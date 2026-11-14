@@ -1,5 +1,6 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "home.title"))}}
   <h1>{{t "home.hello"}} {{.Person.Name}}</h1>
+  {{template "httpsNotice" .}}
   {{template "syncNotice" .}}
   <p class="lead">{{t "home.placeholder"}}</p>
   {{if eq .Person.Role "parent"}}<p><a href="/calendars">{{t "calendars.title"}}</a> · <a href="/caldav">{{t "caldav.link"}}</a> · <a href="/displays">{{t "displays.link"}}</a></p>{{end}}

@@ -164,7 +164,7 @@ func (s *Store) Provision(host string, now time.Time) error {
 		return err
 	}
 	s.caDER, s.caKey = der, caKey // published only once the box is ready
-	s.logger.Info("box CA created; compare this fingerprint when trusting it on a device", "sha256", fingerprint(der))
+	s.logger.Info("box CA created; its fingerprint is what a device shows when trusting it", "sha256", fingerprint(der))
 	return nil
 }
 

@@ -3,6 +3,7 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"html/template"
 	"io/fs"
@@ -13,6 +14,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/pki"
+	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/web"
 )
@@ -26,6 +28,9 @@ type Options struct {
 	// HTTPSPort is the port clients reach HTTPS on, used in redirects and
 	// links. Empty means 443.
 	HTTPSPort string
+	// Public is the public HTTPS certificate (ADR 0014). Nil means the
+	// wizard offers only the box's own CA.
+	Public PublicHTTPS
 	// Sync syncs calendars from outside. Nil means a service with HTTP
 	// fetching; main passes its own so the scheduler and the web UI share it.
 	Sync *calsync.Service
@@ -35,9 +40,30 @@ type Options struct {
 	Logger *slog.Logger
 }
 
+// PublicHTTPS is the box's publicly trusted certificate, set up through the
+// wizard; implemented by publiccert.Manager.
+type PublicHTTPS interface {
+	// Ready reports whether a public setup is installed (its certificate may
+	// still be missing, see HasCertificate).
+	Ready() bool
+	// HasCertificate reports whether the manager has a certificate to serve.
+	// It is false while a stored setup is ready but its certificate could not
+	// be loaded or obtained: the box then serves its own CA's certificate.
+	HasCertificate() bool
+	// Name is the public DNS name of the box.
+	Name() string
+	// Status is shown to parents.
+	Status() publiccert.Status
+	// Setup points the name to the box and obtains the certificate.
+	Setup(context.Context, publiccert.Request) error
+	// Clear forgets the public setup (back to the box's own CA).
+	Clear() error
+}
+
 type server struct {
 	db        *store.DB
 	pki       *pki.Store
+	public    PublicHTTPS
 	httpsPort string
 	now       func() time.Time
 	i18n      *i18n.Bundle
@@ -56,7 +82,7 @@ func New(opts Options) http.Handler {
 	if opts.PKI == nil {
 		panic("server: Options.PKI is required")
 	}
-	s := &server{db: opts.DB, pki: opts.PKI, httpsPort: opts.HTTPSPort, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad()}
+	s := &server{db: opts.DB, pki: opts.PKI, public: opts.Public, httpsPort: opts.HTTPSPort, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad()}
 	if s.httpsPort == "" {
 		s.httpsPort = "443"
 	}
@@ -86,6 +112,9 @@ func New(opts Options) http.Handler {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
 	mux.HandleFunc("GET /setup/https", s.handleHTTPSForm)
 	mux.HandleFunc("POST /setup/https", s.handleHTTPSSubmit)
+	mux.HandleFunc("POST /setup/https/public", s.handlePublicHTTPSSubmit)
+	mux.HandleFunc("GET /setup/https/check", s.handleNameCheck)
+	mux.HandleFunc("POST /setup/https/own-ca", s.handleSwitchToOwnCA)
 	mux.HandleFunc("GET /ca", s.handleTrustPage)
 	mux.HandleFunc("GET /ca/hejmo-ca.crt", s.handleCACert)
 	mux.HandleFunc("GET /ca/hejmo.mobileconfig", s.handleMobileConfig)
@@ -141,7 +170,7 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "household", err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID)})
+	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": p.Role == store.RoleParent && s.httpsWarning()})
 }
 
 func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name string, data map[string]any) {

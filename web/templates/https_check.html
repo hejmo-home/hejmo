@@ -1,0 +1,26 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "setup.https.check.title"))}}
+  <h1>{{t "setup.https.check.title"}}</h1>
+  <p class="lead">{{t "setup.https.check.intro"}} <code>{{.Name}}</code></p>
+  <div class="steps" data-check data-check-url="{{.CheckURL}}" data-continue-url="{{.Continue}}" data-retry-seconds="5">
+    <p class="notice" role="status" data-check-waiting>{{t "setup.https.check.waiting"}}</p>
+    <p class="hint" role="status" data-check-ok hidden>{{t "setup.https.check.ok"}}</p>
+    <section data-rebind-help hidden>
+      <h2>{{t "setup.https.rebind.title"}}</h2>
+      <p>{{t "setup.https.rebind.why"}}</p>
+      <ol>
+        <li>{{t "setup.https.rebind.step1"}}</li>
+        <li>{{t "setup.https.rebind.step2"}} <code>{{.Name}}</code></li>
+        <li>{{t "setup.https.rebind.step3"}}</li>
+      </ol>
+      <p class="hint">{{t "setup.https.rebind.other"}}</p>
+      <button class="button secondary" type="button" data-check-again>{{t "setup.https.check.again"}}</button>
+      <form method="post" action="/setup/https/own-ca">
+        <h2>{{t "setup.https.ownca.title"}}</h2>
+        <p>{{t "setup.https.ownca.text"}}</p>
+        <button class="button secondary" type="submit">{{t "setup.https.ownca.button"}}</button>
+      </form>
+    </section>
+    <a class="button" href="{{.Continue}}" data-continue-link>{{t "setup.https.check.continue"}}</a>
+  </div>
+  <script src="/static/https-check.js" defer></script>
+{{template "foot"}}

@@ -36,6 +36,9 @@ type Options struct {
 	// Sync syncs calendars from outside. Nil means a service with HTTP
 	// fetching; main passes its own so the scheduler and the web UI share it.
 	Sync *calsync.Service
+	// LiveInterval is how often the box checks whether a connected display's
+	// view changed (live updates, ticket 5.5). Zero means 2 seconds.
+	LiveInterval time.Duration
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -74,6 +77,7 @@ type server struct {
 	limiter   *loginLimiter
 	opens     *loginLimiter // pairing screens opened, per client address
 	sync      *calsync.Service
+	live      time.Duration
 }
 
 // New returns the box's root HTTP handler.
@@ -96,6 +100,9 @@ func New(opts Options) http.Handler {
 	}
 	if s.sync = opts.Sync; s.sync == nil {
 		s.sync = calsync.New(s.db, nil, s.now)
+	}
+	if s.live = opts.LiveInterval; s.live <= 0 {
+		s.live = 2 * time.Second
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
@@ -139,6 +146,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
+	mux.HandleFunc("GET /display/view", s.handleDisplayView)
+	mux.HandleFunc("GET /display/events", s.handleDisplayEvents)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)

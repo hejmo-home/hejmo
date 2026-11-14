@@ -4,6 +4,7 @@
 //
 //	hejmo              start the box
 //	hejmo healthcheck  exit 0 if the local box answers /healthz (for Docker)
+//	hejmo backup FILE  write an online backup of the database to FILE (for the update script)
 package main
 
 import (
@@ -72,6 +73,17 @@ func main() {
 		}
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "backup" {
+		dest := ""
+		if len(os.Args) > 2 {
+			dest = os.Args[2]
+		}
+		if err := backup(cfg, dest); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	if err := run(cfg, logger); err != nil {
 		logger.Error("box stopped", "err", err)
@@ -131,7 +143,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-weatherDone }()
 
-	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Done: ctx.Done()})
+	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Done: ctx.Done(), UpdateDir: cfg.DataDir})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).
@@ -240,6 +252,20 @@ func tlsConfig(public *publiccert.Manager, certs *pki.Store) *tls.Config {
 		}
 		return certs.GetCertificate(h)
 	}}
+}
+
+// backup writes a consistent copy of the database to dest with SQLite's online
+// backup while the box keeps running (ADR 0018).
+func backup(cfg config, dest string) error {
+	if dest == "" {
+		return errors.New("usage: hejmo backup FILE")
+	}
+	db, err := store.Open(filepath.Join(cfg.DataDir, "hejmo.db"))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	return db.Backup(dest)
 }
 
 // healthcheck asks the box at baseURL for /healthz.

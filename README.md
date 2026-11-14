@@ -37,7 +37,13 @@ go run ./cmd/hejmo     # start the box on http://localhost:8080
 docker compose up      # run the container
 ```
 
-Health check: `GET /healthz` returns `{"status":"ok"}`.
+Health check: `GET /healthz` returns `{"status":"ok"}`. Data lives in `HEJMO_DATA_DIR` (default `/data`, SQLite).
+
+On first start the box opens the **setup wizard**: home location (town and state/canton), first parent account with password and one-time codes (TOTP from any authenticator app, for example Aegis or FreeOTP), and the parent PIN for displays.
+
+## API
+
+The REST API lives under `/api/v1`; its OpenAPI description is served at `/api/v1/openapi.yaml` ([source](api/openapi.yaml)). Authenticate with a bearer token (`Authorization: Bearer hejmo_…`) created via `POST /api/v1/tokens`. Tokens are limited by scopes such as `read`, `write`, `lists` or `events:read`.
 
 Development is strictly test-driven: every acceptance criterion starts as a failing test.
 

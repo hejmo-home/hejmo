@@ -15,10 +15,12 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"syscall"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/server"
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 type config struct {
@@ -57,9 +59,18 @@ func run(cfg config, logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
+		return err
+	}
+	db, err := store.Open(filepath.Join(cfg.DataDir, "hejmo.db"))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           server.New(server.Options{Logger: logger}),
+		Handler:           server.New(server.Options{DB: db, Logger: logger}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	errc := make(chan error, 1)

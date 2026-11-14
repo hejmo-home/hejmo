@@ -1,0 +1,19 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "setup.totp.title"))}}
+  <h1>{{t "setup.totp.title"}}</h1>
+  <p class="lead">{{t "setup.totp.intro"}}</p>
+  {{template "error" .}}
+  <div class="steps">
+    <fieldset>
+      <legend>{{t "setup.totp.key"}}</legend>
+      <code class="secret" data-totp-secret="{{.Secret}}">{{.Secret}}</code>
+      <a class="hint" href="{{.URI}}">{{t "setup.totp.link"}}</a>
+    </fieldset>
+    <form method="post" action="/setup/totp">
+      <fieldset>
+        <label>{{t "setup.totp.code"}}
+          <input name="code" inputmode="numeric" pattern="[0-9 ]{6,7}" required autocomplete="one-time-code" autofocus></label>
+      </fieldset>
+      <button class="button" type="submit">{{t "setup.totp.confirm"}}</button>
+    </form>
+  </div>
+{{template "foot"}}

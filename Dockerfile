@@ -2,7 +2,7 @@
 # Build: pure Go (CGO off), cross-compiled for the target platform.
 FROM --platform=$BUILDPLATFORM golang:1.27.4 AS build
 WORKDIR /src
-COPY go.mod ./
+COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 ARG TARGETOS TARGETARCH

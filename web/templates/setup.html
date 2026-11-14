@@ -1,21 +1,36 @@
-<!doctype html>
-<html lang="{{.Lang}}">
-<head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>{{t "setup.title"}}</title>
-<link rel="stylesheet" href="/static/hejmo.css">
-</head>
-<body>
-<main>
+{{template "head" (dict "Lang" .Lang "Title" (t "setup.title"))}}
   <h1>{{t "setup.title"}}</h1>
   <p class="lead">{{t "setup.intro"}}</p>
-  <ol class="steps">
-    <li><strong>{{t "setup.step.home"}}</strong><span>{{t "setup.step.home.hint"}}</span></li>
-    <li><strong>{{t "setup.step.parent"}}</strong><span>{{t "setup.step.parent.hint"}}</span></li>
-    <li><strong>{{t "setup.step.pin"}}</strong><span>{{t "setup.step.pin.hint"}}</span></li>
-  </ol>
-  <button class="button" type="button" disabled>{{t "setup.start"}}</button>
-</main>
-</body>
-</html>
+  {{template "error" .}}
+  <form method="post" action="/setup" class="steps">
+    <fieldset>
+      <legend>{{t "setup.step.home"}}</legend>
+      <span class="hint">{{t "setup.step.home.hint"}}</span>
+      <label>{{t "setup.field.home_name"}}
+        <input name="home_name" value="{{.Form.HomeName}}" required autocomplete="address-level2"></label>
+      <label>{{t "setup.field.region"}}
+        <select name="region">
+          {{$sel := .Form.Region}}
+          {{range .Regions}}<option value="{{.Code}}"{{if eq .Code $sel}} selected{{end}}>{{.Country}} · {{.Name}}</option>
+          {{end}}
+        </select></label>
+    </fieldset>
+    <fieldset>
+      <legend>{{t "setup.step.parent"}}</legend>
+      <span class="hint">{{t "setup.step.parent.hint"}}</span>
+      <label>{{t "setup.field.name"}}
+        <input name="name" value="{{.Form.Name}}" required autocomplete="given-name"></label>
+      <label>{{t "setup.field.username"}}
+        <input name="username" value="{{.Form.Username}}" required autocomplete="username" autocapitalize="none"></label>
+      <label>{{t "setup.field.password"}}
+        <input name="password" type="password" required minlength="10" autocomplete="new-password"></label>
+    </fieldset>
+    <fieldset>
+      <legend>{{t "setup.step.pin"}}</legend>
+      <span class="hint">{{t "setup.step.pin.hint"}}</span>
+      <label>{{t "setup.field.pin"}}
+        <input name="pin" type="password" inputmode="numeric" pattern="[0-9]{4,8}" required autocomplete="off"></label>
+    </fieldset>
+    <button class="button" type="submit">{{t "setup.start"}}</button>
+  </form>
+{{template "foot"}}

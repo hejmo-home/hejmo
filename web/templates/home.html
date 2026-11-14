@@ -1,5 +1,7 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "home.title"))}}
   <h1>{{t "home.hello"}} {{.Person.Name}}</h1>
+  {{template "syncNotice" .}}
   <p class="lead">{{t "home.placeholder"}}</p>
+  {{if eq .Person.Role "parent"}}<p><a href="/calendars">{{t "calendars.title"}}</a></p>{{end}}
   <form method="post" action="/logout"><button class="button" type="submit">{{t "home.logout"}}</button></form>
 {{template "foot"}}

@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"context"
 	"io"
 	"net/http"
 	"net/http/cookiejar"
@@ -9,9 +10,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -22,6 +25,36 @@ type box struct {
 	db     *store.DB
 	client *http.Client
 	now    time.Time
+	feeds  *fakeFeeds
+}
+
+// fakeFeeds serves ICS feeds (and failures) to the box's calendar sync.
+type fakeFeeds struct {
+	mu    sync.Mutex
+	feeds map[string]string
+	errs  map[string]error
+	asked []string
+}
+
+func (f *fakeFeeds) Fetch(_ context.Context, url string) ([]byte, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.asked = append(f.asked, url)
+	if err := f.errs[url]; err != nil {
+		return nil, err
+	}
+	return []byte(f.feeds[url]), nil
+}
+
+func (f *fakeFeeds) set(url, body string, err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.feeds[url] = body
+	if err == nil {
+		delete(f.errs, url)
+	} else {
+		f.errs[url] = err
+	}
 }
 
 func newBox(t *testing.T) *box {
@@ -31,8 +64,9 @@ func newBox(t *testing.T) *box {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	b := &box{t: t, db: db, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
-	b.srv = httptest.NewServer(server.New(server.Options{DB: db, Now: func() time.Time { return b.now }}))
+	b := &box{t: t, db: db, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC), feeds: &fakeFeeds{feeds: map[string]string{}, errs: map[string]error{}}}
+	now := func() time.Time { return b.now }
+	b.srv = httptest.NewServer(server.New(server.Options{DB: db, Now: now, Sync: calsync.New(db, b.feeds, now)}))
 	t.Cleanup(b.srv.Close)
 	jar, _ := cookiejar.New(nil)
 	b.client = &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}

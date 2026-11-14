@@ -1,0 +1,61 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "calendars.title"))}}
+  <p><a href="/">{{t "calendars.back"}}</a></p>
+  <h1>{{t "calendars.title"}}</h1>
+  {{template "syncNotice" .}}
+
+  <section aria-labelledby="synced">
+    <h2 id="synced">{{t "calendars.synced"}}</h2>
+    {{if .Calendars}}
+    <ul class="cards">
+      {{range .Calendars}}
+      <li>
+        <strong><span class="dot" style="background: {{.Color}}" aria-hidden="true"></span> {{.Name}}</strong>
+        <span class="hint">{{t "calendars.readonly"}}{{if .Audience}} · {{t "calendars.for"}} {{.Audience}}{{end}}</span>
+        <span class="hint">
+          {{if .LastSuccess}}{{t "calendars.last_success"}} {{.LastSuccess}}{{else}}{{t "calendars.never"}}{{end}}
+          {{if .Stale}} · <span data-calendar-stale>{{t "calendars.stale"}}</span>{{end}}
+        </span>
+        {{if .LastError}}<span class="hint">{{t "calendars.last_error"}} {{.LastError}}</span>{{end}}
+        <span class="row">
+          <form method="post" action="/calendars/{{.ID}}/sync"><button class="button" type="submit">{{t "calendars.sync_now"}}</button></form>
+          <form method="post" action="/calendars/{{.ID}}/delete"><button class="button secondary" type="submit">{{t "calendars.remove"}}</button></form>
+        </span>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}<p class="lead">{{t "calendars.none"}}</p>{{end}}
+  </section>
+
+  <section aria-labelledby="add">
+    <h2 id="add">{{t "calendars.add"}}</h2>
+    {{template "error" .}}
+    <form method="post" action="/calendars" class="steps">
+      <fieldset>
+        <label>{{t "calendars.field.name"}}
+          <input name="name" value="{{with .Form}}{{.Name}}{{end}}" required></label>
+        <label>{{t "calendars.field.url"}}
+          <input name="url" value="{{with .Form}}{{.URL}}{{end}}" required inputmode="url" autocapitalize="none" placeholder="webcal://…"></label>
+        <label>{{t "calendars.field.color"}}
+          <input name="color" type="color" value="{{with .Form}}{{if .Color}}{{.Color}}{{else}}#2F5E7A{{end}}{{else}}#2F5E7A{{end}}"></label>
+        <label>{{t "calendars.field.interval"}}
+          <select name="interval">{{range .Intervals}}<option value="{{.}}"{{if eq . 60}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+        <p class="hint">{{t "calendars.field.audience"}}</p>
+        {{range .People}}<label class="check"><input type="checkbox" name="people" value="{{.ID}}"> {{.Name}}</label>{{end}}
+        {{range .Groups}}<label class="check"><input type="checkbox" name="groups" value="{{.ID}}"> {{.Name}}</label>{{end}}
+      </fieldset>
+      <button class="button" type="submit">{{t "calendars.add.submit"}}</button>
+    </form>
+  </section>
+
+  <section aria-labelledby="log">
+    <h2 id="log">{{t "calendars.log"}}</h2>
+    {{if .Log}}
+    <table class="log">
+      <thead><tr><th>{{t "calendars.log.when"}}</th><th>{{t "calendars.log.calendar"}}</th><th>{{t "calendars.log.what"}}</th></tr></thead>
+      <tbody>
+        {{range .Log}}<tr><td>{{.At}}</td><td>{{.Calendar}}</td><td>{{.Message}}</td></tr>{{end}}
+      </tbody>
+    </table>
+    {{else}}<p class="hint">{{t "calendars.log.empty"}}</p>{{end}}
+  </section>
+{{template "foot"}}

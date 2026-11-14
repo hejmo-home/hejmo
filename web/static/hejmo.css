@@ -28,3 +28,13 @@ label { display: grid; gap: 4px; font-size: 14px; color: var(--text-2); }
 input, select { font: inherit; color: var(--text); min-height: 44px; padding: 8px 12px; border: 1px solid #D6D3CC; border-radius: 12px; background: var(--surface); }
 .error { background: #F7E7E0; color: #5C3A2C; border-radius: 14px; padding: 10px 12px; max-width: 560px; }
 .secret { font-size: 19px; letter-spacing: 0.08em; word-break: break-all; }
+.notice { background: #FBF1DC; color: #5A4520; border-radius: 14px; padding: 10px 12px; max-width: 560px; }
+.cards { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: var(--gap); max-width: 560px; }
+.cards li { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 6px; }
+.cards .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
+.dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; }
+.button.secondary { background: var(--surface); color: var(--accent); border: 1px solid var(--accent); }
+.check { display: flex; align-items: center; gap: 8px; color: var(--text); }
+.check input { min-height: 0; width: 20px; height: 20px; }
+.log { border-collapse: collapse; max-width: 100%; font-size: 14px; }
+.log th, .log td { text-align: left; padding: 6px 12px 6px 0; vertical-align: top; }

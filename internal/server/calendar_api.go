@@ -57,8 +57,8 @@ type eventJSON struct {
 	Groups      []string `json:"groups"`
 }
 
-func eventToJSON(e calendar.Event, loc *time.Location) eventJSON {
-	return eventJSON{e.ID, e.CalendarID, e.Title, e.Description, e.Location, e.AllDay,
+func (s *server) eventToJSON(r *http.Request, e calendar.Event, loc *time.Location) eventJSON {
+	return eventJSON{e.ID, e.CalendarID, s.title(r, e.Title), e.Description, e.Location, e.AllDay,
 		formatTime(e.Start, e.AllDay, loc), formatTime(e.End, e.AllDay, loc), e.RRule, nonNil(e.People), nonNil(e.Groups)}
 }
 
@@ -107,7 +107,7 @@ func (s *server) apiListEvents(w http.ResponseWriter, r *http.Request, p princip
 		if o.SeriesID != "" {
 			rec = formatTime(o.RecurrenceID, false, loc)
 		}
-		out = append(out, occurrenceJSON{o.EventID, o.SeriesID, rec, o.CalendarID, o.Title, o.Description, o.Location, o.AllDay,
+		out = append(out, occurrenceJSON{o.EventID, o.SeriesID, rec, o.CalendarID, s.title(r, o.Title), o.Description, o.Location, o.AllDay,
 			formatTime(o.Start, o.AllDay, loc), formatTime(o.End, o.AllDay, loc), nonNil(o.People), nonNil(o.Groups)})
 	}
 	writeJSON(w, http.StatusOK, out)
@@ -188,11 +188,14 @@ func (s *server) apiCreateEvent(w http.ResponseWriter, r *http.Request, p princi
 		}
 		e.CalendarID = cal.ID
 	}
+	if s.refuseReadOnly(w, p.household.ID, e.CalendarID) {
+		return
+	}
 	created, err := s.db.CreateEvent(p.household.ID, e)
 	if s.storeError(w, "create event", err) {
 		return
 	}
-	writeJSON(w, http.StatusCreated, eventToJSON(created, loc))
+	writeJSON(w, http.StatusCreated, s.eventToJSON(r, created, loc))
 }
 
 // seriesTarget resolves an event id plus ?occurrence= and ?scope=.
@@ -228,7 +231,7 @@ func (s *server) seriesTarget(w http.ResponseWriter, r *http.Request, p principa
 
 func (s *server) apiUpdateEvent(w http.ResponseWriter, r *http.Request, p principal) {
 	series, occ, scope, ok := s.seriesTarget(w, r, p)
-	if !ok {
+	if !ok || s.refuseReadOnly(w, p.household.ID, series[0].CalendarID) {
 		return
 	}
 	in, err := readEventInput(r)
@@ -268,7 +271,7 @@ func (s *server) apiUpdateEvent(w http.ResponseWriter, r *http.Request, p princi
 
 func (s *server) apiDeleteEvent(w http.ResponseWriter, r *http.Request, p principal) {
 	series, occ, scope, ok := s.seriesTarget(w, r, p)
-	if !ok {
+	if !ok || s.refuseReadOnly(w, p.household.ID, series[0].CalendarID) {
 		return
 	}
 	ch, err := calendar.Editor{NewID: store.NewID}.Delete(series, occ, scope)
@@ -315,7 +318,7 @@ func (s *server) apiSearch(w http.ResponseWriter, r *http.Request, p principal) 
 	}
 	out := make([]eventJSON, 0, len(events))
 	for _, e := range events {
-		out = append(out, eventToJSON(e, p.location()))
+		out = append(out, s.eventToJSON(r, e, p.location()))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -384,33 +387,4 @@ func (s *server) apiCreateGroup(w http.ResponseWriter, r *http.Request, p princi
 		}
 	}
 	writeJSON(w, http.StatusCreated, groupJSON{g.ID, g.Name, nonNil(g.Members)})
-}
-
-func (s *server) apiListCalendars(w http.ResponseWriter, _ *http.Request, p principal) {
-	if _, err := s.db.FamilyCalendar(p.household.ID); err != nil {
-		s.fail(w, "family calendar", err)
-		return
-	}
-	cals, err := s.db.Calendars(p.household.ID)
-	if err != nil {
-		s.fail(w, "list calendars", err)
-		return
-	}
-	type calJSON struct {
-		ID       string `json:"id"`
-		Name     string `json:"name"`
-		Kind     string `json:"kind"`
-		Color    string `json:"color"`
-		Audience struct {
-			People []string `json:"people"`
-			Groups []string `json:"groups"`
-		} `json:"audience"`
-	}
-	out := make([]calJSON, 0, len(cals))
-	for _, c := range cals {
-		j := calJSON{ID: c.ID, Name: c.Name, Kind: c.Kind, Color: c.Color}
-		j.Audience.People, j.Audience.Groups = nonNil(c.Audience.People), nonNil(c.Audience.Groups)
-		out = append(out, j)
-	}
-	writeJSON(w, http.StatusOK, out)
 }

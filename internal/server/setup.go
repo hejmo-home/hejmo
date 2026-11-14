@@ -179,9 +179,17 @@ func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
 		s.renderTOTP(w, r, http.StatusUnprocessableEntity, acc, "setup.error.code")
 		return
 	}
+	// The codes are stored before the confirmation: if storing fails, the
+	// person is not confirmed yet and can try again instead of being confirmed
+	// without ever seeing their codes.
+	codes, err := s.newRecoveryCodes(acc.PersonID)
+	if err != nil {
+		s.fail(w, "recovery codes", err)
+		return
+	}
 	if err := s.db.ConfirmTOTP(acc.PersonID); err != nil && !errors.Is(err, store.ErrNotFound) {
 		s.fail(w, "confirm TOTP", err)
 		return
 	}
-	s.issueRecoveryCodes(w, r, acc.PersonID)
+	s.showRecoveryCodes(w, r, codes)
 }

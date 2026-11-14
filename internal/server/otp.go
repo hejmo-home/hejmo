@@ -43,6 +43,12 @@ func (s *server) issueRecoveryCodes(w http.ResponseWriter, r *http.Request, pers
 		s.fail(w, "recovery codes", err)
 		return
 	}
+	s.showRecoveryCodes(w, r, codes)
+}
+
+// showRecoveryCodes renders a set that was just stored. It is the only time
+// the codes are shown.
+func (s *server) showRecoveryCodes(w http.ResponseWriter, r *http.Request, codes []string) {
 	w.Header().Set("Cache-Control", "no-store")
 	s.render(w, r, http.StatusOK, "recovery_codes.html", map[string]any{"Codes": codes})
 }
@@ -85,7 +91,7 @@ func (s *server) renderOTP(w http.ResponseWriter, r *http.Request, p principal, 
 		v.DoneText = s.i18n.Format(lang, i18n.Msg("otp.reset.done", "name", v.ResetName))
 	}
 	s.render(w, r, status, "otp.html", map[string]any{
-		"Person": p.person, "Page": v, "Error": v.Error, "SyncStale": s.syncStale(p.household.ID),
+		"Person": p.person, "Page": v, "SyncStale": s.syncStale(p.household.ID),
 	})
 }
 

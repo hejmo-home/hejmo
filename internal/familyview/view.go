@@ -60,6 +60,9 @@ type WeatherChip struct {
 type Event struct {
 	Title string
 	Time  string // "09:00–10:00" or "9:00 AM–10:00 AM", by the household time format
+	// Markers are the people of the event in display order, so black-and-white
+	// mode tells them apart by shape.
+	Markers []Marker
 }
 
 // Progress is a person's task progress today (data arrives with 6.6).
@@ -167,7 +170,7 @@ func Build(in Input) View {
 		if !bar && !whole {
 			for i, p := range in.People {
 				if sees(in, p, o) {
-					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc, in.TimeFormat))
+					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc, in.TimeFormat, markers(in, o)))
 				}
 			}
 			continue
@@ -215,7 +218,7 @@ func Build(in Input) View {
 			}
 			for i, p := range in.People {
 				if sees(in, p, o) && len(v.Columns[i].Tomorrow) < maxTomorrow {
-					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc, in.TimeFormat))
+					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc, in.TimeFormat, markers(in, o)))
 				}
 			}
 		}
@@ -238,8 +241,8 @@ func clock(o calendar.Occurrence, loc *time.Location, format store.TimeFormat) s
 	return fmt.Sprintf("%s–%s", o.Start.In(loc).Format(l), o.End.In(loc).Format(l))
 }
 
-func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat) Event {
-	return Event{Title: o.Title, Time: clock(o, loc, format)}
+func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat, m []Marker) Event {
+	return Event{Title: o.Title, Time: clock(o, loc, format), Markers: m}
 }
 
 // ClockText is the time of day in the household's time format ("24h" or "12h").
@@ -272,6 +275,17 @@ func Chip(w *Weather, unit store.TemperatureUnit) *WeatherChip {
 	}
 	n := int(math.Round(t)) // math.Round(-0.4) is -0, which int() turns into 0
 	return &WeatherChip{Text: fmt.Sprintf("%d°%s", n, sym), Icon: w.Icon}
+}
+
+// markers lists the people who see o, in display order.
+func markers(in Input, o calendar.Occurrence) []Marker {
+	var out []Marker
+	for _, p := range in.People {
+		if sees(in, p, o) {
+			out = append(out, Marker{Name: p.Name, Slot: p.Slot, Shape: p.Shape})
+		}
+	}
+	return out
 }
 
 func wholeHousehold(in Input, o calendar.Occurrence) bool {

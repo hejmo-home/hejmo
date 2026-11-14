@@ -366,3 +366,19 @@ func TestWeatherChipFollowsTheTemperatureUnit(t *testing.T) {
 		t.Error("weather chip without a reading")
 	}
 }
+
+// 5.4: Given an event with two people, each card carries the markers of both
+// people, so black-and-white mode tells them apart by shape.
+func TestEventCardsCarryTheMarkersOfEveryPersonOfTheEvent(t *testing.T) {
+	v := build(at(14, 8, 0), timed("Football", at(14, 15, 0), at(14, 16, 0), "seb", "mia"), timed("Dentist", at(14, 9, 0), at(14, 10, 0), "mama"))
+	want := []familyview.Marker{{Name: "Sebastian", Slot: 3, Shape: "square-filled"}, {Name: "Mia", Slot: 4, Shape: "square-empty"}}
+	for _, who := range []string{"Sebastian", "Mia"} {
+		evs := column(t, v, who).Events
+		if len(evs) != 1 || fmt.Sprint(evs[0].Markers) != fmt.Sprint(want) {
+			t.Errorf("%s: markers = %+v, want %+v", who, evs, want)
+		}
+	}
+	if m := column(t, v, "Mama").Events[0].Markers; len(m) != 1 || m[0].Shape != "circle-filled" {
+		t.Errorf("Dentist markers = %+v", m)
+	}
+}

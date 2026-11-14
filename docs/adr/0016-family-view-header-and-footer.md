@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 14/11/2026
-- Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; the leave-the-house countdown stays out of V1.0 and comes back per person in V2), [0015](0015-display-web-interface-and-everyday.md) (footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
+- Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; the leave-the-house countdown stays out of V1.0 and comes back per person in V2), [0015](0015-display-web-interface-and-everyday.md) (tomorrow block faded and off by default, footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
 
 ## Context
 
@@ -18,6 +18,7 @@ The product owner reviewed the first preview of the family view (PR #58, ticket 
 ### Person columns
 
 - Each person's column shows **today's task progress** as a bar with "done/total" (e.g. "3/5"), anchored to the bottom of the column. When the column's events scroll, the bar stays visible in the same place; the 18:00 tomorrow block of ADR 0015 scrolls with the events above it. A person without tasks today shows no bar.
+- **Tomorrow block** (ADR 0015: from 18:00, each person's first three timed events of the next day, and tomorrow's whole-household events at the end of the family strip): shown **faded**, so today's events stand out. Whether it is shown at all is a setting per display, **off by default**.
 - **Leave time per person in V2:** once journey times exist (V2), the person's next event with a journey time shows "leave in h:mm" in their column from 60 minutes before departure (event start minus journey time); several people can each show their own. Nothing of it is built in V1.0 (ADR 0008, handover).
 
 ### Footer
@@ -32,4 +33,5 @@ The footer has **two tiles**; the task tile of ADR 0015 is dropped, because prog
 - Tickets change: 5.3 (anchored progress bar, two-tile footer), 5.8 (header clock and weather, time format and temperature unit; renamed "Weather and time in the header"), 6.3 (meal cut-off times), 6.4 (renamed "Meal tile on the display"), 6.6 (progress in the columns instead of a tile), 6.7 (tomorrow tile states).
 - The header clock changes once a minute, so E-Ink displays refresh the clock chip once a minute (a partial update, no full-page reload).
 - The preview of 5.1 shows the new header, the anchored progress bars and the footer states (tiles hidden, one collection, two collections with a note).
+- Display settings gain "show tomorrow block" (off by default); ticket 5.3 renders it faded.
 - Household settings gain time format, temperature unit and four meal cut-off times (dinner empty by default).

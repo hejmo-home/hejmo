@@ -1,0 +1,17 @@
+# Start the box: docker compose up -d
+# Then open http://<box-ip>:8080 in a browser.
+services:
+  hejmo:
+    build: .
+    image: ghcr.io/hejmo-home/hejmo:latest
+    container_name: hejmo
+    restart: unless-stopped
+    ports:
+      - "8080:8080"
+    volumes:
+      - hejmo-data:/data
+    environment:
+      TZ: Europe/Berlin
+
+volumes:
+  hejmo-data:

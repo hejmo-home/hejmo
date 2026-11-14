@@ -33,3 +33,13 @@
 {{define "syncNotice"}}{{if .SyncStale}}<p class="notice" role="status" data-sync-stale>{{t "sync.stale"}} <a href="/calendars">{{t "sync.stale.link"}}</a></p>{{end}}{{end}}
 
 {{define "httpsNotice"}}{{if .HTTPSWarning}}<p class="notice" role="alert" data-https-warning>{{t "https.warning"}} {{t "https.warning.hint"}}</p>{{end}}{{end}}
+
+{{define "updateNotice"}}{{with .Update}}<div class="notice" role="status" data-update-notice="{{.State}}">
+  {{if eq .State "updated"}}<p>{{printf (t "update.updated") .Version}} <a href="{{.NotesURL}}">{{t "update.whats_new"}}</a></p>
+  {{else if eq .State "available"}}<p>{{printf (t "update.available") .Target}} <a href="{{.NotesURL}}">{{t "update.whats_new"}}</a></p>
+  {{else if eq .State "rolled_back"}}<p>{{printf (t "update.rolled_back") .Target .Version}}</p>
+  {{else if eq .State "rejected"}}<p>{{printf (t "update.rejected") .Target}}</p>
+  {{else}}<p>{{t "update.failed"}}</p>{{end}}
+  {{if .Reason}}<p>{{t (printf "update.reason.%s" .Reason)}}</p>{{end}}
+  {{if .Dismissible}}<form method="post" action="/update/dismiss"><button class="button" type="submit">{{t "update.dismiss"}}</button></form>{{end}}
+</div>{{end}}{{end}}

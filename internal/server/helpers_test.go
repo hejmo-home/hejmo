@@ -39,6 +39,8 @@ type box struct {
 	public  *fakePublic
 	weather *weather.Service // fetches from meteo, never from the internet
 	meteo   *fakeMeteo
+	// updateDir stands in for the data volume that the host script shares with the box.
+	updateDir string
 }
 
 // fakeMeteo stands in for Open-Meteo.
@@ -181,7 +183,7 @@ func newFreshBox(t *testing.T) *box {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
+	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time { return b.now }
 	b.sync = calsync.New(db, feeds, now)
 	b.meteo = &fakeMeteo{body: `{"current":{"temperature_2m":18.4,"weather_code":0,"is_day":1}}`, status: 200}
@@ -193,7 +195,7 @@ func newFreshBox(t *testing.T) *box {
 	}))
 	t.Cleanup(b.meteo.srv.Close)
 	b.weather = weather.New(weather.WithBaseURL(b.meteo.srv.URL), weather.WithClock(now))
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather})
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: b.updateDir})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()

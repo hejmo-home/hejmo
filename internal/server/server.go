@@ -48,6 +48,10 @@ type Options struct {
 	// Done, when closed, ends open live streams so a shutdown does not wait
 	// for them. Nil means they end only when their client goes away.
 	Done <-chan struct{}
+	// UpdateDir is the data volume directory the host script of auto-update
+	// shares with the box (ADR 0018). Empty means updates are not managed by a
+	// host script: no settings file is written and no status is read.
+	UpdateDir string
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -89,6 +93,7 @@ type server struct {
 	weather   *weather.Service
 	live      time.Duration
 	done      <-chan struct{}
+	updateDir string
 }
 
 // New returns the box's root HTTP handler.
@@ -116,12 +121,14 @@ func New(opts Options) http.Handler {
 		s.weather = weather.New(weather.WithClock(s.now))
 	}
 	s.done = opts.Done
+	s.updateDir = opts.UpdateDir
 	if s.live = opts.LiveInterval; s.live <= 0 {
 		s.live = 2 * time.Second
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
 	s.pages = parsePages()
+	s.syncUpdateSettings()
 
 	static, err := fs.Sub(web.Static, "static")
 	if err != nil {
@@ -175,6 +182,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
 	mux.HandleFunc("GET /settings", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings", s.handleSettingsSave)
+	mux.HandleFunc("POST /update/dismiss", s.handleUpdateDismiss)
 	mux.HandleFunc("POST /displays/{id}/settings", s.handleDisplaySettings)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
@@ -207,7 +215,7 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "household", err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": p.Role == store.RoleParent && s.httpsWarning()})
+	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": p.Role == store.RoleParent && s.httpsWarning(), "Update": s.parentUpdateNotice(p, h)})
 }
 
 // parsePages parses the embedded templates; "t" is replaced per render.
@@ -264,4 +272,12 @@ func dict(kv ...any) map[string]any {
 		}
 	}
 	return m
+}
+
+// parentUpdateNotice is the update notice for a signed-in parent; children see none.
+func (s *server) parentUpdateNotice(p store.Person, h store.Household) *updateView {
+	if p.Role != store.RoleParent {
+		return nil
+	}
+	return s.updateNotice(h)
 }

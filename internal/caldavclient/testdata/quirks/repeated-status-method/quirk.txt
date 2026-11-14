@@ -1,0 +1,1 @@
+iCloud stores events with two STATUS lines and invitations with several METHOD lines; go-ical refuses to re-encode them, so the text must reach the store exactly as sent.

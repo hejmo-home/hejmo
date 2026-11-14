@@ -1,0 +1,8 @@
+{
+  "server": "http://caldav.icloud.example/",
+  "calendar": "http://caldav.icloud.example/cal/",
+  "fetch": [
+    {"url": "http://caldav.icloud.example/cal/twostatus.ics", "etag": "t1", "data": "twostatus.ics"},
+    {"url": "http://caldav.icloud.example/cal/threemethod.ics", "etag": "t2", "data": "threemethod.ics"}
+  ]
+}

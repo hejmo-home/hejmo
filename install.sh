@@ -43,6 +43,15 @@ case "$(uname -m)" in
 aarch64 | arm64 | x86_64 | amd64) ;;
 *) die "Hejmo needs a 64-bit system (Raspberry Pi OS 64-bit); this one reports $(uname -m)." ;;
 esac
+# A Pi 4 or 5 running 32-bit Raspberry Pi OS boots a 64-bit kernel, so uname
+# says aarch64 while the system (and Docker's images) are 32-bit.
+if [ -r "$R/etc/os-release" ]; then
+	# shellcheck disable=SC1090,SC1091
+	[ "$(. "$R/etc/os-release" && echo "${ID:-}")" != "raspbian" ] || die "32-bit Raspberry Pi OS is not supported; install the 64-bit version."
+fi
+case "$(dpkg --print-architecture 2>/dev/null || true)" in
+armhf | armel | i386) die "Hejmo needs a 64-bit system (Raspberry Pi OS 64-bit); this one is a 32-bit system." ;;
+esac
 
 # --- Docker -----------------------------------------------------------------
 if command -v docker >/dev/null 2>&1 && docker compose version >/dev/null 2>&1; then

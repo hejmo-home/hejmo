@@ -5,7 +5,7 @@ English: [Install guide](install.md)
 Hejmo läuft als Docker-Container auf einer kleinen Box bei euch zu Hause. Auf Raspberry Pi OS installiert ein Befehl alles; auf jedem anderen Linux nutzt du Docker Compose direkt.
 
 > **Stand dieser Anleitung (Vorabversion 0.x).**
-> - **Raspberry Pi: in der Emulation getestet.** Das Installationsskript und die Box laufen in CI in einer Raspberry-Pi-OS-64-Bit-Umgebung und in einem Container, der wie ein Raspberry Pi begrenzt ist (1 CPU, 1 GB). Auf echter Hardware hat es noch niemand bestätigt.
+> - **Raspberry Pi: in der Emulation getestet.** Das Installationsskript und die Box laufen in CI in einem Raspberry-Pi-OS-64-Bit-Ersatzsystem. Auf echter Hardware hat es noch niemand bestätigt.
 > - **E-Ink-Funktionen sind experimentell und noch nicht auf E-Ink-Geräten getestet.** Schwarz-Weiß-Darstellung auf echtem E-Ink, das Geisterbild-Neuladen und das Frontlicht im Ruhemodus sind nur gegen einen simulierten Kiosk-Adapter gebaut und getestet. Alle Funktionen laufen auch auf einem normalen Bildschirm wie einem iPad.
 
 ## Voraussetzungen

@@ -50,7 +50,7 @@ in_pi 'HEJMO_IMAGE=registry:5000/hejmo:ci bash /root/install.sh' || fail "first 
 in_pi 'curl -fsS http://localhost/healthz' | grep -q '"status":"ok"' || fail "healthz not ok"
 code=$(in_pi 'curl -s -o /dev/null -w "%{http_code}" -L -k http://localhost/') || true
 [ "$code" = 200 ] || fail "setup wizard answered $code, want 200"
-in_pi 'curl -sk -L http://localhost/ | grep -qi "https"' || fail "the first page is not the HTTPS step of the setup wizard"
+in_pi 'curl -sk -L http://localhost/ | grep -q "Set up encryption"' || fail "the first page is not the HTTPS step of the setup wizard"
 in_pi 'systemctl is-enabled hejmo.service && systemctl is-active hejmo.service' || fail "hejmo.service is not enabled and active"
 
 snapshot() {

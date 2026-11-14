@@ -145,7 +145,8 @@ func (s *server) resetOtherOTP(actor store.Person, household, targetID, password
 	if s.limiter.blocked(key) {
 		return store.Person{}, resetLimited, nil
 	}
-	if !auth.VerifyPassword(own.PasswordHash, password) || !s.secondFactorOK(own, code) {
+	passwordOK := auth.VerifyPassword(own.PasswordHash, password)
+	if secondOK := s.secondFactorOK(own, code, passwordOK); !passwordOK || !secondOK {
 		s.limiter.fail(key)
 		return store.Person{}, resetWrongConfirmation, nil
 	}

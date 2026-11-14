@@ -8,6 +8,7 @@ import (
 	"testing"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -369,5 +370,40 @@ func TestRecoveryAndResetThroughTheAPI(t *testing.T) {
 	mama, _ := b.db.AccountByUsername("mama")
 	if status, _, _ := c.call("POST", "/people/"+mama.PersonID+"/reset-otp", map[string]any{"password": "correct horse battery", "code": totpNow(b, mamaSecret)}); status != http.StatusForbidden {
 		t.Fatalf("own reset = %d, want 403", status)
+	}
+}
+
+// Review round 3: how long a sign-in takes must not tell whether the password
+// is right, so a recovery-shaped code costs the same number of verifies in
+// every case (counted through a seam, not timed).
+func TestRecoveryCodeSignInDoesTheSameWorkWhateverTheOutcome(t *testing.T) {
+	b, _, codes := setupWithCodes(t)
+	verifies := func(user, password, code string) (int, int) {
+		stop := server.CountRecoveryVerifies()
+		r := loginWith(b, user, password, code)
+		return stop(), r.status
+	}
+	wrongPw, _ := verifies("mama", "wrong horse battery", "ZZZZZ-ZZZZZ")
+	if wrongPw == 0 {
+		t.Fatal("wrong password did no recovery verifies: the work would differ from a right password")
+	}
+	cases := []struct{ name, user, pw, code string }{
+		{"right password, wrong code", "mama", "correct horse battery", "ZZZZZ-ZZZZZ"},
+		{"right password, valid code", "mama", "correct horse battery", codes[0]},
+		{"wrong password, valid code", "mama", "wrong horse battery", codes[1]},
+		{"unknown account", "nobody", "whatever it is", "ZZZZZ-ZZZZZ"},
+	}
+	for _, c := range cases {
+		if got, _ := verifies(c.user, c.pw, c.code); got != wrongPw {
+			t.Errorf("%s: %d verifies, want %d (same as wrong password)", c.name, got, wrongPw)
+		}
+	}
+	// Fewer codes left: still the same number.
+	if got, _ := verifies("mama", "correct horse battery", "ZZZZZ-ZZZZZ"); got != wrongPw {
+		t.Errorf("with nine codes left: %d verifies, want %d", got, wrongPw)
+	}
+	// A wrong password must not spend the code.
+	if r := loginWith(b, "mama", "correct horse battery", codes[1]); r.status != http.StatusSeeOther {
+		t.Errorf("code spent by a sign-in with the wrong password: %d", r.status)
 	}
 }

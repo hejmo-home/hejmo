@@ -26,12 +26,14 @@ type Connection struct {
 	Kind        string // caldav
 	URL         string // server address, or the calendar address for a single calendar
 	Username    string
+	Single      bool // URL is one calendar, added by hand; nothing to discover
 	CreatedAt   time.Time
 }
 
 // NewCalDAVConnection describes a CalDAV or iCloud connection to create.
 type NewCalDAVConnection struct {
 	URL, Username, Password string
+	Single                  bool
 	Now                     time.Time
 }
 
@@ -56,16 +58,16 @@ func (db *DB) CreateCalDAVConnection(householdID string, in NewCalDAVConnection)
 		return Connection{}, err
 	}
 	id := newID()
-	if _, err := db.sql.Exec(`INSERT INTO calendar_connections (id, household_id, kind, url, username, credential, created_at) VALUES (?, ?, 'caldav', ?, ?, ?, ?)`,
-		id, householdID, in.URL, in.Username, sealed, stamp(in.Now)); err != nil {
+	if _, err := db.sql.Exec(`INSERT INTO calendar_connections (id, household_id, kind, url, username, credential, single_calendar, created_at) VALUES (?, ?, 'caldav', ?, ?, ?, ?, ?)`,
+		id, householdID, in.URL, in.Username, sealed, in.Single, stamp(in.Now)); err != nil {
 		return Connection{}, err
 	}
-	return Connection{ID: id, HouseholdID: householdID, Kind: "caldav", URL: in.URL, Username: in.Username, CreatedAt: in.Now}, nil
+	return Connection{ID: id, HouseholdID: householdID, Kind: "caldav", URL: in.URL, Username: in.Username, Single: in.Single, CreatedAt: in.Now}, nil
 }
 
 // Connections lists a household's CalDAV connections.
 func (db *DB) Connections(householdID string) ([]Connection, error) {
-	rows, err := db.sql.Query(`SELECT id, household_id, kind, url, username, created_at FROM calendar_connections
+	rows, err := db.sql.Query(`SELECT id, household_id, kind, url, username, single_calendar, created_at FROM calendar_connections
 		WHERE household_id = ? AND kind = 'caldav' ORDER BY created_at, rowid`, householdID)
 	if err != nil {
 		return nil, err
@@ -75,7 +77,7 @@ func (db *DB) Connections(householdID string) ([]Connection, error) {
 	for rows.Next() {
 		var c Connection
 		var created string
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Kind, &c.URL, &c.Username, &created); err != nil {
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Kind, &c.URL, &c.Username, &c.Single, &created); err != nil {
 			return nil, err
 		}
 		c.CreatedAt, _ = time.Parse(time.RFC3339, created)

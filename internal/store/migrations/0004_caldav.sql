@@ -4,6 +4,8 @@
 -- The password is sealed with the box's key (AES-256-GCM) before it is stored.
 ALTER TABLE calendar_connections ADD COLUMN username TEXT NOT NULL DEFAULT '';
 ALTER TABLE calendar_connections ADD COLUMN credential TEXT NOT NULL DEFAULT '';
+-- 1: the address is that of one calendar, added by hand, not of a server to discover.
+ALTER TABLE calendar_connections ADD COLUMN single_calendar INTEGER NOT NULL DEFAULT 0;
 
 -- Address of a synced calendar on the server. ICS calendars use the
 -- connection's address and leave this empty.

@@ -29,6 +29,8 @@ type Event struct {
 	// Audience: people and groups; both empty = whole family.
 	People []string
 	Groups []string
+	// UpdatedAt is when the box last stored the event. Zero for events not read from the store.
+	UpdatedAt time.Time
 }
 
 // Recurring reports whether e is a series master.

@@ -310,7 +310,7 @@
   "calendars.two_way": "In beide Richtungen: Änderungen auf der Box werden zurückgeschrieben",
   "sync.conflict.dropped_read_only": "„{title}“ wurde auf der Box geändert, aber der Kalender ist nur lesbar. Die Version von außerhalb blieb erhalten; die Version der Box steht hier 30 Tage lang.",
   "sync.conflict.dropped_read_only_deleted": "Ein auf der Box gelöschter Termin kam wieder, weil der Kalender nur lesbar ist. Die Version von außerhalb blieb erhalten.",
-  "calendars.make_read_only_hint": "Änderungen auf der Box, die noch nicht zurückgeschrieben sind, gehen verloren; der Kalender folgt danach der Version von außerhalb.",
+  "calendars.make_read_only_hint": "Änderungen auf der Box, die noch nicht zurückgeschrieben sind, werden verworfen und 30 Tage im Sync-Protokoll festgehalten; der Kalender folgt danach der Version von außerhalb. Eine Änderung an einem Termin außerhalb, den die Box nicht lesen kann, bleibt in der Warteschlange.",
   "calendars.make_read_only": "Nur lesbar machen",
   "calendars.make_two_way": "Änderungen auf der Box erlauben",
   "calendars.log.version": "Unterlegene Version"

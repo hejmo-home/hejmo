@@ -109,6 +109,7 @@ var legacyMigrationNames = map[string]string{
 	"0008_display_show_tomorrow.sql": "202611142047_display_show_tomorrow.sql",
 	"0009_household_settings.sql":    "202611142100_household_settings.sql",
 	"0010_caldav.sql":                "202611142200_caldav.sql",
+	"0011_caldav_writeback.sql":      "202611142300_caldav_writeback.sql",
 }
 
 func migrations() ([]migration, error) {

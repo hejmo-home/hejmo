@@ -131,9 +131,9 @@ func TestConfirmedCodePairsTheDisplay(t *testing.T) {
 		t.Fatalf("confirm = %d %q\n%s", r.status, r.location, r.body)
 	}
 	r := d.get("/display", "en")
-	for _, want := range []string{`data-state="paired"`, "Hallway"} {
+	for _, want := range []string{`data-state="paired"`, `data-family`} {
 		if !strings.Contains(r.body, want) {
-			t.Errorf("family view placeholder misses %q:\n%s", want, r.body)
+			t.Errorf("family view misses %q:\n%s", want, r.body)
 		}
 	}
 	if strings.Contains(r.body, "<svg") || codeRe.MatchString(r.body) {
@@ -142,7 +142,7 @@ func TestConfirmedCodePairsTheDisplay(t *testing.T) {
 	if st := d.get("/display/state", ""); !strings.Contains(st.body, `"state":"paired"`) {
 		t.Fatalf("state = %s", st.body)
 	}
-	// The display's own browser holds the token; nobody else gets the placeholder.
+	// The display's own browser holds the token; nobody else gets the family view.
 	if other := newScreen(b).get("/display", "en"); !strings.Contains(other.body, `data-state="pairing"`) {
 		t.Fatal("a browser without the token shows the family view")
 	}

@@ -209,3 +209,49 @@ func TestPairedDisplaysDoNotCountAgainstTheWaitingCap(t *testing.T) {
 		t.Fatalf("%d paired displays, want %d", len(list), store.MaxWaitingDisplays+3)
 	}
 }
+
+// ADR 0016: "show tomorrow block" is a setting per display, off by default.
+func TestShowTomorrowBlockIsAPerDisplaySettingOffByDefault(t *testing.T) {
+	db, h := householdForDisplays(t)
+	pair := func(hash string) store.Display {
+		t.Helper()
+		w, err := db.OpenPairing(h.ID, hash, pairT0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		d, err := db.ConfirmPairing(h.ID, w.Code, store.Display{Name: "Hall", Type: store.DisplayScreen}, pairT0)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return d
+	}
+	a, b := pair("hash-a"), pair("hash-b")
+	if a.ShowTomorrow || b.ShowTomorrow {
+		t.Fatal("tomorrow block on by default")
+	}
+	if err := db.SetDisplayShowTomorrow(h.ID, a.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	gotA, _ := db.DisplayByToken("hash-a", pairT0)
+	gotB, _ := db.DisplayByToken("hash-b", pairT0)
+	if !gotA.ShowTomorrow || gotB.ShowTomorrow {
+		t.Fatalf("setting a=%v b=%v, want true/false", gotA.ShowTomorrow, gotB.ShowTomorrow)
+	}
+	list, _ := db.Displays(h.ID)
+	if len(list) != 2 || !list[0].ShowTomorrow || list[1].ShowTomorrow {
+		t.Fatalf("Displays = %+v", list)
+	}
+	if err := db.SetDisplayShowTomorrow(h.ID, a.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := db.DisplayByToken("hash-a", pairT0); got.ShowTomorrow {
+		t.Fatal("setting not switched off")
+	}
+	other, _ := db.CreateHousehold(store.Household{Name: "Neighbours"})
+	if err := db.SetDisplayShowTomorrow(other.ID, a.ID, true); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("other household sets it: %v", err)
+	}
+	if err := db.SetDisplayShowTomorrow(h.ID, "nope", true); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("unknown display: %v", err)
+	}
+}

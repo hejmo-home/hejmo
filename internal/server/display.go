@@ -7,9 +7,12 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -92,7 +95,20 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		if s.now().Sub(d.LastSeen) > time.Minute {
 			_ = s.db.TouchDisplay(hash, s.now())
 		}
-		s.render(w, r, http.StatusOK, "display_family.html", map[string]any{"Display": d, "PollSeconds": displayPollSeconds})
+		view, err := s.familyView(h, s.langOf(r), d.ShowTomorrow)
+		if err != nil {
+			s.fail(w, "family view", err)
+			return
+		}
+		// Placeholder until the per-display themes ticket: a normal screen is
+		// always light, although ADR 0015 gives it an automatic default theme.
+		theme := "light"
+		if d.Type == store.DisplayEInkBW {
+			theme = "bw"
+		}
+		s.render(w, r, http.StatusOK, "display_family.html", map[string]any{
+			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Theme": theme,
+		})
 		return
 	}
 	if d.Code == "" {
@@ -110,6 +126,64 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 	s.render(w, r, http.StatusOK, "display_pairing.html", map[string]any{
 		"Code": d.Code, "PairURL": pair, "QR": template.HTML(svg), "PollSeconds": displayPollSeconds,
 	})
+}
+
+// markerShapes are the black-and-white marker shapes in person slot order (DESIGN.md).
+var markerShapes = []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled"}
+
+// familyView builds today's family view of the household.
+func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (familyview.View, error) {
+	loc := time.UTC
+	if l, err := time.LoadLocation(h.Timezone); err == nil {
+		loc = l
+	}
+	now := s.now().In(loc)
+	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+	d2 := d0.AddDate(0, 0, 2)
+	people, err := s.db.People(h.ID)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	cals, err := s.db.Calendars(h.ID)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	events, err := s.db.EventsBetween(h.ID, d0, d2)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	occs, err := calendar.Expand(events, d0, d2)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	in := familyview.Input{Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs, ShowTomorrow: showTomorrow}
+	for _, c := range cals {
+		in.Calendars[c.ID] = c.Audience
+	}
+	allGroups, err := s.db.Groups(h.ID) // one query for every person's memberships
+	if err != nil {
+		return familyview.View{}, err
+	}
+	groupsOf := map[string][]string{}
+	for _, g := range allGroups {
+		for _, m := range g.Members {
+			groupsOf[m] = append(groupsOf[m], g.ID)
+		}
+	}
+	for i, p := range people {
+		groups := groupsOf[p.ID]
+		shape := p.Shape
+		if shape == "" {
+			shape = markerShapes[i%len(markerShapes)]
+		}
+		in.People = append(in.People, familyview.Person{ID: p.ID, Name: p.Name, Slot: i%len(markerShapes) + 1, Shape: shape, Groups: groups})
+	}
+	for i := range in.Occurrences {
+		if strings.TrimSpace(in.Occurrences[i].Title) == "" {
+			in.Occurrences[i].Title = s.i18n.T(lang, "event.untitled")
+		}
+	}
+	return familyview.Build(in), nil
 }
 
 // handleDisplayState tells a display whether it is still what its page says:

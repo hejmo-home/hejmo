@@ -12,6 +12,7 @@ import (
 
 type displayView struct {
 	ID, Name, Room, Type, Paired, LastSeen string
+	ShowTomorrow                           bool
 }
 
 func (s *server) renderDisplays(w http.ResponseWriter, r *http.Request, p principal, status int, form map[string]any) {
@@ -29,7 +30,7 @@ func (s *server) renderDisplays(w http.ResponseWriter, r *http.Request, p princi
 	}
 	views := make([]displayView, 0, len(list))
 	for _, d := range list {
-		views = append(views, displayView{d.ID, d.Name, d.Room, string(d.Type), at(d.PairedAt), at(d.LastSeen)})
+		views = append(views, displayView{d.ID, d.Name, d.Room, string(d.Type), at(d.PairedAt), at(d.LastSeen), d.ShowTomorrow})
 	}
 	data := map[string]any{
 		"Person": p.person, "Displays": views, "SyncStale": s.syncStale(p.household.ID), "Form": form,
@@ -88,17 +89,35 @@ func (s *server) handleDisplayUnpair(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
+// handleDisplaySettings saves the per-display settings (ADR 0016: show
+// tomorrow block). An unticked checkbox sends nothing, so absent means off.
+func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	switch err := s.db.SetDisplayShowTomorrow(p.household.ID, r.PathValue("id"), r.PostFormValue("show_tomorrow") != ""); {
+	case errors.Is(err, store.ErrNotFound):
+		http.NotFound(w, r)
+	case err != nil:
+		s.fail(w, "display settings", err)
+	default:
+		http.Redirect(w, r, "/displays", http.StatusSeeOther)
+	}
+}
+
 type displayJSON struct {
-	ID         string  `json:"id"`
-	Name       string  `json:"name"`
-	Room       string  `json:"room"`
-	Type       string  `json:"type"`
-	PairedAt   string  `json:"paired_at"`
-	LastSeenAt *string `json:"last_seen_at"`
+	ID           string  `json:"id"`
+	Name         string  `json:"name"`
+	Room         string  `json:"room"`
+	Type         string  `json:"type"`
+	PairedAt     string  `json:"paired_at"`
+	LastSeenAt   *string `json:"last_seen_at"`
+	ShowTomorrow bool    `json:"show_tomorrow"`
 }
 
 func displayToJSON(d store.Display, loc *time.Location) displayJSON {
-	j := displayJSON{ID: d.ID, Name: d.Name, Room: d.Room, Type: string(d.Type), PairedAt: d.PairedAt.In(loc).Format(time.RFC3339)}
+	j := displayJSON{ID: d.ID, Name: d.Name, Room: d.Room, Type: string(d.Type), PairedAt: d.PairedAt.In(loc).Format(time.RFC3339), ShowTomorrow: d.ShowTomorrow}
 	if !d.LastSeen.IsZero() {
 		seen := d.LastSeen.In(loc).Format(time.RFC3339)
 		j.LastSeenAt = &seen
@@ -139,6 +158,38 @@ func (s *server) apiPairDisplay(w http.ResponseWriter, r *http.Request, p princi
 	default:
 		s.fail(w, "pair display", err)
 	}
+}
+
+func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p principal) {
+	var in struct {
+		ShowTomorrow *bool `json:"show_tomorrow"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if in.ShowTomorrow != nil {
+		switch err := s.db.SetDisplayShowTomorrow(p.household.ID, r.PathValue("id"), *in.ShowTomorrow); {
+		case errors.Is(err, store.ErrNotFound):
+			writeError(w, http.StatusNotFound, "display not found")
+			return
+		case err != nil:
+			s.fail(w, "update display", err)
+			return
+		}
+	}
+	list, err := s.db.Displays(p.household.ID)
+	if err != nil {
+		s.fail(w, "update display", err)
+		return
+	}
+	for _, d := range list {
+		if d.ID == r.PathValue("id") {
+			writeJSON(w, http.StatusOK, displayToJSON(d, p.location()))
+			return
+		}
+	}
+	writeError(w, http.StatusNotFound, "display not found")
 }
 
 func (s *server) apiRevokeDisplay(w http.ResponseWriter, r *http.Request, p principal) {

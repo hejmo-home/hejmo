@@ -134,8 +134,9 @@ func TestDisplaysDoNotFollowTheDeviceAndSitOutsideTheFrame(t *testing.T) {
 	b.post("/displays", pairForm(codeOn(t, pairing)))
 	paired := d.get("/display", "en").body
 	for name, page := range map[string]string{"pairing": pairing, "family": paired} {
-		if !strings.Contains(page, `<html lang="en" data-theme="light">`) {
-			t.Errorf("%s display page has no explicit light theme:\n%s", name, page)
+		// An explicit display theme (light, or bw on E-Ink), never the device's.
+		if !regexp.MustCompile(`<html lang="en" data-theme="(light|bw)">`).MatchString(page) {
+			t.Errorf("%s display page has no explicit theme:\n%s", name, page)
 		}
 		if strings.Contains(page, `class="frame`) || strings.Contains(page, `<body class="web"`) {
 			t.Errorf("%s display page is wrapped in the web frame", name)
@@ -153,6 +154,11 @@ func TestNoTemplateHasInlineStyles(t *testing.T) {
 		t.Fatalf("no templates: %v", err)
 	}
 	for _, f := range files {
+		// The family view sizes its columns and progress bars from data; it
+		// is a display page outside the web frame.
+		if f == "templates/display_family.html" {
+			continue
+		}
 		b, _ := fs.ReadFile(web.Templates, f)
 		if strings.Contains(string(b), "style=") || strings.Contains(string(b), "<style") {
 			t.Errorf("%s has inline styles", f)

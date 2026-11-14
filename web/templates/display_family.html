@@ -1,8 +1,45 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "display.family.title") "Theme" "light")}}
-  <div class="display family" data-display data-state="paired" data-display-type="{{.Display.Type}}" data-poll-seconds="{{.PollSeconds}}">
-    <h1>{{.Display.Name}}</h1>
-    {{if .Display.Room}}<p class="hint">{{.Display.Room}}</p>{{end}}
-    <p class="lead">{{t "display.family.placeholder"}}</p>
+{{template "head" (dict "Lang" .Lang "Title" (t "display.family.title") "Theme" .Theme)}}
+  <div class="family-page" data-display data-state="paired" data-display-type="{{.Display.Type}}" data-poll-seconds="{{.PollSeconds}}">
+    {{template "familyView" .View}}
   </div>
   <script src="/static/display.js" defer></script>
 {{template "foot"}}
+
+{{define "familyView"}}<div class="fv" data-family data-people="{{len .Columns}}"{{if .Scroll}} data-scroll{{end}}>
+  <header class="fv-header">
+    <div>
+      <div class="lab">{{t (printf "weekday.%d" .Weekday)}} · {{t "family.cw"}} {{.Week}}</div>
+      <div class="date">{{.Date.Day}}{{t "family.day_suffix"}} {{t (printf "month.%d" .Date.Month)}}</div>
+    </div>
+    <div class="chips">
+      <span class="chip" data-clock>{{.Clock}}</span>
+      {{if .Weather}}<span class="chip" data-weather>{{.Weather}}</span>{{end}}
+    </div>
+  </header>
+  {{if or .Strip .StripTomorrow}}<div class="strip-wrap">
+    {{if .Strip}}<ul class="strip" data-strip>{{range .Strip}}{{template "stripItem" .}}{{end}}</ul>{{end}}
+    {{if .StripTomorrow}}<ul class="strip tomorrow" data-strip-tomorrow><li class="lab">{{t "family.tomorrow"}}</li>{{range .StripTomorrow}}{{template "stripItem" .}}{{end}}</ul>{{end}}
+  </div>{{end}}
+  <main class="fv-grid" style="--cols:{{len .Columns}}">
+    {{range .Columns}}<section class="column" data-person="{{.Person.Slot}}" data-name="{{.Person.Name}}">
+      <h2><span class="marker" data-shape="{{.Person.Shape}}"></span>{{.Person.Name}}</h2>
+      <div class="events">
+        {{range .Events}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div>
+        {{end}}{{if .Tomorrow}}<div class="tomorrow" data-tomorrow>
+          <div class="lab">{{t "family.tomorrow"}}</div>
+          {{range .Tomorrow}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div>
+          {{end}}</div>{{end}}
+      </div>
+      {{with .Progress}}<div class="pbar" data-progress="{{printf "%d/%d" .Done .Total}}"><div class="progress"><span style="width:{{.Percent}}%"></span></div><span class="count">{{printf "%d/%d" .Done .Total}}</span></div>{{end}}
+    </section>
+    {{end}}
+  </main>
+  {{if or .Meal .TomorrowTile}}<footer class="fv-footer" data-footer>
+    {{with .Meal}}{{template "tile" (dict "Tile" . "Kind" "meal")}}{{end}}
+    {{with .TomorrowTile}}{{template "tile" (dict "Tile" . "Kind" "tomorrow")}}{{end}}
+  </footer>{{end}}
+</div>{{end}}
+
+{{define "stripItem"}}<li class="strip-item{{if .ContinuesBefore}} before{{end}}{{if .ContinuesAfter}} after{{end}}" data-kind="{{.Kind}}"{{if gt .DayCount 1}} data-bar="{{printf "%d/%d" .DayIndex .DayCount}}"{{end}}>{{range .Markers}}<span class="marker small" data-person="{{.Slot}}" data-shape="{{.Shape}}" title="{{.Name}}"></span>{{end}}<span class="title">{{.Title}}</span>{{if .Time}} <span class="meta">{{.Time}}</span>{{end}}{{if gt .DayCount 1}} <span class="meta">{{t "family.day"}} {{printf "%d/%d" .DayIndex .DayCount}}</span>{{end}}{{if .Partial}} <span class="meta">{{t "family.partial"}}</span>{{end}}</li>{{end}}
+
+{{define "tile"}}<div class="tile{{if .Tile.Alert}} alert{{end}}" data-tile="{{.Kind}}"><div class="lab">{{.Tile.Label}}</div>{{range .Tile.Lines}}<div class="ln">{{.}}</div>{{end}}</div>{{end}}

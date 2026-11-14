@@ -27,7 +27,7 @@
 
 {{/* Person chips: who is it for? Arguments: Root, Name (field of the people),
      Legend, People (list of person chips), Selected, Groups, SelectedGroups,
-     Whole (offer the "Whole family" chip) and Single (choose exactly one
+     Whole (offer the "Whole family" chip), GroupsName (field of the groups, default "groups") and Single (choose exactly one
      person, as radio buttons). The Whole family chip is selected when nothing
      else is, and stores no audience: the server reads "no person" as the whole
      family, so it works without JavaScript. */}}
@@ -37,7 +37,7 @@
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>{{t "chips.whole_family"}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>{{end}}
   {{range .People}}<label class="pchip" data-person="{{.Slot}}"><input type="{{if $.Single}}radio{{else}}checkbox{{end}}" name="{{$.Name}}" value="{{.ID}}"{{if has $.Selected .ID}} checked{{end}}><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   {{end}}
-  {{range .Groups}}<label class="pchip group"><input type="checkbox" name="groups" value="{{.ID}}"{{if has $.SelectedGroups .ID}} checked{{end}}>
+  {{range .Groups}}<label class="pchip group"><input type="checkbox" name="{{or $.GroupsName "groups"}}" value="{{.ID}}"{{if has $.SelectedGroups .ID}} checked{{end}}>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="3"/><circle cx="16" cy="10" r="2.5"/><path d="M3.5 19c.5-3.5 3-5 5.5-5s5 1.5 5.5 5M14.5 15c2.5 0 4.5 1 5 4"/></svg>{{.Name}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   {{end}}
   {{template "fieldError" .}}

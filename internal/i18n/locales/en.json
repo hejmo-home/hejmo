@@ -153,7 +153,7 @@
   "connections.field.password": "Password (app-specific password for iCloud)",
   "connections.submit": "Connect and find calendars",
   "connections.choose.title": "Choose calendars",
-  "connections.choose.lead": "Tick the calendars to show on the box. Give each one a colour and say who it is for; leave it empty for the whole family.",
+  "connections.choose.lead": "Tick the calendars to show on the box. Give each one a colour and say who it is for.",
   "connections.choose.added": "Already synced",
   "connections.choose.submit": "Add ticked calendars",
   "connections.choose.none": "No calendars were found on this server.",
@@ -319,6 +319,7 @@
   "flash.calendar_added": "Calendar added.",
   "flash.calendar_synced": "Calendar updated.",
   "flash.calendar_removed": "Calendar removed.",
+  "flash.connection_removed": "Connection removed.",
   "flash.share_on": "Sharing through the box is on.",
   "flash.share_off": "Sharing through the box is off.",
   "flash.token_revoked": "Access revoked.",
@@ -353,6 +354,8 @@
   "caldav.token.revoke.confirm": "Yes, revoke access",
   "calendars.remove.explain": "The calendar and its events disappear from the box and from the displays. The original calendar stays untouched.",
   "calendars.remove.confirm": "Yes, remove the calendar",
+  "connections.remove.explain": "The connection and its calendars disappear from the box and from the displays. Nothing is deleted at iCloud or on the server.",
+  "connections.remove.confirm": "Yes, disconnect",
   "displays.unpair.explain": "The display shows a new pairing code and stays empty until you pair it again.",
   "displays.unpair.confirm": "Yes, unpair the display"
 }

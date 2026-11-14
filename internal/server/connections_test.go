@@ -442,13 +442,7 @@ func TestWebICloudErrorDoesNotEchoHiddenFields(t *testing.T) {
 	})
 	// Only the connection form is checked: the page's calendar form has its own
 	// defaults ("Whole family" starts ticked).
-	form := r.body
-	if i := strings.Index(form, `action="/connections"`); i >= 0 {
-		form = form[i:]
-		if j := strings.Index(form, "</form>"); j >= 0 {
-			form = form[:j]
-		}
-	}
+	form := formOf(t, r.body, "/connections")
 	if r.status != http.StatusUnprocessableEntity || strings.Contains(r.body, "somewhere.example") || strings.Contains(form, " checked") {
 		t.Fatalf("error page = %d\n%s", r.status, r.body)
 	}

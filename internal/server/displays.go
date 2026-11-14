@@ -36,11 +36,7 @@ func (s *server) renderDisplays(w http.ResponseWriter, r *http.Request, p princi
 		"Person": p.person, "Displays": views, "SyncStale": s.syncStale(p.household.ID), "Form": form,
 		"Types": []store.DisplayType{store.DisplayEInkBW, store.DisplayEInkColor, store.DisplayScreen},
 	}
-	if form == nil {
-		data["Form"] = map[string]any{"Type": string(store.DisplayEInkBW)}
-	} else {
-		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
-	}
+	data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"] // form is never nil
 	s.render(w, r, status, "displays.html", data)
 }
 

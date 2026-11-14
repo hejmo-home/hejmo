@@ -211,8 +211,9 @@ func TestDestructiveButtonsOnListsSitBehindAConfirmation(t *testing.T) {
 	b.post("/calendars", url.Values{"name": {"Holidays"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
 	b.post("/displays", pairForm(codeOn(t, newScreen(b).get("/display", "en").body)))
 	b.post("/caldav/tokens", url.Values{"name": {"Phone"}})
+	connID := connectedBox(t, b)
 	for _, c := range []struct{ page, action string }{
-		{"/caldav", "/revoke"}, {"/calendars", "/delete"}, {"/displays", "/unpair"},
+		{"/calendars", "/connections/" + connID + "/delete"}, {"/caldav", "/revoke"}, {"/calendars", "/delete"}, {"/displays", "/unpair"},
 	} {
 		body := getEN(b, c.page).body
 		at := strings.Index(body, c.action+`"`)

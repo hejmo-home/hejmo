@@ -16,6 +16,22 @@ func inputTag(page, name string) string {
 	return re.FindString(page)
 }
 
+// formOf returns the <form> of a page that posts to action, from its opening
+// tag to </form>. A renamed action fails the test instead of silently
+// checking the whole page.
+func formOf(t *testing.T, page, action string) string {
+	t.Helper()
+	i := strings.Index(page, `action="`+action+`"`)
+	if i < 0 {
+		t.Fatalf("no form with action %q on the page:\n%s", action, page)
+	}
+	form := page[i:]
+	if j := strings.Index(form, "</form>"); j >= 0 {
+		form = form[:j]
+	}
+	return form
+}
+
 // ADR 0017, ticket 5.16: a form error is shown at its field; the other
 // entries stay filled in, passwords never come back.
 func TestFormErrorsAppearAtTheFieldAndKeepOtherEntries(t *testing.T) {
@@ -51,10 +67,7 @@ func TestFormErrorsAppearAtTheFieldAndKeepOtherEntries(t *testing.T) {
 		}
 		// The calendars page also holds the connection form (a "url" input
 		// of its own); look only at the form this case posted to.
-		page := r.body
-		if i := strings.Index(page, `action="`+c.path+`"`); i >= 0 {
-			page = page[i:]
-		}
+		page := formOf(t, r.body, c.path)
 		tag := inputTag(page, c.field)
 		if !strings.Contains(tag, `aria-invalid="true"`) || !strings.Contains(tag, `aria-describedby="err-`+c.field+`"`) {
 			t.Errorf("%s: field %q is not marked invalid: %q", c.name, c.field, tag)

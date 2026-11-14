@@ -24,9 +24,34 @@ func connectionErrorKey(e *inputError) string {
 	}
 }
 
+// connectionErrorField names the input of the connection form an error belongs
+// to. Address problems of iCloud show at the service, since iCloud hides the
+// address field.
+func connectionErrorField(e *inputError, provider string) string {
+	switch e.Field {
+	case "provider", "username", "password", "url":
+		return e.Field
+	case "login":
+		return "password"
+	}
+	if provider == "icloud" {
+		return "provider"
+	}
+	return "url" // server, foreign_host, downgrade
+}
+
+// selectionErrorField names what an error of the calendar choice belongs to:
+// the interval or the calendar that was being added.
+func selectionErrorField(e *inputError) string {
+	if e.Field == "interval" {
+		return "interval"
+	}
+	return "calendar"
+}
+
 // renderSelection shows the calendars found on a connection so parents can
 // tick the ones to sync. Colour and audience are chosen per calendar.
-func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p principal, status int, conn store.Connection, found []discoveredJSON, errKey string) {
+func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p principal, status int, conn store.Connection, found []discoveredJSON, errKey, errField, errCalendar string) {
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
 		s.fail(w, "people", err)
@@ -37,17 +62,16 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		s.fail(w, "groups", err)
 		return
 	}
-	var peopleChoices, groupChoices []choice
-	for _, x := range people {
-		peopleChoices = append(peopleChoices, choice{x.ID, x.Name})
-	}
+	peopleChoices := chipsOf(people)
+	var groupChoices []choice
 	for _, x := range groups {
 		groupChoices = append(groupChoices, choice{x.ID, x.Name})
 	}
 	s.render(w, r, status, "connection.html", map[string]any{
 		"Person": p.person, "Connection": connectionView{ID: conn.ID, URL: conn.URL, Username: conn.Username},
 		"Found": found, "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
-		"DefaultInterval": defaultCalDAVSync, "SyncStale": s.syncStale(p.household.ID), "Error": errKey,
+		"DefaultInterval": defaultCalDAVSync, "SyncStale": s.syncStale(p.household.ID),
+		"Error": errKey, "ErrorField": errField, "ErrorCalendar": errCalendar,
 	})
 }
 
@@ -69,7 +93,7 @@ func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		if in.Provider == "icloud" {
 			in.URL, in.Single = "", false // iCloud ignores both; do not bring them back when the form is shown again
 		}
-		form := map[string]any{"ConnError": connectionErrorKey(bad), "ConnProvider": in.Provider, "ConnURL": in.URL, "ConnUsername": in.Username, "ConnSingle": in.Single}
+		form := map[string]any{"ConnError": connectionErrorKey(bad), "ConnErrorField": connectionErrorField(bad, in.Provider), "ConnProvider": in.Provider, "ConnURL": in.URL, "ConnUsername": in.Username, "ConnSingle": in.Single}
 		s.renderCalendars(w, r, p, http.StatusUnprocessableEntity, form)
 		return
 	case err != nil:
@@ -81,7 +105,7 @@ func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "connect", err)
 		return
 	}
-	s.renderSelection(w, r, p, http.StatusOK, conn, marked, "")
+	s.renderSelection(w, r, p, http.StatusOK, conn, marked, "", "", "")
 }
 
 func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
@@ -101,13 +125,13 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 	var bad *inputError
 	switch {
 	case errors.As(err, &bad):
-		s.renderSelection(w, r, p, http.StatusBadGateway, conn, nil, connectionErrorKey(bad))
+		s.renderSelection(w, r, p, http.StatusBadGateway, conn, nil, connectionErrorKey(bad), "", "")
 		return
 	case err != nil:
 		s.fail(w, "discover", err)
 		return
 	}
-	s.renderSelection(w, r, p, http.StatusOK, conn, found, "")
+	s.renderSelection(w, r, p, http.StatusOK, conn, found, "", "", "")
 }
 
 func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Request) {
@@ -141,14 +165,14 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 			if derr != nil {
 				found = nil
 			}
-			s.renderSelection(w, r, p, http.StatusUnprocessableEntity, conn, found, connectionErrorKey(bad))
+			s.renderSelection(w, r, p, http.StatusUnprocessableEntity, conn, found, connectionErrorKey(bad), selectionErrorField(bad), address)
 			return
 		case err != nil:
 			s.fail(w, "add calendar", err)
 			return
 		}
 	}
-	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
+	s.redirectSaved(w, r, "/calendars", "flash.calendar_added")
 }
 
 func (s *server) handleConnectionDelete(w http.ResponseWriter, r *http.Request) {
@@ -163,5 +187,5 @@ func (s *server) handleConnectionDelete(w http.ResponseWriter, r *http.Request) 
 		s.fail(w, "delete connection", err)
 		return
 	}
-	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
+	s.redirectSaved(w, r, "/calendars", "flash.connection_removed")
 }

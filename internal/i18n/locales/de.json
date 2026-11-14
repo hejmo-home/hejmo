@@ -153,7 +153,7 @@
   "connections.field.password": "Passwort (bei iCloud das app-spezifische Passwort)",
   "connections.submit": "Verbinden und Kalender suchen",
   "connections.choose.title": "Kalender auswählen",
-  "connections.choose.lead": "Hake die Kalender an, die auf der Box erscheinen sollen. Gib jedem eine Farbe und sag, für wen er ist; leer heißt ganze Familie.",
+  "connections.choose.lead": "Hake die Kalender an, die auf der Box erscheinen sollen. Gib jedem eine Farbe und sag, für wen er ist.",
   "connections.choose.added": "Schon synchronisiert",
   "connections.choose.submit": "Angehakte Kalender hinzufügen",
   "connections.choose.none": "Auf diesem Server wurden keine Kalender gefunden.",
@@ -319,6 +319,7 @@
   "flash.calendar_added": "Kalender hinzugefügt.",
   "flash.calendar_synced": "Kalender aktualisiert.",
   "flash.calendar_removed": "Kalender entfernt.",
+  "flash.connection_removed": "Verbindung getrennt.",
   "flash.share_on": "Teilen über die Box ist an.",
   "flash.share_off": "Teilen über die Box ist aus.",
   "flash.token_revoked": "Zugang widerrufen.",
@@ -353,6 +354,8 @@
   "caldav.token.revoke.confirm": "Ja, Zugriff entziehen",
   "calendars.remove.explain": "Der Kalender und seine Termine verschwinden von der Box und von den Displays. Der ursprüngliche Kalender bleibt unverändert.",
   "calendars.remove.confirm": "Ja, Kalender entfernen",
+  "connections.remove.explain": "Die Verbindung und ihre Kalender verschwinden von der Box und von den Displays. Bei iCloud oder auf dem Server wird nichts gelöscht.",
+  "connections.remove.confirm": "Ja, trennen",
   "displays.unpair.explain": "Das Display zeigt einen neuen Kopplungscode und bleibt leer, bis du es wieder koppelst.",
   "displays.unpair.confirm": "Ja, Display entkoppeln"
 }

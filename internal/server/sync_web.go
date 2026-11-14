@@ -183,10 +183,11 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	data := map[string]any{
 		"Person": p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
 		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "Connections": connViews, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
+		"ConnError": "", "ConnErrorField": "",
 	}
 	if form != nil {
 		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
-		data["ConnError"] = form["ConnError"]
+		data["ConnError"], data["ConnErrorField"] = form["ConnError"], form["ConnErrorField"]
 	}
 	s.render(w, r, status, "calendars.html", data)
 }

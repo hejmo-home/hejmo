@@ -52,6 +52,8 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		}
 	}
 
+	connID := connectedBox(t, b)
+
 	steps := []struct {
 		name, path, page string
 		form             url.Values
@@ -67,8 +69,10 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		{"display settings", "/displays/" + displayID + "/settings", "/displays", url.Values{"show_tomorrow": {"on"}}, "Saved."},
 		{"share", "/caldav/calendars/" + calID + "/share", "/caldav", url.Values{"shared": {"on"}}, "Sharing through the box is on."},
 		{"token revoke", "/caldav/tokens/" + tokenID + "/revoke", "/caldav", url.Values{}, "Access revoked."},
+		{"connection calendars", "/connections/" + connID + "/calendars", "/calendars", url.Values{"calendar": {flowCalendar}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}}, "Calendar added."},
 		{"task delete", "/tasks/" + taskID + "/delete", "/tasks", url.Values{}, "Task deleted."},
 		{"calendar remove", "/calendars/" + calID + "/delete", "/calendars", url.Values{}, "Calendar removed."},
+		{"connection remove", "/connections/" + connID + "/delete", "/calendars", url.Values{}, "Connection removed."},
 		{"display unpair", "/displays/" + displayID + "/unpair", "/displays", url.Values{}, "Display unpaired."},
 	}
 	for _, s := range steps {

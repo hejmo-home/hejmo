@@ -1,6 +1,7 @@
 package i18n_test
 
 import (
+	"strings"
 	"testing"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
@@ -61,5 +62,19 @@ func TestMatchAcceptLanguage(t *testing.T) {
 		if got := b.Match(header); got != want {
 			t.Errorf("Match(%q) = %q, want %q", header, got, want)
 		}
+	}
+}
+
+func TestFormatFillsParameters(t *testing.T) {
+	b := i18n.MustLoad()
+	m := i18n.Message{Key: "sync.note.no_start", Params: map[string]string{"label": "Choir"}}
+	if got := b.Format("en", m); got != `Skipped event "Choir": it has no start time.` {
+		t.Errorf("en = %q", got)
+	}
+	if got := b.Format("de", m); got == m.Key || !strings.Contains(got, "Choir") {
+		t.Errorf("de = %q", got)
+	}
+	if got := b.Format("en", i18n.Message{}); got != "" {
+		t.Errorf("empty message = %q, want empty", got)
 	}
 }

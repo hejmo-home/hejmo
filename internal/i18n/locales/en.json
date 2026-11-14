@@ -65,5 +65,17 @@
   "calendars.log.when": "When",
   "calendars.log.calendar": "Calendar",
   "calendars.log.what": "What happened",
-  "calendars.log.empty": "Nothing to report."
+  "calendars.log.empty": "Nothing to report.",
+  "sync.note.no_start": "Skipped event \"{label}\": it has no start time.",
+  "sync.note.bad_start": "Skipped event \"{label}\": unreadable start time ({detail}).",
+  "sync.note.bad_recurrence_id": "Skipped event \"{label}\": unreadable recurrence id ({detail}).",
+  "sync.note.bad_rrule": "Skipped event \"{label}\": unreadable repeat rule ({detail}).",
+  "sync.note.unknown_zone": "Unknown time zone \"{zone}\": used the box's time zone instead.",
+  "sync.fail.address": "The calendar address cannot be used: {detail}",
+  "sync.fail.fetch": "The calendar could not be fetched: {detail}",
+  "sync.fail.status": "The calendar server answered {status}.",
+  "sync.fail.too_large": "The calendar feed is larger than 16 MiB.",
+  "sync.fail.not_ics": "The address does not return a calendar: {detail}",
+  "sync.fail.store": "The events could not be stored: {detail}",
+  "event.untitled": "(no title)"
 }

@@ -136,3 +136,36 @@ func parseRange(s string) (tag string, q float64) {
 	}
 	return tag, q
 }
+
+// Message is user-facing text that is stored as a key plus parameters and
+// translated when it is shown. The zero Message is empty text.
+type Message struct {
+	Key    string            `json:"key"`
+	Params map[string]string `json:"params,omitempty"`
+}
+
+// Msg builds a Message from a key and name/value pairs.
+func Msg(key string, kv ...string) Message {
+	m := Message{Key: key}
+	for i := 0; i+1 < len(kv); i += 2 {
+		if m.Params == nil {
+			m.Params = map[string]string{}
+		}
+		m.Params[kv[i]] = kv[i+1]
+	}
+	return m
+}
+
+// Format translates a Message into lang and fills its {name} placeholders.
+// An empty Message gives "".
+func (b *Bundle) Format(lang string, m Message) string {
+	if m.Key == "" {
+		return ""
+	}
+	text := b.T(lang, m.Key)
+	pairs := make([]string, 0, 2*len(m.Params))
+	for k, v := range m.Params {
+		pairs = append(pairs, "{"+k+"}", v)
+	}
+	return strings.NewReplacer(pairs...).Replace(text)
+}

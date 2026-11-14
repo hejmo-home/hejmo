@@ -65,5 +65,17 @@
   "calendars.log.when": "Wann",
   "calendars.log.calendar": "Kalender",
   "calendars.log.what": "Was ist passiert",
-  "calendars.log.empty": "Nichts zu melden."
+  "calendars.log.empty": "Nichts zu melden.",
+  "sync.note.no_start": "Termin \"{label}\" übersprungen: Er hat keine Startzeit.",
+  "sync.note.bad_start": "Termin \"{label}\" übersprungen: Die Startzeit ist nicht lesbar ({detail}).",
+  "sync.note.bad_recurrence_id": "Termin \"{label}\" übersprungen: Die Wiederholungs-ID ist nicht lesbar ({detail}).",
+  "sync.note.bad_rrule": "Termin \"{label}\" übersprungen: Die Wiederholungsregel ist nicht lesbar ({detail}).",
+  "sync.note.unknown_zone": "Unbekannte Zeitzone \"{zone}\": Stattdessen wurde die Zeitzone der Box verwendet.",
+  "sync.fail.address": "Die Kalenderadresse ist nicht nutzbar: {detail}",
+  "sync.fail.fetch": "Der Kalender konnte nicht abgerufen werden: {detail}",
+  "sync.fail.status": "Der Kalenderserver antwortete mit {status}.",
+  "sync.fail.too_large": "Der Kalender ist größer als 16 MiB.",
+  "sync.fail.not_ics": "Die Adresse liefert keinen Kalender: {detail}",
+  "sync.fail.store": "Die Termine konnten nicht gespeichert werden: {detail}",
+  "event.untitled": "(ohne Titel)"
 }

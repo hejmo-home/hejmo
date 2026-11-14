@@ -525,7 +525,7 @@ func TestUnreadableOutsideObjectOfAReadOnlyCalendarKeepsTheBoxChangeQueued(t *te
 	if err := fx.db.SetCalendarReadOnly(fx.h.ID, fx.cal.ID, true); err != nil {
 		t.Fatal(err)
 	}
-	fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swim outside", "20260301T080000Z"))
+	obj := fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swim outside", "20990101T080000Z"))
 	fx.tamper.Break("swim.ics") // the server now sends it unreadable
 	fx.syncAfter(t, 5*time.Minute)
 
@@ -537,5 +537,31 @@ func TestUnreadableOutsideObjectOfAReadOnlyCalendarKeepsTheBoxChangeQueued(t *te
 	}
 	if got := fx.droppedLogged(t); len(got) != 0 {
 		t.Fatalf("logged %v as dropped, but nothing was dropped", got)
+	}
+
+	// Back to two-way once the object is readable again: the queued box change
+	// must not be pushed over an outside version the box never read. The
+	// outside change is the later one, so it wins and the box change is logged.
+	fx.tamper.Break()
+	fx.tamper.RefuseWrites(0)
+	if err := fx.db.SetCalendarReadOnly(fx.h.ID, fx.cal.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	fx.syncAfter(t, 5*time.Minute)
+	if got := fx.srv.Get(t, obj); !strings.Contains(got, "SUMMARY:Swim outside") {
+		t.Fatalf("the outside change was overwritten:\n%s", got)
+	}
+	if got := fx.titles(t); len(got) != 1 || got[0] != "Swim outside" {
+		t.Fatalf("events = %v, want the later outside version", got)
+	}
+	log, _ := fx.db.SyncLog(fx.h.ID, 20)
+	conflicts := 0
+	for _, e := range log {
+		if e.Kind == "conflict" && e.Message.Key == "sync.conflict.outside_won" {
+			conflicts++
+		}
+	}
+	if conflicts != 1 {
+		t.Fatalf("log = %+v, want one outside_won conflict entry", log)
 	}
 }

@@ -266,10 +266,16 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 				return fmt.Errorf("object %s: %w", o.URL, err)
 			}
 		}
-		// An unreadable object keeps the last good text, not the junk.
+		// An unreadable object keeps the last good text, not the junk. If the
+		// box change to it stays queued, the ETag stays too: it names the
+		// version that change was made against, so a later push meets a 412 and
+		// settles the change as a conflict instead of overwriting a version the
+		// box never read.
 		if _, err := tx.Exec(`INSERT INTO remote_objects (calendar_id, url, etag, raw) VALUES (?, ?, ?, ?)
-			ON CONFLICT (calendar_id, url) DO UPDATE SET etag = excluded.etag, raw = CASE WHEN ? THEN raw ELSE excluded.raw END,
-			pending = CASE WHEN ? AND NOT ? THEN 0 ELSE pending END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents, o.DropPending, o.KeepEvents); err != nil {
+			ON CONFLICT (calendar_id, url) DO UPDATE SET
+			etag = CASE WHEN ? AND pending > 0 THEN etag ELSE excluded.etag END,
+			raw = CASE WHEN ? THEN raw ELSE excluded.raw END,
+			pending = CASE WHEN ? AND NOT ? THEN 0 ELSE pending END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents, o.KeepEvents, o.DropPending, o.KeepEvents); err != nil {
 			return err
 		}
 	}

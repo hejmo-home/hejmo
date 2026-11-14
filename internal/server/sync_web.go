@@ -109,6 +109,15 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		}
 		cals = append(cals, v)
 	}
+	conns, err := s.db.Connections(p.household.ID)
+	if err != nil {
+		s.fail(w, "connections", err)
+		return
+	}
+	var connViews []connectionView
+	for _, c := range conns {
+		connViews = append(connViews, connectionView{ID: c.ID, URL: c.URL, Username: c.Username})
+	}
 	entries, err := s.db.SyncLog(p.household.ID, 50)
 	if err != nil {
 		s.fail(w, "sync log", err)
@@ -120,7 +129,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	data := map[string]any{
 		"Person": p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
-		"Intervals": syncIntervals, "SyncStale": s.syncStale(p.household.ID), "Form": form,
+		"Intervals": syncIntervals, "Connections": connViews, "SyncStale": s.syncStale(p.household.ID), "Form": form,
 	}
 	if form != nil {
 		data["Error"] = form["Error"]

@@ -15,6 +15,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -26,6 +27,7 @@ type box struct {
 	client *http.Client
 	now    time.Time
 	feeds  *fakeFeeds
+	sync   *calsync.Service
 }
 
 // fakeFeeds serves ICS feeds (and failures) to the box's calendar sync.
@@ -64,9 +66,15 @@ func newBox(t *testing.T) *box {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
+	keys, err := secret.LoadOrCreate(filepath.Join(t.TempDir(), "secret.key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.SetSecrets(keys)
 	b := &box{t: t, db: db, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC), feeds: &fakeFeeds{feeds: map[string]string{}, errs: map[string]error{}}}
 	now := func() time.Time { return b.now }
-	b.srv = httptest.NewServer(server.New(server.Options{DB: db, Now: now, Sync: calsync.New(db, b.feeds, now)}))
+	b.sync = calsync.New(db, b.feeds, now)
+	b.srv = httptest.NewServer(server.New(server.Options{DB: db, Now: now, Sync: b.sync}))
 	t.Cleanup(b.srv.Close)
 	jar, _ := cookiejar.New(nil)
 	b.client = &http.Client{Jar: jar, CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}

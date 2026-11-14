@@ -143,32 +143,11 @@ func (s *server) addICS(r *http.Request, p principal, in newCalendarInput) (stor
 	if err != nil {
 		return store.SyncedCalendar{}, &inputError{"url", "url: " + err.Error()}
 	}
-	interval := defaultSyncMinutes
-	if in.IntervalMinutes != nil {
-		interval = *in.IntervalMinutes
-	}
-	if interval < minSyncMinutes || interval > maxSyncMinutes {
-		return store.SyncedCalendar{}, &inputError{"interval", "sync_interval_minutes must be between 5 and 1440"}
-	}
-	var aud calendar.Audience
-	if in.Audience != nil {
-		aud = calendar.Audience{People: in.Audience.People, Groups: in.Audience.Groups}
-	}
-	ok, err := s.audienceExists(p.household.ID, aud)
+	opts, err := s.calendarOptions(p, in, defaultSyncMinutes)
 	if err != nil {
 		return store.SyncedCalendar{}, err
 	}
-	if !ok {
-		return store.SyncedCalendar{}, &inputError{"audience", "audience: unknown person or group"}
-	}
-	color := strings.TrimSpace(in.Color)
-	if color == "" {
-		color = defaultColor
-	}
-	if !hexColor.MatchString(color) {
-		return store.SyncedCalendar{}, &inputError{"color", "color must be #RRGGBB"}
-	}
-	cal, err := s.db.CreateICSCalendar(p.household.ID, store.NewICS{Name: in.Name, URL: address, Color: color, Audience: aud, IntervalMinutes: interval, Now: s.now()})
+	cal, err := s.db.CreateICSCalendar(p.household.ID, store.NewICS{Name: in.Name, URL: address, Color: opts.color, Audience: opts.audience, IntervalMinutes: opts.interval, Now: s.now()})
 	if err != nil {
 		return store.SyncedCalendar{}, err
 	}
@@ -176,6 +155,44 @@ func (s *server) addICS(r *http.Request, p principal, in newCalendarInput) (stor
 	// is in the sync log; the scheduler retries.
 	_ = s.sync.Sync(r.Context(), p.household.ID, cal.ID)
 	return s.db.SyncedCalendar(p.household.ID, cal.ID)
+}
+
+// calendarSettings are the colour, audience and update interval a parent
+// chooses for a synced calendar.
+type calendarSettings struct {
+	color    string
+	audience calendar.Audience
+	interval int
+}
+
+// calendarOptions checks and completes those choices. The error is an
+// *inputError.
+func (s *server) calendarOptions(p principal, in newCalendarInput, defaultMinutes int) (calendarSettings, error) {
+	out := calendarSettings{interval: defaultMinutes}
+	if in.IntervalMinutes != nil {
+		out.interval = *in.IntervalMinutes
+	}
+	if out.interval < minSyncMinutes || out.interval > maxSyncMinutes {
+		return out, &inputError{"interval", "sync_interval_minutes must be between 5 and 1440"}
+	}
+	if in.Audience != nil {
+		out.audience = calendar.Audience{People: in.Audience.People, Groups: in.Audience.Groups}
+	}
+	ok, err := s.audienceExists(p.household.ID, out.audience)
+	if err != nil {
+		return out, err
+	}
+	if !ok {
+		return out, &inputError{"audience", "audience: unknown person or group"}
+	}
+	out.color = strings.TrimSpace(in.Color)
+	if out.color == "" {
+		out.color = defaultColor
+	}
+	if !hexColor.MatchString(out.color) {
+		return out, &inputError{"color", "color must be #RRGGBB"}
+	}
+	return out, nil
 }
 
 func (s *server) audienceExists(householdID string, a calendar.Audience) (bool, error) {

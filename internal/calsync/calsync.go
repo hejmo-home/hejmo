@@ -124,6 +124,7 @@ type Service struct {
 	fetch  Fetcher
 	now    func() time.Time
 	logger *slog.Logger
+	dial   Dialer
 	locks  sync.Map // calendar id -> *sync.Mutex: one sync per calendar at a time
 }
 
@@ -140,8 +141,12 @@ func New(db *store.DB, fetch Fetcher, now func() time.Time) *Service {
 	if now == nil {
 		now = time.Now
 	}
-	return &Service{db: db, fetch: fetch, now: now, logger: slog.Default()}
+	return &Service{db: db, fetch: fetch, now: now, logger: slog.Default(), dial: dialCalDAV}
 }
+
+// SetDialer sets how the service connects to CalDAV servers (tests count or
+// fake the traffic).
+func (s *Service) SetDialer(d Dialer) { s.dial = d }
 
 // SetLogger sets where unexpected errors go.
 func (s *Service) SetLogger(l *slog.Logger) { s.logger = l }
@@ -169,6 +174,9 @@ func (s *Service) Sync(ctx context.Context, householdID, calendarID string) erro
 			return errors.Join(cause, err)
 		}
 		return cause
+	}
+	if cal.Kind == "caldav" {
+		return s.syncCalDAV(ctx, cal, h, at, fail)
 	}
 	feedURL, err := icsfeed.NormalizeURL(cal.URL)
 	if err != nil {

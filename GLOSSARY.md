@@ -126,6 +126,52 @@ _Avoid_: profile view, child view (that is a later, separate view)
 The box's connection to the kiosk app on a display that switches its front light and sleep mode.
 _Avoid_: display driver, device control
 
+**Display type**:
+How a display shows things: **E-Ink black-and-white**, **E-Ink colour** or **normal screen**.
+_Avoid_: display mode, device type
+
+**Family strip**:
+The row above the person columns in the family view for events meant for the whole household, all-day events and public holidays.
+_Avoid_: banner, header events, all-day row
+
+**Theme**:
+Whether a display or the web interface is light or dark, or switches automatically by sunrise and sunset.
+_Avoid_: dark mode (alone), skin, colour scheme
+
+**Quiet mode**:
+The scheduled night state of a display: a calm night page and the front light off.
+_Avoid_: sleep mode (in prose), night mode, standby
+
+**Phone**:
+A smartphone paired with the box through a QR code, running the web interface as an app for an account or for a child.
+_Avoid_: mobile, client, handset
+
+**Device session**:
+The long-lived, revocable sign-in of a paired phone.
+_Avoid_: remember-me, phone token
+
+## Everyday
+
+**List**:
+A named collection of entries belonging to the household, such as "Shopping" or "To-dos".
+_Avoid_: checklist, note
+
+**List entry**:
+One line of text on a list that can be ticked off.
+_Avoid_: item (alone), list item
+
+**Meal plan**:
+The household's meals per day and mealtime (breakfast, lunch, dinner, snack).
+_Avoid_: menu, food plan
+
+**Task**:
+Something one person should do once or repeatedly, ticked off when done.
+_Avoid_: chore, todo, job
+
+**Waste collection calendar**:
+A synced calendar marked as listing the household's waste collection days.
+_Avoid_: bin calendar, garbage feed
+
 ## Access
 
 **API token**:

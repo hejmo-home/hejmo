@@ -12,12 +12,22 @@ import (
 	"os/exec"
 	"path/filepath"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 )
 
-// Image is the Radicale container image the tests run.
-const Image = "tomsquest/docker-radicale:latest"
+// Image is the Radicale container image the tests run, pinned to a release so
+// a new upstream image cannot break CI unannounced.
+const Image = "tomsquest/docker-radicale:3.9.1.1"
+
+// pulled makes the first Start download the image once, so a cold runner does
+// not spend the startup deadline on the download.
+var (
+	pullOnce sync.Once
+	pullErr  error
+	pullOut  []byte
+)
 
 // User and Password sign in to the test server.
 const (
@@ -56,6 +66,12 @@ func Start(t *testing.T) *Server {
 	if err := exec.Command(docker, "info").Run(); err != nil {
 		t.Skip("docker daemon not reachable: Radicale tests need a container runtime")
 	}
+	pullOnce.Do(func() {
+		pullOut, pullErr = exec.Command(docker, "pull", "--quiet", Image).CombinedOutput()
+	})
+	if pullErr != nil {
+		t.Fatalf("pulling %s: %v\n%s", Image, pullErr, pullOut)
+	}
 	dir := t.TempDir()
 	if err := os.Chmod(dir, 0o755); err != nil {
 		t.Fatal(err)
@@ -65,11 +81,13 @@ func Start(t *testing.T) *Server {
 			t.Fatal(err)
 		}
 	}
-	out, err := exec.Command(docker, "run", "-d", "--rm", "-p", "127.0.0.1::5232", "-v", dir+":/config:ro", Image).CombinedOutput()
+	out, err := exec.Command(docker, "run", "-d", "-p", "127.0.0.1::5232", "-v", dir+":/config:ro", Image).CombinedOutput()
 	if err != nil {
 		t.Fatalf("starting Radicale: %v\n%s", err, out)
 	}
 	id := strings.TrimSpace(string(out))
+	// No --rm: the container must outlive a crash so its log can be read; the
+	// cleanup below removes it.
 	t.Cleanup(func() {
 		if t.Failed() {
 			logs, _ := exec.Command(docker, "logs", "--tail", "30", id).CombinedOutput()
@@ -79,7 +97,7 @@ func Start(t *testing.T) *Server {
 	})
 	port, err := exec.Command(docker, "port", id, "5232/tcp").Output()
 	if err != nil {
-		t.Fatalf("Radicale port: %v", err)
+		t.Fatalf("Radicale port: %v (container is %s)", err, state(docker, id))
 	}
 	// "127.0.0.1:49152" (possibly followed by an IPv6 line)
 	addr := strings.TrimSpace(strings.SplitN(string(port), "\n", 2)[0])
@@ -158,4 +176,13 @@ func (s *Server) do(t *testing.T, method, url, body, contentType string, want ..
 		}
 	}
 	t.Fatalf("%s %s: status %d, body %s", method, url, res.StatusCode, b)
+}
+
+// state describes whether the container is running, for failure messages.
+func state(docker, id string) string {
+	out, err := exec.Command(docker, "inspect", "--format", "{{.State.Status}} (exit {{.State.ExitCode}}) {{.State.Error}}", id).CombinedOutput()
+	if err != nil {
+		return "unknown: " + strings.TrimSpace(string(out))
+	}
+	return strings.TrimSpace(string(out))
 }

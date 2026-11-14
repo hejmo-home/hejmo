@@ -9,6 +9,7 @@
 // In quiet mode an E-Ink display reloads the whole page from the box once an
 // hour against ghosting (ADR 0015): the night page marks itself with
 // data-reload-seconds, and the timer runs only while that markup is shown.
+// The reload happens only if the box answers; otherwise it retries in 5 minutes.
 //
 // Separately, a display asks the box now and then whether it is still what its
 // page says (paired, or waiting with a code) and reloads when that changed:
@@ -42,7 +43,19 @@
     }
     if (reloadTimer) return;
     var secs = Number(q.getAttribute("data-reload-seconds")) || 3600;
-    reloadTimer = setTimeout(function () { location.reload(); }, secs * 1000);
+    reloadTimer = setTimeout(function () { reloadIfBoxAnswers(secs); }, secs * 1000);
+  }
+  // Reload only when the box answers: an unreachable box would leave the
+  // browser's error page on the display all night. Otherwise try again later.
+  function reloadIfBoxAnswers(secs) {
+    fetch("/display/view", { cache: "no-store", credentials: "same-origin" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("view " + r.status);
+        location.reload();
+      })
+      .catch(function () {
+        reloadTimer = setTimeout(function () { reloadIfBoxAnswers(secs); }, Math.min(secs, 300) * 1000);
+      });
   }
   armReload();
   function refresh() {

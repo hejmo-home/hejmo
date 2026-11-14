@@ -1,6 +1,6 @@
 # 0008. Design takes precedence over the version plan
 
-- Status: Accepted
+- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md)
 - Date: 14/11/2026
 
 ## Context

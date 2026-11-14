@@ -9,7 +9,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/hejmo-home/hejmo/internal/caldav"
+	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -49,7 +49,7 @@ type newConnectionInput struct {
 // connect checks the input, signs in and discovers the calendars, and only then
 // stores the connection (with its password sealed). A refused login or an
 // unreachable server stores nothing.
-func (s *server) connect(r *http.Request, p principal, in newConnectionInput) (store.Connection, []caldav.Calendar, error) {
+func (s *server) connect(r *http.Request, p principal, in newConnectionInput) (store.Connection, []caldavclient.Calendar, error) {
 	address := strings.TrimSpace(in.URL)
 	switch in.Provider {
 	case "icloud":
@@ -72,7 +72,7 @@ func (s *server) connect(r *http.Request, p principal, in newConnectionInput) (s
 	defer cancel()
 	found, err := s.sync.Discover(ctx, address, in.Username, in.Password, in.Single)
 	if err != nil {
-		if caldav.IsUnauthorized(err) {
+		if caldavclient.IsUnauthorized(err) {
 			return store.Connection{}, nil, &inputError{"login", "the server refused the user name or password"}
 		}
 		return store.Connection{}, nil, &inputError{"server", "could not read calendars from the server: " + err.Error()}
@@ -93,7 +93,7 @@ func (s *server) rediscover(ctx context.Context, p principal, conn store.Connect
 	defer cancel()
 	found, err := s.sync.Discover(ctx, conn.URL, user, password, conn.Single)
 	if err != nil {
-		if caldav.IsUnauthorized(err) {
+		if caldavclient.IsUnauthorized(err) {
 			return nil, &inputError{"login", "the server refused the user name or password"}
 		}
 		return nil, &inputError{"server", "could not read calendars from the server: " + err.Error()}
@@ -101,7 +101,7 @@ func (s *server) rediscover(ctx context.Context, p principal, conn store.Connect
 	return s.markAdded(p, conn, found)
 }
 
-func (s *server) markAdded(p principal, conn store.Connection, found []caldav.Calendar) ([]discoveredJSON, error) {
+func (s *server) markAdded(p principal, conn store.Connection, found []caldavclient.Calendar) ([]discoveredJSON, error) {
 	synced, err := s.db.SyncedCalendars(p.household.ID)
 	if err != nil {
 		return nil, err
@@ -109,12 +109,12 @@ func (s *server) markAdded(p principal, conn store.Connection, found []caldav.Ca
 	have := map[string]bool{}
 	for _, c := range synced {
 		if c.ConnectionID == conn.ID {
-			have[caldav.AddressKey(c.URL)] = true
+			have[caldavclient.AddressKey(c.URL)] = true
 		}
 	}
 	out := make([]discoveredJSON, 0, len(found))
 	for _, f := range found {
-		out = append(out, discoveredJSON{URL: f.URL, Name: f.Name, Added: have[caldav.AddressKey(f.URL)]})
+		out = append(out, discoveredJSON{URL: f.URL, Name: f.Name, Added: have[caldavclient.AddressKey(f.URL)]})
 	}
 	return out, nil
 }
@@ -144,7 +144,7 @@ func (s *server) addConnectionCalendar(r *http.Request, p principal, connectionI
 		return store.SyncedCalendar{}, err
 	}
 	for _, c := range existing {
-		if c.ConnectionID == conn.ID && caldav.AddressKey(c.URL) == caldav.AddressKey(in.URL) {
+		if c.ConnectionID == conn.ID && caldavclient.AddressKey(c.URL) == caldavclient.AddressKey(in.URL) {
 			return store.SyncedCalendar{}, &inputError{"duplicate", "this calendar is already synced"}
 		}
 	}

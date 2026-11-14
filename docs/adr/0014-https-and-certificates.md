@@ -31,3 +31,10 @@ With the box as a CalDAV server in V1.0 (ADR 0012), phones send credentials to t
 - The setup order in ADR 0010 ("setup is complete once the first parent has confirmed TOTP") gains the HTTPS step before the password.
 - Let's Encrypt is shortening certificate lifetimes to 45 days by 2028; automatic renewal covers that.
 - Passkeys stay in V1.x; they only need HTTPS, which now exists.
+
+## Notes on the own-CA fallback (added in review of PR #45)
+
+- Port 80 redirects everything except `/healthz` and the trust page with its downloads (`/ca`, `/ca/hejmo-ca.crt`, `/ca/hejmo.mobileconfig`), which a phone needs before it trusts the box.
+- The CA fingerprint on the trust page is served over HTTP, so it only helps against mistakes, not against an attacker on the network. The box also logs the fingerprint when it creates the CA; compare it with the log for a stronger check.
+- If the box is reached by a two-label LAN name such as `fritz.box`, the CA's name constraint permits every name under it. Prefer the IP address or `hejmo.local` during setup.
+- The CA is valid for 10 years and is not renewed. Box certificates are capped at the CA's expiry, and the box logs a warning once that cap applies.

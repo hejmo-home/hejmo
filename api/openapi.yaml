@@ -7,8 +7,13 @@ info:
     integrations. Authenticate with a bearer token (`Authorization: Bearer hejmo_…`)
     or a browser session. A token acts on behalf of a person and is limited by
     its scopes: `read`, `write`, `<resource>` or `<resource>:<action>`
-    (resources: people, events, tasks, lists, meals, displays, settings, tokens;
+    (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens;
     actions: read, write, delete, complete).
+
+    The scope `calendars` is for a phone's calendar app: it opens the box's
+    CalDAV server at `/dav/` (HTTP Basic with the person's username and the
+    token as password, HTTPS only) and nothing in this REST API. Create one
+    token per device and revoke it on its own.
   license:
     name: AGPL-3.0-or-later
     url: https://www.gnu.org/licenses/agpl-3.0.html
@@ -75,6 +80,19 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
   /tokens:
+    get:
+      operationId: listTokens
+      summary: Active API tokens of the household, without their values (scope tokens:read)
+      responses:
+        "200":
+          description: Tokens, oldest first. Revoked tokens are not listed.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ApiToken" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
     post:
       operationId: createToken
       summary: Create an API token for the caller (scope tokens:write)
@@ -189,6 +207,30 @@ paths:
   /calendars/{id}:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: updateCalendar
+      summary: Switch "share through the box" for a synced calendar
+      description: The family calendar is always served to phones; asking to change it answers 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [share_through_box]
+              properties:
+                share_through_box: { type: boolean }
+      responses:
+        "200":
+          description: The calendar after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Calendar" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
     delete:
       operationId: removeCalendar
       summary: Remove a synced calendar and its events from the box
@@ -476,15 +518,26 @@ components:
         groups: { type: array, items: { type: string, format: uuid } }
     Calendar:
       type: object
-      required: [id, name, kind, color, read_only, audience]
+      required: [id, name, kind, color, read_only, share_through_box, audience]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         kind: { type: string, enum: [local, ics, caldav, google] }
         color: { type: string }
         read_only: { type: boolean, description: "The box never changes this calendar's events (always true for ICS)" }
+        share_through_box: { type: boolean, description: "Phones may subscribe to this calendar over CalDAV. Always true for the family calendar; on by default for ICS, off for CalDAV and Google" }
         audience: { $ref: "#/components/schemas/Audience" }
         sync: { $ref: "#/components/schemas/SyncState" }
+    ApiToken:
+      type: object
+      required: [id, name, scopes, person, created_at, last_used_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: iPhone Mama }
+        scopes: { type: string, example: calendars }
+        person: { type: string, description: "Name of the person the token acts for" }
+        created_at: { type: string, format: date-time }
+        last_used_at: { type: string, format: date-time, nullable: true }
     SyncState:
       type: object
       description: Only on synced calendars. Displays read `state` to show the sync notice.

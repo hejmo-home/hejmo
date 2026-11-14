@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hejmo-home/hejmo/internal/caldav"
-	"github.com/hejmo-home/hejmo/internal/caldav/caldavtest"
+	"github.com/hejmo-home/hejmo/internal/caldavclient"
+	"github.com/hejmo-home/hejmo/internal/caldavclient/caldavtest"
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -29,11 +29,11 @@ type davFixture struct {
 
 // countingRemote counts the objects the box downloads.
 type countingRemote struct {
-	*caldav.Client
+	*caldavclient.Client
 	fx *davFixture
 }
 
-func (c countingRemote) List(ctx context.Context, cal string) ([]caldav.Object, error) {
+func (c countingRemote) List(ctx context.Context, cal string) ([]caldavclient.Object, error) {
 	objs, err := c.Client.List(ctx, cal)
 	if c.fx.afterList != nil {
 		c.fx.afterList()
@@ -41,7 +41,7 @@ func (c countingRemote) List(ctx context.Context, cal string) ([]caldav.Object, 
 	return objs, err
 }
 
-func (c countingRemote) Fetch(ctx context.Context, cal string, urls []string) ([]caldav.Object, error) {
+func (c countingRemote) Fetch(ctx context.Context, cal string, urls []string) ([]caldavclient.Object, error) {
 	c.fx.fetched.Add(int32(len(urls)))
 	return c.Client.Fetch(ctx, cal, urls)
 }
@@ -75,7 +75,7 @@ func newDAVFixture(t *testing.T, password string) *davFixture {
 	}
 	fx.svc = calsync.New(db, nil, func() time.Time { return fx.clock })
 	fx.svc.SetDialer(func(serverURL, user, pass string) (calsync.Remote, error) {
-		c, err := caldav.NewClient(serverURL, user, pass, fx.tamper.Client())
+		c, err := caldavclient.NewClient(serverURL, user, pass, fx.tamper.Client())
 		return countingRemote{c, fx}, err
 	})
 	return fx

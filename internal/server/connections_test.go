@@ -8,8 +8,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/hejmo-home/hejmo/internal/caldav"
-	"github.com/hejmo-home/hejmo/internal/caldav/caldavtest"
+	"github.com/hejmo-home/hejmo/internal/caldavclient"
+	"github.com/hejmo-home/hejmo/internal/caldavclient/caldavtest"
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -211,7 +211,7 @@ func TestRemovingAConnectionRemovesItsEventsAndDeletesNothingOutside(t *testing.
 	}
 
 	// Outside, nothing changed.
-	remote, _ := caldav.NewClient(srv.URL, caldavtest.User, caldavtest.Password, nil)
+	remote, _ := caldavclient.NewClient(srv.URL, caldavtest.User, caldavtest.Password, nil)
 	for _, cal := range []string{family, school} {
 		if objs, err := remote.List(context.Background(), cal); err != nil || len(objs) != 1 {
 			t.Fatalf("objects in %s after removal = %v, %v", cal, objs, err)

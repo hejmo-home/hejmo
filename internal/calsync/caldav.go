@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/hejmo-home/hejmo/internal/caldav"
+	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -13,17 +13,17 @@ import (
 
 // Remote is a CalDAV server as the sync needs it.
 type Remote interface {
-	Calendars(ctx context.Context) ([]caldav.Calendar, error)
-	Calendar(ctx context.Context, calendarURL string) (caldav.Calendar, error)
-	List(ctx context.Context, calendarURL string) ([]caldav.Object, error)
-	Fetch(ctx context.Context, calendarURL string, objectURLs []string) ([]caldav.Object, error)
+	Calendars(ctx context.Context) ([]caldavclient.Calendar, error)
+	Calendar(ctx context.Context, calendarURL string) (caldavclient.Calendar, error)
+	List(ctx context.Context, calendarURL string) ([]caldavclient.Object, error)
+	Fetch(ctx context.Context, calendarURL string, objectURLs []string) ([]caldavclient.Object, error)
 }
 
 // Dialer connects to a CalDAV server with one set of credentials.
 type Dialer func(serverURL, user, password string) (Remote, error)
 
 func dialCalDAV(serverURL, user, password string) (Remote, error) {
-	c, err := caldav.NewClient(serverURL, user, password, nil)
+	c, err := caldavclient.NewClient(serverURL, user, password, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -32,7 +32,7 @@ func dialCalDAV(serverURL, user, password string) (Remote, error) {
 
 // Discover signs in to a CalDAV server and lists its event calendars; with
 // single, serverURL is itself the address of one calendar. It stores nothing.
-func (s *Service) Discover(ctx context.Context, serverURL, user, password string, single bool) ([]caldav.Calendar, error) {
+func (s *Service) Discover(ctx context.Context, serverURL, user, password string, single bool) ([]caldavclient.Calendar, error) {
 	remote, err := s.dial(serverURL, user, password)
 	if err != nil {
 		return nil, err
@@ -42,7 +42,7 @@ func (s *Service) Discover(ctx context.Context, serverURL, user, password string
 		if err != nil {
 			return nil, err
 		}
-		return []caldav.Calendar{c}, nil
+		return []caldavclient.Calendar{c}, nil
 	}
 	return remote.Calendars(ctx)
 }
@@ -64,7 +64,7 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 		return fail(i18n.Msg("sync.fail.address", "detail", err.Error()), err)
 	}
 	failRemote := func(err error) error {
-		if caldav.IsUnauthorized(err) {
+		if caldavclient.IsUnauthorized(err) {
 			return fail(i18n.Msg("sync.fail.login"), err)
 		}
 		return fail(MessageOf(err), err)
@@ -85,7 +85,7 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	for _, o := range listed {
 		present[o.URL] = true
 		etags[o.URL] = o.ETag
-		byPath[caldav.AddressKey(o.URL)] = o.URL
+		byPath[caldavclient.AddressKey(o.URL)] = o.URL
 		if etag, ok := known[o.URL]; !ok || etag != o.ETag || o.ETag == "" {
 			toFetch = append(toFetch, o.URL)
 		}
@@ -108,7 +108,7 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	var changes []store.ObjectChange
 	var notes []i18n.Message
 	for _, o := range fetched {
-		addr, ok := byPath[caldav.AddressKey(o.URL)]
+		addr, ok := byPath[caldavclient.AddressKey(o.URL)]
 		if !ok {
 			continue // not asked for
 		}

@@ -5,6 +5,7 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
@@ -73,6 +74,36 @@ func TestStartOnAFreshVolumeCreatesTheKeyFileAndRestartReusesIt(t *testing.T) {
 	conns, _ := db.Connections(h.ID)
 	if _, pass, err := db.ConnectionCredentials(h.ID, conns[0].ID); err != nil || pass != "p" {
 		t.Fatalf("credentials after restart = %q, %v", pass, err)
+	}
+}
+
+func TestHTTPSConfig(t *testing.T) {
+	cfg := loadConfig(func(string) string { return "" })
+	if cfg.HTTPSAddr != ":8443" || cfg.PublicHTTPSPort != "443" {
+		t.Errorf("defaults: HTTPSAddr=%q PublicHTTPSPort=%q", cfg.HTTPSAddr, cfg.PublicHTTPSPort)
+	}
+	env := map[string]string{"HEJMO_HTTPS_ADDR": ":9443", "HEJMO_PUBLIC_HTTPS_PORT": "9443"}
+	cfg = loadConfig(func(k string) string { return env[k] })
+	if cfg.HTTPSAddr != ":9443" || cfg.PublicHTTPSPort != "9443" {
+		t.Errorf("from env: %+v", cfg)
+	}
+}
+
+// Acceptance: ports 443 and 80 are configurable in Compose.
+func TestComposeMakesBothPortsConfigurable(t *testing.T) {
+	raw, err := os.ReadFile("../../compose.yaml")
+	if err != nil {
+		t.Fatal(err)
+	}
+	compose := string(raw)
+	for _, want := range []string{
+		`"${HEJMO_HTTP_PORT:-80}:8080"`,
+		`"${HEJMO_HTTPS_PORT:-443}:8443"`,
+		`HEJMO_PUBLIC_HTTPS_PORT: ${HEJMO_HTTPS_PORT:-443}`,
+	} {
+		if !strings.Contains(compose, want) {
+			t.Errorf("compose.yaml misses %s", want)
+		}
 	}
 }
 

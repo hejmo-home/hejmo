@@ -1,161 +1,188 @@
 package caldav_test
 
 import (
-	"context"
-	"fmt"
+	"bytes"
 	"strings"
 	"testing"
+	"time"
+
+	ical "github.com/emersion/go-ical"
 
 	"github.com/hejmo-home/hejmo/internal/caldav"
-	"github.com/hejmo-home/hejmo/internal/caldav/caldavtest"
+	"github.com/hejmo-home/hejmo/internal/calendar"
 )
 
-func client(t *testing.T, srv *caldavtest.Server, password string) *caldav.Client {
+var berlin = mustZone("Europe/Berlin")
+
+func mustZone(name string) *time.Location {
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		panic(err)
+	}
+	return loc
+}
+
+func at(y int, m time.Month, d, h, min int) time.Time {
+	return time.Date(y, m, d, h, min, 0, 0, berlin)
+}
+
+func text(t *testing.T, cal *ical.Calendar) string {
 	t.Helper()
-	c, err := caldav.NewClient(srv.URL, caldavtest.User, password, nil)
+	var buf bytes.Buffer
+	if err := ical.NewEncoder(&buf).Encode(cal); err != nil {
+		t.Fatal(err)
+	}
+	return buf.String()
+}
+
+func roundTrip(t *testing.T, o caldav.Object) caldav.Object {
+	t.Helper()
+	cal, err := o.Calendar()
 	if err != nil {
 		t.Fatal(err)
 	}
-	return c
+	// Through the wire format, as a phone would see it.
+	decoded, err := ical.NewDecoder(strings.NewReader(text(t, cal))).Decode()
+	if err != nil {
+		t.Fatalf("own output does not parse: %v\n%s", err, text(t, cal))
+	}
+	got, err := caldav.Parse(decoded, berlin)
+	if err != nil {
+		t.Fatalf("parse own output: %v\n%s", err, text(t, cal))
+	}
+	return got
 }
 
-func TestDiscoversCalendarsFromTheServerRoot(t *testing.T) {
-	srv := caldavtest.Start(t)
-	srv.MakeCalendar(t, "family", "Family")
-	srv.MakeCalendar(t, "school", "School")
+func TestTimedSeriesSurvivesTheRoundTrip(t *testing.T) {
+	master := calendar.Event{
+		ID: "choir", Title: "Choir, \"Tuesday\"; with commas", Description: "Bring sheet music\nand water", Location: "School hall",
+		Start: at(2026, 11, 3, 17, 0), End: at(2026, 11, 3, 18, 0), RRule: "FREQ=WEEKLY;COUNT=6",
+		ExDates: []time.Time{at(2026, 11, 10, 17, 0)},
+	}
+	got := roundTrip(t, caldav.Object{Master: master})
+	g := got.Master
+	if g.Title != master.Title || g.Description != master.Description || g.Location != master.Location || g.RRule != master.RRule {
+		t.Fatalf("got %+v", g)
+	}
+	if !g.Start.Equal(master.Start) || !g.End.Equal(master.End) || g.Start.Location().String() != "Europe/Berlin" {
+		t.Fatalf("times: %v - %v in %v", g.Start, g.End, g.Start.Location())
+	}
+	if len(g.ExDates) != 1 || !g.ExDates[0].Equal(master.ExDates[0]) {
+		t.Fatalf("exdates = %v", g.ExDates)
+	}
+	if got.UID != "choir" {
+		t.Fatalf("uid = %q", got.UID)
+	}
+}
 
-	cals, err := client(t, srv, caldavtest.Password).Calendars(context.Background())
+func TestOutputDefinesItsTimeZoneIncludingDaylightSaving(t *testing.T) {
+	cal, err := caldav.Object{Master: calendar.Event{ID: "x", Title: "X", Start: at(2026, 7, 1, 9, 0), End: at(2026, 7, 1, 10, 0)}}.Calendar()
 	if err != nil {
 		t.Fatal(err)
 	}
-	got := map[string]string{}
-	for _, c := range cals {
-		got[c.Name] = c.URL
-	}
-	if len(got) != 2 || got["Family"] != srv.CalendarURL("family") || got["School"] != srv.CalendarURL("school") {
-		t.Fatalf("Calendars() = %+v", cals)
-	}
-}
-
-func TestWrongPasswordIsReportedAsRefusedLogin(t *testing.T) {
-	srv := caldavtest.Start(t)
-	_, err := client(t, srv, "wrong").Calendars(context.Background())
-	if !caldav.IsUnauthorized(err) {
-		t.Fatalf("err = %v, want an unauthorized error", err)
-	}
-}
-
-func TestSingleCalendarAddressWorksWithoutDiscovery(t *testing.T) {
-	srv := caldavtest.Start(t)
-	srv.MakeCalendar(t, "family", "Family")
-
-	cal, err := client(t, srv, caldavtest.Password).Calendar(context.Background(), srv.CalendarURL("family"))
-	if err != nil {
-		t.Fatal(err)
-	}
-	if cal.URL != srv.CalendarURL("family") || cal.Name != "Family" {
-		t.Fatalf("Calendar() = %+v", cal)
-	}
-}
-
-func TestListsEtagsAndFetchesOnlyWhatIsAsked(t *testing.T) {
-	srv := caldavtest.Start(t)
-	cal := srv.MakeCalendar(t, "family", "Family")
-	a := srv.Put(t, cal, "a.ics", caldavtest.Event("a@test", "Swimming", "20261120T150000", "20261120T160000"))
-	srv.Put(t, cal, "b.ics", caldavtest.Event("b@test", "Piano", "20261121T150000", "20261121T160000"))
-
-	c := client(t, srv, caldavtest.Password)
-	objs, err := c.List(context.Background(), cal)
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(objs) != 2 || objs[0].ETag == "" || objs[1].ETag == "" || objs[0].ETag == objs[1].ETag {
-		t.Fatalf("List() = %+v", objs)
-	}
-	got, err := c.Fetch(context.Background(), cal, []string{a})
-	if err != nil {
-		t.Fatal(err)
-	}
-	if len(got) != 1 || got[0].URL != a || !strings.Contains(string(got[0].Data), "SUMMARY:Swimming") || got[0].ETag == "" {
-		t.Fatalf("Fetch() = %+v", got)
-	}
-}
-
-func TestAddressKeyIgnoresCaseOfHostTrailingSlashAndEscaping(t *testing.T) {
-	a := caldav.AddressKey("https://Cal.Example.org/mama/family/")
-	for _, same := range []string{"https://cal.example.org/mama/family", "https://cal.example.org/mama/fam%69ly/"} {
-		if got := caldav.AddressKey(same); got != a {
-			t.Errorf("AddressKey(%q) = %q, want %q", same, got, a)
+	out := text(t, cal)
+	for _, want := range []string{"BEGIN:VTIMEZONE", "TZID:Europe/Berlin", "BEGIN:DAYLIGHT", "BEGIN:STANDARD", "TZOFFSETTO:+0200", "TZOFFSETTO:+0100", "DTSTART;TZID=Europe/Berlin:20260701T090000"} {
+		if !strings.Contains(out, want) {
+			t.Errorf("output lacks %q:\n%s", want, out)
 		}
 	}
-	if caldav.AddressKey("https://cal.example.org/mama/school/") == a {
-		t.Error("different calendars share a key")
+}
+
+func TestAllDayEventKeepsDatesAndExclusiveEnd(t *testing.T) {
+	e := calendar.Event{ID: "trip", Title: "Trip", AllDay: true,
+		Start: time.Date(2026, 12, 24, 0, 0, 0, 0, berlin), End: time.Date(2026, 12, 27, 0, 0, 0, 0, berlin)}
+	cal, _ := caldav.Object{Master: e}.Calendar()
+	out := text(t, cal)
+	if !strings.Contains(out, "DTSTART;VALUE=DATE:20261224") || !strings.Contains(out, "DTEND;VALUE=DATE:20261227") {
+		t.Fatalf("all-day dates wrong:\n%s", out)
+	}
+	if strings.Contains(out, "VTIMEZONE") {
+		t.Fatalf("all-day only calendar needs no time zone:\n%s", out)
+	}
+	g := roundTrip(t, caldav.Object{Master: e}).Master
+	if !g.AllDay || !g.Start.Equal(e.Start) || !g.End.Equal(e.End) {
+		t.Fatalf("got %+v", g)
 	}
 }
 
-func tamperedClient(t *testing.T, srv *caldavtest.Server, broken ...string) (*caldav.Client, *caldavtest.Tamper) {
-	t.Helper()
-	tp := new(caldavtest.Tamper)
-	tp.Break(broken...)
-	c, err := caldav.NewClient(srv.URL, caldavtest.User, caldavtest.Password, tp.Client())
+func TestChangedOccurrenceTravelsWithItsSeries(t *testing.T) {
+	master := calendar.Event{ID: "m", Title: "Choir", Start: at(2026, 11, 3, 17, 0), End: at(2026, 11, 3, 18, 0), RRule: "FREQ=WEEKLY"}
+	moved := calendar.Event{ID: "o", Title: "Choir (hall B)", SeriesID: "m", RecurrenceID: at(2026, 11, 10, 17, 0),
+		Start: at(2026, 11, 10, 18, 0), End: at(2026, 11, 10, 19, 0)}
+	got := roundTrip(t, caldav.Object{Master: master, Overrides: []calendar.Event{moved}})
+	if len(got.Overrides) != 1 {
+		t.Fatalf("overrides = %+v", got.Overrides)
+	}
+	o := got.Overrides[0]
+	if o.Title != "Choir (hall B)" || !o.RecurrenceID.Equal(moved.RecurrenceID) || !o.Start.Equal(moved.Start) {
+		t.Fatalf("override = %+v", o)
+	}
+}
+
+func TestParseReadsUTCAndWindowsZones(t *testing.T) {
+	src := "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//t//EN\r\nBEGIN:VEVENT\r\nUID:u1\r\nSUMMARY:Call\r\n" +
+		"DTSTART:20261102T160000Z\r\nDTEND:20261102T170000Z\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+	cal, _ := ical.NewDecoder(strings.NewReader(src)).Decode()
+	got, err := caldav.Parse(cal, berlin)
 	if err != nil {
 		t.Fatal(err)
 	}
-	return c, tp
-}
-
-func TestFetchKeepsGoodObjectsWhenOneCannotBeDecoded(t *testing.T) {
-	srv := caldavtest.Start(t)
-	cal := srv.MakeCalendar(t, "family", "Family")
-	good := srv.Put(t, cal, "good.ics", caldavtest.Event("good@test", "Swimming", "20261120T150000", "20261120T160000"))
-	bad := srv.Put(t, cal, "bad.ics", caldavtest.Event("bad@test", "Piano", "20261121T150000", "20261121T160000"))
-
-	c, _ := tamperedClient(t, srv, "bad.ics")
-	got, err := c.Fetch(context.Background(), cal, []string{good, bad})
-	if err != nil {
-		t.Fatalf("Fetch() = %v, want the good object despite the bad one", err)
-	}
-	byURL := map[string]caldav.Object{}
-	for _, o := range got {
-		byURL[o.URL] = o
-	}
-	if o := byURL[good]; o.Err != nil || !strings.Contains(string(o.Data), "SUMMARY:Swimming") {
-		t.Fatalf("good object = %+v", o)
-	}
-	if o, ok := byURL[bad]; !ok || o.Err == nil {
-		t.Fatalf("bad object = %+v, want it reported with an error", o)
+	if !got.Master.Start.Equal(time.Date(2026, 11, 2, 16, 0, 0, 0, time.UTC)) {
+		t.Fatalf("start = %v", got.Master.Start)
 	}
 }
 
-func TestFetchSkipsAnObjectDeletedAfterListing(t *testing.T) {
-	srv := caldavtest.Start(t)
-	cal := srv.MakeCalendar(t, "family", "Family")
-	good := srv.Put(t, cal, "good.ics", caldavtest.Event("good@test", "Swimming", "20261120T150000", "20261120T160000"))
-	gone := srv.Put(t, cal, "gone.ics", caldavtest.Event("gone@test", "Piano", "20261121T150000", "20261121T160000"))
-	srv.Delete(t, gone)
-
-	got, err := client(t, srv, caldavtest.Password).Fetch(context.Background(), cal, []string{good, gone})
-	if err != nil {
-		t.Fatalf("Fetch() = %v, want the deleted object skipped", err)
-	}
-	if len(got) != 1 || got[0].URL != good || got[0].Err != nil {
-		t.Fatalf("Fetch() = %+v", got)
+func TestParseKeepsOldEventsThatAFeedWouldDrop(t *testing.T) {
+	src := "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//t//EN\r\nBEGIN:VEVENT\r\nUID:old\r\nSUMMARY:Old\r\n" +
+		"DTSTART:20150102T160000Z\r\nDTEND:20150102T170000Z\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+	cal, _ := ical.NewDecoder(strings.NewReader(src)).Decode()
+	if _, err := caldav.Parse(cal, berlin); err != nil {
+		t.Fatalf("an event from 2015 written by a phone must be kept: %v", err)
 	}
 }
 
-func TestFetchAsksForObjectsInBatches(t *testing.T) {
-	srv := caldavtest.Start(t)
-	cal := srv.MakeCalendar(t, "family", "Family")
-	var urls []string
-	for i := range 230 {
-		urls = append(urls, srv.Put(t, cal, fmt.Sprintf("e%03d.ics", i), caldavtest.Event(fmt.Sprintf("e%d@test", i), "Event", "20261120T150000", "20261120T160000")))
+func TestParseRejectsWhatIsNotOneEvent(t *testing.T) {
+	two := "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//t//EN\r\n" +
+		"BEGIN:VEVENT\r\nUID:a\r\nSUMMARY:A\r\nDTSTART:20261102T160000Z\r\nDTEND:20261102T170000Z\r\nEND:VEVENT\r\n" +
+		"BEGIN:VEVENT\r\nUID:b\r\nSUMMARY:B\r\nDTSTART:20261103T160000Z\r\nDTEND:20261103T170000Z\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
+	todo := "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//t//EN\r\nBEGIN:VTODO\r\nUID:t\r\nSUMMARY:T\r\nEND:VTODO\r\nEND:VCALENDAR\r\n"
+	for name, src := range map[string]string{"two UIDs": two, "task only": todo} {
+		cal, _ := ical.NewDecoder(strings.NewReader(src)).Decode()
+		if _, err := caldav.Parse(cal, berlin); err == nil {
+			t.Errorf("%s: want an error", name)
+		}
 	}
-	c, tp := tamperedClient(t, srv)
-	got, err := c.Fetch(context.Background(), cal, urls)
-	if err != nil || len(got) != len(urls) {
-		t.Fatalf("Fetch() = %d objects, %v", len(got), err)
+}
+
+func TestETagChangesWithContentOnly(t *testing.T) {
+	e := calendar.Event{ID: "e", Title: "A", Start: at(2026, 11, 3, 17, 0), End: at(2026, 11, 3, 18, 0)}
+	tag := func(o caldav.Object) string {
+		cal, err := o.Calendar()
+		if err != nil {
+			t.Fatal(err)
+		}
+		v, err := caldav.ETag(cal)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return v
 	}
-	if n := tp.Reports.Load(); n != 3 {
-		t.Fatalf("multiget requests = %d, want 3 (100 + 100 + 30)", n)
+	if tag(caldav.Object{Master: e}) != tag(caldav.Object{Master: e}) {
+		t.Fatal("etag is not stable")
+	}
+	changed := e
+	changed.Title = "B"
+	if tag(caldav.Object{Master: e}) == tag(caldav.Object{Master: changed}) {
+		t.Fatal("etag did not change with the title")
+	}
+}
+
+func TestGroupJoinsChangedOccurrencesToTheirSeries(t *testing.T) {
+	master := calendar.Event{ID: "m", Title: "Choir", RRule: "FREQ=WEEKLY"}
+	single := calendar.Event{ID: "s", Title: "Dentist"}
+	moved := calendar.Event{ID: "o", Title: "Choir B", SeriesID: "m"}
+	objs := caldav.Group([]calendar.Event{master, single, moved})
+	if len(objs) != 2 || objs[0].Master.ID != "m" || len(objs[0].Overrides) != 1 || objs[1].Master.ID != "s" {
+		t.Fatalf("objects = %+v", objs)
 	}
 }

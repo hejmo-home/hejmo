@@ -21,6 +21,7 @@ import (
 	_ "time/tzdata" // DST rules independent of the host system
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -28,6 +29,10 @@ import (
 type config struct {
 	Addr    string // listen address, HEJMO_ADDR
 	DataDir string // persistent data, HEJMO_DATA_DIR
+	// SecretKeyFile holds the key that seals stored credentials,
+	// HEJMO_SECRET_KEY_FILE (default: secret.key in the data volume). Point it
+	// at a Docker secret to keep the key off the data volume.
+	SecretKeyFile string
 }
 
 func loadConfig(getenv func(string) string) config {
@@ -37,6 +42,10 @@ func loadConfig(getenv func(string) string) config {
 	}
 	if v := getenv("HEJMO_DATA_DIR"); v != "" {
 		cfg.DataDir = v
+	}
+	cfg.SecretKeyFile = filepath.Join(cfg.DataDir, "secret.key")
+	if v := getenv("HEJMO_SECRET_KEY_FILE"); v != "" {
+		cfg.SecretKeyFile = v
 	}
 	return cfg
 }
@@ -64,7 +73,7 @@ func run(cfg config, logger *slog.Logger) error {
 	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
 		return err
 	}
-	db, err := store.Open(filepath.Join(cfg.DataDir, "hejmo.db"))
+	db, err := openDatabase(cfg)
 	if err != nil {
 		return err
 	}
@@ -106,6 +115,24 @@ func run(cfg config, logger *slog.Logger) error {
 		return err
 	}
 	return nil
+}
+
+// openDatabase opens the box's database and gives it the key for stored
+// credentials, generating the key file on first start (mode 0600).
+func openDatabase(cfg config) (*store.DB, error) {
+	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
+		return nil, err
+	}
+	keys, err := secret.LoadOrCreate(cfg.SecretKeyFile)
+	if err != nil {
+		return nil, fmt.Errorf("credential key: %w", err)
+	}
+	db, err := store.Open(filepath.Join(cfg.DataDir, "hejmo.db"))
+	if err != nil {
+		return nil, err
+	}
+	db.SetSecrets(keys)
+	return db, nil
 }
 
 // healthcheck asks the box at baseURL for /healthz.

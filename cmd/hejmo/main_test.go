@@ -3,7 +3,12 @@ package main
 import (
 	"net/http"
 	"net/http/httptest"
+	"os"
+	"path/filepath"
 	"testing"
+	"time"
+
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 func TestConfigDefaults(t *testing.T) {
@@ -21,6 +26,53 @@ func TestConfigFromEnvironment(t *testing.T) {
 	cfg := loadConfig(func(k string) string { return env[k] })
 	if cfg.Addr != "127.0.0.1:9000" || cfg.DataDir != "/tmp/hejmo" {
 		t.Errorf("cfg = %+v", cfg)
+	}
+}
+
+func TestSecretKeyFileDefaultsToTheDataVolumeAndCanBeMoved(t *testing.T) {
+	cfg := loadConfig(func(k string) string {
+		return map[string]string{"HEJMO_DATA_DIR": "/vol"}[k]
+	})
+	if cfg.SecretKeyFile != "/vol/secret.key" {
+		t.Errorf("SecretKeyFile = %q, want /vol/secret.key", cfg.SecretKeyFile)
+	}
+	cfg = loadConfig(func(k string) string {
+		return map[string]string{"HEJMO_DATA_DIR": "/vol", "HEJMO_SECRET_KEY_FILE": "/run/secrets/hejmo_key"}[k]
+	})
+	if cfg.SecretKeyFile != "/run/secrets/hejmo_key" {
+		t.Errorf("SecretKeyFile = %q, want the Docker secret path", cfg.SecretKeyFile)
+	}
+}
+
+func TestStartOnAFreshVolumeCreatesTheKeyFileAndRestartReusesIt(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config{DataDir: dir, SecretKeyFile: filepath.Join(dir, "secret.key")}
+	db, err := openDatabase(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	info, err := os.Stat(cfg.SecretKeyFile)
+	if err != nil || info.Mode().Perm() != 0o600 {
+		t.Fatalf("key file after first start: %v, %v", info, err)
+	}
+	first, _ := os.ReadFile(cfg.SecretKeyFile)
+	h, _ := db.CreateHousehold(store.Household{Name: "Home"})
+	if _, err := db.CreateCalDAVConnection(h.ID, store.NewCalDAVConnection{URL: "https://x.example/", Username: "u", Password: "p", Now: time.Now()}); err != nil {
+		t.Fatalf("the opened database cannot seal credentials: %v", err)
+	}
+	db.Close()
+
+	db, err = openDatabase(cfg) // restart
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if again, _ := os.ReadFile(cfg.SecretKeyFile); string(again) != string(first) {
+		t.Fatal("the key file changed on restart")
+	}
+	conns, _ := db.Connections(h.ID)
+	if _, pass, err := db.ConnectionCredentials(h.ID, conns[0].ID); err != nil || pass != "p" {
+		t.Fatalf("credentials after restart = %q, %v", pass, err)
 	}
 }
 

@@ -120,3 +120,34 @@ func TestOpaqueTokens(t *testing.T) {
 		t.Error("HashToken must be deterministic, distinct and not the token")
 	}
 }
+
+// A stored hash is read from the database; one that asks for absurd work or an
+// absurd key length must be refused, not computed (gosec G115, ADR 0018).
+func TestVerifyPasswordRefusesAbsurdParameters(t *testing.T) {
+	salt := "c2FsdHNhbHRzYWx0c2E"
+	key := strings.Repeat("A", 43)
+	for name, h := range map[string]string{
+		"memory":  "$argon2id$v=19$m=4294967295,t=2,p=1$" + salt + "$" + key,
+		"passes":  "$argon2id$v=19$m=19456,t=4294967295,p=1$" + salt + "$" + key,
+		"keylen":  "$argon2id$v=19$m=19456,t=2,p=1$" + salt + "$" + strings.Repeat("A", 4000),
+		"threads": "$argon2id$v=19$m=19456,t=2,p=255$" + salt + "$" + key,
+	} {
+		start := time.Now()
+		if auth.VerifyPassword(h, "anything long") {
+			t.Errorf("%s: verified", name)
+		}
+		if d := time.Since(start); d > 2*time.Second {
+			t.Errorf("%s: took %v, parameters were not refused", name, d)
+		}
+	}
+}
+
+func TestTOTPCodeRefusesTimesBeforeTheEpoch(t *testing.T) {
+	secret := auth.NewTOTPSecret()
+	if _, err := auth.TOTPCode(secret, time.Unix(-1, 0)); err == nil {
+		t.Error("a time before 1970 must not wrap into a huge counter")
+	}
+	if auth.VerifyTOTP(secret, "123456", time.Unix(-1, 0)) {
+		t.Error("verified at a time before 1970")
+	}
+}

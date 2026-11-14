@@ -49,7 +49,13 @@ func TestFormErrorsAppearAtTheFieldAndKeepOtherEntries(t *testing.T) {
 			t.Errorf("%s: status = %d, want %d", c.name, r.status, c.status)
 			continue
 		}
-		tag := inputTag(r.body, c.field)
+		// The calendars page also holds the connection form (a "url" input
+		// of its own); look only at the form this case posted to.
+		page := r.body
+		if i := strings.Index(page, `action="`+c.path+`"`); i >= 0 {
+			page = page[i:]
+		}
+		tag := inputTag(page, c.field)
 		if !strings.Contains(tag, `aria-invalid="true"`) || !strings.Contains(tag, `aria-describedby="err-`+c.field+`"`) {
 			t.Errorf("%s: field %q is not marked invalid: %q", c.name, c.field, tag)
 		}
@@ -60,12 +66,12 @@ func TestFormErrorsAppearAtTheFieldAndKeepOtherEntries(t *testing.T) {
 			t.Errorf("%s: error also shown as a generic message above the form", c.name)
 		}
 		for name, value := range c.kept {
-			if !strings.Contains(inputTag(r.body, name), `value="`+value+`"`) {
-				t.Errorf("%s: %q does not keep %q: %q", c.name, name, value, inputTag(r.body, name))
+			if !strings.Contains(inputTag(page, name), `value="`+value+`"`) {
+				t.Errorf("%s: %q does not keep %q: %q", c.name, name, value, inputTag(page, name))
 			}
 		}
 		for name := range c.form {
-			if name != c.field && inputTag(r.body, name) != "" && strings.Contains(inputTag(r.body, name), "aria-invalid") {
+			if name != c.field && inputTag(page, name) != "" && strings.Contains(inputTag(page, name), "aria-invalid") {
 				t.Errorf("%s: %q is marked invalid too", c.name, name)
 			}
 		}

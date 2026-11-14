@@ -192,7 +192,8 @@ h1 { font-size: var(--fs-date); font-weight: var(--fw-date); margin: 0 0 8px; }
 .steps fieldset { border: 0; margin: 0; background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 10px; }
 .steps legend { font-size: var(--fs-person-name); font-weight: 700; padding: 0; float: left; }
 .steps form { display: grid; gap: var(--gap); }
-.hint { color: var(--text-secondary); font-size: var(--fs-label); }
+.hint { color: var(--text-secondary); font-size: var(--fs-label); overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
 label { display: grid; gap: 4px; font-size: var(--fs-label); color: var(--text-secondary); }
 input, select { font: inherit; color: var(--text); min-height: var(--touch-target); padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); }
 .error { background: var(--error-bg); color: var(--error-text); border-radius: var(--radius-card); padding: 10px 12px; max-width: 560px; }
@@ -276,6 +277,7 @@ a { color: var(--accent); }
 /* Family view (ticket 5.3; ADR 0015, 0016). The page fills the display;
    columns share the width up to six people, from seven they scroll. */
 .family-page { height: calc(100vh - 2 * var(--margin)); min-height: 0; }
+.family-page > [data-view] { height: 100%; } /* the box swaps this one's content on a change (ticket 5.5) */
 body:has(.family-page) { overflow: hidden; }
 .fv { height: 100%; display: flex; flex-direction: column; gap: var(--gap-section); min-height: 0; }
 .fv-header { display: flex; justify-content: space-between; align-items: center; flex: none; }
@@ -283,6 +285,8 @@ body:has(.family-page) { overflow: hidden; }
 .fv-header .date { font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
 .fv .chips { display: flex; gap: var(--gap); }
 .fv .chip { font-variant-numeric: tabular-nums; }
+.fv .sync-notice { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); font-size: var(--fs-label); font-weight: 700; }
+.fv .sync-notice .icon { flex: none; }
 .strip-wrap { flex: none; display: grid; gap: var(--gap-cards); }
 .strip { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-cards); align-items: center; }
 .strip .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
@@ -296,6 +300,7 @@ body:has(.family-page) { overflow: hidden; }
 .fv-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: var(--gap); }
 .fv[data-scroll] .fv-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 200px; overflow-x: auto; }
 .fv .column { display: flex; flex-direction: column; gap: 0; min-height: 0; overflow: hidden; }
+.fv .person-link { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); color: inherit; text-decoration: none; }
 .fv .column h2 { flex: none; margin: 0 0 var(--gap-cards); font-size: var(--fs-person-name); font-weight: var(--fw-person-name); display: flex; align-items: center; gap: 8px; }
 .fv .events { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: var(--gap-cards); align-content: start; }
 .fv .events .tomorrow { display: grid; gap: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); opacity: 0.6; }
@@ -426,3 +431,21 @@ details.danger form { margin: 0 0 10px; }
 /* Empty state: what the thing is for, then the first action. */
 .empty { display: grid; gap: 10px; justify-items: start; max-width: 560px; padding: 16px; margin: 0 0 20px; border: 1.5px dashed var(--border); border-radius: var(--radius-tile); }
 .empty p { margin: 0; color: var(--text-secondary); }
+
+/* Personal view (ticket 5.6; ADR 0015): one person's seven days and today's
+   tasks. Touch targets are at least 44 px; the checkbox is larger. */
+.pv { height: 100%; display: flex; flex-direction: column; gap: var(--gap-section); min-height: 0; }
+.pv-header { display: flex; justify-content: space-between; align-items: center; flex: none; gap: var(--gap); }
+.pv-header h1 { margin: 0; font-size: var(--fs-date); font-weight: var(--fw-date); display: flex; align-items: center; gap: 12px; }
+.pv-back { display: inline-flex; align-items: center; min-height: var(--touch-target); padding: 8px 22px; border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
+.pv-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--gap); }
+.pv-days, .pv-tasks { background: var(--surface); border-radius: var(--radius-tile); padding: var(--pad-column); min-height: 0; overflow-y: auto; }
+.pv-day { display: grid; gap: var(--gap-cards); padding-bottom: var(--gap-cards); }
+.pv-day .lab, .pv-tasks .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.pv-day .none { font-size: var(--fs-meta); color: var(--text-secondary); }
+.pv-tasks ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap-cards); }
+.pv-tasks form { margin: 0; }
+.big-check { display: flex; align-items: center; gap: 14px; width: 100%; min-height: var(--touch-target); min-width: var(--touch-target); padding: 8px 4px; border: 0; background: none; color: var(--text); font: inherit; font-size: var(--fs-event-title); text-align: left; cursor: pointer; }
+.big-check .box { flex: none; width: var(--touch-target); height: var(--touch-target); border: 3px solid var(--text); border-radius: var(--radius-card); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; line-height: 1; }
+[data-done="true"] .big-check .title { text-decoration: line-through; color: var(--text-secondary); }
+[data-done="true"] .big-check .box::after { content: "\2713"; }

@@ -63,3 +63,16 @@ func TestTamperedOrForeignValuesAreRejected(t *testing.T) {
 		t.Error("a too short value opened")
 	}
 }
+
+func TestBrokenKeyFileIsRefusedNotReplaced(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "secret.key")
+	if err := os.WriteFile(path, []byte("too short"), 0o600); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := secret.Open(path); err == nil {
+		t.Fatal("accepted a broken key file")
+	}
+	if got, _ := os.ReadFile(path); string(got) != "too short" {
+		t.Fatal("broken key file was overwritten, which would lock out stored credentials")
+	}
+}

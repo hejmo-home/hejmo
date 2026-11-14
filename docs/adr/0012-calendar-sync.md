@@ -1,6 +1,6 @@
 # 0012. Calendar sync
 
-- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md)
+- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md), [0017](0017-web-interface-usability.md), [0018](0018-path-to-0-1.md)
 - Date: 14/11/2026
 - Amends: [0003](0003-v1-scope-and-work-packages.md) (work package 4 and the V1.x list)
 
@@ -19,7 +19,7 @@ Work package 4 connects the box to outside calendars (ADR 0007). The founding fa
 
 ### What the box keeps
 
-- Per synced event the box stores the **raw iCalendar data, ETag and remote URL** (new migration `0003_sync.sql`). On write-back it changes only the fields it models and keeps everything else (attendees, `VALARM`, conference links).
+- Per synced event the box stores the **raw iCalendar data, ETag and remote URL** (new migration `202611141702_sync.sql` (formerly `0003_sync.sql`)). On write-back it changes only the fields it models and keeps everything else (attendees, `VALARM`, conference links).
 - The **audience** goes out as `X-HEJMO-AUDIENCE` plus one readable line at the end of the description ("For: Mia, Sebastian", localised). The title stays unchanged. The line is stripped again on import.
 - Import window: the **last 12 months and the whole future**. A series is imported whole if any occurrence falls in the window.
 - Windows time zone names are mapped to IANA zones through the CLDR table (embedded). Floating times and unknown zones use the box's time zone; unknown zones are noted in the sync log.
@@ -29,6 +29,8 @@ Work package 4 connects the box to outside calendars (ADR 0007). The founding fa
 - A **calendar connection** holds one set of credentials. For CalDAV (iCloud, Nextcloud and others) the box discovers the calendars and a parent ticks the ones to sync. A single calendar URL or ICS URL can also be added by hand.
 - Each synced calendar gets its own colour and audience.
 - Intervals: CalDAV and Google every **5 minutes**, ICS every **60 minutes**, both configurable per calendar. Changes on the box are pushed immediately. Parents can trigger "sync now". Delta sync through `sync-collection` (RFC 6578) where offered, else CTag/ETag. Failures back off exponentially.
+- **Delta sync decision (Q24, 14/11/2026, ticket 16):** the first CalDAV version lists ETags (a `calendar-query` REPORT asking for `getetag` only, depth 1) each interval and downloads only new or changed objects, because go-webdav v0.7.0 has no `sync-collection` and no CTag. Listing and downloading use the box's own `calendar-query` and `calendar-multiget` REPORTs, since go-webdav's reader fails on answers real servers (iCloud) give. The product owner accepted this; `sync-collection` and a CTag short-circuit are follow-up #54.
+- **Hosts of one server (Q25, ticket 16):** CalDAV servers such as iCloud answer from several hosts (`caldav.icloud.com` names `pNN-caldav.icloud.com` as the calendar home). The client follows redirects and principal / calendar-home hrefs to other hosts only within the same registrable domain as the configured server (public suffix list), over the same scheme. Any other host is refused with a clear error in the sync log, and credentials are never sent to it.
 - On failure the box keeps the last good data and logs the error. After **24 hours** without success, parents see a notice in the web interface and displays show an info symbol in the header pointing to the web interface (package 5); it clears itself after the next successful sync.
 
 ### Credentials

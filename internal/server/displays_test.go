@@ -403,3 +403,17 @@ func TestPairingErrorsAreShownAtTheWrongField(t *testing.T) {
 		}
 	}
 }
+
+func (s *screen) post(path string, form url.Values) resp {
+	s.b.t.Helper()
+	req, _ := http.NewRequest(http.MethodPost, s.b.srv.URL+path, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", s.b.srv.URL)
+	res, err := s.client.Do(req)
+	if err != nil {
+		s.b.t.Fatal(err)
+	}
+	defer res.Body.Close()
+	raw, _ := io.ReadAll(res.Body)
+	return resp{res.StatusCode, res.Header.Get("Location"), string(raw)}
+}

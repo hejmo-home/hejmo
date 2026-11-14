@@ -1,6 +1,6 @@
 # 0015. Display, web interface and everyday features
 
-- Status: Accepted, amended by [0016](0016-family-view-header-and-footer.md)
+- Status: Accepted, amended by [0016](0016-family-view-header-and-footer.md), [0017](0017-web-interface-usability.md), [0018](0018-path-to-0-1.md)
 - Date: 14/11/2026
 - Amends: [0003](0003-v1-scope-and-work-packages.md) (package 5 gains web interface frame, calendar screen, phone web app, children's phones and themes; sleep mode becomes quiet mode), [0005](0005-display-client-and-kiosk-adapter.md) (sleep mode becomes quiet mode with a night page), [0006](0006-authentication.md) (children's phones without an account), [0008](0008-design-takes-precedence-over-version-plan.md) (footer tiles), [0010](0010-households-memberships-and-credentials.md) (child rights limited to own tasks), [0012](0012-calendar-sync.md) (meal-plan calendar shared through the box by default)
 

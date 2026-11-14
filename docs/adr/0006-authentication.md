@@ -1,6 +1,6 @@
 # 0006. Authentication
 
-- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md)
+- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md), [0017](0017-web-interface-usability.md), [0018](0018-path-to-0-1.md)
 - Date: 14/11/2026
 
 ## Context

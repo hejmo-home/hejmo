@@ -317,7 +317,7 @@ func TestWebAddsAndListsICSCalendars(t *testing.T) {
 
 func TestCalendarsPageNeedsASignedInParent(t *testing.T) {
 	b, _ := configuredBox(t)
-	if r := b.get("/calendars"); r.status != http.StatusSeeOther || r.location != "/login" {
+	if r := b.get("/calendars"); r.status != http.StatusSeeOther || r.location != "/login?next=%2Fcalendars" {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
 	}
 	if r := b.post("/calendars", url.Values{"name": {"x"}, "url": {schoolFeed}}); r.status != http.StatusSeeOther || r.location != "/login" {

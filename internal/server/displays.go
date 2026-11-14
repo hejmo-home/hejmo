@@ -78,7 +78,7 @@ func (s *server) handleDisplayUnpair(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	switch err := s.db.RevokeDisplay(p.household.ID, r.PathValue("id")); {
+	switch err := s.db.RevokeDisplay(p.household.ID, r.PathValue("id"), s.now()); {
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
 	case err != nil:
@@ -142,7 +142,7 @@ func (s *server) apiPairDisplay(w http.ResponseWriter, r *http.Request, p princi
 }
 
 func (s *server) apiRevokeDisplay(w http.ResponseWriter, r *http.Request, p principal) {
-	switch err := s.db.RevokeDisplay(p.household.ID, r.PathValue("id")); {
+	switch err := s.db.RevokeDisplay(p.household.ID, r.PathValue("id"), s.now()); {
 	case errors.Is(err, store.ErrNotFound):
 		writeError(w, http.StatusNotFound, "display not found")
 	case err != nil:

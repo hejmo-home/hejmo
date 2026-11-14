@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"html/template"
+	"net"
 	"net/http"
 	"net/url"
 	"time"
@@ -65,6 +66,17 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	d, hash, ok := s.currentDisplay(r)
 	if !ok {
+		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
+		if splitErr != nil {
+			ip = r.RemoteAddr
+		}
+		if key := "open:" + ip; s.opens.blocked(key) {
+			w.Header().Set("Retry-After", "600")
+			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
+			return
+		} else {
+			s.opens.fail(key)
+		}
 		token := auth.NewToken()
 		hash = auth.HashToken(token)
 		if d, err = s.db.OpenPairing(h.ID, hash, s.now()); err != nil {

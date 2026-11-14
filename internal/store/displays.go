@@ -13,6 +13,11 @@ import (
 // PairingCodeLifetime is how long a pairing code can be confirmed.
 const PairingCodeLifetime = 10 * time.Minute
 
+// MaxWaitingDisplays is how many unpaired displays a household keeps at once.
+// Opening one more drops the oldest, so a client that keeps opening pairing
+// screens cannot hold a large share of the six-digit code space.
+const MaxWaitingDisplays = 20
+
 // staleWaiting is how long an unconfirmed display's row is kept.
 const staleWaiting = 24 * time.Hour
 
@@ -93,6 +98,9 @@ func (db *DB) assignCode(tokenHash string, at time.Time) error {
 			WHERE token_hash = ? AND paired_at IS NULL AND revoked_at IS NULL
 			AND NOT EXISTS (SELECT 1 FROM displays WHERE pairing_code = ?)`,
 			code, stamp(at.Add(PairingCodeLifetime)), tokenHash, code)
+		if isUniqueViolation(err) {
+			continue // another display took this code a moment ago
+		}
 		if err != nil {
 			return err
 		}
@@ -110,10 +118,19 @@ func (db *DB) assignCode(tokenHash string, at time.Time) error {
 	return errors.New("store: no free pairing code")
 }
 
+func isUniqueViolation(err error) bool {
+	return err != nil && strings.Contains(err.Error(), "UNIQUE constraint failed")
+}
+
 // OpenPairing registers a new display, identified by the hash of its own
 // token, and gives it a pairing code to be confirmed by a parent.
 func (db *DB) OpenPairing(householdID, tokenHash string, at time.Time) (Display, error) {
 	if _, err := db.sql.Exec(`DELETE FROM displays WHERE paired_at IS NULL AND created_at < ?`, stamp(at.Add(-staleWaiting))); err != nil {
+		return Display{}, err
+	}
+	if _, err := db.sql.Exec(`DELETE FROM displays WHERE household_id = ? AND paired_at IS NULL AND id IN (
+		SELECT id FROM displays WHERE household_id = ? AND paired_at IS NULL ORDER BY created_at DESC, rowid DESC LIMIT -1 OFFSET ?)`,
+		householdID, householdID, MaxWaitingDisplays-1); err != nil {
 		return Display{}, err
 	}
 	if _, err := db.sql.Exec(`INSERT INTO displays (id, household_id, token_hash, created_at) VALUES (?, ?, ?, ?)`,
@@ -152,29 +169,18 @@ func (db *DB) ConfirmPairing(householdID, code string, in Display, at time.Time)
 	if in.Name == "" || len(in.Name) > 80 || len(in.Room) > 80 || !in.Type.Valid() {
 		return Display{}, fmt.Errorf("%w: a display needs a name and a known type", ErrInvalid)
 	}
-	tx, err := db.sql.Begin()
-	if err != nil {
-		return Display{}, err
-	}
-	defer tx.Rollback()
 	var id string
-	err = tx.QueryRow(`SELECT id FROM displays WHERE household_id = ? AND pairing_code = ? AND code_expires_at > ?
-		AND paired_at IS NULL AND revoked_at IS NULL`, householdID, code, stamp(at)).Scan(&id)
+	err := db.sql.QueryRow(`UPDATE displays SET name = ?, room = ?, type = ?, paired_at = ?, last_seen_at = ?, pairing_code = NULL, code_expires_at = NULL
+		WHERE household_id = ? AND pairing_code = ? AND code_expires_at > ? AND paired_at IS NULL AND revoked_at IS NULL
+		RETURNING id`,
+		in.Name, in.Room, string(in.Type), stamp(at), stamp(at), householdID, code, stamp(at)).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Display{}, ErrNotFound
 	}
 	if err != nil {
 		return Display{}, err
 	}
-	if _, err := tx.Exec(`UPDATE displays SET name = ?, room = ?, type = ?, paired_at = ?, last_seen_at = ?, pairing_code = NULL, code_expires_at = NULL WHERE id = ?`,
-		in.Name, in.Room, string(in.Type), stamp(at), stamp(at), id); err != nil {
-		return Display{}, err
-	}
-	if err := tx.Commit(); err != nil {
-		return Display{}, err
-	}
-	d, err := scanDisplay(db.sql.QueryRow(`SELECT `+displayColumns+` FROM displays WHERE id = ?`, id), at)
-	return d, err
+	return scanDisplay(db.sql.QueryRow(`SELECT `+displayColumns+` FROM displays WHERE id = ?`, id), at)
 }
 
 // Displays lists a household's paired displays, oldest first.
@@ -197,9 +203,9 @@ func (db *DB) Displays(householdID string) ([]Display, error) {
 }
 
 // RevokeDisplay unpairs a display: its token stops working.
-func (db *DB) RevokeDisplay(householdID, id string) error {
+func (db *DB) RevokeDisplay(householdID, id string, at time.Time) error {
 	return expectOne(db.sql.Exec(`UPDATE displays SET revoked_at = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
-		now(), householdID, id))
+		stamp(at), householdID, id))
 }
 
 // TouchDisplay records that the display with tokenHash was seen at t.

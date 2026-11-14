@@ -163,7 +163,7 @@ func TestCalDAVPageIsGerman(t *testing.T) {
 
 func TestCalDAVPageNeedsASignedInParent(t *testing.T) {
 	b, _ := configuredBox(t)
-	if r := b.get("/caldav"); r.status != http.StatusSeeOther || r.location != "/login" {
+	if r := b.get("/caldav"); r.status != http.StatusSeeOther || r.location != "/login?next=%2Fcaldav" {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
 	}
 	if r := b.post("/caldav/tokens", url.Values{"name": {"x"}}); r.status != http.StatusSeeOther || r.location != "/login" {

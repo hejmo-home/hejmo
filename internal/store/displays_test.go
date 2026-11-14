@@ -2,6 +2,7 @@ package store_test
 
 import (
 	"errors"
+	"fmt"
 	"regexp"
 	"strings"
 	"testing"
@@ -139,7 +140,7 @@ func TestRevokedDisplayLosesItsToken(t *testing.T) {
 	d, _ := db.OpenPairing(h.ID, "hash-1", pairT0)
 	paired, _ := db.ConfirmPairing(h.ID, d.Code, store.Display{Name: "Hallway", Type: store.DisplayEInkColor}, pairT0)
 
-	if err := db.RevokeDisplay(h.ID, paired.ID); err != nil {
+	if err := db.RevokeDisplay(h.ID, paired.ID, pairT0); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.DisplayByToken("hash-1", pairT0); !errors.Is(err, store.ErrNotFound) {
@@ -148,7 +149,7 @@ func TestRevokedDisplayLosesItsToken(t *testing.T) {
 	if list, _ := db.Displays(h.ID); len(list) != 0 {
 		t.Fatalf("revoked display listed: %+v", list)
 	}
-	if err := db.RevokeDisplay(h.ID, paired.ID); !errors.Is(err, store.ErrNotFound) {
+	if err := db.RevokeDisplay(h.ID, paired.ID, pairT0); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("second revoke = %v, want ErrNotFound", err)
 	}
 }
@@ -164,5 +165,47 @@ func TestDisplayUseIsRecorded(t *testing.T) {
 	list, _ := db.Displays(h.ID)
 	if len(list) != 1 || !list[0].LastSeen.Equal(seen) {
 		t.Fatalf("Displays = %+v, want last seen %v", list, seen)
+	}
+}
+
+func TestWaitingDisplaysAreCappedAndTheNewestWins(t *testing.T) {
+	db, h := householdForDisplays(t)
+	const opened = store.MaxWaitingDisplays + 15
+	var codes []string
+	for i := 0; i < opened; i++ {
+		d, err := db.OpenPairing(h.ID, fmt.Sprintf("hash-%d", i), pairT0.Add(time.Duration(i)*time.Second))
+		if err != nil {
+			t.Fatal(err)
+		}
+		codes = append(codes, d.Code)
+	}
+	at := pairT0.Add(time.Hour)
+	alive := 0
+	for i := 0; i < opened; i++ {
+		if _, err := db.DisplayByToken(fmt.Sprintf("hash-%d", i), at); err == nil {
+			alive++
+		}
+	}
+	if alive != store.MaxWaitingDisplays {
+		t.Fatalf("%d waiting displays kept, want %d", alive, store.MaxWaitingDisplays)
+	}
+	if _, err := db.DisplayByToken("hash-0", at); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("oldest waiting display kept: %v", err)
+	}
+	if _, err := db.ConfirmPairing(h.ID, codes[opened-1], store.Display{Name: "X", Type: store.DisplayScreen}, pairT0.Add(time.Minute)); err != nil {
+		t.Fatalf("newest display cannot be paired: %v", err)
+	}
+}
+
+func TestPairedDisplaysDoNotCountAgainstTheWaitingCap(t *testing.T) {
+	db, h := householdForDisplays(t)
+	for i := 0; i < store.MaxWaitingDisplays+3; i++ {
+		d, _ := db.OpenPairing(h.ID, fmt.Sprintf("p-%d", i), pairT0)
+		if _, err := db.ConfirmPairing(h.ID, d.Code, store.Display{Name: "D", Type: store.DisplayScreen}, pairT0); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if list, _ := db.Displays(h.ID); len(list) != store.MaxWaitingDisplays+3 {
+		t.Fatalf("%d paired displays, want %d", len(list), store.MaxWaitingDisplays+3)
 	}
 }

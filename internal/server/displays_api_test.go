@@ -67,3 +67,18 @@ func TestOnlyScopedParentsManageDisplays(t *testing.T) {
 		t.Fatalf("read token revokes = %d, want 403", status)
 	}
 }
+
+func TestAPIAnswers429AfterFiveWrongCodes(t *testing.T) {
+	c := signedInAPI(t)
+	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
+	wrong := "000000"
+	if code == wrong {
+		wrong = "000001"
+	}
+	for i := 0; i < 5; i++ {
+		c.call(http.MethodPost, "/displays", map[string]any{"code": wrong, "name": "K", "type": "screen"})
+	}
+	if status, _, _ := c.call(http.MethodPost, "/displays", map[string]any{"code": code, "name": "K", "type": "screen"}); status != http.StatusTooManyRequests {
+		t.Fatalf("after 5 wrong codes = %d, want 429", status)
+	}
+}

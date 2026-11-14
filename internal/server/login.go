@@ -15,13 +15,14 @@ func (s *server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
-	s.render(w, r, http.StatusOK, "login.html", nil)
+	s.render(w, r, http.StatusOK, "login.html", map[string]any{"Next": localPath(r.URL.Query().Get("next"))})
 }
 
 func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	username := strings.TrimSpace(r.PostFormValue("username"))
 	key := strings.ToLower(username)
-	data := map[string]any{"Username": username}
+	next := localPath(r.PostFormValue("next"))
+	data := map[string]any{"Username": username, "Next": next}
 	if s.limiter.blocked(key) {
 		data["Error"] = "login.error.limit"
 		s.render(w, r, http.StatusTooManyRequests, "login.html", data)
@@ -44,7 +45,19 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "login session", err)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	if next == "" {
+		next = "/"
+	}
+	http.Redirect(w, r, next, http.StatusSeeOther)
+}
+
+// localPath returns p if it is a path on this box, else "". It keeps the
+// sign-in page from sending people to other sites.
+func localPath(p string) string {
+	if !strings.HasPrefix(p, "/") || strings.HasPrefix(p, "//") || strings.ContainsAny(p, `\`+"\r\n") {
+		return ""
+	}
+	return p
 }
 
 func (s *server) handleLogout(w http.ResponseWriter, r *http.Request) {

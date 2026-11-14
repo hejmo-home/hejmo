@@ -290,7 +290,7 @@ func TestDisplaysAreManagedByParentsOnly(t *testing.T) {
 		t.Fatalf("unconfigured = %d %q", r.status, r.location)
 	}
 	b, _ = configuredBox(t)
-	if r := b.get("/displays"); r.status != http.StatusSeeOther || r.location != "/login" {
+	if r := b.get("/displays"); r.status != http.StatusSeeOther || r.location != "/login?next=%2Fdisplays" {
 		t.Fatalf("signed out = %d %q, want 303 to /login", r.status, r.location)
 	}
 	if r := b.post("/displays", pairForm("123456")); r.status != http.StatusSeeOther || r.location != "/login" {
@@ -302,5 +302,60 @@ func TestDisplayLinkIsOnTheHomePage(t *testing.T) {
 	b := signedInBox(t)
 	if r := b.get("/"); !strings.Contains(r.body, `href="/displays"`) {
 		t.Fatal("no link to the displays page")
+	}
+}
+
+// A client that keeps opening pairing screens is slowed down, and the
+// waiting rows it leaves behind stay bounded.
+func TestOpeningManyPairingScreensIsLimited(t *testing.T) {
+	b := signedInBox(t)
+	refused := 0
+	for i := 0; i < 40; i++ {
+		if r := newScreen(b).get("/display", "en"); r.status == http.StatusTooManyRequests {
+			refused++
+		} else if r.status != http.StatusOK {
+			t.Fatalf("open %d = %d", i, r.status)
+		}
+	}
+	if refused == 0 {
+		t.Fatal("40 pairing screens opened from one address, none refused")
+	}
+	b.now = b.now.Add(11 * time.Minute)
+	if r := newScreen(b).get("/display", "en"); r.status != http.StatusOK {
+		t.Fatalf("after the wait = %d, want 200", r.status)
+	}
+}
+
+func TestEvictedWaitingDisplayGetsANewPairingScreen(t *testing.T) {
+	b := signedInBox(t)
+	first := newScreen(b)
+	first.get("/display", "en")
+	for i := 0; i < 30; i++ {
+		b.now = b.now.Add(2 * time.Minute)
+		newScreen(b).get("/display", "en")
+	}
+	if r := first.get("/display", "en"); r.status != http.StatusOK || !strings.Contains(r.body, "data-pairing-code") {
+		t.Fatalf("evicted display = %d, want a fresh pairing screen", r.status)
+	}
+}
+
+func TestSignInFromTheQRLinkReturnsToTheDisplaysPageWithTheCode(t *testing.T) {
+	b, secret := configuredBox(t)
+	code := codeOn(t, newScreen(b).get("/display", "en").body)
+	r := b.get("/displays?code=" + code)
+	if r.status != http.StatusSeeOther || r.location != "/login?next=%2Fdisplays%3Fcode%3D"+code {
+		t.Fatalf("signed out = %d %q", r.status, r.location)
+	}
+	form := loginForm(b, secret, "correct horse battery")
+	form.Set("next", "/displays?code="+code)
+	if r := b.post("/login", form); r.status != http.StatusSeeOther || r.location != "/displays?code="+code {
+		t.Fatalf("login = %d %q, want 303 back to the displays page", r.status, r.location)
+	}
+	for _, bad := range []string{"https://evil.example/", "//evil.example/", `/\evil.example`} {
+		b.logout()
+		form.Set("next", bad)
+		if r := b.post("/login", form); r.location != "/" {
+			t.Fatalf("next=%q redirected to %q, want /", bad, r.location)
+		}
 	}
 }

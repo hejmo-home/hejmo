@@ -143,7 +143,7 @@ func editAll(master Event, overrides []Event, occStart time.Time, p Patch) Chang
 	m.Start = master.Start.Add(delta)
 	m.End = m.Start.Add(duration)
 	if m.AllDay {
-		m.End = m.Start.AddDate(0, 0, daysBetween(probe.Start, probe.End))
+		m.End = m.Start.AddDate(0, 0, DaysBetween(probe.Start, probe.End))
 	}
 	m.ExDates = nil
 	for _, x := range master.ExDates {

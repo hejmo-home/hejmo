@@ -118,7 +118,7 @@ func seriesStarts(e Event, after, before time.Time) ([]time.Time, error) {
 func occurrence(e Event, start, recurrenceID time.Time, seriesID string) Occurrence {
 	end := start.Add(e.End.Sub(e.Start))
 	if e.AllDay {
-		end = start.AddDate(0, 0, daysBetween(e.Start, e.End))
+		end = start.AddDate(0, 0, DaysBetween(e.Start, e.End))
 	}
 	return Occurrence{
 		EventID: e.ID, SeriesID: seriesID, RecurrenceID: recurrenceID, CalendarID: e.CalendarID,
@@ -129,8 +129,8 @@ func occurrence(e Event, start, recurrenceID time.Time, seriesID string) Occurre
 
 func occKey(seriesID string, t time.Time) string { return fmt.Sprintf("%s@%d", seriesID, t.Unix()) }
 
-// daysBetween counts calendar days from a to b (both midnight local).
-func daysBetween(a, b time.Time) int {
+// DaysBetween counts calendar days from a to b (both midnight local).
+func DaysBetween(a, b time.Time) int {
 	ay, am, ad := a.Date()
 	by, bm, bd := b.Date()
 	return int(time.Date(by, bm, bd, 0, 0, 0, 0, time.UTC).Sub(time.Date(ay, am, ad, 0, 0, 0, 0, time.UTC)).Hours() / 24)

@@ -98,11 +98,7 @@ func New(opts Options) http.Handler {
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
-	s.pages = template.Must(template.New("").Funcs(template.FuncMap{
-		"t":    func(string) string { return "" }, // replaced per request in render
-		"dict": dict,
-		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
-	}).ParseFS(web.Templates, "templates/*.html"))
+	s.pages = parsePages()
 
 	static, err := fs.Sub(web.Static, "static")
 	if err != nil {
@@ -145,6 +141,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
+	mux.HandleFunc("POST /displays/{id}/settings", s.handleDisplaySettings)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
 	return s.requireHTTPS(sameOrigin(mux))
@@ -177,6 +174,15 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": p.Role == store.RoleParent && s.httpsWarning()})
+}
+
+// parsePages parses the embedded templates; "t" is replaced per render.
+func parsePages() *template.Template {
+	return template.Must(template.New("").Funcs(template.FuncMap{
+		"t":    func(string) string { return "" },
+		"dict": dict,
+		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
+	}).ParseFS(web.Templates, "templates/*.html"))
 }
 
 func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name string, data map[string]any) {

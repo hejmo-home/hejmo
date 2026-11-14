@@ -21,7 +21,7 @@ A person's belonging to a household, carrying their role and position in the fam
 _Avoid_: household member record
 
 **Role**:
-What a person may do in a household: **parent** (everything) or **child** (read, tick off tasks and list entries).
+What a person may do in a household: **parent** (everything) or **child** (read, tick off their own tasks and any list entry).
 _Avoid_: permission level, user type
 
 **Account**:
@@ -135,11 +135,11 @@ How a display shows things: **E-Ink black-and-white**, **E-Ink colour** or **nor
 _Avoid_: display mode, device type
 
 **Family strip**:
-The row above the person columns in the family view for events meant for the whole household, all-day events and public holidays.
+The row above the person columns in the family view for events meant for the whole household, all-day and multi-day events, and public holidays.
 _Avoid_: banner, header events, all-day row
 
 **Theme**:
-Whether a display or the web interface is light or dark, or switches automatically by sunrise and sunset.
+Whether a display or the web interface is light or dark, switches automatically by sunrise and sunset, or follows the device.
 _Avoid_: dark mode (alone), skin, colour scheme
 
 **Quiet mode**:
@@ -148,7 +148,7 @@ _Avoid_: sleep mode (in prose), night mode, standby
 
 **Phone**:
 A smartphone paired with the box through a QR code that runs the web interface as an app for one person, adult or child. A phone's calendar app syncing over CalDAV is a CalDAV client, not a phone.
-_Avoid_: mobile, client, handset
+_Avoid_: mobile, client (alone), handset
 
 **Device session**:
 The long-lived, revocable access of a paired phone, which acts for one person.

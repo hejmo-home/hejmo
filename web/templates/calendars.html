@@ -44,6 +44,7 @@
     {{end}}
     <h3>{{t "connections.add"}}</h3>
     <p class="hint">{{t "connections.hint"}}</p>
+    {{if .ConnError}}<p class="error" role="alert">{{t .ConnError}}</p>{{end}}
     <form method="post" action="/connections" class="steps" autocomplete="off">
       <fieldset>
         <label>{{t "connections.field.provider"}}

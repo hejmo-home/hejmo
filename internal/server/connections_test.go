@@ -274,6 +274,9 @@ func TestWebConnectTickAndRemove(t *testing.T) {
 	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `role="alert"`) {
 		t.Fatalf("wrong password = %d\n%s", r.status, r.body)
 	}
+	if alert, add := strings.Index(r.body, `role="alert"`), strings.Index(r.body, `id="add"`); alert > add {
+		t.Fatal("the error is shown in the ICS section, not next to the connection form")
+	}
 	if strings.Contains(r.body, "pw-not-accepted-1") {
 		t.Fatal("the page echoes the password back")
 	}

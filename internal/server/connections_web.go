@@ -9,7 +9,7 @@ import (
 )
 
 type connectionView struct {
-	ID, Name, URL, Username string
+	ID, URL, Username string
 }
 
 // connectionErrorKey is the i18n key explaining an input error.
@@ -66,7 +66,7 @@ func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.As(err, &bad):
 		// The password is never sent back to the page.
-		form := map[string]any{"Error": connectionErrorKey(bad), "ConnProvider": in.Provider, "ConnURL": in.URL, "ConnUsername": in.Username, "ConnSingle": in.Single}
+		form := map[string]any{"ConnError": connectionErrorKey(bad), "ConnProvider": in.Provider, "ConnURL": in.URL, "ConnUsername": in.Username, "ConnSingle": in.Single}
 		s.renderCalendars(w, r, p, http.StatusUnprocessableEntity, form)
 		return
 	case err != nil:

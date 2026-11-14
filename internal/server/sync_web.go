@@ -133,6 +133,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	if form != nil {
 		data["Error"] = form["Error"]
+		data["ConnError"] = form["ConnError"]
 	}
 	s.render(w, r, status, "calendars.html", data)
 }

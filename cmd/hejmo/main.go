@@ -70,9 +70,6 @@ func run(cfg config, logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
-		return err
-	}
 	db, err := openDatabase(cfg)
 	if err != nil {
 		return err

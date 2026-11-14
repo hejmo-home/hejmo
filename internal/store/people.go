@@ -33,6 +33,41 @@ type Household struct {
 	Longitude float64
 	Region    string // ISO 3166-2, e.g. DE-BY
 	Timezone  string
+	// TimeFormat and TemperatureUnit are household settings (ADR 0016).
+	TimeFormat      TimeFormat
+	TemperatureUnit TemperatureUnit
+}
+
+// TimeFormat is how the household wants times shown.
+type TimeFormat string
+
+// Time formats; 24-hour is the default.
+const (
+	Time24h TimeFormat = "24h"
+	Time12h TimeFormat = "12h"
+)
+
+// TemperatureUnit is how the household wants temperatures shown.
+type TemperatureUnit string
+
+// Temperature units; Celsius is the default.
+const (
+	Celsius    TemperatureUnit = "c"
+	Fahrenheit TemperatureUnit = "f"
+)
+
+// Valid reports whether f is a known time format.
+func (f TimeFormat) Valid() bool { return f == Time24h || f == Time12h }
+
+// Valid reports whether u is a known temperature unit.
+func (u TemperatureUnit) Valid() bool { return u == Celsius || u == Fahrenheit }
+
+// UpdateHouseholdSettings stores the household's time format and temperature unit.
+func (db *DB) UpdateHouseholdSettings(id string, f TimeFormat, u TemperatureUnit) error {
+	if !f.Valid() || !u.Valid() {
+		return errors.New("store: unknown time format or temperature unit")
+	}
+	return expectOne(db.sql.Exec(`UPDATE households SET time_format = ?, temperature_unit = ?, updated_at = ? WHERE id = ?`, f, u, now(), id))
 }
 
 // Person is a family member as seen from one household.
@@ -63,6 +98,7 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 	if h.Timezone == "" {
 		h.Timezone = "Europe/Berlin"
 	}
+	h.TimeFormat, h.TemperatureUnit = Time24h, Celsius
 	h.ID = newID()
 	ts := now()
 	_, err := db.sql.Exec(`INSERT INTO households (id, name, home_name, latitude, longitude, region, timezone, created_at, updated_at)
@@ -73,19 +109,19 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 
 // Household loads a household by id.
 func (db *DB) Household(id string) (Household, error) {
-	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone
+	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, time_format, temperature_unit
 		FROM households WHERE id = ?`, id))
 }
 
 // HomeHousehold returns the household this box serves (V1: exactly one).
 func (db *DB) HomeHousehold() (Household, error) {
-	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone
+	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, time_format, temperature_unit
 		FROM households ORDER BY created_at, rowid LIMIT 1`))
 }
 
 func (db *DB) scanHousehold(row *sql.Row) (Household, error) {
 	var h Household
-	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone)
+	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.TimeFormat, &h.TemperatureUnit)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Household{}, ErrNotFound
 	}

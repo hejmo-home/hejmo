@@ -5,6 +5,7 @@ package iosprofile
 
 import (
 	"bytes"
+	"crypto/rand"
 	"encoding/xml"
 	"errors"
 	"fmt"
@@ -70,4 +71,14 @@ func CalDAV(p Params) ([]byte, error) {
 	}
 	b.WriteString("</dict>\n</plist>\n")
 	return b.Bytes(), nil
+}
+
+// NewUUID returns a random (version 4) UUID in the upper-case form profiles use.
+func NewUUID() string {
+	var b [16]byte
+	if _, err := rand.Read(b[:]); err != nil {
+		panic(err) // the system's random source failing is not recoverable
+	}
+	b[6], b[8] = b[6]&0x0f|0x40, b[8]&0x3f|0x80
+	return fmt.Sprintf("%X-%X-%X-%X-%X", b[0:4], b[4:6], b[6:8], b[8:10], b[10:])
 }

@@ -3,6 +3,7 @@ package iosprofile_test
 import (
 	"encoding/xml"
 	"io"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -193,5 +194,13 @@ func TestProfileNeedsItsParts(t *testing.T) {
 		if _, err := iosprofile.CalDAV(p); err == nil {
 			t.Errorf("%+v: want an error", p)
 		}
+	}
+}
+
+func TestNewUUIDIsAVersion4UUIDAndDiffers(t *testing.T) {
+	re := regexp.MustCompile(`^[0-9A-F]{8}-[0-9A-F]{4}-4[0-9A-F]{3}-[89AB][0-9A-F]{3}-[0-9A-F]{12}$`)
+	a, b := iosprofile.NewUUID(), iosprofile.NewUUID()
+	if !re.MatchString(a) || a == b {
+		t.Fatalf("uuids %q %q", a, b)
 	}
 }

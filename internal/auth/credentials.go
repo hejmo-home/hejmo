@@ -173,3 +173,52 @@ func HashToken(token string) string {
 	sum := sha256.Sum256([]byte(token))
 	return hex.EncodeToString(sum[:])
 }
+
+// --- Recovery codes ---
+
+// recoveryAlphabet leaves out 0, O, 1, I and L so a printed code is easy to read.
+const recoveryAlphabet = "ABCDEFGHJKMNPQRSTUVWXYZ23456789"
+
+// NewRecoveryCodes returns n fresh recovery codes like "K7QD2-M9XPA" (about 50 bit each).
+func NewRecoveryCodes(n int) []string {
+	codes := make([]string, n)
+	for i := range codes {
+		var b strings.Builder
+		for b.Len() < 11 {
+			if b.Len() == 5 {
+				b.WriteByte('-')
+				continue
+			}
+			var one [1]byte
+			_, _ = rand.Read(one[:])
+			// 31 * 8 = 248: reject the rest so every letter is equally likely.
+			if one[0] < 248 {
+				b.WriteByte(recoveryAlphabet[int(one[0])%len(recoveryAlphabet)])
+			}
+		}
+		codes[i] = b.String()
+	}
+	return codes
+}
+
+func normalizeRecoveryCode(code string) string {
+	code = strings.ToUpper(code)
+	return strings.Map(func(r rune) rune {
+		if r == '-' || r == ' ' {
+			return -1
+		}
+		return r
+	}, code)
+}
+
+// HashRecoveryCode hashes a recovery code with Argon2id, like a password.
+func HashRecoveryCode(code string) string { return hashSecret(normalizeRecoveryCode(code)) }
+
+// VerifyRecoveryCode checks a typed code against a stored hash.
+func VerifyRecoveryCode(hash, code string) bool {
+	return verifySecret(hash, normalizeRecoveryCode(code))
+}
+
+// LooksLikeRecoveryCode reports whether code has the length of a recovery
+// code once spaces and dashes are left out, so other input is not hashed.
+func LooksLikeRecoveryCode(code string) bool { return len(normalizeRecoveryCode(code)) == 10 }

@@ -2,6 +2,7 @@ package auth_test
 
 import (
 	"encoding/base32"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -118,5 +119,31 @@ func TestOpaqueTokens(t *testing.T) {
 	}
 	if auth.HashToken(a) == a || auth.HashToken(a) != auth.HashToken(a) || auth.HashToken(a) == auth.HashToken(b) {
 		t.Error("HashToken must be deterministic, distinct and not the token")
+	}
+}
+
+func TestRecoveryCodesAreDistinctReadableAndVerifyOnlyTheirOwnHash(t *testing.T) {
+	codes := auth.NewRecoveryCodes(10)
+	if len(codes) != 10 {
+		t.Fatalf("got %d codes, want 10", len(codes))
+	}
+	seen := map[string]bool{}
+	for _, c := range codes {
+		if !regexp.MustCompile(`^[A-Z2-9]{5}-[A-Z2-9]{5}$`).MatchString(c) || seen[c] {
+			t.Fatalf("bad or repeated code %q", c)
+		}
+		seen[c] = true
+	}
+	hash := auth.HashRecoveryCode(codes[0])
+	if !strings.HasPrefix(hash, "$argon2id$") || strings.Contains(hash, codes[0]) {
+		t.Fatalf("hash = %q, want an Argon2id hash", hash)
+	}
+	// Typing is forgiving: case, spaces and the dash do not matter.
+	lax := " " + strings.ToLower(strings.ReplaceAll(codes[0], "-", " ")) + " "
+	if !auth.VerifyRecoveryCode(hash, lax) {
+		t.Error("code typed in lower case without dash not accepted")
+	}
+	if auth.VerifyRecoveryCode(hash, codes[1]) {
+		t.Error("another code accepted")
 	}
 }

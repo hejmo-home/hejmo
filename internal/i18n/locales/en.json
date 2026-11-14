@@ -262,6 +262,7 @@
   "family.tomorrow": "Tomorrow",
   "family.day": "Day",
   "family.partial": "in most places",
+  "family.sync_stale": "Calendar not up to date – please open the web interface",
   "family.day_suffix": "",
   "personal.title": "Personal view",
   "personal.back": "Back to the family view",

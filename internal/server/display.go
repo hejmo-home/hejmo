@@ -95,13 +95,13 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		if s.now().Sub(d.LastSeen) > time.Minute {
 			_ = s.db.TouchDisplay(hash, s.now())
 		}
-		view, err := s.familyView(h, s.langOf(r), d.ShowTomorrow)
+		view, version, err := s.renderFamily(h, s.langOf(r), d.ShowTomorrow)
 		if err != nil {
 			s.fail(w, "family view", err)
 			return
 		}
 		s.render(w, r, http.StatusOK, "display_family.html", map[string]any{
-			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Theme": displayTheme(d),
+			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Version": version, "Theme": displayTheme(d),
 		})
 		return
 	}
@@ -143,7 +143,7 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 		return familyview.View{}, err
 	}
 	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people,
-		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow}), nil
+		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID)}), nil
 }
 
 // displayData is what the views of a display are built from: the household's

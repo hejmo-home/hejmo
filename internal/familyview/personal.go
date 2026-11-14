@@ -44,11 +44,12 @@ type PersonalInput struct {
 
 // PersonalView is the data of one person's screen on a display.
 type PersonalView struct {
-	Person Person
-	Date   time.Time
-	Clock  string
-	Days   []PersonalDay
-	Tasks  []Task
+	Person    Person
+	Date      time.Time
+	Clock     string // "15:04"; the display ticks it itself between renders
+	ClockZone string // IANA name of the household time zone, for that ticking
+	Days      []PersonalDay
+	Tasks     []Task
 }
 
 // BuildPersonal lays out one person's view: their events for today and the
@@ -57,7 +58,7 @@ func BuildPersonal(in PersonalInput) PersonalView {
 	now := in.Now
 	loc := now.Location()
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-	v := PersonalView{Person: in.Person, Date: d0, Clock: now.Format("15:04")}
+	v := PersonalView{Person: in.Person, Date: d0, Clock: now.Format("15:04"), ClockZone: loc.String()}
 	occs := append([]calendar.Occurrence(nil), in.Occurrences...)
 	sort.SliceStable(occs, func(i, j int) bool { return occs[i].Start.Before(occs[j].Start) })
 	finput := Input{Calendars: in.Calendars}

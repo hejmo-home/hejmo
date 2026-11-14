@@ -262,6 +262,7 @@
   "family.tomorrow": "Morgen",
   "family.day": "Tag",
   "family.partial": "in den meisten Orten",
+  "family.sync_stale": "Kalender nicht aktuell – bitte Weboberfläche öffnen",
   "family.day_suffix": ".",
   "personal.title": "Persönliche Ansicht",
   "personal.back": "Zurück zur Familienansicht",

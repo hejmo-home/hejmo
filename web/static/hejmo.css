@@ -277,6 +277,7 @@ a { color: var(--accent); }
 /* Family view (ticket 5.3; ADR 0015, 0016). The page fills the display;
    columns share the width up to six people, from seven they scroll. */
 .family-page { height: calc(100vh - 2 * var(--margin)); min-height: 0; }
+.family-page > [data-view] { height: 100%; } /* the box swaps this one's content on a change (ticket 5.5) */
 body:has(.family-page) { overflow: hidden; }
 .fv { height: 100%; display: flex; flex-direction: column; gap: var(--gap-section); min-height: 0; }
 .fv-header { display: flex; justify-content: space-between; align-items: center; flex: none; }
@@ -284,6 +285,8 @@ body:has(.family-page) { overflow: hidden; }
 .fv-header .date { font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
 .fv .chips { display: flex; gap: var(--gap); }
 .fv .chip { font-variant-numeric: tabular-nums; }
+.fv .sync-notice { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); font-size: var(--fs-label); font-weight: 700; }
+.fv .sync-notice .icon { flex: none; }
 .strip-wrap { flex: none; display: grid; gap: var(--gap-cards); }
 .strip { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-cards); align-items: center; }
 .strip .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }

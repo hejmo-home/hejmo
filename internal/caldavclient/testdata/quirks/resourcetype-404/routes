@@ -1,0 +1,2 @@
+caldav.icloud.example PROPFIND /cal/ 207 list.xml
+caldav.icloud.example REPORT:calendar-query /cal/ 207 list.xml

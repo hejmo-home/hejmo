@@ -1,11 +1,13 @@
 package server_test
 
 import (
+	"net/http"
 	"net/url"
 	"os"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -239,5 +241,106 @@ func TestDisplayTickRefusesAnyDayButToday(t *testing.T) {
 	f.display.post("/display/tasks/"+tk.ID+"/done", url.Values{"done": {"1"}, "day": {"2026-11-14"}})
 	if ok, _ := f.db.TaskDone(tk.ID, "2026-11-14"); !ok {
 		t.Error("today was not ticked")
+	}
+}
+
+var (
+	eventsURLRe = regexp.MustCompile(`data-events-url="([^"]+)"`)
+	viewURLRe   = regexp.MustCompile(`data-view-url="([^"]+)"`)
+)
+
+// 5.6 x 5.5: Given a personal view is open, when an event of the person changes,
+// then the box announces a new version of that view and serves its markup for a
+// partial refresh. Changes of other people and the clock do not move it.
+func TestPersonalViewReceivesLiveUpdates(t *testing.T) {
+	l := newLiveBox(t, 10*time.Millisecond)
+	id := l.people["Mia"].ID
+	_, _, page := l.get("/display/person/" + id)
+	pageVersion := versionRe.FindStringSubmatch(page)
+	events, view := eventsURLRe.FindStringSubmatch(page), viewURLRe.FindStringSubmatch(page)
+	if pageVersion == nil || events == nil || view == nil {
+		t.Fatalf("personal page lacks data-version, data-events-url or data-view-url:\n%s", page)
+	}
+	if !strings.Contains(page, "data-view") || !strings.Contains(page, "data-clock-zone=") {
+		t.Fatalf("personal page has no swappable view or clock zone:\n%s", page)
+	}
+	s := l.openPath(t, strings.ReplaceAll(events[1], "&amp;", "&"))
+	if v := s.first(t); v != pageVersion[1] {
+		t.Fatalf("announced %q on connect, page shows %q", v, pageVersion[1])
+	}
+
+	l.event(t, "Dentist", l.at(14, 9, 0), l.at(14, 10, 0), false, "Mama") // not Mia's
+	l.clock.set(l.at(14, 8, 1))                                           // a new minute alone
+	if v, ok := s.next(t, 400*time.Millisecond); ok {
+		t.Fatalf("announced %q without a change to Mia's view", v)
+	}
+
+	l.event(t, "Swimming", l.at(14, 16, 0), l.at(14, 17, 0), false, "Mia")
+	v, ok := s.next(t, 2*time.Second)
+	if !ok || v == pageVersion[1] {
+		t.Fatalf("no new version after Mia's event changed (got %q, ok=%v)", v, ok)
+	}
+	code, hdr, body := l.get(view[1])
+	if code != 200 || !strings.Contains(body, "Swimming") || !strings.Contains(body, "08:01") || strings.Contains(body, "<html") {
+		t.Fatalf("GET %s = %d, want Mia's view markup alone with the event:\n%s", view[1], code, body)
+	}
+	if hdr.Get("X-Hejmo-View") != v {
+		t.Fatalf("view version %q, announced %q", hdr.Get("X-Hejmo-View"), v)
+	}
+
+	// A task of hers changes the view too.
+	l.task(t, "Mia", "Tidy room", task.Daily)
+	if v2, ok := s.next(t, 2*time.Second); !ok || v2 == v {
+		t.Fatalf("no new version after a task appeared (got %q, ok=%v)", v2, ok)
+	}
+}
+
+// 5.6 x 5.5: the live endpoints of a personal view are for paired displays, and
+// a person who is gone sends the display back instead of leaving it stuck.
+func TestPersonalLiveEndpointsNeedAPairedDisplayAndAKnownPerson(t *testing.T) {
+	l := newLiveBox(t, 10*time.Millisecond)
+	id := l.people["Mia"].ID
+	stranger := newScreen(l.box)
+	req, _ := http.NewRequest(http.MethodGet, l.url+"/display/person/"+id+"/view", nil)
+	res, err := stranger.client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusForbidden {
+		t.Fatalf("unpaired GET personal view = %d, want 403", res.StatusCode)
+	}
+	if code, _, _ := l.get("/display/person/nobody/view"); code != http.StatusNotFound {
+		t.Fatalf("unknown person view = %d, want 404", code)
+	}
+	if v, ok := l.openPath(t, "/display/events?person=nobody").next(t, 2*time.Second); !ok || v != "gone" {
+		t.Fatalf("unknown person announced %q (ok=%v), want gone", v, ok)
+	}
+}
+
+// 5.6 x 5.5: Given a personal view that is kept current over SSE, then the
+// return to the family view still comes after 30 seconds without interaction:
+// the page carries both, and a refresh is no interaction (the script restarts
+// the countdown only from input events, once at load).
+func TestPersonalViewKeepsItsReturnTimerWhileLive(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	r := f.personalPage(t, "en", "Mia", 14, 9)
+	for _, want := range []string{`data-return-seconds="30"`, `data-return-url="/display"`, `data-events-url=`, `data-view-url=`} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("personal page lacks %s", want)
+		}
+	}
+	b, err := os.ReadFile("../../web/static/display.js")
+	if err != nil {
+		t.Fatal(err)
+	}
+	js := string(b)
+	if n := strings.Count(js, "restart()"); n != 1 {
+		t.Errorf("display.js calls restart() %d times, want once (at load); refreshes must not restart the countdown", n)
+	}
+	for _, want := range []string{"data-events-url", "data-view-url", "new EventSource(eventsURL)", "fetch(viewURL"} {
+		if !strings.Contains(js, want) {
+			t.Errorf("display.js lacks %q", want)
+		}
 	}
 }

@@ -351,7 +351,7 @@ func TestSignInFromTheQRLinkReturnsToTheDisplaysPageWithTheCode(t *testing.T) {
 	if r := b.post("/login", form); r.status != http.StatusSeeOther || r.location != "/displays?code="+code {
 		t.Fatalf("login = %d %q, want 303 back to the displays page", r.status, r.location)
 	}
-	for _, bad := range []string{"https://evil.example/", "//evil.example/", `/\evil.example`} {
+	for _, bad := range []string{"https://evil.example/", "//evil.example/", `/\evil.example`, "/\t/evil.example/", "/ /evil.example/", "/\x00x"} {
 		b.logout()
 		form.Set("next", bad)
 		if r := b.post("/login", form); r.location != "/" {

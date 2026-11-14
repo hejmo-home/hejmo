@@ -54,8 +54,15 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 // localPath returns p if it is a path on this box, else "". It keeps the
 // sign-in page from sending people to other sites.
 func localPath(p string) string {
-	if !strings.HasPrefix(p, "/") || strings.HasPrefix(p, "//") || strings.ContainsAny(p, `\`+"\r\n") {
+	if !strings.HasPrefix(p, "/") || strings.HasPrefix(p, "//") || strings.Contains(p, `\`) {
 		return ""
+	}
+	// Browsers drop tabs and newlines inside URLs, so "/\t/host" would become
+	// "//host". Refuse every control character and space.
+	for _, c := range p {
+		if c <= ' ' || c == 0x7f {
+			return ""
+		}
 	}
 	return p
 }

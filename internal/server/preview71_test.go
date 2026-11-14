@@ -80,12 +80,12 @@ func TestWritePreview71(t *testing.T) {
 	land := func(themes ...string) []frame {
 		var fs []frame
 		for _, th := range themes {
-			fs = append(fs, frame{th, 1024, 768})
+			fs = append(fs, frame{th, 1280, 800})
 		}
 		return fs
 	}
 	portrait := frame{"light", 768, 1024}
-	phone := frame{"light", 375, 812}
+	phoneLight, phoneDark := frame{"light", 375, 812}, frame{"dark", 375, 812}
 	var body strings.Builder
 	var docs []string
 	docOf := map[string]int{}
@@ -96,6 +96,8 @@ func TestWritePreview71(t *testing.T) {
 			docOf[html] = idx
 			docs = append(docs, html)
 		}
+		// Design gate: every page is shown at 1280 px and at 375 px, light and dark.
+		frames = append(frames, phoneLight, phoneDark)
 		if title != "" {
 			fmt.Fprintf(&body, "<h2>%s</h2><p class=\"note\">%s</p>", title, note)
 		}
@@ -117,13 +119,13 @@ func TestWritePreview71(t *testing.T) {
 		"", tasksSaved, land("light", "dark", "bw")...)
 	add("2. New task: person chips (one choice), segmented control, weekday chips, More options",
 		"The person is one chip with the person marker; how often is a segmented control; the date or the weekdays appear only when they apply; the emoji sits under More options. In black and white the marker is a shape and a selected chip has a thick border and a tick.",
-		"#new", tasksForm, append(land("light", "dark", "bw"), portrait, phone)...)
+		"#new", tasksForm, append(land("light", "dark", "bw"), portrait)...)
 	add("3. Error at the field, entries stay filled in",
 		"No title: the error is under the title and the field is marked (it takes the focus in the real page). Sebastian, weekly and the emoji stay as typed; More options opens by itself when the error is inside it.",
 		"#new", tasksError, land("light", "bw")...)
 	add("4. Calendars: Whole family chip is selected by default",
 		"\"Whole family\" stores no audience, so people added later are included; it works without JavaScript. Colour and update interval sit under More options.",
-		"#add", calendarsForm, append(land("light", "dark", "bw"), phone)...)
+		"#add", calendarsForm, land("light", "dark", "bw")...)
 	add("5. Calendars: error at the address, a person chosen",
 		"Mia is chosen, so Whole family looks unselected (the server then ignores it). The bad address shows its error under the field; name and Mia stay filled in.",
 		"#add", calendarsError, land("light", "bw")...)
@@ -136,8 +138,8 @@ func TestWritePreview71(t *testing.T) {
 	add("8. Displays: choice cards for the display type",
 		"The display type is a choice card with a one-line explanation.",
 		"#new", displaysPage, land("light", "bw")...)
-	add("9. Task detail: deleting only here, behind a confirmation",
-		"The danger disclosure is closed by default; it explains what happens and the red button confirms (shown open here).",
+	add("9. Task detail: deleting behind a confirmation",
+		"The danger disclosure is closed by default; it explains what happens and the red button confirms (shown open here). Revoking a token, removing a calendar and unpairing a display use the same confirmation on their lists.",
 		"", detail, land("light", "bw")...)
 	add("10. Empty states: what it is for, then the first action",
 		"Tasks and displays on a fresh box.",
@@ -163,7 +165,7 @@ h1{font-size:22px}h2{font-size:18px;margin:28px 0 4px}.note{margin:0 0 10px;max-
 figure{margin:0 0 12px}figcaption{margin-bottom:6px;font-weight:700}
 iframe{border:0;background:#fff;display:block}
 </style></head><body>
-<h1>Hejmo 5.16 shared form patterns: preview with the example family (Mama, Papa, Sebastian, Mia)</h1>
+<h1>Hejmo 5.16 shared form patterns: preview with the example family (Mama, Papa, Sebastian, Mia): 1280 px and 375 px, light and dark</h1>
 <noscript><p>This page needs JavaScript only to place the real pages into their frames.</p></noscript>
 ` + body.String() + `
 <template id="css">` + string(css) + `</template>

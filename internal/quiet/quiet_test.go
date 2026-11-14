@@ -78,6 +78,20 @@ func TestMorningOfAWindowEndingBeforeMidnightIsTomorrow(t *testing.T) {
 	}
 }
 
+// A window that starts after midnight (00:00 to 06:00) ends this morning when
+// it is running, and tomorrow morning once it is over.
+func TestMorningOfAWindowStartingAfterMidnight(t *testing.T) {
+	s, _ := quiet.Parse(true, "00:00", "06:00")
+	for _, c := range []struct {
+		now  time.Time
+		want int
+	}{{at(15, 1, 0), 15}, {at(15, 5, 59), 15}, {at(15, 6, 0), 16}, {at(15, 14, 0), 16}} {
+		if _, _, d := s.Morning(c.now).Date(); d != c.want {
+			t.Errorf("Morning(%s) = day %d, want %d", c.now.Format("02 15:04"), d, c.want)
+		}
+	}
+}
+
 func TestParseRefusesBadTimes(t *testing.T) {
 	for _, bad := range [][2]string{{"24:00", "06:00"}, {"22:00", "6"}, {"", "06:00"}, {"22:00", "06:60"}, {"22:00", "22:00"}} {
 		if _, err := quiet.Parse(true, bad[0], bad[1]); err == nil {

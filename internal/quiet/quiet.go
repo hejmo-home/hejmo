@@ -63,8 +63,18 @@ func (s Schedule) Active(t time.Time) bool {
 // has no morning of its own, so the coming morning is always tomorrow's.
 func (s Schedule) Morning(t time.Time) time.Time {
 	day := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
-	if s.From < s.To || minuteOfDay(t) >= s.To {
+	m := minuteOfDay(t)
+	switch {
+	case s.From > s.To: // wraps midnight: the window ends in the morning
+		if m >= s.To {
+			day = day.AddDate(0, 0, 1)
+		}
+	case s.From >= 12*60: // same-day evening window: no morning of its own
 		day = day.AddDate(0, 0, 1)
+	default: // same-day window starting before noon (00:00 to 06:00)
+		if m >= s.To {
+			day = day.AddDate(0, 0, 1)
+		}
 	}
 	return day
 }

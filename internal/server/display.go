@@ -156,7 +156,7 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
-	in := familyview.Input{Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs, ShowTomorrow: showTomorrow}
+	in := familyview.Input{Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID)}
 	for _, c := range cals {
 		in.Calendars[c.ID] = c.Audience
 	}

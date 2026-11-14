@@ -16,6 +16,7 @@ import (
 	"net/url"
 	"path"
 	"slices"
+	"strconv"
 	"strings"
 	"sync"
 	"time"
@@ -358,25 +359,103 @@ func nameOf(display, p string) string {
 	return n
 }
 
+// listBody asks for the ETag of every event object in the calendar. Nothing
+// else is requested, so a server has no property to report as missing. No time
+// range is asked for: the import window (ADR 0012) is applied to occurrences
+// when the objects are read, so a series that began before the window but
+// recurs into it is never lost here.
+const listBody = `<?xml version="1.0" encoding="utf-8"?>` +
+	`<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">` +
+	`<d:prop><d:getetag/></d:prop>` +
+	`<c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VEVENT"/></c:comp-filter></c:filter>` +
+	`</c:calendar-query>`
+
+type listAnswer struct {
+	Responses []struct {
+		Href      string `xml:"DAV: href"`
+		Propstats []struct {
+			Status string `xml:"DAV: status"`
+			Prop   struct {
+				ETag string `xml:"DAV: getetag"`
+			} `xml:"DAV: prop"`
+		} `xml:"DAV: propstat"`
+	} `xml:"DAV: response"`
+}
+
 // List returns the objects of a calendar with their ETags, without their data.
+//
+// It does not use go-webdav's directory listing: that decodes resourcetype of
+// every member and fails the whole listing when one answers 404 for it, which
+// iCloud does for some members. Here only the 200 propstats are read, and a
+// member without an ETag, or a collection, is skipped.
 func (c *Client) List(ctx context.Context, calendarURL string) ([]Object, error) {
-	origin, dav, err := c.origin(calendarURL)
+	origin, _, err := c.origin(calendarURL)
 	if err != nil {
 		return nil, err
 	}
-	dir := c.route(calendarURL)
-	infos, err := dav.ReadDir(ctx, dir, false)
+	dir := abs(origin, c.route(calendarURL))
+	req, err := http.NewRequestWithContext(ctx, "REPORT", dir, strings.NewReader(listBody))
 	if err != nil {
 		return nil, err
 	}
+	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
+	req.Header.Set("Depth", "1")
+	res, err := c.auth.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusMultiStatus {
+		return nil, &StatusError{res.StatusCode, res.Status}
+	}
+	var ans listAnswer
+	if err := xml.NewDecoder(res.Body).Decode(&ans); err != nil {
+		return nil, fmt.Errorf("reading the list of events: %w", err)
+	}
+	// Resolve against the address that finally answered, which may be on
+	// another host than the one asked after a redirect.
+	at, _ := url.Parse(dir)
+	if res.Request != nil && res.Request.URL != nil {
+		at = res.Request.URL
+	}
+	self := AddressKey(dir)
 	var out []Object
-	for _, fi := range infos {
-		if fi.IsDir || strings.TrimSuffix(fi.Path, "/") == strings.TrimSuffix(dir, "/") {
+	for _, r := range ans.Responses {
+		href, err := url.Parse(strings.TrimSpace(r.Href))
+		if err != nil || strings.TrimSpace(r.Href) == "" {
 			continue
 		}
-		out = append(out, Object{URL: abs(origin, fi.Path), ETag: fi.ETag})
+		target := at.ResolveReference(href)
+		if err := c.auth.permit(target); err != nil {
+			return nil, err
+		}
+		if strings.HasSuffix(target.Path, "/") || AddressKey(target.String()) == self {
+			continue // a collection
+		}
+		etag := ""
+		for _, ps := range r.Propstats {
+			if strings.Contains(ps.Status, " 200") && strings.TrimSpace(ps.Prop.ETag) != "" {
+				etag = unquoteETag(ps.Prop.ETag)
+				break
+			}
+		}
+		if etag == "" {
+			continue // not an object we can track
+		}
+		out = append(out, Object{URL: target.String(), ETag: etag})
 	}
 	return out, nil
+}
+
+// unquoteETag drops the quotes around an ETag, as go-webdav does for the ETags
+// Fetch returns, so a listed ETag and a fetched one are the same string. An
+// ETag that is not quoted (or a weak one) is kept as the server sent it.
+func unquoteETag(s string) string {
+	s = strings.TrimSpace(s)
+	if u, err := strconv.Unquote(s); err == nil {
+		return u
+	}
+	return s
 }
 
 // fetchBatch is how many objects one multiget asks for, so that the first

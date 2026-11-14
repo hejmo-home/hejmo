@@ -30,6 +30,11 @@ type Options struct {
 	Zone *time.Location
 	// Now anchors the 12-month import window.
 	Now time.Time
+	// AudienceLines are the beginnings of the readable audience line the box
+	// writes at the end of a description ("For: ", "Für: "), in every
+	// language. The line is removed again from events that carry an
+	// X-HEJMO-AUDIENCE property (ADR 0012).
+	AudienceLines []string
 }
 
 // Item is one imported event. Key is stable across syncs (the feed's UID,
@@ -153,6 +158,10 @@ func (p *parser) add(c *ical.Component) {
 		Description: text(c, ical.PropDescription),
 		Location:    text(c, ical.PropLocation),
 		AllDay:      allDay, Start: start, End: end,
+	}
+	if aud := propValue(c, AudienceProp); aud != "" {
+		e.People, e.Groups = ParseAudience(aud)
+		e.Description = stripAudienceLine(e.Description, p.opts.AudienceLines)
 	}
 	// An empty title stays empty: the placeholder is localised when shown.
 	item := Item{Key: uid, Event: e}
@@ -323,4 +332,61 @@ func text(c *ical.Component, name string) string {
 		return propValue(c, name)
 	}
 	return strings.TrimSpace(s)
+}
+
+// AudienceProp is the property that carries an event's audience outside the box.
+const AudienceProp = "X-HEJMO-AUDIENCE"
+
+// FormatAudience writes an audience as the value of X-HEJMO-AUDIENCE:
+// "person:<id>,group:<id>".
+func FormatAudience(people, groups []string) string {
+	var parts []string
+	for _, p := range people {
+		parts = append(parts, "person:"+p)
+	}
+	for _, g := range groups {
+		parts = append(parts, "group:"+g)
+	}
+	return strings.Join(parts, ",")
+}
+
+// ParseAudience reads the value of X-HEJMO-AUDIENCE. Unknown entries are ignored.
+func ParseAudience(v string) (people, groups []string) {
+	for _, part := range strings.Split(v, ",") {
+		kind, id, ok := strings.Cut(strings.TrimSpace(part), ":")
+		switch {
+		case !ok || id == "":
+		case kind == "person":
+			people = append(people, id)
+		case kind == "group":
+			groups = append(groups, id)
+		}
+	}
+	return people, groups
+}
+
+// stripAudienceLine removes the last line of a description if it is the
+// readable audience line.
+func stripAudienceLine(desc string, prefixes []string) string {
+	i := strings.LastIndex(desc, "\n")
+	last := desc[i+1:]
+	for _, p := range prefixes {
+		if p != "" && strings.HasPrefix(last, p) {
+			if i < 0 {
+				return ""
+			}
+			return strings.TrimRight(desc[:i], " \t\r\n")
+		}
+	}
+	return desc
+}
+
+// ParseTime reads a DATE or DATE-TIME property the way the import does:
+// Windows zone names map to IANA zones, floating times and unknown zones use zone.
+func ParseTime(prop *ical.Prop, zone *time.Location) (t time.Time, allDay bool, err error) {
+	if zone == nil {
+		zone = time.UTC
+	}
+	p := &parser{opts: Options{Zone: zone}}
+	return p.parseTime(prop)
 }

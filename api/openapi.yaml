@@ -34,6 +34,58 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Person" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+  /me/recovery-codes:
+    post:
+      operationId: createRecoveryCodes
+      summary: Create a new set of 10 recovery codes for the caller (parents only, scope people:write)
+      description: |
+        A recovery code replaces the one-time code at sign-in, never the
+        password, and is valid once. The new set voids the old one. The codes
+        are returned once and stored only as Argon2id hashes.
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [codes]
+                properties:
+                  codes:
+                    type: array
+                    items: { type: string, example: K7QD2-M9XPA }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /people/{id}/reset-otp:
+    post:
+      operationId: resetOneTimeCodes
+      summary: Reset another parent's one-time codes (parents only, scope people:write)
+      description: |
+        Removes the parent's one-time code secret and recovery codes and ends
+        their browser sessions. Device sessions and tokens stay. At the next
+        sign-in the parent sets up new one-time codes before anything else is
+        reachable. The caller confirms with their own password and one-time
+        code (or an unused recovery code). A parent cannot reset their own
+        codes this way.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, code]
+              properties:
+                password: { type: string, description: The caller's own password }
+                code: { type: string, description: The caller's own one-time code }
+      responses:
+        "204": { description: Reset }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+        "429": { description: Too many failed confirmations. Wait 15 minutes. }
   /people:
     get:
       operationId: listPeople

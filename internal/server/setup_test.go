@@ -76,8 +76,8 @@ func TestSetupSavesAndConfirmsTOTP(t *testing.T) {
 		t.Error("wrong code shows no error message")
 	}
 	code, _ := auth.TOTPCode(secret, b.now)
-	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusSeeOther || r.location != "/" {
-		t.Fatalf("right code = %d %q, want 303 to /", r.status, r.location)
+	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusOK || !strings.Contains(r.body, `href="/"`) {
+		t.Fatalf("right code = %d, want 200 with the recovery codes and a way on\n%s", r.status, r.body)
 	}
 	if !b.db.Configured() {
 		t.Fatal("not configured after setup")

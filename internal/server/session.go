@@ -36,8 +36,23 @@ func (s *server) endSession(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode})
 }
 
-// currentPerson resolves the session cookie to a household member.
+// currentPerson resolves the session cookie to a household member. A person
+// whose one-time codes were reset has a session only to set up new ones
+// (pendingPerson); nothing else is reachable until that is confirmed.
 func (s *server) currentPerson(r *http.Request) (store.Person, bool) {
+	p, ok := s.pendingPerson(r)
+	if !ok {
+		return store.Person{}, false
+	}
+	if acc, err := s.db.AccountByPerson(p.ID); err == nil && !acc.TOTPConfirmed {
+		return store.Person{}, false
+	}
+	return p, true
+}
+
+// pendingPerson resolves the session cookie even when the person still has to
+// confirm their one-time codes.
+func (s *server) pendingPerson(r *http.Request) (store.Person, bool) {
 	c, err := r.Cookie(sessionCookie)
 	if err != nil || c.Value == "" {
 		return store.Person{}, false

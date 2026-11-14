@@ -1,0 +1,37 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "otp.title") "Frame" .Frame)}}
+  <h1>{{t "otp.title"}}</h1>
+  {{template "syncNotice" .}}
+  <p class="lead">{{t "otp.intro"}}</p>
+  {{template "error" .}}
+  {{if .Page.ResetName}}
+  <p class="notice" role="status" data-otp-reset>{{.Page.DoneText}} {{t "otp.reset.revoke"}} <a href="/caldav">{{t "nav.caldav"}}</a></p>
+  {{end}}
+  <section>
+    <h2>{{t "otp.recovery.heading"}}</h2>
+    <p>{{.Page.LeftText}}</p>
+    <form method="post" action="/otp/recovery-codes">
+      <button class="button secondary" type="submit">{{t "otp.recovery.new"}}</button>
+      <p class="hint">{{t "otp.recovery.new_hint"}}</p>
+    </form>
+  </section>
+  <section>
+    <h2>{{t "otp.reset.heading"}}</h2>
+    {{if .Page.Parents}}
+    <p class="lead">{{t "otp.reset.intro"}}</p>
+    {{range .Page.Parents}}
+    <form method="post" action="/otp/reset/{{.ID}}" class="steps">
+      <fieldset>
+        <legend>{{.Name}}</legend>
+        <label>{{t "otp.reset.password"}}
+          <input name="password" type="password" required autocomplete="current-password"></label>
+        <label>{{t "otp.reset.code"}}
+          <input name="code" required autocomplete="one-time-code"></label>
+      </fieldset>
+      <button class="button" type="submit">{{t "otp.reset.submit"}}</button>
+    </form>
+    {{end}}
+    {{else}}
+    <p>{{t "otp.reset.none"}}</p>
+    {{end}}
+  </section>
+{{template "foot"}}

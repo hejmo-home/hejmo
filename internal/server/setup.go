@@ -114,7 +114,7 @@ func (s *server) createFirstParent(f setupForm, passwordHash, pinHash string) (s
 }
 
 func (s *server) setupAccount(r *http.Request) (store.Account, bool) {
-	p, ok := s.currentPerson(r)
+	p, ok := s.pendingPerson(r)
 	if !ok {
 		return store.Account{}, false
 	}
@@ -122,15 +122,33 @@ func (s *server) setupAccount(r *http.Request) (store.Account, bool) {
 	return acc, err == nil
 }
 
-func (s *server) handleSetupTOTPForm(w http.ResponseWriter, r *http.Request) {
-	if s.db.Configured() {
+// totpSetupAccount returns the account that is setting up one-time codes: the
+// first parent in the wizard, or a person whose codes were reset. Anyone else
+// is sent on.
+func (s *server) totpSetupAccount(w http.ResponseWriter, r *http.Request) (store.Account, bool) {
+	acc, ok := s.setupAccount(r)
+	switch {
+	case !ok:
+		http.Redirect(w, r, "/setup", http.StatusSeeOther)
+	case acc.TOTPConfirmed:
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+	default:
+		return acc, true
+	}
+	return store.Account{}, false
+}
+
+func (s *server) handleSetupTOTPForm(w http.ResponseWriter, r *http.Request) {
+	acc, ok := s.totpSetupAccount(w, r)
+	if !ok {
 		return
 	}
-	acc, ok := s.setupAccount(r)
-	if !ok {
-		http.Redirect(w, r, "/setup", http.StatusSeeOther)
-		return
+	if acc.TOTPSecret == "" { // reset: a new secret for the new setup
+		acc.TOTPSecret = auth.NewTOTPSecret()
+		if err := s.db.SetTOTPSecret(acc.PersonID, acc.TOTPSecret); err != nil {
+			s.fail(w, "new TOTP secret", err)
+			return
+		}
 	}
 	s.renderTOTP(w, r, http.StatusOK, acc, "")
 }
@@ -149,13 +167,12 @@ func (s *server) renderTOTP(w http.ResponseWriter, r *http.Request, status int, 
 }
 
 func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
-	if s.db.Configured() {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+	acc, ok := s.totpSetupAccount(w, r)
+	if !ok {
 		return
 	}
-	acc, ok := s.setupAccount(r)
-	if !ok {
-		http.Redirect(w, r, "/setup", http.StatusSeeOther)
+	if acc.TOTPSecret == "" { // the setup page was not opened yet
+		http.Redirect(w, r, "/setup/totp", http.StatusSeeOther)
 		return
 	}
 	if !auth.VerifyTOTP(acc.TOTPSecret, r.PostFormValue("code"), s.now()) {
@@ -166,5 +183,5 @@ func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "confirm TOTP", err)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	s.issueRecoveryCodes(w, r, acc.PersonID)
 }

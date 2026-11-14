@@ -51,8 +51,8 @@ jobs:
         run: |
           start=$(date +%s)
           docker compose up -d --build --wait --wait-timeout 60
-          curl -fsS http://localhost:8080/healthz
-          curl -fsS -o /dev/null -w "setup page: %{http_code}\n" -L http://localhost:8080/
+          curl -fsS http://localhost/healthz
+          curl -fsS -o /dev/null -w "setup page: %{http_code}\n" -L http://localhost/
           echo "ready after $(( $(date +%s) - start ))s (including image build)"
       - name: Logs
         if: always()

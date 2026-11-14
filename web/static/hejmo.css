@@ -417,6 +417,7 @@ details.more .sum { margin-left: auto; color: var(--text-secondary); font-size: 
 details.more > div { display: grid; gap: 12px; padding: 2px 0 10px; }
 
 /* Destructive actions: only on a detail page, closed, explaining what happens. */
+.cards details.danger { border-top: 0; margin-top: 4px; }
 details.danger { border-top: 1px solid var(--border); margin-top: var(--gap-section); max-width: 560px; }
 details.danger > summary { color: var(--error-text); font-weight: 700; }
 details.danger p { margin: 0 0 10px; color: var(--text-secondary); font-size: var(--fs-label); }

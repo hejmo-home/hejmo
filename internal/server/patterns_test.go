@@ -201,3 +201,25 @@ func TestDeletingATaskHappensOnItsDetailPageAfterConfirming(t *testing.T) {
 		t.Errorf("child opens the detail page = %d", r.status)
 	}
 }
+
+// ADR 0017: a destructive button never sits loose on a list. Revoking a token,
+// removing a calendar and unpairing a display each sit behind a confirmation.
+func TestDestructiveButtonsOnListsSitBehindAConfirmation(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	b.feeds.set("https://example.org/a.ics", feedOf(), nil)
+	b.post("/calendars", url.Values{"name": {"Holidays"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
+	b.post("/displays", pairForm(codeOn(t, newScreen(b).get("/display", "en").body)))
+	b.post("/caldav/tokens", url.Values{"name": {"Phone"}})
+	for _, c := range []struct{ page, action string }{
+		{"/caldav", "/revoke"}, {"/calendars", "/delete"}, {"/displays", "/unpair"},
+	} {
+		body := getEN(b, c.page).body
+		at := strings.Index(body, c.action+`"`)
+		open := strings.LastIndex(body[:max(at, 0)], `<details class="danger">`)
+		closed := strings.LastIndex(body[:max(at, 0)], `</details>`)
+		if at < 0 || open < 0 || closed > open {
+			t.Errorf("%s: the %s button is not inside a danger disclosure", c.page, c.action)
+		}
+	}
+}

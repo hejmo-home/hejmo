@@ -21,8 +21,11 @@
         {{if .LastError}}<span class="hint">{{t "calendars.last_error"}} {{.LastError}}</span>{{end}}
         <span class="row">
           <form method="post" action="/calendars/{{.ID}}/sync"><button class="button" type="submit">{{t "calendars.sync_now"}}</button></form>
-          <form method="post" action="/calendars/{{.ID}}/delete"><button class="button secondary" type="submit">{{t "calendars.remove"}}</button></form>
         </span>
+        {{template "dangerOpen" (dict "Label" (t "calendars.remove"))}}
+          <p>{{t "calendars.remove.explain"}}</p>
+          <form method="post" action="/calendars/{{.ID}}/delete"><button class="button danger" type="submit">{{t "calendars.remove.confirm"}}</button></form>
+        {{template "dangerClose"}}
       </li>
       {{end}}
     </ul>

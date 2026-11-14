@@ -15,7 +15,10 @@
           {{template "switch" (dict "Name" "show_tomorrow" "Label" (t "displays.show_tomorrow") "OnText" (t "displays.show_tomorrow.on") "OffText" (t "displays.show_tomorrow.off") "Checked" .ShowTomorrow)}}
           <button class="button secondary" type="submit">{{t "displays.save"}}</button>
         </form>
-        <span class="row"><form method="post" action="/displays/{{.ID}}/unpair"><button class="button secondary" type="submit">{{t "displays.unpair"}}</button></form></span>
+        {{template "dangerOpen" (dict "Label" (t "displays.unpair"))}}
+          <p>{{t "displays.unpair.explain"}}</p>
+          <form method="post" action="/displays/{{.ID}}/unpair"><button class="button danger" type="submit">{{t "displays.unpair.confirm"}}</button></form>
+        {{template "dangerClose"}}
       </li>
       {{end}}
     </ul>

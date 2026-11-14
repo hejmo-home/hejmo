@@ -23,7 +23,10 @@
       <li>
         <strong>{{.Name}}</strong>
         <span class="hint">{{t "caldav.token.owner"}} {{.Person}} · {{t "caldav.token.created"}} {{.Created}} · {{if .LastUsed}}{{t "caldav.token.last_used"}} {{.LastUsed}}{{else}}{{t "caldav.token.never"}}{{end}}</span>
-        <span class="row"><form method="post" action="/caldav/tokens/{{.ID}}/revoke"><button class="button secondary" type="submit">{{t "caldav.token.revoke"}}</button></form></span>
+        {{template "dangerOpen" (dict "Label" (t "caldav.token.revoke"))}}
+          <p>{{t "caldav.token.revoke.explain"}}</p>
+          <form method="post" action="/caldav/tokens/{{.ID}}/revoke"><button class="button danger" type="submit">{{t "caldav.token.revoke.confirm"}}</button></form>
+        {{template "dangerClose"}}
       </li>
       {{end}}
     </ul>

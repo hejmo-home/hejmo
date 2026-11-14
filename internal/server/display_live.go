@@ -7,6 +7,7 @@ import (
 	"fmt"
 	"html/template"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -16,25 +17,28 @@ import (
 // not a view: nothing of the picture is transmitted.
 const heartbeatEvery = 25 * time.Second
 
+// clockMark stands in for the clock text while the markup is hashed.
+const clockMark = "@@hejmo-clock@@"
+
 // renderFamily renders the family view markup and names it by a version: a
-// hash of the markup, so two renders are equal exactly when the display would
-// show the same.
+// hash of the markup without the clock, so two renders are equal exactly when
+// the display would show the same apart from the time. The clock chip changes
+// every minute; the display ticks it itself (ADR 0016), so it must not make
+// every display repaint its whole view.
 func (s *server) renderFamily(h store.Household, lang string, showTomorrow bool) (template.HTML, string, error) {
 	view, err := s.familyView(h, lang, showTomorrow)
 	if err != nil {
 		return "", "", err
 	}
-	tpl, err := s.pages.Clone()
-	if err != nil {
-		return "", "", err
-	}
-	tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return s.i18n.T(lang, key) }})
+	clock := view.Clock
+	view.Clock = clockMark
 	var buf bytes.Buffer
-	if err := tpl.ExecuteTemplate(&buf, "familyView", view); err != nil {
+	if err := s.execute(&buf, "familyView", lang, view); err != nil {
 		return "", "", err
 	}
 	sum := sha256.Sum256(buf.Bytes())
-	return template.HTML(buf.String()), hex.EncodeToString(sum[:8]), nil
+	markup := strings.Replace(buf.String(), clockMark, clock, 1)
+	return template.HTML(markup), hex.EncodeToString(sum[:8]), nil
 }
 
 // pairedDisplay answers 403 unless the request comes from a paired display.
@@ -72,10 +76,11 @@ func (s *server) handleDisplayView(w http.ResponseWriter, r *http.Request) {
 
 // handleDisplayEvents is the display's Server-Sent Events stream. It names the
 // current view version on connect, so a display that was cut off catches up,
-// and again whenever the view changes (an event, the clock, 18:00, midnight).
+// and again whenever the view changes (an event, 18:00, midnight). The clock
+// is not part of the version: the display ticks its chip itself.
 // While nothing changes it sends only comment heartbeats, no view.
 func (s *server) handleDisplayEvents(w http.ResponseWriter, r *http.Request) {
-	d, h, ok := s.pairedDisplay(w, r)
+	d, _, ok := s.pairedDisplay(w, r)
 	if !ok {
 		return
 	}
@@ -93,6 +98,11 @@ func (s *server) handleDisplayEvents(w http.ResponseWriter, r *http.Request) {
 	hash, _ := displayToken(r)
 	last := ""
 	check := func() bool {
+		h, err := s.db.HomeHousehold() // read each time: time zone and region may change
+		if err != nil {
+			s.logger.Error("live household", "err", err)
+			return true
+		}
 		if cur, err := s.db.DisplayByToken(hash, s.now()); err != nil || !cur.Paired {
 			return false // revoked: the display's state check takes it back to pairing
 		} else {
@@ -121,6 +131,8 @@ func (s *server) handleDisplayEvents(w http.ResponseWriter, r *http.Request) {
 		select {
 		case <-r.Context().Done():
 			return
+		case <-s.done:
+			return // the box is stopping; EventSource reconnects to whatever comes next
 		case <-tick.C:
 			if !check() {
 				return

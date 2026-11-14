@@ -12,7 +12,7 @@
       <div class="date">{{.Date.Day}}{{t "family.day_suffix"}} {{t (printf "month.%d" .Date.Month)}}</div>
     </div>
     <div class="chips">
-      <span class="chip" data-clock>{{.Clock}}</span>
+      <span class="chip" data-clock-zone="{{.ClockZone}}" data-clock>{{.Clock}}</span>
       {{if .Weather}}<span class="chip" data-weather>{{.Weather}}</span>{{end}}
     </div>
   </header>

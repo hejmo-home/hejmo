@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"bufio"
+	"context"
 	"crypto/tls"
 	"net/http"
 	"net/http/httptest"
@@ -165,8 +166,8 @@ func TestLiveNothingIsSentWhenNothingChanges(t *testing.T) {
 	}
 }
 
-// 5.5 (from PR #64): the clock chip, the 18:00 block and the day rollover update without a reload.
-func TestLiveClockEveningAndMidnightAreAnnounced(t *testing.T) {
+// 5.5 (from PR #64): the 18:00 block and the day rollover update without a reload.
+func TestLiveEveningAndMidnightAreAnnounced(t *testing.T) {
 	l := newLiveBox(t, 10*time.Millisecond)
 	l.showTomorrow(t, true)
 	l.event(t, "Tomorrow school", l.at(15, 8, 0), l.at(15, 9, 0), false, "Mia")
@@ -177,7 +178,6 @@ func TestLiveClockEveningAndMidnightAreAnnounced(t *testing.T) {
 		at   time.Time
 		want string
 	}{
-		{"clock", l.at(14, 8, 1), "08:01"},
 		{"18:00 tomorrow block", l.at(14, 18, 0), "data-tomorrow"},
 		{"midnight rollover", l.at(15, 0, 0), "Tomorrow school"},
 	} {
@@ -190,6 +190,51 @@ func TestLiveClockEveningAndMidnightAreAnnounced(t *testing.T) {
 		if _, _, body := l.get("/display/view"); !strings.Contains(body, step.want) {
 			t.Fatalf("%s: view lacks %q:\n%s", step.name, step.want, body)
 		}
+	}
+}
+
+// ADR 0016: the clock chip is a partial update the display ticks itself. A new
+// minute alone must not change the view version, or every display would
+// repaint its whole view once a minute.
+func TestLiveClockMinuteKeepsTheVersion(t *testing.T) {
+	l := newLiveBox(t, 10*time.Millisecond)
+	s := l.open(t)
+	first := s.first(t)
+	l.clock.set(l.at(14, 8, 1))
+	if v, ok := s.next(t, 400*time.Millisecond); ok {
+		t.Fatalf("announced %q for a new minute alone", v)
+	}
+	code, hdr, body := l.get("/display/view")
+	if code != 200 || !strings.Contains(body, "08:01") || !strings.Contains(body, "data-clock-zone=") {
+		t.Fatalf("view lacks the current clock or its zone:\n%s", body)
+	}
+	if hdr.Get("X-Hejmo-View") != first {
+		t.Fatalf("view version %q after a minute, was %q", hdr.Get("X-Hejmo-View"), first)
+	}
+}
+
+// Shutdown must not wait for open streams: they end when the box is told to stop.
+func TestLiveShutdownEndsOpenStreams(t *testing.T) {
+	f := newFamilyBox(t, "eink_bw")
+	done := make(chan struct{})
+	c := &clock{t: f.at(14, 8, 0)}
+	h := server.New(server.Options{DB: f.db, PKI: f.pki, Now: c.now, LiveInterval: 10 * time.Millisecond, Done: done})
+	srv := httptest.NewUnstartedServer(h)
+	cert, err := f.pki.GetCertificate(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	srv.TLS = &tls.Config{Certificates: []tls.Certificate{*cert}}
+	srv.StartTLS()
+	defer srv.Close()
+	l := &liveBox{familyBox: f, clock: c, url: srv.URL}
+	l.open(t).first(t)
+
+	close(done)
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := srv.Config.Shutdown(ctx); err != nil {
+		t.Fatalf("Shutdown with a stream open: %v", err)
 	}
 }
 

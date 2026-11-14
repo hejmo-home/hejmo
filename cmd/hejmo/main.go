@@ -20,6 +20,7 @@ import (
 	"time"
 	_ "time/tzdata" // DST rules independent of the host system
 
+	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -69,9 +70,20 @@ func run(cfg config, logger *slog.Logger) error {
 	}
 	defer db.Close()
 
+	// The scheduler checks for due calendars every minute; each calendar
+	// syncs on its own interval (60 minutes for ICS by default).
+	syncer := calsync.New(db, nil, nil)
+	syncer.SetLogger(logger)
+	schedulerDone := make(chan struct{})
+	go func() {
+		defer close(schedulerDone)
+		syncer.Run(ctx, time.Minute)
+	}()
+	defer func() { stop(); <-schedulerDone }()
+
 	srv := &http.Server{
 		Addr:              cfg.Addr,
-		Handler:           server.New(server.Options{DB: db, Logger: logger}),
+		Handler:           server.New(server.Options{DB: db, Logger: logger, Sync: syncer}),
 		ReadHeaderTimeout: 10 * time.Second,
 	}
 	errc := make(chan error, 1)

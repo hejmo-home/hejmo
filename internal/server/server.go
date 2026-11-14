@@ -12,6 +12,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/web"
 )
@@ -20,6 +21,11 @@ import (
 type Options struct {
 	// DB is the box's database (required).
 	DB *store.DB
+	// PKI holds the box's own certificate authority and certificate (required).
+	PKI *pki.Store
+	// HTTPSPort is the port clients reach HTTPS on, used in redirects and
+	// links. Empty means 443.
+	HTTPSPort string
 	// Sync syncs calendars from outside. Nil means a service with HTTP
 	// fetching; main passes its own so the scheduler and the web UI share it.
 	Sync *calsync.Service
@@ -30,13 +36,15 @@ type Options struct {
 }
 
 type server struct {
-	db      *store.DB
-	now     func() time.Time
-	i18n    *i18n.Bundle
-	pages   *template.Template
-	logger  *slog.Logger
-	limiter *loginLimiter
-	sync    *calsync.Service
+	db        *store.DB
+	pki       *pki.Store
+	httpsPort string
+	now       func() time.Time
+	i18n      *i18n.Bundle
+	pages     *template.Template
+	logger    *slog.Logger
+	limiter   *loginLimiter
+	sync      *calsync.Service
 }
 
 // New returns the box's root HTTP handler.
@@ -44,7 +52,13 @@ func New(opts Options) http.Handler {
 	if opts.DB == nil {
 		panic("server: Options.DB is required")
 	}
-	s := &server{db: opts.DB, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad()}
+	if opts.PKI == nil {
+		panic("server: Options.PKI is required")
+	}
+	s := &server{db: opts.DB, pki: opts.PKI, httpsPort: opts.HTTPSPort, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad()}
+	if s.httpsPort == "" {
+		s.httpsPort = "443"
+	}
 	if s.now == nil {
 		s.now = time.Now
 	}
@@ -68,6 +82,11 @@ func New(opts Options) http.Handler {
 	mux := http.NewServeMux()
 	mux.HandleFunc("GET /healthz", s.handleHealthz)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
+	mux.HandleFunc("GET /setup/https", s.handleHTTPSForm)
+	mux.HandleFunc("POST /setup/https", s.handleHTTPSSubmit)
+	mux.HandleFunc("GET /ca", s.handleTrustPage)
+	mux.HandleFunc("GET /ca/hejmo-ca.crt", s.handleCACert)
+	mux.HandleFunc("GET /ca/hejmo.mobileconfig", s.handleMobileConfig)
 	mux.HandleFunc("GET /setup", s.handleSetupForm)
 	mux.HandleFunc("POST /setup", s.handleSetupSubmit)
 	mux.HandleFunc("GET /setup/totp", s.handleSetupTOTPForm)
@@ -81,7 +100,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
 	s.routeAPI(mux)
-	return sameOrigin(mux)
+	return s.requireHTTPS(sameOrigin(mux))
 }
 
 func (s *server) handleHealthz(w http.ResponseWriter, r *http.Request) {

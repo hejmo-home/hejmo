@@ -41,8 +41,12 @@ The people and subgroups an event or a calendar is meant for. No audience means 
 _Avoid_: participants, attendees, visibility
 
 **Setup wizard**:
-The first-run steps on a new box: home location, first parent account, parent PIN, one-time code confirmation.
+The first-run steps on a new box: HTTPS, home location, first parent account, parent PIN, one-time code confirmation. It starts over HTTP on the LAN; no password is set before HTTPS works.
 _Avoid_: onboarding, installer
+
+**Box CA**:
+The box's own certificate authority, name-constrained to the box so it cannot vouch for other sites. Devices trust it once (iOS profile, DAVx5 prompt, browser import). The fallback when no public name and certificate are used (ADR 0014).
+_Avoid_: self-signed certificate, root cert
 
 **Home region**:
 The German state, Austrian state or Swiss canton of the household, which decides its public holidays.

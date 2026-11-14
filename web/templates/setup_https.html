@@ -1,0 +1,13 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "setup.https.title"))}}
+  <h1>{{t "setup.https.title"}}</h1>
+  <p class="lead">{{t "setup.https.intro"}}</p>
+  {{template "error" .}}
+  <form method="post" action="/setup/https" class="steps">
+    <fieldset>
+      <legend>{{t "setup.https.step"}}</legend>
+      <span class="hint">{{t "setup.https.hint"}}</span>
+      <code class="secret">{{.Host}}</code>
+    </fieldset>
+    <button class="button" type="submit">{{t "setup.https.create"}}</button>
+  </form>
+{{template "foot"}}

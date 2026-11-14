@@ -97,7 +97,8 @@ type View struct {
 	Weekday       time.Weekday
 	Week          int
 	Date          time.Time
-	Clock         string
+	Clock         string // "15:04"; the display ticks it itself between renders
+	ClockZone     string // IANA name of the household time zone, for that ticking
 	Weather       string // empty until 5.8
 	Strip         []StripItem
 	StripTomorrow []StripItem
@@ -120,7 +121,7 @@ func Build(in Input) View {
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	d1 := d0.AddDate(0, 0, 1)
 	_, week := now.ISOWeek()
-	v := View{Weekday: now.Weekday(), Week: week, Date: d0, Clock: now.Format("15:04")}
+	v := View{Weekday: now.Weekday(), Week: week, Date: d0, Clock: now.Format("15:04"), ClockZone: now.Location().String()}
 	v.ShowTomorrow = in.ShowTomorrow && now.Hour() >= tomorrowFromHour
 	v.Scroll = len(in.People) > maxNarrowColumns
 	for _, p := range in.People {

@@ -1,0 +1,320 @@
+package store
+
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/hejmo-home/hejmo/internal/calendar"
+)
+
+// syncLogKeep is how long sync log entries stay (ADR 0012).
+const syncLogKeep = 30 * 24 * time.Hour
+
+// SyncState is the sync bookkeeping of one synced calendar. Zero times mean
+// "never".
+type SyncState struct {
+	IntervalMinutes int
+	StartedAt       time.Time // when syncing began
+	LastAttempt     time.Time
+	LastSuccess     time.Time
+	NextAttempt     time.Time
+	Failures        int // consecutive failures
+	LastError       string
+}
+
+// SyncedCalendar is a calendar fed from outside through a calendar connection.
+type SyncedCalendar struct {
+	Calendar
+	URL  string
+	Sync SyncState
+}
+
+// NewICS describes an ICS subscription to create.
+type NewICS struct {
+	Name, URL, Color string
+	Audience         calendar.Audience
+	IntervalMinutes  int
+	Now              time.Time
+}
+
+// SyncItem is one event of a feed. Key identifies it across syncs; SeriesKey
+// names the master of a changed occurrence.
+type SyncItem struct {
+	Key, SeriesKey string
+	Event          calendar.Event
+}
+
+// SyncLogEntry is one line of the sync log.
+type SyncLogEntry struct {
+	ID           string
+	CalendarID   string
+	CalendarName string
+	At           time.Time
+	Kind         string // failure, conflict, note
+	Message      string
+}
+
+func stamp(t time.Time) string { return t.UTC().Format(time.RFC3339) }
+
+func parseStamp(s sql.NullString) time.Time {
+	if !s.Valid || s.String == "" {
+		return time.Time{}
+	}
+	t, _ := time.Parse(time.RFC3339, s.String)
+	return t
+}
+
+// CreateICSCalendar adds a read-only ICS calendar with its connection. It is
+// due for its first sync at once.
+func (db *DB) CreateICSCalendar(householdID string, in NewICS) (SyncedCalendar, error) {
+	if strings.TrimSpace(in.Name) == "" || strings.TrimSpace(in.URL) == "" {
+		return SyncedCalendar{}, fmt.Errorf("%w: name and address required", ErrInvalid)
+	}
+	if in.IntervalMinutes <= 0 {
+		return SyncedCalendar{}, fmt.Errorf("%w: sync interval must be positive", ErrInvalid)
+	}
+	connID, calID, ts := newID(), newID(), stamp(in.Now)
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return SyncedCalendar{}, err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`INSERT INTO calendar_connections (id, household_id, kind, url, created_at) VALUES (?, ?, 'ics', ?, ?)`,
+		connID, householdID, in.URL, ts); err != nil {
+		return SyncedCalendar{}, err
+	}
+	if _, err := tx.Exec(`INSERT INTO calendars (id, household_id, name, kind, color, connection_id, read_only, created_at, updated_at)
+		VALUES (?, ?, ?, 'ics', ?, ?, 1, ?, ?)`, calID, householdID, strings.TrimSpace(in.Name), in.Color, connID, ts, ts); err != nil {
+		return SyncedCalendar{}, err
+	}
+	if err := writeAudience(tx, "calendar_audience", "calendar_id", calID, in.Audience); err != nil {
+		return SyncedCalendar{}, err
+	}
+	if _, err := tx.Exec(`INSERT INTO calendar_sync (calendar_id, interval_minutes, started_at, next_attempt_at) VALUES (?, ?, ?, ?)`,
+		calID, in.IntervalMinutes, ts, ts); err != nil {
+		return SyncedCalendar{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return SyncedCalendar{}, err
+	}
+	return db.SyncedCalendar(householdID, calID)
+}
+
+const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, n.url,
+	s.interval_minutes, s.started_at, s.last_attempt_at, s.last_success_at, s.next_attempt_at, s.failures, s.last_error
+	FROM calendars c JOIN calendar_connections n ON n.id = c.connection_id JOIN calendar_sync s ON s.calendar_id = c.id`
+
+// SyncedCalendar returns one synced calendar of a household.
+func (db *DB) SyncedCalendar(householdID, calendarID string) (SyncedCalendar, error) {
+	out, err := db.syncedCalendars(syncedSelect+` WHERE c.household_id = ? AND c.id = ?`, householdID, calendarID)
+	if err != nil {
+		return SyncedCalendar{}, err
+	}
+	if len(out) == 0 {
+		return SyncedCalendar{}, ErrNotFound
+	}
+	return out[0], nil
+}
+
+// SyncedCalendars lists a household's synced calendars.
+func (db *DB) SyncedCalendars(householdID string) ([]SyncedCalendar, error) {
+	return db.syncedCalendars(syncedSelect+` WHERE c.household_id = ? ORDER BY c.created_at, c.rowid`, householdID)
+}
+
+// DueCalendars lists the synced calendars of all households whose next sync
+// is due at or before now.
+func (db *DB) DueCalendars(now time.Time) ([]SyncedCalendar, error) {
+	return db.syncedCalendars(syncedSelect+` WHERE s.next_attempt_at <= ? ORDER BY s.next_attempt_at, c.rowid`, stamp(now))
+}
+
+func (db *DB) syncedCalendars(query string, args ...any) ([]SyncedCalendar, error) {
+	rows, err := db.sql.Query(query, args...)
+	if err != nil {
+		return nil, err
+	}
+	var out []SyncedCalendar
+	for rows.Next() {
+		var c SyncedCalendar
+		var started, attempt, success, next sql.NullString
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.URL,
+			&c.Sync.IntervalMinutes, &started, &attempt, &success, &next, &c.Sync.Failures, &c.Sync.LastError); err != nil {
+			rows.Close()
+			return nil, err
+		}
+		c.Sync.StartedAt, c.Sync.LastAttempt, c.Sync.LastSuccess, c.Sync.NextAttempt = parseStamp(started), parseStamp(attempt), parseStamp(success), parseStamp(next)
+		out = append(out, c)
+	}
+	rows.Close()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	for i := range out {
+		if out[i].Audience, err = db.audience("calendar_audience", "calendar_id", out[i].ID); err != nil {
+			return nil, err
+		}
+	}
+	return out, nil
+}
+
+// DeleteSyncedCalendar removes a synced calendar, its connection, events and
+// log. Nothing is deleted outside the box.
+func (db *DB) DeleteSyncedCalendar(householdID, calendarID string) error {
+	return expectOne(db.sql.Exec(`DELETE FROM calendar_connections WHERE household_id = ?
+		AND id = (SELECT connection_id FROM calendars WHERE id = ? AND household_id = ?)`, householdID, calendarID, householdID))
+}
+
+// CompleteSync stores a successful sync: the feed's events replace the
+// calendar's synced events (ids stay stable per key), notes go to the log
+// and the failure state is cleared. All or nothing.
+func (db *DB) CompleteSync(householdID, calendarID string, items []SyncItem, notes []string, at, next time.Time) error {
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := replaceSyncedEvents(tx, householdID, calendarID, items); err != nil {
+		return err
+	}
+	if err := expectOne(tx.Exec(`UPDATE calendar_sync SET last_attempt_at = ?, last_success_at = ?, next_attempt_at = ?, failures = 0, last_error = ''
+		WHERE calendar_id = ? AND calendar_id IN (SELECT id FROM calendars WHERE household_id = ?)`, stamp(at), stamp(at), stamp(next), calendarID, householdID)); err != nil {
+		return err
+	}
+	for _, n := range notes {
+		var same int
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM sync_log WHERE calendar_id = ? AND kind = 'note' AND message = ?`, calendarID, n).Scan(&same); err != nil {
+			return err
+		}
+		if same == 0 {
+			if err := writeLog(tx, householdID, calendarID, at, "note", n); err != nil {
+				return err
+			}
+		}
+	}
+	if err := pruneLog(tx, at); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// FailSync records a failed sync. The calendar's events stay as they were.
+func (db *DB) FailSync(householdID, calendarID, message string, at, next time.Time) error {
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := expectOne(tx.Exec(`UPDATE calendar_sync SET last_attempt_at = ?, next_attempt_at = ?, failures = failures + 1, last_error = ?
+		WHERE calendar_id = ? AND calendar_id IN (SELECT id FROM calendars WHERE household_id = ?)`, stamp(at), stamp(next), message, calendarID, householdID)); err != nil {
+		return err
+	}
+	if err := writeLog(tx, householdID, calendarID, at, "failure", message); err != nil {
+		return err
+	}
+	if err := pruneLog(tx, at); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func writeLog(tx *sql.Tx, householdID, calendarID string, at time.Time, kind, message string) error {
+	_, err := tx.Exec(`INSERT INTO sync_log (id, household_id, calendar_id, at, kind, message) VALUES (?, ?, ?, ?, ?, ?)`,
+		newID(), householdID, calendarID, stamp(at), kind, message)
+	return err
+}
+
+func pruneLog(tx *sql.Tx, now time.Time) error {
+	_, err := tx.Exec(`DELETE FROM sync_log WHERE at < ?`, stamp(now.Add(-syncLogKeep)))
+	return err
+}
+
+// SyncLog returns the newest entries of a household's sync log first.
+func (db *DB) SyncLog(householdID string, limit int) ([]SyncLogEntry, error) {
+	rows, err := db.sql.Query(`SELECT l.id, l.calendar_id, c.name, l.at, l.kind, l.message FROM sync_log l
+		JOIN calendars c ON c.id = l.calendar_id WHERE l.household_id = ? ORDER BY l.at DESC, l.rowid DESC LIMIT ?`, householdID, limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []SyncLogEntry
+	for rows.Next() {
+		var e SyncLogEntry
+		var at string
+		if err := rows.Scan(&e.ID, &e.CalendarID, &e.CalendarName, &at, &e.Kind, &e.Message); err != nil {
+			return nil, err
+		}
+		e.At, _ = time.Parse(time.RFC3339, at)
+		out = append(out, e)
+	}
+	return out, rows.Err()
+}
+
+// replaceSyncedEvents makes the calendar's synced events equal to items.
+func replaceSyncedEvents(tx *sql.Tx, householdID, calendarID string, items []SyncItem) error {
+	var one int
+	if err := tx.QueryRow(`SELECT 1 FROM calendars WHERE id = ? AND household_id = ? AND connection_id IS NOT NULL`, calendarID, householdID).Scan(&one); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
+		return err
+	}
+	existing := map[string]string{} // key -> id
+	rows, err := tx.Query(`SELECT remote_key, id FROM events WHERE calendar_id = ? AND remote_key IS NOT NULL`, calendarID)
+	if err != nil {
+		return err
+	}
+	for rows.Next() {
+		var key, id string
+		if err := rows.Scan(&key, &id); err != nil {
+			rows.Close()
+			return err
+		}
+		existing[key] = id
+	}
+	rows.Close()
+
+	ids := map[string]string{}
+	for _, it := range items {
+		if id, ok := existing[it.Key]; ok {
+			ids[it.Key] = id
+		} else {
+			ids[it.Key] = newID()
+		}
+	}
+	for key, id := range existing {
+		if _, kept := ids[key]; !kept {
+			if _, err := tx.Exec(`DELETE FROM events WHERE id = ?`, id); err != nil { // cascades to changed occurrences
+				return err
+			}
+		}
+	}
+	// Series masters first, so changed occurrences can point at them.
+	for _, pass := range []bool{false, true} {
+		for _, it := range items {
+			if (it.SeriesKey != "") != pass {
+				continue
+			}
+			e := it.Event
+			e.ID, e.CalendarID = ids[it.Key], calendarID
+			e.SeriesID = ""
+			if it.SeriesKey != "" {
+				if e.SeriesID = ids[it.SeriesKey]; e.SeriesID == "" {
+					continue // changed occurrence of an unknown series
+				}
+			}
+			if _, had := existing[it.Key]; had {
+				err = updateEvent(tx, householdID, e)
+			} else {
+				if err = insertEvent(tx, householdID, e); err == nil {
+					_, err = tx.Exec(`UPDATE events SET remote_key = ? WHERE id = ?`, it.Key, e.ID)
+				}
+			}
+			if err != nil {
+				return fmt.Errorf("event %q: %w", e.Title, err)
+			}
+		}
+	}
+	return nil
+}

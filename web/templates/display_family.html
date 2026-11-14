@@ -1,6 +1,6 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "display.family.title") "Theme" .Theme)}}
-  <div class="family-page" data-display data-state="paired" data-display-type="{{.Display.Type}}" data-poll-seconds="{{.PollSeconds}}">
-    {{template "familyView" .View}}
+  <div class="family-page" data-display data-state="paired" data-display-type="{{.Display.Type}}" data-poll-seconds="{{.PollSeconds}}" data-version="{{.Version}}">
+    <div data-view>{{.View}}</div>
   </div>
   <script src="/static/display.js" defer></script>
 {{template "foot"}}
@@ -12,7 +12,8 @@
       <div class="date">{{.Date.Day}}{{t "family.day_suffix"}} {{t (printf "month.%d" .Date.Month)}}</div>
     </div>
     <div class="chips">
-      <span class="chip" data-clock>{{.Clock}}</span>
+      {{if .SyncStale}}<span class="chip sync-notice" role="status" data-sync-notice><svg class="icon" viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.01"/></svg> {{t "family.sync_stale"}}</span>{{end}}
+      <span class="chip" data-clock-zone="{{.ClockZone}}" data-clock>{{.Clock}}</span>
       {{if .Weather}}<span class="chip" data-weather>{{.Weather}}</span>{{end}}
     </div>
   </header>

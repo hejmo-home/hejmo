@@ -57,3 +57,45 @@ func TestFTS5IsAvailable(t *testing.T) {
 		t.Fatalf("FTS5 not available: %v", err)
 	}
 }
+
+// Until the timestamp convention, migrations were numbered 0001 to 0010.
+// Development databases hold those names; they must map onto the renamed
+// files instead of running every migration a second time.
+func TestDevelopmentDatabaseWithOldMigrationNamesMigratesWithoutRerunning(t *testing.T) {
+	db, path := openTemp(t)
+	if _, err := db.SQL().Exec(`INSERT INTO people (id, name, created_at, updated_at) VALUES ('p1', 'Mama', '2026-11-14T10:00:00Z', '2026-11-14T10:00:00Z')`); err != nil {
+		t.Fatal(err)
+	}
+	// Put schema_migrations back into the state the old runner left it in.
+	old := []string{
+		"0001_people_and_access.sql", "0002_calendar.sql", "0003_sync.sql", "0004_share_through_box.sql",
+		"0005_public_https.sql", "0006_displays.sql", "0007_tasks.sql", "0008_display_show_tomorrow.sql",
+		"0009_household_settings.sql", "0010_caldav.sql",
+	}
+	if _, err := db.SQL().Exec(`DELETE FROM schema_migrations`); err != nil {
+		t.Fatal(err)
+	}
+	for i, name := range old {
+		if _, err := db.SQL().Exec(`INSERT INTO schema_migrations (version, name) VALUES (?, ?)`, i+1, name); err != nil {
+			t.Fatal(err)
+		}
+	}
+	db.Close()
+
+	again, err := store.Open(path) // re-running a CREATE TABLE would fail here
+	if err != nil {
+		t.Fatalf("opening a database with old migration names: %v", err)
+	}
+	defer again.Close()
+	if v, _ := again.SchemaVersion(); v != store.LatestVersion() {
+		t.Errorf("schema version = %d, want %d", v, store.LatestVersion())
+	}
+	var n int
+	if err := again.SQL().QueryRow(`SELECT COUNT(*) FROM people WHERE name = 'Mama'`).Scan(&n); err != nil || n != 1 {
+		t.Errorf("data after the upgrade: %d rows, %v", n, err)
+	}
+	var names int
+	if err := again.SQL().QueryRow(`SELECT COUNT(*) FROM schema_migrations WHERE name LIKE '0%'`).Scan(&names); err != nil || names != 0 {
+		t.Errorf("%d rows still carry an old name, %v", names, err)
+	}
+}

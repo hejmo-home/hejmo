@@ -1,0 +1,1 @@
+iCloud reports resourcetype and getetag of some calendar members in a 404 propstat; that says the property is missing, not that the member is gone.

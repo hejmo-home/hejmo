@@ -95,7 +95,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		if s.now().Sub(d.LastSeen) > time.Minute {
 			_ = s.db.TouchDisplay(hash, s.now())
 		}
-		view, err := s.familyView(h, s.langOf(r), d.ShowTomorrow)
+		view, version, err := s.renderFamily(h, s.langOf(r), d.ShowTomorrow)
 		if err != nil {
 			s.fail(w, "family view", err)
 			return
@@ -107,7 +107,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 			theme = "bw"
 		}
 		s.render(w, r, http.StatusOK, "display_family.html", map[string]any{
-			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Theme": theme,
+			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Version": version, "Theme": theme,
 		})
 		return
 	}
@@ -156,7 +156,7 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
-	in := familyview.Input{Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs, ShowTomorrow: showTomorrow}
+	in := familyview.Input{Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID)}
 	for _, c := range cals {
 		in.Calendars[c.ID] = c.Audience
 	}

@@ -262,6 +262,7 @@
   "family.tomorrow": "Tomorrow",
   "family.day": "Day",
   "family.partial": "in most places",
+  "family.sync_stale": "Calendar not up to date – please open the web interface",
   "family.day_suffix": "",
   "tasks.title": "Tasks",
   "tasks.intro": "Tasks for each person. Tick off today's tasks here, for example to confirm one a child did. Children tick off their own tasks themselves.",

@@ -17,6 +17,7 @@ Self-hosted, open-source family organizer: a Go box (Raspberry Pi, Docker) with 
 - **One branch and one PR per work package or ticket.** The PR body lists acceptance criteria with their tests, decisions to review, new dependencies (license, why, in binary or not) and local measurements.
 - **Merge** only after CI is green on x86_64 and arm64, and only when the product owner says so. Use a merge commit (`gh pr merge --merge --delete-branch`), not squash, so signed-off commits survive.
 - **Ask before:** deviating from scope, guardrails or acceptance criteria; adding external services, network connections or non-AGPL-compatible dependencies; data-model changes that would make V2/V3 (shared custody, multiple households) harder.
+- **Make or buy:** before building anything foundational (a protocol, parser, crypto, sync engine, UI framework), search for open-source libraries, compare them (license, maintenance, size, fit) against building it, and put the choice to the product owner. "Make" is not the default.
 - **Open source only at runtime** (ADR 0004). Proprietary services are allowed as optional integrations.
 - **No real personal data** in the repo. Test data uses the example family: Mama, Papa, Sebastian, Mia.
 - **Migrations are append-only** once a 0.x release exists. Before that, an unreleased migration may still be edited.

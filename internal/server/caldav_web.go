@@ -8,6 +8,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/i18n"
@@ -93,7 +94,7 @@ func (s *server) handleDeviceTokenCreate(w http.ResponseWriter, r *http.Request)
 		return
 	}
 	name := strings.TrimSpace(r.PostFormValue("name"))
-	if name == "" || len(name) > 80 {
+	if !validDeviceName(name) {
 		s.renderCalDAV(w, r, p, http.StatusUnprocessableEntity, map[string]any{"Error": "caldav.error.name", "Name": name}, "", "")
 		return
 	}
@@ -108,6 +109,8 @@ func (s *server) handleDeviceTokenCreate(w http.ResponseWriter, r *http.Request)
 // iosProfile creates a new device token for the person and returns the iOS
 // configuration profile that holds it (ADR 0017). The box keeps no copy: the
 // token is stored hashed, the profile only exists in this answer.
+//
+// TODO(#94): add the tasks scope to this token once tasks sync over CalDAV.
 func (s *server) iosProfile(r *http.Request, p principal, name string) ([]byte, error) {
 	acc, err := s.db.AccountByPerson(p.person.ID)
 	if err != nil {
@@ -141,7 +144,9 @@ func sendProfile(w http.ResponseWriter, profile []byte) {
 	_, _ = w.Write(profile)
 }
 
-func validDeviceName(name string) bool { return name != "" && len(name) <= 80 }
+// validDeviceName counts characters, as maxLength in openapi.yaml and maxlength
+// in the form do.
+func validDeviceName(name string) bool { return name != "" && utf8.RuneCountInString(name) <= 80 }
 
 func (s *server) handleIOSProfile(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
@@ -169,7 +174,7 @@ func (s *server) apiIOSProfile(w http.ResponseWriter, r *http.Request, p princip
 		Name string `json:"name"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
-		writeError(w, http.StatusUnprocessableEntity, "invalid JSON")
+		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
 	name := strings.TrimSpace(in.Name)

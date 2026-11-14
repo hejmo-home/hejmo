@@ -3,10 +3,15 @@ package server_test
 import (
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
+
+	"github.com/hejmo-home/hejmo/internal/pki"
+	"github.com/hejmo-home/hejmo/internal/server"
 )
 
 var profilePasswordRe = regexp.MustCompile(`<key>CalDAVPassword</key>\s*<string>(hejmo_[^<]+)</string>`)
@@ -112,7 +117,8 @@ func TestIOSProfileIsForSignedInParentsOverHTTPSOnly(t *testing.T) {
 	}
 
 	c := signedInAPI(t)
-	// Plain HTTP is sent to HTTPS (a token must never travel unencrypted).
+	// With HTTPS set up, plain HTTP is sent there (a token must never travel
+	// unencrypted); the 403 without a certificate is tested below.
 	plain := c.b.plainServer()
 	req, _ := http.NewRequest(http.MethodPost, plain.URL+"/caldav/profile", strings.NewReader(url.Values{"name": {"x"}}.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -176,5 +182,73 @@ func TestIOSProfileThroughTheAPI(t *testing.T) {
 		if _, st, _ := c.withToken(c.newToken(scopes)).callRaw(http.MethodPost, "/caldav-profile", map[string]any{"name": "x"}); st != http.StatusForbidden {
 			t.Errorf("token %q = %d, want 403", scopes, st)
 		}
+	}
+}
+
+// plainBoxSignedIn returns a parent's client on a box that has no certificate
+// yet, served over plain HTTP: requireHTTPS has nowhere to redirect to.
+func plainBoxSignedIn(t *testing.T) *apiClient {
+	t.Helper()
+	b, secret := configuredBox(t)
+	fresh, err := pki.Open(t.TempDir())
+	if err != nil {
+		t.Fatal(err)
+	}
+	now := b.now
+	b.pki = fresh
+	b.handler = server.New(server.Options{DB: b.db, PKI: fresh, Public: &fakePublic{}, Now: func() time.Time { return now }})
+	b.srv = httptest.NewServer(b.handler)
+	t.Cleanup(b.srv.Close)
+	b.client = b.trustingClient()
+	if r := b.post("/login", loginForm(b, secret, "correct horse battery")); r.status != http.StatusSeeOther {
+		t.Fatalf("login on the plain box = %d", r.status)
+	}
+	c := newAPIClient(t, b)
+	c.cookie = true
+	return c
+}
+
+func TestIOSProfileIsRefusedOnPlainHTTPBeforeHTTPSIsSetUp(t *testing.T) {
+	c := plainBoxSignedIn(t)
+	b := c.b
+	h, _ := familyOf(t, c)
+
+	for lang, want := range map[string]string{"de": "nur über HTTPS", "en": "only offered over HTTPS"} {
+		r := b.do(http.MethodPost, "/caldav/profile", url.Values{"name": {"iPhone Mama"}}, map[string]string{"Accept-Language": lang})
+		if r.status != http.StatusForbidden || !strings.Contains(r.body, `role="alert"`) || !strings.Contains(r.body, want) || strings.Contains(r.body, "hejmo_") {
+			t.Errorf("web %s = %d, want 403 with the HTTPS message %q:\n%s", lang, r.status, want, r.body)
+		}
+	}
+	raw, status, _ := c.callRaw(http.MethodPost, "/caldav-profile", map[string]any{"name": "iPhone Mama"})
+	if status != http.StatusForbidden || strings.Contains(raw, "hejmo_") {
+		t.Errorf("API = %d, want 403:\n%s", status, raw)
+	}
+	if toks, _ := b.db.APITokens(h.ID); len(toks) != 0 {
+		t.Errorf("tokens = %+v, want none", toks)
+	}
+}
+
+func TestIOSProfileTakesNamesByCharactersAndAPIRejectsBrokenJSONWith400(t *testing.T) {
+	c := signedInAPI(t)
+	name := strings.Repeat("ä", 80) // 160 bytes, 80 characters: within the limit
+	if r := c.b.post("/caldav/profile", url.Values{"name": {name}}); r.status != http.StatusOK {
+		t.Errorf("web, 80 umlauts = %d, want 200", r.status)
+	}
+	if r := c.b.post("/caldav/tokens", url.Values{"name": {name}}); r.status != http.StatusOK {
+		t.Errorf("token form, 80 umlauts = %d, want 200", r.status)
+	}
+	if _, st, _ := c.callRaw(http.MethodPost, "/caldav-profile", map[string]any{"name": name}); st != http.StatusOK {
+		t.Errorf("API, 80 umlauts = %d, want 200", st)
+	}
+	req, _ := http.NewRequest(http.MethodPost, c.b.srv.URL+"/api/v1/caldav-profile", strings.NewReader("{"))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Origin", c.b.srv.URL)
+	res, err := c.b.client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Errorf("broken JSON = %d, want 400", res.StatusCode)
 	}
 }

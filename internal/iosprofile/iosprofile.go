@@ -37,11 +37,12 @@ func CalDAV(p Params) ([]byte, error) {
 		authority = net.JoinHostPort(p.Host, strconv.Itoa(p.Port))
 	}
 	var b bytes.Buffer
-	str := func(key, value string) {
-		fmt.Fprintf(&b, "\t\t\t<key>%s</key>\n\t\t\t<string>", key)
+	entry := func(indent, key, value string) {
+		fmt.Fprintf(&b, "%s<key>%s</key>\n%s<string>", indent, key, indent)
 		_ = xml.EscapeText(&b, []byte(value))
 		b.WriteString("</string>\n")
 	}
+	str := func(key, value string) { entry("\t\t\t", key, value) }
 	b.WriteString(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -65,9 +66,7 @@ func CalDAV(p Params) ([]byte, error) {
 	b.WriteString("\t\t</dict>\n\t</array>\n\t<key>PayloadType</key>\n\t<string>Configuration</string>\n\t<key>PayloadVersion</key>\n\t<integer>1</integer>\n")
 	for _, kv := range [][2]string{{"PayloadIdentifier", p.Identifier}, {"PayloadUUID", p.ProfileUUID}, {"PayloadDisplayName", "Hejmo: " + p.DeviceName},
 		{"PayloadDescription", "Sets up the calendars of your Hejmo box on this device. It holds a password: install it, then delete the file."}} {
-		fmt.Fprintf(&b, "\t<key>%s</key>\n\t<string>", kv[0])
-		_ = xml.EscapeText(&b, []byte(kv[1]))
-		b.WriteString("</string>\n")
+		entry("\t", kv[0], kv[1])
 	}
 	b.WriteString("</dict>\n</plist>\n")
 	return b.Bytes(), nil

@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
@@ -131,6 +132,10 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /caldav/tokens", s.handleDeviceTokenCreate)
 	mux.HandleFunc("POST /caldav/tokens/{id}/revoke", s.handleDeviceTokenRevoke)
 	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
+	mux.HandleFunc("GET /tasks", s.handleTasksPage)
+	mux.HandleFunc("POST /tasks", s.handleTaskAdd)
+	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
+	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
@@ -175,6 +180,7 @@ func parsePages() *template.Template {
 	return template.Must(template.New("").Funcs(template.FuncMap{
 		"t":    func(string) string { return "" },
 		"dict": dict,
+		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
 

@@ -34,6 +34,7 @@ type config struct {
 	HTTPSAddr       string // HTTPS listen address, HEJMO_HTTPS_ADDR
 	PublicHTTPSPort string // port clients reach HTTPS on, HEJMO_PUBLIC_HTTPS_PORT
 	DataDir         string // persistent data, HEJMO_DATA_DIR
+	SecretKeyFile   string // key that seals credentials, HEJMO_SECRET_KEY_FILE (default: secret.key in DataDir)
 }
 
 func loadConfig(getenv func(string) string) config {
@@ -49,6 +50,10 @@ func loadConfig(getenv func(string) string) config {
 	}
 	if v := getenv("HEJMO_DATA_DIR"); v != "" {
 		cfg.DataDir = v
+	}
+	cfg.SecretKeyFile = filepath.Join(cfg.DataDir, "secret.key")
+	if v := getenv("HEJMO_SECRET_KEY_FILE"); v != "" {
+		cfg.SecretKeyFile = v
 	}
 	return cfg
 }
@@ -88,8 +93,9 @@ func run(cfg config, logger *slog.Logger) error {
 	}
 
 	// A public certificate (ADR 0014), if the family chose a name in the
-	// wizard: its DNS token is sealed with a key file next to the database.
-	sealer, err := secret.Open(filepath.Join(cfg.DataDir, "secret.key"))
+	// wizard: its DNS token is sealed with a key file (ADR 0012), by default
+	// next to the database.
+	sealer, err := secret.Open(cfg.SecretKeyFile)
 	if err != nil {
 		return err
 	}
@@ -98,8 +104,11 @@ func run(cfg config, logger *slog.Logger) error {
 		return err
 	}
 	defer public.Close()
+	// A setup that cannot be resumed (for example a lost key file) must not
+	// take the web interface down: parents are warned there and can enter the
+	// DNS token again.
 	if err := public.Start(ctx); err != nil {
-		return err
+		logger.Error("public HTTPS not started; set up the public name again in the web interface", "err", err)
 	}
 
 	// The scheduler checks for due calendars every minute; each calendar

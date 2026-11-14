@@ -89,3 +89,22 @@ func TestLocalURL(t *testing.T) {
 		}
 	}
 }
+
+// ADR 0012: an environment variable can point the key to another file, such
+// as a Docker secret.
+func TestSecretKeyFileDefaultsToTheDataDirAndCanBeMoved(t *testing.T) {
+	cfg := loadConfig(func(k string) string {
+		if k == "HEJMO_DATA_DIR" {
+			return "/srv/hejmo"
+		}
+		return ""
+	})
+	if cfg.SecretKeyFile != "/srv/hejmo/secret.key" {
+		t.Errorf("default = %q, want secret.key in the data directory", cfg.SecretKeyFile)
+	}
+	env := map[string]string{"HEJMO_DATA_DIR": "/srv/hejmo", "HEJMO_SECRET_KEY_FILE": "/run/secrets/hejmo_key"}
+	cfg = loadConfig(func(k string) string { return env[k] })
+	if cfg.SecretKeyFile != "/run/secrets/hejmo_key" {
+		t.Errorf("from env = %q", cfg.SecretKeyFile)
+	}
+}

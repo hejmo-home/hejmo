@@ -41,9 +41,11 @@ With the box as a CalDAV server in V1.0 (ADR 0012), phones send credentials to t
 
 ## Notes on the public name (added in ticket #14)
 
-- The wizard offers deSEC as the DNS provider. Other libdns providers (Hetzner, INWX, Cloudflare) are one entry each in `publiccert`, but each adds a dependency and is left to a later ticket.
+- The wizard offers deSEC as the DNS provider. Other libdns providers (Hetzner, INWX, Cloudflare) are one entry each in `publiccert`, but each adds a dependency. They are tracked in #57 and not part of this ticket; the issue asks for an own domain at any DNS provider with an API, so this narrows scope until the product owner decides.
 - The box finds the DNS zone through SOA lookups, sets an A (or AAAA) record for the name to the LAN address the family enters (prefilled from the address used to reach the wizard) and keeps no other DNS records.
 - Actalis needs an account: the wizard asks for its external account binding (key ID and HMAC key). ZeroSSL hands out account keys against an email address, so the fallback issuer is active only if the family enters an email address.
 - The name check runs in the browser (a `no-cors` request to `https://<name>/healthz` that succeeds only if the name resolves and the certificate is trusted); the box cannot know what the family's router does with the name. On failure the page shows the FRITZ!Box rebind help and tries again every five seconds.
-- The DNS token and account keys are sealed with AES-256-GCM; the key is the file `secret.key` in the data directory, never in the database.
+- The DNS token and account keys are sealed with AES-256-GCM; the key is a file, never in the database: `secret.key` in the data directory by default, or the file named by `HEJMO_SECRET_KEY_FILE` (for example a Docker secret), as ADR 0012 says.
+- If the stored setup cannot be resumed at start (the key file was lost, so the token cannot be opened), the box keeps running over HTTP, logs the error and warns parents; the wizard's public-name step can be done again. A box that is already set up shows the warning only; redoing the step there needs a settings page (not part of this ticket).
+- If the name check cannot pass because the router offers no rebind exception, the check page offers the box's own CA while setup is not complete; this forgets the public setup.
 - Renewal failures are stored in the database and shown to parents on the start page and the calendars page and through `GET /api/v1/https`. The same warning appears when a certificate has less than 7 days left.

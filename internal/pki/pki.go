@@ -14,13 +14,16 @@ import (
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"errors"
 	"fmt"
+	"log/slog"
 	"math/big"
 	"net"
 	"os"
 	"path/filepath"
+	"strings"
 	"sync"
 	"text/template"
 	"time"
@@ -37,7 +40,9 @@ var alwaysNames = []string{"hejmo.local", "localhost"}
 
 // Store keeps the CA and the box certificate in a directory (mode 0700).
 type Store struct {
-	dir string
+	dir    string
+	now    func() time.Time
+	logger *slog.Logger
 
 	mu     sync.RWMutex
 	caDER  []byte
@@ -46,13 +51,29 @@ type Store struct {
 	expiry time.Time
 }
 
+// Option configures a Store.
+type Option func(*Store)
+
+// WithClock sets the clock that decides when the box certificate is renewed.
+func WithClock(now func() time.Time) Option { return func(s *Store) { s.now = now } }
+
+// WithLogger sets where certificate problems are logged.
+func WithLogger(l *slog.Logger) Option { return func(s *Store) { s.logger = l } }
+
 // Open loads the store at dir, creating the directory if needed. A directory
-// without a CA yields a store that is not Ready.
-func Open(dir string) (*Store, error) {
+// without a CA and certificate (also one whose provisioning was interrupted)
+// yields a store that is not Ready.
+func Open(dir string, opts ...Option) (*Store, error) {
 	if err := os.MkdirAll(dir, 0o700); err != nil {
 		return nil, err
 	}
-	s := &Store{dir: dir}
+	s := &Store{dir: dir, now: time.Now, logger: slog.Default()}
+	for _, o := range opts {
+		o(s)
+	}
+	if _, err := os.Stat(s.path("box.pem")); errors.Is(err, os.ErrNotExist) {
+		return s, nil // box.pem is written last
+	}
 	caPEM, err := os.ReadFile(s.path("ca.pem"))
 	if errors.Is(err, os.ErrNotExist) {
 		return s, nil
@@ -72,7 +93,11 @@ func Open(dir string) (*Store, error) {
 	if s.caKey, err = parseKey(keyPEM); err != nil {
 		return nil, err
 	}
-	leafCert, err := tls.LoadX509KeyPair(s.path("box.pem"), s.path("box-key.pem"))
+	boxPEM, err := os.ReadFile(s.path("box.pem")) // certificate, then its key
+	if err != nil {
+		return nil, err
+	}
+	leafCert, err := tls.X509KeyPair(boxPEM, boxPEM)
 	if err != nil {
 		return nil, err
 	}
@@ -97,7 +122,10 @@ func (s *Store) Provision(host string, now time.Time) error {
 	if s.leaf != nil {
 		return errors.New("pki: already provisioned")
 	}
-	dns, ips := boxNames(host)
+	dns, ips, err := boxNames(host)
+	if err != nil {
+		return err
+	}
 
 	caKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
@@ -123,26 +151,58 @@ func (s *Store) Provision(host string, now time.Time) error {
 	if err := writeKey(s.path("ca-key.pem"), caKey); err != nil {
 		return err
 	}
-	if err := os.WriteFile(s.path("ca.pem"), pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o644); err != nil {
+	if err := writeFile(s.path("ca.pem"), pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o644); err != nil {
 		return err
 	}
 	s.caDER, s.caKey = der, caKey
 	return s.issueLocked(now, dns, ips)
 }
 
-func boxNames(host string) (dns []string, ips []net.IP) {
+// ErrInvalidHost means the name used to reach the box cannot go into a certificate.
+var ErrInvalidHost = errors.New("pki: host is neither an IP address nor a valid DNS name")
+
+func boxNames(host string) (dns []string, ips []net.IP, err error) {
 	ips = []net.IP{net.IPv4(127, 0, 0, 1)}
+	host = strings.ToLower(host)
 	if ip := net.ParseIP(host); ip != nil {
 		ips = append([]net.IP{ip}, ips...)
-	} else if host != "" {
+	} else if validDNSName(host) {
 		dns = append(dns, host)
+	} else {
+		return nil, nil, fmt.Errorf("%w: %q", ErrInvalidHost, host)
 	}
 	for _, n := range alwaysNames {
 		if n != host {
 			dns = append(dns, n)
 		}
 	}
-	return dns, ips
+	return dns, ips, nil
+}
+
+// validDNSName accepts host names of at least two labels (letters, digits and
+// hyphens), or "localhost". Single labels, IPv6 zones and other forms are out.
+func validDNSName(name string) bool {
+	if name == "localhost" {
+		return true
+	}
+	if len(name) > 253 {
+		return false
+	}
+	labels := strings.Split(name, ".")
+	if len(labels) < 2 {
+		return false
+	}
+	for _, l := range labels {
+		if l == "" || len(l) > 63 || l[0] == '-' || l[len(l)-1] == '-' {
+			return false
+		}
+		for _, c := range l {
+			if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-') {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func ipRanges(ips []net.IP) []*net.IPNet {
@@ -179,10 +239,14 @@ func (s *Store) issueLocked(now time.Time, dns []string, ips []net.IP) error {
 	if err != nil {
 		return err
 	}
-	if err := writeKey(s.path("box-key.pem"), key); err != nil {
+	keyDER, err := x509.MarshalPKCS8PrivateKey(key)
+	if err != nil {
 		return err
 	}
-	if err := os.WriteFile(s.path("box.pem"), pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o644); err != nil {
+	// One file, replaced atomically, so certificate and key always match.
+	boxPEM := append(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}),
+		pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER})...)
+	if err := writeFile(s.path("box.pem"), boxPEM, 0o600); err != nil {
 		return err
 	}
 	s.setLeaf(&tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key})
@@ -198,7 +262,9 @@ func (s *Store) setLeaf(c *tls.Certificate) {
 }
 
 // GetCertificate serves the box certificate (tls.Config.GetCertificate). It
-// renews the certificate for the same names shortly before it expires.
+// renews the certificate for the same names shortly before it expires. A
+// failed renewal is logged; the current certificate keeps being served while
+// it is still valid.
 func (s *Store) GetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 	s.mu.RLock()
 	c, expiry := s.leaf, s.expiry
@@ -206,17 +272,36 @@ func (s *Store) GetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 	if c == nil {
 		return nil, errors.New("pki: HTTPS is not set up")
 	}
-	if time.Until(expiry) > renewBefore {
+	if expiry.Sub(s.now()) > renewBefore {
 		return c, nil
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if time.Until(s.expiry) <= renewBefore && s.leaf.Leaf != nil {
-		if err := s.issueLocked(time.Now(), s.leaf.Leaf.DNSNames, s.leaf.Leaf.IPAddresses); err != nil {
-			return nil, err
+	if s.expiry.Sub(s.now()) <= renewBefore && s.leaf.Leaf != nil {
+		if err := s.issueLocked(s.now(), s.leaf.Leaf.DNSNames, s.leaf.Leaf.IPAddresses); err != nil {
+			s.logger.Error("renew box certificate", "err", err, "expires", s.expiry)
+			if !s.now().Before(s.expiry) {
+				return nil, err
+			}
 		}
 	}
 	return s.leaf, nil
+}
+
+// CAFingerprint returns the CA certificate's SHA-256 fingerprint as colon
+// separated upper-case hex, for comparing what a device installed.
+func (s *Store) CAFingerprint() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.caDER == nil {
+		return ""
+	}
+	sum := sha256.Sum256(s.caDER)
+	parts := make([]string, len(sum))
+	for i, b := range sum {
+		parts[i] = strings.ToUpper(hex.EncodeToString([]byte{b}))
+	}
+	return strings.Join(parts, ":")
 }
 
 // CAPEM returns the CA certificate, PEM encoded, for download.
@@ -302,7 +387,29 @@ func writeKey(path string, key *ecdsa.PrivateKey) error {
 	if err != nil {
 		return err
 	}
-	return os.WriteFile(path, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der}), 0o600)
+	return writeFile(path, pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: der}), 0o600)
+}
+
+// writeFile replaces path atomically: it writes a temporary file next to it
+// and renames it, so a crash never leaves a half-written file.
+func writeFile(path string, data []byte, perm os.FileMode) error {
+	tmp, err := os.CreateTemp(filepath.Dir(path), ".tmp-*")
+	if err != nil {
+		return err
+	}
+	defer os.Remove(tmp.Name())
+	if _, err := tmp.Write(data); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Chmod(perm); err != nil {
+		tmp.Close()
+		return err
+	}
+	if err := tmp.Close(); err != nil {
+		return err
+	}
+	return os.Rename(tmp.Name(), path)
 }
 
 func parseKey(keyPEM []byte) (crypto.Signer, error) {

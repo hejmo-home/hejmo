@@ -1,15 +1,21 @@
 package pki_test
 
 import (
+	"bytes"
 	"crypto/ecdsa"
 	"crypto/elliptic"
 	"crypto/rand"
+	"crypto/sha256"
 	"crypto/x509"
 	"crypto/x509/pkix"
 	"encoding/base64"
+	"encoding/hex"
 	"encoding/pem"
 	"encoding/xml"
+	"log/slog"
 	"math/big"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -162,4 +168,131 @@ func signWithCA(t *testing.T, s *pki.Store, name string) *x509.Certificate {
 	}
 	c, _ := x509.ParseCertificate(der)
 	return c
+}
+
+// Renewal: a certificate close to its end is replaced by one for the same
+// names that the CA vouches for, and the box keeps it across a restart.
+func TestCertificateIsRenewedBeforeItExpires(t *testing.T) {
+	dir := t.TempDir()
+	clock := now
+	s, err := pki.Open(dir, pki.WithClock(func() time.Time { return clock }))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Provision("192.168.1.20", now); err != nil {
+		t.Fatal(err)
+	}
+	first, _ := s.GetCertificate(nil)
+	oldLeaf, _ := x509.ParseCertificate(first.Certificate[0])
+
+	clock = now.Add(771 * 24 * time.Hour)
+	second, err := s.GetCertificate(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	newLeaf, _ := x509.ParseCertificate(second.Certificate[0])
+	if newLeaf.SerialNumber.Cmp(oldLeaf.SerialNumber) == 0 || !newLeaf.NotAfter.After(oldLeaf.NotAfter) {
+		t.Fatal("certificate was not renewed")
+	}
+	if !slices.Equal(newLeaf.DNSNames, oldLeaf.DNSNames) || len(newLeaf.IPAddresses) != len(oldLeaf.IPAddresses) {
+		t.Fatalf("names changed: %v %v -> %v %v", oldLeaf.DNSNames, oldLeaf.IPAddresses, newLeaf.DNSNames, newLeaf.IPAddresses)
+	}
+	for i := range oldLeaf.IPAddresses {
+		if !newLeaf.IPAddresses[i].Equal(oldLeaf.IPAddresses[i]) {
+			t.Fatalf("IPs changed: %v -> %v", oldLeaf.IPAddresses, newLeaf.IPAddresses)
+		}
+	}
+	pool := x509.NewCertPool()
+	pool.AddCert(caCert(t, s))
+	for _, name := range []string{"192.168.1.20", "hejmo.local", "localhost"} {
+		if _, err := newLeaf.Verify(x509.VerifyOptions{Roots: pool, DNSName: name, CurrentTime: clock}); err != nil {
+			t.Errorf("renewed certificate, verify %s: %v", name, err)
+		}
+	}
+
+	again, err := pki.Open(dir, pki.WithClock(func() time.Time { return clock }))
+	if err != nil || !again.Ready() {
+		t.Fatalf("reopen: %v", err)
+	}
+	got, _ := again.GetCertificate(nil)
+	if !bytes.Equal(got.Certificate[0], second.Certificate[0]) {
+		t.Error("renewed certificate was not kept across a restart")
+	}
+}
+
+func TestFailedRenewalIsLoggedAndKeepsTheValidCertificate(t *testing.T) {
+	dir := t.TempDir()
+	clock := now
+	var logs bytes.Buffer
+	s, err := pki.Open(dir, pki.WithClock(func() time.Time { return clock }), pki.WithLogger(slog.New(slog.NewTextHandler(&logs, nil))))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Provision("hejmo.local", now); err != nil {
+		t.Fatal(err)
+	}
+	first, _ := s.GetCertificate(nil)
+
+	if err := os.Chmod(dir, 0o500); err != nil { // make writing the renewed certificate fail
+		t.Fatal(err)
+	}
+	t.Cleanup(func() { os.Chmod(dir, 0o700) })
+	clock = now.Add(771 * 24 * time.Hour)
+	got, err := s.GetCertificate(nil)
+	if err != nil || !bytes.Equal(got.Certificate[0], first.Certificate[0]) {
+		t.Fatalf("still valid certificate not served: err=%v", err)
+	}
+	if !strings.Contains(logs.String(), "renew") {
+		t.Errorf("failure not logged: %q", logs.String())
+	}
+
+	clock = now.Add(801 * 24 * time.Hour) // expired and cannot be renewed
+	if _, err := s.GetCertificate(nil); err == nil {
+		t.Error("expired certificate served without error")
+	}
+}
+
+func TestInterruptedProvisioningLeavesARestartableStore(t *testing.T) {
+	dir := t.TempDir()
+	s, _ := pki.Open(dir)
+	if err := s.Provision("hejmo.local", now); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.Remove(filepath.Join(dir, "box.pem")); err != nil { // as if it stopped before the last file
+		t.Fatal(err)
+	}
+	again, err := pki.Open(dir)
+	if err != nil {
+		t.Fatalf("open after interrupted provisioning: %v", err)
+	}
+	if again.Ready() {
+		t.Fatal("store without certificate reports ready")
+	}
+	if err := again.Provision("hejmo.local", now); err != nil || !again.Ready() {
+		t.Fatalf("provision again: %v", err)
+	}
+}
+
+func TestProvisionRejectsUnusableHostNames(t *testing.T) {
+	for _, host := range []string{"fe80::1%en0", "hejmo", "", "a b.local", "-x.local", "x..local", ".local", "bank.example.com/x"} {
+		s, _ := pki.Open(t.TempDir())
+		if err := s.Provision(host, now); err == nil {
+			t.Errorf("Provision(%q) succeeded", host)
+		}
+	}
+	for _, host := range []string{"192.168.1.20", "fd00::1", "hejmo.local", "localhost", "my-box.fritz.box"} {
+		s, _ := pki.Open(t.TempDir())
+		if err := s.Provision(host, now); err != nil {
+			t.Errorf("Provision(%q): %v", host, err)
+		}
+	}
+}
+
+func TestCAFingerprintIsTheSHA256OfTheCertificate(t *testing.T) {
+	s := provisioned(t, "hejmo.local")
+	sum := sha256.Sum256(caCert(t, s).Raw)
+	want := strings.ToUpper(hex.EncodeToString(sum[:1])) + ":" + strings.ToUpper(hex.EncodeToString(sum[1:2]))
+	if fp := s.CAFingerprint(); !strings.HasPrefix(fp, want) || strings.Count(fp, ":") != 31 {
+		t.Errorf("fingerprint = %q, want prefix %q and 32 groups", fp, want)
+	}
 }

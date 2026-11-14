@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Hejmo box API
-  version: 0.3.0
+  version: 0.4.0
   description: |
     The REST API is the single interface for the web UI, displays, phones and
     integrations. Authenticate with a bearer token (`Authorization: Bearer hejmo_…`)
@@ -165,6 +165,69 @@ paths:
                 items: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: addCalendar
+      summary: Subscribe to an ICS calendar (parents)
+      description: |
+        Adds a read-only calendar from an ICS address (`https://`, `http://` or `webcal://`)
+        and syncs it once right away. If that first sync fails the calendar is still added;
+        the failure is in the sync log and the scheduler retries.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewCalendar" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Calendar" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /calendars/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      operationId: removeCalendar
+      summary: Remove a synced calendar and its events from the box
+      description: Nothing is deleted outside the box. The family calendar cannot be removed.
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /calendars/{id}/sync:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    post:
+      operationId: syncCalendarNow
+      summary: Sync a calendar now
+      description: Answers 200 with the calendar and its new sync state, also when the sync failed (see `sync.last_error` and the sync log).
+      responses:
+        "200":
+          description: Calendar after the sync
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Calendar" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /sync-log:
+    get:
+      operationId: listSyncLog
+      summary: Sync failures, conflicts and remarks, newest first (parents, scope settings:read)
+      responses:
+        "200":
+          description: At most 200 entries from the last 30 days
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/SyncLogEntry" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /events:
     get:
       operationId: listOccurrences
@@ -323,13 +386,45 @@ components:
         groups: { type: array, items: { type: string, format: uuid } }
     Calendar:
       type: object
-      required: [id, name, kind, color, audience]
+      required: [id, name, kind, color, read_only, audience]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         kind: { type: string, enum: [local, ics, caldav, google] }
         color: { type: string }
+        read_only: { type: boolean, description: "The box never changes this calendar's events (always true for ICS)" }
         audience: { $ref: "#/components/schemas/Audience" }
+        sync: { $ref: "#/components/schemas/SyncState" }
+    SyncState:
+      type: object
+      description: Only on synced calendars. Displays read `state` to show the sync notice.
+      required: [state, interval_minutes, last_attempt_at, last_success_at, last_error]
+      properties:
+        state: { type: string, enum: [ok, stale], description: "stale = 24 hours without a successful sync; one success clears it" }
+        interval_minutes: { type: integer, example: 60 }
+        last_attempt_at: { type: string, format: date-time, nullable: true }
+        last_success_at: { type: string, format: date-time, nullable: true }
+        last_error: { type: string, description: "Empty after a successful sync" }
+    NewCalendar:
+      type: object
+      required: [kind, name, url]
+      properties:
+        kind: { type: string, enum: [ics], description: "Only ICS subscriptions so far" }
+        name: { type: string }
+        url: { type: string, example: "webcal://example.org/school.ics" }
+        color: { type: string, example: "#B4583A", description: "Defaults to the accent colour" }
+        audience: { $ref: "#/components/schemas/Audience" }
+        sync_interval_minutes: { type: integer, default: 60, description: "Between 5 and 1440 minutes, else 422" }
+    SyncLogEntry:
+      type: object
+      required: [id, calendar_id, calendar_name, at, kind, message]
+      properties:
+        id: { type: string, format: uuid }
+        calendar_id: { type: string, format: uuid }
+        calendar_name: { type: string }
+        at: { type: string, format: date-time }
+        kind: { type: string, enum: [failure, conflict, note] }
+        message: { type: string }
     Event:
       type: object
       description: An event or series master. Times are RFC 3339 in the household's time zone; all-day events use dates with an exclusive end.

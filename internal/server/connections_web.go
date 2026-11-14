@@ -66,6 +66,9 @@ func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
 	switch {
 	case errors.As(err, &bad):
 		// The password is never sent back to the page.
+		if in.Provider == "icloud" {
+			in.URL, in.Single = "", false // iCloud ignores both; do not bring them back when the form is shown again
+		}
 		form := map[string]any{"ConnError": connectionErrorKey(bad), "ConnProvider": in.Provider, "ConnURL": in.URL, "ConnUsername": in.Username, "ConnSingle": in.Single}
 		s.renderCalendars(w, r, p, http.StatusUnprocessableEntity, form)
 		return

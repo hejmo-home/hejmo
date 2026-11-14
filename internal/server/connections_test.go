@@ -370,3 +370,77 @@ func TestDiscoveredCalendarOnAnotherHostOfTheServersDomainCanBeAdded(t *testing.
 		}
 	}
 }
+
+// iCloud has one fixed address and no single-calendar mode. The form hides
+// those two fields with a small script; without it they are still sent, and
+// the server must ignore them.
+func TestConnectionFormMarksFieldsOnlyOtherServersNeed(t *testing.T) {
+	c := signedInAPI(t)
+	r := c.b.get("/calendars")
+	if r.status != http.StatusOK {
+		t.Fatalf("calendars = %d", r.status)
+	}
+	if n := strings.Count(r.body, "data-other-only"); n != 2 {
+		t.Fatalf("%d fields marked other-server-only, want 2 (address, single calendar):\n%s", n, r.body)
+	}
+	if !strings.Contains(r.body, `src="/static/connection-form.js"`) {
+		t.Fatal("the page does not load the form script")
+	}
+	if js := c.b.get("/static/connection-form.js"); js.status != http.StatusOK || !strings.Contains(js.body, "data-other-only") {
+		t.Fatalf("form script = %d", js.status)
+	}
+	if css := c.b.get("/static/hejmo.css"); !strings.Contains(css.body, "overflow-wrap: anywhere") || !strings.Contains(css.body, "[hidden]") {
+		t.Fatal("stylesheet lacks wrapping of long words or the hidden rule")
+	}
+}
+
+type oneCalendarRemote struct {
+	calendarAsked *bool
+}
+
+func (o oneCalendarRemote) Calendars(context.Context) ([]caldavclient.Calendar, error) {
+	return []caldavclient.Calendar{{URL: "https://caldav.icloud.com/1/calendars/home/", Name: "Home"}}, nil
+}
+func (o oneCalendarRemote) Calendar(context.Context, string) (caldavclient.Calendar, error) {
+	*o.calendarAsked = true
+	return caldavclient.Calendar{}, errors.New("single-calendar mode must not be used for iCloud")
+}
+func (o oneCalendarRemote) List(context.Context, string) ([]caldavclient.Object, error) {
+	return nil, nil
+}
+func (o oneCalendarRemote) Fetch(context.Context, string, []string) ([]caldavclient.Object, error) {
+	return nil, nil
+}
+
+func TestWebICloudIgnoresAddressAndSingleCalendarFlag(t *testing.T) {
+	c := signedInAPI(t)
+	var asked string
+	singleUsed := false
+	c.b.sync.SetDialer(func(serverURL, user, pass string) (calsync.Remote, error) {
+		asked = serverURL
+		return oneCalendarRemote{&singleUsed}, nil
+	})
+	r := c.b.post("/connections", url.Values{
+		"provider": {"icloud"}, "url": {"https://somewhere.example/dav"}, "single_calendar": {"1"},
+		"username": {"mama@example.org"}, "password": {"abcd-efgh-ijkl-mnop"},
+	})
+	if r.status != http.StatusOK || asked != "https://caldav.icloud.com" || singleUsed {
+		t.Fatalf("status %d, asked %q, single mode used %v\n%s", r.status, asked, singleUsed, r.body)
+	}
+	conns, _ := c.b.db.Connections(mustHousehold(t, c).ID)
+	if len(conns) != 1 || conns[0].URL != "https://caldav.icloud.com" || conns[0].Single {
+		t.Fatalf("stored connection = %+v", conns)
+	}
+}
+
+func TestWebICloudErrorDoesNotEchoHiddenFields(t *testing.T) {
+	c := signedInAPI(t)
+	c.b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { return nil, errors.New("offline in test") })
+	r := c.b.post("/connections", url.Values{
+		"provider": {"icloud"}, "url": {"https://somewhere.example/dav"}, "single_calendar": {"1"},
+		"username": {"mama@example.org"}, "password": {"abcd-efgh-ijkl-mnop"},
+	})
+	if r.status != http.StatusUnprocessableEntity || strings.Contains(r.body, "somewhere.example") || strings.Contains(r.body, " checked") {
+		t.Fatalf("error page = %d\n%s", r.status, r.body)
+	}
+}

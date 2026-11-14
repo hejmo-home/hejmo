@@ -23,7 +23,8 @@ h1 { font-size: 36px; font-weight: 700; margin: 0 0 8px; }
 .steps fieldset { border: 0; margin: 0; background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 10px; }
 .steps legend { font-size: 19px; font-weight: 700; padding: 0; float: left; }
 .steps form { display: grid; gap: var(--gap); }
-.hint { color: var(--text-2); font-size: 14px; }
+.hint { color: var(--text-2); font-size: 14px; overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
 label { display: grid; gap: 4px; font-size: 14px; color: var(--text-2); }
 input, select { font: inherit; color: var(--text); min-height: 44px; padding: 8px 12px; border: 1px solid #D6D3CC; border-radius: 12px; background: var(--surface); }
 .error { background: #F7E7E0; color: #5C3A2C; border-radius: 14px; padding: 10px 12px; max-width: 560px; }

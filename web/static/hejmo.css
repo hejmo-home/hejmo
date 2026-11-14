@@ -1,40 +1,213 @@
-/* "Nordic Calm" base values, see docs/spec.md, section "Design". */
-:root {
-  --bg: #F6F3EE;
+/* "Nordic Calm" design tokens and shared styles for the web interface and the
+   displays. The values are recorded in DESIGN.md (binding values: docs/spec.md,
+   section "Design specification"); web/design_test.go keeps both in step.
+   Themes: light (default), dark, bw (black-and-white). Select one with
+   data-theme on <html> or any container. No shadows, no gradients, no
+   animations (E-Ink). Fonts come from the box (/static/fonts), never a CDN. */
+
+@font-face {
+  font-family: Figtree;
+  src: url("/static/fonts/Figtree-wght.ttf") format("truetype");
+  font-weight: 300 900;
+  font-style: normal;
+  font-display: swap;
+}
+
+:root, [data-theme="light"] {
+  color-scheme: light;
+  --background: #F6F3EE;
   --surface: #FFFFFF;
   --text: #2A2A28;
-  --text-2: #5C5A55;
+  --text-secondary: #5C5A55;
   --accent: #2F5E7A;
+  --border: #D6D3CC;
+  --error-bg: #F7E7E0;
+  --error-text: #5C3A2C;
+  --notice-bg: #FBF1DC;
+  --notice-text: #5A4520;
+  --person-1: #B4583A;
+  --person-1-tint: #F7E7E0;
+  --person-1-text: #5C3A2C;
+  --person-2: #2F5E7A;
+  --person-2-tint: #E1EBF1;
+  --person-2-text: #24485E;
+  --person-3: #4E7D52;
+  --person-3-tint: #E3EEE3;
+  --person-3-text: #2F4D31;
+  --person-4: #9A7420;
+  --person-4-tint: #F3EAD3;
+  --person-4-text: #5A4513;
+  --person-5: #86587F;
+  --person-5-tint: #F0EBF0;
+  --person-5-text: #432C40;
+  --person-6: #3A7A74;
+  --person-6-tint: #E7EFEE;
+  --person-6-text: #1D3D3A;
+  --accent-text: #FFFFFF;
+  /* type scale: size and weight per element */
+  --fs-date: 36px;        --fw-date: 700;
+  --fs-key-figure: 22px;  --fw-key-figure: 700;
+  --fs-person-name: 19px; --fw-person-name: 700;
+  --fs-event-title: 16px; --fw-event-title: 600;
+  --fs-body: 16px;        --fw-body: 400;
+  --fs-label: 14px;       --fw-label: 400;
+  --fs-label-large: 15px; --fw-label-large: 400;
+  --fs-meta: 13px;        --fw-meta: 400;
+  /* shapes and spacing */
   --radius-tile: 22px;
   --radius-chip: 18px;
-  --gap: 14px;
+  --radius-card: 14px;
+  --radius-field: 12px;
+  --radius-progress: 4px;
+  --progress-height: 8px;
   --margin: 28px;
+  --gap: 14px;
+  --gap-section: 20px;
+  --gap-cards: 10px;
+  --pad-column: 16px;
+  --pad-card: 10px 12px;
+  --marker-size: 14px;
+  --marker-size-bw-column: 16px;
+  --marker-size-bw-event: 9px;
+  --journey-border: 1.5px;
+  --icon-stroke: 1.8px;
+  --touch-target: 44px;
   font-family: Figtree, system-ui, sans-serif;
 }
+
+[data-theme="dark"] {
+  color-scheme: dark;
+  --background: #1B1A18;
+  --surface: #262522;
+  --text: #ECE9E3;
+  --text-secondary: #B4B0A7;
+  --accent: #6FA3C2;
+  --border: #403E39;
+  --error-bg: #3E2A24;
+  --error-text: #F0CDBF;
+  --notice-bg: #38301D;
+  --notice-text: #EBD9A6;
+  --person-1: #D98466;
+  --person-1-tint: #4A3830;
+  --person-1-text: #F4DAD1;
+  --person-2: #6FA3C2;
+  --person-2-tint: #353E42;
+  --person-2-text: #D4E3ED;
+  --person-3: #7FB383;
+  --person-3-tint: #384135;
+  --person-3-text: #D9E8DA;
+  --person-4: #D1A94A;
+  --person-4-tint: #483F2A;
+  --person-4-text: #F1E5C9;
+  --person-5: #B98AB2;
+  --person-5-tint: #43393F;
+  --person-5-text: #EADCE8;
+  --person-6: #6FB2AA;
+  --person-6-tint: #35413D;
+  --person-6-text: #D4E8E6;
+  --accent-text: #1B1A18;
+}
+
+[data-theme="bw"] {
+  color-scheme: light;
+  --background: #EDEDEA;
+  --surface: #FFFFFF;
+  --text: #111111;
+  --text-secondary: #3A3A38;
+  --accent: #111111;
+  --border: #111111;
+  --error-bg: #E4E4E1;
+  --error-text: #111111;
+  --notice-bg: #E4E4E1;
+  --notice-text: #111111;
+  --event-card: #E4E4E1;
+  --progress-fill: #111111;
+  --progress-track: #D6D6D3;
+  --person-1: #111111;
+  --person-1-tint: #E4E4E1;
+  --person-1-text: #111111;
+  --person-2: #111111;
+  --person-2-tint: #E4E4E1;
+  --person-2-text: #111111;
+  --person-3: #111111;
+  --person-3-tint: #E4E4E1;
+  --person-3-text: #111111;
+  --person-4: #111111;
+  --person-4-tint: #E4E4E1;
+  --person-4-text: #111111;
+  --person-5: #111111;
+  --person-5-tint: #E4E4E1;
+  --person-5-text: #111111;
+  --person-6: #111111;
+  --person-6-tint: #E4E4E1;
+  --person-6-text: #111111;
+  --accent-text: #FFFFFF;
+  --fw-event-title: 700;
+}
+
 * { box-sizing: border-box; }
-body { margin: 0; padding: var(--margin); background: var(--bg); color: var(--text); font-size: 16px; }
-h1 { font-size: 36px; font-weight: 700; margin: 0 0 8px; }
-.lead { color: var(--text-2); margin: 0 0 20px; }
+body { margin: 0; padding: var(--margin); background: var(--background); color: var(--text); font-size: var(--fs-body); font-weight: var(--fw-body); }
+h1 { font-size: var(--fs-date); font-weight: var(--fw-date); margin: 0 0 8px; }
+.lead { color: var(--text-secondary); margin: 0 0 20px; }
 .steps { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: var(--gap); max-width: 560px; }
 .steps li { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; }
-.steps strong { display: block; font-size: 19px; }
-.steps span { color: var(--text-2); font-size: 14px; }
-.button { cursor: pointer; display: inline-block; min-height: 44px; padding: 10px 22px; border-radius: var(--radius-chip); background: var(--accent); color: #fff; font-weight: 700; text-decoration: none; border: 0; font: inherit; }
+.steps strong { display: block; font-size: var(--fs-person-name); }
+.steps span { color: var(--text-secondary); font-size: var(--fs-label); }
+.button { cursor: pointer; display: inline-block; min-height: var(--touch-target); padding: 10px 22px; border-radius: var(--radius-chip); background: var(--accent); color: var(--accent-text); font-weight: 700; text-decoration: none; border: 0; font: inherit; font-weight: 700; }
 .steps fieldset { border: 0; margin: 0; background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 10px; }
-.steps legend { font-size: 19px; font-weight: 700; padding: 0; float: left; }
+.steps legend { font-size: var(--fs-person-name); font-weight: 700; padding: 0; float: left; }
 .steps form { display: grid; gap: var(--gap); }
-.hint { color: var(--text-2); font-size: 14px; }
-label { display: grid; gap: 4px; font-size: 14px; color: var(--text-2); }
-input, select { font: inherit; color: var(--text); min-height: 44px; padding: 8px 12px; border: 1px solid #D6D3CC; border-radius: 12px; background: var(--surface); }
-.error { background: #F7E7E0; color: #5C3A2C; border-radius: 14px; padding: 10px 12px; max-width: 560px; }
-.secret { font-size: 19px; letter-spacing: 0.08em; word-break: break-all; }
-.notice { background: #FBF1DC; color: #5A4520; border-radius: 14px; padding: 10px 12px; max-width: 560px; }
+.hint { color: var(--text-secondary); font-size: var(--fs-label); }
+label { display: grid; gap: 4px; font-size: var(--fs-label); color: var(--text-secondary); }
+input, select { font: inherit; color: var(--text); min-height: var(--touch-target); padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); }
+.error { background: var(--error-bg); color: var(--error-text); border-radius: var(--radius-card); padding: 10px 12px; max-width: 560px; }
+.secret { font-size: var(--fs-person-name); letter-spacing: 0.08em; word-break: break-all; }
+.notice { background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-card); padding: 10px 12px; max-width: 560px; }
 .cards { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: var(--gap); max-width: 560px; }
 .cards li { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 6px; }
 .cards .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
-.dot { display: inline-block; width: 14px; height: 14px; border-radius: 50%; vertical-align: middle; }
+.dot { display: inline-block; width: var(--marker-size); height: var(--marker-size); border-radius: 50%; vertical-align: middle; }
 .button.secondary { background: var(--surface); color: var(--accent); border: 1px solid var(--accent); }
 .check { display: flex; align-items: center; gap: 8px; color: var(--text); }
 .check input { min-height: 0; width: 20px; height: 20px; }
-.log { border-collapse: collapse; max-width: 100%; font-size: 14px; }
+.log { border-collapse: collapse; max-width: 100%; font-size: var(--fs-label); }
 .log th, .log td { text-align: left; padding: 6px 12px 6px 0; vertical-align: top; }
+a { color: var(--accent); }
+
+/* Person slots: a person gets data-person="1".."6" (colour, tint, text on
+   tint). In bw every slot is #111 on a grey tint and differs by marker shape. */
+[data-person="1"] { --pc: var(--person-1); --pc-tint: var(--person-1-tint); --pc-text: var(--person-1-text); }
+[data-person="2"] { --pc: var(--person-2); --pc-tint: var(--person-2-tint); --pc-text: var(--person-2-text); }
+[data-person="3"] { --pc: var(--person-3); --pc-tint: var(--person-3-tint); --pc-text: var(--person-3-text); }
+[data-person="4"] { --pc: var(--person-4); --pc-tint: var(--person-4-tint); --pc-text: var(--person-4-text); }
+[data-person="5"] { --pc: var(--person-5); --pc-tint: var(--person-5-tint); --pc-text: var(--person-5-text); }
+[data-person="6"] { --pc: var(--person-6); --pc-tint: var(--person-6-tint); --pc-text: var(--person-6-text); }
+
+/* Marker: circle in the person colour; in bw a shape (16px in the column
+   header, 9px on an event, .marker.small). */
+.marker { display: inline-block; width: var(--marker-size); height: var(--marker-size); border-radius: 50%; background: var(--pc); vertical-align: middle; flex: none; }
+[data-theme="bw"] .marker { width: var(--marker-size-bw-column); height: var(--marker-size-bw-column); background: #111111; border: 2px solid #111111; border-radius: 0; }
+[data-theme="bw"] .marker.small { width: var(--marker-size-bw-event); height: var(--marker-size-bw-event); border-width: 1.5px; }
+[data-theme="bw"] .marker[data-shape="circle-filled"] { border-radius: 50%; }
+[data-theme="bw"] .marker[data-shape="circle-empty"] { border-radius: 50%; background: transparent; }
+[data-theme="bw"] .marker[data-shape="square-filled"] { border-radius: 0; }
+[data-theme="bw"] .marker[data-shape="square-empty"] { border-radius: 0; background: transparent; }
+[data-theme="bw"] .marker[data-shape="triangle-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+[data-theme="bw"] .marker[data-shape="diamond-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+
+/* Family view building blocks (screens use them from ticket 5.3 on). */
+.tile, .column, .chip { background: var(--surface); }
+.tile, .column { border-radius: var(--radius-tile); }
+.column { padding: var(--pad-column); display: grid; gap: var(--gap-cards); align-content: start; }
+.chip { border-radius: var(--radius-chip); padding: 8px 16px; font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); }
+.event { background: var(--pc-tint); color: var(--pc-text); border-radius: var(--radius-card); padding: var(--pad-card); display: grid; gap: 2px; }
+[data-theme="bw"] .event { background: var(--event-card); color: var(--text); }
+.event .title { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+.event .meta { font-size: var(--fs-meta); font-weight: var(--fw-meta); }
+.event.journey { background: none; color: var(--text); border: var(--journey-border) dashed var(--pc); }
+[data-theme="bw"] .event.journey { border-color: #111111; }
+.progress { height: var(--progress-height); border-radius: var(--radius-progress); background: var(--pc-tint); overflow: hidden; }
+.progress > span { display: block; height: 100%; background: var(--pc); }
+[data-theme="bw"] .progress { background: var(--progress-track); }
+[data-theme="bw"] .progress > span { background: var(--progress-fill); }
+.icon { stroke: var(--accent); stroke-width: var(--icon-stroke); fill: none; stroke-linecap: round; stroke-linejoin: round; }

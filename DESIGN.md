@@ -1,0 +1,176 @@
+---
+version: alpha
+name: Hejmo Nordic Calm
+description: Calm, spacious design for the Hejmo family organizer. White cards on a warm background, one muted colour per person, shapes instead of colours in black-and-white mode.
+colors:
+  light-background: "#F6F3EE"
+  light-surface: "#FFFFFF"
+  light-text: "#2A2A28"
+  light-text-secondary: "#5C5A55"
+  light-accent: "#2F5E7A"
+  light-border: "#D6D3CC"
+  light-error-bg: "#F7E7E0"
+  light-error-text: "#5C3A2C"
+  light-notice-bg: "#FBF1DC"
+  light-notice-text: "#5A4520"
+  light-person-1: "#B4583A"
+  light-person-1-tint: "#F7E7E0"
+  light-person-1-text: "#5C3A2C"
+  light-person-2: "#2F5E7A"
+  light-person-2-tint: "#E1EBF1"
+  light-person-2-text: "#24485E"
+  light-person-3: "#4E7D52"
+  light-person-3-tint: "#E3EEE3"
+  light-person-3-text: "#2F4D31"
+  light-person-4: "#9A7420"
+  light-person-4-tint: "#F3EAD3"
+  light-person-4-text: "#5A4513"
+  light-person-5: "#86587F"
+  light-person-5-tint: "#F0EBF0"
+  light-person-5-text: "#432C40"
+  light-person-6: "#3A7A74"
+  light-person-6-tint: "#E7EFEE"
+  light-person-6-text: "#1D3D3A"
+  dark-background: "#1B1A18"
+  dark-surface: "#262522"
+  dark-text: "#ECE9E3"
+  dark-text-secondary: "#B4B0A7"
+  dark-accent: "#6FA3C2"
+  dark-border: "#403E39"
+  dark-error-bg: "#3E2A24"
+  dark-error-text: "#F0CDBF"
+  dark-notice-bg: "#38301D"
+  dark-notice-text: "#EBD9A6"
+  dark-person-1: "#D98466"
+  dark-person-1-tint: "#4A3830"
+  dark-person-1-text: "#F4DAD1"
+  dark-person-2: "#6FA3C2"
+  dark-person-2-tint: "#353E42"
+  dark-person-2-text: "#D4E3ED"
+  dark-person-3: "#7FB383"
+  dark-person-3-tint: "#384135"
+  dark-person-3-text: "#D9E8DA"
+  dark-person-4: "#D1A94A"
+  dark-person-4-tint: "#483F2A"
+  dark-person-4-text: "#F1E5C9"
+  dark-person-5: "#B98AB2"
+  dark-person-5-tint: "#43393F"
+  dark-person-5-text: "#EADCE8"
+  dark-person-6: "#6FB2AA"
+  dark-person-6-tint: "#35413D"
+  dark-person-6-text: "#D4E8E6"
+  bw-background: "#EDEDEA"
+  bw-surface: "#FFFFFF"
+  bw-text: "#111111"
+  bw-text-secondary: "#3A3A38"
+  bw-accent: "#111111"
+  bw-border: "#111111"
+  bw-error-bg: "#E4E4E1"
+  bw-error-text: "#111111"
+  bw-notice-bg: "#E4E4E1"
+  bw-notice-text: "#111111"
+  bw-event-card: "#E4E4E1"
+  bw-progress-fill: "#111111"
+  bw-progress-track: "#D6D6D3"
+  bw-person-1: "#111111"
+  bw-person-1-tint: "#E4E4E1"
+  bw-person-1-text: "#111111"
+  bw-person-2: "#111111"
+  bw-person-2-tint: "#E4E4E1"
+  bw-person-2-text: "#111111"
+  bw-person-3: "#111111"
+  bw-person-3-tint: "#E4E4E1"
+  bw-person-3-text: "#111111"
+  bw-person-4: "#111111"
+  bw-person-4-tint: "#E4E4E1"
+  bw-person-4-text: "#111111"
+  bw-person-5: "#111111"
+  bw-person-5-tint: "#E4E4E1"
+  bw-person-5-text: "#111111"
+  bw-person-6: "#111111"
+  bw-person-6-tint: "#E4E4E1"
+  bw-person-6-text: "#111111"
+typography:
+  date: {fontFamily: Figtree, fontSize: 36px, fontWeight: "700"}
+  key-figure: {fontFamily: Figtree, fontSize: 22px, fontWeight: "700"}
+  person-name: {fontFamily: Figtree, fontSize: 19px, fontWeight: "700"}
+  event-title: {fontFamily: Figtree, fontSize: 16px, fontWeight: "600"}
+  body: {fontFamily: Figtree, fontSize: 16px, fontWeight: "400"}
+  label: {fontFamily: Figtree, fontSize: 14px, fontWeight: "400"}
+  label-large: {fontFamily: Figtree, fontSize: 15px, fontWeight: "400"}
+  meta: {fontFamily: Figtree, fontSize: 13px, fontWeight: "400"}
+rounded:
+  tile: 22px
+  chip: 18px
+  card: 14px
+  field: 12px
+  progress: 4px
+spacing:
+  margin: 28px
+  gap: 14px
+  section-gap: 20px
+  column-padding: 16px
+  card-padding: 10px 12px
+  card-gap: 10px
+sizes:
+  progress-height: 8px
+  marker: 14px
+  marker-bw-column: 16px
+  marker-bw-event: 9px
+  journey-border: 1.5px
+  icon-stroke: 1.8px
+  touch-target: 44px
+---
+
+# Hejmo Nordic Calm
+
+Binding values come from `docs/spec.md` ("Design specification Nordic Calm"); the dark palette comes from ADR 0015. The front matter above is the single record of the tokens; `web/static/hejmo.css` implements them as CSS custom properties and `web/design_test.go` fails when the two drift apart or a contrast drops below 4.5:1.
+
+## Overview
+
+- Calm, plenty of white space, white cards on a warm background, one muted colour per person.
+- No gradients, no shadows, no animations on E-Ink. Touch targets are at least 44 px.
+- Three palettes, selected with `data-theme` on `<html>` or a container: **light** (default, colour), **dark**, **bw** (black-and-white, for E-Ink black-and-white displays). Dark in black-and-white does not exist.
+
+## Colors
+
+- Token names are `<theme>-<role>`: `light-`, `dark-`, `bw-`. In CSS the prefix is dropped and the theme block overrides the default (`--background`, `--person-1-tint`, ...).
+- Roles: `background`, `surface` (columns, tiles, chips), `text`, `text-secondary` (labels), `accent` (icons, links, buttons: Papa blue; #111111 in bw), `border`, `error-*`, `notice-*`, and per person slot `person-N` (marker, progress bar), `person-N-tint` (event card surface), `person-N-text` (text on the tint).
+- bw only: `bw-event-card` (#E4E4E1, instead of the person tint), `bw-progress-fill` on `bw-progress-track` (instead of person colour on tint). In bw every person is #111111 and told apart by marker shape.
+- Slots 1 to 4 are the spec's example family (1 Mama, 2 Papa, 3 Sebastian, 4 Mia). Slots 5 and 6 are derived the same way (similar lightness and saturation, tint = colour mixed 88 % with white, text = colour mixed 50 % with black) for additional people; a household with more than six people reuses slots with a different shape in bw.
+- **Dark palette** (ADR 0015): warm near-black background and surface, light warm text, person colours lightened and muted, tint = person colour mixed 20 % into the surface, text on tint = person colour mixed 70 % with white. No shadows; separation is by surface and tint only.
+- Contrast: text on every person tint, text on background and surface, and error and notice text reach at least 4.5:1 in all three palettes; person colours against the surface reach at least 3:1 (non-text).
+
+## Typography
+
+- Figtree, a variable font (weight 300 to 900, SIL OFL 1.1), served by the box from `/static/fonts/Figtree-wght.ttf` with its licence `OFL.txt` next to it. No outside font CDN. Fallback `system-ui, sans-serif`.
+- Event titles are 600, in bw 700 (`--fw-event-title`). Labels are 14 px (`label`) or 15 px (`label-large`).
+
+## Layout
+
+- Outer margin 28 px; gap between columns and tiles 14 px; gap between header, main area and footer 20 px; column inner padding 16 px; event card padding 10 px by 12 px; gap between cards 10 px.
+- Reference layout 1024 by 768 landscape: header, one white column per person in a 4-column grid, footer with three tiles.
+
+## Elevation
+
+None. No shadows in any palette.
+
+## Shapes
+
+- Corners: columns and tiles 22 px, header chips 18 px, event cards 14 px, form fields 12 px, progress bar 4 px (height 8 px).
+- Person marker: circle 14 px in the person colour. In bw a shape: 16 px in the column header, 9 px on each event (`.marker.small`). Shapes in slot order: circle filled, circle empty, square filled, square empty, triangle filled, diamond filled (`data-shape`).
+- Journeys: no fill, 1.5 px dashed border in the person colour (bw #111111), label "Journey" after the time.
+- Icons: line icons with 1.8 px stroke in the accent colour (Papa blue; bw #111111).
+
+## Components
+
+- `.tile`, `.column`, `.chip`: white surface cards with the radii above.
+- `.event`: filled in the person tint, time (`.meta`) on top, title below; `.event.journey` is the dashed variant. Person slot via `data-person`.
+- `.progress`: person colour on person tint (bw #111111 on #D6D6D3).
+- `.marker`: person marker as above.
+
+## Do's and Don'ts
+
+- Do take every colour, size and radius from the tokens; do not hard-code values in templates.
+- Do not rely on colour alone to tell people apart: bw and red-green colour deficiency need the marker shape or an icon.
+- Do not add shadows, gradients or animations.

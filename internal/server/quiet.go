@@ -37,7 +37,7 @@ func (s *server) renderDisplayContent(h store.Household, d store.Display, lang s
 		if err != nil {
 			return "", "", err
 		}
-		v.Night = familyview.BuildNight(familyview.NightInput{Morning: morning, Occurrences: occs})
+		v.Night = familyview.BuildNight(familyview.NightInput{Morning: morning, Occurrences: occs, TimeFormat: h.TimeFormat})
 		v.ReloadSeconds = quietReloadSeconds
 	}
 	var buf bytes.Buffer

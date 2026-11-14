@@ -1,0 +1,1 @@
+iCloud's entry host answers discovery with a 307 to the per-account host of the same domain.

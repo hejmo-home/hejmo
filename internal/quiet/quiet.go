@@ -59,8 +59,10 @@ func (s Schedule) Active(t time.Time) bool {
 
 // Morning returns the day (midnight, in t's zone) the window ends on next: the
 // coming morning the night page is about. At 23:00 on Monday and at 02:00 on
-// Tuesday it is Tuesday. A window that ends before midnight (20:00 to 23:30)
-// has no morning of its own, so the coming morning is always tomorrow's.
+// Tuesday it is Tuesday. A window inside one day that starts at or after 12:00
+// (20:00 to 23:30) is an evening window with no morning of its own, so the
+// coming morning is always tomorrow's. One that starts before noon (00:00 to
+// 06:00) ends this morning, and tomorrow's once it is over.
 func (s Schedule) Morning(t time.Time) time.Time {
 	day := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
 	m := minuteOfDay(t)

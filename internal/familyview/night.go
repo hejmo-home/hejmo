@@ -5,12 +5,14 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 // NightInput is what the night page of quiet mode needs (ADR 0015).
 type NightInput struct {
 	Morning     time.Time // midnight of the coming morning, in the household's zone
 	Occurrences []calendar.Occurrence
+	TimeFormat  store.TimeFormat // the household's; empty means 24h
 	// Waste lists the waste collections of that day (ticket 6.7 fills it).
 	Waste []string
 }
@@ -34,7 +36,7 @@ func BuildNight(in NightInput) NightView {
 		if o.AllDay || o.Start.Before(d0) || !o.Start.Before(d1) {
 			continue
 		}
-		e := card(o, d0.Location())
+		e := card(o, d0.Location(), in.TimeFormat, nil)
 		v.First = &e
 		break
 	}

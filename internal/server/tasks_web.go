@@ -34,6 +34,11 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		return
 	}
 	today := s.today(p)
+	doneToday, err := s.db.TasksDoneOn(p.household.ID, today)
+	if err != nil {
+		s.fail(w, "task state", err)
+		return
+	}
 	var groups []personTasks
 	var choices []choice
 	for _, person := range people {
@@ -43,12 +48,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			if t.PersonID != person.ID {
 				continue
 			}
-			done, err := s.db.TaskDone(t.ID, today)
-			if err != nil {
-				s.fail(w, "task state", err)
-				return
-			}
-			v := taskView{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat), Weekdays: t.Weekdays, Part: string(t.PartOfDay), Due: t.DueOn(today), Done: done}
+			v := taskView{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat), Weekdays: t.Weekdays, Part: string(t.PartOfDay), Due: t.DueOn(today), Done: doneToday[t.ID]}
 			if d, err := time.Parse(task.DateLayout, t.Date); err == nil {
 				v.Date = d.Format("02/01/2006")
 			}
@@ -59,7 +59,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		}
 	}
 	if form == nil {
-		form = map[string]any{"Repeat": "daily", "Date": today}
+		form = map[string]any{"Repeat": "daily", "Date": today, "Weekdays": []string{}}
 	}
 	data := map[string]any{
 		"Person": p.person, "Groups": groups, "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form,

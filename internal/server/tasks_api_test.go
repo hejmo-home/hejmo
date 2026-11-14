@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 	"time"
 
@@ -75,9 +76,24 @@ func TestTaskInputIsValidated(t *testing.T) {
 		"unknown ppl":   {"person_id": "00000000-0000-4000-8000-000000000000", "title": "x", "repeat": "daily"},
 		"once no date":  {"person_id": tb.miaID, "title": "x", "repeat": "once"},
 		"weekly no day": {"person_id": tb.miaID, "title": "x", "repeat": "weekly"},
+		"double day":    {"person_id": tb.miaID, "title": "x", "repeat": "weekly", "weekdays": []string{"MO", "MO"}},
 	} {
 		if status, _, _ := tb.parent.call(http.MethodPost, "/tasks", body); status != http.StatusUnprocessableEntity {
 			t.Errorf("%s = %d, want 422", name, status)
+		}
+	}
+}
+
+// The contract client refuses these before they are sent, so the server's own
+// limits are checked with raw requests.
+func TestTaskLimitsOfTheContractAreEnforced(t *testing.T) {
+	tb := newTaskBox(t)
+	for name, body := range map[string]string{
+		"long title": `{"person_id":"` + tb.miaID + `","title":"` + strings.Repeat("x", 500) + `","repeat":"daily"}`,
+		"long emoji": `{"person_id":"` + tb.miaID + `","title":"x","emoji":"` + strings.Repeat("🪥", 17) + `","repeat":"daily"}`,
+	} {
+		if got := rawCall(t, tb.parent, http.MethodPost, "/tasks", body); got != http.StatusUnprocessableEntity {
+			t.Errorf("%s = %d, want 422", name, got)
 		}
 	}
 }
@@ -165,5 +181,47 @@ func TestParentDeletesTasksAndFiltersByPerson(t *testing.T) {
 	}
 	if status, _, _ := tb.parent.call(http.MethodDelete, "/tasks/"+b, nil); status != http.StatusNotFound {
 		t.Fatalf("second delete = %d, want 404", status)
+	}
+}
+
+// rawCall sends a body without the contract client, which would refuse it.
+func rawCall(t *testing.T, c *apiClient, method, path, body string) int {
+	t.Helper()
+	req, _ := http.NewRequest(method, c.b.srv.URL+"/api/v1"+path, strings.NewReader(body))
+	req.Header.Set("Content-Type", "application/json")
+	if c.token != "" {
+		req.Header.Set("Authorization", "Bearer "+c.token)
+	}
+	client := c.b.bareClient()
+	if c.cookie {
+		req.Header.Set("Origin", c.b.srv.URL)
+		client = c.b.client
+	}
+	res, err := client.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	return res.StatusCode
+}
+
+func TestMalformedJSONIsA400OnBothTaskWrites(t *testing.T) {
+	tb := newTaskBox(t)
+	id := tb.newDaily(t, tb.miaID)
+	if got := rawCall(t, tb.parent, http.MethodPost, "/tasks", "{"); got != http.StatusBadRequest {
+		t.Errorf("create = %d, want 400", got)
+	}
+	if got := rawCall(t, tb.parent, http.MethodPut, "/tasks/"+id+"/done", "{"); got != http.StatusBadRequest {
+		t.Errorf("done = %d, want 400", got)
+	}
+	if got := rawCall(t, tb.parent, http.MethodPut, "/tasks/"+id+"/done", "{}"); got != http.StatusUnprocessableEntity {
+		t.Errorf("done missing = %d, want 422", got)
+	}
+}
+
+func TestTaskListRefusesAPersonThatIsNoUUID(t *testing.T) {
+	tb := newTaskBox(t)
+	if got := rawCall(t, tb.parent, http.MethodGet, "/tasks?person=mia", ""); got != http.StatusUnprocessableEntity {
+		t.Errorf("person=mia = %d, want 422", got)
 	}
 }

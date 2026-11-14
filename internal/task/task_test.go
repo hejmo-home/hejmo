@@ -2,6 +2,7 @@ package task_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/hejmo-home/hejmo/internal/task"
@@ -62,11 +63,18 @@ func TestValidate(t *testing.T) {
 		{Title: "x", PersonID: "p", Repeat: task.Weekly, Weekdays: []string{"XX"}, Date: "2026-11-14"},
 		{Title: "x", PersonID: "p", Repeat: "monthly", Date: "2026-11-14"},
 		{Title: "x", PersonID: "p", Repeat: task.Daily, Date: "2026-11-14", PartOfDay: "noon"},
+		{Title: strings.Repeat("x", 121), PersonID: "p", Repeat: task.Daily, Date: "2026-11-14"},
+		{Title: "x", Emoji: strings.Repeat("🪥", 17), PersonID: "p", Repeat: task.Daily, Date: "2026-11-14"},
+		{Title: "x", PersonID: "p", Repeat: task.Weekly, Weekdays: []string{"MO", "MO"}, Date: "2026-11-14"},
 	}
 	for _, k := range bad {
 		if err := k.Validate(); !errors.Is(err, task.ErrInvalid) {
 			t.Errorf("Validate(%+v) = %v, want ErrInvalid", k, err)
 		}
+	}
+	limits := task.Task{Title: strings.Repeat("ä", 120), Emoji: strings.Repeat("🪥", 16), PersonID: "p", Repeat: task.Daily, Date: "2026-11-14"}
+	if err := limits.Validate(); err != nil {
+		t.Errorf("title of 120 and emoji of 16 characters: %v", err)
 	}
 	ok := task.Task{Title: "x", PersonID: "p", Repeat: task.Weekly, Weekdays: []string{"SA"}, Date: "2026-11-14", PartOfDay: task.Morning}
 	if err := ok.Validate(); err != nil {

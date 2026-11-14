@@ -47,12 +47,13 @@
           <input name="emoji" maxlength="16" value="{{index $f "Emoji"}}"></label>
         <label>{{t "tasks.field.repeat"}}
           <select name="repeat">
-            {{range $r := .Repeats}}<option value="{{$r}}"{{if eq $r (index $f "Repeat")}} selected{{end}}>{{t (printf "tasks.repeat.%s" $r)}}</option>{{end}}
+            {{range $r := .Repeats}}<option value="{{$r}}"{{if eq $r (index $f "Repeat")}} selected{{end}}>{{t (printf "tasks.repeat_option.%s" $r)}}</option>{{end}}
           </select></label>
         <label>{{t "tasks.field.date"}}
           <input name="date" type="date" value="{{index $f "Date"}}"></label>
         <p class="hint">{{t "tasks.field.weekdays"}}</p>
-        {{range .Weekdays}}<label class="check"><input type="checkbox" name="weekdays" value="{{.}}"> {{t (printf "tasks.weekday.%s" .)}}</label>{{end}}
+        {{$chosen := index $f "Weekdays"}}
+        {{range .Weekdays}}<label class="check"><input type="checkbox" name="weekdays" value="{{.}}"{{if has $chosen .}} checked{{end}}> {{t (printf "tasks.weekday.%s" .)}}</label>{{end}}
         <label>{{t "tasks.field.part"}}
           <select name="part">
             <option value="">{{t "tasks.part.any"}}</option>

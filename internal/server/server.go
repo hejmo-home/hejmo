@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"slices"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
@@ -100,6 +101,7 @@ func New(opts Options) http.Handler {
 	s.pages = template.Must(template.New("").Funcs(template.FuncMap{
 		"t":    func(string) string { return "" }, // replaced per request in render
 		"dict": dict,
+		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 	}).ParseFS(web.Templates, "templates/*.html"))
 
 	static, err := fs.Sub(web.Static, "static")

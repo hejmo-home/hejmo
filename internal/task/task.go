@@ -4,6 +4,10 @@
 // A task is stored like an iCalendar VTODO so that export (V1.x) needs no
 // remodelling: Date is DTSTART (DUE for a once task), RRule is the RRULE and
 // each done day is one completed occurrence.
+//
+// For a weekly task Date may fall on a day that is not one of its weekdays,
+// yet in iCalendar DTSTART always counts as an occurrence. A VTODO export must
+// therefore move DTSTART to the first day the task is due (see DueOn).
 package task
 
 import (
@@ -12,6 +16,7 @@ import (
 	"sort"
 	"strings"
 	"time"
+	"unicode/utf8"
 )
 
 // ErrInvalid marks input the caller can fix.
@@ -35,6 +40,12 @@ const (
 	AnyTime PartOfDay = ""
 	Morning PartOfDay = "morning"
 	Evening PartOfDay = "evening"
+)
+
+// Limits of the input, as in api/openapi.yaml (NewTask), counted in characters.
+const (
+	MaxTitle = 120
+	MaxEmoji = 16
 )
 
 // DateLayout is the layout of Task.Date and of days passed around.
@@ -61,6 +72,12 @@ func (t Task) Validate() error {
 	if strings.TrimSpace(t.Title) == "" {
 		return bad("title required")
 	}
+	if utf8.RuneCountInString(strings.TrimSpace(t.Title)) > MaxTitle {
+		return bad(fmt.Sprintf("title may have at most %d characters", MaxTitle))
+	}
+	if utf8.RuneCountInString(t.Emoji) > MaxEmoji {
+		return bad(fmt.Sprintf("emoji may have at most %d characters", MaxEmoji))
+	}
 	if t.PersonID == "" {
 		return bad("person required")
 	}
@@ -76,10 +93,15 @@ func (t Task) Validate() error {
 		if len(t.Weekdays) == 0 {
 			return bad("a weekly task needs at least one weekday")
 		}
+		seen := map[string]bool{}
 		for _, d := range t.Weekdays {
 			if weekdayIndex(d) < 0 {
 				return bad("unknown weekday " + d)
 			}
+			if seen[d] {
+				return bad("weekday " + d + " given twice")
+			}
+			seen[d] = true
 		}
 	default:
 		return bad("repeat must be once, daily or weekly")

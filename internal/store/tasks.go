@@ -117,6 +117,26 @@ func (db *DB) TaskDone(id, day string) (bool, error) {
 	return n > 0, err
 }
 
+// TasksDoneOn returns the ids of the household's tasks that are ticked off on a
+// day, in one query.
+func (db *DB) TasksDoneOn(householdID, day string) (map[string]bool, error) {
+	rows, err := db.sql.Query(`SELECT d.task_id FROM task_done d JOIN tasks t ON t.id = d.task_id
+		WHERE t.household_id = ? AND d.day = ?`, householdID, day)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]bool{}
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out[id] = true
+	}
+	return out, rows.Err()
+}
+
 // TasksForDay lists the tasks due on a day with their state: what a display
 // needs for today's progress per person.
 func (db *DB) TasksForDay(householdID, day string) ([]DayTask, error) {
@@ -124,16 +144,15 @@ func (db *DB) TasksForDay(householdID, day string) ([]DayTask, error) {
 	if err != nil {
 		return nil, err
 	}
+	done, err := db.TasksDoneOn(householdID, day)
+	if err != nil {
+		return nil, err
+	}
 	var out []DayTask
 	for _, t := range all {
-		if !t.DueOn(day) {
-			continue
+		if t.DueOn(day) {
+			out = append(out, DayTask{t, done[t.ID]})
 		}
-		done, err := db.TaskDone(t.ID, day)
-		if err != nil {
-			return nil, err
-		}
-		out = append(out, DayTask{t, done})
 	}
 	return out, nil
 }

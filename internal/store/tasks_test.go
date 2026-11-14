@@ -105,7 +105,7 @@ func TestTasksForDayListsOnlyDueTasksPerPerson(t *testing.T) {
 	}
 }
 
-func TestDeleteTaskAndCascadeWithPerson(t *testing.T) {
+func TestDeleteTaskRemovesItsDoneDays(t *testing.T) {
 	f := newTaskFixture(t)
 	k, _ := f.db.AddTask(f.h.ID, task.Task{PersonID: f.mia.ID, Title: "x", Repeat: task.Daily, Date: "2026-11-14"})
 	_ = f.db.SetTaskDone(f.h.ID, k.ID, "2026-11-14", true, f.mia.ID, taskNow)
@@ -117,5 +117,17 @@ func TestDeleteTaskAndCascadeWithPerson(t *testing.T) {
 	}
 	if list, _ := f.db.Tasks(f.h.ID); len(list) != 0 {
 		t.Fatalf("tasks left: %v", list)
+	}
+}
+
+func TestTasksDoneOnListsOnlyThatDaysDoneTasks(t *testing.T) {
+	f := newTaskFixture(t)
+	a, _ := f.db.AddTask(f.h.ID, task.Task{PersonID: f.mia.ID, Title: "a", Repeat: task.Daily, Date: "2026-11-14"})
+	b, _ := f.db.AddTask(f.h.ID, task.Task{PersonID: f.mia.ID, Title: "b", Repeat: task.Daily, Date: "2026-11-14"})
+	_ = f.db.SetTaskDone(f.h.ID, a.ID, "2026-11-14", true, f.mia.ID, taskNow)
+	_ = f.db.SetTaskDone(f.h.ID, b.ID, "2026-11-15", true, f.mia.ID, taskNow)
+	got, err := f.db.TasksDoneOn(f.h.ID, "2026-11-14")
+	if err != nil || len(got) != 1 || !got[a.ID] {
+		t.Fatalf("done on the 14th = %v, %v", got, err)
 	}
 }

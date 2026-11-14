@@ -93,3 +93,19 @@ func TestTasksPageIsGerman(t *testing.T) {
 		t.Fatalf("de page = %d", r.status)
 	}
 }
+
+func TestTaskFormKeepsWeekdaysAndRepeatAfterAnError(t *testing.T) {
+	tb := newTaskBox(t)
+	r := tb.parent.b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {" "}, "repeat": {"weekly"}, "weekdays": {"TU", "FR"}})
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d", r.status)
+	}
+	for _, want := range []string{`value="TU" checked`, `value="FR" checked`} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("form lacks %q:\n%s", want, r.body)
+		}
+	}
+	if strings.Contains(r.body, `value="MO" checked`) {
+		t.Error("Monday must stay unchecked")
+	}
+}

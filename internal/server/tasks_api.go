@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -28,12 +29,18 @@ func (s *server) today(p principal) string {
 	return s.now().In(p.location()).Format(task.DateLayout)
 }
 
-func (s *server) taskToJSON(t task.Task, day string) (taskJSON, error) {
-	j := taskJSON{ID: t.ID, PersonID: t.PersonID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat),
-		Weekdays: nonNil(t.Weekdays), Date: t.Date, PartOfDay: string(t.PartOfDay), Due: t.DueOn(day)}
+var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}$`)
+
+// taskToJSON renders a task; done is whether it is ticked off on day.
+func taskToJSON(t task.Task, day string, done bool) taskJSON {
+	return taskJSON{ID: t.ID, PersonID: t.PersonID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat),
+		Weekdays: nonNil(t.Weekdays), Date: t.Date, PartOfDay: string(t.PartOfDay), Due: t.DueOn(day), Done: done}
+}
+
+// taskStateToJSON renders one task with its state on day.
+func (s *server) taskStateToJSON(t task.Task, day string) (taskJSON, error) {
 	done, err := s.db.TaskDone(t.ID, day)
-	j.Done = done
-	return j, err
+	return taskToJSON(t, day, done), err
 }
 
 func (s *server) apiListTasks(w http.ResponseWriter, r *http.Request, p principal) {
@@ -45,23 +52,27 @@ func (s *server) apiListTasks(w http.ResponseWriter, r *http.Request, p principa
 		}
 		day = d
 	}
+	person := r.URL.Query().Get("person")
+	if person != "" && !uuidPattern.MatchString(person) {
+		writeError(w, http.StatusUnprocessableEntity, "person must be a UUID")
+		return
+	}
 	list, err := s.db.Tasks(p.household.ID)
 	if err != nil {
 		s.fail(w, "list tasks", err)
 		return
 	}
-	person := r.URL.Query().Get("person")
+	done, err := s.db.TasksDoneOn(p.household.ID, day)
+	if err != nil {
+		s.fail(w, "task state", err)
+		return
+	}
 	out := make([]taskJSON, 0, len(list))
 	for _, t := range list {
 		if person != "" && t.PersonID != person {
 			continue
 		}
-		j, err := s.taskToJSON(t, day)
-		if err != nil {
-			s.fail(w, "task state", err)
-			return
-		}
-		out = append(out, j)
+		out = append(out, taskToJSON(t, day, done[t.ID]))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -88,7 +99,7 @@ func (s *server) apiCreateTask(w http.ResponseWriter, r *http.Request, p princip
 	case err != nil:
 		s.fail(w, "create task", err)
 	default:
-		j, _ := s.taskToJSON(t, s.today(p))
+		j, _ := s.taskStateToJSON(t, s.today(p))
 		writeJSON(w, http.StatusCreated, j)
 	}
 }
@@ -131,7 +142,11 @@ func (s *server) apiSetTaskDone(w http.ResponseWriter, r *http.Request, p princi
 	var in struct {
 		Done *bool `json:"done"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.Done == nil {
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if in.Done == nil {
 		writeError(w, http.StatusUnprocessableEntity, "done is required")
 		return
 	}
@@ -146,7 +161,7 @@ func (s *server) apiSetTaskDone(w http.ResponseWriter, r *http.Request, p princi
 	case err != nil:
 		s.fail(w, "tick task", err)
 	default:
-		j, _ := s.taskToJSON(t, s.today(p))
+		j, _ := s.taskStateToJSON(t, s.today(p))
 		writeJSON(w, http.StatusOK, j)
 	}
 }

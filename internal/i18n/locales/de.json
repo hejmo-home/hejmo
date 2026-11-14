@@ -4,6 +4,7 @@
   "setup.https.intro": "Bevor ihr ein Passwort festlegt, bekommt eure Box eine sichere Verbindung (HTTPS). Dafür braucht es keinen Dienst außerhalb eures Zuhauses.",
   "setup.https.step": "Eigene Zertifizierungsstelle",
   "setup.https.hint": "Die Box erstellt ein Zertifikat, das nur für diesen Namen der Box gilt und für keine andere Webseite. Name, unter dem ihr die Box gerade erreicht:",
+  "setup.https.invalidhost": "Diese Adresse kann nicht für HTTPS verwendet werden. Öffnet die Box über ihre IP-Adresse oder einen Namen wie hejmo.local.",
   "setup.https.create": "Verschlüsselung einrichten",
   "trust.title": "Der Box vertrauen",
   "trust.intro": "Damit Geräte der Box vertrauen, installiert einmalig das Zertifikat der Box. Es gilt nur für die Box selbst.",

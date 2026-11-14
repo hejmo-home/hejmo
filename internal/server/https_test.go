@@ -226,6 +226,9 @@ func TestHTTPSStepRefusesNamesThatCannotGoIntoACertificate(t *testing.T) {
 	if r.status != http.StatusBadRequest {
 		t.Fatalf("POST /setup/https for a single-label host = %d, want 400", r.status)
 	}
+	if !strings.Contains(r.body, `action="/setup/https"`) {
+		t.Errorf("the HTTPS step is not shown again:\n%s", r.body)
+	}
 	if b.pki.Ready() {
 		t.Fatal("a certificate was issued")
 	}
@@ -238,5 +241,15 @@ func TestTrustPageNeedsHTTPSToBeSetUp(t *testing.T) {
 	}
 	if r := b.get("/ca/hejmo.mobileconfig"); r.status != http.StatusNotFound {
 		t.Fatalf("profile before HTTPS = %d, want 404", r.status)
+	}
+}
+
+func TestRefusedNameIsExplainedInBothLanguages(t *testing.T) {
+	for lang, want := range map[string]string{"de": "kann nicht für HTTPS verwendet werden", "en": "cannot be used for HTTPS"} {
+		b := newFreshBox(t)
+		r := b.do(http.MethodPost, "/setup/https", url.Values{}, map[string]string{"Host": "hejmo", "Origin": "http://hejmo", "Accept-Language": lang})
+		if r.status != http.StatusBadRequest || !strings.Contains(r.body, want) {
+			t.Errorf("%s: status %d, want 400 with %q:\n%s", lang, r.status, want, r.body)
+		}
 	}
 }

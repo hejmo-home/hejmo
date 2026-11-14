@@ -67,7 +67,7 @@ func (s *server) handleHTTPSSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := s.pki.Provision(hostOf(r), s.now()); err != nil {
 		if errors.Is(err, pki.ErrInvalidHost) {
-			http.Error(w, "This address cannot be used for HTTPS. Open the box by its IP address or a name like hejmo.local.", http.StatusBadRequest)
+			s.render(w, r, http.StatusBadRequest, "setup_https.html", map[string]any{"Host": hostOf(r), "Error": "setup.https.invalidhost"})
 			return
 		}
 		s.fail(w, "provision HTTPS", err)

@@ -4,6 +4,7 @@
   "setup.https.intro": "Before you choose a password, your box gets a secure connection (HTTPS). No service outside your home is needed for this.",
   "setup.https.step": "Own certificate authority",
   "setup.https.hint": "The box creates a certificate that is valid only for this box's own name and for no other website. The name you are using to reach the box right now:",
+  "setup.https.invalidhost": "This address cannot be used for HTTPS. Open the box by its IP address or a name like hejmo.local.",
   "setup.https.create": "Set up encryption",
   "trust.title": "Trust the box",
   "trust.intro": "So that your devices trust the box, install its certificate once. It is valid for the box itself only.",

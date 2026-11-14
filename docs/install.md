@@ -78,7 +78,19 @@ The CA is name-constrained to the box, so it cannot vouch for other websites. Th
 - **Phones:** open the box's address in the phone's browser and sign in. Phone pairing by QR code and the installable phone web app come with the phone screens of the web interface. Calendar apps (iOS Calendar, DAVx5) can subscribe to the box over CalDAV with a device token from the **CalDAV** page.
 - On a phone, trust the own CA first if you use one.
 
+## Automatic updates
+
+The install script also sets up a nightly update check (a systemd timer, `hejmo-update.timer`). It applies to the install script's setup; a plain Docker Compose setup is updated by you.
+
+- **Every night at 03:30** the updater looks for the newest published version (release tags without a suffix such as `-rc.1`; preview builds are never installed).
+- It installs an image only if its signature from the project's release workflow verifies (cosign, keyless via GitHub OIDC). An unsigned or wrongly signed image is not installed.
+- Before switching it takes a backup of the database with SQLite's online backup, restarts the box on the new image and waits for `/healthz`. If the new version does not start or does not answer, it returns to the previous image (recorded by digest) and restores the backup. Parents then see a notice with the reason; a release that failed is not tried again until a newer one is published.
+- After an update, parents see once what is new, with a link to the release notes.
+- **Settings** (web interface, **Settings**): *on* (default), *off*, or *notify only* (nothing is installed; parents see that an update is available).
+- The container gets no access to the Docker socket. The box and the updater exchange only two small files in the data volume (`update-settings`, `update-status`) with fixed keys and values.
+- The updater script itself changes only when you run the install script again. Check the last run with `sudo journalctl -u hejmo-update`.
+
 ## Updating and removing
 
-- Re-running the install script never updates the box. Automatic updates with rollback are a separate part of 0.1.
-- To remove the box: `sudo systemctl disable --now hejmo.service && sudo rm /etc/systemd/system/hejmo.service && cd /opt/hejmo && sudo docker compose down`. Your data stays in `/opt/hejmo/data` until you delete that folder.
+- Re-running the install script keeps your settings and data and refreshes the updater and the systemd units; it does not update the box itself.
+- To remove the box: `sudo systemctl disable --now hejmo.service hejmo-update.timer && sudo rm /etc/systemd/system/hejmo.service /etc/systemd/system/hejmo-update.service /etc/systemd/system/hejmo-update.timer && cd /opt/hejmo && sudo docker compose down`. Your data stays in `/opt/hejmo/data` until you delete that folder.

@@ -466,3 +466,25 @@ func TestStatusFileHasOnlyFixedKeys(t *testing.T) {
 		}
 	}
 }
+
+// The identity the updater demands is the one the release workflow signs with
+// and verifies itself.
+func TestUpdaterTrustsTheReleaseWorkflowsIdentity(t *testing.T) {
+	script, release := read(t, "install.sh"), read(t, ".github/workflows/release.yml")
+	for _, want := range []string{
+		"https://github.com/hejmo-home/hejmo/.github/workflows/release.yml@refs/tags/",
+		"https://token.actions.githubusercontent.com",
+	} {
+		if !strings.Contains(script, want) {
+			t.Errorf("install.sh lacks %q", want)
+		}
+	}
+	for _, want := range []string{"/.github/workflows/release.yml@refs/tags/", "https://token.actions.githubusercontent.com", "cosign sign"} {
+		if !strings.Contains(release, want) {
+			t.Errorf("release.yml lacks %q", want)
+		}
+	}
+	if !strings.Contains(script, "ghcr.io/sigstore/cosign/cosign:v") || !strings.Contains(script, "@sha256:") {
+		t.Error("the cosign image must be pinned by digest")
+	}
+}

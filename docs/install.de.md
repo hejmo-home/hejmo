@@ -78,7 +78,19 @@ Die CA ist auf die Box namensbeschränkt und kann daher nicht für andere Websit
 - **Handys:** Öffne die Adresse der Box im Browser des Handys und melde dich an. Die Kopplung per QR-Code und die installierbare Handy-Web-App kommen mit den Handy-Bildschirmen der Weboberfläche. Kalender-Apps (iOS-Kalender, DAVx5) können die Box per CalDAV mit einem Geräte-Token von der Seite **CalDAV** abonnieren.
 - Nutzt du die eigene CA, vertraue ihr auf dem Handy zuerst.
 
+## Automatische Updates
+
+Das Installationsskript richtet auch eine nächtliche Update-Prüfung ein (ein systemd-Timer, `hejmo-update.timer`). Sie gilt für die Einrichtung per Installationsskript; ein reines Docker-Compose-Setup aktualisierst du selbst.
+
+- **Jede Nacht um 03:30 Uhr** sucht der Updater die neueste veröffentlichte Version (Release-Tags ohne Zusatz wie `-rc.1`; Vorschau-Builds werden nie installiert).
+- Er installiert ein Image nur, wenn dessen Signatur aus dem Release-Workflow des Projekts stimmt (cosign, schlüssellos über GitHub OIDC). Ein unsigniertes oder falsch signiertes Image wird nicht installiert.
+- Vor dem Wechsel sichert er die Datenbank mit der Online-Sicherung von SQLite, startet die Box mit dem neuen Image neu und wartet auf `/healthz`. Startet die neue Version nicht oder antwortet sie nicht, kehrt er zum vorherigen Image (per Digest gemerkt) zurück und spielt die Sicherung ein. Eltern sehen dann einen Hinweis mit dem Grund; eine fehlgeschlagene Version wird nicht erneut versucht, bis eine neuere erscheint.
+- Nach einem Update sehen Eltern einmalig, was neu ist, mit Link zu den Release Notes.
+- **Einstellung** (Weboberfläche, **Einstellungen**): *an* (Standard), *aus* oder *nur benachrichtigen* (nichts wird installiert; Eltern sehen, dass ein Update bereitsteht).
+- Der Container bekommt keinen Zugriff auf den Docker-Socket. Box und Updater tauschen nur zwei kleine Dateien im Datenvolumen aus (`update-settings`, `update-status`) mit festen Schlüsseln und Werten.
+- Das Updater-Skript selbst ändert sich nur, wenn du das Installationsskript erneut ausführst. Den letzten Lauf siehst du mit `sudo journalctl -u hejmo-update`.
+
 ## Aktualisieren und entfernen
 
-- Ein erneuter Lauf des Installationsskripts aktualisiert die Box nie. Automatische Updates mit Rollback sind ein eigener Teil von 0.1.
-- Zum Entfernen: `sudo systemctl disable --now hejmo.service && sudo rm /etc/systemd/system/hejmo.service && cd /opt/hejmo && sudo docker compose down`. Deine Daten bleiben in `/opt/hejmo/data`, bis du den Ordner löschst.
+- Ein erneuter Lauf des Installationsskripts behält Einstellungen und Daten und erneuert Updater und systemd-Units; die Box selbst aktualisiert er nicht.
+- Zum Entfernen: `sudo systemctl disable --now hejmo.service hejmo-update.timer && sudo rm /etc/systemd/system/hejmo.service /etc/systemd/system/hejmo-update.service /etc/systemd/system/hejmo-update.timer && cd /opt/hejmo && sudo docker compose down`. Deine Daten bleiben in `/opt/hejmo/data`, bis du den Ordner löschst.

@@ -1,0 +1,7 @@
+/bin/
+/dist/
+/data/
+*.db
+*.db-*
+.DS_Store
+.env

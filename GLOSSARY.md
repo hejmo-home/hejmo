@@ -21,7 +21,7 @@ A person's belonging to a household, carrying their role and position in the fam
 _Avoid_: household member record
 
 **Role**:
-What a person may do in a household: **parent** (everything) or **child** (read, tick off their own tasks and any list entry).
+What a person may do in a household: **parent** (everything) or **child** (read, tick off and untick their own tasks and any list entry).
 _Avoid_: permission level, user type
 
 **Account**:
@@ -123,7 +123,7 @@ One person's view on a display, opened by tapping them; returns to the family vi
 _Avoid_: profile view, child view (that is a later, separate view)
 
 **Kiosk adapter**:
-The box's connection to the kiosk app on a display that switches its front light and quiet mode.
+The box's connection to the kiosk app on a display that switches its front light and screen, for example in quiet mode.
 _Avoid_: display driver, device control
 
 **Web interface**:
@@ -143,7 +143,7 @@ Whether a display or the web interface is light or dark, switches automatically 
 _Avoid_: dark mode (alone), skin, colour scheme
 
 **Quiet mode**:
-The scheduled night state of a display: a calm night page and the front light off.
+The scheduled night state of a display: a calm night page about the coming morning with the front light off, or a black page on a normal screen.
 _Avoid_: sleep mode (in prose), night mode, standby
 
 **Phone**:

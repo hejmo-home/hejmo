@@ -1,0 +1,139 @@
+package store
+
+import (
+	"database/sql"
+	"errors"
+	"fmt"
+	"strings"
+	"time"
+
+	"github.com/hejmo-home/hejmo/internal/task"
+)
+
+// DayTask is a task due on one day, with whether it is done that day.
+type DayTask struct {
+	task.Task
+	Done bool
+}
+
+// AddTask stores a task. The person must belong to the household.
+func (db *DB) AddTask(householdID string, t task.Task) (task.Task, error) {
+	t.Title = strings.TrimSpace(t.Title)
+	if err := t.Validate(); err != nil {
+		return task.Task{}, fmt.Errorf("%w: %s", ErrInvalid, err)
+	}
+	if _, err := db.Person(householdID, t.PersonID); errors.Is(err, ErrNotFound) {
+		return task.Task{}, fmt.Errorf("%w: unknown person", ErrInvalid)
+	} else if err != nil {
+		return task.Task{}, err
+	}
+	t.ID = newID()
+	ts := now()
+	_, err := db.sql.Exec(`INSERT INTO tasks (id, household_id, person_id, title, emoji, rrule, start_date, part_of_day, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, householdID, t.PersonID, t.Title, t.Emoji, t.RRule(), t.Date, string(t.PartOfDay), ts, ts)
+	return t, err
+}
+
+const taskColumns = `id, person_id, title, emoji, rrule, start_date, part_of_day`
+
+func scanTask(row interface{ Scan(...any) error }) (task.Task, error) {
+	var t task.Task
+	var rule, part string
+	if err := row.Scan(&t.ID, &t.PersonID, &t.Title, &t.Emoji, &rule, &t.Date, &part); err != nil {
+		return task.Task{}, err
+	}
+	parsed, err := task.ParseRRule(rule)
+	if err != nil {
+		return task.Task{}, err
+	}
+	t.Repeat, t.Weekdays, t.PartOfDay = parsed.Repeat, parsed.Weekdays, task.PartOfDay(part)
+	return t, nil
+}
+
+// Tasks lists all tasks of a household, oldest first.
+func (db *DB) Tasks(householdID string) ([]task.Task, error) {
+	rows, err := db.sql.Query(`SELECT `+taskColumns+` FROM tasks WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []task.Task
+	for rows.Next() {
+		t, err := scanTask(rows)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
+// Task loads one task.
+func (db *DB) Task(householdID, id string) (task.Task, error) {
+	t, err := scanTask(db.sql.QueryRow(`SELECT `+taskColumns+` FROM tasks WHERE household_id = ? AND id = ?`, householdID, id))
+	if errors.Is(err, sql.ErrNoRows) {
+		return task.Task{}, ErrNotFound
+	}
+	return t, err
+}
+
+// DeleteTask removes a task and its done days.
+func (db *DB) DeleteTask(householdID, id string) error {
+	res, err := db.sql.Exec(`DELETE FROM tasks WHERE household_id = ? AND id = ?`, householdID, id)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// SetTaskDone ticks a task off (or back open) for one day (YYYY-MM-DD, in the
+// household's time zone). The task must be due that day. Doing either twice
+// changes nothing.
+func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at time.Time) error {
+	t, err := db.Task(householdID, id)
+	if err != nil {
+		return err
+	}
+	if !t.DueOn(day) {
+		return fmt.Errorf("%w: task is not due on %s", ErrInvalid, day)
+	}
+	if !done {
+		_, err = db.sql.Exec(`DELETE FROM task_done WHERE task_id = ? AND day = ?`, id, day)
+		return err
+	}
+	_, err = db.sql.Exec(`INSERT INTO task_done (task_id, day, completed_at, completed_by) VALUES (?, ?, ?, NULLIF(?, ''))
+		ON CONFLICT (task_id, day) DO NOTHING`, id, day, at.UTC().Format(time.RFC3339), by)
+	return err
+}
+
+// TaskDone reports whether a task is ticked off on a day.
+func (db *DB) TaskDone(id, day string) (bool, error) {
+	var n int
+	err := db.sql.QueryRow(`SELECT COUNT(*) FROM task_done WHERE task_id = ? AND day = ?`, id, day).Scan(&n)
+	return n > 0, err
+}
+
+// TasksForDay lists the tasks due on a day with their state: what a display
+// needs for today's progress per person.
+func (db *DB) TasksForDay(householdID, day string) ([]DayTask, error) {
+	all, err := db.Tasks(householdID)
+	if err != nil {
+		return nil, err
+	}
+	var out []DayTask
+	for _, t := range all {
+		if !t.DueOn(day) {
+			continue
+		}
+		done, err := db.TaskDone(t.ID, day)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, DayTask{t, done})
+	}
+	return out, nil
+}

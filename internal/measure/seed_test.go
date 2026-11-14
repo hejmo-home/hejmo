@@ -113,3 +113,30 @@ func TestSeededCalendarsAreNotDueAtStart(t *testing.T) {
 		t.Fatalf("%d seeded calendars are due within the hour; the idle box would be syncing", len(due))
 	}
 }
+
+// Only the next attempt is moved: a seeded calendar started syncing now, so
+// the staleness check sees a household of today, not one of tomorrow.
+func TestSeededCalendarsStartedNow(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	before := time.Now().Add(-time.Minute)
+	if _, err := measure.Seed(db, measure.SeedOptions{FeedURL: "http://feed.invalid/cal.ics", Calendars: 2, EventsPerFeed: 20}); err != nil {
+		t.Fatal(err)
+	}
+	cals, err := db.DueCalendars(time.Now().Add(48 * time.Hour))
+	if err != nil || len(cals) != 2 {
+		t.Fatalf("calendars: %d %v", len(cals), err)
+	}
+	after := time.Now().Add(time.Minute)
+	for _, c := range cals {
+		if c.Sync.StartedAt.Before(before) || c.Sync.StartedAt.After(after) {
+			t.Errorf("started_at %v is not about now", c.Sync.StartedAt)
+		}
+		if !c.Sync.NextAttempt.After(time.Now().Add(time.Hour)) {
+			t.Errorf("next attempt %v is not pushed out", c.Sync.NextAttempt)
+		}
+	}
+}

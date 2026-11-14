@@ -213,6 +213,22 @@ func TestTrustPageExplainsIPhoneAndroidAndBrowsers(t *testing.T) {
 	}
 }
 
+func TestTrustPageHasAMacSectionWithKeychainSteps(t *testing.T) {
+	b := newBox(t)
+	de := b.do(http.MethodGet, "/ca", nil, map[string]string{"Accept-Language": "de"})
+	for _, want := range []string{"Mac", "Schlüsselbundverwaltung", "Anmeldung", "Hejmo box CA", "Vertrauen", "Immer vertrauen", "-25294"} {
+		if !strings.Contains(de.body, want) {
+			t.Errorf("German trust page misses %q", want)
+		}
+	}
+	en := b.do(http.MethodGet, "/ca", nil, map[string]string{"Accept-Language": "en"})
+	for _, want := range []string{"Mac", "Keychain Access", "login", "Hejmo box CA", "Trust", "Always Trust", "-25294"} {
+		if !strings.Contains(en.body, want) {
+			t.Errorf("English trust page misses %q", want)
+		}
+	}
+}
+
 func TestTrustPageShowsTheCAFingerprint(t *testing.T) {
 	b := newBox(t)
 	if r := b.get("/ca"); !strings.Contains(r.body, b.pki.CAFingerprint()) {

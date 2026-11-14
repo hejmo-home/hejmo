@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"slices"
 	"strings"
 	"time"
 
@@ -101,6 +102,7 @@ func New(opts Options) http.Handler {
 	s.pages = template.Must(template.New("").Funcs(template.FuncMap{
 		"t":    func(string) string { return "" }, // replaced per request in render
 		"dict": dict,
+		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 	}).ParseFS(web.Templates, "templates/*.html"))
 
 	static, err := fs.Sub(web.Static, "static")
@@ -135,6 +137,10 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /caldav/tokens", s.handleDeviceTokenCreate)
 	mux.HandleFunc("POST /caldav/tokens/{id}/revoke", s.handleDeviceTokenRevoke)
 	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
+	mux.HandleFunc("GET /tasks", s.handleTasksPage)
+	mux.HandleFunc("POST /tasks", s.handleTaskAdd)
+	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
+	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)

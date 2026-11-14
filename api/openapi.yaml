@@ -185,6 +185,88 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /tasks:
+    get:
+      operationId: listTasks
+      summary: Simple tasks of the household with their state on one day (scope tasks:read)
+      description: |
+        All tasks, oldest first. `due` says whether a task is due on `date`
+        (default today in the household's time zone) and `done` whether it is
+        ticked off that day. A repeating task is open again on the next day it
+        is due. Everyone, children included, may read all tasks.
+      parameters:
+        - { name: date, in: query, required: false, schema: { type: string, format: date } }
+        - { name: person, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Task" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    post:
+      operationId: createTask
+      summary: Create a task for a person (scope tasks:write, parents only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewTask" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/{id}:
+    delete:
+      operationId: deleteTask
+      summary: Delete a task with its history (scope tasks:delete, parents only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /tasks/{id}/done:
+    put:
+      operationId: setTaskDone
+      summary: Tick a task off or back open for today (scope tasks:complete)
+      description: |
+        Parents may do this for every task, a child only for its own (else
+        403). The task must be due today, else 422. Ticking twice changes
+        nothing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [done]
+              properties:
+                done: { type: boolean }
+      responses:
+        "200":
+          description: The task with its state today
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /groups:
     get:
       operationId: listGroups
@@ -516,6 +598,46 @@ components:
         color: { type: string, pattern: "^#[0-9A-Fa-f]{6}$" }
         shape: { type: string }
         symbol: { type: string }
+    TaskRepeat:
+      type: string
+      enum: [once, daily, weekly]
+    TaskWeekday:
+      type: string
+      enum: [MO, TU, WE, TH, FR, SA, SU]
+    TaskPartOfDay:
+      type: string
+      enum: ["", morning, evening]
+      description: Empty means any time of the day
+    NewTask:
+      type: object
+      required: [person_id, title, repeat]
+      properties:
+        person_id: { type: string, format: uuid }
+        title: { type: string, minLength: 1, maxLength: 120, example: Brush teeth }
+        emoji: { type: string, maxLength: 16, example: "🪥" }
+        repeat: { $ref: "#/components/schemas/TaskRepeat" }
+        weekdays:
+          type: array
+          items: { $ref: "#/components/schemas/TaskWeekday" }
+          description: Required (at least one) for `weekly`, else must be empty
+        date: { type: string, format: date, description: "The day of a `once` task (required); the first day of a repeating one (default today)" }
+        part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
+    Task:
+      type: object
+      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, due, done]
+      properties:
+        id: { type: string, format: uuid }
+        person_id: { type: string, format: uuid }
+        title: { type: string }
+        emoji: { type: string }
+        repeat: { $ref: "#/components/schemas/TaskRepeat" }
+        weekdays:
+          type: array
+          items: { $ref: "#/components/schemas/TaskWeekday" }
+        date: { type: string, format: date }
+        part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
+        due: { type: boolean, description: "Due on the requested day" }
+        done: { type: boolean, description: "Ticked off on the requested day" }
     Group:
       type: object
       required: [id, name, members]

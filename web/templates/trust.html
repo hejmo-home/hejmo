@@ -1,4 +1,4 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "trust.title"))}}
+{{template "head" (dict "Lang" .Lang "Title" (t "trust.title") "Frame" .Frame)}}
   <h1>{{t "trust.title"}}</h1>
   <p class="lead">{{t "trust.intro"}}</p>
   <div class="steps">
@@ -10,6 +10,11 @@
     <fieldset>
       <legend>{{t "trust.android.title"}}</legend>
       <span class="hint">{{t "trust.android.steps"}}</span>
+      <a class="button" href="/ca/hejmo-ca.crt">{{t "trust.cert.download"}}</a>
+    </fieldset>
+    <fieldset>
+      <legend>{{t "trust.mac.title"}}</legend>
+      <span class="hint">{{t "trust.mac.steps"}}</span>
       <a class="button" href="/ca/hejmo-ca.crt">{{t "trust.cert.download"}}</a>
     </fieldset>
     <fieldset>

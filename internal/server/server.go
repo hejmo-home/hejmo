@@ -3,16 +3,20 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"html/template"
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"slices"
+	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/pki"
+	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/web"
 )
@@ -26,6 +30,9 @@ type Options struct {
 	// HTTPSPort is the port clients reach HTTPS on, used in redirects and
 	// links. Empty means 443.
 	HTTPSPort string
+	// Public is the public HTTPS certificate (ADR 0014). Nil means the
+	// wizard offers only the box's own CA.
+	Public PublicHTTPS
 	// Sync syncs calendars from outside. Nil means a service with HTTP
 	// fetching; main passes its own so the scheduler and the web UI share it.
 	Sync *calsync.Service
@@ -35,15 +42,37 @@ type Options struct {
 	Logger *slog.Logger
 }
 
+// PublicHTTPS is the box's publicly trusted certificate, set up through the
+// wizard; implemented by publiccert.Manager.
+type PublicHTTPS interface {
+	// Ready reports whether a public setup is installed (its certificate may
+	// still be missing, see HasCertificate).
+	Ready() bool
+	// HasCertificate reports whether the manager has a certificate to serve.
+	// It is false while a stored setup is ready but its certificate could not
+	// be loaded or obtained: the box then serves its own CA's certificate.
+	HasCertificate() bool
+	// Name is the public DNS name of the box.
+	Name() string
+	// Status is shown to parents.
+	Status() publiccert.Status
+	// Setup points the name to the box and obtains the certificate.
+	Setup(context.Context, publiccert.Request) error
+	// Clear forgets the public setup (back to the box's own CA).
+	Clear() error
+}
+
 type server struct {
 	db        *store.DB
 	pki       *pki.Store
+	public    PublicHTTPS
 	httpsPort string
 	now       func() time.Time
 	i18n      *i18n.Bundle
 	pages     *template.Template
 	logger    *slog.Logger
 	limiter   *loginLimiter
+	opens     *loginLimiter // pairing screens opened, per client address
 	sync      *calsync.Service
 }
 
@@ -55,7 +84,7 @@ func New(opts Options) http.Handler {
 	if opts.PKI == nil {
 		panic("server: Options.PKI is required")
 	}
-	s := &server{db: opts.DB, pki: opts.PKI, httpsPort: opts.HTTPSPort, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad()}
+	s := &server{db: opts.DB, pki: opts.PKI, public: opts.Public, httpsPort: opts.HTTPSPort, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad()}
 	if s.httpsPort == "" {
 		s.httpsPort = "443"
 	}
@@ -69,10 +98,8 @@ func New(opts Options) http.Handler {
 		s.sync = calsync.New(s.db, nil, s.now)
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
-	s.pages = template.Must(template.New("").Funcs(template.FuncMap{
-		"t":    func(string) string { return "" }, // replaced per request in render
-		"dict": dict,
-	}).ParseFS(web.Templates, "templates/*.html"))
+	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
+	s.pages = parsePages()
 
 	static, err := fs.Sub(web.Static, "static")
 	if err != nil {
@@ -84,6 +111,9 @@ func New(opts Options) http.Handler {
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
 	mux.HandleFunc("GET /setup/https", s.handleHTTPSForm)
 	mux.HandleFunc("POST /setup/https", s.handleHTTPSSubmit)
+	mux.HandleFunc("POST /setup/https/public", s.handlePublicHTTPSSubmit)
+	mux.HandleFunc("GET /setup/https/check", s.handleNameCheck)
+	mux.HandleFunc("POST /setup/https/own-ca", s.handleSwitchToOwnCA)
 	mux.HandleFunc("GET /ca", s.handleTrustPage)
 	mux.HandleFunc("GET /ca/hejmo-ca.crt", s.handleCACert)
 	mux.HandleFunc("GET /ca/hejmo.mobileconfig", s.handleMobileConfig)
@@ -107,6 +137,18 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /caldav/tokens", s.handleDeviceTokenCreate)
 	mux.HandleFunc("POST /caldav/tokens/{id}/revoke", s.handleDeviceTokenRevoke)
 	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
+	mux.HandleFunc("GET /tasks", s.handleTasksPage)
+	mux.HandleFunc("POST /tasks", s.handleTaskAdd)
+	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
+	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
+	mux.HandleFunc("GET /display", s.handleDisplay)
+	mux.HandleFunc("GET /display/state", s.handleDisplayState)
+	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
+	mux.HandleFunc("POST /displays", s.handleDisplayPair)
+	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
+	mux.HandleFunc("GET /settings", s.handleSettingsPage)
+	mux.HandleFunc("POST /settings", s.handleSettingsSave)
+	mux.HandleFunc("POST /displays/{id}/settings", s.handleDisplaySettings)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
 	return s.requireHTTPS(sameOrigin(mux))
@@ -138,7 +180,16 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "household", err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID)})
+	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": p.Role == store.RoleParent && s.httpsWarning()})
+}
+
+// parsePages parses the embedded templates; "t" is replaced per render.
+func parsePages() *template.Template {
+	return template.Must(template.New("").Funcs(template.FuncMap{
+		"t":    func(string) string { return "" },
+		"dict": dict,
+		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
+	}).ParseFS(web.Templates, "templates/*.html"))
 }
 
 func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name string, data map[string]any) {
@@ -147,6 +198,9 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
+	if !strings.HasPrefix(name, "display_") {
+		data["Frame"] = s.frameFor(r)
+	}
 	tpl, err := s.pages.Clone()
 	if err == nil {
 		tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return s.i18n.T(lang, key) }})

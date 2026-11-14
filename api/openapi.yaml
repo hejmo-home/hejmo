@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Hejmo box API
-  version: 0.4.0
+  version: 0.5.0
   description: |
     The REST API is the single interface for the web UI, displays, phones and
     integrations. Authenticate with a bearer token (`Authorization: Bearer hejmo_…`)
@@ -134,6 +134,159 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /displays:
+    get:
+      operationId: listDisplays
+      summary: Paired displays of the household (scope displays:read)
+      responses:
+        "200":
+          description: Displays, oldest first. Unpaired displays are not listed.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Display" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: pairDisplay
+      summary: Pair a waiting display by the six-digit code it shows (scope displays:write)
+      description: |
+        A new display opens the box's display address (`/display`) and shows a
+        QR code and a six-digit code, valid for ten minutes. Confirming the
+        code names the display and gives it its own revocable token, which it
+        keeps in its browser. A wrong or expired code is refused with 404;
+        after five wrong codes in 15 minutes the person gets 429.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PairDisplay" }
+      responses:
+        "201":
+          description: Paired
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Display" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /displays/{id}:
+    patch:
+      operationId: updateDisplay
+      summary: Change the settings of a paired display (scope displays:write)
+      description: Only the fields sent are changed. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdateDisplay" }
+      responses:
+        "200":
+          description: The display with its settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Display" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    delete:
+      operationId: unpairDisplay
+      summary: Unpair a display and revoke its token (scope displays:delete)
+      description: The display shows the pairing screen again within a minute.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Unpaired }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /tasks:
+    get:
+      operationId: listTasks
+      summary: Simple tasks of the household with their state on one day (scope tasks:read)
+      description: |
+        All tasks, oldest first. `due` says whether a task is due on `date`
+        (default today in the household's time zone) and `done` whether it is
+        ticked off that day. A repeating task is open again on the next day it
+        is due. Everyone, children included, may read all tasks.
+      parameters:
+        - { name: date, in: query, required: false, schema: { type: string, format: date } }
+        - { name: person, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Tasks
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Task" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    post:
+      operationId: createTask
+      summary: Create a task for a person (scope tasks:write, parents only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewTask" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/{id}:
+    delete:
+      operationId: deleteTask
+      summary: Delete a task with its history (scope tasks:delete, parents only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /tasks/{id}/done:
+    put:
+      operationId: setTaskDone
+      summary: Tick a task off or back open for today (scope tasks:complete)
+      description: |
+        Parents may do this for every task, a child only for its own (else
+        403). The task must be due today, else 422. Ticking twice changes
+        nothing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [done]
+              properties:
+                done: { type: boolean }
+      responses:
+        "200":
+          description: The task with its state today
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /groups:
     get:
       operationId: listGroups
@@ -360,6 +513,58 @@ paths:
                 items: { $ref: "#/components/schemas/SyncLogEntry" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /https:
+    get:
+      operationId: getHTTPS
+      summary: How the box secures HTTPS and whether its certificate needs attention (parents, scope settings:read)
+      description: |
+        `own-ca` is the box's own certificate authority (it is renewed by the box). Without `warning` there is
+        nothing to do. With `warning` true it is the fallback of a configured box whose public certificate could
+        not be loaded or obtained (decision Q27): the box serves its own CA's certificate on HTTPS, never
+        plain HTTP, and phones must first trust the own CA (`/ca`); `renewal_error` says why.
+        `public` is a publicly trusted certificate for the family's DNS name (ADR 0014); `warning` is set when its
+        renewal failed or it is about to expire.
+      responses:
+        "200":
+          description: HTTPS status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HTTPSStatus" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /settings:
+    get:
+      operationId: getSettings
+      summary: Household settings (scope settings:read)
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Settings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: updateSettings
+      summary: Change household settings; omitted fields stay as they are (scope settings:write)
+      description: |
+        The time format applies to every time shown in the web interface and
+        on displays (ADR 0016). Unknown values are refused with 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SettingsUpdate" }
+      responses:
+        "200":
+          description: Settings after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Settings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /events:
     get:
       operationId: listOccurrences
@@ -503,6 +708,46 @@ components:
         color: { type: string, pattern: "^#[0-9A-Fa-f]{6}$" }
         shape: { type: string }
         symbol: { type: string }
+    TaskRepeat:
+      type: string
+      enum: [once, daily, weekly]
+    TaskWeekday:
+      type: string
+      enum: [MO, TU, WE, TH, FR, SA, SU]
+    TaskPartOfDay:
+      type: string
+      enum: ["", morning, evening]
+      description: Empty means any time of the day
+    NewTask:
+      type: object
+      required: [person_id, title, repeat]
+      properties:
+        person_id: { type: string, format: uuid }
+        title: { type: string, minLength: 1, maxLength: 120, example: Brush teeth }
+        emoji: { type: string, maxLength: 16, example: "🪥" }
+        repeat: { $ref: "#/components/schemas/TaskRepeat" }
+        weekdays:
+          type: array
+          items: { $ref: "#/components/schemas/TaskWeekday" }
+          description: Required (at least one) for `weekly`, else must be empty
+        date: { type: string, format: date, description: "The day of a `once` task (required); the first day of a repeating one (default today)" }
+        part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
+    Task:
+      type: object
+      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, due, done]
+      properties:
+        id: { type: string, format: uuid }
+        person_id: { type: string, format: uuid }
+        title: { type: string }
+        emoji: { type: string }
+        repeat: { $ref: "#/components/schemas/TaskRepeat" }
+        weekdays:
+          type: array
+          items: { $ref: "#/components/schemas/TaskWeekday" }
+        date: { type: string, format: date }
+        part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
+        due: { type: boolean, description: "Due on the requested day" }
+        done: { type: boolean, description: "Ticked off on the requested day" }
     Group:
       type: object
       required: [id, name, members]
@@ -538,6 +783,33 @@ components:
         person: { type: string, description: "Name of the person the token acts for" }
         created_at: { type: string, format: date-time }
         last_used_at: { type: string, format: date-time, nullable: true }
+    DisplayType:
+      type: string
+      enum: [eink_bw, eink_color, screen]
+      description: Black-and-white E-Ink, colour E-Ink or normal screen
+    Display:
+      type: object
+      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Hallway }
+        room: { type: string, example: Entrance }
+        type: { $ref: "#/components/schemas/DisplayType" }
+        paired_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time, nullable: true }
+        show_tomorrow: { type: boolean, description: "Show the faded tomorrow block from 18:00. Off by default (ADR 0016)" }
+    UpdateDisplay:
+      type: object
+      properties:
+        show_tomorrow: { type: boolean }
+    PairDisplay:
+      type: object
+      required: [code, name, type]
+      properties:
+        code: { type: string, pattern: "^[0-9]{6}$", example: "042917" }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        room: { type: string, maxLength: 80 }
+        type: { $ref: "#/components/schemas/DisplayType" }
     SyncState:
       type: object
       description: Only on synced calendars. Displays read `state` to show the sync notice.
@@ -605,6 +877,27 @@ components:
         at: { type: string, format: date-time }
         kind: { type: string, enum: [failure, conflict, note] }
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
+    Settings:
+      type: object
+      required: [time_format, temperature_unit]
+      properties:
+        time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
+        temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
+    SettingsUpdate:
+      type: object
+      properties:
+        time_format: { type: string, description: "24h or 12h" }
+        temperature_unit: { type: string, description: "c or f" }
+    HTTPSStatus:
+      type: object
+      required: [mode, warning]
+      properties:
+        mode: { type: string, enum: [own-ca, public] }
+        name: { type: string, description: "Public DNS name of the box (mode public)" }
+        issuer: { type: string, enum: [letsencrypt, actalis], description: "Chosen certificate authority (mode public)" }
+        expires_at: { type: string, format: date-time }
+        warning: { type: boolean, description: "True if the public certificate could not be resumed, loaded, obtained or renewed, or expires within 7 days" }
+        renewal_error: { type: string, description: "Why the last resume, load, order or renewal failed" }
     Event:
       type: object
       description: An event or series master. Times are RFC 3339 in the household's time zone; all-day events use dates with an exclusive end.
@@ -686,6 +979,11 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Invalid:
       description: Request is well-formed but not valid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    TooManyRequests:
+      description: Too many wrong attempts, try again later
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }

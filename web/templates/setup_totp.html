@@ -1,10 +1,11 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "setup.totp.title"))}}
+{{template "head" (dict "Lang" .Lang "Title" (t "setup.totp.title") "Frame" .Frame)}}
   <h1>{{t "setup.totp.title"}}</h1>
   <p class="lead">{{t "setup.totp.intro"}}</p>
   {{template "error" .}}
   <div class="steps">
     <fieldset>
       <legend>{{t "setup.totp.key"}}</legend>
+      <div class="qr">{{.QR}}</div>
       <code class="secret" data-totp-secret="{{.Secret}}">{{.Secret}}</code>
       <a class="hint" href="{{.URI}}">{{t "setup.totp.link"}}</a>
     </fieldset>

@@ -1,78 +1,66 @@
 package secret_test
 
 import (
+	"bytes"
 	"os"
 	"path/filepath"
-	"strings"
 	"testing"
 
 	"github.com/hejmo-home/hejmo/internal/secret"
 )
 
-func TestSealedTextIsNotReadableAndOpensWithTheSameKey(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "secret.key")
-	box, err := secret.LoadOrCreate(path)
+func TestSealedTextIsNotPlainAndOpensAgain(t *testing.T) {
+	s, err := secret.Open(filepath.Join(t.TempDir(), "secret.key"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	sealed, err := box.Seal("app-specific-password")
+	sealed, err := s.Seal([]byte("dns-token-1234"))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if strings.Contains(sealed, "app-specific-password") {
-		t.Fatalf("sealed text leaks the secret: %q", sealed)
+	if bytes.Contains(sealed, []byte("dns-token")) {
+		t.Fatal("sealed value contains the plain text")
 	}
-	again, _ := box.Seal("app-specific-password")
-	if again == sealed {
-		t.Fatal("two seals of the same text are identical: nonce is reused")
-	}
-	got, err := box.Open(sealed)
-	if err != nil || got != "app-specific-password" {
+	got, err := s.Open(sealed)
+	if err != nil || string(got) != "dns-token-1234" {
 		t.Fatalf("Open = %q, %v", got, err)
 	}
+	again, _ := s.Seal([]byte("dns-token-1234"))
+	if bytes.Equal(sealed, again) {
+		t.Error("sealing twice gave the same bytes; nonce is reused")
+	}
 }
 
-func TestOtherKeyOrTamperedTextDoesNotOpen(t *testing.T) {
-	dir := t.TempDir()
-	a, _ := secret.LoadOrCreate(filepath.Join(dir, "a.key"))
-	b, _ := secret.LoadOrCreate(filepath.Join(dir, "b.key"))
-	sealed, _ := a.Seal("pw")
+func TestKeySurvivesRestartAndStaysPrivate(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "secret.key")
+	first, _ := secret.Open(path)
+	sealed, _ := first.Seal([]byte("x"))
+
+	second, err := secret.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got, err := second.Open(sealed); err != nil || string(got) != "x" {
+		t.Fatalf("after restart: %q, %v", got, err)
+	}
+	if fi, _ := os.Stat(path); fi.Mode().Perm() != 0o600 {
+		t.Errorf("key file mode = %v, want 0600", fi.Mode().Perm())
+	}
+}
+
+func TestTamperedOrForeignValuesAreRejected(t *testing.T) {
+	a, _ := secret.Open(filepath.Join(t.TempDir(), "a.key"))
+	b, _ := secret.Open(filepath.Join(t.TempDir(), "b.key"))
+	sealed, _ := a.Seal([]byte("x"))
 	if _, err := b.Open(sealed); err == nil {
-		t.Fatal("opened with another key")
+		t.Error("a value sealed with another key opened")
 	}
-	if _, err := a.Open(sealed[:len(sealed)-6] + "AAAAAA"); err == nil {
-		t.Fatal("opened tampered text")
+	sealed[len(sealed)-1] ^= 1
+	if _, err := a.Open(sealed); err == nil {
+		t.Error("a tampered value opened")
 	}
-	if _, err := a.Open("not base64 !"); err == nil {
-		t.Fatal("opened garbage")
-	}
-}
-
-func TestFreshVolumeGetsKeyFileWithMode0600AndRestartReusesIt(t *testing.T) {
-	path := filepath.Join(t.TempDir(), "data", "secret.key")
-	first, err := secret.LoadOrCreate(path)
-	if err != nil {
-		t.Fatal(err)
-	}
-	info, err := os.Stat(path)
-	if err != nil {
-		t.Fatalf("no key file: %v", err)
-	}
-	if info.Mode().Perm() != 0o600 {
-		t.Fatalf("mode = %v, want 0600", info.Mode().Perm())
-	}
-	raw, _ := os.ReadFile(path)
-	sealed, _ := first.Seal("pw")
-
-	second, err := secret.LoadOrCreate(path) // restart
-	if err != nil {
-		t.Fatal(err)
-	}
-	if got, err := second.Open(sealed); err != nil || got != "pw" {
-		t.Fatalf("restart did not reuse the key: %q, %v", got, err)
-	}
-	if again, _ := os.ReadFile(path); string(again) != string(raw) {
-		t.Fatal("key file was rewritten on restart")
+	if _, err := a.Open([]byte("short")); err == nil {
+		t.Error("a too short value opened")
 	}
 }
 
@@ -81,7 +69,7 @@ func TestBrokenKeyFileIsRefusedNotReplaced(t *testing.T) {
 	if err := os.WriteFile(path, []byte("too short"), 0o600); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := secret.LoadOrCreate(path); err == nil {
+	if _, err := secret.Open(path); err == nil {
 		t.Fatal("accepted a broken key file")
 	}
 	if got, _ := os.ReadFile(path); string(got) != "too short" {

@@ -19,6 +19,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/pki"
+	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -34,6 +35,73 @@ type box struct {
 	now     time.Time
 	feeds   *fakeFeeds
 	sync    *calsync.Service
+	public  *fakePublic
+}
+
+// fakePublic stands in for the public certificate manager: what it does
+// (DNS-01, CAs) is tested in internal/publiccert.
+type fakePublic struct {
+	mu      sync.Mutex
+	name    string
+	status  publiccert.Status
+	got     []publiccert.Request
+	failure error
+	cleared int
+	// noCert makes a ready manager have no certificate to serve: the setup is
+	// stored but the certificate could not be obtained.
+	noCert bool
+	// warnOnFailure makes a failed Setup leave a warning, as a failed order may.
+	warnOnFailure bool
+	// gate, if set, holds Setup back until it is closed.
+	gate chan struct{}
+	// ctxErr and ctxDeadline describe the context the last Setup ended with.
+	ctxErr      error
+	ctxDeadline bool
+}
+
+func (f *fakePublic) Ready() bool { f.mu.Lock(); defer f.mu.Unlock(); return f.name != "" }
+func (f *fakePublic) HasCertificate() bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.name != "" && !f.noCert
+}
+func (f *fakePublic) Name() string { f.mu.Lock(); defer f.mu.Unlock(); return f.name }
+func (f *fakePublic) Status() publiccert.Status {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	st := f.status
+	st.Name = f.name
+	return st
+}
+func (f *fakePublic) Clear() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.name, f.status, f.cleared = "", publiccert.Status{}, f.cleared+1
+	return nil
+}
+func (f *fakePublic) Setup(ctx context.Context, r publiccert.Request) error {
+	if f.gate != nil {
+		<-f.gate
+	}
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.got = append(f.got, r)
+	f.ctxErr = ctx.Err()
+	_, f.ctxDeadline = ctx.Deadline()
+	if f.failure != nil {
+		if f.warnOnFailure {
+			f.status.Warning, f.status.RenewalError = true, f.failure.Error()
+		}
+		return f.failure
+	}
+	f.name = r.Name
+	f.status.Issuer = r.Issuer
+	return nil
+}
+func (f *fakePublic) requests() []publiccert.Request {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]publiccert.Request(nil), f.got...)
 }
 
 // fakeFeeds serves ICS feeds (and failures) to the box's calendar sync.
@@ -86,7 +154,7 @@ func newFreshBox(t *testing.T) *box {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	keys, err := secret.LoadOrCreate(filepath.Join(t.TempDir(), "secret.key"))
+	keys, err := secret.Open(filepath.Join(t.TempDir(), "secret.key"))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -96,10 +164,10 @@ func newFreshBox(t *testing.T) *box {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := &box{t: t, db: db, pki: certs, feeds: feeds, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
+	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time { return b.now }
 	b.sync = calsync.New(db, feeds, now)
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Now: now, Sync: b.sync})
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()
@@ -197,7 +265,7 @@ func pemToDER(t *testing.T, p []byte) []byte {
 
 // serverWithHTTPSPort rebuilds the box's handler with a public HTTPS port.
 func serverWithHTTPSPort(b *box, port string) http.Handler {
-	return server.New(server.Options{DB: b.db, PKI: b.pki, HTTPSPort: port, Now: func() time.Time { return b.now }})
+	return server.New(server.Options{DB: b.db, PKI: b.pki, Public: b.public, HTTPSPort: port, Now: func() time.Time { return b.now }})
 }
 
 func validSetupForm() url.Values {

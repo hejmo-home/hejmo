@@ -48,6 +48,10 @@ _Avoid_: onboarding, installer
 The box's own certificate authority, name-constrained to the box so it cannot vouch for other sites. Devices trust it once (iOS profile, DAVx5 prompt, browser import). The fallback when no public name and certificate are used (ADR 0014).
 _Avoid_: self-signed certificate, root cert
 
+**Public name**:
+A DNS name of the box (a free deSEC `dedyn.io` name or the family's own domain) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
+_Avoid_: domain, DynDNS
+
 **Home region**:
 The German state, Austrian state or Swiss canton of the household, which decides its public holidays.
 _Avoid_: location, country, Bundesland (in code)
@@ -109,7 +113,7 @@ The same event changed both on the box and outside since the last sync.
 _Avoid_: collision, clash
 
 **Sync log**:
-The record, visible to parents, of sync failures and sync conflicts, including the version that lost.
+The record, visible to parents, of sync failures and sync conflicts, including the version that lost. Shown as "Sync problems".
 _Avoid_: history, audit log
 
 ## Views and devices
@@ -193,6 +197,10 @@ _Avoid_: app password, CalDAV password
 **Share through the box**:
 The switch on a calendar that makes the box serve it to CalDAV clients. The family calendar is always shared; on by default for ICS calendars, off for CalDAV and Google calendars.
 _Avoid_: publish, export
+
+**Recovery code**:
+A one-time code shown once when one-time codes are set up, which replaces the one-time code at sign-in when the device with the authenticator app is lost.
+_Avoid_: backup code, reset code
 
 **Token scope**:
 A right granted to an API token: `read`, `write`, a resource (e.g. `lists`) or a resource with an action (e.g. `events:read`).

@@ -1,17 +1,29 @@
 {{define "head"}}<!doctype html>
-<html lang="{{.Lang}}">
+<html lang="{{.Lang}}"{{with .Theme}} data-theme="{{.}}"{{end}}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Title}} · Hejmo</title>
 <link rel="stylesheet" href="/static/hejmo.css">
 </head>
-<body>
-<main>
+<body{{if .Frame}} class="web"{{end}}>
+{{if .Frame}}<a class="skip" href="#content">{{t "frame.skip"}}</a>{{end}}
+<div{{if .Frame}} class="frame framed{{if .Frame.Items}} has-nav{{end}}"{{end}}>
+{{with .Frame}}
+<header class="frame-bar">
+  <a class="brand" href="/">Hejmo</a>
+  {{if .SignedIn}}<form method="post" action="/logout"><button class="button secondary" type="submit">{{t "home.logout"}}</button></form>{{end}}
+</header>
+{{if .Items}}<nav class="frame-nav" aria-label="{{t "nav.label"}}"><ul>
+  {{range .Items}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{t .Label}}</a></li>
+  {{end}}</ul></nav>{{end}}
+{{end}}
+<main id="content">
 {{end}}
 
 {{define "foot"}}
 </main>
+</div>
 </body>
 </html>
 {{end}}
@@ -19,3 +31,5 @@
 {{define "error"}}{{if .Error}}<p class="error" role="alert">{{t .Error}}</p>{{end}}{{end}}
 
 {{define "syncNotice"}}{{if .SyncStale}}<p class="notice" role="status" data-sync-stale>{{t "sync.stale"}} <a href="/calendars">{{t "sync.stale.link"}}</a></p>{{end}}{{end}}
+
+{{define "httpsNotice"}}{{if .HTTPSWarning}}<p class="notice" role="alert" data-https-warning>{{t "https.warning"}} {{t "https.warning.hint"}}</p>{{end}}{{end}}

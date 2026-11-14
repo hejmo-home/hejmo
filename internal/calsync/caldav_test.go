@@ -55,7 +55,7 @@ func newDAVFixture(t *testing.T, password string) *davFixture {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
-	box, err := secret.LoadOrCreate(filepath.Join(t.TempDir(), "secret.key"))
+	box, err := secret.Open(filepath.Join(t.TempDir(), "secret.key"))
 	if err != nil {
 		t.Fatal(err)
 	}

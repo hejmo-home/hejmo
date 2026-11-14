@@ -1,58 +1,36 @@
-// Package secret encrypts credentials at rest with AES-256-GCM (ADR 0012).
-//
-// The key lives in a file in the data volume. This protects a leaked database
-// file or backup on its own, not a leaked data volume.
+// Package secret seals credentials the box must be able to read again (the
+// DNS token, ADR 0014; calendar passwords, ADR 0012) so that they are not
+// readable in a dump of the database. The key lives in its own file next to
+// the database, never in it. Standard library only (AES-256-GCM).
 package secret
 
 import (
 	"crypto/aes"
 	"crypto/cipher"
 	"crypto/rand"
-	"encoding/base64"
 	"errors"
-	"fmt"
-	"io/fs"
 	"os"
 	"path/filepath"
 )
 
-const keySize = 32 // AES-256
+// Sealer seals and opens values with the box's key.
+type Sealer struct{ aead cipher.AEAD }
 
-// Box seals and opens short secrets such as app-specific passwords.
-type Box struct{ gcm cipher.AEAD }
-
-// NewBox returns a Box for a 32-byte key.
-func NewBox(key []byte) (*Box, error) {
-	if len(key) != keySize {
-		return nil, fmt.Errorf("secret: key must be %d bytes, is %d", keySize, len(key))
-	}
-	block, err := aes.NewCipher(key)
-	if err != nil {
-		return nil, err
-	}
-	gcm, err := cipher.NewGCM(block)
-	if err != nil {
-		return nil, err
-	}
-	return &Box{gcm: gcm}, nil
-}
-
-// LoadOrCreate reads the key file at path, or creates it (mode 0600, random
-// key) if it does not exist. A key file of the wrong size is an error and is
-// never replaced: that would lock out everything sealed with the old key.
-func LoadOrCreate(path string) (*Box, error) {
+// Open loads the key at path, creating it (mode 0600) on first use.
+func Open(path string) (*Sealer, error) {
 	key, err := os.ReadFile(path)
-	if errors.Is(err, fs.ErrNotExist) {
-		key = make([]byte, keySize)
+	if errors.Is(err, os.ErrNotExist) {
+		key = make([]byte, 32)
 		if _, err := rand.Read(key); err != nil {
 			return nil, err
 		}
 		if err := os.MkdirAll(filepath.Dir(path), 0o700); err != nil {
 			return nil, err
 		}
+		// O_EXCL: never overwrite a key another start created meanwhile.
 		f, err := os.OpenFile(path, os.O_WRONLY|os.O_CREATE|os.O_EXCL, 0o600)
-		if errors.Is(err, fs.ErrExist) { // created by someone else meanwhile
-			return LoadOrCreate(path)
+		if errors.Is(err, os.ErrExist) {
+			return Open(path)
 		}
 		if err != nil {
 			return nil, err
@@ -68,36 +46,34 @@ func LoadOrCreate(path string) (*Box, error) {
 	} else if err != nil {
 		return nil, err
 	}
-	box, err := NewBox(key)
-	if err != nil {
-		return nil, fmt.Errorf("key file %s: %w", path, err)
+	if len(key) != 32 {
+		return nil, errors.New("secret: key file has the wrong size")
 	}
-	return box, nil
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	aead, err := cipher.NewGCM(block)
+	if err != nil {
+		return nil, err
+	}
+	return &Sealer{aead: aead}, nil
 }
 
-// Seal encrypts text. The result is base64 of nonce and ciphertext; every call
-// uses a fresh nonce.
-func (b *Box) Seal(plain string) (string, error) {
-	nonce := make([]byte, b.gcm.NonceSize())
+// Seal encrypts plain. The result starts with a fresh random nonce.
+func (s *Sealer) Seal(plain []byte) ([]byte, error) {
+	nonce := make([]byte, s.aead.NonceSize())
 	if _, err := rand.Read(nonce); err != nil {
-		return "", err
+		return nil, err
 	}
-	return base64.StdEncoding.EncodeToString(b.gcm.Seal(nonce, nonce, []byte(plain), nil)), nil
+	return s.aead.Seal(nonce, nonce, plain, nil), nil
 }
 
-// Open decrypts text produced by Seal. It fails for another key or altered text.
-func (b *Box) Open(sealed string) (string, error) {
-	raw, err := base64.StdEncoding.DecodeString(sealed)
-	if err != nil {
-		return "", errors.New("secret: not sealed text")
+// Open decrypts a value from Seal. It fails for foreign or altered values.
+func (s *Sealer) Open(sealed []byte) ([]byte, error) {
+	n := s.aead.NonceSize()
+	if len(sealed) < n+s.aead.Overhead() {
+		return nil, errors.New("secret: sealed value too short")
 	}
-	n := b.gcm.NonceSize()
-	if len(raw) < n+b.gcm.Overhead() {
-		return "", errors.New("secret: sealed text too short")
-	}
-	plain, err := b.gcm.Open(nil, raw[:n], raw[n:], nil)
-	if err != nil {
-		return "", errors.New("secret: cannot open (wrong key or altered text)")
-	}
-	return string(plain), nil
+	return s.aead.Open(nil, sealed[:n], sealed[n:], nil)
 }

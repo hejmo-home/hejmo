@@ -3,14 +3,13 @@ package server
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
-
-const webTimeLayout = "02/01/2006 15:04"
 
 // parentPage resolves the signed-in parent for a web page, or answers with the
 // redirect or refusal itself.
@@ -21,7 +20,11 @@ func (s *server) parentPage(w http.ResponseWriter, r *http.Request) (principal, 
 	}
 	person, ok := s.currentPerson(r)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		to := "/login"
+		if r.Method == http.MethodGet {
+			to += "?" + url.Values{"next": {r.URL.RequestURI()}}.Encode()
+		}
+		http.Redirect(w, r, to, http.StatusSeeOther)
 		return principal{}, false
 	}
 	if person.Role != store.RoleParent {
@@ -58,6 +61,13 @@ type calendarView struct {
 	IntervalMinutes                                   int
 }
 
+// calendarGroup is one heading of the subscribed calendars: a person, or the
+// whole household. Color is empty for the household.
+type calendarGroup struct {
+	Name, Color string
+	Calendars   []calendarView
+}
+
 type logView struct{ At, Calendar, Kind, Message string }
 
 type choice struct{ ID, Name string }
@@ -70,7 +80,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(webTimeLayout)
+		return t.In(loc).Format(p.timeLayout())
 	}
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
@@ -97,7 +107,16 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		s.fail(w, "synced calendars", err)
 		return
 	}
-	var cals []calendarView
+	// Grouped by person in household order; a calendar shows under every
+	// person of its audience (groups expand to their members). Calendars with
+	// no audience go first under "Whole household". Calendars nobody sees go last under "Not assigned". Empty groups are dropped.
+	members := map[string][]string{}
+	for _, x := range groups {
+		members[x.ID] = x.Members
+	}
+	whole := calendarGroup{Name: s.i18n.T(s.langOf(r), "calendars.whole_household")}
+	unassigned := calendarGroup{Name: s.i18n.T(s.langOf(r), "calendars.unassigned")}
+	byPerson := map[string][]calendarView{}
 	for _, c := range synced {
 		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
 			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes}
@@ -107,7 +126,41 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 			}
 			v.Audience += names[id]
 		}
-		cals = append(cals, v)
+		if len(c.Audience.People) == 0 && len(c.Audience.Groups) == 0 {
+			whole.Calendars = append(whole.Calendars, v)
+			continue
+		}
+		audience := map[string]bool{}
+		for _, id := range c.Audience.People {
+			audience[id] = true
+		}
+		for _, id := range c.Audience.Groups {
+			for _, m := range members[id] {
+				audience[m] = true
+			}
+		}
+		placed := false
+		for _, x := range people {
+			if audience[x.ID] {
+				byPerson[x.ID] = append(byPerson[x.ID], v)
+				placed = true
+			}
+		}
+		if !placed {
+			unassigned.Calendars = append(unassigned.Calendars, v)
+		}
+	}
+	var cals []calendarGroup
+	if len(whole.Calendars) > 0 {
+		cals = append(cals, whole)
+	}
+	for _, x := range people {
+		if len(byPerson[x.ID]) > 0 {
+			cals = append(cals, calendarGroup{Name: x.Name, Color: x.Color, Calendars: byPerson[x.ID]})
+		}
+	}
+	if len(unassigned.Calendars) > 0 {
+		cals = append(cals, unassigned)
 	}
 	conns, err := s.db.Connections(p.household.ID)
 	if err != nil {
@@ -129,7 +182,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	data := map[string]any{
 		"Person": p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
-		"Intervals": syncIntervals, "Connections": connViews, "SyncStale": s.syncStale(p.household.ID), "Form": form,
+		"Intervals": syncIntervals, "Connections": connViews, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
 	}
 	if form != nil {
 		data["Error"] = form["Error"]

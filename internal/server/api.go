@@ -40,12 +40,23 @@ var apiRoutes = []APIRoute{
 	{"GET", "/calendar-connections/{id}/calendars", auth.Perm("settings", auth.Write), (*server).apiDiscover},
 	{"POST", "/calendar-connections/{id}/calendars", auth.Perm("settings", auth.Write), (*server).apiAddConnectionCalendar},
 	{"GET", "/sync-log", auth.Perm("settings", auth.Read), (*server).apiSyncLog},
+	{"GET", "/https", auth.Perm("settings", auth.Read), (*server).apiHTTPS},
+	{"GET", "/settings", auth.Perm("settings", auth.Read), (*server).apiGetSettings},
+	{"PATCH", "/settings", auth.Perm("settings", auth.Write), (*server).apiUpdateSettings},
 	{"GET", "/events", auth.Perm("events", auth.Read), (*server).apiListEvents},
 	{"POST", "/events", auth.Perm("events", auth.Write), (*server).apiCreateEvent},
 	{"PATCH", "/events/{id}", auth.Perm("events", auth.Write), (*server).apiUpdateEvent},
 	{"DELETE", "/events/{id}", auth.Perm("events", auth.Delete), (*server).apiDeleteEvent},
 	{"GET", "/holidays", auth.Perm("events", auth.Read), (*server).apiHolidays},
 	{"GET", "/search", auth.Perm("events", auth.Read), (*server).apiSearch},
+	{"GET", "/tasks", auth.Perm("tasks", auth.Read), (*server).apiListTasks},
+	{"POST", "/tasks", auth.Perm("tasks", auth.Write), (*server).apiCreateTask},
+	{"DELETE", "/tasks/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeleteTask},
+	{"PUT", "/tasks/{id}/done", auth.Perm("tasks", auth.Complete), (*server).apiSetTaskDone},
+	{"GET", "/displays", auth.Perm("displays", auth.Read), (*server).apiListDisplays},
+	{"POST", "/displays", auth.Perm("displays", auth.Write), (*server).apiPairDisplay},
+	{"PATCH", "/displays/{id}", auth.Perm("displays", auth.Write), (*server).apiUpdateDisplay},
+	{"DELETE", "/displays/{id}", auth.Perm("displays", auth.Delete), (*server).apiRevokeDisplay},
 }
 
 // APIRoutes lists the served endpoints (used by the contract test).

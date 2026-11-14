@@ -2,6 +2,7 @@ package store
 
 import (
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"strings"
@@ -12,9 +13,10 @@ import (
 	"github.com/hejmo-home/hejmo/internal/secret"
 )
 
-// SetSecrets sets the key box that seals credentials. Without it, storing or
-// reading a credential fails: the box never keeps one in plain text.
-func (db *DB) SetSecrets(box *secret.Box) { db.secrets = box }
+// SetSecrets sets the sealer for credentials. Without it, storing or reading a
+// credential fails: the box never keeps one in plain text. The sealed bytes are
+// kept base64-encoded in the text column.
+func (db *DB) SetSecrets(s *secret.Sealer) { db.secrets = s }
 
 var errNoKey = errors.New("store: no encryption key set for credentials")
 
@@ -53,10 +55,11 @@ func (db *DB) CreateCalDAVConnection(householdID string, in NewCalDAVConnection)
 	if db.secrets == nil {
 		return Connection{}, errNoKey
 	}
-	sealed, err := db.secrets.Seal(in.Password)
+	raw, err := db.secrets.Seal([]byte(in.Password))
 	if err != nil {
 		return Connection{}, err
 	}
+	sealed := base64.StdEncoding.EncodeToString(raw)
 	id := newID()
 	if _, err := db.sql.Exec(`INSERT INTO calendar_connections (id, household_id, kind, url, username, credential, single_calendar, created_at) VALUES (?, ?, 'caldav', ?, ?, ?, ?, ?)`,
 		id, householdID, in.URL, in.Username, sealed, in.Single, stamp(in.Now)); err != nil {
@@ -114,10 +117,15 @@ func (db *DB) ConnectionCredentials(householdID, connectionID string) (user, pas
 	if err != nil {
 		return "", "", err
 	}
-	if password, err = db.secrets.Open(sealed); err != nil {
-		return "", "", err
+	raw, err := base64.StdEncoding.DecodeString(sealed)
+	if err != nil {
+		return "", "", errors.New("store: stored credential is not sealed text")
 	}
-	return user, password, nil
+	plain, err := db.secrets.Open(raw)
+	if err != nil {
+		return "", "", errors.New("store: cannot open stored credential (wrong key or altered text)")
+	}
+	return user, string(plain), nil
 }
 
 // AddCalDAVCalendar adds a calendar of a connection. It is read-only (write-back

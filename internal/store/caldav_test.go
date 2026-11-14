@@ -15,7 +15,7 @@ import (
 func openSealed(t *testing.T) (*store.DB, string) {
 	t.Helper()
 	db, path := openTemp(t)
-	box, err := secret.LoadOrCreate(filepath.Join(t.TempDir(), "secret.key"))
+	box, err := secret.Open(filepath.Join(t.TempDir(), "secret.key"))
 	if err != nil {
 		t.Fatal(err)
 	}

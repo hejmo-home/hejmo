@@ -1,7 +1,41 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "setup.https.title"))}}
+{{template "head" (dict "Lang" .Lang "Title" (t "setup.https.title") "Frame" .Frame)}}
   <h1>{{t "setup.https.title"}}</h1>
   <p class="lead">{{t "setup.https.intro"}}</p>
+  {{template "httpsNotice" .}}
   {{template "error" .}}
+  {{if .Public}}
+  <form method="post" action="/setup/https/public" class="steps">
+    <fieldset>
+      <legend>{{t "setup.https.public.title"}}</legend>
+      <span class="hint">{{t "setup.https.public.hint"}}</span>
+      <input type="hidden" name="provider" value="desec">
+      <label>{{t "setup.https.public.name"}}
+        <input name="name" value="{{.Form.Name}}" required placeholder="familie.dedyn.io" autocomplete="off" autocapitalize="none" spellcheck="false"></label>
+      <label>{{t "setup.https.public.token"}}
+        <input name="token" type="password" required autocomplete="off"></label>
+      <span class="hint">{{t "setup.https.public.token.hint"}}</span>
+      <label>{{t "setup.https.public.lan_ip"}}
+        <input name="lan_ip" value="{{.Form.LANIP}}" required inputmode="decimal" autocomplete="off" spellcheck="false"></label>
+      <label>{{t "setup.https.public.issuer"}}
+        <select name="issuer">
+          <option value="letsencrypt"{{if ne .Form.Issuer "actalis"}} selected{{end}}>{{t "setup.https.public.issuer.letsencrypt"}}</option>
+          <option value="actalis"{{if eq .Form.Issuer "actalis"}} selected{{end}}>{{t "setup.https.public.issuer.actalis"}}</option>
+        </select></label>
+      <label>{{t "setup.https.public.email"}}
+        <input name="email" type="email" value="{{.Form.Email}}" autocomplete="email"></label>
+      <details>
+        <summary>{{t "setup.https.public.actalis"}}</summary>
+        <span class="hint">{{t "setup.https.public.actalis.hint"}}</span>
+        <label>{{t "setup.https.public.eab_key_id"}}
+          <input name="eab_key_id" value="{{.Form.EABKeyID}}" autocomplete="off" spellcheck="false"></label>
+        <label>{{t "setup.https.public.eab_hmac"}}
+          <input name="eab_hmac" type="password" autocomplete="off"></label>
+      </details>
+      <span class="hint">{{t "setup.https.public.terms"}}</span>
+      <button class="button" type="submit">{{t "setup.https.public.create"}}</button>
+    </fieldset>
+  </form>
+  {{end}}
   <form method="post" action="/setup/https" class="steps">
     <fieldset>
       <legend>{{t "setup.https.step"}}</legend>

@@ -13,7 +13,7 @@ Each ADR records one decision: context, decision, consequences. ADRs take preced
 | [0007](0007-calendar-sync-in-v1.md) | Calendar sync in V1.0 | Accepted, amended by 0013 |
 | [0008](0008-design-takes-precedence-over-version-plan.md) | Design takes precedence over the version plan | Accepted, amended by 0015, 0016 |
 | [0009](0009-project-governance.md) | Project governance | Accepted |
-| [0010](0010-households-memberships-and-credentials.md) | Households, memberships and credentials | Accepted, amended by 0015 |
+| [0010](0010-households-memberships-and-credentials.md) | Households, memberships and credentials | Accepted, amended by 0015, 0017 |
 | [0011](0011-calendar-model.md) | Calendar model | Accepted |
 | [0012](0012-calendar-sync.md) | Calendar sync | Accepted, amended by 0015, 0017, notes added in #19 |
 | [0013](0013-google-calendar-connection.md) | Google Calendar connection | Accepted |

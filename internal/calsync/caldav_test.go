@@ -23,17 +23,25 @@ type davFixture struct {
 	cal     store.SyncedCalendar
 	clock   time.Time
 	fetched atomic.Int32 // objects downloaded
+	garble  atomic.Bool  // downloaded objects arrive unreadable
 }
 
 // countingRemote counts the objects the box downloads.
 type countingRemote struct {
 	*caldav.Client
-	n *atomic.Int32
+	n      *atomic.Int32
+	garble *atomic.Bool
 }
 
 func (c countingRemote) Fetch(ctx context.Context, cal string, urls []string) ([]caldav.Object, error) {
 	c.n.Add(int32(len(urls)))
-	return c.Client.Fetch(ctx, cal, urls)
+	objs, err := c.Client.Fetch(ctx, cal, urls)
+	if c.garble.Load() {
+		for i := range objs {
+			objs[i].Data = []byte("this is not a calendar")
+		}
+	}
+	return objs, err
 }
 
 func newDAVFixture(t *testing.T, password string) *davFixture {
@@ -66,7 +74,7 @@ func newDAVFixture(t *testing.T, password string) *davFixture {
 	fx.svc = calsync.New(db, nil, func() time.Time { return fx.clock })
 	fx.svc.SetDialer(func(serverURL, user, pass string) (calsync.Remote, error) {
 		c, err := caldav.NewClient(serverURL, user, pass, nil)
-		return countingRemote{c, &fx.fetched}, err
+		return countingRemote{c, &fx.fetched, &fx.garble}, err
 	})
 	return fx
 }
@@ -168,5 +176,42 @@ func TestRefusedPasswordKeepsTheEventsAndLogsAReadableFailure(t *testing.T) {
 	log, _ := fx.db.SyncLog(fx.h.ID, 10)
 	if len(log) != 1 || log[0].Kind != "failure" || log[0].Message.Key != "sync.fail.login" {
 		t.Fatalf("log = %+v", log)
+	}
+}
+
+func TestUnreadableObjectKeepsItsLastGoodEventsAndIsNoted(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.srv.Put(t, fx.remote, "swim.ics", caldavtest.Event("swim@test", "Swimming", "20261120T150000", "20261120T160000"))
+	ctx := context.Background()
+	if err := fx.svc.Sync(ctx, fx.h.ID, fx.cal.ID); err != nil || len(fx.titles(t)) != 1 {
+		t.Fatalf("first sync: %v, %v", err, fx.titles(t))
+	}
+
+	fx.srv.Put(t, fx.remote, "swim.ics", caldavtest.Event("swim@test", "Swimming lesson", "20261120T150000", "20261120T160000"))
+	fx.garble.Store(true)
+	fx.clock = fx.clock.Add(5 * time.Minute)
+	if err := fx.svc.Sync(ctx, fx.h.ID, fx.cal.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := fx.titles(t); len(got) != 1 || got[0] != "Swimming" {
+		t.Fatalf("events = %v, want the last good Swimming", got)
+	}
+	log, _ := fx.db.SyncLog(fx.h.ID, 10)
+	var noted bool
+	for _, e := range log {
+		noted = noted || e.Message.Key == "sync.note.bad_object"
+	}
+	if !noted {
+		t.Fatalf("no sync.note.bad_object in %+v", log)
+	}
+
+	// Once the object reads again, the new version replaces the old one.
+	fx.garble.Store(false)
+	fx.clock = fx.clock.Add(5 * time.Minute)
+	if err := fx.svc.Sync(ctx, fx.h.ID, fx.cal.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := fx.titles(t); len(got) != 1 || got[0] != "Swimming lesson" {
+		t.Fatalf("events = %v, want Swimming lesson", got)
 	}
 }

@@ -3,7 +3,6 @@ package calsync
 import (
 	"context"
 	"fmt"
-	"net/url"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/caldav"
@@ -86,7 +85,7 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	for _, o := range listed {
 		present[o.URL] = true
 		etags[o.URL] = o.ETag
-		byPath[normal(o.URL)] = o.URL
+		byPath[caldav.AddressKey(o.URL)] = o.URL
 		if etag, ok := known[o.URL]; !ok || etag != o.ETag || o.ETag == "" {
 			toFetch = append(toFetch, o.URL)
 		}
@@ -109,21 +108,22 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	var changes []store.ObjectChange
 	var notes []i18n.Message
 	for _, o := range fetched {
-		addr, ok := byPath[normal(o.URL)]
+		addr, ok := byPath[caldav.AddressKey(o.URL)]
 		if !ok {
 			continue // not asked for
 		}
 		change := store.ObjectChange{URL: addr, ETag: etags[addr], Raw: string(o.Data)}
 		res, err := icsfeed.Parse(o.Data, icsfeed.Options{Zone: zone, Now: at})
 		if err != nil {
-			// Remember the object anyway, so it is not downloaded again until it changes.
+			// Keep the last good events and ETag (ADR 0012): the object is
+			// tried again next time and the note says why it was skipped.
 			notes = append(notes, i18n.Msg("sync.note.bad_object", "object", addr, "detail", err.Error()))
-		} else {
-			for _, it := range res.Items {
-				change.Items = append(change.Items, store.SyncItem{Key: it.Key, SeriesKey: it.SeriesKey, Event: it.Event})
-			}
-			notes = append(notes, res.Notes...)
+			continue
 		}
+		for _, it := range res.Items {
+			change.Items = append(change.Items, store.SyncItem{Key: it.Key, SeriesKey: it.SeriesKey, Event: it.Event})
+		}
+		notes = append(notes, res.Notes...)
 		changes = append(changes, change)
 	}
 	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
@@ -131,14 +131,4 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), fmt.Errorf("could not store the events: %w", err))
 	}
 	return nil
-}
-
-// normal compares addresses by their decoded path, so servers that escape
-// differently between listing and download still match.
-func normal(address string) string {
-	u, err := url.Parse(address)
-	if err != nil {
-		return address
-	}
-	return u.Path
 }

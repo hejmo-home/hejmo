@@ -10,6 +10,7 @@ import (
 	"strconv"
 	"strings"
 
+	"github.com/hejmo-home/hejmo/internal/secret"
 	_ "modernc.org/sqlite" // pure-Go SQLite driver, BSD-3-Clause
 )
 
@@ -18,7 +19,8 @@ var migrationFiles embed.FS
 
 // DB is the box's database.
 type DB struct {
-	sql *sql.DB
+	sql     *sql.DB
+	secrets *secret.Sealer // seals stored credentials; set with SetSecrets
 }
 
 type migration struct {

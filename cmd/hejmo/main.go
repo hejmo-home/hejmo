@@ -34,7 +34,10 @@ type config struct {
 	HTTPSAddr       string // HTTPS listen address, HEJMO_HTTPS_ADDR
 	PublicHTTPSPort string // port clients reach HTTPS on, HEJMO_PUBLIC_HTTPS_PORT
 	DataDir         string // persistent data, HEJMO_DATA_DIR
-	SecretKeyFile   string // key that seals credentials, HEJMO_SECRET_KEY_FILE (default: secret.key in DataDir)
+	// SecretKeyFile holds the key that seals stored credentials,
+	// HEJMO_SECRET_KEY_FILE (default: secret.key in the data volume). Point it
+	// at a Docker secret to keep the key off the data volume.
+	SecretKeyFile string
 }
 
 func loadConfig(getenv func(string) string) config {
@@ -78,10 +81,7 @@ func run(cfg config, logger *slog.Logger) error {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
-		return err
-	}
-	db, err := store.Open(filepath.Join(cfg.DataDir, "hejmo.db"))
+	db, sealer, err := openDatabase(cfg)
 	if err != nil {
 		return err
 	}
@@ -95,13 +95,6 @@ func run(cfg config, logger *slog.Logger) error {
 	// A public certificate (ADR 0014), if the family chose a name in the
 	// wizard: its DNS token is sealed with a key file (ADR 0012), by default
 	// next to the database.
-	if _, err := os.Stat(cfg.SecretKeyFile); errors.Is(err, os.ErrNotExist) && os.Getenv("HEJMO_SECRET_KEY_FILE") != "" {
-		return fmt.Errorf("HEJMO_SECRET_KEY_FILE %s does not exist", cfg.SecretKeyFile)
-	}
-	sealer, err := secret.Open(cfg.SecretKeyFile)
-	if err != nil {
-		return err
-	}
 	public, err := publiccert.New(filepath.Join(cfg.DataDir, "tls", "public"), db, sealer, publiccert.WithLogger(logger))
 	if err != nil {
 		return err
@@ -166,6 +159,31 @@ func run(cfg config, logger *slog.Logger) error {
 		}
 	}
 	return nil
+}
+
+// openDatabase opens the box's database and the key file that seals stored
+// credentials (calendar passwords, the DNS token; ADR 0012). The key file is
+// generated on first start (mode 0600). A key file named by
+// HEJMO_SECRET_KEY_FILE must already exist, so a missing Docker secret does
+// not silently start the box with a new key. The database gets the sealer, and
+// the caller passes it on to the public certificate manager.
+func openDatabase(cfg config) (*store.DB, *secret.Sealer, error) {
+	if err := os.MkdirAll(cfg.DataDir, 0o700); err != nil {
+		return nil, nil, err
+	}
+	if _, err := os.Stat(cfg.SecretKeyFile); errors.Is(err, os.ErrNotExist) && os.Getenv("HEJMO_SECRET_KEY_FILE") != "" {
+		return nil, nil, fmt.Errorf("HEJMO_SECRET_KEY_FILE %s does not exist", cfg.SecretKeyFile)
+	}
+	sealer, err := secret.Open(cfg.SecretKeyFile)
+	if err != nil {
+		return nil, nil, fmt.Errorf("credential key: %w", err)
+	}
+	db, err := store.Open(filepath.Join(cfg.DataDir, "hejmo.db"))
+	if err != nil {
+		return nil, nil, err
+	}
+	db.SetSecrets(sealer)
+	return db, sealer, nil
 }
 
 // ensureHTTPS makes sure the box can serve HTTPS whenever the family chose a

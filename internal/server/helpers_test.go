@@ -20,6 +20,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
+	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -33,6 +34,7 @@ type box struct {
 	client  *http.Client
 	now     time.Time
 	feeds   *fakeFeeds
+	sync    *calsync.Service
 	public  *fakePublic
 }
 
@@ -152,6 +154,11 @@ func newFreshBox(t *testing.T) *box {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
+	keys, err := secret.Open(filepath.Join(t.TempDir(), "secret.key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	db.SetSecrets(keys)
 	feeds := &fakeFeeds{feeds: map[string]string{}, errs: map[string]error{}}
 	certs, err := pki.Open(t.TempDir())
 	if err != nil {
@@ -159,7 +166,8 @@ func newFreshBox(t *testing.T) *box {
 	}
 	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time { return b.now }
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: calsync.New(db, feeds, now)})
+	b.sync = calsync.New(db, feeds, now)
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()

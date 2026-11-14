@@ -2,6 +2,7 @@ package calsync
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"time"
 
@@ -66,6 +67,10 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	failRemote := func(err error) error {
 		if caldavclient.IsUnauthorized(err) {
 			return fail(i18n.Msg("sync.fail.login"), err)
+		}
+		var foreign *caldavclient.ForeignHostError
+		if errors.As(err, &foreign) {
+			return fail(i18n.Msg("sync.fail.foreign_host", "host", foreign.Host, "domain", foreign.Domain), err)
 		}
 		return fail(MessageOf(err), err)
 	}

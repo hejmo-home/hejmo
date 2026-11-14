@@ -314,3 +314,26 @@ func TestTemporaryServerErrorFailsTheRunAndTheChangeArrivesOnTheNextOne(t *testi
 		})
 	}
 }
+
+// foreignRemote refuses every request the way the client does for a host
+// outside the server's domain.
+type foreignRemote struct{ calsync.Remote }
+
+func (foreignRemote) List(context.Context, string) ([]caldavclient.Object, error) {
+	return nil, &caldavclient.ForeignHostError{Host: "evil.test", Domain: "example.org"}
+}
+
+func TestForeignHostRefusalIsAClearEntryInTheSyncLog(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.svc.SetDialer(func(serverURL, user, pass string) (calsync.Remote, error) { return foreignRemote{}, nil })
+	if err := fx.svc.Sync(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+		t.Fatal("sync succeeded")
+	}
+	log, _ := fx.db.SyncLog(fx.h.ID, 10)
+	if len(log) != 1 || log[0].Kind != "failure" || log[0].Message.Key != "sync.fail.foreign_host" {
+		t.Fatalf("log = %+v", log)
+	}
+	if a := log[0].Message.Params; a["host"] != "evil.test" || a["domain"] != "example.org" {
+		t.Fatalf("args = %v", a)
+	}
+}

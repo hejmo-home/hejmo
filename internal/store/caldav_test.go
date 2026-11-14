@@ -156,6 +156,10 @@ func TestUnreadableObjectKeepsItsEventsButRemembersItsETag(t *testing.T) {
 	f := newDAVFixture(t)
 	u1, u2 := f.a.URL+"a.ics", f.a.URL+"new.ics"
 	_ = f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{obj(u1, "e1", item("a@x", "", "Swimming", at(2026, 11, 20, 15, 0)))}, nil, nil, t0, t0)
+	var goodRaw string
+	if err := f.db.SQL().QueryRow(`SELECT raw FROM remote_objects WHERE url = ?`, u1).Scan(&goodRaw); err != nil || goodRaw == "junk" {
+		t.Fatalf("raw = %q, %v", goodRaw, err)
+	}
 
 	// The object changed on the server but cannot be read; a new one never could.
 	keep := func(url, etag string) store.ObjectChange {
@@ -170,6 +174,10 @@ func TestUnreadableObjectKeepsItsEventsButRemembersItsETag(t *testing.T) {
 	known, _ := f.db.RemoteObjects(f.a.ID)
 	if len(known) != 2 || known[u1] != "e2" || known[u2] != "n1" {
 		t.Fatalf("RemoteObjects = %v", known)
+	}
+	var raw string
+	if err := f.db.SQL().QueryRow(`SELECT raw FROM remote_objects WHERE url = ?`, u1).Scan(&raw); err != nil || raw != goodRaw {
+		t.Fatalf("raw = %q, %v; want the last good text kept", raw, err)
 	}
 }
 

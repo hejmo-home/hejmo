@@ -75,6 +75,10 @@ func (s *server) connect(r *http.Request, p principal, in newConnectionInput) (s
 		if caldavclient.IsUnauthorized(err) {
 			return store.Connection{}, nil, &inputError{"login", "the server refused the user name or password"}
 		}
+		var foreign *caldavclient.ForeignHostError
+		if errors.As(err, &foreign) {
+			return store.Connection{}, nil, &inputError{"foreign_host", err.Error()}
+		}
 		return store.Connection{}, nil, &inputError{"server", "could not read calendars from the server: " + err.Error()}
 	}
 	conn, err := s.db.CreateCalDAVConnection(p.household.ID, store.NewCalDAVConnection{
@@ -95,6 +99,10 @@ func (s *server) rediscover(ctx context.Context, p principal, conn store.Connect
 	if err != nil {
 		if caldavclient.IsUnauthorized(err) {
 			return nil, &inputError{"login", "the server refused the user name or password"}
+		}
+		var foreign *caldavclient.ForeignHostError
+		if errors.As(err, &foreign) {
+			return nil, &inputError{"foreign_host", err.Error()}
 		}
 		return nil, &inputError{"server", "could not read calendars from the server: " + err.Error()}
 	}
@@ -132,7 +140,7 @@ func (s *server) addConnectionCalendar(r *http.Request, p principal, connectionI
 	}
 	remote, err := url.Parse(strings.TrimSpace(in.URL))
 	base, _ := url.Parse(conn.URL)
-	if err != nil || base == nil || remote.Host == "" || !strings.EqualFold(remote.Host, base.Host) || (remote.Scheme != "http" && remote.Scheme != "https") {
+	if err != nil || base == nil || remote.Host == "" || caldavclient.CheckSameDomain(base, remote) != nil {
 		return store.SyncedCalendar{}, &inputError{"calendar", "url must be a calendar on the connection's server"}
 	}
 	opts, err := s.calendarOptions(p, in, defaultCalDAVSync)

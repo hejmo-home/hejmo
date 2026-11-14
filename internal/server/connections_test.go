@@ -330,3 +330,43 @@ func TestConnectionPagesNeedASignedInParent(t *testing.T) {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
 	}
 }
+
+// hostedRemote is a server that, like iCloud, lists calendars on other hosts.
+type hostedRemote struct {
+	calsync.Remote
+	found []caldavclient.Calendar
+}
+
+func (h hostedRemote) Calendars(context.Context) ([]caldavclient.Calendar, error) {
+	return h.found, nil
+}
+func (h hostedRemote) List(context.Context, string) ([]caldavclient.Object, error) {
+	return nil, nil
+}
+
+func (h hostedRemote) Fetch(context.Context, string, []string) ([]caldavclient.Object, error) {
+	return nil, nil
+}
+
+func TestDiscoveredCalendarOnAnotherHostOfTheServersDomainCanBeAdded(t *testing.T) {
+	c := signedInAPI(t)
+	home := "https://p123-caldav.example.org/1/calendars/home/"
+	c.b.sync.SetDialer(func(serverURL, user, pass string) (calsync.Remote, error) {
+		return hostedRemote{found: []caldavclient.Calendar{{URL: home, Name: "Home"}}}, nil
+	})
+	conn := c.connect(t, map[string]any{"provider": "caldav", "url": "https://caldav.example.org", "username": "u", "password": "p"})
+	id := conn["id"].(string)
+	status, cal, _ := c.call(http.MethodPost, "/calendar-connections/"+id+"/calendars", map[string]any{"url": home, "name": "Home"})
+	if status != http.StatusCreated {
+		t.Fatalf("add calendar on a second host = %d %v", status, cal)
+	}
+	for name, foreign := range map[string]string{
+		"foreign domain": "https://calendar.evil.test/home/",
+		"http downgrade": "http://p123-caldav.example.org/1/calendars/other/",
+	} {
+		status, body, _ := c.call(http.MethodPost, "/calendar-connections/"+id+"/calendars", map[string]any{"url": foreign, "name": "X"})
+		if status != http.StatusUnprocessableEntity {
+			t.Errorf("%s: add = %d %v, want 422", name, status, body)
+		}
+	}
+}

@@ -167,19 +167,29 @@ func registrable(host string) string {
 	return host
 }
 
-// permit says whether credentials may be sent to u: the same registrable
-// domain as the configured server, and never a step down from https to http.
-func (a *authClient) permit(u *url.URL) error {
-	domain := registrable(a.base.Hostname())
-	if registrable(u.Hostname()) != domain || u.Scheme != a.base.Scheme {
+// CheckSameDomain says whether u may be contacted with the credentials of the
+// server at base: the same registrable domain, and never a step down from
+// https to http. A move from http to https is allowed. The error is a
+// *ForeignHostError. The sync, discovery and the server's check of a ticked
+// calendar all use this one rule.
+//
+// An unknown top-level domain counts as a public suffix, so on a home network
+// nas.fritz.box and cal.fritz.box are the same domain. That is intended.
+func CheckSameDomain(base, u *url.URL) error {
+	domain := registrable(base.Hostname())
+	upgrade := base.Scheme == "http" && u.Scheme == "https"
+	if registrable(u.Hostname()) != domain || (u.Scheme != base.Scheme && !upgrade) || (u.Scheme != "http" && u.Scheme != "https") {
 		host := u.Hostname()
-		if u.Scheme != a.base.Scheme {
+		if registrable(host) == domain {
 			host = u.Scheme + "://" + host
 		}
 		return &ForeignHostError{Host: host, Domain: domain}
 	}
 	return nil
 }
+
+// permit says whether credentials may be sent to u.
+func (a *authClient) permit(u *url.URL) error { return CheckSameDomain(a.base, u) }
 
 func (a *authClient) Do(req *http.Request) (*http.Response, error) {
 	if err := a.permit(req.URL); err != nil {

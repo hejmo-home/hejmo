@@ -2,10 +2,12 @@ package caldavclient_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
 	"net"
 	"net/http"
 	"net/http/httptest"
+	"net/url"
 	"strings"
 	"sync"
 	"testing"
@@ -219,4 +221,39 @@ func TestCalendarHomeOnAForeignDomainIsRefusedAndCredentialsStayHome(t *testing.
 	if foreign.requests() != 0 {
 		t.Errorf("the foreign host got %d requests, want none", foreign.requests())
 	}
+}
+
+func TestSameDomainAcceptsOtherHostsOfTheServersDomainOnly(t *testing.T) {
+	base := "https://caldav.icloud.com"
+	for addr, ok := range map[string]bool{
+		"https://caldav.icloud.com/1/":          true,
+		"https://p123-caldav.icloud.com/1/":     true,
+		"https://CALDAV.ICLOUD.COM:443/1/":      true,
+		"http://p123-caldav.icloud.com/1/":      false, // never a step down to http
+		"https://caldav.icloud.com.evil.test/1": false,
+		"https://evil.test/1/":                  false,
+		"https://nas.example.co.uk/":            false,
+	} {
+		err := caldavclient.CheckSameDomain(mustURL(t, base), mustURL(t, addr))
+		if (err == nil) != ok {
+			t.Errorf("%s: err = %v, want ok = %v", addr, err, ok)
+		}
+	}
+	// An http server may send you to https of its own domain.
+	if err := caldavclient.CheckSameDomain(mustURL(t, "http://nas.example.org/dav"), mustURL(t, "https://nas.example.org/dav")); err != nil {
+		t.Errorf("http to https upgrade refused: %v", err)
+	}
+	var foreign *caldavclient.ForeignHostError
+	if err := caldavclient.CheckSameDomain(mustURL(t, base), mustURL(t, "https://evil.test/")); !errors.As(err, &foreign) || foreign.Host != "evil.test" || foreign.Domain != "icloud.com" {
+		t.Errorf("err = %#v, want a ForeignHostError naming evil.test and icloud.com", err)
+	}
+}
+
+func mustURL(t *testing.T, s string) *url.URL {
+	t.Helper()
+	u, err := url.Parse(s)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return u
 }

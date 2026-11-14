@@ -221,8 +221,9 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 				return fmt.Errorf("object %s: %w", o.URL, err)
 			}
 		}
+		// An unreadable object keeps the last good text, not the junk.
 		if _, err := tx.Exec(`INSERT INTO remote_objects (calendar_id, url, etag, raw) VALUES (?, ?, ?, ?)
-			ON CONFLICT (calendar_id, url) DO UPDATE SET etag = excluded.etag, raw = excluded.raw`, calendarID, o.URL, o.ETag, o.Raw); err != nil {
+			ON CONFLICT (calendar_id, url) DO UPDATE SET etag = excluded.etag, raw = CASE WHEN ? THEN raw ELSE excluded.raw END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents); err != nil {
 			return err
 		}
 	}

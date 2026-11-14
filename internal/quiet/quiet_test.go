@@ -67,6 +67,17 @@ func TestMorningIsTheDayTheWindowEnds(t *testing.T) {
 	}
 }
 
+// A window that ends before midnight has no morning of its own: the night page
+// is about the day after, not about today, which is already over.
+func TestMorningOfAWindowEndingBeforeMidnightIsTomorrow(t *testing.T) {
+	s, _ := quiet.Parse(true, "20:00", "23:30")
+	for _, now := range []time.Time{at(14, 20, 0), at(14, 22, 0), at(14, 23, 29)} {
+		if _, _, d := s.Morning(now).Date(); d != 15 {
+			t.Errorf("Morning(%s) = day %d, want 15", now.Format("15:04"), d)
+		}
+	}
+}
+
 func TestParseRefusesBadTimes(t *testing.T) {
 	for _, bad := range [][2]string{{"24:00", "06:00"}, {"22:00", "6"}, {"", "06:00"}, {"22:00", "06:60"}, {"22:00", "22:00"}} {
 		if _, err := quiet.Parse(true, bad[0], bad[1]); err == nil {

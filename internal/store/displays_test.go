@@ -3,6 +3,7 @@ package store_test
 import (
 	"errors"
 	"regexp"
+	"strings"
 	"testing"
 	"time"
 
@@ -90,7 +91,7 @@ func TestWrongOrExpiredCodeIsRefused(t *testing.T) {
 func TestConfirmingNeedsANameAndAKnownType(t *testing.T) {
 	db, h := householdForDisplays(t)
 	d, _ := db.OpenPairing(h.ID, "hash-1", pairT0)
-	for _, in := range []store.Display{{Name: " ", Type: store.DisplayScreen}, {Name: "Hallway", Type: "hologram"}} {
+	for _, in := range []store.Display{{Name: " ", Type: store.DisplayScreen}, {Name: strings.Repeat("x", 81), Type: store.DisplayScreen}, {Name: "Hallway", Room: strings.Repeat("x", 81), Type: store.DisplayScreen}, {Name: "Hallway", Type: "hologram"}} {
 		if _, err := db.ConfirmPairing(h.ID, d.Code, in, pairT0); !errors.Is(err, store.ErrInvalid) {
 			t.Fatalf("ConfirmPairing(%+v) = %v, want ErrInvalid", in, err)
 		}

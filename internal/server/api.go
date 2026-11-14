@@ -41,6 +41,9 @@ var apiRoutes = []APIRoute{
 	{"DELETE", "/events/{id}", auth.Perm("events", auth.Delete), (*server).apiDeleteEvent},
 	{"GET", "/holidays", auth.Perm("events", auth.Read), (*server).apiHolidays},
 	{"GET", "/search", auth.Perm("events", auth.Read), (*server).apiSearch},
+	{"GET", "/displays", auth.Perm("displays", auth.Read), (*server).apiListDisplays},
+	{"POST", "/displays", auth.Perm("displays", auth.Write), (*server).apiPairDisplay},
+	{"DELETE", "/displays/{id}", auth.Perm("displays", auth.Delete), (*server).apiRevokeDisplay},
 }
 
 // APIRoutes lists the served endpoints (used by the contract test).

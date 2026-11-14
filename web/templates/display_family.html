@@ -25,10 +25,10 @@
     {{range .Columns}}<section class="column" data-person="{{.Person.Slot}}" data-name="{{.Person.Name}}">
       <h2><span class="marker" data-shape="{{.Person.Shape}}"></span>{{.Person.Name}}</h2>
       <div class="events">
-        {{range .Events}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div>
+        {{range .Events}}<div class="event">{{template "markers" .Markers}}<div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div>
         {{end}}{{if .Tomorrow}}<div class="tomorrow" data-tomorrow>
           <div class="lab">{{t "family.tomorrow"}}</div>
-          {{range .Tomorrow}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div>
+          {{range .Tomorrow}}<div class="event">{{template "markers" .Markers}}<div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div>
           {{end}}</div>{{end}}
       </div>
       {{with .Progress}}<div class="pbar" data-progress="{{printf "%d/%d" .Done .Total}}"><div class="progress"><span style="--pct:{{.Percent}}"></span></div><span class="count">{{printf "%d/%d" .Done .Total}}</span></div>{{end}}
@@ -44,3 +44,5 @@
 {{define "stripItem"}}<li class="strip-item{{if .ContinuesBefore}} before{{end}}{{if .ContinuesAfter}} after{{end}}" data-kind="{{.Kind}}"{{if gt .DayCount 1}} data-bar="{{printf "%d/%d" .DayIndex .DayCount}}"{{end}}>{{range .Markers}}<span class="marker small" data-person="{{.Slot}}" data-shape="{{.Shape}}" title="{{.Name}}"></span>{{end}}<span class="title">{{.Title}}</span>{{if .Time}} <span class="meta">{{.Time}}</span>{{end}}{{if gt .DayCount 1}} <span class="meta">{{t "family.day"}} {{printf "%d/%d" .DayIndex .DayCount}}</span>{{end}}{{if .Partial}} <span class="meta">{{t "family.partial"}}</span>{{end}}</li>{{end}}
 
 {{define "tile"}}<div class="tile{{if .Tile.Alert}} alert{{end}}" data-tile="{{.Kind}}"><div class="lab">{{.Tile.Label}}</div>{{range .Tile.Lines}}<div class="ln">{{.}}</div>{{end}}</div>{{end}}
+
+{{define "markers"}}{{if .}}<span class="markers" aria-hidden="true">{{range .}}<span class="marker small" data-person="{{.Slot}}" data-shape="{{.Shape}}" title="{{.Name}}"></span>{{end}}</span>{{end}}{{end}}

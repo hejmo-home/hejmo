@@ -6,6 +6,10 @@
 // minute, as a partial update (ADR 0016): the script ticks it itself in the
 // household's time zone, it is not part of the announced version.
 //
+// In quiet mode an E-Ink display reloads the whole page from the box once an
+// hour against ghosting (ADR 0015): the night page marks itself with
+// data-reload-seconds, and the timer runs only while that markup is shown.
+//
 // Separately, a display asks the box now and then whether it is still what its
 // page says (paired, or waiting with a code) and reloads when that changed:
 // after a parent confirmed the code, revoked the display, or the code ran out.
@@ -29,6 +33,18 @@
   if (!view) return; // the pairing screen has no view
   var version = el.getAttribute("data-version") || "";
   var loading = false;
+  var reloadTimer = null;
+  function armReload() {
+    var q = view.querySelector("[data-reload-seconds]");
+    if (!q) {
+      if (reloadTimer) { clearTimeout(reloadTimer); reloadTimer = null; }
+      return;
+    }
+    if (reloadTimer) return;
+    var secs = Number(q.getAttribute("data-reload-seconds")) || 3600;
+    reloadTimer = setTimeout(function () { location.reload(); }, secs * 1000);
+  }
+  armReload();
   function refresh() {
     if (loading) return;
     loading = true;
@@ -42,6 +58,7 @@
         view.innerHTML = res.html;
         version = res.v;
         tickClock();
+        armReload();
       })
       .catch(function () {})
       .then(function () { loading = false; });

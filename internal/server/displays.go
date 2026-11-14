@@ -7,12 +7,18 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/kiosk"
+	"github.com/hejmo-home/hejmo/internal/quiet"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 type displayView struct {
 	ID, Name, Room, Type, Paired, LastSeen string
 	ShowTomorrow                           bool
+	QuietOn                                bool
+	QuietFrom, QuietTo                     string
+	KioskURL                               string
+	KioskKeySet                            bool
 }
 
 func (s *server) renderDisplays(w http.ResponseWriter, r *http.Request, p principal, status int, form map[string]any) {
@@ -30,7 +36,8 @@ func (s *server) renderDisplays(w http.ResponseWriter, r *http.Request, p princi
 	}
 	views := make([]displayView, 0, len(list))
 	for _, d := range list {
-		views = append(views, displayView{d.ID, d.Name, d.Room, string(d.Type), at(d.PairedAt), at(d.LastSeen), d.ShowTomorrow})
+		views = append(views, displayView{d.ID, d.Name, d.Room, string(d.Type), at(d.PairedAt), at(d.LastSeen), d.ShowTomorrow,
+			d.Quiet.Enabled, d.Quiet.FromText(), d.Quiet.ToText(), d.KioskURL, d.KioskKeySet})
 	}
 	data := map[string]any{
 		"Person": p.person, "Displays": views, "SyncStale": s.syncStale(p.household.ID), "Form": form,
@@ -89,16 +96,107 @@ func (s *server) handleDisplayUnpair(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleDisplaySettings saves the per-display settings (ADR 0016: show
-// tomorrow block). An unticked checkbox sends nothing, so absent means off.
+var (
+	errQuietTimes = errors.New("quiet mode needs two different times")
+	errKioskURL   = errors.New("the kiosk address must be an http or https address")
+)
+
+// displayChange is a change of a display's settings; nil fields stay as they are.
+type displayChange struct {
+	ShowTomorrow       *bool
+	QuietEnabled       *bool
+	QuietFrom, QuietTo *string
+	KioskURL, KioskKey *string // a nil key keeps the stored one, an empty address removes the kiosk
+}
+
+// changeDisplay validates and saves a change, for the web interface and the API alike.
+func (s *server) changeDisplay(householdID, id string, c displayChange) error {
+	list, err := s.db.Displays(householdID)
+	if err != nil {
+		return err
+	}
+	var cur store.Display
+	found := false
+	for _, d := range list {
+		if d.ID == id {
+			cur, found = d, true
+		}
+	}
+	if !found {
+		return store.ErrNotFound
+	}
+	sched := cur.Quiet
+	if c.QuietEnabled != nil || c.QuietFrom != nil || c.QuietTo != nil {
+		enabled, from, to := sched.Enabled, sched.FromText(), sched.ToText()
+		if c.QuietEnabled != nil {
+			enabled = *c.QuietEnabled
+		}
+		if c.QuietFrom != nil {
+			from = *c.QuietFrom
+		}
+		if c.QuietTo != nil {
+			to = *c.QuietTo
+		}
+		if sched, err = quiet.Parse(enabled, from, to); err != nil {
+			return errQuietTimes
+		}
+	}
+	if c.KioskURL != nil && *c.KioskURL != "" && !kiosk.ValidURL(*c.KioskURL) {
+		return errKioskURL
+	}
+	if c.ShowTomorrow != nil {
+		if err := s.db.SetDisplayShowTomorrow(householdID, id, *c.ShowTomorrow); err != nil {
+			return err
+		}
+	}
+	if sched != cur.Quiet {
+		if err := s.db.SetDisplayQuiet(householdID, id, sched); err != nil {
+			return err
+		}
+	}
+	if c.KioskURL != nil {
+		key := c.KioskKey
+		if key != nil && *key == "" {
+			key = nil // an empty field keeps the key; removing the kiosk removes it
+		}
+		if err := s.db.SetDisplayKiosk(householdID, id, *c.KioskURL, key); err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+// optional returns the form field's value, or nil when the form has no such field.
+func optional(r *http.Request, name string) *string {
+	if _, ok := r.PostForm[name]; !ok {
+		return nil
+	}
+	v := strings.TrimSpace(r.PostForm.Get(name))
+	return &v
+}
+
+// handleDisplaySettings saves the per-display settings: the tomorrow block
+// (ADR 0016), quiet mode and the kiosk app (ADR 0015). An unticked checkbox
+// sends nothing, so absent means off; absent times and addresses stay.
 func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
 	}
-	switch err := s.db.SetDisplayShowTomorrow(p.household.ID, r.PathValue("id"), r.PostFormValue("show_tomorrow") != ""); {
+	_ = r.ParseForm()
+	on := func(name string) *bool { v := r.PostForm.Get(name) != ""; return &v }
+	err := s.changeDisplay(p.household.ID, r.PathValue("id"), displayChange{
+		ShowTomorrow: on("show_tomorrow"), QuietEnabled: on("quiet"),
+		QuietFrom: optional(r, "quiet_from"), QuietTo: optional(r, "quiet_to"),
+		KioskURL: optional(r, "kiosk_url"), KioskKey: optional(r, "kiosk_key"),
+	})
+	switch {
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
+	case errors.Is(err, errQuietTimes):
+		s.renderDisplays(w, r, p, http.StatusUnprocessableEntity, map[string]any{"Error": "displays.error.quiet", "Type": string(store.DisplayEInkBW)})
+	case errors.Is(err, errKioskURL):
+		s.renderDisplays(w, r, p, http.StatusUnprocessableEntity, map[string]any{"Error": "displays.error.kiosk", "Type": string(store.DisplayEInkBW)})
 	case err != nil:
 		s.fail(w, "display settings", err)
 	default:
@@ -107,17 +205,32 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 }
 
 type displayJSON struct {
-	ID           string  `json:"id"`
-	Name         string  `json:"name"`
-	Room         string  `json:"room"`
-	Type         string  `json:"type"`
-	PairedAt     string  `json:"paired_at"`
-	LastSeenAt   *string `json:"last_seen_at"`
-	ShowTomorrow bool    `json:"show_tomorrow"`
+	ID           string    `json:"id"`
+	Name         string    `json:"name"`
+	Room         string    `json:"room"`
+	Type         string    `json:"type"`
+	PairedAt     string    `json:"paired_at"`
+	LastSeenAt   *string   `json:"last_seen_at"`
+	ShowTomorrow bool      `json:"show_tomorrow"`
+	QuietMode    quietJSON `json:"quiet_mode"`
+	Kiosk        kioskJSON `json:"kiosk"`
+}
+
+type quietJSON struct {
+	Enabled bool   `json:"enabled"`
+	From    string `json:"from"`
+	To      string `json:"to"`
+}
+
+// kioskJSON never carries the API key, only whether one is stored.
+type kioskJSON struct {
+	URL       string `json:"url"`
+	APIKeySet bool   `json:"api_key_set"`
 }
 
 func displayToJSON(d store.Display, loc *time.Location) displayJSON {
-	j := displayJSON{ID: d.ID, Name: d.Name, Room: d.Room, Type: string(d.Type), PairedAt: d.PairedAt.In(loc).Format(time.RFC3339), ShowTomorrow: d.ShowTomorrow}
+	j := displayJSON{ID: d.ID, Name: d.Name, Room: d.Room, Type: string(d.Type), PairedAt: d.PairedAt.In(loc).Format(time.RFC3339), ShowTomorrow: d.ShowTomorrow,
+		QuietMode: quietJSON{d.Quiet.Enabled, d.Quiet.FromText(), d.Quiet.ToText()}, Kiosk: kioskJSON{d.KioskURL, d.KioskKeySet}}
 	if !d.LastSeen.IsZero() {
 		seen := d.LastSeen.In(loc).Format(time.RFC3339)
 		j.LastSeenAt = &seen
@@ -163,20 +276,40 @@ func (s *server) apiPairDisplay(w http.ResponseWriter, r *http.Request, p princi
 func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
 		ShowTomorrow *bool `json:"show_tomorrow"`
+		QuietMode    *struct {
+			Enabled *bool   `json:"enabled"`
+			From    *string `json:"from"`
+			To      *string `json:"to"`
+		} `json:"quiet_mode"`
+		Kiosk *struct {
+			URL    *string `json:"url"`
+			APIKey *string `json:"api_key"`
+		} `json:"kiosk"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	if in.ShowTomorrow != nil {
-		switch err := s.db.SetDisplayShowTomorrow(p.household.ID, r.PathValue("id"), *in.ShowTomorrow); {
-		case errors.Is(err, store.ErrNotFound):
-			writeError(w, http.StatusNotFound, "display not found")
-			return
-		case err != nil:
-			s.fail(w, "update display", err)
-			return
-		}
+	c := displayChange{ShowTomorrow: in.ShowTomorrow}
+	if q := in.QuietMode; q != nil {
+		c.QuietEnabled, c.QuietFrom, c.QuietTo = q.Enabled, q.From, q.To
+	}
+	if k := in.Kiosk; k != nil {
+		c.KioskURL, c.KioskKey = k.URL, k.APIKey
+	}
+	switch err := s.changeDisplay(p.household.ID, r.PathValue("id"), c); {
+	case errors.Is(err, store.ErrNotFound):
+		writeError(w, http.StatusNotFound, "display not found")
+		return
+	case errors.Is(err, errQuietTimes):
+		writeError(w, http.StatusUnprocessableEntity, "quiet mode needs two different times as hh:mm")
+		return
+	case errors.Is(err, errKioskURL):
+		writeError(w, http.StatusUnprocessableEntity, "the kiosk address must start with http:// or https://")
+		return
+	case err != nil:
+		s.fail(w, "update display", err)
+		return
 	}
 	list, err := s.db.Displays(p.household.ID)
 	if err != nil {

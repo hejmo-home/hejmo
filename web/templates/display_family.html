@@ -43,3 +43,12 @@
 {{define "stripItem"}}<li class="strip-item{{if .ContinuesBefore}} before{{end}}{{if .ContinuesAfter}} after{{end}}" data-kind="{{.Kind}}"{{if gt .DayCount 1}} data-bar="{{printf "%d/%d" .DayIndex .DayCount}}"{{end}}>{{range .Markers}}<span class="marker small" data-person="{{.Slot}}" data-shape="{{.Shape}}" title="{{.Name}}"></span>{{end}}<span class="title">{{.Title}}</span>{{if .Time}} <span class="meta">{{.Time}}</span>{{end}}{{if gt .DayCount 1}} <span class="meta">{{t "family.day"}} {{printf "%d/%d" .DayIndex .DayCount}}</span>{{end}}{{if .Partial}} <span class="meta">{{t "family.partial"}}</span>{{end}}</li>{{end}}
 
 {{define "tile"}}<div class="tile{{if .Tile.Alert}} alert{{end}}" data-tile="{{.Kind}}"><div class="lab">{{.Tile.Label}}</div>{{range .Tile.Lines}}<div class="ln">{{.}}</div>{{end}}</div>{{end}}
+
+{{define "quietView"}}{{if .Black}}<div class="quiet black" data-quiet="black"></div>{{else}}<div class="quiet night" data-quiet="night" data-reload-seconds="{{.ReloadSeconds}}">
+  <div class="lab">{{t "night.title"}}</div>
+  <div class="lab">{{t (printf "weekday.%d" .Night.Weekday)}}</div>
+  <div class="date">{{.Night.Date.Day}}{{t "family.day_suffix"}} {{t (printf "month.%d" .Night.Date.Month)}}</div>
+  {{with .Night.First}}<div class="night-item" data-first-event><div class="lab">{{t "night.first_event"}}</div><div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div></div>
+  {{else}}<p class="lab" data-no-event>{{t "night.no_event"}}</p>{{end}}
+  {{with .Night.Waste}}<div class="night-item" data-waste><div class="lab">{{t "night.waste"}}</div>{{range .}}<div class="title">{{.}}</div>{{end}}</div>{{end}}
+</div>{{end}}{{end}}

@@ -315,3 +315,13 @@ body:has(.family-page) { overflow: hidden; }
 .fv-footer .tile.alert .lab { color: var(--notice-text); }
 .qr { width: min(60vw, 240px); margin: 0 0 12px; color: var(--text); }
 .qr svg { display: block; width: 100%; height: auto; }
+
+/* Quiet mode (ticket 5.9; ADR 0015). A normal screen goes black; an E-Ink
+   display shows a calm night page about the coming morning. Quiet mode takes
+   precedence over the theme: it uses the display's page background only. */
+.quiet.black { position: fixed; inset: 0; background: black; }
+.quiet.night { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: var(--gap-section); max-width: 32em; margin: 0 auto; }
+.quiet.night .lab { font-size: var(--fs-label); color: var(--text-secondary); }
+.quiet.night .date { font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
+.quiet.night .night-item .title { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+.quiet.night .night-item .meta { font-size: var(--fs-meta); color: var(--text-secondary); }

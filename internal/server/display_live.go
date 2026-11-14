@@ -63,7 +63,7 @@ func (s *server) handleDisplayView(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	markup, version, err := s.renderFamily(h, s.langOf(r), d.ShowTomorrow)
+	markup, version, err := s.renderDisplayContent(h, d, s.langOf(r))
 	if err != nil {
 		s.fail(w, "family view", err)
 		return
@@ -108,7 +108,7 @@ func (s *server) handleDisplayEvents(w http.ResponseWriter, r *http.Request) {
 		} else {
 			d = cur
 		}
-		_, version, err := s.renderFamily(h, lang, d.ShowTomorrow)
+		_, version, err := s.renderDisplayContent(h, d, lang)
 		if err != nil {
 			s.logger.Error("live view", "err", err)
 			return true

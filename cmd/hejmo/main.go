@@ -119,6 +119,16 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-schedulerDone }()
 
+	// The kiosk runner switches the front light of displays with a kiosk app
+	// off at sunset and in quiet mode (ADR 0005, 0015), checked every minute.
+	kioskRunner := server.NewKioskRunner(server.KioskOptions{DB: db, Logger: logger})
+	kioskDone := make(chan struct{})
+	go func() {
+		defer close(kioskDone)
+		kioskRunner.Run(ctx, time.Minute)
+	}()
+	defer func() { stop(); <-kioskDone }()
+
 	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Done: ctx.Done()})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its

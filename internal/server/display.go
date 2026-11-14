@@ -95,9 +95,9 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		if s.now().Sub(d.LastSeen) > time.Minute {
 			_ = s.db.TouchDisplay(hash, s.now())
 		}
-		view, version, err := s.renderFamily(h, s.langOf(r), d.ShowTomorrow)
+		view, version, err := s.renderDisplayContent(h, d, s.langOf(r))
 		if err != nil {
-			s.fail(w, "family view", err)
+			s.fail(w, "display view", err)
 			return
 		}
 		// Placeholder until the per-display themes ticket: a normal screen is
@@ -131,13 +131,38 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 // markerShapes are the black-and-white marker shapes in person slot order (DESIGN.md).
 var markerShapes = []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled"}
 
-// familyView builds today's family view of the household.
-func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (familyview.View, error) {
+// householdNow is the current time in the household's time zone.
+func (s *server) householdNow(h store.Household) time.Time {
 	loc := time.UTC
 	if l, err := time.LoadLocation(h.Timezone); err == nil {
 		loc = l
 	}
-	now := s.now().In(loc)
+	return s.now().In(loc)
+}
+
+// occurrences returns the household's occurrences in [from, to), with a
+// placeholder for untitled events.
+func (s *server) occurrences(h store.Household, lang string, from, to time.Time) ([]calendar.Occurrence, error) {
+	events, err := s.db.EventsBetween(h.ID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	occs, err := calendar.Expand(events, from, to)
+	if err != nil {
+		return nil, err
+	}
+	for i := range occs {
+		if strings.TrimSpace(occs[i].Title) == "" {
+			occs[i].Title = s.i18n.T(lang, "event.untitled")
+		}
+	}
+	return occs, nil
+}
+
+// familyView builds today's family view of the household.
+func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (familyview.View, error) {
+	now := s.householdNow(h)
+	loc := now.Location()
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
 	d2 := d0.AddDate(0, 0, 2)
 	people, err := s.db.People(h.ID)
@@ -148,11 +173,7 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
-	events, err := s.db.EventsBetween(h.ID, d0, d2)
-	if err != nil {
-		return familyview.View{}, err
-	}
-	occs, err := calendar.Expand(events, d0, d2)
+	occs, err := s.occurrences(h, lang, d0, d2)
 	if err != nil {
 		return familyview.View{}, err
 	}
@@ -177,11 +198,6 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 			shape = markerShapes[i%len(markerShapes)]
 		}
 		in.People = append(in.People, familyview.Person{ID: p.ID, Name: p.Name, Slot: i%len(markerShapes) + 1, Shape: shape, Groups: groups})
-	}
-	for i := range in.Occurrences {
-		if strings.TrimSpace(in.Occurrences[i].Title) == "" {
-			in.Occurrences[i].Title = s.i18n.T(lang, "event.untitled")
-		}
 	}
 	return familyview.Build(in), nil
 }

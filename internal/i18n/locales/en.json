@@ -298,5 +298,18 @@
   "tasks.field.part": "Time of day",
   "tasks.part.any": "Any time",
   "tasks.create": "Add task",
-  "tasks.error.invalid": "Please choose a person and enter a title. A once task needs a date, a weekly task at least one weekday."
+  "tasks.error.invalid": "Please choose a person and enter a title. A once task needs a date, a weekly task at least one weekday.",
+  "night.title": "Good night",
+  "night.first_event": "First appointment in the morning",
+  "night.no_event": "No appointment in the morning.",
+  "night.waste": "Waste collection",
+  "displays.quiet": "Quiet mode (night page, front light off)",
+  "displays.quiet_from": "from",
+  "displays.quiet_to": "until",
+  "displays.kiosk_url": "Kiosk app address (FreeKiosk), for example http://192.168.1.20:8080",
+  "displays.kiosk_key": "Kiosk app API key",
+  "displays.kiosk_key_set": "A key is saved; leave empty to keep it.",
+  "displays.kiosk_hint": "With a kiosk app the front light goes off at sunset and in quiet mode.",
+  "displays.error.quiet": "Please enter two different times as hh:mm.",
+  "displays.error.kiosk": "Please enter the kiosk app address starting with http:// or https://."
 }

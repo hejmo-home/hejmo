@@ -1,5 +1,4 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "calendars.title"))}}
-  <p><a href="/">{{t "calendars.back"}}</a></p>
+{{template "head" (dict "Lang" .Lang "Title" (t "calendars.title") "Frame" .Frame)}}
   <h1>{{t "calendars.title"}}</h1>
   {{template "httpsNotice" .}}
   {{template "syncNotice" .}}
@@ -10,7 +9,7 @@
     <ul class="cards">
       {{range .Calendars}}
       <li>
-        <strong><span class="dot" style="background: {{.Color}}" aria-hidden="true"></span> {{.Name}}</strong>
+        <strong><input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{.Name}}</strong>
         <span class="hint">{{t "calendars.readonly"}}{{if .Audience}} · {{t "calendars.for"}} {{.Audience}}{{end}}</span>
         <span class="hint">
           {{if .LastSuccess}}{{t "calendars.last_success"}} {{.LastSuccess}}{{else}}{{t "calendars.never"}}{{end}}

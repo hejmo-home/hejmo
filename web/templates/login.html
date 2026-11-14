@@ -1,4 +1,4 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "login.title"))}}
+{{template "head" (dict "Lang" .Lang "Title" (t "login.title") "Frame" .Frame)}}
   <h1>{{t "login.title"}}</h1>
   {{template "error" .}}
   <form method="post" action="/login" class="steps">

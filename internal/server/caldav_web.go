@@ -29,7 +29,7 @@ func (s *server) renderCalDAV(w http.ResponseWriter, r *http.Request, p principa
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(webTimeLayout)
+		return t.In(loc).Format(p.timeLayout())
 	}
 	acc, err := s.db.AccountByPerson(p.person.ID)
 	if err != nil {

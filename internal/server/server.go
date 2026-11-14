@@ -9,6 +9,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
@@ -139,6 +140,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
+	mux.HandleFunc("GET /settings", s.handleSettingsPage)
+	mux.HandleFunc("POST /settings", s.handleSettingsSave)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
 	return s.requireHTTPS(sameOrigin(mux))
@@ -179,6 +182,9 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
+	if !strings.HasPrefix(name, "display_") {
+		data["Frame"] = s.frameFor(r)
+	}
 	tpl, err := s.pages.Clone()
 	if err == nil {
 		tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return s.i18n.T(lang, key) }})

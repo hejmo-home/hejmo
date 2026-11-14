@@ -7,11 +7,23 @@
 <link rel="stylesheet" href="/static/hejmo.css">
 </head>
 <body>
-<main>
+{{if .Frame}}<a class="skip" href="#content">{{t "frame.skip"}}</a>{{end}}
+<div class="frame{{if .Frame}} framed{{if .Frame.Items}} has-nav{{end}}{{end}}">
+{{with .Frame}}
+<header class="frame-bar">
+  <a class="brand" href="/">Hejmo</a>
+  {{if .SignedIn}}<form method="post" action="/logout"><button class="button secondary" type="submit">{{t "home.logout"}}</button></form>{{end}}
+</header>
+{{if .Items}}<nav class="frame-nav" aria-label="{{t "nav.label"}}"><ul>
+  {{range .Items}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{t .Label}}</a></li>
+  {{end}}</ul></nav>{{end}}
+{{end}}
+<main id="content">
 {{end}}
 
 {{define "foot"}}
 </main>
+</div>
 </body>
 </html>
 {{end}}

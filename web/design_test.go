@@ -356,3 +356,55 @@ func TestFontsLoadFromTheBoxOnly(t *testing.T) {
 		}
 	}
 }
+
+// ruleFor returns the declarations of the first rule whose selector is exactly sel.
+func ruleFor(t *testing.T, css, sel string) string {
+	t.Helper()
+	m := regexp.MustCompile(`(?s)(?:^|\n|\{)\s*` + regexp.QuoteMeta(sel) + `\s*\{([^}]*)\}`).FindStringSubmatch(css)
+	if m == nil {
+		t.Fatalf("no CSS rule for %q", sel)
+	}
+	return m[1]
+}
+
+// 5.11: every navigation target and button is at least 44 px (touch-target).
+func TestFrameNavigationTargetsAreTouchSized(t *testing.T) {
+	css := stylesheet(t)
+	for _, sel := range []string{".frame-nav a", ".frame-bar .button", ".button"} {
+		if rule := ruleFor(t, css, sel); !strings.Contains(rule, "min-height: var(--touch-target)") {
+			t.Errorf("%s lacks min-height: var(--touch-target): %s", sel, rule)
+		}
+	}
+	if tok := cssTokens(t, css, "light")["--touch-target"]; tok != "44px" {
+		t.Errorf("--touch-target = %q, want 44px", tok)
+	}
+}
+
+// 5.11: "follow the device" (ADR 0015) is the default: without data-theme the
+// dark palette applies when the device asks for it, with the same values.
+func TestDarkFollowsTheDeviceByDefaultWithTheSameValues(t *testing.T) {
+	css := stylesheet(t)
+	m := regexp.MustCompile(`(?s)@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme\]\) \{([^}]*)\}`).FindStringSubmatch(css)
+	if m == nil {
+		t.Fatal("no prefers-color-scheme: dark block for :root:not([data-theme])")
+	}
+	got := map[string]string{}
+	for _, d := range regexp.MustCompile(`(--[a-z0-9-]+)\s*:\s*([^;]+);`).FindAllStringSubmatch(m[1], -1) {
+		got[d[1]] = strings.TrimSpace(d[2])
+	}
+	for k, v := range cssTokens(t, css, "dark") {
+		if got[k] != v {
+			t.Errorf("device-dark %s = %q, dark theme has %q", k, got[k], v)
+		}
+	}
+	if len(got) != len(cssTokens(t, css, "dark")) {
+		t.Errorf("device-dark has %d tokens, dark theme %d", len(got), len(cssTokens(t, css, "dark")))
+	}
+}
+
+// 5.11: the frame is responsive: it has a layout for wide screens.
+func TestFrameHasAWideLayout(t *testing.T) {
+	if !regexp.MustCompile(`@media \(min-width: \d+px\)`).MatchString(stylesheet(t)) {
+		t.Fatal("no min-width media query for the wide layout")
+	}
+}

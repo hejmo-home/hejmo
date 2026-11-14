@@ -172,6 +172,7 @@ None. No shadows in any palette.
 - `.event`: filled in the person tint, time (`.meta`) on top, title below; `.event.journey` is the dashed variant. Person slot via `data-person`.
 - `.progress`: person colour on person tint (bw #111111 on #D6D6D3).
 - `.marker`: person marker as above.
+- Web interface frame (`.frame`): brand bar (`.frame-bar`) with sign-out, navigation (`.frame-nav`, one `.chip`-shaped link per screen, at least 44 px high, current screen filled with `accent`), content (`main`). Under 900 px the navigation wraps above the content; from 900 px it stands as a column left of it. Without a `data-theme` the palette follows the device (`prefers-color-scheme`); an explicit `data-theme` wins. Screens a role may not use are not listed.
 
 ## Do's and Don'ts
 

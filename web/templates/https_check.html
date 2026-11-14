@@ -1,4 +1,4 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "setup.https.check.title"))}}
+{{template "head" (dict "Lang" .Lang "Title" (t "setup.https.check.title") "Frame" .Frame)}}
   <h1>{{t "setup.https.check.title"}}</h1>
   <p class="lead">{{t "setup.https.check.intro"}} <code>{{.Name}}</code></p>
   <div class="steps" data-check data-check-url="{{.CheckURL}}" data-continue-url="{{.Continue}}" data-retry-seconds="5">

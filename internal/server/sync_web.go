@@ -11,8 +11,6 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-const webTimeLayout = "02/01/2006 15:04"
-
 // parentPage resolves the signed-in parent for a web page, or answers with the
 // redirect or refusal itself.
 func (s *server) parentPage(w http.ResponseWriter, r *http.Request) (principal, bool) {
@@ -75,7 +73,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(webTimeLayout)
+		return t.In(loc).Format(p.timeLayout())
 	}
 	people, err := s.db.People(p.household.ID)
 	if err != nil {

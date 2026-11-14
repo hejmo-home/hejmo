@@ -184,5 +184,22 @@
   "display.pair.scan": "Scanne den QR-Code mit dem Handy und bestätige in der Hejmo-Weboberfläche.",
   "display.pair.or": "Oder gib diesen Code in der Weboberfläche unter Displays ein:",
   "display.family.title": "Familienansicht",
-  "display.family.placeholder": "Die Familienansicht kommt mit den nächsten Tickets."
+  "display.family.placeholder": "Die Familienansicht kommt mit den nächsten Tickets.",
+  "nav.label": "Hauptnavigation",
+  "nav.home": "Start",
+  "nav.connections": "Kalender",
+  "nav.caldav": "Kalender-Apps",
+  "nav.displays": "Displays",
+  "nav.settings": "Einstellungen",
+  "frame.skip": "Zum Inhalt springen",
+  "settings.title": "Einstellungen",
+  "settings.intro": "Diese Einstellungen gelten für den ganzen Haushalt.",
+  "settings.time_format": "Zeitformat",
+  "settings.time_format.24h": "24 Stunden (14:30)",
+  "settings.time_format.12h": "12 Stunden (2:30 PM)",
+  "settings.temperature_unit": "Temperatureinheit",
+  "settings.temperature_unit.c": "Grad Celsius (°C)",
+  "settings.temperature_unit.f": "Grad Fahrenheit (°F)",
+  "settings.save": "Speichern",
+  "settings.error.invalid": "Bitte wähle einen der angebotenen Werte."
 }

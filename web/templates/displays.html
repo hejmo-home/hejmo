@@ -1,5 +1,4 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "displays.title"))}}
-  <p><a href="/">{{t "calendars.back"}}</a></p>
+{{template "head" (dict "Lang" .Lang "Title" (t "displays.title") "Frame" .Frame)}}
   <h1>{{t "displays.title"}}</h1>
   {{template "syncNotice" .}}
   <p class="lead">{{t "displays.intro"}}</p>

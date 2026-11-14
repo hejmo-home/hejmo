@@ -108,6 +108,41 @@
   --accent-text: #1B1A18;
 }
 
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme]) {
+    color-scheme: dark;
+    --background: #1B1A18;
+    --surface: #262522;
+    --text: #ECE9E3;
+    --text-secondary: #B4B0A7;
+    --accent: #6FA3C2;
+    --border: #403E39;
+    --error-bg: #3E2A24;
+    --error-text: #F0CDBF;
+    --notice-bg: #38301D;
+    --notice-text: #EBD9A6;
+    --person-1: #D98466;
+    --person-1-tint: #4A3830;
+    --person-1-text: #F4DAD1;
+    --person-2: #6FA3C2;
+    --person-2-tint: #353E42;
+    --person-2-text: #D4E3ED;
+    --person-3: #7FB383;
+    --person-3-tint: #384135;
+    --person-3-text: #D9E8DA;
+    --person-4: #D1A94A;
+    --person-4-tint: #483F2A;
+    --person-4-text: #F1E5C9;
+    --person-5: #B98AB2;
+    --person-5-tint: #43393F;
+    --person-5-text: #EADCE8;
+    --person-6: #6FB2AA;
+    --person-6-tint: #35413D;
+    --person-6-text: #D4E8E6;
+    --accent-text: #1B1A18;
+  }
+}
+
 [data-theme="bw"] {
   color-scheme: light;
   --background: #EDEDEA;
@@ -146,7 +181,7 @@
 }
 
 * { box-sizing: border-box; }
-body { margin: 0; padding: var(--margin); background: var(--background); color: var(--text); font-size: var(--fs-body); font-weight: var(--fw-body); }
+body { margin: 0; padding: var(--gap); background: var(--background); color: var(--text); font-size: var(--fs-body); font-weight: var(--fw-body); }
 h1 { font-size: var(--fs-date); font-weight: var(--fw-date); margin: 0 0 8px; }
 .lead { color: var(--text-secondary); margin: 0 0 20px; }
 .steps { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: var(--gap); max-width: 560px; }
@@ -166,7 +201,7 @@ input, select { font: inherit; color: var(--text); min-height: var(--touch-targe
 .cards { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: var(--gap); max-width: 560px; }
 .cards li { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 6px; }
 .cards .row { display: flex; gap: 10px; flex-wrap: wrap; margin-top: 6px; }
-.dot { display: inline-block; width: var(--marker-size); height: var(--marker-size); border-radius: 50%; vertical-align: middle; }
+.swatch { width: calc(var(--marker-size) * 2); min-height: 0; height: var(--marker-size); padding: 0; border: 0; vertical-align: middle; background: none; }
 .button.secondary { background: var(--surface); color: var(--accent); border: 1px solid var(--accent); }
 .check { display: flex; align-items: center; gap: 8px; color: var(--text); }
 .check input { min-height: 0; width: 20px; height: 20px; }
@@ -214,3 +249,26 @@ a { color: var(--accent); }
 .display .qr { width: min(70vw, 360px); margin: 0 auto 16px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
 .display .qr svg { display: block; width: 100%; height: auto; }
 .pairing-code { font-size: 56px; font-weight: 700; letter-spacing: 0.18em; margin: 0; font-variant-numeric: tabular-nums; }
+
+/* Frame (ticket 5.11): brand bar, navigation and content. Narrow screens
+   stack them; wide screens put the navigation beside the content. */
+.skip { position: absolute; left: -9999px; }
+.skip:focus { position: static; display: inline-block; padding: 10px 12px; }
+.frame { display: grid; gap: var(--gap-section); align-content: start; }
+.frame-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); }
+.brand { display: inline-flex; align-items: center; min-height: var(--touch-target); font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); color: var(--text); text-decoration: none; }
+.frame-bar .button { min-height: var(--touch-target); }
+.frame-bar form { margin: 0; }
+.frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-cards); }
+.frame-nav a { display: flex; align-items: center; min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
+.frame-nav a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+[data-theme="bw"] .frame-nav a { border-width: 2px; }
+.frame main { min-width: 0; }
+@media (min-width: 600px) {
+  body { padding: var(--margin); }
+}
+@media (min-width: 900px) {
+  .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); align-items: start; }
+  .frame.has-nav .frame-bar { grid-column: 1 / -1; }
+  .frame-nav ul { flex-direction: column; flex-wrap: nowrap; }
+}

@@ -1,0 +1,123 @@
+package server_test
+
+import (
+	"net/http"
+	"regexp"
+	"strings"
+	"testing"
+)
+
+var navHrefRe = regexp.MustCompile(`<nav class="frame-nav"[^>]*>(?s:(.*?))</nav>`)
+var hrefRe = regexp.MustCompile(`href="([^"]+)"`)
+
+func navTargets(t *testing.T, page string) []string {
+	t.Helper()
+	m := navHrefRe.FindStringSubmatch(page)
+	if m == nil {
+		return nil
+	}
+	var out []string
+	for _, h := range hrefRe.FindAllStringSubmatch(m[1], -1) {
+		out = append(out, h[1])
+	}
+	return out
+}
+
+// 5.11: navigation reaches every screen a parent has.
+func TestParentNavigationReachesEveryScreen(t *testing.T) {
+	b := signedInBox(t)
+	want := []string{"/", "/calendars", "/caldav", "/displays", "/settings"}
+	for _, page := range want {
+		r := b.get(page)
+		if r.status != http.StatusOK {
+			t.Fatalf("GET %s = %d", page, r.status)
+		}
+		got := navTargets(t, r.body)
+		if strings.Join(got, " ") != strings.Join(want, " ") {
+			t.Errorf("nav on %s = %v, want %v", page, got, want)
+		}
+		if !strings.Contains(r.body, `<a href="`+page+`" aria-current="page"`) {
+			t.Errorf("nav on %s does not mark the current screen", page)
+		}
+	}
+}
+
+// 5.11: a child's device session sees only the screens its role allows.
+func TestChildNavigationShowsOnlyAllowedScreens(t *testing.T) {
+	b := signedInBox(t)
+	child := childSession(t, b)
+	r := child.get("/")
+	if r.status != http.StatusOK {
+		t.Fatalf("child GET / = %d", r.status)
+	}
+	if got := navTargets(t, r.body); strings.Join(got, " ") != "/" {
+		t.Fatalf("child nav = %v, want only /", got)
+	}
+	for _, page := range []string{"/calendars", "/caldav", "/displays", "/settings"} {
+		if r := child.get(page); r.status != http.StatusForbidden {
+			t.Errorf("child GET %s = %d, want 403", page, r.status)
+		}
+	}
+}
+
+// 5.11: the sign-in and setup screens sit in the frame, without navigation.
+func TestSignedOutScreensHaveFrameWithoutNavigation(t *testing.T) {
+	b, _ := configuredBox(t)
+	r := b.get("/login")
+	if !strings.Contains(r.body, `class="frame-bar"`) || strings.Contains(r.body, `class="frame-nav"`) {
+		t.Fatalf("login frame wrong:\n%s", r.body)
+	}
+	fresh := newBox(t)
+	r = fresh.get("/setup")
+	if !strings.Contains(r.body, `class="frame-bar"`) || strings.Contains(r.body, `class="frame-nav"`) {
+		t.Fatalf("setup frame wrong:\n%s", r.body)
+	}
+}
+
+// 5.11: every web screen uses the shared stylesheet and no inline colours.
+func TestEveryScreenUsesTheSharedStylesheetWithoutInlineStyles(t *testing.T) {
+	b := signedInBox(t)
+	b.post("/calendars", map[string][]string{"name": {"Feiertage"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
+	pages := []string{"/", "/calendars", "/caldav", "/displays", "/settings", "/ca"}
+	for _, page := range pages {
+		body := b.get(page).body
+		if !strings.Contains(body, `href="/static/hejmo.css"`) {
+			t.Errorf("%s does not use the shared stylesheet", page)
+		}
+		if strings.Contains(body, "style=") || strings.Contains(body, "<style") {
+			t.Errorf("%s has inline styles", page)
+		}
+	}
+	b.logout()
+	for _, page := range []string{"/login"} {
+		if body := b.get(page).body; strings.Contains(body, "style=") || strings.Contains(body, "<style") {
+			t.Errorf("%s has inline styles", page)
+		}
+	}
+}
+
+// 5.11: the frame is German or English, from the locales.
+func TestNavigationIsTranslated(t *testing.T) {
+	b := signedInBox(t)
+	de := b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": "de"}).body
+	en := b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": "en"}).body
+	for _, want := range []string{"Einstellungen", "Hauptnavigation", "Abmelden"} {
+		if !strings.Contains(de, want) {
+			t.Errorf("German frame lacks %q", want)
+		}
+	}
+	for _, want := range []string{"Settings", "Main navigation", "Sign out"} {
+		if !strings.Contains(en, want) {
+			t.Errorf("English frame lacks %q", want)
+		}
+	}
+}
+
+func TestSignOutIsInTheFrameOnEveryScreen(t *testing.T) {
+	b := signedInBox(t)
+	for _, page := range []string{"/", "/calendars", "/settings"} {
+		if !strings.Contains(b.get(page).body, `action="/logout"`) {
+			t.Errorf("%s has no sign-out in the frame", page)
+		}
+	}
+}

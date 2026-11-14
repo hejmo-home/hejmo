@@ -25,7 +25,7 @@ func (s *server) renderDisplays(w http.ResponseWriter, r *http.Request, p princi
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(webTimeLayout)
+		return t.In(loc).Format(p.timeLayout())
 	}
 	views := make([]displayView, 0, len(list))
 	for _, d := range list {

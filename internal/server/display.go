@@ -95,11 +95,13 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		if s.now().Sub(d.LastSeen) > time.Minute {
 			_ = s.db.TouchDisplay(hash, s.now())
 		}
-		view, err := s.familyView(h, s.langOf(r))
+		view, err := s.familyView(h, s.langOf(r), d.ShowTomorrow)
 		if err != nil {
 			s.fail(w, "family view", err)
 			return
 		}
+		// Placeholder until the per-display themes ticket: a normal screen is
+		// always light, although ADR 0015 gives it an automatic default theme.
 		theme := "light"
 		if d.Type == store.DisplayEInkBW {
 			theme = "bw"
@@ -130,7 +132,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 var markerShapes = []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled"}
 
 // familyView builds today's family view of the household.
-func (s *server) familyView(h store.Household, lang string) (familyview.View, error) {
+func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (familyview.View, error) {
 	loc := time.UTC
 	if l, err := time.LoadLocation(h.Timezone); err == nil {
 		loc = l
@@ -154,15 +156,22 @@ func (s *server) familyView(h store.Household, lang string) (familyview.View, er
 	if err != nil {
 		return familyview.View{}, err
 	}
-	in := familyview.Input{Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs}
+	in := familyview.Input{Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs, ShowTomorrow: showTomorrow}
 	for _, c := range cals {
 		in.Calendars[c.ID] = c.Audience
 	}
-	for i, p := range people {
-		groups, err := s.db.PersonGroups(p.ID)
-		if err != nil {
-			return familyview.View{}, err
+	allGroups, err := s.db.Groups(h.ID) // one query for every person's memberships
+	if err != nil {
+		return familyview.View{}, err
+	}
+	groupsOf := map[string][]string{}
+	for _, g := range allGroups {
+		for _, m := range g.Members {
+			groupsOf[m] = append(groupsOf[m], g.ID)
 		}
+	}
+	for i, p := range people {
+		groups := groupsOf[p.ID]
 		shape := p.Shape
 		if shape == "" {
 			shape = markerShapes[i%len(markerShapes)]

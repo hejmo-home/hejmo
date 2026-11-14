@@ -375,6 +375,8 @@ func TestFamilyViewLayoutRulesFollowTheSpec(t *testing.T) {
 		".fv-header":                {"display: flex", "justify-content: space-between", "flex: none"},
 		".fv-grid":                  {"display: grid", "grid-template-columns: repeat(var(--cols), minmax(0, 1fr))", "gap: var(--gap)", "flex: 1"},
 		".fv .events":               {"gap: var(--gap-cards)", "overflow-y: auto"},
+		".fv .events .tomorrow":     {"opacity: 0.6"}, // ADR 0016: the tomorrow block is faded
+		".strip.tomorrow":           {"opacity: 0.6"},
 		".fv-footer":                {"display: flex", "gap: var(--gap)", "flex: none"},
 		".fv-footer .tile":          {"flex: 1", "padding: var(--pad-column)"},
 		".strip-item":               {"background: var(--surface)", "border-radius: var(--radius-card)", "padding: var(--pad-card)"},

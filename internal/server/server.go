@@ -141,6 +141,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
+	mux.HandleFunc("POST /displays/{id}/settings", s.handleDisplaySettings)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
 	return s.requireHTTPS(sameOrigin(mux))

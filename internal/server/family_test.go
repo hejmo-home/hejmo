@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"net/url"
 	"os"
 	"regexp"
 	"strings"
@@ -195,8 +196,25 @@ func TestFamilyViewHeaderShowsDateWeekAndClockWithoutLeaveTime(t *testing.T) {
 	}
 }
 
+// showTomorrow switches the display's "show tomorrow block" setting in the web interface.
+func (f *familyBox) showTomorrow(t *testing.T, on bool) {
+	t.Helper()
+	ds, err := f.db.Displays(f.householdID)
+	if err != nil || len(ds) != 1 {
+		t.Fatalf("displays = %v, %v", ds, err)
+	}
+	form := url.Values{}
+	if on {
+		form.Set("show_tomorrow", "on")
+	}
+	if r := f.post("/displays/"+ds[0].ID+"/settings", form); r.status != 303 {
+		t.Fatalf("settings = %d", r.status)
+	}
+}
+
 func TestFamilyViewTomorrowBlockAppearsFrom1800(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
+	f.showTomorrow(t, true)
 	f.event(t, "Piano", f.at(15, 15, 0), f.at(15, 16, 0), false, "Mia")
 	if p := f.view(t, "en", f.at(14, 17, 59)); strings.Contains(p, "data-tomorrow") {
 		t.Fatal("tomorrow block before 18:00")
@@ -205,6 +223,39 @@ func TestFamilyViewTomorrowBlockAppearsFrom1800(t *testing.T) {
 	m := regexp.MustCompile(`(?s)data-tomorrow.*?</section>`).FindString(p)
 	if !strings.Contains(m, "Piano") {
 		t.Fatalf("tomorrow block misses Piano:\n%s", p)
+	}
+}
+
+// ADR 0016: off by default; switching it on and off is per display.
+func TestFamilyViewTomorrowBlockIsOffUntilTheDisplaySettingIsOn(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	f.event(t, "Piano", f.at(15, 15, 0), f.at(15, 16, 0), false, "Mia")
+	f.event(t, "Brunch", f.at(15, 10, 0), f.at(15, 11, 0), false)
+	evening := f.at(14, 19, 0)
+	if p := f.view(t, "en", evening); strings.Contains(p, "data-tomorrow") || strings.Contains(p, "data-strip-tomorrow") {
+		t.Fatal("tomorrow shown with the setting off (the default)")
+	}
+	f.showTomorrow(t, true)
+	if p := f.view(t, "en", evening); !strings.Contains(p, "data-tomorrow") || !strings.Contains(p, "data-strip-tomorrow") {
+		t.Fatal("tomorrow not shown with the setting on")
+	}
+	f.showTomorrow(t, false)
+	if p := f.view(t, "en", evening); strings.Contains(p, "data-tomorrow") {
+		t.Fatal("tomorrow still shown after switching the setting off")
+	}
+}
+
+func TestDisplaysPageShowsTheTomorrowSetting(t *testing.T) {
+	f := newFamilyBox(t, "screen")
+	if p := f.get("/displays").body; !strings.Contains(p, `name="show_tomorrow"`) || strings.Contains(p, `name="show_tomorrow" checked`) {
+		t.Fatalf("setting missing or on by default:\n%s", p)
+	}
+	f.showTomorrow(t, true)
+	if p := f.get("/displays").body; !strings.Contains(p, `name="show_tomorrow" checked`) {
+		t.Fatal("setting not shown as on")
+	}
+	if r := f.post("/displays/unknown/settings", url.Values{}); r.status != 404 {
+		t.Fatalf("unknown display = %d, want 404", r.status)
 	}
 }
 
@@ -265,7 +316,7 @@ func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
 	}
 }
 
-// 5.3: Layout matches the spec values (snapshot of the markup at 1024x768; the
+// 5.3: Layout matches the spec values (snapshot of the markup, not a pixel render; the
 // stylesheet values are held by web/design_test.go).
 func TestFamilyViewMarkupSnapshot(t *testing.T) {
 	loc := berlinTZ
@@ -276,7 +327,7 @@ func TestFamilyViewMarkupSnapshot(t *testing.T) {
 	occ := func(title string, s, e time.Time, who ...string) calendar.Occurrence {
 		return calendar.Occurrence{EventID: title, CalendarID: "c", Title: title, Start: s, End: e, People: who}
 	}
-	v := familyview.Build(familyview.Input{Now: d(14, 18, 5), Lang: "en", Region: "DE-BY", People: people, Occurrences: []calendar.Occurrence{
+	v := familyview.Build(familyview.Input{Now: d(14, 18, 5), Lang: "en", Region: "DE-BY", People: people, ShowTomorrow: true, Occurrences: []calendar.Occurrence{
 		occ("Dentist", d(14, 9, 0), d(14, 10, 0), "mama"),
 		occ("Football", d(14, 15, 0), d(14, 16, 0), "seb", "mia"),
 		occ("Piano", d(15, 15, 0), d(15, 16, 0), "mia"),
@@ -288,7 +339,7 @@ func TestFamilyViewMarkupSnapshot(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	const golden = "testdata/family_1024x768.html"
+	const golden = "testdata/family_markup.html"
 	if os.Getenv("HEJMO_UPDATE_GOLDEN") != "" {
 		if err := os.WriteFile(golden, []byte(got), 0o644); err != nil {
 			t.Fatal(err)

@@ -175,6 +175,8 @@
   "displays.type.eink_bw": "E-Ink black and white",
   "displays.type.eink_color": "E-Ink colour",
   "displays.type.screen": "Normal screen",
+  "displays.show_tomorrow": "Show the tomorrow block from 18:00 (faded)",
+  "displays.save": "Save",
   "displays.pair": "Pair display",
   "displays.error.code": "This code is wrong or has expired. Check the code on the display; a display shows a new one after ten minutes.",
   "displays.error.invalid": "Please enter a name and choose a display type.",

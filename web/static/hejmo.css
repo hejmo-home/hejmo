@@ -240,7 +240,8 @@ body:has(.family-page) { overflow: hidden; }
 .fv .column { display: flex; flex-direction: column; gap: 0; min-height: 0; overflow: hidden; }
 .fv .column h2 { flex: none; margin: 0 0 var(--gap-cards); font-size: var(--fs-person-name); font-weight: var(--fw-person-name); display: flex; align-items: center; gap: 8px; }
 .fv .events { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: var(--gap-cards); align-content: start; }
-.fv .events .tomorrow { display: grid; gap: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); }
+.fv .events .tomorrow { display: grid; gap: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); opacity: 0.6; }
+.strip.tomorrow { opacity: 0.6; } /* ADR 0016: tomorrow is faded so today's events stand out */
 .fv .tomorrow .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
 .fv .event .meta { display: block; }
 .pbar { flex: none; display: flex; align-items: center; gap: 10px; padding-top: var(--gap-cards); }

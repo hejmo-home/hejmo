@@ -175,6 +175,8 @@
   "displays.type.eink_bw": "E-Ink schwarz-weiß",
   "displays.type.eink_color": "E-Ink farbig",
   "displays.type.screen": "Normaler Bildschirm",
+  "displays.show_tomorrow": "Morgen-Block ab 18:00 anzeigen (abgeblendet)",
+  "displays.save": "Speichern",
   "displays.pair": "Display koppeln",
   "displays.error.code": "Dieser Code ist falsch oder abgelaufen. Prüfe den Code auf dem Display; nach zehn Minuten zeigt es einen neuen.",
   "displays.error.invalid": "Bitte gib einen Namen ein und wähle einen Display-Typ.",

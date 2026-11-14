@@ -33,8 +33,10 @@ func timed(title string, start, end time.Time, people ...string) calendar.Occurr
 	return calendar.Occurrence{EventID: title, CalendarID: "cal", Title: title, Start: start, End: end, People: people}
 }
 
+// build lays out the view with the display's "show tomorrow block" setting on,
+// so the 18:00 rule is what the tests exercise.
 func build(now time.Time, occs ...calendar.Occurrence) familyview.View {
-	return familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: family(), Occurrences: occs})
+	return familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: family(), Occurrences: occs, ShowTomorrow: true})
 }
 
 func column(t *testing.T, v familyview.View, name string) familyview.Column {
@@ -225,6 +227,22 @@ func TestTomorrowBlockFrom1800(t *testing.T) {
 	same(t, titles(column(t, v, "Mia").Tomorrow), []string{"T1", "T2", "T3"})
 	same(t, titles(column(t, v, "Mia").Events), []string{"Today"})
 	same(t, titles(column(t, v, "Mama").Tomorrow), nil)
+}
+
+// ADR 0016: the tomorrow block is a per-display setting, off by default; with
+// it off nothing of tomorrow is shown, even in the evening.
+func TestTomorrowBlockNeedsTheDisplaySetting(t *testing.T) {
+	occs := []calendar.Occurrence{
+		timed("Piano", at(15, 15, 0), at(15, 16, 0), "mia"),
+		allDay("Tomorrow bar", day(15), day(16)),
+	}
+	v := familyview.Build(familyview.Input{Now: at(14, 19, 0), Lang: "en", Region: "DE-BY", People: family(), Occurrences: occs})
+	if v.ShowTomorrow || len(column(t, v, "Mia").Tomorrow) != 0 || len(v.StripTomorrow) != 0 {
+		t.Fatalf("tomorrow shown with the setting off: %+v", v)
+	}
+	if on := build(at(14, 19, 0), occs...); !on.ShowTomorrow || len(column(t, on, "Mia").Tomorrow) != 1 {
+		t.Fatal("tomorrow not shown with the setting on")
+	}
 }
 
 // ADR 0015: whole-household events of tomorrow appear once at the end of the strip.

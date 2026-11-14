@@ -50,9 +50,11 @@ type Display struct {
 	// when it has expired.
 	Code        string
 	CodeExpires time.Time
+	// ShowTomorrow is the setting "show tomorrow block" (ADR 0016), off by default.
+	ShowTomorrow bool
 }
 
-const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at`
+const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow`
 
 type rowScanner interface{ Scan(...any) error }
 
@@ -60,7 +62,7 @@ func scanDisplay(r rowScanner, at time.Time) (Display, error) {
 	var d Display
 	var typ string
 	var code, expires, paired, seen sql.NullString
-	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen); err != nil {
+	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow); err != nil {
 		return Display{}, err
 	}
 	d.Type = DisplayType(typ)
@@ -211,4 +213,11 @@ func (db *DB) RevokeDisplay(householdID, id string, at time.Time) error {
 // TouchDisplay records that the display with tokenHash was seen at t.
 func (db *DB) TouchDisplay(tokenHash string, t time.Time) error {
 	return expectOne(db.sql.Exec(`UPDATE displays SET last_seen_at = ? WHERE token_hash = ? AND revoked_at IS NULL`, stamp(t), tokenHash))
+}
+
+// SetDisplayShowTomorrow switches the "show tomorrow block" setting of one of
+// the household's paired displays.
+func (db *DB) SetDisplayShowTomorrow(householdID, id string, on bool) error {
+	return expectOne(db.sql.Exec(`UPDATE displays SET show_tomorrow = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
+		on, householdID, id))
 }

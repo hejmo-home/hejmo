@@ -28,6 +28,9 @@ type Input struct {
 	People      []Person  // display order
 	Calendars   map[string]calendar.Audience
 	Occurrences []calendar.Occurrence
+	// ShowTomorrow is the display's setting "show tomorrow block", off by
+	// default (ADR 0016). Without it nothing of tomorrow is built.
+	ShowTomorrow bool
 }
 
 // Event is a card in a person's column.
@@ -118,7 +121,7 @@ func Build(in Input) View {
 	d1 := d0.AddDate(0, 0, 1)
 	_, week := now.ISOWeek()
 	v := View{Weekday: now.Weekday(), Week: week, Date: d0, Clock: now.Format("15:04")}
-	v.ShowTomorrow = now.Hour() >= tomorrowFromHour
+	v.ShowTomorrow = in.ShowTomorrow && now.Hour() >= tomorrowFromHour
 	v.Scroll = len(in.People) > maxNarrowColumns
 	for _, p := range in.People {
 		v.Columns = append(v.Columns, Column{Person: p})

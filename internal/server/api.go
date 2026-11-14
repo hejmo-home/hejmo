@@ -48,6 +48,7 @@ var apiRoutes = []APIRoute{
 	{"PUT", "/tasks/{id}/done", auth.Perm("tasks", auth.Complete), (*server).apiSetTaskDone},
 	{"GET", "/displays", auth.Perm("displays", auth.Read), (*server).apiListDisplays},
 	{"POST", "/displays", auth.Perm("displays", auth.Write), (*server).apiPairDisplay},
+	{"PATCH", "/displays/{id}", auth.Perm("displays", auth.Write), (*server).apiUpdateDisplay},
 	{"DELETE", "/displays/{id}", auth.Perm("displays", auth.Delete), (*server).apiRevokeDisplay},
 }
 

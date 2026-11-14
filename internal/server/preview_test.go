@@ -52,8 +52,8 @@ func TestWriteDesignPreview(t *testing.T) {
 		occ("Swimming", d(2, 16, 30), d(2, 17, 30), "seb"),
 		occ("Parents' evening", d(2, 19, 0), d(2, 20, 30)),
 	}
-	build := func(now time.Time, filled bool) familyview.View {
-		v := familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: people, Occurrences: occs})
+	build := func(now time.Time, filled, showTomorrow bool) familyview.View {
+		v := familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: people, Occurrences: occs, ShowTomorrow: showTomorrow})
 		if filled {
 			// Slots filled for illustration: the data arrives with package 6 (6.4, 6.6, 6.7).
 			v.Columns[0].Progress = &familyview.Progress{Done: 3, Total: 5}
@@ -72,17 +72,21 @@ func TestWriteDesignPreview(t *testing.T) {
 		}
 		fmt.Fprintf(&body, `<figure><figcaption>%s (%dx%d)</figcaption><div class="frame" data-theme="%s" style="width:%dpx;height:%dpx">%s</div></figure>`+"\n", caption, w, h, theme, w, h, html)
 	}
-	evening := build(d(1, 18, 5), true)
-	morning := build(d(1, 7, 58), false)
-	body.WriteString("<h2>Landscape, evening (tomorrow block, progress bars and footer tiles filled for illustration)</h2><div class=\"row\">\n")
+	evening := build(d(1, 18, 5), true, true)
+	eveningOff := build(d(1, 18, 5), true, false)
+	morning := build(d(1, 7, 58), false, true)
+	body.WriteString("<h2>Landscape, evening, display setting \"show tomorrow block\" ON (the block is faded; progress bars and footer tiles filled for illustration)</h2><div class=\"row\">\n")
 	frame("Light", "light", 1024, 768, evening)
 	frame("Dark", "dark", 1024, 768, evening)
 	frame("Black and white", "bw", 1024, 768, evening)
-	body.WriteString("</div><h2>Portrait</h2><div class=\"row\">\n")
+	body.WriteString("</div><h2>Landscape, same evening, setting OFF (the default): nothing of tomorrow is shown</h2><div class=\"row\">\n")
+	frame("Light", "light", 1024, 768, eveningOff)
+	frame("Black and white", "bw", 1024, 768, eveningOff)
+	body.WriteString("</div><h2>Portrait (setting on)</h2><div class=\"row\">\n")
 	frame("Light", "light", 768, 1024, evening)
 	frame("Dark", "dark", 768, 1024, evening)
 	frame("Black and white", "bw", 768, 1024, evening)
-	body.WriteString("</div><h2>Morning as built today: no tomorrow block, no progress bars, no footer, no weather chip</h2><div class=\"row\">\n")
+	body.WriteString("</div><h2>Morning (the setting is on, but before 18:00 there is no tomorrow block): no tomorrow block, no progress bars, no footer, no weather chip</h2><div class=\"row\">\n")
 	frame("Light", "light", 1024, 768, morning)
 	body.WriteString("</div>\n")
 

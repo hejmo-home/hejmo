@@ -308,6 +308,16 @@
   "tasks.field.weekdays": "Weekdays (for weekly)",
   "tasks.field.part": "Time of day",
   "tasks.part.any": "Any time",
+  "tasks.field.stars": "Stars for ticking it off (empty: 1 for a child, 0 for an adult)",
+  "tasks.stars.unit": "stars",
+  "tasks.stars.title": "Stars",
+  "tasks.stars.intro": "Ticking off a task credits its stars, unticking deducts them. Book stars by hand here, for example to redeem them.",
+  "tasks.stars.log": "Star log",
+  "tasks.stars.log_empty": "No bookings yet.",
+  "tasks.stars.field.delta": "Stars to book (negative to deduct)",
+  "tasks.stars.field.note": "Note, for example \"redeemed: ice cream\"",
+  "tasks.stars.book": "Book stars",
+  "tasks.stars.error.invalid": "Please choose a person, enter a whole number of stars other than 0 and add a note.",
   "tasks.create": "Add task",
   "tasks.error.invalid": "Please choose a person and enter a title. A once task needs a date, a weekly task at least one weekday."
 }

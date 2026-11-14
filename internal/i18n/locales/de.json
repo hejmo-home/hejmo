@@ -308,6 +308,16 @@
   "tasks.field.weekdays": "Wochentage (für wöchentlich)",
   "tasks.field.part": "Tageszeit",
   "tasks.part.any": "Jederzeit",
+  "tasks.field.stars": "Sterne fürs Abhaken (leer: 1 für ein Kind, 0 für Erwachsene)",
+  "tasks.stars.unit": "Sterne",
+  "tasks.stars.title": "Sterne",
+  "tasks.stars.intro": "Abhaken schreibt die Sterne einer Aufgabe gut, Wiederöffnen zieht sie wieder ab. Hier buchst du Sterne von Hand, zum Beispiel zum Einlösen.",
+  "tasks.stars.log": "Sternekonto",
+  "tasks.stars.log_empty": "Noch keine Buchungen.",
+  "tasks.stars.field.delta": "Sterne buchen (negativ zum Abziehen)",
+  "tasks.stars.field.note": "Notiz, zum Beispiel „eingelöst: Eis“",
+  "tasks.stars.book": "Sterne buchen",
+  "tasks.stars.error.invalid": "Bitte wähle eine Person, gib eine ganze Zahl von Sternen ungleich 0 ein und schreibe eine Notiz dazu.",
   "tasks.create": "Aufgabe hinzufügen",
   "tasks.error.invalid": "Bitte wähle eine Person und gib einen Titel ein. Eine einmalige Aufgabe braucht ein Datum, eine wöchentliche mindestens einen Wochentag."
 }

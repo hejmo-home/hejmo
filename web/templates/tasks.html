@@ -9,7 +9,7 @@
     <ul class="cards">
       {{range .Tasks}}
       <li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
-        <strong>{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}</strong>
+        <strong>{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}{{if .Stars}} <span class="task-stars" data-task-stars="{{.Stars}}"><span class="sr">{{.Stars}} {{t "tasks.stars.unit"}}</span></span>{{end}}</strong>
         <span class="hint">
           {{if eq .Repeat "once"}}{{t "tasks.repeat.once"}} {{.Date}}{{else if eq .Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}
           {{if .Part}} · {{t (printf "tasks.part.%s" .Part)}}{{end}}
@@ -29,6 +29,38 @@
     </ul>
   </section>
   {{else}}<p class="lead">{{t "tasks.none"}}</p>{{end}}
+
+  <section aria-labelledby="stars">
+    <h2 id="stars">{{t "tasks.stars.title"}}</h2>
+    <p class="lead">{{t "tasks.stars.intro"}}</p>
+    {{range .StarCards}}
+    <article class="cards" aria-label="{{.Name}}">
+      <ul>
+        <li data-balance="{{.Balance}}">
+          <strong><input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{.Name}} <span class="stars-balance">{{.Balance}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span></strong>
+          <span class="hint">{{t "tasks.stars.log"}}</span>
+          {{range .Entries}}<span class="log-line"><b>{{.Delta}}</b> {{.Label}}<span class="hint"> · {{.When}}{{if .By}} · {{.By}}{{end}}</span></span>
+          {{else}}<span class="hint">{{t "tasks.stars.log_empty"}}</span>{{end}}
+        </li>
+      </ul>
+    </article>
+    {{end}}
+    {{with .StarError}}<p class="error" role="alert">{{t .}}</p>{{end}}
+    <form method="post" action="/tasks/stars" class="steps">
+      {{$sf := .StarForm}}
+      <fieldset>
+        <label>{{t "tasks.field.person"}}
+          <select name="person" required>
+            {{range .People}}<option value="{{.ID}}"{{if eq .ID (index $sf "Person")}} selected{{end}}>{{.Name}}</option>{{end}}
+          </select></label>
+        <label>{{t "tasks.stars.field.delta"}}
+          <input name="delta" type="number" step="1" required value="{{index $sf "Delta"}}"></label>
+        <label>{{t "tasks.stars.field.note"}}
+          <input name="note" required maxlength="120" value="{{index $sf "Note"}}"></label>
+      </fieldset>
+      <button class="button" type="submit">{{t "tasks.stars.book"}}</button>
+    </form>
+  </section>
 
   <section aria-labelledby="new">
     <h2 id="new">{{t "tasks.new"}}</h2>
@@ -53,6 +85,8 @@
         <p class="hint">{{t "tasks.field.weekdays"}}</p>
         {{$chosen := index $f "Weekdays"}}
         {{range .Weekdays}}<label class="check"><input type="checkbox" name="weekdays" value="{{.}}"{{if has $chosen .}} checked{{end}}> {{t (printf "tasks.weekday.%s" .)}}</label>{{end}}
+        <label>{{t "tasks.field.stars"}}
+          <input name="stars" type="number" min="0" max="100" step="1" value="{{index $f "Stars"}}"></label>
         <label>{{t "tasks.field.part"}}
           <select name="part">
             <option value="">{{t "tasks.part.any"}}</option>

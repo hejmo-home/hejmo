@@ -21,6 +21,7 @@ import (
 	"time"
 	_ "time/tzdata" // DST rules independent of the host system
 
+	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -83,7 +84,19 @@ func run(cfg config, logger *slog.Logger) error {
 	if err != nil {
 		return err
 	}
-	handler := server.New(server.Options{DB: db, PKI: certs, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger})
+
+	// The scheduler checks for due calendars every minute; each calendar
+	// syncs on its own interval (60 minutes for ICS by default).
+	syncer := calsync.New(db, nil, nil)
+	syncer.SetLogger(logger)
+	schedulerDone := make(chan struct{})
+	go func() {
+		defer close(schedulerDone)
+		syncer.Run(ctx, time.Minute)
+	}()
+	defer func() { stop(); <-schedulerDone }()
+
+	handler := server.New(server.Options{DB: db, PKI: certs, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).

@@ -10,6 +10,7 @@ import (
 	"net/http"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -25,6 +26,9 @@ type Options struct {
 	// HTTPSPort is the port clients reach HTTPS on, used in redirects and
 	// links. Empty means 443.
 	HTTPSPort string
+	// Sync syncs calendars from outside. Nil means a service with HTTP
+	// fetching; main passes its own so the scheduler and the web UI share it.
+	Sync *calsync.Service
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -40,6 +44,7 @@ type server struct {
 	pages     *template.Template
 	logger    *slog.Logger
 	limiter   *loginLimiter
+	sync      *calsync.Service
 }
 
 // New returns the box's root HTTP handler.
@@ -59,6 +64,9 @@ func New(opts Options) http.Handler {
 	}
 	if s.logger == nil {
 		s.logger = slog.Default()
+	}
+	if s.sync = opts.Sync; s.sync == nil {
+		s.sync = calsync.New(s.db, nil, s.now)
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.pages = template.Must(template.New("").Funcs(template.FuncMap{
@@ -87,6 +95,10 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /login", s.handleLoginSubmit)
 	mux.HandleFunc("POST /logout", s.handleLogout)
 	mux.HandleFunc("GET /{$}", s.handleHome)
+	mux.HandleFunc("GET /calendars", s.handleCalendarsPage)
+	mux.HandleFunc("POST /calendars", s.handleCalendarAdd)
+	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
+	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
 	s.routeAPI(mux)
 	return s.requireHTTPS(sameOrigin(mux))
 }
@@ -112,7 +124,12 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	// The family view arrives with work package 5.
-	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p})
+	h, err := s.db.HomeHousehold()
+	if err != nil {
+		s.fail(w, "household", err)
+		return
+	}
+	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID)})
 }
 
 func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name string, data map[string]any) {

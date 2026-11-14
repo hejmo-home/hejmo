@@ -29,6 +29,7 @@ type Calendar struct {
 	Name        string
 	Kind        string // local, ics, caldav, google
 	Color       string
+	ReadOnly    bool // ICS calendars are always read-only
 	Audience    calendar.Audience
 }
 
@@ -110,14 +111,14 @@ func (db *DB) CreateCalendar(c Calendar) (Calendar, error) {
 
 // Calendars lists a household's calendars with their audiences.
 func (db *DB) Calendars(householdID string) ([]Calendar, error) {
-	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
+	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color, read_only FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
 	if err != nil {
 		return nil, err
 	}
 	var out []Calendar
 	for rows.Next() {
 		var c Calendar
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color); err != nil {
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -195,6 +196,12 @@ func validateEvent(e calendar.Event) error {
 	if strings.TrimSpace(e.Title) == "" {
 		return fmt.Errorf("%w: event title required", ErrInvalid)
 	}
+	return validateTimes(e)
+}
+
+// validateTimes is validateEvent without the title, for synced events: a feed
+// may hold untitled events, and the placeholder is localised when shown.
+func validateTimes(e calendar.Event) error {
 	if !e.End.After(e.Start) {
 		return fmt.Errorf("%w: event must end after it starts", ErrInvalid)
 	}
@@ -218,6 +225,13 @@ func insertEvent(tx *sql.Tx, householdID string, e calendar.Event) error {
 	if err := validateEvent(e); err != nil {
 		return err
 	}
+	return insertEventRow(tx, householdID, e)
+}
+
+func insertEventRow(tx *sql.Tx, householdID string, e calendar.Event) error {
+	if err := validateTimes(e); err != nil {
+		return err
+	}
 	start, end, tz, recID, seriesID := eventColumns(e)
 	ts := now()
 	if _, err := tx.Exec(`INSERT INTO events (id, household_id, calendar_id, title, description, location, all_day,
@@ -236,6 +250,13 @@ func insertEvent(tx *sql.Tx, householdID string, e calendar.Event) error {
 
 func updateEvent(tx *sql.Tx, householdID string, e calendar.Event) error {
 	if err := validateEvent(e); err != nil {
+		return err
+	}
+	return updateEventRow(tx, householdID, e)
+}
+
+func updateEventRow(tx *sql.Tx, householdID string, e calendar.Event) error {
+	if err := validateTimes(e); err != nil {
 		return err
 	}
 	start, end, tz, recID, seriesID := eventColumns(e)

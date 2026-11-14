@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"context"
 	"crypto/tls"
 	"crypto/x509"
 	"encoding/pem"
@@ -12,9 +13,11 @@ import (
 	"path/filepath"
 	"regexp"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -28,6 +31,36 @@ type box struct {
 	db      *store.DB
 	client  *http.Client
 	now     time.Time
+	feeds   *fakeFeeds
+}
+
+// fakeFeeds serves ICS feeds (and failures) to the box's calendar sync.
+type fakeFeeds struct {
+	mu    sync.Mutex
+	feeds map[string]string
+	errs  map[string]error
+	asked []string
+}
+
+func (f *fakeFeeds) Fetch(_ context.Context, url string) ([]byte, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.asked = append(f.asked, url)
+	if err := f.errs[url]; err != nil {
+		return nil, err
+	}
+	return []byte(f.feeds[url]), nil
+}
+
+func (f *fakeFeeds) set(url, body string, err error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.feeds[url] = body
+	if err == nil {
+		delete(f.errs, url)
+	} else {
+		f.errs[url] = err
+	}
 }
 
 // newBox returns a box whose HTTPS is set up, served over TLS like in production.
@@ -51,12 +84,14 @@ func newFreshBox(t *testing.T) *box {
 		t.Fatal(err)
 	}
 	t.Cleanup(func() { db.Close() })
+	feeds := &fakeFeeds{feeds: map[string]string{}, errs: map[string]error{}}
 	certs, err := pki.Open(t.TempDir())
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := &box{t: t, db: db, pki: certs, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Now: func() time.Time { return b.now }})
+	b := &box{t: t, db: db, pki: certs, feeds: feeds, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
+	now := func() time.Time { return b.now }
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Now: now, Sync: calsync.New(db, feeds, now)})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()

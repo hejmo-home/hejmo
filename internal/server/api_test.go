@@ -79,6 +79,7 @@ func (c *apiClient) call(method, path string, body any) (int, map[string]any, []
 		t.Fatalf("request violates contract: %v", err)
 	}
 	req.Body = io.NopCloser(bytes.NewReader(raw))
+	req.ContentLength = int64(len(raw)) // the validator applied schema defaults to the length, not to raw
 
 	client := c.b.bareClient()
 	if c.cookie {

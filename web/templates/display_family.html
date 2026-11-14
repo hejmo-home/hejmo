@@ -1,5 +1,5 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "display.family.title") "Theme" .Theme)}}
-  <div class="family-page" data-display data-state="paired" data-display-type="{{.Display.Type}}" data-poll-seconds="{{.PollSeconds}}">
+  <div class="family-page" data-display data-state="paired" data-chip-icon="{{with .View.Weather}}{{.Icon}}{{end}}" data-display-type="{{.Display.Type}}" data-poll-seconds="{{.PollSeconds}}">
     {{template "familyView" .View}}
   </div>
   <script src="/static/display.js" defer></script>

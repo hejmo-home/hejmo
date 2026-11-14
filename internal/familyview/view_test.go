@@ -7,6 +7,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 var berlin = func() *time.Location {
@@ -345,16 +346,16 @@ func TestTimesFollowTheTimeFormat(t *testing.T) {
 // ADR 0016: the weather chip shows the temperature in the household's unit.
 func TestWeatherChipFollowsTheTemperatureUnit(t *testing.T) {
 	w := &familyview.Weather{TempC: 18.4, Icon: "clear"}
-	for unit, want := range map[string]string{"": "18°C", "c": "18°C", "f": "65°F"} {
+	for unit, want := range map[store.TemperatureUnit]string{"": "18°C", store.Celsius: "18°C", store.Fahrenheit: "65°F"} {
 		v := familyview.Build(familyview.Input{Now: at(14, 8, 0), People: family(), Weather: w, TemperatureUnit: unit})
 		if v.Weather == nil || v.Weather.Text != want || v.Weather.Icon != "clear" {
 			t.Errorf("unit %q: %+v, want %q", unit, v.Weather, want)
 		}
 	}
 	for c, want := range map[float64]string{-0.4: "0°C", -2.6: "-3°C", 0: "32°F"} {
-		unit := "c"
+		unit := store.Celsius
 		if want == "32°F" {
-			unit = "f"
+			unit = store.Fahrenheit
 		}
 		v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Weather: &familyview.Weather{TempC: c}, TemperatureUnit: unit})
 		if v.Weather.Text != want {

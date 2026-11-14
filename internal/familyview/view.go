@@ -10,6 +10,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/holiday"
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 // Person is one column of the family view. Slot (1..6) picks the person's
@@ -33,11 +34,11 @@ type Input struct {
 	// default (ADR 0016). Without it nothing of tomorrow is built.
 	ShowTomorrow bool
 	// TimeFormat is the household's "24h" (default) or "12h" (ADR 0016).
-	TimeFormat string
+	TimeFormat store.TimeFormat
 	// Weather is the current weather at home; nil hides the chip.
 	// TemperatureUnit is "c" (default) or "f".
 	Weather         *Weather
-	TemperatureUnit string
+	TemperatureUnit store.TemperatureUnit
 }
 
 // Weather is a reading for the weather chip; Icon names the symbol.
@@ -225,33 +226,33 @@ func Build(in Input) View {
 
 // clock formats the times in the household's zone, whatever zone the event is
 // stored in (synced events often arrive as UTC or with their own TZID).
-func clock(o calendar.Occurrence, loc *time.Location, format string) string {
+func clock(o calendar.Occurrence, loc *time.Location, format store.TimeFormat) string {
 	l := layout(format)
 	return fmt.Sprintf("%s–%s", o.Start.In(loc).Format(l), o.End.In(loc).Format(l))
 }
 
-func card(o calendar.Occurrence, loc *time.Location, format string) Event {
+func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat) Event {
 	return Event{Title: o.Title, Time: clock(o, loc, format)}
 }
 
 // ClockText is the time of day in the household's time format ("24h" or "12h").
-func ClockText(t time.Time, format string) string { return t.Format(layout(format)) }
+func ClockText(t time.Time, format store.TimeFormat) string { return t.Format(layout(format)) }
 
 // layout is the time layout of the household's time format.
-func layout(format string) string {
-	if format == "12h" {
+func layout(format store.TimeFormat) string {
+	if format == store.Time12h {
 		return "3:04 PM"
 	}
 	return "15:04"
 }
 
 // Chip builds the weather chip, or nil without a reading.
-func Chip(w *Weather, unit string) *WeatherChip {
+func Chip(w *Weather, unit store.TemperatureUnit) *WeatherChip {
 	if w == nil {
 		return nil
 	}
 	t, sym := w.TempC, "C"
-	if unit == "f" {
+	if unit == store.Fahrenheit {
 		t, sym = t*9/5+32, "F"
 	}
 	n := int(math.Round(t)) // math.Round(-0.4) is -0, which int() turns into 0

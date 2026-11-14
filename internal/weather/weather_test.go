@@ -219,10 +219,84 @@ func TestKeepLooksUpTheHomeOnceAndRefreshesItsWeather(t *testing.T) {
 
 func TestKeepReportsFailuresAndDoesNothingWithoutAHome(t *testing.T) {
 	s := weather.New(weather.WithBaseURL("http://127.0.0.1:1"))
-	if err := s.Keep(context.Background(), &fakeHome{err: errors.New("no household")}); err != nil {
+	if err := s.Keep(context.Background(), &fakeHome{err: weather.ErrNoHome}); err != nil {
 		t.Fatalf("no home must not be an error: %v", err)
 	}
 	if err := s.Keep(context.Background(), &fakeHome{lat: 1, lon: 2}); err == nil {
 		t.Fatal("unreachable Open-Meteo not reported")
 	}
+}
+
+// Only "no home yet" is quiet; a real database error is reported.
+func TestKeepReportsDatabaseErrors(t *testing.T) {
+	s := weather.New(weather.WithBaseURL("http://127.0.0.1:1"))
+	if err := s.Keep(context.Background(), &fakeHome{err: errors.New("disk I/O error")}); err == nil {
+		t.Fatal("database error swallowed")
+	}
+}
+
+// A place that is not found is not searched again every round.
+func TestKeepBacksOffAfterNoPlaceFound(t *testing.T) {
+	var geoHits atomic.Int32
+	geo := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		geoHits.Add(1)
+		_, _ = w.Write([]byte(`{}`))
+	}))
+	defer geo.Close()
+	now := t0
+	s := weather.New(weather.WithGeocodingURL(geo.URL), weather.WithClock(func() time.Time { return now }))
+	home := &fakeHome{name: "Nowhereville"}
+	if err := s.Keep(context.Background(), home); err == nil {
+		t.Fatal("first failed search not reported")
+	}
+	for i := 0; i < 3; i++ {
+		if err := s.Keep(context.Background(), home); err != nil {
+			t.Fatalf("round during back-off: %v", err)
+		}
+	}
+	if geoHits.Load() != 1 {
+		t.Fatalf("searched %d times during back-off", geoHits.Load())
+	}
+	home.mu.Lock()
+	home.name = "Pasing" // the location was corrected
+	home.mu.Unlock()
+	_ = s.Keep(context.Background(), home)
+	if geoHits.Load() != 2 {
+		t.Fatalf("corrected name not searched, hits %d", geoHits.Load())
+	}
+	now = now.Add(weather.NoPlaceBackoff + time.Minute)
+	home.mu.Lock()
+	home.name = "Nowhereville"
+	home.mu.Unlock()
+	_ = s.Keep(context.Background(), home)
+	if geoHits.Load() != 3 {
+		t.Fatalf("not searched again after back-off, hits %d", geoHits.Load())
+	}
+}
+
+// Run does not wait a whole interval for the first reading when the home is
+// created after the box started.
+func TestRunRetriesSoonWhileThereIsNoReading(t *testing.T) {
+	fc, _, _ := openMeteo(t, sunny, 200)
+	s := weather.New(weather.WithBaseURL(fc.URL), weather.WithRetry(5*time.Millisecond))
+	home := &fakeHome{err: weather.ErrNoHome}
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan struct{})
+	go func() { s.Run(ctx, time.Hour, home, nil); close(done) }()
+	time.Sleep(30 * time.Millisecond)
+	home.mu.Lock()
+	home.err, home.lat, home.lon = nil, 48.15, 11.46
+	home.mu.Unlock()
+	deadline := time.Now().Add(2 * time.Second)
+	for time.Now().Before(deadline) {
+		if _, ok := s.Latest(48.15, 11.46); ok {
+			cancel()
+			<-done
+			return
+		}
+		time.Sleep(5 * time.Millisecond)
+	}
+	cancel()
+	<-done
+	t.Fatal("no reading although the home appeared")
 }

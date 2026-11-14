@@ -7,6 +7,7 @@ package weather
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"fmt"
 	"io"
 	"net/http"
@@ -48,6 +49,20 @@ type Reading struct {
 	Icon  Icon
 }
 
+// NoPlaceBackoff is how long a home name that no place was found for is left
+// alone; changing the name searches again at once.
+const NoPlaceBackoff = 6 * time.Hour
+
+// defaultRetry is how soon Run asks again while the box has no reading and
+// nothing failed (for example before the household exists).
+const defaultRetry = time.Minute
+
+// ErrNoHome is what a Home returns while there is no household yet.
+var ErrNoHome = errors.New("weather: no home yet")
+
+// errNoPlace is the answer of a place search without a result.
+var errNoPlace = errors.New("weather: no place found")
+
 type entry struct {
 	lat, lon float64
 	reading  Reading
@@ -60,9 +75,14 @@ type Service struct {
 	geo  string
 	http *http.Client
 	now  func() time.Time
+	// retry is the wait of Run while there is no reading and no failure.
+	retry time.Duration
 
 	mu   sync.Mutex
 	last *entry
+	// noPlace is the home name the last search found nothing for, and when.
+	noPlace   string
+	noPlaceAt time.Time
 }
 
 // Option configures a Service.
@@ -77,9 +97,12 @@ func WithGeocodingURL(u string) Option { return func(s *Service) { s.geo = u } }
 // WithClock sets the clock.
 func WithClock(now func() time.Time) Option { return func(s *Service) { s.now = now } }
 
+// WithRetry sets how soon Run asks again while there is no reading (tests).
+func WithRetry(d time.Duration) Option { return func(s *Service) { s.retry = d } }
+
 // New returns a service for Open-Meteo.
 func New(opts ...Option) *Service {
-	s := &Service{base: DefaultBaseURL, geo: DefaultGeocodingURL, http: &http.Client{Timeout: 15 * time.Second}, now: time.Now}
+	s := &Service{base: DefaultBaseURL, geo: DefaultGeocodingURL, http: &http.Client{Timeout: 15 * time.Second}, now: time.Now, retry: defaultRetry}
 	for _, o := range opts {
 		o(s)
 	}
@@ -152,8 +175,8 @@ func iconFor(code int, day bool) Icon {
 // Home is the household's home location, as the weather needs it.
 type Home interface {
 	// Home returns the coordinates (both zero: not known yet), the home's
-	// name and its ISO 3166-1 country code (may be empty). An error means
-	// there is no home yet.
+	// name and its ISO 3166-1 country code (may be empty). ErrNoHome means
+	// there is no household yet; any other error is a real failure.
 	Home() (lat, lon float64, name, country string, err error)
 	// SetCoordinates keeps coordinates found for the home.
 	SetCoordinates(lat, lon float64) error
@@ -161,17 +184,26 @@ type Home interface {
 
 // Keep does one round for the home: it finds the coordinates by the home's
 // name if they are not known (and keeps them) and refreshes the weather. A box
-// without a home yet is not an error.
+// without a home yet (ErrNoHome) is not an error; a place that was not found is
+// reported once and then left alone for NoPlaceBackoff.
 func (s *Service) Keep(ctx context.Context, h Home) error {
 	lat, lon, name, country, err := h.Home()
-	if err != nil {
+	if errors.Is(err, ErrNoHome) {
 		return nil
 	}
+	if err != nil {
+		return err
+	}
 	if lat == 0 && lon == 0 {
-		if name == "" {
+		if name == "" || s.inBackoff(name) {
 			return nil
 		}
 		if lat, lon, err = s.Geocode(ctx, name, country); err != nil {
+			if errors.Is(err, errNoPlace) {
+				s.mu.Lock()
+				s.noPlace, s.noPlaceAt = name, s.now()
+				s.mu.Unlock()
+			}
 			return err
 		}
 		if err := h.SetCoordinates(lat, lon); err != nil {
@@ -181,18 +213,46 @@ func (s *Service) Keep(ctx context.Context, h Home) error {
 	return s.Refresh(ctx, lat, lon)
 }
 
-// Run calls Keep now and then every interval until ctx ends; failures go to onErr.
+// inBackoff reports whether a search for name found nothing recently.
+func (s *Service) inBackoff(name string) bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.noPlace == name && s.now().Sub(s.noPlaceAt) < NoPlaceBackoff
+}
+
+// hasReading reports whether there is any reading yet.
+func (s *Service) hasReading() bool {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.last != nil
+}
+
+// Run calls Keep now and then every interval until ctx ends; failures go to
+// onErr. While there is no reading and nothing failed (no household yet, or a
+// place in back-off) it asks again sooner, so a display paired right after
+// setup does not wait a whole interval for its chip.
 func (s *Service) Run(ctx context.Context, interval time.Duration, h Home, onErr func(error)) {
 	tick := time.NewTicker(interval)
 	defer tick.Stop()
 	for {
-		if err := s.Keep(ctx, h); err != nil && ctx.Err() == nil && onErr != nil {
+		err := s.Keep(ctx, h)
+		if err != nil && ctx.Err() == nil && onErr != nil {
 			onErr(err)
+		}
+		var soon <-chan time.Time
+		var timer *time.Timer
+		if err == nil && !s.hasReading() {
+			timer = time.NewTimer(s.retry)
+			soon = timer.C
 		}
 		select {
 		case <-ctx.Done():
 			return
 		case <-tick.C:
+		case <-soon:
+		}
+		if timer != nil {
+			timer.Stop()
 		}
 	}
 }
@@ -214,7 +274,7 @@ func (s *Service) Geocode(ctx context.Context, name, countryCode string) (lat, l
 		return 0, 0, err
 	}
 	if len(body.Results) == 0 {
-		return 0, 0, fmt.Errorf("weather: no place found for %q", name)
+		return 0, 0, fmt.Errorf("%w for %q", errNoPlace, name)
 	}
 	return body.Results[0].Latitude, body.Results[0].Longitude, nil
 }

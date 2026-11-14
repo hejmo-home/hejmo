@@ -270,6 +270,9 @@ type homeOf struct{ db *store.DB }
 
 func (h homeOf) Home() (lat, lon float64, name, country string, err error) {
 	hh, err := h.db.HomeHousehold()
+	if errors.Is(err, store.ErrNotFound) {
+		return 0, 0, "", "", weather.ErrNoHome
+	}
 	if err != nil {
 		return 0, 0, "", "", err
 	}

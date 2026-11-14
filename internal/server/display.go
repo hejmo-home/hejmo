@@ -158,7 +158,7 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	}
 	in := familyview.Input{
 		Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs, ShowTomorrow: showTomorrow,
-		TimeFormat: string(h.TimeFormat), TemperatureUnit: string(h.TemperatureUnit), Weather: s.homeWeather(h),
+		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h),
 	}
 	for _, c := range cals {
 		in.Calendars[c.ID] = c.Audience
@@ -242,8 +242,10 @@ func (s *server) pairDisplay(p principal, code string, in store.Display) (store.
 	return d, err
 }
 
-// addChips puts the text of the header chips into a paired display's state,
-// so the display updates them once a minute without reloading the page.
+// addChips puts the header chips into a paired display's state: the texts, so
+// the display updates them once a minute without reloading the page, and the
+// weather icon, so the page can tell that the chip appeared, vanished or
+// changed its symbol and reload.
 func (s *server) addChips(state map[string]string) {
 	h, err := s.db.HomeHousehold()
 	if err != nil {
@@ -253,8 +255,8 @@ func (s *server) addChips(state map[string]string) {
 	if l, err := time.LoadLocation(h.Timezone); err == nil {
 		loc = l
 	}
-	state["clock"] = familyview.ClockText(s.now().In(loc), string(h.TimeFormat))
-	if c := familyview.Chip(s.homeWeather(h), string(h.TemperatureUnit)); c != nil {
-		state["weather"] = c.Text
+	state["clock"] = familyview.ClockText(s.now().In(loc), h.TimeFormat)
+	if c := familyview.Chip(s.homeWeather(h), h.TemperatureUnit); c != nil {
+		state["weather"], state["weather_icon"] = c.Text, c.Icon
 	}
 }

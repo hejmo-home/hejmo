@@ -98,13 +98,32 @@ func TestDisplayStateCarriesTheChipsForTheMinuteUpdate(t *testing.T) {
 	f.now = f.at(14, 8, 7)
 	f.homeWeather(t)
 	body := f.display.get("/display/state", "en").body
-	for _, want := range []string{`"clock":"08:07"`, `"weather":"18°C"`, `"state":"paired"`} {
+	for _, want := range []string{`"clock":"08:07"`, `"weather":"18°C"`, `"weather_icon":"clear"`, `"state":"paired"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("state misses %s: %s", want, body)
 		}
 	}
 	f.now = f.now.Add(weather.MaxAge + time.Minute)
-	if body := f.display.get("/display/state", "en").body; strings.Contains(body, `"weather"`) {
+	if body := f.display.get("/display/state", "en").body; strings.Contains(body, `"weather"`) || strings.Contains(body, `"weather_icon"`) {
 		t.Errorf("stale weather in state: %s", body)
+	}
+}
+
+// The page tells its script which icon it shows, so the script can notice a
+// chip that appeared, vanished or changed its symbol and reload (a display
+// paired before the first reading must get its chip; a sun must not stay at night).
+func TestDisplayPageCarriesTheIconItShowsAndTheScriptReloadsOnChange(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	f.now = f.at(14, 8, 7)
+	if page := f.display.get("/display", "en").body; !strings.Contains(page, `data-chip-icon=""`) {
+		t.Errorf("page without a reading must say it shows no icon: %s", page)
+	}
+	f.homeWeather(t)
+	if page := f.display.get("/display", "en").body; !strings.Contains(page, `data-chip-icon="clear"`) {
+		t.Errorf("page does not carry its icon")
+	}
+	js := f.display.get("/static/display.js", "").body
+	if !strings.Contains(js, "weather_icon") || !strings.Contains(js, "data-chip-icon") {
+		t.Errorf("script does not compare the icon")
 	}
 }

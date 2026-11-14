@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 14/11/2026
-- Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; leave time per person instead of a header countdown), [0015](0015-display-web-interface-and-everyday.md) (footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
+- Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; the leave-the-house countdown stays out of V1.0 and comes back per person in V2), [0015](0015-display-web-interface-and-everyday.md) (footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
 
 ## Context
 
@@ -18,7 +18,7 @@ The product owner reviewed the first preview of the family view (PR #58, ticket 
 ### Person columns
 
 - Each person's column shows **today's task progress** as a bar with "done/total" (e.g. "3/5"), anchored to the bottom of the column. When the column's events scroll, the bar stays visible in the same place; the 18:00 tomorrow block of ADR 0015 scrolls with the events above it. A person without tasks today shows no bar.
-- **Leave time per person:** see "Open point" below.
+- **Leave time per person in V2:** once journey times exist (V2), the person's next event with a journey time shows "leave in h:mm" in their column from 60 minutes before departure (event start minus journey time); several people can each show their own. Nothing of it is built in V1.0 (ADR 0008, handover).
 
 ### Footer
 
@@ -26,10 +26,6 @@ The footer has **two tiles**; the task tile of ADR 0015 is dropped, because prog
 
 - **Meal tile** (replaces the dinner tile): shows every mealtime planned for today that is not over yet, one line each, always with the mealtime ("Lunch: Pasta bake"). Each mealtime has a time from which it is no longer shown, set per household. Defaults: breakfast 10:00, lunch 13:30, snack 16:30, dinner none (shown for the rest of the day). With one line the tile is labelled with the mealtime, with several "Meals today".
 - **Tomorrow tile:** one line per waste collection tomorrow (e.g. "Paper bin", "Residual waste"), shown all day, and the parent's note for tomorrow as the last line. The note keeps the timing of ADR 0015: shown from 18:00 the evening before its day until the end of that day, then deleted. At most three lines are shown: with more, the tile shows as many collections as fit, then "+N more", and the note is never hidden. The tile is highlighted from 18:00 when it holds a collection (the waste collection reminder); a tile with only a note is not highlighted. Hidden when there is neither a collection nor a note.
-
-## Open point
-
-The leave time per person needs journey times, which ADR 0008 and the handover leave for V2. The product owner decides whether it waits for V2 or a simple journey time comes into V1.0.
 
 ## Consequences
 

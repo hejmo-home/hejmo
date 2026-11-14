@@ -13,6 +13,7 @@ Work packages 5 (display) and 6 (everyday) were sliced from `docs/spec.md` witho
 ### Technology
 
 - Display and web interface are **server-rendered HTML** (Go templates) with a **small own JavaScript**, no htmx or other framework (make or buy: the needed behaviour, SSE-triggered partial updates and timers, is small).
+- **HTML routes next to the REST API** (deviation from the spec's "REST API as the only interface"): pages and forms of the web interface and displays are served by their own HTML routes, as setup and login already are. They call the same domain and store code as the API. Everything the web interface or a display can do is also possible through the REST API (`api/openapi.yaml`); a test checks this parity. HTML routes are tested through server tests, not the OpenAPI contract.
 - The view is built from a **view model** (the data for one screen) that the HTML renderer turns into markup, so other renderers can be added later.
 - **All displays have a touch screen and a browser.** Server-side image rendering (PNG) is **out of scope** for V1.0; the research (headless Chromium as optional container, TRMNL BYOS API) is kept for a later decision.
 - Against ghosting, E-Ink displays reload the whole page from the box once per hour, **only during quiet mode**. This deviates from the spec criterion "when nothing changes, then no new image is transmitted" for quiet mode only.

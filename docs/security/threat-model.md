@@ -77,7 +77,7 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 ### T7. Hostile text in a title runs as script on a display or phone
 
 - **Threat:** an event title or task name from a synced calendar contains markup.
-- **Check:** every page is rendered by `html/template`, which escapes by context; the gosec triage above covers the places that wrap markup deliberately. `ci:gosec`
+- **Check:** every page is rendered by `html/template`, which escapes by context; tests render a `<script>` title on the family view, the display page and the tasks page and require it escaped. `test:internal/server/escaping_test.go` (gosec's XSS rules are medium severity and do not fail CI; the triage above covers the places that wrap markup deliberately.)
 - **Accepted risk:** the box sets no Content-Security-Policy or clickjacking headers yet. Pages are only reachable on the LAN over HTTPS and templates escape, so exploitation needs a second flaw. Adding the headers is a follow-up for the product owner to schedule.
 
 ## Phones
@@ -86,7 +86,7 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 
 - **Threat:** a thief opens the web interface or syncs the calendar.
 - **Check:** device tokens are stored as hashes and can be revoked, after which they are refused. `test:internal/server/caldav_test.go`
-- **Accepted risk:** a browser session lasts 30 days and parents can end it only by signing out on that phone or changing the password. The phone's own lock screen is the protection until a session list exists.
+- **Accepted risk:** a browser session lasts 30 days and the box has no remote way to end it. It ends only when someone signs out on that phone; there is no password-change function and no session list, so a lost phone keeps its session until it expires. The phone's own lock screen is the protection until parents can end sessions remotely (#108).
 
 ### T9. A child's account or token reaches parent functions
 

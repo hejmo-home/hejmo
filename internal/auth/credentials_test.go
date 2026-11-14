@@ -2,9 +2,13 @@ package auth_test
 
 import (
 	"encoding/base32"
+	"encoding/base64"
+	"fmt"
 	"strings"
 	"testing"
 	"time"
+
+	"golang.org/x/crypto/argon2"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 )
@@ -127,10 +131,8 @@ func TestVerifyPasswordRefusesAbsurdParameters(t *testing.T) {
 	salt := "c2FsdHNhbHRzYWx0c2E"
 	key := strings.Repeat("A", 43)
 	for name, h := range map[string]string{
-		"memory":  "$argon2id$v=19$m=4294967295,t=2,p=1$" + salt + "$" + key,
-		"passes":  "$argon2id$v=19$m=19456,t=4294967295,p=1$" + salt + "$" + key,
-		"keylen":  "$argon2id$v=19$m=19456,t=2,p=1$" + salt + "$" + strings.Repeat("A", 4000),
-		"threads": "$argon2id$v=19$m=19456,t=2,p=255$" + salt + "$" + key,
+		"memory": "$argon2id$v=19$m=4294967295,t=2,p=1$" + salt + "$" + key,
+		"passes": "$argon2id$v=19$m=19456,t=4294967295,p=1$" + salt + "$" + key,
 	} {
 		start := time.Now()
 		if auth.VerifyPassword(h, "anything long") {
@@ -149,5 +151,34 @@ func TestTOTPCodeRefusesTimesBeforeTheEpoch(t *testing.T) {
 	}
 	if auth.VerifyTOTP(secret, "123456", time.Unix(-1, 0)) {
 		t.Error("verified at a time before 1970")
+	}
+}
+
+// Bounds on key length and threads: each hash below is genuine for the secret,
+// so without the bound it would verify. Hashes at the bound must still verify.
+func TestVerifyPasswordKeyLengthAndThreadBounds(t *testing.T) {
+	const secret = "anything long"
+	salt := []byte("saltsaltsaltsalt")
+	phc := func(keyLen uint32, threads uint8) string {
+		key := argon2.IDKey([]byte(secret), salt, 1, 8, threads, keyLen)
+		b64 := base64.RawStdEncoding
+		return fmt.Sprintf("$argon2id$v=%d$m=8,t=1,p=%d$%s$%s",
+			argon2.Version, threads, b64.EncodeToString(salt), b64.EncodeToString(key))
+	}
+	for name, c := range map[string]struct {
+		keyLen  uint32
+		threads uint8
+		ok      bool
+	}{
+		"shortest key":      {16, 1, true},
+		"longest key":       {64, 1, true},
+		"most threads":      {32, 8, true},
+		"key below minimum": {8, 1, false},
+		"key above maximum": {65, 1, false},
+		"threads above max": {32, 9, false},
+	} {
+		if got := auth.VerifyPassword(phc(c.keyLen, c.threads), secret); got != c.ok {
+			t.Errorf("%s: verified = %v, want %v", name, got, c.ok)
+		}
 	}
 }

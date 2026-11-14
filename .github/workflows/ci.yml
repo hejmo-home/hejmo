@@ -67,7 +67,8 @@ jobs:
   # Security checks (ADR 0018, Measurement). Tools run in CI only; none is part of the binary.
   # Thresholds: govulncheck fails on any vulnerability the code calls; gosec fails on
   # findings of high severity; Trivy fails on fixable HIGH or CRITICAL findings in the image.
-  # Medium and low gosec findings are triaged in docs/security/threat-model.md.
+  # Medium and low gosec findings are triaged in docs/security/threat-model.md; the gosec job
+  # prints the medium ones in a non-failing step so reviewers see them.
   govulncheck:
     name: govulncheck
     runs-on: ubuntu-24.04
@@ -89,6 +90,8 @@ jobs:
           go-version-file: go.mod
       - name: Static analysis, high severity fails
         run: go run github.com/securego/gosec/v2/cmd/gosec@v2.30.0 -quiet -severity high ./...
+      - name: Medium findings for reviewers (never fails)
+        run: go run github.com/securego/gosec/v2/cmd/gosec@v2.30.0 -quiet -severity medium -no-fail ./...
 
   image-scan:
     name: Container image scan

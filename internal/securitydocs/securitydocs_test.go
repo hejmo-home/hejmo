@@ -30,11 +30,11 @@ type workflow struct {
 	Jobs map[string]struct {
 		ContinueOnError bool `yaml:"continue-on-error"`
 		Steps           []struct {
-			Name            string `yaml:"name"`
-			Run             string `yaml:"run"`
-			Uses            string `yaml:"uses"`
-			ContinueOnError bool   `yaml:"continue-on-error"`
-			With            map[string]any
+			Name            string         `yaml:"name"`
+			Run             string         `yaml:"run"`
+			Uses            string         `yaml:"uses"`
+			ContinueOnError bool           `yaml:"continue-on-error"`
+			With            map[string]any `yaml:"with"`
 		}
 	}
 }
@@ -80,17 +80,42 @@ func TestCISecurityJobsExistAndFail(t *testing.T) {
 	}
 }
 
-// The agreed thresholds are written into the workflow, not left to defaults.
+// The agreed thresholds are written into the workflow steps, not left to defaults.
 func TestCIThresholds(t *testing.T) {
-	ci := read(t, ".github/workflows/ci.yml")
-	for _, want := range []string{
-		"-severity high",          // gosec: high severity fails the build
-		"severity: HIGH,CRITICAL", // trivy
-		"exit-code: \"1\"",
-	} {
-		if !strings.Contains(ci, want) {
-			t.Errorf("ci.yml lacks threshold %q", want)
+	w := loadWorkflow(t)
+	runOf := func(job, tool string) string {
+		for _, s := range w.Jobs[job].Steps {
+			if strings.Contains(s.Run, tool) {
+				return s.Run
+			}
 		}
+		t.Errorf("job %q has no step running %s", job, tool)
+		return ""
+	}
+	if run := runOf("govulncheck", "govulncheck"); !strings.Contains(run, "./...") {
+		t.Errorf("govulncheck must scan every package, runs %q", run)
+	}
+	if run := runOf("gosec", "gosec"); !strings.Contains(run, "-severity high") {
+		t.Errorf("a gosec step must fail on high severity, runs %q", run)
+	}
+	found := false
+	for _, s := range w.Jobs["image-scan"].Steps {
+		if !strings.HasPrefix(s.Uses, "aquasecurity/trivy-action@") {
+			continue
+		}
+		found = true
+		for k, want := range map[string]any{
+			"severity":       "HIGH,CRITICAL",
+			"ignore-unfixed": true, // only fixable findings fail
+			"exit-code":      "1",
+		} {
+			if got := s.With[k]; got != want {
+				t.Errorf("trivy step: %s = %v, want %v", k, got, want)
+			}
+		}
+	}
+	if !found {
+		t.Error("image-scan has no trivy-action step")
 	}
 }
 

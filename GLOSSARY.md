@@ -180,6 +180,22 @@ _Avoid_: menu, food plan
 Something to be done once or repeatedly, ticked off when done.
 _Avoid_: chore, todo, job
 
+**Routine**:
+The ordered sequence of one person's tasks for a part of the day, such as Mia's morning.
+_Avoid_: checklist, schedule, habit
+
+**Routine template**:
+A reusable routine without a person that a parent copies into a routine for someone.
+_Avoid_: preset, blueprint
+
+**Subtask**:
+One item of the checklist inside a task; the task is done when all its subtasks are done.
+_Avoid_: step (alone), child task
+
+**Star**:
+A point a person earns by ticking off a task, booked in their star log.
+_Avoid_: point, coin, reward (a reward is what stars are redeemed for)
+
 **Waste collection calendar**:
 A read-only calendar marked as listing the household's waste collection days.
 _Avoid_: bin calendar, garbage feed

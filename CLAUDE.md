@@ -5,7 +5,7 @@ Self-hosted, open-source family organizer: a Go box (Raspberry Pi, Docker) with 
 ## Start here
 
 - `GLOSSARY.md`: domain language. Use these terms in code, tests, issues and PRs.
-- `docs/adr/`: decisions. **ADRs override `docs/spec.md` and `docs/handover.md`.** ADR 0003 holds the V1.0 work packages and what moved to V1.x.
+- `docs/adr/`: decisions. **ADRs override `docs/spec.md` and `docs/handover.md`.** ADR 0003 holds the V1.0 work packages; ADR 0018 says what else goes into 0.1, the first public version.
 - `docs/spec.md`: the full product specification (frozen 14/11/2026), including acceptance criteria and the "Nordic Calm" design values.
 - `docs/research/`: researched facts with sources (e.g. public holidays).
 

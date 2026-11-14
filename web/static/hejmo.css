@@ -231,6 +231,11 @@ a { color: var(--accent); }
 [data-theme="bw"] .marker[data-shape="triangle-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 [data-theme="bw"] .marker[data-shape="diamond-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 
+/* Event cards list their people as markers; only bw needs them (colour cards
+   carry the person colour). */
+.event .markers { display: none; }
+[data-theme="bw"] .event .markers { display: flex; gap: 4px; margin-bottom: 4px; }
+
 /* Family view building blocks (screens use them from ticket 5.3 on). */
 .tile, .column, .chip { background: var(--surface); }
 .tile, .column { border-radius: var(--radius-tile); }
@@ -300,6 +305,7 @@ body:has(.family-page) { overflow: hidden; }
 .fv-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: var(--gap); }
 .fv[data-scroll] .fv-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 200px; overflow-x: auto; }
 .fv .column { display: flex; flex-direction: column; gap: 0; min-height: 0; overflow: hidden; }
+.fv .person-link { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); color: inherit; text-decoration: none; }
 .fv .column h2 { flex: none; margin: 0 0 var(--gap-cards); font-size: var(--fs-person-name); font-weight: var(--fw-person-name); display: flex; align-items: center; gap: 8px; }
 .fv .events { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: var(--gap-cards); align-content: start; }
 .fv .events .tomorrow { display: grid; gap: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); opacity: 0.6; }
@@ -317,3 +323,21 @@ body:has(.family-page) { overflow: hidden; }
 .fv-footer .tile.alert .lab { color: var(--notice-text); }
 .qr { width: min(60vw, 240px); margin: 0 0 12px; color: var(--text); }
 .qr svg { display: block; width: 100%; height: auto; }
+
+/* Personal view (ticket 5.6; ADR 0015): one person's seven days and today's
+   tasks. Touch targets are at least 44 px; the checkbox is larger. */
+.pv { height: 100%; display: flex; flex-direction: column; gap: var(--gap-section); min-height: 0; }
+.pv-header { display: flex; justify-content: space-between; align-items: center; flex: none; gap: var(--gap); }
+.pv-header h1 { margin: 0; font-size: var(--fs-date); font-weight: var(--fw-date); display: flex; align-items: center; gap: 12px; }
+.pv-back { display: inline-flex; align-items: center; min-height: var(--touch-target); padding: 8px 22px; border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
+.pv-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--gap); }
+.pv-days, .pv-tasks { background: var(--surface); border-radius: var(--radius-tile); padding: var(--pad-column); min-height: 0; overflow-y: auto; }
+.pv-day { display: grid; gap: var(--gap-cards); padding-bottom: var(--gap-cards); }
+.pv-day .lab, .pv-tasks .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.pv-day .none { font-size: var(--fs-meta); color: var(--text-secondary); }
+.pv-tasks ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap-cards); }
+.pv-tasks form { margin: 0; }
+.big-check { display: flex; align-items: center; gap: 14px; width: 100%; min-height: var(--touch-target); min-width: var(--touch-target); padding: 8px 4px; border: 0; background: none; color: var(--text); font: inherit; font-size: var(--fs-event-title); text-align: left; cursor: pointer; }
+.big-check .box { flex: none; width: var(--touch-target); height: var(--touch-target); border: 3px solid var(--text); border-radius: var(--radius-card); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; line-height: 1; }
+[data-done="true"] .big-check .title { text-decoration: line-through; color: var(--text-secondary); }
+[data-done="true"] .big-check .box::after { content: "\2713"; }

@@ -12,7 +12,13 @@ Sign off every commit:
 git commit -s -m "Add holiday rules for Bavaria"
 ```
 
-This adds a line `Signed-off-by: Your Name <you@example.com>`. Pull requests with unsigned commits cannot be merged.
+This adds a line `Signed-off-by: Your Name <you@example.com>`. To have it added automatically (also for merge commits), run this once per clone; it covers every worktree of the clone:
+
+```bash
+git config core.hooksPath .githooks
+```
+
+The hook `.githooks/prepare-commit-msg` appends the line for the committer and never twice. Pull requests with unsigned commits cannot be merged.
 
 ## How we work
 
@@ -21,8 +27,26 @@ This adds a line `Signed-off-by: Your Name <you@example.com>`. Pull requests wit
 - **Dependencies** must be open source and AGPL-compatible. Explain every new dependency in the pull request.
 - **No proprietary runtime.** Anything a user must install to run Hejmo is open source. Integrations with proprietary services (Google, iCloud, Outlook) are fine but never required. See [ADR 0004](docs/adr/0004-open-source-only-runtime.md).
 - **No real personal data** in the repository. Use the example family from the specification (Mama, Papa, Sebastian, Mia).
+- **Migrations** are named `YYYYMMDDhhmm_name.sql` with the UTC minute you create the file (`date -u +%Y%m%d%H%M`), never a running counter. A test fails on duplicate or non-ascending prefixes. Applied migrations are tracked by name, so a migration that is merged later but carries an older timestamp still runs.
+- **Provider bugs** (iCloud, Nextcloud, ...) first become a quirk file in `internal/caldavclient/testdata/quirks/`, then get fixed. See its README.
+- **Radicale tests** need Docker; CI sets `HEJMO_REQUIRE_RADICALE=1`, so they cannot be skipped there. Set it locally to see the same.
+- **Security checks.** CI runs govulncheck, gosec (high severity fails) and a Trivy image scan. A change that adds a way in (a new token, port, file the box reads from the host, or a new integration) adds a threat with its check or accepted risk to [docs/security/threat-model.md](docs/security/threat-model.md); a test keeps that file consistent with CI.
 - **Translatable text.** All user-facing text goes through the i18n catalogues in `internal/i18n/locales/` (German and English must have the same keys; a test checks this).
 
 ## Decisions
 
 Larger decisions are recorded as ADRs in `docs/adr/`. Propose a new ADR in your pull request if you change scope, guardrails or the data model.
+
+## Releases
+
+Only the product owner cuts a release (ADR 0018). A tag `v<major>.<minor>.<patch>` on `main` runs `.github/workflows/release.yml`: it builds the image for x86_64 and arm64, pushes it to `ghcr.io/hejmo-home/hejmo`, signs it with cosign (keyless, GitHub OIDC), verifies the signature and creates the GitHub release with notes listing the merged pull requests since the previous tag. A suffix (`v0.1.0-rc.1`) makes it a pre-release: it gets no `latest` tag and auto-update ignores it.
+
+Every push to `main` runs `.github/workflows/preview.yml`: images tagged `preview` and `preview-<short sha>`, never signed as a release and never a GitHub release.
+
+Verify a release image:
+
+```bash
+cosign verify ghcr.io/hejmo-home/hejmo:0.1.0 \
+  --certificate-identity "https://github.com/hejmo-home/hejmo/.github/workflows/release.yml@refs/tags/v0.1.0" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```

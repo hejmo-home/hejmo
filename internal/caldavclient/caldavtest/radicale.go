@@ -1,6 +1,7 @@
 // Package caldavtest runs a real Radicale CalDAV server in a container for
-// tests (ADR 0012). Tests that need it are skipped where Docker is missing,
-// and fail loudly if it is there but Radicale does not come up.
+// tests (ADR 0012). Tests that need it are skipped where Docker is missing
+// unless HEJMO_REQUIRE_RADICALE=1 is set (CI does), which turns the skip into
+// a failure. They fail loudly if Docker is there but Radicale does not come up.
 package caldavtest
 
 import (
@@ -60,15 +61,28 @@ type = owner_only
 filesystem_folder = /data/collections
 `
 
+// RequireEnv is the environment variable that turns a missing container
+// runtime from a skip into a failure.
+const RequireEnv = "HEJMO_REQUIRE_RADICALE"
+
+// unavailable skips the test, or fails it when RequireEnv is 1.
+func unavailable(t *testing.T, reason string) {
+	t.Helper()
+	if os.Getenv(RequireEnv) == "1" {
+		t.Fatalf("%s (%s=1, so the test must not be skipped)", reason, RequireEnv)
+	}
+	t.Skip(reason)
+}
+
 // Start runs Radicale for the duration of the test.
 func Start(t *testing.T) *Server {
 	t.Helper()
 	docker, err := exec.LookPath("docker")
 	if err != nil {
-		t.Skip("docker not found: Radicale tests need a container runtime")
+		unavailable(t, "docker not found: Radicale tests need a container runtime")
 	}
 	if err := exec.Command(docker, "info").Run(); err != nil {
-		t.Skip("docker daemon not reachable: Radicale tests need a container runtime")
+		unavailable(t, "docker daemon not reachable: Radicale tests need a container runtime")
 	}
 	pullOnce.Do(func() {
 		pullOut, pullErr = exec.Command(docker, "pull", "--quiet", Image).CombinedOutput()

@@ -21,8 +21,8 @@ Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. It 
 
 | Release | Content |
 |---|---|
-| **0.x (V1.0, family core)** | Box and setup wizard, people and roles, calendar with series and DACH holidays, sync (ICS, iCloud, Google), one E-Ink display with the family view, lists, meal plan, simple tasks, waste collection calendar |
-| **1.0 (V1.x)** | Stars and routines, subtasks, VTODO export, box as CalDAV/CardDAV server, Outlook, passkeys, screensaver, auto-update with rollback, MCP server, install guide |
+| **0.1 (first public version)** | Box and setup wizard, people and roles, calendar with series and DACH holidays, sync (ICS, iCloud, CalDAV, Google), box as CalDAV server, displays and phones, lists, meal plan, tasks with stars, routines and subtasks, VTODO export, passkeys, MCP server, install guide, auto-update with rollback |
+| **0.2 and later** | Outlook, photo screensaver, brightness control, free display layouts |
 | **V2 / V3** | School, childcare and logistics; shared-custody model and multiple households (see the specification) |
 
 See [ADR 0003](docs/adr/0003-v1-scope-and-work-packages.md) for the work packages.

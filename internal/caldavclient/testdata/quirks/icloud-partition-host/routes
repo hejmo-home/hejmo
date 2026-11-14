@@ -1,0 +1,6 @@
+caldav.icloud.example PROPFIND / 207 entry-root.xml
+caldav.icloud.example PROPFIND /123/principal/ 207 entry-principal.xml
+p123-caldav.icloud.example PROPFIND /123/calendars/ 207 home.xml
+p123-caldav.icloud.example PROPFIND /123/calendars/family/ 207 list.xml
+p123-caldav.icloud.example REPORT:calendar-query /123/calendars/family/ 207 list.xml
+p123-caldav.icloud.example REPORT:calendar-multiget /123/calendars/family/ 207 multiget.xml

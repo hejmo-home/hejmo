@@ -25,7 +25,7 @@ func (p principal) location() *time.Location {
 // interface (ADR 0016).
 func (p principal) timeLayout() string {
 	if p.household.TimeFormat == store.Time12h {
-		return "02/01/2006 03:04 PM"
+		return "02/01/2006 3:04 PM"
 	}
 	return "02/01/2006 15:04"
 }

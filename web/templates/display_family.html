@@ -1,4 +1,4 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "display.family.title"))}}
+{{template "head" (dict "Lang" .Lang "Title" (t "display.family.title") "Theme" "light")}}
   <div class="display family" data-display data-state="paired" data-display-type="{{.Display.Type}}" data-poll-seconds="{{.PollSeconds}}">
     <h1>{{.Display.Name}}</h1>
     {{if .Display.Room}}<p class="hint">{{.Display.Room}}</p>{{end}}

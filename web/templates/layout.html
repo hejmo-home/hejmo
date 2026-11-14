@@ -1,14 +1,14 @@
 {{define "head"}}<!doctype html>
-<html lang="{{.Lang}}">
+<html lang="{{.Lang}}"{{with .Theme}} data-theme="{{.}}"{{end}}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Title}} · Hejmo</title>
 <link rel="stylesheet" href="/static/hejmo.css">
 </head>
-<body>
+<body{{if .Frame}} class="web"{{end}}>
 {{if .Frame}}<a class="skip" href="#content">{{t "frame.skip"}}</a>{{end}}
-<div class="frame{{if .Frame}} framed{{if .Frame.Items}} has-nav{{end}}{{end}}">
+<div{{if .Frame}} class="frame framed{{if .Frame.Items}} has-nav{{end}}"{{end}}>
 {{with .Frame}}
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>

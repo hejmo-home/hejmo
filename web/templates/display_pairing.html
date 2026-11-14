@@ -1,4 +1,4 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "display.pair.title"))}}
+{{template "head" (dict "Lang" .Lang "Title" (t "display.pair.title") "Theme" "light")}}
   <div class="display pairing" data-display data-state="pairing" data-code="{{.Code}}" data-poll-seconds="{{.PollSeconds}}" data-pair-url="{{.PairURL}}">
     <h1>{{t "display.pair.title"}}</h1>
     <div class="qr">{{.QR}}</div>

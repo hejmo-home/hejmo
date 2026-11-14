@@ -402,9 +402,26 @@ func TestDarkFollowsTheDeviceByDefaultWithTheSameValues(t *testing.T) {
 	}
 }
 
-// 5.11: the frame is responsive: it has a layout for wide screens.
+// 5.11: the frame is responsive: from 900 px the navigation sits beside the
+// content in a grid.
 func TestFrameHasAWideLayout(t *testing.T) {
-	if !regexp.MustCompile(`@media \(min-width: \d+px\)`).MatchString(stylesheet(t)) {
-		t.Fatal("no min-width media query for the wide layout")
+	m := regexp.MustCompile(`(?s)@media \(min-width: 900px\) \{(.*?)\n\}`).FindStringSubmatch(stylesheet(t))
+	if m == nil {
+		t.Fatal("no min-width: 900px media query for the wide layout")
+	}
+	if !regexp.MustCompile(`\.frame\.has-nav\s*\{[^}]*grid-template-columns`).MatchString(m[1]) {
+		t.Errorf("900 px query has no .frame.has-nav grid rule:\n%s", m[1])
+	}
+}
+
+// Displays are untouched by the web frame: the padding changes only apply to
+// body.web, never to a bare body.
+func TestFramePaddingAppliesOnlyToWebPages(t *testing.T) {
+	css := stylesheet(t)
+	if rule := ruleFor(t, css, "body"); !strings.Contains(rule, "padding: var(--margin)") {
+		t.Errorf("bare body padding changed: %s", rule)
+	}
+	if !regexp.MustCompile(`body\.web\s*\{`).MatchString(css) {
+		t.Error("no body.web rule")
 	}
 }

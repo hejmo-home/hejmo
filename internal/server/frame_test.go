@@ -1,10 +1,13 @@
 package server_test
 
 import (
+	"io/fs"
 	"net/http"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/hejmo-home/hejmo/web"
 )
 
 var navHrefRe = regexp.MustCompile(`<nav class="frame-nav"[^>]*>(?s:(.*?))</nav>`)
@@ -118,6 +121,41 @@ func TestSignOutIsInTheFrameOnEveryScreen(t *testing.T) {
 	for _, page := range []string{"/", "/calendars", "/settings"} {
 		if !strings.Contains(b.get(page).body, `action="/logout"`) {
 			t.Errorf("%s has no sign-out in the frame", page)
+		}
+	}
+}
+
+// ADR 0015: displays choose their theme per display (E-Ink: light), so they
+// neither follow the device's colour scheme nor sit in the web frame.
+func TestDisplaysDoNotFollowTheDeviceAndSitOutsideTheFrame(t *testing.T) {
+	b := signedInBox(t)
+	d := newScreen(b)
+	pairing := d.get("/display", "en").body
+	b.post("/displays", pairForm(codeOn(t, pairing)))
+	paired := d.get("/display", "en").body
+	for name, page := range map[string]string{"pairing": pairing, "family": paired} {
+		if !strings.Contains(page, `<html lang="en" data-theme="light">`) {
+			t.Errorf("%s display page has no explicit light theme:\n%s", name, page)
+		}
+		if strings.Contains(page, `class="frame`) || strings.Contains(page, `<body class="web"`) {
+			t.Errorf("%s display page is wrapped in the web frame", name)
+		}
+	}
+	if page := b.get("/").body; regexp.MustCompile(`<html lang="[a-z]+">`).FindString(page) == "" || !strings.Contains(page, `<body class="web">`) {
+		t.Errorf("web page lacks the follow-the-device root or the web body class:\n%s", page)
+	}
+}
+
+// 5.11: no template of any screen carries inline styles, rendered or not.
+func TestNoTemplateHasInlineStyles(t *testing.T) {
+	files, err := fs.Glob(web.Templates, "templates/*.html")
+	if err != nil || len(files) == 0 {
+		t.Fatalf("no templates: %v", err)
+	}
+	for _, f := range files {
+		b, _ := fs.ReadFile(web.Templates, f)
+		if strings.Contains(string(b), "style=") || strings.Contains(string(b), "<style") {
+			t.Errorf("%s has inline styles", f)
 		}
 	}
 }

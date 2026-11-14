@@ -72,16 +72,18 @@ type stream struct {
 	cancel   func()
 }
 
-func (l *liveBox) open(t *testing.T) *stream {
+func (l *liveBox) open(t *testing.T) *stream { return l.openPath(t, "/display/events") }
+
+func (l *liveBox) openPath(t *testing.T, path string) *stream {
 	t.Helper()
-	req, _ := http.NewRequest(http.MethodGet, l.url+"/display/events", nil)
+	req, _ := http.NewRequest(http.MethodGet, l.url+path, nil)
 	req.Header.Set("Accept-Language", "en")
 	res, err := l.display.client.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 	if res.StatusCode != 200 || !strings.HasPrefix(res.Header.Get("Content-Type"), "text/event-stream") {
-		t.Fatalf("GET /display/events = %d %q", res.StatusCode, res.Header.Get("Content-Type"))
+		t.Fatalf("GET %s = %d %q", path, res.StatusCode, res.Header.Get("Content-Type"))
 	}
 	s := &stream{versions: make(chan string, 100), cancel: func() { res.Body.Close() }}
 	t.Cleanup(s.cancel)

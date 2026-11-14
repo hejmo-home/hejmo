@@ -100,6 +100,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
 	s.routeAPI(mux)
+	s.routeCalDAV(mux)
 	return s.requireHTTPS(sameOrigin(mux))
 }
 

@@ -125,11 +125,13 @@ func (db *DB) CreateAPIToken(t APIToken) (APIToken, error) {
 // APITokenByHash returns an active (not revoked) token.
 func (db *DB) APITokenByHash(hash string) (APIToken, error) {
 	var t APIToken
-	err := db.sql.QueryRow(`SELECT id, name, token_hash, person_id, scopes FROM api_tokens
-		WHERE token_hash = ? AND revoked_at IS NULL`, hash).Scan(&t.ID, &t.Name, &t.Hash, &t.PersonID, &t.Scopes)
+	var used sql.NullString
+	err := db.sql.QueryRow(`SELECT id, name, token_hash, person_id, scopes, last_used_at FROM api_tokens
+		WHERE token_hash = ? AND revoked_at IS NULL`, hash).Scan(&t.ID, &t.Name, &t.Hash, &t.PersonID, &t.Scopes, &used)
 	if errors.Is(err, sql.ErrNoRows) {
 		return APIToken{}, ErrNotFound
 	}
+	t.LastUsed = parseStamp(used)
 	return t, err
 }
 

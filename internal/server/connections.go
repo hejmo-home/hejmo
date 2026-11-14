@@ -109,24 +109,14 @@ func (s *server) markAdded(p principal, conn store.Connection, found []caldav.Ca
 	have := map[string]bool{}
 	for _, c := range synced {
 		if c.ConnectionID == conn.ID {
-			have[sameAddress(c.URL)] = true
+			have[caldav.AddressKey(c.URL)] = true
 		}
 	}
 	out := make([]discoveredJSON, 0, len(found))
 	for _, f := range found {
-		out = append(out, discoveredJSON{URL: f.URL, Name: f.Name, Added: have[sameAddress(f.URL)]})
+		out = append(out, discoveredJSON{URL: f.URL, Name: f.Name, Added: have[caldav.AddressKey(f.URL)]})
 	}
 	return out, nil
-}
-
-// sameAddress compares calendar addresses by host and path, ignoring a
-// trailing slash.
-func sameAddress(a string) string {
-	u, err := url.Parse(a)
-	if err != nil {
-		return a
-	}
-	return strings.ToLower(u.Host) + strings.TrimSuffix(u.Path, "/")
 }
 
 // addConnectionCalendar stores a calendar the parent ticked and runs its first
@@ -154,7 +144,7 @@ func (s *server) addConnectionCalendar(r *http.Request, p principal, connectionI
 		return store.SyncedCalendar{}, err
 	}
 	for _, c := range existing {
-		if c.ConnectionID == conn.ID && sameAddress(c.URL) == sameAddress(in.URL) {
+		if c.ConnectionID == conn.ID && caldav.AddressKey(c.URL) == caldav.AddressKey(in.URL) {
 			return store.SyncedCalendar{}, &inputError{"url", "this calendar is already synced"}
 		}
 	}

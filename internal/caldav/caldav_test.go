@@ -79,3 +79,15 @@ func TestListsEtagsAndFetchesOnlyWhatIsAsked(t *testing.T) {
 		t.Fatalf("Fetch() = %+v", got)
 	}
 }
+
+func TestAddressKeyIgnoresCaseOfHostTrailingSlashAndEscaping(t *testing.T) {
+	a := caldav.AddressKey("https://Cal.Example.org/mama/family/")
+	for _, same := range []string{"https://cal.example.org/mama/family", "https://cal.example.org/mama/fam%69ly/"} {
+		if got := caldav.AddressKey(same); got != a {
+			t.Errorf("AddressKey(%q) = %q, want %q", same, got, a)
+		}
+	}
+	if caldav.AddressKey("https://cal.example.org/mama/school/") == a {
+		t.Error("different calendars share a key")
+	}
+}

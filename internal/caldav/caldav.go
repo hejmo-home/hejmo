@@ -207,3 +207,14 @@ func (c *Client) Fetch(ctx context.Context, calendarURL string, objectURLs []str
 	}
 	return out, nil
 }
+
+// AddressKey identifies an address by host and decoded path, ignoring the
+// case of the host and a trailing slash, so servers that escape or end
+// addresses differently between listing and download still match.
+func AddressKey(address string) string {
+	u, err := url.Parse(address)
+	if err != nil {
+		return address
+	}
+	return strings.ToLower(u.Host) + strings.TrimSuffix(u.Path, "/")
+}

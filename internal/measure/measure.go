@@ -6,10 +6,13 @@ package measure
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"os"
+	"regexp"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // Result is what one measurement run found.
@@ -20,13 +23,9 @@ type Result struct {
 	IdleCPUPercent float64 `json:"idle_cpu_percent"` // share of the one allowed CPU while idle
 }
 
-// Thresholds are the ceilings; a result above one fails the build.
-type Thresholds struct {
-	IdleMemoryMiB  float64 `json:"idle_memory_mib"`
-	BurstMemoryMiB float64 `json:"burst_memory_mib"`
-	StartSeconds   float64 `json:"start_seconds"`
-	IdleCPUPercent float64 `json:"idle_cpu_percent"`
-}
+// Thresholds are the ceilings, in the units of Result; a result above one
+// fails the build.
+type Thresholds = Result
 
 // LoadThresholds reads the thresholds file (ci/resource-thresholds.json).
 func LoadThresholds(path string) (Thresholds, error) {
@@ -100,4 +99,55 @@ func ParseCPU(s string) (float64, error) {
 		return 0, fmt.Errorf("cpu %q: %w", s, err)
 	}
 	return v, nil
+}
+
+var ansi = regexp.MustCompile(`\x1b\[[0-9;?]*[A-Za-z]`)
+
+// StatsFormat is the --format that makes `docker stats` print what ParseStats reads.
+const StatsFormat = "{{.MemUsage}}|{{.CPUPerc}}"
+
+// ParseStats reads one line of `docker stats --format StatsFormat`, also from
+// the stream, which prefixes lines with terminal escape sequences. It returns
+// memory in MiB and CPU in percent.
+func ParseStats(line string) (mem, cpu float64, err error) {
+	line = strings.TrimSpace(ansi.ReplaceAllString(line, ""))
+	m, c, ok := strings.Cut(line, "|")
+	if !ok {
+		return 0, 0, fmt.Errorf("unexpected docker stats line %q", line)
+	}
+	if mem, err = ParseMemUsage(m); err != nil {
+		return
+	}
+	cpu, err = ParseCPU(c)
+	return
+}
+
+// PeakTracker keeps the highest memory of the streamed stats lines it is fed.
+type PeakTracker struct {
+	mu      sync.Mutex
+	highest float64
+	n       int
+}
+
+// Add parses one line and records it; lines that do not parse are ignored.
+func (p *PeakTracker) Add(line string) {
+	mem, _, err := ParseStats(line)
+	if err != nil {
+		return
+	}
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	p.highest = max(p.highest, mem)
+	p.n++
+}
+
+// Peak returns the highest memory in MiB, or an error when no line parsed, so
+// that a burst nobody measured cannot pass the gate.
+func (p *PeakTracker) Peak() (float64, error) {
+	p.mu.Lock()
+	defer p.mu.Unlock()
+	if p.n == 0 {
+		return 0, errors.New("the sync burst produced no docker stats samples")
+	}
+	return p.highest, nil
 }

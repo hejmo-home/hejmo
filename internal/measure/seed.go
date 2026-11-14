@@ -80,9 +80,12 @@ func Seed(db *store.DB, o SeedOptions) (Seeded, error) {
 			return Seeded{}, err
 		}
 	}
+	// Not due at start: the scheduler would sync every calendar right away and
+	// the idle measurement would not be idle. The burst syncs them through the API.
+	notDue := now.Add(24 * time.Hour)
 	out := Seeded{Token: token}
 	for i := 0; i < o.Calendars; i++ {
-		c, err := db.CreateICSCalendar(h.ID, store.NewICS{Name: fmt.Sprintf("Feed %d", i+1), URL: o.FeedURL, Color: "#888888", IntervalMinutes: 60, Now: now})
+		c, err := db.CreateICSCalendar(h.ID, store.NewICS{Name: fmt.Sprintf("Feed %d", i+1), URL: o.FeedURL, Color: "#888888", IntervalMinutes: 60, Now: notDue})
 		if err != nil {
 			return Seeded{}, err
 		}

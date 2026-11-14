@@ -23,7 +23,7 @@ import (
 	"os/exec"
 	"os/user"
 	"path/filepath"
-	"regexp"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -93,7 +93,7 @@ func measureBox(o options) (measure.Result, error) {
 
 	// The feed the synced calendars subscribe to, served from this host.
 	feed := measure.Feed(o.events, time.Now())
-	ln, err := net.Listen("tcp", "0.0.0.0:0")
+	ln, err := net.Listen("tcp", feedListenAddr())
 	if err != nil {
 		return res, err
 	}
@@ -175,7 +175,11 @@ func measureBox(o options) (measure.Result, error) {
 	}
 	time.Sleep(2500 * time.Millisecond) // the stream reports once a second
 	stop()
-	res.BurstMemoryMiB = max(peak(), res.IdleMemoryMiB)
+	highest, err := peak.Peak()
+	if err != nil {
+		return res, err
+	}
+	res.BurstMemoryMiB = max(highest, res.IdleMemoryMiB)
 	return res, nil
 }
 
@@ -220,35 +224,18 @@ func burst(base, token string, ids []string) error {
 	return <-errs
 }
 
-const statsFormat = "{{.MemUsage}}|{{.CPUPerc}}"
-
-var ansi = regexp.MustCompile(`\x1b\[[0-9;?]*[A-Za-z]`)
-
-func parseStats(line string) (mem, cpu float64, err error) {
-	line = strings.TrimSpace(ansi.ReplaceAllString(line, ""))
-	m, c, ok := strings.Cut(line, "|")
-	if !ok {
-		return 0, 0, fmt.Errorf("unexpected docker stats line %q", line)
-	}
-	if mem, err = measure.ParseMemUsage(m); err != nil {
-		return
-	}
-	cpu, err = measure.ParseCPU(c)
-	return
-}
-
 func sample(name string) (mem, cpu float64, err error) {
-	out, err := exec.Command("docker", "stats", "--no-stream", "--format", statsFormat, name).Output()
+	out, err := exec.Command("docker", "stats", "--no-stream", "--format", measure.StatsFormat, name).Output()
 	if err != nil {
 		return 0, 0, err
 	}
-	return parseStats(string(out))
+	return measure.ParseStats(string(out))
 }
 
-// streamPeak follows `docker stats` and returns the highest memory seen.
-func streamPeak(name string) (peak func() float64, stop func(), err error) {
+// streamPeak follows `docker stats` and returns the tracker of the memory seen.
+func streamPeak(name string) (peak *measure.PeakTracker, stop func(), err error) {
 	ctx, cancel := context.WithCancel(context.Background())
-	cmd := exec.CommandContext(ctx, "docker", "stats", "--format", statsFormat, name)
+	cmd := exec.CommandContext(ctx, "docker", "stats", "--format", measure.StatsFormat, name)
 	out, err := cmd.StdoutPipe()
 	if err != nil {
 		cancel()
@@ -258,20 +245,28 @@ func streamPeak(name string) (peak func() float64, stop func(), err error) {
 		cancel()
 		return nil, nil, err
 	}
-	var mu sync.Mutex
-	var highest float64
+	peak = new(measure.PeakTracker)
 	done := make(chan struct{})
 	go func() {
 		defer close(done)
 		sc := bufio.NewScanner(out)
 		for sc.Scan() {
-			if mem, _, err := parseStats(sc.Text()); err == nil {
-				mu.Lock()
-				highest = max(highest, mem)
-				mu.Unlock()
-			}
+			peak.Add(sc.Text())
 		}
 	}()
-	return func() float64 { mu.Lock(); defer mu.Unlock(); return highest },
-		func() { cancel(); _ = cmd.Wait(); <-done }, nil
+	return peak, func() { cancel(); _ = cmd.Wait(); <-done }, nil
+}
+
+// feedListenAddr is where the feed is served. On Linux the container reaches
+// the host through the Docker bridge gateway (host-gateway), so bind there; on
+// Docker Desktop host.docker.internal reaches the host's loopback.
+func feedListenAddr() string {
+	if runtime.GOOS == "linux" {
+		if out, err := exec.Command("docker", "network", "inspect", "bridge", "-f", "{{(index .IPAM.Config 0).Gateway}}").Output(); err == nil {
+			if ip := net.ParseIP(strings.TrimSpace(string(out))); ip != nil {
+				return net.JoinHostPort(ip.String(), "0")
+			}
+		}
+	}
+	return "127.0.0.1:0"
 }

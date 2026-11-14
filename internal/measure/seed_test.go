@@ -92,3 +92,24 @@ func TestSeededHouseholdIsServedByTheBox(t *testing.T) {
 		t.Fatalf("after syncing, want at least 800 occurrences, got %d", len(occ))
 	}
 }
+
+// The scheduler must not sync the seeded calendars on its own: the idle
+// measurement needs a quiet box, and the burst is driven through the API.
+func TestSeededCalendarsAreNotDueAtStart(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	if _, err := measure.Seed(db, measure.SeedOptions{FeedURL: "http://feed.invalid/cal.ics", Calendars: 3, EventsPerFeed: 20}); err != nil {
+		t.Fatal(err)
+	}
+	// The measurement samples idle for well under an hour after start.
+	due, err := db.DueCalendars(time.Now().Add(time.Hour))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(due) != 0 {
+		t.Fatalf("%d seeded calendars are due within the hour; the idle box would be syncing", len(due))
+	}
+}

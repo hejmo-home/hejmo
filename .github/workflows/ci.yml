@@ -68,6 +68,7 @@ jobs:
     name: Resources (arm64)
     needs: test
     runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-go@v5

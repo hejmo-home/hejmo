@@ -105,3 +105,31 @@ func TestHardwareSectionQuotesThresholds(t *testing.T) {
 		}
 	}
 }
+
+func TestParseStatsLine(t *testing.T) {
+	// A line as the streaming `docker stats` prints it: a clear-screen escape first.
+	mem, cpu, err := measure.ParseStats("\x1b[2J\x1b[H36.4MiB / 1GiB|12.50%\n")
+	if err != nil || mem != 36.4 || cpu != 12.5 {
+		t.Fatalf("ParseStats = %v, %v, %v", mem, cpu, err)
+	}
+	for _, bad := range []string{"", "36.4MiB / 1GiB", "lots|1%", "1MiB|x"} {
+		if _, _, err := measure.ParseStats(bad); err == nil {
+			t.Errorf("ParseStats(%q) must fail", bad)
+		}
+	}
+}
+
+func TestPeakTrackerNeedsSamples(t *testing.T) {
+	var p measure.PeakTracker
+	if _, err := p.Peak(); err == nil {
+		t.Fatal("no sample parsed: the burst was not measured and must be an error")
+	}
+	p.Add("\x1b[2J\x1b[H50MiB / 1GiB|1%")
+	p.Add("garbage")
+	p.Add("\x1b[2J\x1b[H73MiB / 1GiB|1%")
+	p.Add("60MiB / 1GiB|1%")
+	got, err := p.Peak()
+	if err != nil || got != 73 {
+		t.Fatalf("Peak = %v, %v; want 73", got, err)
+	}
+}

@@ -159,6 +159,20 @@ func (db *DB) APITokens(householdID string) ([]APIToken, error) {
 	return out, rows.Err()
 }
 
+// APITokenByID returns one active token of the household.
+func (db *DB) APITokenByID(householdID, id string) (APIToken, error) {
+	tokens, err := db.APITokens(householdID)
+	if err != nil {
+		return APIToken{}, err
+	}
+	for _, t := range tokens {
+		if t.ID == id {
+			return t, nil
+		}
+	}
+	return APIToken{}, ErrNotFound
+}
+
 // TouchAPIToken records that a token was used at t.
 func (db *DB) TouchAPIToken(id string, t time.Time) error {
 	return expectOne(db.sql.Exec(`UPDATE api_tokens SET last_used_at = ? WHERE id = ?`, stamp(t), id))

@@ -47,7 +47,7 @@ func (s *server) renderCalDAV(w http.ResponseWriter, r *http.Request, p principa
 			devices = append(devices, deviceView{t.ID, t.Name, t.PersonName, at(t.Created), at(t.LastUsed)})
 		}
 	}
-	if _, err := s.db.FamilyCalendar(p.household.ID); err != nil {
+	if err := s.db.EnsureFamilyCalendar(p.household.ID); err != nil {
 		s.fail(w, "family calendar", err)
 		return
 	}
@@ -58,7 +58,7 @@ func (s *server) renderCalDAV(w http.ResponseWriter, r *http.Request, p principa
 	}
 	var shared []sharedView
 	for _, c := range cals {
-		shared = append(shared, sharedView{c.ID, c.Name, c.Color, c.Shared, c.Kind == "local"})
+		shared = append(shared, sharedView{c.ID, c.Name, c.Color, c.Shared, c.Family})
 	}
 	data := map[string]any{
 		"Person": p.person, "Address": s.httpsOrigin(r) + davPrefix + "/", "Username": acc.Username,
@@ -103,22 +103,20 @@ func (s *server) handleDeviceTokenRevoke(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
-	tokens, err := s.db.APITokens(p.household.ID)
-	if err != nil {
-		s.fail(w, "tokens", err)
+	t, err := s.db.APITokenByID(p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
 		return
 	}
-	for _, t := range tokens {
-		if t.ID == r.PathValue("id") {
-			if err := s.db.RevokeAPIToken(t.ID); err != nil && !errors.Is(err, store.ErrNotFound) {
-				s.fail(w, "revoke token", err)
-				return
-			}
-			http.Redirect(w, r, "/caldav", http.StatusSeeOther)
-			return
-		}
+	if err != nil {
+		s.fail(w, "token", err)
+		return
 	}
-	http.NotFound(w, r)
+	if err := s.db.RevokeAPIToken(t.ID); err != nil && !errors.Is(err, store.ErrNotFound) {
+		s.fail(w, "revoke token", err)
+		return
+	}
+	http.Redirect(w, r, "/caldav", http.StatusSeeOther)
 }
 
 func (s *server) handleCalendarShare(w http.ResponseWriter, r *http.Request) {

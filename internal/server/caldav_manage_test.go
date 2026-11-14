@@ -170,3 +170,31 @@ func TestCalDAVPageNeedsASignedInParent(t *testing.T) {
 		t.Fatalf("signed out post = %d %q", r.status, r.location)
 	}
 }
+
+func TestUsingATokenOverTheRESTAPIMarksItAsUsed(t *testing.T) {
+	c := signedInAPI(t)
+	_, made, _ := c.call(http.MethodPost, "/tokens", map[string]any{"name": "script", "scopes": "read"})
+	if status, _, _ := c.withToken(made["token"].(string)).call(http.MethodGet, "/me", nil); status != http.StatusOK {
+		t.Fatalf("me = %d", status)
+	}
+	_, _, list := c.call(http.MethodGet, "/tokens", nil)
+	if len(list) != 1 || list[0].(map[string]any)["last_used_at"] == nil {
+		t.Fatalf("tokens = %v, want last_used_at set", list)
+	}
+}
+
+func TestMalformedCalendarPatchIsABadRequest(t *testing.T) {
+	c := signedInAPI(t)
+	_, family := familyOf(t, c)
+	req, _ := http.NewRequest(http.MethodPatch, c.b.srv.URL+"/api/v1/calendars/"+family.ID, strings.NewReader("{"))
+	req.Header.Set("Content-Type", "application/json")
+	req.Header.Set("Authorization", "Bearer "+c.newToken("write"))
+	res, err := c.b.bareClient().Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusBadRequest {
+		t.Fatalf("invalid JSON = %d, want 400", res.StatusCode)
+	}
+}

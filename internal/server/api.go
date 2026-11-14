@@ -88,6 +88,13 @@ func (s *server) routeAPI(mux *http.ServeMux) {
 	}
 }
 
+// touchToken records a token's use, at most once a minute.
+func (s *server) touchToken(t store.APIToken) {
+	if s.now().Sub(t.LastUsed) > time.Minute {
+		_ = s.db.TouchAPIToken(t.ID, s.now())
+	}
+}
+
 // authenticate accepts a bearer token or a browser session (full rights of the person).
 func (s *server) authenticate(r *http.Request) (principal, bool) {
 	h, err := s.db.HomeHousehold()
@@ -103,6 +110,7 @@ func (s *server) authenticate(r *http.Request) (principal, bool) {
 		if err != nil {
 			return principal{}, false
 		}
+		s.touchToken(t)
 		p, err := s.db.Person(h.ID, t.PersonID)
 		return principal{household: h, person: p, scopes: t.Scopes}, err == nil
 	}

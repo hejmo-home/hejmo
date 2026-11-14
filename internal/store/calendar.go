@@ -32,7 +32,9 @@ type Calendar struct {
 	ReadOnly    bool // ICS calendars are always read-only
 	// Shared is "share through the box": phones may subscribe to the calendar
 	// over CalDAV. Always true for the family calendar.
-	Shared   bool
+	Shared bool
+	// Family marks the household's family calendar: the first local calendar.
+	Family   bool
 	Audience calendar.Audience
 }
 
@@ -114,7 +116,7 @@ func (db *DB) CreateCalendar(c Calendar) (Calendar, error) {
 
 // Calendars lists a household's calendars with their audiences.
 func (db *DB) Calendars(householdID string) ([]Calendar, error) {
-	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color, read_only, shared OR kind = 'local' FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
+	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color, read_only, shared FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
 	if err != nil {
 		return nil, err
 	}
@@ -129,6 +131,9 @@ func (db *DB) Calendars(householdID string) ([]Calendar, error) {
 	}
 	rows.Close()
 	for i := range out {
+		if out[i].Kind == "local" && !hasFamily(out[:i]) {
+			out[i].Family, out[i].Shared = true, true
+		}
 		if out[i].Audience, err = db.audience("calendar_audience", "calendar_id", out[i].ID); err != nil {
 			return nil, err
 		}
@@ -136,18 +141,38 @@ func (db *DB) Calendars(householdID string) ([]Calendar, error) {
 	return out, rows.Err()
 }
 
-// SetCalendarShared switches "share through the box" for a synced calendar.
-// The family calendar is always served: asking to change it is invalid.
-func (db *DB) SetCalendarShared(householdID, calendarID string, shared bool) error {
-	var kind string
-	err := db.sql.QueryRow(`SELECT kind FROM calendars WHERE id = ? AND household_id = ?`, calendarID, householdID).Scan(&kind)
-	if errors.Is(err, sql.ErrNoRows) {
-		return ErrNotFound
+// hasFamily reports whether the family calendar is among cals.
+func hasFamily(cals []Calendar) bool {
+	for _, c := range cals {
+		if c.Family {
+			return true
+		}
 	}
+	return false
+}
+
+// Calendar returns one calendar of the household.
+func (db *DB) Calendar(householdID, calendarID string) (Calendar, error) {
+	cals, err := db.Calendars(householdID)
+	if err != nil {
+		return Calendar{}, err
+	}
+	for _, c := range cals {
+		if c.ID == calendarID {
+			return c, nil
+		}
+	}
+	return Calendar{}, ErrNotFound
+}
+
+// SetCalendarShared switches "share through the box" for a calendar. The
+// family calendar is always served: asking to change it is invalid.
+func (db *DB) SetCalendarShared(householdID, calendarID string, shared bool) error {
+	c, err := db.Calendar(householdID, calendarID)
 	if err != nil {
 		return err
 	}
-	if kind == "local" {
+	if c.Family {
 		return fmt.Errorf("%w: the family calendar is always shared", ErrInvalid)
 	}
 	return expectOne(db.sql.Exec(`UPDATE calendars SET shared = ?, updated_at = ? WHERE id = ? AND household_id = ?`, shared, now(), calendarID, householdID))
@@ -166,11 +191,17 @@ func (db *DB) FamilyCalendar(householdID string) (Calendar, error) {
 		return Calendar{}, err
 	}
 	for _, c := range cals {
-		if c.Kind == "local" {
+		if c.Family {
 			return c, nil
 		}
 	}
 	return db.CreateCalendar(Calendar{HouseholdID: householdID, Name: "Family", Kind: "local"})
+}
+
+// EnsureFamilyCalendar creates the family calendar if the household has none yet.
+func (db *DB) EnsureFamilyCalendar(householdID string) error {
+	_, err := db.FamilyCalendar(householdID)
+	return err
 }
 
 // CreateEvent stores a new event (keeps e.ID if set).

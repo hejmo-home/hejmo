@@ -89,7 +89,7 @@ func plainCalendarJSON(c store.Calendar) calendarJSON {
 }
 
 func (s *server) apiListCalendars(w http.ResponseWriter, r *http.Request, p principal) {
-	if _, err := s.db.FamilyCalendar(p.household.ID); err != nil {
+	if err := s.db.EnsureFamilyCalendar(p.household.ID); err != nil {
 		s.fail(w, "family calendar", err)
 		return
 	}
@@ -256,22 +256,16 @@ func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p pri
 	if s.storeError(w, "share calendar", s.db.SetCalendarShared(p.household.ID, id, *in.Shared)) {
 		return
 	}
-	cals, err := s.db.Calendars(p.household.ID)
+	c, err := s.db.Calendar(p.household.ID, id)
 	if err != nil {
 		s.fail(w, "reload calendar", err)
 		return
 	}
-	for _, c := range cals {
-		if c.ID == id {
-			j := plainCalendarJSON(c)
-			if synced, err := s.db.SyncedCalendar(p.household.ID, id); err == nil {
-				j.Sync = s.syncState(r, synced, p.location())
-			}
-			writeJSON(w, http.StatusOK, j)
-			return
-		}
+	j := plainCalendarJSON(c)
+	if synced, err := s.db.SyncedCalendar(p.household.ID, id); err == nil {
+		j.Sync = s.syncState(r, synced, p.location())
 	}
-	writeError(w, http.StatusNotFound, "calendar not found")
+	writeJSON(w, http.StatusOK, j)
 }
 
 func (s *server) apiDeleteCalendar(w http.ResponseWriter, r *http.Request, p principal) {

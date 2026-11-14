@@ -93,3 +93,28 @@ func TestAPITokenListShowsActiveTokensWithOwnerAndUse(t *testing.T) {
 		t.Fatalf("token = %+v", got)
 	}
 }
+
+// Only the family calendar is always shared, not every local calendar.
+func TestOtherLocalCalendarsCanBeUnshared(t *testing.T) {
+	f := newCalFixture(t)
+	garage, err := f.db.CreateCalendar(store.Calendar{HouseholdID: f.h.ID, Name: "Garage", Kind: "local"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.SetCalendarShared(f.h.ID, garage.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	if sharedByID(t, f)[garage.ID] || !sharedByID(t, f)[f.cal.ID] {
+		t.Fatalf("shared = %v", sharedByID(t, f))
+	}
+	got, err := f.db.Calendar(f.h.ID, garage.ID)
+	if err != nil || got.Name != "Garage" || got.Family {
+		t.Fatalf("Calendar = %+v, %v", got, err)
+	}
+	if fam, _ := f.db.Calendar(f.h.ID, f.cal.ID); !fam.Family || !fam.Shared {
+		t.Fatalf("family = %+v", fam)
+	}
+	if _, err := f.db.Calendar(f.h.ID, "nope"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("unknown = %v", err)
+	}
+}

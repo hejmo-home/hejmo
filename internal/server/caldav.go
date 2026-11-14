@@ -58,13 +58,27 @@ func davChallenge(w http.ResponseWriter) {
 	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 }
 
-// davPermission is what a CalDAV request needs: reading or writing calendars.
+// davPermission is what a CalDAV request needs: reading, writing or deleting calendars.
 func davPermission(method string) auth.Permission {
 	switch method {
 	case http.MethodGet, http.MethodHead, http.MethodOptions, "PROPFIND", "REPORT":
 		return auth.Perm("calendars", auth.Read)
 	}
+	if method == http.MethodDelete {
+		return auth.Perm("calendars", auth.Delete)
+	}
 	return auth.Perm("calendars", auth.Write)
+}
+
+// calendarScoped reports whether a token carries a calendars scope: ADR 0012
+// opens CalDAV to those only, not to plain read or write tokens.
+func calendarScoped(scopes string) bool {
+	for _, sc := range strings.Fields(scopes) {
+		if res, _, _ := strings.Cut(sc, ":"); res == "calendars" {
+			return true
+		}
+	}
+	return false
 }
 
 // davAuth signs a phone in with HTTP Basic: the person's username and a device
@@ -103,13 +117,11 @@ func (s *server) davAuth(next http.Handler) http.Handler {
 		}
 		perm := davPermission(r.Method)
 		// Children have no account; a token held by one is refused all the same.
-		if person.Role != store.RoleParent || !auth.RoleAllows(person.Role, perm) || !auth.ScopesAllow(token.Scopes, perm) {
+		if person.Role != store.RoleParent || !auth.RoleAllows(person.Role, perm) || !calendarScoped(token.Scopes) || !auth.ScopesAllow(token.Scopes, perm) {
 			http.Error(w, "forbidden: needs "+perm.String(), http.StatusForbidden)
 			return
 		}
-		if s.now().Sub(token.LastUsed) > time.Minute {
-			_ = s.db.TouchAPIToken(token.ID, s.now())
-		}
+		s.touchToken(token)
 		// Only the signed-in person's own tree exists.
 		if rest, ok := strings.CutPrefix(r.URL.Path, davPrefix+"/"); ok && rest != "" {
 			if first, _, _ := strings.Cut(rest, "/"); first != person.ID {
@@ -125,7 +137,7 @@ func (s *server) davAuth(next http.Handler) http.Handler {
 // davBackend serves the box's calendars to go-webdav's CalDAV handler.
 type davBackend struct {
 	s  *server
-	mu sync.Mutex // one write at a time, so If-Match checks and writes do not interleave
+	mu sync.Mutex // one CalDAV write at a time; edits through the REST API are not covered
 }
 
 func httpError(code int, msg string) error { return webdav.NewHTTPError(code, errors.New(msg)) }
@@ -171,7 +183,8 @@ func (b *davBackend) CreateCalendar(context.Context, *webcal.Calendar) error {
 // served lists the calendars phones may see: the family calendar always and
 // every calendar shared through the box.
 func (b *davBackend) served(sess *davSession) ([]store.Calendar, error) {
-	if _, err := b.s.db.FamilyCalendar(sess.house.ID); err != nil {
+	// The family calendar is created on first use, so it is always there to serve.
+	if err := b.s.db.EnsureFamilyCalendar(sess.house.ID); err != nil {
 		return nil, err
 	}
 	all, err := b.s.db.Calendars(sess.house.ID)

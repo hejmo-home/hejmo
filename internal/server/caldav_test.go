@@ -474,3 +474,55 @@ var berlin, _ = time.LoadLocation("Europe/Berlin")
 func at(y int, m time.Month, d, hh, mm int) time.Time {
 	return time.Date(y, m, d, hh, mm, 0, 0, berlin)
 }
+
+// Deleting needs the delete right, as it does through the REST API.
+func TestDeletingOverCalDAVNeedsTheDeleteRight(t *testing.T) {
+	c := signedInAPI(t)
+	owner := c.phone(t, "calendars")
+	family := owner.calendarNamed("Family")
+	href := family.Path + "gone.ics"
+	if status, _, _ := owner.raw("PUT", href, eventICS("gone", "Gone", "20261120T090000Z", "20261120T100000Z"), map[string]string{"Content-Type": icsType}); status != http.StatusCreated {
+		t.Fatalf("create = %d", status)
+	}
+	noDelete := c.phone(t, "calendars:read calendars:write")
+	if status, _, _ := noDelete.raw("DELETE", href, "", nil); status != http.StatusForbidden {
+		t.Fatalf("DELETE without calendars:delete = %d, want 403", status)
+	}
+	if got := titlesOnBox(t, c); !contains(got, "Gone") {
+		t.Fatal("a refused delete removed the event")
+	}
+	if status, _, _ := owner.raw("DELETE", href, "", nil); status != http.StatusNoContent {
+		t.Fatalf("DELETE with the calendars scope = %d, want 204", status)
+	}
+}
+
+// Only the calendars scope opens CalDAV (ADR 0012); plain read and write tokens do not.
+func TestOnlyCalendarScopesOpenCalDAV(t *testing.T) {
+	c := signedInAPI(t)
+	for _, scope := range []string{"read", "write"} {
+		ph := c.phone(t, scope)
+		if status, _, _ := ph.raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"}); status != http.StatusForbidden {
+			t.Fatalf("token %q on CalDAV = %d, want 403", scope, status)
+		}
+	}
+	ph := c.phone(t, "calendars:read")
+	if status, _, _ := ph.raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"}); status != http.StatusMultiStatus {
+		t.Fatalf("calendars:read = %d, want 207", status)
+	}
+}
+
+// Pins today's behaviour: the name a phone picks is the event's id and UID,
+// whatever UID the phone sent inside the object.
+func TestTheResourceNameBecomesTheEventUID(t *testing.T) {
+	c := signedInAPI(t)
+	ph := c.phone(t, "calendars")
+	family := ph.calendarNamed("Family")
+	href := family.Path + "by-name.ics"
+	if status, _, _ := ph.raw("PUT", href, eventICS("phone-uid", "Named", "20261120T090000Z", "20261120T100000Z"), map[string]string{"Content-Type": icsType}); status != http.StatusCreated {
+		t.Fatalf("create = %d", status)
+	}
+	_, _, body := ph.raw("GET", href, "", nil)
+	if !strings.Contains(body, "UID:by-name") || strings.Contains(body, "phone-uid") {
+		t.Fatalf("stored object:\n%s", body)
+	}
+}

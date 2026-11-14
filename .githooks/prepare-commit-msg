@@ -1,0 +1,12 @@
+#!/bin/sh
+# Appends "Signed-off-by: <committer>" to every commit message (DCO), merge
+# commits included, unless that exact line is already there. Enable once per
+# clone with: git config core.hooksPath .githooks
+# Arguments from git: message file, source (message|template|merge|squash|commit).
+msg="$1"
+name=$(git var GIT_COMMITTER_IDENT | sed -n 's/^\(.*\) <.*$/\1/p')
+email=$(git var GIT_COMMITTER_IDENT | sed -n 's/^.* <\(.*\)> .*$/\1/p')
+[ -n "$name" ] && [ -n "$email" ] || exit 0
+line="Signed-off-by: $name <$email>"
+grep -qxF "$line" "$msg" && exit 0
+git interpret-trailers --in-place --if-exists addIfDifferent --trailer "$line" "$msg"

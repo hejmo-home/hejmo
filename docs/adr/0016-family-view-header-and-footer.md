@@ -1,6 +1,6 @@
 # 0016. Family view header, columns and footer
 
-- Status: Accepted
+- Status: Accepted, amended by [0018](0018-path-to-0-1.md)
 - Date: 14/11/2026
 - Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; the leave-the-house countdown stays out of V1.0 and comes back per person in V2), [0015](0015-display-web-interface-and-everyday.md) (column limits per orientation, tomorrow block faded and off by default, footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
 

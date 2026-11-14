@@ -39,6 +39,9 @@ type Input struct {
 	// TemperatureUnit is "c" (default) or "f".
 	Weather         *Weather
 	TemperatureUnit store.TemperatureUnit
+	// SyncStale: a synced calendar has gone 24 hours without a successful
+	// sync (ADR 0012). The header then shows an info symbol.
+	SyncStale bool
 }
 
 // Weather is a reading for the weather chip; Icon names the symbol.
@@ -117,11 +120,14 @@ type View struct {
 	Weekday       time.Weekday
 	Week          int
 	Date          time.Time
-	Clock         string
+	Clock         string       // household time format; the display ticks it itself between renders
+	ClockZone     string       // IANA name of the household time zone, for that ticking
+	ClockFormat   string       // "24h" or "12h"
 	Weather       *WeatherChip // nil: no reading, no chip
 	Strip         []StripItem
 	StripTomorrow []StripItem
 	ShowTomorrow  bool
+	SyncStale     bool // header notice: calendar not up to date
 	Columns       []Column
 	Scroll        bool // 7 or more people: the columns scroll
 	Meal          *Tile
@@ -140,9 +146,10 @@ func Build(in Input) View {
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
 	d1 := d0.AddDate(0, 0, 1)
 	_, week := now.ISOWeek()
-	v := View{Weekday: now.Weekday(), Week: week, Date: d0, Clock: ClockText(now, in.TimeFormat)}
+	v := View{Weekday: now.Weekday(), Week: week, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: now.Location().String(), ClockFormat: clockFormat(in.TimeFormat)}
 	v.Weather = Chip(in.Weather, in.TemperatureUnit)
 	v.ShowTomorrow = in.ShowTomorrow && now.Hour() >= tomorrowFromHour
+	v.SyncStale = in.SyncStale
 	v.Scroll = len(in.People) > maxNarrowColumns
 	for _, p := range in.People {
 		v.Columns = append(v.Columns, Column{Person: p})
@@ -239,6 +246,14 @@ func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat) Ev
 func ClockText(t time.Time, format store.TimeFormat) string { return t.Format(layout(format)) }
 
 // layout is the time layout of the household's time format.
+// clockFormat names the time format for the display's script; 24h is the default.
+func clockFormat(format store.TimeFormat) string {
+	if format == store.Time12h {
+		return "12h"
+	}
+	return "24h"
+}
+
 func layout(format store.TimeFormat) string {
 	if format == store.Time12h {
 		return "3:04 PM"

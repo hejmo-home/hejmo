@@ -3,9 +3,11 @@
 package server
 
 import (
+	"bytes"
 	"context"
 	"encoding/json"
 	"html/template"
+	"io"
 	"io/fs"
 	"log/slog"
 	"net/http"
@@ -40,6 +42,12 @@ type Options struct {
 	// Weather holds the weather of the home location, refreshed in the
 	// background (ADR 0016). Nil means a service that never has a reading.
 	Weather *weather.Service
+	// LiveInterval is how often the box checks whether a connected display's
+	// view changed (live updates, ticket 5.5). Zero means 2 seconds.
+	LiveInterval time.Duration
+	// Done, when closed, ends open live streams so a shutdown does not wait
+	// for them. Nil means they end only when their client goes away.
+	Done <-chan struct{}
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -79,6 +87,8 @@ type server struct {
 	opens     *loginLimiter // pairing screens opened, per client address
 	sync      *calsync.Service
 	weather   *weather.Service
+	live      time.Duration
+	done      <-chan struct{}
 }
 
 // New returns the box's root HTTP handler.
@@ -104,6 +114,10 @@ func New(opts Options) http.Handler {
 	}
 	if s.weather = opts.Weather; s.weather == nil {
 		s.weather = weather.New(weather.WithClock(s.now))
+	}
+	s.done = opts.Done
+	if s.live = opts.LiveInterval; s.live <= 0 {
+		s.live = 2 * time.Second
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
@@ -151,6 +165,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
+	mux.HandleFunc("GET /display/view", s.handleDisplayView)
+	mux.HandleFunc("GET /display/events", s.handleDisplayEvents)
+	mux.HandleFunc("GET /display/person/{id}", s.handleDisplayPerson)
+	mux.HandleFunc("GET /display/person/{id}/view", s.handleDisplayPersonView)
+	mux.HandleFunc("POST /display/tasks/{id}/done", s.handleDisplayTaskDone)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
@@ -209,17 +228,26 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	if !strings.HasPrefix(name, "display_") {
 		data["Frame"] = s.frameFor(r)
 	}
-	tpl, err := s.pages.Clone()
+	var buf bytes.Buffer
+	err := s.execute(&buf, name, lang, data)
 	if err == nil {
-		tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return s.i18n.T(lang, key) }})
 		w.Header().Set("Content-Type", "text/html; charset=utf-8")
 		w.Header().Set("Content-Language", lang)
 		w.WriteHeader(status)
-		err = tpl.ExecuteTemplate(w, name, data)
-	}
-	if err != nil {
+		_, _ = buf.WriteTo(w)
+	} else {
 		s.fail(w, "render "+name, err)
 	}
+}
+
+// execute runs the named page template in the given language.
+func (s *server) execute(w io.Writer, name, lang string, data any) error {
+	tpl, err := s.pages.Clone()
+	if err != nil {
+		return err
+	}
+	tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return s.i18n.T(lang, key) }})
+	return tpl.ExecuteTemplate(w, name, data)
 }
 
 func (s *server) fail(w http.ResponseWriter, what string, err error) {

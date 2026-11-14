@@ -1,6 +1,6 @@
 # 0002. Goals and release model
 
-- Status: Accepted
+- Status: Accepted, amended by [0018](0018-path-to-0-1.md)
 - Date: 14/11/2026
 
 ## Context

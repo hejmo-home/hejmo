@@ -30,6 +30,9 @@ jobs:
       - name: Vet
         run: go vet ./...
       - name: Unit and integration tests
+        env:
+          # A missing container runtime fails the Radicale tests instead of skipping them.
+          HEJMO_REQUIRE_RADICALE: "1"
         run: go test -race -count=1 ./...
 
   container:

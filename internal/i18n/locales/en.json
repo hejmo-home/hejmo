@@ -270,6 +270,7 @@
   "personal.nothing": "Nothing planned",
   "personal.all_day": "All day",
   "personal.tasks": "Tasks today",
+  "personal.stars": "Stars",
   "personal.tasks_none": "No tasks today",
   "personal.task_done": "Done, tap to open again",
   "personal.task_open": "Open, tap to tick off",

@@ -286,20 +286,6 @@ func (m *Manager) Status() Status {
 	return st
 }
 
-// RenewNow renews the certificate now, whether or not it is due, and records
-// the outcome for Status.
-func (m *Manager) RenewNow(ctx context.Context) error {
-	m.mu.RLock()
-	cfg, name := m.cfg, m.name
-	m.mu.RUnlock()
-	if cfg == nil {
-		return errors.New("publiccert: HTTPS is not set up")
-	}
-	err := cfg.RenewCertSync(ctx, name, true)
-	m.recordRenewal(err)
-	return err
-}
-
 func (m *Manager) recordRenewal(err error) {
 	text := ""
 	if err != nil {

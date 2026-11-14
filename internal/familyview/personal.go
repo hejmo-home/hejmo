@@ -83,7 +83,7 @@ func BuildPersonal(in PersonalInput) PersonalView {
 				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: clock(o, loc)})
 			case firstDay(o, loc).Equal(day):
 				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: o.Start.In(loc).Format("15:04")})
-			case calendar.LastDay(o, loc).Equal(day):
+			case calendar.LastDay(o, loc).Equal(day) && !endsAtMidnight(o, loc):
 				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: "–" + o.End.In(loc).Format("15:04")})
 			default:
 				allDay = append(allDay, PersonalEvent{Title: o.Title, AllDay: true})
@@ -98,4 +98,11 @@ func BuildPersonal(in PersonalInput) PersonalView {
 		return rank[task.PartOfDay(v.Tasks[i].Part)] < rank[task.PartOfDay(v.Tasks[j].Part)]
 	})
 	return v
+}
+
+// endsAtMidnight reports whether the event ends exactly at 00:00, so its last
+// day is covered completely.
+func endsAtMidnight(o calendar.Occurrence, loc *time.Location) bool {
+	e := o.End.In(loc)
+	return e.Hour() == 0 && e.Minute() == 0 && e.Second() == 0
 }

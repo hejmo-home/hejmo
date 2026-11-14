@@ -3,7 +3,6 @@ package server
 import (
 	"errors"
 	"net/http"
-	"time"
 
 	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -49,7 +48,9 @@ func (s *server) handleDisplayPerson(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	if person == nil {
-		http.NotFound(w, r)
+		// Gone meanwhile: back to the display, never to a bare error page
+		// (it has no display.js and would leave the kiosk stuck).
+		http.Redirect(w, r, "/display", http.StatusSeeOther)
 		return
 	}
 	day := data.now.Format(task.DateLayout)
@@ -75,7 +76,8 @@ func (s *server) handleDisplayPerson(w http.ResponseWriter, r *http.Request) {
 // the parent PIN a display may do this for every task (ADR 0015).
 func (s *server) handleDisplayTaskDone(w http.ResponseWriter, r *http.Request) {
 	if d, _, ok := s.currentDisplay(r); !ok || !d.Paired {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		// Revoked or never paired: the display address shows the pairing screen.
+		http.Redirect(w, r, "/display", http.StatusSeeOther)
 		return
 	}
 	h, err := s.db.HomeHousehold()
@@ -104,11 +106,14 @@ func (s *server) handleDisplayTaskDone(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, back, http.StatusSeeOther)
 		return
 	}
-	// The day the page was rendered for, so a tap after midnight ticks the day on screen.
-	day := r.PostFormValue("day")
-	if _, perr := time.Parse(task.DateLayout, day); perr != nil {
-		day = s.today(principal{household: h})
+	// Like the REST API, a display ticks only today. A page left over from an
+	// earlier day ticks nothing; the redirect shows today's state.
+	today := s.today(principal{household: h})
+	if day := r.PostFormValue("day"); day != "" && day != today {
+		http.Redirect(w, r, back, http.StatusSeeOther)
+		return
 	}
+	day := today
 	switch err = s.db.SetTaskDone(h.ID, t.ID, day, done, "", s.now()); {
 	case err == nil, errors.Is(err, store.ErrNotFound), errors.Is(err, store.ErrInvalid):
 		// Not due (any more) or deleted meanwhile: show the current state.

@@ -122,3 +122,20 @@ func TestPersonalViewListsTodaysTasksMorningFirst(t *testing.T) {
 		t.Error("done state lost")
 	}
 }
+
+// A multi-day timed event that ends at midnight covers its last day completely:
+// that day shows "all day", not "–00:00".
+func TestPersonalViewShowsAllDayOnTheLastDayWhenTheEventEndsAtMidnight(t *testing.T) {
+	v := personal(today(14, 9, 0), []calendar.Occurrence{
+		{EventID: "camp", CalendarID: "cal", Title: "Camp", Start: at(15, 18, 0), End: at(17, 0, 0), People: []string{"mia"}},
+	})
+	if e := v.Days[1].Events[0]; e.Time != "18:00" || e.AllDay {
+		t.Errorf("first day = %+v, want from 18:00", e)
+	}
+	if e := v.Days[2].Events[0]; !e.AllDay || e.Time != "" {
+		t.Errorf("last day = %+v, want all day", e)
+	}
+	if len(v.Days[3].Events) != 0 {
+		t.Errorf("day after = %+v, want nothing", v.Days[3].Events)
+	}
+}

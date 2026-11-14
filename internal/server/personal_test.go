@@ -81,11 +81,12 @@ func TestPersonalViewNeedsAPairedDisplayAndAKnownPerson(t *testing.T) {
 	if r := stranger.get("/display/person/"+f.people["Mia"].ID, "en"); r.status != 303 || r.location != "/display" {
 		t.Errorf("unpaired display: %d %q", r.status, r.location)
 	}
-	if r := f.display.get("/display/person/00000000-0000-4000-8000-000000000000", "en"); r.status != 404 {
-		t.Errorf("unknown person = %d", r.status)
+	// Never a bare error page: it has no display.js and would leave the kiosk stuck.
+	if r := f.display.get("/display/person/00000000-0000-4000-8000-000000000000", "en"); r.status != 303 || r.location != "/display" {
+		t.Errorf("unknown person = %d %q, want 303 /display", r.status, r.location)
 	}
-	if r := f.display.get("/display/person/nonsense", "en"); r.status != 404 {
-		t.Errorf("malformed id = %d", r.status)
+	if r := f.display.get("/display/person/nonsense", "en"); r.status != 303 || r.location != "/display" {
+		t.Errorf("malformed id = %d %q, want 303 /display", r.status, r.location)
 	}
 }
 
@@ -189,8 +190,8 @@ func TestDisplayTickingIsRefusedForUnpairedDisplaysAndUnknownTasks(t *testing.T)
 	f := newFamilyBox(t, "eink_color")
 	tk := f.task(t, "Mia", "Homework", task.Daily)
 	f.now = f.at(14, 9, 0)
-	if r := newScreen(f.box).post("/display/tasks/"+tk.ID+"/done", url.Values{"done": {"1"}}); r.status != 403 {
-		t.Errorf("unpaired = %d, want 403", r.status)
+	if r := newScreen(f.box).post("/display/tasks/"+tk.ID+"/done", url.Values{"done": {"1"}}); r.status != 303 || r.location != "/display" {
+		t.Errorf("unpaired = %d %q, want 303 /display", r.status, r.location)
 	}
 	if ok, _ := f.db.TaskDone(tk.ID, "2026-11-14"); ok {
 		t.Error("an unpaired display ticked a task")
@@ -216,21 +217,27 @@ func TestDisplayFailedTicksGoBackToTheDisplay(t *testing.T) {
 	}
 }
 
-// The tick carries the day the page was rendered for, so a tap after midnight
-// still ticks the task of the day on screen.
-func TestDisplayTickUsesTheDayOfThePage(t *testing.T) {
+// The tick carries the day the page was rendered for. Like PUT /tasks/{id}/done
+// (ADR 0015: the REST API can do everything a display can) it only ticks today:
+// a tap on a page left over from an earlier day ticks nothing and shows today.
+func TestDisplayTickRefusesAnyDayButToday(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	tk := f.task(t, "Mia", "Homework", task.Daily)
 	f.now = f.at(14, 9, 0)
 	if !strings.Contains(f.personalPage(t, "en", "Mia", 14, 9).body, `name="day" value="2026-11-14"`) {
 		t.Error("form does not carry the day")
 	}
-	f.now = f.at(15, 0, 5)
+	home := "/display/person/" + f.people["Mia"].ID
+	for _, day := range []string{"2026-01-01", "2026-11-13", "2026-11-15"} {
+		if r := f.display.post("/display/tasks/"+tk.ID+"/done", url.Values{"done": {"1"}, "day": {day}}); r.status != 303 || r.location != home {
+			t.Errorf("day %s = %d %q, want 303 %s", day, r.status, r.location, home)
+		}
+		if ok, _ := f.db.TaskDone(tk.ID, day); ok {
+			t.Errorf("day %s was ticked", day)
+		}
+	}
 	f.display.post("/display/tasks/"+tk.ID+"/done", url.Values{"done": {"1"}, "day": {"2026-11-14"}})
 	if ok, _ := f.db.TaskDone(tk.ID, "2026-11-14"); !ok {
-		t.Error("the day on screen was not ticked")
-	}
-	if ok, _ := f.db.TaskDone(tk.ID, "2026-11-15"); ok {
-		t.Error("the new day was ticked")
+		t.Error("today was not ticked")
 	}
 }

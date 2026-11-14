@@ -30,6 +30,7 @@ The hook `.githooks/prepare-commit-msg` appends the line for the committer and n
 - **Migrations** are named `YYYYMMDDhhmm_name.sql` with the UTC minute you create the file (`date -u +%Y%m%d%H%M`), never a running counter. A test fails on duplicate or non-ascending prefixes. Applied migrations are tracked by name, so a migration that is merged later but carries an older timestamp still runs.
 - **Provider bugs** (iCloud, Nextcloud, ...) first become a quirk file in `internal/caldavclient/testdata/quirks/`, then get fixed. See its README.
 - **Radicale tests** need Docker; CI sets `HEJMO_REQUIRE_RADICALE=1`, so they cannot be skipped there. Set it locally to see the same.
+- **Security checks.** CI runs govulncheck, gosec (high severity fails) and a Trivy image scan. A change that adds a way in (a new token, port, file the box reads from the host, or a new integration) adds a threat with its check or accepted risk to [docs/security/threat-model.md](docs/security/threat-model.md); a test keeps that file consistent with CI.
 - **Translatable text.** All user-facing text goes through the i18n catalogues in `internal/i18n/locales/` (German and English must have the same keys; a test checks this).
 
 ## Decisions

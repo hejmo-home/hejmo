@@ -25,6 +25,15 @@ var apiRoutes = []APIRoute{
 	{"GET", "/people/{id}", auth.Perm("people", auth.Read), (*server).apiGetPerson},
 	{"POST", "/tokens", auth.Perm("tokens", auth.Write), (*server).apiCreateToken},
 	{"DELETE", "/tokens/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokeToken},
+	{"GET", "/groups", auth.Perm("people", auth.Read), (*server).apiListGroups},
+	{"POST", "/groups", auth.Perm("people", auth.Write), (*server).apiCreateGroup},
+	{"GET", "/calendars", auth.Perm("events", auth.Read), (*server).apiListCalendars},
+	{"GET", "/events", auth.Perm("events", auth.Read), (*server).apiListEvents},
+	{"POST", "/events", auth.Perm("events", auth.Write), (*server).apiCreateEvent},
+	{"PATCH", "/events/{id}", auth.Perm("events", auth.Write), (*server).apiUpdateEvent},
+	{"DELETE", "/events/{id}", auth.Perm("events", auth.Delete), (*server).apiDeleteEvent},
+	{"GET", "/holidays", auth.Perm("events", auth.Read), (*server).apiHolidays},
+	{"GET", "/search", auth.Perm("events", auth.Read), (*server).apiSearch},
 }
 
 // APIRoutes lists the served endpoints (used by the contract test).

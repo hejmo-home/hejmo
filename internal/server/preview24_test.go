@@ -1,0 +1,110 @@
+package server_test
+
+import (
+	"encoding/base64"
+	"fmt"
+	"os"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/server"
+	"github.com/hejmo-home/hejmo/web"
+)
+
+// TestWriteDesignPreview24 writes the self-contained preview page for the
+// product owner's approval of ticket 5.4 (black-and-white mode). It renders
+// the real view model with the real template for the example family.
+// Run: HEJMO_WRITE_PREVIEW_24=../../docs/design/preview-24.html go test ./internal/server -run WriteDesignPreview24
+func TestWriteDesignPreview24(t *testing.T) {
+	out := os.Getenv("HEJMO_WRITE_PREVIEW_24")
+	if out == "" {
+		t.Skip("set HEJMO_WRITE_PREVIEW_24 to the output path to write the preview")
+	}
+	css, err := web.Static.ReadFile("static/hejmo.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	font, err := web.Static.ReadFile("static/fonts/Figtree-wght.ttf")
+	if err != nil {
+		t.Fatal(err)
+	}
+	style := strings.Replace(string(css), `url("/static/fonts/Figtree-wght.ttf")`, "url(data:font/ttf;base64,"+base64.StdEncoding.EncodeToString(font)+")", 1)
+
+	d := func(day, h, m int) time.Time { return time.Date(2026, 11, day, h, m, 0, 0, berlinTZ) }
+	people := []familyview.Person{
+		{ID: "mama", Name: "Mama", Slot: 1, Shape: "circle-filled"}, {ID: "papa", Name: "Papa", Slot: 2, Shape: "circle-empty"},
+		{ID: "seb", Name: "Sebastian", Slot: 3, Shape: "square-filled"}, {ID: "mia", Name: "Mia", Slot: 4, Shape: "square-empty"}}
+	occ := func(title string, s, e time.Time, who ...string) calendar.Occurrence {
+		return calendar.Occurrence{EventID: title, CalendarID: "c", Title: title, Start: s, End: e, People: who}
+	}
+	occs := []calendar.Occurrence{
+		occ("Dentist", d(1, 9, 0), d(1, 10, 0), "mama"),
+		occ("Team meeting", d(1, 10, 0), d(1, 11, 0), "papa"),
+		occ("Football", d(1, 15, 0), d(1, 16, 30), "seb", "mia"),
+		occ("Pick up Mia", d(1, 16, 45), d(1, 17, 15), "papa", "mama"),
+		occ("Family lunch", d(1, 12, 30), d(1, 14, 0)),
+		{EventID: "trip", CalendarID: "c", Title: "Grandparents visit", AllDay: true, Start: time.Date(2026, 10, 31, 0, 0, 0, 0, berlinTZ), End: d(3, 0, 0), People: []string{"mama", "papa"}},
+		occ("Dentist check-up", d(2, 9, 0), d(2, 9, 45), "mama"),
+		occ("Piano", d(2, 15, 0), d(2, 16, 0), "mia"),
+		occ("Swimming", d(2, 16, 30), d(2, 17, 30), "seb", "mia"),
+		occ("Parents' evening", d(2, 19, 0), d(2, 20, 30)),
+	}
+	build := func(showTomorrow bool) familyview.View {
+		v := familyview.Build(familyview.Input{Now: d(1, 18, 5), Lang: "en", Region: "DE-BY", People: people, Occurrences: occs, ShowTomorrow: showTomorrow})
+		v.Columns[0].Progress = &familyview.Progress{Done: 3, Total: 5}
+		v.Columns[2].Progress = &familyview.Progress{Done: 1, Total: 3}
+		v.Columns[3].Progress = &familyview.Progress{Done: 2, Total: 2}
+		v.Meal = &familyview.Tile{Label: "Dinner", Lines: []string{"Dinner: Pasta bake"}}
+		v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []string{"Paper bin", "Residual waste"}, Alert: true}
+		return v
+	}
+	var body strings.Builder
+	frame := func(caption, theme string, w, h int, v familyview.View) {
+		html, err := server.RenderFamilyView("en", v)
+		if err != nil {
+			t.Fatal(err)
+		}
+		fmt.Fprintf(&body, `<figure><figcaption>%s (%dx%d)</figcaption><div class="frame" data-theme="%s" style="width:%dpx;height:%dpx">%s</div></figure>`+"\n", caption, w, h, theme, w, h, html)
+	}
+	on, off := build(true), build(false)
+	body.WriteString("<h2>Decision for the product owner: the faded tomorrow block (ADR 0016) in black-and-white</h2><p class=\"note\">The block (from 18:00, display setting \"show tomorrow block\", off by default) is faded to 60 % opacity in every palette. In black-and-white E-Ink that is a mid grey on white; the bold titles stay legible, but the faded tone is dithered on the panel. The frames below show it on (first) and off (second). Please decide: keep the fade in black-and-white, or show the block unfaded with only its \"Tomorrow\" label and divider line setting it apart.</p><div class=\"row\">\n")
+	frame("Black and white, tomorrow block shown (faded)", "bw", 1024, 768, on)
+	frame("Black and white, tomorrow block off (default)", "bw", 1024, 768, off)
+	body.WriteString("</div><h2>Shapes (people 1 to 6; from the seventh a shape repeats and the name tells people apart). Football has two people, Mia and Sebastian: square filled and square empty</h2><div class=\"legend\">")
+	for i, s := range []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled"} {
+		fmt.Fprintf(&body, `<span data-theme="bw"><span class="marker" data-shape="%s"></span> Person %d</span>`, s, i+1)
+	}
+	body.WriteString("</div><h2>Landscape, evening, tomorrow block on: light, dark, black-and-white</h2><div class=\"row\">\n")
+	frame("Light", "light", 1024, 768, on)
+	frame("Dark", "dark", 1024, 768, on)
+	frame("Black and white", "bw", 1024, 768, on)
+	body.WriteString("</div><h2>Portrait</h2><div class=\"row\">\n")
+	frame("Light", "light", 768, 1024, on)
+	frame("Dark", "dark", 768, 1024, on)
+	frame("Black and white", "bw", 768, 1024, on)
+	body.WriteString("</div>\n")
+
+	page := `<!doctype html>
+<!-- Generated by TestWriteDesignPreview24 from the real view model and template (ticket 5.4). The stylesheet and font are inlined copies of web/static and do not follow later changes. -->
+<html lang="en"><head><meta charset="utf-8"><title>Hejmo preview 5.4 black-and-white mode</title>
+<style>` + style + `
+body{padding:16px;background:#888;font-family:Figtree,system-ui,sans-serif}
+body > h1,body > h2{color:#fff}body > h1{font-size:22px}body > h2{font-size:18px;margin:20px 0 8px}
+.note{color:#fff;max-width:900px;margin:0 0 12px}
+figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
+.row{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+.legend{display:flex;gap:16px;background:#EDEDEA;padding:12px;border-radius:12px;width:max-content}
+.legend > span{display:inline-flex;gap:6px;align-items:center;color:#111}
+.frame{background:var(--background);color:var(--text);padding:var(--margin);overflow:hidden;box-sizing:border-box}
+.frame .fv{height:100%}
+</style></head><body>
+<h1>Hejmo 5.4 black-and-white mode: preview with the example family (Mama, Papa, Sebastian, Mia), Sunday 01/11/2026, 18:05</h1>
+` + body.String() + `</body></html>
+`
+	if err := os.WriteFile(out, []byte(page), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}

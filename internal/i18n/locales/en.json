@@ -23,7 +23,7 @@
   "setup.https.public.terms": "By continuing you accept the terms of the chosen certificate authority.",
   "setup.https.public.create": "Get certificate",
   "setup.https.public.invalid": "Please check the name, the token, the address and, for Actalis, the account keys.",
-  "setup.https.public.failed": "The box could not get the certificate. Check the token and the name at deSEC, then try again. Details:",
+  "setup.https.public.failed": "The box could not get the certificate. Check the token and the name at deSEC, then try again. The box log has the details.",
   "setup.https.check.title": "Check the name",
   "setup.https.check.intro": "Your browser now tests whether it can reach the box under its new name:",
   "setup.https.check.waiting": "Checking …",
@@ -35,6 +35,9 @@
   "setup.https.rebind.step1": "On the FRITZ!Box, open Home Network > Network > Network Settings > Additional Settings > Home Network.",
   "setup.https.rebind.step2": "Under DNS rebind protection, add this name to the host name exceptions:",
   "setup.https.rebind.step3": "Apply the change. This page checks again every few seconds.",
+  "setup.https.ownca.title": "Cannot change the router?",
+  "setup.https.ownca.text": "Use the box's own certificate authority instead. The public name is forgotten; you then install the box's certificate on each device.",
+  "setup.https.ownca.button": "Use the own certificate authority",
   "setup.https.rebind.other": "With other routers, look for DNS rebind protection or a list of allowed names.",
   "trust.title": "Trust the box",
   "trust.intro": "So that your devices trust the box, install its certificate once. It is valid for the box itself only.",
@@ -127,6 +130,6 @@
   "sync.fail.store": "The events could not be stored: {detail}",
   "event.untitled": "(no title)",
   "calendars.error.color": "Please choose a colour.",
-  "https.warning": "The box's HTTPS certificate could not be renewed and will expire soon. Devices will refuse to connect once it has.",
-  "https.warning.hint": "Check the DNS token and that the box is online; it tries again automatically."
+  "https.warning": "The box's HTTPS certificate could not be renewed or loaded. Devices will refuse to connect once it has expired or is missing.",
+  "https.warning.hint": "Check the DNS token and that the box is online; it tries again automatically. If the key file secret.key was lost, set up the public name again."
 }

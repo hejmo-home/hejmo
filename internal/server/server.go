@@ -51,6 +51,8 @@ type PublicHTTPS interface {
 	Status() publiccert.Status
 	// Setup points the name to the box and obtains the certificate.
 	Setup(context.Context, publiccert.Request) error
+	// Clear forgets the public setup (back to the box's own CA).
+	Clear() error
 }
 
 type server struct {
@@ -105,6 +107,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /setup/https", s.handleHTTPSSubmit)
 	mux.HandleFunc("POST /setup/https/public", s.handlePublicHTTPSSubmit)
 	mux.HandleFunc("GET /setup/https/check", s.handleNameCheck)
+	mux.HandleFunc("POST /setup/https/own-ca", s.handleSwitchToOwnCA)
 	mux.HandleFunc("GET /ca", s.handleTrustPage)
 	mux.HandleFunc("GET /ca/hejmo-ca.crt", s.handleCACert)
 	mux.HandleFunc("GET /ca/hejmo.mobileconfig", s.handleMobileConfig)

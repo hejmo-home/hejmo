@@ -1,8 +1,8 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "setup.https.title"))}}
   <h1>{{t "setup.https.title"}}</h1>
   <p class="lead">{{t "setup.https.intro"}}</p>
+  {{template "httpsNotice" .}}
   {{template "error" .}}
-  {{if .Detail}}<p class="hint"><code>{{.Detail}}</code></p>{{end}}
   {{if .Public}}
   <form method="post" action="/setup/https/public" class="steps">
     <fieldset>

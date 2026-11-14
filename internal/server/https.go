@@ -1,6 +1,7 @@
 package server
 
 import (
+	"context"
 	"errors"
 	"net"
 	"net/http"
@@ -11,6 +12,9 @@ import (
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 )
+
+// setupTimeout bounds one attempt to get the public certificate.
+const setupTimeout = 3 * time.Minute
 
 // requireHTTPS redirects plain-HTTP requests to HTTPS once the box has its
 // certificate (ADR 0014), whatever the method. Only what a phone needs before
@@ -30,7 +34,7 @@ func (s *server) plainHTTPAllowed(path string) bool {
 	switch path {
 	case "/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig":
 		return true
-	case "/setup/https/check", "/static/https-check.js", "/static/hejmo.css":
+	case "/setup/https/check", "/setup/https/own-ca", "/static/https-check.js", "/static/hejmo.css":
 		// While the wizard tests the new name, the browser is still on the
 		// LAN address and has no other way to show the page.
 		return s.publicReady() && !s.db.Configured()
@@ -44,8 +48,9 @@ func (s *server) publicReady() bool { return s.public != nil && s.public.Ready()
 func (s *server) httpsReady() bool { return s.pki.Ready() || s.publicReady() }
 
 // httpsWarning reports whether parents must be told that the public
-// certificate cannot be renewed (ADR 0014).
-func (s *server) httpsWarning() bool { return s.publicReady() && s.public.Status().Warning }
+// certificate cannot be renewed or that its setup could not be resumed
+// (ADR 0014).
+func (s *server) httpsWarning() bool { return s.public != nil && s.public.Status().Warning }
 
 // hostOf returns the request's host name without port.
 func hostOf(r *http.Request) string {
@@ -75,7 +80,7 @@ func (s *server) handleHTTPSForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
-	s.renderHTTPSStep(w, r, http.StatusOK, publicForm{Issuer: publiccert.LetsEncrypt}, "", "")
+	s.renderHTTPSStep(w, r, http.StatusOK, publicForm{Issuer: publiccert.LetsEncrypt}, "")
 }
 
 // publicForm is what the wizard's public-name form keeps between attempts.
@@ -84,12 +89,12 @@ type publicForm struct {
 	Name, Issuer, LANIP, Email, EABKeyID string
 }
 
-func (s *server) renderHTTPSStep(w http.ResponseWriter, r *http.Request, status int, f publicForm, errKey, detail string) {
+func (s *server) renderHTTPSStep(w http.ResponseWriter, r *http.Request, status int, f publicForm, errKey string) {
 	if f.LANIP == "" && net.ParseIP(hostOf(r)) != nil {
 		f.LANIP = hostOf(r)
 	}
 	s.render(w, r, status, "setup_https.html", map[string]any{
-		"Host": hostOf(r), "Form": f, "Public": s.public != nil, "Error": errKey, "Detail": detail,
+		"Host": hostOf(r), "Form": f, "Public": s.public != nil, "Error": errKey, "HTTPSWarning": s.httpsWarning(),
 	})
 }
 
@@ -108,21 +113,19 @@ func (s *server) handlePublicHTTPSSubmit(w http.ResponseWriter, r *http.Request)
 		LANIP: trim("lan_ip"), Email: trim("email"), EABKeyID: trim("eab_key_id"), EABHMAC: trim("eab_hmac"),
 	}
 	form := publicForm{Name: req.Name, Issuer: req.Issuer, LANIP: req.LANIP, Email: req.Email, EABKeyID: req.EABKeyID}
-	err := s.public.Setup(r.Context(), req)
+	// The order can take a minute and must not be cancelled partway through
+	// if the browser gives up: it runs on its own context.
+	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), setupTimeout)
+	defer cancel()
+	err := s.public.Setup(ctx, req)
 	switch {
 	case err == nil:
 		http.Redirect(w, r, "/setup/https/check", http.StatusSeeOther)
 	case errors.Is(err, publiccert.ErrInvalid), errors.Is(err, publiccert.ErrUnknownProvider):
-		s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, form, "setup.https.public.invalid", "")
+		s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, form, "setup.https.public.invalid")
 	default:
-		s.logger.Error("public HTTPS setup", "err", err)
-		detail := err.Error()
-		for _, secret := range []string{req.Token, req.EABHMAC} {
-			if secret != "" {
-				detail = strings.ReplaceAll(detail, secret, "…")
-			}
-		}
-		s.renderHTTPSStep(w, r, http.StatusBadGateway, form, "setup.https.public.failed", detail)
+		s.logger.Error("public HTTPS setup", "err", err) // the CA's text is English and technical: log only
+		s.renderHTTPSStep(w, r, http.StatusBadGateway, form, "setup.https.public.failed")
 	}
 }
 
@@ -140,6 +143,25 @@ func (s *server) handleNameCheck(w http.ResponseWriter, r *http.Request) {
 		next = "/"
 	}
 	s.render(w, r, http.StatusOK, "https_check.html", map[string]any{"Name": s.public.Name(), "CheckURL": origin + "/healthz", "Continue": origin + next})
+}
+
+// handleSwitchToOwnCA is the way out of the name check: if the router cannot
+// let the name resolve, the family uses the box's own CA instead (ADR 0014).
+// It forgets the public setup and is closed once the box is set up.
+func (s *server) handleSwitchToOwnCA(w http.ResponseWriter, r *http.Request) {
+	if s.db.Configured() {
+		http.Redirect(w, r, "/setup", http.StatusSeeOther)
+		return
+	}
+	if !s.publicReady() {
+		http.Redirect(w, r, "/setup/https", http.StatusSeeOther)
+		return
+	}
+	if err := s.public.Clear(); err != nil {
+		s.fail(w, "forget public HTTPS setup", err)
+		return
+	}
+	s.handleHTTPSSubmit(w, r)
 }
 
 func (s *server) apiHTTPS(w http.ResponseWriter, r *http.Request, _ principal) {
@@ -171,7 +193,7 @@ func (s *server) handleHTTPSSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := s.pki.Provision(hostOf(r), s.now()); err != nil {
 		if errors.Is(err, pki.ErrInvalidHost) {
-			s.renderHTTPSStep(w, r, http.StatusBadRequest, publicForm{Issuer: publiccert.LetsEncrypt}, "setup.https.invalidhost", "")
+			s.renderHTTPSStep(w, r, http.StatusBadRequest, publicForm{Issuer: publiccert.LetsEncrypt}, "setup.https.invalidhost")
 			return
 		}
 		s.fail(w, "provision HTTPS", err)

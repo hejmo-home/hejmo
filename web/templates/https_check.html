@@ -14,6 +14,11 @@
       </ol>
       <p class="hint">{{t "setup.https.rebind.other"}}</p>
       <button class="button secondary" type="button" data-check-again>{{t "setup.https.check.again"}}</button>
+      <form method="post" action="/setup/https/own-ca">
+        <h2>{{t "setup.https.ownca.title"}}</h2>
+        <p>{{t "setup.https.ownca.text"}}</p>
+        <button class="button secondary" type="submit">{{t "setup.https.ownca.button"}}</button>
+      </form>
     </section>
     <a class="button" href="{{.Continue}}">{{t "setup.https.check.continue"}}</a>
   </div>

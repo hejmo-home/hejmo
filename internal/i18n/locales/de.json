@@ -23,7 +23,7 @@
   "setup.https.public.terms": "Mit „Zertifikat holen“ akzeptierst du die Bedingungen der gewählten Zertifizierungsstelle.",
   "setup.https.public.create": "Zertifikat holen",
   "setup.https.public.invalid": "Bitte prüfe den Namen, den Token, die Adresse und bei Actalis die Kontoschlüssel.",
-  "setup.https.public.failed": "Die Box konnte das Zertifikat nicht holen. Prüfe Token und Namen bei deSEC und versuche es erneut. Einzelheiten:",
+  "setup.https.public.failed": "Die Box konnte das Zertifikat nicht holen. Prüfe Token und Namen bei deSEC und versuche es erneut. Einzelheiten stehen im Protokoll der Box.",
   "setup.https.check.title": "Namen prüfen",
   "setup.https.check.intro": "Dein Browser testet jetzt, ob er die Box unter ihrem neuen Namen erreicht:",
   "setup.https.check.waiting": "Prüfe …",
@@ -35,6 +35,9 @@
   "setup.https.rebind.step1": "Öffne in der FRITZ!Box Heimnetz > Netzwerk > Netzwerkeinstellungen > Weitere Einstellungen > Heimnetz.",
   "setup.https.rebind.step2": "Füge unter DNS-Rebind-Schutz diesen Namen bei den Hostnamen-Ausnahmen hinzu:",
   "setup.https.rebind.step3": "Übernimm die Änderung. Diese Seite prüft alle paar Sekunden erneut.",
+  "setup.https.ownca.title": "Router nicht änderbar?",
+  "setup.https.ownca.text": "Nutze stattdessen die eigene Zertifizierungsstelle der Box. Der öffentliche Name wird vergessen; danach installierst du das Zertifikat der Box auf jedem Gerät.",
+  "setup.https.ownca.button": "Eigene Zertifizierungsstelle nutzen",
   "setup.https.rebind.other": "Bei anderen Routern suche nach DNS-Rebind-Schutz oder einer Liste erlaubter Namen.",
   "trust.title": "Der Box vertrauen",
   "trust.intro": "Damit Geräte der Box vertrauen, installiert einmalig das Zertifikat der Box. Es gilt nur für die Box selbst.",
@@ -127,6 +130,6 @@
   "sync.fail.store": "Die Termine konnten nicht gespeichert werden: {detail}",
   "event.untitled": "(ohne Titel)",
   "calendars.error.color": "Bitte wähle eine Farbe.",
-  "https.warning": "Das HTTPS-Zertifikat der Box konnte nicht erneuert werden und läuft bald ab. Danach verweigern Geräte die Verbindung.",
-  "https.warning.hint": "Prüfe den DNS-Token und ob die Box online ist; sie versucht es automatisch erneut."
+  "https.warning": "Das HTTPS-Zertifikat der Box konnte nicht erneuert oder geladen werden. Geräte verweigern die Verbindung, sobald es abgelaufen ist oder fehlt.",
+  "https.warning.hint": "Prüfe den DNS-Token und ob die Box online ist; sie versucht es automatisch erneut. Ging die Schlüsseldatei secret.key verloren, richte den öffentlichen Namen neu ein."
 }

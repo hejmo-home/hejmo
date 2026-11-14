@@ -6,6 +6,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 )
@@ -90,6 +91,9 @@ func TestPublicSetupFailuresAreExplainedAndTheFormComesBackWithoutTheToken(t *te
 			}
 			if strings.Contains(r.body, "desec-token-4711") {
 				t.Error("the token is echoed back into the page")
+			}
+			if strings.Contains(r.body, "dns says no") {
+				t.Error("the CA's untranslated error text is shown to the family")
 			}
 			if !strings.Contains(r.body, `value="mia.dedyn.io"`) {
 				t.Error("the name is not kept in the form")
@@ -229,5 +233,95 @@ func TestOwnCAModeReportsNoWarning(t *testing.T) {
 	}
 	if r := c.b.get("/"); strings.Contains(r.body, "data-https-warning") {
 		t.Error("warning without a public certificate")
+	}
+}
+
+// A name check that cannot pass (the router offers no rebind exception) must
+// not trap the family: the check page offers the box's own CA instead, which
+// forgets the public setup (ADR 0014).
+func TestNameCheckPageOffersTheOwnCAAndSwitchingForgetsThePublicSetup(t *testing.T) {
+	b := newFreshBox(t)
+	b.post("/setup/https/public", publicForm())
+	for lang, want := range map[string]string{"de": "eigene", "en": "own certificate authority"} {
+		r := b.do(http.MethodGet, "/setup/https/check", nil, map[string]string{"Accept-Language": lang})
+		if !strings.Contains(r.body, `action="/setup/https/own-ca"`) || !strings.Contains(r.body, want) {
+			t.Errorf("%s: the check page offers no way to the own CA:\n%s", lang, r.body)
+		}
+	}
+
+	// The browser is still on plain HTTP: the public name cannot be reached.
+	r := b.post("/setup/https/own-ca", url.Values{})
+	if r.status != http.StatusSeeOther || r.location != "/ca" {
+		t.Fatalf("POST own-ca = %d %q, want 303 /ca", r.status, r.location)
+	}
+	if b.public.Ready() || b.public.cleared != 1 {
+		t.Errorf("the public setup stays: ready=%v cleared=%d", b.public.Ready(), b.public.cleared)
+	}
+	if !b.pki.Ready() {
+		t.Error("the box's own CA is not set up")
+	}
+}
+
+func TestSwitchingToTheOwnCAIsClosedOnceTheBoxIsSetUpOrHasNoPublicName(t *testing.T) {
+	c := signedInAPI(t)
+	c.b.public.name = "mia.dedyn.io"
+	if r := c.b.post("/setup/https/own-ca", url.Values{}); r.status != http.StatusSeeOther || r.location != "/setup" {
+		t.Errorf("POST on a set-up box = %d %q", r.status, r.location)
+	}
+	if !c.b.public.Ready() || c.b.public.cleared != 0 {
+		t.Error("a set-up box lost its public name")
+	}
+
+	fresh := newFreshBox(t)
+	if r := fresh.post("/setup/https/own-ca", url.Values{}); r.status != http.StatusSeeOther || r.location != "/setup/https" {
+		t.Errorf("POST without a public name = %d %q", r.status, r.location)
+	}
+	if fresh.pki.Ready() {
+		t.Error("own CA created without a failed public setup")
+	}
+}
+
+// A stored setup that cannot be resumed (lost secret.key) leaves the box up;
+// parents and the wizard are told.
+func TestParentsAndTheWizardSeeAWarningWhenThePublicSetupCannotBeResumed(t *testing.T) {
+	c := signedInAPI(t)
+	c.b.public.status = publiccert.Status{Warning: true, RenewalError: "publiccert: DNS token: cipher: message authentication failed"}
+	if r := c.b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": "en"}); !strings.Contains(r.body, "data-https-warning") {
+		t.Errorf("no warning on the start page:\n%s", r.body)
+	}
+
+	fresh := newFreshBox(t)
+	fresh.public.status = publiccert.Status{Warning: true, RenewalError: "x"}
+	r := fresh.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusOK || !strings.Contains(r.body, "data-https-warning") || !strings.Contains(r.body, `action="/setup/https/public"`) {
+		t.Errorf("the wizard shows no warning or no form to redo the step:\n%s", r.body)
+	}
+}
+
+// The family's browser may give up while the CA is slow; the order must not
+// be cancelled partway through.
+func TestPublicSetupSurvivesTheBrowserGivingUp(t *testing.T) {
+	b := newFreshBox(t)
+	b.public.gate = make(chan struct{})
+	req, _ := http.NewRequest(http.MethodPost, b.srv.URL+"/setup/https/public", strings.NewReader(publicForm().Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", b.srv.URL)
+	if res, err := (&http.Client{Timeout: 200 * time.Millisecond}).Do(req); err == nil {
+		res.Body.Close()
+		t.Fatal("the request finished although Setup was held back")
+	}
+	time.Sleep(100 * time.Millisecond) // let the server notice the closed connection
+	close(b.public.gate)
+	deadline := time.Now().Add(3 * time.Second)
+	for len(b.public.requests()) == 0 && time.Now().Before(deadline) {
+		time.Sleep(10 * time.Millisecond)
+	}
+	b.public.mu.Lock()
+	defer b.public.mu.Unlock()
+	if b.public.ctxErr != nil {
+		t.Errorf("Setup was cancelled with the request: %v", b.public.ctxErr)
+	}
+	if !b.public.ctxDeadline {
+		t.Error("Setup has no time limit of its own")
 	}
 }

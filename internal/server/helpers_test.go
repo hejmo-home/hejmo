@@ -44,6 +44,12 @@ type fakePublic struct {
 	status  publiccert.Status
 	got     []publiccert.Request
 	failure error
+	cleared int
+	// gate, if set, holds Setup back until it is closed.
+	gate chan struct{}
+	// ctxErr and ctxDeadline describe the context the last Setup ended with.
+	ctxErr      error
+	ctxDeadline bool
 }
 
 func (f *fakePublic) Ready() bool  { f.mu.Lock(); defer f.mu.Unlock(); return f.name != "" }
@@ -55,10 +61,21 @@ func (f *fakePublic) Status() publiccert.Status {
 	st.Name = f.name
 	return st
 }
-func (f *fakePublic) Setup(_ context.Context, r publiccert.Request) error {
+func (f *fakePublic) Clear() error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.name, f.status, f.cleared = "", publiccert.Status{}, f.cleared+1
+	return nil
+}
+func (f *fakePublic) Setup(ctx context.Context, r publiccert.Request) error {
+	if f.gate != nil {
+		<-f.gate
+	}
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	f.got = append(f.got, r)
+	f.ctxErr = ctx.Err()
+	_, f.ctxDeadline = ctx.Deadline()
 	if f.failure != nil {
 		return f.failure
 	}

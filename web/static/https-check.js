@@ -16,12 +16,14 @@
 
   function check() {
     clearTimeout(timer);
+    if (help.hidden) waiting.hidden = false;
     fetch(url, { mode: "no-cors", cache: "no-store" }).then(function () {
       waiting.hidden = true;
       help.hidden = true;
       ok.hidden = false;
       window.location.href = next;
     }, function () {
+      waiting.hidden = true;
       help.hidden = false;
       timer = setTimeout(check, wait);
     });

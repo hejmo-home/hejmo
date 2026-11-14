@@ -101,6 +101,8 @@
   "connections.choose.none": "Auf diesem Server wurden keine Kalender gefunden.",
   "connections.error.provider": "Bitte wähle iCloud oder einen CalDAV-Server.",
   "connections.error.url": "Bitte gib eine gültige Adresse ein, die mit https:// oder http:// beginnt.",
+  "connections.error.duplicate": "Dieser Kalender wird schon synchronisiert.",
+  "connections.error.calendar": "Diese Adresse liegt nicht auf dem Server dieser Verbindung.",
   "connections.error.username": "Bitte gib den Benutzernamen ein.",
   "connections.error.password": "Bitte gib das Passwort ein.",
   "connections.error.login": "Der Server hat Benutzername oder Passwort abgelehnt. Bei iCloud lege auf appleid.apple.com ein app-spezifisches Passwort an.",

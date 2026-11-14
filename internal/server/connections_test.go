@@ -305,6 +305,17 @@ func TestWebConnectTickAndRemove(t *testing.T) {
 	}
 	sameList(t, occTitles(c.occurrences(t, november)), []string{"11-20T15:00 Swimming"})
 
+	// Ticking a calendar that is already synced says so, not "enter a valid address".
+	r = b.do(http.MethodPost, "/connections/"+conns[0].ID+"/calendars", url.Values{"calendar": {family}, "name_" + family: {"Family"}, "interval": {"5"}}, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "already") || strings.Contains(r.body, "valid address") {
+		t.Fatalf("add twice = %d\n%s", r.status, r.body)
+	}
+	// An address on another server says so too.
+	r = b.do(http.MethodPost, "/connections/"+conns[0].ID+"/calendars", url.Values{"calendar": {"https://elsewhere.example/cal/"}, "name_https://elsewhere.example/cal/": {"X"}, "interval": {"5"}}, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "server of this connection") || strings.Contains(r.body, "valid address") {
+		t.Fatalf("other server = %d\n%s", r.status, r.body)
+	}
+
 	if r := b.post("/connections/"+conns[0].ID+"/delete", url.Values{}); r.status != http.StatusSeeOther {
 		t.Fatalf("remove = %d", r.status)
 	}

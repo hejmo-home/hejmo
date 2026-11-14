@@ -133,7 +133,7 @@ func (s *server) addConnectionCalendar(r *http.Request, p principal, connectionI
 	remote, err := url.Parse(strings.TrimSpace(in.URL))
 	base, _ := url.Parse(conn.URL)
 	if err != nil || base == nil || remote.Host == "" || !strings.EqualFold(remote.Host, base.Host) || (remote.Scheme != "http" && remote.Scheme != "https") {
-		return store.SyncedCalendar{}, &inputError{"url", "url must be a calendar on the connection's server"}
+		return store.SyncedCalendar{}, &inputError{"calendar", "url must be a calendar on the connection's server"}
 	}
 	opts, err := s.calendarOptions(p, in, defaultCalDAVSync)
 	if err != nil {
@@ -145,7 +145,7 @@ func (s *server) addConnectionCalendar(r *http.Request, p principal, connectionI
 	}
 	for _, c := range existing {
 		if c.ConnectionID == conn.ID && caldav.AddressKey(c.URL) == caldav.AddressKey(in.URL) {
-			return store.SyncedCalendar{}, &inputError{"url", "this calendar is already synced"}
+			return store.SyncedCalendar{}, &inputError{"duplicate", "this calendar is already synced"}
 		}
 	}
 	cal, err := s.db.AddCalDAVCalendar(p.household.ID, conn.ID, store.NewCalDAVCalendar{

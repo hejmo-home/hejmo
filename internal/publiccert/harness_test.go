@@ -168,6 +168,8 @@ type caOption struct {
 func startCA(t *testing.T, dnsServer *fakeDNS, opt caOption) *fakeCA {
 	t.Helper()
 	t.Setenv("PEBBLE_VA_NOSLEEP", "1")
+	t.Setenv("PEBBLE_WFE_NONCEREJECT", "0") // Pebble rejects 5% of nonces by default, which would repeat orders
+	t.Setenv("PEBBLE_AUTHZREUSE", "0")
 	logger := log.New(io.Discard, "", 0)
 	store := db.NewMemoryStore()
 	authority := ca.New(logger, store, "", "ecdsa", 0, 1, map[string]ca.Profile{"default": {Description: "default"}})

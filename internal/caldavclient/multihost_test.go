@@ -249,6 +249,23 @@ func TestSameDomainAcceptsOtherHostsOfTheServersDomainOnly(t *testing.T) {
 	}
 }
 
+// A step down from https to http stays on the same domain, so the message must
+// not claim the host is foreign.
+func TestDowngradeToHTTPIsNamedAsSuchNotAsAForeignHost(t *testing.T) {
+	err := caldavclient.CheckSameDomain(mustURL(t, "https://caldav.icloud.com"), mustURL(t, "http://p123-caldav.icloud.com/1/"))
+	var foreign *caldavclient.ForeignHostError
+	if !errors.As(err, &foreign) || !foreign.Downgrade || foreign.Host != "p123-caldav.icloud.com" || foreign.Domain != "icloud.com" {
+		t.Fatalf("err = %#v, want a downgrade naming p123-caldav.icloud.com", err)
+	}
+	if msg := err.Error(); strings.Contains(msg, "not part of") || !strings.Contains(msg, "http") || !strings.Contains(msg, "https") {
+		t.Errorf("message = %q, want it to say the connection would drop from https to http", msg)
+	}
+	err = caldavclient.CheckSameDomain(mustURL(t, "https://caldav.icloud.com"), mustURL(t, "https://evil.test/"))
+	if !errors.As(err, &foreign) || foreign.Downgrade {
+		t.Errorf("a foreign domain is no downgrade: %#v", err)
+	}
+}
+
 func mustURL(t *testing.T, s string) *url.URL {
 	t.Helper()
 	u, err := url.Parse(s)

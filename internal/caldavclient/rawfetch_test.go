@@ -140,11 +140,28 @@ func TestFetchLeavesOutObjectsAnsweredWith404Or410(t *testing.T) {
 		t.Fatalf("Fetch() = %+v, want only the existing object", got)
 	}
 
-	extra := "<d:response><d:href>/cal/g.ics</d:href><d:status>HTTP/1.1 410 Gone</d:status></d:response>" +
-		"<d:response><d:href>/cal/h.ics</d:href><d:propstat><d:prop><c:calendar-data/></d:prop><d:status>HTTP/1.1 404 Not Found</d:status></d:propstat></d:response>"
+	extra := "<d:response><d:href>/cal/g.ics</d:href><d:status>HTTP/1.1 410 Gone</d:status></d:response>"
 	srv2 := multigetServer(t, map[string]string{"normal.ics": icsNormal}, extra, nil)
 	if got, err = fetchByName(t, srv2.URL, "normal.ics"); err != nil || len(got) != 1 {
-		t.Fatalf("Fetch() = %+v, %v; want 410 and a 404 propstat left out", got, err)
+		t.Fatalf("Fetch() = %+v, %v; want the 410 member left out", got, err)
+	}
+}
+
+// A 404 propstat says only that a property is missing, not that the object is
+// gone. Left out silently it would be skipped on every run without a note.
+func TestFetchReportsMissingCalendarDataInsteadOfSkippingTheObject(t *testing.T) {
+	extra := "<d:response><d:href>/cal/h.ics</d:href><d:propstat><d:prop><c:calendar-data/></d:prop><d:status>HTTP/1.1 404 Not Found</d:status></d:propstat></d:response>"
+	srv := multigetServer(t, map[string]string{"normal.ics": icsNormal}, extra, nil)
+	got, err := fetchByName(t, srv.URL, "normal.ics")
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, ok := got["h.ics"]
+	if !ok || h.Err == nil || !strings.Contains(h.Err.Error(), "no calendar data") {
+		t.Fatalf("Fetch() = %+v, want h.ics with Err \"the server sent no calendar data\"", got)
+	}
+	if got["normal.ics"].Err != nil {
+		t.Fatalf("normal.ics = %+v, want it fetched", got["normal.ics"])
 	}
 }
 

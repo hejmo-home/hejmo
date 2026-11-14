@@ -69,6 +69,9 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 			return fail(i18n.Msg("sync.fail.login"), err)
 		}
 		var foreign *caldavclient.ForeignHostError
+		if errors.As(err, &foreign) && foreign.Downgrade {
+			return fail(i18n.Msg("sync.fail.downgrade", "host", foreign.Host), err)
+		}
 		if errors.As(err, &foreign) {
 			return fail(i18n.Msg("sync.fail.foreign_host", "host", foreign.Host, "domain", foreign.Domain), err)
 		}

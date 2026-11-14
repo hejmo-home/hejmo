@@ -1,6 +1,8 @@
-// Package caldav reads calendars from a CalDAV server (iCloud, Nextcloud,
-// Radicale and others). It is a thin adapter over go-webdav (ADR 0012): it
-// speaks in absolute URLs and raw iCalendar text and knows nothing of the
+// Package caldavclient reads calendars from a CalDAV server (iCloud, Nextcloud,
+// Radicale and others). It finds calendars with go-webdav and lists and
+// fetches objects with its own calendar-query and calendar-multiget REPORTs
+// (ADR 0012), because real servers answer in ways go-webdav's reader refuses.
+// It speaks in absolute URLs and raw iCalendar text and knows nothing of the
 // box's calendars or database.
 package caldavclient
 
@@ -64,9 +66,17 @@ func IsUnauthorized(err error) bool {
 type ForeignHostError struct {
 	Host   string // the host that was refused
 	Domain string // the registrable domain of the configured server
+	// Downgrade is set when Host is on the server's own domain but was
+	// reached over http while the server is configured with https. The
+	// password is never sent over a connection less safe than the one the
+	// family chose.
+	Downgrade bool
 }
 
 func (e *ForeignHostError) Error() string {
+	if e.Downgrade {
+		return fmt.Sprintf("refused to contact %s over http: the server is configured with https, and the password is never sent unencrypted", e.Host)
+	}
 	return fmt.Sprintf("refused to contact %s: it is not part of %s, the domain of the configured server, and the password is only sent there", e.Host, e.Domain)
 }
 
@@ -181,10 +191,7 @@ func CheckSameDomain(base, u *url.URL) error {
 	upgrade := base.Scheme == "http" && u.Scheme == "https"
 	if registrable(u.Hostname()) != domain || (u.Scheme != base.Scheme && !upgrade) || (u.Scheme != "http" && u.Scheme != "https") {
 		host := u.Hostname()
-		if registrable(host) == domain {
-			host = u.Scheme + "://" + host
-		}
-		return &ForeignHostError{Host: host, Domain: domain}
+		return &ForeignHostError{Host: host, Domain: domain, Downgrade: registrable(host) == domain && (u.Scheme == "http" || u.Scheme == "https")}
 	}
 	return nil
 }
@@ -419,8 +426,11 @@ func (c *Client) report(ctx context.Context, dir, body, what string) (*reportAns
 //
 // It does not use go-webdav's directory listing: that decodes resourcetype of
 // every member and fails the whole listing when one answers 404 for it, which
-// iCloud does for some members. Here only the 200 propstats are read, and a
-// member without an ETag, or a collection, is skipped.
+// iCloud does for some members. Here only the 2xx propstats are read. A
+// collection is skipped, and so is a member the server reports as gone (404 or
+// 410 for the whole response). A member without an ETag stays in the list with
+// an empty one: the sync downloads such an object on every run instead of
+// taking it for deleted.
 func (c *Client) List(ctx context.Context, calendarURL string) ([]Object, error) {
 	origin, _, err := c.origin(calendarURL)
 	if err != nil {
@@ -445,15 +455,15 @@ func (c *Client) List(ctx context.Context, calendarURL string) ([]Object, error)
 		if strings.HasSuffix(target.Path, "/") || AddressKey(target.String()) == self {
 			continue // a collection
 		}
+		if code := statusCode(r.Status); code == http.StatusNotFound || code == http.StatusGone {
+			continue
+		}
 		etag := ""
 		for _, ps := range r.Propstats {
-			if strings.Contains(ps.Status, " 200") && strings.TrimSpace(ps.Prop.ETag) != "" {
+			if statusCode(ps.Status)/100 == 2 && strings.TrimSpace(ps.Prop.ETag) != "" {
 				etag = unquoteETag(ps.Prop.ETag)
 				break
 			}
-		}
-		if etag == "" {
-			continue // not an object we can track
 		}
 		out = append(out, Object{URL: target.String(), ETag: etag})
 	}
@@ -489,9 +499,9 @@ func (c *Client) Fetch(ctx context.Context, calendarURL string, objectURLs []str
 			if IsUnauthorized(err) || errors.As(err, &foreign) || ctx.Err() != nil {
 				return nil, err
 			}
-			// One object the multiget cannot take (go-webdav decodes every
-			// object and fails the whole answer on the first it cannot read,
-			// or on a 404), so ask for each on its own.
+			// The multiget as a whole failed (a server that cannot take it, or
+			// an answer that is no multistatus), so ask for each object on its
+			// own.
 			if got, err = c.fetchEach(ctx, batch); err != nil {
 				return nil, err
 			}
@@ -501,8 +511,9 @@ func (c *Client) Fetch(ctx context.Context, calendarURL string, objectURLs []str
 	return out, nil
 }
 
-// multigetBody asks for the ETag and the calendar data of the given objects.
-// The data is requested whole, as the server stores it.
+// multigetOpen starts the body of a calendar-multiget that asks for the ETag
+// and the calendar data of the objects whose hrefs follow. The data is
+// requested whole, as the server stores it.
 const multigetOpen = `<?xml version="1.0" encoding="utf-8"?>` +
 	`<c:calendar-multiget xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">` +
 	`<d:prop><d:getetag/><c:calendar-data/></d:prop>`
@@ -550,21 +561,23 @@ func (c *Client) multiget(ctx context.Context, calendarURL string, objectURLs []
 			gone  bool
 			other *StatusError
 		)
-		note := func(status string) {
-			code := statusCode(status)
-			switch {
-			case code == http.StatusNotFound || code == http.StatusGone:
-				gone = true
-			case code/100 != 2 && other == nil:
+		refused := func(status string) {
+			if code := statusCode(status); code/100 != 2 && other == nil {
 				other = &StatusError{code, strings.TrimSpace(strings.TrimPrefix(status, "HTTP/1.1 "))}
 			}
 		}
-		if len(r.Propstats) == 0 {
-			note(r.Status)
+		// Only the status of the whole response says the object is gone. A
+		// 404 propstat says that one property is missing.
+		if code := statusCode(r.Status); code == http.StatusNotFound || code == http.StatusGone {
+			gone = true
+		} else if len(r.Propstats) == 0 {
+			refused(r.Status)
 		}
 		for _, ps := range r.Propstats {
 			if code := statusCode(ps.Status); code/100 != 2 {
-				note(ps.Status)
+				if code != http.StatusNotFound {
+					refused(ps.Status)
+				}
 				continue
 			}
 			if tag := strings.TrimSpace(ps.Prop.ETag); tag != "" {
@@ -577,10 +590,10 @@ func (c *Client) multiget(ctx context.Context, calendarURL string, objectURLs []
 		switch {
 		case ok:
 			obj.Err = readable(obj.Data)
-		case other != nil:
-			return nil, other
 		case gone:
 			continue
+		case other != nil:
+			return nil, other
 		default:
 			obj.Err = errors.New("the server sent no calendar data")
 		}

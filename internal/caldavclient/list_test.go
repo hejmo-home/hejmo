@@ -78,8 +78,11 @@ func TestListToleratesMembersWithAMissingResourcetype(t *testing.T) {
 	for _, o := range objs {
 		got[o.URL] = o.ETag
 	}
-	if len(got) != 2 || got[srv.URL+"/cal/a.ics"] != "ea" || got[srv.URL+"/cal/b%20b.ics"] != "eb" {
-		t.Fatalf("List() = %+v, want a.ics and b b.ics with their ETags only", objs)
+	if etag, ok := got[srv.URL+"/cal/nothing.ics"]; !ok || etag != "" {
+		t.Fatalf("List() = %+v, want nothing.ics kept with an empty ETag: the sync downloads it on every run, it is not deleted", objs)
+	}
+	if len(got) != 3 || got[srv.URL+"/cal/a.ics"] != "ea" || got[srv.URL+"/cal/b%20b.ics"] != "eb" {
+		t.Fatalf("List() = %+v, want a.ics and b b.ics with their ETags and nothing.ics without one", objs)
 	}
 }
 
@@ -123,5 +126,33 @@ func TestListReportsAMissingCalendarAsAStatusError(t *testing.T) {
 	var se *caldavclient.StatusError
 	if !errors.As(err, &se) || se.Code != http.StatusNotFound {
 		t.Fatalf("List() = %v, want a StatusError 404", err)
+	}
+}
+
+// A member the server reports as 404 or 410 as a whole is gone; one that only
+// lacks a property, or whose propstat has no status line, is still there.
+func TestListLeavesOutMembersThatAreGoneAndReadsAnETagWithoutAStatusLine(t *testing.T) {
+	body := multistatusOpen +
+		member("/cal/gone.ics", "") + // replaced below by a response-level status
+		member("/cal/nostatus.ics", `<d:propstat><d:prop><d:getetag>"en"</d:getetag></d:prop></d:propstat>`) +
+		member("/cal/ok.ics", fmt.Sprintf(okEtag, "eo")) +
+		"</d:multistatus>"
+	body = strings.Replace(body, "<d:href>/cal/gone.ics</d:href>", "<d:href>/cal/gone.ics</d:href><d:status>HTTP/1.1 404 Not Found</d:status>", 1)
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusMultiStatus)
+		io.WriteString(w, body)
+	}))
+	defer srv.Close()
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	objs, err := c.List(context.Background(), srv.URL+"/cal/")
+	if err != nil {
+		t.Fatal(err)
+	}
+	got := map[string]string{}
+	for _, o := range objs {
+		got[o.URL] = o.ETag
+	}
+	if len(got) != 2 || got[srv.URL+"/cal/nostatus.ics"] != "en" || got[srv.URL+"/cal/ok.ics"] != "eo" {
+		t.Fatalf("List() = %+v, want ok.ics and nostatus.ics only", objs)
 	}
 }

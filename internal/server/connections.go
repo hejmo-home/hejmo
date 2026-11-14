@@ -77,7 +77,7 @@ func (s *server) connect(r *http.Request, p principal, in newConnectionInput) (s
 		}
 		var foreign *caldavclient.ForeignHostError
 		if errors.As(err, &foreign) {
-			return store.Connection{}, nil, &inputError{"foreign_host", err.Error()}
+			return store.Connection{}, nil, foreignHostError(foreign)
 		}
 		return store.Connection{}, nil, &inputError{"server", "could not read calendars from the server: " + err.Error()}
 	}
@@ -102,7 +102,7 @@ func (s *server) rediscover(ctx context.Context, p principal, conn store.Connect
 		}
 		var foreign *caldavclient.ForeignHostError
 		if errors.As(err, &foreign) {
-			return nil, &inputError{"foreign_host", err.Error()}
+			return nil, foreignHostError(foreign)
 		}
 		return nil, &inputError{"server", "could not read calendars from the server: " + err.Error()}
 	}
@@ -254,4 +254,13 @@ func (s *server) apiDeleteConnection(w http.ResponseWriter, r *http.Request, p p
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
+}
+
+// foreignHostError is the input error for a server that sent the client to a
+// host it may not talk to: another domain, or http where https was chosen.
+func foreignHostError(e *caldavclient.ForeignHostError) *inputError {
+	if e.Downgrade {
+		return &inputError{"downgrade", e.Error()}
+	}
+	return &inputError{"foreign_host", e.Error()}
 }

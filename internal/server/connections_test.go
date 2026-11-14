@@ -444,3 +444,38 @@ func TestWebICloudErrorDoesNotEchoHiddenFields(t *testing.T) {
 		t.Fatalf("error page = %d\n%s", r.status, r.body)
 	}
 }
+
+// errRemote fails to list calendars with the given error.
+type errRemote struct {
+	calsync.Remote
+	err error
+}
+
+func (e errRemote) Calendars(context.Context) ([]caldavclient.Calendar, error) { return nil, e.err }
+
+func TestWebConnectExplainsAServerThatPointsToAnotherDomain(t *testing.T) {
+	for name, tc := range map[string]struct {
+		err  error
+		want string
+	}{
+		"foreign domain": {&caldavclient.ForeignHostError{Host: "evil.test", Domain: "example.org"}, "andere Domain"},
+		"http downgrade": {&caldavclient.ForeignHostError{Host: "p1.example.org", Domain: "example.org", Downgrade: true}, "unverschlüsselte"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			c := signedInAPI(t)
+			c.b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { return errRemote{err: tc.err}, nil })
+			r := c.b.post("/connections", url.Values{
+				"provider": {"caldav"}, "url": {"https://caldav.example.org"}, "username": {"u"}, "password": {"secret-pw-1"},
+			})
+			if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, tc.want) {
+				t.Fatalf("connect = %d, want 422 saying %q\n%s", r.status, tc.want, r.body)
+			}
+			if strings.Contains(r.body, "secret-pw-1") || strings.Contains(r.body, "refused to contact") {
+				t.Fatalf("page leaks the password or the raw error:\n%s", r.body)
+			}
+			if conns, _ := c.b.db.Connections(mustHousehold(t, c).ID); len(conns) != 0 {
+				t.Fatalf("a refused connection was stored: %+v", conns)
+			}
+		})
+	}
+}

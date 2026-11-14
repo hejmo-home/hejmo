@@ -3,6 +3,7 @@ package calsync_test
 import (
 	"context"
 	"net/http"
+	"net/url"
 	"path/filepath"
 	"sync/atomic"
 	"testing"
@@ -320,7 +321,15 @@ func TestTemporaryServerErrorFailsTheRunAndTheChangeArrivesOnTheNextOne(t *testi
 type foreignRemote struct{ calsync.Remote }
 
 func (foreignRemote) List(context.Context, string) ([]caldavclient.Object, error) {
-	return nil, &caldavclient.ForeignHostError{Host: "evil.test", Domain: "example.org"}
+	return nil, refusal("https://caldav.example.org", "https://evil.test/cal/")
+}
+
+// refusal is the error the real client gives for a request to the address to,
+// with the credentials of the server at from.
+func refusal(from, to string) error {
+	a, _ := url.Parse(from)
+	b, _ := url.Parse(to)
+	return caldavclient.CheckSameDomain(a, b)
 }
 
 func TestForeignHostRefusalIsAClearEntryInTheSyncLog(t *testing.T) {
@@ -335,5 +344,23 @@ func TestForeignHostRefusalIsAClearEntryInTheSyncLog(t *testing.T) {
 	}
 	if a := log[0].Message.Params; a["host"] != "evil.test" || a["domain"] != "example.org" {
 		t.Fatalf("args = %v", a)
+	}
+}
+
+type downgradeRemote struct{ calsync.Remote }
+
+func (downgradeRemote) List(context.Context, string) ([]caldavclient.Object, error) {
+	return nil, refusal("https://caldav.example.org", "http://p1.example.org/cal/")
+}
+
+func TestDowngradeRefusalHasItsOwnSyncLogMessage(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.svc.SetDialer(func(serverURL, user, pass string) (calsync.Remote, error) { return downgradeRemote{}, nil })
+	if err := fx.svc.Sync(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+		t.Fatal("sync succeeded")
+	}
+	log, _ := fx.db.SyncLog(fx.h.ID, 10)
+	if len(log) != 1 || log[0].Message.Key != "sync.fail.downgrade" || log[0].Message.Params["host"] != "p1.example.org" {
+		t.Fatalf("log = %+v, want sync.fail.downgrade naming the host", log)
 	}
 }

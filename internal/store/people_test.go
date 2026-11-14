@@ -78,3 +78,21 @@ func TestTheBoxHasOneHousehold(t *testing.T) {
 		t.Fatalf("HomeHousehold = %+v, %v", got, err)
 	}
 }
+
+func TestHouseholdKeepsItsHomeCoordinates(t *testing.T) {
+	db, _ := openTemp(t)
+	h, err := db.CreateHousehold(store.Household{Name: "Family", HomeName: "Pasing", Region: "DE-BY"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetHouseholdCoordinates(h.ID, 48.15, 11.46); err != nil {
+		t.Fatal(err)
+	}
+	got, err := db.HomeHousehold()
+	if err != nil || got.Latitude != 48.15 || got.Longitude != 11.46 {
+		t.Fatalf("household = %+v, %v", got, err)
+	}
+	if err := db.SetHouseholdCoordinates("unknown", 1, 2); err == nil {
+		t.Fatal("unknown household accepted")
+	}
+}

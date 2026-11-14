@@ -394,3 +394,28 @@ func TestResetOTPCommandResetsTheAccountAndLogsIt(t *testing.T) {
 		t.Error("unknown account accepted")
 	}
 }
+
+// docker compose logs shows only what the box's main process (PID 1) writes,
+// so a reset run by `docker compose exec` must reach its stdout too.
+func TestCommandLogReachesTheBoxMainProcessOutput(t *testing.T) {
+	var stderr strings.Builder
+	pid1 := filepath.Join(t.TempDir(), "stdout")
+	if err := os.WriteFile(pid1, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	commandLogger(&stderr, pid1, 4711).Info("one-time codes reset", "account", "mama")
+	got, _ := os.ReadFile(pid1)
+	if !strings.Contains(string(got), "account=mama") {
+		t.Errorf("box main process output = %q", got)
+	}
+	if !strings.Contains(stderr.String(), "account=mama") {
+		t.Errorf("stderr = %q", stderr.String())
+	}
+
+	// Without a reachable main process output, stderr alone still works.
+	stderr.Reset()
+	commandLogger(&stderr, filepath.Join(t.TempDir(), "missing"), 4711).Info("x", "k", "v")
+	if !strings.Contains(stderr.String(), "k=v") {
+		t.Errorf("stderr = %q", stderr.String())
+	}
+}

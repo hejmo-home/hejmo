@@ -15,6 +15,7 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
@@ -77,6 +78,7 @@ func main() {
 	}
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
 	if len(os.Args) > 1 && os.Args[1] == "reset-otp" {
+		logger = commandLogger(os.Stderr, "/proc/1/fd/1", os.Getpid())
 		if len(os.Args) != 3 {
 			fmt.Fprintln(os.Stderr, "usage: hejmo reset-otp <username>")
 			os.Exit(2)
@@ -176,6 +178,19 @@ func run(cfg config, logger *slog.Logger) error {
 		}
 	}
 	return nil
+}
+
+// commandLogger logs a command run inside the box's container. `docker compose
+// logs` shows only the output of the main process (PID 1), so the line is also
+// written to that process's stdout when this is not PID 1 and it is reachable.
+func commandLogger(stderr io.Writer, pid1Stdout string, pid int) *slog.Logger {
+	var w io.Writer = stderr
+	if pid != 1 {
+		if f, err := os.OpenFile(pid1Stdout, os.O_WRONLY|os.O_APPEND, 0); err == nil {
+			w = io.MultiWriter(stderr, f)
+		}
+	}
+	return slog.New(slog.NewTextHandler(w, nil))
 }
 
 // resetOTP is the last way back (ADR 0017): it removes an account's one-time

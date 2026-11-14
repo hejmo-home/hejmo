@@ -51,6 +51,8 @@ On first start the box opens the **setup wizard**: HTTPS, home location (town an
 docker compose exec hejmo /hejmo reset-otp <username>
 ```
 
+The reset is logged as `one-time codes reset` in the box's log (`docker compose logs hejmo`).
+
 ## API
 
 The REST API lives under `/api/v1`; its OpenAPI description is served at `/api/v1/openapi.yaml` ([source](api/openapi.yaml)). Authenticate with a bearer token (`Authorization: Bearer hejmo_…`) created via `POST /api/v1/tokens`. Tokens are limited by scopes such as `read`, `write`, `lists` or `events:read`.

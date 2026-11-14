@@ -81,3 +81,43 @@ func TestValidate(t *testing.T) {
 		t.Errorf("valid task: %v", err)
 	}
 }
+
+// ADR 0018: a new task's default star value is 1 for a child and 0 for an adult.
+func TestDefaultStarsIsOneForAChildAndZeroForAnAdult(t *testing.T) {
+	if task.DefaultStars(true) != 1 || task.DefaultStars(false) != 0 {
+		t.Fatalf("defaults = %d / %d, want 1 / 0", task.DefaultStars(true), task.DefaultStars(false))
+	}
+}
+
+func TestStarValueIsWithinLimits(t *testing.T) {
+	base := task.Task{PersonID: "p", Title: "x", Repeat: task.Daily, Date: "2026-11-14"}
+	for _, ok := range []int{0, 1, 3, task.MaxStars} {
+		k := base
+		k.Stars = ok
+		if err := k.Validate(); err != nil {
+			t.Errorf("stars %d refused: %v", ok, err)
+		}
+	}
+	for _, bad := range []int{-1, task.MaxStars + 1} {
+		k := base
+		k.Stars = bad
+		if err := k.Validate(); !errors.Is(err, task.ErrInvalid) {
+			t.Errorf("stars %d = %v, want ErrInvalid", bad, err)
+		}
+	}
+}
+
+// A parent's manual booking needs a non-zero amount and a short note.
+func TestManualBookingNeedsAmountAndNote(t *testing.T) {
+	if err := task.ValidateBooking(-5, "redeemed: ice cream"); err != nil {
+		t.Fatalf("valid booking refused: %v", err)
+	}
+	for _, c := range []struct {
+		delta int
+		note  string
+	}{{0, "x"}, {5, " "}, {5, ""}, {task.MaxBooking + 1, "x"}, {-task.MaxBooking - 1, "x"}, {1, strings.Repeat("a", task.MaxNote+1)}} {
+		if err := task.ValidateBooking(c.delta, c.note); !errors.Is(err, task.ErrInvalid) {
+			t.Errorf("ValidateBooking(%d, %q) = %v, want ErrInvalid", c.delta, c.note, err)
+		}
+	}
+}

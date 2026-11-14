@@ -29,18 +29,18 @@ func (db *DB) AddTask(householdID string, t task.Task) (task.Task, error) {
 	}
 	t.ID = newID()
 	ts := now()
-	_, err := db.sql.Exec(`INSERT INTO tasks (id, household_id, person_id, title, emoji, rrule, start_date, part_of_day, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		t.ID, householdID, t.PersonID, t.Title, t.Emoji, t.RRule(), t.Date, string(t.PartOfDay), ts, ts)
+	_, err := db.sql.Exec(`INSERT INTO tasks (id, household_id, person_id, title, emoji, rrule, start_date, part_of_day, stars, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, householdID, t.PersonID, t.Title, t.Emoji, t.RRule(), t.Date, string(t.PartOfDay), t.Stars, ts, ts)
 	return t, err
 }
 
-const taskColumns = `id, person_id, title, emoji, rrule, start_date, part_of_day`
+const taskColumns = `id, person_id, title, emoji, rrule, start_date, part_of_day, stars`
 
 func scanTask(row interface{ Scan(...any) error }) (task.Task, error) {
 	var t task.Task
 	var rule, part string
-	if err := row.Scan(&t.ID, &t.PersonID, &t.Title, &t.Emoji, &rule, &t.Date, &part); err != nil {
+	if err := row.Scan(&t.ID, &t.PersonID, &t.Title, &t.Emoji, &rule, &t.Date, &part, &t.Stars); err != nil {
 		return task.Task{}, err
 	}
 	parsed, err := task.ParseRRule(rule)
@@ -92,7 +92,9 @@ func (db *DB) DeleteTask(householdID, id string) error {
 
 // SetTaskDone ticks a task off (or back open) for one day (YYYY-MM-DD, in the
 // household's time zone). The task must be due that day. Doing either twice
-// changes nothing.
+// changes nothing. A change books the task's stars into the person's star log
+// in the same transaction: ticking credits them, unticking deducts what was
+// credited (ADR 0018). by is the person who ticked, empty for a display.
 func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at time.Time) error {
 	t, err := db.Task(householdID, id)
 	if err != nil {
@@ -101,13 +103,42 @@ func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at 
 	if !t.DueOn(day) {
 		return fmt.Errorf("%w: task is not due on %s", ErrInvalid, day)
 	}
-	if !done {
-		_, err = db.sql.Exec(`DELETE FROM task_done WHERE task_id = ? AND day = ?`, id, day)
+	tx, err := db.sql.Begin()
+	if err != nil {
 		return err
 	}
-	_, err = db.sql.Exec(`INSERT INTO task_done (task_id, day, completed_at, completed_by) VALUES (?, ?, ?, NULLIF(?, ''))
-		ON CONFLICT (task_id, day) DO NOTHING`, id, day, at.UTC().Format(time.RFC3339), by)
-	return err
+	defer tx.Rollback()
+	var delta int
+	if done {
+		res, err := tx.Exec(`INSERT INTO task_done (task_id, day, completed_at, completed_by, stars) VALUES (?, ?, ?, NULLIF(?, ''), ?)
+			ON CONFLICT (task_id, day) DO NOTHING`, id, day, at.UTC().Format(time.RFC3339), by, t.Stars)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n > 0 {
+			delta = t.Stars
+		}
+	} else {
+		var credited int
+		switch err := tx.QueryRow(`SELECT stars FROM task_done WHERE task_id = ? AND day = ?`, id, day).Scan(&credited); {
+		case errors.Is(err, sql.ErrNoRows):
+		case err != nil:
+			return err
+		default:
+			if _, err := tx.Exec(`DELETE FROM task_done WHERE task_id = ? AND day = ?`, id, day); err != nil {
+				return err
+			}
+			delta = -credited
+		}
+	}
+	if delta != 0 {
+		if _, err := tx.Exec(`INSERT INTO star_log (id, person_id, delta, task_id, task_title, day, booked_by, created_at)
+			VALUES (?, ?, ?, ?, ?, ?, NULLIF(?, ''), ?)`,
+			newID(), t.PersonID, delta, t.ID, t.Title, day, by, at.UTC().Format(time.RFC3339)); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }
 
 // TaskDone reports whether a task is ticked off on a day.

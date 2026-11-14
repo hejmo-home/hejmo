@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -67,8 +68,12 @@ func TestSetupSavesAndConfirmsTOTP(t *testing.T) {
 	}
 	secret := secretOn(t, page.body)
 
-	if r := b.post("/setup/totp", url.Values{"code": {"000000"}}); r.status != http.StatusUnprocessableEntity {
+	r = b.do(http.MethodPost, "/setup/totp", url.Values{"code": {"000000"}}, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("wrong code = %d, want 422", r.status)
+	}
+	if !strings.Contains(r.body, "That code is wrong") {
+		t.Error("wrong code shows no error message")
 	}
 	code, _ := auth.TOTPCode(secret, b.now)
 	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusSeeOther || r.location != "/" {
@@ -172,16 +177,23 @@ func TestSetupTOTPPageShowsQRCodeOfTheOtpauthURI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	svg := page.body[strings.Index(page.body, "<svg"):]
-	svg = svg[:strings.Index(svg, "</svg>")]
+	_, svg, ok := strings.Cut(page.body, "<svg")
+	if !ok {
+		t.Fatalf("no QR code on the page\n%s", page.body)
+	}
+	svg, _, ok = strings.Cut(svg, "</svg>")
+	if !ok {
+		t.Fatalf("unterminated QR code on the page\n%s", page.body)
+	}
 	got := map[[2]int]bool{}
 	for _, m := range qrModuleRe.FindAllStringSubmatch(svg, -1) {
-		x, y := 0, 0
-		for _, c := range m[1] {
-			x = x*10 + int(c-'0')
+		x, err := strconv.Atoi(m[1])
+		if err != nil {
+			t.Fatal(err)
 		}
-		for _, c := range m[2] {
-			y = y*10 + int(c-'0')
+		y, err := strconv.Atoi(m[2])
+		if err != nil {
+			t.Fatal(err)
 		}
 		got[[2]int{x - 4, y - 4}] = true // 4 modules quiet zone
 	}

@@ -21,6 +21,15 @@ func (p principal) location() *time.Location {
 	return time.UTC
 }
 
+// timeLayout is how the household wants date and time shown in the web
+// interface (ADR 0016).
+func (p principal) timeLayout() string {
+	if p.household.TimeFormat == store.Time12h {
+		return "02/01/2006 3:04 PM"
+	}
+	return "02/01/2006 15:04"
+}
+
 func formatTime(t time.Time, allDay bool, loc *time.Location) string {
 	if allDay {
 		return t.In(loc).Format(dateLayout)

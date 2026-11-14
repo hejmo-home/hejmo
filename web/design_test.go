@@ -357,6 +357,75 @@ func TestFontsLoadFromTheBoxOnly(t *testing.T) {
 	}
 }
 
+// ruleFor returns the declarations of the first rule whose selector is exactly sel.
+func ruleFor(t *testing.T, css, sel string) string {
+	t.Helper()
+	m := regexp.MustCompile(`(?s)(?:^|\n|\{)\s*` + regexp.QuoteMeta(sel) + `\s*\{([^}]*)\}`).FindStringSubmatch(css)
+	if m == nil {
+		t.Fatalf("no CSS rule for %q", sel)
+	}
+	return m[1]
+}
+
+// 5.11: every navigation target and button is at least 44 px (touch-target).
+func TestFrameNavigationTargetsAreTouchSized(t *testing.T) {
+	css := stylesheet(t)
+	for _, sel := range []string{".frame-nav a", ".frame-bar .button", ".button"} {
+		if rule := ruleFor(t, css, sel); !strings.Contains(rule, "min-height: var(--touch-target)") {
+			t.Errorf("%s lacks min-height: var(--touch-target): %s", sel, rule)
+		}
+	}
+	if tok := cssTokens(t, css, "light")["--touch-target"]; tok != "44px" {
+		t.Errorf("--touch-target = %q, want 44px", tok)
+	}
+}
+
+// 5.11: "follow the device" (ADR 0015) is the default: without data-theme the
+// dark palette applies when the device asks for it, with the same values.
+func TestDarkFollowsTheDeviceByDefaultWithTheSameValues(t *testing.T) {
+	css := stylesheet(t)
+	m := regexp.MustCompile(`(?s)@media \(prefers-color-scheme: dark\) \{\s*:root:not\(\[data-theme\]\) \{([^}]*)\}`).FindStringSubmatch(css)
+	if m == nil {
+		t.Fatal("no prefers-color-scheme: dark block for :root:not([data-theme])")
+	}
+	got := map[string]string{}
+	for _, d := range regexp.MustCompile(`(--[a-z0-9-]+)\s*:\s*([^;]+);`).FindAllStringSubmatch(m[1], -1) {
+		got[d[1]] = strings.TrimSpace(d[2])
+	}
+	for k, v := range cssTokens(t, css, "dark") {
+		if got[k] != v {
+			t.Errorf("device-dark %s = %q, dark theme has %q", k, got[k], v)
+		}
+	}
+	if len(got) != len(cssTokens(t, css, "dark")) {
+		t.Errorf("device-dark has %d tokens, dark theme %d", len(got), len(cssTokens(t, css, "dark")))
+	}
+}
+
+// 5.11: the frame is responsive: from 900 px the navigation sits beside the
+// content in a grid.
+func TestFrameHasAWideLayout(t *testing.T) {
+	m := regexp.MustCompile(`(?s)@media \(min-width: 900px\) \{(.*?)\n\}`).FindStringSubmatch(stylesheet(t))
+	if m == nil {
+		t.Fatal("no min-width: 900px media query for the wide layout")
+	}
+	if !regexp.MustCompile(`\.frame\.has-nav\s*\{[^}]*grid-template-columns`).MatchString(m[1]) {
+		t.Errorf("900 px query has no .frame.has-nav grid rule:\n%s", m[1])
+	}
+}
+
+// Displays are untouched by the web frame: the padding changes only apply to
+// body.web, never to a bare body.
+func TestFramePaddingAppliesOnlyToWebPages(t *testing.T) {
+	css := stylesheet(t)
+	if rule := ruleFor(t, css, "body"); !strings.Contains(rule, "padding: var(--margin)") {
+		t.Errorf("bare body padding changed: %s", rule)
+	}
+	if !regexp.MustCompile(`body\.web\s*\{`).MatchString(css) {
+		t.Error("no body.web rule")
+	}
+}
+
 // The family view layout of docs/spec.md ("Layout of the family view"): a
 // grid with one white column per person, header above, footer tiles below,
 // spaced with the spec tokens. A CSS regression in these rules fails here.

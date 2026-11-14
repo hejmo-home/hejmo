@@ -1,8 +1,6 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "home.title"))}}
+{{template "head" (dict "Lang" .Lang "Title" (t "home.title") "Frame" .Frame)}}
   <h1>{{t "home.hello"}} {{.Person.Name}}</h1>
   {{template "httpsNotice" .}}
   {{template "syncNotice" .}}
   <p class="lead">{{t "home.placeholder"}}</p>
-  {{if eq .Person.Role "parent"}}<p><a href="/calendars">{{t "calendars.title"}}</a> · <a href="/caldav">{{t "caldav.link"}}</a> · <a href="/displays">{{t "displays.link"}}</a> · <a href="/tasks">{{t "tasks.title"}}</a></p>{{end}}
-  <form method="post" action="/logout"><button class="button" type="submit">{{t "home.logout"}}</button></form>
 {{template "foot"}}

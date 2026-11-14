@@ -1,18 +1,17 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "tasks.title"))}}
-  <p><a href="/">{{t "calendars.back"}}</a></p>
+{{template "head" (dict "Lang" .Lang "Title" (t "tasks.title") "Frame" .Frame)}}
   <h1>{{t "tasks.title"}}</h1>
   {{template "syncNotice" .}}
   <p class="lead">{{t "tasks.intro"}}</p>
 
   {{range .Groups}}
   <section aria-label="{{.Name}}">
-    <h2><span class="dot" style="background: {{.Color}}" aria-hidden="true"></span> {{.Name}}</h2>
+    <h2><input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{.Name}}</h2>
     <ul class="cards">
       {{range .Tasks}}
       <li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
         <strong>{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}</strong>
         <span class="hint">
-          {{if eq .Repeat "once"}}{{t "tasks.repeat.once"}} {{.Date}}{{else if eq .Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Weekdays}}{{if $i}}, {{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}
+          {{if eq .Repeat "once"}}{{t "tasks.repeat.once"}} {{.Date}}{{else if eq .Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}
           {{if .Part}} · {{t (printf "tasks.part.%s" .Part)}}{{end}}
           · {{if not .Due}}{{t "tasks.not_today"}}{{else if .Done}}{{t "tasks.done"}}{{else}}{{t "tasks.open"}}{{end}}
         </span>

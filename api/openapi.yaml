@@ -442,6 +442,39 @@ paths:
               schema: { $ref: "#/components/schemas/HTTPSStatus" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /settings:
+    get:
+      operationId: getSettings
+      summary: Household settings (scope settings:read)
+      responses:
+        "200":
+          description: Settings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Settings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: updateSettings
+      summary: Change household settings; omitted fields stay as they are (scope settings:write)
+      description: |
+        The time format applies to every time shown in the web interface and
+        on displays (ADR 0016). Unknown values are refused with 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/SettingsUpdate" }
+      responses:
+        "200":
+          description: Settings after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Settings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /events:
     get:
       operationId: listOccurrences
@@ -717,6 +750,17 @@ components:
         at: { type: string, format: date-time }
         kind: { type: string, enum: [failure, conflict, note] }
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
+    Settings:
+      type: object
+      required: [time_format, temperature_unit]
+      properties:
+        time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
+        temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
+    SettingsUpdate:
+      type: object
+      properties:
+        time_format: { type: string, description: "24h or 12h" }
+        temperature_unit: { type: string, description: "c or f" }
     HTTPSStatus:
       type: object
       required: [mode, warning]

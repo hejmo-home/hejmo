@@ -136,7 +136,7 @@ func Build(in Input) View {
 		if !bar && !whole {
 			for i, p := range in.People {
 				if sees(in, p, o) {
-					v.Columns[i].Events = append(v.Columns[i].Events, card(o))
+					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc))
 				}
 			}
 			continue
@@ -153,8 +153,8 @@ func Build(in Input) View {
 			}
 		}
 		if bar {
-			first, last := firstDay(o, loc), lastDay(o, loc)
-			item.DayIndex, item.DayCount = days(first, d0)+1, days(first, last)+1
+			first, last := firstDay(o, loc), calendar.LastDay(o, loc)
+			item.DayIndex, item.DayCount = calendar.DaysBetween(first, d0)+1, calendar.DaysBetween(first, last)+1
 			item.ContinuesBefore, item.ContinuesAfter = first.Before(d0), last.After(d0)
 			if item.DayCount == 1 {
 				item.DayIndex = 0
@@ -162,7 +162,7 @@ func Build(in Input) View {
 			bars = append(bars, item)
 			continue
 		}
-		item.Time = clock(o)
+		item.Time = clock(o, loc)
 		lines = append(lines, item)
 	}
 	if v.ShowTomorrow {
@@ -174,7 +174,7 @@ func Build(in Input) View {
 			if wholeHousehold(in, o) {
 				item := StripItem{Kind: KindEvent, Title: o.Title, AllDay: o.AllDay}
 				if !o.AllDay {
-					item.Time = clock(o)
+					item.Time = clock(o, loc)
 				}
 				v.StripTomorrow = append(v.StripTomorrow, item)
 				continue
@@ -184,7 +184,7 @@ func Build(in Input) View {
 			}
 			for i, p := range in.People {
 				if sees(in, p, o) && len(v.Columns[i].Tomorrow) < maxTomorrow {
-					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o))
+					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc))
 				}
 			}
 		}
@@ -200,16 +200,14 @@ func Build(in Input) View {
 	return v
 }
 
-func days(a, b time.Time) int {
-	return int(time.Date(b.Year(), b.Month(), b.Day(), 0, 0, 0, 0, time.UTC).Sub(time.Date(a.Year(), a.Month(), a.Day(), 0, 0, 0, 0, time.UTC)).Hours() / 24)
+// clock formats the times in the household's zone, whatever zone the event is
+// stored in (synced events often arrive as UTC or with their own TZID).
+func clock(o calendar.Occurrence, loc *time.Location) string {
+	return fmt.Sprintf("%s–%s", o.Start.In(loc).Format("15:04"), o.End.In(loc).Format("15:04"))
 }
 
-func clock(o calendar.Occurrence) string {
-	return fmt.Sprintf("%s–%s", o.Start.Format("15:04"), o.End.Format("15:04"))
-}
-
-func card(o calendar.Occurrence) Event {
-	return Event{Title: o.Title, Time: clock(o)}
+func card(o calendar.Occurrence, loc *time.Location) Event {
+	return Event{Title: o.Title, Time: clock(o, loc)}
 }
 
 func wholeHousehold(in Input, o calendar.Occurrence) bool {
@@ -224,18 +222,10 @@ func sees(in Input, p Person, o calendar.Occurrence) bool {
 
 // multiDay reports whether a timed occurrence covers more than one day.
 func multiDay(o calendar.Occurrence, loc *time.Location) bool {
-	return firstDay(o, loc) != lastDay(o, loc)
+	return firstDay(o, loc) != calendar.LastDay(o, loc)
 }
 
 func firstDay(o calendar.Occurrence, loc *time.Location) time.Time {
 	s := o.Start.In(loc)
 	return time.Date(s.Year(), s.Month(), s.Day(), 0, 0, 0, 0, loc)
-}
-
-func lastDay(o calendar.Occurrence, loc *time.Location) time.Time {
-	end := o.End.In(loc)
-	if o.AllDay || (end.Hour() == 0 && end.Minute() == 0 && end.Second() == 0 && end.After(o.Start)) {
-		end = end.Add(-time.Nanosecond)
-	}
-	return time.Date(end.Year(), end.Month(), end.Day(), 0, 0, 0, 0, loc)
 }

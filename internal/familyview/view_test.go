@@ -274,3 +274,33 @@ func TestSevenPeopleScroll(t *testing.T) {
 		t.Error("seven people do not scroll")
 	}
 }
+
+func TestTimesAreShownInTheHouseholdZoneWhateverZoneTheEventIsStoredIn(t *testing.T) {
+	utc := time.Date(2026, 11, 14, 8, 0, 0, 0, time.UTC) // 09:00 in Berlin
+	auckland, err := time.LoadLocation("Pacific/Auckland")
+	if err != nil {
+		t.Fatal(err)
+	}
+	nz := time.Date(2026, 11, 14, 21, 0, 0, 0, auckland) // 09:00 in Berlin (UTC+13)
+	occs := []calendar.Occurrence{
+		timed("UTC", utc, utc.Add(time.Hour), "mia"),
+		timed("NZ", nz, nz.Add(time.Hour), "mia"),
+		timed("Family UTC", utc, utc.Add(time.Hour)),
+		timed("Tomorrow UTC", utc.AddDate(0, 0, 1), utc.AddDate(0, 0, 1).Add(time.Hour), "mia"),
+		timed("Family tomorrow UTC", utc.AddDate(0, 0, 1), utc.AddDate(0, 0, 1).Add(time.Hour)),
+	}
+	v := build(at(14, 18, 0), occs...)
+	for _, e := range column(t, v, "Mia").Events {
+		if e.Time != "09:00–10:00" {
+			t.Errorf("%s column time = %q, want 09:00–10:00", e.Title, e.Time)
+		}
+	}
+	if got := column(t, v, "Mia").Tomorrow; len(got) != 1 || got[0].Time != "09:00–10:00" {
+		t.Errorf("tomorrow card = %+v", got)
+	}
+	for _, s := range append(append([]familyview.StripItem(nil), v.Strip...), v.StripTomorrow...) {
+		if s.Time != "09:00–10:00" {
+			t.Errorf("strip %q time = %q, want 09:00–10:00", s.Title, s.Time)
+		}
+	}
+}

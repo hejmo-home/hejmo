@@ -65,8 +65,8 @@ type Bar struct {
 func WeekBars(occs []Occurrence, weekStart time.Time) []Bar {
 	var bars []Bar
 	for _, o := range occs {
-		first := daysBetween(weekStart, o.Start.In(weekStart.Location()))
-		last := daysBetween(weekStart, lastDay(o, weekStart.Location()))
+		first := DaysBetween(weekStart, o.Start.In(weekStart.Location()))
+		last := DaysBetween(weekStart, LastDay(o, weekStart.Location()))
 		if !o.AllDay && first == last {
 			continue
 		}
@@ -99,8 +99,8 @@ func WeekBars(occs []Occurrence, weekStart time.Time) []Bar {
 	return bars
 }
 
-// lastDay is the date of the occurrence's last covered day.
-func lastDay(o Occurrence, loc *time.Location) time.Time {
+// LastDay is the date of the occurrence's last covered day.
+func LastDay(o Occurrence, loc *time.Location) time.Time {
 	end := o.End.In(loc)
 	if o.AllDay || (end.Hour() == 0 && end.Minute() == 0 && end.Second() == 0 && end.After(o.Start)) {
 		end = end.Add(-time.Nanosecond)

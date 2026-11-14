@@ -9,11 +9,9 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
-	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
-	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
@@ -178,23 +176,6 @@ func parsePages() *template.Template {
 		"t":    func(string) string { return "" },
 		"dict": dict,
 	}).ParseFS(web.Templates, "templates/*.html"))
-}
-
-// RenderFamilyView renders the markup of a family view model in a language.
-// The display page uses the same template; the design previews and the
-// snapshot test call this to show real output.
-func RenderFamilyView(lang string, v familyview.View) (string, error) {
-	bundle := i18n.MustLoad()
-	tpl, err := parsePages().Clone()
-	if err != nil {
-		return "", err
-	}
-	tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return bundle.T(lang, key) }})
-	var b strings.Builder
-	if err := tpl.ExecuteTemplate(&b, "familyView", v); err != nil {
-		return "", err
-	}
-	return b.String(), nil
 }
 
 func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name string, data map[string]any) {

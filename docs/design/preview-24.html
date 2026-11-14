@@ -308,6 +308,7 @@ body:has(.family-page) { overflow: hidden; }
 .fv-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: var(--gap); }
 .fv[data-scroll] .fv-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 200px; overflow-x: auto; }
 .fv .column { display: flex; flex-direction: column; gap: 0; min-height: 0; overflow: hidden; }
+.fv .person-link { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); color: inherit; text-decoration: none; }
 .fv .column h2 { flex: none; margin: 0 0 var(--gap-cards); font-size: var(--fs-person-name); font-weight: var(--fw-person-name); display: flex; align-items: center; gap: 8px; }
 .fv .events { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: var(--gap-cards); align-content: start; }
 .fv .events .tomorrow { display: grid; gap: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); opacity: 0.6; }
@@ -326,6 +327,24 @@ body:has(.family-page) { overflow: hidden; }
 .qr { width: min(60vw, 240px); margin: 0 0 12px; color: var(--text); }
 .qr svg { display: block; width: 100%; height: auto; }
 
+/* Personal view (ticket 5.6; ADR 0015): one person's seven days and today's
+   tasks. Touch targets are at least 44 px; the checkbox is larger. */
+.pv { height: 100%; display: flex; flex-direction: column; gap: var(--gap-section); min-height: 0; }
+.pv-header { display: flex; justify-content: space-between; align-items: center; flex: none; gap: var(--gap); }
+.pv-header h1 { margin: 0; font-size: var(--fs-date); font-weight: var(--fw-date); display: flex; align-items: center; gap: 12px; }
+.pv-back { display: inline-flex; align-items: center; min-height: var(--touch-target); padding: 8px 22px; border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
+.pv-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--gap); }
+.pv-days, .pv-tasks { background: var(--surface); border-radius: var(--radius-tile); padding: var(--pad-column); min-height: 0; overflow-y: auto; }
+.pv-day { display: grid; gap: var(--gap-cards); padding-bottom: var(--gap-cards); }
+.pv-day .lab, .pv-tasks .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.pv-day .none { font-size: var(--fs-meta); color: var(--text-secondary); }
+.pv-tasks ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap-cards); }
+.pv-tasks form { margin: 0; }
+.big-check { display: flex; align-items: center; gap: 14px; width: 100%; min-height: var(--touch-target); min-width: var(--touch-target); padding: 8px 4px; border: 0; background: none; color: var(--text); font: inherit; font-size: var(--fs-event-title); text-align: left; cursor: pointer; }
+.big-check .box { flex: none; width: var(--touch-target); height: var(--touch-target); border: 3px solid var(--text); border-radius: var(--radius-card); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; line-height: 1; }
+[data-done="true"] .big-check .title { text-decoration: line-through; color: var(--text-secondary); }
+[data-done="true"] .big-check .box::after { content: "\2713"; }
+
 body{padding:16px;background:#888;font-family:Figtree,system-ui,sans-serif}
 body > h1,body > h2{color:#fff}body > h1{font-size:22px}body > h2{font-size:18px;margin:20px 0 8px}
 .note{color:#fff;max-width:900px;margin:0 0 12px}
@@ -337,7 +356,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
 .frame .fv{height:100%}
 </style></head><body>
 <h1>Hejmo 5.4 black-and-white mode: preview with the example family (Mama, Papa, Sebastian, Mia), Sunday 01/11/2026, 18:05</h1>
-<h2>Decision for the product owner: the faded tomorrow block (ADR 0016) in black-and-white</h2><p class="note">The block (from 18:00, display setting "show tomorrow block", off by default) is faded to 60 % opacity in every palette. In black-and-white E-Ink that is a mid grey on white; the bold titles stay legible, but the faded tone is dithered on the panel. The frames below show it on (first) and off (second). Please decide: keep the fade in black-and-white, or show the block unfaded with only its "Tomorrow" label and divider line setting it apart.</p><div class="row">
+<h2>Decided by the product owner: the tomorrow block (ADR 0016) stays faded in black-and-white</h2><p class="note">The block (from 18:00, display setting "show tomorrow block", off by default) is faded to 60 % opacity in every palette, black-and-white included.</p><div class="row">
 <figure><figcaption>Black and white, tomorrow block shown (faded) (1024x768)</figcaption><div class="frame" data-theme="bw" style="width:1024px;height:768px"><div class="fv" data-family data-people="4">
   <header class="fv-header">
     <div>
@@ -356,7 +375,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
   </div>
   <main class="fv-grid" style="--cols:4">
     <section class="column" data-person="1" data-name="Mama">
-      <h2><span class="marker" data-shape="circle-filled"></span>Mama</h2>
+      <h2><a class="person-link" href="/display/person/mama"><span class="marker" data-shape="circle-filled"></span>Mama</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span></span><div class="meta">09:00–10:00</div><div class="title">Dentist</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -368,7 +387,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="3/5"><div class="progress"><span style="--pct:60"></span></div><span class="count">3/5</span></div>
     </section>
     <section class="column" data-person="2" data-name="Papa">
-      <h2><span class="marker" data-shape="circle-empty"></span>Papa</h2>
+      <h2><a class="person-link" href="/display/person/papa"><span class="marker" data-shape="circle-empty"></span>Papa</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">10:00–11:00</div><div class="title">Team meeting</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -377,7 +396,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       
     </section>
     <section class="column" data-person="3" data-name="Sebastian">
-      <h2><span class="marker" data-shape="square-filled"></span>Sebastian</h2>
+      <h2><a class="person-link" href="/display/person/seb"><span class="marker" data-shape="square-filled"></span>Sebastian</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -388,7 +407,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="1/3"><div class="progress"><span style="--pct:33"></span></div><span class="count">1/3</span></div>
     </section>
     <section class="column" data-person="4" data-name="Mia">
-      <h2><span class="marker" data-shape="square-empty"></span>Mia</h2>
+      <h2><a class="person-link" href="/display/person/mia"><span class="marker" data-shape="square-empty"></span>Mia</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -396,64 +415,6 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
           <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:00</div><div class="title">Piano</div></div>
           <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">16:30–17:30</div><div class="title">Swimming</div></div>
           </div>
-      </div>
-      <div class="pbar" data-progress="2/2"><div class="progress"><span style="--pct:100"></span></div><span class="count">2/2</span></div>
-    </section>
-    
-  </main>
-  <footer class="fv-footer" data-footer>
-    <div class="tile" data-tile="meal"><div class="lab">Dinner</div><div class="ln">Dinner: Pasta bake</div></div>
-    <div class="tile alert" data-tile="tomorrow"><div class="lab">Tomorrow</div><div class="ln">Paper bin</div><div class="ln">Residual waste</div></div>
-  </footer>
-</div></div></figure>
-<figure><figcaption>Black and white, tomorrow block off (default) (1024x768)</figcaption><div class="frame" data-theme="bw" style="width:1024px;height:768px"><div class="fv" data-family data-people="4">
-  <header class="fv-header">
-    <div>
-      <div class="lab">Sunday · CW 44</div>
-      <div class="date">1 November</div>
-    </div>
-    <div class="chips">
-      
-      <span class="chip" data-clock-zone="Europe/Berlin" data-clock>18:05</span>
-      
-    </div>
-  </header>
-  <div class="strip-wrap">
-    <ul class="strip" data-strip><li class="strip-item" data-kind="holiday"><span class="title">All Saints&#39; Day</span></li><li class="strip-item before after" data-kind="event" data-bar="2/3"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span><span class="title">Grandparents visit</span> <span class="meta">Day 2/3</span></li><li class="strip-item" data-kind="event"><span class="title">Family lunch</span> <span class="meta">12:30–14:00</span></li></ul>
-    
-  </div>
-  <main class="fv-grid" style="--cols:4">
-    <section class="column" data-person="1" data-name="Mama">
-      <h2><span class="marker" data-shape="circle-filled"></span>Mama</h2>
-      <div class="events">
-        <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span></span><div class="meta">09:00–10:00</div><div class="title">Dentist</div></div>
-        <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
-        
-      </div>
-      <div class="pbar" data-progress="3/5"><div class="progress"><span style="--pct:60"></span></div><span class="count">3/5</span></div>
-    </section>
-    <section class="column" data-person="2" data-name="Papa">
-      <h2><span class="marker" data-shape="circle-empty"></span>Papa</h2>
-      <div class="events">
-        <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">10:00–11:00</div><div class="title">Team meeting</div></div>
-        <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
-        
-      </div>
-      
-    </section>
-    <section class="column" data-person="3" data-name="Sebastian">
-      <h2><span class="marker" data-shape="square-filled"></span>Sebastian</h2>
-      <div class="events">
-        <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
-        
-      </div>
-      <div class="pbar" data-progress="1/3"><div class="progress"><span style="--pct:33"></span></div><span class="count">1/3</span></div>
-    </section>
-    <section class="column" data-person="4" data-name="Mia">
-      <h2><span class="marker" data-shape="square-empty"></span>Mia</h2>
-      <div class="events">
-        <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
-        
       </div>
       <div class="pbar" data-progress="2/2"><div class="progress"><span style="--pct:100"></span></div><span class="count">2/2</span></div>
     </section>
@@ -483,7 +444,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
   </div>
   <main class="fv-grid" style="--cols:4">
     <section class="column" data-person="1" data-name="Mama">
-      <h2><span class="marker" data-shape="circle-filled"></span>Mama</h2>
+      <h2><a class="person-link" href="/display/person/mama"><span class="marker" data-shape="circle-filled"></span>Mama</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span></span><div class="meta">09:00–10:00</div><div class="title">Dentist</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -495,7 +456,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="3/5"><div class="progress"><span style="--pct:60"></span></div><span class="count">3/5</span></div>
     </section>
     <section class="column" data-person="2" data-name="Papa">
-      <h2><span class="marker" data-shape="circle-empty"></span>Papa</h2>
+      <h2><a class="person-link" href="/display/person/papa"><span class="marker" data-shape="circle-empty"></span>Papa</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">10:00–11:00</div><div class="title">Team meeting</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -504,7 +465,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       
     </section>
     <section class="column" data-person="3" data-name="Sebastian">
-      <h2><span class="marker" data-shape="square-filled"></span>Sebastian</h2>
+      <h2><a class="person-link" href="/display/person/seb"><span class="marker" data-shape="square-filled"></span>Sebastian</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -515,7 +476,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="1/3"><div class="progress"><span style="--pct:33"></span></div><span class="count">1/3</span></div>
     </section>
     <section class="column" data-person="4" data-name="Mia">
-      <h2><span class="marker" data-shape="square-empty"></span>Mia</h2>
+      <h2><a class="person-link" href="/display/person/mia"><span class="marker" data-shape="square-empty"></span>Mia</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -551,7 +512,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
   </div>
   <main class="fv-grid" style="--cols:4">
     <section class="column" data-person="1" data-name="Mama">
-      <h2><span class="marker" data-shape="circle-filled"></span>Mama</h2>
+      <h2><a class="person-link" href="/display/person/mama"><span class="marker" data-shape="circle-filled"></span>Mama</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span></span><div class="meta">09:00–10:00</div><div class="title">Dentist</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -563,7 +524,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="3/5"><div class="progress"><span style="--pct:60"></span></div><span class="count">3/5</span></div>
     </section>
     <section class="column" data-person="2" data-name="Papa">
-      <h2><span class="marker" data-shape="circle-empty"></span>Papa</h2>
+      <h2><a class="person-link" href="/display/person/papa"><span class="marker" data-shape="circle-empty"></span>Papa</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">10:00–11:00</div><div class="title">Team meeting</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -572,7 +533,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       
     </section>
     <section class="column" data-person="3" data-name="Sebastian">
-      <h2><span class="marker" data-shape="square-filled"></span>Sebastian</h2>
+      <h2><a class="person-link" href="/display/person/seb"><span class="marker" data-shape="square-filled"></span>Sebastian</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -583,7 +544,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="1/3"><div class="progress"><span style="--pct:33"></span></div><span class="count">1/3</span></div>
     </section>
     <section class="column" data-person="4" data-name="Mia">
-      <h2><span class="marker" data-shape="square-empty"></span>Mia</h2>
+      <h2><a class="person-link" href="/display/person/mia"><span class="marker" data-shape="square-empty"></span>Mia</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -619,7 +580,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
   </div>
   <main class="fv-grid" style="--cols:4">
     <section class="column" data-person="1" data-name="Mama">
-      <h2><span class="marker" data-shape="circle-filled"></span>Mama</h2>
+      <h2><a class="person-link" href="/display/person/mama"><span class="marker" data-shape="circle-filled"></span>Mama</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span></span><div class="meta">09:00–10:00</div><div class="title">Dentist</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -631,7 +592,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="3/5"><div class="progress"><span style="--pct:60"></span></div><span class="count">3/5</span></div>
     </section>
     <section class="column" data-person="2" data-name="Papa">
-      <h2><span class="marker" data-shape="circle-empty"></span>Papa</h2>
+      <h2><a class="person-link" href="/display/person/papa"><span class="marker" data-shape="circle-empty"></span>Papa</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">10:00–11:00</div><div class="title">Team meeting</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -640,7 +601,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       
     </section>
     <section class="column" data-person="3" data-name="Sebastian">
-      <h2><span class="marker" data-shape="square-filled"></span>Sebastian</h2>
+      <h2><a class="person-link" href="/display/person/seb"><span class="marker" data-shape="square-filled"></span>Sebastian</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -651,7 +612,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="1/3"><div class="progress"><span style="--pct:33"></span></div><span class="count">1/3</span></div>
     </section>
     <section class="column" data-person="4" data-name="Mia">
-      <h2><span class="marker" data-shape="square-empty"></span>Mia</h2>
+      <h2><a class="person-link" href="/display/person/mia"><span class="marker" data-shape="square-empty"></span>Mia</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -688,7 +649,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
   </div>
   <main class="fv-grid" style="--cols:4">
     <section class="column" data-person="1" data-name="Mama">
-      <h2><span class="marker" data-shape="circle-filled"></span>Mama</h2>
+      <h2><a class="person-link" href="/display/person/mama"><span class="marker" data-shape="circle-filled"></span>Mama</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span></span><div class="meta">09:00–10:00</div><div class="title">Dentist</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -700,7 +661,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="3/5"><div class="progress"><span style="--pct:60"></span></div><span class="count">3/5</span></div>
     </section>
     <section class="column" data-person="2" data-name="Papa">
-      <h2><span class="marker" data-shape="circle-empty"></span>Papa</h2>
+      <h2><a class="person-link" href="/display/person/papa"><span class="marker" data-shape="circle-empty"></span>Papa</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">10:00–11:00</div><div class="title">Team meeting</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -709,7 +670,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       
     </section>
     <section class="column" data-person="3" data-name="Sebastian">
-      <h2><span class="marker" data-shape="square-filled"></span>Sebastian</h2>
+      <h2><a class="person-link" href="/display/person/seb"><span class="marker" data-shape="square-filled"></span>Sebastian</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -720,7 +681,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="1/3"><div class="progress"><span style="--pct:33"></span></div><span class="count">1/3</span></div>
     </section>
     <section class="column" data-person="4" data-name="Mia">
-      <h2><span class="marker" data-shape="square-empty"></span>Mia</h2>
+      <h2><a class="person-link" href="/display/person/mia"><span class="marker" data-shape="square-empty"></span>Mia</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -756,7 +717,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
   </div>
   <main class="fv-grid" style="--cols:4">
     <section class="column" data-person="1" data-name="Mama">
-      <h2><span class="marker" data-shape="circle-filled"></span>Mama</h2>
+      <h2><a class="person-link" href="/display/person/mama"><span class="marker" data-shape="circle-filled"></span>Mama</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span></span><div class="meta">09:00–10:00</div><div class="title">Dentist</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -768,7 +729,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="3/5"><div class="progress"><span style="--pct:60"></span></div><span class="count">3/5</span></div>
     </section>
     <section class="column" data-person="2" data-name="Papa">
-      <h2><span class="marker" data-shape="circle-empty"></span>Papa</h2>
+      <h2><a class="person-link" href="/display/person/papa"><span class="marker" data-shape="circle-empty"></span>Papa</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">10:00–11:00</div><div class="title">Team meeting</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -777,7 +738,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       
     </section>
     <section class="column" data-person="3" data-name="Sebastian">
-      <h2><span class="marker" data-shape="square-filled"></span>Sebastian</h2>
+      <h2><a class="person-link" href="/display/person/seb"><span class="marker" data-shape="square-filled"></span>Sebastian</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -788,7 +749,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="1/3"><div class="progress"><span style="--pct:33"></span></div><span class="count">1/3</span></div>
     </section>
     <section class="column" data-person="4" data-name="Mia">
-      <h2><span class="marker" data-shape="square-empty"></span>Mia</h2>
+      <h2><a class="person-link" href="/display/person/mia"><span class="marker" data-shape="square-empty"></span>Mia</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -824,7 +785,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
   </div>
   <main class="fv-grid" style="--cols:4">
     <section class="column" data-person="1" data-name="Mama">
-      <h2><span class="marker" data-shape="circle-filled"></span>Mama</h2>
+      <h2><a class="person-link" href="/display/person/mama"><span class="marker" data-shape="circle-filled"></span>Mama</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span></span><div class="meta">09:00–10:00</div><div class="title">Dentist</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -836,7 +797,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="3/5"><div class="progress"><span style="--pct:60"></span></div><span class="count">3/5</span></div>
     </section>
     <section class="column" data-person="2" data-name="Papa">
-      <h2><span class="marker" data-shape="circle-empty"></span>Papa</h2>
+      <h2><a class="person-link" href="/display/person/papa"><span class="marker" data-shape="circle-empty"></span>Papa</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">10:00–11:00</div><div class="title">Team meeting</div></div>
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span></span><div class="meta">16:45–17:15</div><div class="title">Pick up Mia</div></div>
@@ -845,7 +806,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       
     </section>
     <section class="column" data-person="3" data-name="Sebastian">
-      <h2><span class="marker" data-shape="square-filled"></span>Sebastian</h2>
+      <h2><a class="person-link" href="/display/person/seb"><span class="marker" data-shape="square-filled"></span>Sebastian</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>
@@ -856,7 +817,7 @@ figure{margin:0 0 28px}figcaption{color:#fff;margin-bottom:6px;font-weight:700}
       <div class="pbar" data-progress="1/3"><div class="progress"><span style="--pct:33"></span></div><span class="count">1/3</span></div>
     </section>
     <section class="column" data-person="4" data-name="Mia">
-      <h2><span class="marker" data-shape="square-empty"></span>Mia</h2>
+      <h2><a class="person-link" href="/display/person/mia"><span class="marker" data-shape="square-empty"></span>Mia</a></h2>
       <div class="events">
         <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:30</div><div class="title">Football</div></div>
         <div class="tomorrow" data-tomorrow>

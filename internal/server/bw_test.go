@@ -108,6 +108,10 @@ func TestBlackAndWhiteRenderingUsesOnlyTheBlackAndWhitePalette(t *testing.T) {
 		}
 	}
 
+	// Person ids are generated and the version hashes them: the golden holds placeholders.
+	page = regexp.MustCompile(`/display/person/[0-9a-f-]{36}`).ReplaceAllString(page, "/display/person/ID")
+	page = regexp.MustCompile(`data-version="[0-9a-f]+"`).ReplaceAllString(page, `data-version="VERSION"`)
+
 	const golden = "testdata/family_bw.html"
 	if os.Getenv("HEJMO_UPDATE_GOLDEN") != "" {
 		if err := os.WriteFile(golden, []byte(page), 0o644); err != nil {

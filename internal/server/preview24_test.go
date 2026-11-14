@@ -69,10 +69,9 @@ func TestWriteDesignPreview24(t *testing.T) {
 		}
 		fmt.Fprintf(&body, `<figure><figcaption>%s (%dx%d)</figcaption><div class="frame" data-theme="%s" style="width:%dpx;height:%dpx">%s</div></figure>`+"\n", caption, w, h, theme, w, h, html)
 	}
-	on, off := build(true), build(false)
-	body.WriteString("<h2>Decision for the product owner: the faded tomorrow block (ADR 0016) in black-and-white</h2><p class=\"note\">The block (from 18:00, display setting \"show tomorrow block\", off by default) is faded to 60 % opacity in every palette. In black-and-white E-Ink that is a mid grey on white; the bold titles stay legible, but the faded tone is dithered on the panel. The frames below show it on (first) and off (second). Please decide: keep the fade in black-and-white, or show the block unfaded with only its \"Tomorrow\" label and divider line setting it apart.</p><div class=\"row\">\n")
+	on := build(true)
+	body.WriteString("<h2>Decided by the product owner: the tomorrow block (ADR 0016) stays faded in black-and-white</h2><p class=\"note\">The block (from 18:00, display setting \"show tomorrow block\", off by default) is faded to 60 % opacity in every palette, black-and-white included.</p><div class=\"row\">\n")
 	frame("Black and white, tomorrow block shown (faded)", "bw", 1024, 768, on)
-	frame("Black and white, tomorrow block off (default)", "bw", 1024, 768, off)
 	body.WriteString("</div><h2>Shapes (people 1 to 6; from the seventh a shape repeats and the name tells people apart). Football has two people, Mia and Sebastian: square filled and square empty</h2><div class=\"legend\">")
 	for i, s := range []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled"} {
 		fmt.Fprintf(&body, `<span data-theme="bw"><span class="marker" data-shape="%s"></span> Person %d</span>`, s, i+1)

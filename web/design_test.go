@@ -399,6 +399,21 @@ func TestFrameNavigationTargetsAreTouchSized(t *testing.T) {
 	}
 }
 
+// 5.6: touch targets of the personal view are at least 44 px: the person link in
+// the family view, the way back and the large checkbox.
+func TestPersonalViewTargetsAreTouchSized(t *testing.T) {
+	css := stylesheet(t)
+	for _, sel := range []string{".fv .person-link", ".pv-back", ".big-check"} {
+		rule := ruleFor(t, css, sel)
+		if !strings.Contains(rule, "min-height: var(--touch-target)") {
+			t.Errorf("%s lacks min-height: var(--touch-target): %s", sel, rule)
+		}
+	}
+	if rule := ruleFor(t, css, ".big-check"); !strings.Contains(rule, "min-width: var(--touch-target)") {
+		t.Errorf(".big-check lacks min-width: var(--touch-target): %s", rule)
+	}
+}
+
 // 5.11: "follow the device" (ADR 0015) is the default: without data-theme the
 // dark palette applies when the device asks for it, with the same values.
 func TestDarkFollowsTheDeviceByDefaultWithTheSameValues(t *testing.T) {

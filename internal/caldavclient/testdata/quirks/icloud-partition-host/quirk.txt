@@ -1,0 +1,1 @@
+iCloud answers discovery on one host and keeps the calendars on a per-account host of the same domain (calendar-home-set is an absolute address).

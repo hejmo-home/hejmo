@@ -1,6 +1,6 @@
 # 0012. Calendar sync
 
-- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md), [0017](0017-web-interface-usability.md)
+- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md), [0017](0017-web-interface-usability.md), [0018](0018-path-to-0-1.md)
 - Date: 14/11/2026
 - Amends: [0003](0003-v1-scope-and-work-packages.md) (work package 4 and the V1.x list)
 
@@ -19,7 +19,7 @@ Work package 4 connects the box to outside calendars (ADR 0007). The founding fa
 
 ### What the box keeps
 
-- Per synced event the box stores the **raw iCalendar data, ETag and remote URL** (new migration `0003_sync.sql`). On write-back it changes only the fields it models and keeps everything else (attendees, `VALARM`, conference links).
+- Per synced event the box stores the **raw iCalendar data, ETag and remote URL** (new migration `202611141702_sync.sql` (formerly `0003_sync.sql`)). On write-back it changes only the fields it models and keeps everything else (attendees, `VALARM`, conference links).
 - The **audience** goes out as `X-HEJMO-AUDIENCE` plus one readable line at the end of the description ("For: Mia, Sebastian", localised). The title stays unchanged. The line is stripped again on import.
 - Import window: the **last 12 months and the whole future**. A series is imported whole if any occurrence falls in the window.
 - Windows time zone names are mapped to IANA zones through the CLDR table (embedded). Floating times and unknown zones use the box's time zone; unknown zones are noted in the sync log.

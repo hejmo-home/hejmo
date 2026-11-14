@@ -1,0 +1,9 @@
+{
+  "server": "http://caldav.icloud.example/",
+  "calendar": "http://caldav.icloud.example/cal/",
+  "list": [
+    {"url": "http://caldav.icloud.example/cal/a.ics", "etag": "ea"},
+    {"url": "http://caldav.icloud.example/cal/b%20b.ics", "etag": "eb"},
+    {"url": "http://caldav.icloud.example/cal/nothing.ics", "etag": ""}
+  ]
+}

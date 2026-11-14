@@ -1,0 +1,4 @@
+caldav.icloud.example PROPFIND / 307 - Location=http://p123-caldav.icloud.example/
+p123-caldav.icloud.example PROPFIND / 207 entry-root.xml
+p123-caldav.icloud.example PROPFIND /123/principal/ 207 entry-principal.xml
+p123-caldav.icloud.example PROPFIND /123/calendars/ 207 home.xml

@@ -64,6 +64,26 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  resources:
+    name: Resources (arm64)
+    needs: test
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build image
+        run: docker build -t hejmo:measure .
+      # ADR 0018: memory, CPU and start time in a container limited like a
+      # Raspberry Pi (1 CPU, 1 GB) with a seeded example household; fails above
+      # ci/resource-thresholds.json.
+      - name: Measure
+        run: go run ./cmd/hejmo-measure -image hejmo:measure -report "$RUNNER_TEMP/resources.md" -json "$RUNNER_TEMP/resources.json"
+      - name: Report
+        if: always()
+        run: test ! -f "$RUNNER_TEMP/resources.md" || cat "$RUNNER_TEMP/resources.md" >> "$GITHUB_STEP_SUMMARY"
+
   dco:
     name: DCO sign-off
     if: github.event_name == 'pull_request'

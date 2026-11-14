@@ -1,0 +1,111 @@
+# Hejmo
+
+Hejmo organizes one family's everyday life (calendar, tasks, lists, meals) on a box in their home and shows it on wall displays.
+
+## Home and people
+
+**Box**:
+The device in a family's home that holds all data and serves the displays, web UI and API. One box serves one household.
+_Avoid_: server, hub, instance
+
+**Household**:
+The family living together that one box serves. A person can later belong to more than one household (two-home model).
+_Avoid_: family (as a technical term), tenant, home
+
+**Person**:
+A member of a household, adult or child, with a colour, a black-and-white marker shape and a symbol.
+_Avoid_: user, profile, member (alone)
+
+**Membership**:
+A person's belonging to a household, carrying their role and position in the family view.
+_Avoid_: household member record
+
+**Role**:
+What a person may do in a household: **parent** (everything) or **child** (read, tick off tasks and list items).
+_Avoid_: permission level, user type
+
+**Account**:
+The sign-in credentials of an adult person: username, password and one-time codes. Children have no account.
+_Avoid_: login, user
+
+**Parent PIN**:
+A short numeric code that unlocks management on a display. It is not a way to sign in.
+_Avoid_: display password, admin PIN
+
+**Subgroup**:
+A named set of people within a household, such as "School children", used to target calendars and events.
+_Avoid_: group (alone), team, tag
+
+**Audience**:
+The people and subgroups an event or a calendar is meant for. No audience means the whole household.
+_Avoid_: participants, attendees, visibility
+
+**Setup wizard**:
+The first-run steps on a new box: home location, first parent account, parent PIN, one-time code confirmation.
+_Avoid_: onboarding, installer
+
+**Home region**:
+The German state, Austrian state or Swiss canton of the household, which decides its public holidays.
+_Avoid_: location, country, Bundesland (in code)
+
+## Calendar
+
+**Calendar**:
+A source of events: the household's own family calendar, or one synced from outside (ICS, CalDAV, Google).
+_Avoid_: feed, account, source (alone)
+
+**Event**:
+Something planned at a time: a single event, or the master of a series.
+_Avoid_: appointment, entry, termin
+
+**Series**:
+An event that repeats by a rule, together with its changed and cancelled occurrences.
+_Avoid_: recurring event, repeat
+
+**Occurrence**:
+One concrete appearance of an event in time. A single event has exactly one; a series has many.
+_Avoid_: instance, date
+
+**Changed occurrence**:
+An occurrence of a series that differs from the rule (moved, retitled), stored as its own event linked to the series.
+_Avoid_: exception, override (in prose)
+
+**Cancelled occurrence**:
+An occurrence of a series that does not take place.
+_Avoid_: exdate (in prose), skipped event
+
+**Edit scope**:
+Which occurrences of a series a change or deletion touches: **this**, **this and following**, or **all**.
+_Avoid_: scope (alone; clashes with token scope), mode
+
+**Public holiday**:
+A statutory day off in the home region. A **partial holiday** applies in most, but not all, municipalities of the region.
+_Avoid_: feast day, bank holiday
+
+## Views and devices
+
+**Display**:
+A paired wall screen (usually an E-Ink tablet) showing the household's day.
+_Avoid_: screen, tablet, device (alone), dashboard
+
+**Family view**:
+The display's default view: one column per person, the whole household's day.
+_Avoid_: home screen, overview
+
+**Personal view**:
+One person's view on a display, opened by tapping them; returns to the family view after 30 seconds without interaction.
+_Avoid_: profile view, child view (that is a later, separate view)
+
+**Kiosk adapter**:
+The box's connection to the kiosk app on a display that switches its front light and sleep mode.
+_Avoid_: display driver, device control
+
+## Access
+
+**API token**:
+A secret that lets software act on behalf of a person through the API, limited by its token scopes.
+_Avoid_: API key, access key
+
+**Token scope**:
+A right granted to an API token: `read`, `write`, a resource (e.g. `lists`) or a resource with an action (e.g. `events:read`).
+_Avoid_: scope (alone; clashes with edit scope), permission

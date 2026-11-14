@@ -216,3 +216,32 @@ func TestMovingToAnUnlistedZoneAddsItsDefinition(t *testing.T) {
 		t.Fatalf("got:\n%s", got)
 	}
 }
+
+func TestMovingAnEventWithoutSequenceAddsOneButARenameDoesNot(t *testing.T) {
+	raw := strings.Replace(iCloudEvent, "SEQUENCE:2\r\n", "", 1)
+	moved := objectOf(t, raw)
+	moved.Master.Start = moved.Master.Start.Add(24 * time.Hour)
+	moved.Master.End = moved.Master.End.Add(24 * time.Hour)
+	if got := patch(t, raw, moved); !strings.Contains(got, "SEQUENCE:1\r\n") {
+		t.Errorf("moved event has no SEQUENCE:1:\n%s", got)
+	}
+	renamed := objectOf(t, raw)
+	renamed.Master.Title = "Swimming lesson"
+	if got := patch(t, raw, renamed); strings.Contains(got, "SEQUENCE") {
+		t.Errorf("renamed event got a SEQUENCE:\n%s", got)
+	}
+}
+
+func TestLocalTimeIsWrittenInUTCNotAsTZIDLocal(t *testing.T) {
+	o := objectOf(t, iCloudEvent)
+	o.Master.Start = time.Date(2026, 11, 20, 17, 0, 0, 0, time.Local)
+	o.Master.End = time.Date(2026, 11, 20, 18, 0, 0, 0, time.Local)
+	got := patch(t, iCloudEvent, o)
+	if strings.Contains(got, "TZID=Local") || strings.Contains(got, "TZID:Local") {
+		t.Fatalf("Local zone written:\n%s", got)
+	}
+	want := "DTSTART:" + o.Master.Start.UTC().Format("20060102T150405Z")
+	if !strings.Contains(got, want) {
+		t.Fatalf("missing %q in\n%s", want, got)
+	}
+}

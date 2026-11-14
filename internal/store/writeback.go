@@ -30,6 +30,10 @@ func (db *DB) SetCalendarReadOnly(householdID, calendarID string, readOnly bool)
 	return expectOne(db.sql.Exec(`UPDATE calendars SET read_only = ?, updated_at = ? WHERE id = ? AND household_id = ?`, readOnly, now(), calendarID, householdID))
 }
 
+// errReadOnly stops a box change to a calendar that was switched to read-only
+// after the caller checked, so no change is stored that could never be queued.
+var errReadOnly = fmt.Errorf("%w: this is a read-only calendar: its events are changed at their source", ErrInvalid)
+
 // pushMarker records, inside the transaction of a box change, which remote
 // objects the change touches, so the change is written to the server later
 // even if the box is offline now. Only two-way CalDAV calendars qualify.
@@ -53,13 +57,17 @@ func (m *pushMarker) add(calendarID, address string) {
 // old marks the object an existing event belongs to.
 func (m *pushMarker) old(eventID string) error {
 	var cal, address string
-	err := m.tx.QueryRow(`SELECT e.calendar_id, e.remote_url FROM events e JOIN calendars c ON c.id = e.calendar_id
-		WHERE e.id = ? AND e.remote_url IS NOT NULL AND c.kind = 'caldav' AND c.read_only = 0`, eventID).Scan(&cal, &address)
+	var readOnly bool
+	err := m.tx.QueryRow(`SELECT e.calendar_id, e.remote_url, c.read_only FROM events e JOIN calendars c ON c.id = e.calendar_id
+		WHERE e.id = ? AND e.remote_url IS NOT NULL AND c.kind = 'caldav'`, eventID).Scan(&cal, &address, &readOnly)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
 	if err != nil {
 		return err
+	}
+	if readOnly {
+		return errReadOnly
 	}
 	m.add(cal, address)
 	return nil
@@ -74,12 +82,16 @@ type eventRow struct {
 
 func (m *pushMarker) row(id string) (eventRow, bool, error) {
 	r := eventRow{id: id}
-	err := m.tx.QueryRow(`SELECT e.calendar_id, c.remote_url, e.series_id, e.recurrence_id, e.remote_url, e.remote_key
+	var readOnly bool
+	err := m.tx.QueryRow(`SELECT e.calendar_id, c.remote_url, e.series_id, e.recurrence_id, e.remote_url, e.remote_key, c.read_only
 		FROM events e JOIN calendars c ON c.id = e.calendar_id
-		WHERE e.id = ? AND c.kind = 'caldav' AND c.read_only = 0 AND c.remote_url IS NOT NULL`, id).
-		Scan(&r.calendarID, &r.base, &r.seriesID, &r.recurrenceID, &r.remoteURL, &r.remoteKey)
+		WHERE e.id = ? AND c.kind = 'caldav' AND c.remote_url IS NOT NULL`, id).
+		Scan(&r.calendarID, &r.base, &r.seriesID, &r.recurrenceID, &r.remoteURL, &r.remoteKey, &readOnly)
 	if errors.Is(err, sql.ErrNoRows) {
 		return r, false, nil
+	}
+	if err == nil && readOnly {
+		return r, false, errReadOnly
 	}
 	return r, err == nil, err
 }

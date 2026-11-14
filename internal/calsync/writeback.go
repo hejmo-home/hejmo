@@ -370,15 +370,6 @@ func lastModified(raw []byte) time.Time {
 	return latest
 }
 
-func titleOf(c store.ObjectContent) string {
-	for _, e := range c.Events {
-		if e.SeriesID == "" {
-			return e.Title
-		}
-	}
-	return ""
-}
-
 // resolvePut settles a write the server refused because its version is not the
 // one the box knew.
 func (s *Service) resolvePut(ctx context.Context, cal store.SyncedCalendar, h store.Household, remote Remote, po store.PendingObject, obj caldav.Object, boxText string, opts caldav.PatchOptions) error {
@@ -437,7 +428,7 @@ func (s *Service) resolveDelete(ctx context.Context, cal store.SyncedCalendar, h
 	if theirs.Err != nil {
 		return fmt.Errorf("the server's version of %s cannot be read, so the conflict cannot be settled: %w", po.URL, theirs.Err)
 	}
-	title := titleFromRaw(po.Raw, theirs.Data)
+	title := titleFromRaw([]byte(po.Raw), theirs.Data)
 	if boxWins(theirs.Data, po.ChangedAt) {
 		if err := remote.Delete(ctx, po.URL, theirs.ETag); err != nil && !caldavclient.IsNotFound(err) {
 			return err
@@ -451,16 +442,9 @@ func (s *Service) resolveDelete(ctx context.Context, cal store.SyncedCalendar, h
 }
 
 // titleFromRaw names an object for the log from the first text that has a title.
-func titleFromRaw(texts ...any) string {
+func titleFromRaw(texts ...[]byte) string {
 	for _, t := range texts {
-		var b []byte
-		switch v := t.(type) {
-		case string:
-			b = []byte(v)
-		case []byte:
-			b = v
-		}
-		if res, err := icsfeed.Parse(b, icsfeed.Options{Now: time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)}); err == nil {
+		if res, err := icsfeed.Parse(t, icsfeed.Options{Now: time.Date(1900, 1, 1, 0, 0, 0, 0, time.UTC)}); err == nil {
 			for _, it := range res.Items {
 				if it.SeriesKey == "" && it.Event.Title != "" {
 					return it.Event.Title

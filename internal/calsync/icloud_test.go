@@ -163,7 +163,7 @@ func TestWriteBackToAnICloudShapedServerKeepsRepeatedLinesAndNeedsNoETagInTheAns
 	if pend, _ := db.PendingObjects(cal.ID); len(pend) != 0 {
 		t.Fatalf("pending = %+v", pend)
 	}
-	known, _ := db.RemoteObjects(cal.ID)
+	known, _ := db.RemoteObjects(cal.ID, false)
 	if known[srv.srv.URL+"/cal/old.ics"] != strings.Trim(etagOf(got), `"`) {
 		t.Fatalf("known = %v, want the server's ETag of the new text", known)
 	}

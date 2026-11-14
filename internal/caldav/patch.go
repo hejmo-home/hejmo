@@ -212,7 +212,7 @@ func (p *patcher) addZones() {
 
 // patchBlock rewrites the lines of one VEVENT block for the fields that differ.
 func (p *patcher) patchBlock(block []entry, old, want calendar.Event) []entry {
-	var changed bool
+	var changed, significant bool
 	set := func(name string, lines ...string) {
 		block = setProp(block, name, lines)
 		changed = true
@@ -249,6 +249,7 @@ func (p *patcher) patchBlock(block []entry, old, want calendar.Event) []entry {
 	}
 	sameTimes := old.AllDay == want.AllDay && old.Start.Equal(want.Start) && old.End.Equal(want.End)
 	if !sameTimes {
+		significant = true
 		set(ical.PropDateTimeStart, dateLine(ical.PropDateTimeStart, want.Start, want.AllDay))
 		set(ical.PropDuration)
 		set(ical.PropDateTimeEnd, dateLine(ical.PropDateTimeEnd, want.End, want.AllDay))
@@ -256,6 +257,7 @@ func (p *patcher) patchBlock(block []entry, old, want calendar.Event) []entry {
 	}
 	if want.SeriesID == "" && want.RRule != "" || old.RRule != "" {
 		if old.RRule != want.RRule {
+			significant = true
 			if want.RRule == "" {
 				set(ical.PropRecurrenceRule)
 			} else {
@@ -277,7 +279,7 @@ func (p *patcher) patchBlock(block []entry, old, want calendar.Event) []entry {
 	stamp := p.opts.Now.UTC().Format("20060102T150405Z")
 	block = setProp(block, ical.PropDateTimeStamp, []string{formatLine(ical.PropDateTimeStamp, "", stamp)})
 	block = setProp(block, ical.PropLastModified, []string{formatLine(ical.PropLastModified, "", stamp)})
-	return bumpSequence(block)
+	return bumpSequence(block, significant)
 }
 
 func sortedCopy(s []string) []string {
@@ -544,7 +546,9 @@ func setProp(block []entry, name string, lines []string) []entry {
 	return out
 }
 
-func bumpSequence(block []entry) []entry {
+// bumpSequence raises SEQUENCE; a significant change (start, end or RRULE) of
+// an object without one adds SEQUENCE:1, as RFC 5545 expects.
+func bumpSequence(block []entry, significant bool) []entry {
 	for i, e := range block {
 		if e.depth == 2 && e.name == "SEQUENCE" {
 			var n int
@@ -554,6 +558,9 @@ func bumpSequence(block []entry) []entry {
 			}
 			return block
 		}
+	}
+	if significant {
+		return setProp(block, "SEQUENCE", []string{formatLine("SEQUENCE", "", "1")})
 	}
 	return block
 }
@@ -576,8 +583,9 @@ func dateLine(name string, t time.Time, allDay bool) string {
 	switch {
 	case allDay:
 		return formatLine(name, ";VALUE=DATE", t.Format("20060102"))
-	case t.Location() == time.UTC:
-		return formatLine(name, "", t.Format("20060102T150405Z"))
+	case t.Location() == time.UTC || t.Location() == time.Local:
+		// Local is no zone a server knows; write the instant in UTC.
+		return formatLine(name, "", t.UTC().Format("20060102T150405Z"))
 	}
 	return formatLine(name, ";TZID="+t.Location().String(), t.Format("20060102T150405"))
 }

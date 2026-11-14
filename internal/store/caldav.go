@@ -177,13 +177,16 @@ type ObjectChange struct {
 	URL, ETag, Raw string
 	Items          []SyncItem
 	KeepEvents     bool
+	// DropPending also drops the box's queued changes to the object: the
+	// outside version wins (a read-only calendar has nothing to push them to).
+	DropPending bool
 }
 
 // RemoteObjects returns the ETag of every remote object the box holds for a
 // calendar, by address. Objects with changes waiting to be pushed are left
-// out (see PendingObjects).
-func (db *DB) RemoteObjects(calendarID string) (map[string]string, error) {
-	rows, err := db.sql.Query(`SELECT url, etag FROM remote_objects WHERE calendar_id = ? AND pending = 0`, calendarID)
+// out (see PendingObjects) unless withPending is set.
+func (db *DB) RemoteObjects(calendarID string, withPending bool) (map[string]string, error) {
+	rows, err := db.sql.Query(`SELECT url, etag FROM remote_objects WHERE calendar_id = ? AND (pending = 0 OR ?)`, calendarID, withPending)
 	if err != nil {
 		return nil, err
 	}
@@ -232,7 +235,8 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 		}
 		// An unreadable object keeps the last good text, not the junk.
 		if _, err := tx.Exec(`INSERT INTO remote_objects (calendar_id, url, etag, raw) VALUES (?, ?, ?, ?)
-			ON CONFLICT (calendar_id, url) DO UPDATE SET etag = excluded.etag, raw = CASE WHEN ? THEN raw ELSE excluded.raw END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents); err != nil {
+			ON CONFLICT (calendar_id, url) DO UPDATE SET etag = excluded.etag, raw = CASE WHEN ? THEN raw ELSE excluded.raw END,
+			pending = CASE WHEN ? THEN 0 ELSE pending END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents, o.DropPending); err != nil {
 			return err
 		}
 	}

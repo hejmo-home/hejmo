@@ -118,6 +118,8 @@ func run(cfg config, logger *slog.Logger) error {
 		syncer.Run(ctx, time.Minute)
 	}()
 	defer func() { stop(); <-schedulerDone }()
+	// Background pushes of box changes finish before the database closes.
+	defer syncer.Wait()
 
 	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer})
 

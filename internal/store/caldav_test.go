@@ -118,7 +118,7 @@ func TestObjectSyncAddsChangesAndDeletesPerObject(t *testing.T) {
 	}, nil, nil, t0, next); err != nil {
 		t.Fatal(err)
 	}
-	known, err := f.db.RemoteObjects(f.a.ID)
+	known, err := f.db.RemoteObjects(f.a.ID, false)
 	if err != nil || len(known) != 2 || known[u1] != "e1" || known[u2] != "e2" {
 		t.Fatalf("RemoteObjects = %v, %v", known, err)
 	}
@@ -142,7 +142,7 @@ func TestObjectSyncAddsChangesAndDeletesPerObject(t *testing.T) {
 	if after[0].ID != id["Swimming"] {
 		t.Fatal("event id changed across syncs")
 	}
-	known, _ = f.db.RemoteObjects(f.a.ID)
+	known, _ = f.db.RemoteObjects(f.a.ID, false)
 	if len(known) != 1 || known[u1] != "e1b" {
 		t.Fatalf("RemoteObjects after = %v", known)
 	}
@@ -171,7 +171,7 @@ func TestUnreadableObjectKeepsItsEventsButRemembersItsETag(t *testing.T) {
 	if got := titles(t, f2(f), f.a.ID); len(got) != 1 || got[0] != "Swimming" {
 		t.Fatalf("events = %v, want the last good Swimming", got)
 	}
-	known, _ := f.db.RemoteObjects(f.a.ID)
+	known, _ := f.db.RemoteObjects(f.a.ID, false)
 	if len(known) != 2 || known[u1] != "e2" || known[u2] != "n1" {
 		t.Fatalf("RemoteObjects = %v", known)
 	}
@@ -224,7 +224,7 @@ func TestRemovingAConnectionRemovesItsCalendarsEventsAndNothingElse(t *testing.T
 	if _, err := f.db.SyncedCalendar(f.h.ID, f.a.ID); err == nil {
 		t.Fatal("calendar survived its connection")
 	}
-	if left, _ := f.db.RemoteObjects(f.a.ID); len(left) != 0 {
+	if left, _ := f.db.RemoteObjects(f.a.ID, false); len(left) != 0 {
 		t.Fatalf("remote objects survived: %v", left)
 	}
 	if conns, _ := f.db.Connections(f.h.ID); len(conns) != 0 {

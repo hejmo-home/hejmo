@@ -341,3 +341,85 @@ func TestAReadOnlyCalendarIsNeverWrittenTo(t *testing.T) {
 		t.Fatalf("outside = %s", got)
 	}
 }
+
+func TestRefusedWriteIsLoggedKeptQueuedAndTheOtherObjectsStillImport(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swimming", "20260101T080000Z"))
+	fx.srv.Put(t, fx.remote, "piano.ics", caldavtest.Event("piano@test", "Piano", "20261121T150000", "20261121T160000"))
+	fx.syncAfter(t, 0)
+
+	e := fx.boxEvent(t, "Swimming")
+	e.Title = "Swim on the box"
+	if err := fx.db.ApplyChange(fx.h.ID, calendar.Change{Update: []calendar.Event{e}}); err != nil {
+		t.Fatal(err)
+	}
+	fx.tamper.RefuseWrites(403)
+	fx.srv.Put(t, fx.remote, "piano.ics", caldavtest.Event("piano@test", "Piano lesson", "20261121T150000", "20261121T160000"))
+	fx.clock = fx.clock.Add(5 * time.Minute)
+	if err := fx.svc.Sync(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+		t.Fatal("sync with a refused write succeeded")
+	}
+	log, _ := fx.db.SyncLog(fx.h.ID, 10)
+	if len(log) == 0 || log[0].Kind != "failure" || log[0].Message.Key != "sync.fail.write_refused" {
+		t.Fatalf("log = %+v, want sync.fail.write_refused", log)
+	}
+	if got := fx.titles(t); len(got) != 2 || got[0] != "Swim on the box" || got[1] != "Piano lesson" {
+		t.Fatalf("events = %v, want the other object imported and the box edit kept", got)
+	}
+	if pend, _ := fx.db.PendingObjects(fx.cal.ID); len(pend) != 1 {
+		t.Fatalf("pending = %+v, want the change kept queued", pend)
+	}
+	cal, err := fx.db.SyncedCalendar(fx.h.ID, fx.cal.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if cal.Sync.Failures != 1 || !cal.Sync.NextAttempt.After(fx.clock) {
+		t.Fatalf("sync state = %+v, want one failure and a back-off", cal.Sync)
+	}
+
+	// The server accepts writes again: the change goes out on a later sync.
+	fx.tamper.RefuseWrites(0)
+	fx.syncAfter(t, 24*time.Hour)
+	if got := fx.srv.Get(t, fx.remote+"swim.ics"); !strings.Contains(got, "SUMMARY:Swim on the box") {
+		t.Fatalf("change not pushed after the server accepted writes:\n%s", got)
+	}
+}
+
+func TestReadOnlyCalendarTakesOutsideChangesOverQueuedBoxChanges(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swimming", "20260101T080000Z"))
+	fx.srv.Put(t, fx.remote, "piano.ics", caldavtest.Event("piano@test", "Piano", "20261121T150000", "20261121T160000"))
+	fx.srv.Put(t, fx.remote, "judo.ics", caldavtest.Event("judo@test", "Judo", "20261122T150000", "20261122T160000"))
+	fx.syncAfter(t, 0)
+
+	// The server refuses writes, so these box changes stay queued.
+	fx.tamper.RefuseWrites(403)
+	for title, to := range map[string]string{"Swimming": "Swim on the box", "Piano": "Piano on the box", "Judo": "Judo on the box"} {
+		e := fx.boxEvent(t, title)
+		e.Title = to
+		if err := fx.db.ApplyChange(fx.h.ID, calendar.Change{Update: []calendar.Event{e}}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if pend, _ := fx.db.PendingObjects(fx.cal.ID); len(pend) != 3 {
+		t.Fatalf("pending = %+v", pend)
+	}
+
+	// The recovery the log message suggests: read-only; outside is the truth.
+	if err := fx.db.SetCalendarReadOnly(fx.h.ID, fx.cal.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swim outside", "20260301T080000Z"))
+	fx.srv.Delete(t, fx.remote+"piano.ics")
+	// judo.ics is unchanged outside: the box version must still go.
+	fx.syncAfter(t, 5*time.Minute)
+	fx.syncAfter(t, 5*time.Minute)
+
+	got := fx.titles(t)
+	if len(got) != 2 || got[0] != "Swim outside" || got[1] != "Judo" {
+		t.Fatalf("events = %v, want the outside versions (Swim outside, Judo), Piano gone", got)
+	}
+	if pend, _ := fx.db.PendingObjects(fx.cal.ID); len(pend) != 0 {
+		t.Fatalf("pending = %+v, want the queued changes dropped", pend)
+	}
+}

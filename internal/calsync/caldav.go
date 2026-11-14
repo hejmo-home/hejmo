@@ -81,16 +81,24 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
 	}
-	waiting := map[string]bool{}
+	// Two-way: objects with queued box changes are left alone by the import.
+	// Read-only: nothing will ever push them, so the outside version wins and
+	// the queued changes are dropped.
+	waiting := map[string]bool{} // skipped by the import
+	discard := map[string]bool{} // imported over the queued changes
 	for _, p := range pending {
-		waiting[caldavclient.AddressKey(p.URL)] = true
+		if cal.ReadOnly {
+			discard[caldavclient.AddressKey(p.URL)] = true
+		} else {
+			waiting[caldavclient.AddressKey(p.URL)] = true
+		}
 	}
 
 	listed, err := remote.List(ctx, cal.URL)
 	if err != nil {
 		return failRemote(err)
 	}
-	known, err := s.db.RemoteObjects(cal.ID)
+	known, err := s.db.RemoteObjects(cal.ID, cal.ReadOnly)
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
 	}
@@ -114,7 +122,7 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 		present[addr] = true
 		etags[addr] = o.ETag
 		byPath[key] = addr
-		if !isKnown || known[addr] != o.ETag || o.ETag == "" {
+		if !isKnown || known[addr] != o.ETag || o.ETag == "" || discard[key] {
 			toFetch = append(toFetch, o.URL)
 		}
 	}
@@ -144,7 +152,7 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 		if !ok {
 			continue // not asked for
 		}
-		change := store.ObjectChange{URL: addr, ETag: etags[addr], Raw: string(o.Data)}
+		change := store.ObjectChange{URL: addr, ETag: etags[addr], Raw: string(o.Data), DropPending: cal.ReadOnly}
 		var res icsfeed.Result
 		err := o.Err
 		if err == nil {

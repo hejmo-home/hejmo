@@ -72,7 +72,7 @@ func TestEditingASyncedEventQueuesItsObjectForPushing(t *testing.T) {
 	if err != nil || len(pend) != 1 || pend[0].URL != u || pend[0].ETag != "e1" || pend[0].Rev != 1 || pend[0].Raw == "" || pend[0].ChangedAt.IsZero() {
 		t.Fatalf("pending = %+v, %v", pend, err)
 	}
-	if known, _ := f.db.RemoteObjects(f.a.ID); len(known) != 0 {
+	if known, _ := f.db.RemoteObjects(f.a.ID, false); len(known) != 0 {
 		t.Fatalf("a pending object is still listed as known: %v", known)
 	}
 	obj, err := f.db.ObjectEvents(f.h.ID, f.a.ID, u)
@@ -187,7 +187,7 @@ func TestFinishingAPushClearsOnlyWhatWasPushed(t *testing.T) {
 	if pend, _ = f.db.PendingObjects(f.a.ID); len(pend) != 0 {
 		t.Fatalf("pending = %+v", pend)
 	}
-	if known, _ := f.db.RemoteObjects(f.a.ID); known[u] != "e3" {
+	if known, _ := f.db.RemoteObjects(f.a.ID, false); known[u] != "e3" {
 		t.Fatalf("known = %v", known)
 	}
 }
@@ -203,7 +203,7 @@ func TestFinishingADeletePushForgetsTheObject(t *testing.T) {
 	if pend, _ = f.db.PendingObjects(f.a.ID); len(pend) != 0 {
 		t.Fatalf("pending = %+v", pend)
 	}
-	if known, _ := f.db.RemoteObjects(f.a.ID); len(known) != 0 {
+	if known, _ := f.db.RemoteObjects(f.a.ID, false); len(known) != 0 {
 		t.Fatalf("known = %v", known)
 	}
 }
@@ -253,3 +253,22 @@ func TestConflictLogEntriesAreKeptForThirtyDays(t *testing.T) {
 }
 
 func msg(key string, kv ...string) i18n.Message { return i18n.Msg(key, kv...) }
+
+func TestChangeToACalendarSwitchedToReadOnlyIsRefusedNotStoredUnqueued(t *testing.T) {
+	f := newDAVFixture(t)
+	imported(t, f, f.a, "swim.ics", "swim@x", "Swimming")
+	e := eventOf(t, f, "Swimming")
+	if err := f.db.SetCalendarReadOnly(f.h.ID, f.a.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	e.Title = "Changed"
+	if err := f.db.ApplyChange(f.h.ID, calendar.Change{Update: []calendar.Event{e}}); !errors.Is(err, store.ErrInvalid) {
+		t.Fatalf("ApplyChange err = %v, want ErrInvalid", err)
+	}
+	if _, err := f.db.CreateEvent(f.h.ID, calendar.Event{CalendarID: f.a.ID, Title: "New", Start: e.Start, End: e.End}); !errors.Is(err, store.ErrInvalid) {
+		t.Fatalf("CreateEvent err = %v, want ErrInvalid", err)
+	}
+	if got := eventOf(t, f, "Swimming"); got.Title != "Swimming" {
+		t.Fatalf("the refused change was stored: %q", got.Title)
+	}
+}

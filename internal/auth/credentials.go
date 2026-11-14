@@ -44,15 +44,13 @@ func HashPassword(password string) (string, error) {
 // VerifyPassword checks password against an Argon2id PHC string.
 func VerifyPassword(hash, password string) bool { return verifySecret(hash, password) }
 
-func hashSecret(secret string) string { return hashSecretWith(secret, argonTime, argonMemory) }
-
-func hashSecretWith(secret string, passes, memory uint32) string {
+func hashSecret(secret string) string {
 	salt := make([]byte, 16)
 	_, _ = rand.Read(salt)
-	key := argon2.IDKey([]byte(secret), salt, passes, memory, argonThreads, argonKeyLen)
+	key := argon2.IDKey([]byte(secret), salt, argonTime, argonMemory, argonThreads, argonKeyLen)
 	b64 := base64.RawStdEncoding
 	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version, memory, passes, argonThreads, b64.EncodeToString(salt), b64.EncodeToString(key))
+		argon2.Version, argonMemory, argonTime, argonThreads, b64.EncodeToString(salt), b64.EncodeToString(key))
 }
 
 func verifySecret(hash, secret string) bool {
@@ -213,19 +211,8 @@ func normalizeRecoveryCode(code string) string {
 	}, code)
 }
 
-// Recovery codes are random with about 50 bit, not chosen by a person, so they
-// need far less stretching than a password. The lighter setting keeps the
-// ten hashes made at setup (and the ten checks at sign-in) quick on a Pi.
-const (
-	recoveryArgonMemory = 4 * 1024
-	recoveryArgonTime   = 1
-)
-
-// HashRecoveryCode hashes a recovery code with Argon2id, like a password but
-// with lighter parameters (see above). The parameters are stored in the hash.
-func HashRecoveryCode(code string) string {
-	return hashSecretWith(normalizeRecoveryCode(code), recoveryArgonTime, recoveryArgonMemory)
-}
+// HashRecoveryCode hashes a recovery code with Argon2id, like a password.
+func HashRecoveryCode(code string) string { return hashSecret(normalizeRecoveryCode(code)) }
 
 // VerifyRecoveryCode checks a typed code against a stored hash.
 func VerifyRecoveryCode(hash, code string) bool {

@@ -82,7 +82,7 @@ func (s *Service) PushSoon(householdID, calendarID string) {
 		defer s.pushes.Done()
 		ctx, cancel := context.WithTimeout(context.Background(), pushTimeout)
 		defer cancel()
-		if err := s.Push(ctx, householdID, calendarID); err != nil {
+		if err := s.Push(ctx, householdID, calendarID); err != nil && !errors.Is(err, store.ErrNotFound) {
 			s.logger.Warn("calendar push failed", "calendar", calendarID, "err", err)
 		}
 	}()

@@ -259,19 +259,30 @@ func (s *server) apiSyncCalendar(w http.ResponseWriter, r *http.Request, p princ
 
 func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
-		Shared *bool `json:"share_through_box"`
+		Shared   *bool `json:"share_through_box"`
+		ReadOnly *bool `json:"read_only"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	if in.Shared == nil {
-		writeError(w, http.StatusUnprocessableEntity, "share_through_box is required")
+	if in.Shared == nil && in.ReadOnly == nil {
+		writeError(w, http.StatusUnprocessableEntity, "share_through_box or read_only is required")
 		return
 	}
 	id := r.PathValue("id")
-	if s.storeError(w, "share calendar", s.db.SetCalendarShared(p.household.ID, id, *in.Shared)) {
-		return
+	if in.Shared != nil {
+		if s.storeError(w, "share calendar", s.db.SetCalendarShared(p.household.ID, id, *in.Shared)) {
+			return
+		}
+	}
+	if in.ReadOnly != nil {
+		if s.storeError(w, "switch calendar", s.db.SetCalendarReadOnly(p.household.ID, id, *in.ReadOnly)) {
+			return
+		}
+		if !*in.ReadOnly {
+			s.sync.PushSoon(p.household.ID, id) // changes queued before the switch
+		}
 	}
 	c, err := s.db.Calendar(p.household.ID, id)
 	if err != nil {
@@ -293,6 +304,7 @@ func (s *server) apiDeleteCalendar(w http.ResponseWriter, r *http.Request, p pri
 }
 
 type syncLogJSON struct {
+	Detail       string `json:"detail,omitempty"`
 	ID           string `json:"id"`
 	CalendarID   string `json:"calendar_id"`
 	CalendarName string `json:"calendar_name"`
@@ -309,7 +321,7 @@ func (s *server) apiSyncLog(w http.ResponseWriter, r *http.Request, p principal)
 	}
 	out := make([]syncLogJSON, 0, len(entries))
 	for _, e := range entries {
-		out = append(out, syncLogJSON{e.ID, e.CalendarID, e.CalendarName, e.At.In(p.location()).Format(time.RFC3339), e.Kind, s.say(r, e.Message)})
+		out = append(out, syncLogJSON{e.Detail, e.ID, e.CalendarID, e.CalendarName, e.At.In(p.location()).Format(time.RFC3339), e.Kind, s.say(r, e.Message)})
 	}
 	writeJSON(w, http.StatusOK, out)
 }

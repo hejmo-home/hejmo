@@ -59,6 +59,7 @@ type calendarView struct {
 	ID, Name, Color, Audience, LastSuccess, LastError string
 	Stale                                             bool
 	IntervalMinutes                                   int
+	TwoWay, Switchable                                bool // CalDAV calendars: two-way now, or read-only and can be made two-way
 }
 
 // calendarGroup is one heading of the subscribed calendars: a person, or the
@@ -68,7 +69,7 @@ type calendarGroup struct {
 	Calendars   []calendarView
 }
 
-type logView struct{ At, Calendar, Kind, Message string }
+type logView struct{ At, Calendar, Kind, Message, Detail string }
 
 type choice struct{ ID, Name string }
 
@@ -119,7 +120,8 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	byPerson := map[string][]calendarView{}
 	for _, c := range synced {
 		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
-			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes}
+			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes,
+			TwoWay: c.Kind == "caldav" && !c.ReadOnly, Switchable: c.Kind == "caldav" && c.ReadOnly}
 		for _, id := range append(append([]string{}, c.Audience.People...), c.Audience.Groups...) {
 			if v.Audience != "" {
 				v.Audience += ", "
@@ -178,7 +180,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	var log []logView
 	for _, e := range entries {
-		log = append(log, logView{at(e.At), e.CalendarName, e.Kind, s.say(r, e.Message)})
+		log = append(log, logView{at(e.At), e.CalendarName, e.Kind, s.say(r, e.Message), e.Detail})
 	}
 	data := map[string]any{
 		"Person": p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
@@ -249,6 +251,32 @@ func (s *server) handleCalendarDelete(w http.ResponseWriter, r *http.Request) {
 	} else if err != nil {
 		s.fail(w, "delete calendar", err)
 		return
+	}
+	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
+}
+
+// handleCalendarReadOnly switches a CalDAV calendar between two-way and read-only.
+func (s *server) handleCalendarReadOnly(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	_ = r.ParseForm()
+	readOnly := r.PostFormValue("read_only") == "1"
+	err := s.db.SetCalendarReadOnly(p.household.ID, r.PathValue("id"), readOnly)
+	switch {
+	case errors.Is(err, store.ErrNotFound):
+		http.NotFound(w, r)
+		return
+	case errors.Is(err, store.ErrInvalid):
+		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		return
+	case err != nil:
+		s.fail(w, "switch calendar", err)
+		return
+	}
+	if !readOnly {
+		s.sync.PushSoon(p.household.ID, r.PathValue("id"))
 	}
 	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
 }

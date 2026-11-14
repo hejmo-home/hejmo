@@ -129,7 +129,11 @@ func TestAudienceGoesOutAsPropertyAndReadableLineAndComesBackOnImport(t *testing
 	fx.edit(t, fx.boxEvent(t, "Swimming"), func(e *calendar.Event) { e.People = []string{mia.ID, seb.ID} })
 
 	got := strings.ReplaceAll(fx.srv.Get(t, obj), "\r\n ", "")
-	if !strings.Contains(got, "X-HEJMO-AUDIENCE:person:"+mia.ID+"|person:"+seb.ID) || !strings.Contains(got, "Für: Mia\\, Sebastian") || !strings.Contains(got, "SUMMARY:Swimming\r\n") {
+	first, second := mia.ID, seb.ID // the property lists ids in sorted order
+	if first > second {
+		first, second = second, first
+	}
+	if !strings.Contains(got, "X-HEJMO-AUDIENCE:person:"+first+"|person:"+second) || !strings.Contains(got, "Für: Mia\\, Sebastian") || !strings.Contains(got, "SUMMARY:Swimming\r\n") {
 		t.Fatalf("outside object:\n%s", got)
 	}
 	// A later sync (after the object changes outside) reads the audience back and

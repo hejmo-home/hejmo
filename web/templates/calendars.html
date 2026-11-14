@@ -13,7 +13,7 @@
       {{range .Calendars}}
       <li>
         <strong><input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{.Name}}</strong>
-        <span class="hint">{{t "calendars.readonly"}}{{if .Audience}} · {{t "calendars.for"}} {{.Audience}}{{end}}</span>
+        <span class="hint">{{if .TwoWay}}{{t "calendars.two_way"}}{{else}}{{t "calendars.readonly"}}{{end}}{{if .Audience}} · {{t "calendars.for"}} {{.Audience}}{{end}}</span>
         <span class="hint">
           {{if .LastSuccess}}{{t "calendars.last_success"}} {{.LastSuccess}}{{else}}{{t "calendars.never"}}{{end}}
           {{if .Stale}} · <span data-calendar-stale>{{t "calendars.stale"}}</span>{{end}}
@@ -21,6 +21,8 @@
         {{if .LastError}}<span class="hint">{{t "calendars.last_error"}} {{.LastError}}</span>{{end}}
         <span class="row">
           <form method="post" action="/calendars/{{.ID}}/sync"><button class="button" type="submit">{{t "calendars.sync_now"}}</button></form>
+          {{if .TwoWay}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="1"><button class="button secondary" type="submit">{{t "calendars.make_read_only"}}</button></form>{{end}}
+          {{if .Switchable}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="0"><button class="button secondary" type="submit">{{t "calendars.make_two_way"}}</button></form>{{end}}
           <form method="post" action="/calendars/{{.ID}}/delete"><button class="button secondary" type="submit">{{t "calendars.remove"}}</button></form>
         </span>
       </li>
@@ -96,7 +98,7 @@
     <table class="log">
       <thead><tr><th>{{t "calendars.log.when"}}</th><th>{{t "calendars.log.calendar"}}</th><th>{{t "calendars.log.what"}}</th></tr></thead>
       <tbody>
-        {{range .Log}}<tr><td>{{.At}}</td><td>{{.Calendar}}</td><td>{{.Message}}</td></tr>{{end}}
+        {{range .Log}}<tr><td>{{.At}}</td><td>{{.Calendar}}</td><td>{{.Message}}{{if .Detail}}<details><summary>{{t "calendars.log.version"}}</summary><pre>{{.Detail}}</pre></details>{{end}}</td></tr>{{end}}
       </tbody>
     </table>
     {{else}}<p class="hint">{{t "calendars.log.empty"}}</p>{{end}}

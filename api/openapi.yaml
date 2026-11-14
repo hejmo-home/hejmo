@@ -362,17 +362,23 @@ paths:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     patch:
       operationId: updateCalendar
-      summary: Switch "share through the box" for a synced calendar
-      description: The family calendar is always served to phones; asking to change it answers 422.
+      summary: Switch "share through the box" or two-way / read-only for a synced calendar
+      description: |
+        Send either or both fields; one is required (else 422).
+        The family calendar is always served to phones; asking to change `share_through_box` for it answers 422.
+        `read_only` switches a CalDAV calendar between two-way (the default: events created, changed or deleted on the box
+        are written back to the server right away, ADR 0012) and read-only (the box never writes; API edits answer 422).
+        ICS and local calendars have no such switch and answer 422. Switching back to two-way pushes
+        changes still queued.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [share_through_box]
               properties:
                 share_through_box: { type: boolean }
+                read_only: { type: boolean, description: "CalDAV calendars only" }
       responses:
         "200":
           description: The calendar after the change
@@ -483,7 +489,7 @@ paths:
         Adds the calendar with its colour and audience and syncs it once right away; if that
         first sync fails the calendar is still added (see the sync log) and the scheduler retries.
         `url` must be a calendar on the connection's server and not yet synced. These calendars
-        are read-only for now; delta sync runs every 5 minutes by default.
+        are two-way (see `PATCH /calendars/{id}`); delta sync runs every 5 minutes by default.
       requestBody:
         required: true
         content:
@@ -588,6 +594,10 @@ paths:
     post:
       operationId: createEvent
       summary: Create an event or a series
+      description: |
+        In a two-way CalDAV calendar the event is written to the server right away (in the background; if the
+        server is down it is queued and written with the next sync). In a read-only calendar the answer is 422.
+        Changing and deleting events (`PATCH`/`DELETE /events/{id}`) work the same way.
       requestBody:
         required: true
         content:
@@ -769,7 +779,7 @@ components:
         name: { type: string }
         kind: { type: string, enum: [local, ics, caldav, google] }
         color: { type: string }
-        read_only: { type: boolean, description: "The box never changes this calendar's events (always true for ICS)" }
+        read_only: { type: boolean, description: "The box never changes this calendar's events outside (always true for ICS; false by default for CalDAV and Google, where a parent can switch it on)" }
         share_through_box: { type: boolean, description: "Phones may subscribe to this calendar over CalDAV. Always true for the family calendar; on by default for ICS, off for CalDAV and Google" }
         audience: { $ref: "#/components/schemas/Audience" }
         sync: { $ref: "#/components/schemas/SyncState" }
@@ -877,6 +887,7 @@ components:
         at: { type: string, format: date-time }
         kind: { type: string, enum: [failure, conflict, note] }
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
+        detail: { type: string, description: "For a conflict: the version that lost, as iCalendar text. Kept for 30 days with the entry. Absent for other entries" }
     Settings:
       type: object
       required: [time_format, temperature_unit]

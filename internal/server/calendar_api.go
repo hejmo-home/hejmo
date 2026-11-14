@@ -204,6 +204,7 @@ func (s *server) apiCreateEvent(w http.ResponseWriter, r *http.Request, p princi
 	if s.storeError(w, "create event", err) {
 		return
 	}
+	s.sync.PushSoon(p.household.ID, e.CalendarID)
 	writeJSON(w, http.StatusCreated, s.eventToJSON(r, created, loc))
 }
 
@@ -275,6 +276,7 @@ func (s *server) apiUpdateEvent(w http.ResponseWriter, r *http.Request, p princi
 	if s.storeError(w, "update event", s.db.ApplyChange(p.household.ID, ch)) {
 		return
 	}
+	s.sync.PushSoon(p.household.ID, series[0].CalendarID)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -290,6 +292,7 @@ func (s *server) apiDeleteEvent(w http.ResponseWriter, r *http.Request, p princi
 	if s.storeError(w, "delete event", s.db.ApplyChange(p.household.ID, ch)) {
 		return
 	}
+	s.sync.PushSoon(p.household.ID, series[0].CalendarID)
 	w.WriteHeader(http.StatusNoContent)
 }
 

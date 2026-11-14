@@ -283,7 +283,7 @@ body:has(.family-page) { overflow: hidden; }
 .fv-header .lab { font-size: var(--fs-label); color: var(--text-secondary); }
 .fv-header .date { font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
 .fv .chips { display: flex; gap: var(--gap); }
-.fv .chip { font-variant-numeric: tabular-nums; }
+.fv .chip { font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 8px; }
 .strip-wrap { flex: none; display: grid; gap: var(--gap-cards); }
 .strip { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-cards); align-items: center; }
 .strip .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }

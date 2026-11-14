@@ -156,7 +156,10 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
-	in := familyview.Input{Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs, ShowTomorrow: showTomorrow}
+	in := familyview.Input{
+		Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs, ShowTomorrow: showTomorrow,
+		TimeFormat: string(h.TimeFormat), TemperatureUnit: string(h.TemperatureUnit), Weather: s.homeWeather(h),
+	}
 	for _, c := range cals {
 		in.Calendars[c.ID] = c.Audience
 	}
@@ -186,6 +189,16 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	return familyview.Build(in), nil
 }
 
+// homeWeather is the last reading for the home, nil when there is none (or
+// only a stale one): the chip then hides. A display never fetches it itself.
+func (s *server) homeWeather(h store.Household) *familyview.Weather {
+	r, ok := s.weather.Latest(h.Latitude, h.Longitude)
+	if !ok {
+		return nil
+	}
+	return &familyview.Weather{TempC: r.TempC, Icon: string(r.Icon)}
+}
+
 // handleDisplayState tells a display whether it is still what its page says:
 // "paired", "pairing" (with its code) or "unpaired" (revoked, unknown or its
 // code ran out). The display's script reloads the page when this changes.
@@ -195,6 +208,7 @@ func (s *server) handleDisplayState(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case d.Paired:
 			state["state"] = "paired"
+			s.addChips(state)
 			if s.now().Sub(d.LastSeen) > time.Minute {
 				_ = s.db.TouchDisplay(hash, s.now())
 			}
@@ -226,4 +240,21 @@ func (s *server) pairDisplay(p principal, code string, in store.Display) (store.
 		s.limiter.reset(key)
 	}
 	return d, err
+}
+
+// addChips puts the text of the header chips into a paired display's state,
+// so the display updates them once a minute without reloading the page.
+func (s *server) addChips(state map[string]string) {
+	h, err := s.db.HomeHousehold()
+	if err != nil {
+		return
+	}
+	loc := time.UTC
+	if l, err := time.LoadLocation(h.Timezone); err == nil {
+		loc = l
+	}
+	state["clock"] = familyview.ClockText(s.now().In(loc), string(h.TimeFormat))
+	if c := familyview.Chip(s.homeWeather(h), string(h.TemperatureUnit)); c != nil {
+		state["weather"] = c.Text
+	}
 }

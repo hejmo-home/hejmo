@@ -18,6 +18,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/weather"
 	"github.com/hejmo-home/hejmo/web"
 )
 
@@ -36,6 +37,9 @@ type Options struct {
 	// Sync syncs calendars from outside. Nil means a service with HTTP
 	// fetching; main passes its own so the scheduler and the web UI share it.
 	Sync *calsync.Service
+	// Weather holds the weather of the home location, refreshed in the
+	// background (ADR 0016). Nil means a service that never has a reading.
+	Weather *weather.Service
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -74,6 +78,7 @@ type server struct {
 	limiter   *loginLimiter
 	opens     *loginLimiter // pairing screens opened, per client address
 	sync      *calsync.Service
+	weather   *weather.Service
 }
 
 // New returns the box's root HTTP handler.
@@ -96,6 +101,9 @@ func New(opts Options) http.Handler {
 	}
 	if s.sync = opts.Sync; s.sync == nil {
 		s.sync = calsync.New(s.db, nil, s.now)
+	}
+	if s.weather = opts.Weather; s.weather == nil {
+		s.weather = weather.New(weather.WithClock(s.now))
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)

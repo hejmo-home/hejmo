@@ -82,6 +82,32 @@ _Avoid_: scope (alone; clashes with token scope), mode
 A statutory day off in the home region. A **partial holiday** applies in most, but not all, municipalities of the region.
 _Avoid_: feast day, bank holiday
 
+**Family calendar**:
+The household's own calendar, held by the box rather than by an outside service.
+_Avoid_: local calendar, box calendar, default calendar
+
+## Sync
+
+**Calendar connection**:
+The link from the box to an outside calendar service or to a single calendar address, together with its credentials.
+_Avoid_: account, integration, provider (alone)
+
+**Synced calendar**:
+A calendar whose events come from, and may be written back to, a calendar outside the box through a calendar connection.
+_Avoid_: external calendar, remote calendar, feed
+
+**Read-only calendar**:
+A synced calendar whose events the box shows but never changes outside. ICS subscriptions are always read-only.
+_Avoid_: subscribed calendar, imported calendar
+
+**Sync conflict**:
+The same event changed both on the box and outside since the last sync.
+_Avoid_: collision, clash
+
+**Sync log**:
+The record, visible to parents, of sync failures and sync conflicts, including the version that lost.
+_Avoid_: history, audit log
+
 ## Views and devices
 
 **Display**:

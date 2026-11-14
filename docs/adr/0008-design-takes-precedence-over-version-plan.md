@@ -1,6 +1,6 @@
 # 0008. Design takes precedence over the version plan
 
-- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md)
+- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md), [0016](0016-family-view-header-and-footer.md)
 - Date: 14/11/2026
 
 ## Context

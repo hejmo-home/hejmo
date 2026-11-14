@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/quiet"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -253,5 +254,78 @@ func TestShowTomorrowBlockIsAPerDisplaySettingOffByDefault(t *testing.T) {
 	}
 	if err := db.SetDisplayShowTomorrow(h.ID, "nope", true); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("unknown display: %v", err)
+	}
+}
+
+func pairedDisplay(t *testing.T) (*store.DB, store.Household, store.Display) {
+	t.Helper()
+	db, _ := openSealed(t)
+	h, err := db.CreateHousehold(store.Household{Name: "Family", HomeName: "Pasing", Region: "DE-BY"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, _ := db.OpenPairing(h.ID, "hash-q", pairT0)
+	d, err := db.ConfirmPairing(h.ID, w.Code, store.Display{Name: "Hallway", Type: store.DisplayEInkBW}, pairT0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return db, h, d
+}
+
+// ADR 0015: quiet mode is a per-display setting, off by default, suggesting 22:00 to 06:00.
+func TestDisplayQuietModeIsOffByDefaultAndSavedPerDisplay(t *testing.T) {
+	db, h, d := pairedDisplay(t)
+	if d.Quiet.Enabled || d.Quiet.FromText() != "22:00" || d.Quiet.ToText() != "06:00" {
+		t.Fatalf("default = %+v", d.Quiet)
+	}
+	s, _ := quiet.Parse(true, "21:30", "06:45")
+	if err := db.SetDisplayQuiet(h.ID, d.ID, s); err != nil {
+		t.Fatal(err)
+	}
+	list, _ := db.Displays(h.ID)
+	if got := list[0].Quiet; got != s {
+		t.Fatalf("quiet = %+v, want %+v", got, s)
+	}
+	if err := db.SetDisplayQuiet(h.ID, "nope", s); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("unknown display = %v", err)
+	}
+}
+
+func TestDisplayKioskAddressIsStoredAndTheKeySealed(t *testing.T) {
+	db, h, d := pairedDisplay(t)
+	key := "secret-api-key"
+	if err := db.SetDisplayKiosk(h.ID, d.ID, "http://192.168.1.20:8080", &key); err != nil {
+		t.Fatal(err)
+	}
+	list, _ := db.Displays(h.ID)
+	if list[0].KioskURL != "http://192.168.1.20:8080" || !list[0].KioskKeySet {
+		t.Fatalf("display = %+v", list[0])
+	}
+	got, err := db.DisplayKioskKey(h.ID, d.ID)
+	if err != nil || got != key {
+		t.Fatalf("key = %q, %v", got, err)
+	}
+	var raw string
+	if err := db.SQL().QueryRow(`SELECT kiosk_key FROM displays WHERE id = ?`, d.ID).Scan(&raw); err != nil || raw == "" || strings.Contains(raw, key) {
+		t.Fatalf("stored key = %q, %v: must be sealed", raw, err)
+	}
+	// Without a new key the old one stays; an empty key clears it.
+	if err := db.SetDisplayKiosk(h.ID, d.ID, "http://192.168.1.21:8080", nil); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := db.DisplayKioskKey(h.ID, d.ID); got != key {
+		t.Fatalf("key after keeping = %q", got)
+	}
+	empty := ""
+	_ = db.SetDisplayKiosk(h.ID, d.ID, "http://192.168.1.21:8080", &empty)
+	if got, _ := db.DisplayKioskKey(h.ID, d.ID); got != "" {
+		t.Fatalf("key after clearing = %q", got)
+	}
+	// An empty address removes the kiosk, key included.
+	_ = db.SetDisplayKiosk(h.ID, d.ID, "http://x:1", &key)
+	_ = db.SetDisplayKiosk(h.ID, d.ID, "", nil)
+	list, _ = db.Displays(h.ID)
+	if list[0].KioskURL != "" || list[0].KioskKeySet {
+		t.Fatalf("kiosk not removed: %+v", list[0])
 	}
 }

@@ -6,7 +6,6 @@ import (
 	"net/http"
 	"strconv"
 	"strings"
-	"sync"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/i18n"
@@ -20,19 +19,10 @@ const recoveryCodeCount = 10
 // one, and returns the codes in plain text: this is the only time they exist.
 func (s *server) newRecoveryCodes(personID string) ([]string, error) {
 	codes := auth.NewRecoveryCodes(recoveryCodeCount)
-	// Argon2id is slow on purpose; four at a time keeps a Pi's memory in check.
 	hashes := make([]string, len(codes))
-	var wg sync.WaitGroup
-	gate := make(chan struct{}, 4)
 	for i, c := range codes {
-		wg.Add(1)
-		gate <- struct{}{}
-		go func() {
-			defer func() { <-gate; wg.Done() }()
-			hashes[i] = auth.HashRecoveryCode(c)
-		}()
+		hashes[i] = auth.HashRecoveryCode(c)
 	}
-	wg.Wait()
 	return codes, s.db.ReplaceRecoveryCodes(personID, hashes)
 }
 

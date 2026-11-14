@@ -26,6 +26,7 @@ var apiRoutes = []APIRoute{
 	{"GET", "/people/{id}", auth.Perm("people", auth.Read), (*server).apiGetPerson},
 	{"GET", "/tokens", auth.Perm("tokens", auth.Read), (*server).apiListTokens},
 	{"POST", "/tokens", auth.Perm("tokens", auth.Write), (*server).apiCreateToken},
+	{"POST", "/caldav-profile", auth.Perm("tokens", auth.Write), (*server).apiIOSProfile},
 	{"DELETE", "/tokens/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokeToken},
 	{"GET", "/groups", auth.Perm("people", auth.Read), (*server).apiListGroups},
 	{"POST", "/groups", auth.Perm("people", auth.Write), (*server).apiCreateGroup},

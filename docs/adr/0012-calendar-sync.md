@@ -44,6 +44,16 @@ Work package 4 connects the box to outside calendars (ADR 0007). The founding fa
 - Phones sign in with the account's username and a per-device **API token** with token scope `calendars` as password. Each token can be revoked on its own. Parents see all events; children have no account.
 - Served only over HTTPS (ADR 0014).
 
+#### Notes added with the implementation (#19)
+
+- **Addresses:** `/dav/{person id}/calendars/{calendar id}/{event id}.ics`, with `/.well-known/caldav` redirecting to `/dav/`. The person's id, not the username, is in the path, so any username is safe there.
+- **One resource per series:** an event, or a series with its changed occurrences, is one `.ics` resource. The event's id is its name and `UID`; a name the phone chooses for a new event (letters, digits and `. _ @ = + -`, at most 128 characters) becomes its id.
+- **ETag** is a hash of the rendered iCalendar, so it changes exactly when the content does. `If-Match`/`If-None-Match` on `PUT` and `DELETE` answer 412 when they do not hold; writes are serialised.
+- **A phone's save replaces the series.** Changed occurrences it leaves out are deleted. The audience (who an event is for) is not shown to phones and is kept from the stored event; new events are for the whole family.
+- **Time zones** go out as `VTIMEZONE` definitions generated from the box's zone data (to 2037), so clients need no zone database. Events a phone writes are never cut off by age.
+- **Read-only and unshared calendars:** subscribed ICS calendars can be read but not written (403); unshared calendars do not exist for phones (404).
+- **Credentials:** HTTP Basic, username plus device token with token scope `calendars` (a token with `read` or `write` works as well). Parents only: a token held by a child is refused. Browser sessions are no credential. There is no per-user lockout: tokens are 256-bit random values.
+
 ### Libraries (make or buy)
 
 - `github.com/emersion/go-webdav` (MIT) for the CalDAV client and server, `github.com/emersion/go-ical` (MIT) for iCalendar. Both in the binary.

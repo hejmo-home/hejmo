@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"strings"
+	"time"
 
 	"github.com/hejmo-home/hejmo/api"
 	"github.com/hejmo-home/hejmo/internal/auth"
@@ -23,12 +24,14 @@ var apiRoutes = []APIRoute{
 	{"GET", "/people", auth.Perm("people", auth.Read), (*server).apiListPeople},
 	{"POST", "/people", auth.Perm("people", auth.Write), (*server).apiCreatePerson},
 	{"GET", "/people/{id}", auth.Perm("people", auth.Read), (*server).apiGetPerson},
+	{"GET", "/tokens", auth.Perm("tokens", auth.Read), (*server).apiListTokens},
 	{"POST", "/tokens", auth.Perm("tokens", auth.Write), (*server).apiCreateToken},
 	{"DELETE", "/tokens/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokeToken},
 	{"GET", "/groups", auth.Perm("people", auth.Read), (*server).apiListGroups},
 	{"POST", "/groups", auth.Perm("people", auth.Write), (*server).apiCreateGroup},
 	{"GET", "/calendars", auth.Perm("events", auth.Read), (*server).apiListCalendars},
 	{"POST", "/calendars", auth.Perm("events", auth.Write), (*server).apiAddCalendar},
+	{"PATCH", "/calendars/{id}", auth.Perm("events", auth.Write), (*server).apiUpdateCalendar},
 	{"DELETE", "/calendars/{id}", auth.Perm("events", auth.Delete), (*server).apiDeleteCalendar},
 	{"POST", "/calendars/{id}/sync", auth.Perm("events", auth.Write), (*server).apiSyncCalendar},
 	{"GET", "/sync-log", auth.Perm("settings", auth.Read), (*server).apiSyncLog},
@@ -202,6 +205,34 @@ func (s *server) apiCreateToken(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]string{"id": t.ID, "name": t.Name, "scopes": t.Scopes, "token": value})
+}
+
+type tokenJSON struct {
+	ID         string  `json:"id"`
+	Name       string  `json:"name"`
+	Scopes     string  `json:"scopes"`
+	Person     string  `json:"person"`
+	CreatedAt  string  `json:"created_at"`
+	LastUsedAt *string `json:"last_used_at"`
+}
+
+func (s *server) apiListTokens(w http.ResponseWriter, _ *http.Request, p principal) {
+	tokens, err := s.db.APITokens(p.household.ID)
+	if err != nil {
+		s.fail(w, "list tokens", err)
+		return
+	}
+	loc := p.location()
+	out := make([]tokenJSON, 0, len(tokens))
+	for _, t := range tokens {
+		j := tokenJSON{ID: t.ID, Name: t.Name, Scopes: t.Scopes, Person: t.PersonName, CreatedAt: t.Created.In(loc).Format(time.RFC3339)}
+		if !t.LastUsed.IsZero() {
+			used := t.LastUsed.In(loc).Format(time.RFC3339)
+			j.LastUsedAt = &used
+		}
+		out = append(out, j)
+	}
+	writeJSON(w, http.StatusOK, out)
 }
 
 func (s *server) apiRevokeToken(w http.ResponseWriter, r *http.Request, _ principal) {

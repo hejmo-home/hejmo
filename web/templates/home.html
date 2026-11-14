@@ -2,6 +2,6 @@
   <h1>{{t "home.hello"}} {{.Person.Name}}</h1>
   {{template "syncNotice" .}}
   <p class="lead">{{t "home.placeholder"}}</p>
-  {{if eq .Person.Role "parent"}}<p><a href="/calendars">{{t "calendars.title"}}</a></p>{{end}}
+  {{if eq .Person.Role "parent"}}<p><a href="/calendars">{{t "calendars.title"}}</a> · <a href="/caldav">{{t "caldav.link"}}</a></p>{{end}}
   <form method="post" action="/logout"><button class="button" type="submit">{{t "home.logout"}}</button></form>
 {{template "foot"}}

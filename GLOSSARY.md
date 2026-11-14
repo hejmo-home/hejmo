@@ -186,6 +186,14 @@ _Avoid_: bin calendar, garbage feed
 A secret that lets software act on behalf of a person through the API, limited by its token scopes.
 _Avoid_: API key, access key
 
+**Device token**:
+An API token with the token scope `calendars`, created by a parent for one CalDAV client (for example "iPhone Mama") and used as the password next to the person's username. Revoked on its own.
+_Avoid_: app password, CalDAV password
+
+**Share through the box**:
+The switch on a calendar that makes the box serve it to CalDAV clients. The family calendar is always shared; on by default for ICS calendars, off for CalDAV and Google calendars.
+_Avoid_: publish, export
+
 **Token scope**:
 A right granted to an API token: `read`, `write`, a resource (e.g. `lists`) or a resource with an action (e.g. `events:read`).
 _Avoid_: scope (alone; clashes with edit scope), permission

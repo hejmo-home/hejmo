@@ -38,6 +38,7 @@ type calendarJSON struct {
 	Kind     string       `json:"kind"`
 	Color    string       `json:"color"`
 	ReadOnly bool         `json:"read_only"`
+	Shared   bool         `json:"share_through_box"`
 	Audience audienceJSON `json:"audience"`
 	Sync     *syncJSON    `json:"sync,omitempty"`
 }
@@ -83,7 +84,7 @@ func (s *server) syncState(r *http.Request, c store.SyncedCalendar, loc *time.Lo
 }
 
 func plainCalendarJSON(c store.Calendar) calendarJSON {
-	return calendarJSON{ID: c.ID, Name: c.Name, Kind: c.Kind, Color: c.Color, ReadOnly: c.ReadOnly,
+	return calendarJSON{ID: c.ID, Name: c.Name, Kind: c.Kind, Color: c.Color, ReadOnly: c.ReadOnly, Shared: c.Shared,
 		Audience: audienceJSON{nonNil(c.Audience.People), nonNil(c.Audience.Groups)}}
 }
 
@@ -237,6 +238,40 @@ func (s *server) apiSyncCalendar(w http.ResponseWriter, r *http.Request, p princ
 	j := plainCalendarJSON(cal.Calendar)
 	j.Sync = s.syncState(r, cal, p.location())
 	writeJSON(w, http.StatusOK, j)
+}
+
+func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p principal) {
+	var in struct {
+		Shared *bool `json:"share_through_box"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if in.Shared == nil {
+		writeError(w, http.StatusUnprocessableEntity, "share_through_box is required")
+		return
+	}
+	id := r.PathValue("id")
+	if s.storeError(w, "share calendar", s.db.SetCalendarShared(p.household.ID, id, *in.Shared)) {
+		return
+	}
+	cals, err := s.db.Calendars(p.household.ID)
+	if err != nil {
+		s.fail(w, "reload calendar", err)
+		return
+	}
+	for _, c := range cals {
+		if c.ID == id {
+			j := plainCalendarJSON(c)
+			if synced, err := s.db.SyncedCalendar(p.household.ID, id); err == nil {
+				j.Sync = s.syncState(r, synced, p.location())
+			}
+			writeJSON(w, http.StatusOK, j)
+			return
+		}
+	}
+	writeError(w, http.StatusNotFound, "calendar not found")
 }
 
 func (s *server) apiDeleteCalendar(w http.ResponseWriter, r *http.Request, p principal) {

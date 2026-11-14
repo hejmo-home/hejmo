@@ -5,6 +5,7 @@ go 1.27.4
 require (
 	github.com/caddyserver/certmagic v0.25.6
 	github.com/emersion/go-ical v0.0.0-20261112170022-46c5b53a1723
+	github.com/emersion/go-webdav v0.7.0
 	github.com/getkin/kin-openapi v0.153.0
 	github.com/letsencrypt/pebble/v2 v2.10.3
 	github.com/libdns/desec v1.1.1

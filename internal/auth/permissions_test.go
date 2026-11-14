@@ -71,3 +71,21 @@ func TestValidateScopes(t *testing.T) {
 		}
 	}
 }
+
+// A device token for a phone's calendar app carries the scope "calendars": it
+// reaches the box's CalDAV server and nothing in the REST API (ADR 0012).
+func TestCalendarsScopeCoversOnlyCalendars(t *testing.T) {
+	if err := auth.ValidateScopes("calendars"); err != nil {
+		t.Fatalf("calendars is a valid scope: %v", err)
+	}
+	for _, p := range []auth.Permission{auth.Perm("calendars", auth.Read), auth.Perm("calendars", auth.Write), auth.Perm("calendars", auth.Delete)} {
+		if !auth.ScopesAllow("calendars", p) {
+			t.Errorf("scope calendars should allow %s", p)
+		}
+	}
+	for _, p := range []auth.Permission{auth.Perm("events", auth.Read), auth.Perm("people", auth.Read), auth.Perm("tokens", auth.Write)} {
+		if auth.ScopesAllow("calendars", p) {
+			t.Errorf("scope calendars must not allow %s", p)
+		}
+	}
+}

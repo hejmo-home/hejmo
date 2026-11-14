@@ -123,7 +123,12 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /calendars", s.handleCalendarAdd)
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
+	mux.HandleFunc("GET /caldav", s.handleCalDAVPage)
+	mux.HandleFunc("POST /caldav/tokens", s.handleDeviceTokenCreate)
+	mux.HandleFunc("POST /caldav/tokens/{id}/revoke", s.handleDeviceTokenRevoke)
+	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
 	s.routeAPI(mux)
+	s.routeCalDAV(mux)
 	return s.requireHTTPS(sameOrigin(mux))
 }
 

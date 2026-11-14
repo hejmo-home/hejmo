@@ -22,6 +22,14 @@ type personTasks struct {
 
 var taskWeekdays = []string{"MO", "TU", "WE", "TH", "FR", "SA", "SU"}
 
+func newTaskView(t task.Task, today string, done bool) taskView {
+	v := taskView{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat), Weekdays: t.Weekdays, Part: string(t.PartOfDay), Due: t.DueOn(today), Done: done}
+	if d, err := time.Parse(task.DateLayout, t.Date); err == nil {
+		v.Date = d.Format("02/01/2006")
+	}
+	return v
+}
+
 func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal, status int, form map[string]any) {
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
@@ -40,19 +48,14 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		return
 	}
 	var groups []personTasks
-	var choices []choice
+	choices := chipsOf(people)
 	for _, person := range people {
-		choices = append(choices, choice{person.ID, person.Name})
 		g := personTasks{Name: person.Name, Color: person.Color}
 		for _, t := range list {
 			if t.PersonID != person.ID {
 				continue
 			}
-			v := taskView{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat), Weekdays: t.Weekdays, Part: string(t.PartOfDay), Due: t.DueOn(today), Done: doneToday[t.ID]}
-			if d, err := time.Parse(task.DateLayout, t.Date); err == nil {
-				v.Date = d.Format("02/01/2006")
-			}
-			g.Tasks = append(g.Tasks, v)
+			g.Tasks = append(g.Tasks, newTaskView(t, today, doneToday[t.ID]))
 		}
 		if len(g.Tasks) > 0 {
 			groups = append(groups, g)
@@ -150,4 +153,41 @@ func taskErrorKey(field string) string {
 		return "tasks.error." + field
 	}
 	return "tasks.error.invalid"
+}
+
+// handleTaskPage is the detail page of a task: what it is and, behind a
+// confirmation, deleting it (ADR 0017: destructive actions only on detail pages).
+func (s *server) handleTaskPage(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	t, err := s.db.Task(p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		s.fail(w, "task", err)
+		return
+	}
+	people, err := s.db.People(p.household.ID)
+	if err != nil {
+		s.fail(w, "people", err)
+		return
+	}
+	var owner personChip
+	for _, c := range chipsOf(people) {
+		if c.ID == t.PersonID {
+			owner = c
+		}
+	}
+	today := s.today(p)
+	doneToday, err := s.db.TasksDoneOn(p.household.ID, today)
+	if err != nil {
+		s.fail(w, "task state", err)
+		return
+	}
+	s.render(w, r, http.StatusOK, "task.html", map[string]any{
+		"Person": p.person, "Task": newTaskView(t, today, doneToday[t.ID]), "Owner": owner, "SyncStale": s.syncStale(p.household.ID),
+	})
 }

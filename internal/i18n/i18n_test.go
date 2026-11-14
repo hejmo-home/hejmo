@@ -87,6 +87,7 @@ func TestFormatFillsParameters(t *testing.T) {
 var wholeFamilyTexts = map[string]bool{
 	"setup.https.intro": true, // "außerhalb eures Zuhauses": the whole home
 	"setup.intro":       true, // "eure Box": the family's box
+	"displays.none":     true, // "euren Tag": the family's day on the wall
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

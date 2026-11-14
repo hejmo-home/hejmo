@@ -28,7 +28,7 @@
     </ul>
     </section>
     {{end}}
-    {{else}}<p class="lead">{{t "calendars.none"}}</p>{{end}}
+    {{else}}{{template "empty" (dict "Text" (t "calendars.none") "Href" "#add" "Action" (t "calendars.add.first"))}}{{end}}
   </section>
 
   <section aria-labelledby="add">
@@ -38,13 +38,15 @@
       <fieldset>
         {{template "field" (dict "Root" . "Name" "name" "Label" (t "calendars.field.name") "Value" (index .Form "Name") "Required" true)}}
         {{template "field" (dict "Root" . "Name" "url" "Label" (t "calendars.field.url") "Value" (index .Form "URL") "Required" true "Inputmode" "url" "Autocapitalize" "none" "Placeholder" "webcal://…")}}
-        <label>{{t "calendars.field.color"}}
-          <input name="color" type="color" value="{{with .Form}}{{if .Color}}{{.Color}}{{else}}#2F5E7A{{end}}{{else}}#2F5E7A{{end}}"></label>
-        <label>{{t "calendars.field.interval"}}
-          <select name="interval">{{range .Intervals}}<option value="{{.}}"{{if eq . 60}} selected{{end}}>{{.}}</option>{{end}}</select></label>
-        <p class="hint">{{t "calendars.field.audience"}}</p>
-        {{range .People}}<label class="check"><input type="checkbox" name="people" value="{{.ID}}"> {{.Name}}</label>{{end}}
-        {{range .Groups}}<label class="check"><input type="checkbox" name="groups" value="{{.ID}}"> {{.Name}}</label>{{end}}
+        {{template "personChips" (dict "Root" . "Name" "people" "Legend" (t "calendars.field.audience") "People" .People "Selected" (strs (index .Form "People")) "Groups" .Groups "SelectedGroups" (strs (index .Form "Groups")) "Whole" true)}}
+        {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" (t "calendars.more.summary") "Open" (or (eq .ErrorField "color") (eq .ErrorField "interval")))}}
+          <label>{{t "calendars.field.color"}}
+            <input name="color" type="color" value="{{with .Form}}{{if .Color}}{{.Color}}{{else}}#2F5E7A{{end}}{{else}}#2F5E7A{{end}}"></label>
+          {{template "fieldError" (dict "Root" . "Name" "color")}}
+          <label>{{t "calendars.field.interval"}}
+            <select name="interval">{{range .Intervals}}<option value="{{.}}"{{if eq . $.IntervalChosen}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+          {{template "fieldError" (dict "Root" . "Name" "interval")}}
+        {{template "moreClose"}}
       </fieldset>
       <button class="button" type="submit">{{t "calendars.add.submit"}}</button>
     </form>

@@ -93,11 +93,11 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		return
 	}
 	names := map[string]string{}
-	var peopleChoices, groupChoices []choice
+	var groupChoices []choice
 	for _, x := range people {
 		names[x.ID] = x.Name
-		peopleChoices = append(peopleChoices, choice{x.ID, x.Name})
 	}
+	peopleChoices := chipsOf(people)
 	for _, x := range groups {
 		names[x.ID] = x.Name
 		groupChoices = append(groupChoices, choice{x.ID, x.Name})
@@ -173,7 +173,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	data := map[string]any{
 		"Person": p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
-		"Intervals": syncIntervals, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
+		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
 	}
 	if form != nil {
 		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
@@ -259,4 +259,13 @@ func calendarErrorField(field string) string {
 		return "people"
 	}
 	return ""
+}
+
+// intervalChosen is the update interval the add form shows selected: the one
+// just typed after an error, else the default of an hour.
+func intervalChosen(form map[string]any) int {
+	if n, ok := form["Interval"].(int); ok && n > 0 {
+		return n
+	}
+	return 60
 }

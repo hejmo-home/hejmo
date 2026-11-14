@@ -328,13 +328,14 @@ func (s *server) apiHolidays(w http.ResponseWriter, r *http.Request, p principal
 		return
 	}
 	type holidayJSON struct {
-		Date   string `json:"date"`
-		Name   string `json:"name"`
-		NameEN string `json:"name_en"`
+		Date    string `json:"date"`
+		Name    string `json:"name"`
+		NameEN  string `json:"name_en"`
+		Partial bool   `json:"partial"`
 	}
 	out := []holidayJSON{}
 	for _, h := range holiday.Between(p.household.Region, from, to) {
-		out = append(out, holidayJSON{h.Date.Format(dateLayout), h.NameDE, h.NameEN})
+		out = append(out, holidayJSON{h.Date.Format(dateLayout), h.NameDE, h.NameEN, h.Partial})
 	}
 	writeJSON(w, http.StatusOK, out)
 }

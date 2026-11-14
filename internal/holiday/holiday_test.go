@@ -86,3 +86,48 @@ func TestBetween(t *testing.T) {
 		t.Fatalf("Between = %s", got)
 	}
 }
+
+func TestBavarianAssumptionDayIsPartial(t *testing.T) {
+	for _, h := range holiday.For("DE-BY", 2026) {
+		if (h.NameDE == "Mariä Himmelfahrt") != h.Partial {
+			t.Errorf("%s partial = %v", h.NameDE, h.Partial)
+		}
+	}
+}
+
+func TestBerlinOneOffHoliday(t *testing.T) {
+	has := func(year int) bool {
+		for _, h := range holiday.For("DE-BE", year) {
+			if h.Date.Format("01-02") == "06-17" {
+				return true
+			}
+		}
+		return false
+	}
+	if has(2027) || !has(2028) || has(2029) {
+		t.Fatal("17 June must be a holiday in Berlin in 2028 only")
+	}
+}
+
+func TestSwissCantons2026(t *testing.T) {
+	cases := map[string][]string{
+		"CH-ZH": {"01.01.", "03.04.", "06.04.", "01.05.", "14.05.", "25.05.", "01.08.", "25.12.", "26.12."},
+		"CH-GE": {"01.01.", "03.04.", "06.04.", "14.05.", "25.05.", "01.08.", "10.09.", "25.12.", "31.12."},
+		"CH-VD": {"01.01.", "02.01.", "03.04.", "06.04.", "14.05.", "25.05.", "01.08.", "21.09.", "25.12."},
+		// 2.1. and 26.12. only on Mondays: neither in 2026.
+		"CH-NE": {"01.01.", "01.03.", "03.04.", "01.05.", "14.05.", "01.08.", "25.12."},
+		// Christmas on a Friday: no St Stephen's Day.
+		"CH-AR": {"01.01.", "03.04.", "06.04.", "14.05.", "25.05.", "01.08.", "25.12."},
+		// Näfelser Fahrt: 2.4.2026 is Maundy Thursday, so a week later. No Good Friday in TI.
+		"CH-GL": {"01.01.", "03.04.", "06.04.", "09.04.", "14.05.", "25.05.", "01.08.", "01.11.", "25.12.", "26.12."},
+		"CH-TI": {"01.01.", "06.01.", "19.03.", "06.04.", "01.05.", "14.05.", "25.05.", "04.06.", "29.06.", "01.08.", "15.08.", "01.11.", "08.12.", "25.12.", "26.12."},
+	}
+	for code, want := range cases {
+		if got := dates(holiday.For(code, 2026)); strings.Join(got, " ") != strings.Join(want, " ") {
+			t.Errorf("%s 2026 = %v\nwant           %v", code, got, want)
+		}
+	}
+	if got := dates(holiday.For("CH-GL", 2027)); got[3] != "01.04." {
+		t.Errorf("Näfelser Fahrt 2027 = %s, want 01.04.", got[3])
+	}
+}

@@ -256,11 +256,12 @@ paths:
                 type: array
                 items:
                   type: object
-                  required: [date, name, name_en]
+                  required: [date, name, name_en, partial]
                   properties:
                     date: { type: string, format: date }
                     name: { type: string, example: Allerheiligen }
                     name_en: { type: string, example: "All Saints' Day" }
+                    partial: { type: boolean, description: "Holiday in most, but not all, municipalities of the region (e.g. 15 August in Bavaria)" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }

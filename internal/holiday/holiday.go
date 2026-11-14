@@ -16,14 +16,18 @@ type Holiday struct {
 	Date   time.Time
 	NameDE string
 	NameEN string
+	// Partial: a holiday in most, but not all, municipalities of the region.
+	Partial bool
 }
 
 type rule struct {
 	nameDE, nameEN string
 	date           func(year int) time.Time
 	// regions: "DE" = whole country, or region codes. Empty = never.
-	regions []string
-	from    int // first year the rule applies (0 = always)
+	regions  []string
+	from, to int                  // years the rule applies (0 = open)
+	when     func(time.Time) bool // optional condition on the date
+	partial  bool
 }
 
 func fixed(month time.Month, d int) func(int) time.Time {
@@ -59,31 +63,35 @@ func repentanceDay(y int) time.Time {
 }
 
 var rules = []rule{
-	{"Neujahr", "New Year's Day", fixed(time.January, 1), []string{"DE", "AT"}, 0},
-	{"Heilige Drei Könige", "Epiphany", fixed(time.January, 6), []string{"DE-BW", "DE-BY", "DE-ST", "AT"}, 0},
-	{"Internationaler Frauentag", "International Women's Day", fixed(time.March, 8), []string{"DE-BE"}, 2019},
-	{"Internationaler Frauentag", "International Women's Day", fixed(time.March, 8), []string{"DE-MV"}, 2023},
-	{"Karfreitag", "Good Friday", easterOffset(-2), []string{"DE"}, 0},
-	{"Ostersonntag", "Easter Sunday", easterOffset(0), []string{"DE-BB"}, 0},
-	{"Ostermontag", "Easter Monday", easterOffset(1), []string{"DE", "AT"}, 0},
-	{"Tag der Arbeit", "Labour Day", fixed(time.May, 1), []string{"DE", "AT"}, 0},
-	{"Christi Himmelfahrt", "Ascension Day", easterOffset(39), []string{"DE", "AT"}, 0},
-	{"Pfingstsonntag", "Whit Sunday", easterOffset(49), []string{"DE-BB"}, 0},
-	{"Pfingstmontag", "Whit Monday", easterOffset(50), []string{"DE", "AT"}, 0},
-	{"Fronleichnam", "Corpus Christi", easterOffset(60), []string{"DE-BW", "DE-BY", "DE-HE", "DE-NW", "DE-RP", "DE-SL", "AT"}, 0},
-	{"Mariä Himmelfahrt", "Assumption Day", fixed(time.August, 15), []string{"DE-BY", "DE-SL", "AT"}, 0},
-	{"Weltkindertag", "World Children's Day", fixed(time.September, 20), []string{"DE-TH"}, 2019},
-	{"Tag der Deutschen Einheit", "German Unity Day", fixed(time.October, 3), []string{"DE"}, 0},
-	{"Nationalfeiertag", "National Day", fixed(time.October, 26), []string{"AT"}, 0},
-	{"Reformationstag", "Reformation Day", fixed(time.October, 31), []string{"DE-BB", "DE-MV", "DE-SN", "DE-ST", "DE-TH"}, 0},
-	{"Reformationstag", "Reformation Day", fixed(time.October, 31), []string{"DE-HB", "DE-HH", "DE-NI", "DE-SH"}, 2018},
-	{"Allerheiligen", "All Saints' Day", fixed(time.November, 1), []string{"DE-BW", "DE-BY", "DE-NW", "DE-RP", "DE-SL", "AT"}, 0},
-	{"Buß- und Bettag", "Day of Repentance and Prayer", repentanceDay, []string{"DE-SN"}, 0},
-	{"Mariä Empfängnis", "Immaculate Conception", fixed(time.December, 8), []string{"AT"}, 0},
-	{"1. Weihnachtstag", "Christmas Day", fixed(time.December, 25), []string{"DE"}, 0},
-	{"Christtag", "Christmas Day", fixed(time.December, 25), []string{"AT"}, 0},
-	{"2. Weihnachtstag", "Boxing Day", fixed(time.December, 26), []string{"DE"}, 0},
-	{"Stefanitag", "St Stephen's Day", fixed(time.December, 26), []string{"AT"}, 0},
+	{nameDE: "Neujahr", nameEN: "New Year's Day", date: fixed(time.January, 1), regions: []string{"DE", "AT"}},
+	{nameDE: "Heilige Drei Könige", nameEN: "Epiphany", date: fixed(time.January, 6), regions: []string{"DE-BW", "DE-BY", "DE-ST", "AT"}},
+	{nameDE: "Internationaler Frauentag", nameEN: "International Women's Day", date: fixed(time.March, 8), regions: []string{"DE-BE"}, from: 2019},
+	{nameDE: "Internationaler Frauentag", nameEN: "International Women's Day", date: fixed(time.March, 8), regions: []string{"DE-MV"}, from: 2023},
+	{nameDE: "Karfreitag", nameEN: "Good Friday", date: easterOffset(-2), regions: []string{"DE"}},
+	{nameDE: "Ostersonntag", nameEN: "Easter Sunday", date: easterOffset(0), regions: []string{"DE-BB"}},
+	{nameDE: "Ostermontag", nameEN: "Easter Monday", date: easterOffset(1), regions: []string{"DE", "AT"}},
+	{nameDE: "Tag der Arbeit", nameEN: "Labour Day", date: fixed(time.May, 1), regions: []string{"DE", "AT"}},
+	{nameDE: "Christi Himmelfahrt", nameEN: "Ascension Day", date: easterOffset(39), regions: []string{"DE", "AT"}},
+	{nameDE: "Pfingstsonntag", nameEN: "Whit Sunday", date: easterOffset(49), regions: []string{"DE-BB"}},
+	{nameDE: "Pfingstmontag", nameEN: "Whit Monday", date: easterOffset(50), regions: []string{"DE", "AT"}},
+	{nameDE: "Fronleichnam", nameEN: "Corpus Christi", date: easterOffset(60), regions: []string{"DE-BW", "DE-BY", "DE-HE", "DE-NW", "DE-RP", "DE-SL", "AT"}},
+	{nameDE: "Mariä Himmelfahrt", nameEN: "Assumption Day", date: fixed(time.August, 15), regions: []string{"DE-SL", "AT"}},
+	// Bavaria: only in municipalities with a Catholic majority (1,708 of 2,056).
+	{nameDE: "Mariä Himmelfahrt", nameEN: "Assumption Day", date: fixed(time.August, 15), regions: []string{"DE-BY"}, partial: true},
+	// Berlin: one-off holidays (law of 10.7.2024).
+	{nameDE: "Jahrestag des Volksaufstands vom 17. Juni 1953", nameEN: "75th anniversary of the 1953 uprising", date: fixed(time.June, 17), regions: []string{"DE-BE"}, from: 2028, to: 2028},
+	{nameDE: "Weltkindertag", nameEN: "World Children's Day", date: fixed(time.September, 20), regions: []string{"DE-TH"}, from: 2019},
+	{nameDE: "Tag der Deutschen Einheit", nameEN: "German Unity Day", date: fixed(time.October, 3), regions: []string{"DE"}},
+	{nameDE: "Nationalfeiertag", nameEN: "National Day", date: fixed(time.October, 26), regions: []string{"AT"}},
+	{nameDE: "Reformationstag", nameEN: "Reformation Day", date: fixed(time.October, 31), regions: []string{"DE-BB", "DE-MV", "DE-SN", "DE-ST", "DE-TH"}},
+	{nameDE: "Reformationstag", nameEN: "Reformation Day", date: fixed(time.October, 31), regions: []string{"DE-HB", "DE-HH", "DE-NI", "DE-SH"}, from: 2018},
+	{nameDE: "Allerheiligen", nameEN: "All Saints' Day", date: fixed(time.November, 1), regions: []string{"DE-BW", "DE-BY", "DE-NW", "DE-RP", "DE-SL", "AT"}},
+	{nameDE: "Buß- und Bettag", nameEN: "Day of Repentance and Prayer", date: repentanceDay, regions: []string{"DE-SN"}},
+	{nameDE: "Mariä Empfängnis", nameEN: "Immaculate Conception", date: fixed(time.December, 8), regions: []string{"AT"}},
+	{nameDE: "1. Weihnachtstag", nameEN: "Christmas Day", date: fixed(time.December, 25), regions: []string{"DE"}},
+	{nameDE: "Christtag", nameEN: "Christmas Day", date: fixed(time.December, 25), regions: []string{"AT"}},
+	{nameDE: "2. Weihnachtstag", nameEN: "Boxing Day", date: fixed(time.December, 26), regions: []string{"DE"}},
+	{nameDE: "Stefanitag", nameEN: "St Stephen's Day", date: fixed(time.December, 26), regions: []string{"AT"}},
 }
 
 // For returns the holidays of a region in a year, sorted by date. Unknown
@@ -95,9 +103,14 @@ func For(code string, year int) []Holiday {
 	}
 	var out []Holiday
 	for _, ru := range append(rules, swissRules...) {
-		if year >= ru.from && applies(ru.regions, r) {
-			out = append(out, Holiday{Date: ru.date(year), NameDE: ru.nameDE, NameEN: ru.nameEN})
+		if year < ru.from || (ru.to != 0 && year > ru.to) || !applies(ru.regions, r) {
+			continue
 		}
+		d := ru.date(year)
+		if ru.when != nil && !ru.when(d) {
+			continue
+		}
+		out = append(out, Holiday{Date: d, NameDE: ru.nameDE, NameEN: ru.nameEN, Partial: ru.partial})
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Date.Before(out[j].Date) })
 	return out

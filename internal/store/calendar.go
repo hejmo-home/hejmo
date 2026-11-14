@@ -30,7 +30,10 @@ type Calendar struct {
 	Kind        string // local, ics, caldav, google
 	Color       string
 	ReadOnly    bool // ICS calendars are always read-only
-	Audience    calendar.Audience
+	// Shared is "share through the box": phones may subscribe to the calendar
+	// over CalDAV. Always true for the family calendar.
+	Shared   bool
+	Audience calendar.Audience
 }
 
 const (
@@ -111,14 +114,14 @@ func (db *DB) CreateCalendar(c Calendar) (Calendar, error) {
 
 // Calendars lists a household's calendars with their audiences.
 func (db *DB) Calendars(householdID string) ([]Calendar, error) {
-	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color, read_only FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
+	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color, read_only, shared OR kind = 'local' FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
 	if err != nil {
 		return nil, err
 	}
 	var out []Calendar
 	for rows.Next() {
 		var c Calendar
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly); err != nil {
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -131,6 +134,29 @@ func (db *DB) Calendars(householdID string) ([]Calendar, error) {
 		}
 	}
 	return out, rows.Err()
+}
+
+// SetCalendarShared switches "share through the box" for a synced calendar.
+// The family calendar is always served: asking to change it is invalid.
+func (db *DB) SetCalendarShared(householdID, calendarID string, shared bool) error {
+	var kind string
+	err := db.sql.QueryRow(`SELECT kind FROM calendars WHERE id = ? AND household_id = ?`, calendarID, householdID).Scan(&kind)
+	if errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	}
+	if err != nil {
+		return err
+	}
+	if kind == "local" {
+		return fmt.Errorf("%w: the family calendar is always shared", ErrInvalid)
+	}
+	return expectOne(db.sql.Exec(`UPDATE calendars SET shared = ?, updated_at = ? WHERE id = ? AND household_id = ?`, shared, now(), calendarID, householdID))
+}
+
+// CalendarEvents returns every event of one calendar: single events, series
+// masters and changed occurrences, masters first.
+func (db *DB) CalendarEvents(householdID, calendarID string) ([]calendar.Event, error) {
+	return db.queryEvents(eventSelect+` WHERE household_id = ? AND calendar_id = ? ORDER BY series_id IS NOT NULL, start_local, id`, householdID, calendarID)
 }
 
 // FamilyCalendar returns the household's local calendar, creating it once.
@@ -297,7 +323,7 @@ func writeAudience(tx *sql.Tx, table, key, id string, a calendar.Audience) error
 }
 
 const eventSelect = `SELECT id, calendar_id, title, description, location, all_day, start_local, end_local, tzid, rrule,
-	COALESCE(series_id, ''), COALESCE(recurrence_id, '') FROM events`
+	COALESCE(series_id, ''), COALESCE(recurrence_id, ''), updated_at FROM events`
 
 // Series returns the event with this id together with its series: the
 // master and all changed occurrences.
@@ -365,10 +391,11 @@ func (db *DB) queryEvents(query string, args ...any) ([]calendar.Event, error) {
 
 func scanEvent(rows *sql.Rows) (calendar.Event, error) {
 	var e calendar.Event
-	var start, end, tz, recID string
-	if err := rows.Scan(&e.ID, &e.CalendarID, &e.Title, &e.Description, &e.Location, &e.AllDay, &start, &end, &tz, &e.RRule, &e.SeriesID, &recID); err != nil {
+	var start, end, tz, recID, updated string
+	if err := rows.Scan(&e.ID, &e.CalendarID, &e.Title, &e.Description, &e.Location, &e.AllDay, &start, &end, &tz, &e.RRule, &e.SeriesID, &recID, &updated); err != nil {
 		return e, err
 	}
+	e.UpdatedAt, _ = time.Parse(time.RFC3339, updated)
 	loc, err := time.LoadLocation(tz)
 	if err != nil {
 		return e, err

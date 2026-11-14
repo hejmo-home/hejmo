@@ -22,6 +22,10 @@ type APIToken struct {
 	Hash     string
 	PersonID string
 	Scopes   string
+	// Filled by APITokens only.
+	PersonName string
+	Created    time.Time
+	LastUsed   time.Time // zero = never
 }
 
 // Configured reports whether first-run setup is complete: a parent account
@@ -127,6 +131,35 @@ func (db *DB) APITokenByHash(hash string) (APIToken, error) {
 		return APIToken{}, ErrNotFound
 	}
 	return t, err
+}
+
+// APITokens lists a household's active (not revoked) tokens, oldest first.
+// The token hash is left out.
+func (db *DB) APITokens(householdID string) ([]APIToken, error) {
+	rows, err := db.sql.Query(`SELECT t.id, t.name, t.person_id, p.name, t.scopes, t.created_at, t.last_used_at
+		FROM api_tokens t JOIN household_members m ON m.person_id = t.person_id JOIN people p ON p.id = t.person_id
+		WHERE m.household_id = ? AND t.revoked_at IS NULL ORDER BY t.created_at, t.rowid`, householdID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []APIToken
+	for rows.Next() {
+		var t APIToken
+		var created string
+		var used sql.NullString
+		if err := rows.Scan(&t.ID, &t.Name, &t.PersonID, &t.PersonName, &t.Scopes, &created, &used); err != nil {
+			return nil, err
+		}
+		t.Created, t.LastUsed = parseStamp(sql.NullString{String: created, Valid: true}), parseStamp(used)
+		out = append(out, t)
+	}
+	return out, rows.Err()
+}
+
+// TouchAPIToken records that a token was used at t.
+func (db *DB) TouchAPIToken(id string, t time.Time) error {
+	return expectOne(db.sql.Exec(`UPDATE api_tokens SET last_used_at = ? WHERE id = ?`, stamp(t), id))
 }
 
 // RevokeAPIToken disables a token for good.

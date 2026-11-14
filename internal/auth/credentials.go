@@ -31,6 +31,13 @@ const (
 	argonTime    = 2
 	argonThreads = 1
 	argonKeyLen  = 32
+
+	// Upper bounds accepted when verifying a stored hash.
+	minKeyLen    = 16
+	maxKeyLen    = 64
+	maxMemoryKiB = 256 * 1024
+	maxPasses    = 10
+	maxThreads   = 8
 )
 
 // HashPassword returns an Argon2id PHC string for password.
@@ -67,16 +74,21 @@ func verifySecret(hash, secret string) bool {
 	if _, err := fmt.Sscanf(parts[3], "m=%d,t=%d,p=%d", &memory, &passes, &threads); err != nil || threads == 0 {
 		return false
 	}
+	// The hash comes from the database; refuse parameters that would make a
+	// check take minutes or gigabytes.
+	if memory > maxMemoryKiB || passes == 0 || passes > maxPasses || threads > maxThreads {
+		return false
+	}
 	b64 := base64.RawStdEncoding
 	salt, err := b64.DecodeString(parts[4])
 	if err != nil {
 		return false
 	}
 	want, err := b64.DecodeString(parts[5])
-	if err != nil || len(want) == 0 {
+	if err != nil || len(want) < minKeyLen || len(want) > maxKeyLen {
 		return false
 	}
-	got := argon2.IDKey([]byte(secret), salt, passes, memory, threads, uint32(len(want)))
+	got := argon2.IDKey([]byte(secret), salt, passes, memory, threads, uint32(len(want))) // #nosec G115 -- len(want) is within minKeyLen..maxKeyLen above
 	return subtle.ConstantTimeCompare(got, want) == 1
 }
 
@@ -97,7 +109,10 @@ func TOTPCode(secret string, t time.Time) (string, error) {
 	if err != nil {
 		return "", errors.New("auth: invalid TOTP secret")
 	}
-	return hotp(key, uint64(t.Unix()/30)), nil
+	if t.Unix() < 0 {
+		return "", errors.New("auth: time before 1970")
+	}
+	return hotp(key, uint64(t.Unix()/30)), nil // #nosec G115 -- t.Unix() >= 0 checked above
 }
 
 func hotp(key []byte, counter uint64) string {

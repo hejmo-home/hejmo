@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/region"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -135,8 +136,15 @@ func (s *server) handleSetupTOTPForm(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) renderTOTP(w http.ResponseWriter, r *http.Request, status int, acc store.Account, errKey string) {
+	uri := auth.TOTPURI(acc.TOTPSecret, acc.Username)
+	svg, err := qrsvg.SVG(uri, s.i18n.T(s.langOf(r), "setup.totp.qr"))
+	if err != nil {
+		s.fail(w, "qr code", err)
+		return
+	}
 	s.render(w, r, status, "setup_totp.html", map[string]any{
-		"Secret": acc.TOTPSecret, "URI": template.URL(auth.TOTPURI(acc.TOTPSecret, acc.Username)), // built here, safe scheme, "Error": errKey,
+		"Secret": acc.TOTPSecret, "URI": template.URL(uri), // built here, safe scheme
+		"QR": template.HTML(svg), "Error": errKey,
 	})
 }
 

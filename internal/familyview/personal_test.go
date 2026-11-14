@@ -93,6 +93,16 @@ func TestPersonalViewListsAllDayFirstAndMultiDayOnEachDay(t *testing.T) {
 	if got := dayTitles(v.Days[3]); got != "Camp" {
 		t.Errorf("day 4 = %q", got)
 	}
+	// Camp runs 15/11 18:00 to 17/11 10:00: start on the first day, all day in between, end on the last.
+	if e := v.Days[1].Events[1]; e.Time != "18:00" || e.AllDay {
+		t.Errorf("first day = %+v, want from 18:00", e)
+	}
+	if e := v.Days[2].Events[0]; !e.AllDay || e.Time != "" {
+		t.Errorf("middle day = %+v, want all day", e)
+	}
+	if e := v.Days[3].Events[0]; e.Time != "–10:00" || e.AllDay {
+		t.Errorf("last day = %+v, want until 10:00", e)
+	}
 }
 
 // 5.6 (ADR 0015): tasks for today come with their state, morning before any time before evening.

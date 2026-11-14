@@ -195,14 +195,42 @@ func TestDisplayTickingIsRefusedForUnpairedDisplaysAndUnknownTasks(t *testing.T)
 	if ok, _ := f.db.TaskDone(tk.ID, "2026-11-14"); ok {
 		t.Error("an unpaired display ticked a task")
 	}
-	if r := f.display.post("/display/tasks/00000000-0000-4000-8000-000000000000/done", url.Values{"done": {"1"}}); r.status != 404 {
-		t.Errorf("unknown task = %d, want 404", r.status)
+}
+
+// A failed tick goes back to the personal view (or the display home), never to a bare error page
+// that would leave the kiosk stuck without display.js.
+func TestDisplayFailedTicksGoBackToTheDisplay(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	tk := f.task(t, "Mia", "Homework", task.Daily)
+	f.now = f.at(14, 9, 0)
+	home := "/display/person/" + f.people["Mia"].ID
+	if r := f.display.post("/display/tasks/00000000-0000-4000-8000-000000000000/done", url.Values{"done": {"1"}}); r.status != 303 || r.location != "/display" {
+		t.Errorf("unknown task = %d %q, want 303 /display", r.status, r.location)
 	}
-	if r := f.display.post("/display/tasks/"+tk.ID+"/done", url.Values{}); r.status != 422 {
-		t.Errorf("missing done = %d, want 422", r.status)
+	if r := f.display.post("/display/tasks/"+tk.ID+"/done", url.Values{}); r.status != 303 || r.location != home {
+		t.Errorf("missing done = %d %q, want 303 %s", r.status, r.location, home)
 	}
 	future, _ := f.db.AddTask(f.householdID, task.Task{PersonID: f.people["Mia"].ID, Title: "Later", Repeat: task.Once, Date: "2026-11-20"})
-	if r := f.display.post("/display/tasks/"+future.ID+"/done", url.Values{"done": {"1"}}); r.status != 422 {
-		t.Errorf("task not due = %d, want 422", r.status)
+	if r := f.display.post("/display/tasks/"+future.ID+"/done", url.Values{"done": {"1"}}); r.status != 303 || r.location != home {
+		t.Errorf("task not due = %d %q, want 303 %s", r.status, r.location, home)
+	}
+}
+
+// The tick carries the day the page was rendered for, so a tap after midnight
+// still ticks the task of the day on screen.
+func TestDisplayTickUsesTheDayOfThePage(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	tk := f.task(t, "Mia", "Homework", task.Daily)
+	f.now = f.at(14, 9, 0)
+	if !strings.Contains(f.personalPage(t, "en", "Mia", 14, 9).body, `name="day" value="2026-11-14"`) {
+		t.Error("form does not carry the day")
+	}
+	f.now = f.at(15, 0, 5)
+	f.display.post("/display/tasks/"+tk.ID+"/done", url.Values{"done": {"1"}, "day": {"2026-11-14"}})
+	if ok, _ := f.db.TaskDone(tk.ID, "2026-11-14"); !ok {
+		t.Error("the day on screen was not ticked")
+	}
+	if ok, _ := f.db.TaskDone(tk.ID, "2026-11-15"); ok {
+		t.Error("the new day was ticked")
 	}
 }

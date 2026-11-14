@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"net/http"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -82,27 +83,37 @@ func (s *server) handleDisplayTaskDone(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "household", err)
 		return
 	}
+	t, err := s.db.Task(h.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		// The task is gone: back to the display, never to a bare error page
+		// (it has no display.js and would leave the kiosk stuck).
+		http.Redirect(w, r, "/display", http.StatusSeeOther)
+		return
+	}
+	if err != nil {
+		s.fail(w, "task", err)
+		return
+	}
+	back := "/display/person/" + t.PersonID
 	var done bool
 	switch r.PostFormValue("done") {
 	case "1":
 		done = true
 	case "0":
 	default:
-		http.Error(w, "done must be 1 or 0", http.StatusUnprocessableEntity)
+		http.Redirect(w, r, back, http.StatusSeeOther)
 		return
 	}
-	t, err := s.db.Task(h.ID, r.PathValue("id"))
-	if err == nil {
-		err = s.db.SetTaskDone(h.ID, t.ID, s.today(principal{household: h}), done, "", s.now())
+	// The day the page was rendered for, so a tap after midnight ticks the day on screen.
+	day := r.PostFormValue("day")
+	if _, perr := time.Parse(task.DateLayout, day); perr != nil {
+		day = s.today(principal{household: h})
 	}
-	switch {
-	case errors.Is(err, store.ErrNotFound):
-		http.NotFound(w, r)
-	case errors.Is(err, store.ErrInvalid):
-		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
-	case err != nil:
-		s.fail(w, "tick task", err)
+	switch err = s.db.SetTaskDone(h.ID, t.ID, day, done, "", s.now()); {
+	case err == nil, errors.Is(err, store.ErrNotFound), errors.Is(err, store.ErrInvalid):
+		// Not due (any more) or deleted meanwhile: show the current state.
+		http.Redirect(w, r, back, http.StatusSeeOther)
 	default:
-		http.Redirect(w, r, "/display/person/"+t.PersonID, http.StatusSeeOther)
+		s.fail(w, "tick task", err)
 	}
 }

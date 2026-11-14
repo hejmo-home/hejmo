@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/task"
 )
 
 // PersonalDays is how many days the personal view covers: today and the next 6 (ADR 0015).
@@ -75,17 +76,26 @@ func BuildPersonal(in PersonalInput) PersonalView {
 			if !o.Start.Before(next) || !o.End.After(day) {
 				continue
 			}
-			if o.AllDay {
+			switch {
+			case o.AllDay:
 				allDay = append(allDay, PersonalEvent{Title: o.Title, AllDay: true})
-			} else {
+			case !multiDay(o, loc):
 				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: clock(o, loc)})
+			case firstDay(o, loc).Equal(day):
+				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: o.Start.In(loc).Format("15:04")})
+			case calendar.LastDay(o, loc).Equal(day):
+				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: "–" + o.End.In(loc).Format("15:04")})
+			default:
+				allDay = append(allDay, PersonalEvent{Title: o.Title, AllDay: true})
 			}
 		}
 		d.Events = append(allDay, timedEvents...)
 		v.Days = append(v.Days, d)
 	}
-	rank := map[string]int{"morning": 0, "": 1, "evening": 2}
+	rank := map[task.PartOfDay]int{task.Morning: 0, task.AnyTime: 1, task.Evening: 2}
 	v.Tasks = append([]Task(nil), in.Tasks...)
-	sort.SliceStable(v.Tasks, func(i, j int) bool { return rank[v.Tasks[i].Part] < rank[v.Tasks[j].Part] })
+	sort.SliceStable(v.Tasks, func(i, j int) bool {
+		return rank[task.PartOfDay(v.Tasks[i].Part)] < rank[task.PartOfDay(v.Tasks[j].Part)]
+	})
 	return v
 }

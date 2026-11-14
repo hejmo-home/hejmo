@@ -25,7 +25,8 @@
       {{if .Tasks}}<ul>
         {{range .Tasks}}<li data-task="{{.ID}}" data-done="{{.Done}}"><form method="post" action="/display/tasks/{{.ID}}/done">
           <input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">
-          <button class="big-check" type="submit" aria-pressed="{{.Done}}" aria-label="{{if .Done}}{{t "personal.task_done"}}{{else}}{{t "personal.task_open"}}{{end}}"><span class="box" aria-hidden="true"></span><span class="title">{{if .Emoji}}{{.Emoji}} {{end}}{{.Title}}</span></button>
+          <input type="hidden" name="day" value="{{$.Date.Format "2006-01-02"}}">
+          <button class="big-check" type="submit" aria-pressed="{{.Done}}" aria-label="{{.Title}}: {{if .Done}}{{t "personal.task_done"}}{{else}}{{t "personal.task_open"}}{{end}}"><span class="box" aria-hidden="true"></span><span class="title">{{if .Emoji}}{{.Emoji}} {{end}}{{.Title}}</span></button>
         </form></li>
         {{end}}</ul>{{else}}<div class="none">{{t "personal.tasks_none"}}</div>{{end}}
     </aside>

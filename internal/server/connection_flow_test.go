@@ -86,11 +86,92 @@ func TestConnectionCalendarChoiceUsesTheWholeFamilyChip(t *testing.T) {
 	if strings.Contains(page, "leave it empty") || strings.Contains(page, "leer heißt") {
 		t.Error("selection page still explains an empty audience instead of showing the chip")
 	}
-	// Whole family chip alone: no audience. A person chip: that person.
+	// Whole family chip alone: no audience.
 	b.post("/connections/"+id+"/calendars", url.Values{"calendar": {flowCalendar}, "name_" + flowCalendar: {"Home"}, "whole_family": {"1"}, "interval": {"60"}})
 	cals, _ := b.db.SyncedCalendars(h.ID)
 	if len(cals) != 1 || len(cals[0].Audience.People) != 0 || len(cals[0].Audience.Groups) != 0 {
 		t.Fatalf("whole family chip stored an audience: %+v", cals)
+	}
+}
+
+func TestConnectionCalendarChoiceStoresAChosenPerson(t *testing.T) {
+	b := signedInAPI(t).b
+	id := connectedBox(t, b)
+	h, _ := b.db.HomeHousehold()
+	mia, _ := b.db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
+	b.post("/connections/"+id+"/calendars", url.Values{"calendar": {flowCalendar}, "name_" + flowCalendar: {"Home"}, "people_" + flowCalendar: {mia.ID}, "interval": {"60"}})
+	cals, _ := b.db.SyncedCalendars(h.ID)
+	if len(cals) != 1 || len(cals[0].Audience.People) != 1 || cals[0].Audience.People[0] != mia.ID {
+		t.Fatalf("chosen person not stored as audience: %+v", cals)
+	}
+}
+
+const flowCalendar2 = "https://caldav.example.org/cal/work/"
+
+// twoCalendarBox connects a box whose server has two calendars.
+func twoCalendarBox(t *testing.T) (*box, string) {
+	b := signedInAPI(t).b
+	id := connectedBox(t, b)
+	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
+		return hostedRemote{found: []caldavclient.Calendar{{URL: flowCalendar, Name: "Home"}, {URL: flowCalendar2, Name: "Work"}}}, nil
+	})
+	return b, id
+}
+
+func TestConnectionCalendarErrorKeepsWhatWasEntered(t *testing.T) {
+	b, id := twoCalendarBox(t)
+	h, _ := b.db.HomeHousehold()
+	mia, _ := b.db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
+	form := url.Values{
+		"calendar":               {flowCalendar, flowCalendar2},
+		"name_" + flowCalendar:   {"Our home"},
+		"color_" + flowCalendar:  {"#112233"},
+		"people_" + flowCalendar: {mia.ID},
+		"name_" + flowCalendar2:  {""}, // fails
+		"color_" + flowCalendar2: {"#445566"},
+		"interval":               {"15"},
+	}
+	r := b.do(http.MethodPost, "/connections/"+id+"/calendars", form, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("status %d\n%s", r.status, r.body)
+	}
+	page := formOf(t, r.body, "/connections/"+id+"/calendars")
+	for _, want := range []string{
+		`value="` + flowCalendar + `" checked`, `value="` + flowCalendar2 + `" checked`,
+		`value="Our home"`, `value="#112233"`, `value="#445566"`,
+		`<option value="15" selected>`, `value="` + mia.ID + `" checked`,
+	} {
+		if !strings.Contains(page, want) {
+			t.Errorf("page lost %q:\n%s", want, page)
+		}
+	}
+	if !strings.Contains(page, `aria-invalid="true"`) || !strings.Contains(page, `aria-describedby="err-name"`) {
+		t.Errorf("name input not marked invalid:\n%s", page)
+	}
+	// Nothing is saved when one calendar is wrong.
+	if cals, _ := b.db.SyncedCalendars(h.ID); len(cals) != 0 {
+		t.Errorf("calendars saved despite the error: %+v", cals)
+	}
+}
+
+func TestConnectionCalendarErrorSurvivesFailedRediscovery(t *testing.T) {
+	b, id := twoCalendarBox(t)
+	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
+		return errRemote{err: errors.New("offline in test")}, nil
+	})
+	form := url.Values{"calendar": {flowCalendar}, "name_" + flowCalendar: {""}, "interval": {"60"}}
+	r := b.do(http.MethodPost, "/connections/"+id+"/calendars", form, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "Please enter a name.") {
+		t.Fatalf("error lost: status %d\n%s", r.status, r.body)
+	}
+}
+
+func TestConnectionCalendarsNothingTickedIsAnError(t *testing.T) {
+	b := signedInAPI(t).b
+	id := connectedBox(t, b)
+	r := b.do(http.MethodPost, "/connections/"+id+"/calendars", url.Values{"interval": {"60"}}, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `class="error"`) {
+		t.Fatalf("status %d\n%s", r.status, r.body)
 	}
 }
 

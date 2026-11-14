@@ -159,6 +159,7 @@
   "connections.choose.none": "No calendars were found on this server.",
   "connections.error.provider": "Please choose iCloud or a CalDAV server.",
   "connections.error.url": "Please enter a valid address starting with https:// or http://.",
+  "connections.error.none_ticked": "Please tick at least one calendar.",
   "connections.error.duplicate": "This calendar is already synced.",
   "connections.error.calendar": "That address is not on the server of this connection.",
   "connections.error.username": "Please enter the user name.",

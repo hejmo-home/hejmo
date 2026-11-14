@@ -11,18 +11,23 @@
       {{if $cal.Added}}
       <p><strong>{{$cal.Name}}</strong> <span class="hint">{{t "connections.choose.added"}}</span></p>
       {{else}}
-      <label class="check"><input type="checkbox" name="calendar" value="{{$cal.URL}}"> <strong>{{$cal.Name}}</strong></label>
+      {{$here := eq $.ErrorCalendar $cal.URL}}
+      <label class="check"><input type="checkbox" name="calendar" value="{{$cal.URL}}"{{if $cal.Ticked}} checked{{end}}{{if and $here (eq $.ErrorField "calendar")}} aria-invalid="true" aria-describedby="err-calendar"{{end}}> <strong>{{$cal.Name}}</strong></label>
       <label>{{t "calendars.field.name"}}
-        <input name="name_{{$cal.URL}}" value="{{$cal.Name}}"></label>
+        <input name="name_{{$cal.URL}}" value="{{$cal.Name}}"{{if and $here (eq $.ErrorField "name")}} aria-invalid="true" aria-describedby="err-name"{{end}}></label>
+      {{if and $here (eq $.ErrorField "name")}}{{template "fieldError" (dict "Root" $ "Name" "name")}}{{end}}
       <label>{{t "calendars.field.color"}}
-        <input name="color_{{$cal.URL}}" type="color" value="#2F5E7A"></label>
-      {{template "personChips" (dict "Root" (dict "ErrorField" "" "Error" "") "Name" (printf "people_%s" $cal.URL) "GroupsName" (printf "groups_%s" $cal.URL) "Legend" (t "calendars.field.audience") "People" $.People "Groups" $.Groups "Whole" true)}}
-      {{if and (eq $.ErrorField "calendar") (eq $.ErrorCalendar $cal.URL)}}{{template "fieldError" (dict "Root" $ "Name" "calendar")}}{{end}}
+        <input name="color_{{$cal.URL}}" type="color" value="{{$cal.Color}}"{{if and $here (eq $.ErrorField "color")}} aria-invalid="true" aria-describedby="err-color"{{end}}></label>
+      {{if and $here (eq $.ErrorField "color")}}{{template "fieldError" (dict "Root" $ "Name" "color")}}{{end}}
+      {{$chipRoot := dict "ErrorField" "" "Error" ""}}
+      {{if and $here (eq $.ErrorField "audience")}}{{$chipRoot = dict "ErrorField" (printf "people_%s" $cal.URL) "Error" $.Error}}{{end}}
+      {{template "personChips" (dict "Root" $chipRoot "Name" (printf "people_%s" $cal.URL) "GroupsName" (printf "groups_%s" $cal.URL) "Legend" (t "calendars.field.audience") "People" $.People "Selected" $cal.People "Groups" $.Groups "SelectedGroups" $cal.Groups "Whole" true)}}
+      {{if and $here (eq $.ErrorField "calendar")}}{{template "fieldError" (dict "Root" $ "Name" "calendar")}}{{end}}
       {{end}}
     </fieldset>
     {{end}}
     <label>{{t "calendars.field.interval"}}
-      <select name="interval">{{range .Intervals}}<option value="{{.}}"{{if eq . $.DefaultInterval}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+      <select name="interval"{{if eq .ErrorField "interval"}} aria-invalid="true" aria-describedby="err-interval"{{end}}>{{range .Intervals}}<option value="{{.}}"{{if eq . $.DefaultInterval}} selected{{end}}>{{.}}</option>{{end}}</select></label>
     {{template "fieldError" (dict "Root" . "Name" "interval")}}
     <button class="button" type="submit">{{t "connections.choose.submit"}}</button>
   </form>

@@ -3,6 +3,8 @@ package server
 import (
 	"errors"
 	"net/http"
+	"net/url"
+	"slices"
 	"strconv"
 
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -41,17 +43,52 @@ func connectionErrorField(e *inputError, provider string) string {
 }
 
 // selectionErrorField names what an error of the calendar choice belongs to:
-// the interval or the calendar that was being added.
+// the input concerned, or the calendar as a whole.
 func selectionErrorField(e *inputError) string {
-	if e.Field == "interval" {
-		return "interval"
+	switch e.Field {
+	case "interval", "name", "color", "audience":
+		return e.Field
 	}
 	return "calendar"
 }
 
+// selectionCalendar is one calendar on the choice page with what the parent
+// entered for it, or the defaults.
+type selectionCalendar struct {
+	URL, Name, Color string
+	Added, Ticked    bool
+	People, Groups   []string
+}
+
+// selectionDefaultColor is the colour offered for a calendar not yet chosen.
+const selectionDefaultColor = "#2F5E7A"
+
+// selectionCalendars shows the discovered calendars with the values of a
+// submitted form (nil for the defaults), so a page shown again after an error
+// keeps what was entered.
+func selectionCalendars(found []discoveredJSON, form url.Values) []selectionCalendar {
+	out := make([]selectionCalendar, 0, len(found))
+	for _, f := range found {
+		c := selectionCalendar{URL: f.URL, Name: f.Name, Color: selectionDefaultColor, Added: f.Added}
+		if form != nil && !f.Added {
+			c.Ticked = slices.Contains(form["calendar"], f.URL)
+			if form.Has("name_" + f.URL) {
+				c.Name = form.Get("name_" + f.URL)
+			}
+			if v := form.Get("color_" + f.URL); v != "" {
+				c.Color = v
+			}
+			c.People, c.Groups = form["people_"+f.URL], form["groups_"+f.URL]
+		}
+		out = append(out, c)
+	}
+	return out
+}
+
 // renderSelection shows the calendars found on a connection so parents can
-// tick the ones to sync. Colour and audience are chosen per calendar.
-func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p principal, status int, conn store.Connection, found []discoveredJSON, errKey, errField, errCalendar string) {
+// tick the ones to sync. Colour and audience are chosen per calendar. A
+// submitted form, if any, fills the page again.
+func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p principal, status int, conn store.Connection, found []discoveredJSON, form url.Values, errKey, errField, errCalendar string) {
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
 		s.fail(w, "people", err)
@@ -67,10 +104,14 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 	for _, x := range groups {
 		groupChoices = append(groupChoices, choice{x.ID, x.Name})
 	}
+	interval := defaultCalDAVSync
+	if n, err := strconv.Atoi(form.Get("interval")); err == nil {
+		interval = n
+	}
 	s.render(w, r, status, "connection.html", map[string]any{
 		"Person": p.person, "Connection": connectionView{ID: conn.ID, URL: conn.URL, Username: conn.Username},
-		"Found": found, "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
-		"DefaultInterval": defaultCalDAVSync, "SyncStale": s.syncStale(p.household.ID),
+		"Found": selectionCalendars(found, form), "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
+		"DefaultInterval": interval, "SyncStale": s.syncStale(p.household.ID),
 		"Error": errKey, "ErrorField": errField, "ErrorCalendar": errCalendar,
 	})
 }
@@ -105,7 +146,7 @@ func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "connect", err)
 		return
 	}
-	s.renderSelection(w, r, p, http.StatusOK, conn, marked, "", "", "")
+	s.renderSelection(w, r, p, http.StatusOK, conn, marked, nil, "", "", "")
 }
 
 func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
@@ -125,13 +166,13 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 	var bad *inputError
 	switch {
 	case errors.As(err, &bad):
-		s.renderSelection(w, r, p, http.StatusBadGateway, conn, nil, connectionErrorKey(bad), "", "")
+		s.renderSelection(w, r, p, http.StatusBadGateway, conn, nil, nil, connectionErrorKey(bad), "", "")
 		return
 	case err != nil:
 		s.fail(w, "discover", err)
 		return
 	}
-	s.renderSelection(w, r, p, http.StatusOK, conn, found, "", "", "")
+	s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "")
 }
 
 func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Request) {
@@ -149,6 +190,7 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 	}
 	_ = r.ParseForm()
 	interval, convErr := strconv.Atoi(r.PostFormValue("interval"))
+	var chosen []newCalendarInput
 	for _, address := range r.PostForm["calendar"] {
 		in := newCalendarInput{
 			Name: r.PostFormValue("name_" + address), URL: address, Color: r.PostFormValue("color_" + address),
@@ -157,17 +199,36 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 		if convErr == nil {
 			in.IntervalMinutes = &interval
 		}
-		_, err := s.addConnectionCalendar(r, p, conn.ID, in)
+		chosen = append(chosen, in)
+	}
+	// Everything is checked before anything is saved, so a mistake in one
+	// calendar leaves the others for the next try instead of half-saving.
+	show := func(errKey, errField, errCalendar string) {
+		found, derr := s.rediscover(r.Context(), p, conn)
+		if derr != nil {
+			// Without calendars the error cannot sit at one; show it generally.
+			found, errField = nil, ""
+		}
+		s.renderSelection(w, r, p, http.StatusUnprocessableEntity, conn, found, r.PostForm, errKey, errField, errCalendar)
+	}
+	if len(chosen) == 0 {
+		show("connections.error.none_ticked", "", "")
+		return
+	}
+	for _, in := range chosen {
+		_, err := s.checkConnectionCalendar(p, conn, in)
 		var bad *inputError
 		switch {
 		case errors.As(err, &bad):
-			found, derr := s.rediscover(r.Context(), p, conn)
-			if derr != nil {
-				found = nil
-			}
-			s.renderSelection(w, r, p, http.StatusUnprocessableEntity, conn, found, connectionErrorKey(bad), selectionErrorField(bad), address)
+			show(connectionErrorKey(bad), selectionErrorField(bad), in.URL)
 			return
 		case err != nil:
+			s.fail(w, "add calendar", err)
+			return
+		}
+	}
+	for _, in := range chosen {
+		if _, err := s.addConnectionCalendar(r, p, conn.ID, in); err != nil {
 			s.fail(w, "add calendar", err)
 			return
 		}

@@ -11,6 +11,11 @@ on:
 permissions:
   contents: read
 
+# Two quick merges must not leave :preview on the older commit.
+concurrency:
+  group: preview
+  cancel-in-progress: true
+
 env:
   IMAGE: ghcr.io/hejmo-home/hejmo
 

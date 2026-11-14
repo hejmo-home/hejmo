@@ -65,11 +65,15 @@ jobs:
           grep -q 'linux/amd64' index.txt
           grep -q 'linux/arm64' index.txt
       - name: Verify the signature as the box's updater will
+        env:
+          TAG: ${{ github.ref_name }}
         run: |
           cosign verify "$IMAGE@${{ steps.build.outputs.digest }}" \
-            --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/release.yml@refs/tags/${{ github.ref_name }}" \
+            --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/release.yml@refs/tags/$TAG" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com
 
+  # If this job fails, the image (and :latest) is already public without a
+  # GitHub release. Recover by re-running this job from the Actions UI.
   notes:
     name: GitHub release with notes
     needs: image

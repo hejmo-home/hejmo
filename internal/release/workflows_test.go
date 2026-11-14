@@ -119,15 +119,37 @@ func TestPreviewRunsOnMainAndNeverLooksLikeARelease(t *testing.T) {
 	if _, ok := push["tags"]; ok {
 		t.Error("preview must not run on tags")
 	}
-	for _, bad := range []string{"value=latest", "type=semver", "type=ref,event=tag", "gh release", "cosign sign"} {
+	for _, bad := range []string{"value=latest", "latest=true", "latest=auto", "type=semver", "type=ref,event=tag", "gh release", "cosign sign"} {
 		if strings.Contains(raw, bad) {
 			t.Errorf("preview.yml must not contain %q", bad)
 		}
+	}
+	if !strings.Contains(raw, "flavor: latest=false") {
+		t.Error("preview metadata step must set flavor latest=false")
+	}
+	conc, _ := doc["concurrency"].(map[string]any)
+	if conc == nil || conc["cancel-in-progress"] != true {
+		t.Error("preview needs a concurrency group with cancel-in-progress so :preview never lands on an older commit")
 	}
 	if !strings.Contains(raw, "preview-") {
 		t.Error("preview images must carry a preview- tag")
 	}
 	if !strings.Contains(raw, "linux/amd64,linux/arm64") {
 		t.Error("preview builds both architectures")
+	}
+}
+
+// Expressions must not be interpolated into run: scripts (script injection);
+// they go through env instead.
+func TestReleaseRunScriptsDoNotInterpolateRefName(t *testing.T) {
+	_, raw := load(t, "release.yml")
+	for _, line := range strings.Split(raw, "\n") {
+		trimmed := strings.TrimSpace(line)
+		if strings.HasPrefix(trimmed, "#") || strings.HasPrefix(trimmed, "TAG:") {
+			continue
+		}
+		if strings.Contains(line, "github.ref_name") {
+			t.Errorf("github.ref_name used outside env: %q", trimmed)
+		}
 	}
 }

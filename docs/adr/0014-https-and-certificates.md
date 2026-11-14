@@ -38,3 +38,12 @@ With the box as a CalDAV server in V1.0 (ADR 0012), phones send credentials to t
 - The CA fingerprint on the trust page is served over HTTP, so it only helps against mistakes, not against an attacker on the network. The box also logs the fingerprint when it creates the CA; compare it with the log for a stronger check.
 - If the box is reached by a two-label LAN name such as `fritz.box`, the CA's name constraint permits every name under it. Prefer the IP address or `hejmo.local` during setup.
 - The CA is valid for 10 years and is not renewed. Box certificates are capped at the CA's expiry, and the box logs a warning once that cap applies.
+
+## Notes on the public name (added in ticket #14)
+
+- The wizard offers deSEC as the DNS provider. Other libdns providers (Hetzner, INWX, Cloudflare) are one entry each in `publiccert`, but each adds a dependency and is left to a later ticket.
+- The box finds the DNS zone through SOA lookups, sets an A (or AAAA) record for the name to the LAN address the family enters (prefilled from the address used to reach the wizard) and keeps no other DNS records.
+- Actalis needs an account: the wizard asks for its external account binding (key ID and HMAC key). ZeroSSL hands out account keys against an email address, so the fallback issuer is active only if the family enters an email address.
+- The name check runs in the browser (a `no-cors` request to `https://<name>/healthz` that succeeds only if the name resolves and the certificate is trusted); the box cannot know what the family's router does with the name. On failure the page shows the FRITZ!Box rebind help and tries again every five seconds.
+- The DNS token and account keys are sealed with AES-256-GCM; the key is the file `secret.key` in the data directory, never in the database.
+- Renewal failures are stored in the database and shown to parents on the start page and the calendars page and through `GET /api/v1/https`. The same warning appears when a certificate has less than 7 days left.

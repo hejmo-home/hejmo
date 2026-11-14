@@ -48,6 +48,10 @@ _Avoid_: onboarding, installer
 The box's own certificate authority, name-constrained to the box so it cannot vouch for other sites. Devices trust it once (iOS profile, DAVx5 prompt, browser import). The fallback when no public name and certificate are used (ADR 0014).
 _Avoid_: self-signed certificate, root cert
 
+**Public name**:
+A DNS name of the box (a free deSEC `dedyn.io` name or the family's own domain) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
+_Avoid_: domain, DynDNS
+
 **Home region**:
 The German state, Austrian state or Swiss canton of the household, which decides its public holidays.
 _Avoid_: location, country, Bundesland (in code)

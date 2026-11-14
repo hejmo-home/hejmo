@@ -208,6 +208,10 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 		if derr != nil {
 			// Without calendars the error cannot sit at one; show it generally.
 			found, errField = nil, ""
+		} else if errField != "" && !canTick(found, errCalendar) {
+			// A calendar that is already synced (or unknown) shows no field,
+			// so the message goes in the general error line.
+			errField = ""
 		}
 		s.renderSelection(w, r, p, http.StatusUnprocessableEntity, conn, found, r.PostForm, errKey, errField, errCalendar)
 	}
@@ -234,6 +238,12 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 		}
 	}
 	s.redirectSaved(w, r, "/calendars", "flash.calendar_added")
+}
+
+// canTick reports whether the calendar at address is shown with a field the
+// parents can still tick, so an error can sit there.
+func canTick(found []discoveredJSON, address string) bool {
+	return slices.ContainsFunc(found, func(f discoveredJSON) bool { return f.URL == address && !f.Added })
 }
 
 func (s *server) handleConnectionDelete(w http.ResponseWriter, r *http.Request) {

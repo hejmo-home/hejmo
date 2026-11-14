@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 14/11/2026
-- Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; the leave-the-house countdown stays out of V1.0 and comes back per person in V2), [0015](0015-display-web-interface-and-everyday.md) (tomorrow block faded and off by default, footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
+- Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; the leave-the-house countdown stays out of V1.0 and comes back per person in V2), [0015](0015-display-web-interface-and-everyday.md) (column limits per orientation, tomorrow block faded and off by default, footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
 
 ## Context
 
@@ -18,6 +18,7 @@ The product owner reviewed the first preview of the family view (PR #58, ticket 
 ### Person columns
 
 - Each person's column shows **today's task progress** as a bar with "done/total" (e.g. "3/5"), anchored to the bottom of the column. When the column's events scroll, the bar stays visible in the same place; the 18:00 tomorrow block of ADR 0015 scrolls with the events above it. A person without tasks today shows no bar.
+- **Column limits:** at most **6 person columns side by side in landscape** and **4 in portrait**; each column is at least about 150 px wide. When the people do not fit within these limits, the columns scroll sideways. On the reference E-Ink tablets (1024×768) the limits apply as stated; on small screens (an iPhone in portrait shows 2 columns) the minimum width makes them scroll earlier. This refines ADR 0015 ("up to 6 people the columns get narrower; from 7 they scroll").
 - **Tomorrow block** (ADR 0015: from 18:00, each person's first three timed events of the next day, and tomorrow's whole-household events at the end of the family strip): shown **faded**, so today's events stand out. Whether it is shown at all is a setting per display, **off by default**.
 - **Leave time per person in V2:** once journey times exist (V2), the person's next event with a journey time shows "leave in h:mm" in their column from 60 minutes before departure (event start minus journey time); several people can each show their own. Nothing of it is built in V1.0 (ADR 0008, handover).
 

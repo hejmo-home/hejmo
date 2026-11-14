@@ -21,7 +21,7 @@
         {{if .LastError}}<span class="hint">{{t "calendars.last_error"}} {{.LastError}}</span>{{end}}
         <span class="row">
           <form method="post" action="/calendars/{{.ID}}/sync"><button class="button" type="submit">{{t "calendars.sync_now"}}</button></form>
-          {{if .TwoWay}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="1"><button class="button secondary" type="submit">{{t "calendars.make_read_only"}}</button></form>{{end}}
+          {{if .TwoWay}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="1"><button class="button secondary" type="submit" title="{{t "calendars.make_read_only_hint"}}">{{t "calendars.make_read_only"}}</button><span class="hint">{{t "calendars.make_read_only_hint"}}</span></form>{{end}}
           {{if .Switchable}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="0"><button class="button secondary" type="submit">{{t "calendars.make_two_way"}}</button></form>{{end}}
           <form method="post" action="/calendars/{{.ID}}/delete"><button class="button secondary" type="submit">{{t "calendars.remove"}}</button></form>
         </span>

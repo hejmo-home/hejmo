@@ -475,3 +475,67 @@ func TestBoxEditDuringAnImportOfAnObjectDeletedOutsideIsNotLost(t *testing.T) {
 		t.Fatalf("pending = %+v, want the edit still queued", pend)
 	}
 }
+
+func (fx *davFixture) droppedLogged(t *testing.T) []string {
+	t.Helper()
+	log, err := fx.db.SyncLog(fx.h.ID, 100)
+	if err != nil {
+		t.Fatal(err)
+	}
+	var out []string
+	for _, e := range log {
+		if e.Message.Key == "sync.conflict.dropped_read_only" {
+			out = append(out, e.Message.Params["title"])
+		}
+	}
+	return out
+}
+
+func TestSwitchingToReadOnlyRemovesBoxOnlyEventsAndLogsWhatWasDropped(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swimming", "20260101T080000Z"))
+	fx.syncAfter(t, 0)
+
+	fx.tamper.RefuseWrites(403) // nothing reaches the server, so both stay queued
+	fx.boxEdits(t, "Swimming", "Swim on the box")
+	if _, err := fx.db.CreateEvent(fx.h.ID, calendar.Event{CalendarID: fx.cal.ID, Title: "Piano on the box",
+		Start: time.Date(2026, 11, 21, 15, 0, 0, 0, fx.berlin(t)), End: time.Date(2026, 11, 21, 16, 0, 0, 0, fx.berlin(t))}); err != nil {
+		t.Fatal(err)
+	}
+	if err := fx.db.SetCalendarReadOnly(fx.h.ID, fx.cal.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	fx.syncAfter(t, 5*time.Minute)
+
+	if got := fx.titles(t); len(got) != 1 || got[0] != "Swimming" {
+		t.Fatalf("events = %v, want only the outside Swimming", got)
+	}
+	got := fx.droppedLogged(t)
+	if len(got) != 2 || !(got[0] == "Piano on the box" && got[1] == "Swim on the box" || got[1] == "Piano on the box" && got[0] == "Swim on the box") {
+		t.Fatalf("dropped box changes logged = %v, want both titles", got)
+	}
+}
+
+func TestUnreadableOutsideObjectOfAReadOnlyCalendarKeepsTheBoxChangeQueued(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swimming", "20260101T080000Z"))
+	fx.syncAfter(t, 0)
+	fx.tamper.RefuseWrites(403)
+	fx.boxEdits(t, "Swimming", "Swim on the box")
+	if err := fx.db.SetCalendarReadOnly(fx.h.ID, fx.cal.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swim outside", "20260301T080000Z"))
+	fx.tamper.Break("swim.ics") // the server now sends it unreadable
+	fx.syncAfter(t, 5*time.Minute)
+
+	if got := fx.titles(t); len(got) != 1 || got[0] != "Swim on the box" {
+		t.Fatalf("events = %v, want the box's last good events kept", got)
+	}
+	if pend, _ := fx.db.PendingObjects(fx.cal.ID); len(pend) != 1 {
+		t.Fatalf("pending = %+v, want the box change still queued, not silently adopted", pend)
+	}
+	if got := fx.droppedLogged(t); len(got) != 0 {
+		t.Fatalf("logged %v as dropped, but nothing was dropped", got)
+	}
+}

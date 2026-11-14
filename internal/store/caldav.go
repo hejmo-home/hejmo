@@ -230,11 +230,14 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 		return n > 0, err
 	}
 	for _, url := range deleted {
-		if !readOnly {
-			if q, err := queued(url); err != nil {
-				return err
-			} else if q {
+		if q, err := queued(url); err != nil {
+			return err
+		} else if q {
+			if !readOnly {
 				continue
+			}
+			if err := logDropped(tx, householdID, calendarID, url, at); err != nil {
+				return err
 			}
 		}
 		if _, err := tx.Exec(`DELETE FROM events WHERE calendar_id = ? AND remote_url = ?`, calendarID, url); err != nil {
@@ -246,11 +249,16 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 	}
 	for _, o := range changed {
 		url := o.URL
-		if !o.DropPending {
-			if q, err := queued(o.URL); err != nil {
-				return err
-			} else if q {
+		if q, err := queued(o.URL); err != nil {
+			return err
+		} else if q {
+			if !o.DropPending {
 				continue
+			}
+			if !o.KeepEvents {
+				if err := logDropped(tx, householdID, calendarID, o.URL, at); err != nil {
+					return err
+				}
 			}
 		}
 		if !o.KeepEvents {
@@ -261,7 +269,7 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 		// An unreadable object keeps the last good text, not the junk.
 		if _, err := tx.Exec(`INSERT INTO remote_objects (calendar_id, url, etag, raw) VALUES (?, ?, ?, ?)
 			ON CONFLICT (calendar_id, url) DO UPDATE SET etag = excluded.etag, raw = CASE WHEN ? THEN raw ELSE excluded.raw END,
-			pending = CASE WHEN ? THEN 0 ELSE pending END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents, o.DropPending); err != nil {
+			pending = CASE WHEN ? AND NOT ? THEN 0 ELSE pending END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents, o.DropPending, o.KeepEvents); err != nil {
 			return err
 		}
 	}
@@ -269,4 +277,35 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 		return err
 	}
 	return tx.Commit()
+}
+
+// logDropped records the box's queued changes to an object that a read-only
+// calendar is about to overwrite or remove, so what the family typed is not
+// lost without a trace. The log keeps the box's version for 30 days.
+func logDropped(tx *sql.Tx, householdID, calendarID, url string, at time.Time) error {
+	rows, err := tx.Query(`SELECT title, start_local FROM events WHERE calendar_id = ? AND remote_url = ? ORDER BY series_id IS NOT NULL, start_local, id`, calendarID, url)
+	if err != nil {
+		return err
+	}
+	var titles []string
+	var detail strings.Builder
+	for rows.Next() {
+		var title, start string
+		if err := rows.Scan(&title, &start); err != nil {
+			rows.Close()
+			return err
+		}
+		titles = append(titles, title)
+		fmt.Fprintf(&detail, "%s (%s)\n", title, start)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	if len(titles) == 0 {
+		titles = []string{url} // the box had deleted it: nothing to name but the object
+	}
+	if err := writeLogDetail(tx, householdID, calendarID, at, "conflict", i18n.Msg("sync.conflict.dropped_read_only", "title", titles[0]), detail.String()); err != nil {
+		return err
+	}
+	return pruneLog(tx, at)
 }

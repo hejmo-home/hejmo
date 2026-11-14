@@ -45,6 +45,17 @@ On first start the box opens the **setup wizard**: home location (town and state
 
 The REST API lives under `/api/v1`; its OpenAPI description is served at `/api/v1/openapi.yaml` ([source](api/openapi.yaml)). Authenticate with a bearer token (`Authorization: Bearer hejmo_…`) created via `POST /api/v1/tokens`. Tokens are limited by scopes such as `read`, `write`, `lists` or `events:read`.
 
+Calendar endpoints (work package 3):
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /events?from=…&to=…[&person=…]` | Occurrences with series expanded; with `person` only what that person's view shows |
+| `POST /events` | Create an event or a series (`rrule`, e.g. `FREQ=WEEKLY;BYDAY=MO`) |
+| `PATCH` / `DELETE /events/{id}?occurrence=…&scope=this\|following\|all` | Change or delete occurrences of a series |
+| `GET /holidays?from=…&to=…` | Public holidays of the home state or canton |
+| `GET /search?q=…` | Full-text search |
+| `GET/POST /groups`, `GET /calendars` | Subgroups and calendars with their audience |
+
 Development is strictly test-driven: every acceptance criterion starts as a failing test.
 
 ## Contributing

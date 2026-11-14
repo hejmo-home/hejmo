@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Hejmo box API
-  version: 0.2.0
+  version: 0.3.0
   description: |
     The REST API is the single interface for the web UI, displays, phones and
     integrations. Authenticate with a bearer token (`Authorization: Bearer hejmo_…`)
@@ -116,6 +116,171 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /groups:
+    get:
+      operationId: listGroups
+      summary: Subgroups such as "School children"
+      responses:
+        "200":
+          description: Groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Group" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createGroup
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string }
+                members: { type: array, items: { type: string, format: uuid } }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Group" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /calendars:
+    get:
+      operationId: listCalendars
+      summary: Calendars (local family calendar, synced calendars) with their audience
+      responses:
+        "200":
+          description: Calendars
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Calendar" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /events:
+    get:
+      operationId: listOccurrences
+      summary: Occurrences in a time range, series expanded
+      description: Without `person` this is the family view. With `person`, only what that person's view shows (event and calendar audiences, subgroups).
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: to, in: query, required: true, schema: { type: string, format: date-time } }
+        - { name: person, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Occurrences sorted by start
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Occurrence" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    post:
+      operationId: createEvent
+      summary: Create an event or a series
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewEvent" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Event" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /events/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - name: occurrence
+        in: query
+        required: false
+        description: Original start of the occurrence to change (RFC 3339; a date for all-day events). Defaults to the event's start.
+        schema: { type: string }
+      - name: scope
+        in: query
+        required: false
+        description: Which occurrences of a series to touch. Defaults to `this`.
+        schema: { type: string, enum: [this, following, all] }
+    patch:
+      operationId: updateEvent
+      summary: Change an event or occurrences of a series
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/EventPatch" }
+      responses:
+        "204": { description: Changed }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteEvent
+      summary: Delete an event or occurrences of a series
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /holidays:
+    get:
+      operationId: listHolidays
+      summary: Public holidays of the home region (state or canton)
+      parameters:
+        - { name: from, in: query, required: true, schema: { type: string, format: date } }
+        - { name: to, in: query, required: true, description: exclusive, schema: { type: string, format: date } }
+      responses:
+        "200":
+          description: Holidays
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  type: object
+                  required: [date, name, name_en, partial]
+                  properties:
+                    date: { type: string, format: date }
+                    name: { type: string, example: Allerheiligen }
+                    name_en: { type: string, example: "All Saints' Day" }
+                    partial: { type: boolean, description: "Holiday in most, but not all, municipalities of the region (e.g. 15 August in Bavaria)" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /search:
+    get:
+      operationId: search
+      summary: Full-text search (V1.0 searches events; tasks and lists follow)
+      parameters:
+        - { name: q, in: query, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: Matching events, at most 100
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Event" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
 components:
   securitySchemes:
     bearer: { type: http, scheme: bearer }
@@ -143,6 +308,86 @@ components:
         color: { type: string, pattern: "^#[0-9A-Fa-f]{6}$" }
         shape: { type: string }
         symbol: { type: string }
+    Group:
+      type: object
+      required: [id, name, members]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        members: { type: array, items: { type: string, format: uuid } }
+    Audience:
+      type: object
+      required: [people, groups]
+      properties:
+        people: { type: array, items: { type: string, format: uuid } }
+        groups: { type: array, items: { type: string, format: uuid } }
+    Calendar:
+      type: object
+      required: [id, name, kind, color, audience]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        kind: { type: string, enum: [local, ics, caldav, google] }
+        color: { type: string }
+        audience: { $ref: "#/components/schemas/Audience" }
+    Event:
+      type: object
+      description: An event or series master. Times are RFC 3339 in the household's time zone; all-day events use dates with an exclusive end.
+      required: [id, calendar_id, title, description, location, all_day, start, end, rrule, people, groups]
+      properties:
+        id: { type: string, format: uuid }
+        calendar_id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        location: { type: string }
+        all_day: { type: boolean }
+        start: { type: string, example: "2026-11-02T16:00:00+01:00" }
+        end: { type: string, example: "2026-11-02T17:00:00+01:00" }
+        rrule: { type: string, description: "RFC 5545 RRULE value, empty for single events", example: "FREQ=WEEKLY;BYDAY=MO" }
+        people: { type: array, items: { type: string, format: uuid } }
+        groups: { type: array, items: { type: string, format: uuid } }
+    NewEvent:
+      type: object
+      required: [title, start, end]
+      properties:
+        calendar_id: { type: string, format: uuid, description: "Defaults to the family calendar" }
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+        location: { type: string }
+        all_day: { type: boolean }
+        start: { type: string }
+        end: { type: string }
+        rrule: { type: string }
+        people: { type: array, items: { type: string, format: uuid } }
+        groups: { type: array, items: { type: string, format: uuid } }
+    EventPatch:
+      type: object
+      description: Only the fields given change. start/end are the new times of the edited occurrence; with scope following or all, the shift applies to the series.
+      properties:
+        title: { type: string, minLength: 1 }
+        description: { type: string }
+        location: { type: string }
+        start: { type: string }
+        end: { type: string }
+        rrule: { type: string }
+        people: { type: array, items: { type: string, format: uuid } }
+        groups: { type: array, items: { type: string, format: uuid } }
+    Occurrence:
+      type: object
+      required: [event_id, series_id, recurrence_id, calendar_id, title, description, location, all_day, start, end, people, groups]
+      properties:
+        event_id: { type: string, format: uuid }
+        series_id: { type: string, description: "Series master id, empty for single events" }
+        recurrence_id: { type: string, description: "Original start within the series; pass as ?occurrence= to edit" }
+        calendar_id: { type: string, format: uuid }
+        title: { type: string }
+        description: { type: string }
+        location: { type: string }
+        all_day: { type: boolean }
+        start: { type: string }
+        end: { type: string }
+        people: { type: array, items: { type: string, format: uuid } }
+        groups: { type: array, items: { type: string, format: uuid } }
     Error:
       type: object
       required: [error]

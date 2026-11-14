@@ -4,6 +4,7 @@ go 1.27.4
 
 require (
 	github.com/getkin/kin-openapi v0.153.0
+	github.com/teambition/rrule-go v1.8.2
 	golang.org/x/crypto v0.59.0
 	modernc.org/sqlite v1.62.0
 )

@@ -116,7 +116,7 @@ func (s *server) handleDeviceTokenRevoke(w http.ResponseWriter, r *http.Request)
 		s.fail(w, "revoke token", err)
 		return
 	}
-	http.Redirect(w, r, "/caldav", http.StatusSeeOther)
+	s.redirectSaved(w, r, "/caldav", "flash.token_revoked")
 }
 
 func (s *server) handleCalendarShare(w http.ResponseWriter, r *http.Request) {
@@ -132,6 +132,14 @@ func (s *server) handleCalendarShare(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "share calendar", err)
 	default:
-		http.Redirect(w, r, "/caldav", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/caldav", shareKey(r))
 	}
+}
+
+// shareKey is the success line for turning sharing through the box on or off.
+func shareKey(r *http.Request) string {
+	if r.PostFormValue("shared") == "on" {
+		return "flash.share_on"
+	}
+	return "flash.share_off"
 }

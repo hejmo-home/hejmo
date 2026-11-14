@@ -1,0 +1,5 @@
+{{/* Shared building blocks (ADR 0017, ticket 5.16). Every text comes from the
+     locales; callers pass already translated strings. */}}
+
+{{/* Success line after a saved change. */}}
+{{define "success"}}<p class="msg ok" role="status" data-success><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{{.}}</p>{{end}}

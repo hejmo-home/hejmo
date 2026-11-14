@@ -87,7 +87,7 @@ func (s *server) handleTaskAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	switch _, err := s.createTask(p, in); {
 	case err == nil:
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/tasks", "flash.task_added")
 	case errors.Is(err, store.ErrInvalid):
 		form := map[string]any{"Error": "tasks.error.invalid", "Person": in.PersonID, "Title": in.Title, "Emoji": in.Emoji,
 			"Repeat": string(in.Repeat), "Date": in.Date, "Part": string(in.PartOfDay), "Weekdays": in.Weekdays}
@@ -110,7 +110,7 @@ func (s *server) handleTaskDone(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "tick task", err)
 	default:
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/tasks", doneKey(r))
 	}
 }
 
@@ -125,6 +125,14 @@ func (s *server) handleTaskDelete(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "delete task", err)
 	default:
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/tasks", "flash.task_deleted")
 	}
+}
+
+// doneKey is the success line for ticking a task off or reopening it.
+func doneKey(r *http.Request) string {
+	if r.PostFormValue("done") == "1" {
+		return "flash.task_done"
+	}
+	return "flash.task_reopened"
 }

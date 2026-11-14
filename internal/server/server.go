@@ -194,8 +194,17 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
+	for _, k := range []string{"Error", "ErrorField"} { // templates compare them
+		if _, ok := data[k]; !ok {
+			data[k] = ""
+		}
+	}
 	if !strings.HasPrefix(name, "display_") {
-		data["Frame"] = s.frameFor(r)
+		fr := s.frameFor(r)
+		if key := s.takeFlash(w, r); key != "" {
+			fr.Success = s.i18n.T(lang, key)
+		}
+		data["Frame"] = fr
 	}
 	tpl, err := s.pages.Clone()
 	if err == nil {

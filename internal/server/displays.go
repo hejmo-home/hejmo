@@ -62,7 +62,7 @@ func (s *server) handleDisplayPair(w http.ResponseWriter, r *http.Request) {
 	}
 	switch _, err := s.pairDisplay(p, code, in); {
 	case err == nil:
-		http.Redirect(w, r, "/displays", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/displays", "flash.display_paired")
 	case errors.Is(err, errTooManyAttempts):
 		s.renderDisplays(w, r, p, http.StatusTooManyRequests, form("displays.error.too_many"))
 	case errors.Is(err, store.ErrNotFound):
@@ -85,7 +85,7 @@ func (s *server) handleDisplayUnpair(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "unpair display", err)
 	default:
-		http.Redirect(w, r, "/displays", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/displays", "flash.display_unpaired")
 	}
 }
 
@@ -102,7 +102,7 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "display settings", err)
 	default:
-		http.Redirect(w, r, "/displays", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/displays", "flash.saved")
 	}
 }
 

@@ -212,7 +212,7 @@ func (s *server) handleCalendarAdd(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "add calendar", err)
 		return
 	}
-	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
+	s.redirectSaved(w, r, "/calendars", "flash.calendar_added")
 }
 
 func (s *server) handleCalendarSync(w http.ResponseWriter, r *http.Request) {
@@ -220,9 +220,14 @@ func (s *server) handleCalendarSync(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	// A failed sync is in the log the page shows next.
-	if err := s.sync.Sync(r.Context(), p.household.ID, r.PathValue("id")); errors.Is(err, store.ErrNotFound) {
+	// A failed sync is in the log the page shows next, not a success line.
+	err := s.sync.Sync(r.Context(), p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
 		http.NotFound(w, r)
+		return
+	}
+	if err == nil {
+		s.redirectSaved(w, r, "/calendars", "flash.calendar_synced")
 		return
 	}
 	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
@@ -240,5 +245,5 @@ func (s *server) handleCalendarDelete(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "delete calendar", err)
 		return
 	}
-	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
+	s.redirectSaved(w, r, "/calendars", "flash.calendar_removed")
 }

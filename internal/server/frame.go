@@ -34,6 +34,8 @@ type navLink struct {
 type frame struct {
 	SignedIn bool
 	Items    []navLink
+	// Success is the success line after a saved change, already translated.
+	Success string
 }
 
 // frameFor builds the frame for the person behind the request, or a bare

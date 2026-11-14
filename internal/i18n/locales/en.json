@@ -265,5 +265,19 @@
   "tasks.field.part": "Time of day",
   "tasks.part.any": "Any time",
   "tasks.create": "Add task",
-  "tasks.error.invalid": "Please choose a person and enter a title. A once task needs a date, a weekly task at least one weekday."
+  "tasks.error.invalid": "Please choose a person and enter a title. A once task needs a date, a weekly task at least one weekday.",
+  "flash.saved": "Saved.",
+  "flash.task_added": "Task added.",
+  "flash.task_done": "Marked as done.",
+  "flash.task_reopened": "Marked as open.",
+  "flash.task_deleted": "Task deleted.",
+  "flash.calendar_added": "Calendar added.",
+  "flash.calendar_synced": "Calendar updated.",
+  "flash.calendar_removed": "Calendar removed.",
+  "flash.share_on": "Sharing through the box is on.",
+  "flash.share_off": "Sharing through the box is off.",
+  "flash.token_revoked": "Access revoked.",
+  "flash.display_paired": "Display paired.",
+  "flash.display_unpaired": "Display unpaired.",
+  "flash.setup_done": "Hejmo is set up. Welcome!"
 }

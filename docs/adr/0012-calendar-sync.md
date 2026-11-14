@@ -29,6 +29,7 @@ Work package 4 connects the box to outside calendars (ADR 0007). The founding fa
 - A **calendar connection** holds one set of credentials. For CalDAV (iCloud, Nextcloud and others) the box discovers the calendars and a parent ticks the ones to sync. A single calendar URL or ICS URL can also be added by hand.
 - Each synced calendar gets its own colour and audience.
 - Intervals: CalDAV and Google every **5 minutes**, ICS every **60 minutes**, both configurable per calendar. Changes on the box are pushed immediately. Parents can trigger "sync now". Delta sync through `sync-collection` (RFC 6578) where offered, else CTag/ETag. Failures back off exponentially.
+- **Status of delta sync (14/11/2026, ticket 16):** the first CalDAV version lists ETags (depth-1 PROPFIND) each interval and downloads only new or changed objects, because go-webdav v0.7.0 has no `sync-collection` and no CTag. This deviates from the line above and is **awaiting the product owner's decision**; the follow-up ticket covers `sync-collection` and a CTag short-circuit.
 - On failure the box keeps the last good data and logs the error. After **24 hours** without success, parents see a notice in the web interface and displays show an info symbol in the header pointing to the web interface (package 5); it clears itself after the next successful sync.
 
 ### Credentials

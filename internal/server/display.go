@@ -100,14 +100,8 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 			s.fail(w, "family view", err)
 			return
 		}
-		// Placeholder until the per-display themes ticket: a normal screen is
-		// always light, although ADR 0015 gives it an automatic default theme.
-		theme := "light"
-		if d.Type == store.DisplayEInkBW {
-			theme = "bw"
-		}
 		s.render(w, r, http.StatusOK, "display_family.html", map[string]any{
-			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Theme": theme,
+			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Theme": displayTheme(d),
 		})
 		return
 	}
@@ -128,41 +122,70 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
+// displayTheme is the theme of a display's pages.
+//
+// Placeholder until the per-display themes ticket: a normal screen is always
+// light, although ADR 0015 gives it an automatic default theme.
+func displayTheme(d store.Display) string {
+	if d.Type == store.DisplayEInkBW {
+		return "bw"
+	}
+	return "light"
+}
+
 // markerShapes are the black-and-white marker shapes in person slot order (DESIGN.md).
 var markerShapes = []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled"}
 
 // familyView builds today's family view of the household.
 func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (familyview.View, error) {
+	data, err := s.displayData(h, lang, 2)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people,
+		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow}), nil
+}
+
+// displayData is what the views of a display are built from: the household's
+// people with their markers and groups, the calendars' audiences and the
+// occurrences of the next days starting today.
+type displayData struct {
+	now         time.Time // in the household's time zone
+	people      []familyview.Person
+	calendars   map[string]calendar.Audience
+	occurrences []calendar.Occurrence
+}
+
+func (s *server) displayData(h store.Household, lang string, days int) (displayData, error) {
 	loc := time.UTC
 	if l, err := time.LoadLocation(h.Timezone); err == nil {
 		loc = l
 	}
 	now := s.now().In(loc)
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-	d2 := d0.AddDate(0, 0, 2)
+	end := d0.AddDate(0, 0, days)
+	out := displayData{now: now, calendars: map[string]calendar.Audience{}}
 	people, err := s.db.People(h.ID)
 	if err != nil {
-		return familyview.View{}, err
+		return out, err
 	}
 	cals, err := s.db.Calendars(h.ID)
 	if err != nil {
-		return familyview.View{}, err
+		return out, err
 	}
-	events, err := s.db.EventsBetween(h.ID, d0, d2)
+	events, err := s.db.EventsBetween(h.ID, d0, end)
 	if err != nil {
-		return familyview.View{}, err
+		return out, err
 	}
-	occs, err := calendar.Expand(events, d0, d2)
-	if err != nil {
-		return familyview.View{}, err
+	if out.occurrences, err = calendar.Expand(events, d0, end); err != nil {
+		return out, err
 	}
-	in := familyview.Input{Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs, ShowTomorrow: showTomorrow}
 	for _, c := range cals {
-		in.Calendars[c.ID] = c.Audience
+		out.calendars[c.ID] = c.Audience
 	}
 	allGroups, err := s.db.Groups(h.ID) // one query for every person's memberships
 	if err != nil {
-		return familyview.View{}, err
+		return out, err
 	}
 	groupsOf := map[string][]string{}
 	for _, g := range allGroups {
@@ -171,19 +194,18 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 		}
 	}
 	for i, p := range people {
-		groups := groupsOf[p.ID]
 		shape := p.Shape
 		if shape == "" {
 			shape = markerShapes[i%len(markerShapes)]
 		}
-		in.People = append(in.People, familyview.Person{ID: p.ID, Name: p.Name, Slot: i%len(markerShapes) + 1, Shape: shape, Groups: groups})
+		out.people = append(out.people, familyview.Person{ID: p.ID, Name: p.Name, Slot: i%len(markerShapes) + 1, Shape: shape, Groups: groupsOf[p.ID]})
 	}
-	for i := range in.Occurrences {
-		if strings.TrimSpace(in.Occurrences[i].Title) == "" {
-			in.Occurrences[i].Title = s.i18n.T(lang, "event.untitled")
+	for i := range out.occurrences {
+		if strings.TrimSpace(out.occurrences[i].Title) == "" {
+			out.occurrences[i].Title = s.i18n.T(lang, "event.untitled")
 		}
 	}
-	return familyview.Build(in), nil
+	return out, nil
 }
 
 // handleDisplayState tells a display whether it is still what its page says:

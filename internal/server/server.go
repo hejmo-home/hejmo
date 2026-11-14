@@ -139,6 +139,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
+	mux.HandleFunc("GET /display/person/{id}", s.handleDisplayPerson)
+	mux.HandleFunc("POST /display/tasks/{id}/done", s.handleDisplayTaskDone)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)

@@ -16,4 +16,21 @@
       .catch(function () {});
   }
   setInterval(check, every * 1000);
+
+  // A personal view returns to the family view after the given seconds
+  // without interaction (ADR 0015). Every touch, key press or scroll
+  // restarts the countdown.
+  var back = Number(el.getAttribute("data-return-seconds"));
+  var target = el.getAttribute("data-return-url");
+  if (back > 0 && target) {
+    var timer;
+    var restart = function () {
+      clearTimeout(timer);
+      timer = setTimeout(function () { location.href = target; }, back * 1000);
+    };
+    ["pointerdown", "touchstart", "keydown", "scroll"].forEach(function (name) {
+      document.addEventListener(name, restart, { passive: true, capture: true });
+    });
+    restart();
+  }
 })();

@@ -9,7 +9,7 @@
     <ul class="cards">
       {{range .Tasks}}
       <li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
-        <strong>{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}{{if .Stars}} <span class="task-stars" data-task-stars="{{.Stars}}"><span class="sr">{{.Stars}} {{t "tasks.stars.unit"}}</span></span>{{end}}</strong>
+        <strong>{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}{{if .Stars}} <span class="task-stars" data-task-stars="{{.Stars}}">{{.Stars}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span>{{end}}</strong>
         <span class="hint">
           {{if eq .Repeat "once"}}{{t "tasks.repeat.once"}} {{.Date}}{{else if eq .Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}
           {{if .Part}} · {{t (printf "tasks.part.%s" .Part)}}{{end}}
@@ -33,18 +33,16 @@
   <section aria-labelledby="stars">
     <h2 id="stars">{{t "tasks.stars.title"}}</h2>
     <p class="lead">{{t "tasks.stars.intro"}}</p>
-    {{range .StarCards}}
-    <article class="cards" aria-label="{{.Name}}">
-      <ul>
+    {{if .StarCards}}<ul class="cards">
+      {{range .StarCards}}
         <li data-balance="{{.Balance}}">
           <strong><input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{.Name}} <span class="stars-balance">{{.Balance}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span></strong>
           <span class="hint">{{t "tasks.stars.log"}}</span>
           {{range .Entries}}<span class="log-line"><b>{{.Delta}}</b> {{.Label}}<span class="hint"> · {{.When}}{{if .By}} · {{.By}}{{end}}</span></span>
           {{else}}<span class="hint">{{t "tasks.stars.log_empty"}}</span>{{end}}
         </li>
-      </ul>
-    </article>
-    {{end}}
+      {{end}}
+    </ul>{{end}}
     {{with .StarError}}<p class="error" role="alert">{{t .}}</p>{{end}}
     <form method="post" action="/tasks/stars" class="steps">
       {{$sf := .StarForm}}

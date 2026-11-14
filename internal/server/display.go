@@ -143,7 +143,8 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 		return familyview.View{}, err
 	}
 	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people,
-		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID)}), nil
+		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID),
+		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
 }
 
 // displayData is what the views of a display are built from: the household's
@@ -206,6 +207,16 @@ func (s *server) displayData(h store.Household, lang string, days int) (displayD
 		}
 	}
 	return out, nil
+}
+
+// homeWeather is the last reading for the home, nil when there is none (or
+// only a stale one): the chip then hides. A display never fetches it itself.
+func (s *server) homeWeather(h store.Household) *familyview.Weather {
+	r, ok := s.weather.Latest(h.Latitude, h.Longitude)
+	if !ok {
+		return nil
+	}
+	return &familyview.Weather{TempC: r.TempC, Icon: string(r.Icon)}
 }
 
 // handleDisplayState tells a display whether it is still what its page says:

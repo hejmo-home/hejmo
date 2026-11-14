@@ -17,6 +17,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 	_ "time/tzdata" // DST rules independent of the host system
@@ -27,6 +28,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/weather"
 )
 
 type config struct {
@@ -119,7 +121,17 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-schedulerDone }()
 
-	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Done: ctx.Done()})
+	// The weather chip's reading: the box asks Open-Meteo every 15 minutes, a
+	// display never does (ADR 0016).
+	forecast := weather.New()
+	weatherDone := make(chan struct{})
+	go func() {
+		defer close(weatherDone)
+		forecast.Run(ctx, 15*time.Minute, homeOf{db}, func(err error) { logger.Warn("weather not refreshed", "err", err) })
+	}()
+	defer func() { stop(); <-weatherDone }()
+
+	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Done: ctx.Done()})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).
@@ -251,4 +263,28 @@ func localURL(addr string) string {
 		port = "8080"
 	}
 	return "http://127.0.0.1:" + port
+}
+
+// homeOf gives the weather service the household's home location.
+type homeOf struct{ db *store.DB }
+
+func (h homeOf) Home() (lat, lon float64, name, country string, err error) {
+	hh, err := h.db.HomeHousehold()
+	if errors.Is(err, store.ErrNotFound) {
+		return 0, 0, "", "", weather.ErrNoHome
+	}
+	if err != nil {
+		return 0, 0, "", "", err
+	}
+	// The region (ISO 3166-2, e.g. DE-BY) starts with the country code.
+	country, _, _ = strings.Cut(hh.Region, "-")
+	return hh.Latitude, hh.Longitude, hh.HomeName, country, nil
+}
+
+func (h homeOf) SetCoordinates(lat, lon float64) error {
+	hh, err := h.db.HomeHousehold()
+	if err != nil {
+		return err
+	}
+	return h.db.SetHouseholdCoordinates(hh.ID, lat, lon)
 }

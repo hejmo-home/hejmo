@@ -289,7 +289,7 @@ body:has(.family-page) { overflow: hidden; }
 .fv-header .lab { font-size: var(--fs-label); color: var(--text-secondary); }
 .fv-header .date { font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
 .fv .chips { display: flex; gap: var(--gap); }
-.fv .chip { font-variant-numeric: tabular-nums; }
+.fv .chip { font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 8px; }
 .fv .sync-notice { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); font-size: var(--fs-label); font-weight: 700; }
 .fv .sync-notice .icon { flex: none; }
 .strip-wrap { flex: none; display: grid; gap: var(--gap-cards); }

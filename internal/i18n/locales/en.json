@@ -1,0 +1,12 @@
+{
+  "app.name": "Hejmo",
+  "setup.title": "Set up Hejmo",
+  "setup.intro": "Welcome! Your box is ready in three steps.",
+  "setup.step.home": "Home location",
+  "setup.step.home.hint": "Used for weather, public holidays and sunrise times.",
+  "setup.step.parent": "First parent account",
+  "setup.step.parent.hint": "With a password and a one-time code from an authenticator app.",
+  "setup.step.pin": "Parent PIN",
+  "setup.step.pin.hint": "Protects management functions on the display.",
+  "setup.start": "Let's go"
+}

@@ -100,7 +100,7 @@ func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {
 		t.Fatal(err)
 	}
 	// Plural address (ihr/euch/euer...) and plural imperatives that are not "du".
-	plural := regexp.MustCompile(`(?i:\b(ihr|euch|eur\w*)\b)|\b(Öffnet|Gebt|Wählt|Prüft|Tragt|Schaut|Klickt|Scannt|Nehmt|Macht|Legt|Stellt|Sagt|Wartet|Versucht|Nutzt|Benutzt)\b`)
+	plural := regexp.MustCompile(`(?i:\b(ihr|euch|euer\w*|eur\w*)\b)|\b(Öffnet|Gebt|Wählt|Prüft|Tragt|Schaut|Klickt|Scannt|Nehmt|Macht|Legt|Stellt|Sagt|Wartet|Versucht|Nutzt|Benutzt)\b`)
 	for key, text := range cat {
 		if wholeFamilyTexts[key] {
 			continue

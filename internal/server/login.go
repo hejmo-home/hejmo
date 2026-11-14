@@ -36,6 +36,8 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	passwordOK := auth.VerifyPassword(hash, r.PostFormValue("password"))
 	if err != nil || !passwordOK || !acc.TOTPConfirmed || !auth.VerifyTOTP(acc.TOTPSecret, r.PostFormValue("code"), s.now()) {
 		s.limiter.fail(key)
+		// Deliberately one error at the password field: it must not reveal which of
+		// username, password or code was wrong; the text names all three.
 		data["Error"], data["ErrorField"] = "login.error.credentials", "password"
 		s.render(w, r, http.StatusUnauthorized, "login.html", data)
 		return

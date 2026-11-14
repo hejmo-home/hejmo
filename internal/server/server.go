@@ -9,9 +9,11 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
@@ -97,10 +99,7 @@ func New(opts Options) http.Handler {
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
-	s.pages = template.Must(template.New("").Funcs(template.FuncMap{
-		"t":    func(string) string { return "" }, // replaced per request in render
-		"dict": dict,
-	}).ParseFS(web.Templates, "templates/*.html"))
+	s.pages = parsePages()
 
 	static, err := fs.Sub(web.Static, "static")
 	if err != nil {
@@ -171,6 +170,31 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": p.Role == store.RoleParent && s.httpsWarning()})
+}
+
+// parsePages parses the embedded templates; "t" is replaced per render.
+func parsePages() *template.Template {
+	return template.Must(template.New("").Funcs(template.FuncMap{
+		"t":    func(string) string { return "" },
+		"dict": dict,
+	}).ParseFS(web.Templates, "templates/*.html"))
+}
+
+// RenderFamilyView renders the markup of a family view model in a language.
+// The display page uses the same template; the design previews and the
+// snapshot test call this to show real output.
+func RenderFamilyView(lang string, v familyview.View) (string, error) {
+	bundle := i18n.MustLoad()
+	tpl, err := parsePages().Clone()
+	if err != nil {
+		return "", err
+	}
+	tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return bundle.T(lang, key) }})
+	var b strings.Builder
+	if err := tpl.ExecuteTemplate(&b, "familyView", v); err != nil {
+		return "", err
+	}
+	return b.String(), nil
 }
 
 func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name string, data map[string]any) {

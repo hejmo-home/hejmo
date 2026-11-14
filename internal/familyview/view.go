@@ -39,6 +39,14 @@ type Event struct {
 // Progress is a person's task progress today (data arrives with 6.6).
 type Progress struct{ Done, Total int }
 
+// Percent is the filled share of the bar, 0 to 100.
+func (p Progress) Percent() int {
+	if p.Total <= 0 {
+		return 0
+	}
+	return min(100, p.Done*100/p.Total)
+}
+
 // Column is one person's column.
 type Column struct {
 	Person   Person

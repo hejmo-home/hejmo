@@ -8,6 +8,7 @@ require (
 	github.com/getkin/kin-openapi v0.153.0
 	github.com/teambition/rrule-go v1.8.2
 	golang.org/x/crypto v0.59.0
+	golang.org/x/net v0.62.0
 	modernc.org/sqlite v1.62.0
 )
 

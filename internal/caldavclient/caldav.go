@@ -7,18 +7,23 @@ package caldavclient
 import (
 	"bytes"
 	"context"
+	"encoding/xml"
 	"errors"
+	"fmt"
 	"io"
+	"net"
 	"net/http"
 	"net/url"
 	"path"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	ical "github.com/emersion/go-ical"
 	"github.com/emersion/go-webdav"
 	davcal "github.com/emersion/go-webdav/caldav"
+	"golang.org/x/net/publicsuffix"
 )
 
 // Calendar is one calendar collection on the server.
@@ -53,11 +58,28 @@ func IsUnauthorized(err error) bool {
 	return errors.As(err, &s) && (s.Code == http.StatusUnauthorized || s.Code == http.StatusForbidden)
 }
 
-// Client talks to one CalDAV server with one set of credentials.
+// ForeignHostError is the refusal to talk to a host outside the domain of the
+// configured server. Credentials are never sent to such a host.
+type ForeignHostError struct {
+	Host   string // the host that was refused
+	Domain string // the registrable domain of the configured server
+}
+
+func (e *ForeignHostError) Error() string {
+	return fmt.Sprintf("refused to contact %s: it is not part of %s, the domain of the configured server, and the password is only sent there", e.Host, e.Domain)
+}
+
+// Client talks to one CalDAV server with one set of credentials. Servers such
+// as iCloud answer from several hosts of one domain (caldav.icloud.com names
+// p123-caldav.icloud.com as the calendar home), so the client follows
+// redirects and hrefs to other hosts, but only within the registrable domain
+// of the configured address.
 type Client struct {
 	base *url.URL
-	dav  *davcal.Client
 	auth *authClient
+
+	mu  sync.Mutex
+	dav map[string]*davcal.Client // by scheme://host
 }
 
 // NewClient returns a Client for the server at serverURL. A nil hc uses an
@@ -70,21 +92,99 @@ func NewClient(serverURL, user, password string, hc *http.Client) (*Client, erro
 	if hc == nil {
 		hc = &http.Client{Timeout: 30 * time.Second}
 	}
-	auth := &authClient{hc: hc, user: user, password: password}
-	dav, err := davcal.NewClient(auth, base.String())
-	if err != nil {
+	auth := &authClient{base: base, user: user, password: password}
+	cp := *hc // do not change the caller's client
+	prev := hc.CheckRedirect
+	cp.CheckRedirect = func(req *http.Request, via []*http.Request) error {
+		if err := auth.permit(req.URL); err != nil {
+			return err
+		}
+		if prev != nil {
+			if err := prev(req, via); err != nil {
+				return err
+			}
+		} else if len(via) >= 10 {
+			return errors.New("stopped after 10 redirects")
+		}
+		// Go drops credentials when a redirect leaves the host's own domain
+		// tree; the host is vetted above, so send them again.
+		req.SetBasicAuth(user, password)
+		return nil
+	}
+	auth.hc = &cp
+	c := &Client{base: base, auth: auth, dav: map[string]*davcal.Client{}}
+	if _, _, err := c.origin(""); err != nil {
 		return nil, err
 	}
-	return &Client{base: base, dav: dav, auth: auth}, nil
+	return c, nil
 }
 
-// authClient adds basic auth and turns refusals into StatusError.
+// origin returns the host an address lives on and the go-webdav client for it.
+// An address without a host (a plain path) lives on the configured server.
+// It fails with a ForeignHostError before anything is sent to a host outside
+// the configured domain.
+func (c *Client) origin(address string) (*url.URL, *davcal.Client, error) {
+	o := c.base
+	if u, err := url.Parse(address); err == nil && u.Host != "" {
+		o = u
+	}
+	if err := c.auth.permit(o); err != nil {
+		return nil, nil, err
+	}
+	root := &url.URL{Scheme: o.Scheme, Host: o.Host}
+	c.mu.Lock()
+	defer c.mu.Unlock()
+	dav, ok := c.dav[root.String()]
+	if !ok {
+		var err error
+		if dav, err = davcal.NewClient(c.auth, root.String()); err != nil {
+			return nil, nil, err
+		}
+		c.dav[root.String()] = dav
+	}
+	return root, dav, nil
+}
+
+// authClient adds basic auth and turns refusals into StatusError. It sends
+// nothing to a host outside the domain of base.
 type authClient struct {
 	hc             *http.Client
+	base           *url.URL
 	user, password string
 }
 
+// registrable returns the registrable domain of a host ("icloud.com" for
+// "p123-caldav.icloud.com"). An IP address, a name such as localhost, or a
+// public suffix has no domain above itself and stands for itself.
+func registrable(host string) string {
+	host = strings.ToLower(strings.TrimSuffix(host, "."))
+	if net.ParseIP(host) != nil {
+		return host
+	}
+	if d, err := publicsuffix.EffectiveTLDPlusOne(host); err == nil {
+		return d
+	}
+	return host
+}
+
+// permit says whether credentials may be sent to u: the same registrable
+// domain as the configured server, and never a step down from https to http.
+func (a *authClient) permit(u *url.URL) error {
+	domain := registrable(a.base.Hostname())
+	if registrable(u.Hostname()) != domain || u.Scheme != a.base.Scheme {
+		host := u.Hostname()
+		if u.Scheme != a.base.Scheme {
+			host = u.Scheme + "://" + host
+		}
+		return &ForeignHostError{Host: host, Domain: domain}
+	}
+	return nil
+}
+
 func (a *authClient) Do(req *http.Request) (*http.Response, error) {
+	if err := a.permit(req.URL); err != nil {
+		return nil, err
+	}
 	req.SetBasicAuth(a.user, a.password)
 	req.Header.Set("User-Agent", "Hejmo calendar sync")
 	res, err := a.hc.Do(req)
@@ -100,14 +200,13 @@ func (a *authClient) Do(req *http.Request) (*http.Response, error) {
 
 var _ webdav.HTTPClient = (*authClient)(nil)
 
-func (c *Client) abs(p string) string {
-	u := *c.base
-	u.RawQuery, u.Fragment = "", ""
+// abs makes p, an address or a path on origin, absolute.
+func abs(origin *url.URL, p string) string {
 	ref, err := url.Parse(p)
 	if err != nil {
 		return p
 	}
-	return u.ResolveReference(ref).String()
+	return origin.ResolveReference(ref).String()
 }
 
 // route turns an address into what go-webdav expects: a path on the server.
@@ -119,17 +218,92 @@ func (c *Client) route(address string) string {
 	return u.EscapedPath()
 }
 
+const propfindBody = `<?xml version="1.0" encoding="utf-8"?>` +
+	`<d:propfind xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav"><d:prop><%s/></d:prop></d:propfind>`
+
+type hrefProp struct {
+	Href string `xml:"DAV: href"`
+}
+
+type multistatus struct {
+	Responses []struct {
+		Propstats []struct {
+			Prop struct {
+				Principal hrefProp `xml:"DAV: current-user-principal"`
+				Home      hrefProp `xml:"urn:ietf:params:xml:ns:caldav calendar-home-set"`
+			} `xml:"DAV: prop"`
+		} `xml:"DAV: propstat"`
+	} `xml:"DAV: response"`
+}
+
+// findHref asks the resource at "from" for a property that holds an address
+// (current-user-principal or calendar-home-set) and returns it resolved
+// against where the answer came from. go-webdav keeps only the path of such
+// an address, but a server may name another host of its domain here. The host
+// is checked before the caller sends anything to it.
+func (c *Client) findHref(ctx context.Context, from *url.URL, prop string) (*url.URL, error) {
+	req, err := http.NewRequestWithContext(ctx, "PROPFIND", from.String(), strings.NewReader(fmt.Sprintf(propfindBody, prop)))
+	if err != nil {
+		return nil, err
+	}
+	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
+	req.Header.Set("Depth", "0")
+	res, err := c.auth.Do(req)
+	if err != nil {
+		return nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusMultiStatus {
+		return nil, &StatusError{res.StatusCode, res.Status}
+	}
+	var ms multistatus
+	if err := xml.NewDecoder(res.Body).Decode(&ms); err != nil {
+		return nil, fmt.Errorf("reading the answer for %s: %w", prop, err)
+	}
+	for _, r := range ms.Responses {
+		for _, ps := range r.Propstats {
+			href := ps.Prop.Principal.Href
+			if prop == "c:calendar-home-set" {
+				href = ps.Prop.Home.Href
+			}
+			if strings.TrimSpace(href) == "" {
+				continue
+			}
+			ref, err := url.Parse(strings.TrimSpace(href))
+			if err != nil {
+				return nil, fmt.Errorf("the server named a malformed address: %w", err)
+			}
+			// Resolve against the address that finally answered, which may
+			// be on another host than "from" after a redirect.
+			at := from
+			if res.Request != nil && res.Request.URL != nil {
+				at = res.Request.URL
+			}
+			target := at.ResolveReference(ref)
+			if err := c.auth.permit(target); err != nil {
+				return nil, err
+			}
+			return target, nil
+		}
+	}
+	return nil, fmt.Errorf("the server does not say where the %s is", strings.TrimPrefix(strings.TrimPrefix(prop, "c:"), "d:"))
+}
+
 // Calendars discovers the server's event calendars of the signed-in user.
 func (c *Client) Calendars(ctx context.Context) ([]Calendar, error) {
-	principal, err := c.dav.FindCurrentUserPrincipal(ctx)
+	principal, err := c.findHref(ctx, c.base, "d:current-user-principal")
 	if err != nil {
 		return nil, err
 	}
-	home, err := c.dav.FindCalendarHomeSet(ctx, principal)
+	home, err := c.findHref(ctx, principal, "c:calendar-home-set")
 	if err != nil {
 		return nil, err
 	}
-	found, err := c.dav.FindCalendars(ctx, home)
+	origin, dav, err := c.origin(home.String())
+	if err != nil {
+		return nil, err
+	}
+	found, err := dav.FindCalendars(ctx, home.EscapedPath())
 	if err != nil {
 		return nil, err
 	}
@@ -138,22 +312,26 @@ func (c *Client) Calendars(ctx context.Context) ([]Calendar, error) {
 		if len(f.SupportedComponentSet) > 0 && !slices.Contains(f.SupportedComponentSet, ical.CompEvent) {
 			continue // a task list or notes
 		}
-		out = append(out, Calendar{URL: c.abs(f.Path), Name: nameOf(f.Name, f.Path)})
+		out = append(out, Calendar{URL: abs(origin, f.Path), Name: nameOf(f.Name, f.Path)})
 	}
 	return out, nil
 }
 
 // Calendar checks one calendar address given by hand and names it.
 func (c *Client) Calendar(ctx context.Context, calendarURL string) (Calendar, error) {
+	origin, dav, err := c.origin(calendarURL)
+	if err != nil {
+		return Calendar{}, err
+	}
 	parent := path.Dir(strings.TrimSuffix(c.route(calendarURL), "/")) + "/"
-	found, err := c.dav.FindCalendars(ctx, parent)
+	found, err := dav.FindCalendars(ctx, parent)
 	if err != nil {
 		return Calendar{}, err
 	}
 	want := strings.TrimSuffix(c.route(calendarURL), "/")
 	for _, f := range found {
 		if strings.TrimSuffix(f.Path, "/") == want {
-			return Calendar{URL: c.abs(f.Path), Name: nameOf(f.Name, f.Path)}, nil
+			return Calendar{URL: abs(origin, f.Path), Name: nameOf(f.Name, f.Path)}, nil
 		}
 	}
 	return Calendar{}, errors.New("that address is not a calendar")
@@ -172,8 +350,12 @@ func nameOf(display, p string) string {
 
 // List returns the objects of a calendar with their ETags, without their data.
 func (c *Client) List(ctx context.Context, calendarURL string) ([]Object, error) {
+	origin, dav, err := c.origin(calendarURL)
+	if err != nil {
+		return nil, err
+	}
 	dir := c.route(calendarURL)
-	infos, err := c.dav.ReadDir(ctx, dir, false)
+	infos, err := dav.ReadDir(ctx, dir, false)
 	if err != nil {
 		return nil, err
 	}
@@ -182,7 +364,7 @@ func (c *Client) List(ctx context.Context, calendarURL string) ([]Object, error)
 		if fi.IsDir || strings.TrimSuffix(fi.Path, "/") == strings.TrimSuffix(dir, "/") {
 			continue
 		}
-		out = append(out, Object{URL: c.abs(fi.Path), ETag: fi.ETag})
+		out = append(out, Object{URL: abs(origin, fi.Path), ETag: fi.ETag})
 	}
 	return out, nil
 }
@@ -201,7 +383,8 @@ func (c *Client) Fetch(ctx context.Context, calendarURL string, objectURLs []str
 	for batch := range slices.Chunk(objectURLs, fetchBatch) {
 		got, err := c.multiget(ctx, calendarURL, batch)
 		if err != nil {
-			if IsUnauthorized(err) || ctx.Err() != nil {
+			var foreign *ForeignHostError
+			if IsUnauthorized(err) || errors.As(err, &foreign) || ctx.Err() != nil {
 				return nil, err
 			}
 			// One object the multiget cannot take (go-webdav decodes every
@@ -217,11 +400,15 @@ func (c *Client) Fetch(ctx context.Context, calendarURL string, objectURLs []str
 }
 
 func (c *Client) multiget(ctx context.Context, calendarURL string, objectURLs []string) ([]Object, error) {
+	origin, dav, err := c.origin(calendarURL)
+	if err != nil {
+		return nil, err
+	}
 	paths := make([]string, len(objectURLs))
 	for i, u := range objectURLs {
 		paths[i] = c.route(u)
 	}
-	got, err := c.dav.MultiGetCalendar(ctx, c.route(calendarURL), &davcal.CalendarMultiGet{
+	got, err := dav.MultiGetCalendar(ctx, c.route(calendarURL), &davcal.CalendarMultiGet{
 		Paths:       paths,
 		CompRequest: davcal.CalendarCompRequest{Name: ical.CompCalendar, AllProps: true, AllComps: true},
 	})
@@ -231,7 +418,7 @@ func (c *Client) multiget(ctx context.Context, calendarURL string, objectURLs []
 	out := make([]Object, 0, len(got))
 	for _, o := range got {
 		var buf bytes.Buffer
-		obj := Object{URL: c.abs(o.Path), ETag: o.ETag}
+		obj := Object{URL: abs(origin, o.Path), ETag: o.ETag}
 		if err := ical.NewEncoder(&buf).Encode(o.Data); err != nil {
 			obj.Err = err
 		} else {
@@ -248,7 +435,11 @@ func (c *Client) multiget(ctx context.Context, calendarURL string, objectURLs []
 func (c *Client) fetchEach(ctx context.Context, objectURLs []string) ([]Object, error) {
 	var out []Object
 	for _, u := range objectURLs {
-		req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.abs(c.route(u)), nil)
+		origin, _, err := c.origin(u)
+		if err != nil {
+			return nil, err
+		}
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, abs(origin, c.route(u)), nil)
 		if err != nil {
 			return nil, err
 		}

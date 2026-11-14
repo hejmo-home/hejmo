@@ -108,12 +108,12 @@ func run(cfg config, logger *slog.Logger) error {
 	}
 	defer public.Close()
 	// A setup that cannot be resumed (for example a lost key file) must not
-	// take the web interface down: parents are warned there and can enter the
-	// DNS token again.
+	// take the web interface down: parents are warned there, and the box
+	// serves HTTPS with its own CA meanwhile (ensureHTTPS).
 	if err := public.Start(ctx); err != nil {
 		logger.Error("public HTTPS not started; falling back to the box's own CA", "err", err)
 	}
-	ensureHTTPS(db, public, certs, time.Now(), logger)
+	ensureHTTPS(db, certs, time.Now(), logger)
 
 	// The scheduler checks for due calendars every minute; each calendar
 	// syncs on its own interval (60 minutes for ICS by default).
@@ -168,14 +168,16 @@ func run(cfg config, logger *slog.Logger) error {
 	return nil
 }
 
-// ensureHTTPS makes sure the box can serve HTTPS when the family chose a
-// public name but its certificate cannot be loaded: the box then creates its
-// own CA for that name and serves it instead of plain HTTP (ADR 0014, decision
-// Q27). The manager keeps warning parents. Without a stored public setup, or
-// with a working certificate, it does nothing: plain HTTP stays only for the
-// wizard before HTTPS is configured.
-func ensureHTTPS(db *store.DB, public *publiccert.Manager, certs *pki.Store, now time.Time, logger *slog.Logger) {
-	if public.Ready() || certs.Ready() {
+// ensureHTTPS makes sure the box can serve HTTPS whenever the family chose a
+// public name: the box then also has its own CA for that name, which serves
+// every handshake the public certificate cannot (ADR 0014, decision Q27). That
+// covers a certificate that cannot be loaded and one that cannot be obtained
+// (token readable, certificate missing, CA or deSEC unreachable), where the
+// manager is ready but has nothing to serve. The public certificate stays
+// preferred, see tlsConfig. Without a stored public setup it does nothing:
+// plain HTTP stays only for the wizard before HTTPS is configured.
+func ensureHTTPS(db *store.DB, certs *pki.Store, now time.Time, logger *slog.Logger) {
+	if certs.Ready() {
 		return
 	}
 	saved, ok, err := db.PublicHTTPS()
@@ -185,12 +187,8 @@ func ensureHTTPS(db *store.DB, public *publiccert.Manager, certs *pki.Store, now
 		}
 		return
 	}
-	err = certs.Provision(saved.Name, now)
-	if errors.Is(err, pki.ErrInvalidHost) && saved.LANIP != "" {
-		err = certs.Provision(saved.LANIP, now)
-	}
-	if err != nil {
-		logger.Error("own CA fallback failed; HTTPS is unavailable", "err", err)
+	if err := certs.Provision(saved.Name, now); err != nil {
+		logger.Error("own CA fallback failed; HTTPS may be unavailable", "err", err)
 	}
 }
 

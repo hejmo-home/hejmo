@@ -240,7 +240,7 @@ func (m *Manager) start(ctx context.Context) error {
 type noRenewal struct{ key string }
 
 func (noRenewal) Issue(context.Context, *x509.CertificateRequest) (*certmagic.IssuedCertificate, error) {
-	return nil, errors.New("the DNS token cannot be opened; enter it again")
+	return nil, errors.New("the DNS token cannot be opened")
 }
 func (n noRenewal) IssuerKey() string { return n.key }
 

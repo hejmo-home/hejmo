@@ -6,6 +6,7 @@ import (
 	"crypto/x509"
 	"io"
 	"log/slog"
+	"net"
 	"net/http"
 	"net/http/httptest"
 	"os"
@@ -151,27 +152,91 @@ func TestFailedPublicCertificateFallsBackToTheOwnCAWithAWarning(t *testing.T) {
 		t.Fatal("Start succeeded; the test needs a setup that cannot be resumed")
 	}
 
-	ensureHTTPS(db, public, certs, time.Now(), slog.New(slog.NewTextHandler(io.Discard, nil)))
+	ensureHTTPS(db, certs, time.Now(), slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	if !certs.Ready() {
 		t.Fatal("the own CA was not created; the box would serve plain HTTP")
 	}
-	cert, err := tlsConfig(public, certs).GetCertificate(&tls.ClientHelloInfo{})
-	if err != nil {
-		t.Fatalf("no certificate for the handshake: %v", err)
+	requireOwnCAHandshake(t, public, certs, "mia.dedyn.io")
+	if st := public.Status(); !st.Warning {
+		t.Errorf("no warning after the fallback: %+v", st)
 	}
+}
+
+// requireOwnCAHandshake connects to a TLS listener configured like the box and
+// checks that the certificate comes from the own CA and covers name.
+func requireOwnCAHandshake(t *testing.T, public *publiccert.Manager, certs *pki.Store, name string) {
+	t.Helper()
 	roots := x509.NewCertPool()
 	if !roots.AppendCertsFromPEM(certs.CAPEM()) {
 		t.Fatal("no CA certificate")
 	}
-	leaf, err := x509.ParseCertificate(cert.Certificate[0])
+	ln, err := tls.Listen("tcp", "127.0.0.1:0", tlsConfig(public, certs))
 	if err != nil {
 		t.Fatal(err)
 	}
-	if _, err := leaf.Verify(x509.VerifyOptions{Roots: roots, DNSName: "mia.dedyn.io"}); err != nil {
-		t.Errorf("the served certificate is not the own CA's for the public name: %v", err)
+	defer ln.Close()
+	go func() {
+		for {
+			c, err := ln.Accept()
+			if err != nil {
+				return
+			}
+			go func() { defer c.Close(); _ = c.(*tls.Conn).Handshake() }()
+		}
+	}()
+	conn, err := tls.DialWithDialer(&net.Dialer{Timeout: 5 * time.Second}, "tcp", ln.Addr().String(), &tls.Config{ServerName: name, RootCAs: roots})
+	if err != nil {
+		t.Fatalf("handshake for %s: %v", name, err)
 	}
-	if st := public.Status(); !st.Warning {
-		t.Errorf("no warning after the fallback: %+v", st)
+	conn.Close()
+}
+
+// Decision Q27, "obtained" case: the DNS token opens, but the certificate is
+// neither on disk nor obtainable (the CA cannot be reached). Start succeeds and
+// the manager is ready, yet it has no certificate: the own CA must serve.
+func TestPublicSetupWithoutObtainableCertificateFallsBackToTheOwnCA(t *testing.T) {
+	dir := t.TempDir()
+	db, err := store.Open(filepath.Join(dir, "hejmo.db"))
+	if err != nil {
+		t.Fatal(err)
 	}
+	defer db.Close()
+	certs, err := pki.Open(filepath.Join(dir, "tls"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	sealer, err := secret.Open(filepath.Join(dir, "secret.key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	down := httptest.NewServer(http.NotFoundHandler())
+	downURL := down.URL + "/directory"
+	down.Close() // nothing listens there any more
+	public, err := publiccert.New(filepath.Join(dir, "tls", "public"), db, sealer,
+		publiccert.WithDirectories(map[string]string{publiccert.LetsEncrypt: downURL}))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer public.Close()
+	token, err := sealer.Seal([]byte("desec-token"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SavePublicHTTPS(store.PublicHTTPS{Name: "mia.dedyn.io", Zone: "dedyn.io", Provider: "desec", Issuer: publiccert.LetsEncrypt, LANIP: "192.168.1.20", Token: token}); err != nil {
+		t.Fatal(err)
+	}
+	if err := public.Start(context.Background()); err != nil {
+		t.Fatalf("Start: %v", err)
+	}
+	if !public.Ready() {
+		t.Fatal("the test needs a manager that is ready but has no certificate")
+	}
+
+	ensureHTTPS(db, certs, time.Now(), slog.New(slog.NewTextHandler(io.Discard, nil)))
+
+	if !certs.Ready() {
+		t.Fatal("the own CA was not created; every handshake would fail")
+	}
+	requireOwnCAHandshake(t, public, certs, "mia.dedyn.io")
 }

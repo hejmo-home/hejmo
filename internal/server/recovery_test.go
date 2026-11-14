@@ -1,8 +1,6 @@
 package server_test
 
 import (
-	"bytes"
-	"encoding/json"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -167,6 +165,9 @@ func TestParentResetsAnotherParentsOneTimeCodes(t *testing.T) {
 	if r.status != http.StatusOK || !strings.Contains(r.body, "Papa") {
 		t.Fatalf("reset = %d\n%s", r.status, r.body)
 	}
+	if !strings.Contains(r.body, "data-otp-reset") || !strings.Contains(r.body, `href="/caldav"`) {
+		t.Fatalf("the success page does not remind to revoke paired devices:\n%s", r.body)
+	}
 
 	// Papa's browser session ended; his password alone leads to a new setup.
 	b.client.Jar = papaJar
@@ -210,7 +211,7 @@ func TestParentResetsAnotherParentsOneTimeCodes(t *testing.T) {
 	}
 }
 
-func TestParentCannotResetTheirOwnCodesAndChildrenCannotReset(t *testing.T) {
+func TestParentCannotResetTheirOwnCodes(t *testing.T) {
 	b, mamaSecret, _ := setupWithCodes(t)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
 	mama, _ := b.db.AccountByUsername("mama")
@@ -223,42 +224,150 @@ func TestParentCannotResetTheirOwnCodesAndChildrenCannotReset(t *testing.T) {
 	}
 }
 
-// Parity: the same through the REST API.
+func TestChildrenCannotUseTheOneTimeCodePagesOrEndpoints(t *testing.T) {
+	b, _, _ := setupWithCodes(t)
+	papa, _ := secondParent(t, b)
+	mia := childSession(t, b)
+	if r := mia.get("/otp"); r.status != http.StatusForbidden {
+		t.Fatalf("child GET /otp = %d, want 403", r.status)
+	}
+	form := url.Values{"password": {"x"}, "code": {"1"}}
+	if r := mia.post("/otp/reset/"+papa.ID, form); r.status != http.StatusForbidden {
+		t.Fatalf("child reset = %d, want 403", r.status)
+	}
+	if r := mia.post("/otp/recovery-codes", url.Values{}); r.status != http.StatusForbidden {
+		t.Fatalf("child new codes = %d, want 403", r.status)
+	}
+	if acc, _ := b.db.AccountByPerson(papa.ID); !acc.TOTPConfirmed {
+		t.Fatal("a child reset a parent's codes")
+	}
+	c := newAPIClient(t, mia)
+	c.cookie = true
+	if status, _, _ := c.call("POST", "/people/"+papa.ID+"/reset-otp", map[string]any{"password": "x", "code": "1"}); status != http.StatusForbidden {
+		t.Fatalf("child API reset = %d, want 403", status)
+	}
+	if status, _, _ := c.call("POST", "/me/recovery-codes", map[string]any{}); status != http.StatusForbidden {
+		t.Fatalf("child API new codes = %d, want 403", status)
+	}
+}
+
+func TestResetOfAnUnknownOrNonParentTargetIsNotFound(t *testing.T) {
+	b, mamaSecret, _ := setupWithCodes(t)
+	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
+	h, _ := b.db.HomeHousehold()
+	mia, _ := b.db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
+	form := func() url.Values {
+		return url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
+	}
+	for _, id := range []string{"no-such-person", mia.ID} {
+		if r := b.post("/otp/reset/"+id, form()); r.status != http.StatusNotFound {
+			t.Errorf("web reset of %q = %d, want 404", id, r.status)
+		}
+	}
+	c := newAPIClient(t, b)
+	c.cookie = true
+	for _, id := range []string{"no-such-person", mia.ID} {
+		if status, _, _ := c.call("POST", "/people/"+id+"/reset-otp", map[string]any{"password": "correct horse battery", "code": totpNow(b, mamaSecret)}); status != http.StatusNotFound {
+			t.Errorf("API reset of %q = %d, want 404", id, status)
+		}
+	}
+}
+
+// The reset confirmation also accepts an unused recovery code, which is then spent.
+func TestRecoveryCodeConfirmsAResetAndIsSpent(t *testing.T) {
+	b, mamaSecret, codes := setupWithCodes(t)
+	papa, _ := secondParent(t, b)
+	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
+	r := b.post("/otp/reset/"+papa.ID, url.Values{"password": {"correct horse battery"}, "code": {codes[0]}})
+	if r.status != http.StatusOK {
+		t.Fatalf("reset with a recovery code = %d\n%s", r.status, r.body)
+	}
+	if acc, _ := b.db.AccountByPerson(papa.ID); acc.TOTPConfirmed {
+		t.Fatal("Papa's codes were not reset")
+	}
+	b.logout()
+	if r := loginWith(b, "mama", "correct horse battery", codes[0]); r.status != http.StatusUnauthorized {
+		t.Fatalf("recovery code used again = %d, want 401", r.status)
+	}
+}
+
+// After five failed confirmations the web form and the API both answer 429,
+// even with the right password and code.
+func TestResetConfirmationIsRateLimitedOnWebAndAPI(t *testing.T) {
+	b, mamaSecret, _ := setupWithCodes(t)
+	papa, _ := secondParent(t, b)
+	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
+	bad := url.Values{"password": {"wrong horse battery"}, "code": {"000000"}}
+	for i := 0; i < 5; i++ {
+		if r := b.post("/otp/reset/"+papa.ID, bad); r.status != http.StatusUnprocessableEntity {
+			t.Fatalf("failed attempt %d = %d, want 422", i+1, r.status)
+		}
+	}
+	good := url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
+	r := b.post("/otp/reset/"+papa.ID, good)
+	if r.status != http.StatusTooManyRequests || !strings.Contains(r.body, "15") {
+		t.Fatalf("web after the limit = %d, want 429\n%s", r.status, r.body)
+	}
+	c := newAPIClient(t, b)
+	c.cookie = true
+	if status, _, _ := c.call("POST", "/people/"+papa.ID+"/reset-otp", map[string]any{"password": "correct horse battery", "code": totpNow(b, mamaSecret)}); status != http.StatusTooManyRequests {
+		t.Fatalf("API after the limit = %d, want 429", status)
+	}
+	if acc, _ := b.db.AccountByPerson(papa.ID); !acc.TOTPConfirmed {
+		t.Fatal("a limited attempt reset the codes")
+	}
+}
+
+// The error appears at the form that failed, not at page level.
+func TestResetErrorShowsAtTheFailingParent(t *testing.T) {
+	b, mamaSecret, _ := setupWithCodes(t)
+	papa, _ := secondParent(t, b)
+	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
+	r := b.post("/otp/reset/"+papa.ID, url.Values{"password": {"wrong horse battery"}, "code": {"000000"}})
+	form := r.body[strings.Index(r.body, `action="/otp/reset/`+papa.ID):]
+	form = form[:strings.Index(form, "</form>")]
+	if !strings.Contains(form, `role="alert"`) {
+		t.Fatalf("no error inside the form of the failing parent:\n%s", r.body)
+	}
+	if n := strings.Count(r.body, `role="alert"`); n != 1 {
+		t.Fatalf("%d errors on the page, want 1", n)
+	}
+}
+
+func TestRecoveryCodeCountReadsRightForOne(t *testing.T) {
+	b, mamaSecret, _ := setupWithCodes(t)
+	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
+	mama, _ := b.db.AccountByUsername("mama")
+	_ = b.db.ReplaceRecoveryCodes(mama.PersonID, []string{auth.HashRecoveryCode("AAAAA-BBBBB")})
+	if page := b.get("/otp").body; strings.Contains(page, "1 recovery codes") || strings.Contains(page, "1 Wiederherstellungscodes") {
+		t.Fatalf("grammar of count 1:\n%s", page)
+	}
+}
+
+// Parity: the same through the REST API, contract-checked against openapi.yaml.
 func TestRecoveryAndResetThroughTheAPI(t *testing.T) {
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
+	c := newAPIClient(t, b)
+	c.cookie = true
 
-	call := func(path string, body any) (int, map[string]any) {
-		raw, _ := json.Marshal(body)
-		req, _ := http.NewRequest(http.MethodPost, b.srv.URL+"/api/v1"+path, bytes.NewReader(raw))
-		req.Header.Set("Content-Type", "application/json")
-		req.Header.Set("Origin", b.srv.URL)
-		res, err := b.client.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		defer res.Body.Close()
-		var out map[string]any
-		_ = json.NewDecoder(res.Body).Decode(&out)
-		return res.StatusCode, out
-	}
-	status, out := call("/me/recovery-codes", map[string]any{})
+	status, out, _ := c.call("POST", "/me/recovery-codes", map[string]any{})
 	codes, _ := out["codes"].([]any)
 	if status != http.StatusCreated || len(codes) != 10 {
 		t.Fatalf("POST /me/recovery-codes = %d %v", status, out)
 	}
-	if status, _ := call("/people/"+papa.ID+"/reset-otp", map[string]any{"password": "nope nope nope", "code": totpNow(b, mamaSecret)}); status != http.StatusUnprocessableEntity {
+	if status, _, _ := c.call("POST", "/people/"+papa.ID+"/reset-otp", map[string]any{"password": "nope nope nope", "code": totpNow(b, mamaSecret)}); status != http.StatusUnprocessableEntity {
 		t.Fatalf("reset with wrong password = %d, want 422", status)
 	}
-	if status, _ := call("/people/"+papa.ID+"/reset-otp", map[string]any{"password": "correct horse battery", "code": totpNow(b, mamaSecret)}); status != http.StatusNoContent {
+	if status, _, _ := c.call("POST", "/people/"+papa.ID+"/reset-otp", map[string]any{"password": "correct horse battery", "code": totpNow(b, mamaSecret)}); status != http.StatusNoContent {
 		t.Fatalf("reset = %d, want 204", status)
 	}
 	if acc, _ := b.db.AccountByPerson(papa.ID); acc.TOTPConfirmed {
 		t.Fatal("Papa's codes were not reset")
 	}
 	mama, _ := b.db.AccountByUsername("mama")
-	if status, _ := call("/people/"+mama.PersonID+"/reset-otp", map[string]any{"password": "correct horse battery", "code": totpNow(b, mamaSecret)}); status != http.StatusForbidden {
+	if status, _, _ := c.call("POST", "/people/"+mama.PersonID+"/reset-otp", map[string]any{"password": "correct horse battery", "code": totpNow(b, mamaSecret)}); status != http.StatusForbidden {
 		t.Fatalf("own reset = %d, want 403", status)
 	}
 }

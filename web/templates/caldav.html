@@ -33,8 +33,7 @@
     {{template "error" .}}
     <form method="post" action="/caldav/tokens" class="steps">
       <fieldset>
-        <label>{{t "caldav.token.name"}}
-          <input name="name" required maxlength="80" value="{{with .Form}}{{.Name}}{{end}}"></label>
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "caldav.token.name") "Value" (index .Form "Name") "Required" true "Max" 80)}}
       </fieldset>
       <button class="button" type="submit">{{t "caldav.token.create"}}</button>
     </form>

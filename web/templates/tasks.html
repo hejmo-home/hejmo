@@ -40,16 +40,13 @@
           <select name="person" required>
             {{range .People}}<option value="{{.ID}}"{{if eq .ID (index $f "Person")}} selected{{end}}>{{.Name}}</option>{{end}}
           </select></label>
-        <label>{{t "tasks.field.title"}}
-          <input name="title" required maxlength="120" value="{{index $f "Title"}}"></label>
-        <label>{{t "tasks.field.emoji"}}
-          <input name="emoji" maxlength="16" value="{{index $f "Emoji"}}"></label>
+        {{template "field" (dict "Root" . "Name" "title" "Label" (t "tasks.field.title") "Value" (index $f "Title") "Required" true "Max" 120)}}
+        {{template "field" (dict "Root" . "Name" "emoji" "Label" (t "tasks.field.emoji") "Value" (index $f "Emoji") "Max" 16)}}
         <label>{{t "tasks.field.repeat"}}
           <select name="repeat">
             {{range $r := .Repeats}}<option value="{{$r}}"{{if eq $r (index $f "Repeat")}} selected{{end}}>{{t (printf "tasks.repeat_option.%s" $r)}}</option>{{end}}
           </select></label>
-        <label>{{t "tasks.field.date"}}
-          <input name="date" type="date" value="{{index $f "Date"}}"></label>
+        {{template "field" (dict "Root" . "Name" "date" "Label" (t "tasks.field.date") "Type" "date" "Value" (index $f "Date"))}}
         <p class="hint">{{t "tasks.field.weekdays"}}</p>
         {{$chosen := index $f "Weekdays"}}
         {{range .Weekdays}}<label class="check"><input type="checkbox" name="weekdays" value="{{.}}"{{if has $chosen .}} checked{{end}}> {{t (printf "tasks.weekday.%s" .)}}</label>{{end}}

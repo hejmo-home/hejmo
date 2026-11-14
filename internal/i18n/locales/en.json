@@ -279,5 +279,12 @@
   "flash.token_revoked": "Access revoked.",
   "flash.display_paired": "Display paired.",
   "flash.display_unpaired": "Display unpaired.",
-  "flash.setup_done": "Hejmo is set up. Welcome!"
+  "flash.setup_done": "Hejmo is set up. Welcome!",
+  "tasks.error.title": "Please enter a title.",
+  "tasks.error.emoji": "The emoji field is too long. Use one emoji or leave it empty.",
+  "tasks.error.person": "Please choose a person.",
+  "tasks.error.date": "Please enter a date.",
+  "tasks.error.weekdays": "Please choose at least one weekday.",
+  "tasks.error.repeat": "Please choose how often the task repeats.",
+  "tasks.error.part": "Please choose morning, evening or any time."
 }

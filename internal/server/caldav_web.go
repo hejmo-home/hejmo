@@ -65,7 +65,7 @@ func (s *server) renderCalDAV(w http.ResponseWriter, r *http.Request, p principa
 		"Tokens": devices, "Calendars": shared, "SyncStale": s.syncStale(p.household.ID), "Form": form,
 	}
 	if form != nil {
-		data["Error"] = form["Error"]
+		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
 	}
 	if newToken != "" {
 		data["NewToken"] = newToken
@@ -87,7 +87,7 @@ func (s *server) handleDeviceTokenCreate(w http.ResponseWriter, r *http.Request)
 	}
 	name := strings.TrimSpace(r.PostFormValue("name"))
 	if name == "" || len(name) > 80 {
-		s.renderCalDAV(w, r, p, http.StatusUnprocessableEntity, map[string]any{"Error": "caldav.error.name", "Name": name}, "", "")
+		s.renderCalDAV(w, r, p, http.StatusUnprocessableEntity, map[string]any{"Error": "caldav.error.name", "ErrorField": "name", "Name": name}, "", "")
 		return
 	}
 	value := auth.NewToken()

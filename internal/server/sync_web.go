@@ -176,7 +176,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		"Intervals": syncIntervals, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
 	}
 	if form != nil {
-		data["Error"] = form["Error"]
+		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
 	}
 	s.render(w, r, status, "calendars.html", data)
 }
@@ -205,7 +205,8 @@ func (s *server) handleCalendarAdd(w http.ResponseWriter, r *http.Request) {
 	var bad *inputError
 	switch {
 	case errors.As(err, &bad):
-		form := map[string]any{"Error": "calendars.error." + bad.Field, "Name": in.Name, "URL": in.URL, "Color": in.Color}
+		form := map[string]any{"Error": "calendars.error." + bad.Field, "ErrorField": calendarErrorField(bad.Field), "Name": in.Name, "URL": in.URL, "Color": in.Color,
+			"Interval": interval, "People": in.Audience.People, "Groups": in.Audience.Groups}
 		s.renderCalendars(w, r, p, http.StatusUnprocessableEntity, form)
 		return
 	case err != nil:
@@ -246,4 +247,16 @@ func (s *server) handleCalendarDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.redirectSaved(w, r, "/calendars", "flash.calendar_removed")
+}
+
+// calendarErrorField names the input of the add form that an error belongs to;
+// an error without an input (the kind) shows above the form instead.
+func calendarErrorField(field string) string {
+	switch field {
+	case "name", "url", "color", "interval":
+		return field
+	case "audience":
+		return "people"
+	}
+	return ""
 }

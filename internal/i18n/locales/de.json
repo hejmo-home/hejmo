@@ -279,5 +279,12 @@
   "flash.token_revoked": "Zugang widerrufen.",
   "flash.display_paired": "Display gekoppelt.",
   "flash.display_unpaired": "Display entkoppelt.",
-  "flash.setup_done": "Hejmo ist eingerichtet. Willkommen!"
+  "flash.setup_done": "Hejmo ist eingerichtet. Willkommen!",
+  "tasks.error.title": "Bitte gib einen Titel ein.",
+  "tasks.error.emoji": "Das Emoji-Feld ist zu lang. Nimm ein Emoji oder lass es leer.",
+  "tasks.error.person": "Bitte wähle eine Person.",
+  "tasks.error.date": "Bitte gib ein Datum ein.",
+  "tasks.error.weekdays": "Bitte wähle mindestens einen Wochentag.",
+  "tasks.error.repeat": "Bitte wähle, wie oft die Aufgabe wiederkehrt.",
+  "tasks.error.part": "Bitte wähle morgens, abends oder jederzeit."
 }

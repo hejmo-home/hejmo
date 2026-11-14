@@ -36,10 +36,8 @@
     {{template "error" .}}
     <form method="post" action="/calendars" class="steps">
       <fieldset>
-        <label>{{t "calendars.field.name"}}
-          <input name="name" value="{{with .Form}}{{.Name}}{{end}}" required></label>
-        <label>{{t "calendars.field.url"}}
-          <input name="url" value="{{with .Form}}{{.URL}}{{end}}" required inputmode="url" autocapitalize="none" placeholder="webcal://…"></label>
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "calendars.field.name") "Value" (index .Form "Name") "Required" true)}}
+        {{template "field" (dict "Root" . "Name" "url" "Label" (t "calendars.field.url") "Value" (index .Form "URL") "Required" true "Inputmode" "url" "Autocapitalize" "none" "Placeholder" "webcal://…")}}
         <label>{{t "calendars.field.color"}}
           <input name="color" type="color" value="{{with .Form}}{{if .Color}}{{.Color}}{{else}}#2F5E7A{{end}}{{else}}#2F5E7A{{end}}"></label>
         <label>{{t "calendars.field.interval"}}

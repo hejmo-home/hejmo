@@ -63,7 +63,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 	}
 	data := map[string]any{
 		"Person": p.person, "Groups": groups, "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form,
-		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"],
+		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
 	s.render(w, r, status, "tasks.html", data)
 }
@@ -89,7 +89,12 @@ func (s *server) handleTaskAdd(w http.ResponseWriter, r *http.Request) {
 	case err == nil:
 		s.redirectSaved(w, r, "/tasks", "flash.task_added")
 	case errors.Is(err, store.ErrInvalid):
-		form := map[string]any{"Error": "tasks.error.invalid", "Person": in.PersonID, "Title": in.Title, "Emoji": in.Emoji,
+		var bad *task.InvalidError
+		field := ""
+		if errors.As(err, &bad) {
+			field = bad.Field
+		}
+		form := map[string]any{"Error": taskErrorKey(field), "ErrorField": field, "Person": in.PersonID, "Title": in.Title, "Emoji": in.Emoji,
 			"Repeat": string(in.Repeat), "Date": in.Date, "Part": string(in.PartOfDay), "Weekdays": in.Weekdays}
 		s.renderTasks(w, r, p, http.StatusUnprocessableEntity, form)
 	default:
@@ -135,4 +140,14 @@ func doneKey(r *http.Request) string {
 		return "flash.task_done"
 	}
 	return "flash.task_reopened"
+}
+
+// taskErrorKey is the text for an invalid task field. A field without its own
+// text falls back to the general one.
+func taskErrorKey(field string) string {
+	switch field {
+	case "title", "emoji", "person", "date", "weekdays", "repeat", "part":
+		return "tasks.error." + field
+	}
+	return "tasks.error.invalid"
 }

@@ -27,12 +27,9 @@
     {{template "error" .}}
     <form method="post" action="/displays" class="steps">
       <fieldset>
-        <label>{{t "displays.code"}}
-          <input name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" value="{{with .Form}}{{.Code}}{{end}}"></label>
-        <label>{{t "displays.name"}}
-          <input name="name" required maxlength="80" value="{{with .Form}}{{.Name}}{{end}}"></label>
-        <label>{{t "displays.room_label"}}
-          <input name="room" maxlength="80" value="{{with .Form}}{{.Room}}{{end}}"></label>
+        {{template "field" (dict "Root" . "Name" "code" "Label" (t "displays.code") "Value" (index .Form "Code") "Required" true "Inputmode" "numeric" "Pattern" "[0-9]{6}" "Max" 6 "Autocomplete" "off")}}
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "displays.name") "Value" (index .Form "Name") "Required" true "Max" 80)}}
+        {{template "field" (dict "Root" . "Name" "room" "Label" (t "displays.room_label") "Value" (index .Form "Room") "Max" 80)}}
         <label>{{t "displays.type"}}
           <select name="type">
             {{$sel := ""}}{{with .Form}}{{$sel = .Type}}{{end}}

@@ -37,7 +37,7 @@ func (s *server) renderDisplays(w http.ResponseWriter, r *http.Request, p princi
 		"Types": []store.DisplayType{store.DisplayEInkBW, store.DisplayEInkColor, store.DisplayScreen},
 	}
 	if form != nil {
-		data["Error"] = form["Error"]
+		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
 	}
 	s.render(w, r, status, "displays.html", data)
 }
@@ -58,7 +58,11 @@ func (s *server) handleDisplayPair(w http.ResponseWriter, r *http.Request) {
 	code := strings.TrimSpace(r.PostFormValue("code"))
 	in := store.Display{Name: r.PostFormValue("name"), Room: r.PostFormValue("room"), Type: store.DisplayType(r.PostFormValue("type"))}
 	form := func(key string) map[string]any {
-		return map[string]any{"Error": key, "Code": code, "Name": in.Name, "Room": in.Room, "Type": string(in.Type)}
+		field := "code"
+		if key == "displays.error.invalid" {
+			field = "name"
+		}
+		return map[string]any{"Error": key, "ErrorField": field, "Code": code, "Name": in.Name, "Room": in.Room, "Type": string(in.Type)}
 	}
 	switch _, err := s.pairDisplay(p, code, in); {
 	case err == nil:

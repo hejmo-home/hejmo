@@ -1,6 +1,6 @@
 # 0012. Calendar sync
 
-- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md)
+- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md), [0017](0017-web-interface-usability.md)
 - Date: 14/11/2026
 - Amends: [0003](0003-v1-scope-and-work-packages.md) (work package 4 and the V1.x list)
 

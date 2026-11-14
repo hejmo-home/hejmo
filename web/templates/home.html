@@ -1,0 +1,5 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "home.title"))}}
+  <h1>{{t "home.hello"}} {{.Person.Name}}</h1>
+  <p class="lead">{{t "home.placeholder"}}</p>
+  <form method="post" action="/logout"><button class="button" type="submit">{{t "home.logout"}}</button></form>
+{{template "foot"}}

@@ -1,0 +1,15 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "login.title"))}}
+  <h1>{{t "login.title"}}</h1>
+  {{template "error" .}}
+  <form method="post" action="/login" class="steps">
+    <fieldset>
+      <label>{{t "setup.field.username"}}
+        <input name="username" value="{{.Username}}" required autocomplete="username" autocapitalize="none"></label>
+      <label>{{t "setup.field.password"}}
+        <input name="password" type="password" required autocomplete="current-password"></label>
+      <label>{{t "setup.totp.code"}}
+        <input name="code" inputmode="numeric" pattern="[0-9 ]{6,7}" required autocomplete="one-time-code"></label>
+    </fieldset>
+    <button class="button" type="submit">{{t "login.submit"}}</button>
+  </form>
+{{template "foot"}}

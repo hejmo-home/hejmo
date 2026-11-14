@@ -1,4 +1,5 @@
-// Package server wires the box's HTTP handlers.
+// Package server wires the box's HTTP handlers: web UI, setup wizard,
+// sign-in and the REST API.
 package server
 
 import (
@@ -7,47 +8,48 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/web"
 )
 
-// SetupState tells whether the box has finished its first-run setup.
-type SetupState interface {
-	Configured() bool
-}
-
 // Options configures the HTTP server.
 type Options struct {
-	// Setup reports the first-run state. Nil means "not configured".
-	Setup SetupState
-	// Logger receives request errors. Nil means slog.Default().
+	// DB is the box's database (required).
+	DB *store.DB
+	// Now returns the current time. Nil means time.Now.
+	Now func() time.Time
+	// Logger receives errors. Nil means slog.Default().
 	Logger *slog.Logger
 }
 
 type server struct {
-	setup  SetupState
-	i18n   *i18n.Bundle
-	pages  *template.Template
-	logger *slog.Logger
+	db      *store.DB
+	now     func() time.Time
+	i18n    *i18n.Bundle
+	pages   *template.Template
+	logger  *slog.Logger
+	limiter *loginLimiter
 }
 
 // New returns the box's root HTTP handler.
 func New(opts Options) http.Handler {
-	s := &server{
-		setup:  opts.Setup,
-		i18n:   i18n.MustLoad(),
-		logger: opts.Logger,
+	if opts.DB == nil {
+		panic("server: Options.DB is required")
 	}
-	if s.setup == nil {
-		s.setup = unconfigured{}
+	s := &server{db: opts.DB, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad()}
+	if s.now == nil {
+		s.now = time.Now
 	}
 	if s.logger == nil {
 		s.logger = slog.Default()
 	}
+	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.pages = template.Must(template.New("").Funcs(template.FuncMap{
-		// Replaced per request in render; declared here so templates parse.
-		"t": func(string) string { return "" },
+		"t":    func(string) string { return "" }, // replaced per request in render
+		"dict": dict,
 	}).ParseFS(web.Templates, "templates/*.html"))
 
 	static, err := fs.Sub(web.Static, "static")
@@ -56,57 +58,75 @@ func New(opts Options) http.Handler {
 	}
 
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET /healthz", handleHealthz)
+	mux.HandleFunc("GET /healthz", s.handleHealthz)
 	mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServerFS(static)))
-	mux.HandleFunc("GET /setup", s.handleSetup)
+	mux.HandleFunc("GET /setup", s.handleSetupForm)
+	mux.HandleFunc("POST /setup", s.handleSetupSubmit)
+	mux.HandleFunc("GET /setup/totp", s.handleSetupTOTPForm)
+	mux.HandleFunc("POST /setup/totp", s.handleSetupTOTPSubmit)
+	mux.HandleFunc("GET /login", s.handleLoginForm)
+	mux.HandleFunc("POST /login", s.handleLoginSubmit)
+	mux.HandleFunc("POST /logout", s.handleLogout)
 	mux.HandleFunc("GET /{$}", s.handleHome)
-	return mux
+	s.routeAPI(mux)
+	return sameOrigin(mux)
 }
 
-type unconfigured struct{}
-
-func (unconfigured) Configured() bool { return false }
-
-func handleHealthz(w http.ResponseWriter, _ *http.Request) {
+func (s *server) handleHealthz(w http.ResponseWriter, r *http.Request) {
+	status, code := "ok", http.StatusOK
+	if err := s.db.SQL().PingContext(r.Context()); err != nil {
+		status, code = "database unavailable", http.StatusServiceUnavailable
+	}
 	w.Header().Set("Content-Type", "application/json")
-	_ = json.NewEncoder(w).Encode(map[string]string{"status": "ok"})
+	w.WriteHeader(code)
+	_ = json.NewEncoder(w).Encode(map[string]string{"status": status})
 }
 
 func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
-	if !s.setup.Configured() {
+	if !s.db.Configured() {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
-	// The family view arrives with work package 5.
-	w.Header().Set("Content-Type", "text/plain; charset=utf-8")
-	_, _ = w.Write([]byte("Hejmo\n"))
-}
-
-func (s *server) handleSetup(w http.ResponseWriter, r *http.Request) {
-	if s.setup.Configured() {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+	p, ok := s.currentPerson(r)
+	if !ok {
+		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	s.render(w, r, "setup.html", nil)
+	// The family view arrives with work package 5.
+	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p})
 }
 
-func (s *server) render(w http.ResponseWriter, r *http.Request, name string, data map[string]any) {
+func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name string, data map[string]any) {
 	lang := s.i18n.Match(r.Header.Get("Accept-Language"))
-	tpl, err := s.pages.Clone()
-	if err == nil {
-		tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return s.i18n.T(lang, key) }})
-	}
 	if data == nil {
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
-	w.Header().Set("Content-Type", "text/html; charset=utf-8")
-	w.Header().Set("Content-Language", lang)
+	tpl, err := s.pages.Clone()
 	if err == nil {
+		tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return s.i18n.T(lang, key) }})
+		w.Header().Set("Content-Type", "text/html; charset=utf-8")
+		w.Header().Set("Content-Language", lang)
+		w.WriteHeader(status)
 		err = tpl.ExecuteTemplate(w, name, data)
 	}
 	if err != nil {
-		s.logger.Error("render page", "page", name, "err", err)
-		http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+		s.fail(w, "render "+name, err)
 	}
+}
+
+func (s *server) fail(w http.ResponseWriter, what string, err error) {
+	s.logger.Error(what, "err", err)
+	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+}
+
+// dict builds a map for passing several values to a sub-template.
+func dict(kv ...any) map[string]any {
+	m := make(map[string]any, len(kv)/2)
+	for i := 0; i+1 < len(kv); i += 2 {
+		if k, ok := kv[i].(string); ok {
+			m[k] = kv[i+1]
+		}
+	}
+	return m
 }

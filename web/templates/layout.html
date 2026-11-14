@@ -1,0 +1,19 @@
+{{define "head"}}<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{.Title}} · Hejmo</title>
+<link rel="stylesheet" href="/static/hejmo.css">
+</head>
+<body>
+<main>
+{{end}}
+
+{{define "foot"}}
+</main>
+</body>
+</html>
+{{end}}
+
+{{define "error"}}{{if .Error}}<p class="error" role="alert">{{t .Error}}</p>{{end}}{{end}}

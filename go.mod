@@ -4,6 +4,7 @@ go 1.27.4
 
 require (
 	github.com/emersion/go-ical v0.0.0-20261112170022-46c5b53a1723
+	github.com/emersion/go-webdav v0.7.0
 	github.com/getkin/kin-openapi v0.153.0
 	github.com/teambition/rrule-go v1.8.2
 	golang.org/x/crypto v0.59.0

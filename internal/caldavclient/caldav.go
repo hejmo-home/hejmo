@@ -370,16 +370,49 @@ const listBody = `<?xml version="1.0" encoding="utf-8"?>` +
 	`<c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VEVENT"/></c:comp-filter></c:filter>` +
 	`</c:calendar-query>`
 
-type listAnswer struct {
+type reportAnswer struct {
 	Responses []struct {
 		Href      string `xml:"DAV: href"`
+		Status    string `xml:"DAV: status"` // of the whole member, when it has no propstat
 		Propstats []struct {
 			Status string `xml:"DAV: status"`
 			Prop   struct {
-				ETag string `xml:"DAV: getetag"`
+				ETag         string `xml:"DAV: getetag"`
+				CalendarData string `xml:"urn:ietf:params:xml:ns:caldav calendar-data"`
 			} `xml:"DAV: prop"`
 		} `xml:"DAV: propstat"`
 	} `xml:"DAV: response"`
+}
+
+// report sends a REPORT with the given body to a calendar and reads the
+// multistatus answer tolerantly (go-webdav's reader fails on a 404 propstat and
+// decodes calendar data). It returns the address that finally answered, which
+// may be on another host than the one asked after a redirect, for resolving
+// the hrefs in the answer.
+func (c *Client) report(ctx context.Context, dir, body, what string) (*reportAnswer, *url.URL, error) {
+	req, err := http.NewRequestWithContext(ctx, "REPORT", dir, strings.NewReader(body))
+	if err != nil {
+		return nil, nil, err
+	}
+	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
+	req.Header.Set("Depth", "1")
+	res, err := c.auth.Do(req)
+	if err != nil {
+		return nil, nil, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusMultiStatus {
+		return nil, nil, &StatusError{res.StatusCode, res.Status}
+	}
+	var ans reportAnswer
+	if err := xml.NewDecoder(res.Body).Decode(&ans); err != nil {
+		return nil, nil, fmt.Errorf("reading %s: %w", what, err)
+	}
+	at, _ := url.Parse(dir)
+	if res.Request != nil && res.Request.URL != nil {
+		at = res.Request.URL
+	}
+	return &ans, at, nil
 }
 
 // List returns the objects of a calendar with their ETags, without their data.
@@ -394,29 +427,9 @@ func (c *Client) List(ctx context.Context, calendarURL string) ([]Object, error)
 		return nil, err
 	}
 	dir := abs(origin, c.route(calendarURL))
-	req, err := http.NewRequestWithContext(ctx, "REPORT", dir, strings.NewReader(listBody))
+	ans, at, err := c.report(ctx, dir, listBody, "the list of events")
 	if err != nil {
 		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
-	req.Header.Set("Depth", "1")
-	res, err := c.auth.Do(req)
-	if err != nil {
-		return nil, err
-	}
-	defer res.Body.Close()
-	if res.StatusCode != http.StatusMultiStatus {
-		return nil, &StatusError{res.StatusCode, res.Status}
-	}
-	var ans listAnswer
-	if err := xml.NewDecoder(res.Body).Decode(&ans); err != nil {
-		return nil, fmt.Errorf("reading the list of events: %w", err)
-	}
-	// Resolve against the address that finally answered, which may be on
-	// another host than the one asked after a redirect.
-	at, _ := url.Parse(dir)
-	if res.Request != nil && res.Request.URL != nil {
-		at = res.Request.URL
 	}
 	self := AddressKey(dir)
 	var out []Object
@@ -488,34 +501,120 @@ func (c *Client) Fetch(ctx context.Context, calendarURL string, objectURLs []str
 	return out, nil
 }
 
+// multigetBody asks for the ETag and the calendar data of the given objects.
+// The data is requested whole, as the server stores it.
+const multigetOpen = `<?xml version="1.0" encoding="utf-8"?>` +
+	`<c:calendar-multiget xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">` +
+	`<d:prop><d:getetag/><c:calendar-data/></d:prop>`
+
+// multiget downloads objects with one calendar-multiget REPORT and returns the
+// server's calendar data as it was sent. It does not go through go-webdav:
+// that decodes every object and the text then has to be encoded again, and
+// go-ical's encoder refuses what real servers hold (iCloud keeps old events
+// with two STATUS lines and invitations with several METHOD lines). Whether
+// the text can be read is decided by readable, which is as liberal as the
+// decoder.
 func (c *Client) multiget(ctx context.Context, calendarURL string, objectURLs []string) ([]Object, error) {
-	origin, dav, err := c.origin(calendarURL)
+	origin, _, err := c.origin(calendarURL)
 	if err != nil {
 		return nil, err
 	}
-	paths := make([]string, len(objectURLs))
-	for i, u := range objectURLs {
-		paths[i] = c.route(u)
+	dir := abs(origin, c.route(calendarURL))
+	var body strings.Builder
+	body.WriteString(multigetOpen)
+	for _, u := range objectURLs {
+		body.WriteString("<d:href>")
+		if err := xml.EscapeText(&body, []byte(c.route(u))); err != nil {
+			return nil, err
+		}
+		body.WriteString("</d:href>")
 	}
-	got, err := dav.MultiGetCalendar(ctx, c.route(calendarURL), &davcal.CalendarMultiGet{
-		Paths:       paths,
-		CompRequest: davcal.CalendarCompRequest{Name: ical.CompCalendar, AllProps: true, AllComps: true},
-	})
+	body.WriteString("</c:calendar-multiget>")
+	ans, at, err := c.report(ctx, dir, body.String(), "the events")
 	if err != nil {
 		return nil, err
 	}
-	out := make([]Object, 0, len(got))
-	for _, o := range got {
-		var buf bytes.Buffer
-		obj := Object{URL: abs(origin, o.Path), ETag: o.ETag}
-		if err := ical.NewEncoder(&buf).Encode(o.Data); err != nil {
-			obj.Err = err
-		} else {
-			obj.Data = buf.Bytes()
+	var out []Object
+	for _, r := range ans.Responses {
+		href, err := url.Parse(strings.TrimSpace(r.Href))
+		if err != nil || strings.TrimSpace(r.Href) == "" {
+			continue
+		}
+		target := at.ResolveReference(href)
+		if err := c.auth.permit(target); err != nil {
+			return nil, err
+		}
+		var (
+			ok    bool
+			obj   = Object{URL: target.String()}
+			gone  bool
+			other *StatusError
+		)
+		note := func(status string) {
+			code := statusCode(status)
+			switch {
+			case code == http.StatusNotFound || code == http.StatusGone:
+				gone = true
+			case code/100 != 2 && other == nil:
+				other = &StatusError{code, strings.TrimSpace(strings.TrimPrefix(status, "HTTP/1.1 "))}
+			}
+		}
+		if len(r.Propstats) == 0 {
+			note(r.Status)
+		}
+		for _, ps := range r.Propstats {
+			if code := statusCode(ps.Status); code/100 != 2 {
+				note(ps.Status)
+				continue
+			}
+			if tag := strings.TrimSpace(ps.Prop.ETag); tag != "" {
+				obj.ETag = unquoteETag(tag)
+			}
+			if strings.TrimSpace(ps.Prop.CalendarData) != "" {
+				obj.Data, ok = []byte(crlf(ps.Prop.CalendarData)), true
+			}
+		}
+		switch {
+		case ok:
+			obj.Err = readable(obj.Data)
+		case other != nil:
+			return nil, other
+		case gone:
+			continue
+		default:
+			obj.Err = errors.New("the server sent no calendar data")
 		}
 		out = append(out, obj)
 	}
 	return out, nil
+}
+
+// statusCode reads the code of a status line such as "HTTP/1.1 404 Not Found".
+// A missing or malformed status counts as 200, as most servers leave it out
+// only when all is well.
+func statusCode(status string) int {
+	f := strings.Fields(status)
+	if len(f) >= 2 {
+		if n, err := strconv.Atoi(f[1]); err == nil {
+			return n
+		}
+	}
+	return http.StatusOK
+}
+
+// crlf gives calendar data the line ends iCalendar prescribes. An XML parser
+// turns CR LF into LF, so the text a server sent as CR LF comes back with LF.
+func crlf(s string) string {
+	return strings.ReplaceAll(strings.ReplaceAll(s, "\r\n", "\n"), "\n", "\r\n")
+}
+
+// readable says whether text is iCalendar at all. It only decodes: cardinality
+// rules (one STATUS, one METHOD, ...) are not checked, so what real servers
+// store is accepted. The reading of single properties is as tolerant (the
+// first of several wins).
+func readable(data []byte) error {
+	_, err := ical.NewDecoder(bytes.NewReader(data)).Decode()
+	return err
 }
 
 // fetchEach downloads objects one request each. An object that is gone is

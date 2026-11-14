@@ -164,7 +164,7 @@ None. No shadows in any palette.
 ## Shapes
 
 - Corners: columns and tiles 22 px, header chips 18 px, event cards 14 px, form fields 12 px, progress bar 4 px (height 8 px).
-- Person marker: circle 14 px in the person colour. In bw a shape: 16 px in the column header, 9 px on each event (`.marker.small`). Shapes in slot order: circle filled, circle empty, square filled, square empty, triangle filled, diamond filled (`data-shape`).
+- Person marker: circle 14 px in the person colour. In bw a shape: 16 px in the column header, 9 px on each event card (`.marker.small`, in `.markers` above the time; the card lists every person of the event, so two people are told apart by shape alone). Colour themes hide the card markers, the card tint carries the person. Shapes in slot order: circle filled, circle empty, square filled, square empty, triangle filled, diamond filled (`data-shape`).
 - Journeys: no fill, 1.5 px dashed border in the person colour (bw: the person colour is #111111), label "Journey" after the time.
 - Icons: line icons with 1.8 px stroke in the accent colour (Papa blue; bw #111111).
 

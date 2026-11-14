@@ -423,3 +423,55 @@ func TestReadOnlyCalendarTakesOutsideChangesOverQueuedBoxChanges(t *testing.T) {
 		t.Fatalf("pending = %+v, want the queued changes dropped", pend)
 	}
 }
+
+// boxEdits changes an event on the box without pushing, as a family member
+// does while a sync is running.
+func (fx *davFixture) boxEdits(t *testing.T, title, to string) {
+	t.Helper()
+	e := fx.boxEvent(t, title)
+	e.Title = to
+	if err := fx.db.ApplyChange(fx.h.ID, calendar.Change{Update: []calendar.Event{e}}); err != nil {
+		t.Fatal(err)
+	}
+}
+
+func TestBoxEditDuringAnImportOfTheSameObjectIsNotLost(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	obj := fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swimming", "20260101T080000Z"))
+	fx.syncAfter(t, 0)
+
+	// The object changes outside, and the box edit lands after the sync has
+	// read its queue but before it stores the import.
+	fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swim outside", "20260301T080000Z"))
+	fx.beforeFetch = func() { fx.boxEdits(t, "Swimming", "Swim on the box") }
+	fx.syncAfter(t, 5*time.Minute)
+
+	if got := fx.titles(t); len(got) != 1 || got[0] != "Swim on the box" {
+		t.Fatalf("events after the import = %v, want the box edit kept", got)
+	}
+	if pend, _ := fx.db.PendingObjects(fx.cal.ID); len(pend) != 1 {
+		t.Fatalf("pending = %+v, want the edit still queued", pend)
+	}
+	// The next sync settles it as a conflict (the box edit is the later change).
+	fx.syncAfter(t, 5*time.Minute)
+	if got := fx.srv.Get(t, obj); !strings.Contains(got, "SUMMARY:Swim on the box") {
+		t.Fatalf("server never got the box edit:\n%s", got)
+	}
+}
+
+func TestBoxEditDuringAnImportOfAnObjectDeletedOutsideIsNotLost(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swimming", "20260101T080000Z"))
+	fx.syncAfter(t, 0)
+
+	fx.srv.Delete(t, fx.remote+"swim.ics")
+	fx.beforeFetch = func() { fx.boxEdits(t, "Swimming", "Swim on the box") }
+	fx.syncAfter(t, 5*time.Minute)
+
+	if got := fx.titles(t); len(got) != 1 || got[0] != "Swim on the box" {
+		t.Fatalf("events after the import = %v, want the box edit kept", got)
+	}
+	if pend, _ := fx.db.PendingObjects(fx.cal.ID); len(pend) != 1 {
+		t.Fatalf("pending = %+v, want the edit still queued", pend)
+	}
+}

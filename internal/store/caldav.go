@@ -211,14 +211,32 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 		return err
 	}
 	defer tx.Rollback()
-	var one int
-	if err := tx.QueryRow(`SELECT 1 FROM calendars WHERE id = ? AND household_id = ? AND connection_id IS NOT NULL`, calendarID, householdID).Scan(&one); err != nil {
+	var readOnly bool
+	if err := tx.QueryRow(`SELECT read_only FROM calendars WHERE id = ? AND household_id = ? AND connection_id IS NOT NULL`, calendarID, householdID).Scan(&readOnly); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return ErrNotFound
 		}
 		return err
 	}
+	// A box edit that landed after the caller read its queue is still queued
+	// here. In a two-way calendar it must survive the import: the push settles
+	// it against the outside version as a conflict (ADR 0012).
+	queued := func(url string) (bool, error) {
+		var n int
+		err := tx.QueryRow(`SELECT pending FROM remote_objects WHERE calendar_id = ? AND url = ?`, calendarID, url).Scan(&n)
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return n > 0, err
+	}
 	for _, url := range deleted {
+		if !readOnly {
+			if q, err := queued(url); err != nil {
+				return err
+			} else if q {
+				continue
+			}
+		}
 		if _, err := tx.Exec(`DELETE FROM events WHERE calendar_id = ? AND remote_url = ?`, calendarID, url); err != nil {
 			return err
 		}
@@ -228,6 +246,13 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 	}
 	for _, o := range changed {
 		url := o.URL
+		if !o.DropPending {
+			if q, err := queued(o.URL); err != nil {
+				return err
+			} else if q {
+				continue
+			}
+		}
 		if !o.KeepEvents {
 			if err := replaceSyncedEvents(tx, householdID, calendarID, o.Items, &url); err != nil {
 				return fmt.Errorf("object %s: %w", o.URL, err)

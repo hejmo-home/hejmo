@@ -17,16 +17,17 @@ import (
 )
 
 type davFixture struct {
-	db        *store.DB
-	h         store.Household
-	srv       *caldavtest.Server
-	remote    string // calendar URL on Radicale
-	svc       *calsync.Service
-	cal       store.SyncedCalendar
-	clock     time.Time
-	fetched   atomic.Int32      // objects downloaded
-	tamper    caldavtest.Tamper // makes chosen objects unreadable on the wire
-	afterList func()            // runs once the box has listed the calendar
+	db          *store.DB
+	h           store.Household
+	srv         *caldavtest.Server
+	remote      string // calendar URL on Radicale
+	svc         *calsync.Service
+	cal         store.SyncedCalendar
+	clock       time.Time
+	fetched     atomic.Int32      // objects downloaded
+	tamper      caldavtest.Tamper // makes chosen objects unreadable on the wire
+	afterList   func()            // runs once the box has listed the calendar
+	beforeFetch func()            // runs once, just before the box downloads objects
 }
 
 // countingRemote counts the objects the box downloads.
@@ -44,6 +45,11 @@ func (c countingRemote) List(ctx context.Context, cal string) ([]caldavclient.Ob
 }
 
 func (c countingRemote) Fetch(ctx context.Context, cal string, urls []string) ([]caldavclient.Object, error) {
+	if c.fx.beforeFetch != nil {
+		f := c.fx.beforeFetch
+		c.fx.beforeFetch = nil
+		f()
+	}
 	c.fx.fetched.Add(int32(len(urls)))
 	return c.Client.Fetch(ctx, cal, urls)
 }

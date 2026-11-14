@@ -215,13 +215,12 @@ func TestQuietModeAndKioskWorkThroughTheAPI(t *testing.T) {
 	if got["quiet_mode"].(map[string]any)["from"] != "21:00" || got["kiosk"].(map[string]any)["api_key_set"] != true {
 		t.Fatalf("untouched settings changed: %v", got)
 	}
-	for name, body := range map[string]map[string]any{
-		"bad time": {"quiet_mode": map[string]any{"enabled": true, "from": "99:00", "to": "07:00"}},
-		"bad url":  {"kiosk": map[string]any{"url": "ftp://x"}},
-	} {
-		if status, _, _ := c.call(http.MethodPatch, "/displays/"+id, body); status != http.StatusUnprocessableEntity {
-			t.Errorf("%s = %d, want 422", name, status)
-		}
+	// The contract refuses a malformed time itself; the box must too.
+	if status := rawCall(t, c, http.MethodPatch, "/displays/"+id, `{"quiet_mode":{"enabled":true,"from":"99:00","to":"07:00"}}`); status != http.StatusUnprocessableEntity {
+		t.Errorf("bad time = %d, want 422", status)
+	}
+	if status, _, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"kiosk": map[string]any{"url": "ftp://x"}}); status != http.StatusUnprocessableEntity {
+		t.Errorf("bad url = %d, want 422", status)
 	}
 	// Removing the kiosk.
 	_, got, _ = c.call(http.MethodPatch, "/displays/"+id, map[string]any{"kiosk": map[string]any{"url": ""}})

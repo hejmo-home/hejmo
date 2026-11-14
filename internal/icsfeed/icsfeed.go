@@ -75,7 +75,7 @@ func Parse(data []byte, opts Options) (Result, error) {
 	if err != nil {
 		return Result{}, fmt.Errorf("not an iCalendar feed: %w", err)
 	}
-	p := &parser{opts: opts, cutoff: opts.Now.AddDate(-1, 0, 0), masters: map[string]int{}}
+	p := &parser{opts: opts, cutoff: opts.Now.AddDate(-1, 0, 0), masters: map[string]int{}, cancelledSeries: map[string]bool{}}
 	for _, c := range cal.Children {
 		if c.Name == ical.CompEvent {
 			p.add(c)
@@ -85,13 +85,14 @@ func Parse(data []byte, opts Options) (Result, error) {
 }
 
 type parser struct {
-	opts    Options
-	cutoff  time.Time
-	items   []Item
-	masters map[string]int // key -> index in items
-	cancels []cancel
-	notes   []string
-	zones   map[string]bool // unknown zones already noted
+	opts            Options
+	cutoff          time.Time
+	items           []Item
+	masters         map[string]int // key -> index in items
+	cancels         []cancel
+	cancelledSeries map[string]bool // UIDs of cancelled masters
+	notes           []string
+	zones           map[string]bool // unknown zones already noted
 }
 
 type cancel struct {
@@ -141,6 +142,7 @@ func (p *parser) add(c *ical.Component) {
 		return
 	}
 	if cancelled {
+		p.cancelledSeries[uid] = true // its changed occurrences go with it (RFC 5545)
 		return
 	}
 
@@ -196,7 +198,7 @@ func (p *parser) finish() Result {
 		case it.SeriesKey != "" && keptSeries[it.SeriesKey]:
 			out = append(out, it)
 		case it.SeriesKey != "":
-			if _, hasMaster := p.masters[it.SeriesKey]; !hasMaster && p.inWindow(it.Event) {
+			if _, hasMaster := p.masters[it.SeriesKey]; !hasMaster && !p.cancelledSeries[it.SeriesKey] && p.inWindow(it.Event) {
 				it.SeriesKey, it.Event.SeriesID = "", ""
 				out = append(out, it) // orphaned change: keep as a single event
 			}

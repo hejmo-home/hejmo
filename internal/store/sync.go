@@ -260,20 +260,10 @@ func replaceSyncedEvents(tx *sql.Tx, householdID, calendarID string, items []Syn
 		}
 		return err
 	}
-	existing := map[string]string{} // key -> id
-	rows, err := tx.Query(`SELECT remote_key, id FROM events WHERE calendar_id = ? AND remote_key IS NOT NULL`, calendarID)
+	existing, err := remoteKeys(tx, calendarID)
 	if err != nil {
 		return err
 	}
-	for rows.Next() {
-		var key, id string
-		if err := rows.Scan(&key, &id); err != nil {
-			rows.Close()
-			return err
-		}
-		existing[key] = id
-	}
-	rows.Close()
 
 	ids := map[string]string{}
 	for _, it := range items {
@@ -289,6 +279,11 @@ func replaceSyncedEvents(tx *sql.Tx, householdID, calendarID string, items []Syn
 				return err
 			}
 		}
+	}
+	// Deleting a series master cascades to its stored changed occurrences, so
+	// look again: a row that is gone is inserted, not updated.
+	if existing, err = remoteKeys(tx, calendarID); err != nil {
+		return err
 	}
 	// Series masters first, so changed occurrences can point at them.
 	for _, pass := range []bool{false, true} {
@@ -317,4 +312,22 @@ func replaceSyncedEvents(tx *sql.Tx, householdID, calendarID string, items []Syn
 		}
 	}
 	return nil
+}
+
+// remoteKeys maps the remote keys of a calendar's synced events to their ids.
+func remoteKeys(tx *sql.Tx, calendarID string) (map[string]string, error) {
+	out := map[string]string{}
+	rows, err := tx.Query(`SELECT remote_key, id FROM events WHERE calendar_id = ? AND remote_key IS NOT NULL`, calendarID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	for rows.Next() {
+		var key, id string
+		if err := rows.Scan(&key, &id); err != nil {
+			return nil, err
+		}
+		out[key] = id
+	}
+	return out, rows.Err()
 }

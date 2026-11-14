@@ -104,7 +104,7 @@ func TestAutomaticSeesTomorrowsEarlySunriseSwitch(t *testing.T) {
 	tom := sun.On(time.Date(2026, 6, 22, 12, 0, 0, 0, utc), 64.15, -21.94)
 	sw := tom.Rise.Add(-180 * time.Minute)
 	if sw.Day() != 21 {
-		t.Skipf("switch falls on %v, not the evening before", sw)
+		t.Fatalf("switch falls on %v, not the evening before", sw)
 	}
 	if got := theme.Resolve(rvk(sw.Add(time.Minute))); got != theme.Light {
 		t.Errorf("after tomorrow's early light switch = %s, want light", got)

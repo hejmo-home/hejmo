@@ -127,9 +127,10 @@ func TestDisplayThemeWorksThroughTheAPI(t *testing.T) {
 	if _, got, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"sunrise_offset": 45}); got["theme"] != "dark" || got["sunset_offset"] != float64(-30) || got["sunrise_offset"] != float64(45) {
 		t.Fatalf("second patch = %v", got)
 	}
-	for _, bad := range []map[string]any{{"theme": "sepia"}, {"sunrise_offset": 181}, {"sunset_offset": -181}} {
-		if status, _, _ := c.call(http.MethodPatch, "/displays/"+id, bad); status != http.StatusUnprocessableEntity {
-			t.Errorf("%v = %d, want 422", bad, status)
+	// The contract client refuses invalid bodies, so these go out raw.
+	for _, bad := range []string{`{"theme":"sepia"}`, `{"sunrise_offset":181}`, `{"sunset_offset":-181}`} {
+		if got := rawCall(t, c, http.MethodPatch, "/displays/"+id, bad); got != http.StatusUnprocessableEntity {
+			t.Errorf("%s = %d, want 422", bad, got)
 		}
 	}
 	if status, _, _ := c.call(http.MethodPatch, "/displays/00000000-0000-4000-8000-000000000000", map[string]any{"theme": "dark"}); status != http.StatusNotFound {

@@ -335,7 +335,8 @@ func (m *Manager) Clear() error {
 	return nil
 }
 
-// Ready reports whether the box has a certificate for its public name.
+// Ready reports whether a public setup is installed. Its certificate may still
+// be missing, see HasCertificate.
 func (m *Manager) Ready() bool {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

@@ -43,7 +43,8 @@ type Options struct {
 // PublicHTTPS is the box's publicly trusted certificate, set up through the
 // wizard; implemented by publiccert.Manager.
 type PublicHTTPS interface {
-	// Ready reports whether the box has a certificate for its public name.
+	// Ready reports whether a public setup is installed (its certificate may
+	// still be missing, see HasCertificate).
 	Ready() bool
 	// HasCertificate reports whether the manager has a certificate to serve.
 	// It is false while a stored setup is ready but its certificate could not

@@ -277,7 +277,7 @@ paths:
       description: |
         `own-ca` is the box's own certificate authority (it is renewed by the box). Without `warning` there is
         nothing to do. With `warning` true it is the fallback of a configured box whose public certificate could
-        not be resumed, loaded or obtained (decision Q27): the box serves its own CA's certificate on HTTPS, never
+        not be loaded or obtained (decision Q27): the box serves its own CA's certificate on HTTPS, never
         plain HTTP, and phones must first trust the own CA (`/ca`); `renewal_error` says why.
         `public` is a publicly trusted certificate for the family's DNS name (ADR 0014); `warning` is set when its
         renewal failed or it is about to expire.

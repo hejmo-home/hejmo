@@ -1,6 +1,9 @@
 package i18n_test
 
 import (
+	"encoding/json"
+	"os"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -76,5 +79,40 @@ func TestFormatFillsParameters(t *testing.T) {
 	}
 	if got := b.Format("en", i18n.Message{}); got != "" {
 		t.Errorf("empty message = %q, want empty", got)
+	}
+}
+
+// ADR 0017: German texts address the user as "du". "eure"/"euer" stay only
+// where the whole family is meant; every such text is listed here with its key.
+var wholeFamilyTexts = map[string]bool{
+	"setup.https.intro": true, // "außerhalb eures Zuhauses": the whole home
+	"setup.intro":       true, // "eure Box": the family's box
+}
+
+func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {
+	raw, err := os.ReadFile("locales/de.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cat := map[string]string{}
+	if err := json.Unmarshal(raw, &cat); err != nil {
+		t.Fatal(err)
+	}
+	// Plural address (ihr/euch/euer...) and plural imperatives that are not "du".
+	plural := regexp.MustCompile(`(?i:\b(ihr|euch|eur\w*)\b)|\b(Öffnet|Gebt|Wählt|Prüft|Tragt|Schaut|Klickt|Scannt|Nehmt|Macht|Legt|Stellt|Sagt|Wartet|Versucht|Nutzt|Benutzt)\b`)
+	for key, text := range cat {
+		if wholeFamilyTexts[key] {
+			continue
+		}
+		// "ihr eigenes Zertifikat" refers to the box, not to the reader.
+		clean := strings.ReplaceAll(text, "ihr eigenes", "")
+		if m := plural.FindString(clean); m != "" {
+			t.Errorf("de %s uses %q instead of du: %s", key, m, text)
+		}
+	}
+	for key := range wholeFamilyTexts {
+		if _, ok := cat[key]; !ok {
+			t.Errorf("allow-list names unknown key %s", key)
+		}
 	}
 }

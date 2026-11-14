@@ -40,6 +40,9 @@ type Input struct {
 type Event struct {
 	Title string
 	Time  string // "09:00–10:00", 24 hours until the time-format setting exists (5.8)
+	// Markers are the people of the event in display order, so black-and-white
+	// mode tells them apart by shape.
+	Markers []Marker
 }
 
 // Progress is a person's task progress today (data arrives with 6.6).
@@ -145,7 +148,7 @@ func Build(in Input) View {
 		if !bar && !whole {
 			for i, p := range in.People {
 				if sees(in, p, o) {
-					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc))
+					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc, markers(in, o)))
 				}
 			}
 			continue
@@ -193,7 +196,7 @@ func Build(in Input) View {
 			}
 			for i, p := range in.People {
 				if sees(in, p, o) && len(v.Columns[i].Tomorrow) < maxTomorrow {
-					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc))
+					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc, markers(in, o)))
 				}
 			}
 		}
@@ -215,8 +218,19 @@ func clock(o calendar.Occurrence, loc *time.Location) string {
 	return fmt.Sprintf("%s–%s", o.Start.In(loc).Format("15:04"), o.End.In(loc).Format("15:04"))
 }
 
-func card(o calendar.Occurrence, loc *time.Location) Event {
-	return Event{Title: o.Title, Time: clock(o, loc)}
+func card(o calendar.Occurrence, loc *time.Location, m []Marker) Event {
+	return Event{Title: o.Title, Time: clock(o, loc), Markers: m}
+}
+
+// markers lists the people who see o, in display order.
+func markers(in Input, o calendar.Occurrence) []Marker {
+	var out []Marker
+	for _, p := range in.People {
+		if sees(in, p, o) {
+			out = append(out, Marker{Name: p.Name, Slot: p.Slot, Shape: p.Shape})
+		}
+	}
+	return out
 }
 
 func wholeHousehold(in Input, o calendar.Occurrence) bool {

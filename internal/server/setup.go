@@ -16,6 +16,7 @@ import (
 var personStyles = []struct{ color, shape string }{
 	{"#B4583A", "circle-filled"}, {"#2F5E7A", "circle-empty"},
 	{"#4E7D52", "square-filled"}, {"#9A7420", "square-empty"},
+	{"#86587F", "triangle-filled"}, {"#3A7A74", "diamond-filled"},
 }
 
 func (s *server) handleSetupForm(w http.ResponseWriter, r *http.Request) {

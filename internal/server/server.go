@@ -45,6 +45,10 @@ type Options struct {
 type PublicHTTPS interface {
 	// Ready reports whether the box has a certificate for its public name.
 	Ready() bool
+	// HasCertificate reports whether the manager has a certificate to serve.
+	// It is false while a stored setup is ready but its certificate could not
+	// be loaded or obtained: the box then serves its own CA's certificate.
+	HasCertificate() bool
 	// Name is the public DNS name of the box.
 	Name() string
 	// Status is shown to parents.

@@ -368,3 +368,49 @@ func TestOwnCAAfterAFailedPublicAttemptLeavesNoWarning(t *testing.T) {
 		t.Errorf("warning stays after the own CA was provisioned: %+v", st)
 	}
 }
+
+// A stored public setup whose certificate could not be obtained: the manager
+// is ready but has nothing to serve, so the box's own CA is what phones get.
+func TestOwnCAFallbackWithoutAPublicCertificateIsReportedAndOffersItsTrustPage(t *testing.T) {
+	c := signedInAPI(t)
+	b := c.b
+	b.public.name, b.public.noCert = "mia.dedyn.io", true
+	b.public.status = publiccert.Status{Warning: true, RenewalError: "acme: unreachable"}
+
+	r := b.get("/ca")
+	if r.status != http.StatusOK || !strings.Contains(r.body, b.pki.CAFingerprint()) {
+		t.Errorf("GET /ca = %d, want the fingerprint of the own CA:\n%s", r.status, r.body)
+	}
+	if status, body, _ := c.call(http.MethodGet, "/https", nil); status != http.StatusOK || body["mode"] != "own-ca" || body["warning"] != true || body["renewal_error"] != "acme: unreachable" {
+		t.Errorf("GET /https = %d %v, want own-ca with a warning", status, body)
+	}
+}
+
+// The same fallback before setup is complete (the box restarted during the
+// name check and could not obtain the certificate): the wizard must not
+// redirect away from the HTTPS step, and the own CA must be choosable.
+func TestWizardOffersTheHTTPSStepAgainWhenThePublicCertificateIsMissing(t *testing.T) {
+	b := newFreshBox(t)
+	b.public.name, b.public.noCert = "mia.dedyn.io", true
+	if r := b.get("/setup/https"); r.status != http.StatusOK {
+		t.Fatalf("GET /setup/https = %d %q, want the step again", r.status, r.location)
+	}
+	r := b.post("/setup/https/own-ca", url.Values{})
+	if r.status != http.StatusSeeOther || r.location != "/ca" || !b.pki.Ready() {
+		t.Fatalf("POST own-ca = %d %q ready=%v, want 303 /ca", r.status, r.location, b.pki.Ready())
+	}
+}
+
+// The box restarted during the name check: its public certificate is there,
+// no own CA was made for the public name, and the own CA can still be chosen.
+func TestOwnCAChoiceAfterARestartDuringTheNameCheck(t *testing.T) {
+	b := newFreshBox(t)
+	b.public.name = "mia.dedyn.io" // as after Start with the stored setup
+	r := b.post("/setup/https/own-ca", url.Values{})
+	if r.status != http.StatusSeeOther || r.location != "/ca" {
+		t.Fatalf("POST own-ca = %d %q, want 303 /ca", r.status, r.location)
+	}
+	if r := b.get("/ca"); r.status != http.StatusOK || !strings.Contains(r.body, b.pki.CAFingerprint()) {
+		t.Errorf("GET /ca = %d", r.status)
+	}
+}

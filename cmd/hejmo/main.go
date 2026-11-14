@@ -174,10 +174,13 @@ func run(cfg config, logger *slog.Logger) error {
 // covers a certificate that cannot be loaded and one that cannot be obtained
 // (token readable, certificate missing, CA or deSEC unreachable), where the
 // manager is ready but has nothing to serve. The public certificate stays
-// preferred, see tlsConfig. Without a stored public setup it does nothing:
-// plain HTTP stays only for the wizard before HTTPS is configured.
+// preferred, see tlsConfig. Without a stored public setup it does nothing,
+// and neither before setup is complete: the wizard's own-CA choice then
+// provisions the CA for the address the browser used, and a CA made earlier
+// for the public name would make that choice fail. Plain HTTP stays only for
+// the wizard before HTTPS is configured.
 func ensureHTTPS(db *store.DB, certs *pki.Store, now time.Time, logger *slog.Logger) {
-	if certs.Ready() {
+	if certs.Ready() || !db.Configured() {
 		return
 	}
 	saved, ok, err := db.PublicHTTPS()
@@ -189,7 +192,9 @@ func ensureHTTPS(db *store.DB, certs *pki.Store, now time.Time, logger *slog.Log
 	}
 	if err := certs.Provision(saved.Name, now); err != nil {
 		logger.Error("own CA fallback failed; HTTPS may be unavailable", "err", err)
+		return
 	}
+	logger.Info("own CA kept as a standby; phones need to trust it only if the public certificate is unavailable, see /ca", "name", saved.Name)
 }
 
 // tlsConfig serves the public certificate when there is one and the box's own

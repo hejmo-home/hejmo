@@ -131,7 +131,7 @@
   "event.untitled": "(no title)",
   "calendars.error.color": "Please choose a colour.",
   "https.warning": "The box's HTTPS certificate could not be renewed or loaded. Devices will refuse to connect once it has expired or is missing.",
-  "https.warning.hint": "Check the DNS token and that the box is online; it tries again automatically. If the key file secret.key was lost, restore it from your backup. Until then the box may serve its own certificate: install the box certificate on the phones (page /ca) so they trust it.",
+  "https.warning.hint": "Check the DNS token and that the box is online; it tries again automatically. If the certificate authority or deSEC cannot be reached, waiting helps; if the key file secret.key was lost, restore it from your backup. Until then the box may serve its own certificate: install the box certificate on the phones (page /ca) so they trust it.",
   "caldav.title": "Calendar apps",
   "caldav.link": "Calendar apps on phones",
   "caldav.intro": "Phones and calendar apps (iOS Calendar, DAVx5 and others) can subscribe to the box's calendars and save events back. Add a calendar account of type CalDAV with the address and user name below. As the password, use a device token created here: one per device, revoked on its own.",

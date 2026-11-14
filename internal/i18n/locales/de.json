@@ -131,7 +131,7 @@
   "event.untitled": "(ohne Titel)",
   "calendars.error.color": "Bitte wähle eine Farbe.",
   "https.warning": "Das HTTPS-Zertifikat der Box konnte nicht erneuert oder geladen werden. Geräte verweigern die Verbindung, sobald es abgelaufen ist oder fehlt.",
-  "https.warning.hint": "Prüfe den DNS-Token und ob die Box online ist; sie versucht es automatisch erneut. Ging die Schlüsseldatei secret.key verloren, stelle sie aus deiner Sicherung wieder her. Bis dahin nutzt die Box womöglich ihr eigenes Zertifikat: installiere das Box-Zertifikat auf den Handys (Seite /ca), damit sie ihm vertrauen.",
+  "https.warning.hint": "Prüfe den DNS-Token und ob die Box online ist; sie versucht es automatisch erneut. Ist der Zertifikatsdienst oder deSEC nicht erreichbar, hilft Warten; ging die Schlüsseldatei secret.key verloren, stelle sie aus deiner Sicherung wieder her. Bis dahin nutzt die Box womöglich ihr eigenes Zertifikat: installiere das Box-Zertifikat auf den Handys (Seite /ca), damit sie ihm vertrauen.",
   "caldav.title": "Kalender-Apps",
   "caldav.link": "Kalender-Apps auf Handys",
   "caldav.intro": "Handys und Kalender-Apps (iOS Kalender, DAVx5 und andere) können die Kalender der Box abonnieren und Termine zurückspeichern. Lege dort ein Kalenderkonto vom Typ CalDAV an, mit der Adresse und dem Benutzernamen unten. Als Passwort dient ein Gerätetoken, das du hier erstellst: eines pro Gerät, einzeln widerrufbar.",

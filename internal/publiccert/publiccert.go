@@ -342,6 +342,15 @@ func (m *Manager) Ready() bool {
 	return m.cfg != nil
 }
 
+// HasCertificate reports whether a certificate is loaded to serve. It is false
+// for a stored setup whose certificate could not be loaded and is not yet
+// obtained, although Ready is true then.
+func (m *Manager) HasCertificate() bool {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+	return m.cfg != nil && !m.expires.IsZero()
+}
+
 // Name is the box's public DNS name, empty before setup.
 func (m *Manager) Name() string {
 	m.mu.RLock()

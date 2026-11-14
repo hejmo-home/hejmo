@@ -111,7 +111,7 @@ func TestSetupObtainsCertificateForTheNameAndPointsItToTheLAN(t *testing.T) {
 	if err := m.Setup(context.Background(), request("letsencrypt")); err != nil {
 		t.Fatal(err)
 	}
-	if !m.Ready() || m.Name() != boxName {
+	if !m.Ready() || !m.HasCertificate() || m.Name() != boxName {
 		t.Fatalf("Ready=%v Name=%q", m.Ready(), m.Name())
 	}
 	serves(t, m, boxName)

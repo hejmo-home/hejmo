@@ -45,6 +45,9 @@ type fakePublic struct {
 	got     []publiccert.Request
 	failure error
 	cleared int
+	// noCert makes a ready manager have no certificate to serve: the setup is
+	// stored but the certificate could not be obtained.
+	noCert bool
 	// warnOnFailure makes a failed Setup leave a warning, as a failed order may.
 	warnOnFailure bool
 	// gate, if set, holds Setup back until it is closed.
@@ -54,7 +57,12 @@ type fakePublic struct {
 	ctxDeadline bool
 }
 
-func (f *fakePublic) Ready() bool  { f.mu.Lock(); defer f.mu.Unlock(); return f.name != "" }
+func (f *fakePublic) Ready() bool { f.mu.Lock(); defer f.mu.Unlock(); return f.name != "" }
+func (f *fakePublic) HasCertificate() bool {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return f.name != "" && !f.noCert
+}
 func (f *fakePublic) Name() string { f.mu.Lock(); defer f.mu.Unlock(); return f.name }
 func (f *fakePublic) Status() publiccert.Status {
 	f.mu.Lock()

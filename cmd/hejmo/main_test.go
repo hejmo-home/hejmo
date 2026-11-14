@@ -152,6 +152,7 @@ func TestFailedPublicCertificateFallsBackToTheOwnCAWithAWarning(t *testing.T) {
 		t.Fatal("Start succeeded; the test needs a setup that cannot be resumed")
 	}
 
+	configure(t, db)
 	ensureHTTPS(db, certs, time.Now(), slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	if !certs.Ready() {
@@ -232,11 +233,75 @@ func TestPublicSetupWithoutObtainableCertificateFallsBackToTheOwnCA(t *testing.T
 	if !public.Ready() {
 		t.Fatal("the test needs a manager that is ready but has no certificate")
 	}
+	if public.HasCertificate() {
+		t.Fatal("a manager without a certificate claims to have one")
+	}
 
+	configure(t, db)
 	ensureHTTPS(db, certs, time.Now(), slog.New(slog.NewTextHandler(io.Discard, nil)))
 
 	if !certs.Ready() {
 		t.Fatal("the own CA was not created; every handshake would fail")
 	}
 	requireOwnCAHandshake(t, public, certs, "mia.dedyn.io")
+	waitFor(t, "the Q27 warning", func() bool { return public.Status().Warning })
+}
+
+// configure completes the first-run setup in db: a parent with a confirmed TOTP.
+func configure(t *testing.T, db *store.DB) {
+	t.Helper()
+	h, err := db.CreateHousehold(store.Household{Name: "Test"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	p, err := db.AddPerson(h.ID, store.Person{Name: "Mama", Role: store.RoleParent})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.CreateAccount(store.Account{PersonID: p.ID, Username: "mama", PasswordHash: "x", TOTPSecret: "x"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ConfirmTOTP(p.ID); err != nil {
+		t.Fatal(err)
+	}
+	if !db.Configured() {
+		t.Fatal("the test needs a configured box")
+	}
+}
+
+// waitFor polls cond until it holds; what it waits for happens in the background.
+func waitFor(t *testing.T, what string, cond func() bool) {
+	t.Helper()
+	deadline := time.Now().Add(5 * time.Second)
+	for !cond() {
+		if time.Now().After(deadline) {
+			t.Fatalf("timed out waiting for %s", what)
+		}
+		time.Sleep(10 * time.Millisecond)
+	}
+}
+
+// Before setup is complete the wizard's own-CA choice provisions the CA for
+// the address the browser used: one made earlier for the public name would
+// make that choice fail after a restart during the name check.
+func TestOwnCAIsNotCreatedBeforeSetupIsComplete(t *testing.T) {
+	dir := t.TempDir()
+	db, err := store.Open(filepath.Join(dir, "hejmo.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	certs, err := pki.Open(filepath.Join(dir, "tls"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SavePublicHTTPS(store.PublicHTTPS{Name: "mia.dedyn.io", Zone: "dedyn.io", Provider: "desec", Issuer: publiccert.LetsEncrypt, LANIP: "192.168.1.20", Token: []byte("x")}); err != nil {
+		t.Fatal(err)
+	}
+
+	ensureHTTPS(db, certs, time.Now(), slog.New(slog.NewTextHandler(io.Discard, nil)))
+
+	if certs.Ready() {
+		t.Fatal("the own CA was created for the public name before setup was complete")
+	}
 }

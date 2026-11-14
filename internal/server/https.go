@@ -44,8 +44,13 @@ func (s *server) plainHTTPAllowed(path string) bool {
 
 func (s *server) publicReady() bool { return s.public != nil && s.public.Ready() }
 
+// publicInUse reports whether the box serves its public certificate. It is
+// false for a stored public setup without a certificate, where only the own
+// CA is served (decision Q27).
+func (s *server) publicInUse() bool { return s.public != nil && s.public.HasCertificate() }
+
 // httpsReady reports whether the box has a certificate, its own CA's or a public one.
-func (s *server) httpsReady() bool { return s.pki.Ready() || s.publicReady() }
+func (s *server) httpsReady() bool { return s.pki.Ready() || s.publicInUse() }
 
 // httpsWarning reports whether parents must be told that the public
 // certificate cannot be renewed or that its setup could not be resumed
@@ -170,7 +175,7 @@ func (s *server) apiHTTPS(w http.ResponseWriter, r *http.Request, _ principal) {
 		st := s.public.Status()
 		// A stored setup that cannot be resumed has no name yet but still warns.
 		out.Warning, out.RenewalError = st.Warning, st.RenewalError
-		if s.publicReady() {
+		if s.publicInUse() {
 			out.Mode, out.Name, out.Issuer = "public", st.Name, st.Issuer
 			if !st.Expires.IsZero() {
 				exp := st.Expires.UTC().Format(time.RFC3339)
@@ -218,7 +223,7 @@ func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleTrustPage(w http.ResponseWriter, r *http.Request) {
-	if s.publicReady() { // a public certificate needs no trust step
+	if s.publicInUse() { // a public certificate needs no trust step
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}

@@ -1,6 +1,7 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "calendars.title"))}}
   <p><a href="/">{{t "calendars.back"}}</a></p>
   <h1>{{t "calendars.title"}}</h1>
+  {{template "httpsNotice" .}}
   {{template "syncNotice" .}}
 
   <section aria-labelledby="synced">

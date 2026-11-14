@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"net/http"
+	"net/url"
 	"strconv"
 	"time"
 
@@ -21,7 +22,11 @@ func (s *server) parentPage(w http.ResponseWriter, r *http.Request) (principal, 
 	}
 	person, ok := s.currentPerson(r)
 	if !ok {
-		http.Redirect(w, r, "/login", http.StatusSeeOther)
+		to := "/login"
+		if r.Method == http.MethodGet {
+			to += "?" + url.Values{"next": {r.URL.RequestURI()}}.Encode()
+		}
+		http.Redirect(w, r, to, http.StatusSeeOther)
 		return principal{}, false
 	}
 	if person.Role != store.RoleParent {
@@ -120,7 +125,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	data := map[string]any{
 		"Person": p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
-		"Intervals": syncIntervals, "SyncStale": s.syncStale(p.household.ID), "Form": form,
+		"Intervals": syncIntervals, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
 	}
 	if form != nil {
 		data["Error"] = form["Error"]

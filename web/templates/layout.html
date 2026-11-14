@@ -19,3 +19,5 @@
 {{define "error"}}{{if .Error}}<p class="error" role="alert">{{t .Error}}</p>{{end}}{{end}}
 
 {{define "syncNotice"}}{{if .SyncStale}}<p class="notice" role="status" data-sync-stale>{{t "sync.stale"}} <a href="/calendars">{{t "sync.stale.link"}}</a></p>{{end}}{{end}}
+
+{{define "httpsNotice"}}{{if .HTTPSWarning}}<p class="notice" role="alert" data-https-warning>{{t "https.warning"}} {{t "https.warning.hint"}}</p>{{end}}{{end}}

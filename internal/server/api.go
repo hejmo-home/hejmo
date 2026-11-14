@@ -35,12 +35,16 @@ var apiRoutes = []APIRoute{
 	{"DELETE", "/calendars/{id}", auth.Perm("events", auth.Delete), (*server).apiDeleteCalendar},
 	{"POST", "/calendars/{id}/sync", auth.Perm("events", auth.Write), (*server).apiSyncCalendar},
 	{"GET", "/sync-log", auth.Perm("settings", auth.Read), (*server).apiSyncLog},
+	{"GET", "/https", auth.Perm("settings", auth.Read), (*server).apiHTTPS},
 	{"GET", "/events", auth.Perm("events", auth.Read), (*server).apiListEvents},
 	{"POST", "/events", auth.Perm("events", auth.Write), (*server).apiCreateEvent},
 	{"PATCH", "/events/{id}", auth.Perm("events", auth.Write), (*server).apiUpdateEvent},
 	{"DELETE", "/events/{id}", auth.Perm("events", auth.Delete), (*server).apiDeleteEvent},
 	{"GET", "/holidays", auth.Perm("events", auth.Read), (*server).apiHolidays},
 	{"GET", "/search", auth.Perm("events", auth.Read), (*server).apiSearch},
+	{"GET", "/displays", auth.Perm("displays", auth.Read), (*server).apiListDisplays},
+	{"POST", "/displays", auth.Perm("displays", auth.Write), (*server).apiPairDisplay},
+	{"DELETE", "/displays/{id}", auth.Perm("displays", auth.Delete), (*server).apiRevokeDisplay},
 }
 
 // APIRoutes lists the served endpoints (used by the contract test).

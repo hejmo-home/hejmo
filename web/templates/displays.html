@@ -1,0 +1,42 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "displays.title"))}}
+  <p><a href="/">{{t "calendars.back"}}</a></p>
+  <h1>{{t "displays.title"}}</h1>
+  {{template "syncNotice" .}}
+  <p class="lead">{{t "displays.intro"}}</p>
+
+  <section aria-labelledby="paired">
+    <h2 id="paired">{{t "displays.paired"}}</h2>
+    {{if .Displays}}
+    <ul class="cards">
+      {{range .Displays}}
+      <li>
+        <strong>{{.Name}}</strong>
+        <span class="hint">{{if .Room}}{{t "displays.room"}} {{.Room}} · {{end}}{{t (printf "displays.type.%s" .Type)}} · {{t "displays.paired_at"}} {{.Paired}} · {{if .LastSeen}}{{t "displays.last_seen"}} {{.LastSeen}}{{else}}{{t "displays.never"}}{{end}}</span>
+        <span class="row"><form method="post" action="/displays/{{.ID}}/unpair"><button class="button secondary" type="submit">{{t "displays.unpair"}}</button></form></span>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}<p class="lead">{{t "displays.none"}}</p>{{end}}
+  </section>
+
+  <section aria-labelledby="new">
+    <h2 id="new">{{t "displays.new"}}</h2>
+    {{template "error" .}}
+    <form method="post" action="/displays" class="steps">
+      <fieldset>
+        <label>{{t "displays.code"}}
+          <input name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" value="{{with .Form}}{{.Code}}{{end}}"></label>
+        <label>{{t "displays.name"}}
+          <input name="name" required maxlength="80" value="{{with .Form}}{{.Name}}{{end}}"></label>
+        <label>{{t "displays.room_label"}}
+          <input name="room" maxlength="80" value="{{with .Form}}{{.Room}}{{end}}"></label>
+        <label>{{t "displays.type"}}
+          <select name="type">
+            {{$sel := ""}}{{with .Form}}{{$sel = .Type}}{{end}}
+            {{range .Types}}<option value="{{.}}"{{if eq (printf "%s" .) $sel}} selected{{end}}>{{t (printf "displays.type.%s" .)}}</option>{{end}}
+          </select></label>
+      </fieldset>
+      <button class="button" type="submit">{{t "displays.pair"}}</button>
+    </form>
+  </section>
+{{template "foot"}}

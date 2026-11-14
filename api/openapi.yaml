@@ -1,7 +1,7 @@
 openapi: 3.0.3
 info:
   title: Hejmo box API
-  version: 0.4.0
+  version: 0.5.0
   description: |
     The REST API is the single interface for the web UI, displays, phones and
     integrations. Authenticate with a bearer token (`Authorization: Bearer hejmo_…`)
@@ -131,6 +131,57 @@ paths:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
         "204": { description: Revoked }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /displays:
+    get:
+      operationId: listDisplays
+      summary: Paired displays of the household (scope displays:read)
+      responses:
+        "200":
+          description: Displays, oldest first. Unpaired displays are not listed.
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Display" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: pairDisplay
+      summary: Pair a waiting display by the six-digit code it shows (scope displays:write)
+      description: |
+        A new display opens the box's display address (`/display`) and shows a
+        QR code and a six-digit code, valid for ten minutes. Confirming the
+        code names the display and gives it its own revocable token, which it
+        keeps in its browser. A wrong or expired code is refused with 404;
+        after five wrong codes in 15 minutes the person gets 429.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PairDisplay" }
+      responses:
+        "201":
+          description: Paired
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Display" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /displays/{id}:
+    delete:
+      operationId: unpairDisplay
+      summary: Unpair a display and revoke its token (scope displays:delete)
+      description: The display shows the pairing screen again within a minute.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Unpaired }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -268,6 +319,25 @@ paths:
               schema:
                 type: array
                 items: { $ref: "#/components/schemas/SyncLogEntry" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /https:
+    get:
+      operationId: getHTTPS
+      summary: How the box secures HTTPS and whether its certificate needs attention (parents, scope settings:read)
+      description: |
+        `own-ca` is the box's own certificate authority (it is renewed by the box). Without `warning` there is
+        nothing to do. With `warning` true it is the fallback of a configured box whose public certificate could
+        not be loaded or obtained (decision Q27): the box serves its own CA's certificate on HTTPS, never
+        plain HTTP, and phones must first trust the own CA (`/ca`); `renewal_error` says why.
+        `public` is a publicly trusted certificate for the family's DNS name (ADR 0014); `warning` is set when its
+        renewal failed or it is about to expire.
+      responses:
+        "200":
+          description: HTTPS status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HTTPSStatus" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
   /events:
@@ -448,6 +518,28 @@ components:
         person: { type: string, description: "Name of the person the token acts for" }
         created_at: { type: string, format: date-time }
         last_used_at: { type: string, format: date-time, nullable: true }
+    DisplayType:
+      type: string
+      enum: [eink_bw, eink_color, screen]
+      description: Black-and-white E-Ink, colour E-Ink or normal screen
+    Display:
+      type: object
+      required: [id, name, room, type, paired_at, last_seen_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: Hallway }
+        room: { type: string, example: Entrance }
+        type: { $ref: "#/components/schemas/DisplayType" }
+        paired_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time, nullable: true }
+    PairDisplay:
+      type: object
+      required: [code, name, type]
+      properties:
+        code: { type: string, pattern: "^[0-9]{6}$", example: "042917" }
+        name: { type: string, minLength: 1, maxLength: 80 }
+        room: { type: string, maxLength: 80 }
+        type: { $ref: "#/components/schemas/DisplayType" }
     SyncState:
       type: object
       description: Only on synced calendars. Displays read `state` to show the sync notice.
@@ -478,6 +570,16 @@ components:
         at: { type: string, format: date-time }
         kind: { type: string, enum: [failure, conflict, note] }
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
+    HTTPSStatus:
+      type: object
+      required: [mode, warning]
+      properties:
+        mode: { type: string, enum: [own-ca, public] }
+        name: { type: string, description: "Public DNS name of the box (mode public)" }
+        issuer: { type: string, enum: [letsencrypt, actalis], description: "Chosen certificate authority (mode public)" }
+        expires_at: { type: string, format: date-time }
+        warning: { type: boolean, description: "True if the public certificate could not be resumed, loaded, obtained or renewed, or expires within 7 days" }
+        renewal_error: { type: string, description: "Why the last resume, load, order or renewal failed" }
     Event:
       type: object
       description: An event or series master. Times are RFC 3339 in the household's time zone; all-day events use dates with an exclusive end.
@@ -559,6 +661,11 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Invalid:
       description: Request is well-formed but not valid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    TooManyRequests:
+      description: Too many wrong attempts, try again later
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }

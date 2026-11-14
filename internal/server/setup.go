@@ -22,7 +22,7 @@ func (s *server) handleSetupForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	if !s.pki.Ready() {
+	if !s.httpsReady() {
 		http.Redirect(w, r, "/setup/https", http.StatusSeeOther)
 		return
 	}
@@ -42,7 +42,7 @@ func (s *server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
-	if !s.pki.Ready() { // ADR 0014: no password before HTTPS works
+	if !s.httpsReady() { // ADR 0014: no password before HTTPS works
 		http.Redirect(w, r, "/setup/https", http.StatusSeeOther)
 		return
 	}

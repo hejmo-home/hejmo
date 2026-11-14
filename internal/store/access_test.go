@@ -124,3 +124,83 @@ func TestResetUnfinishedSetup(t *testing.T) {
 		t.Fatal("reset allowed on a configured box")
 	}
 }
+
+func confirmedParent(t *testing.T, db *store.DB) store.Person {
+	t.Helper()
+	_, mama := seedParent(t, db)
+	if err := db.CreateAccount(store.Account{PersonID: mama.ID, Username: "mama", PasswordHash: "h", TOTPSecret: "S"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ConfirmTOTP(mama.ID); err != nil {
+		t.Fatal(err)
+	}
+	return mama
+}
+
+func TestRecoveryCodesAreSpentOnceAndANewSetVoidsTheOld(t *testing.T) {
+	db, _ := openTemp(t)
+	mama := confirmedParent(t, db)
+	if err := db.ReplaceRecoveryCodes(mama.ID, []string{"h1", "h2", "h3"}); err != nil {
+		t.Fatal(err)
+	}
+	codes, err := db.UnusedRecoveryCodes(mama.ID)
+	if err != nil || len(codes) != 3 {
+		t.Fatalf("unused = %v, %v", codes, err)
+	}
+	if err := db.SpendRecoveryCode(codes[0].ID); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SpendRecoveryCode(codes[0].ID); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("spending twice: %v, want ErrNotFound", err)
+	}
+	if left, _ := db.UnusedRecoveryCodes(mama.ID); len(left) != 2 {
+		t.Fatalf("%d codes left, want 2", len(left))
+	}
+	if err := db.ReplaceRecoveryCodes(mama.ID, []string{"n1"}); err != nil {
+		t.Fatal(err)
+	}
+	left, _ := db.UnusedRecoveryCodes(mama.ID)
+	if len(left) != 1 || left[0].Hash != "n1" {
+		t.Fatalf("after a new set: %v", left)
+	}
+}
+
+func TestResetOTPRemovesSecretCodesAndBrowserSessionsButKeepsTokensAndTheBoxConfigured(t *testing.T) {
+	db, _ := openTemp(t)
+	mama := confirmedParent(t, db)
+	_ = db.ReplaceRecoveryCodes(mama.ID, []string{"h1"})
+	if err := db.CreateSession("tok", mama.ID, time.Now().Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.CreateAPIToken(store.APIToken{Name: "phone", Hash: "x", PersonID: mama.ID, Scopes: "calendars"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ResetOTP(mama.ID); err != nil {
+		t.Fatal(err)
+	}
+	acc, _ := db.AccountByPerson(mama.ID)
+	if acc.TOTPConfirmed || acc.TOTPSecret != "" {
+		t.Fatalf("account after reset = %+v", acc)
+	}
+	if codes, _ := db.UnusedRecoveryCodes(mama.ID); len(codes) != 0 {
+		t.Fatal("recovery codes survived the reset")
+	}
+	if _, err := db.SessionPerson("tok", time.Now()); !errors.Is(err, store.ErrNotFound) {
+		t.Fatal("browser session survived the reset")
+	}
+	if _, err := db.APITokenByHash("x"); err != nil {
+		t.Fatalf("device token lost: %v", err)
+	}
+	if !db.Configured() {
+		t.Fatal("the box counts as unconfigured after the only parent was reset")
+	}
+	if err := db.SetTOTPSecret(mama.ID, "NEW"); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.ConfirmTOTP(mama.ID); err != nil {
+		t.Fatal(err)
+	}
+	if acc, _ := db.AccountByPerson(mama.ID); !acc.TOTPConfirmed || acc.TOTPSecret != "NEW" {
+		t.Fatalf("after re-setup = %+v", acc)
+	}
+}

@@ -1,11 +1,12 @@
 {{define "head"}}<!doctype html>
-<html lang="{{.Lang}}"{{with .Theme}} data-theme="{{.}}"{{end}}>
+<html lang="{{.Lang}}"{{with .Theme}} data-theme="{{.}}"{{end}}{{with .Frame}}{{if .SunRise}} data-sun-rise="{{.SunRise}}" data-sun-set="{{.SunSet}}"{{end}}{{end}}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Title}} · Hejmo</title>
 <link rel="stylesheet" href="/static/hejmo.css">
-</head>
+{{if .Frame}}<script src="/static/theme.js"></script>
+{{end}}</head>
 <body{{if .Frame}} class="web"{{end}}>
 {{if .Frame}}<a class="skip" href="#content">{{t "frame.skip"}}</a>{{end}}
 <div{{if .Frame}} class="frame framed{{if .Frame.Items}} has-nav{{end}}"{{end}}>

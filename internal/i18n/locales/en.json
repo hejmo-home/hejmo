@@ -181,7 +181,9 @@
   "displays.save": "Save",
   "displays.pair": "Pair display",
   "displays.error.code": "This code is wrong or has expired. Check the code on the display; a display shows a new one after ten minutes.",
-  "displays.error.invalid": "Please enter a name and choose a display type.",
+  "displays.error.name": "Please enter a name for the display.",
+  "displays.error.room": "The room may have at most 80 characters.",
+  "displays.error.type": "Please choose a display type.",
   "displays.error.too_many": "Too many wrong codes. Please wait a few minutes and try again.",
   "display.pair.title": "Pair this display",
   "display.pair.qr": "QR code to pair this display",
@@ -277,6 +279,7 @@
   "flash.share_on": "Sharing through the box is on.",
   "flash.share_off": "Sharing through the box is off.",
   "flash.token_revoked": "Access revoked.",
+  "flash.token_created": "Token created.",
   "flash.display_paired": "Display paired.",
   "flash.display_unpaired": "Display unpaired.",
   "flash.setup_done": "Hejmo is set up. Welcome!",
@@ -302,5 +305,11 @@
   "displays.type.eink_bw.hint": "Black and white, calm, changes rarely",
   "displays.type.eink_color.hint": "Colour E-Ink, slow to refresh",
   "displays.type.screen.hint": "Tablet, monitor or phone with a browser",
-  "caldav.tokens.none.action": "Create the first password"
+  "caldav.tokens.none.action": "Create the first password",
+  "caldav.token.revoke.explain": "The phone or calendar app with this token loses access at once. Create a new token to connect it again.",
+  "caldav.token.revoke.confirm": "Yes, revoke access",
+  "calendars.remove.explain": "The calendar and its events disappear from the box and from the displays. The original calendar stays untouched.",
+  "calendars.remove.confirm": "Yes, remove the calendar",
+  "displays.unpair.explain": "The display shows a new pairing code and stays empty until you pair it again.",
+  "displays.unpair.confirm": "Yes, unpair the display"
 }

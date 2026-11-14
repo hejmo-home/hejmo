@@ -181,7 +181,9 @@
   "displays.save": "Speichern",
   "displays.pair": "Display koppeln",
   "displays.error.code": "Dieser Code ist falsch oder abgelaufen. Prüfe den Code auf dem Display; nach zehn Minuten zeigt es einen neuen.",
-  "displays.error.invalid": "Bitte gib einen Namen ein und wähle einen Display-Typ.",
+  "displays.error.name": "Bitte gib dem Display einen Namen.",
+  "displays.error.room": "Der Raum darf höchstens 80 Zeichen haben.",
+  "displays.error.type": "Bitte wähle einen Display-Typ.",
   "displays.error.too_many": "Zu viele falsche Codes. Bitte warte ein paar Minuten und versuche es noch einmal.",
   "display.pair.title": "Dieses Display koppeln",
   "display.pair.qr": "QR-Code zum Koppeln dieses Displays",
@@ -277,6 +279,7 @@
   "flash.share_on": "Teilen über die Box ist an.",
   "flash.share_off": "Teilen über die Box ist aus.",
   "flash.token_revoked": "Zugang widerrufen.",
+  "flash.token_created": "Token erstellt.",
   "flash.display_paired": "Display gekoppelt.",
   "flash.display_unpaired": "Display entkoppelt.",
   "flash.setup_done": "Hejmo ist eingerichtet. Willkommen!",
@@ -302,5 +305,11 @@
   "displays.type.eink_bw.hint": "Schwarz-weiß, ruhig, ändert sich selten",
   "displays.type.eink_color.hint": "Farbiges E-Ink, langsame Aktualisierung",
   "displays.type.screen.hint": "Tablet, Monitor oder Handy mit Browser",
-  "caldav.tokens.none.action": "Erstes Passwort erstellen"
+  "caldav.tokens.none.action": "Erstes Passwort erstellen",
+  "caldav.token.revoke.explain": "Das Handy oder die Kalender-App mit diesem Token verliert sofort den Zugriff. Mit einem neuen Token verbindest du sie wieder.",
+  "caldav.token.revoke.confirm": "Ja, Zugriff entziehen",
+  "calendars.remove.explain": "Der Kalender und seine Termine verschwinden von der Box und von den Displays. Der ursprüngliche Kalender bleibt unverändert.",
+  "calendars.remove.confirm": "Ja, Kalender entfernen",
+  "displays.unpair.explain": "Das Display zeigt einen neuen Kopplungscode und bleibt leer, bis du es wieder koppelst.",
+  "displays.unpair.confirm": "Ja, Display entkoppeln"
 }

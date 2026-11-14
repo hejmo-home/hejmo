@@ -231,6 +231,11 @@ a { color: var(--accent); }
 [data-theme="bw"] .marker[data-shape="triangle-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 [data-theme="bw"] .marker[data-shape="diamond-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 
+/* Event cards list their people as markers; only bw needs them (colour cards
+   carry the person colour). */
+.event .markers { display: none; }
+[data-theme="bw"] .event .markers { display: flex; gap: 4px; margin-bottom: 4px; }
+
 /* Family view building blocks (screens use them from ticket 5.3 on). */
 .tile, .column, .chip { background: var(--surface); }
 .tile, .column { border-radius: var(--radius-tile); }
@@ -284,7 +289,7 @@ body:has(.family-page) { overflow: hidden; }
 .fv-header .lab { font-size: var(--fs-label); color: var(--text-secondary); }
 .fv-header .date { font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
 .fv .chips { display: flex; gap: var(--gap); }
-.fv .chip { font-variant-numeric: tabular-nums; }
+.fv .chip { font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 8px; }
 .fv .sync-notice { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); font-size: var(--fs-label); font-weight: 700; }
 .fv .sync-notice .icon { flex: none; }
 .strip-wrap { flex: none; display: grid; gap: var(--gap-cards); }

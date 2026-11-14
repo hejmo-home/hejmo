@@ -7,6 +7,21 @@
     <li><span class="hint">{{t "caldav.username"}}</span> <strong>{{.Username}}</strong></li>
   </ul>
 
+  <section aria-labelledby="iosprofile">
+    <h2 id="iosprofile">{{t "caldav.profile.title"}}</h2>
+    <p class="lead">{{t "caldav.profile.intro"}}</p>
+    {{if .CAFirst}}<p class="notice" role="status" data-ca-profile-first>{{t "caldav.profile.ca_first"}} <a href="/ca">{{t "caldav.profile.ca_link"}}</a></p>{{end}}
+    <p class="hint">{{t "caldav.profile.once"}}</p>
+    {{if .ProfileError}}<p class="error" role="alert">{{t .ProfileError}}</p>{{end}}
+    <form method="post" action="/caldav/profile" class="steps">
+      <fieldset>
+        <label>{{t "caldav.token.name"}}
+          <input name="name" required maxlength="80" value="{{with .Form}}{{.ProfileName}}{{end}}"></label>
+      </fieldset>
+      <button class="button" type="submit">{{t "caldav.profile.download"}}</button>
+    </form>
+  </section>
+
   {{if .NewToken}}
   <section aria-labelledby="newtoken">
     <h2 id="newtoken">{{.NewTokenTitle}}</h2>

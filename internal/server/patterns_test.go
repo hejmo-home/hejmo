@@ -26,13 +26,13 @@ func patternBox(t *testing.T) (*box, map[string]string) {
 	return b, ids
 }
 
-var chipRe = regexp.MustCompile(`(?s)<label class="pchip[^"]*"[^>]*>.*?</label>`)
+var personChipRe = regexp.MustCompile(`(?s)<label class="pchip[^"]*"[^>]*>.*?</label>`)
 
 // chips returns the person chips of a page: label text mapped to whether the chip is selected.
 func chips(page string) map[string]bool {
 	out := map[string]bool{}
 	tag := regexp.MustCompile(`(?s)<[^>]*>`)
-	for _, c := range chipRe.FindAllString(page, -1) {
+	for _, c := range personChipRe.FindAllString(page, -1) {
 		out[strings.TrimSpace(tag.ReplaceAllString(c, ""))] = regexp.MustCompile(`<input [^>]*\bchecked\b`).MatchString(c)
 	}
 	return out

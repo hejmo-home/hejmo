@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"io"
 	"log/slog"
 	"net"
@@ -19,6 +20,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/weather"
 )
 
 func TestConfigDefaults(t *testing.T) {
@@ -350,5 +352,33 @@ func TestOwnCAIsNotCreatedBeforeSetupIsComplete(t *testing.T) {
 
 	if certs.Ready() {
 		t.Fatal("the own CA was created for the public name before setup was complete")
+	}
+}
+
+// The weather service reads the home through homeOf: no household is
+// weather.ErrNoHome, the country is the start of the region, and found
+// coordinates are saved on the household.
+func TestHomeOfAdaptsTheHouseholdForTheWeather(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	h := homeOf{db}
+	if _, _, _, _, err := h.Home(); !errors.Is(err, weather.ErrNoHome) {
+		t.Fatalf("without a household: %v", err)
+	}
+	if _, err := db.CreateHousehold(store.Household{Name: "Home", HomeName: "Pasing", Region: "DE-BY"}); err != nil {
+		t.Fatal(err)
+	}
+	lat, lon, name, country, err := h.Home()
+	if err != nil || lat != 0 || lon != 0 || name != "Pasing" || country != "DE" {
+		t.Fatalf("home = %v %v %q %q %v", lat, lon, name, country, err)
+	}
+	if err := h.SetCoordinates(48.15, 11.46); err != nil {
+		t.Fatal(err)
+	}
+	if lat, lon, _, _, _ := h.Home(); lat != 48.15 || lon != 11.46 {
+		t.Fatalf("coordinates not saved: %v %v", lat, lon)
 	}
 }

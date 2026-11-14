@@ -13,6 +13,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/server"
+	"github.com/hejmo-home/hejmo/internal/weather"
 )
 
 // clock is a settable time source that is safe to move while a stream reads it.
@@ -36,7 +37,9 @@ func newLiveBox(t *testing.T, interval time.Duration) *liveBox {
 	t.Helper()
 	f := newFamilyBox(t, "eink_bw")
 	c := &clock{t: f.at(14, 8, 0)}
-	h := server.New(server.Options{DB: f.db, PKI: f.pki, Now: c.now, LiveInterval: interval})
+	// The weather reading ages with the live box's clock, not the family box's.
+	f.weather = weather.New(weather.WithBaseURL(f.meteo.srv.URL), weather.WithClock(c.now))
+	h := server.New(server.Options{DB: f.db, PKI: f.pki, Now: c.now, LiveInterval: interval, Weather: f.weather})
 	srv := httptest.NewUnstartedServer(h)
 	cert, err := f.pki.GetCertificate(nil)
 	if err != nil {
@@ -268,4 +271,46 @@ func TestLiveIsOnlyForPairedDisplays(t *testing.T) {
 			t.Fatalf("GET %s = %d, want 403", path, res.StatusCode)
 		}
 	}
+}
+
+// 5.8 (round 1 bug): the weather chip appears, changes its icon and hides on
+// the display without a reload: each is a new view version, announced and fetched.
+func TestLiveWeatherChipAppearsChangesIconAndHides(t *testing.T) {
+	l := newLiveBox(t, 10*time.Millisecond)
+	s := l.open(t)
+	seen := s.first(t)
+	announced := func(name string) string {
+		t.Helper()
+		v, ok := s.next(t, 2*time.Second)
+		if !ok || v == seen {
+			t.Fatalf("%s: no new version announced", name)
+		}
+		seen = v
+		return v
+	}
+	view := func(name, want string, present bool) {
+		t.Helper()
+		_, hdr, body := l.get("/display/view")
+		if hdr.Get("X-Hejmo-View") != seen {
+			t.Errorf("%s: view version %q, announced %q", name, hdr.Get("X-Hejmo-View"), seen)
+		}
+		if strings.Contains(body, want) != present {
+			t.Errorf("%s: want %q present=%v:\n%s", name, want, present, body)
+		}
+	}
+
+	l.homeWeather(t) // a reading appears
+	announced("reading appears")
+	view("reading appears", `data-icon="clear"`, true)
+
+	l.meteo.set(`{"current":{"temperature_2m":9.0,"weather_code":61,"is_day":1}}`, 200)
+	if err := l.weather.Refresh(context.Background(), 48.15, 11.46); err != nil {
+		t.Fatal(err)
+	}
+	announced("icon changes")
+	view("icon changes", `data-icon="rain"`, true)
+
+	l.clock.set(l.clock.now().Add(weather.MaxAge + time.Minute)) // the reading goes stale
+	announced("reading goes stale")
+	view("reading goes stale", "data-weather", false)
 }

@@ -15,7 +15,7 @@ Each ADR records one decision: context, decision, consequences. ADRs take preced
 | [0009](0009-project-governance.md) | Project governance | Accepted |
 | [0010](0010-households-memberships-and-credentials.md) | Households, memberships and credentials | Accepted, amended by 0015 |
 | [0011](0011-calendar-model.md) | Calendar model | Accepted |
-| [0012](0012-calendar-sync.md) | Calendar sync | Accepted, amended by 0015, notes added in #19 |
+| [0012](0012-calendar-sync.md) | Calendar sync | Accepted, amended by 0015, 0017, notes added in #19 |
 | [0013](0013-google-calendar-connection.md) | Google Calendar connection | Accepted |
 | [0014](0014-https-and-certificates.md) | HTTPS and certificates | Accepted, notes added in #45 |
 | [0015](0015-display-web-interface-and-everyday.md) | Display, web interface and everyday features | Accepted, amended by 0016, 0017 |

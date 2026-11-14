@@ -249,78 +249,132 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
 <header class="frame-bar"><a class="brand" href="#">Hejmo</a><form onsubmit="return false"><button class="button secondary" type="button">Sign out</button></form></header>
 <nav class="frame-nav" aria-label="Main navigation"><ul><li><a href="#">Home</a></li><li><a href="#" aria-current="page">Calendars</a></li><li><a href="#">Calendar apps</a></li><li><a href="#">Displays</a></li><li><a href="#">Tasks</a></li><li><a href="#">Settings</a></li></ul></nav><main><h1>Calendars</h1>
 <p class="notice" role="status">Some calendars could not be updated for more than 24 hours. <a href="#">See what went wrong</a></p>
-<h2>Synchronised calendars</h2><ul class="cards">
-<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1"> School holidays</strong>
-<span class="hint">Read-only · for Sebastian, Mia</span><span class="hint">Last successful sync 14/11/2026 13:00</span>
+<h2>Synchronised calendars</h2>
+<section aria-label="Whole household"><h3>Whole household</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#6B6B6B" disabled tabindex="-1" aria-hidden="true"> Bin collection</strong>
+<span class="hint">Read-only</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Mia"><h3><input class="swatch" type="color" value="#B4583A" disabled tabindex="-1" aria-hidden="true"> Mia</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Sebastian"><h3><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> Sebastian</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
 <span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li>
-<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1"> Football club</strong>
-<span class="hint">Read-only · for Sebastian</span><span class="hint">Last successful sync 14/11/2026 12:30</span>
-<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul>
+<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1" aria-hidden="true"> Football club</strong>
+<span class="hint">Read-only · for Sebastian</span><span class="hint">Last updated 14/11/2026 12:30</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
 <h2>Add a calendar</h2>
 <form class="steps" onsubmit="return false"><fieldset><label>Name<input value="Swimming"></label><label>Address<input placeholder="webcal://…"></label></fieldset><button class="button" type="button">Add calendar</button></form></main></div></div></div></figure><figure class="frame-fig"><figcaption>768 px · light · parent (Mama)</figcaption>
 <div class="shell" style="width:768px"><div class="device" data-theme="light"><div class="frame framed has-nav">
 <header class="frame-bar"><a class="brand" href="#">Hejmo</a><form onsubmit="return false"><button class="button secondary" type="button">Sign out</button></form></header>
 <nav class="frame-nav" aria-label="Main navigation"><ul><li><a href="#">Home</a></li><li><a href="#" aria-current="page">Calendars</a></li><li><a href="#">Calendar apps</a></li><li><a href="#">Displays</a></li><li><a href="#">Tasks</a></li><li><a href="#">Settings</a></li></ul></nav><main><h1>Calendars</h1>
 <p class="notice" role="status">Some calendars could not be updated for more than 24 hours. <a href="#">See what went wrong</a></p>
-<h2>Synchronised calendars</h2><ul class="cards">
-<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1"> School holidays</strong>
-<span class="hint">Read-only · for Sebastian, Mia</span><span class="hint">Last successful sync 14/11/2026 13:00</span>
+<h2>Synchronised calendars</h2>
+<section aria-label="Whole household"><h3>Whole household</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#6B6B6B" disabled tabindex="-1" aria-hidden="true"> Bin collection</strong>
+<span class="hint">Read-only</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Mia"><h3><input class="swatch" type="color" value="#B4583A" disabled tabindex="-1" aria-hidden="true"> Mia</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Sebastian"><h3><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> Sebastian</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
 <span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li>
-<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1"> Football club</strong>
-<span class="hint">Read-only · for Sebastian</span><span class="hint">Last successful sync 14/11/2026 12:30</span>
-<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul>
+<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1" aria-hidden="true"> Football club</strong>
+<span class="hint">Read-only · for Sebastian</span><span class="hint">Last updated 14/11/2026 12:30</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
 <h2>Add a calendar</h2>
 <form class="steps" onsubmit="return false"><fieldset><label>Name<input value="Swimming"></label><label>Address<input placeholder="webcal://…"></label></fieldset><button class="button" type="button">Add calendar</button></form></main></div></div></div></figure><figure class="frame-fig"><figcaption>1280 px · light · parent (Mama)</figcaption>
 <div class="shell" style="width:1280px"><div class="device" data-theme="light"><div class="frame framed has-nav">
 <header class="frame-bar"><a class="brand" href="#">Hejmo</a><form onsubmit="return false"><button class="button secondary" type="button">Sign out</button></form></header>
 <nav class="frame-nav" aria-label="Main navigation"><ul><li><a href="#">Home</a></li><li><a href="#" aria-current="page">Calendars</a></li><li><a href="#">Calendar apps</a></li><li><a href="#">Displays</a></li><li><a href="#">Tasks</a></li><li><a href="#">Settings</a></li></ul></nav><main><h1>Calendars</h1>
 <p class="notice" role="status">Some calendars could not be updated for more than 24 hours. <a href="#">See what went wrong</a></p>
-<h2>Synchronised calendars</h2><ul class="cards">
-<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1"> School holidays</strong>
-<span class="hint">Read-only · for Sebastian, Mia</span><span class="hint">Last successful sync 14/11/2026 13:00</span>
+<h2>Synchronised calendars</h2>
+<section aria-label="Whole household"><h3>Whole household</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#6B6B6B" disabled tabindex="-1" aria-hidden="true"> Bin collection</strong>
+<span class="hint">Read-only</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Mia"><h3><input class="swatch" type="color" value="#B4583A" disabled tabindex="-1" aria-hidden="true"> Mia</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Sebastian"><h3><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> Sebastian</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
 <span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li>
-<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1"> Football club</strong>
-<span class="hint">Read-only · for Sebastian</span><span class="hint">Last successful sync 14/11/2026 12:30</span>
-<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul>
+<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1" aria-hidden="true"> Football club</strong>
+<span class="hint">Read-only · for Sebastian</span><span class="hint">Last updated 14/11/2026 12:30</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
 <h2>Add a calendar</h2>
 <form class="steps" onsubmit="return false"><fieldset><label>Name<input value="Swimming"></label><label>Address<input placeholder="webcal://…"></label></fieldset><button class="button" type="button">Add calendar</button></form></main></div></div></div></figure></div><div class="row-of"><figure class="frame-fig"><figcaption>375 px · dark · parent (Mama)</figcaption>
 <div class="shell" style="width:375px"><div class="device" data-theme="dark"><div class="frame framed has-nav">
 <header class="frame-bar"><a class="brand" href="#">Hejmo</a><form onsubmit="return false"><button class="button secondary" type="button">Sign out</button></form></header>
 <nav class="frame-nav" aria-label="Main navigation"><ul><li><a href="#">Home</a></li><li><a href="#" aria-current="page">Calendars</a></li><li><a href="#">Calendar apps</a></li><li><a href="#">Displays</a></li><li><a href="#">Tasks</a></li><li><a href="#">Settings</a></li></ul></nav><main><h1>Calendars</h1>
 <p class="notice" role="status">Some calendars could not be updated for more than 24 hours. <a href="#">See what went wrong</a></p>
-<h2>Synchronised calendars</h2><ul class="cards">
-<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1"> School holidays</strong>
-<span class="hint">Read-only · for Sebastian, Mia</span><span class="hint">Last successful sync 14/11/2026 13:00</span>
+<h2>Synchronised calendars</h2>
+<section aria-label="Whole household"><h3>Whole household</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#6B6B6B" disabled tabindex="-1" aria-hidden="true"> Bin collection</strong>
+<span class="hint">Read-only</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Mia"><h3><input class="swatch" type="color" value="#B4583A" disabled tabindex="-1" aria-hidden="true"> Mia</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Sebastian"><h3><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> Sebastian</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
 <span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li>
-<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1"> Football club</strong>
-<span class="hint">Read-only · for Sebastian</span><span class="hint">Last successful sync 14/11/2026 12:30</span>
-<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul>
+<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1" aria-hidden="true"> Football club</strong>
+<span class="hint">Read-only · for Sebastian</span><span class="hint">Last updated 14/11/2026 12:30</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
 <h2>Add a calendar</h2>
 <form class="steps" onsubmit="return false"><fieldset><label>Name<input value="Swimming"></label><label>Address<input placeholder="webcal://…"></label></fieldset><button class="button" type="button">Add calendar</button></form></main></div></div></div></figure><figure class="frame-fig"><figcaption>768 px · dark · parent (Mama)</figcaption>
 <div class="shell" style="width:768px"><div class="device" data-theme="dark"><div class="frame framed has-nav">
 <header class="frame-bar"><a class="brand" href="#">Hejmo</a><form onsubmit="return false"><button class="button secondary" type="button">Sign out</button></form></header>
 <nav class="frame-nav" aria-label="Main navigation"><ul><li><a href="#">Home</a></li><li><a href="#" aria-current="page">Calendars</a></li><li><a href="#">Calendar apps</a></li><li><a href="#">Displays</a></li><li><a href="#">Tasks</a></li><li><a href="#">Settings</a></li></ul></nav><main><h1>Calendars</h1>
 <p class="notice" role="status">Some calendars could not be updated for more than 24 hours. <a href="#">See what went wrong</a></p>
-<h2>Synchronised calendars</h2><ul class="cards">
-<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1"> School holidays</strong>
-<span class="hint">Read-only · for Sebastian, Mia</span><span class="hint">Last successful sync 14/11/2026 13:00</span>
+<h2>Synchronised calendars</h2>
+<section aria-label="Whole household"><h3>Whole household</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#6B6B6B" disabled tabindex="-1" aria-hidden="true"> Bin collection</strong>
+<span class="hint">Read-only</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Mia"><h3><input class="swatch" type="color" value="#B4583A" disabled tabindex="-1" aria-hidden="true"> Mia</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Sebastian"><h3><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> Sebastian</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
 <span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li>
-<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1"> Football club</strong>
-<span class="hint">Read-only · for Sebastian</span><span class="hint">Last successful sync 14/11/2026 12:30</span>
-<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul>
+<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1" aria-hidden="true"> Football club</strong>
+<span class="hint">Read-only · for Sebastian</span><span class="hint">Last updated 14/11/2026 12:30</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
 <h2>Add a calendar</h2>
 <form class="steps" onsubmit="return false"><fieldset><label>Name<input value="Swimming"></label><label>Address<input placeholder="webcal://…"></label></fieldset><button class="button" type="button">Add calendar</button></form></main></div></div></div></figure><figure class="frame-fig"><figcaption>1280 px · dark · parent (Mama)</figcaption>
 <div class="shell" style="width:1280px"><div class="device" data-theme="dark"><div class="frame framed has-nav">
 <header class="frame-bar"><a class="brand" href="#">Hejmo</a><form onsubmit="return false"><button class="button secondary" type="button">Sign out</button></form></header>
 <nav class="frame-nav" aria-label="Main navigation"><ul><li><a href="#">Home</a></li><li><a href="#" aria-current="page">Calendars</a></li><li><a href="#">Calendar apps</a></li><li><a href="#">Displays</a></li><li><a href="#">Tasks</a></li><li><a href="#">Settings</a></li></ul></nav><main><h1>Calendars</h1>
 <p class="notice" role="status">Some calendars could not be updated for more than 24 hours. <a href="#">See what went wrong</a></p>
-<h2>Synchronised calendars</h2><ul class="cards">
-<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1"> School holidays</strong>
-<span class="hint">Read-only · for Sebastian, Mia</span><span class="hint">Last successful sync 14/11/2026 13:00</span>
+<h2>Synchronised calendars</h2>
+<section aria-label="Whole household"><h3>Whole household</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#6B6B6B" disabled tabindex="-1" aria-hidden="true"> Bin collection</strong>
+<span class="hint">Read-only</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Mia"><h3><input class="swatch" type="color" value="#B4583A" disabled tabindex="-1" aria-hidden="true"> Mia</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
+<section aria-label="Sebastian"><h3><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> Sebastian</h3><ul class="cards">
+<li><strong><input class="swatch" type="color" value="#2F5E7A" disabled tabindex="-1" aria-hidden="true"> School holidays</strong>
+<span class="hint">Read-only · for Mia, Sebastian</span><span class="hint">Last updated 14/11/2026 13:00</span>
 <span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li>
-<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1"> Football club</strong>
-<span class="hint">Read-only · for Sebastian</span><span class="hint">Last successful sync 14/11/2026 12:30</span>
-<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul>
+<li><strong><input class="swatch" type="color" value="#4E7D52" disabled tabindex="-1" aria-hidden="true"> Football club</strong>
+<span class="hint">Read-only · for Sebastian</span><span class="hint">Last updated 14/11/2026 12:30</span>
+<span class="row"><button class="button" type="button">Sync now</button><button class="button secondary" type="button">Remove</button></span></li></ul></section>
 <h2>Add a calendar</h2>
 <form class="steps" onsubmit="return false"><fieldset><label>Name<input value="Swimming"></label><label>Address<input placeholder="webcal://…"></label></fieldset><button class="button" type="button">Add calendar</button></form></main></div></div></div></figure></div><h2 class="sec">Parent: tasks page</h2><div class="row-of"><figure class="frame-fig"><figcaption>375 px · light · parent (Mama) · Tasks</figcaption>
 <div class="shell" style="width:375px"><div class="device" data-theme="light"><div class="frame framed has-nav">

@@ -6,6 +6,9 @@
   <section aria-labelledby="synced">
     <h2 id="synced">{{t "calendars.synced"}}</h2>
     {{if .Calendars}}
+    {{range .Calendars}}
+    <section aria-label="{{.Name}}">
+      <h3>{{if .Color}}<input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{end}}{{.Name}}</h3>
     <ul class="cards">
       {{range .Calendars}}
       <li>
@@ -23,6 +26,8 @@
       </li>
       {{end}}
     </ul>
+    </section>
+    {{end}}
     {{else}}<p class="lead">{{t "calendars.none"}}</p>{{end}}
   </section>
 

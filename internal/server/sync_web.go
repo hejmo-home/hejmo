@@ -61,6 +61,13 @@ type calendarView struct {
 	IntervalMinutes                                   int
 }
 
+// calendarGroup is one heading of the subscribed calendars: a person, or the
+// whole household. Color is empty for the household.
+type calendarGroup struct {
+	Name, Color string
+	Calendars   []calendarView
+}
+
 type logView struct{ At, Calendar, Kind, Message string }
 
 type choice struct{ ID, Name string }
@@ -100,7 +107,15 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		s.fail(w, "synced calendars", err)
 		return
 	}
-	var cals []calendarView
+	// Grouped by person in household order; a calendar shows under every
+	// person of its audience (groups expand to their members). Calendars with
+	// no audience go first under "Whole household". Empty groups are dropped.
+	members := map[string][]string{}
+	for _, x := range groups {
+		members[x.ID] = x.Members
+	}
+	whole := calendarGroup{Name: s.i18n.T(s.langOf(r), "calendars.whole_household")}
+	byPerson := map[string][]calendarView{}
 	for _, c := range synced {
 		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
 			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes}
@@ -110,7 +125,33 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 			}
 			v.Audience += names[id]
 		}
-		cals = append(cals, v)
+		if len(c.Audience.People) == 0 && len(c.Audience.Groups) == 0 {
+			whole.Calendars = append(whole.Calendars, v)
+			continue
+		}
+		audience := map[string]bool{}
+		for _, id := range c.Audience.People {
+			audience[id] = true
+		}
+		for _, id := range c.Audience.Groups {
+			for _, m := range members[id] {
+				audience[m] = true
+			}
+		}
+		for _, x := range people {
+			if audience[x.ID] {
+				byPerson[x.ID] = append(byPerson[x.ID], v)
+			}
+		}
+	}
+	var cals []calendarGroup
+	if len(whole.Calendars) > 0 {
+		cals = append(cals, whole)
+	}
+	for _, x := range people {
+		if len(byPerson[x.ID]) > 0 {
+			cals = append(cals, calendarGroup{Name: x.Name, Color: x.Color, Calendars: byPerson[x.ID]})
+		}
 	}
 	entries, err := s.db.SyncLog(p.household.ID, 50)
 	if err != nil {

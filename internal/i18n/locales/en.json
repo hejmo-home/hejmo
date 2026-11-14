@@ -91,6 +91,7 @@
   "calendars.title": "Calendars",
   "calendars.synced": "Subscribed calendars",
   "calendars.none": "No subscribed calendars yet. Add a school, club or holiday calendar below.",
+  "calendars.whole_household": "Whole household",
   "calendars.readonly": "Read-only",
   "calendars.for": "For",
   "calendars.last_success": "Last updated",

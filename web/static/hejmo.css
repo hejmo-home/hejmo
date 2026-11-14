@@ -1,0 +1,22 @@
+/* "Nordic Calm" base values, see docs/spec.md, section "Design". */
+:root {
+  --bg: #F6F3EE;
+  --surface: #FFFFFF;
+  --text: #2A2A28;
+  --text-2: #5C5A55;
+  --accent: #2F5E7A;
+  --radius-tile: 22px;
+  --radius-chip: 18px;
+  --gap: 14px;
+  --margin: 28px;
+  font-family: Figtree, system-ui, sans-serif;
+}
+* { box-sizing: border-box; }
+body { margin: 0; padding: var(--margin); background: var(--bg); color: var(--text); font-size: 16px; }
+h1 { font-size: 36px; font-weight: 700; margin: 0 0 8px; }
+.lead { color: var(--text-2); margin: 0 0 20px; }
+.steps { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: var(--gap); max-width: 560px; }
+.steps li { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; }
+.steps strong { display: block; font-size: 19px; }
+.steps span { color: var(--text-2); font-size: 14px; }
+.button { display: inline-block; min-height: 44px; padding: 10px 22px; border-radius: var(--radius-chip); background: var(--accent); color: #fff; font-weight: 700; text-decoration: none; border: 0; font: inherit; }

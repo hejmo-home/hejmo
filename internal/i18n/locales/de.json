@@ -1,0 +1,12 @@
+{
+  "app.name": "Hejmo",
+  "setup.title": "Hejmo einrichten",
+  "setup.intro": "Willkommen! In drei Schritten ist eure Box bereit.",
+  "setup.step.home": "Heimatort",
+  "setup.step.home.hint": "Für Wetter, Feiertage und Sonnenzeiten.",
+  "setup.step.parent": "Erstes Elternkonto",
+  "setup.step.parent.hint": "Mit Passwort und Einmalcode aus einer Authenticator-App.",
+  "setup.step.pin": "Eltern-PIN",
+  "setup.step.pin.hint": "Schützt die Verwaltung am Display.",
+  "setup.start": "Los geht's"
+}

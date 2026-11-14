@@ -1,0 +1,21 @@
+<!doctype html>
+<html lang="{{.Lang}}">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>{{t "setup.title"}}</title>
+<link rel="stylesheet" href="/static/hejmo.css">
+</head>
+<body>
+<main>
+  <h1>{{t "setup.title"}}</h1>
+  <p class="lead">{{t "setup.intro"}}</p>
+  <ol class="steps">
+    <li><strong>{{t "setup.step.home"}}</strong><span>{{t "setup.step.home.hint"}}</span></li>
+    <li><strong>{{t "setup.step.parent"}}</strong><span>{{t "setup.step.parent.hint"}}</span></li>
+    <li><strong>{{t "setup.step.pin"}}</strong><span>{{t "setup.step.pin.hint"}}</span></li>
+  </ol>
+  <button class="button" type="button" disabled>{{t "setup.start"}}</button>
+</main>
+</body>
+</html>

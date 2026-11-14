@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strconv"
 
+	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -191,7 +192,13 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 	_ = r.ParseForm()
 	interval, convErr := strconv.Atoi(r.PostFormValue("interval"))
 	var chosen []newCalendarInput
+	seen := map[string]bool{}
 	for _, address := range r.PostForm["calendar"] {
+		if key := caldavclient.AddressKey(address); seen[key] {
+			continue // the same calendar sent twice is saved once
+		} else {
+			seen[key] = true
+		}
 		in := newCalendarInput{
 			Name: r.PostFormValue("name_" + address), URL: address, Color: r.PostFormValue("color_" + address),
 			Audience: &audienceJSON{People: nonNil(r.PostForm["people_"+address]), Groups: nonNil(r.PostForm["groups_"+address])},

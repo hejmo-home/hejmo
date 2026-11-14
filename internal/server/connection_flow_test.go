@@ -203,3 +203,24 @@ func TestConnectionCalendarAlreadySyncedShowsItsMessage(t *testing.T) {
 		t.Fatalf("message not shown: status %d\n%s", r.status, r.body)
 	}
 }
+
+// An error on a calendar URL that is not on the server has no field to sit at, so it is shown generally.
+func TestConnectionCalendarUnknownAddressShowsGeneralError(t *testing.T) {
+	b := signedInAPI(t).b
+	id := connectedBox(t, b)
+	form := url.Values{"calendar": {flowCalendar + "-nope"}, "name_" + flowCalendar + "-nope": {" "}, "interval": {"60"}}
+	r := b.do(http.MethodPost, "/connections/"+id+"/calendars", form, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusUnprocessableEntity || strings.Contains(r.body, `class="ferr"`) || !strings.Contains(r.body, `class="error"`) {
+		t.Fatalf("unknown calendar: status %d\n%s", r.status, r.body)
+	}
+}
+
+// The same calendar sent twice is saved once and does not end in a 500.
+func TestConnectionCalendarRepeatedValueIsSavedOnce(t *testing.T) {
+	b := signedInAPI(t).b
+	id := connectedBox(t, b)
+	form := url.Values{"calendar": {flowCalendar, flowCalendar}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}}
+	if r := b.post("/connections/"+id+"/calendars", form); r.status == http.StatusInternalServerError || r.status == http.StatusUnprocessableEntity {
+		t.Fatalf("repeated calendar = %d\n%s", r.status, r.body)
+	}
+}

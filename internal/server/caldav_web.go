@@ -154,12 +154,12 @@ func (s *server) handleIOSProfile(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	name := strings.TrimSpace(r.PostFormValue("name"))
+	name := strings.TrimSpace(r.PostFormValue("profile_name"))
 	switch {
 	case r.TLS == nil: // a token must never travel unencrypted
 		s.renderCalDAV(w, r, p, http.StatusForbidden, map[string]any{"ProfileError": "caldav.profile.error.https", "ProfileName": name}, "", "")
 	case !validDeviceName(name):
-		s.renderCalDAV(w, r, p, http.StatusUnprocessableEntity, map[string]any{"ProfileError": "caldav.error.name", "ProfileName": name}, "", "")
+		s.renderCalDAV(w, r, p, http.StatusUnprocessableEntity, map[string]any{"Error": "caldav.error.name", "ErrorField": "profile_name", "ProfileName": name}, "", "")
 	default:
 		profile, err := s.iosProfile(r, p, name)
 		if err != nil {

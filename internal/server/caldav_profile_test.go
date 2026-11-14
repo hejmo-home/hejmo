@@ -23,7 +23,7 @@ func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 	b := c.b
 	h, _ := familyOf(t, c)
 
-	res := b.do(http.MethodPost, "/caldav/profile", url.Values{"name": {"iPhone Mama"}}, nil)
+	res := b.do(http.MethodPost, "/caldav/profile", url.Values{"profile_name": {"iPhone Mama"}}, nil)
 	if res.status != http.StatusOK {
 		t.Fatalf("profile = %d\n%s", res.status, res.body)
 	}
@@ -51,7 +51,7 @@ func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 	}
 
 	// Downloading again makes a new profile with a new token; none is kept.
-	again := b.post("/caldav/profile", url.Values{"name": {"iPad Mama"}})
+	again := b.post("/caldav/profile", url.Values{"profile_name": {"iPad Mama"}})
 	m2 := profilePasswordRe.FindStringSubmatch(again.body)
 	if again.status != http.StatusOK || m2 == nil || m2[1] == m[1] {
 		t.Fatalf("second profile = %d, tokens %v %v", again.status, m, m2)
@@ -77,7 +77,7 @@ func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 func TestIOSProfileDownloadHeadersAndFieldError(t *testing.T) {
 	c := signedInAPI(t)
 	b := c.b
-	req, _ := http.NewRequest(http.MethodPost, b.srv.URL+"/caldav/profile", strings.NewReader(url.Values{"name": {"iPhone Mama"}}.Encode()))
+	req, _ := http.NewRequest(http.MethodPost, b.srv.URL+"/caldav/profile", strings.NewReader(url.Values{"profile_name": {"iPhone Mama"}}.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	req.Header.Set("Origin", b.srv.URL)
 	res, err := b.client.Do(req)
@@ -99,20 +99,20 @@ func TestIOSProfileDownloadHeadersAndFieldError(t *testing.T) {
 	// An empty name is a field error and creates no token.
 	h, _ := familyOf(t, c)
 	before, _ := b.db.APITokens(h.ID)
-	r := b.post("/caldav/profile", url.Values{"name": {"  "}})
+	r := b.post("/caldav/profile", url.Values{"profile_name": {"  "}})
 	after, _ := b.db.APITokens(h.ID)
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `role="alert"`) || len(after) != len(before) {
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `class="ferr" id="err-profile_name"`) || !strings.Contains(r.body, `aria-invalid="true" aria-describedby="err-profile_name"`) || strings.Contains(r.body, `<p class="error"`) || len(after) != len(before) {
 		t.Fatalf("empty name = %d, tokens %d -> %d", r.status, len(before), len(after))
 	}
 }
 
 func TestIOSProfileIsForSignedInParentsOverHTTPSOnly(t *testing.T) {
 	b, _ := configuredBox(t)
-	if r := b.post("/caldav/profile", url.Values{"name": {"x"}}); r.status != http.StatusSeeOther || r.location != "/login" {
+	if r := b.post("/caldav/profile", url.Values{"profile_name": {"x"}}); r.status != http.StatusSeeOther || r.location != "/login" {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
 	}
 	child := childSession(t, b)
-	if r := child.post("/caldav/profile", url.Values{"name": {"x"}}); r.status == http.StatusOK {
+	if r := child.post("/caldav/profile", url.Values{"profile_name": {"x"}}); r.status == http.StatusOK {
 		t.Fatalf("a child got a profile")
 	}
 
@@ -120,7 +120,7 @@ func TestIOSProfileIsForSignedInParentsOverHTTPSOnly(t *testing.T) {
 	// With HTTPS set up, plain HTTP is sent there (a token must never travel
 	// unencrypted); the 403 without a certificate is tested below.
 	plain := c.b.plainServer()
-	req, _ := http.NewRequest(http.MethodPost, plain.URL+"/caldav/profile", strings.NewReader(url.Values{"name": {"x"}}.Encode()))
+	req, _ := http.NewRequest(http.MethodPost, plain.URL+"/caldav/profile", strings.NewReader(url.Values{"profile_name": {"x"}}.Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
 	res, err := c.b.client.Do(req)
 	if err != nil {
@@ -214,7 +214,7 @@ func TestIOSProfileIsRefusedOnPlainHTTPBeforeHTTPSIsSetUp(t *testing.T) {
 	h, _ := familyOf(t, c)
 
 	for lang, want := range map[string]string{"de": "nur über HTTPS", "en": "only offered over HTTPS"} {
-		r := b.do(http.MethodPost, "/caldav/profile", url.Values{"name": {"iPhone Mama"}}, map[string]string{"Accept-Language": lang})
+		r := b.do(http.MethodPost, "/caldav/profile", url.Values{"profile_name": {"iPhone Mama"}}, map[string]string{"Accept-Language": lang})
 		if r.status != http.StatusForbidden || !strings.Contains(r.body, `role="alert"`) || !strings.Contains(r.body, want) || strings.Contains(r.body, "hejmo_") {
 			t.Errorf("web %s = %d, want 403 with the HTTPS message %q:\n%s", lang, r.status, want, r.body)
 		}
@@ -231,7 +231,7 @@ func TestIOSProfileIsRefusedOnPlainHTTPBeforeHTTPSIsSetUp(t *testing.T) {
 func TestIOSProfileTakesNamesByCharactersAndAPIRejectsBrokenJSONWith400(t *testing.T) {
 	c := signedInAPI(t)
 	name := strings.Repeat("ä", 80) // 160 bytes, 80 characters: within the limit
-	if r := c.b.post("/caldav/profile", url.Values{"name": {name}}); r.status != http.StatusOK {
+	if r := c.b.post("/caldav/profile", url.Values{"profile_name": {name}}); r.status != http.StatusOK {
 		t.Errorf("web, 80 umlauts = %d, want 200", r.status)
 	}
 	if r := c.b.post("/caldav/tokens", url.Values{"name": {name}}); r.status != http.StatusOK {

@@ -24,11 +24,11 @@ var shims = map[string]string{
 	"uname":    `[ "$1" = "-m" ] && echo "${FAKE_ARCH:-aarch64}"; exit 0`,
 	"hostname": `echo 192.168.1.50`,
 	"chown":    `exit 0`,
-	"dpkg":     `echo arm64`,
+	"dpkg":     `echo "${FAKE_DPKG_ARCH:-arm64}"`,
 	"sleep":    `exit 0`,
 	"curl": `out=""
 while [ $# -gt 0 ]; do
-	case "$1" in -o) out="$2"; shift ;; *healthz) echo '{"status":"ok"}'; exit 0 ;; esac
+	case "$1" in -o) out="$2"; shift ;; *healthz) [ "${FAKE_HEALTHZ:-up}" = down ] && exit 22; echo '{"status":"ok"}'; exit 0 ;; esac
 	shift
 done
 [ -n "$out" ] && echo "fake key" > "$out"
@@ -246,5 +246,48 @@ func TestVersionAndImageOverrides(t *testing.T) {
 	}
 	if env := b.file("opt/hejmo/.env"); !strings.Contains(env, "HEJMO_IMAGE=ghcr.io/hejmo-home/hejmo:0.1.0") {
 		t.Errorf(".env lacks the pinned image:\n%s", env)
+	}
+}
+
+func TestRefuses32BitUserlandOnA64BitKernelEvenWithDocker(t *testing.T) {
+	for name, extra := range map[string][]string{
+		"dpkg armhf": {"FAKE_DPKG_ARCH=armhf"},
+		"raspbian":   {"FAKE_OS_ID=raspbian"},
+	} {
+		t.Run(name, func(t *testing.T) {
+			b := newBox(t)
+			b.withDocker()
+			if name == "raspbian" {
+				osr := "ID=raspbian\nVERSION_CODENAME=bookworm\n"
+				if err := os.WriteFile(filepath.Join(b.root, "etc/os-release"), []byte(osr), 0o644); err != nil {
+					t.Fatal(err)
+				}
+			}
+			out, err := b.run(extra...)
+			if err == nil {
+				t.Fatal("install on 32-bit userland succeeded, want failure")
+			}
+			if !strings.Contains(out, "64-bit") {
+				t.Errorf("message should name the 64-bit requirement, got:\n%s", out)
+			}
+			if _, err := os.Stat(filepath.Join(b.root, "opt/hejmo")); err == nil {
+				t.Error("a refused install must not create files")
+			}
+		})
+	}
+}
+
+func TestFailsWithMessageWhenTheBoxDoesNotAnswer(t *testing.T) {
+	b := newBox(t)
+	b.withDocker()
+	out, err := b.run("FAKE_HEALTHZ=down")
+	if err == nil {
+		t.Fatal("install succeeded although the box never answered, want failure")
+	}
+	if !strings.Contains(out, "did not answer") {
+		t.Errorf("want the 'did not answer' message, got:\n%s", out)
+	}
+	if strings.Contains(out, "Hejmo is running") {
+		t.Errorf("must not claim success, got:\n%s", out)
 	}
 }

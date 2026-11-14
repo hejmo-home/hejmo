@@ -387,7 +387,7 @@ paths:
     delete:
       operationId: removeCalendar
       summary: Remove a synced calendar and its events from the box
-      description: Nothing is deleted outside the box. The family calendar cannot be removed.
+      description: Nothing is deleted outside the box. An ICS subscription goes with its calendar; a CalDAV calendar leaves its connection and the connection's other calendars alone. The family calendar cannot be removed.
       responses:
         "204": { description: Removed }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -409,6 +409,96 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /calendar-connections:
+    get:
+      operationId: listCalendarConnections
+      summary: CalDAV and iCloud connections (parents, scope settings:read)
+      description: Never contains a password.
+      responses:
+        "200":
+          description: Connections
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/CalendarConnection" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: connectCalendarServer
+      summary: Connect iCloud or another CalDAV server and discover its calendars (parents, scope settings:write)
+      description: |
+        Signs in to the server and lists its event calendars; nothing is synced yet. The
+        connection is stored only if that works: a refused login or an unreachable server
+        answers 422 and stores nothing. The password is encrypted with the box's key
+        (AES-256-GCM) and never returned. Tick calendars with `POST /calendar-connections/{id}/calendars`.
+        For iCloud use an app-specific password. With `single_calendar` the address is that of
+        one calendar, entered by hand, and only that calendar is offered.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewCalendarConnection" }
+      responses:
+        "201":
+          description: Connected, with the discovered calendars
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CalendarConnection" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /calendar-connections/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    delete:
+      operationId: removeCalendarConnection
+      summary: Remove a connection with its synced calendars and their events from the box (parents, scope settings:delete)
+      description: Nothing is deleted outside the box.
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /calendar-connections/{id}/calendars:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: discoverConnectionCalendars
+      summary: List the server's calendars again, marking those already synced (parents, scope settings:write)
+      responses:
+        "200":
+          description: The connection with its calendars
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CalendarConnection" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    post:
+      operationId: addConnectionCalendar
+      summary: Sync one of the server's calendars (parents, scope settings:write)
+      description: |
+        Adds the calendar with its colour and audience and syncs it once right away; if that
+        first sync fails the calendar is still added (see the sync log) and the scheduler retries.
+        `url` must be a calendar on the connection's server and not yet synced. These calendars
+        are read-only for now; delta sync runs every 5 minutes by default.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewConnectionCalendar" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Calendar" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /sync-log:
     get:
       operationId: listSyncLog
@@ -740,6 +830,43 @@ components:
         color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422. Defaults to the accent colour" }
         audience: { $ref: "#/components/schemas/Audience" }
         sync_interval_minutes: { type: integer, default: 60, description: "Between 5 and 1440 minutes, else 422" }
+    CalendarConnection:
+      type: object
+      required: [id, kind, url, username, single_calendar]
+      properties:
+        id: { type: string, format: uuid }
+        kind: { type: string, enum: [caldav] }
+        url: { type: string, example: "https://caldav.icloud.com" }
+        username: { type: string }
+        single_calendar: { type: boolean }
+        calendars:
+          type: array
+          description: The server's event calendars. Only on connect and on discovery.
+          items:
+            type: object
+            required: [url, name, added]
+            properties:
+              url: { type: string }
+              name: { type: string }
+              added: { type: boolean, description: "Already synced through this connection" }
+    NewCalendarConnection:
+      type: object
+      required: [provider, username, password]
+      properties:
+        provider: { type: string, enum: [icloud, caldav] }
+        url: { type: string, description: "Server address (required for caldav, ignored for icloud), or the calendar address with single_calendar" }
+        username: { type: string, description: "Apple ID for iCloud" }
+        password: { type: string, description: "App-specific password for iCloud. Stored encrypted, never returned" }
+        single_calendar: { type: boolean, default: false }
+    NewConnectionCalendar:
+      type: object
+      required: [url, name]
+      properties:
+        url: { type: string, description: "A calendar address from the discovery" }
+        name: { type: string }
+        color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422. Defaults to the accent colour" }
+        audience: { $ref: "#/components/schemas/Audience" }
+        sync_interval_minutes: { type: integer, default: 5, description: "Between 5 and 1440 minutes, else 422" }
     SyncLogEntry:
       type: object
       required: [id, calendar_id, calendar_name, at, kind, message]

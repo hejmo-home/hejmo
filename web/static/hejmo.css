@@ -192,7 +192,8 @@ h1 { font-size: var(--fs-date); font-weight: var(--fw-date); margin: 0 0 8px; }
 .steps fieldset { border: 0; margin: 0; background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 10px; }
 .steps legend { font-size: var(--fs-person-name); font-weight: 700; padding: 0; float: left; }
 .steps form { display: grid; gap: var(--gap); }
-.hint { color: var(--text-secondary); font-size: var(--fs-label); }
+.hint { color: var(--text-secondary); font-size: var(--fs-label); overflow-wrap: anywhere; }
+[hidden] { display: none !important; }
 label { display: grid; gap: 4px; font-size: var(--fs-label); color: var(--text-secondary); }
 input, select { font: inherit; color: var(--text); min-height: var(--touch-target); padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); }
 .error { background: var(--error-bg); color: var(--error-text); border-radius: var(--radius-card); padding: 10px 12px; max-width: 560px; }

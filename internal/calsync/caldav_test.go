@@ -2,6 +2,7 @@ package calsync_test
 
 import (
 	"context"
+	"net/http"
 	"path/filepath"
 	"sync/atomic"
 	"testing"
@@ -275,5 +276,41 @@ func TestObjectDeletedBetweenListingAndDownloadIsNotAFailure(t *testing.T) {
 		if e.Kind == "failure" {
 			t.Fatalf("log has a failure: %+v", e)
 		}
+	}
+}
+
+// ADR 0012: on failure the box keeps the last good data and retries. A
+// temporary server error must not make the box remember the new ETag of an
+// object it could not download.
+func TestTemporaryServerErrorFailsTheRunAndTheChangeArrivesOnTheNextOne(t *testing.T) {
+	for _, status := range []int{http.StatusServiceUnavailable, http.StatusTooManyRequests} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			fx := newDAVFixture(t, caldavtest.Password)
+			fx.srv.Put(t, fx.remote, "piano.ics", caldavtest.Event("piano@test", "Piano", "20261121T150000", "20261121T160000"))
+			fx.syncAfter(t, 0)
+
+			fx.srv.Put(t, fx.remote, "piano.ics", caldavtest.Event("piano@test", "Piano lesson", "20261121T150000", "20261121T160000"))
+			fx.tamper.Refuse(status, "piano.ics")
+			fx.clock = fx.clock.Add(5 * time.Minute)
+			if err := fx.svc.Sync(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+				t.Fatal("sync during a temporary server error succeeded")
+			}
+			if got := fx.titles(t); len(got) != 1 || got[0] != "Piano" {
+				t.Fatalf("events = %v, want the last good Piano", got)
+			}
+			if n := fx.badObjectNotes(t); n != 0 {
+				t.Fatalf("bad_object notes = %d, a server error is not unreadable data", n)
+			}
+			log, _ := fx.db.SyncLog(fx.h.ID, 10)
+			if log[0].Kind != "failure" {
+				t.Fatalf("log = %+v, want a failure", log)
+			}
+
+			fx.tamper.Refuse(0)
+			fx.syncAfter(t, 5*time.Minute)
+			if got := fx.titles(t); len(got) != 1 || got[0] != "Piano lesson" {
+				t.Fatalf("events = %v, want the change to arrive on the retry", got)
+			}
+		})
 	}
 }

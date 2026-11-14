@@ -8,7 +8,6 @@ import (
 	"bytes"
 	"context"
 	"errors"
-	"fmt"
 	"io"
 	"net/http"
 	"net/url"
@@ -34,8 +33,9 @@ type Object struct {
 	URL  string // absolute address
 	ETag string
 	Data []byte // iCalendar text, set by Fetch only
-	// Err is set by Fetch when the server sent the object but it cannot be
-	// read as iCalendar. The other objects of the same Fetch are unaffected.
+	// Err is set by Fetch when the server answered 2xx but the object cannot
+	// be read as iCalendar. The other objects of the same Fetch are
+	// unaffected. A refusal by the server is never an Err: Fetch fails.
 	Err error
 }
 
@@ -192,8 +192,10 @@ func (c *Client) List(ctx context.Context, calendarURL string) ([]Object, error)
 const fetchBatch = 100
 
 // Fetch downloads the given objects, fetchBatch at a time. An object that was
-// deleted since it was listed is left out. An object the server sent but that
-// cannot be read comes back with Err set. Neither fails the others.
+// deleted since it was listed (404, 410) is left out. An object the server
+// sent but that cannot be read comes back with Err set. Neither fails the
+// others. Any other refusal (429, 5xx, ...) fails Fetch with a StatusError, so
+// the caller retries instead of remembering a version it never got.
 func (c *Client) Fetch(ctx context.Context, calendarURL string, objectURLs []string) ([]Object, error) {
 	var out []Object
 	for batch := range slices.Chunk(objectURLs, fetchBatch) {
@@ -241,8 +243,8 @@ func (c *Client) multiget(ctx context.Context, calendarURL string, objectURLs []
 }
 
 // fetchEach downloads objects one request each. An object that is gone is
-// left out; one that cannot be read, or that the server refuses to give,
-// carries the reason in Err.
+// left out; one that answers 2xx but cannot be read carries the reason in Err.
+// Any other status fails the whole call: it says nothing about the object.
 func (c *Client) fetchEach(ctx context.Context, objectURLs []string) ([]Object, error) {
 	var out []Object
 	for _, u := range objectURLs {
@@ -264,7 +266,7 @@ func (c *Client) fetchEach(ctx context.Context, objectURLs []string) ([]Object, 
 		case res.StatusCode == http.StatusNotFound || res.StatusCode == http.StatusGone:
 			continue
 		case res.StatusCode/100 != 2:
-			obj.Err = fmt.Errorf("the server answered %s", res.Status)
+			return nil, &StatusError{res.StatusCode, res.Status}
 		default:
 			if _, err := ical.NewDecoder(bytes.NewReader(data)).Decode(); err != nil {
 				obj.Err = err

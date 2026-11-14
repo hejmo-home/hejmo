@@ -2,7 +2,9 @@ package caldavclient_test
 
 import (
 	"context"
+	"errors"
 	"fmt"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -157,5 +159,39 @@ func TestFetchAsksForObjectsInBatches(t *testing.T) {
 	}
 	if n := tp.Reports.Load(); n != 3 {
 		t.Fatalf("multiget requests = %d, want 3 (100 + 100 + 30)", n)
+	}
+}
+
+// A temporary refusal (overload, throttling) is not unreadable data: Fetch
+// fails, so the run is retried, instead of reporting an object with Err.
+func TestFetchFailsOnATemporaryServerError(t *testing.T) {
+	for _, status := range []int{http.StatusServiceUnavailable, http.StatusTooManyRequests, http.StatusInternalServerError} {
+		t.Run(http.StatusText(status), func(t *testing.T) {
+			srv := caldavtest.Start(t)
+			cal := srv.MakeCalendar(t, "family", "Family")
+			good := srv.Put(t, cal, "good.ics", caldavtest.Event("good@test", "Swimming", "20261120T150000", "20261120T160000"))
+			slow := srv.Put(t, cal, "slow.ics", caldavtest.Event("slow@test", "Piano", "20261121T150000", "20261121T160000"))
+
+			c, tp := tamperedClient(t, srv)
+			tp.Refuse(status, "slow.ics")
+			got, err := c.Fetch(context.Background(), cal, []string{good, slow})
+			var se *caldavclient.StatusError
+			if !errors.As(err, &se) || se.Code != status {
+				t.Fatalf("Fetch() = %+v, %v; want a StatusError %d and no objects", got, err, status)
+			}
+			if len(got) != 0 {
+				t.Fatalf("Fetch() returned %d objects with its error", len(got))
+			}
+
+			tp.Refuse(0)
+			if got, err = c.Fetch(context.Background(), cal, []string{good, slow}); err != nil || len(got) != 2 {
+				t.Fatalf("Fetch() after the server recovered = %d objects, %v", len(got), err)
+			}
+			for _, o := range got {
+				if o.Err != nil {
+					t.Errorf("object %s: %v", o.URL, o.Err)
+				}
+			}
+		})
 	}
 }

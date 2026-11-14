@@ -153,8 +153,35 @@ func (s *Server) Put(t *testing.T, calendarURL, file, ics string) string {
 type Tamper struct {
 	Reports atomic.Int32
 
-	mu     sync.Mutex
-	broken []string
+	mu       sync.Mutex
+	broken   []string
+	refuse   int      // status answered for REPORTs and for downloads of refused files
+	refusing []string // file names whose download is refused
+}
+
+// Refuse makes every REPORT, and the download of the named objects, answer
+// with status (503 for an overloaded server, 429 for a throttled one) until
+// Refuse(0) is called. Other downloads work. This is a temporary failure of
+// the server, not unreadable data.
+func (tp *Tamper) Refuse(status int, files ...string) {
+	tp.mu.Lock()
+	defer tp.mu.Unlock()
+	tp.refuse, tp.refusing = status, files
+}
+
+// refused returns the status to answer instead of asking the server.
+func (tp *Tamper) refused(req *http.Request) int {
+	tp.mu.Lock()
+	defer tp.mu.Unlock()
+	switch {
+	case tp.refuse == 0:
+		return 0
+	case req.Method == "REPORT":
+		return tp.refuse
+	case req.Method == http.MethodGet && slices.Contains(tp.refusing, path.Base(req.URL.Path)):
+		return tp.refuse
+	}
+	return 0
 }
 
 // Break makes exactly these objects unreadable from now on.
@@ -182,6 +209,15 @@ var (
 )
 
 func (tr tamper) RoundTrip(req *http.Request) (*http.Response, error) {
+	if status := tr.refused(req); status != 0 {
+		return &http.Response{
+			StatusCode: status,
+			Status:     fmt.Sprintf("%d %s", status, http.StatusText(status)),
+			Header:     http.Header{},
+			Body:       io.NopCloser(strings.NewReader("")),
+			Request:    req,
+		}, nil
+	}
 	res, err := http.DefaultTransport.RoundTrip(req)
 	if err != nil {
 		return res, err

@@ -9,6 +9,7 @@ require (
 	github.com/teambition/rrule-go v1.8.2
 	golang.org/x/crypto v0.59.0
 	modernc.org/sqlite v1.62.0
+	rsc.io/qr v0.2.0
 )
 
 require (

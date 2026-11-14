@@ -153,7 +153,7 @@ Binding values come from `docs/spec.md` ("Design specification Nordic Calm"); th
 ## Layout
 
 - Outer margin 28 px; gap between columns and tiles 14 px; gap between header, main area and footer 20 px; column inner padding 16 px; event card padding 10 px by 12 px; gap between cards 10 px.
-- Reference layout 1024 by 768 landscape: header, one white column per person in a 4-column grid, footer with three tiles.
+- Reference layout 1024 by 768 landscape: header, one white column per person in a 4-column grid, footer with two tiles (meal tile and tomorrow tile, ADR 0016; a tile without content is hidden and the other takes the full width, with both hidden the footer is hidden). Header: weekday, calendar week and date on the left; on the right two chips, the current time (hh:mm) and the weather. Each person column ends with a task progress bar and "done/total", anchored to the column bottom while the events scroll; a person without tasks has no bar.
 
 ## Elevation
 

@@ -20,15 +20,17 @@ func TestBlackAndWhiteEventWithTwoPeopleShowsTwoDistinctShapes(t *testing.T) {
 	if !strings.Contains(page, `data-theme="bw"`) {
 		t.Fatal("not the bw palette")
 	}
+	cols := columnRe.FindAllString(page, -1)
+	cardRe := regexp.MustCompile(`(?s)<div class="event".*?</div></div>`)
+	markerRe := regexp.MustCompile(`class="marker small"[^>]*data-shape="([a-z-]+)" title="([^"]+)"`)
 	for _, who := range []string{"Sebastian", "Mia"} {
-		col := columnRe.FindAllString(page, -1)
 		var card string
-		for _, c := range col {
+		for _, c := range cols {
 			if strings.Contains(c, `data-name="`+who+`"`) {
-				card = regexp.MustCompile(`(?s)<div class="event".*?</div></div>`).FindString(c)
+				card = cardRe.FindString(c)
 			}
 		}
-		shapes := regexp.MustCompile(`class="marker small"[^>]*data-shape="([a-z-]+)" title="([^"]+)"`).FindAllStringSubmatch(card, -1)
+		shapes := markerRe.FindAllStringSubmatch(card, -1)
 		if len(shapes) != 2 || shapes[0][1] == shapes[1][1] || shapes[0][2] != "Sebastian" || shapes[1][2] != "Mia" {
 			t.Errorf("%s column: card markers = %q in %q", who, shapes, card)
 		}
@@ -39,7 +41,7 @@ func TestBlackAndWhiteEventWithTwoPeopleShowsTwoDistinctShapes(t *testing.T) {
 // sixth another); the API hands out the defaults.
 func TestFifthAndSixthPersonGetFurtherDistinctShapes(t *testing.T) {
 	c := signedInAPI(t)
-	shapes := map[string]string{"Mama": ""}
+	shapes := map[string]string{}
 	_, me, _ := c.call(http.MethodGet, "/me", nil)
 	shapes[me["shape"].(string)] = "Mama"
 	for _, n := range []string{"Papa", "Sebastian", "Mia", "Oma", "Opa"} {

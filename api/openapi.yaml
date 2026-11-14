@@ -228,6 +228,22 @@ paths:
                 items: { $ref: "#/components/schemas/SyncLogEntry" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /https:
+    get:
+      operationId: getHTTPS
+      summary: How the box secures HTTPS and whether its certificate needs attention (parents, scope settings:read)
+      description: |
+        `own-ca` is the box's own certificate authority (it is renewed by the box and has nothing to warn about).
+        `public` is a publicly trusted certificate for the family's DNS name (ADR 0014); `warning` is set when its
+        renewal failed or it is about to expire.
+      responses:
+        "200":
+          description: HTTPS status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HTTPSStatus" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /events:
     get:
       operationId: listOccurrences
@@ -425,6 +441,16 @@ components:
         at: { type: string, format: date-time }
         kind: { type: string, enum: [failure, conflict, note] }
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
+    HTTPSStatus:
+      type: object
+      required: [mode, warning]
+      properties:
+        mode: { type: string, enum: [own-ca, public] }
+        name: { type: string, description: "Public DNS name of the box (mode public)" }
+        issuer: { type: string, enum: [letsencrypt, actalis], description: "Chosen certificate authority (mode public)" }
+        expires_at: { type: string, format: date-time }
+        warning: { type: boolean, description: "True if the certificate could not be renewed or expires within 7 days" }
+        renewal_error: { type: string, description: "Why the last renewal failed" }
     Event:
       type: object
       description: An event or series master. Times are RFC 3339 in the household's time zone; all-day events use dates with an exclusive end.

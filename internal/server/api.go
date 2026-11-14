@@ -32,6 +32,7 @@ var apiRoutes = []APIRoute{
 	{"DELETE", "/calendars/{id}", auth.Perm("events", auth.Delete), (*server).apiDeleteCalendar},
 	{"POST", "/calendars/{id}/sync", auth.Perm("events", auth.Write), (*server).apiSyncCalendar},
 	{"GET", "/sync-log", auth.Perm("settings", auth.Read), (*server).apiSyncLog},
+	{"GET", "/https", auth.Perm("settings", auth.Read), (*server).apiHTTPS},
 	{"GET", "/events", auth.Perm("events", auth.Read), (*server).apiListEvents},
 	{"POST", "/events", auth.Perm("events", auth.Write), (*server).apiCreateEvent},
 	{"PATCH", "/events/{id}", auth.Perm("events", auth.Write), (*server).apiUpdateEvent},

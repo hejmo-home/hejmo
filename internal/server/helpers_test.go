@@ -19,6 +19,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/pki"
+	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -32,6 +33,43 @@ type box struct {
 	client  *http.Client
 	now     time.Time
 	feeds   *fakeFeeds
+	public  *fakePublic
+}
+
+// fakePublic stands in for the public certificate manager: what it does
+// (DNS-01, CAs) is tested in internal/publiccert.
+type fakePublic struct {
+	mu      sync.Mutex
+	name    string
+	status  publiccert.Status
+	got     []publiccert.Request
+	failure error
+}
+
+func (f *fakePublic) Ready() bool  { f.mu.Lock(); defer f.mu.Unlock(); return f.name != "" }
+func (f *fakePublic) Name() string { f.mu.Lock(); defer f.mu.Unlock(); return f.name }
+func (f *fakePublic) Status() publiccert.Status {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	st := f.status
+	st.Name = f.name
+	return st
+}
+func (f *fakePublic) Setup(_ context.Context, r publiccert.Request) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.got = append(f.got, r)
+	if f.failure != nil {
+		return f.failure
+	}
+	f.name = r.Name
+	f.status.Issuer = r.Issuer
+	return nil
+}
+func (f *fakePublic) requests() []publiccert.Request {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	return append([]publiccert.Request(nil), f.got...)
 }
 
 // fakeFeeds serves ICS feeds (and failures) to the box's calendar sync.
@@ -89,9 +127,9 @@ func newFreshBox(t *testing.T) *box {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := &box{t: t, db: db, pki: certs, feeds: feeds, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
+	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time { return b.now }
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Now: now, Sync: calsync.New(db, feeds, now)})
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: calsync.New(db, feeds, now)})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()
@@ -189,7 +227,7 @@ func pemToDER(t *testing.T, p []byte) []byte {
 
 // serverWithHTTPSPort rebuilds the box's handler with a public HTTPS port.
 func serverWithHTTPSPort(b *box, port string) http.Handler {
-	return server.New(server.Options{DB: b.db, PKI: b.pki, HTTPSPort: port, Now: func() time.Time { return b.now }})
+	return server.New(server.Options{DB: b.db, PKI: b.pki, Public: b.public, HTTPSPort: port, Now: func() time.Time { return b.now }})
 }
 
 func validSetupForm() url.Values {

@@ -241,7 +241,7 @@ a { color: var(--accent); }
 .event .meta { font-size: var(--fs-meta); font-weight: var(--fw-meta); }
 .event.journey { background: none; color: var(--text); border: var(--journey-border) dashed var(--pc); }
 .progress { height: var(--progress-height); border-radius: var(--radius-progress); background: var(--pc-tint); overflow: hidden; }
-.progress > span { display: block; height: 100%; background: var(--pc); }
+.progress > span { display: block; height: 100%; width: calc(var(--pct, 0) * 1%); background: var(--pc); }
 [data-theme="bw"] .progress { background: var(--progress-track); }
 [data-theme="bw"] .progress > span { background: var(--progress-fill); }
 .icon { stroke: var(--accent); stroke-width: var(--icon-stroke); fill: none; stroke-linecap: round; stroke-linejoin: round; }

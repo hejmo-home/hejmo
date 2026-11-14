@@ -77,3 +77,93 @@ func TestCalendarsPageShowsNoGroupForAnEmptyHousehold(t *testing.T) {
 		t.Fatalf("empty group shown:\n%s", r.body)
 	}
 }
+
+func newGroupsPage(t *testing.T) (c *apiClient, mia, seb, mama store.Person, add func(name string, people, groups []string)) {
+	t.Helper()
+	c = signedInAPI(t)
+	h := mustHousehold(t, c)
+	people, err := c.b.db.People(h.ID)
+	if err != nil || len(people) == 0 {
+		t.Fatalf("people: %v %v", people, err)
+	}
+	mama = people[0]
+	mia, _ = c.b.db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild, Color: "#c0392b"})
+	seb, _ = c.b.db.AddPerson(h.ID, store.Person{Name: "Sebastian", Role: store.RoleChild})
+	c.b.feeds.set(schoolFeed, feedOf(), nil)
+	add = func(name string, people, groups []string) {
+		if people == nil {
+			people = []string{}
+		}
+		if groups == nil {
+			groups = []string{}
+		}
+		c.addICS(t, map[string]any{"kind": "ics", "name": name, "url": schoolFeed, "audience": map[string]any{"people": people, "groups": groups}})
+	}
+	return
+}
+
+func page(c *apiClient, lang string) string {
+	return c.b.do(http.MethodGet, "/calendars", nil, map[string]string{"Accept-Language": lang}).body
+}
+
+// A calendar visible to nobody must not vanish with its buttons.
+func TestCalendarNobodySeesStaysListedInALastGroup(t *testing.T) {
+	c, mia, _, _, add := newGroupsPage(t)
+	h := mustHousehold(t, c)
+	empty, err := c.b.db.CreateGroup(h.ID, "Nobody", nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	add("Orphan", nil, []string{empty.ID})
+	add("Swimming", []string{mia.ID}, nil)
+	for lang, label := range map[string]string{"en": "Not assigned to anyone", "de": "Niemandem zugeordnet"} {
+		body := page(c, lang)
+		headings, cals := calendarGroups(t, body)
+		if strings.Join(headings, "|") != "Mia|"+label {
+			t.Fatalf("%s: groups = %v", lang, headings)
+		}
+		sameList(t, cals[label], []string{"Orphan"})
+		if strings.Contains(body, "Whole household") || strings.Contains(body, "Ganzer Haushalt") {
+			t.Fatalf("%s: orphan shown as whole household", lang)
+		}
+		i := strings.Index(body, `aria-label="`+label+`"`)
+		if !strings.Contains(body[i:], "/delete") || !strings.Contains(body[i:], "/sync") {
+			t.Fatalf("%s: orphan lacks sync/remove forms", lang)
+		}
+	}
+}
+
+func TestWholeHouseholdIsHiddenWhenEmptyAndPeopleKeepHouseholdOrder(t *testing.T) {
+	c, mia, seb, mama, add := newGroupsPage(t)
+	// Added in a different order than the household; Mia (middle) has none.
+	add("Football", []string{seb.ID}, nil)
+	add("Yoga", []string{mama.ID}, nil)
+	headings, _ := calendarGroups(t, page(c, "en"))
+	if strings.Join(headings, "|") != mama.Name+"|Sebastian" {
+		t.Fatalf("groups = %v (mia %s)", headings, mia.Name)
+	}
+}
+
+func TestCalendarInAudienceDirectlyAndViaGroupIsListedOnce(t *testing.T) {
+	c, mia, seb, _, add := newGroupsPage(t)
+	h := mustHousehold(t, c)
+	kids, _ := c.b.db.CreateGroup(h.ID, "Kids", []string{mia.ID, seb.ID})
+	add("Swimming", []string{mia.ID}, []string{kids.ID})
+	_, cals := calendarGroups(t, page(c, "en"))
+	sameList(t, cals["Mia"], []string{"Swimming"})
+	sameList(t, cals["Sebastian"], []string{"Swimming"})
+}
+
+func TestGroupHeadingCarriesThePersonColour(t *testing.T) {
+	c, mia, _, _, add := newGroupsPage(t)
+	add("Swimming", []string{mia.ID}, nil)
+	body := page(c, "en")
+	i := strings.Index(body, `<section aria-label="Mia">`)
+	if i < 0 {
+		t.Fatalf("no Mia group:\n%s", body)
+	}
+	h3 := body[i : i+strings.Index(body[i:], "</h3>")]
+	if !strings.Contains(h3, `value="`+mia.Color+`"`) {
+		t.Fatalf("heading lacks colour %q: %s", mia.Color, h3)
+	}
+}

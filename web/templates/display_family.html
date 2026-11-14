@@ -30,7 +30,7 @@
           {{range .Tomorrow}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div>
           {{end}}</div>{{end}}
       </div>
-      {{with .Progress}}<div class="pbar" data-progress="{{printf "%d/%d" .Done .Total}}"><div class="progress"><span style="width:{{.Percent}}%"></span></div><span class="count">{{printf "%d/%d" .Done .Total}}</span></div>{{end}}
+      {{with .Progress}}<div class="pbar" data-progress="{{printf "%d/%d" .Done .Total}}"><div class="progress"><span style="--pct:{{.Percent}}"></span></div><span class="count">{{printf "%d/%d" .Done .Total}}</span></div>{{end}}
     </section>
     {{end}}
   </main>

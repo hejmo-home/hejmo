@@ -109,12 +109,13 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	// Grouped by person in household order; a calendar shows under every
 	// person of its audience (groups expand to their members). Calendars with
-	// no audience go first under "Whole household". Empty groups are dropped.
+	// no audience go first under "Whole household". Calendars nobody sees go last under "Not assigned". Empty groups are dropped.
 	members := map[string][]string{}
 	for _, x := range groups {
 		members[x.ID] = x.Members
 	}
 	whole := calendarGroup{Name: s.i18n.T(s.langOf(r), "calendars.whole_household")}
+	unassigned := calendarGroup{Name: s.i18n.T(s.langOf(r), "calendars.unassigned")}
 	byPerson := map[string][]calendarView{}
 	for _, c := range synced {
 		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
@@ -138,10 +139,15 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 				audience[m] = true
 			}
 		}
+		placed := false
 		for _, x := range people {
 			if audience[x.ID] {
 				byPerson[x.ID] = append(byPerson[x.ID], v)
+				placed = true
 			}
+		}
+		if !placed {
+			unassigned.Calendars = append(unassigned.Calendars, v)
 		}
 	}
 	var cals []calendarGroup
@@ -152,6 +158,9 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		if len(byPerson[x.ID]) > 0 {
 			cals = append(cals, calendarGroup{Name: x.Name, Color: x.Color, Calendars: byPerson[x.ID]})
 		}
+	}
+	if len(unassigned.Calendars) > 0 {
+		cals = append(cals, unassigned)
 	}
 	entries, err := s.db.SyncLog(p.household.ID, 50)
 	if err != nil {

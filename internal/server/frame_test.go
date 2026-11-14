@@ -125,7 +125,7 @@ func TestSignOutIsInTheFrameOnEveryScreen(t *testing.T) {
 	}
 }
 
-// ADR 0015: displays choose their theme per display (E-Ink: light), so they
+// ADR 0015: displays choose their theme per display (pairing: light, E-Ink: bw), so they
 // neither follow the device's colour scheme nor sit in the web frame.
 func TestDisplaysDoNotFollowTheDeviceAndSitOutsideTheFrame(t *testing.T) {
 	b := signedInBox(t)
@@ -134,9 +134,11 @@ func TestDisplaysDoNotFollowTheDeviceAndSitOutsideTheFrame(t *testing.T) {
 	b.post("/displays", pairForm(codeOn(t, pairing)))
 	paired := d.get("/display", "en").body
 	for name, page := range map[string]string{"pairing": pairing, "family": paired} {
-		// An explicit display theme (light, or bw on E-Ink), never the device's.
-		if !regexp.MustCompile(`<html lang="en" data-theme="(light|bw)">`).MatchString(page) {
-			t.Errorf("%s display page has no explicit theme:\n%s", name, page)
+		// An explicit display theme, never the device's: pairing is always
+		// light, the paired E-Ink display is bw.
+		want := map[string]string{"pairing": "light", "family": "bw"}[name]
+		if !strings.Contains(page, `<html lang="en" data-theme="`+want+`">`) {
+			t.Errorf("%s display page lacks data-theme=%q:\n%s", name, want, page)
 		}
 		if strings.Contains(page, `class="frame`) || strings.Contains(page, `<body class="web"`) {
 			t.Errorf("%s display page is wrapped in the web frame", name)
@@ -148,19 +150,36 @@ func TestDisplaysDoNotFollowTheDeviceAndSitOutsideTheFrame(t *testing.T) {
 }
 
 // 5.11: no template of any screen carries inline styles, rendered or not.
+// The one exception is data handed to CSS as custom properties
+// (style="--cols:{{...}}"); the stylesheet decides what they mean.
+var customPropStyleRe = regexp.MustCompile(`style="--[a-z0-9-]+:\{\{[^}]*\}\}(;\s*--[a-z0-9-]+:\{\{[^}]*\}\})*;?"`)
+
+func hasInlineStyle(src string) bool {
+	src = customPropStyleRe.ReplaceAllString(src, "")
+	return strings.Contains(src, "style=") || strings.Contains(src, "<style")
+}
+
+func TestInlineStyleCheckAllowsOnlyCustomProperties(t *testing.T) {
+	for _, ok := range []string{`<span style="--pct:{{.Percent}}">`, `<main style="--cols:{{len .Columns}}">`, `<i style="--a:{{.A}}; --b:{{.B}};">`} {
+		if hasInlineStyle(ok) {
+			t.Errorf("%s should be allowed", ok)
+		}
+	}
+	for _, bad := range []string{`<span style="width:{{.X}}%">`, `<p style="color:red">`, `<p style="--a:red">`, `<p style="--a:{{.A}};color:red">`, `<style>p{}</style>`} {
+		if !hasInlineStyle(bad) {
+			t.Errorf("%s should be rejected", bad)
+		}
+	}
+}
+
 func TestNoTemplateHasInlineStyles(t *testing.T) {
 	files, err := fs.Glob(web.Templates, "templates/*.html")
 	if err != nil || len(files) == 0 {
 		t.Fatalf("no templates: %v", err)
 	}
 	for _, f := range files {
-		// The family view sizes its columns and progress bars from data; it
-		// is a display page outside the web frame.
-		if f == "templates/display_family.html" {
-			continue
-		}
 		b, _ := fs.ReadFile(web.Templates, f)
-		if strings.Contains(string(b), "style=") || strings.Contains(string(b), "<style") {
+		if hasInlineStyle(string(b)) {
 			t.Errorf("%s has inline styles", f)
 		}
 	}

@@ -64,6 +64,48 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  # Security checks (ADR 0018, Measurement). Tools run in CI only; none is part of the binary.
+  # Thresholds: govulncheck fails on any vulnerability the code calls; gosec fails on
+  # findings of high severity; Trivy fails on fixable HIGH or CRITICAL findings in the image.
+  # Medium and low gosec findings are triaged in docs/security/threat-model.md.
+  govulncheck:
+    name: govulncheck
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Known vulnerabilities in called dependencies
+        run: go run golang.org/x/vuln/cmd/govulncheck@v1.9.0 ./...
+
+  gosec:
+    name: gosec
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Static analysis, high severity fails
+        run: go run github.com/securego/gosec/v2/cmd/gosec@v2.30.0 -quiet -severity high ./...
+
+  image-scan:
+    name: Container image scan
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t hejmo:scan .
+      - name: Trivy scan, fixable HIGH and CRITICAL fail
+        # Pinned to the commit of v0.36.0.
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25
+        with:
+          image-ref: hejmo:scan
+          severity: HIGH,CRITICAL
+          ignore-unfixed: true
+          exit-code: "1"
+
   dco:
     name: DCO sign-off
     if: github.event_name == 'pull_request'

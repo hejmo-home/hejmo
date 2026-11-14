@@ -161,7 +161,7 @@ func (s *server) handleSwitchToOwnCA(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "forget public HTTPS setup", err)
 		return
 	}
-	s.handleHTTPSSubmit(w, r)
+	s.provisionOwnCA(w, r)
 }
 
 func (s *server) apiHTTPS(w http.ResponseWriter, r *http.Request, _ principal) {
@@ -195,6 +195,17 @@ func (s *server) handleHTTPSSubmit(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
+	// Choosing the own CA forgets any public attempt, including its warning.
+	if s.public != nil {
+		if err := s.public.Clear(); err != nil {
+			s.fail(w, "forget public HTTPS setup", err)
+			return
+		}
+	}
+	s.provisionOwnCA(w, r)
+}
+
+func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request) {
 	if err := s.pki.Provision(hostOf(r), s.now()); err != nil {
 		if errors.Is(err, pki.ErrInvalidHost) {
 			s.renderHTTPSStep(w, r, http.StatusBadRequest, publicForm{Issuer: publiccert.LetsEncrypt}, "setup.https.invalidhost")

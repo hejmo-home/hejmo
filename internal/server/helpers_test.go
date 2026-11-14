@@ -45,6 +45,8 @@ type fakePublic struct {
 	got     []publiccert.Request
 	failure error
 	cleared int
+	// warnOnFailure makes a failed Setup leave a warning, as a failed order may.
+	warnOnFailure bool
 	// gate, if set, holds Setup back until it is closed.
 	gate chan struct{}
 	// ctxErr and ctxDeadline describe the context the last Setup ended with.
@@ -77,6 +79,9 @@ func (f *fakePublic) Setup(ctx context.Context, r publiccert.Request) error {
 	f.ctxErr = ctx.Err()
 	_, f.ctxDeadline = ctx.Deadline()
 	if f.failure != nil {
+		if f.warnOnFailure {
+			f.status.Warning, f.status.RenewalError = true, f.failure.Error()
+		}
 		return f.failure
 	}
 	f.name = r.Name

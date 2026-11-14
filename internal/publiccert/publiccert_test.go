@@ -229,6 +229,10 @@ func TestFailedSetupLeavesNoConfigurationBehind(t *testing.T) {
 	if _, ok, _ := r.db.PublicHTTPS(); ok {
 		t.Error("configuration stored although no certificate was obtained")
 	}
+	// A wizard attempt that failed is not a broken setup: nothing to warn about.
+	if st := m.Status(); st.Warning || st.RenewalError != "" {
+		t.Errorf("failed attempt leaves a warning: %+v", st)
+	}
 }
 
 // Acceptance: the DNS token is not readable in a plain-text dump of the database.

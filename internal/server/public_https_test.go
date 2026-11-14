@@ -351,3 +351,20 @@ func TestConfiguredBoxWithAWarnedPublicSetupStillRedirectsHTTP(t *testing.T) {
 		}
 	}
 }
+
+// A failed public attempt may leave a warning in the manager; choosing the
+// box's own CA afterwards must leave none behind.
+func TestOwnCAAfterAFailedPublicAttemptLeavesNoWarning(t *testing.T) {
+	b := newFreshBox(t)
+	b.public.failure = errors.New("acme: the CA is down")
+	b.public.warnOnFailure = true
+	if r := b.post("/setup/https/public", publicForm()); r.status != http.StatusBadGateway {
+		t.Fatalf("failed attempt = %d", r.status)
+	}
+	if r := b.post("/setup/https", url.Values{}); r.status != http.StatusSeeOther || r.location != "/ca" {
+		t.Fatalf("own CA = %d %q", r.status, r.location)
+	}
+	if st := b.public.Status(); st.Warning || st.RenewalError != "" {
+		t.Errorf("warning stays after the own CA was provisioned: %+v", st)
+	}
+}

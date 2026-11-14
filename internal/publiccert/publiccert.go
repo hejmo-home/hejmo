@@ -216,7 +216,7 @@ func (m *Manager) start(ctx context.Context) error {
 		}
 		return err
 	}
-	cfg, cache, err := m.newConfig(req)
+	cfg, cache, err := m.newConfig(req, true)
 	if err != nil {
 		return err
 	}
@@ -254,7 +254,9 @@ func (m *Manager) serveStored(ctx context.Context, saved store.PublicHTTPS) erro
 			GetConfigForCert: func(certmagic.Certificate) (*certmagic.Config, error) { return cfg, nil },
 			Logger:           zap.NewNop(),
 		})
-		cfg = certmagic.New(cache, certmagic.Config{Storage: &certmagic.FileStorage{Path: m.dir}, Logger: zap.NewNop(), OnEvent: m.onEvent})
+		cfg = certmagic.New(cache, certmagic.Config{Storage: &certmagic.FileStorage{Path: m.dir}, Logger: zap.NewNop(), OnEvent: func(ctx context.Context, event string, data map[string]any) error {
+			return m.onEvent(ctx, event, data, true)
+		}})
 		key := certmagic.NewACMEIssuer(cfg, certmagic.ACMEIssuer{CA: m.directories[issuer], Logger: zap.NewNop()}).IssuerKey()
 		cfg.Issuers = []certmagic.Issuer{noRenewal{key}}
 		if _, lastErr = cfg.CacheManagedCertificate(ctx, saved.Name); lastErr == nil {
@@ -463,12 +465,16 @@ func (m *Manager) Setup(ctx context.Context, req Request) error {
 		return fmt.Errorf("point %s to %s: %w", req.Name, req.LANIP, err)
 	}
 
-	cfg, cache, err := m.newConfig(req)
+	cfg, cache, err := m.newConfig(req, false)
 	if err != nil {
 		return err
 	}
 	if err := cfg.ManageSync(ctx, []string{req.Name}); err != nil {
 		cache.Stop()
+		// A failed attempt is not a broken setup: no warning stays behind.
+		m.mu.Lock()
+		m.startErr = ""
+		m.mu.Unlock()
 		return fmt.Errorf("obtain certificate for %s: %w", req.Name, err)
 	}
 	sealedToken, err := m.sealer.Seal([]byte(req.Token))
@@ -493,7 +499,9 @@ func (m *Manager) Setup(ctx context.Context, req Request) error {
 }
 
 // newConfig builds the CertMagic configuration: the chosen issuer first, ZeroSSL as fallback.
-func (m *Manager) newConfig(req Request) (*certmagic.Config, *certmagic.Cache, error) {
+// resuming is true for a stored setup being resumed at start: only then does a
+// failed order count as a broken setup (see onEvent).
+func (m *Manager) newConfig(req Request, resuming bool) (*certmagic.Config, *certmagic.Cache, error) {
 	provider, err := m.providers(req.Provider, req.Token)
 	if err != nil {
 		return nil, nil, err
@@ -509,7 +517,9 @@ func (m *Manager) newConfig(req Request) (*certmagic.Config, *certmagic.Cache, e
 	cfg = certmagic.New(cache, certmagic.Config{
 		Storage: &certmagic.FileStorage{Path: m.dir},
 		Logger:  zap.NewNop(),
-		OnEvent: m.onEvent,
+		OnEvent: func(ctx context.Context, event string, data map[string]any) error {
+			return m.onEvent(ctx, event, data, resuming)
+		},
 	})
 	newIssuer := func(ca string) *certmagic.ACMEIssuer {
 		return certmagic.NewACMEIssuer(cfg, certmagic.ACMEIssuer{
@@ -538,7 +548,7 @@ func (m *Manager) newConfig(req Request) (*certmagic.Config, *certmagic.Cache, e
 }
 
 // onEvent turns CertMagic's background work into the state parents see.
-func (m *Manager) onEvent(ctx context.Context, event string, data map[string]any) error {
+func (m *Manager) onEvent(ctx context.Context, event string, data map[string]any, resuming bool) error {
 	renewal, _ := data["renewal"].(bool)
 	switch event {
 	case "cert_failed":
@@ -547,6 +557,9 @@ func (m *Manager) onEvent(ctx context.Context, event string, data map[string]any
 			err = errors.New("renewal failed")
 		}
 		if !renewal {
+			if !resuming {
+				return nil // an attempt of the wizard: Setup reports it to the caller
+			}
 			// A certificate ordered again after a restart with lost files.
 			m.mu.Lock()
 			m.startErr = err.Error()

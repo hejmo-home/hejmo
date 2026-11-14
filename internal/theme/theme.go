@@ -10,7 +10,7 @@ import (
 )
 
 // Theme is a setting (Light, Dark, Auto) or the result of resolving one
-// (Light, Dark, Night).
+// (Light, Dark).
 type Theme string
 
 // Setting is a stored choice; it uses the same values as Theme.
@@ -21,8 +21,6 @@ const (
 	Light Theme = "light"
 	Dark  Theme = "dark"
 	Auto  Theme = "auto"
-	// Night is the quiet-mode night page, which wins over every theme.
-	Night Theme = "night"
 )
 
 // Valid reports whether s can be stored as a display's theme.
@@ -49,14 +47,11 @@ type Input struct {
 	SunriseOffset, SunsetOffset int       // minutes, each -180..180
 	Now                         time.Time // in the household's zone
 	Lat, Lon                    float64   // home location; 0, 0 means not set
-	Quiet                       bool
 }
 
-// Resolve returns what to show now: Night in quiet mode, otherwise Light or Dark.
+// Resolve returns what to show now: Light or Dark.
 func Resolve(in Input) Theme {
 	switch {
-	case in.Quiet:
-		return Night
 	case in.Setting == Dark:
 		return Dark
 	case in.Setting != Auto:
@@ -72,10 +67,11 @@ func Resolve(in Input) Theme {
 		return Dark
 	}
 	// The latest switch at or before now decides. Offsets reach 3 hours, so
-	// yesterday's sunset can still be the latest one.
+	// yesterday's sunset can still be the latest one, and far north tomorrow's
+	// sunrise switch can already have passed.
 	var latest time.Time
 	result := Light
-	for _, shift := range []int{-1, 0} {
+	for _, shift := range []int{-1, 0, 1} {
 		t := sun.On(in.Now.AddDate(0, 0, shift), in.Lat, in.Lon)
 		if t.Kind != sun.Normal {
 			continue

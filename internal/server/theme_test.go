@@ -179,4 +179,14 @@ func TestWebPagesCarryTodaysSunTimesForAutomatic(t *testing.T) {
 	}
 }
 
+func TestSignedOutPagesCarryNoSunTimes(t *testing.T) {
+	f := newFamilyBox(t, "screen")
+	f.atMunich(t)
+	f.now = time.Date(2026, 6, 21, 12, 0, 0, 0, berlinTZ)
+	f.logout()
+	if body := f.get("/login").body; strings.Contains(body, "data-sun-") {
+		t.Fatalf("signed-out /login leaks sun times (they reveal the home location): %s", htmlThemeRe.FindString(body))
+	}
+}
+
 func itoa(n int64) string { return strconv.FormatInt(n, 10) }

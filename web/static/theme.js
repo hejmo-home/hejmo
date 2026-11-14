@@ -16,7 +16,10 @@
     } else if (mode === "auto") {
       var rise = Number(html.getAttribute("data-sun-rise")), set = Number(html.getAttribute("data-sun-set"));
       if (rise && set) {
-        var now = Date.now() / 1000;
+        // The times are from page load; shift them by whole days so a tab
+        // left open overnight keeps following the sun.
+        var now = Date.now() / 1000, day = 86400, k = Math.floor((now - rise) / day);
+        rise += k * day; set += k * day;
         theme = now < rise || now >= set ? "dark" : "light";
       }
     }

@@ -818,9 +818,9 @@ components:
       type: object
       properties:
         show_tomorrow: { type: boolean }
-        theme: { type: string, description: "light, dark or auto, else 422" }
-        sunrise_offset: { type: integer, description: "Minutes, -180 to 180, else 422" }
-        sunset_offset: { type: integer, description: "Minutes, -180 to 180, else 422" }
+        theme: { $ref: "#/components/schemas/DisplayTheme" }
+        sunrise_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes, -180 to 180, else 422" }
+        sunset_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes, -180 to 180, else 422" }
     PairDisplay:
       type: object
       required: [code, name, type]

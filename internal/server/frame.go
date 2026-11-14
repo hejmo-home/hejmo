@@ -43,13 +43,15 @@ type frame struct {
 }
 
 // frameFor builds the frame for the person behind the request, or a bare
-// frame (brand only) for sign-in and setup screens.
+// frame (brand only, no sun times) for sign-in and setup screens.
 func (s *server) frameFor(r *http.Request) frame {
-	f := s.sunFrame()
 	p, ok := s.currentPerson(r)
 	if !ok {
-		return f
+		// No sun times here: from sunrise and sunset anyone could work out
+		// where the home is.
+		return frame{}
 	}
+	f := s.sunFrame()
 	f.SignedIn = true
 	for _, it := range navItems {
 		if !auth.RoleAllows(p.Role, it.Needs) {

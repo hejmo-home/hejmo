@@ -124,8 +124,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 }
 
 // displayTheme is the palette a display shows now: its theme setting resolved
-// against the sun at the home location. Quiet mode (ticket 5.9) passes Quiet
-// here and shows the night page instead.
+// against the sun at the home location.
 func (s *server) displayTheme(h store.Household, d store.Display) string {
 	loc := time.UTC
 	if l, err := time.LoadLocation(h.Timezone); err == nil {

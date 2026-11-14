@@ -94,14 +94,20 @@ func TestFixedThemesIgnoreTheSun(t *testing.T) {
 	}
 }
 
-// 5.15: quiet mode wins over every theme.
-func TestQuietModeShowsTheNightPageWhateverTheTheme(t *testing.T) {
-	noon := time.Date(2026, 6, 21, 12, 0, 0, 0, berlin)
-	for _, s := range []theme.Setting{theme.Light, theme.Dark, theme.Auto} {
-		in := theme.Input{Setting: s, Now: noon, Lat: lat, Lon: lon, Quiet: true}
-		if got := theme.Resolve(in); got != theme.Night {
-			t.Errorf("quiet with %s = %s, want night", s, got)
-		}
+// Far north the sunrise switch (sunrise minus 180 minutes) can fall on the
+// evening before: tomorrow's switches count too.
+func TestAutomaticSeesTomorrowsEarlySunriseSwitch(t *testing.T) {
+	utc := time.UTC
+	rvk := func(now time.Time) theme.Input {
+		return theme.Input{Setting: theme.Auto, SunriseOffset: -180, SunsetOffset: -180, Now: now, Lat: 64.15, Lon: -21.94}
+	}
+	tom := sun.On(time.Date(2026, 6, 22, 12, 0, 0, 0, utc), 64.15, -21.94)
+	sw := tom.Rise.Add(-180 * time.Minute)
+	if sw.Day() != 21 {
+		t.Skipf("switch falls on %v, not the evening before", sw)
+	}
+	if got := theme.Resolve(rvk(sw.Add(time.Minute))); got != theme.Light {
+		t.Errorf("after tomorrow's early light switch = %s, want light", got)
 	}
 }
 

@@ -165,7 +165,7 @@ func TestUnreachableFeedKeepsEventsAndLogs(t *testing.T) {
 		t.Fatalf("events after failure = %v", got)
 	}
 	log, _ := fx.db.SyncLog(fx.h.ID, 10)
-	if len(log) != 1 || log[0].Kind != "failure" || log[0].Message != "dial tcp: connection refused" {
+	if len(log) != 1 || log[0].Kind != "failure" || log[0].Message.Key != "sync.fail.fetch" || log[0].Message.Params["detail"] != "dial tcp: connection refused" {
 		t.Fatalf("log = %+v", log)
 	}
 	if s := fx.state(t); s.Sync.Failures != 1 || !s.Sync.NextAttempt.Equal(fx.clock.Add(5*time.Minute)) {
@@ -179,7 +179,7 @@ func TestGarbageFeedCountsAsFailure(t *testing.T) {
 	if err := fx.svc.Sync(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
 		t.Fatal("want an error")
 	}
-	if log, _ := fx.db.SyncLog(fx.h.ID, 10); len(log) != 1 || log[0].Kind != "failure" {
+	if log, _ := fx.db.SyncLog(fx.h.ID, 10); len(log) != 1 || log[0].Kind != "failure" || log[0].Message.Key != "sync.fail.not_ics" {
 		t.Fatalf("log = %+v", log)
 	}
 }
@@ -194,7 +194,7 @@ func TestUnknownTimeZoneIsNotedOnceInTheLog(t *testing.T) {
 		fx.clock = fx.clock.Add(time.Hour)
 	}
 	log, _ := fx.db.SyncLog(fx.h.ID, 10)
-	if len(log) != 1 || log[0].Kind != "note" {
+	if len(log) != 1 || log[0].Kind != "note" || log[0].Message.Key != "sync.note.unknown_zone" || log[0].Message.Params["zone"] != "Mars/Olympus" {
 		t.Fatalf("log = %+v", log)
 	}
 }

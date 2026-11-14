@@ -140,7 +140,7 @@ func TestFailedSyncKeepsEventsAndIsInTheSyncLog(t *testing.T) {
 	c.b.feeds.set(schoolFeed, "", errors.New("dial tcp: no route to host"))
 	c.b.now = c.b.now.Add(time.Hour)
 	status, body, _ := c.call(http.MethodPost, "/calendars/"+id+"/sync", nil)
-	if status != http.StatusOK || body["sync"].(map[string]any)["last_error"] != "dial tcp: no route to host" {
+	if status != http.StatusOK || body["sync"].(map[string]any)["last_error"] != "Der Kalender konnte nicht abgerufen werden: dial tcp: no route to host" {
 		t.Fatalf("sync now = %d %v", status, body)
 	}
 	if got := len(c.occurrences(t, november)); got != 1 {
@@ -151,7 +151,7 @@ func TestFailedSyncKeepsEventsAndIsInTheSyncLog(t *testing.T) {
 		t.Fatalf("sync log = %d %v", status, log)
 	}
 	e := log[0].(map[string]any)
-	if e["kind"] != "failure" || e["message"] != "dial tcp: no route to host" || e["calendar_name"] != "School" || e["calendar_id"] != id {
+	if e["kind"] != "failure" || e["message"] != "Der Kalender konnte nicht abgerufen werden: dial tcp: no route to host" || e["calendar_name"] != "School" || e["calendar_id"] != id {
 		t.Fatalf("entry = %v", e)
 	}
 }
@@ -294,8 +294,11 @@ func TestWebAddsAndListsICSCalendars(t *testing.T) {
 	if r := b.post("/calendars/"+cal[0].ID+"/sync", url.Values{}); r.status != http.StatusSeeOther {
 		t.Fatalf("sync now = %d", r.status)
 	}
-	if page := b.get("/calendars"); !strings.Contains(page.body, "timeout") {
+	if page := b.get("/calendars"); !strings.Contains(page.body, "Der Kalender konnte nicht abgerufen werden: timeout") {
 		t.Fatalf("log not on page:\n%s", page.body)
+	}
+	if page := b.do(http.MethodGet, "/calendars", nil, map[string]string{"Accept-Language": "en"}); !strings.Contains(page.body, "The calendar could not be fetched: timeout") {
+		t.Fatalf("log not in English on page:\n%s", page.body)
 	}
 
 	// A bad address is explained, not stored.
@@ -319,5 +322,25 @@ func TestCalendarsPageNeedsASignedInParent(t *testing.T) {
 	}
 	if r := b.post("/calendars", url.Values{"name": {"x"}, "url": {schoolFeed}}); r.status != http.StatusSeeOther || r.location != "/login" {
 		t.Fatalf("signed out post = %d %q", r.status, r.location)
+	}
+}
+
+func TestUntitledFeedEventsGetALocalisedPlaceholder(t *testing.T) {
+	c := signedInAPI(t)
+	c.b.feeds.set(schoolFeed, feedOf("UID:a\r\nDTSTART:20261120T170000"), nil)
+	c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
+	if got := occTitles(c.occurrences(t, november)); len(got) != 1 || !strings.HasSuffix(got[0], "(ohne Titel)") {
+		t.Fatalf("titles = %v", got)
+	}
+}
+
+func TestICSColorMustBeHexRGB(t *testing.T) {
+	c := signedInAPI(t)
+	c.b.feeds.set(schoolFeed, feedOf(), nil)
+	for _, bad := range []string{"red", "#12345", "#GGGGGG", "javascript:1"} {
+		status, _, _ := c.call(http.MethodPost, "/calendars", map[string]any{"kind": "ics", "name": "School", "url": schoolFeed, "color": bad})
+		if status != http.StatusUnprocessableEntity {
+			t.Errorf("colour %q = %d, want 422", bad, status)
+		}
 	}
 }

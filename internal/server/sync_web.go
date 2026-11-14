@@ -99,7 +99,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	var cals []calendarView
 	for _, c := range synced {
-		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: c.Sync.LastError,
+		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
 			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes}
 		for _, id := range append(append([]string{}, c.Audience.People...), c.Audience.Groups...) {
 			if v.Audience != "" {
@@ -116,7 +116,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	var log []logView
 	for _, e := range entries {
-		log = append(log, logView{at(e.At), e.CalendarName, e.Kind, e.Message})
+		log = append(log, logView{at(e.At), e.CalendarName, e.Kind, s.say(r, e.Message)})
 	}
 	data := map[string]any{
 		"Person": p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,

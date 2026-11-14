@@ -77,5 +77,6 @@
   "sync.fail.too_large": "The calendar feed is larger than 16 MiB.",
   "sync.fail.not_ics": "The address does not return a calendar: {detail}",
   "sync.fail.store": "The events could not be stored: {detail}",
-  "event.untitled": "(no title)"
+  "event.untitled": "(no title)",
+  "calendars.error.color": "Please choose a colour."
 }

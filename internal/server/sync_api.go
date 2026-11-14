@@ -4,11 +4,13 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"regexp"
 	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -19,6 +21,8 @@ const (
 	maxSyncMinutes     = 24 * 60
 	defaultColor       = "#2F5E7A"
 )
+
+var hexColor = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
 
 type syncJSON struct {
 	State           calsync.State `json:"state"`
@@ -43,7 +47,25 @@ type audienceJSON struct {
 	Groups []string `json:"groups"`
 }
 
-func (s *server) syncState(c store.SyncedCalendar, loc *time.Location) *syncJSON {
+// langOf is the response language for a request (Accept-Language, else German).
+func (s *server) langOf(r *http.Request) string {
+	return s.i18n.Match(r.Header.Get("Accept-Language"))
+}
+
+// say translates a stored message for the request's language.
+func (s *server) say(r *http.Request, m i18n.Message) string {
+	return s.i18n.Format(s.langOf(r), m)
+}
+
+// title shows an event title; untitled feed events get a localised placeholder.
+func (s *server) title(r *http.Request, t string) string {
+	if strings.TrimSpace(t) == "" {
+		return s.i18n.T(s.langOf(r), "event.untitled")
+	}
+	return t
+}
+
+func (s *server) syncState(r *http.Request, c store.SyncedCalendar, loc *time.Location) *syncJSON {
 	ts := func(t time.Time) *string {
 		if t.IsZero() {
 			return nil
@@ -56,7 +78,7 @@ func (s *server) syncState(c store.SyncedCalendar, loc *time.Location) *syncJSON
 		IntervalMinutes: c.Sync.IntervalMinutes,
 		LastAttemptAt:   ts(c.Sync.LastAttempt),
 		LastSuccessAt:   ts(c.Sync.LastSuccess),
-		LastError:       c.Sync.LastError,
+		LastError:       s.say(r, c.Sync.LastError),
 	}
 }
 
@@ -65,7 +87,7 @@ func plainCalendarJSON(c store.Calendar) calendarJSON {
 		Audience: audienceJSON{nonNil(c.Audience.People), nonNil(c.Audience.Groups)}}
 }
 
-func (s *server) apiListCalendars(w http.ResponseWriter, _ *http.Request, p principal) {
+func (s *server) apiListCalendars(w http.ResponseWriter, r *http.Request, p principal) {
 	if _, err := s.db.FamilyCalendar(p.household.ID); err != nil {
 		s.fail(w, "family calendar", err)
 		return
@@ -82,7 +104,7 @@ func (s *server) apiListCalendars(w http.ResponseWriter, _ *http.Request, p prin
 	}
 	state := map[string]*syncJSON{}
 	for _, c := range synced {
-		state[c.ID] = s.syncState(c, p.location())
+		state[c.ID] = s.syncState(r, c, p.location())
 	}
 	out := make([]calendarJSON, 0, len(cals))
 	for _, c := range cals {
@@ -103,7 +125,7 @@ type newCalendarInput struct {
 }
 
 // inputError is something the person adding a calendar can fix. Field names
-// the form field ("name", "url", "interval", "audience", "kind").
+// the form field ("name", "url", "interval", "audience", "color", "kind").
 type inputError struct{ Field, Msg string }
 
 func (e *inputError) Error() string { return e.Msg }
@@ -142,6 +164,9 @@ func (s *server) addICS(r *http.Request, p principal, in newCalendarInput) (stor
 	color := strings.TrimSpace(in.Color)
 	if color == "" {
 		color = defaultColor
+	}
+	if !hexColor.MatchString(color) {
+		return store.SyncedCalendar{}, &inputError{"color", "color must be #RRGGBB"}
 	}
 	cal, err := s.db.CreateICSCalendar(p.household.ID, store.NewICS{Name: in.Name, URL: address, Color: color, Audience: aud, IntervalMinutes: interval, Now: s.now()})
 	if err != nil {
@@ -194,7 +219,7 @@ func (s *server) apiAddCalendar(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	j := plainCalendarJSON(cal.Calendar)
-	j.Sync = s.syncState(cal, p.location())
+	j.Sync = s.syncState(r, cal, p.location())
 	writeJSON(w, http.StatusCreated, j)
 }
 
@@ -210,7 +235,7 @@ func (s *server) apiSyncCalendar(w http.ResponseWriter, r *http.Request, p princ
 		return
 	}
 	j := plainCalendarJSON(cal.Calendar)
-	j.Sync = s.syncState(cal, p.location())
+	j.Sync = s.syncState(r, cal, p.location())
 	writeJSON(w, http.StatusOK, j)
 }
 
@@ -230,7 +255,7 @@ type syncLogJSON struct {
 	Message      string `json:"message"`
 }
 
-func (s *server) apiSyncLog(w http.ResponseWriter, _ *http.Request, p principal) {
+func (s *server) apiSyncLog(w http.ResponseWriter, r *http.Request, p principal) {
 	entries, err := s.db.SyncLog(p.household.ID, 200)
 	if err != nil {
 		s.fail(w, "sync log", err)
@@ -238,7 +263,7 @@ func (s *server) apiSyncLog(w http.ResponseWriter, _ *http.Request, p principal)
 	}
 	out := make([]syncLogJSON, 0, len(entries))
 	for _, e := range entries {
-		out = append(out, syncLogJSON{e.ID, e.CalendarID, e.CalendarName, e.At.In(p.location()).Format(time.RFC3339), e.Kind, e.Message})
+		out = append(out, syncLogJSON{e.ID, e.CalendarID, e.CalendarName, e.At.In(p.location()).Format(time.RFC3339), e.Kind, s.say(r, e.Message)})
 	}
 	writeJSON(w, http.StatusOK, out)
 }

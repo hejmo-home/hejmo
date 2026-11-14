@@ -202,16 +202,19 @@ func TestNoTitleCancelledAndBrokenEvents(t *testing.T) {
 	))
 	var got []string
 	for _, it := range res.Items {
-		if it.Event.Title == "" {
-			t.Errorf("empty title for %s", it.Key)
+		if it.Key == "1" && it.Event.Title != "" {
+			t.Errorf("title of the untitled event = %q, want empty (the placeholder is localised when shown)", it.Event.Title)
 		}
 		got = append(got, it.Key)
 	}
 	if strings.Join(got, ",") != "1,5" {
 		t.Fatalf("kept %v", got)
 	}
-	if len(res.Notes) != 2 {
+	if len(res.Notes) != 2 || res.Notes[0].Key != "sync.note.no_start" || res.Notes[1].Key != "sync.note.bad_rrule" {
 		t.Fatalf("notes = %v, want one each for the event without start and the bad rule", res.Notes)
+	}
+	if res.Notes[0].Params["label"] != "No start" || res.Notes[1].Params["detail"] == "" {
+		t.Errorf("note params = %v", res.Notes)
 	}
 }
 

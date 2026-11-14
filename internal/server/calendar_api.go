@@ -57,8 +57,8 @@ type eventJSON struct {
 	Groups      []string `json:"groups"`
 }
 
-func eventToJSON(e calendar.Event, loc *time.Location) eventJSON {
-	return eventJSON{e.ID, e.CalendarID, e.Title, e.Description, e.Location, e.AllDay,
+func (s *server) eventToJSON(r *http.Request, e calendar.Event, loc *time.Location) eventJSON {
+	return eventJSON{e.ID, e.CalendarID, s.title(r, e.Title), e.Description, e.Location, e.AllDay,
 		formatTime(e.Start, e.AllDay, loc), formatTime(e.End, e.AllDay, loc), e.RRule, nonNil(e.People), nonNil(e.Groups)}
 }
 
@@ -107,7 +107,7 @@ func (s *server) apiListEvents(w http.ResponseWriter, r *http.Request, p princip
 		if o.SeriesID != "" {
 			rec = formatTime(o.RecurrenceID, false, loc)
 		}
-		out = append(out, occurrenceJSON{o.EventID, o.SeriesID, rec, o.CalendarID, o.Title, o.Description, o.Location, o.AllDay,
+		out = append(out, occurrenceJSON{o.EventID, o.SeriesID, rec, o.CalendarID, s.title(r, o.Title), o.Description, o.Location, o.AllDay,
 			formatTime(o.Start, o.AllDay, loc), formatTime(o.End, o.AllDay, loc), nonNil(o.People), nonNil(o.Groups)})
 	}
 	writeJSON(w, http.StatusOK, out)
@@ -195,7 +195,7 @@ func (s *server) apiCreateEvent(w http.ResponseWriter, r *http.Request, p princi
 	if s.storeError(w, "create event", err) {
 		return
 	}
-	writeJSON(w, http.StatusCreated, eventToJSON(created, loc))
+	writeJSON(w, http.StatusCreated, s.eventToJSON(r, created, loc))
 }
 
 // seriesTarget resolves an event id plus ?occurrence= and ?scope=.
@@ -318,7 +318,7 @@ func (s *server) apiSearch(w http.ResponseWriter, r *http.Request, p principal) 
 	}
 	out := make([]eventJSON, 0, len(events))
 	for _, e := range events {
-		out = append(out, eventToJSON(e, p.location()))
+		out = append(out, s.eventToJSON(r, e, p.location()))
 	}
 	writeJSON(w, http.StatusOK, out)
 }

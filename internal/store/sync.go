@@ -2,12 +2,14 @@ package store
 
 import (
 	"database/sql"
+	"encoding/json"
 	"errors"
 	"fmt"
 	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 )
 
 // syncLogKeep is how long sync log entries stay (ADR 0012).
@@ -21,8 +23,8 @@ type SyncState struct {
 	LastAttempt     time.Time
 	LastSuccess     time.Time
 	NextAttempt     time.Time
-	Failures        int // consecutive failures
-	LastError       string
+	Failures        int          // consecutive failures
+	LastError       i18n.Message // empty after a success
 }
 
 // SyncedCalendar is a calendar fed from outside through a calendar connection.
@@ -54,7 +56,7 @@ type SyncLogEntry struct {
 	CalendarName string
 	At           time.Time
 	Kind         string // failure, conflict, note
-	Message      string
+	Message      i18n.Message
 }
 
 func stamp(t time.Time) string { return t.UTC().Format(time.RFC3339) }
@@ -104,7 +106,7 @@ func (db *DB) CreateICSCalendar(householdID string, in NewICS) (SyncedCalendar, 
 }
 
 const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, n.url,
-	s.interval_minutes, s.started_at, s.last_attempt_at, s.last_success_at, s.next_attempt_at, s.failures, s.last_error
+	s.interval_minutes, s.started_at, s.last_attempt_at, s.last_success_at, s.next_attempt_at, s.failures, s.last_error_key, s.last_error_params
 	FROM calendars c JOIN calendar_connections n ON n.id = c.connection_id JOIN calendar_sync s ON s.calendar_id = c.id`
 
 // SyncedCalendar returns one synced calendar of a household.
@@ -139,11 +141,13 @@ func (db *DB) syncedCalendars(query string, args ...any) ([]SyncedCalendar, erro
 	for rows.Next() {
 		var c SyncedCalendar
 		var started, attempt, success, next sql.NullString
+		var errKey, errParams string
 		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.URL,
-			&c.Sync.IntervalMinutes, &started, &attempt, &success, &next, &c.Sync.Failures, &c.Sync.LastError); err != nil {
+			&c.Sync.IntervalMinutes, &started, &attempt, &success, &next, &c.Sync.Failures, &errKey, &errParams); err != nil {
 			rows.Close()
 			return nil, err
 		}
+		c.Sync.LastError = unpackMessage(errKey, errParams)
 		c.Sync.StartedAt, c.Sync.LastAttempt, c.Sync.LastSuccess, c.Sync.NextAttempt = parseStamp(started), parseStamp(attempt), parseStamp(success), parseStamp(next)
 		out = append(out, c)
 	}
@@ -169,7 +173,7 @@ func (db *DB) DeleteSyncedCalendar(householdID, calendarID string) error {
 // CompleteSync stores a successful sync: the feed's events replace the
 // calendar's synced events (ids stay stable per key), notes go to the log
 // and the failure state is cleared. All or nothing.
-func (db *DB) CompleteSync(householdID, calendarID string, items []SyncItem, notes []string, at, next time.Time) error {
+func (db *DB) CompleteSync(householdID, calendarID string, items []SyncItem, notes []i18n.Message, at, next time.Time) error {
 	tx, err := db.sql.Begin()
 	if err != nil {
 		return err
@@ -178,13 +182,14 @@ func (db *DB) CompleteSync(householdID, calendarID string, items []SyncItem, not
 	if err := replaceSyncedEvents(tx, householdID, calendarID, items); err != nil {
 		return err
 	}
-	if err := expectOne(tx.Exec(`UPDATE calendar_sync SET last_attempt_at = ?, last_success_at = ?, next_attempt_at = ?, failures = 0, last_error = ''
+	if err := expectOne(tx.Exec(`UPDATE calendar_sync SET last_attempt_at = ?, last_success_at = ?, next_attempt_at = ?, failures = 0, last_error_key = '', last_error_params = '{}'
 		WHERE calendar_id = ? AND calendar_id IN (SELECT id FROM calendars WHERE household_id = ?)`, stamp(at), stamp(at), stamp(next), calendarID, householdID)); err != nil {
 		return err
 	}
 	for _, n := range notes {
 		var same int
-		if err := tx.QueryRow(`SELECT COUNT(*) FROM sync_log WHERE calendar_id = ? AND kind = 'note' AND message = ?`, calendarID, n).Scan(&same); err != nil {
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM sync_log WHERE calendar_id = ? AND kind = 'note' AND message_key = ? AND params = ?`,
+			calendarID, n.Key, packParams(n)).Scan(&same); err != nil {
 			return err
 		}
 		if same == 0 {
@@ -200,14 +205,14 @@ func (db *DB) CompleteSync(householdID, calendarID string, items []SyncItem, not
 }
 
 // FailSync records a failed sync. The calendar's events stay as they were.
-func (db *DB) FailSync(householdID, calendarID, message string, at, next time.Time) error {
+func (db *DB) FailSync(householdID, calendarID string, message i18n.Message, at, next time.Time) error {
 	tx, err := db.sql.Begin()
 	if err != nil {
 		return err
 	}
 	defer tx.Rollback()
-	if err := expectOne(tx.Exec(`UPDATE calendar_sync SET last_attempt_at = ?, next_attempt_at = ?, failures = failures + 1, last_error = ?
-		WHERE calendar_id = ? AND calendar_id IN (SELECT id FROM calendars WHERE household_id = ?)`, stamp(at), stamp(next), message, calendarID, householdID)); err != nil {
+	if err := expectOne(tx.Exec(`UPDATE calendar_sync SET last_attempt_at = ?, next_attempt_at = ?, failures = failures + 1, last_error_key = ?, last_error_params = ?
+		WHERE calendar_id = ? AND calendar_id IN (SELECT id FROM calendars WHERE household_id = ?)`, stamp(at), stamp(next), message.Key, packParams(message), calendarID, householdID)); err != nil {
 		return err
 	}
 	if err := writeLog(tx, householdID, calendarID, at, "failure", message); err != nil {
@@ -219,10 +224,28 @@ func (db *DB) FailSync(householdID, calendarID, message string, at, next time.Ti
 	return tx.Commit()
 }
 
-func writeLog(tx *sql.Tx, householdID, calendarID string, at time.Time, kind, message string) error {
-	_, err := tx.Exec(`INSERT INTO sync_log (id, household_id, calendar_id, at, kind, message) VALUES (?, ?, ?, ?, ?, ?)`,
-		newID(), householdID, calendarID, stamp(at), kind, message)
+func writeLog(tx *sql.Tx, householdID, calendarID string, at time.Time, kind string, message i18n.Message) error {
+	_, err := tx.Exec(`INSERT INTO sync_log (id, household_id, calendar_id, at, kind, message_key, params) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		newID(), householdID, calendarID, stamp(at), kind, message.Key, packParams(message))
 	return err
+}
+
+// packParams stores a message's parameters as JSON (map keys come out sorted,
+// so equal messages give equal text).
+func packParams(m i18n.Message) string {
+	if len(m.Params) == 0 {
+		return "{}"
+	}
+	b, _ := json.Marshal(m.Params)
+	return string(b)
+}
+
+func unpackMessage(key, params string) i18n.Message {
+	m := i18n.Message{Key: key}
+	if key != "" && params != "" && params != "{}" {
+		_ = json.Unmarshal([]byte(params), &m.Params)
+	}
+	return m
 }
 
 func pruneLog(tx *sql.Tx, now time.Time) error {
@@ -232,7 +255,7 @@ func pruneLog(tx *sql.Tx, now time.Time) error {
 
 // SyncLog returns the newest entries of a household's sync log first.
 func (db *DB) SyncLog(householdID string, limit int) ([]SyncLogEntry, error) {
-	rows, err := db.sql.Query(`SELECT l.id, l.calendar_id, c.name, l.at, l.kind, l.message FROM sync_log l
+	rows, err := db.sql.Query(`SELECT l.id, l.calendar_id, c.name, l.at, l.kind, l.message_key, l.params FROM sync_log l
 		JOIN calendars c ON c.id = l.calendar_id WHERE l.household_id = ? ORDER BY l.at DESC, l.rowid DESC LIMIT ?`, householdID, limit)
 	if err != nil {
 		return nil, err
@@ -241,10 +264,11 @@ func (db *DB) SyncLog(householdID string, limit int) ([]SyncLogEntry, error) {
 	var out []SyncLogEntry
 	for rows.Next() {
 		var e SyncLogEntry
-		var at string
-		if err := rows.Scan(&e.ID, &e.CalendarID, &e.CalendarName, &at, &e.Kind, &e.Message); err != nil {
+		var at, key, params string
+		if err := rows.Scan(&e.ID, &e.CalendarID, &e.CalendarName, &at, &e.Kind, &key, &params); err != nil {
 			return nil, err
 		}
+		e.Message = unpackMessage(key, params)
 		e.At, _ = time.Parse(time.RFC3339, at)
 		out = append(out, e)
 	}
@@ -300,9 +324,9 @@ func replaceSyncedEvents(tx *sql.Tx, householdID, calendarID string, items []Syn
 				}
 			}
 			if _, had := existing[it.Key]; had {
-				err = updateEvent(tx, householdID, e)
+				err = updateEventRow(tx, householdID, e)
 			} else {
-				if err = insertEvent(tx, householdID, e); err == nil {
+				if err = insertEventRow(tx, householdID, e); err == nil {
 					_, err = tx.Exec(`UPDATE events SET remote_key = ? WHERE id = ?`, it.Key, e.ID)
 				}
 			}

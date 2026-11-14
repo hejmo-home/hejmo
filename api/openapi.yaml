@@ -404,7 +404,7 @@ components:
         interval_minutes: { type: integer, example: 60 }
         last_attempt_at: { type: string, format: date-time, nullable: true }
         last_success_at: { type: string, format: date-time, nullable: true }
-        last_error: { type: string, description: "Empty after a successful sync" }
+        last_error: { type: string, description: "Empty after a successful sync. Translated to the language of the request (Accept-Language, default German)" }
     NewCalendar:
       type: object
       required: [kind, name, url]
@@ -412,7 +412,7 @@ components:
         kind: { type: string, enum: [ics], description: "Only ICS subscriptions so far" }
         name: { type: string }
         url: { type: string, example: "webcal://example.org/school.ics" }
-        color: { type: string, example: "#B4583A", description: "Defaults to the accent colour" }
+        color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422. Defaults to the accent colour" }
         audience: { $ref: "#/components/schemas/Audience" }
         sync_interval_minutes: { type: integer, default: 60, description: "Between 5 and 1440 minutes, else 422" }
     SyncLogEntry:
@@ -424,7 +424,7 @@ components:
         calendar_name: { type: string }
         at: { type: string, format: date-time }
         kind: { type: string, enum: [failure, conflict, note] }
-        message: { type: string }
+        message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
     Event:
       type: object
       description: An event or series master. Times are RFC 3339 in the household's time zone; all-day events use dates with an exclusive end.

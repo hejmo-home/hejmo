@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -57,6 +58,24 @@ func Backoff(interval time.Duration, failures int) time.Duration {
 	return min(d, limit)
 }
 
+// Failure is an error with a translatable message for the sync log. Errors
+// that are not a Failure are shown as their raw text inside a generic message.
+type Failure struct{ Msg i18n.Message }
+
+func (f *Failure) Error() string { return fmt.Sprintf("%s %v", f.Msg.Key, f.Msg.Params) }
+
+func failure(key string, kv ...string) error { return &Failure{i18n.Msg(key, kv...)} }
+
+// MessageOf returns the translatable message of err: its own if err is a
+// Failure, else key "sync.fail.fetch" with the error text as detail.
+func MessageOf(err error) i18n.Message {
+	var f *Failure
+	if errors.As(err, &f) {
+		return f.Msg
+	}
+	return i18n.Msg("sync.fail.fetch", "detail", err.Error())
+}
+
 // Fetcher gets the bytes of a feed.
 type Fetcher interface {
 	Fetch(ctx context.Context, url string) ([]byte, error)
@@ -87,14 +106,14 @@ func (f HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusOK {
-		return nil, fmt.Errorf("the calendar server answered %s", res.Status)
+		return nil, failure("sync.fail.status", "status", res.Status)
 	}
 	body, err := io.ReadAll(io.LimitReader(res.Body, maxFeedBytes+1))
 	if err != nil {
 		return nil, err
 	}
 	if len(body) > maxFeedBytes {
-		return nil, errors.New("the calendar feed is larger than 16 MiB")
+		return nil, failure("sync.fail.too_large")
 	}
 	return body, nil
 }
@@ -105,7 +124,12 @@ type Service struct {
 	fetch  Fetcher
 	now    func() time.Time
 	logger *slog.Logger
-	mu     sync.Mutex // one sync at a time
+	locks  sync.Map // calendar id -> *sync.Mutex: one sync per calendar at a time
+}
+
+func (s *Service) lock(calendarID string) *sync.Mutex {
+	m, _ := s.locks.LoadOrStore(calendarID, &sync.Mutex{})
+	return m.(*sync.Mutex)
 }
 
 // New returns a Service. A nil fetcher uses HTTP, a nil clock time.Now.
@@ -125,8 +149,9 @@ func (s *Service) SetLogger(l *slog.Logger) { s.logger = l }
 // Sync syncs one calendar now. A failure is recorded in the sync log and
 // returned; the calendar's events stay as they were.
 func (s *Service) Sync(ctx context.Context, householdID, calendarID string) error {
-	s.mu.Lock()
-	defer s.mu.Unlock()
+	mu := s.lock(calendarID)
+	mu.Lock()
+	defer mu.Unlock()
 	cal, err := s.db.SyncedCalendar(householdID, calendarID)
 	if err != nil {
 		return err
@@ -138,20 +163,20 @@ func (s *Service) Sync(ctx context.Context, householdID, calendarID string) erro
 	at := s.now()
 	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
 
-	fail := func(cause error) error {
+	fail := func(msg i18n.Message, cause error) error {
 		next := at.Add(Backoff(interval, cal.Sync.Failures+1))
-		if err := s.db.FailSync(householdID, calendarID, cause.Error(), at, next); err != nil {
+		if err := s.db.FailSync(householdID, calendarID, msg, at, next); err != nil {
 			return errors.Join(cause, err)
 		}
 		return cause
 	}
 	feedURL, err := icsfeed.NormalizeURL(cal.URL)
 	if err != nil {
-		return fail(err)
+		return fail(i18n.Msg("sync.fail.address", "detail", err.Error()), err)
 	}
 	body, err := s.fetch.Fetch(ctx, feedURL)
 	if err != nil {
-		return fail(err)
+		return fail(MessageOf(err), err)
 	}
 	zone, err := time.LoadLocation(h.Timezone)
 	if err != nil {
@@ -159,14 +184,14 @@ func (s *Service) Sync(ctx context.Context, householdID, calendarID string) erro
 	}
 	res, err := icsfeed.Parse(body, icsfeed.Options{Zone: zone, Now: at})
 	if err != nil {
-		return fail(err)
+		return fail(i18n.Msg("sync.fail.not_ics", "detail", err.Error()), err)
 	}
 	items := make([]store.SyncItem, len(res.Items))
 	for i, it := range res.Items {
 		items[i] = store.SyncItem{Key: it.Key, SeriesKey: it.SeriesKey, Event: it.Event}
 	}
 	if err := s.db.CompleteSync(householdID, calendarID, items, res.Notes, at, at.Add(interval)); err != nil {
-		return fail(fmt.Errorf("could not store the events: %w", err))
+		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), fmt.Errorf("could not store the events: %w", err))
 	}
 	return nil
 }

@@ -28,7 +28,8 @@ CREATE TABLE calendar_sync (
     last_success_at  TEXT,
     next_attempt_at  TEXT NOT NULL,
     failures         INTEGER NOT NULL DEFAULT 0, -- consecutive failures, drives backoff
-    last_error       TEXT NOT NULL DEFAULT ''
+    last_error_key    TEXT NOT NULL DEFAULT '', -- i18n message key, empty after a success
+    last_error_params TEXT NOT NULL DEFAULT '{}' -- JSON parameters of the message
 );
 
 -- Failures, conflicts and remarks of the synchronisation, readable by parents.
@@ -38,6 +39,7 @@ CREATE TABLE sync_log (
     calendar_id  TEXT NOT NULL REFERENCES calendars(id) ON DELETE CASCADE,
     at           TEXT NOT NULL,
     kind         TEXT NOT NULL CHECK (kind IN ('failure', 'conflict', 'note')),
-    message      TEXT NOT NULL
+    message_key  TEXT NOT NULL,                -- i18n key, translated when shown
+    params       TEXT NOT NULL DEFAULT '{}'    -- JSON parameters of the message
 );
 CREATE INDEX sync_log_household ON sync_log (household_id, at);

@@ -196,6 +196,12 @@ func validateEvent(e calendar.Event) error {
 	if strings.TrimSpace(e.Title) == "" {
 		return fmt.Errorf("%w: event title required", ErrInvalid)
 	}
+	return validateTimes(e)
+}
+
+// validateTimes is validateEvent without the title, for synced events: a feed
+// may hold untitled events, and the placeholder is localised when shown.
+func validateTimes(e calendar.Event) error {
 	if !e.End.After(e.Start) {
 		return fmt.Errorf("%w: event must end after it starts", ErrInvalid)
 	}
@@ -219,6 +225,13 @@ func insertEvent(tx *sql.Tx, householdID string, e calendar.Event) error {
 	if err := validateEvent(e); err != nil {
 		return err
 	}
+	return insertEventRow(tx, householdID, e)
+}
+
+func insertEventRow(tx *sql.Tx, householdID string, e calendar.Event) error {
+	if err := validateTimes(e); err != nil {
+		return err
+	}
 	start, end, tz, recID, seriesID := eventColumns(e)
 	ts := now()
 	if _, err := tx.Exec(`INSERT INTO events (id, household_id, calendar_id, title, description, location, all_day,
@@ -237,6 +250,13 @@ func insertEvent(tx *sql.Tx, householdID string, e calendar.Event) error {
 
 func updateEvent(tx *sql.Tx, householdID string, e calendar.Event) error {
 	if err := validateEvent(e); err != nil {
+		return err
+	}
+	return updateEventRow(tx, householdID, e)
+}
+
+func updateEventRow(tx *sql.Tx, householdID string, e calendar.Event) error {
+	if err := validateTimes(e); err != nil {
 		return err
 	}
 	start, end, tz, recID, seriesID := eventColumns(e)

@@ -21,6 +21,7 @@ import (
 	"github.com/teambition/rrule-go"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 )
 
 // Options configures a parse.
@@ -40,11 +41,11 @@ type Item struct {
 	Event     calendar.Event
 }
 
-// Result is what a feed holds. Notes are readable remarks for the sync log
-// (unknown time zones, events that could not be read).
+// Result is what a feed holds. Notes are remarks for the sync log (unknown
+// time zones, events that could not be read) as translatable messages.
 type Result struct {
 	Items []Item
-	Notes []string
+	Notes []i18n.Message
 }
 
 // NormalizeURL accepts http, https, webcal and webcals addresses and returns
@@ -91,7 +92,7 @@ type parser struct {
 	masters         map[string]int // key -> index in items
 	cancels         []cancel
 	cancelledSeries map[string]bool // UIDs of cancelled masters
-	notes           []string
+	notes           []i18n.Message
 	zones           map[string]bool // unknown zones already noted
 }
 
@@ -100,8 +101,8 @@ type cancel struct {
 	at  time.Time
 }
 
-func (p *parser) note(format string, args ...any) {
-	p.notes = append(p.notes, fmt.Sprintf(format, args...))
+func (p *parser) note(key string, kv ...string) {
+	p.notes = append(p.notes, i18n.Msg(key, kv...))
 }
 
 func (p *parser) add(c *ical.Component) {
@@ -115,12 +116,12 @@ func (p *parser) add(c *ical.Component) {
 
 	startProp := c.Props.Get(ical.PropDateTimeStart)
 	if startProp == nil {
-		p.note("Skipped event %q: it has no start time.", label)
+		p.note("sync.note.no_start", "label", label)
 		return
 	}
 	start, allDay, err := p.parseTime(startProp)
 	if err != nil {
-		p.note("Skipped event %q: unreadable start time (%v).", label, err)
+		p.note("sync.note.bad_start", "label", label, "detail", err.Error())
 		return
 	}
 	var recID time.Time
@@ -128,7 +129,7 @@ func (p *parser) add(c *ical.Component) {
 	if rp := c.Props.Get(ical.PropRecurrenceID); rp != nil {
 		recID, _, err = p.parseTime(rp)
 		if err != nil {
-			p.note("Skipped event %q: unreadable recurrence id (%v).", label, err)
+			p.note("sync.note.bad_recurrence_id", "label", label, "detail", err.Error())
 			return
 		}
 		isOverride = true
@@ -153,9 +154,7 @@ func (p *parser) add(c *ical.Component) {
 		Location:    text(c, ical.PropLocation),
 		AllDay:      allDay, Start: start, End: end,
 	}
-	if e.Title == "" {
-		e.Title = "(no title)"
-	}
+	// An empty title stays empty: the placeholder is localised when shown.
 	item := Item{Key: uid, Event: e}
 	if isOverride {
 		item.Key = uid + "#" + recID.UTC().Format(time.RFC3339)
@@ -164,7 +163,7 @@ func (p *parser) add(c *ical.Component) {
 		item.Event.RecurrenceID = recID
 	} else if rule := propValue(c, ical.PropRecurrenceRule); rule != "" {
 		if err := calendar.ValidateRRule(rule); err != nil {
-			p.note("Skipped event %q: unreadable repeat rule (%v).", label, err)
+			p.note("sync.note.bad_rrule", "label", label, "detail", err.Error())
 			return
 		}
 		item.Event.RRule = rule
@@ -288,7 +287,7 @@ func (p *parser) zone(tzid string) *time.Location {
 			p.zones = map[string]bool{}
 		}
 		p.zones[tzid] = true
-		p.note("Unknown time zone %q: used the box's time zone instead.", tzid)
+		p.note("sync.note.unknown_zone", "zone", tzid)
 	}
 	return p.opts.Zone
 }

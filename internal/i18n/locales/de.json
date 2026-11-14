@@ -77,5 +77,6 @@
   "sync.fail.too_large": "Der Kalender ist größer als 16 MiB.",
   "sync.fail.not_ics": "Die Adresse liefert keinen Kalender: {detail}",
   "sync.fail.store": "Die Termine konnten nicht gespeichert werden: {detail}",
-  "event.untitled": "(ohne Titel)"
+  "event.untitled": "(ohne Titel)",
+  "calendars.error.color": "Bitte wähle eine Farbe."
 }

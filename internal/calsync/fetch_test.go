@@ -36,6 +36,11 @@ func TestHTTPFetcher(t *testing.T) {
 	}
 	if _, err := f.Fetch(ctx, srv.URL+"/huge.ics"); err == nil {
 		t.Fatal("oversized feed accepted")
+	} else if m := calsync.MessageOf(err); m.Key != "sync.fail.too_large" {
+		t.Fatalf("oversized message = %+v", m)
+	}
+	if _, err := f.Fetch(ctx, srv.URL+"/missing.ics"); calsync.MessageOf(err).Key != "sync.fail.status" || !strings.Contains(calsync.MessageOf(err).Params["status"], "404") {
+		t.Fatalf("404 message = %+v", calsync.MessageOf(err))
 	}
 	if _, err := f.Fetch(ctx, "http://127.0.0.1:1/x.ics"); err == nil {
 		t.Fatal("unreachable server accepted")

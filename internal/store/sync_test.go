@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -115,30 +116,30 @@ func TestChangedOccurrencesLinkToTheirSeries(t *testing.T) {
 func TestFailedSyncKeepsEventsAndLogsIt(t *testing.T) {
 	f := newCalFixture(t)
 	c := newICS(t, f)
-	_ = f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{item("a", "", "Choir", at(2026, 11, 20, 17, 0))}, []string{"Unknown time zone"}, t0, t0.Add(time.Hour))
+	_ = f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{item("a", "", "Choir", at(2026, 11, 20, 17, 0))}, []i18n.Message{i18n.Msg("sync.note.unknown_zone", "zone", "Mars/Olympus")}, t0, t0.Add(time.Hour))
 
-	if err := f.db.FailSync(f.h.ID, c.ID, "connection refused", t0.Add(time.Hour), t0.Add(2*time.Hour)); err != nil {
+	if err := f.db.FailSync(f.h.ID, c.ID, i18n.Msg("sync.fail.fetch", "detail", "connection refused"), t0.Add(time.Hour), t0.Add(2*time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if got := titles(t, f, c.ID); len(got) != 1 {
 		t.Fatalf("events = %v, want the previous ones kept", got)
 	}
 	s, err := f.db.SyncedCalendar(f.h.ID, c.ID)
-	if err != nil || s.Sync.Failures != 1 || s.Sync.LastError != "connection refused" || !s.Sync.LastSuccess.Equal(t0) || !s.Sync.NextAttempt.Equal(t0.Add(2*time.Hour)) {
+	if err != nil || s.Sync.Failures != 1 || s.Sync.LastError.Key != "sync.fail.fetch" || s.Sync.LastError.Params["detail"] != "connection refused" || !s.Sync.LastSuccess.Equal(t0) || !s.Sync.NextAttempt.Equal(t0.Add(2*time.Hour)) {
 		t.Fatalf("sync state = %+v, %v", s.Sync, err)
 	}
 	log, err := f.db.SyncLog(f.h.ID, 50)
 	if err != nil || len(log) != 2 {
 		t.Fatalf("log = %+v, %v", log, err)
 	}
-	if log[0].Kind != "failure" || log[0].Message != "connection refused" || log[0].CalendarName != "School" || log[1].Kind != "note" {
+	if log[0].Kind != "failure" || log[0].Message.Key != "sync.fail.fetch" || log[0].Message.Params["detail"] != "connection refused" || log[0].CalendarName != "School" || log[1].Kind != "note" {
 		t.Fatalf("log (newest first) = %+v", log)
 	}
 
 	// One success clears the failure state.
 	_ = f.db.CompleteSync(f.h.ID, c.ID, nil, nil, t0.Add(2*time.Hour), t0.Add(3*time.Hour))
 	s, _ = f.db.SyncedCalendar(f.h.ID, c.ID)
-	if s.Sync.Failures != 0 || s.Sync.LastError != "" {
+	if s.Sync.Failures != 0 || s.Sync.LastError.Key != "" {
 		t.Fatalf("after success: %+v", s.Sync)
 	}
 }
@@ -161,5 +162,32 @@ func TestRemovingTheCalendarRemovesItsEventsAndLog(t *testing.T) {
 	}
 	if err := f.db.DeleteSyncedCalendar(f.h.ID, f.cal.ID); err == nil {
 		t.Fatal("the family calendar must not be removable here")
+	}
+}
+
+func TestSameNoteIsLoggedOnce(t *testing.T) {
+	f := newCalFixture(t)
+	c := newICS(t, f)
+	note := i18n.Msg("sync.note.unknown_zone", "zone", "Mars/Olympus")
+	other := i18n.Msg("sync.note.unknown_zone", "zone", "Venus/Maxwell")
+	for i, n := range [][]i18n.Message{{note}, {note, other}, {note}} {
+		at := t0.Add(time.Duration(i) * time.Hour)
+		if err := f.db.CompleteSync(f.h.ID, c.ID, nil, n, at, at.Add(time.Hour)); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if log, err := f.db.SyncLog(f.h.ID, 10); err != nil || len(log) != 2 {
+		t.Fatalf("log = %+v, %v", log, err)
+	}
+}
+
+func TestSyncedEventsMayHaveNoTitle(t *testing.T) {
+	f := newCalFixture(t)
+	c := newICS(t, f)
+	if err := f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{item("a", "", "", at(2026, 11, 20, 17, 0))}, nil, t0, t0.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	if got := titles(t, f, c.ID); len(got) != 1 || got[0] != "" {
+		t.Fatalf("titles = %q", got)
 	}
 }

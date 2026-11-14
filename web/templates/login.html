@@ -2,6 +2,7 @@
   <h1>{{t "login.title"}}</h1>
   {{template "error" .}}
   <form method="post" action="/login" class="steps">
+    {{if .Next}}<input type="hidden" name="next" value="{{.Next}}">{{end}}
     <fieldset>
       <label>{{t "setup.field.username"}}
         <input name="username" value="{{.Username}}" required autocomplete="username" autocapitalize="none"></label>

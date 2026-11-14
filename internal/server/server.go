@@ -70,6 +70,7 @@ type server struct {
 	pages     *template.Template
 	logger    *slog.Logger
 	limiter   *loginLimiter
+	opens     *loginLimiter // pairing screens opened, per client address
 	sync      *calsync.Service
 }
 
@@ -95,6 +96,7 @@ func New(opts Options) http.Handler {
 		s.sync = calsync.New(s.db, nil, s.now)
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
+	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
 	s.pages = template.Must(template.New("").Funcs(template.FuncMap{
 		"t":    func(string) string { return "" }, // replaced per request in render
 		"dict": dict,
@@ -132,6 +134,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /caldav/tokens", s.handleDeviceTokenCreate)
 	mux.HandleFunc("POST /caldav/tokens/{id}/revoke", s.handleDeviceTokenRevoke)
 	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
+	mux.HandleFunc("GET /display", s.handleDisplay)
+	mux.HandleFunc("GET /display/state", s.handleDisplayState)
+	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
+	mux.HandleFunc("POST /displays", s.handleDisplayPair)
+	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
 	return s.requireHTTPS(sameOrigin(mux))

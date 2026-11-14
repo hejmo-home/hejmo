@@ -123,6 +123,10 @@ func (l *loginLimiter) recent(user string) []time.Time {
 			kept = append(kept, t)
 		}
 	}
+	if len(kept) == 0 {
+		delete(l.failures, user)
+		return nil
+	}
 	l.failures[user] = kept
 	return kept
 }

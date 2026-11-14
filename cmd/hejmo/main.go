@@ -133,6 +133,15 @@ func run(cfg config, logger *slog.Logger) error {
 		TLSConfig:         tlsConfig(public, certs),
 	}
 	servers := []*http.Server{httpSrv, httpsSrv}
+	// Whatever way run returns, the servers stop before syncer.Wait runs (defers
+	// run last-in first), so no handler can start a push while Wait is waiting.
+	defer func() {
+		stopped, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		for _, srv := range servers {
+			_ = srv.Shutdown(stopped)
+		}
+	}()
 	errc := make(chan error, len(servers))
 	go func() {
 		logger.Info("box listening (HTTP)", "addr", cfg.Addr)

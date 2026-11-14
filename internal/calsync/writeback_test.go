@@ -461,7 +461,7 @@ func TestBoxEditDuringAnImportOfTheSameObjectIsNotLost(t *testing.T) {
 
 func TestBoxEditDuringAnImportOfAnObjectDeletedOutsideIsNotLost(t *testing.T) {
 	fx := newDAVFixture(t, caldavtest.Password)
-	fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swimming", "20260101T080000Z"))
+	obj := fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swimming", "20260101T080000Z"))
 	fx.syncAfter(t, 0)
 
 	fx.srv.Delete(t, fx.remote+"swim.ics")
@@ -473,6 +473,11 @@ func TestBoxEditDuringAnImportOfAnObjectDeletedOutsideIsNotLost(t *testing.T) {
 	}
 	if pend, _ := fx.db.PendingObjects(fx.cal.ID); len(pend) != 1 {
 		t.Fatalf("pending = %+v, want the edit still queued", pend)
+	}
+	// The next sync writes the box's change back (ADR 0012).
+	fx.syncAfter(t, 5*time.Minute)
+	if got := fx.srv.Get(t, obj); !strings.Contains(got, "SUMMARY:Swim on the box") {
+		t.Fatalf("the box's change never came back to the server:\n%s", got)
 	}
 }
 
@@ -563,5 +568,37 @@ func TestUnreadableOutsideObjectOfAReadOnlyCalendarKeepsTheBoxChangeQueued(t *te
 	}
 	if conflicts != 1 {
 		t.Fatalf("log = %+v, want one outside_won conflict entry", log)
+	}
+}
+
+func TestDeletionOnTheBoxDroppedByAReadOnlyCalendarIsLoggedWithoutAnObjectAddress(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.srv.Put(t, fx.remote, "swim.ics", iCloudShaped("swim@icloud", "Swimming", "20260101T080000Z"))
+	fx.syncAfter(t, 0)
+
+	fx.tamper.RefuseWrites(403) // the deletion stays queued
+	if err := fx.db.ApplyChange(fx.h.ID, calendar.Change{Delete: []string{fx.boxEvent(t, "Swimming").ID}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := fx.db.SetCalendarReadOnly(fx.h.ID, fx.cal.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	fx.syncAfter(t, 5*time.Minute)
+
+	log, _ := fx.db.SyncLog(fx.h.ID, 20)
+	var found bool
+	for _, e := range log {
+		if e.Message.Key == "sync.conflict.dropped_read_only_deleted" {
+			found = true
+			if len(e.Message.Params) != 0 {
+				t.Errorf("params = %v, want none (no object address in a family-facing text)", e.Message.Params)
+			}
+		}
+		if e.Message.Key == "sync.conflict.dropped_read_only" {
+			t.Errorf("deletion logged as a change to %v", e.Message.Params)
+		}
+	}
+	if !found {
+		t.Fatalf("log = %+v, want a dropped-deletion entry", log)
 	}
 }

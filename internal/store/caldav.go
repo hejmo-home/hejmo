@@ -307,10 +307,11 @@ func logDropped(tx *sql.Tx, householdID, calendarID, url string, at time.Time) e
 	if err := rows.Close(); err != nil {
 		return err
 	}
-	if len(titles) == 0 {
-		titles = []string{url} // the box had deleted it: nothing to name but the object
+	msg := i18n.Msg("sync.conflict.dropped_read_only_deleted") // the box had deleted it: no title left to name
+	if len(titles) > 0 {
+		msg = i18n.Msg("sync.conflict.dropped_read_only", "title", titles[0])
 	}
-	if err := writeLogDetail(tx, householdID, calendarID, at, "conflict", i18n.Msg("sync.conflict.dropped_read_only", "title", titles[0]), detail.String()); err != nil {
+	if err := writeLogDetail(tx, householdID, calendarID, at, "conflict", msg, detail.String()); err != nil {
 		return err
 	}
 	return pruneLog(tx, at)

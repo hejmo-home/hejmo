@@ -8,6 +8,7 @@ colors:
   light-text: "#2A2A28"
   light-text-secondary: "#5C5A55"
   light-accent: "#2F5E7A"
+  light-accent-text: "#FFFFFF"
   light-border: "#D6D3CC"
   light-error-bg: "#F7E7E0"
   light-error-text: "#5C3A2C"
@@ -36,6 +37,7 @@ colors:
   dark-text: "#ECE9E3"
   dark-text-secondary: "#B4B0A7"
   dark-accent: "#6FA3C2"
+  dark-accent-text: "#1B1A18"
   dark-border: "#403E39"
   dark-error-bg: "#3E2A24"
   dark-error-text: "#F0CDBF"
@@ -64,6 +66,7 @@ colors:
   bw-text: "#111111"
   bw-text-secondary: "#3A3A38"
   bw-accent: "#111111"
+  bw-accent-text: "#FFFFFF"
   bw-border: "#111111"
   bw-error-bg: "#E4E4E1"
   bw-error-text: "#111111"
@@ -124,7 +127,7 @@ sizes:
 
 # Hejmo Nordic Calm
 
-Binding values come from `docs/spec.md` ("Design specification Nordic Calm"); the dark palette comes from ADR 0015. The front matter above is the single record of the tokens; `web/static/hejmo.css` implements them as CSS custom properties and `web/design_test.go` fails when the two drift apart or a contrast drops below 4.5:1.
+Binding values come from `docs/spec.md` ("Design specification Nordic Calm"); the dark palette comes from ADR 0015. The front matter above is the single record of the tokens; `web/static/hejmo.css` implements them as CSS custom properties and `web/design_test.go` fails when a colour token and its CSS custom property differ, when either side lacks the other, or when a contrast drops below 4.5:1. Other tokens (sizes, type, radii) are compared in the same test file by an explicit list.
 
 ## Overview
 
@@ -135,11 +138,12 @@ Binding values come from `docs/spec.md` ("Design specification Nordic Calm"); th
 ## Colors
 
 - Token names are `<theme>-<role>`: `light-`, `dark-`, `bw-`. In CSS the prefix is dropped and the theme block overrides the default (`--background`, `--person-1-tint`, ...).
-- Roles: `background`, `surface` (columns, tiles, chips), `text`, `text-secondary` (labels), `accent` (icons, links, buttons: Papa blue; #111111 in bw), `border`, `error-*`, `notice-*`, and per person slot `person-N` (marker, progress bar), `person-N-tint` (event card surface), `person-N-text` (text on the tint).
+- Roles: `background`, `surface` (columns, tiles, chips), `text`, `text-secondary` (labels), `accent` (icons, links, buttons: Papa blue; #111111 in bw), `accent-text` (text on an accent background, e.g. the button label), `border`, `error-*`, `notice-*`, and per person slot `person-N` (marker, progress bar), `person-N-tint` (event card surface), `person-N-text` (text on the tint).
 - bw only: `bw-event-card` (#E4E4E1, instead of the person tint), `bw-progress-fill` on `bw-progress-track` (instead of person colour on tint). In bw every person is #111111 and told apart by marker shape.
-- Slots 1 to 4 are the spec's example family (1 Mama, 2 Papa, 3 Sebastian, 4 Mia). Slots 5 and 6 are derived the same way (similar lightness and saturation, tint = colour mixed 88 % with white, text = colour mixed 50 % with black) for additional people; a household with more than six people reuses slots with a different shape in bw.
+- Slots 1 to 4 are the spec's example family (1 Mama, 2 Papa, 3 Sebastian, 4 Mia). Slots 5 and 6 are derived the same way (similar lightness and saturation, tint = colour mixed 88 % with white, text = colour mixed 50 % with black) for additional people; a household with more than six people reuses slots; only six bw shapes exist, so from the seventh person on a shape repeats and the person name next to the marker tells them apart.
 - **Dark palette** (ADR 0015): warm near-black background and surface, light warm text, person colours lightened and muted, tint = person colour mixed 20 % into the surface, text on tint = person colour mixed 70 % with white. No shadows; separation is by surface and tint only.
-- Contrast: text on every person tint, text on background and surface, and error and notice text reach at least 4.5:1 in all three palettes; person colours against the surface reach at least 3:1 (non-text).
+- Contrast: text on every person tint, text on background and surface, and error and notice text reach at least 4.5:1 in all three palettes; person colours against the surface reach at least 3:1 (non-text); `accent` against background and surface and `accent-text` on `accent` reach 4.5:1 (accent is used as text).
+- **Open decision (product owner, at preview approval):** the spec says person colours must also differ in lightness, but the spec's own light slots 1 and 3 are both L* 48 and the dark slots 1, 2 and 5 are L* 63 to 65 (3 and 6: 68). This is untested until decided; the shape in bw and the name next to the marker carry the distinction meanwhile.
 
 ## Typography
 
@@ -159,7 +163,7 @@ None. No shadows in any palette.
 
 - Corners: columns and tiles 22 px, header chips 18 px, event cards 14 px, form fields 12 px, progress bar 4 px (height 8 px).
 - Person marker: circle 14 px in the person colour. In bw a shape: 16 px in the column header, 9 px on each event (`.marker.small`). Shapes in slot order: circle filled, circle empty, square filled, square empty, triangle filled, diamond filled (`data-shape`).
-- Journeys: no fill, 1.5 px dashed border in the person colour (bw #111111), label "Journey" after the time.
+- Journeys: no fill, 1.5 px dashed border in the person colour (bw: the person colour is #111111), label "Journey" after the time.
 - Icons: line icons with 1.8 px stroke in the accent colour (Papa blue; bw #111111).
 
 ## Components

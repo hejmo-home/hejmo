@@ -175,7 +175,7 @@ input, select { font: inherit; color: var(--text); min-height: var(--touch-targe
 a { color: var(--accent); }
 
 /* Person slots: a person gets data-person="1".."6" (colour, tint, text on
-   tint). In bw every slot is #111 on a grey tint and differs by marker shape. */
+   tint). In bw every slot is black on a grey tint and differs by marker shape. */
 [data-person="1"] { --pc: var(--person-1); --pc-tint: var(--person-1-tint); --pc-text: var(--person-1-text); }
 [data-person="2"] { --pc: var(--person-2); --pc-tint: var(--person-2-tint); --pc-text: var(--person-2-text); }
 [data-person="3"] { --pc: var(--person-3); --pc-tint: var(--person-3-tint); --pc-text: var(--person-3-text); }
@@ -186,7 +186,7 @@ a { color: var(--accent); }
 /* Marker: circle in the person colour; in bw a shape (16px in the column
    header, 9px on an event, .marker.small). */
 .marker { display: inline-block; width: var(--marker-size); height: var(--marker-size); border-radius: 50%; background: var(--pc); vertical-align: middle; flex: none; }
-[data-theme="bw"] .marker { width: var(--marker-size-bw-column); height: var(--marker-size-bw-column); background: #111111; border: 2px solid #111111; border-radius: 0; }
+[data-theme="bw"] .marker { width: var(--marker-size-bw-column); height: var(--marker-size-bw-column); background: var(--text); border: 2px solid var(--text); border-radius: 0; }
 [data-theme="bw"] .marker.small { width: var(--marker-size-bw-event); height: var(--marker-size-bw-event); border-width: 1.5px; }
 [data-theme="bw"] .marker[data-shape="circle-filled"] { border-radius: 50%; }
 [data-theme="bw"] .marker[data-shape="circle-empty"] { border-radius: 50%; background: transparent; }
@@ -205,7 +205,6 @@ a { color: var(--accent); }
 .event .title { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
 .event .meta { font-size: var(--fs-meta); font-weight: var(--fw-meta); }
 .event.journey { background: none; color: var(--text); border: var(--journey-border) dashed var(--pc); }
-[data-theme="bw"] .event.journey { border-color: #111111; }
 .progress { height: var(--progress-height); border-radius: var(--radius-progress); background: var(--pc-tint); overflow: hidden; }
 .progress > span { display: block; height: 100%; background: var(--pc); }
 [data-theme="bw"] .progress { background: var(--progress-track); }

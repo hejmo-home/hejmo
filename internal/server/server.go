@@ -205,6 +205,8 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		fr := s.frameFor(r)
 		if key := s.takeFlash(w, r); key != "" {
 			fr.Success = s.i18n.T(lang, key)
+		} else if key, ok := data["SuccessKey"].(string); ok {
+			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
 		}
 		data["Frame"] = fr
 	}

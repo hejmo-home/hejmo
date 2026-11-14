@@ -41,6 +41,8 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 	b.post("/displays", pairForm(codeOn(t, d.get("/display", "en").body)))
 	displays, _ := b.db.Displays(h.ID)
 	displayID := displays[0].ID
+	d2 := newScreen(b)
+	code2 := codeOn(t, d2.get("/display", "en").body)
 	b.post("/caldav/tokens", url.Values{"name": {"Phone"}})
 	tokens, _ := b.db.APITokens(h.ID)
 	var tokenID string
@@ -61,6 +63,7 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		{"task reopen", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"0"}}, "Marked as open."},
 		{"calendar add", "/calendars", "/calendars", url.Values{"name": {"Choir"}, "url": {"https://example.org/a.ics"}, "color": {"#2F5E7A"}, "interval": {"60"}}, "Calendar added."},
 		{"calendar sync", "/calendars/" + calID + "/sync", "/calendars", url.Values{}, "Calendar updated."},
+		{"display pair", "/displays", "/displays", pairForm(code2), "Display paired."},
 		{"display settings", "/displays/" + displayID + "/settings", "/displays", url.Values{"show_tomorrow": {"on"}}, "Saved."},
 		{"share", "/caldav/calendars/" + calID + "/share", "/caldav", url.Values{"shared": {"on"}}, "Sharing through the box is on."},
 		{"token revoke", "/caldav/tokens/" + tokenID + "/revoke", "/caldav", url.Values{}, "Access revoked."},
@@ -108,5 +111,28 @@ func TestFinishingSetupShowsASuccessLine(t *testing.T) {
 	b.post("/setup/totp", url.Values{"code": {code}})
 	if got := successLine(getEN(b, "/").body); got == "" {
 		t.Fatal("no success line after setup")
+	}
+}
+
+// Creating a device token shows its value once, together with a success line.
+func TestCreatingADeviceTokenShowsASuccessLine(t *testing.T) {
+	b := signedInBox(t)
+	r := b.do(http.MethodPost, "/caldav/tokens", url.Values{"name": {"Phone"}}, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusOK {
+		t.Fatalf("POST = %d", r.status)
+	}
+	if got := successLine(r.body); got != "Token created." {
+		t.Errorf("success line = %q", got)
+	}
+	if !strings.Contains(r.body, "data-device-token=") {
+		t.Error("the new token is not shown")
+	}
+	if got := successLine(getEN(b, "/caldav").body); got != "" {
+		t.Errorf("success line shown again: %q", got)
+	}
+	// A refused name is an error, not a success.
+	r = b.do(http.MethodPost, "/caldav/tokens", url.Values{"name": {" "}}, map[string]string{"Accept-Language": "en"})
+	if got := successLine(r.body); got != "" {
+		t.Errorf("success line on an error: %q", got)
 	}
 }

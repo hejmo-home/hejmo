@@ -69,6 +69,7 @@ func (s *server) renderCalDAV(w http.ResponseWriter, r *http.Request, p principa
 	}
 	if newToken != "" {
 		data["NewToken"] = newToken
+		data["SuccessKey"] = "flash.token_created"
 		data["NewTokenTitle"] = s.i18n.Format(s.langOf(r), i18n.Msg("caldav.token.created_title", "name", newName))
 	}
 	s.render(w, r, status, "caldav.html", data)

@@ -15,6 +15,7 @@
   "trust.browser.title": "Browser am Computer",
   "trust.browser.steps": "Zertifikat laden und im Betriebssystem (Chrome, Edge, Safari) oder in den Zertifikatseinstellungen von Firefox als vertrauenswürdige Zertifizierungsstelle importieren.",
   "trust.cert.download": "Zertifikat laden",
+  "trust.fingerprint": "SHA-256-Fingerabdruck des Zertifikats zum Vergleich auf eurem Gerät:",
   "trust.continue": "Weiter mit der Einrichtung",
   "setup.title": "Hejmo einrichten",
   "setup.intro": "Willkommen! In drei Schritten ist eure Box bereit.",

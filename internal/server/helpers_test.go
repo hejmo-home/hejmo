@@ -113,6 +113,9 @@ func (b *box) do(method, path string, form url.Values, header map[string]string)
 		req.Header.Set("Origin", b.srv.URL)
 	}
 	for k, v := range header {
+		if k == "Host" {
+			req.Host = v
+		}
 		req.Header.Set(k, v)
 	}
 	res, err := b.client.Do(req)

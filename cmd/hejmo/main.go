@@ -79,7 +79,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}
 	defer db.Close()
 
-	certs, err := pki.Open(filepath.Join(cfg.DataDir, "tls"))
+	certs, err := pki.Open(filepath.Join(cfg.DataDir, "tls"), pki.WithLogger(logger))
 	if err != nil {
 		return err
 	}

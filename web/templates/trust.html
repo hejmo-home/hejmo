@@ -17,6 +17,7 @@
       <span class="hint">{{t "trust.browser.steps"}}</span>
       <a class="button" href="/ca/hejmo-ca.crt">{{t "trust.cert.download"}}</a>
     </fieldset>
+    <p class="hint">{{t "trust.fingerprint"}} <code>{{.Fingerprint}}</code></p>
     {{if .Continue}}<a class="button" href="{{.Continue}}">{{t "trust.continue"}}</a>{{end}}
   </div>
 {{template "foot"}}

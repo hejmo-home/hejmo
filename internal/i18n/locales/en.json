@@ -15,6 +15,7 @@
   "trust.browser.title": "Browsers on a computer",
   "trust.browser.steps": "Download the certificate and import it as a trusted certificate authority in the operating system (Chrome, Edge, Safari) or in Firefox's certificate settings.",
   "trust.cert.download": "Download certificate",
+  "trust.fingerprint": "SHA-256 fingerprint of the certificate, to compare on your device:",
   "trust.continue": "Continue setup",
   "setup.title": "Set up Hejmo",
   "setup.intro": "Welcome! Your box is ready in three steps.",

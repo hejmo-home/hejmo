@@ -59,8 +59,8 @@ func TestCreatingTheCertificateAuthorityUnlocksThePasswordStepOverHTTPS(t *testi
 	}
 
 	// Passwords are never accepted over plain HTTP, even with HTTPS set up.
-	if r := b.post("/setup", validSetupForm()); r.status != http.StatusForbidden {
-		t.Fatalf("POST /setup over HTTP = %d, want 403", r.status)
+	if r := b.post("/setup", validSetupForm()); r.status != http.StatusPermanentRedirect {
+		t.Fatalf("POST /setup over HTTP = %d, want 308", r.status)
 	}
 	if _, err := b.db.HomeHousehold(); err == nil {
 		t.Fatal("a household was stored over plain HTTP")
@@ -103,18 +103,18 @@ func TestHTTPRedirectsToHTTPS(t *testing.T) {
 		t.Fatalf("GET http:// = %d %q", res.StatusCode, res.Header.Get("Location"))
 	}
 
-	// Sending a body over HTTP is refused instead of followed.
+	// Every method is redirected, the API included (port 80 only redirects).
 	res, err = client.Post(plain.URL+"/api/v1/tokens", "application/json", strings.NewReader("{}"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	res.Body.Close()
-	if res.StatusCode != http.StatusForbidden {
-		t.Errorf("POST http:// = %d, want 403", res.StatusCode)
+	if res.StatusCode != http.StatusPermanentRedirect || res.Header.Get("Location") != "https://"+host+"/api/v1/tokens" {
+		t.Errorf("POST http:// = %d %q, want 308 to https", res.StatusCode, res.Header.Get("Location"))
 	}
 }
 
-func TestRedirectKeepsAnConfiguredPublicHTTPSPort(t *testing.T) {
+func TestRedirectKeepsAConfiguredPublicHTTPSPort(t *testing.T) {
 	b := newBox(t)
 	b.handler = serverWithHTTPSPort(b, "8443")
 	plain := b.plainServer()
@@ -129,10 +129,27 @@ func TestRedirectKeepsAnConfiguredPublicHTTPSPort(t *testing.T) {
 	}
 }
 
+// Everything else, the stylesheet included, is redirected (ADR 0014).
+func TestPlainHTTPRedirectsEverythingButTheTrustSteps(t *testing.T) {
+	b := newBox(t)
+	plain := b.plainServer()
+	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	for _, path := range []string{"/static/hejmo.css", "/login", "/api/v1/members", "/ca/other", "/setup"} {
+		res, err := client.Get(plain.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		if res.StatusCode != http.StatusPermanentRedirect {
+			t.Errorf("GET http://%s = %d, want 308", path, res.StatusCode)
+		}
+	}
+}
+
 func TestPlainHTTPStillServesWhatPhonesNeedBeforeTheyTrustTheBox(t *testing.T) {
 	b := newBox(t)
 	plain := b.plainServer()
-	for _, path := range []string{"/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig", "/static/hejmo.css"} {
+	for _, path := range []string{"/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig"} {
 		res, err := http.Get(plain.URL + path)
 		if err != nil {
 			t.Fatal(err)
@@ -193,6 +210,24 @@ func TestTrustPageExplainsIPhoneAndroidAndBrowsers(t *testing.T) {
 	en := b.do(http.MethodGet, "/ca", nil, map[string]string{"Accept-Language": "en"})
 	if !strings.Contains(en.body, "certificate") || !strings.Contains(en.body, "DAVx5") {
 		t.Errorf("English trust page:\n%s", en.body)
+	}
+}
+
+func TestTrustPageShowsTheCAFingerprint(t *testing.T) {
+	b := newBox(t)
+	if r := b.get("/ca"); !strings.Contains(r.body, b.pki.CAFingerprint()) {
+		t.Errorf("trust page misses the CA fingerprint:\n%s", r.body)
+	}
+}
+
+func TestHTTPSStepRefusesNamesThatCannotGoIntoACertificate(t *testing.T) {
+	b := newFreshBox(t)
+	r := b.do(http.MethodPost, "/setup/https", url.Values{}, map[string]string{"Host": "hejmo", "Origin": "http://hejmo"})
+	if r.status != http.StatusBadRequest {
+		t.Fatalf("POST /setup/https for a single-label host = %d, want 400", r.status)
+	}
+	if b.pki.Ready() {
+		t.Fatal("a certificate was issued")
 	}
 }
 

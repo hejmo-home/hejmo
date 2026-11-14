@@ -1,23 +1,23 @@
 package server
 
 import (
+	"errors"
 	"net"
 	"net/http"
 	"net/url"
 	"strings"
+
+	"github.com/hejmo-home/hejmo/internal/pki"
 )
 
 // requireHTTPS redirects plain-HTTP requests to HTTPS once the box has its
-// certificate (ADR 0014). What a phone needs before it trusts the box (health
-// check, trust page, CA downloads, stylesheet) stays reachable over HTTP.
+// certificate (ADR 0014), whatever the method. Only what a phone needs before
+// it trusts the box (health check, trust page, CA downloads) stays reachable
+// over HTTP.
 func (s *server) requireHTTPS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.TLS != nil || !s.pki.Ready() || plainHTTPAllowed(r.URL.Path) {
 			next.ServeHTTP(w, r)
-			return
-		}
-		if r.Method != http.MethodGet && r.Method != http.MethodHead {
-			http.Error(w, "HTTPS required", http.StatusForbidden)
 			return
 		}
 		http.Redirect(w, r, s.httpsOrigin(r)+r.URL.RequestURI(), http.StatusPermanentRedirect)
@@ -25,7 +25,11 @@ func (s *server) requireHTTPS(next http.Handler) http.Handler {
 }
 
 func plainHTTPAllowed(path string) bool {
-	return path == "/healthz" || path == "/ca" || strings.HasPrefix(path, "/ca/") || strings.HasPrefix(path, "/static/")
+	switch path {
+	case "/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig":
+		return true
+	}
+	return false
 }
 
 // hostOf returns the request's host name without port.
@@ -62,6 +66,10 @@ func (s *server) handleHTTPSSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err := s.pki.Provision(hostOf(r), s.now()); err != nil {
+		if errors.Is(err, pki.ErrInvalidHost) {
+			http.Error(w, "This address cannot be used for HTTPS. Open the box by its IP address or a name like hejmo.local.", http.StatusBadRequest)
+			return
+		}
 		s.fail(w, "provision HTTPS", err)
 		return
 	}
@@ -73,7 +81,7 @@ func (s *server) handleTrustPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup/https", http.StatusSeeOther)
 		return
 	}
-	data := map[string]any{}
+	data := map[string]any{"Fingerprint": s.pki.CAFingerprint()}
 	if !s.db.Configured() {
 		data["Continue"] = s.httpsOrigin(r) + "/setup"
 	}

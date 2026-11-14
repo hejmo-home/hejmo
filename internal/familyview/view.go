@@ -31,6 +31,9 @@ type Input struct {
 	// ShowTomorrow is the display's setting "show tomorrow block", off by
 	// default (ADR 0016). Without it nothing of tomorrow is built.
 	ShowTomorrow bool
+	// SyncStale: a synced calendar has gone 24 hours without a successful
+	// sync (ADR 0012). The header then shows an info symbol.
+	SyncStale bool
 }
 
 // Event is a card in a person's column.
@@ -103,6 +106,7 @@ type View struct {
 	Strip         []StripItem
 	StripTomorrow []StripItem
 	ShowTomorrow  bool
+	SyncStale     bool // header notice: calendar not up to date
 	Columns       []Column
 	Scroll        bool // 7 or more people: the columns scroll
 	Meal          *Tile
@@ -123,6 +127,7 @@ func Build(in Input) View {
 	_, week := now.ISOWeek()
 	v := View{Weekday: now.Weekday(), Week: week, Date: d0, Clock: now.Format("15:04"), ClockZone: now.Location().String()}
 	v.ShowTomorrow = in.ShowTomorrow && now.Hour() >= tomorrowFromHour
+	v.SyncStale = in.SyncStale
 	v.Scroll = len(in.People) > maxNarrowColumns
 	for _, p := range in.People {
 		v.Columns = append(v.Columns, Column{Person: p})

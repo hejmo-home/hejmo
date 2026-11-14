@@ -53,6 +53,8 @@ type Store struct {
 	// nextRenew is the earliest time of the next renewal attempt, so that a
 	// failing renewal does not run on every TLS handshake.
 	nextRenew time.Time
+	// warnedCA is set once the "CA expires soon" warning has been logged.
+	warnedCA bool
 }
 
 // Option configures a Store.
@@ -233,9 +235,9 @@ func (s *Store) issueLocked(now time.Time, caDER []byte, caKey crypto.Signer, dn
 	if err != nil {
 		return err
 	}
-	notAfter := now.Add(leafLifetime)
-	if ca.NotAfter.Before(notAfter) {
-		notAfter = ca.NotAfter // a certificate cannot outlive its CA
+	notAfter := leafExpiry(now, ca)
+	if notAfter.Equal(ca.NotAfter) && !s.warnedCA {
+		s.warnedCA = true
 		s.logger.Warn("CA expires soon; the box needs a new CA", "expires", ca.NotAfter)
 	}
 	tpl := &x509.Certificate{
@@ -266,6 +268,15 @@ func (s *Store) issueLocked(now time.Time, caDER []byte, caKey crypto.Signer, dn
 	return nil
 }
 
+// leafExpiry is when a certificate issued now ends: a certificate cannot
+// outlive its CA.
+func leafExpiry(now time.Time, ca *x509.Certificate) time.Time {
+	if end := now.Add(leafLifetime); end.Before(ca.NotAfter) {
+		return end
+	}
+	return ca.NotAfter
+}
+
 func (s *Store) setLeaf(c *tls.Certificate) {
 	s.leaf = c
 	if parsed, err := x509.ParseCertificate(c.Certificate[0]); err == nil {
@@ -291,7 +302,7 @@ func (s *Store) GetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	now := s.now()
-	if s.expiry.Sub(now) <= renewBefore && s.leaf.Leaf != nil && !now.Before(s.nextRenew) {
+	if s.expiry.Sub(now) <= renewBefore && s.leaf.Leaf != nil && !now.Before(s.nextRenew) && s.renewalHelps(now) {
 		s.nextRenew = now.Add(renewRetry)
 		if err := s.issueLocked(now, s.caDER, s.caKey, s.leaf.Leaf.DNSNames, s.leaf.Leaf.IPAddresses); err != nil {
 			s.logger.Error("renew box certificate", "err", err, "expires", s.expiry)
@@ -301,6 +312,13 @@ func (s *Store) GetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 		return nil, errors.New("pki: box certificate expired and could not be renewed")
 	}
 	return s.leaf, nil
+}
+
+// renewalHelps reports whether a certificate issued now would last longer than
+// the current one; near the CA's expiry it would not.
+func (s *Store) renewalHelps(now time.Time) bool {
+	ca, err := x509.ParseCertificate(s.caDER)
+	return err != nil || leafExpiry(now, ca).After(s.expiry)
 }
 
 // CAFingerprint returns the CA certificate's SHA-256 fingerprint as colon

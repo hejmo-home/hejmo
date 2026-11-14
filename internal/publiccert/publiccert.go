@@ -153,6 +153,10 @@ type Manager struct {
 	cache  *certmagic.Cache
 	name   string
 	issuer string
+	// expires is the certificate's end, read when it is loaded or renewed.
+	expires time.Time
+	// startErr is why a stored setup could not be resumed; empty if it could.
+	startErr string
 	// setupMu serialises Setup; a certificate is ordered once at a time.
 	setupMu sync.Mutex
 }
@@ -186,8 +190,22 @@ func (m *Manager) Close() {
 }
 
 // Start resumes a stored setup: the certificate is loaded from disk and its
-// renewal continues. Without a stored setup it does nothing.
+// renewal continues. Without a stored setup it does nothing. If the stored
+// setup cannot be resumed (for example the key file was lost, so the token
+// cannot be opened), the manager stays not ready and Status warns parents; the
+// public name can then be set up again.
 func (m *Manager) Start(ctx context.Context) error {
+	err := m.start(ctx)
+	m.mu.Lock()
+	m.startErr = ""
+	if err != nil {
+		m.startErr = err.Error()
+	}
+	m.mu.Unlock()
+	return err
+}
+
+func (m *Manager) start(ctx context.Context) error {
 	saved, ok, err := m.db.PublicHTTPS()
 	if err != nil || !ok {
 		return err
@@ -210,6 +228,7 @@ func (m *Manager) Start(ctx context.Context) error {
 		return err
 	}
 	m.install(cfg, cache, saved.Name, saved.Issuer)
+	m.refreshExpiry(ctx)
 	return nil
 }
 
@@ -235,7 +254,46 @@ func (m *Manager) install(cfg *certmagic.Config, cache *certmagic.Cache, name, i
 	if m.cache != nil {
 		m.cache.Stop()
 	}
-	m.cfg, m.cache, m.name, m.issuer = cfg, cache, name, issuer
+	m.cfg, m.cache, m.name, m.issuer, m.startErr = cfg, cache, name, issuer, ""
+	m.expires = time.Time{}
+}
+
+// refreshExpiry reads the end of the certificate from the store, after it was
+// obtained or renewed; Status then needs no disk access.
+func (m *Manager) refreshExpiry(ctx context.Context) {
+	m.mu.RLock()
+	cfg, name := m.cfg, m.name
+	m.mu.RUnlock()
+	if cfg == nil {
+		return
+	}
+	c, err := cfg.CacheManagedCertificate(ctx, name)
+	if err != nil || c.Leaf == nil {
+		return
+	}
+	m.mu.Lock()
+	if m.cfg == cfg {
+		m.expires = c.Leaf.NotAfter
+	}
+	m.mu.Unlock()
+}
+
+// Clear forgets the public setup, with its sealed token: the family goes back
+// to the box's own CA. The box then serves no public certificate.
+func (m *Manager) Clear() error {
+	m.setupMu.Lock()
+	defer m.setupMu.Unlock()
+	if err := m.db.DeletePublicHTTPS(); err != nil {
+		return err
+	}
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	if m.cache != nil {
+		m.cache.Stop()
+	}
+	m.cfg, m.cache, m.name, m.issuer, m.startErr = nil, nil, "", "", ""
+	m.expires = time.Time{}
+	return nil
 }
 
 // Ready reports whether the box has a certificate for its public name.
@@ -270,15 +328,18 @@ func (m *Manager) GetCertificate(hello *tls.ClientHelloInfo) (*tls.Certificate, 
 // Status describes the certificate for the web interface.
 func (m *Manager) Status() Status {
 	m.mu.RLock()
-	cfg, name, issuer := m.cfg, m.name, m.issuer
+	cfg, name, issuer, expires, startErr := m.cfg, m.name, m.issuer, m.expires, m.startErr
 	m.mu.RUnlock()
 	st := Status{Name: name, Issuer: issuer}
 	if cfg == nil {
+		if startErr != "" {
+			st.Warning, st.RenewalError = true, startErr
+		}
 		return st
 	}
-	if c, err := cfg.CacheManagedCertificate(context.Background(), name); err == nil && c.Leaf != nil {
-		st.Expires = c.Leaf.NotAfter
-		st.Warning = m.now().Add(expirySoon).After(st.Expires)
+	if !expires.IsZero() {
+		st.Expires = expires
+		st.Warning = m.now().Add(expirySoon).After(expires)
 	}
 	if saved, ok, err := m.db.PublicHTTPS(); err == nil && ok && saved.RenewalError != "" {
 		st.RenewalError, st.Warning = saved.RenewalError, true
@@ -390,6 +451,7 @@ func (m *Manager) Setup(ctx context.Context, req Request) error {
 		return err
 	}
 	m.install(cfg, cache, req.Name, req.Issuer)
+	m.refreshExpiry(ctx)
 	return nil
 }
 
@@ -438,21 +500,24 @@ func (m *Manager) newConfig(req Request) (*certmagic.Config, *certmagic.Cache, e
 	return cfg, cache, nil
 }
 
-// onEvent turns CertMagic's background renewals into the state parents see.
-func (m *Manager) onEvent(_ context.Context, event string, data map[string]any) error {
+// onEvent turns CertMagic's background work into the state parents see.
+func (m *Manager) onEvent(ctx context.Context, event string, data map[string]any) error {
 	renewal, _ := data["renewal"].(bool)
-	if !renewal {
-		return nil
-	}
 	switch event {
 	case "cert_failed":
+		if !renewal {
+			return nil
+		}
 		err, _ := data["error"].(error)
 		if err == nil {
 			err = errors.New("renewal failed")
 		}
 		m.recordRenewal(err)
 	case "cert_obtained":
-		m.recordRenewal(nil)
+		if renewal {
+			m.recordRenewal(nil)
+		}
+		m.refreshExpiry(context.WithoutCancel(ctx)) // also a certificate ordered again after a restart
 	}
 	return nil
 }

@@ -59,3 +59,9 @@ func (db *DB) SetRenewalResult(at time.Time, failure string) error {
 	_, err := db.sql.Exec(`UPDATE public_https SET renewal_error = ?, renewal_failed_at = ? WHERE id = 1`, failure, stamp(at))
 	return err
 }
+
+// DeletePublicHTTPS forgets the configuration, with the sealed token.
+func (db *DB) DeletePublicHTTPS() error {
+	_, err := db.sql.Exec(`DELETE FROM public_https WHERE id = 1`)
+	return err
+}

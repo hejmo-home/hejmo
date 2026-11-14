@@ -345,3 +345,70 @@ func TestNearExpiryWarnsEvenWithoutAFailedAttempt(t *testing.T) {
 		t.Errorf("no warning three days before expiry: %+v", st)
 	}
 }
+
+// A lost or replaced secret.key must not take the box down: the stored token
+// cannot be opened, the box keeps serving, parents are warned, and the public
+// name can be set up again.
+func TestForeignKeyFileDoesNotStopTheBoxAndSetupCanBeRedone(t *testing.T) {
+	r := newRig(t)
+	le := r.startCA(caOption{})
+	first := r.manager(map[string]string{"letsencrypt": le.URL})
+	if err := first.Setup(context.Background(), request("letsencrypt")); err != nil {
+		t.Fatal(err)
+	}
+	first.Close()
+
+	// secret.key was lost and the box created a new one.
+	foreign, err := secret.Open(filepath.Join(t.TempDir(), "secret.key"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	r.sealer = foreign
+	again := r.manager(map[string]string{"letsencrypt": le.URL})
+	if err := again.Start(context.Background()); err == nil {
+		t.Fatal("Start opened a token sealed with another key")
+	}
+	if again.Ready() {
+		t.Error("ready without a usable setup")
+	}
+	if st := again.Status(); !st.Warning || st.RenewalError == "" {
+		t.Errorf("parents get no warning: %+v", st)
+	}
+
+	// The family enters the token again.
+	if err := again.Setup(context.Background(), request("letsencrypt")); err != nil {
+		t.Fatal(err)
+	}
+	serves(t, again, boxName)
+	if st := again.Status(); st.Warning || st.RenewalError != "" {
+		t.Errorf("warning stays after a new setup: %+v", st)
+	}
+	third := r.manager(map[string]string{"letsencrypt": le.URL})
+	if err := third.Start(context.Background()); err != nil || !third.Ready() {
+		t.Errorf("restart after the new setup: err=%v ready=%v", err, third.Ready())
+	}
+}
+
+// The name check failed and the router cannot be changed: the family goes
+// back to the box's own CA, which forgets the public setup (ADR 0014).
+func TestClearForgetsThePublicSetup(t *testing.T) {
+	r := newRig(t)
+	le := r.startCA(caOption{})
+	m := r.manager(map[string]string{"letsencrypt": le.URL})
+	if err := m.Setup(context.Background(), request("letsencrypt")); err != nil {
+		t.Fatal(err)
+	}
+	if err := m.Clear(); err != nil {
+		t.Fatal(err)
+	}
+	if m.Ready() || m.Name() != "" {
+		t.Errorf("still set up: ready=%v name=%q", m.Ready(), m.Name())
+	}
+	if _, ok, _ := r.db.PublicHTTPS(); ok {
+		t.Error("the stored setup (with the sealed token) is still there")
+	}
+	again := r.manager(map[string]string{"letsencrypt": le.URL})
+	if err := again.Start(context.Background()); err != nil || again.Ready() {
+		t.Errorf("restart after Clear: err=%v ready=%v", err, again.Ready())
+	}
+}

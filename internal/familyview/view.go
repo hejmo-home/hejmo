@@ -245,7 +245,6 @@ func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat) Ev
 // ClockText is the time of day in the household's time format ("24h" or "12h").
 func ClockText(t time.Time, format store.TimeFormat) string { return t.Format(layout(format)) }
 
-// layout is the time layout of the household's time format.
 // clockFormat names the time format for the display's script; 24h is the default.
 func clockFormat(format store.TimeFormat) string {
 	if format == store.Time12h {
@@ -254,6 +253,7 @@ func clockFormat(format store.TimeFormat) string {
 	return "24h"
 }
 
+// layout is the time layout of the household's time format.
 func layout(format store.TimeFormat) string {
 	if format == store.Time12h {
 		return "3:04 PM"

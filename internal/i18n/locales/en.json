@@ -310,7 +310,7 @@
   "calendars.two_way": "Two-way: changes on the box are written back",
   "sync.conflict.dropped_read_only": "\"{title}\" was changed on the box, but the calendar is read-only. The outside version was kept; the box's version is kept here for 30 days.",
   "sync.conflict.dropped_read_only_deleted": "An event deleted on the box came back, because the calendar is read-only; the outside version was kept.",
-  "calendars.make_read_only_hint": "Changes on the box that are not written back yet are dropped and logged in the sync log for 30 days; the calendar then follows the outside version. A change to an outside event the box cannot read stays queued.",
+  "calendars.make_read_only_hint": "Changes on the box that are not written back yet are dropped and kept in the sync log for 30 days; the calendar then follows the outside version. A change to an outside event the box cannot read stays queued.",
   "calendars.make_read_only": "Make read-only",
   "calendars.make_two_way": "Allow changes on the box",
   "calendars.log.version": "Version that lost"

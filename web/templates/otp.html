@@ -2,7 +2,6 @@
   <h1>{{t "otp.title"}}</h1>
   {{template "syncNotice" .}}
   <p class="lead">{{t "otp.intro"}}</p>
-  {{template "error" .}}
   {{if .Page.ResetName}}
   <p class="notice" role="status" data-otp-reset>{{.Page.DoneText}} {{t "otp.reset.revoke"}} <a href="/caldav">{{t "nav.caldav"}}</a></p>
   {{end}}
@@ -26,6 +25,7 @@
           <input name="password" type="password" required autocomplete="current-password"></label>
         <label>{{t "otp.reset.code"}}
           <input name="code" required autocomplete="one-time-code"></label>
+        {{if eq $.Page.ErrorFor .ID}}<p class="error" role="alert">{{t $.Page.Error}}</p>{{end}}
       </fieldset>
       <button class="button" type="submit">{{t "otp.reset.submit"}}</button>
     </form>

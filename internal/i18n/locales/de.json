@@ -308,7 +308,7 @@
   "otp.title": "Einmalcodes",
   "otp.intro": "Einmalcodes schützen die Anmeldung. Wiederherstellungscodes helfen, wenn deine Authenticator-App nicht zur Hand ist.",
   "otp.recovery.heading": "Wiederherstellungscodes",
-  "otp.recovery.left": "Noch {count} Wiederherstellungscodes übrig.",
+  "otp.recovery.left": "Übrige Wiederherstellungscodes: {count}",
   "otp.recovery.new": "Neue Wiederherstellungscodes erstellen",
   "otp.recovery.new_hint": "Damit werden die aktuellen Codes ungültig.",
   "otp.reset.heading": "Einmalcodes eines anderen Elternteils zurücksetzen",

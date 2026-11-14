@@ -308,7 +308,7 @@
   "otp.title": "One-time codes",
   "otp.intro": "One-time codes protect sign-in. Recovery codes help when your authenticator app is not at hand.",
   "otp.recovery.heading": "Recovery codes",
-  "otp.recovery.left": "{count} recovery codes left.",
+  "otp.recovery.left": "Recovery codes left: {count}",
   "otp.recovery.new": "Create new recovery codes",
   "otp.recovery.new_hint": "This voids the codes you have now.",
   "otp.reset.heading": "Reset one-time codes of another parent",

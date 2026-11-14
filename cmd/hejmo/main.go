@@ -4,6 +4,10 @@
 //
 //	hejmo              start the box
 //	hejmo healthcheck  exit 0 if the local box answers /healthz (for Docker)
+//	hejmo reset-otp <username>
+//	                   reset an account's one-time codes (run inside the
+//	                   container; it opens the database directly and is not
+//	                   reachable over the network)
 package main
 
 import (
@@ -17,6 +21,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 	_ "time/tzdata" // DST rules independent of the host system
@@ -71,6 +76,18 @@ func main() {
 		return
 	}
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	if len(os.Args) > 1 && os.Args[1] == "reset-otp" {
+		if len(os.Args) != 3 {
+			fmt.Fprintln(os.Stderr, "usage: hejmo reset-otp <username>")
+			os.Exit(2)
+		}
+		if err := resetOTP(cfg, os.Args[2], logger); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		fmt.Printf("One-time codes of %s are reset. At the next sign-in, %s sets up new ones.\n", os.Args[2], os.Args[2])
+		return
+	}
 	if err := run(cfg, logger); err != nil {
 		logger.Error("box stopped", "err", err)
 		os.Exit(1)
@@ -158,6 +175,29 @@ func run(cfg config, logger *slog.Logger) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// resetOTP is the last way back (ADR 0017): it removes an account's one-time
+// code secret and recovery codes and ends its browser sessions. Access to the
+// box's shell counts as proof of ownership.
+func resetOTP(cfg config, username string, logger *slog.Logger) error {
+	db, _, err := openDatabase(cfg)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	acc, err := db.AccountByUsername(strings.TrimSpace(username))
+	if errors.Is(err, store.ErrNotFound) {
+		return fmt.Errorf("no account named %q", username)
+	}
+	if err != nil {
+		return err
+	}
+	if err := db.ResetOTP(acc.PersonID); err != nil {
+		return err
+	}
+	logger.Info("one-time codes reset", "account", strings.ToLower(acc.Username), "via", "command on the box")
 	return nil
 }
 

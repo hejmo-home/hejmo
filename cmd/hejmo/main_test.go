@@ -352,3 +352,45 @@ func TestOwnCAIsNotCreatedBeforeSetupIsComplete(t *testing.T) {
 		t.Fatal("the own CA was created for the public name before setup was complete")
 	}
 }
+
+func TestResetOTPCommandResetsTheAccountAndLogsIt(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config{DataDir: dir, SecretKeyFile: filepath.Join(dir, "secret.key")}
+	db, _, err := openDatabase(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
+	mama, _ := db.AddPerson(h.ID, store.Person{Name: "Mama", Role: store.RoleParent})
+	_ = db.CreateAccount(store.Account{PersonID: mama.ID, Username: "mama", PasswordHash: "h", TOTPSecret: "S"})
+	_ = db.ConfirmTOTP(mama.ID)
+	_ = db.ReplaceRecoveryCodes(mama.ID, []string{"x"})
+	_ = db.CreateSession("tok", mama.ID, time.Now().Add(time.Hour))
+	db.Close()
+
+	var logs strings.Builder
+	if err := resetOTP(cfg, "MAMA", slog.New(slog.NewTextHandler(&logs, nil))); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(logs.String(), "one-time codes reset") || !strings.Contains(logs.String(), "account=mama") {
+		t.Errorf("reset not logged: %q", logs.String())
+	}
+	db, _, err = openDatabase(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	acc, _ := db.AccountByPerson(mama.ID)
+	if acc.TOTPConfirmed || acc.TOTPSecret != "" {
+		t.Errorf("account after reset = %+v", acc)
+	}
+	if codes, _ := db.UnusedRecoveryCodes(mama.ID); len(codes) != 0 {
+		t.Error("recovery codes kept")
+	}
+	if _, err := db.SessionPerson("tok", time.Now()); err == nil {
+		t.Error("browser session kept")
+	}
+	if err := resetOTP(cfg, "nobody", slog.New(slog.NewTextHandler(&logs, nil))); err == nil {
+		t.Error("unknown account accepted")
+	}
+}

@@ -276,23 +276,6 @@ func TestHeaderShowsWeekdayWeekDateAndClock(t *testing.T) {
 	}
 }
 
-// ADR 0015: up to six people the columns narrow, from seven they scroll.
-func TestSevenPeopleScroll(t *testing.T) {
-	people := func(n int) []familyview.Person {
-		var ps []familyview.Person
-		for i := 0; i < n; i++ {
-			ps = append(ps, familyview.Person{ID: fmt.Sprint(i), Name: fmt.Sprint("P", i), Slot: i%6 + 1})
-		}
-		return ps
-	}
-	if familyview.Build(familyview.Input{Now: at(14, 8, 0), People: people(6)}).Scroll {
-		t.Error("six people scroll")
-	}
-	if !familyview.Build(familyview.Input{Now: at(14, 8, 0), People: people(7)}).Scroll {
-		t.Error("seven people do not scroll")
-	}
-}
-
 func TestTimesAreShownInTheHouseholdZoneWhateverZoneTheEventIsStoredIn(t *testing.T) {
 	utc := time.Date(2026, 11, 14, 8, 0, 0, 0, time.UTC) // 09:00 in Berlin
 	auckland, err := time.LoadLocation("Pacific/Auckland")

@@ -3,6 +3,8 @@ package server
 import (
 	"errors"
 	"net/http"
+	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -85,7 +87,15 @@ func (s *server) handleTaskAdd(w http.ResponseWriter, r *http.Request) {
 	if in.Repeat == task.Weekly {
 		in.Weekdays = r.PostForm["weekdays"]
 	}
-	switch _, err := s.createTask(p, in); {
+	var stars *int
+	if v := strings.TrimSpace(r.PostFormValue("stars")); v != "" {
+		n, err := strconv.Atoi(v)
+		if err != nil {
+			n = -1 // refused by validation, with the form kept
+		}
+		stars = &n
+	}
+	switch _, err := s.createTask(p, in, stars); {
 	case err == nil:
 		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
 	case errors.Is(err, store.ErrInvalid):

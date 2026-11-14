@@ -24,6 +24,8 @@ var apiRoutes = []APIRoute{
 	{"GET", "/people", auth.Perm("people", auth.Read), (*server).apiListPeople},
 	{"POST", "/people", auth.Perm("people", auth.Write), (*server).apiCreatePerson},
 	{"GET", "/people/{id}", auth.Perm("people", auth.Read), (*server).apiGetPerson},
+	{"GET", "/people/{id}/stars", auth.Perm("tasks", auth.Read), (*server).apiGetStars},
+	{"POST", "/people/{id}/stars", auth.Perm("tasks", auth.Write), (*server).apiBookStars},
 	{"GET", "/tokens", auth.Perm("tokens", auth.Read), (*server).apiListTokens},
 	{"POST", "/tokens", auth.Perm("tokens", auth.Write), (*server).apiCreateToken},
 	{"DELETE", "/tokens/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokeToken},

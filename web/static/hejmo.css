@@ -253,3 +253,5 @@ body:has(.family-page) { overflow: hidden; }
 .fv-footer .ln { font-size: var(--fs-body); font-weight: 600; }
 .fv-footer .tile.alert { background: var(--notice-bg); color: var(--notice-text); border: 2px solid var(--accent); padding: calc(var(--pad-column) - 2px); }
 .fv-footer .tile.alert .lab { color: var(--notice-text); }
+.qr { width: min(60vw, 240px); margin: 0 0 12px; color: var(--text); }
+.qr svg { display: block; width: 100%; height: auto; }

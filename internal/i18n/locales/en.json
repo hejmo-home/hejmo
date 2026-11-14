@@ -78,6 +78,7 @@
   "setup.totp.intro": "Add Hejmo to your authenticator app (for example Aegis, 2FAS or FreeOTP) and enter the code it shows.",
   "setup.totp.key": "Key",
   "setup.totp.link": "Open in authenticator app",
+  "setup.totp.qr": "QR code of the one-time code key. Scan it with your authenticator app.",
   "setup.totp.code": "One-time code",
   "setup.totp.confirm": "Confirm",
   "login.title": "Sign in",

@@ -3,11 +3,14 @@ package server_test
 import (
 	"net/http"
 	"net/url"
+	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"rsc.io/qr"
 )
 
 // Acceptance (Platform): Given a running box without configuration, when the
@@ -65,8 +68,12 @@ func TestSetupSavesAndConfirmsTOTP(t *testing.T) {
 	}
 	secret := secretOn(t, page.body)
 
-	if r := b.post("/setup/totp", url.Values{"code": {"000000"}}); r.status != http.StatusUnprocessableEntity {
+	r = b.do(http.MethodPost, "/setup/totp", url.Values{"code": {"000000"}}, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("wrong code = %d, want 422", r.status)
+	}
+	if !strings.Contains(r.body, "That code is wrong") {
+		t.Error("wrong code shows no error message")
 	}
 	code, _ := auth.TOTPCode(secret, b.now)
 	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusSeeOther || r.location != "/" {
@@ -150,5 +157,69 @@ func TestFormsRejectForeignOrigin(t *testing.T) {
 	r = b.do(http.MethodPost, "/setup", validSetupForm(), map[string]string{"Origin": ""})
 	if r.status != http.StatusForbidden {
 		t.Fatalf("missing origin = %d, want 403", r.status)
+	}
+}
+
+var qrModuleRe = regexp.MustCompile(`M(\d+) (\d+)h1v1h-1z`)
+
+// Acceptance (#68): the one-time code setup page shows a QR code that encodes
+// exactly the page's otpauth URI, served inline, with a text alternative in both
+// locales; key and link remain.
+func TestSetupTOTPPageShowsQRCodeOfTheOtpauthURI(t *testing.T) {
+	b := newBox(t)
+	b.post("/setup", validSetupForm())
+
+	page := b.get("/setup/totp")
+	secret := secretOn(t, page.body)
+	uri := auth.TOTPURI(secret, "mama")
+
+	code, err := qr.Encode(uri, qr.M)
+	if err != nil {
+		t.Fatal(err)
+	}
+	_, svg, ok := strings.Cut(page.body, "<svg")
+	if !ok {
+		t.Fatalf("no QR code on the page\n%s", page.body)
+	}
+	svg, _, ok = strings.Cut(svg, "</svg>")
+	if !ok {
+		t.Fatalf("unterminated QR code on the page\n%s", page.body)
+	}
+	got := map[[2]int]bool{}
+	for _, m := range qrModuleRe.FindAllStringSubmatch(svg, -1) {
+		x, err := strconv.Atoi(m[1])
+		if err != nil {
+			t.Fatal(err)
+		}
+		y, err := strconv.Atoi(m[2])
+		if err != nil {
+			t.Fatal(err)
+		}
+		got[[2]int{x - 4, y - 4}] = true // 4 modules quiet zone
+	}
+	dark := 0
+	for y := 0; y < code.Size; y++ {
+		for x := 0; x < code.Size; x++ {
+			if code.Black(x, y) != got[[2]int{x, y}] {
+				t.Fatalf("module (%d,%d) differs from the QR code of %q", x, y, uri)
+			}
+			if code.Black(x, y) {
+				dark++
+			}
+		}
+	}
+	if dark != len(got) {
+		t.Fatalf("QR has %d dark modules, want %d", len(got), dark)
+	}
+
+	en := b.do(http.MethodGet, "/setup/totp", nil, map[string]string{"Accept-Language": "en"})
+	for _, want := range []string{secret, `class="hint" href="otpauth://totp/Hejmo:mama`, "Open in authenticator app", `aria-label="QR code of the one-time code key`} {
+		if !strings.Contains(en.body, want) {
+			t.Errorf("page misses %q", want)
+		}
+	}
+	de := b.do(http.MethodGet, "/setup/totp", nil, map[string]string{"Accept-Language": "de-DE"})
+	if !strings.Contains(de.body, `aria-label="QR-Code des Einmalcode-Schlüssels`) {
+		t.Errorf("German page misses the QR text alternative:\n%s", de.body)
 	}
 }

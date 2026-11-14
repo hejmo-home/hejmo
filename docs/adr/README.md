@@ -11,7 +11,7 @@ Each ADR records one decision: context, decision, consequences. ADRs take preced
 | [0005](0005-display-client-and-kiosk-adapter.md) | Display client and kiosk adapter | Accepted, amended by 0015 |
 | [0006](0006-authentication.md) | Authentication | Accepted, amended by 0015 |
 | [0007](0007-calendar-sync-in-v1.md) | Calendar sync in V1.0 | Accepted, amended by 0013 |
-| [0008](0008-design-takes-precedence-over-version-plan.md) | Design takes precedence over the version plan | Accepted, amended by 0015 |
+| [0008](0008-design-takes-precedence-over-version-plan.md) | Design takes precedence over the version plan | Accepted, amended by 0015, 0016 |
 | [0009](0009-project-governance.md) | Project governance | Accepted |
 | [0010](0010-households-memberships-and-credentials.md) | Households, memberships and credentials | Accepted, amended by 0015 |
 | [0011](0011-calendar-model.md) | Calendar model | Accepted |

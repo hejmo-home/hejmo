@@ -72,7 +72,8 @@ func TestDevelopmentDatabaseWithOldMigrationNamesMigratesWithoutRerunning(t *tes
 		"0005_public_https.sql", "0006_displays.sql", "0007_tasks.sql", "0008_display_show_tomorrow.sql",
 		"0009_household_settings.sql", "0010_caldav.sql",
 	}
-	if _, err := db.SQL().Exec(`DELETE FROM schema_migrations`); err != nil {
+	// Migrations added after the rename (version > 202611142200) stay recorded.
+	if _, err := db.SQL().Exec(`DELETE FROM schema_migrations WHERE version <= 202611142200`); err != nil {
 		t.Fatal(err)
 	}
 	for i, name := range old {

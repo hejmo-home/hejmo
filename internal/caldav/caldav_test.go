@@ -2,6 +2,7 @@ package caldav_test
 
 import (
 	"context"
+	"fmt"
 	"strings"
 	"testing"
 
@@ -89,5 +90,72 @@ func TestAddressKeyIgnoresCaseOfHostTrailingSlashAndEscaping(t *testing.T) {
 	}
 	if caldav.AddressKey("https://cal.example.org/mama/school/") == a {
 		t.Error("different calendars share a key")
+	}
+}
+
+func tamperedClient(t *testing.T, srv *caldavtest.Server, broken ...string) (*caldav.Client, *caldavtest.Tamper) {
+	t.Helper()
+	tp := new(caldavtest.Tamper)
+	tp.Break(broken...)
+	c, err := caldav.NewClient(srv.URL, caldavtest.User, caldavtest.Password, tp.Client())
+	if err != nil {
+		t.Fatal(err)
+	}
+	return c, tp
+}
+
+func TestFetchKeepsGoodObjectsWhenOneCannotBeDecoded(t *testing.T) {
+	srv := caldavtest.Start(t)
+	cal := srv.MakeCalendar(t, "family", "Family")
+	good := srv.Put(t, cal, "good.ics", caldavtest.Event("good@test", "Swimming", "20261120T150000", "20261120T160000"))
+	bad := srv.Put(t, cal, "bad.ics", caldavtest.Event("bad@test", "Piano", "20261121T150000", "20261121T160000"))
+
+	c, _ := tamperedClient(t, srv, "bad.ics")
+	got, err := c.Fetch(context.Background(), cal, []string{good, bad})
+	if err != nil {
+		t.Fatalf("Fetch() = %v, want the good object despite the bad one", err)
+	}
+	byURL := map[string]caldav.Object{}
+	for _, o := range got {
+		byURL[o.URL] = o
+	}
+	if o := byURL[good]; o.Err != nil || !strings.Contains(string(o.Data), "SUMMARY:Swimming") {
+		t.Fatalf("good object = %+v", o)
+	}
+	if o, ok := byURL[bad]; !ok || o.Err == nil {
+		t.Fatalf("bad object = %+v, want it reported with an error", o)
+	}
+}
+
+func TestFetchSkipsAnObjectDeletedAfterListing(t *testing.T) {
+	srv := caldavtest.Start(t)
+	cal := srv.MakeCalendar(t, "family", "Family")
+	good := srv.Put(t, cal, "good.ics", caldavtest.Event("good@test", "Swimming", "20261120T150000", "20261120T160000"))
+	gone := srv.Put(t, cal, "gone.ics", caldavtest.Event("gone@test", "Piano", "20261121T150000", "20261121T160000"))
+	srv.Delete(t, gone)
+
+	got, err := client(t, srv, caldavtest.Password).Fetch(context.Background(), cal, []string{good, gone})
+	if err != nil {
+		t.Fatalf("Fetch() = %v, want the deleted object skipped", err)
+	}
+	if len(got) != 1 || got[0].URL != good || got[0].Err != nil {
+		t.Fatalf("Fetch() = %+v", got)
+	}
+}
+
+func TestFetchAsksForObjectsInBatches(t *testing.T) {
+	srv := caldavtest.Start(t)
+	cal := srv.MakeCalendar(t, "family", "Family")
+	var urls []string
+	for i := range 230 {
+		urls = append(urls, srv.Put(t, cal, fmt.Sprintf("e%03d.ics", i), caldavtest.Event(fmt.Sprintf("e%d@test", i), "Event", "20261120T150000", "20261120T160000")))
+	}
+	c, tp := tamperedClient(t, srv)
+	got, err := c.Fetch(context.Background(), cal, urls)
+	if err != nil || len(got) != len(urls) {
+		t.Fatalf("Fetch() = %d objects, %v", len(got), err)
+	}
+	if n := tp.Reports.Load(); n != 3 {
+		t.Fatalf("multiget requests = %d, want 3 (100 + 100 + 30)", n)
 	}
 }

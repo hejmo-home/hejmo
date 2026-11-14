@@ -10,9 +10,13 @@ import (
 	"net/http"
 	"os"
 	"os/exec"
+	"path"
 	"path/filepath"
+	"regexp"
+	"slices"
 	"strings"
 	"sync"
+	"sync/atomic"
 	"testing"
 	"time"
 )
@@ -140,6 +144,74 @@ func (s *Server) Put(t *testing.T, calendarURL, file, ics string) string {
 	u := calendarURL + file
 	s.do(t, http.MethodPut, u, ics, "text/calendar; charset=utf-8", http.StatusCreated, http.StatusNoContent)
 	return u
+}
+
+// Tamper sits between the client and Radicale and makes objects unreadable on
+// the wire: multiget answers and plain downloads of the objects named in Break
+// (file names) carry text that is not iCalendar. Radicale refuses to store such
+// objects, but other servers hand them out. Reports counts multiget requests.
+type Tamper struct {
+	Reports atomic.Int32
+
+	mu     sync.Mutex
+	broken []string
+}
+
+// Break makes exactly these objects unreadable from now on.
+func (tp *Tamper) Break(files ...string) {
+	tp.mu.Lock()
+	defer tp.mu.Unlock()
+	tp.broken = files
+}
+
+// Client is an HTTP client that goes through the Tamper.
+func (tp *Tamper) Client() *http.Client { return &http.Client{Transport: tamper{tp}} }
+
+type tamper struct{ *Tamper }
+
+func (tp *Tamper) isBroken(f string) bool {
+	tp.mu.Lock()
+	defer tp.mu.Unlock()
+	return slices.Contains(tp.broken, f)
+}
+
+var (
+	responseBlock = regexp.MustCompile(`(?s)<(\w+:)?response>.*?</(\w+:)?response>`)
+	hrefOf        = regexp.MustCompile(`<(?:\w+:)?href>([^<]*)</`)
+	calendarData  = regexp.MustCompile(`(?s)(<(?:\w+:)?calendar-data[^>]*>).*?(</(?:\w+:)?calendar-data>)`)
+)
+
+func (tr tamper) RoundTrip(req *http.Request) (*http.Response, error) {
+	res, err := http.DefaultTransport.RoundTrip(req)
+	if err != nil {
+		return res, err
+	}
+	if req.Method == http.MethodGet && res.StatusCode == http.StatusOK {
+		if tr.isBroken(path.Base(req.URL.Path)) {
+			res.Body.Close()
+			res.Body = io.NopCloser(strings.NewReader("this is not a calendar"))
+			res.Header.Del("Content-Length")
+		}
+	}
+	if req.Method != "REPORT" {
+		return res, nil
+	}
+	tr.Reports.Add(1)
+	body, err := io.ReadAll(res.Body)
+	res.Body.Close()
+	if err != nil {
+		return nil, err
+	}
+	out := responseBlock.ReplaceAllStringFunc(string(body), func(block string) string {
+		if m := hrefOf.FindStringSubmatch(block); m != nil && tr.isBroken(path.Base(m[1])) {
+			return calendarData.ReplaceAllString(block, "${1}this is not a calendar${2}")
+		}
+		return block
+	})
+	res.Body = io.NopCloser(strings.NewReader(out))
+	res.ContentLength = int64(len(out))
+	res.Header.Del("Content-Length")
+	return res, nil
 }
 
 // Delete removes an object.

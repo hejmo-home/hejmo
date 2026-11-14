@@ -9,6 +9,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"io"
 	"net/http"
 	"net/url"
 	"path"
@@ -33,6 +34,9 @@ type Object struct {
 	URL  string // absolute address
 	ETag string
 	Data []byte // iCalendar text, set by Fetch only
+	// Err is set by Fetch when the server sent the object but it cannot be
+	// read as iCalendar. The other objects of the same Fetch are unaffected.
+	Err error
 }
 
 // StatusError is a refusal by the server, such as 401 for a wrong password.
@@ -53,6 +57,7 @@ func IsUnauthorized(err error) bool {
 type Client struct {
 	base *url.URL
 	dav  *davcal.Client
+	auth *authClient
 }
 
 // NewClient returns a Client for the server at serverURL. A nil hc uses an
@@ -65,11 +70,12 @@ func NewClient(serverURL, user, password string, hc *http.Client) (*Client, erro
 	if hc == nil {
 		hc = &http.Client{Timeout: 30 * time.Second}
 	}
-	dav, err := davcal.NewClient(&authClient{hc: hc, user: user, password: password}, base.String())
+	auth := &authClient{hc: hc, user: user, password: password}
+	dav, err := davcal.NewClient(auth, base.String())
 	if err != nil {
 		return nil, err
 	}
-	return &Client{base: base, dav: dav}, nil
+	return &Client{base: base, dav: dav, auth: auth}, nil
 }
 
 // authClient adds basic auth and turns refusals into StatusError.
@@ -181,11 +187,34 @@ func (c *Client) List(ctx context.Context, calendarURL string) ([]Object, error)
 	return out, nil
 }
 
-// Fetch downloads the given objects (at most one request).
+// fetchBatch is how many objects one multiget asks for, so that the first
+// sync of a calendar with years of events is not one huge request.
+const fetchBatch = 100
+
+// Fetch downloads the given objects, fetchBatch at a time. An object that was
+// deleted since it was listed is left out. An object the server sent but that
+// cannot be read comes back with Err set. Neither fails the others.
 func (c *Client) Fetch(ctx context.Context, calendarURL string, objectURLs []string) ([]Object, error) {
-	if len(objectURLs) == 0 {
-		return nil, nil
+	var out []Object
+	for batch := range slices.Chunk(objectURLs, fetchBatch) {
+		got, err := c.multiget(ctx, calendarURL, batch)
+		if err != nil {
+			if IsUnauthorized(err) || ctx.Err() != nil {
+				return nil, err
+			}
+			// One object the multiget cannot take (go-webdav decodes every
+			// object and fails the whole answer on the first it cannot read,
+			// or on a 404), so ask for each on its own.
+			if got, err = c.fetchEach(ctx, batch); err != nil {
+				return nil, err
+			}
+		}
+		out = append(out, got...)
 	}
+	return out, nil
+}
+
+func (c *Client) multiget(ctx context.Context, calendarURL string, objectURLs []string) ([]Object, error) {
 	paths := make([]string, len(objectURLs))
 	for i, u := range objectURLs {
 		paths[i] = c.route(u)
@@ -200,10 +229,48 @@ func (c *Client) Fetch(ctx context.Context, calendarURL string, objectURLs []str
 	out := make([]Object, 0, len(got))
 	for _, o := range got {
 		var buf bytes.Buffer
+		obj := Object{URL: c.abs(o.Path), ETag: o.ETag}
 		if err := ical.NewEncoder(&buf).Encode(o.Data); err != nil {
-			return nil, fmt.Errorf("object %s: %w", o.Path, err)
+			obj.Err = err
+		} else {
+			obj.Data = buf.Bytes()
 		}
-		out = append(out, Object{URL: c.abs(o.Path), ETag: o.ETag, Data: buf.Bytes()})
+		out = append(out, obj)
+	}
+	return out, nil
+}
+
+// fetchEach downloads objects one request each. An object that is gone is
+// left out; one that cannot be read, or that the server refuses to give,
+// carries the reason in Err.
+func (c *Client) fetchEach(ctx context.Context, objectURLs []string) ([]Object, error) {
+	var out []Object
+	for _, u := range objectURLs {
+		req, err := http.NewRequestWithContext(ctx, http.MethodGet, c.abs(c.route(u)), nil)
+		if err != nil {
+			return nil, err
+		}
+		res, err := c.auth.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		data, err := io.ReadAll(res.Body)
+		res.Body.Close()
+		if err != nil {
+			return nil, err
+		}
+		obj := Object{URL: u, ETag: res.Header.Get("ETag"), Data: data}
+		switch {
+		case res.StatusCode == http.StatusNotFound || res.StatusCode == http.StatusGone:
+			continue
+		case res.StatusCode/100 != 2:
+			obj.Err = fmt.Errorf("the server answered %s", res.Status)
+		default:
+			if _, err := ical.NewDecoder(bytes.NewReader(data)).Decode(); err != nil {
+				obj.Err = err
+			}
+		}
+		out = append(out, obj)
 	}
 	return out, nil
 }

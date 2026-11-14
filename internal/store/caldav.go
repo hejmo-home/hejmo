@@ -162,10 +162,13 @@ func (db *DB) DeleteConnection(householdID, connectionID string) error {
 }
 
 // ObjectChange is one remote object that is new or changed: its address,
-// ETag, raw iCalendar text and the events it holds.
+// ETag, raw iCalendar text and the events it holds. With KeepEvents the object
+// could not be read: its ETag is remembered so it is not downloaded again
+// until the server changes it, but the events from its last good version stay.
 type ObjectChange struct {
 	URL, ETag, Raw string
 	Items          []SyncItem
+	KeepEvents     bool
 }
 
 // RemoteObjects returns the ETag of every remote object the box holds for a
@@ -213,8 +216,10 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 	}
 	for _, o := range changed {
 		url := o.URL
-		if err := replaceSyncedEvents(tx, householdID, calendarID, o.Items, &url); err != nil {
-			return fmt.Errorf("object %s: %w", o.URL, err)
+		if !o.KeepEvents {
+			if err := replaceSyncedEvents(tx, householdID, calendarID, o.Items, &url); err != nil {
+				return fmt.Errorf("object %s: %w", o.URL, err)
+			}
 		}
 		if _, err := tx.Exec(`INSERT INTO remote_objects (calendar_id, url, etag, raw) VALUES (?, ?, ?, ?)
 			ON CONFLICT (calendar_id, url) DO UPDATE SET etag = excluded.etag, raw = excluded.raw`, calendarID, o.URL, o.ETag, o.Raw); err != nil {

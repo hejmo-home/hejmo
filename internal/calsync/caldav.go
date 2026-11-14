@@ -113,11 +113,18 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 			continue // not asked for
 		}
 		change := store.ObjectChange{URL: addr, ETag: etags[addr], Raw: string(o.Data)}
-		res, err := icsfeed.Parse(o.Data, icsfeed.Options{Zone: zone, Now: at})
+		var res icsfeed.Result
+		err := o.Err
+		if err == nil {
+			res, err = icsfeed.Parse(o.Data, icsfeed.Options{Zone: zone, Now: at})
+		}
 		if err != nil {
-			// Keep the last good events and ETag (ADR 0012): the object is
-			// tried again next time and the note says why it was skipped.
+			// Keep the object's last good events (ADR 0012) and remember its
+			// ETag, so it is not downloaded and noted again until the server
+			// changes it.
 			notes = append(notes, i18n.Msg("sync.note.bad_object", "object", addr, "detail", err.Error()))
+			change.KeepEvents = true
+			changes = append(changes, change)
 			continue
 		}
 		for _, it := range res.Items {

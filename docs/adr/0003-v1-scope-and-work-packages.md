@@ -1,6 +1,6 @@
 # 0003. V1 scope and work packages
 
-- Status: Accepted, amended by [0012](0012-calendar-sync.md)
+- Status: Accepted, amended by [0012](0012-calendar-sync.md), [0015](0015-display-web-interface-and-everyday.md)
 - Date: 14/11/2026
 - Replaces: work packages 1–7 in `docs/handover.md`
 

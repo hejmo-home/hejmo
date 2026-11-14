@@ -33,6 +33,7 @@ const (
 	caLifetime   = 10 * 365 * 24 * time.Hour
 	leafLifetime = 800 * 24 * time.Hour // iOS rejects server certificates valid longer than 825 days
 	renewBefore  = 30 * 24 * time.Hour
+	renewRetry   = time.Hour // pause between renewal attempts
 )
 
 // alwaysNames are reachable on every box besides the name used during setup.
@@ -49,6 +50,9 @@ type Store struct {
 	caKey  crypto.Signer
 	leaf   *tls.Certificate
 	expiry time.Time
+	// nextRenew is the earliest time of the next renewal attempt, so that a
+	// failing renewal does not run on every TLS handshake.
+	nextRenew time.Time
 }
 
 // Option configures a Store.
@@ -154,8 +158,12 @@ func (s *Store) Provision(host string, now time.Time) error {
 	if err := writeFile(s.path("ca.pem"), pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o644); err != nil {
 		return err
 	}
-	s.caDER, s.caKey = der, caKey
-	return s.issueLocked(now, dns, ips)
+	if err := s.issueLocked(now, der, caKey, dns, ips); err != nil {
+		return err
+	}
+	s.caDER, s.caKey = der, caKey // published only once the box is ready
+	s.logger.Info("box CA created; compare this fingerprint when trusting it on a device", "sha256", fingerprint(der))
+	return nil
 }
 
 // ErrInvalidHost means the name used to reach the box cannot go into a certificate.
@@ -216,8 +224,8 @@ func ipRanges(ips []net.IP) []*net.IPNet {
 	return out
 }
 
-func (s *Store) issueLocked(now time.Time, dns []string, ips []net.IP) error {
-	ca, err := x509.ParseCertificate(s.caDER)
+func (s *Store) issueLocked(now time.Time, caDER []byte, caKey crypto.Signer, dns []string, ips []net.IP) error {
+	ca, err := x509.ParseCertificate(caDER)
 	if err != nil {
 		return err
 	}
@@ -225,17 +233,22 @@ func (s *Store) issueLocked(now time.Time, dns []string, ips []net.IP) error {
 	if err != nil {
 		return err
 	}
+	notAfter := now.Add(leafLifetime)
+	if ca.NotAfter.Before(notAfter) {
+		notAfter = ca.NotAfter // a certificate cannot outlive its CA
+		s.logger.Warn("CA expires soon; the box needs a new CA", "expires", ca.NotAfter)
+	}
 	tpl := &x509.Certificate{
 		SerialNumber: serial(),
 		Subject:      pkix.Name{CommonName: "Hejmo box"},
 		NotBefore:    now.Add(-time.Hour),
-		NotAfter:     now.Add(leafLifetime),
+		NotAfter:     notAfter,
 		KeyUsage:     x509.KeyUsageDigitalSignature,
 		ExtKeyUsage:  []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth},
 		DNSNames:     dns,
 		IPAddresses:  ips,
 	}
-	der, err := x509.CreateCertificate(rand.Reader, tpl, ca, &key.PublicKey, s.caKey)
+	der, err := x509.CreateCertificate(rand.Reader, tpl, ca, &key.PublicKey, caKey)
 	if err != nil {
 		return err
 	}
@@ -277,13 +290,15 @@ func (s *Store) GetCertificate(*tls.ClientHelloInfo) (*tls.Certificate, error) {
 	}
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	if s.expiry.Sub(s.now()) <= renewBefore && s.leaf.Leaf != nil {
-		if err := s.issueLocked(s.now(), s.leaf.Leaf.DNSNames, s.leaf.Leaf.IPAddresses); err != nil {
+	now := s.now()
+	if s.expiry.Sub(now) <= renewBefore && s.leaf.Leaf != nil && !now.Before(s.nextRenew) {
+		s.nextRenew = now.Add(renewRetry)
+		if err := s.issueLocked(now, s.caDER, s.caKey, s.leaf.Leaf.DNSNames, s.leaf.Leaf.IPAddresses); err != nil {
 			s.logger.Error("renew box certificate", "err", err, "expires", s.expiry)
-			if !s.now().Before(s.expiry) {
-				return nil, err
-			}
 		}
+	}
+	if !now.Before(s.expiry) {
+		return nil, errors.New("pki: box certificate expired and could not be renewed")
 	}
 	return s.leaf, nil
 }
@@ -296,7 +311,11 @@ func (s *Store) CAFingerprint() string {
 	if s.caDER == nil {
 		return ""
 	}
-	sum := sha256.Sum256(s.caDER)
+	return fingerprint(s.caDER)
+}
+
+func fingerprint(der []byte) string {
+	sum := sha256.Sum256(der)
 	parts := make([]string, len(sum))
 	for i, b := range sum {
 		parts[i] = strings.ToUpper(hex.EncodeToString([]byte{b}))

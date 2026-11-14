@@ -80,7 +80,7 @@ func (c *apiClient) call(method, path string, body any) (int, map[string]any, []
 	}
 	req.Body = io.NopCloser(bytes.NewReader(raw))
 
-	client := http.DefaultClient
+	client := c.b.bareClient()
 	if c.cookie {
 		client = c.b.client
 	}
@@ -151,7 +151,7 @@ func TestOpenAPIDocumentsEveryRoute(t *testing.T) {
 
 func TestOpenAPIFileIsServed(t *testing.T) {
 	b := newBox(t)
-	res, err := http.Get(b.srv.URL + "/api/v1/openapi.yaml")
+	res, err := b.bareClient().Get(b.srv.URL + "/api/v1/openapi.yaml")
 	if err != nil {
 		t.Fatal(err)
 	}

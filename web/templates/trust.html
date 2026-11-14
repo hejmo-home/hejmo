@@ -1,0 +1,22 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "trust.title"))}}
+  <h1>{{t "trust.title"}}</h1>
+  <p class="lead">{{t "trust.intro"}}</p>
+  <div class="steps">
+    <fieldset>
+      <legend>{{t "trust.ios.title"}}</legend>
+      <span class="hint">{{t "trust.ios.steps"}}</span>
+      <a class="button" href="/ca/hejmo.mobileconfig">{{t "trust.ios.download"}}</a>
+    </fieldset>
+    <fieldset>
+      <legend>{{t "trust.android.title"}}</legend>
+      <span class="hint">{{t "trust.android.steps"}}</span>
+      <a class="button" href="/ca/hejmo-ca.crt">{{t "trust.cert.download"}}</a>
+    </fieldset>
+    <fieldset>
+      <legend>{{t "trust.browser.title"}}</legend>
+      <span class="hint">{{t "trust.browser.steps"}}</span>
+      <a class="button" href="/ca/hejmo-ca.crt">{{t "trust.cert.download"}}</a>
+    </fieldset>
+    {{if .Continue}}<a class="button" href="{{.Continue}}">{{t "trust.continue"}}</a>{{end}}
+  </div>
+{{template "foot"}}

@@ -22,6 +22,10 @@ func (s *server) handleSetupForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 		return
 	}
+	if !s.pki.Ready() {
+		http.Redirect(w, r, "/setup/https", http.StatusSeeOther)
+		return
+	}
 	s.renderSetup(w, r, http.StatusOK, setupForm{Region: "DE-BY"}, "")
 }
 
@@ -36,6 +40,10 @@ func (s *server) renderSetup(w http.ResponseWriter, r *http.Request, status int,
 func (s *server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 	if s.db.Configured() {
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+		return
+	}
+	if !s.pki.Ready() { // ADR 0014: no password before HTTPS works
+		http.Redirect(w, r, "/setup/https", http.StatusSeeOther)
 		return
 	}
 	f := setupForm{

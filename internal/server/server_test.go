@@ -8,7 +8,7 @@ import (
 
 func TestHealthzReportsOK(t *testing.T) {
 	b := newBox(t)
-	res, err := http.Get(b.srv.URL + "/healthz")
+	res, err := b.bareClient().Get(b.srv.URL + "/healthz")
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -30,8 +30,9 @@ type SyncState struct {
 // SyncedCalendar is a calendar fed from outside through a calendar connection.
 type SyncedCalendar struct {
 	Calendar
-	URL  string
-	Sync SyncState
+	ConnectionID string
+	URL          string // the feed or calendar address
+	Sync         SyncState
 }
 
 // NewICS describes an ICS subscription to create.
@@ -105,7 +106,7 @@ func (db *DB) CreateICSCalendar(householdID string, in NewICS) (SyncedCalendar, 
 	return db.SyncedCalendar(householdID, calID)
 }
 
-const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, n.url,
+const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, n.id, COALESCE(c.remote_url, n.url),
 	s.interval_minutes, s.started_at, s.last_attempt_at, s.last_success_at, s.next_attempt_at, s.failures, s.last_error_key, s.last_error_params
 	FROM calendars c JOIN calendar_connections n ON n.id = c.connection_id JOIN calendar_sync s ON s.calendar_id = c.id`
 
@@ -142,7 +143,7 @@ func (db *DB) syncedCalendars(query string, args ...any) ([]SyncedCalendar, erro
 		var c SyncedCalendar
 		var started, attempt, success, next sql.NullString
 		var errKey, errParams string
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.URL,
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.ConnectionID, &c.URL,
 			&c.Sync.IntervalMinutes, &started, &attempt, &success, &next, &c.Sync.Failures, &errKey, &errParams); err != nil {
 			rows.Close()
 			return nil, err
@@ -163,9 +164,21 @@ func (db *DB) syncedCalendars(query string, args ...any) ([]SyncedCalendar, erro
 	return out, nil
 }
 
-// DeleteSyncedCalendar removes a synced calendar, its connection, events and
-// log. Nothing is deleted outside the box.
+// DeleteSyncedCalendar removes a synced calendar with its events and log.
+// An ICS subscription takes its connection with it; a CalDAV calendar leaves
+// the connection and its other calendars alone. Nothing is deleted outside
+// the box.
 func (db *DB) DeleteSyncedCalendar(householdID, calendarID string) error {
+	var kind string
+	if err := db.sql.QueryRow(`SELECT kind FROM calendars WHERE id = ? AND household_id = ? AND connection_id IS NOT NULL`, calendarID, householdID).Scan(&kind); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return ErrNotFound
+		}
+		return err
+	}
+	if kind != "ics" {
+		return expectOne(db.sql.Exec(`DELETE FROM calendars WHERE id = ? AND household_id = ?`, calendarID, householdID))
+	}
 	return expectOne(db.sql.Exec(`DELETE FROM calendar_connections WHERE household_id = ?
 		AND id = (SELECT connection_id FROM calendars WHERE id = ? AND household_id = ?)`, householdID, calendarID, householdID))
 }
@@ -179,9 +192,17 @@ func (db *DB) CompleteSync(householdID, calendarID string, items []SyncItem, not
 		return err
 	}
 	defer tx.Rollback()
-	if err := replaceSyncedEvents(tx, householdID, calendarID, items); err != nil {
+	if err := replaceSyncedEvents(tx, householdID, calendarID, items, nil); err != nil {
 		return err
 	}
+	if err := recordSuccess(tx, householdID, calendarID, notes, at, next); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// recordSuccess clears the failure state, logs new notes and prunes the log.
+func recordSuccess(tx *sql.Tx, householdID, calendarID string, notes []i18n.Message, at, next time.Time) error {
 	if err := expectOne(tx.Exec(`UPDATE calendar_sync SET last_attempt_at = ?, last_success_at = ?, next_attempt_at = ?, failures = 0, last_error_key = '', last_error_params = '{}'
 		WHERE calendar_id = ? AND calendar_id IN (SELECT id FROM calendars WHERE household_id = ?)`, stamp(at), stamp(at), stamp(next), calendarID, householdID)); err != nil {
 		return err
@@ -201,7 +222,7 @@ func (db *DB) CompleteSync(householdID, calendarID string, items []SyncItem, not
 	if err := pruneLog(tx, at); err != nil {
 		return err
 	}
-	return tx.Commit()
+	return nil
 }
 
 // FailSync records a failed sync. The calendar's events stay as they were.
@@ -275,8 +296,12 @@ func (db *DB) SyncLog(householdID string, limit int) ([]SyncLogEntry, error) {
 	return out, rows.Err()
 }
 
-// replaceSyncedEvents makes the calendar's synced events equal to items.
-func replaceSyncedEvents(tx *sql.Tx, householdID, calendarID string, items []SyncItem) error {
+// replaceSyncedEvents makes the calendar's synced events equal to items. With
+// scope set (the address of one remote object) only the events that came from
+// that object are replaced, and the new ones are recorded as coming from it.
+// Events are matched by key across the whole calendar, so one that moved to
+// another object keeps its id.
+func replaceSyncedEvents(tx *sql.Tx, householdID, calendarID string, items []SyncItem, scope *string) error {
 	var one int
 	if err := tx.QueryRow(`SELECT 1 FROM calendars WHERE id = ? AND household_id = ? AND connection_id IS NOT NULL`, calendarID, householdID).Scan(&one); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
@@ -288,18 +313,19 @@ func replaceSyncedEvents(tx *sql.Tx, householdID, calendarID string, items []Syn
 	if err != nil {
 		return err
 	}
+	inScope := func(r remoteEvent) bool { return scope == nil || (r.url.Valid && r.url.String == *scope) }
 
 	ids := map[string]string{}
 	for _, it := range items {
-		if id, ok := existing[it.Key]; ok {
-			ids[it.Key] = id
+		if r, ok := existing[it.Key]; ok {
+			ids[it.Key] = r.id
 		} else {
 			ids[it.Key] = newID()
 		}
 	}
-	for key, id := range existing {
-		if _, kept := ids[key]; !kept {
-			if _, err := tx.Exec(`DELETE FROM events WHERE id = ?`, id); err != nil { // cascades to changed occurrences
+	for key, r := range existing {
+		if _, kept := ids[key]; !kept && inScope(r) {
+			if _, err := tx.Exec(`DELETE FROM events WHERE id = ?`, r.id); err != nil { // cascades to changed occurrences
 				return err
 			}
 		}
@@ -308,6 +334,10 @@ func replaceSyncedEvents(tx *sql.Tx, householdID, calendarID string, items []Syn
 	// look again: a row that is gone is inserted, not updated.
 	if existing, err = remoteKeys(tx, calendarID); err != nil {
 		return err
+	}
+	var object any
+	if scope != nil {
+		object = *scope
 	}
 	// Series masters first, so changed occurrences can point at them.
 	for _, pass := range []bool{false, true} {
@@ -326,9 +356,10 @@ func replaceSyncedEvents(tx *sql.Tx, householdID, calendarID string, items []Syn
 			if _, had := existing[it.Key]; had {
 				err = updateEventRow(tx, householdID, e)
 			} else {
-				if err = insertEventRow(tx, householdID, e); err == nil {
-					_, err = tx.Exec(`UPDATE events SET remote_key = ? WHERE id = ?`, it.Key, e.ID)
-				}
+				err = insertEventRow(tx, householdID, e)
+			}
+			if err == nil {
+				_, err = tx.Exec(`UPDATE events SET remote_key = ?, remote_url = COALESCE(?, remote_url) WHERE id = ?`, it.Key, object, e.ID)
 			}
 			if err != nil {
 				return fmt.Errorf("event %q: %w", e.Title, err)
@@ -338,20 +369,26 @@ func replaceSyncedEvents(tx *sql.Tx, householdID, calendarID string, items []Syn
 	return nil
 }
 
+type remoteEvent struct {
+	id  string
+	url sql.NullString // remote object, empty for ICS
+}
+
 // remoteKeys maps the remote keys of a calendar's synced events to their ids.
-func remoteKeys(tx *sql.Tx, calendarID string) (map[string]string, error) {
-	out := map[string]string{}
-	rows, err := tx.Query(`SELECT remote_key, id FROM events WHERE calendar_id = ? AND remote_key IS NOT NULL`, calendarID)
+func remoteKeys(tx *sql.Tx, calendarID string) (map[string]remoteEvent, error) {
+	out := map[string]remoteEvent{}
+	rows, err := tx.Query(`SELECT remote_key, id, remote_url FROM events WHERE calendar_id = ? AND remote_key IS NOT NULL`, calendarID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	for rows.Next() {
-		var key, id string
-		if err := rows.Scan(&key, &id); err != nil {
+		var key string
+		var r remoteEvent
+		if err := rows.Scan(&key, &r.id, &r.url); err != nil {
 			return nil, err
 		}
-		out[key] = id
+		out[key] = r
 	}
 	return out, rows.Err()
 }

@@ -338,11 +338,11 @@
   "otp.reset.heading": "Reset one-time codes of another parent",
   "otp.reset.intro": "If another parent lost their authenticator app and has no recovery code, you can reset their one-time codes. Confirm with your own password and one-time code.",
   "otp.reset.password": "Your password",
-  "otp.reset.code": "Your one-time code",
+  "otp.reset.code": "Your one-time code or recovery code",
   "otp.reset.submit": "Reset one-time codes",
   "otp.reset.none": "There is no other parent.",
   "otp.reset.done": "The one-time codes of {name} were reset. At the next sign-in, {name} sets up new ones; nothing else is reachable until then.",
   "otp.reset.revoke": "If the lost phone was paired, revoke it on the CalDAV clients and phones pages.",
-  "otp.error.confirm": "Your password or one-time code is wrong. Nothing was reset.",
+  "otp.error.confirm": "Your password or code is wrong. Nothing was reset.",
   "settings.otp": "One-time codes and recovery codes"
 }

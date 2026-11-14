@@ -338,11 +338,11 @@
   "otp.reset.heading": "Einmalcodes eines anderen Elternteils zurücksetzen",
   "otp.reset.intro": "Hat ein anderes Elternteil die Authenticator-App verloren und keinen Wiederherstellungscode, kannst du dessen Einmalcodes zurücksetzen. Bestätige mit deinem eigenen Passwort und Einmalcode.",
   "otp.reset.password": "Dein Passwort",
-  "otp.reset.code": "Dein Einmalcode",
+  "otp.reset.code": "Dein Einmalcode oder Wiederherstellungscode",
   "otp.reset.submit": "Einmalcodes zurücksetzen",
   "otp.reset.none": "Es gibt kein anderes Elternteil.",
   "otp.reset.done": "Die Einmalcodes von {name} wurden zurückgesetzt. Bei der nächsten Anmeldung richtet {name} neue ein; vorher ist nichts erreichbar.",
   "otp.reset.revoke": "War das verlorene Handy gekoppelt, widerrufe es auf den Seiten für CalDAV-Apps und Handys.",
-  "otp.error.confirm": "Dein Passwort oder Einmalcode ist falsch. Es wurde nichts zurückgesetzt.",
+  "otp.error.confirm": "Dein Passwort oder Code ist falsch. Es wurde nichts zurückgesetzt.",
   "settings.otp": "Einmalcodes und Wiederherstellungscodes"
 }

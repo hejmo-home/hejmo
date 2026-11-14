@@ -407,3 +407,59 @@ func TestRecoveryCodeSignInDoesTheSameWorkWhateverTheOutcome(t *testing.T) {
 		t.Errorf("code spent by a sign-in with the wrong password: %d", r.status)
 	}
 }
+
+// Same for the reset confirmation: a recovery-shaped code costs the same
+// number of verifies whether or not the password is right.
+func TestResetConfirmationDoesTheSameWorkWhateverTheOutcome(t *testing.T) {
+	b, mamaSecret, codes := setupWithCodes(t)
+	papa, _ := secondParent(t, b)
+	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
+	verifies := func(password, code string) int {
+		stop := server.CountRecoveryVerifies()
+		b.post("/otp/reset/"+papa.ID, url.Values{"password": {password}, "code": {code}})
+		return stop()
+	}
+	wrongPw := verifies("wrong horse battery", "ZZZZZ-ZZZZZ")
+	if wrongPw == 0 {
+		t.Fatal("wrong password did no recovery verifies: the work would differ from a right password")
+	}
+	for _, c := range []struct{ name, pw, code string }{
+		{"right password, wrong code", "correct horse battery", "ZZZZZ-ZZZZZ"},
+		{"wrong password, valid code", "wrong horse battery", codes[0]},
+		{"right password, valid code", "correct horse battery", codes[0]},
+	} {
+		if got := verifies(c.pw, c.code); got != wrongPw {
+			t.Errorf("%s: %d verifies, want %d (same as wrong password)", c.name, got, wrongPw)
+		}
+	}
+}
+
+// A person whose codes were reset may only set new ones up: a still-valid API
+// token must not mint recovery codes for the account in that state.
+func TestPendingAccountCannotMintRecoveryCodesWithAToken(t *testing.T) {
+	b, _, _ := setupWithCodes(t)
+	mama, _ := b.db.AccountByUsername("mama")
+	if _, err := b.db.CreateAPIToken(store.APIToken{Name: "Assistant", Hash: auth.HashToken("tok-123"), PersonID: mama.PersonID, Scopes: "write"}); err != nil {
+		t.Fatal(err)
+	}
+	post := func() int {
+		req, _ := http.NewRequest("POST", b.srv.URL+"/api/v1/me/recovery-codes", strings.NewReader("{}"))
+		req.Header.Set("Authorization", "Bearer tok-123")
+		req.Header.Set("Content-Type", "application/json")
+		resp, err := b.client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		resp.Body.Close()
+		return resp.StatusCode
+	}
+	if got := post(); got != http.StatusCreated {
+		t.Fatalf("confirmed account = %d, want 201", got)
+	}
+	if err := b.db.ResetOTP(mama.PersonID); err != nil {
+		t.Fatal(err)
+	}
+	if got := post(); got != http.StatusForbidden {
+		t.Fatalf("account pending re-setup = %d, want 403", got)
+	}
+}

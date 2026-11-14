@@ -42,6 +42,8 @@ paths:
         A recovery code replaces the one-time code at sign-in, never the
         password, and is valid once. The new set voids the old one. The codes
         are returned once and stored only as Argon2id hashes.
+        Refused with 403 while the caller's new one-time codes are not yet
+        confirmed (after a reset).
       responses:
         "201":
           description: Created

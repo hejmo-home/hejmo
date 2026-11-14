@@ -92,7 +92,6 @@ func TestSpecColoursExistAsTokensInColourAndBlackAndWhite(t *testing.T) {
 		{"surface", "#FFFFFF", "#FFFFFF"},
 		{"text", "#2A2A28", "#111111"},
 		{"text-secondary", "#5C5A55", "#3A3A38"},
-		{"progress-track-bw", "", "#D6D6D3"},
 		{"event-card", "", "#E4E4E1"},
 		{"person-1", "#B4583A", "#111111"},
 		{"person-1-tint", "#F7E7E0", "#E4E4E1"},
@@ -111,9 +110,6 @@ func TestSpecColoursExistAsTokensInColourAndBlackAndWhite(t *testing.T) {
 	for _, r := range rows {
 		for theme, want := range map[string]string{"light": r.light, "bw": r.bw} {
 			if want == "" {
-				continue
-			}
-			if r.name == "progress-track-bw" {
 				continue
 			}
 			if got := themed(t, css, theme)["--"+r.name]; !strings.EqualFold(got, want) {
@@ -153,6 +149,7 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 		{"--radius-tile", "22px", d.Rounded, "tile"},
 		{"--radius-chip", "18px", d.Rounded, "chip"},
 		{"--radius-card", "14px", d.Rounded, "card"},
+		{"--radius-field", "12px", d.Rounded, "field"},
 		{"--radius-progress", "4px", d.Rounded, "progress"},
 		{"--progress-height", "8px", d.Sizes, "progress-height"},
 		{"--margin", "28px", d.Spacing, "margin"},
@@ -205,9 +202,63 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 
 func TestBlackAndWhiteMarkersUseDistinctShapes(t *testing.T) {
 	css := stylesheet(t)
+	seen := map[string]string{}
 	for _, shape := range []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled"} {
-		if !strings.Contains(css, `[data-shape="`+shape+`"]`) {
-			t.Errorf("no marker rule for shape %s", shape)
+		m := regexp.MustCompile(`\[data-theme="bw"\] \.marker\[data-shape="` + shape + `"\]\s*\{([^}]*)\}`).FindStringSubmatch(css)
+		if m == nil {
+			t.Errorf("no bw marker rule for shape %s", shape)
+			continue
+		}
+		body := strings.Join(strings.Fields(m[1]), " ")
+		if other, dup := seen[body]; dup {
+			t.Errorf("shape %s has the same rule as %s", shape, other)
+		}
+		seen[body] = shape
+	}
+}
+
+// Every colour in DESIGN.md equals the custom property of the same role in
+// that theme's CSS block, and every colour custom property has a token.
+func TestDesignColoursAndStylesheetAgreeBothWays(t *testing.T) {
+	css, d := stylesheet(t), design(t)
+	hex := regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
+	for _, theme := range themes {
+		block := cssTokens(t, css, theme)
+		prefix := theme + "-"
+		for name, want := range d.Colors {
+			role, ok := strings.CutPrefix(name, prefix)
+			if !ok {
+				continue
+			}
+			got, ok := block["--"+role]
+			if !ok {
+				t.Errorf("DESIGN.md colors.%s has no --%s in the %s CSS block", name, role, theme)
+				continue
+			}
+			if !strings.EqualFold(got, want) {
+				t.Errorf("%s: css --%s = %s, DESIGN.md colors.%s = %s", theme, role, got, name, want)
+			}
+		}
+		for prop, val := range block {
+			if !hex.MatchString(val) {
+				continue
+			}
+			if _, ok := d.Colors[prefix+strings.TrimPrefix(prop, "--")]; !ok {
+				t.Errorf("%s: css %s has no DESIGN.md token colors.%s%s", theme, prop, prefix, strings.TrimPrefix(prop, "--"))
+			}
+		}
+	}
+}
+
+// Component rules take colours from tokens, never hard-coded hex values.
+func TestComponentRulesDoNotHardCodeColours(t *testing.T) {
+	css := stylesheet(t)
+	for _, line := range strings.Split(css, "\n") {
+		if strings.HasPrefix(strings.TrimSpace(line), "--") || strings.HasPrefix(strings.TrimSpace(line), "/*") {
+			continue
+		}
+		if regexp.MustCompile(`#[0-9A-Fa-f]{3,6}\b`).MatchString(line) {
+			t.Errorf("hard-coded colour in component rule: %s", strings.TrimSpace(line))
 		}
 	}
 }
@@ -263,7 +314,10 @@ func TestContrastOnEveryPaletteReachesAA(t *testing.T) {
 			check("person-"+n+"-text", "person-"+n+"-tint", 4.5) // text on person tints
 			check("person-"+n, "surface", 3)                     // marker against the column
 		}
-		check("accent", "surface", 3)
+		// accent is text (links, .button.secondary) and the button background.
+		check("accent", "background", 4.5)
+		check("accent", "surface", 4.5)
+		check("accent-text", "accent", 4.5)
 	}
 }
 

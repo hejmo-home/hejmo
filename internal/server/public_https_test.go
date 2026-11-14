@@ -290,6 +290,10 @@ func TestParentsAndTheWizardSeeAWarningWhenThePublicSetupCannotBeResumed(t *test
 		t.Errorf("no warning on the start page:\n%s", r.body)
 	}
 
+	if _, body, _ := c.call(http.MethodGet, "/https", nil); body["warning"] != true || body["renewal_error"] == "" {
+		t.Errorf("the API shows no warning: %v", body)
+	}
+
 	fresh := newFreshBox(t)
 	fresh.public.status = publiccert.Status{Warning: true, RenewalError: "x"}
 	r := fresh.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": "en"})
@@ -323,5 +327,27 @@ func TestPublicSetupSurvivesTheBrowserGivingUp(t *testing.T) {
 	}
 	if !b.public.ctxDeadline {
 		t.Error("Setup has no time limit of its own")
+	}
+}
+
+// A configured box whose token cannot be opened still holds its certificate
+// (name set, warning raised): plain HTTP must keep redirecting, never serve
+// login, API or CalDAV (ADR 0014).
+func TestConfiguredBoxWithAWarnedPublicSetupStillRedirectsHTTP(t *testing.T) {
+	c := signedInAPI(t)
+	b := c.b
+	b.public.name = "mia.dedyn.io"
+	b.public.status = publiccert.Status{Warning: true, RenewalError: "publiccert: DNS token: x"}
+	plain := b.plainServer()
+	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	for _, path := range []string{"/login", "/api/v1/https", "/dav/"} {
+		res, err := client.Get(plain.URL + path)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		if res.StatusCode != http.StatusPermanentRedirect || res.Header.Get("Location") != "https://mia.dedyn.io"+path {
+			t.Errorf("GET http://%s = %d %q", path, res.StatusCode, res.Header.Get("Location"))
+		}
 	}
 }

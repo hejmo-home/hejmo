@@ -71,9 +71,6 @@ func defaultProviders(provider, token string) (DNSProvider, error) {
 	return nil, ErrUnknownProvider
 }
 
-// Providers lists the DNS providers the wizard offers.
-func Providers() []string { return []string{"desec"} }
-
 // Request is what the wizard collects.
 type Request struct {
 	Name     string // DNS name of the box, e.g. familie.dedyn.io
@@ -212,6 +209,11 @@ func (m *Manager) start(ctx context.Context) error {
 	}
 	req, err := m.requestFrom(saved)
 	if err != nil {
+		// The token is only needed to order and renew: the stored
+		// certificate is still served, so HTTPS keeps working (ADR 0014).
+		if serveErr := m.serveStored(ctx, saved); serveErr != nil {
+			m.logger.Warn("stored HTTPS certificate cannot be served either", "err", serveErr)
+		}
 		return err
 	}
 	cfg, cache, err := m.newConfig(req)
@@ -230,6 +232,39 @@ func (m *Manager) start(ctx context.Context) error {
 	m.install(cfg, cache, saved.Name, saved.Issuer)
 	m.refreshExpiry(ctx)
 	return nil
+}
+
+// noRenewal stands in for an issuer when the DNS token cannot be opened. It
+// carries the real issuer's key because CertMagic stores certificates per
+// issuer.
+type noRenewal struct{ key string }
+
+func (noRenewal) Issue(context.Context, *x509.CertificateRequest) (*certmagic.IssuedCertificate, error) {
+	return nil, errors.New("the DNS token cannot be opened; enter it again")
+}
+func (n noRenewal) IssuerKey() string { return n.key }
+
+// serveStored serves the certificate on disk without being able to renew it.
+// It was issued by the chosen issuer or by the ZeroSSL fallback.
+func (m *Manager) serveStored(ctx context.Context, saved store.PublicHTTPS) error {
+	var lastErr error
+	for _, issuer := range []string{saved.Issuer, zeroSSL} {
+		var cfg *certmagic.Config
+		cache := certmagic.NewCache(certmagic.CacheOptions{
+			GetConfigForCert: func(certmagic.Certificate) (*certmagic.Config, error) { return cfg, nil },
+			Logger:           zap.NewNop(),
+		})
+		cfg = certmagic.New(cache, certmagic.Config{Storage: &certmagic.FileStorage{Path: m.dir}, Logger: zap.NewNop(), OnEvent: m.onEvent})
+		key := certmagic.NewACMEIssuer(cfg, certmagic.ACMEIssuer{CA: m.directories[issuer], Logger: zap.NewNop()}).IssuerKey()
+		cfg.Issuers = []certmagic.Issuer{noRenewal{key}}
+		if _, lastErr = cfg.CacheManagedCertificate(ctx, saved.Name); lastErr == nil {
+			m.install(cfg, cache, saved.Name, saved.Issuer)
+			m.refreshExpiry(ctx)
+			return nil
+		}
+		cache.Stop()
+	}
+	return lastErr
 }
 
 func (m *Manager) requestFrom(s store.PublicHTTPS) (Request, error) {
@@ -279,7 +314,9 @@ func (m *Manager) refreshExpiry(ctx context.Context) {
 }
 
 // Clear forgets the public setup, with its sealed token: the family goes back
-// to the box's own CA. The box then serves no public certificate.
+// to the box's own CA. The box then serves no public certificate. The
+// address record at the DNS provider is left as it is: the token is not
+// kept long enough to remove it, and a stale record does no harm.
 func (m *Manager) Clear() error {
 	m.setupMu.Lock()
 	defer m.setupMu.Unlock()
@@ -331,17 +368,17 @@ func (m *Manager) Status() Status {
 	cfg, name, issuer, expires, startErr := m.cfg, m.name, m.issuer, m.expires, m.startErr
 	m.mu.RUnlock()
 	st := Status{Name: name, Issuer: issuer}
+	if startErr != "" {
+		st.Warning, st.RenewalError = true, startErr
+	}
 	if cfg == nil {
-		if startErr != "" {
-			st.Warning, st.RenewalError = true, startErr
-		}
 		return st
 	}
 	if !expires.IsZero() {
 		st.Expires = expires
-		st.Warning = m.now().Add(expirySoon).After(expires)
+		st.Warning = st.Warning || m.now().Add(expirySoon).After(expires)
 	}
-	if saved, ok, err := m.db.PublicHTTPS(); err == nil && ok && saved.RenewalError != "" {
+	if saved, ok, err := m.db.PublicHTTPS(); err == nil && ok && saved.RenewalError != "" && startErr == "" {
 		st.RenewalError, st.Warning = saved.RenewalError, true
 	}
 	return st
@@ -505,15 +542,24 @@ func (m *Manager) onEvent(ctx context.Context, event string, data map[string]any
 	renewal, _ := data["renewal"].(bool)
 	switch event {
 	case "cert_failed":
-		if !renewal {
-			return nil
-		}
 		err, _ := data["error"].(error)
 		if err == nil {
 			err = errors.New("renewal failed")
 		}
+		if !renewal {
+			// A certificate ordered again after a restart with lost files.
+			m.mu.Lock()
+			m.startErr = err.Error()
+			m.mu.Unlock()
+			return nil
+		}
 		m.recordRenewal(err)
 	case "cert_obtained":
+		m.mu.Lock()
+		if !renewal {
+			m.startErr = ""
+		}
+		m.mu.Unlock()
 		if renewal {
 			m.recordRenewal(nil)
 		}

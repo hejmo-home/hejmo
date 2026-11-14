@@ -131,5 +131,5 @@
   "event.untitled": "(no title)",
   "calendars.error.color": "Please choose a colour.",
   "https.warning": "The box's HTTPS certificate could not be renewed or loaded. Devices will refuse to connect once it has expired or is missing.",
-  "https.warning.hint": "Check the DNS token and that the box is online; it tries again automatically. If the key file secret.key was lost, set up the public name again."
+  "https.warning.hint": "Check the DNS token and that the box is online; it tries again automatically. If the key file secret.key was lost, restore it from your backup; the current certificate keeps working until then."
 }

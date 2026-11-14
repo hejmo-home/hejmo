@@ -95,6 +95,9 @@ func run(cfg config, logger *slog.Logger) error {
 	// A public certificate (ADR 0014), if the family chose a name in the
 	// wizard: its DNS token is sealed with a key file (ADR 0012), by default
 	// next to the database.
+	if _, err := os.Stat(cfg.SecretKeyFile); errors.Is(err, os.ErrNotExist) && os.Getenv("HEJMO_SECRET_KEY_FILE") != "" {
+		return fmt.Errorf("HEJMO_SECRET_KEY_FILE %s does not exist", cfg.SecretKeyFile)
+	}
 	sealer, err := secret.Open(cfg.SecretKeyFile)
 	if err != nil {
 		return err

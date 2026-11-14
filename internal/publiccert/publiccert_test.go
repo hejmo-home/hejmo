@@ -368,10 +368,12 @@ func TestForeignKeyFileDoesNotStopTheBoxAndSetupCanBeRedone(t *testing.T) {
 	if err := again.Start(context.Background()); err == nil {
 		t.Fatal("Start opened a token sealed with another key")
 	}
-	if again.Ready() {
-		t.Error("ready without a usable setup")
+	// The stored certificate needs no token to be served.
+	if !again.Ready() {
+		t.Error("not ready although the certificate is stored")
 	}
-	if st := again.Status(); !st.Warning || st.RenewalError == "" {
+	serves(t, again, boxName)
+	if st := again.Status(); !st.Warning || st.RenewalError == "" || st.Name != boxName {
 		t.Errorf("parents get no warning: %+v", st)
 	}
 

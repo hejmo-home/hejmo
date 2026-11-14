@@ -166,12 +166,16 @@ func (s *server) handleSwitchToOwnCA(w http.ResponseWriter, r *http.Request) {
 
 func (s *server) apiHTTPS(w http.ResponseWriter, r *http.Request, _ principal) {
 	out := httpsJSON{Mode: "own-ca"}
-	if s.publicReady() {
+	if s.public != nil {
 		st := s.public.Status()
-		out = httpsJSON{Mode: "public", Name: st.Name, Issuer: st.Issuer, Warning: st.Warning, RenewalError: st.RenewalError}
-		if !st.Expires.IsZero() {
-			exp := st.Expires.UTC().Format(time.RFC3339)
-			out.ExpiresAt = &exp
+		// A stored setup that cannot be resumed has no name yet but still warns.
+		out.Warning, out.RenewalError = st.Warning, st.RenewalError
+		if s.publicReady() {
+			out.Mode, out.Name, out.Issuer = "public", st.Name, st.Issuer
+			if !st.Expires.IsZero() {
+				exp := st.Expires.UTC().Format(time.RFC3339)
+				out.ExpiresAt = &exp
+			}
 		}
 	}
 	writeJSON(w, http.StatusOK, out)

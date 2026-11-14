@@ -131,5 +131,5 @@
   "event.untitled": "(ohne Titel)",
   "calendars.error.color": "Bitte wähle eine Farbe.",
   "https.warning": "Das HTTPS-Zertifikat der Box konnte nicht erneuert oder geladen werden. Geräte verweigern die Verbindung, sobald es abgelaufen ist oder fehlt.",
-  "https.warning.hint": "Prüfe den DNS-Token und ob die Box online ist; sie versucht es automatisch erneut. Ging die Schlüsseldatei secret.key verloren, richte den öffentlichen Namen neu ein."
+  "https.warning.hint": "Prüfe den DNS-Token und ob die Box online ist; sie versucht es automatisch erneut. Ging die Schlüsseldatei secret.key verloren, stelle sie aus deiner Sicherung wieder her; das aktuelle Zertifikat funktioniert bis dahin weiter."
 }

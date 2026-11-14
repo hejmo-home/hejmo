@@ -12,6 +12,7 @@
   var help = box.querySelector("[data-rebind-help]");
   var waiting = box.querySelector("[data-check-waiting]");
   var ok = box.querySelector("[data-check-ok]");
+  var link = box.querySelector("[data-continue-link]");
   var timer = null;
 
   function check() {
@@ -20,11 +21,13 @@
     fetch(url, { mode: "no-cors", cache: "no-store" }).then(function () {
       waiting.hidden = true;
       help.hidden = true;
+      link.hidden = false;
       ok.hidden = false;
       window.location.href = next;
     }, function () {
       waiting.hidden = true;
       help.hidden = false;
+      link.hidden = true; // not while the name does not resolve
       timer = setTimeout(check, wait);
     });
   }

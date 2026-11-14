@@ -21,7 +21,7 @@ Self-hosted, open-source family organizer: a Go box (Raspberry Pi, Docker) with 
 - **Make or buy:** before building anything foundational (a protocol, parser, crypto, sync engine, UI framework), search for open-source libraries, compare them (license, maintenance, size, fit) against building it, and put the choice to the product owner. "Make" is not the default.
 - **Open source only at runtime** (ADR 0004). Proprietary services are allowed as optional integrations.
 - **No real personal data** in the repo. Test data uses the example family: Mama, Papa, Sebastian, Mia.
-- **Migrations** are named `YYYYMMDDhhmm_name.sql` (UTC minute you write it, lower-case ascii name); never a running counter, so branches cannot collide. A test fails on duplicate or non-ascending prefixes. They are append-only once a 0.x release exists; before that, an unreleased migration may still be edited.
+- **Migrations** are named `YYYYMMDDhhmm_name.sql` (UTC minute you write it, lower-case ascii name); never a running counter, so branches cannot collide. A test fails on duplicate or non-ascending prefixes. They are append-only once 0.1 is released (preview builds from `main` are not releases); before that, an unreleased migration may still be edited.
 - **Reviewers** also read `CODING_STANDARDS.md`: judgement calls no check can enforce. Implementers do not need it.
 - Code, comments, commits, issues and docs in English. User-facing text through `internal/i18n/locales/` (German and English, same keys).
 

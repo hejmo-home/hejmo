@@ -23,6 +23,8 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/pki"
+	"github.com/hejmo-home/hejmo/internal/publiccert"
+	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -85,6 +87,21 @@ func run(cfg config, logger *slog.Logger) error {
 		return err
 	}
 
+	// A public certificate (ADR 0014), if the family chose a name in the
+	// wizard: its DNS token is sealed with a key file next to the database.
+	sealer, err := secret.Open(filepath.Join(cfg.DataDir, "secret.key"))
+	if err != nil {
+		return err
+	}
+	public, err := publiccert.New(filepath.Join(cfg.DataDir, "tls", "public"), db, sealer, publiccert.WithLogger(logger))
+	if err != nil {
+		return err
+	}
+	defer public.Close()
+	if err := public.Start(ctx); err != nil {
+		return err
+	}
+
 	// The scheduler checks for due calendars every minute; each calendar
 	// syncs on its own interval (60 minutes for ICS by default).
 	syncer := calsync.New(db, nil, nil)
@@ -96,7 +113,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-schedulerDone }()
 
-	handler := server.New(server.Options{DB: db, PKI: certs, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer})
+	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).
@@ -105,7 +122,12 @@ func run(cfg config, logger *slog.Logger) error {
 		Addr:              cfg.HTTPSAddr,
 		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
-		TLSConfig:         &tls.Config{MinVersion: tls.VersionTLS12, GetCertificate: certs.GetCertificate},
+		TLSConfig: &tls.Config{MinVersion: tls.VersionTLS12, GetCertificate: func(h *tls.ClientHelloInfo) (*tls.Certificate, error) {
+			if public.Ready() {
+				return public.GetCertificate(h)
+			}
+			return certs.GetCertificate(h)
+		}},
 	}
 	servers := []*http.Server{httpSrv, httpsSrv}
 	errc := make(chan error, len(servers))

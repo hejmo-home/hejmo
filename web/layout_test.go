@@ -1,7 +1,9 @@
 package web_test
 
 import (
+	"fmt"
 	"math"
+	"os"
 	"regexp"
 	"strconv"
 	"strings"
@@ -45,7 +47,7 @@ func visibleColumns(t *testing.T, css string, w, h float64, n int) int {
 	if err != nil {
 		t.Fatalf("--cols-max = %q", root["--cols-max"])
 	}
-	if h > w {
+	if h >= w { // CSS orientation: portrait also matches a square viewport
 		limit, err = strconv.Atoi(portraitTokens(t, css)["--cols-max"])
 		if err != nil {
 			t.Fatal("no --cols-max in portrait")
@@ -62,7 +64,7 @@ func visibleColumns(t *testing.T, css string, w, h float64, n int) int {
 	return vis
 }
 
-// Product owner, 14/11/2026 (ADR 0016): at most 6 person columns in landscape,
+// Proposed in ADR 0016 (pending approval of preview-27): at most 6 person columns in landscape,
 // 4 in portrait, each at least about 150 px; beyond that they scroll sideways.
 func TestColumnLimitsPerOrientationAndWidth(t *testing.T) {
 	css := stylesheet(t)
@@ -80,7 +82,9 @@ func TestColumnLimitsPerOrientationAndWidth(t *testing.T) {
 		{"E-Ink landscape, 7 people: 6 visible, then scroll", 1024, 768, 7, 6},
 		{"E-Ink landscape, 4 people", 1024, 768, 4, 4},
 		{"iPad Air landscape, 8 people", 1180, 820, 8, 6},
-		{"rotated: the same 5 people, portrait then landscape", 1024, 768, 5, 5},
+		{"rotated: the same 5 people, portrait", 768, 1024, 5, 4},
+		{"rotated: the same 5 people, landscape", 1024, 768, 5, 5},
+		{"square viewport counts as portrait", 800, 800, 5, 4},
 	}
 	for _, c := range cases {
 		if got := visibleColumns(t, css, c.w, c.h, c.people); got != c.want {
@@ -97,7 +101,11 @@ func TestFamilyGridUsesColumnTokens(t *testing.T) {
 	if m == nil {
 		t.Fatal("no .fv-grid rule")
 	}
-	for _, want := range []string{"grid-auto-flow: column", "overflow-x: auto", "var(--col-min)", "var(--cols-max)", "var(--cols)"} {
+	for _, want := range []string{
+		"grid-auto-flow: column", "overflow-x: auto",
+		"--visible: min(var(--cols), var(--cols-max));",
+		"grid-auto-columns: max(var(--col-min), calc((100% - (var(--visible) - 1) * var(--gap)) / var(--visible)));",
+	} {
 		if !strings.Contains(m[1], want) {
 			t.Errorf(".fv-grid lacks %q", want)
 		}
@@ -114,5 +122,92 @@ func TestColumnMinimumIsInDesignMd(t *testing.T) {
 	}
 	if got := cssTokens(t, stylesheet(t), "light")["--col-min"]; got != "144px" {
 		t.Errorf("css --col-min = %q, want 144px", got)
+	}
+}
+
+// The page fits the display: dynamic viewport height (iOS toolbars) with a
+// plain vh fallback, a header that wraps instead of overflowing, and footer
+// tiles that grow from a 200 px basis and wrap.
+func TestFamilyPageFitsNarrowAndShortDisplays(t *testing.T) {
+	css := stylesheet(t)
+	rule := func(sel string) string {
+		m := regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(sel) + `\s*\{([^}]*)\}`).FindStringSubmatch(css)
+		if m == nil {
+			t.Fatalf("no %s rule", sel)
+		}
+		return m[1]
+	}
+	page := rule(".family-page")
+	vh, dvh := strings.Index(page, "height: calc(100vh - 2 * var(--margin));"), strings.Index(page, "height: calc(100dvh - 2 * var(--margin));")
+	if vh < 0 || dvh < 0 || vh > dvh {
+		t.Errorf(".family-page needs the 100vh fallback before the 100dvh height: %q", page)
+	}
+	if h := rule(".fv-header"); !strings.Contains(h, "flex-wrap: wrap;") {
+		t.Errorf(".fv-header does not wrap: %q", h)
+	}
+	if f := rule(".fv-footer"); !strings.Contains(f, "flex-wrap: wrap;") {
+		t.Errorf(".fv-footer does not wrap: %q", f)
+	}
+	if tile := rule(".fv-footer .tile"); !strings.Contains(tile, "flex: 1 1 200px;") || !strings.Contains(tile, "min-width: 0;") {
+		t.Errorf(".fv-footer .tile must grow from 200px and be shrinkable: %q", tile)
+	}
+}
+
+// Readability snapshot (acceptance criterion 2). For each reference device and
+// number of people it records how many columns are visible, how wide a column
+// is, how much room its content has inside the padding, and whether the
+// longest example name (with its marker) fits that room. Text width is
+// estimated at 0.51 em per bold character (measured 0.50 em for "Sebastian" in Figtree 700 at 19 px).
+// HEJMO_UPDATE_GOLDEN=1 rewrites the golden after a reviewed change.
+func TestPortraitColumnReadabilitySnapshot(t *testing.T) {
+	css := stylesheet(t)
+	root := cssTokens(t, css, "light")
+	margin, gap, min := px(t, root["--margin"]), px(t, root["--gap"]), px(t, root["--col-min"])
+	pad, fs := px(t, root["--pad-column"]), px(t, root["--fs-person-name"])
+	marker := px(t, themed(t, css, "bw")["--marker-size-bw-column"]) // the larger of the two themes
+	const longest = "Sebastian"
+	need := float64(len(longest))*0.51*fs + 8 + marker
+
+	devices := []struct {
+		name string
+		w, h float64
+	}{
+		{"iPhone portrait 375x812", 375, 812}, {"iPad portrait 768x1024", 768, 1024},
+		{"iPad Air portrait 820x1180", 820, 1180}, {"E-Ink landscape 1024x768", 1024, 768},
+	}
+	var b strings.Builder
+	for _, d := range devices {
+		for _, n := range []int{3, 4, 5, 6} {
+			vis := visibleColumns(t, css, d.w, d.h, n)
+			limit := 6
+			if d.h >= d.w {
+				limit, _ = strconv.Atoi(portraitTokens(t, css)["--cols-max"])
+			}
+			share := math.Min(float64(n), float64(limit))
+			colw := math.Max(min, (d.w-2*margin-(share-1)*gap)/share)
+			content := colw - 2*pad
+			fit := "fits"
+			if content < need {
+				fit = "TOO NARROW"
+			}
+			fmt.Fprintf(&b, "%s, %d people: %d visible, column %.0f px, content %.0f px, %q %s (needs %.0f px)\n", d.name, n, vis, colw, content, longest, fit, need)
+		}
+	}
+	got := b.String()
+	if strings.Contains(got, "TOO NARROW") {
+		t.Errorf("a person name does not fit its column:\n%s", got)
+	}
+	const golden = "testdata/portrait_layout.golden"
+	if os.Getenv("HEJMO_UPDATE_GOLDEN") != "" {
+		if err := os.WriteFile(golden, []byte(got), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	want, err := os.ReadFile(golden)
+	if err != nil {
+		t.Fatalf("%v (HEJMO_UPDATE_GOLDEN=1 writes it)", err)
+	}
+	if got != string(want) {
+		t.Errorf("layout differs from %s (HEJMO_UPDATE_GOLDEN=1 rewrites it after a reviewed change):\n%s", golden, got)
 	}
 }

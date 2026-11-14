@@ -23,6 +23,8 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/pki"
+	"github.com/hejmo-home/hejmo/internal/publiccert"
+	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -32,6 +34,7 @@ type config struct {
 	HTTPSAddr       string // HTTPS listen address, HEJMO_HTTPS_ADDR
 	PublicHTTPSPort string // port clients reach HTTPS on, HEJMO_PUBLIC_HTTPS_PORT
 	DataDir         string // persistent data, HEJMO_DATA_DIR
+	SecretKeyFile   string // key that seals credentials, HEJMO_SECRET_KEY_FILE (default: secret.key in DataDir)
 }
 
 func loadConfig(getenv func(string) string) config {
@@ -47,6 +50,10 @@ func loadConfig(getenv func(string) string) config {
 	}
 	if v := getenv("HEJMO_DATA_DIR"); v != "" {
 		cfg.DataDir = v
+	}
+	cfg.SecretKeyFile = filepath.Join(cfg.DataDir, "secret.key")
+	if v := getenv("HEJMO_SECRET_KEY_FILE"); v != "" {
+		cfg.SecretKeyFile = v
 	}
 	return cfg
 }
@@ -85,6 +92,29 @@ func run(cfg config, logger *slog.Logger) error {
 		return err
 	}
 
+	// A public certificate (ADR 0014), if the family chose a name in the
+	// wizard: its DNS token is sealed with a key file (ADR 0012), by default
+	// next to the database.
+	if _, err := os.Stat(cfg.SecretKeyFile); errors.Is(err, os.ErrNotExist) && os.Getenv("HEJMO_SECRET_KEY_FILE") != "" {
+		return fmt.Errorf("HEJMO_SECRET_KEY_FILE %s does not exist", cfg.SecretKeyFile)
+	}
+	sealer, err := secret.Open(cfg.SecretKeyFile)
+	if err != nil {
+		return err
+	}
+	public, err := publiccert.New(filepath.Join(cfg.DataDir, "tls", "public"), db, sealer, publiccert.WithLogger(logger))
+	if err != nil {
+		return err
+	}
+	defer public.Close()
+	// A setup that cannot be resumed (for example a lost key file) must not
+	// take the web interface down: parents are warned there, and the box
+	// serves HTTPS with its own CA meanwhile (ensureHTTPS).
+	if err := public.Start(ctx); err != nil {
+		logger.Error("public HTTPS not started; falling back to the box's own CA", "err", err)
+	}
+	ensureHTTPS(db, certs, time.Now(), logger)
+
 	// The scheduler checks for due calendars every minute; each calendar
 	// syncs on its own interval (60 minutes for ICS by default).
 	syncer := calsync.New(db, nil, nil)
@@ -96,7 +126,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-schedulerDone }()
 
-	handler := server.New(server.Options{DB: db, PKI: certs, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer})
+	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).
@@ -105,7 +135,7 @@ func run(cfg config, logger *slog.Logger) error {
 		Addr:              cfg.HTTPSAddr,
 		Handler:           handler,
 		ReadHeaderTimeout: 10 * time.Second,
-		TLSConfig:         &tls.Config{MinVersion: tls.VersionTLS12, GetCertificate: certs.GetCertificate},
+		TLSConfig:         tlsConfig(public, certs),
 	}
 	servers := []*http.Server{httpSrv, httpsSrv}
 	errc := make(chan error, len(servers))
@@ -136,6 +166,50 @@ func run(cfg config, logger *slog.Logger) error {
 		}
 	}
 	return nil
+}
+
+// ensureHTTPS makes sure the box can serve HTTPS whenever the family chose a
+// public name: the box then also has its own CA for that name, which serves
+// every handshake the public certificate cannot (ADR 0014, decision Q27). That
+// covers a certificate that cannot be loaded and one that cannot be obtained
+// (token readable, certificate missing, CA or deSEC unreachable), where the
+// manager is ready but has nothing to serve. The public certificate stays
+// preferred, see tlsConfig. Without a stored public setup it does nothing,
+// and neither before setup is complete: the wizard's own-CA choice then
+// provisions the CA for the address the browser used, and a CA made earlier
+// for the public name would make that choice fail. Plain HTTP stays only for
+// the wizard before HTTPS is configured.
+func ensureHTTPS(db *store.DB, certs *pki.Store, now time.Time, logger *slog.Logger) {
+	if certs.Ready() || !db.Configured() {
+		return
+	}
+	saved, ok, err := db.PublicHTTPS()
+	if err != nil || !ok {
+		if err != nil {
+			logger.Error("read stored public HTTPS setup", "err", err)
+		}
+		return
+	}
+	if err := certs.Provision(saved.Name, now); err != nil {
+		logger.Error("own CA fallback failed; HTTPS may be unavailable", "err", err)
+		return
+	}
+	logger.Info("own CA kept as a standby; phones need to trust it only if the public certificate is unavailable, see /ca", "name", saved.Name)
+}
+
+// tlsConfig serves the public certificate when there is one and the box's own
+// CA certificate otherwise, also when the public certificate cannot be
+// produced for a handshake.
+func tlsConfig(public *publiccert.Manager, certs *pki.Store) *tls.Config {
+	return &tls.Config{MinVersion: tls.VersionTLS12, GetCertificate: func(h *tls.ClientHelloInfo) (*tls.Certificate, error) {
+		if public.Ready() {
+			c, err := public.GetCertificate(h)
+			if err == nil || !certs.Ready() {
+				return c, err
+			}
+		}
+		return certs.GetCertificate(h)
+	}}
 }
 
 // healthcheck asks the box at baseURL for /healthz.

@@ -120,7 +120,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	data := map[string]any{
 		"Person": p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
-		"Intervals": syncIntervals, "SyncStale": s.syncStale(p.household.ID), "Form": form,
+		"Intervals": syncIntervals, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
 	}
 	if form != nil {
 		data["Error"] = form["Error"]

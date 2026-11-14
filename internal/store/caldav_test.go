@@ -89,9 +89,9 @@ func TestCreatingAConnectionWithoutAKeyFailsInsteadOfStoringPlainText(t *testing
 	}
 }
 
-func TestCalDAVCalendarsAreReadOnlyUntilWriteBackExistsAndDueAtOnce(t *testing.T) {
+func TestCalDAVCalendarsAreTwoWayByDefaultAndDueAtOnce(t *testing.T) {
 	f := newDAVFixture(t)
-	if f.a.Kind != "caldav" || !f.a.ReadOnly || f.a.URL != "https://caldav.example.org/mama/family/" || f.a.ConnectionID != f.conn.ID || f.a.Sync.IntervalMinutes != 5 {
+	if f.a.Kind != "caldav" || f.a.ReadOnly || f.a.URL != "https://caldav.example.org/mama/family/" || f.a.ConnectionID != f.conn.ID || f.a.Sync.IntervalMinutes != 5 {
 		t.Fatalf("calendar = %+v", f.a)
 	}
 	due, _ := f.db.DueCalendars(t0)

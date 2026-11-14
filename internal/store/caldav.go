@@ -128,8 +128,8 @@ func (db *DB) ConnectionCredentials(householdID, connectionID string) (user, pas
 	return user, string(plain), nil
 }
 
-// AddCalDAVCalendar adds a calendar of a connection. It is read-only (write-back
-// follows with its own ticket) and due for its first sync at once.
+// AddCalDAVCalendar adds a calendar of a connection. It is two-way (parents can
+// switch it to read-only) and due for its first sync at once.
 func (db *DB) AddCalDAVCalendar(householdID, connectionID string, in NewCalDAVCalendar) (SyncedCalendar, error) {
 	if strings.TrimSpace(in.Name) == "" || strings.TrimSpace(in.RemoteURL) == "" {
 		return SyncedCalendar{}, fmt.Errorf("%w: name and address required", ErrInvalid)
@@ -147,7 +147,7 @@ func (db *DB) AddCalDAVCalendar(householdID, connectionID string, in NewCalDAVCa
 	}
 	defer tx.Rollback()
 	if _, err := tx.Exec(`INSERT INTO calendars (id, household_id, name, kind, color, connection_id, remote_url, read_only, created_at, updated_at)
-		VALUES (?, ?, ?, 'caldav', ?, ?, ?, 1, ?, ?)`, calID, householdID, strings.TrimSpace(in.Name), in.Color, connectionID, in.RemoteURL, ts, ts); err != nil {
+		VALUES (?, ?, ?, 'caldav', ?, ?, ?, 0, ?, ?)`, calID, householdID, strings.TrimSpace(in.Name), in.Color, connectionID, in.RemoteURL, ts, ts); err != nil {
 		return SyncedCalendar{}, err
 	}
 	if err := writeAudience(tx, "calendar_audience", "calendar_id", calID, in.Audience); err != nil {
@@ -180,9 +180,10 @@ type ObjectChange struct {
 }
 
 // RemoteObjects returns the ETag of every remote object the box holds for a
-// calendar, by address.
+// calendar, by address. Objects with changes waiting to be pushed are left
+// out (see PendingObjects).
 func (db *DB) RemoteObjects(calendarID string) (map[string]string, error) {
-	rows, err := db.sql.Query(`SELECT url, etag FROM remote_objects WHERE calendar_id = ?`, calendarID)
+	rows, err := db.sql.Query(`SELECT url, etag FROM remote_objects WHERE calendar_id = ? AND pending = 0`, calendarID)
 	if err != nil {
 		return nil, err
 	}

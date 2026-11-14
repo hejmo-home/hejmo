@@ -175,6 +175,40 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /caldav-profile:
+    post:
+      operationId: createCalDAVProfile
+      summary: Download an iOS profile that sets up the caller's CalDAV account (scope tokens:write)
+      description: |
+        Creates a new device token (scope `calendars`) for the caller, named
+        after the device, and answers with an iOS configuration profile
+        (`com.apple.caldav.account`) that holds the box address, the caller's
+        user name and that token. For the caller's own account only. The box
+        keeps no copy: the profile is the answer to this request; asking again
+        creates another profile and another token. The token is listed and
+        revoked like any other (`/tokens`). Served over HTTPS only, because
+        the file holds the token in plain text; a plain HTTP request gets 403.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80, example: iPhone Mama }
+      responses:
+        "200":
+          description: The profile, as a download
+          headers:
+            Content-Disposition: { schema: { type: string } }
+          content:
+            application/x-apple-aspen-config:
+              schema: { type: string }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /tokens/{id}:
     delete:
       operationId: revokeToken

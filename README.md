@@ -13,6 +13,7 @@ Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. It 
 
 ## Documentation
 
+- Install guide: [English](docs/install.md), [Deutsch](docs/install.de.md) (Raspberry Pi OS: one command)
 - [Specification](docs/spec.md): features, data model, acceptance criteria, design
 - [Build handover](docs/handover.md): original work plan and guardrails
 - [Architecture decision records](docs/adr/): decisions that refine or override the specification

@@ -64,6 +64,20 @@ jobs:
         if: always()
         run: docker compose down -v
 
+  # Acceptance (ticket #100): on a Raspberry Pi OS 64-bit stand-in (Debian
+  # bookworm arm64 with Raspberry Pi's archive, systemd as PID 1) the install
+  # command makes the setup wizard reachable, and running it again changes
+  # nothing. Containers only; see .github/install-test/run.sh.
+  install:
+    name: Install script (Raspberry Pi OS 64-bit stand-in)
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        run: shellcheck install.sh .github/install-test/run.sh
+      - name: Install on the stand-in, twice
+        run: ./.github/install-test/run.sh
+
   # Security checks (ADR 0018, Measurement). Tools run in CI only; none is part of the binary.
   # Thresholds: govulncheck fails on any vulnerability the code calls; gosec fails on
   # findings of high severity; Trivy fails on fixable HIGH or CRITICAL findings in the image.

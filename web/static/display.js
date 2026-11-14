@@ -2,9 +2,11 @@
 // the box announces each new version of the family view over Server-Sent
 // Events, and the script swaps in only the changed markup. On connect the box
 // announces the current version, so a display that lost its connection
-// catches up when EventSource reconnects. The clock chip changes once a
-// minute, as a partial update (ADR 0016): the script ticks it itself in the
-// household's time zone, it is not part of the announced version.
+// catches up when EventSource reconnects. The weather chip is part of the
+// view, so a new reading arrives as an ordinary change. The clock chip changes
+// once a minute, as a partial update (ADR 0016): the script ticks it itself in
+// the household's time zone and time format, it is not part of the announced
+// version.
 //
 // Separately, a display asks the box now and then whether it is still what its
 // page says (paired, or waiting with a code) and reloads when that changed:
@@ -73,7 +75,8 @@
       .then(function () { loading = false; });
   }
   // The clock chip is ticked here, not announced: once a minute, in the
-  // household's zone (data-clock-zone), 24-hour hh:mm.
+  // household's zone (data-clock-zone) and time format (data-clock-format):
+  // 24-hour hh:mm, or 12-hour h:mm AM/PM.
   var fmt = {};
   function tickClock() {
     var chip = view.querySelector("[data-clock]");
@@ -81,7 +84,12 @@
     var zone = chip.getAttribute("data-clock-zone") || undefined;
     try {
       fmt[zone] = fmt[zone] || new Intl.DateTimeFormat("en-GB", { hour: "2-digit", minute: "2-digit", hourCycle: "h23", timeZone: zone });
-      var text = fmt[zone].format(new Date());
+      var parts = fmt[zone].formatToParts(new Date());
+      var h = 0, m = "00";
+      parts.forEach(function (p) { if (p.type === "hour") h = Number(p.value); if (p.type === "minute") m = p.value; });
+      var text = chip.getAttribute("data-clock-format") === "12h"
+        ? ((h + 11) % 12 + 1) + ":" + m + " " + (h < 12 ? "AM" : "PM")
+        : (h < 10 ? "0" : "") + h + ":" + m;
       if (chip.textContent !== text) chip.textContent = text;
     } catch (e) {}
   }

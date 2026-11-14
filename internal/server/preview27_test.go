@@ -81,6 +81,10 @@ func TestWriteDesignPreview27(t *testing.T) {
 	frame("Black and white", "bw", 768, 1024, build(five))
 	body.WriteString("</div><h2>Phone portrait 375x812, four people: two columns visible (minimum width 144 px), the rest by scrolling</h2><div class=\"row\">\n")
 	frame("iPhone portrait", "light", 375, 812, build(four))
+	body.WriteString("</div><h2>Phone landscape 812x375, four people with a footer tile: the columns are short, the footer takes its share of the height</h2><div class=\"row\">\n")
+	phoneLandscape := build(four)
+	phoneLandscape.Meal = &familyview.Tile{Label: "Dinner", Lines: []string{"Pasta bake"}}
+	frame("iPhone landscape", "light", 812, 375, phoneLandscape)
 	body.WriteString("</div>\n")
 
 	page := `<!doctype html>

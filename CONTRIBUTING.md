@@ -36,3 +36,17 @@ The hook `.githooks/prepare-commit-msg` appends the line for the committer and n
 ## Decisions
 
 Larger decisions are recorded as ADRs in `docs/adr/`. Propose a new ADR in your pull request if you change scope, guardrails or the data model.
+
+## Releases
+
+Only the product owner cuts a release (ADR 0018). A tag `v<major>.<minor>.<patch>` on `main` runs `.github/workflows/release.yml`: it builds the image for x86_64 and arm64, pushes it to `ghcr.io/hejmo-home/hejmo`, signs it with cosign (keyless, GitHub OIDC), verifies the signature and creates the GitHub release with notes listing the merged pull requests since the previous tag. A suffix (`v0.1.0-rc.1`) makes it a pre-release: it gets no `latest` tag and auto-update ignores it.
+
+Every push to `main` runs `.github/workflows/preview.yml`: images tagged `preview` and `preview-<short sha>`, never signed as a release and never a GitHub release.
+
+Verify a release image:
+
+```bash
+cosign verify ghcr.io/hejmo-home/hejmo:0.1.0 \
+  --certificate-identity "https://github.com/hejmo-home/hejmo/.github/workflows/release.yml@refs/tags/v0.1.0" \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```

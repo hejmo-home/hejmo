@@ -338,7 +338,8 @@ func text(c *ical.Component, name string) string {
 const AudienceProp = "X-HEJMO-AUDIENCE"
 
 // FormatAudience writes an audience as the value of X-HEJMO-AUDIENCE:
-// "person:<id>,group:<id>".
+// "person:<id>|group:<id>". The separator is not a comma: servers such as
+// Radicale split a value at commas and keep only the first part.
 func FormatAudience(people, groups []string) string {
 	var parts []string
 	for _, p := range people {
@@ -347,12 +348,12 @@ func FormatAudience(people, groups []string) string {
 	for _, g := range groups {
 		parts = append(parts, "group:"+g)
 	}
-	return strings.Join(parts, ",")
+	return strings.Join(parts, "|")
 }
 
 // ParseAudience reads the value of X-HEJMO-AUDIENCE. Unknown entries are ignored.
 func ParseAudience(v string) (people, groups []string) {
-	for _, part := range strings.Split(v, ",") {
+	for _, part := range strings.FieldsFunc(v, func(r rune) bool { return r == '|' || r == ',' }) {
 		kind, id, ok := strings.Cut(strings.TrimSpace(part), ":")
 		switch {
 		case !ok || id == "":

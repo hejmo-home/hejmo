@@ -8,7 +8,7 @@ import (
 
 func TestImportReadsTheAudienceAndStripsTheReadableLine(t *testing.T) {
 	data := feed(vevent("UID:a", "SUMMARY:Swimming", "DTSTART:20261120T150000Z", "DTEND:20261120T160000Z",
-		"DESCRIPTION:Bring towels\\n\\nFür: Mia\\, Sebastian", "X-HEJMO-AUDIENCE:person:p1,group:g1"))
+		"DESCRIPTION:Bring towels\\n\\nFür: Mia\\, Sebastian", "X-HEJMO-AUDIENCE:person:p1|group:g1"))
 	res, err := icsfeed.Parse(data, icsfeed.Options{Zone: berlin, Now: now, AudienceLines: []string{"For: ", "Für: "}})
 	if err != nil || len(res.Items) != 1 {
 		t.Fatalf("%v %+v", err, res)

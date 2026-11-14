@@ -298,5 +298,16 @@
   "tasks.field.part": "Tageszeit",
   "tasks.part.any": "Jederzeit",
   "tasks.create": "Aufgabe hinzufügen",
-  "tasks.error.invalid": "Bitte wähle eine Person und gib einen Titel ein. Eine einmalige Aufgabe braucht ein Datum, eine wöchentliche mindestens einen Wochentag."
+  "tasks.error.invalid": "Bitte wähle eine Person und gib einen Titel ein. Eine einmalige Aufgabe braucht ein Datum, eine wöchentliche mindestens einen Wochentag.",
+  "sync.audience_line": "Für: {names}",
+  "sync.conflict.outside_won": "„{title}“ wurde auf der Box und außerhalb geändert. Die spätere Änderung, außerhalb gemacht, blieb erhalten; die Version der Box steht hier 30 Tage lang.",
+  "sync.conflict.box_won": "„{title}“ wurde auf der Box und außerhalb geändert. Die spätere Änderung, auf der Box gemacht, blieb erhalten; die Version von außerhalb steht hier 30 Tage lang.",
+  "sync.conflict.deleted_outside": "„{title}“ wurde auf der Box geändert, aber außerhalb gelöscht. Die Änderung der Box blieb erhalten und der Termin wurde zurückgeschrieben.",
+  "sync.conflict.deleted_on_box": "„{title}“ wurde auf der Box gelöscht, aber später außerhalb geändert. Die Änderung von außerhalb blieb erhalten, der Termin ist wieder auf der Box.",
+  "sync.fail.push": "Eine Änderung auf der Box konnte nicht zum Kalenderserver geschrieben werden: {detail}",
+  "sync.fail.write_refused": "Der Kalenderserver nimmt für diesen Kalender keine Änderungen von der Box an. Stelle den Kalender auf „Nur lesbar“, damit die Box es nicht weiter versucht.",
+  "calendars.two_way": "In beide Richtungen: Änderungen auf der Box werden zurückgeschrieben",
+  "calendars.make_read_only": "Nur lesbar machen",
+  "calendars.make_two_way": "Änderungen auf der Box erlauben",
+  "calendars.log.version": "Unterlegene Version"
 }

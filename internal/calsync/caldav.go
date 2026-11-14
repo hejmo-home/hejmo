@@ -2,7 +2,6 @@ package calsync
 
 import (
 	"context"
-	"errors"
 	"fmt"
 	"time"
 
@@ -18,6 +17,11 @@ type Remote interface {
 	Calendar(ctx context.Context, calendarURL string) (caldavclient.Calendar, error)
 	List(ctx context.Context, calendarURL string) ([]caldavclient.Object, error)
 	Fetch(ctx context.Context, calendarURL string, objectURLs []string) ([]caldavclient.Object, error)
+	// Put writes an object (a new one with an empty etag, else replacing that
+	// version) and returns its new ETag; Delete removes one. A refusal because
+	// the server's version is another is caldavclient.IsConflict.
+	Put(ctx context.Context, objectURL, raw, etag string) (string, error)
+	Delete(ctx context.Context, objectURL, etag string) error
 }
 
 // Dialer connects to a CalDAV server with one set of credentials.
@@ -64,18 +68,22 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.address", "detail", err.Error()), err)
 	}
-	failRemote := func(err error) error {
-		if caldavclient.IsUnauthorized(err) {
-			return fail(i18n.Msg("sync.fail.login"), err)
+	failRemote := func(err error) error { return fail(remoteMessage(err), err) }
+
+	// Box changes go out first, so the import below never overwrites them.
+	var pushErr error
+	if !cal.ReadOnly {
+		if pushErr = s.pushPending(ctx, cal, h, remote); pushErr != nil && abortsSync(pushErr) {
+			return failRemote(pushErr)
 		}
-		var foreign *caldavclient.ForeignHostError
-		if errors.As(err, &foreign) && foreign.Downgrade {
-			return fail(i18n.Msg("sync.fail.downgrade", "host", foreign.Host), err)
-		}
-		if errors.As(err, &foreign) {
-			return fail(i18n.Msg("sync.fail.foreign_host", "host", foreign.Host, "domain", foreign.Domain), err)
-		}
-		return fail(MessageOf(err), err)
+	}
+	pending, err := s.db.PendingObjects(cal.ID)
+	if err != nil {
+		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
+	}
+	waiting := map[string]bool{}
+	for _, p := range pending {
+		waiting[caldavclient.AddressKey(p.URL)] = true
 	}
 
 	listed, err := remote.List(ctx, cal.URL)
@@ -86,15 +94,27 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
 	}
+	knownByKey := map[string]string{} // normalised address -> address as stored
+	for u := range known {
+		knownByKey[caldavclient.AddressKey(u)] = u
+	}
 	var toFetch []string
 	present := map[string]bool{}
 	etags := map[string]string{}
-	byPath := map[string]string{} // normalised address -> listed address
+	byPath := map[string]string{} // normalised address -> address as stored, else as listed
 	for _, o := range listed {
-		present[o.URL] = true
-		etags[o.URL] = o.ETag
-		byPath[caldavclient.AddressKey(o.URL)] = o.URL
-		if etag, ok := known[o.URL]; !ok || etag != o.ETag || o.ETag == "" {
+		key := caldavclient.AddressKey(o.URL)
+		if waiting[key] {
+			continue // the box has changes for it that are not written yet
+		}
+		addr, isKnown := knownByKey[key]
+		if !isKnown {
+			addr = o.URL
+		}
+		present[addr] = true
+		etags[addr] = o.ETag
+		byPath[key] = addr
+		if !isKnown || known[addr] != o.ETag || o.ETag == "" {
 			toFetch = append(toFetch, o.URL)
 		}
 	}
@@ -108,6 +128,10 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	zone, err := time.LoadLocation(h.Timezone)
 	if err != nil {
 		zone = time.UTC
+	}
+	ids, err := s.audienceIDs(h.ID)
+	if err != nil {
+		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
 	}
 	fetched, err := remote.Fetch(ctx, cal.URL, toFetch)
 	if err != nil {
@@ -124,7 +148,7 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 		var res icsfeed.Result
 		err := o.Err
 		if err == nil {
-			res, err = icsfeed.Parse(o.Data, icsfeed.Options{Zone: zone, Now: at})
+			res, err = icsfeed.Parse(o.Data, s.importOptions(zone, at))
 		}
 		if err != nil {
 			// Keep the object's last good events (ADR 0012) and remember its
@@ -136,6 +160,7 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 			continue
 		}
 		for _, it := range res.Items {
+			it.Event.People, it.Event.Groups = keepKnown(it.Event.People, ids), keepKnown(it.Event.Groups, ids)
 			change.Items = append(change.Items, store.SyncItem{Key: it.Key, SeriesKey: it.SeriesKey, Event: it.Event})
 		}
 		notes = append(notes, res.Notes...)
@@ -144,6 +169,10 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
 	if err := s.db.CompleteObjectSync(h.ID, cal.ID, changes, deleted, notes, at, at.Add(interval)); err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), fmt.Errorf("could not store the events: %w", err))
+	}
+	if pushErr != nil {
+		// Reading went well; the failed write is logged and tried again.
+		return fail(pushMessage(pushErr), pushErr)
 	}
 	return nil
 }

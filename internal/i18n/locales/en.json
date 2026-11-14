@@ -298,5 +298,16 @@
   "tasks.field.part": "Time of day",
   "tasks.part.any": "Any time",
   "tasks.create": "Add task",
-  "tasks.error.invalid": "Please choose a person and enter a title. A once task needs a date, a weekly task at least one weekday."
+  "tasks.error.invalid": "Please choose a person and enter a title. A once task needs a date, a weekly task at least one weekday.",
+  "sync.audience_line": "For: {names}",
+  "sync.conflict.outside_won": "\"{title}\" was changed on the box and outside. The later change, made outside, was kept; the box's version is kept here for 30 days.",
+  "sync.conflict.box_won": "\"{title}\" was changed on the box and outside. The later change, made on the box, was kept; the outside version is kept here for 30 days.",
+  "sync.conflict.deleted_outside": "\"{title}\" was changed on the box but deleted outside. The box's change was kept and the event written back.",
+  "sync.conflict.deleted_on_box": "\"{title}\" was deleted on the box but changed later outside. The outside change was kept and the event is back on the box.",
+  "sync.fail.push": "A change on the box could not be written to the calendar server: {detail}",
+  "sync.fail.write_refused": "The calendar server does not accept changes from the box for this calendar. Switch the calendar to read-only to stop trying.",
+  "calendars.two_way": "Two-way: changes on the box are written back",
+  "calendars.make_read_only": "Make read-only",
+  "calendars.make_two_way": "Allow changes on the box",
+  "calendars.log.version": "Version that lost"
 }

@@ -126,6 +126,9 @@ type Service struct {
 	logger *slog.Logger
 	dial   Dialer
 	locks  sync.Map // calendar id -> *sync.Mutex: one sync per calendar at a time
+	pushes sync.WaitGroup
+	bundle *i18n.Bundle
+	lang   string // language of the readable audience line
 }
 
 func (s *Service) lock(calendarID string) *sync.Mutex {
@@ -141,7 +144,7 @@ func New(db *store.DB, fetch Fetcher, now func() time.Time) *Service {
 	if now == nil {
 		now = time.Now
 	}
-	return &Service{db: db, fetch: fetch, now: now, logger: slog.Default(), dial: dialCalDAV}
+	return &Service{db: db, fetch: fetch, now: now, logger: slog.Default(), dial: dialCalDAV, bundle: i18n.MustLoad(), lang: i18n.Default}
 }
 
 // SetDialer sets how the service connects to CalDAV servers (tests count or

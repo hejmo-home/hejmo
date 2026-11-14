@@ -94,7 +94,7 @@ func TestAudienceGoesOutAsPropertyAndReadableLineWithTheTitleUnchanged(t *testin
 	o := objectOf(t, iCloudEvent)
 	o.Master.People = []string{"Mia", "Sebastian"}
 	got := patch(t, iCloudEvent, o)
-	if !strings.Contains(got, "X-HEJMO-AUDIENCE:person:Mia,person:Sebastian\r\n") {
+	if !strings.Contains(got, "X-HEJMO-AUDIENCE:person:Mia|person:Sebastian\r\n") {
 		t.Fatalf("no audience property:\n%s", got)
 	}
 	if !strings.Contains(got, "SUMMARY:Swimming\r\n") {

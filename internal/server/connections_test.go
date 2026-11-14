@@ -411,6 +411,12 @@ func (o oneCalendarRemote) List(context.Context, string) ([]caldavclient.Object,
 func (o oneCalendarRemote) Fetch(context.Context, string, []string) ([]caldavclient.Object, error) {
 	return nil, nil
 }
+func (o oneCalendarRemote) Put(context.Context, string, string, string) (string, error) {
+	return "", errors.New("not used")
+}
+func (o oneCalendarRemote) Delete(context.Context, string, string) error {
+	return errors.New("not used")
+}
 
 func TestWebICloudIgnoresAddressAndSingleCalendarFlag(t *testing.T) {
 	c := signedInAPI(t)

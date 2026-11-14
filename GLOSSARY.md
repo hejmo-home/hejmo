@@ -113,7 +113,7 @@ The same event changed both on the box and outside since the last sync.
 _Avoid_: collision, clash
 
 **Sync log**:
-The record, visible to parents, of sync failures and sync conflicts, including the version that lost.
+The record, visible to parents, of sync failures and sync conflicts, including the version that lost. Shown as "Sync problems".
 _Avoid_: history, audit log
 
 ## Views and devices
@@ -197,6 +197,10 @@ _Avoid_: app password, CalDAV password
 **Share through the box**:
 The switch on a calendar that makes the box serve it to CalDAV clients. The family calendar is always shared; on by default for ICS calendars, off for CalDAV and Google calendars.
 _Avoid_: publish, export
+
+**Recovery code**:
+A one-time code shown once when one-time codes are set up, which replaces the one-time code at sign-in when the device with the authenticator app is lost.
+_Avoid_: backup code, reset code
 
 **Token scope**:
 A right granted to an API token: `read`, `write`, a resource (e.g. `lists`) or a resource with an action (e.g. `events:read`).

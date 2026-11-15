@@ -271,13 +271,11 @@ var bundle = i18n.MustLoad()
 
 // audienceOf lists the IDs of the people who see o, in display order.
 func audienceOf(in Input, o calendar.Occurrence) []string {
-	var out []string
-	for _, p := range in.People {
-		if sees(in, p, o) {
-			out = append(out, p.ID)
-		}
+	viewers := make([]calendar.Viewer, len(in.People))
+	for i, p := range in.People {
+		viewers[i] = calendar.Viewer{PersonID: p.ID, Groups: p.Groups}
 	}
-	return out
+	return calendar.ViewersOf(o, in.Calendars, viewers)
 }
 
 // whoLine words who o is for; omit is the person of the column it is shown in.

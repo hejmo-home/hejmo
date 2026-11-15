@@ -114,7 +114,9 @@ func TestSubscribedCalendarRowsSayWhoTheyAreFor(t *testing.T) {
 	seb, _ := c.b.db.AddPerson(h.ID, store.Person{Name: "Sebastian", Role: store.RoleChild})
 	kids, _ := c.b.db.CreateGroup(h.ID, "Kids", []string{mia.ID, seb.ID})
 	c.b.feeds.set(schoolFeed, feedOf(), nil)
-	two := func(people, groups []string) map[string]any { return map[string]any{"people": people, "groups": groups} }
+	two := func(people, groups []string) map[string]any {
+		return map[string]any{"people": people, "groups": groups}
+	}
 	c.addICS(t, map[string]any{"kind": "ics", "name": "Bins", "url": schoolFeed})
 	c.addICS(t, map[string]any{"kind": "ics", "name": "Football", "url": schoolFeed, "audience": two([]string{seb.ID, mia.ID}, []string{})})
 	c.addICS(t, map[string]any{"kind": "ics", "name": "Swimming", "url": schoolFeed, "audience": two([]string{}, []string{kids.ID})})

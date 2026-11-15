@@ -61,6 +61,7 @@ func selectionErrorField(e *inputError) string {
 // entered for it, or what is stored, or the defaults. On means the switch is on.
 type selectionCalendar struct {
 	URL, Name, Color string
+	LastSync         string // when it last synced, in words; empty for a calendar that is not synced
 	Synced, On       bool
 	People, Groups   []string
 }
@@ -162,9 +163,17 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		lastFact,
 		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: conn.CreatedAt.In(p.location()).Format(dayLayout)},
 	}
+	shown := selectionCalendars(found, form, mine, taken)
+	for i, c := range shown {
+		for _, m := range mine {
+			if c.Synced && caldavclient.AddressKey(m.URL) == caldavclient.AddressKey(c.URL) {
+				shown[i].LastSync = s.syncLast(r, p, m)
+			}
+		}
+	}
 	data := map[string]any{
 		"Person": p.person, "Connection": connectionView{ID: conn.ID, URL: conn.URL, Username: conn.Username}, "Title": conn.Username,
-		"Found": selectionCalendars(found, form, mine, taken), "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
+		"Found": shown, "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
 		"DefaultInterval": interval, "SyncStale": s.syncStale(p.household.ID),
 		"Error": errKey, "ErrorField": errField, "ErrorCalendar": errCalendar,
 		"Facts": facts, "Names": names, "ICloud": conn.URL == iCloudServer,

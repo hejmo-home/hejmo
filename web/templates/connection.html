@@ -15,7 +15,8 @@
       <div class="card-row">
         <span class="t"><b>{{$cal.Name}}</b>
           <span class="state{{if $cal.On}} is-on{{end}}"><span class="on-text">{{t "connections.switch.on"}}</span><span class="off-text">{{t "connections.switch.off"}}</span></span>
-          <span class="hint count" data-count-for="{{$cal.URL}}" data-state="loading">{{t "connections.count.nojs"}}</span></span>
+          <span class="hint count" data-count-for="{{$cal.URL}}" data-state="loading">{{t "connections.count.nojs"}}</span>{{if $cal.LastSync}}
+          <span class="status">{{$cal.LastSync}}</span>{{end}}</span>
         <label class="switch"><input type="checkbox" role="switch" name="calendar" value="{{$cal.URL}}"{{if $cal.On}} checked{{end}} aria-label="{{$cal.Name}}"{{if and $here (eq $.ErrorField "calendar")}} aria-invalid="true" aria-describedby="err-calendar"{{end}}></label>
       </div>
       <label>{{t "calendars.field.name"}}

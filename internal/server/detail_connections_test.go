@@ -191,3 +191,20 @@ func TestConnectionPasswordWorksThroughTheAPI(t *testing.T) {
 		t.Errorf("read-only token = %d, want 403", status)
 	}
 }
+
+func TestAnOnCalendarShowsItsLastSyncUnderTheSwitch(t *testing.T) {
+	b := signedInBox(t)
+	id := chosenConnection(t, b)
+	acceptOnly(b, "pw-1")
+	body := getEN(b, "/connections/"+id).body
+	home := body[strings.Index(body, `<b>Home</b>`):]
+	home = home[:strings.Index(home, `name="name_`)]
+	if !strings.Contains(home, `<span class="status">Last synced `) {
+		t.Errorf("the calendar that is on shows no last sync\n%s", home)
+	}
+	work := body[strings.Index(body, `<b>Work</b>`):]
+	work = work[:strings.Index(work, `name="name_`)]
+	if strings.Contains(work, "Last synced") {
+		t.Errorf("a calendar that is off shows a last sync\n%s", work)
+	}
+}

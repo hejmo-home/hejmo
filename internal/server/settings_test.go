@@ -39,7 +39,9 @@ func TestWebTimesFollowTheHouseholdTimeFormat(t *testing.T) {
 	b.post("/caldav/tokens", url.Values{"name": {"Phone"}})
 	// The token is stamped with the real clock, so the CalDAV page is matched by shape.
 	h24 := regexp.MustCompile(`\d\d/\d\d/\d{4}, \d{1,2}:\d\d:\d\d(?: [AP]M)?`)
-	tokenPage := func() string { return b.get("/caldav/tokens/" + tokenHrefRe.FindStringSubmatch(b.get("/caldav").body)[1]).body }
+	tokenPage := func() string {
+		return b.get("/caldav/tokens/" + tokenHrefRe.FindStringSubmatch(b.get("/caldav").body)[1]).body
+	}
 	if body := b.get("/calendars").body; !strings.Contains(body, "14/11/2026 13:00:00") {
 		t.Errorf("/calendars does not use the 24h format:\n%s", body)
 	}

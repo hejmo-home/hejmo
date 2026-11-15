@@ -33,6 +33,9 @@ type Calendar struct {
 	// Shared is "share through the box": phones may subscribe to the calendar
 	// over CalDAV. Always true for the family calendar.
 	Shared bool
+	// Waste marks a read-only calendar as the household's waste collection
+	// calendar (ADR 0015): its events feed only the tomorrow tile and the night page.
+	Waste bool
 	// Family marks the household's family calendar: the first local calendar.
 	Family   bool
 	Audience calendar.Audience
@@ -116,14 +119,14 @@ func (db *DB) CreateCalendar(c Calendar) (Calendar, error) {
 
 // Calendars lists a household's calendars with their audiences.
 func (db *DB) Calendars(householdID string) ([]Calendar, error) {
-	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color, read_only, shared FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
+	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color, read_only, shared, waste FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
 	if err != nil {
 		return nil, err
 	}
 	var out []Calendar
 	for rows.Next() {
 		var c Calendar
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared); err != nil {
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -500,4 +503,73 @@ func (db *DB) strings(query string, args ...any) ([]string, error) {
 		out = append(out, s)
 	}
 	return out, rows.Err()
+}
+
+// SetCalendarWaste marks a calendar as waste collection or unmarks it. Only
+// read-only calendars can be marked (ADR 0015).
+func (db *DB) SetCalendarWaste(householdID, calendarID string, waste bool) error {
+	c, err := db.Calendar(householdID, calendarID)
+	if err != nil {
+		return err
+	}
+	if !c.ReadOnly {
+		return fmt.Errorf("%w: only a read-only calendar can be a waste collection calendar", ErrInvalid)
+	}
+	return expectOne(db.sql.Exec(`UPDATE calendars SET waste = ?, updated_at = ? WHERE id = ? AND household_id = ?`, waste, now(), calendarID, householdID))
+}
+
+// DayNote is a parent's free-text note for a day.
+type DayNote struct {
+	Day  string // YYYY-MM-DD
+	Text string
+}
+
+// SetDayNote sets the note of a day (YYYY-MM-DD); empty text deletes it.
+func (db *DB) SetDayNote(householdID, day, text string) error {
+	if _, err := time.Parse(dateLayout, day); err != nil {
+		return fmt.Errorf("%w: day must be YYYY-MM-DD", ErrInvalid)
+	}
+	text = strings.TrimSpace(text)
+	if text == "" {
+		_, err := db.sql.Exec(`DELETE FROM day_notes WHERE household_id = ? AND day = ?`, householdID, day)
+		return err
+	}
+	_, err := db.sql.Exec(`INSERT INTO day_notes (household_id, day, text) VALUES (?, ?, ?)
+		ON CONFLICT(household_id, day) DO UPDATE SET text = excluded.text`, householdID, day, text)
+	return err
+}
+
+// DayNote returns the note of a day, if there is one.
+func (db *DB) DayNote(householdID, day string) (string, bool, error) {
+	var text string
+	err := db.sql.QueryRow(`SELECT text FROM day_notes WHERE household_id = ? AND day = ?`, householdID, day).Scan(&text)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", false, nil
+	}
+	return text, err == nil, err
+}
+
+// DayNotes lists the household's notes by day.
+func (db *DB) DayNotes(householdID string) ([]DayNote, error) {
+	rows, err := db.sql.Query(`SELECT day, text FROM day_notes WHERE household_id = ? ORDER BY day`, householdID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []DayNote
+	for rows.Next() {
+		var n DayNote
+		if err := rows.Scan(&n.Day, &n.Text); err != nil {
+			return nil, err
+		}
+		out = append(out, n)
+	}
+	return out, rows.Err()
+}
+
+// PruneDayNotes deletes the notes of days before the given day (ADR 0015: a
+// note is deleted once its day is over).
+func (db *DB) PruneDayNotes(householdID, before string) error {
+	_, err := db.sql.Exec(`DELETE FROM day_notes WHERE household_id = ? AND day < ?`, householdID, before)
+	return err
 }

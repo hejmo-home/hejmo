@@ -488,3 +488,12 @@ func TestSingleHouseholdEventsGoToTheStrip(t *testing.T) {
 		t.Errorf("column has %v, want none", titles(got))
 	}
 }
+
+func TestBuildPanicsWithoutI18n(t *testing.T) {
+	defer func() {
+		if recover() == nil {
+			t.Fatal("Build without I18n must panic")
+		}
+	}()
+	familyview.Build(familyview.Input{Now: at(14, 8, 0), Lang: "en", Region: "DE-BY", People: family(), Occurrences: []calendar.Occurrence{timed("x", at(14, 9, 0), at(14, 10, 0), "mama")}})
+}

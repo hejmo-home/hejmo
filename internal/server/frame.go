@@ -18,9 +18,6 @@ type navItem struct {
 
 var navItems = []navItem{
 	{"/", "nav.home", auth.Perm("events", auth.Read)},
-	{"/calendars", "nav.connections", auth.Perm("calendars", auth.Write)},
-	{"/caldav", "nav.caldav", auth.Perm("tokens", auth.Read)},
-	{"/displays", "nav.displays", auth.Perm("displays", auth.Write)},
 	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Write)},
 	{"/settings", "nav.settings", auth.Perm("settings", auth.Write)},
 }
@@ -34,6 +31,8 @@ type navLink struct {
 type frame struct {
 	SignedIn bool
 	Items    []navLink
+	// Back is set on setup screens: they link back to the Settings hub.
+	Back bool
 	// Success is the success line after a saved change, already translated.
 	Success string
 }
@@ -45,13 +44,39 @@ func (s *server) frameFor(r *http.Request) frame {
 	if !ok {
 		return frame{}
 	}
-	f := frame{SignedIn: true}
+	f := frame{SignedIn: true, Back: isSetupPath(r.URL.Path)}
 	for _, it := range navItems {
 		if !auth.RoleAllows(p.Role, it.Needs) {
 			continue
 		}
-		cur := r.URL.Path == it.Href || (it.Href != "/" && strings.HasPrefix(r.URL.Path, it.Href+"/"))
+		cur := (it.Href == "/settings" && f.Back) || r.URL.Path == it.Href || (it.Href != "/" && strings.HasPrefix(r.URL.Path, it.Href+"/"))
 		f.Items = append(f.Items, navLink{it.Href, it.Label, cur})
 	}
 	return f
+}
+
+// setupPaths are the screens reached from the Settings hub (ADR 0017).
+var setupPaths = []string{"/calendars", "/connections", "/caldav", "/displays", "/settings/household"}
+
+func isSetupPath(path string) bool {
+	for _, p := range setupPaths {
+		if path == p || strings.HasPrefix(path, p+"/") {
+			return true
+		}
+	}
+	return false
+}
+
+// hubItem is one entry of the Settings hub. Entries appear as their screens
+// exist (phones, people and my account join with their tickets).
+type hubItem struct {
+	Href, Label, Hint string
+	Needs             auth.Permission
+}
+
+var hubItems = []hubItem{
+	{"/calendars", "hub.connections", "hub.connections.hint", auth.Perm("calendars", auth.Write)},
+	{"/caldav", "hub.caldav", "hub.caldav.hint", auth.Perm("tokens", auth.Read)},
+	{"/displays", "hub.displays", "hub.displays.hint", auth.Perm("displays", auth.Write)},
+	{"/settings/household", "hub.household", "hub.household.hint", auth.Perm("settings", auth.Write)},
 }

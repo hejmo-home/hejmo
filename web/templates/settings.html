@@ -1,0 +1,10 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "settings.title") "Frame" .Frame)}}
+  <h1>{{t "settings.title"}}</h1>
+  {{template "syncNotice" .}}
+  <p class="lead">{{t "hub.intro"}}</p>
+  <ul class="cards hub">
+    {{range .Hub}}
+    <li><a class="hub-row" href="{{.Href}}"><strong>{{t .Label}}</strong><span class="hint">{{t .Hint}}</span></a></li>
+    {{end}}
+  </ul>
+{{template "foot"}}

@@ -1,9 +1,9 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "settings.title") "Frame" .Frame)}}
-  <h1>{{t "settings.title"}}</h1>
+{{template "head" (dict "Lang" .Lang "Title" (t "hub.household") "Frame" .Frame)}}
+  <h1>{{t "hub.household"}}</h1>
   {{template "syncNotice" .}}
   <p class="lead">{{t "settings.intro"}}</p>
   {{template "error" .}}
-  <form method="post" action="/settings" class="steps">
+  <form method="post" action="/settings/household" class="steps">
     {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.time_format"))}}
       {{template "option" (dict "Name" "time_format" "Value" "24h" "Label" (t "settings.time_format.24h") "Checked" (eq .TimeFormat "24h"))}}
       {{template "option" (dict "Name" "time_format" "Value" "12h" "Label" (t "settings.time_format.12h") "Checked" (eq .TimeFormat "12h"))}}

@@ -328,7 +328,8 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		case data["SuccessText"] != nil:
 			fr.Success, _ = data["SuccessText"].(string) // a page that shows the result itself, and names the thing
 		case data["SuccessMsg"] != nil:
-			fr.Success = s.i18n.Format(lang, data["SuccessMsg"].(i18n.Message)) // the same, with values filled in
+			msg, _ := data["SuccessMsg"].(i18n.Message)
+			fr.Success = s.i18n.Format(lang, msg) // the same, with values filled in
 		case own != "":
 			fr.Success = s.i18n.T(lang, own)
 		case key != "":

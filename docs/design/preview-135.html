@@ -106,7 +106,11 @@ iframe{border:0;background:#fff;display:block}
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/de.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Sprache: </span>Deutsch</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/calendars"><button type="submit" name="lang" value="en" lang="en"><img class="flag" src="/static/flags/gb.svg" alt="">English</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Hauptnavigation"><ul>
   <li><a href="/">Start</a></li>
@@ -115,28 +119,29 @@ iframe{border:0;background:#fff;display:block}
   <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
-<a class="back" href="/settings">Zurück zu den Einstellungen</a>
 
 <main id="content">
-
+<a class="back" href="/settings"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Zurück zu den Einstellungen</a>
 
   <h1>Kalender</h1>
   
   
 
-  <section aria-labelledby="synced">
-    <h2 id="synced">Abonnierte Kalender</h2>
-    <div class="empty" data-empty>
-  <p>Noch keine Kalender. Füge einen Schul-, Vereins- oder Ferienkalender hinzu.</p>
-  <a class="button" href="#add">Ersten Kalender hinzufügen</a>
-</div>
-  </section>
+  <p class="lead">Hier kommen Termine von außen auf die Box. Tippe auf eine Verbindung oder einen Kalender, um ihn einzustellen, abzugleichen oder zu entfernen.</p>
 
   <section aria-labelledby="connections">
     <h2 id="connections">iCloud und andere Kalender-Server</h2>
     <div class="empty" data-empty>
   <p>Noch keine Verbindung. Verbinde iCloud oder einen anderen Kalender-Server, dann erscheinen eure Termine auf der Box.</p>
   <a class="button" href="/connections/new">Kalender verbinden</a>
+</div>
+  </section>
+
+  <section aria-labelledby="synced">
+    <h2 id="synced">Abonnierte Kalender</h2>
+    <div class="empty" data-empty>
+  <p>Noch keine Kalender. Füge einen Schul-, Vereins- oder Ferienkalender hinzu.</p>
+  <a class="button" href="#add">Ersten Kalender hinzufügen</a>
 </div>
   </section>
 
@@ -159,7 +164,7 @@ iframe{border:0;background:#fff;display:block}
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="50573ad7-deba-4a83-9e43-f31e2ac44702"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="4120d33a-ab29-43b5-84aa-3c317c9ebd25"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -185,7 +190,6 @@ iframe{border:0;background:#fff;display:block}
     <p class="hint">Hier stehen nur Probleme. Erfolgreiche Abgleiche siehst du bei jedem Kalender unter Abonnierte Kalender. <a href="#synced">Zu den Kalendern</a></p>
     <p class="hint">Nichts zu melden.</p>
   </section>
-
 
 </main>
 </div>
@@ -196,7 +200,11 @@ iframe{border:0;background:#fff;display:block}
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/de.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Sprache: </span>Deutsch</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/calendars"><button type="submit" name="lang" value="en" lang="en"><img class="flag" src="/static/flags/gb.svg" alt="">English</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Hauptnavigation"><ul>
   <li><a href="/">Start</a></li>
@@ -205,14 +213,26 @@ iframe{border:0;background:#fff;display:block}
   <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
-<a class="back" href="/settings">Zurück zu den Einstellungen</a>
 
 <main id="content">
-
+<a class="back" href="/settings"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Zurück zu den Einstellungen</a>
 
   <h1>Kalender</h1>
   
   
+
+  <p class="lead">Hier kommen Termine von außen auf die Box. Tippe auf eine Verbindung oder einen Kalender, um ihn einzustellen, abzugleichen oder zu entfernen.</p>
+
+  <section aria-labelledby="connections">
+    <h2 id="connections">iCloud und andere Kalender-Server</h2>
+    
+    <ul class="list-rows">
+      <li><a href="/connections/46b48d16-e8b2-4ca3-b599-a07bbd8ba2f4"><span class="t"><b>konstantin-alexander.mueller-luedenscheidt@icloud.com</b><span class="meta">iCloud</span><span class="meta">Noch kein Kalender auf der Box</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      
+    </ul>
+    <p><a class="button secondary" href="/connections/new">Weiteren Kalender verbinden</a></p>
+    
+  </section>
 
   <section aria-labelledby="synced">
     <h2 id="synced">Abonnierte Kalender</h2>
@@ -220,29 +240,6 @@ iframe{border:0;background:#fff;display:block}
   <p>Noch keine Kalender. Füge einen Schul-, Vereins- oder Ferienkalender hinzu.</p>
   <a class="button" href="#add">Ersten Kalender hinzufügen</a>
 </div>
-  </section>
-
-  <section aria-labelledby="connections">
-    <h2 id="connections">iCloud und andere Kalender-Server</h2>
-    
-    <ul class="cards">
-      
-      <li>
-        <strong>iCloud</strong>
-        <span class="hint">konstantin-alexander.mueller-luedenscheidt@icloud.com</span>
-        <span class="row">
-          <a class="button secondary" href="/connections/e80001b7-9a9e-45dc-8bf9-02bc85e5294e">Kalender auswählen</a>
-        </span>
-        <details class="danger">
-  <summary>Trennen</summary>
-          <p>Die Verbindung und ihre Kalender verschwinden von der Box und von den Displays. Bei iCloud oder auf dem Server wird nichts gelöscht.</p>
-          <form method="post" action="/connections/e80001b7-9a9e-45dc-8bf9-02bc85e5294e/delete"><button class="button danger" type="submit">Ja, trennen</button></form>
-        </details>
-      </li>
-      
-    </ul>
-    <p><a class="button secondary" href="/connections/new">Weiteren Kalender verbinden</a></p>
-    
   </section>
 
   <section aria-labelledby="add">
@@ -264,7 +261,7 @@ iframe{border:0;background:#fff;display:block}
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="50573ad7-deba-4a83-9e43-f31e2ac44702"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="4120d33a-ab29-43b5-84aa-3c317c9ebd25"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -291,7 +288,6 @@ iframe{border:0;background:#fff;display:block}
     <p class="hint">Nichts zu melden.</p>
   </section>
 
-
 </main>
 </div>
 </template>
@@ -301,7 +297,11 @@ iframe{border:0;background:#fff;display:block}
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/de.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Sprache: </span>Deutsch</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/connections/new"><button type="submit" name="lang" value="en" lang="en"><img class="flag" src="/static/flags/gb.svg" alt="">English</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Hauptnavigation"><ul>
   <li><a href="/">Start</a></li>
@@ -310,11 +310,11 @@ iframe{border:0;background:#fff;display:block}
   <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
-<a class="back" href="/calendars">Zurück zu den Kalendern</a>
 
 <main id="content">
 
 
+  <a class="back" href="/calendars"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Zurück zu den Kalender-Verbindungen</a>
   
   
   
@@ -414,7 +414,11 @@ iframe{border:0;background:#fff;display:block}
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/de.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Sprache: </span>Deutsch</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/connections/new"><button type="submit" name="lang" value="en" lang="en"><img class="flag" src="/static/flags/gb.svg" alt="">English</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Hauptnavigation"><ul>
   <li><a href="/">Start</a></li>
@@ -423,11 +427,11 @@ iframe{border:0;background:#fff;display:block}
   <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
-<a class="back" href="/calendars">Zurück zu den Kalendern</a>
 
 <main id="content">
 
 
+  <a class="back" href="/calendars"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Zurück zu den Kalender-Verbindungen</a>
   
   
   
@@ -527,7 +531,11 @@ iframe{border:0;background:#fff;display:block}
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/de.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Sprache: </span>Deutsch</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/"><button type="submit" name="lang" value="en" lang="en"><img class="flag" src="/static/flags/gb.svg" alt="">English</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Hauptnavigation"><ul>
   <li><a href="/">Start</a></li>
@@ -536,11 +544,11 @@ iframe{border:0;background:#fff;display:block}
   <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
-<a class="back" href="/calendars">Zurück zu den Kalendern</a>
 
 <main id="content">
 
 
+  <a class="back" href="/calendars"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Zurück zu den Kalender-Verbindungen</a>
   
   
   
@@ -640,7 +648,11 @@ iframe{border:0;background:#fff;display:block}
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/de.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Sprache: </span>Deutsch</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/connections/new?service=caldav"><button type="submit" name="lang" value="en" lang="en"><img class="flag" src="/static/flags/gb.svg" alt="">English</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Hauptnavigation"><ul>
   <li><a href="/">Start</a></li>
@@ -649,11 +661,11 @@ iframe{border:0;background:#fff;display:block}
   <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
-<a class="back" href="/calendars">Zurück zu den Kalendern</a>
 
 <main id="content">
 
 
+  <a class="back" href="/calendars"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Zurück zu den Kalender-Verbindungen</a>
   
   
   
@@ -753,7 +765,11 @@ iframe{border:0;background:#fff;display:block}
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/de.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Sprache: </span>Deutsch</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/"><button type="submit" name="lang" value="en" lang="en"><img class="flag" src="/static/flags/gb.svg" alt="">English</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Hauptnavigation"><ul>
   <li><a href="/">Start</a></li>
@@ -762,11 +778,11 @@ iframe{border:0;background:#fff;display:block}
   <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
-<a class="back" href="/calendars">Zurück zu den Kalendern</a>
 
 <main id="content">
 
 
+  <a class="back" href="/calendars"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Zurück zu den Kalender-Verbindungen</a>
   
   
   
@@ -866,7 +882,11 @@ iframe{border:0;background:#fff;display:block}
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/de.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Sprache: </span>Deutsch</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/"><button type="submit" name="lang" value="en" lang="en"><img class="flag" src="/static/flags/gb.svg" alt="">English</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Hauptnavigation"><ul>
   <li><a href="/">Start</a></li>
@@ -875,16 +895,27 @@ iframe{border:0;background:#fff;display:block}
   <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
-<a class="back" href="/calendars">Zurück zu den Kalendern</a>
 
 <main id="content">
 <p class="msg ok" role="status" data-success><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Mit iCloud verbunden. 2 Kalender gefunden: Schalte ein, was die Box zeigen soll.</p>
 
-  <h1>Kalender auswählen</h1>
-  <p class="hint">konstantin-alexander.mueller-luedenscheidt@icloud.com · https://caldav.icloud.com</p>
+  <a class="back" href="/calendars"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Zurück zu den Kalender-Verbindungen</a>
+  <h1>konstantin-alexander.mueller-luedenscheidt@icloud.com</h1>
   
   
-  <form method="post" action="/connections/e80001b7-9a9e-45dc-8bf9-02bc85e5294e/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/e80001b7-9a9e-45dc-8bf9-02bc85e5294e/event-counts" data-count-loading="Termine werden gezählt …" data-count-unknown="Anzahl der Termine unbekannt">
+  <dl class="facts">
+  <dt>Dienst</dt>
+  <dd>iCloud</dd>
+  <dt>Benutzername</dt>
+  <dd>konstantin-alexander.mueller-luedenscheidt@icloud.com</dd>
+  <dt>Zuletzt abgeglichen</dt>
+  <dd>Noch nicht abgeglichen</dd>
+  <dt>Verbunden seit</dt>
+  <dd>14.11.2026</dd>
+</dl>
+  
+  <form method="post" action="/connections/46b48d16-e8b2-4ca3-b599-a07bbd8ba2f4/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/46b48d16-e8b2-4ca3-b599-a07bbd8ba2f4/event-counts" data-count-loading="Termine werden gezählt …" data-count-unknown="Anzahl der Termine unbekannt">
+    <h2>Kalender auswählen</h2>
     <p class="lead">Schalte die Kalender ein, die auf der Box erscheinen sollen. Name, für wen er ist und Farbe kannst du jederzeit ändern.</p>
     
     
@@ -905,7 +936,7 @@ iframe{border:0;background:#fff;display:block}
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://caldav.example.org/cal/home/" value="50573ad7-deba-4a83-9e43-f31e2ac44702"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://caldav.example.org/cal/home/" value="4120d33a-ab29-43b5-84aa-3c317c9ebd25"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -939,7 +970,7 @@ iframe{border:0;background:#fff;display:block}
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://caldav.example.org/cal/work/" value="50573ad7-deba-4a83-9e43-f31e2ac44702"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://caldav.example.org/cal/work/" value="4120d33a-ab29-43b5-84aa-3c317c9ebd25"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -968,6 +999,29 @@ iframe{border:0;background:#fff;display:block}
   
   
 
+  <section id="login" class="steps"><details class="more">
+  <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>Anmeldedaten<span class="sum">Passwort ändern</span></summary>
+  <div>
+    <form method="post" action="/connections/46b48d16-e8b2-4ca3-b599-a07bbd8ba2f4/credentials" class="steps" autocomplete="off">
+      <div class="f">
+  <label>Neues Passwort (bei iCloud ein app-spezifisches Passwort)
+    <input name="password" type="password" required autocomplete="new-password"></label>
+  
+</div>
+      <button class="button secondary" type="submit">Passwort prüfen und speichern</button>
+    </form>
+  </div>
+</details></section>
+
+  <details class="danger">
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Verbindung trennen</summary>
+  <p>Die Verbindung und diese Kalender verschwinden von der Box und von den Displays. Bei iCloud wird nichts gelöscht.</p>
+  <div class="confirm">
+    <form method="post" action="/connections/46b48d16-e8b2-4ca3-b599-a07bbd8ba2f4/delete"><button class="button danger" type="submit">Ja, Verbindung trennen</button></form>
+    <a href="/connections/46b48d16-e8b2-4ca3-b599-a07bbd8ba2f4">Nein, nichts ändern</a>
+  </div></details>
+  
+
 </main>
 </div>
 </template>
@@ -977,7 +1031,11 @@ iframe{border:0;background:#fff;display:block}
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/gb.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Language: </span>English</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/connections/new"><button type="submit" name="lang" value="de" lang="de"><img class="flag" src="/static/flags/de.svg" alt="">Deutsch</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
@@ -986,11 +1044,11 @@ iframe{border:0;background:#fff;display:block}
   <li><a href="/meals">Meals</a></li>
   <li><a href="/settings" aria-current="page">Settings</a></li>
   </ul></nav>
-<a class="back" href="/calendars">Back to the calendars</a>
 
 <main id="content">
 
 
+  <a class="back" href="/calendars"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>Back to calendar connections</a>
   
   
   
@@ -1145,6 +1203,8 @@ iframe{border:0;background:#fff;display:block}
   --fs-label: 14px;       --fw-label: 400;
   --fs-label-large: 15px; --fw-label-large: 400;
   --fs-meta: 13px;        --fw-meta: 400;
+  --fs-title-phone: 28px; /* h1 under 600 px */
+  --fs-secret: 19px;      /* a secret shown once, monospace */
   /* shapes and spacing */
   --radius-tile: 22px;
   --radius-chip: 18px;
@@ -1374,7 +1434,7 @@ a { color: var(--accent); }
    stack them; wide screens put the navigation beside the content. */
 .skip { position: absolute; left: -9999px; }
 .skip:focus { position: static; display: inline-block; padding: 10px 12px; }
-.frame { display: grid; gap: var(--gap-section); align-content: start; }
+.frame { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gap-section); align-content: start; }
 .frame-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); }
 .brand { display: inline-flex; align-items: center; min-height: var(--touch-target); font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); color: var(--text); text-decoration: none; }
 .frame-bar .button { min-height: var(--touch-target); }
@@ -1440,9 +1500,6 @@ body:has(.family-page) { overflow: hidden; }
 .strip.tomorrow { opacity: 0.6; } /* ADR 0016: tomorrow is faded so today&#39;s events stand out */
 .fv .tomorrow .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
 .fv .event .meta { display: block; }
-.pbar { flex: none; display: flex; align-items: center; gap: 10px; padding-top: var(--gap-cards); }
-.pbar .progress { flex: 1; }
-.pbar .count { font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
 .fv-footer { flex: none; display: flex; flex-wrap: wrap; gap: var(--gap); }
 .fv-footer .tile { flex: 1 1 200px; min-width: 0; padding: var(--pad-column); }
 .fv-footer .lab { font-size: var(--fs-label); color: var(--text-secondary); }
@@ -1704,11 +1761,85 @@ textarea { width: 100%; font: inherit; color: var(--text); background: var(--sur
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
 
-/* Frame: on wide screens the &#34;Back to Settings&#34; link and the content both sit
-   right of the navigation (the rule is in the shared block below). On a
-   phone the navigation scrolls sideways inside the screen instead of widening
-   the page. */
+/* Ticket #108 Signed-in devices: person group heading, session rows with a
+   word tag for this browser, facts list on the detail page. */
+.who-head { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); overflow-wrap: anywhere; }
+.cards.sessions li { padding: 12px 16px; }
+.cards.sessions .hub-row { gap: 4px; }
+.cards.sessions .hub-row strong { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; overflow-wrap: anywhere; }
+.tag { display: inline-flex; align-items: center; min-height: 24px; padding: 1px 10px; border: 1.5px solid var(--accent); border-radius: var(--radius-chip); color: var(--accent); font-size: var(--fs-meta); font-weight: 700; text-decoration: none; }
+[data-theme=&#34;bw&#34;] .tag { border-width: 2px; color: var(--text); border-color: var(--text); }
+[data-theme=&#34;bw&#34;] .cards.sessions .hub-row strong { text-decoration: underline; }
+[data-theme=&#34;bw&#34;] .cards.sessions .hub-row { text-decoration: none; }
+.group-list { display: grid; gap: var(--gap-section); max-width: 560px; margin: 0 0 20px; }
+.group-list .cards { margin: 0; }
+/* A notice that stands above the page title. */
+.notice.top { margin-bottom: 14px; }
+/* ---- Detail pages and calm overview rows (ticket 111, ADR 0017) ---- */
+/* Detail pages and calm overview rows (ADR 0017). */
+/* The frame&#39;s single column must be allowed to shrink: without minmax(0, 1fr) the
+   one-line navigation sets the column to its full width and pushes the page past
+   the right edge of a 375 px phone (left margin looks wrong, text does not wrap). */
+.frame { grid-template-columns: minmax(0, 1fr); }
 .frame &gt; * { min-width: 0; }
+/* Under 900 px the navigation wraps onto a second line instead of hiding
+   screens past the right edge. */
+@media (max-width: 899px) { .frame-nav ul { flex-wrap: wrap; overflow-x: visible; } }
+.steps .card-row .t b { color: var(--text); }
+h1 { overflow-wrap: anywhere; hyphens: auto; }
+.back { gap: 6px; text-decoration: none; }
+.back .icon { stroke: currentColor; }
+main &gt; .back { margin: 0 0 4px; }
+.list-rows { list-style: none; padding: 0; margin: 0 0 var(--gap-section); display: grid; gap: var(--gap-cards); max-width: 560px; }
+.list-rows a { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; background: var(--surface); border-radius: var(--radius-tile); color: var(--text); text-decoration: none; }
+[data-theme=&#34;bw&#34;] .list-rows a { border: 2px solid var(--text); }
+.list-rows a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.list-rows .t { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.list-rows b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: anywhere; }
+.list-rows .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.list-rows .chev { margin-left: auto; flex: none; stroke: var(--text-secondary); }
+.rows-head { font-size: var(--fs-label-large); font-weight: 700; color: var(--text-secondary); margin: var(--gap-section) 0 var(--gap-cards); max-width: 560px; overflow-wrap: anywhere; }
+.list-rows .who, .facts .who { display: inline-flex; align-items: center; gap: 6px; }
+.flag { display: inline-flex; align-items: flex-start; gap: 6px; padding: 3px 8px; border-radius: var(--radius-field); font-size: var(--fs-label); font-weight: 600; justify-self: start; overflow-wrap: anywhere; }
+.flag .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+.flag.problem { background: var(--error-bg); color: var(--error-text); }
+.flag.warn { background: var(--notice-bg); color: var(--notice-text); }
+[data-theme=&#34;bw&#34;] .flag { background: none; color: var(--text); border: 2px solid var(--text); }
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px 20px; margin: 0 0 var(--gap-section); padding: 16px; max-width: 560px; box-sizing: border-box; background: var(--surface); border-radius: var(--radius-tile); }
+.facts dt { color: var(--text-secondary); font-size: var(--fs-label); padding-top: 2px; }
+.facts dd { margin: 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+.facts .button { margin-top: 4px; }
+[data-theme=&#34;bw&#34;] .facts { border: 2px solid var(--text); }
+.steps .pair { display: flex; flex-wrap: wrap; align-items: start; gap: 10px var(--gap); }
+.steps .pair .f { flex: 1 1 140px; min-width: 0; }
+.steps .pair .f.invalid { flex-basis: 100%; }
+@supports selector(:has(a)) {
+  .steps fieldset:has(&gt; .card-row .switch input:not(:checked)) &gt; .when-on { display: none; }
+  .calchoice:has(&gt; .card-row .switch input:not(:checked)) &gt; :not(.card-row):not(input) { display: none; }
+}
+.calchoice .status { font-size: var(--fs-meta); color: var(--text-secondary); }
+details.danger { box-sizing: border-box; }
+details.danger &gt; summary .icon { stroke: var(--error-text); flex: none; }
+details.danger[open] { background: var(--surface); border: 2px solid var(--error-text); border-radius: var(--radius-tile); padding: 0 16px 6px; }
+details.danger ul { margin: 0 0 10px; padding-left: 20px; }
+details.danger li { overflow-wrap: anywhere; }
+details.danger .confirm { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 0 0 10px; }
+details.danger .confirm form { margin: 0; }
+details.danger .confirm a { display: inline-flex; align-items: center; min-height: var(--touch-target); font-weight: 600; }
+.button { max-width: 100%; white-space: normal; text-align: center; }
+.once { display: grid; gap: 12px; max-width: 560px; box-sizing: border-box; padding: 16px; margin: 0 0 var(--gap-section); background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius-tile); }
+.once p { margin: 0; }
+.once .secret { font-family: ui-monospace, &#34;SF Mono&#34;, Menlo, Consolas, monospace; font-size: var(--fs-secret); font-weight: 600; letter-spacing: 0.04em; background: var(--background); border-radius: var(--radius-field); padding: 10px 12px; margin: 0; }
+.once .row { display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 599px) {
+  h1 { font-size: var(--fs-title-phone); }
+  .facts { grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 14px; }
+  .facts dd { margin-bottom: 10px; }
+  .facts dd:last-child { margin-bottom: 0; }
+  .list-rows a { padding: 12px 14px; }
+}
+.once .facts { margin: 0; padding: 0; background: none; border: 0; max-width: none; }
+.facts + .hint { max-width: 560px; }
 
 /* Meal plan (ticket 6.3, ADR 0015): the week as one card per day, one row per
    mealtime in the order of the day. A row is the mealtime (icon and word) and
@@ -1824,11 +1955,176 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .waste-next { font-size: var(--fs-label); }
 .waste-next b { font-weight: 700; }
 
-/* ---- Shared with #133 (setup flow) and #134 (language switcher); whichever
-   ticket merges first adds these rules, the others reuse them unchanged. ---- */
-.frame { grid-template-columns: minmax(0, 1fr); }
-.frame-nav { min-width: 0; }
+/* Visually hidden text that screen readers still read; language switcher in the brand bar (ticket 134). */
 .vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.frame-tools { display: flex; align-items: center; gap: var(--gap-cards); margin-left: auto; }
+.lang .flag { display: block; flex: none; padding: 0; gap: 0; border: 0; background: none; margin: 0; justify-self: auto; width: 24px; height: 16px; object-fit: cover; border-radius: 3px; outline: 1px solid var(--border); outline-offset: -1px; }
+[data-theme=&#34;bw&#34;] .lang .flag { filter: grayscale(1); outline: 1px solid var(--text); }
+.lang { position: relative; }
+.lang &gt; summary { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: var(--touch-target); padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); font-weight: 600; cursor: pointer; list-style: none; }
+.lang &gt; summary::-webkit-details-marker { display: none; }
+.lang &gt; summary .chev { flex: none; width: 14px; height: 14px; }
+.lang[open] &gt; summary { border-color: var(--accent); }
+.lang[open] &gt; summary .chev { transform: rotate(180deg); }
+.lang &gt; summary:focus-visible, .lang-menu button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme=&#34;bw&#34;] .lang &gt; summary { border: 2px solid var(--text); }
+.lang-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; min-width: 200px; margin: 0; padding: 6px; display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); }
+[data-theme=&#34;bw&#34;] .lang-menu { border: 2px solid var(--text); }
+.lang-menu button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: var(--touch-target); padding: 8px 12px; border: 0; border-radius: var(--radius-field); background: none; color: var(--text); font: inherit; font-size: var(--fs-body); text-align: left; cursor: pointer; }
+.lang-menu button:hover { background: var(--background); }
+[data-theme=&#34;bw&#34;] .lang-menu button:hover { text-decoration: underline; }
+/* Next to &#34;Sign out&#34; a narrow bar drops the visible name; flag and chevron stay and the name stays in the accessible name. */
+@media (max-width: 479px) {
+  .frame-tools:has(.signout) .lang-name { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}
+
+/* ---- Design pass 6.6: tasks on the display (ticket 6.6, preview-37) ---- */
+/* Family view: progress block anchored at the column bottom (ADR 0016), in words, tappable. */
+.pbar { flex: none; display: grid; gap: 6px; margin-top: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); min-height: var(--touch-target); align-content: center; color: inherit; text-decoration: none; }
+.pbar .progress { width: 100%; }
+.pbar .count { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pbar[data-all-done] .count { font-weight: 700; }
+.pbar .icon, .tasks-head .icon { flex: none; stroke: var(--pc); stroke-width: 2.4; }
+[data-theme=&#34;bw&#34;] .pbar .icon, [data-theme=&#34;bw&#34;] .tasks-head .icon { stroke: var(--text); }
+/* Long German words wrap inside event cards instead of being cut at the column edge. */
+.fv .events &gt; *, .pv-day &gt; * { min-width: 0; }
+.event .title { overflow-wrap: anywhere; hyphens: auto; }
+
+/* Personal view: tasks first and as wide as the week, progress in words on top. */
+.pv-header { justify-content: flex-start; flex-wrap: wrap; }
+.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: anywhere; }
+.pv-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.pv-tasks { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.tasks-head { flex: none; display: grid; gap: 8px; padding: var(--pad-column) var(--pad-column) 12px; border-bottom: 1px solid var(--border); }
+.tasks-head .count { display: flex; gap: 8px; align-items: center; font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); font-variant-numeric: tabular-nums; }
+.tasks-head .msg { margin: 0; max-width: none; font-size: var(--fs-event-title); font-weight: 700; }
+.tasks-head .msg .icon { stroke: var(--accent); }
+.pv-tasks .list { flex: 1; min-height: 0; overflow-y: auto; padding: 12px var(--pad-column) var(--pad-column); display: grid; gap: 14px; align-content: start; }
+.pv-tasks .part { display: grid; gap: var(--gap-cards); }
+.pv-tasks .part &gt; .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.pv-tasks ul { gap: var(--gap-cards); }
+.pv-tasks li { display: grid; gap: 6px; }
+.big-check { gap: 12px; min-height: 64px; padding: 8px 12px 8px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); font-weight: 600; }
+[data-theme=&#34;bw&#34;] .big-check { border: 2px solid var(--text); }
+.big-check .box { border-radius: var(--radius-field); }
+.big-check .box svg { display: none; }
+[data-done=&#34;true&#34;] .big-check .box { background: var(--pc); border-color: var(--pc); }
+[data-theme=&#34;bw&#34;] [data-done=&#34;true&#34;] .big-check .box { background: var(--text); border-color: var(--text); }
+[data-done=&#34;true&#34;] .big-check .box::after { content: none; }
+[data-done=&#34;true&#34;] .big-check .box svg { display: block; stroke: var(--surface); stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.big-check .emoji { flex: none; width: 36px; font-size: 30px; line-height: 1; text-align: center; }
+.big-check .title { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
+[data-done=&#34;true&#34;] .big-check .title { font-weight: 400; }
+[data-done=&#34;true&#34;] .big-check { background: transparent; }
+.pv-tasks .ferr { margin-left: 4px; }
+.pv-body[data-no-tasks] { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.pv-body[data-no-tasks] .tasks-head { border-bottom: 0; padding-bottom: 0; }
+.pv-tasks .none { margin: 0; padding: 16px; border: 1.5px dashed var(--border); border-radius: var(--radius-card); color: var(--text-secondary); }
+@media (max-width: 599px) {
+  .pv-header h1 { font-size: var(--fs-key-figure); }
+  .pv-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
+}
+
+/* Ticket #147: a hint or an error inside a segmented control takes the full row
+   (the error used to become a third segment); an invalid group shows its 2px
+   error border like a field. */
+fieldset.seg &gt; .hint, fieldset.seg &gt; .ferr { flex: 0 0 100%; }
+fieldset.seg &gt; .hint { margin: 0 0 10px; }
+fieldset.seg &gt; .ferr { margin: 8px 0 0; }
+fieldset.seg[aria-invalid=&#34;true&#34;] label { border: 2px solid var(--error-text); }
+.seg label b { font-variant-numeric: tabular-nums; }
+
+/* ---- Meal plan templates (ticket 6.9, design pass, preview-131) ---- */
+/* Meal plan: one card above the week says which templates fill it (names are
+   links) and that changes count for this week only; the button opens the
+   Templates menu. A dish that comes from a template says so under the field;
+   an adjusted one has the pill &#34;Adjusted this week&#34;, the template&#39;s dish and
+   &#34;Back to template&#34;. */
+.tpl-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; max-width: 1200px; margin: 0 0 var(--gap); padding: 12px 16px; background: var(--surface); border-radius: var(--radius-card); }
+.tpl-sum p { flex: 1 1 22em; min-width: 0; margin: 0; }
+.tpl-sum p a { font-weight: 600; }
+.tpl-sum p, .mrow .src, .tpl-row, .ahead li, .weeks-hint, .tpl-form .ferr, main:has(.tpl-form) &gt; .form-error { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) { .tpl-sum p, .mrow .src, .tpl-row, .ahead li, .weeks-hint, .tpl-form .ferr, main:has(.tpl-form) &gt; .form-error { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
+.tpl-sum .mt-of { white-space: nowrap; -webkit-hyphens: manual; hyphens: manual; }
+.tpl-sum .button { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.tpl-sum .button .icon { stroke: currentColor; }
+[data-theme=&#34;bw&#34;] .tpl-sum { border: 2px solid var(--text); }
+.mrow .src { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: -2px; font-size: var(--fs-meta); color: var(--text-secondary); min-width: 0; }
+.mrow .src &gt; span { min-width: 0; }
+.mrow .src .icon { flex: none; width: 16px; height: 16px; stroke: var(--text-secondary); }
+.mrow .src a { color: var(--text-secondary); }
+.mrow .src .adj { font-weight: 700; color: var(--notice-text); background: var(--notice-bg); border-radius: var(--radius-chip); padding: 2px 10px; }
+[data-theme=&#34;bw&#34;] .mrow .src .adj { background: var(--surface); color: var(--text); border: 2px solid var(--text); padding: 0 8px; }
+.mrow .src .was { flex: 1 1 10em; }
+.mrow .src .was b { font-weight: 600; color: var(--text); }
+.mrow .src .button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: var(--fs-label); }
+.mrow .src .button .icon { stroke: currentColor; }
+.mrow.adjusted textarea { border: 2px solid var(--notice-text); }
+[data-theme=&#34;bw&#34;] .mrow.adjusted textarea { border: 2px dashed var(--text); }
+.mrow textarea::placeholder { color: var(--text-secondary); opacity: 1; font-style: italic; }
+@container (max-width: 270px) { .mrow .src { grid-column: 1; } }
+@container (max-width: 360px) { .mrow.adjusted .src { grid-column: 1 / -1; } .mrow.adjusted .src .was { flex-basis: 100%; } }
+
+/* Templates menu (/meals/templates): calm rows that open a template, and the
+   coming weeks in words (which template fills which mealtime). */
+.tpl-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); }
+.cards a.tpl-row { color: var(--text); font-weight: 400; }
+.tpl-row strong { display: flex; align-items: center; gap: 8px; font-size: var(--fs-event-title); font-weight: var(--fw-event-title); color: var(--accent); }
+.tpl-row strong .icon { flex: none; stroke: var(--accent); margin-left: auto; }
+.tpl-row .hint { overflow-wrap: break-word; }
+.tpl-row .hint b { color: var(--text); font-weight: 600; }
+[data-theme=&#34;bw&#34;] .tpl-row strong { text-decoration: underline; }
+.ahead { list-style: none; margin: 0 0 var(--gap-section); padding: 4px 16px; background: var(--surface); border-radius: var(--radius-tile); max-width: 720px; container-type: inline-size; }
+.ahead li { display: grid; grid-template-columns: 11em minmax(0, 1fr); gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+.ahead li:first-child { border-top: 0; }
+.ahead .wkn b { display: block; }
+.ahead .wkn span { font-size: var(--fs-label); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.ahead .wkn .today { display: inline-block; margin-top: 2px; font-size: var(--fs-meta); font-weight: 700; color: var(--accent-text); background: var(--accent); border-radius: var(--radius-chip); padding: 1px 9px; }
+.ahead .fills { display: grid; gap: 2px; }
+.ahead .fills .free { color: var(--text-secondary); }
+@container (max-width: 420px) { .ahead li { grid-template-columns: minmax(0, 1fr); } }
+.page-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 var(--gap-section); }
+
+/* Template form: name, which meals, when it repeats (the weeks it fills in
+   words), then the week pattern as the meal plan&#39;s day cards without dates. */
+.tpl-form &gt; fieldset, .tpl-form &gt; .f-card { max-width: 720px; }
+.f-card { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 12px; border: 0; margin: 0; min-width: 0; }
+.f-card &gt; legend { font-size: var(--fs-person-name); font-weight: 700; padding: 0; float: left; width: 100%; margin: 0 0 4px; }
+.f-card .hint { margin: 0; }
+.mtpick-wrap { container-type: inline-size; }
+fieldset.choice.mtpick { display: flex; flex-wrap: wrap; gap: 10px; }
+.mtpick label { flex: 1 1 100%; min-width: min(100%, max-content); max-width: 100%; }
+@container (min-width: 24em) { .mtpick label { flex-basis: calc(50% - 5px); } }
+.mtpick b { overflow-wrap: break-word; }
+.mtpick label { grid-template-columns: auto auto 1fr; }
+.mtpick input { grid-row: auto; }
+.mtpick .icon { stroke: var(--accent); }
+.every { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: var(--fs-body); color: var(--text); }
+.every input { width: 4.5em; text-align: center; font-variant-numeric: tabular-nums; }
+.f.invalid .every input, .every input[aria-invalid=&#34;true&#34;] { border: 2px solid var(--error-text); }
+.f-card select { width: 100%; }
+.weeks-hint { font-size: var(--fs-label); color: var(--text); background: var(--background); border-radius: var(--radius-field); padding: 8px 12px; overflow-wrap: break-word; font-variant-numeric: tabular-nums; }
+.weeks-hint b { font-weight: 700; }
+[data-theme=&#34;bw&#34;] .weeks-hint { border: 1.5px solid var(--text); }
+.tpl-form h2 { font-size: var(--fs-person-name); margin: 8px 0 0; }
+.tpl-form &gt; .hint { margin: -8px 0 0; }
+@supports selector(:has(a)) {
+  .tpl-form:has(input[name=&#34;fills&#34;][value=&#34;all&#34;]:checked) .mtpick { display: none; }
+  .tpl-form:has(input[name=&#34;fills&#34;][value=&#34;one&#34;]:checked):has(input[name=&#34;mealtime&#34;][value=&#34;breakfast&#34;]:checked) .mrow:not([data-mt=&#34;breakfast&#34;]),
+  .tpl-form:has(input[name=&#34;fills&#34;][value=&#34;one&#34;]:checked):has(input[name=&#34;mealtime&#34;][value=&#34;lunch&#34;]:checked) .mrow:not([data-mt=&#34;lunch&#34;]),
+  .tpl-form:has(input[name=&#34;fills&#34;][value=&#34;one&#34;]:checked):has(input[name=&#34;mealtime&#34;][value=&#34;snack&#34;]:checked) .mrow:not([data-mt=&#34;snack&#34;]),
+  .tpl-form:has(input[name=&#34;fills&#34;][value=&#34;one&#34;]:checked):has(input[name=&#34;mealtime&#34;][value=&#34;dinner&#34;]:checked) .mrow:not([data-mt=&#34;dinner&#34;]) { display: none; }
+}
+.mrow .src { margin: -2px 0 2px; }
+.mrow .src &gt; span:not(.adj) { flex: 1 1 8em; }
+.ahead .wkn { display: grid; gap: 2px; align-content: start; }
+.ahead .wkn .today { justify-self: start; }
+.ahead .fills b { font-weight: 600; }
+.mtpick legend { margin: 4px 0 0; }
+.f-card[aria-invalid=&#34;true&#34;] select, .f-card[aria-invalid=&#34;true&#34;] .every input { border: 2px solid var(--error-text); }
+.page-actions .button .icon { stroke: currentColor; vertical-align: -3px; margin-right: 6px; }
+
+/* ---- Step lists and action rows (#135; shared with the setup flow) ---- */
 .actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px var(--gap); }
 .actions .button { flex: 0 1 auto; }
 ol.howto .s &gt; .actions { justify-self: stretch; }
@@ -1848,15 +2144,6 @@ ol.howto .path { font-weight: 600; }
 
 /* ---- New for #135: connecting iCloud and other CalDAV servers ---- */
 
-/* Frame fix (#135): from 900 px the navigation is a column on the left. The
-   &#34;Back&#34; link is a grid item of its own; without a fixed place it took the
-   right column and pushed main into the left max-content column, so one long
-   line (the old connection hint) set the width of the whole page and ran off
-   the right edge. Navigation spans both rows; back link and main stay right. */
-@media (min-width: 900px) {
-  .frame.has-nav &gt; .frame-nav { grid-column: 1; grid-row: 2 / span 2; }
-  .frame.has-nav &gt; .back, .frame.has-nav &gt; main { grid-column: 2; }
-}
 /* Running text keeps the width of the cards beside it at every screen width. */
 .lead, main &gt; .hint, section &gt; .hint { max-width: 560px; }
 main &gt; .hint, section &gt; .hint { margin: 0 0 var(--gap); }

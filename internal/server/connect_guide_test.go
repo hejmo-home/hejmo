@@ -241,7 +241,7 @@ func TestConnectUnreachableServerShowsAtTheAddressField(t *testing.T) {
 	}
 }
 
-func TestConnectSuccessLineAndFrameBackLinkOnTheChoosePage(t *testing.T) {
+func TestConnectSuccessLineAndBackLinkOnTheChoosePage(t *testing.T) {
 	b := signedInAPI(t).b
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
 		return hostedRemote{found: []caldavclient.Calendar{{URL: flowCalendar, Name: "Home"}, {URL: flowCalendar2, Name: "Work"}}}, nil

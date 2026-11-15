@@ -282,7 +282,6 @@ func (s *server) renderConnectNew(w http.ResponseWriter, r *http.Request, p prin
 	}
 	data := map[string]any{
 		"Person": p.person, "Service": service, "SyncStale": s.syncStale(p.household.ID),
-		"BackHref": "/calendars", "BackLabel": "calendars.back",
 		"Error": "", "ErrorField": "", "ConnURL": "", "ConnUsername": "", "ConnSingle": false,
 	}
 	for k, v := range extra {

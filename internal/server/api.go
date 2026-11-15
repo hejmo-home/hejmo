@@ -192,7 +192,7 @@ func (s *server) apiCreatePerson(w http.ResponseWriter, r *http.Request, p princ
 		return
 	}
 	if !in.Role.Valid() {
-		writeError(w, http.StatusUnprocessableEntity, "name and a valid role are required")
+		writeError(w, http.StatusUnprocessableEntity, "a valid role is required")
 		return
 	}
 	people, err := s.db.People(p.household.ID)
@@ -201,7 +201,7 @@ func (s *server) apiCreatePerson(w http.ResponseWriter, r *http.Request, p princ
 		return
 	}
 	look := personInput{in.Name, in.Color, in.Shape}
-	if field, _ := checkLook(people, "", &look); field != "" {
+	if field, _ := checkLook(people, "", &look, nil); field != "" {
 		writeError(w, http.StatusUnprocessableEntity, "invalid "+field)
 		return
 	}

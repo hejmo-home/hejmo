@@ -551,8 +551,20 @@ var ErrInUse = errors.New("in use")
 // calendar or an event is refused with ErrInUse: its audience would silently
 // become the whole household.
 func (db *DB) DeleteGroup(householdID, id string) error {
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var exists int
+	if err := tx.QueryRow(`SELECT COUNT(*) FROM groups WHERE id = ? AND household_id = ?`, id, householdID).Scan(&exists); err != nil {
+		return err
+	}
+	if exists == 0 {
+		return ErrNotFound
+	}
 	var used int
-	if err := db.sql.QueryRow(`SELECT
+	if err := tx.QueryRow(`SELECT
 		(SELECT COUNT(*) FROM calendar_audience WHERE group_id = ?) +
 		(SELECT COUNT(*) FROM event_audience WHERE group_id = ?)`, id, id).Scan(&used); err != nil {
 		return err
@@ -560,5 +572,8 @@ func (db *DB) DeleteGroup(householdID, id string) error {
 	if used > 0 {
 		return ErrInUse
 	}
-	return expectOne(db.sql.Exec(`DELETE FROM groups WHERE id = ? AND household_id = ?`, id, householdID))
+	if err := expectOne(tx.Exec(`DELETE FROM groups WHERE id = ? AND household_id = ?`, id, householdID)); err != nil {
+		return err
+	}
+	return tx.Commit()
 }

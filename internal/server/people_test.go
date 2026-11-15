@@ -534,3 +534,65 @@ func TestPeoplePageIsGerman(t *testing.T) {
 		}
 	}
 }
+
+// A person stored with a colour outside the palette (the old API took any hex)
+// can still be renamed; only a colour or marker that is sent is checked.
+func TestAPIRenamesAPersonWithALegacyColour(t *testing.T) {
+	p := newPeopleBox(t)
+	h, _ := p.db.HomeHousehold()
+	legacy, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#123456", Shape: "circle-empty"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// The contract refuses non-palette colours and empty values before they are
+	// sent; the box must cope with them too.
+	patch := func(body string) int {
+		req, _ := http.NewRequest(http.MethodPatch, p.srv.URL+"/api/v1/people/"+legacy.ID, strings.NewReader(body))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Origin", p.srv.URL)
+		res, err := p.client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		return res.StatusCode
+	}
+	status, got, _ := p.api.call(http.MethodPatch, "/people/"+legacy.ID, map[string]any{"name": "Oma Maier"})
+	if status != http.StatusOK || got["name"] != "Oma Maier" || got["color"] != "#123456" {
+		t.Fatalf("rename = %d %v", status, got)
+	}
+	if got := patch(`{"color":"#123456"}`); got != http.StatusOK {
+		t.Errorf("resending the stored colour = %d, want 200", got)
+	}
+	for name, body := range map[string]string{"new non-palette colour": `{"color":"#654321"}`, "empty colour": `{"color":""}`, "empty shape": `{"shape":""}`} {
+		if got := patch(body); got != http.StatusUnprocessableEntity {
+			t.Errorf("%s = %d, want 422", name, got)
+		}
+	}
+}
+
+func TestAPIGroupNamesAreAtMost80Characters(t *testing.T) {
+	p := newPeopleBox(t)
+	// The contract refuses a long name before it is sent; the box refuses it too.
+	send := func(method, path, name string) int {
+		req, _ := http.NewRequest(method, p.srv.URL+"/api/v1"+path, strings.NewReader(`{"name":"`+name+`"}`))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Origin", p.srv.URL)
+		res, err := p.client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		return res.StatusCode
+	}
+	if got := send(http.MethodPost, "/groups", strings.Repeat("x", 81)); got != http.StatusUnprocessableEntity {
+		t.Fatalf("create long name = %d, want 422", got)
+	}
+	status, g, _ := p.api.call(http.MethodPost, "/groups", map[string]any{"name": strings.Repeat("x", 80)})
+	if status != http.StatusCreated {
+		t.Fatalf("create 80 = %d", status)
+	}
+	if got := send(http.MethodPatch, "/groups/"+g["id"].(string), strings.Repeat("x", 81)); got != http.StatusUnprocessableEntity {
+		t.Fatalf("patch long name = %d, want 422", got)
+	}
+}

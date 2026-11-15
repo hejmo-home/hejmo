@@ -396,7 +396,7 @@ paths:
               type: object
               required: [name]
               properties:
-                name: { type: string }
+                name: { type: string, minLength: 1, maxLength: 80 }
                 members: { type: array, items: { type: string, format: uuid } }
       responses:
         "201":
@@ -420,7 +420,7 @@ paths:
             schema:
               type: object
               properties:
-                name: { type: string }
+                name: { type: string, minLength: 1, maxLength: 80 }
                 members: { type: array, items: { type: string, format: uuid } }
       responses:
         "200":
@@ -843,7 +843,7 @@ components:
       type: object
       required: [name, role]
       properties:
-        name: { type: string }
+        name: { type: string, maxLength: 80 }
         role: { $ref: "#/components/schemas/Role" }
         color: { $ref: "#/components/schemas/PersonColor" }
         shape: { $ref: "#/components/schemas/PersonShape" }

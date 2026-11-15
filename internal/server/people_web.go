@@ -104,7 +104,7 @@ func (s *server) handlePersonAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	look := personInput{r.PostFormValue("name"), r.PostFormValue("color"), r.PostFormValue("shape")}
 	role := store.Role(r.PostFormValue("role"))
-	field, key := checkLook(people, "", &look)
+	field, key := checkLook(people, "", &look, nil)
 	if field == "" && !role.Valid() {
 		field, key = "role", "people.error.role"
 	}
@@ -182,7 +182,7 @@ func (s *server) handlePersonSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	look := personInput{r.PostFormValue("name"), r.PostFormValue("color"), r.PostFormValue("shape")}
-	field, key := checkLook(people, person.ID, &look)
+	field, key := checkLook(people, person.ID, &look, nil)
 	if field == "" {
 		// A form without colour or marker keeps what the person has.
 		if look.Color == "" {

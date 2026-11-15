@@ -82,22 +82,30 @@ type personInput struct {
 }
 
 // checkLook validates name, colour and marker of a person. exceptID is the
-// person being changed. An empty colour or marker is left to the caller. The
-// result names the field that is wrong.
-func checkLook(people []store.Person, exceptID string, in *personInput) (field, key string) {
+// person being changed; cur is that person's stored look (nil for a new one):
+// a colour or marker equal to the stored one is not checked again, so people
+// stored with a colour from before the palette can still be renamed. An empty
+// colour or marker is left to the caller. The result names the field that is
+// wrong.
+func checkLook(people []store.Person, exceptID string, in *personInput, cur *store.Person) (field, key string) {
 	in.Name = strings.TrimSpace(in.Name)
 	if in.Name == "" || utf8.RuneCountInString(in.Name) > maxPersonName {
 		return "name", "people.error.name"
 	}
-	if in.Color != "" {
+	sameColor := cur != nil && in.Color == cur.Color
+	sameShape := cur != nil && in.Shape == cur.Shape
+	if in.Color != "" && !sameColor {
 		c, ok := paletteColor(in.Color)
 		if !ok {
 			return "color", "people.error.color"
 		}
 		in.Color = c
 	}
-	if in.Shape != "" && !validShape(in.Shape) {
+	if in.Shape != "" && !sameShape && !validShape(in.Shape) {
 		return "shape", "people.error.shape"
+	}
+	if sameColor && sameShape {
+		return "", ""
 	}
 	if in.Color != "" && in.Shape != "" && styleTaken(people, exceptID, in.Color, in.Shape) {
 		return "shape", "people.error.taken"
@@ -129,12 +137,20 @@ func (s *server) apiUpdatePerson(w http.ResponseWriter, r *http.Request, p princ
 		look.Name = *in.Name
 	}
 	if in.Color != nil {
+		if *in.Color == "" {
+			writeError(w, http.StatusUnprocessableEntity, "invalid color")
+			return
+		}
 		look.Color = *in.Color
 	}
 	if in.Shape != nil {
+		if *in.Shape == "" {
+			writeError(w, http.StatusUnprocessableEntity, "invalid shape")
+			return
+		}
 		look.Shape = *in.Shape
 	}
-	if field, _ := checkLook(people, cur.ID, &look); field != "" {
+	if field, _ := checkLook(people, cur.ID, &look, &cur); field != "" {
 		writeError(w, http.StatusUnprocessableEntity, "invalid "+field)
 		return
 	}
@@ -183,6 +199,10 @@ func (s *server) apiUpdateGroup(w http.ResponseWriter, r *http.Request, p princi
 	}
 	if in.Name != nil {
 		g.Name = *in.Name
+		if utf8.RuneCountInString(strings.TrimSpace(g.Name)) > maxPersonName {
+			writeError(w, http.StatusUnprocessableEntity, "name is too long")
+			return
+		}
 	}
 	if in.Members != nil {
 		g.Members = *in.Members

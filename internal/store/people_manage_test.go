@@ -17,7 +17,11 @@ func exampleFamily(t *testing.T) (*store.DB, store.Household, map[string]store.P
 	}
 	out := map[string]store.Person{}
 	for _, n := range []string{"Mama", "Papa", "Sebastian", "Mia"} {
-		p, err := db.AddPerson(h.ID, store.Person{Name: n, Role: store.RoleParent})
+		role := store.RoleParent
+		if n == "Sebastian" || n == "Mia" {
+			role = store.RoleChild
+		}
+		p, err := db.AddPerson(h.ID, store.Person{Name: n, Role: role})
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -45,7 +49,7 @@ func TestUpdatePersonChangesNameColourAndShape(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, err := db.Person(h.ID, f["Mia"].ID)
-	if err != nil || got.Name != "Mia Maier" || got.Color != "#4E7D52" || got.Shape != "square-filled" || got.Role != store.RoleParent {
+	if err != nil || got.Name != "Mia Maier" || got.Color != "#4E7D52" || got.Shape != "square-filled" || got.Role != store.RoleChild {
 		t.Fatalf("Person = %+v, %v", got, err)
 	}
 	if err := db.UpdatePerson(h.ID, f["Mia"].ID, "  ", "", ""); err == nil {
@@ -143,5 +147,21 @@ func TestGroupInUseByACalendarIsNotDeleted(t *testing.T) {
 	}
 	if _, err := db.Group(h.ID, g.ID); err != nil {
 		t.Fatalf("used group is gone: %v", err)
+	}
+}
+
+// Another household's group id is unknown, not in use.
+func TestDeletingAnotherHouseholdsGroupIsNotFound(t *testing.T) {
+	db, h, f := exampleFamily(t)
+	g, _ := db.CreateGroup(h.ID, "School children", []string{f["Mia"].ID})
+	if _, err := db.CreateCalendar(store.Calendar{HouseholdID: h.ID, Name: "School", Kind: "ics", Audience: calendar.Audience{Groups: []string{g.ID}}}); err != nil {
+		t.Fatal(err)
+	}
+	other, err := db.CreateHousehold(store.Household{Name: "Other"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.DeleteGroup(other.ID, g.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("delete foreign group: %v, want ErrNotFound", err)
 	}
 }

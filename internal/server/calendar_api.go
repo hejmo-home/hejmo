@@ -6,6 +6,7 @@ import (
 	"net/http"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/holiday"
@@ -382,6 +383,10 @@ func (s *server) apiCreateGroup(w http.ResponseWriter, r *http.Request, p princi
 	}
 	if strings.TrimSpace(in.Name) == "" {
 		writeError(w, http.StatusUnprocessableEntity, "name is required")
+		return
+	}
+	if utf8.RuneCountInString(strings.TrimSpace(in.Name)) > maxPersonName {
+		writeError(w, http.StatusUnprocessableEntity, "name is too long")
 		return
 	}
 	g, err := s.db.CreateGroup(p.household.ID, in.Name, in.Members)

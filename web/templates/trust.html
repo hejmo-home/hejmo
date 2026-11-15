@@ -31,7 +31,7 @@
       <p>{{rich (t "trust.fp.what")}}</p>
       <div class="fp" aria-label="{{tf "trust.fp.aria" "fingerprint" .Fingerprint}}">{{range .Pairs}}<span>{{.}}</span>{{end}}</div>
       <p class="hint">{{rich (t (printf "trust.%s.fp" .Device))}}</p>
-      <p class="hint">{{t "trust.fp.mismatch"}}</p>
+      <p class="hint">{{if eq .Device "windows"}}{{t "trust.windows.mismatch"}}{{else}}{{t "trust.fp.mismatch"}}{{end}}</p>
     </div>
   </details>
   {{if .Continue}}<details class="more no-print">

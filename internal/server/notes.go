@@ -80,6 +80,15 @@ func (s *server) handleCalendarWaste(w http.ResponseWriter, r *http.Request) {
 	}
 	on := r.PostFormValue("waste") == "on"
 	id := r.PathValue("id")
+	back := "/calendars"
+	if c, err := s.db.SyncedCalendar(p.household.ID, id); err == nil {
+		// The switch is on the page of a feed or, for a calendar of a connection, on the connection page.
+		if c.Kind == "ics" {
+			back += "/" + id
+		} else if c.ConnectionID != "" {
+			back = "/connections/" + c.ConnectionID
+		}
+	}
 	switch err := s.db.SetCalendarWaste(p.household.ID, id, on); {
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
@@ -88,9 +97,9 @@ func (s *server) handleCalendarWaste(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "waste calendar", err)
 	case on:
-		s.redirectSaved(w, r, "/calendars", "flash.waste_on:"+id) // says when the next collection shows
+		s.redirectSaved(w, r, back, "flash.waste_on:"+id) // says when the next collection shows
 	default:
-		s.redirectSaved(w, r, "/calendars", "flash.waste_off")
+		s.redirectSaved(w, r, back, "flash.waste_off")
 	}
 }
 

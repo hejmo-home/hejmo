@@ -170,6 +170,14 @@ _Avoid_: login (as a noun), cookie, session (alone)
 The long-lived, revocable access of a paired phone, which acts for one person.
 _Avoid_: remember-me, phone token
 
+**Overview and detail page**:
+An overview lists the things of one kind (displays, device tokens, connections, subscribed calendars, phones) as calm rows; each row opens the thing's detail page. Changing a thing and removing it, revoking it or disconnecting it happen only on its detail page, after a confirmation that names it.
+_Avoid_: list page (for the overview), settings page (for the detail page)
+
+**Device token**:
+The password a calendar app or CalDAV client on a phone uses, one per device and revocable on its own; shown once when created. It is a token of scope `calendars`, unlike an API token for other software.
+_Avoid_: app password, phone token (a phone has a device session)
+
 ## Everyday
 
 **List**:
@@ -187,6 +195,14 @@ _Avoid_: menu, food plan
 **Mealtime**:
 One of breakfast, lunch, snack or dinner, in the order of the day.
 _Avoid_: meal type, course
+
+**Meal plan template**:
+A week pattern from Monday to Sunday that fills one mealtime or all mealtimes of the meal plan by itself, every X weeks (1 to 52) from a start week. Two templates may never fill the same mealtime on the same day of the same week. Edited only in the Templates menu; its changes reach today and later, never days before today.
+_Avoid_: template (alone; clashes with routine template), preset, default plan
+
+**Adjusted meal**:
+A meal plan entry changed for one week where a meal plan template would fill it (also emptied). It keeps its change when the template changes, until "Back to template".
+_Avoid_: override (in prose), exception
 
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.

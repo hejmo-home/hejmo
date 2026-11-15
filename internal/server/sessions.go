@@ -54,8 +54,8 @@ func (s *server) deviceText(lang, device string) string {
 	return name("device", d) + " · " + name("browser", b)
 }
 
-// dayLayout is the date as the language writes it.
-func dayLayout(lang string) string {
+// dayLayoutFor is the date as the language writes it.
+func dayLayoutFor(lang string) string {
 	if lang == "de" {
 		return "02.01.2006"
 	}
@@ -68,7 +68,7 @@ func (s *server) sessionViews(lang string, p principal, list []store.BrowserSess
 	if p.household.TimeFormat == store.Time12h {
 		clock = "3:04 PM"
 	}
-	day := dayLayout(lang)
+	day := dayLayoutFor(lang)
 	now := s.now().In(loc)
 	lastUsed := func(t time.Time) string {
 		if t.IsZero() {

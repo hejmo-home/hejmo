@@ -475,15 +475,15 @@ func TestTheRawUserAgentIsNeverStoredOrShown(t *testing.T) {
 	}
 }
 
-// The back link stays before main (the frame grid depends on it); the
-// session detail page links back to the list, not to Settings.
-func TestBackLinkSitsBeforeMain(t *testing.T) {
+// The back link is the first thing inside main (ADR 0017); the session
+// detail page links back to the list, not to Settings.
+func TestBackLinkSitsInsideMain(t *testing.T) {
 	s := newSessionsBox(t)
 	for _, path := range []string{"/sessions", "/phones", "/otp"} {
 		body := s.mama.get(path, "en").body
 		back, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main id="content">`)
-		if back < 0 || main < back {
-			t.Errorf("%s: the back link must come before main (%d, %d)", path, back, main)
+		if back < 0 || main < 0 || back < main {
+			t.Errorf("%s: the back link must come first inside main (%d, %d)", path, back, main)
 		}
 	}
 }

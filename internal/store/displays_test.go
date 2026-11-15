@@ -401,3 +401,30 @@ func TestConfirmingNamesTheWrongField(t *testing.T) {
 		}
 	}
 }
+
+// Ticket 111: a paired display can be renamed and given another type.
+func TestPairedDisplayCanBeRenamedAndRetyped(t *testing.T) {
+	db, h := householdForDisplays(t)
+	d, _ := db.OpenPairing(h.ID, "hash-1", pairT0)
+	paired, err := db.ConfirmPairing(h.ID, d.Code, store.Display{Name: "Hallway", Type: store.DisplayEInkBW}, pairT0.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetDisplayIdentity(h.ID, paired.ID, "  Kitchen ", store.DisplayScreen); err != nil {
+		t.Fatal(err)
+	}
+	list, _ := db.Displays(h.ID)
+	if list[0].Name != "Kitchen" || list[0].Type != store.DisplayScreen {
+		t.Errorf("display = %+v", list[0])
+	}
+	var fe *store.FieldError
+	if err := db.SetDisplayIdentity(h.ID, paired.ID, "", store.DisplayScreen); !errors.As(err, &fe) || fe.Field != "name" {
+		t.Errorf("blank name = %v, want a name error", err)
+	}
+	if err := db.SetDisplayIdentity(h.ID, paired.ID, "x", "hologram"); !errors.As(err, &fe) || fe.Field != "type" {
+		t.Errorf("unknown type = %v, want a type error", err)
+	}
+	if err := db.SetDisplayIdentity(h.ID, "nope", "x", store.DisplayScreen); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unknown display = %v", err)
+	}
+}

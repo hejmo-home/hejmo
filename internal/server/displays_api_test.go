@@ -137,3 +137,35 @@ func TestDisplayThemeWorksThroughTheAPI(t *testing.T) {
 		t.Errorf("unknown display = %d, want 404", status)
 	}
 }
+
+// Ticket 111: the web form renames a display and changes its type, so the API can too.
+func TestDisplayNameAndTypeChangeThroughTheAPI(t *testing.T) {
+	c := signedInAPI(t)
+	id := pairedDisplay(t, c.b, "Hallway", "screen")
+	status, body, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"name": " Kitchen ", "type": "eink_bw"})
+	if status != http.StatusOK || body["name"] != "Kitchen" || body["type"] != "eink_bw" {
+		t.Fatalf("patch = %d %v", status, body)
+	}
+	for _, bad := range []map[string]any{{"name": "  "}} {
+		if status, _, _ := c.call(http.MethodPatch, "/displays/"+id, bad); status != http.StatusUnprocessableEntity {
+			t.Errorf("patch %v = %d, want 422", bad, status)
+		}
+	}
+	// The contract refuses a name over 80 characters and an unknown type before they are sent; the box refuses them too.
+	for name, raw := range map[string]string{"a name of 81 characters": `{"name":"` + strings.Repeat("x", 81) + `"}`, "an unknown type": `{"type":"hologram"}`} {
+		req, _ := http.NewRequest(http.MethodPatch, c.b.srv.URL+"/api/v1/displays/"+id, strings.NewReader(raw))
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Origin", c.b.srv.URL)
+		res, err := c.b.client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		if res.StatusCode != http.StatusUnprocessableEntity {
+			t.Errorf("%s = %d, want 422", name, res.StatusCode)
+		}
+	}
+	if status, body, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"show_tomorrow": true}); status != http.StatusOK || body["name"] != "Kitchen" {
+		t.Errorf("a patch without name changed it: %d %v", status, body)
+	}
+}

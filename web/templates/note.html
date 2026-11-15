@@ -1,0 +1,21 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  <p><a href="/">{{t "note.back"}}</a></p>
+  <h1>{{.Title}}</h1>
+  <p class="lead">{{.Lead}}</p>
+  {{$bad := eq .ErrorField "text"}}
+  <form class="steps" method="post" action="/notes/{{.Day}}">
+    <fieldset>
+      <div class="f{{if $bad}} invalid{{end}}">
+        <label>{{t "home.note.text"}}<textarea name="text" rows="2" maxlength="120"{{if $bad}} autofocus aria-invalid="true" aria-describedby="err-text"{{end}} data-counter>{{.Text}}</textarea></label>
+        <span class="counter" data-format="{{t "home.note.counter"}}">{{printf (t "home.note.counter") .Count}}</span>
+        {{template "fieldError" (dict "Root" . "Name" "text")}}
+      </div>
+    </fieldset>
+    <button class="button" type="submit">{{t "note.save"}}</button>
+  </form>
+  {{template "dangerOpen" (dict "Label" (t "note.remove"))}}
+    <p>{{t "note.remove.explain"}}</p>
+    <form method="post" action="/notes/{{.Day}}/delete"><button class="button danger" type="submit">{{t "note.remove.confirm"}}</button></form>
+  {{template "dangerClose"}}
+  <script src="/static/note.js" defer></script>
+{{template "foot"}}

@@ -225,3 +225,45 @@ func TestTaskListRefusesAPersonThatIsNoUUID(t *testing.T) {
 		t.Errorf("person=mia = %d, want 422", got)
 	}
 }
+
+// Acceptance (#122): PATCH /tasks/{id} changes the star value, nothing else.
+func TestPatchTaskChangesTheStarValueOnly(t *testing.T) {
+	tb := newTaskBox(t)
+	id := tb.newDaily(t, tb.miaID)
+	status, got, _ := tb.parent.call(http.MethodPatch, "/tasks/"+id, map[string]any{"stars": 4})
+	if status != http.StatusOK || got["stars"] != float64(4) || got["title"] != "Brush teeth" || got["id"] != id {
+		t.Fatalf("patch = %d %v", status, got)
+	}
+	if st := taskState(t, tb.parent, id, ""); st["stars"] != float64(4) {
+		t.Fatalf("stored = %v", st)
+	}
+	status, got, _ = tb.parent.call(http.MethodPatch, "/tasks/"+id, map[string]any{"stars": 0})
+	if status != http.StatusOK || got["stars"] != float64(0) {
+		t.Fatalf("patch 0 = %d %v", status, got)
+	}
+}
+
+func TestPatchTaskRefusesBadBodiesAndUnknownTasks(t *testing.T) {
+	tb := newTaskBox(t)
+	id := tb.newDaily(t, tb.miaID)
+	for name, body := range map[string]map[string]any{
+		"too many": {"stars": 101}, "negative": {"stars": -1}, "missing": {}, "other field": {"stars": 2, "title": "x"}, "unknown field": {"colour": "red"},
+	} {
+		status, got, _ := tb.parent.call(http.MethodPatch, "/tasks/"+id, body)
+		if status != http.StatusBadRequest || got["error"] == nil {
+			t.Errorf("%s = %d %v, want 400 with an error", name, status, got)
+		}
+	}
+	if _, got, _ := tb.parent.call(http.MethodPatch, "/tasks/"+id, map[string]any{"stars": 101}); got["field"] != "stars" {
+		t.Errorf("out of range names no field: %v", got)
+	}
+	if st := taskState(t, tb.parent, id, ""); st["stars"] != float64(1) {
+		t.Fatalf("a refused patch changed the value: %v", st)
+	}
+	if status, _, _ := tb.parent.call(http.MethodPatch, "/tasks/00000000-0000-0000-0000-000000000000", map[string]any{"stars": 2}); status != http.StatusNotFound {
+		t.Errorf("unknown = %d", status)
+	}
+	if status, _, _ := tb.child.call(http.MethodPatch, "/tasks/"+id, map[string]any{"stars": 2}); status != http.StatusForbidden {
+		t.Errorf("child = %d, want 403", status)
+	}
+}

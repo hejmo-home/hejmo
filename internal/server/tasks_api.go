@@ -3,8 +3,10 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"regexp"
+	"strconv"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -119,6 +121,48 @@ func (s *server) createTask(p principal, t task.Task, stars *int) (task.Task, er
 		t.Stars = task.DefaultStars(owner.Role == store.RoleChild)
 	}
 	return s.db.AddTask(p.household.ID, t)
+}
+
+// apiPatchTask changes a task's star value, the only field of a task that can
+// be edited so far; any other field is refused. The value counts from the next
+// tick, credited ticks keep theirs.
+func (s *server) apiPatchTask(w http.ResponseWriter, r *http.Request, p principal) {
+	var in struct {
+		Stars *json.Number `json:"stars"`
+	}
+	dec := json.NewDecoder(r.Body)
+	dec.DisallowUnknownFields()
+	dec.UseNumber()
+	if err := dec.Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON or an unknown field: only stars can be changed")
+		return
+	}
+	if in.Stars == nil {
+		writeFieldError(w, http.StatusBadRequest, "stars", "stars is required")
+		return
+	}
+	n, err := strconv.Atoi(in.Stars.String())
+	if err != nil {
+		writeFieldError(w, http.StatusBadRequest, "stars", "stars must be a whole number")
+		return
+	}
+	id := r.PathValue("id")
+	switch err := s.db.SetTaskStars(p.household.ID, id, n); {
+	case errors.Is(err, store.ErrNotFound):
+		writeError(w, http.StatusNotFound, "task not found")
+	case errors.Is(err, store.ErrInvalid):
+		writeFieldError(w, http.StatusBadRequest, "stars", fmt.Sprintf("stars must be between 0 and %d", task.MaxStars))
+	case err != nil:
+		s.fail(w, "set task stars", err)
+	default:
+		t, err := s.db.Task(p.household.ID, id)
+		if err != nil {
+			s.fail(w, "task", err)
+			return
+		}
+		j, _ := s.taskStateToJSON(t, s.today(p))
+		writeJSON(w, http.StatusOK, j)
+	}
 }
 
 func (s *server) apiDeleteTask(w http.ResponseWriter, r *http.Request, p principal) {

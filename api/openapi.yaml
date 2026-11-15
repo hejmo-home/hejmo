@@ -477,6 +477,43 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
   /tasks/{id}:
+    patch:
+      operationId: updateTask
+      summary: Change a task's star value (scope tasks:write, parents only)
+      description: |
+        Only `stars` can be changed so far; any other or unknown field is
+        refused with 400. The new value counts from the next tick. Ticks that
+        are already credited keep their value: the star log and the stars
+        credited for done days stay as they are, and unticking deducts what was
+        credited. An out-of-range value gives 400 with `field: stars`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: |
+                `stars` is a whole number from 0 to 100. The range is checked by
+                the box, so a value outside it gets the 400 below with a field
+                error. Any other field is refused with 400 as well.
+              properties:
+                stars: { type: integer }
+      responses:
+        "200":
+          description: The updated task with its state today
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400":
+          description: Not valid JSON, an unknown field or a star value outside 0 to 100
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
     delete:
       operationId: deleteTask
       summary: Delete a task with its history (scope tasks:delete, parents only)
@@ -1491,6 +1528,7 @@ components:
       required: [error]
       properties:
         error: { type: string }
+        field: { type: string, description: "The refused field, when the error is about one" }
   responses:
     Unauthorized:
       description: Missing or invalid credentials

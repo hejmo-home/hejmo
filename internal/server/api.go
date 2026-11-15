@@ -64,6 +64,7 @@ var apiRoutes = []APIRoute{
 	{"GET", "/search", auth.Perm("events", auth.Read), (*server).apiSearch},
 	{"GET", "/tasks", auth.Perm("tasks", auth.Read), (*server).apiListTasks},
 	{"POST", "/tasks", auth.Perm("tasks", auth.Write), (*server).apiCreateTask},
+	{"PATCH", "/tasks/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchTask},
 	{"DELETE", "/tasks/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeleteTask},
 	{"PUT", "/tasks/{id}/done", auth.Perm("tasks", auth.Complete), (*server).apiSetTaskDone},
 	{"GET", "/displays", auth.Perm("displays", auth.Read), (*server).apiListDisplays},
@@ -300,6 +301,11 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// writeFieldError is writeError for a refused field: the body names it.
+func writeFieldError(w http.ResponseWriter, status int, field, msg string) {
+	writeJSON(w, status, map[string]string{"error": msg, "field": field})
 }
 
 func writeError(w http.ResponseWriter, status int, msg string) {

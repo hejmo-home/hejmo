@@ -713,3 +713,21 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .tpick label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 [data-theme="bw"] .tpick label { border-color: var(--text); }
 .tpick .done { justify-self: end; }
+
+/* Meal tile (ticket 6.4, ADR 0016). */
+.fv-footer .tile { container-type: inline-size; }
+.fv-footer .ln, .fv-footer .dish { overflow-wrap: break-word; hyphens: auto; }
+.fv-footer .lab.mt { display: flex; align-items: center; gap: 6px; }
+.fv-footer .meals { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 14px; row-gap: 8px; align-items: start; }
+.fv-footer .meal-ln { display: contents; }
+.fv-footer .meal-ln .mt { display: flex; align-items: center; gap: 6px; font-size: var(--fs-label); color: var(--text-secondary); line-height: 22px; }
+.fv-footer .meal-ln .dish { font-size: var(--fs-body); font-weight: 600; line-height: 22px; min-width: 0; }
+.fv-footer .mt .icon { flex: none; }
+@container (max-width: 300px) {
+  .fv-footer .meals { display: block; }
+  .fv-footer .meal-ln { display: block; margin-top: 6px; }
+  .fv-footer .meal-ln .mt { display: inline-flex; vertical-align: top; margin-right: 8px; }
+  .fv-footer .meal-ln .dish { display: inline; }
+}
+/* A long word in a narrow column wraps with a hyphen instead of being clipped (the #32 feedback). */
+.fv .event .title, .strip-item .title { overflow-wrap: break-word; hyphens: auto; }

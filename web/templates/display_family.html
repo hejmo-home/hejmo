@@ -36,12 +36,14 @@
     {{end}}
   </main>
   {{if or .Meal .TomorrowTile}}<footer class="fv-footer" data-footer>
-    {{with .Meal}}{{template "tile" (dict "Tile" . "Kind" "meal")}}{{end}}
+    {{with .Meal}}{{template "mealTile" .}}{{end}}
     {{with .TomorrowTile}}{{template "tile" (dict "Tile" . "Kind" "tomorrow")}}{{end}}
   </footer>{{end}}
 </div>{{end}}
 
 {{define "stripItem"}}<li class="strip-item{{if .ContinuesBefore}} before{{end}}{{if .ContinuesAfter}} after{{end}}" data-kind="{{.Kind}}"{{if gt .DayCount 1}} data-bar="{{printf "%d/%d" .DayIndex .DayCount}}"{{end}}><span class="title">{{.Title}}</span>{{if .WhoParts}} <span class="who">{{template "whoParts" .WhoParts}}</span>{{end}}{{if .Time}} <span class="meta">{{.Time}}</span>{{end}}{{if gt .DayCount 1}} <span class="meta">{{t "family.day"}} {{printf "%d/%d" .DayIndex .DayCount}}</span>{{end}}{{if .Partial}} <span class="meta">{{t "family.partial"}}</span>{{end}}</li>{{end}}
+
+{{define "mealTile"}}{{if eq (len .Entries) 1}}{{with index .Entries 0}}<div class="tile meal" data-tile="meal" data-mealtime="{{.Mealtime}}"><div class="lab mt">{{template "mealIcon" .Mealtime}}{{t (printf "meals.mealtime.%s" .Mealtime)}}</div><div class="ln dish">{{.Dish}}</div></div>{{end}}{{else}}<div class="tile meal" data-tile="meal"><div class="lab">{{.Label}}</div><ul class="meals">{{range .Entries}}<li class="meal-ln" data-mealtime="{{.Mealtime}}"><span class="mt">{{template "mealIcon" .Mealtime}}{{t (printf "meals.mealtime.%s" .Mealtime)}}</span><span class="dish">{{.Dish}}</span></li>{{end}}</ul></div>{{end}}{{end}}
 
 {{define "tile"}}<div class="tile{{if .Tile.Alert}} alert{{end}}" data-tile="{{.Kind}}"><div class="lab">{{.Tile.Label}}</div>{{range .Tile.Lines}}<div class="ln">{{.}}</div>{{end}}</div>{{end}}
 

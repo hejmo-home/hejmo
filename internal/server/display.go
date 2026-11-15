@@ -14,6 +14,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/theme"
@@ -161,9 +162,27 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
-	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
+	meals, cutoffs := s.mealsToday(h, data.now)
+	return familyview.Build(familyview.Input{Meals: meals, MealCutoffs: cutoffs, Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
 		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID),
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
+}
+
+// mealsToday reads today's meals for the meal tile. If they cannot be read it
+// logs that and returns none: the family view renders without the tile
+// instead of failing.
+func (s *server) mealsToday(h store.Household, now time.Time) (map[meal.Mealtime]string, meal.Cutoffs) {
+	day := now.Format("2006-01-02")
+	entries, err := s.db.Meals(h.ID, day, day)
+	if err != nil {
+		s.logger.Error("meal tile: reading today's meals", "err", err)
+		return nil, meal.Cutoffs{}
+	}
+	out := map[meal.Mealtime]string{}
+	for _, e := range entries {
+		out[e.Mealtime] = e.Text
+	}
+	return out, h.MealCutoffs
 }
 
 // displayData is what the views of a display are built from: the household's

@@ -112,8 +112,8 @@ func TestOnlyReadOnlyCalendarsCanBeWasteCollection(t *testing.T) {
 	if n := strings.Count(page, `/waste"`); n != 2 {
 		t.Fatalf("%d waste forms, want 2 (the page lists only synced calendars; the read-only gate is the store/handler refusal below)\n%s", n, page)
 	}
-	if n := strings.Count(page, "data-waste-state"); n != 2 {
-		t.Fatalf("%d waste hints, want 2\n%s", n, page)
+	if n := strings.Count(page, `role="switch" name="waste"`); n != 2 {
+		t.Fatalf("%d waste switches, want 2\n%s", n, page)
 	}
 
 	home, err := c.b.db.CreateCalendar(store.Calendar{HouseholdID: mustHousehold(t, c).ID, Name: "Home", Kind: "local", Color: "#2F5E7A"})
@@ -253,47 +253,6 @@ func TestWritableCalendarCannotBeWasteCollection(t *testing.T) {
 	}
 	if c.calendarJSON(t, cal.ID)["share_through_box"] != was {
 		t.Fatal("the sharing change was saved although the request was refused")
-	}
-}
-
-// The calendars page lists the notes in the household's date format, each with a button that removes it.
-func TestCalendarsPageListsNotesWithDateAndRemoveButton(t *testing.T) {
-	f := newFamilyBox(t, "eink_color")
-	if r := f.post("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Swimming bags"}}); r.status != http.StatusSeeOther {
-		t.Fatalf("note = %d", r.status)
-	}
-	page := f.get("/calendars").body
-	if !strings.Contains(page, "16/11/2026") || strings.Contains(page, "<strong>2026-11-16</strong>") {
-		t.Fatalf("note day not in household format:\n%s", page)
-	}
-	if !regexp.MustCompile(`(?s)data-note.*?name="day" value="2026-11-16".*?name="text" value=""`).MatchString(page) {
-		t.Fatalf("no remove button on the note:\n%s", page)
-	}
-	if r := f.post("/notes", url.Values{"day": {"tomorrow"}, "text": {"x"}}); r.status != http.StatusUnprocessableEntity {
-		t.Fatalf("bad day = %d, want 422", r.status)
-	}
-	if r := f.post("/notes", url.Values{"day": {"2026-11-17"}, "text": {"   "}}); r.status != http.StatusSeeOther {
-		t.Fatalf("blank text = %d", r.status)
-	}
-	if r := f.post("/notes", url.Values{"day": {"2026-11-16"}, "text": {""}}); r.status != http.StatusSeeOther {
-		t.Fatalf("remove = %d", r.status)
-	}
-	if notes, _ := f.db.DayNotes(f.householdID); len(notes) != 0 {
-		t.Fatalf("notes = %v", notes)
-	}
-}
-
-// The calendars page leaves out the notes of days that are over (the clock stands at 14/11/2026).
-func TestCalendarsPageLeavesOutPastNotes(t *testing.T) {
-	f := newFamilyBox(t, "eink_color")
-	for _, day := range []string{"2026-11-10", "2026-11-16"} {
-		if r := f.post("/notes", url.Values{"day": {day}, "text": {"x"}}); r.status != http.StatusSeeOther {
-			t.Fatalf("note = %d", r.status)
-		}
-	}
-	page := f.get("/calendars").body
-	if strings.Contains(page, "10/11/2026") || !strings.Contains(page, "16/11/2026") {
-		t.Fatalf("notes on the page:\n%s", page)
 	}
 }
 

@@ -43,7 +43,7 @@
 
 {{define "stripItem"}}<li class="strip-item{{if .ContinuesBefore}} before{{end}}{{if .ContinuesAfter}} after{{end}}" data-kind="{{.Kind}}"{{if gt .DayCount 1}} data-bar="{{printf "%d/%d" .DayIndex .DayCount}}"{{end}}>{{range .Markers}}<span class="marker small" data-person="{{.Slot}}" data-shape="{{.Shape}}" title="{{.Name}}"></span>{{end}}<span class="title">{{.Title}}</span>{{if .Time}} <span class="meta">{{.Time}}</span>{{end}}{{if gt .DayCount 1}} <span class="meta">{{t "family.day"}} {{printf "%d/%d" .DayIndex .DayCount}}</span>{{end}}{{if .Partial}} <span class="meta">{{t "family.partial"}}</span>{{end}}</li>{{end}}
 
-{{define "tile"}}<div class="tile{{if .Tile.Alert}} alert{{end}}" data-tile="{{.Kind}}"><div class="lab">{{.Tile.Label}}</div>{{range .Tile.Lines}}<div class="ln">{{.}}</div>{{end}}</div>{{end}}
+{{define "binIcon"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9.5 7V4.5h5V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v5.5M14 11v5.5"/></svg>{{end}}{{define "tile"}}{{if eq .Kind "meal"}}<div class="tile" data-tile="meal"><div class="lab">{{.Tile.Label}}</div>{{range .Tile.Lines}}<div class="ln">{{.Text}}</div>{{end}}</div>{{else}}{{$waste := .Tile.HasWaste}}<div class="tile{{if .Tile.Alert}} alert{{end}}" data-tile="{{.Kind}}"><div class="tile-head"><span class="lab">{{.Tile.Label}}</span>{{if .Tile.Alert}}<span class="flag">{{t "family.put_out"}}</span>{{end}}</div>{{range .Tile.Lines}}{{if eq .Kind "waste"}}<div class="ln waste">{{template "binIcon"}}<span>{{.Text}}</span></div>{{else if eq .Kind "note"}}<div class="ln note">{{if and .NoteToday $waste}}<span class="day">{{t "family.today"}}</span>{{end}}{{.Text}}</div>{{else}}<div class="ln">{{.Text}}</div>{{end}}{{end}}</div>{{end}}{{end}}
 
 {{define "quietView"}}{{if .Black}}<div class="quiet black" data-quiet="black"></div>{{else}}<div class="quiet night" data-quiet="night" data-reload-seconds="{{.ReloadSeconds}}">
   <div class="lab">{{t "night.title"}}</div>
@@ -51,7 +51,7 @@
   <div class="date">{{.Night.Date.Day}}{{t "family.day_suffix"}} {{t (printf "month.%d" .Night.Date.Month)}}</div>
   {{with .Night.First}}<div class="night-item" data-first-event><div class="lab">{{t "night.first_event"}}</div><div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div></div>
   {{else}}<p class="lab" data-no-event>{{t "night.no_event"}}</p>{{end}}
-  {{with .Night.Waste}}<div class="night-item" data-waste><div class="lab">{{t "night.waste"}}</div>{{range .}}<div class="title">{{.}}</div>{{end}}</div>{{end}}
+  {{with .Night.Waste}}<div class="night-item" data-waste><div class="lab">{{t "night.waste"}}</div>{{range .}}<div class="ln waste">{{template "binIcon"}}<span>{{.}}</span></div>{{end}}</div>{{end}}
 </div>{{end}}{{end}}
 
 {{define "weatherIcon"}}<svg class="icon" viewBox="0 0 24 24" width="28" height="28" role="img" data-icon="{{.}}" aria-label="{{t (printf "weather.%s" .)}}">

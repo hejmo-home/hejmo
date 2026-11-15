@@ -66,5 +66,15 @@ func (s *server) successText(lang, key, arg string) string {
 			}
 		}
 	}
+	switch key {
+	case "flash.note_saved":
+		if arg != "" {
+			return s.noteSavedText(lang, arg)
+		}
+	case "flash.waste_on":
+		if arg != "" {
+			return s.wasteOnText(lang, arg)
+		}
+	}
 	return s.i18n.T(lang, key)
 }

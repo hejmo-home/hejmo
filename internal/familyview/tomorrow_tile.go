@@ -1,8 +1,8 @@
 package familyview
 
 import (
-	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
@@ -30,12 +30,14 @@ func WasteTitles(waste []calendar.Occurrence, from, to time.Time) []string {
 // tomorrowTile builds the footer's tomorrow tile (ADR 0016): one line per waste
 // collection tomorrow, the parent's note as the last line, three lines at most,
 // highlighted from 18:00 when it holds a collection, nil when empty. The note
-// of tomorrow replaces the note of today from 18:00.
+// of tomorrow replaces the note of today from 18:00. The room is three lines
+// minus one for the note: collections that fit get a line each, otherwise they
+// share one line, every title named. Nothing is cut off or replaced by a count.
 func tomorrowTile(in Input, now, d1 time.Time) *Tile {
 	collections := WasteTitles(in.Waste, d1, d1.AddDate(0, 0, 1))
-	day := now
-	if now.Hour() >= tomorrowFromHour {
-		day = d1
+	day, noteToday := d1, false
+	if now.Hour() < tomorrowFromHour {
+		day, noteToday = now, true
 	}
 	note := in.DayNotes[day.Format("2006-01-02")]
 	if len(collections) == 0 && note == "" {
@@ -45,16 +47,20 @@ func tomorrowTile(in Input, now, d1 time.Time) *Tile {
 	if note != "" {
 		room--
 	}
-	var lines []string
-	if len(collections) > room {
-		room-- // one line for "+N more"
-		lines = append(lines, collections[:room]...)
-		lines = append(lines, fmt.Sprintf(in.MoreFormat, len(collections)-room))
+	var lines []Line
+	if len(collections) <= room {
+		for _, c := range collections {
+			lines = append(lines, Line{Kind: LineWaste, Text: c})
+		}
 	} else {
-		lines = collections
+		lines = append(lines, Line{Kind: LineWaste, Text: strings.Join(collections, ", ")})
 	}
 	if note != "" {
-		lines = append(lines, note)
+		lines = append(lines, Line{Kind: LineNote, Text: note, NoteToday: noteToday})
 	}
-	return &Tile{Label: in.TomorrowLabel, Lines: lines, Alert: len(collections) > 0 && now.Hour() >= tomorrowFromHour}
+	label := in.TomorrowLabel
+	if len(collections) == 0 && noteToday {
+		label = in.TodayLabel
+	}
+	return &Tile{Label: label, Lines: lines, Alert: len(collections) > 0 && !noteToday}
 }

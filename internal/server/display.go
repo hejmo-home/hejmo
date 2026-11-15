@@ -172,7 +172,7 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 		byDay[n.Day] = n.Text
 	}
 	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people,
-		Waste: data.waste, DayNotes: byDay, TomorrowLabel: s.i18n.T(lang, "family.tomorrow"), MoreFormat: s.i18n.T(lang, "family.more"),
+		Waste: data.waste, DayNotes: byDay, TomorrowLabel: s.i18n.T(lang, "family.tomorrow"), TodayLabel: s.i18n.T(lang, "family.today"),
 		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID),
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
 }

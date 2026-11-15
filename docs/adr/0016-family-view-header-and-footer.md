@@ -35,9 +35,13 @@ Proposed: the minimum column width is fixed at **144 px** (design token `column-
 
 ### Tomorrow tile as built (ticket 6.7)
 
-- A note is a **day note**: one per day, up to 120 characters, set by a parent in the web interface (calendars page) or the API (`/day-notes`). Before 18:00 the tile shows the note of today, from 18:00 the note of tomorrow replaces it. Notes of past days are deleted when a display renders, when the calendars page is shown and when the API lists the notes (`GET /day-notes`).
+- A note is a **day note**: one per day, up to 120 characters, set by a parent in the web interface (card "Note on the display" on Home) or the API (`/day-notes`). Before 18:00 the tile shows the note of today, from 18:00 the note of tomorrow replaces it. Notes of past days are deleted when a display renders, when Home is shown and when the API lists the notes (`GET /day-notes`).
 - Identical collection titles from several waste collection calendars are one line. Only read-only calendars can be marked as waste collection; their events stay out of the strip, columns and personal view.
-- Of "at most three lines": with a note and more than one collection too many, the tile shows one collection, "+N more" (N counts the collections not shown) and the note.
+- Of "at most three lines": the room is three lines minus one when there is a note. Collections that fit in the room keep one line each; when they do not, **all collection titles share one line, joined by ", "** and the note stays the last line. Nothing is cut off and no count ("+N more") replaces a title; lines wrap.
+- The tile says what to do: from 18:00 with a collection the highlighted tile shows the pill "Put out tonight" next to its label (black on black-and-white displays), so the highlight does not rely on colour alone.
+- Each collection line starts with a bin icon next to the word; the note is set apart below a thin rule in regular weight.
+- Today's note: "Tomorrow" never heads today's note. Before 18:00 the tile shows today's note; next to a collection it starts with a bold "Today", and when the tile holds only today's note, its label is "Today".
+- The day note lives on Home, not on the calendars page. An empty note is a field error (it never removes a note); a planned note opens on its own page, where it can be changed or removed after a confirmation. The waste collection is a switch on the calendar card with its state in words, and the card names the next collection (or says there is none in the next 30 days).
 
 ## Consequences
 

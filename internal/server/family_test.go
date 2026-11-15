@@ -308,12 +308,12 @@ func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
 	if strings.Contains(out, "data-footer") {
 		t.Error("footer shown with both tiles empty")
 	}
-	v.Meal = &familyview.Tile{Label: "Dinner", Lines: []string{"Pasta bake"}}
+	v.Meal = &familyview.Tile{Label: "Dinner", Lines: []familyview.Line{{Text: "Pasta bake"}}}
 	one, _ := server.RenderFamilyView("en", v)
 	if !strings.Contains(one, "data-footer") || !strings.Contains(one, `data-tile="meal"`) || strings.Contains(one, `data-tile="tomorrow"`) {
 		t.Errorf("one tile: %s", one)
 	}
-	v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []string{"Paper bin"}, Alert: true}
+	v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []familyview.Line{{Kind: familyview.LineWaste, Text: "Paper bin"}}, Alert: true}
 	two, _ := server.RenderFamilyView("en", v)
 	if strings.Count(two, "data-tile=") != 2 || !strings.Contains(two, "tile alert") {
 		t.Errorf("two tiles: %s", two)

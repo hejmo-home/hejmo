@@ -44,8 +44,9 @@ type Input struct {
 	Waste []calendar.Occurrence
 	// DayNotes are the parents' notes by day (YYYY-MM-DD).
 	DayNotes map[string]string
-	// TomorrowLabel and MoreFormat ("+%d more") come from the translations.
-	TomorrowLabel, MoreFormat string
+	// TomorrowLabel and TodayLabel come from the translations: the tile is
+	// labelled "Today" when it holds only today's note.
+	TomorrowLabel, TodayLabel string
 	// SyncStale: a synced calendar has gone 24 hours without a successful
 	// sync (ADR 0012). The header then shows an info symbol.
 	SyncStale bool
@@ -118,11 +119,36 @@ type StripItem struct {
 	ContinuesAfter  bool
 }
 
-// Tile is a footer tile (content arrives with package 6).
+// Line kinds of a footer tile: a plain line (the meal tile) has no kind.
+const (
+	LineWaste = "waste"
+	LineNote  = "note"
+)
+
+// Line is one line of a footer tile. The kind lets the template draw a waste
+// collection and the parents' note differently.
+type Line struct {
+	Kind string
+	Text string
+	// NoteToday marks the note of today (before 18:00), not of tomorrow.
+	NoteToday bool
+}
+
+// Tile is a footer tile.
 type Tile struct {
 	Label string
-	Lines []string
+	Lines []Line
 	Alert bool
+}
+
+// HasWaste reports whether the tile holds a waste collection.
+func (t Tile) HasWaste() bool {
+	for _, l := range t.Lines {
+		if l.Kind == LineWaste {
+			return true
+		}
+	}
+	return false
 }
 
 // View is the data of one family view screen.

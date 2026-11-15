@@ -39,6 +39,13 @@ type Input struct {
 	// TemperatureUnit is "c" (default) or "f".
 	Weather         *Weather
 	TemperatureUnit store.TemperatureUnit
+	// Waste holds the occurrences of the waste collection calendars (ADR 0015),
+	// kept apart from Occurrences: they feed only the tomorrow tile.
+	Waste []calendar.Occurrence
+	// DayNotes are the parents' notes by day (YYYY-MM-DD).
+	DayNotes map[string]string
+	// TomorrowLabel and MoreFormat ("+%d more") come from the translations.
+	TomorrowLabel, MoreFormat string
 	// SyncStale: a synced calendar has gone 24 hours without a successful
 	// sync (ADR 0012). The header then shows an info symbol.
 	SyncStale bool
@@ -151,6 +158,7 @@ func Build(in Input) View {
 	v.Weather = Chip(in.Weather, in.TemperatureUnit)
 	v.ShowTomorrow = in.ShowTomorrow && now.Hour() >= tomorrowFromHour
 	v.SyncStale = in.SyncStale
+	v.TomorrowTile = tomorrowTile(in, now, d1)
 	for _, p := range in.People {
 		v.Columns = append(v.Columns, Column{Person: p})
 	}

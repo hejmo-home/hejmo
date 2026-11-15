@@ -212,3 +212,27 @@ func TestResetOTPRemovesSecretCodesAndBrowserSessionsButKeepsTokensAndTheBoxConf
 		t.Fatalf("after re-setup = %+v", acc)
 	}
 }
+
+func TestAccountLanguage(t *testing.T) {
+	db, _ := openTemp(t)
+	_, mama := seedParent(t, db)
+	_ = db.CreateAccount(store.Account{PersonID: mama.ID, Username: "mama", PasswordHash: "h", TOTPSecret: "S"})
+	acc, err := db.AccountByPerson(mama.ID)
+	if err != nil || acc.Language != "" {
+		t.Fatalf("new account language = %q, %v; want none", acc.Language, err)
+	}
+	if err := db.SetAccountLanguage(mama.ID, "en"); err != nil {
+		t.Fatal(err)
+	}
+	for _, get := range []func() (store.Account, error){
+		func() (store.Account, error) { return db.AccountByPerson(mama.ID) },
+		func() (store.Account, error) { return db.AccountByUsername("mama") },
+	} {
+		if acc, err := get(); err != nil || acc.Language != "en" {
+			t.Fatalf("language = %q, %v; want en", acc.Language, err)
+		}
+	}
+	if err := db.SetAccountLanguage("nobody", "en"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("unknown person: %v", err)
+	}
+}

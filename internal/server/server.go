@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
@@ -100,6 +101,7 @@ type server struct {
 	countWait time.Duration
 	done      <-chan struct{}
 	updateDir string
+	rolled    sync.Map // household id -> the day its meal plan calendar was last rolled forward
 }
 
 // New returns the box's root HTTP handler.
@@ -166,6 +168,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /login", s.handleLoginForm)
 	mux.HandleFunc("POST /login", s.handleLoginSubmit)
 	mux.HandleFunc("POST /logout", s.handleLogout)
+	mux.HandleFunc("POST /language", s.handleLanguageSwitch)
 	mux.HandleFunc("GET /{$}", s.handleHome)
 	mux.HandleFunc("GET /calendar", s.handleCalendarWeek)
 	mux.HandleFunc("GET /calendar/search", s.handleCalendarSearch)
@@ -210,6 +213,12 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /meals", s.handleMealsPage)
 	mux.HandleFunc("POST /meals", s.handleMealsSave)
+	mux.HandleFunc("GET /meals/templates", s.handleTemplatesPage)
+	mux.HandleFunc("GET /meals/templates/new", s.handleTemplateNew)
+	mux.HandleFunc("POST /meals/templates", s.handleTemplateCreate)
+	mux.HandleFunc("GET /meals/templates/{id}", s.handleTemplatePage)
+	mux.HandleFunc("POST /meals/templates/{id}", s.handleTemplateSave)
+	mux.HandleFunc("POST /meals/templates/{id}/delete", s.handleTemplateDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
@@ -234,7 +243,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /displays/{id}/settings", s.handleDisplaySettings)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
-	return s.requireHTTPS(sameOrigin(mux))
+	return s.requireHTTPS(sameOrigin(withPageLanguage(mux)))
 }
 
 func (s *server) handleHealthz(w http.ResponseWriter, r *http.Request) {
@@ -279,7 +288,12 @@ func parsePages() *template.Template {
 }
 
 func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name string, data map[string]any) {
-	lang := s.i18n.Match(r.Header.Get("Accept-Language"))
+	var lang string
+	if strings.HasPrefix(name, "display_") {
+		lang = s.displayLang(r) // a parent's choice does not reach displays
+	} else {
+		lang = s.pageLanguage(r)
+	}
 	if data == nil {
 		data = map[string]any{}
 	}
@@ -291,10 +305,15 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	}
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
-		if key, arg := s.takeFlash(w, r); key != "" {
+		fr.setLanguage(lang, r)
+		if key, arg := s.takeFlash(w, r); key == "flash.lang.error" {
+			fr.Error = s.i18n.T(lang, key)
+		} else if key != "" {
 			fr.Success = s.successText(lang, key, arg)
 		} else if key, ok := data["SuccessKey"].(string); ok {
 			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
+		} else if text, ok := data["SuccessText"].(string); ok {
+			fr.Success = text // a page that shows the result itself, with a name in it
 		}
 		data["Frame"] = fr
 	}

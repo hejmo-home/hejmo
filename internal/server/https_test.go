@@ -299,3 +299,81 @@ func TestRefusedNameIsExplainedInBothLanguages(t *testing.T) {
 		}
 	}
 }
+
+// The trust page carries the language switcher (ticket 134), and a phone reads
+// it over plain HTTP before it trusts the box: the flags and the switch itself
+// must work there instead of redirecting to the untrusted HTTPS address.
+func TestLanguageSwitcherWorksOnTheTrustPageOverPlainHTTP(t *testing.T) {
+	b := newBox(t)
+	plain := b.plainServer()
+	page, err := http.Get(plain.URL + "/ca")
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := io.ReadAll(page.Body)
+	page.Body.Close()
+	if !strings.Contains(string(raw), `<details class="lang">`) {
+		t.Fatalf("trust page over HTTP has no switcher:\n%s", raw)
+	}
+	for _, f := range []string{"de", "gb"} {
+		res, err := http.Get(plain.URL + "/static/flags/" + f + ".svg") // follows redirects: HTTPS would fail on the untrusted certificate
+		if err != nil {
+			t.Fatalf("flag %s: %v", f, err)
+		}
+		res.Body.Close()
+		if res.StatusCode != http.StatusOK || res.Request.URL.Scheme != "http" {
+			t.Errorf("flag %s = %d via %s, want 200 over http", f, res.StatusCode, res.Request.URL.Scheme)
+		}
+	}
+	noRedirect := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
+	req, _ := http.NewRequest(http.MethodPost, plain.URL+"/language", strings.NewReader(url.Values{"lang": {"en"}, "next": {"/ca"}}.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", plain.URL)
+	res, err := noRedirect.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	res.Body.Close()
+	if res.StatusCode != http.StatusSeeOther || res.Header.Get("Location") != "/ca" {
+		t.Fatalf("POST http://language = %d %q, want 303 to /ca", res.StatusCode, res.Header.Get("Location"))
+	}
+	var set *http.Cookie
+	for _, c := range res.Cookies() {
+		if c.Name == "hejmo_lang" {
+			set = c
+		}
+	}
+	if set == nil || set.Value != "en" || set.Secure {
+		t.Errorf("language cookie over HTTP = %+v, want en and not Secure", set)
+	}
+	// Following the 303 back to the trust page over HTTP shows it in English.
+	back, _ := http.NewRequest(http.MethodGet, plain.URL+res.Header.Get("Location"), nil)
+	back.AddCookie(set)
+	back.Header.Set("Accept-Language", "de")
+	br, err := noRedirect.Do(back)
+	if err != nil {
+		t.Fatal(err)
+	}
+	braw, _ := io.ReadAll(br.Body)
+	br.Body.Close()
+	if br.StatusCode != http.StatusOK || !strings.Contains(string(braw), `<html lang="en"`) {
+		t.Fatalf("GET http://ca after the switch = %d, want 200 with lang=\"en\":\n%s", br.StatusCode, braw)
+	}
+
+	// Only the switch and single flag files: no other POST, no listing, no traversal.
+	for _, c := range []struct{ method, path string }{
+		{http.MethodGet, "/static/flags/"}, {http.MethodGet, "/static/flags/..%2fform.js"},
+		{http.MethodGet, "/static/flags/../sw.js"}, {http.MethodPost, "/login"},
+		{http.MethodPost, "/ca"}, {http.MethodPost, "/setup"},
+	} {
+		req, _ := http.NewRequest(c.method, plain.URL+c.path, nil)
+		res, err := noRedirect.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		if res.StatusCode != http.StatusPermanentRedirect {
+			t.Errorf("%s http://%s = %d, want 308", c.method, c.path, res.StatusCode)
+		}
+	}
+}

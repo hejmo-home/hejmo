@@ -184,6 +184,14 @@ _Avoid_: menu, food plan
 One of breakfast, lunch, snack or dinner, in the order of the day.
 _Avoid_: meal type, course
 
+**Meal plan template**:
+A week pattern from Monday to Sunday that fills one mealtime or all mealtimes of the meal plan by itself, every X weeks (1 to 52) from a start week. Two templates may never fill the same mealtime on the same day of the same week. Edited only in the Templates menu; its changes reach today and later, never days before today.
+_Avoid_: template (alone; clashes with routine template), preset, default plan
+
+**Adjusted meal**:
+A meal plan entry changed for one week where a meal plan template would fill it (also emptied). It keeps its change when the template changes, until "Back to template".
+_Avoid_: override (in prose), exception
+
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.
 _Avoid_: deadline, expiry

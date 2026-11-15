@@ -581,6 +581,11 @@ paths:
         most 62 days; give both or neither, else 422. Everyone, children
         included, may read the plan.
 
+        An entry is the effective meal: this week's adjustment if there is one,
+        else what a meal plan template fills in, else the hand-typed entry
+        (`source` and `template_dish` say which). A meal emptied for a week is
+        not listed.
+
         Every entry also appears as an all-day event "<Mealtime>: <text>" in
         the generated, read-only calendar of kind `meals` (see `/calendars`),
         which is shared through the box by default (ADR 0015).
@@ -608,6 +613,10 @@ paths:
         event title uses the language of the request (Accept-Language), for
         example "Dinner: Pasta bake". Saving the same text again changes
         nothing. An empty text is refused with 422: remove a meal with DELETE.
+
+        Where a meal plan template fills the day, the text is that week's
+        adjustment (`source` adjusted); typing the template's own dish is no
+        adjustment.
       parameters:
         - { name: date, in: path, required: true, schema: { type: string, format: date } }
         - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }
@@ -633,7 +642,10 @@ paths:
     delete:
       operationId: deleteMeal
       summary: Remove a planned meal and its calendar event (scope meals:delete, parents only)
-      description: Removing a meal that is not planned is not an error (204).
+      description: |
+        Removing a meal that is not planned is not an error (204). Where a meal
+        plan template fills the day, it empties the meal for that week (an
+        adjustment); `restoreMeal` brings the template's dish back.
       parameters:
         - { name: date, in: path, required: true, schema: { type: string, format: date } }
         - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }
@@ -642,6 +654,126 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /meals/{date}/{mealtime}/restore:
+    post:
+      operationId: restoreMeal
+      summary: Back to template, drop the week's change of a meal (scope meals:write, parents only)
+      description: |
+        Removes the adjustment of a meal, so the template's dish shows again
+        (and in the calendar). 404 if the meal is not adjusted.
+      parameters:
+        - { name: date, in: path, required: true, schema: { type: string, format: date } }
+        - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }
+      responses:
+        "200":
+          description: The meal as it is now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Meal" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /meal-templates:
+    get:
+      operationId: listMealTemplates
+      summary: Meal plan templates, by name (scope meals:read)
+      description: |
+        A template is a week pattern from Monday to Sunday that fills the meal
+        plan by itself, every `interval` weeks from `start_week`.
+      responses:
+        "200":
+          description: Templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MealTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createMealTemplate
+      summary: Create a meal plan template (scope meals:write, parents only)
+      description: |
+        Fills the meal plan and the meal-plan calendar from today on. Entries of
+        mealtimes the template does not fill are ignored; an empty entry leaves
+        that meal free. At least one entry must be filled (else 422).
+
+        Two templates may not fill the same mealtime on the same weekday of the
+        same week, from today on. Then nothing is saved and the answer is 409
+        with `clashes`: for each template it clashes with, the mealtime, the
+        weekdays and the first week.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewMealTemplate" }
+      responses:
+        "201":
+          description: The template as stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/MealTemplateClash" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /meal-templates/{id}:
+    get:
+      operationId: getMealTemplate
+      summary: One meal plan template (scope meals:read)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: updateMealTemplate
+      summary: Replace a meal plan template (scope meals:write, parents only)
+      description: |
+        Changes reach today and all later days, never days before today. Meals
+        adjusted for a week keep their change. Overlaps are refused as in
+        `createMealTemplate`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewMealTemplate" }
+      responses:
+        "200":
+          description: The template as stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/MealTemplateClash" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteMealTemplate
+      summary: Delete a meal plan template (scope meals:delete, parents only)
+      description: |
+        From today on its meals leave the plan and the calendar. Days before
+        today keep what they showed; meals adjusted for a week stay as plain
+        entries.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /people/{id}/stars:
     get:
       operationId: getStars
@@ -1586,11 +1718,65 @@ components:
     Meal:
       type: object
       description: One entry of the shared meal plan, free text for a day and a mealtime.
-      required: [date, mealtime, text]
+      required: [date, mealtime, text, source]
       properties:
         date: { type: string, format: date }
         mealtime: { $ref: "#/components/schemas/Mealtime" }
         text: { type: string, maxLength: 200 }
+        source:
+          type: string
+          enum: [manual, template, adjusted]
+          description: |
+            Where the meal comes from: typed by hand, filled in by a meal plan
+            template, or a template's meal that was changed for this week.
+        template_id: { type: string, format: uuid, description: "The template that fills this meal (source template or adjusted)" }
+        template_dish: { type: string, description: "What the template fills in (source template or adjusted)" }
+    MealTemplateEntry:
+      type: object
+      required: [weekday, mealtime, text]
+      properties:
+        weekday: { type: integer, minimum: 1, maximum: 7, description: "1 Monday to 7 Sunday" }
+        mealtime: { $ref: "#/components/schemas/Mealtime" }
+        text: { type: string, maxLength: 200 }
+    NewMealTemplate:
+      type: object
+      required: [name, mealtimes, interval, start_week, entries]
+      properties:
+        name: { type: string, maxLength: 60 }
+        mealtimes: { type: string, enum: [all, one], description: "Fills all mealtimes of the day, or one" }
+        mealtime: { $ref: "#/components/schemas/Mealtime" }
+        interval: { type: integer, minimum: 1, maximum: 52, description: "Every n weeks, counted from the start week" }
+        start_week: { type: string, format: date, description: "The Monday of the start week" }
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/MealTemplateEntry" }
+    MealTemplate:
+      allOf:
+        - $ref: "#/components/schemas/NewMealTemplate"
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string, format: uuid }
+    MealTemplateClash:
+      type: object
+      required: [error, clashes]
+      properties:
+        error: { type: string }
+        clashes:
+          type: array
+          items:
+            type: object
+            required: [template, mealtime, weekdays, first_week]
+            properties:
+              template:
+                type: object
+                required: [id, name]
+                properties:
+                  id: { type: string, format: uuid }
+                  name: { type: string }
+              mealtime: { $ref: "#/components/schemas/Mealtime" }
+              weekdays: { type: array, items: { type: integer, minimum: 1, maximum: 7 } }
+              first_week: { type: string, format: date, description: "Monday of the first week both fill the meal, from today on" }
     Event:
       type: object
       description: An event or series master. Times are RFC 3339 in the household's time zone; all-day events use dates with an exclusive end.
@@ -1676,6 +1862,11 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
+    MealTemplateClash:
+      description: The template fills a meal another template fills too; nothing was saved
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/MealTemplateClash" }
     TooManyRequests:
       description: Too many wrong attempts, try again later
       content:

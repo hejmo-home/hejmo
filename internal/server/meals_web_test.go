@@ -147,7 +147,7 @@ func TestTooLongMealShowsAnErrorAtItsFieldKeepsWhatWasTypedAndSavesNothing(t *te
 	// The row is marked, the field points at its error and takes the focus, and a line above
 	// the week says nothing was saved and links to the field.
 	field := mealField("2026-11-18", "dinner")
-	for _, want := range []string{`<div class="mrow invalid">`, `aria-invalid="true"`, `aria-describedby="err-` + field + `"`, ` autofocus`,
+	for _, want := range []string{`<div class="mrow invalid" data-mt="dinner">`, `aria-invalid="true"`, `aria-describedby="err-` + field + `"`, ` autofocus`,
 		`class="error form-error" role="alert"`, "Nothing was saved. Please shorten", `<a href="#` + field + `">Wednesday, Dinner</a>`, "everything else you typed is still here."} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("error page lacks %q:\n%s", want, r.body)

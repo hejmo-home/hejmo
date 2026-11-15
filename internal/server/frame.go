@@ -44,8 +44,19 @@ type frame struct {
 	TimeFormat string
 	// Back is set on setup screens: they link back to the Settings hub.
 	Back bool
+	// BackHref and BackLabel (a locale key) are the link above the content that
+	// leads one level up: the Settings hub for setup screens, the meal plan and
+	// the templates menu for the meal plan templates.
+	BackHref, BackLabel string
 	// Success is the success line after a saved change, already translated.
 	Success string
+	// Error is an error line shown above the page, already translated.
+	Error string
+	// The language switcher (ticket 134): the active language, its own name and
+	// flag file, the other languages, and the page to come back to.
+	LangName, LangFlag string
+	Others             []language
+	Next               string
 }
 
 // frameFor builds the frame for the person behind the request, or a bare
@@ -63,6 +74,14 @@ func (s *server) frameFor(r *http.Request) frame {
 		f.TimeFormat = string(h.TimeFormat)
 	}
 	f.Back = isSetupPath(r.URL.Path)
+	switch {
+	case f.Back:
+		f.BackHref, f.BackLabel = "/settings", "hub.back"
+	case r.URL.Path == "/meals/templates":
+		f.BackHref, f.BackLabel = "/meals", "meals.tpl.back_plan"
+	case strings.HasPrefix(r.URL.Path, "/meals/templates/"):
+		f.BackHref, f.BackLabel = "/meals/templates", "meals.tpl.back_templates"
+	}
 	for _, it := range navItems {
 		if !auth.RoleAllows(p.Role, it.Needs) {
 			continue

@@ -80,7 +80,7 @@ paths:
               required: [password, code]
               properties:
                 password: { type: string, description: The caller's own password }
-                code: { type: string, description: The caller's own one-time code }
+                code: { type: string, description: The caller's own one-time code or an unused recovery code }
       responses:
         "204": { description: Reset }
         "401": { $ref: "#/components/responses/Unauthorized" }

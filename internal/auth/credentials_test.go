@@ -230,6 +230,7 @@ func TestProductionUsesTheADR0010Parameters(t *testing.T) {
 func TestSetHashCostChangesNewHashesOnlyAndRestores(t *testing.T) {
 	before, _ := auth.HashPassword("correct horse battery")
 	restore := auth.SetHashCost(auth.HashCost{MemoryKiB: 8, Passes: 1, Threads: 1})
+	t.Cleanup(restore)
 	cheap, _ := auth.HashPassword("correct horse battery")
 	if !strings.Contains(cheap, "$m=8,t=1,p=1$") {
 		t.Errorf("cheap hash = %q", cheap)

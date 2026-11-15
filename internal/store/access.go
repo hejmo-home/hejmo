@@ -112,6 +112,13 @@ func (db *DB) SessionPerson(tokenHash string, t time.Time) (string, error) {
 	return id, err
 }
 
+// IsPhoneSession reports whether the session is a paired phone's device session.
+func (db *DB) IsPhoneSession(tokenHash string) bool {
+	var n int
+	err := db.sql.QueryRow(`SELECT COUNT(*) FROM sessions WHERE token_hash = ? AND phone_id IS NOT NULL`, tokenHash).Scan(&n)
+	return err == nil && n > 0
+}
+
 // DeleteSession ends a session. A phone's device session takes the phone with
 // it: signing out on the phone unpairs it.
 func (db *DB) DeleteSession(tokenHash string) error {
@@ -269,7 +276,8 @@ func (db *DB) SpendRecoveryCode(id string) error {
 }
 
 // ResetOTP removes a person's one-time code secret and recovery codes and
-// ends their browser sessions. Device tokens stay. The next sign-in must set
+// ends their browser sessions. Device tokens and paired phones' device
+// sessions stay (ADR 0017). The next sign-in must set
 // up one-time codes again.
 func (db *DB) ResetOTP(personID string) error {
 	tx, err := db.sql.Begin()
@@ -281,7 +289,7 @@ func (db *DB) ResetOTP(personID string) error {
 	if err := expectOne(res, err); err != nil {
 		return err
 	}
-	for _, q := range []string{`DELETE FROM recovery_codes WHERE person_id = ?`, `DELETE FROM sessions WHERE person_id = ?`} {
+	for _, q := range []string{`DELETE FROM recovery_codes WHERE person_id = ?`, `DELETE FROM sessions WHERE person_id = ? AND phone_id IS NULL`} {
 		if _, err := tx.Exec(q, personID); err != nil {
 			return err
 		}

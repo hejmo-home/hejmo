@@ -150,6 +150,7 @@ func TestParentResetsAnotherParentsOneTimeCodes(t *testing.T) {
 	papaJar := b.client.Jar
 	b.logout()
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
+	papaPhone := pairedPhone(t, b, papa, "Papa's phone")
 
 	if page := b.get("/otp").body; !strings.Contains(page, "/otp/reset/"+papa.ID) || strings.Contains(page, "/otp/reset/"+papa.ID+"x") {
 		t.Fatalf("the page offers no reset for the other parent:\n%s", page)
@@ -168,6 +169,14 @@ func TestParentResetsAnotherParentsOneTimeCodes(t *testing.T) {
 	}
 	if !strings.Contains(r.body, "data-otp-reset") || !strings.Contains(r.body, `href="/caldav"`) {
 		t.Fatalf("the success page does not remind to revoke paired devices:\n%s", r.body)
+	}
+
+	// ADR 0017: Papa's paired phone keeps working while his codes are pending.
+	if r := papaPhone.get("/", "en"); r.status != http.StatusOK {
+		t.Fatalf("Papa's phone after the reset = %d %q, want 200", r.status, r.location)
+	}
+	if !strings.Contains(r.body, `href="/phones"`) {
+		t.Fatalf("the success page does not link the phones page:\n%s", r.body)
 	}
 
 	// Papa's browser session ended; his password alone leads to a new setup.

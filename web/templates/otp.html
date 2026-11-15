@@ -4,7 +4,7 @@
   <p class="lead">{{t "otp.intro"}}</p>
   {{if .Page.ResetName}}
   <div data-otp-reset>{{template "success" .Page.DoneText}}
-  <p class="hint">{{t "otp.reset.revoke"}} <a href="/caldav">{{t "nav.caldav"}}</a></p></div>
+  <p class="hint">{{t "otp.reset.revoke"}} <a href="/caldav">{{t "nav.caldav"}}</a> <a href="/phones">{{t "nav.phones"}}</a></p></div>
   {{end}}
   <section>
     <h2>{{t "otp.recovery.heading"}}</h2>

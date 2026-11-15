@@ -38,11 +38,15 @@ func (s *server) endSession(w http.ResponseWriter, r *http.Request) {
 
 // currentPerson resolves the session cookie to a household member. A person
 // whose one-time codes were reset has a session only to set up new ones
-// (pendingPerson); nothing else is reachable until that is confirmed.
+// (pendingPerson); nothing else is reachable until that is confirmed. A paired
+// phone's device session is exempt.
 func (s *server) currentPerson(r *http.Request) (store.Person, bool) {
 	p, ok := s.pendingPerson(r)
 	if !ok {
 		return store.Person{}, false
+	}
+	if c, err := r.Cookie(sessionCookie); err == nil && s.db.IsPhoneSession(auth.HashToken(c.Value)) {
+		return p, true
 	}
 	if acc, err := s.db.AccountByPerson(p.ID); err == nil && !acc.TOTPConfirmed {
 		return store.Person{}, false

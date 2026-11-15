@@ -115,3 +115,20 @@ func TestUpdateSyncedCalendarChangesNameColourAndAudience(t *testing.T) {
 		t.Errorf("unknown calendar: %v", err)
 	}
 }
+
+func TestAnEventWithARepeatedExdateIsNotChangedOnEveryRun(t *testing.T) {
+	f := newCalFixture(t)
+	c := newICS(t, f)
+	master := item("a", "", "Choir", at(2026, 11, 2, 17, 0))
+	master.Event.RRule = "FREQ=WEEKLY;COUNT=5"
+	gone := at(2026, 11, 9, 17, 0)
+	master.Event.ExDates = []time.Time{gone, gone}
+
+	for i, want := range []store.SyncRun{{Events: 1, New: 1}, {Events: 1}, {Events: 1}} {
+		run, err := f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{master}, nil, t0.Add(time.Duration(i)*time.Hour), t0.Add(time.Duration(i+1)*time.Hour))
+		if err != nil {
+			t.Fatal(err)
+		}
+		wantRun(t, "run "+string(rune('1'+i)), run, want)
+	}
+}

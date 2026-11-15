@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"slices"
 	"sort"
 	"strings"
 	"time"
@@ -374,6 +375,7 @@ func eventSignature(e calendar.Event) string {
 		ex = append(ex, x.UTC().Format(time.RFC3339))
 	}
 	sort.Strings(ex)
+	ex = slices.Compact(ex) // the store keeps each EXDATE once (INSERT OR IGNORE)
 	b, _ := json.Marshal([]any{e.Title, e.Description, e.Location, e.AllDay, start, end, tz, e.RRule, seriesID, recID, ex})
 	return string(b)
 }

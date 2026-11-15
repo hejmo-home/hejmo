@@ -80,9 +80,14 @@ func (s *server) handleCalendarWaste(w http.ResponseWriter, r *http.Request) {
 	}
 	on := r.PostFormValue("waste") == "on"
 	id := r.PathValue("id")
-	back := "/calendars" // the calendars of a connection have no page of their own
-	if c, err := s.db.SyncedCalendar(p.household.ID, id); err == nil && c.Kind == "ics" {
-		back += "/" + id
+	back := "/calendars"
+	if c, err := s.db.SyncedCalendar(p.household.ID, id); err == nil {
+		// The switch is on the page of a feed or, for a calendar of a connection, on the connection page.
+		if c.Kind == "ics" {
+			back += "/" + id
+		} else if c.ConnectionID != "" {
+			back = "/connections/" + c.ConnectionID
+		}
 	}
 	switch err := s.db.SetCalendarWaste(p.household.ID, id, on); {
 	case errors.Is(err, store.ErrNotFound):

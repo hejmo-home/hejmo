@@ -109,24 +109,30 @@ func TestOnlyReadOnlyCalendarsCanBeWasteCollection(t *testing.T) {
 	if r := c.b.post("/calendars", url.Values{"name": {"Waste"}, "url": {wasteFeed}, "interval": {"60"}}); r.status != http.StatusSeeOther {
 		t.Fatalf("add waste calendar = %d\n%s", r.status, r.body)
 	}
-	// The switch sits on the page of a subscribed calendar; the calendars of a connection have no page of
-	// their own (ADR 0017) and are marked through the API, where the read-only gate is the same.
+	// The switch sits on the page of a subscribed calendar and, for the calendars of a connection (which
+	// have no page of their own, ADR 0017), on the connection page: two switches in all, as before.
 	synced, err := c.b.db.SyncedCalendars(mustHousehold(t, c).ID)
 	if err != nil {
 		t.Fatal(err)
 	}
-	var feedID string
+	var feedID, davID string
 	for _, sc := range synced {
 		if sc.Kind == "ics" {
 			feedID = sc.ID
+		} else {
+			davID = sc.ID
 		}
 	}
-	page := c.b.get("/calendars/" + feedID).body
-	if n := strings.Count(page, `/waste"`); n != 1 {
-		t.Fatalf("%d waste forms, want 1\n%s", n, page)
+	page := c.b.get("/calendars/"+feedID).body + c.b.get("/connections/"+conn["id"].(string)).body
+	if n := strings.Count(page, `/waste"`); n != 2 {
+		t.Fatalf("%d waste forms, want 2\n%s", n, page)
 	}
-	if n := strings.Count(page, `role="switch" name="waste"`); n != 1 {
-		t.Fatalf("%d waste switches, want 1\n%s", n, page)
+	if n := strings.Count(page, `role="switch" name="waste"`); n != 2 {
+		t.Fatalf("%d waste switches, want 2\n%s", n, page)
+	}
+	// Switching it on from the connection page leads back to that page.
+	if r := c.b.post("/calendars/"+davID+"/waste", url.Values{"waste": {"on"}}); r.status != http.StatusSeeOther || r.location != "/connections/"+conn["id"].(string) {
+		t.Fatalf("waste switch of a connection calendar = %d %q, want 303 back to the connection page", r.status, r.location)
 	}
 
 	home, err := c.b.db.CreateCalendar(store.Calendar{HouseholdID: mustHousehold(t, c).ID, Name: "Home", Kind: "local", Color: "#2F5E7A"})

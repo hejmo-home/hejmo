@@ -41,6 +41,17 @@
     <button class="button" type="submit">{{t "connections.choose.submit"}}</button>
   </form>
   {{else}}<p class="lead">{{t "connections.choose.none"}}</p>{{end}}
+  {{if .Waste}}
+  <section class="steps">
+    <h2>{{t "connections.waste.heading"}}</h2>
+    {{range .Waste}}
+    <form method="post" action="/calendars/{{.ID}}/waste" class="waste-form" data-autosubmit>
+      {{template "switch" (dict "Name" "waste" "Label" (printf "%s: %s" .Name (t "calendars.waste.label")) "OnText" (t "calendars.waste.on") "OffText" (t "calendars.waste.off") "Checked" .Waste)}}
+      <noscript><button class="button secondary" type="submit">{{t "calendars.waste.save"}}</button></noscript>
+    </form>
+    {{end}}
+  </section>
+  {{end}}
 
   <section id="login" class="steps">{{template "moreOpen" (dict "Label" (t "connections.login") "Summary" (t "connections.login.summary") "Open" .LoginOpen)}}
     <form method="post" action="/connections/{{.Connection.ID}}/credentials" class="steps" autocomplete="off">

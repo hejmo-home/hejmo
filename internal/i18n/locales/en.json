@@ -827,6 +827,7 @@
   "connections.fact.since": "Connected since",
   "connections.error.refused": "The server refused the login on {when}. The calendars of this connection have not been updated since.",
   "connections.error.refused_link": "Enter a new password",
+  "connections.waste.heading": "Waste collection",
   "connections.choose.heading": "Choose calendars",
   "connections.login": "Credentials",
   "connections.login.summary": "Change password",

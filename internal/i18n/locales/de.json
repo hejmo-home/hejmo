@@ -827,6 +827,7 @@
   "connections.fact.since": "Verbunden seit",
   "connections.error.refused": "Der Server hat die Anmeldung am {when} abgelehnt. Die Kalender dieser Verbindung werden seitdem nicht aktualisiert.",
   "connections.error.refused_link": "Neues Passwort eintragen",
+  "connections.waste.heading": "Müllabfuhr",
   "connections.choose.heading": "Kalender auswählen",
   "connections.login": "Anmeldedaten",
   "connections.login.summary": "Passwort ändern",

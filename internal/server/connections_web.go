@@ -57,6 +57,12 @@ func selectionErrorField(e *inputError) string {
 	return "calendar"
 }
 
+// wasteRow is a read-only calendar of a connection with its waste collection switch.
+type wasteRow struct {
+	ID, Name string
+	Waste    bool
+}
+
 // selectionCalendar is one calendar on the choice page with what the parent
 // entered for it, or what is stored, or the defaults. On means the switch is on.
 type selectionCalendar struct {
@@ -168,7 +174,14 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 			}
 		}
 	}
+	var wasteRows []wasteRow
+	for _, m := range mine {
+		if m.ReadOnly {
+			wasteRows = append(wasteRows, wasteRow{ID: m.ID, Name: m.Name, Waste: m.Waste})
+		}
+	}
 	data := map[string]any{
+		"Waste":  wasteRows,
 		"Person": p.person, "Connection": connectionView{ID: conn.ID, URL: conn.URL, Username: conn.Username}, "Title": conn.Username,
 		"Found": shown, "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
 		"DefaultInterval": interval, "SyncStale": s.syncStale(p.household.ID),

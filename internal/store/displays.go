@@ -183,8 +183,13 @@ func (db *DB) DisplayByToken(tokenHash string, at time.Time) (Display, error) {
 // name, room and type in in. A wrong, used or expired code is ErrNotFound.
 func (db *DB) ConfirmPairing(householdID, code string, in Display, at time.Time) (Display, error) {
 	in.Name, in.Room = strings.TrimSpace(in.Name), strings.TrimSpace(in.Room)
-	if in.Name == "" || len(in.Name) > 80 || len(in.Room) > 80 || !in.Type.Valid() {
-		return Display{}, fmt.Errorf("%w: a display needs a name and a known type", ErrInvalid)
+	switch {
+	case in.Name == "" || len(in.Name) > 80:
+		return Display{}, &FieldError{"name", "a display needs a name of at most 80 characters"}
+	case len(in.Room) > 80:
+		return Display{}, &FieldError{"room", "a room may have at most 80 characters"}
+	case !in.Type.Valid():
+		return Display{}, &FieldError{"type", "a display needs a known type"}
 	}
 	var id string
 	err := db.sql.QueryRow(`UPDATE displays SET name = ?, room = ?, type = ?, paired_at = ?, last_seen_at = ?, pairing_code = NULL, code_expires_at = NULL

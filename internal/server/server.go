@@ -48,6 +48,11 @@ type Options struct {
 	// Done, when closed, ends open live streams so a shutdown does not wait
 	// for them. Nil means they end only when their client goes away.
 	Done <-chan struct{}
+	// UpdateDir is the data volume directory the host script of auto-update
+	// shares with the box (ADR 0018). Empty means updates are not managed by a
+	// host script: no settings file is written, no status is read and the
+	// settings page does not offer auto-update.
+	UpdateDir string
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -89,6 +94,7 @@ type server struct {
 	weather   *weather.Service
 	live      time.Duration
 	done      <-chan struct{}
+	updateDir string
 }
 
 // New returns the box's root HTTP handler.
@@ -116,12 +122,14 @@ func New(opts Options) http.Handler {
 		s.weather = weather.New(weather.WithClock(s.now))
 	}
 	s.done = opts.Done
+	s.updateDir = opts.UpdateDir
 	if s.live = opts.LiveInterval; s.live <= 0 {
 		s.live = 2 * time.Second
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
 	s.pages = parsePages()
+	s.syncUpdateSettings()
 
 	static, err := fs.Sub(web.Static, "static")
 	if err != nil {
@@ -157,10 +165,12 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /connections/{id}/delete", s.handleConnectionDelete)
 	mux.HandleFunc("GET /caldav", s.handleCalDAVPage)
 	mux.HandleFunc("POST /caldav/tokens", s.handleDeviceTokenCreate)
+	mux.HandleFunc("POST /caldav/profile", s.handleIOSProfile)
 	mux.HandleFunc("POST /caldav/tokens/{id}/revoke", s.handleDeviceTokenRevoke)
 	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
 	mux.HandleFunc("GET /tasks", s.handleTasksPage)
 	mux.HandleFunc("POST /tasks", s.handleTaskAdd)
+	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
@@ -173,8 +183,16 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
+	mux.HandleFunc("GET /phones", s.handlePhonesPage)
+	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)
+	mux.HandleFunc("POST /phones/pairings/{id}/confirm", s.handlePhonePairingConfirm)
+	mux.HandleFunc("POST /phones/{id}/revoke", s.handlePhoneRevoke)
+	mux.HandleFunc("GET /phones/join/{code}", s.handlePhoneJoin)
+	mux.HandleFunc("GET /manifest.webmanifest", s.handleManifest)
+	mux.HandleFunc("GET /sw.js", s.handleServiceWorker)
 	mux.HandleFunc("GET /settings", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings", s.handleSettingsSave)
+	mux.HandleFunc("POST /update/dismiss", s.handleUpdateDismiss)
 	mux.HandleFunc("POST /displays/{id}/settings", s.handleDisplaySettings)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
@@ -207,7 +225,7 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "household", err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": p.Role == store.RoleParent && s.httpsWarning()})
+	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": p.Role == store.RoleParent && s.httpsWarning(), "Update": s.parentUpdateNotice(p, h)})
 }
 
 // parsePages parses the embedded templates; "t" is replaced per render.
@@ -216,6 +234,7 @@ func parsePages() *template.Template {
 		"t":    func(string) string { return "" },
 		"dict": dict,
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
+		"strs": strs,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
 
@@ -225,8 +244,19 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
+	for _, k := range []string{"Error", "ErrorField"} { // templates compare them
+		if _, ok := data[k]; !ok {
+			data[k] = ""
+		}
+	}
 	if !strings.HasPrefix(name, "display_") {
-		data["Frame"] = s.frameFor(r)
+		fr := s.frameFor(r)
+		if key := s.takeFlash(w, r); key != "" {
+			fr.Success = s.i18n.T(lang, key)
+		} else if key, ok := data["SuccessKey"].(string); ok {
+			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
+		}
+		data["Frame"] = fr
 	}
 	var buf bytes.Buffer
 	err := s.execute(&buf, name, lang, data)
@@ -264,4 +294,26 @@ func dict(kv ...any) map[string]any {
 		}
 	}
 	return m
+}
+
+// parentUpdateNotice is the update notice for a signed-in parent; children see none.
+func (s *server) parentUpdateNotice(p store.Person, h store.Household) *updateView {
+	if p.Role != store.RoleParent {
+		return nil
+	}
+	return s.updateNotice(h)
+}
+
+// strs turns a form value (nothing, one string or a list) into a list for the
+// chips and options that mark their selected values.
+func strs(v any) []string {
+	switch x := v.(type) {
+	case string:
+		if x != "" {
+			return []string{x}
+		}
+	case []string:
+		return x
+	}
+	return nil
 }

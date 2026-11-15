@@ -33,6 +33,8 @@ jobs:
         env:
           # A missing container runtime fails the Radicale tests instead of skipping them.
           HEJMO_REQUIRE_RADICALE: "1"
+          # The service worker is tested with node's test runner (web/test).
+          HEJMO_REQUIRE_NODE: "1"
         run: go test -race -count=1 ./...
 
   container:
@@ -63,6 +65,41 @@ jobs:
       - name: Stop
         if: always()
         run: docker compose down -v
+
+  resources:
+    name: Resources (arm64)
+    needs: test
+    runs-on: ubuntu-24.04-arm
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - name: Build image
+        run: docker build -t hejmo:measure .
+      # ADR 0018: memory, CPU and start time in a container limited like a
+      # Raspberry Pi (1 CPU, 1 GB) with a seeded example household; fails above
+      # ci/resource-thresholds.json.
+      - name: Measure
+        run: go run ./cmd/hejmo-measure -image hejmo:measure -report "$RUNNER_TEMP/resources.md" -json "$RUNNER_TEMP/resources.json"
+      - name: Report
+        if: always()
+        run: test ! -f "$RUNNER_TEMP/resources.md" || cat "$RUNNER_TEMP/resources.md" >> "$GITHUB_STEP_SUMMARY"
+
+  # Acceptance (ticket #100): on a Raspberry Pi OS 64-bit stand-in (Debian
+  # bookworm arm64 with Raspberry Pi's archive, systemd as PID 1) the install
+  # command makes the setup wizard reachable, and running it again changes
+  # nothing. Containers only; see .github/install-test/run.sh.
+  install:
+    name: Install script (Raspberry Pi OS 64-bit stand-in)
+    runs-on: ubuntu-24.04-arm
+    steps:
+      - uses: actions/checkout@v4
+      - name: ShellCheck
+        run: shellcheck install.sh .github/install-test/run.sh
+      - name: Install on the stand-in, twice
+        run: ./.github/install-test/run.sh
 
   # Security checks (ADR 0018, Measurement). Tools run in CI only; none is part of the binary.
   # Thresholds: govulncheck fails on any vulnerability the code calls; gosec fails on

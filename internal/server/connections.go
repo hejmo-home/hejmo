@@ -135,26 +135,9 @@ func (s *server) addConnectionCalendar(r *http.Request, p principal, connectionI
 	if err != nil {
 		return store.SyncedCalendar{}, err
 	}
-	if strings.TrimSpace(in.Name) == "" {
-		return store.SyncedCalendar{}, &inputError{"name", "name is required"}
-	}
-	remote, err := url.Parse(strings.TrimSpace(in.URL))
-	base, _ := url.Parse(conn.URL)
-	if err != nil || base == nil || remote.Host == "" || caldavclient.CheckSameDomain(base, remote) != nil {
-		return store.SyncedCalendar{}, &inputError{"calendar", "url must be a calendar on the connection's server"}
-	}
-	opts, err := s.calendarOptions(p, in, defaultCalDAVSync)
+	opts, err := s.checkConnectionCalendar(p, conn, in)
 	if err != nil {
 		return store.SyncedCalendar{}, err
-	}
-	existing, err := s.db.SyncedCalendars(p.household.ID)
-	if err != nil {
-		return store.SyncedCalendar{}, err
-	}
-	for _, c := range existing {
-		if c.ConnectionID == conn.ID && caldavclient.AddressKey(c.URL) == caldavclient.AddressKey(in.URL) {
-			return store.SyncedCalendar{}, &inputError{"duplicate", "this calendar is already synced"}
-		}
 	}
 	cal, err := s.db.AddCalDAVCalendar(p.household.ID, conn.ID, store.NewCalDAVCalendar{
 		Name: in.Name, RemoteURL: strings.TrimSpace(in.URL), Color: opts.color, Audience: opts.audience, IntervalMinutes: opts.interval, Now: s.now(),
@@ -166,6 +149,34 @@ func (s *server) addConnectionCalendar(r *http.Request, p principal, connectionI
 	// is in the sync log; the scheduler retries.
 	_ = s.sync.Sync(r.Context(), p.household.ID, cal.ID)
 	return s.db.SyncedCalendar(p.household.ID, cal.ID)
+}
+
+// checkConnectionCalendar validates a calendar choice without saving it, so a
+// form with several calendars can be checked as a whole before anything is
+// stored. The error is an *inputError for bad input.
+func (s *server) checkConnectionCalendar(p principal, conn store.Connection, in newCalendarInput) (calendarSettings, error) {
+	if strings.TrimSpace(in.Name) == "" {
+		return calendarSettings{}, &inputError{"name", "name is required"}
+	}
+	remote, err := url.Parse(strings.TrimSpace(in.URL))
+	base, _ := url.Parse(conn.URL)
+	if err != nil || base == nil || remote.Host == "" || caldavclient.CheckSameDomain(base, remote) != nil {
+		return calendarSettings{}, &inputError{"calendar", "url must be a calendar on the connection's server"}
+	}
+	opts, err := s.calendarOptions(p, in, defaultCalDAVSync)
+	if err != nil {
+		return calendarSettings{}, err
+	}
+	existing, err := s.db.SyncedCalendars(p.household.ID)
+	if err != nil {
+		return calendarSettings{}, err
+	}
+	for _, c := range existing {
+		if c.ConnectionID == conn.ID && caldavclient.AddressKey(c.URL) == caldavclient.AddressKey(in.URL) {
+			return calendarSettings{}, &inputError{"duplicate", "this calendar is already synced"}
+		}
+	}
+	return opts, nil
 }
 
 func (s *server) apiListConnections(w http.ResponseWriter, _ *http.Request, p principal) {

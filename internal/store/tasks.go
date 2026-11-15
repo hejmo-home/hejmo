@@ -20,10 +20,10 @@ type DayTask struct {
 func (db *DB) AddTask(householdID string, t task.Task) (task.Task, error) {
 	t.Title = strings.TrimSpace(t.Title)
 	if err := t.Validate(); err != nil {
-		return task.Task{}, fmt.Errorf("%w: %s", ErrInvalid, err)
+		return task.Task{}, fmt.Errorf("%w: %w", ErrInvalid, err) // keeps the *task.InvalidError and its field
 	}
 	if _, err := db.Person(householdID, t.PersonID); errors.Is(err, ErrNotFound) {
-		return task.Task{}, fmt.Errorf("%w: unknown person", ErrInvalid)
+		return task.Task{}, fmt.Errorf("%w: %w", ErrInvalid, &task.InvalidError{Field: "person", Msg: "unknown person"})
 	} else if err != nil {
 		return task.Task{}, err
 	}

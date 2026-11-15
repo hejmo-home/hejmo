@@ -329,3 +329,24 @@ func TestDisplayKioskAddressIsStoredAndTheKeySealed(t *testing.T) {
 		t.Fatalf("kiosk not removed: %+v", list[0])
 	}
 }
+
+func TestConfirmingNamesTheWrongField(t *testing.T) {
+	db, h := householdForDisplays(t)
+	d, _ := db.OpenPairing(h.ID, "hash-1", pairT0)
+	for _, c := range []struct {
+		in    store.Display
+		field string
+	}{
+		{store.Display{Name: " ", Type: store.DisplayScreen}, "name"},
+		{store.Display{Name: strings.Repeat("x", 81), Type: store.DisplayScreen}, "name"},
+		{store.Display{Name: "Hallway", Room: strings.Repeat("x", 81), Type: store.DisplayScreen}, "room"},
+		{store.Display{Name: "Hallway"}, "type"},
+		{store.Display{Name: "Hallway", Type: "hologram"}, "type"},
+	} {
+		_, err := db.ConfirmPairing(h.ID, d.Code, c.in, pairT0)
+		var fe *store.FieldError
+		if !errors.As(err, &fe) || fe.Field != c.field || !errors.Is(err, store.ErrInvalid) {
+			t.Errorf("ConfirmPairing(%+v) = %v, want a FieldError for %q", c.in, err, c.field)
+		}
+	}
+}

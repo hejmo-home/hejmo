@@ -709,5 +709,7 @@
   "browser.edge": "Edge",
   "browser.samsung": "Samsung Internet",
   "browser.unknown": "Unbekannter Browser",
-  "login.signed_out": "Du bist in diesem Browser nicht mehr angemeldet. Bitte melde dich neu an."
+  "login.signed_out": "Du bist in diesem Browser nicht mehr angemeldet. Bitte melde dich neu an.",
+  "sessions.row": "Zuletzt benutzt: {used} · Angemeldet am {date}",
+  "sessions.phones.after": "."
 }

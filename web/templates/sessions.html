@@ -3,14 +3,14 @@
   <h1>{{t "sessions.title"}}</h1>
   {{template "syncNotice" .}}
   <p class="lead">{{t "sessions.lead"}}</p>
-  <p class="notice">{{t "sessions.phones"}} <a href="/phones">{{t "sessions.phones.link"}}</a>.</p>
+  <p class="notice">{{t "sessions.phones"}} <a href="/phones">{{t "sessions.phones.link"}}</a>{{t "sessions.phones.after"}}</p>
   <div class="group-list">
     {{range .Groups}}
     <section>
       <h2 class="who-head"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}</h2>
       <ul class="cards sessions">
         {{range .Sessions}}
-        <li data-session-id="{{.ID}}"><a class="hub-row" href="/sessions/{{.ID}}"><strong>{{.Device}}{{if .Own}} <span class="tag">{{t "sessions.this"}}</span>{{end}}</strong><span class="hint">{{t "sessions.last_used"}}: {{.LastUsed}} · {{t "sessions.signed_in"}} {{.SignedIn}}</span></a></li>
+        <li data-session-id="{{.ID}}"><a class="hub-row" href="/sessions/{{.ID}}"><strong>{{.Device}}{{if .Own}} <span class="tag">{{t "sessions.this"}}</span>{{end}}</strong><span class="hint">{{tf "sessions.row" "used" .LastUsed "date" .SignedIn}}</span></a></li>
         {{end}}
       </ul>
     </section>

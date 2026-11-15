@@ -152,14 +152,19 @@ func (f *fakeFeeds) set(url, body string, err error) {
 	}
 }
 
-// noHostUpdater makes the next boxes run like a plain Docker Compose install,
-// without the host updater of ADR 0018; tests set it and reset it when done.
-var noHostUpdater bool
+// boxOption changes how a test box is built.
+type boxOption func(*boxConfig)
+
+type boxConfig struct{ noHostUpdater bool }
+
+// withoutHostUpdater makes the box run like a plain Docker Compose install,
+// without the host updater of ADR 0018.
+func withoutHostUpdater(c *boxConfig) { c.noHostUpdater = true }
 
 // newBox returns a box whose HTTPS is set up, served over TLS like in production.
-func newBox(t *testing.T) *box {
+func newBox(t *testing.T, opts ...boxOption) *box {
 	t.Helper()
-	b := newFreshBox(t)
+	b := newFreshBox(t, opts...)
 	if err := b.pki.Provision("127.0.0.1", b.now); err != nil {
 		t.Fatal(err)
 	}
@@ -170,8 +175,12 @@ func newBox(t *testing.T) *box {
 }
 
 // newFreshBox returns a box that has not set up HTTPS yet, reachable over plain HTTP.
-func newFreshBox(t *testing.T) *box {
+func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	t.Helper()
+	var cfg boxConfig
+	for _, o := range opts {
+		o(&cfg)
+	}
 	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -200,7 +209,7 @@ func newFreshBox(t *testing.T) *box {
 	t.Cleanup(b.meteo.srv.Close)
 	b.weather = weather.New(weather.WithBaseURL(b.meteo.srv.URL), weather.WithClock(now))
 	updateDir := b.updateDir
-	if noHostUpdater {
+	if cfg.noHostUpdater {
 		updateDir, b.updateDir = "", ""
 	}
 	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir})

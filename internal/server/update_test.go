@@ -164,7 +164,7 @@ func TestChildrenSeeNoUpdateNotices(t *testing.T) {
 func TestUpdateStatusWorksThroughTheAPI(t *testing.T) {
 	c := signedInAPI(t)
 	status, got, _ := c.call(http.MethodGet, "/update", nil)
-	if status != http.StatusOK || got["mode"] != "on" || got["state"] != "idle" || got["notice"] != false {
+	if status != http.StatusOK || got["mode"] != "on" || got["state"] != "idle" || got["notice"] != false || got["managed"] != true {
 		t.Fatalf("empty = %d %v", status, got)
 	}
 	c.b.writeStatus("state=rolled_back\nversion=0.1.0\ntarget=0.2.0\nreason=start_failed\ntime=2026-11-16T03:31:00Z\n")
@@ -186,9 +186,7 @@ func TestUpdateStatusWorksThroughTheAPI(t *testing.T) {
 
 // A plain Docker Compose install has no updater: the box must not promise updates.
 func TestWithoutAHostUpdaterTheSettingIsNotOffered(t *testing.T) {
-	noHostUpdater = true
-	t.Cleanup(func() { noHostUpdater = false })
-	b := signedInBox(t)
+	b := signedInBox(t, withoutHostUpdater)
 	body := b.get("/settings").body
 	if strings.Contains(body, "auto_update") || strings.Contains(body, "03:30") {
 		t.Fatalf("auto-update offered without a host updater:\n%s", body)
@@ -199,6 +197,14 @@ func TestWithoutAHostUpdaterTheSettingIsNotOffered(t *testing.T) {
 	// Saving the rest of the form still works.
 	if r := b.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d", r.status)
+	}
+}
+
+// The API must not promise updates either: it says whether an updater is there.
+func TestAPISaysWhetherAHostUpdaterManagesTheBox(t *testing.T) {
+	c := signedInAPI(t, withoutHostUpdater)
+	if status, got, _ := c.call(http.MethodGet, "/update", nil); status != http.StatusOK || got["managed"] != false {
+		t.Fatalf("plain Compose install = %d %v, want managed false", status, got)
 	}
 }
 

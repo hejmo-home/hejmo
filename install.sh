@@ -313,7 +313,15 @@ if [ -f "$HOLD/skip-version" ] && [ "$(head -c 32 "$HOLD/skip-version")" = "$lat
 	exit 0
 fi
 
-# 1. Remember what runs now, by digest.
+# 1. The box must be running: a stopped one cannot make the backup. (A missing
+# container has no version and ended the run above.)
+if [ "$(docker inspect hejmo --format '{{.State.Running}}' 2>/dev/null)" != true ]; then
+	report failed "$current" "$latest" box_not_running
+	log "the box is not running; no update"
+	exit 1
+fi
+
+# 2. Remember what runs now, by digest.
 image_id="$(docker inspect hejmo --format '{{.Image}}' 2>/dev/null)"
 previous=""
 if [ -n "$image_id" ]; then
@@ -322,11 +330,11 @@ if [ -n "$image_id" ]; then
 fi
 if [ -z "$previous" ]; then
 	report failed "$current" "$latest" box_not_running
-	log "the box is not running; no update"
+	log "the box has no image to go back to; no update"
 	exit 1
 fi
 
-# 2. Fetch the new image, then verify it before anything is started or changed.
+# 3. Fetch the new image, then verify it before anything is started or changed.
 if ! docker pull "$IMAGE_REPO:$latest" >/dev/null 2>&1; then
 	report failed "$current" "$latest" pull_failed
 	exit 1
@@ -342,7 +350,7 @@ if [ -z "$new" ] || ! docker run --rm "$COSIGN" verify "$new" \
 	exit 0
 fi
 
-# 3. Online backup by the running box, copied out of the data volume. docker cp
+# 4. Online backup by the running box, copied out of the data volume. docker cp
 # does not follow links, so a link in the volume cannot make this read a host file.
 rm -f "$DATA/pre-update.db" "$HOLD/backup.new"
 if ! docker exec hejmo /hejmo backup /data/pre-update.db >/dev/null 2>&1 ||
@@ -356,7 +364,7 @@ fi
 rm -f "$DATA/pre-update.db"
 mv -f "$HOLD/backup.new" "$HOLD/pre-update.db"
 
-# 4. Switch, and return to the previous image and database if it does not work.
+# 5. Switch, and return to the previous image and database if it does not work.
 rollback() {
 	local reason="$1"
 	log "version $latest failed ($reason); going back to the previous image and database"
@@ -369,6 +377,8 @@ rollback() {
 		chmod 0600 "$DATA/hejmo.db"; then
 		restored=1
 	fi
+	# If the restore failed the box stays stopped: starting the old image on a
+	# half-restored or newer database could do more harm.
 	use_image "$previous"
 	if [ "$restored" = 1 ] && start_box; then
 		printf '%s\n' "$latest" >"$HOLD/skip-version"

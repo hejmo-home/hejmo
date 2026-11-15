@@ -910,7 +910,7 @@ components:
       properties:
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
         temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
-        auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
+        auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
     SettingsUpdate:
       type: object
       properties:
@@ -919,9 +919,10 @@ components:
         auto_update: { type: string, description: "on, off or notify" }
     UpdateStatus:
       type: object
-      required: [mode, state, notice]
+      required: [mode, managed, state, notice]
       properties:
         mode: { type: string, enum: [on, off, notify] }
+        managed: { type: boolean, description: "Whether the host updater of the install script manages this box. False on a plain Docker Compose install: then mode (also in /settings) is stored but nothing acts on it." }
         state:
           type: string
           enum: [idle, available, updated, rolled_back, rejected, failed]

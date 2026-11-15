@@ -10,9 +10,9 @@ import (
 )
 
 // configuredBox runs the setup wizard and returns the parent's TOTP secret.
-func configuredBox(t *testing.T) (*box, string) {
+func configuredBox(t *testing.T, opts ...boxOption) (*box, string) {
 	t.Helper()
-	b := newBox(t)
+	b := newBox(t, opts...)
 	b.post("/setup", validSetupForm())
 	secret := secretOn(t, b.get("/setup/totp").body)
 	code, _ := auth.TOTPCode(secret, b.now)

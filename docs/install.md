@@ -90,6 +90,7 @@ The install script also sets up a nightly update check (a systemd timer, `hejmo-
 - A box that does not know its version, such as a preview build, is never updated.
 - The container gets no access to the Docker socket. The box and the updater exchange only two small files in the data volume (`update-settings`, `update-status`) with fixed keys and values.
 - The updater script itself changes only when you run the install script again. Check the last run with `sudo journalctl -u hejmo-update`.
+- If going back fails too (the backup cannot be restored), the box stays **stopped** on purpose, and parents cannot see a notice because the box is down. If the box does not answer after a night with an update, run `sudo journalctl -u hejmo-update` to see what happened.
 
 ## Updating and removing
 

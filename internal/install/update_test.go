@@ -42,7 +42,8 @@ compose)
 inspect)
 	case "$*" in
 	*Labels*) cat "$STATE/version" ;;
-	*.Image*) [ "${FAKE_NOBOX:-0}" = 1 ] || echo "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ;;
+	*State.Running*) if [ "${FAKE_STOPPED:-0}" = 1 ]; then echo false; else echo true; fi ;;
+	*.Image*) echo "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ;;
 	esac ;;
 image)
 	case "$2" in
@@ -515,9 +516,11 @@ func TestUnknownRunningVersionInstallsNothing(t *testing.T) {
 	}
 }
 
-func TestMissingBoxIsNotReportedAsABackupFailure(t *testing.T) {
+// A stopped container still has its image and version label, like on a real
+// host, so the check must look at whether it runs.
+func TestStoppedBoxIsNotReportedAsABackupFailure(t *testing.T) {
 	b := installed(t)
-	_, _ = b.update("FAKE_NOBOX=1")
+	_, _ = b.update("FAKE_STOPPED=1")
 	st := b.status()
 	if hasLine(st, "reason=backup_failed") || !hasLine(st, "reason=box_not_running") {
 		t.Errorf("status:\n%s", st)

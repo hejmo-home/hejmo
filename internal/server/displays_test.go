@@ -49,9 +49,9 @@ func codeOn(t *testing.T, page string) string {
 }
 
 // signedInBox returns a configured box with the parent signed in.
-func signedInBox(t *testing.T) *box {
+func signedInBox(t *testing.T, opts ...boxOption) *box {
 	t.Helper()
-	b, secret := configuredBox(t)
+	b, secret := configuredBox(t, opts...)
 	if r := b.post("/login", loginForm(b, secret, "correct horse battery")); r.status != http.StatusSeeOther {
 		t.Fatalf("login = %d", r.status)
 	}

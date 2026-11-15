@@ -80,6 +80,7 @@ func (s *server) dismissUpdate(h store.Household) error {
 
 type updateJSON struct {
 	Mode     store.UpdateMode `json:"mode"`
+	Managed  bool             `json:"managed"`
 	State    update.State     `json:"state"`
 	Version  string           `json:"version,omitempty"`
 	Target   string           `json:"target,omitempty"`
@@ -91,7 +92,7 @@ type updateJSON struct {
 
 func (s *server) apiGetUpdate(w http.ResponseWriter, _ *http.Request, p principal) {
 	v := s.updateView(p.household)
-	writeJSON(w, http.StatusOK, updateJSON{v.Mode, v.State, v.Version, v.Target, v.Reason, v.Time, v.Notice, v.NotesURL})
+	writeJSON(w, http.StatusOK, updateJSON{v.Mode, s.updateDir != "", v.State, v.Version, v.Target, v.Reason, v.Time, v.Notice, v.NotesURL})
 }
 
 func (s *server) apiDismissUpdate(w http.ResponseWriter, _ *http.Request, p principal) {

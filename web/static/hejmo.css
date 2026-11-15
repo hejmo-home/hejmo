@@ -489,6 +489,7 @@ details.danger form { margin: 0 0 10px; }
 .ev .title, .bar .title { font-weight: var(--fw-event-title); font-size: var(--fs-label-large); color: inherit; text-decoration: none; }
 .ev a.title:hover, .bar a.title:hover { text-decoration: underline; }
 .ev .meta, .bar .meta { font-size: var(--fs-meta); }
+.ev .icon, .bar .icon { stroke: currentColor; vertical-align: middle; }
 .who { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .ev .marker, .bar .marker { width: 10px; height: 10px; }
 [data-theme="bw"] .ev .marker, [data-theme="bw"] .bar .marker { width: var(--marker-size-bw-event); height: var(--marker-size-bw-event); }

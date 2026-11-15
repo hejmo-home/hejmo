@@ -476,5 +476,6 @@
   "flash.event_saved": "Event saved.",
   "flash.event_deleted": "Event deleted.",
   "calendar.info.calendar": "Calendar: %s",
-  "calendar.info.timezone": "Time zone: %s. The time zone of an event stays as it was created."
+  "calendar.info.timezone": "Time zone: %s. The time zone of an event stays as it was created.",
+  "calendar.range": "%s to %s"
 }

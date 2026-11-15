@@ -541,6 +541,7 @@ details.danger form { margin: 0 0 10px; }
 .ev .title, .bar .title { font-weight: var(--fw-event-title); font-size: var(--fs-label-large); color: inherit; text-decoration: none; }
 .ev a.title:hover, .bar a.title:hover { text-decoration: underline; }
 .ev .meta, .bar .meta { font-size: var(--fs-meta); }
+.ev .icon, .bar .icon { stroke: currentColor; vertical-align: middle; }
 .who { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
 .ev .marker, .bar .marker { width: 10px; height: 10px; }
 [data-theme="bw"] .ev .marker, [data-theme="bw"] .bar .marker { width: var(--marker-size-bw-event); height: var(--marker-size-bw-event); }
@@ -610,7 +611,7 @@ document.addEventListener("change", function (e) {
       <a class="button secondary" href="/calendar?week=2026-11-16">This week</a>
       <a class="button secondary" href="/calendar?week=2026-11-23" rel="next">Next week</a>
     </nav>
-    <p class="wk-range"><strong>Week 47</strong> <span class="hint">16/11 – 22/11/2026</span></p>
+    <p class="wk-range"><strong>Week 47</strong> <span class="hint">16/11 to 22/11/2026</span></p>
     <a class="button" href="/calendar/new?date=2026-11-16">New event</a>
   </div>
   <form method="get" action="/calendar/search" role="search" class="wk-search">
@@ -623,74 +624,74 @@ document.addEventListener("change", function (e) {
       <li data-today aria-current="date">
         <span class="dn">Mon</span> <span class="dd">16/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-16" aria-label="Add an event on 16/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-16" aria-label="Add an event on 16/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Tue</span> <span class="dd">17/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-17" aria-label="Add an event on 17/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-17" aria-label="Add an event on 17/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Wed</span> <span class="dd">18/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-18" aria-label="Add an event on 18/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-18" aria-label="Add an event on 18/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Thu</span> <span class="dd">19/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-19" aria-label="Add an event on 19/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-19" aria-label="Add an event on 19/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Fri</span> <span class="dd">20/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-20" aria-label="Add an event on 20/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-20" aria-label="Add an event on 20/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Sat</span> <span class="dd">21/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-21" aria-label="Add an event on 21/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-21" aria-label="Add an event on 21/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Sun</span> <span class="dd">22/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-22" aria-label="Add an event on 22/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-22" aria-label="Add an event on 22/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li>
     </ol>
     <ul class="wk-bars" data-bars>
       <li class="bar c2 s3" data-col="2" data-span="3" data-lane="1" data-person="4">
-        <span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/3f88e9cc-7677-4295-a86b-daa6be03d726?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a>
+        <span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/ded38e71-3a4a-41a5-979b-866c21308694?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a>
       </li><li class="bar c3 s1" data-col="3" data-span="1" data-lane="2">
-        <a class="title" href="/calendar/events/6ea98b32-f392-4ba1-9f19-690558e3cf6d?occurrence=2026-11-18T00%3A00%3A00%2B01%3A00">Grandma&#39;s birthday</a>
+        <a class="title" href="/calendar/events/3cbe2306-2538-40cb-92b7-0ba0b491bc95?occurrence=2026-11-18T00%3A00%3A00%2B01%3A00">Grandma&#39;s birthday</a>
       </li><li class="bar c5 s3" data-col="5" data-span="3" data-lane="1">
-        <a class="title" href="/calendar/events/1addcc0e-56eb-4214-a1b8-3f06848d4f7a?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a>
+        <a class="title" href="/calendar/events/c1279a0e-5f52-4203-84b5-b54ae69208ce?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a>
       </li>
     </ul>
     <ol class="wk-days">
       <li data-day="2026-11-16" data-today>
         <h2 class="wk-dayname"><span class="dn">Mon</span> <span class="dd">16/11</span></h2>
         
-        <ul class="wk-events"><li class="ev" data-person="1"><span class="who"><span class="marker small" data-person="1" data-shape="circle-filled" role="img" aria-label="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" role="img" aria-label="Papa"></span></span><a class="title" href="/calendar/events/de27e893-3bae-4d91-af27-eda41b65a7a5?occurrence=2026-11-16T19%3A30%3A00%2B01%3A00">Parents&#39; evening</a> <span class="meta">19:30</span></li></ul>
+        <ul class="wk-events"><li class="ev" data-person="1"><span class="who"><span class="marker small" data-person="1" data-shape="circle-filled" role="img" aria-label="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" role="img" aria-label="Papa"></span></span><a class="title" href="/calendar/events/bcd796f2-9757-4bc0-8b52-9a69fa0d4071?occurrence=2026-11-16T19%3A30%3A00%2B01%3A00">Parents&#39; evening</a> <span class="meta">19:30</span></li></ul>
         
       </li><li data-day="2026-11-17">
         <h2 class="wk-dayname"><span class="dn">Tue</span> <span class="dd">17/11</span></h2>
-        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/3f88e9cc-7677-4295-a86b-daa6be03d726?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li></ul>
-        <ul class="wk-events"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/8d14a333-b435-44ec-908e-b789649d6058?occurrence=2026-11-17T15%3A00%3A00%2B01%3A00">Swimming</a> <span class="meta">15:00</span> <span class="meta">↻<span class="sr">Repeats</span></span></li></ul>
+        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/ded38e71-3a4a-41a5-979b-866c21308694?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li></ul>
+        <ul class="wk-events"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/6deff7db-c0ad-461f-a752-f3a1a6fffee3?occurrence=2026-11-17T15%3A00%3A00%2B01%3A00">Swimming</a> <span class="meta">15:00</span> <span class="meta"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 4v5h-5M20 12a8 8 0 0 1-14 5l-2-2M4 20v-5h5"/></svg><span class="sr">Repeats</span></span></li></ul>
         
       </li><li data-day="2026-11-18">
         <h2 class="wk-dayname"><span class="dn">Wed</span> <span class="dd">18/11</span></h2>
-        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/3f88e9cc-7677-4295-a86b-daa6be03d726?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li><li class="ev" ><a class="title" href="/calendar/events/6ea98b32-f392-4ba1-9f19-690558e3cf6d?occurrence=2026-11-18T00%3A00%3A00%2B01%3A00">Grandma&#39;s birthday</a></li></ul>
-        <ul class="wk-events"><li class="ev" data-person="3"><span class="who"><span class="marker small" data-person="3" data-shape="square-filled" role="img" aria-label="Sebastian"></span></span><a class="title" href="/calendar/events/21740de9-1878-4dc8-bd65-9c4d44473b18?occurrence=2026-11-18T08%3A30%3A00%2B01%3A00">Dentist</a> <span class="meta">08:30</span></li><li class="ev" data-person="3"><span class="who"><span class="marker small" data-person="3" data-shape="square-filled" role="img" aria-label="Sebastian"></span></span><a class="title" href="/calendar/events/11fc939f-64c1-4ec9-8ac6-c6ed5dd916cd?occurrence=2026-11-18T16%3A00%3A00%2B01%3A00">Piano</a> <span class="meta">16:00</span> <span class="meta">↻<span class="sr">Repeats</span></span></li></ul>
+        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/ded38e71-3a4a-41a5-979b-866c21308694?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li><li class="ev" ><a class="title" href="/calendar/events/3cbe2306-2538-40cb-92b7-0ba0b491bc95?occurrence=2026-11-18T00%3A00%3A00%2B01%3A00">Grandma&#39;s birthday</a></li></ul>
+        <ul class="wk-events"><li class="ev" data-person="3"><span class="who"><span class="marker small" data-person="3" data-shape="square-filled" role="img" aria-label="Sebastian"></span></span><a class="title" href="/calendar/events/d771643b-e5f7-4ffc-8a0c-5832af7d70a1?occurrence=2026-11-18T08%3A30%3A00%2B01%3A00">Dentist</a> <span class="meta">08:30</span></li><li class="ev" data-person="3"><span class="who"><span class="marker small" data-person="3" data-shape="square-filled" role="img" aria-label="Sebastian"></span></span><a class="title" href="/calendar/events/0919358c-cd80-4965-b90e-3cb8644d0f77?occurrence=2026-11-18T16%3A00%3A00%2B01%3A00">Piano</a> <span class="meta">16:00</span> <span class="meta"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 4v5h-5M20 12a8 8 0 0 1-14 5l-2-2M4 20v-5h5"/></svg><span class="sr">Repeats</span></span></li></ul>
         
       </li><li data-day="2026-11-19">
         <h2 class="wk-dayname"><span class="dn">Thu</span> <span class="dd">19/11</span></h2>
-        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/3f88e9cc-7677-4295-a86b-daa6be03d726?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li></ul>
-        <ul class="wk-events"><li class="ev"><span class="title">School concert</span> <span class="meta">16:00</span> <span class="meta lock">Read-only: changed at its source</span></li><li class="ev" data-person="1"><span class="who"><span class="marker small" data-person="1" data-shape="circle-filled" role="img" aria-label="Mama"></span></span><a class="title" href="/calendar/events/b808593b-2238-4e9f-a5fd-8bf9907c3beb?occurrence=2026-11-19T18%3A00%3A00%2B01%3A00">Choir</a> <span class="meta">18:00</span> <span class="meta">↻<span class="sr">Repeats</span></span></li></ul>
+        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/ded38e71-3a4a-41a5-979b-866c21308694?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li></ul>
+        <ul class="wk-events"><li class="ev"><span class="title">School concert</span> <span class="meta">16:00</span> <span class="meta lock">Read-only: changed at its source</span></li><li class="ev" data-person="1"><span class="who"><span class="marker small" data-person="1" data-shape="circle-filled" role="img" aria-label="Mama"></span></span><a class="title" href="/calendar/events/1934e722-3731-4980-8d4c-d584a8144408?occurrence=2026-11-19T18%3A00%3A00%2B01%3A00">Choir</a> <span class="meta">18:00</span> <span class="meta"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 4v5h-5M20 12a8 8 0 0 1-14 5l-2-2M4 20v-5h5"/></svg><span class="sr">Repeats</span></span></li></ul>
         
       </li><li data-day="2026-11-20">
         <h2 class="wk-dayname"><span class="dn">Fri</span> <span class="dd">20/11</span></h2>
-        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/1addcc0e-56eb-4214-a1b8-3f06848d4f7a?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
+        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/c1279a0e-5f52-4203-84b5-b54ae69208ce?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
         
       </li><li data-day="2026-11-21">
         <h2 class="wk-dayname"><span class="dn">Sat</span> <span class="dd">21/11</span></h2>
-        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/1addcc0e-56eb-4214-a1b8-3f06848d4f7a?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
+        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/c1279a0e-5f52-4203-84b5-b54ae69208ce?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
         
       </li><li data-day="2026-11-22">
         <h2 class="wk-dayname"><span class="dn">Sun</span> <span class="dd">22/11</span></h2>
-        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/1addcc0e-56eb-4214-a1b8-3f06848d4f7a?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
+        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/c1279a0e-5f52-4203-84b5-b54ae69208ce?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
         
       </li>
     </ol>
@@ -728,7 +729,7 @@ document.addEventListener("change", function (e) {
       <a class="button secondary" href="/calendar?week=2026-11-16">This week</a>
       <a class="button secondary" href="/calendar?week=2026-11-23" rel="next">Next week</a>
     </nav>
-    <p class="wk-range"><strong>Week 47</strong> <span class="hint">16/11 – 22/11/2026</span></p>
+    <p class="wk-range"><strong>Week 47</strong> <span class="hint">16/11 to 22/11/2026</span></p>
     <a class="button" href="/calendar/new?date=2026-11-16">New event</a>
   </div>
   <form method="get" action="/calendar/search" role="search" class="wk-search">
@@ -741,74 +742,74 @@ document.addEventListener("change", function (e) {
       <li data-today aria-current="date">
         <span class="dn">Mon</span> <span class="dd">16/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-16" aria-label="Add an event on 16/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-16" aria-label="Add an event on 16/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Tue</span> <span class="dd">17/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-17" aria-label="Add an event on 17/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-17" aria-label="Add an event on 17/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Wed</span> <span class="dd">18/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-18" aria-label="Add an event on 18/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-18" aria-label="Add an event on 18/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Thu</span> <span class="dd">19/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-19" aria-label="Add an event on 19/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-19" aria-label="Add an event on 19/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Fri</span> <span class="dd">20/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-20" aria-label="Add an event on 20/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-20" aria-label="Add an event on 20/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Sat</span> <span class="dd">21/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-21" aria-label="Add an event on 21/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-21" aria-label="Add an event on 21/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Sun</span> <span class="dd">22/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-22" aria-label="Add an event on 22/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-22" aria-label="Add an event on 22/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li>
     </ol>
     <ul class="wk-bars" data-bars>
       <li class="bar c2 s3" data-col="2" data-span="3" data-lane="1" data-person="4">
-        <span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/3f88e9cc-7677-4295-a86b-daa6be03d726?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a>
+        <span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/ded38e71-3a4a-41a5-979b-866c21308694?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a>
       </li><li class="bar c3 s1" data-col="3" data-span="1" data-lane="2">
-        <a class="title" href="/calendar/events/6ea98b32-f392-4ba1-9f19-690558e3cf6d?occurrence=2026-11-18T00%3A00%3A00%2B01%3A00">Grandma&#39;s birthday</a>
+        <a class="title" href="/calendar/events/3cbe2306-2538-40cb-92b7-0ba0b491bc95?occurrence=2026-11-18T00%3A00%3A00%2B01%3A00">Grandma&#39;s birthday</a>
       </li><li class="bar c5 s3" data-col="5" data-span="3" data-lane="1">
-        <a class="title" href="/calendar/events/1addcc0e-56eb-4214-a1b8-3f06848d4f7a?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a>
+        <a class="title" href="/calendar/events/c1279a0e-5f52-4203-84b5-b54ae69208ce?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a>
       </li>
     </ul>
     <ol class="wk-days">
       <li data-day="2026-11-16" data-today>
         <h2 class="wk-dayname"><span class="dn">Mon</span> <span class="dd">16/11</span></h2>
         
-        <ul class="wk-events"><li class="ev" data-person="1"><span class="who"><span class="marker small" data-person="1" data-shape="circle-filled" role="img" aria-label="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" role="img" aria-label="Papa"></span></span><a class="title" href="/calendar/events/de27e893-3bae-4d91-af27-eda41b65a7a5?occurrence=2026-11-16T19%3A30%3A00%2B01%3A00">Parents&#39; evening</a> <span class="meta">19:30</span></li></ul>
+        <ul class="wk-events"><li class="ev" data-person="1"><span class="who"><span class="marker small" data-person="1" data-shape="circle-filled" role="img" aria-label="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" role="img" aria-label="Papa"></span></span><a class="title" href="/calendar/events/bcd796f2-9757-4bc0-8b52-9a69fa0d4071?occurrence=2026-11-16T19%3A30%3A00%2B01%3A00">Parents&#39; evening</a> <span class="meta">19:30</span></li></ul>
         
       </li><li data-day="2026-11-17">
         <h2 class="wk-dayname"><span class="dn">Tue</span> <span class="dd">17/11</span></h2>
-        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/3f88e9cc-7677-4295-a86b-daa6be03d726?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li></ul>
-        <ul class="wk-events"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/8d14a333-b435-44ec-908e-b789649d6058?occurrence=2026-11-17T15%3A00%3A00%2B01%3A00">Swimming</a> <span class="meta">15:00</span> <span class="meta">↻<span class="sr">Repeats</span></span></li></ul>
+        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/ded38e71-3a4a-41a5-979b-866c21308694?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li></ul>
+        <ul class="wk-events"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/6deff7db-c0ad-461f-a752-f3a1a6fffee3?occurrence=2026-11-17T15%3A00%3A00%2B01%3A00">Swimming</a> <span class="meta">15:00</span> <span class="meta"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 4v5h-5M20 12a8 8 0 0 1-14 5l-2-2M4 20v-5h5"/></svg><span class="sr">Repeats</span></span></li></ul>
         
       </li><li data-day="2026-11-18">
         <h2 class="wk-dayname"><span class="dn">Wed</span> <span class="dd">18/11</span></h2>
-        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/3f88e9cc-7677-4295-a86b-daa6be03d726?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li><li class="ev" ><a class="title" href="/calendar/events/6ea98b32-f392-4ba1-9f19-690558e3cf6d?occurrence=2026-11-18T00%3A00%3A00%2B01%3A00">Grandma&#39;s birthday</a></li></ul>
-        <ul class="wk-events"><li class="ev" data-person="3"><span class="who"><span class="marker small" data-person="3" data-shape="square-filled" role="img" aria-label="Sebastian"></span></span><a class="title" href="/calendar/events/21740de9-1878-4dc8-bd65-9c4d44473b18?occurrence=2026-11-18T08%3A30%3A00%2B01%3A00">Dentist</a> <span class="meta">08:30</span></li><li class="ev" data-person="3"><span class="who"><span class="marker small" data-person="3" data-shape="square-filled" role="img" aria-label="Sebastian"></span></span><a class="title" href="/calendar/events/11fc939f-64c1-4ec9-8ac6-c6ed5dd916cd?occurrence=2026-11-18T16%3A00%3A00%2B01%3A00">Piano</a> <span class="meta">16:00</span> <span class="meta">↻<span class="sr">Repeats</span></span></li></ul>
+        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/ded38e71-3a4a-41a5-979b-866c21308694?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li><li class="ev" ><a class="title" href="/calendar/events/3cbe2306-2538-40cb-92b7-0ba0b491bc95?occurrence=2026-11-18T00%3A00%3A00%2B01%3A00">Grandma&#39;s birthday</a></li></ul>
+        <ul class="wk-events"><li class="ev" data-person="3"><span class="who"><span class="marker small" data-person="3" data-shape="square-filled" role="img" aria-label="Sebastian"></span></span><a class="title" href="/calendar/events/d771643b-e5f7-4ffc-8a0c-5832af7d70a1?occurrence=2026-11-18T08%3A30%3A00%2B01%3A00">Dentist</a> <span class="meta">08:30</span></li><li class="ev" data-person="3"><span class="who"><span class="marker small" data-person="3" data-shape="square-filled" role="img" aria-label="Sebastian"></span></span><a class="title" href="/calendar/events/0919358c-cd80-4965-b90e-3cb8644d0f77?occurrence=2026-11-18T16%3A00%3A00%2B01%3A00">Piano</a> <span class="meta">16:00</span> <span class="meta"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 4v5h-5M20 12a8 8 0 0 1-14 5l-2-2M4 20v-5h5"/></svg><span class="sr">Repeats</span></span></li></ul>
         
       </li><li data-day="2026-11-19">
         <h2 class="wk-dayname"><span class="dn">Thu</span> <span class="dd">19/11</span></h2>
-        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/3f88e9cc-7677-4295-a86b-daa6be03d726?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li></ul>
-        <ul class="wk-events"><li class="ev"><span class="title">School concert</span> <span class="meta">16:00</span> <span class="meta lock">Read-only: changed at its source</span></li><li class="ev" data-person="1"><span class="who"><span class="marker small" data-person="1" data-shape="circle-filled" role="img" aria-label="Mama"></span></span><a class="title" href="/calendar/events/b808593b-2238-4e9f-a5fd-8bf9907c3beb?occurrence=2026-11-19T18%3A00%3A00%2B01%3A00">Choir</a> <span class="meta">18:00</span> <span class="meta">↻<span class="sr">Repeats</span></span></li></ul>
+        <ul class="wk-allday"><li class="ev" data-person="4"><span class="who"><span class="marker small" data-person="4" data-shape="square-empty" role="img" aria-label="Mia"></span></span><a class="title" href="/calendar/events/ded38e71-3a4a-41a5-979b-866c21308694?occurrence=2026-11-17T00%3A00%3A00%2B01%3A00">School trip</a></li></ul>
+        <ul class="wk-events"><li class="ev"><span class="title">School concert</span> <span class="meta">16:00</span> <span class="meta lock">Read-only: changed at its source</span></li><li class="ev" data-person="1"><span class="who"><span class="marker small" data-person="1" data-shape="circle-filled" role="img" aria-label="Mama"></span></span><a class="title" href="/calendar/events/1934e722-3731-4980-8d4c-d584a8144408?occurrence=2026-11-19T18%3A00%3A00%2B01%3A00">Choir</a> <span class="meta">18:00</span> <span class="meta"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 4v5h-5M20 12a8 8 0 0 1-14 5l-2-2M4 20v-5h5"/></svg><span class="sr">Repeats</span></span></li></ul>
         
       </li><li data-day="2026-11-20">
         <h2 class="wk-dayname"><span class="dn">Fri</span> <span class="dd">20/11</span></h2>
-        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/1addcc0e-56eb-4214-a1b8-3f06848d4f7a?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
+        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/c1279a0e-5f52-4203-84b5-b54ae69208ce?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
         
       </li><li data-day="2026-11-21">
         <h2 class="wk-dayname"><span class="dn">Sat</span> <span class="dd">21/11</span></h2>
-        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/1addcc0e-56eb-4214-a1b8-3f06848d4f7a?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
+        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/c1279a0e-5f52-4203-84b5-b54ae69208ce?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
         
       </li><li data-day="2026-11-22">
         <h2 class="wk-dayname"><span class="dn">Sun</span> <span class="dd">22/11</span></h2>
-        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/1addcc0e-56eb-4214-a1b8-3f06848d4f7a?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
+        <ul class="wk-allday"><li class="ev" ><a class="title" href="/calendar/events/c1279a0e-5f52-4203-84b5-b54ae69208ce?occurrence=2026-11-20T00%3A00%3A00%2B01%3A00">Hut weekend</a></li></ul>
         
       </li>
     </ol>
@@ -884,16 +885,16 @@ document.addEventListener("change", function (e) {
   <legend>Who is it for?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Whole family<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="58ac4450-4f2b-4bc5-9664-3f48fa45a282"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people" value="cdff72e5-cb9b-4707-a34d-2da4b27acb92"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people" value="e9d3e683-c756-4949-a8e2-482f2b7ac8e9"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people" value="171a240c-9f2a-497e-9d94-0a2c80738bfe"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="72054d85-f38c-411e-b540-4512969130aa"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people" value="c21a82f5-7a60-48c0-aadc-e84591d6fc29"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people" value="34905de6-466e-4ba4-b9ae-432a5cc6c80d"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people" value="469cf238-3cb9-4f4b-b81b-100104953f96"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
 </fieldset>
       
-        <input type="hidden" name="calendar" value="2abec2b2-9ac3-451b-a14c-6a2f1c4438a2">
+        <input type="hidden" name="calendar" value="54df1d24-54b5-445c-b0d3-fcc95b30fc23">
       
       <div class="f"><label>Repeat
         <select name="repeat">
@@ -961,7 +962,7 @@ document.addEventListener("change", function (e) {
   
   
   
-  <form method="post" action="/calendar/events/8d14a333-b435-44ec-908e-b789649d6058" class="steps" data-event-form>
+  <form method="post" action="/calendar/events/6deff7db-c0ad-461f-a752-f3a1a6fffee3" class="steps" data-event-form>
     <input type="hidden" name="occurrence" value="2026-11-17T15:00:00&#43;01:00">
     <fieldset>
       <div class="f">
@@ -998,10 +999,10 @@ document.addEventListener("change", function (e) {
   <legend>Who is it for?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Whole family<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="58ac4450-4f2b-4bc5-9664-3f48fa45a282"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people" value="cdff72e5-cb9b-4707-a34d-2da4b27acb92"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people" value="e9d3e683-c756-4949-a8e2-482f2b7ac8e9"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people" value="171a240c-9f2a-497e-9d94-0a2c80738bfe" checked><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="72054d85-f38c-411e-b540-4512969130aa"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people" value="c21a82f5-7a60-48c0-aadc-e84591d6fc29"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people" value="34905de6-466e-4ba4-b9ae-432a5cc6c80d"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people" value="469cf238-3cb9-4f4b-b81b-100104953f96" checked><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1043,7 +1044,7 @@ document.addEventListener("change", function (e) {
   <section class="cards" aria-label="Delete event">
   <details class="danger">
   <summary>Delete event</summary>
-    <form method="post" action="/calendar/events/8d14a333-b435-44ec-908e-b789649d6058/delete" class="steps">
+    <form method="post" action="/calendar/events/6deff7db-c0ad-461f-a752-f3a1a6fffee3/delete" class="steps">
       <input type="hidden" name="occurrence" value="2026-11-17T15:00:00&#43;01:00">
       <p>The events you choose disappear from the calendar, the displays and from phones that use this calendar. This cannot be undone.</p>
       
@@ -1090,7 +1091,7 @@ document.addEventListener("change", function (e) {
   
   
   
-  <form method="post" action="/calendar/events/8d14a333-b435-44ec-908e-b789649d6058" class="steps" data-event-form>
+  <form method="post" action="/calendar/events/6deff7db-c0ad-461f-a752-f3a1a6fffee3" class="steps" data-event-form>
     <input type="hidden" name="occurrence" value="2026-11-17T15:00:00&#43;01:00">
     <fieldset>
       <div class="f">
@@ -1127,10 +1128,10 @@ document.addEventListener("change", function (e) {
   <legend>Who is it for?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Whole family<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="58ac4450-4f2b-4bc5-9664-3f48fa45a282"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people" value="cdff72e5-cb9b-4707-a34d-2da4b27acb92"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people" value="e9d3e683-c756-4949-a8e2-482f2b7ac8e9"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people" value="171a240c-9f2a-497e-9d94-0a2c80738bfe" checked><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="72054d85-f38c-411e-b540-4512969130aa"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people" value="c21a82f5-7a60-48c0-aadc-e84591d6fc29"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people" value="34905de6-466e-4ba4-b9ae-432a5cc6c80d"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people" value="469cf238-3cb9-4f4b-b81b-100104953f96" checked><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1172,7 +1173,7 @@ document.addEventListener("change", function (e) {
   <section class="cards" aria-label="Delete event">
   <details class="danger" open>
   <summary>Delete event</summary>
-    <form method="post" action="/calendar/events/8d14a333-b435-44ec-908e-b789649d6058/delete" class="steps">
+    <form method="post" action="/calendar/events/6deff7db-c0ad-461f-a752-f3a1a6fffee3/delete" class="steps">
       <input type="hidden" name="occurrence" value="2026-11-17T15:00:00&#43;01:00">
       <p>The events you choose disappear from the calendar, the displays and from phones that use this calendar. This cannot be undone.</p>
       
@@ -1259,10 +1260,10 @@ document.addEventListener("change", function (e) {
   <legend>Who is it for?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Whole family<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="58ac4450-4f2b-4bc5-9664-3f48fa45a282"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people" value="cdff72e5-cb9b-4707-a34d-2da4b27acb92"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people" value="e9d3e683-c756-4949-a8e2-482f2b7ac8e9"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people" value="171a240c-9f2a-497e-9d94-0a2c80738bfe"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="72054d85-f38c-411e-b540-4512969130aa"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people" value="c21a82f5-7a60-48c0-aadc-e84591d6fc29"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people" value="34905de6-466e-4ba4-b9ae-432a5cc6c80d"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people" value="469cf238-3cb9-4f4b-b81b-100104953f96"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1340,7 +1341,7 @@ document.addEventListener("change", function (e) {
   <p class="hint">Search finds words that start like your search, in the title, place and notes, ignoring capitals and accents.</p>
   <ul class="cards" data-results>
     <li data-person="4">
-      <strong><a href="/calendar/events/8d14a333-b435-44ec-908e-b789649d6058?occurrence=2026-11-03T15%3A00%3A00%2B01%3A00">Swimming</a></strong>
+      <strong><a href="/calendar/events/6deff7db-c0ad-461f-a752-f3a1a6fffee3?occurrence=2026-11-03T15%3A00%3A00%2B01%3A00">Swimming</a></strong>
       <span class="hint">03/11/2026 · 15:00 · Repeats</span>
     </li>
   </ul>
@@ -1377,7 +1378,7 @@ document.addEventListener("change", function (e) {
       <a class="button secondary" href="/calendar?week=2026-11-09">This week</a>
       <a class="button secondary" href="/calendar?week=2026-11-16" rel="next">Next week</a>
     </nav>
-    <p class="wk-range"><strong>Week 46</strong> <span class="hint">09/11 – 15/11/2026</span></p>
+    <p class="wk-range"><strong>Week 46</strong> <span class="hint">09/11 to 15/11/2026</span></p>
     <a class="button" href="/calendar/new?date=2026-11-09">New event</a>
   </div>
   <form method="get" action="/calendar/search" role="search" class="wk-search">
@@ -1390,31 +1391,31 @@ document.addEventListener("change", function (e) {
       <li>
         <span class="dn">Mon</span> <span class="dd">09/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-09" aria-label="Add an event on 09/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-09" aria-label="Add an event on 09/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Tue</span> <span class="dd">10/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-10" aria-label="Add an event on 10/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-10" aria-label="Add an event on 10/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Wed</span> <span class="dd">11/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-11" aria-label="Add an event on 11/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-11" aria-label="Add an event on 11/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Thu</span> <span class="dd">12/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-12" aria-label="Add an event on 12/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-12" aria-label="Add an event on 12/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Fri</span> <span class="dd">13/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-13" aria-label="Add an event on 13/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-13" aria-label="Add an event on 13/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li data-today aria-current="date">
         <span class="dn">Sat</span> <span class="dd">14/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-14" aria-label="Add an event on 14/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-14" aria-label="Add an event on 14/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li><li>
         <span class="dn">Sun</span> <span class="dd">15/11</span>
         
-        <a class="add" href="/calendar/new?date=2026-11-15" aria-label="Add an event on 15/11">+</a>
+        <a class="add" href="/calendar/new?date=2026-11-15" aria-label="Add an event on 15/11"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li>
     </ol>
     

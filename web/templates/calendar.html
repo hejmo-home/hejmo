@@ -7,7 +7,7 @@
       <a class="button secondary" href="{{.ThisWeek}}">{{t "calendar.today"}}</a>
       <a class="button secondary" href="{{.Next}}" rel="next">{{t "calendar.next"}}</a>
     </nav>
-    <p class="wk-range"><strong>{{printf (t "calendar.week") .Week}}</strong> <span class="hint">{{.From}} – {{.To}}</span></p>
+    <p class="wk-range"><strong>{{printf (t "calendar.week") .Week}}</strong> <span class="hint">{{printf (t "calendar.range") .From .To}}</span></p>
     <a class="button" href="{{.NewHref}}">{{t "calendar.new"}}</a>
   </div>
   <form method="get" action="/calendar/search" role="search" class="wk-search">
@@ -20,7 +20,7 @@
       {{range .Days}}<li{{if .Today}} data-today aria-current="date"{{end}}>
         <span class="dn">{{t (printf "calendar.weekday.%s" .Name)}}</span> <span class="dd">{{.Date}}</span>
         {{with .Holiday}}<span class="hol" title="{{t "calendar.holiday"}}">{{.}}</span>{{end}}
-        <a class="add" href="/calendar/new?date={{.ISO}}" aria-label="{{printf (t "calendar.add_on") .Date}}">+</a>
+        <a class="add" href="/calendar/new?date={{.ISO}}" aria-label="{{printf (t "calendar.add_on") .Date}}"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg></a>
       </li>{{end}}
     </ol>
     {{if .Bars}}<ul class="wk-bars" data-bars>
@@ -39,4 +39,4 @@
   </section>
 {{template "foot"}}
 
-{{define "eventBody"}}{{if .People}}<span class="who">{{range .People}}<span class="marker small" data-person="{{.Slot}}" data-shape="{{.Shape}}" role="img" aria-label="{{.Name}}"></span>{{end}}</span>{{end}}{{if .Href}}<a class="title" href="{{.Href}}">{{.Title}}</a>{{else}}<span class="title">{{.Title}}</span>{{end}}{{if .Time}} <span class="meta">{{.Time}}</span>{{end}}{{if .Repeats}} <span class="meta">↻<span class="sr">{{t "calendar.repeats"}}</span></span>{{end}}{{if .ReadOnly}} <span class="meta lock">{{t "calendar.readonly"}}</span>{{end}}{{end}}
+{{define "eventBody"}}{{if .People}}<span class="who">{{range .People}}<span class="marker small" data-person="{{.Slot}}" data-shape="{{.Shape}}" role="img" aria-label="{{.Name}}"></span>{{end}}</span>{{end}}{{if .Href}}<a class="title" href="{{.Href}}">{{.Title}}</a>{{else}}<span class="title">{{.Title}}</span>{{end}}{{if .Time}} <span class="meta">{{.Time}}</span>{{end}}{{if .Repeats}} <span class="meta"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5l2 2M20 4v5h-5M20 12a8 8 0 0 1-14 5l-2-2M4 20v-5h5"/></svg><span class="sr">{{t "calendar.repeats"}}</span></span>{{end}}{{if .ReadOnly}} <span class="meta lock">{{t "calendar.readonly"}}</span>{{end}}{{end}}

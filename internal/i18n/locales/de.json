@@ -467,7 +467,7 @@
   "calendar.error.title": "Bitte gib dem Termin einen Titel.",
   "calendar.error.start": "Bitte gib ein gültiges Anfangsdatum und eine gültige Uhrzeit an.",
   "calendar.error.end": "Das Ende muss am oder nach dem Anfang liegen und ein gültiges Datum und eine gültige Uhrzeit haben.",
-  "calendar.error.timezone": "Diese Zeitzone ist nicht bekannt. Nimm einen Namen wie Europe/Berlin.",
+  "calendar.error.timezone": "Diese Zeitzone ist nicht bekannt. Nimm einen Namen aus der Liste, die beim Tippen erscheint.",
   "calendar.error.until": "Die Wiederholung muss am oder nach dem ersten Tag enden, mit gültigem Datum.",
   "calendar.error.repeat": "Bitte wähle eine der Wiederholungen.",
   "calendar.error.calendar": "Bitte wähle einen Kalender, der geändert werden kann.",
@@ -476,5 +476,6 @@
   "flash.event_saved": "Termin gespeichert.",
   "flash.event_deleted": "Termin gelöscht.",
   "calendar.info.calendar": "Kalender: %s",
-  "calendar.info.timezone": "Zeitzone: %s. Die Zeitzone eines Termins bleibt so, wie er angelegt wurde."
+  "calendar.info.timezone": "Zeitzone: %s. Die Zeitzone eines Termins bleibt so, wie er angelegt wurde.",
+  "calendar.range": "%s bis %s"
 }

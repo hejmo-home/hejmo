@@ -114,6 +114,7 @@ var hubItems = []hubItem{
 	{"/caldav", "hub.caldav", "hub.caldav.hint", auth.Perm("tokens", auth.Read)},
 	{"/displays", "hub.displays", "hub.displays.hint", auth.Perm("displays", auth.Write)},
 	{"/phones", "hub.phones", "hub.phones.hint", auth.Perm("tokens", auth.Write)},
+	{"/people", "hub.people", "hub.people.hint", auth.Perm("people", auth.Write)},
 	{"/settings/household", "hub.household", "hub.household.hint", auth.Perm("settings", auth.Write)},
 	{"/otp", "hub.otp", "hub.otp.hint", auth.Perm("settings", auth.Write)},
 }

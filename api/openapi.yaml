@@ -133,6 +133,57 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updatePerson
+      summary: Change a person's name, colour or marker (parents only, scope people:write)
+      description: |
+        Only the fields sent change. The colour is one of the eight palette colours
+        (`Person.color`), the marker one of the eight shapes. No two people may have
+        the same colour and the same marker: such a request gets 422.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PersonUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Person" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /people/order:
+    put:
+      operationId: orderPeople
+      summary: Set the order of the people, which is the order of the columns on the displays (parents only, scope people:write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ids]
+              properties:
+                ids:
+                  type: array
+                  description: Every person of the household exactly once
+                  items: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The people in their new order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Person" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /tokens:
     get:
       operationId: listTokens
@@ -737,7 +788,7 @@ paths:
               type: object
               required: [name]
               properties:
-                name: { type: string }
+                name: { type: string, minLength: 1, maxLength: 80 }
                 members: { type: array, items: { type: string, format: uuid } }
       responses:
         "201":
@@ -748,6 +799,47 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /groups/{id}:
+    patch:
+      operationId: updateGroup
+      summary: Rename a subgroup or replace its members (parents only, scope people:write)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80 }
+                members: { type: array, items: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Group" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteGroup
+      summary: Delete a subgroup (parents only, scope people:write)
+      description: A subgroup that still decides who sees a calendar or an event is not deleted (409).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: The subgroup is still used by a calendar or an event
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /calendars:
     get:
       operationId: listCalendars
@@ -1180,17 +1272,31 @@ components:
         id: { type: string, format: uuid }
         name: { type: string }
         role: { $ref: "#/components/schemas/Role" }
-        color: { type: string, description: "Hex colour for colour mode", example: "#B4583A" }
+        color: { type: string, description: "Hex colour for colour mode: one of the eight palette colours (empty for a person added before colours were chosen)", example: "#B4583A" }
         shape: { type: string, description: "Marker for black-and-white mode", example: circle-filled }
         symbol: { type: string }
+    PersonColor:
+      type: string
+      description: The eight person colours of the palette, in slot order
+      enum: ["#B4583A", "#2F5E7A", "#4E7D52", "#9A7420", "#86587F", "#3A7A74", "#5559A3", "#B04A6A"]
+    PersonShape:
+      type: string
+      description: The eight black-and-white markers, in slot order
+      enum: [circle-filled, circle-empty, square-filled, square-empty, triangle-filled, diamond-filled, cross-filled, star-filled]
+    PersonUpdate:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+        color: { $ref: "#/components/schemas/PersonColor" }
+        shape: { $ref: "#/components/schemas/PersonShape" }
     NewPerson:
       type: object
       required: [name, role]
       properties:
-        name: { type: string }
+        name: { type: string, maxLength: 80 }
         role: { $ref: "#/components/schemas/Role" }
-        color: { type: string, pattern: "^#[0-9A-Fa-f]{6}$" }
-        shape: { type: string }
+        color: { $ref: "#/components/schemas/PersonColor" }
+        shape: { $ref: "#/components/schemas/PersonShape" }
         symbol: { type: string }
     TaskRepeat:
       type: string

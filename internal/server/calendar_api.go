@@ -149,6 +149,7 @@ type eventInput struct {
 	RRule       *string   `json:"rrule"`
 	People      *[]string `json:"people"`
 	Groups      *[]string `json:"groups"`
+	TimeZone    *string   `json:"timezone"` // create only
 }
 
 func readEventInput(r *http.Request) (eventInput, error) {
@@ -164,6 +165,14 @@ func (s *server) apiCreateEvent(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	loc := p.location()
+	if in.TimeZone != nil && *in.TimeZone != "" {
+		zone, err := time.LoadLocation(*in.TimeZone)
+		if err != nil || *in.TimeZone == "Local" {
+			writeError(w, http.StatusUnprocessableEntity, "timezone: use an IANA time zone name such as Europe/Berlin")
+			return
+		}
+		loc = zone
+	}
 	e := calendar.Event{Title: *in.Title, AllDay: in.AllDay != nil && *in.AllDay}
 	if e.Start, err = parseTime(*in.Start, e.AllDay, loc); err == nil {
 		e.End, err = parseTime(*in.End, e.AllDay, loc)
@@ -204,7 +213,7 @@ func (s *server) apiCreateEvent(w http.ResponseWriter, r *http.Request, p princi
 	if s.storeError(w, "create event", err) {
 		return
 	}
-	writeJSON(w, http.StatusCreated, s.eventToJSON(r, created, loc))
+	writeJSON(w, http.StatusCreated, s.eventToJSON(r, created, p.location()))
 }
 
 // seriesTarget resolves an event id plus ?occurrence= and ?scope=.

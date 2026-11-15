@@ -1004,6 +1004,7 @@ components:
         all_day: { type: boolean }
         start: { type: string }
         end: { type: string }
+        timezone: { type: string, example: "Europe/Berlin", description: "IANA time zone the event keeps (its wall-clock time stays the same across daylight-saving changes). Defaults to the household's. It cannot be changed afterwards." }
         rrule: { type: string }
         people: { type: array, items: { type: string, format: uuid } }
         groups: { type: array, items: { type: string, format: uuid } }

@@ -25,11 +25,11 @@ func TestInstallGuideExistsInBothLanguagesAndIsLinkedFromReadme(t *testing.T) {
 		notes    []string // the honesty markers of ADR 0018
 	}{
 		"en": {"docs/install.md",
-			[]string{"## Requirements", "## Install", "## First steps", "## HTTPS", "## Trust the box's own CA", "## Displays and phones"},
-			[]string{"experimental", "not yet tested on E-Ink devices", "tested in emulation"}},
+			[]string{"## Requirements", "## Install", "## First steps", "## HTTPS", "## Trust the box's own CA", "## Displays and phones", "## Automatic updates"},
+			[]string{"experimental", "not yet tested on E-Ink devices", "tested in emulation", "03:30", "cosign", "notify only"}},
 		"de": {"docs/install.de.md",
-			[]string{"## Voraussetzungen", "## Installation", "## Erste Schritte", "## HTTPS", "## Der eigenen CA vertrauen", "## Displays und Handys"},
-			[]string{"experimentell", "noch nicht auf E-Ink-Geräten getestet", "in der Emulation getestet"}},
+			[]string{"## Voraussetzungen", "## Installation", "## Erste Schritte", "## HTTPS", "## Der eigenen CA vertrauen", "## Displays und Handys", "## Automatische Updates"},
+			[]string{"experimentell", "noch nicht auf E-Ink-Geräten getestet", "in der Emulation getestet", "03:30", "cosign", "nur benachrichtigen"}},
 	}
 	for lang, g := range guides {
 		t.Run(lang, func(t *testing.T) {

@@ -447,3 +447,48 @@ func TestHomeOfAdaptsTheHouseholdForTheWeather(t *testing.T) {
 		t.Fatalf("coordinates not saved: %v %v", lat, lon)
 	}
 }
+
+// ADR 0018: the host script asks the running box for an online backup of its
+// database with `hejmo backup <file>` (docker exec), before it updates.
+func TestBackupCommandCopiesTheLiveDatabase(t *testing.T) {
+	dir := t.TempDir()
+	cfg := loadConfig(func(k string) string { return map[string]string{"HEJMO_DATA_DIR": dir}[k] })
+	live, err := store.Open(filepath.Join(dir, "hejmo.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer live.Close()
+	if _, err := live.CreateHousehold(store.Household{Name: "Familie"}); err != nil {
+		t.Fatal(err)
+	}
+	dest := filepath.Join(dir, "backup", "pre-update.db")
+	if err := os.MkdirAll(filepath.Dir(dest), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := backup(cfg, dest); err != nil {
+		t.Fatal(err)
+	}
+	cp, err := store.Open(dest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cp.Close()
+	if h, err := cp.HomeHousehold(); err != nil || h.Name != "Familie" {
+		t.Fatalf("backup content: %+v %v", h, err)
+	}
+	if err := backup(cfg, ""); err == nil {
+		t.Fatal("backup without a target succeeded")
+	}
+}
+
+// The box offers auto-update only where the install script's host updater runs.
+func TestUpdateDirIsSetOnlyWhenAHostUpdaterManagesTheBox(t *testing.T) {
+	plain := loadConfig(func(string) string { return "" })
+	if plain.UpdateDir != "" {
+		t.Fatalf("plain Compose install has UpdateDir %q", plain.UpdateDir)
+	}
+	managed := loadConfig(func(k string) string { return map[string]string{"HEJMO_HOST_UPDATER": "1", "HEJMO_DATA_DIR": "/d"}[k] })
+	if managed.UpdateDir != "/d" {
+		t.Fatalf("managed UpdateDir = %q, want the data dir", managed.UpdateDir)
+	}
+}

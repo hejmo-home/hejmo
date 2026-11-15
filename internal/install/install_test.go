@@ -35,9 +35,10 @@ done
 exit 0`,
 	"apt-get": `case "$*" in *docker-ce*) cp "$STATE/docker.shim" "$BIN/docker"; chmod +x "$BIN/docker" ;; esac
 exit 0`,
-	"systemctl": `case "$1" in
-is-enabled) [ -e "$STATE/enabled" ] || exit 1 ;;
-enable) touch "$STATE/enabled" ;;
+	"systemctl": `for unit; do :; done
+case "$1" in
+is-enabled) [ -e "$STATE/enabled-$unit" ] || exit 1 ;;
+enable) touch "$STATE/enabled-$unit" ;;
 is-active) [ -e "$STATE/started" ] || exit 1 ;;
 start) touch "$STATE/started" ;;
 esac

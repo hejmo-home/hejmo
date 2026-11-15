@@ -198,7 +198,7 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 // logs that and returns none: the family view renders without the tile
 // instead of failing.
 func (s *server) mealsToday(h store.Household, now time.Time) (map[meal.Mealtime]string, meal.Cutoffs) {
-	day := now.Format("2006-01-02")
+	day := now.Format(store.DayLayout)
 	entries, err := s.db.Meals(h.ID, day, day)
 	if err != nil {
 		s.logger.Error("meal tile: reading today's meals", "err", err)

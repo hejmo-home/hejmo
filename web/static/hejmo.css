@@ -714,7 +714,7 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 
 /* Meal tile (ticket 6.4, ADR 0016). */
 .fv-footer .tile { container-type: inline-size; }
-.fv-footer .ln, .fv-footer .dish { overflow-wrap: break-word; hyphens: auto; }
+.fv-footer .ln.dish, .fv-footer .dish { overflow-wrap: break-word; hyphens: auto; }
 .fv-footer .lab.mt { display: flex; align-items: center; gap: 6px; }
 .fv-footer .meals { list-style: none; margin: 6px 0 0; padding: 0; display: grid; grid-template-columns: max-content minmax(0, 1fr); column-gap: 14px; row-gap: 8px; align-items: start; }
 .fv-footer .meal-ln { display: contents; }

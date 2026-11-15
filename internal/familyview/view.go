@@ -392,6 +392,7 @@ func mealTile(in Input) *MealTile {
 		if dish == "" {
 			continue
 		}
+		// Cut-offs are stored as zero-padded HH:MM, so the string compare is a time compare.
 		if cut := in.MealCutoffs.For(m); cut != "" && cut <= hhmm {
 			continue
 		}

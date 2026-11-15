@@ -454,5 +454,10 @@
   "phones.join.refused.text": "Der Code ist abgelaufen oder wurde schon benutzt. Bitte ein Elternteil, einen neuen QR-Code zu zeigen.",
   "flash.phone_paired": "Handy bestätigt. Es meldet sich in wenigen Sekunden an.",
   "flash.phone_revoked": "Handy entfernt.",
-  "offline.banner": "Stand {time}, nicht verbunden"
+  "offline.banner": "Stand {time}, nicht verbunden",
+  "meals.calendar_name": "Speiseplan",
+  "meals.mealtime.breakfast": "Frühstück",
+  "meals.mealtime.lunch": "Mittagessen",
+  "meals.mealtime.snack": "Snack",
+  "meals.mealtime.dinner": "Abendessen"
 }

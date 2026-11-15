@@ -113,7 +113,7 @@ The same event changed both on the box and outside since the last sync.
 _Avoid_: collision, clash
 
 **Sync log**:
-The record, visible to parents, of sync failures and sync conflicts, including the version that lost. Shown as "Sync problems".
+The record, visible to parents, of sync failures and sync conflicts, including the version that lost. Shown as "Sync problems". Successful runs are not in it: they show per calendar (last successful sync with seconds, event count, new/changed/removed of the last run).
 _Avoid_: history, audit log
 
 ## Views and devices

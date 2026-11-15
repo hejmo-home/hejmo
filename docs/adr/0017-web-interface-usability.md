@@ -26,6 +26,9 @@ The product owner tested the box with a real iCloud account on 14/11/2026. The m
 - **Calendar colour** (amends ADR 0012) is used only in the web interface's calendar views; displays colour by person. The box picks it automatically from a fixed set; it can be changed under "More options". Adding a calendar no longer asks for it.
 - **Sync feedback and sync log** (amends ADR 0012): the sync log stays a record of problems only and is shown as "Sync problems". Successful runs show as status per calendar (last successful sync, event count, changes of the last run) on the calendars page and the calendar's detail page; the sync log page says so with a link to the calendars.
 
+- **Event count query (ticket 5.17):** the box asks the server with one `calendar-query` with a time-range from 12 months ago, open-ended, and counts the objects it answers; the server decides about series, so a series counts once. Nothing is downloaded. The quirk corpus covers this query like listing and download.
+- **Seconds and run line (product owner feedback and retro, 14/11/2026):** times of the last successful sync and of sync problems show seconds (hh:mm:ss; 12-hour: h:mm:ss a), and a relative hint may stand next to them, never instead. Every sync run writes one INFO log line without content: calendar id, listed, fetched, new, changed, removed, skipped, duration, result. Titles, descriptions and addresses of events never appear in logs.
+
 ### Navigation (amends ADR 0015 and the approved frame)
 
 - The navigation holds everyday screens only: Home, Calendar, Tasks, Lists, Meals. Everything for setting up sits under **Settings**, a hub page: calendar connections, CalDAV clients (device tokens, share through the box), displays, phones, people, household (incl. HTTPS and API tokens for other software) and my account (password, one-time codes, recovery codes).

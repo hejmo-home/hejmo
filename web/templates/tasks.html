@@ -1,7 +1,7 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "tasks.title") "Frame" .Frame)}}
   <h1>{{t "tasks.title"}}</h1>
   {{template "syncNotice" .}}
-  <p class="lead">{{t "tasks.intro"}}</p>
+  <p class="lead">{{if .Child}}{{t "tasks.intro.child"}}{{else}}{{t "tasks.intro"}}{{end}}</p>
 
   {{range .Groups}}
   <section aria-label="{{.Name}}">
@@ -9,7 +9,7 @@
     <ul class="cards">
       {{range .Tasks}}
       <li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
-        <strong><a href="/tasks/{{.ID}}">{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}</a></strong>
+        <strong>{{if $.Child}}{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}{{else}}<a href="/tasks/{{.ID}}">{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}</a>{{end}}</strong>
         <span class="hint">
           {{if eq .Repeat "once"}}{{t "tasks.repeat.once"}} {{.Date}}{{else if eq .Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}
           {{if .Part}} · {{t (printf "tasks.part.%s" .Part)}}{{end}}
@@ -27,9 +27,9 @@
       {{end}}
     </ul>
   </section>
-  {{else}}{{template "empty" (dict "Text" (t "tasks.none") "Href" "#new" "Action" (t "tasks.none.action"))}}{{end}}
+  {{else}}{{if .Child}}<p class="lead">{{t "tasks.none.child"}}</p>{{else}}{{template "empty" (dict "Text" (t "tasks.none") "Href" "#new" "Action" (t "tasks.none.action"))}}{{end}}{{end}}
 
-  <section aria-labelledby="new">
+  {{if not .Child}}<section aria-labelledby="new">
     <h2 id="new">{{t "tasks.new"}}</h2>
     {{template "error" .}}
     <form method="post" action="/tasks" class="steps">
@@ -58,5 +58,5 @@
       </fieldset>
       <button class="button" type="submit">{{t "tasks.create"}}</button>
     </form>
-  </section>
+  </section>{{end}}
 {{template "foot"}}

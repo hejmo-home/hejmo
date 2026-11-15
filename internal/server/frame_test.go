@@ -53,10 +53,10 @@ func TestChildNavigationShowsOnlyAllowedScreens(t *testing.T) {
 	if r.status != http.StatusOK {
 		t.Fatalf("child GET / = %d", r.status)
 	}
-	if got := navTargets(t, r.body); strings.Join(got, " ") != "/" {
-		t.Fatalf("child nav = %v, want only /", got)
+	if got := navTargets(t, r.body); strings.Join(got, " ") != "/ /tasks" {
+		t.Fatalf("child nav = %v, want / and /tasks", got)
 	}
-	for _, page := range []string{"/calendars", "/caldav", "/displays", "/phones", "/tasks", "/settings"} {
+	for _, page := range []string{"/calendars", "/caldav", "/displays", "/phones", "/settings"} {
 		if r := child.get(page); r.status != http.StatusForbidden {
 			t.Errorf("child GET %s = %d, want 403", page, r.status)
 		}

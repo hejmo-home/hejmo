@@ -172,6 +172,7 @@ paths:
     get:
       operationId: listDisplays
       summary: Paired displays of the household (scope displays:read)
+      description: Children, including a child's phone, are refused (403). Device management is for parents.
       responses:
         "200":
           description: Displays, oldest first. Unpaired displays are not listed.

@@ -48,8 +48,9 @@
 {{/* One of a few: Class "seg" (segmented control, short options), "choice"
      (choice cards with a one-line explanation) or "days" (round weekday chips,
      checkboxes). Open with optionsOpen, add an option per choice, then
-     optionsClose with Root and Name to show an error under the group. */}}
-{{define "optionsOpen"}}<fieldset class="{{.Class}}{{with .When}} {{.}}{{end}}"><legend>{{.Legend}}</legend>{{end}}
+     optionsClose with Root and Name to show an error under the group (give
+     optionsOpen Root and Name too and the group is marked invalid). */}}
+{{define "optionsOpen"}}<fieldset class="{{.Class}}{{with .When}} {{.}}{{end}}"{{if and .Root .Name .Root.ErrorField (eq .Root.ErrorField .Name)}} aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}><legend>{{.Legend}}</legend>{{end}}
 {{define "option"}}<label><input type="{{or .Type "radio"}}" name="{{.Name}}" value="{{.Value}}"{{if .Checked}} checked{{end}}>{{if .Hint}}<b>{{.Label}}</b><small>{{.Hint}}</small>{{else}}{{.Label}}{{end}}</label>{{end}}
 {{define "optionsClose"}}{{template "fieldError" .}}</fieldset>{{end}}
 

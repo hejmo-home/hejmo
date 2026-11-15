@@ -29,12 +29,11 @@ type sharedView struct {
 // renderCalDAV shows the calendar apps page. newToken is the value of a token
 // just created, shown this once.
 func (s *server) renderCalDAV(w http.ResponseWriter, r *http.Request, p principal, status int, form map[string]any, newName, newToken string) {
-	loc := p.location()
 	at := func(t time.Time) string {
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(p.timeLayout())
+		return p.dateTime(t)
 	}
 	acc, err := s.db.AccountByPerson(p.person.ID)
 	if err != nil {

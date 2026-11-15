@@ -31,12 +31,11 @@ func (s *server) renderDisplays(w http.ResponseWriter, r *http.Request, p princi
 		s.fail(w, "displays", err)
 		return
 	}
-	loc := p.location()
 	at := func(t time.Time) string {
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(p.timeLayout())
+		return p.dateTime(t)
 	}
 	views := make([]displayView, 0, len(list))
 	for _, d := range list {

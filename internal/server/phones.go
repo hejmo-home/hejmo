@@ -87,12 +87,11 @@ func (s *server) trustContinue(r *http.Request) string {
 }
 
 func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principal, status int, code *pairingCode, form confirmForm) {
-	loc := p.location()
 	at := func(t time.Time) string {
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(p.timeLayout())
+		return p.dateTime(t)
 	}
 	phones, err := s.db.Phones(p.household.ID)
 	if err != nil {

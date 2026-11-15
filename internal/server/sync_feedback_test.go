@@ -68,13 +68,13 @@ func TestAFailedSyncNowShowsNoSuccessLine(t *testing.T) {
 func TestCalendarRowShowsLastSuccessEventCountAndLastRunChanges(t *testing.T) {
 	b, _ := icsBox(t)
 	page := getEN(b, "/calendars").body
-	for _, want := range []string{"14/11/2026 21:46:26", "Events: 2", "Last run: 2 new, 0 changed, 0 removed"} {
+	for _, want := range []string{"14.11.2026\u00a021:46:26", "Events: 2", "Last run: 2 new, 0 changed, 0 removed"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("calendars page lacks %q", want)
 		}
 	}
 	de := b.do(http.MethodGet, "/calendars", nil, map[string]string{"Accept-Language": "de"}).body
-	for _, want := range []string{"14/11/2026 21:46:26", "Termine: 2", "Letzter Abgleich: 2 neu, 0 geändert, 0 entfernt"} {
+	for _, want := range []string{"14.11.2026\u00a021:46:26", "Termine: 2", "Letzter Abgleich: 2 neu, 0 geändert, 0 entfernt"} {
 		if !strings.Contains(de, want) {
 			t.Errorf("German calendars page lacks %q", want)
 		}
@@ -90,17 +90,17 @@ func TestSyncTimesOfTheCalendarsPageAndTheSyncProblemsShowSeconds(t *testing.T) 
 	}
 	page := getEN(b, "/calendars").body
 	log := page[strings.Index(page, `id="log"`):]
-	if !strings.Contains(page, "21:46:26") || !strings.Contains(log, "14/11/2026 21:46:26") {
+	if !strings.Contains(page, "21:46:26") || !strings.Contains(log, "14.11.2026\u00a021:46:26") {
 		t.Errorf("the page and the problem log must show 21:46:26:\n%s", log)
 	}
 
-	if err := b.db.UpdateHouseholdSettings(h.ID, store.Time12h, store.Celsius, store.UpdateOn); err != nil {
+	if err := b.db.UpdateHouseholdSettings(h.ID, store.DateDMY, store.Time12h, store.Celsius, store.UpdateOn); err != nil {
 		t.Fatal(err)
 	}
 	page = getEN(b, "/calendars").body
 	log = page[strings.Index(page, `id="log"`):]
-	if !strings.Contains(page, "9:46:26 PM") || !strings.Contains(log, "9:46:26 PM") {
-		t.Errorf("the 12-hour format must show 9:46:26 PM:\n%s", log)
+	if !strings.Contains(page, "9:46:26\u00a0PM") || !strings.Contains(log, "9:46:26\u00a0PM") {
+		t.Errorf("the 12-hour format must show 9:46:26 PM (no-break space):\n%s", log)
 	}
 }
 

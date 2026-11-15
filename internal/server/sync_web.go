@@ -89,12 +89,11 @@ type choice struct{ ID, Name string }
 var syncIntervals = []int{5, 15, 30, 60, 120, 360, 1440}
 
 func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p principal, status int, form map[string]any) {
-	loc := p.location()
 	at := func(t time.Time) string {
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(p.syncLayout())
+		return p.dateTimeSeconds(t)
 	}
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
@@ -147,7 +146,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
 			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes, Waste: c.Waste}
 		if next, ok := nexts[c.ID]; ok {
-			v.NextLabel = s.i18n.Format(lang, i18n.Msg("calendars.waste.next", "day", s.dayLabel(lang, next.Day)))
+			v.NextLabel = s.i18n.Format(lang, i18n.Msg("calendars.waste.next", "day", s.dayLabel(lang, p.household.DateFormat, next.Day)))
 			v.NextTitles = s.i18n.Format(lang, i18n.Msg("calendars.waste.next_titles", "titles", strings.Join(next.Titles, ", ")))
 		}
 		if !c.Sync.LastSuccess.IsZero() {

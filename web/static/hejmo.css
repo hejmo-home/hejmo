@@ -786,3 +786,12 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
   .pv-header h1 { font-size: var(--fs-key-figure); }
   .pv-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
 }
+
+/* Ticket #147: a hint or an error inside a segmented control takes the full row
+   (the error used to become a third segment); an invalid group shows its 2px
+   error border like a field. */
+fieldset.seg > .hint, fieldset.seg > .ferr { flex: 0 0 100%; }
+fieldset.seg > .hint { margin: 0 0 10px; }
+fieldset.seg > .ferr { margin: 8px 0 0; }
+fieldset.seg[aria-invalid="true"] label { border: 2px solid var(--error-text); }
+.seg label b { font-variant-numeric: tabular-nums; }

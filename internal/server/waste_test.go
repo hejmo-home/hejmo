@@ -1,12 +1,14 @@
 package server_test
 
 import (
-	"github.com/hejmo-home/hejmo/internal/store"
 	"net/http"
 	"net/url"
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/hejmo-home/hejmo/internal/caldavclient/caldavtest"
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 const wasteFeed = "https://example.org/waste.ics"
@@ -79,6 +81,33 @@ func TestWasteEventsStayOutOfTheStripAndColumns(t *testing.T) {
 	}
 	if r := f.get("/calendars"); !strings.Contains(r.body, `/waste"`) {
 		t.Fatal("calendars page has no waste collection switch")
+	}
+	// ADR 0015/0016: nor does the personal view show it.
+	if r := f.personalPage(t, "en", "Mama", 15, 9); strings.Contains(r.body, "Paper bin") {
+		t.Fatalf("waste event in the personal view:\n%s", r.body)
+	}
+}
+
+// Only read-only calendars can be waste collection: a writable synced calendar has no switch and no hint.
+func TestWritableCalendarHasNoWasteSwitch(t *testing.T) {
+	c, srv := radicaleBox(t)
+	family := srv.MakeCalendar(t, "family", "Family")
+	srv.Put(t, family, "swim.ics", caldavtest.Event("swim@test", "Swimming", "20261120T150000", "20261120T160000"))
+	conn := c.connect(t, davCreds(srv))
+	pick := calendarNamed(t, conn, "Family")
+	if status, cal, _ := c.call(http.MethodPost, "/calendar-connections/"+conn["id"].(string)+"/calendars", map[string]any{"url": pick["url"], "name": "Family"}); status != http.StatusCreated {
+		t.Fatalf("add calendar = %d %v", status, cal)
+	}
+	c.b.feeds.set(wasteFeed, feedOf(wasteEvent("p1", "Paper bin", "5")), nil)
+	if r := c.b.post("/calendars", url.Values{"name": {"Waste"}, "url": {wasteFeed}, "interval": {"60"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("add waste calendar = %d\n%s", r.status, r.body)
+	}
+	page := c.b.get("/calendars").body
+	if n := strings.Count(page, `/waste"`); n != 1 {
+		t.Fatalf("%d waste forms, want 1 (the ICS calendar only)\n%s", n, page)
+	}
+	if n := strings.Count(page, "data-waste-state"); n != 1 {
+		t.Fatalf("%d waste hints, want 1\n%s", n, page)
 	}
 }
 
@@ -234,5 +263,28 @@ func TestCalendarsPageListsNotesWithDateAndRemoveButton(t *testing.T) {
 	}
 	if notes, _ := f.db.DayNotes(f.householdID); len(notes) != 0 {
 		t.Fatalf("notes = %v", notes)
+	}
+}
+
+// The calendars page leaves out the notes of days that are over (the clock stands at 14/11/2026).
+func TestCalendarsPageLeavesOutPastNotes(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	for _, day := range []string{"2026-11-10", "2026-11-16"} {
+		if r := f.post("/notes", url.Values{"day": {day}, "text": {"x"}}); r.status != http.StatusSeeOther {
+			t.Fatalf("note = %d", r.status)
+		}
+	}
+	page := f.get("/calendars").body
+	if strings.Contains(page, "10/11/2026") || !strings.Contains(page, "16/11/2026") {
+		t.Fatalf("notes on the page:\n%s", page)
+	}
+}
+
+// The web form counts the trimmed text, like the API.
+func TestNoteWithSurroundingSpaceCountsTrimmed(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	text := " " + strings.Repeat("a", 120) + " "
+	if r := f.post("/notes", url.Values{"day": {"2026-11-16"}, "text": {text}}); r.status != http.StatusSeeOther {
+		t.Fatalf("note of 120 characters with spaces = %d", r.status)
 	}
 }

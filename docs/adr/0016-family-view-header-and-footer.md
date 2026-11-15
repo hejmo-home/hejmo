@@ -35,7 +35,7 @@ Proposed: the minimum column width is fixed at **144 px** (design token `column-
 
 ### Tomorrow tile as built (ticket 6.7)
 
-- A note is a **day note**: one per day, up to 120 characters, set by a parent in the web interface (calendars page) or the API (`/day-notes`). Before 18:00 the tile shows the note of today, from 18:00 the note of tomorrow replaces it. Notes of past days are deleted when a display renders.
+- A note is a **day note**: one per day, up to 120 characters, set by a parent in the web interface (calendars page) or the API (`/day-notes`). Before 18:00 the tile shows the note of today, from 18:00 the note of tomorrow replaces it. Notes of past days are deleted when a display renders, when the calendars page is shown and when the API lists the notes (`GET /day-notes`).
 - Identical collection titles from several waste collection calendars are one line. Only read-only calendars can be marked as waste collection; their events stay out of the strip, columns and personal view.
 - Of "at most three lines": with a note and more than one collection too many, the tile shows one collection, "+N more" (N counts the collections not shown) and the note.
 

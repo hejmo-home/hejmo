@@ -202,6 +202,10 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	for _, c := range synced {
 		taken = append(taken, c.Color)
 	}
+	if err := s.db.PruneDayNotes(p.household.ID, s.householdNow(p.household).Format(store.DayLayout)); err != nil { // only today and later
+		s.fail(w, "day notes", err)
+		return
+	}
 	notes, err := s.db.DayNotes(p.household.ID)
 	if err != nil {
 		s.fail(w, "day notes", err)

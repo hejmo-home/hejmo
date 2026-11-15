@@ -95,7 +95,7 @@ func (s *server) handleNoteSave(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	text := r.PostFormValue("text")
+	text := strings.TrimSpace(r.PostFormValue("text"))
 	if utf8.RuneCountInString(text) > maxNoteRunes {
 		http.Error(w, "note too long", http.StatusUnprocessableEntity)
 		return

@@ -2,6 +2,7 @@ package store_test
 
 import (
 	"errors"
+	"strings"
 	"testing"
 
 	"github.com/hejmo-home/hejmo/internal/meal"
@@ -62,21 +63,58 @@ func TestSaveHouseholdSettingsIsAllOrNothing(t *testing.T) {
 	db, _ := openTemp(t)
 	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
 	good := meal.Cutoffs{Breakfast: "10:00"}
-	if err := db.SaveHouseholdSettings(h.ID, store.Time12h, store.Fahrenheit, store.UpdateNotify, good, true); err != nil {
+	if err := db.SaveHouseholdSettings(h.ID, store.Time12h, store.Fahrenheit, store.UpdateNotify, good, true, []string{"tasks", "family"}); err != nil {
 		t.Fatal(err)
 	}
 	got, _ := db.Household(h.ID)
-	if got.TimeFormat != store.Time12h || got.TemperatureUnit != store.Fahrenheit || got.AutoUpdate != store.UpdateNotify || got.MealCutoffs.Breakfast != "10:00" || !got.FirstStepsHidden {
+	if got.TimeFormat != store.Time12h || got.TemperatureUnit != store.Fahrenheit || got.AutoUpdate != store.UpdateNotify || got.MealCutoffs.Breakfast != "10:00" || !got.FirstStepsHidden || strings.Join(got.FirstStepsSkipped, ",") != "family,tasks" {
 		t.Fatalf("not all stored: %+v", got)
 	}
 	bad := meal.Cutoffs{Breakfast: "25:99"}
-	if err := db.SaveHouseholdSettings(h.ID, store.Time24h, store.Celsius, store.UpdateOn, bad, false); err == nil {
+	if err := db.SaveHouseholdSettings(h.ID, store.Time24h, store.Celsius, store.UpdateOn, bad, false, nil); err == nil {
 		t.Fatal("invalid cut-off accepted")
 	}
-	if again, _ := db.Household(h.ID); again.TimeFormat != store.Time12h || again.MealCutoffs.Breakfast != "10:00" || !again.FirstStepsHidden {
+	if again, _ := db.Household(h.ID); again.TimeFormat != store.Time12h || again.MealCutoffs.Breakfast != "10:00" || !again.FirstStepsHidden || len(again.FirstStepsSkipped) != 2 {
 		t.Fatalf("a refused save changed something: %+v", again)
 	}
-	if err := db.SaveHouseholdSettings("missing", store.Time24h, store.Celsius, store.UpdateOn, good, false); !errors.Is(err, store.ErrNotFound) {
+	if err := db.SaveHouseholdSettings("missing", store.Time24h, store.Celsius, store.UpdateOn, good, false, nil); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("unknown household: %v", err)
+	}
+}
+
+// Ticket 133, design pass 2: a step of the first steps card can be skipped and
+// taken back; the household keeps the skipped steps in the order of the card,
+// and an unknown step is refused.
+func TestFirstStepsCanBeSkippedAndTakenBack(t *testing.T) {
+	db, _ := openTemp(t)
+	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
+	if got, _ := db.Household(h.ID); len(got.FirstStepsSkipped) != 0 {
+		t.Fatalf("steps skipped by default: %v", got.FirstStepsSkipped)
+	}
+	for _, step := range []string{"display", "family", "display"} { // skipping twice changes nothing
+		if err := db.SetFirstStepSkipped(h.ID, step, true); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if got, _ := db.HomeHousehold(); strings.Join(got.FirstStepsSkipped, ",") != "family,display" {
+		t.Fatalf("skipped = %v, want family,display", got.FirstStepsSkipped)
+	}
+	if err := db.SetFirstStepSkipped(h.ID, "family", false); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := db.Household(h.ID); strings.Join(got.FirstStepsSkipped, ",") != "display" {
+		t.Fatalf("after taking one back: %v", got.FirstStepsSkipped)
+	}
+	if err := db.SetFirstStepSkipped(h.ID, "nonsense", true); !errors.Is(err, store.ErrInvalid) {
+		t.Fatalf("unknown step: %v", err)
+	}
+	if err := db.SetFirstStepSkipped("missing", "family", true); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("unknown household: %v", err)
+	}
+	if err := db.SaveHouseholdSettings(h.ID, store.Time24h, store.Celsius, store.UpdateOn, meal.Cutoffs{}, false, []string{"bogus"}); !errors.Is(err, store.ErrInvalid) {
+		t.Fatalf("a save with an unknown step: %v", err)
+	}
+	if want := []string{"family", "parents", "calendars", "tasks", "meals", "display"}; strings.Join(store.FirstStepIDs, ",") != strings.Join(want, ",") {
+		t.Fatalf("steps = %v", store.FirstStepIDs)
 	}
 }

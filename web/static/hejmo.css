@@ -454,3 +454,24 @@ details.danger form { margin: 0 0 10px; }
 .big-check .box { flex: none; width: var(--touch-target); height: var(--touch-target); border: 3px solid var(--text); border-radius: var(--radius-card); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; line-height: 1; }
 [data-done="true"] .big-check .title { text-decoration: line-through; color: var(--text-secondary); }
 [data-done="true"] .big-check .box::after { content: "\2713"; }
+
+/* People page (ticket 5.21; ADR 0017). A person row: marker, name, role and
+   the order buttons. The colour and marker choice shows every shape as its own
+   preview, because in colour mode the plain marker is always a circle. */
+.cards.people li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.people .who { display: flex; align-items: center; gap: 10px; flex: 1 1 140px; }
+.people .who a { color: var(--text); text-decoration: none; }
+.people .row { margin: 0 0 0 auto; flex-wrap: nowrap; }
+.people .row form { margin: 0; }
+.people .row .button { min-width: var(--touch-target); padding: 10px 16px; }
+h1 .marker { margin-right: 4px; }
+.pchip.shape { --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
+fieldset.look { display: flex; flex-wrap: wrap; gap: 8px; }
+.marker.preview { background: var(--text); border: 0; border-radius: 0; }
+[data-theme="bw"] .marker.preview { width: var(--marker-size); height: var(--marker-size); }
+.marker.preview[data-shape="circle-filled"] { border-radius: 50%; }
+.marker.preview[data-shape="circle-empty"] { border-radius: 50%; background: transparent; border: 2px solid var(--text); }
+.marker.preview[data-shape="square-filled"] { border-radius: 0; }
+.marker.preview[data-shape="square-empty"] { background: transparent; border: 2px solid var(--text); }
+.marker.preview[data-shape="triangle-filled"] { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.marker.preview[data-shape="diamond-filled"] { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }

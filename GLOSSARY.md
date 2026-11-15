@@ -13,7 +13,7 @@ The family living together that one box serves. A person can later belong to mor
 _Avoid_: family (as a technical term), tenant, home
 
 **Person**:
-A member of a household, adult or child, with a colour, a black-and-white marker shape and a symbol.
+A member of a household, adult or child, with a colour (one of six palette colours), a black-and-white marker shape and a symbol. No two people share the same colour and marker.
 _Avoid_: user, profile, member (alone)
 
 **Membership**:

@@ -3,6 +3,7 @@
   {{template "syncNotice" .}}
   <p class="lead">{{t "settings.intro"}}</p>
   {{template "error" .}}
+  <p><a href="/people"><strong>{{t "settings.people"}}</strong></a><br><span class="hint">{{t "settings.people.hint"}}</span></p>
   <form method="post" action="/settings" class="steps">
     {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.time_format"))}}
       {{template "option" (dict "Name" "time_format" "Value" "24h" "Label" (t "settings.time_format.24h") "Checked" (eq .TimeFormat "24h"))}}

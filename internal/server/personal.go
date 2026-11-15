@@ -52,9 +52,14 @@ func (s *server) personalView(h store.Household, lang, personID string) (familyv
 	in := familyview.PersonalInput{Now: data.now, Person: *person, Calendars: data.calendars, Occurrences: data.occurrences, TimeFormat: h.TimeFormat}
 	for _, t := range due {
 		if t.PersonID == person.ID {
-			in.Tasks = append(in.Tasks, familyview.Task{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Part: string(t.PartOfDay), Done: t.Done})
+			in.Tasks = append(in.Tasks, familyview.Task{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Part: string(t.PartOfDay), Done: t.Done, Stars: t.Stars})
 		}
 	}
+	sums, err := s.db.StarSummaries(h.ID)
+	if err != nil {
+		return familyview.PersonalView{}, err
+	}
+	in.Stars = familyview.Stars{Shown: sums[person.ID].Shown, Balance: sums[person.ID].Balance}
 	return familyview.BuildPersonal(in), nil
 }
 

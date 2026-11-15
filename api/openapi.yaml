@@ -466,6 +466,52 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /people/{id}/stars:
+    get:
+      operationId: getStars
+      summary: A person's star balance and star log (scope tasks:read)
+      description: |
+        The balance is the sum of all bookings of the person. `entries` are the
+        latest bookings, newest first (default 50, at most 200). Everyone,
+        children included, may read it.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        "200":
+          description: The star account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StarAccount" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    post:
+      operationId: bookStars
+      summary: Book stars by hand with a note (scope tasks:write, parents only)
+      description: |
+        A negative amount deducts, for example -5 with the note "redeemed: ice
+        cream". The amount may not be 0 and the note may not be blank (else
+        422). Ticking tasks books stars on its own, see `setTaskDone`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewStarBooking" }
+      responses:
+        "201":
+          description: The booking
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StarEntry" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /groups:
     get:
       operationId: listGroups
@@ -969,9 +1015,10 @@ components:
           description: Required (at least one) for `weekly`, else must be empty
         date: { type: string, format: date, description: "The day of a `once` task (required); the first day of a repeating one (default today)" }
         part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
+        stars: { type: integer, minimum: 0, maximum: 100, description: "Stars credited when ticked off (0 allowed). Default: 1 for a child, 0 for an adult" }
     Task:
       type: object
-      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, due, done]
+      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, stars, due, done]
       properties:
         id: { type: string, format: uuid }
         person_id: { type: string, format: uuid }
@@ -983,8 +1030,38 @@ components:
           items: { $ref: "#/components/schemas/TaskWeekday" }
         date: { type: string, format: date }
         part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
+        stars: { type: integer, description: "Stars credited when ticked off, deducted when unticked" }
         due: { type: boolean, description: "Due on the requested day" }
         done: { type: boolean, description: "Ticked off on the requested day" }
+    NewStarBooking:
+      type: object
+      required: [delta, note]
+      properties:
+        delta: { type: integer, minimum: -1000, maximum: 1000, description: "Stars to add; negative to deduct; not 0", example: -5 }
+        note: { type: string, minLength: 1, maxLength: 120, example: "redeemed: ice cream" }
+    StarEntry:
+      type: object
+      required: [id, person_id, delta, note, task_id, task_title, day, booked_by, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        person_id: { type: string, format: uuid }
+        delta: { type: integer, description: "Positive credits, negative deducts" }
+        note: { type: string, description: "Of a manual booking, else empty" }
+        task_id: { type: string, description: "Of the ticked or unticked task; empty for a manual booking or once the task is deleted" }
+        task_title: { type: string, description: "Title of the task at booking time" }
+        day: { type: string, description: "The ticked day (YYYY-MM-DD); empty for a manual booking" }
+        booked_by: { type: string, description: "Name of the person who booked; empty when a display did" }
+        created_at: { type: string, format: date-time }
+    StarAccount:
+      type: object
+      required: [person_id, balance, shown, entries]
+      properties:
+        person_id: { type: string, format: uuid }
+        balance: { type: integer }
+        shown: { type: boolean, description: "Whether displays show stars for this person: they have a task worth stars or a booking" }
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/StarEntry" }
     Group:
       type: object
       required: [id, name, members]

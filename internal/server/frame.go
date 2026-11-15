@@ -83,4 +83,5 @@ var hubItems = []hubItem{
 	{"/displays", "hub.displays", "hub.displays.hint", auth.Perm("displays", auth.Write)},
 	{"/phones", "hub.phones", "hub.phones.hint", auth.Perm("tokens", auth.Write)},
 	{"/settings/household", "hub.household", "hub.household.hint", auth.Perm("settings", auth.Write)},
+	{"/otp", "hub.otp", "hub.otp.hint", auth.Perm("settings", auth.Write)},
 }

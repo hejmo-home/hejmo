@@ -1,0 +1,10 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "recovery.title") "Frame" .Frame)}}
+  <h1>{{t "recovery.title"}}</h1>
+  <p class="lead">{{t "recovery.intro"}}</p>
+  <p class="notice" role="status">{{t "recovery.shown_once"}}</p>
+  <ul class="recovery-codes">
+    {{range .Codes}}<li><code class="secret" data-recovery-code="{{.}}">{{.}}</code></li>
+    {{end}}
+  </ul>
+  <p><a class="button" href="/">{{t "recovery.continue"}}</a></p>
+{{template "foot"}}

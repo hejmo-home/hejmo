@@ -4,6 +4,7 @@ import (
 	"encoding/base32"
 	"encoding/base64"
 	"fmt"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -125,6 +126,32 @@ func TestOpaqueTokens(t *testing.T) {
 	}
 }
 
+func TestRecoveryCodesAreDistinctReadableAndVerifyOnlyTheirOwnHash(t *testing.T) {
+	codes := auth.NewRecoveryCodes(10)
+	if len(codes) != 10 {
+		t.Fatalf("got %d codes, want 10", len(codes))
+	}
+	seen := map[string]bool{}
+	for _, c := range codes {
+		if !regexp.MustCompile(`^[A-Z2-9]{5}-[A-Z2-9]{5}$`).MatchString(c) || seen[c] {
+			t.Fatalf("bad or repeated code %q", c)
+		}
+		seen[c] = true
+	}
+	hash := auth.HashRecoveryCode(codes[0])
+	if !strings.HasPrefix(hash, "$argon2id$") || strings.Contains(hash, codes[0]) {
+		t.Fatalf("hash = %q, want an Argon2id hash", hash)
+	}
+	// Typing is forgiving: case, spaces and the dash do not matter.
+	lax := " " + strings.ToLower(strings.ReplaceAll(codes[0], "-", " ")) + " "
+	if !auth.VerifyRecoveryCode(hash, lax) {
+		t.Error("code typed in lower case without dash not accepted")
+	}
+	if auth.VerifyRecoveryCode(hash, codes[1]) {
+		t.Error("another code accepted")
+	}
+}
+
 // A stored hash is read from the database; one that asks for absurd work or an
 // absurd key length must be refused, not computed (gosec G115, ADR 0018).
 func TestVerifyPasswordRefusesAbsurdParameters(t *testing.T) {
@@ -180,5 +207,40 @@ func TestVerifyPasswordKeyLengthAndThreadBounds(t *testing.T) {
 		if got := auth.VerifyPassword(phc(c.keyLen, c.threads), secret); got != c.ok {
 			t.Errorf("%s: verified = %v, want %v", name, got, c.ok)
 		}
+	}
+}
+
+// The cost seam for tests must never leak into production: a fresh process
+// hashes with the ADR 0010 parameters (Argon2id, 19 MiB, 2 passes, 1 lane).
+func TestProductionUsesTheADR0010Parameters(t *testing.T) {
+	if auth.ProductionHashCost != (auth.HashCost{MemoryKiB: 19 * 1024, Passes: 2, Threads: 1}) {
+		t.Fatalf("ProductionHashCost = %+v, want 19 MiB, 2 passes, 1 lane", auth.ProductionHashCost)
+	}
+	pw, err := auth.HashPassword("correct horse battery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, h := range map[string]string{"password": pw, "recovery code": auth.HashRecoveryCode("AAAAA-BBBBB")} {
+		if !strings.HasPrefix(h, "$argon2id$v=19$m=19456,t=2,p=1$") {
+			t.Errorf("%s hash = %q, want the ADR 0010 parameters", name, h)
+		}
+	}
+}
+
+func TestSetHashCostChangesNewHashesOnlyAndRestores(t *testing.T) {
+	before, _ := auth.HashPassword("correct horse battery")
+	restore := auth.SetHashCost(auth.HashCost{MemoryKiB: 8, Passes: 1, Threads: 1})
+	t.Cleanup(restore)
+	cheap, _ := auth.HashPassword("correct horse battery")
+	if !strings.Contains(cheap, "$m=8,t=1,p=1$") {
+		t.Errorf("cheap hash = %q", cheap)
+	}
+	if !auth.VerifyPassword(before, "correct horse battery") || !auth.VerifyPassword(cheap, "correct horse battery") {
+		t.Error("a hash must verify whatever cost is set now")
+	}
+	restore()
+	after, _ := auth.HashPassword("correct horse battery")
+	if !strings.Contains(after, "$m=19456,t=2,p=1$") {
+		t.Errorf("after restore = %q", after)
 	}
 }

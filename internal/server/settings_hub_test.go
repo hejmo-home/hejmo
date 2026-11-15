@@ -48,7 +48,7 @@ func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
 
 // hubPages are the setup screens the Settings hub holds. Add a new hub entry here; the tests
 // below also check that the hub shows nothing this list lacks.
-var hubPages = []string{"/calendars", "/caldav", "/displays", "/phones", "/settings/household"}
+var hubPages = []string{"/calendars", "/caldav", "/displays", "/phones", "/settings/household", "/otp"}
 
 // 5.18: every setup page is reachable from the Settings hub.
 func TestSettingsHubLinksEverySetupPage(t *testing.T) {
@@ -67,7 +67,7 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 			t.Errorf("hub lacks a link to %s: %v", want, got)
 		}
 	}
-	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Phones", "Household"} {
+	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Phones", "Household", "One-time codes"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("hub lacks %q", want)
 		}

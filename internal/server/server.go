@@ -99,6 +99,7 @@ type server struct {
 
 // New returns the box's root HTTP handler.
 func New(opts Options) http.Handler {
+	dummyHash() // make it now, not during the first sign-in
 	if opts.DB == nil {
 		panic("server: Options.DB is required")
 	}
@@ -151,6 +152,9 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /setup", s.handleSetupSubmit)
 	mux.HandleFunc("GET /setup/totp", s.handleSetupTOTPForm)
 	mux.HandleFunc("POST /setup/totp", s.handleSetupTOTPSubmit)
+	mux.HandleFunc("GET /otp", s.handleOTPPage)
+	mux.HandleFunc("POST /otp/recovery-codes", s.handleRecoveryCodesNew)
+	mux.HandleFunc("POST /otp/reset/{id}", s.handleOTPReset)
 	mux.HandleFunc("GET /login", s.handleLoginForm)
 	mux.HandleFunc("POST /login", s.handleLoginSubmit)
 	mux.HandleFunc("POST /logout", s.handleLogout)

@@ -54,9 +54,9 @@ func (s *server) handleDisplayPair(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	code := strings.TrimSpace(r.PostFormValue("code"))
-	in := store.Display{Name: r.PostFormValue("name"), Room: r.PostFormValue("room"), Type: store.DisplayType(r.PostFormValue("type"))}
+	in := store.Display{Name: r.PostFormValue("name"), Type: store.DisplayType(r.PostFormValue("type"))}
 	form := func(key, field string) map[string]any {
-		return map[string]any{"Error": key, "ErrorField": field, "Code": code, "Name": in.Name, "Room": in.Room, "Type": string(in.Type)}
+		return map[string]any{"Error": key, "ErrorField": field, "Code": code, "Name": in.Name, "Type": string(in.Type)}
 	}
 	var fieldErr *store.FieldError
 	switch _, err := s.pairDisplay(p, code, in); {

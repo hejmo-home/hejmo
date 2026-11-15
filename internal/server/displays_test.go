@@ -59,7 +59,7 @@ func signedInBox(t *testing.T) *box {
 }
 
 func pairForm(code string) url.Values {
-	return url.Values{"code": {code}, "name": {"Hallway"}, "room": {"Entrance"}, "type": {"eink_bw"}}
+	return url.Values{"code": {code}, "name": {"Hallway"}, "type": {"eink_bw"}}
 }
 
 // 5.2: Given an unpaired display, when it starts, then it shows a QR code and a six-digit code.
@@ -157,14 +157,14 @@ func TestParentSeesPairedDisplaysAndOpensTheQRLinkWithCodePrefilled(t *testing.T
 	if page.status != http.StatusOK || !strings.Contains(page.body, `value="`+code+`"`) {
 		t.Fatalf("form = %d, code not prefilled:\n%s", page.status, page.body)
 	}
-	for _, want := range []string{`name="name"`, `name="room"`, `name="type"`, `value="eink_bw"`, `value="eink_color"`, `value="screen"`} {
+	for _, want := range []string{`name="name"`, `name="type"`, `value="eink_bw"`, `value="eink_color"`, `value="screen"`} {
 		if !strings.Contains(page.body, want) {
 			t.Errorf("form misses %s", want)
 		}
 	}
 	b.post("/displays", pairForm(code))
 	list := b.get("/displays")
-	for _, want := range []string{"Hallway", "Entrance"} {
+	for _, want := range []string{"Hallway"} {
 		if !strings.Contains(list.body, want) {
 			t.Errorf("display list misses %q", want)
 		}
@@ -298,9 +298,9 @@ func TestDisplaysAreManagedByParentsOnly(t *testing.T) {
 	}
 }
 
-func TestDisplayLinkIsOnTheHomePage(t *testing.T) {
+func TestDisplayLinkIsOnTheSettingsHub(t *testing.T) {
 	b := signedInBox(t)
-	if r := b.get("/"); !strings.Contains(r.body, `href="/displays"`) {
+	if r := b.get("/settings"); !strings.Contains(r.body, `href="/displays"`) {
 		t.Fatal("no link to the displays page")
 	}
 }
@@ -373,7 +373,7 @@ func TestFreshPairingFormHasADisplayTypeChecked(t *testing.T) {
 	}
 }
 
-// A form error is shown at its field: the code, the name, the room or the type.
+// A form error is shown at its field: the code, the name or the type.
 func TestPairingErrorsAreShownAtTheWrongField(t *testing.T) {
 	b := signedInBox(t)
 	d := newScreen(b)
@@ -384,7 +384,6 @@ func TestPairingErrorsAreShownAtTheWrongField(t *testing.T) {
 		field string
 	}{
 		{"no name", func(v url.Values) { v.Set("name", " ") }, "name"},
-		{"long room", func(v url.Values) { v.Set("room", strings.Repeat("x", 81)) }, "room"},
 		{"no type", func(v url.Values) { v.Del("type") }, "type"},
 		{"wrong code", func(v url.Values) { v.Set("code", "000000") }, "code"},
 	} {

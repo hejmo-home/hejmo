@@ -478,6 +478,7 @@
   "family.today": "Today",
   "family.put_out": "Put out tonight",
   "flash.waste_on": "Waste collection calendar is on.",
+  "flash.waste_on_now": "Waste collection calendar is on. The next collection shows on the display now.",
   "flash.waste_on_next": "Waste collection calendar is on. The next collection shows on the display from {when} 18:00.",
   "flash.waste_off": "Waste collection calendar is off.",
   "flash.note_saved": "Note saved.",

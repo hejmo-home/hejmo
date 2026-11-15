@@ -478,6 +478,7 @@
   "family.today": "Heute",
   "family.put_out": "Heute Abend rausstellen",
   "flash.waste_on": "Müllabfuhr-Kalender ist an.",
+  "flash.waste_on_now": "Müllabfuhr-Kalender ist an. Die nächste Abfuhr steht jetzt auf dem Display.",
   "flash.waste_on_next": "Müllabfuhr-Kalender ist an. Die nächste Abfuhr steht ab {when} 18:00 auf dem Display.",
   "flash.waste_off": "Müllabfuhr-Kalender ist aus.",
   "flash.note_saved": "Notiz gespeichert.",

@@ -258,9 +258,9 @@ func TestWasteFlashTexts(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "6"))
 	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "de")
-	mustContain(t, f.page("de", "/calendars").body, "Müllabfuhr-Kalender ist an. Die nächste Abfuhr steht ab Sonntag 18:00 auf dem Display.")
+	mustContain(t, f.page("de", "/calendars").body, "Müllabfuhr-Kalender ist an. Die nächste Abfuhr steht ab Sonntag 15/11 18:00 auf dem Display.")
 	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "en")
-	mustContain(t, f.page("en", "/calendars").body, "Waste collection calendar is on. The next collection shows on the display from Sunday 18:00.")
+	mustContain(t, f.page("en", "/calendars").body, "Waste collection calendar is on. The next collection shows on the display from Sunday 15/11 18:00.")
 	f.save("/calendars/"+id+"/waste", url.Values{}, "de")
 	mustContain(t, f.page("de", "/calendars").body, "Müllabfuhr-Kalender ist aus.")
 	f.save("/calendars/"+id+"/waste", url.Values{}, "en")
@@ -279,4 +279,43 @@ func TestFrameGridMayShrink(t *testing.T) {
 	if !regexp.MustCompile(`\.frame \{ grid-template-columns: minmax\(0, 1fr\); \}`).MatchString(css) {
 		t.Fatal("the frame grid has no minmax(0, 1fr) column")
 	}
+}
+
+// The flash names the day the reminder starts, with its date, and says so when it shows already.
+func TestWasteFlashNamesTheDayAndTheDisplayNow(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "8")) // Wednesday 18/11
+	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "de")
+	mustContain(t, f.page("de", "/calendars").body, "Die nächste Abfuhr steht ab Dienstag 17/11 18:00 auf dem Display.")
+	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "en")
+	mustContain(t, f.page("en", "/calendars").body, "The next collection shows on the display from Tuesday 17/11 18:00.")
+	f.now = f.at(17, 19, 0) // the evening before has come
+	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "de")
+	mustContain(t, f.page("de", "/calendars").body, "Die nächste Abfuhr steht jetzt auf dem Display.")
+	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "en")
+	mustContain(t, f.page("en", "/calendars").body, "The next collection shows on the display now.")
+}
+
+// A note of a past day that is not pruned yet can be neither opened nor saved.
+func TestPastNoteHasNoPage(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	if err := f.db.SetDayNote(f.householdID, "2026-11-13", "Alt"); err != nil {
+		t.Fatal(err)
+	}
+	if r := f.page("de", "/notes/2026-11-13"); r.status != http.StatusNotFound {
+		t.Fatalf("GET past note = %d", r.status)
+	}
+	if r := f.save("/notes/2026-11-13", url.Values{"text": {"Neu"}}, "de"); r.status != http.StatusNotFound {
+		t.Fatalf("POST past note = %d", r.status)
+	}
+	if n, _, _ := f.db.DayNote(f.householdID, "2026-11-13"); n != "Alt" {
+		t.Fatalf("stored %q", n)
+	}
+}
+
+// The note page belongs to Home, so Home is the current item in the navigation.
+func TestNotePageMarksHomeAsCurrent(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	f.save("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Mia"}}, "de")
+	mustContain(t, f.page("de", "/notes/2026-11-16").body, `<a href="/" aria-current="page"`)
 }

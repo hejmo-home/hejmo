@@ -199,7 +199,17 @@ func (s *server) wasteOnText(lang, id string) string {
 	if err != nil || len(next) == 0 {
 		return plain
 	}
-	return s.i18n.Format(lang, i18n.Msg("flash.waste_on_next", "when", s.weekdayName(lang, next[id].Day.AddDate(0, 0, -1))))
+	// The collection can be weeks away: name the day of the evening before with its date, as the note does.
+	now := s.householdNow(h)
+	eve := next[id].Day.AddDate(0, 0, -1)
+	if _, shownNow := s.shownFrom(lang, now, next[id].Day); shownNow {
+		return s.i18n.T(lang, "flash.waste_on_now")
+	}
+	when := s.dayLabel(lang, eve)
+	if eve.Equal(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) {
+		when = s.i18n.T(lang, "when.today")
+	}
+	return s.i18n.Format(lang, i18n.Msg("flash.waste_on_next", "when", when))
 }
 
 // noteRow is a planned note on Home.
@@ -321,6 +331,10 @@ func (s *server) notePage(w http.ResponseWriter, r *http.Request) (p principal, 
 	now := s.householdNow(p.household)
 	day, valid := parseDay(now.Location(), r.PathValue("day"))
 	if !valid {
+		http.NotFound(w, r)
+		return p, day, "", false
+	}
+	if day.Before(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) { // not pruned yet
 		http.NotFound(w, r)
 		return p, day, "", false
 	}

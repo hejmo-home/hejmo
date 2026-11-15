@@ -7,7 +7,6 @@ import (
 	"fmt"
 	"net/http"
 	"net/url"
-	"slices"
 	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
@@ -98,15 +97,12 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, "meal_cutoffs: "+err.Error())
 		return
 	}
-	if in.FirstStepsSkipped != nil {
-		for _, step := range *in.FirstStepsSkipped {
-			if !slices.Contains(store.FirstStepIDs, step) {
-				writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("first_steps_skipped: unknown step %q; steps are %s", step, strings.Join(store.FirstStepIDs, ", ")))
-				return
-			}
-		}
-	}
 	if err := s.saveSettings(p.household, store.HouseholdSettings{TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c, FirstStepsHidden: in.FirstStepsHidden, FirstStepsSkipped: in.FirstStepsSkipped}); err != nil {
+		var unknown *store.UnknownStepError
+		if errors.As(err, &unknown) {
+			writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("first_steps_skipped: unknown step %q; steps are %s", unknown.Step, strings.Join(store.FirstStepIDs, ", ")))
+			return
+		}
 		if errors.Is(err, store.ErrInvalid) {
 			writeError(w, http.StatusUnprocessableEntity, err.Error())
 			return

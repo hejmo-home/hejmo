@@ -86,6 +86,15 @@ func (db *DB) SetFirstStepsHidden(id string, hidden bool) error {
 // shows them (ticket 133).
 var FirstStepIDs = []string{"family", "parents", "calendars", "tasks", "meals", "display"}
 
+// UnknownStepError says which step id is not a first step. It matches
+// ErrInvalid with errors.Is.
+type UnknownStepError struct{ Step string }
+
+func (e *UnknownStepError) Error() string {
+	return fmt.Sprintf("%s: unknown first step %q", ErrInvalid, e.Step)
+}
+func (e *UnknownStepError) Unwrap() error { return ErrInvalid }
+
 // cleanFirstSteps checks a list of step ids and returns it without doubles, in
 // the order of the card.
 func cleanFirstSteps(steps []string) ([]string, error) {
@@ -97,7 +106,7 @@ func cleanFirstSteps(steps []string) ([]string, error) {
 	}
 	for _, s := range steps {
 		if !slices.Contains(FirstStepIDs, s) {
-			return nil, fmt.Errorf("%w: unknown first step %q", ErrInvalid, s)
+			return nil, &UnknownStepError{Step: s}
 		}
 	}
 	return out, nil
@@ -143,11 +152,13 @@ func splitSteps(list string) []string {
 // state is optional: nil leaves what is stored alone, so a save of the other
 // settings never undoes a skip or hide made at the same time.
 type HouseholdSettings struct {
-	TimeFormat        TimeFormat
-	TemperatureUnit   TemperatureUnit
-	AutoUpdate        UpdateMode
-	MealCutoffs       meal.Cutoffs
-	FirstStepsHidden  *bool
+	TimeFormat       TimeFormat
+	TemperatureUnit  TemperatureUnit
+	AutoUpdate       UpdateMode
+	MealCutoffs      meal.Cutoffs
+	FirstStepsHidden *bool
+	// FirstStepsSkipped is a pointer to a slice on purpose: nil keeps the
+	// stored list, a pointer to an empty list clears it.
 	FirstStepsSkipped *[]string
 }
 

@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -190,9 +191,18 @@ func (s *server) displayData(h store.Household, lang string, days int) (displayD
 	if err != nil {
 		return out, err
 	}
+	// The meal plan has its own place on a display (the meal tile), not the
+	// family strip, the person columns or the personal view (ADR 0015).
+	generated := map[string]bool{}
+	for _, c := range cals {
+		if c.Kind == "meals" {
+			generated[c.ID] = true
+		}
+	}
 	if out.occurrences, err = s.occurrences(h, lang, d0, end); err != nil {
 		return out, err
 	}
+	out.occurrences = slices.DeleteFunc(out.occurrences, func(o calendar.Occurrence) bool { return generated[o.CalendarID] })
 	for _, c := range cals {
 		out.calendars[c.ID] = c.Audience
 	}

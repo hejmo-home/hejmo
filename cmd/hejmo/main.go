@@ -41,6 +41,10 @@ type config struct {
 	// HEJMO_SECRET_KEY_FILE (default: secret.key in the data volume). Point it
 	// at a Docker secret to keep the key off the data volume.
 	SecretKeyFile string
+	// UpdateDir is the data directory shared with the install script's host
+	// updater (ADR 0018); empty on a plain Docker Compose install, which has
+	// none. HEJMO_HOST_UPDATER=1 is set by the install script's compose file.
+	UpdateDir string
 }
 
 func loadConfig(getenv func(string) string) config {
@@ -60,6 +64,9 @@ func loadConfig(getenv func(string) string) config {
 	cfg.SecretKeyFile = filepath.Join(cfg.DataDir, "secret.key")
 	if v := getenv("HEJMO_SECRET_KEY_FILE"); v != "" {
 		cfg.SecretKeyFile = v
+	}
+	if getenv("HEJMO_HOST_UPDATER") == "1" {
+		cfg.UpdateDir = cfg.DataDir
 	}
 	return cfg
 }
@@ -143,7 +150,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-weatherDone }()
 
-	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Done: ctx.Done(), UpdateDir: cfg.DataDir})
+	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Done: ctx.Done(), UpdateDir: cfg.UpdateDir})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).

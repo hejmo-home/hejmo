@@ -152,6 +152,10 @@ func (f *fakeFeeds) set(url, body string, err error) {
 	}
 }
 
+// noHostUpdater makes the next boxes run like a plain Docker Compose install,
+// without the host updater of ADR 0018; tests set it and reset it when done.
+var noHostUpdater bool
+
 // newBox returns a box whose HTTPS is set up, served over TLS like in production.
 func newBox(t *testing.T) *box {
 	t.Helper()
@@ -195,7 +199,11 @@ func newFreshBox(t *testing.T) *box {
 	}))
 	t.Cleanup(b.meteo.srv.Close)
 	b.weather = weather.New(weather.WithBaseURL(b.meteo.srv.URL), weather.WithClock(now))
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: b.updateDir})
+	updateDir := b.updateDir
+	if noHostUpdater {
+		updateDir, b.updateDir = "", ""
+	}
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()

@@ -183,3 +183,62 @@ func TestUpdateStatusWorksThroughTheAPI(t *testing.T) {
 		t.Fatalf("notice after dismissing: %v", got)
 	}
 }
+
+// A plain Docker Compose install has no updater: the box must not promise updates.
+func TestWithoutAHostUpdaterTheSettingIsNotOffered(t *testing.T) {
+	noHostUpdater = true
+	t.Cleanup(func() { noHostUpdater = false })
+	b := signedInBox(t)
+	body := b.get("/settings").body
+	if strings.Contains(body, "auto_update") || strings.Contains(body, "03:30") {
+		t.Fatalf("auto-update offered without a host updater:\n%s", body)
+	}
+	if !strings.Contains(body, `name="time_format"`) {
+		t.Fatal("the other settings are gone")
+	}
+	// Saving the rest of the form still works.
+	if r := b.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d", r.status)
+	}
+}
+
+func TestWithAHostUpdaterTheSettingIsOffered(t *testing.T) {
+	b := signedInBox(t)
+	if !strings.Contains(b.get("/settings").body, `name="auto_update"`) {
+		t.Fatal("auto-update not offered")
+	}
+}
+
+func TestFailedRollbackDoesNotSayTheBoxStillRunsThePreviousVersion(t *testing.T) {
+	b := signedInBox(t)
+	b.writeStatus("state=failed\nversion=0.1.0\ntarget=0.2.0\nreason=rollback_failed\ntime=2026-11-16T03:31:00Z\n")
+	for lang, bad := range map[string]string{"en": "still running the previous version", "de": "läuft weiter mit der vorherigen Version"} {
+		r := b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": lang})
+		if !strings.Contains(r.body, `data-update-notice="failed"`) || strings.Contains(r.body, bad) {
+			t.Fatalf("%s: contradictory notice:\n%s", lang, r.body)
+		}
+	}
+}
+
+func TestMissingBoxReasonIsTranslated(t *testing.T) {
+	b := signedInBox(t)
+	b.writeStatus("state=failed\nversion=0.1.0\ntarget=0.2.0\nreason=box_not_running\ntime=2026-11-16T03:31:00Z\n")
+	body := b.get("/").body
+	if strings.Contains(body, "update.reason") || strings.Contains(body, "backup") {
+		t.Fatalf("notice:\n%s", body)
+	}
+}
+
+func TestSavingSettingsToleratesAFailingSettingsFile(t *testing.T) {
+	b := signedInBox(t)
+	if err := os.RemoveAll(b.updateDir); err != nil {
+		t.Fatal(err)
+	}
+	r := b.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}, "auto_update": {"off"}})
+	if r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d, want 303 for a change that was stored", r.status)
+	}
+	if !strings.Contains(b.get("/settings").body, `value="off" checked`) {
+		t.Fatal("the change was not stored")
+	}
+}

@@ -334,5 +334,7 @@
   "update.reason.signature_invalid": "Reason: its signature could not be verified.",
   "update.reason.backup_failed": "Reason: the backup of your data before the update failed, so nothing was changed.",
   "update.reason.pull_failed": "Reason: the new version could not be downloaded.",
+  "update.failed_rollback": "The update could not be done and going back to the previous version failed as well. Please check the box.",
+  "update.reason.box_not_running": "Reason: the box was not running, so nothing was changed.",
   "update.reason.rollback_failed": "Reason: going back failed as well. Please check the box."
 }

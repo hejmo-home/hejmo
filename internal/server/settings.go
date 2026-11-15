@@ -53,7 +53,7 @@ func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p princi
 	s.render(w, r, status, "settings.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Error": errKey,
 		"TimeFormat": string(p.household.TimeFormat), "TemperatureUnit": string(p.household.TemperatureUnit),
-		"AutoUpdate": string(p.household.AutoUpdate), "Update": s.updateNotice(p.household),
+		"AutoUpdate": string(p.household.AutoUpdate), "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
 	})
 }
 
@@ -94,5 +94,10 @@ func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.Tem
 	if a == h.AutoUpdate {
 		return nil
 	}
-	return s.setAutoUpdate(h, a)
+	// The change is stored; a settings file that cannot be written must not turn
+	// it into an error. The box writes the file again at its next start.
+	if err := s.setAutoUpdate(h, a); err != nil {
+		s.logger.Error("write update settings", "err", err)
+	}
+	return nil
 }

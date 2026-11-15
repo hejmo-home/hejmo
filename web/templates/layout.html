@@ -39,6 +39,7 @@
   {{else if eq .State "available"}}<p>{{printf (t "update.available") .Target}} <a href="{{.NotesURL}}">{{t "update.whats_new"}}</a></p>
   {{else if eq .State "rolled_back"}}<p>{{printf (t "update.rolled_back") .Target .Version}}</p>
   {{else if eq .State "rejected"}}<p>{{printf (t "update.rejected") .Target}}</p>
+  {{else if eq .Reason "rollback_failed"}}<p>{{t "update.failed_rollback"}}</p>
   {{else}}<p>{{t "update.failed"}}</p>{{end}}
   {{if .Reason}}<p>{{t (printf "update.reason.%s" .Reason)}}</p>{{end}}
   {{if .Dismissible}}<form method="post" action="/update/dismiss"><button class="button" type="submit">{{t "update.dismiss"}}</button></form>{{end}}

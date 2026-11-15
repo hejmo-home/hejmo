@@ -334,5 +334,7 @@
   "update.reason.signature_invalid": "Grund: Ihre Signatur konnte nicht geprüft werden.",
   "update.reason.backup_failed": "Grund: Die Sicherung deiner Daten vor dem Update ist fehlgeschlagen, deshalb wurde nichts geändert.",
   "update.reason.pull_failed": "Grund: Die neue Version konnte nicht heruntergeladen werden.",
+  "update.failed_rollback": "Das Update konnte nicht durchgeführt werden und die Rückkehr zur vorherigen Version ist ebenfalls fehlgeschlagen. Bitte sieh nach der Box.",
+  "update.reason.box_not_running": "Grund: Die Box lief nicht, deshalb wurde nichts geändert.",
   "update.reason.rollback_failed": "Grund: Auch die Rückkehr ist fehlgeschlagen. Bitte sieh nach der Box."
 }

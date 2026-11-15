@@ -39,7 +39,7 @@ var states = map[State]bool{Idle: true, Available: true, Updated: true, RolledBa
 
 // Reasons are the fixed causes of a rollback, rejection or failure; the web
 // interface has a translated text for each.
-var Reasons = []string{"start_failed", "health_check_failed", "signature_invalid", "backup_failed", "pull_failed", "rollback_failed"}
+var Reasons = []string{"start_failed", "health_check_failed", "signature_invalid", "backup_failed", "pull_failed", "rollback_failed", "box_not_running"}
 
 // Status is the script's report. Every field is empty if absent or invalid.
 type Status struct {

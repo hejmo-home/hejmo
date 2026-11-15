@@ -415,3 +415,15 @@ func TestBackupCommandCopiesTheLiveDatabase(t *testing.T) {
 		t.Fatal("backup without a target succeeded")
 	}
 }
+
+// The box offers auto-update only where the install script's host updater runs.
+func TestUpdateDirIsSetOnlyWhenAHostUpdaterManagesTheBox(t *testing.T) {
+	plain := loadConfig(func(string) string { return "" })
+	if plain.UpdateDir != "" {
+		t.Fatalf("plain Compose install has UpdateDir %q", plain.UpdateDir)
+	}
+	managed := loadConfig(func(k string) string { return map[string]string{"HEJMO_HOST_UPDATER": "1", "HEJMO_DATA_DIR": "/d"}[k] })
+	if managed.UpdateDir != "/d" {
+		t.Fatalf("managed UpdateDir = %q, want the data dir", managed.UpdateDir)
+	}
+}

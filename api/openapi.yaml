@@ -928,7 +928,7 @@ components:
           description: "idle (nothing newer or no report yet), available (notify only), updated, rolled_back (the new version failed; the previous one runs again with its data), rejected (signature not valid, not installed), failed (nothing changed)"
         version: { type: string, description: "The version that runs now" }
         target: { type: string, description: "The version offered or attempted" }
-        reason: { type: string, enum: [start_failed, health_check_failed, signature_invalid, backup_failed, pull_failed, rollback_failed] }
+        reason: { type: string, enum: [start_failed, health_check_failed, signature_invalid, backup_failed, pull_failed, rollback_failed, box_not_running] }
         time: { type: string, format: date-time, description: "When the script recorded this event" }
         notice: { type: boolean, description: "Whether the web interface currently shows a notice to parents" }
         release_notes_url: { type: string, format: uri, description: "Release notes of the version installed or offered" }

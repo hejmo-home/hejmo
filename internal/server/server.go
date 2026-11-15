@@ -50,7 +50,8 @@ type Options struct {
 	Done <-chan struct{}
 	// UpdateDir is the data volume directory the host script of auto-update
 	// shares with the box (ADR 0018). Empty means updates are not managed by a
-	// host script: no settings file is written and no status is read.
+	// host script: no settings file is written, no status is read and the
+	// settings page does not offer auto-update.
 	UpdateDir string
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time

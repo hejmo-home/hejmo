@@ -86,7 +86,8 @@ Das Installationsskript richtet auch eine nächtliche Update-Prüfung ein (ein s
 - Er installiert ein Image nur, wenn dessen Signatur aus dem Release-Workflow des Projekts stimmt (cosign, schlüssellos über GitHub OIDC). Ein unsigniertes oder falsch signiertes Image wird nicht installiert.
 - Vor dem Wechsel sichert er die Datenbank mit der Online-Sicherung von SQLite, startet die Box mit dem neuen Image neu und wartet auf `/healthz`. Startet die neue Version nicht oder antwortet sie nicht, kehrt er zum vorherigen Image (per Digest gemerkt) zurück und spielt die Sicherung ein. Eltern sehen dann einen Hinweis mit dem Grund; eine fehlgeschlagene Version wird nicht erneut versucht, bis eine neuere erscheint.
 - Nach einem Update sehen Eltern einmalig, was neu ist, mit Link zu den Release Notes.
-- **Einstellung** (Weboberfläche, **Einstellungen**): *an* (Standard), *aus* oder *nur benachrichtigen* (nichts wird installiert; Eltern sehen, dass ein Update bereitsteht).
+- **Einstellung** (Weboberfläche, **Einstellungen**): *an* (Standard), *aus* oder *nur benachrichtigen* (nichts wird installiert; Eltern sehen, dass ein Update bereitsteht). Die Einstellung erscheint nur, wo das Installationsskript den Updater eingerichtet hat. Willst du bei einer mit `HEJMO_VERSION` festgelegten Version bleiben, stelle die automatischen Updates auf *aus*; sonst hebt der Updater die Box auf die neueste veröffentlichte Version.
+- Eine Box, die ihre Version nicht kennt (etwa ein Vorschau-Build), wird nie aktualisiert.
 - Der Container bekommt keinen Zugriff auf den Docker-Socket. Box und Updater tauschen nur zwei kleine Dateien im Datenvolumen aus (`update-settings`, `update-status`) mit festen Schlüsseln und Werten.
 - Das Updater-Skript selbst ändert sich nur, wenn du das Installationsskript erneut ausführst. Den letzten Lauf siehst du mit `sudo journalctl -u hejmo-update`.
 

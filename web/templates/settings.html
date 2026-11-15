@@ -15,13 +15,13 @@
       <label class="check"><input type="radio" name="temperature_unit" value="c"{{if eq .TemperatureUnit "c"}} checked{{end}}> {{t "settings.temperature_unit.c"}}</label>
       <label class="check"><input type="radio" name="temperature_unit" value="f"{{if eq .TemperatureUnit "f"}} checked{{end}}> {{t "settings.temperature_unit.f"}}</label>
     </fieldset>
-    <fieldset>
+    {{if .UpdateManaged}}<fieldset>
       <legend>{{t "settings.auto_update"}}</legend>
       <p class="hint">{{t "settings.auto_update.hint"}}</p>
       <label class="check"><input type="radio" name="auto_update" value="on"{{if eq .AutoUpdate "on"}} checked{{end}}> {{t "settings.auto_update.on"}}</label>
       <label class="check"><input type="radio" name="auto_update" value="notify"{{if eq .AutoUpdate "notify"}} checked{{end}}> {{t "settings.auto_update.notify"}}</label>
       <label class="check"><input type="radio" name="auto_update" value="off"{{if eq .AutoUpdate "off"}} checked{{end}}> {{t "settings.auto_update.off"}}</label>
-    </fieldset>
+    </fieldset>{{end}}
     <button class="button" type="submit">{{t "settings.save"}}</button>
   </form>
 {{template "foot"}}

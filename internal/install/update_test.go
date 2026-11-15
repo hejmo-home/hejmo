@@ -42,7 +42,7 @@ compose)
 inspect)
 	case "$*" in
 	*Labels*) cat "$STATE/version" ;;
-	*.Image*) echo "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ;;
+	*.Image*) [ "${FAKE_NOBOX:-0}" = 1 ] || echo "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" ;;
 	esac ;;
 image)
 	case "$2" in
@@ -151,7 +151,7 @@ func hasLine(status, line string) bool {
 func TestInstallRegistersANightlyTimerAndTheUpdater(t *testing.T) {
 	b := installed(t)
 	timer := b.read("etc/systemd/system/hejmo-update.timer")
-	for _, want := range []string{"OnCalendar=*-*-* 03:30:00", "WantedBy=timers.target"} {
+	for _, want := range []string{"OnCalendar=*-*-* 03:30:00", "RandomizedDelaySec=", "WantedBy=timers.target"} {
 		if !strings.Contains(timer, want) {
 			t.Errorf("timer lacks %q:\n%s", want, timer)
 		}
@@ -168,6 +168,9 @@ func TestInstallRegistersANightlyTimerAndTheUpdater(t *testing.T) {
 	}
 	if !strings.Contains(b.read("opt/hejmo/compose.yaml"), "image:") || strings.Contains(b.read("opt/hejmo/compose.yaml"), "docker.sock") {
 		t.Error("the container must get no access to the Docker socket")
+	}
+	if !strings.Contains(b.read("opt/hejmo/compose.yaml"), "HEJMO_HOST_UPDATER") {
+		t.Error("the box is not told that a host updater manages it")
 	}
 	// The updater changes only by re-running the install script (ADR 0018).
 	if strings.Contains(b.read("opt/hejmo/hejmo-update"), "raw.githubusercontent.com") {
@@ -486,5 +489,61 @@ func TestUpdaterTrustsTheReleaseWorkflowsIdentity(t *testing.T) {
 	}
 	if !strings.Contains(script, "ghcr.io/sigstore/cosign/cosign:v") || !strings.Contains(script, "@sha256:") {
 		t.Error("the cosign image must be pinned by digest")
+	}
+}
+
+// A preview build has no version label. Installing the latest release over it
+// could be a downgrade, with a database the older binary cannot read.
+func TestUnknownRunningVersionInstallsNothing(t *testing.T) {
+	b := installed(t)
+	if err := os.WriteFile(filepath.Join(b.state, "version"), nil, 0o644); err != nil {
+		t.Fatal(err)
+	}
+	for _, mode := range []string{"on", "notify"} {
+		b.write("opt/hejmo/data/update-settings", "mode="+mode+"\n")
+		b.mustUpdate()
+		calls := b.calls()
+		if strings.Contains(calls, "pull") || strings.Contains(calls, "compose up") {
+			t.Errorf("mode %s: installed over an unknown version:\n%s", mode, calls)
+		}
+		if got := b.running(); got != imageRepo+":latest" {
+			t.Errorf("mode %s: running image changed to %q", mode, got)
+		}
+		if strings.Contains(b.status(), "state=updated") {
+			t.Errorf("mode %s: reported an update: %q", mode, b.status())
+		}
+	}
+}
+
+func TestMissingBoxIsNotReportedAsABackupFailure(t *testing.T) {
+	b := installed(t)
+	_, _ = b.update("FAKE_NOBOX=1")
+	st := b.status()
+	if hasLine(st, "reason=backup_failed") || !hasLine(st, "reason=box_not_running") {
+		t.Errorf("status:\n%s", st)
+	}
+}
+
+func TestFailedRestoreIsReportedAsFailedRollback(t *testing.T) {
+	b := installed(t)
+	script := "#!/bin/sh\n[ \"$FAKE_RESTORE\" = fail ] && exit 1\nexit 0\n"
+	if err := os.WriteFile(filepath.Join(b.bin, "chown"), []byte(script), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	_, _ = b.update("FAKE_START=fail", "FAKE_RESTORE=fail")
+	st := b.status()
+	if hasLine(st, "state=rolled_back") || !hasLine(st, "state=failed") || !hasLine(st, "reason=rollback_failed") {
+		t.Errorf("status:\n%s", st)
+	}
+}
+
+// An "available" report that the box cannot dismiss must not outlive the
+// reason for it, for example when the box was updated another way.
+func TestOutdatedAvailableReportBecomesIdle(t *testing.T) {
+	b := installed(t)
+	b.write("opt/hejmo/data/update-status", "state=available\nversion=0.1.0\ntarget=0.2.0\ntime=2026-11-15T03:30:00Z\n")
+	b.mustUpdate("FAKE_LATEST=0.1.0")
+	if !hasLine(b.status(), "state=idle") {
+		t.Errorf("status:\n%s", b.status())
 	}
 }

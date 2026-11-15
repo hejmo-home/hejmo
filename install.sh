@@ -110,6 +110,7 @@ services:
     environment:
       TZ: Europe/Berlin
       HEJMO_PUBLIC_HTTPS_PORT: ${HEJMO_HTTPS_PORT:-443}
+      HEJMO_HOST_UPDATER: "1" # tells the box that hejmo-update runs on this host
 YAML
 
 if [ ! -e "$DIR/.env" ]; then
@@ -284,7 +285,18 @@ latest="$(latest_version)" || {
 	exit 0
 }
 current="$(current_version)"
-if [ -n "$current" ] && ! version_gt "$latest" "$current"; then
+# A box that does not know its version (a preview build has no version label)
+# may be newer than the release; installing it could be a downgrade onto a
+# database the older version cannot read. Nothing is installed or reported.
+if [ -z "$current" ]; then
+	log "the running version is unknown (a preview build?); no update"
+	exit 0
+fi
+if ! version_gt "$latest" "$current"; then
+	# An "available" report that is out of date would stay for good.
+	if [ -f "$STATUS" ] && [ ! -L "$STATUS" ] && head -c 256 "$STATUS" | grep -qx 'state=available'; then
+		report idle "$current"
+	fi
 	log "version $current is up to date"
 	exit 0
 fi
@@ -309,7 +321,7 @@ if [ -n "$image_id" ]; then
 	[ -n "$previous" ] || previous="$image_id"
 fi
 if [ -z "$previous" ]; then
-	report failed "$current" "$latest" backup_failed
+	report failed "$current" "$latest" box_not_running
 	log "the box is not running; no update"
 	exit 1
 fi
@@ -349,19 +361,22 @@ rollback() {
 	local reason="$1"
 	log "version $latest failed ($reason); going back to the previous image and database"
 	(cd "$DIR" && docker compose stop) >/dev/null 2>&1
-	cp "$HOLD/pre-update.db" "$HOLD/restore.db" &&
+	local restored=0
+	if cp "$HOLD/pre-update.db" "$HOLD/restore.db" &&
 		rm -f "$DATA/hejmo.db" "$DATA/hejmo.db-wal" "$DATA/hejmo.db-shm" &&
 		mv -f "$HOLD/restore.db" "$DATA/hejmo.db" &&
 		chown 65532:65532 "$DATA/hejmo.db" &&
-		chmod 0600 "$DATA/hejmo.db"
+		chmod 0600 "$DATA/hejmo.db"; then
+		restored=1
+	fi
 	use_image "$previous"
-	if start_box; then
+	if [ "$restored" = 1 ] && start_box; then
 		printf '%s\n' "$latest" >"$HOLD/skip-version"
 		report rolled_back "$current" "$latest" "$reason"
 		exit 0
 	fi
 	report failed "$current" "$latest" rollback_failed
-	log "going back failed too"
+	log "going back failed too (database restored: $restored)"
 	exit 1
 }
 
@@ -396,6 +411,7 @@ Description=Hejmo nightly update check
 
 [Timer]
 OnCalendar=*-*-* 03:30:00
+RandomizedDelaySec=15min
 Persistent=true
 
 [Install]

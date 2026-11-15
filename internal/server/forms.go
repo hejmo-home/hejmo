@@ -18,7 +18,7 @@ func chipsOf(people []store.Person) []personChip {
 		if shape == "" {
 			shape = markerShapes[i%len(markerShapes)]
 		}
-		out = append(out, personChip{ID: p.ID, Name: p.Name, Shape: shape, Slot: i%len(markerShapes) + 1})
+		out = append(out, personChip{ID: p.ID, Name: p.Name, Shape: shape, Slot: slotOf(p, i)})
 	}
 	return out
 }

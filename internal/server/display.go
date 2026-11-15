@@ -199,7 +199,7 @@ func (s *server) displayData(h store.Household, lang string, days int) (displayD
 		if shape == "" {
 			shape = markerShapes[i%len(markerShapes)]
 		}
-		out.people = append(out.people, familyview.Person{ID: p.ID, Name: p.Name, Slot: i%len(markerShapes) + 1, Shape: shape, Groups: groupsOf[p.ID]})
+		out.people = append(out.people, familyview.Person{ID: p.ID, Name: p.Name, Slot: slotOf(p, i), Shape: shape, Groups: groupsOf[p.ID]})
 	}
 	for i := range out.occurrences {
 		if strings.TrimSpace(out.occurrences[i].Title) == "" {

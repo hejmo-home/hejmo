@@ -149,11 +149,15 @@ func TestAPIChangesNameColourAndAudienceOfASyncedCalendarAndNothingElse(t *testi
 		"nothing":    {},
 		"blank name": {"name": " "},
 		"bad colour": {"color": "red"},
+		"no colour":  {"color": ""},
 		"unknown":    {"audience": map[string]any{"people": []string{"00000000-0000-4000-8000-000000000000"}, "groups": []string{}}},
 	} {
 		if status, _, _ := c.call(http.MethodPatch, "/calendars/"+id, body); status != http.StatusUnprocessableEntity {
 			t.Errorf("%s: status = %d, want 422", name, status)
 		}
+	}
+	if status, _, _ := c.call(http.MethodPatch, "/calendars/00000000-0000-4000-8000-000000000000", map[string]any{"name": "Nobody's"}); status != http.StatusNotFound {
+		t.Errorf("renaming an unknown calendar = %d, want 404", status)
 	}
 	family, _ := b.db.FamilyCalendar(h.ID)
 	if status, _, _ := c.call(http.MethodPatch, "/calendars/"+family.ID, map[string]any{"name": "Mine"}); status != http.StatusUnprocessableEntity {

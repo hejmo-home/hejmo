@@ -246,7 +246,11 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 		name, color := r.PostFormValue("name_"+address), r.PostFormValue("color_"+address)
 		audience := &audienceJSON{People: nonNil(r.PostForm["people_"+address]), Groups: nonNil(r.PostForm["groups_"+address])}
 		if cal, isSynced := have[key]; isSynced {
-			keep = append(keep, choiceKeep{cal, calendarChanges{Name: &name, Color: &color, Audience: audience}})
+			changes := calendarChanges{Name: &name, Color: &color, Audience: audience}
+			if color == "" {
+				changes.Color = nil // the form sent no colour: the calendar keeps its own
+			}
+			keep = append(keep, choiceKeep{cal, changes})
 			continue
 		}
 		in := newCalendarInput{Name: name, URL: address, Color: color, Audience: audience}
@@ -307,12 +311,6 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 		s.renderSwitchOffConfirmation(w, r, p, conn, off)
 		return
 	}
-	for _, cal := range off {
-		if err := s.db.DeleteSyncedCalendar(p.household.ID, cal.ID); err != nil && !errors.Is(err, store.ErrNotFound) {
-			s.fail(w, "switch calendar off", err)
-			return
-		}
-	}
 	for _, k := range keep {
 		if err := s.changeSyncedCalendar(p, k.cal, k.changes); err != nil {
 			s.fail(w, "change calendar", err)
@@ -322,6 +320,13 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 	for _, in := range chosen {
 		if _, err := s.addConnectionCalendar(r, p, conn.ID, in); err != nil {
 			s.fail(w, "add calendar", err)
+			return
+		}
+	}
+	// Switch-offs come last: a store error before this point leaves nothing removed.
+	for _, cal := range off {
+		if err := s.db.DeleteSyncedCalendar(p.household.ID, cal.ID); err != nil && !errors.Is(err, store.ErrNotFound) {
+			s.fail(w, "switch calendar off", err)
 			return
 		}
 	}
@@ -338,7 +343,7 @@ func (s *server) checkSyncedChanges(p principal, cal store.SyncedCalendar, in ca
 	if in.Name != nil && strings.TrimSpace(*in.Name) == "" {
 		return &inputError{"name", "name is required"}
 	}
-	if in.Color != nil && strings.TrimSpace(*in.Color) != "" && !hexColor.MatchString(strings.TrimSpace(*in.Color)) {
+	if in.Color != nil && !hexColor.MatchString(strings.TrimSpace(*in.Color)) {
 		return &inputError{"color", "color must be #RRGGBB"}
 	}
 	if in.Audience != nil {

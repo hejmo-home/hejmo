@@ -330,7 +330,7 @@ func (s *server) changeSyncedCalendar(p principal, cal store.SyncedCalendar, in 
 			return &inputError{"name", "name is required"}
 		}
 	}
-	if in.Color != nil && strings.TrimSpace(*in.Color) != "" {
+	if in.Color != nil {
 		if color = strings.TrimSpace(*in.Color); !hexColor.MatchString(color) {
 			return &inputError{"color", "color must be #RRGGBB"}
 		}
@@ -346,6 +346,12 @@ func (s *server) changeSyncedCalendar(p principal, cal store.SyncedCalendar, in 
 		}
 	}
 	return s.db.UpdateSyncedCalendar(p.household.ID, cal.ID, name, color, audience)
+}
+
+// calendarExists is nil when the household has a calendar with this id.
+func (s *server) calendarExists(householdID, id string) error {
+	_, err := s.db.Calendar(householdID, id)
+	return err
 }
 
 func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p principal) {
@@ -365,6 +371,9 @@ func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p pri
 	if in.calendarChanges.any() {
 		cal, err := s.db.SyncedCalendar(p.household.ID, id)
 		if errors.Is(err, store.ErrNotFound) {
+			if s.storeError(w, "calendar", s.calendarExists(p.household.ID, id)) {
+				return
+			}
 			writeError(w, http.StatusUnprocessableEntity, "name, color and audience can only be changed on a synced calendar")
 			return
 		} else if s.storeError(w, "synced calendar", err) {

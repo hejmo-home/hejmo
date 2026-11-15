@@ -400,7 +400,7 @@ paths:
       description: |
         Send at least one field. `share_through_box` switches sharing through the box for a synced
         calendar; the family calendar is always served to phones, asking to change it answers 422.
-        `name`, `color` and `audience` can only be changed on a synced calendar (else 422); a field
+        `name`, `color` and `audience` can only be changed on a synced calendar (else 422; 404 if no calendar has the id); a field
         left out stays as it is. Nothing is sent to the calendar's source.
       requestBody:
         required: true

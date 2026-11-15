@@ -6,6 +6,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/wholine"
 )
 
 // NightInput is what the night page of quiet mode needs (ADR 0015).
@@ -36,7 +37,7 @@ func BuildNight(in NightInput) NightView {
 		if o.AllDay || o.Start.Before(d0) || !o.Start.Before(d1) {
 			continue
 		}
-		e := card(o, d0.Location(), in.TimeFormat, nil)
+		e := card(o, d0.Location(), in.TimeFormat, wholine.Line{})
 		v.First = &e
 		break
 	}

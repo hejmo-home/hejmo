@@ -11,6 +11,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/holiday"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/wholine"
 )
 
 // The calendar screen (ticket 5.12, ADR 0011 and 0015): the week, and creating,
@@ -29,6 +30,7 @@ type eventItem struct {
 	Slot                        int    // colour slot of the first person in the audience, 0 = whole family
 	People                      []personChip
 	Groups                      []string
+	WhoParts                    []wholine.Part // who it is for, in words (wholine, nobody left out), one part per name for the page to keep whole
 	Repeats, ReadOnly           bool
 }
 
@@ -54,6 +56,12 @@ type calendarContext struct {
 	groups    map[string]string
 	readOnly  map[string]bool
 	calendars []store.Calendar
+	// For the who-line: everyone in display order, the subgroups, and who sees
+	// what (the calendars' audiences).
+	household []wholine.Person
+	wgroups   []wholine.Group
+	viewers   []calendar.Viewer
+	audiences map[string]calendar.Audience
 }
 
 func (s *server) calendarContext(w http.ResponseWriter, r *http.Request, p principal) (*calendarContext, bool) {
@@ -73,14 +81,25 @@ func (s *server) calendarContext(w http.ResponseWriter, r *http.Request, p princ
 		return nil, false
 	}
 	c := &calendarContext{s: s, r: r, p: p, loc: p.location(), chips: map[string]personChip{}, groups: map[string]string{}, readOnly: map[string]bool{}, calendars: cals}
+	c.audiences = map[string]calendar.Audience{}
+	memberOf := map[string][]string{}
 	for _, chip := range chipsOf(people) {
 		c.chips[chip.ID] = chip
 	}
 	for _, g := range groups {
 		c.groups[g.ID] = g.Name
+		c.wgroups = append(c.wgroups, wholine.Group{Name: g.Name, Members: g.Members})
+		for _, m := range g.Members {
+			memberOf[m] = append(memberOf[m], g.ID)
+		}
 	}
 	for _, cal := range cals {
 		c.readOnly[cal.ID] = cal.ReadOnly
+		c.audiences[cal.ID] = cal.Audience
+	}
+	for _, p := range people {
+		c.household = append(c.household, wholine.Person{ID: p.ID, Name: p.Name})
+		c.viewers = append(c.viewers, calendar.Viewer{PersonID: p.ID, Groups: memberOf[p.ID]})
 	}
 	return c, true
 }
@@ -124,6 +143,9 @@ func (c *calendarContext) item(o calendar.Occurrence) eventItem {
 	if len(it.People) > 0 {
 		it.Slot = it.People[0].Slot
 	}
+	lang := c.s.langOf(c.r)
+	it.WhoParts = wholine.Of(wholine.Input{Household: c.household, Groups: c.wgroups, Audience: calendar.ViewersOf(o, c.audiences, c.viewers)},
+		c.s.i18n, lang).Parts
 	it.Date = o.Start.In(c.loc).Format("02/01/2006")
 	return it
 }

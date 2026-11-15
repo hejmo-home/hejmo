@@ -19,6 +19,16 @@
       {{template "option" (dict "Name" "auto_update" "Value" "notify" "Label" (t "settings.auto_update.notify") "Checked" (eq .AutoUpdate "notify"))}}
       {{template "option" (dict "Name" "auto_update" "Value" "off" "Label" (t "settings.auto_update.off") "Checked" (eq .AutoUpdate "off"))}}
     {{template "optionsClose" (dict "Root" . "Name" "auto_update")}}{{end}}
+    <fieldset class="cutoffs">
+      <legend>{{t "settings.cutoffs"}}</legend>
+      <p class="hint">{{t "settings.cutoffs.hint"}}</p>
+      {{range .Cutoffs}}{{$bad := and $.ErrorField (eq $.ErrorField .Name)}}<div class="cut">
+        {{template "switch" (dict "Name" (printf "%s_on" .Name) "Mealtime" .Mealtime "Label" (t (printf "meals.mealtime.%s" .Mealtime)) "AriaLabel" (printf (t "settings.cutoff.switch") (t (printf "meals.mealtime.%s" .Mealtime))) "OnText" (t "settings.cutoff.on_text") "OffText" (t "settings.cutoff.off_text") "Checked" .On)}}
+        <label class="at{{if $bad}} invalid{{end}}">{{t "settings.cutoff.at"}} <input class="tcap" type="time" name="{{.Name}}" value="{{.Value}}" step="300"{{if $bad}} autofocus aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}></label>
+        {{template "fieldError" (dict "Root" $ "Name" .Name)}}
+      </div>
+      {{end}}
+    </fieldset>
     <button class="button" type="submit">{{t "settings.save"}}</button>
   </form>
 {{template "foot"}}

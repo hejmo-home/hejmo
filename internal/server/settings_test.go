@@ -39,7 +39,7 @@ func TestWebTimesFollowTheHouseholdTimeFormat(t *testing.T) {
 	b.post("/caldav/tokens", url.Values{"name": {"Phone"}})
 	// The token is stamped with the real clock, so the CalDAV page is matched by shape.
 	h24 := regexp.MustCompile(`\d\d/\d\d/\d{4} \d{1,2}:\d\d(?: [AP]M)?\b`)
-	if body := b.get("/calendars").body; !strings.Contains(body, "14/11/2026 13:00") {
+	if body := b.get("/calendars").body; !strings.Contains(body, "14/11/2026 13:00:00") {
 		t.Errorf("/calendars does not use the 24h format:\n%s", body)
 	}
 	if m := h24.FindString(b.get("/caldav").body); m == "" || strings.HasSuffix(m, "M") {
@@ -52,7 +52,7 @@ func TestWebTimesFollowTheHouseholdTimeFormat(t *testing.T) {
 	if page := b.get("/displays").body; !strings.Contains(page, "14/11/2026 1:00 PM") {
 		t.Fatalf("12h time missing:\n%s", page)
 	}
-	if body := b.get("/calendars").body; !strings.Contains(body, "14/11/2026 1:00 PM") || strings.Contains(body, "14/11/2026 13:00") {
+	if body := b.get("/calendars").body; !strings.Contains(body, "14/11/2026 1:00:00 PM") || strings.Contains(body, "14/11/2026 13:00") {
 		t.Errorf("/calendars does not use the 12h format:\n%s", body)
 	}
 	if m := h24.FindString(b.get("/caldav").body); !strings.HasSuffix(m, "M") {

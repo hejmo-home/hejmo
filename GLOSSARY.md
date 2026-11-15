@@ -52,6 +52,14 @@ _Avoid_: self-signed certificate, root cert
 A DNS name of the box (a free deSEC `dedyn.io` name or the family's own domain) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
 _Avoid_: domain, DynDNS
 
+**Passkey**:
+A WebAuthn credential of an adult's account, kept on a device or in a password manager, that replaces password and one-time code at sign-in and counts as both factors (ADR 0018). It is valid only for the box name it was created under; password and one-time code stay the way back.
+_Avoid_: security key, FIDO key, WebAuthn credential (in user-facing text)
+
+**Box name**:
+The name the box is served under: its public name or the Box CA's DNS name (e.g. `hejmo.local`), never an IP address. It is the relying-party ID of passkeys.
+_Avoid_: hostname, domain, relying party (in user-facing text)
+
 **Home region**:
 The German state, Austrian state or Swiss canton of the household, which decides its public holidays.
 _Avoid_: location, country, Bundesland (in code)

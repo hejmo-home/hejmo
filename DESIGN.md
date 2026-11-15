@@ -120,6 +120,8 @@ typography:
   label: {fontFamily: Figtree, fontSize: 14px, fontWeight: "400"}
   label-large: {fontFamily: Figtree, fontSize: 15px, fontWeight: "400"}
   meta: {fontFamily: Figtree, fontSize: 13px, fontWeight: "400"}
+  title-phone: {fontFamily: Figtree, fontSize: 28px, fontWeight: "700"}
+  secret: {fontFamily: ui-monospace, fontSize: 19px, fontWeight: "600"}
 rounded:
   tile: 22px
   chip: 18px
@@ -195,6 +197,8 @@ None. No shadows in any palette.
 - `.marker`: person marker as above.
 - Web interface frame (`.frame`): brand bar (`.frame-bar`) with sign-out, navigation (`.frame-nav`, one `.chip`-shaped link per screen, at least 44 px high, current screen filled with `accent`), content (`main`). Under 900 px the navigation wraps above the content; from 900 px it stands as a column left of it. Without a `data-theme` the palette follows the device (`prefers-color-scheme`); an explicit `data-theme` wins. Screens a role may not use are not listed.
 - Shared form patterns (ADR 0017, templates in `web/templates/patterns.html`): success line `.msg.ok` (white card, 1.5 px `accent` border, check icon, `role="status"`); field error `.ferr` under the field (`error-bg`, input with 2 px `error-text` border, `aria-invalid`); switch `.switch` (off: `text-secondary` outline, on: `accent` track) with its state in words; person chips `.pchip` (selected: person tint, 2 px person-colour border, tick, bold; bw: thick border and the marker shape; "Whole family" neutral and selected by default); segmented control `.seg` and weekday chips `.days` (selected: `accent`), choice cards `.choice` (selected: 2 px `accent` border); disclosure `details.more`; destructive actions only in `details.danger` on a detail page; empty state `.empty` with one sentence and the first action. All use existing tokens, at least 44 px targets.
+- Overview rows and detail pages (ticket 111, ADR 0017): an overview lists calm rows `.list-rows` (one whole-row link per thing: name in `event-title`, meta lines in `label`, a person shown as marker plus name, a chevron in `text-secondary`; bw: 2 px border). A problem or warning in a row or a fact is a `.flag` in words with an icon (`.flag.problem` on `error-*`, `.flag.warn` on `notice-*`; bw: 2 px border, no fill). A detail page starts with a `.back` link to its overview, the name as `h1`, then `.facts` (label and value pairs in a surface card, two columns from 600 px, stacked below), then one form with one primary action, then `details.danger`. An open danger box gets a 2 px `error-text` frame, names the thing on the red button ("Ja, „Küche“ entkoppeln"), lists what disappears by name, and offers "Nein, nichts ändern". A secret shown once sits in `.once` (2 px `accent` frame) in the `secret` face (monospace, so l, 1, O and 0 differ) with a copy button.
+- Page frame on phones: the frame has one column `minmax(0, 1fr)` so nothing pushes the page past the right edge; under 900 px the navigation wraps onto more lines instead of scrolling screens out of sight; `h1` wraps anywhere and uses `title-phone` (28 px) under 600 px. Back links sit inside `main`, never as a grid item of the frame.
 
 ## Do's and Don'ts
 

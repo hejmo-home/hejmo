@@ -3,6 +3,7 @@ package server_test
 import (
 	"encoding/base64"
 	"fmt"
+	html_ "html"
 	"net/http"
 	"net/url"
 	"os"
@@ -35,20 +36,37 @@ func TestWritePreview32(t *testing.T) {
 	shopping, todos := lists[0], lists[1]
 	shopping.Name = "Shopping"
 	_, _ = b.db.UpdateList(h.ID, shopping)
+	entryIDs := map[string]string{}
 	add := func(l list.List, done map[string]bool, texts ...string) {
 		for _, s := range texts {
-			e, _ := b.db.AddEntry(h.ID, l.ID, s)
+			e, err := b.db.AddEntry(h.ID, l.ID, s)
+			if err != nil {
+				t.Fatal(err)
+			}
+			entryIDs[s] = e.ID
 			if done[s] {
 				_ = b.db.SetEntryDone(h.ID, l.ID, e.ID, true)
 			}
 		}
 	}
 	add(shopping, map[string]bool{"Oat milk": true, "Football socks for Sebastian": true},
-		"Oat milk", "Bananas", "Football socks for Sebastian", "Coffee for Papa", "Birthday card for Mama", "Pasta")
+		"Oat milk", "Bananas", "Football socks for Sebastian", "Coffee for Papa", "Birthday card for Mama",
+		"Sunscreen for sensitive children's skin, factor 50, the big bottle")
 	add(todos, nil, "Book the dentist for Mia", "Pack the swimming bag", "Call the plumber")
 	packing, _ := b.db.CreateList(h.ID, list.List{Name: "Holiday packing", Color: "plum", Symbol: "triangle-filled", Sort: list.Alphabetical})
 	add(packing, map[string]bool{"Sun hats": true}, "Swimsuits", "Sun hats", "Passports", "Charger", "Ärmelschoner")
-	_, _ = b.db.CreateList(h.ID, list.List{Name: "Gift ideas", Color: "ochre", Symbol: "diamond-filled", Sort: list.Manual})
+	// A list name holds 60 characters at most (list.MaxName): this one is as long as it gets, to show wrapping.
+	party, err := b.db.CreateList(h.ID, list.List{Name: "Sebastian's birthday party: things to borrow from neighbours", Color: "terracotta", Symbol: "circle-filled", Sort: list.Manual})
+	partyDone := map[string]bool{}
+	partyTexts := []string{"Trestle table", "Folding chairs", "Paddling pool", "Fairy lights", "Cool box"}
+	for _, s := range partyTexts {
+		partyDone[s] = true
+	}
+	add(party, partyDone, partyTexts...)
+	if err != nil {
+		t.Fatal(err)
+	}
+	gifts, _ := b.db.CreateList(h.ID, list.List{Name: "Gift ideas", Color: "ochre", Symbol: "diamond-filled", Sort: list.Manual})
 
 	page := func(c interface{ get(string) resp }, path string) string {
 		r := c.get(path)
@@ -59,15 +77,9 @@ func TestWritePreview32(t *testing.T) {
 	}
 	parent := enGetter{b}
 	child := screenGetter{cp.screen}
-	failed := b.do(http.MethodPost, "/lists", url.Values{"name": {""}, "color": {"teal"}, "symbol": {"square-filled"}, "sort": {"alphabetical"}}, map[string]string{"Accept-Language": "en"})
-	if failed.status != http.StatusUnprocessableEntity {
-		t.Fatalf("failed create = %d", failed.status)
-	}
 	open := func(s, marker string) string {
 		return strings.Replace(s, marker, strings.Replace(marker, "<details", "<details open", 1), 1)
 	}
-	detail := page(parent, "/lists/"+shopping.ID)
-	detail = open(detail, `<details class="danger">`)
 
 	type frame struct {
 		theme string
@@ -81,6 +93,16 @@ func TestWritePreview32(t *testing.T) {
 		return fs
 	}
 	portrait := []frame{{"light", 768, 1024}, {"bw", 768, 1024}}
+	phone := func(themes ...string) []frame {
+		var fs []frame
+		for _, th := range themes {
+			fs = append(fs, frame{th, 375, 812})
+		}
+		return fs
+	}
+	all := func() []frame {
+		return append(append(desk("light", "dark", "bw"), portrait...), phone("light", "bw")...)
+	}
 	var body strings.Builder
 	var docs []string
 	section := func(title, note, anchor, html string, frames ...frame) {
@@ -89,20 +111,57 @@ func TestWritePreview32(t *testing.T) {
 		fmt.Fprintf(&body, "<h2>%s</h2><p class=\"note\">%s</p><div class=\"row\">\n", title, note)
 		for _, f := range frames {
 			label := map[string]string{"light": "Light", "dark": "Dark", "bw": "Black and white"}[f.theme]
-			fmt.Fprintf(&body, `<figure><figcaption>%s, %d x %d</figcaption><iframe data-doc="%d" data-theme="%s" data-anchor="%s" width="%d" height="%d" title="%s"></iframe></figure>`+"\n", label, f.w, f.h, idx, f.theme, anchor, f.w, f.h, title)
+			fmt.Fprintf(&body, `<figure><figcaption>%s, %d x %d</figcaption><iframe data-doc="%d" data-theme="%s" data-anchor="%s" width="%d" height="%d" title="%s"></iframe></figure>`+"\n", label, f.w, f.h, idx, f.theme, anchor, f.w, f.h, html_.EscapeString(title))
 		}
 		body.WriteString("</div>\n")
 	}
-	section("1. Lists overview", "Lists in the navigation between Tasks and Settings. Each list wears its colour; in black and white its symbol replaces the colour.", "",
-		page(parent, "/lists"), append(desk("light", "dark", "bw"), portrait...)...)
-	section("2. A manual list: Shopping", "Ticked entries are struck through and keep their place. Entries move up and down by hand; the add field and the settings are for parents. Completed entries can be hidden, or deleted behind a confirmation (open here).", "",
-		detail, append(desk("light", "dark", "bw"), portrait...)...)
-	section("3. An alphabetical list: Holiday packing", "A new entry appears at its alphabetical place (ignoring case, with ä like a). No move buttons.", "", page(parent, "/lists/"+packing.ID), desk("light", "bw")...)
-	section("4. Completed entries hidden", "\"Hide completed entries\" is a link, so the choice needs no setting.", "", page(parent, "/lists/"+shopping.ID+"?completed=hide"), desk("light", "bw")...)
+
+	_ = page(parent, "/lists") // shows and clears the success line left over from pairing Mia's phone
+	if r := b.post("/lists/"+shopping.ID+"/entries", url.Values{"text": {"Pasta"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("add = %d", r.status)
+	}
+	detail := open(page(parent, "/lists/"+shopping.ID), `<details class="danger">`) // shows the success line of the add
+	overview := page(parent, "/lists")
+
+	section("1. Lists overview", "Lists is an everyday screen between Tasks and Settings. Each list is one calm row that opens it, with its state in words (\"All 5 ticked off\", \"No entries yet\"); a long name wraps. In black and white the symbol replaces the colour. Adding a list sits below, with its choices under More options; the summary on the closed disclosure says what is chosen.", "",
+		overview, all()...)
+	section("2. A list sorted by hand: Shopping, right after adding an entry", "One add row on top (the only primary action), a success line naming the entry, and the field ready for the next one. Open entries come first; ticked-off entries move into their own group below and keep their place in the order, so unticking puts them back. Deleting the ticked-off entries says how many and asks first (open here). Name, colour, symbol and order sit under one disclosure; deleting the list is last.", "",
+		detail, all()...)
+
+	moved := func(direction string) {
+		if r := b.post("/lists/"+shopping.ID+"/entries/"+entryIDs["Bananas"]+"/move", url.Values{"direction": {direction}}); r.status != http.StatusSeeOther {
+			t.Fatalf("move %s = %d", direction, r.status)
+		}
+		_ = page(parent, "/lists/"+shopping.ID+"?edit=1")
+	}
+	moved("down") // so that the frame can show "Bananas" moved up
+	if r := b.post("/lists/"+shopping.ID+"/entries/"+entryIDs["Bananas"]+"/move", url.Values{"direction": {"up"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("move up = %d", r.status)
+	}
+	section("3. Sort or remove entries", "Moving and removing are rare, so they leave the everyday rows: \"Sort or remove entries\" opens this view. Buttons say what they do in words. Up and down count only the open entries, so the first open entry has no Up. A single entry is removed straight away with a success line (ADR 0015 lets displays do this without the PIN). Done goes back to the list.", "",
+		page(parent, "/lists/"+shopping.ID+"?edit=1"), append(desk("light", "bw"), phone("light")...)...)
+
+	section("4. A list sorted A to Z: Holiday packing", "A new entry appears at its alphabetical place (ignoring case, with ä like a). There is nothing to sort by hand, so the link only says \"Remove entries\".", "",
+		page(parent, "/lists/"+packing.ID), desk("light", "bw")...)
+	section("5. Ticked-off entries hidden", "\"Hide\" on the group hides the ticked-off entries; the page says how many are hidden and how to show them. The choice stays while ticking, adding and removing.", "",
+		page(parent, "/lists/"+shopping.ID+"?ticked=hide"), append(desk("light", "bw"), phone("light")...)...)
+
 	newForm := strings.Replace(page(parent, "/lists"), `<details class="more">`, `<details class="more" open>`, 1)
-	section("5. New list: colour, symbol and sorting under More options", "Defaults are the next free colour and symbol. Colour is named as well as shown; the symbol chooser shows the shapes in every theme.", "#new", newForm, desk("light", "dark", "bw")...)
-	section("6. Error at the name", "The error is under the field; chosen colour, symbol and sorting stay (More options opens by itself when the error is inside it).", "#new", failed.body, desk("light", "bw")...)
-	section("7. Mia's phone", "A child sees the lists and ticks entries off. There is no add field, no move, remove or delete.", "", page(child, "/lists/"+shopping.ID), desk("light", "bw")...)
+	section("6. New list: colour, symbol and order under More options", "Defaults are the next free colour and symbol. Colour and symbol are named, not only shown; in black and white the colour chips show only their names, because every colour prints black there.", "#new",
+		newForm, append(desk("light", "dark", "bw"), phone("light")...)...)
+
+	failed := b.do(http.MethodPost, "/lists", url.Values{"name": {""}, "color": {"teal"}, "symbol": {"square-filled"}, "sort": {"alphabetical"}}, map[string]string{"Accept-Language": "en"})
+	if failed.status != http.StatusUnprocessableEntity {
+		t.Fatalf("failed create = %d", failed.status)
+	}
+	section("7. Error at the name", "The error is under the field. The chosen colour, symbol and order stay, and the closed More options says so (\"Teal, filled square, A to Z\").", "#new",
+		failed.body, append(desk("light", "bw"), phone("light")...)...)
+
+	section("8. Mia's phone", "A child reads and ticks off; there is no add row, no sorting, removing or deleting, and no Settings in the navigation. The large boxes work for children who cannot read well yet.", "",
+		page(child, "/lists/"+shopping.ID), append(phone("light", "bw"), desk("light")...)...)
+
+	section("9. An empty list", "What to do next, in one sentence.", "",
+		page(parent, "/lists/"+gifts.ID), append(desk("light"), phone("light")...)...)
 
 	var jsDocs strings.Builder
 	for i, h := range docs {
@@ -114,7 +173,7 @@ func TestWritePreview32(t *testing.T) {
 		fmt.Fprintf(&jsDocs, "<template id=\"doc%d\">%s</template>\n", i, inner)
 	}
 	doc := `<!doctype html>
-<!-- Generated by TestWritePreview32 from the box's real pages and templates (ticket 6.1). The stylesheet, script and font are inlined copies of web/static and do not follow later changes. No external requests. -->
+<!-- Generated by TestWritePreview32 from the box's real pages and templates (ticket 6.1, with the design pass of the Opus designer). The stylesheet, script and font are inlined copies of web/static and do not follow later changes. No external requests. -->
 <html lang="en"><head><meta charset="utf-8"><title>Hejmo preview 6.1 lists</title>
 <style>
 body{margin:0;padding:16px;background:#888;font-family:system-ui,sans-serif;color:#fff}
@@ -123,7 +182,7 @@ h1{font-size:22px}h2{font-size:18px;margin:28px 0 4px}.note{margin:0 0 10px;max-
 figure{margin:0 0 12px}figcaption{margin-bottom:6px;font-weight:700}
 iframe{border:0;background:#fff;display:block}
 </style></head><body>
-<h1>Hejmo 6.1 lists: preview with the example family (Mama, Papa, Sebastian, Mia): 1024 x 768 and portrait, light, dark and black and white</h1>
+<h1>Hejmo 6.1 lists: preview with the example family (Mama, Papa, Sebastian, Mia): 1024 x 768, portrait and 375 px phone, light, dark and black and white</h1>
 <noscript><p>This page needs JavaScript only to place the real pages into their frames.</p></noscript>
 ` + body.String() + `
 <template id="css">` + string(css) + `</template>

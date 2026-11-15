@@ -1,10 +1,14 @@
 package server
 
 import (
+	"crypto/rand"
+	"encoding/hex"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
 )
@@ -26,6 +30,54 @@ func (s *server) setFlash(w http.ResponseWriter, r *http.Request, key string) {
 		Name: flashCookie, Value: key, Path: "/", MaxAge: 120,
 		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
 	})
+}
+
+// flashTexts holds the text a success line names (an entry of a list) for the
+// redirect that follows. The cookie carries only a random token, never the
+// text itself, so a forged cookie shows nothing. A token works once.
+type flashTexts struct {
+	mu sync.Mutex
+	m  map[string]flashText
+}
+
+type flashText struct {
+	text  string
+	until time.Time
+}
+
+const flashTextTTL = 2 * time.Minute
+
+func (f *flashTexts) put(text string, now time.Time) string {
+	raw := make([]byte, 16)
+	_, _ = rand.Read(raw)
+	token := hex.EncodeToString(raw)
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	if f.m == nil {
+		f.m = map[string]flashText{}
+	}
+	for k, v := range f.m {
+		if now.After(v.until) {
+			delete(f.m, k)
+		}
+	}
+	f.m[token] = flashText{text, now.Add(flashTextTTL)}
+	return token
+}
+
+func (f *flashTexts) take(token string, now time.Time) (string, bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	v, ok := f.m[token]
+	delete(f.m, token)
+	return v.text, ok && !now.After(v.until)
+}
+
+// redirectSavedText is redirectSaved for a success line that names text from
+// the request, such as the entry that was added.
+func (s *server) redirectSavedText(w http.ResponseWriter, r *http.Request, to, key, text string) {
+	s.setFlash(w, r, key+":"+s.flashTexts.put(text, s.now()))
+	http.Redirect(w, r, to, http.StatusSeeOther)
 }
 
 // redirectSynced redirects to a page and has it show the result of the last
@@ -56,6 +108,13 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 // successText is the text of a success line. After "Sync now" it says when
 // the calendar was updated and what the run did.
 func (s *server) successText(lang, key, arg string) string {
+	if strings.HasPrefix(key, "flash.entry_") && arg != "" {
+		text, ok := s.flashTexts.take(arg, s.now())
+		if !ok {
+			return "" // the box restarted or the line is old: better none than a wrong one
+		}
+		return s.i18n.Format(lang, i18n.Msg(key, "text", text))
+	}
 	if key == "flash.calendar_synced" && arg != "" {
 		if h, err := s.db.HomeHousehold(); err == nil {
 			if c, err := s.db.SyncedCalendar(h.ID, arg); err == nil && !c.Sync.LastSuccess.IsZero() {

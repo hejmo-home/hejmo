@@ -84,22 +84,23 @@ type PublicHTTPS interface {
 }
 
 type server struct {
-	db        *store.DB
-	pki       *pki.Store
-	public    PublicHTTPS
-	httpsPort string
-	now       func() time.Time
-	i18n      *i18n.Bundle
-	pages     *template.Template
-	logger    *slog.Logger
-	limiter   *loginLimiter
-	opens     *loginLimiter // pairing screens opened, per client address
-	sync      *calsync.Service
-	weather   *weather.Service
-	live      time.Duration
-	countWait time.Duration
-	done      <-chan struct{}
-	updateDir string
+	db         *store.DB
+	pki        *pki.Store
+	public     PublicHTTPS
+	httpsPort  string
+	now        func() time.Time
+	i18n       *i18n.Bundle
+	pages      *template.Template
+	logger     *slog.Logger
+	limiter    *loginLimiter
+	opens      *loginLimiter // pairing screens opened, per client address
+	sync       *calsync.Service
+	weather    *weather.Service
+	live       time.Duration
+	countWait  time.Duration
+	done       <-chan struct{}
+	updateDir  string
+	flashTexts flashTexts
 }
 
 // New returns the box's root HTTP handler.
@@ -202,7 +203,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /lists/{id}/entries/{entry}/done", s.handleEntryDone)
 	mux.HandleFunc("POST /lists/{id}/entries/{entry}/delete", s.handleEntryDelete)
 	mux.HandleFunc("POST /lists/{id}/entries/{entry}/move", s.handleEntryMove)
-	mux.HandleFunc("POST /lists/{id}/completed/delete", s.handleCompletedDelete)
+	mux.HandleFunc("POST /lists/{id}/completed/delete", s.handleTickedDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
@@ -275,17 +276,25 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
-	for _, k := range []string{"Error", "ErrorField"} { // templates compare them
+	for _, k := range []string{"Error", "ErrorField", "Flash"} { // templates compare them
 		if _, ok := data[k]; !ok {
 			data[k] = ""
 		}
 	}
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
-		if key, arg := s.takeFlash(w, r); key != "" {
+		key, arg := s.takeFlash(w, r)
+		switch skey, _ := data["SuccessKey"].(string); {
+		case key != "" && status >= http.StatusBadRequest:
+			// A failed form shows no success line, not even one left over from before.
+		case key != "":
 			fr.Success = s.successText(lang, key, arg)
-		} else if key, ok := data["SuccessKey"].(string); ok {
-			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
+			data["Flash"] = key
+		case skey != "":
+			fr.Success = s.i18n.T(lang, skey) // a page that shows the result itself
+		}
+		if inline, _ := data["SuccessInline"].(bool); inline {
+			data["Success"], fr.Success = fr.Success, "" // the page places the line itself
 		}
 		data["Frame"] = fr
 	}

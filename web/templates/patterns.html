@@ -52,9 +52,9 @@
 {{define "optionsClose"}}{{template "fieldError" .}}</fieldset>{{end}}
 
 {{/* "More options": fields with a good default. Arguments: Label, Summary (the
-     current value), Open. Close with moreClose. */}}
+     current value), Open and ID (of the summary, for aria-labelledby). Close with moreClose. */}}
 {{define "moreOpen"}}<details class="more"{{if .Open}} open{{end}}>
-  <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{.Label}}{{with .Summary}}<span class="sum">{{.}}</span>{{end}}</summary>
+  <summary{{with .ID}} id="{{.}}"{{end}}><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{.Label}}{{with .Summary}}<span class="sum">{{.}}</span>{{end}}</summary>
   <div>{{end}}
 {{define "moreClose"}}</div>
 </details>{{end}}

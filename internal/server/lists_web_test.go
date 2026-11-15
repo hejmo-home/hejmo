@@ -91,12 +91,13 @@ func TestAlphabeticalListPageShowsEntriesInOrder(t *testing.T) {
 	for _, s := range []string{"Water", "Apple juice", "Milk"} {
 		b.post("/lists/"+id+"/entries", url.Values{"text": {s}})
 	}
-	body := getEN(b, "/lists/"+id).body
-	a, m, w := strings.Index(body, "Apple juice"), strings.Index(body, "Milk"), strings.Index(body, "Water")
+	body := getEN(b, "/lists/"+id+"?edit=1").body
+	title := func(s string) int { return strings.Index(body, `<span class="title">`+s) }
+	a, m, w := title("Apple juice"), title("Milk"), title("Water")
 	if a < 0 || !(a < m && m < w) {
 		t.Fatalf("order on page: apple %d milk %d water %d", a, m, w)
 	}
-	if strings.Contains(body, "/move") {
+	if strings.Contains(getEN(b, "/lists/"+id+"?edit=1").body, "/move") {
 		t.Errorf("alphabetical list offers moving entries")
 	}
 }
@@ -110,11 +111,12 @@ func TestManualListPageMovesEntries(t *testing.T) {
 		e, _ := b.db.AddEntry(h.ID, id, s)
 		ids = append(ids, e.ID)
 	}
-	if r := b.post("/lists/"+id+"/entries/"+ids[2]+"/move", url.Values{"direction": {"up"}}); r.status != http.StatusSeeOther {
+	if r := b.post("/lists/"+id+"/entries/"+ids[2]+"/move", url.Values{"direction": {"up"}}); r.status != http.StatusSeeOther || r.location != "/lists/"+id+"?edit=1" {
 		t.Fatalf("move = %d", r.status)
 	}
-	body := getEN(b, "/lists/"+id).body
-	if !(strings.Index(body, "c-three") < strings.Index(body, "b-two")) || !(strings.Index(body, "a-one") < strings.Index(body, "c-three")) {
+	body := getEN(b, "/lists/"+id+"?edit=1").body
+	title := func(s string) int { return strings.Index(body, `<span class="title">`+s) }
+	if !(title("c-three") < title("b-two")) || !(title("a-one") < title("c-three")) {
 		t.Fatalf("order after move wrong:\n%s", body)
 	}
 	if r := b.post("/lists/"+id+"/entries/"+ids[0]+"/move", url.Values{"direction": {"sideways"}}); r.status != http.StatusUnprocessableEntity {
@@ -137,7 +139,7 @@ func TestDeleteCompletedAndHideCompletedInTheWebInterface(t *testing.T) {
 	if !strings.Contains(page.body, "<s>Milk</s>") || !strings.Contains(page.body, "Eggs") {
 		t.Fatalf("ticked entry not shown struck through:\n%s", page.body)
 	}
-	hidden := getEN(b, "/lists/"+id+"?completed=hide")
+	hidden := getEN(b, "/lists/"+id+"?ticked=hide")
 	if strings.Contains(hidden.body, "Milk") || !strings.Contains(hidden.body, "Eggs") {
 		t.Fatalf("hide completed:\n%s", hidden.body)
 	}

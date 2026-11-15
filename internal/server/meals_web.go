@@ -82,15 +82,27 @@ func (s *server) renderMeals(w http.ResponseWriter, r *http.Request, p principal
 	today := s.today(p)
 	days := weekDays(monday, today, values)
 	planned := false
+	errDay, errMealtime := 0, ""
 	for _, d := range days {
 		planned = planned || len(d.Planned) > 0
+		for _, c := range d.Cells {
+			if errField != "" && c.Name == errField {
+				errDay, errMealtime = d.Weekday, c.Mealtime
+			}
+		}
 	}
 	s.render(w, r, status, "meals.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Days": days, "Planned": planned,
 		"Week": monday.Format(task.DateLayout), "Prev": monday.AddDate(0, 0, -7).Format(task.DateLayout), "Next": monday.AddDate(0, 0, 7).Format(task.DateLayout),
-		"From": monday.Format("02/01/2006"), "To": sunday.Format("02/01/2006"), "ThisWeek": monday.Format(task.DateLayout) == weekOf(mustDay(today)).Format(task.DateLayout),
+		"WeekNo": isoWeek(monday), "From": monday.Format("02/01"), "To": sunday.Format("02/01/2006"), "ErrorWeekday": errDay, "ErrorMealtime": errMealtime, "ThisWeek": monday.Format(task.DateLayout) == weekOf(mustDay(today)).Format(task.DateLayout),
 		"Editable": p.person.Role == store.RoleParent, "Error": errKey, "ErrorField": errField,
 	})
+}
+
+// isoWeek is the number of the ISO calendar week that starts on monday.
+func isoWeek(monday time.Time) int {
+	_, w := monday.AddDate(0, 0, 3).ISOWeek() // the Thursday decides, as the standard has it
+	return w
 }
 
 func mustDay(s string) time.Time {
@@ -139,7 +151,7 @@ func (s *server) handleMealsSave(w http.ResponseWriter, r *http.Request) {
 	}
 	switch err := s.saveMeals(r, p, changes); {
 	case err == nil:
-		s.redirectSaved(w, r, "/meals?"+url.Values{"week": {monday.Format(task.DateLayout)}}.Encode(), "flash.meals_saved")
+		s.redirectSaved(w, r, "/meals?"+url.Values{"week": {monday.Format(task.DateLayout)}}.Encode(), "flash.meals_saved:"+monday.Format(task.DateLayout))
 	case errors.Is(err, store.ErrInvalid):
 		s.renderMeals(w, r, p, http.StatusUnprocessableEntity, monday, typed, "meals.error.text", "")
 	default:

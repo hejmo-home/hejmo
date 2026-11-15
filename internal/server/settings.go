@@ -1,9 +1,11 @@
 package server
 
 import (
+	"cmp"
 	"encoding/json"
 	"errors"
 	"net/http"
+	"net/url"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/meal"
@@ -89,7 +91,10 @@ func cutoffField(m meal.Mealtime) string { return "cutoff_" + string(m) }
 func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p principal, status int, errKey, errField string, cutoffs meal.Cutoffs) {
 	fields := make([]cutoffInput, 0, 4)
 	for _, m := range meal.Mealtimes() {
-		fields = append(fields, cutoffInput{Name: cutoffField(m), Mealtime: string(m), Value: cutoffs.For(m)})
+		// A mealtime without a cut-off is switched off; its field waits with a
+		// sensible time, so switching it on starts there.
+		at := cutoffs.For(m)
+		fields = append(fields, cutoffInput{Name: cutoffField(m), Mealtime: string(m), Value: cmp.Or(at, meal.SuggestedCutoff(m)), On: at != ""})
 	}
 	s.render(w, r, status, "household.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Error": errKey, "ErrorField": errField, "Cutoffs": fields,
@@ -98,7 +103,10 @@ func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p princi
 	})
 }
 
-type cutoffInput struct{ Name, Mealtime, Value string }
+type cutoffInput struct {
+	Name, Mealtime, Value string
+	On                    bool // the switch: the mealtime disappears from displays at Value
+}
 
 // handleSettingsHub shows the Settings hub: one calm row per setup screen.
 func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
@@ -138,9 +146,7 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
 	c := p.household.MealCutoffs
 	for _, m := range meal.Mealtimes() {
-		if v, ok := r.PostForm[cutoffField(m)]; ok && len(v) > 0 { // a form without the field leaves it alone
-			c = c.With(m, v[0])
-		}
+		c = c.With(m, postedCutoff(r.PostForm, m, c.For(m)))
 	}
 	if !f.Valid() || !u.Valid() || !a.Valid() {
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.invalid", "", c)
@@ -159,7 +165,27 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "update settings", err)
 		return
 	}
-	s.redirectSaved(w, r, "/settings/household", "flash.saved")
+	s.redirectSaved(w, r, "/settings/household", "flash.household_saved")
+}
+
+// postedCutoff is the cut-off of a mealtime as the form sends it: a switch
+// (cutoff_<m>_on) and a time (cutoff_<m>). A mealtime switched off has no
+// cut-off, whatever the time field holds; an unchecked box is not sent at all,
+// so a form that carries the time field but not the switch says "off". A
+// switch that is on with an empty time starts at the suggested time. A form
+// with neither leaves the stored value alone (current).
+func postedCutoff(form url.Values, m meal.Mealtime, current string) string {
+	at, hasTime := form[cutoffField(m)]
+	on, hasSwitch := form[cutoffField(m)+"_on"]
+	switch {
+	case !hasTime && !hasSwitch:
+		return current
+	case !hasSwitch || len(on) == 0 || on[0] == "off":
+		return ""
+	case !hasTime || len(at) == 0 || at[0] == "":
+		return cmp.Or(current, meal.SuggestedCutoff(m))
+	}
+	return at[0]
 }
 
 // saveSettings stores the household settings: the general ones and the meal

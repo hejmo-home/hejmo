@@ -39,6 +39,9 @@ type frame struct {
 	// seconds, 0 when unknown); the page script uses them for the browser
 	// theme "automatic" (ADR 0015).
 	SunRise, SunSet int64
+	// TimeFormat is the household's clock ("24h" or "12h"); the time picker
+	// follows it.
+	TimeFormat string
 	// Back is set on setup screens: they link back to the Settings hub.
 	Back bool
 	// Success is the success line after a saved change, already translated.
@@ -56,6 +59,9 @@ func (s *server) frameFor(r *http.Request) frame {
 	}
 	f := s.sunFrame()
 	f.SignedIn = true
+	if h, err := s.db.HomeHousehold(); err == nil {
+		f.TimeFormat = string(h.TimeFormat)
+	}
 	f.Back = isSetupPath(r.URL.Path)
 	for _, it := range navItems {
 		if !auth.RoleAllows(p.Role, it.Needs) {

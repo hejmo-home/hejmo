@@ -92,26 +92,81 @@ func TestSettingsWorkThroughTheAPI(t *testing.T) {
 }
 
 // ADR 0016: household settings gain a cut-off time per mealtime, from which it
-// is no longer shown on displays.
+// is no longer shown on displays. Ticket 6.3 design pass: a switch row per
+// mealtime with its state in words; off means no cut-off.
 func TestSettingsScreenShowsAndSavesTheMealCutoffTimes(t *testing.T) {
 	b := signedInBox(t)
 	page := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "en"})
-	for _, want := range []string{`name="cutoff_breakfast"`, `value="10:00"`, `name="cutoff_lunch"`, `value="13:30"`, `name="cutoff_snack"`, `value="16:30"`, `name="cutoff_dinner"`, "Breakfast", "Dinner"} {
+	for _, want := range []string{`name="cutoff_breakfast"`, `value="10:00"`, `name="cutoff_lunch"`, `value="13:30"`, `name="cutoff_snack"`, `value="16:30"`, `name="cutoff_dinner"`, "Breakfast", "Dinner",
+		`name="cutoff_breakfast_on"`, `name="cutoff_dinner_on"`, "Disappears from displays at a set time", "Shown all day", "Disappears at",
+		`class="tcap" type="time"`, `step="300"`, `<div class="cut">`, `class="at"`,
+		"Displays show today&#39;s meals. Choose for each mealtime whether it disappears at a set time or stays all day."} {
 		if !strings.Contains(page.body, want) {
 			t.Fatalf("settings page lacks %q:\n%s", want, page.body)
 		}
 	}
-	form := url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "cutoff_breakfast": {"09:30"}, "cutoff_lunch": {""}, "cutoff_snack": {"17:00"}, "cutoff_dinner": {"21:00"}}
+	// Breakfast, lunch and snack are on, dinner is off with 20:00 waiting in its field.
+	for _, m := range []string{"breakfast", "lunch", "snack"} {
+		if !regexp.MustCompile(`name="cutoff_` + m + `_on" checked`).MatchString(page.body) {
+			t.Errorf("%s switch is not on", m)
+		}
+	}
+	if regexp.MustCompile(`name="cutoff_dinner_on" checked`).MatchString(page.body) || !regexp.MustCompile(`name="cutoff_dinner"[^>]*value="20:00"`).MatchString(page.body) {
+		t.Errorf("dinner is not off with 20:00 prefilled:\n%s", page.body)
+	}
+	if n := strings.Count(page.body, `class="state is-on"`); n != 3 {
+		t.Errorf("%d switches show the on state, want 3", n)
+	}
+	form := url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "cutoff_breakfast": {"09:30"}, "cutoff_breakfast_on": {"on"}, "cutoff_lunch": {"13:30"}, "cutoff_snack": {"17:00"}, "cutoff_snack_on": {"on"}, "cutoff_dinner": {"21:00"}, "cutoff_dinner_on": {"on"}}
 	if r := b.post("/settings/household", form); r.status != http.StatusSeeOther || r.location != "/settings/household" {
 		t.Fatalf("save = %d %q\n%s", r.status, r.location, r.body)
 	}
 	h, _ := b.db.HomeHousehold()
+	// Lunch has a time in its field but its switch is off (unchecked boxes are not sent): no cut-off.
 	if got := h.MealCutoffs; got.Breakfast != "09:30" || got.Lunch != "" || got.Snack != "17:00" || got.Dinner != "21:00" {
 		t.Fatalf("stored = %+v", got)
 	}
-	page = b.get("/settings/household")
-	if !strings.Contains(page.body, `value="09:30"`) || !strings.Contains(page.body, `value="21:00"`) || strings.Contains(page.body, `value="13:30"`) {
+	page = b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "en"})
+	if !strings.Contains(page.body, `value="09:30"`) || !strings.Contains(page.body, `value="21:00"`) || regexp.MustCompile(`name="cutoff_lunch_on" checked`).MatchString(page.body) {
 		t.Fatalf("saved values not shown:\n%s", page.body)
+	}
+	if !regexp.MustCompile(`name="cutoff_lunch"[^>]*value="13:30"`).MatchString(page.body) {
+		t.Error("an off mealtime does not wait with its suggested time")
+	}
+}
+
+func TestSwitchedOffMealtimeStoresNoCutoffWhateverTheTimeFieldHolds(t *testing.T) {
+	b := signedInBox(t)
+	for _, off := range []url.Values{{"cutoff_snack_on": {"off"}}, {}} { // an explicit "off" and an unchecked box (not sent)
+		form := url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "cutoff_snack": {"17:45"}}
+		for k, v := range off {
+			form[k] = v
+		}
+		if r := b.post("/settings/household", form); r.status != http.StatusSeeOther {
+			t.Fatalf("save = %d\n%s", r.status, r.body)
+		}
+		if h, _ := b.db.HomeHousehold(); h.MealCutoffs.Snack != "" {
+			t.Errorf("snack cut-off = %q with its switch off (%v), want none", h.MealCutoffs.Snack, off)
+		}
+		b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "cutoff_snack": {"16:30"}, "cutoff_snack_on": {"on"}})
+	}
+}
+
+func TestSwitchedOnMealtimeWithAnEmptyTimeStartsAtItsSuggestedTime(t *testing.T) {
+	b := signedInBox(t)
+	b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "cutoff_dinner": {""}, "cutoff_dinner_on": {"on"}})
+	if h, _ := b.db.HomeHousehold(); h.MealCutoffs.Dinner != "20:00" {
+		t.Errorf("dinner = %q, want 20:00", h.MealCutoffs.Dinner)
+	}
+}
+
+func TestSettingsScreenShowsTheSwitchStatesInGerman(t *testing.T) {
+	b := signedInBox(t)
+	page := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body
+	for _, want := range []string{"Verschwindet zu einer festen Uhrzeit von Displays", "Den ganzen Tag sichtbar", "Verschwindet um", "Frühstück", "Abendessen", "Displays zeigen die Mahlzeiten von heute."} {
+		if !strings.Contains(page, want) {
+			t.Errorf("German page lacks %q", want)
+		}
 	}
 }
 
@@ -128,7 +183,7 @@ func TestSettingsFormWithoutCutoffFieldsLeavesThemAlone(t *testing.T) {
 
 func TestInvalidCutoffShowsAnErrorAtItsFieldAndSavesNothing(t *testing.T) {
 	b := signedInBox(t)
-	r := b.do(http.MethodPost, "/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}, "cutoff_breakfast": {"09:30"}, "cutoff_snack": {"25:61"}},
+	r := b.do(http.MethodPost, "/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}, "cutoff_breakfast": {"09:30"}, "cutoff_breakfast_on": {"on"}, "cutoff_snack": {"25:61"}, "cutoff_snack_on": {"on"}},
 		map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `role="alert"`) || !strings.Contains(r.body, `id="err-cutoff_snack"`) {
 		t.Fatalf("status = %d\n%s", r.status, r.body)

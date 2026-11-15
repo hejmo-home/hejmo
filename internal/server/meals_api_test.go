@@ -55,7 +55,7 @@ func TestADinnerEnteredForTuesdayAppearsInTheCalendarOnTuesday(t *testing.T) {
 			meals = x.(map[string]any)
 		}
 	}
-	if meals == nil || meals["id"] != occs[0]["calendar_id"] || meals["read_only"] != true || meals["share_through_box"] != true || meals["name"] != "Speiseplan" {
+	if meals == nil || meals["id"] != occs[0]["calendar_id"] || meals["read_only"] != true || meals["share_through_box"] != true || meals["name"] != "Essensplan" {
 		t.Fatalf("meal calendar = %v", meals)
 	}
 }
@@ -181,7 +181,7 @@ func TestMealCalendarIsSharedToPhonesAndReadOnlyThere(t *testing.T) {
 	c := signedInAPI(t)
 	putMeal(t, c, tuesday, "dinner", "Nudelauflauf")
 	p := c.phone(t, "calendars")
-	cal := p.calendarNamed("Speiseplan")
+	cal := p.calendarNamed("Essensplan")
 	if got := p.titles(cal.Path); len(got) != 1 || got[0] != "Abendessen: Nudelauflauf" {
 		t.Fatalf("phone sees %v", got)
 	}

@@ -2,14 +2,16 @@
   <h1>{{t "meals.title"}}</h1>
   {{template "syncNotice" .}}
   <p class="lead">{{if .Editable}}{{t "meals.intro"}}{{else}}{{t "meals.intro.child"}}{{end}}</p>
+  {{if .Editable}}<p class="hint recipe"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v5M12 7.5v.5"/></svg>{{t "meals.recipe_note"}}</p>{{end}}
 
-  <nav class="weeknav" aria-label="{{t "meals.week.nav"}}">
-    <a href="/meals?week={{.Prev}}">{{t "meals.week.prev"}}</a>
-    <strong>{{printf (t "meals.week.range") .From .To}}</strong>
-    <a href="/meals?week={{.Next}}">{{t "meals.week.next"}}</a>
-    {{if not .ThisWeek}}<a href="/meals">{{t "meals.week.this"}}</a>{{end}}
-  </nav>
-  {{if not .Planned}}<p class="hint" data-empty>{{t "meals.none"}}</p>{{end}}
+<div class="weeknav-row"><nav class="weeknav" aria-label="{{t "meals.week.nav"}}">
+  <a class="wbtn" href="/meals?week={{.Prev}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>{{t "meals.week.prev"}}</a>
+  <div class="wk"><strong>{{printf (t "meals.week.label") .WeekNo}}</strong><span>{{printf (t "meals.week.range") .From .To}}</span></div>
+  <a class="wbtn" href="/meals?week={{.Next}}">{{t "meals.week.next"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+  {{if not .ThisWeek}}<a class="wbtn this" href="/meals">{{t "meals.week.this"}}</a>{{end}}
+</nav></div>
+  {{if and .Error .ErrorField}}<p class="error form-error" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{t "meals.error.form.before"}} <a href="#{{.ErrorField}}">{{printf (t "meals.error.field") (t (printf "meals.weekday.%d" .ErrorWeekday)) (t (printf "meals.mealtime.%s" .ErrorMealtime))}}</a>{{t "meals.error.form.after"}}</span></p>{{end}}
+  {{if not .Planned}}<p class="hint" data-empty>{{printf (t "meals.none") .WeekNo}}</p>{{end}}
   {{template "error" .}}
 
   {{if .Editable}}<form method="post" action="/meals" class="steps wide">
@@ -18,18 +20,19 @@
       {{range .Days}}
       <fieldset class="meal-day" data-day="{{.Date}}"{{if .Today}} data-today{{end}}>
         <legend>{{t (printf "meals.weekday.%d" .Weekday)}} <span class="date">{{.Short}}</span>{{if .Today}} <span class="today">{{t "meals.today"}}</span>{{end}}</legend>
-        {{range .Cells}}{{template "field" (dict "Root" $ "Name" .Name "Label" (t (printf "meals.mealtime.%s" .Mealtime)) "Value" .Value "Max" 200)}}{{end}}
+        {{range .Cells}}{{$bad := and $.ErrorField (eq $.ErrorField .Name)}}<div class="mrow{{if $bad}} invalid{{end}}"><label class="mt" for="{{.Name}}">{{template "mealIcon" .Mealtime}}{{t (printf "meals.mealtime.%s" .Mealtime)}}</label><textarea id="{{.Name}}" name="{{.Name}}" rows="1"{{if not $bad}} maxlength="200"{{end}}{{if $bad}} autofocus aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}>{{.Value}}</textarea>{{template "fieldError" (dict "Root" $ "Name" .Name)}}</div>
+        {{end}}
       </fieldset>
       {{end}}
     </div>
-    <button class="button" type="submit">{{t "meals.save"}}</button>
+    <div class="savebar"><button class="button" type="submit">{{printf (t "meals.save") .WeekNo}}</button><span class="dirty" hidden>{{t "meals.dirty"}}</span></div>
   </form>
   {{else}}
   <div class="meal-week">
     {{range .Days}}
     <section class="meal-day" data-day="{{.Date}}"{{if .Today}} data-today{{end}} aria-label="{{t (printf "meals.weekday.%d" .Weekday)}} {{.Short}}">
       <h2>{{t (printf "meals.weekday.%d" .Weekday)}} <span class="date">{{.Short}}</span>{{if .Today}} <span class="today">{{t "meals.today"}}</span>{{end}}</h2>
-      {{if .Planned}}<dl>{{range .Planned}}<div><dt>{{t (printf "meals.mealtime.%s" .Mealtime)}}</dt><dd>{{.Value}}</dd></div>{{end}}</dl>{{else}}<p class="hint">{{t "meals.day_none"}}</p>{{end}}
+      {{if .Planned}}<dl>{{range .Planned}}<div><dt class="mt">{{template "mealIcon" .Mealtime}}{{t (printf "meals.mealtime.%s" .Mealtime)}}</dt><dd>{{.Value}}</dd></div>{{end}}</dl>{{else}}<p class="none">{{t "meals.day_none"}}</p>{{end}}
     </section>
     {{end}}
   </div>

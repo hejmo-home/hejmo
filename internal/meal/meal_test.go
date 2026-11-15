@@ -98,3 +98,18 @@ func TestEventTitleNamesTheMealtime(t *testing.T) {
 		t.Fatalf("title = %q", got)
 	}
 }
+
+// A mealtime switched off waits with a sensible time, so switching it on
+// starts there (ticket 6.3). Only the stored default of ADR 0016 differs for
+// dinner, which has none.
+func TestSuggestedCutoffIsTheDefaultOrEightInTheEveningForDinner(t *testing.T) {
+	want := map[meal.Mealtime]string{meal.Breakfast: "10:00", meal.Lunch: "13:30", meal.Snack: "16:30", meal.Dinner: "20:00"}
+	for m, at := range want {
+		if got := meal.SuggestedCutoff(m); got != at {
+			t.Errorf("SuggestedCutoff(%s) = %q, want %q", m, got, at)
+		}
+		if !meal.ValidTime(meal.SuggestedCutoff(m)) {
+			t.Errorf("SuggestedCutoff(%s) is not a valid time", m)
+		}
+	}
+}

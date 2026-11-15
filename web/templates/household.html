@@ -22,7 +22,12 @@
     <fieldset class="cutoffs">
       <legend>{{t "settings.cutoffs"}}</legend>
       <p class="hint">{{t "settings.cutoffs.hint"}}</p>
-      {{range .Cutoffs}}{{template "field" (dict "Root" $ "Name" .Name "Label" (t (printf "meals.mealtime.%s" .Mealtime)) "Type" "time" "Value" .Value)}}{{end}}
+      {{range .Cutoffs}}{{$bad := and $.ErrorField (eq $.ErrorField .Name)}}<div class="cut">
+        {{template "switch" (dict "Name" (printf "%s_on" .Name) "Mealtime" .Mealtime "Label" (t (printf "meals.mealtime.%s" .Mealtime)) "AriaLabel" (printf (t "settings.cutoff.switch") (t (printf "meals.mealtime.%s" .Mealtime))) "OnText" (t "settings.cutoff.on_text") "OffText" (t "settings.cutoff.off_text") "Checked" .On)}}
+        <label class="at{{if $bad}} invalid{{end}}">{{t "settings.cutoff.at"}} <input class="tcap" type="time" name="{{.Name}}" value="{{.Value}}" step="300"{{if $bad}} autofocus aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}></label>
+        {{template "fieldError" (dict "Root" $ "Name" .Name)}}
+      </div>
+      {{end}}
     </fieldset>
     <button class="button" type="submit">{{t "settings.save"}}</button>
   </form>

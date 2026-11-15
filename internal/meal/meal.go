@@ -124,3 +124,13 @@ func (c Cutoffs) Validate() error {
 	}
 	return nil
 }
+
+// SuggestedCutoff is the time a mealtime's cut-off field starts with when its
+// switch is off, so switching it on starts at a sensible time: the default of
+// ADR 0016, and 20:00 for dinner, which has no default.
+func SuggestedCutoff(m Mealtime) string {
+	if m == Dinner {
+		return "20:00"
+	}
+	return DefaultCutoffs().For(m)
+}

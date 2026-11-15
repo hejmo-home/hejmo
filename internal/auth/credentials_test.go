@@ -209,3 +209,37 @@ func TestVerifyPasswordKeyLengthAndThreadBounds(t *testing.T) {
 		}
 	}
 }
+
+// The cost seam for tests must never leak into production: a fresh process
+// hashes with the ADR 0010 parameters (Argon2id, 19 MiB, 2 passes, 1 lane).
+func TestProductionUsesTheADR0010Parameters(t *testing.T) {
+	if auth.ProductionHashCost != (auth.HashCost{MemoryKiB: 19 * 1024, Passes: 2, Threads: 1}) {
+		t.Fatalf("ProductionHashCost = %+v, want 19 MiB, 2 passes, 1 lane", auth.ProductionHashCost)
+	}
+	pw, err := auth.HashPassword("correct horse battery")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for name, h := range map[string]string{"password": pw, "recovery code": auth.HashRecoveryCode("AAAAA-BBBBB")} {
+		if !strings.HasPrefix(h, "$argon2id$v=19$m=19456,t=2,p=1$") {
+			t.Errorf("%s hash = %q, want the ADR 0010 parameters", name, h)
+		}
+	}
+}
+
+func TestSetHashCostChangesNewHashesOnlyAndRestores(t *testing.T) {
+	before, _ := auth.HashPassword("correct horse battery")
+	restore := auth.SetHashCost(auth.HashCost{MemoryKiB: 8, Passes: 1, Threads: 1})
+	cheap, _ := auth.HashPassword("correct horse battery")
+	if !strings.Contains(cheap, "$m=8,t=1,p=1$") {
+		t.Errorf("cheap hash = %q", cheap)
+	}
+	if !auth.VerifyPassword(before, "correct horse battery") || !auth.VerifyPassword(cheap, "correct horse battery") {
+		t.Error("a hash must verify whatever cost is set now")
+	}
+	restore()
+	after, _ := auth.HashPassword("correct horse battery")
+	if !strings.Contains(after, "$m=19456,t=2,p=1$") {
+		t.Errorf("after restore = %q", after)
+	}
+}

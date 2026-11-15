@@ -40,6 +40,30 @@ const (
 	maxThreads   = 8
 )
 
+// HashCost is the work one Argon2id hash asks for.
+type HashCost struct {
+	MemoryKiB uint32
+	Passes    uint32
+	Threads   uint8
+}
+
+// ProductionHashCost is the ADR 0010 cost every real hash uses.
+var ProductionHashCost = HashCost{MemoryKiB: argonMemory, Passes: argonTime, Threads: argonThreads}
+
+// hashCost is what new hashes are made with. Verifying reads the cost from the
+// stored hash, so changing it never makes an existing hash fail.
+var hashCost = ProductionHashCost
+
+// SetHashCost changes the cost of new hashes and returns a function that puts
+// the previous cost back. It is a seam for tests, which hash a lot and do not
+// need the ADR 0010 cost; the box never calls it. Call it before tests start
+// (TestMain), not while hashes are being made.
+func SetHashCost(c HashCost) (restore func()) {
+	prev := hashCost
+	hashCost = c
+	return func() { hashCost = prev }
+}
+
 // HashPassword returns an Argon2id PHC string for password.
 func HashPassword(password string) (string, error) {
 	if utf8.RuneCountInString(password) < MinPasswordLength {
@@ -54,10 +78,11 @@ func VerifyPassword(hash, password string) bool { return verifySecret(hash, pass
 func hashSecret(secret string) string {
 	salt := make([]byte, 16)
 	_, _ = rand.Read(salt)
-	key := argon2.IDKey([]byte(secret), salt, argonTime, argonMemory, argonThreads, argonKeyLen)
+	c := hashCost
+	key := argon2.IDKey([]byte(secret), salt, c.Passes, c.MemoryKiB, c.Threads, argonKeyLen)
 	b64 := base64.RawStdEncoding
 	return fmt.Sprintf("$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
-		argon2.Version, argonMemory, argonTime, argonThreads, b64.EncodeToString(salt), b64.EncodeToString(key))
+		argon2.Version, c.MemoryKiB, c.Passes, c.Threads, b64.EncodeToString(salt), b64.EncodeToString(key))
 }
 
 func verifySecret(hash, secret string) bool {

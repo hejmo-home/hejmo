@@ -3,13 +3,18 @@ package server
 import (
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-// dummyHash keeps sign-in timing equal for unknown usernames.
-var dummyHash, _ = auth.HashPassword("hejmo-timing-equaliser")
+// dummyHash keeps sign-in timing equal for unknown usernames. It is made on
+// first use (New does that), with the cost new hashes have at that time.
+var dummyHash = sync.OnceValue(func() string {
+	h, _ := auth.HashPassword("hejmo-timing-equaliser")
+	return h
+})
 
 func (s *server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 	if !s.db.Configured() {
@@ -32,7 +37,7 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	acc, err := s.db.AccountByUsername(username)
 	hash := acc.PasswordHash
 	if err != nil {
-		hash = dummyHash
+		hash = dummyHash()
 	}
 	passwordOK := auth.VerifyPassword(hash, r.PostFormValue("password"))
 	// Always run the second-factor check, whatever the password, so the time
@@ -91,7 +96,7 @@ func (s *server) secondFactorOK(acc store.Account, code string, spend bool) bool
 	}
 	matched := ""
 	for i := 0; i < max(recoveryCodeSlots, len(codes)); i++ { // check all, so timing does not tell which one matched
-		hash, id := dummyHash, ""
+		hash, id := dummyHash(), ""
 		if i < len(codes) {
 			hash, id = codes[i].Hash, codes[i].ID
 		}

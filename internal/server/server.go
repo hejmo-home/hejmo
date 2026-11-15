@@ -99,6 +99,7 @@ type server struct {
 
 // New returns the box's root HTTP handler.
 func New(opts Options) http.Handler {
+	dummyHash() // make it now, not during the first sign-in
 	if opts.DB == nil {
 		panic("server: Options.DB is required")
 	}

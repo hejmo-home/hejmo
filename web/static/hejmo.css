@@ -295,8 +295,7 @@ a { color: var(--accent); }
    stack them; wide screens put the navigation beside the content. */
 .skip { position: absolute; left: -9999px; }
 .skip:focus { position: static; display: inline-block; padding: 10px 12px; }
-.frame { display: grid; gap: var(--gap-section); align-content: start; }
-.frame { grid-template-columns: minmax(0, 1fr); }
+.frame { display: grid; gap: var(--gap-section); align-content: start; grid-template-columns: minmax(0, 1fr); }
 .frame-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); }
 .brand { display: inline-flex; align-items: center; min-height: var(--touch-target); font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); color: var(--text); text-decoration: none; }
 .frame-bar .button { min-height: var(--touch-target); }

@@ -485,7 +485,8 @@ paths:
         refused with 400. The new value counts from the next tick. Ticks that
         are already credited keep their value: the star log and the stars
         credited for done days stay as they are, and unticking deducts what was
-        credited. An out-of-range value gives 400 with `field: stars`.
+        credited. A missing value, a value that is not a whole number and a value
+        outside 0 to 100 give 422 with `field: stars`, as on POST /tasks.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -496,10 +497,11 @@ paths:
               type: object
               description: |
                 `stars` is a whole number from 0 to 100. The range is checked by
-                the box, so a value outside it gets the 400 below with a field
-                error. Any other field is refused with 400 as well.
+                the box, so a value outside it gets the 422 below with a field
+                error. Any other field is refused with 400.
+              additionalProperties: false
               properties:
-                stars: { type: integer }
+                stars: { type: integer, minimum: 0, maximum: 100 }
       responses:
         "200":
           description: The updated task with its state today
@@ -507,13 +509,14 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Task" }
         "400":
-          description: Not valid JSON, an unknown field or a star value outside 0 to 100
+          description: Not valid JSON or an unknown field
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Error" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
     delete:
       operationId: deleteTask
       summary: Delete a task with its history (scope tasks:delete, parents only)

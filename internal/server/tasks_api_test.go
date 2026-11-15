@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -187,6 +188,13 @@ func TestParentDeletesTasksAndFiltersByPerson(t *testing.T) {
 // rawCall sends a body without the contract client, which would refuse it.
 func rawCall(t *testing.T, c *apiClient, method, path, body string) int {
 	t.Helper()
+	status, _ := rawCallBody(t, c, method, path, body)
+	return status
+}
+
+// rawCallBody is rawCall that also returns the answer body.
+func rawCallBody(t *testing.T, c *apiClient, method, path, body string) (int, string) {
+	t.Helper()
 	req, _ := http.NewRequest(method, c.b.srv.URL+"/api/v1"+path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	if c.token != "" {
@@ -201,8 +209,9 @@ func rawCall(t *testing.T, c *apiClient, method, path, body string) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	res.Body.Close()
-	return res.StatusCode
+	defer res.Body.Close()
+	out, _ := io.ReadAll(res.Body)
+	return res.StatusCode, string(out)
 }
 
 func TestMalformedJSONIsA400OnBothTaskWrites(t *testing.T) {
@@ -246,16 +255,27 @@ func TestPatchTaskChangesTheStarValueOnly(t *testing.T) {
 func TestPatchTaskRefusesBadBodiesAndUnknownTasks(t *testing.T) {
 	tb := newTaskBox(t)
 	id := tb.newDaily(t, tb.miaID)
-	for name, body := range map[string]map[string]any{
-		"too many": {"stars": 101}, "negative": {"stars": -1}, "missing": {}, "other field": {"stars": 2, "title": "x"}, "unknown field": {"colour": "red"},
+	// Well-formed but invalid values: 422 with the field, like POST /tasks. The
+	// contract client would refuse some of these, so they go out raw.
+	for name, body := range map[string]string{
+		"too many": `{"stars":101}`, "negative": `{"stars":-1}`, "missing": `{}`, "quoted number": `{"stars":"3"}`, "fraction": `{"stars":2.5}`, "null": `{"stars":null}`,
 	} {
-		status, got, _ := tb.parent.call(http.MethodPatch, "/tasks/"+id, body)
-		if status != http.StatusBadRequest || got["error"] == nil {
-			t.Errorf("%s = %d %v, want 400 with an error", name, status, got)
+		status, out := rawCallBody(t, tb.parent, http.MethodPatch, "/tasks/"+id, body)
+		if status != http.StatusUnprocessableEntity || !strings.Contains(out, `"field":"stars"`) {
+			t.Errorf("%s = %d %s, want 422 naming the field stars", name, status, out)
 		}
 	}
-	if _, got, _ := tb.parent.call(http.MethodPatch, "/tasks/"+id, map[string]any{"stars": 101}); got["field"] != "stars" {
-		t.Errorf("out of range names no field: %v", got)
+	// Bad JSON and unknown fields stay 400.
+	for name, body := range map[string]string{
+		"other field": `{"stars":2,"title":"x"}`, "unknown field": `{"colour":"red"}`, "bad json": `{`,
+	} {
+		if got := rawCall(t, tb.parent, http.MethodPatch, "/tasks/"+id, body); got != http.StatusBadRequest {
+			t.Errorf("%s = %d, want 400", name, got)
+		}
+	}
+	// POST /tasks answers the same value the same way.
+	if got := rawCall(t, tb.parent, http.MethodPost, "/tasks", `{"person_id":"`+tb.miaID+`","title":"x","repeat":"daily","stars":101}`); got != http.StatusUnprocessableEntity {
+		t.Errorf("POST stars=101 = %d, want 422", got)
 	}
 	if st := taskState(t, tb.parent, id, ""); st["stars"] != float64(1) {
 		t.Fatalf("a refused patch changed the value: %v", st)

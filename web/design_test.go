@@ -507,10 +507,10 @@ func TestFamilyViewLayoutRulesFollowTheSpec(t *testing.T) {
 // sets the two-column layout, which has to keep winning.
 func TestFrameColumnIsClampedToTheViewport(t *testing.T) {
 	css := stylesheet(t)
-	clamp := strings.Index(css, ".frame { grid-template-columns: minmax(0, 1fr); }")
+	clamp := strings.Index(css, "align-content: start; grid-template-columns: minmax(0, 1fr); }")
 	wide := strings.Index(css, ".frame.has-nav { grid-template-columns: max-content minmax(0, 1fr)")
 	if clamp < 0 {
-		t.Fatal("no .frame { grid-template-columns: minmax(0, 1fr); } rule")
+		t.Fatal("no .frame rule with grid-template-columns: minmax(0, 1fr)")
 	}
 	if wide < 0 || clamp > wide {
 		t.Fatalf("the clamp (at %d) must come before the .frame.has-nav rule (at %d)", clamp, wide)

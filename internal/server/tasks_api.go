@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"net/http"
 	"regexp"
-	"strconv"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -128,30 +127,31 @@ func (s *server) createTask(p principal, t task.Task, stars *int) (task.Task, er
 // tick, credited ticks keep theirs.
 func (s *server) apiPatchTask(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
-		Stars *json.Number `json:"stars"`
+		Stars *int `json:"stars"`
 	}
 	dec := json.NewDecoder(r.Body)
 	dec.DisallowUnknownFields()
-	dec.UseNumber()
 	if err := dec.Decode(&in); err != nil {
+		var wrongType *json.UnmarshalTypeError
+		if errors.As(err, &wrongType) {
+			// Well-formed JSON, but not a whole number (a string, a fraction).
+			writeFieldError(w, http.StatusUnprocessableEntity, "stars", "stars must be a whole number")
+			return
+		}
 		writeError(w, http.StatusBadRequest, "invalid JSON or an unknown field: only stars can be changed")
 		return
 	}
 	if in.Stars == nil {
-		writeFieldError(w, http.StatusBadRequest, "stars", "stars is required")
+		writeFieldError(w, http.StatusUnprocessableEntity, "stars", "stars is required")
 		return
 	}
-	n, err := strconv.Atoi(in.Stars.String())
-	if err != nil {
-		writeFieldError(w, http.StatusBadRequest, "stars", "stars must be a whole number")
-		return
-	}
+	n := *in.Stars
 	id := r.PathValue("id")
 	switch err := s.db.SetTaskStars(p.household.ID, id, n); {
 	case errors.Is(err, store.ErrNotFound):
 		writeError(w, http.StatusNotFound, "task not found")
 	case errors.Is(err, store.ErrInvalid):
-		writeFieldError(w, http.StatusBadRequest, "stars", fmt.Sprintf("stars must be between 0 and %d", task.MaxStars))
+		writeFieldError(w, http.StatusUnprocessableEntity, "stars", fmt.Sprintf("stars must be between 0 and %d", task.MaxStars))
 	case err != nil:
 		s.fail(w, "set task stars", err)
 	default:
@@ -160,7 +160,11 @@ func (s *server) apiPatchTask(w http.ResponseWriter, r *http.Request, p principa
 			s.fail(w, "task", err)
 			return
 		}
-		j, _ := s.taskStateToJSON(t, s.today(p))
+		j, err := s.taskStateToJSON(t, s.today(p))
+		if err != nil {
+			s.fail(w, "task state", err)
+			return
+		}
 		writeJSON(w, http.StatusOK, j)
 	}
 }

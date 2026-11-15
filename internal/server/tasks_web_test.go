@@ -380,3 +380,36 @@ func TestDetailPageSaysWhatTodaysTickCredited(t *testing.T) {
 		t.Fatalf("page lacks %q:\n%s", want, page.body)
 	}
 }
+
+// The notice builds trusted markup by hand, so a name with markup in it must
+// come out escaped.
+func TestDetailPageEscapesTheOwnerNameInTheCreditedNotice(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	en := map[string]string{"Accept-Language": "en"}
+	id := tb.newDaily(t, tb.miaID)
+	if status, got, _ := tb.parent.call(http.MethodPatch, "/people/"+tb.miaID, map[string]any{"name": `Tom & "Jerry" <b>x</b>`}); status != http.StatusOK {
+		t.Fatalf("rename = %d %v", status, got)
+	}
+	b.post("/tasks/"+id+"/done", url.Values{"done": {"1"}})
+	page := b.do(http.MethodGet, "/tasks/"+id, nil, en)
+	if strings.Contains(page.body, "<b>x</b>") {
+		t.Fatalf("owner name came out as markup:\n%s", page.body)
+	}
+	if want := "Tom &amp; &#34;Jerry&#34; &lt;b&gt;x&lt;/b&gt; got <b>1 star</b>"; !strings.Contains(page.body, want) {
+		t.Fatalf("page lacks %q:\n%s", want, page.body)
+	}
+}
+
+// A forged star line cookie without a number shows nothing, not a raw verb.
+func TestForgedStarsFlashWithoutNumberShowsNothing(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	id := tb.newDaily(t, tb.miaID)
+	for _, v := range []string{"tasks.stars.saved.other", "tasks.stars.saved.other:abc", "tasks.stars.saved.one", "tasks.stars.saved.bogus:3"} {
+		page := b.do(http.MethodGet, "/tasks/"+id, nil, map[string]string{"Accept-Language": "en", "Cookie": "hejmo_flash=" + v})
+		if strings.Contains(page.body, "%d") || strings.Contains(page.body, "MISSING") || strings.Contains(page.body, "Saved. Ticking off") {
+			t.Errorf("cookie %q shows a line:\n%s", v, page.body)
+		}
+	}
+}

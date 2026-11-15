@@ -58,6 +58,12 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 	if !(strings.HasPrefix(key, "flash.") || strings.HasPrefix(key, starsSavedPrefix)) || s.i18n.T(i18n.Default, key) == key || (arg != "" && !flashArg.MatchString(arg)) {
 		return "", ""
 	}
+	if strings.HasPrefix(key, starsSavedPrefix) {
+		// These lines always carry the new value, and it must be a number.
+		if _, err := strconv.Atoi(arg); err != nil {
+			return "", ""
+		}
+	}
 	return key, arg
 }
 

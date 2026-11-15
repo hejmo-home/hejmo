@@ -8,7 +8,6 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
-	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
 
@@ -255,5 +254,3 @@ func TestChildHomeWithNothingToday(t *testing.T) {
 		t.Error("a child without tasks gets a progress bar or the tick-off button")
 	}
 }
-
-var _ = store.RoleChild

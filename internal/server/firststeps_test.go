@@ -3,7 +3,6 @@ package server_test
 import (
 	"net/http"
 	"net/url"
-	"regexp"
 	"strings"
 	"testing"
 
@@ -360,4 +359,34 @@ func strs(v any) []string {
 	return out
 }
 
-var _ = regexp.MustCompile
+// The API refuses an unknown first step with 422 (openapi.yaml) and says which
+// field is wrong; other invalid values keep their own messages.
+func TestSettingsAPIRefusesAnUnknownFirstStepAndSaysWhy(t *testing.T) {
+	c := signedInAPI(t)
+	status, body, _ := c.call(http.MethodPatch, "/settings", map[string]any{"first_steps_skipped": []string{"nonsense"}})
+	if msg, _ := body["error"].(string); status != http.StatusUnprocessableEntity || !strings.Contains(msg, "first step") || !strings.Contains(msg, "nonsense") {
+		t.Fatalf("unknown step = %d %v", status, body)
+	}
+	status, body, _ = c.call(http.MethodPatch, "/settings", map[string]any{"time_format": "25h"})
+	if msg, _ := body["error"].(string); status != http.StatusUnprocessableEntity || strings.Contains(msg, "first_steps_skipped") {
+		t.Fatalf("bad time format = %d %v", status, body)
+	}
+	if _, got, _ := c.call(http.MethodGet, "/settings", nil); len(strs(got["first_steps_skipped"])) != 0 {
+		t.Errorf("a refused save stored steps: %v", got)
+	}
+}
+
+// The second parent is a parent other than the one looking at Home, whatever
+// the order of the people is.
+func TestFirstStepsParentsStepNamesTheOtherParentNotTheViewer(t *testing.T) {
+	p := newPeopleBox(t)
+	p.add(t, "Papa", "parent")
+	papa, mama := personNamed(t, p.box, "Papa").ID, personNamed(t, p.box, "Mama").ID
+	if status, _, _ := p.api.call(http.MethodPut, "/people/order", map[string]any{"ids": []string{papa, mama}}); status != http.StatusOK {
+		t.Fatalf("order = %d", status)
+	}
+	parents := stepOf(t, card(homeDE(p.box)), 2) // signed in as Mama
+	if !strings.Contains(parents, "Papa") || strings.Contains(parents, "Zweites Elternteil: Mama") {
+		t.Errorf("the step names the viewer:\n%s", parents)
+	}
+}

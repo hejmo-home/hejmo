@@ -217,6 +217,25 @@ func TestBlackAndWhiteMarkersUseDistinctShapes(t *testing.T) {
 	}
 }
 
+// 5.4: card markers exist in the markup of every theme, but only bw shows
+// them (colour cards carry the person colour).
+func TestEventCardMarkersAreHiddenInColourAndShownInBlackAndWhite(t *testing.T) {
+	css := stylesheet(t)
+	display := func(sel string) string {
+		m := regexp.MustCompile(`display:\s*([a-z-]+)`).FindStringSubmatch(ruleFor(t, css, sel))
+		if m == nil {
+			t.Fatalf("%s has no display declaration", sel)
+		}
+		return m[1]
+	}
+	if got := display(".event .markers"); got != "none" {
+		t.Errorf(".event .markers display = %q, want none", got)
+	}
+	if got := display(`[data-theme="bw"] .event .markers`); got == "none" {
+		t.Errorf("bw .event .markers is hidden")
+	}
+}
+
 // Every colour in DESIGN.md equals the custom property of the same role in
 // that theme's CSS block, and every colour custom property has a token.
 func TestDesignColoursAndStylesheetAgreeBothWays(t *testing.T) {
@@ -377,6 +396,21 @@ func TestFrameNavigationTargetsAreTouchSized(t *testing.T) {
 	}
 	if tok := cssTokens(t, css, "light")["--touch-target"]; tok != "44px" {
 		t.Errorf("--touch-target = %q, want 44px", tok)
+	}
+}
+
+// 5.6: touch targets of the personal view are at least 44 px: the person link in
+// the family view, the way back and the large checkbox.
+func TestPersonalViewTargetsAreTouchSized(t *testing.T) {
+	css := stylesheet(t)
+	for _, sel := range []string{".fv .person-link", ".pv-back", ".big-check"} {
+		rule := ruleFor(t, css, sel)
+		if !strings.Contains(rule, "min-height: var(--touch-target)") {
+			t.Errorf("%s lacks min-height: var(--touch-target): %s", sel, rule)
+		}
+	}
+	if rule := ruleFor(t, css, ".big-check"); !strings.Contains(rule, "min-width: var(--touch-target)") {
+		t.Errorf(".big-check lacks min-width: var(--touch-target): %s", rule)
 	}
 }
 

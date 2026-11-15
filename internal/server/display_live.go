@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"fmt"
 	"html/template"
 	"net/http"
@@ -32,8 +33,14 @@ func (s *server) renderFamily(h store.Household, lang string, showTomorrow bool)
 	}
 	clock := view.Clock
 	view.Clock = clockMark
+	return s.renderVersioned("familyView", lang, view, clock)
+}
+
+// renderVersioned executes a view template whose clock is clockMark and
+// returns the markup with the real clock, and the version of the markup.
+func (s *server) renderVersioned(name, lang string, view any, clock string) (template.HTML, string, error) {
 	var buf bytes.Buffer
-	if err := s.execute(&buf, "familyView", lang, view); err != nil {
+	if err := s.execute(&buf, name, lang, view); err != nil {
 		return "", "", err
 	}
 	sum := sha256.Sum256(buf.Bytes())
@@ -75,7 +82,7 @@ func (s *server) handleDisplayView(w http.ResponseWriter, r *http.Request) {
 }
 
 // handleDisplayEvents is the display's Server-Sent Events stream. It names the
-// current view version on connect, so a display that was cut off catches up,
+// current version of the family view (or, with ?person=, of that person's view) on connect, so a display that was cut off catches up,
 // and again whenever the view changes (an event, 18:00, midnight). The clock
 // is not part of the version: the display ticks its chip itself.
 // While nothing changes it sends only comment heartbeats, no view.
@@ -95,6 +102,7 @@ func (s *server) handleDisplayEvents(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusOK)
 
 	lang := s.langOf(r)
+	person := r.URL.Query().Get("person") // a personal view follows its own version
 	hash, _ := displayToken(r)
 	last := ""
 	check := func() bool {
@@ -108,7 +116,15 @@ func (s *server) handleDisplayEvents(w http.ResponseWriter, r *http.Request) {
 		} else {
 			d = cur
 		}
-		_, version, err := s.renderFamily(h, lang, d.ShowTomorrow)
+		var version string
+		if person != "" {
+			_, version, err = s.renderPersonal(h, lang, person)
+			if errors.Is(err, errNoPerson) {
+				version, err = "gone", nil // the display returns to the family view
+			}
+		} else {
+			_, version, err = s.renderFamily(h, lang, d.ShowTomorrow)
+		}
 		if err != nil {
 			s.logger.Error("live view", "err", err)
 			return true

@@ -81,3 +81,32 @@ func TestValidate(t *testing.T) {
 		t.Errorf("valid task: %v", err)
 	}
 }
+
+// Every validation failure names the field the form must mark.
+func TestValidateNamesTheWrongField(t *testing.T) {
+	base := task.Task{Title: "x", PersonID: "p", Repeat: task.Daily, Date: "2026-11-14"}
+	with := func(f func(*task.Task)) task.Task { k := base; f(&k); return k }
+	for _, c := range []struct {
+		name  string
+		task  task.Task
+		field string
+	}{
+		{"empty title", with(func(k *task.Task) { k.Title = " " }), "title"},
+		{"long title", with(func(k *task.Task) { k.Title = strings.Repeat("x", 121) }), "title"},
+		{"long emoji", with(func(k *task.Task) { k.Emoji = strings.Repeat("🪥", 17) }), "emoji"},
+		{"no person", with(func(k *task.Task) { k.PersonID = "" }), "person"},
+		{"bad date", with(func(k *task.Task) { k.Date = "14/11/2026" }), "date"},
+		{"weekdays on daily", with(func(k *task.Task) { k.Weekdays = []string{"MO"} }), "weekdays"},
+		{"weekly without weekdays", with(func(k *task.Task) { k.Repeat = task.Weekly }), "weekdays"},
+		{"unknown weekday", with(func(k *task.Task) { k.Repeat, k.Weekdays = task.Weekly, []string{"XX"} }), "weekdays"},
+		{"double weekday", with(func(k *task.Task) { k.Repeat, k.Weekdays = task.Weekly, []string{"MO", "MO"} }), "weekdays"},
+		{"unknown repeat", with(func(k *task.Task) { k.Repeat = "monthly" }), "repeat"},
+		{"unknown part", with(func(k *task.Task) { k.PartOfDay = "noon" }), "part"},
+	} {
+		var ie *task.InvalidError
+		err := c.task.Validate()
+		if !errors.As(err, &ie) || ie.Field != c.field || !errors.Is(err, task.ErrInvalid) {
+			t.Errorf("%s: Validate = %v, want InvalidError for %q", c.name, err, c.field)
+		}
+	}
+}

@@ -42,10 +42,12 @@ func (s *server) currentPerson(r *http.Request) (store.Person, bool) {
 	if err != nil || c.Value == "" {
 		return store.Person{}, false
 	}
-	personID, err := s.db.SessionPerson(auth.HashToken(c.Value), s.now())
+	hash := auth.HashToken(c.Value)
+	personID, err := s.db.SessionPerson(hash, s.now())
 	if err != nil {
 		return store.Person{}, false
 	}
+	s.db.TouchPhoneSession(hash, s.now())
 	return s.member(personID)
 }
 

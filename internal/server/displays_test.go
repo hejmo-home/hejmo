@@ -49,9 +49,9 @@ func codeOn(t *testing.T, page string) string {
 }
 
 // signedInBox returns a configured box with the parent signed in.
-func signedInBox(t *testing.T) *box {
+func signedInBox(t *testing.T, opts ...boxOption) *box {
 	t.Helper()
-	b, secret := configuredBox(t)
+	b, secret := configuredBox(t, opts...)
 	if r := b.post("/login", loginForm(b, secret, "correct horse battery")); r.status != http.StatusSeeOther {
 		t.Fatalf("login = %d", r.status)
 	}
@@ -358,4 +358,62 @@ func TestSignInFromTheQRLinkReturnsToTheDisplaysPageWithTheCode(t *testing.T) {
 			t.Fatalf("next=%q redirected to %q, want /", bad, r.location)
 		}
 	}
+}
+
+var checkedTypeRe = regexp.MustCompile(`<input type="radio" name="type" value="([a-z_]+)" checked>`)
+
+// ADR 0017: the type cards start with one choice, as the old select did.
+func TestFreshPairingFormHasADisplayTypeChecked(t *testing.T) {
+	b := signedInBox(t)
+	for _, path := range []string{"/displays", "/displays?code=123456"} {
+		m := checkedTypeRe.FindStringSubmatch(getEN(b, path).body)
+		if m == nil || m[1] != "eink_bw" {
+			t.Errorf("GET %s: checked type = %v, want eink_bw", path, m)
+		}
+	}
+}
+
+// A form error is shown at its field: the code, the name, the room or the type.
+func TestPairingErrorsAreShownAtTheWrongField(t *testing.T) {
+	b := signedInBox(t)
+	d := newScreen(b)
+	code := codeOn(t, d.get("/display", "en").body)
+	for _, c := range []struct {
+		name  string
+		edit  func(url.Values)
+		field string
+	}{
+		{"no name", func(v url.Values) { v.Set("name", " ") }, "name"},
+		{"long room", func(v url.Values) { v.Set("room", strings.Repeat("x", 81)) }, "room"},
+		{"no type", func(v url.Values) { v.Del("type") }, "type"},
+		{"wrong code", func(v url.Values) { v.Set("code", "000000") }, "code"},
+	} {
+		form := pairForm(code)
+		c.edit(form)
+		r := b.do(http.MethodPost, "/displays", form, map[string]string{"Accept-Language": "en"})
+		if r.status != http.StatusUnprocessableEntity {
+			t.Errorf("%s: status = %d", c.name, r.status)
+			continue
+		}
+		if !strings.Contains(r.body, `id="err-`+c.field+`"`) {
+			t.Errorf("%s: no error at %q:\n%s", c.name, c.field, r.body)
+		}
+		if n := strings.Count(r.body, `class="ferr"`); n != 1 {
+			t.Errorf("%s: %d field errors, want 1", c.name, n)
+		}
+	}
+}
+
+func (s *screen) post(path string, form url.Values) resp {
+	s.b.t.Helper()
+	req, _ := http.NewRequest(http.MethodPost, s.b.srv.URL+path, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", s.b.srv.URL)
+	res, err := s.client.Do(req)
+	if err != nil {
+		s.b.t.Fatal(err)
+	}
+	defer res.Body.Close()
+	raw, _ := io.ReadAll(res.Body)
+	return resp{res.StatusCode, res.Header.Get("Location"), string(raw)}
 }

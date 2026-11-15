@@ -233,6 +233,11 @@ a { color: var(--accent); }
 [data-theme="bw"] .marker[data-shape="triangle-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 [data-theme="bw"] .marker[data-shape="diamond-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 
+/* Event cards list their people as markers; only bw needs them (colour cards
+   carry the person colour). */
+.event .markers { display: none; }
+[data-theme="bw"] .event .markers { display: flex; gap: 4px; margin-bottom: 4px; }
+
 /* Family view building blocks (screens use them from ticket 5.3 on). */
 .tile, .column, .chip { background: var(--surface); }
 .tile, .column { border-radius: var(--radius-tile); }
@@ -293,7 +298,7 @@ body:has(.family-page) { overflow: hidden; }
 .fv-header .lab { font-size: var(--fs-label); color: var(--text-secondary); }
 .fv-header .date { font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
 .fv .chips { display: flex; gap: var(--gap); }
-.fv .chip { font-variant-numeric: tabular-nums; }
+.fv .chip { font-variant-numeric: tabular-nums; display: inline-flex; align-items: center; gap: 8px; }
 .fv .sync-notice { display: inline-flex; align-items: center; gap: 8px; color: var(--accent); font-size: var(--fs-label); font-weight: 700; }
 .fv .sync-notice .icon { flex: none; }
 .strip-wrap { flex: none; display: grid; gap: var(--gap-cards); }
@@ -309,6 +314,7 @@ body:has(.family-page) { overflow: hidden; }
 
 .fv-grid { --visible: min(var(--cols), var(--cols-max)); flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: max(var(--col-min), calc((100% - (var(--visible) - 1) * var(--gap)) / var(--visible))); grid-auto-rows: minmax(0, 1fr); gap: var(--gap); overflow-x: auto; }
 .fv .column { display: flex; flex-direction: column; gap: 0; min-height: 0; overflow: hidden; }
+.fv .person-link { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); color: inherit; text-decoration: none; }
 .fv .column h2 { flex: none; margin: 0 0 var(--gap-cards); font-size: var(--fs-person-name); font-weight: var(--fw-person-name); display: flex; align-items: center; gap: 8px; }
 .fv .events { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: var(--gap-cards); align-content: start; }
 .fv .events .tomorrow { display: grid; gap: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); opacity: 0.6; }
@@ -326,3 +332,139 @@ body:has(.family-page) { overflow: hidden; }
 .fv-footer .tile.alert .lab { color: var(--notice-text); }
 .qr { width: min(60vw, 240px); margin: 0 0 12px; color: var(--text); }
 .qr svg { display: block; width: 100%; height: auto; }
+
+/* Shared form patterns (ticket 5.16; ADR 0017). Switch, person chips,
+   segmented control, choice cards, weekday chips, "More options", detail-page
+   danger zone, empty state, success line and field errors. Colours come from
+   the tokens only; selection never relies on colour alone (border, tick,
+   weight; in bw the person marker is a shape). */
+.msg { display: flex; gap: 10px; align-items: flex-start; border-radius: var(--radius-card); padding: 10px 12px; max-width: 560px; margin: 0 0 var(--gap); }
+.msg .icon { flex: none; margin-top: 2px; }
+.msg.ok { background: var(--surface); border: 1.5px solid var(--accent); color: var(--text); }
+[data-theme="bw"] .msg.ok { border-width: 2px; }
+.f { display: grid; gap: 6px; }
+.f input, .f select { width: 100%; }
+.f.invalid input { border: 2px solid var(--error-text); }
+.ferr { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 6px 10px; border-radius: var(--radius-field); background: var(--error-bg); color: var(--error-text); font-size: var(--fs-label); }
+.ferr .icon { flex: none; stroke: var(--error-text); }
+.button.danger { background: var(--error-text); color: var(--surface); }
+.cards a, .steps a { color: var(--accent); font-weight: 600; }
+
+/* Switch: "is it on?", with its state in words under the name. */
+.card-row { display: flex; align-items: center; gap: 12px; }
+.card-row .t { display: grid; gap: 2px; min-width: 0; }
+.card-row .t b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+.card-row .state { font-size: var(--fs-meta); color: var(--text-secondary); }
+.state .on-text, .state .off-text { display: none; }
+.state.is-on .on-text, .state:not(.is-on) .off-text { display: inline; }
+@supports selector(:has(a)) {
+  .state.is-on .off-text { display: none; }
+  .state.is-on .on-text { display: none; }
+  .card-row:has(.switch input:checked) .state .on-text { display: inline; }
+  .card-row:has(.switch input:not(:checked)) .state .off-text { display: inline; }
+}
+.switch { display: inline-flex; align-items: center; min-height: var(--touch-target); margin-left: auto; cursor: pointer; }
+.switch input { appearance: none; -webkit-appearance: none; margin: 0; width: 52px; height: 32px; min-height: 0; padding: 0; border-radius: 16px; border: 2px solid var(--text-secondary); background: var(--surface); position: relative; flex: none; cursor: pointer; }
+.switch input::before { content: ""; position: absolute; top: 4px; left: 4px; width: 20px; height: 20px; border-radius: 50%; background: var(--text-secondary); }
+.switch input:checked { background: var(--accent); border-color: var(--accent); }
+.switch input:checked::before { left: 24px; background: var(--accent-text); }
+.switch input:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+[data-theme="bw"] .switch input { border-color: var(--text); }
+[data-theme="bw"] .switch input::before { background: var(--text); }
+[data-theme="bw"] .switch input:checked { background: var(--text); }
+[data-theme="bw"] .switch input:checked::before { background: var(--surface); }
+
+/* Person chips: who is it for. Selected = tint + 2px border in the person
+   colour + tick + bold. "Whole family" is neutral and selected by default. */
+fieldset.chips { display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 0; margin: 0; min-width: 0; }
+fieldset.chips legend, fieldset.seg legend, fieldset.days legend, fieldset.choice legend { font-size: var(--fs-label); font-weight: 400; color: var(--text-secondary); padding: 0; margin: 0 0 8px; float: left; width: 100%; }
+.steps fieldset.chips, .steps fieldset.seg, .steps fieldset.days, .steps fieldset.choice { background: none; border-radius: 0; padding: 0; }
+.steps > fieldset.seg, .steps > fieldset.chips { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; }
+.pchip { position: relative; display: inline-flex; align-items: center; gap: 8px; min-height: var(--touch-target); padding: 6px 14px 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); cursor: pointer; }
+.pchip input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; min-height: 0; padding: 0; }
+.pchip .tick { display: none; stroke: currentColor; }
+.pchip .icon { stroke: currentColor; }
+.pchip:has(input:checked) { background: var(--pc-tint); color: var(--pc-text); border: 2px solid var(--pc); padding: 5px 13px 5px 11px; font-weight: 700; }
+.pchip:has(input:checked) .tick { display: inline-block; }
+.pchip:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.pchip.all { --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
+.pchip.group { border-style: dashed; --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
+[data-theme="bw"] .pchip:has(input:checked) { background: var(--event-card); border-width: 3px; padding: 4px 12px 4px 10px; }
+/* The Whole family checkbox stays ticked in the page while a person is chosen
+   (the server ignores it then); it only looks selected when nobody else is. */
+@supports selector(:has(a)) {
+  fieldset.chips:has(.pchip:not(.all):not(.group) input:checked) .pchip.all:has(input:checked),
+  fieldset.chips:has(.pchip.group input:checked) .pchip.all:has(input:checked) { background: var(--surface); color: var(--text); border: 1px solid var(--border); padding: 6px 14px 6px 12px; font-weight: 400; }
+  fieldset.chips:has(.pchip:not(.all):not(.group) input:checked) .pchip.all:has(input:checked) .tick,
+  fieldset.chips:has(.pchip.group input:checked) .pchip.all:has(input:checked) .tick { display: none; }
+}
+.lead .pchip { cursor: default; }
+
+/* Segmented control (2 to 4 short options), choice cards, weekday chips. */
+fieldset.seg, fieldset.days, fieldset.choice { border: 0; margin: 0; padding: 0; min-width: 0; }
+fieldset.seg { display: flex; flex-wrap: wrap; }
+.seg label { position: relative; display: inline-flex; align-items: center; justify-content: center; flex: 1 1 0; min-height: var(--touch-target); padding: 8px 10px; margin-left: -1px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-align: center; cursor: pointer; }
+.seg label:first-of-type { border-radius: var(--radius-field) 0 0 var(--radius-field); margin-left: 0; }
+.seg label:last-of-type { border-radius: 0 var(--radius-field) var(--radius-field) 0; }
+.seg input, .days input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; min-height: 0; padding: 0; }
+.seg label:has(input:checked) { background: var(--accent); color: var(--accent-text); border-color: var(--accent); font-weight: 700; z-index: 1; }
+.seg label:has(input:focus-visible), .days label:has(input:focus-visible), .choice label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+fieldset.days { display: flex; flex-wrap: wrap; gap: 6px; }
+.days label { position: relative; display: inline-flex; align-items: center; justify-content: center; width: var(--touch-target); height: var(--touch-target); border: 1px solid var(--border); border-radius: 50%; background: var(--surface); color: var(--text); font-size: var(--fs-label); cursor: pointer; }
+.days label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+fieldset.choice { display: grid; gap: 10px; }
+.choice label { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; min-height: var(--touch-target); padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); color: var(--text); cursor: pointer; }
+.choice input { grid-row: span 2; width: 22px; height: 22px; min-height: 0; margin: 0; accent-color: var(--accent); }
+.choice b { font-size: var(--fs-event-title); }
+.choice small { grid-column: 2; font-size: var(--fs-meta); color: var(--text-secondary); }
+.choice label:has(input:checked) { border: 2px solid var(--accent); padding: 11px 13px; }
+/* Dependent fields appear only when they apply; without :has they stay visible. */
+@supports selector(:has(a)) {
+  .steps:has(input[name="repeat"]) .when { display: none; }
+  .steps:has(input[name="repeat"][value="once"]:checked) .when-once { display: grid; }
+  .steps:has(input[name="repeat"][value="weekly"]:checked) .when-weekly { display: flex; }
+}
+
+/* "More options": fields with a good default sit in a disclosure. */
+details.more { border-top: 1px solid var(--border); }
+details.more > summary, details.danger > summary { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); cursor: pointer; list-style: none; }
+details.more > summary { color: var(--accent); font-size: var(--fs-label-large); }
+details.more > summary::-webkit-details-marker, details.danger > summary::-webkit-details-marker { display: none; }
+details.more .chev { stroke: var(--accent); }
+details.more[open] .chev { transform: rotate(90deg); }
+details.more .sum { margin-left: auto; color: var(--text-secondary); font-size: var(--fs-meta); }
+details.more > div { display: grid; gap: 12px; padding: 2px 0 10px; }
+
+/* Destructive actions: only on a detail page, closed, explaining what happens. */
+.cards details.danger { border-top: 0; margin-top: 4px; }
+details.danger { border-top: 1px solid var(--border); margin-top: var(--gap-section); max-width: 560px; }
+details.danger > summary { color: var(--error-text); font-weight: 700; }
+details.danger p { margin: 0 0 10px; color: var(--text-secondary); font-size: var(--fs-label); }
+details.danger form { margin: 0 0 10px; }
+
+/* Empty state: what the thing is for, then the first action. */
+.empty { display: grid; gap: 10px; justify-items: start; max-width: 560px; padding: 16px; margin: 0 0 20px; border: 1.5px dashed var(--border); border-radius: var(--radius-tile); }
+.empty p { margin: 0; color: var(--text-secondary); }
+
+/* Personal view (ticket 5.6; ADR 0015): one person's seven days and today's
+   tasks. Touch targets are at least 44 px; the checkbox is larger. */
+.pv { height: 100%; display: flex; flex-direction: column; gap: var(--gap-section); min-height: 0; }
+.pv-header { display: flex; justify-content: space-between; align-items: center; flex: none; gap: var(--gap); }
+.pv-header h1 { margin: 0; font-size: var(--fs-date); font-weight: var(--fw-date); display: flex; align-items: center; gap: 12px; }
+.pv-back { display: inline-flex; align-items: center; min-height: var(--touch-target); padding: 8px 22px; border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
+.pv-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(0, 2fr) minmax(0, 1fr); gap: var(--gap); }
+.pv-days, .pv-tasks { background: var(--surface); border-radius: var(--radius-tile); padding: var(--pad-column); min-height: 0; overflow-y: auto; }
+.pv-day { display: grid; gap: var(--gap-cards); padding-bottom: var(--gap-cards); }
+.pv-day .lab, .pv-tasks .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.pv-day .none { font-size: var(--fs-meta); color: var(--text-secondary); }
+.pv-tasks ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap-cards); }
+.pv-tasks form { margin: 0; }
+.big-check { display: flex; align-items: center; gap: 14px; width: 100%; min-height: var(--touch-target); min-width: var(--touch-target); padding: 8px 4px; border: 0; background: none; color: var(--text); font: inherit; font-size: var(--fs-event-title); text-align: left; cursor: pointer; }
+.big-check .box { flex: none; width: var(--touch-target); height: var(--touch-target); border: 3px solid var(--text); border-radius: var(--radius-card); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; line-height: 1; }
+[data-done="true"] .big-check .title { text-decoration: line-through; color: var(--text-secondary); }
+[data-done="true"] .big-check .box::after { content: "\2713"; }
+
+/* Phones (ticket 5.13): the QR code a phone scans, and the offline view. */
+.pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
+.pair-qr svg { display: block; width: 100%; height: auto; }
+html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }

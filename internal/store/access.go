@@ -108,8 +108,12 @@ func (db *DB) SessionPerson(tokenHash string, t time.Time) (string, error) {
 	return id, err
 }
 
-// DeleteSession ends a session.
+// DeleteSession ends a session. A phone's device session takes the phone with
+// it: signing out on the phone unpairs it.
 func (db *DB) DeleteSession(tokenHash string) error {
+	if _, err := db.sql.Exec(`DELETE FROM phones WHERE id = (SELECT phone_id FROM sessions WHERE token_hash = ?)`, tokenHash); err != nil {
+		return err
+	}
 	_, err := db.sql.Exec(`DELETE FROM sessions WHERE token_hash = ?`, tokenHash)
 	return err
 }

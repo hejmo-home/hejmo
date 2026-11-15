@@ -7,6 +7,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 var berlin = func() *time.Location {
@@ -271,8 +272,8 @@ func TestHeaderShowsWeekdayWeekDateAndClock(t *testing.T) {
 	if v.Weekday != time.Saturday || v.Week != 46 || v.Clock != "07:58" || v.Date.Day() != 14 {
 		t.Errorf("header = %v CW%d %v %s", v.Weekday, v.Week, v.Date, v.Clock)
 	}
-	if v.Weather != "" || v.Meal != nil || v.TomorrowTile != nil {
-		t.Error("weather and footer tiles must be empty until 5.8 and package 6")
+	if v.Weather != nil || v.Meal != nil || v.TomorrowTile != nil {
+		t.Error("weather needs a reading and footer tiles are empty until package 6")
 	}
 }
 
@@ -303,5 +304,64 @@ func TestTimesAreShownInTheHouseholdZoneWhateverZoneTheEventIsStoredIn(t *testin
 		if s.Time != "09:00–10:00" {
 			t.Errorf("strip %q time = %q, want 09:00–10:00", s.Title, s.Time)
 		}
+	}
+}
+
+// ADR 0016: the clock and every event time follow the household's time format.
+func TestTimesFollowTheTimeFormat(t *testing.T) {
+	v := familyview.Build(familyview.Input{Now: at(14, 13, 5), Lang: "en", People: family(), TimeFormat: "12h",
+		Occurrences: []calendar.Occurrence{timed("Dentist", at(14, 9, 0), at(14, 14, 30), "mama"), timed("Brunch", at(14, 10, 0), at(14, 11, 0))}})
+	if v.Clock != "1:05 PM" {
+		t.Errorf("clock = %q", v.Clock)
+	}
+	if got := column(t, v, "Mama").Events[0].Time; got != "9:00 AM–2:30 PM" {
+		t.Errorf("event = %q", got)
+	}
+	if got := v.Strip[0].Time; got != "10:00 AM–11:00 AM" {
+		t.Errorf("strip = %q", got)
+	}
+	v = familyview.Build(familyview.Input{Now: at(14, 13, 5), Lang: "en", People: family(), TimeFormat: "24h"})
+	if v.Clock != "13:05" {
+		t.Errorf("24h clock = %q", v.Clock)
+	}
+}
+
+// ADR 0016: the weather chip shows the temperature in the household's unit.
+func TestWeatherChipFollowsTheTemperatureUnit(t *testing.T) {
+	w := &familyview.Weather{TempC: 18.4, Icon: "clear"}
+	for unit, want := range map[store.TemperatureUnit]string{"": "18°C", store.Celsius: "18°C", store.Fahrenheit: "65°F"} {
+		v := familyview.Build(familyview.Input{Now: at(14, 8, 0), People: family(), Weather: w, TemperatureUnit: unit})
+		if v.Weather == nil || v.Weather.Text != want || v.Weather.Icon != "clear" {
+			t.Errorf("unit %q: %+v, want %q", unit, v.Weather, want)
+		}
+	}
+	for c, want := range map[float64]string{-0.4: "0°C", -2.6: "-3°C", 0: "32°F"} {
+		unit := store.Celsius
+		if want == "32°F" {
+			unit = store.Fahrenheit
+		}
+		v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Weather: &familyview.Weather{TempC: c}, TemperatureUnit: unit})
+		if v.Weather.Text != want {
+			t.Errorf("%v = %q, want %q", c, v.Weather.Text, want)
+		}
+	}
+	if v := familyview.Build(familyview.Input{Now: at(14, 8, 0), People: family()}); v.Weather != nil {
+		t.Error("weather chip without a reading")
+	}
+}
+
+// 5.4: Given an event with two people, each card carries the markers of both
+// people, so black-and-white mode tells them apart by shape.
+func TestEventCardsCarryTheMarkersOfEveryPersonOfTheEvent(t *testing.T) {
+	v := build(at(14, 8, 0), timed("Football", at(14, 15, 0), at(14, 16, 0), "seb", "mia"), timed("Dentist", at(14, 9, 0), at(14, 10, 0), "mama"))
+	want := []familyview.Marker{{Name: "Sebastian", Slot: 3, Shape: "square-filled"}, {Name: "Mia", Slot: 4, Shape: "square-empty"}}
+	for _, who := range []string{"Sebastian", "Mia"} {
+		evs := column(t, v, who).Events
+		if len(evs) != 1 || fmt.Sprint(evs[0].Markers) != fmt.Sprint(want) {
+			t.Errorf("%s: markers = %+v, want %+v", who, evs, want)
+		}
+	}
+	if m := column(t, v, "Mama").Events[0].Markers; len(m) != 1 || m[0].Shape != "circle-filled" {
+		t.Errorf("Dentist markers = %+v", m)
 	}
 }

@@ -1,6 +1,6 @@
 # 0016. Family view header, columns and footer
 
-- Status: Accepted
+- Status: Accepted, amended by [0018](0018-path-to-0-1.md)
 - Date: 14/11/2026
 - Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; the leave-the-house countdown stays out of V1.0 and comes back per person in V2), [0015](0015-display-web-interface-and-everyday.md) (column limits per orientation, tomorrow block faded and off by default, footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
 
@@ -40,3 +40,4 @@ Proposed: the minimum column width is fixed at **144 px** (design token `column-
 - The preview of 5.1 shows the new header, the anchored progress bars and the footer states (tiles hidden, one collection, two collections with a note).
 - Display settings gain "show tomorrow block" (off by default); ticket 5.3 renders it faded.
 - Household settings gain time format, temperature unit and four meal cut-off times (dinner empty by default).
+- The box finds the coordinates of the home once, by the home's name and country, with Open-Meteo's place search (no key) and keeps them in the household; it refreshes the weather every 15 minutes. Open-Meteo is the only outside service the weather feature talks to. When a refresh fails the chip keeps its last reading for three hours, then hides.

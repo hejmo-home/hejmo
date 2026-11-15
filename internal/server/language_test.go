@@ -355,14 +355,19 @@ func TestHandlerBuiltTextFollowsTheSwitchedLanguage(t *testing.T) {
 	}
 }
 
+// A signed-in page reads the language several times (frame, handler-built
+// texts, headers); without the per-request memo each of those is a lookup.
 func TestPageLanguageIsLookedUpOncePerRequest(t *testing.T) {
-	b, _ := configuredBox(t)
-	stop := server.CountLanguageLookups()
-	page := b.get("/login") // the page reads the language for the frame, the texts and the headers
-	if n := stop(); n != 1 {
-		t.Fatalf("language lookups for one request = %d, want 1", n)
-	}
-	if page.status != http.StatusOK {
-		t.Fatalf("GET /login = %d", page.status)
+	b := signedInBox(t)
+	for _, path := range []string{"/", "/otp", "/calendars", "/calendar?week=2026-12-25"} {
+		stop := server.CountLanguageLookups(t)
+		page := b.get(path)
+		n := stop()
+		if page.status != http.StatusOK {
+			t.Fatalf("GET %s = %d", path, page.status)
+		}
+		if n != 1 {
+			t.Errorf("GET %s: language lookups for one request = %d, want 1", path, n)
+		}
 	}
 }

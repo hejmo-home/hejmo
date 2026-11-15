@@ -3,6 +3,7 @@ package server
 import (
 	"html/template"
 	"strings"
+	"testing"
 
 	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/i18n"
@@ -92,8 +93,9 @@ func RenderPersonalView(lang string, v familyview.PersonalView) (string, error) 
 
 // CountLanguageLookups counts page language lookups until the returned
 // function is called, which stops counting and returns the number so far.
-func CountLanguageLookups() func() int {
+func CountLanguageLookups(t *testing.T) func() int {
 	n := 0
 	languageLookups = func() { n++ }
+	t.Cleanup(func() { languageLookups = func() {} })
 	return func() int { languageLookups = func() {}; return n }
 }

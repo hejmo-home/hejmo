@@ -293,6 +293,8 @@
   "personal.task_open": "Open, tap to tick off",
   "tasks.title": "Tasks",
   "tasks.intro": "Tasks for each person. Tick off today's tasks here, for example to confirm one a child did. Children tick off their own tasks themselves.",
+  "tasks.intro.child": "Your tasks for today. Tick them off when they are done.",
+  "tasks.none.child": "You have no tasks yet.",
   "tasks.none": "No tasks yet. A task is something a person does again and again, like brushing teeth.",
   "tasks.today": "Today",
   "tasks.not_today": "Not today",

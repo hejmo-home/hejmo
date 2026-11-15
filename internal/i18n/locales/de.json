@@ -293,6 +293,8 @@
   "personal.task_open": "Offen, tippen zum Abhaken",
   "tasks.title": "Aufgaben",
   "tasks.intro": "Aufgaben für jede Person. Hier kannst du die Aufgaben von heute abhaken, zum Beispiel um zu bestätigen, dass ein Kind sie erledigt hat. Kinder haken ihre eigenen Aufgaben selbst ab.",
+  "tasks.intro.child": "Deine Aufgaben für heute. Hake sie ab, wenn sie erledigt sind.",
+  "tasks.none.child": "Du hast noch keine Aufgaben.",
   "tasks.none": "Noch keine Aufgaben. Eine Aufgabe ist etwas, das eine Person immer wieder tut, zum Beispiel Zähne putzen.",
   "tasks.today": "Heute",
   "tasks.not_today": "Nicht heute",

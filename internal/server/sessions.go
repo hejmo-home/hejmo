@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"net/http"
 	"strings"
 	"time"
@@ -54,21 +55,9 @@ func (s *server) deviceText(lang, device string) string {
 	return name("device", d) + " · " + name("browser", b)
 }
 
-// dayLayoutFor is the date as the language writes it.
-func dayLayoutFor(lang string) string {
-	if lang == "de" {
-		return "02.01.2006"
-	}
-	return "02/01/2006"
-}
-
 func (s *server) sessionViews(lang string, p principal, list []store.BrowserSession, ownID string) []sessionView {
 	loc := p.location()
-	clock := "15:04"
-	if p.household.TimeFormat == store.Time12h {
-		clock = "3:04 PM"
-	}
-	day := dayLayoutFor(lang)
+	df, tf := p.household.DateFormat, p.household.TimeFormat
 	now := s.now().In(loc)
 	lastUsed := func(t time.Time) string {
 		if t.IsZero() {
@@ -77,11 +66,11 @@ func (s *server) sessionViews(lang string, p principal, list []store.BrowserSess
 		t = t.In(loc)
 		switch {
 		case sameDay(t, now):
-			return s.i18n.T(lang, "sessions.today") + ", " + t.Format(clock)
+			return s.i18n.T(lang, "sessions.today") + ", " + datefmt.Clock(tf, t)
 		case sameDay(t, now.AddDate(0, 0, -1)):
-			return s.i18n.T(lang, "sessions.yesterday") + ", " + t.Format(clock)
+			return s.i18n.T(lang, "sessions.yesterday") + ", " + datefmt.Clock(tf, t)
 		}
-		return t.Format(day) + ", " + t.Format(clock)
+		return datefmt.Date(df, t) + ", " + datefmt.Clock(tf, t)
 	}
 	chips := map[string]personChip{}
 	if people, err := s.db.People(p.household.ID); err == nil {
@@ -94,8 +83,8 @@ func (s *server) sessionViews(lang string, p principal, list []store.BrowserSess
 		c := chips[b.Person.ID]
 		out = append(out, sessionView{
 			ID: b.ID, Device: s.deviceText(lang, b.Device), LastUsed: lastUsed(b.LastSeen),
-			SignedIn: b.SignedIn.In(loc).Format(day), SignedInAt: b.SignedIn.In(loc).Format(day + ", " + clock),
-			Ends: b.Expires.In(loc).Format(day), PersonID: b.Person.ID, Person: b.Person.Name, Slot: c.Slot, Shape: c.Shape, Own: b.ID == ownID,
+			SignedIn: datefmt.Date(df, b.SignedIn.In(loc)), SignedInAt: datefmt.Date(df, b.SignedIn.In(loc)) + ", " + datefmt.Clock(tf, b.SignedIn.In(loc)),
+			Ends: datefmt.Date(df, b.Expires.In(loc)), PersonID: b.Person.ID, Person: b.Person.Name, Slot: c.Slot, Shape: c.Shape, Own: b.ID == ownID,
 		})
 	}
 	return out

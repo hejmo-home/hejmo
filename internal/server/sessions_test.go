@@ -172,10 +172,10 @@ func TestSessionsListGroupsBrowsersByPerson(t *testing.T) {
 		`class="notice"`, `href="/phones"`,
 		`class="who-head"`, "Mama",
 		`class="cards sessions"`,
-		"Mac · Firefox", `<span class="tag">This browser</span>`, "Last used: today, 13:00 · Signed in 02/11/2026",
-		"iPhone · Safari", "Last used: yesterday, 21:05 · Signed in 28/10/2026",
+		"Mac · Firefox", `<span class="tag">This browser</span>`, "Last used: today, 13:00 · Signed in 02.11.2026",
+		"iPhone · Safari", "Last used: yesterday, 21:05 · Signed in 28.10.2026",
 		`class="who-head"`, "Papa",
-		"Android phone · Chrome", "Last used: today, 07:48 · Signed in 11/11/2026",
+		"Android phone · Chrome", "Last used: today, 07:48 · Signed in 11.11.2026",
 	)
 	if strings.Count(r.body, `<span class="tag">`) != 1 {
 		t.Errorf("only the current browser carries the tag:\n%s", r.body)

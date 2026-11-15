@@ -234,16 +234,16 @@ func TestColumnReadabilitySnapshot(t *testing.T) {
 // may break at its hyphen, so only its longer half "Anna-" (5 of 9 characters)
 // has to fit; that half is the proportional share of the measured 94.7 px, not
 // a separate measurement. The bw theme has a 16 px marker and a 6 px gap in the
-// name row (light: 14 px and 8 px); the room is the column minus padding, gap
+// name row (.fv .person-link, the flex row of marker and name) (light: 14 px and 8 px); the room is the column minus padding, gap
 // and marker.
 func TestIssueNamesFitWithEightPeople(t *testing.T) {
 	css := stylesheet(t)
 	root := cssTokens(t, css, "light")
 	pad := px(t, root["--pad-column"])
 	measured := map[string]float64{"Maximilian": 93.7, "Anna-Lena": 94.7 * 5 / 9, "Konstantin": 94.6}
-	lightGap := px(t, regexp.MustCompile(`gap:\s*(\d+px)`).FindStringSubmatch(ruleFor(t, css, ".fv .column h2"))[1])
+	lightGap := px(t, regexp.MustCompile(`gap:\s*(\d+px)`).FindStringSubmatch(ruleFor(t, css, ".fv .person-link"))[1])
 	bwGap := lightGap
-	bwNameRow := regexp.MustCompile(`(?m)^\[data-theme="bw"\] \.fv \.column h2\s*\{[^}]*\}`)
+	bwNameRow := regexp.MustCompile(`(?m)^\[data-theme="bw"\] \.fv \.person-link\s*\{[^}]*\}`)
 	if m := regexp.MustCompile(`gap:\s*(\d+px)`).FindStringSubmatch(bwNameRow.FindString(css)); m != nil {
 		bwGap = px(t, m[1])
 	}

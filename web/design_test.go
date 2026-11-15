@@ -514,3 +514,38 @@ func TestFamilyViewLayoutRulesFollowTheSpec(t *testing.T) {
 		}
 	}
 }
+
+// #150: a person name in the family view never breaks inside the word. The
+// name sits in its own shrinkable element (span.person-name, min-width: 0), so
+// overflow-wrap: break-word applies at the column edge; hyphens only for words
+// of 12+ letters (#32/#86 rule, inside @supports). The layout itself is
+// checked in TestColumnReadabilitySnapshot and in a browser measurement.
+func TestFamilyViewPersonNamesDoNotBreakInsideWords(t *testing.T) {
+	css := stylesheet(t)
+	rule := ruleFor(t, css, ".fv .person-name")
+	for _, want := range []string{"min-width: 0;", "overflow-wrap: break-word;", "hyphens: manual;"} {
+		if !strings.Contains(rule, want) {
+			t.Errorf(".fv .person-name needs %q: %s", want, rule)
+		}
+	}
+	if strings.Contains(rule, "anywhere") {
+		t.Errorf(".fv .person-name must not use overflow-wrap: anywhere: %s", rule)
+	}
+	if !regexp.MustCompile(`@supports\s*\(\s*hyphenate-limit-chars:\s*12 5 5\s*\)\s*\{[^@]*\.fv \.person-name[^}]*hyphens:\s*auto[^}]*hyphenate-limit-chars:\s*12 5 5`).MatchString(css) {
+		t.Error("the family view hyphenates only words of 12+ letters (hyphenate-limit-chars: 12 5 5 inside @supports)")
+	}
+	if !familyTemplateHasNameSpan(t) {
+		t.Error("display_family.html must put the person name in span.person-name")
+	}
+}
+
+// familyTemplateHasNameSpan reports whether the family view template puts the
+// person name in its own span.person-name element.
+func familyTemplateHasNameSpan(t *testing.T) bool {
+	t.Helper()
+	tpl, err := os.ReadFile("templates/display_family.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.Contains(string(tpl), `<span class="person-name">{{.Person.Name}}</span>`)
+}

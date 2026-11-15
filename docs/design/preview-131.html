@@ -1,5 +1,5 @@
 <!doctype html>
-<!-- Design pass on ticket 6.9 meal plan templates (Opus, 15/11/2026). Built from the box's current stylesheet (web/static/hejmo.css, inlined) plus the new rules of this ticket (marked "ticket 6.9"); the implementation must change web/templates/meals.html, add the templates pages and add those rules to web/static/hejmo.css (see the design concept on issue #131). Script and font are inlined copies of web/static. No external requests. -->
+<!-- Design pass on ticket 6.9 meal plan templates (Opus, 15/11/2026; second pass the same day after the product owner's feedback: text fits every box). Built from the box's current stylesheet (web/static/hejmo.css, inlined) plus the new rules of this ticket (marked "ticket 6.9"); the implementation must change web/templates/meals.html, add the templates pages and add those rules to web/static/hejmo.css (see the design concept on issue #131). Script and font are inlined copies of web/static. No external requests. -->
 <html lang="en"><head><meta charset="utf-8"><title>Hejmo preview 6.9 meal plan templates</title>
 <style>
 body{margin:0;padding:16px;background:#888;font-family:system-ui,sans-serif;color:#fff}
@@ -61,7 +61,7 @@ iframe{border:0;background:#fff;display:block}
 <figure><figcaption>Black and white, portrait 768 x 1024</figcaption><iframe data-doc="6" data-theme="bw" data-lang="en" data-anchor="" width="768" height="1024" title="7. Templates menu, nothing yet"></iframe></figure>
 <figure><figcaption>Light, phone 375 x 812</figcaption><iframe data-doc="6" data-theme="light" data-lang="en" data-anchor="" width="375" height="812" title="7. Templates menu, nothing yet"></iframe></figure>
 </div>
-<h2>8. New template: one meal (dinner), every 2 weeks</h2><p class="note">Name, then which meals (two choice cards; for “One meal of the day” a second choice of the mealtime with its icon), then when it repeats as a sentence “Every [2] weeks” with the start week chosen from a list of weeks with their dates. Below it, the weeks it will fill in words, including the turn of the year (2026 has a week 53, so “every 2 weeks” goes 53, then 2). The week pattern uses the meal plan’s day cards without dates; only the chosen mealtime’s rows are shown. Empty fields leave that meal free.</p><div class="row">
+<h2>8. New template: one meal (dinner), every 2 weeks</h2><p class="note">Name, then which meals (two choice cards; for “One meal of the day” a second choice of the mealtime with its icon), then when it repeats as a sentence “Every [2] weeks” with the start week chosen from a list of weeks with their dates. Below it, the weeks it will fill in words, including the turn of the year (2026 has a week 53, so “every 2 weeks” goes 53, then 2). The week pattern uses the meal plan’s day cards without dates; only the chosen mealtime’s rows are shown. Empty fields leave that meal free. The four mealtimes are two by two, each at least as wide as its word; on phones they stack (one full-width row each), so “Mittagessen” and “Abendessen” never touch or cross the border. Long text in every box hyphenates only words of 12 or more letters (approved rule of #86/#32).</p><div class="row">
 <figure><figcaption>Light, landscape 1024 x 768</figcaption><iframe data-doc="7" data-theme="light" data-lang="en" data-anchor="" width="1024" height="768" title="8. New template: one meal (dinner), every 2 weeks"></iframe></figure>
 <figure><figcaption>Dark, landscape 1024 x 768</figcaption><iframe data-doc="7" data-theme="dark" data-lang="en" data-anchor="" width="1024" height="768" title="8. New template: one meal (dinner), every 2 weeks"></iframe></figure>
 <figure><figcaption>Black and white, landscape 1024 x 768</figcaption><iframe data-doc="7" data-theme="bw" data-lang="en" data-anchor="" width="1024" height="768" title="8. New template: one meal (dinner), every 2 weeks"></iframe></figure>
@@ -903,12 +903,12 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
    an adjusted one has the pill "Adjusted this week", the template's dish and
    "Back to template". */
 .tpl-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; max-width: 1200px; margin: 0 0 var(--gap); padding: 12px 16px; background: var(--surface); border-radius: var(--radius-card); }
-.tpl-sum p { flex: 1 1 22em; min-width: 0; margin: 0; overflow-wrap: break-word; hyphens: auto; }
+.tpl-sum p { flex: 1 1 22em; min-width: 0; margin: 0; overflow-wrap: break-word; }
 .tpl-sum p a { font-weight: 600; }
 .tpl-sum .button { display: inline-flex; align-items: center; gap: 8px; flex: none; }
 .tpl-sum .button .icon { stroke: currentColor; }
 [data-theme="bw"] .tpl-sum { border: 2px solid var(--text); }
-.mrow .src { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: -2px; font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: break-word; hyphens: auto; min-width: 0; }
+.mrow .src { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: -2px; font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: break-word; min-width: 0; }
 .mrow .src &gt; span { min-width: 0; }
 .mrow .src .icon { flex: none; width: 16px; height: 16px; stroke: var(--text-secondary); }
 .mrow .src a { color: var(--text-secondary); }
@@ -922,10 +922,11 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 [data-theme="bw"] .mrow.adjusted textarea { border: 2px dashed var(--text); }
 .mrow textarea::placeholder { color: var(--text-secondary); opacity: 1; font-style: italic; }
 @container (max-width: 270px) { .mrow .src { grid-column: 1; } }
+@container (max-width: 360px) { .mrow.adjusted .src { grid-column: 1 / -1; } .mrow.adjusted .src .was { flex-basis: 100%; } } /* phones: the adjusted block (pill, template dish, "Back to template") takes the card width under the field, so the button label stays on one line */
 
 /* Templates menu (/meals/templates): calm rows that open a template, and the
    coming weeks in words (which template fills which mealtime). */
-.tpl-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); overflow-wrap: break-word; hyphens: auto; }
+.tpl-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); overflow-wrap: break-word; }
 .cards a.tpl-row { color: var(--text); font-weight: 400; }
 .tpl-row strong { display: flex; align-items: center; gap: 8px; font-size: var(--fs-event-title); font-weight: var(--fw-event-title); color: var(--accent); }
 .tpl-row strong .icon { flex: none; stroke: var(--accent); margin-left: auto; }
@@ -933,7 +934,7 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .tpl-row .hint b { color: var(--text); font-weight: 600; }
 [data-theme="bw"] .tpl-row strong { text-decoration: underline; }
 .ahead { list-style: none; margin: 0 0 var(--gap-section); padding: 4px 16px; background: var(--surface); border-radius: var(--radius-tile); max-width: 720px; container-type: inline-size; }
-.ahead li { display: grid; grid-template-columns: 11em minmax(0, 1fr); gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--border); overflow-wrap: break-word; hyphens: auto; }
+.ahead li { display: grid; grid-template-columns: 11em minmax(0, 1fr); gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--border); overflow-wrap: break-word; }
 .ahead li:first-child { border-top: 0; }
 .ahead .wkn b { display: block; }
 .ahead .wkn span { font-size: var(--fs-label); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
@@ -949,7 +950,6 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .f-card { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 12px; border: 0; margin: 0; min-width: 0; }
 .f-card &gt; legend { font-size: var(--fs-person-name); font-weight: 700; padding: 0; float: left; width: 100%; margin: 0 0 4px; }
 .f-card .hint { margin: 0; }
-fieldset.choice.mtpick { grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5em), 1fr)); }
 .mtpick label { grid-template-columns: auto auto 1fr; }
 .mtpick input { grid-row: auto; }
 .mtpick .icon { stroke: var(--accent); }
@@ -969,14 +969,33 @@ fieldset.choice.mtpick { grid-template-columns: repeat(auto-fit, minmax(min(100%
   .tpl-form:has(input[name="fills"][value="one"]:checked):has(input[name="mealtime"][value="snack"]:checked) .mrow:not([data-mt="snack"]),
   .tpl-form:has(input[name="fills"][value="one"]:checked):has(input[name="mealtime"][value="dinner"]:checked) .mrow:not([data-mt="dinner"]) { display: none; }
 }
-.f-card .ferr { overflow-wrap: break-word; hyphens: auto; }
 .mrow .src { margin: -2px 0 2px; }
 .mrow .src &gt; span:not(.adj) { flex: 1 1 8em; }
 .ahead .wkn { display: grid; gap: 2px; align-content: start; }
 .ahead .wkn .today { justify-self: start; }
 .ahead .fills b { font-weight: 600; }
-.mtpick legend { grid-column: 1 / -1; margin: 4px 0 0; }
+.mtpick legend { margin: 4px 0 0; }
 .f-card[aria-invalid="true"] select, .f-card[aria-invalid="true"] .every input { border: 2px solid var(--error-text); }
+
+/* Text fits its box (product owner, 15/11/2026). The four mealtime choices
+   are two by two, each at least as wide as its own text: a choice that does
+   not fit half the row wraps to a row of its own instead of running past the
+   border. On phones they stack, one full-width row each (as every choice of
+   three or more on #86). Same in both languages, at every width. */
+.mtpick-wrap { container-type: inline-size; }
+fieldset.choice.mtpick { display: flex; flex-wrap: wrap; gap: 10px; }
+.mtpick label { flex: 1 1 100%; min-width: min(100%, max-content); max-width: 100%; }
+@container (min-width: 24em) { .mtpick label { flex-basis: calc(50% - 5px); } }
+.mtpick b { overflow-wrap: break-word; }
+/* The mealtime after a template name, "(alle Mahlzeiten)", stays on one line
+   and never splits: Chrome counts the closing ")." into the word length, so
+   "Mahlzeiten)." would pass the 12-letter limit. */
+.tpl-sum .mt-of { white-space: nowrap; -webkit-hyphens: manual; hyphens: manual; }
+/* Approved hyphenation rule (#86/#32): only words of 12 or more letters get a
+   hyphen (Abendessen, Donnerstag, anderen, Wochenende never split). Safari
+   lacks hyphenate-limit-chars, so there long words just break. */
+.tpl-sum p, .mrow .src, .tpl-row, .ahead li, .weeks-hint, .tpl-form .ferr, main:has(.tpl-form) &gt; .form-error { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) { .tpl-sum p, .mrow .src, .tpl-row, .ahead li, .weeks-hint, .tpl-form .ferr, main:has(.tpl-form) &gt; .form-error { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
 </template>
 <template id="js">// Shared form patterns (ticket 5.16). Everything works without this script:
 // the server reads "no person chosen" as the whole family. The script only
@@ -1176,7 +1195,7 @@ document.addEventListener("change", function (e) {
   <div class="wk"><strong>Week 47</strong><span>16/11 – 22/11/2026</span></div>
   <a class="wbtn" href="/meals?week=2026-11-23">Next week<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
 </nav></div>
-<div class="tpl-sum"><p>This week is filled by the templates <a href="#t-b">Week B</a> (dinner), <a href="#t-s">School-day breakfast</a> (breakfast) and <a href="#t-w">Weekend</a> (all meals). What you change here counts for this week only.</p><a class="button secondary" href="/meals/templates"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="12" height="13" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v11"/></svg>Templates</a></div>
+<div class="tpl-sum"><p>This week is filled by the templates <a href="#t-b">Week B</a> <span class="mt-of">(dinner)</span>, <a href="#t-s">School-day breakfast</a> <span class="mt-of">(breakfast)</span> and <a href="#t-w">Weekend</a> <span class="mt-of">(all meals)</span>. What you change here counts for this week only.</p><a class="button secondary" href="/meals/templates"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="12" height="13" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v11"/></svg>Templates</a></div>
 <form method="post" action="/meals" class="steps wide">
 <input type="hidden" name="week" value="2026-11-16">
 <div class="meal-week">
@@ -1245,7 +1264,7 @@ document.addEventListener("change", function (e) {
   <div class="wk"><strong>Woche 47</strong><span>16/11 – 22/11/2026</span></div>
   <a class="wbtn" href="/meals?week=2026-11-23">Nächste Woche<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
 </nav></div>
-<div class="tpl-sum"><p>Diese Woche füllen die Vorlagen <a href="#t-b">Woche B</a> (Abendessen), <a href="#t-s">Frühstück an Schultagen</a> (Frühstück) und <a href="#t-w">Wochenende</a> (alle Mahlzeiten). Was du hier änderst, gilt nur für diese Woche.</p><a class="button secondary" href="/meals/templates"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="12" height="13" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v11"/></svg>Vorlagen</a></div>
+<div class="tpl-sum"><p>Diese Woche füllen die Vorlagen <a href="#t-b">Woche B</a> <span class="mt-of">(Abendessen)</span>, <a href="#t-s">Frühstück an Schultagen</a> <span class="mt-of">(Frühstück)</span> und <a href="#t-w">Wochenende</a> <span class="mt-of">(alle Mahlzeiten)</span>. Was du hier änderst, gilt nur für diese Woche.</p><a class="button secondary" href="/meals/templates"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="12" height="13" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v11"/></svg>Vorlagen</a></div>
 <form method="post" action="/meals" class="steps wide">
 <input type="hidden" name="week" value="2026-11-16">
 <div class="meal-week">
@@ -1315,7 +1334,7 @@ document.addEventListener("change", function (e) {
   <div class="wk"><strong>Week 47</strong><span>16/11 – 22/11/2026</span></div>
   <a class="wbtn" href="/meals?week=2026-11-23">Next week<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
 </nav></div>
-<div class="tpl-sum"><p>This week is filled by the templates <a href="#t-b">Week B</a> (dinner), <a href="#t-s">School-day breakfast</a> (breakfast) and <a href="#t-w">Weekend</a> (all meals). What you change here counts for this week only.</p><a class="button secondary" href="/meals/templates"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="12" height="13" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v11"/></svg>Templates</a></div>
+<div class="tpl-sum"><p>This week is filled by the templates <a href="#t-b">Week B</a> <span class="mt-of">(dinner)</span>, <a href="#t-s">School-day breakfast</a> <span class="mt-of">(breakfast)</span> and <a href="#t-w">Weekend</a> <span class="mt-of">(all meals)</span>. What you change here counts for this week only.</p><a class="button secondary" href="/meals/templates"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="12" height="13" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v11"/></svg>Templates</a></div>
 <form method="post" action="/meals" class="steps wide">
 <input type="hidden" name="week" value="2026-11-16">
 <div class="meal-week">
@@ -1535,7 +1554,7 @@ document.addEventListener("change", function (e) {
 <p class="hint">For example “Week A” or “Holidays”.</p></div></fieldset>
 <fieldset class="f-card"><legend>Which meals does it fill?</legend>
 <fieldset class="choice"><label><input type="radio" name="fills" value="one" checked><b>One meal of the day</b><small>For example only dinner</small></label><label><input type="radio" name="fills" value="all"><b>All meals of the day</b><small>Breakfast, lunch, snack and dinner</small></label></fieldset>
-<fieldset class="choice mtpick"><legend>Which meal?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Breakfast</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Lunch</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Dinner</b></label></fieldset>
+<div class="mtpick-wrap"><fieldset class="choice mtpick"><legend>Which meal?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Breakfast</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Lunch</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Dinner</b></label></fieldset></div>
 </fieldset>
 <fieldset class="f-card" id="schedule"><legend>When does it repeat?</legend>
 <label class="every">Every <input name="every" type="number" inputmode="numeric" min="1" max="52" step="1" value="2"> weeks</label>
@@ -1611,7 +1630,7 @@ document.addEventListener("change", function (e) {
 <p class="hint">Zum Beispiel „Woche A“ oder „Ferien“.</p></div></fieldset>
 <fieldset class="f-card"><legend>Welche Mahlzeiten füllt sie?</legend>
 <fieldset class="choice"><label><input type="radio" name="fills" value="one" checked><b>Eine Mahlzeit am Tag</b><small>Zum Beispiel nur das Abendessen</small></label><label><input type="radio" name="fills" value="all"><b>Alle Mahlzeiten des Tages</b><small>Frühstück, Mittagessen, Snack und Abendessen</small></label></fieldset>
-<fieldset class="choice mtpick"><legend>Welche Mahlzeit?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Frühstück</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Mittagessen</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Abendessen</b></label></fieldset>
+<div class="mtpick-wrap"><fieldset class="choice mtpick"><legend>Welche Mahlzeit?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Frühstück</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Mittagessen</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Abendessen</b></label></fieldset></div>
 </fieldset>
 <fieldset class="f-card" id="schedule"><legend>Wann kommt sie dran?</legend>
 <label class="every">Alle <input name="every" type="number" inputmode="numeric" min="1" max="52" step="1" value="2"> Wochen</label>
@@ -1687,7 +1706,7 @@ document.addEventListener("change", function (e) {
 <p class="hint">For example “Week A” or “Holidays”.</p></div></fieldset>
 <fieldset class="f-card"><legend>Which meals does it fill?</legend>
 <fieldset class="choice"><label><input type="radio" name="fills" value="one"><b>One meal of the day</b><small>For example only dinner</small></label><label><input type="radio" name="fills" value="all" checked><b>All meals of the day</b><small>Breakfast, lunch, snack and dinner</small></label></fieldset>
-<fieldset class="choice mtpick"><legend>Which meal?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Breakfast</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Lunch</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Dinner</b></label></fieldset>
+<div class="mtpick-wrap"><fieldset class="choice mtpick"><legend>Which meal?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Breakfast</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Lunch</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Dinner</b></label></fieldset></div>
 </fieldset>
 <fieldset class="f-card" id="schedule"><legend>When does it repeat?</legend>
 <label class="every">Every <input name="every" type="number" inputmode="numeric" min="1" max="52" step="1" value="1"> weeks</label>
@@ -1764,7 +1783,7 @@ document.addEventListener("change", function (e) {
 <p class="hint">For example “Week A” or “Holidays”.</p></div></fieldset>
 <fieldset class="f-card"><legend>Which meals does it fill?</legend>
 <fieldset class="choice"><label><input type="radio" name="fills" value="one" checked><b>One meal of the day</b><small>For example only dinner</small></label><label><input type="radio" name="fills" value="all"><b>All meals of the day</b><small>Breakfast, lunch, snack and dinner</small></label></fieldset>
-<fieldset class="choice mtpick"><legend>Which meal?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Breakfast</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Lunch</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Dinner</b></label></fieldset>
+<div class="mtpick-wrap"><fieldset class="choice mtpick"><legend>Which meal?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Breakfast</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Lunch</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Dinner</b></label></fieldset></div>
 </fieldset>
 <fieldset class="f-card" id="schedule" aria-invalid="true" aria-describedby="err-schedule"><legend>When does it repeat?</legend>
 <label class="every">Every <input name="every" type="number" inputmode="numeric" min="1" max="52" step="1" value="2"> weeks</label>
@@ -1841,7 +1860,7 @@ document.addEventListener("change", function (e) {
 <p class="hint">Zum Beispiel „Woche A“ oder „Ferien“.</p></div></fieldset>
 <fieldset class="f-card"><legend>Welche Mahlzeiten füllt sie?</legend>
 <fieldset class="choice"><label><input type="radio" name="fills" value="one" checked><b>Eine Mahlzeit am Tag</b><small>Zum Beispiel nur das Abendessen</small></label><label><input type="radio" name="fills" value="all"><b>Alle Mahlzeiten des Tages</b><small>Frühstück, Mittagessen, Snack und Abendessen</small></label></fieldset>
-<fieldset class="choice mtpick"><legend>Welche Mahlzeit?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Frühstück</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Mittagessen</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Abendessen</b></label></fieldset>
+<div class="mtpick-wrap"><fieldset class="choice mtpick"><legend>Welche Mahlzeit?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Frühstück</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Mittagessen</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Abendessen</b></label></fieldset></div>
 </fieldset>
 <fieldset class="f-card" id="schedule" aria-invalid="true" aria-describedby="err-schedule"><legend>Wann kommt sie dran?</legend>
 <label class="every">Alle <input name="every" type="number" inputmode="numeric" min="1" max="52" step="1" value="2"> Wochen</label>
@@ -1917,7 +1936,7 @@ document.addEventListener("change", function (e) {
 <p class="ferr" id="err-name" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>Give the template a name, for example “Week A”.</p><p class="hint">For example “Week A” or “Holidays”.</p></div></fieldset>
 <fieldset class="f-card"><legend>Which meals does it fill?</legend>
 <fieldset class="choice"><label><input type="radio" name="fills" value="one" checked><b>One meal of the day</b><small>For example only dinner</small></label><label><input type="radio" name="fills" value="all"><b>All meals of the day</b><small>Breakfast, lunch, snack and dinner</small></label></fieldset>
-<fieldset class="choice mtpick"><legend>Which meal?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Breakfast</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Lunch</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Dinner</b></label></fieldset>
+<div class="mtpick-wrap"><fieldset class="choice mtpick"><legend>Which meal?</legend><label><input type="radio" name="mealtime" value="breakfast"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg><b>Breakfast</b></label><label><input type="radio" name="mealtime" value="lunch"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg><b>Lunch</b></label><label><input type="radio" name="mealtime" value="snack"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg><b>Snack</b></label><label><input type="radio" name="mealtime" value="dinner" checked><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><b>Dinner</b></label></fieldset></div>
 </fieldset>
 <fieldset class="f-card" id="schedule"><legend>When does it repeat?</legend>
 <label class="every">Every <input name="every" type="number" inputmode="numeric" min="1" max="52" step="1" value="2"> weeks</label>

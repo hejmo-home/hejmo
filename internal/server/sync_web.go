@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -64,147 +65,134 @@ func (s *server) syncStale(householdID string) bool {
 	return false
 }
 
-type calendarView struct {
-	ID, Name, Color, Audience, LastSuccess, LastError string
-	Events, Changes                                   string // the count and what the last run did; empty until a run succeeded
-	Stale                                             bool
-	Waste                                             bool
-	// The next collection of a waste calendar: NextLabel is "Next collection: Monday 16/11", NextTitles the
-	// titles joined by ", " after a dash. Both are empty when there is none in the next 30 days.
-	NextLabel, NextTitles string
-	IntervalMinutes       int
-}
-
-// calendarGroup is one heading of the subscribed calendars: a person, or the
-// whole household. Color is empty for the household.
-type calendarGroup struct {
-	Name, Color string
-	Calendars   []calendarView
-}
-
 type logView struct{ At, Calendar, Kind, Message string }
 
 type choice struct{ ID, Name string }
 
 var syncIntervals = []int{5, 15, 30, 60, 120, 360, 1440}
 
+// syncFlag is what a synced calendar's state says in words when something is
+// wrong: a refused login, a problem of the last run, or no success for a day.
+func (s *server) syncFlag(r *http.Request, p principal, c store.SyncedCalendar, fact bool) *flagView {
+	stale := calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale
+	problem := c.Sync.LastError.Key != ""
+	switch {
+	case c.Sync.LastError.Key == loginFailKey:
+		key := "sync.flag.login"
+		if fact {
+			key = "sync.flag.login_fact"
+		}
+		return &flagView{"problem", s.say(r, i18n.Msg(key, "when", p.when(c.Sync.LastAttempt)))}
+	case problem && stale:
+		return &flagView{"problem", s.say(r, i18n.Msg("sync.flag.stale_problem", "error", s.say(r, c.Sync.LastError)))}
+	case problem:
+		return &flagView{"problem", s.say(r, i18n.Msg("sync.flag.problem", "error", s.say(r, c.Sync.LastError)))}
+	case stale:
+		return &flagView{"problem", s.say(r, i18n.Msg("sync.flag.stale"))}
+	}
+	return nil
+}
+
+// loginFailKey is the stored message of a sync that the server refused the login for.
+const loginFailKey = "sync.fail.login"
+
+// syncLast says when a calendar was last synced successfully.
+func (s *server) syncLast(r *http.Request, p principal, c store.SyncedCalendar) string {
+	if c.Sync.LastSuccess.IsZero() {
+		return s.say(r, i18n.Msg("sync.never"))
+	}
+	return s.say(r, i18n.Msg("sync.last", "when", p.when(c.Sync.LastSuccess)))
+}
+
+// audienceOf splits an audience into the people (as chips) and the names of
+// the subgroups; nobody and no group means the whole family.
+func audienceOf(a calendar.Audience, chips map[string]personChip, groups map[string]string) (people []personChip, groupNames []string, whole bool) {
+	for _, id := range a.People {
+		if c, ok := chips[id]; ok {
+			people = append(people, c)
+		}
+	}
+	for _, id := range a.Groups {
+		if name, ok := groups[id]; ok {
+			groupNames = append(groupNames, name)
+		}
+	}
+	return people, groupNames, len(people) == 0 && len(groupNames) == 0
+}
+
+// audienceLine says who a calendar is for in a row: the whole family, or the
+// people as markers and the subgroups by name.
+func (s *server) audienceLine(r *http.Request, a calendar.Audience, chips map[string]personChip, groups map[string]string) rowLine {
+	people, groupNames, whole := audienceOf(a, chips, groups)
+	text := s.say(r, i18n.Msg("row.for"))
+	if len(groupNames) > 0 {
+		text += " " + strings.Join(groupNames, ", ")
+	}
+	return rowLine{Text: text, Whole: whole, People: people}
+}
+
+// audienceMaps loads the people (as chips) and subgroups (by name) of a household.
+func (s *server) audienceMaps(householdID string) (map[string]personChip, map[string]string, []personChip, []choice, error) {
+	people, err := s.db.People(householdID)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	groups, err := s.db.Groups(householdID)
+	if err != nil {
+		return nil, nil, nil, nil, err
+	}
+	chips := map[string]personChip{}
+	list := chipsOf(people)
+	for _, c := range list {
+		chips[c.ID] = c
+	}
+	names := map[string]string{}
+	var choices []choice
+	for _, g := range groups {
+		names[g.ID] = g.Name
+		choices = append(choices, choice{g.ID, g.Name})
+	}
+	return chips, names, list, choices, nil
+}
+
 func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p principal, status int, form map[string]any) {
-	loc := p.location()
 	at := func(t time.Time) string {
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(p.syncLayout())
+		return p.dateTimeSeconds(t)
 	}
-	people, err := s.db.People(p.household.ID)
+	chips, groupNames, peopleChoices, groupChoices, err := s.audienceMaps(p.household.ID)
 	if err != nil {
 		s.fail(w, "people", err)
 		return
-	}
-	groups, err := s.db.Groups(p.household.ID)
-	if err != nil {
-		s.fail(w, "groups", err)
-		return
-	}
-	names := map[string]string{}
-	var groupChoices []choice
-	for _, x := range people {
-		names[x.ID] = x.Name
-	}
-	peopleChoices := chipsOf(people)
-	for _, x := range groups {
-		names[x.ID] = x.Name
-		groupChoices = append(groupChoices, choice{x.ID, x.Name})
 	}
 	synced, err := s.db.SyncedCalendars(p.household.ID)
 	if err != nil {
 		s.fail(w, "synced calendars", err)
 		return
 	}
-	// Grouped by person in household order; a calendar shows under every
-	// person of its audience (groups expand to their members). Calendars with
-	// no audience go first under "Whole household". Calendars nobody sees go last under "Not assigned". Empty groups are dropped.
-	members := map[string][]string{}
-	for _, x := range groups {
-		members[x.ID] = x.Members
-	}
-	var wasteIDs []string
+	// Subscribed calendars (ICS feeds) are rows; the calendars of a connection
+	// are managed on the connection's page.
+	var subscribed []rowView
+	byConn := map[string][]store.SyncedCalendar{}
 	for _, c := range synced {
-		if c.Waste {
-			wasteIDs = append(wasteIDs, c.ID)
-		}
-	}
-	lang := s.langOf(r)
-	nexts, err := s.nextWastes(p.household, lang, wasteIDs)
-	if err != nil {
-		s.fail(w, "next waste collection", err)
-		return
-	}
-	whole := calendarGroup{Name: s.i18n.T(s.langOf(r), "calendars.whole_household")}
-	unassigned := calendarGroup{Name: s.i18n.T(s.langOf(r), "calendars.unassigned")}
-	byPerson := map[string][]calendarView{}
-	for _, c := range synced {
-		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
-			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes, Waste: c.Waste}
-		if next, ok := nexts[c.ID]; ok {
-			v.NextLabel = s.i18n.Format(lang, i18n.Msg("calendars.waste.next", "day", s.dayLabel(lang, next.Day)))
-			v.NextTitles = s.i18n.Format(lang, i18n.Msg("calendars.waste.next_titles", "titles", strings.Join(next.Titles, ", ")))
-		}
-		if !c.Sync.LastSuccess.IsZero() {
-			run := c.Sync.LastRun
-			v.Events = s.say(r, i18n.Msg("calendars.events", "count", strconv.Itoa(run.Events)))
-			v.Changes = s.say(r, i18n.Msg("calendars.run", "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))
-		}
-		for _, id := range append(append([]string{}, c.Audience.People...), c.Audience.Groups...) {
-			if v.Audience != "" {
-				v.Audience += ", "
-			}
-			v.Audience += names[id]
-		}
-		if len(c.Audience.People) == 0 && len(c.Audience.Groups) == 0 {
-			whole.Calendars = append(whole.Calendars, v)
+		if c.Kind != "ics" {
+			byConn[c.ConnectionID] = append(byConn[c.ConnectionID], c)
 			continue
 		}
-		audience := map[string]bool{}
-		for _, id := range c.Audience.People {
-			audience[id] = true
-		}
-		for _, id := range c.Audience.Groups {
-			for _, m := range members[id] {
-				audience[m] = true
-			}
-		}
-		placed := false
-		for _, x := range people {
-			if audience[x.ID] {
-				byPerson[x.ID] = append(byPerson[x.ID], v)
-				placed = true
-			}
-		}
-		if !placed {
-			unassigned.Calendars = append(unassigned.Calendars, v)
-		}
-	}
-	var cals []calendarGroup
-	if len(whole.Calendars) > 0 {
-		cals = append(cals, whole)
-	}
-	for _, x := range people {
-		if len(byPerson[x.ID]) > 0 {
-			cals = append(cals, calendarGroup{Name: x.Name, Color: x.Color, Calendars: byPerson[x.ID]})
-		}
-	}
-	if len(unassigned.Calendars) > 0 {
-		cals = append(cals, unassigned)
+		row := rowView{Href: "/calendars/" + c.ID, Title: c.Name, Lines: []rowLine{s.audienceLine(r, c.Audience, chips, groupNames), {Text: s.syncLast(r, p, c)}}}
+		row.Flag = s.syncFlag(r, p, c, false)
+		subscribed = append(subscribed, row)
 	}
 	conns, err := s.db.Connections(p.household.ID)
 	if err != nil {
 		s.fail(w, "connections", err)
 		return
 	}
-	var connViews []connectionView
+	var connRows []rowView
 	for _, c := range conns {
-		connViews = append(connViews, newConnectionView(c))
+		connRows = append(connRows, s.connectionRow(r, p, c, byConn[c.ID]))
 	}
 	entries, err := s.db.SyncLog(p.household.ID, 50)
 	if err != nil {
@@ -221,13 +209,57 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	data := map[string]any{
 		"AutoColor": nextColors(taken, 1)[0],
-		"Person":    p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
-		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "Connections": connViews, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
+		"Person":    p.person, "Rows": subscribed, "ConnRows": connRows, "Log": log, "People": peopleChoices, "Groups": groupChoices,
+		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
 	}
 	if form != nil {
 		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
 	}
 	s.render(w, r, status, "calendars.html", data)
+}
+
+// connectionRow is the row of one calendar connection: the service, the
+// calendars it puts on the box by name, and the last sync or what went wrong.
+func (s *server) connectionRow(r *http.Request, p principal, c store.Connection, cals []store.SyncedCalendar) rowView {
+	row := rowView{Href: "/connections/" + c.ID, Title: c.Username, Lines: []rowLine{{Text: s.serviceName(r, c)}}}
+	var names []string
+	var last time.Time
+	var flag *flagView
+	for _, cal := range cals {
+		names = append(names, cal.Name)
+		if cal.Sync.LastSuccess.After(last) {
+			last = cal.Sync.LastSuccess
+		}
+		if f := s.syncFlag(r, p, cal, false); f != nil && (flag == nil || cal.Sync.LastError.Key == loginFailKey) {
+			flag = f
+		}
+	}
+	if len(names) == 0 {
+		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("connections.on_box_none"))})
+	} else {
+		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("connections.on_box", "names", strings.Join(names, ", ")))})
+	}
+	switch {
+	case flag != nil:
+		row.Flag = flag
+	case !last.IsZero():
+		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("sync.last", "when", p.when(last)))})
+	case len(names) > 0:
+		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("sync.never"))})
+	}
+	return row
+}
+
+// serviceName names the service of a connection: iCloud, or the CalDAV server's host.
+func (s *server) serviceName(r *http.Request, c store.Connection) string {
+	if c.URL == iCloudServer {
+		return s.say(r, i18n.Msg("connections.provider.icloud"))
+	}
+	host := c.URL
+	if u, err := url.Parse(c.URL); err == nil && u.Host != "" {
+		host = u.Host
+	}
+	return s.say(r, i18n.Msg("connections.service.caldav", "host", host))
 }
 
 func (s *server) handleCalendarsPage(w http.ResponseWriter, r *http.Request) {
@@ -265,22 +297,89 @@ func (s *server) handleCalendarAdd(w http.ResponseWriter, r *http.Request) {
 	s.redirectSaved(w, r, "/calendars", "flash.calendar_added")
 }
 
+// syncedCalendarPage finds the subscribed calendar of a detail page; the
+// calendars of a connection have no page of their own.
+func (s *server) syncedCalendarPage(w http.ResponseWriter, r *http.Request, p principal) (store.SyncedCalendar, bool) {
+	c, err := s.db.SyncedCalendar(p.household.ID, r.PathValue("id"))
+	switch {
+	case errors.Is(err, store.ErrNotFound), err == nil && c.Kind != "ics":
+		http.NotFound(w, r)
+		return store.SyncedCalendar{}, false
+	case err != nil:
+		s.fail(w, "calendar", err)
+		return store.SyncedCalendar{}, false
+	}
+	return c, true
+}
+
+func (s *server) handleCalendarPage(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	c, ok := s.syncedCalendarPage(w, r, p)
+	if !ok {
+		return
+	}
+	chips, groupNames, _, _, err := s.audienceMaps(p.household.ID)
+	if err != nil {
+		s.fail(w, "people", err)
+		return
+	}
+	people, groupList, whole := audienceOf(c.Audience, chips, groupNames)
+	forFact := factView{Label: s.say(r, i18n.Msg("calendars.fact.for")), Whole: whole, People: people, Value: strings.Join(groupList, ", ")}
+	last := factView{Label: s.say(r, i18n.Msg("calendars.fact.last"))}
+	if f := s.syncFlag(r, p, c, true); f != nil {
+		last.Flag = f
+	} else if c.Sync.LastSuccess.IsZero() {
+		last.Value = s.say(r, i18n.Msg("sync.never"))
+	} else {
+		last.Value = p.when(c.Sync.LastSuccess)
+	}
+	facts := []factView{{Label: s.say(r, i18n.Msg("calendars.fact.address")), Value: c.URL}, forFact,
+		{Label: s.say(r, i18n.Msg("calendars.fact.color")), Value: c.Color}, last}
+	if !c.Sync.LastSuccess.IsZero() {
+		run := c.Sync.LastRun
+		facts = append(facts,
+			factView{Label: s.say(r, i18n.Msg("calendars.fact.events")), Value: s.say(r, i18n.Msg("calendars.fact.events_value", "count", strconv.Itoa(run.Events)))},
+			factView{Label: s.say(r, i18n.Msg("calendars.fact.run")), Value: s.say(r, i18n.Msg("calendars.fact.run_value", "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))})
+	}
+	page := map[string]any{"Person": p.person, "Calendar": c, "Facts": facts, "Title": c.Name}
+	if c.Waste {
+		lang := s.langOf(r)
+		nexts, err := s.nextWastes(p.household, lang, []string{c.ID})
+		if err != nil {
+			s.fail(w, "next waste collection", err)
+			return
+		}
+		if next, ok := nexts[c.ID]; ok {
+			page["NextLabel"] = s.i18n.Format(lang, i18n.Msg("calendars.waste.next", "day", s.dayLabel(lang, p.household.DateFormat, next.Day)))
+			page["NextTitles"] = s.i18n.Format(lang, i18n.Msg("calendars.waste.next_titles", "titles", strings.Join(next.Titles, ", ")))
+		}
+	}
+	s.render(w, r, http.StatusOK, "calendar_detail.html", page)
+}
+
 func (s *server) handleCalendarSync(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
 	}
-	// A failed sync is in the log the page shows next, not a success line.
+	// A failed sync shows as a problem on the page it returns to, not as a success line.
 	err := s.sync.Sync(r.Context(), p.household.ID, r.PathValue("id"))
 	if errors.Is(err, store.ErrNotFound) {
 		http.NotFound(w, r)
 		return
 	}
+	back := "/calendars/" + r.PathValue("id")
+	if c, cerr := s.db.SyncedCalendar(p.household.ID, r.PathValue("id")); cerr == nil && c.Kind != "ics" {
+		back = "/connections/" + c.ConnectionID
+	}
 	if err == nil {
-		s.redirectSynced(w, r, "/calendars", r.PathValue("id"))
+		s.redirectSynced(w, r, back, r.PathValue("id"))
 		return
 	}
-	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
+	http.Redirect(w, r, back, http.StatusSeeOther)
 }
 
 func (s *server) handleCalendarDelete(w http.ResponseWriter, r *http.Request) {
@@ -288,14 +387,22 @@ func (s *server) handleCalendarDelete(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	if err := s.db.DeleteSyncedCalendar(p.household.ID, r.PathValue("id")); errors.Is(err, store.ErrNotFound) {
+	c, err := s.db.SyncedCalendar(p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		s.fail(w, "calendar", err)
+		return
+	}
+	if err := s.db.DeleteSyncedCalendar(p.household.ID, c.ID); errors.Is(err, store.ErrNotFound) {
 		http.NotFound(w, r)
 		return
 	} else if err != nil {
 		s.fail(w, "delete calendar", err)
 		return
 	}
-	s.redirectSaved(w, r, "/calendars", "flash.calendar_removed")
+	s.redirectSavedNamed(w, r, "/calendars", "flash.calendar_removed", c.Name)
 }
 
 // calendarErrorField names the input of the add form that an error belongs to;

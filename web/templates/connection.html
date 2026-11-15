@@ -1,9 +1,12 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "connections.choose.title") "Frame" .Frame)}}
-  <h1>{{t "connections.choose.title"}}</h1>
-  <p class="hint">{{.Connection.Username}} · {{.Connection.URL}}</p>
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/calendars" "Text" (t "calendars.back"))}}
+  <h1>{{.Connection.Username}}</h1>
+  {{with .Refused}}<p class="error" role="alert">{{.}} <a href="#login">{{t "connections.error.refused_link"}}</a></p>{{end}}
   {{if and .Error (not .ErrorField)}}{{template "error" .}}{{end}}
+  {{template "facts" .Facts}}
   {{if .Found}}
   <form method="post" action="/connections/{{.Connection.ID}}/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/{{.Connection.ID}}/event-counts" data-count-loading="{{t "connections.count.loading"}}" data-count-unknown="{{t "connections.count.unknown"}}">
+    <h2>{{t "connections.choose.heading"}}</h2>
     <p class="lead">{{t "connections.choose.lead"}}</p>
     {{range $cal := .Found}}
     {{$here := eq $.ErrorCalendar $cal.URL}}
@@ -12,7 +15,8 @@
       <div class="card-row">
         <span class="t"><b>{{$cal.Name}}</b>
           <span class="state{{if $cal.On}} is-on{{end}}"><span class="on-text">{{t "connections.switch.on"}}</span><span class="off-text">{{t "connections.switch.off"}}</span></span>
-          <span class="hint count" data-count-for="{{$cal.URL}}" data-state="loading">{{t "connections.count.nojs"}}</span></span>
+          <span class="hint count" data-count-for="{{$cal.URL}}" data-state="loading">{{t "connections.count.nojs"}}</span>{{if $cal.LastSync}}
+          <span class="status">{{$cal.LastSync}}</span>{{end}}</span>
         <label class="switch"><input type="checkbox" role="switch" name="calendar" value="{{$cal.URL}}"{{if $cal.On}} checked{{end}} aria-label="{{$cal.Name}}"{{if and $here (eq $.ErrorField "calendar")}} aria-invalid="true" aria-describedby="err-calendar"{{end}}></label>
       </div>
       <label>{{t "calendars.field.name"}}
@@ -37,5 +41,25 @@
     <button class="button" type="submit">{{t "connections.choose.submit"}}</button>
   </form>
   {{else}}<p class="lead">{{t "connections.choose.none"}}</p>{{end}}
+  {{if .Waste}}
+  <section class="steps">
+    <h2>{{t "connections.waste.heading"}}</h2>
+    {{range .Waste}}
+    <form method="post" action="/calendars/{{.ID}}/waste" class="waste-form" data-autosubmit>
+      {{template "switch" (dict "Name" "waste" "Label" (printf "%s: %s" .Name (t "calendars.waste.label")) "OnText" (t "calendars.waste.on") "OffText" (t "calendars.waste.off") "Checked" .Waste)}}
+      <noscript><button class="button secondary" type="submit">{{t "calendars.waste.save"}}</button></noscript>
+    </form>
+    {{end}}
+  </section>
+  {{end}}
+
+  <section id="login" class="steps">{{template "moreOpen" (dict "Label" (t "connections.login") "Summary" (t "connections.login.summary") "Open" .LoginOpen)}}
+    <form method="post" action="/connections/{{.Connection.ID}}/credentials" class="steps" autocomplete="off">
+      {{template "field" (dict "Root" . "Name" "password" "Label" (t "connections.login.field") "Type" "password" "Required" true "Autocomplete" "new-password")}}
+      <button class="button secondary" type="submit">{{t "connections.login.submit"}}</button>
+    </form>
+  {{template "moreClose"}}</section>
+
+  {{template "danger" (dict "Label" (t "connections.remove") "Explain" (or (and .ICloud (t "connections.remove.explain_icloud")) (t "connections.remove.explain")) "Names" .Names "Confirm" (t "connections.remove.confirm") "Action" (printf "/connections/%s/delete" .Connection.ID) "CancelHref" (printf "/connections/%s" .Connection.ID))}}
   <script src="/static/connection-counts.js" defer></script>
 {{template "foot"}}

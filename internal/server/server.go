@@ -14,6 +14,7 @@ import (
 	"regexp"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
@@ -101,6 +102,7 @@ type server struct {
 	countWait time.Duration
 	done      <-chan struct{}
 	updateDir string
+	rolled    sync.Map // household id -> the day its meal plan calendar was last rolled forward
 }
 
 // New returns the box's root HTTP handler.
@@ -164,9 +166,13 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /otp", s.handleOTPPage)
 	mux.HandleFunc("POST /otp/recovery-codes", s.handleRecoveryCodesNew)
 	mux.HandleFunc("POST /otp/reset/{id}", s.handleOTPReset)
+	mux.HandleFunc("GET /sessions", s.handleSessionsPage)
+	mux.HandleFunc("GET /sessions/{id}", s.handleSessionPage)
+	mux.HandleFunc("POST /sessions/{id}/end", s.handleSessionEnd)
 	mux.HandleFunc("GET /login", s.handleLoginForm)
 	mux.HandleFunc("POST /login", s.handleLoginSubmit)
 	mux.HandleFunc("POST /logout", s.handleLogout)
+	mux.HandleFunc("POST /language", s.handleLanguageSwitch)
 	mux.HandleFunc("GET /{$}", s.handleHome)
 	mux.HandleFunc("GET /calendar", s.handleCalendarWeek)
 	mux.HandleFunc("GET /calendar/search", s.handleCalendarSearch)
@@ -177,6 +183,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /calendar/events/{id}/delete", s.handleEventDelete)
 	mux.HandleFunc("GET /calendars", s.handleCalendarsPage)
 	mux.HandleFunc("POST /calendars", s.handleCalendarAdd)
+	mux.HandleFunc("GET /calendars/{id}", s.handleCalendarPage)
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
 	mux.HandleFunc("GET /connections/new", s.handleConnectNew)
@@ -188,10 +195,12 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /connections", s.handleConnect)
 	mux.HandleFunc("GET /connections/{id}", s.handleConnectionPage)
 	mux.HandleFunc("POST /connections/{id}/calendars", s.handleConnectionCalendars)
+	mux.HandleFunc("POST /connections/{id}/credentials", s.handleConnectionCredentials)
 	mux.HandleFunc("POST /connections/{id}/delete", s.handleConnectionDelete)
 	mux.HandleFunc("GET /caldav", s.handleCalDAVPage)
 	mux.HandleFunc("POST /caldav/tokens", s.handleDeviceTokenCreate)
 	mux.HandleFunc("POST /caldav/profile", s.handleIOSProfile)
+	mux.HandleFunc("GET /caldav/tokens/{id}", s.handleDeviceTokenPage)
 	mux.HandleFunc("POST /caldav/tokens/{id}/revoke", s.handleDeviceTokenRevoke)
 	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
 	mux.HandleFunc("GET /people", s.handlePeoplePage)
@@ -212,6 +221,12 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /meals", s.handleMealsPage)
 	mux.HandleFunc("POST /meals", s.handleMealsSave)
+	mux.HandleFunc("GET /meals/templates", s.handleTemplatesPage)
+	mux.HandleFunc("GET /meals/templates/new", s.handleTemplateNew)
+	mux.HandleFunc("POST /meals/templates", s.handleTemplateCreate)
+	mux.HandleFunc("GET /meals/templates/{id}", s.handleTemplatePage)
+	mux.HandleFunc("POST /meals/templates/{id}", s.handleTemplateSave)
+	mux.HandleFunc("POST /meals/templates/{id}/delete", s.handleTemplateDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
@@ -221,11 +236,13 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /display/tasks/{id}/done", s.handleDisplayTaskDone)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
+	mux.HandleFunc("GET /displays/{id}", s.handleDisplayPage)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
 	mux.HandleFunc("GET /settings", s.handleSettingsHub)
 	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
 	mux.HandleFunc("GET /phones", s.handlePhonesPage)
+	mux.HandleFunc("GET /phones/{id}", s.handlePhonePage)
 	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)
 	mux.HandleFunc("POST /phones/pairings/{id}/confirm", s.handlePhonePairingConfirm)
 	mux.HandleFunc("POST /phones/{id}/revoke", s.handlePhoneRevoke)
@@ -236,7 +253,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /displays/{id}/settings", s.handleDisplaySettings)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
-	return s.requireHTTPS(sameOrigin(mux))
+	return s.requireHTTPS(sameOrigin(withPageLanguage(mux)))
 }
 
 func (s *server) handleHealthz(w http.ResponseWriter, r *http.Request) {
@@ -275,13 +292,20 @@ func parsePages() *template.Template {
 		"tf":   func(string, ...string) string { return "" },
 		"dict": dict,
 		"rich": rich,
+		"list": func(v ...any) []any { return v },
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
+		"repl": repl,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
 
 func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name string, data map[string]any) {
-	lang := s.i18n.Match(r.Header.Get("Accept-Language"))
+	var lang string
+	if strings.HasPrefix(name, "display_") {
+		lang = s.displayLang(r) // a parent's choice does not reach displays
+	} else {
+		lang = s.pageLanguage(r)
+	}
 	if data == nil {
 		data = map[string]any{}
 	}
@@ -293,16 +317,22 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	}
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
-		if key, arg := s.takeFlash(w, r); key != "" {
-			fr.Success = s.successText(lang, key, arg)
-		} else if key, ok := data["SuccessKey"].(string); ok {
-			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
-		} else if m, ok := data["SuccessMsg"].(i18n.Message); ok {
-			fr.Success = s.i18n.Format(lang, m) // the same, with values filled in
+		fr.setLanguage(lang, r)
+		if detailPages[name] && fr.Back { // a detail page links to its own overview, not to the hub
+			fr.Back, fr.BackHref, fr.BackLabel = false, "", ""
 		}
-		if href, ok := data["BackHref"].(string); ok {
-			label, _ := data["BackLabel"].(string)
-			fr.BackHref, fr.BackLabel = href, label
+		key, arg := s.takeFlash(w, r) // always consumed, so it cannot show later
+		switch own, _ := data["SuccessKey"].(string); {
+		case key == "flash.lang.error":
+			fr.Error = s.i18n.T(lang, key)
+		case data["SuccessText"] != nil:
+			fr.Success, _ = data["SuccessText"].(string) // a page that shows the result itself, and names the thing
+		case data["SuccessMsg"] != nil:
+			fr.Success = s.i18n.Format(lang, data["SuccessMsg"].(i18n.Message)) // the same, with values filled in
+		case own != "":
+			fr.Success = s.i18n.T(lang, own)
+		case key != "":
+			fr.Success = s.successText(lang, key, arg)
 		}
 		data["Frame"] = fr
 	}
@@ -345,6 +375,9 @@ var pathMark = regexp.MustCompile(`\[\[(.+?)\]\]`)
 func rich(text string) template.HTML {
 	return template.HTML(pathMark.ReplaceAllString(template.HTMLEscapeString(text), `<span class="path">$1</span>`))
 }
+
+// repl fills the {name} placeholders of a translated text: repl(text, "{n}", "3", ...).
+func repl(text string, pairs ...string) string { return strings.NewReplacer(pairs...).Replace(text) }
 
 // dict builds a map for passing several values to a sub-template.
 func dict(kv ...any) map[string]any {

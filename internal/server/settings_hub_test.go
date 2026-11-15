@@ -48,7 +48,7 @@ func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
 
 // hubPages are the setup screens the Settings hub holds. Add a new hub entry here; the tests
 // below also check that the hub shows nothing this list lacks.
-var hubPages = []string{"/calendars", "/caldav", "/displays", "/phones", "/people", "/settings/household", "/otp"}
+var hubPages = []string{"/calendars", "/caldav", "/displays", "/phones", "/people", "/settings/household", "/otp", "/sessions"}
 
 // 5.18: every setup page is reachable from the Settings hub.
 func TestSettingsHubLinksEverySetupPage(t *testing.T) {
@@ -67,7 +67,7 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 			t.Errorf("hub lacks a link to %s: %v", want, got)
 		}
 	}
-	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Phones", "People", "Household", "One-time codes"} {
+	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Phones", "People", "Household", "One-time codes", "Signed-in devices"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("hub lacks %q", want)
 		}
@@ -90,6 +90,11 @@ func TestSetupPagesLinkBackToSettings(t *testing.T) {
 		body := getEN(b, page).body
 		if !strings.Contains(body, `<a class="back" href="/settings">`) {
 			t.Errorf("%s has no link back to Settings", page)
+		}
+		// Ticket 111: the link sits inside main. As a grid item of the frame it
+		// broke the 1024 px layout.
+		if at, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main`); at < main {
+			t.Errorf("%s: the link back to Settings is outside main", page)
 		}
 		if !strings.Contains(body, `<a href="/settings" aria-current="page"`) {
 			t.Errorf("%s does not mark Settings as the current section", page)

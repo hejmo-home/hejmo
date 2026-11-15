@@ -21,7 +21,16 @@ func (s *server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
-	s.render(w, r, http.StatusOK, "login.html", map[string]any{"Next": localPath(r.URL.Query().Get("next"))})
+	data := map[string]any{"Next": localPath(r.URL.Query().Get("next"))}
+	// A session cookie the box no longer knows (ended by a parent or run out):
+	// say why the sign-in page is shown, and drop the cookie.
+	if c, err := r.Cookie(sessionCookie); err == nil && c.Value != "" {
+		if _, err := s.db.SessionPerson(auth.HashToken(c.Value), s.now()); err != nil {
+			data["SignedOut"] = true
+			http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
+		}
+	}
+	s.render(w, r, http.StatusOK, "login.html", data)
 }
 
 func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
@@ -58,6 +67,12 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	if err := s.startSession(w, r, acc.PersonID); err != nil {
 		s.fail(w, "login session", err)
 		return
+	}
+	if code := cookieLanguage(r); code != "" && acc.Language == "" {
+		// the choice made before sign-in becomes the account's
+		if err := s.db.SetAccountLanguage(acc.PersonID, code); err != nil {
+			s.logger.Error("save account language", "err", err)
+		}
 	}
 	if pendingSetup {
 		http.Redirect(w, r, "/setup/totp", http.StatusSeeOther)

@@ -222,37 +222,15 @@ func TestColumnReadabilitySnapshot(t *testing.T) {
 	}
 }
 
-// Ticket #135: from 900 px the navigation is a column on the left and the back
-// link and main both sit in the right column. Without a fixed place the back
-// link took the right column and main fell into the narrow left one, so one
-// long line set the width of the page and ran off the right edge.
-func TestWideFrameKeepsBackLinkAndMainInTheRightColumn(t *testing.T) {
+// Ticket #135: running text keeps the width of the cards at every screen
+// width, and a link used as a button inside a card keeps its button text
+// colour. (The wide frame grid is covered by
+// TestFrameLayoutCoversTheBackLinkAndNarrowScreens.)
+func TestRunningTextAndLinkButtonsInCards(t *testing.T) {
 	css := stylesheet(t)
-	var wide string
-	for _, m := range regexp.MustCompile(`(?s)@media \(min-width: 900px\) \{(.*?)\n\}`).FindAllStringSubmatch(css, -1) {
-		wide += m[1]
-	}
-	decl := func(selector string) string {
-		m := regexp.MustCompile(`(?s)` + regexp.QuoteMeta(selector) + `\s*\{([^}]*)\}`).FindStringSubmatch(wide)
-		if m == nil {
-			t.Fatalf("no rule %q at 900 px", selector)
-		}
-		return m[1]
-	}
-	if d := decl(".frame.has-nav > .frame-nav"); !strings.Contains(d, "grid-column: 1") || !strings.Contains(d, "grid-row: 2 / span 2") {
-		t.Errorf("navigation is not the left column over both rows: %s", d)
-	}
-	if d := decl(".frame.has-nav > .back, .frame.has-nav > main"); !strings.Contains(d, "grid-column: 2") {
-		t.Errorf("back link and main are not in the right column: %s", d)
-	}
-	if !regexp.MustCompile(`\.frame\.has-nav\s*\{[^}]*grid-template-columns:\s*max-content minmax\(0, 1fr\)`).MatchString(wide) {
-		t.Error("the right column must be minmax(0, 1fr) so long lines wrap instead of widening the page")
-	}
-	// Running text keeps the width of the cards at every screen width.
 	if !strings.Contains(css, ".lead, main > .hint, section > .hint { max-width: 560px; }") {
 		t.Error("running text is not limited to 560 px")
 	}
-	// A link used as a button inside a card keeps its button text colour.
 	if !strings.Contains(css, ".cards a.button, .steps a.button { color: var(--accent-text); font-weight: 700; }") ||
 		!strings.Contains(css, ".cards a.button.secondary, .steps a.button.secondary { color: var(--accent); }") {
 		t.Error("link buttons in cards and steps lose their text colour")

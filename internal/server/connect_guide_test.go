@@ -61,8 +61,8 @@ func TestConnectNewShowsBothGuidesWithExactlyOneServiceChecked(t *testing.T) {
 		if strings.Contains(block, `form="`) {
 			t.Errorf("%s: the choice cards must not use a form attribute", path)
 		}
-		if !strings.Contains(r.body, `<a class="back" href="/calendars">Zurück zu den Kalendern</a>`) {
-			t.Errorf("%s: no frame back link to the calendars:\n%s", path, r.body)
+		if !regexp.MustCompile(`<a class="back" href="/calendars">.*Zurück zu den Kalender-Verbindungen</a>`).MatchString(r.body) {
+			t.Errorf("%s: no back link to the calendars:\n%s", path, r.body)
 		}
 		if !strings.Contains(r.body, "<h1>Kalender verbinden</h1>") {
 			t.Errorf("%s: no title", path)
@@ -253,8 +253,8 @@ func TestConnectSuccessLineAndFrameBackLinkOnTheChoosePage(t *testing.T) {
 	if !strings.Contains(r.body, "Mit iCloud verbunden. 2 Kalender gefunden: Schalte ein, was die Box zeigen soll.") {
 		t.Errorf("no success line:\n%s", r.body)
 	}
-	if !strings.Contains(r.body, `<a class="back" href="/calendars">Zurück zu den Kalendern</a>`) || strings.Contains(r.body, `<p><a href="/calendars">`) {
-		t.Error("the choose page has no frame back link")
+	if !regexp.MustCompile(`<a class="back" href="/calendars">.*Zurück zu den Kalender-Verbindungen</a>`).MatchString(r.body) || strings.Contains(r.body, `<p><a href="/calendars">`) {
+		t.Error("the choose page has no back link")
 	}
 	r = b.post("/connections", url.Values{"provider": {"caldav"}, "url": {"https://caldav.example.org"}, "username": {"u"}, "password": {"pw-1"}})
 	if !strings.Contains(r.body, "Verbunden. 2 Kalender gefunden: Schalte ein, was die Box zeigen soll.") {
@@ -284,7 +284,7 @@ func TestCalendarsPageLinksToTheConnectPage(t *testing.T) {
 	})
 	b.post("/connections", url.Values{"provider": {"icloud"}, "username": {"mama@example.org"}, "password": {"abcd-efgh-ijkl-mnop"}})
 	r = b.get("/calendars")
-	for _, want := range []string{"<strong>iCloud</strong>", `<span class="hint">mama@example.org</span>`, `class="button secondary"`, "Kalender auswählen", `<a class="button secondary" href="/connections/new">Weiteren Kalender verbinden</a>`} {
+	for _, want := range []string{`<ul class="list-rows">`, "<b>mama@example.org</b>", `<span class="meta">iCloud</span>`, `<a class="button secondary" href="/connections/new">Weiteren Kalender verbinden</a>`} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("connection card lacks %q:\n%s", want, r.body)
 		}

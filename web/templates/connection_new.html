@@ -1,4 +1,5 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "connect.title") "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/calendars" "Text" (t "calendars.back"))}}
   {{/* The guide of the service the card chooses; an error belongs to the guide that was submitted. */}}
   {{$ic := dict "ErrorField" "" "Error" ""}}{{$cd := dict "ErrorField" "" "Error" ""}}
   {{if eq .Service "icloud"}}{{$ic = dict "ErrorField" .ErrorField "Error" .Error}}{{else}}{{$cd = dict "ErrorField" .ErrorField "Error" .Error}}{{end}}

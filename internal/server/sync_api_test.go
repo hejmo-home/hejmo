@@ -279,13 +279,18 @@ func TestWebAddsAndListsICSCalendars(t *testing.T) {
 		t.Fatalf("add = %d %q", r.status, r.location)
 	}
 	page := b.do(http.MethodGet, "/calendars", nil, map[string]string{"Accept-Language": "en"})
-	for _, want := range []string{"School", "Mia", "#B4583A"} {
+	for _, want := range []string{"School", "Mia"} {
 		if page.status != http.StatusOK || !strings.Contains(page.body, want) {
 			t.Fatalf("calendars page misses %q:\n%s", want, page.body)
 		}
 	}
 	if got := len(c.occurrences(t, november)); got != 1 {
 		t.Fatalf("events = %d, want 1", got)
+	}
+	// The colour is on the calendar's own page (the overview rows are calm and carry none).
+	added, _ := b.db.SyncedCalendars(h.ID)
+	if detail := b.do(http.MethodGet, "/calendars/"+added[0].ID, nil, map[string]string{"Accept-Language": "en"}); !strings.Contains(detail.body, "#B4583A") {
+		t.Fatalf("calendar page misses the colour:\n%s", detail.body)
 	}
 
 	// A failure shows in the log on the page, in the viewer's language.

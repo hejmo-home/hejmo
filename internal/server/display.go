@@ -16,6 +16,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/task"
 	"github.com/hejmo-home/hejmo/internal/theme"
 	"github.com/hejmo-home/hejmo/internal/wholine"
 )
@@ -98,7 +99,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		if s.now().Sub(d.LastSeen) > time.Minute {
 			_ = s.db.TouchDisplay(hash, s.now())
 		}
-		view, version, err := s.renderDisplayContent(h, d, s.langOf(r))
+		view, version, err := s.renderDisplayContent(h, d, s.displayLang(r))
 		if err != nil {
 			s.fail(w, "display view", err)
 			return
@@ -115,7 +116,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	pair := s.pairURL(r, d.Code)
-	svg, err := qrsvg.SVG(pair, s.i18n.T(s.langOf(r), "display.pair.qr"))
+	svg, err := qrsvg.SVG(pair, s.i18n.T(s.displayLang(r), "display.pair.qr"))
 	if err != nil {
 		s.fail(w, "qr code", err)
 		return
@@ -173,9 +174,21 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	for _, n := range notes {
 		byDay[n.Day] = n.Text
 	}
+	due, err := s.db.TasksForDay(h.ID, data.now.Format(task.DateLayout))
+	if err != nil {
+		return familyview.View{}, err
+	}
+	byPerson := map[string][]familyview.Task{}
+	for _, t := range due {
+		byPerson[t.PersonID] = append(byPerson[t.PersonID], familyview.Task{Done: t.Done})
+	}
+	progress := map[string]familyview.Progress{}
+	for id, ts := range byPerson {
+		progress[id] = familyview.ProgressOf(ts)
+	}
 	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
 		Waste: data.waste, DayNotes: byDay, TomorrowLabel: s.i18n.T(lang, "family.tomorrow"), TodayLabel: s.i18n.T(lang, "family.today"),
-		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID),
+		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID), TaskProgress: progress,
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
 }
 
@@ -194,6 +207,7 @@ type displayData struct {
 }
 
 func (s *server) displayData(h store.Household, lang string, days int) (displayData, error) {
+	s.rollMealPlan(h, lang) // the meal tile reads the meal-plan calendar
 	now := s.householdNow(h)
 	loc := now.Location()
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)

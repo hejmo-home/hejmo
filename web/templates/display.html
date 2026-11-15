@@ -1,0 +1,48 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/displays" "Text" (t "displays.back"))}}
+  <h1>{{.D.Name}}</h1>
+  {{template "error" .}}
+  {{template "facts" .Facts}}
+
+  <form method="post" action="/displays/{{.D.ID}}/settings" class="steps">
+    <fieldset>
+      <legend>{{t "displays.legend.where"}}</legend>
+      {{template "field" (dict "Root" . "Name" "name" "Label" (t "displays.name") "Value" .D.Name "Required" true "Max" 80)}}
+      {{$sel := .D.Type}}
+      {{template "optionsOpen" (dict "Class" "choice" "Legend" (t "displays.type"))}}
+        {{range .D.Types}}{{template "option" (dict "Name" "type" "Value" (printf "%s" .) "Label" (t (printf "displays.type.%s" .)) "Hint" (t (printf "displays.type.%s.hint" .)) "Checked" (eq (printf "%s" .) $sel))}}{{end}}
+      {{template "optionsClose" (dict "Root" . "Name" "type")}}
+    </fieldset>
+
+    <fieldset>
+      <legend>{{t "displays.legend.shows"}}</legend>
+      {{template "switch" (dict "Name" "show_tomorrow" "Label" (t "displays.show_tomorrow") "OnText" (t "displays.show_tomorrow.on") "OffText" (t "displays.show_tomorrow.off") "Checked" .D.ShowTomorrow)}}
+      {{$th := .D.Theme}}
+      {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "displays.theme"))}}
+        {{range .D.Themes}}{{template "option" (dict "Name" "theme" "Value" (printf "%s" .) "Label" (t (printf "displays.theme.%s" .)) "Checked" (eq (printf "%s" .) $th))}}{{end}}
+      {{template "optionsClose" (dict "Root" . "Name" "theme")}}
+      <p class="hint">{{t "displays.theme.auto.hint"}}</p>
+    </fieldset>
+
+    <fieldset>
+      <legend>{{t "displays.legend.quiet"}}</legend>
+      {{template "switch" (dict "Name" "quiet" "Label" (t "displays.quiet") "OnText" (t "displays.quiet.on") "OffText" (t "displays.quiet.off") "Checked" .D.QuietOn)}}
+      <div class="pair when-on">
+        {{template "field" (dict "Root" . "Name" "quiet_from" "Label" (t "displays.quiet_from") "Type" "time" "Value" .D.QuietFrom)}}
+        {{template "field" (dict "Root" . "Name" "quiet_to" "Label" (t "displays.quiet_to") "Type" "time" "Value" .D.QuietTo)}}
+      </div>
+    </fieldset>
+
+    {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" (or (and .D.KioskURL (t "displays.kiosk.on")) (t "displays.kiosk.off")) "Open" (or (eq .ErrorField "kiosk_url") (eq .ErrorField "sunrise_offset") (eq .ErrorField "sunset_offset")))}}
+      {{template "field" (dict "Root" . "Name" "sunrise_offset" "Label" (t "displays.sunrise_offset") "Type" "number" "Value" .D.SunRise "Bounded" true "Lo" -180 "Hi" 180)}}
+      {{template "field" (dict "Root" . "Name" "sunset_offset" "Label" (t "displays.sunset_offset") "Type" "number" "Value" .D.SunSet "Bounded" true "Lo" -180 "Hi" 180)}}
+      {{template "field" (dict "Root" . "Name" "kiosk_url" "Label" (t "displays.kiosk_url") "Type" "url" "Value" .D.KioskURL "Autocapitalize" "none")}}
+      {{template "field" (dict "Root" . "Name" "kiosk_key" "Label" (t "displays.kiosk_key") "Type" "password" "Autocomplete" "off")}}
+      {{if .D.KioskKeySet}}<p class="hint">{{t "displays.kiosk_key_set"}}</p>{{end}}
+      <p class="hint">{{t "displays.kiosk_hint"}}</p>
+    {{template "moreClose"}}
+    <button class="button" type="submit">{{t "displays.save"}}</button>
+  </form>
+
+  {{template "danger" (dict "Label" (t "displays.unpair") "Explain" (tf "displays.unpair.explain" "name" .D.Name) "Confirm" (tf "displays.unpair.confirm" "name" .D.Name) "Action" (printf "/displays/%s/unpair" .D.ID) "CancelHref" (printf "/displays/%s" .D.ID))}}
+{{template "foot"}}

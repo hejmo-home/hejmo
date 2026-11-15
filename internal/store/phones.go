@@ -160,8 +160,8 @@ func (db *DB) CompletePhonePairing(codeHash, claimHash, sessionHash string, at, 
 		ph.ID, householdID, ph.PersonID, ph.Name, stamp(at), stamp(at)); err != nil {
 		return Phone{}, err
 	}
-	if _, err := tx.Exec(`INSERT INTO sessions (token_hash, person_id, created_at, expires_at, phone_id) VALUES (?, ?, ?, ?, ?)`,
-		sessionHash, ph.PersonID, stamp(at), stamp(expires), ph.ID); err != nil {
+	if _, err := tx.Exec(`INSERT INTO sessions (id, token_hash, person_id, created_at, expires_at, phone_id) VALUES (?, ?, ?, ?, ?, ?)`,
+		newID(), sessionHash, ph.PersonID, stamp(at), stamp(expires), ph.ID); err != nil {
 		return Phone{}, err
 	}
 	if _, err := tx.Exec(`DELETE FROM phone_pairings WHERE id = ?`, id); err != nil {

@@ -16,7 +16,7 @@ import (
 var (
 	joinURLRe   = regexp.MustCompile(`data-join-url="([^"]+)"`)
 	pairingIDRe = regexp.MustCompile(`data-pairing-id="([^"]+)"`)
-	phoneIDRe   = regexp.MustCompile(`data-phone-id="([^"]+)"`)
+	phoneIDRe   = regexp.MustCompile(`href="/phones/([0-9a-f-]{36})"`)
 )
 
 // joinPath is the path a phone opens after scanning the QR code on page. With
@@ -142,7 +142,7 @@ func TestPhoneOpensTheQRCodeAndGetsADeviceSessionAfterTheParentConfirms(t *testi
 	if me.status != http.StatusOK || !strings.Contains(me.body, `"Mama"`) {
 		t.Fatalf("phone is not signed in as Mama: %d %s", me.status, me.body)
 	}
-	if list := b.get("/phones").body; !strings.Contains(list, "Mama&#39;s phone") || !strings.Contains(list, "data-phone-id") {
+	if list := b.get("/phones").body; !strings.Contains(list, "Mama&#39;s phone") || !phoneIDRe.MatchString(list) {
 		t.Fatalf("phones page does not list the phone:\n%s", list)
 	}
 }
@@ -224,7 +224,7 @@ func TestRevokedPhoneIsSignedOut(t *testing.T) {
 	if r := phone.get("/api/v1/me", "en"); r.status != http.StatusUnauthorized {
 		t.Fatalf("revoked phone calls the API = %d, want 401", r.status)
 	}
-	if strings.Contains(b.get("/phones").body, "data-phone-id") {
+	if phoneIDRe.MatchString(b.get("/phones").body) {
 		t.Error("revoked phone is still listed")
 	}
 	if r := b.post("/phones/"+id+"/revoke", url.Values{}); r.status != http.StatusNotFound {
@@ -242,7 +242,7 @@ func TestSigningOutOnThePhoneRemovesIt(t *testing.T) {
 		t.Fatal(err)
 	}
 	res.Body.Close()
-	if strings.Contains(b.get("/phones").body, "data-phone-id") {
+	if phoneIDRe.MatchString(b.get("/phones").body) {
 		t.Error("a phone that signed out is still listed")
 	}
 }
@@ -480,12 +480,12 @@ func TestPhoneWithAnExpiredSessionIsListedAsExpired(t *testing.T) {
 	b, secret := configuredBox(t)
 	b.post("/login", loginForm(b, secret, "correct horse battery"))
 	pairedPhone(t, b, personNamed(t, b, "Mama"), "Old phone")
-	if strings.Contains(b.get("/phones").body, "data-expired") {
+	if strings.Contains(b.get("/phones").body, `class="flag warn"`) {
 		t.Fatal("fresh phone is shown as expired")
 	}
 	b.now = b.now.Add(store.PhoneSessionLifetime + 24*time.Hour)
 	b.post("/login", loginForm(b, secret, "correct horse battery"))
-	if !strings.Contains(b.get("/phones").body, "data-expired") {
+	if !strings.Contains(b.get("/phones").body, `class="flag warn"`) {
 		t.Fatal("phone with an expired session is not shown as expired")
 	}
 }

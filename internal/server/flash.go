@@ -1,11 +1,13 @@
 package server
 
 import (
+	"encoding/base64"
 	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/task"
@@ -37,7 +39,26 @@ func (s *server) redirectSynced(w http.ResponseWriter, r *http.Request, to, cale
 	s.redirectSaved(w, r, to, "flash.calendar_synced:"+calendarID)
 }
 
-var flashArg = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+// redirectSavedNamed is redirectSaved for a success line that names the thing
+// it is about ("Küche" unpaired): the name travels as base64 text and is shown
+// only as plain text, escaped by the template, in the one language of the page.
+func (s *server) redirectSavedNamed(w http.ResponseWriter, r *http.Request, to, key, name string) {
+	if utf8.RuneCountInString(name) > maxFlashName {
+		name = string([]rune(name)[:maxFlashName])
+	}
+	s.setFlash(w, r, key+":"+flashNamePrefix+base64.RawURLEncoding.EncodeToString([]byte(name)))
+	http.Redirect(w, r, to, http.StatusSeeOther)
+}
+
+const (
+	flashNamePrefix = "n~"
+	maxFlashName    = 80
+)
+
+var (
+	flashArg     = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+	flashNameArg = regexp.MustCompile(`^n~[A-Za-z0-9_-]{1,` + strconv.Itoa(8*maxFlashName) + `}$`)
+)
 
 // takeFlash returns the success line waiting for this browser, as the key of
 // its text and an optional argument, and clears it. Unknown values are
@@ -49,7 +70,7 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 	}
 	http.SetCookie(w, &http.Cookie{Name: flashCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
 	key, arg, _ = strings.Cut(c.Value, ":")
-	if !strings.HasPrefix(key, "flash.") || s.i18n.T(i18n.Default, key) == key || (arg != "" && !flashArg.MatchString(arg)) {
+	if !strings.HasPrefix(key, "flash.") || s.i18n.T(i18n.Default, key) == key || (arg != "" && !flashArg.MatchString(arg) && !flashNameArg.MatchString(arg)) {
 		return "", ""
 	}
 	return key, arg
@@ -58,6 +79,13 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 // successText is the text of a success line. After "Sync now" it says when
 // the calendar was updated and what the run did.
 func (s *server) successText(lang, key, arg string) string {
+	if name, ok := strings.CutPrefix(arg, flashNamePrefix); ok {
+		raw, err := base64.RawURLEncoding.DecodeString(name)
+		if err != nil || !utf8.Valid(raw) {
+			return s.i18n.T(lang, key)
+		}
+		return s.i18n.Format(lang, i18n.Msg(key, "name", string(raw)))
+	}
 	if key == "flash.calendar_synced" && arg != "" {
 		if h, err := s.db.HomeHousehold(); err == nil {
 			if c, err := s.db.SyncedCalendar(h.ID, arg); err == nil && !c.Sync.LastSuccess.IsZero() {

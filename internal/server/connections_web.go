@@ -7,9 +7,11 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -55,10 +57,17 @@ func selectionErrorField(e *inputError) string {
 	return "calendar"
 }
 
+// wasteRow is a read-only calendar of a connection with its waste collection switch.
+type wasteRow struct {
+	ID, Name string
+	Waste    bool
+}
+
 // selectionCalendar is one calendar on the choice page with what the parent
 // entered for it, or what is stored, or the defaults. On means the switch is on.
 type selectionCalendar struct {
 	URL, Name, Color string
+	LastSync         string // when it last synced, in words; empty for a calendar that is not synced
 	Synced, On       bool
 	People, Groups   []string
 }
@@ -123,20 +132,67 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		s.fail(w, "synced calendars", err)
 		return
 	}
-	var mine []store.SyncedCalendar
+	mine := calendarsOf(all, conn.ID)
 	var taken []string
 	for _, c := range all {
 		taken = append(taken, c.Color)
-		if c.ConnectionID == conn.ID {
-			mine = append(mine, c)
+	}
+	// What the box knows about the connection: when it last synced, and
+	// whether the server refused the login.
+	var last time.Time
+	var refusedAt time.Time
+	var names []string
+	for _, c := range mine {
+		names = append(names, c.Name)
+		if c.Sync.LastSuccess.After(last) {
+			last = c.Sync.LastSuccess
+		}
+		if c.Sync.LastError.Key == loginFailKey && c.Sync.LastAttempt.After(refusedAt) {
+			refusedAt = c.Sync.LastAttempt
 		}
 	}
-	s.render(w, r, status, "connection.html", map[string]any{
-		"Person": p.person, "Connection": connectionView{ID: conn.ID, URL: conn.URL, Username: conn.Username},
-		"Found": selectionCalendars(found, form, mine, taken), "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
+	lastFact := factView{Label: s.say(r, i18n.Msg("connections.fact.last")), Value: s.say(r, i18n.Msg("sync.never"))}
+	if !last.IsZero() {
+		lastFact.Value = p.when(last)
+	}
+	for _, c := range mine {
+		if f := s.syncFlag(r, p, c, true); f != nil && (lastFact.Flag == nil || c.Sync.LastError.Key == loginFailKey) {
+			lastFact.Flag = f
+		}
+	}
+	facts := []factView{
+		{Label: s.say(r, i18n.Msg("connections.fact.service")), Value: s.serviceName(r, conn)},
+		{Label: s.say(r, i18n.Msg("connections.fact.username")), Value: conn.Username},
+		lastFact,
+		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: conn.CreatedAt.In(p.location()).Format(dayLayout)},
+	}
+	shown := selectionCalendars(found, form, mine, taken)
+	for i, c := range shown {
+		for _, m := range mine {
+			if c.Synced && caldavclient.AddressKey(m.URL) == caldavclient.AddressKey(c.URL) {
+				shown[i].LastSync = s.syncLast(r, p, m)
+			}
+		}
+	}
+	var wasteRows []wasteRow
+	for _, m := range mine {
+		if m.ReadOnly {
+			wasteRows = append(wasteRows, wasteRow{ID: m.ID, Name: m.Name, Waste: m.Waste})
+		}
+	}
+	data := map[string]any{
+		"Waste":  wasteRows,
+		"Person": p.person, "Connection": connectionView{ID: conn.ID, URL: conn.URL, Username: conn.Username}, "Title": conn.Username,
+		"Found": shown, "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
 		"DefaultInterval": interval, "SyncStale": s.syncStale(p.household.ID),
 		"Error": errKey, "ErrorField": errField, "ErrorCalendar": errCalendar,
-	})
+		"Facts": facts, "Names": names, "ICloud": conn.URL == iCloudServer,
+		"LoginOpen": !refusedAt.IsZero() || errField == "password",
+	}
+	if !refusedAt.IsZero() {
+		data["Refused"] = s.say(r, i18n.Msg("connections.error.refused", "when", p.when(refusedAt)))
+	}
+	s.render(w, r, status, "connection.html", data)
 }
 
 func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
@@ -189,13 +245,102 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 	var bad *inputError
 	switch {
 	case errors.As(err, &bad):
-		s.renderSelection(w, r, p, http.StatusBadGateway, conn, nil, nil, connectionErrorKey(bad), "", "")
+		// The server cannot be asked now (the login was refused, or it is not
+		// reachable): the page still shows the calendars the box has, so the
+		// password can be replaced and the connection can be disconnected.
+		stored, serr := s.storedCalendars(p, conn)
+		if serr != nil {
+			s.fail(w, "synced calendars", serr)
+			return
+		}
+		errKey, status := connectionErrorKey(bad), http.StatusBadGateway
+		if bad.Field == "login" {
+			status = http.StatusOK
+			if refused, _ := s.refusedSince(p, conn); refused {
+				errKey = "" // the line about the refused login says it
+			}
+		}
+		s.renderSelection(w, r, p, status, conn, stored, nil, errKey, "", "")
 		return
 	case err != nil:
 		s.fail(w, "discover", err)
 		return
 	}
 	s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "")
+}
+
+// calendarsOf picks the calendars of one connection out of the household's synced calendars.
+func calendarsOf(all []store.SyncedCalendar, connectionID string) []store.SyncedCalendar {
+	var mine []store.SyncedCalendar
+	for _, c := range all {
+		if c.ConnectionID == connectionID {
+			mine = append(mine, c)
+		}
+	}
+	return mine
+}
+
+// storedCalendars lists the calendars a connection has on the box, in the
+// shape of discovered ones, for when the server cannot be asked.
+func (s *server) storedCalendars(p principal, conn store.Connection) ([]discoveredJSON, error) {
+	all, err := s.db.SyncedCalendars(p.household.ID)
+	if err != nil {
+		return nil, err
+	}
+	var out []discoveredJSON
+	for _, c := range calendarsOf(all, conn.ID) {
+		out = append(out, discoveredJSON{URL: c.URL, Name: c.Name, Added: true, CalendarID: c.ID})
+	}
+	return out, nil
+}
+
+// refusedSince reports whether the last sync of one of the connection's
+// calendars was refused at login.
+func (s *server) refusedSince(p principal, conn store.Connection) (bool, error) {
+	all, err := s.db.SyncedCalendars(p.household.ID)
+	if err != nil {
+		return false, err
+	}
+	for _, c := range calendarsOf(all, conn.ID) {
+		if c.Sync.LastError.Key == loginFailKey {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// handleConnectionCredentials replaces the password of a connection after the
+// server accepted it. A refused login is shown at the password field and
+// leaves the old password in place.
+func (s *server) handleConnectionCredentials(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	conn, err := s.db.Connection(p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		s.fail(w, "connection", err)
+		return
+	}
+	err = s.changeConnectionPassword(r.Context(), p, conn.ID, r.PostFormValue("password"))
+	var bad *inputError
+	switch {
+	case errors.As(err, &bad):
+		// Never sent back: the new password is not put on the page again.
+		stored, serr := s.storedCalendars(p, conn)
+		if serr != nil {
+			s.fail(w, "synced calendars", serr)
+			return
+		}
+		s.renderSelection(w, r, p, http.StatusUnprocessableEntity, conn, stored, nil, connectionErrorKey(bad), "password", "")
+	case err != nil:
+		s.fail(w, "change password", err)
+	default:
+		s.redirectSaved(w, r, "/connections/"+conn.ID, "flash.connection_password_saved")
+	}
 }
 
 // choiceKeep is a synced calendar that stays switched on, with what the
@@ -397,12 +542,20 @@ func (s *server) handleConnectionDelete(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
-	if err := s.db.DeleteConnection(p.household.ID, r.PathValue("id")); errors.Is(err, store.ErrNotFound) {
+	conn, err := s.db.Connection(p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		s.fail(w, "connection", err)
+		return
+	}
+	if err := s.db.DeleteConnection(p.household.ID, conn.ID); errors.Is(err, store.ErrNotFound) {
 		http.NotFound(w, r)
 		return
 	} else if err != nil {
 		s.fail(w, "delete connection", err)
 		return
 	}
-	s.redirectSaved(w, r, "/calendars", "flash.connection_removed")
+	s.redirectSavedNamed(w, r, "/calendars", "flash.connection_removed", conn.Username)
 }

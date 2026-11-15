@@ -371,7 +371,7 @@ paths:
       operationId: updateDisplay
       summary: Change the settings of a paired display (scope displays:write)
       description: |
-        Only the fields sent are changed. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
+        Only the fields sent are changed. `name` (1 to 80 characters after trimming) and `type` (`eink_bw`, `eink_color` or `screen`) rename and retype the display; an empty or too long name, or an unknown type, is refused with 422. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
         `theme` and the two offsets set the display's theme (ADR 0015); an unknown theme or an offset outside -180..180 is refused with 422.
         `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015). Quiet mode takes precedence over the theme.
         `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to switch the front light off at sunset and in quiet mode; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
@@ -1041,6 +1041,32 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /calendar-connections/{id}/credentials:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    put:
+      operationId: changeConnectionPassword
+      summary: Replace the password of a connection, after the server accepted it (parents, scope settings:write)
+      description: |
+        Signs in with the new password and lists the server's calendars, as when connecting. Only if that
+        works is the password stored (encrypted with the box's key, never returned) and the connection's
+        calendars synced again at once. A refused login, a server that points to another domain and an
+        unreachable server answer 422 and keep the old password. For iCloud use an app-specific password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, minLength: 1, writeOnly: true }
+      responses:
+        "204": { description: The password was checked and stored }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /calendar-connections/{id}/calendars:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -1515,6 +1541,8 @@ components:
     UpdateDisplay:
       type: object
       properties:
+        name: { type: string, minLength: 1, maxLength: 80, description: "The new name, trimmed; empty or longer than 80 characters is refused with 422" }
+        type: { $ref: "#/components/schemas/DisplayType" }
         show_tomorrow: { type: boolean }
         theme: { $ref: "#/components/schemas/DisplayTheme" }
         sunrise_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes, -180 to 180, else 422" }

@@ -268,7 +268,8 @@ paths:
       summary: Change the settings of a paired display (scope displays:write)
       description: |
         Only the fields sent are changed. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
-        `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015).
+        `theme` and the two offsets set the display's theme (ADR 0015); an unknown theme or an offset outside -180..180 is refused with 422.
+        `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015). Quiet mode takes precedence over the theme.
         `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to switch the front light off at sunset and in quiet mode; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -460,6 +461,52 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /people/{id}/stars:
+    get:
+      operationId: getStars
+      summary: A person's star balance and star log (scope tasks:read)
+      description: |
+        The balance is the sum of all bookings of the person. `entries` are the
+        latest bookings, newest first (default 50, at most 200). Everyone,
+        children included, may read it.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: limit, in: query, required: false, schema: { type: integer, minimum: 1, maximum: 200, default: 50 } }
+      responses:
+        "200":
+          description: The star account
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StarAccount" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    post:
+      operationId: bookStars
+      summary: Book stars by hand with a note (scope tasks:write, parents only)
+      description: |
+        A negative amount deducts, for example -5 with the note "redeemed: ice
+        cream". The amount may not be 0 and the note may not be blank (else
+        422). Ticking tasks books stars on its own, see `setTaskDone`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewStarBooking" }
+      responses:
+        "201":
+          description: The booking
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/StarEntry" }
         "400": { $ref: "#/components/responses/Invalid" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
@@ -741,17 +788,23 @@ paths:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     patch:
       operationId: updateCalendar
-      summary: Switch "share through the box" for a synced calendar
-      description: The family calendar is always served to phones; asking to change it answers 422.
+      summary: Change a synced calendar (share through the box, name, colour, audience)
+      description: |
+        Send at least one field. `share_through_box` switches sharing through the box for a synced
+        calendar; the family calendar is always served to phones, asking to change it answers 422.
+        `name`, `color` and `audience` can only be changed on a synced calendar (else 422; 404 if no calendar has the id); a field
+        left out stays as it is. Nothing is sent to the calendar's source.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [share_through_box]
               properties:
                 share_through_box: { type: boolean }
+                name: { type: string, minLength: 1 }
+                color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422" }
+                audience: { $ref: "#/components/schemas/Audience" }
       responses:
         "200":
           description: The calendar after the change
@@ -878,10 +931,35 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /calendar-connections/{id}/event-counts:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: countConnectionEvents
+      summary: How many events each of the server's calendars has in the import window (parents, scope settings:write)
+      description: |
+        Lists the server's calendars again and asks the server to count, per calendar, the events in the
+        import window: the past 12 months and everything later, a series counting once. Nothing is
+        downloaded or stored. The calendars are asked together, each within a timeout; a calendar the
+        server does not answer in time (or cannot count) has `state` `unknown` and the others are
+        unaffected. The web page asks for this after it has been shown, so a slow server cannot block it.
+      responses:
+        "200":
+          description: One entry per calendar
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/EventCount" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /sync-log:
     get:
       operationId: listSyncLog
-      summary: Sync failures, conflicts and remarks, newest first (parents, scope settings:read)
+      summary: Sync problems (failures, conflicts and remarks), newest first (parents, scope settings:read)
+      description: A record of problems only. Successful runs show as `sync.last_success_at`, `sync.event_count` and `sync.last_run` of each calendar.
       responses:
         "200":
           description: At most 200 entries from the last 30 days
@@ -1138,9 +1216,10 @@ components:
           description: Required (at least one) for `weekly`, else must be empty
         date: { type: string, format: date, description: "The day of a `once` task (required); the first day of a repeating one (default today)" }
         part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
+        stars: { type: integer, minimum: 0, maximum: 100, description: "Stars credited when ticked off (0 allowed). Default: 1 for a child, 0 for an adult" }
     Task:
       type: object
-      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, due, done]
+      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, stars, due, done]
       properties:
         id: { type: string, format: uuid }
         person_id: { type: string, format: uuid }
@@ -1152,8 +1231,38 @@ components:
           items: { $ref: "#/components/schemas/TaskWeekday" }
         date: { type: string, format: date }
         part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
+        stars: { type: integer, description: "Stars credited when ticked off, deducted when unticked" }
         due: { type: boolean, description: "Due on the requested day" }
         done: { type: boolean, description: "Ticked off on the requested day" }
+    NewStarBooking:
+      type: object
+      required: [delta, note]
+      properties:
+        delta: { type: integer, minimum: -1000, maximum: 1000, description: "Stars to add; negative to deduct; not 0", example: -5 }
+        note: { type: string, minLength: 1, maxLength: 120, example: "redeemed: ice cream" }
+    StarEntry:
+      type: object
+      required: [id, person_id, delta, note, task_id, task_title, day, booked_by, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        person_id: { type: string, format: uuid }
+        delta: { type: integer, description: "Positive credits, negative deducts" }
+        note: { type: string, description: "Of a manual booking, else empty" }
+        task_id: { type: string, description: "Of the ticked or unticked task; empty for a manual booking or once the task is deleted" }
+        task_title: { type: string, description: "Title of the task at booking time" }
+        day: { type: string, description: "The ticked day (YYYY-MM-DD); empty for a manual booking" }
+        booked_by: { type: string, description: "Name of the person who booked; empty when a display did" }
+        created_at: { type: string, format: date-time }
+    StarAccount:
+      type: object
+      required: [person_id, balance, shown, entries]
+      properties:
+        person_id: { type: string, format: uuid }
+        balance: { type: integer }
+        shown: { type: boolean, description: "Whether displays show stars for this person: they have a task worth stars or a booking" }
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/StarEntry" }
     ListColor:
       type: string
       description: The person colour slot 1 to 6 of DESIGN.md, by name
@@ -1249,7 +1358,7 @@ components:
       description: Black-and-white E-Ink, colour E-Ink or normal screen
     Display:
       type: object
-      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, quiet_mode, kiosk]
+      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: Hallway }
@@ -1258,6 +1367,9 @@ components:
         paired_at: { type: string, format: date-time }
         last_seen_at: { type: string, format: date-time, nullable: true }
         show_tomorrow: { type: boolean, description: "Show the faded tomorrow block from 18:00. Off by default (ADR 0016)" }
+        theme: { $ref: "#/components/schemas/DisplayTheme" }
+        sunrise_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes added to sunrise before an automatic theme turns light" }
+        sunset_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes added to sunset before an automatic theme turns dark" }
         quiet_mode: { $ref: "#/components/schemas/QuietMode" }
         kiosk: { $ref: "#/components/schemas/Kiosk" }
     QuietMode:
@@ -1275,10 +1387,21 @@ components:
       properties:
         url: { type: string, example: "http://192.168.1.20:8080", description: "Empty without a kiosk app" }
         api_key_set: { type: boolean }
+    DisplayTheme:
+      type: string
+      enum: [light, dark, auto]
+      description: |
+        `auto` turns dark at sunset and light at sunrise at the home
+        location (computed on the box), each shifted by its offset. New
+        displays: E-Ink `light`, normal screen `auto`. Quiet mode takes
+        precedence over the theme (ADR 0015).
     UpdateDisplay:
       type: object
       properties:
         show_tomorrow: { type: boolean }
+        theme: { $ref: "#/components/schemas/DisplayTheme" }
+        sunrise_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes, -180 to 180, else 422" }
+        sunset_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes, -180 to 180, else 422" }
         quiet_mode:
           type: object
           properties:
@@ -1334,6 +1457,15 @@ components:
       description: Only on synced calendars. Displays read `state` to show the sync notice.
       required: [state, interval_minutes, last_attempt_at, last_success_at, last_error]
       properties:
+        event_count: { type: integer, description: "Events the calendar holds after the last successful run; a series counts once" }
+        last_run:
+          type: object
+          description: What the last successful run did to the events. A failed run leaves it as it was.
+          required: [new, changed, removed]
+          properties:
+            new: { type: integer }
+            changed: { type: integer }
+            removed: { type: integer }
         state: { type: string, enum: [ok, stale], description: "stale = 24 hours without a successful sync; one success clears it" }
         interval_minutes: { type: integer, example: 60 }
         last_attempt_at: { type: string, format: date-time, nullable: true }
@@ -1346,7 +1478,7 @@ components:
         kind: { type: string, enum: [ics], description: "Only ICS subscriptions so far" }
         name: { type: string }
         url: { type: string, example: "webcal://example.org/school.ics" }
-        color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422. Defaults to the accent colour" }
+        color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422. Left out, the box picks one from a fixed set" }
         audience: { $ref: "#/components/schemas/Audience" }
         sync_interval_minutes: { type: integer, default: 60, description: "Between 5 and 1440 minutes, else 422" }
     CalendarConnection:
@@ -1368,6 +1500,15 @@ components:
               url: { type: string }
               name: { type: string }
               added: { type: boolean, description: "Already synced through this connection" }
+              calendar_id: { type: string, format: uuid, description: "The synced calendar, when `added`: change it with PATCH /calendars/{id}, switch it off with DELETE /calendars/{id}" }
+    EventCount:
+      type: object
+      required: [url, state, count, text]
+      properties:
+        url: { type: string, description: "The calendar's address, as in the discovery" }
+        state: { type: string, enum: [count, empty, unknown], description: "empty = no events in the last 12 months or later; unknown = the server did not answer in time or cannot count" }
+        count: { type: integer, description: "0 unless state is count" }
+        text: { type: string, description: "The count as text, translated to the language of the request (Accept-Language, default German)" }
     NewCalendarConnection:
       type: object
       required: [provider, username, password]
@@ -1383,7 +1524,7 @@ components:
       properties:
         url: { type: string, description: "A calendar address from the discovery" }
         name: { type: string }
-        color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422. Defaults to the accent colour" }
+        color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422. Left out, the box picks one from a fixed set" }
         audience: { $ref: "#/components/schemas/Audience" }
         sync_interval_minutes: { type: integer, default: 5, description: "Between 5 and 1440 minutes, else 422" }
     SyncLogEntry:
@@ -1462,12 +1603,13 @@ components:
         all_day: { type: boolean }
         start: { type: string }
         end: { type: string }
+        timezone: { type: string, example: "Europe/Berlin", description: "IANA time zone the event keeps (its wall-clock time stays the same across daylight-saving changes). Defaults to the household's. It cannot be changed afterwards." }
         rrule: { type: string }
         people: { type: array, items: { type: string, format: uuid } }
         groups: { type: array, items: { type: string, format: uuid } }
     EventPatch:
       type: object
-      description: Only the fields given change. start/end are the new times of the edited occurrence; with scope following or all, the shift applies to the series.
+      description: Only the fields given change. start/end are the new times of the edited occurrence; with scope following or all, the shift applies to the series. Sending timezone on PATCH answers 422 (the timezone of an event cannot be changed).
       properties:
         title: { type: string, minLength: 1 }
         description: { type: string }

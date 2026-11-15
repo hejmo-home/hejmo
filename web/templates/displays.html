@@ -7,6 +7,7 @@
   <section aria-labelledby="paired">
     <h2 id="paired">{{t "displays.paired"}}</h2>
     {{if .Displays}}
+    {{template "error" .}}
     <ul class="cards">
       {{range .Displays}}
       <li>
@@ -14,6 +15,15 @@
         <span class="hint">{{if .Room}}{{t "displays.room"}} {{.Room}} · {{end}}{{t (printf "displays.type.%s" .Type)}} · {{t "displays.paired_at"}} {{.Paired}} · {{if .LastSeen}}{{t "displays.last_seen"}} {{.LastSeen}}{{else}}{{t "displays.never"}}{{end}}</span>
         <form method="post" action="/displays/{{.ID}}/settings" class="row">
           {{template "switch" (dict "Name" "show_tomorrow" "Label" (t "displays.show_tomorrow") "OnText" (t "displays.show_tomorrow.on") "OffText" (t "displays.show_tomorrow.off") "Checked" .ShowTomorrow)}}
+          {{$th := .Theme}}
+          <label>{{t "displays.theme"}}
+            <select name="theme">
+              {{range $.Themes}}<option value="{{.}}"{{if eq (printf "%s" .) $th}} selected{{end}}>{{t (printf "displays.theme.%s" .)}}</option>{{end}}
+            </select></label>
+          <label>{{t "displays.sunrise_offset"}}
+            <input type="number" name="sunrise_offset" min="-180" max="180" step="1" value="{{.SunriseOffset}}"></label>
+          <label>{{t "displays.sunset_offset"}}
+            <input type="number" name="sunset_offset" min="-180" max="180" step="1" value="{{.SunsetOffset}}"></label>
           <label><input type="checkbox" name="quiet"{{if .QuietOn}} checked{{end}}> {{t "displays.quiet"}}</label>
           <label>{{t "displays.quiet_from"}} <input type="time" name="quiet_from" value="{{.QuietFrom}}"></label>
           <label>{{t "displays.quiet_to"}} <input type="time" name="quiet_to" value="{{.QuietTo}}"></label>

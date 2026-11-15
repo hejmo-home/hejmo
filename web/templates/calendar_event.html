@@ -1,0 +1,76 @@
+{{template "head" (dict "Lang" .Lang "Title" (or (and (eq .Mode "new") (t "calendar.new.title")) (t "calendar.edit.title")) "Frame" .Frame)}}
+  <p><a href="/calendar">{{t "calendar.back"}}</a></p>
+  {{$f := .Form}}
+  {{if eq .Mode "new"}}<h1>{{t "calendar.new.title"}}</h1>{{else}}<h1>{{.Item.Title}}</h1>{{end}}
+  {{template "syncNotice" .}}
+  {{template "error" .}}
+  {{if .ReadOnly}}
+  <p class="lead">{{.Item.Date}}{{if .Item.Time}} · {{.Item.Time}}{{end}}{{if .Item.Location}} · {{.Item.Location}}{{end}}</p>
+  <p class="notice" role="status" data-readonly>{{t "calendar.readonly.explain"}}</p>
+  {{else}}
+  <form method="post" action="{{if eq .Mode "new"}}/calendar/events{{else}}/calendar/events/{{.EventID}}{{end}}" class="steps" data-event-form>
+    {{if eq .Mode "edit"}}<input type="hidden" name="occurrence" value="{{index $f "Occurrence"}}">{{end}}
+    <fieldset>
+      {{template "field" (dict "Root" . "Name" "title" "Label" (t "calendar.field.title") "Value" (index $f "Title") "Required" true "Max" 200 "Autofocus" (eq .Mode "new"))}}
+      {{if eq .Mode "new"}}{{template "switch" (dict "Name" "all_day" "Label" (t "calendar.field.all_day") "OnText" (t "calendar.all_day.on") "OffText" (t "calendar.all_day.off") "Checked" (index $f "AllDay"))}}{{end}}
+      <div class="dt">
+        {{template "field" (dict "Root" . "Name" "start_date" "Label" (t "calendar.field.start_date") "Type" "date" "Value" (index $f "StartDate") "Required" true)}}
+        {{if or (eq .Mode "new") (not (index $f "AllDay"))}}<div class="when-timed">{{template "field" (dict "Root" . "Name" "start_time" "Label" (t "calendar.field.start_time") "Type" "time" "Value" (index $f "StartTime"))}}</div>{{end}}
+      </div>
+      <div class="dt">
+        {{template "field" (dict "Root" . "Name" "end_date" "Label" (t "calendar.field.end_date") "Type" "date" "Value" (index $f "EndDate"))}}
+        {{if or (eq .Mode "new") (not (index $f "AllDay"))}}<div class="when-timed">{{template "field" (dict "Root" . "Name" "end_time" "Label" (t "calendar.field.end_time") "Type" "time" "Value" (index $f "EndTime"))}}</div>{{end}}
+      </div>
+      {{template "personChips" (dict "Root" . "Name" "people" "Legend" (t "calendar.field.audience") "People" .People "Selected" (strs (index $f "People")) "Groups" .GroupChoices "SelectedGroups" (strs (index $f "Groups")) "Whole" true)}}
+      {{if eq .Mode "new"}}
+        {{if gt (len .Calendars) 1}}<div class="f"><label>{{t "calendar.field.calendar"}}
+          <select name="calendar">{{range .Calendars}}<option value="{{.ID}}"{{if eq .ID (index $f "Calendar")}} selected{{end}}>{{.Name}}</option>{{end}}</select></label>
+          {{template "fieldError" (dict "Root" . "Name" "calendar")}}</div>
+        {{else}}<input type="hidden" name="calendar" value="{{index $f "Calendar"}}">{{end}}
+      {{else}}<p class="hint">{{printf (t "calendar.info.calendar") .CalendarName}}</p>{{end}}
+      <div class="f"><label>{{t "calendar.field.repeat"}}
+        <select name="repeat">
+          {{range .Repeats}}<option value="{{.}}"{{if eq (printf "%s" .) (index $f "Repeat")}} selected{{end}}>{{t (printf "calendar.repeat.%s" .)}}</option>{{end}}
+          {{if eq (index $f "Repeat") "custom"}}<option value="custom" selected>{{t "calendar.repeat.custom"}}</option>{{end}}
+        </select></label>
+        {{template "fieldError" (dict "Root" . "Name" "repeat")}}
+        {{if eq .Mode "edit"}}{{if or .Recurring (ne (index $f "Repeat") "none")}}<p class="hint">{{t "calendar.field.repeat.hint"}}</p>{{end}}{{end}}</div>
+      {{template "field" (dict "Root" . "Name" "until" "Label" (t "calendar.field.until") "Type" "date" "Value" (index $f "Until"))}}
+      {{template "moreOpen" (dict "Label" (t "calendar.more") "Open" (or (eq .ErrorField "timezone") (index $f "Location") (index $f "Description")))}}
+        {{template "field" (dict "Root" . "Name" "location" "Label" (t "calendar.field.location") "Value" (index $f "Location") "Max" 200)}}
+        <div class="f"><label>{{t "calendar.field.description"}}<textarea name="description" rows="4" maxlength="2000">{{index $f "Description"}}</textarea></label></div>
+        {{if eq .Mode "new"}}
+        <div class="f{{if eq .ErrorField "timezone"}} invalid{{end}}"><label>{{t "calendar.field.timezone"}}
+          <input name="timezone" list="zones" value="{{index $f "TimeZone"}}" autocomplete="off" spellcheck="false"{{if eq .ErrorField "timezone"}} aria-invalid="true" aria-describedby="err-timezone"{{end}}></label>
+          <datalist id="zones">{{range .Zones}}<option value="{{.}}">{{end}}</datalist>
+          {{template "fieldError" (dict "Root" . "Name" "timezone")}}</div>
+        {{else}}<p class="hint">{{printf (t "calendar.info.timezone") .Zone}}</p>{{end}}
+      {{template "moreClose"}}
+      {{if and (eq .Mode "edit") .Item.Repeats}}
+        {{template "optionsOpen" (dict "Class" "choice" "Legend" (t "calendar.scope"))}}
+          {{range .Scopes}}{{template "option" (dict "Name" "scope" "Value" . "Label" (t (printf "calendar.scope.%s" .)) "Hint" (t (printf "calendar.scope.%s.hint" .)) "Checked" (eq (printf "%s" .) (index $f "Scope")))}}{{end}}
+        {{template "optionsClose" (dict "Root" . "Name" "scope")}}
+      {{end}}
+    </fieldset>
+    <button class="button" type="submit">{{if eq .Mode "new"}}{{t "calendar.create"}}{{else}}{{t "calendar.save"}}{{end}}</button>
+  </form>
+  {{if eq .Mode "edit"}}
+  <section class="cards" aria-label="{{t "calendar.delete"}}">
+  {{template "dangerOpen" (dict "Label" (t "calendar.delete"))}}
+    <form method="post" action="/calendar/events/{{.EventID}}/delete" class="steps">
+      <input type="hidden" name="occurrence" value="{{index $f "Occurrence"}}">
+      <p>{{if .Item.Repeats}}{{t "calendar.delete.explain.series"}}{{else}}{{t "calendar.delete.explain"}}{{end}}</p>
+      {{if .Item.Repeats}}
+      <fieldset>
+        {{template "optionsOpen" (dict "Class" "choice" "Legend" (t "calendar.delete.scope"))}}
+          {{range .Scopes}}{{template "option" (dict "Name" "scope" "Value" . "Label" (t (printf "calendar.scope.%s" .)) "Hint" (t (printf "calendar.scope.%s.hint" .)) "Checked" (eq (printf "%s" .) "this"))}}{{end}}
+        {{template "optionsClose" (dict "Root" . "Name" "scope")}}
+      </fieldset>
+      {{end}}
+      <button class="button danger" type="submit">{{t "calendar.delete.confirm"}}</button>
+    </form>
+  {{template "dangerClose"}}
+  </section>
+  {{end}}
+  {{end}}
+{{template "foot"}}

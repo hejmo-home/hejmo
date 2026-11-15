@@ -109,3 +109,163 @@ func TestTaskFormKeepsWeekdaysAndRepeatAfterAnError(t *testing.T) {
 		t.Error("Monday must stay unchecked")
 	}
 }
+
+// 7.1: the star value is a field of the new-task form (empty: the default of
+// the person) and shows on the task; the API sees the same value.
+func TestParentSetsAStarValueInTheWebInterface(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"Tidy room"}, "repeat": {"daily"}, "stars": {"3"}})
+	b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"Feed cat"}, "repeat": {"daily"}})
+	b.post("/tasks", url.Values{"person": {tb.mamaID}, "title": {"Bins"}, "repeat": {"daily"}})
+	_, _, list := tb.parent.call(http.MethodGet, "/tasks", nil)
+	got := map[string]float64{}
+	for _, x := range list {
+		m := x.(map[string]any)
+		got[m["title"].(string)] = m["stars"].(float64)
+	}
+	if got["Tidy room"] != 3 || got["Feed cat"] != 1 || got["Bins"] != 0 {
+		t.Fatalf("stars = %v, want Tidy room 3, Feed cat 1 (child default), Bins 0 (adult default)", got)
+	}
+	page := b.do(http.MethodGet, "/tasks", nil, map[string]string{"Accept-Language": "en"})
+	if !strings.Contains(page.body, `data-task-stars="3"`) || !strings.Contains(page.body, `name="stars"`) {
+		t.Fatalf("page lacks the star value or the field:\n%s", page.body)
+	}
+	if r := b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"x"}, "repeat": {"daily"}, "stars": {"-4"}}); r.status != http.StatusUnprocessableEntity {
+		t.Errorf("negative stars = %d, want 422", r.status)
+	}
+	if r := b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"x"}, "repeat": {"daily"}, "stars": {"lots"}}); r.status != http.StatusUnprocessableEntity {
+		t.Errorf("non-numeric stars = %d, want 422", r.status)
+	}
+}
+
+// 7.1: ticking in the web interface credits stars, and the page shows the
+// person's balance and star log.
+func TestWebTickCreditsStarsAndThePageShowsBalanceAndLog(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"Tidy room"}, "repeat": {"daily"}, "stars": {"3"}})
+	_, _, list := tb.parent.call(http.MethodGet, "/tasks", nil)
+	id := list[0].(map[string]any)["id"].(string)
+	b.post("/tasks/"+id+"/done", url.Values{"done": {"1"}})
+	page := b.do(http.MethodGet, "/tasks", nil, map[string]string{"Accept-Language": "en"}).body
+	for _, want := range []string{`data-balance="3"`, "Star log", "Tidy room", "&#43;3"} { // html/template writes + as &#43;
+		if !strings.Contains(page, want) {
+			t.Errorf("page lacks %q:\n%s", want, page)
+		}
+	}
+}
+
+// 7.1 acceptance: Given a parent books -5 with note "redeemed: ice cream",
+// then the balance and the log show it (web interface and API alike).
+func TestParentBooksStarsByHandInTheWebInterface(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	r := b.post("/tasks/stars", url.Values{"person": {tb.miaID}, "delta": {"-5"}, "note": {"redeemed: ice cream"}})
+	if r.status != http.StatusSeeOther || r.location != "/tasks" {
+		t.Fatalf("book = %d %q\n%s", r.status, r.location, r.body)
+	}
+	page := b.do(http.MethodGet, "/tasks", nil, map[string]string{"Accept-Language": "en"}).body
+	for _, want := range []string{`data-balance="-5"`, "redeemed: ice cream", "-5", "Mama"} {
+		if !strings.Contains(page, want) {
+			t.Errorf("page lacks %q:\n%s", want, page)
+		}
+	}
+	// API parity.
+	_, acc, _ := tb.parent.call(http.MethodGet, "/people/"+tb.miaID+"/stars", nil)
+	if acc["balance"] != float64(-5) {
+		t.Errorf("API balance = %v", acc["balance"])
+	}
+}
+
+func TestInvalidStarBookingShowsAnErrorAndKeepsTheForm(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	for name, form := range map[string]url.Values{
+		"zero":       {"person": {tb.miaID}, "delta": {"0"}, "note": {"x"}},
+		"no note":    {"person": {tb.miaID}, "delta": {"2"}, "note": {" "}},
+		"not number": {"person": {tb.miaID}, "delta": {"many"}, "note": {"x"}},
+	} {
+		r := b.do(http.MethodPost, "/tasks/stars", form, map[string]string{"Accept-Language": "en"})
+		if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `role="alert"`) {
+			t.Errorf("%s = %d\n%s", name, r.status, r.body)
+		}
+	}
+	r := b.do(http.MethodPost, "/tasks/stars", url.Values{"person": {tb.miaID}, "delta": {"2"}, "note": {" "}}, map[string]string{"Accept-Language": "en"})
+	if !strings.Contains(r.body, `value="2"`) {
+		t.Errorf("the amount typed is lost:\n%s", r.body)
+	}
+	if r := b.post("/tasks/stars", url.Values{"person": {"00000000-0000-4000-8000-000000000000"}, "delta": {"1"}, "note": {"x"}}); r.status != http.StatusUnprocessableEntity {
+		t.Errorf("unknown person = %d, want 422", r.status)
+	}
+}
+
+func TestStarBookingPageIsForSignedInParentsOnly(t *testing.T) {
+	b, _ := configuredBox(t)
+	if r := b.post("/tasks/stars", url.Values{"delta": {"5"}, "note": {"x"}}); r.status != http.StatusSeeOther || !strings.HasPrefix(r.location, "/login") {
+		t.Fatalf("signed out = %d %q", r.status, r.location)
+	}
+}
+
+func TestStarsOnTheTasksPageAreGerman(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	b.post("/tasks/stars", url.Values{"person": {tb.miaID}, "delta": {"2"}, "note": {"Geschenk"}})
+	page := b.do(http.MethodGet, "/tasks", nil, map[string]string{"Accept-Language": "de"}).body
+	for _, want := range []string{"Sternekonto", "Geschenk"} {
+		if !strings.Contains(page, want) {
+			t.Errorf("German page lacks %q", want)
+		}
+	}
+}
+
+// 7.1: a child's phone shows neither the star accounts nor the booking form
+// (ADR 0015), so a child never sees siblings' balances.
+func TestChildPhoneShowsNoStarAccountsOrBookingForm(t *testing.T) {
+	cp := newChildPhone(t)
+	b := cp.parent.b
+	b.post("/tasks", url.Values{"person": {personNamed(t, b, "Mia").ID}, "title": {"Tidy room"}, "repeat": {"daily"}, "stars": {"3"}})
+	_, _, list := cp.parent.call(http.MethodGet, "/tasks", nil)
+	for _, it := range list {
+		if m := it.(map[string]any); m["title"] == "Tidy room" {
+			b.post("/tasks/"+m["id"].(string)+"/done", url.Values{"done": {"1"}})
+		}
+	}
+	if parent := b.get("/tasks").body; !strings.Contains(parent, "data-balance=") {
+		t.Fatalf("parent page shows no star account:\n%s", parent)
+	}
+	page := cp.screen.get("/tasks", "en")
+	if page.status != http.StatusOK {
+		t.Fatalf("child GET /tasks = %d", page.status)
+	}
+	for _, bad := range []string{"data-balance=", "/tasks/stars", "Star log"} {
+		if strings.Contains(page.body, bad) {
+			t.Errorf("child's page contains %q:\n%s", bad, page.body)
+		}
+	}
+}
+
+// 7.1: an invalid star value gets its own error text and the field is bounded.
+func TestInvalidStarValueHasItsOwnErrorAndTheFieldIsBounded(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	r := b.do(http.MethodPost, "/tasks", url.Values{"person": {tb.miaID}, "title": {"Tidy"}, "repeat": {"daily"}, "stars": {"101"}}, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "Please enter a whole number of stars from 0 to 100.") {
+		t.Fatalf("limit = %d\n%s", r.status, r.body)
+	}
+	if !strings.Contains(r.body, `name="stars" type="number"`) || !strings.Contains(r.body, `min="0" max="100" step="1"`) {
+		t.Errorf("star field is not bounded:\n%s", r.body)
+	}
+}
+
+// 7.1: the task detail page shows the star value.
+func TestTaskDetailPageShowsTheStarValue(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"Tidy room"}, "repeat": {"daily"}, "stars": {"3"}})
+	_, _, list := tb.parent.call(http.MethodGet, "/tasks", nil)
+	id := list[0].(map[string]any)["id"].(string)
+	if page := b.do(http.MethodGet, "/tasks/"+id, nil, map[string]string{"Accept-Language": "en"}); !strings.Contains(page.body, `data-task-stars="3"`) {
+		t.Errorf("detail page lacks the star value:\n%s", page.body)
+	}
+}

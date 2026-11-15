@@ -344,3 +344,66 @@ func TestPersonalViewKeepsItsReturnTimerWhileLive(t *testing.T) {
 		}
 	}
 }
+
+func (f *familyBox) starTask(t *testing.T, who, title string, stars int) task.Task {
+	t.Helper()
+	tk, err := f.db.AddTask(f.householdID, task.Task{PersonID: f.people[who].ID, Title: title, Repeat: task.Daily, Date: "2026-11-14", Stars: stars})
+	if err != nil {
+		t.Fatal(err)
+	}
+	return tk
+}
+
+// 7.1: Given a task worth 3 stars, when Mia ticks it off on a display, then
+// her balance rises by 3 and a log entry is created; the personal view shows
+// the balance and the task's star value.
+func TestDisplayTickCreditsStarsAndThePersonalViewShowsTheBalance(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	tk := f.starTask(t, "Mia", "Tidy room", 3)
+	before := f.personalPage(t, "en", "Mia", 14, 9).body
+	if !strings.Contains(before, `data-stars="0"`) || !strings.Contains(before, `data-task-stars="3"`) {
+		t.Fatalf("before the tick: balance 0 and the task's 3 stars expected:\n%s", before)
+	}
+	// The button's aria-label overrides its content, so it carries the value.
+	if !strings.Contains(before, `Tidy room: Open, tap to tick off, 3 Stars"`) {
+		t.Errorf("the big-check label lacks the star value:\n%s", before)
+	}
+	if r := f.display.post("/display/tasks/"+tk.ID+"/done", url.Values{"done": {"1"}}); r.status != 303 {
+		t.Fatalf("tick = %d", r.status)
+	}
+	if !strings.Contains(f.personalPage(t, "en", "Mia", 14, 9).body, `data-stars="3"`) {
+		t.Error("the personal view does not show the balance of 3")
+	}
+	acc, err := f.db.StarAccount(f.householdID, f.people["Mia"].ID, 10)
+	if err != nil || acc.Balance != 3 || len(acc.Entries) != 1 || acc.Entries[0].Delta != 3 {
+		t.Fatalf("account = %+v, %v", acc, err)
+	}
+	f.display.post("/display/tasks/"+tk.ID+"/done", url.Values{"done": {"0"}})
+	if !strings.Contains(f.personalPage(t, "en", "Mia", 14, 9).body, `data-stars="0"`) {
+		t.Error("untick must deduct again")
+	}
+}
+
+// ADR 0018: stars show only for people with a task worth stars or a booking.
+func TestPersonalViewShowsNoStarsForAPersonWithoutStarTasks(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	f.starTask(t, "Papa", "Take out bins", 0)
+	body := f.personalPage(t, "en", "Papa", 14, 9).body
+	if strings.Contains(body, "data-stars") || strings.Contains(body, "data-task-stars") {
+		t.Fatalf("no stars expected for Papa:\n%s", body)
+	}
+	if _, err := f.db.BookStars(f.householdID, f.people["Papa"].ID, 5, "bonus", f.people["Mama"].ID, f.at(14, 8, 0)); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(f.personalPage(t, "en", "Papa", 14, 9).body, `data-stars="5"`) {
+		t.Error("a booking makes stars show")
+	}
+}
+
+func TestPersonalViewStarsAreGerman(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	f.starTask(t, "Mia", "Zimmer aufräumen", 2)
+	if !strings.Contains(f.personalPage(t, "de", "Mia", 14, 9).body, "Sterne") {
+		t.Error("no German label for the stars")
+	}
+}

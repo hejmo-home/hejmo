@@ -30,6 +30,23 @@ func (p principal) timeLayout() string {
 	return "02/01/2006 15:04"
 }
 
+// syncLayout is timeLayout with seconds: the times of sync runs and sync
+// problems, where "21:46:26" tells which run it was (ticket 5.17).
+func (p principal) syncLayout() string {
+	if p.household.TimeFormat == store.Time12h {
+		return "02/01/2006 3:04:05 PM"
+	}
+	return "02/01/2006 15:04:05"
+}
+
+// clockLayout is the time of day alone, with seconds, in the household's format.
+func (p principal) clockLayout() string {
+	if p.household.TimeFormat == store.Time12h {
+		return "3:04:05 PM"
+	}
+	return "15:04:05"
+}
+
 func formatTime(t time.Time, allDay bool, loc *time.Location) string {
 	if allDay {
 		return t.In(loc).Format(dateLayout)
@@ -149,6 +166,7 @@ type eventInput struct {
 	RRule       *string   `json:"rrule"`
 	People      *[]string `json:"people"`
 	Groups      *[]string `json:"groups"`
+	TimeZone    *string   `json:"timezone"` // create only
 }
 
 func readEventInput(r *http.Request) (eventInput, error) {
@@ -164,6 +182,14 @@ func (s *server) apiCreateEvent(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	loc := p.location()
+	if in.TimeZone != nil && *in.TimeZone != "" {
+		zone, err := time.LoadLocation(*in.TimeZone)
+		if err != nil || *in.TimeZone == "Local" {
+			writeError(w, http.StatusUnprocessableEntity, "timezone: use an IANA time zone name such as Europe/Berlin")
+			return
+		}
+		loc = zone
+	}
 	e := calendar.Event{Title: *in.Title, AllDay: in.AllDay != nil && *in.AllDay}
 	if e.Start, err = parseTime(*in.Start, e.AllDay, loc); err == nil {
 		e.End, err = parseTime(*in.End, e.AllDay, loc)
@@ -204,7 +230,7 @@ func (s *server) apiCreateEvent(w http.ResponseWriter, r *http.Request, p princi
 	if s.storeError(w, "create event", err) {
 		return
 	}
-	writeJSON(w, http.StatusCreated, s.eventToJSON(r, created, loc))
+	writeJSON(w, http.StatusCreated, s.eventToJSON(r, created, p.location()))
 }
 
 // seriesTarget resolves an event id plus ?occurrence= and ?scope=.
@@ -246,6 +272,10 @@ func (s *server) apiUpdateEvent(w http.ResponseWriter, r *http.Request, p princi
 	in, err := readEventInput(r)
 	if err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if in.TimeZone != nil {
+		writeError(w, http.StatusUnprocessableEntity, "timezone: the time zone of an event cannot be changed")
 		return
 	}
 	allDay := series[0].AllDay

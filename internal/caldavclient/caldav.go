@@ -432,12 +432,38 @@ func (c *Client) report(ctx context.Context, dir, body, what string) (*reportAns
 // an empty one: the sync downloads such an object on every run instead of
 // taking it for deleted.
 func (c *Client) List(ctx context.Context, calendarURL string) ([]Object, error) {
+	return c.query(ctx, calendarURL, listBody, "the list of events")
+}
+
+// countBody asks which event objects have an occurrence at or after a moment
+// (a time-range without an end), so the server decides about series: an
+// object holding a series is one answer however often it recurs.
+const countBody = `<?xml version="1.0" encoding="utf-8"?>` +
+	`<c:calendar-query xmlns:d="DAV:" xmlns:c="urn:ietf:params:xml:ns:caldav">` +
+	`<d:prop><d:getetag/></d:prop>` +
+	`<c:filter><c:comp-filter name="VCALENDAR"><c:comp-filter name="VEVENT"><c:time-range start="%s"/></c:comp-filter></c:comp-filter></c:filter>` +
+	`</c:calendar-query>`
+
+// CountEvents says how many events a calendar has at or after since: event
+// objects with an occurrence in that range, a series counting once. It is
+// what the import window (ADR 0012) will bring in, asked of the server
+// without downloading anything. A server that cannot answer a time-range
+// query fails the call.
+func (c *Client) CountEvents(ctx context.Context, calendarURL string, since time.Time) (int, error) {
+	body := fmt.Sprintf(countBody, since.UTC().Format("20060102T150405Z"))
+	objects, err := c.query(ctx, calendarURL, body, "the count of events")
+	return len(objects), err
+}
+
+// query sends a calendar-query that asks for ETags and returns the member
+// objects of the answer, read as List documents.
+func (c *Client) query(ctx context.Context, calendarURL, body, what string) ([]Object, error) {
 	origin, _, err := c.origin(calendarURL)
 	if err != nil {
 		return nil, err
 	}
 	dir := abs(origin, c.route(calendarURL))
-	ans, at, err := c.report(ctx, dir, listBody, "the list of events")
+	ans, at, err := c.report(ctx, dir, body, what)
 	if err != nil {
 		return nil, err
 	}

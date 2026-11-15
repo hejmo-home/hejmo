@@ -319,7 +319,8 @@ paths:
       summary: Change the settings of a paired display (scope displays:write)
       description: |
         Only the fields sent are changed. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
-        `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015).
+        `theme` and the two offsets set the display's theme (ADR 0015); an unknown theme or an offset outside -180..180 is refused with 422.
+        `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015). Quiet mode takes precedence over the theme.
         `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to switch the front light off at sunset and in quiet mode; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -1208,7 +1209,7 @@ components:
       description: Black-and-white E-Ink, colour E-Ink or normal screen
     Display:
       type: object
-      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, quiet_mode, kiosk]
+      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: Hallway }
@@ -1217,6 +1218,9 @@ components:
         paired_at: { type: string, format: date-time }
         last_seen_at: { type: string, format: date-time, nullable: true }
         show_tomorrow: { type: boolean, description: "Show the faded tomorrow block from 18:00. Off by default (ADR 0016)" }
+        theme: { $ref: "#/components/schemas/DisplayTheme" }
+        sunrise_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes added to sunrise before an automatic theme turns light" }
+        sunset_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes added to sunset before an automatic theme turns dark" }
         quiet_mode: { $ref: "#/components/schemas/QuietMode" }
         kiosk: { $ref: "#/components/schemas/Kiosk" }
     QuietMode:
@@ -1234,10 +1238,21 @@ components:
       properties:
         url: { type: string, example: "http://192.168.1.20:8080", description: "Empty without a kiosk app" }
         api_key_set: { type: boolean }
+    DisplayTheme:
+      type: string
+      enum: [light, dark, auto]
+      description: |
+        `auto` turns dark at sunset and light at sunrise at the home
+        location (computed on the box), each shifted by its offset. New
+        displays: E-Ink `light`, normal screen `auto`. Quiet mode takes
+        precedence over the theme (ADR 0015).
     UpdateDisplay:
       type: object
       properties:
         show_tomorrow: { type: boolean }
+        theme: { $ref: "#/components/schemas/DisplayTheme" }
+        sunrise_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes, -180 to 180, else 422" }
+        sunset_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes, -180 to 180, else 422" }
         quiet_mode:
           type: object
           properties:

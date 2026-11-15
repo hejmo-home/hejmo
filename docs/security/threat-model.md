@@ -63,10 +63,11 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 
 ## Displays
 
-### T5. A stranger pairs their own screen, or guesses a pairing code
+### T5. A stranger pairs their own screen or phone, or guesses a pairing code
 
-- **Threat:** a display shows the family's day to whoever completes pairing.
+- **Threat:** a display or phone shows the family's day to whoever completes pairing.
 - **Check:** pairing needs a short code confirmed by a signed-in parent; codes expire; guessing codes and opening many pairing screens are rate-limited. `test:internal/server/displays_test.go`
+- **Check:** a phone's pairing code is random (128 bits, stored only as a hash), works for one phone and ten minutes, and the phone only gets its device session after a signed-in parent confirmed it and chose the person; a code seen over a shoulder is useless once used, expired or unconfirmed. `test:internal/server/phones_test.go`
 
 ### T6. A lost or stolen display keeps access
 
@@ -86,7 +87,8 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 
 - **Threat:** a thief opens the web interface or syncs the calendar.
 - **Check:** device tokens are stored as hashes and can be revoked, after which they are refused. `test:internal/server/caldav_test.go`
-- **Accepted risk:** a browser session lasts 30 days and the box has no remote way to end it. It ends only when someone signs out on that phone; there is no password-change function and no session list, so a lost phone keeps its session until it expires. The phone's own lock screen is the protection until parents can end sessions remotely (#108).
+- **Check:** a paired phone's device session is listed on the phones screen and removed by a parent, after which the phone is signed out at its next request and its offline copy is deleted. `test:internal/server/phones_test.go`
+- **Accepted risk:** a browser session of a parent who signed in with a password lasts 30 days and the box has no remote way to end it; it ends only when someone signs out on that phone, so a lost phone keeps such a session until it expires. The phone's own lock screen is the protection until parents can end those sessions remotely (#108).
 
 ### T9. A child's account or token reaches parent functions
 

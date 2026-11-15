@@ -179,12 +179,8 @@ func TestColumnReadabilitySnapshot(t *testing.T) {
 	// item (min-width: 0) with overflow-wrap: break-word, and the template
 	// puts the name in that element.
 	nameRule := regexp.MustCompile(`(?m)^\.fv \.person-name\s*\{([^}]*)\}`).FindStringSubmatch(css)
-	tpl, err := os.ReadFile("templates/display_family.html")
-	if err != nil {
-		t.Fatal(err)
-	}
 	wraps := nameRule != nil && strings.Contains(nameRule[1], "overflow-wrap: break-word;") && strings.Contains(nameRule[1], "min-width: 0;") &&
-		strings.Contains(string(tpl), `<span class="person-name">{{.Person.Name}}</span>`)
+		familyTemplateHasNameSpan(t)
 
 	devices := []struct {
 		name string
@@ -231,37 +227,42 @@ func TestColumnReadabilitySnapshot(t *testing.T) {
 }
 
 // #150 AC 1: with 8 people the names from the issue (Maximilian, Anna-Lena,
-// Konstantin) must not break inside a word at 1024x768 and 768x1024. Widths are
-// browser measurements (Figtree 700, 19 px, one line); the snapshot's 0.51 em
-// estimate is too coarse here (it says 121 px for Maximilian, the browser 94).
-// Anna-Lena may break at its hyphen, so only its longer half has to fit.
-// The bw theme has a 16 px marker (light: 14 px); at 1024x768 the names are
-// about 1 px wider than the room left (open product decision, see PR #152), so
-// that case is logged, not asserted.
+// Konstantin) must not break inside a word at 1024x768 and 768x1024, in both
+// themes. Widths are browser measurements (Figtree 700, 19 px, one line,
+// measured with getBoundingClientRect on a nowrap span); the snapshot's 0.51 em
+// estimate is too coarse here (121 px for Maximilian, the browser 94). Anna-Lena
+// may break at its hyphen, so only its longer half "Anna-" (5 of 9 characters)
+// has to fit; that half is the proportional share of the measured 94.7 px, not
+// a separate measurement. The bw theme has a 16 px marker and a 6 px gap in the
+// name row (light: 14 px and 8 px); the room is the column minus padding, gap
+// and marker.
 func TestIssueNamesFitWithEightPeople(t *testing.T) {
 	css := stylesheet(t)
 	root := cssTokens(t, css, "light")
 	pad := px(t, root["--pad-column"])
 	measured := map[string]float64{"Maximilian": 93.7, "Anna-Lena": 94.7 * 5 / 9, "Konstantin": 94.6}
+	lightGap := px(t, regexp.MustCompile(`gap:\s*(\d+px)`).FindStringSubmatch(ruleFor(t, css, ".fv .column h2"))[1])
+	bwGap := lightGap
+	bwNameRow := regexp.MustCompile(`(?m)^\[data-theme="bw"\] \.fv \.column h2\s*\{[^}]*\}`)
+	if m := regexp.MustCompile(`gap:\s*(\d+px)`).FindStringSubmatch(bwNameRow.FindString(css)); m != nil {
+		bwGap = px(t, m[1])
+	}
 	for _, theme := range []struct {
-		name   string
-		marker float64
-		assert bool
-	}{{"light", px(t, root["--marker-size"]), true}, {"bw", px(t, themed(t, css, "bw")["--marker-size-bw-column"]), false}} {
+		name        string
+		marker, gap float64
+	}{
+		{"light", px(t, root["--marker-size"]), lightGap},
+		{"bw", px(t, themed(t, css, "bw")["--marker-size-bw-column"]), bwGap},
+	} {
 		for _, d := range []struct {
 			name string
 			w, h float64
 		}{{"1024x768", 1024, 768}, {"768x1024", 768, 1024}} {
 			_, colw := visibleColumns(t, css, d.w, d.h, 8)
-			room := colw - 2*pad - 8 - theme.marker
+			room := colw - 2*pad - theme.gap - theme.marker
 			for n, w := range measured {
-				if w <= room {
-					continue
-				}
-				if theme.assert {
+				if w > room {
 					t.Errorf("%s %s, 8 people: %q needs %.1f px, the name has %.1f px", theme.name, d.name, n, w, room)
-				} else {
-					t.Logf("%s %s, 8 people: %q needs %.1f px, the name has %.1f px (product decision)", theme.name, d.name, n, w, room)
 				}
 			}
 		}

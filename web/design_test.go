@@ -534,11 +534,18 @@ func TestFamilyViewPersonNamesDoNotBreakInsideWords(t *testing.T) {
 	if !regexp.MustCompile(`@supports\s*\(\s*hyphenate-limit-chars:\s*12 5 5\s*\)\s*\{[^@]*\.fv \.person-name[^}]*hyphens:\s*auto[^}]*hyphenate-limit-chars:\s*12 5 5`).MatchString(css) {
 		t.Error("the family view hyphenates only words of 12+ letters (hyphenate-limit-chars: 12 5 5 inside @supports)")
 	}
+	if !familyTemplateHasNameSpan(t) {
+		t.Error("display_family.html must put the person name in span.person-name")
+	}
+}
+
+// familyTemplateHasNameSpan reports whether the family view template puts the
+// person name in its own span.person-name element.
+func familyTemplateHasNameSpan(t *testing.T) bool {
+	t.Helper()
 	tpl, err := os.ReadFile("templates/display_family.html")
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !strings.Contains(string(tpl), `<span class="person-name">{{.Person.Name}}</span>`) {
-		t.Error("display_family.html must put the person name in span.person-name")
-	}
+	return strings.Contains(string(tpl), `<span class="person-name">{{.Person.Name}}</span>`)
 }

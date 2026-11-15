@@ -353,6 +353,7 @@ body:has(.family-page) { overflow: hidden; }
 .fv .person-name { min-width: 0; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* its own shrinkable flex item: a name never breaks inside a word; only a word wider than the column breaks at its edge (not clipped) */
 @supports (hyphenate-limit-chars: 12 5 5) { .fv .person-name { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
 .fv .column h2 { flex: none; min-width: 0; margin: 0 0 var(--gap-cards); font-size: var(--fs-person-name); font-weight: var(--fw-person-name); display: flex; align-items: center; gap: 8px; }
+[data-theme="bw"] .fv .column h2 { gap: 6px; } /* the bw marker is 2 px larger, so the gap is 2 px smaller and long names still fit (ticket 150) */
 .fv .events { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: var(--gap-cards); align-content: start; }
 .fv .events .tomorrow { display: grid; gap: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); opacity: 0.6; }
 .strip.tomorrow { opacity: 0.6; } /* ADR 0016: tomorrow is faded so today's events stand out */

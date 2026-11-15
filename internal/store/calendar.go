@@ -575,3 +575,79 @@ func (db *DB) PruneDayNotes(householdID, before string) error {
 	_, err := db.sql.Exec(`DELETE FROM day_notes WHERE household_id = ? AND day < ?`, householdID, before)
 	return err
 }
+
+// Group loads one subgroup of a household with its members.
+func (db *DB) Group(householdID, id string) (Group, error) {
+	groups, err := db.Groups(householdID)
+	if err != nil {
+		return Group{}, err
+	}
+	for _, g := range groups {
+		if g.ID == id {
+			return g, nil
+		}
+	}
+	return Group{}, ErrNotFound
+}
+
+// UpdateGroup renames a subgroup and replaces its members. Calendars and
+// events keep pointing at the group.
+func (db *DB) UpdateGroup(householdID, id, name string, members []string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return &FieldError{Field: "name", Msg: "group name required"}
+	}
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := expectOne(tx.Exec(`UPDATE groups SET name = ? WHERE id = ? AND household_id = ?`, name, id, householdID)); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM group_members WHERE group_id = ?`, id); err != nil {
+		return err
+	}
+	for _, p := range members {
+		if _, err := tx.Exec(`INSERT OR IGNORE INTO group_members (group_id, person_id)
+			SELECT ?, person_id FROM household_members WHERE household_id = ? AND person_id = ?`, id, householdID, p); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// ErrInUse is returned when something cannot be removed because other data
+// still refers to it.
+var ErrInUse = errors.New("in use")
+
+// DeleteGroup removes a subgroup. A group that still decides who sees a
+// calendar or an event is refused with ErrInUse: its audience would silently
+// become the whole household.
+func (db *DB) DeleteGroup(householdID, id string) error {
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var exists int
+	if err := tx.QueryRow(`SELECT COUNT(*) FROM groups WHERE id = ? AND household_id = ?`, id, householdID).Scan(&exists); err != nil {
+		return err
+	}
+	if exists == 0 {
+		return ErrNotFound
+	}
+	var used int
+	if err := tx.QueryRow(`SELECT
+		(SELECT COUNT(*) FROM calendar_audience WHERE group_id = ?) +
+		(SELECT COUNT(*) FROM event_audience WHERE group_id = ?)`, id, id).Scan(&used); err != nil {
+		return err
+	}
+	if used > 0 {
+		return ErrInUse
+	}
+	if err := expectOne(tx.Exec(`DELETE FROM groups WHERE id = ? AND household_id = ?`, id, householdID)); err != nil {
+		return err
+	}
+	return tx.Commit()
+}

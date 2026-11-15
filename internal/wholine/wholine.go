@@ -28,18 +28,21 @@ type Input struct {
 	Omit string
 }
 
+// Rule is the rule that worded a line.
+type Rule int
+
 // Rules, in the order they are tried.
 const (
-	None      = 0 // nothing to say
-	Everyone  = 1
-	Subgroup  = 2
-	Except    = 3
-	NamesOnly = 4
+	None      Rule = 0 // nothing to say
+	Everyone  Rule = 1
+	Subgroup  Rule = 2
+	Except    Rule = 3
+	NamesOnly Rule = 4
 )
 
 // Line is the who-line of an event.
 type Line struct {
-	Rule int
+	Rule Rule
 	// Text is the line on a card: "Whole family", "with Kids", "everyone except
 	// Papa", "with Mia, Ben".
 	Text string
@@ -68,7 +71,7 @@ func Of(in Input, tr func(key string) string) Line {
 		return Line{Rule: Everyone, Text: tr("wholine.family")}
 	}
 	for _, g := range in.Groups {
-		if sameSet(people, g.Members) {
+		if sameSet(people, g.Members, in.Household) {
 			t := strings.Replace(tr("wholine.with"), "%s", g.Name, 1)
 			return Line{Rule: Subgroup, Text: t, InBrackets: t}
 		}
@@ -102,9 +105,16 @@ func join(names []string, and string) string {
 	return strings.Join(names, ", ")
 }
 
-// sameSet reports whether the people are exactly the members.
-func sameSet(people []Person, members []string) bool {
-	if len(people) != len(members) {
+// sameSet reports whether the people are exactly the members who are still in
+// the household.
+func sameSet(people []Person, members []string, household []Person) bool {
+	n := 0
+	for _, h := range household {
+		if slices.Contains(members, h.ID) {
+			n++
+		}
+	}
+	if len(people) != n {
 		return false
 	}
 	for _, p := range people {

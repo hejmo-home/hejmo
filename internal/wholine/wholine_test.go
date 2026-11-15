@@ -31,10 +31,10 @@ func TestLine(t *testing.T) {
 	kids := wholine.Group{Name: "Kids", Members: ids("Sebastian", "Mia")}
 	tr := i18n.MustLoad()
 	cases := []struct {
-		name           string
-		in             wholine.Input
-		rule           int
-		en, de, bullet string // text on a card (en, de); the same in the all-day row's brackets (en)
+		name             string
+		in               wholine.Input
+		rule             wholine.Rule
+		en, de, brackets string // text on a card (en, de); the same in the all-day row's brackets (en)
 	}{
 		{"rule 1: everyone", wholine.Input{Household: household(4), Audience: ids("Mama", "Papa", "Sebastian", "Mia")},
 			1, "Whole family", "ganze Familie", ""},
@@ -43,6 +43,8 @@ func TestLine(t *testing.T) {
 		{"rule 2: exactly one subgroup", wholine.Input{Household: household(4), Groups: []wholine.Group{kids}, Audience: ids("Sebastian", "Mia")},
 			2, "with Kids", "mit Kids", "with Kids"},
 		{"rule 2 beats rule 3: a subgroup that is all but two", wholine.Input{Household: household(4), Groups: []wholine.Group{kids}, Audience: ids("Mia", "Sebastian")},
+			2, "with Kids", "mit Kids", "with Kids"},
+		{"rule 2 ignores group members who left the household", wholine.Input{Household: household(4), Groups: []wholine.Group{{Name: "Kids", Members: ids("Sebastian", "Mia", "ghost")}}, Audience: ids("Sebastian", "Mia")},
 			2, "with Kids", "mit Kids", "with Kids"},
 		{"rule 2 needs the exact set", wholine.Input{Household: household(5), Groups: []wholine.Group{kids}, Audience: ids("Sebastian", "Mia", "Jonas")},
 			3, "everyone except Mama and Papa", "alle außer Mama und Papa", "everyone except Mama and Papa"},
@@ -83,8 +85,8 @@ func TestLine(t *testing.T) {
 				if got.Rule != c.rule || got.Text != want {
 					t.Errorf("%s: got rule %d %q, want rule %d %q", lang, got.Rule, got.Text, c.rule, want)
 				}
-				if lang == "en" && got.InBrackets != c.bullet {
-					t.Errorf("brackets: got %q, want %q", got.InBrackets, c.bullet)
+				if lang == "en" && got.InBrackets != c.brackets {
+					t.Errorf("brackets: got %q, want %q", got.InBrackets, c.brackets)
 				}
 				for _, bad := range []string{"+", "…", "..."} {
 					if strings.Contains(got.Text, bad) {

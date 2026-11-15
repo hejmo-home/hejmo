@@ -461,6 +461,207 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /lists:
+    get:
+      operationId: listLists
+      summary: The household's lists with their number of entries (scope lists:read)
+      description: |
+        Oldest first. Every list belongs to the household and has no audience.
+        A new box has the lists "Shopping" and "To-dos". Everyone, children
+        included, may read lists.
+      responses:
+        "200":
+          description: Lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/List" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createList
+      summary: Create a list (scope lists:write, parents only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewList" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/List" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getList
+      summary: One list with its entries in the order the list shows them (scope lists:read)
+      description: |
+        An alphabetical list orders its entries by text, ignoring case and
+        treating ä, ö, ü like a, o, u; a manual list follows the positions
+        set with `PUT /lists/{id}/entries/{entry}/position`.
+      responses:
+        "200":
+          description: The list with its entries
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListWithEntries" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateList
+      summary: Rename a list or change its colour, symbol or sorting (scope lists:write, parents only)
+      description: Switching the sorting keeps the manual order, so switching back restores it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ListChange" }
+      responses:
+        "200":
+          description: The changed list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/List" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteList
+      summary: Delete a list with all its entries (scope lists:delete, parents only)
+      description: A child is refused with 403.
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /lists/{id}/entries:
+    post:
+      operationId: addListEntry
+      summary: Add an entry at the end of a list (scope lists:write, parents only)
+      description: An alphabetical list shows it at its place by text.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, minLength: 1, maxLength: 200 }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntry" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}/entries/{entry}:
+    delete:
+      operationId: deleteListEntry
+      summary: Delete one entry (scope lists:delete, parents only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /lists/{id}/entries/{entry}/done:
+    put:
+      operationId: setListEntryDone
+      summary: Tick an entry off or back open (scope lists:complete)
+      description: Everyone, children included, may do this. Ticking twice changes nothing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [done]
+              properties:
+                done: { type: boolean }
+      responses:
+        "200":
+          description: The entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntry" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}/entries/{entry}/position:
+    put:
+      operationId: moveListEntry
+      summary: Move an entry to a place of a manually sorted list (scope lists:write, parents only)
+      description: Position 0 is first. Refused with 422 on an alphabetical list.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [position]
+              properties:
+                position: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: The entries in their new order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ListEntry" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}/completed-entries:
+    delete:
+      operationId: deleteCompletedListEntries
+      summary: Delete all ticked-off entries of a list (scope lists:delete, parents only)
+      description: Open entries stay.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: How many entries were deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted]
+                properties:
+                  deleted: { type: integer, minimum: 0 }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /groups:
     get:
       operationId: listGroups
@@ -949,6 +1150,60 @@ components:
         part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
         due: { type: boolean, description: "Due on the requested day" }
         done: { type: boolean, description: "Ticked off on the requested day" }
+    ListColor:
+      type: string
+      description: The person colour slot 1 to 6 of DESIGN.md, by name
+      enum: [terracotta, blue, green, ochre, plum, teal]
+    ListSymbol:
+      type: string
+      description: The black-and-white symbol, in the order of the person colour slots
+      enum: [circle-filled, circle-empty, square-filled, square-empty, triangle-filled, diamond-filled]
+    ListSort:
+      type: string
+      enum: [manual, alphabetical]
+    NewList:
+      type: object
+      required: [name, color, symbol]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        color: { $ref: "#/components/schemas/ListColor" }
+        symbol: { $ref: "#/components/schemas/ListSymbol" }
+        sort: { allOf: [{ $ref: "#/components/schemas/ListSort" }], description: "Default manual" }
+    ListChange:
+      type: object
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        color: { $ref: "#/components/schemas/ListColor" }
+        symbol: { $ref: "#/components/schemas/ListSymbol" }
+        sort: { $ref: "#/components/schemas/ListSort" }
+    List:
+      type: object
+      required: [id, name, color, symbol, sort, open_count, done_count]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        color: { $ref: "#/components/schemas/ListColor" }
+        symbol: { $ref: "#/components/schemas/ListSymbol" }
+        sort: { $ref: "#/components/schemas/ListSort" }
+        open_count: { type: integer, description: "Entries not ticked off" }
+        done_count: { type: integer, description: "Entries ticked off" }
+    ListEntry:
+      type: object
+      required: [id, text, done]
+      properties:
+        id: { type: string, format: uuid }
+        text: { type: string }
+        done: { type: boolean }
+    ListWithEntries:
+      allOf:
+        - { $ref: "#/components/schemas/List" }
+        - type: object
+          required: [entries]
+          properties:
+            entries:
+              type: array
+              items: { $ref: "#/components/schemas/ListEntry" }
     Group:
       type: object
       required: [id, name, members]

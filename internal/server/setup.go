@@ -7,6 +7,7 @@ import (
 	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/region"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -65,7 +66,7 @@ func (s *server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "reset setup", err)
 		return
 	}
-	personID, err := s.createFirstParent(f, passwordHash, pinHash)
+	personID, err := s.createFirstParent(f, passwordHash, pinHash, s.i18n.Match(r.Header.Get("Accept-Language")))
 	if err != nil {
 		s.fail(w, "setup", err)
 		return
@@ -98,9 +99,12 @@ func validateSetup(f setupForm) (passwordHash, pinHash, errKey string) {
 	return passwordHash, pinHash, ""
 }
 
-func (s *server) createFirstParent(f setupForm, passwordHash, pinHash string) (string, error) {
+func (s *server) createFirstParent(f setupForm, passwordHash, pinHash, lang string) (string, error) {
 	h, err := s.db.CreateHousehold(store.Household{Name: f.HomeName, HomeName: f.HomeName, Region: f.Region})
 	if err != nil {
+		return "", err
+	}
+	if err := s.createDefaultLists(h.ID, lang); err != nil {
 		return "", err
 	}
 	style := personStyles[0]
@@ -224,4 +228,18 @@ func totpErrorField(errKey string) string {
 		return ""
 	}
 	return "code"
+}
+
+// createDefaultLists gives a new household the lists "Shopping" and "To-dos"
+// (ADR 0015), named in the language of the setup.
+func (s *server) createDefaultLists(householdID, lang string) error {
+	for _, d := range []struct{ key, color, symbol string }{
+		{"lists.default.shopping", "green", "square-filled"},
+		{"lists.default.todos", "blue", "circle-empty"},
+	} {
+		if _, err := s.db.CreateList(householdID, list.List{Name: s.i18n.T(lang, d.key), Color: d.color, Symbol: d.symbol, Sort: list.Manual}); err != nil {
+			return err
+		}
+	}
+	return nil
 }

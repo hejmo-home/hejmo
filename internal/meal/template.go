@@ -15,6 +15,9 @@ type Slot struct {
 	Mealtime Mealtime
 }
 
+// At is the slot of a weekday (1 Monday to 7 Sunday) and a mealtime.
+func At(weekday int, m Mealtime) Slot { return Slot{weekday, m} }
+
 // MaxNameLength is the longest template name, counted in characters.
 const MaxNameLength = 60
 

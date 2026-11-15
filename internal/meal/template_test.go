@@ -22,7 +22,7 @@ func dinners(start string, every int, entries map[meal.Slot]string) meal.Templat
 }
 
 var monToFri = map[meal.Slot]string{
-	{1, meal.Dinner}: "Pasta", {2, meal.Dinner}: "Soup", {3, meal.Dinner}: "Pizza", {4, meal.Dinner}: "Curry", {5, meal.Dinner}: "Fish",
+	meal.At(1, meal.Dinner): "Pasta", meal.At(2, meal.Dinner): "Soup", meal.At(3, meal.Dinner): "Pizza", meal.At(4, meal.Dinner): "Curry", meal.At(5, meal.Dinner): "Fish",
 }
 
 func TestATemplateAppliesEveryNthWeekFromItsStartWeek(t *testing.T) {
@@ -59,12 +59,12 @@ func TestADishComesFromTheEntryOfThatWeekdayAndMealtime(t *testing.T) {
 }
 
 func TestEntriesOfMealtimesTheTemplateDoesNotFillAreIgnored(t *testing.T) {
-	tpl := dinners("2026-11-16", 1, map[meal.Slot]string{{1, meal.Dinner}: "Pasta", {1, meal.Lunch}: "Ignored", {2, meal.Dinner}: "   "})
-	want := map[meal.Slot]string{{1, meal.Dinner}: "Pasta"}
+	tpl := dinners("2026-11-16", 1, map[meal.Slot]string{meal.At(1, meal.Dinner): "Pasta", meal.At(1, meal.Lunch): "Ignored", meal.At(2, meal.Dinner): "   "})
+	want := map[meal.Slot]string{meal.At(1, meal.Dinner): "Pasta"}
 	if got := tpl.Filled(); !reflect.DeepEqual(got, want) {
 		t.Fatalf("filled = %v", got)
 	}
-	all := meal.Template{Name: "W", AllMealtimes: true, Interval: 1, Start: "2026-11-16", Entries: map[meal.Slot]string{{6, meal.Lunch}: "Roast"}}
+	all := meal.Template{Name: "W", AllMealtimes: true, Interval: 1, Start: "2026-11-16", Entries: map[meal.Slot]string{meal.At(6, meal.Lunch): "Roast"}}
 	if !all.Fills(meal.Snack) || len(all.Filled()) != 1 {
 		t.Fatalf("all = %v", all.Filled())
 	}
@@ -79,10 +79,12 @@ func TestValidateNamesTheFieldThatIsWrong(t *testing.T) {
 		{"no name", func(t *meal.Template) { t.Name = "  " }, "name"},
 		{"interval 0", func(t *meal.Template) { t.Interval = 0 }, "every"},
 		{"interval 53", func(t *meal.Template) { t.Interval = 53 }, "every"},
-		{"empty", func(t *meal.Template) { t.Entries = map[meal.Slot]string{{1, meal.Lunch}: "ignored"} }, "entries"},
+		{"empty", func(t *meal.Template) { t.Entries = map[meal.Slot]string{meal.At(1, meal.Lunch): "ignored"} }, "entries"},
 		{"start not a monday", func(t *meal.Template) { t.Start = "2026-11-17" }, "start"},
 		{"unknown mealtime", func(t *meal.Template) { t.Mealtime = "brunch" }, "mealtime"},
-		{"entry too long", func(t *meal.Template) { t.Entries = map[meal.Slot]string{{1, meal.Dinner}: string(make([]rune, 201))} }, "entries"},
+		{"entry too long", func(t *meal.Template) {
+			t.Entries = map[meal.Slot]string{meal.At(1, meal.Dinner): string(make([]rune, 201))}
+		}, "entries"},
 	}
 	for _, c := range cases {
 		tpl := dinners("2026-11-16", 2, monToFri)
@@ -131,17 +133,17 @@ func TestTwoTemplatesOverlapOnlyWhereBothFillTheSameMealOnTheSameDayOfTheSameWee
 		t.Fatalf("clash = %+v %v", c, ok)
 	}
 	// Different days of the week do not clash even in the same week.
-	weekend := dinners("2026-11-16", 1, map[meal.Slot]string{{6, meal.Dinner}: "Burgers"})
+	weekend := dinners("2026-11-16", 1, map[meal.Slot]string{meal.At(6, meal.Dinner): "Burgers"})
 	if _, ok := meal.FirstClash(a, weekend, today); ok {
 		t.Fatal("Saturday vs Monday to Friday")
 	}
 	// A different mealtime does not clash.
-	lunch := meal.Template{Name: "L", Mealtime: meal.Lunch, Interval: 1, Start: "2026-11-16", Entries: map[meal.Slot]string{{1, meal.Lunch}: "Soup"}}
+	lunch := meal.Template{Name: "L", Mealtime: meal.Lunch, Interval: 1, Start: "2026-11-16", Entries: map[meal.Slot]string{meal.At(1, meal.Lunch): "Soup"}}
 	if _, ok := meal.FirstClash(a, lunch, today); ok {
 		t.Fatal("lunch vs dinner")
 	}
 	// An empty entry does not count: only filled entries clash.
-	sparse := dinners("2026-11-16", 1, map[meal.Slot]string{{1, meal.Dinner}: "", {2, meal.Dinner}: "Soup"})
+	sparse := dinners("2026-11-16", 1, map[meal.Slot]string{meal.At(1, meal.Dinner): "", meal.At(2, meal.Dinner): "Soup"})
 	c, ok = meal.FirstClash(a, sparse, today)
 	if !ok || !reflect.DeepEqual(c.Weekdays, []int{2}) {
 		t.Fatalf("sparse = %+v", c)
@@ -163,8 +165,8 @@ func TestOverlapsFoundAcrossIntervalsThatMeetOnlyLater(t *testing.T) {
 }
 
 func TestClashesBeforeTodayDoNotCount(t *testing.T) {
-	mondays := dinners("2026-11-02", 1, map[meal.Slot]string{{1, meal.Dinner}: "Pasta"})
-	every4 := dinners("2026-11-02", 4, map[meal.Slot]string{{1, meal.Dinner}: "Soup"}) // Mondays 02/11, 30/11, 28/12
+	mondays := dinners("2026-11-02", 1, map[meal.Slot]string{meal.At(1, meal.Dinner): "Pasta"})
+	every4 := dinners("2026-11-02", 4, map[meal.Slot]string{meal.At(1, meal.Dinner): "Soup"}) // Mondays 02/11, 30/11, 28/12
 	// On Tuesday 01/12 the Monday of 30/11 is over; the next one both fill is 28/12.
 	c, ok := meal.FirstClash(mondays, every4, day("2026-12-01"))
 	if !ok || c.Week.Format("2006-01-02") != "2026-12-28" {

@@ -55,11 +55,14 @@ func (s *server) frameFor(r *http.Request) frame {
 	return f
 }
 
-// setupPaths are the screens reached from the Settings hub (ADR 0017).
-var setupPaths = []string{"/calendars", "/connections", "/caldav", "/displays", "/phones", "/settings/household"}
-
+// isSetupPath reports whether path is a screen reached from the Settings hub
+// (ADR 0017): a hub entry or a page below one. Connections hang off Calendars.
 func isSetupPath(path string) bool {
-	for _, p := range setupPaths {
+	paths := []string{"/connections"}
+	for _, it := range hubItems {
+		paths = append(paths, it.Href)
+	}
+	for _, p := range paths {
 		if path == p || strings.HasPrefix(path, p+"/") {
 			return true
 		}
@@ -68,7 +71,7 @@ func isSetupPath(path string) bool {
 }
 
 // hubItem is one entry of the Settings hub. Entries appear as their screens
-// exist (phones, people and my account join with their tickets).
+// exist (people and my account join with their tickets).
 type hubItem struct {
 	Href, Label, Hint string
 	Needs             auth.Permission

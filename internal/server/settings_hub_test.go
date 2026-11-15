@@ -46,6 +46,10 @@ func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
 	}
 }
 
+// hubPages are the setup screens the Settings hub holds. Add a new hub entry here; the tests
+// below also check that the hub shows nothing this list lacks.
+var hubPages = []string{"/calendars", "/caldav", "/displays", "/phones", "/settings/household"}
+
 // 5.18: every setup page is reachable from the Settings hub.
 func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 	b := signedInBox(t)
@@ -54,7 +58,7 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 		t.Fatalf("GET /settings = %d", r.status)
 	}
 	got := hubTargets(r.body)
-	for _, want := range []string{"/calendars", "/caldav", "/displays", "/settings/household"} {
+	for _, want := range hubPages {
 		found := false
 		for _, g := range got {
 			found = found || g == want
@@ -63,10 +67,13 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 			t.Errorf("hub lacks a link to %s: %v", want, got)
 		}
 	}
-	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Household"} {
+	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Phones", "Household"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("hub lacks %q", want)
 		}
+	}
+	if strings.Join(got, " ") != strings.Join(hubPages, " ") {
+		t.Errorf("hub links %v, want %v", got, hubPages)
 	}
 	for _, link := range got {
 		if r := b.get(link); r.status != http.StatusOK {
@@ -79,7 +86,7 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 func TestSetupPagesLinkBackToSettings(t *testing.T) {
 	b := signedInBox(t)
 	b.post("/calendars", url.Values{"name": {"Feiertage"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
-	for _, page := range []string{"/calendars", "/caldav", "/displays", "/settings/household"} {
+	for _, page := range hubPages {
 		body := getEN(b, page).body
 		if !strings.Contains(body, `<a class="back" href="/settings">`) {
 			t.Errorf("%s has no link back to Settings", page)
@@ -119,7 +126,7 @@ func TestChildSeesNoSettingsPages(t *testing.T) {
 	if strings.Contains(body, `href="/settings"`) {
 		t.Error("child sees the Settings link")
 	}
-	for _, page := range []string{"/settings", "/settings/household", "/calendars", "/caldav", "/displays"} {
+	for _, page := range append([]string{"/settings"}, hubPages...) {
 		if r := child.get(page); r.status != http.StatusForbidden {
 			t.Errorf("child GET %s = %d, want 403", page, r.status)
 		}

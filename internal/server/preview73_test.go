@@ -26,8 +26,7 @@ func TestWritePreview73(t *testing.T) {
 	js, _ := web.Static.ReadFile("static/form.js")
 	font, _ := web.Static.ReadFile("static/fonts/Figtree-wght.ttf")
 
-	b, ids := patternBox(t)
-	_ = ids
+	b, _ := patternBox(t)
 	d := newScreen(b)
 	b.post("/displays", url.Values{"code": {codeOn(t, d.get("/display", "en").body)}, "name": {"Kitchen"}, "type": {"eink_bw"}})
 	page := func(path string) string {
@@ -55,11 +54,11 @@ func TestWritePreview73(t *testing.T) {
 		}
 		body.WriteString("</div>\n")
 	}
-	all := []frame{{"light", 1024, 768}, {"dark", 1024, 768}, {"bw", 1024, 768}, {"light", 768, 1024}, {"light", 375, 812}, {"dark", 375, 812}}
-	add("1. Settings hub", "The navigation holds Home, Tasks and Settings; everything for setting up is one calm row each under Settings. Entries for phones, people and my account join when their screens exist.", "", hub, all...)
+	all := []frame{{"light", 1280, 800}, {"dark", 1280, 800}, {"light", 1024, 768}, {"bw", 1024, 768}, {"light", 768, 1024}, {"light", 375, 812}, {"dark", 375, 812}}
+	add("1. Settings hub", "The navigation holds Home, Tasks and Settings; everything for setting up is one calm row each under Settings. Entries for people and my account join when their screens exist.", "", hub, all...)
 	add("2. A setup page: back to Settings", "Setup pages keep Settings marked in the navigation and link back to the hub (here: Displays).", "", displays, all...)
 	add("3. Display pairing asks one question", "\"Where does it hang?\" is the display's name; there is no room field.", "#new", displays, frame{"light", 1024, 768}, frame{"bw", 1024, 768}, frame{"light", 375, 812})
-	add("4. Household", "Time format and temperature unit moved here from the former Settings page.", "", household, frame{"light", 1024, 768}, frame{"light", 375, 812})
+	add("4. Household", "Time format, temperature unit and automatic updates moved here from the former Settings page.", "", household, frame{"light", 1024, 768}, frame{"light", 375, 812})
 
 	var jsDocs strings.Builder
 	for i, h := range docs {
@@ -80,7 +79,7 @@ h1{font-size:22px}h2{font-size:18px;margin:28px 0 4px}.note{margin:0 0 10px;max-
 figure{margin:0 0 12px}figcaption{margin-bottom:6px;font-weight:700}
 iframe{border:0;background:#fff;display:block}
 </style></head><body>
-<h1>Hejmo 5.18 Settings hub and navigation: example family (Mama, Papa, Sebastian, Mia), 1024 x 768 and portrait, light, dark and black and white</h1>
+<h1>Hejmo 5.18 Settings hub and navigation: example family (Mama, Papa, Sebastian, Mia), 1280 x 800, 1024 x 768 and portrait, light, dark and black and white</h1>
 <noscript><p>This page needs JavaScript only to place the real pages into their frames.</p></noscript>
 ` + body.String() + `
 <template id="css">` + string(css) + `</template>

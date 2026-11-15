@@ -180,6 +180,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
 	mux.HandleFunc("GET /connections/new", s.handleConnectNew)
+	mux.HandleFunc("POST /calendars/{id}/waste", s.handleCalendarWaste)
+	mux.HandleFunc("POST /notes", s.handleNoteSave)
+	mux.HandleFunc("GET /notes/{day}", s.handleNotePage)
+	mux.HandleFunc("POST /notes/{day}", s.handleNoteChange)
+	mux.HandleFunc("POST /notes/{day}/delete", s.handleNoteDelete)
 	mux.HandleFunc("POST /connections", s.handleConnect)
 	mux.HandleFunc("GET /connections/{id}", s.handleConnectionPage)
 	mux.HandleFunc("POST /connections/{id}/calendars", s.handleConnectionCalendars)
@@ -260,7 +265,7 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "household", err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": p.Role == store.RoleParent && s.httpsWarning(), "Update": s.parentUpdateNotice(p, h)})
+	s.renderHome(w, r, http.StatusOK, p, h, nil)
 }
 
 // parsePages parses the embedded templates; "t" is replaced per render.

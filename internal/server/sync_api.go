@@ -86,6 +86,7 @@ type calendarJSON struct {
 	Color    string       `json:"color"`
 	ReadOnly bool         `json:"read_only"`
 	Shared   bool         `json:"share_through_box"`
+	Waste    bool         `json:"waste_collection"`
 	Audience audienceJSON `json:"audience"`
 	Sync     *syncJSON    `json:"sync,omitempty"`
 }
@@ -133,7 +134,7 @@ func (s *server) syncState(r *http.Request, c store.SyncedCalendar, loc *time.Lo
 }
 
 func plainCalendarJSON(c store.Calendar) calendarJSON {
-	return calendarJSON{ID: c.ID, Name: c.Name, Kind: c.Kind, Color: c.Color, ReadOnly: c.ReadOnly, Shared: c.Shared,
+	return calendarJSON{ID: c.ID, Name: c.Name, Kind: c.Kind, Color: c.Color, ReadOnly: c.ReadOnly, Shared: c.Shared, Waste: c.Waste,
 		Audience: audienceJSON{nonNil(c.Audience.People), nonNil(c.Audience.Groups)}}
 }
 
@@ -357,17 +358,28 @@ func (s *server) calendarExists(householdID, id string) error {
 func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
 		Shared *bool `json:"share_through_box"`
+		Waste  *bool `json:"waste_collection"`
 		calendarChanges
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	if in.Shared == nil && !in.calendarChanges.any() {
-		writeError(w, http.StatusUnprocessableEntity, "send share_through_box, name, color or audience")
+	if in.Shared == nil && in.Waste == nil && !in.calendarChanges.any() {
+		writeError(w, http.StatusUnprocessableEntity, "send share_through_box, waste_collection, name, color or audience")
 		return
 	}
 	id := r.PathValue("id")
+	if in.Waste != nil { // refuse before anything is saved
+		c, err := s.db.Calendar(p.household.ID, id)
+		if s.storeError(w, "waste calendar", err) {
+			return
+		}
+		if !c.ReadOnly {
+			writeError(w, http.StatusUnprocessableEntity, "only a read-only calendar can be a waste collection calendar")
+			return
+		}
+	}
 	if in.calendarChanges.any() {
 		cal, err := s.db.SyncedCalendar(p.household.ID, id)
 		if errors.Is(err, store.ErrNotFound) {
@@ -390,6 +402,9 @@ func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p pri
 		}
 	}
 	if in.Shared != nil && s.storeError(w, "share calendar", s.db.SetCalendarShared(p.household.ID, id, *in.Shared)) {
+		return
+	}
+	if in.Waste != nil && s.storeError(w, "waste calendar", s.db.SetCalendarWaste(p.household.ID, id, *in.Waste)) {
 		return
 	}
 	c, err := s.db.Calendar(p.household.ID, id)

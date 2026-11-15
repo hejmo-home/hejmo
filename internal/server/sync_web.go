@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
@@ -67,7 +68,11 @@ type calendarView struct {
 	ID, Name, Color, Audience, LastSuccess, LastError string
 	Events, Changes                                   string // the count and what the last run did; empty until a run succeeded
 	Stale                                             bool
-	IntervalMinutes                                   int
+	Waste                                             bool
+	// The next collection of a waste calendar: NextLabel is "Next collection: Monday 16/11", NextTitles the
+	// titles joined by ", " after a dash. Both are empty when there is none in the next 30 days.
+	NextLabel, NextTitles string
+	IntervalMinutes       int
 }
 
 // calendarGroup is one heading of the subscribed calendars: a person, or the
@@ -123,12 +128,28 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	for _, x := range groups {
 		members[x.ID] = x.Members
 	}
+	var wasteIDs []string
+	for _, c := range synced {
+		if c.Waste {
+			wasteIDs = append(wasteIDs, c.ID)
+		}
+	}
+	lang := s.langOf(r)
+	nexts, err := s.nextWastes(p.household, lang, wasteIDs)
+	if err != nil {
+		s.fail(w, "next waste collection", err)
+		return
+	}
 	whole := calendarGroup{Name: s.i18n.T(s.langOf(r), "calendars.whole_household")}
 	unassigned := calendarGroup{Name: s.i18n.T(s.langOf(r), "calendars.unassigned")}
 	byPerson := map[string][]calendarView{}
 	for _, c := range synced {
 		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
-			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes}
+			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes, Waste: c.Waste}
+		if next, ok := nexts[c.ID]; ok {
+			v.NextLabel = s.i18n.Format(lang, i18n.Msg("calendars.waste.next", "day", s.dayLabel(lang, next.Day)))
+			v.NextTitles = s.i18n.Format(lang, i18n.Msg("calendars.waste.next_titles", "titles", strings.Join(next.Titles, ", ")))
+		}
 		if !c.Sync.LastSuccess.IsZero() {
 			run := c.Sync.LastRun
 			v.Events = s.say(r, i18n.Msg("calendars.events", "count", strconv.Itoa(run.Events)))

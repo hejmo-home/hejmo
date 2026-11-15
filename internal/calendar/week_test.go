@@ -108,3 +108,14 @@ func TestRepeatPresetsBecomeRulesAndBack(t *testing.T) {
 		t.Error("an unknown preset is accepted")
 	}
 }
+
+func TestOriginalStartIdentifiesAnOccurrenceInItsSeries(t *testing.T) {
+	single := calendar.Occurrence{EventID: "a", Start: at(2026, 11, 16, 16, 0)}
+	if got := single.OriginalStart(); !got.Equal(at(2026, 11, 16, 16, 0)) {
+		t.Errorf("single event: %v", got)
+	}
+	moved := calendar.Occurrence{EventID: "o", SeriesID: "m", RecurrenceID: at(2026, 11, 16, 16, 0), Start: at(2026, 11, 16, 18, 0)}
+	if got := moved.OriginalStart(); !got.Equal(at(2026, 11, 16, 16, 0)) {
+		t.Errorf("changed occurrence: %v", got)
+	}
+}

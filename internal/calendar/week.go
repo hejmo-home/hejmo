@@ -60,6 +60,16 @@ func OccurrenceOf(events []Event, occStart time.Time) (Occurrence, bool) {
 	return occurrence(master, occStart, occStart, master.ID), true
 }
 
+// OriginalStart is the start the occurrence has in its series (the
+// recurrence id), or its own start for a single event: what identifies it
+// when it is edited or deleted.
+func (o Occurrence) OriginalStart() time.Time {
+	if o.SeriesID != "" {
+		return o.RecurrenceID
+	}
+	return o.Start
+}
+
 // Repeat is one of the series presets the web interface offers.
 type Repeat string
 

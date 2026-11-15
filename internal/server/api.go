@@ -24,6 +24,8 @@ var apiRoutes = []APIRoute{
 	{"GET", "/people", auth.Perm("people", auth.Read), (*server).apiListPeople},
 	{"POST", "/people", auth.Perm("people", auth.Write), (*server).apiCreatePerson},
 	{"GET", "/people/{id}", auth.Perm("people", auth.Read), (*server).apiGetPerson},
+	{"GET", "/people/{id}/stars", auth.Perm("tasks", auth.Read), (*server).apiGetStars},
+	{"POST", "/people/{id}/stars", auth.Perm("tasks", auth.Write), (*server).apiBookStars},
 	{"POST", "/me/recovery-codes", auth.Perm("people", auth.Write), (*server).apiNewRecoveryCodes},
 	{"POST", "/people/{id}/reset-otp", auth.Perm("people", auth.Write), (*server).apiResetOTP},
 	{"GET", "/tokens", auth.Perm("tokens", auth.Read), (*server).apiListTokens},

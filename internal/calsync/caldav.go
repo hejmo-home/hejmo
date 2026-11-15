@@ -18,6 +18,7 @@ type Remote interface {
 	Calendar(ctx context.Context, calendarURL string) (caldavclient.Calendar, error)
 	List(ctx context.Context, calendarURL string) ([]caldavclient.Object, error)
 	Fetch(ctx context.Context, calendarURL string, objectURLs []string) ([]caldavclient.Object, error)
+	CountEvents(ctx context.Context, calendarURL string, since time.Time) (int, error)
 }
 
 // Dialer connects to a CalDAV server with one set of credentials.
@@ -48,10 +49,21 @@ func (s *Service) Discover(ctx context.Context, serverURL, user, password string
 	return remote.Calendars(ctx)
 }
 
+// CountEvents asks a CalDAV server how many events a calendar has in the
+// import window (the past 12 months and everything later; a series counts
+// once) without downloading them. It stores nothing.
+func (s *Service) CountEvents(ctx context.Context, serverURL, user, password, calendarURL string) (int, error) {
+	remote, err := s.dial(serverURL, user, password)
+	if err != nil {
+		return 0, err
+	}
+	return remote.CountEvents(ctx, calendarURL, s.now().AddDate(-1, 0, 0))
+}
+
 // syncCalDAV brings one CalDAV calendar up to date by ETag: it lists the
 // server's objects, downloads only those that are new or changed, and drops
 // those that are gone. The caller holds the calendar's lock.
-func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h store.Household, at time.Time, fail func(i18n.Message, error) error) error {
+func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h store.Household, at time.Time, run *runInfo, fail func(i18n.Message, error) error) error {
 	conn, err := s.db.Connection(h.ID, cal.ConnectionID)
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
@@ -82,6 +94,7 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	if err != nil {
 		return failRemote(err)
 	}
+	run.listed = len(listed)
 	known, err := s.db.RemoteObjects(cal.ID)
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
@@ -113,6 +126,7 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	if err != nil {
 		return failRemote(err)
 	}
+	run.fetched = len(fetched)
 	var changes []store.ObjectChange
 	var notes []i18n.Message
 	for _, o := range fetched {
@@ -142,8 +156,11 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 		changes = append(changes, change)
 	}
 	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
-	if err := s.db.CompleteObjectSync(h.ID, cal.ID, changes, deleted, notes, at, at.Add(interval)); err != nil {
+	run.skipped = skipped(notes)
+	done, err := s.db.CompleteObjectSync(h.ID, cal.ID, changes, deleted, notes, at, at.Add(interval))
+	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), fmt.Errorf("could not store the events: %w", err))
 	}
+	run.done = done
 	return nil
 }

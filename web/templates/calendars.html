@@ -18,6 +18,8 @@
           {{if .LastSuccess}}{{t "calendars.last_success"}} {{.LastSuccess}}{{else}}{{t "calendars.never"}}{{end}}
           {{if .Stale}} · <span data-calendar-stale>{{t "calendars.stale"}}</span>{{end}}
         </span>
+        {{if .Events}}<span class="hint" data-events>{{.Events}}</span>
+        <span class="hint" data-last-run>{{.Changes}}</span>{{end}}
         {{if .LastError}}<span class="hint">{{t "calendars.last_error"}} {{.LastError}}</span>{{end}}
         <span class="row">
           <form method="post" action="/calendars/{{.ID}}/sync"><button class="button" type="submit">{{t "calendars.sync_now"}}</button></form>
@@ -85,7 +87,7 @@
         {{template "personChips" (dict "Root" . "Name" "people" "Legend" (t "calendars.field.audience") "People" .People "Selected" (strs (index .Form "People")) "Groups" .Groups "SelectedGroups" (strs (index .Form "Groups")) "Whole" true)}}
         {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" (t "calendars.more.summary") "Open" (or (eq .ErrorField "color") (eq .ErrorField "interval")))}}
           <label>{{t "calendars.field.color"}}
-            <input name="color" type="color" value="{{with .Form}}{{if .Color}}{{.Color}}{{else}}#2F5E7A{{end}}{{else}}#2F5E7A{{end}}"></label>
+            <input name="color" type="color" value="{{with .Form}}{{if .Color}}{{.Color}}{{else}}{{$.AutoColor}}{{end}}{{else}}{{.AutoColor}}{{end}}"></label>
           {{template "fieldError" (dict "Root" . "Name" "color")}}
           <label>{{t "calendars.field.interval"}}
             <select name="interval">{{range .Intervals}}<option value="{{.}}"{{if eq . $.IntervalChosen}} selected{{end}}>{{.}}</option>{{end}}</select></label>
@@ -98,6 +100,7 @@
 
   <section aria-labelledby="log">
     <h2 id="log">{{t "calendars.log"}}</h2>
+    <p class="hint">{{t "calendars.log.hint"}} <a href="#synced">{{t "calendars.log.link"}}</a></p>
     {{if .Log}}
     <table class="log">
       <thead><tr><th>{{t "calendars.log.when"}}</th><th>{{t "calendars.log.calendar"}}</th><th>{{t "calendars.log.what"}}</th></tr></thead>

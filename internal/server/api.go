@@ -43,6 +43,7 @@ var apiRoutes = []APIRoute{
 	{"POST", "/calendar-connections", auth.Perm("settings", auth.Write), (*server).apiConnect},
 	{"DELETE", "/calendar-connections/{id}", auth.Perm("settings", auth.Delete), (*server).apiDeleteConnection},
 	{"GET", "/calendar-connections/{id}/calendars", auth.Perm("settings", auth.Write), (*server).apiDiscover},
+	{"GET", "/calendar-connections/{id}/event-counts", auth.Perm("settings", auth.Write), (*server).apiEventCounts},
 	{"POST", "/calendar-connections/{id}/calendars", auth.Perm("settings", auth.Write), (*server).apiAddConnectionCalendar},
 	{"GET", "/sync-log", auth.Perm("settings", auth.Read), (*server).apiSyncLog},
 	{"GET", "/https", auth.Perm("settings", auth.Read), (*server).apiHTTPS},

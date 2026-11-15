@@ -69,7 +69,7 @@ func TestCompleteSyncReplacesEventsAndKeepsIDs(t *testing.T) {
 	c := newICS(t, f)
 	next := t0.Add(time.Hour)
 
-	if err := f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{
+	if _, err := f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{
 		item("a", "", "Choir", at(2026, 11, 20, 17, 0)),
 		item("b", "", "Fair", at(2026, 11, 21, 10, 0)),
 	}, nil, t0, next); err != nil {
@@ -82,7 +82,7 @@ func TestCompleteSyncReplacesEventsAndKeepsIDs(t *testing.T) {
 	}
 
 	// Second sync: Fair is gone from the feed, Choir was renamed.
-	if err := f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{item("a", "", "Choir rehearsal", at(2026, 11, 20, 17, 0))}, nil, t0.Add(time.Hour), next.Add(time.Hour)); err != nil {
+	if _, err := f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{item("a", "", "Choir rehearsal", at(2026, 11, 20, 17, 0))}, nil, t0.Add(time.Hour), next.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	got := titles(t, f, c.ID)
@@ -103,7 +103,7 @@ func TestChangedOccurrencesLinkToTheirSeries(t *testing.T) {
 	moved := item("a#x", "a", "Choir (moved)", at(2026, 11, 9, 19, 0))
 	moved.Event.RecurrenceID = at(2026, 11, 9, 17, 0)
 	// Overrides may come before their master in the feed.
-	if err := f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{moved, master}, nil, t0, t0.Add(time.Hour)); err != nil {
+	if _, err := f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{moved, master}, nil, t0, t0.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	evs, _ := f.db.EventsBetween(f.h.ID, at(2026, 11, 1, 0, 0), at(2026, 12, 1, 0, 0))
@@ -116,7 +116,7 @@ func TestChangedOccurrencesLinkToTheirSeries(t *testing.T) {
 func TestFailedSyncKeepsEventsAndLogsIt(t *testing.T) {
 	f := newCalFixture(t)
 	c := newICS(t, f)
-	_ = f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{item("a", "", "Choir", at(2026, 11, 20, 17, 0))}, []i18n.Message{i18n.Msg("sync.note.unknown_zone", "zone", "Mars/Olympus")}, t0, t0.Add(time.Hour))
+	_, _ = f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{item("a", "", "Choir", at(2026, 11, 20, 17, 0))}, []i18n.Message{i18n.Msg("sync.note.unknown_zone", "zone", "Mars/Olympus")}, t0, t0.Add(time.Hour))
 
 	if err := f.db.FailSync(f.h.ID, c.ID, i18n.Msg("sync.fail.fetch", "detail", "connection refused"), t0.Add(time.Hour), t0.Add(2*time.Hour)); err != nil {
 		t.Fatal(err)
@@ -137,7 +137,7 @@ func TestFailedSyncKeepsEventsAndLogsIt(t *testing.T) {
 	}
 
 	// One success clears the failure state.
-	_ = f.db.CompleteSync(f.h.ID, c.ID, nil, nil, t0.Add(2*time.Hour), t0.Add(3*time.Hour))
+	_, _ = f.db.CompleteSync(f.h.ID, c.ID, nil, nil, t0.Add(2*time.Hour), t0.Add(3*time.Hour))
 	s, _ = f.db.SyncedCalendar(f.h.ID, c.ID)
 	if s.Sync.Failures != 0 || s.Sync.LastError.Key != "" {
 		t.Fatalf("after success: %+v", s.Sync)
@@ -147,7 +147,7 @@ func TestFailedSyncKeepsEventsAndLogsIt(t *testing.T) {
 func TestRemovingTheCalendarRemovesItsEventsAndLog(t *testing.T) {
 	f := newCalFixture(t)
 	c := newICS(t, f)
-	_ = f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{item("a", "", "Choir", at(2026, 11, 20, 17, 0))}, nil, t0, t0.Add(time.Hour))
+	_, _ = f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{item("a", "", "Choir", at(2026, 11, 20, 17, 0))}, nil, t0, t0.Add(time.Hour))
 	local, _ := f.db.CreateEvent(f.h.ID, calendar.Event{CalendarID: f.cal.ID, Title: "Own", Start: at(2026, 11, 20, 8, 0), End: at(2026, 11, 20, 9, 0)})
 
 	if err := f.db.DeleteSyncedCalendar(f.h.ID, c.ID); err != nil {
@@ -172,7 +172,7 @@ func TestSameNoteIsLoggedOnce(t *testing.T) {
 	other := i18n.Msg("sync.note.unknown_zone", "zone", "Venus/Maxwell")
 	for i, n := range [][]i18n.Message{{note}, {note, other}, {note}} {
 		at := t0.Add(time.Duration(i) * time.Hour)
-		if err := f.db.CompleteSync(f.h.ID, c.ID, nil, n, at, at.Add(time.Hour)); err != nil {
+		if _, err := f.db.CompleteSync(f.h.ID, c.ID, nil, n, at, at.Add(time.Hour)); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -184,7 +184,7 @@ func TestSameNoteIsLoggedOnce(t *testing.T) {
 func TestSyncedEventsMayHaveNoTitle(t *testing.T) {
 	f := newCalFixture(t)
 	c := newICS(t, f)
-	if err := f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{item("a", "", "", at(2026, 11, 20, 17, 0))}, nil, t0, t0.Add(time.Hour)); err != nil {
+	if _, err := f.db.CompleteSync(f.h.ID, c.ID, []store.SyncItem{item("a", "", "", at(2026, 11, 20, 17, 0))}, nil, t0, t0.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if got := titles(t, f, c.ID); len(got) != 1 || got[0] != "" {

@@ -7,6 +7,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/caldavclient/caldavtest"
@@ -305,10 +306,12 @@ func TestWebConnectTickAndRemove(t *testing.T) {
 	}
 	sameList(t, occTitles(c.occurrences(t, november)), []string{"11-20T15:00 Swimming"})
 
-	// Ticking a calendar that is already synced says so, not "enter a valid address".
-	r = b.do(http.MethodPost, "/connections/"+conns[0].ID+"/calendars", url.Values{"calendar": {family}, "name_" + family: {"Family"}, "interval": {"5"}}, map[string]string{"Accept-Language": "en"})
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "already") || strings.Contains(r.body, "valid address") {
-		t.Fatalf("add twice = %d\n%s", r.status, r.body)
+	// Ticking a calendar that is already synced changes nothing and is no error.
+	if r = b.post("/connections/"+conns[0].ID+"/calendars", url.Values{"calendar": {family}, "name_" + family: {"Family"}, "interval": {"5"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("keep = %d\n%s", r.status, r.body)
+	}
+	if cals, _ := b.db.SyncedCalendars(h.ID); len(cals) != 1 {
+		t.Fatalf("calendars = %+v", cals)
 	}
 	// An address on another server says so too.
 	r = b.do(http.MethodPost, "/connections/"+conns[0].ID+"/calendars", url.Values{"calendar": {"https://elsewhere.example/cal/"}, "name_https://elsewhere.example/cal/": {"X"}, "interval": {"5"}}, map[string]string{"Accept-Language": "en"})
@@ -410,6 +413,9 @@ func (o oneCalendarRemote) List(context.Context, string) ([]caldavclient.Object,
 }
 func (o oneCalendarRemote) Fetch(context.Context, string, []string) ([]caldavclient.Object, error) {
 	return nil, nil
+}
+func (o oneCalendarRemote) CountEvents(context.Context, string, time.Time) (int, error) {
+	return 0, nil
 }
 
 func TestWebICloudIgnoresAddressAndSingleCalendarFlag(t *testing.T) {

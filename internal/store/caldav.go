@@ -201,42 +201,81 @@ func (db *DB) RemoteObjects(calendarID string) (map[string]string, error) {
 // CompleteObjectSync stores a successful delta sync of a CalDAV calendar:
 // changed objects replace their events, deleted objects take their events with
 // them, notes go to the log and the failure state is cleared. All or nothing.
-func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []ObjectChange, deleted []string, notes []i18n.Message, at, next time.Time) error {
+// It returns what the run did to the events.
+func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []ObjectChange, deleted []string, notes []i18n.Message, at, next time.Time) (SyncRun, error) {
 	tx, err := db.sql.Begin()
 	if err != nil {
-		return err
+		return SyncRun{}, err
 	}
 	defer tx.Rollback()
 	var one int
 	if err := tx.QueryRow(`SELECT 1 FROM calendars WHERE id = ? AND household_id = ? AND connection_id IS NOT NULL`, calendarID, householdID).Scan(&one); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrNotFound
+			return SyncRun{}, ErrNotFound
 		}
-		return err
+		return SyncRun{}, err
 	}
+	changes := newRunChanges()
 	for _, url := range deleted {
+		gone, err := topLevelEvents(tx, calendarID, url)
+		if err != nil {
+			return SyncRun{}, err
+		}
+		for _, id := range gone {
+			changes.gone[id] = true
+		}
 		if _, err := tx.Exec(`DELETE FROM events WHERE calendar_id = ? AND remote_url = ?`, calendarID, url); err != nil {
-			return err
+			return SyncRun{}, err
 		}
 		if _, err := tx.Exec(`DELETE FROM remote_objects WHERE calendar_id = ? AND url = ?`, calendarID, url); err != nil {
-			return err
+			return SyncRun{}, err
 		}
 	}
 	for _, o := range changed {
 		url := o.URL
 		if !o.KeepEvents {
-			if err := replaceSyncedEvents(tx, householdID, calendarID, o.Items, &url); err != nil {
-				return fmt.Errorf("object %s: %w", o.URL, err)
+			got, err := replaceSyncedEvents(tx, householdID, calendarID, o.Items, &url)
+			if err != nil {
+				return SyncRun{}, fmt.Errorf("object %s: %w", o.URL, err)
+			}
+			for id := range got.added {
+				changes.added[id] = true
+			}
+			for id := range got.updated {
+				changes.updated[id] = true
+			}
+			for id := range got.gone {
+				changes.gone[id] = true
 			}
 		}
 		// An unreadable object keeps the last good text, not the junk.
 		if _, err := tx.Exec(`INSERT INTO remote_objects (calendar_id, url, etag, raw) VALUES (?, ?, ?, ?)
 			ON CONFLICT (calendar_id, url) DO UPDATE SET etag = excluded.etag, raw = CASE WHEN ? THEN raw ELSE excluded.raw END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents); err != nil {
-			return err
+			return SyncRun{}, err
 		}
 	}
-	if err := recordSuccess(tx, householdID, calendarID, notes, at, next); err != nil {
-		return err
+	run, err := recordSuccess(tx, householdID, calendarID, notes, at, next, changes)
+	if err != nil {
+		return SyncRun{}, err
 	}
-	return tx.Commit()
+	return run, tx.Commit()
+}
+
+// topLevelEvents lists the ids of the single events and series masters that
+// came from one remote object.
+func topLevelEvents(tx *sql.Tx, calendarID, object string) ([]string, error) {
+	rows, err := tx.Query(`SELECT id FROM events WHERE calendar_id = ? AND remote_url = ? AND series_id IS NULL`, calendarID, object)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
 }

@@ -1,0 +1,12 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "connections.off.title") "Frame" .Frame)}}
+  <h1>{{t "connections.off.title"}}</h1>
+  <p class="lead">{{t "connections.off.lead"}}</p>
+  <ul>{{range .Names}}<li><strong>{{.}}</strong></li>
+  {{end}}</ul>
+  <form method="post" action="/connections/{{.Connection.ID}}/calendars" class="steps">
+    {{range .Hidden}}<input type="hidden" name="{{.Name}}" value="{{.Value}}">
+    {{end}}<input type="hidden" name="confirm_off" value="1">
+    <button class="button danger" type="submit">{{t "connections.off.confirm"}}</button>
+  </form>
+  <p><a href="/connections/{{.Connection.ID}}">{{t "connections.off.cancel"}}</a></p>
+{{template "foot"}}

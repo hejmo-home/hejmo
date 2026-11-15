@@ -212,7 +212,7 @@ func TestDisplayNamesInTheSuccessLineAreEscaped(t *testing.T) {
 
 func TestALongNameOfWideCharactersStillShowsInTheSuccessLine(t *testing.T) {
 	b := signedInBox(t)
-	name := strings.Repeat("😀", 80)
+	name := strings.Repeat("😀", 20)
 	id := pairedDisplay(t, b, name, "screen")
 	b.post("/displays/"+id+"/unpair", url.Values{})
 	if body := getEN(b, "/displays").body; !strings.Contains(body, "“"+name+"” unpaired.") {

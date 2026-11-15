@@ -896,6 +896,92 @@ details.danger .confirm a { display: inline-flex; align-items: center; min-heigh
 }
 .once .facts { margin: 0; padding: 0; background: none; border: 0; max-width: none; }
 .facts + .hint { max-width: 560px; }
+
+/* Meal plan (ticket 6.3, ADR 0015): the week as one card per day, one row per
+   mealtime in the order of the day. A row is the mealtime (icon and word) and
+   the dish; a long dish wraps instead of being cut off. Two columns of days on
+   a tablet, one on a phone; inside a narrow card the word sits above the dish. */
+.weeknav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-cards); margin: 0 0 var(--gap); }
+.weeknav .wk { display: grid; gap: 0; min-width: 9em; text-align: center; flex: 1 1 auto; }
+.weeknav .wk strong { font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
+.weeknav .wk span { font-size: var(--fs-label); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.wbtn { display: inline-flex; align-items: center; gap: 4px; min-height: var(--touch-target); padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
+.wbtn .icon { stroke: currentColor; flex: none; }
+.wbtn.this { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+[data-theme="bw"] .wbtn { border-width: 2px; }
+.weeknav-row { display: flex; flex-wrap: wrap; gap: var(--gap-cards); align-items: center; justify-content: space-between; max-width: 1200px; }
+@media (max-width: 599px) {
+  .weeknav .wk { order: -1; flex-basis: 100%; text-align: left; }
+  .weeknav .wbtn { flex: 1 1 auto; justify-content: center; }
+}
+.recipe { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 var(--gap-section); max-width: 720px; }
+.recipe .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.steps.wide { max-width: none; grid-template-columns: minmax(0, 1fr); }
+.meal-week > * { min-width: 0; }
+.meal-week { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--gap); align-items: start; margin: 0 0 var(--gap-section); max-width: 1200px; }
+.steps .meal-week { margin: 0; }
+.meal-day { container-type: inline-size; background: var(--surface); border: 0; border-radius: var(--radius-tile); padding: 14px 16px 16px; display: grid; gap: 8px; min-width: 0; margin: 0; }
+.meal-day legend, .meal-day h2 { float: left; width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); margin: 0 0 4px; padding: 0; }
+.meal-day .date { color: var(--text-secondary); font-weight: 400; font-size: var(--fs-label-large); font-variant-numeric: tabular-nums; }
+.meal-day .today { align-self: center; font-size: var(--fs-meta); font-weight: 700; color: var(--accent-text); background: var(--accent); border-radius: var(--radius-chip); padding: 2px 10px; }
+.meal-day[data-today] { outline: 3px solid var(--accent); outline-offset: -3px; }
+.mrow { display: grid; grid-template-columns: 8.2em minmax(0, 1fr); gap: 4px 10px; align-items: center; }
+.mt { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-label-large); color: var(--text-secondary); min-width: 0; }
+.mt .icon { flex: none; }
+.mrow textarea { font: inherit; color: var(--text); width: 100%; min-height: var(--touch-target); padding: 10px 12px; line-height: 1.35; border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); resize: none; overflow: hidden; field-sizing: content; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.mrow textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.mrow .ferr { grid-column: 2; }
+.mrow.invalid textarea { border: 2px solid var(--error-text); }
+[data-theme="bw"] .mrow textarea { border-color: var(--text); }
+@container (max-width: 270px) {
+  .mrow { grid-template-columns: minmax(0, 1fr); }
+  .mrow .ferr { grid-column: 1; }
+}
+/* Read view (children, ADR 0015): the planned dishes, large; an unplanned
+   mealtime is left out, an empty day says so in words. */
+.meal-day dl { margin: 0; display: grid; gap: 10px; }
+.meal-day dl > div { display: grid; gap: 2px; }
+.meal-day dt { font-size: var(--fs-label); }
+.meal-day dd { margin: 0 0 0 26px; font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: anywhere; }
+.meal-day .none { margin: 0; color: var(--text-secondary); }
+/* Save bar: the one primary action stays in reach while the week scrolls. */
+.savebar { position: sticky; bottom: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 0; margin-top: -4px; background: var(--background); border-top: 1px solid var(--border); max-width: 1200px; }
+.savebar .dirty { font-size: var(--fs-label); font-weight: 700; color: var(--text); }
+.form-error { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 var(--gap); }
+.form-error .icon { flex: none; stroke: var(--error-text); margin-top: 2px; }
+.form-error a { color: var(--error-text); font-weight: 700; }
+[data-theme="bw"] .form-error { border: 2px solid var(--text); }
+
+/* Cut-off times (ADR 0016): one switch row per mealtime. Off = "Shown all
+   day"; on = the time it disappears, in a time capsule. */
+.cutoffs .cut { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--border); }
+.cutoffs .cut:first-of-type { border-top: 0; }
+.cutoffs .card-row .t b { display: inline-flex; align-items: center; gap: 6px; }
+.cutoffs .at { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-left: 26px; font-size: var(--fs-label-large); color: var(--text); }
+@supports selector(:has(a)) {
+  .cut:has(.switch input:not(:checked)) .at { display: none; }
+}
+
+/* Time capsule (shared, every time field): the time in a pill as on iOS. On
+   phones and tablets the system picker opens (input type="time"); on a computer
+   and on displays a picker panel opens below it: hours and minutes as tap
+   targets, no wheel, no scrolling (works with a mouse and on E-Ink). */
+.tcap { font: inherit; font-size: var(--fs-event-title); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--background); width: auto; }
+.tcap::-webkit-calendar-picker-indicator { display: none; }
+[data-theme="bw"] .tcap { border: 2px solid var(--text); background: var(--surface); }
+.tcap[aria-expanded="true"] { border: 2px solid var(--accent); }
+.tpick { display: grid; gap: 12px; width: min(100%, 340px); padding: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
+[data-theme="bw"] .tpick { border: 2px solid var(--text); }
+.tpick .now { font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); font-variant-numeric: tabular-nums; }
+.tpick fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.tpick .grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.tpick legend { font-size: var(--fs-label); color: var(--text-secondary); padding: 0; margin: 0 0 6px; }
+.tpick label { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: var(--touch-target); border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); font-variant-numeric: tabular-nums; cursor: pointer; }
+.tpick input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; min-height: 0; padding: 0; }
+.tpick label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+.tpick label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] .tpick label { border-color: var(--text); }
+.tpick .done { justify-self: end; }
 </template>
 <template id="js">// Shared form patterns (ticket 5.16). Everything works without this script:
 // the server reads "no person chosen" as the whole family. The script only
@@ -914,6 +1000,145 @@ document.addEventListener("change", function (e) {
     whole.checked = !others.some(function (o) { return o.checked; });
   }
 });
+// Meal plan: a dish field grows with its text where field-sizing is missing,
+// Enter saves instead of starting a new line, and the save bar says in words
+// when something is not saved yet. The server strips newlines anyway.
+(function () {
+  function grow(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }
+  var supports = window.CSS && CSS.supports && CSS.supports("field-sizing", "content");
+  document.querySelectorAll(".mrow textarea").forEach(function (t) {
+    if (!supports) grow(t);
+    t.addEventListener("input", function () {
+      if (!supports) grow(t);
+      var d = document.querySelector(".savebar .dirty"); if (d) d.hidden = false;
+    });
+    t.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); t.form.requestSubmit(); }
+    });
+  });
+})();
+
+// Time picker (shared by every time field). The time sits in a capsule
+// (input.tcap). On iPhone, iPad and Android the capsule stays the system time
+// field, so the system picker opens. On a computer and on displays, click or
+// Enter opens a panel below it: the time large, the hours as tap targets, the
+// minutes in 5-minute steps (with AM/PM in the 12-hour format). No wheel, no
+// scrolling, so it works with a mouse and on E-Ink. Typing into the capsule
+// still works, and without this script the plain time field works too.
+(function () {
+  var script = document.currentScript;
+  var texts = (script && script.dataset) || {};
+  var mobile = /Android|iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var fine = !!(window.matchMedia && matchMedia("(pointer: fine)").matches);
+  if (mobile && !fine) return;
+  var twelve = texts.timeFormat === "12h"; // data-time-format of this script tag
+  var count = 0;
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function parse(v) { var m = /^(\d\d):(\d\d)/.exec(v || ""); return m ? { h: +m[1], m: +m[2] } : null; }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  // A radio of the picker; "form" points at no form, so it is never submitted.
+  function choice(name, value, text, label) {
+    var l = el("label"), r = el("input");
+    r.type = "radio"; r.name = name; r.value = value; r.setAttribute("form", "tpick-none");
+    l.appendChild(r); l.appendChild(document.createTextNode(text));
+    label.appendChild(l);
+    return r;
+  }
+  function group(legend, extra) {
+    var f = el("fieldset", extra), l = el("legend", legend.cls, legend.text);
+    f.appendChild(l);
+    return f;
+  }
+
+  function open(input) {
+    if (input.getAttribute("aria-expanded") === "true") return;
+    var id = ++count;
+    var panel = el("div", "tpick");
+    panel.id = "tpick-" + id;
+    panel.setAttribute("role", "group");
+    var holder = input.closest("label");
+    panel.setAttribute("aria-label", (holder ? holder.textContent : input.getAttribute("aria-label") || "").trim());
+    var now = el("div", "now");
+    now.setAttribute("aria-live", "polite");
+    panel.appendChild(now);
+
+    var hoursSet = group({ text: texts.hour || "Hour" }), hours = el("div", "grid");
+    hoursSet.appendChild(hours);
+    var hourRadios = [];
+    for (var i = twelve ? 1 : 0; i < (twelve ? 13 : 24); i++) {
+      hourRadios.push(choice("tp_h" + id, String(i), twelve ? String(i) : pad(i), hours));
+    }
+    panel.appendChild(hoursSet);
+
+    var minutesSet = group({ text: texts.minute || "Minute" }), minutes = el("div", "grid");
+    minutesSet.appendChild(minutes);
+    var minuteRadios = [];
+    for (var m = 0; m < 60; m += 5) minuteRadios.push(choice("tp_m" + id, String(m), pad(m), minutes));
+    panel.appendChild(minutesSet);
+
+    var am, pm;
+    if (twelve) {
+      var seg = group({ text: "AM / PM", cls: "sr" }, "seg");
+      am = choice("tp_p" + id, "am", "AM", seg);
+      pm = choice("tp_p" + id, "pm", "PM", seg);
+      panel.appendChild(seg);
+    }
+    var done = el("button", "button secondary done", texts.done || "Done");
+    done.type = "button";
+    panel.appendChild(done);
+
+    function show() {
+      var t = parse(input.value);
+      hourRadios.forEach(function (r) { r.checked = !!t && (twelve ? (t.h % 12 || 12) : t.h) === +r.value; });
+      minuteRadios.forEach(function (r) { r.checked = !!t && t.m === +r.value; });
+      if (twelve) { am.checked = !!t && t.h < 12; pm.checked = !!t && t.h >= 12; }
+      now.textContent = t ? (twelve ? (t.h % 12 || 12) + ":" + pad(t.m) + " " + (t.h < 12 ? "AM" : "PM") : pad(t.h) + ":" + pad(t.m)) : "--:--";
+    }
+    function write() {
+      var t = parse(input.value) || { h: 0, m: 0 };
+      var h = +(hourRadios.filter(function (r) { return r.checked; })[0] || { value: twelve ? t.h % 12 || 12 : t.h }).value;
+      var min = +(minuteRadios.filter(function (r) { return r.checked; })[0] || { value: t.m }).value;
+      if (twelve) h = (h % 12) + ((pm.checked || (!am.checked && t.h >= 12)) ? 12 : 0);
+      input.value = pad(h) + ":" + pad(min);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      show();
+    }
+    function close() {
+      input.removeEventListener("input", show);
+      input.removeEventListener("keydown", onKey);
+      panel.remove();
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-controls");
+      input.focus();
+    }
+    function onKey(e) { if (e.key === "Escape") { e.preventDefault(); close(); } }
+    panel.addEventListener("change", function (e) { if (e.target.type === "radio") write(); });
+    panel.addEventListener("keydown", onKey);
+    done.addEventListener("click", close);
+    input.addEventListener("input", show);
+    input.addEventListener("keydown", onKey);
+
+    (holder || input).insertAdjacentElement("afterend", panel);
+    input.setAttribute("aria-expanded", "true");
+    input.setAttribute("aria-controls", panel.id);
+    show();
+  }
+
+  document.querySelectorAll("input.tcap[type=time]").forEach(function (input) {
+    input.setAttribute("aria-expanded", "false");
+    input.addEventListener("click", function () { open(input); });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); open(input); }
+    });
+  });
+})();
 
 // People form (ticket 76): a colour and marker pair another person already
 // has is disabled, so it cannot be chosen. Picking a colour updates which
@@ -980,6 +1205,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -995,9 +1221,9 @@ document.addEventListener("change", function (e) {
     <h2 id="paired">Gekoppelte Displays</h2>
     
     <ul class="list-rows">
-      <li><a href="/displays/49b036d8-b7a3-4478-a50a-23c4decbd0e0"><span class="t"><b>Küche</b><span class="meta">E-Ink farbig</span><span class="meta">Zuletzt gesehen 15/11/2026, 07:42:13</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/displays/69295272-de30-43cd-9017-5e008c6b888f"><span class="t"><b>Kinderzimmer Sebastian und Jonas (oben, neben dem Hochbett)</b><span class="meta">E-Ink schwarz-weiß</span><span class="flag warn"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>Seit 14/11/2026, 21:05:44 nicht gesehen. Prüfe Strom und WLAN.</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/displays/17647f6b-07db-4a49-b0d2-5ce15cbf5e48"><span class="t"><b>Flur</b><span class="meta">Normaler Bildschirm</span><span class="meta">Zuletzt gesehen 15/11/2026, 07:41:58</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/displays/f3c99f9f-e42e-4661-803a-5da906855e7e"><span class="t"><b>Küche</b><span class="meta">E-Ink farbig</span><span class="meta">Zuletzt gesehen 15/11/2026, 07:42:13</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/displays/b3b10fb0-91f5-457d-a337-dd57c4bdfe96"><span class="t"><b>Kinderzimmer Sebastian und Jonas (oben, neben dem Hochbett)</b><span class="meta">E-Ink schwarz-weiß</span><span class="flag warn"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>Seit 14/11/2026, 21:05:44 nicht gesehen. Prüfe Strom und WLAN.</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/displays/2fd16ac2-c064-48c9-961b-4b7f9302b060"><span class="t"><b>Flur</b><span class="meta">Normaler Bildschirm</span><span class="meta">Zuletzt gesehen 15/11/2026, 07:41:58</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
       
     </ul>
     
@@ -1041,6 +1267,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -1098,6 +1325,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -1114,7 +1342,7 @@ document.addEventListener("change", function (e) {
   <dd>02/11/2026</dd>
 </dl>
 
-  <form method="post" action="/displays/49b036d8-b7a3-4478-a50a-23c4decbd0e0/settings" class="steps">
+  <form method="post" action="/displays/f3c99f9f-e42e-4661-803a-5da906855e7e/settings" class="steps">
     <fieldset>
       <legend>Wo und was</legend>
       <div class="f">
@@ -1149,12 +1377,12 @@ document.addEventListener("change", function (e) {
       <div class="pair when-on">
         <div class="f">
   <label>Von
-    <input name="quiet_from" type="time" value="22:00"></label>
+    <input name="quiet_from" type="time" class="tcap" value="22:00"></label>
   
 </div>
         <div class="f">
   <label>Bis
-    <input name="quiet_to" type="time" value="06:00"></label>
+    <input name="quiet_to" type="time" class="tcap" value="06:00"></label>
   
 </div>
       </div>
@@ -1194,8 +1422,8 @@ document.addEventListener("change", function (e) {
   <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Display entkoppeln</summary>
   <p>„Küche“ zeigt danach einen neuen Kopplungscode und bleibt leer, bis du es wieder koppelst. Seine Einstellungen gehen verloren.</p>
   <div class="confirm">
-    <form method="post" action="/displays/49b036d8-b7a3-4478-a50a-23c4decbd0e0/unpair"><button class="button danger" type="submit">Ja, „Küche“ entkoppeln</button></form>
-    <a href="/displays/49b036d8-b7a3-4478-a50a-23c4decbd0e0">Nein, nichts ändern</a>
+    <form method="post" action="/displays/f3c99f9f-e42e-4661-803a-5da906855e7e/unpair"><button class="button danger" type="submit">Ja, „Küche“ entkoppeln</button></form>
+    <a href="/displays/f3c99f9f-e42e-4661-803a-5da906855e7e">Nein, nichts ändern</a>
   </div></details>
 
 </main>
@@ -1213,6 +1441,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -1229,7 +1458,7 @@ document.addEventListener("change", function (e) {
   <dd>02/11/2026</dd>
 </dl>
 
-  <form method="post" action="/displays/69295272-de30-43cd-9017-5e008c6b888f/settings" class="steps">
+  <form method="post" action="/displays/b3b10fb0-91f5-457d-a337-dd57c4bdfe96/settings" class="steps">
     <fieldset>
       <legend>Wo und was</legend>
       <div class="f">
@@ -1261,12 +1490,12 @@ document.addEventListener("change", function (e) {
       <div class="pair when-on">
         <div class="f">
   <label>Von
-    <input name="quiet_from" type="time" value="22:00"></label>
+    <input name="quiet_from" type="time" class="tcap" value="22:00"></label>
   
 </div>
         <div class="f">
   <label>Bis
-    <input name="quiet_to" type="time" value="06:00"></label>
+    <input name="quiet_to" type="time" class="tcap" value="06:00"></label>
   
 </div>
       </div>
@@ -1306,8 +1535,8 @@ document.addEventListener("change", function (e) {
   <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Display entkoppeln</summary>
   <p>„Kinderzimmer Sebastian und Jonas (oben, neben dem Hochbett)“ zeigt danach einen neuen Kopplungscode und bleibt leer, bis du es wieder koppelst. Seine Einstellungen gehen verloren.</p>
   <div class="confirm">
-    <form method="post" action="/displays/69295272-de30-43cd-9017-5e008c6b888f/unpair"><button class="button danger" type="submit">Ja, „Kinderzimmer Sebastian und Jonas (oben, neben dem Hochbett)“ entkoppeln</button></form>
-    <a href="/displays/69295272-de30-43cd-9017-5e008c6b888f">Nein, nichts ändern</a>
+    <form method="post" action="/displays/b3b10fb0-91f5-457d-a337-dd57c4bdfe96/unpair"><button class="button danger" type="submit">Ja, „Kinderzimmer Sebastian und Jonas (oben, neben dem Hochbett)“ entkoppeln</button></form>
+    <a href="/displays/b3b10fb0-91f5-457d-a337-dd57c4bdfe96">Nein, nichts ändern</a>
   </div></details>
 
 </main>
@@ -1325,6 +1554,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -1341,7 +1571,7 @@ document.addEventListener("change", function (e) {
   <dd>02/11/2026</dd>
 </dl>
 
-  <form method="post" action="/displays/49b036d8-b7a3-4478-a50a-23c4decbd0e0/settings" class="steps">
+  <form method="post" action="/displays/f3c99f9f-e42e-4661-803a-5da906855e7e/settings" class="steps">
     <fieldset>
       <legend>Wo und was</legend>
       <div class="f">
@@ -1376,12 +1606,12 @@ document.addEventListener("change", function (e) {
       <div class="pair when-on">
         <div class="f">
   <label>Von
-    <input name="quiet_from" type="time" value="21:00"></label>
+    <input name="quiet_from" type="time" class="tcap" value="21:00"></label>
   
 </div>
         <div class="f invalid">
   <label>Bis
-    <input name="quiet_to" type="time" value="21:00" aria-invalid="true" aria-describedby="err-quiet_to"></label>
+    <input name="quiet_to" type="time" class="tcap" value="21:00" aria-invalid="true" aria-describedby="err-quiet_to"></label>
   <p class="ferr" id="err-quiet_to" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>Bitte zwei verschiedene Uhrzeiten als hh:mm eingeben.</p>
 </div>
       </div>
@@ -1421,8 +1651,8 @@ document.addEventListener("change", function (e) {
   <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Display entkoppeln</summary>
   <p>„Küche“ zeigt danach einen neuen Kopplungscode und bleibt leer, bis du es wieder koppelst. Seine Einstellungen gehen verloren.</p>
   <div class="confirm">
-    <form method="post" action="/displays/49b036d8-b7a3-4478-a50a-23c4decbd0e0/unpair"><button class="button danger" type="submit">Ja, „Küche“ entkoppeln</button></form>
-    <a href="/displays/49b036d8-b7a3-4478-a50a-23c4decbd0e0">Nein, nichts ändern</a>
+    <form method="post" action="/displays/f3c99f9f-e42e-4661-803a-5da906855e7e/unpair"><button class="button danger" type="submit">Ja, „Küche“ entkoppeln</button></form>
+    <a href="/displays/f3c99f9f-e42e-4661-803a-5da906855e7e">Nein, nichts ändern</a>
   </div></details>
 
 </main>
@@ -1440,6 +1670,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -1456,7 +1687,7 @@ document.addEventListener("change", function (e) {
   <dd>02/11/2026</dd>
 </dl>
 
-  <form method="post" action="/displays/49b036d8-b7a3-4478-a50a-23c4decbd0e0/settings" class="steps">
+  <form method="post" action="/displays/f3c99f9f-e42e-4661-803a-5da906855e7e/settings" class="steps">
     <fieldset>
       <legend>Wo und was</legend>
       <div class="f">
@@ -1491,12 +1722,12 @@ document.addEventListener("change", function (e) {
       <div class="pair when-on">
         <div class="f">
   <label>Von
-    <input name="quiet_from" type="time" value="22:00"></label>
+    <input name="quiet_from" type="time" class="tcap" value="22:00"></label>
   
 </div>
         <div class="f">
   <label>Bis
-    <input name="quiet_to" type="time" value="06:00"></label>
+    <input name="quiet_to" type="time" class="tcap" value="06:00"></label>
   
 </div>
       </div>
@@ -1536,8 +1767,8 @@ document.addEventListener("change", function (e) {
   <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Display entkoppeln</summary>
   <p>„Küche“ zeigt danach einen neuen Kopplungscode und bleibt leer, bis du es wieder koppelst. Seine Einstellungen gehen verloren.</p>
   <div class="confirm">
-    <form method="post" action="/displays/49b036d8-b7a3-4478-a50a-23c4decbd0e0/unpair"><button class="button danger" type="submit">Ja, „Küche“ entkoppeln</button></form>
-    <a href="/displays/49b036d8-b7a3-4478-a50a-23c4decbd0e0">Nein, nichts ändern</a>
+    <form method="post" action="/displays/f3c99f9f-e42e-4661-803a-5da906855e7e/unpair"><button class="button danger" type="submit">Ja, „Küche“ entkoppeln</button></form>
+    <a href="/displays/f3c99f9f-e42e-4661-803a-5da906855e7e">Nein, nichts ändern</a>
   </div></details>
 
 </main>
@@ -1555,6 +1786,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -1566,7 +1798,7 @@ document.addEventListener("change", function (e) {
   <p class="lead">Handys und Kalender-Apps (iOS Kalender, DAVx5 und andere) können die Kalender der Box abonnieren und Termine zurückspeichern. Lege dort ein Kalenderkonto vom Typ CalDAV an, mit der Adresse und dem Benutzernamen unten. Als Passwort dient ein Gerätetoken, das du hier erstellst: eines pro Gerät, einzeln widerrufbar.</p>
   <dl class="facts">
   <dt>Serveradresse</dt>
-  <dd>https://127.0.0.1/dav/</dd>
+  <dd>https://hejmo.familie-maier.de/dav/</dd>
   <dt>Benutzername</dt>
   <dd>mama</dd>
 </dl>
@@ -1594,9 +1826,9 @@ document.addEventListener("change", function (e) {
     <p class="hint">Tippe auf ein Gerät, um zu sehen, wann es zuletzt da war, oder um ihm den Zugang zu entziehen.</p>
     
     <ul class="list-rows">
-      <li><a href="/caldav/tokens/741fe6e8-7479-456d-9224-b71b80b219d5"><span class="t"><b>iPhone Mama</b><span class="meta">Für <span class="who"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama</span></span><span class="meta">Zuletzt benutzt 15/11/2026, 07:12:40</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/caldav/tokens/80fff94c-cad9-41ac-ba76-40a738c34c36"><span class="t"><b>iPad Pro im Arbeitszimmer von Papa (Kalender-App)</b><span class="meta">Für <span class="who"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa</span></span><span class="meta">Zuletzt benutzt 14/11/2026, 22:31:05</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/caldav/tokens/0cf8cb51-fd1a-4c4a-9ddb-496bf1a67a04"><span class="t"><b>DAVx5 auf dem Pixel</b><span class="meta">Für <span class="who"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa</span></span><span class="flag warn"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>Noch nie benutzt. Ist das Token in der App eingetragen?</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/caldav/tokens/49aae829-3584-461f-816d-8e2eacee73f5"><span class="t"><b>iPhone Mama</b><span class="meta">Für <span class="who"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama</span></span><span class="meta">Zuletzt benutzt 15/11/2026, 07:12:40</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/caldav/tokens/aa3a6169-ffb1-4e2f-9e1e-2ac53092bdf0"><span class="t"><b>iPad Pro im Arbeitszimmer von Papa (Kalender-App)</b><span class="meta">Für <span class="who"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa</span></span><span class="meta">Zuletzt benutzt 14/11/2026, 22:31:05</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/caldav/tokens/80f250b4-d974-4a8a-99d3-f88ed65a5224"><span class="t"><b>DAVx5 auf dem Pixel</b><span class="meta">Für <span class="who"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa</span></span><span class="flag warn"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>Noch nie benutzt. Ist das Token in der App eingetragen?</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
       
     </ul>
     
@@ -1644,6 +1876,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -1667,8 +1900,8 @@ document.addEventListener("change", function (e) {
   <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Zugang entziehen</summary>
   <p>„iPad Pro im Arbeitszimmer von Papa (Kalender-App)“ kann sofort keine Kalender mehr lesen und keine Termine mehr speichern. Die Kalender-App meldet dann ein falsches Passwort. Zum Wiederverbinden erstellst du ein neues Token.</p>
   <div class="confirm">
-    <form method="post" action="/caldav/tokens/80fff94c-cad9-41ac-ba76-40a738c34c36/revoke"><button class="button danger" type="submit">Ja, Zugang entziehen</button></form>
-    <a href="/caldav/tokens/80fff94c-cad9-41ac-ba76-40a738c34c36">Nein, nichts ändern</a>
+    <form method="post" action="/caldav/tokens/aa3a6169-ffb1-4e2f-9e1e-2ac53092bdf0/revoke"><button class="button danger" type="submit">Ja, Zugang entziehen</button></form>
+    <a href="/caldav/tokens/aa3a6169-ffb1-4e2f-9e1e-2ac53092bdf0">Nein, nichts ändern</a>
   </div></details>
 
 </main>
@@ -1686,6 +1919,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -1709,8 +1943,8 @@ document.addEventListener("change", function (e) {
   <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Zugang entziehen</summary>
   <p>„DAVx5 auf dem Pixel“ kann sofort keine Kalender mehr lesen und keine Termine mehr speichern. Die Kalender-App meldet dann ein falsches Passwort. Zum Wiederverbinden erstellst du ein neues Token.</p>
   <div class="confirm">
-    <form method="post" action="/caldav/tokens/0cf8cb51-fd1a-4c4a-9ddb-496bf1a67a04/revoke"><button class="button danger" type="submit">Ja, Zugang entziehen</button></form>
-    <a href="/caldav/tokens/0cf8cb51-fd1a-4c4a-9ddb-496bf1a67a04">Nein, nichts ändern</a>
+    <form method="post" action="/caldav/tokens/80f250b4-d974-4a8a-99d3-f88ed65a5224/revoke"><button class="button danger" type="submit">Ja, Zugang entziehen</button></form>
+    <a href="/caldav/tokens/80f250b4-d974-4a8a-99d3-f88ed65a5224">Nein, nichts ändern</a>
   </div></details>
 
 </main>
@@ -1728,6 +1962,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -1744,14 +1979,14 @@ document.addEventListener("change", function (e) {
     </div>
     <dl class="facts">
   <dt>Serveradresse</dt>
-  <dd>https://127.0.0.1/dav/</dd>
+  <dd>https://hejmo.familie-maier.de/dav/</dd>
   <dt>Benutzername</dt>
   <dd>mama</dd>
   <dt>Passwort</dt>
   <dd>das Token oben</dd>
 </dl>
   </section>
-  <a class="button" href="/caldav/tokens/10c88050-b6f9-437d-8264-9159e250a21b">Fertig, das Token ist eingetragen</a>
+  <a class="button" href="/caldav/tokens/f083391d-a5d3-4400-8e05-58c4b5328706">Fertig, das Token ist eingetragen</a>
   
 
 </main>
@@ -1769,6 +2004,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -1780,7 +2016,7 @@ document.addEventListener("change", function (e) {
   <p class="lead">Handys und Kalender-Apps (iOS Kalender, DAVx5 und andere) können die Kalender der Box abonnieren und Termine zurückspeichern. Lege dort ein Kalenderkonto vom Typ CalDAV an, mit der Adresse und dem Benutzernamen unten. Als Passwort dient ein Gerätetoken, das du hier erstellst: eines pro Gerät, einzeln widerrufbar.</p>
   <dl class="facts">
   <dt>Serveradresse</dt>
-  <dd>https://127.0.0.1/dav/</dd>
+  <dd>https://hejmo.familie-maier.de/dav/</dd>
   <dt>Benutzername</dt>
   <dd>mama</dd>
 </dl>
@@ -1854,6 +2090,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -1870,8 +2107,8 @@ document.addEventListener("change", function (e) {
     <h2 id="connections">iCloud und CalDAV</h2>
     
     <ul class="list-rows">
-      <li><a href="/connections/6f9530cb-558a-4e83-b891-c7442ff1bc9b"><span class="t"><b>mama.maier-schmidt@icloud.com</b><span class="meta">iCloud</span><span class="meta">Auf der Box: Familie, Schule Mia, Fußball Sebastian</span><span class="meta">Zuletzt abgeglichen 15/11/2026, 07:40:12</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/connections/0a3f7918-025a-426a-9f75-571d59494796"><span class="t"><b>papa@nextcloud.familie-maier.de</b><span class="meta">Nextcloud/CalDAV: cloud.familie-maier.de</span><span class="meta">Auf der Box: Arbeit Papa</span><span class="flag problem"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>Anmeldung abgelehnt am 14/11/2026, 22:10:05. Tippe hier, um ein neues Passwort einzutragen.</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/connections/00282dda-501b-4bc0-ae90-1b3dc37cb911"><span class="t"><b>mama.maier-schmidt@icloud.com</b><span class="meta">iCloud</span><span class="meta">Auf der Box: Familie, Schule Mia, Fußball Sebastian</span><span class="meta">Zuletzt abgeglichen 15/11/2026, 07:40:12</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/connections/0dcd2c58-2866-4a75-b8c0-3b91d1e242f1"><span class="t"><b>papa@nextcloud.familie-maier.de</b><span class="meta">Nextcloud/CalDAV: cloud.familie-maier.de</span><span class="meta">Auf der Box: Arbeit Papa</span><span class="flag problem"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>Anmeldung abgelehnt am 14/11/2026, 22:10:05. Tippe hier, um ein neues Passwort einzutragen.</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
       
     </ul>
     
@@ -1913,9 +2150,9 @@ document.addEventListener("change", function (e) {
     <h2 id="synced">Abonnierte Kalender</h2>
     
     <ul class="list-rows">
-      <li><a href="/calendars/d28cd685-861f-46eb-8c4f-e294064ff241"><span class="t"><b>Schulferien Bayern</b><span class="meta">Für <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg> Ganze Familie</span><span class="meta">Zuletzt abgeglichen 15/11/2026, 06:00:03</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/calendars/fc20f5ca-3cb7-4364-b5e2-fb5b482e602c"><span class="t"><b>Abfallkalender München-Pasing (Restmüll, Papier, Bio)</b><span class="meta">Für <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg> Ganze Familie</span><span class="meta">Zuletzt abgeglichen 15/11/2026, 06:00:05</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/calendars/ec8a2816-e7bb-40ea-b182-7c87254d0416"><span class="t"><b>Fußballverein FC Pasing U11: Training und Spiele</b><span class="meta">Für <span class="who"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian</span> <span class="who"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas</span></span><span class="meta">Zuletzt abgeglichen 13/11/2026, 06:00:00</span><span class="flag problem"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>Seit mehr als 24 Stunden nicht abgeglichen. Letztes Problem: Der Kalender konnte nicht abgerufen werden: der Server antwortet nicht</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/calendars/785bf67e-e9a1-48ae-9bd5-ada42de74d1f"><span class="t"><b>Schulferien Bayern</b><span class="meta">Für <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg> Ganze Familie</span><span class="meta">Zuletzt abgeglichen 15/11/2026, 06:00:03</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/calendars/23132be2-7ac1-45bb-9f16-fbbc14abb5b4"><span class="t"><b>Abfallkalender München-Pasing (Restmüll, Papier, Bio)</b><span class="meta">Für <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg> Ganze Familie</span><span class="meta">Zuletzt abgeglichen 15/11/2026, 06:00:05</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/calendars/1d6f627b-12d9-444d-81a4-d870b19d8ae0"><span class="t"><b>Fußballverein FC Pasing U11: Training und Spiele</b><span class="meta">Für <span class="who"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian</span> <span class="who"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas</span></span><span class="meta">Zuletzt abgeglichen 13/11/2026, 06:00:00</span><span class="flag problem"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>Seit mehr als 24 Stunden nicht abgeglichen. Letztes Problem: Der Kalender konnte nicht abgerufen werden: der Server antwortet nicht</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
       
     </ul>
     
@@ -1940,14 +2177,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people" value="7d52674a-441f-4240-b843-04215b7ea33d"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people" value="78f142f8-62d4-4f47-8913-28fcb28b6119"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people" value="393929eb-b89b-4a6d-8112-80a511d1cfee"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1997,6 +2234,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -2018,7 +2256,7 @@ document.addEventListener("change", function (e) {
   <dd>02/11/2026</dd>
 </dl>
   
-  <form method="post" action="/connections/6f9530cb-558a-4e83-b891-c7442ff1bc9b/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/6f9530cb-558a-4e83-b891-c7442ff1bc9b/event-counts" data-count-loading="Termine werden gezählt …" data-count-unknown="Anzahl der Termine unbekannt">
+  <form method="post" action="/connections/00282dda-501b-4bc0-ae90-1b3dc37cb911/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/00282dda-501b-4bc0-ae90-1b3dc37cb911/event-counts" data-count-loading="Termine werden gezählt …" data-count-unknown="Anzahl der Termine unbekannt">
     <h2>Kalender auswählen</h2>
     <p class="lead">Schalte die Kalender ein, die auf der Box erscheinen sollen. Name, für wen er ist und Farbe kannst du jederzeit ändern.</p>
     
@@ -2041,14 +2279,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="7d52674a-441f-4240-b843-04215b7ea33d"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="78f142f8-62d4-4f47-8913-28fcb28b6119"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="393929eb-b89b-4a6d-8112-80a511d1cfee"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2083,14 +2321,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="7d52674a-441f-4240-b843-04215b7ea33d"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="78f142f8-62d4-4f47-8913-28fcb28b6119" checked><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="393929eb-b89b-4a6d-8112-80a511d1cfee"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2" checked><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2125,14 +2363,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="7d52674a-441f-4240-b843-04215b7ea33d"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3" checked><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="78f142f8-62d4-4f47-8913-28fcb28b6119"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="393929eb-b89b-4a6d-8112-80a511d1cfee" checked><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2166,14 +2404,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="7d52674a-441f-4240-b843-04215b7ea33d"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="78f142f8-62d4-4f47-8913-28fcb28b6119"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="393929eb-b89b-4a6d-8112-80a511d1cfee"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2207,14 +2445,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="7d52674a-441f-4240-b843-04215b7ea33d"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="78f142f8-62d4-4f47-8913-28fcb28b6119"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="393929eb-b89b-4a6d-8112-80a511d1cfee"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2245,7 +2483,7 @@ document.addEventListener("change", function (e) {
   <section id="login" class="steps"><details class="more">
   <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>Anmeldedaten<span class="sum">Passwort ändern</span></summary>
   <div>
-    <form method="post" action="/connections/6f9530cb-558a-4e83-b891-c7442ff1bc9b/credentials" class="steps" autocomplete="off">
+    <form method="post" action="/connections/00282dda-501b-4bc0-ae90-1b3dc37cb911/credentials" class="steps" autocomplete="off">
       <div class="f">
   <label>Neues Passwort (bei iCloud ein app-spezifisches Passwort)
     <input name="password" type="password" required autocomplete="new-password"></label>
@@ -2261,8 +2499,8 @@ document.addEventListener("change", function (e) {
   <p>Die Verbindung und diese Kalender verschwinden von der Box und von den Displays. Bei iCloud wird nichts gelöscht.</p>
   <ul><li><strong>Familie</strong></li><li><strong>Schule Mia</strong></li><li><strong>Fußball Sebastian</strong></li></ul>
   <div class="confirm">
-    <form method="post" action="/connections/6f9530cb-558a-4e83-b891-c7442ff1bc9b/delete"><button class="button danger" type="submit">Ja, Verbindung trennen</button></form>
-    <a href="/connections/6f9530cb-558a-4e83-b891-c7442ff1bc9b">Nein, nichts ändern</a>
+    <form method="post" action="/connections/00282dda-501b-4bc0-ae90-1b3dc37cb911/delete"><button class="button danger" type="submit">Ja, Verbindung trennen</button></form>
+    <a href="/connections/00282dda-501b-4bc0-ae90-1b3dc37cb911">Nein, nichts ändern</a>
   </div></details>
   
 
@@ -2281,6 +2519,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -2302,7 +2541,7 @@ document.addEventListener("change", function (e) {
   <dd>02/11/2026</dd>
 </dl>
   
-  <form method="post" action="/connections/0a3f7918-025a-426a-9f75-571d59494796/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/0a3f7918-025a-426a-9f75-571d59494796/event-counts" data-count-loading="Termine werden gezählt …" data-count-unknown="Anzahl der Termine unbekannt">
+  <form method="post" action="/connections/0dcd2c58-2866-4a75-b8c0-3b91d1e242f1/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/0dcd2c58-2866-4a75-b8c0-3b91d1e242f1/event-counts" data-count-loading="Termine werden gezählt …" data-count-unknown="Anzahl der Termine unbekannt">
     <h2>Kalender auswählen</h2>
     <p class="lead">Schalte die Kalender ein, die auf der Box erscheinen sollen. Name, für wen er ist und Farbe kannst du jederzeit ändern.</p>
     
@@ -2325,14 +2564,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="7d52674a-441f-4240-b843-04215b7ea33d" checked><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="78f142f8-62d4-4f47-8913-28fcb28b6119"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4" checked><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="393929eb-b89b-4a6d-8112-80a511d1cfee"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://cloud.familie-maier.de/remote.php/dav/calendars/papa/work/" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2363,7 +2602,7 @@ document.addEventListener("change", function (e) {
   <section id="login" class="steps"><details class="more" open>
   <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>Anmeldedaten<span class="sum">Passwort ändern</span></summary>
   <div>
-    <form method="post" action="/connections/0a3f7918-025a-426a-9f75-571d59494796/credentials" class="steps" autocomplete="off">
+    <form method="post" action="/connections/0dcd2c58-2866-4a75-b8c0-3b91d1e242f1/credentials" class="steps" autocomplete="off">
       <div class="f invalid">
   <label>Neues Passwort (bei iCloud ein app-spezifisches Passwort)
     <input name="password" type="password" required autocomplete="new-password" aria-invalid="true" aria-describedby="err-password"></label>
@@ -2379,8 +2618,8 @@ document.addEventListener("change", function (e) {
   <p>Die Verbindung und diese Kalender verschwinden von der Box und von den Displays. Auf dem Server wird nichts gelöscht.</p>
   <ul><li><strong>Arbeit Papa</strong></li></ul>
   <div class="confirm">
-    <form method="post" action="/connections/0a3f7918-025a-426a-9f75-571d59494796/delete"><button class="button danger" type="submit">Ja, Verbindung trennen</button></form>
-    <a href="/connections/0a3f7918-025a-426a-9f75-571d59494796">Nein, nichts ändern</a>
+    <form method="post" action="/connections/0dcd2c58-2866-4a75-b8c0-3b91d1e242f1/delete"><button class="button danger" type="submit">Ja, Verbindung trennen</button></form>
+    <a href="/connections/0dcd2c58-2866-4a75-b8c0-3b91d1e242f1">Nein, nichts ändern</a>
   </div></details>
   
 
@@ -2399,6 +2638,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -2420,7 +2660,7 @@ document.addEventListener("change", function (e) {
   <dd>02/11/2026</dd>
 </dl>
   
-  <form method="post" action="/connections/6f9530cb-558a-4e83-b891-c7442ff1bc9b/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/6f9530cb-558a-4e83-b891-c7442ff1bc9b/event-counts" data-count-loading="Termine werden gezählt …" data-count-unknown="Anzahl der Termine unbekannt">
+  <form method="post" action="/connections/00282dda-501b-4bc0-ae90-1b3dc37cb911/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/00282dda-501b-4bc0-ae90-1b3dc37cb911/event-counts" data-count-loading="Termine werden gezählt …" data-count-unknown="Anzahl der Termine unbekannt">
     <h2>Kalender auswählen</h2>
     <p class="lead">Schalte die Kalender ein, die auf der Box erscheinen sollen. Name, für wen er ist und Farbe kannst du jederzeit ändern.</p>
     
@@ -2443,14 +2683,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="7d52674a-441f-4240-b843-04215b7ea33d"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="78f142f8-62d4-4f47-8913-28fcb28b6119"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="393929eb-b89b-4a6d-8112-80a511d1cfee"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/family/" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2485,14 +2725,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="7d52674a-441f-4240-b843-04215b7ea33d"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="78f142f8-62d4-4f47-8913-28fcb28b6119" checked><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="393929eb-b89b-4a6d-8112-80a511d1cfee"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2" checked><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/school/" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2527,14 +2767,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="7d52674a-441f-4240-b843-04215b7ea33d"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3" checked><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="78f142f8-62d4-4f47-8913-28fcb28b6119"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="393929eb-b89b-4a6d-8112-80a511d1cfee" checked><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/football/" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2568,14 +2808,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="7d52674a-441f-4240-b843-04215b7ea33d"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="78f142f8-62d4-4f47-8913-28fcb28b6119"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="393929eb-b89b-4a6d-8112-80a511d1cfee"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/birthdays/" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2609,14 +2849,14 @@ document.addEventListener("change", function (e) {
   <legend>Für wen ist er?</legend>
   <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole checked>
     <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>Ganze Familie<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="1a75ab0a-40fa-4ec7-a341-d7be57f17699"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="7d52674a-441f-4240-b843-04215b7ea33d"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="03fe0d77-2a93-453f-aca6-1c7cac0138c3"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="78f142f8-62d4-4f47-8913-28fcb28b6119"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="6e7f5e5d-ac13-44da-9440-ffbf629b9b82"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="182366d5-4cf0-41ee-9f21-4c951e718159"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="8d64dbe4-9a8b-4da7-b3b2-89f2092fc84c"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="f2a07782-6607-4132-b04e-a5d5c055d6da"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="25f3f67b-d60d-4be0-8c75-1e9677246856"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="c1d0f7c8-c6ae-487b-8768-5482d9c904c4"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="393929eb-b89b-4a6d-8112-80a511d1cfee"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="c15370ca-8e56-4035-af74-3e53e0f6d8b2"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="5"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="4d18b6eb-c257-4f45-acd3-65bd60818d71"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="6"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="d7708da9-6d6e-427a-b161-8b8d0b9f140e"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="7"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="f2974e98-d15f-429d-9209-77842b7d7d96"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="8"><input type="checkbox" name="people_https://p12-caldav.icloud.com/1234/calendars/reminders/" value="e48a4482-d46d-4d7b-98f8-6107b98fc03d"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2647,7 +2887,7 @@ document.addEventListener("change", function (e) {
   <section id="login" class="steps"><details class="more">
   <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>Anmeldedaten<span class="sum">Passwort ändern</span></summary>
   <div>
-    <form method="post" action="/connections/6f9530cb-558a-4e83-b891-c7442ff1bc9b/credentials" class="steps" autocomplete="off">
+    <form method="post" action="/connections/00282dda-501b-4bc0-ae90-1b3dc37cb911/credentials" class="steps" autocomplete="off">
       <div class="f">
   <label>Neues Passwort (bei iCloud ein app-spezifisches Passwort)
     <input name="password" type="password" required autocomplete="new-password"></label>
@@ -2663,8 +2903,8 @@ document.addEventListener("change", function (e) {
   <p>Die Verbindung und diese Kalender verschwinden von der Box und von den Displays. Bei iCloud wird nichts gelöscht.</p>
   <ul><li><strong>Familie</strong></li><li><strong>Schule Mia</strong></li><li><strong>Fußball Sebastian</strong></li></ul>
   <div class="confirm">
-    <form method="post" action="/connections/6f9530cb-558a-4e83-b891-c7442ff1bc9b/delete"><button class="button danger" type="submit">Ja, Verbindung trennen</button></form>
-    <a href="/connections/6f9530cb-558a-4e83-b891-c7442ff1bc9b">Nein, nichts ändern</a>
+    <form method="post" action="/connections/00282dda-501b-4bc0-ae90-1b3dc37cb911/delete"><button class="button danger" type="submit">Ja, Verbindung trennen</button></form>
+    <a href="/connections/00282dda-501b-4bc0-ae90-1b3dc37cb911">Nein, nichts ändern</a>
   </div></details>
   
 
@@ -2683,6 +2923,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -2703,15 +2944,15 @@ document.addEventListener("change", function (e) {
   <dt>Letzter Abgleich</dt>
   <dd>neu 2, geändert 1, entfernt 0</dd>
 </dl>
-  <form method="post" action="/calendars/ec8a2816-e7bb-40ea-b182-7c87254d0416/sync" class="steps">
+  <form method="post" action="/calendars/1d6f627b-12d9-444d-81a4-d870b19d8ae0/sync" class="steps">
     <button class="button" type="submit">Jetzt abgleichen</button>
   </form>
   <details class="danger">
   <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Kalender entfernen</summary>
   <p>„Fußballverein FC Pasing U11: Training und Spiele“ und seine Termine verschwinden von der Box und von den Displays. Der ursprüngliche Kalender bleibt unverändert.</p>
   <div class="confirm">
-    <form method="post" action="/calendars/ec8a2816-e7bb-40ea-b182-7c87254d0416/delete"><button class="button danger" type="submit">Ja, Kalender entfernen</button></form>
-    <a href="/calendars/ec8a2816-e7bb-40ea-b182-7c87254d0416">Nein, nichts ändern</a>
+    <form method="post" action="/calendars/1d6f627b-12d9-444d-81a4-d870b19d8ae0/delete"><button class="button danger" type="submit">Ja, Kalender entfernen</button></form>
+    <a href="/calendars/1d6f627b-12d9-444d-81a4-d870b19d8ae0">Nein, nichts ändern</a>
   </div></details>
 
 </main>
@@ -2729,6 +2970,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -2747,14 +2989,14 @@ document.addEventListener("change", function (e) {
     <h2 id="paired">Gekoppelte Handys</h2>
     
     <ul class="list-rows">
-      <li><a href="/phones/51cbb876-df7f-407e-a4d2-248874495e0d"><span class="t"><b>iPhone Mama</b><span class="meta">Für <span class="who"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:40:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/phones/15b39035-3c3c-4e74-92c0-e5a938e4677b"><span class="t"><b>Papas Pixel</b><span class="meta">Für <span class="who"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:39:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/phones/078bbc2b-928a-4ebe-a344-7caa4eb69060"><span class="t"><b>Sebastians Handy</b><span class="meta">Für <span class="who"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:38:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/phones/f085259f-334e-457c-b495-c103e26d0319"><span class="t"><b>Mias altes iPhone aus der Schublade</b><span class="meta">Für <span class="who"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:37:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/phones/3b9b874b-f1a3-4237-a414-94535ddb8413"><span class="t"><b>Jonas’ Handy</b><span class="meta">Für <span class="who"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:36:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/phones/0c479bbe-efb5-4dfb-99d3-451419191724"><span class="t"><b>Lottas Handy</b><span class="meta">Für <span class="who"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:35:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/phones/37be802d-e3d7-4c4e-a898-263fe7b01c5c"><span class="t"><b>Bens Tablet</b><span class="meta">Für <span class="who"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben</span></span><span class="meta">Zuletzt gesehen 12/11/2026, 18:30:00</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
-      <li><a href="/phones/9d36e1d7-7bb7-4cb7-9627-b94b51fd8df8"><span class="t"><b>Emmas Handy</b><span class="meta">Für <span class="who"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:33:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/phones/d81a81b6-a93f-48c0-b73b-51aa64dcd461"><span class="t"><b>iPhone Mama</b><span class="meta">Für <span class="who"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:40:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/phones/6f07b5e9-207c-4e81-bbfe-86048c1c7849"><span class="t"><b>Papas Pixel</b><span class="meta">Für <span class="who"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:39:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/phones/74dfaa0b-e38d-4788-ab21-158a0a885945"><span class="t"><b>Sebastians Handy</b><span class="meta">Für <span class="who"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:38:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/phones/fb874011-7977-43a5-9803-30f48d4d9191"><span class="t"><b>Mias altes iPhone aus der Schublade</b><span class="meta">Für <span class="who"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:37:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/phones/56d3af1f-00bd-43a5-a325-6f363f3b2d21"><span class="t"><b>Jonas’ Handy</b><span class="meta">Für <span class="who"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span>Jonas</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:36:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/phones/6bc8e771-7885-4314-945e-c79dca515b05"><span class="t"><b>Lottas Handy</b><span class="meta">Für <span class="who"><span class="marker" data-person="6" data-shape="diamond-filled" aria-hidden="true"></span>Lotta</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:35:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/phones/c3afda31-d47b-4400-90db-cbdb85ad87a4"><span class="t"><b>Bens Tablet</b><span class="meta">Für <span class="who"><span class="marker" data-person="7" data-shape="cross-filled" aria-hidden="true"></span>Ben</span></span><span class="meta">Zuletzt gesehen 12/11/2026, 18:30:00</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      <li><a href="/phones/c79b7544-cb76-4392-b81d-1a24bb83eaf3"><span class="t"><b>Emmas Handy</b><span class="meta">Für <span class="who"><span class="marker" data-person="8" data-shape="star-filled" aria-hidden="true"></span>Emma</span></span><span class="meta">Zuletzt gesehen 15/11/2026, 07:33:02</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
       
     </ul>
     
@@ -2784,6 +3026,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/settings" aria-current="page">Einstellungen</a></li>
   </ul></nav>
 
@@ -2806,8 +3049,8 @@ document.addEventListener("change", function (e) {
   <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Handy entfernen</summary>
   <p>„Bens Tablet“ ist abgemeldet, sobald es die App das nächste Mal öffnet. Du kannst es jederzeit wieder koppeln.</p>
   <div class="confirm">
-    <form method="post" action="/phones/37be802d-e3d7-4c4e-a898-263fe7b01c5c/revoke"><button class="button danger" type="submit">Ja, „Bens Tablet“ entfernen</button></form>
-    <a href="/phones/37be802d-e3d7-4c4e-a898-263fe7b01c5c">Nein, nichts ändern</a>
+    <form method="post" action="/phones/c3afda31-d47b-4400-90db-cbdb85ad87a4/revoke"><button class="button danger" type="submit">Ja, „Bens Tablet“ entfernen</button></form>
+    <a href="/phones/c3afda31-d47b-4400-90db-cbdb85ad87a4">Nein, nichts ändern</a>
   </div></details>
 
 </main>

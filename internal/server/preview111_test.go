@@ -138,17 +138,17 @@ func TestWritePreview111(t *testing.T) {
 	icloud, nextcloud := conns[0].ID, conns[1].ID
 	sql(`UPDATE calendar_connections SET created_at = ?`, moment(2, 18, 30, 0))
 	post("/connections/"+icloud+"/calendars", url.Values{"interval": {"15"},
-		"shown":    {cal(icloudBase, "family"), cal(icloudBase, "school"), cal(icloudBase, "football"), cal(icloudBase, "birthdays"), cal(icloudBase, "reminders")},
-		"calendar": {cal(icloudBase, "family"), cal(icloudBase, "school"), cal(icloudBase, "football")},
+		"shown":                             {cal(icloudBase, "family"), cal(icloudBase, "school"), cal(icloudBase, "football"), cal(icloudBase, "birthdays"), cal(icloudBase, "reminders")},
+		"calendar":                          {cal(icloudBase, "family"), cal(icloudBase, "school"), cal(icloudBase, "football")},
 		"name_" + cal(icloudBase, "family"): {"Familie"}, "name_" + cal(icloudBase, "school"): {"Schule Mia"}, "name_" + cal(icloudBase, "football"): {"Fußball Sebastian"},
 		"people_" + cal(icloudBase, "school"): {personID["Mia"]}, "people_" + cal(icloudBase, "football"): {personID["Sebastian"]}}, http.StatusSeeOther)
 	post("/connections/"+nextcloud+"/calendars", url.Values{"interval": {"15"}, "shown": {cal(nextBase, "work")}, "calendar": {cal(nextBase, "work")},
 		"name_" + cal(nextBase, "work"): {"Arbeit Papa"}, "people_" + cal(nextBase, "work"): {personID["Papa"]}}, http.StatusSeeOther)
 
 	feeds := map[string]string{
-		"Schulferien Bayern":     "https://example.org/schulferien.ics",
+		"Schulferien Bayern": "https://example.org/schulferien.ics",
 		"Abfallkalender München-Pasing (Restmüll, Papier, Bio)": "https://example.org/abfall.ics",
-		"Fußballverein FC Pasing U11: Training und Spiele":       "https://example.org/fcp-u11.ics",
+		"Fußballverein FC Pasing U11: Training und Spiele":      "https://example.org/fcp-u11.ics",
 	}
 	for name, u := range feeds {
 		b.feeds.set(u, feedOf("UID:a\r\nSUMMARY:Termin\r\nDTSTART:20261120T170000Z"), nil)
@@ -265,7 +265,9 @@ func TestWritePreview111(t *testing.T) {
 			frames = append(frames, frame{th, size[0], size[1]})
 		}
 	}
-	open := func(html string) string { return strings.ReplaceAll(html, `<details class="danger">`, `<details class="danger" open>`) }
+	open := func(html string) string {
+		return strings.ReplaceAll(html, `<details class="danger">`, `<details class="danger" open>`)
+	}
 	var body strings.Builder
 	var docs []string
 	docOf := map[string]int{}

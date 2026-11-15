@@ -514,3 +514,17 @@ func TestFamilyViewLayoutRulesFollowTheSpec(t *testing.T) {
 		}
 	}
 }
+
+// #150: a person name in the family view never breaks inside the word. Hyphens
+// only for words of 12+ letters (#32/#86 rule, inside @supports); break-word is
+// the last resort for a column narrower than the word.
+func TestFamilyViewPersonNamesDoNotBreakInsideWords(t *testing.T) {
+	css := stylesheet(t)
+	rule := ruleFor(t, css, ".fv .person-link")
+	if strings.Contains(rule, "anywhere") || !strings.Contains(rule, "overflow-wrap: break-word") || !strings.Contains(rule, "hyphens: manual") {
+		t.Errorf(".fv .person-link must use overflow-wrap: break-word and hyphens: manual: %s", rule)
+	}
+	if !strings.Contains(css, "@supports (hyphenate-limit-chars: 12 5 5) { .fv .person-link { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }") {
+		t.Error("the family view hyphenates only words of 12+ letters (hyphenate-limit-chars: 12 5 5 inside @supports)")
+	}
+}

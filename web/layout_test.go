@@ -176,7 +176,7 @@ func TestColumnReadabilitySnapshot(t *testing.T) {
 	const veryLong = "Konstantinos" // 12 characters, a single word: must wrap, not clip
 	need := func(name string) float64 { return float64(len(name))*0.51*fs + 8 + marker }
 	link := regexp.MustCompile(`(?m)^\.fv \.person-link\s*\{([^}]*)\}`).FindStringSubmatch(css)
-	wraps := link != nil && strings.Contains(link[1], "overflow-wrap: anywhere;") && strings.Contains(link[1], "min-width: 0;")
+	wraps := link != nil && strings.Contains(link[1], "overflow-wrap: break-word;") && strings.Contains(link[1], "min-width: 0;")
 
 	devices := []struct {
 		name string

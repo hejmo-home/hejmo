@@ -273,7 +273,9 @@ func mealCalendarID(tx *sql.Tx, householdID, name string) (string, error) {
 }
 
 // Meals lists the entries from one day to another, both included (YYYY-MM-DD),
-// by day and then by mealtime in the order of the day.
+// by day and then by mealtime in the order of the day. It reads the hand-typed
+// entries only, without templates or adjustments; the API and pages use
+// MealPlan. Kept on purpose for the tests of the plain entries.
 func (db *DB) Meals(householdID, from, to string) ([]Meal, error) {
 	rows, err := db.sql.Query(`SELECT day, mealtime, text FROM meal_plan WHERE household_id = ? AND day >= ? AND day <= ?
 		ORDER BY day, CASE mealtime WHEN 'breakfast' THEN 1 WHEN 'lunch' THEN 2 WHEN 'snack' THEN 3 ELSE 4 END`, householdID, from, to)

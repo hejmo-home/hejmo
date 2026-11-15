@@ -152,6 +152,19 @@ func (s *server) handleMealsPage(w http.ResponseWriter, r *http.Request) {
 	s.renderMeals(w, r, p, http.StatusOK, requestedWeek(r.URL.Query().Get("week"), s.today(p)), nil, "", "")
 }
 
+// saveTypedMeal saves the text typed for one meal field.
+func (s *server) saveTypedMeal(r *http.Request, p principal, field, raw string) error {
+	day, mt, ok := parseMealField(field)
+	if !ok {
+		return nil
+	}
+	text, err := meal.CleanText(raw)
+	if err != nil {
+		return err
+	}
+	return s.saveMeals(r, p, []store.Meal{{Day: day, Mealtime: mt, Text: text}})
+}
+
 // restoreField drops the adjustment of the meal a form field stands for.
 func (s *server) restoreField(r *http.Request, p principal, field string) error {
 	day, mt, ok := parseMealField(field)
@@ -193,12 +206,12 @@ func (s *server) handleMealsSave(w http.ResponseWriter, r *http.Request) {
 				continue
 			}
 			typed[c.Name] = vals[0]
-			if c.Name == restore {
-				continue // it goes back to the template, whatever is typed
-			}
 			text, err := meal.CleanText(vals[0])
 			if err != nil && badField == "" {
 				badField, badKey = c.Name, "meals.error.text"
+			}
+			if c.Name == restore {
+				continue // it goes back to the template, whatever is typed
 			}
 			changes = append(changes, store.Meal{Day: d.Date, Mealtime: meal.Mealtime(c.Mealtime), Text: text})
 		}
@@ -215,7 +228,11 @@ func (s *server) handleMealsSave(w http.ResponseWriter, r *http.Request) {
 				switch err := s.restoreField(r, p, restore); {
 				case err == nil:
 					key = "flash.meal_restored:" + restore
-				case errors.Is(err, store.ErrNotFound): // it was not adjusted any more: just saved
+				case errors.Is(err, store.ErrNotFound): // it was not adjusted any more: what was typed is saved
+					if err := s.saveTypedMeal(r, p, restore, typed[restore]); err != nil {
+						s.fail(w, "save meals", err)
+						return
+					}
 				default:
 					s.fail(w, "restore meal", err)
 					return

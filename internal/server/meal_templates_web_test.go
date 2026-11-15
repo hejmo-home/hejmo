@@ -351,3 +351,73 @@ func TestTemplatePagesAreGermanInDuForm(t *testing.T) {
 		t.Errorf("delete line = %q", successLine(r.body))
 	}
 }
+
+func TestTheMealPlanCalendarRollsForwardOncePerDayWhenAPageIsOpened(t *testing.T) {
+	c := signedInAPI(t) // the clock stands at Saturday 14/11/2026
+	form := weekBForm("Every day", "2026-11-16", "1")
+	for wd := 4; wd <= 7; wd++ {
+		form.Set(tplField(wd, "dinner"), "Soup")
+	}
+	if r := saveTemplate(t, c, form, en); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d", r.status)
+	}
+	h, _ := c.b.db.HomeHousehold()
+	cal, err := c.b.db.MealCalendar(h.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	titleOn := func(day string) string {
+		evs, err := c.b.db.CalendarEvents(h.ID, cal.ID)
+		if err != nil {
+			t.Fatal(err)
+		}
+		for _, e := range evs {
+			if e.Start.In(berlinTZ).Format("2006-01-02") == day {
+				return e.Title
+			}
+		}
+		return ""
+	}
+	const reached, next = "2027-11-19", "2027-11-20" // the last day in reach on 14/11/2026, and the one after
+	if titleOn(reached) == "" || titleOn(next) != "" {
+		t.Fatalf("after saving: %q, %q", titleOn(reached), titleOn(next))
+	}
+
+	c.b.now = c.b.now.AddDate(0, 0, 1) // Sunday 15/11/2026
+	if r := c.b.do(http.MethodGet, "/meals", nil, en); r.status != http.StatusOK {
+		t.Fatalf("meals = %d", r.status)
+	}
+	if got := titleOn(next); got != "Dinner: Soup" {
+		t.Fatalf("the day that came into reach = %q, want its meal", got)
+	}
+	if got := titleOn("2026-11-14"); got != "" { // a day before today is not rewritten
+		t.Errorf("a day before today = %q", got)
+	}
+
+	// Once a day: a second page on the same day does not write again.
+	if _, err := c.b.db.SQL().Exec(`DELETE FROM events WHERE calendar_id = ? AND title = ?`, cal.ID, "Dinner: Soup"); err != nil {
+		t.Fatal(err)
+	}
+	c.b.do(http.MethodGet, "/meals", nil, en)
+	if got := titleOn(next); got != "" {
+		t.Errorf("same day, second page wrote again: %q", got)
+	}
+	c.b.now = c.b.now.AddDate(0, 0, 1)
+	c.b.do(http.MethodGet, "/meals", nil, en)
+	if got := titleOn("2027-11-21"); got != "Dinner: Soup" {
+		t.Errorf("next day = %q, want the roll to run again", got)
+	}
+}
+
+func TestBackToTemplateOnAMealThatIsNotAdjustedAnyMoreStillSavesWhatWasTyped(t *testing.T) {
+	c := signedInAPI(t)
+	saveTemplate(t, c, weekBForm("Week B", "2026-11-16", "2"), en)
+	// Tuesday follows the template (another tab restored it); the form still offers "Back to template".
+	form := url.Values{"week": {"2026-11-16"}, "restore": {"meal_2026-11-17_dinner"}, mealField("2026-11-17", "dinner"): {"Lasagne"}}
+	if r := c.b.do(http.MethodPost, "/meals", form, en); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+	if list := mealsBetween(t, c, "2026-11-17", "2026-11-17"); len(list) != 1 || list[0]["text"] != "Lasagne" {
+		t.Fatalf("what was typed = %v", list)
+	}
+}

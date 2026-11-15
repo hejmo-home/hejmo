@@ -316,3 +316,67 @@ func TestAHandTypedMealComesBackWhenNoTemplateFillsItAnymore(t *testing.T) {
 		t.Fatalf("after delete = %+v", m)
 	}
 }
+
+func TestEditingATemplateThatStopsFillingACellMovesItsAdjustmentToAPlainEntry(t *testing.T) {
+	f := newCalFixture(t)
+	o := optionsOn("2026-11-18")
+	tpl, _ := f.db.CreateMealTemplate(f.h.ID, weekB(), o)
+	_ = f.db.SetMeals(f.h.ID, []store.Meal{
+		{Day: "2026-11-30", Mealtime: meal.Dinner, Text: "Pizza"}, // adjusted: Monday of a week the template fills
+		{Day: "2026-12-01", Mealtime: meal.Dinner, Text: ""},      // adjusted to nothing
+	}, o)
+	delete(tpl.Entries, meal.Slot{Weekday: 1, Mealtime: meal.Dinner})
+	delete(tpl.Entries, meal.Slot{Weekday: 2, Mealtime: meal.Dinner})
+	if _, err := f.db.UpdateMealTemplate(f.h.ID, tpl, o); err != nil {
+		t.Fatal(err)
+	}
+	plan := planOf(t, f.db, f.h, "2026-11-30", "2026-12-01", "2026-11-18")
+	if m := plan["2026-11-30|dinner"]; m.Text != "Pizza" || m.Source != store.SourceManual {
+		t.Fatalf("after the edit = %+v, want a plain entry", m)
+	}
+	if m, ok := plan["2026-12-01|dinner"]; ok && m.Text != "" {
+		t.Fatalf("emptied day after the edit = %+v, want nothing", m)
+	}
+
+	// A later template that fills the cell must not show the old text as an adjustment.
+	other := meal.Template{Name: "C", Mealtime: meal.Dinner, Interval: 1, Start: "2026-11-16",
+		Entries: map[meal.Slot]string{meal.At(1, meal.Dinner): "Rice", meal.At(2, meal.Dinner): "Soup"}}
+	if _, err := f.db.CreateMealTemplate(f.h.ID, other, o); err != nil {
+		t.Fatal(err)
+	}
+	plan = planOf(t, f.db, f.h, "2026-11-30", "2026-12-01", "2026-11-18")
+	if m := plan["2026-11-30|dinner"]; m.Text != "Rice" || m.Source != store.SourceTemplate || m.TemplateName != "C" {
+		t.Errorf("with the later template = %+v, want its own dish", m)
+	}
+	if m := plan["2026-12-01|dinner"]; m.Text != "Soup" || m.Source != store.SourceTemplate {
+		t.Errorf("emptied day with the later template = %+v, want its own dish", m)
+	}
+}
+
+func TestRefreshingTheMealPlanAsDaysGoByReachesTheNewDayAndLeavesThePastAlone(t *testing.T) {
+	f := newCalFixture(t)
+	o := optionsOn("2026-11-18")
+	daily := meal.Template{Name: "Every day", Mealtime: meal.Dinner, Interval: 1, Start: "2026-11-16", Entries: map[meal.Slot]string{}}
+	for wd := 0; wd < 7; wd++ {
+		daily.Entries[meal.At(wd, meal.Dinner)] = "Soup"
+	}
+	if _, err := f.db.CreateMealTemplate(f.h.ID, daily, o); err != nil {
+		t.Fatal(err)
+	}
+	cal, _ := f.db.MealCalendar(f.h.ID)
+	before := eventTitlesByDay(t, f.db, f.h, cal)
+	last := "2027-11-24" // 18/11/2026 plus 371 days is out of reach; the day before is the last one
+	if before["2026-11-18"] == "" || before[last] != "" {
+		t.Fatalf("before the roll: today %q, %s %q", before["2026-11-18"], last, before[last])
+	}
+	if err := f.db.RefreshMealPlan(f.h.ID, optionsOn("2026-11-19")); err != nil {
+		t.Fatal(err)
+	}
+	after := eventTitlesByDay(t, f.db, f.h, cal)
+	if after[last] != "Dinner: Soup" {
+		t.Errorf("newly reachable day = %q, want its meal", after[last])
+	}
+	if after["2026-11-18"] != before["2026-11-18"] {
+		t.Errorf("a day before today = %q, want it left alone (%q)", after["2026-11-18"], before["2026-11-18"])
+	}
+}

@@ -225,6 +225,41 @@ func (l *mealLayers) set(tx *sql.Tx, householdID string, c cell, text string) er
 	return put("meal_manual", l.manual, text != "")
 }
 
+// releaseAdjustments turns the adjustments of the cells that template id fills
+// into plain entries (an emptied one into nothing). After a template edit,
+// after is the edited template and only cells it no longer fills are released.
+func (l *mealLayers) releaseAdjustments(tx *sql.Tx, householdID, id string, after *meal.Template) error {
+	for c, text := range l.adjust {
+		if t, _ := l.templateFor(c); t == nil || t.ID != id {
+			continue
+		}
+		if after != nil {
+			if _, ok := after.Dish(mustParseDay(c.day), c.mealtime); ok {
+				continue
+			}
+		}
+		var err error
+		if text == "" {
+			_, err = tx.Exec(`DELETE FROM meal_manual WHERE household_id = ? AND day = ? AND mealtime = ?`, householdID, c.day, c.mealtime)
+		} else {
+			_, err = tx.Exec(`INSERT INTO meal_manual (household_id, day, mealtime, text) VALUES (?, ?, ?, ?)
+				ON CONFLICT (household_id, day, mealtime) DO UPDATE SET text = excluded.text`, householdID, c.day, c.mealtime, text)
+		}
+		if err == nil {
+			_, err = tx.Exec(`DELETE FROM meal_adjustments WHERE household_id = ? AND day = ? AND mealtime = ?`, householdID, c.day, c.mealtime)
+		}
+		if err != nil {
+			return err
+		}
+	}
+	return nil
+}
+
+func mustParseDay(day string) time.Time {
+	d, _ := time.Parse(dateLayout, day)
+	return d
+}
+
 // MealTemplates lists the household's templates by name.
 func (db *DB) MealTemplates(householdID string) ([]meal.Template, error) {
 	return loadTemplates(db.sql, householdID, "")
@@ -306,6 +341,17 @@ func (db *DB) saveMealTemplate(householdID string, t meal.Template, o MealOption
 	if t.AllMealtimes {
 		all = 1
 	}
+	if !create {
+		// Adjustments of cells the edited template stops filling become plain
+		// entries, as when it is deleted; none stay behind to resurface later.
+		layers, err := loadMealLayers(tx, householdID, o.today())
+		if err != nil {
+			return meal.Template{}, err
+		}
+		if err := layers.releaseAdjustments(tx, householdID, t.ID, &t); err != nil {
+			return meal.Template{}, err
+		}
+	}
 	if create {
 		t.ID = newID()
 		_, err = tx.Exec(`INSERT INTO meal_templates (id, household_id, name, all_mealtimes, mealtime, every, start_week, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
@@ -369,22 +415,8 @@ func (db *DB) DeleteMealTemplate(householdID, id string, o MealOptions) error {
 	if tpl == nil {
 		return ErrNotFound
 	}
-	for c, text := range layers.adjust {
-		if t, _ := layers.templateFor(c); t == nil || t.ID != id {
-			continue
-		}
-		if text == "" {
-			_, err = tx.Exec(`DELETE FROM meal_manual WHERE household_id = ? AND day = ? AND mealtime = ?`, householdID, c.day, c.mealtime)
-		} else {
-			_, err = tx.Exec(`INSERT INTO meal_manual (household_id, day, mealtime, text) VALUES (?, ?, ?, ?)
-				ON CONFLICT (household_id, day, mealtime) DO UPDATE SET text = excluded.text`, householdID, c.day, c.mealtime, text)
-		}
-		if err == nil {
-			_, err = tx.Exec(`DELETE FROM meal_adjustments WHERE household_id = ? AND day = ? AND mealtime = ?`, householdID, c.day, c.mealtime)
-		}
-		if err != nil {
-			return err
-		}
+	if err := layers.releaseAdjustments(tx, householdID, id, nil); err != nil {
+		return err
 	}
 	if _, err := tx.Exec(`DELETE FROM meal_templates WHERE id = ? AND household_id = ?`, id, householdID); err != nil {
 		return err
@@ -485,8 +517,9 @@ func refreshMealPlan(tx *sql.Tx, householdID string, o MealOptions) error {
 // MealPlan lists the meals of a range of days, both included, with where each
 // comes from: the effective plan (this week's adjustment, else the template,
 // else the hand-typed entry). Days before today show what they showed. An
-// adjusted meal that was emptied is listed with empty text. Meals come by day
-// and then in the order of the day.
+// adjusted meal that was emptied is listed with empty text while its day is
+// still to come; it has no meal_plan row, so once the day is over it shows as a
+// plain empty cell. Meals come by day and then in the order of the day.
 func (db *DB) MealPlan(householdID, from, to, today string) ([]PlanMeal, error) {
 	a, errA := time.Parse(dateLayout, from)
 	b, errB := time.Parse(dateLayout, to)

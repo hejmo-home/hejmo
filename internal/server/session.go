@@ -19,7 +19,7 @@ const (
 func (s *server) startSession(w http.ResponseWriter, r *http.Request, personID string) error {
 	token := auth.NewToken()
 	expires := s.now().Add(sessionDuration)
-	if err := s.db.CreateSession(auth.HashToken(token), personID, expires); err != nil {
+	if err := s.db.CreateSession(auth.HashToken(token), personID, auth.DeviceLabel(r.UserAgent()), s.now(), expires); err != nil {
 		return err
 	}
 	http.SetCookie(w, &http.Cookie{

@@ -1,6 +1,7 @@
 package store
 
 import (
+	"database/sql"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -62,5 +63,69 @@ func TestAMigrationOlderThanTheLatestAppliedStillRuns(t *testing.T) {
 	}
 	if err := db.apply([]migration{late}); err != nil {
 		t.Fatalf("applying again: %v", err)
+	}
+}
+
+// Issue #108: sessions made before the migration get a public id of their own
+// (not derived from the token hash), no device and no last use.
+func TestBrowserSessionsMigrationBackfillsExistingRows(t *testing.T) {
+	conn, err := sql.Open("sqlite", "file:"+filepath.Join(t.TempDir(), "legacy.db")+"?_pragma=foreign_keys(1)")
+	if err != nil {
+		t.Fatal(err)
+	}
+	old := &DB{sql: conn}
+	defer old.Close()
+	if _, err := conn.Exec(`CREATE TABLE schema_migrations (
+		version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`); err != nil {
+		t.Fatal(err)
+	}
+	ms, err := migrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var before, target []migration
+	for _, m := range ms {
+		if strings.HasSuffix(m.name, "_browser_sessions.sql") {
+			target = append(target, m)
+		} else if len(target) == 0 {
+			before = append(before, m)
+		}
+	}
+	if len(target) != 1 {
+		t.Fatalf("found %d browser_sessions migrations, want 1", len(target))
+	}
+	if err := old.apply(before); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := conn.Exec(`INSERT INTO people (id, name, created_at, updated_at) VALUES ('p1', 'Mama', 'x', 'x')`); err != nil {
+		t.Fatal(err)
+	}
+	for _, h := range []string{"tok-a", "tok-b"} {
+		if _, err := conn.Exec(`INSERT INTO sessions (token_hash, person_id, created_at, expires_at) VALUES (?, 'p1', '2026-11-01T00:00:00Z', '2026-12-01T00:00:00Z')`, h); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := old.apply(target); err != nil {
+		t.Fatal(err)
+	}
+	rows, err := conn.Query(`SELECT token_hash, id, device, last_seen_at FROM sessions ORDER BY token_hash`)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer rows.Close()
+	var ids []string
+	for rows.Next() {
+		var hash, id, device string
+		var seen sql.NullString
+		if err := rows.Scan(&hash, &id, &device, &seen); err != nil {
+			t.Fatal(err)
+		}
+		if id == "" || strings.Contains(id, hash) || device != "" || seen.Valid {
+			t.Errorf("row %s: id %q device %q last_seen %v", hash, id, device, seen)
+		}
+		ids = append(ids, id)
+	}
+	if len(ids) != 2 || ids[0] == ids[1] {
+		t.Errorf("ids = %v, want two distinct", ids)
 	}
 }

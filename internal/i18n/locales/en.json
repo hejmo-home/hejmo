@@ -251,7 +251,7 @@
   "settings.intro": "These settings apply to the whole household.",
   "settings.time_format": "Time format",
   "settings.time_format.24h": "24-hour (14:30)",
-  "settings.time_format.12h": "12-hour (2:30 PM)",
+  "settings.time_format.12h": "12-hour (2:30 PM)",
   "settings.temperature_unit": "Temperature unit",
   "settings.temperature_unit.c": "Degrees Celsius (°C)",
   "settings.temperature_unit.f": "Degrees Fahrenheit (°F)",

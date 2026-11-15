@@ -632,3 +632,26 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .place-status.missing { border: 2px dashed var(--text-secondary); }
 [data-theme="bw"] .place-status, [data-theme="bw"] .place-found { border: 2px solid var(--text); }
 [data-theme="bw"] .place-status.missing { border: 2px dashed var(--text); }
+
+/* Page padding and line breaks (product owner feedback 15/11/2026, #32 and
+   #86). The frame has one column that may be narrower than the navigation
+   row, so the page keeps the same padding on both sides and the navigation
+   wraps inside it; fieldsets may shrink below their content. Words break
+   at syllables in the page language (html lang), a word longer than the line
+   breaks anywhere; nothing is cut or runs over the edge. Continuation lines
+   start under the text, not under a radio or an icon. */
+.frame { grid-template-columns: minmax(0, 1fr); }
+.frame > *, .steps fieldset, .steps fieldset > * { min-width: 0; }
+body { overflow-wrap: anywhere; -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } /* only long words get a hyphen */
+.frame-nav ul { flex-wrap: wrap; overflow-x: visible; } /* every item visible, none cut at the edge */
+input, select, textarea, .secret, .pairing-code { -webkit-hyphens: manual; hyphens: manual; }
+.choice label { grid-template-columns: auto minmax(0, 1fr); }
+.choice b, .choice small { grid-column: 2; }
+.place-status > div, .msg, .ferr { min-width: 0; }
+/* A choice of three or more sentences stacks on phones, one full-width row each. */
+@media (max-width: 599px) {
+  fieldset.seg:has(> label:nth-of-type(3)) { flex-direction: column; }
+  fieldset.seg:has(> label:nth-of-type(3)) label { flex: none; justify-content: flex-start; text-align: left; margin: -1px 0 0; border-radius: 0; }
+  fieldset.seg:has(> label:nth-of-type(3)) label:first-of-type { margin-top: 0; border-radius: var(--radius-field) var(--radius-field) 0 0; }
+  fieldset.seg:has(> label:nth-of-type(3)) label:last-of-type { border-radius: 0 0 var(--radius-field) var(--radius-field); }
+}

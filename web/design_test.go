@@ -492,3 +492,42 @@ func TestFamilyViewLayoutRulesFollowTheSpec(t *testing.T) {
 		}
 	}
 }
+
+// Design pass 2 of #86 (and #32): one shared block gives the page the same
+// padding on both sides and breaks long words; three-option choices stack on
+// phones.
+func TestPageKeepsItsPaddingAndBreaksLongWords(t *testing.T) {
+	css := stylesheet(t)
+	for _, want := range []string{
+		".frame { grid-template-columns: minmax(0, 1fr); }",
+		".frame > *, .steps fieldset, .steps fieldset > * { min-width: 0; }",
+		"body { overflow-wrap: anywhere; -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }",
+		".frame-nav ul { flex-wrap: wrap; overflow-x: visible; }",
+		"input, select, textarea, .secret, .pairing-code { -webkit-hyphens: manual; hyphens: manual; }",
+		".choice label { grid-template-columns: auto minmax(0, 1fr); }",
+		".choice b, .choice small { grid-column: 2; }",
+		".place-status > div, .msg, .ferr { min-width: 0; }",
+	} {
+		if !strings.Contains(css, want) {
+			t.Errorf("stylesheet lacks %q", want)
+		}
+	}
+	m := regexp.MustCompile(`(?s)@media \(max-width: 599px\) \{(.*?)\n\}`).FindAllStringSubmatch(css, -1)
+	var phone string
+	for _, x := range m {
+		phone += x[1]
+	}
+	for _, want := range []string{
+		"fieldset.seg:has(> label:nth-of-type(3)) { flex-direction: column; }",
+		"fieldset.seg:has(> label:nth-of-type(3)) label { flex: none; justify-content: flex-start; text-align: left; margin: -1px 0 0; border-radius: 0; }",
+		"fieldset.seg:has(> label:nth-of-type(3)) label:first-of-type { margin-top: 0; border-radius: var(--radius-field) var(--radius-field) 0 0; }",
+		"fieldset.seg:has(> label:nth-of-type(3)) label:last-of-type { border-radius: 0 0 var(--radius-field) var(--radius-field); }",
+	} {
+		if !strings.Contains(phone, want) {
+			t.Errorf("phone media query lacks %q", want)
+		}
+	}
+	if strings.Index(css, ".frame { grid-template-columns") < strings.Index(css, ".place-status.missing") {
+		t.Error("the shared block must follow the home-location block")
+	}
+}

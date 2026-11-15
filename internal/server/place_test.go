@@ -55,7 +55,7 @@ func TestSetupShowsTheResolvedPlaceForConfirmationBeforeCreatingAnything(t *test
 	if tag := inputTag(r.body, "place_label"); !strings.Contains(tag, `value="Pasing, Bavaria, Germany"`) {
 		t.Errorf("place_label = %q", tag)
 	}
-	for _, want := range []string{`role="status" data-place-found`, `<p class="place-q">Is this your home?</p>`, `<b>Pasing</b><small>Bavaria, Germany · 48.15° N, 11.46° E</small>`, "Not saved yet. Save to use this place, or change the name to search again."} {
+	for _, want := range []string{`role="status" data-place-found`, `<p class="place-q">Is this your home?</p>`, `<b>Pasing</b><small>Bavaria, Germany · 48.15° N, 11.46° E</small>`, "Not saved yet. Save to use this place, or change the name to search again."} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("found-place card misses %q", want)
 		}
@@ -204,7 +204,7 @@ func TestHouseholdSettingsShowTheHomeAndItsLocation(t *testing.T) {
 	if tag := inputTag(r.body, "home_name"); !strings.Contains(tag, `value="Pasing"`) {
 		t.Errorf("home_name = %q", tag)
 	}
-	if !strings.Contains(r.body, `<div class="place-status" data-location>`) || !strings.Contains(r.body, "<b>In use: Pasing</b><small>48.15° N, 11.46° E · today sunrise ") {
+	if !strings.Contains(r.body, `<div class="place-status" data-location>`) || !strings.Contains(r.body, "<b>In use: Pasing</b><small>48.15° N, 11.46° E · today sunrise ") {
 		t.Errorf("location not shown:\n%s", r.body)
 	}
 	if !regexp.MustCompile(`today sunrise \d\d:\d\d, sunset \d\d:\d\d</small>`).MatchString(r.body) {
@@ -258,7 +258,7 @@ func TestChangingTheHomeAsksToConfirmAndSavesNothingYet(t *testing.T) {
 	if h.Latitude != 50.25 || h.Longitude != 11.88 || h.HomeName != "Neustadt" || h.TimeFormat != "12h" {
 		t.Errorf("household = %+v", h)
 	}
-	if !strings.Contains(b.do(http.MethodGet, "/settings/household", nil, en).body, "50.25° N, 11.88° E") {
+	if !strings.Contains(b.do(http.MethodGet, "/settings/household", nil, en).body, "50.25° N, 11.88° E") {
 		t.Error("new location not shown")
 	}
 }
@@ -467,7 +467,7 @@ func TestFoundPlaceCardAndPendingHintInGerman(t *testing.T) {
 	r := b.do(http.MethodPost, "/settings/household", settingsForm("Pasing-Obermenzing"), map[string]string{"Accept-Language": "de"})
 	for _, want := range []string{
 		`<p class="place-q">Ist das dein Zuhause?</p>`,
-		"<b>Pasing-Obermenzing</b><small>Oberbayern, Bayern, Deutschland · 48.16° N, 11.45° E</small>",
+		"<b>Pasing-Obermenzing</b><small>Oberbayern, Bayern, Deutschland · 48.16° N, 11.45° E</small>",
 		"Noch nicht gespeichert. Speichere, um diesen Ort zu verwenden, oder ändere den Namen, um neu zu suchen.",
 		`<p class="hint" data-location>Bis du speicherst, bleibt Pasing in Verwendung.</p>`,
 	} {
@@ -494,7 +494,16 @@ func TestCarriedAlongPlaceRendersTheSameCard(t *testing.T) {
 	f.Set("place_label", "Pasing, Bavaria, Germany")
 	f.Set("password", "x") // another field is wrong: the page comes back with the place carried along
 	r := b.do(http.MethodPost, "/setup", f, en)
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "<b>Pasing</b><small>Bavaria, Germany · 48.15° N, 11.46° E</small>") || !strings.Contains(r.body, "data-place-found") {
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "<b>Pasing</b><small>Bavaria, Germany · 48.15° N, 11.46° E</small>") || !strings.Contains(r.body, "data-place-found") {
 		t.Errorf("status %d, carried card missing:\n%s", r.status, r.body)
+	}
+}
+
+// Coordinates never break across lines: every space inside is non-breaking.
+func TestCoordinatesDoNotBreak(t *testing.T) {
+	b := signedInBox(t)
+	r := b.do(http.MethodGet, "/settings/household", nil, en)
+	if !strings.Contains(r.body, "48.15\u00b0\u00a0N,\u00a011.46\u00b0\u00a0E") {
+		t.Errorf("coordinates are breakable:\n%s", r.body)
 	}
 }

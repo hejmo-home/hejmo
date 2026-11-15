@@ -164,7 +164,8 @@ func confirmedPlace(r *http.Request, name string) *placeView {
 	return &placeView{For: name, Found: &o}
 }
 
-// coordinatesText shows coordinates in degrees, north and east positive.
+// coordinatesText shows coordinates in degrees, north and east positive. The
+// spaces are non-breaking so the coordinates never break across lines.
 func coordinatesText(lat, lon float64) string {
 	ns, ew := "N", "E"
 	if lat < 0 {
@@ -173,7 +174,7 @@ func coordinatesText(lat, lon float64) string {
 	if lon < 0 {
 		ew, lon = "W", -lon
 	}
-	return fmt.Sprintf("%s° %s, %s° %s", strconv.FormatFloat(math.Round(lat*1e4)/1e4, 'f', -1, 64), ns, strconv.FormatFloat(math.Round(lon*1e4)/1e4, 'f', -1, 64), ew)
+	return fmt.Sprintf("%s°\u00a0%s,\u00a0%s°\u00a0%s", strconv.FormatFloat(math.Round(lat*1e4)/1e4, 'f', -1, 64), ns, strconv.FormatFloat(math.Round(lon*1e4)/1e4, 'f', -1, 64), ew)
 }
 
 // placeJSON is a place of the API's search.

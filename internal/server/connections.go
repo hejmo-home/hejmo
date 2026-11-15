@@ -119,6 +119,9 @@ func (s *server) discoverChecked(ctx context.Context, address, user, password st
 	return found, nil
 }
 
+// passwordSyncTimeoutSec bounds the syncs that follow a new password.
+const passwordSyncTimeoutSec = 30
+
 // changeConnectionPassword checks a new password against the server and, if the
 // server accepts it, stores it sealed and has the connection's calendars sync
 // again at once. The error is an *inputError for bad input, store.ErrNotFound
@@ -140,11 +143,16 @@ func (s *server) changeConnectionPassword(ctx context.Context, p principal, id, 
 		return err
 	}
 	// The calendars were waiting for a working login: sync them now instead of at their next, backed-off turn.
-	if cals, err := s.db.SyncedCalendars(p.household.ID); err == nil {
-		for _, c := range cals {
-			if c.ConnectionID == conn.ID {
-				_ = s.sync.Sync(ctx, p.household.ID, c.ID)
+	// The time is bounded, so a connection with many calendars cannot keep the request open for long; what
+	// is not synced by then waits for its next turn.
+	sctx, stop := context.WithTimeout(ctx, passwordSyncTimeoutSec*time.Second)
+	defer stop()
+	if all, err := s.db.SyncedCalendars(p.household.ID); err == nil {
+		for _, c := range calendarsOf(all, conn.ID) {
+			if sctx.Err() != nil {
+				break
 			}
+			_ = s.sync.Sync(sctx, p.household.ID, c.ID)
 		}
 	}
 	return nil

@@ -8,7 +8,6 @@ import (
 	"strconv"
 	"strings"
 	"time"
-	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/kiosk"
@@ -58,7 +57,7 @@ type displayPage struct {
 	ShowTomorrow, QuietOn     bool
 	QuietFrom, QuietTo        string
 	KioskURL, SunRise, SunSet string
-	KioskKeySet, BW           bool
+	KioskKeySet               bool
 	Types                     []store.DisplayType
 	Themes                    []store.Theme
 }
@@ -83,7 +82,6 @@ func newDisplayPage(d store.Display, in url.Values) displayPage {
 		str(&v.SunSet, "sunset_offset")
 		v.ShowTomorrow, v.QuietOn = in.Get("show_tomorrow") != "", in.Get("quiet") != ""
 	}
-	v.BW = v.Type == string(store.DisplayEInkBW)
 	v.Types = []store.DisplayType{store.DisplayEInkBW, store.DisplayEInkColor, store.DisplayScreen}
 	v.Themes = []store.Theme{theme.Light, theme.Dark, theme.Auto}
 	return v
@@ -210,19 +208,11 @@ func (s *server) changeDisplay(householdID, id string, c displayChange) error {
 		return store.ErrNotFound
 	}
 	name, typ := cur.Name, cur.Type
-	if c.Name != nil || c.Type != nil {
-		if c.Name != nil {
-			name = strings.TrimSpace(*c.Name)
-		}
-		if c.Type != nil {
-			typ = store.DisplayType(*c.Type)
-		}
-		switch {
-		case name == "" || utf8.RuneCountInString(name) > 80:
-			return &store.FieldError{Field: "name", Msg: "a display needs a name of at most 80 characters"}
-		case !typ.Valid():
-			return &store.FieldError{Field: "type", Msg: "a display needs a known type"}
-		}
+	if c.Name != nil {
+		name = *c.Name
+	}
+	if c.Type != nil {
+		typ = store.DisplayType(*c.Type)
 	}
 	sched := cur.Quiet
 	if c.QuietEnabled != nil || c.QuietFrom != nil || c.QuietTo != nil {
@@ -258,7 +248,7 @@ func (s *server) changeDisplay(householdID, id string, c displayChange) error {
 			return errTheme
 		}
 	}
-	if name != cur.Name || typ != cur.Type {
+	if name != cur.Name || typ != cur.Type { // the store trims and validates both
 		if err := s.db.SetDisplayIdentity(householdID, id, name, typ); err != nil {
 			return err
 		}
@@ -318,18 +308,23 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 		s.renderDisplay(w, r, p, http.StatusUnprocessableEntity, d, r.PostForm, key, field)
 	}
 	c := displayChange{Name: optional(r, "name"), Type: optional(r, "type")}
+	// The theme and the sun offsets are saved on every display type (ADR 0015); each is read when it is posted.
 	if th := r.PostForm.Get("theme"); th != "" {
-		rise, err1 := strconv.Atoi(strings.TrimSpace(r.PostForm.Get("sunrise_offset")))
-		set, err2 := strconv.Atoi(strings.TrimSpace(r.PostForm.Get("sunset_offset")))
-		switch {
-		case err1 != nil || !theme.ValidOffset(rise):
-			refuse("displays.error.offset", "sunrise_offset")
-			return
-		case err2 != nil || !theme.ValidOffset(set):
-			refuse("displays.error.offset", "sunset_offset")
+		c.Theme = &th
+	}
+	for _, o := range []struct {
+		field string
+		into  **int
+	}{{"sunrise_offset", &c.SunriseOffset}, {"sunset_offset", &c.SunsetOffset}} {
+		if _, posted := r.PostForm[o.field]; !posted {
+			continue
+		}
+		v, err := strconv.Atoi(strings.TrimSpace(r.PostForm.Get(o.field)))
+		if err != nil || !theme.ValidOffset(v) {
+			refuse("displays.error.offset", o.field)
 			return
 		}
-		c.Theme, c.SunriseOffset, c.SunsetOffset = &th, &rise, &set
+		*o.into = &v
 	}
 	on := func(name string) *bool { v := r.PostForm.Get(name) != ""; return &v }
 	c.ShowTomorrow, c.QuietEnabled = on("show_tomorrow"), on("quiet")

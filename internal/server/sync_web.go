@@ -338,14 +338,28 @@ func (s *server) handleCalendarPage(w http.ResponseWriter, r *http.Request) {
 	} else {
 		last.Value = p.when(c.Sync.LastSuccess)
 	}
-	facts := []factView{{Label: s.say(r, i18n.Msg("calendars.fact.address")), Value: c.URL}, forFact, last}
+	facts := []factView{{Label: s.say(r, i18n.Msg("calendars.fact.address")), Value: c.URL}, forFact,
+		{Label: s.say(r, i18n.Msg("calendars.fact.color")), Value: c.Color}, last}
 	if !c.Sync.LastSuccess.IsZero() {
 		run := c.Sync.LastRun
 		facts = append(facts,
 			factView{Label: s.say(r, i18n.Msg("calendars.fact.events")), Value: s.say(r, i18n.Msg("calendars.fact.events_value", "count", strconv.Itoa(run.Events)))},
 			factView{Label: s.say(r, i18n.Msg("calendars.fact.run")), Value: s.say(r, i18n.Msg("calendars.fact.run_value", "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))})
 	}
-	s.render(w, r, http.StatusOK, "calendar_detail.html", map[string]any{"Person": p.person, "Calendar": c, "Facts": facts, "Title": c.Name})
+	page := map[string]any{"Person": p.person, "Calendar": c, "Facts": facts, "Title": c.Name}
+	if c.Waste {
+		lang := s.langOf(r)
+		nexts, err := s.nextWastes(p.household, lang, []string{c.ID})
+		if err != nil {
+			s.fail(w, "next waste collection", err)
+			return
+		}
+		if next, ok := nexts[c.ID]; ok {
+			page["NextLabel"] = s.i18n.Format(lang, i18n.Msg("calendars.waste.next", "day", s.dayLabel(lang, next.Day)))
+			page["NextTitles"] = s.i18n.Format(lang, i18n.Msg("calendars.waste.next_titles", "titles", strings.Join(next.Titles, ", ")))
+		}
+	}
+	s.render(w, r, http.StatusOK, "calendar_detail.html", page)
 }
 
 func (s *server) handleCalendarSync(w http.ResponseWriter, r *http.Request) {

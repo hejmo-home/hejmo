@@ -169,6 +169,31 @@ func TestSwitchingACalendarOffStillAsksAndCancelsToTheConnectionPage(t *testing.
 	}
 }
 
+// ADR 0017: after a new password the connection's calendars sync at once, not at their next backed-off turn.
+func TestANewPasswordSyncsTheConnectionsCalendarsAtOnce(t *testing.T) {
+	b := signedInBox(t)
+	b.now = time.Date(2026, 11, 14, 21, 10, 5, 0, time.UTC)
+	id := chosenConnection(t, b)
+	h, _ := b.db.HomeHousehold()
+	cals, _ := b.db.SyncedCalendars(h.ID)
+	if err := b.db.FailSync(h.ID, cals[0].ID, i18n.Msg("sync.fail.login"), b.now, b.now.Add(24*time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	before, _ := b.db.SyncedCalendar(h.ID, cals[0].ID)
+	if before.Sync.LastError.Key == "" {
+		t.Fatal("setup: the calendar has no login error")
+	}
+	acceptOnly(b, "new-pw")
+	b.now = b.now.Add(time.Hour) // far inside the backed-off turn
+	if r := b.post("/connections/"+id+"/credentials", url.Values{"password": {"new-pw"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("new password = %d\n%s", r.status, r.body)
+	}
+	after, _ := b.db.SyncedCalendar(h.ID, cals[0].ID)
+	if !after.Sync.LastSuccess.Equal(b.now) || after.Sync.LastError.Key != "" {
+		t.Errorf("after the new password: last success %v (want %v), error %q", after.Sync.LastSuccess, b.now, after.Sync.LastError.Key)
+	}
+}
+
 func TestConnectionPasswordWorksThroughTheAPI(t *testing.T) {
 	c := signedInAPI(t)
 	id := chosenConnection(t, c.b)

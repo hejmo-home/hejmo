@@ -126,13 +126,10 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		s.fail(w, "synced calendars", err)
 		return
 	}
-	var mine []store.SyncedCalendar
+	mine := calendarsOf(all, conn.ID)
 	var taken []string
 	for _, c := range all {
 		taken = append(taken, c.Color)
-		if c.ConnectionID == conn.ID {
-			mine = append(mine, c)
-		}
 	}
 	// What the box knows about the connection: when it last synced, and
 	// whether the server refused the login.
@@ -259,6 +256,17 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 	s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "")
 }
 
+// calendarsOf picks the calendars of one connection out of the household's synced calendars.
+func calendarsOf(all []store.SyncedCalendar, connectionID string) []store.SyncedCalendar {
+	var mine []store.SyncedCalendar
+	for _, c := range all {
+		if c.ConnectionID == connectionID {
+			mine = append(mine, c)
+		}
+	}
+	return mine
+}
+
 // storedCalendars lists the calendars a connection has on the box, in the
 // shape of discovered ones, for when the server cannot be asked.
 func (s *server) storedCalendars(p principal, conn store.Connection) ([]discoveredJSON, error) {
@@ -267,10 +275,8 @@ func (s *server) storedCalendars(p principal, conn store.Connection) ([]discover
 		return nil, err
 	}
 	var out []discoveredJSON
-	for _, c := range all {
-		if c.ConnectionID == conn.ID {
-			out = append(out, discoveredJSON{URL: c.URL, Name: c.Name, Added: true, CalendarID: c.ID})
-		}
+	for _, c := range calendarsOf(all, conn.ID) {
+		out = append(out, discoveredJSON{URL: c.URL, Name: c.Name, Added: true, CalendarID: c.ID})
 	}
 	return out, nil
 }
@@ -282,8 +288,8 @@ func (s *server) refusedSince(p principal, conn store.Connection) (bool, error) 
 	if err != nil {
 		return false, err
 	}
-	for _, c := range all {
-		if c.ConnectionID == conn.ID && c.Sync.LastError.Key == loginFailKey {
+	for _, c := range calendarsOf(all, conn.ID) {
+		if c.Sync.LastError.Key == loginFailKey {
 			return true, nil
 		}
 	}

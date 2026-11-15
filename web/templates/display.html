@@ -17,15 +17,15 @@
     <fieldset>
       <legend>{{t "displays.legend.shows"}}</legend>
       {{template "switch" (dict "Name" "show_tomorrow" "Label" (t "displays.show_tomorrow") "OnText" (t "displays.show_tomorrow.on") "OffText" (t "displays.show_tomorrow.off") "Checked" .D.ShowTomorrow)}}
-      {{if .D.BW}}<p class="hint">{{t "displays.theme.bw"}}</p>
-      {{else}}{{$th := .D.Theme}}
+      {{$th := .D.Theme}}
       {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "displays.theme"))}}
         {{range .D.Themes}}{{template "option" (dict "Name" "theme" "Value" (printf "%s" .) "Label" (t (printf "displays.theme.%s" .)) "Checked" (eq (printf "%s" .) $th))}}{{end}}
       {{template "optionsClose" (dict "Root" . "Name" "theme")}}
-      <p class="hint">{{t "displays.theme.auto.hint"}}</p>{{end}}
+      <p class="hint">{{t "displays.theme.auto.hint"}}</p>
     </fieldset>
 
     <fieldset>
+      <legend>{{t "displays.legend.quiet"}}</legend>
       {{template "switch" (dict "Name" "quiet" "Label" (t "displays.quiet") "OnText" (t "displays.quiet.on") "OffText" (t "displays.quiet.off") "Checked" .D.QuietOn)}}
       <div class="pair when-on">
         {{template "field" (dict "Root" . "Name" "quiet_from" "Label" (t "displays.quiet_from") "Type" "time" "Value" .D.QuietFrom)}}

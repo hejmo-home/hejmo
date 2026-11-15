@@ -771,3 +771,31 @@ details.danger .confirm a { display: inline-flex; align-items: center; min-heigh
 .tpick label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 [data-theme="bw"] .tpick label { border-color: var(--text); }
 .tpick .done { justify-self: end; }
+
+/* Tomorrow tile (ticket 6.7, design pass): label row with the reminder in
+   words, a bin icon before each collection, the note set apart below. */
+.fv-footer .tile-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-bottom: 2px; }
+.fv-footer .flag { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: var(--accent-text); border-radius: var(--radius-chip); padding: 3px 12px; font-size: var(--fs-label); font-weight: 700; }
+.fv-footer .ln { overflow-wrap: anywhere; }
+.fv-footer .ln.waste { display: flex; gap: 8px; align-items: flex-start; }
+.fv-footer .ln.waste .icon { flex: none; margin-top: 1px; }
+.fv-footer .tile.alert .ln.waste .icon { stroke: var(--notice-text); }
+.fv-footer .ln.note { font-weight: 400; }
+.fv-footer .ln.waste + .ln.note { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+.fv-footer .tile.alert .ln.waste + .ln.note { border-top-color: currentColor; }
+.fv-footer .ln.note .day { font-weight: 700; margin-right: 6px; }
+[data-theme="bw"] .fv-footer .tile.alert { border-width: 3px; padding: calc(var(--pad-column) - 3px); }
+.quiet.night .night-item .ln.waste { display: flex; gap: 8px; align-items: center; font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+/* Day note card on Home (ticket 6.7, design pass). */
+.note-day .hint { margin: 0; }
+.note-day:not(:has(input[value="other"]:checked)) .other-day { display: none; }
+.seg label small { display: block; font-size: var(--fs-meta); font-weight: 400; }
+.seg label { flex-direction: column; }
+.counter { font-size: var(--fs-meta); color: var(--text-secondary); justify-self: end; font-variant-numeric: tabular-nums; }
+.cards a.note-row { color: var(--text); font-weight: 400; }
+.note-row { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); min-height: var(--touch-target); }
+.note-row .t { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.note-row .t b { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.note-row .go { margin-left: auto; flex: none; color: var(--accent); font-weight: 600; }
+.waste-next { font-size: var(--fs-label); }
+.waste-next b { font-weight: 700; }

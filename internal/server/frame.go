@@ -67,7 +67,7 @@ func (s *server) frameFor(r *http.Request) frame {
 		if !auth.RoleAllows(p.Role, it.Needs) {
 			continue
 		}
-		cur := (it.Href == "/settings" && f.Back) || r.URL.Path == it.Href || (it.Href != "/" && strings.HasPrefix(r.URL.Path, it.Href+"/"))
+		cur := (it.Href == "/settings" && f.Back) || r.URL.Path == it.Href || (it.Href != "/" && strings.HasPrefix(r.URL.Path, it.Href+"/")) || (it.Href == "/" && strings.HasPrefix(r.URL.Path, "/notes/"))
 		f.Items = append(f.Items, navLink{it.Href, it.Label, cur})
 	}
 	return f

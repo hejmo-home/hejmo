@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/update"
 )
 
 type settingsJSON struct {
@@ -83,12 +84,13 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "update settings", err)
 		return
 	}
-	http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	s.redirectSaved(w, r, "/settings", "flash.saved")
 }
 
-// saveSettings stores all household settings; the update mode also goes to the host script.
+// saveSettings stores all household settings in one database write. The update
+// mode also goes to the host script; only a failing settings file is tolerated.
 func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode) error {
-	if err := s.db.UpdateHouseholdSettings(h.ID, f, u); err != nil {
+	if err := s.db.UpdateHouseholdSettings(h.ID, f, u, a); err != nil {
 		return err
 	}
 	if a == h.AutoUpdate {
@@ -96,7 +98,7 @@ func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.Tem
 	}
 	// The change is stored; a settings file that cannot be written must not turn
 	// it into an error. The box writes the file again at its next start.
-	if err := s.setAutoUpdate(h, a); err != nil {
+	if err := update.WriteSettings(s.updateDir, string(a)); err != nil {
 		s.logger.Error("write update settings", "err", err)
 	}
 	return nil

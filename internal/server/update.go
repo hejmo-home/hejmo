@@ -50,14 +50,6 @@ func (s *server) updateNotice(h store.Household) *updateView {
 	return &v
 }
 
-// setAutoUpdate stores the mode and tells the host script.
-func (s *server) setAutoUpdate(h store.Household, m store.UpdateMode) error {
-	if err := s.db.SetAutoUpdate(h.ID, m); err != nil {
-		return err
-	}
-	return update.WriteSettings(s.updateDir, string(m))
-}
-
 func (s *server) handleUpdateDismiss(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {

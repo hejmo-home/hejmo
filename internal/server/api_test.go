@@ -41,6 +41,11 @@ func loadSpec(t *testing.T) *openapi3.T {
 	return doc
 }
 
+func init() {
+	// Profiles are downloads: the contract check reads them as opaque files.
+	openapi3filter.RegisterBodyDecoder("application/x-apple-aspen-config", openapi3filter.FileBodyDecoder)
+}
+
 func newAPIClient(t *testing.T, b *box) *apiClient {
 	doc := loadSpec(t)
 	doc.Servers = openapi3.Servers{{URL: b.srv.URL + "/api/v1"}}
@@ -52,6 +57,21 @@ func newAPIClient(t *testing.T, b *box) *apiClient {
 }
 
 func (c *apiClient) call(method, path string, body any) (int, map[string]any, []any) {
+	raw, status, _ := c.callRaw(method, path, body)
+	resBody := []byte(raw)
+	var obj map[string]any
+	var list []any
+	if bytes.HasPrefix(bytes.TrimSpace(resBody), []byte("[")) {
+		_ = json.Unmarshal(resBody, &list)
+	} else {
+		_ = json.Unmarshal(resBody, &obj)
+	}
+	return status, obj, list
+}
+
+// callRaw is call for answers that are not JSON: the body, status and content
+// type, after both request and response were checked against openapi.yaml.
+func (c *apiClient) callRaw(method, path string, body any) (string, int, string) {
 	t := c.b.t
 	t.Helper()
 	var raw []byte
@@ -99,14 +119,7 @@ func (c *apiClient) call(method, path string, body any) (int, map[string]any, []
 		t.Fatalf("%s %s: response %d violates contract: %v\n%s", method, path, res.StatusCode, err, resBody)
 	}
 
-	var obj map[string]any
-	var list []any
-	if bytes.HasPrefix(bytes.TrimSpace(resBody), []byte("[")) {
-		_ = json.Unmarshal(resBody, &list)
-	} else {
-		_ = json.Unmarshal(resBody, &obj)
-	}
-	return res.StatusCode, obj, list
+	return string(resBody), res.StatusCode, res.Header.Get("Content-Type")
 }
 
 // signedInAPI returns a client using the parent's browser session.

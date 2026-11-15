@@ -123,6 +123,40 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /caldav-profile:
+    post:
+      operationId: createCalDAVProfile
+      summary: Download an iOS profile that sets up the caller's CalDAV account (scope tokens:write)
+      description: |
+        Creates a new device token (scope `calendars`) for the caller, named
+        after the device, and answers with an iOS configuration profile
+        (`com.apple.caldav.account`) that holds the box address, the caller's
+        user name and that token. For the caller's own account only. The box
+        keeps no copy: the profile is the answer to this request; asking again
+        creates another profile and another token. The token is listed and
+        revoked like any other (`/tokens`). Served over HTTPS only, because
+        the file holds the token in plain text; a plain HTTP request gets 403.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80, example: iPhone Mama }
+      responses:
+        "200":
+          description: The profile, as a download
+          headers:
+            Content-Disposition: { schema: { type: string } }
+          content:
+            application/x-apple-aspen-config:
+              schema: { type: string }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /tokens/{id}:
     delete:
       operationId: revokeToken
@@ -926,7 +960,7 @@ components:
         state:
           type: string
           enum: [idle, available, updated, rolled_back, rejected, failed]
-          description: "idle (nothing newer or no report yet), available (notify only), updated, rolled_back (the new version failed; the previous one runs again with its data), rejected (signature not valid, not installed), failed (nothing changed)"
+          description: "idle (nothing newer or no report yet), available (notify only), updated, rolled_back (the new version failed; the previous one runs again with its data), rejected (signature not valid, not installed), failed (nothing changed, except with reason rollback_failed: then the image and database did change)"
         version: { type: string, description: "The version that runs now" }
         target: { type: string, description: "The version offered or attempted" }
         reason: { type: string, enum: [start_failed, health_check_failed, signature_invalid, backup_failed, pull_failed, rollback_failed, box_not_running] }

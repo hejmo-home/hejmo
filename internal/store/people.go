@@ -66,12 +66,13 @@ func (f TimeFormat) Valid() bool { return f == Time24h || f == Time12h }
 // Valid reports whether u is a known temperature unit.
 func (u TemperatureUnit) Valid() bool { return u == Celsius || u == Fahrenheit }
 
-// UpdateHouseholdSettings stores the household's time format and temperature unit.
-func (db *DB) UpdateHouseholdSettings(id string, f TimeFormat, u TemperatureUnit) error {
-	if !f.Valid() || !u.Valid() {
-		return errors.New("store: unknown time format or temperature unit")
+// UpdateHouseholdSettings stores the household's time format, temperature unit
+// and auto-update mode in one statement, so a save is all or nothing.
+func (db *DB) UpdateHouseholdSettings(id string, f TimeFormat, u TemperatureUnit, a UpdateMode) error {
+	if !f.Valid() || !u.Valid() || !a.Valid() {
+		return errors.New("store: unknown time format, temperature unit or update mode")
 	}
-	return expectOne(db.sql.Exec(`UPDATE households SET time_format = ?, temperature_unit = ?, updated_at = ? WHERE id = ?`, f, u, now(), id))
+	return expectOne(db.sql.Exec(`UPDATE households SET time_format = ?, temperature_unit = ?, auto_update = ?, updated_at = ? WHERE id = ?`, f, u, a, now(), id))
 }
 
 // SetHouseholdCoordinates stores the coordinates of the household's home.

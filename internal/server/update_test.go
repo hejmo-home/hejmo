@@ -223,6 +223,9 @@ func TestFailedRollbackDoesNotSayTheBoxStillRunsThePreviousVersion(t *testing.T)
 		if !strings.Contains(r.body, `data-update-notice="failed"`) || strings.Contains(r.body, bad) {
 			t.Fatalf("%s: contradictory notice:\n%s", lang, r.body)
 		}
+		if strings.Contains(r.body, "Reason:") || strings.Contains(r.body, "Grund:") {
+			t.Fatalf("%s: the notice says the same thing twice:\n%s", lang, r.body)
+		}
 	}
 }
 

@@ -163,3 +163,17 @@ func withSteps(in store.HouseholdSettings, steps ...string) store.HouseholdSetti
 	in.FirstStepsSkipped = &steps
 	return in
 }
+
+// An unknown first step comes back as a typed error that names the step, so
+// the API builds its message from it in one place.
+func TestSaveHouseholdSettingsNamesTheUnknownFirstStep(t *testing.T) {
+	db, _ := openTemp(t)
+	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
+	in := settings(store.Time24h, store.Celsius, store.UpdateOn)
+	in.FirstStepsSkipped = &[]string{"family", "nonsense"}
+	err := db.SaveHouseholdSettings(h.ID, in)
+	var unknown *store.UnknownStepError
+	if !errors.As(err, &unknown) || unknown.Step != "nonsense" || !errors.Is(err, store.ErrInvalid) {
+		t.Fatalf("err = %v, want *UnknownStepError for nonsense that is ErrInvalid", err)
+	}
+}

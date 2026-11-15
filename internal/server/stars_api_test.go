@@ -114,3 +114,28 @@ func TestStarBookingIsParentsOnlyAndValidated(t *testing.T) {
 		t.Errorf("refused bookings must not count: %v", acc)
 	}
 }
+
+// The contract-checking client refuses a limit outside 1..200, so the server's
+// own check is exercised with a plain request.
+func TestStarLogLimitMustBeBetween1And200(t *testing.T) {
+	tb := newTaskBox(t)
+	get := func(limit string) int {
+		req, _ := http.NewRequest(http.MethodGet, tb.parent.b.srv.URL+"/api/v1/people/"+tb.miaID+"/stars?limit="+limit, nil)
+		res, err := tb.parent.b.client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		return res.StatusCode
+	}
+	for _, limit := range []string{"0", "201", "-1", "x"} {
+		if got := get(limit); got != http.StatusUnprocessableEntity {
+			t.Errorf("limit=%s = %d, want 422", limit, got)
+		}
+	}
+	for _, limit := range []string{"1", "200"} {
+		if got := get(limit); got != http.StatusOK {
+			t.Errorf("limit=%s = %d, want 200", limit, got)
+		}
+	}
+}

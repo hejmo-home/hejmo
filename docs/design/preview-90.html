@@ -471,9 +471,9 @@ details.danger form { margin: 0 0 10px; }
 .sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
 .chip.stars { font-variant-numeric: tabular-nums; }
 .task-stars { margin-left: auto; flex: none; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
-.chip.stars::before { content: "\2605\00a0"; }
-.task-stars::before { content: "+"; }
-.task-stars::after { content: "\00a0\2605"; }
+.chip.stars::before { content: "\2605\00a0" / ""; }
+.task-stars::before { content: "+" / ""; }
+.task-stars::after { content: "\00a0\2605" / ""; }
 
 /* Phones (ticket 5.13): the QR code a phone scans, and the offline view. */
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
@@ -537,22 +537,22 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <li data-task="1" data-done="true"><form method="post" action="/display/tasks/1/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         <li data-task="2" data-done="true"><form method="post" action="/display/tasks/2/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again, 2 Stars"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
         </form></li>
         <li data-task="3" data-done="false"><form method="post" action="/display/tasks/3/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off, 3 Stars"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
         </form></li>
         <li data-task="4" data-done="false"><form method="post" action="/display/tasks/4/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         </ul>
     </aside>
@@ -605,22 +605,22 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <li data-task="1" data-done="true"><form method="post" action="/display/tasks/1/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         <li data-task="2" data-done="true"><form method="post" action="/display/tasks/2/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again, 2 Stars"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
         </form></li>
         <li data-task="3" data-done="false"><form method="post" action="/display/tasks/3/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off, 3 Stars"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
         </form></li>
         <li data-task="4" data-done="false"><form method="post" action="/display/tasks/4/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         </ul>
     </aside>
@@ -673,22 +673,22 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <li data-task="1" data-done="true"><form method="post" action="/display/tasks/1/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         <li data-task="2" data-done="true"><form method="post" action="/display/tasks/2/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again, 2 Stars"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
         </form></li>
         <li data-task="3" data-done="false"><form method="post" action="/display/tasks/3/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off, 3 Stars"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
         </form></li>
         <li data-task="4" data-done="false"><form method="post" action="/display/tasks/4/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         </ul>
     </aside>
@@ -742,22 +742,22 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <li data-task="1" data-done="true"><form method="post" action="/display/tasks/1/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         <li data-task="2" data-done="true"><form method="post" action="/display/tasks/2/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again, 2 Stars"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
         </form></li>
         <li data-task="3" data-done="false"><form method="post" action="/display/tasks/3/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off, 3 Stars"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
         </form></li>
         <li data-task="4" data-done="false"><form method="post" action="/display/tasks/4/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         </ul>
     </aside>
@@ -810,22 +810,22 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <li data-task="1" data-done="true"><form method="post" action="/display/tasks/1/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         <li data-task="2" data-done="true"><form method="post" action="/display/tasks/2/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again, 2 Stars"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
         </form></li>
         <li data-task="3" data-done="false"><form method="post" action="/display/tasks/3/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off, 3 Stars"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
         </form></li>
         <li data-task="4" data-done="false"><form method="post" action="/display/tasks/4/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         </ul>
     </aside>
@@ -878,22 +878,22 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <li data-task="1" data-done="true"><form method="post" action="/display/tasks/1/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Brush teeth: Done, tap to open again, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🪥 Brush teeth</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         <li data-task="2" data-done="true"><form method="post" action="/display/tasks/2/done">
           <input type="hidden" name="done" value="0">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
+          <button class="big-check" type="submit" aria-pressed="true" aria-label="Pack school bag: Done, tap to open again, 2 Stars"><span class="box" aria-hidden="true"></span><span class="title">🎒 Pack school bag</span><span class="task-stars" data-task-stars="2">2</span></button>
         </form></li>
         <li data-task="3" data-done="false"><form method="post" action="/display/tasks/3/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Tidy room: Open, tap to tick off, 3 Stars"><span class="box" aria-hidden="true"></span><span class="title">🧸 Tidy room</span><span class="task-stars" data-task-stars="3">3</span></button>
         </form></li>
         <li data-task="4" data-done="false"><form method="post" action="/display/tasks/4/done">
           <input type="hidden" name="done" value="1">
           <input type="hidden" name="day" value="2026-11-14">
-          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
+          <button class="big-check" type="submit" aria-pressed="false" aria-label="Feed the cat: Open, tap to tick off, 1 Stars"><span class="box" aria-hidden="true"></span><span class="title">🐈 Feed the cat</span><span class="task-stars" data-task-stars="1">1</span></button>
         </form></li>
         </ul>
     </aside>
@@ -928,8 +928,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Papa</h2>
     <ul class="cards">
       
-      <li data-task="a63a73fa-b998-4cb4-9331-c02603b47936">
-        <strong><a href="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936">🗑️ Take out the bins</a></strong>
+      <li data-task="bb4895af-1612-4622-b395-7c5b3c9fc723">
+        <strong><a href="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723">🗑️ Take out the bins</a></strong>
         <span class="hint">
           Every day
            · Evening
@@ -937,7 +937,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936/done">
+          <form method="post" action="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -952,8 +952,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Sebastian</h2>
     <ul class="cards">
       
-      <li data-task="68356c00-3ec7-4653-b1e7-55b9b5aa0047" data-done>
-        <strong><a href="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="dbf62089-8526-4a58-a6b0-b72e3783e48f" data-done>
+        <strong><a href="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -961,7 +961,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047/done">
+          <form method="post" action="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -976,8 +976,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Mia</h2>
     <ul class="cards">
       
-      <li data-task="34963985-b4e1-4fec-906e-efc465be843c" data-done>
-        <strong><a href="/tasks/34963985-b4e1-4fec-906e-efc465be843c">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="0c5255f3-795b-405d-b9b3-4bb3620482d2" data-done>
+        <strong><a href="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -985,7 +985,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/34963985-b4e1-4fec-906e-efc465be843c/done">
+          <form method="post" action="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -993,8 +993,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="20af40bf-cd6a-4f6a-8861-08311e27ac6a" data-done>
-        <strong><a href="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
+      <li data-task="1de0b83e-3dc6-45c9-86c9-d178b38b40d2" data-done>
+        <strong><a href="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -1002,7 +1002,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a/done">
+          <form method="post" action="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1010,8 +1010,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="24414cae-12c8-45dc-9c2b-0b51762a217c">
-        <strong><a href="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
+      <li data-task="bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">
+        <strong><a href="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -1019,7 +1019,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c/done">
+          <form method="post" action="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -1061,10 +1061,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1088,10 +1088,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1171,8 +1171,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Papa</h2>
     <ul class="cards">
       
-      <li data-task="a63a73fa-b998-4cb4-9331-c02603b47936">
-        <strong><a href="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936">🗑️ Take out the bins</a></strong>
+      <li data-task="bb4895af-1612-4622-b395-7c5b3c9fc723">
+        <strong><a href="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723">🗑️ Take out the bins</a></strong>
         <span class="hint">
           Every day
            · Evening
@@ -1180,7 +1180,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936/done">
+          <form method="post" action="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -1195,8 +1195,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Sebastian</h2>
     <ul class="cards">
       
-      <li data-task="68356c00-3ec7-4653-b1e7-55b9b5aa0047" data-done>
-        <strong><a href="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="dbf62089-8526-4a58-a6b0-b72e3783e48f" data-done>
+        <strong><a href="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -1204,7 +1204,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047/done">
+          <form method="post" action="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1219,8 +1219,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Mia</h2>
     <ul class="cards">
       
-      <li data-task="34963985-b4e1-4fec-906e-efc465be843c" data-done>
-        <strong><a href="/tasks/34963985-b4e1-4fec-906e-efc465be843c">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="0c5255f3-795b-405d-b9b3-4bb3620482d2" data-done>
+        <strong><a href="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -1228,7 +1228,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/34963985-b4e1-4fec-906e-efc465be843c/done">
+          <form method="post" action="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1236,8 +1236,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="20af40bf-cd6a-4f6a-8861-08311e27ac6a" data-done>
-        <strong><a href="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
+      <li data-task="1de0b83e-3dc6-45c9-86c9-d178b38b40d2" data-done>
+        <strong><a href="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -1245,7 +1245,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a/done">
+          <form method="post" action="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1253,8 +1253,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="24414cae-12c8-45dc-9c2b-0b51762a217c">
-        <strong><a href="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
+      <li data-task="bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">
+        <strong><a href="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -1262,7 +1262,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c/done">
+          <form method="post" action="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -1304,10 +1304,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1331,10 +1331,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1414,8 +1414,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Papa</h2>
     <ul class="cards">
       
-      <li data-task="a63a73fa-b998-4cb4-9331-c02603b47936">
-        <strong><a href="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936">🗑️ Take out the bins</a></strong>
+      <li data-task="bb4895af-1612-4622-b395-7c5b3c9fc723">
+        <strong><a href="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723">🗑️ Take out the bins</a></strong>
         <span class="hint">
           Every day
            · Evening
@@ -1423,7 +1423,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936/done">
+          <form method="post" action="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -1438,8 +1438,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Sebastian</h2>
     <ul class="cards">
       
-      <li data-task="68356c00-3ec7-4653-b1e7-55b9b5aa0047" data-done>
-        <strong><a href="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="dbf62089-8526-4a58-a6b0-b72e3783e48f" data-done>
+        <strong><a href="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -1447,7 +1447,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047/done">
+          <form method="post" action="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1462,8 +1462,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Mia</h2>
     <ul class="cards">
       
-      <li data-task="34963985-b4e1-4fec-906e-efc465be843c" data-done>
-        <strong><a href="/tasks/34963985-b4e1-4fec-906e-efc465be843c">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="0c5255f3-795b-405d-b9b3-4bb3620482d2" data-done>
+        <strong><a href="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -1471,7 +1471,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/34963985-b4e1-4fec-906e-efc465be843c/done">
+          <form method="post" action="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1479,8 +1479,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="20af40bf-cd6a-4f6a-8861-08311e27ac6a" data-done>
-        <strong><a href="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
+      <li data-task="1de0b83e-3dc6-45c9-86c9-d178b38b40d2" data-done>
+        <strong><a href="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -1488,7 +1488,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a/done">
+          <form method="post" action="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1496,8 +1496,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="24414cae-12c8-45dc-9c2b-0b51762a217c">
-        <strong><a href="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
+      <li data-task="bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">
+        <strong><a href="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -1505,7 +1505,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c/done">
+          <form method="post" action="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -1547,10 +1547,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1574,10 +1574,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1658,8 +1658,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Papa</h2>
     <ul class="cards">
       
-      <li data-task="a63a73fa-b998-4cb4-9331-c02603b47936">
-        <strong><a href="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936">🗑️ Take out the bins</a></strong>
+      <li data-task="bb4895af-1612-4622-b395-7c5b3c9fc723">
+        <strong><a href="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723">🗑️ Take out the bins</a></strong>
         <span class="hint">
           Every day
            · Evening
@@ -1667,7 +1667,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936/done">
+          <form method="post" action="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -1682,8 +1682,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Sebastian</h2>
     <ul class="cards">
       
-      <li data-task="68356c00-3ec7-4653-b1e7-55b9b5aa0047" data-done>
-        <strong><a href="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="dbf62089-8526-4a58-a6b0-b72e3783e48f" data-done>
+        <strong><a href="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -1691,7 +1691,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047/done">
+          <form method="post" action="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1706,8 +1706,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Mia</h2>
     <ul class="cards">
       
-      <li data-task="34963985-b4e1-4fec-906e-efc465be843c" data-done>
-        <strong><a href="/tasks/34963985-b4e1-4fec-906e-efc465be843c">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="0c5255f3-795b-405d-b9b3-4bb3620482d2" data-done>
+        <strong><a href="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -1715,7 +1715,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/34963985-b4e1-4fec-906e-efc465be843c/done">
+          <form method="post" action="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1723,8 +1723,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="20af40bf-cd6a-4f6a-8861-08311e27ac6a" data-done>
-        <strong><a href="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
+      <li data-task="1de0b83e-3dc6-45c9-86c9-d178b38b40d2" data-done>
+        <strong><a href="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -1732,7 +1732,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a/done">
+          <form method="post" action="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1740,8 +1740,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="24414cae-12c8-45dc-9c2b-0b51762a217c">
-        <strong><a href="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
+      <li data-task="bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">
+        <strong><a href="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -1749,7 +1749,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c/done">
+          <form method="post" action="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -1791,10 +1791,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1818,10 +1818,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -1901,8 +1901,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Papa</h2>
     <ul class="cards">
       
-      <li data-task="a63a73fa-b998-4cb4-9331-c02603b47936">
-        <strong><a href="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936">🗑️ Take out the bins</a></strong>
+      <li data-task="bb4895af-1612-4622-b395-7c5b3c9fc723">
+        <strong><a href="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723">🗑️ Take out the bins</a></strong>
         <span class="hint">
           Every day
            · Evening
@@ -1910,7 +1910,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936/done">
+          <form method="post" action="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -1925,8 +1925,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Sebastian</h2>
     <ul class="cards">
       
-      <li data-task="68356c00-3ec7-4653-b1e7-55b9b5aa0047" data-done>
-        <strong><a href="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="dbf62089-8526-4a58-a6b0-b72e3783e48f" data-done>
+        <strong><a href="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -1934,7 +1934,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047/done">
+          <form method="post" action="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1949,8 +1949,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Mia</h2>
     <ul class="cards">
       
-      <li data-task="34963985-b4e1-4fec-906e-efc465be843c" data-done>
-        <strong><a href="/tasks/34963985-b4e1-4fec-906e-efc465be843c">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="0c5255f3-795b-405d-b9b3-4bb3620482d2" data-done>
+        <strong><a href="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -1958,7 +1958,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/34963985-b4e1-4fec-906e-efc465be843c/done">
+          <form method="post" action="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1966,8 +1966,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="20af40bf-cd6a-4f6a-8861-08311e27ac6a" data-done>
-        <strong><a href="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
+      <li data-task="1de0b83e-3dc6-45c9-86c9-d178b38b40d2" data-done>
+        <strong><a href="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -1975,7 +1975,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a/done">
+          <form method="post" action="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -1983,8 +1983,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="24414cae-12c8-45dc-9c2b-0b51762a217c">
-        <strong><a href="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
+      <li data-task="bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">
+        <strong><a href="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -1992,7 +1992,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c/done">
+          <form method="post" action="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -2034,10 +2034,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2061,10 +2061,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2144,8 +2144,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Papa</h2>
     <ul class="cards">
       
-      <li data-task="a63a73fa-b998-4cb4-9331-c02603b47936">
-        <strong><a href="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936">🗑️ Take out the bins</a></strong>
+      <li data-task="bb4895af-1612-4622-b395-7c5b3c9fc723">
+        <strong><a href="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723">🗑️ Take out the bins</a></strong>
         <span class="hint">
           Every day
            · Evening
@@ -2153,7 +2153,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/a63a73fa-b998-4cb4-9331-c02603b47936/done">
+          <form method="post" action="/tasks/bb4895af-1612-4622-b395-7c5b3c9fc723/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -2168,8 +2168,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Sebastian</h2>
     <ul class="cards">
       
-      <li data-task="68356c00-3ec7-4653-b1e7-55b9b5aa0047" data-done>
-        <strong><a href="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="dbf62089-8526-4a58-a6b0-b72e3783e48f" data-done>
+        <strong><a href="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f">🐈 <s>Feed the cat</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -2177,7 +2177,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/68356c00-3ec7-4653-b1e7-55b9b5aa0047/done">
+          <form method="post" action="/tasks/dbf62089-8526-4a58-a6b0-b72e3783e48f/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -2192,8 +2192,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
     <h2>Mia</h2>
     <ul class="cards">
       
-      <li data-task="34963985-b4e1-4fec-906e-efc465be843c" data-done>
-        <strong><a href="/tasks/34963985-b4e1-4fec-906e-efc465be843c">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
+      <li data-task="0c5255f3-795b-405d-b9b3-4bb3620482d2" data-done>
+        <strong><a href="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2">🪥 <s>Brush teeth</s></a> <span class="task-stars" data-task-stars="1">1<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -2201,7 +2201,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/34963985-b4e1-4fec-906e-efc465be843c/done">
+          <form method="post" action="/tasks/0c5255f3-795b-405d-b9b3-4bb3620482d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -2209,8 +2209,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="20af40bf-cd6a-4f6a-8861-08311e27ac6a" data-done>
-        <strong><a href="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
+      <li data-task="1de0b83e-3dc6-45c9-86c9-d178b38b40d2" data-done>
+        <strong><a href="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2">🎒 <s>Pack school bag</s></a> <span class="task-stars" data-task-stars="2">2<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
            · Morning
@@ -2218,7 +2218,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/20af40bf-cd6a-4f6a-8861-08311e27ac6a/done">
+          <form method="post" action="/tasks/1de0b83e-3dc6-45c9-86c9-d178b38b40d2/done">
             <input type="hidden" name="done" value="0">
             <button class="button secondary" type="submit">Mark as open</button>
           </form>
@@ -2226,8 +2226,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         
       </li>
       
-      <li data-task="24414cae-12c8-45dc-9c2b-0b51762a217c">
-        <strong><a href="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
+      <li data-task="bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">
+        <strong><a href="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50">🧸 Tidy room</a> <span class="task-stars" data-task-stars="3">3<span class="sr"> stars</span></span></strong>
         <span class="hint">
           Every day
           
@@ -2235,7 +2235,7 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </span>
         
         <span class="row">
-          <form method="post" action="/tasks/24414cae-12c8-45dc-9c2b-0b51762a217c/done">
+          <form method="post" action="/tasks/bd3d35ee-66cd-4b8d-a9d0-e2410cc86a50/done">
             <input type="hidden" name="done" value="1">
             <button class="button secondary" type="submit">Mark as done</button>
           </form>
@@ -2277,10 +2277,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   
@@ -2304,10 +2304,10 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         <fieldset class="chips">
   <legend>Person</legend>
   
-  <label class="pchip" data-person="1"><input type="radio" name="person" value="36148ca7-10bb-4cea-a955-abd69af81fab"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="2"><input type="radio" name="person" value="402ef359-c4d0-4c3c-a06b-30f77f628900"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="3"><input type="radio" name="person" value="4b5b842a-446e-449b-8f95-a025903cfc11"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
-  <label class="pchip" data-person="4"><input type="radio" name="person" value="52615ae3-7787-4909-9f64-a123c99fc9c6"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="1"><input type="radio" name="person" value="b1e82ea1-64ff-4775-8c81-9129e09efed7"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span>Mama<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="2"><input type="radio" name="person" value="c9aa7081-5bf5-4798-b749-2b54ff40f05a"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span>Papa<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="3"><input type="radio" name="person" value="4691c534-4e0b-4fe4-9b2d-0006438f005f"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span>Sebastian<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+  <label class="pchip" data-person="4"><input type="radio" name="person" value="280c24a6-63f2-42be-b1ad-f43b3514421b"><span class="marker" data-person="4" data-shape="square-empty" aria-hidden="true"></span>Mia<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
   
   
   

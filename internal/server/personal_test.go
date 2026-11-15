@@ -364,6 +364,10 @@ func TestDisplayTickCreditsStarsAndThePersonalViewShowsTheBalance(t *testing.T) 
 	if !strings.Contains(before, `data-stars="0"`) || !strings.Contains(before, `data-task-stars="3"`) {
 		t.Fatalf("before the tick: balance 0 and the task's 3 stars expected:\n%s", before)
 	}
+	// The button's aria-label overrides its content, so it carries the value.
+	if !strings.Contains(before, `Tidy room: Open, tap to tick off, 3 Stars"`) {
+		t.Errorf("the big-check label lacks the star value:\n%s", before)
+	}
 	if r := f.display.post("/display/tasks/"+tk.ID+"/done", url.Values{"done": {"1"}}); r.status != 303 {
 		t.Fatalf("tick = %d", r.status)
 	}

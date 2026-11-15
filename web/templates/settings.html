@@ -19,6 +19,11 @@
       {{template "option" (dict "Name" "auto_update" "Value" "notify" "Label" (t "settings.auto_update.notify") "Checked" (eq .AutoUpdate "notify"))}}
       {{template "option" (dict "Name" "auto_update" "Value" "off" "Label" (t "settings.auto_update.off") "Checked" (eq .AutoUpdate "off"))}}
     {{template "optionsClose" (dict "Root" . "Name" "auto_update")}}{{end}}
+    <fieldset class="cutoffs">
+      <legend>{{t "settings.cutoffs"}}</legend>
+      <p class="hint">{{t "settings.cutoffs.hint"}}</p>
+      {{range .Cutoffs}}{{template "field" (dict "Root" $ "Name" .Name "Label" (t (printf "meals.mealtime.%s" .Mealtime)) "Type" "time" "Value" .Value)}}{{end}}
+    </fieldset>
     <button class="button" type="submit">{{t "settings.save"}}</button>
   </form>
   <p><a href="/otp">{{t "settings.otp"}}</a></p>

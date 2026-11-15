@@ -459,5 +459,8 @@
   "meals.mealtime.breakfast": "Frühstück",
   "meals.mealtime.lunch": "Mittagessen",
   "meals.mealtime.snack": "Snack",
-  "meals.mealtime.dinner": "Abendessen"
+  "meals.mealtime.dinner": "Abendessen",
+  "settings.cutoffs": "Mahlzeiten auf Displays",
+  "settings.cutoffs.hint": "Ab dieser Uhrzeit zeigen Displays die Mahlzeit nicht mehr an. Lass die Zeit leer, dann bleibt die Mahlzeit für den Rest des Tages sichtbar.",
+  "settings.error.cutoff": "Bitte gib eine Uhrzeit wie 13:30 ein oder lass das Feld leer."
 }

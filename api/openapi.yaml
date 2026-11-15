@@ -1183,17 +1183,36 @@ components:
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
     Settings:
       type: object
-      required: [time_format, temperature_unit, auto_update]
+      required: [time_format, temperature_unit, auto_update, meal_cutoffs]
       properties:
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
         temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
+        meal_cutoffs: { $ref: "#/components/schemas/MealCutoffs" }
+    MealCutoffs:
+      type: object
+      description: "Per mealtime, the time of day (hh:mm, 24-hour) from which it is no longer shown on displays (ADR 0016). Empty means no cut-off: shown for the rest of the day. Defaults: breakfast 10:00, lunch 13:30, snack 16:30, dinner none."
+      required: [breakfast, lunch, snack, dinner]
+      properties:
+        breakfast: { $ref: "#/components/schemas/CutoffTime" }
+        lunch: { $ref: "#/components/schemas/CutoffTime" }
+        snack: { $ref: "#/components/schemas/CutoffTime" }
+        dinner: { $ref: "#/components/schemas/CutoffTime" }
+    CutoffTime: { type: string, pattern: '^(([01][0-9]|2[0-3]):[0-5][0-9])?$', example: "13:30" }
     SettingsUpdate:
       type: object
       properties:
         time_format: { type: string, description: "24h or 12h" }
         temperature_unit: { type: string, description: "c or f" }
         auto_update: { type: string, description: "on, off or notify" }
+        meal_cutoffs:
+          type: object
+          description: "Only the mealtimes given change; a time outside hh:mm refuses the whole request with 422"
+          properties:
+            breakfast: { type: string }
+            lunch: { type: string }
+            snack: { type: string }
+            dinner: { type: string }
     UpdateStatus:
       type: object
       required: [mode, managed, state, notice]

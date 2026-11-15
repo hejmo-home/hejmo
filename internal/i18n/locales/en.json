@@ -459,5 +459,8 @@
   "meals.mealtime.breakfast": "Breakfast",
   "meals.mealtime.lunch": "Lunch",
   "meals.mealtime.snack": "Snack",
-  "meals.mealtime.dinner": "Dinner"
+  "meals.mealtime.dinner": "Dinner",
+  "settings.cutoffs": "Meals on displays",
+  "settings.cutoffs.hint": "From this time on, a mealtime is no longer shown on displays. Leave a time empty to show the mealtime for the rest of the day.",
+  "settings.error.cutoff": "Please enter a time like 13:30, or leave the field empty."
 }

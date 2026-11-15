@@ -5,7 +5,7 @@
   <script src="/static/display.js" defer></script>
 {{template "foot"}}
 
-{{define "familyView"}}<div class="fv" data-family data-people="{{len .Columns}}"{{if .Scroll}} data-scroll{{end}}>
+{{define "familyView"}}<div class="fv" data-family data-people="{{len .Columns}}">
   <header class="fv-header">
     <div>
       <div class="lab">{{t (printf "weekday.%d" .Weekday)}} · {{t "family.cw"}} {{.Week}}</div>

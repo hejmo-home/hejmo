@@ -132,7 +132,6 @@ type View struct {
 	ShowTomorrow  bool
 	SyncStale     bool // header notice: calendar not up to date
 	Columns       []Column
-	Scroll        bool // 7 or more people: the columns scroll
 	Meal          *Tile
 	TomorrowTile  *Tile
 }
@@ -140,7 +139,6 @@ type View struct {
 const (
 	tomorrowFromHour = 18 // the tomorrow block appears from 18:00
 	maxTomorrow      = 3  // timed events per column in the tomorrow block
-	maxNarrowColumns = 6  // from seven people the columns scroll
 )
 
 // Build lays out today's family view.
@@ -153,7 +151,6 @@ func Build(in Input) View {
 	v.Weather = Chip(in.Weather, in.TemperatureUnit)
 	v.ShowTomorrow = in.ShowTomorrow && now.Hour() >= tomorrowFromHour
 	v.SyncStale = in.SyncStale
-	v.Scroll = len(in.People) > maxNarrowColumns
 	for _, p := range in.People {
 		v.Columns = append(v.Columns, Column{Person: p})
 	}

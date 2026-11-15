@@ -207,6 +207,7 @@ type displayData struct {
 }
 
 func (s *server) displayData(h store.Household, lang string, days int) (displayData, error) {
+	s.rollMealPlan(h, lang) // the meal tile reads the meal-plan calendar
 	now := s.householdNow(h)
 	loc := now.Location()
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)

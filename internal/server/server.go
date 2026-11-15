@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"slices"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
@@ -100,6 +101,7 @@ type server struct {
 	countWait time.Duration
 	done      <-chan struct{}
 	updateDir string
+	rolled    sync.Map // household id -> the day its meal plan calendar was last rolled forward
 }
 
 // New returns the box's root HTTP handler.
@@ -211,6 +213,12 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /meals", s.handleMealsPage)
 	mux.HandleFunc("POST /meals", s.handleMealsSave)
+	mux.HandleFunc("GET /meals/templates", s.handleTemplatesPage)
+	mux.HandleFunc("GET /meals/templates/new", s.handleTemplateNew)
+	mux.HandleFunc("POST /meals/templates", s.handleTemplateCreate)
+	mux.HandleFunc("GET /meals/templates/{id}", s.handleTemplatePage)
+	mux.HandleFunc("POST /meals/templates/{id}", s.handleTemplateSave)
+	mux.HandleFunc("POST /meals/templates/{id}/delete", s.handleTemplateDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
@@ -304,6 +312,8 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 			fr.Success = s.successText(lang, key, arg)
 		} else if key, ok := data["SuccessKey"].(string); ok {
 			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
+		} else if text, ok := data["SuccessText"].(string); ok {
+			fr.Success = text // a page that shows the result itself, with a name in it
 		}
 		data["Frame"] = fr
 	}

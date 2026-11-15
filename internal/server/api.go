@@ -24,6 +24,8 @@ var apiRoutes = []APIRoute{
 	{"GET", "/people", auth.Perm("people", auth.Read), (*server).apiListPeople},
 	{"POST", "/people", auth.Perm("people", auth.Write), (*server).apiCreatePerson},
 	{"GET", "/people/{id}", auth.Perm("people", auth.Read), (*server).apiGetPerson},
+	{"POST", "/me/recovery-codes", auth.Perm("people", auth.Write), (*server).apiNewRecoveryCodes},
+	{"POST", "/people/{id}/reset-otp", auth.Perm("people", auth.Write), (*server).apiResetOTP},
 	{"GET", "/tokens", auth.Perm("tokens", auth.Read), (*server).apiListTokens},
 	{"POST", "/tokens", auth.Perm("tokens", auth.Write), (*server).apiCreateToken},
 	{"POST", "/caldav-profile", auth.Perm("tokens", auth.Write), (*server).apiIOSProfile},
@@ -60,6 +62,11 @@ var apiRoutes = []APIRoute{
 	{"POST", "/displays", auth.Perm("displays", auth.Write), (*server).apiPairDisplay},
 	{"PATCH", "/displays/{id}", auth.Perm("displays", auth.Write), (*server).apiUpdateDisplay},
 	{"DELETE", "/displays/{id}", auth.Perm("displays", auth.Delete), (*server).apiRevokeDisplay},
+	{"GET", "/phones", auth.Perm("tokens", auth.Read), (*server).apiListPhones},
+	{"DELETE", "/phones/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokePhone},
+	{"GET", "/phones/pairings", auth.Perm("tokens", auth.Read), (*server).apiListPhonePairings},
+	{"POST", "/phones/pairings", auth.Perm("tokens", auth.Write), (*server).apiCreatePhonePairing},
+	{"POST", "/phones/pairings/{id}/confirm", auth.Perm("tokens", auth.Write), (*server).apiConfirmPhonePairing},
 }
 
 // APIRoutes lists the served endpoints (used by the contract test).

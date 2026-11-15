@@ -34,6 +34,60 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/Person" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+  /me/recovery-codes:
+    post:
+      operationId: createRecoveryCodes
+      summary: Create a new set of 10 recovery codes for the caller (parents only, scope people:write)
+      description: |
+        A recovery code replaces the one-time code at sign-in, never the
+        password, and is valid once. The new set voids the old one. The codes
+        are returned once and stored only as Argon2id hashes.
+        Refused with 403 while the caller's new one-time codes are not yet
+        confirmed (after a reset).
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [codes]
+                properties:
+                  codes:
+                    type: array
+                    items: { type: string, example: K7QD2-M9XPA }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /people/{id}/reset-otp:
+    post:
+      operationId: resetOneTimeCodes
+      summary: Reset another parent's one-time codes (parents only, scope people:write)
+      description: |
+        Removes the parent's one-time code secret and recovery codes and ends
+        their browser sessions. Device sessions and tokens stay. At the next
+        sign-in the parent sets up new one-time codes before anything else is
+        reachable. The caller confirms with their own password and one-time
+        code (or an unused recovery code). A parent cannot reset their own
+        codes this way.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password, code]
+              properties:
+                password: { type: string, description: The caller's own password }
+                code: { type: string, description: The caller's own one-time code or an unused recovery code }
+      responses:
+        "204": { description: Reset }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+        "429": { description: Too many failed confirmations. Wait 15 minutes. }
   /people:
     get:
       operationId: listPeople
@@ -172,6 +226,7 @@ paths:
     get:
       operationId: listDisplays
       summary: Paired displays of the household (scope displays:read)
+      description: Children, including a child's phone, are refused (403). Device management is for parents.
       responses:
         "200":
           description: Displays, oldest first. Unpaired displays are not listed.
@@ -211,7 +266,10 @@ paths:
     patch:
       operationId: updateDisplay
       summary: Change the settings of a paired display (scope displays:write)
-      description: Only the fields sent are changed. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
+      description: |
+        Only the fields sent are changed. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
+        `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015).
+        `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to switch the front light off at sunset and in quiet mode; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -228,6 +286,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
     delete:
       operationId: unpairDisplay
       summary: Unpair a display and revoke its token (scope displays:delete)
@@ -239,6 +298,91 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /phones:
+    get:
+      operationId: listPhones
+      summary: Paired phones of the household (scope tokens:read)
+      description: Each phone has a long-lived device session for the person it was paired for (ADR 0015).
+      responses:
+        "200":
+          description: Phones, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Phone" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /phones/{id}:
+    delete:
+      operationId: revokePhone
+      summary: Remove a phone and end its device session (scope tokens:delete)
+      description: The phone is signed out the next time it opens the app.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /phones/pairings:
+    get:
+      operationId: listPhonePairings
+      summary: Phones that opened a pairing code and wait for confirmation (scope tokens:read)
+      responses:
+        "200":
+          description: Waiting phones, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PhonePairing" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createPhonePairing
+      summary: Create a pairing code for a phone (scope tokens:write)
+      description: |
+        Returns the address a phone opens, valid once and for ten minutes; show
+        it as a QR code. The box keeps only a hash of the code, so the address
+        is only in this answer. With the box's own certificate authority the
+        address leads over the plain-HTTP trust page first, which then leads on
+        to the pairing (ADR 0014). The phone opens the address, waits, and a
+        parent confirms it with `confirmPhonePairing`.
+      responses:
+        "201":
+          description: The pairing code
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NewPhonePairing" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /phones/pairings/{id}/confirm:
+    post:
+      operationId: confirmPhonePairing
+      summary: Confirm the phone that opened a pairing code (scope tokens:write)
+      description: |
+        Chooses whom the phone is for (an account or a child) and names it. The
+        phone gets its device session at its next request. The phone acts with
+        the role of that person. A pairing that no phone opened, or that
+        expired or was confirmed already, is 404.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConfirmPhone" }
+      responses:
+        "201":
+          description: The phone
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Phone" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /tasks:
     get:
       operationId: listTasks
@@ -850,7 +994,7 @@ components:
       description: Black-and-white E-Ink, colour E-Ink or normal screen
     Display:
       type: object
-      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow]
+      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, quiet_mode, kiosk]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: Hallway }
@@ -859,10 +1003,38 @@ components:
         paired_at: { type: string, format: date-time }
         last_seen_at: { type: string, format: date-time, nullable: true }
         show_tomorrow: { type: boolean, description: "Show the faded tomorrow block from 18:00. Off by default (ADR 0016)" }
+        quiet_mode: { $ref: "#/components/schemas/QuietMode" }
+        kiosk: { $ref: "#/components/schemas/Kiosk" }
+    QuietMode:
+      type: object
+      description: The daily window, in the household's time zone, in which the display is quiet (ADR 0015). Off by default.
+      required: [enabled, from, to]
+      properties:
+        enabled: { type: boolean }
+        from: { type: string, pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$", example: "22:00" }
+        to: { type: string, pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$", example: "06:00", description: "May be earlier than `from` (the window then spans midnight); never equal to it" }
+    Kiosk:
+      type: object
+      description: The display's kiosk app (ADR 0005). The API key is never returned.
+      required: [url, api_key_set]
+      properties:
+        url: { type: string, example: "http://192.168.1.20:8080", description: "Empty without a kiosk app" }
+        api_key_set: { type: boolean }
     UpdateDisplay:
       type: object
       properties:
         show_tomorrow: { type: boolean }
+        quiet_mode:
+          type: object
+          properties:
+            enabled: { type: boolean }
+            from: { type: string, pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$", example: "22:00" }
+            to: { type: string, pattern: "^([01][0-9]|2[0-3]):[0-5][0-9]$", example: "06:00" }
+        kiosk:
+          type: object
+          properties:
+            url: { type: string, description: "http or https address; empty removes the kiosk app and its key" }
+            api_key: { type: string, writeOnly: true, description: "Omitted or empty keeps the stored key" }
     PairDisplay:
       type: object
       required: [code, name, type]
@@ -871,6 +1043,37 @@ components:
         name: { type: string, minLength: 1, maxLength: 80 }
         room: { type: string, maxLength: 80 }
         type: { $ref: "#/components/schemas/DisplayType" }
+    Phone:
+      type: object
+      required: [id, name, person_id, person_name, paired_at, last_seen_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: "Mia's phone" }
+        person_id: { type: string, format: uuid, description: "The person the phone acts for, with their role" }
+        person_name: { type: string, example: Mia }
+        paired_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time, nullable: true }
+    PhonePairing:
+      type: object
+      required: [id, device, verification, expires_at]
+      properties:
+        id: { type: string, format: uuid }
+        device: { type: string, example: Safari on iPhone, description: "What the phone said about itself" }
+        verification: { type: string, example: "483 920", description: "Six-digit number the waiting phone shows. Confirm only if it matches the number on the phone in your hand." }
+        expires_at: { type: string, format: date-time }
+    NewPhonePairing:
+      type: object
+      required: [id, url, expires_at]
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: string, format: uri, description: "The address to show as a QR code. Only in this answer." }
+        expires_at: { type: string, format: date-time }
+    ConfirmPhone:
+      type: object
+      required: [person_id, name]
+      properties:
+        person_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 80 }
     SyncState:
       type: object
       description: Only on synced calendars. Displays read `state` to show the sync notice.

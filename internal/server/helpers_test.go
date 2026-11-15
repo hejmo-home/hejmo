@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -333,4 +335,13 @@ func secretOn(t *testing.T, page string) string {
 		t.Fatalf("no TOTP secret on page:\n%s", page)
 	}
 	return m[1]
+}
+
+func itoa(n int) string { return strconv.Itoa(n) }
+
+func decodeJSON(t *testing.T, body string, v any) {
+	t.Helper()
+	if err := json.Unmarshal([]byte(body), v); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, body)
+	}
 }

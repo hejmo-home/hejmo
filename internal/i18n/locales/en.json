@@ -403,6 +403,7 @@
   "tasks.error.date": "Please enter a date.",
   "tasks.error.weekdays": "Please choose at least one weekday.",
   "tasks.error.repeat": "Please choose how often the task repeats.",
+  "tasks.error.stars": "Please enter a whole number of stars from 0 to 100.",
   "tasks.error.part": "Please choose morning, evening or any time.",
   "chips.whole_family": "Whole family",
   "calendars.more": "More options",

@@ -11,7 +11,7 @@
      the error under it, is marked invalid and takes the focus. */}}
 {{define "field"}}{{$bad := and .Root.ErrorField (eq .Root.ErrorField .Name)}}{{$type := or .Type "text"}}<div class="f{{if $bad}} invalid{{end}}">
   <label>{{.Label}}
-    <input name="{{.Name}}" type="{{$type}}"{{if ne $type "password"}} value="{{.Value}}"{{end}}{{if .Required}} required{{end}}{{with .Max}} maxlength="{{.}}"{{end}}{{with .Min}} minlength="{{.}}"{{end}}{{with .Pattern}} pattern="{{.}}"{{end}}{{with .Inputmode}} inputmode="{{.}}"{{end}}{{with .Autocomplete}} autocomplete="{{.}}"{{end}}{{with .Autocapitalize}} autocapitalize="{{.}}"{{end}}{{with .Placeholder}} placeholder="{{.}}"{{end}}{{with .Spellcheck}} spellcheck="{{.}}"{{end}}{{if or $bad .Autofocus}} autofocus{{end}}{{if $bad}} aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}></label>
+    <input name="{{.Name}}" type="{{$type}}"{{if ne $type "password"}} value="{{.Value}}"{{end}}{{if .Required}} required{{end}}{{with .Max}} maxlength="{{.}}"{{end}}{{with .Min}} minlength="{{.}}"{{end}}{{with .Pattern}} pattern="{{.}}"{{end}}{{if .Bounded}} min="{{.Lo}}" max="{{.Hi}}" step="1"{{end}}{{with .Inputmode}} inputmode="{{.}}"{{end}}{{with .Autocomplete}} autocomplete="{{.}}"{{end}}{{with .Autocapitalize}} autocapitalize="{{.}}"{{end}}{{with .Placeholder}} placeholder="{{.}}"{{end}}{{with .Spellcheck}} spellcheck="{{.}}"{{end}}{{if or $bad .Autofocus}} autofocus{{end}}{{if $bad}} aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}></label>
   {{template "fieldError" .}}
 </div>{{end}}
 

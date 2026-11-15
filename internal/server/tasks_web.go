@@ -104,7 +104,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		starForm = map[string]any{}
 	}
 	data := map[string]any{
-		"Person": p.person, "Groups": groups, "StarCards": cards, "StarForm": starForm, "StarError": starForm["Error"], "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form, "Child": child,
+		"Person": p.person, "Groups": groups, "StarCards": cards, "StarForm": starForm, "StarError": starForm["Error"], "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form, "Child": child, "MaxStars": task.MaxStars,
 		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
 	s.render(w, r, status, "tasks.html", data)
@@ -198,7 +198,7 @@ func doneKey(r *http.Request) string {
 // text falls back to the general one.
 func taskErrorKey(field string) string {
 	switch field {
-	case "title", "emoji", "person", "date", "weekdays", "repeat", "part":
+	case "title", "emoji", "person", "date", "weekdays", "repeat", "part", "stars":
 		return "tasks.error." + field
 	}
 	return "tasks.error.invalid"

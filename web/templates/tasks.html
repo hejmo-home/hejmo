@@ -80,7 +80,7 @@
           {{template "option" (dict "Name" "part" "Value" "morning" "Label" (t "tasks.part.morning") "Checked" (eq (index $f "Part") "morning"))}}
           {{template "option" (dict "Name" "part" "Value" "evening" "Label" (t "tasks.part.evening") "Checked" (eq (index $f "Part") "evening"))}}
         {{template "optionsClose" (dict "Root" . "Name" "part")}}
-        {{template "field" (dict "Root" . "Name" "stars" "Label" (t "tasks.field.stars") "Type" "number" "Value" (index $f "Stars") "Inputmode" "numeric")}}
+        {{template "field" (dict "Root" . "Name" "stars" "Label" (t "tasks.field.stars") "Type" "number" "Value" (index $f "Stars") "Inputmode" "numeric" "Bounded" true "Lo" 0 "Hi" .MaxStars)}}
         {{template "moreOpen" (dict "Label" (t "tasks.more") "Open" (eq .ErrorField "emoji"))}}
           {{template "field" (dict "Root" . "Name" "emoji" "Label" (t "tasks.field.emoji") "Value" (index $f "Emoji") "Max" 16)}}
         {{template "moreClose"}}

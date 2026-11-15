@@ -218,3 +218,54 @@ func TestStarsOnTheTasksPageAreGerman(t *testing.T) {
 		}
 	}
 }
+
+// 7.1: a child's phone shows neither the star accounts nor the booking form
+// (ADR 0015), so a child never sees siblings' balances.
+func TestChildPhoneShowsNoStarAccountsOrBookingForm(t *testing.T) {
+	cp := newChildPhone(t)
+	b := cp.parent.b
+	b.post("/tasks", url.Values{"person": {personNamed(t, b, "Mia").ID}, "title": {"Tidy room"}, "repeat": {"daily"}, "stars": {"3"}})
+	_, _, list := cp.parent.call(http.MethodGet, "/tasks", nil)
+	for _, it := range list {
+		if m := it.(map[string]any); m["title"] == "Tidy room" {
+			b.post("/tasks/"+m["id"].(string)+"/done", url.Values{"done": {"1"}})
+		}
+	}
+	if parent := b.get("/tasks").body; !strings.Contains(parent, "data-balance=") {
+		t.Fatalf("parent page shows no star account:\n%s", parent)
+	}
+	page := cp.screen.get("/tasks", "en")
+	if page.status != http.StatusOK {
+		t.Fatalf("child GET /tasks = %d", page.status)
+	}
+	for _, bad := range []string{"data-balance=", "/tasks/stars", "Star log"} {
+		if strings.Contains(page.body, bad) {
+			t.Errorf("child's page contains %q:\n%s", bad, page.body)
+		}
+	}
+}
+
+// 7.1: an invalid star value gets its own error text and the field is bounded.
+func TestInvalidStarValueHasItsOwnErrorAndTheFieldIsBounded(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	r := b.do(http.MethodPost, "/tasks", url.Values{"person": {tb.miaID}, "title": {"Tidy"}, "repeat": {"daily"}, "stars": {"101"}}, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "Please enter a whole number of stars from 0 to 100.") {
+		t.Fatalf("limit = %d\n%s", r.status, r.body)
+	}
+	if !strings.Contains(r.body, `name="stars" type="number"`) || !strings.Contains(r.body, `min="0" max="100" step="1"`) {
+		t.Errorf("star field is not bounded:\n%s", r.body)
+	}
+}
+
+// 7.1: the task detail page shows the star value.
+func TestTaskDetailPageShowsTheStarValue(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"Tidy room"}, "repeat": {"daily"}, "stars": {"3"}})
+	_, _, list := tb.parent.call(http.MethodGet, "/tasks", nil)
+	id := list[0].(map[string]any)["id"].(string)
+	if page := b.do(http.MethodGet, "/tasks/"+id, nil, map[string]string{"Accept-Language": "en"}); !strings.Contains(page.body, `data-task-stars="3"`) {
+		t.Errorf("detail page lacks the star value:\n%s", page.body)
+	}
+}

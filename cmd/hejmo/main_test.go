@@ -90,13 +90,34 @@ func TestStartOnAFreshVolumeCreatesTheKeyFileAndRestartReusesIt(t *testing.T) {
 
 func TestHTTPSConfig(t *testing.T) {
 	cfg := loadConfig(func(string) string { return "" })
-	if cfg.HTTPSAddr != ":8443" || cfg.PublicHTTPSPort != "443" {
+	if cfg.HTTPSAddr != ":8443" || cfg.PublicHTTPSPort != "8443" {
 		t.Errorf("defaults: HTTPSAddr=%q PublicHTTPSPort=%q", cfg.HTTPSAddr, cfg.PublicHTTPSPort)
 	}
 	env := map[string]string{"HEJMO_HTTPS_ADDR": ":9443", "HEJMO_PUBLIC_HTTPS_PORT": "9443"}
 	cfg = loadConfig(func(k string) string { return env[k] })
 	if cfg.HTTPSAddr != ":9443" || cfg.PublicHTTPSPort != "9443" {
 		t.Errorf("from env: %+v", cfg)
+	}
+}
+
+// Run natively, the box listens on :8443; clients then reach HTTPS there, so
+// the public port follows HEJMO_HTTPS_ADDR unless it is set explicitly.
+func TestPublicHTTPSPortDefaultsToThePortOfTheHTTPSAddress(t *testing.T) {
+	cases := []struct {
+		name string
+		env  map[string]string
+		want string
+	}{
+		{"native defaults", nil, "8443"},
+		{"custom address", map[string]string{"HEJMO_HTTPS_ADDR": "0.0.0.0:9443"}, "9443"},
+		{"explicit port wins", map[string]string{"HEJMO_HTTPS_ADDR": ":8443", "HEJMO_PUBLIC_HTTPS_PORT": "443"}, "443"},
+		{"address without port", map[string]string{"HEJMO_HTTPS_ADDR": "garbage"}, "443"},
+	}
+	for _, c := range cases {
+		cfg := loadConfig(func(k string) string { return c.env[k] })
+		if cfg.PublicHTTPSPort != c.want {
+			t.Errorf("%s: PublicHTTPSPort = %q, want %q", c.name, cfg.PublicHTTPSPort, c.want)
+		}
 	}
 }
 

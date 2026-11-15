@@ -195,8 +195,12 @@ func TestNotePageChangesAndRemoves(t *testing.T) {
 	f.save("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Mia: Schwimmsachen"}}, "de")
 	p := f.page("de", "/notes/2026-11-16").body
 	mustContain(t, p, "<h1>Notiz für Montag, 16/11</h1>", `class="lead"`, "Steht ab Sonntag 18:00 in der Kachel „Morgen“.",
-		"Mia: Schwimmsachen</textarea>", "18 von 120 Zeichen", ">Speichern<", `<details class="danger">`, "Notiz entfernen</summary>", "Ja, Notiz entfernen",
+		"Mia: Schwimmsachen</textarea>", "18 von 120 Zeichen", ">Speichern<", `<details class="danger">`, "Ja, Notiz entfernen",
 		`action="/notes/2026-11-16"`, `action="/notes/2026-11-16/delete"`)
+	// The shared danger pattern puts a warning icon in front of the summary text.
+	if !regexp.MustCompile(`<summary><svg [^>]*>.*?</svg>Notiz entfernen</summary>`).MatchString(p) {
+		t.Errorf("the summary does not read Notiz entfernen after the icon:\n%s", p)
+	}
 	if r := f.page("de", "/notes/2026-11-17"); r.status != http.StatusNotFound {
 		t.Fatalf("no such note = %d", r.status)
 	}

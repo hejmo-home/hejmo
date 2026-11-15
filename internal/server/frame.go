@@ -40,6 +40,9 @@ type frame struct {
 	SunRise, SunSet int64
 	// Back is set on setup screens: they link back to the Settings hub.
 	Back bool
+	// BackHref and BackLabel (a locale key) say where the back link goes; empty
+	// means the Settings hub.
+	BackHref, BackLabel string
 	// Success is the success line after a saved change, already translated.
 	Success string
 }

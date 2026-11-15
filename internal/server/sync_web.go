@@ -183,7 +183,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	var connViews []connectionView
 	for _, c := range conns {
-		connViews = append(connViews, connectionView{ID: c.ID, URL: c.URL, Username: c.Username})
+		connViews = append(connViews, newConnectionView(c))
 	}
 	entries, err := s.db.SyncLog(p.household.ID, 50)
 	if err != nil {
@@ -202,11 +202,9 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		"AutoColor": nextColors(taken, 1)[0],
 		"Person":    p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
 		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "Connections": connViews, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
-		"ConnError": "", "ConnErrorField": "",
 	}
 	if form != nil {
 		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
-		data["ConnError"], data["ConnErrorField"] = form["ConnError"], form["ConnErrorField"]
 	}
 	s.render(w, r, status, "calendars.html", data)
 }

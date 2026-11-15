@@ -41,11 +41,11 @@ func TestConnectionErrorsAppearAtTheirField(t *testing.T) {
 		field string
 		fatal bool
 	}{
-		{"unknown service", url.Values{"provider": {"x"}, "username": {"u"}, "password": {"p"}}, "provider", false},
+		{"unknown service", url.Values{"provider": {"x"}, "username": {"u"}, "password": {"p"}}, "", false},
 		{"bad address", url.Values{"provider": {"caldav"}, "url": {"nope"}, "username": {"u"}, "password": {"p"}}, "url", false},
 		{"no user name", url.Values{"provider": {"caldav"}, "url": {"https://caldav.example.org"}, "username": {""}, "password": {"p"}}, "username", false},
 		{"no password", url.Values{"provider": {"caldav"}, "url": {"https://caldav.example.org"}, "username": {"u"}, "password": {""}}, "password", false},
-		{"icloud server problem", url.Values{"provider": {"icloud"}, "username": {"u"}, "password": {"p"}}, "provider", true},
+		{"icloud server problem", url.Values{"provider": {"icloud"}, "username": {"u"}, "password": {"p"}}, "", true},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			b := signedInAPI(t).b
@@ -58,7 +58,13 @@ func TestConnectionErrorsAppearAtTheirField(t *testing.T) {
 			if r.status != http.StatusUnprocessableEntity {
 				t.Fatalf("status = %d\n%s", r.status, r.body)
 			}
-			form := formOf(t, r.body, "/connections")
+			if c.field == "" { // iCloud has no address field and an unknown service no field at all: a general message
+				if strings.Count(r.body, `class="ferr"`) != 0 || strings.Count(r.body, `<p class="error"`) != 1 {
+					t.Errorf("want one general error and no field error:\n%s", r.body)
+				}
+				return
+			}
+			form := connectBlock(t, r.body) // both guides post to /connections: look at the whole page block
 			if !strings.Contains(form, `id="err-`+c.field+`"`) || strings.Count(r.body, `class="ferr"`) != 1 {
 				t.Errorf("want exactly one error with id err-%s:\n%s", c.field, form)
 			}

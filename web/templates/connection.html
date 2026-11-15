@@ -1,5 +1,4 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "connections.choose.title") "Frame" .Frame)}}
-  <p><a href="/calendars">{{t "calendars.back"}}</a></p>
   <h1>{{t "connections.choose.title"}}</h1>
   <p class="hint">{{.Connection.Username}} · {{.Connection.URL}}</p>
   {{if and .Error (not .ErrorField)}}{{template "error" .}}{{end}}

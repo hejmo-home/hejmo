@@ -11,6 +11,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"regexp"
 	"slices"
 	"strings"
 	"time"
@@ -178,6 +179,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /calendars", s.handleCalendarAdd)
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
+	mux.HandleFunc("GET /connections/new", s.handleConnectNew)
 	mux.HandleFunc("POST /connections", s.handleConnect)
 	mux.HandleFunc("GET /connections/{id}", s.handleConnectionPage)
 	mux.HandleFunc("POST /connections/{id}/calendars", s.handleConnectionCalendars)
@@ -265,6 +267,7 @@ func parsePages() *template.Template {
 		"t":    func(string) string { return "" },
 		"tf":   func(string, ...string) string { return "" },
 		"dict": dict,
+		"rich": rich,
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
 	}).ParseFS(web.Templates, "templates/*.html"))
@@ -287,6 +290,11 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 			fr.Success = s.successText(lang, key, arg)
 		} else if key, ok := data["SuccessKey"].(string); ok {
 			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
+		} else if m, ok := data["SuccessMsg"].(i18n.Message); ok {
+			fr.Success = s.i18n.Format(lang, m) // the same, with values filled in
+		}
+		if href, ok := data["BackHref"].(string); ok {
+			fr.BackHref, fr.BackLabel = href, data["BackLabel"].(string)
 		}
 		data["Frame"] = fr
 	}
@@ -318,6 +326,16 @@ func (s *server) execute(w io.Writer, name, lang string, data any) error {
 func (s *server) fail(w http.ResponseWriter, what string, err error) {
 	s.logger.Error(what, "err", err)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
+}
+
+// pathMark finds a menu name in a translated text: [[Settings]].
+var pathMark = regexp.MustCompile(`\[\[(.+?)\]\]`)
+
+// rich shows a translated text with its menu names ([[like this]]) set apart
+// as the names the person sees on the screen they are told to use. The text is
+// escaped first, so it cannot add markup of its own.
+func rich(text string) template.HTML {
+	return template.HTML(pathMark.ReplaceAllString(template.HTMLEscapeString(text), `<span class="path">$1</span>`))
 }
 
 // dict builds a map for passing several values to a sub-template.

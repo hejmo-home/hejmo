@@ -16,6 +16,9 @@ type Account struct {
 	// TOTPReset is set once the codes were reset (ADR 0017): the next sign-in
 	// sets up new ones.
 	TOTPReset bool
+	// Language is the interface language the person chose (ticket 134), or ""
+	// when none was chosen yet.
+	Language string
 }
 
 // APIToken is a bearer token acting on behalf of a person, limited by scopes.
@@ -75,19 +78,19 @@ func (db *DB) ConfirmTOTP(personID string) error {
 
 // AccountByUsername looks up credentials (case-insensitive).
 func (db *DB) AccountByUsername(username string) (Account, error) {
-	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL
+	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, COALESCE(language, '')
 		FROM accounts WHERE username = ?`, username))
 }
 
 // AccountByPerson looks up credentials by person.
 func (db *DB) AccountByPerson(personID string) (Account, error) {
-	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL
+	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, COALESCE(language, '')
 		FROM accounts WHERE person_id = ?`, personID))
 }
 
 func (db *DB) scanAccount(row *sql.Row) (Account, error) {
 	var a Account
-	err := row.Scan(&a.PersonID, &a.Username, &a.PasswordHash, &a.TOTPSecret, &a.TOTPConfirmed, &a.TOTPReset)
+	err := row.Scan(&a.PersonID, &a.Username, &a.PasswordHash, &a.TOTPSecret, &a.TOTPConfirmed, &a.TOTPReset, &a.Language)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Account{}, ErrNotFound
 	}
@@ -295,4 +298,9 @@ func (db *DB) ResetOTP(personID string) error {
 		}
 	}
 	return tx.Commit()
+}
+
+// SetAccountLanguage stores the interface language a person chose.
+func (db *DB) SetAccountLanguage(personID, language string) error {
+	return expectOne(db.sql.Exec(`UPDATE accounts SET language = ? WHERE person_id = ?`, language, personID))
 }

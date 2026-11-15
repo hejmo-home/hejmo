@@ -860,5 +860,9 @@
   "meals.tpl.clash.advice": "Wähle eine andere Startwoche oder einen anderen Abstand, oder lass diese Tage in einer der beiden Vorlagen leer.",
   "flash.template_saved": "Vorlage „{name}“ gespeichert. Sie füllt den Essensplan ab heute.",
   "flash.template_deleted": "Vorlage „{name}“ gelöscht. Mahlzeiten vor heute und Mahlzeiten, die du für eine Woche angepasst hast, bleiben im Essensplan.",
-  "meals.tpl.ahead.sep": ": "
+  "meals.tpl.ahead.sep": ": ",
+  "lang.label": "Sprache:",
+  "flash.lang.account": "Sprache auf Deutsch umgestellt und für dein Konto gespeichert. Displays und die Handys der Kinder behalten ihre Sprache.",
+  "flash.lang.device": "Sprache auf Deutsch umgestellt. Dieses Gerät merkt sich die Wahl.",
+  "flash.lang.error": "Sprache nur auf diesem Gerät umgestellt: Sie konnte nicht für dein Konto gespeichert werden. Versuche es später noch einmal."
 }

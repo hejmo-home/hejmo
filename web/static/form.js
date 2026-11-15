@@ -223,3 +223,23 @@ document.addEventListener("change", function (e) {
     if (input && input.form && (input.name === "color" || input.name === "shape") && input.hasAttribute("data-taken-with")) sync(input.form);
   });
 })();
+
+// Language switcher (ticket 134). The menu is a <details> and works without
+// this script; the script adds what a native <details> lacks: Escape closes it
+// (focus goes back to its button) and so does a click outside it.
+(function () {
+  function open() {
+    return document.querySelector("details.lang[open]");
+  }
+  document.addEventListener("keydown", function (e) {
+    var menu = e.key === "Escape" && open();
+    if (!menu) return;
+    menu.removeAttribute("open");
+    var summary = menu.querySelector("summary");
+    if (summary) summary.focus();
+  });
+  document.addEventListener("click", function (e) {
+    var menu = open();
+    if (menu && !menu.contains(e.target)) menu.removeAttribute("open");
+  });
+})();

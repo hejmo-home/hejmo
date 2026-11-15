@@ -50,6 +50,13 @@ type frame struct {
 	BackHref, BackLabel string
 	// Success is the success line after a saved change, already translated.
 	Success string
+	// Error is an error line shown above the page, already translated.
+	Error string
+	// The language switcher (ticket 134): the active language, its own name and
+	// flag file, the other languages, and the page to come back to.
+	LangName, LangFlag string
+	Others             []language
+	Next               string
 }
 
 // frameFor builds the frame for the person behind the request, or a bare

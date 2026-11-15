@@ -860,5 +860,9 @@
   "meals.tpl.clash.advice": "Choose another start week or interval, or leave those days empty in one of the two templates.",
   "flash.template_saved": "Template “{name}” saved. It fills the meal plan from today on.",
   "flash.template_deleted": "Template “{name}” deleted. Meals before today and meals you adjusted for a week stay in the meal plan.",
-  "meals.tpl.ahead.sep": ": "
+  "meals.tpl.ahead.sep": ": ",
+  "lang.label": "Language:",
+  "flash.lang.account": "Language changed to English and saved for your account. Displays and the children's phones keep their language.",
+  "flash.lang.device": "Language changed to English. This device remembers your choice.",
+  "flash.lang.error": "Language changed on this device only: it could not be saved for your account. Try again later."
 }

@@ -146,7 +146,7 @@ func TestTheTemplateFormHasEveryFieldOfTheDesign(t *testing.T) {
 	if n := strings.Count(r.body, "<textarea"); n != 28 {
 		t.Errorf("%d fields, want 28", n)
 	}
-	if strings.Contains(r.body, "details") {
+	if strings.Contains(r.body, "Delete template") { // the page header has its own <details> (language switcher)
 		t.Error("a new template cannot be deleted")
 	}
 	if n := strings.Count(r.body, `<option`); n != 53 {

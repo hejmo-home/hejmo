@@ -136,12 +136,12 @@ func TestChildSeesNoSettingsPages(t *testing.T) {
 	}
 }
 
-// 5.18: at 375 px the navigation is one row with targets of at least 44 px.
-func TestNavigationFitsOneRowWithTouchTargets(t *testing.T) {
+// 5.18: at 375 px the navigation wraps onto further rows instead of scrolling (design pass 2 on 6.1), with targets of at least 44 px.
+func TestNavigationWrapsWithTouchTargets(t *testing.T) {
 	css := string(mustStatic(t, "static/hejmo.css"))
 	m := regexp.MustCompile(`\.frame-nav ul \{([^}]*)\}`).FindStringSubmatch(css)
-	if m == nil || !strings.Contains(m[1], "flex-wrap: nowrap") || !strings.Contains(m[1], "overflow-x: auto") {
-		t.Errorf("the navigation is not a single scrollable row: %v", m)
+	if m == nil || !strings.Contains(m[1], "flex-wrap: wrap") || strings.Contains(m[1], "overflow-x") {
+		t.Errorf("the navigation does not wrap: %v", m)
 	}
 	a := regexp.MustCompile(`\.frame-nav a \{([^}]*)\}`).FindStringSubmatch(css)
 	if a == nil || !strings.Contains(a[1], "min-height: var(--touch-target)") {

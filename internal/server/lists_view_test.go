@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"io/fs"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -8,6 +9,7 @@ import (
 	"testing"
 
 	"github.com/hejmo-home/hejmo/internal/list"
+	"github.com/hejmo-home/hejmo/web"
 )
 
 // Design pass on 6.1 (docs/design/preview-32.html): the page structure, the
@@ -509,5 +511,64 @@ func TestFailedFormsShowNoStaleSuccessLine(t *testing.T) {
 	}
 	if next := getEN(b, "/lists").body; strings.Contains(next, "data-success") {
 		t.Errorf("the stale success line turned up on the next page")
+	}
+}
+
+// cssRule returns the declarations of the rule with exactly this selector.
+func cssRule(t *testing.T, css, selector string) string {
+	t.Helper()
+	m := regexp.MustCompile(`(?m)^` + regexp.QuoteMeta(selector) + ` \{([^}]*)\}`).FindStringSubmatch(css)
+	if m == nil {
+		t.Fatalf("no CSS rule %q", selector)
+	}
+	return m[1]
+}
+
+// Design pass 2 on 6.1: nothing is wider than a 375 px screen, and long words
+// break and hyphenate under the box language.
+func TestListsStylesKeepLongTextInsideThePhoneWidth(t *testing.T) {
+	raw, err := fs.ReadFile(web.Static, "static/hejmo.css")
+	if err != nil {
+		t.Fatal(err)
+	}
+	css := string(raw)
+	want := map[string][]string{
+		".frame":                        {"grid-template-columns: minmax(0, 1fr)"},
+		".frame-nav ul":                 {"flex-wrap: wrap"},
+		".big-check .title":             {"flex: 1", "min-width: 0", "line-height: 1.3", "overflow-wrap: break-word", "hyphens: auto"},
+		".entries .title":               {"min-width: 0", "overflow-wrap: break-word", "hyphens: auto"},
+		".list-rows b":                  {"overflow-wrap: break-word", "hyphens: auto"},
+		".list-rows a > .t":             {"flex: 1"},
+		".list-title":                   {"overflow-wrap: break-word", "hyphens: auto"},
+		".list-title > span:last-child": {"min-width: 0"},
+		".msg":                          {"min-width: 0", "overflow-wrap: break-word", "hyphens: auto"},
+		"details.more .sum":             {"min-width: 0", "overflow-wrap: break-word", "hyphens: auto"},
+	}
+	for sel, decls := range want {
+		rule := cssRule(t, css, sel)
+		for _, d := range decls {
+			if !strings.Contains(rule, d) {
+				t.Errorf("%s lacks %q: %s", sel, d, rule)
+			}
+		}
+		if strings.Contains(rule, "anywhere") {
+			t.Errorf("%s still breaks anywhere: %s", sel, rule)
+		}
+	}
+	if nav := cssRule(t, css, ".frame-nav ul"); strings.Contains(nav, "overflow-x") || strings.Contains(nav, "nowrap") {
+		t.Errorf("the navigation must wrap, not scroll: %s", nav)
+	}
+}
+
+func TestEveryListsPageCarriesTheBoxLanguageForHyphenation(t *testing.T) {
+	for _, lang := range []string{"en", "de"} {
+		b := signedInBox(t)
+		id, _ := listWith(t, b, "Wocheneinkauf Großfamilie", []string{"a"}, "a", "b")
+		for _, path := range []string{"/lists", "/lists/" + id, "/lists/" + id + "?edit=1"} {
+			r := b.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": lang})
+			if r.status != http.StatusOK || !strings.Contains(r.body, `<html lang="`+lang+`"`) {
+				t.Errorf("%s (%s): status %d, no lang=%q", path, lang, r.status, lang)
+			}
+		}
 	}
 }

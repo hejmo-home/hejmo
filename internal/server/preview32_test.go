@@ -84,19 +84,20 @@ func TestWritePreview32(t *testing.T) {
 	type frame struct {
 		theme string
 		w, h  int
+		lang  string // "" is English
 	}
 	desk := func(themes ...string) []frame {
 		var fs []frame
 		for _, th := range themes {
-			fs = append(fs, frame{th, 1024, 768})
+			fs = append(fs, frame{theme: th, w: 1024, h: 768})
 		}
 		return fs
 	}
-	portrait := []frame{{"light", 768, 1024}, {"bw", 768, 1024}}
+	portrait := []frame{{theme: "light", w: 768, h: 1024}, {theme: "bw", w: 768, h: 1024}}
 	phone := func(themes ...string) []frame {
 		var fs []frame
 		for _, th := range themes {
-			fs = append(fs, frame{th, 375, 812})
+			fs = append(fs, frame{theme: th, w: 375, h: 812})
 		}
 		return fs
 	}
@@ -111,7 +112,7 @@ func TestWritePreview32(t *testing.T) {
 		fmt.Fprintf(&body, "<h2>%s</h2><p class=\"note\">%s</p><div class=\"row\">\n", title, note)
 		for _, f := range frames {
 			label := map[string]string{"light": "Light", "dark": "Dark", "bw": "Black and white"}[f.theme]
-			fmt.Fprintf(&body, `<figure><figcaption>%s, %d x %d</figcaption><iframe data-doc="%d" data-theme="%s" data-anchor="%s" width="%d" height="%d" title="%s"></iframe></figure>`+"\n", label, f.w, f.h, idx, f.theme, anchor, f.w, f.h, html_.EscapeString(title))
+			fmt.Fprintf(&body, `<figure><figcaption>%s, %d x %d</figcaption><iframe data-doc="%d" data-theme="%s" data-lang="%s" data-anchor="%s" width="%d" height="%d" title="%s"></iframe></figure>`+"\n", label, f.w, f.h, idx, f.theme, f.lang, anchor, f.w, f.h, html_.EscapeString(title))
 		}
 		body.WriteString("</div>\n")
 	}
@@ -163,6 +164,70 @@ func TestWritePreview32(t *testing.T) {
 	section("9. An empty list", "What to do next, in one sentence.", "",
 		page(parent, "/lists/"+gifts.ID), append(desk("light"), phone("light")...)...)
 
+	// Section 10: German, long words, 375 px phone. A box of its own, so that the
+	// overview shows only these two lists. Names longer than the 60 characters of
+	// the forms are stored directly; the page must cope with them as well.
+	gb := signedInBox(t)
+	gh, _ := gb.db.HomeHousehold()
+	defaults, _ := gb.db.Lists(gh.ID)
+	for _, l := range defaults {
+		_ = gb.db.DeleteList(gh.ID, l.ID)
+	}
+	deOf := func(path string) string {
+		r := gb.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": "de"})
+		if r.status != http.StatusOK {
+			t.Fatalf("de %s = %d", path, r.status)
+		}
+		return r.body
+	}
+	kita, err := gb.db.CreateList(gh.ID, list.List{Name: "Kindergeburtstag", Color: "terracotta", Symbol: "circle-filled", Sort: list.Manual})
+	if err != nil {
+		t.Fatal(err)
+	}
+	// 64 characters: the designer's name is 4 over list.MaxName, which the forms enforce.
+	if _, err := gb.db.SQL().Exec(`UPDATE lists SET name = ? WHERE id = ?`, "Kindergeburtstag: Ausleihliste für die Nachbarschaftsgartenparty", kita.ID); err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range []string{"Bierzeltgarnitur", "Klappstühle", "Planschbecken", "Lichterkette", "Kühlbox"} {
+		e, err := gb.db.AddEntry(gh.ID, kita.ID, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		_ = gb.db.SetEntryDone(gh.ID, kita.ID, e.ID, true)
+	}
+	if _, err := gb.db.CreateList(gh.ID, list.List{Name: "Weihnachtsgeschenkideen", Color: "ochre", Symbol: "diamond-filled", Sort: list.Manual}); err != nil {
+		t.Fatal(err)
+	}
+	einkauf, err := gb.db.CreateList(gh.ID, list.List{Name: "Wocheneinkauf Großfamilie", Color: "green", Symbol: "square-filled", Sort: list.Manual})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range []string{"Kinderwagenregenschutzverdeck für den Zwillingswagen", "Geburtstagsgeschenkpapier für Sebastians Kindergartenfreundin", "Sonnencreme für empfindliche Kinderhaut, Lichtschutzfaktor 50", "Haushaltsreinigungsschwämme", "Milch", "Fußballschienbeinschoner für Maximilian-Alexander"} {
+		e, err := gb.db.AddEntry(gh.ID, einkauf.ID, s)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if strings.HasPrefix(s, "Fußball") {
+			_ = gb.db.SetEntryDone(gh.ID, einkauf.ID, e.ID, true)
+		}
+	}
+	_ = deOf("/lists")
+	if r := gb.post("/lists/"+einkauf.ID+"/entries", url.Values{"text": {"Sonnencreme für empfindliche Kinderhaut, Lichtschutzfaktor 50"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("de add = %d", r.status)
+	}
+	deList := deOf("/lists/" + einkauf.ID)
+	de := func(fs ...frame) []frame {
+		for i := range fs {
+			fs[i].lang = "de"
+		}
+		return fs
+	}
+	// The overview is read after the add, so no success line sits on top of it.
+	section("10. German, long words, 375 px phone", "Everything here is German, so the browser hyphenates by the page language: long compound words break with a hyphen at the line end, the text of a wrapped entry sits under the text and not under the box, and nothing is wider than the screen. The overview has a list name of 64 characters (the forms allow 60, so it is stored directly; the page must still fit it) and an empty list.", "",
+		deOf("/lists"), de(phone("light")...)...)
+	section("10b. German, long words: the list page", "The list page in German: long entries, a ticked-off entry, and the success line for the entry just added.", "",
+		deList, de(append(phone("light", "bw"), frame{theme: "light", w: 768, h: 1024})...)...)
+
 	var jsDocs strings.Builder
 	for i, h := range docs {
 		h = regexp.MustCompile(`(?s)<script src="[^"]*"[^>]*></script>`).ReplaceAllString(h, "")
@@ -201,7 +266,7 @@ iframe{border:0;background:#fff;display:block}
       var el = a && f.contentDocument.querySelector(a);
       if (el) el.scrollIntoView();
     });
-    f.srcdoc = '<!doctype html><html lang="en" data-theme="' + f.getAttribute("data-theme") + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>' + css + '</style></head>' + inner + '<script>' + js + '<\/script></html>';
+    f.srcdoc = '<!doctype html><html lang="' + (f.getAttribute("data-lang") || "en") + '" data-theme="' + f.getAttribute("data-theme") + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>' + css + '</style></head>' + inner + '<script>' + js + '<\/script></html>';
   });
 })();
 </script>

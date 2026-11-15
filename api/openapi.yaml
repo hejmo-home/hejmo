@@ -599,6 +599,33 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "400": { $ref: "#/components/responses/Invalid" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /update:
+    get:
+      operationId: getUpdate
+      summary: Auto-update mode and what the host script last did (scope settings:read)
+      description: |
+        The host-side update script (ADR 0018) reports through a small status
+        file; this is its content with fixed values only. `notice` says whether
+        the web interface shows a notice to parents: after an update (what is new),
+        after a rollback or a rejected image (with the `reason`), and, with
+        mode `notify`, while a newer version is available.
+      responses:
+        "200":
+          description: Update status
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UpdateStatus" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /update/dismiss:
+    post:
+      operationId: dismissUpdateNotice
+      summary: Dismiss the current update notice so it is not shown again (scope settings:write)
+      description: A notice about an available update (mode notify) cannot be dismissed; it goes when the update is installed.
+      responses:
+        "204": { description: Dismissed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /events:
     get:
       operationId: listOccurrences
@@ -913,15 +940,33 @@ components:
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
     Settings:
       type: object
-      required: [time_format, temperature_unit]
+      required: [time_format, temperature_unit, auto_update]
       properties:
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
         temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
+        auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
     SettingsUpdate:
       type: object
       properties:
         time_format: { type: string, description: "24h or 12h" }
         temperature_unit: { type: string, description: "c or f" }
+        auto_update: { type: string, description: "on, off or notify" }
+    UpdateStatus:
+      type: object
+      required: [mode, managed, state, notice]
+      properties:
+        mode: { type: string, enum: [on, off, notify] }
+        managed: { type: boolean, description: "Whether the host updater of the install script manages this box. False on a plain Docker Compose install: then mode (also in /settings) is stored but nothing acts on it." }
+        state:
+          type: string
+          enum: [idle, available, updated, rolled_back, rejected, failed]
+          description: "idle (nothing newer or no report yet), available (notify only), updated, rolled_back (the new version failed; the previous one runs again with its data), rejected (signature not valid, not installed), failed (nothing changed, except with reason rollback_failed: then the image and database did change)"
+        version: { type: string, description: "The version that runs now" }
+        target: { type: string, description: "The version offered or attempted" }
+        reason: { type: string, enum: [start_failed, health_check_failed, signature_invalid, backup_failed, pull_failed, rollback_failed, box_not_running] }
+        time: { type: string, format: date-time, description: "When the script recorded this event" }
+        notice: { type: boolean, description: "Whether the web interface currently shows a notice to parents" }
+        release_notes_url: { type: string, format: uri, description: "Release notes of the version installed or offered" }
     HTTPSStatus:
       type: object
       required: [mode, warning]

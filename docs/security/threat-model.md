@@ -125,27 +125,27 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 
 ## Auto-update script
 
-The script is built in #101 and signed images come from #99. These threats list what that work must satisfy; the checks are tickets until then.
+The host-side script (`hejmo-update`, installed by `install.sh`) runs as root once a night; signed images come from the release workflow (#99). Its tests run it as a black box against a stand-in Docker.
 
 ### T15. A tampered or unpublished image is installed
 
 - **Threat:** the script pulls an image that was not released by the project, or a preview build.
-- **Check:** only images with a valid keyless cosign signature from the release workflow, only release tags without a pre-release suffix, previous image recorded by digest. #101 and #99
+- **Check:** only images with a valid keyless cosign signature from the release workflow, only release tags without a pre-release suffix, previous image recorded by digest. `test:internal/install/update_test.go` and `test:internal/release/workflows_test.go`
 
 ### T16. The box feeds the host script a malicious setting
 
 - **Threat:** a compromised box writes the status file the root-run script reads, and gets code executed on the host.
-- **Check:** the file has fixed keys and values; the script accepts nothing else and never runs or interpolates its content; the container gets no Docker socket. #101
+- **Check:** the file has fixed keys and values; the script accepts nothing else and never runs or interpolates its content; the container gets no Docker socket. A settings file that is a link, oversized or doubtful means "notify", never install; the status file is replaced, never written through a link. `test:internal/install/update_test.go`, `test:internal/update/update_test.go`
 
 ### T17. An update loses or corrupts the database
 
 - **Threat:** a bad release leaves the family without calendar and tasks.
-- **Check:** online backup before the update, wait for `/healthz`, return to the previous image and database on failure, notice to parents. #101
+- **Check:** online backup before the update, wait for `/healthz`, return to the previous image and database on failure, notice to parents. `test:internal/install/update_test.go`
 
 ### T18. The update script itself is replaced
 
 - **Threat:** auto-update becomes a way to change the host script.
-- **Check:** the script is updated only by re-running the install script, never by auto-update. #101
+- **Check:** the script is updated only by re-running the install script, never by auto-update. `test:internal/install/update_test.go`
 
 ## MCP
 

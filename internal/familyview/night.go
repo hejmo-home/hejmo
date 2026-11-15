@@ -36,7 +36,7 @@ func BuildNight(in NightInput) NightView {
 		if o.AllDay || o.Start.Before(d0) || !o.Start.Before(d1) {
 			continue
 		}
-		e := card(o, d0.Location(), in.TimeFormat, nil)
+		e := card(o, d0.Location(), in.TimeFormat, "")
 		v.First = &e
 		break
 	}

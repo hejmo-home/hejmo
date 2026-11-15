@@ -10,7 +10,9 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/holiday"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/wholine"
 )
 
 // Person is one column of the family view. Slot (1..6) picks the person's
@@ -24,10 +26,11 @@ type Person struct {
 
 // Input is everything Build needs. Occurrences must cover today and tomorrow.
 type Input struct {
-	Now         time.Time // in the household's time zone
-	Lang        string    // "de" or "en", for holiday names
-	Region      string    // home region (ISO 3166-2)
-	People      []Person  // display order
+	Now         time.Time       // in the household's time zone
+	Lang        string          // "de" or "en", for holiday names
+	Region      string          // home region (ISO 3166-2)
+	People      []Person        // display order
+	Groups      []wholine.Group // subgroups with their members, for the who-line
 	Calendars   map[string]calendar.Audience
 	Occurrences []calendar.Occurrence
 	// ShowTomorrow is the display's setting "show tomorrow block", off by
@@ -60,9 +63,9 @@ type WeatherChip struct {
 type Event struct {
 	Title string
 	Time  string // "09:00–10:00" or "9:00 AM–10:00 AM", by the household time format
-	// Markers are the people of the event in display order, so black-and-white
-	// mode tells them apart by shape.
-	Markers []Marker
+	// Who says in words who the event is for, leaving out the column's own
+	// person (Q62); empty on a card for that person alone.
+	Who string
 }
 
 // Progress is a person's task progress today (data arrives with 6.6).
@@ -84,13 +87,6 @@ type Column struct {
 	Progress *Progress // nil: no bar
 }
 
-// Marker identifies a person on a strip item.
-type Marker struct {
-	Name  string
-	Slot  int
-	Shape string
-}
-
 // Strip item kinds.
 const (
 	KindEvent   = "event"
@@ -103,9 +99,9 @@ type StripItem struct {
 	Title           string
 	Time            string // timed whole-household events only
 	AllDay          bool
-	Partial         bool // partial public holiday
-	Markers         []Marker
-	DayIndex        int // multi-day: this is day DayIndex of DayCount (1-based)
+	Partial         bool   // partial public holiday
+	Who             string // who it is for, shown in brackets after the title; empty for the whole family
+	DayIndex        int    // multi-day: this is day DayIndex of DayCount (1-based)
 	DayCount        int
 	ContinuesBefore bool
 	ContinuesAfter  bool
@@ -167,21 +163,18 @@ func Build(in Input) View {
 		if !bar && !whole {
 			for i, p := range in.People {
 				if sees(in, p, o) {
-					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc, in.TimeFormat, markers(in, o)))
+					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc, in.TimeFormat, whoLine(in, o, p.ID).Text))
 				}
 			}
 			continue
 		}
 		item := StripItem{Kind: KindEvent, Title: o.Title, AllDay: o.AllDay}
 		if !whole {
-			for _, p := range in.People {
-				if sees(in, p, o) {
-					item.Markers = append(item.Markers, Marker{Name: p.Name, Slot: p.Slot, Shape: p.Shape})
-				}
-			}
-			if len(item.Markers) == 0 {
+			audience := audienceOf(in, o)
+			if len(audience) == 0 {
 				continue
 			}
+			item.Who = whoLine(in, o, "").InBrackets
 		}
 		if bar {
 			first, last := firstDay(o, loc), calendar.LastDay(o, loc)
@@ -215,7 +208,7 @@ func Build(in Input) View {
 			}
 			for i, p := range in.People {
 				if sees(in, p, o) && len(v.Columns[i].Tomorrow) < maxTomorrow {
-					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc, in.TimeFormat, markers(in, o)))
+					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc, in.TimeFormat, whoLine(in, o, p.ID).Text))
 				}
 			}
 		}
@@ -238,8 +231,8 @@ func clock(o calendar.Occurrence, loc *time.Location, format store.TimeFormat) s
 	return fmt.Sprintf("%s–%s", o.Start.In(loc).Format(l), o.End.In(loc).Format(l))
 }
 
-func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat, m []Marker) Event {
-	return Event{Title: o.Title, Time: clock(o, loc, format), Markers: m}
+func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat, who string) Event {
+	return Event{Title: o.Title, Time: clock(o, loc, format), Who: who}
 }
 
 // ClockText is the time of day in the household's time format ("24h" or "12h").
@@ -274,15 +267,27 @@ func Chip(w *Weather, unit store.TemperatureUnit) *WeatherChip {
 	return &WeatherChip{Text: fmt.Sprintf("%d°%s", n, sym), Icon: w.Icon}
 }
 
-// markers lists the people who see o, in display order.
-func markers(in Input, o calendar.Occurrence) []Marker {
-	var out []Marker
+var bundle = i18n.MustLoad()
+
+// audienceOf lists the IDs of the people who see o, in display order.
+func audienceOf(in Input, o calendar.Occurrence) []string {
+	var out []string
 	for _, p := range in.People {
 		if sees(in, p, o) {
-			out = append(out, Marker{Name: p.Name, Slot: p.Slot, Shape: p.Shape})
+			out = append(out, p.ID)
 		}
 	}
 	return out
+}
+
+// whoLine words who o is for; omit is the person of the column it is shown in.
+func whoLine(in Input, o calendar.Occurrence, omit string) wholine.Line {
+	household := make([]wholine.Person, len(in.People))
+	for i, p := range in.People {
+		household[i] = wholine.Person{ID: p.ID, Name: p.Name}
+	}
+	return wholine.Of(wholine.Input{Household: household, Groups: in.Groups, Audience: audienceOf(in, o), Omit: omit},
+		func(key string) string { return bundle.T(in.Lang, key) })
 }
 
 func wholeHousehold(in Input, o calendar.Occurrence) bool {

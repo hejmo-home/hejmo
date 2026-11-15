@@ -8,6 +8,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/wholine"
 )
 
 var berlin = func() *time.Location {
@@ -153,11 +154,11 @@ func TestWholeHouseholdAndAllDayEventsGoToTheStripOnly(t *testing.T) {
 			t.Errorf("%s column has %v, want none", c.Person.Name, titles(c.Events))
 		}
 	}
-	// An all-day event with an audience carries the markers of its people.
-	if m := v.Strip[0].Markers; len(m) != 1 || m[0].Name != "Sebastian" || m[0].Slot != 3 || m[0].Shape != "square-filled" {
-		t.Errorf("markers = %+v", m)
+	// An all-day event with an audience says in brackets who it is for; the whole family needs none.
+	if w := v.Strip[0].Who; w != "Sebastian" {
+		t.Errorf("who-line = %q", w)
 	}
-	if v.Strip[2].Time != "12:00–13:00" || !v.Strip[1].AllDay || len(v.Strip[1].Markers) != 0 {
+	if v.Strip[2].Time != "12:00–13:00" || !v.Strip[1].AllDay || v.Strip[1].Who != "" {
 		t.Errorf("strip = %+v", v.Strip)
 	}
 }
@@ -350,18 +351,69 @@ func TestWeatherChipFollowsTheTemperatureUnit(t *testing.T) {
 	}
 }
 
-// 5.4: Given an event with two people, each card carries the markers of both
-// people, so black-and-white mode tells them apart by shape.
-func TestEventCardsCarryTheMarkersOfEveryPersonOfTheEvent(t *testing.T) {
-	v := build(at(14, 8, 0), timed("Football", at(14, 15, 0), at(14, 16, 0), "seb", "mia"), timed("Dentist", at(14, 9, 0), at(14, 10, 0), "mama"))
-	want := []familyview.Marker{{Name: "Sebastian", Slot: 3, Shape: "square-filled"}, {Name: "Mia", Slot: 4, Shape: "square-empty"}}
-	for _, who := range []string{"Sebastian", "Mia"} {
-		evs := column(t, v, who).Events
-		if len(evs) != 1 || fmt.Sprint(evs[0].Markers) != fmt.Sprint(want) {
-			t.Errorf("%s: markers = %+v, want %+v", who, evs, want)
+// 5.22: Given an event, then its card says in words who it is for; the
+// column's own person is left out, and nobody is named on a card for one person.
+func TestEventCardsSayInWordsWhoTheEventIsFor(t *testing.T) {
+	v := build(at(14, 8, 0),
+		timed("Football", at(14, 15, 0), at(14, 16, 0), "seb", "mia"),
+		timed("Dentist", at(14, 9, 0), at(14, 10, 0), "mama"),
+		timed("Parents' evening", at(14, 19, 0), at(14, 20, 0), "mama", "papa", "mia"),
+		timed("Cinema", at(14, 17, 0), at(14, 18, 0), "mama", "papa", "seb", "mia"),
+	)
+	who := func(name, title string) string {
+		t.Helper()
+		for _, e := range column(t, v, name).Events {
+			if e.Title == title {
+				return e.Who
+			}
+		}
+		t.Fatalf("%s has no %q", name, title)
+		return ""
+	}
+	for _, c := range []struct{ column, title, want string }{
+		{"Sebastian", "Football", "everyone except Mama and Papa"},
+		{"Mia", "Football", "everyone except Mama and Papa"},
+		{"Mama", "Dentist", ""},
+		{"Mia", "Parents' evening", "everyone except Sebastian"},
+		{"Papa", "Cinema", "Whole family"},
+	} {
+		if got := who(c.column, c.title); got != c.want {
+			t.Errorf("%s column, %s: who-line = %q, want %q", c.column, c.title, got, c.want)
 		}
 	}
-	if m := column(t, v, "Mama").Events[0].Markers; len(m) != 1 || m[0].Shape != "circle-filled" {
-		t.Errorf("Dentist markers = %+v", m)
+}
+
+// 5.22: Given a subgroup and a big household, then the subgroup is named and
+// the others are listed in full: no count, no ellipsis.
+func TestWhoLineNamesTheSubgroupAndListsEveryoneElseInFull(t *testing.T) {
+	var people []familyview.Person
+	for i, n := range []string{"Mama", "Papa", "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"} {
+		people = append(people, familyview.Person{ID: n, Name: n, Slot: i + 1, Shape: "circle-filled"})
+	}
+	in := familyview.Input{Now: at(14, 8, 0), Lang: "de", People: people,
+		Groups: []wholine.Group{{Name: "Kinder", Members: []string{"Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"}}},
+		Occurrences: []calendar.Occurrence{
+			timed("Schwimmen", at(14, 15, 0), at(14, 16, 0), "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"),
+			timed("Training", at(14, 17, 0), at(14, 18, 0), "Mia", "Jonas", "Ben", "Mama", "Papa"),
+			allDay("Besuch bei Oma", day(14), day(15), "Mama", "Papa"),
+			allDay("Ausflug", day(14), day(15), "Mia", "Jonas", "Ben", "Emma", "Lotta"),
+			allDay("Familientag", day(14), day(15)),
+		}}
+	v := familyview.Build(in)
+	if got := column(t, v, "Emma").Events[0].Who; got != "mit Kinder" {
+		t.Errorf("subgroup: %q", got)
+	}
+	if got := column(t, v, "Mia").Events[1].Who; got != "mit Mama, Papa, Jonas, Ben" {
+		t.Errorf("names: %q", got)
+	}
+	got := map[string]string{}
+	for _, it := range v.Strip {
+		got[it.Title] = it.Who
+	}
+	want := map[string]string{"Besuch bei Oma": "Mama, Papa", "Ausflug": "Mia, Jonas, Lotta, Ben, Emma", "Familientag": ""}
+	for title, w := range want {
+		if got[title] != w {
+			t.Errorf("all-day row, %s: %q, want %q", title, got[title], w)
+		}
 	}
 }

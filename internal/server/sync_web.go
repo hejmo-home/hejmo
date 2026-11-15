@@ -15,6 +15,17 @@ import (
 // parentPage resolves the signed-in parent for a web page, or answers with the
 // redirect or refusal itself.
 func (s *server) parentPage(w http.ResponseWriter, r *http.Request) (principal, bool) {
+	p, ok := s.memberPage(w, r)
+	if ok && p.person.Role != store.RoleParent {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return principal{}, false
+	}
+	return p, ok
+}
+
+// memberPage is parentPage for screens a child's device session may use too
+// (ADR 0015): the handler checks what the person's role allows.
+func (s *server) memberPage(w http.ResponseWriter, r *http.Request) (principal, bool) {
 	if !s.db.Configured() {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return principal{}, false
@@ -26,10 +37,6 @@ func (s *server) parentPage(w http.ResponseWriter, r *http.Request) (principal, 
 			to += "?" + url.Values{"next": {r.URL.RequestURI()}}.Encode()
 		}
 		http.Redirect(w, r, to, http.StatusSeeOther)
-		return principal{}, false
-	}
-	if person.Role != store.RoleParent {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return principal{}, false
 	}
 	h, err := s.db.HomeHousehold()

@@ -66,35 +66,14 @@ func TestDevelopmentDatabaseWithOldMigrationNamesMigratesWithoutRerunning(t *tes
 	if _, err := db.SQL().Exec(`INSERT INTO people (id, name, created_at, updated_at) VALUES ('p1', 'Mama', '2026-11-14T10:00:00Z', '2026-11-14T10:00:00Z')`); err != nil {
 		t.Fatal(err)
 	}
-	// Put schema_migrations back into the state the old runner left it in.
+	// Put schema_migrations back into the state the old runner left it in (newer migrations keep their rows).
 	old := []string{
 		"0001_people_and_access.sql", "0002_calendar.sql", "0003_sync.sql", "0004_share_through_box.sql",
 		"0005_public_https.sql", "0006_displays.sql", "0007_tasks.sql", "0008_display_show_tomorrow.sql",
 		"0009_household_settings.sql", "0010_caldav.sql",
 	}
-	// Migrations written after the rename are not part of the old history.
-	var later []string
-	rows, err := db.SQL().Query(`SELECT version, name FROM schema_migrations WHERE version > 202611142200 ORDER BY version`)
-	if err != nil {
+	if _, err := db.SQL().Exec(`DELETE FROM schema_migrations WHERE version <= 202611142200`); err != nil {
 		t.Fatal(err)
-	}
-	var laterVersions []int64
-	for rows.Next() {
-		var v int64
-		var n string
-		if err := rows.Scan(&v, &n); err != nil {
-			t.Fatal(err)
-		}
-		laterVersions, later = append(laterVersions, v), append(later, n)
-	}
-	rows.Close()
-	if _, err := db.SQL().Exec(`DELETE FROM schema_migrations`); err != nil {
-		t.Fatal(err)
-	}
-	for i, v := range laterVersions {
-		if _, err := db.SQL().Exec(`INSERT INTO schema_migrations (version, name) VALUES (?, ?)`, v, later[i]); err != nil {
-			t.Fatal(err)
-		}
 	}
 	for i, name := range old {
 		if _, err := db.SQL().Exec(`INSERT INTO schema_migrations (version, name) VALUES (?, ?)`, i+1, name); err != nil {

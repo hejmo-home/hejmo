@@ -465,3 +465,8 @@ details.danger form { margin: 0 0 10px; }
 .big-check .box { flex: none; width: var(--touch-target); height: var(--touch-target); border: 3px solid var(--text); border-radius: var(--radius-card); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; line-height: 1; }
 [data-done="true"] .big-check .title { text-decoration: line-through; color: var(--text-secondary); }
 [data-done="true"] .big-check .box::after { content: "\2713"; }
+
+/* Phones (ticket 5.13): the QR code a phone scans, and the offline view. */
+.pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
+.pair-qr svg { display: block; width: 100%; height: auto; }
+html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }

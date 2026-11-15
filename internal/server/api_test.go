@@ -123,8 +123,8 @@ func (c *apiClient) callRaw(method, path string, body any) (string, int, string)
 }
 
 // signedInAPI returns a client using the parent's browser session.
-func signedInAPI(t *testing.T) *apiClient {
-	b, secret := configuredBox(t)
+func signedInAPI(t *testing.T, opts ...boxOption) *apiClient {
+	b, secret := configuredBox(t, opts...)
 	if r := b.post("/login", loginForm(b, secret, "correct horse battery")); r.status != http.StatusSeeOther {
 		t.Fatalf("login = %d", r.status)
 	}

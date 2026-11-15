@@ -1,0 +1,63 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "phones.title") "Frame" .Frame)}}
+  <h1>{{t "phones.title"}}</h1>
+  {{template "syncNotice" .}}
+  <p class="lead">{{t "phones.intro"}}</p>
+
+  {{with .Code}}
+  <section aria-labelledby="qr">
+    <h2 id="qr">{{t "phones.qr.title"}}</h2>
+    <div class="pair-qr" data-join-url="{{.URL}}">{{.QR}}</div>
+    <p class="hint">{{t "phones.qr.valid"}} {{.Expires}}</p>
+    {{if $.CAFirst}}<p class="notice" role="status" data-ca-first>{{t "phones.qr.ca_first"}}</p>{{end}}
+    <a class="button secondary" href="/phones">{{t "phones.qr.check"}}</a>
+  </section>
+  {{end}}
+
+  {{if .Waiting}}
+  <section aria-labelledby="waiting">
+    <h2 id="waiting">{{t "phones.waiting"}}</h2>
+    {{range .Waiting}}
+    {{$root := dict "Error" .Error "ErrorField" .ErrorField}}
+    <form method="post" action="/phones/pairings/{{.ID}}/confirm" class="steps" data-pairing-id="{{.ID}}">
+      <fieldset>
+        <legend>{{if .Device}}{{.Device}}{{else}}{{t "phones.device.unknown"}}{{end}}</legend>
+        <p>{{t "phones.verify.parent"}} <strong class="verification" data-verification="{{.Verification}}">{{.Verification}}</strong></p>
+        {{template "field" (dict "Root" $root "Name" "name" "Label" (t "phones.name") "Value" .Name "Required" true "Max" 80)}}
+        {{$sel := .Person}}
+        {{template "optionsOpen" (dict "Class" "choice" "Legend" (t "phones.person"))}}
+          {{range $.People}}{{template "option" (dict "Name" "person" "Value" .ID "Label" .Name "Checked" (eq .ID $sel))}}{{end}}
+        {{template "optionsClose" (dict "Root" $root "Name" "person")}}
+      </fieldset>
+      <button class="button" type="submit">{{t "phones.confirm"}}</button>
+    </form>
+    {{end}}
+  </section>
+  {{end}}
+
+  <section aria-labelledby="paired">
+    <h2 id="paired">{{t "phones.paired"}}</h2>
+    {{if .Phones}}
+    <ul class="cards">
+      {{range .Phones}}
+      <li data-phone-id="{{.ID}}">
+        <strong>{{.Name}}</strong>
+        <span class="hint">{{t "phones.person_of"}} {{.Person}} · {{t "phones.paired_at"}} {{.Paired}} · {{if .Expired}}<span data-expired>{{t "phones.expired"}}</span> · {{end}}{{if .LastSeen}}{{t "phones.last_seen"}} {{.LastSeen}}{{else}}{{t "phones.never"}}{{end}}</span>
+        {{template "dangerOpen" (dict "Label" (t "phones.revoke"))}}
+          <p>{{t "phones.revoke.explain"}}</p>
+          <form method="post" action="/phones/{{.ID}}/revoke"><button class="button danger" type="submit">{{t "phones.revoke.confirm"}}</button></form>
+        {{template "dangerClose"}}
+      </li>
+      {{end}}
+    </ul>
+    {{else}}{{template "empty" (dict "Text" (t "phones.none") "Href" "#add" "Action" (t "phones.none.action"))}}{{end}}
+  </section>
+
+  <section aria-labelledby="add">
+    <h2 id="add">{{t "phones.add"}}</h2>
+    {{template "error" .}}
+    <p class="lead">{{t "phones.add.intro"}}</p>
+    <form method="post" action="/phones/pairings" class="steps">
+      <button class="button" type="submit">{{t "phones.add.show"}}</button>
+    </form>
+  </section>
+{{template "foot"}}

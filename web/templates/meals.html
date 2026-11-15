@@ -5,7 +5,7 @@
 
   <nav class="weeknav" aria-label="{{t "meals.week.nav"}}">
     <a href="/meals?week={{.Prev}}">{{t "meals.week.prev"}}</a>
-    <strong>{{.From}} – {{.To}}</strong>
+    <strong>{{printf (t "meals.week.range") .From .To}}</strong>
     <a href="/meals?week={{.Next}}">{{t "meals.week.next"}}</a>
     {{if not .ThisWeek}}<a href="/meals">{{t "meals.week.this"}}</a>{{end}}
   </nav>

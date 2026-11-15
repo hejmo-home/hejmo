@@ -483,5 +483,6 @@
   "meals.weekday.3": "Wednesday",
   "meals.weekday.4": "Thursday",
   "meals.weekday.5": "Friday",
-  "meals.weekday.6": "Saturday"
+  "meals.weekday.6": "Saturday",
+  "meals.week.range": "%s – %s"
 }

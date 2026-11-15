@@ -15,3 +15,26 @@ document.addEventListener("change", function (e) {
     whole.checked = !others.some(function (o) { return o.checked; });
   }
 });
+
+// People form (ticket 76): a colour and marker pair another person already
+// has is disabled, so it cannot be chosen. Picking a colour updates which
+// markers are disabled and the other way round. Without this script the server
+// still refuses such a pair with the field error.
+(function () {
+  function sync(form) {
+    var color = form.querySelector('input[name="color"]:checked');
+    var shape = form.querySelector('input[name="shape"]:checked');
+    function update(name, other) {
+      Array.prototype.forEach.call(form.querySelectorAll('input[name="' + name + '"]'), function (o) {
+        var taken = o.getAttribute("data-taken-with");
+        o.disabled = !o.checked && !!other && !!taken && taken.split(" ").indexOf(other.value) >= 0;
+      });
+    }
+    update("color", shape);
+    update("shape", color);
+  }
+  document.addEventListener("change", function (e) {
+    var input = e.target;
+    if (input && input.form && (input.name === "color" || input.name === "shape") && input.hasAttribute("data-taken-with")) sync(input.form);
+  });
+})();

@@ -23,22 +23,67 @@ type groupRow struct {
 	Members  []personChip
 }
 
+// colorOption is one colour of the choice. Users names the other people who
+// wear it (empty: free); TakenWith lists the markers they wear it with, and Off
+// is set when the pair with the selected marker would be refused.
 type colorOption struct {
-	Hex  string
-	Slot int
+	Hex       string
+	Slot      int
+	Users     string
+	TakenWith string
+	Off       bool
 }
 
-func colorOptions() []colorOption {
-	out := make([]colorOption, len(personColors))
+// shapeOption is one marker of the choice, like colorOption.
+type shapeOption struct {
+	Shape     string
+	Users     string
+	TakenWith string
+	Off       bool
+}
+
+// lookData is what the colour and marker choice of a form needs: the options
+// with who uses them. exceptID is the person being changed (their own look is
+// not "taken"); data["Form"] holds the selected Color and Shape. The selected
+// option is never disabled, so a refused pair can be sent again and shows its
+// error.
+func lookData(people []store.Person, exceptID string, data map[string]any) map[string]any {
+	form, _ := data["Form"].(map[string]any)
+	color, _ := form["Color"].(string)
+	shape, _ := form["Shape"].(string)
+	colors := make([]colorOption, len(personColors))
 	for i, c := range personColors {
-		out[i] = colorOption{c, i + 1}
+		o := colorOption{Hex: c, Slot: i + 1}
+		var users, shapes []string
+		for _, p := range people {
+			if p.ID != exceptID && strings.EqualFold(p.Color, c) {
+				users = append(users, p.Name)
+				if p.Shape != "" {
+					shapes = append(shapes, p.Shape)
+				}
+			}
+		}
+		o.Users, o.TakenWith = strings.Join(users, ", "), strings.Join(shapes, " ")
+		o.Off = !strings.EqualFold(c, color) && styleTaken(people, exceptID, c, shape)
+		colors[i] = o
 	}
-	return out
-}
-
-// lookData is what the colour and marker choice of a form needs.
-func lookData(data map[string]any) map[string]any {
-	data["Colors"], data["Shapes"] = colorOptions(), markerShapes
+	shapes := make([]shapeOption, len(markerShapes))
+	for i, sh := range markerShapes {
+		o := shapeOption{Shape: sh}
+		var users, cols []string
+		for _, p := range people {
+			if p.ID != exceptID && p.Shape == sh {
+				users = append(users, p.Name)
+				if p.Color != "" {
+					cols = append(cols, strings.ToUpper(p.Color))
+				}
+			}
+		}
+		o.Users, o.TakenWith = strings.Join(users, ", "), strings.Join(cols, " ")
+		o.Off = sh != shape && styleTaken(people, exceptID, color, sh)
+		shapes[i] = o
+	}
+	data["Colors"], data["Shapes"] = colors, shapes
 	return data
 }
 
@@ -81,7 +126,7 @@ func (s *server) renderPeople(w http.ResponseWriter, r *http.Request, p principa
 		color, shape, _ := freeStyle(people, "", "")
 		form = map[string]any{"Role": string(store.RoleChild), "Color": color, "Shape": shape}
 	}
-	s.render(w, r, status, "people.html", lookData(map[string]any{
+	s.render(w, r, status, "people.html", lookData(people, "", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "People": rows, "Groups": subgroups,
 		"Form": form, "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}))
@@ -156,7 +201,7 @@ func (s *server) renderPerson(w http.ResponseWriter, r *http.Request, p principa
 			form["Color"] = personColors[chip.Slot-1] // the colour the displays show for them
 		}
 	}
-	s.render(w, r, status, "person_edit.html", lookData(map[string]any{
+	s.render(w, r, status, "person_edit.html", lookData(people, person.ID, map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role,
 		"Form": form, "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}))

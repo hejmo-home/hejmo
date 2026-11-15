@@ -89,19 +89,37 @@ func TestWritePreview76(t *testing.T) {
 		t.Fatalf("%d columns on the display, want 8", n)
 	}
 
+	// Ben wears Mama's colour (his marker, the plus, is free with it) and Emma
+	// Mama's marker (her colour, raspberry, is free with it): the edit pages show
+	// taken options faded and the pairs that would be refused disabled. Taken
+	// after the family view, so the displays keep the example family.
+	ben, emma := more[2], more[3]
+	mama := p.byName(t, "Mama")
+	for _, x := range []struct{ id, name, color, shape string }{
+		{ben, "Ben", mama["color"].(string), p.byName(t, "Ben")["shape"].(string)},
+		{emma, "Emma", p.byName(t, "Emma")["color"].(string), mama["shape"].(string)},
+	} {
+		if r := p.save(x.id, url.Values{"name": {x.name}, "color": {x.color}, "shape": {x.shape}}); r.status != http.StatusSeeOther {
+			t.Fatalf("save %s = %d\n%s", x.name, r.status, r.body)
+		}
+	}
+	p.en("/people") // shows the "Person saved" line once
+	benPage, emmaPage := page("/people/"+ben), page("/people/"+emma)
+
 	type frame struct {
 		theme string
 		w, h  int
+		focus string // selector of the choice that shows its tooltip, as it does on keyboard focus
 	}
 	desk := func(themes ...string) []frame {
 		var fs []frame
 		for _, th := range themes {
-			fs = append(fs, frame{th, 1024, 768})
+			fs = append(fs, frame{th, 1024, 768, ""})
 		}
 		return fs
 	}
-	portrait := []frame{{"light", 768, 1024}, {"bw", 768, 1024}}
-	phone := []frame{{"light", 375, 812}, {"dark", 375, 812}}
+	portrait := []frame{{"light", 768, 1024, ""}, {"bw", 768, 1024, ""}}
+	phone := []frame{{"light", 375, 812, ""}, {"dark", 375, 812, ""}}
 	var body strings.Builder
 	var docs []string
 	docOf := map[string]int{}
@@ -115,7 +133,7 @@ func TestWritePreview76(t *testing.T) {
 		fmt.Fprintf(&body, "<h2>%s</h2><p class=\"note\">%s</p><div class=\"row\">\n", title, note)
 		for _, f := range frames {
 			label := map[string]string{"light": "Light", "dark": "Dark", "bw": "Black and white"}[f.theme]
-			fmt.Fprintf(&body, `<figure><figcaption>%s, %d x %d</figcaption><iframe data-doc="%d" data-theme="%s" data-anchor="%s" width="%d" height="%d" title="%s"></iframe></figure>`+"\n", label, f.w, f.h, idx, f.theme, anchor, f.w, f.h, title)
+			fmt.Fprintf(&body, `<figure><figcaption>%s, %d x %d</figcaption><iframe data-doc="%d" data-theme="%s" data-anchor="%s" data-focus="%s" width="%d" height="%d" title="%s"></iframe></figure>`+"\n", label, f.w, f.h, idx, f.theme, anchor, strings.ReplaceAll(f.focus, "'", "&#39;"), f.w, f.h, title)
 		}
 		body.WriteString("</div>\n")
 	}
@@ -131,7 +149,16 @@ func TestWritePreview76(t *testing.T) {
 	add("4. The same colour with the same marker is refused",
 		"Mia was given Papa's colour and marker. The error sits at the marker choice, and what was typed stays.",
 		"#err-shape", clash.body, append(desk("light", "bw"), phone...)...)
-	add("5. New subgroup: name and person chips",
+	add("5. Taken colours and markers are faded, pairs that would be refused are disabled",
+		"Ben wears Mama's terracotta: the markers Mama and the others wear with it (filled circle) are disabled and cannot be chosen; every colour and marker another person uses is faded but still readable, also in black and white; the free ones keep full strength. Picking a colour updates which markers are disabled and the other way round (with JavaScript); without it the server still refuses the pair with the field error, as in frame 4.",
+		"fieldset.look", benPage, append(desk("light", "bw"), phone[0])...)
+	add("5b. The same for a colour: Emma wears Mama's filled circle",
+		"With the filled circle selected, terracotta (Mama's colour with that marker) is disabled.",
+		"fieldset.look", emmaPage, desk("light", "dark")...)
+	add("5c. Tooltip: every colour and marker names who uses it, on hover and on focus",
+		"Here the keyboard focus is on Mama's colour: the bubble reads Terracotta: Mama. The same text is the title (hover) and the accessible name of the choice; free options say free (German: frei).",
+		"fieldset.look", benPage, frame{"light", 1024, 768, "label[title^='Terracotta']"}, frame{"bw", 1024, 768, "label[title^='Filled circle']"})
+	add("5d. New subgroup: name and person chips",
 		"Subgroups are chosen with the same chips as everywhere else.",
 		"", groupPage, append(desk("light", "dark"), phone[0])...)
 	add("6. Result on the display: eight people, eight columns, eight colours and eight shapes",
@@ -142,7 +169,7 @@ func TestWritePreview76(t *testing.T) {
 		`section.column[data-person='8']`, family, desk("light", "dark", "bw")...)
 	add("8. Landscape 1280 x 800 with eight people",
 		"A wider display still shows six columns before the sideways scroll starts.",
-		"", family, frame{"light", 1280, 800}, frame{"bw", 1280, 800})
+		"", family, frame{"light", 1280, 800, ""}, frame{"bw", 1280, 800, ""})
 
 	var jsDocs strings.Builder
 	for i, h := range docs {
@@ -174,13 +201,16 @@ iframe{border:0;background:#fff;display:block}
   var font = Uint8Array.from(atob("` + base64.StdEncoding.EncodeToString(font) + `"), function (c) { return c.charCodeAt(0); });
   var fontUrl = URL.createObjectURL(new Blob([font], { type: "font/ttf" }));
   var css = document.getElementById("css").innerHTML.replace("/static/fonts/Figtree-wght.ttf", fontUrl).replace(/&amp;/g, "&").replace(/&gt;/g, ">").replace(/&lt;/g, "<");
-  var js = document.getElementById("js").textContent;
+  var js = document.getElementById("js").innerHTML.replace(/&lt;/g, "<").replace(/&gt;/g, ">").replace(/&amp;/g, "&");
   document.querySelectorAll("iframe[data-doc]").forEach(function (f) {
     var inner = document.getElementById("doc" + f.getAttribute("data-doc")).innerHTML;
     f.addEventListener("load", function () {
       var a = f.getAttribute("data-anchor");
       var el = a && f.contentDocument.querySelector(a);
       if (el) el.scrollIntoView();
+      var focus = f.getAttribute("data-focus");
+      var fl = focus && f.contentDocument.querySelector(focus);
+      if (fl) { fl.setAttribute("data-tip-open", ""); }
     });
     f.srcdoc = '<!doctype html><html lang="en" data-theme="' + f.getAttribute("data-theme") + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>' + css + '</style></head>' + inner + '<script>' + js + '<\/script></html>';
   });

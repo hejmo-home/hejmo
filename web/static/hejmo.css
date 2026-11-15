@@ -530,6 +530,15 @@ details.danger form { margin: 0 0 10px; }
 h1 .marker { margin-right: 4px; }
 .pchip.shape { --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
 fieldset.look { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Taken options (ticket 76): a colour or marker another person wears is faded
+   but stays readable (also in black and white); a pair that would be refused is
+   disabled. The name of the person shows on hover and focus as a tooltip (the
+   title attribute covers the mouse, the bubble covers keyboard focus;
+   data-tip-open only lets the design preview show the bubble). */
+fieldset.look .pchip.used { opacity: .6; }
+fieldset.look .pchip:has(input:disabled) { opacity: .45; cursor: not-allowed; border-style: dashed; }
+fieldset.look .pchip:has(input:checked) { opacity: 1; }
+fieldset.look .pchip:has(input:focus)::after, fieldset.look .pchip[data-tip-open]::after { content: attr(title); position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 2; white-space: nowrap; padding: 4px 10px; border-radius: var(--radius-field); background: var(--text); color: var(--background); font-size: var(--fs-meta); font-weight: 400; pointer-events: none; }
 .marker.preview { background: var(--text); border: 0; border-radius: 0; }
 [data-theme="bw"] .marker.preview { width: var(--marker-size); height: var(--marker-size); }
 .marker.preview[data-shape="circle-filled"] { border-radius: 50%; }

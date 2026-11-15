@@ -504,3 +504,26 @@ func TestThemeColourFollowsTheColourScheme(t *testing.T) {
 		}
 	}
 }
+
+// Ticket 149: the offline line follows the household's time and date format.
+// The box hands both to offline.js as data attributes, in either page language,
+// so the script needs no request while offline.
+func TestOfflineScriptGetsTheHouseholdTimeAndDateFormat(t *testing.T) {
+	b := signedInBox(t)
+	for _, lang := range []string{"en", "de"} {
+		r := b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": lang})
+		if !strings.Contains(r.body, `data-time-format="24h" data-date-format="dmy"`) {
+			t.Errorf("%s: defaults not on the offline script tag", lang)
+		}
+	}
+	if r := b.post("/settings/household", url.Values{"date_format": {"mdy"}, "time_format": {"12h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("settings = %d", r.status)
+	}
+	for _, lang := range []string{"en", "de"} {
+		r := b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": lang})
+		tag := regexp.MustCompile(`<script src="/static/offline.js"[^>]*>`).FindString(r.body)
+		if !strings.Contains(tag, `data-time-format="12h"`) || !strings.Contains(tag, `data-date-format="mdy"`) {
+			t.Errorf("%s: offline script tag = %q", lang, tag)
+		}
+	}
+}

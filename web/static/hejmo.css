@@ -794,12 +794,15 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
    an adjusted one has the pill "Adjusted this week", the template's dish and
    "Back to template". */
 .tpl-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; max-width: 1200px; margin: 0 0 var(--gap); padding: 12px 16px; background: var(--surface); border-radius: var(--radius-card); }
-.tpl-sum p { flex: 1 1 22em; min-width: 0; margin: 0; overflow-wrap: break-word; hyphens: auto; }
+.tpl-sum p { flex: 1 1 22em; min-width: 0; margin: 0; }
 .tpl-sum p a { font-weight: 600; }
+.tpl-sum p, .mrow .src, .tpl-row, .ahead li, .weeks-hint, .tpl-form .ferr, main:has(.tpl-form) > .form-error { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) { .tpl-sum p, .mrow .src, .tpl-row, .ahead li, .weeks-hint, .tpl-form .ferr, main:has(.tpl-form) > .form-error { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
+.tpl-sum .mt-of { white-space: nowrap; -webkit-hyphens: manual; hyphens: manual; }
 .tpl-sum .button { display: inline-flex; align-items: center; gap: 8px; flex: none; }
 .tpl-sum .button .icon { stroke: currentColor; }
 [data-theme="bw"] .tpl-sum { border: 2px solid var(--text); }
-.mrow .src { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: -2px; font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: break-word; hyphens: auto; min-width: 0; }
+.mrow .src { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: -2px; font-size: var(--fs-meta); color: var(--text-secondary); min-width: 0; }
 .mrow .src > span { min-width: 0; }
 .mrow .src .icon { flex: none; width: 16px; height: 16px; stroke: var(--text-secondary); }
 .mrow .src a { color: var(--text-secondary); }
@@ -813,10 +816,11 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 [data-theme="bw"] .mrow.adjusted textarea { border: 2px dashed var(--text); }
 .mrow textarea::placeholder { color: var(--text-secondary); opacity: 1; font-style: italic; }
 @container (max-width: 270px) { .mrow .src { grid-column: 1; } }
+@container (max-width: 360px) { .mrow.adjusted .src { grid-column: 1 / -1; } .mrow.adjusted .src .was { flex-basis: 100%; } }
 
 /* Templates menu (/meals/templates): calm rows that open a template, and the
    coming weeks in words (which template fills which mealtime). */
-.tpl-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); overflow-wrap: break-word; hyphens: auto; }
+.tpl-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); }
 .cards a.tpl-row { color: var(--text); font-weight: 400; }
 .tpl-row strong { display: flex; align-items: center; gap: 8px; font-size: var(--fs-event-title); font-weight: var(--fw-event-title); color: var(--accent); }
 .tpl-row strong .icon { flex: none; stroke: var(--accent); margin-left: auto; }
@@ -824,7 +828,7 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .tpl-row .hint b { color: var(--text); font-weight: 600; }
 [data-theme="bw"] .tpl-row strong { text-decoration: underline; }
 .ahead { list-style: none; margin: 0 0 var(--gap-section); padding: 4px 16px; background: var(--surface); border-radius: var(--radius-tile); max-width: 720px; container-type: inline-size; }
-.ahead li { display: grid; grid-template-columns: 11em minmax(0, 1fr); gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--border); overflow-wrap: break-word; hyphens: auto; }
+.ahead li { display: grid; grid-template-columns: 11em minmax(0, 1fr); gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--border); }
 .ahead li:first-child { border-top: 0; }
 .ahead .wkn b { display: block; }
 .ahead .wkn span { font-size: var(--fs-label); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
@@ -840,7 +844,11 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .f-card { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 12px; border: 0; margin: 0; min-width: 0; }
 .f-card > legend { font-size: var(--fs-person-name); font-weight: 700; padding: 0; float: left; width: 100%; margin: 0 0 4px; }
 .f-card .hint { margin: 0; }
-fieldset.choice.mtpick { grid-template-columns: repeat(auto-fit, minmax(min(100%, 9.5em), 1fr)); }
+.mtpick-wrap { container-type: inline-size; }
+fieldset.choice.mtpick { display: flex; flex-wrap: wrap; gap: 10px; }
+.mtpick label { flex: 1 1 100%; min-width: min(100%, max-content); max-width: 100%; }
+@container (min-width: 24em) { .mtpick label { flex-basis: calc(50% - 5px); } }
+.mtpick b { overflow-wrap: break-word; }
 .mtpick label { grid-template-columns: auto auto 1fr; }
 .mtpick input { grid-row: auto; }
 .mtpick .icon { stroke: var(--accent); }
@@ -860,12 +868,11 @@ fieldset.choice.mtpick { grid-template-columns: repeat(auto-fit, minmax(min(100%
   .tpl-form:has(input[name="fills"][value="one"]:checked):has(input[name="mealtime"][value="snack"]:checked) .mrow:not([data-mt="snack"]),
   .tpl-form:has(input[name="fills"][value="one"]:checked):has(input[name="mealtime"][value="dinner"]:checked) .mrow:not([data-mt="dinner"]) { display: none; }
 }
-.f-card .ferr { overflow-wrap: break-word; hyphens: auto; }
 .mrow .src { margin: -2px 0 2px; }
 .mrow .src > span:not(.adj) { flex: 1 1 8em; }
 .ahead .wkn { display: grid; gap: 2px; align-content: start; }
 .ahead .wkn .today { justify-self: start; }
 .ahead .fills b { font-weight: 600; }
-.mtpick legend { grid-column: 1 / -1; margin: 4px 0 0; }
+.mtpick legend { margin: 4px 0 0; }
 .f-card[aria-invalid="true"] select, .f-card[aria-invalid="true"] .every input { border: 2px solid var(--error-text); }
 .page-actions .button .icon { stroke: currentColor; vertical-align: -3px; margin-right: 6px; }

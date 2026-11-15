@@ -192,7 +192,7 @@ func (s *server) templateSummary(p principal, lang string, monday time.Time) (te
 	var links []string
 	for _, t := range list {
 		if t.AppliesInWeek(monday) {
-			links = append(links, fmt.Sprintf(`<a href="/meals/templates/%s">%s</a> (%s)`, html.EscapeString(t.ID), html.EscapeString(t.Name), html.EscapeString(s.fillsWord(lang, t))))
+			links = append(links, fmt.Sprintf(`<a href="/meals/templates/%s">%s</a> <span class="mt-of">(%s)</span>`, html.EscapeString(t.ID), html.EscapeString(t.Name), html.EscapeString(s.fillsWord(lang, t))))
 		}
 	}
 	key := "meals.tpl.sum.many"

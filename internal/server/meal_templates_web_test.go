@@ -135,7 +135,7 @@ func TestTheTemplateFormHasEveryFieldOfTheDesign(t *testing.T) {
 	r := c.b.do(http.MethodGet, "/meals/templates/new", nil, en)
 	for _, want := range []string{
 		`<a class="back" href="/meals/templates">Back to templates</a>`, "<h1>New template</h1>", `class="steps wide tpl-form"`, `action="/meals/templates"`,
-		`name="name"`, `maxlength="60"`, "Which meals does it fill?", `name="fills" value="one"`, `name="fills" value="all"`, `class="choice mtpick"`, `name="mealtime" value="dinner"`,
+		`name="name"`, `maxlength="60"`, "Which meals does it fill?", `name="fills" value="one"`, `name="fills" value="all"`, `<div class="mtpick-wrap"><fieldset class="choice mtpick">`, `name="mealtime" value="dinner"`,
 		`id="schedule"`, `class="every"`, `name="every"`, `min="1" max="52"`, `name="start"`, `class="weeks-hint"`, "<h2>Meals of the week</h2>",
 		`data-mt="breakfast"`, `name="tpl_7_dinner"`, `name="tpl_1_breakfast"`, "Save template", `class="savebar"`, "Week 46 · 09/11 – 15/11", "Week 45 · 08/11 – 14/11",
 	} {
@@ -264,7 +264,7 @@ func TestTheMealPlanSaysWhereMealsComeFromAndOffersBackToTemplate(t *testing.T) 
 	id := templateID(t, c, "Week B")
 	r = b.do(http.MethodGet, "/meals?week=2026-11-16", nil, en)
 	for _, want := range []string{
-		`This week is filled by the templates <a href="/meals/templates/` + id + `">Week B</a> (dinner) and <a href="/meals/templates/`, `(all meals)`, "What you change here counts for this week only.",
+		`This week is filled by the templates <a href="/meals/templates/` + id + `">Week B</a> <span class="mt-of">(dinner)</span> and <a href="/meals/templates/`, `<span class="mt-of">(all meals)</span>`, "What you change here counts for this week only.",
 		`href="/meals/templates"`, ">Templates</a>",
 		`>Lentil soup</textarea><p class="src">`, `From template <a href="/meals/templates/` + id + `">Week B</a>`, `>Pancakes</textarea>`,
 	} {
@@ -342,7 +342,7 @@ func TestTemplatePagesAreGermanInDuForm(t *testing.T) {
 	id := templateID(t, c, "Woche B")
 	c.b.do(http.MethodPost, "/meals", url.Values{"week": {"2026-11-16"}, mealField("2026-11-17", "dinner"): {"Pizza"}}, de)
 	body := c.b.do(http.MethodGet, "/meals?week=2026-11-16", nil, de).body
-	for _, want := range []string{"Diese Woche angepasst", "Vorlage:", "Zurück zur Vorlage"} {
+	for _, want := range []string{"Diese Woche angepasst", "Vorlage:", "Zurück zur Vorlage", `<span class="mt-of">(Abendessen)</span>`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("meal plan lacks %q", want)
 		}

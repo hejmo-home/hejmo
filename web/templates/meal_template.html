@@ -8,7 +8,7 @@
       <p class="hint">{{t "meals.tpl.name.hint"}}</p></div></fieldset>
     <fieldset class="f-card"><legend>{{t "meals.tpl.fills.legend"}}</legend>
       <fieldset class="choice"><label><input type="radio" name="fills" value="one"{{if ne .Fills "all"}} checked{{end}}><b>{{t "meals.tpl.fills.one"}}</b><small>{{t "meals.tpl.fills.one.hint"}}</small></label><label><input type="radio" name="fills" value="all"{{if eq .Fills "all"}} checked{{end}}><b>{{t "meals.tpl.fills.all"}}</b><small>{{t "meals.tpl.fills.all.hint"}}</small></label></fieldset>
-      <fieldset class="choice mtpick"><legend>{{t "meals.tpl.mealtime.legend"}}</legend>{{range .Mealtimes}}<label><input type="radio" name="mealtime" value="{{.}}"{{if eq . $.Mealtime}} checked{{end}}>{{template "mealIcon" .}}<b>{{t (printf "meals.mealtime.%s" .)}}</b></label>{{end}}</fieldset>
+      <div class="mtpick-wrap"><fieldset class="choice mtpick"><legend>{{t "meals.tpl.mealtime.legend"}}</legend>{{range .Mealtimes}}<label><input type="radio" name="mealtime" value="{{.}}"{{if eq . $.Mealtime}} checked{{end}}>{{template "mealIcon" .}}<b>{{t (printf "meals.mealtime.%s" .)}}</b></label>{{end}}</fieldset></div>
       {{if .ErrMealtime}}<p class="ferr" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{t "meals.tpl.error.mealtime"}}</p>{{end}}
     </fieldset>
     <fieldset class="f-card" id="schedule"{{if or .ErrEvery .ErrClash}} aria-invalid="true" aria-describedby="err-schedule"{{end}}><legend>{{t "meals.tpl.schedule.legend"}}</legend>

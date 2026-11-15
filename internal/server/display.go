@@ -124,11 +124,23 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 }
 
 // displayTheme is the palette a display shows now: its theme setting resolved
-// against the sun at the home location.
+// against the sun at the home location, or in quiet mode the palette of the
+// quiet page, whatever the setting.
 func (s *server) displayTheme(h store.Household, d store.Display) string {
 	loc := time.UTC
 	if l, err := time.LoadLocation(h.Timezone); err == nil {
 		loc = l
+	}
+	if d.Quiet.Active(s.householdNow(h)) {
+		// Quiet mode takes precedence over the theme (ADR 0015): a normal
+		// screen shows a black page, an E-Ink display its own night page.
+		switch d.Type {
+		case store.DisplayScreen:
+			return string(theme.Dark)
+		case store.DisplayEInkBW:
+			return "bw"
+		}
+		return string(theme.Light)
 	}
 	t := theme.Resolve(theme.Input{
 		Setting: d.Theme, SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset,

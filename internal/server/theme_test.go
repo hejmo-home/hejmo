@@ -190,3 +190,37 @@ func TestSignedOutPagesCarryNoSunTimes(t *testing.T) {
 }
 
 func itoa64(n int64) string { return strconv.FormatInt(n, 10) }
+
+// ADR 0015: quiet mode takes precedence over the theme. A normal screen shows
+// a black page, so it is dark whatever its theme says; the night page of an
+// E-Ink display keeps the display's own palette, even when its theme is dark.
+// Outside the quiet window the theme applies again.
+func TestQuietModeTakesPrecedenceOverTheTheme(t *testing.T) {
+	for _, c := range []struct {
+		typ, theme, quiet, outside string
+	}{
+		{"screen", "light", "dark", "light"},
+		{"eink_bw", "dark", "bw", "dark"},
+		{"eink_color", "dark", "light", "dark"},
+	} {
+		f := newFamilyBox(t, c.typ)
+		f.atMunich(t)
+		f.setTheme(t, c.theme, "0", "0")
+		f.quietOn(t)
+		night := f.view(t, "en", f.at(14, 2, 0))
+		if !strings.Contains(night, "data-quiet") {
+			t.Fatalf("%s: 02:00 is not quiet:\n%s", c.typ, night)
+		}
+		if got := themeOf(t, night); got != c.quiet {
+			t.Errorf("%s with theme %s in quiet mode = %q, want %q", c.typ, c.theme, got, c.quiet)
+		}
+		f.now = f.at(14, 2, 0)
+		if body := f.display.get("/display/state", "").body; !strings.Contains(body, `"theme":"`+c.quiet+`"`) {
+			t.Errorf("%s: state in quiet mode = %s, want theme %s", c.typ, body, c.quiet)
+		}
+		day := f.view(t, "en", f.at(14, 12, 0))
+		if got := themeOf(t, day); got != c.outside {
+			t.Errorf("%s with theme %s at noon = %q, want %q", c.typ, c.theme, got, c.outside)
+		}
+	}
+}

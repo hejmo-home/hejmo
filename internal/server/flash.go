@@ -1,6 +1,9 @@
 package server
 
 import (
+	"fmt"
+	"html"
+	"html/template"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -35,6 +38,10 @@ func (s *server) redirectSynced(w http.ResponseWriter, r *http.Request, to, cale
 	s.redirectSaved(w, r, to, "flash.calendar_synced:"+calendarID)
 }
 
+// starsSavedPrefix marks the success lines after a changed star value; their
+// argument is the new value.
+const starsSavedPrefix = "tasks.stars.saved."
+
 var flashArg = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 
 // takeFlash returns the success line waiting for this browser, as the key of
@@ -47,7 +54,7 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 	}
 	http.SetCookie(w, &http.Cookie{Name: flashCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
 	key, arg, _ = strings.Cut(c.Value, ":")
-	if !strings.HasPrefix(key, "flash.") || s.i18n.T(i18n.Default, key) == key || (arg != "" && !flashArg.MatchString(arg)) {
+	if !(strings.HasPrefix(key, "flash.") || strings.HasPrefix(key, starsSavedPrefix)) || s.i18n.T(i18n.Default, key) == key || (arg != "" && !flashArg.MatchString(arg)) {
 		return "", ""
 	}
 	return key, arg
@@ -67,4 +74,17 @@ func (s *server) successText(lang, key, arg string) string {
 		}
 	}
 	return s.i18n.T(lang, key)
+}
+
+// successHTML is the success line as markup: the text of successText escaped,
+// except the lines after a changed star value, which put the new value in bold.
+func (s *server) successHTML(lang, key, arg string) template.HTML {
+	if strings.HasPrefix(key, starsSavedPrefix) {
+		text := s.i18n.T(lang, key)
+		if n, err := strconv.Atoi(arg); err == nil && key == starsSavedPrefix+"other" {
+			text = fmt.Sprintf(text, n)
+		}
+		return template.HTML(text)
+	}
+	return template.HTML(html.EscapeString(s.successText(lang, key, arg)))
 }

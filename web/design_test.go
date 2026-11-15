@@ -492,3 +492,22 @@ func TestFamilyViewLayoutRulesFollowTheSpec(t *testing.T) {
 		}
 	}
 }
+
+// #122: below 900 px the one-column frame must not grow to the width of the
+// unwrapped navigation row (a 375 px phone showed every page too wide). The
+// column is clamped with minmax(0, 1fr), declared before the 900 px rule that
+// sets the two-column layout, which has to keep winning.
+func TestFrameColumnIsClampedToTheViewport(t *testing.T) {
+	css := stylesheet(t)
+	clamp := strings.Index(css, ".frame { grid-template-columns: minmax(0, 1fr); }")
+	wide := strings.Index(css, ".frame.has-nav { grid-template-columns: max-content minmax(0, 1fr)")
+	if clamp < 0 {
+		t.Fatal("no .frame { grid-template-columns: minmax(0, 1fr); } rule")
+	}
+	if wide < 0 || clamp > wide {
+		t.Fatalf("the clamp (at %d) must come before the .frame.has-nav rule (at %d)", clamp, wide)
+	}
+	if !strings.Contains(css, "h1 { overflow-wrap: break-word; hyphens: auto; }") {
+		t.Error("long headings must wrap")
+	}
+}

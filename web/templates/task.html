@@ -2,16 +2,21 @@
   <p><a href="/tasks">{{t "tasks.back"}}</a></p>
   <h1>{{if .Task.Emoji}}{{.Task.Emoji}} {{end}}{{.Task.Title}}</h1>
   <p class="lead"><span class="pchip" data-person="{{.Owner.Slot}}"><span class="marker" data-person="{{.Owner.Slot}}" data-shape="{{.Owner.Shape}}" aria-hidden="true"></span>{{.Owner.Name}}</span>{{if .Task.Stars}} <span class="task-stars" data-task-stars="{{.Task.Stars}}">{{.Task.Stars}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span>{{end}}</p>
-  <p class="hint">
-    {{if eq .Task.Repeat "once"}}{{t "tasks.repeat.once"}} {{.Task.Date}}{{else if eq .Task.Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Task.Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}
-    {{if .Task.Part}} · {{t (printf "tasks.part.%s" .Task.Part)}}{{end}}
-  </p>
-  {{if .Task.Due}}
-  <form method="post" action="/tasks/{{.Task.ID}}/done">
-    <input type="hidden" name="done" value="{{if .Task.Done}}0{{else}}1{{end}}">
-    <button class="button" type="submit">{{if .Task.Done}}{{t "tasks.untick"}}{{else}}{{t "tasks.tick"}}{{end}}</button>
+  <div class="task-today">
+    <p class="hint">{{if eq .Task.Repeat "once"}}{{t "tasks.repeat.once"}} {{.Task.Date}}{{else if eq .Task.Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Task.Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}{{if .Task.Part}} · {{t (printf "tasks.part.%s" .Task.Part)}}{{end}} · {{if not .Task.Due}}{{t "tasks.not_today"}}{{else if .Task.Done}}{{t "tasks.done"}}{{else}}{{t "tasks.open"}}{{end}}</p>
+    {{if .Task.Due}}<form method="post" action="/tasks/{{.Task.ID}}/done">
+      <input type="hidden" name="done" value="{{if .Task.Done}}0{{else}}1{{end}}">
+      <button class="button secondary" type="submit">{{if .Task.Done}}{{t "tasks.untick"}}{{else}}{{t "tasks.tick"}}{{end}}</button>
+    </form>{{end}}
+  </div>
+  <form method="post" action="/tasks/{{.Task.ID}}/stars" class="steps">
+    <fieldset>
+      <legend>{{t "tasks.stars.legend"}}</legend>
+      {{template "field" (dict "Root" . "Name" "stars" "Label" (t "tasks.stars.field") "Type" "number" "Inputmode" "numeric" "Bounded" true "Lo" 0 "Hi" .MaxStars "Required" true "Class" "short" "Value" .StarsValue "Hint" (t "tasks.stars.edit.hint"))}}
+      {{with .Credited}}<p class="notice" data-credited="{{.Stars}}">{{.HTML}}</p>{{end}}
+    </fieldset>
+    <button class="button" type="submit">{{t "tasks.stars.save"}}</button>
   </form>
-  {{end}}
   {{template "dangerOpen" (dict "Label" (t "tasks.delete"))}}
     <p>{{t "tasks.delete.explain"}}</p>
     <form method="post" action="/tasks/{{.Task.ID}}/delete"><button class="button danger" type="submit">{{t "tasks.delete.confirm"}}</button></form>

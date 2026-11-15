@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"html"
 	"html/template"
 	"io"
 	"io/fs"
@@ -202,6 +203,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/stars", s.handleStarBooking)
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
+	mux.HandleFunc("POST /tasks/{id}/stars", s.handleTaskStars)
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
@@ -284,9 +286,9 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
 		if key, arg := s.takeFlash(w, r); key != "" {
-			fr.Success = s.successText(lang, key, arg)
+			fr.Success = s.successHTML(lang, key, arg)
 		} else if key, ok := data["SuccessKey"].(string); ok {
-			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
+			fr.Success = template.HTML(html.EscapeString(s.i18n.T(lang, key))) // a page that shows the result itself
 		}
 		data["Frame"] = fr
 	}

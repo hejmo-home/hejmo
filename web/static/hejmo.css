@@ -224,6 +224,13 @@ label { display: grid; gap: 4px; font-size: var(--fs-label); color: var(--text-s
 input, select { font: inherit; color: var(--text); min-height: var(--touch-target); padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); }
 .error { background: var(--error-bg); color: var(--error-text); border-radius: var(--radius-card); padding: 10px 12px; max-width: 560px; }
 .secret { font-size: var(--fs-person-name); letter-spacing: 0.08em; word-break: break-all; }
+h1 { overflow-wrap: break-word; hyphens: auto; }
+.task-today { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; margin: 0 0 var(--gap-section); }
+.task-today .hint { margin: 0; }
+.f > .hint { margin: 0; }
+.f.short input { width: 7em; max-width: 100%; font-variant-numeric: tabular-nums; }
+.steps fieldset > .notice { margin: 0; }
+.task-stars, .msg b, .notice b { white-space: nowrap; }
 .notice { background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-card); padding: 10px 12px; max-width: 560px; }
 .cards { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: var(--gap); max-width: 560px; }
 .cards li { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 6px; }
@@ -291,6 +298,7 @@ a { color: var(--accent); }
 .skip { position: absolute; left: -9999px; }
 .skip:focus { position: static; display: inline-block; padding: 10px 12px; }
 .frame { display: grid; gap: var(--gap-section); align-content: start; }
+.frame { grid-template-columns: minmax(0, 1fr); }
 .frame-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); }
 .brand { display: inline-flex; align-items: center; min-height: var(--touch-target); font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); color: var(--text); text-decoration: none; }
 .frame-bar .button { min-height: var(--touch-target); }

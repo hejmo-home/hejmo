@@ -1,6 +1,7 @@
 package server
 
 import (
+	"html/template"
 	"net/http"
 	"strings"
 	"time"
@@ -40,8 +41,9 @@ type frame struct {
 	SunRise, SunSet int64
 	// Back is set on setup screens: they link back to the Settings hub.
 	Back bool
-	// Success is the success line after a saved change, already translated.
-	Success string
+	// Success is the success line after a saved change, already translated
+	// and escaped; a text of the locales may hold <b> around a figure.
+	Success template.HTML
 }
 
 // frameFor builds the frame for the person behind the request, or a bare

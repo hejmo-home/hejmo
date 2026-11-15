@@ -38,9 +38,9 @@ func portraitTokens(t *testing.T, css string) map[string]string {
 // visibleColumns models the family view grid of hejmo.css: the columns share
 // the width up to the orientation's limit, none is narrower than --col-min,
 // and the rest scrolls sideways. It returns how many of n person columns are
-// fully visible on a w by h viewport. The viewport decides the orientation,
-// so a rotated display switches limit by itself.
-func visibleColumns(t *testing.T, css string, w, h float64, n int) int {
+// fully visible on a w by h viewport, and how wide a column is. The viewport
+// decides the orientation, so a rotated display switches limit by itself.
+func visibleColumns(t *testing.T, css string, w, h float64, n int) (int, float64) {
 	t.Helper()
 	root := cssTokens(t, css, "light")
 	limit, err := strconv.Atoi(root["--cols-max"])
@@ -61,11 +61,13 @@ func visibleColumns(t *testing.T, css string, w, h float64, n int) int {
 	if vis > n {
 		vis = n
 	}
-	return vis
+	return vis, colw
 }
 
 // Proposed in ADR 0016 (pending approval of preview-27): at most 6 person columns in landscape,
 // 4 in portrait, each at least about 150 px; beyond that they scroll sideways.
+// Rotating the display switches the limit and back: the same five people on
+// the same device, portrait then landscape, are asserted as one case below.
 func TestColumnLimitsPerOrientationAndWidth(t *testing.T) {
 	css := stylesheet(t)
 	cases := []struct {
@@ -82,14 +84,18 @@ func TestColumnLimitsPerOrientationAndWidth(t *testing.T) {
 		{"E-Ink landscape, 7 people: 6 visible, then scroll", 1024, 768, 7, 6},
 		{"E-Ink landscape, 4 people", 1024, 768, 4, 4},
 		{"iPad Air landscape, 8 people", 1180, 820, 8, 6},
-		{"rotated: the same 5 people, portrait", 768, 1024, 5, 4},
-		{"rotated: the same 5 people, landscape", 1024, 768, 5, 5},
 		{"square viewport counts as portrait", 800, 800, 5, 4},
 	}
 	for _, c := range cases {
-		if got := visibleColumns(t, css, c.w, c.h, c.people); got != c.want {
+		if got, _ := visibleColumns(t, css, c.w, c.h, c.people); got != c.want {
 			t.Errorf("%s: %d columns visible, want %d", c.name, got, c.want)
 		}
+	}
+	// Rotation in one case: the same device and people, both orientations.
+	portrait, _ := visibleColumns(t, css, 768, 1024, 5)
+	landscape, _ := visibleColumns(t, css, 1024, 768, 5)
+	if portrait != 4 || landscape != 5 {
+		t.Errorf("rotating 5 people: portrait %d (want 4), landscape %d (want 5)", portrait, landscape)
 	}
 }
 
@@ -156,17 +162,21 @@ func TestFamilyPageFitsNarrowAndShortDisplays(t *testing.T) {
 // Readability snapshot (acceptance criterion 2). For each reference device and
 // number of people it records how many columns are visible, how wide a column
 // is, how much room its content has inside the padding, and whether the
-// longest example name (with its marker) fits that room. Text width is
+// longest example name (with its marker) fits that room. A very long single
+// word ("fits", "wraps" at the column edge, or "TOO NARROW" if clipped) is
+// recorded too. Text width is
 // estimated at 0.51 em per bold character (measured 0.50 em for "Sebastian" in Figtree 700 at 19 px).
 // HEJMO_UPDATE_GOLDEN=1 rewrites the golden after a reviewed change.
-func TestPortraitColumnReadabilitySnapshot(t *testing.T) {
+func TestColumnReadabilitySnapshot(t *testing.T) {
 	css := stylesheet(t)
 	root := cssTokens(t, css, "light")
-	margin, gap, min := px(t, root["--margin"]), px(t, root["--gap"]), px(t, root["--col-min"])
 	pad, fs := px(t, root["--pad-column"]), px(t, root["--fs-person-name"])
 	marker := px(t, themed(t, css, "bw")["--marker-size-bw-column"]) // the larger of the two themes
 	const longest = "Sebastian"
-	need := float64(len(longest))*0.51*fs + 8 + marker
+	const veryLong = "Konstantinos" // 12 characters, a single word: must wrap, not clip
+	need := func(name string) float64 { return float64(len(name))*0.51*fs + 8 + marker }
+	link := regexp.MustCompile(`(?m)^\.fv \.person-link\s*\{([^}]*)\}`).FindStringSubmatch(css)
+	wraps := link != nil && strings.Contains(link[1], "overflow-wrap: anywhere;") && strings.Contains(link[1], "min-width: 0;")
 
 	devices := []struct {
 		name string
@@ -178,26 +188,26 @@ func TestPortraitColumnReadabilitySnapshot(t *testing.T) {
 	var b strings.Builder
 	for _, d := range devices {
 		for _, n := range []int{3, 4, 5, 6} {
-			vis := visibleColumns(t, css, d.w, d.h, n)
-			limit := 6
-			if d.h >= d.w {
-				limit, _ = strconv.Atoi(portraitTokens(t, css)["--cols-max"])
-			}
-			share := math.Min(float64(n), float64(limit))
-			colw := math.Max(min, (d.w-2*margin-(share-1)*gap)/share)
+			vis, colw := visibleColumns(t, css, d.w, d.h, n)
 			content := colw - 2*pad
-			fit := "fits"
-			if content < need {
-				fit = "TOO NARROW"
+			verdict := func(name string, mustFit bool) string {
+				switch {
+				case content >= need(name):
+					return "fits"
+				case !mustFit && wraps:
+					return "wraps"
+				}
+				return "TOO NARROW"
 			}
-			fmt.Fprintf(&b, "%s, %d people: %d visible, column %.0f px, content %.0f px, %q %s (needs %.0f px)\n", d.name, n, vis, colw, content, longest, fit, need)
+			fmt.Fprintf(&b, "%s, %d people: %d visible, column %.0f px, content %.0f px, %q %s (needs %.0f px), %q %s (needs %.0f px)\n",
+				d.name, n, vis, colw, content, longest, verdict(longest, true), need(longest), veryLong, verdict(veryLong, false), need(veryLong))
 		}
 	}
 	got := b.String()
 	if strings.Contains(got, "TOO NARROW") {
 		t.Errorf("a person name does not fit its column:\n%s", got)
 	}
-	const golden = "testdata/portrait_layout.golden"
+	const golden = "testdata/column_layout.golden"
 	if os.Getenv("HEJMO_UPDATE_GOLDEN") != "" {
 		if err := os.WriteFile(golden, []byte(got), 0o644); err != nil {
 			t.Fatal(err)

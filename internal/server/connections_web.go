@@ -164,7 +164,7 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		{Label: s.say(r, i18n.Msg("connections.fact.service")), Value: s.serviceName(r, conn)},
 		{Label: s.say(r, i18n.Msg("connections.fact.username")), Value: conn.Username},
 		lastFact,
-		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: conn.CreatedAt.In(p.location()).Format(dayLayout)},
+		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: p.day(conn.CreatedAt)},
 	}
 	shown := selectionCalendars(found, form, mine, taken)
 	for i, c := range shown {

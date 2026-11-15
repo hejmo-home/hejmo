@@ -11,6 +11,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -18,8 +19,6 @@ import (
 )
 
 const (
-	dateShort = "02/01"
-	dateLong  = "02/01/2006"
 	// aheadWeeks is how many weeks "The coming weeks" lists.
 	aheadWeeks = 6
 	// startWeeks is how many weeks after the current one a start week can be.
@@ -51,9 +50,16 @@ func (s *server) joinWords(lang string, items []string) string {
 	return strings.Join(items[:len(items)-1], ", ") + " " + s.i18n.T(lang, "meals.tpl.and") + " " + items[len(items)-1]
 }
 
+// yearRange is the week that starts on monday with its year: "23.11. – 29.11.2026",
+// and across New Year with both years.
+func (s *server) yearRange(lang string, f store.DateFormat, monday time.Time) string {
+	from, to := datefmt.RangeParts(f, monday, monday.AddDate(0, 0, 6))
+	return fmt.Sprintf(s.i18n.T(lang, "meals.week.range"), from, to)
+}
+
 // weekRange is "23/11 – 29/11" for the week that starts on monday.
-func (s *server) weekRange(lang string, monday time.Time) string {
-	return fmt.Sprintf(s.i18n.T(lang, "meals.week.range"), monday.Format(dateShort), monday.AddDate(0, 0, 6).Format(dateShort))
+func (s *server) weekRange(lang string, f store.DateFormat, monday time.Time) string {
+	return fmt.Sprintf(s.i18n.T(lang, "meals.week.range"), datefmt.Short(f, monday), datefmt.Short(f, monday.AddDate(0, 0, 6)))
 }
 
 // weekdaysOf lists the weekdays (1 to 7) a template has an entry for.
@@ -106,9 +112,9 @@ func (s *server) fillsWord(lang string, t meal.Template) string {
 func thisMonday(p principal, s *server) time.Time { return weekOf(mustDay(s.today(p))) }
 
 // scheduleText is "Every 2 weeks from week 46 (09/11/2026) · next in week 48 (23/11 – 29/11)".
-func (s *server) scheduleText(lang string, t meal.Template, this time.Time) string {
+func (s *server) scheduleText(lang string, f store.DateFormat, t meal.Template, this time.Time) string {
 	start, _ := time.Parse(task.DateLayout, t.Start)
-	args := []string{"week", strconv.Itoa(isoWeek(start)), "date", start.Format(dateLong)}
+	args := []string{"week", strconv.Itoa(isoWeek(start)), "date", datefmt.Date(f, start)}
 	head := s.tr(lang, "meals.tpl.sched.one", args...)
 	if t.Interval > 1 {
 		head = s.tr(lang, "meals.tpl.sched.n", append(args, "n", strconv.Itoa(t.Interval))...)
@@ -126,7 +132,7 @@ func (s *server) scheduleText(lang string, t meal.Template, this time.Time) stri
 	if len(next) == 0 {
 		return head
 	}
-	return head + s.tr(lang, key, "next", strconv.Itoa(isoWeek(next[0])), "range", s.weekRange(lang, next[0]))
+	return head + s.tr(lang, key, "next", strconv.Itoa(isoWeek(next[0])), "range", s.weekRange(lang, f, next[0]))
 }
 
 type tplRow struct {
@@ -161,12 +167,12 @@ func (s *server) renderTemplates(w http.ResponseWriter, r *http.Request, p princ
 	this := thisMonday(p, s)
 	rows := make([]tplRow, 0, len(list))
 	for _, t := range list {
-		rows = append(rows, tplRow{ID: t.ID, Name: t.Name, Label: s.fillsLabel(lang, t), On: s.onText(lang, weekdaysOf(t)), Schedule: s.scheduleText(lang, t, this)})
+		rows = append(rows, tplRow{ID: t.ID, Name: t.Name, Label: s.fillsLabel(lang, t), On: s.onText(lang, weekdaysOf(t)), Schedule: s.scheduleText(lang, p.household.DateFormat, t, this)})
 	}
 	var ahead []aheadWeek
 	for i := 0; i < aheadWeeks && len(list) > 0; i++ {
 		monday := this.AddDate(0, 0, 7*i)
-		week := aheadWeek{No: isoWeek(monday), Range: s.weekRange(lang, monday), This: i == 0}
+		week := aheadWeek{No: isoWeek(monday), Range: s.weekRange(lang, p.household.DateFormat, monday), This: i == 0}
 		for _, t := range list {
 			if t.AppliesInWeek(monday) {
 				week.Fills = append(week.Fills, aheadFill{t.Name, s.fillsWord(lang, t)})
@@ -230,10 +236,10 @@ type startOption struct {
 
 // startOptions lists the current week and the 52 after it; a start week that
 // is already over stays in the list while its template is edited.
-func (s *server) startOptions(lang string, this time.Time, selected string) []startOption {
+func (s *server) startOptions(lang string, f store.DateFormat, this time.Time, selected string) []startOption {
 	var out []startOption
 	label := func(m time.Time) string {
-		return s.tr(lang, "meals.tpl.start.option", "week", strconv.Itoa(isoWeek(m)), "from", m.Format(dateShort), "to", m.AddDate(0, 0, 6).Format(dateShort))
+		return s.tr(lang, "meals.tpl.start.option", "week", strconv.Itoa(isoWeek(m)), "from", datefmt.Short(f, m), "to", datefmt.Short(f, m.AddDate(0, 0, 6)))
 	}
 	if d, err := time.Parse(task.DateLayout, selected); err == nil && d.Before(this) {
 		out = append(out, startOption{d.Format(task.DateLayout), label(d), true})
@@ -259,7 +265,7 @@ func isoYear(monday time.Time) int { return monday.AddDate(0, 0, 3).Year() }
 // from today), 49, 51, 53, then week 2 of 2027 (11/01/2027), and so on." The
 // interval counts weeks from the start week, so the turn of the year shows.
 // form.js builds the same sentence while the fields change.
-func (s *server) weeksHint(lang string, every int, start string, this time.Time) template.HTML {
+func (s *server) weeksHint(lang string, f store.DateFormat, every int, start string, this time.Time) template.HTML {
 	st, err := time.Parse(task.DateLayout, start)
 	if err != nil || every < 1 || every > meal.MaxInterval {
 		return ""
@@ -291,7 +297,7 @@ func (s *server) weeksHint(lang string, every int, start string, this time.Time)
 		for _, w := range weeks {
 			if isoYear(w) != year {
 				then := html.EscapeString(s.i18n.T(lang, "meals.tpl.hint.then"))
-				then = strings.NewReplacer("{week}", fmt.Sprintf("<b>%d</b>", isoWeek(w)), "{year}", strconv.Itoa(isoYear(w)), "{date}", w.Format(dateLong)).Replace(then)
+				then = strings.NewReplacer("{week}", fmt.Sprintf("<b>%d</b>", isoWeek(w)), "{year}", strconv.Itoa(isoYear(w)), "{date}", datefmt.Date(f, w)).Replace(then)
 				b.WriteString(then)
 				break
 			}
@@ -336,7 +342,7 @@ func (s *server) renderTemplateForm(w http.ResponseWriter, r *http.Request, p pr
 	data := map[string]any{
 		"Title": title, "Edit": f.ID != "", "ID": f.ID, "OriginalName": original, "Action": action,
 		"Name": f.Name, "Fills": f.Fills, "Mealtime": f.Mealtime, "Every": f.Every, "Mealtimes": meal.Mealtimes(),
-		"StartOptions": s.startOptions(lang, this, f.Start), "Today": this.Format(task.DateLayout), "WeeksHint": s.weeksHint(lang, every, f.Start, this),
+		"StartOptions": s.startOptions(lang, p.household.DateFormat, this, f.Start), "Today": this.Format(task.DateLayout), "DateFormat": string(p.household.DateFormat), "WeeksHint": s.weeksHint(lang, p.household.DateFormat, every, f.Start, this),
 		"Days": days, "ErrName": errs.Name, "ErrEvery": errs.Every, "ErrMealtime": errs.Mealtime, "ErrField": errs.Field,
 	}
 	switch {
@@ -347,7 +353,7 @@ func (s *server) renderTemplateForm(w http.ResponseWriter, r *http.Request, p pr
 			names = append(names, quoted)
 			sentences = append(sentences, s.tr(lang, "meals.tpl.clash.sentence", "template", quoted, "meal", s.i18n.T(lang, "meals.tpl.clash.mt."+string(c.Clash.Mealtime)),
 				"days", s.namesOf(lang, c.Clash.Weekdays), "week", strconv.Itoa(isoWeek(c.Clash.Week)),
-				"range", fmt.Sprintf(s.i18n.T(lang, "meals.week.range"), c.Clash.Week.Format(dateShort), c.Clash.Week.AddDate(0, 0, 6).Format(dateLong))))
+				"range", s.yearRange(lang, p.household.DateFormat, c.Clash.Week)))
 		}
 		data["ErrClash"] = sentences
 		data["TopError"] = template.HTML(fmt.Sprintf(`%s %s (%s <a href="#schedule">%s</a>). %s`, html.EscapeString(s.i18n.T(lang, "meals.tpl.clash.top.before")),

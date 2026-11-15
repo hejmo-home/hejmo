@@ -15,7 +15,7 @@ func TestCalendarsOverviewListsRowsThatOpenTheirDetailPages(t *testing.T) {
 	connID := connectedBox(t, b)
 	body := getEN(b, "/calendars").body
 	for _, want := range []string{
-		`<ul class="list-rows">`, `<a href="/calendars/` + cal.ID + `">`, "<b>School</b>", "For ", "Whole family", "Last synced 14/11/2026, 21:46:26",
+		`<ul class="list-rows">`, `<a href="/calendars/` + cal.ID + `">`, "<b>School</b>", "For ", "Whole family", "Last synced 14.11.2026,\u00a021:46:26",
 		`<a href="/connections/` + connID + `">`, "<b>u</b>", "No calendar on the box yet",
 	} {
 		if !strings.Contains(body, want) {

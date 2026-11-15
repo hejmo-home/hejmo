@@ -14,7 +14,7 @@ func TestHouseholdDefaultsTo24HourAndCelsius(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, err := db.Household(h.ID)
-	if err != nil || got.TimeFormat != store.Time24h || got.TemperatureUnit != store.Celsius {
+	if err != nil || got.DateFormat != store.DateDMY || got.TimeFormat != store.Time24h || got.TemperatureUnit != store.Celsius {
 		t.Fatalf("defaults = %+v, %v", got, err)
 	}
 }
@@ -22,20 +22,23 @@ func TestHouseholdDefaultsTo24HourAndCelsius(t *testing.T) {
 func TestHouseholdSettingsPersistAndRejectUnknownValues(t *testing.T) {
 	db, _ := openTemp(t)
 	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
-	if err := db.UpdateHouseholdSettings(h.ID, store.Time12h, store.Fahrenheit, store.UpdateNotify); err != nil {
+	if err := db.UpdateHouseholdSettings(h.ID, store.DateMDY, store.Time12h, store.Fahrenheit, store.UpdateNotify); err != nil {
 		t.Fatal(err)
 	}
 	got, _ := db.HomeHousehold()
-	if got.TimeFormat != store.Time12h || got.TemperatureUnit != store.Fahrenheit || got.AutoUpdate != store.UpdateNotify {
+	if got.DateFormat != store.DateMDY || got.TimeFormat != store.Time12h || got.TemperatureUnit != store.Fahrenheit || got.AutoUpdate != store.UpdateNotify {
 		t.Fatalf("saved = %+v", got)
 	}
-	if err := db.UpdateHouseholdSettings(h.ID, "25h", store.Celsius, store.UpdateOn); err == nil {
+	if err := db.UpdateHouseholdSettings(h.ID, store.DateMDY, "25h", store.Celsius, store.UpdateOn); err == nil {
 		t.Fatal("unknown time format accepted")
 	}
-	if err := db.UpdateHouseholdSettings(h.ID, store.Time24h, "kelvin", store.UpdateOn); err == nil {
+	if err := db.UpdateHouseholdSettings(h.ID, store.DateMDY, store.Time24h, "kelvin", store.UpdateOn); err == nil {
 		t.Fatal("unknown unit accepted")
 	}
-	if err := db.UpdateHouseholdSettings("missing", store.Time24h, store.Celsius, store.UpdateOn); err == nil {
+	if err := db.UpdateHouseholdSettings(h.ID, "ymd", store.Time24h, store.Celsius, store.UpdateOn); err == nil {
+		t.Fatal("unknown date format accepted")
+	}
+	if err := db.UpdateHouseholdSettings("missing", store.DateDMY, store.Time24h, store.Celsius, store.UpdateOn); err == nil {
 		t.Fatal("unknown household accepted")
 	}
 }
@@ -45,11 +48,11 @@ func TestHouseholdSettingsPersistAndRejectUnknownValues(t *testing.T) {
 func TestHouseholdSettingsSaveIsAllOrNothing(t *testing.T) {
 	db, _ := openTemp(t)
 	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
-	if err := db.UpdateHouseholdSettings(h.ID, store.Time12h, store.Fahrenheit, "sometimes"); err == nil {
+	if err := db.UpdateHouseholdSettings(h.ID, store.DateMDY, store.Time12h, store.Fahrenheit, "sometimes"); err == nil {
 		t.Fatal("unknown update mode accepted")
 	}
 	got, _ := db.Household(h.ID)
-	if got.TimeFormat != store.Time24h || got.TemperatureUnit != store.Celsius || got.AutoUpdate != store.UpdateOn {
+	if got.DateFormat != store.DateDMY || got.TimeFormat != store.Time24h || got.TemperatureUnit != store.Celsius || got.AutoUpdate != store.UpdateOn {
 		t.Fatalf("a rejected save changed the settings: %+v", got)
 	}
 }

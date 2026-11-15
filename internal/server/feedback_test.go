@@ -64,7 +64,7 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		{"task done", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"1"}}, "Marked as done."},
 		{"task reopen", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"0"}}, "Marked as open."},
 		{"calendar add", "/calendars", "/calendars", url.Values{"name": {"Choir"}, "url": {"https://example.org/a.ics"}, "color": {"#2F5E7A"}, "interval": {"60"}}, "Calendar added."},
-		{"calendar sync", "/calendars/" + calID + "/sync", "/calendars/" + calID, url.Values{}, "Updated at 1:00:00 PM. Events: 0 (new 0, changed 0, removed 0)."},
+		{"calendar sync", "/calendars/" + calID + "/sync", "/calendars/" + calID, url.Values{}, "Updated at 1:00:00\u00a0PM. Events: 0 (new 0, changed 0, removed 0)."},
 		{"display pair", "/displays", "/displays", pairForm(code2), "Display paired."},
 		{"display settings", "/displays/" + displayID + "/settings", "/displays/" + displayID, url.Values{"show_tomorrow": {"on"}}, "Saved."},
 		{"share", "/caldav/calendars/" + calID + "/share", "/caldav", url.Values{"shared": {"on"}}, "Sharing through the box is on."},

@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
@@ -54,11 +55,11 @@ func requestedWeek(raw, today string) time.Time {
 
 // weekDays builds the seven days of a week with a cell per mealtime. values
 // holds what the cells show: the stored plan, or what was typed after an error.
-func weekDays(monday time.Time, today string, values map[string]string, marks map[string]store.PlanMeal) []mealDay {
+func weekDays(f store.DateFormat, monday time.Time, today string, values map[string]string, marks map[string]store.PlanMeal) []mealDay {
 	var days []mealDay
 	for i := 0; i < 7; i++ {
 		d := monday.AddDate(0, 0, i)
-		day := mealDay{Date: d.Format(task.DateLayout), Weekday: int(d.Weekday()), Short: d.Format("02/01")}
+		day := mealDay{Date: d.Format(task.DateLayout), Weekday: int(d.Weekday()), Short: datefmt.Short(f, d)}
 		day.Today = day.Date == today
 		for _, m := range meal.Mealtimes() {
 			c := mealCell{Name: mealField(day.Date, m), Mealtime: string(m)}
@@ -104,7 +105,8 @@ func (s *server) renderMeals(w http.ResponseWriter, r *http.Request, p principal
 	if typed != nil {
 		values = typed
 	}
-	days := weekDays(monday, today, values, marks)
+	days := weekDays(p.household.DateFormat, monday, today, values, marks)
+	from, to := datefmt.RangeParts(p.household.DateFormat, monday, sunday)
 	planned := false
 	errDay, errMealtime := 0, ""
 	for _, d := range days {
@@ -118,7 +120,7 @@ func (s *server) renderMeals(w http.ResponseWriter, r *http.Request, p principal
 	data := map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Days": days, "Planned": planned,
 		"Week": monday.Format(task.DateLayout), "Prev": monday.AddDate(0, 0, -7).Format(task.DateLayout), "Next": monday.AddDate(0, 0, 7).Format(task.DateLayout),
-		"WeekNo": isoWeek(monday), "From": monday.Format("02/01"), "To": sunday.Format("02/01/2006"), "ErrorWeekday": errDay, "ErrorMealtime": errMealtime, "ThisWeek": monday.Format(task.DateLayout) == weekOf(mustDay(today)).Format(task.DateLayout),
+		"WeekNo": isoWeek(monday), "From": from, "To": to, "ErrorWeekday": errDay, "ErrorMealtime": errMealtime, "ThisWeek": monday.Format(task.DateLayout) == weekOf(mustDay(today)).Format(task.DateLayout),
 		"Editable": p.person.Role == store.RoleParent, "Error": errKey, "ErrorField": errField,
 	}
 	if p.person.Role == store.RoleParent {
@@ -199,7 +201,7 @@ func (s *server) handleMealsSave(w http.ResponseWriter, r *http.Request) {
 	typed := map[string]string{}
 	badField, badKey := "", ""
 	restore := r.PostFormValue("restore") // "Back to template" of one meal, saved with the week
-	for _, d := range weekDays(monday, s.today(p), nil, nil) {
+	for _, d := range weekDays(p.household.DateFormat, monday, s.today(p), nil, nil) {
 		for _, c := range d.Cells {
 			vals, present := r.PostForm[c.Name]
 			if !present || len(vals) == 0 {

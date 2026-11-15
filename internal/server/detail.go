@@ -34,6 +34,3 @@ type factView struct {
 // silentAfter is how long a display may stay out of contact before its row
 // warns (ticket 111).
 const silentAfter = 15 * time.Minute
-
-// when says a moment in the household's zone and clock, with seconds.
-func (p principal) when(t time.Time) string { return t.In(p.location()).Format(p.whenLayout()) }

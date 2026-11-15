@@ -61,7 +61,10 @@ function load(network) {
 // The assets layout.html loads (not the ones in {{if}} templating only: every /static/ reference).
 function layoutAssets() {
   const html = fs.readFileSync(path.join(root, 'templates/layout.html'), 'utf8');
-  return [...html.matchAll(/(?:href|src)="(\/static\/[^"]+)"/g)].map((m) => m[1]).filter((u) => !u.includes('/icons/'));
+  const urls = [...html.matchAll(/(?:href|src)="(\/static\/[^"]+)"/g)].map((m) => m[1]).filter((u) => !u.includes('/icons/'));
+  // The language switcher names its flags by template ({{.LangFlag}}, {{.Flag}}): every file in static/flags can be shown.
+  const flags = fs.readdirSync(path.join(root, 'static/flags')).map((f) => '/static/flags/' + f);
+  return urls.flatMap((u) => (u.includes('{{') ? flags : [u])).filter((u, i, all) => all.indexOf(u) === i);
 }
 
 const page = (body) => new Response(body, { status: 200, headers: { 'Content-Type': 'text/html; charset=utf-8' } });
@@ -75,6 +78,7 @@ function box(online) {
     if (p.endsWith('.css')) return asset('body{}', 'text/css');
     if (p.endsWith('.js')) return asset('//js', 'text/javascript');
     if (p.endsWith('.ttf')) return asset('font', 'font/ttf');
+    if (p.endsWith('.svg')) return asset('<svg/>', 'image/svg+xml');
     return new Response('', { status: 404 });
   };
 }

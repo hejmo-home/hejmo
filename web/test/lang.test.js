@@ -21,9 +21,11 @@ function setup() {
   const handlers = {};
   const document = {
     addEventListener(ev, fn) { handlers[ev] = fn; },
+    querySelectorAll() { return []; },
     querySelector(sel) { return sel === 'details.lang[open]' && menu.open ? menu : null; },
   };
-  vm.runInNewContext(source, { document });
+  // The script also wires the meal plan fields and the time picker, which need a window and a navigator; no such elements exist here.
+  vm.runInNewContext(source, { document, window: {}, navigator: { userAgent: '', platform: '', maxTouchPoints: 0 } });
   return { menu, summary, inside, handlers };
 }
 

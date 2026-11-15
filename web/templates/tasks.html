@@ -9,7 +9,7 @@
     <ul class="cards">
       {{range .Tasks}}
       <li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
-        <strong>{{if not $.Child}}<a href="/tasks/{{.ID}}">{{end}}{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}{{if not $.Child}}</a>{{end}}</strong>
+        <strong>{{if not $.Child}}<a href="/tasks/{{.ID}}">{{end}}{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}{{if not $.Child}}</a>{{end}}{{if .Stars}} <span class="task-stars" data-task-stars="{{.Stars}}">{{.Stars}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span>{{end}}</strong>
         <span class="hint">
           {{if eq .Repeat "once"}}{{t "tasks.repeat.once"}} {{.Date}}{{else if eq .Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}
           {{if .Part}} · {{t (printf "tasks.part.%s" .Part)}}{{end}}
@@ -28,6 +28,34 @@
     </ul>
   </section>
   {{else}}{{if .Child}}<p class="lead">{{t "tasks.none.child"}}</p>{{else}}{{template "empty" (dict "Text" (t "tasks.none") "Href" "#new" "Action" (t "tasks.none.action"))}}{{end}}{{end}}
+
+  {{if not .Child}}<section aria-labelledby="stars">
+    <h2 id="stars">{{t "tasks.stars.title"}}</h2>
+    <p class="lead">{{t "tasks.stars.intro"}}</p>
+    {{if .StarCards}}<ul class="cards">
+      {{range .StarCards}}
+        <li data-balance="{{.Balance}}">
+          <strong><input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{.Name}} <span class="stars-balance">{{.Balance}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span></strong>
+          <span class="hint">{{t "tasks.stars.log"}}</span>
+          {{range .Entries}}<span class="log-line"><b>{{.Delta}}</b> {{.Label}}<span class="hint"> · {{.When}}{{if .By}} · {{.By}}{{end}}</span></span>
+          {{else}}<span class="hint">{{t "tasks.stars.log_empty"}}</span>{{end}}
+        </li>
+      {{end}}
+    </ul>{{end}}
+    {{with .StarError}}<p class="error" role="alert">{{t .}}</p>{{end}}
+    <form method="post" action="/tasks/stars" class="steps">
+      {{$sf := .StarForm}}
+      <fieldset>
+        {{template "personChips" (dict "Root" (dict) "Name" "person" "Legend" (t "tasks.field.person") "People" .People "Selected" (strs (index $sf "Person")) "Single" true)}}
+        <label>{{t "tasks.stars.field.delta"}}
+          <input name="delta" type="number" step="1" required value="{{index $sf "Delta"}}"></label>
+        <label>{{t "tasks.stars.field.note"}}
+          <input name="note" required maxlength="120" value="{{index $sf "Note"}}"></label>
+      </fieldset>
+      <button class="button" type="submit">{{t "tasks.stars.book"}}</button>
+    </form>
+  </section>
+  {{end}}
 
   {{if not .Child}}<section aria-labelledby="new">
     <h2 id="new">{{t "tasks.new"}}</h2>
@@ -52,6 +80,7 @@
           {{template "option" (dict "Name" "part" "Value" "morning" "Label" (t "tasks.part.morning") "Checked" (eq (index $f "Part") "morning"))}}
           {{template "option" (dict "Name" "part" "Value" "evening" "Label" (t "tasks.part.evening") "Checked" (eq (index $f "Part") "evening"))}}
         {{template "optionsClose" (dict "Root" . "Name" "part")}}
+        {{template "field" (dict "Root" . "Name" "stars" "Label" (t "tasks.field.stars") "Type" "number" "Value" (index $f "Stars") "Inputmode" "numeric" "Bounded" true "Lo" 0 "Hi" .MaxStars)}}
         {{template "moreOpen" (dict "Label" (t "tasks.more") "Open" (eq .ErrorField "emoji"))}}
           {{template "field" (dict "Root" . "Name" "emoji" "Label" (t "tasks.field.emoji") "Value" (index $f "Emoji") "Max" 16)}}
         {{template "moreClose"}}

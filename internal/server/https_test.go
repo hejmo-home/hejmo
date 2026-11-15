@@ -129,12 +129,12 @@ func TestRedirectKeepsAConfiguredPublicHTTPSPort(t *testing.T) {
 	}
 }
 
-// Everything else, the stylesheet included, is redirected (ADR 0014).
+// Everything else is redirected (ADR 0014).
 func TestPlainHTTPRedirectsEverythingButTheTrustSteps(t *testing.T) {
 	b := newBox(t)
 	plain := b.plainServer()
 	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	for _, path := range []string{"/static/hejmo.css", "/login", "/api/v1/members", "/ca/other", "/setup"} {
+	for _, path := range []string{"/static/sw.js", "/static/form.js", "/login", "/api/v1/members", "/ca/other", "/setup"} {
 		res, err := client.Get(plain.URL + path)
 		if err != nil {
 			t.Fatal(err)
@@ -142,6 +142,34 @@ func TestPlainHTTPRedirectsEverythingButTheTrustSteps(t *testing.T) {
 		res.Body.Close()
 		if res.StatusCode != http.StatusPermanentRedirect {
 			t.Errorf("GET http://%s = %d, want 308", path, res.StatusCode)
+		}
+	}
+}
+
+// The trust page is read before the device trusts the box, so what it needs
+// to look right (stylesheet, font, icons) must not redirect to HTTPS. These
+// files are public and identical on every box: serving them in the clear
+// leaks nothing.
+func TestTrustPageRendersStyledOverPlainHTTP(t *testing.T) {
+	b := newBox(t)
+	plain := b.plainServer()
+	page, err := http.Get(plain.URL + "/ca")
+	if err != nil {
+		t.Fatal(err)
+	}
+	raw, _ := io.ReadAll(page.Body)
+	page.Body.Close()
+	if !strings.Contains(string(raw), `href="/static/hejmo.css"`) {
+		t.Fatalf("trust page links no stylesheet:\n%s", raw)
+	}
+	for _, path := range []string{"/static/hejmo.css", "/static/fonts/Figtree-wght.ttf", "/static/icons/apple-touch-icon.png"} {
+		res, err := http.Get(plain.URL + path) // follows redirects: a redirect to HTTPS fails on the untrusted certificate
+		if err != nil {
+			t.Fatalf("GET http://%s: %v", path, err)
+		}
+		res.Body.Close()
+		if res.StatusCode != http.StatusOK || res.Request.URL.Scheme != "http" {
+			t.Errorf("GET http://%s = %d via %s, want 200 over http", path, res.StatusCode, res.Request.URL.Scheme)
 		}
 	}
 }

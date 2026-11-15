@@ -30,11 +30,23 @@ func (s *server) requireHTTPS(next http.Handler) http.Handler {
 	})
 }
 
+// plainStaticAssets are the static files the plain-HTTP pages need to look
+// right before the device trusts the box: stylesheet, font and icons. They are
+// public and identical on every box, so serving them in the clear leaks
+// nothing. Scripts stay HTTPS-only (code fetched over HTTP could be swapped).
+func plainStaticAsset(path string) bool {
+	return path == "/static/hejmo.css" ||
+		strings.HasPrefix(path, "/static/fonts/") || strings.HasPrefix(path, "/static/icons/")
+}
+
 func (s *server) plainHTTPAllowed(path string) bool {
+	if plainStaticAsset(path) {
+		return true
+	}
 	switch path {
 	case "/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig":
 		return true
-	case "/setup/https/check", "/setup/https/own-ca", "/static/https-check.js", "/static/hejmo.css":
+	case "/setup/https/check", "/setup/https/own-ca", "/static/https-check.js":
 		// While the wizard tests the new name, the browser is still on the
 		// LAN address and has no other way to show the page.
 		return s.publicReady() && !s.db.Configured()

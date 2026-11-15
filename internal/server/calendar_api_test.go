@@ -203,3 +203,19 @@ func TestSearchAPI(t *testing.T) {
 		t.Fatalf("search = %d %v %v", status, body, list)
 	}
 }
+
+// Ticket 5.12 (API parity with the web form): an event can be created in its
+// own time zone; an unknown zone is refused.
+func TestCreateEventInItsOwnTimeZone(t *testing.T) {
+	c := signedInAPI(t)
+	c.createEvent(t, map[string]any{"title": "Call with Grandma", "timezone": "Pacific/Auckland", "start": "2026-11-14T09:00:00+13:00", "end": "2026-11-14T10:00:00+13:00", "rrule": "FREQ=WEEKLY"})
+	h, _ := c.b.db.HomeHousehold()
+	cal, _ := c.b.db.FamilyCalendar(h.ID)
+	events, _ := c.b.db.CalendarEvents(h.ID, cal.ID)
+	if len(events) != 1 || events[0].Start.Location().String() != "Pacific/Auckland" || events[0].Start.Hour() != 9 {
+		t.Fatalf("stored = %+v", events)
+	}
+	if status, _, _ := c.call(http.MethodPost, "/events", map[string]any{"title": "x", "timezone": "Mars/Olympus", "start": "2026-11-14T09:00:00+13:00", "end": "2026-11-14T10:00:00+13:00"}); status != http.StatusUnprocessableEntity {
+		t.Fatalf("unknown zone = %d, want 422", status)
+	}
+}

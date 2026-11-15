@@ -36,15 +36,11 @@ type fakeDNS struct {
 func newFakeDNS(t *testing.T) *fakeDNS {
 	t.Helper()
 	f := &fakeDNS{records: map[string][]libdns.RR{}}
-	pc, err := net.ListenPacket("udp", "127.0.0.1:0")
+	pc, ln, err := listenPair(net.Listen)
 	if err != nil {
 		t.Fatal(err)
 	}
 	f.addr = pc.LocalAddr().String()
-	ln, err := net.Listen("tcp", f.addr)
-	if err != nil {
-		t.Fatal(err)
-	}
 	h := dns.HandlerFunc(f.serve)
 	udp := &dns.Server{PacketConn: pc, Handler: h}
 	tcp := &dns.Server{Listener: ln, Handler: h}
@@ -197,4 +193,23 @@ func startCA(t *testing.T, dnsServer *fakeDNS, opt caOption) *fakeCA {
 	c.Roots = x509.NewCertPool()
 	c.Roots.AddCert(c.srv.Certificate())
 	return c
+}
+
+// listenPair opens a UDP and a TCP socket on the same loopback port. The
+// kernel picks the UDP port; if TCP has that number taken, try again.
+func listenPair(listen func(network, addr string) (net.Listener, error)) (net.PacketConn, net.Listener, error) {
+	var lastErr error
+	for range 20 {
+		pc, err := net.ListenPacket("udp", "127.0.0.1:0")
+		if err != nil {
+			return nil, nil, err
+		}
+		ln, err := listen("tcp", pc.LocalAddr().String())
+		if err == nil {
+			return pc, ln, nil
+		}
+		pc.Close()
+		lastErr = err
+	}
+	return nil, nil, lastErr
 }

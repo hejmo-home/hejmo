@@ -11,8 +11,7 @@
     </fieldset>
     <form method="post" action="/setup/totp">
       <fieldset>
-        <label>{{t "setup.totp.code"}}
-          <input name="code" inputmode="numeric" pattern="[0-9 ]{6,7}" required autocomplete="one-time-code" autofocus></label>
+        {{template "field" (dict "Root" . "Name" "code" "Label" (t "setup.totp.code") "Required" true "Inputmode" "numeric" "Pattern" "[0-9 ]{6,7}" "Autocomplete" "one-time-code" "Autofocus" true)}}
       </fieldset>
       <button class="button" type="submit">{{t "setup.totp.confirm"}}</button>
     </form>

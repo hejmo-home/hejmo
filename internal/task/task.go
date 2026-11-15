@@ -98,53 +98,61 @@ type Task struct {
 	Stars     int // credited when ticked off, deducted when unticked (ADR 0018); 0 allowed
 }
 
+// InvalidError says why a task cannot be stored and which field is wrong
+// (title, emoji, person, date, weekdays, repeat or part). It matches
+// ErrInvalid with errors.Is.
+type InvalidError struct{ Field, Msg string }
+
+func (e *InvalidError) Error() string { return ErrInvalid.Error() + ": " + e.Msg }
+func (e *InvalidError) Unwrap() error { return ErrInvalid }
+
 // Validate reports why a task cannot be stored.
 func (t Task) Validate() error {
-	bad := func(msg string) error { return fmt.Errorf("%w: %s", ErrInvalid, msg) }
+	bad := func(field, msg string) error { return &InvalidError{Field: field, Msg: msg} }
 	if strings.TrimSpace(t.Title) == "" {
-		return bad("title required")
+		return bad("title", "title required")
 	}
 	if utf8.RuneCountInString(strings.TrimSpace(t.Title)) > MaxTitle {
-		return bad(fmt.Sprintf("title may have at most %d characters", MaxTitle))
+		return bad("title", fmt.Sprintf("title may have at most %d characters", MaxTitle))
 	}
 	if utf8.RuneCountInString(t.Emoji) > MaxEmoji {
-		return bad(fmt.Sprintf("emoji may have at most %d characters", MaxEmoji))
+		return bad("emoji", fmt.Sprintf("emoji may have at most %d characters", MaxEmoji))
 	}
 	if t.Stars < 0 || t.Stars > MaxStars {
-		return bad(fmt.Sprintf("stars must be between 0 and %d", MaxStars))
+		return bad("stars", fmt.Sprintf("stars must be between 0 and %d", MaxStars))
 	}
 	if t.PersonID == "" {
-		return bad("person required")
+		return bad("person", "person required")
 	}
 	if _, err := time.Parse(DateLayout, t.Date); err != nil {
-		return bad("date must be YYYY-MM-DD")
+		return bad("date", "date must be YYYY-MM-DD")
 	}
 	switch t.Repeat {
 	case Once, Daily:
 		if len(t.Weekdays) > 0 {
-			return bad("weekdays only apply to weekly tasks")
+			return bad("weekdays", "weekdays only apply to weekly tasks")
 		}
 	case Weekly:
 		if len(t.Weekdays) == 0 {
-			return bad("a weekly task needs at least one weekday")
+			return bad("weekdays", "a weekly task needs at least one weekday")
 		}
 		seen := map[string]bool{}
 		for _, d := range t.Weekdays {
 			if weekdayIndex(d) < 0 {
-				return bad("unknown weekday " + d)
+				return bad("weekdays", "unknown weekday "+d)
 			}
 			if seen[d] {
-				return bad("weekday " + d + " given twice")
+				return bad("weekdays", "weekday "+d+" given twice")
 			}
 			seen[d] = true
 		}
 	default:
-		return bad("repeat must be once, daily or weekly")
+		return bad("repeat", "repeat must be once, daily or weekly")
 	}
 	switch t.PartOfDay {
 	case AnyTime, Morning, Evening:
 	default:
-		return bad("part of day must be morning or evening")
+		return bad("part", "part of day must be morning or evening")
 	}
 	return nil
 }

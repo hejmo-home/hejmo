@@ -39,6 +39,14 @@ type personTasks struct {
 
 var taskWeekdays = []string{"MO", "TU", "WE", "TH", "FR", "SA", "SU"}
 
+func newTaskView(t task.Task, today string, done bool) taskView {
+	v := taskView{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat), Weekdays: t.Weekdays, Part: string(t.PartOfDay), Due: t.DueOn(today), Done: done, Stars: t.Stars}
+	if d, err := time.Parse(task.DateLayout, t.Date); err == nil {
+		v.Date = d.Format("02/01/2006")
+	}
+	return v
+}
+
 func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal, status int, form, starForm map[string]any) {
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
@@ -63,10 +71,14 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 	}
 	var cards []starCard
 	var groups []personTasks
-	var choices []choice
+	choices := chipsOf(people)
+	child := p.person.Role == store.RoleChild
 	for _, person := range people {
-		choices = append(choices, choice{person.ID, person.Name})
-		if sums[person.ID].Shown {
+		// A child's phone shows the child's own tasks only (ADR 0015).
+		if child && person.ID != p.person.ID {
+			continue
+		}
+		if !child && sums[person.ID].Shown {
 			acc, err := s.db.StarAccount(p.household.ID, person.ID, starLogLines)
 			if err != nil {
 				s.fail(w, "star log", err)
@@ -79,11 +91,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			if t.PersonID != person.ID {
 				continue
 			}
-			v := taskView{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat), Weekdays: t.Weekdays, Part: string(t.PartOfDay), Due: t.DueOn(today), Done: doneToday[t.ID], Stars: t.Stars}
-			if d, err := time.Parse(task.DateLayout, t.Date); err == nil {
-				v.Date = d.Format("02/01/2006")
-			}
-			g.Tasks = append(g.Tasks, v)
+			g.Tasks = append(g.Tasks, newTaskView(t, today, doneToday[t.ID]))
 		}
 		if len(g.Tasks) > 0 {
 			groups = append(groups, g)
@@ -96,14 +104,14 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		starForm = map[string]any{}
 	}
 	data := map[string]any{
-		"Person": p.person, "Groups": groups, "StarCards": cards, "StarForm": starForm, "StarError": starForm["Error"], "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form,
-		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"],
+		"Person": p.person, "Groups": groups, "StarCards": cards, "StarForm": starForm, "StarError": starForm["Error"], "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form, "Child": child,
+		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
 	s.render(w, r, status, "tasks.html", data)
 }
 
 func (s *server) handleTasksPage(w http.ResponseWriter, r *http.Request) {
-	if p, ok := s.parentPage(w, r); ok {
+	if p, ok := s.memberPage(w, r); ok {
 		s.renderTasks(w, r, p, http.StatusOK, nil, nil)
 	}
 }
@@ -129,9 +137,14 @@ func (s *server) handleTaskAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	switch _, err := s.createTask(p, in, stars); {
 	case err == nil:
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/tasks", "flash.task_added")
 	case errors.Is(err, store.ErrInvalid):
-		form := map[string]any{"Error": "tasks.error.invalid", "Person": in.PersonID, "Title": in.Title, "Emoji": in.Emoji,
+		var bad *task.InvalidError
+		field := ""
+		if errors.As(err, &bad) {
+			field = bad.Field
+		}
+		form := map[string]any{"Error": taskErrorKey(field), "ErrorField": field, "Person": in.PersonID, "Title": in.Title, "Emoji": in.Emoji,
 			"Repeat": string(in.Repeat), "Date": in.Date, "Part": string(in.PartOfDay), "Weekdays": in.Weekdays, "Stars": r.PostFormValue("stars")}
 		s.renderTasks(w, r, p, http.StatusUnprocessableEntity, form, nil)
 	default:
@@ -140,19 +153,21 @@ func (s *server) handleTaskAdd(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleTaskDone(w http.ResponseWriter, r *http.Request) {
-	p, ok := s.parentPage(w, r)
+	p, ok := s.memberPage(w, r)
 	if !ok {
 		return
 	}
 	switch _, err := s.tickTask(p, r.PathValue("id"), r.PostFormValue("done") == "1"); {
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
+	case errors.Is(err, errNotYourTask):
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 	case errors.Is(err, store.ErrInvalid):
 		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
 	case err != nil:
 		s.fail(w, "tick task", err)
 	default:
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/tasks", doneKey(r))
 	}
 }
 
@@ -167,8 +182,26 @@ func (s *server) handleTaskDelete(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "delete task", err)
 	default:
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/tasks", "flash.task_deleted")
 	}
+}
+
+// doneKey is the success line for ticking a task off or reopening it.
+func doneKey(r *http.Request) string {
+	if r.PostFormValue("done") == "1" {
+		return "flash.task_done"
+	}
+	return "flash.task_reopened"
+}
+
+// taskErrorKey is the text for an invalid task field. A field without its own
+// text falls back to the general one.
+func taskErrorKey(field string) string {
+	switch field {
+	case "title", "emoji", "person", "date", "weekdays", "repeat", "part":
+		return "tasks.error." + field
+	}
+	return "tasks.error.invalid"
 }
 
 // starCardOf builds a person's star account for the page: balance and log, newest first.
@@ -215,4 +248,41 @@ func (s *server) handleStarBooking(w http.ResponseWriter, r *http.Request) {
 	default:
 		s.fail(w, "book stars", err)
 	}
+}
+
+// handleTaskPage is the detail page of a task: what it is and, behind a
+// confirmation, deleting it (ADR 0017: destructive actions only on detail pages).
+func (s *server) handleTaskPage(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	t, err := s.db.Task(p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		s.fail(w, "task", err)
+		return
+	}
+	people, err := s.db.People(p.household.ID)
+	if err != nil {
+		s.fail(w, "people", err)
+		return
+	}
+	var owner personChip
+	for _, c := range chipsOf(people) {
+		if c.ID == t.PersonID {
+			owner = c
+		}
+	}
+	today := s.today(p)
+	doneToday, err := s.db.TasksDoneOn(p.household.ID, today)
+	if err != nil {
+		s.fail(w, "task state", err)
+		return
+	}
+	s.render(w, r, http.StatusOK, "task.html", map[string]any{
+		"Person": p.person, "Task": newTaskView(t, today, doneToday[t.ID]), "Owner": owner, "SyncStale": s.syncStale(p.household.ID),
+	})
 }

@@ -123,6 +123,7 @@ sizes:
   journey-border: 1.5px
   icon-stroke: 1.8px
   touch-target: 44px
+  column-min: 144px
 ---
 
 # Hejmo Nordic Calm
@@ -155,7 +156,7 @@ Binding values come from `docs/spec.md` ("Design specification Nordic Calm"); th
 - Outer margin 28 px; gap between columns and tiles 14 px; gap between header, main area and footer 20 px; column inner padding 16 px; event card padding 10 px by 12 px; gap between cards 10 px.
 - Reference layout 1024 by 768 landscape: header, one white column per person in a 4-column grid, footer with two tiles (meal tile and tomorrow tile, ADR 0016; a tile without content is hidden and the other takes the full width, with both hidden the footer is hidden). Header: weekday, calendar week and date on the left; on the right two chips, the current time (hh:mm) and the weather. Each person column ends with a task progress bar and "done/total", anchored to the column bottom while the events scroll; a person without tasks has no bar.
 
-- Family strip (ADR 0015) between header and columns: white cards (`.strip-item`) for whole-household events, all-day and multi-day events and public holidays (notice colours); a multi-day bar shows "Day n/m" with a flat edge where it continues. Up to six people the columns share the width; from seven they keep 200 px and scroll sideways.
+- Family strip (ADR 0015) between header and columns: white cards (`.strip-item`) for whole-household events, all-day and multi-day events and public holidays (notice colours); a multi-day bar shows "Day n/m" with a flat edge where it continues. At most six person columns side by side in landscape and four in portrait (ADR 0016); they share the width and are never narrower than 144 px (`column-min`, the 150 px of ADR 0016 rounded down so that six fit 1024 px), beyond that they scroll sideways.
 
 ## Elevation
 
@@ -175,6 +176,7 @@ None. No shadows in any palette.
 - `.progress`: person colour on person tint (bw #111111 on #D6D6D3).
 - `.marker`: person marker as above.
 - Web interface frame (`.frame`): brand bar (`.frame-bar`) with sign-out, navigation (`.frame-nav`, one `.chip`-shaped link per screen, at least 44 px high, current screen filled with `accent`), content (`main`). Under 900 px the navigation wraps above the content; from 900 px it stands as a column left of it. Without a `data-theme` the palette follows the device (`prefers-color-scheme`); an explicit `data-theme` wins. Screens a role may not use are not listed.
+- Shared form patterns (ADR 0017, templates in `web/templates/patterns.html`): success line `.msg.ok` (white card, 1.5 px `accent` border, check icon, `role="status"`); field error `.ferr` under the field (`error-bg`, input with 2 px `error-text` border, `aria-invalid`); switch `.switch` (off: `text-secondary` outline, on: `accent` track) with its state in words; person chips `.pchip` (selected: person tint, 2 px person-colour border, tick, bold; bw: thick border and the marker shape; "Whole family" neutral and selected by default); segmented control `.seg` and weekday chips `.days` (selected: `accent`), choice cards `.choice` (selected: 2 px `accent` border); disclosure `details.more`; destructive actions only in `details.danger` on a detail page; empty state `.empty` with one sentence and the first action. All use existing tokens, at least 44 px targets.
 
 ## Do's and Don'ts
 

@@ -10,9 +10,9 @@ import (
 )
 
 // configuredBox runs the setup wizard and returns the parent's TOTP secret.
-func configuredBox(t *testing.T) (*box, string) {
+func configuredBox(t *testing.T, opts ...boxOption) (*box, string) {
 	t.Helper()
-	b := newBox(t)
+	b := newBox(t, opts...)
 	b.post("/setup", validSetupForm())
 	secret := secretOn(t, b.get("/setup/totp").body)
 	code, _ := auth.TOTPCode(secret, b.now)
@@ -66,7 +66,7 @@ func TestLoginRejectsWrongCredentials(t *testing.T) {
 
 	for name, form := range map[string]url.Values{"password": wrongPassword, "code": wrongCode, "user": unknownUser} {
 		r := b.post("/login", form)
-		if r.status != http.StatusUnauthorized || !strings.Contains(r.body, `class="error"`) {
+		if r.status != http.StatusUnauthorized || !strings.Contains(r.body, `class="ferr"`) {
 			t.Errorf("wrong %s = %d, want 401 with error", name, r.status)
 		}
 	}

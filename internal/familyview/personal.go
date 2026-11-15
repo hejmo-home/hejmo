@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
 
@@ -49,17 +50,20 @@ type PersonalInput struct {
 	Occurrences []calendar.Occurrence
 	Tasks       []Task
 	Stars       Stars
+	// TimeFormat is the household's "24h" (default) or "12h" (ADR 0016).
+	TimeFormat store.TimeFormat
 }
 
 // PersonalView is the data of one person's screen on a display.
 type PersonalView struct {
-	Person    Person
-	Date      time.Time
-	Clock     string // "15:04"; the display ticks it itself between renders
-	ClockZone string // IANA name of the household time zone, for that ticking
-	Days      []PersonalDay
-	Tasks     []Task
-	Stars     Stars
+	Person      Person
+	Date        time.Time
+	Clock       string // household time format; the display ticks it itself between renders
+	ClockZone   string // IANA name of the household time zone, for that ticking
+	ClockFormat string // "24h" or "12h"
+	Days        []PersonalDay
+	Tasks       []Task
+	Stars       Stars
 }
 
 // BuildPersonal lays out one person's view: their events for today and the
@@ -68,7 +72,7 @@ func BuildPersonal(in PersonalInput) PersonalView {
 	now := in.Now
 	loc := now.Location()
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-	v := PersonalView{Person: in.Person, Date: d0, Clock: now.Format("15:04"), ClockZone: loc.String(), Stars: in.Stars}
+	v := PersonalView{Person: in.Person, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: loc.String(), ClockFormat: clockFormat(in.TimeFormat), Stars: in.Stars}
 	occs := append([]calendar.Occurrence(nil), in.Occurrences...)
 	sort.SliceStable(occs, func(i, j int) bool { return occs[i].Start.Before(occs[j].Start) })
 	finput := Input{Calendars: in.Calendars}
@@ -91,11 +95,11 @@ func BuildPersonal(in PersonalInput) PersonalView {
 			case o.AllDay:
 				allDay = append(allDay, PersonalEvent{Title: o.Title, AllDay: true})
 			case !multiDay(o, loc):
-				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: clock(o, loc)})
+				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: clock(o, loc, in.TimeFormat)})
 			case firstDay(o, loc).Equal(day):
-				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: o.Start.In(loc).Format("15:04")})
+				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: o.Start.In(loc).Format(layout(in.TimeFormat))})
 			case calendar.LastDay(o, loc).Equal(day) && !endsAtMidnight(o, loc):
-				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: "–" + o.End.In(loc).Format("15:04")})
+				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: "–" + o.End.In(loc).Format(layout(in.TimeFormat))})
 			default:
 				allDay = append(allDay, PersonalEvent{Title: o.Title, AllDay: true})
 			}

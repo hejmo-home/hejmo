@@ -1,36 +1,35 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "tasks.title") "Frame" .Frame)}}
   <h1>{{t "tasks.title"}}</h1>
   {{template "syncNotice" .}}
-  <p class="lead">{{t "tasks.intro"}}</p>
+  <p class="lead">{{if .Child}}{{t "tasks.intro.child"}}{{else}}{{t "tasks.intro"}}{{end}}</p>
 
   {{range .Groups}}
   <section aria-label="{{.Name}}">
-    <h2><input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{.Name}}</h2>
+    <h2>{{.Name}}</h2>
     <ul class="cards">
       {{range .Tasks}}
       <li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
-        <strong>{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}{{if .Stars}} <span class="task-stars" data-task-stars="{{.Stars}}">{{.Stars}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span>{{end}}</strong>
+        <strong>{{if not $.Child}}<a href="/tasks/{{.ID}}">{{end}}{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}{{if not $.Child}}</a>{{end}}{{if .Stars}} <span class="task-stars" data-task-stars="{{.Stars}}">{{.Stars}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span>{{end}}</strong>
         <span class="hint">
           {{if eq .Repeat "once"}}{{t "tasks.repeat.once"}} {{.Date}}{{else if eq .Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}
           {{if .Part}} · {{t (printf "tasks.part.%s" .Part)}}{{end}}
           · {{if not .Due}}{{t "tasks.not_today"}}{{else if .Done}}{{t "tasks.done"}}{{else}}{{t "tasks.open"}}{{end}}
         </span>
+        {{if .Due}}
         <span class="row">
-          {{if .Due}}
           <form method="post" action="/tasks/{{.ID}}/done">
             <input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">
-            <button class="button" type="submit">{{if .Done}}{{t "tasks.untick"}}{{else}}{{t "tasks.tick"}}{{end}}</button>
+            <button class="button secondary" type="submit">{{if .Done}}{{t "tasks.untick"}}{{else}}{{t "tasks.tick"}}{{end}}</button>
           </form>
-          {{end}}
-          <form method="post" action="/tasks/{{.ID}}/delete"><button class="button secondary" type="submit">{{t "tasks.delete"}}</button></form>
         </span>
+        {{end}}
       </li>
       {{end}}
     </ul>
   </section>
-  {{else}}<p class="lead">{{t "tasks.none"}}</p>{{end}}
+  {{else}}{{if .Child}}<p class="lead">{{t "tasks.none.child"}}</p>{{else}}{{template "empty" (dict "Text" (t "tasks.none") "Href" "#new" "Action" (t "tasks.none.action"))}}{{end}}{{end}}
 
-  <section aria-labelledby="stars">
+  {{if not .Child}}<section aria-labelledby="stars">
     <h2 id="stars">{{t "tasks.stars.title"}}</h2>
     <p class="lead">{{t "tasks.stars.intro"}}</p>
     {{if .StarCards}}<ul class="cards">
@@ -47,10 +46,7 @@
     <form method="post" action="/tasks/stars" class="steps">
       {{$sf := .StarForm}}
       <fieldset>
-        <label>{{t "tasks.field.person"}}
-          <select name="person" required>
-            {{range .People}}<option value="{{.ID}}"{{if eq .ID (index $sf "Person")}} selected{{end}}>{{.Name}}</option>{{end}}
-          </select></label>
+        {{template "personChips" (dict "Root" (dict) "Name" "person" "Legend" (t "tasks.field.person") "People" .People "Selected" (strs (index $sf "Person")) "Single" true)}}
         <label>{{t "tasks.stars.field.delta"}}
           <input name="delta" type="number" step="1" required value="{{index $sf "Delta"}}"></label>
         <label>{{t "tasks.stars.field.note"}}
@@ -59,40 +55,37 @@
       <button class="button" type="submit">{{t "tasks.stars.book"}}</button>
     </form>
   </section>
+  {{end}}
 
-  <section aria-labelledby="new">
+  {{if not .Child}}<section aria-labelledby="new">
     <h2 id="new">{{t "tasks.new"}}</h2>
     {{template "error" .}}
     <form method="post" action="/tasks" class="steps">
       {{$f := .Form}}
       <fieldset>
-        <label>{{t "tasks.field.person"}}
-          <select name="person" required>
-            {{range .People}}<option value="{{.ID}}"{{if eq .ID (index $f "Person")}} selected{{end}}>{{.Name}}</option>{{end}}
-          </select></label>
-        <label>{{t "tasks.field.title"}}
-          <input name="title" required maxlength="120" value="{{index $f "Title"}}"></label>
-        <label>{{t "tasks.field.emoji"}}
-          <input name="emoji" maxlength="16" value="{{index $f "Emoji"}}"></label>
-        <label>{{t "tasks.field.repeat"}}
-          <select name="repeat">
-            {{range $r := .Repeats}}<option value="{{$r}}"{{if eq $r (index $f "Repeat")}} selected{{end}}>{{t (printf "tasks.repeat_option.%s" $r)}}</option>{{end}}
-          </select></label>
-        <label>{{t "tasks.field.date"}}
-          <input name="date" type="date" value="{{index $f "Date"}}"></label>
-        <p class="hint">{{t "tasks.field.weekdays"}}</p>
-        {{$chosen := index $f "Weekdays"}}
-        {{range .Weekdays}}<label class="check"><input type="checkbox" name="weekdays" value="{{.}}"{{if has $chosen .}} checked{{end}}> {{t (printf "tasks.weekday.%s" .)}}</label>{{end}}
-        <label>{{t "tasks.field.stars"}}
-          <input name="stars" type="number" min="0" max="100" step="1" value="{{index $f "Stars"}}"></label>
-        <label>{{t "tasks.field.part"}}
-          <select name="part">
-            <option value="">{{t "tasks.part.any"}}</option>
-            <option value="morning"{{if eq (index $f "Part") "morning"}} selected{{end}}>{{t "tasks.part.morning"}}</option>
-            <option value="evening"{{if eq (index $f "Part") "evening"}} selected{{end}}>{{t "tasks.part.evening"}}</option>
-          </select></label>
+        {{template "personChips" (dict "Root" . "Name" "person" "Legend" (t "tasks.field.person") "People" .People "Selected" (strs (index $f "Person")) "Single" true)}}
+        {{template "field" (dict "Root" . "Name" "title" "Label" (t "tasks.field.title") "Value" (index $f "Title") "Required" true "Max" 120)}}
+        {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "tasks.field.repeat"))}}
+          {{range $r := .Repeats}}{{template "option" (dict "Name" "repeat" "Value" $r "Label" (t (printf "tasks.repeat_option.%s" $r)) "Checked" (eq $r (index $f "Repeat")))}}{{end}}
+        {{template "optionsClose" (dict "Root" . "Name" "repeat")}}
+        <div class="when when-once">
+          {{template "field" (dict "Root" . "Name" "date" "Label" (t "tasks.field.date") "Type" "date" "Value" (index $f "Date"))}}
+        </div>
+        {{template "optionsOpen" (dict "Class" "days" "When" "when-weekly" "Legend" (t "tasks.field.weekdays"))}}
+          {{$chosen := strs (index $f "Weekdays")}}
+          {{range .Weekdays}}{{template "option" (dict "Type" "checkbox" "Name" "weekdays" "Value" . "Label" (t (printf "tasks.weekday.%s" .)) "Checked" (has $chosen .))}}{{end}}
+        {{template "optionsClose" (dict "Root" . "Name" "weekdays")}}
+        {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "tasks.field.part"))}}
+          {{template "option" (dict "Name" "part" "Value" "" "Label" (t "tasks.part.any") "Checked" (not (index $f "Part")))}}
+          {{template "option" (dict "Name" "part" "Value" "morning" "Label" (t "tasks.part.morning") "Checked" (eq (index $f "Part") "morning"))}}
+          {{template "option" (dict "Name" "part" "Value" "evening" "Label" (t "tasks.part.evening") "Checked" (eq (index $f "Part") "evening"))}}
+        {{template "optionsClose" (dict "Root" . "Name" "part")}}
+        {{template "field" (dict "Root" . "Name" "stars" "Label" (t "tasks.field.stars") "Type" "number" "Value" (index $f "Stars") "Inputmode" "numeric")}}
+        {{template "moreOpen" (dict "Label" (t "tasks.more") "Open" (eq .ErrorField "emoji"))}}
+          {{template "field" (dict "Root" . "Name" "emoji" "Label" (t "tasks.field.emoji") "Value" (index $f "Emoji") "Max" 16)}}
+        {{template "moreClose"}}
       </fieldset>
       <button class="button" type="submit">{{t "tasks.create"}}</button>
     </form>
-  </section>
+  </section>{{end}}
 {{template "foot"}}

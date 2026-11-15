@@ -14,6 +14,17 @@ import (
 // parentPage resolves the signed-in parent for a web page, or answers with the
 // redirect or refusal itself.
 func (s *server) parentPage(w http.ResponseWriter, r *http.Request) (principal, bool) {
+	p, ok := s.memberPage(w, r)
+	if ok && p.person.Role != store.RoleParent {
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
+		return principal{}, false
+	}
+	return p, ok
+}
+
+// memberPage is parentPage for screens a child's device session may use too
+// (ADR 0015): the handler checks what the person's role allows.
+func (s *server) memberPage(w http.ResponseWriter, r *http.Request) (principal, bool) {
 	if !s.db.Configured() {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return principal{}, false
@@ -25,10 +36,6 @@ func (s *server) parentPage(w http.ResponseWriter, r *http.Request) (principal, 
 			to += "?" + url.Values{"next": {r.URL.RequestURI()}}.Encode()
 		}
 		http.Redirect(w, r, to, http.StatusSeeOther)
-		return principal{}, false
-	}
-	if person.Role != store.RoleParent {
-		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 		return principal{}, false
 	}
 	h, err := s.db.HomeHousehold()
@@ -93,11 +100,11 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		return
 	}
 	names := map[string]string{}
-	var peopleChoices, groupChoices []choice
+	var groupChoices []choice
 	for _, x := range people {
 		names[x.ID] = x.Name
-		peopleChoices = append(peopleChoices, choice{x.ID, x.Name})
 	}
+	peopleChoices := chipsOf(people)
 	for _, x := range groups {
 		names[x.ID] = x.Name
 		groupChoices = append(groupChoices, choice{x.ID, x.Name})
@@ -182,11 +189,12 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	data := map[string]any{
 		"Person": p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
-		"Intervals": syncIntervals, "Connections": connViews, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
+		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "Connections": connViews, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
+		"ConnError": "", "ConnErrorField": "",
 	}
 	if form != nil {
-		data["Error"] = form["Error"]
-		data["ConnError"] = form["ConnError"]
+		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
+		data["ConnError"], data["ConnErrorField"] = form["ConnError"], form["ConnErrorField"]
 	}
 	s.render(w, r, status, "calendars.html", data)
 }
@@ -215,14 +223,15 @@ func (s *server) handleCalendarAdd(w http.ResponseWriter, r *http.Request) {
 	var bad *inputError
 	switch {
 	case errors.As(err, &bad):
-		form := map[string]any{"Error": "calendars.error." + bad.Field, "Name": in.Name, "URL": in.URL, "Color": in.Color}
+		form := map[string]any{"Error": "calendars.error." + bad.Field, "ErrorField": calendarErrorField(bad.Field), "Name": in.Name, "URL": in.URL, "Color": in.Color,
+			"Interval": interval, "People": in.Audience.People, "Groups": in.Audience.Groups}
 		s.renderCalendars(w, r, p, http.StatusUnprocessableEntity, form)
 		return
 	case err != nil:
 		s.fail(w, "add calendar", err)
 		return
 	}
-	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
+	s.redirectSaved(w, r, "/calendars", "flash.calendar_added")
 }
 
 func (s *server) handleCalendarSync(w http.ResponseWriter, r *http.Request) {
@@ -230,9 +239,14 @@ func (s *server) handleCalendarSync(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	// A failed sync is in the log the page shows next.
-	if err := s.sync.Sync(r.Context(), p.household.ID, r.PathValue("id")); errors.Is(err, store.ErrNotFound) {
+	// A failed sync is in the log the page shows next, not a success line.
+	err := s.sync.Sync(r.Context(), p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
 		http.NotFound(w, r)
+		return
+	}
+	if err == nil {
+		s.redirectSaved(w, r, "/calendars", "flash.calendar_synced")
 		return
 	}
 	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
@@ -250,5 +264,26 @@ func (s *server) handleCalendarDelete(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "delete calendar", err)
 		return
 	}
-	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
+	s.redirectSaved(w, r, "/calendars", "flash.calendar_removed")
+}
+
+// calendarErrorField names the input of the add form that an error belongs to;
+// an error without an input (the kind) shows above the form instead.
+func calendarErrorField(field string) string {
+	switch field {
+	case "name", "url", "color", "interval":
+		return field
+	case "audience":
+		return "people"
+	}
+	return ""
+}
+
+// intervalChosen is the update interval the add form shows selected: the one
+// just typed after an error, else the default of an hour.
+func intervalChosen(form map[string]any) int {
+	if n, ok := form["Interval"].(int); ok && n > 0 {
+		return n
+	}
+	return 60
 }

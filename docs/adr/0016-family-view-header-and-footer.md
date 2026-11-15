@@ -29,6 +29,10 @@ The footer has **two tiles**; the task tile of ADR 0015 is dropped, because prog
 - **Meal tile** (replaces the dinner tile): shows every mealtime planned for today that is not over yet, one line each, always with the mealtime ("Lunch: Pasta bake"). Each mealtime has a time from which it is no longer shown, set per household. Defaults: breakfast 10:00, lunch 13:30, snack 16:30, dinner none (shown for the rest of the day). With one line the tile is labelled with the mealtime, with several "Meals today".
 - **Tomorrow tile:** one line per waste collection tomorrow (e.g. "Paper bin", "Residual waste"), shown all day, and the parent's note for tomorrow as the last line. The note keeps the timing of ADR 0015: shown from 18:00 the evening before its day until the end of that day, then deleted. At most three lines are shown: with more, the tile shows as many collections as fit, then "+N more", and the note is never hidden. The tile is highlighted from 18:00 when it holds a collection (the waste collection reminder); a tile with only a note is not highlighted. Hidden when there is neither a collection nor a note.
 
+### Column width (ticket 5.7, proposed, pending the product owner's approval of preview-27)
+
+Proposed: the minimum column width is fixed at **144 px** (design token `column-min`), the "about 150 px" above rounded down so that six columns still fit the 1024 px reference display (968 px inside the margins). It applies to landscape as well as portrait. Landscape and portrait follow the viewport (`orientation`), so a rotated display switches by itself; there is no per-view scroll flag. The view counts 6 columns in landscape and 4 in portrait before it scrolls: 5 people on a 768x1024 portrait display show 4 columns, 4 people on a 375 px wide phone in portrait show 2.
+
 ## Consequences
 
 - Tickets change: 5.3 (anchored progress bar, two-tile footer), 5.8 (header clock and weather, time format and temperature unit; renamed "Weather and time in the header"), 6.3 (meal cut-off times), 6.4 (renamed "Meal tile on the display"), 6.6 (progress in the columns instead of a tile), 6.7 (tomorrow tile states).
@@ -36,3 +40,4 @@ The footer has **two tiles**; the task tile of ADR 0015 is dropped, because prog
 - The preview of 5.1 shows the new header, the anchored progress bars and the footer states (tiles hidden, one collection, two collections with a note).
 - Display settings gain "show tomorrow block" (off by default); ticket 5.3 renders it faded.
 - Household settings gain time format, temperature unit and four meal cut-off times (dinner empty by default).
+- The box finds the coordinates of the home once, by the home's name and country, with Open-Meteo's place search (no key) and keeps them in the household; it refreshes the weather every 15 minutes. Open-Meteo is the only outside service the weather feature talks to. When a refresh fails the chip keeps its last reading for three hours, then hides.

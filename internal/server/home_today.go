@@ -8,7 +8,6 @@ import (
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
-	"github.com/hejmo-home/hejmo/internal/wholine"
 )
 
 // The day on Home (ticket 133, design pass 2). A parent sees the whole
@@ -100,7 +99,7 @@ func (s *server) todayCard(h store.Household, lang string, people []store.Person
 		case len(it.WhoParts) == 0:
 			ev.Who = t("home.today.family")
 		default:
-			ev.Who = strings.Trim(wholine.Plain(it.WhoParts), "[] ")
+			ev.Who = it.Who
 		}
 		if it.AllDay && ev.Time == "" {
 			ev.Time = t("home.today.allday")

@@ -98,8 +98,9 @@ type personInput struct {
 // person being changed; cur is that person's stored look (nil for a new one):
 // a colour or marker equal to the stored one is not checked again, so people
 // stored with a colour from before the palette can still be renamed. An empty
-// colour or marker is left to the caller. The result names the field that is
-// wrong.
+// colour or marker is left to the caller. When a half of the look of an
+// existing person was changed, in is left as the displayed pair that was
+// checked. The result names the field that is wrong.
 func checkLook(people []store.Person, exceptID string, in *personInput, cur *store.Person) (field, key string) {
 	in.Name = strings.TrimSpace(in.Name)
 	if in.Name == "" || utf8.RuneCountInString(in.Name) > maxPersonName {
@@ -121,7 +122,9 @@ func checkLook(people []store.Person, exceptID string, in *personInput, cur *sto
 		return "", ""
 	}
 	// The pair that counts is what the person will show: a colour or marker
-	// they have not got (yet) is the one the pages show for them.
+	// they have not got (yet) is the one the pages show for them. A look that
+	// was edited is left in in as that pair, so the person is stored with
+	// palette values.
 	color, shape := in.Color, in.Shape
 	if cur != nil {
 		if i := slices.IndexFunc(people, func(x store.Person) bool { return x.ID == cur.ID }); i >= 0 {
@@ -136,6 +139,9 @@ func checkLook(people []store.Person, exceptID string, in *personInput, cur *sto
 	}
 	if color != "" && shape != "" && styleTaken(people, exceptID, color, shape) {
 		return "shape", "people.error.taken"
+	}
+	if cur != nil {
+		in.Color, in.Shape = color, shape
 	}
 	return "", ""
 }

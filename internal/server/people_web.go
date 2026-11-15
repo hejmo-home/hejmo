@@ -55,12 +55,10 @@ func lookData(people []store.Person, exceptID string, data map[string]any) map[s
 	for i, c := range personColors {
 		o := colorOption{Hex: c, Slot: i + 1}
 		var users, shapes []string
-		for _, p := range people {
-			if p.ID != exceptID && strings.EqualFold(p.Color, c) {
+		for i, p := range people {
+			if dc, ds := displayedLook(p, i); p.ID != exceptID && dc == c {
 				users = append(users, p.Name)
-				if p.Shape != "" {
-					shapes = append(shapes, p.Shape)
-				}
+				shapes = append(shapes, ds)
 			}
 		}
 		o.Users, o.TakenWith = strings.Join(users, ", "), strings.Join(shapes, " ")
@@ -71,12 +69,10 @@ func lookData(people []store.Person, exceptID string, data map[string]any) map[s
 	for i, sh := range markerShapes {
 		o := shapeOption{Shape: sh}
 		var users, cols []string
-		for _, p := range people {
-			if p.ID != exceptID && p.Shape == sh {
+		for i, p := range people {
+			if dc, ds := displayedLook(p, i); p.ID != exceptID && ds == sh {
 				users = append(users, p.Name)
-				if p.Color != "" {
-					cols = append(cols, strings.ToUpper(p.Color))
-				}
+				cols = append(cols, dc)
 			}
 		}
 		o.Users, o.TakenWith = strings.Join(users, ", "), strings.Join(cols, " ")
@@ -229,43 +225,26 @@ func (s *server) handlePersonSave(w http.ResponseWriter, r *http.Request) {
 	look := personInput{r.PostFormValue("name"), r.PostFormValue("color"), r.PostFormValue("shape")}
 	// The form preselects the colour and marker the displays show. Sent back
 	// unchanged, they stand for what is stored (a legacy person keeps their
-	// colour and can be renamed); only a changed one is checked.
-	for _, c := range chipsOf(people) {
-		if c.ID != person.ID {
-			continue
-		}
-		if _, ok := paletteColor(person.Color); !ok && strings.EqualFold(look.Color, personColors[c.Slot-1]) {
+	// colour and can be renamed); only a changed one is checked. A form without
+	// colour or marker keeps what the person has. checkLook stores an edited
+	// look as the palette colour and marker the pair check used, so the person
+	// leaves the legacy state.
+	if i := slices.IndexFunc(people, func(x store.Person) bool { return x.ID == person.ID }); i >= 0 {
+		dc, ds := displayedLook(person, i)
+		if _, ok := paletteColor(person.Color); !ok && strings.EqualFold(look.Color, dc) {
 			look.Color = person.Color
 		}
-		if person.Shape == "" && look.Shape == c.Shape {
+		if person.Shape == "" && look.Shape == ds {
 			look.Shape = person.Shape
 		}
+	}
+	if look.Color == "" {
+		look.Color = person.Color
+	}
+	if look.Shape == "" {
+		look.Shape = person.Shape
 	}
 	field, key := checkLook(people, person.ID, &look, &person)
-	if field == "" {
-		// A form without colour or marker keeps what the person has. A look
-		// that was edited (not just a rename) is stored as the palette colour
-		// and marker the pair check used, so the person leaves the legacy state.
-		if look.Color == "" {
-			look.Color = person.Color
-		}
-		if look.Shape == "" {
-			look.Shape = person.Shape
-		}
-		if look.Color != person.Color || look.Shape != person.Shape {
-			for i, x := range people {
-				if x.ID == person.ID {
-					dc, ds := displayedLook(person, i)
-					if _, ok := paletteColor(look.Color); !ok {
-						look.Color = dc
-					}
-					if look.Shape == "" {
-						look.Shape = ds
-					}
-				}
-			}
-		}
-	}
 	if field != "" {
 		s.renderPerson(w, r, p, http.StatusUnprocessableEntity, person, people, map[string]any{
 			"Name": strings.TrimSpace(r.PostFormValue("name")), "Color": look.Color, "Shape": look.Shape, "Error": key, "ErrorField": field,

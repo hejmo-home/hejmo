@@ -205,10 +205,7 @@ func (s *server) displayData(h store.Household, lang string, days int) (displayD
 		}
 	}
 	for i, p := range people {
-		shape := p.Shape
-		if shape == "" {
-			shape = markerShapes[i%len(markerShapes)]
-		}
+		_, shape := displayedLook(p, i)
 		out.people = append(out.people, familyview.Person{ID: p.ID, Name: p.Name, Slot: slotOf(p, i), Shape: shape, Groups: groupsOf[p.ID]})
 	}
 	return out, nil

@@ -174,8 +174,12 @@ func TestWebRenamesAPersonWithALegacyLook(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Papa takes the slot colour the pages show for Oma, with her marker.
-	p.add(t, "Papa", "parent")
+	// Oma shows blue with the empty circle (the slot and marker of her place).
+	// Papa is stored with exactly that pair, as old data may have it: the
+	// rename below is not refused for it.
+	if _, err := p.db.AddPerson(h.ID, store.Person{Name: "Papa", Role: store.RoleParent, Color: blue, Shape: "circle-empty"}); err != nil {
+		t.Fatal(err)
+	}
 	// A browser sends what the page preselects, not the stored colour.
 	page := p.en("/people/" + legacy.ID).body
 	form := url.Values{"name": {"Oma Maier"}}
@@ -257,5 +261,44 @@ func TestWebPersonWithoutMarkerWithOnlyTheColourChangedCannotCopyAnotherLook(t *
 	form.Set("color", "#B04A6A")
 	if r := p.save(oma.ID, form); r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-shape"`) {
 		t.Fatalf("Oma takes Kim's look = %d\n%s", r.status, r.body)
+	}
+}
+
+// The options of the people form name and fade what people show, not what is
+// stored: a person with a legacy colour and no marker shows the blue of their
+// place and the empty circle.
+func TestLookOptionsFollowTheDisplayedLookOfLegacyPeople(t *testing.T) {
+	p := newPeopleBox(t)
+	h, _ := p.db.HomeHousehold()
+	if _, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#123456"}); err != nil {
+		t.Fatal(err)
+	}
+	page := p.en("/people").body
+	if o := lookOptions(page, "color")[blue]; o.title != "Blue: Oma" || !o.used {
+		t.Errorf("the blue Oma shows = %+v", o)
+	}
+	if o := lookOptions(page, "shape")["circle-empty"]; o.title != "Empty circle: Oma" || !o.used {
+		t.Errorf("the marker Oma shows = %+v", o)
+	}
+	if !strings.Contains(page, `data-taken-with="circle-empty"`) || !strings.Contains(page, `data-taken-with="`+blue+`"`) {
+		t.Errorf("no data-taken-with for Oma's displayed pair:\n%s", page)
+	}
+	if strings.Contains(page, "#123456") {
+		t.Errorf("the stored legacy colour leaks into the form:\n%s", page)
+	}
+}
+
+// Editing one half of a legacy person's look through the API stores the
+// palette values, like the web page: the colour they show, not the legacy hex.
+func TestAPILegacyColourWithOnlyTheMarkerChangedIsStoredAsPaletteColour(t *testing.T) {
+	p := newPeopleBox(t)
+	h, _ := p.db.HomeHousehold()
+	oma, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#123456", Shape: "circle-empty"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	status, got, _ := p.api.call(http.MethodPatch, "/people/"+oma.ID, map[string]any{"shape": "star-filled"})
+	if status != http.StatusOK || got["color"] != blue || got["shape"] != "star-filled" {
+		t.Fatalf("patch = %d %v, want the displayed blue with the star", status, got)
 	}
 }

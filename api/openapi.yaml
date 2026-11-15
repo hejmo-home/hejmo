@@ -239,6 +239,91 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /phones:
+    get:
+      operationId: listPhones
+      summary: Paired phones of the household (scope tokens:read)
+      description: Each phone has a long-lived device session for the person it was paired for (ADR 0015).
+      responses:
+        "200":
+          description: Phones, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Phone" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /phones/{id}:
+    delete:
+      operationId: revokePhone
+      summary: Remove a phone and end its device session (scope tokens:delete)
+      description: The phone is signed out the next time it opens the app.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /phones/pairings:
+    get:
+      operationId: listPhonePairings
+      summary: Phones that opened a pairing code and wait for confirmation (scope tokens:read)
+      responses:
+        "200":
+          description: Waiting phones, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/PhonePairing" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createPhonePairing
+      summary: Create a pairing code for a phone (scope tokens:write)
+      description: |
+        Returns the address a phone opens, valid once and for ten minutes; show
+        it as a QR code. The box keeps only a hash of the code, so the address
+        is only in this answer. With the box's own certificate authority the
+        address leads over the plain-HTTP trust page first, which then leads on
+        to the pairing (ADR 0014). The phone opens the address, waits, and a
+        parent confirms it with `confirmPhonePairing`.
+      responses:
+        "201":
+          description: The pairing code
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NewPhonePairing" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /phones/pairings/{id}/confirm:
+    post:
+      operationId: confirmPhonePairing
+      summary: Confirm the phone that opened a pairing code (scope tokens:write)
+      description: |
+        Chooses whom the phone is for (an account or a child) and names it. The
+        phone gets its device session at its next request. The phone acts with
+        the role of that person. A pairing that no phone opened, or that
+        expired or was confirmed already, is 404.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ConfirmPhone" }
+      responses:
+        "201":
+          description: The phone
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Phone" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /tasks:
     get:
       operationId: listTasks
@@ -871,6 +956,37 @@ components:
         name: { type: string, minLength: 1, maxLength: 80 }
         room: { type: string, maxLength: 80 }
         type: { $ref: "#/components/schemas/DisplayType" }
+    Phone:
+      type: object
+      required: [id, name, person_id, person_name, paired_at, last_seen_at]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, example: "Mia's phone" }
+        person_id: { type: string, format: uuid, description: "The person the phone acts for, with their role" }
+        person_name: { type: string, example: Mia }
+        paired_at: { type: string, format: date-time }
+        last_seen_at: { type: string, format: date-time, nullable: true }
+    PhonePairing:
+      type: object
+      required: [id, device, verification, expires_at]
+      properties:
+        id: { type: string, format: uuid }
+        device: { type: string, example: Safari on iPhone, description: "What the phone said about itself" }
+        verification: { type: string, example: "483 920", description: "Six-digit number the waiting phone shows. Confirm only if it matches the number on the phone in your hand." }
+        expires_at: { type: string, format: date-time }
+    NewPhonePairing:
+      type: object
+      required: [id, url, expires_at]
+      properties:
+        id: { type: string, format: uuid }
+        url: { type: string, format: uri, description: "The address to show as a QR code. Only in this answer." }
+        expires_at: { type: string, format: date-time }
+    ConfirmPhone:
+      type: object
+      required: [person_id, name]
+      properties:
+        person_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 80 }
     SyncState:
       type: object
       description: Only on synced calendars. Displays read `state` to show the sync notice.

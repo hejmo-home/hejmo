@@ -94,7 +94,7 @@ func TestSyncTimesOfTheCalendarsPageAndTheSyncProblemsShowSeconds(t *testing.T) 
 		t.Errorf("the page and the problem log must show 21:46:26:\n%s", log)
 	}
 
-	if err := b.db.UpdateHouseholdSettings(h.ID, store.Time12h, store.Celsius); err != nil {
+	if err := b.db.UpdateHouseholdSettings(h.ID, store.Time12h, store.Celsius, store.UpdateOn); err != nil {
 		t.Fatal(err)
 	}
 	page = getEN(b, "/calendars").body

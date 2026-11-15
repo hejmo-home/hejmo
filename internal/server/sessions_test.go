@@ -392,10 +392,11 @@ func TestSessionPagesAreForSignedInParentsOnly(t *testing.T) {
 		t.Errorf("a paired phone is listed:\n%s", list)
 	}
 	var phoneID string
-	if err := s.db.SQL().QueryRow(`SELECT id FROM sessions WHERE phone_id IS NOT NULL LIMIT 1`).Scan(&phoneID); err == nil && phoneID != "" {
-		if r := s.mama.post("/sessions/"+phoneID+"/end", url.Values{}); r.status != http.StatusSeeOther || r.location != "/sessions?gone=1" {
-			t.Errorf("ending a phone session here = %d %q, want the gone redirect", r.status, r.location)
-		}
+	if err := s.db.SQL().QueryRow(`SELECT id FROM sessions WHERE phone_id IS NOT NULL LIMIT 1`).Scan(&phoneID); err != nil || phoneID == "" {
+		t.Fatalf("no phone session row: %v", err)
+	}
+	if r := s.mama.post("/sessions/"+phoneID+"/end", url.Values{}); r.status != http.StatusSeeOther || r.location != "/sessions?gone=1" {
+		t.Errorf("ending a phone session here = %d %q, want the gone redirect", r.status, r.location)
 	}
 }
 
@@ -474,17 +475,15 @@ func TestTheRawUserAgentIsNeverStoredOrShown(t *testing.T) {
 	}
 }
 
-// Frame fix found while designing #108: the back link sits inside main, so at
-// 900 px and wider it is not a grid item of its own beside the navigation.
-func TestBackLinkSitsInsideMain(t *testing.T) {
+// The back link stays before main (the frame grid depends on it); the
+// session detail page links back to the list, not to Settings.
+func TestBackLinkSitsBeforeMain(t *testing.T) {
 	s := newSessionsBox(t)
 	for _, path := range []string{"/sessions", "/phones", "/otp"} {
 		body := s.mama.get(path, "en").body
-		if !strings.Contains(body, `<main id="content">`+"\n"+`<a class="back" href="/settings">`) {
-			t.Errorf("%s: the back link is not the first thing in main:\n%s", path, body)
-		}
-		if i := strings.Index(body, `class="back"`); i < strings.Index(body, `<main`) {
-			t.Errorf("%s: the back link comes before main", path)
+		back, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main id="content">`)
+		if back < 0 || main < back {
+			t.Errorf("%s: the back link must come before main (%d, %d)", path, back, main)
 		}
 	}
 }

@@ -25,10 +25,10 @@
 {{if .Items}}<nav class="frame-nav" aria-label="{{t "nav.label"}}"><ul>
   {{range .Items}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{t .Label}}</a></li>
   {{end}}</ul></nav>{{end}}
+{{if .Back}}<a class="back" href="{{.BackHref}}">{{t .BackLabel}}</a>{{end}}
 {{end}}
 <main id="content">
-{{with .Frame}}{{if .Back}}<a class="back" href="{{.BackHref}}">{{t .BackLabel}}</a>
-{{end}}{{with .Success}}{{template "success" .}}{{end}}{{end}}
+{{with .Frame}}{{with .Success}}{{template "success" .}}{{end}}{{end}}
 {{end}}
 
 {{define "foot"}}

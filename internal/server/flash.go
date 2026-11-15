@@ -49,7 +49,7 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 	}
 	http.SetCookie(w, &http.Cookie{Name: flashCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
 	key, arg, _ = strings.Cut(c.Value, ":")
-	if !strings.HasPrefix(key, "flash.") || (s.i18n.T(i18n.Default, key) == key) || (arg != "" && !flashArg.MatchString(arg)) {
+	if !strings.HasPrefix(key, "flash.") || s.i18n.T(i18n.Default, key) == key || (arg != "" && !flashArg.MatchString(arg)) {
 		return "", ""
 	}
 	return key, arg

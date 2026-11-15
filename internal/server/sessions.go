@@ -128,8 +128,9 @@ func (s *server) handleSessionsPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	lang := s.langOf(r)
+	own := s.ownSessionID(r)
 	var groups []sessionGroup
-	for _, v := range s.sessionViews(lang, p, list, s.ownSessionID(r)) {
+	for _, v := range s.sessionViews(lang, p, list, own) {
 		if n := len(groups); n == 0 || groups[n-1].ID != v.PersonID {
 			groups = append(groups, sessionGroup{ID: v.PersonID, Name: v.Person, Slot: v.Slot, Shape: v.Shape})
 		}
@@ -138,7 +139,7 @@ func (s *server) handleSessionsPage(w http.ResponseWriter, r *http.Request) {
 	}
 	s.render(w, r, http.StatusOK, "sessions.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID),
-		"Groups": groups, "OnlyThis": len(list) == 1 && list[0].ID == s.ownSessionID(r), "NoBrowser": len(list) == 0, "Gone": r.URL.Query().Get("gone") == "1",
+		"Groups": groups, "OnlyThis": len(list) == 1 && list[0].ID == own, "NoBrowser": len(list) == 0, "Gone": r.URL.Query().Get("gone") == "1",
 	})
 }
 

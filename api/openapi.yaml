@@ -396,17 +396,23 @@ paths:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     patch:
       operationId: updateCalendar
-      summary: Switch "share through the box" for a synced calendar
-      description: The family calendar is always served to phones; asking to change it answers 422.
+      summary: Change a synced calendar (share through the box, name, colour, audience)
+      description: |
+        Send at least one field. `share_through_box` switches sharing through the box for a synced
+        calendar; the family calendar is always served to phones, asking to change it answers 422.
+        `name`, `color` and `audience` can only be changed on a synced calendar (else 422); a field
+        left out stays as it is. Nothing is sent to the calendar's source.
       requestBody:
         required: true
         content:
           application/json:
             schema:
               type: object
-              required: [share_through_box]
               properties:
                 share_through_box: { type: boolean }
+                name: { type: string, minLength: 1 }
+                color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422" }
+                audience: { $ref: "#/components/schemas/Audience" }
       responses:
         "200":
           description: The calendar after the change
@@ -533,10 +539,35 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /calendar-connections/{id}/event-counts:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: countConnectionEvents
+      summary: How many events each of the server's calendars has in the import window (parents, scope settings:write)
+      description: |
+        Lists the server's calendars again and asks the server to count, per calendar, the events in the
+        import window: the past 12 months and everything later, a series counting once. Nothing is
+        downloaded or stored. The calendars are asked together, each within a timeout; a calendar the
+        server does not answer in time (or cannot count) has `state` `unknown` and the others are
+        unaffected. The web page asks for this after it has been shown, so a slow server cannot block it.
+      responses:
+        "200":
+          description: One entry per calendar
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/EventCount" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /sync-log:
     get:
       operationId: listSyncLog
-      summary: Sync failures, conflicts and remarks, newest first (parents, scope settings:read)
+      summary: Sync problems (failures, conflicts and remarks), newest first (parents, scope settings:read)
+      description: A record of problems only. Successful runs show as `sync.last_success_at`, `sync.event_count` and `sync.last_run` of each calendar.
       responses:
         "200":
           description: At most 200 entries from the last 30 days
@@ -849,6 +880,15 @@ components:
       description: Only on synced calendars. Displays read `state` to show the sync notice.
       required: [state, interval_minutes, last_attempt_at, last_success_at, last_error]
       properties:
+        event_count: { type: integer, description: "Events the calendar holds after the last successful run; a series counts once" }
+        last_run:
+          type: object
+          description: What the last successful run did to the events. A failed run leaves it as it was.
+          required: [new, changed, removed]
+          properties:
+            new: { type: integer }
+            changed: { type: integer }
+            removed: { type: integer }
         state: { type: string, enum: [ok, stale], description: "stale = 24 hours without a successful sync; one success clears it" }
         interval_minutes: { type: integer, example: 60 }
         last_attempt_at: { type: string, format: date-time, nullable: true }
@@ -861,7 +901,7 @@ components:
         kind: { type: string, enum: [ics], description: "Only ICS subscriptions so far" }
         name: { type: string }
         url: { type: string, example: "webcal://example.org/school.ics" }
-        color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422. Defaults to the accent colour" }
+        color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422. Left out, the box picks one from a fixed set" }
         audience: { $ref: "#/components/schemas/Audience" }
         sync_interval_minutes: { type: integer, default: 60, description: "Between 5 and 1440 minutes, else 422" }
     CalendarConnection:
@@ -883,6 +923,15 @@ components:
               url: { type: string }
               name: { type: string }
               added: { type: boolean, description: "Already synced through this connection" }
+              calendar_id: { type: string, format: uuid, description: "The synced calendar, when `added`: change it with PATCH /calendars/{id}, switch it off with DELETE /calendars/{id}" }
+    EventCount:
+      type: object
+      required: [url, state, count, text]
+      properties:
+        url: { type: string, description: "The calendar's address, as in the discovery" }
+        state: { type: string, enum: [count, empty, unknown], description: "empty = no events in the last 12 months or later; unknown = the server did not answer in time or cannot count" }
+        count: { type: integer, description: "0 unless state is count" }
+        text: { type: string, description: "The count as text, translated to the language of the request (Accept-Language, default German)" }
     NewCalendarConnection:
       type: object
       required: [provider, username, password]
@@ -898,7 +947,7 @@ components:
       properties:
         url: { type: string, description: "A calendar address from the discovery" }
         name: { type: string }
-        color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422. Defaults to the accent colour" }
+        color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422. Left out, the box picks one from a fixed set" }
         audience: { $ref: "#/components/schemas/Audience" }
         sync_interval_minutes: { type: integer, default: 5, description: "Between 5 and 1440 minutes, else 422" }
     SyncLogEntry:

@@ -48,6 +48,10 @@ type Options struct {
 	// Done, when closed, ends open live streams so a shutdown does not wait
 	// for them. Nil means they end only when their client goes away.
 	Done <-chan struct{}
+	// CountTimeout is how long the box waits for a CalDAV server to count the
+	// events of one calendar before the count shows as unknown. Zero means 10
+	// seconds.
+	CountTimeout time.Duration
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -88,6 +92,7 @@ type server struct {
 	sync      *calsync.Service
 	weather   *weather.Service
 	live      time.Duration
+	countWait time.Duration
 	done      <-chan struct{}
 }
 
@@ -118,6 +123,9 @@ func New(opts Options) http.Handler {
 	s.done = opts.Done
 	if s.live = opts.LiveInterval; s.live <= 0 {
 		s.live = 2 * time.Second
+	}
+	if s.countWait = opts.CountTimeout; s.countWait <= 0 {
+		s.countWait = 10 * time.Second
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
@@ -235,8 +243,8 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	}
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
-		if key := s.takeFlash(w, r); key != "" {
-			fr.Success = s.i18n.T(lang, key)
+		if key, arg := s.takeFlash(w, r); key != "" {
+			fr.Success = s.successText(lang, key, arg)
 		} else if key, ok := data["SuccessKey"].(string); ok {
 			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
 		}

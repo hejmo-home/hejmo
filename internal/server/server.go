@@ -219,6 +219,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
 	mux.HandleFunc("GET /phones", s.handlePhonesPage)
+	mux.HandleFunc("GET /phones/{id}", s.handlePhonePage)
 	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)
 	mux.HandleFunc("POST /phones/pairings/{id}/confirm", s.handlePhonePairingConfirm)
 	mux.HandleFunc("POST /phones/{id}/revoke", s.handlePhoneRevoke)

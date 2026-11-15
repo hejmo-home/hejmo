@@ -83,7 +83,7 @@ func (s *server) firstSteps(p store.Person, h store.Household, lang string) (*fi
 	if err := s.fillFamily(&steps[0], people, f); err != nil {
 		return nil, err
 	}
-	if err := s.fillParents(&steps[1], h, people, f); err != nil {
+	if err := s.fillParents(&steps[1], h, p, people, f); err != nil {
 		return nil, err
 	}
 	if err := s.fillCalendars(&steps[2], h, people, f, t); err != nil {
@@ -153,18 +153,15 @@ func (s *server) fillFamily(st *firstStep, people []store.Person, f func(string,
 	return nil
 }
 
-func (s *server) fillParents(st *firstStep, h store.Household, people []store.Person, f func(string, ...string) string) error {
+// fillParents is the second parent and phones step. The second parent is a
+// parent other than the one looking at Home: who set the box up is not stored,
+// and the order of the people can change.
+func (s *server) fillParents(st *firstStep, h store.Household, viewer store.Person, people []store.Person, f func(string, ...string) string) error {
 	var second []string
-	seen := false
 	for _, p := range people {
-		if p.Role != store.RoleParent {
-			continue
+		if p.Role == store.RoleParent && p.ID != viewer.ID {
+			second = append(second, p.Name)
 		}
-		if !seen {
-			seen = true // the first parent is the one from the setup
-			continue
-		}
-		second = append(second, p.Name)
 	}
 	phones, err := s.db.Phones(h.ID)
 	if err != nil {

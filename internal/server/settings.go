@@ -4,8 +4,11 @@ import (
 	"cmp"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"slices"
+	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/meal"
@@ -101,11 +104,17 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 	}
 	skipped := p.household.FirstStepsSkipped
 	if in.FirstStepsSkipped != nil {
+		for _, step := range *in.FirstStepsSkipped {
+			if !slices.Contains(store.FirstStepIDs, step) {
+				writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("first_steps_skipped: unknown step %q; steps are %s", step, strings.Join(store.FirstStepIDs, ", ")))
+				return
+			}
+		}
 		skipped = *in.FirstStepsSkipped
 	}
 	if err := s.saveSettings(p.household, f, u, a, c, hidden, skipped); err != nil {
 		if errors.Is(err, store.ErrInvalid) {
-			writeError(w, http.StatusUnprocessableEntity, "first_steps_skipped: "+err.Error())
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
 			return
 		}
 		s.fail(w, "update settings", err)

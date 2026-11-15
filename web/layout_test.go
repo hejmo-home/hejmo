@@ -221,3 +221,37 @@ func TestColumnReadabilitySnapshot(t *testing.T) {
 		t.Errorf("layout differs from %s (HEJMO_UPDATE_GOLDEN=1 rewrites it after a reviewed change):\n%s", golden, got)
 	}
 }
+
+// Ticket 133: the navigation row of a framed page must not widen the page on a
+// 375 px phone. The grid has one column that may shrink to nothing, the
+// navigation may shrink and scrolls sideways inside its own row, and the
+// two-column grid with navigation starts at 900 px only.
+func TestFramedPagesAreNeverWiderThanAPhone(t *testing.T) {
+	css := stylesheet(t)
+	for _, want := range []string{
+		`.frame { grid-template-columns: minmax(0, 1fr); }`,
+		`.frame-nav { min-width: 0; }`,
+		`@media (min-width: 900px) { .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); } }`,
+	} {
+		if !strings.Contains(css, want) {
+			t.Errorf("stylesheet lacks %q", want)
+		}
+	}
+	if !regexp.MustCompile(`\.frame-nav ul \{[^}]*overflow-x: auto`).MatchString(css) {
+		t.Error("the navigation row does not scroll inside itself")
+	}
+}
+
+// Ticket 133: the setup wizard's components exist in the stylesheet.
+func TestStylesheetHasTheWizardComponents(t *testing.T) {
+	css := stylesheet(t)
+	for _, sel := range []string{
+		".wizard {", ".wiz-count", ".wsteps ol", "ol.howto", ".devices", ".detected", `.checkline[data-state="waiting"]`,
+		`.checkline[data-state="ok"]`, `.checkline[data-state="fail"]`, ".fp {", ".addr", ".secret.grouped", "ol.codes", ".confirm",
+		".pw {", ".firststeps", ".actions", ".link {", ".button[disabled]", `[data-theme="bw"] .button[disabled]`, "@media print",
+	} {
+		if !strings.Contains(css, sel) {
+			t.Errorf("stylesheet lacks %q", sel)
+		}
+	}
+}

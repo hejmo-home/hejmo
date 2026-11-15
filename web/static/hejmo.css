@@ -617,3 +617,123 @@ textarea { width: 100%; font: inherit; color: var(--text); background: var(--sur
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
+
+/* Setup wizard (ticket #133, DESIGN.md "Setup wizard"). One centred column,
+   no navigation, the progress of the four steps on top. Only existing tokens. */
+.wizard { max-width: 600px; margin: 0 auto; display: grid; gap: var(--gap-section); align-content: start; }
+.wizard main { display: grid; gap: var(--gap); min-width: 0; }
+.wizard h1 { margin: 0; overflow-wrap: anywhere; hyphens: manual; }
+.wizard h2 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
+.wizard p, .wizard .lead { margin: 0; }
+.wizard .notice, .wizard .error, .wizard .msg { max-width: none; margin: 0; }
+.wizard .tile, .firststeps { background: var(--surface); border-radius: var(--radius-tile); padding: var(--pad-column); display: grid; gap: 12px; min-width: 0; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px var(--gap); }
+.actions .button { flex: 0 1 auto; }
+ol.howto .s > .actions { justify-self: stretch; }
+.link { display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; }
+.wizard ul.plain { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.wiz-count { font-size: var(--fs-label); color: var(--text-secondary); text-align: right; }
+@media (max-width: 599px) {
+  .wizard h1 { font-size: var(--fs-key-figure); }
+  .wizard .actions .button { flex: 1 1 100%; text-align: center; }
+  .wizard details.more > summary { flex-wrap: wrap; }
+}
+/* Frame fix found while drawing #133: the navigation row must not widen the
+   page on a 375 px phone (it scrolls sideways inside its own row instead). */
+.frame { grid-template-columns: minmax(0, 1fr); }
+.frame-nav { min-width: 0; }
+@media (min-width: 900px) { .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); } }
+
+/* .button as <button> keeps its look; disabled while the box works. */
+.button[disabled] { cursor: default; background: var(--border); color: var(--text-secondary); }
+[data-theme="bw"] .button[disabled] { background: var(--surface); color: var(--text); border: 2px dashed var(--text); }
+[data-theme="bw"] .button.secondary { border-width: 2px; }
+
+/* Progress through the four steps: a bar segment, number (tick when done) and
+   name per step. The current step is bold; "Schritt n von 4" stands in words
+   in the bar above. */
+.wsteps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.wsteps li { display: grid; gap: 6px; align-content: start; font-size: var(--fs-meta); color: var(--text-secondary); min-width: 0; }
+.wsteps li::before { content: ""; height: var(--progress-height); border-radius: var(--radius-progress); background: var(--border); }
+.wsteps li[data-state="done"]::before, .wsteps li[aria-current="step"]::before { background: var(--accent); }
+.wsteps li[aria-current="step"] { color: var(--text); font-weight: 700; }
+.wsteps .lab { overflow-wrap: normal; hyphens: manual; }
+.wsteps .n { font-variant-numeric: tabular-nums; margin-right: 4px; }
+.wsteps .icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 3px; }
+[data-theme="bw"] .wsteps li::before { background: var(--progress-track); }
+[data-theme="bw"] .wsteps li[data-state="done"]::before, [data-theme="bw"] .wsteps li[aria-current="step"]::before { background: var(--progress-fill); }
+/* Under 600 px the numbers give way to the names (the bar above says "Schritt n von 4"). */
+@media (max-width: 599px) { .wsteps .n { display: none; } }
+
+/* Numbered how-to: a ringed number, a bold title, a sentence, then the
+   action of that step. Used for every list of steps the family follows. */
+ol.howto { list-style: none; counter-reset: howto; margin: 0; padding: 0; display: grid; }
+ol.howto > li { counter-increment: howto; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-top: 1px solid var(--border); }
+ol.howto > li:first-child { border-top: 0; padding-top: 2px; }
+ol.howto > li:last-child { padding-bottom: 0; }
+ol.howto > li::before { content: counter(howto); width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+ol.howto > li[data-done]::before { content: "\2713"; background: var(--accent); color: var(--accent-text); }
+ol.howto .s { display: grid; gap: 6px; min-width: 0; justify-items: start; }
+ol.howto .s > b { font-size: var(--fs-event-title); font-weight: 700; }
+ol.howto .s > p { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+ol.howto .s > .f, ol.howto .s > .checkline, ol.howto .s > .qr, ol.howto .s > details { justify-self: stretch; }
+ol.howto .path { font-weight: 600; }
+[data-theme="bw"] ol.howto > li::before { border-color: var(--text); color: var(--text); }
+[data-theme="bw"] ol.howto > li[data-done]::before { background: var(--text); color: var(--surface); }
+
+/* Device chooser on the trust page: links in the navigation chip look; the
+   detected device is selected and named in words below. */
+.devices { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.devices a { display: inline-flex; align-items: center; min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
+.devices a[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+[data-theme="bw"] .devices a { border-width: 2px; }
+.detected { font-size: var(--fs-label); color: var(--text-secondary); }
+
+/* Check line: the state of a check the page runs by itself, in words. */
+.checkline { display: flex; gap: 10px; align-items: flex-start; border-radius: var(--radius-card); padding: 10px 12px; margin: 0; }
+.checkline .icon { flex: none; margin-top: 2px; stroke: currentColor; }
+.checkline > span { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.checkline small { font-size: var(--fs-meta); }
+.checkline[data-state="waiting"] { background: var(--notice-bg); color: var(--notice-text); }
+.checkline[data-state="fail"] { background: var(--error-bg); color: var(--error-text); }
+.checkline[data-state="ok"] { background: var(--surface); border: 1.5px solid var(--accent); color: var(--text); }
+.checkline[data-state="ok"] .icon { stroke: var(--accent); }
+[data-theme="bw"] .checkline[data-state="ok"], [data-theme="bw"] .checkline[data-state="fail"] { border: 2px solid var(--text); }
+[data-theme="bw"] .checkline[data-state="fail"] { border-style: dashed; }
+
+/* Fingerprint: 32 pairs in a fixed grid (8 by 4) so lines can be compared. */
+.fp { display: grid; grid-template-columns: repeat(8, auto); justify-content: start; gap: 4px 10px; margin: 0; padding: 10px 12px; background: var(--background); border-radius: var(--radius-card); font-size: var(--fs-event-title); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+[data-theme="bw"] .fp { border: 2px solid var(--text); }
+/* An address or name the family must read exactly. */
+.addr { font-size: var(--fs-person-name); font-weight: 700; overflow-wrap: anywhere; }
+.secret.grouped { word-spacing: 0.4em; letter-spacing: 0.06em; }
+
+/* Recovery codes: numbered, two columns, readable and printable. */
+ol.codes { list-style: none; counter-reset: code; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px var(--gap); }
+ol.codes li { counter-increment: code; display: flex; align-items: baseline; gap: 8px; padding: 8px 10px; background: var(--background); border-radius: var(--radius-card); font-size: var(--fs-person-name); font-weight: 700; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+ol.codes li::before { content: counter(code) "."; min-width: 1.6em; font-size: var(--fs-meta); font-weight: 400; color: var(--text-secondary); letter-spacing: 0; }
+@media (max-width: 479px) { ol.codes { grid-template-columns: minmax(0, 1fr); gap: 6px; } }
+[data-theme="bw"] ol.codes li { border: 1.5px solid var(--text); background: var(--surface); }
+.confirm { display: flex; align-items: flex-start; gap: 12px; min-height: var(--touch-target); font-size: var(--fs-body); color: var(--text); grid-template-columns: none; }
+.confirm input { flex: none; width: 24px; height: 24px; min-height: 0; margin: 2px 0 0; accent-color: var(--accent); }
+
+/* Password with a "Show" button in words. */
+.pw { display: flex; gap: 8px; }
+.pw input { flex: 1; min-width: 0; }
+.pw .button { flex: none; padding: 10px 14px; }
+.f .hint { margin: 0; }
+
+/* First steps on the start page after the wizard. */
+.firststeps { max-width: 600px; margin: 0 0 var(--gap-section); }
+.firststeps h2 { margin: 0; font-size: var(--fs-person-name); }
+.firststeps > p { margin: 0; color: var(--text-secondary); }
+.firststeps .done-who { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--text-secondary); font-size: var(--fs-label); }
+.firststeps .done-who span { display: inline-flex; align-items: center; gap: 6px; }
+.firststeps .later { justify-self: start; font-size: var(--fs-label); }
+[data-theme="bw"] .firststeps .done-who .marker { width: 12px; height: 12px; }
+
+@media print {
+  body { background: white; padding: 0; }
+  .wizard > header, .wsteps, .no-print { display: none !important; }
+  ol.codes li { border: 1px solid black; background: white; color: black; }
+}

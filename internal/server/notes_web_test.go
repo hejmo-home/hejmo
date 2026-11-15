@@ -283,6 +283,14 @@ func TestFrameGridMayShrink(t *testing.T) {
 
 // The flash names the day the reminder starts, with its date, and says so when it shows already.
 func TestWasteFlashNamesTheDayAndTheDisplayNow(t *testing.T) {
+	// Collection tomorrow, before 18:00: the evening before is today.
+	g := newFamilyBox(t, "eink_color")
+	gid := g.addWaste(t, wasteEvent("p0", "Paper bin", "5")) // Sunday 15/11, the clock is Saturday 14/11 13:00
+	g.save("/calendars/"+gid+"/waste", url.Values{"waste": {"on"}}, "de")
+	mustContain(t, g.page("de", "/calendars").body, "Die nächste Abfuhr steht ab heute 18:00 auf dem Display.")
+	g.save("/calendars/"+gid+"/waste", url.Values{"waste": {"on"}}, "en")
+	mustContain(t, g.page("en", "/calendars").body, "The next collection shows on the display from today 18:00.")
+
 	f := newFamilyBox(t, "eink_color")
 	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "8")) // Wednesday 18/11
 	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "de")

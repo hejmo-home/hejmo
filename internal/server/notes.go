@@ -147,10 +147,16 @@ func (s *server) dayLabel(lang string, d time.Time) string {
 	return s.weekdayName(lang, d) + " " + d.Format("02/01")
 }
 
+// midnight is the start of now's day.
+func midnight(now time.Time) time.Time {
+	return time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+}
+
 // shownFrom says when a note for the day starts to show: "today" or the weekday of the evening before, at
 // 18:00. now is true when it shows already (the day is today, or the evening before has come).
-func (s *server) shownFrom(lang string, now, day time.Time) (when string, shownNow bool) {
-	today := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())
+// label names the evening before (weekdayName or dayLabel).
+func (s *server) shownFrom(lang string, now, day time.Time, label func(string, time.Time) string) (when string, shownNow bool) {
+	today := midnight(now)
 	eve := day.AddDate(0, 0, -1)
 	switch {
 	case !day.After(today):
@@ -160,7 +166,7 @@ func (s *server) shownFrom(lang string, now, day time.Time) (when string, shownN
 	case eve.Equal(today):
 		return s.i18n.T(lang, "when.today"), false
 	}
-	return s.weekdayName(lang, eve), false
+	return label(lang, eve), false
 }
 
 // parseDay reads a YYYY-MM-DD day in the household's zone.
@@ -180,7 +186,7 @@ func (s *server) noteSavedText(lang, arg string) string {
 	if !ok {
 		return s.i18n.T(lang, "flash.note_saved")
 	}
-	when, shownNow := s.shownFrom(lang, now, day)
+	when, shownNow := s.shownFrom(lang, now, day, s.weekdayName)
 	if shownNow {
 		return s.i18n.T(lang, "flash.note_saved_now")
 	}
@@ -201,13 +207,9 @@ func (s *server) wasteOnText(lang, id string) string {
 	}
 	// The collection can be weeks away: name the day of the evening before with its date, as the note does.
 	now := s.householdNow(h)
-	eve := next[id].Day.AddDate(0, 0, -1)
-	if _, shownNow := s.shownFrom(lang, now, next[id].Day); shownNow {
+	when, shownNow := s.shownFrom(lang, now, next[id].Day, s.dayLabel)
+	if shownNow {
 		return s.i18n.T(lang, "flash.waste_on_now")
-	}
-	when := s.dayLabel(lang, eve)
-	if eve.Equal(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) {
-		when = s.i18n.T(lang, "when.today")
 	}
 	return s.i18n.Format(lang, i18n.Msg("flash.waste_on_next", "when", when))
 }
@@ -334,7 +336,7 @@ func (s *server) notePage(w http.ResponseWriter, r *http.Request) (p principal, 
 		http.NotFound(w, r)
 		return p, day, "", false
 	}
-	if day.Before(time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, now.Location())) { // not pruned yet
+	if day.Before(midnight(now)) { // not pruned yet
 		http.NotFound(w, r)
 		return p, day, "", false
 	}
@@ -355,7 +357,7 @@ func (s *server) renderNote(w http.ResponseWriter, r *http.Request, status int, 
 	now := s.householdNow(p.household)
 	title := fmt.Sprintf(s.i18n.T(lang, "note.title"), s.weekdayName(lang, day), day.Format("02/01"))
 	lead := s.i18n.T(lang, "note.lead_now")
-	if when, shownNow := s.shownFrom(lang, now, day); !shownNow {
+	if when, shownNow := s.shownFrom(lang, now, day, s.weekdayName); !shownNow {
 		lead = s.i18n.Format(lang, i18n.Msg("note.lead_from", "when", when))
 	}
 	data := map[string]any{"Title": title, "Lead": lead, "Day": day.Format(store.DayLayout), "Text": text, "Count": utf8.RuneCountInString(strings.TrimSpace(text))}

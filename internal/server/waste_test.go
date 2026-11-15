@@ -4,6 +4,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -17,7 +18,7 @@ func wasteEvent(uid, title, day string) string {
 	return "UID:" + uid + "\r\nSUMMARY:" + title + "\r\nDTSTART;VALUE=DATE:2026111" + day + "\r\nDTEND;VALUE=DATE:2026111" + nextDay(day)
 }
 
-func nextDay(d string) string { return string(rune(d[0] + 1)) } // the days used here are 5 to 7
+func nextDay(d string) string { n, _ := strconv.Atoi(d); return strconv.Itoa(n + 1) } // single digits, 1 to 8
 
 // addWaste subscribes the waste ICS feed and marks it as waste collection through the web interface.
 func (f *familyBox) addWaste(t *testing.T, events ...string) string {

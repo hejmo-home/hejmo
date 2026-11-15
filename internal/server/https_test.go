@@ -310,6 +310,29 @@ func TestTrustTextsForIPadFirefoxAndMac(t *testing.T) {
 	}
 }
 
+// The iOS steps work on an iPad too, so they never say "das iPhone"; Windows
+// shows only SHA-1 at install time, so it gets no "compare, else do not install" hint.
+func TestTrustTextsFitIPadAndWindows(t *testing.T) {
+	const iPad = "Mozilla/5.0 (iPad; CPU OS 19_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1"
+	b := newBox(t)
+	ipad := b.trustPage("/ca", "de", iPad)
+	if !strings.Contains(ipad.body, "Profil laden") {
+		t.Fatalf("an iPad is not served the iOS steps:\n%s", ipad.body)
+	}
+	for _, bad := range []string{"das iPhone", "deines iPhones", "dein iPhone"} {
+		if strings.Contains(ipad.body, bad) {
+			t.Errorf("iOS steps on an iPad say %q", bad)
+		}
+	}
+	win := b.trustPage("/ca", "de", windowsUA)
+	if strings.Contains(win.body, "installiere das Zertifikat nicht") {
+		t.Error("Windows shows no SHA-256 at install time, so it must not be told to compare")
+	}
+	if !strings.Contains(win.body, "SHA-1") {
+		t.Error("Windows misses its SHA-1 note")
+	}
+}
+
 func TestDetectsDevicesFromTheUserAgent(t *testing.T) {
 	for ua, want := range map[string]string{iPhone: "ios", androidUA: "android", macUA: "mac", windowsUA: "windows", linuxUA: "linux"} {
 		b := newBox(t)

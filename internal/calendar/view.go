@@ -51,6 +51,18 @@ func Visible(occs []Occurrence, calendars map[string]Audience, v Viewer) []Occur
 	return out
 }
 
+// ViewersOf lists the IDs of the viewers (in the order given) whose view shows
+// o: the people the occurrence is for.
+func ViewersOf(o Occurrence, calendars map[string]Audience, viewers []Viewer) []string {
+	var out []string
+	for _, v := range viewers {
+		if len(Visible([]Occurrence{o}, calendars, v)) == 1 {
+			out = append(out, v.PersonID)
+		}
+	}
+	return out
+}
+
 // Bar is a multi-day or all-day occurrence laid out on a 7-day week.
 type Bar struct {
 	Occurrence

@@ -95,3 +95,27 @@ func titlesOfBars(bs []calendar.Bar) []string {
 	}
 	return out
 }
+
+// 5.22: the people an occurrence is for are those whose view shows it.
+func TestViewersOfAnOccurrence(t *testing.T) {
+	viewers := []calendar.Viewer{
+		{PersonID: "mama", Groups: []string{"parents"}},
+		{PersonID: "papa", Groups: []string{"parents"}},
+		{PersonID: "sebastian", Groups: []string{"schoolkids"}},
+		{PersonID: "mia"},
+	}
+	audiences := map[string]calendar.Audience{"school": {Groups: []string{"schoolkids"}}}
+	for _, c := range []struct {
+		name string
+		o    calendar.Occurrence
+		want []string
+	}{
+		{"no audience: everyone", calendar.Occurrence{CalendarID: "family"}, []string{"mama", "papa", "sebastian", "mia"}},
+		{"event people", calendar.Occurrence{CalendarID: "family", People: []string{"mia", "papa"}}, []string{"papa", "mia"}},
+		{"event group", calendar.Occurrence{CalendarID: "family", Groups: []string{"parents"}}, []string{"mama", "papa"}},
+		{"calendar audience", calendar.Occurrence{CalendarID: "school"}, []string{"sebastian"}},
+		{"calendar and event audience", calendar.Occurrence{CalendarID: "school", People: []string{"mia", "sebastian"}}, []string{"sebastian"}},
+	} {
+		equal(t, calendar.ViewersOf(c.o, audiences, viewers), c.want)
+	}
+}

@@ -164,14 +164,13 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
-	progress := map[string]familyview.Progress{}
+	byPerson := map[string][]familyview.Task{}
 	for _, t := range due {
-		p := progress[t.PersonID]
-		p.Total++
-		if t.Done {
-			p.Done++
-		}
-		progress[t.PersonID] = p
+		byPerson[t.PersonID] = append(byPerson[t.PersonID], familyview.Task{Done: t.Done})
+	}
+	progress := map[string]familyview.Progress{}
+	for id, ts := range byPerson {
+		progress[id] = familyview.ProgressOf(ts)
 	}
 	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people,
 		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID), TaskProgress: progress,

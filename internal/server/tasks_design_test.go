@@ -71,13 +71,12 @@ func TestPersonalViewTasksTile(t *testing.T) {
 		}
 		return tk
 	}
-	evening := mk("Piano", "evening")
+	mk("Piano", "evening")
 	morning := mk("Teeth", "morning")
 	mk("Cat", "")
 	if err := f.db.SetTaskDone(f.householdID, morning.ID, "2026-11-14", true, "", f.at(14, 8, 0)); err != nil {
 		t.Fatal(err)
 	}
-	_ = evening
 	body := f.personalPage(t, "en", "Mia", 14, 9).body
 	for _, want := range []string{
 		`class="pv" data-person="`, `<aside class="pv-tasks"`, `<div class="tasks-head"><div class="lab">Tasks today</div><div class="count">1 of 3 tasks done</div><div class="progress" role="img" aria-label="1/3">`,
@@ -153,12 +152,13 @@ func TestPersonalViewWithoutTasks(t *testing.T) {
 
 // A failed tick shows an error under the task and keeps the old state
 // (display.js, nothing to render on the server side).
+// Smoke check only: it looks for the markers in display.js, it does not run the script.
 func TestDisplayScriptReportsFailedTicks(t *testing.T) {
 	b, err := os.ReadFile("../../web/static/display.js")
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"data-tick-error", `"ferr"`, `"alert"`, `.big-check`, `"submit"`} {
+	for _, want := range []string{"data-tick-error", `"ferr"`, `"alert"`, `.big-check`, `"submit"`, "r.redirected"} {
 		if !strings.Contains(string(b), want) {
 			t.Errorf("display.js lacks %s", want)
 		}

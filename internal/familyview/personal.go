@@ -124,9 +124,12 @@ func endsAtMidnight(o calendar.Occurrence, loc *time.Location) bool {
 
 // Progress is the person's task progress today, the same figure the family
 // view shows in their column.
-func (v PersonalView) Progress() Progress {
-	p := Progress{Total: len(v.Tasks)}
-	for _, t := range v.Tasks {
+func (v PersonalView) Progress() Progress { return ProgressOf(v.Tasks) }
+
+// ProgressOf counts the done tasks of a person's tasks for today.
+func ProgressOf(tasks []Task) Progress {
+	p := Progress{Total: len(tasks)}
+	for _, t := range tasks {
 		if t.Done {
 			p.Done++
 		}

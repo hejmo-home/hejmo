@@ -96,8 +96,8 @@ func TestTickingAnnouncesNewVersionsOfBothViews(t *testing.T) {
 }
 
 // 6.6 criterion: given a child ticking off a task on the display, then it is
-// done in the web interface within 10 seconds (it is stored at once, and both
-// the web page and the REST API read the same state), and the family view
+// done in the web interface within 10 seconds (it is stored at once, and the
+// web page reads the same state; the web page shows it on the next load, not live), and the family view
 // counts it.
 func TestTickOnTheDisplayIsDoneInTheWebInterface(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")

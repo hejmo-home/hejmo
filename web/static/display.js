@@ -151,6 +151,9 @@
     fetch(form.action, { method: "POST", body: body, credentials: "same-origin", cache: "no-store" })
       .then(function (r) {
         if (!r.ok) throw new Error("tick " + r.status);
+        // fetch follows the 303: a revoked display lands on the pairing screen
+        // (or a deleted task on /display), which a plain form post would show.
+        if (r.redirected && new URL(r.url).pathname === "/display") { location.href = "/display"; return; }
         refresh();
       })
       .catch(function () {

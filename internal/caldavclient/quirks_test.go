@@ -44,8 +44,8 @@ type quirkExpect struct {
 	List     []quirkObject `json:"list"`
 	// Count is the number of events the event-count query must report
 	// (nil: the quirk says nothing about it).
-	Count *int `json:"count"`
-	Fetch    []quirkObject `json:"fetch"`
+	Count *int          `json:"count"`
+	Fetch []quirkObject `json:"fetch"`
 }
 
 var icsPlaceholder = regexp.MustCompile(`\{\{ics:([^}]+)\}\}`)

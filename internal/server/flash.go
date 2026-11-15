@@ -55,7 +55,7 @@ const (
 
 var (
 	flashArg     = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
-	flashNameArg = regexp.MustCompile(`^n~[A-Za-z0-9_-]{1,` + strconv.Itoa(4*maxFlashName) + `}$`)
+	flashNameArg = regexp.MustCompile(`^n~[A-Za-z0-9_-]{1,` + strconv.Itoa(8*maxFlashName) + `}$`)
 )
 
 // takeFlash returns the success line waiting for this browser, as the key of

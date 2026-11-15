@@ -209,3 +209,13 @@ func TestDisplayNamesInTheSuccessLineAreEscaped(t *testing.T) {
 		t.Errorf("the name is not escaped in the success line\n%s", body)
 	}
 }
+
+func TestALongNameOfWideCharactersStillShowsInTheSuccessLine(t *testing.T) {
+	b := signedInBox(t)
+	name := strings.Repeat("😀", 80)
+	id := pairedDisplay(t, b, name, "screen")
+	b.post("/displays/"+id+"/unpair", url.Values{})
+	if body := getEN(b, "/displays").body; !strings.Contains(body, "“"+name+"” unpaired.") {
+		t.Errorf("the success line lost the name\n%s", body)
+	}
+}

@@ -35,7 +35,7 @@ func (s *server) redirectSynced(w http.ResponseWriter, r *http.Request, to, cale
 	s.redirectSaved(w, r, to, "flash.calendar_synced:"+calendarID)
 }
 
-var flashArg = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+var flashArg = regexp.MustCompile(`^[A-Za-z0-9_-]{1,96}$`)
 
 // takeFlash returns the success line waiting for this browser, as the key of
 // its text and an optional argument, and clears it. Unknown values are
@@ -47,7 +47,7 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 	}
 	http.SetCookie(w, &http.Cookie{Name: flashCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
 	key, arg, _ = strings.Cut(c.Value, ":")
-	if !strings.HasPrefix(key, "flash.") || s.i18n.T(i18n.Default, key) == key || (arg != "" && !flashArg.MatchString(arg)) {
+	if !strings.HasPrefix(key, "flash.") || (s.i18n.T(i18n.Default, key) == key && key != flashSessionEnded) || (arg != "" && !flashArg.MatchString(arg)) {
 		return "", ""
 	}
 	return key, arg
@@ -56,6 +56,12 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 // successText is the text of a success line. After "Sync now" it says when
 // the calendar was updated and what the run did.
 func (s *server) successText(lang, key, arg string) string {
+	if key == flashSessionEnded {
+		if text := s.sessionEndedText(lang, arg); text != "" {
+			return text
+		}
+		return s.i18n.T(lang, "flash.saved")
+	}
 	if key == "flash.calendar_synced" && arg != "" {
 		if h, err := s.db.HomeHousehold(); err == nil {
 			if c, err := s.db.SyncedCalendar(h.ID, arg); err == nil && !c.Sync.LastSuccess.IsZero() {

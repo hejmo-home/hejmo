@@ -38,8 +38,10 @@ type frame struct {
 	// seconds, 0 when unknown); the page script uses them for the browser
 	// theme "automatic" (ADR 0015).
 	SunRise, SunSet int64
-	// Back is set on setup screens: they link back to the Settings hub.
-	Back bool
+	// Back is set on setup screens: they link back to the Settings hub, or
+	// to BackHref with the text BackLabel when a screen below one says so.
+	Back                bool
+	BackHref, BackLabel string
 	// Success is the success line after a saved change, already translated.
 	Success string
 }
@@ -56,6 +58,10 @@ func (s *server) frameFor(r *http.Request) frame {
 	f := s.sunFrame()
 	f.SignedIn = true
 	f.Back = isSetupPath(r.URL.Path)
+	f.BackHref, f.BackLabel = "/settings", "hub.back"
+	if strings.HasPrefix(r.URL.Path, "/sessions/") {
+		f.BackHref, f.BackLabel = "/sessions", "sessions.back"
+	}
 	for _, it := range navItems {
 		if !auth.RoleAllows(p.Role, it.Needs) {
 			continue
@@ -116,4 +122,5 @@ var hubItems = []hubItem{
 	{"/people", "hub.people", "hub.people.hint", auth.Perm("people", auth.Write)},
 	{"/settings/household", "hub.household", "hub.household.hint", auth.Perm("settings", auth.Write)},
 	{"/otp", "hub.otp", "hub.otp.hint", auth.Perm("settings", auth.Write)},
+	{"/sessions", "hub.sessions", "hub.sessions.hint", auth.Perm("settings", auth.Write)},
 }

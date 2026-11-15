@@ -73,6 +73,7 @@ func (s *server) pendingPerson(r *http.Request) (store.Person, bool) {
 		return store.Person{}, false
 	}
 	s.db.TouchPhoneSession(hash, s.now())
+	s.db.TouchSession(hash, s.now())
 	return s.member(personID)
 }
 

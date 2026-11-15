@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -57,6 +58,7 @@ func (s *server) syncStale(householdID string) bool {
 
 type calendarView struct {
 	ID, Name, Color, Audience, LastSuccess, LastError string
+	Events, Changes                                   string // the count and what the last run did; empty until a run succeeded
 	Stale                                             bool
 	IntervalMinutes                                   int
 }
@@ -80,7 +82,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(p.timeLayout())
+		return t.In(loc).Format(p.syncLayout())
 	}
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
@@ -120,6 +122,11 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	for _, c := range synced {
 		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
 			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes}
+		if !c.Sync.LastSuccess.IsZero() {
+			run := c.Sync.LastRun
+			v.Events = s.say(r, i18n.Msg("calendars.events", "count", strconv.Itoa(run.Events)))
+			v.Changes = s.say(r, i18n.Msg("calendars.run", "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))
+		}
 		for _, id := range append(append([]string{}, c.Audience.People...), c.Audience.Groups...) {
 			if v.Audience != "" {
 				v.Audience += ", "
@@ -180,8 +187,13 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	for _, e := range entries {
 		log = append(log, logView{at(e.At), e.CalendarName, e.Kind, s.say(r, e.Message)})
 	}
+	var taken []string
+	for _, c := range synced {
+		taken = append(taken, c.Color)
+	}
 	data := map[string]any{
-		"Person": p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
+		"AutoColor": nextColors(taken, 1)[0],
+		"Person":    p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
 		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "Connections": connViews, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
 		"ConnError": "", "ConnErrorField": "",
 	}
@@ -239,7 +251,7 @@ func (s *server) handleCalendarSync(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if err == nil {
-		s.redirectSaved(w, r, "/calendars", "flash.calendar_synced")
+		s.redirectSynced(w, r, "/calendars", r.PathValue("id"))
 		return
 	}
 	http.Redirect(w, r, "/calendars", http.StatusSeeOther)

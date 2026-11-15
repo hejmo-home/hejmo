@@ -365,6 +365,17 @@ body:has(.family-page) { overflow: hidden; }
 [data-theme="bw"] .switch input:checked { background: var(--text); }
 [data-theme="bw"] .switch input:checked::before { background: var(--surface); }
 
+/* Choose calendars: the event count of each calendar (ADR 0017). It is filled
+   in after the page has loaded; "empty" is the one that matters (a calendar
+   with nothing in the window), so it is a notice, and in black and white bold. */
+.count { font-size: var(--fs-meta); }
+.count[data-state="loading"] { font-style: italic; }
+.count[data-state="unknown"] { font-style: italic; }
+.count[data-state="empty"] { background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-field); padding: 2px 8px; justify-self: start; font-weight: 600; }
+[data-theme="bw"] .count[data-state="empty"] { background: none; color: var(--text); border: 2px solid var(--text); }
+.calchoice .card-row { margin-bottom: 4px; }
+.cards [data-events], .cards [data-last-run] { font-variant-numeric: tabular-nums; }
+
 /* Person chips: who is it for. Selected = tint + 2px border in the person
    colour + tick + bold. "Whole family" is neutral and selected by default. */
 fieldset.chips { display: flex; flex-wrap: wrap; gap: 8px; border: 0; padding: 0; margin: 0; min-width: 0; }

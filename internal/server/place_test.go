@@ -168,3 +168,125 @@ func TestSetupShowsAFieldErrorWhenTheServiceIsUnreachable(t *testing.T) {
 		t.Errorf("German message missing:\n%s", de.body)
 	}
 }
+
+// --- Settings → Household ---
+
+func settingsForm(home string) url.Values {
+	return url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}, "home_name": {home}}
+}
+
+func TestHouseholdSettingsShowTheHomeAndItsLocation(t *testing.T) {
+	b := signedInBox(t)
+	r := b.do(http.MethodGet, "/settings/household", nil, en)
+	if tag := inputTag(r.body, "home_name"); !strings.Contains(tag, `value="Pasing"`) {
+		t.Errorf("home_name = %q", tag)
+	}
+	if !strings.Contains(r.body, "Location in use: 48.15° N, 11.46° E") {
+		t.Errorf("location not shown:\n%s", r.body)
+	}
+}
+
+func TestChangingTheHomeAsksToConfirmAndSavesNothingYet(t *testing.T) {
+	b := signedInBox(t)
+	r := b.do(http.MethodPost, "/settings/household", settingsForm("Neustadt"), en)
+	if r.status != http.StatusOK || len(radios(r.body, "place")) != 2 {
+		t.Fatalf("status %d, choices %q", r.status, radios(r.body, "place"))
+	}
+	if lat, lon, name := homeOf(t, b); lat != 48.15 || lon != 11.46 || name != "Pasing" {
+		t.Errorf("home changed before confirming: %v %v %q", lat, lon, name)
+	}
+	h, _ := b.db.HomeHousehold()
+	if h.TimeFormat != "24h" {
+		t.Errorf("time format saved before confirming: %q", h.TimeFormat)
+	}
+	// What was typed is kept.
+	if !strings.Contains(inputTag(r.body, "home_name"), `value="Neustadt"`) || !strings.Contains(r.body, `value="12h" checked`) || !strings.Contains(r.body, `value="f" checked`) {
+		t.Errorf("typed values not kept:\n%s", r.body)
+	}
+	// Choosing the second place saves the name, the coordinates and the other settings together.
+	f := settingsForm("Neustadt")
+	f.Set("place", "50.25,11.88")
+	f.Set("place_for", "Neustadt")
+	if r := b.post("/settings/household", f); r.status != http.StatusSeeOther || r.location != "/settings/household" {
+		t.Fatalf("confirm = %d %q", r.status, r.location)
+	}
+	h, _ = b.db.HomeHousehold()
+	if h.Latitude != 50.25 || h.Longitude != 11.88 || h.HomeName != "Neustadt" || h.TimeFormat != "12h" {
+		t.Errorf("household = %+v", h)
+	}
+	if !strings.Contains(b.do(http.MethodGet, "/settings/household", nil, en).body, "50.25° N, 11.88° E") {
+		t.Error("new location not shown")
+	}
+}
+
+func TestSettingsWithoutChangingTheHomeDoNotSearchAgain(t *testing.T) {
+	b := signedInBox(t)
+	before := len(b.geo.searches())
+	if r := b.post("/settings/household", settingsForm("Pasing")); r.status != http.StatusSeeOther {
+		t.Fatalf("status = %d", r.status)
+	}
+	// A form without the field (older clients) leaves the home alone too.
+	if r := b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("status = %d", r.status)
+	}
+	if n := len(b.geo.searches()) - before; n != 0 {
+		t.Errorf("%d searches, want none", n)
+	}
+	if lat, lon, _ := homeOf(t, b); lat != 48.15 || lon != 11.46 {
+		t.Errorf("home = %v %v", lat, lon)
+	}
+}
+
+func TestSettingsSearchWhenTheHomeHasNoLocationYet(t *testing.T) {
+	b := signedInBox(t)
+	if _, err := b.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL`); err != nil {
+		t.Fatal(err)
+	}
+	r := b.do(http.MethodGet, "/settings/household", nil, en)
+	if !strings.Contains(r.body, "No location yet") {
+		t.Errorf("missing location not pointed out:\n%s", r.body)
+	}
+	if r := b.post("/settings/household", settingsForm("Pasing")); r.status != http.StatusOK || len(radios(r.body, "place")) != 1 {
+		t.Fatalf("status %d: the unchanged name must be searched while there is no location", r.status)
+	}
+}
+
+func TestSettingsFieldErrorsForNoPlaceAndUnreachableKeepWhatWasTyped(t *testing.T) {
+	b := signedInBox(t)
+	r := b.do(http.MethodPost, "/settings/household", settingsForm("Nirgendwo"), en)
+	tag := inputTag(r.body, "home_name")
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(tag, `aria-invalid="true"`) || !strings.Contains(tag, `value="Nirgendwo"`) || !strings.Contains(r.body, "No place found") {
+		t.Fatalf("no match: status %d, %q", r.status, tag)
+	}
+	if !strings.Contains(r.body, `value="12h" checked`) {
+		t.Error("other typed values lost")
+	}
+	b.geo.setDown(true)
+	r = b.do(http.MethodPost, "/settings/household", settingsForm("Neustadt"), en)
+	tag = inputTag(r.body, "home_name")
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(tag, `value="Neustadt"`) || !strings.Contains(r.body, "could not be reached") {
+		t.Fatalf("unreachable: status %d, %q", r.status, tag)
+	}
+	if _, _, name := homeOf(t, b); name != "Pasing" {
+		t.Errorf("home changed to %q", name)
+	}
+	if r := b.post("/settings/household", settingsForm("  ")); r.status != http.StatusUnprocessableEntity || !strings.Contains(inputTag(r.body, "home_name"), `aria-invalid="true"`) {
+		t.Errorf("empty name: status %d", r.status)
+	}
+}
+
+func TestChangingTheHomeShowsTheWeatherThereAtOnce(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	f.homeWeather(t) // 18 degrees at the old location
+	f.meteo.set(`{"current":{"temperature_2m":3.0,"weather_code":3,"is_day":1}}`, 200)
+	g := settingsForm("Neustadt")
+	g.Set("temperature_unit", "c")
+	g.Set("place", "50.25,11.88")
+	g.Set("place_for", "Neustadt")
+	if r := f.post("/settings/household", g); r.status != http.StatusSeeOther {
+		t.Fatalf("status = %d", r.status)
+	}
+	if chip := chipRe.FindString(f.view(t, "en", f.at(14, 8, 0))); !strings.Contains(chip, "3°C") {
+		t.Errorf("chip = %q, want the weather of the new home", chip)
+	}
+}

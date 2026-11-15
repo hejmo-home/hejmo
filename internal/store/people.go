@@ -75,15 +75,40 @@ func (db *DB) UpdateHouseholdSettings(id string, f TimeFormat, u TemperatureUnit
 	return expectOne(db.sql.Exec(`UPDATE households SET time_format = ?, temperature_unit = ?, auto_update = ?, updated_at = ? WHERE id = ?`, f, u, a, now(), id))
 }
 
+// Home is a household's home: the place's name and its coordinates.
+type Home struct {
+	Name                string
+	Latitude, Longitude float64
+}
+
+// UpdateHouseholdSettingsAndHome is UpdateHouseholdSettings together with the
+// home place, still in one statement. The coordinates must be real degrees
+// and the name not empty.
+func (db *DB) UpdateHouseholdSettingsAndHome(id string, f TimeFormat, u TemperatureUnit, a UpdateMode, home Home) error {
+	if !f.Valid() || !u.Valid() || !a.Valid() {
+		return errors.New("store: unknown time format, temperature unit or update mode")
+	}
+	if err := home.validate(); err != nil {
+		return err
+	}
+	return expectOne(db.sql.Exec(`UPDATE households SET time_format = ?, temperature_unit = ?, auto_update = ?, home_name = ?, latitude = ?, longitude = ?, updated_at = ? WHERE id = ?`,
+		f, u, a, home.Name, home.Latitude, home.Longitude, now(), id))
+}
+
+func (h Home) validate() error {
+	// Written so that NaN fails too.
+	if !(h.Latitude >= -90 && h.Latitude <= 90 && h.Longitude >= -180 && h.Longitude <= 180) {
+		return errors.New("store: home coordinates out of range")
+	}
+	if strings.TrimSpace(h.Name) == "" {
+		return errors.New("store: home name required")
+	}
+	return nil
+}
+
 // SetHouseholdCoordinates stores the coordinates of the household's home.
 func (db *DB) SetHouseholdCoordinates(id string, lat, lon float64) error {
 	return expectOne(db.sql.Exec(`UPDATE households SET latitude = ?, longitude = ?, updated_at = ? WHERE id = ?`, lat, lon, now(), id))
-}
-
-// SetHouseholdHome stores the name and the coordinates of the household's home
-// in one statement.
-func (db *DB) SetHouseholdHome(id, name string, lat, lon float64) error {
-	return expectOne(db.sql.Exec(`UPDATE households SET home_name = ?, latitude = ?, longitude = ?, updated_at = ? WHERE id = ?`, name, lat, lon, now(), id))
 }
 
 // Person is a family member as seen from one household.

@@ -5,6 +5,12 @@
   <p class="lead">{{t "settings.intro"}}</p>
   {{template "error" .}}
   <form method="post" action="/settings/household" class="steps">
+    <fieldset>
+      <legend>{{t "settings.home"}}</legend>
+      {{template "field" (dict "Root" . "Name" "home_name" "Label" (t "setup.field.home_name") "Value" .HomeName "Required" true "Autocomplete" "address-level2")}}
+      {{template "placeChoice" (dict "Root" . "Place" .Place)}}
+      <p class="hint" data-location>{{if .Location}}{{printf (t "settings.home.location") .Location}}{{else}}{{t "settings.home.unknown"}}{{end}}</p>
+    </fieldset>
     {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.time_format"))}}
       {{template "option" (dict "Name" "time_format" "Value" "24h" "Label" (t "settings.time_format.24h") "Checked" (eq .TimeFormat "24h"))}}
       {{template "option" (dict "Name" "time_format" "Value" "12h" "Label" (t "settings.time_format.12h") "Checked" (eq .TimeFormat "12h"))}}

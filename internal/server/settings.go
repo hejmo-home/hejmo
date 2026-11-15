@@ -1,8 +1,11 @@
 package server
 
 import (
+	"context"
 	"encoding/json"
 	"net/http"
+	"strings"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -44,19 +47,36 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, "time_format must be 24h or 12h, temperature_unit c or f and auto_update on, off or notify")
 		return
 	}
-	if err := s.saveSettings(p.household, f, u, a); err != nil {
+	if err := s.saveSettings(p.household, f, u, a, nil); err != nil {
 		s.fail(w, "update settings", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, settingsJSON{f, u, a})
 }
 
-func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p principal, status int, errKey string) {
-	s.render(w, r, status, "household.html", map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Error": errKey,
-		"TimeFormat": string(p.household.TimeFormat), "TemperatureUnit": string(p.household.TemperatureUnit),
-		"AutoUpdate": string(p.household.AutoUpdate), "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
-	})
+// settingsPage is what the household page shows: the stored settings, or what
+// was typed when the page is shown again.
+type settingsPage struct {
+	TimeFormat, TemperatureUnit, AutoUpdate, HomeName string
+	Place                                             *placeView
+}
+
+func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p principal, status int, errKey, errField string, form settingsPage) {
+	data := map[string]any{
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Error": errKey, "ErrorField": errField,
+		"TimeFormat": form.TimeFormat, "TemperatureUnit": form.TemperatureUnit,
+		"AutoUpdate": form.AutoUpdate, "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
+		"HomeName": form.HomeName, "Place": form.Place,
+	}
+	if p.household.Latitude != 0 || p.household.Longitude != 0 {
+		data["Location"] = coordinatesText(p.household.Latitude, p.household.Longitude)
+	}
+	s.render(w, r, status, "household.html", data)
+}
+
+// storedSettings is the page as stored.
+func storedSettings(h store.Household) settingsPage {
+	return settingsPage{string(h.TimeFormat), string(h.TemperatureUnit), string(h.AutoUpdate), h.HomeName, nil}
 }
 
 // handleSettingsHub shows the Settings hub: one calm row per setup screen.
@@ -81,7 +101,7 @@ func (s *server) handleSettingsPage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	s.renderSettings(w, r, p, http.StatusOK, "")
+	s.renderSettings(w, r, p, http.StatusOK, "", "", storedSettings(p.household))
 }
 
 func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
@@ -94,21 +114,66 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 	if v := r.PostFormValue("auto_update"); v != "" { // a form without the field leaves it alone
 		a = store.UpdateMode(v)
 	}
+	typed := settingsPage{string(f), string(u), string(a), p.household.HomeName, nil}
 	if !f.Valid() || !u.Valid() || !a.Valid() {
-		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.invalid")
+		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.invalid", "", storedSettings(p.household))
 		return
 	}
-	if err := s.saveSettings(p.household, f, u, a); err != nil {
+	// The home place (Q59): a form without the field leaves it alone. A new
+	// name, or a home that has no location yet, must be searched and
+	// confirmed before anything is saved.
+	var home *store.Home
+	if _, sent := r.PostForm["home_name"]; sent {
+		name := strings.TrimSpace(r.PostFormValue("home_name"))
+		typed.HomeName = name
+		switch {
+		case name == "":
+			s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "setup.error.home", "home_name", typed)
+			return
+		case name != p.household.HomeName || (p.household.Latitude == 0 && p.household.Longitude == 0):
+			lat, lon, confirmed, view, errKey := s.resolvePlace(r, name, p.household.Region)
+			if errKey != "" {
+				s.renderSettings(w, r, p, http.StatusUnprocessableEntity, errKey, "home_name", typed)
+				return
+			}
+			if !confirmed {
+				typed.Place = view
+				s.renderSettings(w, r, p, http.StatusOK, "", "", typed)
+				return
+			}
+			home = &store.Home{Name: name, Latitude: lat, Longitude: lon}
+		}
+	}
+	if err := s.saveSettings(p.household, f, u, a, home); err != nil {
 		s.fail(w, "update settings", err)
 		return
+	}
+	if home != nil {
+		s.refreshWeather(home.Latitude, home.Longitude)
 	}
 	s.redirectSaved(w, r, "/settings/household", "flash.saved")
 }
 
+// refreshWeather fetches the weather of a new home at once, so the chip does
+// not wait for the next round; a failure is left to that round.
+func (s *server) refreshWeather(lat, lon float64) {
+	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
+	defer cancel()
+	if err := s.weather.Refresh(ctx, lat, lon); err != nil {
+		s.logger.Warn("weather not refreshed for the new home", "err", err)
+	}
+}
+
 // saveSettings stores all household settings in one database write. The update
 // mode also goes to the host script; only a failing settings file is tolerated.
-func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode) error {
-	if err := s.db.UpdateHouseholdSettings(h.ID, f, u, a); err != nil {
+func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode, home *store.Home) error {
+	var err error
+	if home == nil {
+		err = s.db.UpdateHouseholdSettings(h.ID, f, u, a)
+	} else {
+		err = s.db.UpdateHouseholdSettingsAndHome(h.ID, f, u, a, *home)
+	}
+	if err != nil {
 		return err
 	}
 	if a == h.AutoUpdate {

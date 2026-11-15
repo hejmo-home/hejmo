@@ -1,6 +1,7 @@
 package store_test
 
 import (
+	"math"
 	"testing"
 
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -51,5 +52,31 @@ func TestHouseholdSettingsSaveIsAllOrNothing(t *testing.T) {
 	got, _ := db.Household(h.ID)
 	if got.TimeFormat != store.Time24h || got.TemperatureUnit != store.Celsius || got.AutoUpdate != store.UpdateOn {
 		t.Fatalf("a rejected save changed the settings: %+v", got)
+	}
+}
+
+// Q59: the home place and its coordinates are saved with the settings, all or nothing.
+func TestHouseholdHomeIsSavedWithTheSettingsAndRefusesBadCoordinates(t *testing.T) {
+	db, _ := openTemp(t)
+	h, _ := db.CreateHousehold(store.Household{Name: "Family", HomeName: "Pasing"})
+	home := store.Home{Name: "München-Pasing", Latitude: 48.1486, Longitude: 11.4558}
+	if err := db.UpdateHouseholdSettingsAndHome(h.ID, store.Time12h, store.Fahrenheit, store.UpdateNotify, home); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := db.HomeHousehold()
+	if got.HomeName != "München-Pasing" || got.Latitude != 48.1486 || got.Longitude != 11.4558 || got.TimeFormat != store.Time12h {
+		t.Fatalf("saved = %+v", got)
+	}
+	nan := math.NaN()
+	for _, bad := range []store.Home{
+		{Name: "x", Latitude: 90.1, Longitude: 0}, {Name: "x", Latitude: -91, Longitude: 0},
+		{Name: "x", Latitude: 0, Longitude: 180.1}, {Name: "x", Latitude: nan, Longitude: 0}, {Name: " ", Latitude: 1, Longitude: 1},
+	} {
+		if err := db.UpdateHouseholdSettingsAndHome(h.ID, store.Time24h, store.Celsius, store.UpdateOn, bad); err == nil {
+			t.Errorf("accepted %+v", bad)
+		}
+	}
+	if got, _ := db.HomeHousehold(); got.TimeFormat != store.Time12h || got.Latitude != 48.1486 {
+		t.Errorf("a refused save changed the household: %+v", got)
 	}
 }

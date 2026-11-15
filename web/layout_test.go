@@ -237,8 +237,31 @@ func TestFramedPagesAreNeverWiderThanAPhone(t *testing.T) {
 			t.Errorf("stylesheet lacks %q", want)
 		}
 	}
-	if !regexp.MustCompile(`\.frame-nav ul \{[^}]*overflow-x: auto`).MatchString(css) {
-		t.Error("the navigation row does not scroll inside itself")
+	// Design pass 2: the row wraps on a phone, nothing is cut or hidden (as in #86).
+	if !strings.Contains(css, `.frame-nav ul { flex-wrap: wrap; overflow-x: visible; }`) {
+		t.Error("the navigation row does not wrap")
+	}
+}
+
+// Ticket 133, design pass 2: the components of the first steps, the picker, the
+// today card, the child's day and the outside links exist; the language
+// switcher rules of #134 are there once only.
+func TestStylesheetHasTheDesignPass2Components(t *testing.T) {
+	css := stylesheet(t)
+	for _, sel := range []string{
+		`.wsteps .wiz-count {`, "a.ext {", ".copyrow {", ".place-pick {", ".place-list {", ".place-status.ok {", ".fs-bar {", ".fs-head {", ".fs-state[data-state=\"done\"]",
+		".fs-acts {", ".link.quiet {", ".fs-foot {", ".who-chips {", ".fs-sub, .fs-rows {", ".fs-rows .for {", ".today {", ".today-fam ", ".today-people {",
+		".tev", ".today-meal {", ".child-h .marker {", ".today.child {", ".ctasks {", ".icon.star {", `ol.howto > li[data-skipped]::before`,
+	} {
+		if !strings.Contains(css, sel) {
+			t.Errorf("stylesheet lacks %q", sel)
+		}
+	}
+	if n := strings.Count(css, "\n.lang-menu {"); n != 1 {
+		t.Errorf("the language switcher rules are there %d times, want once", n)
+	}
+	if !regexp.MustCompile(`\.wsteps \.wiz-count \{[^}]*margin: 0 0 8px[^}]*text-align: left[^}]*color: var\(--text-secondary\)`).MatchString(css) {
+		t.Error("the step count is not left aligned with an 8 px gap")
 	}
 }
 

@@ -90,13 +90,10 @@ var wholeFamilyTexts = map[string]bool{
 	"setup.welcome.step.2":           true, // "Euer Ort": the family's town
 	"setup.step.home":                true, // "Euer Zuhause"
 	"setup.https.way.public.hint":    true, // "eure Box"
-	"setup.https.way.own.hint":       true, // "euer Zuhause", "mit dem ihr die Box öffnet"
 	"setup.https.public.lan_ip.hint": true, // "eure Geräte"
 	"setup.https.rebind.why":         true, // "bei euch zu Hause"
-	"setup.https.check.ok.hint":      true, // "Öffnet ihr die Box": the family opens it
 	"setup.totp.lead":                true, // "eure Box"
 	"firststeps.family.text":         true, // "bei euch wohnen"
-	"firststeps.calendars.text":      true, // "Ihr könnt auch nur den Kalender der Box nutzen"
 	"firststeps.lead.1":              true, // "euren Tag"
 	"firststeps.lead.2":              true, // "euren Tag"
 	"firststeps.lead.3":              true, // "euren Tag"

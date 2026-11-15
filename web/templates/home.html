@@ -23,4 +23,30 @@
     </ol>
     <form method="post" action="/first-steps/hide"><button class="link later" type="submit">{{t "firststeps.hide"}}</button></form>
   </section>{{end}}
+  {{with .Note}}{{$bad := eq $.ErrorField "text"}}
+  <form class="steps note-day" method="post" action="/notes">
+    <fieldset>
+      <legend>{{t "home.note.title"}}</legend>
+      <p class="hint">{{t "home.note.hint"}}</p>
+      <fieldset class="seg"{{if eq $.ErrorField "day"}} aria-invalid="true" aria-describedby="err-day"{{end}}>
+        <legend>{{t "home.note.day"}}</legend>
+        {{if .ShowToday}}<label><input type="radio" name="day" value="today"{{if eq .Choice "today"}} checked{{end}}>{{t "home.note.today"}}<small>{{.TodayShort}}</small></label>{{end}}
+        <label><input type="radio" name="day" value="tomorrow"{{if eq .Choice "tomorrow"}} checked{{end}}>{{t "home.note.tomorrow"}}<small>{{.TomorrowShort}}</small></label>
+        <label><input type="radio" name="day" value="other"{{if eq .Choice "other"}} checked{{end}}>{{t "home.note.other"}}</label>
+      </fieldset>
+      {{template "fieldError" (dict "Root" $ "Name" "day")}}
+      <div class="other-day">{{template "field" (dict "Root" $ "Name" "other" "Label" (t "home.note.other_date") "Type" "date" "Value" .Other)}}</div>
+      <div class="f{{if $bad}} invalid{{end}}">
+        <label>{{t "home.note.text"}}<textarea name="text" rows="2" maxlength="120"{{if $bad}} autofocus aria-invalid="true" aria-describedby="err-text"{{end}} placeholder="{{t "home.note.placeholder"}}" data-counter>{{.Text}}</textarea></label>
+        <span class="counter" data-format="{{t "home.note.counter"}}">{{printf (t "home.note.counter") .Count}}</span>
+        {{template "fieldError" (dict "Root" $ "Name" "text")}}
+      </div>
+    </fieldset>
+    <button class="button" type="submit">{{t "home.note.save"}}</button>
+  </form>
+  <h2>{{t "home.notes.planned"}}</h2>
+  {{if .Rows}}<ul class="cards">{{range .Rows}}<li><a class="note-row" href="/notes/{{.Day}}"><span class="t"><b>{{.Label}}</b><span>{{.Text}}</span></span><span class="go">{{t "home.notes.change"}}</span></a></li>{{end}}</ul>
+  {{else}}<p class="hint">{{t "home.notes.none"}}</p>{{end}}
+  <script src="/static/note.js" defer></script>
+  {{else}}<p class="lead">{{t "home.placeholder"}}</p>{{end}}
 {{template "foot"}}

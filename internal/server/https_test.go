@@ -283,6 +283,30 @@ func TestTrustPageDeviceOverrideAndFallback(t *testing.T) {
 	}
 }
 
+// ChromeOS has no update-ca-certificates: it is not guessed as Linux.
+func TestChromeOSIsNotTakenForLinux(t *testing.T) {
+	const crOS = "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+	r := newBox(t).trustPage("/ca", "de", crOS)
+	if !strings.Contains(r.body, "nicht erkannt") || strings.Contains(r.body, "update-ca-certificates") && strings.Contains(r.body, `href="?device=linux" aria-current="true"`) {
+		t.Errorf("ChromeOS must count as unknown:\n%s", r.body)
+	}
+}
+
+// An iPad is not called an iPhone in the check lines, Firefox on Android gets its note, and the Mac button is clicked.
+func TestTrustTextsForIPadFirefoxAndMac(t *testing.T) {
+	b := newBox(t)
+	ios := b.trustPage("/ca?device=ios", "de", iPhone)
+	if strings.Contains(ios.body, "Dein iPhone vertraut") || strings.Contains(ios.body, "iPhone ist nicht") {
+		t.Errorf("check lines name the iPhone only:\n%s", ios.body)
+	}
+	if a := b.trustPage("/ca", "de", androidUA); !strings.Contains(a.body, "Firefox") {
+		t.Error("Android misses the Firefox note")
+	}
+	if m := b.trustPage("/ca", "de", macUA); strings.Contains(m.body, "Tippe auf den Knopf") || !strings.Contains(m.body, "Klicke auf den Knopf") {
+		t.Error("Mac text must say Klicke")
+	}
+}
+
 func TestDetectsDevicesFromTheUserAgent(t *testing.T) {
 	for ua, want := range map[string]string{iPhone: "ios", androidUA: "android", macUA: "mac", windowsUA: "windows", linuxUA: "linux"} {
 		b := newBox(t)
@@ -387,8 +411,11 @@ func TestTrustPageFingerprintInPlainWords(t *testing.T) {
 		}
 	}
 	win := b.trustPage("/ca", "de", windowsUA)
-	if strings.Contains(win.body, `class="fp"`) || !strings.Contains(win.body, "SHA-1") || !strings.Contains(win.body, "nicht möglich") {
-		t.Errorf("Windows must say that comparing is not possible:\n%s", win.body)
+	// Windows shows only SHA-1, but the grid and the mismatch hint stay for the comparison with the box log.
+	for _, want := range []string{`class="fp"`, "<span>" + pairs[0] + "</span>", "SHA-1", "Protokoll der Box"} {
+		if !strings.Contains(win.body, want) {
+			t.Errorf("Windows fingerprint section misses %q", want)
+		}
 	}
 }
 

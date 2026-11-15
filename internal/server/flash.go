@@ -75,7 +75,16 @@ func (s *server) successText(lang, key, arg string) string {
 			}
 		}
 	}
-	if key == "flash.meals_saved" {
+	switch key {
+	case "flash.note_saved":
+		if arg != "" {
+			return s.noteSavedText(lang, arg)
+		}
+	case "flash.waste_on":
+		if arg != "" {
+			return s.wasteOnText(lang, arg)
+		}
+	case "flash.meals_saved":
 		// The line names the week that was saved; the cookie holds its Monday.
 		monday := requestedWeek(arg, s.now().Format(task.DateLayout))
 		return fmt.Sprintf(s.i18n.T(lang, key), isoWeek(monday))

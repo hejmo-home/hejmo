@@ -29,9 +29,9 @@
     <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{t "trust.fp.title"}}</summary>
     <div>
       <p>{{rich (t "trust.fp.what")}}</p>
-      {{if ne .Device "windows"}}<div class="fp" aria-label="{{tf "trust.fp.aria" "fingerprint" .Fingerprint}}">{{range .Pairs}}<span>{{.}}</span>{{end}}</div>{{end}}
+      <div class="fp" aria-label="{{tf "trust.fp.aria" "fingerprint" .Fingerprint}}">{{range .Pairs}}<span>{{.}}</span>{{end}}</div>
       <p class="hint">{{rich (t (printf "trust.%s.fp" .Device))}}</p>
-      {{if ne .Device "windows"}}<p class="hint">{{t "trust.fp.mismatch"}}</p>{{end}}
+      <p class="hint">{{t "trust.fp.mismatch"}}</p>
     </div>
   </details>
   {{if .Continue}}<details class="more no-print">

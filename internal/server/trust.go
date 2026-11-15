@@ -24,6 +24,8 @@ var trustDevices = []string{devIOS, devAndroid, devMac, devWindows, devLinux}
 func detectDevice(userAgent string) string {
 	ua := strings.ToLower(userAgent)
 	switch {
+	case strings.Contains(ua, "cros"): // ChromeOS has no update-ca-certificates: unknown
+		return ""
 	case strings.Contains(ua, "iphone"), strings.Contains(ua, "ipad"), strings.Contains(ua, "ipod"):
 		return devIOS
 	case strings.Contains(ua, "android"):
@@ -32,7 +34,7 @@ func detectDevice(userAgent string) string {
 		return devWindows
 	case strings.Contains(ua, "macintosh"), strings.Contains(ua, "mac os x"):
 		return devMac
-	case strings.Contains(ua, "linux"), strings.Contains(ua, "x11"), strings.Contains(ua, "cros"):
+	case strings.Contains(ua, "linux"), strings.Contains(ua, "x11"):
 		return devLinux
 	}
 	return ""

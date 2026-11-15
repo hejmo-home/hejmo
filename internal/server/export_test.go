@@ -73,3 +73,19 @@ func RenderOTPPreview(lang, state string) (string, error) {
 	}
 	return b.String(), nil
 }
+
+// RenderPersonalView renders the markup of a personal view model in a language,
+// with the template the display page uses. The design preview calls it.
+func RenderPersonalView(lang string, v familyview.PersonalView) (string, error) {
+	bundle := i18n.MustLoad()
+	tpl, err := parsePages().Clone()
+	if err != nil {
+		return "", err
+	}
+	tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return bundle.T(lang, key) }})
+	var b strings.Builder
+	if err := tpl.ExecuteTemplate(&b, "personalView", v); err != nil {
+		return "", err
+	}
+	return b.String(), nil
+}

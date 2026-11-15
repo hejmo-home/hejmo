@@ -541,6 +541,70 @@ fieldset.look { display: flex; flex-wrap: wrap; gap: 8px; }
 .marker.preview[data-shape="cross-filled"] { clip-path: polygon(34% 0, 66% 0, 66% 34%, 100% 34%, 100% 66%, 66% 66%, 66% 100%, 34% 100%, 34% 66%, 0 66%, 0 34%, 34% 34%); }
 .marker.preview[data-shape="star-filled"] { clip-path: polygon(50% 0, 62% 36%, 100% 36%, 69% 58%, 81% 96%, 50% 73%, 19% 96%, 31% 58%, 0 36%, 38% 36%); }
 
+/* Calendar screen (ticket 5.12; ADR 0011, 0015): the week as seven day
+   columns with multi-day and all-day events as continuous bars above them.
+   Narrow screens (a phone, a portrait tablet) stack the days and show the
+   bars as items inside the days they cover. */
+.wk-tools { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap); margin: 0 0 var(--gap); }
+.wk-nav { display: flex; flex-wrap: wrap; gap: var(--gap-cards); }
+.wk-range { margin: 0 auto 0 0; display: flex; gap: 10px; align-items: baseline; flex-wrap: wrap; }
+.wk-search { display: flex; flex-wrap: wrap; align-items: end; gap: var(--gap-cards); margin: 0 0 var(--gap-section); max-width: 560px; }
+.wk-search .f { flex: 1 1 220px; }
+.wk { display: grid; gap: 6px; margin: 0 0 var(--gap-section); }
+.wk ol, .wk ul { list-style: none; margin: 0; padding: 0; }
+.wk-heads, .wk-bars, .wk-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
+.wk-bars { row-gap: 4px; grid-auto-flow: row dense; } /* dense packing: a bar goes to the first row where its columns are free */
+.c1 { grid-column-start: 1; } .c2 { grid-column-start: 2; } .c3 { grid-column-start: 3; } .c4 { grid-column-start: 4; } .c5 { grid-column-start: 5; } .c6 { grid-column-start: 6; } .c7 { grid-column-start: 7; }
+.s1 { grid-column-end: span 1; } .s2 { grid-column-end: span 2; } .s3 { grid-column-end: span 3; } .s4 { grid-column-end: span 4; } .s5 { grid-column-end: span 5; } .s6 { grid-column-end: span 6; } .s7 { grid-column-end: span 7; }
+.wk-heads li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; padding: 6px 8px; font-size: var(--fs-label); color: var(--text-secondary); min-width: 0; }
+.wk-heads li[data-today], .wk-days li[data-today] .wk-dayname { color: var(--accent); }
+.wk-heads li[data-today] { border-bottom: 3px solid var(--accent); }
+.wk-heads .dn { font-weight: 700; color: var(--text); }
+.wk-heads .hol { flex-basis: 100%; font-size: var(--fs-meta); background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-field); padding: 1px 8px; overflow-wrap: anywhere; }
+.wk-heads .add { margin-left: auto; display: inline-flex; align-items: center; justify-content: center; min-width: var(--touch-target); min-height: var(--touch-target); margin-block: -10px; font-size: 22px; text-decoration: none; }
+.bar, .ev { background: var(--pc-tint, var(--surface)); color: var(--pc-text, var(--text)); border-radius: var(--radius-card); padding: var(--pad-card); min-width: 0; overflow-wrap: break-word; hyphens: auto; }
+.bar { display: flex; align-items: center; gap: 8px; min-height: 36px; }
+.bar.before { border-top-left-radius: 0; border-bottom-left-radius: 0; }
+.bar.after { border-top-right-radius: 0; border-bottom-right-radius: 0; }
+.wk-days > li { background: var(--surface); border-radius: var(--radius-card); padding: 6px; min-height: 180px; min-width: 0; display: grid; gap: var(--gap-cards); align-content: start; }
+.wk-days .ev { background: var(--pc-tint, var(--background)); display: grid; gap: 2px; padding: 8px 8px; }
+.wk-days ul { display: grid; gap: var(--gap-cards); }
+.wk-dayname { display: none; margin: 0; font-size: var(--fs-person-name); }
+.wk-allday { display: none !important; }
+.wk-days .none { margin: 0; font-size: var(--fs-meta); color: var(--text-secondary); }
+.ev .title, .bar .title { font-weight: var(--fw-event-title); font-size: var(--fs-label-large); color: inherit; text-decoration: none; }
+.ev a.title:hover, .bar a.title:hover { text-decoration: underline; }
+.ev .meta, .bar .meta { font-size: var(--fs-meta); }
+.ev .icon, .bar .icon { stroke: currentColor; vertical-align: middle; }
+.who { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
+.ev .marker, .bar .marker { width: 10px; height: 10px; }
+[data-theme="bw"] .ev .marker, [data-theme="bw"] .bar .marker { width: var(--marker-size-bw-event); height: var(--marker-size-bw-event); }
+.sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+[data-theme="bw"] .bar, [data-theme="bw"] .wk-days .ev { background: var(--event-card); color: var(--text); border: 1.5px solid var(--text); }
+[data-theme="bw"] .wk-heads li[data-today] { border-bottom-width: 4px; }
+.lock { color: var(--text-secondary); }
+@media (max-width: 760px) {
+  .wk-heads, .wk-bars { display: none; }
+  .wk-days { grid-template-columns: minmax(0, 1fr); }
+  .wk-days > li { min-height: 0; }
+  .wk-dayname { display: block; }
+  .wk-allday { display: grid !important; }
+}
+/* Date and time side by side. */
+.dt { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 9em); gap: var(--gap); align-items: start; }
+.dt:not(:has(.when-timed)) { grid-template-columns: minmax(0, 1fr); }
+.steps:has(input[name="all_day"]:checked) .dt { grid-template-columns: minmax(0, 1fr); }
+/* An all-day event hides the times of the new-event form. */
+.steps:has(input[name="all_day"]:checked) .when-timed { display: none; }
+textarea { width: 100%; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-field); padding: 10px 12px; }
+/* Stars (ADR 0018): the balance chip in the personal view header, the value of a task. */
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.chip.stars { font-variant-numeric: tabular-nums; }
+.task-stars { margin-left: auto; flex: none; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.chip.stars::before { content: "\2605\00a0" / ""; }
+.task-stars::before { content: "+" / ""; }
+.task-stars::after { content: "\00a0\2605" / ""; }
+
 /* Phones (ticket 5.13): the QR code a phone scans, and the offline view. */
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
 .pair-qr svg { display: block; width: 100%; height: auto; }

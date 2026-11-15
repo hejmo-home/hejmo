@@ -38,7 +38,7 @@ func entriesToJSON(es []list.Entry) []entryJSON {
 	return out
 }
 
-// listError answers a failed list operation; ok is false when it was handled.
+// listError answers a failed list operation with the matching status.
 func (s *server) listError(w http.ResponseWriter, what string, err error) {
 	switch {
 	case errors.Is(err, store.ErrNotFound):
@@ -145,7 +145,11 @@ func (s *server) apiUpdateList(w http.ResponseWriter, r *http.Request, p princip
 		s.listError(w, "update list", err)
 		return
 	}
-	counts, _ := s.db.EntryCounts(p.household.ID)
+	counts, err := s.db.EntryCounts(p.household.ID)
+	if err != nil {
+		s.listError(w, "count list entries", err)
+		return
+	}
 	writeJSON(w, http.StatusOK, listToJSON(l, counts[l.ID]))
 }
 

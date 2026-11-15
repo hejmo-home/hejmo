@@ -369,10 +369,10 @@ func entryOrder(t *testing.T, b *box, listID string) []string {
 	return out
 }
 
-func TestMovingSwapsWithTheNeighbouringOpenEntryAndSkipsTickedOffOnes(t *testing.T) {
+func TestMovingPassesTheNeighbouringOpenEntryAndSkipsTickedOffOnes(t *testing.T) {
 	b := signedInBox(t)
 	id, ids := listWith(t, b, "Shop", []string{"t"}, "a", "t", "c", "d")
-	// c moves up past the ticked-off t and swaps with a.
+	// c moves up past the ticked-off t and the open a (an insert).
 	r := b.post("/lists/"+id+"/entries/"+ids["c"]+"/move", url.Values{"direction": {"up"}})
 	if r.status != http.StatusSeeOther || r.location != "/lists/"+id+"?edit=1" {
 		t.Fatalf("move = %d %q", r.status, r.location)
@@ -384,7 +384,7 @@ func TestMovingSwapsWithTheNeighbouringOpenEntryAndSkipsTickedOffOnes(t *testing
 	if !strings.Contains(page, `&#34;c&#34; moved up.`) || !strings.Contains(page, `data-success`) {
 		t.Errorf("success line after moving up:\n%s", page)
 	}
-	// a moves down past t and swaps with d.
+	// a moves down past t and d.
 	b.post("/lists/"+id+"/entries/"+ids["a"]+"/move", url.Values{"direction": {"down"}})
 	if got := entryOrder(t, b, id); !sameStrings(got, []string{"c", "t", "d", "a"}) {
 		t.Fatalf("after down: %v", got)
@@ -525,7 +525,7 @@ func cssRule(t *testing.T, css, selector string) string {
 }
 
 // Design pass 2 on 6.1: nothing is wider than a 375 px screen, and long words
-// break and hyphenate under the box language.
+// break and hyphenate under the page language.
 func TestListsStylesKeepLongTextInsideThePhoneWidth(t *testing.T) {
 	raw, err := fs.ReadFile(web.Static, "static/hejmo.css")
 	if err != nil {
@@ -560,7 +560,7 @@ func TestListsStylesKeepLongTextInsideThePhoneWidth(t *testing.T) {
 	}
 }
 
-func TestEveryListsPageCarriesTheBoxLanguageForHyphenation(t *testing.T) {
+func TestEveryListsPageCarriesThePageLanguageForHyphenation(t *testing.T) {
 	for _, lang := range []string{"en", "de"} {
 		b := signedInBox(t)
 		id, _ := listWith(t, b, "Wocheneinkauf Großfamilie", []string{"a"}, "a", "b")

@@ -214,6 +214,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /lists/{id}/entries/{entry}/delete", s.handleEntryDelete)
 	mux.HandleFunc("POST /lists/{id}/entries/{entry}/move", s.handleEntryMove)
 	mux.HandleFunc("POST /lists/{id}/completed/delete", s.handleTickedDelete)
+	mux.HandleFunc("GET /meals", s.handleMealsPage)
+	mux.HandleFunc("POST /meals", s.handleMealsSave)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)

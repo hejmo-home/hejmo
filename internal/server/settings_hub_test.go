@@ -37,7 +37,7 @@ func hubTargets(body string) []string {
 // 5.18: the navigation holds everyday screens only; setup screens sit under Settings (ADR 0017).
 func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
 	b := signedInBox(t)
-	want := []string{"/", "/calendar", "/tasks", "/lists", "/settings"}
+	want := []string{"/", "/calendar", "/tasks", "/meals", "/lists", "/settings"}
 	for _, page := range []string{"/", "/tasks", "/settings", "/calendars", "/displays"} {
 		got := navTargets(t, b.get(page).body)
 		if strings.Join(got, " ") != strings.Join(want, " ") {

@@ -397,8 +397,9 @@ func (s *server) handleTickedDelete(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleEntryMove swaps an open entry of a manual list with the next open entry
-// up or down; ticked-off entries between them keep their places.
+// handleEntryMove moves an open entry of a manual list past the next open entry
+// up or down (an insert, not a swap): ticked-off entries between them shift by
+// one place, and unticking one later puts it back at its stored position.
 func (s *server) handleEntryMove(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {

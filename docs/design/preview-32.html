@@ -149,7 +149,6 @@ iframe{border:0;background:#fff;display:block}
   --pad-card: 10px 12px;
   --marker-size: 14px;
   --marker-size-bw-column: 16px;
-  --marker-size-bw-event: 9px;
   --journey-border: 1.5px;
   --icon-stroke: 1.8px;
   --touch-target: 44px;
@@ -321,10 +320,9 @@ a { color: var(--accent); }
 [data-person="8"] { --pc: var(--person-8); --pc-tint: var(--person-8-tint); --pc-text: var(--person-8-text); }
 
 /* Marker: circle in the person colour; in bw a shape (16px in the column
-   header, 9px on an event, .marker.small). */
+   header). */
 .marker { display: inline-block; width: var(--marker-size); height: var(--marker-size); border-radius: 50%; background: var(--pc); vertical-align: middle; flex: none; }
 [data-theme="bw"] .marker { width: var(--marker-size-bw-column); height: var(--marker-size-bw-column); background: var(--text); border: 2px solid var(--text); border-radius: 0; }
-[data-theme="bw"] .marker.small { width: var(--marker-size-bw-event); height: var(--marker-size-bw-event); border-width: 1.5px; }
 [data-theme="bw"] .marker[data-shape="circle-filled"] { border-radius: 50%; }
 [data-theme="bw"] .marker[data-shape="circle-empty"] { border-radius: 50%; background: transparent; }
 [data-theme="bw"] .marker[data-shape="square-filled"] { border-radius: 0; }
@@ -334,10 +332,10 @@ a { color: var(--accent); }
 [data-theme="bw"] .marker[data-shape="cross-filled"] { border: 0; border-radius: 0; clip-path: polygon(34% 0, 66% 0, 66% 34%, 100% 34%, 100% 66%, 66% 66%, 66% 100%, 34% 100%, 34% 66%, 0 66%, 0 34%, 34% 34%); }
 [data-theme="bw"] .marker[data-shape="star-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 62% 36%, 100% 36%, 69% 58%, 81% 96%, 50% 73%, 19% 96%, 31% 58%, 0 36%, 38% 36%); }
 
-/* Event cards list their people as markers; only bw needs them (colour cards
-   carry the person colour). */
-.event .markers { display: none; }
-[data-theme="bw"] .event .markers { display: flex; gap: 4px; margin-bottom: 4px; }
+/* Who an event is for is said in words (Q62): a line under the title that
+   wraps, so the card grows; names are never cut. Markers stay in the column
+   headers and the person chips. */
+.event .who { font-size: var(--fs-meta); font-weight: var(--fw-meta); overflow-wrap: break-word; hyphens: manual; }
 
 /* Family view building blocks (screens use them from ticket 5.3 on). */
 .tile, .column, .chip { background: var(--surface); }
@@ -384,7 +382,7 @@ a { color: var(--accent); }
 @media (min-width: 900px) {
   .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); align-items: start; }
   .frame.has-nav .frame-bar { grid-column: 1 / -1; }
-  .frame-nav ul { flex-direction: column; overflow-x: visible; }
+  .frame-nav ul { flex-direction: column; }
 }
 
 /* Portrait shows at most four person columns (ticket 5.7, ADR 0016). The
@@ -412,6 +410,8 @@ body:has(.family-page) { overflow: hidden; }
 .strip .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
 .strip-item { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border-radius: var(--radius-card); padding: var(--pad-card); font-size: var(--fs-event-title); }
 .strip-item .title { font-weight: var(--fw-event-title); }
+.strip-item .who { font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: break-word; hyphens: manual; }
+.who .nm { display: inline-block; max-width: 100%; }
 .strip-item .meta { font-size: var(--fs-meta); color: var(--text-secondary); }
 .strip-item[data-kind="holiday"] { background: var(--notice-bg); color: var(--notice-text); }
 .strip-item[data-kind="holiday"] .meta { color: var(--notice-text); }
@@ -659,9 +659,8 @@ fieldset.look .pchip:has(input:focus-visible)::after, fieldset.look .pchip[data-
 .ev a.title:hover, .bar a.title:hover { text-decoration: underline; }
 .ev .meta, .bar .meta { font-size: var(--fs-meta); }
 .ev .icon, .bar .icon { stroke: currentColor; vertical-align: middle; }
-.who { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-.ev .marker, .bar .marker { width: 10px; height: 10px; }
-[data-theme="bw"] .ev .marker, [data-theme="bw"] .bar .marker { width: var(--marker-size-bw-event); height: var(--marker-size-bw-event); }
+.ev .who, .bar .who { display: block; font-size: var(--fs-meta); overflow-wrap: break-word; hyphens: manual; }
+.who .nm { display: inline-block; max-width: 100%; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 [data-theme="bw"] .bar, [data-theme="bw"] .wk-days .ev { background: var(--event-card); color: var(--text); border: 1.5px solid var(--text); }
 [data-theme="bw"] .wk-heads li[data-today] { border-bottom-width: 4px; }
@@ -742,6 +741,101 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .marker.shaped[data-shape="square-empty"] { background: transparent; }
 .marker.shaped[data-shape="triangle-filled"] { border: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .marker.shaped[data-shape="diamond-filled"] { border: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+/* Frame: on wide screens the "Back to Settings" link and the content both sit
+   right of the navigation (the link used to take the second column alone and
+   push the navigation to full width). On a phone the navigation scrolls
+   sideways inside the screen instead of widening the page. */
+.frame > * { min-width: 0; }
+@media (min-width: 900px) {
+  .frame.has-nav > .frame-nav { grid-row: span 2; }
+  .frame.has-nav > .back, .frame.has-nav > main { grid-column: 2; }
+}
+
+/* Meal plan (ticket 6.3, ADR 0015): the week as one card per day, one row per
+   mealtime in the order of the day. A row is the mealtime (icon and word) and
+   the dish; a long dish wraps instead of being cut off. Two columns of days on
+   a tablet, one on a phone; inside a narrow card the word sits above the dish. */
+.weeknav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-cards); margin: 0 0 var(--gap); }
+.weeknav .wk { display: grid; gap: 0; min-width: 9em; text-align: center; flex: 1 1 auto; }
+.weeknav .wk strong { font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
+.weeknav .wk span { font-size: var(--fs-label); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.wbtn { display: inline-flex; align-items: center; gap: 4px; min-height: var(--touch-target); padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
+.wbtn .icon { stroke: currentColor; flex: none; }
+.wbtn.this { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+[data-theme="bw"] .wbtn { border-width: 2px; }
+.weeknav-row { display: flex; flex-wrap: wrap; gap: var(--gap-cards); align-items: center; justify-content: space-between; max-width: 1200px; }
+@media (max-width: 599px) {
+  .weeknav .wk { order: -1; flex-basis: 100%; text-align: left; }
+  .weeknav .wbtn { flex: 1 1 auto; justify-content: center; }
+}
+.recipe { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 var(--gap-section); max-width: 720px; }
+.recipe .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.steps.wide { max-width: none; grid-template-columns: minmax(0, 1fr); }
+.meal-week > * { min-width: 0; }
+.meal-week { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--gap); align-items: start; margin: 0 0 var(--gap-section); max-width: 1200px; }
+.steps .meal-week { margin: 0; }
+.meal-day { container-type: inline-size; background: var(--surface); border: 0; border-radius: var(--radius-tile); padding: 14px 16px 16px; display: grid; gap: 8px; min-width: 0; margin: 0; }
+.meal-day legend, .meal-day h2 { float: left; width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); margin: 0 0 4px; padding: 0; }
+.meal-day .date { color: var(--text-secondary); font-weight: 400; font-size: var(--fs-label-large); font-variant-numeric: tabular-nums; }
+.meal-day .today { align-self: center; font-size: var(--fs-meta); font-weight: 700; color: var(--accent-text); background: var(--accent); border-radius: var(--radius-chip); padding: 2px 10px; }
+.meal-day[data-today] { outline: 3px solid var(--accent); outline-offset: -3px; }
+.mrow { display: grid; grid-template-columns: 8.2em minmax(0, 1fr); gap: 4px 10px; align-items: center; }
+.mt { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-label-large); color: var(--text-secondary); min-width: 0; }
+.mt .icon { flex: none; }
+.mrow textarea { font: inherit; color: var(--text); width: 100%; min-height: var(--touch-target); padding: 10px 12px; line-height: 1.35; border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); resize: none; overflow: hidden; field-sizing: content; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.mrow textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.mrow .ferr { grid-column: 2; }
+.mrow.invalid textarea { border: 2px solid var(--error-text); }
+[data-theme="bw"] .mrow textarea { border-color: var(--text); }
+@container (max-width: 270px) {
+  .mrow { grid-template-columns: minmax(0, 1fr); }
+  .mrow .ferr { grid-column: 1; }
+}
+/* Read view (children, ADR 0015): the planned dishes, large; an unplanned
+   mealtime is left out, an empty day says so in words. */
+.meal-day dl { margin: 0; display: grid; gap: 10px; }
+.meal-day dl > div { display: grid; gap: 2px; }
+.meal-day dt { font-size: var(--fs-label); }
+.meal-day dd { margin: 0 0 0 26px; font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: anywhere; }
+.meal-day .none { margin: 0; color: var(--text-secondary); }
+/* Save bar: the one primary action stays in reach while the week scrolls. */
+.savebar { position: sticky; bottom: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 0; margin-top: -4px; background: var(--background); border-top: 1px solid var(--border); max-width: 1200px; }
+.savebar .dirty { font-size: var(--fs-label); font-weight: 700; color: var(--text); }
+.form-error { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 var(--gap); }
+.form-error .icon { flex: none; stroke: var(--error-text); margin-top: 2px; }
+.form-error a { color: var(--error-text); font-weight: 700; }
+[data-theme="bw"] .form-error { border: 2px solid var(--text); }
+
+/* Cut-off times (ADR 0016): one switch row per mealtime. Off = "Shown all
+   day"; on = the time it disappears, in a time capsule. */
+.cutoffs .cut { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--border); }
+.cutoffs .cut:first-of-type { border-top: 0; }
+.cutoffs .card-row .t b { display: inline-flex; align-items: center; gap: 6px; }
+.cutoffs .at { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-left: 26px; font-size: var(--fs-label-large); color: var(--text); }
+@supports selector(:has(a)) {
+  .cut:has(.switch input:not(:checked)) .at { display: none; }
+}
+
+/* Time capsule (shared, every time field): the time in a pill as on iOS. On
+   phones and tablets the system picker opens (input type="time"); on a computer
+   and on displays a picker panel opens below it: hours and minutes as tap
+   targets, no wheel, no scrolling (works with a mouse and on E-Ink). */
+.tcap { font: inherit; font-size: var(--fs-event-title); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--background); width: auto; }
+.tcap::-webkit-calendar-picker-indicator { display: none; }
+[data-theme="bw"] .tcap { border: 2px solid var(--text); background: var(--surface); }
+.tcap[aria-expanded="true"] { border: 2px solid var(--accent); }
+.tpick { display: grid; gap: 12px; width: min(100%, 340px); padding: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
+[data-theme="bw"] .tpick { border: 2px solid var(--text); }
+.tpick .now { font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); font-variant-numeric: tabular-nums; }
+.tpick fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.tpick .grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.tpick legend { font-size: var(--fs-label); color: var(--text-secondary); padding: 0; margin: 0 0 6px; }
+.tpick label { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: var(--touch-target); border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); font-variant-numeric: tabular-nums; cursor: pointer; }
+.tpick input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; min-height: 0; padding: 0; }
+.tpick label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+.tpick label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] .tpick label { border-color: var(--text); }
+.tpick .done { justify-self: end; }
 </template>
 <template id="js">// Shared form patterns (ticket 5.16). Everything works without this script:
 // the server reads "no person chosen" as the whole family. The script only
@@ -760,6 +854,145 @@ document.addEventListener("change", function (e) {
     whole.checked = !others.some(function (o) { return o.checked; });
   }
 });
+// Meal plan: a dish field grows with its text where field-sizing is missing,
+// Enter saves instead of starting a new line, and the save bar says in words
+// when something is not saved yet. The server strips newlines anyway.
+(function () {
+  function grow(t) { t.style.height = "auto"; t.style.height = t.scrollHeight + 2 + "px"; }
+  var supports = window.CSS && CSS.supports && CSS.supports("field-sizing", "content");
+  document.querySelectorAll(".mrow textarea").forEach(function (t) {
+    if (!supports) grow(t);
+    t.addEventListener("input", function () {
+      if (!supports) grow(t);
+      var d = document.querySelector(".savebar .dirty"); if (d) d.hidden = false;
+    });
+    t.addEventListener("keydown", function (e) {
+      if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); t.form.requestSubmit(); }
+    });
+  });
+})();
+
+// Time picker (shared by every time field). The time sits in a capsule
+// (input.tcap). On iPhone, iPad and Android the capsule stays the system time
+// field, so the system picker opens. On a computer and on displays, click or
+// Enter opens a panel below it: the time large, the hours as tap targets, the
+// minutes in 5-minute steps (with AM/PM in the 12-hour format). No wheel, no
+// scrolling, so it works with a mouse and on E-Ink. Typing into the capsule
+// still works, and without this script the plain time field works too.
+(function () {
+  var script = document.currentScript;
+  var texts = (script && script.dataset) || {};
+  var mobile = /Android|iPhone|iPad|iPod/.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+  var fine = !!(window.matchMedia && matchMedia("(pointer: fine)").matches);
+  if (mobile && !fine) return;
+  var twelve = texts.timeFormat === "12h"; // data-time-format of this script tag
+  var count = 0;
+
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function parse(v) { var m = /^(\d\d):(\d\d)/.exec(v || ""); return m ? { h: +m[1], m: +m[2] } : null; }
+  function el(tag, cls, text) {
+    var e = document.createElement(tag);
+    if (cls) e.className = cls;
+    if (text !== undefined) e.textContent = text;
+    return e;
+  }
+  // A radio of the picker; "form" points at no form, so it is never submitted.
+  function choice(name, value, text, label) {
+    var l = el("label"), r = el("input");
+    r.type = "radio"; r.name = name; r.value = value; r.setAttribute("form", "tpick-none");
+    l.appendChild(r); l.appendChild(document.createTextNode(text));
+    label.appendChild(l);
+    return r;
+  }
+  function group(legend, extra) {
+    var f = el("fieldset", extra), l = el("legend", legend.cls, legend.text);
+    f.appendChild(l);
+    return f;
+  }
+
+  function open(input) {
+    if (input.getAttribute("aria-expanded") === "true") return;
+    var id = ++count;
+    var panel = el("div", "tpick");
+    panel.id = "tpick-" + id;
+    panel.setAttribute("role", "group");
+    var holder = input.closest("label");
+    panel.setAttribute("aria-label", (holder ? holder.textContent : input.getAttribute("aria-label") || "").trim());
+    var now = el("div", "now");
+    now.setAttribute("aria-live", "polite");
+    panel.appendChild(now);
+
+    var hoursSet = group({ text: texts.hour || "Hour" }), hours = el("div", "grid");
+    hoursSet.appendChild(hours);
+    var hourRadios = [];
+    for (var i = twelve ? 1 : 0; i < (twelve ? 13 : 24); i++) {
+      hourRadios.push(choice("tp_h" + id, String(i), twelve ? String(i) : pad(i), hours));
+    }
+    panel.appendChild(hoursSet);
+
+    var minutesSet = group({ text: texts.minute || "Minute" }), minutes = el("div", "grid");
+    minutesSet.appendChild(minutes);
+    var minuteRadios = [];
+    for (var m = 0; m < 60; m += 5) minuteRadios.push(choice("tp_m" + id, String(m), pad(m), minutes));
+    panel.appendChild(minutesSet);
+
+    var am, pm;
+    if (twelve) {
+      var seg = group({ text: "AM / PM", cls: "sr" }, "seg");
+      am = choice("tp_p" + id, "am", "AM", seg);
+      pm = choice("tp_p" + id, "pm", "PM", seg);
+      panel.appendChild(seg);
+    }
+    var done = el("button", "button secondary done", texts.done || "Done");
+    done.type = "button";
+    panel.appendChild(done);
+
+    function show() {
+      var t = parse(input.value);
+      hourRadios.forEach(function (r) { r.checked = !!t && (twelve ? (t.h % 12 || 12) : t.h) === +r.value; });
+      minuteRadios.forEach(function (r) { r.checked = !!t && t.m === +r.value; });
+      if (twelve) { am.checked = !!t && t.h < 12; pm.checked = !!t && t.h >= 12; }
+      now.textContent = t ? (twelve ? (t.h % 12 || 12) + ":" + pad(t.m) + " " + (t.h < 12 ? "AM" : "PM") : pad(t.h) + ":" + pad(t.m)) : "--:--";
+    }
+    function write() {
+      var t = parse(input.value) || { h: 0, m: 0 };
+      var h = +(hourRadios.filter(function (r) { return r.checked; })[0] || { value: twelve ? t.h % 12 || 12 : t.h }).value;
+      var min = +(minuteRadios.filter(function (r) { return r.checked; })[0] || { value: t.m }).value;
+      if (twelve) h = (h % 12) + ((pm.checked || (!am.checked && t.h >= 12)) ? 12 : 0);
+      input.value = pad(h) + ":" + pad(min);
+      input.dispatchEvent(new Event("input", { bubbles: true }));
+      input.dispatchEvent(new Event("change", { bubbles: true }));
+      show();
+    }
+    function close() {
+      input.removeEventListener("input", show);
+      input.removeEventListener("keydown", onKey);
+      panel.remove();
+      input.setAttribute("aria-expanded", "false");
+      input.removeAttribute("aria-controls");
+      input.focus();
+    }
+    function onKey(e) { if (e.key === "Escape") { e.preventDefault(); close(); } }
+    panel.addEventListener("change", function (e) { if (e.target.type === "radio") write(); });
+    panel.addEventListener("keydown", onKey);
+    done.addEventListener("click", close);
+    input.addEventListener("input", show);
+    input.addEventListener("keydown", onKey);
+
+    (holder || input).insertAdjacentElement("afterend", panel);
+    input.setAttribute("aria-expanded", "true");
+    input.setAttribute("aria-controls", panel.id);
+    show();
+  }
+
+  document.querySelectorAll("input.tcap[type=time]").forEach(function (input) {
+    input.setAttribute("aria-expanded", "false");
+    input.addEventListener("click", function () { open(input); });
+    input.addEventListener("keydown", function (e) {
+      if (e.key === "Enter") { e.preventDefault(); open(input); }
+    });
+  });
+})();
 
 // People form (ticket 76): a colour and marker pair another person already
 // has is disabled, so it cannot be chosen. Picking a colour updates which
@@ -785,7 +1018,7 @@ document.addEventListener("change", function (e) {
   });
 })();
 </template>
-<template id="doc0"><body class="web">
+<template id="doc0" data-body-class="web">
 <a class="skip" href="#content">Skip to content</a>
 <div class="frame framed has-nav">
 
@@ -797,6 +1030,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Home</a></li>
   <li><a href="/calendar">Calendar</a></li>
   <li><a href="/tasks">Tasks</a></li>
+  <li><a href="/meals">Meals</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
@@ -811,15 +1045,15 @@ document.addEventListener("change", function (e) {
 
   <ul class="list-rows">
     
-    <li data-list="9bc1e595-1538-4d93-9e4a-2adc16d1ae8e"><a href="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="state">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="cc874fef-27e3-48a1-888a-cc172c1fe699"><a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="state">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="14665c6c-8027-4b83-a803-90da066ebab6"><a href="/lists/14665c6c-8027-4b83-a803-90da066ebab6"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="state">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="836bfb3d-9195-4f61-8386-8c81185bac22"><a href="/lists/836bfb3d-9195-4f61-8386-8c81185bac22"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="state">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="8ff827db-550f-45ff-a879-028c349f2787"><a href="/lists/8ff827db-550f-45ff-a879-028c349f2787"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="state">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="1d859bb0-d68e-41e8-90b6-56e611181221"><a href="/lists/1d859bb0-d68e-41e8-90b6-56e611181221"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="state">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="fb6a33bd-3ce9-4b11-9463-c6534a930620"><a href="/lists/fb6a33bd-3ce9-4b11-9463-c6534a930620"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="state">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="cc18da93-3e71-4380-a14f-03ff63d58070"><a href="/lists/cc18da93-3e71-4380-a14f-03ff63d58070"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="state">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="0758d700-32c1-41cd-8320-629e2e47fa0e"><a href="/lists/0758d700-32c1-41cd-8320-629e2e47fa0e"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="state">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="49a69029-89ee-4cc9-8e24-bc45f93d8760"><a href="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="state">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
   </ul>
 
@@ -870,7 +1104,7 @@ document.addEventListener("change", function (e) {
 </main>
 </div>
 </template>
-<template id="doc1"><body class="web">
+<template id="doc1" data-body-class="web">
 <a class="skip" href="#content">Skip to content</a>
 <div class="frame framed has-nav">
 
@@ -882,6 +1116,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Home</a></li>
   <li><a href="/calendar">Calendar</a></li>
   <li><a href="/tasks">Tasks</a></li>
+  <li><a href="/meals">Meals</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
@@ -896,7 +1131,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint list-meta">Sorted by hand. 5 open, 2 ticked off.</p>
 
-  <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries" class="add-entry">
+  <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries" class="add-entry">
     
     <div class="f">
   <label>New entry
@@ -910,35 +1145,35 @@ document.addEventListener("change", function (e) {
   
   <ul class="entries">
   <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/f9a86df3-c91b-4b7a-b6ef-f3455b8b16a0/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/7133b877-919e-4870-b93a-4c19c89022b5/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Bananas"><span class="box" aria-hidden="true"></span><span class="title">Bananas</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/dad04360-b370-49ce-9026-93484b81fe20/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Coffee for Papa"><span class="box" aria-hidden="true"></span><span class="title">Coffee for Papa</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/122517b8-9097-4d3a-ac0a-89f949dc8ad1/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Birthday card for Mama"><span class="box" aria-hidden="true"></span><span class="title">Birthday card for Mama</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/8209e038-650e-4243-9ea8-2dac38564029/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><span class="box" aria-hidden="true"></span><span class="title">Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/69be55e3-c54a-4b73-9ba8-83c2f36d58f0/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/3f08d1f5-e353-4a5c-a59c-b82654240a12/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Pasta"><span class="box" aria-hidden="true"></span><span class="title">Pasta</span></button></form>
   </li>
 </ul>
-  <p class="tools"><a href="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e?edit=1">Sort or remove entries</a></p>
+  <p class="tools"><a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699?edit=1">Sort or remove entries</a></p>
   <div class="group-head"><h2>Ticked off (2)</h2><a href="?ticked=hide">Hide</a></div>
   <ul class="entries">
   <li data-done="true">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/2335276d-afcd-44fb-87c6-94207ed5a96a/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/286a5832-041d-445d-befa-71547c09dcba/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Mark as open: Oat milk"><span class="box" aria-hidden="true"></span><span class="title"><s>Oat milk</s></span></button></form>
   </li>
 <li data-done="true">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/2887b229-667c-4c6a-843d-b0af1da63c45/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/c22c7568-6ab5-4a13-a83d-29ec50db1b42/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Mark as open: Football socks for Sebastian"><span class="box" aria-hidden="true"></span><span class="title"><s>Football socks for Sebastian</s></span></button></form>
   </li>
 </ul>
@@ -947,11 +1182,11 @@ document.addEventListener("change", function (e) {
   <details open class="danger">
   <summary>Delete ticked-off entries (2)</summary>
     <p>The 2 ticked-off entries of this list are deleted for good. Open entries stay.</p>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/completed/delete"><button class="button danger" type="submit">Yes, delete 2 entries</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/completed/delete"><button class="button danger" type="submit">Yes, delete 2 entries</button></form>
   </details>
 
   <section class="list-settings" aria-labelledby="settings">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/settings" class="steps">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/settings" class="steps">
       
       <details class="more">
   <summary id="settings"><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>List settings<span class="sum">Green, filled square, by hand</span></summary>
@@ -998,7 +1233,7 @@ document.addEventListener("change", function (e) {
   <details class="danger">
   <summary>Delete list</summary>
     <p>The list is deleted for good, with all its entries.</p>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
   </details>
   
 
@@ -1006,7 +1241,7 @@ document.addEventListener("change", function (e) {
 </main>
 </div>
 </template>
-<template id="doc2"><body class="web">
+<template id="doc2" data-body-class="web">
 <a class="skip" href="#content">Skip to content</a>
 <div class="frame framed has-nav">
 
@@ -1018,6 +1253,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Home</a></li>
   <li><a href="/calendar">Calendar</a></li>
   <li><a href="/tasks">Tasks</a></li>
+  <li><a href="/meals">Meals</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
@@ -1031,36 +1267,36 @@ document.addEventListener("change", function (e) {
 <p class="msg ok" role="status" data-success><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>&#34;Bananas&#34; moved up.</p>
 <h1 class="list-title"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span>Shopping</span></h1>
 <p class="hint list-meta">Sort or remove entries</p>
-<div class="edit-bar"><p>Changes are saved straight away.</p><a class="button" href="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e">Done</a></div>
+<div class="edit-bar"><p>Changes are saved straight away.</p><a class="button" href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699">Done</a></div>
 
 <ul class="entries">
   <li><span class="title">Bananas</span><span class="row">
     
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/f9a86df3-c91b-4b7a-b6ef-f3455b8b16a0/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Bananas"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/f9a86df3-c91b-4b7a-b6ef-f3455b8b16a0/delete"><button class="button secondary" type="submit" aria-label="Remove: Bananas"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/7133b877-919e-4870-b93a-4c19c89022b5/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Bananas"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/7133b877-919e-4870-b93a-4c19c89022b5/delete"><button class="button secondary" type="submit" aria-label="Remove: Bananas"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   <li><span class="title">Coffee for Papa</span><span class="row">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/dad04360-b370-49ce-9026-93484b81fe20/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/dad04360-b370-49ce-9026-93484b81fe20/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/dad04360-b370-49ce-9026-93484b81fe20/delete"><button class="button secondary" type="submit" aria-label="Remove: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/delete"><button class="button secondary" type="submit" aria-label="Remove: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   <li><span class="title">Birthday card for Mama</span><span class="row">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/122517b8-9097-4d3a-ac0a-89f949dc8ad1/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/122517b8-9097-4d3a-ac0a-89f949dc8ad1/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/122517b8-9097-4d3a-ac0a-89f949dc8ad1/delete"><button class="button secondary" type="submit" aria-label="Remove: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/delete"><button class="button secondary" type="submit" aria-label="Remove: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   <li><span class="title">Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle</span><span class="row">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/8209e038-650e-4243-9ea8-2dac38564029/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/8209e038-650e-4243-9ea8-2dac38564029/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/8209e038-650e-4243-9ea8-2dac38564029/delete"><button class="button secondary" type="submit" aria-label="Remove: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/delete"><button class="button secondary" type="submit" aria-label="Remove: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   <li><span class="title">Pasta</span><span class="row">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/69be55e3-c54a-4b73-9ba8-83c2f36d58f0/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Pasta"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/3f08d1f5-e353-4a5c-a59c-b82654240a12/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Pasta"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
     
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/69be55e3-c54a-4b73-9ba8-83c2f36d58f0/delete"><button class="button secondary" type="submit" aria-label="Remove: Pasta"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/3f08d1f5-e353-4a5c-a59c-b82654240a12/delete"><button class="button secondary" type="submit" aria-label="Remove: Pasta"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   </ul>
 <div class="group-head"><h2>Ticked off (2)</h2></div>
 <ul class="entries">
   <li><span class="title"><s>Oat milk</s></span><span class="row">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/2335276d-afcd-44fb-87c6-94207ed5a96a/delete"><button class="button secondary" type="submit" aria-label="Remove: Oat milk"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/286a5832-041d-445d-befa-71547c09dcba/delete"><button class="button secondary" type="submit" aria-label="Remove: Oat milk"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   <li><span class="title"><s>Football socks for Sebastian</s></span><span class="row">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/2887b229-667c-4c6a-843d-b0af1da63c45/delete"><button class="button secondary" type="submit" aria-label="Remove: Football socks for Sebastian"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/c22c7568-6ab5-4a13-a83d-29ec50db1b42/delete"><button class="button secondary" type="submit" aria-label="Remove: Football socks for Sebastian"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   </ul>
 </div>
 
@@ -1068,7 +1304,7 @@ document.addEventListener("change", function (e) {
 </main>
 </div>
 </template>
-<template id="doc3"><body class="web">
+<template id="doc3" data-body-class="web">
 <a class="skip" href="#content">Skip to content</a>
 <div class="frame framed has-nav">
 
@@ -1080,6 +1316,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Home</a></li>
   <li><a href="/calendar">Calendar</a></li>
   <li><a href="/tasks">Tasks</a></li>
+  <li><a href="/meals">Meals</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
@@ -1094,7 +1331,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint list-meta">Sorted A to Z. 4 open, 1 ticked off.</p>
 
-  <form method="post" action="/lists/8ff827db-550f-45ff-a879-028c349f2787/entries" class="add-entry">
+  <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries" class="add-entry">
     
     <div class="f">
   <label>New entry
@@ -1108,27 +1345,27 @@ document.addEventListener("change", function (e) {
   
   <ul class="entries">
   <li>
-    <form method="post" action="/lists/8ff827db-550f-45ff-a879-028c349f2787/entries/0286d0f5-3938-4efc-8a2b-a51a2814982e/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries/c97bf71c-8299-43ce-b394-fbe42cd8dff5/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Ärmelschoner"><span class="box" aria-hidden="true"></span><span class="title">Ärmelschoner</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/8ff827db-550f-45ff-a879-028c349f2787/entries/d9b3b9bd-93fb-4300-abde-cac424e9b0b5/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries/0d7188a0-0e5a-4439-ad28-780a9a4be94c/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Charger"><span class="box" aria-hidden="true"></span><span class="title">Charger</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/8ff827db-550f-45ff-a879-028c349f2787/entries/a72efdbb-e448-4bd0-b2a1-959c902b3445/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries/fa1bb04e-1f20-4f01-af2c-f8d63ce3debf/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Passports"><span class="box" aria-hidden="true"></span><span class="title">Passports</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/8ff827db-550f-45ff-a879-028c349f2787/entries/55f569bf-c51a-4c4a-b4f2-30c8ce4f5464/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries/adaa6e1c-680a-47c7-ada0-b4ea12737398/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Swimsuits"><span class="box" aria-hidden="true"></span><span class="title">Swimsuits</span></button></form>
   </li>
 </ul>
-  <p class="tools"><a href="/lists/8ff827db-550f-45ff-a879-028c349f2787?edit=1">Remove entries</a></p>
+  <p class="tools"><a href="/lists/1d859bb0-d68e-41e8-90b6-56e611181221?edit=1">Remove entries</a></p>
   <div class="group-head"><h2>Ticked off (1)</h2><a href="?ticked=hide">Hide</a></div>
   <ul class="entries">
   <li data-done="true">
-    <form method="post" action="/lists/8ff827db-550f-45ff-a879-028c349f2787/entries/bc14de40-cdf3-407c-a531-f71d537d3c66/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries/f08ee837-41ba-466c-b266-48a171fde877/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Mark as open: Sun hats"><span class="box" aria-hidden="true"></span><span class="title"><s>Sun hats</s></span></button></form>
   </li>
 </ul>
@@ -1137,11 +1374,11 @@ document.addEventListener("change", function (e) {
   <details class="danger">
   <summary>Delete ticked-off entry (1)</summary>
     <p>The ticked-off entry of this list is deleted for good. Open entries stay.</p>
-    <form method="post" action="/lists/8ff827db-550f-45ff-a879-028c349f2787/completed/delete"><button class="button danger" type="submit">Yes, delete 1 entry</button></form>
+    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/completed/delete"><button class="button danger" type="submit">Yes, delete 1 entry</button></form>
   </details>
 
   <section class="list-settings" aria-labelledby="settings">
-    <form method="post" action="/lists/8ff827db-550f-45ff-a879-028c349f2787/settings" class="steps">
+    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/settings" class="steps">
       
       <details class="more">
   <summary id="settings"><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>List settings<span class="sum">Plum, triangle, A to Z</span></summary>
@@ -1188,7 +1425,7 @@ document.addEventListener("change", function (e) {
   <details class="danger">
   <summary>Delete list</summary>
     <p>The list is deleted for good, with all its entries.</p>
-    <form method="post" action="/lists/8ff827db-550f-45ff-a879-028c349f2787/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
+    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
   </details>
   
 
@@ -1196,7 +1433,7 @@ document.addEventListener("change", function (e) {
 </main>
 </div>
 </template>
-<template id="doc4"><body class="web">
+<template id="doc4" data-body-class="web">
 <a class="skip" href="#content">Skip to content</a>
 <div class="frame framed has-nav">
 
@@ -1208,6 +1445,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Home</a></li>
   <li><a href="/calendar">Calendar</a></li>
   <li><a href="/tasks">Tasks</a></li>
+  <li><a href="/meals">Meals</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
@@ -1222,7 +1460,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint list-meta">Sorted by hand. 5 open, 2 ticked off.</p>
 
-  <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries" class="add-entry">
+  <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries" class="add-entry">
     
     <div class="f">
   <label>New entry
@@ -1236,39 +1474,39 @@ document.addEventListener("change", function (e) {
   
   <ul class="entries">
   <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/f9a86df3-c91b-4b7a-b6ef-f3455b8b16a0/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/7133b877-919e-4870-b93a-4c19c89022b5/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
       <button class="big-check" type="submit" aria-label="Tick off: Bananas"><span class="box" aria-hidden="true"></span><span class="title">Bananas</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/dad04360-b370-49ce-9026-93484b81fe20/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
       <button class="big-check" type="submit" aria-label="Tick off: Coffee for Papa"><span class="box" aria-hidden="true"></span><span class="title">Coffee for Papa</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/122517b8-9097-4d3a-ac0a-89f949dc8ad1/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
       <button class="big-check" type="submit" aria-label="Tick off: Birthday card for Mama"><span class="box" aria-hidden="true"></span><span class="title">Birthday card for Mama</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/8209e038-650e-4243-9ea8-2dac38564029/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
       <button class="big-check" type="submit" aria-label="Tick off: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><span class="box" aria-hidden="true"></span><span class="title">Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/69be55e3-c54a-4b73-9ba8-83c2f36d58f0/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/3f08d1f5-e353-4a5c-a59c-b82654240a12/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
       <button class="big-check" type="submit" aria-label="Tick off: Pasta"><span class="box" aria-hidden="true"></span><span class="title">Pasta</span></button></form>
   </li>
 </ul>
-  <p class="tools"><a href="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e?edit=1&amp;ticked=hide">Sort or remove entries</a></p>
-  <p class="hidden-line">2 ticked-off entries are hidden. <a href="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e">Show them</a></p>
+  <p class="tools"><a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699?edit=1&amp;ticked=hide">Sort or remove entries</a></p>
+  <p class="hidden-line">2 ticked-off entries are hidden. <a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699">Show them</a></p>
   
 
   
   <details class="danger">
   <summary>Delete ticked-off entries (2)</summary>
     <p>The 2 ticked-off entries of this list are deleted for good. Open entries stay.</p>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/completed/delete"><input type="hidden" name="ticked" value="hide"><button class="button danger" type="submit">Yes, delete 2 entries</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/completed/delete"><input type="hidden" name="ticked" value="hide"><button class="button danger" type="submit">Yes, delete 2 entries</button></form>
   </details>
 
   <section class="list-settings" aria-labelledby="settings">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/settings" class="steps">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/settings" class="steps">
       <input type="hidden" name="ticked" value="hide">
       <details class="more">
   <summary id="settings"><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>List settings<span class="sum">Green, filled square, by hand</span></summary>
@@ -1315,7 +1553,7 @@ document.addEventListener("change", function (e) {
   <details class="danger">
   <summary>Delete list</summary>
     <p>The list is deleted for good, with all its entries.</p>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
   </details>
   
 
@@ -1323,7 +1561,7 @@ document.addEventListener("change", function (e) {
 </main>
 </div>
 </template>
-<template id="doc5"><body class="web">
+<template id="doc5" data-body-class="web">
 <a class="skip" href="#content">Skip to content</a>
 <div class="frame framed has-nav">
 
@@ -1335,6 +1573,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Home</a></li>
   <li><a href="/calendar">Calendar</a></li>
   <li><a href="/tasks">Tasks</a></li>
+  <li><a href="/meals">Meals</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
@@ -1349,15 +1588,15 @@ document.addEventListener("change", function (e) {
 
   <ul class="list-rows">
     
-    <li data-list="9bc1e595-1538-4d93-9e4a-2adc16d1ae8e"><a href="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="state">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="cc874fef-27e3-48a1-888a-cc172c1fe699"><a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="state">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="14665c6c-8027-4b83-a803-90da066ebab6"><a href="/lists/14665c6c-8027-4b83-a803-90da066ebab6"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="state">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="836bfb3d-9195-4f61-8386-8c81185bac22"><a href="/lists/836bfb3d-9195-4f61-8386-8c81185bac22"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="state">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="8ff827db-550f-45ff-a879-028c349f2787"><a href="/lists/8ff827db-550f-45ff-a879-028c349f2787"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="state">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="1d859bb0-d68e-41e8-90b6-56e611181221"><a href="/lists/1d859bb0-d68e-41e8-90b6-56e611181221"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="state">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="fb6a33bd-3ce9-4b11-9463-c6534a930620"><a href="/lists/fb6a33bd-3ce9-4b11-9463-c6534a930620"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="state">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="cc18da93-3e71-4380-a14f-03ff63d58070"><a href="/lists/cc18da93-3e71-4380-a14f-03ff63d58070"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="state">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="0758d700-32c1-41cd-8320-629e2e47fa0e"><a href="/lists/0758d700-32c1-41cd-8320-629e2e47fa0e"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="state">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="49a69029-89ee-4cc9-8e24-bc45f93d8760"><a href="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="state">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
   </ul>
 
@@ -1408,7 +1647,7 @@ document.addEventListener("change", function (e) {
 </main>
 </div>
 </template>
-<template id="doc6"><body class="web">
+<template id="doc6" data-body-class="web">
 <a class="skip" href="#content">Skip to content</a>
 <div class="frame framed has-nav">
 
@@ -1420,6 +1659,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Home</a></li>
   <li><a href="/calendar">Calendar</a></li>
   <li><a href="/tasks">Tasks</a></li>
+  <li><a href="/meals">Meals</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
@@ -1434,15 +1674,15 @@ document.addEventListener("change", function (e) {
 
   <ul class="list-rows">
     
-    <li data-list="9bc1e595-1538-4d93-9e4a-2adc16d1ae8e"><a href="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="state">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="cc874fef-27e3-48a1-888a-cc172c1fe699"><a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="state">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="14665c6c-8027-4b83-a803-90da066ebab6"><a href="/lists/14665c6c-8027-4b83-a803-90da066ebab6"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="state">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="836bfb3d-9195-4f61-8386-8c81185bac22"><a href="/lists/836bfb3d-9195-4f61-8386-8c81185bac22"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="state">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="8ff827db-550f-45ff-a879-028c349f2787"><a href="/lists/8ff827db-550f-45ff-a879-028c349f2787"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="state">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="1d859bb0-d68e-41e8-90b6-56e611181221"><a href="/lists/1d859bb0-d68e-41e8-90b6-56e611181221"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="state">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="fb6a33bd-3ce9-4b11-9463-c6534a930620"><a href="/lists/fb6a33bd-3ce9-4b11-9463-c6534a930620"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="state">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="cc18da93-3e71-4380-a14f-03ff63d58070"><a href="/lists/cc18da93-3e71-4380-a14f-03ff63d58070"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="state">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="0758d700-32c1-41cd-8320-629e2e47fa0e"><a href="/lists/0758d700-32c1-41cd-8320-629e2e47fa0e"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="state">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="49a69029-89ee-4cc9-8e24-bc45f93d8760"><a href="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="state">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
   </ul>
 
@@ -1493,7 +1733,7 @@ document.addEventListener("change", function (e) {
 </main>
 </div>
 </template>
-<template id="doc7"><body class="web">
+<template id="doc7" data-body-class="web">
 <a class="skip" href="#content">Skip to content</a>
 <div class="frame framed has-nav">
 
@@ -1504,6 +1744,7 @@ document.addEventListener("change", function (e) {
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
   <li><a href="/tasks">Tasks</a></li>
+  <li><a href="/meals">Meals</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   </ul></nav>
 
@@ -1522,23 +1763,23 @@ document.addEventListener("change", function (e) {
   
   <ul class="entries">
   <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/f9a86df3-c91b-4b7a-b6ef-f3455b8b16a0/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/7133b877-919e-4870-b93a-4c19c89022b5/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Bananas"><span class="box" aria-hidden="true"></span><span class="title">Bananas</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/dad04360-b370-49ce-9026-93484b81fe20/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Coffee for Papa"><span class="box" aria-hidden="true"></span><span class="title">Coffee for Papa</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/122517b8-9097-4d3a-ac0a-89f949dc8ad1/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Birthday card for Mama"><span class="box" aria-hidden="true"></span><span class="title">Birthday card for Mama</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/8209e038-650e-4243-9ea8-2dac38564029/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><span class="box" aria-hidden="true"></span><span class="title">Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/69be55e3-c54a-4b73-9ba8-83c2f36d58f0/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/3f08d1f5-e353-4a5c-a59c-b82654240a12/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Pasta"><span class="box" aria-hidden="true"></span><span class="title">Pasta</span></button></form>
   </li>
 </ul>
@@ -1546,11 +1787,11 @@ document.addEventListener("change", function (e) {
   <div class="group-head"><h2>Ticked off (2)</h2><a href="?ticked=hide">Hide</a></div>
   <ul class="entries">
   <li data-done="true">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/2335276d-afcd-44fb-87c6-94207ed5a96a/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/286a5832-041d-445d-befa-71547c09dcba/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Mark as open: Oat milk"><span class="box" aria-hidden="true"></span><span class="title"><s>Oat milk</s></span></button></form>
   </li>
 <li data-done="true">
-    <form method="post" action="/lists/9bc1e595-1538-4d93-9e4a-2adc16d1ae8e/entries/2887b229-667c-4c6a-843d-b0af1da63c45/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/c22c7568-6ab5-4a13-a83d-29ec50db1b42/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Mark as open: Football socks for Sebastian"><span class="box" aria-hidden="true"></span><span class="title"><s>Football socks for Sebastian</s></span></button></form>
   </li>
 </ul>
@@ -1561,7 +1802,7 @@ document.addEventListener("change", function (e) {
 </main>
 </div>
 </template>
-<template id="doc8"><body class="web">
+<template id="doc8" data-body-class="web">
 <a class="skip" href="#content">Skip to content</a>
 <div class="frame framed has-nav">
 
@@ -1573,6 +1814,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Home</a></li>
   <li><a href="/calendar">Calendar</a></li>
   <li><a href="/tasks">Tasks</a></li>
+  <li><a href="/meals">Meals</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
@@ -1587,7 +1829,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint list-meta">Sorted by hand. No entries yet.</p>
 
-  <form method="post" action="/lists/0758d700-32c1-41cd-8320-629e2e47fa0e/entries" class="add-entry">
+  <form method="post" action="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760/entries" class="add-entry">
     
     <div class="f">
   <label>New entry
@@ -1607,7 +1849,7 @@ document.addEventListener("change", function (e) {
   
 
   <section class="list-settings" aria-labelledby="settings">
-    <form method="post" action="/lists/0758d700-32c1-41cd-8320-629e2e47fa0e/settings" class="steps">
+    <form method="post" action="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760/settings" class="steps">
       
       <details class="more">
   <summary id="settings"><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>List settings<span class="sum">Ochre, diamond, by hand</span></summary>
@@ -1654,7 +1896,7 @@ document.addEventListener("change", function (e) {
   <details class="danger">
   <summary>Delete list</summary>
     <p>The list is deleted for good, with all its entries.</p>
-    <form method="post" action="/lists/0758d700-32c1-41cd-8320-629e2e47fa0e/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
+    <form method="post" action="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
   </details>
   
 
@@ -1662,7 +1904,7 @@ document.addEventListener("change", function (e) {
 </main>
 </div>
 </template>
-<template id="doc9"><body class="web">
+<template id="doc9" data-body-class="web">
 <a class="skip" href="#content">Zum Inhalt springen</a>
 <div class="frame framed has-nav">
 
@@ -1674,6 +1916,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/lists" aria-current="page">Listen</a></li>
   <li><a href="/settings">Einstellungen</a></li>
   </ul></nav>
@@ -1688,11 +1931,11 @@ document.addEventListener("change", function (e) {
 
   <ul class="list-rows">
     
-    <li data-list="0a7016a5-5de9-4ac0-a167-fd443a459540"><a href="/lists/0a7016a5-5de9-4ac0-a167-fd443a459540"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Kindergeburtstag: Ausleihliste für die Nachbarschaftsgartenparty</b><span class="state">Alle 5 abgehakt</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="3dc36f58-d3f4-403d-9093-79a1ef275577"><a href="/lists/3dc36f58-d3f4-403d-9093-79a1ef275577"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Kindergeburtstag: Ausleihliste für die Nachbarschaftsgartenparty</b><span class="state">Alle 5 abgehakt</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="c70185ce-d514-423e-844b-d8d8c499d506"><a href="/lists/c70185ce-d514-423e-844b-d8d8c499d506"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Weihnachtsgeschenkideen</b><span class="state">Noch keine Einträge</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="a0c2ecf0-c13c-4c57-9c97-3518d16c8387"><a href="/lists/a0c2ecf0-c13c-4c57-9c97-3518d16c8387"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Weihnachtsgeschenkideen</b><span class="state">Noch keine Einträge</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="02eec9f8-a95b-48ae-834b-6911319c425d"><a href="/lists/02eec9f8-a95b-48ae-834b-6911319c425d"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Wocheneinkauf Großfamilie</b><span class="state">6 offen, 1 abgehakt</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="26a346a7-0b6d-460e-a2a9-ed4adbfd12ad"><a href="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Wocheneinkauf Großfamilie</b><span class="state">6 offen, 1 abgehakt</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
   </ul>
 
@@ -1743,7 +1986,7 @@ document.addEventListener("change", function (e) {
 </main>
 </div>
 </template>
-<template id="doc10"><body class="web">
+<template id="doc10" data-body-class="web">
 <a class="skip" href="#content">Zum Inhalt springen</a>
 <div class="frame framed has-nav">
 
@@ -1755,6 +1998,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/">Start</a></li>
   <li><a href="/calendar">Kalender</a></li>
   <li><a href="/tasks">Aufgaben</a></li>
+  <li><a href="/meals">Essen</a></li>
   <li><a href="/lists" aria-current="page">Listen</a></li>
   <li><a href="/settings">Einstellungen</a></li>
   </ul></nav>
@@ -1769,7 +2013,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint list-meta">Von Hand sortiert. 6 offen, 1 abgehakt.</p>
 
-  <form method="post" action="/lists/02eec9f8-a95b-48ae-834b-6911319c425d/entries" class="add-entry">
+  <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries" class="add-entry">
     
     <div class="f">
   <label>Neuer Eintrag
@@ -1783,35 +2027,35 @@ document.addEventListener("change", function (e) {
   
   <ul class="entries">
   <li>
-    <form method="post" action="/lists/02eec9f8-a95b-48ae-834b-6911319c425d/entries/f73f11ca-90bf-4c25-b258-7172fe2a5d35/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/132fa849-3fc9-4e61-9c8c-07ed7ebc686a/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Kinderwagenregenschutzverdeck für den Zwillingswagen"><span class="box" aria-hidden="true"></span><span class="title">Kinderwagenregenschutzverdeck für den Zwillingswagen</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/02eec9f8-a95b-48ae-834b-6911319c425d/entries/19d63426-7834-47a2-b710-a35841280237/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/50697a7b-9315-4a9e-8d56-8b1603c4d9f0/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Geburtstagsgeschenkpapier für Sebastians Kindergartenfreundin"><span class="box" aria-hidden="true"></span><span class="title">Geburtstagsgeschenkpapier für Sebastians Kindergartenfreundin</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/02eec9f8-a95b-48ae-834b-6911319c425d/entries/3d8cbd04-d605-4f2e-b645-ae6eca4ae3db/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/a40ea3ee-26ff-4672-ab46-9d24aa2247f3/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Sonnencreme für empfindliche Kinderhaut, Lichtschutzfaktor 50"><span class="box" aria-hidden="true"></span><span class="title">Sonnencreme für empfindliche Kinderhaut, Lichtschutzfaktor 50</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/02eec9f8-a95b-48ae-834b-6911319c425d/entries/be55aa3c-5444-4057-9dc6-e1ad60f910fc/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/6e6092a3-ea9e-45af-b205-8f374a28f1ef/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Haushaltsreinigungsschwämme"><span class="box" aria-hidden="true"></span><span class="title">Haushaltsreinigungsschwämme</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/02eec9f8-a95b-48ae-834b-6911319c425d/entries/8b25ecaa-8a08-4ad6-bf7b-562952244e0d/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/d117cd60-a097-4bab-8050-e99eb2dcecde/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Milch"><span class="box" aria-hidden="true"></span><span class="title">Milch</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/02eec9f8-a95b-48ae-834b-6911319c425d/entries/eb8f7e54-a635-41f2-af3e-f07adf3e6fb8/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/f71c9e58-d29c-4038-b5b6-a4e0b5ab36cb/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Sonnencreme für empfindliche Kinderhaut, Lichtschutzfaktor 50"><span class="box" aria-hidden="true"></span><span class="title">Sonnencreme für empfindliche Kinderhaut, Lichtschutzfaktor 50</span></button></form>
   </li>
 </ul>
-  <p class="tools"><a href="/lists/02eec9f8-a95b-48ae-834b-6911319c425d?edit=1">Einträge sortieren oder entfernen</a></p>
+  <p class="tools"><a href="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad?edit=1">Einträge sortieren oder entfernen</a></p>
   <div class="group-head"><h2>Abgehakt (1)</h2><a href="?ticked=hide">Ausblenden</a></div>
   <ul class="entries">
   <li data-done="true">
-    <form method="post" action="/lists/02eec9f8-a95b-48ae-834b-6911319c425d/entries/ab719baa-4ab1-4fc7-b6cd-53be215e9deb/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/a8f5a8bc-96d1-4f22-b4fd-9bf2cd1786e8/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Als offen markieren: Fußballschienbeinschoner für Maximilian-Alexander"><span class="box" aria-hidden="true"></span><span class="title"><s>Fußballschienbeinschoner für Maximilian-Alexander</s></span></button></form>
   </li>
 </ul>
@@ -1820,11 +2064,11 @@ document.addEventListener("change", function (e) {
   <details class="danger">
   <summary>Abgehakten Eintrag löschen (1)</summary>
     <p>Der abgehakte Eintrag dieser Liste wird endgültig gelöscht. Offene Einträge bleiben.</p>
-    <form method="post" action="/lists/02eec9f8-a95b-48ae-834b-6911319c425d/completed/delete"><button class="button danger" type="submit">Ja, 1 Eintrag löschen</button></form>
+    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/completed/delete"><button class="button danger" type="submit">Ja, 1 Eintrag löschen</button></form>
   </details>
 
   <section class="list-settings" aria-labelledby="settings">
-    <form method="post" action="/lists/02eec9f8-a95b-48ae-834b-6911319c425d/settings" class="steps">
+    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/settings" class="steps">
       
       <details class="more">
   <summary id="settings"><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>Listeneinstellungen<span class="sum">Grün, volles Quadrat, von Hand</span></summary>
@@ -1871,7 +2115,7 @@ document.addEventListener("change", function (e) {
   <details class="danger">
   <summary>Liste löschen</summary>
     <p>Die Liste wird endgültig gelöscht, mit allen Einträgen.</p>
-    <form method="post" action="/lists/02eec9f8-a95b-48ae-834b-6911319c425d/delete"><button class="button danger" type="submit">Ja, Liste löschen</button></form>
+    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/delete"><button class="button danger" type="submit">Ja, Liste löschen</button></form>
   </details>
   
 
@@ -1887,13 +2131,15 @@ document.addEventListener("change", function (e) {
   var css = document.getElementById("css").innerHTML.replace("/static/fonts/Figtree-wght.ttf", fontUrl).replace(/&amp;/g, "&").replace(/&gt;/g, ">").replace(/&lt;/g, "<");
   var js = document.getElementById("js").textContent;
   document.querySelectorAll("iframe[data-doc]").forEach(function (f) {
-    var inner = document.getElementById("doc" + f.getAttribute("data-doc")).innerHTML;
+    var tpl = document.getElementById("doc" + f.getAttribute("data-doc"));
+    var inner = tpl.innerHTML;
+    var bodyClass = tpl.getAttribute("data-body-class");
     f.addEventListener("load", function () {
       var a = f.getAttribute("data-anchor");
       var el = a && f.contentDocument.querySelector(a);
       if (el) el.scrollIntoView();
     });
-    f.srcdoc = '<!doctype html><html lang="' + (f.getAttribute("data-lang") || "en") + '" data-theme="' + f.getAttribute("data-theme") + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>' + css + '</style></head>' + inner + '<script>' + js + '<\/script></html>';
+    f.srcdoc = '<!doctype html><html lang="' + (f.getAttribute("data-lang") || "en") + '" data-theme="' + f.getAttribute("data-theme") + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>' + css + '</style></head><body class="' + bodyClass + '">' + inner + '<script>' + js + '<\/script></body></html>';
   });
 })();
 </script>

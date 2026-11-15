@@ -59,7 +59,7 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		form             url.Values
 		want             string
 	}{
-		{"settings", "/settings/household", "/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}, "Saved."},
+		{"settings", "/settings/household", "/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}, "Household settings saved."},
 		{"task add", "/tasks", "/tasks", url.Values{"person": {tb.miaID}, "title": {"Read"}, "repeat": {"daily"}}, "Task added."},
 		{"task done", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"1"}}, "Marked as done."},
 		{"task reopen", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"0"}}, "Marked as open."},
@@ -92,7 +92,7 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 func TestSuccessLineIsGermanWithGermanLocale(t *testing.T) {
 	b := signedInBox(t)
 	b.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}})
-	if got := successLine(b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body); got != "Gespeichert." {
+	if got := successLine(b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body); got != "Haushaltseinstellungen gespeichert." {
 		t.Fatalf("success line = %q", got)
 	}
 }

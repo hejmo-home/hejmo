@@ -202,3 +202,60 @@ func TestWebRenamesAPersonWithALegacyLook(t *testing.T) {
 		}
 	}
 }
+
+// preselected is what the edit page of a person sends back unchanged.
+func (p peopleBox) preselected(t *testing.T, id, name string) url.Values {
+	t.Helper()
+	page := p.en("/people/" + id).body
+	form := url.Values{"name": {name}}
+	for _, field := range []string{"color", "shape"} {
+		for val, o := range lookOptions(page, field) {
+			if o.checked {
+				form.Set(field, val)
+			}
+		}
+	}
+	if form.Get("color") == "" || form.Get("shape") == "" {
+		t.Fatalf("no preselected look in\n%s", page)
+	}
+	return form
+}
+
+// Acceptance 3 for a legacy colour: changing only the marker must not give the
+// person the colour slot and marker another person has.
+func TestWebLegacyColourWithOnlyTheMarkerChangedCannotCopyAnotherLook(t *testing.T) {
+	p := newPeopleBox(t)
+	h, _ := p.db.HomeHousehold()
+	oma, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#123456", Shape: "square-empty"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	form := p.preselected(t, oma.ID, "Oma")
+	// The pages show Oma in this slot colour; Kim takes it with a star.
+	if r := p.post("/people", url.Values{"name": {"Kim"}, "role": {"child"}, "color": {form.Get("color")}, "shape": {"star-filled"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("add Kim = %d\n%s", r.status, r.body)
+	}
+	form.Set("shape", "star-filled")
+	if r := p.save(oma.ID, form); r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-shape"`) {
+		t.Fatalf("Oma takes Kim's look = %d\n%s", r.status, r.body)
+	}
+}
+
+// Acceptance 3 for a person without a marker: changing only the colour must not
+// give them the colour and the marker the pages show for another person.
+func TestWebPersonWithoutMarkerWithOnlyTheColourChangedCannotCopyAnotherLook(t *testing.T) {
+	p := newPeopleBox(t)
+	h, _ := p.db.HomeHousehold()
+	oma, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#5559A3"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	form := p.preselected(t, oma.ID, "Oma") // the marker the pages show for her
+	if r := p.post("/people", url.Values{"name": {"Kim"}, "role": {"child"}, "color": {"#B04A6A"}, "shape": {form.Get("shape")}}); r.status != http.StatusSeeOther {
+		t.Fatalf("add Kim = %d\n%s", r.status, r.body)
+	}
+	form.Set("color", "#B04A6A")
+	if r := p.save(oma.ID, form); r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-shape"`) {
+		t.Fatalf("Oma takes Kim's look = %d\n%s", r.status, r.body)
+	}
+}

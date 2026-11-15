@@ -200,3 +200,48 @@ func (db *DB) Person(householdID, personID string) (Person, error) {
 	}
 	return p, err
 }
+
+// UpdatePerson changes a member's name, colour and black-and-white marker.
+// An empty colour or shape is stored as is (the family view then picks one by
+// place). The role and the account stay as they are.
+func (db *DB) UpdatePerson(householdID, personID, name, color, shape string) error {
+	name = strings.TrimSpace(name)
+	if name == "" {
+		return &FieldError{Field: "name", Msg: "person name required"}
+	}
+	return expectOne(db.sql.Exec(`UPDATE people SET name = ?, color = ?, shape = ?, updated_at = ?
+		WHERE id = ? AND id IN (SELECT person_id FROM household_members WHERE household_id = ?)`,
+		name, color, shape, now(), personID, householdID))
+}
+
+// SetPeopleOrder stores the order of the family view. ids must name every
+// member of the household exactly once.
+func (db *DB) SetPeopleOrder(householdID string, ids []string) error {
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var have int
+	if err := tx.QueryRow(`SELECT COUNT(*) FROM household_members WHERE household_id = ?`, householdID).Scan(&have); err != nil {
+		return err
+	}
+	if len(ids) != have {
+		return &FieldError{Field: "ids", Msg: "the order must list every person once"}
+	}
+	seen := map[string]bool{}
+	for i, id := range ids {
+		if seen[id] {
+			return &FieldError{Field: "ids", Msg: "the order must list every person once"}
+		}
+		seen[id] = true
+		res, err := tx.Exec(`UPDATE household_members SET sort_order = ? WHERE household_id = ? AND person_id = ?`, i+1, householdID, id)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return &FieldError{Field: "ids", Msg: "unknown person"}
+		}
+	}
+	return tx.Commit()
+}

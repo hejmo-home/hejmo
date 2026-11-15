@@ -43,6 +43,12 @@
   --person-6: #3A7A74;
   --person-6-tint: #E7EFEE;
   --person-6-text: #1D3D3A;
+  --person-7: #5559A3;
+  --person-7-tint: #EBEBF4;
+  --person-7-text: #2A2C52;
+  --person-8: #B04A6A;
+  --person-8-tint: #F6E9ED;
+  --person-8-text: #582535;
   --accent-text: #FFFFFF;
   /* type scale: size and weight per element */
   --fs-date: 36px;        --fw-date: 700;
@@ -107,6 +113,12 @@
   --person-6: #6FB2AA;
   --person-6-tint: #35413D;
   --person-6-text: #D4E8E6;
+  --person-7: #8589D6;
+  --person-7-tint: #393946;
+  --person-7-text: #DADCF3;
+  --person-8: #D67188;
+  --person-8-tint: #493436;
+  --person-8-text: #F3D4DB;
   --accent-text: #1B1A18;
 }
 
@@ -141,6 +153,12 @@
     --person-6: #6FB2AA;
     --person-6-tint: #35413D;
     --person-6-text: #D4E8E6;
+    --person-7: #8589D6;
+    --person-7-tint: #393946;
+    --person-7-text: #DADCF3;
+    --person-8: #D67188;
+    --person-8-tint: #493436;
+    --person-8-text: #F3D4DB;
     --accent-text: #1B1A18;
   }
 }
@@ -178,6 +196,12 @@
   --person-6: #111111;
   --person-6-tint: #E4E4E1;
   --person-6-text: #111111;
+  --person-7: #111111;
+  --person-7-tint: #E4E4E1;
+  --person-7-text: #111111;
+  --person-8: #111111;
+  --person-8-tint: #E4E4E1;
+  --person-8-text: #111111;
   --accent-text: #FFFFFF;
   --fw-event-title: 700;
 }
@@ -212,7 +236,7 @@ input, select { font: inherit; color: var(--text); min-height: var(--touch-targe
 .log th, .log td { text-align: left; padding: 6px 12px 6px 0; vertical-align: top; }
 a { color: var(--accent); }
 
-/* Person slots: a person gets data-person="1".."6" (colour, tint, text on
+/* Person slots: a person gets data-person="1".."8" (colour, tint, text on
    tint). In bw every slot is black on a grey tint and differs by marker shape. */
 [data-person="1"] { --pc: var(--person-1); --pc-tint: var(--person-1-tint); --pc-text: var(--person-1-text); }
 [data-person="2"] { --pc: var(--person-2); --pc-tint: var(--person-2-tint); --pc-text: var(--person-2-text); }
@@ -220,6 +244,8 @@ a { color: var(--accent); }
 [data-person="4"] { --pc: var(--person-4); --pc-tint: var(--person-4-tint); --pc-text: var(--person-4-text); }
 [data-person="5"] { --pc: var(--person-5); --pc-tint: var(--person-5-tint); --pc-text: var(--person-5-text); }
 [data-person="6"] { --pc: var(--person-6); --pc-tint: var(--person-6-tint); --pc-text: var(--person-6-text); }
+[data-person="7"] { --pc: var(--person-7); --pc-tint: var(--person-7-tint); --pc-text: var(--person-7-text); }
+[data-person="8"] { --pc: var(--person-8); --pc-tint: var(--person-8-tint); --pc-text: var(--person-8-text); }
 
 /* Marker: circle in the person colour; in bw a shape (16px in the column
    header, 9px on an event, .marker.small). */
@@ -232,6 +258,8 @@ a { color: var(--accent); }
 [data-theme="bw"] .marker[data-shape="square-empty"] { border-radius: 0; background: transparent; }
 [data-theme="bw"] .marker[data-shape="triangle-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 [data-theme="bw"] .marker[data-shape="diamond-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+[data-theme="bw"] .marker[data-shape="cross-filled"] { border: 0; border-radius: 0; clip-path: polygon(34% 0, 66% 0, 66% 34%, 100% 34%, 100% 66%, 66% 66%, 66% 100%, 34% 100%, 34% 66%, 0 66%, 0 34%, 34% 34%); }
+[data-theme="bw"] .marker[data-shape="star-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 62% 36%, 100% 36%, 69% 58%, 81% 96%, 50% 73%, 19% 96%, 31% 58%, 0 36%, 38% 36%); }
 
 /* Event cards list their people as markers; only bw needs them (colour cards
    carry the person colour). */
@@ -489,6 +517,38 @@ details.danger form { margin: 0 0 10px; }
 .big-check .box { flex: none; width: var(--touch-target); height: var(--touch-target); border: 3px solid var(--text); border-radius: var(--radius-card); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; line-height: 1; }
 [data-done="true"] .big-check .title { text-decoration: line-through; color: var(--text-secondary); }
 [data-done="true"] .big-check .box::after { content: "\2713"; }
+
+/* People page (ticket 5.21; ADR 0017). A person row: marker, name, role and
+   the order buttons. The colour and marker choice shows every shape as its own
+   preview, because in colour mode the plain marker is always a circle. */
+.cards.people li { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; }
+.people .who { display: flex; align-items: center; gap: 10px; flex: 1 1 140px; }
+.people .who a { color: var(--text); text-decoration: none; }
+.people .row { margin: 0 0 0 auto; flex-wrap: nowrap; }
+.people .row form { margin: 0; }
+.people .row .button { min-width: var(--touch-target); padding: 10px 16px; }
+h1 .marker { margin-right: 4px; }
+.pchip.shape { --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
+fieldset.look { display: flex; flex-wrap: wrap; gap: 8px; }
+/* Taken options (ticket 76): a colour or marker another person wears is faded
+   but stays readable (also in black and white); a pair that would be refused is
+   disabled. The name of the person shows on hover and focus as a tooltip (the
+   title attribute covers the mouse, the bubble covers keyboard focus;
+   data-tip-open only lets the design preview show the bubble). */
+fieldset.look .pchip.used { opacity: .6; }
+fieldset.look .pchip:has(input:disabled) { opacity: .45; cursor: not-allowed; border-style: dashed; }
+fieldset.look .pchip:has(input:checked) { opacity: 1; }
+fieldset.look .pchip:has(input:focus-visible)::after, fieldset.look .pchip[data-tip-open]::after { content: attr(title); position: absolute; left: 0; bottom: calc(100% + 6px); z-index: 2; white-space: nowrap; padding: 4px 10px; border-radius: var(--radius-field); background: var(--text); color: var(--background); font-size: var(--fs-meta); font-weight: 400; pointer-events: none; }
+.marker.preview { background: var(--text); border: 0; border-radius: 0; }
+[data-theme="bw"] .marker.preview { width: var(--marker-size); height: var(--marker-size); }
+.marker.preview[data-shape="circle-filled"] { border-radius: 50%; }
+.marker.preview[data-shape="circle-empty"] { border-radius: 50%; background: transparent; border: 2px solid var(--text); }
+.marker.preview[data-shape="square-filled"] { border-radius: 0; }
+.marker.preview[data-shape="square-empty"] { background: transparent; border: 2px solid var(--text); }
+.marker.preview[data-shape="triangle-filled"] { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.marker.preview[data-shape="diamond-filled"] { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.marker.preview[data-shape="cross-filled"] { clip-path: polygon(34% 0, 66% 0, 66% 34%, 100% 34%, 100% 66%, 66% 66%, 66% 100%, 34% 100%, 34% 66%, 0 66%, 0 34%, 34% 34%); }
+.marker.preview[data-shape="star-filled"] { clip-path: polygon(50% 0, 62% 36%, 100% 36%, 69% 58%, 81% 96%, 50% 73%, 19% 96%, 31% 58%, 0 36%, 38% 36%); }
 
 /* Calendar screen (ticket 5.12; ADR 0011, 0015): the week as seven day
    columns with multi-day and all-day events as continuous bars above them.

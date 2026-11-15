@@ -134,7 +134,9 @@ func TestPlainHTTPRedirectsEverythingButTheTrustSteps(t *testing.T) {
 	b := newBox(t)
 	plain := b.plainServer()
 	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	for _, path := range []string{"/static/sw.js", "/static/form.js", "/login", "/api/v1/members", "/ca/other", "/setup"} {
+	for _, path := range []string{"/static/sw.js", "/static/form.js", "/login", "/api/v1/members", "/ca/other", "/setup",
+		// encoded traversal out of the allowed static prefixes, and directory listings
+		"/static/icons/..%2fform.js", "/static/fonts/%2e%2e/sw.js", "/static/fonts/../sw.js", "/static/icons/", "/static/fonts/"} {
 		res, err := client.Get(plain.URL + path)
 		if err != nil {
 			t.Fatal(err)

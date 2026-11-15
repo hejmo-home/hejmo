@@ -154,6 +154,10 @@ _Avoid_: dark mode (alone), skin, colour scheme
 The scheduled night state of a display: a calm night page about the coming morning with the front light off, or a black page on a normal screen.
 _Avoid_: sleep mode (in prose), night mode, standby
 
+**Night page**:
+What an E-Ink display shows in quiet mode: the date of the coming morning, the household's first timed event of that day and its waste collection. A normal screen shows a black page instead.
+_Avoid_: sleep screen, standby page
+
 **Phone**:
 A smartphone paired with the box through a QR code that runs the web interface as an app for one person, adult or child. A phone's calendar app syncing over CalDAV is a CalDAV client, not a phone.
 _Avoid_: mobile, client (alone), handset

@@ -11,21 +11,21 @@ import (
 // ADR 0016: the household settings screen offers time format and temperature unit.
 func TestSettingsScreenSavesTimeFormatAndUnit(t *testing.T) {
 	b := signedInBox(t)
-	r := b.get("/settings")
+	r := b.get("/settings/household")
 	if r.status != http.StatusOK || !strings.Contains(r.body, `name="time_format"`) || !strings.Contains(r.body, `name="temperature_unit"`) {
 		t.Fatalf("settings page = %d\n%s", r.status, r.body)
 	}
 	if !strings.Contains(r.body, `value="24h" checked`) || !strings.Contains(r.body, `value="c" checked`) {
 		t.Fatalf("defaults not selected:\n%s", r.body)
 	}
-	if r := b.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}}); r.status != http.StatusSeeOther || r.location != "/settings" {
+	if r := b.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}}); r.status != http.StatusSeeOther || r.location != "/settings/household" {
 		t.Fatalf("save = %d %q", r.status, r.location)
 	}
-	r = b.get("/settings")
+	r = b.get("/settings/household")
 	if !strings.Contains(r.body, `value="12h" checked`) || !strings.Contains(r.body, `value="f" checked`) {
 		t.Fatalf("saved values not selected:\n%s", r.body)
 	}
-	if r := b.post("/settings", url.Values{"time_format": {"25h"}, "temperature_unit": {"f"}}); r.status != http.StatusUnprocessableEntity {
+	if r := b.post("/settings/household", url.Values{"time_format": {"25h"}, "temperature_unit": {"f"}}); r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("bad format = %d, want 422", r.status)
 	}
 }
@@ -48,7 +48,7 @@ func TestWebTimesFollowTheHouseholdTimeFormat(t *testing.T) {
 	if page := b.get("/displays").body; !strings.Contains(page, "14/11/2026 13:00") {
 		t.Fatalf("24h time missing:\n%s", page)
 	}
-	b.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}})
+	b.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}})
 	if page := b.get("/displays").body; !strings.Contains(page, "14/11/2026 1:00 PM") {
 		t.Fatalf("12h time missing:\n%s", page)
 	}
@@ -63,10 +63,10 @@ func TestWebTimesFollowTheHouseholdTimeFormat(t *testing.T) {
 func TestChildCannotOpenSettings(t *testing.T) {
 	b := signedInBox(t)
 	child := childSession(t, b)
-	if r := child.get("/settings"); r.status != http.StatusForbidden {
+	if r := child.get("/settings/household"); r.status != http.StatusForbidden {
 		t.Fatalf("child GET /settings = %d, want 403", r.status)
 	}
-	if r := child.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}}); r.status != http.StatusForbidden {
+	if r := child.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}}); r.status != http.StatusForbidden {
 		t.Fatalf("child POST /settings = %d, want 403", r.status)
 	}
 }

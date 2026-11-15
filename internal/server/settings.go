@@ -79,17 +79,13 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, "meal_cutoffs: "+err.Error())
 		return
 	}
-	if err := s.saveSettings(p.household, f, u, a, c); err != nil {
+	hidden := p.household.FirstStepsHidden
+	if in.FirstStepsHidden != nil {
+		hidden = *in.FirstStepsHidden
+	}
+	if err := s.saveSettings(p.household, f, u, a, c, hidden); err != nil {
 		s.fail(w, "update settings", err)
 		return
-	}
-	hidden := p.household.FirstStepsHidden
-	if in.FirstStepsHidden != nil && *in.FirstStepsHidden != hidden {
-		hidden = *in.FirstStepsHidden
-		if err := s.db.SetFirstStepsHidden(p.household.ID, hidden); err != nil {
-			s.fail(w, "update first steps", err)
-			return
-		}
 	}
 	writeJSON(w, http.StatusOK, settingsJSON{f, u, a, cutoffsToJSON(c), hidden})
 }
@@ -173,7 +169,7 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.cutoff", field, c)
 		return
 	}
-	if err := s.saveSettings(p.household, f, u, a, c); err != nil {
+	if err := s.saveSettings(p.household, f, u, a, c, p.household.FirstStepsHidden); err != nil {
 		s.fail(w, "update settings", err)
 		return
 	}
@@ -200,14 +196,11 @@ func postedCutoff(form url.Values, m meal.Mealtime, current string) string {
 	return at[0]
 }
 
-// saveSettings stores the household settings: the general ones and the meal
-// cut-offs are two writes. The update mode also goes to the host script; only a
+// saveSettings stores the household settings (general ones, meal cut-offs and
+// the first steps flag) in one write. The update mode also goes to the host script; only a
 // failing settings file is tolerated.
-func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode, c meal.Cutoffs) error {
-	if err := s.db.UpdateHouseholdSettings(h.ID, f, u, a); err != nil {
-		return err
-	}
-	if err := s.db.SetMealCutoffs(h.ID, c); err != nil {
+func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode, c meal.Cutoffs, firstStepsHidden bool) error {
+	if err := s.db.SaveHouseholdSettings(h.ID, f, u, a, c, firstStepsHidden); err != nil {
 		return err
 	}
 	if a == h.AutoUpdate {

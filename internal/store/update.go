@@ -47,8 +47,3 @@ func (db *DB) Backup(dest string) error {
 	_, err := db.sql.Exec(`VACUUM INTO ?`, dest)
 	return err
 }
-
-// SetFirstStepsHidden shows or hides the first steps card on the start page.
-func (db *DB) SetFirstStepsHidden(id string, hidden bool) error {
-	return expectOne(db.sql.Exec(`UPDATE households SET first_steps_hidden = ?, updated_at = ? WHERE id = ?`, hidden, now(), id))
-}

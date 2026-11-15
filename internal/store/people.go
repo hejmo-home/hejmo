@@ -92,6 +92,26 @@ func (db *DB) SetMealCutoffs(id string, c meal.Cutoffs) error {
 		c.Breakfast, c.Lunch, c.Snack, c.Dinner, now(), id))
 }
 
+// SetFirstStepsHidden shows or hides the first steps card on the start page.
+func (db *DB) SetFirstStepsHidden(id string, hidden bool) error {
+	return expectOne(db.sql.Exec(`UPDATE households SET first_steps_hidden = ?, updated_at = ? WHERE id = ?`, hidden, now(), id))
+}
+
+// SaveHouseholdSettings stores time format, temperature unit, auto-update
+// mode, meal cut-offs and the first steps flag in one statement, so a save is
+// all or nothing.
+func (db *DB) SaveHouseholdSettings(id string, f TimeFormat, u TemperatureUnit, a UpdateMode, c meal.Cutoffs, firstStepsHidden bool) error {
+	if !f.Valid() || !u.Valid() || !a.Valid() {
+		return errors.New("store: unknown time format, temperature unit or update mode")
+	}
+	if err := c.Validate(); err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalid, err)
+	}
+	return expectOne(db.sql.Exec(`UPDATE households SET time_format = ?, temperature_unit = ?, auto_update = ?,
+		cutoff_breakfast = ?, cutoff_lunch = ?, cutoff_snack = ?, cutoff_dinner = ?, first_steps_hidden = ?, updated_at = ? WHERE id = ?`,
+		f, u, a, c.Breakfast, c.Lunch, c.Snack, c.Dinner, firstStepsHidden, now(), id))
+}
+
 // SetHouseholdCoordinates stores the coordinates of the household's home.
 func (db *DB) SetHouseholdCoordinates(id string, lat, lon float64) error {
 	return expectOne(db.sql.Exec(`UPDATE households SET latitude = ?, longitude = ?, updated_at = ? WHERE id = ?`, lat, lon, now(), id))

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/web"
 )
 
@@ -351,5 +352,22 @@ func TestHandlerBuiltTextFollowsTheSwitchedLanguage(t *testing.T) {
 	b.post("/language", langForm("de", "/calendar"))
 	if wde := b.do(http.MethodGet, "/calendar?week=2026-12-25", nil, map[string]string{"Accept-Language": "en"}); !strings.Contains(wde.body, "1. Weihnachtstag") {
 		t.Errorf("holiday name is not German:\n%s", wde.body)
+	}
+}
+
+// A signed-in page reads the language several times (frame, handler-built
+// texts, headers); without the per-request memo each of those is a lookup.
+func TestPageLanguageIsLookedUpOncePerRequest(t *testing.T) {
+	b := signedInBox(t)
+	for _, path := range []string{"/", "/otp", "/calendars", "/calendar?week=2026-12-25"} {
+		stop := server.CountLanguageLookups(t)
+		page := b.get(path)
+		n := stop()
+		if page.status != http.StatusOK {
+			t.Fatalf("GET %s = %d", path, page.status)
+		}
+		if n != 1 {
+			t.Errorf("GET %s: language lookups for one request = %d, want 1", path, n)
+		}
 	}
 }

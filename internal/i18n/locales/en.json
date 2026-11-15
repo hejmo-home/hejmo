@@ -600,6 +600,7 @@
   "tasks.stars.title": "Stars",
   "tasks.stars.intro": "Ticking off a task credits its stars, unticking deducts them. Book stars by hand here, for example to redeem them.",
   "tasks.stars.log": "Star log",
+  "tasks.stars.removed": "(removed)",
   "tasks.stars.log_empty": "No bookings yet.",
   "tasks.stars.field.delta": "Stars to book (negative to deduct)",
   "tasks.stars.field.note": "Note, for example \"redeemed: ice cream\"",

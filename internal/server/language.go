@@ -68,6 +68,8 @@ func (s *server) pageLanguage(r *http.Request) string {
 
 type pageLangKey struct{}
 
+// pageLangHolder keeps the language for one request only. It can go stale if a
+// handler changes the language and then renders: set the new value there.
 type pageLangHolder struct {
 	once sync.Once
 	lang string
@@ -80,7 +82,11 @@ func withPageLanguage(next http.Handler) http.Handler {
 	})
 }
 
+// languageLookups is called on every real lookup; tests count them.
+var languageLookups = func() {}
+
 func (s *server) lookupPageLanguage(r *http.Request) string {
+	languageLookups()
 	if p, ok := s.currentPerson(r); ok {
 		if acc, err := s.db.AccountByPerson(p.ID); err == nil {
 			if _, ok := languageByCode(acc.Language); ok {

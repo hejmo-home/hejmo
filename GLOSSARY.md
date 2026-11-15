@@ -197,7 +197,7 @@ The ordered sequence of one person's tasks for a part of the day, such as Mia's 
 _Avoid_: checklist, schedule, habit
 
 **Routine template**:
-A reusable routine without a person that a parent copies into a routine for someone.
+A reusable routine without a person that a parent copies into a routine for someone. Hejmo ships some in German and English; parents add their own by saving a routine as a template. Using a template makes an independent copy: changing one never changes the other.
 _Avoid_: preset, blueprint
 
 **Subtask**:

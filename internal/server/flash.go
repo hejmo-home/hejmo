@@ -79,6 +79,12 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 // successText is the text of a success line. After "Sync now" it says when
 // the calendar was updated and what the run did.
 func (s *server) successText(lang, key, arg string) string {
+	if key == flashSessionEnded {
+		if text := s.sessionEndedText(lang, arg); text != "" {
+			return text
+		}
+		return s.i18n.T(lang, flashSessionEnded)
+	}
 	if name, ok := strings.CutPrefix(arg, flashNamePrefix); ok {
 		raw, err := base64.RawURLEncoding.DecodeString(name)
 		if err != nil || !utf8.Valid(raw) {

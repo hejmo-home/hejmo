@@ -10,6 +10,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/web"
 )
@@ -47,7 +48,7 @@ func TestWriteThemePreview(t *testing.T) {
 		occ("Pick up Mia", d(1, 16, 45), d(1, 17, 15), "papa"),
 		occ("Family lunch", d(1, 12, 30), d(1, 14, 0)),
 	}
-	view, err := server.RenderFamilyView("en", familyview.Build(familyview.Input{Now: d(1, 16, 20), Lang: "en", Region: "DE-BY", People: people, Occurrences: occs}))
+	view, err := server.RenderFamilyView("en", familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: d(1, 16, 20), Lang: "en", Region: "DE-BY", People: people, Occurrences: occs}))
 	if err != nil {
 		t.Fatal(err)
 	}

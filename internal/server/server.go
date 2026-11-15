@@ -263,6 +263,7 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 func parsePages() *template.Template {
 	return template.Must(template.New("").Funcs(template.FuncMap{
 		"t":    func(string) string { return "" },
+		"tf":   func(string, ...string) string { return "" },
 		"dict": dict,
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
@@ -307,7 +308,10 @@ func (s *server) execute(w io.Writer, name, lang string, data any) error {
 	if err != nil {
 		return err
 	}
-	tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return s.i18n.T(lang, key) }})
+	tpl = tpl.Funcs(template.FuncMap{
+		"t":  func(key string) string { return s.i18n.T(lang, key) },
+		"tf": func(key string, kv ...string) string { return s.i18n.Format(lang, i18n.Msg(key, kv...)) },
+	})
 	return tpl.ExecuteTemplate(w, name, data)
 }
 

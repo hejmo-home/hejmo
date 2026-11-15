@@ -227,7 +227,9 @@ func (s *server) handlePersonSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	look := personInput{r.PostFormValue("name"), r.PostFormValue("color"), r.PostFormValue("shape")}
-	field, key := checkLook(people, person.ID, &look, nil)
+	// The stored colour and marker are not checked again (a legacy person can
+	// be renamed); only a changed one is.
+	field, key := checkLook(people, person.ID, &look, &person)
 	if field == "" {
 		// A form without colour or marker keeps what the person has.
 		if look.Color == "" {
@@ -236,7 +238,7 @@ func (s *server) handlePersonSave(w http.ResponseWriter, r *http.Request) {
 		if look.Shape == "" {
 			look.Shape = person.Shape
 		}
-		if look.Color != "" && look.Shape != "" && styleTaken(people, person.ID, look.Color, look.Shape) {
+		if (look.Color != person.Color || look.Shape != person.Shape) && look.Color != "" && look.Shape != "" && styleTaken(people, person.ID, look.Color, look.Shape) {
 			field, key = "shape", "people.error.taken"
 		}
 	}

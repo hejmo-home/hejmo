@@ -27,7 +27,8 @@ document.addEventListener("change", function (e) {
     function update(name, other) {
       Array.prototype.forEach.call(form.querySelectorAll('input[name="' + name + '"]'), function (o) {
         var taken = o.getAttribute("data-taken-with");
-        o.disabled = !o.checked && !!other && !!taken && taken.split(" ").indexOf(other.value) >= 0;
+        var want = other && other.value.toUpperCase();
+        o.disabled = !o.checked && !!other && !!taken && taken.toUpperCase().split(" ").indexOf(want) >= 0;
       });
     }
     update("color", shape);

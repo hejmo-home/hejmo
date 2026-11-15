@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 // lookOption is one colour or marker choice of the people form as the page
@@ -98,9 +100,9 @@ func TestLookPairsThatWouldBeRefusedAreDisabled(t *testing.T) {
 	jonas := p.add(t, "Jonas", "child")
 	// Papa gets Mama's colour with the empty circle; Jonas too, with the filled square.
 	for _, x := range []struct {
-		id, shape string
-	}{{papa["id"].(string), "circle-empty"}, {jonas["id"].(string), "square-filled"}} {
-		if r := p.save(x.id, url.Values{"name": {"X"}, "color": {terracotta}, "shape": {x.shape}}); r.status != http.StatusSeeOther {
+		id, name, shape string
+	}{{papa["id"].(string), "Papa", "circle-empty"}, {jonas["id"].(string), "Jonas", "square-filled"}} {
+		if r := p.save(x.id, url.Values{"name": {x.name}, "color": {terracotta}, "shape": {x.shape}}); r.status != http.StatusSeeOther {
 			t.Fatalf("save = %d\n%s", r.status, r.body)
 		}
 	}
@@ -112,17 +114,16 @@ func TestLookPairsThatWouldBeRefusedAreDisabled(t *testing.T) {
 			t.Errorf("marker %s disabled = %v, want %v", shape, shapes[shape].off, want)
 		}
 	}
-	// With Mama's marker (circle-filled) selected, the other colours are free and
-	// terracotta is the current one. A person with the filled circle: Mama.
+	// Papa wears the empty circle, which nobody else has with another colour:
+	// no colour is disabled on his page.
 	papaPage := lookOptions(p.en("/people/"+papa["id"].(string)).body, "color")
 	for c, o := range papaPage {
 		if o.off {
 			t.Errorf("colour %s disabled on Papa's page (empty circle is free in every colour)", c)
 		}
 	}
-	// Mama's page: her marker is the filled circle, which Jonas does not have with
-	// terracotta (he has the square), so only pairs worn by others are off. Give
-	// Jonas the filled circle in blue and look at Mama's colours.
+	// Give Jonas the filled circle in blue; on Mama's page (her marker is the
+	// filled circle) blue is then disabled and terracotta is her own colour.
 	if r := p.save(jonas["id"].(string), url.Values{"name": {"Jonas"}, "color": {blue}, "shape": {"circle-filled"}}); r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d\n%s", r.status, r.body)
 	}
@@ -161,5 +162,20 @@ func TestLookOptionsCarryWhatTheyAreTakenWith(t *testing.T) {
 	page := p.en("/people").body
 	if !strings.Contains(page, `data-taken-with="circle-filled"`) || !strings.Contains(page, `data-taken-with="`+terracotta+`"`) {
 		t.Errorf("no data-taken-with for Mama's pair:\n%s", page)
+	}
+}
+
+// A person stored with a colour outside the palette can be renamed on the web
+// page too, also when the form sends the stored colour and marker back.
+func TestWebRenamesAPersonWithALegacyLook(t *testing.T) {
+	p := newPeopleBox(t)
+	h, _ := p.db.HomeHousehold()
+	legacy, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#123456", Shape: "circle-empty"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r := p.save(legacy.ID, url.Values{"name": {"Oma Maier"}, "color": {"#123456"}, "shape": {"circle-empty"}})
+	if r.status != http.StatusSeeOther {
+		t.Fatalf("rename = %d\n%s", r.status, r.body)
 	}
 }

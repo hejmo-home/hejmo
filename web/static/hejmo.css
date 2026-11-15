@@ -468,3 +468,20 @@ details.danger form { margin: 0 0 10px; }
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
+
+/* Meal plan (ticket 6.3, ADR 0015): the week as one card per day, a field per
+   mealtime. Two columns of days on a tablet, one on a phone. */
+.weeknav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap); margin: 0 0 var(--gap-section); }
+.weeknav a { display: inline-flex; align-items: center; min-height: var(--touch-target); font-weight: 600; }
+.steps.wide { max-width: none; }
+.meal-week { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--gap); align-items: start; margin: 0 0 var(--gap-section); }
+.steps .meal-week { margin: 0; }
+.meal-day { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 10px; min-width: 0; }
+.meal-day legend, .meal-day h2 { font-size: var(--fs-person-name); font-weight: 700; margin: 0; padding: 0; }
+.meal-day .date { color: var(--text-secondary); font-weight: 400; }
+.meal-day .today { font-size: var(--fs-meta); font-weight: 700; color: var(--accent-text); background: var(--accent); border-radius: var(--radius-chip); padding: 2px 10px; margin-left: 6px; vertical-align: middle; }
+.meal-day[data-today] { outline: 2px solid var(--accent); }
+.meal-day dl { margin: 0; display: grid; gap: 8px; }
+.meal-day dt { font-size: var(--fs-label); color: var(--text-secondary); }
+.meal-day dd { margin: 0; font-weight: 600; overflow-wrap: anywhere; }
+

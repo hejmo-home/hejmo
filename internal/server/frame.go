@@ -10,7 +10,7 @@ import (
 // navItem is one screen of the web interface frame. A person sees it when
 // their role holds the permission the screen needs (ADR 0015), so a child's
 // device session sees only the screens its role allows. Later screens
-// (calendar, lists, meal plan, phones) add a line here.
+// (calendar, lists, phones) add a line here.
 type navItem struct {
 	Href, Label string
 	Needs       auth.Permission
@@ -23,6 +23,7 @@ var navItems = []navItem{
 	{"/displays", "nav.displays", auth.Perm("displays", auth.Write)},
 	{"/phones", "nav.phones", auth.Perm("tokens", auth.Write)},
 	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Read)},
+	{"/meals", "nav.meals", auth.Perm("meals", auth.Read)},
 	{"/settings", "nav.settings", auth.Perm("settings", auth.Write)},
 }
 

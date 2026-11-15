@@ -1,0 +1,37 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "meals.title") "Frame" .Frame)}}
+  <h1>{{t "meals.title"}}</h1>
+  {{template "syncNotice" .}}
+  <p class="lead">{{if .Editable}}{{t "meals.intro"}}{{else}}{{t "meals.intro.child"}}{{end}}</p>
+
+  <nav class="weeknav" aria-label="{{t "meals.week.nav"}}">
+    <a href="/meals?week={{.Prev}}">{{t "meals.week.prev"}}</a>
+    <strong>{{.From}} – {{.To}}</strong>
+    <a href="/meals?week={{.Next}}">{{t "meals.week.next"}}</a>
+    {{if not .ThisWeek}}<a href="/meals">{{t "meals.week.this"}}</a>{{end}}
+  </nav>
+  {{if not .Planned}}<p class="hint" data-empty>{{t "meals.none"}}</p>{{end}}
+  {{template "error" .}}
+
+  {{if .Editable}}<form method="post" action="/meals" class="steps wide">
+    <input type="hidden" name="week" value="{{.Week}}">
+    <div class="meal-week">
+      {{range .Days}}
+      <fieldset class="meal-day" data-day="{{.Date}}"{{if .Today}} data-today{{end}}>
+        <legend>{{t (printf "meals.weekday.%d" .Weekday)}} <span class="date">{{.Short}}</span>{{if .Today}} <span class="today">{{t "meals.today"}}</span>{{end}}</legend>
+        {{range .Cells}}{{template "field" (dict "Root" $ "Name" .Name "Label" (t (printf "meals.mealtime.%s" .Mealtime)) "Value" .Value "Max" 200)}}{{end}}
+      </fieldset>
+      {{end}}
+    </div>
+    <button class="button" type="submit">{{t "meals.save"}}</button>
+  </form>
+  {{else}}
+  <div class="meal-week">
+    {{range .Days}}
+    <section class="meal-day" data-day="{{.Date}}"{{if .Today}} data-today{{end}} aria-label="{{t (printf "meals.weekday.%d" .Weekday)}} {{.Short}}">
+      <h2>{{t (printf "meals.weekday.%d" .Weekday)}} <span class="date">{{.Short}}</span>{{if .Today}} <span class="today">{{t "meals.today"}}</span>{{end}}</h2>
+      {{if .Planned}}<dl>{{range .Planned}}<div><dt>{{t (printf "meals.mealtime.%s" .Mealtime)}}</dt><dd>{{.Value}}</dd></div>{{end}}</dl>{{else}}<p class="hint">{{t "meals.day_none"}}</p>{{end}}
+    </section>
+    {{end}}
+  </div>
+  {{end}}
+{{template "foot"}}

@@ -2,6 +2,7 @@ package familyview_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
@@ -491,8 +492,12 @@ func TestSingleHouseholdEventsGoToTheStrip(t *testing.T) {
 
 func TestBuildPanicsWithoutI18n(t *testing.T) {
 	defer func() {
-		if recover() == nil {
+		r := recover()
+		if r == nil {
 			t.Fatal("Build without I18n must panic")
+		}
+		if msg := fmt.Sprint(r); !strings.Contains(msg, "Input.I18n") {
+			t.Fatalf("panic must come from the I18n guard, got %q", msg)
 		}
 	}()
 	familyview.Build(familyview.Input{Now: at(14, 8, 0), Lang: "en", Region: "DE-BY", People: family(), Occurrences: []calendar.Occurrence{timed("x", at(14, 9, 0), at(14, 10, 0), "mama")}})

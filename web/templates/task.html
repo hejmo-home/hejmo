@@ -1,7 +1,7 @@
 {{template "head" (dict "Lang" .Lang "Title" .Task.Title "Frame" .Frame)}}
   <p><a href="/tasks">{{t "tasks.back"}}</a></p>
   <h1>{{if .Task.Emoji}}{{.Task.Emoji}} {{end}}{{.Task.Title}}</h1>
-  <p class="lead"><span class="pchip" data-person="{{.Owner.Slot}}"><span class="marker" data-person="{{.Owner.Slot}}" data-shape="{{.Owner.Shape}}" aria-hidden="true"></span>{{.Owner.Name}}</span></p>
+  <p class="lead"><span class="pchip" data-person="{{.Owner.Slot}}"><span class="marker" data-person="{{.Owner.Slot}}" data-shape="{{.Owner.Shape}}" aria-hidden="true"></span>{{.Owner.Name}}</span>{{if .Task.Stars}} <span class="task-stars" data-task-stars="{{.Task.Stars}}">{{.Task.Stars}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span>{{end}}</p>
   <p class="hint">
     {{if eq .Task.Repeat "once"}}{{t "tasks.repeat.once"}} {{.Task.Date}}{{else if eq .Task.Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Task.Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}
     {{if .Task.Part}} · {{t (printf "tasks.part.%s" .Task.Part)}}{{end}}

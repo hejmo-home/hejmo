@@ -546,6 +546,14 @@ details.danger form { margin: 0 0 10px; }
 /* An all-day event hides the times of the new-event form. */
 .steps:has(input[name="all_day"]:checked) .when-timed { display: none; }
 textarea { width: 100%; font: inherit; color: var(--text); background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-field); padding: 10px 12px; }
+/* Stars (ADR 0018): the balance chip in the personal view header, the value of a task. */
+.sr { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.chip.stars { font-variant-numeric: tabular-nums; }
+.task-stars { margin-left: auto; flex: none; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.chip.stars::before { content: "\2605\00a0" / ""; }
+.task-stars::before { content: "+" / ""; }
+.task-stars::after { content: "\00a0\2605" / ""; }
+
 /* Phones (ticket 5.13): the QR code a phone scans, and the offline view. */
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
 .pair-qr svg { display: block; width: 100%; height: auto; }

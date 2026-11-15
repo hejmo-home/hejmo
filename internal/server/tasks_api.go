@@ -20,6 +20,7 @@ type taskJSON struct {
 	Weekdays  []string `json:"weekdays"`
 	Date      string   `json:"date"`
 	PartOfDay string   `json:"part_of_day"`
+	Stars     int      `json:"stars"`
 	Due       bool     `json:"due"`
 	Done      bool     `json:"done"`
 }
@@ -34,7 +35,7 @@ var uuidPattern = regexp.MustCompile(`^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]
 // taskToJSON renders a task; done is whether it is ticked off on day.
 func taskToJSON(t task.Task, day string, done bool) taskJSON {
 	return taskJSON{ID: t.ID, PersonID: t.PersonID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat),
-		Weekdays: nonNil(t.Weekdays), Date: t.Date, PartOfDay: string(t.PartOfDay), Due: t.DueOn(day), Done: done}
+		Weekdays: nonNil(t.Weekdays), Date: t.Date, PartOfDay: string(t.PartOfDay), Stars: t.Stars, Due: t.DueOn(day), Done: done}
 }
 
 // taskStateToJSON renders one task with its state on day.
@@ -86,13 +87,14 @@ func (s *server) apiCreateTask(w http.ResponseWriter, r *http.Request, p princip
 		Weekdays  []string `json:"weekdays"`
 		Date      string   `json:"date"`
 		PartOfDay string   `json:"part_of_day"`
+		Stars     *int     `json:"stars"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
 	t, err := s.createTask(p, task.Task{PersonID: in.PersonID, Title: in.Title, Emoji: in.Emoji, Repeat: task.Repeat(in.Repeat),
-		Weekdays: in.Weekdays, Date: in.Date, PartOfDay: task.PartOfDay(in.PartOfDay)})
+		Weekdays: in.Weekdays, Date: in.Date, PartOfDay: task.PartOfDay(in.PartOfDay)}, in.Stars)
 	switch {
 	case errors.Is(err, store.ErrInvalid):
 		writeError(w, http.StatusUnprocessableEntity, err.Error())
@@ -104,10 +106,17 @@ func (s *server) apiCreateTask(w http.ResponseWriter, r *http.Request, p princip
 	}
 }
 
-// createTask stores a task; a repeating task without a date starts today.
-func (s *server) createTask(p principal, t task.Task) (task.Task, error) {
+// createTask stores a task; a repeating task without a date starts today. A
+// task without a star value (nil) gets the default of its person: 1 for a
+// child, 0 for an adult (ADR 0018).
+func (s *server) createTask(p principal, t task.Task, stars *int) (task.Task, error) {
 	if t.Date == "" && t.Repeat != task.Once {
 		t.Date = s.today(p)
+	}
+	if stars != nil {
+		t.Stars = *stars
+	} else if owner, err := s.db.Person(p.household.ID, t.PersonID); err == nil {
+		t.Stars = task.DefaultStars(owner.Role == store.RoleChild)
 	}
 	return s.db.AddTask(p.household.ID, t)
 }

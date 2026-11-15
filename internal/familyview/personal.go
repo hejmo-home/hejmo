@@ -17,6 +17,14 @@ type Task struct {
 	ID, Title, Emoji string
 	Part             string // "morning", "evening" or empty
 	Done             bool
+	Stars            int // credited when ticked off; 0 shows nothing
+}
+
+// Stars is a person's star balance (ADR 0018). Shown is false for people with
+// no task worth stars and no booking: the view shows nothing of stars then.
+type Stars struct {
+	Shown   bool
+	Balance int
 }
 
 // PersonalEvent is a line of the personal view.
@@ -41,6 +49,7 @@ type PersonalInput struct {
 	Calendars   map[string]calendar.Audience
 	Occurrences []calendar.Occurrence
 	Tasks       []Task
+	Stars       Stars
 	// TimeFormat is the household's "24h" (default) or "12h" (ADR 0016).
 	TimeFormat store.TimeFormat
 }
@@ -54,6 +63,7 @@ type PersonalView struct {
 	ClockFormat string // "24h" or "12h"
 	Days        []PersonalDay
 	Tasks       []Task
+	Stars       Stars
 }
 
 // BuildPersonal lays out one person's view: their events for today and the
@@ -62,7 +72,7 @@ func BuildPersonal(in PersonalInput) PersonalView {
 	now := in.Now
 	loc := now.Location()
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-	v := PersonalView{Person: in.Person, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: loc.String(), ClockFormat: clockFormat(in.TimeFormat)}
+	v := PersonalView{Person: in.Person, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: loc.String(), ClockFormat: clockFormat(in.TimeFormat), Stars: in.Stars}
 	occs := append([]calendar.Occurrence(nil), in.Occurrences...)
 	sort.SliceStable(occs, func(i, j int) bool { return occs[i].Start.Before(occs[j].Start) })
 	finput := Input{Calendars: in.Calendars}

@@ -440,7 +440,10 @@ func TestWebICloudErrorDoesNotEchoHiddenFields(t *testing.T) {
 		"provider": {"icloud"}, "url": {"https://somewhere.example/dav"}, "single_calendar": {"1"},
 		"username": {"mama@example.org"}, "password": {"abcd-efgh-ijkl-mnop"},
 	})
-	if r.status != http.StatusUnprocessableEntity || strings.Contains(r.body, "somewhere.example") || strings.Contains(r.body, " checked") {
+	// Only the connection form is checked: the page's calendar form has its own
+	// defaults ("Whole family" starts ticked).
+	form := formOf(t, r.body, "/connections")
+	if r.status != http.StatusUnprocessableEntity || strings.Contains(r.body, "somewhere.example") || strings.Contains(form, " checked") {
 		t.Fatalf("error page = %d\n%s", r.status, r.body)
 	}
 }

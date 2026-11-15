@@ -66,7 +66,7 @@ func TestLoginRejectsWrongCredentials(t *testing.T) {
 
 	for name, form := range map[string]url.Values{"password": wrongPassword, "code": wrongCode, "user": unknownUser} {
 		r := b.post("/login", form)
-		if r.status != http.StatusUnauthorized || !strings.Contains(r.body, `class="error"`) {
+		if r.status != http.StatusUnauthorized || !strings.Contains(r.body, `class="ferr"`) {
 			t.Errorf("wrong %s = %d, want 401 with error", name, r.status)
 		}
 	}

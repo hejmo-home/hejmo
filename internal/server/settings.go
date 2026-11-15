@@ -72,5 +72,5 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "update settings", err)
 		return
 	}
-	http.Redirect(w, r, "/settings", http.StatusSeeOther)
+	s.redirectSaved(w, r, "/settings", "flash.saved")
 }

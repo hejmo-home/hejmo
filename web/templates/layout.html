@@ -4,7 +4,8 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Title}} · Hejmo</title>
-<link rel="stylesheet" href="/static/hejmo.css">
+<link rel="stylesheet" href="/static/hejmo.css">{{if .Frame}}
+<script src="/static/form.js" defer></script>{{end}}
 </head>
 <body{{if .Frame}} class="web"{{end}}>
 {{if .Frame}}<a class="skip" href="#content">{{t "frame.skip"}}</a>{{end}}
@@ -19,6 +20,7 @@
   {{end}}</ul></nav>{{end}}
 {{end}}
 <main id="content">
+{{with .Frame}}{{with .Success}}{{template "success" .}}{{end}}{{end}}
 {{end}}
 
 {{define "foot"}}
@@ -28,7 +30,7 @@
 </html>
 {{end}}
 
-{{define "error"}}{{if .Error}}<p class="error" role="alert">{{t .Error}}</p>{{end}}{{end}}
+{{define "error"}}{{if and .Error (not .ErrorField)}}<p class="error" role="alert">{{t .Error}}</p>{{end}}{{end}}
 
 {{define "syncNotice"}}{{if .SyncStale}}<p class="notice" role="status" data-sync-stale>{{t "sync.stale"}} <a href="/calendars">{{t "sync.stale.link"}}</a></p>{{end}}{{end}}
 

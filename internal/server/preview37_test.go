@@ -18,7 +18,10 @@ import (
 // TestWriteDesignPreview37 writes the self-contained preview page for ticket
 // 6.6 (tasks on the display): the family view with each person's task progress
 // anchored at the bottom of the column (ADR 0016), and a personal view with its
-// large checkboxes. Every frame is an iframe with the real stylesheet and the
+// large checkboxes. Since the design pass (Opus) the templates and the
+// stylesheet carry its markup, so regenerating gives the same design for the
+// example family; the committed docs/design/preview-37.html is the designer's
+// reference with its extra edge cases (eight people, phone, long titles). Every frame is an iframe with the real stylesheet and the
 // real templates, built from the real view models.
 // Run: HEJMO_WRITE_PREVIEW_37=../../docs/design/preview-37.html go test ./internal/server -run WriteDesignPreview37
 func TestWriteDesignPreview37(t *testing.T) {
@@ -87,9 +90,9 @@ func TestWriteDesignPreview37(t *testing.T) {
 		}
 		body.WriteString("</div>\n")
 	}
-	section("Family view, landscape 1024x768: task progress (done/total) anchored at the bottom of each column; Mama has no tasks today and shows no bar", 1024, 768, familyMarkup)
+	section("Family view, landscape 1024x768: today's tasks in words at the bottom of each column, the whole block opens the personal view; Mama has no tasks today and shows no block", 1024, 768, familyMarkup)
 	section("Family view, portrait 768x1024", 768, 1024, familyMarkup)
-	section("Mia's personal view, landscape 1024x768: today's tasks with large checkboxes (touch targets of at least 44 px)", 1024, 768, personalMarkup)
+	section("Mia's personal view, landscape 1024x768: tasks first, grouped by part of the day, with large checkboxes (touch targets of at least 44 px)", 1024, 768, personalMarkup)
 	section("Mia's personal view, portrait 768x1024", 768, 1024, personalMarkup)
 
 	page := `<!doctype html>

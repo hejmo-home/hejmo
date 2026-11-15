@@ -91,6 +91,11 @@ func TestSetupPagesLinkBackToSettings(t *testing.T) {
 		if !strings.Contains(body, `<a class="back" href="/settings">`) {
 			t.Errorf("%s has no link back to Settings", page)
 		}
+		// Ticket 111: the link sits inside main. As a grid item of the frame it
+		// broke the 1024 px layout.
+		if at, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main`); at < main {
+			t.Errorf("%s: the link back to Settings is outside main", page)
+		}
 		if !strings.Contains(body, `<a href="/settings" aria-current="page"`) {
 			t.Errorf("%s does not mark Settings as the current section", page)
 		}

@@ -71,3 +71,6 @@
   <p>{{.Text}}</p>
   <a class="button" href="{{.Href}}">{{.Action}}</a>
 </div>{{end}}
+
+{{/* The link back to the overview, first thing in main. Arguments: Href, Text. */}}
+{{define "backLink"}}<a class="back" href="{{.Href}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>{{.Text}}</a>{{end}}

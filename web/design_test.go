@@ -194,6 +194,20 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 			t.Errorf("DESIGN.md typography.%s = %v", c.name, e)
 		}
 	}
+	// Phone title and the secret shown once (ticket 111): size only; the secret
+	// is monospace so that l, 1, O and 0 differ.
+	for _, c := range []struct{ name, size, family, weight string }{
+		{"title-phone", "28px", "Figtree", "700"},
+		{"secret", "19px", "ui-monospace", "600"},
+	} {
+		if got := root["--fs-"+c.name]; got != c.size {
+			t.Errorf("css --fs-%s = %q, want %s", c.name, got, c.size)
+		}
+		e := d.Typography[c.name]
+		if e["fontFamily"] != c.family || e["fontSize"] != c.size || e["fontWeight"] != c.weight {
+			t.Errorf("DESIGN.md typography.%s = %v", c.name, e)
+		}
+	}
 	if got := themed(t, css, "bw")["--fw-event-title"]; got != "700" {
 		t.Errorf("bw --fw-event-title = %q, want 700", got)
 	}

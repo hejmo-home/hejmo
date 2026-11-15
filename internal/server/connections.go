@@ -6,10 +6,13 @@ import (
 	"errors"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -32,6 +35,9 @@ type discoveredJSON struct {
 	URL   string `json:"url"`
 	Name  string `json:"name"`
 	Added bool   `json:"added"`
+	// CalendarID is the id of the synced calendar when Added: the calendar
+	// to change or to switch off with /calendars/{id}.
+	CalendarID string `json:"calendar_id,omitempty"`
 }
 
 func connectionOf(c store.Connection) connectionJSON {
@@ -114,15 +120,16 @@ func (s *server) markAdded(p principal, conn store.Connection, found []caldavcli
 	if err != nil {
 		return nil, err
 	}
-	have := map[string]bool{}
+	have := map[string]string{}
 	for _, c := range synced {
 		if c.ConnectionID == conn.ID {
-			have[caldavclient.AddressKey(c.URL)] = true
+			have[caldavclient.AddressKey(c.URL)] = c.ID
 		}
 	}
 	out := make([]discoveredJSON, 0, len(found))
 	for _, f := range found {
-		out = append(out, discoveredJSON{URL: f.URL, Name: f.Name, Added: have[caldavclient.AddressKey(f.URL)]})
+		id, added := have[caldavclient.AddressKey(f.URL)]
+		out = append(out, discoveredJSON{URL: f.URL, Name: f.Name, Added: added, CalendarID: id})
 	}
 	return out, nil
 }
@@ -234,6 +241,68 @@ func (s *server) apiDiscover(w http.ResponseWriter, r *http.Request, p principal
 	j := connectionOf(conn)
 	j.Calendars = found
 	writeJSON(w, http.StatusOK, j)
+}
+
+// eventCountJSON is the number of events one found calendar has in the import
+// window. State is "count", "empty" (none in the last 12 months or later) or
+// "unknown" (the server did not answer in time or cannot count); Text says it
+// in the language of the request.
+type eventCountJSON struct {
+	URL   string `json:"url"`
+	State string `json:"state"`
+	Count int    `json:"count"`
+	Text  string `json:"text"`
+}
+
+// apiEventCounts counts the events of every calendar found on a connection.
+// The calendars are asked together, each with its own timeout, so one slow
+// calendar shows as unknown and does not hold up the others.
+func (s *server) apiEventCounts(w http.ResponseWriter, r *http.Request, p principal) {
+	conn, err := s.db.Connection(p.household.ID, r.PathValue("id"))
+	if s.storeError(w, "connection", err) {
+		return
+	}
+	found, err := s.rediscover(r.Context(), p, conn)
+	var bad *inputError
+	switch {
+	case errors.As(err, &bad):
+		writeError(w, http.StatusUnprocessableEntity, bad.Msg)
+		return
+	case err != nil:
+		s.fail(w, "discover", err)
+		return
+	}
+	user, password, err := s.db.ConnectionCredentials(p.household.ID, conn.ID)
+	if err != nil {
+		s.fail(w, "credentials", err)
+		return
+	}
+	out := make([]eventCountJSON, len(found))
+	var wg sync.WaitGroup
+	for i, f := range found {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			ctx, cancel := context.WithTimeout(r.Context(), s.countWait)
+			defer cancel()
+			n, err := s.sync.CountEvents(ctx, conn.URL, user, password, f.URL)
+			out[i] = s.eventCount(r, f.URL, n, err)
+		}()
+	}
+	wg.Wait()
+	writeJSON(w, http.StatusOK, out)
+}
+
+func (s *server) eventCount(r *http.Request, address string, n int, err error) eventCountJSON {
+	switch {
+	case err != nil:
+		return eventCountJSON{URL: address, State: "unknown", Text: s.say(r, i18n.Msg("connections.count.unknown"))}
+	case n == 0:
+		return eventCountJSON{URL: address, State: "empty", Text: s.say(r, i18n.Msg("connections.count.empty"))}
+	case n == 1:
+		return eventCountJSON{URL: address, State: "count", Count: 1, Text: s.say(r, i18n.Msg("connections.count.one"))}
+	}
+	return eventCountJSON{URL: address, State: "count", Count: n, Text: s.say(r, i18n.Msg("connections.count.many", "count", strconv.Itoa(n)))}
 }
 
 func (s *server) apiAddConnectionCalendar(w http.ResponseWriter, r *http.Request, p principal) {

@@ -69,7 +69,7 @@ func TestWritePreview71(t *testing.T) {
 	tasksSaved := saved("/tasks", url.Values{"person": {ids["Mia"]}, "title": {"Read a book"}, "emoji": {"📖"}, "repeat": {"daily"}}, "/tasks")
 	tasksError := failed("/tasks", url.Values{"person": {ids["Sebastian"]}, "title": {""}, "emoji": {"🎒"}, "repeat": {"weekly"}})
 	calendarsError := failed("/calendars", url.Values{"name": {"Swimming"}, "url": {"not an address"}, "color": {"#4E7D52"}, "interval": {"60"}, "people": {ids["Mia"]}})
-	settingsSaved := saved("/settings", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}}, "/settings")
+	settingsSaved := saved("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}}, "/settings/household")
 	displaysSaved := saved("/displays/"+firstDisplay(t, b)+"/settings", url.Values{"show_tomorrow": {"on"}}, "/displays")
 	detail := strings.Replace(page("/tasks/"+tasks[0].ID), `<details class="danger">`, `<details class="danger" open>`, 1)
 

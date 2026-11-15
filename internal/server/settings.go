@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 
+	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/update"
@@ -82,14 +83,15 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 // cutoffField is the name of a mealtime's time field in the settings form.
 func cutoffField(m meal.Mealtime) string { return "cutoff_" + string(m) }
 
-// renderSettings shows the settings. cutoffs is what the cut-off fields hold
-// (what was typed, after a refused save); errField names the field at fault.
+// renderSettings shows the household settings. cutoffs is what the cut-off
+// fields hold (what was typed, after a refused save); errField names the
+// field at fault.
 func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p principal, status int, errKey, errField string, cutoffs meal.Cutoffs) {
 	fields := make([]cutoffInput, 0, 4)
 	for _, m := range meal.Mealtimes() {
 		fields = append(fields, cutoffInput{Name: cutoffField(m), Mealtime: string(m), Value: cutoffs.For(m)})
 	}
-	s.render(w, r, status, "settings.html", map[string]any{
+	s.render(w, r, status, "household.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Error": errKey, "ErrorField": errField, "Cutoffs": fields,
 		"TimeFormat": string(p.household.TimeFormat), "TemperatureUnit": string(p.household.TemperatureUnit),
 		"AutoUpdate": string(p.household.AutoUpdate), "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
@@ -97,6 +99,23 @@ func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p princi
 }
 
 type cutoffInput struct{ Name, Mealtime, Value string }
+
+// handleSettingsHub shows the Settings hub: one calm row per setup screen.
+func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	var items []hubItem
+	for _, it := range hubItems {
+		if auth.RoleAllows(p.person.Role, it.Needs) {
+			items = append(items, it)
+		}
+	}
+	s.render(w, r, http.StatusOK, "settings.html", map[string]any{
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Hub": items, "Update": s.updateNotice(p.household),
+	})
+}
 
 func (s *server) handleSettingsPage(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
@@ -140,11 +159,12 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "update settings", err)
 		return
 	}
-	s.redirectSaved(w, r, "/settings", "flash.saved")
+	s.redirectSaved(w, r, "/settings/household", "flash.saved")
 }
 
-// saveSettings stores all household settings in one database write. The update
-// mode also goes to the host script; only a failing settings file is tolerated.
+// saveSettings stores the household settings: the general ones and the meal
+// cut-offs are two writes. The update mode also goes to the host script; only a
+// failing settings file is tolerated.
 func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode, c meal.Cutoffs) error {
 	if err := s.db.UpdateHouseholdSettings(h.ID, f, u, a); err != nil {
 		return err

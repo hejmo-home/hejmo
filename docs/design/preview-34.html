@@ -32,12 +32,12 @@ iframe{border:0;background:#fff;display:block}
 <figure><figcaption>Black and white, landscape 1024 x 768</figcaption><iframe data-doc="3" data-theme="bw" data-anchor="" width="1024" height="768" title="4. A child's phone or a child's browser: read only"></iframe></figure>
 <figure><figcaption>Light, portrait 768 x 1024</figcaption><iframe data-doc="3" data-theme="light" data-anchor="" width="768" height="1024" title="4. A child's phone or a child's browser: read only"></iframe></figure>
 </div>
-<h2>5. Settings: cut-off time per mealtime</h2><p class="note">From these times a mealtime is no longer shown on displays (ADR 0016). The defaults are breakfast 10:00, lunch 13:30, snack 16:30; dinner has none and shows for the rest of the day. Leave a field empty for none. The page is shown scrolled to the new section.</p><div class="row">
-<figure><figcaption>Light, landscape 1024 x 768</figcaption><iframe data-doc="4" data-theme="light" data-anchor="fieldset.cutoffs" width="1024" height="768" title="5. Settings: cut-off time per mealtime"></iframe></figure>
-<figure><figcaption>Dark, landscape 1024 x 768</figcaption><iframe data-doc="4" data-theme="dark" data-anchor="fieldset.cutoffs" width="1024" height="768" title="5. Settings: cut-off time per mealtime"></iframe></figure>
-<figure><figcaption>Black and white, landscape 1024 x 768</figcaption><iframe data-doc="4" data-theme="bw" data-anchor="fieldset.cutoffs" width="1024" height="768" title="5. Settings: cut-off time per mealtime"></iframe></figure>
-<figure><figcaption>Light, portrait 768 x 1024</figcaption><iframe data-doc="4" data-theme="light" data-anchor="fieldset.cutoffs" width="768" height="1024" title="5. Settings: cut-off time per mealtime"></iframe></figure>
-<figure><figcaption>Black and white, portrait 768 x 1024</figcaption><iframe data-doc="4" data-theme="bw" data-anchor="fieldset.cutoffs" width="768" height="1024" title="5. Settings: cut-off time per mealtime"></iframe></figure>
+<h2>5. Settings > Household: cut-off time per mealtime</h2><p class="note">From these times a mealtime is no longer shown on displays (ADR 0016). The defaults are breakfast 10:00, lunch 13:30, snack 16:30; dinner has none and shows for the rest of the day. Leave a field empty for none. The page is shown scrolled to the new section.</p><div class="row">
+<figure><figcaption>Light, landscape 1024 x 768</figcaption><iframe data-doc="4" data-theme="light" data-anchor="fieldset.cutoffs" width="1024" height="768" title="5. Settings > Household: cut-off time per mealtime"></iframe></figure>
+<figure><figcaption>Dark, landscape 1024 x 768</figcaption><iframe data-doc="4" data-theme="dark" data-anchor="fieldset.cutoffs" width="1024" height="768" title="5. Settings > Household: cut-off time per mealtime"></iframe></figure>
+<figure><figcaption>Black and white, landscape 1024 x 768</figcaption><iframe data-doc="4" data-theme="bw" data-anchor="fieldset.cutoffs" width="1024" height="768" title="5. Settings > Household: cut-off time per mealtime"></iframe></figure>
+<figure><figcaption>Light, portrait 768 x 1024</figcaption><iframe data-doc="4" data-theme="light" data-anchor="fieldset.cutoffs" width="768" height="1024" title="5. Settings > Household: cut-off time per mealtime"></iframe></figure>
+<figure><figcaption>Black and white, portrait 768 x 1024</figcaption><iframe data-doc="4" data-theme="bw" data-anchor="fieldset.cutoffs" width="768" height="1024" title="5. Settings > Household: cut-off time per mealtime"></iframe></figure>
 </div>
 
 <template id="css">/* "Nordic Calm" design tokens and shared styles for the web interface and the
@@ -309,10 +309,15 @@ a { color: var(--accent); }
 .brand { display: inline-flex; align-items: center; min-height: var(--touch-target); font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); color: var(--text); text-decoration: none; }
 .frame-bar .button { min-height: var(--touch-target); }
 .frame-bar form { margin: 0; }
-.frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-cards); }
+.frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: var(--gap-cards); }
+.frame-nav li { flex: none; }
 .frame-nav a { display: flex; align-items: center; min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
 .frame-nav a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
 [data-theme="bw"] .frame-nav a { border-width: 2px; }
+.back { display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; }
+.hub-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); }
+.hub-row strong { font-size: var(--fs-event-title); }
+[data-theme="bw"] .hub-row { text-decoration: underline; }
 .frame main { min-width: 0; }
 @media (max-width: 599px) {
   body.web { padding: var(--gap); }
@@ -320,7 +325,7 @@ a { color: var(--accent); }
 @media (min-width: 900px) {
   .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); align-items: start; }
   .frame.has-nav .frame-bar { grid-column: 1 / -1; }
-  .frame-nav ul { flex-direction: column; flex-wrap: nowrap; }
+  .frame-nav ul { flex-direction: column; overflow-x: visible; }
 }
 
 /* Portrait shows at most four person columns (ticket 5.7, ADR 0016). The
@@ -375,6 +380,16 @@ body:has(.family-page) { overflow: hidden; }
 .qr { width: min(60vw, 240px); margin: 0 0 12px; color: var(--text); }
 .qr svg { display: block; width: 100%; height: auto; }
 
+/* Quiet mode (ticket 5.9; ADR 0015). A normal screen goes black; an E-Ink
+   display shows a calm night page about the coming morning. Quiet mode takes
+   precedence over the theme: it uses the display's page background only. */
+.quiet.black { position: fixed; inset: 0; background: black; }
+.quiet.night { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: var(--gap-section); max-width: 32em; margin: 0 auto; }
+.quiet.night .lab { font-size: var(--fs-label); color: var(--text-secondary); }
+.quiet.night .date { font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
+.quiet.night .night-item .title { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+.quiet.night .night-item .meta { font-size: var(--fs-meta); color: var(--text-secondary); }
+
 /* Shared form patterns (ticket 5.16; ADR 0017). Switch, person chips,
    segmented control, choice cards, weekday chips, "More options", detail-page
    danger zone, empty state, success line and field errors. Colours come from
@@ -415,6 +430,17 @@ body:has(.family-page) { overflow: hidden; }
 [data-theme="bw"] .switch input::before { background: var(--text); }
 [data-theme="bw"] .switch input:checked { background: var(--text); }
 [data-theme="bw"] .switch input:checked::before { background: var(--surface); }
+
+/* Choose calendars: the event count of each calendar (ADR 0017). It is filled
+   in after the page has loaded; "empty" is the one that matters (a calendar
+   with nothing in the window), so it is a notice, and in black and white bold. */
+.count { font-size: var(--fs-meta); }
+.count[data-state="loading"] { font-style: italic; }
+.count[data-state="unknown"] { font-style: italic; }
+.count[data-state="empty"] { background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-field); padding: 2px 8px; justify-self: start; font-weight: 600; }
+[data-theme="bw"] .count[data-state="empty"] { background: none; color: var(--text); border: 2px solid var(--text); }
+.calchoice .card-row { margin-bottom: 4px; }
+.cards [data-events], .cards [data-last-run] { font-variant-numeric: tabular-nums; }
 
 /* Person chips: who is it for. Selected = tint + 2px border in the person
    colour + tick + bold. "Whole family" is neutral and selected by default. */
@@ -556,14 +582,11 @@ document.addEventListener("change", function (e) {
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
-  <li><a href="/calendars">Calendars</a></li>
-  <li><a href="/caldav">Calendar apps</a></li>
-  <li><a href="/displays">Displays</a></li>
-  <li><a href="/phones">Phones</a></li>
   <li><a href="/tasks">Tasks</a></li>
   <li><a href="/meals" aria-current="page">Meals</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
+
 
 <main id="content">
 <p class="msg ok" role="status" data-success><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Meal plan saved.</p>
@@ -750,14 +773,11 @@ document.addEventListener("change", function (e) {
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
-  <li><a href="/calendars">Calendars</a></li>
-  <li><a href="/caldav">Calendar apps</a></li>
-  <li><a href="/displays">Displays</a></li>
-  <li><a href="/phones">Phones</a></li>
   <li><a href="/tasks">Tasks</a></li>
   <li><a href="/meals" aria-current="page">Meals</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
+
 
 <main id="content">
 
@@ -944,14 +964,11 @@ document.addEventListener("change", function (e) {
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
-  <li><a href="/calendars">Calendars</a></li>
-  <li><a href="/caldav">Calendar apps</a></li>
-  <li><a href="/displays">Displays</a></li>
-  <li><a href="/phones">Phones</a></li>
   <li><a href="/tasks">Tasks</a></li>
   <li><a href="/meals" aria-current="page">Meals</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
+
 
 <main id="content">
 
@@ -1142,6 +1159,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/meals" aria-current="page">Meals</a></li>
   </ul></nav>
 
+
 <main id="content">
 
 
@@ -1212,24 +1230,21 @@ document.addEventListener("change", function (e) {
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
-  <li><a href="/calendars">Calendars</a></li>
-  <li><a href="/caldav">Calendar apps</a></li>
-  <li><a href="/displays">Displays</a></li>
-  <li><a href="/phones">Phones</a></li>
   <li><a href="/tasks">Tasks</a></li>
   <li><a href="/meals">Meals</a></li>
   <li><a href="/settings" aria-current="page">Settings</a></li>
   </ul></nav>
+<a class="back" href="/settings">Back to Settings</a>
 
 <main id="content">
 <p class="msg ok" role="status" data-success><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Phone confirmed. It signs in within a few seconds.</p>
 
-  <h1>Settings</h1>
+  <h1>Household</h1>
   
   
   <p class="lead">These settings apply to the whole household.</p>
   
-  <form method="post" action="/settings" class="steps">
+  <form method="post" action="/settings/household" class="steps">
     <fieldset class="seg"><legend>Time format</legend>
       <label><input type="radio" name="time_format" value="24h" checked>24-hour (14:30)</label>
       <label><input type="radio" name="time_format" value="12h">12-hour (2:30 PM)</label>
@@ -1267,7 +1282,6 @@ document.addEventListener("change", function (e) {
     </fieldset>
     <button class="button" type="submit">Save</button>
   </form>
-  <p><a href="/otp">One-time codes and recovery codes</a></p>
 
 </main>
 </div>

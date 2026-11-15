@@ -63,7 +63,7 @@ func TestWritePreview34(t *testing.T) {
 	}
 	failed := r.body
 	child := pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone").get("/meals?week=2026-11-09", "en").body
-	settings := page("/settings")
+	settings := page("/settings/household")
 
 	type frame struct {
 		theme string
@@ -116,7 +116,7 @@ func TestWritePreview34(t *testing.T) {
 	add("4. A child's phone or a child's browser: read only",
 		"Children see the plan (read), not the fields. Only planned meals are listed.",
 		"", child, append(land("light", "bw"), port("light")...)...)
-	add("5. Settings: cut-off time per mealtime",
+	add("5. Settings > Household: cut-off time per mealtime",
 		"From these times a mealtime is no longer shown on displays (ADR 0016). The defaults are breakfast 10:00, lunch 13:30, snack 16:30; dinner has none and shows for the rest of the day. Leave a field empty for none. The page is shown scrolled to the new section.",
 		"fieldset.cutoffs", settings, append(land("light", "dark", "bw"), port("light", "bw")...)...)
 

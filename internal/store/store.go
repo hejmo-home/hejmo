@@ -245,7 +245,9 @@ func checkForeignKeys(ctx context.Context, tx *sql.Tx) error {
 	if rows.Next() {
 		var table, parent sql.NullString
 		var rowid, idx sql.NullInt64
-		_ = rows.Scan(&table, &rowid, &parent, &idx)
+		if err := rows.Scan(&table, &rowid, &parent, &idx); err != nil {
+			return fmt.Errorf("read foreign key check result: %w", err)
+		}
 		return fmt.Errorf("row %d of %s refers to a missing row of %s", rowid.Int64, table.String, parent.String)
 	}
 	return rows.Err()

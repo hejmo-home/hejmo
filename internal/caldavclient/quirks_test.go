@@ -12,6 +12,7 @@ import (
 	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 )
@@ -41,7 +42,10 @@ type quirkExpect struct {
 	} `json:"calendars"`
 	Calendar string        `json:"calendar"`
 	List     []quirkObject `json:"list"`
-	Fetch    []quirkObject `json:"fetch"`
+	// Count is the number of events the event-count query must report
+	// (nil: the quirk says nothing about it).
+	Count *int          `json:"count"`
+	Fetch []quirkObject `json:"fetch"`
 }
 
 var icsPlaceholder = regexp.MustCompile(`\{\{ics:([^}]+)\}\}`)
@@ -169,6 +173,15 @@ func runQuirk(t *testing.T, dir string) {
 			if got[i].URL != w.URL || got[i].ETag != w.ETag {
 				t.Errorf("listed object %d = {%s %q}, want {%s %q}", i, got[i].URL, got[i].ETag, w.URL, w.ETag)
 			}
+		}
+	}
+	if want.Count != nil {
+		got, err := c.CountEvents(ctx, want.Calendar, time.Date(2025, 11, 14, 12, 0, 0, 0, time.UTC))
+		if err != nil {
+			t.Fatalf("count: %v", err)
+		}
+		if got != *want.Count {
+			t.Errorf("count = %d, want %d", got, *want.Count)
 		}
 	}
 	if want.Fetch != nil {

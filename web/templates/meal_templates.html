@@ -10,7 +10,7 @@
   <h2>{{t "meals.tpl.ahead.title"}}</h2>
   <p class="hint">{{t "meals.tpl.ahead.hint"}}</p>
   <ul class="ahead">
-    {{range .Ahead}}<li><div class="wkn"><b>{{printf (t "meals.week.label") .No}}</b><span>{{.Range}}</span> {{if .This}}<span class="today">{{t "meals.tpl.this_week"}}</span>{{end}}</div><div class="fills">{{range .Fills}}<span><b>{{.Name}}</b>: {{.Meal}}</span>{{else}}<span class="free">{{t "meals.tpl.ahead.free"}}</span>{{end}}</div></li>
+    {{range .Ahead}}<li><div class="wkn"><b>{{printf (t "meals.week.label") .No}}</b><span>{{.Range}}</span> {{if .This}}<span class="today">{{t "meals.tpl.this_week"}}</span>{{end}}</div><div class="fills">{{range .Fills}}<span><b>{{.Name}}</b>{{t "meals.tpl.ahead.sep"}}{{.Meal}}</span>{{else}}<span class="free">{{t "meals.tpl.ahead.free"}}</span>{{end}}</div></li>
     {{end}}
   </ul>
   {{else}}

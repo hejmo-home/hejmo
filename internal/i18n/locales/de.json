@@ -858,5 +858,6 @@
   "meals.tpl.clash.sentence": "{template} füllt auch {meal} am {days}, zuerst in Woche {week} ({range}).",
   "meals.tpl.clash.advice": "Wähle eine andere Startwoche oder einen anderen Abstand, oder lass diese Tage in einer der beiden Vorlagen leer.",
   "flash.template_saved": "Vorlage „{name}“ gespeichert. Sie füllt den Essensplan ab heute.",
-  "flash.template_deleted": "Vorlage „{name}“ gelöscht. Mahlzeiten vor heute und Mahlzeiten, die du für eine Woche angepasst hast, bleiben im Essensplan."
+  "flash.template_deleted": "Vorlage „{name}“ gelöscht. Mahlzeiten vor heute und Mahlzeiten, die du für eine Woche angepasst hast, bleiben im Essensplan.",
+  "meals.tpl.ahead.sep": ": "
 }

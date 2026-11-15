@@ -858,5 +858,6 @@
   "meals.tpl.clash.sentence": "{template} also fills {meal} on {days}, first in week {week} ({range}).",
   "meals.tpl.clash.advice": "Choose another start week or interval, or leave those days empty in one of the two templates.",
   "flash.template_saved": "Template “{name}” saved. It fills the meal plan from today on.",
-  "flash.template_deleted": "Template “{name}” deleted. Meals before today and meals you adjusted for a week stay in the meal plan."
+  "flash.template_deleted": "Template “{name}” deleted. Meals before today and meals you adjusted for a week stay in the meal plan.",
+  "meals.tpl.ahead.sep": ": "
 }

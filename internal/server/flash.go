@@ -1,12 +1,14 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/task"
 )
 
 // flashCookie carries the success line across the redirect that follows a
@@ -75,6 +77,10 @@ func (s *server) successText(lang, key, arg string) string {
 		if arg != "" {
 			return s.wasteOnText(lang, arg)
 		}
+	case "flash.meals_saved":
+		// The line names the week that was saved; the cookie holds its Monday.
+		monday := requestedWeek(arg, s.now().Format(task.DateLayout))
+		return fmt.Sprintf(s.i18n.T(lang, key), isoWeek(monday))
 	}
 	return s.i18n.T(lang, key)
 }

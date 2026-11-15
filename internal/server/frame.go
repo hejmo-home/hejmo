@@ -12,7 +12,7 @@ import (
 // navItem is one screen of the web interface frame. A person sees it when
 // their role holds the permission the screen needs (ADR 0015), so a child's
 // device session sees only the screens its role allows. Later screens
-// (calendar, lists, meal plan, phones) add a line here.
+// (calendar, lists, phones) add a line here.
 type navItem struct {
 	Href, Label string
 	Needs       auth.Permission
@@ -22,6 +22,7 @@ var navItems = []navItem{
 	{"/", "nav.home", auth.Perm("events", auth.Read)},
 	{"/calendar", "nav.calendar", auth.Perm("events", auth.Write)},
 	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Read)},
+	{"/meals", "nav.meals", auth.Perm("meals", auth.Read)},
 	{"/settings", "nav.settings", auth.Perm("settings", auth.Write)},
 }
 
@@ -38,6 +39,9 @@ type frame struct {
 	// seconds, 0 when unknown); the page script uses them for the browser
 	// theme "automatic" (ADR 0015).
 	SunRise, SunSet int64
+	// TimeFormat is the household's clock ("24h" or "12h"); the time picker
+	// follows it.
+	TimeFormat string
 	// Back is set on setup screens: they link back to the Settings hub.
 	Back bool
 	// Success is the success line after a saved change, already translated.
@@ -55,6 +59,9 @@ func (s *server) frameFor(r *http.Request) frame {
 	}
 	f := s.sunFrame()
 	f.SignedIn = true
+	if h, err := s.db.HomeHousehold(); err == nil {
+		f.TimeFormat = string(h.TimeFormat)
+	}
 	f.Back = isSetupPath(r.URL.Path)
 	for _, it := range navItems {
 		if !auth.RoleAllows(p.Role, it.Needs) {

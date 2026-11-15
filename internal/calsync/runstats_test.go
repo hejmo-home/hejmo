@@ -143,3 +143,26 @@ func TestCountEventsCountsTheImportWindowOnly(t *testing.T) {
 		}
 	}
 }
+
+func TestAFailedScheduledRunLogsNoUrlAndNoTitle(t *testing.T) {
+	fx := newFixture(t)
+	var buf bytes.Buffer
+	fx.svc.SetLogger(slog.New(slog.NewJSONHandler(&buf, nil)))
+	fx.f.errs[feedURL] = errors.New("Get https://example.org/school.ics?token=s3cret: connection refused; event \"Choir\"")
+
+	fx.svc.RunDue(context.Background())
+
+	if len(runLines(t, &buf)) != 1 {
+		t.Fatalf("want one run line through RunDue:\n%s", buf.String())
+	}
+	for _, leak := range []string{"s3cret", "example.org", "school.ics", "Choir", "https://"} {
+		if strings.Contains(buf.String(), leak) {
+			t.Errorf("the log contains %q:\n%s", leak, buf.String())
+		}
+	}
+	for _, line := range strings.Split(strings.TrimSpace(buf.String()), "\n") {
+		if strings.Contains(line, `"level":"WARN"`) {
+			t.Errorf("unexpected WARN line: %s", line)
+		}
+	}
+}

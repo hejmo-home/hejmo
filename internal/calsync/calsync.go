@@ -260,9 +260,10 @@ func (s *Service) RunDue(ctx context.Context) {
 		if ctx.Err() != nil {
 			return
 		}
-		if err := s.Sync(ctx, c.HouseholdID, c.ID); err != nil {
-			s.logger.Warn("calendar sync failed", "calendar", c.ID, "err", err)
-		}
+		// Sync already wrote the run's one INFO line and stored the failure; the
+		// raw error can hold the feed address (often with a secret token) or an
+		// event title, so it is not logged.
+		_ = s.Sync(ctx, c.HouseholdID, c.ID)
 	}
 }
 

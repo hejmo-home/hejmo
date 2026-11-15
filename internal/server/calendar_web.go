@@ -189,7 +189,7 @@ func (s *server) handleCalendarWeek(w http.ResponseWriter, r *http.Request) {
 	}
 	_, week := start.ISOWeek()
 	s.render(w, r, http.StatusOK, "calendar.html", map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Days": days, "Bars": bars, "Lanes": len(bars),
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Days": days, "Bars": bars,
 		"Week": week, "From": start.Format("02/01"), "To": end.AddDate(0, 0, -1).Format("02/01/2006"),
 		"Prev": weekLink(start.AddDate(0, 0, -7)), "Next": weekLink(end), "ThisWeek": weekLink(calendar.StartOfWeek(s.now().In(c.loc))),
 		"NewHref": "/calendar/new?date=" + start.Format(dateLayout), "Weekdays": calendarWeekdays,
@@ -374,7 +374,11 @@ func (s *server) handleEventNew(w http.ResponseWriter, r *http.Request) {
 	if d, err := time.ParseInLocation(dateLayout, r.URL.Query().Get("date"), c.loc); err == nil {
 		day = d
 	}
-	fam, _ := s.db.FamilyCalendar(p.household.ID)
+	fam, err := s.db.FamilyCalendar(p.household.ID)
+	if err != nil {
+		s.fail(w, "family calendar", err)
+		return
+	}
 	f := eventForm{StartDate: day.Format(dateLayout), EndDate: day.Format(dateLayout), StartTime: "09:00", EndTime: "10:00",
 		TimeZone: p.household.Timezone, Repeat: string(calendar.RepeatNone), Calendar: fam.ID}
 	s.renderEventForm(w, r, c, http.StatusOK, "new", f, nil, nil)
@@ -540,7 +544,7 @@ func (s *server) handleEventPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if raw == "" {
-		raw = occ.Start.Format(time.RFC3339)
+		raw = occ.OriginalStart().Format(time.RFC3339)
 	}
 	s.renderEventPage(w, r, c, http.StatusOK, series, occ, formOf(series, occ, raw), nil)
 }
@@ -643,13 +647,20 @@ func (c *calendarContext) patch(series []calendar.Event, occ calendar.Occurrence
 	if scope == calendar.ScopeThis || f.Repeat == "" || f.Repeat == string(calendar.RepeatCustom) {
 		return p, nil
 	}
+	curRepeat, curUntil := calendar.RepeatOf(master.RRule)
+	// The form shows the end of the series as a date. A series cut by "this and
+	// following" ends a second before the cut, so only a changed date counts as
+	// a new end: otherwise the cut-off occurrences would come back.
+	untouchedEnd := f.Until == "" && curUntil.IsZero() || !curUntil.IsZero() && f.Until == curUntil.In(loc).Format(dateLayout)
+	if string(curRepeat) == f.Repeat && untouchedEnd {
+		return p, nil
+	}
 	until, err := f.untilOf(loc)
 	if err != nil {
 		return p, err
 	}
-	curRepeat, curUntil := calendar.RepeatOf(master.RRule)
-	if string(curRepeat) == f.Repeat && curUntil.Equal(until) {
-		return p, nil
+	if untouchedEnd {
+		until = curUntil
 	}
 	rule, err := calendar.RepeatRule(calendar.Repeat(f.Repeat), until)
 	if err != nil {

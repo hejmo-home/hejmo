@@ -467,7 +467,7 @@ details.danger form { margin: 0 0 10px; }
 .wk { display: grid; gap: 6px; margin: 0 0 var(--gap-section); }
 .wk ol, .wk ul { list-style: none; margin: 0; padding: 0; }
 .wk-heads, .wk-bars, .wk-days { display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 6px; }
-.wk-bars { row-gap: 4px; grid-auto-flow: row dense; } /* a bar goes to the first row where its columns are free: the lanes of WeekBars */
+.wk-bars { row-gap: 4px; grid-auto-flow: row dense; } /* dense packing: a bar goes to the first row where its columns are free */
 .c1 { grid-column-start: 1; } .c2 { grid-column-start: 2; } .c3 { grid-column-start: 3; } .c4 { grid-column-start: 4; } .c5 { grid-column-start: 5; } .c6 { grid-column-start: 6; } .c7 { grid-column-start: 7; }
 .s1 { grid-column-end: span 1; } .s2 { grid-column-end: span 2; } .s3 { grid-column-end: span 3; } .s4 { grid-column-end: span 4; } .s5 { grid-column-end: span 5; } .s6 { grid-column-end: span 6; } .s7 { grid-column-end: span 7; }
 .wk-heads li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; padding: 6px 8px; font-size: var(--fs-label); color: var(--text-secondary); min-width: 0; }

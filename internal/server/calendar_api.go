@@ -257,6 +257,10 @@ func (s *server) apiUpdateEvent(w http.ResponseWriter, r *http.Request, p princi
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
+	if in.TimeZone != nil {
+		writeError(w, http.StatusUnprocessableEntity, "timezone: the time zone of an event cannot be changed")
+		return
+	}
 	allDay := series[0].AllDay
 	loc := series[0].Start.Location()
 	patch := calendar.Patch{Title: in.Title, Description: in.Description, Location: in.Location, RRule: in.RRule, People: in.People, Groups: in.Groups}

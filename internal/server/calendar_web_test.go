@@ -51,12 +51,7 @@ func TestParentCreatesAWeeklyEventForMiaAndItShowsInTheWeekAndOnTheDisplay(t *te
 	if cols := columns(t, f.view(t, "en", f.at(14, 13, 0))); strings.Join(cols["Mia"], "|") != "Swimming" {
 		t.Fatalf("Mia's column = %v", cols)
 	}
-	// API parity: the same series is there.
-	events := regexp.MustCompile(`"rrule"`)
-	_ = events
 }
-
-var _ = regexp.MustCompile
 
 var eventLinkRe = regexp.MustCompile(`href="(/calendar/events/[^"]+)"`)
 
@@ -353,9 +348,98 @@ func TestEventsMadeInTheWebInterfaceAreVisibleThroughTheAPI(t *testing.T) {
 	form.Del("whole_family")
 	form["people"] = []string{f.people["Mia"].ID}
 	f.postEvent(t, form)
+	c := newAPIClient(t, f.box)
+	c.cookie = true
+	occs := c.occurrences(t, november)
+	if len(occs) != 3 {
+		t.Fatalf("occurrences in November = %v", occTitles(occs))
+	}
+	o := occs[0]
+	people, _ := o["people"].([]any)
+	if o["title"] != "Swimming" || o["start"] != "2026-11-14T16:00:00+01:00" || len(people) != 1 || people[0] != f.people["Mia"].ID {
+		t.Fatalf("occurrence = %v", o)
+	}
 	h, _ := f.db.HomeHousehold()
 	events, _ := f.db.CalendarEvents(h.ID, f.family.ID)
-	if len(events) != 1 || events[0].RRule != "FREQ=WEEKLY" || events[0].Start.Location().String() != "Europe/London" || len(events[0].People) != 1 || events[0].People[0] != f.people["Mia"].ID {
+	if len(events) != 1 || events[0].RRule != "FREQ=WEEKLY" || events[0].Start.Location().String() != "Europe/London" {
 		t.Fatalf("stored = %+v", events)
+	}
+}
+
+// The earlier half of a split series ends the day before the split; editing it
+// without touching repeat or end must not bring the split-off occurrence back.
+func TestEditingTheEarlierHalfOfASplitSeriesKeepsItsEnd(t *testing.T) {
+	f := calendarBox(t)
+	form := eventForm("Choir", "2026-11-02", "17:00", "18:00")
+	form.Set("repeat", "weekly")
+	f.postEvent(t, form)
+	path, occ := occurrenceOf(t, linkTo(t, getEN(f.box, "/calendar?week=2026-11-16").body, "Choir"))
+	split := eventForm("Choir (big hall)", "2026-11-16", "17:00", "18:00")
+	split.Set("repeat", "weekly")
+	split.Set("occurrence", occ)
+	split.Set("scope", "following")
+	f.post(path, split)
+
+	path, occ = occurrenceOf(t, linkTo(t, getEN(f.box, "/calendar?week=2026-11-09").body, "Choir"))
+	page := getEN(f.box, path+"?occurrence="+url.QueryEscape(occ)).body
+	m := regexp.MustCompile(`name="until"[^>]*value="([^"]*)"|value="([^"]*)"[^>]*name="until"`).FindStringSubmatch(page)
+	if m == nil {
+		t.Fatalf("no end date on the edit page:\n%s", page)
+	}
+	until := m[1] + m[2]
+	for _, scope := range []string{"all", "following"} {
+		edit := eventForm("Choir (small hall)", "2026-11-09", "17:00", "18:00")
+		edit.Set("repeat", "weekly")
+		edit.Set("until", until)
+		edit.Set("occurrence", occ)
+		edit.Set("scope", scope)
+		if r := f.post(path, edit); r.status != http.StatusSeeOther {
+			t.Fatalf("%s: edit = %d\n%s", scope, r.status, r.body)
+		}
+		week := getEN(f.box, "/calendar?week=2026-11-16").body
+		if strings.Contains(week, "small hall") || !strings.Contains(week, "big hall") {
+			t.Fatalf("%s: the split-off occurrence changed or came back:\n%s", scope, week)
+		}
+		if !strings.Contains(getEN(f.box, "/calendar?week=2026-11-09").body, "small hall") {
+			t.Fatalf("%s: the earlier half was not changed", scope)
+		}
+	}
+}
+
+// An event page opened without ?occurrence= must still save when the first
+// occurrence of its series was moved.
+func TestEventPageOfASeriesWhoseFirstOccurrenceWasMovedStillSaves(t *testing.T) {
+	f := calendarBox(t)
+	form := eventForm("Piano", "2026-11-02", "16:00", "17:00")
+	form.Set("repeat", "weekly")
+	f.postEvent(t, form)
+	path, occ := occurrenceOf(t, linkTo(t, getEN(f.box, "/calendar?week=2026-11-02").body, "Piano"))
+	move := eventForm("Piano", "2026-11-02", "18:00", "19:00")
+	move.Set("repeat", "weekly")
+	move.Set("occurrence", occ)
+	move.Set("scope", "this")
+	f.post(path, move)
+
+	page := getEN(f.box, path).body
+	m := regexp.MustCompile(`name="occurrence" value="([^"]*)"`).FindStringSubmatch(page)
+	if m == nil {
+		t.Fatalf("no occurrence on the page:\n%s", page)
+	}
+	save := eventForm("Piano (moved)", "2026-11-02", "18:00", "19:00")
+	save.Set("repeat", "weekly")
+	save.Set("occurrence", html.UnescapeString(m[1]))
+	save.Set("scope", "this")
+	if r := f.post(path, save); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+}
+
+// ADR 0015: the zone of an event is not changed afterwards; the API says so.
+func TestAPIRefusesATimezoneWhenChangingAnEvent(t *testing.T) {
+	c := signedInAPI(t)
+	ev := c.createEvent(t, map[string]any{"title": "Call", "start": "2026-11-14T09:00:00+01:00", "end": "2026-11-14T10:00:00+01:00"})
+	status, _, _ := c.call(http.MethodPatch, "/events/"+ev["id"].(string), map[string]any{"timezone": "Europe/London"})
+	if status != http.StatusUnprocessableEntity {
+		t.Fatalf("patch with timezone = %d", status)
 	}
 }

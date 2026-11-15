@@ -29,7 +29,7 @@ func navTargets(t *testing.T, page string) []string {
 // 5.11: navigation reaches every screen a parent has.
 func TestParentNavigationReachesEveryScreen(t *testing.T) {
 	b := signedInBox(t)
-	want := []string{"/", "/calendars", "/caldav", "/displays", "/tasks", "/settings"}
+	want := []string{"/", "/calendar", "/calendars", "/caldav", "/displays", "/tasks", "/settings"}
 	for _, page := range want {
 		r := b.get(page)
 		if r.status != http.StatusOK {

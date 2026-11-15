@@ -1,0 +1,42 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "calendar.title") "Frame" .Frame)}}
+  <h1>{{t "calendar.title"}}</h1>
+  {{template "syncNotice" .}}
+  <div class="wk-tools">
+    <nav class="wk-nav" aria-label="{{t "calendar.nav"}}">
+      <a class="button secondary" href="{{.Prev}}" rel="prev">{{t "calendar.prev"}}</a>
+      <a class="button secondary" href="{{.ThisWeek}}">{{t "calendar.today"}}</a>
+      <a class="button secondary" href="{{.Next}}" rel="next">{{t "calendar.next"}}</a>
+    </nav>
+    <p class="wk-range"><strong>{{printf (t "calendar.week") .Week}}</strong> <span class="hint">{{.From}} – {{.To}}</span></p>
+    <a class="button" href="{{.NewHref}}">{{t "calendar.new"}}</a>
+  </div>
+  <form method="get" action="/calendar/search" role="search" class="wk-search">
+    <label class="f"><span>{{t "calendar.search.label"}}</span><input type="search" name="q" value="" autocomplete="off"></label>
+    <button class="button secondary" type="submit">{{t "calendar.search.submit"}}</button>
+  </form>
+
+  <section class="wk" aria-label="{{printf (t "calendar.week") .Week}}" data-week>
+    <ol class="wk-heads">
+      {{range .Days}}<li{{if .Today}} data-today aria-current="date"{{end}}>
+        <span class="dn">{{t (printf "calendar.weekday.%s" .Name)}}</span> <span class="dd">{{.Date}}</span>
+        {{with .Holiday}}<span class="hol" title="{{t "calendar.holiday"}}">{{.}}</span>{{end}}
+        <a class="add" href="/calendar/new?date={{.ISO}}" aria-label="{{printf (t "calendar.add_on") .Date}}">+</a>
+      </li>{{end}}
+    </ol>
+    {{if .Bars}}<ul class="wk-bars" data-bars>
+      {{range .Bars}}<li class="bar c{{.Col}} s{{.Span}}{{if .Before}} before{{end}}{{if .After}} after{{end}}" data-col="{{.Col}}" data-span="{{.Span}}" data-lane="{{.Lane}}"{{if .Item.Slot}} data-person="{{.Item.Slot}}"{{end}}>
+        {{template "eventBody" .Item}}
+      </li>{{end}}
+    </ul>{{end}}
+    <ol class="wk-days">
+      {{range .Days}}<li data-day="{{.ISO}}"{{if .Today}} data-today{{end}}>
+        <h2 class="wk-dayname"><span class="dn">{{t (printf "calendar.weekday.%s" .Name)}}</span> <span class="dd">{{.Date}}</span></h2>
+        {{if .AllDay}}<ul class="wk-allday">{{range .AllDay}}<li class="ev" {{if .Slot}}data-person="{{.Slot}}"{{end}}>{{template "eventBody" .}}</li>{{end}}</ul>{{end}}
+        {{if .Events}}<ul class="wk-events">{{range .Events}}<li class="ev"{{if .Slot}} data-person="{{.Slot}}"{{end}}>{{template "eventBody" .}}</li>{{end}}</ul>
+        {{else if not .AllDay}}<p class="none">{{t "calendar.empty_day"}}</p>{{end}}
+      </li>{{end}}
+    </ol>
+  </section>
+{{template "foot"}}
+
+{{define "eventBody"}}{{if .People}}<span class="who">{{range .People}}<span class="marker small" data-person="{{.Slot}}" data-shape="{{.Shape}}" role="img" aria-label="{{.Name}}"></span>{{end}}</span>{{end}}{{if .Href}}<a class="title" href="{{.Href}}">{{.Title}}</a>{{else}}<span class="title">{{.Title}}</span>{{end}}{{if .Time}} <span class="meta">{{.Time}}</span>{{end}}{{if .Repeats}} <span class="meta">↻<span class="sr">{{t "calendar.repeats"}}</span></span>{{end}}{{if .ReadOnly}} <span class="meta lock">{{t "calendar.readonly"}}</span>{{end}}{{end}}

@@ -18,6 +18,7 @@ type navItem struct {
 
 var navItems = []navItem{
 	{"/", "nav.home", auth.Perm("events", auth.Read)},
+	{"/calendar", "nav.calendar", auth.Perm("events", auth.Write)},
 	{"/calendars", "nav.connections", auth.Perm("calendars", auth.Write)},
 	{"/caldav", "nav.caldav", auth.Perm("tokens", auth.Read)},
 	{"/displays", "nav.displays", auth.Perm("displays", auth.Write)},

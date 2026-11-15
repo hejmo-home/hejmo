@@ -491,3 +491,42 @@ func TestRecoveryCodesPageAndResetFormsUseSharedPatterns(t *testing.T) {
 		t.Fatal("the reset intro does not mention that a recovery code works")
 	}
 }
+
+// ADR 0017: after a reset the parent's password is followed by a new setup. A
+// paired phone keeps its session but must not take that setup over.
+func TestResetParentsPhoneCannotSetUpTheirOneTimeCodes(t *testing.T) {
+	b, mamaSecret, _ := setupWithCodes(t)
+	papa, papaSecret := secondParent(t, b)
+	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
+	papaPhone := pairedPhone(t, b, papa, "Papa's phone")
+	own := url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
+	if r := b.post("/otp/reset/"+papa.ID, own); r.status != http.StatusOK {
+		t.Fatalf("reset = %d", r.status)
+	}
+
+	r := papaPhone.get("/setup/totp", "en")
+	if r.status != http.StatusSeeOther || r.location != "/setup" || strings.Contains(r.body, "data-secret") {
+		t.Fatalf("phone GET /setup/totp = %d %q, want a redirect without a setup page", r.status, r.location)
+	}
+	acc, _ := b.db.AccountByPerson(papa.ID)
+	if acc.TOTPSecret != "" {
+		t.Fatal("the phone caused a new secret to be created")
+	}
+	// Even with a valid code for a secret the phone could know.
+	post := papaPhone.post("/setup/totp", url.Values{"code": {totpNow(b, acc.TOTPSecret)}})
+	if post.status == http.StatusOK {
+		t.Fatalf("phone POST /setup/totp = 200, want refused\n%s", post.body)
+	}
+	if r := papaPhone.post("/otp/recovery-codes", url.Values{}); r.status == http.StatusOK {
+		t.Fatalf("phone minted recovery codes while the account is pending\n%s", r.body)
+	}
+	if acc, _ := b.db.AccountByPerson(papa.ID); acc.TOTPConfirmed {
+		t.Fatal("the phone confirmed the parent's one-time codes")
+	}
+	// The parent's own password sign-in still leads to the setup.
+	b.logout()
+	if r := loginWith(b, "papa", "papa's long password", ""); r.status != http.StatusSeeOther || r.location != "/setup/totp" {
+		t.Fatalf("sign-in after reset = %d %q", r.status, r.location)
+	}
+	_ = papaSecret
+}

@@ -45,13 +45,19 @@ func (s *server) currentPerson(r *http.Request) (store.Person, bool) {
 	if !ok {
 		return store.Person{}, false
 	}
-	if c, err := r.Cookie(sessionCookie); err == nil && s.db.IsPhoneSession(auth.HashToken(c.Value)) {
+	if s.phoneSession(r) {
 		return p, true
 	}
 	if acc, err := s.db.AccountByPerson(p.ID); err == nil && !acc.TOTPConfirmed {
 		return store.Person{}, false
 	}
 	return p, true
+}
+
+// phoneSession reports whether the request carries a paired phone's device session.
+func (s *server) phoneSession(r *http.Request) bool {
+	c, err := r.Cookie(sessionCookie)
+	return err == nil && s.db.IsPhoneSession(auth.HashToken(c.Value))
 }
 
 // pendingPerson resolves the session cookie even when the person still has to

@@ -114,9 +114,12 @@ func (s *server) createFirstParent(f setupForm, passwordHash, pinHash string) (s
 	return p.ID, s.db.SetDisplayPIN(h.ID, pinHash)
 }
 
+// setupAccount is the account behind a browser session that may set up
+// one-time codes. A paired phone's device session survives a reset but must not
+// take the new setup over: that is for the parent, after their password.
 func (s *server) setupAccount(r *http.Request) (store.Account, bool) {
 	p, ok := s.pendingPerson(r)
-	if !ok {
+	if !ok || s.phoneSession(r) {
 		return store.Account{}, false
 	}
 	acc, err := s.db.AccountByPerson(p.ID)

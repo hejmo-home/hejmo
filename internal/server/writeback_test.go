@@ -172,3 +172,41 @@ func TestAnEventSavedOnAPhoneInASharedTwoWayCalendarReachesTheServer(t *testing.
 		t.Fatalf("outside after delete = %q", got)
 	}
 }
+
+// The week view's own screens (create, edit, delete) must write back to a
+// two-way CalDAV calendar just as the API does.
+func TestEventsMadeInTheWebScreensOfATwoWayCalendarReachTheServer(t *testing.T) {
+	c, srv, remote, calID := twoWayCalendar(t)
+	b := c.b
+	post := func(path string, form url.Values) {
+		t.Helper()
+		if r := b.post(path, form); r.status != http.StatusSeeOther {
+			t.Fatalf("POST %s = %d\n%s", path, r.status, r.body)
+		}
+		b.sync.Wait()
+	}
+
+	form := eventForm("Piano", "2026-11-21", "15:00", "16:00")
+	form.Set("calendar", calID)
+	post("/calendar/events", form)
+
+	path, occ := occurrenceOf(t, linkTo(t, getEN(b, "/calendar?week=2026-11-16").body, "Piano"))
+	id := strings.TrimPrefix(path, "/calendar/events/")
+	if got := srv.Get(t, remote+id+".ics"); !strings.Contains(got, "SUMMARY:Piano") {
+		t.Fatalf("created in the web screen, outside = %q", got)
+	}
+
+	edit := eventForm("Piano lesson", "2026-11-21", "15:00", "16:00")
+	edit.Set("calendar", calID)
+	edit.Set("occurrence", occ)
+	edit.Set("scope", "all")
+	post(path, edit)
+	if got := srv.Get(t, remote+id+".ics"); !strings.Contains(got, "SUMMARY:Piano lesson") {
+		t.Fatalf("edited in the web screen, outside = %q", got)
+	}
+
+	post(path+"/delete", url.Values{"occurrence": {occ}})
+	if got := srv.Get(t, remote+id+".ics"); got != "" {
+		t.Fatalf("deleted in the web screen, still outside: %q", got)
+	}
+}

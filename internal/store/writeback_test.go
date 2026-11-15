@@ -15,7 +15,7 @@ import (
 func imported(t *testing.T, f davFixture, cal store.SyncedCalendar, file, uid, title string) string {
 	t.Helper()
 	u := cal.URL + file
-	if err := f.db.CompleteObjectSync(f.h.ID, cal.ID, []store.ObjectChange{obj(u, "e1", item(uid, "", title, at(2026, 11, 20, 15, 0)))}, nil, nil, t0, t0); err != nil {
+	if _, err := f.db.CompleteObjectSync(f.h.ID, cal.ID, []store.ObjectChange{obj(u, "e1", item(uid, "", title, at(2026, 11, 20, 15, 0)))}, nil, nil, t0, t0); err != nil {
 		t.Fatal(err)
 	}
 	return u
@@ -133,7 +133,7 @@ func TestSeriesEditsQueueTheOldAndTheNewObject(t *testing.T) {
 	u := f.a.URL + "choir.ics"
 	master := item("choir@x", "", "Choir", at(2026, 11, 2, 17, 0))
 	master.Event.RRule = "FREQ=WEEKLY;COUNT=6"
-	if err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{obj(u, "e1", master)}, nil, nil, t0, t0); err != nil {
+	if _, err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{obj(u, "e1", master)}, nil, nil, t0, t0); err != nil {
 		t.Fatal(err)
 	}
 	series, _ := f.db.Series(f.h.ID, eventOf(t, f, "Choir").ID)
@@ -238,13 +238,13 @@ func TestConflictLogEntriesAreKeptForThirtyDays(t *testing.T) {
 	if err := f.db.LogConflict(f.h.ID, f.a.ID, msg("sync.conflict.box_won", "title", "X"), "losing text", t0); err != nil {
 		t.Fatal(err)
 	}
-	if err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, nil, nil, nil, t0.Add(29*24*time.Hour), t0); err != nil {
+	if _, err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, nil, nil, nil, t0.Add(29*24*time.Hour), t0); err != nil {
 		t.Fatal(err)
 	}
 	if log, _ := f.db.SyncLog(f.h.ID, 10); len(log) != 1 || log[0].Detail != "losing text" {
 		t.Fatalf("log after 29 days = %+v", log)
 	}
-	if err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, nil, nil, nil, t0.Add(31*24*time.Hour), t0); err != nil {
+	if _, err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, nil, nil, nil, t0.Add(31*24*time.Hour), t0); err != nil {
 		t.Fatal(err)
 	}
 	if log, _ := f.db.SyncLog(f.h.ID, 10); len(log) != 0 {

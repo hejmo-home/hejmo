@@ -112,7 +112,7 @@ func TestObjectSyncAddsChangesAndDeletesPerObject(t *testing.T) {
 	next := t0.Add(5 * time.Minute)
 	u1, u2 := f.a.URL+"a.ics", f.a.URL+"b.ics"
 
-	if err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{
+	if _, err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{
 		obj(u1, "e1", item("a@x", "", "Swimming", at(2026, 11, 20, 15, 0))),
 		obj(u2, "e2", item("b@x", "", "Piano", at(2026, 11, 21, 15, 0))),
 	}, nil, nil, t0, next); err != nil {
@@ -129,7 +129,7 @@ func TestObjectSyncAddsChangesAndDeletesPerObject(t *testing.T) {
 	}
 
 	// Next sync: object 1 is renamed, object 2 was deleted outside.
-	if err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{
+	if _, err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{
 		obj(u1, "e1b", item("a@x", "", "Swimming lesson", at(2026, 11, 20, 15, 0))),
 	}, []string{u2}, nil, t0.Add(5*time.Minute), next.Add(5*time.Minute)); err != nil {
 		t.Fatal(err)
@@ -155,7 +155,7 @@ func TestObjectSyncAddsChangesAndDeletesPerObject(t *testing.T) {
 func TestUnreadableObjectKeepsItsEventsButRemembersItsETag(t *testing.T) {
 	f := newDAVFixture(t)
 	u1, u2 := f.a.URL+"a.ics", f.a.URL+"new.ics"
-	_ = f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{obj(u1, "e1", item("a@x", "", "Swimming", at(2026, 11, 20, 15, 0)))}, nil, nil, t0, t0)
+	_, _ = f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{obj(u1, "e1", item("a@x", "", "Swimming", at(2026, 11, 20, 15, 0)))}, nil, nil, t0, t0)
 	var goodRaw string
 	if err := f.db.SQL().QueryRow(`SELECT raw FROM remote_objects WHERE url = ?`, u1).Scan(&goodRaw); err != nil || goodRaw == "junk" {
 		t.Fatalf("raw = %q, %v", goodRaw, err)
@@ -165,7 +165,7 @@ func TestUnreadableObjectKeepsItsEventsButRemembersItsETag(t *testing.T) {
 	keep := func(url, etag string) store.ObjectChange {
 		return store.ObjectChange{URL: url, ETag: etag, Raw: "junk", KeepEvents: true}
 	}
-	if err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{keep(u1, "e2"), keep(u2, "n1")}, nil, nil, t0, t0); err != nil {
+	if _, err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{keep(u1, "e2"), keep(u2, "n1")}, nil, nil, t0, t0); err != nil {
 		t.Fatal(err)
 	}
 	if got := titles(t, f2(f), f.a.ID); len(got) != 1 || got[0] != "Swimming" {
@@ -184,9 +184,9 @@ func TestUnreadableObjectKeepsItsEventsButRemembersItsETag(t *testing.T) {
 func TestEventMovedBetweenObjectsKeepsOneCopy(t *testing.T) {
 	f := newDAVFixture(t)
 	u1, u2 := f.a.URL+"a.ics", f.a.URL+"b.ics"
-	_ = f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{obj(u1, "e1", item("a@x", "", "Swimming", at(2026, 11, 20, 15, 0)))}, nil, nil, t0, t0)
+	_, _ = f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{obj(u1, "e1", item("a@x", "", "Swimming", at(2026, 11, 20, 15, 0)))}, nil, nil, t0, t0)
 	// The server now serves the same UID from another file.
-	if err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{obj(u2, "e2", item("a@x", "", "Swimming", at(2026, 11, 20, 15, 0)))}, []string{u1}, nil, t0, t0); err != nil {
+	if _, err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{obj(u2, "e2", item("a@x", "", "Swimming", at(2026, 11, 20, 15, 0)))}, []string{u1}, nil, t0, t0); err != nil {
 		t.Fatal(err)
 	}
 	if got := titles(t, f2(f), f.a.ID); len(got) != 1 {
@@ -199,7 +199,7 @@ func f2(f davFixture) calFixture { return calFixture{db: f.db, h: f.h} }
 func TestRemovingAConnectionRemovesItsCalendarsEventsAndNothingElse(t *testing.T) {
 	f := newDAVFixture(t)
 	for _, c := range []store.SyncedCalendar{f.a, f.b} {
-		if err := f.db.CompleteObjectSync(f.h.ID, c.ID, []store.ObjectChange{obj(c.URL+"x.ics", "e", item("x@"+c.Name, "", "Event of "+c.Name, at(2026, 11, 20, 15, 0)))}, nil, nil, t0, t0); err != nil {
+		if _, err := f.db.CompleteObjectSync(f.h.ID, c.ID, []store.ObjectChange{obj(c.URL+"x.ics", "e", item("x@"+c.Name, "", "Event of "+c.Name, at(2026, 11, 20, 15, 0)))}, nil, nil, t0, t0); err != nil {
 			t.Fatal(err)
 		}
 	}
@@ -208,7 +208,7 @@ func TestRemovingAConnectionRemovesItsCalendarsEventsAndNothingElse(t *testing.T
 		t.Fatal(err)
 	}
 	other, _ := f.db.CreateICSCalendar(f.h.ID, store.NewICS{Name: "Holidays", URL: "https://example.org/h.ics", Color: "#2F5E7A", IntervalMinutes: 60, Now: t0})
-	_ = f.db.CompleteSync(f.h.ID, other.ID, []store.SyncItem{item("h", "", "Holiday", at(2026, 11, 23, 0, 0))}, nil, t0, t0)
+	_, _ = f.db.CompleteSync(f.h.ID, other.ID, []store.SyncItem{item("h", "", "Holiday", at(2026, 11, 23, 0, 0))}, nil, t0, t0)
 
 	if err := f.db.DeleteConnection(f.h.ID, f.conn.ID); err != nil {
 		t.Fatal(err)

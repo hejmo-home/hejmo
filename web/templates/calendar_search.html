@@ -1,0 +1,16 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "calendar.search.title") "Frame" .Frame)}}
+  <p><a href="/calendar">{{t "calendar.back"}}</a></p>
+  <h1>{{t "calendar.search.title"}}</h1>
+  {{template "syncNotice" .}}
+  <form method="get" action="/calendar/search" role="search" class="wk-search">
+    <label class="f"><span>{{t "calendar.search.label"}}</span><input type="search" name="q" value="{{.Query}}" autocomplete="off" autofocus></label>
+    <button class="button" type="submit">{{t "calendar.search.submit"}}</button>
+  </form>
+  <p class="hint">{{t "calendar.search.hint"}}</p>
+  {{if .Items}}<ul class="cards" data-results>
+    {{range .Items}}<li{{if .Slot}} data-person="{{.Slot}}"{{end}}>
+      <strong>{{if .Href}}<a href="{{.Href}}">{{.Title}}</a>{{else}}{{.Title}}{{end}}</strong>
+      <span class="hint">{{.Date}}{{if .Time}} · {{.Time}}{{end}}{{if .Location}} · {{.Location}}{{end}}{{if .Repeats}} · {{t "calendar.repeats"}}{{end}}{{if .ReadOnly}} · {{t "calendar.readonly"}}{{end}}</span>
+    </li>{{end}}
+  </ul>{{else if .Searched}}<p class="lead">{{t "calendar.search.none"}}</p>{{end}}
+{{template "foot"}}

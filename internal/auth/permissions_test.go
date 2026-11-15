@@ -24,6 +24,11 @@ func TestRolePermissions(t *testing.T) {
 		{store.RoleChild, auth.Perm("tasks", auth.Complete), true},
 		{store.RoleChild, auth.Perm("lists", auth.Complete), true},
 		{store.RoleChild, auth.Perm("settings", auth.Write), false},
+		// Device and box management is parent only, even to read.
+		{store.RoleChild, auth.Perm("displays", auth.Read), false},
+		{store.RoleChild, auth.Perm("tokens", auth.Read), false},
+		{store.RoleChild, auth.Perm("settings", auth.Read), false},
+		{store.RoleParent, auth.Perm("displays", auth.Read), true},
 		{"", auth.Perm("events", auth.Read), false},
 	}
 	for _, c := range cases {

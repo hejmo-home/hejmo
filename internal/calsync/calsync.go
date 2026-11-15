@@ -154,16 +154,56 @@ func (s *Service) SetDialer(d Dialer) { s.dial = d }
 // SetLogger sets where unexpected errors go.
 func (s *Service) SetLogger(l *slog.Logger) { s.logger = l }
 
+// runInfo is what one sync run reports in the log. It holds numbers and the
+// key of a failure, never an event's title, description or address.
+type runInfo struct {
+	calendar        string
+	started         bool // the calendar was found, so there is a run to report
+	listed, fetched int  // objects the server listed, objects downloaded
+	skipped         int  // events or objects the box could not read
+	done            store.SyncRun
+	result, failure string
+}
+
+// skipped counts the notes that say something was left out, not the ones that
+// only remark on how it was read.
+func skipped(notes []i18n.Message) int {
+	n := 0
+	for _, m := range notes {
+		if m.Key != "sync.note.unknown_zone" {
+			n++
+		}
+	}
+	return n
+}
+
 // Sync syncs one calendar now. A failure is recorded in the sync log and
-// returned; the calendar's events stay as they were.
+// returned; the calendar's events stay as they were. Every run writes one
+// INFO line (see runInfo).
 func (s *Service) Sync(ctx context.Context, householdID, calendarID string) error {
 	mu := s.lock(calendarID)
 	mu.Lock()
 	defer mu.Unlock()
+	run := runInfo{calendar: calendarID, result: "ok"}
+	began := time.Now()
+	err := s.sync(ctx, householdID, calendarID, &run)
+	if run.started {
+		attrs := []any{"calendar", run.calendar, "listed", run.listed, "fetched", run.fetched, "new", run.done.New, "changed", run.done.Changed,
+			"removed", run.done.Removed, "skipped", run.skipped, "duration", time.Since(began).Round(time.Millisecond).String(), "result", run.result}
+		if run.failure != "" {
+			attrs = append(attrs, "failure", run.failure)
+		}
+		s.logger.Info("calendar sync", attrs...)
+	}
+	return err
+}
+
+func (s *Service) sync(ctx context.Context, householdID, calendarID string, run *runInfo) error {
 	cal, err := s.db.SyncedCalendar(householdID, calendarID)
 	if err != nil {
 		return err
 	}
+	run.started = true
 	h, err := s.db.Household(householdID)
 	if err != nil {
 		return err
@@ -172,6 +212,7 @@ func (s *Service) Sync(ctx context.Context, householdID, calendarID string) erro
 	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
 
 	fail := func(msg i18n.Message, cause error) error {
+		run.result, run.failure = "failed", msg.Key
 		next := at.Add(Backoff(interval, cal.Sync.Failures+1))
 		if err := s.db.FailSync(householdID, calendarID, msg, at, next); err != nil {
 			return errors.Join(cause, err)
@@ -179,7 +220,7 @@ func (s *Service) Sync(ctx context.Context, householdID, calendarID string) erro
 		return cause
 	}
 	if cal.Kind == "caldav" {
-		return s.syncCalDAV(ctx, cal, h, at, fail)
+		return s.syncCalDAV(ctx, cal, h, at, run, fail)
 	}
 	feedURL, err := icsfeed.NormalizeURL(cal.URL)
 	if err != nil {
@@ -189,6 +230,7 @@ func (s *Service) Sync(ctx context.Context, householdID, calendarID string) erro
 	if err != nil {
 		return fail(MessageOf(err), err)
 	}
+	run.fetched = 1
 	zone, err := time.LoadLocation(h.Timezone)
 	if err != nil {
 		zone = time.UTC
@@ -201,9 +243,12 @@ func (s *Service) Sync(ctx context.Context, householdID, calendarID string) erro
 	for i, it := range res.Items {
 		items[i] = store.SyncItem{Key: it.Key, SeriesKey: it.SeriesKey, Event: it.Event}
 	}
-	if err := s.db.CompleteSync(householdID, calendarID, items, res.Notes, at, at.Add(interval)); err != nil {
+	run.listed, run.skipped = len(items), skipped(res.Notes)
+	done, err := s.db.CompleteSync(householdID, calendarID, items, res.Notes, at, at.Add(interval))
+	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), fmt.Errorf("could not store the events: %w", err))
 	}
+	run.done = done
 	return nil
 }
 
@@ -218,9 +263,10 @@ func (s *Service) RunDue(ctx context.Context) {
 		if ctx.Err() != nil {
 			return
 		}
-		if err := s.Sync(ctx, c.HouseholdID, c.ID); err != nil {
-			s.logger.Warn("calendar sync failed", "calendar", c.ID, "err", err)
-		}
+		// Sync already wrote the run's one INFO line and stored the failure; the
+		// raw error can hold the feed address (often with a secret token) or an
+		// event title, so it is not logged.
+		_ = s.Sync(ctx, c.HouseholdID, c.ID)
 	}
 }
 

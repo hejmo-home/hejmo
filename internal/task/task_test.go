@@ -81,3 +81,72 @@ func TestValidate(t *testing.T) {
 		t.Errorf("valid task: %v", err)
 	}
 }
+
+// ADR 0018: a new task's default star value is 1 for a child and 0 for an adult.
+func TestDefaultStarsIsOneForAChildAndZeroForAnAdult(t *testing.T) {
+	if task.DefaultStars(true) != 1 || task.DefaultStars(false) != 0 {
+		t.Fatalf("defaults = %d / %d, want 1 / 0", task.DefaultStars(true), task.DefaultStars(false))
+	}
+}
+
+func TestStarValueIsWithinLimits(t *testing.T) {
+	base := task.Task{PersonID: "p", Title: "x", Repeat: task.Daily, Date: "2026-11-14"}
+	for _, ok := range []int{0, 1, 3, task.MaxStars} {
+		k := base
+		k.Stars = ok
+		if err := k.Validate(); err != nil {
+			t.Errorf("stars %d refused: %v", ok, err)
+		}
+	}
+	for _, bad := range []int{-1, task.MaxStars + 1} {
+		k := base
+		k.Stars = bad
+		if err := k.Validate(); !errors.Is(err, task.ErrInvalid) {
+			t.Errorf("stars %d = %v, want ErrInvalid", bad, err)
+		}
+	}
+}
+
+// A parent's manual booking needs a non-zero amount and a short note.
+func TestManualBookingNeedsAmountAndNote(t *testing.T) {
+	if err := task.ValidateBooking(-5, "redeemed: ice cream"); err != nil {
+		t.Fatalf("valid booking refused: %v", err)
+	}
+	for _, c := range []struct {
+		delta int
+		note  string
+	}{{0, "x"}, {5, " "}, {5, ""}, {task.MaxBooking + 1, "x"}, {-task.MaxBooking - 1, "x"}, {1, strings.Repeat("a", task.MaxNote+1)}} {
+		if err := task.ValidateBooking(c.delta, c.note); !errors.Is(err, task.ErrInvalid) {
+			t.Errorf("ValidateBooking(%d, %q) = %v, want ErrInvalid", c.delta, c.note, err)
+		}
+	}
+}
+
+// Every validation failure names the field the form must mark.
+func TestValidateNamesTheWrongField(t *testing.T) {
+	base := task.Task{Title: "x", PersonID: "p", Repeat: task.Daily, Date: "2026-11-14"}
+	with := func(f func(*task.Task)) task.Task { k := base; f(&k); return k }
+	for _, c := range []struct {
+		name  string
+		task  task.Task
+		field string
+	}{
+		{"empty title", with(func(k *task.Task) { k.Title = " " }), "title"},
+		{"long title", with(func(k *task.Task) { k.Title = strings.Repeat("x", 121) }), "title"},
+		{"long emoji", with(func(k *task.Task) { k.Emoji = strings.Repeat("🪥", 17) }), "emoji"},
+		{"no person", with(func(k *task.Task) { k.PersonID = "" }), "person"},
+		{"bad date", with(func(k *task.Task) { k.Date = "14/11/2026" }), "date"},
+		{"weekdays on daily", with(func(k *task.Task) { k.Weekdays = []string{"MO"} }), "weekdays"},
+		{"weekly without weekdays", with(func(k *task.Task) { k.Repeat = task.Weekly }), "weekdays"},
+		{"unknown weekday", with(func(k *task.Task) { k.Repeat, k.Weekdays = task.Weekly, []string{"XX"} }), "weekdays"},
+		{"double weekday", with(func(k *task.Task) { k.Repeat, k.Weekdays = task.Weekly, []string{"MO", "MO"} }), "weekdays"},
+		{"unknown repeat", with(func(k *task.Task) { k.Repeat = "monthly" }), "repeat"},
+		{"unknown part", with(func(k *task.Task) { k.PartOfDay = "noon" }), "part"},
+	} {
+		var ie *task.InvalidError
+		err := c.task.Validate()
+		if !errors.As(err, &ie) || ie.Field != c.field || !errors.Is(err, task.ErrInvalid) {
+			t.Errorf("%s: Validate = %v, want InvalidError for %q", c.name, err, c.field)
+		}
+	}
+}

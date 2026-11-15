@@ -13,6 +13,9 @@ type Account struct {
 	PasswordHash  string
 	TOTPSecret    string
 	TOTPConfirmed bool
+	// TOTPReset is set once the codes were reset (ADR 0017): the next sign-in
+	// sets up new ones.
+	TOTPReset bool
 }
 
 // APIToken is a bearer token acting on behalf of a person, limited by scopes.
@@ -29,12 +32,13 @@ type APIToken struct {
 }
 
 // Configured reports whether first-run setup is complete: a parent account
-// exists and has confirmed its TOTP.
+// exists and has confirmed its TOTP (or had it reset later: a reset does not
+// send the box back to the wizard).
 func (db *DB) Configured() bool {
 	var n int
 	_ = db.sql.QueryRow(`SELECT COUNT(*) FROM accounts a
 		JOIN household_members m ON m.person_id = a.person_id
-		WHERE a.totp_confirmed_at IS NOT NULL AND m.role = 'parent'`).Scan(&n)
+		WHERE (a.totp_confirmed_at IS NOT NULL OR a.totp_reset_at IS NOT NULL) AND m.role = 'parent'`).Scan(&n)
 	return n > 0
 }
 
@@ -71,19 +75,19 @@ func (db *DB) ConfirmTOTP(personID string) error {
 
 // AccountByUsername looks up credentials (case-insensitive).
 func (db *DB) AccountByUsername(username string) (Account, error) {
-	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL
+	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL
 		FROM accounts WHERE username = ?`, username))
 }
 
 // AccountByPerson looks up credentials by person.
 func (db *DB) AccountByPerson(personID string) (Account, error) {
-	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL
+	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL
 		FROM accounts WHERE person_id = ?`, personID))
 }
 
 func (db *DB) scanAccount(row *sql.Row) (Account, error) {
 	var a Account
-	err := row.Scan(&a.PersonID, &a.Username, &a.PasswordHash, &a.TOTPSecret, &a.TOTPConfirmed)
+	err := row.Scan(&a.PersonID, &a.Username, &a.PasswordHash, &a.TOTPSecret, &a.TOTPConfirmed, &a.TOTPReset)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Account{}, ErrNotFound
 	}
@@ -108,8 +112,19 @@ func (db *DB) SessionPerson(tokenHash string, t time.Time) (string, error) {
 	return id, err
 }
 
-// DeleteSession ends a session.
+// IsPhoneSession reports whether the session is a paired phone's device session.
+func (db *DB) IsPhoneSession(tokenHash string) bool {
+	var n int
+	err := db.sql.QueryRow(`SELECT COUNT(*) FROM sessions WHERE token_hash = ? AND phone_id IS NOT NULL`, tokenHash).Scan(&n)
+	return err == nil && n > 0
+}
+
+// DeleteSession ends a session. A phone's device session takes the phone with
+// it: signing out on the phone unpairs it.
 func (db *DB) DeleteSession(tokenHash string) error {
+	if _, err := db.sql.Exec(`DELETE FROM phones WHERE id = (SELECT phone_id FROM sessions WHERE token_hash = ?)`, tokenHash); err != nil {
+		return err
+	}
 	_, err := db.sql.Exec(`DELETE FROM sessions WHERE token_hash = ?`, tokenHash)
 	return err
 }
@@ -206,4 +221,78 @@ func expectOne(res sql.Result, err error) error {
 		return ErrNotFound
 	}
 	return nil
+}
+
+// SetTOTPSecret stores a new one-time code secret for a person whose codes
+// were reset.
+func (db *DB) SetTOTPSecret(personID, secret string) error {
+	return expectOne(db.sql.Exec(`UPDATE accounts SET totp_secret = ? WHERE person_id = ?`, secret, personID))
+}
+
+// RecoveryCode is a stored (hashed) recovery code.
+type RecoveryCode struct{ ID, Hash string }
+
+// ReplaceRecoveryCodes stores a new set of recovery code hashes and voids the old one.
+func (db *DB) ReplaceRecoveryCodes(personID string, hashes []string) error {
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`DELETE FROM recovery_codes WHERE person_id = ?`, personID); err != nil {
+		return err
+	}
+	for _, h := range hashes {
+		if _, err := tx.Exec(`INSERT INTO recovery_codes (id, person_id, code_hash, created_at) VALUES (?, ?, ?, ?)`,
+			newID(), personID, h, now()); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// UnusedRecoveryCodes lists the person's recovery codes that are still valid.
+func (db *DB) UnusedRecoveryCodes(personID string) ([]RecoveryCode, error) {
+	rows, err := db.sql.Query(`SELECT id, code_hash FROM recovery_codes WHERE person_id = ? AND used_at IS NULL ORDER BY rowid`, personID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []RecoveryCode
+	for rows.Next() {
+		var c RecoveryCode
+		if err := rows.Scan(&c.ID, &c.Hash); err != nil {
+			return nil, err
+		}
+		out = append(out, c)
+	}
+	return out, rows.Err()
+}
+
+// SpendRecoveryCode marks a recovery code as used. It returns ErrNotFound if
+// the code was spent already, so two sign-ins cannot use one code.
+func (db *DB) SpendRecoveryCode(id string) error {
+	return expectOne(db.sql.Exec(`UPDATE recovery_codes SET used_at = ? WHERE id = ? AND used_at IS NULL`, now(), id))
+}
+
+// ResetOTP removes a person's one-time code secret and recovery codes and
+// ends their browser sessions. Device tokens and paired phones' device
+// sessions stay (ADR 0017). The next sign-in must set
+// up one-time codes again.
+func (db *DB) ResetOTP(personID string) error {
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	res, err := tx.Exec(`UPDATE accounts SET totp_secret = '', totp_confirmed_at = NULL, totp_reset_at = ? WHERE person_id = ?`, now(), personID)
+	if err := expectOne(res, err); err != nil {
+		return err
+	}
+	for _, q := range []string{`DELETE FROM recovery_codes WHERE person_id = ?`, `DELETE FROM sessions WHERE person_id = ? AND phone_id IS NULL`} {
+		if _, err := tx.Exec(q, personID); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }

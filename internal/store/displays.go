@@ -3,11 +3,14 @@ package store
 import (
 	"crypto/rand"
 	"database/sql"
+	"encoding/base64"
 	"errors"
 	"fmt"
 	"math/big"
 	"strings"
 	"time"
+
+	"github.com/hejmo-home/hejmo/internal/quiet"
 )
 
 // PairingCodeLifetime is how long a pairing code can be confirmed.
@@ -52,9 +55,16 @@ type Display struct {
 	CodeExpires time.Time
 	// ShowTomorrow is the setting "show tomorrow block" (ADR 0016), off by default.
 	ShowTomorrow bool
+	// Quiet is the quiet mode schedule (ADR 0015), off by default.
+	Quiet quiet.Schedule
+	// KioskURL is the address of the display's kiosk app (ADR 0005); empty
+	// without one. KioskKeySet says whether an API key is stored; the key
+	// itself is read only by DisplayKioskKey.
+	KioskURL    string
+	KioskKeySet bool
 }
 
-const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow`
+const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow, quiet_enabled, quiet_from, quiet_to, kiosk_url, kiosk_key != ''`
 
 type rowScanner interface{ Scan(...any) error }
 
@@ -62,8 +72,13 @@ func scanDisplay(r rowScanner, at time.Time) (Display, error) {
 	var d Display
 	var typ string
 	var code, expires, paired, seen sql.NullString
-	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow); err != nil {
+	var qOn bool
+	var qFrom, qTo string
+	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow, &qOn, &qFrom, &qTo, &d.KioskURL, &d.KioskKeySet); err != nil {
 		return Display{}, err
+	}
+	if q, err := quiet.Parse(qOn, qFrom, qTo); err == nil {
+		d.Quiet = q
 	}
 	d.Type = DisplayType(typ)
 	d.PairedAt, d.LastSeen = parseStamp(paired), parseStamp(seen)
@@ -168,8 +183,13 @@ func (db *DB) DisplayByToken(tokenHash string, at time.Time) (Display, error) {
 // name, room and type in in. A wrong, used or expired code is ErrNotFound.
 func (db *DB) ConfirmPairing(householdID, code string, in Display, at time.Time) (Display, error) {
 	in.Name, in.Room = strings.TrimSpace(in.Name), strings.TrimSpace(in.Room)
-	if in.Name == "" || len(in.Name) > 80 || len(in.Room) > 80 || !in.Type.Valid() {
-		return Display{}, fmt.Errorf("%w: a display needs a name and a known type", ErrInvalid)
+	switch {
+	case in.Name == "" || len(in.Name) > 80:
+		return Display{}, &FieldError{"name", "a display needs a name of at most 80 characters"}
+	case len(in.Room) > 80:
+		return Display{}, &FieldError{"room", "a room may have at most 80 characters"}
+	case !in.Type.Valid():
+		return Display{}, &FieldError{"type", "a display needs a known type"}
 	}
 	var id string
 	err := db.sql.QueryRow(`UPDATE displays SET name = ?, room = ?, type = ?, paired_at = ?, last_seen_at = ?, pairing_code = NULL, code_expires_at = NULL
@@ -220,4 +240,62 @@ func (db *DB) TouchDisplay(tokenHash string, t time.Time) error {
 func (db *DB) SetDisplayShowTomorrow(householdID, id string, on bool) error {
 	return expectOne(db.sql.Exec(`UPDATE displays SET show_tomorrow = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
 		on, householdID, id))
+}
+
+// SetDisplayQuiet saves the quiet mode schedule of one of the household's
+// paired displays.
+func (db *DB) SetDisplayQuiet(householdID, id string, s quiet.Schedule) error {
+	return expectOne(db.sql.Exec(`UPDATE displays SET quiet_enabled = ?, quiet_from = ?, quiet_to = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
+		s.Enabled, s.FromText(), s.ToText(), householdID, id))
+}
+
+// SetDisplayKiosk saves the address of a display's kiosk app. A nil key keeps
+// the stored key, an empty key removes it, anything else replaces it (sealed).
+// An empty address removes the kiosk and its key.
+func (db *DB) SetDisplayKiosk(householdID, id, url string, key *string) error {
+	sealed := ""
+	if url != "" && key != nil && *key != "" {
+		if db.secrets == nil {
+			return errNoKey
+		}
+		raw, err := db.secrets.Seal([]byte(*key))
+		if err != nil {
+			return err
+		}
+		sealed = base64.StdEncoding.EncodeToString(raw)
+	}
+	where := ` WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`
+	switch {
+	case url == "":
+		return expectOne(db.sql.Exec(`UPDATE displays SET kiosk_url = '', kiosk_key = ''`+where, householdID, id))
+	case key == nil:
+		return expectOne(db.sql.Exec(`UPDATE displays SET kiosk_url = ?`+where, url, householdID, id))
+	default:
+		return expectOne(db.sql.Exec(`UPDATE displays SET kiosk_url = ?, kiosk_key = ?`+where, url, sealed, householdID, id))
+	}
+}
+
+// DisplayKioskKey returns the unsealed API key of a display's kiosk app, empty
+// when none is set.
+func (db *DB) DisplayKioskKey(householdID, id string) (string, error) {
+	var sealed string
+	err := db.sql.QueryRow(`SELECT kiosk_key FROM displays WHERE household_id = ? AND id = ?`, householdID, id).Scan(&sealed)
+	if errors.Is(err, sql.ErrNoRows) {
+		return "", ErrNotFound
+	}
+	if err != nil || sealed == "" {
+		return "", err
+	}
+	if db.secrets == nil {
+		return "", errNoKey
+	}
+	raw, err := base64.StdEncoding.DecodeString(sealed)
+	if err != nil {
+		return "", errors.New("store: stored kiosk key is not sealed text")
+	}
+	plain, err := db.secrets.Open(raw)
+	if err != nil {
+		return "", errors.New("store: cannot open stored kiosk key (wrong key or altered text)")
+	}
+	return string(plain), nil
 }

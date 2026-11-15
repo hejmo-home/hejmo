@@ -282,6 +282,13 @@ func (db *DB) ApplyChange(householdID string, ch calendar.Change) error {
 // ErrInvalid marks input the caller can fix (maps to HTTP 422).
 var ErrInvalid = errors.New("invalid")
 
+// FieldError says which field of a form was refused. It matches ErrInvalid
+// with errors.Is.
+type FieldError struct{ Field, Msg string }
+
+func (e *FieldError) Error() string { return ErrInvalid.Error() + ": " + e.Msg }
+func (e *FieldError) Unwrap() error { return ErrInvalid }
+
 func validateEvent(e calendar.Event) error {
 	if strings.TrimSpace(e.Title) == "" {
 		return fmt.Errorf("%w: event title required", ErrInvalid)

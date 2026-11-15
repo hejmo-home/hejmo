@@ -205,18 +205,19 @@ func (db *DB) RemoteObjects(calendarID string, withPending bool) (map[string]str
 // CompleteObjectSync stores a successful delta sync of a CalDAV calendar:
 // changed objects replace their events, deleted objects take their events with
 // them, notes go to the log and the failure state is cleared. All or nothing.
-func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []ObjectChange, deleted []string, notes []i18n.Message, at, next time.Time) error {
+// It returns what the run did to the events.
+func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []ObjectChange, deleted []string, notes []i18n.Message, at, next time.Time) (SyncRun, error) {
 	tx, err := db.sql.Begin()
 	if err != nil {
-		return err
+		return SyncRun{}, err
 	}
 	defer tx.Rollback()
 	var readOnly bool
 	if err := tx.QueryRow(`SELECT read_only FROM calendars WHERE id = ? AND household_id = ? AND connection_id IS NOT NULL`, calendarID, householdID).Scan(&readOnly); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
-			return ErrNotFound
+			return SyncRun{}, ErrNotFound
 		}
-		return err
+		return SyncRun{}, err
 	}
 	// A box edit that landed after the caller read its queue is still queued
 	// here. In a two-way calendar it must survive the import: the push settles
@@ -229,41 +230,59 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 		}
 		return n > 0, err
 	}
+	changes := newRunChanges()
 	for _, url := range deleted {
 		if q, err := queued(url); err != nil {
-			return err
+			return SyncRun{}, err
 		} else if q {
 			if !readOnly {
 				continue
 			}
 			if err := logDropped(tx, householdID, calendarID, url, at); err != nil {
-				return err
+				return SyncRun{}, err
 			}
 		}
+		gone, err := topLevelEvents(tx, calendarID, url)
+		if err != nil {
+			return SyncRun{}, err
+		}
+		for _, id := range gone {
+			changes.gone[id] = true
+		}
 		if _, err := tx.Exec(`DELETE FROM events WHERE calendar_id = ? AND remote_url = ?`, calendarID, url); err != nil {
-			return err
+			return SyncRun{}, err
 		}
 		if _, err := tx.Exec(`DELETE FROM remote_objects WHERE calendar_id = ? AND url = ?`, calendarID, url); err != nil {
-			return err
+			return SyncRun{}, err
 		}
 	}
 	for _, o := range changed {
 		url := o.URL
 		if q, err := queued(o.URL); err != nil {
-			return err
+			return SyncRun{}, err
 		} else if q {
 			if !o.DropPending {
 				continue
 			}
 			if !o.KeepEvents {
 				if err := logDropped(tx, householdID, calendarID, o.URL, at); err != nil {
-					return err
+					return SyncRun{}, err
 				}
 			}
 		}
 		if !o.KeepEvents {
-			if err := replaceSyncedEvents(tx, householdID, calendarID, o.Items, &url); err != nil {
-				return fmt.Errorf("object %s: %w", o.URL, err)
+			got, err := replaceSyncedEvents(tx, householdID, calendarID, o.Items, &url)
+			if err != nil {
+				return SyncRun{}, fmt.Errorf("object %s: %w", o.URL, err)
+			}
+			for id := range got.added {
+				changes.added[id] = true
+			}
+			for id := range got.updated {
+				changes.updated[id] = true
+			}
+			for id := range got.gone {
+				changes.gone[id] = true
 			}
 		}
 		// An unreadable object keeps the last good text, not the junk. If the
@@ -276,13 +295,33 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 			etag = CASE WHEN ? AND pending > 0 THEN etag ELSE excluded.etag END,
 			raw = CASE WHEN ? THEN raw ELSE excluded.raw END,
 			pending = CASE WHEN ? AND NOT ? THEN 0 ELSE pending END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents, o.KeepEvents, o.DropPending, o.KeepEvents); err != nil {
-			return err
+			return SyncRun{}, err
 		}
 	}
-	if err := recordSuccess(tx, householdID, calendarID, notes, at, next); err != nil {
-		return err
+	run, err := recordSuccess(tx, householdID, calendarID, notes, at, next, changes)
+	if err != nil {
+		return SyncRun{}, err
 	}
-	return tx.Commit()
+	return run, tx.Commit()
+}
+
+// topLevelEvents lists the ids of the single events and series masters that
+// came from one remote object.
+func topLevelEvents(tx *sql.Tx, calendarID, object string) ([]string, error) {
+	rows, err := tx.Query(`SELECT id FROM events WHERE calendar_id = ? AND remote_url = ? AND series_id IS NULL`, calendarID, object)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	for rows.Next() {
+		var id string
+		if err := rows.Scan(&id); err != nil {
+			return nil, err
+		}
+		out = append(out, id)
+	}
+	return out, rows.Err()
 }
 
 // logDropped records the box's queued changes to an object that a read-only

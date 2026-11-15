@@ -18,19 +18,24 @@
           {{if .LastSuccess}}{{t "calendars.last_success"}} {{.LastSuccess}}{{else}}{{t "calendars.never"}}{{end}}
           {{if .Stale}} · <span data-calendar-stale>{{t "calendars.stale"}}</span>{{end}}
         </span>
+        {{if .Events}}<span class="hint" data-events>{{.Events}}</span>
+        <span class="hint" data-last-run>{{.Changes}}</span>{{end}}
         {{if .LastError}}<span class="hint">{{t "calendars.last_error"}} {{.LastError}}</span>{{end}}
         <span class="row">
           <form method="post" action="/calendars/{{.ID}}/sync"><button class="button" type="submit">{{t "calendars.sync_now"}}</button></form>
           {{if .TwoWay}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="1"><button class="button secondary" type="submit" title="{{t "calendars.make_read_only_hint"}}">{{t "calendars.make_read_only"}}</button><span class="hint">{{t "calendars.make_read_only_hint"}}</span></form>{{end}}
           {{if .Switchable}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="0"><button class="button secondary" type="submit">{{t "calendars.make_two_way"}}</button></form>{{end}}
-          <form method="post" action="/calendars/{{.ID}}/delete"><button class="button secondary" type="submit">{{t "calendars.remove"}}</button></form>
         </span>
+        {{template "dangerOpen" (dict "Label" (t "calendars.remove"))}}
+          <p>{{t "calendars.remove.explain"}}</p>
+          <form method="post" action="/calendars/{{.ID}}/delete"><button class="button danger" type="submit">{{t "calendars.remove.confirm"}}</button></form>
+        {{template "dangerClose"}}
       </li>
       {{end}}
     </ul>
     </section>
     {{end}}
-    {{else}}<p class="lead">{{t "calendars.none"}}</p>{{end}}
+    {{else}}{{template "empty" (dict "Text" (t "calendars.none") "Href" "#add" "Action" (t "calendars.add.first"))}}{{end}}
   </section>
 
   <section aria-labelledby="connections">
@@ -43,29 +48,32 @@
         <span class="hint">{{.URL}}</span>
         <span class="row">
           <a class="button" href="/connections/{{.ID}}">{{t "connections.choose"}}</a>
-          <form method="post" action="/connections/{{.ID}}/delete"><button class="button secondary" type="submit">{{t "connections.remove"}}</button></form>
         </span>
+        {{template "dangerOpen" (dict "Label" (t "connections.remove"))}}
+          <p>{{t "connections.remove.explain"}}</p>
+          <form method="post" action="/connections/{{.ID}}/delete"><button class="button danger" type="submit">{{t "connections.remove.confirm"}}</button></form>
+        {{template "dangerClose"}}
       </li>
       {{end}}
     </ul>
     {{end}}
     <h3>{{t "connections.add"}}</h3>
     <p class="hint">{{t "connections.hint"}}</p>
-    {{if .ConnError}}<p class="error" role="alert">{{t .ConnError}}</p>{{end}}
+    {{$ce := dict "ErrorField" .ConnErrorField "Error" .ConnError}}
     <form method="post" action="/connections" class="steps" autocomplete="off" data-connection-form>
       <fieldset>
-        <label>{{t "connections.field.provider"}}
-          <select name="provider">
-            <option value="icloud"{{with .Form}}{{if eq .ConnProvider "icloud"}} selected{{end}}{{end}}>{{t "connections.provider.icloud"}}</option>
-            <option value="caldav"{{with .Form}}{{if eq .ConnProvider "caldav"}} selected{{end}}{{end}}>{{t "connections.provider.caldav"}}</option>
-          </select></label>
-        <label data-other-only>{{t "connections.field.url"}}
-          <input name="url" value="{{with .Form}}{{.ConnURL}}{{end}}" inputmode="url" autocapitalize="none" placeholder="https://…"></label>
+        <div class="f{{if eq .ConnErrorField "provider"}} invalid{{end}}">
+          <label>{{t "connections.field.provider"}}
+            <select name="provider"{{if eq .ConnErrorField "provider"}} autofocus aria-invalid="true" aria-describedby="err-provider"{{end}}>
+              <option value="icloud"{{with .Form}}{{if eq .ConnProvider "icloud"}} selected{{end}}{{end}}>{{t "connections.provider.icloud"}}</option>
+              <option value="caldav"{{with .Form}}{{if eq .ConnProvider "caldav"}} selected{{end}}{{end}}>{{t "connections.provider.caldav"}}</option>
+            </select></label>
+          {{template "fieldError" (dict "Root" $ce "Name" "provider")}}
+        </div>
+        <div data-other-only>{{template "field" (dict "Root" $ce "Name" "url" "Label" (t "connections.field.url") "Value" (index .Form "ConnURL") "Inputmode" "url" "Autocapitalize" "none" "Placeholder" "https://…")}}</div>
         <label class="check" data-other-only><input type="checkbox" name="single_calendar" value="1"{{with .Form}}{{if .ConnSingle}} checked{{end}}{{end}}> {{t "connections.field.single"}}</label>
-        <label>{{t "connections.field.username"}}
-          <input name="username" value="{{with .Form}}{{.ConnUsername}}{{end}}" required autocapitalize="none"></label>
-        <label>{{t "connections.field.password"}}
-          <input name="password" type="password" required autocomplete="off"></label>
+        {{template "field" (dict "Root" $ce "Name" "username" "Label" (t "connections.field.username") "Value" (index .Form "ConnUsername") "Required" true "Autocapitalize" "none")}}
+        {{template "field" (dict "Root" $ce "Name" "password" "Label" (t "connections.field.password") "Type" "password" "Required" true "Autocomplete" "off")}}
       </fieldset>
       <button class="button" type="submit">{{t "connections.submit"}}</button>
     </form>
@@ -76,17 +84,17 @@
     {{template "error" .}}
     <form method="post" action="/calendars" class="steps">
       <fieldset>
-        <label>{{t "calendars.field.name"}}
-          <input name="name" value="{{with .Form}}{{.Name}}{{end}}" required></label>
-        <label>{{t "calendars.field.url"}}
-          <input name="url" value="{{with .Form}}{{.URL}}{{end}}" required inputmode="url" autocapitalize="none" placeholder="webcal://…"></label>
-        <label>{{t "calendars.field.color"}}
-          <input name="color" type="color" value="{{with .Form}}{{if .Color}}{{.Color}}{{else}}#2F5E7A{{end}}{{else}}#2F5E7A{{end}}"></label>
-        <label>{{t "calendars.field.interval"}}
-          <select name="interval">{{range .Intervals}}<option value="{{.}}"{{if eq . 60}} selected{{end}}>{{.}}</option>{{end}}</select></label>
-        <p class="hint">{{t "calendars.field.audience"}}</p>
-        {{range .People}}<label class="check"><input type="checkbox" name="people" value="{{.ID}}"> {{.Name}}</label>{{end}}
-        {{range .Groups}}<label class="check"><input type="checkbox" name="groups" value="{{.ID}}"> {{.Name}}</label>{{end}}
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "calendars.field.name") "Value" (index .Form "Name") "Required" true)}}
+        {{template "field" (dict "Root" . "Name" "url" "Label" (t "calendars.field.url") "Value" (index .Form "URL") "Required" true "Inputmode" "url" "Autocapitalize" "none" "Placeholder" "webcal://…")}}
+        {{template "personChips" (dict "Root" . "Name" "people" "Legend" (t "calendars.field.audience") "People" .People "Selected" (strs (index .Form "People")) "Groups" .Groups "SelectedGroups" (strs (index .Form "Groups")) "Whole" true)}}
+        {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" (t "calendars.more.summary") "Open" (or (eq .ErrorField "color") (eq .ErrorField "interval")))}}
+          <label>{{t "calendars.field.color"}}
+            <input name="color" type="color" value="{{with .Form}}{{if .Color}}{{.Color}}{{else}}{{$.AutoColor}}{{end}}{{else}}{{.AutoColor}}{{end}}"></label>
+          {{template "fieldError" (dict "Root" . "Name" "color")}}
+          <label>{{t "calendars.field.interval"}}
+            <select name="interval">{{range .Intervals}}<option value="{{.}}"{{if eq . $.IntervalChosen}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+          {{template "fieldError" (dict "Root" . "Name" "interval")}}
+        {{template "moreClose"}}
       </fieldset>
       <button class="button" type="submit">{{t "calendars.add.submit"}}</button>
     </form>
@@ -94,6 +102,7 @@
 
   <section aria-labelledby="log">
     <h2 id="log">{{t "calendars.log"}}</h2>
+    <p class="hint">{{t "calendars.log.hint"}} <a href="#synced">{{t "calendars.log.link"}}</a></p>
     {{if .Log}}
     <table class="log">
       <thead><tr><th>{{t "calendars.log.when"}}</th><th>{{t "calendars.log.calendar"}}</th><th>{{t "calendars.log.what"}}</th></tr></thead>

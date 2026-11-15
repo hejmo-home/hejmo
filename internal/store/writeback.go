@@ -265,7 +265,7 @@ func (db *DB) ResolveToOutside(householdID, calendarID string, change ObjectChan
 	}
 	defer tx.Rollback()
 	address := change.URL
-	if err := replaceSyncedEvents(tx, householdID, calendarID, change.Items, &address); err != nil {
+	if _, err := replaceSyncedEvents(tx, householdID, calendarID, change.Items, &address); err != nil {
 		return fmt.Errorf("object %s: %w", address, err)
 	}
 	if _, err := tx.Exec(`UPDATE remote_objects SET etag = ?, raw = ?, pending = CASE WHEN pending = ? THEN 0 ELSE pending END

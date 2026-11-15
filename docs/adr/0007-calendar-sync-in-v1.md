@@ -1,6 +1,6 @@
 # 0007. Calendar sync in V1.0
 
-- Status: Accepted, amended by [0013](0013-google-calendar-connection.md)
+- Status: Accepted, amended by [0013](0013-google-calendar-connection.md), [0018](0018-path-to-0-1.md)
 - Date: 14/11/2026
 
 ## Context

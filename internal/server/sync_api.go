@@ -19,8 +19,45 @@ const (
 	defaultSyncMinutes = 60
 	minSyncMinutes     = 5
 	maxSyncMinutes     = 24 * 60
-	defaultColor       = "#2F5E7A"
 )
+
+// calendarColors is the fixed set a calendar's colour is picked from (the
+// muted person colours of the design, ADR 0017).
+var calendarColors = []string{"#2F5E7A", "#B4583A", "#4E7D52", "#9A7420", "#86587F", "#3A7A74"}
+
+// nextColors picks n colours for new calendars: first those no existing
+// calendar uses, then the set again from its start.
+func nextColors(taken []string, n int) []string {
+	used := map[string]int{}
+	for _, c := range taken {
+		used[strings.ToUpper(c)]++
+	}
+	out := make([]string, 0, n)
+	for len(out) < n {
+		best := calendarColors[0]
+		for _, c := range calendarColors {
+			if used[strings.ToUpper(c)] < used[strings.ToUpper(best)] {
+				best = c
+			}
+		}
+		used[strings.ToUpper(best)]++
+		out = append(out, best)
+	}
+	return out
+}
+
+// takenColors lists the colours of a household's synced calendars.
+func (s *server) takenColors(householdID string) ([]string, error) {
+	cals, err := s.db.SyncedCalendars(householdID)
+	if err != nil {
+		return nil, err
+	}
+	var out []string
+	for _, c := range cals {
+		out = append(out, c.Color)
+	}
+	return out, nil
+}
 
 var hexColor = regexp.MustCompile(`^#[0-9A-Fa-f]{6}$`)
 
@@ -30,6 +67,16 @@ type syncJSON struct {
 	LastAttemptAt   *string       `json:"last_attempt_at"`
 	LastSuccessAt   *string       `json:"last_success_at"`
 	LastError       string        `json:"last_error"`
+	// EventCount is how many events the calendar holds after the last
+	// successful run (a series counts once); LastRun says what that run did.
+	EventCount int     `json:"event_count"`
+	LastRun    runJSON `json:"last_run"`
+}
+
+type runJSON struct {
+	New     int `json:"new"`
+	Changed int `json:"changed"`
+	Removed int `json:"removed"`
 }
 
 type calendarJSON struct {
@@ -80,6 +127,8 @@ func (s *server) syncState(r *http.Request, c store.SyncedCalendar, loc *time.Lo
 		LastAttemptAt:   ts(c.Sync.LastAttempt),
 		LastSuccessAt:   ts(c.Sync.LastSuccess),
 		LastError:       s.say(r, c.Sync.LastError),
+		EventCount:      c.Sync.LastRun.Events,
+		LastRun:         runJSON{c.Sync.LastRun.New, c.Sync.LastRun.Changed, c.Sync.LastRun.Removed},
 	}
 }
 
@@ -188,7 +237,11 @@ func (s *server) calendarOptions(p principal, in newCalendarInput, defaultMinute
 	}
 	out.color = strings.TrimSpace(in.Color)
 	if out.color == "" {
-		out.color = defaultColor
+		taken, err := s.takenColors(p.household.ID)
+		if err != nil {
+			return out, err
+		}
+		out.color = nextColors(taken, 1)[0]
 	}
 	if !hexColor.MatchString(out.color) {
 		return out, &inputError{"color", "color must be #RRGGBB"}
@@ -257,24 +310,88 @@ func (s *server) apiSyncCalendar(w http.ResponseWriter, r *http.Request, p princ
 	writeJSON(w, http.StatusOK, j)
 }
 
+// calendarChanges are the fields of a synced calendar a parent may change;
+// nil leaves a field as it is.
+type calendarChanges struct {
+	Name     *string       `json:"name"`
+	Color    *string       `json:"color"`
+	Audience *audienceJSON `json:"audience"`
+}
+
+func (c calendarChanges) any() bool { return c.Name != nil || c.Color != nil || c.Audience != nil }
+
+// changeSyncedCalendar checks and stores new name, colour and audience of a
+// synced calendar. The error is an *inputError for bad input, store.ErrNotFound
+// for an unknown calendar.
+func (s *server) changeSyncedCalendar(p principal, cal store.SyncedCalendar, in calendarChanges) error {
+	name, color, audience := cal.Name, cal.Color, cal.Audience
+	if in.Name != nil {
+		if name = strings.TrimSpace(*in.Name); name == "" {
+			return &inputError{"name", "name is required"}
+		}
+	}
+	if in.Color != nil {
+		if color = strings.TrimSpace(*in.Color); !hexColor.MatchString(color) {
+			return &inputError{"color", "color must be #RRGGBB"}
+		}
+	}
+	if in.Audience != nil {
+		audience = calendar.Audience{People: in.Audience.People, Groups: in.Audience.Groups}
+		ok, err := s.audienceExists(p.household.ID, audience)
+		if err != nil {
+			return err
+		}
+		if !ok {
+			return &inputError{"audience", "audience: unknown person or group"}
+		}
+	}
+	return s.db.UpdateSyncedCalendar(p.household.ID, cal.ID, name, color, audience)
+}
+
+// calendarExists is nil when the household has a calendar with this id.
+func (s *server) calendarExists(householdID, id string) error {
+	_, err := s.db.Calendar(householdID, id)
+	return err
+}
+
 func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
 		Shared   *bool `json:"share_through_box"`
 		ReadOnly *bool `json:"read_only"`
+		calendarChanges
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	if in.Shared == nil && in.ReadOnly == nil {
-		writeError(w, http.StatusUnprocessableEntity, "share_through_box or read_only is required")
+	if in.Shared == nil && in.ReadOnly == nil && !in.calendarChanges.any() {
+		writeError(w, http.StatusUnprocessableEntity, "send share_through_box, read_only, name, color or audience")
 		return
 	}
 	id := r.PathValue("id")
-	if in.Shared != nil {
-		if s.storeError(w, "share calendar", s.db.SetCalendarShared(p.household.ID, id, *in.Shared)) {
+	if in.calendarChanges.any() {
+		cal, err := s.db.SyncedCalendar(p.household.ID, id)
+		if errors.Is(err, store.ErrNotFound) {
+			if s.storeError(w, "calendar", s.calendarExists(p.household.ID, id)) {
+				return
+			}
+			writeError(w, http.StatusUnprocessableEntity, "name, color and audience can only be changed on a synced calendar")
+			return
+		} else if s.storeError(w, "synced calendar", err) {
 			return
 		}
+		var bad *inputError
+		switch err := s.changeSyncedCalendar(p, cal, in.calendarChanges); {
+		case errors.As(err, &bad):
+			writeError(w, http.StatusUnprocessableEntity, bad.Msg)
+			return
+		case err != nil:
+			s.fail(w, "change calendar", err)
+			return
+		}
+	}
+	if in.Shared != nil && s.storeError(w, "share calendar", s.db.SetCalendarShared(p.household.ID, id, *in.Shared)) {
+		return
 	}
 	if in.ReadOnly != nil {
 		if s.storeError(w, "switch calendar", s.db.SetCalendarReadOnly(p.household.ID, id, *in.ReadOnly)) {

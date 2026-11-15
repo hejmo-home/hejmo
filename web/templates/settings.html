@@ -1,19 +1,11 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "settings.title") "Frame" .Frame)}}
   <h1>{{t "settings.title"}}</h1>
+  {{template "updateNotice" .}}
   {{template "syncNotice" .}}
-  <p class="lead">{{t "settings.intro"}}</p>
-  {{template "error" .}}
-  <form method="post" action="/settings" class="steps">
-    <fieldset>
-      <legend>{{t "settings.time_format"}}</legend>
-      <label class="check"><input type="radio" name="time_format" value="24h"{{if eq .TimeFormat "24h"}} checked{{end}}> {{t "settings.time_format.24h"}}</label>
-      <label class="check"><input type="radio" name="time_format" value="12h"{{if eq .TimeFormat "12h"}} checked{{end}}> {{t "settings.time_format.12h"}}</label>
-    </fieldset>
-    <fieldset>
-      <legend>{{t "settings.temperature_unit"}}</legend>
-      <label class="check"><input type="radio" name="temperature_unit" value="c"{{if eq .TemperatureUnit "c"}} checked{{end}}> {{t "settings.temperature_unit.c"}}</label>
-      <label class="check"><input type="radio" name="temperature_unit" value="f"{{if eq .TemperatureUnit "f"}} checked{{end}}> {{t "settings.temperature_unit.f"}}</label>
-    </fieldset>
-    <button class="button" type="submit">{{t "settings.save"}}</button>
-  </form>
+  <p class="lead">{{t "hub.intro"}}</p>
+  <ul class="cards hub">
+    {{range .Hub}}
+    <li><a class="hub-row" href="{{.Href}}"><strong>{{t .Label}}</strong><span class="hint">{{t .Hint}}</span></a></li>
+    {{end}}
+  </ul>
 {{template "foot"}}

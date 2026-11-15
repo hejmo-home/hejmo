@@ -15,6 +15,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/theme"
 )
 
 const (
@@ -101,7 +102,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		s.render(w, r, http.StatusOK, "display_family.html", map[string]any{
-			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Version": version, "Theme": displayTheme(d),
+			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Version": version, "Theme": s.displayTheme(h, d),
 		})
 		return
 	}
@@ -122,15 +123,31 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// displayTheme is the theme of a display's pages.
-//
-// Placeholder until the per-display themes ticket: a normal screen is always
-// light, although ADR 0015 gives it an automatic default theme.
-func displayTheme(d store.Display) string {
-	if d.Type == store.DisplayEInkBW {
+// displayTheme is the palette a display shows now: its theme setting resolved
+// against the sun at the home location, or in quiet mode the palette of the
+// quiet page, whatever the setting.
+func (s *server) displayTheme(h store.Household, d store.Display) string {
+	now := s.householdNow(h)
+	if d.Quiet.Active(now) {
+		// Quiet mode takes precedence over the theme (ADR 0015): a normal
+		// screen shows a black page, an E-Ink display its own night page.
+		switch d.Type {
+		case store.DisplayScreen:
+			return string(theme.Dark)
+		case store.DisplayEInkBW:
+			return "bw"
+		}
+		return string(theme.Light)
+	}
+	t := theme.Resolve(theme.Input{
+		Setting: d.Theme, SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset,
+		Now: now, Lat: h.Latitude, Lon: h.Longitude,
+	})
+	// Black-and-white E-Ink has its own light palette; dark uses the dark one.
+	if t == theme.Light && d.Type == store.DisplayEInkBW {
 		return "bw"
 	}
-	return "light"
+	return string(t)
 }
 
 // markerShapes are the black-and-white marker shapes in person slot order (DESIGN.md).
@@ -262,6 +279,9 @@ func (s *server) handleDisplayState(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case d.Paired:
 			state["state"] = "paired"
+			if h, err := s.db.HomeHousehold(); err == nil {
+				state["theme"] = s.displayTheme(h, d)
+			}
 			if s.now().Sub(d.LastSeen) > time.Minute {
 				_ = s.db.TouchDisplay(hash, s.now())
 			}

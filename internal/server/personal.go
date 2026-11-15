@@ -103,7 +103,7 @@ func (s *server) handleDisplayPerson(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	s.render(w, r, http.StatusOK, "display_person.html", map[string]any{
 		"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Version": version,
-		"Theme": displayTheme(d), "ReturnSeconds": personalReturnSeconds,
+		"Theme": s.displayTheme(h, d), "ReturnSeconds": personalReturnSeconds,
 		"ViewURL": "/display/person/" + url.PathEscape(id) + "/view", "EventsURL": "/display/events?person=" + url.QueryEscape(id),
 	})
 }

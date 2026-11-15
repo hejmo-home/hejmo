@@ -16,6 +16,7 @@
 // Separately, a display asks the box now and then whether it is still what its
 // page says (paired, or waiting with a code) and reloads when that changed:
 // after a parent confirmed the code, revoked the display, or the code ran out.
+// The same answer carries the theme the display should show now.
 //
 // A personal view (ticket 5.6) works the same way on its own addresses
 // (data-view-url, data-events-url), and returns to the family view after
@@ -30,7 +31,11 @@
     fetch("/display/state", { cache: "no-store", credentials: "same-origin" })
       .then(function (r) { return r.json(); })
       .then(function (s) {
-        if (s.state !== state || (s.code || "") !== code) location.reload();
+        if (s.state !== state || (s.code || "") !== code) { location.reload(); return; }
+        // Automatic themes switch at sunset and sunrise without a reload (ADR 0015).
+        if (s.theme && document.documentElement.getAttribute("data-theme") !== s.theme) {
+          document.documentElement.setAttribute("data-theme", s.theme);
+        }
       })
       .catch(function () {});
   }

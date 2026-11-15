@@ -4,16 +4,14 @@
   <p class="lead">{{t "settings.intro"}}</p>
   {{template "error" .}}
   <form method="post" action="/settings" class="steps">
-    <fieldset>
-      <legend>{{t "settings.time_format"}}</legend>
-      <label class="check"><input type="radio" name="time_format" value="24h"{{if eq .TimeFormat "24h"}} checked{{end}}> {{t "settings.time_format.24h"}}</label>
-      <label class="check"><input type="radio" name="time_format" value="12h"{{if eq .TimeFormat "12h"}} checked{{end}}> {{t "settings.time_format.12h"}}</label>
-    </fieldset>
-    <fieldset>
-      <legend>{{t "settings.temperature_unit"}}</legend>
-      <label class="check"><input type="radio" name="temperature_unit" value="c"{{if eq .TemperatureUnit "c"}} checked{{end}}> {{t "settings.temperature_unit.c"}}</label>
-      <label class="check"><input type="radio" name="temperature_unit" value="f"{{if eq .TemperatureUnit "f"}} checked{{end}}> {{t "settings.temperature_unit.f"}}</label>
-    </fieldset>
+    {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.time_format"))}}
+      {{template "option" (dict "Name" "time_format" "Value" "24h" "Label" (t "settings.time_format.24h") "Checked" (eq .TimeFormat "24h"))}}
+      {{template "option" (dict "Name" "time_format" "Value" "12h" "Label" (t "settings.time_format.12h") "Checked" (eq .TimeFormat "12h"))}}
+    {{template "optionsClose" (dict "Root" . "Name" "time_format")}}
+    {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.temperature_unit"))}}
+      {{template "option" (dict "Name" "temperature_unit" "Value" "c" "Label" (t "settings.temperature_unit.c") "Checked" (eq .TemperatureUnit "c"))}}
+      {{template "option" (dict "Name" "temperature_unit" "Value" "f" "Label" (t "settings.temperature_unit.f") "Checked" (eq .TemperatureUnit "f"))}}
+    {{template "optionsClose" (dict "Root" . "Name" "temperature_unit")}}
     <button class="button" type="submit">{{t "settings.save"}}</button>
   </form>
   <p><a href="/otp">{{t "settings.otp"}}</a></p>

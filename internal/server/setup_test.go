@@ -111,7 +111,7 @@ func TestSetupRejectsInvalidInput(t *testing.T) {
 			if r.status != http.StatusUnprocessableEntity {
 				t.Fatalf("status = %d, want 422", r.status)
 			}
-			if !strings.Contains(r.body, `class="error"`) {
+			if !strings.Contains(r.body, `class="ferr"`) {
 				t.Error("no error message shown")
 			}
 			if _, err := b.db.HomeHousehold(); err == nil {

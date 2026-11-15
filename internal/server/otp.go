@@ -50,7 +50,7 @@ func (s *server) issueRecoveryCodes(w http.ResponseWriter, r *http.Request, pers
 // the codes are shown.
 func (s *server) showRecoveryCodes(w http.ResponseWriter, r *http.Request, codes []string) {
 	w.Header().Set("Cache-Control", "no-store")
-	s.render(w, r, http.StatusOK, "recovery_codes.html", map[string]any{"Codes": codes})
+	s.render(w, r, http.StatusOK, "recovery_codes.html", map[string]any{"Codes": codes, "SuccessKey": "flash.recovery_codes_created"})
 }
 
 type otherParent struct{ ID, Name, Username string }
@@ -183,7 +183,16 @@ func (s *server) handleOTPReset(w http.ResponseWriter, r *http.Request) {
 func (s *server) apiNewRecoveryCodes(w http.ResponseWriter, _ *http.Request, p principal) {
 	// A token outlives a reset; until the new codes are confirmed the account
 	// may only set them up, not mint recovery codes.
-	if acc, err := s.db.AccountByPerson(p.person.ID); err == nil && !acc.TOTPConfirmed {
+	acc, err := s.db.AccountByPerson(p.person.ID)
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusForbidden, "this person has no account")
+		return
+	}
+	if err != nil {
+		s.fail(w, "account", err)
+		return
+	}
+	if !acc.TOTPConfirmed {
 		writeError(w, http.StatusForbidden, "confirm your new one-time codes first")
 		return
 	}

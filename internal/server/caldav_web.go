@@ -70,13 +70,14 @@ func (s *server) renderCalDAV(w http.ResponseWriter, r *http.Request, p principa
 		"Tokens": devices, "Calendars": shared, "SyncStale": s.syncStale(p.household.ID), "Form": form,
 	}
 	if form != nil {
-		data["Error"] = form["Error"]
+		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
 		data["ProfileError"] = form["ProfileError"]
 	}
 	// With the box's own CA the phone must trust the box before the profile can work (ADR 0014).
 	data["CAFirst"] = s.pki.Ready() && !s.publicInUse()
 	if newToken != "" {
 		data["NewToken"] = newToken
+		data["SuccessKey"] = "flash.token_created"
 		data["NewTokenTitle"] = s.i18n.Format(s.langOf(r), i18n.Msg("caldav.token.created_title", "name", newName))
 	}
 	s.render(w, r, status, "caldav.html", data)
@@ -95,7 +96,7 @@ func (s *server) handleDeviceTokenCreate(w http.ResponseWriter, r *http.Request)
 	}
 	name := strings.TrimSpace(r.PostFormValue("name"))
 	if !validDeviceName(name) {
-		s.renderCalDAV(w, r, p, http.StatusUnprocessableEntity, map[string]any{"Error": "caldav.error.name", "Name": name}, "", "")
+		s.renderCalDAV(w, r, p, http.StatusUnprocessableEntity, map[string]any{"Error": "caldav.error.name", "ErrorField": "name", "Name": name}, "", "")
 		return
 	}
 	value := auth.NewToken()
@@ -153,12 +154,12 @@ func (s *server) handleIOSProfile(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	name := strings.TrimSpace(r.PostFormValue("name"))
+	name := strings.TrimSpace(r.PostFormValue("profile_name"))
 	switch {
 	case r.TLS == nil: // a token must never travel unencrypted
 		s.renderCalDAV(w, r, p, http.StatusForbidden, map[string]any{"ProfileError": "caldav.profile.error.https", "ProfileName": name}, "", "")
 	case !validDeviceName(name):
-		s.renderCalDAV(w, r, p, http.StatusUnprocessableEntity, map[string]any{"ProfileError": "caldav.error.name", "ProfileName": name}, "", "")
+		s.renderCalDAV(w, r, p, http.StatusUnprocessableEntity, map[string]any{"Error": "caldav.error.name", "ErrorField": "profile_name", "ProfileName": name}, "", "")
 	default:
 		profile, err := s.iosProfile(r, p, name)
 		if err != nil {
@@ -211,7 +212,7 @@ func (s *server) handleDeviceTokenRevoke(w http.ResponseWriter, r *http.Request)
 		s.fail(w, "revoke token", err)
 		return
 	}
-	http.Redirect(w, r, "/caldav", http.StatusSeeOther)
+	s.redirectSaved(w, r, "/caldav", "flash.token_revoked")
 }
 
 func (s *server) handleCalendarShare(w http.ResponseWriter, r *http.Request) {
@@ -227,6 +228,14 @@ func (s *server) handleCalendarShare(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "share calendar", err)
 	default:
-		http.Redirect(w, r, "/caldav", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/caldav", shareKey(r))
 	}
+}
+
+// shareKey is the success line for turning sharing through the box on or off.
+func shareKey(r *http.Request) string {
+	if r.PostFormValue("shared") == "on" {
+		return "flash.share_on"
+	}
+	return "flash.share_off"
 }

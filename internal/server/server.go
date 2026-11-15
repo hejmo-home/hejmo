@@ -165,6 +165,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
 	mux.HandleFunc("GET /tasks", s.handleTasksPage)
 	mux.HandleFunc("POST /tasks", s.handleTaskAdd)
+	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /display", s.handleDisplay)
@@ -220,6 +221,7 @@ func parsePages() *template.Template {
 		"t":    func(string) string { return "" },
 		"dict": dict,
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
+		"strs": strs,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
 
@@ -229,8 +231,19 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
+	for _, k := range []string{"Error", "ErrorField"} { // templates compare them
+		if _, ok := data[k]; !ok {
+			data[k] = ""
+		}
+	}
 	if !strings.HasPrefix(name, "display_") {
-		data["Frame"] = s.frameFor(r)
+		fr := s.frameFor(r)
+		if key := s.takeFlash(w, r); key != "" {
+			fr.Success = s.i18n.T(lang, key)
+		} else if key, ok := data["SuccessKey"].(string); ok {
+			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
+		}
+		data["Frame"] = fr
 	}
 	var buf bytes.Buffer
 	err := s.execute(&buf, name, lang, data)
@@ -268,4 +281,18 @@ func dict(kv ...any) map[string]any {
 		}
 	}
 	return m
+}
+
+// strs turns a form value (nothing, one string or a list) into a list for the
+// chips and options that mark their selected values.
+func strs(v any) []string {
+	switch x := v.(type) {
+	case string:
+		if x != "" {
+			return []string{x}
+		}
+	case []string:
+		return x
+	}
+	return nil
 }

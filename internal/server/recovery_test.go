@@ -437,29 +437,48 @@ func TestResetConfirmationDoesTheSameWorkWhateverTheOutcome(t *testing.T) {
 // A person whose codes were reset may only set new ones up: a still-valid API
 // token must not mint recovery codes for the account in that state.
 func TestPendingAccountCannotMintRecoveryCodesWithAToken(t *testing.T) {
-	b, _, _ := setupWithCodes(t)
+	b, secret, _ := setupWithCodes(t)
+	loginWith(b, "mama", "correct horse battery", totpNow(b, secret))
+	session := newAPIClient(t, b)
+	session.cookie = true
+	token := session.withToken(session.newToken("write"))
+	// Both answers are checked against openapi.yaml by call.
+	if status, body, _ := token.call("POST", "/me/recovery-codes", nil); status != http.StatusCreated {
+		t.Fatalf("confirmed account = %d %v, want 201", status, body)
+	}
 	mama, _ := b.db.AccountByUsername("mama")
-	if _, err := b.db.CreateAPIToken(store.APIToken{Name: "Assistant", Hash: auth.HashToken("tok-123"), PersonID: mama.PersonID, Scopes: "write"}); err != nil {
-		t.Fatal(err)
-	}
-	post := func() int {
-		req, _ := http.NewRequest("POST", b.srv.URL+"/api/v1/me/recovery-codes", strings.NewReader("{}"))
-		req.Header.Set("Authorization", "Bearer tok-123")
-		req.Header.Set("Content-Type", "application/json")
-		resp, err := b.client.Do(req)
-		if err != nil {
-			t.Fatal(err)
-		}
-		resp.Body.Close()
-		return resp.StatusCode
-	}
-	if got := post(); got != http.StatusCreated {
-		t.Fatalf("confirmed account = %d, want 201", got)
-	}
 	if err := b.db.ResetOTP(mama.PersonID); err != nil {
 		t.Fatal(err)
 	}
-	if got := post(); got != http.StatusForbidden {
-		t.Fatalf("account pending re-setup = %d, want 403", got)
+	if status, body, _ := token.call("POST", "/me/recovery-codes", nil); status != http.StatusForbidden {
+		t.Fatalf("account pending re-setup = %d %v, want 403", status, body)
+	}
+}
+
+// The wizard ends on the recovery codes; the welcome line follows on the home page.
+func TestSetupWelcomeFollowsTheRecoveryCodes(t *testing.T) {
+	b := newBox(t)
+	b.post("/setup", validSetupForm())
+	secret := secretOn(t, b.get("/setup/totp").body)
+	code, _ := auth.TOTPCode(secret, b.now)
+	r := b.post("/setup/totp", url.Values{"code": {code}})
+	if len(recoveryCodesOn(t, r.body)) != 10 {
+		t.Fatalf("no recovery codes after setup\n%s", r.body)
+	}
+	if m := successRe.FindStringSubmatch(b.get("/").body); m == nil || !strings.Contains(m[1], "Willkommen") {
+		t.Fatalf("home shows no welcome line after the recovery codes: %v", m)
+	}
+}
+
+func TestRecoveryCodesPageAndResetFormsUseSharedPatterns(t *testing.T) {
+	b, secret, _ := setupWithCodes(t)
+	loginWith(b, "mama", "correct horse battery", totpNow(b, secret))
+	secondParent(t, b)
+	r := b.post("/otp/recovery-codes", url.Values{})
+	if !successRe.MatchString(r.body) {
+		t.Fatalf("recovery codes page shows no success line\n%s", r.body)
+	}
+	if !strings.Contains(b.get("/otp").body, "oder einem Wiederherstellungscode") {
+		t.Fatal("the reset intro does not mention that a recovery code works")
 	}
 }

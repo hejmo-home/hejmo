@@ -4,12 +4,9 @@
   <form method="post" action="/login" class="steps">
     {{if .Next}}<input type="hidden" name="next" value="{{.Next}}">{{end}}
     <fieldset>
-      <label>{{t "setup.field.username"}}
-        <input name="username" value="{{.Username}}" required autocomplete="username" autocapitalize="none"></label>
-      <label>{{t "setup.field.password"}}
-        <input name="password" type="password" required autocomplete="current-password"></label>
-      <label>{{t "login.code_or_recovery"}}
-        <input name="code" autocomplete="one-time-code" autocapitalize="characters"></label>
+      {{template "field" (dict "Root" . "Name" "username" "Label" (t "setup.field.username") "Value" .Username "Required" true "Autocomplete" "username" "Autocapitalize" "none")}}
+      {{template "field" (dict "Root" . "Name" "password" "Label" (t "setup.field.password") "Type" "password" "Required" true "Autocomplete" "current-password")}}
+      {{template "field" (dict "Root" . "Name" "code" "Label" (t "login.code_or_recovery") "Autocomplete" "one-time-code" "Autocapitalize" "characters")}}
     </fieldset>
     <button class="button" type="submit">{{t "login.submit"}}</button>
   </form>

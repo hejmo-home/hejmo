@@ -319,7 +319,7 @@ func TestAccountPageHintsGroupedRegionsAndPasswordReveal(t *testing.T) {
 	b := newBox(t)
 	r := de(b, "/setup")
 	for _, want := range []string{
-		"<h1>Dein Konto</h1>", "Damit meldest du dich bei Hejmo an.", "<legend>Euer Zuhause</legend>", "<legend>Du</legend>", "<legend>Eltern-PIN</legend>",
+		"<h1>Dein Konto</h1>", "Damit meldest du dich bei Hejmo an.", "<legend>Heimatort</legend>", `<p class="hint">Der Ort gibt Wetter, Sonnenauf- und -untergang, das Bundesland die Feiertage.</p>`, "<legend>Du</legend>", "<legend>Eltern-PIN</legend>",
 		"Für Wetter und Sonnenzeiten.", "Für die Feiertage.", "So erscheinst du auf dem Display.", "Damit meldest du dich an.", "Mindestens 10 Zeichen.",
 		"Die PIN brauchen Eltern am Display", "PIN (4 bis 8 Ziffern)", `<optgroup label="Deutschland">`, `<optgroup label="Österreich">`, `<optgroup label="Schweiz">`,
 		`<option value="DE-BY" selected>Bayern</option>`, `<span class="pw">`, `data-pw-toggle data-show-text="Anzeigen" data-hide-text="Verbergen"`, "Konto anlegen",

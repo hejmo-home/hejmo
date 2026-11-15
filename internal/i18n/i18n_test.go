@@ -88,7 +88,6 @@ var wholeFamilyTexts = map[string]bool{
 	"displays.none":                  true, // "euren Tag": the family's day on the wall
 	"setup.welcome.lead":             true, // "eure Box": the family's box
 	"setup.welcome.step.2":           true, // "Euer Ort": the family's town
-	"setup.step.home":                true, // "Euer Zuhause"
 	"setup.https.way.public.hint":    true, // "eure Box"
 	"setup.https.public.lan_ip.hint": true, // "eure Geräte"
 	"setup.https.rebind.why":         true, // "bei euch zu Hause"

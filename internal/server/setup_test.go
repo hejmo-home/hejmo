@@ -22,7 +22,7 @@ func TestUnconfiguredBoxStartsSetupWizard(t *testing.T) {
 		t.Fatalf("GET / = %d %q, want 303 to /setup", r.status, r.location)
 	}
 	r := b.do(http.MethodGet, "/setup", nil, map[string]string{"Accept-Language": "de-DE"})
-	for _, want := range []string{"Dein Konto", "Euer Zuhause", "Eltern-PIN", `lang="de"`, `name="password"`, `value="DE-BY"`, "Konto anlegen"} {
+	for _, want := range []string{"Dein Konto", "Heimatort", "Eltern-PIN", `lang="de"`, `name="password"`, `value="DE-BY"`, "Konto anlegen"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("setup page misses %q", want)
 		}
@@ -32,7 +32,7 @@ func TestUnconfiguredBoxStartsSetupWizard(t *testing.T) {
 func TestSetupWizardSpeaksEnglish(t *testing.T) {
 	b := newBox(t)
 	r := b.do(http.MethodGet, "/setup", nil, map[string]string{"Accept-Language": "en-GB,en;q=0.9"})
-	for _, want := range []string{"Your account", "Your home", "Parent PIN", `lang="en"`, "Create account"} {
+	for _, want := range []string{"Your account", "Home location", "The town gives the weather and the sunrise and sunset, the state the public holidays.", "Parent PIN", `lang="en"`, "Create account"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("setup page misses %q", want)
 		}

@@ -5,6 +5,7 @@
   <form method="post" action="/setup" class="steps">
     <fieldset>
       <legend>{{t "setup.step.home"}}</legend>
+      <p class="hint">{{t "setup.step.home.hint"}}</p>
       {{template "field" (dict "Root" . "Name" "home_name" "Label" (t "setup.field.home_name") "Value" .Form.HomeName "Required" true "Autocomplete" "address-level2" "Hint" (t "setup.field.home_name.hint"))}}
       <div class="f">
         <label>{{t "setup.field.region"}}

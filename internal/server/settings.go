@@ -16,10 +16,22 @@ type settingsJSON struct {
 	TimeFormat      store.TimeFormat      `json:"time_format"`
 	TemperatureUnit store.TemperatureUnit `json:"temperature_unit"`
 	AutoUpdate      store.UpdateMode      `json:"auto_update"`
+	HomeName        string                `json:"home_name"`
+	// Latitude and Longitude are null until the home has a location.
+	Latitude  *float64 `json:"latitude"`
+	Longitude *float64 `json:"longitude"`
+}
+
+func settingsOf(h store.Household) settingsJSON {
+	out := settingsJSON{TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, HomeName: h.HomeName}
+	if h.Latitude != 0 || h.Longitude != 0 {
+		out.Latitude, out.Longitude = &h.Latitude, &h.Longitude
+	}
+	return out
 }
 
 func (s *server) apiGetSettings(w http.ResponseWriter, _ *http.Request, p principal) {
-	writeJSON(w, http.StatusOK, settingsJSON{p.household.TimeFormat, p.household.TemperatureUnit, p.household.AutoUpdate})
+	writeJSON(w, http.StatusOK, settingsOf(p.household))
 }
 
 func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p principal) {
@@ -27,6 +39,9 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		TimeFormat      *store.TimeFormat      `json:"time_format"`
 		TemperatureUnit *store.TemperatureUnit `json:"temperature_unit"`
 		AutoUpdate      *store.UpdateMode      `json:"auto_update"`
+		HomeName        *string                `json:"home_name"`
+		Latitude        *float64               `json:"latitude"`
+		Longitude       *float64               `json:"longitude"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -47,11 +62,51 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, "time_format must be 24h or 12h, temperature_unit c or f and auto_update on, off or notify")
 		return
 	}
-	if err := s.saveSettings(p.household, f, u, a, nil); err != nil {
+	home, errMsg := homeOfPatch(p.household, in.HomeName, in.Latitude, in.Longitude)
+	if errMsg != "" {
+		writeError(w, http.StatusUnprocessableEntity, errMsg)
+		return
+	}
+	if err := s.saveSettings(p.household, f, u, a, home); err != nil {
 		s.fail(w, "update settings", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, settingsJSON{f, u, a})
+	if home != nil {
+		s.refreshWeather(home.Latitude, home.Longitude)
+	}
+	h := p.household
+	h.TimeFormat, h.TemperatureUnit, h.AutoUpdate = f, u, a
+	if home != nil {
+		h.HomeName, h.Latitude, h.Longitude = home.Name, home.Latitude, home.Longitude
+	}
+	writeJSON(w, http.StatusOK, settingsOf(h))
+}
+
+// homeOfPatch reads the home of a settings patch: nil if it does not touch
+// the home, else the new home, or what is wrong with it. Latitude and
+// longitude come together, and a new name needs the coordinates of its place
+// (search with GET /places), so the name and the location never disagree.
+func homeOfPatch(h store.Household, name *string, lat, lon *float64) (*store.Home, string) {
+	if name == nil && lat == nil && lon == nil {
+		return nil, ""
+	}
+	if (lat == nil) != (lon == nil) {
+		return nil, "latitude and longitude must be given together"
+	}
+	if lat == nil {
+		return nil, "a new home_name needs latitude and longitude (find them with GET /places)"
+	}
+	if !validCoordinates(*lat, *lon) {
+		return nil, "latitude must be between -90 and 90 and longitude between -180 and 180"
+	}
+	home := store.Home{Name: h.HomeName, Latitude: *lat, Longitude: *lon}
+	if name != nil {
+		home.Name = strings.TrimSpace(*name)
+	}
+	if home.Name == "" {
+		return nil, "home_name must not be empty"
+	}
+	return &home, ""
 }
 
 // settingsPage is what the household page shows: the stored settings, or what

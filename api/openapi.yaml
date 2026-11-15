@@ -806,6 +806,12 @@ paths:
       description: |
         The time format applies to every time shown in the web interface and
         on displays (ADR 0016). Unknown values are refused with 422.
+
+        The home place sets where sunrise and sunset are computed (front light
+        of displays, themes) and which weather is shown. Give `latitude` and
+        `longitude` together (degrees, -90 to 90 and -180 to 180); a new
+        `home_name` needs them too. Find the coordinates of a place name with
+        `GET /places`. Out-of-range or lone coordinates are refused with 422.
       requestBody:
         required: true
         content:
@@ -821,6 +827,37 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "400": { $ref: "#/components/responses/Invalid" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /places:
+    get:
+      operationId: searchPlaces
+      summary: Search places by name, to set the home location (scope settings:read)
+      description: |
+        Looks the name up with Open-Meteo's geocoding (the only thing sent
+        is the name) and lists up to five places that match, so a parent can
+        confirm one before `PATCH /settings` stores its coordinates. The
+        search is limited to the country of the household's region unless
+        `country` says otherwise. No match is an empty list.
+      parameters:
+        - { name: name, in: query, required: true, schema: { type: string }, description: "The place name, for example München-Pasing; blank is refused with 422" }
+        - { name: country, in: query, required: false, schema: { type: string }, description: "ISO 3166-1 alpha-2 country code; default the household's country" }
+      responses:
+        "200":
+          description: The matching places, best match first
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [places]
+                properties:
+                  places: { type: array, items: { $ref: "#/components/schemas/Place" } }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+        "502":
+          description: The geocoding service could not be reached; try again later
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /update:
     get:
       operationId: getUpdate
@@ -1282,16 +1319,30 @@ components:
         at: { type: string, format: date-time }
         kind: { type: string, enum: [failure, conflict, note] }
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
+    Place:
+      type: object
+      required: [label, name, latitude, longitude]
+      properties:
+        label: { type: string, description: "The place as a person recognises it: name, district, state, country", example: "Pasing, Bavaria, Germany" }
+        name: { type: string }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
     Settings:
       type: object
-      required: [time_format, temperature_unit, auto_update]
+      required: [time_format, temperature_unit, auto_update, home_name, latitude, longitude]
       properties:
+        home_name: { type: string, description: "The place name of the home, as the parent entered it" }
+        latitude: { type: number, nullable: true, format: double, description: "Latitude of the home in degrees (north positive); null until the home has a location. Sunrise and sunset, themes and weather use it" }
+        longitude: { type: number, nullable: true, format: double, description: "Longitude of the home in degrees (east positive); null until the home has a location" }
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
         temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
     SettingsUpdate:
       type: object
       properties:
+        home_name: { type: string, description: "New home place name; needs latitude and longitude" }
+        latitude: { type: number, format: double, description: "-90 to 90; with longitude" }
+        longitude: { type: number, format: double, description: "-180 to 180; with latitude" }
         time_format: { type: string, description: "24h or 12h" }
         temperature_unit: { type: string, description: "c or f" }
         auto_update: { type: string, description: "on, off or notify" }

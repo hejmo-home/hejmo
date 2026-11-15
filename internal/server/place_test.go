@@ -290,3 +290,101 @@ func TestChangingTheHomeShowsTheWeatherThereAtOnce(t *testing.T) {
 		t.Errorf("chip = %q, want the weather of the new home", chip)
 	}
 }
+
+// --- /settings and /places API (parity with the web interface, ADR 0015) ---
+
+func TestSettingsAPIExposesAndChangesTheHomeLocation(t *testing.T) {
+	c := signedInAPI(t)
+	status, got, _ := c.call(http.MethodGet, "/settings", nil)
+	if status != http.StatusOK || got["home_name"] != "Pasing" || got["latitude"] != 48.15 || got["longitude"] != 11.46 {
+		t.Fatalf("get = %d %v", status, got)
+	}
+	status, got, _ = c.call(http.MethodPatch, "/settings", map[string]any{"home_name": "Neustadt", "latitude": 50.25, "longitude": 11.88})
+	if status != http.StatusOK || got["home_name"] != "Neustadt" || got["latitude"] != 50.25 || got["longitude"] != 11.88 {
+		t.Fatalf("patch = %d %v", status, got)
+	}
+	if lat, lon, name := homeOf(t, c.b); lat != 50.25 || lon != 11.88 || name != "Neustadt" {
+		t.Errorf("stored = %v %v %q", lat, lon, name)
+	}
+	// Coordinates alone move the location, the name stays.
+	status, got, _ = c.call(http.MethodPatch, "/settings", map[string]any{"latitude": -33.9, "longitude": 18.4})
+	if status != http.StatusOK || got["home_name"] != "Neustadt" || got["latitude"] != -33.9 {
+		t.Fatalf("coordinates only = %d %v", status, got)
+	}
+	// Other settings leave the location alone.
+	status, got, _ = c.call(http.MethodPatch, "/settings", map[string]any{"time_format": "12h"})
+	if status != http.StatusOK || got["latitude"] != -33.9 || got["home_name"] != "Neustadt" {
+		t.Fatalf("other setting = %d %v", status, got)
+	}
+}
+
+func TestSettingsAPIRefusesBadLocations(t *testing.T) {
+	c := signedInAPI(t)
+	for name, body := range map[string]map[string]any{
+		"latitude too big":     {"latitude": 91.0, "longitude": 0.0},
+		"latitude too small":   {"latitude": -90.5, "longitude": 0.0},
+		"longitude too big":    {"latitude": 0.0, "longitude": 180.5},
+		"latitude alone":       {"latitude": 48.0},
+		"longitude alone":      {"longitude": 11.0},
+		"empty name":           {"home_name": " ", "latitude": 48.0, "longitude": 11.0},
+		"new name, no coords":  {"home_name": "Neustadt"},
+		"time format and move": {"time_format": "25h", "latitude": 48.0, "longitude": 11.0},
+	} {
+		if status, _, _ := c.call(http.MethodPatch, "/settings", body); status != http.StatusUnprocessableEntity {
+			t.Errorf("%s: status = %d, want 422", name, status)
+		}
+	}
+	if lat, lon, name := homeOf(t, c.b); lat != 48.15 || lon != 11.46 || name != "Pasing" {
+		t.Errorf("a refused patch changed the home: %v %v %q", lat, lon, name)
+	}
+	ro := c.withToken(c.newToken("read"))
+	if status, _, _ := ro.call(http.MethodPatch, "/settings", map[string]any{"latitude": 1.0, "longitude": 1.0}); status != http.StatusForbidden {
+		t.Errorf("read token moves the home = %d, want 403", status)
+	}
+}
+
+func TestSettingsAPIShowsAnUnknownLocationAsNull(t *testing.T) {
+	c := signedInAPI(t)
+	if _, err := c.b.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL`); err != nil {
+		t.Fatal(err)
+	}
+	status, got, _ := c.call(http.MethodGet, "/settings", nil)
+	if status != http.StatusOK {
+		t.Fatalf("status = %d", status)
+	}
+	if v, ok := got["latitude"]; !ok || v != nil {
+		t.Errorf("latitude = %v (present %v), want null", v, ok)
+	}
+}
+
+func TestPlacesAPISearchesOnceAndListsWhatMatches(t *testing.T) {
+	c := signedInAPI(t)
+	before := len(c.b.geo.searches())
+	status, got, _ := c.call(http.MethodGet, "/places?name=Neustadt", nil)
+	places, _ := got["places"].([]any)
+	if status != http.StatusOK || len(places) != 2 {
+		t.Fatalf("status %d: %v", status, got)
+	}
+	first := places[1].(map[string]any)
+	if first["label"] != "Neustadt, Coburg, Bavaria, Germany" || first["latitude"] != 50.25 || first["longitude"] != 11.88 {
+		t.Errorf("place = %v", first)
+	}
+	qs := c.b.geo.searches()
+	if len(qs)-before != 1 || qs[len(qs)-1].Get("countryCode") != "DE" {
+		t.Errorf("searches = %v, want one in the household's country", qs)
+	}
+	// No match is an empty list, not an error.
+	if status, got, _ := c.call(http.MethodGet, "/places?name=Nirgendwo", nil); status != http.StatusOK || len(got["places"].([]any)) != 0 {
+		t.Errorf("no match = %d %v", status, got)
+	}
+	if status, _, _ := c.call(http.MethodGet, "/places?name=%20", nil); status != http.StatusUnprocessableEntity {
+		t.Errorf("no name = %d, want 422", status)
+	}
+	c.b.geo.setDown(true)
+	if status, _, _ := c.call(http.MethodGet, "/places?name=Pasing", nil); status != http.StatusBadGateway {
+		t.Errorf("unreachable = %d, want 502", status)
+	}
+	if status, _, _ := c.withToken("nope").call(http.MethodGet, "/places?name=Pasing", nil); status != http.StatusUnauthorized {
+		t.Errorf("bad token = %d, want 401", status)
+	}
+}

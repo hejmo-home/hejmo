@@ -327,7 +327,7 @@ func TestTrustPageChecksByItselfAndContinuesOnlyWhenTrusted(t *testing.T) {
 	for _, want := range []string{
 		`data-check="trust"`, `data-check-url="https://` + host, `/healthz"`, `/static/https-check.js`,
 		`data-hook="waiting"`, `data-hook="ok"`, `data-hook="fail"`, `data-download`,
-		`Dein iPhone vertraut der Box noch nicht.`, `Dein iPhone vertraut der Box.`,
+		`Dein Gerät vertraut der Box noch nicht.`, `Dein Gerät vertraut der Box.`,
 		`href="https://` + host, `/setup" data-continue-link hidden>Weiter zu Schritt 2: Dein Konto`,
 		"Ohne Prüfung weiter", "Die Prüfung klappt nicht?",
 	} {

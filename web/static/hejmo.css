@@ -475,3 +475,8 @@ fieldset.look { display: flex; flex-wrap: wrap; gap: 8px; }
 .marker.preview[data-shape="square-empty"] { background: transparent; border: 2px solid var(--text); }
 .marker.preview[data-shape="triangle-filled"] { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .marker.preview[data-shape="diamond-filled"] { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+
+/* Phones (ticket 5.13): the QR code a phone scans, and the offline view. */
+.pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
+.pair-qr svg { display: block; width: 100%; height: auto; }
+html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }

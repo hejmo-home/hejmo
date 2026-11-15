@@ -21,7 +21,8 @@ var navItems = []navItem{
 	{"/calendars", "nav.connections", auth.Perm("calendars", auth.Write)},
 	{"/caldav", "nav.caldav", auth.Perm("tokens", auth.Read)},
 	{"/displays", "nav.displays", auth.Perm("displays", auth.Write)},
-	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Write)},
+	{"/phones", "nav.phones", auth.Perm("tokens", auth.Write)},
+	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Read)},
 	{"/people", "nav.people", auth.Perm("people", auth.Write)},
 	{"/settings", "nav.settings", auth.Perm("settings", auth.Write)},
 }

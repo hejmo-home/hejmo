@@ -89,3 +89,11 @@ func RenderPersonalView(lang string, v familyview.PersonalView) (string, error) 
 	}
 	return b.String(), nil
 }
+
+// CountLanguageLookups counts page language lookups until the returned
+// function is called, which stops counting and returns the number so far.
+func CountLanguageLookups() func() int {
+	n := 0
+	languageLookups = func() { n++ }
+	return func() int { languageLookups = func() {}; return n }
+}

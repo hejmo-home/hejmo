@@ -346,11 +346,25 @@ func TestLanguageSwitcherWorksOnTheTrustPageOverPlainHTTP(t *testing.T) {
 	if set == nil || set.Value != "en" || set.Secure {
 		t.Errorf("language cookie over HTTP = %+v, want en and not Secure", set)
 	}
+	// Following the 303 back to the trust page over HTTP shows it in English.
+	back, _ := http.NewRequest(http.MethodGet, plain.URL+res.Header.Get("Location"), nil)
+	back.AddCookie(set)
+	back.Header.Set("Accept-Language", "de")
+	br, err := noRedirect.Do(back)
+	if err != nil {
+		t.Fatal(err)
+	}
+	braw, _ := io.ReadAll(br.Body)
+	br.Body.Close()
+	if br.StatusCode != http.StatusOK || !strings.Contains(string(braw), `<html lang="en"`) {
+		t.Fatalf("GET http://ca after the switch = %d, want 200 with lang=\"en\":\n%s", br.StatusCode, braw)
+	}
 
 	// Only the switch and single flag files: no other POST, no listing, no traversal.
 	for _, c := range []struct{ method, path string }{
 		{http.MethodGet, "/static/flags/"}, {http.MethodGet, "/static/flags/..%2fform.js"},
 		{http.MethodGet, "/static/flags/../sw.js"}, {http.MethodPost, "/login"},
+		{http.MethodPost, "/ca"}, {http.MethodPost, "/setup"},
 	} {
 		req, _ := http.NewRequest(c.method, plain.URL+c.path, nil)
 		res, err := noRedirect.Do(req)

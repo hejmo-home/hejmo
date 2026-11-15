@@ -66,7 +66,8 @@ func (s *server) plainHTTPAllowed(r *http.Request) bool {
 	}
 	switch u.Path {
 	case "/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig":
-		return true
+		// Pages to read: nothing is posted to them over HTTP.
+		return r.Method == http.MethodGet || r.Method == http.MethodHead
 	case "/setup/https/check", "/setup/https/own-ca", "/static/https-check.js":
 		// While the wizard tests the new name, the browser is still on the
 		// LAN address and has no other way to show the page.

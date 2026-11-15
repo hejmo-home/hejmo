@@ -82,7 +82,11 @@ func withPageLanguage(next http.Handler) http.Handler {
 	})
 }
 
+// languageLookups is called on every real lookup; tests count them.
+var languageLookups = func() {}
+
 func (s *server) lookupPageLanguage(r *http.Request) string {
+	languageLookups()
 	if p, ok := s.currentPerson(r); ok {
 		if acc, err := s.db.AccountByPerson(p.ID); err == nil {
 			if _, ok := languageByCode(acc.Language); ok {

@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/web"
 )
 
@@ -351,5 +352,17 @@ func TestHandlerBuiltTextFollowsTheSwitchedLanguage(t *testing.T) {
 	b.post("/language", langForm("de", "/calendar"))
 	if wde := b.do(http.MethodGet, "/calendar?week=2026-12-25", nil, map[string]string{"Accept-Language": "en"}); !strings.Contains(wde.body, "1. Weihnachtstag") {
 		t.Errorf("holiday name is not German:\n%s", wde.body)
+	}
+}
+
+func TestPageLanguageIsLookedUpOncePerRequest(t *testing.T) {
+	b, _ := configuredBox(t)
+	stop := server.CountLanguageLookups()
+	page := b.get("/login") // the page reads the language for the frame, the texts and the headers
+	if n := stop(); n != 1 {
+		t.Fatalf("language lookups for one request = %d, want 1", n)
+	}
+	if page.status != http.StatusOK {
+		t.Fatalf("GET /login = %d", page.status)
 	}
 }

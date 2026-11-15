@@ -149,12 +149,12 @@ func TestWritePreview72(t *testing.T) {
 		theme string
 		w, h  int
 	}
+	// Design gate: every page is shown at 1280 px and at 375 px, light and dark.
 	var frames []frame
-	for _, th := range []string{"light", "dark", "bw"} {
-		frames = append(frames, frame{th, 1024, 768})
-	}
-	for _, th := range []string{"light", "dark", "bw"} {
-		frames = append(frames, frame{th, 768, 1024})
+	for _, size := range [][2]int{{1280, 800}, {375, 812}} {
+		for _, th := range []string{"light", "dark"} {
+			frames = append(frames, frame{th, size[0], size[1]})
+		}
 	}
 	var body strings.Builder
 	var docs []string
@@ -170,11 +170,7 @@ func TestWritePreview72(t *testing.T) {
 		anchor = strings.ReplaceAll(anchor, `"`, "&quot;")
 		for _, f := range frames {
 			label := map[string]string{"light": "Light", "dark": "Dark", "bw": "Black and white"}[f.theme]
-			orientation := "landscape"
-			if f.h > f.w {
-				orientation = "portrait"
-			}
-			fmt.Fprintf(&body, `<figure><figcaption>%s, %s, %d x %d</figcaption><iframe data-doc="%d" data-theme="%s" data-anchor="%s" width="%d" height="%d" title="%s"></iframe></figure>`+"\n", label, orientation, f.w, f.h, idx, f.theme, anchor, f.w, f.h, title)
+			fmt.Fprintf(&body, `<figure><figcaption>%s, %d x %d</figcaption><iframe data-doc="%d" data-theme="%s" data-anchor="%s" width="%d" height="%d" title="%s"></iframe></figure>`+"\n", label, f.w, f.h, idx, f.theme, anchor, f.w, f.h, title)
 		}
 		body.WriteString("</div>\n")
 	}
@@ -210,7 +206,7 @@ h1{font-size:22px}h2{font-size:18px;margin:28px 0 4px}.note{margin:0 0 10px;max-
 figure{margin:0 0 12px}figcaption{margin-bottom:6px;font-weight:700}
 iframe{border:0;background:#fff;display:block}
 </style></head><body>
-<h1>Hejmo 5.17 Choose calendars and calendar management: preview with the example family (Mama, Papa, Sebastian, Mia): 1024 x 768 and portrait, light, dark and black and white</h1>
+<h1>Hejmo 5.17 Choose calendars and calendar management: preview with the example family (Mama, Papa, Sebastian, Mia): 1280 px and 375 px, light and dark</h1>
 <noscript><p>This page needs JavaScript only to place the real pages into their frames.</p></noscript>
 ` + body.String() + `
 <template id="css">` + string(css) + `</template>

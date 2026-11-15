@@ -46,7 +46,38 @@ const (
 const (
 	MaxTitle = 120
 	MaxEmoji = 16
+	// MaxStars is the largest star value of one task.
+	MaxStars = 100
+	// MaxBooking is the largest amount of one manual star booking, up or down.
+	MaxBooking = 1000
+	// MaxNote is the longest note of a manual star booking, in characters.
+	MaxNote = 120
 )
+
+// DefaultStars is the star value a new task gets: 1 for a child, 0 for an
+// adult (ADR 0018). Parents can change it per task.
+func DefaultStars(child bool) int {
+	if child {
+		return 1
+	}
+	return 0
+}
+
+// ValidateBooking reports why a manual star booking cannot be stored: it needs
+// a non-zero amount (negative to deduct) and a short note.
+func ValidateBooking(delta int, note string) error {
+	bad := func(msg string) error { return fmt.Errorf("%w: %s", ErrInvalid, msg) }
+	if delta == 0 || delta > MaxBooking || delta < -MaxBooking {
+		return bad(fmt.Sprintf("amount must be between -%d and %d, not 0", MaxBooking, MaxBooking))
+	}
+	if strings.TrimSpace(note) == "" {
+		return bad("note required")
+	}
+	if utf8.RuneCountInString(strings.TrimSpace(note)) > MaxNote {
+		return bad(fmt.Sprintf("note may have at most %d characters", MaxNote))
+	}
+	return nil
+}
 
 // DateLayout is the layout of Task.Date and of days passed around.
 const DateLayout = "2006-01-02"
@@ -64,6 +95,7 @@ type Task struct {
 	Weekdays  []string // RFC 5545 codes (MO..SU), only for Weekly
 	Date      string   // YYYY-MM-DD in the household's time zone: the day of a once task, the first day of a repeating one
 	PartOfDay PartOfDay
+	Stars     int // credited when ticked off, deducted when unticked (ADR 0018); 0 allowed
 }
 
 // InvalidError says why a task cannot be stored and which field is wrong
@@ -85,6 +117,9 @@ func (t Task) Validate() error {
 	}
 	if utf8.RuneCountInString(t.Emoji) > MaxEmoji {
 		return bad("emoji", fmt.Sprintf("emoji may have at most %d characters", MaxEmoji))
+	}
+	if t.Stars < 0 || t.Stars > MaxStars {
+		return bad("stars", fmt.Sprintf("stars must be between 0 and %d", MaxStars))
 	}
 	if t.PersonID == "" {
 		return bad("person", "person required")

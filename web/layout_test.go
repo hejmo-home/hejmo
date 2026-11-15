@@ -175,8 +175,16 @@ func TestColumnReadabilitySnapshot(t *testing.T) {
 	const longest = "Sebastian"
 	const veryLong = "Konstantinos" // 12 characters, a single word: must wrap, not clip
 	need := func(name string) float64 { return float64(len(name))*0.51*fs + 8 + marker }
-	link := regexp.MustCompile(`(?m)^\.fv \.person-link\s*\{([^}]*)\}`).FindStringSubmatch(css)
-	wraps := link != nil && strings.Contains(link[1], "overflow-wrap: break-word;") && strings.Contains(link[1], "min-width: 0;")
+	// A name wraps at the column edge only if it is its own shrinkable flex
+	// item (min-width: 0) with overflow-wrap: break-word, and the template
+	// puts the name in that element.
+	nameRule := regexp.MustCompile(`(?m)^\.fv \.person-name\s*\{([^}]*)\}`).FindStringSubmatch(css)
+	tpl, err := os.ReadFile("templates/display_family.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	wraps := nameRule != nil && strings.Contains(nameRule[1], "overflow-wrap: break-word;") && strings.Contains(nameRule[1], "min-width: 0;") &&
+		strings.Contains(string(tpl), `<span class="person-name">{{.Person.Name}}</span>`)
 
 	devices := []struct {
 		name string
@@ -219,5 +227,43 @@ func TestColumnReadabilitySnapshot(t *testing.T) {
 	}
 	if got != string(want) {
 		t.Errorf("layout differs from %s (HEJMO_UPDATE_GOLDEN=1 rewrites it after a reviewed change):\n%s", golden, got)
+	}
+}
+
+// #150 AC 1: with 8 people the names from the issue (Maximilian, Anna-Lena,
+// Konstantin) must not break inside a word at 1024x768 and 768x1024. Widths are
+// browser measurements (Figtree 700, 19 px, one line); the snapshot's 0.51 em
+// estimate is too coarse here (it says 121 px for Maximilian, the browser 94).
+// Anna-Lena may break at its hyphen, so only its longer half has to fit.
+// The bw theme has a 16 px marker (light: 14 px); at 1024x768 the names are
+// about 1 px wider than the room left (open product decision, see PR #152), so
+// that case is logged, not asserted.
+func TestIssueNamesFitWithEightPeople(t *testing.T) {
+	css := stylesheet(t)
+	root := cssTokens(t, css, "light")
+	pad := px(t, root["--pad-column"])
+	measured := map[string]float64{"Maximilian": 93.7, "Anna-Lena": 94.7 * 5 / 9, "Konstantin": 94.6}
+	for _, theme := range []struct {
+		name   string
+		marker float64
+		assert bool
+	}{{"light", px(t, root["--marker-size"]), true}, {"bw", px(t, themed(t, css, "bw")["--marker-size-bw-column"]), false}} {
+		for _, d := range []struct {
+			name string
+			w, h float64
+		}{{"1024x768", 1024, 768}, {"768x1024", 768, 1024}} {
+			_, colw := visibleColumns(t, css, d.w, d.h, 8)
+			room := colw - 2*pad - 8 - theme.marker
+			for n, w := range measured {
+				if w <= room {
+					continue
+				}
+				if theme.assert {
+					t.Errorf("%s %s, 8 people: %q needs %.1f px, the name has %.1f px", theme.name, d.name, n, w, room)
+				} else {
+					t.Logf("%s %s, 8 people: %q needs %.1f px, the name has %.1f px (product decision)", theme.name, d.name, n, w, room)
+				}
+			}
+		}
 	}
 }

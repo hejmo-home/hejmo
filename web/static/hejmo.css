@@ -349,8 +349,9 @@ body:has(.family-page) { overflow: hidden; }
 
 .fv-grid { --visible: min(var(--cols), var(--cols-max)); flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: max(var(--col-min), calc((100% - (var(--visible) - 1) * var(--gap)) / var(--visible))); grid-auto-rows: minmax(0, 1fr); gap: var(--gap); overflow-x: auto; }
 .fv .column { display: flex; flex-direction: column; gap: 0; min-height: 0; overflow: hidden; }
-.fv .person-link { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: 0; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; color: inherit; text-decoration: none; } /* a name never breaks inside a word; only a word wider than the column breaks at its edge (not clipped) */
-@supports (hyphenate-limit-chars: 12 5 5) { .fv .person-link { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
+.fv .person-link { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: 0; color: inherit; text-decoration: none; }
+.fv .person-name { min-width: 0; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* its own shrinkable flex item: a name never breaks inside a word; only a word wider than the column breaks at its edge (not clipped) */
+@supports (hyphenate-limit-chars: 12 5 5) { .fv .person-name { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
 .fv .column h2 { flex: none; min-width: 0; margin: 0 0 var(--gap-cards); font-size: var(--fs-person-name); font-weight: var(--fw-person-name); display: flex; align-items: center; gap: 8px; }
 .fv .events { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: var(--gap-cards); align-content: start; }
 .fv .events .tomorrow { display: grid; gap: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); opacity: 0.6; }

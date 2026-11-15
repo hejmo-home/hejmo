@@ -515,16 +515,30 @@ func TestFamilyViewLayoutRulesFollowTheSpec(t *testing.T) {
 	}
 }
 
-// #150: a person name in the family view never breaks inside the word. Hyphens
-// only for words of 12+ letters (#32/#86 rule, inside @supports); break-word is
-// the last resort for a column narrower than the word.
+// #150: a person name in the family view never breaks inside the word. The
+// name sits in its own shrinkable element (span.person-name, min-width: 0), so
+// overflow-wrap: break-word applies at the column edge; hyphens only for words
+// of 12+ letters (#32/#86 rule, inside @supports). The layout itself is
+// checked in TestColumnReadabilitySnapshot and in a browser measurement.
 func TestFamilyViewPersonNamesDoNotBreakInsideWords(t *testing.T) {
 	css := stylesheet(t)
-	rule := ruleFor(t, css, ".fv .person-link")
-	if strings.Contains(rule, "anywhere") || !strings.Contains(rule, "overflow-wrap: break-word") || !strings.Contains(rule, "hyphens: manual") {
-		t.Errorf(".fv .person-link must use overflow-wrap: break-word and hyphens: manual: %s", rule)
+	rule := ruleFor(t, css, ".fv .person-name")
+	for _, want := range []string{"min-width: 0;", "overflow-wrap: break-word;", "hyphens: manual;"} {
+		if !strings.Contains(rule, want) {
+			t.Errorf(".fv .person-name needs %q: %s", want, rule)
+		}
 	}
-	if !strings.Contains(css, "@supports (hyphenate-limit-chars: 12 5 5) { .fv .person-link { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }") {
+	if strings.Contains(rule, "anywhere") {
+		t.Errorf(".fv .person-name must not use overflow-wrap: anywhere: %s", rule)
+	}
+	if !regexp.MustCompile(`@supports\s*\(\s*hyphenate-limit-chars:\s*12 5 5\s*\)\s*\{[^@]*\.fv \.person-name[^}]*hyphens:\s*auto[^}]*hyphenate-limit-chars:\s*12 5 5`).MatchString(css) {
 		t.Error("the family view hyphenates only words of 12+ letters (hyphenate-limit-chars: 12 5 5 inside @supports)")
+	}
+	tpl, err := os.ReadFile("templates/display_family.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(string(tpl), `<span class="person-name">{{.Person.Name}}</span>`) {
+		t.Error("display_family.html must put the person name in span.person-name")
 	}
 }

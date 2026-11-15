@@ -42,6 +42,10 @@ type Input struct {
 	// SyncStale: a synced calendar has gone 24 hours without a successful
 	// sync (ADR 0012). The header then shows an info symbol.
 	SyncStale bool
+	// TaskProgress is each person's task progress today, by person ID. A
+	// person without tasks due today has no entry (or a zero total) and
+	// shows no bar (ADR 0016).
+	TaskProgress map[string]Progress
 }
 
 // Weather is a reading for the weather chip; Icon names the symbol.
@@ -65,7 +69,7 @@ type Event struct {
 	Markers []Marker
 }
 
-// Progress is a person's task progress today (data arrives with 6.6).
+// Progress is a person's task progress today: tasks done of tasks due (ticket 6.6, ADR 0016).
 type Progress struct{ Done, Total int }
 
 // Percent is the filled share of the bar, 0 to 100.
@@ -152,7 +156,11 @@ func Build(in Input) View {
 	v.ShowTomorrow = in.ShowTomorrow && now.Hour() >= tomorrowFromHour
 	v.SyncStale = in.SyncStale
 	for _, p := range in.People {
-		v.Columns = append(v.Columns, Column{Person: p})
+		col := Column{Person: p}
+		if pr, ok := in.TaskProgress[p.ID]; ok && pr.Total > 0 {
+			col.Progress = &pr
+		}
+		v.Columns = append(v.Columns, col)
 	}
 	loc := d0.Location()
 	occs := append([]calendar.Occurrence(nil), in.Occurrences...)

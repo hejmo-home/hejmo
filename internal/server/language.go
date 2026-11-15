@@ -68,6 +68,8 @@ func (s *server) pageLanguage(r *http.Request) string {
 
 type pageLangKey struct{}
 
+// pageLangHolder keeps the language for one request only. It can go stale if a
+// handler changes the language and then renders: set the new value there.
 type pageLangHolder struct {
 	once sync.Once
 	lang string

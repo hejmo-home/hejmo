@@ -29,7 +29,7 @@ func navTargets(t *testing.T, page string) []string {
 // 5.11 / 5.18: the navigation holds the everyday screens and Settings, and marks the current one.
 func TestParentNavigationMarksTheCurrentScreen(t *testing.T) {
 	b := signedInBox(t)
-	want := []string{"/", "/tasks", "/meals", "/settings"}
+	want := []string{"/", "/calendar", "/tasks", "/meals", "/settings"}
 	for _, page := range want {
 		r := b.get(page)
 		if r.status != http.StatusOK {

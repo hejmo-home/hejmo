@@ -1,5 +1,5 @@
 {{define "head"}}<!doctype html>
-<html lang="{{.Lang}}"{{with .Theme}} data-theme="{{.}}"{{end}}>
+<html lang="{{.Lang}}"{{with .Theme}} data-theme="{{.}}"{{end}}{{with .Frame}}{{if .SunRise}} data-sun-rise="{{.SunRise}}" data-sun-set="{{.SunSet}}"{{end}}{{end}}>
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
@@ -10,6 +10,7 @@
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
 {{end}}<link rel="stylesheet" href="/static/hejmo.css">{{if .Frame}}
+<script src="/static/theme.js"></script>
 <script src="/static/form.js" defer></script>{{with .Frame}}{{if .SignedIn}}
 <script src="/static/offline.js" defer data-offline-text="{{t "offline.banner"}}"></script>{{end}}{{end}}{{end}}
 </head>

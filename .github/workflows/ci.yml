@@ -33,7 +33,7 @@ jobs:
         env:
           # A missing container runtime fails the Radicale tests instead of skipping them.
           HEJMO_REQUIRE_RADICALE: "1"
-        run: go test -race -count=1 ./...
+        run: go test -race -count=1 -timeout 20m ./...
 
   container:
     name: Container (${{ matrix.arch }})

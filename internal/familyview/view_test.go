@@ -7,6 +7,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/wholine"
 )
@@ -38,7 +39,7 @@ func timed(title string, start, end time.Time, people ...string) calendar.Occurr
 // build lays out the view with the display's "show tomorrow block" setting on,
 // so the 18:00 rule is what the tests exercise.
 func build(now time.Time, occs ...calendar.Occurrence) familyview.View {
-	return familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: family(), Occurrences: occs, ShowTomorrow: true})
+	return familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: family(), I18n: i18n.MustLoad(), Occurrences: occs, ShowTomorrow: true})
 }
 
 func column(t *testing.T, v familyview.View, name string) familyview.Column {
@@ -155,10 +156,10 @@ func TestWholeHouseholdAndAllDayEventsGoToTheStripOnly(t *testing.T) {
 		}
 	}
 	// An all-day event with an audience says in brackets who it is for; the whole family needs none.
-	if w := v.Strip[0].Who; w != "[Sebastian]" {
+	if w := wholine.Plain(v.Strip[0].WhoParts); w != "[Sebastian]" {
 		t.Errorf("who-line = %q", w)
 	}
-	if v.Strip[2].Time != "12:00–13:00" || !v.Strip[1].AllDay || v.Strip[1].Who != "" {
+	if v.Strip[2].Time != "12:00–13:00" || !v.Strip[1].AllDay || len(v.Strip[1].WhoParts) != 0 {
 		t.Errorf("strip = %+v", v.Strip)
 	}
 }
@@ -363,7 +364,7 @@ func TestEventCardsSayInWordsWhoTheEventIsFor(t *testing.T) {
 		t.Helper()
 		for _, e := range column(t, v, name).Events {
 			if e.Title == title {
-				return e.Who
+				return wholine.Plain(e.WhoParts)
 			}
 		}
 		t.Fatalf("%s has no %q", name, title)
@@ -388,7 +389,7 @@ func TestWhoLineNamesTheSubgroupAndListsEveryoneElseInFull(t *testing.T) {
 	for i, n := range []string{"Mama", "Papa", "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"} {
 		people = append(people, familyview.Person{ID: n, Name: n, Slot: i + 1, Shape: "circle-filled"})
 	}
-	in := familyview.Input{Now: at(14, 8, 0), Lang: "de", People: people,
+	in := familyview.Input{Now: at(14, 8, 0), Lang: "de", I18n: i18n.MustLoad(), People: people,
 		Groups: []wholine.Group{{Name: "Kinder", Members: []string{"Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"}}},
 		Occurrences: []calendar.Occurrence{
 			timed("Schwimmen", at(14, 15, 0), at(14, 16, 0), "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"),
@@ -399,15 +400,15 @@ func TestWhoLineNamesTheSubgroupAndListsEveryoneElseInFull(t *testing.T) {
 			allDay("Kindertag", day(14), day(15), "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"),
 		}}
 	v := familyview.Build(in)
-	if got := column(t, v, "Emma").Events[0].Who; got != "mit Gruppe Kinder" {
+	if got := wholine.Plain(column(t, v, "Emma").Events[0].WhoParts); got != "mit Gruppe Kinder" {
 		t.Errorf("subgroup: %q", got)
 	}
-	if got := column(t, v, "Mia").Events[1].Who; got != "mit Mama, Papa, Jonas, Ben" {
+	if got := wholine.Plain(column(t, v, "Mia").Events[1].WhoParts); got != "mit Mama, Papa, Jonas, Ben" {
 		t.Errorf("names: %q", got)
 	}
 	got := map[string]string{}
 	for _, it := range v.Strip {
-		got[it.Title] = it.Who
+		got[it.Title] = wholine.Plain(it.WhoParts)
 	}
 	want := map[string]string{"Besuch bei Oma": "[Mama, Papa]", "Ausflug": "[Mia, Jonas, Lotta, Ben, Emma]", "Familientag": "", "Kindertag": "[Kinder]"}
 	for title, w := range want {
@@ -425,7 +426,7 @@ func TestEventForEveryoneListedGoesToTheStripLikeOneWithNoAudience(t *testing.T)
 	for i, n := range names {
 		people = append(people, familyview.Person{ID: n, Name: n, Slot: i%6 + 1, Shape: "circle-filled"})
 	}
-	v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Lang: "en", People: people, Occurrences: []calendar.Occurrence{
+	v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Lang: "en", I18n: i18n.MustLoad(), People: people, Occurrences: []calendar.Occurrence{
 		timed("Cinema", at(14, 19, 0), at(14, 21, 0), names...),
 		timed("Family lunch", at(14, 12, 0), at(14, 13, 0)),
 	}})
@@ -435,7 +436,7 @@ func TestEventForEveryoneListedGoesToTheStripLikeOneWithNoAudience(t *testing.T)
 			cinema = append(cinema, it)
 		}
 	}
-	if len(cinema) != 1 || cinema[0].Time != "19:00–21:00" || cinema[0].Who != "" || len(cinema[0].WhoParts) != 0 {
+	if len(cinema) != 1 || cinema[0].Time != "19:00–21:00" || len(cinema[0].WhoParts) != 0 {
 		t.Errorf("Cinema in the strip = %+v", cinema)
 	}
 	for _, c := range v.Columns {
@@ -464,15 +465,26 @@ func TestWhoLineComesInPartsOneNameEach(t *testing.T) {
 			item = it
 		}
 	}
-	got := ""
-	for _, p := range item.WhoParts {
-		got += p.Text
-	}
-	if got != item.Who || got != "[everyone except Sebastian and Mia]" {
-		t.Errorf("strip parts %q, who %q", got, item.Who)
+	if got := wholine.Plain(item.WhoParts); got != "[everyone except Sebastian and Mia]" {
+		t.Errorf("strip parts %q", got)
 	}
 }
 
 func allDay2(title string, people ...string) calendar.Occurrence {
 	return allDay(title, day(14), day(15), people...)
+}
+
+// 5.22: in a household of one, every event is for the whole household, so it
+// goes to the family strip and the person's column stays empty (decided here,
+// locked in by this test).
+func TestSingleHouseholdEventsGoToTheStrip(t *testing.T) {
+	v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Lang: "en", I18n: i18n.MustLoad(),
+		People:      []familyview.Person{{ID: "mama", Name: "Mama", Slot: 1, Shape: "circle-filled"}},
+		Occurrences: []calendar.Occurrence{timed("Dentist", at(14, 9, 0), at(14, 10, 0), "mama")}})
+	if len(v.Strip) != 1 || v.Strip[0].Title != "Dentist" || len(v.Strip[0].WhoParts) != 0 {
+		t.Errorf("strip = %+v", v.Strip)
+	}
+	if got := column(t, v, "Mama").Events; len(got) != 0 {
+		t.Errorf("column has %v, want none", titles(got))
+	}
 }

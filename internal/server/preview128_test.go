@@ -3,6 +3,7 @@ package server_test
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"net/url"
 	"os"
 	"regexp"
@@ -54,7 +55,7 @@ func germanView(t *testing.T, d func(day, h, m int) time.Time) string {
 		occ("Fußballtraining", d(16, 17, 0), d(16, 18, 0), "Papa", "Maximilian", "Konstantin-Alexander", "Ben", "Emma"),
 		occ("Elternabend Grundschule", d(16, 19, 30), d(16, 21, 0), "Mama", "Papa"),
 	}
-	v := familyview.Build(familyview.Input{Now: d(16, 8, 0), Lang: "de", Region: "DE-BY", People: people,
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: d(16, 8, 0), Lang: "de", Region: "DE-BY", People: people,
 		Groups: []wholine.Group{{Name: "Kinder", Members: kids}}, Occurrences: occs})
 	var shown []familyview.Column
 	for _, c := range v.Columns {
@@ -116,7 +117,7 @@ func TestWritePreview128(t *testing.T) {
 		allDay("Papa's birthday"),
 	}
 	groups := []wholine.Group{{Name: "Kids", Members: kids}}
-	view, err := server.RenderFamilyView("en", familyview.Build(familyview.Input{Now: d(16, 8, 0), Lang: "en", Region: "DE-BY", People: people, Groups: groups, Occurrences: occs}))
+	view, err := server.RenderFamilyView("en", familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: d(16, 8, 0), Lang: "en", Region: "DE-BY", People: people, Groups: groups, Occurrences: occs}))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -81,7 +81,7 @@ func TestLine(t *testing.T) {
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
 			for lang, want := range map[string]string{"en": c.en, "de": c.de} {
-				got := wholine.Of(c.in, func(key string) string { return tr.T(lang, key) })
+				got := wholine.Of(c.in, tr, lang)
 				if got.Rule != c.rule || got.Text != want {
 					t.Errorf("%s: got rule %d %q, want rule %d %q", lang, got.Rule, got.Text, c.rule, want)
 				}
@@ -103,7 +103,7 @@ func TestSubgroupInBracketsIsTheBareNameInBothLanguages(t *testing.T) {
 	tr := i18n.MustLoad()
 	in := wholine.Input{Household: household(4), Groups: []wholine.Group{{Name: "Kinder", Members: ids("Sebastian", "Mia")}}, Audience: ids("Sebastian", "Mia")}
 	for _, lang := range []string{"en", "de"} {
-		got := wholine.Of(in, func(key string) string { return tr.T(lang, key) })
+		got := wholine.Of(in, tr, lang)
 		if got.InBrackets != "Kinder" {
 			t.Errorf("%s: brackets %q, want Kinder", lang, got.InBrackets)
 		}
@@ -114,7 +114,6 @@ func TestSubgroupInBracketsIsTheBareNameInBothLanguages(t *testing.T) {
 // whole on one line; the parts add up to the text.
 func TestPartsKeepEveryNameWhole(t *testing.T) {
 	tr := i18n.MustLoad()
-	en := func(key string) string { return tr.T("en", key) }
 	cases := []struct {
 		name  string
 		in    wholine.Input
@@ -136,7 +135,7 @@ func TestPartsKeepEveryNameWhole(t *testing.T) {
 		return
 	}
 	for _, c := range cases {
-		line := wholine.Of(c.in, en)
+		line := wholine.Of(c.in, tr, "en")
 		text, names := join(line.Parts)
 		if text != line.Text || strings.Join(names, "|") != strings.Join(c.names, "|") {
 			t.Errorf("%s: parts %q names %q, want text %q names %q", c.name, text, names, line.Text, c.names)

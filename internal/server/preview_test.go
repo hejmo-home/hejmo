@@ -3,6 +3,7 @@ package server_test
 import (
 	"encoding/base64"
 	"fmt"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"os"
 	"strings"
 	"testing"
@@ -53,7 +54,7 @@ func TestWriteDesignPreview(t *testing.T) {
 		occ("Parents' evening", d(2, 19, 0), d(2, 20, 30)),
 	}
 	build := func(now time.Time, filled, showTomorrow bool) familyview.View {
-		v := familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: people, Occurrences: occs, ShowTomorrow: showTomorrow})
+		v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: now, Lang: "en", Region: "DE-BY", People: people, Occurrences: occs, ShowTomorrow: showTomorrow})
 		if filled {
 			// Slots filled for illustration: the data arrives with package 6 (6.4, 6.6, 6.7).
 			v.Columns[0].Progress = &familyview.Progress{Done: 3, Total: 5}

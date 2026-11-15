@@ -7,6 +7,8 @@ package wholine
 import (
 	"slices"
 	"strings"
+
+	"github.com/hejmo-home/hejmo/internal/i18n"
 )
 
 // Person is a member of the household.
@@ -62,10 +64,11 @@ type Line struct {
 	Parts, BracketParts []Part
 }
 
-// Of words who the event is for. tr looks up a catalogue key in the language
-// of the page (wholine.family, wholine.with, wholine.withGroup, wholine.except,
+// Of words who the event is for, in lang, from the catalogue b (wholine.family,
+// wholine.with and wholine.except with {names}, wholine.withGroup with {group},
 // wholine.and).
-func Of(in Input, tr func(key string) string) Line {
+func Of(in Input, b *i18n.Bundle, lang string) Line {
+	tr := func(key string) string { return b.T(lang, key) }
 	var people []Person // the audience, in household order
 	for _, p := range in.Household {
 		if slices.Contains(in.Audience, p.ID) {
@@ -79,14 +82,12 @@ func Of(in Input, tr func(key string) string) Line {
 		return Line{}
 	}
 	if len(people) == len(in.Household) {
-		t := tr("wholine.family")
-		return Line{Rule: Everyone, Text: t, Parts: []Part{{Text: t}}}
+		return line(Everyone, []Part{{Text: tr("wholine.family")}}, nil)
 	}
 	for _, g := range in.Groups {
 		if sameSet(people, g.Members, in.Household) {
 			name := []Part{{Text: g.Name, Name: true}}
-			return Line{Rule: Subgroup, Text: text(tr("wholine.withGroup"), g.Name), InBrackets: g.Name,
-				Parts: fill(tr("wholine.withGroup"), name), BracketParts: name}
+			return line(Subgroup, fill(tr("wholine.withGroup"), "{group}", name), name)
 		}
 	}
 	// "Everyone except" needs a group to be everyone but one or two; a lone
@@ -98,8 +99,8 @@ func Of(in Input, tr func(key string) string) Line {
 				left = append(left, p.Name)
 			}
 		}
-		parts := fill(tr("wholine.except"), joinParts(left, tr("wholine.and")))
-		return Line{Rule: Except, Text: plain(parts), InBrackets: plain(parts), Parts: parts, BracketParts: parts}
+		parts := fill(tr("wholine.except"), "{names}", namesAnd(left, tr("wholine.and")))
+		return line(Except, parts, parts)
 	}
 	var others []string
 	for _, p := range people {
@@ -107,14 +108,17 @@ func Of(in Input, tr func(key string) string) Line {
 			others = append(others, p.Name)
 		}
 	}
-	list := joinParts(others, ", ")
-	return Line{Rule: NamesOnly, Text: text(tr("wholine.with"), plain(list)), InBrackets: plain(list),
-		Parts: fill(tr("wholine.with"), list), BracketParts: list}
+	list := namesComma(others)
+	return line(NamesOnly, fill(tr("wholine.with"), "{names}", list), list)
 }
 
-func text(tmpl, s string) string { return strings.Replace(tmpl, "%s", s, 1) }
+// line builds a Line; the texts are the parts joined, so there is one source.
+func line(r Rule, parts, bracket []Part) Line {
+	return Line{Rule: r, Text: Plain(parts), InBrackets: Plain(bracket), Parts: parts, BracketParts: bracket}
+}
 
-func plain(parts []Part) string {
+// Plain is the text the parts add up to.
+func Plain(parts []Part) string {
 	var b strings.Builder
 	for _, p := range parts {
 		b.WriteString(p.Text)
@@ -122,9 +126,9 @@ func plain(parts []Part) string {
 	return b.String()
 }
 
-// fill puts parts where the template has %s.
-func fill(tmpl string, inner []Part) []Part {
-	before, after, _ := strings.Cut(tmpl, "%s")
+// fill puts parts where the template has the placeholder.
+func fill(tmpl, placeholder string, inner []Part) []Part {
+	before, after, _ := strings.Cut(tmpl, placeholder)
 	var out []Part
 	if before != "" {
 		out = append(out, Part{Text: before})
@@ -136,13 +140,18 @@ func fill(tmpl string, inner []Part) []Part {
 	return out
 }
 
-// joinParts lists names. With "and" as the joiner (the catalogue's word, spaces
-// included) two names read "A and B"; with ", " every list is "A, B, C". A
-// comma stays attached to its name, so the pair never splits across lines.
-func joinParts(names []string, and string) []Part {
-	if len(names) == 2 && and != ", " {
+// namesAnd lists one or two names: "A" or "A and B", with the catalogue's word
+// for "and" (spaces included).
+func namesAnd(names []string, and string) []Part {
+	if len(names) == 2 {
 		return []Part{{Text: names[0], Name: true}, {Text: and}, {Text: names[1], Name: true}}
 	}
+	return namesComma(names)
+}
+
+// namesComma lists names as "A, B, C". A comma stays attached to its name, so
+// a name never splits from it across lines.
+func namesComma(names []string) []Part {
 	var out []Part
 	for i, n := range names {
 		if i == len(names)-1 {

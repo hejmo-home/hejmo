@@ -747,3 +747,5 @@ form:has(input[name="issuer"][value="actalis"]:checked) .when-actalis { display:
 .devnav { display: grid; gap: 6px; min-width: 0; }
 button.link { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; cursor: pointer; }
 .firststeps form { justify-self: start; margin: 0; }
+/* A legend that only screen readers see must not stretch the page (the choice legend floats at full width). */
+fieldset.choice legend.sr { float: none; width: 1px; margin: -1px; }

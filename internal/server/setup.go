@@ -16,6 +16,7 @@ import (
 var personStyles = []struct{ color, shape string }{
 	{"#B4583A", "circle-filled"}, {"#2F5E7A", "circle-empty"},
 	{"#4E7D52", "square-filled"}, {"#9A7420", "square-empty"},
+	{"#86587F", "triangle-filled"}, {"#3A7A74", "diamond-filled"},
 }
 
 func (s *server) handleSetupForm(w http.ResponseWriter, r *http.Request) {
@@ -35,7 +36,7 @@ type setupForm struct {
 }
 
 func (s *server) renderSetup(w http.ResponseWriter, r *http.Request, status int, f setupForm, errKey string) {
-	s.render(w, r, status, "setup.html", map[string]any{"Form": f, "Regions": region.All(), "Error": errKey})
+	s.render(w, r, status, "setup.html", map[string]any{"Form": f, "Regions": region.All(), "Error": errKey, "ErrorField": setupErrorField(errKey, f)})
 }
 
 func (s *server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
@@ -144,7 +145,7 @@ func (s *server) renderTOTP(w http.ResponseWriter, r *http.Request, status int, 
 	}
 	s.render(w, r, status, "setup_totp.html", map[string]any{
 		"Secret": acc.TOTPSecret, "URI": template.URL(uri), // built here, safe scheme
-		"QR": template.HTML(svg), "Error": errKey,
+		"QR": template.HTML(svg), "Error": errKey, "ErrorField": totpErrorField(errKey),
 	})
 }
 
@@ -166,5 +167,32 @@ func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "confirm TOTP", err)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	s.redirectSaved(w, r, "/", "flash.setup_done")
+}
+
+// setupErrorField names the input of the setup form that an error belongs to.
+func setupErrorField(errKey string, f setupForm) string {
+	switch errKey {
+	case "setup.error.home":
+		return "home_name"
+	case "setup.error.region":
+		return "region"
+	case "setup.error.name":
+		if f.Name == "" {
+			return "name"
+		}
+		return "username"
+	case "setup.error.password":
+		return "password"
+	case "setup.error.pin":
+		return "pin"
+	}
+	return ""
+}
+
+func totpErrorField(errKey string) string {
+	if errKey == "" {
+		return ""
+	}
+	return "code"
 }

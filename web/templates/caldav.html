@@ -7,6 +7,20 @@
     <li><span class="hint">{{t "caldav.username"}}</span> <strong>{{.Username}}</strong></li>
   </ul>
 
+  <section aria-labelledby="iosprofile">
+    <h2 id="iosprofile">{{t "caldav.profile.title"}}</h2>
+    <p class="lead">{{t "caldav.profile.intro"}}</p>
+    {{if .CAFirst}}<p class="notice" role="status" data-ca-profile-first>{{t "caldav.profile.ca_first"}} <a href="/ca">{{t "caldav.profile.ca_link"}}</a></p>{{end}}
+    <p class="hint">{{t "caldav.profile.once"}}</p>
+    {{if .ProfileError}}<p class="error" role="alert">{{t .ProfileError}}</p>{{end}}
+    <form method="post" action="/caldav/profile" class="steps">
+      <fieldset>
+        {{template "field" (dict "Root" . "Name" "profile_name" "Label" (t "caldav.token.name") "Value" (index .Form "ProfileName") "Required" true "Max" 80)}}
+      </fieldset>
+      <button class="button" type="submit">{{t "caldav.profile.download"}}</button>
+    </form>
+  </section>
+
   {{if .NewToken}}
   <section aria-labelledby="newtoken">
     <h2 id="newtoken">{{.NewTokenTitle}}</h2>
@@ -23,18 +37,20 @@
       <li>
         <strong>{{.Name}}</strong>
         <span class="hint">{{t "caldav.token.owner"}} {{.Person}} · {{t "caldav.token.created"}} {{.Created}} · {{if .LastUsed}}{{t "caldav.token.last_used"}} {{.LastUsed}}{{else}}{{t "caldav.token.never"}}{{end}}</span>
-        <span class="row"><form method="post" action="/caldav/tokens/{{.ID}}/revoke"><button class="button secondary" type="submit">{{t "caldav.token.revoke"}}</button></form></span>
+        {{template "dangerOpen" (dict "Label" (t "caldav.token.revoke"))}}
+          <p>{{t "caldav.token.revoke.explain"}}</p>
+          <form method="post" action="/caldav/tokens/{{.ID}}/revoke"><button class="button danger" type="submit">{{t "caldav.token.revoke.confirm"}}</button></form>
+        {{template "dangerClose"}}
       </li>
       {{end}}
     </ul>
-    {{else}}<p class="lead">{{t "caldav.tokens.none"}}</p>{{end}}
+    {{else}}{{template "empty" (dict "Text" (t "caldav.tokens.none") "Href" "#tokenform" "Action" (t "caldav.tokens.none.action"))}}{{end}}
 
-    <h3>{{t "caldav.token.new"}}</h3>
+    <h3 id="tokenform">{{t "caldav.token.new"}}</h3>
     {{template "error" .}}
     <form method="post" action="/caldav/tokens" class="steps">
       <fieldset>
-        <label>{{t "caldav.token.name"}}
-          <input name="name" required maxlength="80" value="{{with .Form}}{{.Name}}{{end}}"></label>
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "caldav.token.name") "Value" (index .Form "Name") "Required" true "Max" 80)}}
       </fieldset>
       <button class="button" type="submit">{{t "caldav.token.create"}}</button>
     </form>

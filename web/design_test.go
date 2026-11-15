@@ -217,6 +217,25 @@ func TestBlackAndWhiteMarkersUseDistinctShapes(t *testing.T) {
 	}
 }
 
+// 5.4: card markers exist in the markup of every theme, but only bw shows
+// them (colour cards carry the person colour).
+func TestEventCardMarkersAreHiddenInColourAndShownInBlackAndWhite(t *testing.T) {
+	css := stylesheet(t)
+	display := func(sel string) string {
+		m := regexp.MustCompile(`display:\s*([a-z-]+)`).FindStringSubmatch(ruleFor(t, css, sel))
+		if m == nil {
+			t.Fatalf("%s has no display declaration", sel)
+		}
+		return m[1]
+	}
+	if got := display(".event .markers"); got != "none" {
+		t.Errorf(".event .markers display = %q, want none", got)
+	}
+	if got := display(`[data-theme="bw"] .event .markers`); got == "none" {
+		t.Errorf("bw .event .markers is hidden")
+	}
+}
+
 // Every colour in DESIGN.md equals the custom property of the same role in
 // that theme's CSS block, and every colour custom property has a token.
 func TestDesignColoursAndStylesheetAgreeBothWays(t *testing.T) {

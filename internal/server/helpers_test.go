@@ -23,6 +23,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/weather"
 )
 
 type box struct {
@@ -36,6 +37,22 @@ type box struct {
 	feeds   *fakeFeeds
 	sync    *calsync.Service
 	public  *fakePublic
+	weather *weather.Service // fetches from meteo, never from the internet
+	meteo   *fakeMeteo
+}
+
+// fakeMeteo stands in for Open-Meteo.
+type fakeMeteo struct {
+	mu     sync.Mutex
+	body   string
+	status int
+	srv    *httptest.Server
+}
+
+func (m *fakeMeteo) set(body string, status int) {
+	m.mu.Lock()
+	defer m.mu.Unlock()
+	m.body, m.status = body, status
 }
 
 // fakePublic stands in for the public certificate manager: what it does
@@ -167,7 +184,16 @@ func newFreshBox(t *testing.T) *box {
 	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time { return b.now }
 	b.sync = calsync.New(db, feeds, now)
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync})
+	b.meteo = &fakeMeteo{body: `{"current":{"temperature_2m":18.4,"weather_code":0,"is_day":1}}`, status: 200}
+	b.meteo.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		b.meteo.mu.Lock()
+		defer b.meteo.mu.Unlock()
+		w.WriteHeader(b.meteo.status)
+		_, _ = w.Write([]byte(b.meteo.body))
+	}))
+	t.Cleanup(b.meteo.srv.Close)
+	b.weather = weather.New(weather.WithBaseURL(b.meteo.srv.URL), weather.WithClock(now))
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()

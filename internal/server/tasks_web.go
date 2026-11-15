@@ -22,6 +22,14 @@ type personTasks struct {
 
 var taskWeekdays = []string{"MO", "TU", "WE", "TH", "FR", "SA", "SU"}
 
+func newTaskView(t task.Task, today string, done bool) taskView {
+	v := taskView{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat), Weekdays: t.Weekdays, Part: string(t.PartOfDay), Due: t.DueOn(today), Done: done}
+	if d, err := time.Parse(task.DateLayout, t.Date); err == nil {
+		v.Date = d.Format("02/01/2006")
+	}
+	return v
+}
+
 func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal, status int, form map[string]any) {
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
@@ -40,19 +48,14 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		return
 	}
 	var groups []personTasks
-	var choices []choice
+	choices := chipsOf(people)
 	for _, person := range people {
-		choices = append(choices, choice{person.ID, person.Name})
 		g := personTasks{Name: person.Name, Color: person.Color}
 		for _, t := range list {
 			if t.PersonID != person.ID {
 				continue
 			}
-			v := taskView{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat), Weekdays: t.Weekdays, Part: string(t.PartOfDay), Due: t.DueOn(today), Done: doneToday[t.ID]}
-			if d, err := time.Parse(task.DateLayout, t.Date); err == nil {
-				v.Date = d.Format("02/01/2006")
-			}
-			g.Tasks = append(g.Tasks, v)
+			g.Tasks = append(g.Tasks, newTaskView(t, today, doneToday[t.ID]))
 		}
 		if len(g.Tasks) > 0 {
 			groups = append(groups, g)
@@ -63,7 +66,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 	}
 	data := map[string]any{
 		"Person": p.person, "Groups": groups, "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form,
-		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"],
+		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
 	s.render(w, r, status, "tasks.html", data)
 }
@@ -87,9 +90,14 @@ func (s *server) handleTaskAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	switch _, err := s.createTask(p, in); {
 	case err == nil:
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/tasks", "flash.task_added")
 	case errors.Is(err, store.ErrInvalid):
-		form := map[string]any{"Error": "tasks.error.invalid", "Person": in.PersonID, "Title": in.Title, "Emoji": in.Emoji,
+		var bad *task.InvalidError
+		field := ""
+		if errors.As(err, &bad) {
+			field = bad.Field
+		}
+		form := map[string]any{"Error": taskErrorKey(field), "ErrorField": field, "Person": in.PersonID, "Title": in.Title, "Emoji": in.Emoji,
 			"Repeat": string(in.Repeat), "Date": in.Date, "Part": string(in.PartOfDay), "Weekdays": in.Weekdays}
 		s.renderTasks(w, r, p, http.StatusUnprocessableEntity, form)
 	default:
@@ -110,7 +118,7 @@ func (s *server) handleTaskDone(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "tick task", err)
 	default:
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/tasks", doneKey(r))
 	}
 }
 
@@ -125,6 +133,61 @@ func (s *server) handleTaskDelete(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "delete task", err)
 	default:
-		http.Redirect(w, r, "/tasks", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/tasks", "flash.task_deleted")
 	}
+}
+
+// doneKey is the success line for ticking a task off or reopening it.
+func doneKey(r *http.Request) string {
+	if r.PostFormValue("done") == "1" {
+		return "flash.task_done"
+	}
+	return "flash.task_reopened"
+}
+
+// taskErrorKey is the text for an invalid task field. A field without its own
+// text falls back to the general one.
+func taskErrorKey(field string) string {
+	switch field {
+	case "title", "emoji", "person", "date", "weekdays", "repeat", "part":
+		return "tasks.error." + field
+	}
+	return "tasks.error.invalid"
+}
+
+// handleTaskPage is the detail page of a task: what it is and, behind a
+// confirmation, deleting it (ADR 0017: destructive actions only on detail pages).
+func (s *server) handleTaskPage(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	t, err := s.db.Task(p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		s.fail(w, "task", err)
+		return
+	}
+	people, err := s.db.People(p.household.ID)
+	if err != nil {
+		s.fail(w, "people", err)
+		return
+	}
+	var owner personChip
+	for _, c := range chipsOf(people) {
+		if c.ID == t.PersonID {
+			owner = c
+		}
+	}
+	today := s.today(p)
+	doneToday, err := s.db.TasksDoneOn(p.household.ID, today)
+	if err != nil {
+		s.fail(w, "task state", err)
+		return
+	}
+	s.render(w, r, http.StatusOK, "task.html", map[string]any{
+		"Person": p.person, "Task": newTaskView(t, today, doneToday[t.ID]), "Owner": owner, "SyncStale": s.syncStale(p.household.ID),
+	})
 }

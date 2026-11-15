@@ -36,9 +36,7 @@ func (s *server) renderDisplays(w http.ResponseWriter, r *http.Request, p princi
 		"Person": p.person, "Displays": views, "SyncStale": s.syncStale(p.household.ID), "Form": form,
 		"Types": []store.DisplayType{store.DisplayEInkBW, store.DisplayEInkColor, store.DisplayScreen},
 	}
-	if form != nil {
-		data["Error"] = form["Error"]
-	}
+	data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"] // form is never nil
 	s.render(w, r, status, "displays.html", data)
 }
 
@@ -57,18 +55,19 @@ func (s *server) handleDisplayPair(w http.ResponseWriter, r *http.Request) {
 	}
 	code := strings.TrimSpace(r.PostFormValue("code"))
 	in := store.Display{Name: r.PostFormValue("name"), Room: r.PostFormValue("room"), Type: store.DisplayType(r.PostFormValue("type"))}
-	form := func(key string) map[string]any {
-		return map[string]any{"Error": key, "Code": code, "Name": in.Name, "Room": in.Room, "Type": string(in.Type)}
+	form := func(key, field string) map[string]any {
+		return map[string]any{"Error": key, "ErrorField": field, "Code": code, "Name": in.Name, "Room": in.Room, "Type": string(in.Type)}
 	}
+	var fieldErr *store.FieldError
 	switch _, err := s.pairDisplay(p, code, in); {
 	case err == nil:
-		http.Redirect(w, r, "/displays", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/displays", "flash.display_paired")
 	case errors.Is(err, errTooManyAttempts):
-		s.renderDisplays(w, r, p, http.StatusTooManyRequests, form("displays.error.too_many"))
+		s.renderDisplays(w, r, p, http.StatusTooManyRequests, form("displays.error.too_many", "code"))
 	case errors.Is(err, store.ErrNotFound):
-		s.renderDisplays(w, r, p, http.StatusUnprocessableEntity, form("displays.error.code"))
-	case errors.Is(err, store.ErrInvalid):
-		s.renderDisplays(w, r, p, http.StatusUnprocessableEntity, form("displays.error.invalid"))
+		s.renderDisplays(w, r, p, http.StatusUnprocessableEntity, form("displays.error.code", "code"))
+	case errors.As(err, &fieldErr):
+		s.renderDisplays(w, r, p, http.StatusUnprocessableEntity, form("displays.error."+fieldErr.Field, fieldErr.Field))
 	default:
 		s.fail(w, "pair display", err)
 	}
@@ -85,7 +84,7 @@ func (s *server) handleDisplayUnpair(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "unpair display", err)
 	default:
-		http.Redirect(w, r, "/displays", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/displays", "flash.display_unpaired")
 	}
 }
 
@@ -102,7 +101,7 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "display settings", err)
 	default:
-		http.Redirect(w, r, "/displays", http.StatusSeeOther)
+		s.redirectSaved(w, r, "/displays", "flash.saved")
 	}
 }
 

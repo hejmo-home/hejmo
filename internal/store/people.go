@@ -70,6 +70,11 @@ func (db *DB) UpdateHouseholdSettings(id string, f TimeFormat, u TemperatureUnit
 	return expectOne(db.sql.Exec(`UPDATE households SET time_format = ?, temperature_unit = ?, updated_at = ? WHERE id = ?`, f, u, now(), id))
 }
 
+// SetHouseholdCoordinates stores the coordinates of the household's home.
+func (db *DB) SetHouseholdCoordinates(id string, lat, lon float64) error {
+	return expectOne(db.sql.Exec(`UPDATE households SET latitude = ?, longitude = ?, updated_at = ? WHERE id = ?`, lat, lon, now(), id))
+}
+
 // Person is a family member as seen from one household.
 type Person struct {
 	ID     string

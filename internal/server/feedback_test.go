@@ -72,7 +72,7 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		{"connection calendars", "/connections/" + connID + "/calendars", "/calendars", url.Values{"calendar": {flowCalendar}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}}, "Calendar added."},
 		{"task delete", "/tasks/" + taskID + "/delete", "/tasks", url.Values{}, "Task deleted."},
 		{"calendar remove", "/calendars/" + calID + "/delete", "/calendars", url.Values{}, "“Holidays” removed."},
-		{"connection remove", "/connections/" + connID + "/delete", "/calendars", url.Values{}, "“u” removed."},
+		{"connection remove", "/connections/" + connID + "/delete", "/calendars", url.Values{}, "“u” disconnected."},
 		{"display unpair", "/displays/" + displayID + "/unpair", "/displays", url.Values{}, "“Hallway” unpaired."},
 	}
 	for _, s := range steps {

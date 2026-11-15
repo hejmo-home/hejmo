@@ -54,8 +54,8 @@ func TestConnectionOverviewRowsShowServiceCalendarsAndLastSync(t *testing.T) {
 
 func TestConnectionDetailHoldsFactsChooseCalendarsPasswordAndDisconnect(t *testing.T) {
 	b := signedInBox(t)
-	acceptOnly(b, "pw-1")
 	id := chosenConnection(t, b)
+	acceptOnly(b, "pw-1")
 	r := getEN(b, "/connections/"+id)
 	if r.status != http.StatusOK {
 		t.Fatalf("GET = %d\n%s", r.status, r.body)
@@ -109,8 +109,8 @@ func TestARefusedLoginIsToldWithTheTimeAndLinksToTheCredentials(t *testing.T) {
 
 func TestNewPasswordIsCheckedAgainstTheServerAndStoredEncrypted(t *testing.T) {
 	b := signedInBox(t)
-	acceptOnly(b, "pw-1")
 	id := chosenConnection(t, b)
+	acceptOnly(b, "pw-1")
 	h, _ := b.db.HomeHousehold()
 
 	r := b.do(http.MethodPost, "/connections/"+id+"/credentials", url.Values{"password": {"wrong-pw"}}, map[string]string{"Accept-Language": "en"})
@@ -166,5 +166,28 @@ func TestSwitchingACalendarOffStillAsksAndCancelsToTheConnectionPage(t *testing.
 	r := b.do(http.MethodPost, "/connections/"+id+"/calendars", form, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusOK || !strings.Contains(r.body, `href="/connections/`+id+`"`) {
 		t.Fatalf("switch off = %d\n%s", r.status, r.body)
+	}
+}
+
+func TestConnectionPasswordWorksThroughTheAPI(t *testing.T) {
+	c := signedInAPI(t)
+	id := chosenConnection(t, c.b)
+	acceptOnly(c.b, "new-pw")
+	if status, _, _ := c.call(http.MethodPut, "/calendar-connections/"+id+"/credentials", map[string]any{"password": "wrong"}); status != http.StatusUnprocessableEntity {
+		t.Errorf("refused password = %d, want 422", status)
+	}
+	if status, _, _ := c.call(http.MethodPut, "/calendar-connections/"+id+"/credentials", map[string]any{"password": "new-pw"}); status != http.StatusNoContent {
+		t.Errorf("accepted password = %d, want 204", status)
+	}
+	h := mustHousehold(t, c)
+	if _, pw, _ := c.b.db.ConnectionCredentials(h.ID, id); pw != "new-pw" {
+		t.Errorf("stored password = %q", pw)
+	}
+	if status, _, _ := c.call(http.MethodPut, "/calendar-connections/00000000-0000-4000-8000-000000000000/credentials", map[string]any{"password": "x"}); status != http.StatusNotFound {
+		t.Errorf("unknown connection = %d, want 404", status)
+	}
+	ro := c.withToken(c.newToken("read"))
+	if status, _, _ := ro.call(http.MethodPut, "/calendar-connections/"+id+"/credentials", map[string]any{"password": "new-pw"}); status != http.StatusForbidden {
+		t.Errorf("read-only token = %d, want 403", status)
 	}
 }

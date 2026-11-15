@@ -204,25 +204,47 @@ func TestDeletingATaskHappensOnItsDetailPageAfterConfirming(t *testing.T) {
 	}
 }
 
-// ADR 0017: a destructive button never sits loose on a list. Revoking a token,
-// removing a calendar and unpairing a display each sit behind a confirmation.
-func TestDestructiveButtonsOnListsSitBehindAConfirmation(t *testing.T) {
+// ADR 0017 (ticket 111): an overview offers no way to remove, revoke, unpair or
+// disconnect. Every such action lives on the detail page the row opens, in a
+// closed disclosure, and the overview rows lead there.
+func TestNoDestructiveFormOnAnyOverview(t *testing.T) {
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	b.feeds.set("https://example.org/a.ics", feedOf(), nil)
 	b.post("/calendars", url.Values{"name": {"Holidays"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
-	b.post("/displays", pairForm(codeOn(t, newScreen(b).get("/display", "en").body)))
-	b.post("/caldav/tokens", url.Values{"name": {"Phone"}})
+	pairedDisplay(t, b, "Hallway", "screen")
+	newDeviceToken(t, b, "Phone")
+	pairedPhone(t, b, personNamed(t, b, "Mama"), "Mama's phone")
 	connID := connectedBox(t, b)
-	for _, c := range []struct{ page, action string }{
-		{"/calendars", "/connections/" + connID + "/delete"}, {"/caldav", "/revoke"}, {"/calendars", "/delete"}, {"/displays", "/unpair"},
+	h, _ := b.db.HomeHousehold()
+	cals, _ := b.db.SyncedCalendars(h.ID)
+	displays, _ := b.db.Displays(h.ID)
+	tokens, _ := b.db.APITokens(h.ID)
+	phones, _ := b.db.Phones(h.ID)
+	tokenID := ""
+	for _, tok := range tokens {
+		if tok.Name == "Phone" {
+			tokenID = tok.ID
+		}
+	}
+	for _, c := range []struct{ overview, detail, action string }{
+		{"/displays", "/displays/" + displays[0].ID, "/displays/" + displays[0].ID + "/unpair"},
+		{"/caldav", "/caldav/tokens/" + tokenID, "/caldav/tokens/" + tokenID + "/revoke"},
+		{"/calendars", "/calendars/" + cals[0].ID, "/calendars/" + cals[0].ID + "/delete"},
+		{"/calendars", "/connections/" + connID, "/connections/" + connID + "/delete"},
+		{"/phones", "/phones/" + phones[0].ID, "/phones/" + phones[0].ID + "/revoke"},
 	} {
-		body := getEN(b, c.page).body
-		at := strings.Index(body, c.action+`"`)
-		open := strings.LastIndex(body[:max(at, 0)], `<details class="danger">`)
-		closed := strings.LastIndex(body[:max(at, 0)], `</details>`)
+		over := getEN(b, c.overview).body
+		noDestructiveForm(t, c.overview, over)
+		if !strings.Contains(over, `<a href="`+c.detail+`">`) {
+			t.Errorf("%s has no row that opens %s", c.overview, c.detail)
+		}
+		page := getEN(b, c.detail).body
+		at := strings.Index(page, `action="`+c.action+`"`)
+		open := strings.LastIndex(page[:max(at, 0)], `<details class="danger">`)
+		closed := strings.LastIndex(page[:max(at, 0)], `</details>`)
 		if at < 0 || open < 0 || closed > open {
-			t.Errorf("%s: the %s button is not inside a danger disclosure", c.page, c.action)
+			t.Errorf("%s: the button to %s is not inside a closed danger disclosure", c.detail, c.action)
 		}
 	}
 }

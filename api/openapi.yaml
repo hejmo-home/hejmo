@@ -783,6 +783,32 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /calendar-connections/{id}/credentials:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    put:
+      operationId: changeConnectionPassword
+      summary: Replace the password of a connection, after the server accepted it (parents, scope settings:write)
+      description: |
+        Signs in with the new password and lists the server's calendars, as when connecting. Only if that
+        works is the password stored (encrypted with the box's key, never returned) and the connection's
+        calendars synced again at once. A refused login, a server that points to another domain and an
+        unreachable server answer 422 and keep the old password. For iCloud use an app-specific password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, minLength: 1, writeOnly: true }
+      responses:
+        "204": { description: The password was checked and stored }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /calendar-connections/{id}/calendars:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }

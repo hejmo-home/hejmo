@@ -76,16 +76,9 @@ func (s *server) connect(r *http.Request, p principal, in newConnectionInput) (s
 	}
 	ctx, cancel := context.WithTimeout(r.Context(), discoverTimeoutSec*time.Second)
 	defer cancel()
-	found, err := s.sync.Discover(ctx, address, in.Username, in.Password, in.Single)
+	found, err := s.discoverChecked(ctx, address, in.Username, in.Password, in.Single)
 	if err != nil {
-		if caldavclient.IsUnauthorized(err) {
-			return store.Connection{}, nil, &inputError{"login", "the server refused the user name or password"}
-		}
-		var foreign *caldavclient.ForeignHostError
-		if errors.As(err, &foreign) {
-			return store.Connection{}, nil, foreignHostError(foreign)
-		}
-		return store.Connection{}, nil, &inputError{"server", "could not read calendars from the server: " + err.Error()}
+		return store.Connection{}, nil, err
 	}
 	conn, err := s.db.CreateCalDAVConnection(p.household.ID, store.NewCalDAVConnection{
 		URL: address, Username: in.Username, Password: in.Password, Single: in.Single, Now: s.now(),
@@ -101,7 +94,18 @@ func (s *server) rediscover(ctx context.Context, p principal, conn store.Connect
 	}
 	ctx, cancel := context.WithTimeout(ctx, discoverTimeoutSec*time.Second)
 	defer cancel()
-	found, err := s.sync.Discover(ctx, conn.URL, user, password, conn.Single)
+	found, err := s.discoverChecked(ctx, conn.URL, user, password, conn.Single)
+	if err != nil {
+		return nil, err
+	}
+	return s.markAdded(p, conn, found)
+}
+
+// discoverChecked signs in and lists the server's calendars. A refused login,
+// a server that sends the client to another domain and an unreachable server
+// are an *inputError; the same check serves a new connection and a new password.
+func (s *server) discoverChecked(ctx context.Context, address, user, password string, single bool) ([]caldavclient.Calendar, error) {
+	found, err := s.sync.Discover(ctx, address, user, password, single)
 	if err != nil {
 		if caldavclient.IsUnauthorized(err) {
 			return nil, &inputError{"login", "the server refused the user name or password"}
@@ -112,7 +116,60 @@ func (s *server) rediscover(ctx context.Context, p principal, conn store.Connect
 		}
 		return nil, &inputError{"server", "could not read calendars from the server: " + err.Error()}
 	}
-	return s.markAdded(p, conn, found)
+	return found, nil
+}
+
+// changeConnectionPassword checks a new password against the server and, if the
+// server accepts it, stores it sealed and has the connection's calendars sync
+// again at once. The error is an *inputError for bad input, store.ErrNotFound
+// for an unknown connection.
+func (s *server) changeConnectionPassword(ctx context.Context, p principal, id, password string) error {
+	conn, err := s.db.Connection(p.household.ID, id)
+	if err != nil {
+		return err
+	}
+	if password == "" {
+		return &inputError{"password", "password is required"}
+	}
+	dctx, cancel := context.WithTimeout(ctx, discoverTimeoutSec*time.Second)
+	defer cancel()
+	if _, err := s.discoverChecked(dctx, conn.URL, conn.Username, password, conn.Single); err != nil {
+		return err
+	}
+	if err := s.db.SetConnectionPassword(p.household.ID, conn.ID, password); err != nil {
+		return err
+	}
+	// The calendars were waiting for a working login: sync them now instead of at their next, backed-off turn.
+	if cals, err := s.db.SyncedCalendars(p.household.ID); err == nil {
+		for _, c := range cals {
+			if c.ConnectionID == conn.ID {
+				_ = s.sync.Sync(ctx, p.household.ID, c.ID)
+			}
+		}
+	}
+	return nil
+}
+
+func (s *server) apiChangeConnectionPassword(w http.ResponseWriter, r *http.Request, p principal) {
+	var in struct {
+		Password string `json:"password"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	err := s.changeConnectionPassword(r.Context(), p, r.PathValue("id"), in.Password)
+	var bad *inputError
+	switch {
+	case errors.Is(err, store.ErrNotFound):
+		writeError(w, http.StatusNotFound, "connection not found")
+	case errors.As(err, &bad):
+		writeError(w, http.StatusUnprocessableEntity, bad.Msg)
+	case err != nil:
+		s.fail(w, "change password", err)
+	default:
+		w.WriteHeader(http.StatusNoContent)
+	}
 }
 
 func (s *server) markAdded(p principal, conn store.Connection, found []caldavclient.Calendar) ([]discoveredJSON, error) {

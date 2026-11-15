@@ -182,6 +182,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /connections", s.handleConnect)
 	mux.HandleFunc("GET /connections/{id}", s.handleConnectionPage)
 	mux.HandleFunc("POST /connections/{id}/calendars", s.handleConnectionCalendars)
+	mux.HandleFunc("POST /connections/{id}/credentials", s.handleConnectionCredentials)
 	mux.HandleFunc("POST /connections/{id}/delete", s.handleConnectionDelete)
 	mux.HandleFunc("GET /caldav", s.handleCalDAVPage)
 	mux.HandleFunc("POST /caldav/tokens", s.handleDeviceTokenCreate)

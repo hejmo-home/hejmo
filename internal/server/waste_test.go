@@ -101,19 +101,19 @@ func TestOnlyReadOnlyCalendarsCanBeWasteCollection(t *testing.T) {
 	if status != http.StatusCreated {
 		t.Fatalf("add calendar = %d %v", status, cal)
 	}
+	if cal["read_only"] != true {
+		t.Fatalf("synced CalDAV calendar is not read-only: %v", cal)
+	}
 	c.b.feeds.set(wasteFeed, feedOf(wasteEvent("p1", "Paper bin", "5")), nil)
 	if r := c.b.post("/calendars", url.Values{"name": {"Waste"}, "url": {wasteFeed}, "interval": {"60"}}); r.status != http.StatusSeeOther {
 		t.Fatalf("add waste calendar = %d\n%s", r.status, r.body)
 	}
 	page := c.b.get("/calendars").body
 	if n := strings.Count(page, `/waste"`); n != 2 {
-		t.Fatalf("%d waste forms, want 2 (both synced calendars are read-only)\n%s", n, page)
+		t.Fatalf("%d waste forms, want 2 (the page lists only synced calendars; the read-only gate is the store/handler refusal below)\n%s", n, page)
 	}
 	if n := strings.Count(page, "data-waste-state"); n != 2 {
 		t.Fatalf("%d waste hints, want 2\n%s", n, page)
-	}
-	if cal["read_only"] != true {
-		t.Fatalf("synced CalDAV calendar is not read-only: %v", cal)
 	}
 
 	home, err := c.b.db.CreateCalendar(store.Calendar{HouseholdID: mustHousehold(t, c).ID, Name: "Home", Kind: "local", Color: "#2F5E7A"})

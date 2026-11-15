@@ -67,7 +67,7 @@ type calendarView struct {
 	ID, Name, Color, Audience, LastSuccess, LastError string
 	Events, Changes                                   string // the count and what the last run did; empty until a run succeeded
 	Stale                                             bool
-	Waste, ReadOnly                                   bool
+	Waste                                             bool
 	IntervalMinutes                                   int
 }
 
@@ -132,7 +132,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	byPerson := map[string][]calendarView{}
 	for _, c := range synced {
 		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
-			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes, Waste: c.Waste, ReadOnly: c.ReadOnly}
+			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes, Waste: c.Waste}
 		if !c.Sync.LastSuccess.IsZero() {
 			run := c.Sync.LastRun
 			v.Events = s.say(r, i18n.Msg("calendars.events", "count", strconv.Itoa(run.Events)))

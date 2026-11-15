@@ -300,7 +300,7 @@ func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
 	}
 	col := columnRe.FindString(out)
 	i, j := strings.Index(col, `class="events"`), strings.Index(col, `data-progress="3/5"`)
-	if i < 0 || j < i || !strings.Contains(col, "--pct:60") || !strings.Contains(col, ">3/5<") {
+	if i < 0 || j < i || !strings.Contains(col, "--pct:60") || !strings.Contains(col, ">3 of 5 tasks done</span>") {
 		t.Fatalf("progress bar not after the events:\n%s", col)
 	}
 	if strings.Count(out, "data-progress") != 1 {
@@ -314,7 +314,7 @@ func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
 	if !strings.Contains(one, "data-footer") || !strings.Contains(one, `data-tile="meal"`) || strings.Contains(one, `data-tile="tomorrow"`) {
 		t.Errorf("one tile: %s", one)
 	}
-	v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []string{"Paper bin"}, Alert: true}
+	v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []familyview.Line{{Kind: familyview.LineWaste, Text: "Paper bin"}}, Alert: true}
 	two, _ := server.RenderFamilyView("en", v)
 	if strings.Count(two, "data-tile=") != 2 || !strings.Contains(two, "tile alert") {
 		t.Errorf("two tiles: %s", two)

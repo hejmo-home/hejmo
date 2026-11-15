@@ -134,6 +134,53 @@
   }
   scheduleClock();
 
+  // Ticking a task (personal view) posts in the background. If the box cannot
+  // be reached or answers with an error, the task keeps its state and an
+  // error is announced under its row (data-tick-error); on success the view
+  // is replaced, as for any change. Without script the form posts as usual.
+  view.addEventListener("submit", function (e) {
+    var form = e.target;
+    var btn = form.querySelector && form.querySelector(".big-check");
+    var tile = form.closest && form.closest("[data-tick-error]");
+    if (!btn || !tile || !window.fetch || !window.FormData) return;
+    e.preventDefault();
+    var row = form.parentNode;
+    var old = row.querySelector(".ferr");
+    if (old) row.removeChild(old);
+    var body = new URLSearchParams(new FormData(form));
+    fetch(form.action, { method: "POST", body: body, credentials: "same-origin", cache: "no-store" })
+      .then(function (r) {
+        if (!r.ok) throw new Error("tick " + r.status);
+        // fetch follows the 303: a revoked display lands on the pairing screen
+        // (or a deleted task on /display), which a plain form post would show.
+        if (r.redirected && new URL(r.url).pathname === "/display") { location.href = "/display"; return; }
+        refresh();
+      })
+      .catch(function () {
+        var p = document.createElement("p");
+        p.className = "ferr";
+        p.setAttribute("role", "alert");
+        var ns = "http://www.w3.org/2000/svg";
+        var svg = document.createElementNS(ns, "svg");
+        svg.setAttribute("class", "icon");
+        svg.setAttribute("width", "18");
+        svg.setAttribute("height", "18");
+        svg.setAttribute("viewBox", "0 0 24 24");
+        svg.setAttribute("aria-hidden", "true");
+        var path = document.createElementNS(ns, "path");
+        path.setAttribute("d", "M12 8v5M12 16.5v.5");
+        var circle = document.createElementNS(ns, "circle");
+        circle.setAttribute("cx", "12");
+        circle.setAttribute("cy", "12");
+        circle.setAttribute("r", "9");
+        svg.appendChild(path);
+        svg.appendChild(circle);
+        p.appendChild(svg);
+        p.appendChild(document.createTextNode(tile.getAttribute("data-tick-error")));
+        row.appendChild(p);
+      });
+  });
+
   var retry = 1000;
   function connect() {
     var source = new EventSource(eventsURL);

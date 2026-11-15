@@ -45,6 +45,14 @@ func TestMealTileSnapshots(t *testing.T) {
 			f := newFamilyBox(t, tc.display)
 			f.plan(t, dayPlan)
 			var got strings.Builder
+			// The colour and black-and-white markup of the footer is the same; the
+			// difference is the theme on the page (data-theme, CSS only), so the
+			// golden records the page's <html> tag too.
+			htmlTag := regexp.MustCompile(`<html[^>]*>`).FindString(f.view(t, "en", f.at(14, 7, 15)))
+			if want := tc.display == "eink_bw"; strings.Contains(htmlTag, `data-theme="bw"`) != want {
+				t.Errorf("page theme: %s", htmlTag)
+			}
+			got.WriteString(htmlTag + "\n")
 			add := func(title, footer string) { got.WriteString("<!-- " + title + " -->\n" + footer + "\n") }
 			add("several meals (07:15)", f.footer(t, "en", 14, 7, 15))
 			add("one meal (18:30)", f.footer(t, "en", 14, 18, 30))
@@ -57,7 +65,8 @@ func TestMealTileSnapshots(t *testing.T) {
 			} else {
 				add("nothing left (21:00, dinner cut-off 20:00)", "(no footer)")
 			}
-			f.plan(t, map[meal.Mealtime]string{meal.Lunch: longDish, meal.Dinner: "Maultaschen"})
+			// SetMeals merges: an empty text clears the snack of the first plan.
+			f.plan(t, map[meal.Mealtime]string{meal.Lunch: longDish, meal.Dinner: "Maultaschen", meal.Snack: ""})
 			add("German long text (11:00)", f.footer(t, "de", 14, 11, 0))
 			compareGolden(t, "testdata/meal_tile_"+tc.name+".html", got.String())
 		})
@@ -118,7 +127,22 @@ func TestMealTileCutoffChangesTheViewVersion(t *testing.T) {
 	}
 }
 
-// ADR 0015/0016: the display page's language is set so the browser can hyphenate.
+// 6.4: if the meal plan cannot be read the view renders without the tile, not with an error.
+func TestMealTileIsLeftOutWhenTheMealsCannotBeRead(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	f.plan(t, dayPlan)
+	if !strings.Contains(f.view(t, "en", f.at(14, 7, 15)), `data-tile="meal"`) {
+		t.Fatal("no meal tile before the table is dropped")
+	}
+	if _, err := f.db.SQL().Exec(`DROP TABLE meal_plan`); err != nil {
+		t.Fatal(err)
+	}
+	if p := f.view(t, "en", f.at(14, 7, 15)); strings.Contains(p, `data-tile="meal"`) || !strings.Contains(p, "data-family") {
+		t.Errorf("the view should render without the meal tile:\n%s", p)
+	}
+}
+
+// ADR 0015/0016: regression guard: the display page's language is set so the browser can hyphenate.
 func TestDisplayPageSetsLanguageForHyphenation(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	if p := f.view(t, "de", f.at(14, 8, 0)); !strings.Contains(p, `<html lang="de"`) {

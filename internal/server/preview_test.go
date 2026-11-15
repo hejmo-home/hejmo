@@ -61,7 +61,7 @@ func TestWriteDesignPreview(t *testing.T) {
 			v.Columns[2].Progress = &familyview.Progress{Done: 1, Total: 3}
 			v.Columns[3].Progress = &familyview.Progress{Done: 2, Total: 2}
 			v.Meal = &familyview.MealTile{Label: "Dinner", Entries: []familyview.MealEntry{{Mealtime: "dinner", Dish: "Pasta bake"}}}
-			v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []string{"Paper bin", "Residual waste"}, Alert: now.Hour() >= 18}
+			v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []familyview.Line{{Kind: familyview.LineWaste, Text: "Paper bin"}, {Kind: familyview.LineWaste, Text: "Residual waste"}}, Alert: now.Hour() >= 18}
 		}
 		return v
 	}

@@ -139,3 +139,51 @@ func TestPersonalViewShowsAllDayOnTheLastDayWhenTheEventEndsAtMidnight(t *testin
 		t.Errorf("day after = %+v, want nothing", v.Days[3].Events)
 	}
 }
+
+func TestProgressOf(t *testing.T) {
+	task := func(done bool) familyview.Task { return familyview.Task{Done: done} }
+	for _, tc := range []struct {
+		name    string
+		tasks   []familyview.Task
+		want    familyview.Progress
+		percent int
+	}{
+		{"none", nil, familyview.Progress{}, 0},
+		{"nothing done", []familyview.Task{task(false), task(false)}, familyview.Progress{Done: 0, Total: 2}, 0},
+		{"some done", []familyview.Task{task(true), task(false), task(false)}, familyview.Progress{Done: 1, Total: 3}, 33},
+		{"all done", []familyview.Task{task(true), task(true)}, familyview.Progress{Done: 2, Total: 2}, 100},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := familyview.ProgressOf(tc.tasks)
+			if p != tc.want || p.Percent() != tc.percent {
+				t.Errorf("ProgressOf = %+v (%d%%), want %+v (%d%%)", p, p.Percent(), tc.want, tc.percent)
+			}
+			v := personal(today(14, 9, 0), nil, tc.tasks...)
+			if v.Progress() != tc.want || v.Percent() != tc.percent {
+				t.Errorf("view progress = %+v (%d%%), want %+v (%d%%)", v.Progress(), v.Percent(), tc.want, tc.percent)
+			}
+		})
+	}
+}
+
+func TestPersonalViewPartsGroupInOrder(t *testing.T) {
+	mk := func(title, part string) familyview.Task { return familyview.Task{Title: title, Part: part} }
+	v := personal(today(14, 9, 0), nil, mk("e1", "evening"), mk("a1", ""), mk("m1", "morning"), mk("a2", ""), mk("m2", "morning"))
+	var got []string
+	for _, p := range v.Parts() {
+		var titles []string
+		for _, t := range p.Tasks {
+			titles = append(titles, t.Title)
+		}
+		got = append(got, p.Part+":"+strings.Join(titles, ","))
+	}
+	if want := "morning:m1,m2 :a1,a2 evening:e1"; strings.Join(got, " ") != want {
+		t.Errorf("Parts = %q, want %q", strings.Join(got, " "), want)
+	}
+	if parts := personal(today(14, 9, 0), nil, mk("a", "")).Parts(); len(parts) != 1 || parts[0].Part != "" {
+		t.Errorf("only any-time tasks: %+v", parts)
+	}
+	if parts := personal(today(14, 9, 0), nil).Parts(); len(parts) != 0 {
+		t.Errorf("no tasks: %+v", parts)
+	}
+}

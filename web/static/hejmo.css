@@ -737,3 +737,13 @@ ol.codes li::before { content: counter(code) "."; min-width: 1.6em; font-size: v
   .wizard > header, .wsteps, .no-print { display: none !important; }
   ol.codes li { border: 1px solid black; background: white; color: black; }
 }
+
+/* Added while building #133: a column of blocks inside the wizard's single
+   column (the name check keeps its parts together for the page script), and the
+   Actalis account keys that only show while Actalis is the chosen issuer. */
+.stack { display: grid; gap: var(--gap); min-width: 0; }
+.when-actalis { display: none; }
+form:has(input[name="issuer"][value="actalis"]:checked) .when-actalis { display: grid; gap: 12px; }
+.devnav { display: grid; gap: 6px; min-width: 0; }
+button.link { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; cursor: pointer; }
+.firststeps form { justify-self: start; margin: 0; }

@@ -1,32 +1,35 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "setup.title") "Frame" .Frame)}}
+{{template "head" (dict "Lang" .Lang "Title" (t "setup.title") "Frame" .Frame "Wizard" .Wizard)}}
   <h1>{{t "setup.title"}}</h1>
-  <p class="lead">{{t "setup.intro"}}</p>
+  <p class="lead">{{t "setup.lead"}}</p>
   {{template "error" .}}
   <form method="post" action="/setup" class="steps">
     <fieldset>
       <legend>{{t "setup.step.home"}}</legend>
-      <span class="hint">{{t "setup.step.home.hint"}}</span>
-      {{template "field" (dict "Root" . "Name" "home_name" "Label" (t "setup.field.home_name") "Value" .Form.HomeName "Required" true "Autocomplete" "address-level2")}}
-      <label>{{t "setup.field.region"}}
-        <select name="region">
-          {{$sel := .Form.Region}}
-          {{range .Regions}}<option value="{{.Code}}"{{if eq .Code $sel}} selected{{end}}>{{.Country}} · {{.Name}}</option>
-          {{end}}
-        </select></label>
-      {{template "fieldError" (dict "Root" . "Name" "region")}}
+      {{template "field" (dict "Root" . "Name" "home_name" "Label" (t "setup.field.home_name") "Value" .Form.HomeName "Required" true "Autocomplete" "address-level2" "Hint" (t "setup.field.home_name.hint"))}}
+      <div class="f">
+        <label>{{t "setup.field.region"}}
+          <select name="region">
+            {{$sel := .Form.Region}}
+            {{range .RegionGroups}}<optgroup label="{{t (printf "setup.country.%s" .Country)}}">
+              {{range .Regions}}<option value="{{.Code}}"{{if eq .Code $sel}} selected{{end}}>{{.Name}}</option>
+              {{end}}</optgroup>
+            {{end}}
+          </select></label>
+        <p class="hint">{{t "setup.field.region.hint"}}</p>
+        {{template "fieldError" (dict "Root" . "Name" "region")}}
+      </div>
     </fieldset>
     <fieldset>
       <legend>{{t "setup.step.parent"}}</legend>
-      <span class="hint">{{t "setup.step.parent.hint"}}</span>
-      {{template "field" (dict "Root" . "Name" "name" "Label" (t "setup.field.name") "Value" .Form.Name "Required" true "Autocomplete" "given-name")}}
-      {{template "field" (dict "Root" . "Name" "username" "Label" (t "setup.field.username") "Value" .Form.Username "Required" true "Autocomplete" "username" "Autocapitalize" "none")}}
-      {{template "field" (dict "Root" . "Name" "password" "Label" (t "setup.field.password") "Type" "password" "Required" true "Min" 10 "Autocomplete" "new-password")}}
+      {{template "field" (dict "Root" . "Name" "name" "Label" (t "setup.field.name") "Value" .Form.Name "Required" true "Autocomplete" "given-name" "Hint" (t "setup.field.name.hint"))}}
+      {{template "field" (dict "Root" . "Name" "username" "Label" (t "setup.field.username") "Value" .Form.Username "Required" true "Autocomplete" "username" "Autocapitalize" "none" "Hint" (t "setup.field.username.hint"))}}
+      {{template "field" (dict "Root" . "Name" "password" "Label" (t "setup.field.password") "Type" "password" "Required" true "Min" 10 "Autocomplete" "new-password" "Hint" (t "setup.field.password.hint") "Reveal" (dict "Show" (t "setup.password.show") "Hide" (t "setup.password.hide")))}}
     </fieldset>
     <fieldset>
       <legend>{{t "setup.step.pin"}}</legend>
-      <span class="hint">{{t "setup.step.pin.hint"}}</span>
+      <p class="hint">{{t "setup.step.pin.hint"}}</p>
       {{template "field" (dict "Root" . "Name" "pin" "Label" (t "setup.field.pin") "Type" "password" "Required" true "Inputmode" "numeric" "Pattern" "[0-9]{4,8}" "Autocomplete" "off")}}
     </fieldset>
-    <button class="button" type="submit">{{t "setup.start"}}</button>
+    <div class="actions"><button class="button" type="submit">{{t "setup.start"}}</button></div>
   </form>
 {{template "foot"}}

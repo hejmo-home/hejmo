@@ -24,7 +24,7 @@ func TestWizardOffersPublicNameBesideTheOwnCA(t *testing.T) {
 		"de": {"deSEC", "Zugangstoken", "Actalis", `action="/setup/https/public"`, `name="lan_ip"`, `value="127.0.0.1"`},
 		"en": {"deSEC", "access token", "Actalis", `action="/setup/https/public"`},
 	} {
-		r := b.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": lang})
+		r := b.do(http.MethodGet, "/setup/https?way=public", nil, map[string]string{"Accept-Language": lang})
 		for _, want := range wants {
 			if !strings.Contains(r.body, want) {
 				t.Errorf("%s: HTTPS step misses %q:\n%s", lang, want, r.body)
@@ -77,8 +77,8 @@ func TestPublicSetupFailuresAreExplainedAndTheFormComesBackWithoutTheToken(t *te
 		status int
 		key    string // English text
 	}{
-		"invalid":  {publiccert.ErrInvalid, http.StatusUnprocessableEntity, "check the name"},
-		"provider": {publiccert.ErrUnknownProvider, http.StatusUnprocessableEntity, "check the name"},
+		"invalid":  {publiccert.ErrInvalid, http.StatusUnprocessableEntity, "check your entries"},
+		"provider": {publiccert.ErrUnknownProvider, http.StatusUnprocessableEntity, "check your entries"},
 		"failed":   {errors.New("obtain certificate: dns says no"), http.StatusBadGateway, "could not get the certificate"},
 	}
 	for name, c := range cases {
@@ -122,7 +122,7 @@ func TestNameCheckPageShowsRebindHelpAndRetries(t *testing.T) {
 	b.post("/setup/https/public", publicForm())
 
 	for lang, wants := range map[string][]string{
-		"de": {"DNS-Rebind-Schutz", "Hostnamen-Ausnahmen", "FRITZ!Box", "mia.dedyn.io"},
+		"de": {"DNS-Rebind-Schutz", "FRITZ!Box", "mia.dedyn.io", `href="http://fritz.box/"`, `class="addr">mia.dedyn.io`},
 		"en": {"DNS rebind protection", "FRITZ!Box", "mia.dedyn.io"},
 	} {
 		r := b.do(http.MethodGet, "/setup/https/check", nil, map[string]string{"Accept-Language": lang})
@@ -242,7 +242,7 @@ func TestOwnCAModeReportsNoWarning(t *testing.T) {
 func TestNameCheckPageOffersTheOwnCAAndSwitchingForgetsThePublicSetup(t *testing.T) {
 	b := newFreshBox(t)
 	b.post("/setup/https/public", publicForm())
-	for lang, want := range map[string]string{"de": "eigene", "en": "own certificate authority"} {
+	for lang, want := range map[string]string{"de": "Router lässt sich nicht ändern?", "en": "Cannot change the router?"} {
 		r := b.do(http.MethodGet, "/setup/https/check", nil, map[string]string{"Accept-Language": lang})
 		if !strings.Contains(r.body, `action="/setup/https/own-ca"`) || !strings.Contains(r.body, want) {
 			t.Errorf("%s: the check page offers no way to the own CA:\n%s", lang, r.body)
@@ -296,7 +296,7 @@ func TestParentsAndTheWizardSeeAWarningWhenThePublicSetupCannotBeResumed(t *test
 
 	fresh := newFreshBox(t)
 	fresh.public.status = publiccert.Status{Warning: true, RenewalError: "x"}
-	r := fresh.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": "en"})
+	r := fresh.do(http.MethodGet, "/setup/https?way=public", nil, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusOK || !strings.Contains(r.body, "data-https-warning") || !strings.Contains(r.body, `action="/setup/https/public"`) {
 		t.Errorf("the wizard shows no warning or no form to redo the step:\n%s", r.body)
 	}

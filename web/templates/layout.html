@@ -16,7 +16,9 @@
 </head>
 <body{{if .Frame}} class="web"{{end}}>
 {{if .Frame}}<a class="skip" href="#content">{{t "frame.skip"}}</a>{{end}}
-<div{{if .Frame}} class="frame framed{{if .Frame.Items}} has-nav{{end}}"{{end}}>
+{{if .Wizard}}<div class="wizard">
+{{template "wizard" .Wizard}}
+{{else}}<div{{if .Frame}} class="frame framed{{if .Frame.Items}} has-nav{{end}}"{{end}}>
 {{with .Frame}}
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
@@ -26,7 +28,7 @@
   {{range .Items}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{t .Label}}</a></li>
   {{end}}</ul></nav>{{end}}
 {{if .Back}}<a class="back" href="/settings">{{t "hub.back"}}</a>{{end}}
-{{end}}
+{{end}}{{end}}
 <main id="content">
 {{with .Frame}}{{with .Success}}{{template "success" .}}{{end}}{{end}}
 {{end}}
@@ -38,7 +40,9 @@
 </html>
 {{end}}
 
-{{define "error"}}{{if and .Error (not .ErrorField)}}<p class="error" role="alert">{{t .Error}}</p>{{end}}{{end}}
+{{/* The page-level error. A page that reports a field error as well (FieldError
+     is its own text for the field) shows this one too. */}}
+{{define "error"}}{{if and .Error (or (not .ErrorField) .FieldError)}}<p class="error" role="alert">{{t .Error}}</p>{{end}}{{end}}
 
 {{define "syncNotice"}}{{if .SyncStale}}<p class="notice" role="status" data-sync-stale>{{t "sync.stale"}} <a href="/calendars">{{t "sync.stale.link"}}</a></p>{{end}}{{end}}
 

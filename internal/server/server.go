@@ -167,6 +167,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /login", s.handleLoginSubmit)
 	mux.HandleFunc("POST /logout", s.handleLogout)
 	mux.HandleFunc("GET /{$}", s.handleHome)
+	mux.HandleFunc("POST /first-steps/hide", s.handleFirstStepsHide)
 	mux.HandleFunc("GET /calendar", s.handleCalendarWeek)
 	mux.HandleFunc("GET /calendar/search", s.handleCalendarSearch)
 	mux.HandleFunc("GET /calendar/new", s.handleEventNew)
@@ -250,13 +251,17 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	// The family view arrives with work package 5.
 	h, err := s.db.HomeHousehold()
 	if err != nil {
 		s.fail(w, "household", err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": p.Role == store.RoleParent && s.httpsWarning(), "Update": s.parentUpdateNotice(p, h)})
+	first, err := s.firstSteps(p, h)
+	if err != nil {
+		s.fail(w, "first steps", err)
+		return
+	}
+	s.render(w, r, http.StatusOK, "home.html", map[string]any{"Person": p, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": p.Role == store.RoleParent && s.httpsWarning(), "Update": s.parentUpdateNotice(p, h), "FirstSteps": first})
 }
 
 // parsePages parses the embedded templates; "t" is replaced per render.
@@ -267,6 +272,7 @@ func parsePages() *template.Template {
 		"dict": dict,
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
+		"rich": rich,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
 
@@ -276,7 +282,7 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
-	for _, k := range []string{"Error", "ErrorField"} { // templates compare them
+	for _, k := range []string{"Error", "ErrorField", "FieldError"} { // templates compare them
 		if _, ok := data[k]; !ok {
 			data[k] = ""
 		}

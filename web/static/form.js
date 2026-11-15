@@ -39,3 +39,54 @@ document.addEventListener("change", function (e) {
     if (input && input.form && (input.name === "color" || input.name === "shape") && input.hasAttribute("data-taken-with")) sync(input.form);
   });
 })();
+
+// Busy state (ticket 133): a form that takes a while (getting the certificate
+// can take up to 3 minutes) greys out its submit button, says what happens in
+// words and shows the hidden check line. Nothing animates (E-Ink). Without
+// this script the form works the same, the page just waits.
+(function () {
+  function reset(form) {
+    var button = form.querySelector("[data-busy-text]");
+    if (button && button.hasAttribute("data-idle-text")) {
+      button.disabled = false;
+      button.textContent = button.getAttribute("data-idle-text");
+    }
+    var line = form.querySelector('[data-hook="busy"]');
+    if (line) line.hidden = true;
+  }
+  document.addEventListener("submit", function (e) {
+    var form = e.target;
+    if (!form.hasAttribute || !form.hasAttribute("data-busy")) return;
+    var button = form.querySelector("[data-busy-text]");
+    if (!button) return;
+    button.setAttribute("data-idle-text", button.textContent);
+    // Disable after the browser has collected the form, so nothing is lost.
+    setTimeout(function () {
+      button.disabled = true;
+      button.textContent = button.getAttribute("data-busy-text");
+    }, 0);
+    var line = form.querySelector('[data-hook="busy"]');
+    if (line) line.hidden = false;
+  });
+  // Back from the page cache: the form is usable again.
+  window.addEventListener("pageshow", function (e) {
+    if (!e.persisted) return;
+    Array.prototype.forEach.call(document.querySelectorAll("form[data-busy]"), reset);
+  });
+})();
+
+// Password with a "Show" button in words (ticket 133).
+document.addEventListener("click", function (e) {
+  var button = e.target.closest && e.target.closest("[data-pw-toggle]");
+  if (!button) return;
+  var input = button.closest(".pw").querySelector("input");
+  var show = input.type === "password";
+  input.type = show ? "text" : "password";
+  button.textContent = button.getAttribute(show ? "data-hide-text" : "data-show-text");
+  button.setAttribute("aria-pressed", show ? "true" : "false");
+});
+
+// "Print" on the recovery codes page (ticket 133); the print styles show only the codes.
+document.addEventListener("click", function (e) {
+  if (e.target.closest && e.target.closest("[data-print]")) window.print();
+});

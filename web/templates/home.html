@@ -3,5 +3,24 @@
   {{template "httpsNotice" .}}
   {{template "updateNotice" .}}
   {{template "syncNotice" .}}
-  <p class="lead">{{t "home.placeholder"}}</p>
+  {{with .FirstSteps}}<section class="firststeps" data-firststeps>
+    <h2>{{t "firststeps.title"}}</h2>
+    <p>{{t .LeadKey}}</p>
+    <ol class="howto">
+      {{if .Family.Done}}<li data-done><div class="s"><b>{{t "firststeps.family.title"}}</b>
+        <p class="done-who">{{range .People}}<span><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}</span>{{end}}</p>
+        <a class="link" href="/people">{{t "firststeps.family.change"}}</a></div></li>
+      {{else}}<li><div class="s"><b>{{t "firststeps.family.title"}}</b><p>{{t "firststeps.family.text"}}</p>
+        <a class="{{if .Family.Primary}}button{{else}}link{{end}}" href="/people">{{t "firststeps.family.action"}}</a></div></li>{{end}}
+      {{if .Calendars.Done}}<li data-done><div class="s"><b>{{t "firststeps.calendars.title"}}</b><p>{{t "firststeps.calendars.done"}}</p>
+        <a class="link" href="/calendars">{{t "firststeps.calendars.change"}}</a></div></li>
+      {{else}}<li><div class="s"><b>{{t "firststeps.calendars.title"}}</b><p>{{t "firststeps.calendars.text"}}</p>
+        <a class="{{if .Calendars.Primary}}button{{else}}link{{end}}" href="/calendars">{{t "firststeps.calendars.action"}}</a></div></li>{{end}}
+      {{if .Devices.Done}}<li data-done><div class="s"><b>{{t "firststeps.devices.title"}}</b><p>{{t "firststeps.devices.done"}}</p>
+        <span class="actions"><a class="link" href="/displays">{{t "firststeps.devices.display"}}</a><a class="link" href="/phones">{{t "firststeps.devices.phone"}}</a></span></div></li>
+      {{else}}<li><div class="s"><b>{{t "firststeps.devices.title"}}</b><p>{{t "firststeps.devices.text"}}</p>
+        <span class="actions"><a class="{{if .Devices.Primary}}button{{else}}link{{end}}" href="/displays">{{t "firststeps.devices.display"}}</a><a class="link" href="/phones">{{t "firststeps.devices.phone"}}</a></span></div></li>{{end}}
+    </ol>
+    <form method="post" action="/first-steps/hide"><button class="link later" type="submit">{{t "firststeps.hide"}}</button></form>
+  </section>{{end}}
 {{template "foot"}}

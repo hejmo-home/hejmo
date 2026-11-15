@@ -13,10 +13,12 @@ type settingsJSON struct {
 	TimeFormat      store.TimeFormat      `json:"time_format"`
 	TemperatureUnit store.TemperatureUnit `json:"temperature_unit"`
 	AutoUpdate      store.UpdateMode      `json:"auto_update"`
+	// FirstStepsHidden is whether the first steps card on the start page is hidden.
+	FirstStepsHidden bool `json:"first_steps_hidden"`
 }
 
 func (s *server) apiGetSettings(w http.ResponseWriter, _ *http.Request, p principal) {
-	writeJSON(w, http.StatusOK, settingsJSON{p.household.TimeFormat, p.household.TemperatureUnit, p.household.AutoUpdate})
+	writeJSON(w, http.StatusOK, settingsJSON{p.household.TimeFormat, p.household.TemperatureUnit, p.household.AutoUpdate, p.household.FirstStepsHidden})
 }
 
 func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p principal) {
@@ -24,6 +26,8 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		TimeFormat      *store.TimeFormat      `json:"time_format"`
 		TemperatureUnit *store.TemperatureUnit `json:"temperature_unit"`
 		AutoUpdate      *store.UpdateMode      `json:"auto_update"`
+		// FirstStepsHidden hides or shows the first steps card on the start page.
+		FirstStepsHidden *bool `json:"first_steps_hidden"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -48,7 +52,15 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		s.fail(w, "update settings", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, settingsJSON{f, u, a})
+	hidden := p.household.FirstStepsHidden
+	if in.FirstStepsHidden != nil && *in.FirstStepsHidden != hidden {
+		hidden = *in.FirstStepsHidden
+		if err := s.db.SetFirstStepsHidden(p.household.ID, hidden); err != nil {
+			s.fail(w, "update first steps", err)
+			return
+		}
+	}
+	writeJSON(w, http.StatusOK, settingsJSON{f, u, a, hidden})
 }
 
 func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p principal, status int, errKey string) {

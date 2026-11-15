@@ -48,14 +48,22 @@ func (s *server) issueRecoveryCodes(w http.ResponseWriter, r *http.Request, pers
 		s.fail(w, "recovery codes", err)
 		return
 	}
-	s.showRecoveryCodes(w, r, codes)
+	s.showRecoveryCodes(w, r, codes, false)
 }
 
 // showRecoveryCodes renders a set that was just stored. It is the only time
-// the codes are shown.
-func (s *server) showRecoveryCodes(w http.ResponseWriter, r *http.Request, codes []string) {
+// the codes are shown. In the first setup (wizard) it is the second half of
+// step 3 and leads on to the first steps; otherwise it sits in the frame.
+func (s *server) showRecoveryCodes(w http.ResponseWriter, r *http.Request, codes []string, wizard bool) {
 	w.Header().Set("Cache-Control", "no-store")
-	s.render(w, r, http.StatusOK, "recovery_codes.html", map[string]any{"Codes": codes, "SuccessKey": "flash.recovery_codes_created"})
+	data := map[string]any{"Codes": codes, "ContinueKey": "recovery.continue"}
+	if wizard {
+		data["Wizard"] = wizardAt(3)
+		data["ContinueKey"] = "recovery.continue.wizard"
+	} else {
+		data["SuccessKey"] = "flash.recovery_codes_created"
+	}
+	s.render(w, r, http.StatusOK, "recovery_codes.html", data)
 }
 
 type otherParent struct{ ID, Name, Username string }

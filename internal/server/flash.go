@@ -56,6 +56,13 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 // successText is the text of a success line. After "Sync now" it says when
 // the calendar was updated and what the run did.
 func (s *server) successText(lang, key, arg string) string {
+	if key == "flash.setup_done" && arg != "" { // greet the parent by name
+		if h, err := s.db.HomeHousehold(); err == nil {
+			if p, err := s.db.Person(h.ID, arg); err == nil {
+				return s.i18n.Format(lang, i18n.Msg("flash.setup_done_named", "name", p.Name))
+			}
+		}
+	}
 	if key == "flash.calendar_synced" && arg != "" {
 		if h, err := s.db.HomeHousehold(); err == nil {
 			if c, err := s.db.SyncedCalendar(h.ID, arg); err == nil && !c.Sync.LastSuccess.IsZero() {

@@ -155,7 +155,7 @@ func TestWholeHouseholdAndAllDayEventsGoToTheStripOnly(t *testing.T) {
 		}
 	}
 	// An all-day event with an audience says in brackets who it is for; the whole family needs none.
-	if w := v.Strip[0].Who; w != "Sebastian" {
+	if w := v.Strip[0].Who; w != "[Sebastian]" {
 		t.Errorf("who-line = %q", w)
 	}
 	if v.Strip[2].Time != "12:00–13:00" || !v.Strip[1].AllDay || v.Strip[1].Who != "" {
@@ -410,7 +410,7 @@ func TestWhoLineNamesTheSubgroupAndListsEveryoneElseInFull(t *testing.T) {
 	for _, it := range v.Strip {
 		got[it.Title] = it.Who
 	}
-	want := map[string]string{"Besuch bei Oma": "Mama, Papa", "Ausflug": "Mia, Jonas, Lotta, Ben, Emma", "Familientag": ""}
+	want := map[string]string{"Besuch bei Oma": "[Mama, Papa]", "Ausflug": "[Mia, Jonas, Lotta, Ben, Emma]", "Familientag": ""}
 	for title, w := range want {
 		if got[title] != w {
 			t.Errorf("all-day row, %s: %q, want %q", title, got[title], w)

@@ -100,7 +100,7 @@ type StripItem struct {
 	Time            string // timed whole-household events only
 	AllDay          bool
 	Partial         bool   // partial public holiday
-	Who             string // who it is for, shown in brackets after the title; empty for the whole family
+	Who             string // who it is for, in square brackets, shown after the title; empty for the whole family
 	DayIndex        int    // multi-day: this is day DayIndex of DayCount (1-based)
 	DayCount        int
 	ContinuesBefore bool
@@ -174,7 +174,9 @@ func Build(in Input) View {
 			if len(audience) == 0 {
 				continue
 			}
-			item.Who = whoLine(in, o, "").InBrackets
+			if w := whoLine(in, o, "").InBrackets; w != "" {
+				item.Who = "[" + w + "]"
+			}
 		}
 		if bar {
 			first, last := firstDay(o, loc), calendar.LastDay(o, loc)

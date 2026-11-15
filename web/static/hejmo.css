@@ -70,7 +70,6 @@
   --pad-card: 10px 12px;
   --marker-size: 14px;
   --marker-size-bw-column: 16px;
-  --marker-size-bw-event: 9px;
   --journey-border: 1.5px;
   --icon-stroke: 1.8px;
   --touch-target: 44px;
@@ -222,10 +221,9 @@ a { color: var(--accent); }
 [data-person="6"] { --pc: var(--person-6); --pc-tint: var(--person-6-tint); --pc-text: var(--person-6-text); }
 
 /* Marker: circle in the person colour; in bw a shape (16px in the column
-   header, 9px on an event, .marker.small). */
+   header). */
 .marker { display: inline-block; width: var(--marker-size); height: var(--marker-size); border-radius: 50%; background: var(--pc); vertical-align: middle; flex: none; }
 [data-theme="bw"] .marker { width: var(--marker-size-bw-column); height: var(--marker-size-bw-column); background: var(--text); border: 2px solid var(--text); border-radius: 0; }
-[data-theme="bw"] .marker.small { width: var(--marker-size-bw-event); height: var(--marker-size-bw-event); border-width: 1.5px; }
 [data-theme="bw"] .marker[data-shape="circle-filled"] { border-radius: 50%; }
 [data-theme="bw"] .marker[data-shape="circle-empty"] { border-radius: 50%; background: transparent; }
 [data-theme="bw"] .marker[data-shape="square-filled"] { border-radius: 0; }
@@ -233,10 +231,10 @@ a { color: var(--accent); }
 [data-theme="bw"] .marker[data-shape="triangle-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 [data-theme="bw"] .marker[data-shape="diamond-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 
-/* Event cards list their people as markers; only bw needs them (colour cards
-   carry the person colour). */
-.event .markers { display: none; }
-[data-theme="bw"] .event .markers { display: flex; gap: 4px; margin-bottom: 4px; }
+/* Who an event is for is said in words (Q62): a line under the title that
+   wraps, so the card grows; names are never cut. Markers stay in the column
+   headers and the person chips. */
+.event .who { font-size: var(--fs-meta); font-weight: var(--fw-meta); overflow-wrap: anywhere; }
 
 /* Family view building blocks (screens use them from ticket 5.3 on). */
 .tile, .column, .chip { background: var(--surface); }
@@ -311,6 +309,7 @@ body:has(.family-page) { overflow: hidden; }
 .strip .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
 .strip-item { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border-radius: var(--radius-card); padding: var(--pad-card); font-size: var(--fs-event-title); }
 .strip-item .title { font-weight: var(--fw-event-title); }
+.strip-item .who { font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: anywhere; }
 .strip-item .meta { font-size: var(--fs-meta); color: var(--text-secondary); }
 .strip-item[data-kind="holiday"] { background: var(--notice-bg); color: var(--notice-text); }
 .strip-item[data-kind="holiday"] .meta { color: var(--notice-text); }
@@ -525,9 +524,7 @@ details.danger form { margin: 0 0 10px; }
 .ev a.title:hover, .bar a.title:hover { text-decoration: underline; }
 .ev .meta, .bar .meta { font-size: var(--fs-meta); }
 .ev .icon, .bar .icon { stroke: currentColor; vertical-align: middle; }
-.who { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-.ev .marker, .bar .marker { width: 10px; height: 10px; }
-[data-theme="bw"] .ev .marker, [data-theme="bw"] .bar .marker { width: var(--marker-size-bw-event); height: var(--marker-size-bw-event); }
+.ev .who, .bar .who { display: block; font-size: var(--fs-meta); overflow-wrap: anywhere; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 [data-theme="bw"] .bar, [data-theme="bw"] .wk-days .ev { background: var(--event-card); color: var(--text); border: 1.5px solid var(--text); }
 [data-theme="bw"] .wk-heads li[data-today] { border-bottom-width: 4px; }

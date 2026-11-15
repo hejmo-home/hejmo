@@ -119,7 +119,6 @@ sizes:
   progress-height: 8px
   marker: 14px
   marker-bw-column: 16px
-  marker-bw-event: 9px
   journey-border: 1.5px
   icon-stroke: 1.8px
   touch-target: 44px
@@ -165,14 +164,15 @@ None. No shadows in any palette.
 ## Shapes
 
 - Corners: columns and tiles 22 px, header chips 18 px, event cards 14 px, form fields 12 px, progress bar 4 px (height 8 px).
-- Person marker: circle 14 px in the person colour. In bw a shape: 16 px in the column header, 9 px on each event card (`.marker.small`, in `.markers` above the time; the card lists every person of the event, so two people are told apart by shape alone). Colour themes hide the card markers, the card tint carries the person. Shapes in slot order: circle filled, circle empty, square filled, square empty, triangle filled, diamond filled (`data-shape`).
+- Person marker: circle 14 px in the person colour. In bw a shape, 16 px. Markers appear only in the column header and the person chips in forms: they are the legend for black and white. Event cards and the all-day row carry no markers; they say in words who the event is for (the who-line, Q62: "Whole family", "with Kids", "everyone except Papa", else the names). The card tint carries the person in colour themes. Shapes in slot order: circle filled, circle empty, square filled, square empty, triangle filled, diamond filled (`data-shape`).
 - Journeys: no fill, 1.5 px dashed border in the person colour (bw: the person colour is #111111), label "Journey" after the time.
 - Icons: line icons with 1.8 px stroke in the accent colour (Papa blue; bw #111111).
 
 ## Components
 
 - `.tile`, `.column`, `.chip`: white surface cards with the radii above.
-- `.event`: filled in the person tint, time (`.meta`) on top, title below; `.event.journey` is the dashed variant. Person slot via `data-person`.
+- `.event`: filled in the person tint, time (`.meta`) on top, title below, then the who-line (`.who`, meta size, wraps so the card grows; names are never cut or replaced by a count, and the column's own person is left out); `.event.journey` is the dashed variant. Person slot via `data-person`.
+- Who-line rules, first match wins: everyone is "Whole family"; exactly one subgroup is "with <group>"; everyone except one or two is "everyone except <names>"; otherwise "with <names>". In the all-day row it follows the title in square brackets (names only for the last rule, nothing for the whole family); on a card of the web week it sits under the time.
 - `.progress`: person colour on person tint (bw #111111 on #D6D6D3).
 - `.marker`: person marker as above.
 - Web interface frame (`.frame`): brand bar (`.frame-bar`) with sign-out, navigation (`.frame-nav`, one `.chip`-shaped link per screen, at least 44 px high, current screen filled with `accent`), content (`main`). Under 900 px the navigation wraps above the content; from 900 px it stands as a column left of it. Without a `data-theme` the palette follows the device (`prefers-color-scheme`); an explicit `data-theme` wins. Screens a role may not use are not listed.

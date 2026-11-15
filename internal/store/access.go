@@ -97,10 +97,11 @@ func (db *DB) scanAccount(row *sql.Row) (Account, error) {
 	return a, err
 }
 
-// CreateSession stores a browser session by token hash.
-func (db *DB) CreateSession(tokenHash, personID string, expires time.Time) error {
-	_, err := db.sql.Exec(`INSERT INTO sessions (token_hash, person_id, created_at, expires_at) VALUES (?, ?, ?, ?)`,
-		tokenHash, personID, now(), expires.UTC().Format(time.RFC3339))
+// CreateSession stores a browser session by token hash. device holds the
+// derived device and browser keys, never the raw User-Agent.
+func (db *DB) CreateSession(tokenHash, personID, device string, created, expires time.Time) error {
+	_, err := db.sql.Exec(`INSERT INTO sessions (id, token_hash, person_id, device, created_at, last_seen_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		newID(), tokenHash, personID, device, stamp(created), stamp(created), stamp(expires))
 	return err
 }
 

@@ -21,7 +21,16 @@ func (s *server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
-	s.render(w, r, http.StatusOK, "login.html", map[string]any{"Next": localPath(r.URL.Query().Get("next"))})
+	data := map[string]any{"Next": localPath(r.URL.Query().Get("next"))}
+	// A session cookie the box no longer knows (ended by a parent or run out):
+	// say why the sign-in page is shown, and drop the cookie.
+	if c, err := r.Cookie(sessionCookie); err == nil && c.Value != "" {
+		if _, err := s.db.SessionPerson(auth.HashToken(c.Value), s.now()); err != nil {
+			data["SignedOut"] = true
+			http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
+		}
+	}
+	s.render(w, r, http.StatusOK, "login.html", data)
 }
 
 func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {

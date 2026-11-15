@@ -98,7 +98,7 @@ func TestARefusedLoginIsToldWithTheTimeAndLinksToTheCredentials(t *testing.T) {
 			t.Errorf("%s: no problem flag\n%s", page, body)
 		}
 		if page != "/calendars" {
-			for _, want := range []string{`class="error"`, "14/11/2026, 22:10:05", `href="#login"`, `<section id="login" class="steps"><details class="more" open>`} {
+			for _, want := range []string{`class="error"`, "14.11.2026,\u00a022:10:05", `href="#login"`, `<section id="login" class="steps"><details class="more" open>`} {
 				if !strings.Contains(body, want) {
 					t.Errorf("%s lacks %q\n%s", page, want, body)
 				}

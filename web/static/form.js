@@ -49,7 +49,7 @@ document.addEventListener("change", function (e) {
   function isoYear(ms) { return new Date(ms + 3 * DAY).getUTCFullYear(); }
   function isoWeek(ms) { var th = ms + 3 * DAY; return Math.floor((th - Date.UTC(new Date(th).getUTCFullYear(), 0, 1)) / WEEK) + 1; }
   function pad(n) { return (n < 10 ? "0" : "") + n; }
-  function date(ms) { var d = new Date(ms); return pad(d.getUTCDate()) + "/" + pad(d.getUTCMonth() + 1) + "/" + d.getUTCFullYear(); }
+  function date(ms) { var d = new Date(ms), day = pad(d.getUTCDate()), mon = pad(d.getUTCMonth() + 1); return hint.getAttribute("data-date-format") === "mdy" ? mon + "/" + day + "/" + d.getUTCFullYear() : day + "." + mon + "." + d.getUTCFullYear(); }
   function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function build() {
     var n = parseInt(every.value, 10), st = parse(start.value), today = monday(parse(hint.getAttribute("data-today")));

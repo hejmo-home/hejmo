@@ -14,7 +14,7 @@
     <fieldset class="f-card" id="schedule"{{if or .ErrEvery .ErrClash}} aria-invalid="true" aria-describedby="err-schedule"{{end}}><legend>{{t "meals.tpl.schedule.legend"}}</legend>
       <label class="every">{{t "meals.tpl.every.before"}} <input name="every" type="number" inputmode="numeric" min="1" max="52" step="1" value="{{.Every}}"> {{t "meals.tpl.every.after"}}</label>
       <label>{{t "meals.tpl.start"}}<select name="start">{{range .StartOptions}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>{{end}}</select></label>
-      <p class="weeks-hint" aria-live="polite" data-today="{{.Today}}" data-lead="{{t "meals.tpl.hint.lead"}}" data-this="{{t "meals.tpl.hint.this"}}" data-then="{{t "meals.tpl.hint.then"}}" data-tail="{{t "meals.tpl.hint.tail"}}">{{.WeeksHint}}</p>
+      <p class="weeks-hint" aria-live="polite" data-today="{{.Today}}" data-date-format="{{.DateFormat}}" data-lead="{{t "meals.tpl.hint.lead"}}" data-this="{{t "meals.tpl.hint.this"}}" data-then="{{t "meals.tpl.hint.then"}}" data-tail="{{t "meals.tpl.hint.tail"}}">{{.WeeksHint}}</p>
       {{if .ErrEvery}}<p class="ferr" id="err-schedule" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{t "meals.tpl.error.every"}}</p>{{end}}
       {{if .ErrClash}}<p class="ferr" id="err-schedule" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{range .ErrClash}}{{.}} {{end}}{{t "meals.tpl.clash.advice"}}</span></p>{{end}}
     </fieldset>

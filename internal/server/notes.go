@@ -11,6 +11,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -151,9 +152,9 @@ func (s *server) weekdayName(lang string, d time.Time) string {
 	return s.i18n.T(lang, fmt.Sprintf("weekday.%d", int(d.Weekday())))
 }
 
-// dayLabel is "Monday 16/11".
-func (s *server) dayLabel(lang string, d time.Time) string {
-	return s.weekdayName(lang, d) + " " + d.Format("02/01")
+// dayLabel is "Monday 16.11." or "Monday 11/16", by the household's date format.
+func (s *server) dayLabel(lang string, f store.DateFormat, d time.Time) string {
+	return s.weekdayName(lang, d) + " " + datefmt.Short(f, d)
 }
 
 // midnight is the start of now's day.
@@ -216,7 +217,7 @@ func (s *server) wasteOnText(lang, id string) string {
 	}
 	// The collection can be weeks away: name the day of the evening before with its date, as the note does.
 	now := s.householdNow(h)
-	when, shownNow := s.shownFrom(lang, now, next[id].Day, s.dayLabel)
+	when, shownNow := s.shownFrom(lang, now, next[id].Day, func(lang string, d time.Time) string { return s.dayLabel(lang, h.DateFormat, d) })
 	if shownNow {
 		return s.i18n.T(lang, "flash.waste_on_now")
 	}
@@ -255,12 +256,12 @@ func (s *server) renderHome(w http.ResponseWriter, r *http.Request, status int, 
 			return
 		}
 		short := func(d time.Time) string {
-			return s.i18n.T(lang, fmt.Sprintf("weekday.short.%d", int(d.Weekday()))) + " " + d.Format("02/01")
+			return s.i18n.T(lang, fmt.Sprintf("weekday.short.%d", int(d.Weekday()))) + " " + datefmt.Short(h.DateFormat, d)
 		}
 		card := noteCard{ShowToday: now.Hour() < tomorrowFromHour, TodayShort: short(now), TomorrowShort: short(now.AddDate(0, 0, 1)), Choice: "tomorrow"}
 		for _, n := range notes {
 			if day, ok := parseDay(now.Location(), n.Day); ok {
-				card.Rows = append(card.Rows, noteRow{Day: n.Day, Label: s.dayLabel(lang, day), Text: n.Text})
+				card.Rows = append(card.Rows, noteRow{Day: n.Day, Label: s.dayLabel(lang, h.DateFormat, day), Text: n.Text})
 			}
 		}
 		if form != nil {
@@ -364,7 +365,7 @@ func (s *server) notePage(w http.ResponseWriter, r *http.Request) (p principal, 
 func (s *server) renderNote(w http.ResponseWriter, r *http.Request, status int, p principal, day time.Time, text, errKey string) {
 	lang := s.langOf(r)
 	now := s.householdNow(p.household)
-	title := fmt.Sprintf(s.i18n.T(lang, "note.title"), s.weekdayName(lang, day), day.Format("02/01"))
+	title := fmt.Sprintf(s.i18n.T(lang, "note.title"), s.weekdayName(lang, day), datefmt.Short(p.household.DateFormat, day))
 	lead := s.i18n.T(lang, "note.lead_now")
 	if when, shownNow := s.shownFrom(lang, now, day, s.weekdayName); !shownNow {
 		lead = s.i18n.Format(lang, i18n.Msg("note.lead_from", "when", when))

@@ -99,7 +99,7 @@ func (s *server) renderDisplay(w http.ResponseWriter, r *http.Request, p princip
 	} else {
 		facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.last_seen")), Value: p.when(d.LastSeen)})
 	}
-	facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.paired")), Value: d.PairedAt.In(p.location()).Format(dayLayout)})
+	facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.paired")), Value: p.day(d.PairedAt)})
 	s.render(w, r, status, "display.html", map[string]any{
 		"Person": p.person, "D": newDisplayPage(d, in), "Facts": facts, "Error": errKey, "ErrorField": errField,
 		"Title": d.Name,

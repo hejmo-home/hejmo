@@ -1181,7 +1181,8 @@ paths:
       summary: Change household settings; omitted fields stay as they are (scope settings:write)
       description: |
         The time format applies to every time shown in the web interface and
-        on displays (ADR 0016). Unknown values are refused with 422.
+        on displays (ADR 0016). An unknown `date_format` is refused with 400, an
+        unknown value of any other field with 422.
       requestBody:
         required: true
         content:
@@ -1684,8 +1685,9 @@ components:
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
     Settings:
       type: object
-      required: [time_format, temperature_unit, auto_update, meal_cutoffs]
+      required: [date_format, time_format, temperature_unit, auto_update, meal_cutoffs]
       properties:
+        date_format: { type: string, enum: [dmy, mdy], description: "Day first DD.MM.YYYY (default) or month first MM/DD/YYYY. Only how the web interface writes dates in numbers; this API, CalDAV and iCalendar stay ISO 8601" }
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
         temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
@@ -1703,6 +1705,7 @@ components:
     SettingsUpdate:
       type: object
       properties:
+        date_format: { type: string, description: "dmy or mdy; anything else is refused with 400" }
         time_format: { type: string, description: "24h or 12h" }
         temperature_unit: { type: string, description: "c or f" }
         auto_update: { type: string, description: "on, off or notify" }

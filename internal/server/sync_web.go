@@ -160,7 +160,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(p.location()).Format(p.syncLayout())
+		return p.dateTimeSeconds(t)
 	}
 	chips, groupNames, peopleChoices, groupChoices, err := s.audienceMaps(p.household.ID)
 	if err != nil {
@@ -355,7 +355,7 @@ func (s *server) handleCalendarPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		if next, ok := nexts[c.ID]; ok {
-			page["NextLabel"] = s.i18n.Format(lang, i18n.Msg("calendars.waste.next", "day", s.dayLabel(lang, next.Day)))
+			page["NextLabel"] = s.i18n.Format(lang, i18n.Msg("calendars.waste.next", "day", s.dayLabel(lang, p.household.DateFormat, next.Day)))
 			page["NextTitles"] = s.i18n.Format(lang, i18n.Msg("calendars.waste.next_titles", "titles", strings.Join(next.Titles, ", ")))
 		}
 	}

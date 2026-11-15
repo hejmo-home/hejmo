@@ -5,6 +5,11 @@
   <p class="lead">{{t "settings.intro"}}</p>
   {{template "error" .}}
   <form method="post" action="/settings/household" class="steps">
+    {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.date_format") "Root" . "Name" "date_format")}}
+      <p class="hint">{{t "settings.date_format.hint"}}</p>
+      {{template "option" (dict "Name" "date_format" "Value" "dmy" "Label" .DateDMY "Hint" (printf (t "settings.date_format.dmy.hint") .SampleYear) "Checked" (eq .DateFormat "dmy"))}}
+      {{template "option" (dict "Name" "date_format" "Value" "mdy" "Label" .DateMDY "Hint" (printf (t "settings.date_format.mdy.hint") .SampleYear) "Checked" (eq .DateFormat "mdy"))}}
+    {{template "optionsClose" (dict "Root" . "Name" "date_format")}}
     {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.time_format"))}}
       {{template "option" (dict "Name" "time_format" "Value" "24h" "Label" (t "settings.time_format.24h") "Checked" (eq .TimeFormat "24h"))}}
       {{template "option" (dict "Name" "time_format" "Value" "12h" "Label" (t "settings.time_format.12h") "Checked" (eq .TimeFormat "12h"))}}

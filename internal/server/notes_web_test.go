@@ -105,15 +105,15 @@ func TestHomeHasTheNoteCard(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	p := f.page("de", "/").body
 	mustContain(t, p, "Notiz auf dem Display", `<fieldset class="seg">`,
-		`<input type="radio" name="day" value="today">Heute<small>Sa 14/11</small>`,
-		`<input type="radio" name="day" value="tomorrow" checked>Morgen<small>So 15/11</small>`,
+		`<input type="radio" name="day" value="today">Heute<small>Sa 14.11.</small>`,
+		`<input type="radio" name="day" value="tomorrow" checked>Morgen<small>So 15.11.</small>`,
 		`<input type="radio" name="day" value="other">Anderer Tag`, `name="other"`,
 		`<textarea name="text" rows="2" maxlength="120"`, "0 von 120 Zeichen", "Notiz speichern", `action="/notes"`)
 	if n := strings.Count(p, `type="submit"`); n != 3 { // the card's button, the switcher's language and Sign out
 		t.Fatalf("%d submit buttons", n)
 	}
 	en := f.page("en", "/").body
-	mustContain(t, en, "Note on the display", "Sat 14/11", "Tomorrow", "Other day", "0 of 120 characters", "Save note")
+	mustContain(t, en, "Note on the display", "Sat 14.11.", "Tomorrow", "Other day", "0 of 120 characters", "Save note")
 	// After 18:00 the Today option is left out: today's note would no longer show.
 	f.now = f.at(14, 18, 30)
 	late := f.page("de", "/").body
@@ -183,10 +183,10 @@ func TestHomeListsPlannedNotesAsRows(t *testing.T) {
 	f.save("/notes", url.Values{"day": {"2026-11-10"}, "text": {"Vorbei"}}, "de") // a day that is over
 	f.save("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Mia: Schwimmsachen"}}, "de")
 	p = f.page("de", "/").body
-	mustContain(t, p, `<a class="note-row" href="/notes/2026-11-16"><span class="t"><b>Montag 16/11</b><span>Mia: Schwimmsachen</span></span><span class="go">Ändern</span></a>`)
+	mustContain(t, p, `<a class="note-row" href="/notes/2026-11-16"><span class="t"><b>Montag 16.11.</b><span>Mia: Schwimmsachen</span></span><span class="go">Ändern</span></a>`)
 	mustNotContain(t, p, "Noch keine Notiz geplant.", "Entfernen", `name="text" value=""`)
 	en := f.page("en", "/").body
-	mustContain(t, en, "Planned notes", "Monday 16/11", ">Change<")
+	mustContain(t, en, "Planned notes", "Monday 16.11.", ">Change<")
 }
 
 // A planned note opens on its own page: change it, or remove it after a confirmation.
@@ -194,7 +194,7 @@ func TestNotePageChangesAndRemoves(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	f.save("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Mia: Schwimmsachen"}}, "de")
 	p := f.page("de", "/notes/2026-11-16").body
-	mustContain(t, p, "<h1>Notiz für Montag, 16/11</h1>", `class="lead"`, "Steht ab Sonntag 18:00 in der Kachel „Morgen“.",
+	mustContain(t, p, "<h1>Notiz für Montag, 16.11.</h1>", `class="lead"`, "Steht ab Sonntag 18:00 in der Kachel „Morgen“.",
 		"Mia: Schwimmsachen</textarea>", "18 von 120 Zeichen", ">Speichern<", `<details class="danger">`, "Ja, Notiz entfernen",
 		`action="/notes/2026-11-16"`, `action="/notes/2026-11-16/delete"`)
 	// The shared danger pattern puts a warning icon in front of the summary text.
@@ -236,13 +236,13 @@ func TestCalendarsPageHasTheWasteSwitch(t *testing.T) {
 	mustContain(t, p, `<form method="post" action="/calendars/`+id+`/waste"`, `role="switch" name="waste" checked aria-label="Müllabfuhr-Kalender"`,
 		"An: Die Termine stehen nur in der Kachel „Morgen“ und auf der Nachtseite, ab 18:00 als Erinnerung.",
 		"Aus: Die Termine erscheinen wie bei jedem Kalender.", `<noscript>`, `/static/switch-submit.js`,
-		`class="waste-next"`, "Nächste Abfuhr: Montag 16/11</b> – Paper bin, Residual waste")
+		`class="waste-next"`, "Nächste Abfuhr: Montag 16.11.</b> – Paper bin, Residual waste")
 	if !regexp.MustCompile(`(?s)<noscript>.*?type="submit".*?</noscript>`).MatchString(p) {
 		t.Fatal("no Save button in noscript")
 	}
 	en := f.page("en", "/calendars/"+id).body
 	mustContain(t, en, "Waste collection calendar", "On: its dates show only in the Tomorrow tile and on the night page, from 18:00 as the reminder.",
-		"Off: its events show like any other calendar.", "Next collection: Monday 16/11</b> – Paper bin, Residual waste")
+		"Off: its events show like any other calendar.", "Next collection: Monday 16.11.</b> – Paper bin, Residual waste")
 	// Switched off, the line is gone.
 	f.save("/calendars/"+id+"/waste", url.Values{}, "de")
 	mustNotContain(t, f.page("de", "/calendars/"+id).body, "waste-next", ` checked aria-label="Müllabfuhr-Kalender"`)
@@ -262,9 +262,9 @@ func TestWasteFlashTexts(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "6"))
 	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "de")
-	mustContain(t, f.page("de", "/calendars").body, "Müllabfuhr-Kalender ist an. Die nächste Abfuhr steht ab Sonntag 15/11 18:00 auf dem Display.")
+	mustContain(t, f.page("de", "/calendars").body, "Müllabfuhr-Kalender ist an. Die nächste Abfuhr steht ab Sonntag 15.11. 18:00 auf dem Display.")
 	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "en")
-	mustContain(t, f.page("en", "/calendars").body, "Waste collection calendar is on. The next collection shows on the display from Sunday 15/11 18:00.")
+	mustContain(t, f.page("en", "/calendars").body, "Waste collection calendar is on. The next collection shows on the display from Sunday 15.11. 18:00.")
 	f.save("/calendars/"+id+"/waste", url.Values{}, "de")
 	mustContain(t, f.page("de", "/calendars").body, "Müllabfuhr-Kalender ist aus.")
 	f.save("/calendars/"+id+"/waste", url.Values{}, "en")
@@ -289,18 +289,18 @@ func TestFrameGridMayShrink(t *testing.T) {
 func TestWasteFlashNamesTheDayAndTheDisplayNow(t *testing.T) {
 	// Collection tomorrow, before 18:00: the evening before is today.
 	g := newFamilyBox(t, "eink_color")
-	gid := g.addWaste(t, wasteEvent("p0", "Paper bin", "5")) // Sunday 15/11, the clock is Saturday 14/11 13:00
+	gid := g.addWaste(t, wasteEvent("p0", "Paper bin", "5")) // Sunday 15.11., the clock is Saturday 14.11. 13:00
 	g.save("/calendars/"+gid+"/waste", url.Values{"waste": {"on"}}, "de")
 	mustContain(t, g.page("de", "/calendars").body, "Die nächste Abfuhr steht ab heute 18:00 auf dem Display.")
 	g.save("/calendars/"+gid+"/waste", url.Values{"waste": {"on"}}, "en")
 	mustContain(t, g.page("en", "/calendars").body, "The next collection shows on the display from today 18:00.")
 
 	f := newFamilyBox(t, "eink_color")
-	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "8")) // Wednesday 18/11
+	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "8")) // Wednesday 18.11.
 	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "de")
-	mustContain(t, f.page("de", "/calendars").body, "Die nächste Abfuhr steht ab Dienstag 17/11 18:00 auf dem Display.")
+	mustContain(t, f.page("de", "/calendars").body, "Die nächste Abfuhr steht ab Dienstag 17.11. 18:00 auf dem Display.")
 	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "en")
-	mustContain(t, f.page("en", "/calendars").body, "The next collection shows on the display from Tuesday 17/11 18:00.")
+	mustContain(t, f.page("en", "/calendars").body, "The next collection shows on the display from Tuesday 17.11. 18:00.")
 	f.now = f.at(17, 19, 0) // the evening before has come
 	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "de")
 	mustContain(t, f.page("de", "/calendars").body, "Die nächste Abfuhr steht jetzt auf dem Display.")

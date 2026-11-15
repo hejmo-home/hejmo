@@ -83,12 +83,11 @@ func (s *server) trustContinue(r *http.Request) string {
 }
 
 func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principal, status int, code *pairingCode, form confirmForm) {
-	loc := p.location()
 	at := func(t time.Time) string {
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(p.timeLayout())
+		return p.dateTime(t)
 	}
 	phones, err := s.db.Phones(p.household.ID)
 	if err != nil {
@@ -242,7 +241,7 @@ func (s *server) handlePhonePage(w http.ResponseWriter, r *http.Request) {
 	}
 	facts := []factView{who,
 		{Label: s.say(r, i18n.Msg("phones.fact.can")), Value: s.say(r, i18n.Msg(can))},
-		{Label: s.say(r, i18n.Msg("phones.fact.paired")), Value: ph.PairedAt.In(p.location()).Format(dayLayout)},
+		{Label: s.say(r, i18n.Msg("phones.fact.paired")), Value: p.day(ph.PairedAt)},
 		last}
 	if !ph.SessionEnds.IsZero() && !ph.SessionEnds.After(s.now()) {
 		facts = append(facts, factView{Label: s.say(r, i18n.Msg("phones.fact.session")), Flag: &flagView{"warn", s.say(r, i18n.Msg("phones.expired"))}})

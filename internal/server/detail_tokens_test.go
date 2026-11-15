@@ -48,7 +48,7 @@ func TestDeviceTokenRowSaysWhenItWasLastUsedWithSeconds(t *testing.T) {
 	if !strings.Contains(body, "Last used ") || strings.Contains(body, "Never used") {
 		t.Errorf("a used token still says never used\n%s", body)
 	}
-	if !regexp.MustCompile(`Last used \d\d/\d\d/\d{4}, \d{1,2}:\d\d:\d\d`).MatchString(body) {
+	if !regexp.MustCompile(`Last used \d\d\.\d\d\.\d{4},\x{00a0}\d{1,2}:\d\d:\d\d`).MatchString(body) {
 		t.Errorf("last use has no seconds\n%s", body)
 	}
 }

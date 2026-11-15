@@ -88,14 +88,17 @@ func TestWasteEventsStayOutOfTheStripAndColumns(t *testing.T) {
 	}
 }
 
-// Only read-only calendars can be waste collection: a writable synced calendar has no switch and no hint.
-func TestWritableCalendarHasNoWasteSwitch(t *testing.T) {
+// Only read-only calendars can be waste collection (ADR 0015/0016). Every synced calendar is read-only for now
+// (CalDAV write-back has its own ticket), so the calendars page offers the switch on each of them; a writable
+// calendar is refused by the web form as it is by the API, and stays unmarked.
+func TestOnlyReadOnlyCalendarsCanBeWasteCollection(t *testing.T) {
 	c, srv := radicaleBox(t)
 	family := srv.MakeCalendar(t, "family", "Family")
 	srv.Put(t, family, "swim.ics", caldavtest.Event("swim@test", "Swimming", "20261120T150000", "20261120T160000"))
 	conn := c.connect(t, davCreds(srv))
 	pick := calendarNamed(t, conn, "Family")
-	if status, cal, _ := c.call(http.MethodPost, "/calendar-connections/"+conn["id"].(string)+"/calendars", map[string]any{"url": pick["url"], "name": "Family"}); status != http.StatusCreated {
+	status, cal, _ := c.call(http.MethodPost, "/calendar-connections/"+conn["id"].(string)+"/calendars", map[string]any{"url": pick["url"], "name": "Family"})
+	if status != http.StatusCreated {
 		t.Fatalf("add calendar = %d %v", status, cal)
 	}
 	c.b.feeds.set(wasteFeed, feedOf(wasteEvent("p1", "Paper bin", "5")), nil)
@@ -103,11 +106,25 @@ func TestWritableCalendarHasNoWasteSwitch(t *testing.T) {
 		t.Fatalf("add waste calendar = %d\n%s", r.status, r.body)
 	}
 	page := c.b.get("/calendars").body
-	if n := strings.Count(page, `/waste"`); n != 1 {
-		t.Fatalf("%d waste forms, want 1 (the ICS calendar only)\n%s", n, page)
+	if n := strings.Count(page, `/waste"`); n != 2 {
+		t.Fatalf("%d waste forms, want 2 (both synced calendars are read-only)\n%s", n, page)
 	}
-	if n := strings.Count(page, "data-waste-state"); n != 1 {
-		t.Fatalf("%d waste hints, want 1\n%s", n, page)
+	if n := strings.Count(page, "data-waste-state"); n != 2 {
+		t.Fatalf("%d waste hints, want 2\n%s", n, page)
+	}
+	if cal["read_only"] != true {
+		t.Fatalf("synced CalDAV calendar is not read-only: %v", cal)
+	}
+
+	home, err := c.b.db.CreateCalendar(store.Calendar{HouseholdID: mustHousehold(t, c).ID, Name: "Home", Kind: "local", Color: "#2F5E7A"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if r := c.b.post("/calendars/"+home.ID+"/waste", url.Values{"waste": {"on"}}); r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("marking a writable calendar = %d, want 422", r.status)
+	}
+	if c.calendarJSON(t, home.ID)["waste_collection"] == true {
+		t.Fatal("the writable calendar was marked as waste collection")
 	}
 }
 

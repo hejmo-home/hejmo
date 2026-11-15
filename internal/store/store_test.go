@@ -72,6 +72,8 @@ func TestDevelopmentDatabaseWithOldMigrationNamesMigratesWithoutRerunning(t *tes
 		"0005_public_https.sql", "0006_displays.sql", "0007_tasks.sql", "0008_display_show_tomorrow.sql",
 		"0009_household_settings.sql", "0010_caldav.sql",
 	}
+	// Only the rows of the first ten migrations go back to counter names; later
+	// migrations (recovery codes, ...) stay recorded, as on a real dev database.
 	if _, err := db.SQL().Exec(`DELETE FROM schema_migrations WHERE version <= 202611142200`); err != nil {
 		t.Fatal(err)
 	}

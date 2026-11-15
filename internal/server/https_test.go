@@ -287,8 +287,11 @@ func TestTrustPageDeviceOverrideAndFallback(t *testing.T) {
 func TestChromeOSIsNotTakenForLinux(t *testing.T) {
 	const crOS = "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
 	r := newBox(t).trustPage("/ca", "de", crOS)
-	if !strings.Contains(r.body, "nicht erkannt") || strings.Contains(r.body, "update-ca-certificates") && strings.Contains(r.body, `href="?device=linux" aria-current="true"`) {
+	if !strings.Contains(r.body, "nicht erkannt") {
 		t.Errorf("ChromeOS must count as unknown:\n%s", r.body)
+	}
+	if strings.Contains(r.body, `href="?device=linux" aria-current="true"`) {
+		t.Errorf("ChromeOS must not mark Linux as the current device:\n%s", r.body)
 	}
 }
 

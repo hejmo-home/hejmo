@@ -14,11 +14,16 @@ const flashCookie = "hejmo_flash"
 
 // redirectSaved redirects to a page and has it show the success line key.
 func (s *server) redirectSaved(w http.ResponseWriter, r *http.Request, to, key string) {
+	s.setFlash(w, r, key)
+	http.Redirect(w, r, to, http.StatusSeeOther)
+}
+
+// setFlash has the next page this browser opens show the success line key.
+func (s *server) setFlash(w http.ResponseWriter, r *http.Request, key string) {
 	http.SetCookie(w, &http.Cookie{
 		Name: flashCookie, Value: key, Path: "/", MaxAge: 120,
 		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
 	})
-	http.Redirect(w, r, to, http.StatusSeeOther)
 }
 
 // takeFlash returns the success line key waiting for this browser and clears

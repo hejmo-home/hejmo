@@ -16,7 +16,7 @@ func configuredBox(t *testing.T, opts ...boxOption) (*box, string) {
 	b.post("/setup", validSetupForm())
 	secret := secretOn(t, b.get("/setup/totp").body)
 	code, _ := auth.TOTPCode(secret, b.now)
-	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusSeeOther {
+	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusOK {
 		t.Fatalf("setup failed: %d", r.status)
 	}
 	b.logout()

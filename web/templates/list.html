@@ -1,0 +1,57 @@
+{{template "head" (dict "Lang" .Lang "Title" .List.Name "Frame" .Frame)}}
+  <p><a href="/lists">{{t "lists.back"}}</a></p>
+  <h1><span class="marker" data-person="{{.List.Slot}}" data-shape="{{.List.Symbol}}" aria-hidden="true"></span> {{.List.Name}}</h1>
+  {{template "syncNotice" .}}
+  <p class="hint">{{t (printf "lists.sort.%s.hint" .List.Sort)}}{{if .List.Open}} · {{printf (t "lists.open_count") .List.Open}}{{end}}{{if .List.Done}} · {{printf (t "lists.done_count") .List.Done}}{{end}}</p>
+
+  {{if not .Child}}<form method="post" action="/lists/{{.List.ID}}/entries" class="add-entry">
+    {{template "error" .}}
+    {{template "field" (dict "Root" . "Name" "text" "Label" (t "lists.field.entry") "Value" (index .Form "Text") "Required" true "Max" 200 "Autocomplete" "off")}}
+    <button class="button" type="submit">{{t "lists.add"}}</button>
+  </form>{{end}}
+
+  {{if .Entries}}<ul class="entries">
+    {{range .Entries}}
+    <li data-entry="{{.ID}}"{{if .Done}} data-done="true"{{end}}>
+      <form method="post" action="/lists/{{$.List.ID}}/entries/{{.ID}}/done">
+        <input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">
+        <button class="big-check" type="submit" aria-label="{{if .Done}}{{t "lists.untick"}}{{else}}{{t "lists.tick"}}{{end}}: {{.Text}}"><span class="box" aria-hidden="true"></span><span class="title">{{if .Done}}<s>{{.Text}}</s>{{else}}{{.Text}}{{end}}</span></button>
+      </form>
+      {{if not $.Child}}<span class="row">
+        {{if $.Manual}}
+        {{if not .First}}<form method="post" action="/lists/{{$.List.ID}}/entries/{{.ID}}/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="{{t "lists.up"}}: {{.Text}}"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>{{end}}
+        {{if not .Last}}<form method="post" action="/lists/{{$.List.ID}}/entries/{{.ID}}/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="{{t "lists.down"}}: {{.Text}}"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>{{end}}
+        {{end}}
+        <form method="post" action="/lists/{{$.List.ID}}/entries/{{.ID}}/delete"><button class="button secondary" type="submit" aria-label="{{t "lists.remove"}}: {{.Text}}"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+      </span>{{end}}
+    </li>
+    {{end}}
+  </ul>{{else}}<p class="lead">{{if and .Hide .List.Done}}{{t "lists.all_hidden"}}{{else}}{{t "lists.empty"}}{{end}}</p>{{end}}
+
+  {{if .List.Done}}<p class="row-links">
+    {{if .Hide}}<a href="/lists/{{.List.ID}}">{{t "lists.show_completed"}}</a>{{else}}<a href="?completed=hide">{{t "lists.hide_completed"}}</a>{{end}}
+  </p>{{end}}
+
+  {{if not .Child}}
+  {{if .List.Done}}{{template "dangerOpen" (dict "Label" (printf (t "lists.delete_completed") .List.Done))}}
+    <p>{{t "lists.delete_completed.explain"}}</p>
+    <form method="post" action="/lists/{{.List.ID}}/completed/delete"><button class="button danger" type="submit">{{t "lists.delete_completed.confirm"}}</button></form>
+  {{template "dangerClose"}}{{end}}
+
+  <section aria-labelledby="settings">
+    <h2 id="settings" class="visually-hidden">{{t "lists.settings"}}</h2>
+    <form method="post" action="/lists/{{.List.ID}}/settings" class="steps">
+      {{template "moreOpen" (dict "Label" (t "lists.settings") "Open" (or .Form.SettingsOpen (eq .ErrorField "name")))}}
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "lists.field.name") "Value" (index .Form "Name") "Required" true "Max" 60)}}
+        {{template "listLook" (dict "Root" . "Form" .Form)}}
+        <button class="button" type="submit">{{t "lists.save"}}</button>
+      {{template "moreClose"}}
+    </form>
+  </section>
+
+  {{template "dangerOpen" (dict "Label" (t "lists.delete"))}}
+    <p>{{t "lists.delete.explain"}}</p>
+    <form method="post" action="/lists/{{.List.ID}}/delete"><button class="button danger" type="submit">{{t "lists.delete.confirm"}}</button></form>
+  {{template "dangerClose"}}
+  {{end}}
+{{template "foot"}}

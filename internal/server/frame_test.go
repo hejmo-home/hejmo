@@ -29,7 +29,7 @@ func navTargets(t *testing.T, page string) []string {
 // 5.11: navigation reaches every screen a parent has.
 func TestParentNavigationReachesEveryScreen(t *testing.T) {
 	b := signedInBox(t)
-	want := []string{"/", "/calendars", "/caldav", "/displays", "/phones", "/tasks", "/settings"}
+	want := []string{"/", "/calendars", "/caldav", "/displays", "/phones", "/tasks", "/lists", "/settings"}
 	for _, page := range want {
 		r := b.get(page)
 		if r.status != http.StatusOK {
@@ -53,8 +53,8 @@ func TestChildNavigationShowsOnlyAllowedScreens(t *testing.T) {
 	if r.status != http.StatusOK {
 		t.Fatalf("child GET / = %d", r.status)
 	}
-	if got := navTargets(t, r.body); strings.Join(got, " ") != "/ /tasks" {
-		t.Fatalf("child nav = %v, want / and /tasks", got)
+	if got := navTargets(t, r.body); strings.Join(got, " ") != "/ /tasks /lists" {
+		t.Fatalf("child nav = %v, want /, /tasks and /lists", got)
 	}
 	for _, page := range []string{"/calendars", "/caldav", "/displays", "/phones", "/settings"} {
 		if r := child.get(page); r.status != http.StatusForbidden {

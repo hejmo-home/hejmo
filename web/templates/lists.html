@@ -1,0 +1,45 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "lists.title") "Frame" .Frame)}}
+  <h1>{{t "lists.title"}}</h1>
+  {{template "syncNotice" .}}
+  <p class="lead">{{if .Child}}{{t "lists.intro.child"}}{{else}}{{t "lists.intro"}}{{end}}</p>
+
+  {{if .Lists}}<ul class="cards lists">
+    {{range .Lists}}
+    <li data-list="{{.ID}}">
+      <strong><span class="marker" data-person="{{.Slot}}" data-shape="{{.Symbol}}" aria-hidden="true"></span> <a href="/lists/{{.ID}}">{{.Name}}</a></strong>
+      <span class="hint">{{if .Open}}{{printf (t "lists.open_count") .Open}}{{else}}{{t "lists.all_done"}}{{end}}{{if .Done}} · {{printf (t "lists.done_count") .Done}}{{end}}</span>
+    </li>
+    {{end}}
+  </ul>{{else}}{{if .Child}}<p class="lead">{{t "lists.none.child"}}</p>{{else}}{{template "empty" (dict "Text" (t "lists.none") "Href" "#new" "Action" (t "lists.none.action"))}}{{end}}{{end}}
+
+  {{if not .Child}}<section aria-labelledby="new">
+    <h2 id="new">{{t "lists.new"}}</h2>
+    {{template "error" .}}
+    <form method="post" action="/lists" class="steps">
+      {{$f := .Form}}
+      <fieldset>
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "lists.field.name") "Value" (index $f "Name") "Required" true "Max" 60)}}
+        {{template "listLook" (dict "Root" . "Form" $f)}}
+      </fieldset>
+      <button class="button" type="submit">{{t "lists.create"}}</button>
+    </form>
+  </section>{{end}}
+{{template "foot"}}
+
+{{/* Colour, symbol and sorting of a list: good defaults, so they sit under
+     "More options". Arguments: Root (page data) and Form. */}}
+{{define "listLook"}}{{$f := .Form}}{{$root := .Root}}
+  {{template "moreOpen" (dict "Label" (t "lists.more") "Open" (or (eq $root.ErrorField "color") (eq $root.ErrorField "symbol") (eq $root.ErrorField "sort")))}}
+    <fieldset class="chips"><legend>{{t "lists.field.color"}}</legend>
+      {{range $root.Colors}}<label class="pchip" data-person="{{.Slot}}"><input type="radio" name="color" value="{{.Name}}"{{if eq .Name (index $f "Color")}} checked{{end}}><span class="marker" data-person="{{.Slot}}" aria-hidden="true"></span>{{t (printf "lists.color.%s" .Name)}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+      {{end}}
+    </fieldset>
+    <fieldset class="chips"><legend>{{t "lists.field.symbol"}}</legend>
+      {{range $root.Symbols}}<label class="pchip plain"><input type="radio" name="symbol" value="{{.}}"{{if eq . (index $f "Symbol")}} checked{{end}}><span class="marker shaped" data-person="0" data-shape="{{.}}" aria-hidden="true"></span>{{t (printf "lists.symbol.%s" .)}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+      {{end}}
+    </fieldset>
+    {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "lists.field.sort"))}}
+      {{range $root.Sorts}}{{template "option" (dict "Name" "sort" "Value" . "Label" (t (printf "lists.sort.%s" .)) "Checked" (eq . (index $f "Sort")))}}{{end}}
+    {{template "optionsClose" (dict "Root" $root "Name" "sort")}}
+  {{template "moreClose"}}
+{{end}}

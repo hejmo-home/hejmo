@@ -23,6 +23,7 @@ var navItems = []navItem{
 	{"/displays", "nav.displays", auth.Perm("displays", auth.Write)},
 	{"/phones", "nav.phones", auth.Perm("tokens", auth.Write)},
 	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Read)},
+	{"/lists", "nav.lists", auth.Perm("lists", auth.Read)},
 	{"/settings", "nav.settings", auth.Perm("settings", auth.Write)},
 }
 

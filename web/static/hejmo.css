@@ -387,7 +387,7 @@ fieldset.chips legend, fieldset.seg legend, fieldset.days legend, fieldset.choic
 .pchip:has(input:checked) { background: var(--pc-tint); color: var(--pc-text); border: 2px solid var(--pc); padding: 5px 13px 5px 11px; font-weight: 700; }
 .pchip:has(input:checked) .tick { display: inline-block; }
 .pchip:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-.pchip.all { --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
+.pchip.all, .pchip.plain { --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
 .pchip.group { border-style: dashed; --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
 [data-theme="bw"] .pchip:has(input:checked) { background: var(--event-card); border-width: 3px; padding: 4px 12px 4px 10px; }
 /* The Whole family checkbox stays ticked in the page while a person is chosen
@@ -468,3 +468,25 @@ details.danger form { margin: 0 0 10px; }
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
+
+/* Lists (ticket 6.1; ADR 0015): entries as calm rows with a large tick target.
+   A list wears a person colour slot and a black-and-white symbol. */
+.entries { list-style: none; padding: 0; margin: 0 0 20px; display: grid; gap: var(--gap-cards); max-width: 560px; }
+.entries li { display: flex; align-items: center; gap: 8px; background: var(--surface); border-radius: var(--radius-card); padding: 2px 8px 2px 12px; }
+.entries li form { margin: 0; }
+.entries li > form:first-child { flex: 1; min-width: 0; }
+.entries .row { display: flex; gap: 6px; flex: none; }
+.entries .row .button { min-width: var(--touch-target); padding: 8px; display: inline-flex; align-items: center; justify-content: center; }
+.entries .title { overflow-wrap: anywhere; }
+.add-entry { display: grid; gap: 10px; max-width: 560px; margin: 0 0 var(--gap-section); }
+.add-entry .button { justify-self: start; }
+.row-links { margin: 0 0 var(--gap); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+.lists .marker { margin-right: 4px; }
+/* The symbol chooser shows the shapes in every theme; elsewhere a shape appears in black and white only. */
+.marker.shaped { width: var(--marker-size); height: var(--marker-size); border-radius: 0; background: currentColor; border: 2px solid currentColor; }
+.marker.shaped[data-shape="circle-filled"] { border-radius: 50%; }
+.marker.shaped[data-shape="circle-empty"] { border-radius: 50%; background: transparent; }
+.marker.shaped[data-shape="square-empty"] { background: transparent; }
+.marker.shaped[data-shape="triangle-filled"] { border: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.marker.shaped[data-shape="diamond-filled"] { border: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }

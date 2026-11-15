@@ -354,9 +354,6 @@ body:has(.family-page) { overflow: hidden; }
 .strip.tomorrow { opacity: 0.6; } /* ADR 0016: tomorrow is faded so today's events stand out */
 .fv .tomorrow .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
 .fv .event .meta { display: block; }
-.pbar { flex: none; display: flex; align-items: center; gap: 10px; padding-top: var(--gap-cards); }
-.pbar .progress { flex: 1; }
-.pbar .count { font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
 .fv-footer { flex: none; display: flex; flex-wrap: wrap; gap: var(--gap); }
 .fv-footer .tile { flex: 1 1 200px; min-width: 0; padding: var(--pad-column); }
 .fv-footer .lab { font-size: var(--fs-label); color: var(--text-secondary); }
@@ -764,4 +761,51 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 /* Next to "Sign out" a narrow bar drops the visible name; flag and chevron stay and the name stays in the accessible name. */
 @media (max-width: 479px) {
   .frame-tools:has(.signout) .lang-name { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}
+
+/* ---- Design pass 6.6: tasks on the display (ticket 6.6, preview-37) ---- */
+/* Family view: progress block anchored at the column bottom (ADR 0016), in words, tappable. */
+.pbar { flex: none; display: grid; gap: 6px; margin-top: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); min-height: var(--touch-target); align-content: center; color: inherit; text-decoration: none; }
+.pbar .progress { width: 100%; }
+.pbar .count { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pbar[data-all-done] .count { font-weight: 700; }
+.pbar .icon, .tasks-head .icon { flex: none; stroke: var(--pc); stroke-width: 2.4; }
+[data-theme="bw"] .pbar .icon, [data-theme="bw"] .tasks-head .icon { stroke: var(--text); }
+/* Long German words wrap inside event cards instead of being cut at the column edge. */
+.fv .events > *, .pv-day > * { min-width: 0; }
+.event .title { overflow-wrap: anywhere; hyphens: auto; }
+
+/* Personal view: tasks first and as wide as the week, progress in words on top. */
+.pv-header { justify-content: flex-start; flex-wrap: wrap; }
+.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: anywhere; }
+.pv-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.pv-tasks { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.tasks-head { flex: none; display: grid; gap: 8px; padding: var(--pad-column) var(--pad-column) 12px; border-bottom: 1px solid var(--border); }
+.tasks-head .count { display: flex; gap: 8px; align-items: center; font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); font-variant-numeric: tabular-nums; }
+.tasks-head .msg { margin: 0; max-width: none; font-size: var(--fs-event-title); font-weight: 700; }
+.tasks-head .msg .icon { stroke: var(--accent); }
+.pv-tasks .list { flex: 1; min-height: 0; overflow-y: auto; padding: 12px var(--pad-column) var(--pad-column); display: grid; gap: 14px; align-content: start; }
+.pv-tasks .part { display: grid; gap: var(--gap-cards); }
+.pv-tasks .part > .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.pv-tasks ul { gap: var(--gap-cards); }
+.pv-tasks li { display: grid; gap: 6px; }
+.big-check { gap: 12px; min-height: 64px; padding: 8px 12px 8px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); font-weight: 600; }
+[data-theme="bw"] .big-check { border: 2px solid var(--text); }
+.big-check .box { border-radius: var(--radius-field); }
+.big-check .box svg { display: none; }
+[data-done="true"] .big-check .box { background: var(--pc); border-color: var(--pc); }
+[data-theme="bw"] [data-done="true"] .big-check .box { background: var(--text); border-color: var(--text); }
+[data-done="true"] .big-check .box::after { content: none; }
+[data-done="true"] .big-check .box svg { display: block; stroke: var(--surface); stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.big-check .emoji { flex: none; width: 36px; font-size: 30px; line-height: 1; text-align: center; }
+.big-check .title { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
+[data-done="true"] .big-check .title { font-weight: 400; }
+[data-done="true"] .big-check { background: transparent; }
+.pv-tasks .ferr { margin-left: 4px; }
+.pv-body[data-no-tasks] { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.pv-body[data-no-tasks] .tasks-head { border-bottom: 0; padding-bottom: 0; }
+.pv-tasks .none { margin: 0; padding: 16px; border: 1.5px dashed var(--border); border-radius: var(--radius-card); color: var(--text-secondary); }
+@media (max-width: 599px) {
+  .pv-header h1 { font-size: var(--fs-key-figure); }
+  .pv-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
 }

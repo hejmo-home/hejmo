@@ -1,6 +1,6 @@
 # 0016. Family view header, columns and footer
 
-- Status: Accepted, amended by [0018](0018-path-to-0-1.md)
+- Status: Accepted, amended by [0018](0018-path-to-0-1.md). Amended by the product owner on 15/11/2026 (see Amendment of 15/11/2026)
 - Date: 14/11/2026
 - Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; the leave-the-house countdown stays out of V1.0 and comes back per person in V2), [0015](0015-display-web-interface-and-everyday.md) (column limits per orientation, tomorrow block faded and off by default, footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
 
@@ -51,3 +51,13 @@ Proposed: the minimum column width is fixed at **144 px** (design token `column-
 - Display settings gain "show tomorrow block" (off by default); ticket 5.3 renders it faded.
 - Household settings gain time format, temperature unit and four meal cut-off times (dinner empty by default).
 - The box finds the coordinates of the home once, by the home's name and country, with Open-Meteo's place search (no key) and keeps them in the household; it refreshes the weather every 15 minutes. Open-Meteo is the only outside service the weather feature talks to. When a refresh fails the chip keeps its last reading for three hours, then hides.
+
+## Amendment of 15/11/2026 (ticket 6.6, PR #127)
+
+The product owner approved a deviation from the person-column decision above on 15/11/2026. It replaces the progress bar with "done/total" in "Person columns".
+
+- **Progress in words:** routine and task progress in a person's column is shown in words (e.g. "1 of 3 tasks done") instead of a done/total bar. A person without tasks today still shows nothing. The block stays anchored to the bottom of the column.
+- **Block opens the personal view:** tapping a person's block opens their personal view.
+- **Tasks first:** the personal view shows the person's tasks first.
+
+Everything else in this ADR is unchanged.

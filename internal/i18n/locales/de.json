@@ -770,5 +770,9 @@
   "picker.hour": "Stunde",
   "picker.minute": "Minute",
   "picker.done": "Fertig",
-  "meals.error.field": "%s, %s"
+  "meals.error.field": "%s, %s",
+  "lang.label": "Sprache:",
+  "lang.saved.account": "Sprache auf Deutsch umgestellt und für dein Konto gespeichert. Displays und die Handys der Kinder behalten ihre Sprache.",
+  "lang.saved.device": "Sprache auf Deutsch umgestellt. Dieses Gerät merkt sich die Wahl.",
+  "lang.error.account": "Sprache nur auf diesem Gerät umgestellt: Sie konnte nicht für dein Konto gespeichert werden. Versuche es später noch einmal."
 }

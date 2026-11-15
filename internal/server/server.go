@@ -166,6 +166,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /login", s.handleLoginForm)
 	mux.HandleFunc("POST /login", s.handleLoginSubmit)
 	mux.HandleFunc("POST /logout", s.handleLogout)
+	mux.HandleFunc("POST /language", s.handleLanguageSwitch)
 	mux.HandleFunc("GET /{$}", s.handleHome)
 	mux.HandleFunc("GET /calendar", s.handleCalendarWeek)
 	mux.HandleFunc("GET /calendar/search", s.handleCalendarSearch)
@@ -278,7 +279,12 @@ func parsePages() *template.Template {
 }
 
 func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name string, data map[string]any) {
-	lang := s.i18n.Match(r.Header.Get("Accept-Language"))
+	var lang string
+	if strings.HasPrefix(name, "display_") {
+		lang = s.i18n.Match(r.Header.Get("Accept-Language")) // a parent's choice does not reach displays
+	} else {
+		lang = s.pageLanguage(r)
+	}
 	if data == nil {
 		data = map[string]any{}
 	}
@@ -290,7 +296,10 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	}
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
-		if key, arg := s.takeFlash(w, r); key != "" {
+		fr.setLanguage(lang, r)
+		if key, arg := s.takeFlash(w, r); key == "lang.error.account" {
+			fr.Error = s.i18n.T(lang, key)
+		} else if key != "" {
 			fr.Success = s.successText(lang, key, arg)
 		} else if key, ok := data["SuccessKey"].(string); ok {
 			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself

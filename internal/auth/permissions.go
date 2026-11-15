@@ -33,14 +33,15 @@ func Perm(resource string, action Action) Permission { return Permission{resourc
 func (p Permission) String() string { return p.Resource + ":" + string(p.Action) }
 
 // RoleAllows applies the V1 role model: parents may do everything; children
-// may read and tick off tasks and list items, nothing else.
+// may read (except tokens, settings and displays, which are device and box
+// management) and tick off tasks and list items, nothing else.
 func RoleAllows(role store.Role, p Permission) bool {
 	switch role {
 	case store.RoleParent:
 		return true
 	case store.RoleChild:
 		if p.Action == Read {
-			return p.Resource != "tokens" && p.Resource != "settings"
+			return p.Resource != "tokens" && p.Resource != "settings" && p.Resource != "displays"
 		}
 		return p.Action == Complete && (p.Resource == "tasks" || p.Resource == "lists")
 	}

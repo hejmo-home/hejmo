@@ -33,6 +33,8 @@ jobs:
         env:
           # A missing container runtime fails the Radicale tests instead of skipping them.
           HEJMO_REQUIRE_RADICALE: "1"
+          # The service worker is tested with node's test runner (web/test).
+          HEJMO_REQUIRE_NODE: "1"
         run: go test -race -count=1 ./...
 
   container:

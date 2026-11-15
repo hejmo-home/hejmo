@@ -1,5 +1,6 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "settings.title") "Frame" .Frame)}}
   <h1>{{t "settings.title"}}</h1>
+  {{template "updateNotice" .}}
   {{template "syncNotice" .}}
   <p class="lead">{{t "settings.intro"}}</p>
   {{template "error" .}}
@@ -12,6 +13,12 @@
       {{template "option" (dict "Name" "temperature_unit" "Value" "c" "Label" (t "settings.temperature_unit.c") "Checked" (eq .TemperatureUnit "c"))}}
       {{template "option" (dict "Name" "temperature_unit" "Value" "f" "Label" (t "settings.temperature_unit.f") "Checked" (eq .TemperatureUnit "f"))}}
     {{template "optionsClose" (dict "Root" . "Name" "temperature_unit")}}
+    {{if .UpdateManaged}}{{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.auto_update"))}}
+      <p class="hint">{{t "settings.auto_update.hint"}}</p>
+      {{template "option" (dict "Name" "auto_update" "Value" "on" "Label" (t "settings.auto_update.on") "Checked" (eq .AutoUpdate "on"))}}
+      {{template "option" (dict "Name" "auto_update" "Value" "notify" "Label" (t "settings.auto_update.notify") "Checked" (eq .AutoUpdate "notify"))}}
+      {{template "option" (dict "Name" "auto_update" "Value" "off" "Label" (t "settings.auto_update.off") "Checked" (eq .AutoUpdate "off"))}}
+    {{template "optionsClose" (dict "Root" . "Name" "auto_update")}}{{end}}
     <button class="button" type="submit">{{t "settings.save"}}</button>
   </form>
 {{template "foot"}}

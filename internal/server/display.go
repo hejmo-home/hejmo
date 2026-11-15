@@ -15,6 +15,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/task"
 )
 
 const (
@@ -142,8 +143,21 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
+	due, err := s.db.TasksForDay(h.ID, data.now.Format(task.DateLayout))
+	if err != nil {
+		return familyview.View{}, err
+	}
+	progress := map[string]familyview.Progress{}
+	for _, t := range due {
+		p := progress[t.PersonID]
+		p.Total++
+		if t.Done {
+			p.Done++
+		}
+		progress[t.PersonID] = p
+	}
 	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people,
-		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID),
+		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID), TaskProgress: progress,
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
 }
 

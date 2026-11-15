@@ -37,6 +37,11 @@ func ageEvents(t *testing.T, db *store.DB, h store.Household, cal store.Calendar
 	return mealEvents(t, db, h, cal)[0]
 }
 
+func saveCutoffs(db *store.DB, id string, c meal.Cutoffs) error {
+	in := store.HouseholdSettings{TimeFormat: store.Time24h, TemperatureUnit: store.Celsius, AutoUpdate: store.UpdateOn, MealCutoffs: c}
+	return db.SaveHouseholdSettings(id, in)
+}
+
 func TestHouseholdMealCutoffsDefaultToADR0016AndPersist(t *testing.T) {
 	db, _ := openTemp(t)
 	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
@@ -45,20 +50,20 @@ func TestHouseholdMealCutoffsDefaultToADR0016AndPersist(t *testing.T) {
 		t.Fatalf("defaults = %+v", got.MealCutoffs)
 	}
 	want := meal.Cutoffs{Breakfast: "09:30", Lunch: "", Snack: "17:00", Dinner: "21:00"}
-	if err := db.SetMealCutoffs(h.ID, want); err != nil {
+	if err := saveCutoffs(db, h.ID, want); err != nil {
 		t.Fatal(err)
 	}
 	got, _ = db.Household(h.ID)
 	if got.MealCutoffs != want {
 		t.Fatalf("saved = %+v", got.MealCutoffs)
 	}
-	if err := db.SetMealCutoffs(h.ID, meal.Cutoffs{Lunch: "25:00"}); !errors.Is(err, store.ErrInvalid) {
+	if err := saveCutoffs(db, h.ID, meal.Cutoffs{Lunch: "25:00"}); !errors.Is(err, store.ErrInvalid) {
 		t.Fatalf("bad time = %v, want ErrInvalid", err)
 	}
 	if got, _ = db.Household(h.ID); got.MealCutoffs != want {
 		t.Fatalf("a refused save changed the cut-offs: %+v", got.MealCutoffs)
 	}
-	if err := db.SetMealCutoffs("missing", want); !errors.Is(err, store.ErrNotFound) {
+	if err := saveCutoffs(db, "missing", want); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("unknown household = %v", err)
 	}
 }

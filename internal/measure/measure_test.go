@@ -81,27 +81,39 @@ func TestLoadThresholdsFile(t *testing.T) {
 	}
 }
 
-// The install guide's hardware section quotes the values the build enforces,
-// marked as tested in emulation (ADR 0018).
+// Both language versions of the install guide link to a hardware section that
+// quotes the values the build enforces, marked as tested in emulation (ADR 0018).
 func TestHardwareSectionQuotesThresholds(t *testing.T) {
 	th, err := measure.LoadThresholds("../../ci/resource-thresholds.json")
 	if err != nil {
 		t.Fatal(err)
 	}
-	b, err := os.ReadFile("../../docs/install/hardware.md")
-	if err != nil {
-		t.Fatal(err)
-	}
-	doc := string(b)
-	if !strings.Contains(doc, "tested in emulation") {
-		t.Error("hardware section must say the Raspberry Pi is tested in emulation")
-	}
-	for _, want := range []string{
-		fmt.Sprintf("%.0f MiB", th.IdleMemoryMiB), fmt.Sprintf("%.0f MiB", th.BurstMemoryMiB),
-		fmt.Sprintf("%.0f s", th.StartSeconds), fmt.Sprintf("%.0f %%", th.IdleCPUPercent),
+	for _, c := range []struct{ guide, link, doc, marker string }{
+		{"install.md", "install/hardware.md", "install/hardware.md", "tested in emulation"},
+		{"install.de.md", "install/hardware.de.md", "install/hardware.de.md", "in der Emulation getestet"},
 	} {
-		if !strings.Contains(doc, want) {
-			t.Errorf("hardware section does not quote %q; update it with ci/resource-thresholds.json", want)
+		g, err := os.ReadFile("../../docs/" + c.guide)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if !strings.Contains(string(g), "("+c.link+")") {
+			t.Errorf("%s does not link to %s", c.guide, c.link)
+		}
+		b, err := os.ReadFile("../../docs/" + c.doc)
+		if err != nil {
+			t.Fatal(err)
+		}
+		doc := string(b)
+		if !strings.Contains(doc, c.marker) {
+			t.Errorf("%s must say %q", c.doc, c.marker)
+		}
+		for _, want := range []string{
+			fmt.Sprintf("%.0f MiB", th.IdleMemoryMiB), fmt.Sprintf("%.0f MiB", th.BurstMemoryMiB),
+			fmt.Sprintf("%.0f s", th.StartSeconds), fmt.Sprintf("%.0f %%", th.IdleCPUPercent),
+		} {
+			if !strings.Contains(doc, want) {
+				t.Errorf("%s does not quote %q; update it with ci/resource-thresholds.json", c.doc, want)
+			}
 		}
 	}
 }

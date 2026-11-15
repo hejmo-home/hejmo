@@ -200,3 +200,53 @@ func TestNoHandBuiltNumericDateLayoutsRemainInTheServer(t *testing.T) {
 		}
 	}
 }
+
+// dayFirstDate is a date in numbers the way day first writes it: 17.11. or 17.11.2026.
+var dayFirstDate = regexp.MustCompile(`\b\d{2}\.\d{2}\.(\d{4})?`)
+
+// Month first on the pages the first round missed: event, search, star log and
+// the CalDAV lists. Nothing on them is left day first.
+func TestEventSearchStarLogAndCalDAVListsFollowMonthFirst(t *testing.T) {
+	f := calendarBox(t)
+	f.postEvent(t, eventForm("Dentist", "2026-11-17", "10:00", "11:00"))
+	f.box.post("/tasks/stars", url.Values{"person": {f.people["Mia"].ID}, "delta": {"3"}, "note": {"weekend chores"}})
+	f.box.post("/caldav/tokens", url.Values{"name": {"iPhone Mama"}})
+	useDateFormat(t, f.box, "mdy")
+	week := getEN(f.box, "/calendar?week=2026-11-16").body
+	// The event page shows its dates in date fields (ISO), so it only has to be free of day-first dates.
+	pages := map[string]*regexp.Regexp{
+		"/calendar/search?q=dentist": regexp.MustCompile(`11/17`),
+		"/tasks":                     regexp.MustCompile(`11/14`),
+		"/caldav":                    regexp.MustCompile(`Created \d\d/\d\d/\d{4}`), // the clock of a new token is the real one
+		linkTo(t, week, "Dentist"):   regexp.MustCompile(``),
+	}
+	for path, want := range pages {
+		body := getEN(f.box, path).body
+		if !want.MatchString(body) {
+			t.Errorf("%s lacks %s:\n%s", path, want, body)
+		}
+		if m := dayFirstDate.FindString(body); m != "" {
+			t.Errorf("%s still has the day-first date %q", path, m)
+		}
+	}
+}
+
+// The displays keep dates in words: switching the format changes nothing on them.
+func TestDisplaysStayFreeOfNumericDatesWhenTheFormatSwitches(t *testing.T) {
+	f := newFamilyBox(t, "screen")
+	f.event(t, "Dentist", f.at(16, 10, 0), f.at(16, 11, 0), false, "Mia")
+	paths := []string{"/display", "/display/view"}
+	before := map[string]string{}
+	for _, p := range paths {
+		before[p] = f.display.get(p, "en").body
+		if m := dayFirstDate.FindString(before[p]); m != "" {
+			t.Errorf("%s has the numeric date %q", p, m)
+		}
+	}
+	useDateFormat(t, f.box, "mdy")
+	for _, p := range paths {
+		if after := f.display.get(p, "en").body; after != before[p] {
+			t.Errorf("%s changed with the date format", p)
+		}
+	}
+}

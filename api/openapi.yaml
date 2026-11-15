@@ -1155,7 +1155,8 @@ paths:
       summary: Change household settings; omitted fields stay as they are (scope settings:write)
       description: |
         The time format applies to every time shown in the web interface and
-        on displays (ADR 0016). Unknown values are refused with 422.
+        on displays (ADR 0016). An unknown `date_format` is refused with 400, an
+        unknown value of any other field with 422.
       requestBody:
         required: true
         content:

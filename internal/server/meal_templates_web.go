@@ -50,6 +50,13 @@ func (s *server) joinWords(lang string, items []string) string {
 	return strings.Join(items[:len(items)-1], ", ") + " " + s.i18n.T(lang, "meals.tpl.and") + " " + items[len(items)-1]
 }
 
+// yearRange is the week that starts on monday with its year: "23.11. – 29.11.2026",
+// and across New Year with both years.
+func (s *server) yearRange(lang string, f store.DateFormat, monday time.Time) string {
+	from, to := datefmt.RangeParts(f, monday, monday.AddDate(0, 0, 6))
+	return fmt.Sprintf(s.i18n.T(lang, "meals.week.range"), from, to)
+}
+
 // weekRange is "23/11 – 29/11" for the week that starts on monday.
 func (s *server) weekRange(lang string, f store.DateFormat, monday time.Time) string {
 	return fmt.Sprintf(s.i18n.T(lang, "meals.week.range"), datefmt.Short(f, monday), datefmt.Short(f, monday.AddDate(0, 0, 6)))
@@ -346,7 +353,7 @@ func (s *server) renderTemplateForm(w http.ResponseWriter, r *http.Request, p pr
 			names = append(names, quoted)
 			sentences = append(sentences, s.tr(lang, "meals.tpl.clash.sentence", "template", quoted, "meal", s.i18n.T(lang, "meals.tpl.clash.mt."+string(c.Clash.Mealtime)),
 				"days", s.namesOf(lang, c.Clash.Weekdays), "week", strconv.Itoa(isoWeek(c.Clash.Week)),
-				"range", fmt.Sprintf(s.i18n.T(lang, "meals.week.range"), datefmt.Short(p.household.DateFormat, c.Clash.Week), datefmt.Date(p.household.DateFormat, c.Clash.Week.AddDate(0, 0, 6)))))
+				"range", s.yearRange(lang, p.household.DateFormat, c.Clash.Week)))
 		}
 		data["ErrClash"] = sentences
 		data["TopError"] = template.HTML(fmt.Sprintf(`%s %s (%s <a href="#schedule">%s</a>). %s`, html.EscapeString(s.i18n.T(lang, "meals.tpl.clash.top.before")),

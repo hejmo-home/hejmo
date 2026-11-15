@@ -421,3 +421,45 @@ func TestBackToTemplateOnAMealThatIsNotAdjustedAnyMoreStillSavesWhatWasTyped(t *
 		t.Fatalf("what was typed = %v", list)
 	}
 }
+
+// A clash that starts in week 53 names the year at both ends of its week.
+func TestAClashAcrossNewYearNamesBothYearsInEveryDateFormat(t *testing.T) {
+	for setting, want := range map[string]string{"dmy": "(28.12.2026 – 03.01.2027)", "mdy": "(12/28/2026 – 01/03/2027)"} {
+		t.Run(setting, func(t *testing.T) {
+			c := signedInAPI(t)
+			useDateFormat(t, c.b, setting)
+			saveTemplate(t, c, weekBForm("Week A", "2026-12-28", "2"), en)
+			r := saveTemplate(t, c, weekBForm("Every week", "2026-12-28", "1"), en)
+			if r.status != http.StatusConflict {
+				t.Fatalf("status = %d\n%s", r.status, r.body)
+			}
+			if !strings.Contains(r.body, "first in week 53 "+want) {
+				t.Errorf("page lacks %q\n%s", want, r.body)
+			}
+		})
+	}
+}
+
+// Month first: the menu, the options of the start week and the weeks hint.
+func TestTemplatePagesFollowTheMonthFirstDateFormat(t *testing.T) {
+	c := signedInAPI(t)
+	useDateFormat(t, c.b, "mdy")
+	saveTemplate(t, c, weekBForm("Week B", "2026-11-16", "2"), en)
+	menu := c.b.do(http.MethodGet, "/meals/templates", nil, en).body
+	for _, want := range []string{"Every 2 weeks from week 47 (11/16/2026) · next in week 47 (11/16 – 11/22)", "11/16 – 11/22", "11/09 – 11/15"} {
+		if !strings.Contains(menu, want) {
+			t.Errorf("menu lacks %q:\n%s", want, menu)
+		}
+	}
+	bad := weekBForm("", "2026-11-16", "2")
+	form := saveTemplate(t, c, bad, en).body
+	if want := `then week <b>2</b> of 2027 (01/11/2027), and so on.`; !strings.Contains(form, want) {
+		t.Errorf("form lacks %q:\n%s", want, form)
+	}
+	if !strings.Contains(form, `data-date-format="mdy"`) {
+		t.Errorf("form does not tell the script the format:\n%s", form)
+	}
+	if strings.Contains(form, "16.11.") {
+		t.Errorf("a day-first date is left on the form:\n%s", form)
+	}
+}

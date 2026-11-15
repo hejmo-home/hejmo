@@ -354,6 +354,7 @@
   "tasks.stars.title": "Sterne",
   "tasks.stars.intro": "Abhaken schreibt die Sterne einer Aufgabe gut, Wiederöffnen zieht sie wieder ab. Hier buchst du Sterne von Hand, zum Beispiel zum Einlösen.",
   "tasks.stars.log": "Sternekonto",
+  "tasks.stars.removed": "(entfernt)",
   "tasks.stars.log_empty": "Noch keine Buchungen.",
   "tasks.stars.field.delta": "Sterne buchen (negativ zum Abziehen)",
   "tasks.stars.field.note": "Notiz, zum Beispiel „eingelöst: Eis“",

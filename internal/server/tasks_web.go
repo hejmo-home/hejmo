@@ -27,6 +27,7 @@ type starCard struct {
 
 type starEntryView struct {
 	Delta, Label, By, When string
+	ByRemoved              bool // the booker has been removed; By is their last name
 }
 
 // starLogLines is how many star log entries per person the tasks page shows.
@@ -220,7 +221,7 @@ func (s *server) starCardOf(p principal, person store.Person, acc store.StarAcco
 		if e.Delta > 0 {
 			delta = "+" + delta
 		}
-		c.Entries = append(c.Entries, starEntryView{Delta: delta, Label: label, By: e.BookedByName, When: e.At.In(p.location()).Format(layout)})
+		c.Entries = append(c.Entries, starEntryView{Delta: delta, Label: label, By: e.BookedByName, ByRemoved: e.BookedByRemoved, When: e.At.In(p.location()).Format(layout)})
 	}
 	return c
 }

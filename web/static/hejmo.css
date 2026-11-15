@@ -683,3 +683,5 @@ details.danger .confirm a { display: inline-flex; align-items: center; min-heigh
   .facts dd:last-child { margin-bottom: 0; }
   .list-rows a { padding: 12px 14px; }
 }
+.once .facts { margin: 0; padding: 0; background: none; border: 0; max-width: none; }
+.facts + .hint { max-width: 560px; }

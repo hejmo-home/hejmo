@@ -185,6 +185,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /caldav", s.handleCalDAVPage)
 	mux.HandleFunc("POST /caldav/tokens", s.handleDeviceTokenCreate)
 	mux.HandleFunc("POST /caldav/profile", s.handleIOSProfile)
+	mux.HandleFunc("GET /caldav/tokens/{id}", s.handleDeviceTokenPage)
 	mux.HandleFunc("POST /caldav/tokens/{id}/revoke", s.handleDeviceTokenRevoke)
 	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
 	mux.HandleFunc("GET /people", s.handlePeoplePage)
@@ -266,6 +267,7 @@ func parsePages() *template.Template {
 		"t":    func(string) string { return "" },
 		"tf":   func(string, ...string) string { return "" },
 		"dict": dict,
+		"list": func(v ...any) []any { return v },
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
 	}).ParseFS(web.Templates, "templates/*.html"))
@@ -285,7 +287,7 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
 		fr.Back = fr.Back && !detailPages[name] // a detail page links to its own overview, not to the hub
-		key, arg := s.takeFlash(w, r) // always consumed, so it cannot show later
+		key, arg := s.takeFlash(w, r)           // always consumed, so it cannot show later
 		switch own, _ := data["SuccessKey"].(string); {
 		case data["SuccessText"] != nil:
 			fr.Success, _ = data["SuccessText"].(string) // a page that shows the result itself, and names the thing

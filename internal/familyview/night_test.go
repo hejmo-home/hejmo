@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/store"
 
 	"github.com/hejmo-home/hejmo/internal/familyview"
 )
@@ -41,5 +42,17 @@ func TestNightIgnoresAllDayEventsAndHasNoEventWhenNoneIsTimed(t *testing.T) {
 	v := familyview.BuildNight(familyview.NightInput{Morning: morning(15), Occurrences: []calendar.Occurrence{allDay}})
 	if v.First != nil || len(v.Waste) != 0 {
 		t.Fatalf("view = %+v", v)
+	}
+}
+
+// ADR 0016: the night page follows the household's 12h/24h setting.
+func TestNightFollowsTheHouseholdTimeFormat(t *testing.T) {
+	v := familyview.BuildNight(familyview.NightInput{
+		Morning:     morning(15),
+		Occurrences: []calendar.Occurrence{timed("School run", at(15, 7, 45), at(15, 8, 15))},
+		TimeFormat:  store.Time12h,
+	})
+	if v.First == nil || v.First.Time != "7:45 AM–8:15 AM" {
+		t.Fatalf("first = %+v", v.First)
 	}
 }

@@ -1,0 +1,1 @@
+A server answers the time-range query like a listing: with the collection itself, members that carry no ETag and members it reports as gone (404 for the whole response); only the members that exist are events.

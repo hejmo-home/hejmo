@@ -78,7 +78,7 @@ func TestSyncNoticeDisappearsWithin10SecondsOfTheNextSync(t *testing.T) {
 	s := l.open(t)
 	s.first(t)
 	start := time.Now()
-	if err := l.db.CompleteSync(l.householdID, cal.ID, nil, nil, l.clock.now(), l.clock.now().Add(time.Hour)); err != nil {
+	if _, err := l.db.CompleteSync(l.householdID, cal.ID, nil, nil, l.clock.now(), l.clock.now().Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if _, ok := s.next(t, 10*time.Second); !ok {

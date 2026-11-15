@@ -4,6 +4,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -87,4 +88,30 @@ func TestASeriesCountsOnceAndAChangedOccurrenceChangesTheSeries(t *testing.T) {
 		t.Fatal(err)
 	}
 	wantRun(t, "series removed", run, store.SyncRun{Removed: 1})
+}
+
+func TestUpdateSyncedCalendarChangesNameColourAndAudience(t *testing.T) {
+	f := newCalFixture(t)
+	c := newICS(t, f)
+	if err := f.db.UpdateSyncedCalendar(f.h.ID, c.ID, "School and club", "#4E7D52", calendar.Audience{People: []string{f.mia.ID}}); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := f.db.SyncedCalendar(f.h.ID, c.ID)
+	if got.Name != "School and club" || got.Color != "#4E7D52" || len(got.Audience.People) != 1 {
+		t.Fatalf("calendar = %+v", got)
+	}
+	// Everyone again: the audience is emptied.
+	if err := f.db.UpdateSyncedCalendar(f.h.ID, c.ID, "School and club", "#4E7D52", calendar.Audience{}); err != nil {
+		t.Fatal(err)
+	}
+	got, _ = f.db.SyncedCalendar(f.h.ID, c.ID)
+	if len(got.Audience.People) != 0 {
+		t.Fatalf("audience = %+v", got.Audience)
+	}
+	if err := f.db.UpdateSyncedCalendar(f.h.ID, c.ID, " ", "#4E7D52", calendar.Audience{}); err == nil {
+		t.Error("a blank name was accepted")
+	}
+	if err := f.db.UpdateSyncedCalendar(f.h.ID, "unknown", "X", "#4E7D52", calendar.Audience{}); err != store.ErrNotFound {
+		t.Errorf("unknown calendar: %v", err)
+	}
 }

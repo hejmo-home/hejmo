@@ -175,6 +175,30 @@ func (db *DB) syncedCalendars(query string, args ...any) ([]SyncedCalendar, erro
 	return out, nil
 }
 
+// UpdateSyncedCalendar changes the name, colour and audience of a synced
+// calendar. What it syncs and how often is left alone.
+func (db *DB) UpdateSyncedCalendar(householdID, calendarID, name, color string, audience calendar.Audience) error {
+	if strings.TrimSpace(name) == "" {
+		return fmt.Errorf("%w: name required", ErrInvalid)
+	}
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := expectOne(tx.Exec(`UPDATE calendars SET name = ?, color = ?, updated_at = ? WHERE id = ? AND household_id = ? AND connection_id IS NOT NULL`,
+		strings.TrimSpace(name), color, stamp(time.Now()), calendarID, householdID)); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM calendar_audience WHERE calendar_id = ?`, calendarID); err != nil {
+		return err
+	}
+	if err := writeAudience(tx, "calendar_audience", "calendar_id", calendarID, audience); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
 // DeleteSyncedCalendar removes a synced calendar with its events and log.
 // An ICS subscription takes its connection with it; a CalDAV calendar leaves
 // the connection and its other calendars alone. Nothing is deleted outside

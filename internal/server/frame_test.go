@@ -29,7 +29,7 @@ func navTargets(t *testing.T, page string) []string {
 // 5.11 / 5.18: the navigation holds the everyday screens and Settings, and marks the current one.
 func TestParentNavigationMarksTheCurrentScreen(t *testing.T) {
 	b := signedInBox(t)
-	want := []string{"/", "/calendar", "/tasks", "/settings"}
+	want := []string{"/", "/calendar", "/tasks", "/meals", "/settings"}
 	for _, page := range want {
 		r := b.get(page)
 		if r.status != http.StatusOK {
@@ -53,8 +53,8 @@ func TestChildNavigationShowsOnlyAllowedScreens(t *testing.T) {
 	if r.status != http.StatusOK {
 		t.Fatalf("child GET / = %d", r.status)
 	}
-	if got := navTargets(t, r.body); strings.Join(got, " ") != "/ /tasks" {
-		t.Fatalf("child nav = %v, want / and /tasks", got)
+	if got := navTargets(t, r.body); strings.Join(got, " ") != "/ /tasks /meals" {
+		t.Fatalf("child nav = %v, want /, /tasks and /meals", got)
 	}
 	for _, page := range []string{"/calendars", "/caldav", "/displays", "/phones", "/people", "/settings"} {
 		if r := child.get(page); r.status != http.StatusForbidden {
@@ -81,7 +81,7 @@ func TestSignedOutScreensHaveFrameWithoutNavigation(t *testing.T) {
 func TestEveryScreenUsesTheSharedStylesheetWithoutInlineStyles(t *testing.T) {
 	b := signedInBox(t)
 	b.post("/calendars", map[string][]string{"name": {"Feiertage"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
-	pages := []string{"/", "/calendars", "/caldav", "/displays", "/phones", "/tasks", "/people", "/settings", "/ca"}
+	pages := []string{"/", "/calendars", "/caldav", "/displays", "/phones", "/tasks", "/meals", "/people", "/settings", "/ca"}
 	for _, page := range pages {
 		body := b.get(page).body
 		if !strings.Contains(body, `href="/static/hejmo.css"`) {

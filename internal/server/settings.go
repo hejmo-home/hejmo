@@ -1,14 +1,18 @@
 package server
 
 import (
+	"cmp"
 	"context"
 	"encoding/json"
+	"errors"
 	"net/http"
+	"net/url"
 	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/sun"
 	"github.com/hejmo-home/hejmo/internal/update"
@@ -20,12 +24,24 @@ type settingsJSON struct {
 	AutoUpdate      store.UpdateMode      `json:"auto_update"`
 	HomeName        string                `json:"home_name"`
 	// Latitude and Longitude are null until the home has a location.
-	Latitude  *float64 `json:"latitude"`
-	Longitude *float64 `json:"longitude"`
+	Latitude    *float64    `json:"latitude"`
+	Longitude   *float64    `json:"longitude"`
+	MealCutoffs cutoffsJSON `json:"meal_cutoffs"`
 }
 
+// cutoffsJSON is the time per mealtime from which it is no longer shown on
+// displays (ADR 0016); empty means no cut-off.
+type cutoffsJSON struct {
+	Breakfast string `json:"breakfast"`
+	Lunch     string `json:"lunch"`
+	Snack     string `json:"snack"`
+	Dinner    string `json:"dinner"`
+}
+
+func cutoffsToJSON(c meal.Cutoffs) cutoffsJSON { return cutoffsJSON(c) }
+
 func settingsOf(h store.Household) settingsJSON {
-	out := settingsJSON{TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, HomeName: h.HomeName}
+	out := settingsJSON{TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, HomeName: h.HomeName, MealCutoffs: cutoffsToJSON(h.MealCutoffs)}
 	if h.Latitude != 0 || h.Longitude != 0 {
 		out.Latitude, out.Longitude = &h.Latitude, &h.Longitude
 	}
@@ -44,6 +60,9 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		HomeName        *string                `json:"home_name"`
 		Latitude        *float64               `json:"latitude"`
 		Longitude       *float64               `json:"longitude"`
+		MealCutoffs     *struct {
+			Breakfast, Lunch, Snack, Dinner *string
+		} `json:"meal_cutoffs"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -60,8 +79,20 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 	if in.AutoUpdate != nil {
 		a = *in.AutoUpdate
 	}
+	c := p.household.MealCutoffs
+	if in.MealCutoffs != nil {
+		for m, v := range map[meal.Mealtime]*string{meal.Breakfast: in.MealCutoffs.Breakfast, meal.Lunch: in.MealCutoffs.Lunch, meal.Snack: in.MealCutoffs.Snack, meal.Dinner: in.MealCutoffs.Dinner} {
+			if v != nil {
+				c = c.With(m, *v)
+			}
+		}
+	}
 	if !f.Valid() || !u.Valid() || !a.Valid() {
 		writeError(w, http.StatusUnprocessableEntity, "time_format must be 24h or 12h, temperature_unit c or f and auto_update on, off or notify")
+		return
+	}
+	if err := c.Validate(); err != nil {
+		writeError(w, http.StatusUnprocessableEntity, "meal_cutoffs: "+err.Error())
 		return
 	}
 	home, errMsg := homeOfPatch(p.household, in.HomeName, in.Latitude, in.Longitude)
@@ -69,7 +100,7 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, errMsg)
 		return
 	}
-	if err := s.saveSettings(p.household, f, u, a, home); err != nil {
+	if err := s.saveSettings(p.household, f, u, a, c, home); err != nil {
 		s.fail(w, "update settings", err)
 		return
 	}
@@ -77,7 +108,7 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		s.refreshWeather(home.Latitude, home.Longitude)
 	}
 	h := p.household
-	h.TimeFormat, h.TemperatureUnit, h.AutoUpdate = f, u, a
+	h.TimeFormat, h.TemperatureUnit, h.AutoUpdate, h.MealCutoffs = f, u, a, c
 	if home != nil {
 		h.HomeName, h.Latitude, h.Longitude = home.Name, home.Latitude, home.Longitude
 	}
@@ -116,11 +147,19 @@ func homeOfPatch(h store.Household, name *string, lat, lon *float64) (*store.Hom
 type settingsPage struct {
 	TimeFormat, TemperatureUnit, AutoUpdate, HomeName string
 	Place                                             *placeView
+	Cutoffs                                           meal.Cutoffs // what the cut-off fields hold
 }
 
 func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p principal, status int, errKey, errField string, form settingsPage) {
+	fields := make([]cutoffInput, 0, 4)
+	for _, m := range meal.Mealtimes() {
+		// A mealtime without a cut-off is switched off; its field waits with a
+		// sensible time, so switching it on starts there.
+		at := form.Cutoffs.For(m)
+		fields = append(fields, cutoffInput{Name: cutoffField(m), Mealtime: string(m), Value: cmp.Or(at, meal.SuggestedCutoff(m)), On: at != ""})
+	}
 	data := map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Error": errKey, "ErrorField": errField,
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Error": errKey, "ErrorField": errField, "Cutoffs": fields,
 		"TimeFormat": form.TimeFormat, "TemperatureUnit": form.TemperatureUnit,
 		"AutoUpdate": form.AutoUpdate, "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
 		"HomeName": form.HomeName, "Place": form.Place,
@@ -151,9 +190,17 @@ func (s *server) locationDetail(r *http.Request, p principal) string {
 	return s.i18n.Format(s.langOf(r), i18n.Msg("place.in_use.detail", "coords", coords, "rise", t.Rise.Round(time.Minute).In(p.location()).Format(layout), "set", t.Set.Round(time.Minute).In(p.location()).Format(layout)))
 }
 
+// cutoffField is the name of a mealtime's time field in the settings form.
+func cutoffField(m meal.Mealtime) string { return "cutoff_" + string(m) }
+
+type cutoffInput struct {
+	Name, Mealtime, Value string
+	On                    bool // the switch: the mealtime disappears from displays at Value
+}
+
 // storedSettings is the page as stored.
 func storedSettings(h store.Household) settingsPage {
-	return settingsPage{string(h.TimeFormat), string(h.TemperatureUnit), string(h.AutoUpdate), h.HomeName, nil}
+	return settingsPage{string(h.TimeFormat), string(h.TemperatureUnit), string(h.AutoUpdate), h.HomeName, nil, h.MealCutoffs}
 }
 
 // handleSettingsHub shows the Settings hub: one calm row per setup screen.
@@ -191,12 +238,26 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 	if v := r.PostFormValue("auto_update"); v != "" { // a form without the field leaves it alone
 		a = store.UpdateMode(v)
 	}
-	typed := settingsPage{string(f), string(u), string(a), p.household.HomeName, nil}
+	_ = r.ParseForm()
+	c := p.household.MealCutoffs
+	for _, m := range meal.Mealtimes() {
+		c = c.With(m, postedCutoff(r.PostForm, m, c.For(m)))
+	}
+	typed := settingsPage{string(f), string(u), string(a), p.household.HomeName, nil, c}
 	if _, sent := r.PostForm["home_name"]; sent {
 		typed.HomeName = strings.TrimSpace(r.PostFormValue("home_name"))
 	}
 	if !f.Valid() || !u.Valid() || !a.Valid() {
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.invalid", "", typed)
+		return
+	}
+	if err := c.Validate(); err != nil {
+		var bad *meal.InvalidError
+		field := ""
+		if errors.As(err, &bad) {
+			field = cutoffField(meal.Mealtime(bad.Field))
+		}
+		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.cutoff", field, typed)
 		return
 	}
 	// The home place (Q59): a form without the field leaves it alone. A new
@@ -223,18 +284,36 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 			home = &store.Home{Name: name, Latitude: lat, Longitude: lon}
 		}
 	}
-	if err := s.saveSettings(p.household, f, u, a, home); err != nil {
+	if err := s.saveSettings(p.household, f, u, a, c, home); err != nil {
 		s.fail(w, "update settings", err)
 		return
 	}
-	if home != nil {
-		s.refreshWeather(home.Latitude, home.Longitude)
-	}
 	if home != nil { // the success line names the new place
+		s.refreshWeather(home.Latitude, home.Longitude)
 		s.redirectSaved(w, r, "/settings/household", "flash.home_saved")
 		return
 	}
-	s.redirectSaved(w, r, "/settings/household", "flash.saved")
+	s.redirectSaved(w, r, "/settings/household", "flash.household_saved")
+}
+
+// postedCutoff is the cut-off of a mealtime as the form sends it: a switch
+// (cutoff_<m>_on) and a time (cutoff_<m>). A mealtime switched off has no
+// cut-off, whatever the time field holds; an unchecked box is not sent at all,
+// so a form that carries the time field but not the switch says "off". A
+// switch that is on with an empty time starts at the suggested time. A form
+// with neither leaves the stored value alone (current).
+func postedCutoff(form url.Values, m meal.Mealtime, current string) string {
+	at, hasTime := form[cutoffField(m)]
+	on, hasSwitch := form[cutoffField(m)+"_on"]
+	switch {
+	case !hasTime && !hasSwitch:
+		return current
+	case !hasSwitch || len(on) == 0 || on[0] == "off":
+		return ""
+	case !hasTime || len(at) == 0 || at[0] == "":
+		return cmp.Or(current, meal.SuggestedCutoff(m))
+	}
+	return at[0]
 }
 
 // refreshWeather fetches the weather of a new home at once, so the chip does
@@ -247,9 +326,10 @@ func (s *server) refreshWeather(lat, lon float64) {
 	}
 }
 
-// saveSettings stores all household settings in one database write. The update
+// saveSettings stores the household settings: the general ones (with the home) and the meal
+// cut-offs are two writes. The update
 // mode also goes to the host script; only a failing settings file is tolerated.
-func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode, home *store.Home) error {
+func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode, c meal.Cutoffs, home *store.Home) error {
 	var err error
 	if home == nil {
 		err = s.db.UpdateHouseholdSettings(h.ID, f, u, a)
@@ -257,6 +337,9 @@ func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.Tem
 		err = s.db.UpdateHouseholdSettingsAndHome(h.ID, f, u, a, *home)
 	}
 	if err != nil {
+		return err
+	}
+	if err := s.db.SetMealCutoffs(h.ID, c); err != nil {
 		return err
 	}
 	if a == h.AutoUpdate {

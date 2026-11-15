@@ -7,6 +7,8 @@ import (
 	"fmt"
 	"strings"
 	"time"
+
+	"github.com/hejmo-home/hejmo/internal/meal"
 )
 
 // ErrNotFound is returned when a record does not exist.
@@ -40,6 +42,9 @@ type Household struct {
 	// parents dismissed (ADR 0018).
 	AutoUpdate UpdateMode
 	UpdateAck  string
+	// MealCutoffs are the times from which a mealtime is no longer shown on
+	// displays (ADR 0016).
+	MealCutoffs meal.Cutoffs
 }
 
 // TimeFormat is how the household wants times shown.
@@ -100,10 +105,23 @@ func (h Home) validate() error {
 	if !(h.Latitude >= -90 && h.Latitude <= 90 && h.Longitude >= -180 && h.Longitude <= 180) {
 		return errors.New("store: home coordinates out of range")
 	}
+	if h.Latitude == 0 && h.Longitude == 0 { // stored as "no location yet"
+		return errors.New("store: home coordinates (0, 0) mean no location")
+	}
 	if strings.TrimSpace(h.Name) == "" {
 		return errors.New("store: home name required")
 	}
 	return nil
+}
+
+// SetMealCutoffs stores the times from which a mealtime is no longer shown on
+// displays (ADR 0016).
+func (db *DB) SetMealCutoffs(id string, c meal.Cutoffs) error {
+	if err := c.Validate(); err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalid, err) // keeps the *meal.InvalidError and its field
+	}
+	return expectOne(db.sql.Exec(`UPDATE households SET cutoff_breakfast = ?, cutoff_lunch = ?, cutoff_snack = ?, cutoff_dinner = ?, updated_at = ? WHERE id = ?`,
+		c.Breakfast, c.Lunch, c.Snack, c.Dinner, now(), id))
 }
 
 // SetHouseholdCoordinates stores the coordinates of the household's home.
@@ -139,7 +157,7 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 	if h.Timezone == "" {
 		h.Timezone = "Europe/Berlin"
 	}
-	h.TimeFormat, h.TemperatureUnit, h.AutoUpdate = Time24h, Celsius, UpdateOn
+	h.TimeFormat, h.TemperatureUnit, h.AutoUpdate, h.MealCutoffs = Time24h, Celsius, UpdateOn, meal.DefaultCutoffs()
 	h.ID = newID()
 	ts := now()
 	_, err := db.sql.Exec(`INSERT INTO households (id, name, home_name, latitude, longitude, region, timezone, created_at, updated_at)
@@ -150,19 +168,22 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 
 // Household loads a household by id.
 func (db *DB) Household(id string) (Household, error) {
-	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, time_format, temperature_unit, auto_update, update_ack
+	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, time_format, temperature_unit, auto_update, update_ack,
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner
 		FROM households WHERE id = ?`, id))
 }
 
 // HomeHousehold returns the household this box serves (V1: exactly one).
 func (db *DB) HomeHousehold() (Household, error) {
-	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, time_format, temperature_unit, auto_update, update_ack
+	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, time_format, temperature_unit, auto_update, update_ack,
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner
 		FROM households ORDER BY created_at, rowid LIMIT 1`))
 }
 
 func (db *DB) scanHousehold(row *sql.Row) (Household, error) {
 	var h Household
-	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck)
+	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
+		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Household{}, ErrNotFound
 	}

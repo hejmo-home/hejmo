@@ -71,6 +71,7 @@ func TestHouseholdHomeIsSavedWithTheSettingsAndRefusesBadCoordinates(t *testing.
 	for _, bad := range []store.Home{
 		{Name: "x", Latitude: 90.1, Longitude: 0}, {Name: "x", Latitude: -91, Longitude: 0},
 		{Name: "x", Latitude: 0, Longitude: 180.1}, {Name: "x", Latitude: nan, Longitude: 0}, {Name: " ", Latitude: 1, Longitude: 1},
+		{Name: "Null Island", Latitude: 0, Longitude: 0}, // (0, 0) means "no location yet"
 	} {
 		if err := db.UpdateHouseholdSettingsAndHome(h.ID, store.Time24h, store.Celsius, store.UpdateOn, bad); err == nil {
 			t.Errorf("accepted %+v", bad)

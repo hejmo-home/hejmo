@@ -160,7 +160,6 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 		{"--gap-cards", "10px", d.Spacing, "card-gap"},
 		{"--marker-size", "14px", d.Sizes, "marker"},
 		{"--marker-size-bw-column", "16px", d.Sizes, "marker-bw-column"},
-		{"--marker-size-bw-event", "9px", d.Sizes, "marker-bw-event"},
 		{"--journey-border", "1.5px", d.Sizes, "journey-border"},
 		{"--icon-stroke", "1.8px", d.Sizes, "icon-stroke"},
 		{"--touch-target", "44px", d.Sizes, "touch-target"},
@@ -217,22 +216,31 @@ func TestBlackAndWhiteMarkersUseDistinctShapes(t *testing.T) {
 	}
 }
 
-// 5.4: card markers exist in the markup of every theme, but only bw shows
-// them (colour cards carry the person colour).
-func TestEventCardMarkersAreHiddenInColourAndShownInBlackAndWhite(t *testing.T) {
+// 5.22: cards carry no person markers; the who-line wraps, so the card grows
+// and no name is ever cut (no ellipsis, no line clamp, no fixed height).
+func TestWhoLineWrapsAndIsNeverCut(t *testing.T) {
 	css := stylesheet(t)
-	display := func(sel string) string {
-		m := regexp.MustCompile(`display:\s*([a-z-]+)`).FindStringSubmatch(ruleFor(t, css, sel))
-		if m == nil {
-			t.Fatalf("%s has no display declaration", sel)
+	for _, sel := range []string{".event .who", ".strip-item .who", ".ev .who, .bar .who"} {
+		rule := ruleFor(t, css, sel)
+		for _, bad := range []string{"text-overflow", "line-clamp", "white-space: nowrap", "overflow: hidden", "height:"} {
+			if strings.Contains(rule, bad) {
+				t.Errorf("%s cuts the who-line: %s", sel, bad)
+			}
 		}
-		return m[1]
 	}
-	if got := display(".event .markers"); got != "none" {
-		t.Errorf(".event .markers display = %q, want none", got)
+	// Names are never split: a name breaks only when wider than the card, and the
+	// who-line takes no automatic hyphens (the .ev/.bar rule above it has them).
+	for _, sel := range []string{".event .who", ".strip-item .who", ".ev .who, .bar .who"} {
+		rule := ruleFor(t, css, sel)
+		if strings.Contains(rule, "anywhere") || !strings.Contains(rule, "overflow-wrap: break-word") || !strings.Contains(rule, "hyphens: manual") {
+			t.Errorf("%s must use overflow-wrap: break-word and hyphens: manual: %s", sel, rule)
+		}
 	}
-	if got := display(`[data-theme="bw"] .event .markers`); got == "none" {
-		t.Errorf("bw .event .markers is hidden")
+	if rule := ruleFor(t, css, ".who .nm"); !strings.Contains(rule, "display: inline-block") || !strings.Contains(rule, "max-width: 100%") {
+		t.Errorf(".who .nm keeps a name whole: %q", rule)
+	}
+	if strings.Contains(css, ".markers") || strings.Contains(css, ".marker.small") {
+		t.Error("the stylesheet still has card markers")
 	}
 }
 
@@ -501,7 +509,8 @@ func TestPageKeepsItsPaddingAndBreaksLongWords(t *testing.T) {
 	for _, want := range []string{
 		".frame { grid-template-columns: minmax(0, 1fr); }",
 		".frame > *, .steps fieldset, .steps fieldset > * { min-width: 0; }",
-		"body { overflow-wrap: anywhere; -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }",
+		"body.web { overflow-wrap: anywhere; }",
+		"@supports (hyphenate-limit-chars: 12 5 5) { body.web { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }",
 		".frame-nav ul { flex-wrap: wrap; overflow-x: visible; }",
 		"input, select, textarea, .secret, .pairing-code { -webkit-hyphens: manual; hyphens: manual; }",
 		".choice label { grid-template-columns: auto minmax(0, 1fr); }",
@@ -511,6 +520,14 @@ func TestPageKeepsItsPaddingAndBreaksLongWords(t *testing.T) {
 		if !strings.Contains(css, want) {
 			t.Errorf("stylesheet lacks %q", want)
 		}
+	}
+	// The wall display (body without .web) keeps its approved layout (ADR
+	// 0015/0016): no rule may break or hyphenate words for every body.
+	if regexp.MustCompile(`(?m)^body\s*\{[^}]*(overflow-wrap|hyphens)`).MatchString(css) {
+		t.Error("line-break rules must be scoped to body.web, not body")
+	}
+	if strings.Contains(css, "navigation scrolls") {
+		t.Error("the navigation wraps; a comment says it scrolls")
 	}
 	m := regexp.MustCompile(`(?s)@media \(max-width: 599px\) \{(.*?)\n\}`).FindAllStringSubmatch(css, -1)
 	var phone string

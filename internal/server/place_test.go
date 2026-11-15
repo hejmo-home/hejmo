@@ -269,7 +269,7 @@ func TestSettingsWithoutChangingTheHomeDoNotSearchAgain(t *testing.T) {
 	if r := b.post("/settings/household", settingsForm("Pasing")); r.status != http.StatusSeeOther {
 		t.Fatalf("status = %d", r.status)
 	}
-	if page := b.do(http.MethodGet, "/settings/household", nil, en).body; !strings.Contains(page, ">Saved.</p>") || strings.Contains(page, "now use") {
+	if page := b.do(http.MethodGet, "/settings/household", nil, en).body; !strings.Contains(page, ">Household settings saved.</p>") || strings.Contains(page, "now use") {
 		t.Errorf("an unchanged location gets the plain success line:\n%s", page)
 	}
 	// A form without the field (older clients) leaves the home alone too.

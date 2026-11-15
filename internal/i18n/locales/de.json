@@ -609,7 +609,7 @@
   "offline.banner": "Stand {time}, nicht verbunden",
   "place.confirm": "Ist das dein Zuhause?",
   "place.choose": "Welchen Ort meinst du?",
-  "place.hint": "Die Box sucht den Namen einmal bei Open-Meteo und merkt sich die Koordinaten für Sonnenaufgang, Sonnenuntergang, Themes und Wetter. Es wird nur der Name gesendet. Gespeichert wird erst, wenn du bestätigst.",
+  "place.hint": "Die Box sucht den Namen einmal bei Open-Meteo und merkt sich die Koordinaten für Sonnenaufgang, Sonnenuntergang, Themes und Wetter. Gesendet werden nur der Name, das Land und die Sprache der Seite. Gespeichert wird erst, wenn du bestätigst.",
   "place.confirmed.hint": "Ändere den Namen, um neu zu suchen.",
   "place.error.none": "Zu diesem Namen wurde kein Ort gefunden. Prüfe die Schreibweise oder versuche eine größere Stadt in der Nähe.",
   "place.error.unreachable": "Die Ortssuche war nicht erreichbar. Prüfe die Internetverbindung der Box und versuche es noch einmal; deine Eingabe bleibt erhalten.",

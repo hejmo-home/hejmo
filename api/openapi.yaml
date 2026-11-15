@@ -832,14 +832,14 @@ paths:
       operationId: searchPlaces
       summary: Search places by name, to set the home location (scope settings:read)
       description: |
-        Looks the name up with Open-Meteo's geocoding (the only thing sent
-        is the name) and lists up to five places that match, so a parent can
+        Looks the name up with Open-Meteo's geocoding (only the name, the country
+        and the language are sent) and lists up to five places that match, so a parent can
         confirm one before `PATCH /settings` stores its coordinates. The
         search is limited to the country of the household's region unless
         `country` says otherwise. No match is an empty list.
       parameters:
         - { name: name, in: query, required: true, schema: { type: string }, description: "The place name, for example München-Pasing; blank is refused with 422" }
-        - { name: country, in: query, required: false, schema: { type: string }, description: "ISO 3166-1 alpha-2 country code; default the household's country" }
+        - { name: country, in: query, required: false, schema: { type: string }, description: "ISO 3166-1 alpha-2 country code (two letters, else 422); default the household's country" }
       responses:
         "200":
           description: The matching places, best match first

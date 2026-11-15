@@ -444,6 +444,8 @@ fieldset.days { display: flex; flex-wrap: wrap; gap: 6px; }
 fieldset.choice { display: grid; gap: 10px; }
 .choice label { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; min-height: var(--touch-target); padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); color: var(--text); cursor: pointer; }
 .choice input { grid-row: span 2; width: 22px; height: 22px; min-height: 0; margin: 0; accent-color: var(--accent); }
+.place-confirmed { display: flex; align-items: center; gap: 10px; margin: 0; }
+.place-confirmed small { display: block; color: var(--text-secondary); font-size: var(--fs-meta); }
 .choice b { font-size: var(--fs-event-title); }
 .choice small { grid-column: 2; font-size: var(--fs-meta); color: var(--text-secondary); }
 .choice label:has(input:checked) { border: 2px solid var(--accent); padding: 11px 13px; }
@@ -655,8 +657,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </select></label>
       
       <input type="hidden" name="place_for" value="Neustadt">
-  <fieldset class="seg place-options"><legend>Which place do you mean?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Which place do you mean?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="49.35,8.14" required>Neustadt, Rhineland-Palatinate, Germany</label><label><input type="radio" name="place" value="50.25,11.88" required>Neustadt, Coburg, Bavaria, Germany</label>
     </fieldset>
     </fieldset>
@@ -776,8 +778,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </select></label>
       
       <input type="hidden" name="place_for" value="Neustadt">
-  <fieldset class="seg place-options"><legend>Which place do you mean?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Which place do you mean?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="49.35,8.14" required>Neustadt, Rhineland-Palatinate, Germany</label><label><input type="radio" name="place" value="50.25,11.88" required>Neustadt, Coburg, Bavaria, Germany</label>
     </fieldset>
     </fieldset>
@@ -897,8 +899,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </select></label>
       
       <input type="hidden" name="place_for" value="Neustadt">
-  <fieldset class="seg place-options"><legend>Which place do you mean?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Which place do you mean?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="49.35,8.14" required>Neustadt, Rhineland-Palatinate, Germany</label><label><input type="radio" name="place" value="50.25,11.88" required>Neustadt, Coburg, Bavaria, Germany</label>
     </fieldset>
     </fieldset>
@@ -1483,8 +1485,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
   
 </div>
       <input type="hidden" name="place_for" value="Pasing-Obermenzing">
-  <fieldset class="seg place-options"><legend>Is this your home?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Is this your home?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="48.16,11.45" checked required>Pasing-Obermenzing, Upper Bavaria, Bavaria, Germany</label>
     </fieldset>
       <p class="hint" data-location>Location in use: 48.15° N, 11.46° E</p>
@@ -1540,8 +1542,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
   
 </div>
       <input type="hidden" name="place_for" value="Pasing-Obermenzing">
-  <fieldset class="seg place-options"><legend>Is this your home?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Is this your home?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="48.16,11.45" checked required>Pasing-Obermenzing, Upper Bavaria, Bavaria, Germany</label>
     </fieldset>
       <p class="hint" data-location>Location in use: 48.15° N, 11.46° E</p>
@@ -1597,8 +1599,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
   
 </div>
       <input type="hidden" name="place_for" value="Pasing-Obermenzing">
-  <fieldset class="seg place-options"><legend>Is this your home?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Is this your home?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="48.16,11.45" checked required>Pasing-Obermenzing, Upper Bavaria, Bavaria, Germany</label>
     </fieldset>
       <p class="hint" data-location>Location in use: 48.15° N, 11.46° E</p>
@@ -1708,8 +1710,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </select></label>
       
       <input type="hidden" name="place_for" value="Neustadt">
-  <fieldset class="seg place-options"><legend>Which place do you mean?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Which place do you mean?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="49.35,8.14" required>Neustadt, Rhineland-Palatinate, Germany</label><label><input type="radio" name="place" value="50.25,11.88" required>Neustadt, Coburg, Bavaria, Germany</label>
     </fieldset>
     </fieldset>
@@ -1829,8 +1831,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </select></label>
       
       <input type="hidden" name="place_for" value="Neustadt">
-  <fieldset class="seg place-options"><legend>Which place do you mean?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Which place do you mean?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="49.35,8.14" required>Neustadt, Rhineland-Palatinate, Germany</label><label><input type="radio" name="place" value="50.25,11.88" required>Neustadt, Coburg, Bavaria, Germany</label>
     </fieldset>
     </fieldset>
@@ -1950,8 +1952,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
         </select></label>
       
       <input type="hidden" name="place_for" value="Neustadt">
-  <fieldset class="seg place-options"><legend>Which place do you mean?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Which place do you mean?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="49.35,8.14" required>Neustadt, Rhineland-Palatinate, Germany</label><label><input type="radio" name="place" value="50.25,11.88" required>Neustadt, Coburg, Bavaria, Germany</label>
     </fieldset>
     </fieldset>
@@ -2536,8 +2538,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
   
 </div>
       <input type="hidden" name="place_for" value="Pasing-Obermenzing">
-  <fieldset class="seg place-options"><legend>Is this your home?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Is this your home?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="48.16,11.45" checked required>Pasing-Obermenzing, Upper Bavaria, Bavaria, Germany</label>
     </fieldset>
       <p class="hint" data-location>Location in use: 48.15° N, 11.46° E</p>
@@ -2593,8 +2595,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
   
 </div>
       <input type="hidden" name="place_for" value="Pasing-Obermenzing">
-  <fieldset class="seg place-options"><legend>Is this your home?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Is this your home?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="48.16,11.45" checked required>Pasing-Obermenzing, Upper Bavaria, Bavaria, Germany</label>
     </fieldset>
       <p class="hint" data-location>Location in use: 48.15° N, 11.46° E</p>
@@ -2650,8 +2652,8 @@ body { margin: 0; background: #fff; color: #111; font-family: Figtree, system-ui
   
 </div>
       <input type="hidden" name="place_for" value="Pasing-Obermenzing">
-  <fieldset class="seg place-options"><legend>Is this your home?</legend>
-      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.</p>
+  <fieldset class="choice place-options"><legend>Is this your home?</legend>
+      <p class="hint">The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name, the country and the page language are sent. Nothing is saved until you confirm.</p>
       <label><input type="radio" name="place" value="48.16,11.45" checked required>Pasing-Obermenzing, Upper Bavaria, Bavaria, Germany</label>
     </fieldset>
       <p class="hint" data-location>Location in use: 48.15° N, 11.46° E</p>

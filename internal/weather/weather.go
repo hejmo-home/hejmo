@@ -65,8 +65,6 @@ var ErrNoHome = errors.New("weather: no home yet")
 // of a search means the service could not be reached or understood.
 var ErrNoPlace = errors.New("weather: no place found")
 
-var errNoPlace = ErrNoPlace
-
 type entry struct {
 	lat, lon float64
 	reading  Reading
@@ -203,7 +201,7 @@ func (s *Service) Keep(ctx context.Context, h Home) error {
 			return nil
 		}
 		if lat, lon, err = s.Geocode(ctx, name, country); err != nil {
-			if errors.Is(err, errNoPlace) {
+			if errors.Is(err, ErrNoPlace) {
 				s.mu.Lock()
 				s.noPlace, s.noPlaceAt = name, s.now()
 				s.mu.Unlock()
@@ -287,7 +285,12 @@ func (p Place) Label() string {
 // geocoding (no key). countryCode (ISO 3166-1 alpha-2) and language (the
 // language of the place names) may be empty. ErrNoPlace means nothing matched.
 func (s *Service) Search(ctx context.Context, name, countryCode, language string) ([]Place, error) {
-	q := url.Values{"name": {name}, "count": {strconv.Itoa(MaxPlaces)}}
+	return s.search(ctx, name, countryCode, language, MaxPlaces)
+}
+
+// search asks the geocoding service for at most count places.
+func (s *Service) search(ctx context.Context, name, countryCode, language string, count int) ([]Place, error) {
+	q := url.Values{"name": {name}, "count": {strconv.Itoa(count)}}
 	if countryCode != "" {
 		q.Set("countryCode", countryCode)
 	}
@@ -319,7 +322,7 @@ func (s *Service) Search(ctx context.Context, name, countryCode, language string
 
 // Geocode finds the coordinates of the first place that matches name.
 func (s *Service) Geocode(ctx context.Context, name, countryCode string) (lat, lon float64, err error) {
-	places, err := s.Search(ctx, name, countryCode, "")
+	places, err := s.search(ctx, name, countryCode, "", 1)
 	if err != nil {
 		return 0, 0, err
 	}

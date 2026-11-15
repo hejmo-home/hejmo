@@ -324,6 +324,7 @@ func TestSettingsAPIRefusesBadLocations(t *testing.T) {
 		"latitude too big":     {"latitude": 91.0, "longitude": 0.0},
 		"latitude too small":   {"latitude": -90.5, "longitude": 0.0},
 		"longitude too big":    {"latitude": 0.0, "longitude": 180.5},
+		"null island":          {"latitude": 0.0, "longitude": 0.0},
 		"latitude alone":       {"latitude": 48.0},
 		"longitude alone":      {"longitude": 11.0},
 		"empty name":           {"home_name": " ", "latitude": 48.0, "longitude": 11.0},
@@ -380,11 +381,29 @@ func TestPlacesAPISearchesOnceAndListsWhatMatches(t *testing.T) {
 	if status, _, _ := c.call(http.MethodGet, "/places?name=%20", nil); status != http.StatusUnprocessableEntity {
 		t.Errorf("no name = %d, want 422", status)
 	}
+	for _, bad := range []string{"DEU", "1", "D%C3%89", "D1"} {
+		if status, _, _ := c.call(http.MethodGet, "/places?name=Pasing&country="+bad, nil); status != http.StatusUnprocessableEntity {
+			t.Errorf("country %q = %d, want 422", bad, status)
+		}
+	}
+	if status, _, _ := c.call(http.MethodGet, "/places?name=Pasing&country=at", nil); status != http.StatusOK {
+		t.Errorf("country at = %d, want 200", status)
+	}
 	c.b.geo.setDown(true)
 	if status, _, _ := c.call(http.MethodGet, "/places?name=Pasing", nil); status != http.StatusBadGateway {
 		t.Errorf("unreachable = %d, want 502", status)
 	}
 	if status, _, _ := c.withToken("nope").call(http.MethodGet, "/places?name=Pasing", nil); status != http.StatusUnauthorized {
 		t.Errorf("bad token = %d, want 401", status)
+	}
+}
+
+func TestSettingsWithInvalidFieldsKeepTheTypedHomeName(t *testing.T) {
+	b := signedInBox(t)
+	g := settingsForm("Neustadt")
+	g.Set("time_format", "25h")
+	r := b.do(http.MethodPost, "/settings/household", g, en)
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(inputTag(r.body, "home_name"), `value="Neustadt"`) {
+		t.Errorf("status %d, home name tag %q", r.status, inputTag(r.body, "home_name"))
 	}
 }

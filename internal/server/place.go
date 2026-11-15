@@ -55,8 +55,12 @@ func parsePlace(v string) (lat, lon float64, ok bool) {
 	return lat, lon, true
 }
 
-// validCoordinates reports whether lat and lon are real degrees.
+// validCoordinates reports whether lat and lon are real degrees. (0, 0) is
+// refused: the stored home treats it as "no location yet".
 func validCoordinates(lat, lon float64) bool {
+	if lat == 0 && lon == 0 {
+		return false
+	}
 	return !math.IsNaN(lat) && !math.IsNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180
 }
 
@@ -160,6 +164,10 @@ func (s *server) apiSearchPlaces(w http.ResponseWriter, r *http.Request, p princ
 	country := countryOfRegion(p.household.Region)
 	if c, ok := r.URL.Query()["country"]; ok && len(c) > 0 {
 		country = strings.ToUpper(strings.TrimSpace(c[0]))
+		if !isAlpha2(country) {
+			writeError(w, http.StatusUnprocessableEntity, "country must be an ISO 3166-1 alpha-2 code such as DE")
+			return
+		}
 	}
 	places, err := s.searchPlaces(r.Context(), name, country, s.langOf(r))
 	out := []placeJSON{}
@@ -174,4 +182,9 @@ func (s *server) apiSearchPlaces(w http.ResponseWriter, r *http.Request, p princ
 		}
 	}
 	writeJSON(w, http.StatusOK, map[string]any{"places": out})
+}
+
+// isAlpha2 reports whether c is two letters A-Z.
+func isAlpha2(c string) bool {
+	return len(c) == 2 && c[0] >= 'A' && c[0] <= 'Z' && c[1] >= 'A' && c[1] <= 'Z'
 }

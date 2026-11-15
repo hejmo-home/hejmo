@@ -80,7 +80,7 @@
 {{define "placeChoice"}}{{with .Place}}<input type="hidden" name="place_for" value="{{.For}}">
   {{if .Confirmed}}<input type="hidden" name="place" value="{{.Confirmed.Value}}"><input type="hidden" name="place_label" value="{{.Confirmed.Label}}">
   <p class="place-confirmed" data-place-confirmed><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span><b>{{.Confirmed.Label}}</b> <small>{{t "place.confirmed.hint"}}</small></span></p>
-  {{else}}{{$many := gt (len .Options) 1}}{{template "optionsOpen" (dict "Class" "seg place-options" "Legend" (t (or (and $many "place.choose") "place.confirm")))}}
+  {{else}}{{$many := gt (len .Options) 1}}{{template "optionsOpen" (dict "Class" "choice place-options" "Legend" (t (or (and $many "place.choose") "place.confirm")))}}
       <p class="hint">{{t "place.hint"}}</p>
       {{range .Options}}{{template "option" (dict "Name" "place" "Value" .Value "Label" .Label "Checked" .Checked "Required" true)}}{{end}}
     </fieldset>{{end}}{{end}}{{end}}

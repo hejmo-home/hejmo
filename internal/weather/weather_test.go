@@ -159,7 +159,7 @@ func TestGeocodeFindsTheHomeByName(t *testing.T) {
 	if err != nil || lat != 48.15 || lon != 11.46 {
 		t.Fatalf("geocode = %v %v %v", lat, lon, err)
 	}
-	if q.Get("name") != "Pasing" || q.Get("countryCode") != "DE" {
+	if q.Get("name") != "Pasing" || q.Get("countryCode") != "DE" || q.Get("count") != "1" {
 		t.Errorf("query = %v", q)
 	}
 	empty := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(`{}`)) }))

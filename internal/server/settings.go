@@ -170,8 +170,11 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		a = store.UpdateMode(v)
 	}
 	typed := settingsPage{string(f), string(u), string(a), p.household.HomeName, nil}
+	if _, sent := r.PostForm["home_name"]; sent {
+		typed.HomeName = strings.TrimSpace(r.PostFormValue("home_name"))
+	}
 	if !f.Valid() || !u.Valid() || !a.Valid() {
-		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.invalid", "", storedSettings(p.household))
+		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.invalid", "", typed)
 		return
 	}
 	// The home place (Q59): a form without the field leaves it alone. A new
@@ -180,7 +183,6 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 	var home *store.Home
 	if _, sent := r.PostForm["home_name"]; sent {
 		name := strings.TrimSpace(r.PostFormValue("home_name"))
-		typed.HomeName = name
 		switch {
 		case name == "":
 			s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "setup.error.home", "home_name", typed)

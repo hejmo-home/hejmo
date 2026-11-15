@@ -42,6 +42,9 @@ type frame struct {
 	// TimeFormat is the household's clock ("24h" or "12h"); the time picker
 	// follows it.
 	TimeFormat string
+	// DateFormat is the household's date layout ("dmy" or "mdy"); the offline
+	// line on phones writes its date that way.
+	DateFormat string
 	// Back is set on setup screens: they link back to the Settings hub.
 	Back bool
 	// BackHref and BackLabel (a locale key) are the link above the content that
@@ -72,6 +75,7 @@ func (s *server) frameFor(r *http.Request) frame {
 	f.SignedIn = true
 	if h, err := s.db.HomeHousehold(); err == nil {
 		f.TimeFormat = string(h.TimeFormat)
+		f.DateFormat = string(h.DateFormat)
 	}
 	f.Back = isSetupPath(r.URL.Path)
 	switch {

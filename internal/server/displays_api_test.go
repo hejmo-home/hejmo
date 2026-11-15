@@ -137,3 +137,21 @@ func TestDisplayThemeWorksThroughTheAPI(t *testing.T) {
 		t.Errorf("unknown display = %d, want 404", status)
 	}
 }
+
+// Ticket 111: the web form renames a display and changes its type, so the API can too.
+func TestDisplayNameAndTypeChangeThroughTheAPI(t *testing.T) {
+	c := signedInAPI(t)
+	id := pairedDisplay(t, c.b, "Hallway", "screen")
+	status, body, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"name": " Kitchen ", "type": "eink_bw"})
+	if status != http.StatusOK || body["name"] != "Kitchen" || body["type"] != "eink_bw" {
+		t.Fatalf("patch = %d %v", status, body)
+	}
+	for _, bad := range []map[string]any{{"name": "  "}, {"name": strings.Repeat("x", 81)}, {"type": "hologram"}} {
+		if status, _, _ := c.call(http.MethodPatch, "/displays/"+id, bad); status != http.StatusUnprocessableEntity {
+			t.Errorf("patch %v = %d, want 422", bad, status)
+		}
+	}
+	if status, body, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"show_tomorrow": true}); status != http.StatusOK || body["name"] != "Kitchen" {
+		t.Errorf("a patch without name changed it: %d %v", status, body)
+	}
+}

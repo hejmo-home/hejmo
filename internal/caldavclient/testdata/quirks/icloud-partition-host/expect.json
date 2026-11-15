@@ -2,5 +2,6 @@
   "server": "http://caldav.icloud.example/",
   "calendars": [{"name": "Family", "url": "http://p123-caldav.icloud.example/123/calendars/family/"}],
   "list": [{"url": "http://p123-caldav.icloud.example/123/calendars/family/piano.ics", "etag": "p1"}],
-  "fetch": [{"url": "http://p123-caldav.icloud.example/123/calendars/family/piano.ics", "etag": "p1", "data": "piano.ics"}]
+  "fetch": [{"url": "http://p123-caldav.icloud.example/123/calendars/family/piano.ics", "etag": "p1", "data": "piano.ics"}],
+  "count": 1
 }

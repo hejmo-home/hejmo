@@ -1,0 +1,5 @@
+{
+  "server": "http://caldav.nextcloud.example/",
+  "calendar": "http://caldav.nextcloud.example/cal/",
+  "count": 2
+}

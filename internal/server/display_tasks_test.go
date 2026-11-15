@@ -113,3 +113,25 @@ func TestTickOnTheDisplayIsDoneInTheWebInterface(t *testing.T) {
 		t.Errorf("family view after display tick: %q", got)
 	}
 }
+
+// The display script treats a redirected tick as "go back to /display"
+// (revoked display, deleted task). This pins the server side of that contract.
+func TestTickFromARevokedDisplayRedirectsToThePairingScreen(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	tk := f.task(t, "Mia", "Homework", task.Daily)
+	f.now = f.at(14, 9, 0)
+	id := regexp.MustCompile(`/displays/([0-9a-f-]{36})/unpair`).FindStringSubmatch(f.get("/displays").body)
+	if id == nil {
+		t.Fatal("no unpair button on the displays page")
+	}
+	if r := f.post("/displays/"+id[1]+"/unpair", url.Values{}); r.status != http.StatusSeeOther {
+		t.Fatalf("unpair = %d", r.status)
+	}
+	r := f.display.post("/display/tasks/"+tk.ID+"/done", url.Values{"done": {"1"}})
+	if r.status != http.StatusSeeOther || r.location != "/display" {
+		t.Errorf("tick from a revoked display = %d %q, want 303 /display", r.status, r.location)
+	}
+	if page := f.get("/tasks"); strings.Contains(page.body, "<s>Homework</s>") {
+		t.Error("a revoked display ticked the task")
+	}
+}

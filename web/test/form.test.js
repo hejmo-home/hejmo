@@ -33,8 +33,14 @@ function setup(colorTaken = { '#C00': 'circle', '#00C': 'square' }, shapeTaken =
   form.querySelectorAll = (sel) => matches(sel);
   form.querySelector = (sel) => matches(sel)[0] || null;
   const handlers = [];
-  const document = { addEventListener(ev, fn) { if (ev === 'change') handlers.push(fn); } };
-  vm.runInNewContext(source, { document });
+  const document = {
+    addEventListener(ev, fn) { if (ev === 'change') handlers.push(fn); },
+    querySelectorAll() { return []; },
+    querySelector() { return null; },
+  };
+  // The script also wires the meal plan fields and the time picker, which need
+  // a window and a navigator; no such elements exist in this form.
+  vm.runInNewContext(source, { document, window: {}, navigator: { userAgent: '', platform: '', maxTouchPoints: 0 } });
   const pick = (name, value) => {
     inputs.filter((i) => i.name === name).forEach((i) => { i.checked = i.value === value; });
     const target = inputs.find((i) => i.name === name && i.value === value);

@@ -205,6 +205,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
+	mux.HandleFunc("GET /meals", s.handleMealsPage)
+	mux.HandleFunc("POST /meals", s.handleMealsSave)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
@@ -294,7 +296,8 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 			fr.Success = s.i18n.Format(lang, m) // the same, with values filled in
 		}
 		if href, ok := data["BackHref"].(string); ok {
-			fr.BackHref, fr.BackLabel = href, data["BackLabel"].(string)
+			label, _ := data["BackLabel"].(string)
+			fr.BackHref, fr.BackLabel = href, label
 		}
 		data["Frame"] = fr
 	}

@@ -39,8 +39,11 @@ func connectionErrorKey(e *inputError, provider string) string {
 	case "url":
 		return "connections.error.url"
 	case "login":
-		if provider == "icloud" {
+		switch provider {
+		case "icloud":
 			return "connections.error.login_icloud"
+		case "caldav":
+			return "connections.error.login_caldav"
 		}
 	case "server":
 		switch provider {

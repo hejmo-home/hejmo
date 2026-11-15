@@ -189,6 +189,23 @@ func TestConnectICloudLoginFailureShowsAtThePasswordAndKeepsTheUsername(t *testi
 	}
 }
 
+func TestConnectCalDAVLoginFailureDoesNotMentionApple(t *testing.T) {
+	b := signedInAPI(t).b
+	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
+		return errRemote{err: &caldavclient.StatusError{Code: http.StatusUnauthorized}}, nil
+	})
+	r := b.post("/connections", url.Values{"provider": {"caldav"}, "url": {"https://caldav.example.org"}, "username": {"u"}, "password": {"p"}})
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-password"`) {
+		t.Fatalf("status %d\n%s", r.status, r.body)
+	}
+	if strings.Contains(r.body, "app-spezifische") && strings.Contains(r.body, "Der Server hat Benutzername oder Passwort abgelehnt. Bei iCloud") {
+		t.Error("a CalDAV login failure shows the generic text that sends the user to Apple")
+	}
+	if !strings.Contains(r.body, "Schritt 2") {
+		t.Errorf("the error does not point to step 2:\n%s", r.body)
+	}
+}
+
 // downRemote fails both ways of finding calendars (the whole server, one calendar).
 type downRemote struct{ errRemote }
 

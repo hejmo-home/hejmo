@@ -139,7 +139,7 @@ func TestConnectTextsExistInBothLanguages(t *testing.T) {
 		"connections.title", "connections.empty", "connections.connect", "connections.connect.more",
 		"connections.success.icloud.none", "connections.success.icloud.one", "connections.success.icloud.many",
 		"connections.success.caldav.none", "connections.success.caldav.one", "connections.success.caldav.many",
-		"connections.error.login", "connections.error.login_icloud", "connections.error.server", "connections.error.server_icloud", "connections.error.server_saved",
+		"connections.error.login", "connections.error.login_icloud", "connections.error.login_caldav", "connections.error.server", "connections.error.server_icloud", "connections.error.server_saved",
 	}
 	for _, lang := range []string{"de", "en"} {
 		for _, k := range keys {

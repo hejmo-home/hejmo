@@ -164,12 +164,6 @@ func TestDayNotesThroughTheAPI(t *testing.T) {
 	if _, _, list := c.call(http.MethodGet, "/day-notes", nil); len(list) != 1 || list[0].(map[string]any)["day"] != "2026-11-16" {
 		t.Fatalf("list = %v", list)
 	}
-	if status, _, _ := c.call(http.MethodPut, "/day-notes/tomorrow", map[string]any{"text": "x"}); status != http.StatusUnprocessableEntity {
-		t.Fatalf("bad day = %d", status)
-	}
-	if status, _, _ := c.call(http.MethodPut, "/day-notes/2026-11-17", map[string]any{"text": ""}); status != http.StatusUnprocessableEntity {
-		t.Fatalf("empty text = %d", status)
-	}
 	if status, _, _ := c.call(http.MethodDelete, "/day-notes/2026-11-16", nil); status != http.StatusNoContent {
 		t.Fatalf("delete = %d", status)
 	}

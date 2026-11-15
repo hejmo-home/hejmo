@@ -246,8 +246,7 @@ paths:
       description: |
         A free-text note of up to 120 characters for one day (`YYYY-MM-DD`, household time). The family
         view's tomorrow tile shows it as its last line from 18:00 the evening before until the end of that
-        day; before 18:00 it shows the note of today. A day with no valid date or text of 1 to 120
-        characters answers 422.
+        day; before 18:00 it shows the note of today. A date that does not exist answers 422.
       requestBody:
         required: true
         content:

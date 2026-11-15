@@ -77,25 +77,6 @@ func (f TimeFormat) Valid() bool { return f == Time24h || f == Time12h }
 // Valid reports whether u is a known temperature unit.
 func (u TemperatureUnit) Valid() bool { return u == Celsius || u == Fahrenheit }
 
-// UpdateHouseholdSettings stores the household's time format, temperature unit
-// and auto-update mode in one statement, so a save is all or nothing.
-func (db *DB) UpdateHouseholdSettings(id string, f TimeFormat, u TemperatureUnit, a UpdateMode) error {
-	if !f.Valid() || !u.Valid() || !a.Valid() {
-		return errors.New("store: unknown time format, temperature unit or update mode")
-	}
-	return expectOne(db.sql.Exec(`UPDATE households SET time_format = ?, temperature_unit = ?, auto_update = ?, updated_at = ? WHERE id = ?`, f, u, a, now(), id))
-}
-
-// SetMealCutoffs stores the times from which a mealtime is no longer shown on
-// displays (ADR 0016).
-func (db *DB) SetMealCutoffs(id string, c meal.Cutoffs) error {
-	if err := c.Validate(); err != nil {
-		return fmt.Errorf("%w: %w", ErrInvalid, err) // keeps the *meal.InvalidError and its field
-	}
-	return expectOne(db.sql.Exec(`UPDATE households SET cutoff_breakfast = ?, cutoff_lunch = ?, cutoff_snack = ?, cutoff_dinner = ?, updated_at = ? WHERE id = ?`,
-		c.Breakfast, c.Lunch, c.Snack, c.Dinner, now(), id))
-}
-
 // SetFirstStepsHidden shows or hides the first steps card on the start page.
 func (db *DB) SetFirstStepsHidden(id string, hidden bool) error {
 	return expectOne(db.sql.Exec(`UPDATE households SET first_steps_hidden = ?, updated_at = ? WHERE id = ?`, hidden, now(), id))
@@ -158,23 +139,41 @@ func splitSteps(list string) []string {
 	return strings.Split(list, ",")
 }
 
-// SaveHouseholdSettings stores time format, temperature unit, auto-update
-// mode, meal cut-offs and the first steps state (hidden, skipped steps) in one
-// statement, so a save is all or nothing.
-func (db *DB) SaveHouseholdSettings(id string, f TimeFormat, u TemperatureUnit, a UpdateMode, c meal.Cutoffs, firstStepsHidden bool, firstStepsSkipped []string) error {
-	if !f.Valid() || !u.Valid() || !a.Valid() {
-		return errors.New("store: unknown time format, temperature unit or update mode")
+// HouseholdSettings are the settings a parent can change. The first steps
+// state is optional: nil leaves what is stored alone, so a save of the other
+// settings never undoes a skip or hide made at the same time.
+type HouseholdSettings struct {
+	TimeFormat        TimeFormat
+	TemperatureUnit   TemperatureUnit
+	AutoUpdate        UpdateMode
+	MealCutoffs       meal.Cutoffs
+	FirstStepsHidden  *bool
+	FirstStepsSkipped *[]string
+}
+
+// SaveHouseholdSettings stores the settings in one statement, so a save is all
+// or nothing. Invalid values give ErrInvalid.
+func (db *DB) SaveHouseholdSettings(id string, in HouseholdSettings) error {
+	if !in.TimeFormat.Valid() || !in.TemperatureUnit.Valid() || !in.AutoUpdate.Valid() {
+		return fmt.Errorf("%w: unknown time format, temperature unit or update mode", ErrInvalid)
 	}
-	if err := c.Validate(); err != nil {
+	if err := in.MealCutoffs.Validate(); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
-	skipped, err := cleanFirstSteps(firstStepsSkipped)
-	if err != nil {
-		return err
+	var skipped *string // NULL keeps the stored list
+	if in.FirstStepsSkipped != nil {
+		clean, err := cleanFirstSteps(*in.FirstStepsSkipped)
+		if err != nil {
+			return err
+		}
+		list := strings.Join(clean, ",")
+		skipped = &list
 	}
+	c := in.MealCutoffs
 	return expectOne(db.sql.Exec(`UPDATE households SET time_format = ?, temperature_unit = ?, auto_update = ?,
-		cutoff_breakfast = ?, cutoff_lunch = ?, cutoff_snack = ?, cutoff_dinner = ?, first_steps_hidden = ?, first_steps_skipped = ?, updated_at = ? WHERE id = ?`,
-		f, u, a, c.Breakfast, c.Lunch, c.Snack, c.Dinner, firstStepsHidden, strings.Join(skipped, ","), now(), id))
+		cutoff_breakfast = ?, cutoff_lunch = ?, cutoff_snack = ?, cutoff_dinner = ?,
+		first_steps_hidden = COALESCE(?, first_steps_hidden), first_steps_skipped = COALESCE(?, first_steps_skipped), updated_at = ? WHERE id = ?`,
+		in.TimeFormat, in.TemperatureUnit, in.AutoUpdate, c.Breakfast, c.Lunch, c.Snack, c.Dinner, in.FirstStepsHidden, skipped, now(), id))
 }
 
 // SetHouseholdCoordinates stores the coordinates of the household's home.

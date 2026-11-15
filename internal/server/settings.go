@@ -98,11 +98,6 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, "meal_cutoffs: "+err.Error())
 		return
 	}
-	hidden := p.household.FirstStepsHidden
-	if in.FirstStepsHidden != nil {
-		hidden = *in.FirstStepsHidden
-	}
-	skipped := p.household.FirstStepsSkipped
 	if in.FirstStepsSkipped != nil {
 		for _, step := range *in.FirstStepsSkipped {
 			if !slices.Contains(store.FirstStepIDs, step) {
@@ -110,9 +105,8 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 				return
 			}
 		}
-		skipped = *in.FirstStepsSkipped
 	}
-	if err := s.saveSettings(p.household, f, u, a, c, hidden, skipped); err != nil {
+	if err := s.saveSettings(p.household, store.HouseholdSettings{TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c, FirstStepsHidden: in.FirstStepsHidden, FirstStepsSkipped: in.FirstStepsSkipped}); err != nil {
 		if errors.Is(err, store.ErrInvalid) {
 			writeError(w, http.StatusUnprocessableEntity, err.Error())
 			return
@@ -207,7 +201,7 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.cutoff", field, c)
 		return
 	}
-	if err := s.saveSettings(p.household, f, u, a, c, p.household.FirstStepsHidden, p.household.FirstStepsSkipped); err != nil {
+	if err := s.saveSettings(p.household, store.HouseholdSettings{TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c}); err != nil {
 		s.fail(w, "update settings", err)
 		return
 	}
@@ -237,16 +231,16 @@ func postedCutoff(form url.Values, m meal.Mealtime, current string) string {
 // saveSettings stores the household settings (general ones, meal cut-offs and
 // the first steps state) in one write. The update mode also goes to the host script; only a
 // failing settings file is tolerated.
-func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode, c meal.Cutoffs, firstStepsHidden bool, firstStepsSkipped []string) error {
-	if err := s.db.SaveHouseholdSettings(h.ID, f, u, a, c, firstStepsHidden, firstStepsSkipped); err != nil {
+func (s *server) saveSettings(h store.Household, in store.HouseholdSettings) error {
+	if err := s.db.SaveHouseholdSettings(h.ID, in); err != nil {
 		return err
 	}
-	if a == h.AutoUpdate {
+	if in.AutoUpdate == h.AutoUpdate {
 		return nil
 	}
 	// The change is stored; a settings file that cannot be written must not turn
 	// it into an error. The box writes the file again at its next start.
-	if err := update.WriteSettings(s.updateDir, string(a)); err != nil {
+	if err := update.WriteSettings(s.updateDir, string(in.AutoUpdate)); err != nil {
 		s.logger.Error("write update settings", "err", err)
 	}
 	return nil

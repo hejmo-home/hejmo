@@ -16,6 +16,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/theme"
+	"github.com/hejmo-home/hejmo/internal/wholine"
 )
 
 const (
@@ -159,7 +160,7 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
-	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people,
+	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
 		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID),
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
 }
@@ -170,6 +171,7 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 type displayData struct {
 	now         time.Time // in the household's time zone
 	people      []familyview.Person
+	groups      []wholine.Group // subgroups with their members, for the who-line
 	calendars   map[string]calendar.Audience
 	occurrences []calendar.Occurrence
 }
@@ -200,6 +202,7 @@ func (s *server) displayData(h store.Household, lang string, days int) (displayD
 	}
 	groupsOf := map[string][]string{}
 	for _, g := range allGroups {
+		out.groups = append(out.groups, wholine.Group{Name: g.Name, Members: g.Members})
 		for _, m := range g.Members {
 			groupsOf[m] = append(groupsOf[m], g.ID)
 		}

@@ -212,6 +212,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /display/tasks/{id}/done", s.handleDisplayTaskDone)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
+	mux.HandleFunc("GET /displays/{id}", s.handleDisplayPage)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
 	mux.HandleFunc("GET /settings", s.handleSettingsHub)
 	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
@@ -283,10 +284,15 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	}
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
-		if key, arg := s.takeFlash(w, r); key != "" {
+		fr.Back = fr.Back && !detailPages[name] // a detail page links to its own overview, not to the hub
+		key, arg := s.takeFlash(w, r) // always consumed, so it cannot show later
+		switch own, _ := data["SuccessKey"].(string); {
+		case data["SuccessText"] != nil:
+			fr.Success, _ = data["SuccessText"].(string) // a page that shows the result itself, and names the thing
+		case own != "":
+			fr.Success = s.i18n.T(lang, own)
+		case key != "":
 			fr.Success = s.successText(lang, key, arg)
-		} else if key, ok := data["SuccessKey"].(string); ok {
-			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
 		}
 		data["Frame"] = fr
 	}

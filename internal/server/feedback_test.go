@@ -66,14 +66,14 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		{"calendar add", "/calendars", "/calendars", url.Values{"name": {"Choir"}, "url": {"https://example.org/a.ics"}, "color": {"#2F5E7A"}, "interval": {"60"}}, "Calendar added."},
 		{"calendar sync", "/calendars/" + calID + "/sync", "/calendars", url.Values{}, "Updated at 1:00:00 PM. Events: 0 (new 0, changed 0, removed 0)."},
 		{"display pair", "/displays", "/displays", pairForm(code2), "Display paired."},
-		{"display settings", "/displays/" + displayID + "/settings", "/displays", url.Values{"show_tomorrow": {"on"}}, "Saved."},
+		{"display settings", "/displays/" + displayID + "/settings", "/displays/" + displayID, url.Values{"show_tomorrow": {"on"}}, "Saved."},
 		{"share", "/caldav/calendars/" + calID + "/share", "/caldav", url.Values{"shared": {"on"}}, "Sharing through the box is on."},
 		{"token revoke", "/caldav/tokens/" + tokenID + "/revoke", "/caldav", url.Values{}, "Access revoked."},
 		{"connection calendars", "/connections/" + connID + "/calendars", "/calendars", url.Values{"calendar": {flowCalendar}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}}, "Calendar added."},
 		{"task delete", "/tasks/" + taskID + "/delete", "/tasks", url.Values{}, "Task deleted."},
 		{"calendar remove", "/calendars/" + calID + "/delete", "/calendars", url.Values{}, "Calendar removed."},
 		{"connection remove", "/connections/" + connID + "/delete", "/calendars", url.Values{}, "Connection removed."},
-		{"display unpair", "/displays/" + displayID + "/unpair", "/displays", url.Values{}, "Display unpaired."},
+		{"display unpair", "/displays/" + displayID + "/unpair", "/displays", url.Values{}, "“Hallway” unpaired."},
 	}
 	for _, s := range steps {
 		r := b.post(s.path, s.form)

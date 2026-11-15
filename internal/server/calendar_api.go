@@ -40,6 +40,19 @@ func (p principal) syncLayout() string {
 	return "02/01/2006 15:04:05"
 }
 
+// whenLayout is a date and time of day with seconds in one phrase, as the
+// overview rows and the facts of detail pages say when something happened
+// ("15/11/2026, 07:42:13").
+func (p principal) whenLayout() string {
+	if p.household.TimeFormat == store.Time12h {
+		return "02/01/2006, 3:04:05 PM"
+	}
+	return "02/01/2006, 15:04:05"
+}
+
+// dayLayout is a date alone.
+const dayLayout = "02/01/2006"
+
 // clockLayout is the time of day alone, with seconds, in the household's format.
 func (p principal) clockLayout() string {
 	if p.household.TimeFormat == store.Time12h {

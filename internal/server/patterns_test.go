@@ -129,8 +129,10 @@ func TestDisplaySwitchAndChoiceCards(t *testing.T) {
 	b := signedInBox(t)
 	d := newScreen(b)
 	b.post("/displays", pairForm(codeOn(t, d.get("/display", "en").body)))
-	page := getEN(b, "/displays").body
-	if !strings.Contains(page, `role="switch" name="show_tomorrow"`) || !strings.Contains(page, "The tomorrow block is hidden") || !strings.Contains(page, "The tomorrow block is shown") {
+	h, _ := b.db.HomeHousehold()
+	list, _ := b.db.Displays(h.ID)
+	page := getEN(b, "/displays/"+list[0].ID).body
+	if !strings.Contains(page, `role="switch" name="show_tomorrow"`) || !strings.Contains(page, "Off: today only") || !strings.Contains(page, "On: from 18:00 tomorrow appears, dimmed") {
 		t.Errorf("tomorrow block is not a switch with state text:\n%s", page)
 	}
 	if !strings.Contains(page, `<fieldset class="choice">`) || !strings.Contains(page, `type="radio" name="type" value="eink_bw"`) || !strings.Contains(page, "<small>") {

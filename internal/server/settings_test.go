@@ -45,11 +45,11 @@ func TestWebTimesFollowTheHouseholdTimeFormat(t *testing.T) {
 	if m := h24.FindString(b.get("/caldav").body); m == "" || strings.HasSuffix(m, "M") {
 		t.Errorf("/caldav time %q is not 24h", m)
 	}
-	if page := b.get("/displays").body; !strings.Contains(page, "14/11/2026 13:00") {
+	if page := b.get("/displays").body; !strings.Contains(page, "14/11/2026, 13:00:00") {
 		t.Fatalf("24h time missing:\n%s", page)
 	}
 	b.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}})
-	if page := b.get("/displays").body; !strings.Contains(page, "14/11/2026 1:00 PM") {
+	if page := b.get("/displays").body; !strings.Contains(page, "14/11/2026, 1:00:00 PM") {
 		t.Fatalf("12h time missing:\n%s", page)
 	}
 	if body := b.get("/calendars").body; !strings.Contains(body, "14/11/2026 1:00:00 PM") || strings.Contains(body, "14/11/2026 13:00") {

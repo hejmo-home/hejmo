@@ -1,8 +1,10 @@
 package store_test
 
 import (
+	"errors"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -51,5 +53,30 @@ func TestHouseholdSettingsSaveIsAllOrNothing(t *testing.T) {
 	got, _ := db.Household(h.ID)
 	if got.TimeFormat != store.Time24h || got.TemperatureUnit != store.Celsius || got.AutoUpdate != store.UpdateOn {
 		t.Fatalf("a rejected save changed the settings: %+v", got)
+	}
+}
+
+// Ticket 133: the settings, the cut-offs and the first steps flag are saved in
+// one statement, so a refused save changes none of them.
+func TestSaveHouseholdSettingsIsAllOrNothing(t *testing.T) {
+	db, _ := openTemp(t)
+	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
+	good := meal.Cutoffs{Breakfast: "10:00"}
+	if err := db.SaveHouseholdSettings(h.ID, store.Time12h, store.Fahrenheit, store.UpdateNotify, good, true); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := db.Household(h.ID)
+	if got.TimeFormat != store.Time12h || got.TemperatureUnit != store.Fahrenheit || got.AutoUpdate != store.UpdateNotify || got.MealCutoffs.Breakfast != "10:00" || !got.FirstStepsHidden {
+		t.Fatalf("not all stored: %+v", got)
+	}
+	bad := meal.Cutoffs{Breakfast: "25:99"}
+	if err := db.SaveHouseholdSettings(h.ID, store.Time24h, store.Celsius, store.UpdateOn, bad, false); err == nil {
+		t.Fatal("invalid cut-off accepted")
+	}
+	if again, _ := db.Household(h.ID); again.TimeFormat != store.Time12h || again.MealCutoffs.Breakfast != "10:00" || !again.FirstStepsHidden {
+		t.Fatalf("a refused save changed something: %+v", again)
+	}
+	if err := db.SaveHouseholdSettings("missing", store.Time24h, store.Celsius, store.UpdateOn, good, false); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("unknown household: %v", err)
 	}
 }

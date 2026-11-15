@@ -475,8 +475,8 @@ func TestTheRawUserAgentIsNeverStoredOrShown(t *testing.T) {
 	}
 }
 
-// The back link is the first thing inside main (ADR 0017); the session
-// detail page links back to the list, not to Settings.
+// The back link is the first thing inside main (ADR 0017). The detail
+// page's back target is covered by TestSessionDetailOfAnotherBrowserOffersTheConfirmation.
 func TestBackLinkSitsInsideMain(t *testing.T) {
 	s := newSessionsBox(t)
 	for _, path := range []string{"/sessions", "/phones", "/otp"} {

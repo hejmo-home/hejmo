@@ -235,7 +235,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /displays/{id}/settings", s.handleDisplaySettings)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
-	return s.requireHTTPS(sameOrigin(mux))
+	return s.requireHTTPS(sameOrigin(withPageLanguage(mux)))
 }
 
 func (s *server) handleHealthz(w http.ResponseWriter, r *http.Request) {

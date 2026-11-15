@@ -1,8 +1,10 @@
 package server
 
 import (
+	"context"
 	"net/http"
 	"slices"
+	"sync"
 )
 
 // langCookie remembers the interface language chosen in the language switcher
@@ -53,7 +55,32 @@ func (f *frame) setLanguage(lang string, r *http.Request) {
 // pageLanguage is the language of a web page: the signed-in person's own
 // choice, else the one this browser remembers, else the browser's language,
 // else German.
+//
+// The lookup costs database queries, so it runs once per request: withPageLanguage
+// puts a holder in the request context and the answer is kept there.
 func (s *server) pageLanguage(r *http.Request) string {
+	if h, ok := r.Context().Value(pageLangKey{}).(*pageLangHolder); ok {
+		h.once.Do(func() { h.lang = s.lookupPageLanguage(r) })
+		return h.lang
+	}
+	return s.lookupPageLanguage(r)
+}
+
+type pageLangKey struct{}
+
+type pageLangHolder struct {
+	once sync.Once
+	lang string
+}
+
+// withPageLanguage makes every pageLanguage call of one request share one lookup.
+func withPageLanguage(next http.Handler) http.Handler {
+	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), pageLangKey{}, &pageLangHolder{})))
+	})
+}
+
+func (s *server) lookupPageLanguage(r *http.Request) string {
 	if p, ok := s.currentPerson(r); ok {
 		if acc, err := s.db.AccountByPerson(p.ID); err == nil {
 			if _, ok := languageByCode(acc.Language); ok {

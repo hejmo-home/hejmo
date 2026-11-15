@@ -333,7 +333,23 @@ func TestHandlerBuiltTextFollowsTheSwitchedLanguage(t *testing.T) {
 	if !strings.Contains(page.body, "Recovery codes left: ") || strings.Contains(page.body, "Wiederherstellungscodes") {
 		t.Errorf("/otp still has German handler text:\n%s", page.body)
 	}
-	if r := b.do(http.MethodGet, "/calendars", nil, de); r.status == http.StatusOK && (strings.Contains(r.body, "Ganzer Haushalt") || strings.Contains(r.body, "Nicht zugeordnet")) {
+	cals := b.do(http.MethodGet, "/calendars", nil, de)
+	if cals.status != http.StatusOK {
+		t.Fatalf("/calendars = %d", cals.status)
+	}
+	if strings.Contains(cals.body, "Ganzer Haushalt") || strings.Contains(cals.body, "Nicht zugeordnet") {
 		t.Errorf("/calendars still has German handler text")
+	}
+	// Holiday names on the week page are built by the handler too.
+	week := b.do(http.MethodGet, "/calendar?week=2026-12-25", nil, de)
+	if week.status != http.StatusOK {
+		t.Fatalf("/calendar = %d", week.status)
+	}
+	if !strings.Contains(week.body, "Christmas Day") || strings.Contains(week.body, "1. Weihnachtstag") {
+		t.Errorf("holiday name is not English:\n%s", week.body)
+	}
+	b.post("/language", langForm("de", "/calendar"))
+	if wde := b.do(http.MethodGet, "/calendar?week=2026-12-25", nil, map[string]string{"Accept-Language": "en"}); !strings.Contains(wde.body, "1. Weihnachtstag") {
+		t.Errorf("holiday name is not German:\n%s", wde.body)
 	}
 }

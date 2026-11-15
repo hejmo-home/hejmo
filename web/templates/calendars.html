@@ -21,12 +21,12 @@
         {{if .Events}}<span class="hint" data-events>{{.Events}}</span>
         <span class="hint" data-last-run>{{.Changes}}</span>{{end}}
         {{if .LastError}}<span class="hint">{{t "calendars.last_error"}} {{.LastError}}</span>{{end}}
-        <span class="hint" data-waste-state>{{if .Waste}}<strong>{{t "calendars.waste"}}</strong> · {{end}}{{t "calendars.waste.hint"}}</span>
+        {{if .ReadOnly}}<span class="hint" data-waste-state>{{if .Waste}}<strong>{{t "calendars.waste"}}</strong> · {{end}}{{t "calendars.waste.hint"}}</span>{{end}}
         <span class="row">
-          <form method="post" action="/calendars/{{.ID}}/waste">
+          {{if .ReadOnly}}<form method="post" action="/calendars/{{.ID}}/waste">
             {{if .Waste}}<input type="hidden" name="waste" value="off"><button class="button secondary" type="submit">{{t "calendars.waste.unmark"}}</button>
             {{else}}<input type="hidden" name="waste" value="on"><button class="button secondary" type="submit">{{t "calendars.waste.mark"}}</button>{{end}}
-          </form>
+          </form>{{end}}
           <form method="post" action="/calendars/{{.ID}}/sync"><button class="button" type="submit">{{t "calendars.sync_now"}}</button></form>
         </span>
         {{template "dangerOpen" (dict "Label" (t "calendars.remove"))}}
@@ -51,7 +51,8 @@
       </fieldset>
       <button class="button" type="submit">{{t "calendars.note.save"}}</button>
     </form>
-    {{if .Notes}}<ul class="cards" aria-label="{{t "calendars.note.list"}}">{{range .Notes}}<li data-note><strong>{{.Day}}</strong> <span>{{.Text}}</span></li>{{end}}</ul>{{end}}
+    {{if .Notes}}<ul class="cards" aria-label="{{t "calendars.note.list"}}">{{range .Notes}}<li data-note><strong>{{.Shown}}</strong> <span>{{.Text}}</span>
+      <form method="post" action="/notes"><input type="hidden" name="day" value="{{.Day}}"><input type="hidden" name="text" value=""><button class="button secondary" type="submit">{{t "calendars.note.remove"}}</button></form></li>{{end}}</ul>{{end}}
   </section>
 
   <section aria-labelledby="connections">

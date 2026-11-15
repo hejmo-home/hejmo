@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"github.com/hejmo-home/hejmo/internal/store"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -164,10 +165,74 @@ func TestDayNotesThroughTheAPI(t *testing.T) {
 	if _, _, list := c.call(http.MethodGet, "/day-notes", nil); len(list) != 1 || list[0].(map[string]any)["day"] != "2026-11-16" {
 		t.Fatalf("list = %v", list)
 	}
+	if status, _, _ := c.call(http.MethodPut, "/day-notes/2026-11-16", map[string]any{"text": "   "}); status != http.StatusUnprocessableEntity {
+		t.Fatalf("whitespace text = %d, want 422", status)
+	}
+	if _, _, list := c.call(http.MethodGet, "/day-notes", nil); len(list) != 1 {
+		t.Fatalf("a refused note changed the list: %v", list)
+	}
 	if status, _, _ := c.call(http.MethodDelete, "/day-notes/2026-11-16", nil); status != http.StatusNoContent {
 		t.Fatalf("delete = %d", status)
 	}
 	if _, _, list := c.call(http.MethodGet, "/day-notes", nil); len(list) != 0 {
 		t.Fatalf("list after delete = %v", list)
+	}
+}
+
+// The API lists only today and later: notes of days that are over are gone when the list is read.
+func TestDayNoteListLeavesOutPastDays(t *testing.T) {
+	c := signedInAPI(t)
+	for _, day := range []string{"2020-01-01", "2999-01-01"} {
+		if status, _, _ := c.call(http.MethodPut, "/day-notes/"+day, map[string]any{"text": "x"}); status != http.StatusOK {
+			t.Fatalf("set %s = %d", day, status)
+		}
+	}
+	if _, _, list := c.call(http.MethodGet, "/day-notes", nil); len(list) != 1 || list[0].(map[string]any)["day"] != "2999-01-01" {
+		t.Fatalf("list = %v", list)
+	}
+}
+
+// A PATCH that cannot be applied as a whole changes nothing: marking a writable calendar as waste collection
+// is refused before the sharing change in the same request is saved.
+func TestWritableCalendarCannotBeWasteCollection(t *testing.T) {
+	c := signedInAPI(t)
+	familyOf(t, c) // the family calendar comes first, so Home is an ordinary local calendar
+	cal, err := c.b.db.CreateCalendar(store.Calendar{HouseholdID: mustHousehold(t, c).ID, Name: "Home", Kind: "local", Color: "#2F5E7A"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	was := c.calendarJSON(t, cal.ID)["share_through_box"]
+	if status, _, _ := c.call(http.MethodPatch, "/calendars/"+cal.ID, map[string]any{"share_through_box": was != true, "waste_collection": true}); status != http.StatusUnprocessableEntity {
+		t.Fatalf("patch = %d, want 422", status)
+	}
+	if c.calendarJSON(t, cal.ID)["share_through_box"] != was {
+		t.Fatal("the sharing change was saved although the request was refused")
+	}
+}
+
+// The calendars page lists the notes in the household's date format, each with a button that removes it.
+func TestCalendarsPageListsNotesWithDateAndRemoveButton(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	if r := f.post("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Swimming bags"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("note = %d", r.status)
+	}
+	page := f.get("/calendars").body
+	if !strings.Contains(page, "16/11/2026") || strings.Contains(page, "<strong>2026-11-16</strong>") {
+		t.Fatalf("note day not in household format:\n%s", page)
+	}
+	if !regexp.MustCompile(`(?s)data-note.*?name="day" value="2026-11-16".*?name="text" value=""`).MatchString(page) {
+		t.Fatalf("no remove button on the note:\n%s", page)
+	}
+	if r := f.post("/notes", url.Values{"day": {"tomorrow"}, "text": {"x"}}); r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("bad day = %d, want 422", r.status)
+	}
+	if r := f.post("/notes", url.Values{"day": {"2026-11-17"}, "text": {"   "}}); r.status != http.StatusSeeOther {
+		t.Fatalf("blank text = %d", r.status)
+	}
+	if r := f.post("/notes", url.Values{"day": {"2026-11-16"}, "text": {""}}); r.status != http.StatusSeeOther {
+		t.Fatalf("remove = %d", r.status)
+	}
+	if notes, _ := f.db.DayNotes(f.householdID); len(notes) != 0 {
+		t.Fatalf("notes = %v", notes)
 	}
 }

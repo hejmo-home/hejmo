@@ -67,7 +67,7 @@ type calendarView struct {
 	ID, Name, Color, Audience, LastSuccess, LastError string
 	Events, Changes                                   string // the count and what the last run did; empty until a run succeeded
 	Stale                                             bool
-	Waste                                             bool
+	Waste, ReadOnly                                   bool
 	IntervalMinutes                                   int
 }
 
@@ -83,6 +83,9 @@ type logView struct{ At, Calendar, Kind, Message string }
 type choice struct{ ID, Name string }
 
 var syncIntervals = []int{5, 15, 30, 60, 120, 360, 1440}
+
+// noteView is a day note on the calendars page: Day for the form, Shown in the household's date format.
+type noteView struct{ Day, Shown, Text string }
 
 func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p principal, status int, form map[string]any) {
 	loc := p.location()
@@ -129,7 +132,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	byPerson := map[string][]calendarView{}
 	for _, c := range synced {
 		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
-			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes, Waste: c.Waste}
+			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes, Waste: c.Waste, ReadOnly: c.ReadOnly}
 		if !c.Sync.LastSuccess.IsZero() {
 			run := c.Sync.LastRun
 			v.Events = s.say(r, i18n.Msg("calendars.events", "count", strconv.Itoa(run.Events)))
@@ -204,8 +207,13 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		s.fail(w, "day notes", err)
 		return
 	}
+	var noteViews []noteView
+	for _, n := range notes {
+		day, _ := time.Parse(store.DayLayout, n.Day)
+		noteViews = append(noteViews, noteView{Day: n.Day, Shown: day.Format("02/01/2006"), Text: n.Text})
+	}
 	data := map[string]any{
-		"Notes": notes, "Tomorrow": s.householdNow(p.household).AddDate(0, 0, 1).Format(store.DayLayout),
+		"Notes": noteViews, "Tomorrow": s.householdNow(p.household).AddDate(0, 0, 1).Format(store.DayLayout),
 		"AutoColor": nextColors(taken, 1)[0],
 		"Person":    p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
 		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "Connections": connViews, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,

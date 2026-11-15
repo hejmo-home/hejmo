@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -18,6 +19,10 @@ type dayNoteJSON struct {
 }
 
 func (s *server) apiListDayNotes(w http.ResponseWriter, r *http.Request, p principal) {
+	if err := s.db.PruneDayNotes(p.household.ID, s.householdNow(p.household).Format(store.DayLayout)); err != nil { // only today and later
+		s.fail(w, "day notes", err)
+		return
+	}
 	notes, err := s.db.DayNotes(p.household.ID)
 	if err != nil {
 		s.fail(w, "day notes", err)
@@ -38,6 +43,7 @@ func (s *server) apiSetDayNote(w http.ResponseWriter, r *http.Request, p princip
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
+	in.Text = strings.TrimSpace(in.Text)
 	if utf8.RuneCountInString(in.Text) > maxNoteRunes || in.Text == "" {
 		writeError(w, http.StatusUnprocessableEntity, "text: 1 to 120 characters")
 		return

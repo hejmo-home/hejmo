@@ -413,6 +413,7 @@
   "calendars.note.text": "Notiz",
   "calendars.note.save": "Notiz speichern",
   "calendars.note.list": "Gesetzte Notizen",
+  "calendars.note.remove": "Entfernen",
   "flash.token_revoked": "Zugang widerrufen.",
   "flash.token_created": "Token erstellt.",
   "flash.display_paired": "Display gekoppelt.",

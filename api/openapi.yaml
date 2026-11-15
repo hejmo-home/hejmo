@@ -226,7 +226,7 @@ paths:
     get:
       operationId: listDayNotes
       summary: Notes for days, oldest day first (scope displays:read)
-      description: Notes of days that are over are deleted by the box, so only today and later are listed. Children are refused (403).
+      description: Notes of days that are over are deleted by the box when the list is read, so only today and later are listed. Children are refused (403).
       responses:
         "200":
           description: The notes
@@ -246,7 +246,8 @@ paths:
       description: |
         A free-text note of up to 120 characters for one day (`YYYY-MM-DD`, household time). The family
         view's tomorrow tile shows it as its last line from 18:00 the evening before until the end of that
-        day; before 18:00 it shows the note of today. A date that does not exist answers 422.
+        day; before 18:00 it shows the note of today. A day that is not a date, or a text that is empty after
+        trimming spaces, answers 422.
       requestBody:
         required: true
         content:

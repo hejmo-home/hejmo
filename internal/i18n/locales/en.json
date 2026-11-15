@@ -413,6 +413,7 @@
   "calendars.note.text": "Note",
   "calendars.note.save": "Save note",
   "calendars.note.list": "Notes set",
+  "calendars.note.remove": "Remove",
   "flash.token_revoked": "Access revoked.",
   "flash.token_created": "Token created.",
   "flash.display_paired": "Display paired.",

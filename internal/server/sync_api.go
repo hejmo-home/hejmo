@@ -370,6 +370,16 @@ func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p pri
 		return
 	}
 	id := r.PathValue("id")
+	if in.Waste != nil { // refuse before anything is saved
+		c, err := s.db.Calendar(p.household.ID, id)
+		if s.storeError(w, "waste calendar", err) {
+			return
+		}
+		if !c.ReadOnly {
+			writeError(w, http.StatusUnprocessableEntity, "only a read-only calendar can be a waste collection calendar")
+			return
+		}
+	}
 	if in.calendarChanges.any() {
 		cal, err := s.db.SyncedCalendar(p.household.ID, id)
 		if errors.Is(err, store.ErrNotFound) {

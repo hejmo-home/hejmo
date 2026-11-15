@@ -92,6 +92,8 @@
 {{else}}<li><span class="lab"><span class="n">{{.N}}</span>{{t .Label}}</span></li>
 {{end}}{{end}}</ol></nav>{{end}}{{end}}
 
+{{define "starIcon"}}<svg class="icon star" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.8l6-.7z"/></svg>{{end}}
+
 {{define "tickIcon"}}<svg class="icon" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{{end}}
 
 {{/* A check the page runs by itself, in words. Arguments: State (waiting, ok

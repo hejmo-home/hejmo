@@ -1,5 +1,6 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "home.title") "Frame" .Frame)}}
-  <h1>{{t "home.hello"}} {{.Person.Name}}</h1>
+  {{with .Child}}<h1 class="child-h"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span>{{t "home.hello"}} {{$.Person.Name}}</h1>
+  {{else}}<h1>{{t "home.hello"}} {{.Person.Name}}</h1>{{end}}
   {{template "httpsNotice" .}}
   {{template "updateNotice" .}}
   {{template "syncNotice" .}}
@@ -18,6 +19,12 @@
     {{if .Settled}}<div class="fs-foot"><form method="post" action="/first-steps/hide"><button class="button" type="submit">{{t "firststeps.close"}}</button></form><p class="hint">{{t "firststeps.close.hint"}}</p></div>
     {{else}}<div class="fs-foot"><form method="post" action="/first-steps/hide"><button class="link quiet" type="submit">{{t "firststeps.hide"}}</button></form><p class="hint">{{t "firststeps.hide.hint"}}</p></div>{{end}}
   </section>{{end}}
+  {{with .Today}}<section class="today"><div class="today-head"><h2>{{.Title}}</h2><a class="link" href="/calendar">{{t "home.today.week"}}</a></div>
+    {{if .Empty}}<div class="empty"><p>{{t "home.today.empty"}}</p><a class="button secondary" href="/calendar/new">{{t "home.today.add"}}</a></div>
+    {{else}}{{if .Family}}<ul class="today-fam">{{range .Family}}<li><span class="tm">{{.Time}}</span><span><b>{{.Title}}</b><span class="who">{{.Who}}</span></span></li>{{end}}</ul>{{end}}
+    <ul class="today-people">{{range .People}}{{$pid := .ID}}<li data-person="{{.Slot}}"><h3><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}</h3><ul class="tev">{{range .Events}}<li><span class="tm">{{.Time}}</span><span>{{.Title}}</span></li>{{else}}<li class="none">{{t "home.today.none"}}</li>{{end}}</ul>{{with .Progress}}<a class="pbar" href="/tasks?person={{$pid}}"><span class="progress"><span style="--pct:{{.Pct}}"></span></span><span class="count">{{.Text}}{{if .Stars}} · {{template "starIcon" 18}}{{.Stars}}{{end}}</span></a>{{end}}</li>{{end}}</ul>{{end}}
+    <p class="today-meal"><b>{{t "home.today.meal"}}</b> {{if .Meal}}{{.Meal}}{{else}}{{t "home.today.meal.none"}} <a href="/meals">{{t "home.today.meal.open"}}</a>{{end}}</p></section>
+  {{end}}
   {{with .Note}}{{$bad := eq $.ErrorField "text"}}
   <form class="steps note-day" method="post" action="/notes">
     <fieldset>
@@ -43,5 +50,10 @@
   {{if .Rows}}<ul class="cards">{{range .Rows}}<li><a class="note-row" href="/notes/{{.Day}}"><span class="t"><b>{{.Label}}</b><span>{{.Text}}</span></span><span class="go">{{t "home.notes.change"}}</span></a></li>{{end}}</ul>
   {{else}}<p class="hint">{{t "home.notes.none"}}</p>{{end}}
   <script src="/static/note.js" defer></script>
-  {{else}}<p class="lead">{{t "home.placeholder"}}</p>{{end}}
+  {{else}}{{with .Child}}<section class="today child" data-person="{{.Chip.Slot}}"><div class="today-head"><h2>{{t "home.child.day"}}</h2></div>
+    <ul class="tev big">{{range .Events}}<li><span class="tm">{{.Time}}</span><span>{{.Title}}{{with .Who}} <span class="who">{{.}}</span>{{end}}</span></li>{{else}}<li class="none">{{t "home.today.none"}}</li>{{end}}</ul>
+    {{if .Tasks}}<h3>{{t "home.child.tasks"}}</h3><ul class="ctasks">{{range .Tasks}}<li{{if .Done}} data-done{{end}}><span class="box">{{if .Done}}{{template "tickIcon" 18}}{{end}}</span><span class="t">{{.Title}}</span>{{if .Stars}}<span class="stars">{{template "starIcon" 18}}{{.Stars}}</span>{{end}}</li>{{end}}</ul>
+    {{with .Progress}}<a class="pbar" href="/tasks"><span class="progress"><span style="--pct:{{.Pct}}"></span></span><span class="count">{{.Text}}{{if .Stars}} · {{template "starIcon" 18}}{{.Stars}}{{end}}</span></a>{{end}}
+    <div class="actions"><a class="button" href="/tasks">{{t "home.child.check"}}</a></div>
+    {{else}}<h3>{{t "home.child.tasks"}}</h3><p>{{t "home.child.no_tasks"}}</p>{{end}}</section>{{end}}{{end}}
 {{template "foot"}}

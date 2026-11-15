@@ -441,8 +441,6 @@ fieldset.days { display: flex; flex-wrap: wrap; gap: 6px; }
 fieldset.choice { display: grid; gap: 10px; }
 .choice label { display: grid; grid-template-columns: auto 1fr; gap: 2px 12px; align-items: center; min-height: var(--touch-target); padding: 12px 14px; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); color: var(--text); cursor: pointer; }
 .choice input { grid-row: span 2; width: 22px; height: 22px; min-height: 0; margin: 0; accent-color: var(--accent); }
-.place-confirmed { display: flex; align-items: center; gap: 10px; margin: 0; }
-.place-confirmed small { display: block; color: var(--text-secondary); font-size: var(--fs-meta); }
 .choice b { font-size: var(--fs-event-title); }
 .choice small { grid-column: 2; font-size: var(--fs-meta); color: var(--text-secondary); }
 .choice label:has(input:checked) { border: 2px solid var(--accent); padding: 11px 13px; }
@@ -560,3 +558,17 @@ textarea { width: 100%; font: inherit; color: var(--text); background: var(--sur
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
+
+/* Home location (#86): place choice, found place, location status. */
+.steps fieldset.place-options { padding: 0; background: none; border-radius: 0; gap: 8px; }
+.steps .place-options legend, .place-q { float: none; margin: 0 0 4px; padding: 0; font-size: var(--fs-event-title); font-weight: 700; color: var(--text); }
+.place-options .hint, .place-found .hint, .place-privacy, .steps [data-location] { margin: 0; }
+.place-found { display: grid; gap: 6px; padding: 12px 14px; border: 2px solid var(--accent); border-radius: var(--radius-card); background: var(--surface); }
+.place-found p { margin: 0; }
+.place-name b, .place-status b { display: block; font-size: var(--fs-event-title); font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.place-name small, .place-status small { display: block; color: var(--text-secondary); font-size: var(--fs-meta); overflow-wrap: anywhere; }
+.place-status { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-card); }
+.place-status .icon { flex: none; margin-top: 2px; }
+.place-status.missing { border: 2px dashed var(--text-secondary); }
+[data-theme="bw"] .place-status, [data-theme="bw"] .place-found { border: 2px solid var(--text); }
+[data-theme="bw"] .place-status.missing { border: 2px dashed var(--text); }

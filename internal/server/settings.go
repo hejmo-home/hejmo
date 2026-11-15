@@ -8,7 +8,9 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/sun"
 	"github.com/hejmo-home/hejmo/internal/update"
 )
 
@@ -124,9 +126,29 @@ func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p princi
 		"HomeName": form.HomeName, "Place": form.Place,
 	}
 	if p.household.Latitude != 0 || p.household.Longitude != 0 {
-		data["Location"] = coordinatesText(p.household.Latitude, p.household.Longitude)
+		label := "place.in_use"
+		if errField == "home_name" { // the search failed: nothing changed
+			label = "place.still_in_use"
+		}
+		data["Location"] = map[string]string{"Name": p.household.HomeName, "Label": label, "Detail": s.locationDetail(r, p)}
 	}
 	s.render(w, r, status, "household.html", data)
+}
+
+// locationDetail is the second line of the location in use: its coordinates and
+// today's sunrise and sunset there, in the household's time zone and format.
+func (s *server) locationDetail(r *http.Request, p principal) string {
+	h := p.household
+	coords := coordinatesText(h.Latitude, h.Longitude)
+	t := sun.On(s.now().In(p.location()), h.Latitude, h.Longitude)
+	if t.Kind != sun.Normal { // polar day or night: no sunrise to name
+		return coords
+	}
+	layout := "15:04"
+	if h.TimeFormat == store.Time12h {
+		layout = "3:04 PM"
+	}
+	return s.i18n.Format(s.langOf(r), i18n.Msg("place.in_use.detail", "coords", coords, "rise", t.Rise.Round(time.Minute).In(p.location()).Format(layout), "set", t.Set.Round(time.Minute).In(p.location()).Format(layout)))
 }
 
 // storedSettings is the page as stored.
@@ -207,6 +229,10 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 	}
 	if home != nil {
 		s.refreshWeather(home.Latitude, home.Longitude)
+	}
+	if home != nil { // the success line names the new place
+		s.redirectSaved(w, r, "/settings/household", "flash.home_saved")
+		return
 	}
 	s.redirectSaved(w, r, "/settings/household", "flash.saved")
 }

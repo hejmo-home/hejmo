@@ -6,10 +6,13 @@
   {{template "error" .}}
   <form method="post" action="/settings/household" class="steps">
     <fieldset>
-      <legend>{{t "settings.home"}}</legend>
+      <legend>{{t "setup.step.home"}}</legend>
+      <span class="hint">{{t "settings.home.hint"}}</span>
       {{template "field" (dict "Root" . "Name" "home_name" "Label" (t "setup.field.home_name") "Value" .HomeName "Required" true "Autocomplete" "address-level2")}}
       {{template "placeChoice" (dict "Root" . "Place" .Place)}}
-      <p class="hint" data-location>{{if .Location}}{{printf (t "settings.home.location") .Location}}{{else}}{{t "settings.home.unknown"}}{{end}}</p>
+      {{with .Place}}{{with $.Location}}<p class="hint" data-location>{{printf (t "place.pending") .Name}}</p>{{end}}
+      {{else}}{{with .Location}}<div class="place-status" data-location><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><div><b>{{printf (t .Label) .Name}}</b><small>{{.Detail}}</small></div></div>
+      {{else}}<div class="place-status missing" data-location><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><div><b>{{t "place.missing"}}</b><small>{{printf (t "place.missing.hint") $.HomeName}}</small></div></div>{{end}}{{end}}
     </fieldset>
     {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.time_format"))}}
       {{template "option" (dict "Name" "time_format" "Value" "24h" "Label" (t "settings.time_format.24h") "Checked" (eq .TimeFormat "24h"))}}

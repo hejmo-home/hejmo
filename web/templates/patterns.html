@@ -72,15 +72,18 @@
   <a class="button" href="{{.Href}}">{{.Action}}</a>
 </div>{{end}}
 
-{{/* The place a home name was resolved to (Q59). Arguments: Root, Place (nil
-     before a name was searched). One match is preselected, several are
-     offered as radio buttons to choose from; a place chosen earlier is carried
-     along while other fields are corrected. Nothing is stored until the page
-     is submitted with a place chosen. */}}
-{{define "placeChoice"}}{{with .Place}}<input type="hidden" name="place_for" value="{{.For}}">
-  {{if .Confirmed}}<input type="hidden" name="place" value="{{.Confirmed.Value}}"><input type="hidden" name="place_label" value="{{.Confirmed.Label}}">
-  <p class="place-confirmed" data-place-confirmed><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span><b>{{.Confirmed.Label}}</b> <small>{{t "place.confirmed.hint"}}</small></span></p>
-  {{else}}{{$many := gt (len .Options) 1}}{{template "optionsOpen" (dict "Class" "choice place-options" "Legend" (t (or (and $many "place.choose") "place.confirm")))}}
-      <p class="hint">{{t "place.hint"}}</p>
-      {{range .Options}}{{template "option" (dict "Name" "place" "Value" .Value "Label" .Label "Checked" .Checked "Required" true)}}{{end}}
-    </fieldset>{{end}}{{end}}{{end}}
+{{/* The place a home name was resolved to (Q59), directly after the name
+     field. Arguments: Root, Place (nil before a name was searched). Always
+     shows the privacy line. Several matches are offered as radio buttons with
+     none chosen; one match, or a place chosen earlier and carried along while
+     other fields are corrected, is a card that Save confirms through hidden
+     values. Nothing is stored until the page is submitted with a place. */}}
+{{define "placeChoice"}}{{with .Place}}{{if .Options}}<input type="hidden" name="place_for" value="{{.For}}">
+      <fieldset class="choice place-options" aria-describedby="place-more"><legend>{{printf (t "place.choose") .For}}</legend>
+      {{range .Options}}{{template "option" (dict "Name" "place" "Value" .Value "Label" .Name "Hint" .Region "Required" true)}}{{end}}
+      <p class="hint" id="place-more">{{t "place.more"}}</p>
+      </fieldset>
+      {{template "placePrivacy"}}{{else}}{{template "placePrivacy"}}{{with .Found}}
+      <input type="hidden" name="place_for" value="{{$.Place.For}}"><input type="hidden" name="place" value="{{.Value}}"><input type="hidden" name="place_label" value="{{.Label}}">
+      <div class="place-found" role="status" data-place-found><p class="place-q">{{t "place.confirm"}}</p><p class="place-name"><b>{{.Name}}</b>{{if or .Region .Coords}}<small>{{.Region}}{{if and .Region .Coords}} · {{end}}{{.Coords}}</small>{{end}}</p><p class="hint">{{t "place.found.hint"}}</p></div>{{end}}{{end}}{{else}}{{template "placePrivacy"}}{{end}}{{end}}
+{{define "placePrivacy"}}<p class="hint place-privacy">{{t "place.hint"}}</p>{{end}}

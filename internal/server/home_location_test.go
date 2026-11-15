@@ -32,7 +32,7 @@ func (f *familyBox) withoutLocation(t *testing.T) {
 func (f *familyBox) setHomeInSettings(t *testing.T) {
 	t.Helper()
 	form := url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "home_name": {"Pasing"}}
-	if r := f.do(http.MethodPost, "/settings/household", form, en); r.status != http.StatusOK || len(radios(r.body, "place")) != 1 {
+	if r := f.do(http.MethodPost, "/settings/household", form, en); r.status != http.StatusOK || !strings.Contains(r.body, "data-place-found") {
 		t.Fatalf("search step = %d", r.status)
 	}
 	form.Set("place", "48.15,11.46")

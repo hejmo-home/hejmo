@@ -66,5 +66,10 @@ func (s *server) successText(lang, key, arg string) string {
 			}
 		}
 	}
+	if key == "flash.home_saved" { // names the place that was stored
+		if h, err := s.db.HomeHousehold(); err == nil {
+			return s.i18n.Format(lang, i18n.Msg(key, "place", h.HomeName))
+		}
+	}
 	return s.i18n.T(lang, key)
 }

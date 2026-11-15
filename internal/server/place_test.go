@@ -46,9 +46,23 @@ func TestSetupShowsTheResolvedPlaceForConfirmationBeforeCreatingAnything(t *test
 	if !strings.Contains(r.body, "Pasing, Bavaria, Germany") {
 		t.Errorf("resolved place not shown:\n%s", r.body)
 	}
-	rs := radios(r.body, "place")
-	if len(rs) != 1 || !strings.Contains(rs[0], `value="48.15,11.46"`) || !strings.Contains(rs[0], "checked") {
-		t.Errorf("place choice = %q", rs)
+	if rs := radios(r.body, "place"); len(rs) != 0 {
+		t.Errorf("a single match is a card, not a radio button: %q", rs)
+	}
+	if tag := inputTag(r.body, "place"); !strings.Contains(tag, `type="hidden"`) || !strings.Contains(tag, `value="48.15,11.46"`) {
+		t.Errorf("place = %q, want the match carried as a hidden value", tag)
+	}
+	if tag := inputTag(r.body, "place_label"); !strings.Contains(tag, `value="Pasing, Bavaria, Germany"`) {
+		t.Errorf("place_label = %q", tag)
+	}
+	for _, want := range []string{`role="status" data-place-found`, `<p class="place-q">Is this your home?</p>`, `<b>Pasing</b><small>Bavaria, Germany · 48.15° N, 11.46° E</small>`, "Not saved yet. Save to use this place, or change the name to search again."} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("found-place card misses %q", want)
+		}
+	}
+	// The card sits under the name field, above the state select.
+	if card, sel := strings.Index(r.body, "data-place-found"), strings.Index(r.body, `<select name="region">`); card < 0 || sel < 0 || card > sel {
+		t.Errorf("card at %d, state select at %d: the answer belongs under the question", card, sel)
 	}
 	if !strings.Contains(inputTag(r.body, "place_for"), `value="Pasing"`) {
 		t.Errorf("searched name not carried: %q", inputTag(r.body, "place_for"))
@@ -89,10 +103,19 @@ func TestSetupLetsTheParentChooseAmongSeveralPlaces(t *testing.T) {
 			t.Errorf("choice not required: %q", c)
 		}
 	}
-	for _, want := range []string{"Neustadt, Rhineland-Palatinate, Germany", "Neustadt, Coburg, Bavaria, Germany", `value="50.25,11.88"`} {
+	for _, want := range []string{
+		"<legend>Which Neustadt do you mean?</legend>",
+		"<b>Neustadt</b><small>Rhineland-Palatinate, Germany</small>", "<b>Neustadt</b><small>Coburg, Bavaria, Germany</small>", `value="50.25,11.88"`,
+		`<fieldset class="choice place-options" aria-describedby="place-more">`,
+		`<p class="hint" id="place-more">Not in the list? Add the district or a larger town nearby to the name.</p>`,
+	} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("page misses %q", want)
 		}
+	}
+	// The privacy line is always there, under the name field and not between the question and its options.
+	if priv := strings.Index(r.body, `<p class="hint place-privacy">Hejmo looks the place up once at Open-Meteo and sends only the name, the country and the page language.</p>`); priv < strings.Index(r.body, "place-more") || priv > strings.Index(r.body, `<select name="region">`) {
+		t.Errorf("privacy line at %d", priv)
 	}
 	// Submitting without a choice asks again and creates nothing.
 	if r := b.post("/setup", unconfirmedSetup("Neustadt")); r.status != http.StatusOK || b.db.Configured() {
@@ -181,8 +204,22 @@ func TestHouseholdSettingsShowTheHomeAndItsLocation(t *testing.T) {
 	if tag := inputTag(r.body, "home_name"); !strings.Contains(tag, `value="Pasing"`) {
 		t.Errorf("home_name = %q", tag)
 	}
-	if !strings.Contains(r.body, "Location in use: 48.15° N, 11.46° E") {
+	if !strings.Contains(r.body, `<div class="place-status" data-location>`) || !strings.Contains(r.body, "<b>In use: Pasing</b><small>48.15° N, 11.46° E · today sunrise ") {
 		t.Errorf("location not shown:\n%s", r.body)
+	}
+	if !regexp.MustCompile(`today sunrise \d\d:\d\d, sunset \d\d:\d\d</small>`).MatchString(r.body) {
+		t.Errorf("sun times of today missing:\n%s", r.body)
+	}
+	for _, want := range []string{"<legend>Home location</legend>", `<span class="hint">Sunrise and sunset (front light, themes) and the weather are taken for this place.</span>`, "Town or district"} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("page misses %q", want)
+		}
+	}
+	de := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body
+	for _, want := range []string{"<legend>Heimatort</legend>", "Ort oder Stadtteil", "<b>Verwendet: Pasing</b>", "heute Sonnenaufgang ", ", Sonnenuntergang ", "Sonnenaufgang und Sonnenuntergang (Vorderlicht, Themes) und das Wetter gelten für diesen Ort.", "Hejmo sucht den Ort einmal bei Open-Meteo und sendet nur den Namen, das Land und die Sprache der Seite."} {
+		if !strings.Contains(de, want) {
+			t.Errorf("German page misses %q", want)
+		}
 	}
 }
 
@@ -199,6 +236,10 @@ func TestChangingTheHomeAsksToConfirmAndSavesNothingYet(t *testing.T) {
 	if h.TimeFormat != "24h" {
 		t.Errorf("time format saved before confirming: %q", h.TimeFormat)
 	}
+	// Until the parent saves, the old place stays in use, and the status box gives way to a line saying so.
+	if !strings.Contains(r.body, `<p class="hint" data-location>Until you save, Pasing stays in use.</p>`) || strings.Contains(r.body, "place-status") {
+		t.Errorf("pending hint missing or status box still shown:\n%s", r.body)
+	}
 	// What was typed is kept.
 	if !strings.Contains(inputTag(r.body, "home_name"), `value="Neustadt"`) || !strings.Contains(r.body, `value="12h" checked`) || !strings.Contains(r.body, `value="f" checked`) {
 		t.Errorf("typed values not kept:\n%s", r.body)
@@ -209,6 +250,9 @@ func TestChangingTheHomeAsksToConfirmAndSavesNothingYet(t *testing.T) {
 	f.Set("place_for", "Neustadt")
 	if r := b.post("/settings/household", f); r.status != http.StatusSeeOther || r.location != "/settings/household" {
 		t.Fatalf("confirm = %d %q", r.status, r.location)
+	}
+	if page := b.do(http.MethodGet, "/settings/household", nil, en).body; !strings.Contains(page, "Saved. Sunrise, sunset and weather now use Neustadt.") {
+		t.Errorf("success line after a changed location:\n%s", page)
 	}
 	h, _ = b.db.HomeHousehold()
 	if h.Latitude != 50.25 || h.Longitude != 11.88 || h.HomeName != "Neustadt" || h.TimeFormat != "12h" {
@@ -224,6 +268,9 @@ func TestSettingsWithoutChangingTheHomeDoNotSearchAgain(t *testing.T) {
 	before := len(b.geo.searches())
 	if r := b.post("/settings/household", settingsForm("Pasing")); r.status != http.StatusSeeOther {
 		t.Fatalf("status = %d", r.status)
+	}
+	if page := b.do(http.MethodGet, "/settings/household", nil, en).body; !strings.Contains(page, ">Saved.</p>") || strings.Contains(page, "now use") {
+		t.Errorf("an unchanged location gets the plain success line:\n%s", page)
 	}
 	// A form without the field (older clients) leaves the home alone too.
 	if r := b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther {
@@ -243,10 +290,13 @@ func TestSettingsSearchWhenTheHomeHasNoLocationYet(t *testing.T) {
 		t.Fatal(err)
 	}
 	r := b.do(http.MethodGet, "/settings/household", nil, en)
-	if !strings.Contains(r.body, "No location yet") {
+	if !strings.Contains(r.body, `<div class="place-status missing" data-location>`) || !strings.Contains(r.body, "<b>No location yet</b><small>Sunrise, sunset and weather need one. Save to look up “Pasing”.</small>") {
 		t.Errorf("missing location not pointed out:\n%s", r.body)
 	}
-	if r := b.post("/settings/household", settingsForm("Pasing")); r.status != http.StatusOK || len(radios(r.body, "place")) != 1 {
+	if de := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body; !strings.Contains(de, "<b>Noch kein Standort</b><small>Sonnenaufgang, Sonnenuntergang und Wetter brauchen einen. Speichere, um „Pasing“ zu suchen.</small>") {
+		t.Errorf("German missing-location box:\n%s", de)
+	}
+	if r := b.post("/settings/household", settingsForm("Pasing")); r.status != http.StatusOK || !strings.Contains(r.body, "data-place-found") {
 		t.Fatalf("status %d: the unchanged name must be searched while there is no location", r.status)
 	}
 }
@@ -260,6 +310,9 @@ func TestSettingsFieldErrorsForNoPlaceAndUnreachableKeepWhatWasTyped(t *testing.
 	}
 	if !strings.Contains(r.body, `value="12h" checked`) {
 		t.Error("other typed values lost")
+	}
+	if !strings.Contains(r.body, "<b>Still in use: Pasing</b>") {
+		t.Errorf("the location in use is not kept in view:\n%s", r.body)
 	}
 	b.geo.setDown(true)
 	r = b.do(http.MethodPost, "/settings/household", settingsForm("Neustadt"), en)
@@ -405,5 +458,43 @@ func TestSettingsWithInvalidFieldsKeepTheTypedHomeName(t *testing.T) {
 	r := b.do(http.MethodPost, "/settings/household", g, en)
 	if r.status != http.StatusUnprocessableEntity || !strings.Contains(inputTag(r.body, "home_name"), `value="Neustadt"`) {
 		t.Errorf("status %d, home name tag %q", r.status, inputTag(r.body, "home_name"))
+	}
+}
+
+func TestFoundPlaceCardAndPendingHintInGerman(t *testing.T) {
+	b := signedInBox(t)
+	b.geo.set("Pasing-Obermenzing", `{"results":[{"name":"Pasing-Obermenzing","latitude":48.16,"longitude":11.45,"country":"Deutschland","admin1":"Bayern","admin2":"Oberbayern"}]}`)
+	r := b.do(http.MethodPost, "/settings/household", settingsForm("Pasing-Obermenzing"), map[string]string{"Accept-Language": "de"})
+	for _, want := range []string{
+		`<p class="place-q">Ist das dein Zuhause?</p>`,
+		"<b>Pasing-Obermenzing</b><small>Oberbayern, Bayern, Deutschland · 48.16° N, 11.45° E</small>",
+		"Noch nicht gespeichert. Speichere, um diesen Ort zu verwenden, oder ändere den Namen, um neu zu suchen.",
+		`<p class="hint" data-location>Bis du speicherst, bleibt Pasing in Verwendung.</p>`,
+	} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("German page misses %q", want)
+		}
+	}
+	// Saving the card's hidden place stores it and names it in the success line.
+	f := settingsForm("Pasing-Obermenzing")
+	f.Set("place_for", "Pasing-Obermenzing")
+	f.Set("place", "48.16,11.45")
+	f.Set("place_label", "Pasing-Obermenzing, Oberbayern, Bayern, Deutschland")
+	if r := b.do(http.MethodPost, "/settings/household", f, map[string]string{"Accept-Language": "de"}); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d", r.status)
+	}
+	if page := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body; !strings.Contains(page, "Gespeichert. Sonnenaufgang, Sonnenuntergang und Wetter gelten jetzt für Pasing-Obermenzing.") {
+		t.Errorf("German success line:\n%s", page)
+	}
+}
+
+func TestCarriedAlongPlaceRendersTheSameCard(t *testing.T) {
+	b := newBox(t)
+	f := validSetupForm()
+	f.Set("place_label", "Pasing, Bavaria, Germany")
+	f.Set("password", "x") // another field is wrong: the page comes back with the place carried along
+	r := b.do(http.MethodPost, "/setup", f, en)
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "<b>Pasing</b><small>Bavaria, Germany · 48.15° N, 11.46° E</small>") || !strings.Contains(r.body, "data-place-found") {
+		t.Errorf("status %d, carried card missing:\n%s", r.status, r.body)
 	}
 }

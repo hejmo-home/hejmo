@@ -21,19 +21,44 @@ import (
 // searchTimeout bounds a place search while a parent waits for the page.
 const searchTimeout = 8 * time.Second
 
-// placeOption is one place a search found, as a choice on the page.
+// placeOption is one place a search found, as a choice or card on the page.
 type placeOption struct {
-	Label, Value string // Value is "lat,lon"
-	Checked      bool
+	Name   string // what the parent would call it
+	Region string // "district, state, country", without empty or repeated parts
+	Value  string // "lat,lon"
+	Label  string // name and region in one line, carried along as place_label
+	Coords string // the coordinates in degrees
 }
 
 // placeView is what the confirmation part of a form shows.
 type placeView struct {
-	For     string        // the name the places were searched for or confirmed for
-	Options []placeOption // places to choose from; one of them is preselected if it is the only one
-	// Confirmed is the place already chosen for For, carried along while other
-	// fields of the form are corrected.
-	Confirmed *placeOption
+	For string // the name the places were searched for or confirmed for
+	// Options are the places to choose from when several match; none is preselected.
+	Options []placeOption
+	// Found is the one place to confirm by saving: the single match of a
+	// search, or the place already chosen for For and carried along while
+	// other fields of the form are corrected.
+	Found *placeOption
+}
+
+// regionText joins the parts of a place below its name, leaving out empty ones
+// and ones that repeat the name or an earlier part.
+func regionText(name string, parts ...string) string {
+	seen := map[string]bool{name: true}
+	var out []string
+	for _, p := range parts {
+		if p != "" && !seen[p] {
+			seen[p] = true
+			out = append(out, p)
+		}
+	}
+	return strings.Join(out, ", ")
+}
+
+func newPlaceOption(p weather.Place) placeOption {
+	o := placeOption{Name: p.Name, Region: regionText(p.Name, p.Area, p.Region, p.Country), Value: placeValue(p.Latitude, p.Longitude), Coords: coordinatesText(p.Latitude, p.Longitude)}
+	o.Label = regionText("", o.Name, o.Region)
+	return o
 }
 
 // formatCoord writes a coordinate the way the form carries it.
@@ -111,8 +136,13 @@ func (s *server) resolvePlace(r *http.Request, name, region string) (lat, lon fl
 		return 0, 0, false, nil, placeErrorKey(err)
 	}
 	v := &placeView{For: name}
+	if len(places) == 1 {
+		o := newPlaceOption(places[0])
+		v.Found = &o
+		return 0, 0, false, v, ""
+	}
 	for _, p := range places {
-		v.Options = append(v.Options, placeOption{Label: p.Label(), Value: placeValue(p.Latitude, p.Longitude), Checked: len(places) == 1})
+		v.Options = append(v.Options, newPlaceOption(p))
 	}
 	return 0, 0, false, v, ""
 }
@@ -126,11 +156,12 @@ func confirmedPlace(r *http.Request, name string) *placeView {
 	if !ok {
 		return nil
 	}
-	label := strings.TrimSpace(r.PostFormValue("place_label"))
-	if label == "" { // a choice among several places carries no label
-		label = coordinatesText(lat, lon)
+	o := placeOption{Name: coordinatesText(lat, lon), Value: placeValue(lat, lon)} // a choice among several places carries no label
+	if label := strings.TrimSpace(r.PostFormValue("place_label")); label != "" {
+		o.Label, o.Coords = label, coordinatesText(lat, lon)
+		o.Name, o.Region, _ = strings.Cut(label, ", ")
 	}
-	return &placeView{For: name, Confirmed: &placeOption{Label: label, Value: placeValue(lat, lon)}}
+	return &placeView{For: name, Found: &o}
 }
 
 // coordinatesText shows coordinates in degrees, north and east positive.

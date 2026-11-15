@@ -7,6 +7,7 @@
       <legend>{{t "setup.step.home"}}</legend>
       <span class="hint">{{t "setup.step.home.hint"}}</span>
       {{template "field" (dict "Root" . "Name" "home_name" "Label" (t "setup.field.home_name") "Value" .Form.HomeName "Required" true "Autocomplete" "address-level2")}}
+      {{template "placeChoice" (dict "Root" . "Place" .Form.Place)}}
       <label>{{t "setup.field.region"}}
         <select name="region">
           {{$sel := .Form.Region}}
@@ -14,7 +15,6 @@
           {{end}}
         </select></label>
       {{template "fieldError" (dict "Root" . "Name" "region")}}
-      {{template "placeChoice" (dict "Root" . "Place" .Form.Place)}}
     </fieldset>
     <fieldset>
       <legend>{{t "setup.step.parent"}}</legend>

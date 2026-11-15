@@ -315,10 +315,15 @@ a { color: var(--accent); }
 .brand { display: inline-flex; align-items: center; min-height: var(--touch-target); font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); color: var(--text); text-decoration: none; }
 .frame-bar .button { min-height: var(--touch-target); }
 .frame-bar form { margin: 0; }
-.frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-cards); }
+.frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: var(--gap-cards); }
+.frame-nav li { flex: none; }
 .frame-nav a { display: flex; align-items: center; min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
 .frame-nav a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
 [data-theme="bw"] .frame-nav a { border-width: 2px; }
+.back { display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; }
+.hub-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); }
+.hub-row strong { font-size: var(--fs-event-title); }
+[data-theme="bw"] .hub-row { text-decoration: underline; }
 .frame main { min-width: 0; }
 @media (max-width: 599px) {
   body.web { padding: var(--gap); }
@@ -326,7 +331,7 @@ a { color: var(--accent); }
 @media (min-width: 900px) {
   .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); align-items: start; }
   .frame.has-nav .frame-bar { grid-column: 1 / -1; }
-  .frame-nav ul { flex-direction: column; flex-wrap: nowrap; }
+  .frame-nav ul { flex-direction: column; overflow-x: visible; }
 }
 
 /* Portrait shows at most four person columns (ticket 5.7, ADR 0016). The
@@ -380,6 +385,16 @@ body:has(.family-page) { overflow: hidden; }
 .fv-footer .tile.alert .lab { color: var(--notice-text); }
 .qr { width: min(60vw, 240px); margin: 0 0 12px; color: var(--text); }
 .qr svg { display: block; width: 100%; height: auto; }
+
+/* Quiet mode (ticket 5.9; ADR 0015). A normal screen goes black; an E-Ink
+   display shows a calm night page about the coming morning. Quiet mode takes
+   precedence over the theme: it uses the display's page background only. */
+.quiet.black { position: fixed; inset: 0; background: black; }
+.quiet.night { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: var(--gap-section); max-width: 32em; margin: 0 auto; }
+.quiet.night .lab { font-size: var(--fs-label); color: var(--text-secondary); }
+.quiet.night .date { font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
+.quiet.night .night-item .title { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+.quiet.night .night-item .meta { font-size: var(--fs-meta); color: var(--text-secondary); }
 
 /* Shared form patterns (ticket 5.16; ADR 0017). Switch, person chips,
    segmented control, choice cards, weekday chips, "More options", detail-page
@@ -567,14 +582,11 @@ document.addEventListener("change", function (e) {
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
-  <li><a href="/calendars">Calendars</a></li>
-  <li><a href="/caldav">Calendar apps</a></li>
-  <li><a href="/displays">Displays</a></li>
-  <li><a href="/phones">Phones</a></li>
   <li><a href="/tasks">Tasks</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
+
 
 <main id="content">
 
@@ -585,23 +597,23 @@ document.addEventListener("change", function (e) {
 
   <ul class="cards lists">
     
-    <li data-list="3528cae2-f7f4-4b6a-afcb-42155920187d">
-      <strong><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span> <a href="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d">Shopping</a></strong>
+    <li data-list="34c94f30-cebf-4f7e-a14e-4550c4a84d6a">
+      <strong><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span> <a href="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a">Shopping</a></strong>
       <span class="hint">4 open · 2 done</span>
     </li>
     
-    <li data-list="db74af6c-dee4-4489-ae32-f6cb6a456915">
-      <strong><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span> <a href="/lists/db74af6c-dee4-4489-ae32-f6cb6a456915">To-dos</a></strong>
+    <li data-list="46c7ce9f-51ba-4f81-a426-5d62938d2f7b">
+      <strong><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span> <a href="/lists/46c7ce9f-51ba-4f81-a426-5d62938d2f7b">To-dos</a></strong>
       <span class="hint">3 open</span>
     </li>
     
-    <li data-list="f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1">
-      <strong><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span> <a href="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1">Holiday packing</a></strong>
+    <li data-list="c0438502-8eae-43e4-9fbd-6ea294c772ce">
+      <strong><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span> <a href="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce">Holiday packing</a></strong>
       <span class="hint">4 open · 1 done</span>
     </li>
     
-    <li data-list="39647a35-3d83-46ad-996d-477bbcd9d9e2">
-      <strong><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span> <a href="/lists/39647a35-3d83-46ad-996d-477bbcd9d9e2">Gift ideas</a></strong>
+    <li data-list="0fe26bee-3774-43d0-aa66-dd3598c1e3e2">
+      <strong><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span> <a href="/lists/0fe26bee-3774-43d0-aa66-dd3598c1e3e2">Gift ideas</a></strong>
       <span class="hint">Nothing open</span>
     </li>
     
@@ -664,14 +676,11 @@ document.addEventListener("change", function (e) {
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
-  <li><a href="/calendars">Calendars</a></li>
-  <li><a href="/caldav">Calendar apps</a></li>
-  <li><a href="/displays">Displays</a></li>
-  <li><a href="/phones">Phones</a></li>
   <li><a href="/tasks">Tasks</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
+
 
 <main id="content">
 
@@ -681,7 +690,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint">Sorted by hand · 4 open · 2 done</p>
 
-  <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries" class="add-entry">
+  <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries" class="add-entry">
     
     <div class="f">
   <label>New entry
@@ -693,87 +702,87 @@ document.addEventListener("change", function (e) {
 
   <ul class="entries">
     
-    <li data-entry="ee08ce63-6e1f-4f6e-ad43-2c54ab90e7c4" data-done="true">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/ee08ce63-6e1f-4f6e-ad43-2c54ab90e7c4/done">
+    <li data-entry="f50670b2-88c9-486c-b1ca-32a9d131e27e" data-done="true">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/f50670b2-88c9-486c-b1ca-32a9d131e27e/done">
         <input type="hidden" name="done" value="0">
         <button class="big-check" type="submit" aria-label="Mark as open: Oat milk"><span class="box" aria-hidden="true"></span><span class="title"><s>Oat milk</s></span></button>
       </form>
       <span class="row">
         
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/ee08ce63-6e1f-4f6e-ad43-2c54ab90e7c4/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Oat milk"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/f50670b2-88c9-486c-b1ca-32a9d131e27e/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Oat milk"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/ee08ce63-6e1f-4f6e-ad43-2c54ab90e7c4/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Oat milk"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/f50670b2-88c9-486c-b1ca-32a9d131e27e/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Oat milk"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="fd15bedd-76f3-4cd4-821f-c136c4687487">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/fd15bedd-76f3-4cd4-821f-c136c4687487/done">
+    <li data-entry="b5cf281a-c0b4-4ec5-b531-5bcdf08f07af">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/b5cf281a-c0b4-4ec5-b531-5bcdf08f07af/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Bananas"><span class="box" aria-hidden="true"></span><span class="title">Bananas</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/fd15bedd-76f3-4cd4-821f-c136c4687487/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/fd15bedd-76f3-4cd4-821f-c136c4687487/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/b5cf281a-c0b4-4ec5-b531-5bcdf08f07af/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/b5cf281a-c0b4-4ec5-b531-5bcdf08f07af/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/fd15bedd-76f3-4cd4-821f-c136c4687487/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/b5cf281a-c0b4-4ec5-b531-5bcdf08f07af/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="1027b6c5-4f72-4f3c-9635-6837553caffc" data-done="true">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/1027b6c5-4f72-4f3c-9635-6837553caffc/done">
+    <li data-entry="c4fd32eb-63ca-4d96-a38b-5a9b32ebfdec" data-done="true">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/c4fd32eb-63ca-4d96-a38b-5a9b32ebfdec/done">
         <input type="hidden" name="done" value="0">
         <button class="big-check" type="submit" aria-label="Mark as open: Football socks for Sebastian"><span class="box" aria-hidden="true"></span><span class="title"><s>Football socks for Sebastian</s></span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/1027b6c5-4f72-4f3c-9635-6837553caffc/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Football socks for Sebastian"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/1027b6c5-4f72-4f3c-9635-6837553caffc/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Football socks for Sebastian"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/c4fd32eb-63ca-4d96-a38b-5a9b32ebfdec/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Football socks for Sebastian"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/c4fd32eb-63ca-4d96-a38b-5a9b32ebfdec/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Football socks for Sebastian"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/1027b6c5-4f72-4f3c-9635-6837553caffc/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Football socks for Sebastian"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/c4fd32eb-63ca-4d96-a38b-5a9b32ebfdec/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Football socks for Sebastian"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="dee379b4-08b4-440a-bcf8-a2df7ea6e1fd">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/dee379b4-08b4-440a-bcf8-a2df7ea6e1fd/done">
+    <li data-entry="52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Coffee for Papa"><span class="box" aria-hidden="true"></span><span class="title">Coffee for Papa</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/dee379b4-08b4-440a-bcf8-a2df7ea6e1fd/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/dee379b4-08b4-440a-bcf8-a2df7ea6e1fd/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/dee379b4-08b4-440a-bcf8-a2df7ea6e1fd/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f/done">
+    <li data-entry="21b4c231-f9b8-4a9e-a5ea-98348666e3eb">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/21b4c231-f9b8-4a9e-a5ea-98348666e3eb/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Birthday card for Mama"><span class="box" aria-hidden="true"></span><span class="title">Birthday card for Mama</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/21b4c231-f9b8-4a9e-a5ea-98348666e3eb/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/21b4c231-f9b8-4a9e-a5ea-98348666e3eb/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/21b4c231-f9b8-4a9e-a5ea-98348666e3eb/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="efe06094-3b41-4d38-afcd-eb38bc5d7ee2">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/efe06094-3b41-4d38-afcd-eb38bc5d7ee2/done">
+    <li data-entry="1501adbe-cd7c-44be-ab70-002ca0a1cdaa">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/1501adbe-cd7c-44be-ab70-002ca0a1cdaa/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Pasta"><span class="box" aria-hidden="true"></span><span class="title">Pasta</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/efe06094-3b41-4d38-afcd-eb38bc5d7ee2/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Pasta"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/1501adbe-cd7c-44be-ab70-002ca0a1cdaa/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Pasta"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
         
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/efe06094-3b41-4d38-afcd-eb38bc5d7ee2/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Pasta"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/1501adbe-cd7c-44be-ab70-002ca0a1cdaa/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Pasta"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
@@ -787,12 +796,12 @@ document.addEventListener("change", function (e) {
   <details open class="danger">
   <summary>Delete completed entries (2)</summary>
     <p>The ticked-off entries of this list are deleted for good. Open entries stay.</p>
-    <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/completed/delete"><button class="button danger" type="submit">Yes, delete completed entries</button></form>
+    <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/completed/delete"><button class="button danger" type="submit">Yes, delete completed entries</button></form>
   </details>
 
   <section aria-labelledby="settings">
     <h2 id="settings" class="visually-hidden">List settings</h2>
-    <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/settings" class="steps">
+    <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/settings" class="steps">
       <details class="more">
   <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>List settings</summary>
   <div>
@@ -838,7 +847,7 @@ document.addEventListener("change", function (e) {
   <details class="danger">
   <summary>Delete list</summary>
     <p>The list is deleted for good, with all its entries.</p>
-    <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
+    <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
   </details>
   
 
@@ -855,14 +864,11 @@ document.addEventListener("change", function (e) {
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
-  <li><a href="/calendars">Calendars</a></li>
-  <li><a href="/caldav">Calendar apps</a></li>
-  <li><a href="/displays">Displays</a></li>
-  <li><a href="/phones">Phones</a></li>
   <li><a href="/tasks">Tasks</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
+
 
 <main id="content">
 
@@ -872,7 +878,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint">Sorted A to Z · 4 open · 1 done</p>
 
-  <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/entries" class="add-entry">
+  <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/entries" class="add-entry">
     
     <div class="f">
   <label>New entry
@@ -884,58 +890,58 @@ document.addEventListener("change", function (e) {
 
   <ul class="entries">
     
-    <li data-entry="89ca22fb-74fa-48df-883d-b160363f87e2">
-      <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/entries/89ca22fb-74fa-48df-883d-b160363f87e2/done">
+    <li data-entry="c763441b-b87d-4865-9e3d-cad5d690e220">
+      <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/entries/c763441b-b87d-4865-9e3d-cad5d690e220/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Ärmelschoner"><span class="box" aria-hidden="true"></span><span class="title">Ärmelschoner</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/entries/89ca22fb-74fa-48df-883d-b160363f87e2/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Ärmelschoner"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/entries/c763441b-b87d-4865-9e3d-cad5d690e220/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Ärmelschoner"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="2b75f47f-0907-440b-a60c-dc24f56a0221">
-      <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/entries/2b75f47f-0907-440b-a60c-dc24f56a0221/done">
+    <li data-entry="cdaa1a8d-5dbf-477a-b0a2-3f535a0b06a3">
+      <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/entries/cdaa1a8d-5dbf-477a-b0a2-3f535a0b06a3/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Charger"><span class="box" aria-hidden="true"></span><span class="title">Charger</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/entries/2b75f47f-0907-440b-a60c-dc24f56a0221/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Charger"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/entries/cdaa1a8d-5dbf-477a-b0a2-3f535a0b06a3/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Charger"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="87f656f3-0ae5-47d3-8bfd-0c954c2d539b">
-      <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/entries/87f656f3-0ae5-47d3-8bfd-0c954c2d539b/done">
+    <li data-entry="21ea4672-f4e5-464b-8510-0b647a3bef9e">
+      <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/entries/21ea4672-f4e5-464b-8510-0b647a3bef9e/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Passports"><span class="box" aria-hidden="true"></span><span class="title">Passports</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/entries/87f656f3-0ae5-47d3-8bfd-0c954c2d539b/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Passports"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/entries/21ea4672-f4e5-464b-8510-0b647a3bef9e/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Passports"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="4970fbdd-7fc8-4307-b8ed-0b225b2ae445" data-done="true">
-      <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/entries/4970fbdd-7fc8-4307-b8ed-0b225b2ae445/done">
+    <li data-entry="fde1723c-ea09-4c8d-82b9-e3e0310afcb5" data-done="true">
+      <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/entries/fde1723c-ea09-4c8d-82b9-e3e0310afcb5/done">
         <input type="hidden" name="done" value="0">
         <button class="big-check" type="submit" aria-label="Mark as open: Sun hats"><span class="box" aria-hidden="true"></span><span class="title"><s>Sun hats</s></span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/entries/4970fbdd-7fc8-4307-b8ed-0b225b2ae445/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Sun hats"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/entries/fde1723c-ea09-4c8d-82b9-e3e0310afcb5/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Sun hats"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="1a4f0901-7134-459e-ac7b-b220104466f2">
-      <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/entries/1a4f0901-7134-459e-ac7b-b220104466f2/done">
+    <li data-entry="4194ded9-4887-47ce-97a0-9740f1ce3739">
+      <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/entries/4194ded9-4887-47ce-97a0-9740f1ce3739/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Swimsuits"><span class="box" aria-hidden="true"></span><span class="title">Swimsuits</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/entries/1a4f0901-7134-459e-ac7b-b220104466f2/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Swimsuits"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/entries/4194ded9-4887-47ce-97a0-9740f1ce3739/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Swimsuits"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
@@ -949,12 +955,12 @@ document.addEventListener("change", function (e) {
   <details class="danger">
   <summary>Delete completed entries (1)</summary>
     <p>The ticked-off entries of this list are deleted for good. Open entries stay.</p>
-    <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/completed/delete"><button class="button danger" type="submit">Yes, delete completed entries</button></form>
+    <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/completed/delete"><button class="button danger" type="submit">Yes, delete completed entries</button></form>
   </details>
 
   <section aria-labelledby="settings">
     <h2 id="settings" class="visually-hidden">List settings</h2>
-    <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/settings" class="steps">
+    <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/settings" class="steps">
       <details class="more">
   <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>List settings</summary>
   <div>
@@ -1000,7 +1006,7 @@ document.addEventListener("change", function (e) {
   <details class="danger">
   <summary>Delete list</summary>
     <p>The list is deleted for good, with all its entries.</p>
-    <form method="post" action="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
+    <form method="post" action="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
   </details>
   
 
@@ -1017,14 +1023,11 @@ document.addEventListener("change", function (e) {
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
-  <li><a href="/calendars">Calendars</a></li>
-  <li><a href="/caldav">Calendar apps</a></li>
-  <li><a href="/displays">Displays</a></li>
-  <li><a href="/phones">Phones</a></li>
   <li><a href="/tasks">Tasks</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
+
 
 <main id="content">
 
@@ -1034,7 +1037,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint">Sorted by hand · 4 open · 2 done</p>
 
-  <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries" class="add-entry">
+  <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries" class="add-entry">
     
     <div class="f">
   <label>New entry
@@ -1046,78 +1049,78 @@ document.addEventListener("change", function (e) {
 
   <ul class="entries">
     
-    <li data-entry="fd15bedd-76f3-4cd4-821f-c136c4687487">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/fd15bedd-76f3-4cd4-821f-c136c4687487/done">
+    <li data-entry="b5cf281a-c0b4-4ec5-b531-5bcdf08f07af">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/b5cf281a-c0b4-4ec5-b531-5bcdf08f07af/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Bananas"><span class="box" aria-hidden="true"></span><span class="title">Bananas</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/fd15bedd-76f3-4cd4-821f-c136c4687487/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/fd15bedd-76f3-4cd4-821f-c136c4687487/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/b5cf281a-c0b4-4ec5-b531-5bcdf08f07af/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/b5cf281a-c0b4-4ec5-b531-5bcdf08f07af/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/fd15bedd-76f3-4cd4-821f-c136c4687487/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/b5cf281a-c0b4-4ec5-b531-5bcdf08f07af/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Bananas"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="dee379b4-08b4-440a-bcf8-a2df7ea6e1fd">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/dee379b4-08b4-440a-bcf8-a2df7ea6e1fd/done">
+    <li data-entry="52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Coffee for Papa"><span class="box" aria-hidden="true"></span><span class="title">Coffee for Papa</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/dee379b4-08b4-440a-bcf8-a2df7ea6e1fd/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/dee379b4-08b4-440a-bcf8-a2df7ea6e1fd/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/dee379b4-08b4-440a-bcf8-a2df7ea6e1fd/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Coffee for Papa"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f/done">
+    <li data-entry="21b4c231-f9b8-4a9e-a5ea-98348666e3eb">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/21b4c231-f9b8-4a9e-a5ea-98348666e3eb/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Birthday card for Mama"><span class="box" aria-hidden="true"></span><span class="title">Birthday card for Mama</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/21b4c231-f9b8-4a9e-a5ea-98348666e3eb/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/21b4c231-f9b8-4a9e-a5ea-98348666e3eb/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></button></form>
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/21b4c231-f9b8-4a9e-a5ea-98348666e3eb/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Birthday card for Mama"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
-    <li data-entry="efe06094-3b41-4d38-afcd-eb38bc5d7ee2">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/efe06094-3b41-4d38-afcd-eb38bc5d7ee2/done">
+    <li data-entry="1501adbe-cd7c-44be-ab70-002ca0a1cdaa">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/1501adbe-cd7c-44be-ab70-002ca0a1cdaa/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Pasta"><span class="box" aria-hidden="true"></span><span class="title">Pasta</span></button>
       </form>
       <span class="row">
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/efe06094-3b41-4d38-afcd-eb38bc5d7ee2/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Pasta"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/1501adbe-cd7c-44be-ab70-002ca0a1cdaa/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Pasta"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg></button></form>
         
         
-        <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/efe06094-3b41-4d38-afcd-eb38bc5d7ee2/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Pasta"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
+        <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/1501adbe-cd7c-44be-ab70-002ca0a1cdaa/delete"><button class="button secondary" type="submit" aria-label="Remove entry: Pasta"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button></form>
       </span>
     </li>
     
   </ul>
 
   <p class="row-links">
-    <a href="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d">Show completed entries</a>
+    <a href="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a">Show completed entries</a>
   </p>
 
   
   <details class="danger">
   <summary>Delete completed entries (2)</summary>
     <p>The ticked-off entries of this list are deleted for good. Open entries stay.</p>
-    <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/completed/delete"><button class="button danger" type="submit">Yes, delete completed entries</button></form>
+    <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/completed/delete"><button class="button danger" type="submit">Yes, delete completed entries</button></form>
   </details>
 
   <section aria-labelledby="settings">
     <h2 id="settings" class="visually-hidden">List settings</h2>
-    <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/settings" class="steps">
+    <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/settings" class="steps">
       <details class="more">
   <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>List settings</summary>
   <div>
@@ -1163,7 +1166,7 @@ document.addEventListener("change", function (e) {
   <details class="danger">
   <summary>Delete list</summary>
     <p>The list is deleted for good, with all its entries.</p>
-    <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
+    <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
   </details>
   
 
@@ -1180,14 +1183,11 @@ document.addEventListener("change", function (e) {
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
-  <li><a href="/calendars">Calendars</a></li>
-  <li><a href="/caldav">Calendar apps</a></li>
-  <li><a href="/displays">Displays</a></li>
-  <li><a href="/phones">Phones</a></li>
   <li><a href="/tasks">Tasks</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
+
 
 <main id="content">
 
@@ -1198,23 +1198,23 @@ document.addEventListener("change", function (e) {
 
   <ul class="cards lists">
     
-    <li data-list="3528cae2-f7f4-4b6a-afcb-42155920187d">
-      <strong><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span> <a href="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d">Shopping</a></strong>
+    <li data-list="34c94f30-cebf-4f7e-a14e-4550c4a84d6a">
+      <strong><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span> <a href="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a">Shopping</a></strong>
       <span class="hint">4 open · 2 done</span>
     </li>
     
-    <li data-list="db74af6c-dee4-4489-ae32-f6cb6a456915">
-      <strong><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span> <a href="/lists/db74af6c-dee4-4489-ae32-f6cb6a456915">To-dos</a></strong>
+    <li data-list="46c7ce9f-51ba-4f81-a426-5d62938d2f7b">
+      <strong><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span> <a href="/lists/46c7ce9f-51ba-4f81-a426-5d62938d2f7b">To-dos</a></strong>
       <span class="hint">3 open</span>
     </li>
     
-    <li data-list="f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1">
-      <strong><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span> <a href="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1">Holiday packing</a></strong>
+    <li data-list="c0438502-8eae-43e4-9fbd-6ea294c772ce">
+      <strong><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span> <a href="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce">Holiday packing</a></strong>
       <span class="hint">4 open · 1 done</span>
     </li>
     
-    <li data-list="39647a35-3d83-46ad-996d-477bbcd9d9e2">
-      <strong><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span> <a href="/lists/39647a35-3d83-46ad-996d-477bbcd9d9e2">Gift ideas</a></strong>
+    <li data-list="0fe26bee-3774-43d0-aa66-dd3598c1e3e2">
+      <strong><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span> <a href="/lists/0fe26bee-3774-43d0-aa66-dd3598c1e3e2">Gift ideas</a></strong>
       <span class="hint">Nothing open</span>
     </li>
     
@@ -1277,14 +1277,11 @@ document.addEventListener("change", function (e) {
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
-  <li><a href="/calendars">Calendars</a></li>
-  <li><a href="/caldav">Calendar apps</a></li>
-  <li><a href="/displays">Displays</a></li>
-  <li><a href="/phones">Phones</a></li>
   <li><a href="/tasks">Tasks</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
+
 
 <main id="content">
 <p class="msg ok" role="status" data-success><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Phone confirmed. It signs in within a few seconds.</p>
@@ -1295,23 +1292,23 @@ document.addEventListener("change", function (e) {
 
   <ul class="cards lists">
     
-    <li data-list="3528cae2-f7f4-4b6a-afcb-42155920187d">
-      <strong><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span> <a href="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d">Shopping</a></strong>
+    <li data-list="34c94f30-cebf-4f7e-a14e-4550c4a84d6a">
+      <strong><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span> <a href="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a">Shopping</a></strong>
       <span class="hint">4 open · 2 done</span>
     </li>
     
-    <li data-list="db74af6c-dee4-4489-ae32-f6cb6a456915">
-      <strong><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span> <a href="/lists/db74af6c-dee4-4489-ae32-f6cb6a456915">To-dos</a></strong>
+    <li data-list="46c7ce9f-51ba-4f81-a426-5d62938d2f7b">
+      <strong><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span> <a href="/lists/46c7ce9f-51ba-4f81-a426-5d62938d2f7b">To-dos</a></strong>
       <span class="hint">3 open</span>
     </li>
     
-    <li data-list="f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1">
-      <strong><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span> <a href="/lists/f441d8e0-2029-4e9b-a6b7-ea5dba8c69d1">Holiday packing</a></strong>
+    <li data-list="c0438502-8eae-43e4-9fbd-6ea294c772ce">
+      <strong><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span> <a href="/lists/c0438502-8eae-43e4-9fbd-6ea294c772ce">Holiday packing</a></strong>
       <span class="hint">4 open · 1 done</span>
     </li>
     
-    <li data-list="39647a35-3d83-46ad-996d-477bbcd9d9e2">
-      <strong><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span> <a href="/lists/39647a35-3d83-46ad-996d-477bbcd9d9e2">Gift ideas</a></strong>
+    <li data-list="0fe26bee-3774-43d0-aa66-dd3598c1e3e2">
+      <strong><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span> <a href="/lists/0fe26bee-3774-43d0-aa66-dd3598c1e3e2">Gift ideas</a></strong>
       <span class="hint">Nothing open</span>
     </li>
     
@@ -1378,6 +1375,7 @@ document.addEventListener("change", function (e) {
   <li><a href="/lists" aria-current="page">Lists</a></li>
   </ul></nav>
 
+
 <main id="content">
 
 
@@ -1390,48 +1388,48 @@ document.addEventListener("change", function (e) {
 
   <ul class="entries">
     
-    <li data-entry="ee08ce63-6e1f-4f6e-ad43-2c54ab90e7c4" data-done="true">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/ee08ce63-6e1f-4f6e-ad43-2c54ab90e7c4/done">
+    <li data-entry="f50670b2-88c9-486c-b1ca-32a9d131e27e" data-done="true">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/f50670b2-88c9-486c-b1ca-32a9d131e27e/done">
         <input type="hidden" name="done" value="0">
         <button class="big-check" type="submit" aria-label="Mark as open: Oat milk"><span class="box" aria-hidden="true"></span><span class="title"><s>Oat milk</s></span></button>
       </form>
       
     </li>
     
-    <li data-entry="fd15bedd-76f3-4cd4-821f-c136c4687487">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/fd15bedd-76f3-4cd4-821f-c136c4687487/done">
+    <li data-entry="b5cf281a-c0b4-4ec5-b531-5bcdf08f07af">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/b5cf281a-c0b4-4ec5-b531-5bcdf08f07af/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Bananas"><span class="box" aria-hidden="true"></span><span class="title">Bananas</span></button>
       </form>
       
     </li>
     
-    <li data-entry="1027b6c5-4f72-4f3c-9635-6837553caffc" data-done="true">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/1027b6c5-4f72-4f3c-9635-6837553caffc/done">
+    <li data-entry="c4fd32eb-63ca-4d96-a38b-5a9b32ebfdec" data-done="true">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/c4fd32eb-63ca-4d96-a38b-5a9b32ebfdec/done">
         <input type="hidden" name="done" value="0">
         <button class="big-check" type="submit" aria-label="Mark as open: Football socks for Sebastian"><span class="box" aria-hidden="true"></span><span class="title"><s>Football socks for Sebastian</s></span></button>
       </form>
       
     </li>
     
-    <li data-entry="dee379b4-08b4-440a-bcf8-a2df7ea6e1fd">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/dee379b4-08b4-440a-bcf8-a2df7ea6e1fd/done">
+    <li data-entry="52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/52bd2e93-0a93-4cc7-90e1-2ec7a413d2c9/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Coffee for Papa"><span class="box" aria-hidden="true"></span><span class="title">Coffee for Papa</span></button>
       </form>
       
     </li>
     
-    <li data-entry="54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/54aad65c-8f0e-4cc8-89c9-97b0bb5c1a9f/done">
+    <li data-entry="21b4c231-f9b8-4a9e-a5ea-98348666e3eb">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/21b4c231-f9b8-4a9e-a5ea-98348666e3eb/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Birthday card for Mama"><span class="box" aria-hidden="true"></span><span class="title">Birthday card for Mama</span></button>
       </form>
       
     </li>
     
-    <li data-entry="efe06094-3b41-4d38-afcd-eb38bc5d7ee2">
-      <form method="post" action="/lists/3528cae2-f7f4-4b6a-afcb-42155920187d/entries/efe06094-3b41-4d38-afcd-eb38bc5d7ee2/done">
+    <li data-entry="1501adbe-cd7c-44be-ab70-002ca0a1cdaa">
+      <form method="post" action="/lists/34c94f30-cebf-4f7e-a14e-4550c4a84d6a/entries/1501adbe-cd7c-44be-ab70-002ca0a1cdaa/done">
         <input type="hidden" name="done" value="1">
         <button class="big-check" type="submit" aria-label="Mark as done: Pasta"><span class="box" aria-hidden="true"></span><span class="title">Pasta</span></button>
       </form>

@@ -35,46 +35,46 @@ func TestSyncNowShowsASuccessLineWithTimeEventCountAndChanges(t *testing.T) {
 	b.now = b.now.Add(time.Hour) // 22:46:26 local
 	b.feeds.set(feedURL172, feedOf("UID:a\r\nSUMMARY:Choir rehearsal\r\nDTSTART:20261120T170000Z", "UID:c\r\nSUMMARY:Swim\r\nDTSTART:20261122T090000Z", "UID:d\r\nSUMMARY:Piano\r\nDTSTART:20261123T090000Z"), nil)
 
-	if r := b.post("/calendars/"+cal.ID+"/sync", url.Values{}); r.status != http.StatusSeeOther || r.location != "/calendars" {
+	if r := b.post("/calendars/"+cal.ID+"/sync", url.Values{}); r.status != http.StatusSeeOther || r.location != "/calendars/"+cal.ID {
 		t.Fatalf("sync now = %d %q", r.status, r.location)
 	}
-	page := getEN(b, "/calendars")
+	page := getEN(b, "/calendars/"+cal.ID)
 	want := "Updated at 22:46:26. Events: 3 (new 2, changed 1, removed 1)."
 	if got := successLine(page.body); got != want {
 		t.Errorf("success line = %q, want %q", got, want)
 	}
-	if again := getEN(b, "/calendars"); successLine(again.body) != "" {
+	if again := getEN(b, "/calendars/"+cal.ID); successLine(again.body) != "" {
 		t.Error("the success line is shown twice")
 	}
 	de := b.do(http.MethodPost, "/calendars/"+cal.ID+"/sync", url.Values{}, map[string]string{"Accept-Language": "de"})
 	if de.status != http.StatusSeeOther {
 		t.Fatal(de.status)
 	}
-	if got := successLine(b.do(http.MethodGet, "/calendars", nil, map[string]string{"Accept-Language": "de"}).body); got != "Aktualisiert um 22:46:26. Termine: 3 (neu 0, geändert 0, entfernt 0)." {
+	if got := successLine(b.do(http.MethodGet, "/calendars/"+cal.ID, nil, map[string]string{"Accept-Language": "de"}).body); got != "Aktualisiert um 22:46:26. Termine: 3 (neu 0, geändert 0, entfernt 0)." {
 		t.Errorf("German success line = %q", got)
 	}
 }
 
 func TestAFailedSyncNowShowsNoSuccessLine(t *testing.T) {
 	b, cal := icsBox(t)
-	getEN(b, "/calendars") // the line of adding the calendar is shown and gone
+	getEN(b, "/calendars/"+cal.ID) // the line of adding the calendar is shown and gone
 	b.feeds.set(feedURL172, "", http.ErrHandlerTimeout)
 	b.post("/calendars/"+cal.ID+"/sync", url.Values{})
-	if got := successLine(getEN(b, "/calendars").body); got != "" {
+	if got := successLine(getEN(b, "/calendars/"+cal.ID).body); got != "" {
 		t.Errorf("success line after a failure: %q", got)
 	}
 }
 
 func TestCalendarRowShowsLastSuccessEventCountAndLastRunChanges(t *testing.T) {
-	b, _ := icsBox(t)
-	page := getEN(b, "/calendars").body
-	for _, want := range []string{"14/11/2026 21:46:26", "Events: 2", "Last run: 2 new, 0 changed, 0 removed"} {
+	b, cal := icsBox(t)
+	page := getEN(b, "/calendars/"+cal.ID).body
+	for _, want := range []string{"14/11/2026, 21:46:26", "2 (last 12 months and later)", "2 new, 0 changed, 0 removed"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("calendars page lacks %q", want)
 		}
 	}
-	de := b.do(http.MethodGet, "/calendars", nil, map[string]string{"Accept-Language": "de"}).body
-	for _, want := range []string{"14/11/2026 21:46:26", "Termine: 2", "Letzter Abgleich: 2 neu, 0 geändert, 0 entfernt"} {
+	de := b.do(http.MethodGet, "/calendars/"+cal.ID, nil, map[string]string{"Accept-Language": "de"}).body
+	for _, want := range []string{"14/11/2026, 21:46:26", "2 (letzte 12 Monate und später)", "neu 2, geändert 0, entfernt 0"} {
 		if !strings.Contains(de, want) {
 			t.Errorf("German calendars page lacks %q", want)
 		}

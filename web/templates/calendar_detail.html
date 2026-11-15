@@ -1,0 +1,9 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/calendars" "Text" (t "calendars.back"))}}
+  <h1>{{.Calendar.Name}}</h1>
+  {{template "facts" .Facts}}
+  <form method="post" action="/calendars/{{.Calendar.ID}}/sync" class="steps">
+    <button class="button" type="submit">{{t "calendars.sync_now"}}</button>
+  </form>
+  {{template "danger" (dict "Label" (t "calendars.remove") "Explain" (tf "calendars.remove.explain" "name" .Calendar.Name) "Confirm" (t "calendars.remove.confirm") "Action" (printf "/calendars/%s/delete" .Calendar.ID) "CancelHref" (printf "/calendars/%s" .Calendar.ID))}}
+{{template "foot"}}

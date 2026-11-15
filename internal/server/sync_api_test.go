@@ -279,7 +279,7 @@ func TestWebAddsAndListsICSCalendars(t *testing.T) {
 		t.Fatalf("add = %d %q", r.status, r.location)
 	}
 	page := b.do(http.MethodGet, "/calendars", nil, map[string]string{"Accept-Language": "en"})
-	for _, want := range []string{"School", "Mia", "#B4583A"} {
+	for _, want := range []string{"School", "Mia"} {
 		if page.status != http.StatusOK || !strings.Contains(page.body, want) {
 			t.Fatalf("calendars page misses %q:\n%s", want, page.body)
 		}

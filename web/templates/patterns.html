@@ -94,7 +94,7 @@
      each with Label and one of Value, Flag (Kind and Text) or Whole/People. */}}
 {{define "facts"}}<dl class="facts">{{range .}}
   <dt>{{.Label}}</dt>
-  <dd>{{if .Flag}}{{template "flag" .Flag}}{{else if or .Whole .People}}{{template "forWhom" .}}{{else}}{{.Value}}{{end}}</dd>{{end}}
+  <dd>{{if .Flag}}{{template "flag" .Flag}}{{else}}{{if or .Whole .People}}{{template "forWhom" .}}{{end}}{{.Value}}{{end}}</dd>{{end}}
 </dl>{{end}}
 
 {{/* Empty state: one sentence on what the thing is for and the first action. */}}

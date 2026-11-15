@@ -176,6 +176,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /calendar/events/{id}/delete", s.handleEventDelete)
 	mux.HandleFunc("GET /calendars", s.handleCalendarsPage)
 	mux.HandleFunc("POST /calendars", s.handleCalendarAdd)
+	mux.HandleFunc("GET /calendars/{id}", s.handleCalendarPage)
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
 	mux.HandleFunc("POST /connections", s.handleConnect)

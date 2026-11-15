@@ -300,7 +300,7 @@ func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
 	}
 	col := columnRe.FindString(out)
 	i, j := strings.Index(col, `class="events"`), strings.Index(col, `data-progress="3/5"`)
-	if i < 0 || j < i || !strings.Contains(col, "--pct:60") || !strings.Contains(col, ">3/5<") {
+	if i < 0 || j < i || !strings.Contains(col, "--pct:60") || !strings.Contains(col, ">3 of 5 tasks done</span>") {
 		t.Fatalf("progress bar not after the events:\n%s", col)
 	}
 	if strings.Count(out, "data-progress") != 1 {

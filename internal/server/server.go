@@ -280,6 +280,7 @@ func parsePages() *template.Template {
 		"list": func(v ...any) []any { return v },
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
+		"repl": repl,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
 
@@ -337,6 +338,9 @@ func (s *server) fail(w http.ResponseWriter, what string, err error) {
 	s.logger.Error(what, "err", err)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
 }
+
+// repl fills the {name} placeholders of a translated text: repl(text, "{n}", "3", ...).
+func repl(text string, pairs ...string) string { return strings.NewReplacer(pairs...).Replace(text) }
 
 // dict builds a map for passing several values to a sub-template.
 func dict(kv ...any) map[string]any {

@@ -162,6 +162,10 @@ _Avoid_: sleep screen, standby page
 A smartphone paired with the box through a QR code that runs the web interface as an app for one person, adult or child. A phone's calendar app syncing over CalDAV is a CalDAV client, not a phone.
 _Avoid_: mobile, client (alone), handset
 
+**Browser session**:
+The sign-in of one person in one browser with username, password and one-time code; lasts 30 days. Ended by signing out in that browser or by a parent under "Signed-in devices"; a paired phone's access is a device session, not a browser session.
+_Avoid_: login (as a noun), cookie, session (alone)
+
 **Device session**:
 The long-lived, revocable access of a paired phone, which acts for one person.
 _Avoid_: remember-me, phone token

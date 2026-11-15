@@ -92,11 +92,10 @@ var wholeFamilyTexts = map[string]bool{
 	"setup.https.public.lan_ip.hint": true, // "eure Geräte"
 	"setup.https.rebind.why":         true, // "bei euch zu Hause"
 	"setup.totp.lead":                true, // "eure Box"
-	"firststeps.family.text":         true, // "bei euch wohnen"
-	"firststeps.lead.1":              true, // "euren Tag"
-	"firststeps.lead.2":              true, // "euren Tag"
-	"firststeps.lead.3":              true, // "euren Tag"
-	"firststeps.devices.text":        true, // "euren Tag"
+	"firststeps.lead":                true, // "eurem Familienleben"
+	"firststeps.settled":             true, // "eure Familie"
+	"firststeps.close.hint":          true, // "euren Tag"
+	"firststeps.display.text":        true, // "euren Tag"
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

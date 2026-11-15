@@ -1048,3 +1048,5 @@ ol.howto > li[data-skipped]::before { content: "\2013"; border-style: dashed; bo
 .ctasks li[data-done] .t { text-decoration: line-through; color: var(--text-secondary); }
 .ctasks .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
 .ctasks .stars { display: inline-flex; align-items: center; gap: 2px; font-weight: 700; }
+/* A hub row that posts (Settings: show the first steps again) looks like the link rows. */
+button.hub-row { width: 100%; padding: 0; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }

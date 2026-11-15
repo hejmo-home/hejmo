@@ -251,7 +251,7 @@ func TestStylesheetHasTheDesignPass2Components(t *testing.T) {
 	for _, sel := range []string{
 		`.wsteps .wiz-count {`, "a.ext {", ".copyrow {", ".place-pick {", ".place-list {", ".place-status.ok {", ".fs-bar {", ".fs-head {", ".fs-state[data-state=\"done\"]",
 		".fs-acts {", ".link.quiet {", ".fs-foot {", ".who-chips {", ".fs-sub, .fs-rows {", ".fs-rows .for {", ".today {", ".today-fam ", ".today-people {",
-		".tev", ".today-meal {", ".child-h .marker {", ".today.child {", ".ctasks {", ".icon.star {", `ol.howto > li[data-skipped]::before`,
+		".tev", ".today-meal {", ".child-h .marker {", ".today.child {", ".ctasks {", ".icon.star {", `ol.howto > li[data-skipped]::before`, "button.hub-row {",
 	} {
 		if !strings.Contains(css, sel) {
 			t.Errorf("stylesheet lacks %q", sel)

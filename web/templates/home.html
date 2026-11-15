@@ -3,25 +3,20 @@
   {{template "httpsNotice" .}}
   {{template "updateNotice" .}}
   {{template "syncNotice" .}}
-  {{with .FirstSteps}}<section class="firststeps" data-firststeps>
+  {{with .FirstSteps}}<section class="firststeps{{if .Settled}} done{{end}}" data-firststeps>
     <h2>{{t "firststeps.title"}}</h2>
-    <p>{{t .LeadKey}}</p>
+    {{if .Settled}}<p class="msg ok" role="status">{{template "tickIcon" 20}}{{t "firststeps.settled"}}</p>{{else}}<p>{{t "firststeps.lead"}}</p>{{end}}
+    <div class="fs-progress"><span class="fs-bar" aria-hidden="true">{{range .Bar}}<span data-state="{{.}}"></span>{{end}}</span><span class="fs-count">{{.Count}}</span></div>
     <ol class="howto">
-      {{if .Family.Done}}<li data-done><div class="s"><b>{{t "firststeps.family.title"}}</b>
-        <p class="done-who">{{range .People}}<span><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}</span>{{end}}</p>
-        <a class="link" href="/people">{{t "firststeps.family.change"}}</a></div></li>
-      {{else}}<li><div class="s"><b>{{t "firststeps.family.title"}}</b><p>{{t "firststeps.family.text"}}</p>
-        <a class="{{if .Family.Primary}}button{{else}}link{{end}}" href="/people">{{t "firststeps.family.action"}}</a></div></li>{{end}}
-      {{if .Calendars.Done}}<li data-done><div class="s"><b>{{t "firststeps.calendars.title"}}</b><p>{{t "firststeps.calendars.done"}}</p>
-        <a class="link" href="/calendars">{{t "firststeps.calendars.change"}}</a></div></li>
-      {{else}}<li><div class="s"><b>{{t "firststeps.calendars.title"}}</b><p>{{t "firststeps.calendars.text"}}</p>
-        <a class="{{if .Calendars.Primary}}button{{else}}link{{end}}" href="/calendars">{{t "firststeps.calendars.action"}}</a></div></li>{{end}}
-      {{if .Devices.Done}}<li data-done><div class="s"><b>{{t "firststeps.devices.title"}}</b><p>{{t "firststeps.devices.done"}}</p>
-        <span class="actions"><a class="link" href="/displays">{{t "firststeps.devices.display"}}</a><a class="link" href="/phones">{{t "firststeps.devices.phone"}}</a></span></div></li>
-      {{else}}<li><div class="s"><b>{{t "firststeps.devices.title"}}</b><p>{{t "firststeps.devices.text"}}</p>
-        <span class="actions"><a class="{{if .Devices.Primary}}button{{else}}link{{end}}" href="/displays">{{t "firststeps.devices.display"}}</a><a class="link" href="/phones">{{t "firststeps.devices.phone"}}</a></span></div></li>{{end}}
+      {{range .Steps}}{{$st := .}}<li{{if eq .State "done"}} data-done{{else if eq .State "skipped"}} data-skipped{{end}}><div class="s"><p class="fs-head"><b>{{.Title}}</b><span class="fs-state" data-state="{{.State}}">{{.StateText}}</span></p>
+        {{if .Subs}}<ul class="fs-sub">{{range .Subs}}{{if .Done}}<li data-state="done">{{template "tickIcon" 18}}<span>{{.Text}}<span class="vh"> {{t "firststeps.sub.done"}}</span></span></li>{{else}}<li data-state="open"><span class="dot" aria-hidden="true"></span><span>{{.Text}}<span class="vh"> {{t "firststeps.sub.open"}}</span></span></li>{{end}}{{end}}</ul>{{else if .Text}}<p>{{.Text}}</p>{{end}}
+        {{if .Chips}}<ul class="who-chips">{{range .Chips}}<li><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}</li>{{end}}</ul>{{end}}
+        {{if .Rows}}<ul class="fs-rows">{{range .Rows}}<li><b>{{.Name}}</b> <span class="src">{{.Source}}</span><span class="for">{{.For}}</span></li>{{end}}</ul>{{end}}
+        <div class="fs-acts">{{range $i, $a := .Actions}}<a class="{{if and $st.Primary (eq $i 0)}}button{{else}}link{{end}}" href="{{$a.Href}}">{{$a.Label}}</a>{{end}}{{if .Skip}}<form method="post" action="/first-steps/skip"><input type="hidden" name="step" value="{{.ID}}"><button class="link quiet" type="submit">{{t "firststeps.skip"}}</button></form>{{end}}{{if .Undo}}<form method="post" action="/first-steps/undo"><input type="hidden" name="step" value="{{.ID}}"><button class="link quiet" type="submit">{{t "firststeps.undo"}}</button></form>{{end}}</div></div></li>
+      {{end}}
     </ol>
-    <form method="post" action="/first-steps/hide"><button class="link later" type="submit">{{t "firststeps.hide"}}</button></form>
+    {{if .Settled}}<div class="fs-foot"><form method="post" action="/first-steps/hide"><button class="button" type="submit">{{t "firststeps.close"}}</button></form><p class="hint">{{t "firststeps.close.hint"}}</p></div>
+    {{else}}<div class="fs-foot"><form method="post" action="/first-steps/hide"><button class="link quiet" type="submit">{{t "firststeps.hide"}}</button></form><p class="hint">{{t "firststeps.hide.hint"}}</p></div>{{end}}
   </section>{{end}}
   {{with .Note}}{{$bad := eq $.ErrorField "text"}}
   <form class="steps note-day" method="post" action="/notes">

@@ -1523,11 +1523,15 @@ components:
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
     Settings:
       type: object
-      required: [time_format, temperature_unit, auto_update, first_steps_hidden, meal_cutoffs]
+      required: [time_format, temperature_unit, auto_update, first_steps_hidden, first_steps_skipped, meal_cutoffs]
       properties:
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
         temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
-        first_steps_hidden: { type: boolean, description: "Whether the first steps card on the start page is hidden (default false). The card also disappears by itself once its steps are done." }
+        first_steps_hidden: { type: boolean, description: "Whether the first steps card on the start page is hidden (default false). A parent closes the card when all six steps are done or skipped, or hides it earlier." }
+        first_steps_skipped:
+          type: array
+          description: "The steps of the first steps card a parent skipped, in the order of the card (default empty)"
+          items: { type: string, enum: [family, parents, calendars, tasks, meals, display] }
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
         meal_cutoffs: { $ref: "#/components/schemas/MealCutoffs" }
     MealCutoffs:
@@ -1547,6 +1551,10 @@ components:
         temperature_unit: { type: string, description: "c or f" }
         auto_update: { type: string, description: "on, off or notify" }
         first_steps_hidden: { type: boolean, description: "Hide or show the first steps card on the start page" }
+        first_steps_skipped:
+          type: array
+          description: "Replaces the list of skipped steps; an unknown step refuses the whole request with 422"
+          items: { type: string, enum: [family, parents, calendars, tasks, meals, display] }
         meal_cutoffs:
           type: object
           description: "Only the mealtimes given change; a time outside hh:mm refuses the whole request with 422"

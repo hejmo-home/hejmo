@@ -233,7 +233,7 @@ type noteForm struct {
 
 func (s *server) renderHome(w http.ResponseWriter, r *http.Request, status int, person store.Person, h store.Household, form *noteForm) {
 	data := map[string]any{"Person": person, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": person.Role == store.RoleParent && s.httpsWarning(), "Update": s.parentUpdateNotice(person, h)}
-	first, err := s.firstSteps(person, h)
+	first, err := s.firstSteps(person, h, s.langOf(r))
 	if err != nil {
 		s.fail(w, "first steps", err)
 		return

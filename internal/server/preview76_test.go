@@ -1,0 +1,182 @@
+package server_test
+
+import (
+	"encoding/base64"
+	"fmt"
+	"net/http"
+	"net/url"
+	"os"
+	"regexp"
+	"strings"
+	"testing"
+	"time"
+
+	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/web"
+)
+
+// TestWritePreview76 writes the self-contained preview page for the product
+// owner's approval of ticket 5.21 (people in the web interface). Every frame
+// is a real page of the box, rendered by the real templates for the example
+// family (Mama, Papa, Sebastian, Mia); nothing is hand-written HTML. Each frame
+// is an iframe, so the viewport sizes trigger the real media queries.
+// Run: HEJMO_WRITE_PREVIEW=../../docs/design/preview-76.html go test ./internal/server -run WritePreview76
+func TestWritePreview76(t *testing.T) {
+	out := os.Getenv("HEJMO_WRITE_PREVIEW")
+	if out == "" {
+		t.Skip("set HEJMO_WRITE_PREVIEW to the output path to write the preview")
+	}
+	css, _ := web.Static.ReadFile("static/hejmo.css")
+	js, _ := web.Static.ReadFile("static/form.js")
+	font, _ := web.Static.ReadFile("static/fonts/Figtree-wght.ttf")
+
+	p := newPeopleBox(t)
+	p.add(t, "Papa", "parent")
+	p.add(t, "Sebastian", "child")
+	mia := p.add(t, "Mia", "child")
+	sebastian := p.byName(t, "Sebastian")["id"].(string)
+	// The family strip shows markers of whoever an event is for.
+	if r := p.post("/groups", url.Values{"name": {"School children"}, "people": {sebastian, mia["id"].(string)}}); r.status != http.StatusSeeOther {
+		t.Fatalf("group = %d", r.status)
+	}
+
+	page := func(path string) string {
+		r := p.en(path)
+		if r.status != http.StatusOK {
+			t.Fatalf("%s = %d", path, r.status)
+		}
+		return r.body
+	}
+	open := func(h string) string {
+		return strings.Replace(h, `<details class="more">`, `<details class="more" open>`, 1)
+	}
+	// After a saved change the real redirect carries the success line.
+	if r := p.post("/people/"+mia["id"].(string)+"/move", url.Values{"direction": {"up"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("move = %d", r.status)
+	}
+	overview := page("/people")
+	addForm := open(overview)
+	edit := page("/people/" + mia["id"].(string))
+	papa := p.byName(t, "Papa")
+	clash := p.do(http.MethodPost, "/people/"+mia["id"].(string), url.Values{"name": {"Mia"}, "color": {papa["color"].(string)}, "shape": {papa["shape"].(string)}}, map[string]string{"Accept-Language": "en"})
+	if clash.status != http.StatusUnprocessableEntity {
+		t.Fatalf("clash = %d", clash.status)
+	}
+	groupPage := page("/groups/new")
+	// Mia gets a plum colour with a triangle: the display, chips and markers follow.
+	if r := p.save(mia["id"].(string), url.Values{"name": {"Mia"}, "color": {"#86587F"}, "shape": {"triangle-filled"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("recolour = %d", r.status)
+	}
+	h, _ := p.db.HomeHousehold()
+	cal, _ := p.db.FamilyCalendar(h.ID)
+	day := func(hour, min int) time.Time { return time.Date(2026, 11, 14, hour, min, 0, 0, berlinTZ) }
+	for _, e := range []calendar.Event{
+		{Title: "Swimming", Start: day(16, 0), End: day(17, 0), People: []string{mia["id"].(string)}},
+		{Title: "Football", Start: day(15, 30), End: day(17, 0), People: []string{sebastian}},
+		{Title: "Parents' evening", Start: day(19, 0), End: day(21, 0), People: []string{p.byName(t, "Mama")["id"].(string), papa["id"].(string)}},
+		{Title: "Visit to Oma", Start: day(0, 0), End: day(0, 0).AddDate(0, 0, 1), AllDay: true, People: []string{mia["id"].(string), sebastian}},
+	} {
+		e.CalendarID = cal.ID
+		if _, err := p.db.CreateEvent(h.ID, e); err != nil {
+			t.Fatal(err)
+		}
+	}
+	family := p.display.get("/display", "en").body
+
+	type frame struct {
+		theme string
+		w, h  int
+	}
+	desk := func(themes ...string) []frame {
+		var fs []frame
+		for _, th := range themes {
+			fs = append(fs, frame{th, 1024, 768})
+		}
+		return fs
+	}
+	portrait := []frame{{"light", 768, 1024}, {"bw", 768, 1024}}
+	phone := []frame{{"light", 375, 812}, {"dark", 375, 812}}
+	var body strings.Builder
+	var docs []string
+	docOf := map[string]int{}
+	add := func(title, note, anchor, html string, frames ...frame) {
+		idx, ok := docOf[html]
+		if !ok {
+			idx = len(docs)
+			docOf[html] = idx
+			docs = append(docs, html)
+		}
+		fmt.Fprintf(&body, "<h2>%s</h2><p class=\"note\">%s</p><div class=\"row\">\n", title, note)
+		for _, f := range frames {
+			label := map[string]string{"light": "Light", "dark": "Dark", "bw": "Black and white"}[f.theme]
+			fmt.Fprintf(&body, `<figure><figcaption>%s, %d x %d</figcaption><iframe data-doc="%d" data-theme="%s" data-anchor="%s" width="%d" height="%d" title="%s"></iframe></figure>`+"\n", label, f.w, f.h, idx, f.theme, anchor, f.w, f.h, title)
+		}
+		body.WriteString("</div>\n")
+	}
+	add("1. People: rows with marker, role and order buttons; subgroups; success line",
+		"Mia was just moved up one place (the success line shows once). Each person is a calm row that opens their page; the only buttons on a row are the everyday ones, up and down, which set the order of the columns on the displays. Subgroups sit below with their members.",
+		"", overview, append(append(desk("light", "dark", "bw"), portrait...), phone...)...)
+	add("2. Add a person: name and adult or child; colour and marker under More options",
+		"One primary action. The box suggests the first free colour and marker, so the defaults never clash. More options is shown open here.",
+		"#new", addForm, append(append(desk("light", "dark", "bw"), portrait[0]), phone...)...)
+	add("3. Change a person: name, colour (six palette colours) and marker (six shapes)",
+		"The colour chips carry the colour name, the marker chips show the shape, so nothing relies on colour alone. In black and white every colour is black and only the marker tells people apart.",
+		"", edit, append(append(desk("light", "dark", "bw"), portrait[0]), phone...)...)
+	add("4. The same colour with the same marker is refused",
+		"Mia was given Papa's colour and marker. The error sits at the marker choice, and what was typed stays.",
+		"#err-shape", clash.body, append(desk("light", "bw"), phone...)...)
+	add("5. New subgroup: name and person chips",
+		"Subgroups are chosen with the same chips as everywhere else.",
+		"", groupPage, append(desk("light", "dark"), phone[0])...)
+	add("6. Result on the display: Mia now has a plum column with a triangle marker",
+		"After changing Mia's colour and marker on her page, her column, markers and personal view follow. The displays at 1024 x 768 (E-Ink colour tablet, here in light, dark and black and white) and in portrait.",
+		"", family, append(desk("light", "dark", "bw"), portrait...)...)
+
+	var jsDocs strings.Builder
+	for i, h := range docs {
+		h = regexp.MustCompile(`(?s)<script src="[^"]*"[^>]*></script>`).ReplaceAllString(h, "")
+		h = regexp.MustCompile(`(?s)<link rel="stylesheet"[^>]*>`).ReplaceAllString(h, "")
+		h = strings.ReplaceAll(h, " autofocus", "") // focus would scroll the frame
+		bodyAt := strings.Index(h, "<body")
+		inner := h[bodyAt:strings.LastIndex(h, "</body>")]
+		fmt.Fprintf(&jsDocs, "<template id=\"doc%d\">%s</template>\n", i, inner)
+	}
+	pageHTML := `<!doctype html>
+<!-- Generated by TestWritePreview76 from the box's real pages and templates (ticket 5.21). The stylesheet, script and font are inlined copies of web/static and do not follow later changes. No external requests. -->
+<html lang="en"><head><meta charset="utf-8"><title>Hejmo preview 5.21 people</title>
+<style>
+body{margin:0;padding:16px;background:#888;font-family:system-ui,sans-serif;color:#fff}
+h1{font-size:22px}h2{font-size:18px;margin:28px 0 4px}.note{margin:0 0 10px;max-width:900px}
+.row{display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start}
+figure{margin:0 0 12px}figcaption{margin-bottom:6px;font-weight:700}
+iframe{border:0;background:#fff;display:block}
+</style></head><body>
+<h1>Hejmo 5.21 people in the web interface: preview with the example family (Mama, Papa, Sebastian, Mia): 1024 x 768 and portrait, light, dark and black and white; 375 px for phones</h1>
+<noscript><p>This page needs JavaScript only to place the real pages into their frames.</p></noscript>
+` + body.String() + `
+<template id="css">` + string(css) + `</template>
+<template id="js">` + string(js) + `</template>
+` + jsDocs.String() + `
+<script>
+(function () {
+  var font = Uint8Array.from(atob("` + base64.StdEncoding.EncodeToString(font) + `"), function (c) { return c.charCodeAt(0); });
+  var fontUrl = URL.createObjectURL(new Blob([font], { type: "font/ttf" }));
+  var css = document.getElementById("css").innerHTML.replace("/static/fonts/Figtree-wght.ttf", fontUrl).replace(/&amp;/g, "&").replace(/&gt;/g, ">").replace(/&lt;/g, "<");
+  var js = document.getElementById("js").textContent;
+  document.querySelectorAll("iframe[data-doc]").forEach(function (f) {
+    var inner = document.getElementById("doc" + f.getAttribute("data-doc")).innerHTML;
+    f.addEventListener("load", function () {
+      var a = f.getAttribute("data-anchor");
+      var el = a && f.contentDocument.querySelector(a);
+      if (el) el.scrollIntoView();
+    });
+    f.srcdoc = '<!doctype html><html lang="en" data-theme="' + f.getAttribute("data-theme") + '"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><style>' + css + '</style></head>' + inner + '<script>' + js + '<\/script></html>';
+  });
+})();
+</script>
+</body></html>
+`
+	if err := os.WriteFile(out, []byte(pageHTML), 0o644); err != nil {
+		t.Fatal(err)
+	}
+}

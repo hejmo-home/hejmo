@@ -33,6 +33,11 @@ func (s *server) handleSetupForm(w http.ResponseWriter, r *http.Request) {
 
 type setupForm struct {
 	HomeName, Region, Name, Username, password, pin string
+	// Place is the choice of places under the home name: to confirm, or
+	// already confirmed while other fields are corrected.
+	Place *placeView
+	// lat and lon are the confirmed coordinates of the home.
+	lat, lon float64
 }
 
 func (s *server) renderSetup(w http.ResponseWriter, r *http.Request, status int, f setupForm, errKey string) {
@@ -58,9 +63,22 @@ func (s *server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 	}
 	passwordHash, pinHash, errKey := validateSetup(f)
 	if errKey != "" {
+		f.Place = confirmedPlace(r, f.HomeName)
 		s.renderSetup(w, r, http.StatusUnprocessableEntity, f, errKey)
 		return
 	}
+	// Q59: the home is a place the parent confirmed, not just a name.
+	lat, lon, confirmed, view, placeErr := s.resolvePlace(r, f.HomeName, f.Region)
+	if placeErr != "" {
+		s.renderSetup(w, r, http.StatusUnprocessableEntity, f, placeErr)
+		return
+	}
+	if !confirmed {
+		f.Place = view
+		s.renderSetup(w, r, http.StatusOK, f, "")
+		return
+	}
+	f.lat, f.lon = lat, lon
 	if err := s.db.ResetUnfinishedSetup(); err != nil {
 		s.fail(w, "reset setup", err)
 		return
@@ -99,7 +117,7 @@ func validateSetup(f setupForm) (passwordHash, pinHash, errKey string) {
 }
 
 func (s *server) createFirstParent(f setupForm, passwordHash, pinHash string) (string, error) {
-	h, err := s.db.CreateHousehold(store.Household{Name: f.HomeName, HomeName: f.HomeName, Region: f.Region})
+	h, err := s.db.CreateHousehold(store.Household{Name: f.HomeName, HomeName: f.HomeName, Latitude: f.lat, Longitude: f.lon, Region: f.Region})
 	if err != nil {
 		return "", err
 	}
@@ -202,7 +220,7 @@ func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
 // setupErrorField names the input of the setup form that an error belongs to.
 func setupErrorField(errKey string, f setupForm) string {
 	switch errKey {
-	case "setup.error.home":
+	case "setup.error.home", "place.error.none", "place.error.unreachable":
 		return "home_name"
 	case "setup.error.region":
 		return "region"

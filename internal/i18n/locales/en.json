@@ -606,5 +606,14 @@
   "phones.join.refused.text": "The code has expired or was already used. Ask a parent to show a new QR code.",
   "flash.phone_paired": "Phone confirmed. It signs in within a few seconds.",
   "flash.phone_revoked": "Phone removed.",
-  "offline.banner": "As of {time}, not connected"
+  "offline.banner": "As of {time}, not connected",
+  "place.confirm": "Is this your home?",
+  "place.choose": "Which place do you mean?",
+  "place.hint": "The box looks the name up once with Open-Meteo and keeps the coordinates for sunrise, sunset, themes and weather. Only the name is sent. Nothing is saved until you confirm.",
+  "place.confirmed.hint": "Change the name to search again.",
+  "place.error.none": "No place found with this name. Check the spelling or try a larger town nearby.",
+  "place.error.unreachable": "The place search could not be reached. Check the box's internet connection and try again; what you typed is kept.",
+  "settings.home": "Home",
+  "settings.home.location": "Location in use: %s",
+  "settings.home.unknown": "No location yet: sunrise, sunset and weather need one."
 }

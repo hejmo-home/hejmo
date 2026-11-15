@@ -48,7 +48,7 @@
      checkboxes). Open with optionsOpen, add an option per choice, then
      optionsClose with Root and Name to show an error under the group. */}}
 {{define "optionsOpen"}}<fieldset class="{{.Class}}{{with .When}} {{.}}{{end}}"><legend>{{.Legend}}</legend>{{end}}
-{{define "option"}}<label><input type="{{or .Type "radio"}}" name="{{.Name}}" value="{{.Value}}"{{if .Checked}} checked{{end}}>{{if .Hint}}<b>{{.Label}}</b><small>{{.Hint}}</small>{{else}}{{.Label}}{{end}}</label>{{end}}
+{{define "option"}}<label><input type="{{or .Type "radio"}}" name="{{.Name}}" value="{{.Value}}"{{if .Checked}} checked{{end}}{{if .Required}} required{{end}}>{{if .Hint}}<b>{{.Label}}</b><small>{{.Hint}}</small>{{else}}{{.Label}}{{end}}</label>{{end}}
 {{define "optionsClose"}}{{template "fieldError" .}}</fieldset>{{end}}
 
 {{/* "More options": fields with a good default. Arguments: Label, Summary (the
@@ -71,3 +71,16 @@
   <p>{{.Text}}</p>
   <a class="button" href="{{.Href}}">{{.Action}}</a>
 </div>{{end}}
+
+{{/* The place a home name was resolved to (Q59). Arguments: Root, Place (nil
+     before a name was searched). One match is preselected, several are
+     offered as radio buttons to choose from; a place chosen earlier is carried
+     along while other fields are corrected. Nothing is stored until the page
+     is submitted with a place chosen. */}}
+{{define "placeChoice"}}{{with .Place}}<input type="hidden" name="place_for" value="{{.For}}">
+  {{if .Confirmed}}<input type="hidden" name="place" value="{{.Confirmed.Value}}"><input type="hidden" name="place_label" value="{{.Confirmed.Label}}">
+  <p class="place-confirmed" data-place-confirmed><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span><b>{{.Confirmed.Label}}</b> <small>{{t "place.confirmed.hint"}}</small></span></p>
+  {{else}}{{$many := gt (len .Options) 1}}{{template "optionsOpen" (dict "Class" "seg place-options" "Legend" (t (or (and $many "place.choose") "place.confirm")))}}
+      <p class="hint">{{t "place.hint"}}</p>
+      {{range .Options}}{{template "option" (dict "Name" "place" "Value" .Value "Label" .Label "Checked" .Checked "Required" true)}}{{end}}
+    </fieldset>{{end}}{{end}}{{end}}

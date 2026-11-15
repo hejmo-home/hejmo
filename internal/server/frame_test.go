@@ -144,7 +144,7 @@ func TestDisplaysDoNotFollowTheDeviceAndSitOutsideTheFrame(t *testing.T) {
 			t.Errorf("%s display page is wrapped in the web frame", name)
 		}
 	}
-	if page := b.get("/").body; regexp.MustCompile(`<html lang="[a-z]+">`).FindString(page) == "" || !strings.Contains(page, `<body class="web">`) {
+	if page := b.get("/").body; regexp.MustCompile(`<html lang="[a-z]+"( data-sun-[a-z]+="[0-9]+")*>`).FindString(page) == "" || !strings.Contains(page, `<body class="web">`) {
 		t.Errorf("web page lacks the follow-the-device root or the web body class:\n%s", page)
 	}
 }

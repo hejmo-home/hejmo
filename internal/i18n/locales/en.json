@@ -952,5 +952,9 @@
   "picker.hour": "Hour",
   "picker.minute": "Minute",
   "picker.done": "Done",
-  "meals.error.field": "%s, %s"
+  "meals.error.field": "%s, %s",
+  "lang.label": "Language:",
+  "flash.lang.account": "Language changed to English and saved for your account. Displays and the children's phones keep their language.",
+  "flash.lang.device": "Language changed to English. This device remembers your choice.",
+  "flash.lang.error": "Language changed on this device only: it could not be saved for your account. Try again later."
 }

@@ -182,7 +182,7 @@ func TestSetupTOTPPageShowsQRCodeOfTheOtpauthURI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, svg, ok := strings.Cut(page.body, `class="qr"`) // the progress bar has icons too
+	_, svg, ok := strings.Cut(page.body, `<div class="qr"><svg`) // not the chevron of the language switcher
 	if !ok {
 		t.Fatalf("no QR code on the page\n%s", page.body)
 	}

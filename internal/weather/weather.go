@@ -13,6 +13,7 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
+	"strings"
 	"sync"
 	"time"
 )
@@ -60,8 +61,11 @@ const defaultRetry = time.Minute
 // ErrNoHome is what a Home returns while there is no household yet.
 var ErrNoHome = errors.New("weather: no home yet")
 
-// errNoPlace is the answer of a place search without a result.
-var errNoPlace = errors.New("weather: no place found")
+// ErrNoPlace is the answer of a place search without a result; any other error
+// of a search means the service could not be reached or understood.
+var ErrNoPlace = errors.New("weather: no place found")
+
+var errNoPlace = ErrNoPlace
 
 type entry struct {
 	lat, lon float64
@@ -257,26 +261,69 @@ func (s *Service) Run(ctx context.Context, interval time.Duration, h Home, onErr
 	}
 }
 
-// Geocode finds the coordinates of a place by its name with Open-Meteo's
-// geocoding (no key). countryCode (ISO 3166-1 alpha-2) may be empty.
-func (s *Service) Geocode(ctx context.Context, name, countryCode string) (lat, lon float64, err error) {
-	q := url.Values{"name": {name}, "count": {"1"}}
+// MaxPlaces is how many matching places a search lists.
+const MaxPlaces = 5
+
+// Place is a place found by name.
+type Place struct {
+	Name, Region, Country string // Region is the state, Country the country name
+	// Area is the district or county, when the service names one.
+	Area                string
+	Latitude, Longitude float64
+}
+
+// Label is the place as a parent recognises it: name, district, state, country.
+func (p Place) Label() string {
+	var parts []string
+	for _, s := range []string{p.Name, p.Area, p.Region, p.Country} {
+		if s != "" {
+			parts = append(parts, s)
+		}
+	}
+	return strings.Join(parts, ", ")
+}
+
+// Search lists up to MaxPlaces places that match name with Open-Meteo's
+// geocoding (no key). countryCode (ISO 3166-1 alpha-2) and language (the
+// language of the place names) may be empty. ErrNoPlace means nothing matched.
+func (s *Service) Search(ctx context.Context, name, countryCode, language string) ([]Place, error) {
+	q := url.Values{"name": {name}, "count": {strconv.Itoa(MaxPlaces)}}
 	if countryCode != "" {
 		q.Set("countryCode", countryCode)
 	}
+	if language != "" {
+		q.Set("language", language)
+	}
 	var body struct {
 		Results []struct {
+			Name      string  `json:"name"`
 			Latitude  float64 `json:"latitude"`
 			Longitude float64 `json:"longitude"`
+			Country   string  `json:"country"`
+			Admin1    string  `json:"admin1"`
+			Admin2    string  `json:"admin2"`
 		} `json:"results"`
 	}
 	if err := s.getJSON(ctx, s.geo+"?"+q.Encode(), &body); err != nil {
-		return 0, 0, err
+		return nil, err
 	}
 	if len(body.Results) == 0 {
-		return 0, 0, fmt.Errorf("%w for %q", errNoPlace, name)
+		return nil, fmt.Errorf("%w for %q", ErrNoPlace, name)
 	}
-	return body.Results[0].Latitude, body.Results[0].Longitude, nil
+	places := make([]Place, 0, len(body.Results))
+	for _, r := range body.Results {
+		places = append(places, Place{Name: r.Name, Region: r.Admin1, Country: r.Country, Area: r.Admin2, Latitude: r.Latitude, Longitude: r.Longitude})
+	}
+	return places, nil
+}
+
+// Geocode finds the coordinates of the first place that matches name.
+func (s *Service) Geocode(ctx context.Context, name, countryCode string) (lat, lon float64, err error) {
+	places, err := s.Search(ctx, name, countryCode, "")
+	if err != nil {
+		return 0, 0, err
+	}
+	return places[0].Latitude, places[0].Longitude, nil
 }
 
 // getJSON reads a JSON answer from Open-Meteo.

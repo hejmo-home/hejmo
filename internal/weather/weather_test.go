@@ -159,7 +159,7 @@ func TestGeocodeFindsTheHomeByName(t *testing.T) {
 	if err != nil || lat != 48.15 || lon != 11.46 {
 		t.Fatalf("geocode = %v %v %v", lat, lon, err)
 	}
-	if q.Get("name") != "Pasing" || q.Get("countryCode") != "DE" || q.Get("count") != "1" {
+	if q.Get("name") != "Pasing" || q.Get("countryCode") != "DE" {
 		t.Errorf("query = %v", q)
 	}
 	empty := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(`{}`)) }))
@@ -299,4 +299,45 @@ func TestRunRetriesSoonWhileThereIsNoReading(t *testing.T) {
 	cancel()
 	<-done
 	t.Fatal("no reading although the home appeared")
+}
+
+// Q59: the parent enters a place name; the box lists the places that match so
+// the parent can confirm one.
+func TestSearchListsMatchingPlaces(t *testing.T) {
+	var q url.Values
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		q = r.URL.Query()
+		_, _ = w.Write([]byte(`{"results":[
+			{"name":"Pasing","latitude":48.1486,"longitude":11.4558,"country_code":"DE","country":"Germany","admin1":"Bavaria"},
+			{"name":"Pasing","latitude":48.5,"longitude":12.1,"country_code":"DE","country":"Germany","admin1":"Saxony","admin2":"Leipzig"}]}`))
+	}))
+	defer srv.Close()
+	s := weather.New(weather.WithGeocodingURL(srv.URL))
+	got, err := s.Search(context.Background(), "Pasing", "DE", "en")
+	if err != nil || len(got) != 2 {
+		t.Fatalf("search = %v %v", got, err)
+	}
+	want := weather.Place{Name: "Pasing", Region: "Bavaria", Country: "Germany", Latitude: 48.1486, Longitude: 11.4558}
+	if got[0] != want {
+		t.Errorf("first = %+v, want %+v", got[0], want)
+	}
+	if got[1].Label() != "Pasing, Leipzig, Saxony, Germany" || got[0].Label() != "Pasing, Bavaria, Germany" {
+		t.Errorf("labels = %q, %q", got[0].Label(), got[1].Label())
+	}
+	if q.Get("name") != "Pasing" || q.Get("countryCode") != "DE" || q.Get("count") != "5" || q.Get("language") != "en" {
+		t.Errorf("query = %v", q)
+	}
+}
+
+func TestSearchTellsNoMatchFromUnreachable(t *testing.T) {
+	empty := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(`{"generationtime_ms":0.5}`)) }))
+	defer empty.Close()
+	if _, err := weather.New(weather.WithGeocodingURL(empty.URL)).Search(context.Background(), "Nowhere", "", ""); !errors.Is(err, weather.ErrNoPlace) {
+		t.Fatalf("no match: err = %v, want ErrNoPlace", err)
+	}
+	down := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { w.WriteHeader(503) }))
+	defer down.Close()
+	if _, err := weather.New(weather.WithGeocodingURL(down.URL)).Search(context.Background(), "Pasing", "", ""); err == nil || errors.Is(err, weather.ErrNoPlace) {
+		t.Fatalf("unreachable: err = %v, want a failure that is not ErrNoPlace", err)
+	}
 }

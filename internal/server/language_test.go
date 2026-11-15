@@ -319,3 +319,21 @@ func TestFlagsAreServed(t *testing.T) {
 		}
 	}
 }
+
+// Text a handler builds (not only the template's) follows the page's language:
+// a German browser that switched to English gets no German on the page.
+func TestHandlerBuiltTextFollowsTheSwitchedLanguage(t *testing.T) {
+	b := signedInBox(t)
+	b.post("/language", langForm("en", "/otp"))
+	de := map[string]string{"Accept-Language": "de"}
+	page := b.do(http.MethodGet, "/otp", nil, de)
+	if pageLang(t, page.body) != "en" {
+		t.Fatalf("page language:\n%s", page.body)
+	}
+	if !strings.Contains(page.body, "Recovery codes left: ") || strings.Contains(page.body, "Wiederherstellungscodes") {
+		t.Errorf("/otp still has German handler text:\n%s", page.body)
+	}
+	if r := b.do(http.MethodGet, "/calendars", nil, de); r.status == http.StatusOK && (strings.Contains(r.body, "Ganzer Haushalt") || strings.Contains(r.body, "Nicht zugeordnet")) {
+		t.Errorf("/calendars still has German handler text")
+	}
+}

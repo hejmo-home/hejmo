@@ -50,9 +50,9 @@ type frame struct {
 	Error string
 	// The language switcher (ticket 134): the active language, its own name and
 	// flag file, the other languages, and the page to come back to.
-	Lang, LangName, LangFlag string
-	Others                   []langChoice
-	Next                     string
+	LangName, LangFlag string
+	Others             []language
+	Next               string
 }
 
 // frameFor builds the frame for the person behind the request, or a bare

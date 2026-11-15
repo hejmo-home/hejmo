@@ -31,18 +31,13 @@ func languageByCode(code string) (language, bool) {
 	return languages[i], true
 }
 
-// langChoice is what the switcher in the frame shows.
-type langChoice struct {
-	Code, Name, Flag string
-}
-
 // setLanguage fills the switcher of a frame: the active language and the others.
 func (f *frame) setLanguage(lang string, r *http.Request) {
 	cur, _ := languageByCode(lang)
-	f.Lang, f.LangName, f.LangFlag = cur.Code, cur.Name, cur.Flag
+	f.LangName, f.LangFlag = cur.Name, cur.Flag
 	for _, l := range languages {
 		if l.Code != cur.Code {
-			f.Others = append(f.Others, langChoice(l))
+			f.Others = append(f.Others, l)
 		}
 	}
 	// A page that was the answer to a post has no page of its own to come back
@@ -99,21 +94,16 @@ func (s *server) handleLanguageSwitch(w http.ResponseWriter, r *http.Request) {
 		Name: langCookie, Value: l.Code, Path: "/", MaxAge: 365 * 24 * 3600,
 		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
 	})
-	key := "lang.saved.device"
+	key := "flash.lang.device"
 	if p, ok := s.currentPerson(r); ok {
 		if _, err := s.db.AccountByPerson(p.ID); err == nil { // a phone's device session has no account
 			if err := s.db.SetAccountLanguage(p.ID, l.Code); err != nil {
 				s.logger.Error("save account language", "err", err)
-				key = "lang.error.account"
+				key = "flash.lang.error"
 			} else {
-				key = "lang.saved.account"
+				key = "flash.lang.account"
 			}
 		}
 	}
 	s.redirectSaved(w, r, next, key)
-}
-
-// isLanguageFlash reports whether key is a text of the switcher that may wait in the flash cookie.
-func isLanguageFlash(key string) bool {
-	return key == "lang.saved.device" || key == "lang.saved.account" || key == "lang.error.account"
 }

@@ -60,7 +60,10 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if code := cookieLanguage(r); code != "" && acc.Language == "" {
-		_ = s.db.SetAccountLanguage(acc.PersonID, code) // the choice made before sign-in becomes the account's
+		// the choice made before sign-in becomes the account's
+		if err := s.db.SetAccountLanguage(acc.PersonID, code); err != nil {
+			s.logger.Error("save account language", "err", err)
+		}
 	}
 	if pendingSetup {
 		http.Redirect(w, r, "/setup/totp", http.StatusSeeOther)

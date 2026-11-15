@@ -98,7 +98,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		if s.now().Sub(d.LastSeen) > time.Minute {
 			_ = s.db.TouchDisplay(hash, s.now())
 		}
-		view, version, err := s.renderDisplayContent(h, d, s.langOf(r))
+		view, version, err := s.renderDisplayContent(h, d, s.displayLang(r))
 		if err != nil {
 			s.fail(w, "display view", err)
 			return
@@ -115,7 +115,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	pair := s.pairURL(r, d.Code)
-	svg, err := qrsvg.SVG(pair, s.i18n.T(s.langOf(r), "display.pair.qr"))
+	svg, err := qrsvg.SVG(pair, s.i18n.T(s.displayLang(r), "display.pair.qr"))
 	if err != nil {
 		s.fail(w, "qr code", err)
 		return

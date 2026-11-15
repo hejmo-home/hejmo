@@ -80,7 +80,7 @@ func TestTomorrowTileLimitsLinesAndKeepsTheNote(t *testing.T) {
 		t.Fatalf("three collections: %s", got)
 	}
 	notes := map[string]string{"2026-11-16": "Bring bags"}
-	if got := lines(tile(at(15, 19, 0), notes, three...)); got != "Paper bin|+3 more|Bring bags" {
+	if got := lines(tile(at(15, 19, 0), notes, three...)); got != "Paper bin|+2 more|Bring bags" {
 		t.Fatalf("three collections and a note: %s", got)
 	}
 	if got := lines(tile(at(15, 19, 0), notes, four[:2]...)); got != "Paper bin|Residual waste|Bring bags" {

@@ -282,6 +282,7 @@
   "wholine.except": "everyone except {names}",
   "wholine.and": " and ",
   "family.cw": "CW",
+  "family.meals_today": "Meals today",
   "family.tomorrow": "Tomorrow",
   "family.day": "Day",
   "family.partial": "in most places",

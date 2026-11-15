@@ -355,6 +355,72 @@ func TestOwnCAIsNotCreatedBeforeSetupIsComplete(t *testing.T) {
 	}
 }
 
+func TestResetOTPCommandResetsTheAccountAndLogsIt(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config{DataDir: dir, SecretKeyFile: filepath.Join(dir, "secret.key")}
+	db, _, err := openDatabase(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
+	mama, _ := db.AddPerson(h.ID, store.Person{Name: "Mama", Role: store.RoleParent})
+	_ = db.CreateAccount(store.Account{PersonID: mama.ID, Username: "mama", PasswordHash: "h", TOTPSecret: "S"})
+	_ = db.ConfirmTOTP(mama.ID)
+	_ = db.ReplaceRecoveryCodes(mama.ID, []string{"x"})
+	_ = db.CreateSession("tok", mama.ID, time.Now().Add(time.Hour))
+	db.Close()
+
+	var logs strings.Builder
+	if err := resetOTP(cfg, "MAMA", slog.New(slog.NewTextHandler(&logs, nil))); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(logs.String(), "one-time codes reset") || !strings.Contains(logs.String(), "account=mama") {
+		t.Errorf("reset not logged: %q", logs.String())
+	}
+	db, _, err = openDatabase(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	acc, _ := db.AccountByPerson(mama.ID)
+	if acc.TOTPConfirmed || acc.TOTPSecret != "" {
+		t.Errorf("account after reset = %+v", acc)
+	}
+	if codes, _ := db.UnusedRecoveryCodes(mama.ID); len(codes) != 0 {
+		t.Error("recovery codes kept")
+	}
+	if _, err := db.SessionPerson("tok", time.Now()); err == nil {
+		t.Error("browser session kept")
+	}
+	if err := resetOTP(cfg, "nobody", slog.New(slog.NewTextHandler(&logs, nil))); err == nil {
+		t.Error("unknown account accepted")
+	}
+}
+
+// docker compose logs shows only what the box's main process (PID 1) writes,
+// so a reset run by `docker compose exec` must reach its stdout too.
+func TestCommandLogReachesTheBoxMainProcessOutput(t *testing.T) {
+	var stderr strings.Builder
+	pid1 := filepath.Join(t.TempDir(), "stdout")
+	if err := os.WriteFile(pid1, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	commandLogger(&stderr, pid1, 4711).Info("one-time codes reset", "account", "mama")
+	got, _ := os.ReadFile(pid1)
+	if !strings.Contains(string(got), "account=mama") {
+		t.Errorf("box main process output = %q", got)
+	}
+	if !strings.Contains(stderr.String(), "account=mama") {
+		t.Errorf("stderr = %q", stderr.String())
+	}
+
+	// Without a reachable main process output, stderr alone still works.
+	stderr.Reset()
+	commandLogger(&stderr, filepath.Join(t.TempDir(), "missing"), 4711).Info("x", "k", "v")
+	if !strings.Contains(stderr.String(), "k=v") {
+		t.Errorf("stderr = %q", stderr.String())
+	}
+}
+
 // The weather service reads the home through homeOf: no household is
 // weather.ErrNoHome, the country is the start of the region, and found
 // coordinates are saved on the household.
@@ -363,7 +429,6 @@ func TestHomeOfAdaptsTheHouseholdForTheWeather(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	defer db.Close()
 	h := homeOf{db}
 	if _, _, _, _, err := h.Home(); !errors.Is(err, weather.ErrNoHome) {
 		t.Fatalf("without a household: %v", err)

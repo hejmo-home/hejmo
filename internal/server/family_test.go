@@ -270,16 +270,20 @@ func TestFamilyViewUsesThePaletteOfTheDisplayType(t *testing.T) {
 	}
 }
 
-func TestFamilyViewFromSevenPeopleScrolls(t *testing.T) {
+// 5.7: one column per person in any number; how many are visible per
+// orientation is the stylesheet's job (web/layout_test.go), so the markup
+// carries the count and no view-dependent scroll flag.
+func TestFamilyViewRendersOneColumnPerPersonWithoutScrollFlag(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
-	if p := f.view(t, "en", f.at(14, 8, 0)); strings.Contains(p, "data-scroll") {
-		t.Fatal("four people scroll")
-	}
 	for _, n := range []string{"Oma", "Opa", "Tante"} {
 		f.db.AddPerson(f.householdID, store.Person{Name: n, Role: store.RoleChild})
 	}
-	if p := f.view(t, "en", f.at(14, 8, 0)); !strings.Contains(p, "data-scroll") {
-		t.Fatal("seven people do not scroll")
+	p := f.view(t, "en", f.at(14, 8, 0))
+	if strings.Count(p, `class="column"`) != 7 || !strings.Contains(p, `data-people="7"`) || !strings.Contains(p, "--cols:7") {
+		t.Errorf("seven people: %s", p)
+	}
+	if strings.Contains(p, "data-scroll") {
+		t.Error("view carries a scroll flag; scrolling follows the viewport")
 	}
 }
 

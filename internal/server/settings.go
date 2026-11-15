@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"net/http"
 
+	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/update"
 )
@@ -51,10 +52,27 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 }
 
 func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p principal, status int, errKey string) {
-	s.render(w, r, status, "settings.html", map[string]any{
+	s.render(w, r, status, "household.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Error": errKey,
 		"TimeFormat": string(p.household.TimeFormat), "TemperatureUnit": string(p.household.TemperatureUnit),
 		"AutoUpdate": string(p.household.AutoUpdate), "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
+	})
+}
+
+// handleSettingsHub shows the Settings hub: one calm row per setup screen.
+func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	var items []hubItem
+	for _, it := range hubItems {
+		if auth.RoleAllows(p.person.Role, it.Needs) {
+			items = append(items, it)
+		}
+	}
+	s.render(w, r, http.StatusOK, "settings.html", map[string]any{
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Hub": items, "Update": s.updateNotice(p.household),
 	})
 }
 
@@ -84,7 +102,7 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "update settings", err)
 		return
 	}
-	s.redirectSaved(w, r, "/settings", "flash.saved")
+	s.redirectSaved(w, r, "/settings/household", "flash.saved")
 }
 
 // saveSettings stores all household settings in one database write. The update

@@ -104,6 +104,7 @@ type server struct {
 
 // New returns the box's root HTTP handler.
 func New(opts Options) http.Handler {
+	dummyHash() // make it now, not during the first sign-in
 	if opts.DB == nil {
 		panic("server: Options.DB is required")
 	}
@@ -159,6 +160,9 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /setup", s.handleSetupSubmit)
 	mux.HandleFunc("GET /setup/totp", s.handleSetupTOTPForm)
 	mux.HandleFunc("POST /setup/totp", s.handleSetupTOTPSubmit)
+	mux.HandleFunc("GET /otp", s.handleOTPPage)
+	mux.HandleFunc("POST /otp/recovery-codes", s.handleRecoveryCodesNew)
+	mux.HandleFunc("POST /otp/reset/{id}", s.handleOTPReset)
 	mux.HandleFunc("GET /login", s.handleLoginForm)
 	mux.HandleFunc("POST /login", s.handleLoginSubmit)
 	mux.HandleFunc("POST /logout", s.handleLogout)
@@ -191,6 +195,9 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
+	mux.HandleFunc("GET /settings", s.handleSettingsHub)
+	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
+	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
 	mux.HandleFunc("GET /phones", s.handlePhonesPage)
 	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)
 	mux.HandleFunc("POST /phones/pairings/{id}/confirm", s.handlePhonePairingConfirm)
@@ -198,8 +205,6 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /phones/join/{code}", s.handlePhoneJoin)
 	mux.HandleFunc("GET /manifest.webmanifest", s.handleManifest)
 	mux.HandleFunc("GET /sw.js", s.handleServiceWorker)
-	mux.HandleFunc("GET /settings", s.handleSettingsPage)
-	mux.HandleFunc("POST /settings", s.handleSettingsSave)
 	mux.HandleFunc("POST /update/dismiss", s.handleUpdateDismiss)
 	mux.HandleFunc("POST /displays/{id}/settings", s.handleDisplaySettings)
 	s.routeAPI(mux)

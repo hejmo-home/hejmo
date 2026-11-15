@@ -49,7 +49,7 @@ func TestHeaderFollowsTheHouseholdSettings(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	f.homeWeather(t)
 	f.event(t, "Dentist", f.at(14, 15, 0), f.at(14, 15, 45), false, "Mama")
-	if r := f.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}}); r.status != 303 {
+	if r := f.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}}); r.status != 303 {
 		t.Fatalf("settings = %d", r.status)
 	}
 	p := f.view(t, "en", f.at(14, 13, 5))
@@ -103,7 +103,7 @@ func TestStateCarriesNoChipsAndClockChipCarriesZoneAndFormat(t *testing.T) {
 	if strings.Contains(body, `"clock"`) || strings.Contains(body, `"weather`) || !strings.Contains(body, `"state":"paired"`) {
 		t.Errorf("state: %s", body)
 	}
-	if r := f.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}); r.status != 303 {
+	if r := f.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}); r.status != 303 {
 		t.Fatalf("settings = %d", r.status)
 	}
 	page := f.view(t, "en", f.now)

@@ -212,3 +212,43 @@ func TestStarsShowOnlyForPeopleWithStarTasksOrBookings(t *testing.T) {
 		t.Fatalf("a booking shows stars: %+v", s)
 	}
 }
+
+// Product owner decision Q2: when the person who booked is removed, the
+// booking keeps their last name and is marked as removed.
+func TestARemovedBookersNameStaysInTheStarLog(t *testing.T) {
+	f := newTaskFixture(t)
+	if _, err := f.db.BookStars(f.h.ID, f.mia.ID, 3, "gift", f.mama.ID, taskNow); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.UpdatePerson(f.h.ID, f.mama.ID, "Mami", f.mama.Color, f.mama.Shape); err != nil {
+		t.Fatal(err)
+	}
+	entry := func() store.StarEntry {
+		acc, err := f.db.StarAccount(f.h.ID, f.mia.ID, 10)
+		if err != nil || len(acc.Entries) != 1 {
+			t.Fatalf("account = %+v, %v", acc, err)
+		}
+		return acc.Entries[0]
+	}
+	if e := entry(); e.BookedByName != "Mami" || e.BookedByRemoved {
+		t.Fatalf("before removal = %+v, want the current name, not removed", e)
+	}
+	if _, err := f.db.SQL().Exec(`DELETE FROM people WHERE id = ?`, f.mama.ID); err != nil {
+		t.Fatal(err)
+	}
+	if e := entry(); e.BookedByName != "Mami" || !e.BookedByRemoved || e.Delta != 3 {
+		t.Fatalf("after removal = %+v, want the last name and removed", e)
+	}
+}
+
+func TestADisplayBookingIsNotARemovedPerson(t *testing.T) {
+	f := newTaskFixture(t)
+	k := f.starTask(t, 2)
+	if err := f.db.SetTaskDone(f.h.ID, k.ID, "2026-11-14", true, "", taskNow); err != nil {
+		t.Fatal(err)
+	}
+	acc, _ := f.db.StarAccount(f.h.ID, f.mia.ID, 10)
+	if e := acc.Entries[0]; e.BookedByName != "" || e.BookedByRemoved {
+		t.Fatalf("display booking = %+v", e)
+	}
+}

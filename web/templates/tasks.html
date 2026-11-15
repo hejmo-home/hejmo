@@ -37,7 +37,7 @@
         <li data-balance="{{.Balance}}">
           <strong><input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{.Name}} <span class="stars-balance">{{.Balance}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span></strong>
           <span class="hint">{{t "tasks.stars.log"}}</span>
-          {{range .Entries}}<span class="log-line"><b>{{.Delta}}</b> {{.Label}}<span class="hint"> · {{.When}}{{if .By}} · {{.By}}{{end}}</span></span>
+          {{range .Entries}}<span class="log-line"><b>{{.Delta}}</b> {{.Label}}<span class="hint"> · {{.When}}{{if .By}} · {{.By}}{{if .ByRemoved}} {{t "tasks.stars.removed"}}{{end}}{{end}}</span></span>
           {{else}}<span class="hint">{{t "tasks.stars.log_empty"}}</span>{{end}}
         </li>
       {{end}}

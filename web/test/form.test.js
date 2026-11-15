@@ -32,15 +32,13 @@ function setup(colorTaken = { '#C00': 'circle', '#00C': 'square' }, shapeTaken =
   };
   form.querySelectorAll = (sel) => matches(sel);
   form.querySelector = (sel) => matches(sel)[0] || null;
-  let handler;
-  const document = { addEventListener(ev, fn) { if (ev === 'change' && !handler) handler = fn; else if (ev === 'change') handler2 = fn; } };
-  let handler2;
+  const handlers = [];
+  const document = { addEventListener(ev, fn) { if (ev === 'change') handlers.push(fn); } };
   vm.runInNewContext(source, { document });
   const pick = (name, value) => {
     inputs.filter((i) => i.name === name).forEach((i) => { i.checked = i.value === value; });
     const target = inputs.find((i) => i.name === name && i.value === value);
-    handler({ target });
-    handler2({ target });
+    handlers.forEach((fn) => fn({ target }));
   };
   const disabled = (name) => inputs.filter((i) => i.name === name && i.disabled).map((i) => i.value);
   return { inputs, pick, disabled };

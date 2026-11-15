@@ -227,8 +227,20 @@ func (s *server) handlePersonSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	look := personInput{r.PostFormValue("name"), r.PostFormValue("color"), r.PostFormValue("shape")}
-	// The stored colour and marker are not checked again (a legacy person can
-	// be renamed); only a changed one is.
+	// The form preselects the colour and marker the displays show. Sent back
+	// unchanged, they stand for what is stored (a legacy person keeps their
+	// colour and can be renamed); only a changed one is checked.
+	for _, c := range chipsOf(people) {
+		if c.ID != person.ID {
+			continue
+		}
+		if _, ok := paletteColor(person.Color); !ok && strings.EqualFold(look.Color, personColors[c.Slot-1]) {
+			look.Color = person.Color
+		}
+		if person.Shape == "" && look.Shape == c.Shape {
+			look.Shape = person.Shape
+		}
+	}
 	field, key := checkLook(people, person.ID, &look, &person)
 	if field == "" {
 		// A form without colour or marker keeps what the person has.

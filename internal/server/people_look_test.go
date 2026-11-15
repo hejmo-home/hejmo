@@ -174,8 +174,31 @@ func TestWebRenamesAPersonWithALegacyLook(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	r := p.save(legacy.ID, url.Values{"name": {"Oma Maier"}, "color": {"#123456"}, "shape": {"circle-empty"}})
-	if r.status != http.StatusSeeOther {
+	// Papa takes the slot colour the pages show for Oma, with her marker.
+	p.add(t, "Papa", "parent")
+	// A browser sends what the page preselects, not the stored colour.
+	page := p.en("/people/" + legacy.ID).body
+	form := url.Values{"name": {"Oma Maier"}}
+	for _, field := range []string{"color", "shape"} {
+		for val, o := range lookOptions(page, field) {
+			if o.checked {
+				form.Set(field, val)
+			}
+		}
+	}
+	if form.Get("color") == "" || form.Get("shape") == "" {
+		t.Fatalf("no preselected look in\n%s", page)
+	}
+	if r := p.save(legacy.ID, form); r.status != http.StatusSeeOther {
 		t.Fatalf("rename = %d\n%s", r.status, r.body)
+	}
+	got, err := p.db.People(h.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, g := range got {
+		if g.ID == legacy.ID && (g.Name != "Oma Maier" || g.Color != "#123456" || g.Shape != "circle-empty") {
+			t.Fatalf("Oma = %+v, want renamed with her stored look", g)
+		}
 	}
 }

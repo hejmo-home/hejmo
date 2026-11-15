@@ -364,7 +364,7 @@ func strs(v any) []string {
 func TestSettingsAPIRefusesAnUnknownFirstStepAndSaysWhy(t *testing.T) {
 	c := signedInAPI(t)
 	status, body, _ := c.call(http.MethodPatch, "/settings", map[string]any{"first_steps_skipped": []string{"nonsense"}})
-	if msg, _ := body["error"].(string); status != http.StatusUnprocessableEntity || !strings.Contains(msg, "first step") || !strings.Contains(msg, "nonsense") {
+	if msg, _ := body["error"].(string); status != http.StatusUnprocessableEntity || !strings.HasPrefix(msg, "first_steps_skipped:") || !strings.Contains(msg, `"nonsense"`) || !strings.Contains(msg, "family, parents, calendars, tasks, meals, display") {
 		t.Fatalf("unknown step = %d %v", status, body)
 	}
 	status, body, _ = c.call(http.MethodPatch, "/settings", map[string]any{"time_format": "25h"})

@@ -1554,8 +1554,8 @@ components:
         first_steps_hidden: { type: boolean, description: "Hide or show the first steps card on the start page" }
         first_steps_skipped:
           type: array
-          description: "Replaces the list of skipped steps; an unknown step refuses the whole request with 422"
-          items: { type: string, enum: [family, parents, calendars, tasks, meals, display] }
+          description: "Replaces the list of skipped steps; an unknown step refuses the whole request with 422. Steps: family, parents, calendars, tasks, meals, display."
+          items: { type: string }
         meal_cutoffs:
           type: object
           description: "Only the mealtimes given change; a time outside hh:mm refuses the whole request with 422"

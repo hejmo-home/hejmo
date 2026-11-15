@@ -1405,7 +1405,7 @@ components:
         note: { type: string, minLength: 1, maxLength: 120, example: "redeemed: ice cream" }
     StarEntry:
       type: object
-      required: [id, person_id, delta, note, task_id, task_title, day, booked_by, created_at]
+      required: [id, person_id, delta, note, task_id, task_title, day, booked_by, booked_by_removed, created_at]
       properties:
         id: { type: string, format: uuid }
         person_id: { type: string, format: uuid }
@@ -1414,7 +1414,8 @@ components:
         task_id: { type: string, description: "Of the ticked or unticked task; empty for a manual booking or once the task is deleted" }
         task_title: { type: string, description: "Title of the task at booking time" }
         day: { type: string, description: "The ticked day (YYYY-MM-DD); empty for a manual booking" }
-        booked_by: { type: string, description: "Name of the person who booked; empty when a display did" }
+        booked_by: { type: string, description: "Name of the person who booked; empty when a display did. Once that person is removed, their last name" }
+        booked_by_removed: { type: boolean, description: "True when the person who booked has been removed; clients show the name as removed" }
         created_at: { type: string, format: date-time }
     StarAccount:
       type: object

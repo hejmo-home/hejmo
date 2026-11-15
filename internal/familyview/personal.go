@@ -121,3 +121,45 @@ func endsAtMidnight(o calendar.Occurrence, loc *time.Location) bool {
 	e := o.End.In(loc)
 	return e.Hour() == 0 && e.Minute() == 0 && e.Second() == 0
 }
+
+// Progress is the person's task progress today, the same figure the family
+// view shows in their column.
+func (v PersonalView) Progress() Progress { return ProgressOf(v.Tasks) }
+
+// ProgressOf counts the done tasks of a person's tasks for today.
+func ProgressOf(tasks []Task) Progress {
+	p := Progress{Total: len(tasks)}
+	for _, t := range tasks {
+		if t.Done {
+			p.Done++
+		}
+	}
+	return p
+}
+
+// TaskPart is the tasks of one part of the day, in the stored order.
+type TaskPart struct {
+	Part  string // "morning", "" (any time today) or "evening"
+	Tasks []Task
+}
+
+// Parts groups the tasks by part of the day, in the order morning, any time,
+// evening, leaving out the parts without tasks.
+func (v PersonalView) Parts() []TaskPart {
+	var parts []TaskPart
+	for _, part := range []string{string(task.Morning), string(task.AnyTime), string(task.Evening)} {
+		var ts []Task
+		for _, t := range v.Tasks {
+			if t.Part == part {
+				ts = append(ts, t)
+			}
+		}
+		if len(ts) > 0 {
+			parts = append(parts, TaskPart{Part: part, Tasks: ts})
+		}
+	}
+	return parts
+}
+
+// Percent is the filled share of the progress bar, 0 to 100.
+func (v PersonalView) Percent() int { return v.Progress().Percent() }

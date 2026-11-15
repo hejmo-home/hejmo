@@ -5,13 +5,23 @@
   <script src="/static/display.js" defer></script>
 {{template "foot"}}
 
-{{define "personalView"}}<div class="pv" data-personal="{{.Person.Name}}">
+{{define "personalView"}}<div class="pv" data-person="{{.Person.Slot}}" data-personal="{{.Person.Name}}">
   <header class="pv-header">
     <h1><span class="marker" data-person="{{.Person.Slot}}" data-shape="{{.Person.Shape}}"></span>{{.Person.Name}}</h1>
     <div class="chips">{{if .Stars.Shown}}<span class="chip stars" data-stars="{{.Stars.Balance}}">{{.Stars.Balance}}<span class="sr"> {{t "personal.stars"}}</span></span>{{end}}<span class="chip" data-clock-zone="{{.ClockZone}}" data-clock-format="{{.ClockFormat}}" data-clock>{{.Clock}}</span></div>
     <a class="pv-back" href="/display">{{t "personal.back"}}</a>
   </header>
-  <div class="pv-body">
+  {{$p := .Progress}}<div class="pv-body"{{if not .Tasks}} data-no-tasks{{end}}>
+    <aside class="pv-tasks" data-tasks data-tick-error="{{t "personal.tick_error"}}">
+      <div class="tasks-head"><div class="lab">{{t "personal.tasks"}}</div>{{if .Tasks}}{{if eq $p.Done $p.Total}}<p class="msg ok" role="status">{{template "tick" 20}}{{repl (t "personal.all_done") "{n}" (printf "%d" $p.Total)}}</p>{{else}}<div class="count">{{template "progressWords" $p}}</div>{{end}}<div class="progress" role="img" aria-label="{{printf "%d/%d" $p.Done $p.Total}}"><span style="--pct:{{.Percent}}"></span></div>{{end}}</div>
+      <div class="list">{{$parts := .Parts}}{{range $parts}}<section class="part">{{if gt (len $parts) 1}}<div class="lab">{{t (printf "personal.part_%s" (or .Part "anytime"))}}</div>{{end}}<ul>
+        {{range .Tasks}}<li data-task="{{.ID}}" data-done="{{.Done}}"><form method="post" action="/display/tasks/{{.ID}}/done">
+          <input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">
+          <input type="hidden" name="day" value="{{$.Date.Format "2006-01-02"}}">
+          <button class="big-check" type="submit" aria-pressed="{{.Done}}" aria-label="{{.Title}}: {{if .Done}}{{t "personal.task_done"}}{{else}}{{t "personal.task_open"}}{{end}}{{if and $.Stars.Shown .Stars}}, {{.Stars}} {{t "personal.stars"}}{{end}}"><span class="box" aria-hidden="true">{{template "tick" 30}}</span>{{if .Emoji}}<span class="emoji" aria-hidden="true">{{.Emoji}}</span>{{end}}<span class="title">{{.Title}}</span>{{if and $.Stars.Shown .Stars}}<span class="task-stars" data-task-stars="{{.Stars}}">{{.Stars}}</span>{{end}}</button>
+        </form></li>
+        {{end}}</ul></section>{{else}}<p class="none">{{t "personal.tasks_none"}}</p>{{end}}</div>
+    </aside>
     <main class="pv-days">
       {{range .Days}}<section class="pv-day" data-day="{{.Date.Format "2006-01-02"}}"{{if .Today}} data-today{{end}}>
         <div class="lab">{{if .Today}}{{t "personal.today"}} · {{end}}{{t (printf "weekday.%d" .Date.Weekday)}} {{.Date.Day}}{{t "family.day_suffix"}} {{t (printf "month.%d" .Date.Month)}}</div>
@@ -20,15 +30,5 @@
       </section>
       {{end}}
     </main>
-    <aside class="pv-tasks" data-tasks>
-      <div class="lab">{{t "personal.tasks"}}</div>
-      {{if .Tasks}}<ul>
-        {{range .Tasks}}<li data-task="{{.ID}}" data-done="{{.Done}}"><form method="post" action="/display/tasks/{{.ID}}/done">
-          <input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">
-          <input type="hidden" name="day" value="{{$.Date.Format "2006-01-02"}}">
-          <button class="big-check" type="submit" aria-pressed="{{.Done}}" aria-label="{{.Title}}: {{if .Done}}{{t "personal.task_done"}}{{else}}{{t "personal.task_open"}}{{end}}{{if and $.Stars.Shown .Stars}}, {{.Stars}} {{t "personal.stars"}}{{end}}"><span class="box" aria-hidden="true"></span><span class="title">{{if .Emoji}}{{.Emoji}} {{end}}{{.Title}}</span>{{if and $.Stars.Shown .Stars}}<span class="task-stars" data-task-stars="{{.Stars}}">{{.Stars}}</span>{{end}}</button>
-        </form></li>
-        {{end}}</ul>{{else}}<div class="none">{{t "personal.tasks_none"}}</div>{{end}}
-    </aside>
   </div>
 </div>{{end}}

@@ -226,3 +226,18 @@ func TestMealPlanBelongsToOneHousehold(t *testing.T) {
 		t.Fatalf("other household sees %+v", got)
 	}
 }
+
+// A count of the meal plan is the same whatever the dates are.
+func TestCountMealsCountsEntriesOfAnyDay(t *testing.T) {
+	f := newCalFixture(t)
+	if n, err := f.db.CountMeals(f.h.ID); err != nil || n != 0 {
+		t.Fatalf("empty = %d, %v", n, err)
+	}
+	in := []store.Meal{{Day: "2026-11-17", Mealtime: meal.Dinner, Text: "Pasta bake"}, {Day: "2031-01-02", Mealtime: meal.Lunch, Text: "Soup"}}
+	if err := f.db.SetMeals(f.h.ID, in, englishMeals()); err != nil {
+		t.Fatal(err)
+	}
+	if n, err := f.db.CountMeals(f.h.ID); err != nil || n != 2 {
+		t.Fatalf("counted = %d, %v", n, err)
+	}
+}

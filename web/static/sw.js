@@ -5,20 +5,34 @@
 // loaded (offline.js draws the notice and switches the controls off). Nothing
 // is changed offline. The copies go as soon as the box says the person is
 // signed out (revoked phone, sign-out).
+//
+// The styles and scripts every page needs are kept apart (they hold nothing
+// personal) and are loaded when the service worker is installed, so a kept page
+// has its styles, its offline notice and its locked controls without a network.
 const CACHE = 'hejmo-pages-v1';
+const ASSET_CACHE = 'hejmo-assets-v1';
+// Must list every asset web/templates/layout.html loads (checked by web/test/sw.test.js).
+const ASSETS = ['/static/hejmo.css', '/static/form.js', '/static/offline.js', '/static/fonts/Figtree-wght.ttf'];
 const MAX_PAGES = 30;
 const STAMP = 'x-hejmo-cached-at';
 
 // Never kept: displays, the API and CalDAV, pairing and setup, sign-in.
-const SKIP = ['/display', '/api', '/dav', '/ca', '/setup', '/phones/join', '/static'];
+const SKIP = ['/display', '/api', '/dav', '/ca', '/setup', '/phones/join'];
 
-self.addEventListener('install', () => self.skipWaiting());
+self.addEventListener('install', (event) => {
+  event.waitUntil(caches.open(ASSET_CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()));
+});
 self.addEventListener('activate', (event) => event.waitUntil(self.clients.claim()));
 
 self.addEventListener('fetch', (event) => {
   const req = event.request;
-  if (req.method !== 'GET' || req.mode !== 'navigate') return;
+  if (req.method !== 'GET') return;
   const path = new URL(req.url).pathname;
+  if (ASSETS.includes(path)) {
+    event.respondWith(asset(req));
+    return;
+  }
+  if (req.mode !== 'navigate') return;
   if (path === '/login') {
     // Whoever signs in next must not see the last person's pages.
     event.waitUntil(caches.delete(CACHE));
@@ -27,6 +41,21 @@ self.addEventListener('fetch', (event) => {
   if (SKIP.some((p) => path === p || path.startsWith(p + '/'))) return;
   event.respondWith(page(req));
 });
+
+// An asset comes from the box when it can be reached (and the copy is
+// renewed), otherwise from the copy kept at installation.
+async function asset(req) {
+  const cache = await caches.open(ASSET_CACHE);
+  try {
+    const res = await fetch(req.url, { credentials: 'same-origin' });
+    if (res.ok) await cache.put(req.url, res.clone());
+    return res;
+  } catch (e) {
+    const hit = await cache.match(req.url);
+    if (hit) return hit;
+    throw e;
+  }
+}
 
 async function page(req) {
   let res;

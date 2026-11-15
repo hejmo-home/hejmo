@@ -5,7 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>{{.Title}} · Hejmo</title>
 {{with .Refresh}}<meta http-equiv="refresh" content="{{.}}">
-{{end}}{{if .Frame}}<meta name="theme-color" content="#F6F3EE">
+{{end}}{{if .Frame}}<meta name="theme-color" content="#F6F3EE" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#1B1A18" media="(prefers-color-scheme: dark)">
 <link rel="manifest" href="/manifest.webmanifest">
 <link rel="apple-touch-icon" href="/static/icons/apple-touch-icon.png">
 {{end}}<link rel="stylesheet" href="/static/hejmo.css">{{if .Frame}}

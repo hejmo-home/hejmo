@@ -26,6 +26,9 @@ type PhonePairing struct {
 	// Device is what the phone said about itself when it opened the code;
 	// empty until a phone did.
 	Device string
+	// ClaimHash is the hash of the secret of the phone that opened the code;
+	// the verification number shown to both sides derives from it.
+	ClaimHash string
 }
 
 // Phone is a paired phone: a device session for one person.
@@ -37,6 +40,8 @@ type Phone struct {
 	PersonName string
 	PairedAt   time.Time
 	LastSeen   time.Time
+	// SessionEnds is when the phone's device session runs out.
+	SessionEnds time.Time
 }
 
 // CreatePhonePairing stores a pairing code by its hash. The code is valid for
@@ -76,7 +81,7 @@ func (db *DB) JoinPhonePairing(codeHash, claimHash, device string, at time.Time)
 // PendingPhonePairings lists the codes a phone opened that wait for a
 // parent's confirmation, oldest first.
 func (db *DB) PendingPhonePairings(householdID string, at time.Time) ([]PhonePairing, error) {
-	rows, err := db.sql.Query(`SELECT id, device, expires_at FROM phone_pairings
+	rows, err := db.sql.Query(`SELECT id, device, expires_at, claim_hash FROM phone_pairings
 		WHERE household_id = ? AND claim_hash IS NOT NULL AND person_id IS NULL AND expires_at > ?
 		ORDER BY created_at, rowid`, householdID, stamp(at))
 	if err != nil {
@@ -87,7 +92,7 @@ func (db *DB) PendingPhonePairings(householdID string, at time.Time) ([]PhonePai
 	for rows.Next() {
 		var p PhonePairing
 		var exp sql.NullString
-		if err := rows.Scan(&p.ID, &p.Device, &exp); err != nil {
+		if err := rows.Scan(&p.ID, &p.Device, &exp, &p.ClaimHash); err != nil {
 			return nil, err
 		}
 		p.ExpiresAt = parseStamp(exp)
@@ -167,7 +172,8 @@ func (db *DB) CompletePhonePairing(codeHash, claimHash, sessionHash string, at, 
 
 // Phones lists a household's paired phones, oldest first.
 func (db *DB) Phones(householdID string) ([]Phone, error) {
-	rows, err := db.sql.Query(`SELECT ph.id, ph.name, ph.person_id, p.name, ph.created_at, ph.last_seen_at
+	rows, err := db.sql.Query(`SELECT ph.id, ph.name, ph.person_id, p.name, ph.created_at, ph.last_seen_at,
+		(SELECT MAX(expires_at) FROM sessions WHERE phone_id = ph.id)
 		FROM phones ph JOIN people p ON p.id = ph.person_id
 		WHERE ph.household_id = ? ORDER BY ph.created_at, ph.rowid`, householdID)
 	if err != nil {
@@ -177,11 +183,11 @@ func (db *DB) Phones(householdID string) ([]Phone, error) {
 	var out []Phone
 	for rows.Next() {
 		var ph Phone
-		var created, seen sql.NullString
-		if err := rows.Scan(&ph.ID, &ph.Name, &ph.PersonID, &ph.PersonName, &created, &seen); err != nil {
+		var created, seen, ends sql.NullString
+		if err := rows.Scan(&ph.ID, &ph.Name, &ph.PersonID, &ph.PersonName, &created, &seen, &ends); err != nil {
 			return nil, err
 		}
-		ph.PairedAt, ph.LastSeen = parseStamp(created), parseStamp(seen)
+		ph.PairedAt, ph.LastSeen, ph.SessionEnds = parseStamp(created), parseStamp(seen), parseStamp(ends)
 		out = append(out, ph)
 	}
 	return out, rows.Err()

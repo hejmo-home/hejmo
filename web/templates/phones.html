@@ -21,6 +21,7 @@
     <form method="post" action="/phones/pairings/{{.ID}}/confirm" class="steps" data-pairing-id="{{.ID}}">
       <fieldset>
         <legend>{{if .Device}}{{.Device}}{{else}}{{t "phones.device.unknown"}}{{end}}</legend>
+        <p>{{t "phones.verify.parent"}} <strong class="verification" data-verification="{{.Verification}}">{{.Verification}}</strong></p>
         {{template "field" (dict "Root" $root "Name" "name" "Label" (t "phones.name") "Value" .Name "Required" true "Max" 80)}}
         {{$sel := .Person}}
         {{template "optionsOpen" (dict "Class" "choice" "Legend" (t "phones.person"))}}
@@ -40,7 +41,7 @@
       {{range .Phones}}
       <li data-phone-id="{{.ID}}">
         <strong>{{.Name}}</strong>
-        <span class="hint">{{t "phones.person_of"}} {{.Person}} · {{t "phones.paired_at"}} {{.Paired}} · {{if .LastSeen}}{{t "phones.last_seen"}} {{.LastSeen}}{{else}}{{t "phones.never"}}{{end}}</span>
+        <span class="hint">{{t "phones.person_of"}} {{.Person}} · {{t "phones.paired_at"}} {{.Paired}} · {{if .Expired}}<span data-expired>{{t "phones.expired"}}</span> · {{end}}{{if .LastSeen}}{{t "phones.last_seen"}} {{.LastSeen}}{{else}}{{t "phones.never"}}{{end}}</span>
         {{template "dangerOpen" (dict "Label" (t "phones.revoke"))}}
           <p>{{t "phones.revoke.explain"}}</p>
           <form method="post" action="/phones/{{.ID}}/revoke"><button class="button danger" type="submit">{{t "phones.revoke.confirm"}}</button></form>

@@ -2,6 +2,7 @@
   <div data-state="waiting">
     <h1>{{t "phones.join.waiting.title"}}</h1>
     <p class="lead">{{t "phones.join.waiting.text"}}</p>
+    <p>{{t "phones.verify.phone"}} <strong class="verification" data-verification="{{.Verification}}">{{.Verification}}</strong></p>
   </div>
 {{else}}{{template "head" (dict "Lang" .Lang "Title" (t "phones.join.refused.title") "Frame" .Frame)}}
   <div data-state="refused">

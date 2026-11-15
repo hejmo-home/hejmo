@@ -3,9 +3,11 @@ package server
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"html/template"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -23,11 +25,14 @@ const (
 	phonePollSeconds = 3
 )
 
-type phoneView struct{ ID, Name, Person, Paired, LastSeen string }
+type phoneView struct {
+	ID, Name, Person, Paired, LastSeen string
+	Expired                            bool
+}
 
 // waitingView is a phone that opened its code. The form fields and the error
 // are filled only for the pairing a failed confirmation was about.
-type waitingView struct{ ID, Device, Expires, Name, Person, Error, ErrorField string }
+type waitingView struct{ ID, Device, Expires, Verification, Name, Person, Error, ErrorField string }
 
 type phonePersonView struct{ ID, Name string }
 
@@ -102,11 +107,12 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 	}
 	var phoneViews []phoneView
 	for _, ph := range phones {
-		phoneViews = append(phoneViews, phoneView{ph.ID, ph.Name, ph.PersonName, at(ph.PairedAt), at(ph.LastSeen)})
+		expired := !ph.SessionEnds.IsZero() && !ph.SessionEnds.After(s.now())
+		phoneViews = append(phoneViews, phoneView{ph.ID, ph.Name, ph.PersonName, at(ph.PairedAt), at(ph.LastSeen), expired})
 	}
 	var waitingViews []waitingView
 	for _, wp := range waiting {
-		v := waitingView{ID: wp.ID, Device: wp.Device, Expires: at(wp.ExpiresAt)}
+		v := waitingView{ID: wp.ID, Device: wp.Device, Expires: at(wp.ExpiresAt), Verification: verificationNumber(wp.ClaimHash)}
 		if form["PairingID"] == wp.ID {
 			v.Name, v.Person, v.Error, v.ErrorField = form["Name"].(string), form["Person"].(string), form["Error"].(string), form["ErrorField"].(string)
 		}
@@ -121,7 +127,7 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 		"Phones": phoneViews, "Waiting": waitingViews, "People": peopleViews,
 	}
 	if code != nil {
-		svg, err := qrsvg.SVG(code.URL, s.i18n.T(s.langOf(r), "phones.qr_label"))
+		svg, err := qrsvg.SVG(code.URL, s.i18n.T(s.langOf(r), "phones.qr.label"))
 		if err != nil {
 			s.fail(w, "qr code", err)
 			return
@@ -229,12 +235,30 @@ func (s *server) handlePhoneJoin(w http.ResponseWriter, r *http.Request) {
 			Name: pairingCookie, Value: claim, Path: "/phones/join/", MaxAge: int(store.PairingCodeLifetime.Seconds()),
 			HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
 		})
-		s.render(w, r, http.StatusOK, "phones_join.html", map[string]any{"State": "waiting", "Poll": phonePollSeconds})
+		s.render(w, r, http.StatusOK, "phones_join.html", map[string]any{"State": "waiting", "Poll": phonePollSeconds, "Verification": verificationNumber(claimHash)})
 	case errors.Is(err, store.ErrNotFound):
 		refuse()
 	default:
 		s.fail(w, "complete phone pairing", err)
 	}
+}
+
+// verificationNumber is a six-digit number both the waiting phone and the
+// parent's phones screen show, taken from the hash of the phone's secret. The
+// pairing address can travel over plain HTTP (the trust page of the box's own
+// CA), so someone on the home network could open the code before the real
+// phone does; that someone cannot make their phone show the number of the
+// phone in the parent's hand, so the parent confirms only a matching number.
+func verificationNumber(claimHash string) string {
+	if len(claimHash) < 8 {
+		return ""
+	}
+	n, err := strconv.ParseUint(claimHash[:8], 16, 32)
+	if err != nil {
+		return ""
+	}
+	n %= 1000000
+	return fmt.Sprintf("%03d %03d", n/1000, n%1000)
 }
 
 // deviceLabel names a phone for the parent from its User-Agent, for example
@@ -276,6 +300,8 @@ func deviceLabel(ua string) string {
 	return browser + " on " + device
 }
 
+func rfc3339(t time.Time, loc *time.Location) string { return t.In(loc).Format(time.RFC3339) }
+
 type phoneJSON struct {
 	ID         string  `json:"id"`
 	Name       string  `json:"name"`
@@ -286,9 +312,9 @@ type phoneJSON struct {
 }
 
 func phoneToJSON(ph store.Phone, loc *time.Location) phoneJSON {
-	j := phoneJSON{ID: ph.ID, Name: ph.Name, PersonID: ph.PersonID, PersonName: ph.PersonName, PairedAt: ph.PairedAt.In(loc).Format(time.RFC3339)}
+	j := phoneJSON{ID: ph.ID, Name: ph.Name, PersonID: ph.PersonID, PersonName: ph.PersonName, PairedAt: rfc3339(ph.PairedAt, loc)}
 	if !ph.LastSeen.IsZero() {
-		seen := ph.LastSeen.In(loc).Format(time.RFC3339)
+		seen := rfc3339(ph.LastSeen, loc)
 		j.LastSeenAt = &seen
 	}
 	return j
@@ -313,7 +339,7 @@ func (s *server) apiCreatePhonePairing(w http.ResponseWriter, r *http.Request, p
 		s.fail(w, "phone pairing", err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, map[string]string{"id": code.ID, "url": code.URL, "expires_at": code.Expires.In(p.location()).Format(time.RFC3339)})
+	writeJSON(w, http.StatusCreated, map[string]string{"id": code.ID, "url": code.URL, "expires_at": rfc3339(code.Expires, p.location())})
 }
 
 func (s *server) apiListPhonePairings(w http.ResponseWriter, _ *http.Request, p principal) {
@@ -324,7 +350,7 @@ func (s *server) apiListPhonePairings(w http.ResponseWriter, _ *http.Request, p 
 	}
 	out := make([]map[string]string, 0, len(list))
 	for _, pr := range list {
-		out = append(out, map[string]string{"id": pr.ID, "device": pr.Device, "expires_at": pr.ExpiresAt.In(p.location()).Format(time.RFC3339)})
+		out = append(out, map[string]string{"id": pr.ID, "device": pr.Device, "verification": verificationNumber(pr.ClaimHash), "expires_at": rfc3339(pr.ExpiresAt, p.location())})
 	}
 	writeJSON(w, http.StatusOK, out)
 }

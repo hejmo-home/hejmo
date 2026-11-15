@@ -417,3 +417,86 @@ func TestOfflineViewGetsItsTextsInBothLanguagesAndItsScripts(t *testing.T) {
 		}
 	}
 }
+
+// Review of #118: the QR code carries a translated accessible label.
+func TestQRCodeHasATranslatedAccessibleLabel(t *testing.T) {
+	b := signedInBox(t)
+	for lang, want := range map[string]string{"en": "QR code to pair a phone", "de": "QR-Code zum Koppeln eines Handys"} {
+		r := b.do(http.MethodPost, "/phones/pairings", url.Values{}, map[string]string{"Accept-Language": lang})
+		if !strings.Contains(r.body, `aria-label="`+want+`"`) {
+			t.Errorf("%s: QR code misses the label %q (raw key shown?)", lang, want)
+		}
+	}
+}
+
+var verificationRe = regexp.MustCompile(`data-verification="([0-9 ]+)"`)
+
+// Review of #118: the code travels over plain HTTP with the box's own CA, so
+// the phone shows a number the parent compares before confirming. A phone that
+// is not the one in the parent's hand shows another number.
+func TestPhoneAndParentSeeTheSameVerificationNumber(t *testing.T) {
+	b := signedInBox(t)
+	path := showCode(t, b)
+	phone := newScreen(b)
+	waiting := phone.get(path, "en")
+	onPhone := verificationRe.FindStringSubmatch(waiting.body)
+	if onPhone == nil {
+		t.Fatalf("waiting phone shows no verification number:\n%s", waiting.body)
+	}
+	if again := verificationRe.FindStringSubmatch(phone.get(path, "en").body); again == nil || again[1] != onPhone[1] {
+		t.Errorf("number changes between requests: %v vs %v", again, onPhone)
+	}
+	onParent := verificationRe.FindStringSubmatch(b.get("/phones").body)
+	if onParent == nil || onParent[1] != onPhone[1] {
+		t.Fatalf("parent sees %v, phone shows %v", onParent, onPhone)
+	}
+	if len(strings.ReplaceAll(onPhone[1], " ", "")) != 6 {
+		t.Errorf("verification number %q is not six digits", onPhone[1])
+	}
+	// Another phone cannot take over the code, and is not shown a number.
+	if other := newScreen(b).get(path, "en"); other.status != http.StatusGone || verificationRe.MatchString(other.body) {
+		t.Errorf("second phone = %d, want refused without a number", other.status)
+	}
+}
+
+func TestVerificationNumberIsInTheAPIToo(t *testing.T) {
+	c := signedInAPI(t)
+	_, shown, _ := c.call(http.MethodPost, "/phones/pairings", nil)
+	path := joinPath(t, `data-join-url="`+shown["url"].(string)+`"`)
+	phone := newScreen(c.b)
+	onPhone := verificationRe.FindStringSubmatch(phone.get(path, "en").body)
+	_, _, waiting := c.call(http.MethodGet, "/phones/pairings", nil)
+	if onPhone == nil || len(waiting) != 1 || waiting[0].(map[string]any)["verification"] != onPhone[1] {
+		t.Fatalf("API waiting = %v, phone shows %v", waiting, onPhone)
+	}
+}
+
+// Review of #118: a phone whose device session ran out is shown as expired.
+func TestPhoneWithAnExpiredSessionIsListedAsExpired(t *testing.T) {
+	b, secret := configuredBox(t)
+	b.post("/login", loginForm(b, secret, "correct horse battery"))
+	pairedPhone(t, b, personNamed(t, b, "Mama"), "Old phone")
+	if strings.Contains(b.get("/phones").body, "data-expired") {
+		t.Fatal("fresh phone is shown as expired")
+	}
+	b.now = b.now.Add(store.PhoneSessionLifetime + 24*time.Hour)
+	b.post("/login", loginForm(b, secret, "correct horse battery"))
+	if !strings.Contains(b.get("/phones").body, "data-expired") {
+		t.Fatal("phone with an expired session is not shown as expired")
+	}
+}
+
+// Review of #118: the dark scheme gets its own status bar colour.
+func TestThemeColourFollowsTheColourScheme(t *testing.T) {
+	b := signedInBox(t)
+	b.logout()
+	head := b.get("/login").body
+	for _, want := range []string{
+		`name="theme-color" content="#F6F3EE" media="(prefers-color-scheme: light)"`,
+		`name="theme-color" content="#1B1A18" media="(prefers-color-scheme: dark)"`,
+	} {
+		if !strings.Contains(head, want) {
+			t.Errorf("page head misses %q", want)
+		}
+	}
+}

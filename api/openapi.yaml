@@ -968,10 +968,11 @@ components:
         last_seen_at: { type: string, format: date-time, nullable: true }
     PhonePairing:
       type: object
-      required: [id, device, expires_at]
+      required: [id, device, verification, expires_at]
       properties:
         id: { type: string, format: uuid }
         device: { type: string, example: Safari on iPhone, description: "What the phone said about itself" }
+        verification: { type: string, example: "483 920", description: "Six-digit number the waiting phone shows. Confirm only if it matches the number on the phone in your hand." }
         expires_at: { type: string, format: date-time }
     NewPhonePairing:
       type: object

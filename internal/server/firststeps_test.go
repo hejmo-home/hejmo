@@ -25,7 +25,7 @@ func TestHomeAfterSetupShowsWelcomeAndFirstSteps(t *testing.T) {
 	for _, want := range []string{
 		`data-firststeps`, "<h2>Erste Schritte</h2>", "Drei Dinge, dann zeigt Hejmo euren Tag.", "Familie eintragen", "Kalender verbinden", "Display oder Handy verbinden",
 		`class="button" href="/people">Personen eintragen`, `class="link" href="/calendars">Kalender verbinden`, `class="link" href="/displays">Display verbinden`, `class="link" href="/phones">Handy verbinden`,
-		"Erste Schritte ausblenden",
+		"Erste Schritte ausblenden", "Auf dem Handy hast du Hejmo immer dabei.",
 	} {
 		if !strings.Contains(page, want) {
 			t.Errorf("first steps misses %q", want)

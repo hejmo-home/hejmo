@@ -32,6 +32,12 @@ colors:
   light-person-6: "#3A7A74"
   light-person-6-tint: "#E7EFEE"
   light-person-6-text: "#1D3D3A"
+  light-person-7: "#5559A3"
+  light-person-7-tint: "#EBEBF4"
+  light-person-7-text: "#2A2C52"
+  light-person-8: "#B04A6A"
+  light-person-8-tint: "#F6E9ED"
+  light-person-8-text: "#582535"
   dark-background: "#1B1A18"
   dark-surface: "#262522"
   dark-text: "#ECE9E3"
@@ -61,6 +67,12 @@ colors:
   dark-person-6: "#6FB2AA"
   dark-person-6-tint: "#35413D"
   dark-person-6-text: "#D4E8E6"
+  dark-person-7: "#8589D6"
+  dark-person-7-tint: "#393946"
+  dark-person-7-text: "#DADCF3"
+  dark-person-8: "#D67188"
+  dark-person-8-tint: "#493436"
+  dark-person-8-text: "#F3D4DB"
   bw-background: "#EDEDEA"
   bw-surface: "#FFFFFF"
   bw-text: "#111111"
@@ -93,6 +105,12 @@ colors:
   bw-person-6: "#111111"
   bw-person-6-tint: "#E4E4E1"
   bw-person-6-text: "#111111"
+  bw-person-7: "#111111"
+  bw-person-7-tint: "#E4E4E1"
+  bw-person-7-text: "#111111"
+  bw-person-8: "#111111"
+  bw-person-8-tint: "#E4E4E1"
+  bw-person-8-text: "#111111"
 typography:
   date: {fontFamily: Figtree, fontSize: 36px, fontWeight: "700"}
   key-figure: {fontFamily: Figtree, fontSize: 22px, fontWeight: "700"}
@@ -140,7 +158,7 @@ Binding values come from `docs/spec.md` ("Design specification Nordic Calm"); th
 - Token names are `<theme>-<role>`: `light-`, `dark-`, `bw-`. In CSS the prefix is dropped and the theme block overrides the default (`--background`, `--person-1-tint`, ...).
 - Roles: `background`, `surface` (columns, tiles, chips), `text`, `text-secondary` (labels), `accent` (icons, links, buttons: Papa blue; #111111 in bw), `accent-text` (text on an accent background, e.g. the button label), `border`, `error-*`, `notice-*`, and per person slot `person-N` (marker, progress bar), `person-N-tint` (event card surface), `person-N-text` (text on the tint).
 - bw only: `bw-event-card` (#E4E4E1, instead of the person tint), `bw-progress-fill` on `bw-progress-track` (instead of person colour on tint). In bw every person is #111111 and told apart by marker shape.
-- Slots 1 to 4 are the spec's example family (1 Mama, 2 Papa, 3 Sebastian, 4 Mia). Slots 5 and 6 are derived the same way (similar lightness and saturation, tint = colour mixed 88 % with white, text = colour mixed 50 % with black) for additional people; a household with more than six people reuses slots; only six bw shapes exist, so from the seventh person on a shape repeats and the person name next to the marker tells them apart.
+- Slots 1 to 4 are the spec's example family (1 Mama, 2 Papa, 3 Sebastian, 4 Mia). Slots 5 to 8 are derived the same way (similar lightness and saturation, tint = colour mixed 88 % with white, text = colour mixed 50 % with black) for additional people. The product owner decided on 15/11/2026 that a household holds up to **8 people (2 parents and 6 children)**, each with their own colour and their own bw shape, so there are 8 slots and 8 shapes. Slot 7 is an indigo (hue 237 degrees), slot 8 a raspberry rose (hue 346 degrees): both sit in hue gaps of the first six (blue 202, plum 309, terracotta 15) and keep at least 26 CIELAB units from every other slot. Colours and shapes repeat only from the 9th person on (the pair of colour and shape stays unique, ADR 0017); the person name next to the marker tells repeats apart.
 - **Dark palette** (ADR 0015): warm near-black background and surface, light warm text, person colours lightened and muted, tint = person colour mixed 20 % into the surface, text on tint = person colour mixed 70 % with white. No shadows; separation is by surface and tint only.
 - Contrast: text on every person tint, text on background and surface, and error and notice text reach at least 4.5:1 in all three palettes; person colours against the surface reach at least 3:1 (non-text); `accent` against background and surface and `accent-text` on `accent` reach 4.5:1 (accent is used as text).
 - **Open decision (product owner, at preview approval):** the spec says person colours must also differ in lightness, but the spec's own light slots 1 and 3 are both L* 48 and the dark slots 1, 2 and 5 are L* 63 to 65 (3 and 6: 68). This is untested until decided; the shape in bw and the name next to the marker carry the distinction meanwhile.
@@ -164,7 +182,7 @@ None. No shadows in any palette.
 ## Shapes
 
 - Corners: columns and tiles 22 px, header chips 18 px, event cards 14 px, form fields 12 px, progress bar 4 px (height 8 px).
-- Person marker: circle 14 px in the person colour. In bw a shape, 16 px. Markers appear only in the column header and the person chips in forms: they are the legend for black and white. Event cards and the family strip carry no markers; they say in words who the event is for (the who-line, Q62: "Whole family" in the web week, "with Kids", "everyone except Papa", else the names). The card tint carries the person in colour themes. Shapes in slot order: circle filled, circle empty, square filled, square empty, triangle filled, diamond filled (`data-shape`).
+- Person marker: circle 14 px in the person colour. In bw a shape, 16 px. Markers appear only in the column header and the person chips in forms: they are the legend for black and white. Event cards and the family strip carry no markers; they say in words who the event is for (the who-line, Q62: "Whole family" in the web week, "with Kids", "everyone except Papa", else the names). The card tint carries the person in colour themes. Shapes in slot order: circle filled, circle empty, square filled, square empty, triangle filled, diamond filled, cross filled, star filled (`data-shape`). Slots 7 and 8 use solid forms with a clear silhouette (a thick plus with concave corners, a five-point star), no thin outlines, so they stay apart from the round, square and triangular shapes at 16 px in the column header and in the person chips; the empty circle and square are the only outline shapes and keep their 2 px ring.
 - Journeys: no fill, 1.5 px dashed border in the person colour (bw: the person colour is #111111), label "Journey" after the time.
 - Icons: line icons with 1.8 px stroke in the accent colour (Papa blue; bw #111111).
 

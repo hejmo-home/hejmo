@@ -50,6 +50,7 @@ The product owner tested the box with a real iCloud account on 14/11/2026. The m
 ### People
 
 - The web interface gets a page to manage people (add, edit colour and marker, order); it was missing.
+- Ticket 5.21 builds it. **Colour** of a person is one of the eight palette colours of "Nordic Calm" (slot 1 to 8, DESIGN.md), **marker** one of the eight black-and-white shapes. The product owner decided at the preview review on 15/11/2026 that households of up to eight people (two parents and six children) get distinct colours and distinct shapes; the palette and shapes grew from six to eight for that (slots 7 and 8, cross and star). The displays, chips and markers take the slot from the person's colour, so changing the colour changes it everywhere, including the dark palette. No two people may have the same colour **and** the same marker; the box refuses the second one (web form and API) and gives new people the first free combination. People are ordered with up and down buttons (also through `PUT /people/order`). A subgroup can be added, renamed, given other members and deleted; one that still decides who sees a calendar or an event is not deleted, because its audience would silently become the whole household. Adding an adult here adds the person only; their account (username, password) is a separate step.
 
 ## Consequences
 

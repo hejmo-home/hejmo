@@ -15,7 +15,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/wholine"
 )
 
-// Person is one column of the family view. Slot (1..6) picks the person's
+// Person is one column of the family view. Slot (1..8) picks the person's
 // colour tokens; Shape is the black-and-white marker.
 type Person struct {
 	ID, Name string
@@ -288,7 +288,7 @@ func whoLine(in Input, o calendar.Occurrence, omit string) wholine.Line {
 		household[i] = wholine.Person{ID: p.ID, Name: p.Name}
 	}
 	if in.I18n == nil {
-		return wholine.Line{}
+		panic("familyview: Input.I18n is required to word the who-line")
 	}
 	return wholine.Of(wholine.Input{Household: household, Groups: in.Groups, Audience: audienceOf(in, o), Omit: omit}, in.I18n, in.Lang)
 }

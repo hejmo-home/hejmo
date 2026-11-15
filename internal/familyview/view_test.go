@@ -103,7 +103,7 @@ func TestEventWithTwoPeopleAppearsInBothColumns(t *testing.T) {
 func TestCalendarAudienceNarrowsTheColumns(t *testing.T) {
 	o := timed("Football", at(14, 15, 0), at(14, 16, 0), "seb", "mia")
 	o.CalendarID = "kids"
-	v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Lang: "en", Region: "DE-BY", People: family(),
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 8, 0), Lang: "en", Region: "DE-BY", People: family(),
 		Calendars:   map[string]calendar.Audience{"kids": {People: []string{"seb"}}},
 		Occurrences: []calendar.Occurrence{o}})
 	same(t, titles(column(t, v, "Sebastian").Events), []string{"Football"})
@@ -114,7 +114,7 @@ func TestSubgroupAudienceReachesItsMembers(t *testing.T) {
 	o := calendar.Occurrence{EventID: "x", CalendarID: "cal", Title: "School", Start: at(14, 8, 0), End: at(14, 12, 0), Groups: []string{"school"}}
 	ps := family()
 	ps[2].Groups = []string{"school"}
-	v := familyview.Build(familyview.Input{Now: at(14, 7, 0), Lang: "en", Region: "DE-BY", People: ps, Occurrences: []calendar.Occurrence{o}})
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 7, 0), Lang: "en", Region: "DE-BY", People: ps, Occurrences: []calendar.Occurrence{o}})
 	same(t, titles(column(t, v, "Sebastian").Events), []string{"School"})
 	same(t, titles(column(t, v, "Mia").Events), nil)
 }
@@ -192,20 +192,20 @@ func TestTimedEventOverMidnightIsAMultiDayBar(t *testing.T) {
 // 5.3: Given a public holiday in Bavaria, it is shown; none from other states.
 func TestHolidaysOfTheHomeRegionOnly(t *testing.T) {
 	// 2026-11-01 Allerheiligen: Bavaria yes, Berlin no.
-	by := familyview.Build(familyview.Input{Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "en", Region: "DE-BY", People: family()})
+	by := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "en", Region: "DE-BY", People: family()})
 	same(t, stripTitles(by), []string{"All Saints' Day"})
 	if by.Strip[0].Kind != familyview.KindHoliday {
 		t.Errorf("kind = %s", by.Strip[0].Kind)
 	}
-	be := familyview.Build(familyview.Input{Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "en", Region: "DE-BE", People: family()})
+	be := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "en", Region: "DE-BE", People: family()})
 	same(t, stripTitles(be), nil)
-	de := familyview.Build(familyview.Input{Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "de", Region: "DE-BY", People: family()})
+	de := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "de", Region: "DE-BY", People: family()})
 	same(t, stripTitles(de), []string{"Allerheiligen"})
 }
 
 func TestStripListsHolidaysFirst(t *testing.T) {
 	now := time.Date(2026, 11, 1, 8, 0, 0, 0, berlin)
-	v := familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: family(),
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: now, Lang: "en", Region: "DE-BY", People: family(),
 		Occurrences: []calendar.Occurrence{timed("Brunch", at(1, 10, 0), at(1, 11, 0))}})
 	same(t, stripTitles(v), []string{"All Saints' Day", "Brunch"})
 }
@@ -239,7 +239,7 @@ func TestTomorrowBlockNeedsTheDisplaySetting(t *testing.T) {
 		timed("Piano", at(15, 15, 0), at(15, 16, 0), "mia"),
 		allDay("Tomorrow bar", day(15), day(16)),
 	}
-	v := familyview.Build(familyview.Input{Now: at(14, 19, 0), Lang: "en", Region: "DE-BY", People: family(), Occurrences: occs})
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 19, 0), Lang: "en", Region: "DE-BY", People: family(), Occurrences: occs})
 	if v.ShowTomorrow || len(column(t, v, "Mia").Tomorrow) != 0 || len(v.StripTomorrow) != 0 {
 		t.Fatalf("tomorrow shown with the setting off: %+v", v)
 	}
@@ -311,7 +311,7 @@ func TestTimesAreShownInTheHouseholdZoneWhateverZoneTheEventIsStoredIn(t *testin
 
 // ADR 0016: the clock and every event time follow the household's time format.
 func TestTimesFollowTheTimeFormat(t *testing.T) {
-	v := familyview.Build(familyview.Input{Now: at(14, 13, 5), Lang: "en", People: family(), TimeFormat: "12h",
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 13, 5), Lang: "en", People: family(), TimeFormat: "12h",
 		Occurrences: []calendar.Occurrence{timed("Dentist", at(14, 9, 0), at(14, 14, 30), "mama"), timed("Brunch", at(14, 10, 0), at(14, 11, 0))}})
 	if v.Clock != "1:05 PM" {
 		t.Errorf("clock = %q", v.Clock)
@@ -322,7 +322,7 @@ func TestTimesFollowTheTimeFormat(t *testing.T) {
 	if got := v.Strip[0].Time; got != "10:00 AM–11:00 AM" {
 		t.Errorf("strip = %q", got)
 	}
-	v = familyview.Build(familyview.Input{Now: at(14, 13, 5), Lang: "en", People: family(), TimeFormat: "24h"})
+	v = familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 13, 5), Lang: "en", People: family(), TimeFormat: "24h"})
 	if v.Clock != "13:05" {
 		t.Errorf("24h clock = %q", v.Clock)
 	}
@@ -332,7 +332,7 @@ func TestTimesFollowTheTimeFormat(t *testing.T) {
 func TestWeatherChipFollowsTheTemperatureUnit(t *testing.T) {
 	w := &familyview.Weather{TempC: 18.4, Icon: "clear"}
 	for unit, want := range map[store.TemperatureUnit]string{"": "18°C", store.Celsius: "18°C", store.Fahrenheit: "65°F"} {
-		v := familyview.Build(familyview.Input{Now: at(14, 8, 0), People: family(), Weather: w, TemperatureUnit: unit})
+		v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 8, 0), People: family(), Weather: w, TemperatureUnit: unit})
 		if v.Weather == nil || v.Weather.Text != want || v.Weather.Icon != "clear" {
 			t.Errorf("unit %q: %+v, want %q", unit, v.Weather, want)
 		}
@@ -342,12 +342,12 @@ func TestWeatherChipFollowsTheTemperatureUnit(t *testing.T) {
 		if want == "32°F" {
 			unit = store.Fahrenheit
 		}
-		v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Weather: &familyview.Weather{TempC: c}, TemperatureUnit: unit})
+		v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 8, 0), Weather: &familyview.Weather{TempC: c}, TemperatureUnit: unit})
 		if v.Weather.Text != want {
 			t.Errorf("%v = %q, want %q", c, v.Weather.Text, want)
 		}
 	}
-	if v := familyview.Build(familyview.Input{Now: at(14, 8, 0), People: family()}); v.Weather != nil {
+	if v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 8, 0), People: family()}); v.Weather != nil {
 		t.Error("weather chip without a reading")
 	}
 }

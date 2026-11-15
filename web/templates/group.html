@@ -1,0 +1,19 @@
+{{template "head" (dict "Lang" .Lang "Title" (or .Group.Name (t "groups.new")) "Frame" .Frame)}}
+  <p><a href="/people">{{t "people.back"}}</a></p>
+  <h1>{{if .New}}{{t "groups.new"}}{{else}}{{.Group.Name}}{{end}}</h1>
+  <p class="lead">{{t "groups.intro"}}</p>
+  {{template "error" .}}
+  <form method="post" action="{{if .New}}/groups{{else}}/groups/{{.Group.ID}}{{end}}" class="steps">
+    <fieldset>
+      {{template "field" (dict "Root" . "Name" "name" "Label" (t "groups.field.name") "Value" .Group.Name "Required" true "Max" 80 "Autocomplete" "off")}}
+      {{template "personChips" (dict "Root" . "Name" "people" "Legend" (t "groups.field.members") "People" .People "Selected" .Group.Members)}}
+    </fieldset>
+    <button class="button" type="submit">{{t "groups.save"}}</button>
+  </form>
+  {{if not .New}}
+  {{template "dangerOpen" (dict "Label" (t "groups.delete"))}}
+    <p>{{t "groups.delete.explain"}}</p>
+    <form method="post" action="/groups/{{.Group.ID}}/delete"><button class="button danger" type="submit">{{t "groups.delete.confirm"}}</button></form>
+  {{template "dangerClose"}}
+  {{end}}
+{{template "foot"}}

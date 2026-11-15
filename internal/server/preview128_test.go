@@ -3,7 +3,6 @@ package server_test
 import (
 	"encoding/base64"
 	"fmt"
-	"github.com/hejmo-home/hejmo/internal/i18n"
 	"net/url"
 	"os"
 	"regexp"
@@ -13,6 +12,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/wholine"

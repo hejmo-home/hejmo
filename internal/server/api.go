@@ -24,6 +24,9 @@ var apiRoutes = []APIRoute{
 	{"GET", "/people", auth.Perm("people", auth.Read), (*server).apiListPeople},
 	{"POST", "/people", auth.Perm("people", auth.Write), (*server).apiCreatePerson},
 	{"GET", "/people/{id}", auth.Perm("people", auth.Read), (*server).apiGetPerson},
+	{"PATCH", "/people/{id}", auth.Perm("people", auth.Write), (*server).apiUpdatePerson},
+	{"PUT", "/people/order", auth.Perm("people", auth.Write), (*server).apiOrderPeople},
+
 	{"GET", "/people/{id}/stars", auth.Perm("tasks", auth.Read), (*server).apiGetStars},
 	{"POST", "/people/{id}/stars", auth.Perm("tasks", auth.Write), (*server).apiBookStars},
 	{"POST", "/me/recovery-codes", auth.Perm("people", auth.Write), (*server).apiNewRecoveryCodes},
@@ -34,6 +37,8 @@ var apiRoutes = []APIRoute{
 	{"DELETE", "/tokens/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokeToken},
 	{"GET", "/groups", auth.Perm("people", auth.Read), (*server).apiListGroups},
 	{"POST", "/groups", auth.Perm("people", auth.Write), (*server).apiCreateGroup},
+	{"PATCH", "/groups/{id}", auth.Perm("people", auth.Write), (*server).apiUpdateGroup},
+	{"DELETE", "/groups/{id}", auth.Perm("people", auth.Write), (*server).apiDeleteGroup},
 	{"GET", "/calendars", auth.Perm("events", auth.Read), (*server).apiListCalendars},
 	{"POST", "/calendars", auth.Perm("events", auth.Write), (*server).apiAddCalendar},
 	{"PATCH", "/calendars/{id}", auth.Perm("events", auth.Write), (*server).apiUpdateCalendar},
@@ -199,20 +204,26 @@ func (s *server) apiCreatePerson(w http.ResponseWriter, r *http.Request, p princ
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	if strings.TrimSpace(in.Name) == "" || !in.Role.Valid() {
-		writeError(w, http.StatusUnprocessableEntity, "name and a valid role are required")
+	if !in.Role.Valid() {
+		writeError(w, http.StatusUnprocessableEntity, "a valid role is required")
 		return
 	}
-	if in.Color == "" || in.Shape == "" {
-		people, _ := s.db.People(p.household.ID)
-		style := personStyles[len(people)%len(personStyles)]
-		if in.Color == "" {
-			in.Color = style.color
-		}
-		if in.Shape == "" {
-			in.Shape = style.shape
-		}
+	people, err := s.db.People(p.household.ID)
+	if err != nil {
+		s.fail(w, "list people", err)
+		return
 	}
+	look := personInput{in.Name, in.Color, in.Shape}
+	if field, _ := checkLook(people, "", &look, nil); field != "" {
+		writeError(w, http.StatusUnprocessableEntity, "invalid "+field)
+		return
+	}
+	var ok bool
+	if look.Color, look.Shape, ok = freeStyle(people, look.Color, look.Shape); !ok {
+		writeError(w, http.StatusUnprocessableEntity, "no free colour and marker left")
+		return
+	}
+	in.Name, in.Color, in.Shape = look.Name, look.Color, look.Shape
 	created, err := s.db.AddPerson(p.household.ID, store.Person{Name: in.Name, Role: in.Role, Color: in.Color, Shape: in.Shape, Symbol: in.Symbol})
 	if err != nil {
 		s.fail(w, "create person", err)

@@ -7,6 +7,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
@@ -161,6 +162,18 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
+	today := data.now.Format(store.DayLayout)
+	if err := s.db.PruneDayNotes(h.ID, today); err != nil { // a note is deleted once its day is over
+		return familyview.View{}, err
+	}
+	notes, err := s.db.DayNotes(h.ID)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	byDay := map[string]string{}
+	for _, n := range notes {
+		byDay[n.Day] = n.Text
+	}
 	due, err := s.db.TasksForDay(h.ID, data.now.Format(task.DateLayout))
 	if err != nil {
 		return familyview.View{}, err
@@ -174,6 +187,7 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 		progress[id] = familyview.ProgressOf(ts)
 	}
 	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
+		Waste: data.waste, DayNotes: byDay, TomorrowLabel: s.i18n.T(lang, "family.tomorrow"), TodayLabel: s.i18n.T(lang, "family.today"),
 		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID), TaskProgress: progress,
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
 }
@@ -186,7 +200,10 @@ type displayData struct {
 	people      []familyview.Person
 	groups      []wholine.Group // subgroups with their members, for the who-line
 	calendars   map[string]calendar.Audience
-	occurrences []calendar.Occurrence
+	occurrences []calendar.Occurrence // without waste collections
+	// waste holds the occurrences of the waste collection calendars: they show
+	// only in the tomorrow tile and on the night page (ADR 0015).
+	waste []calendar.Occurrence
 }
 
 func (s *server) displayData(h store.Household, lang string, days int) (displayData, error) {
@@ -203,9 +220,20 @@ func (s *server) displayData(h store.Household, lang string, days int) (displayD
 	if err != nil {
 		return out, err
 	}
-	if out.occurrences, err = s.occurrences(h, lang, d0, end); err != nil {
+	// The meal plan has its own place on a display (the meal tile), not the
+	// family strip, the person columns or the personal view (ADR 0015).
+	generated := map[string]bool{}
+	for _, c := range cals {
+		if c.Kind == "meals" {
+			generated[c.ID] = true
+		}
+	}
+	all, err := s.occurrences(h, lang, d0, end)
+	if err != nil {
 		return out, err
 	}
+	all = slices.DeleteFunc(all, func(o calendar.Occurrence) bool { return generated[o.CalendarID] })
+	out.occurrences, out.waste = splitWaste(all, cals)
 	for _, c := range cals {
 		out.calendars[c.ID] = c.Audience
 	}
@@ -308,4 +336,20 @@ func (s *server) pairDisplay(p principal, code string, in store.Display) (store.
 		s.limiter.reset(key)
 	}
 	return d, err
+}
+
+// splitWaste separates the occurrences of waste collection calendars from the rest.
+func splitWaste(occs []calendar.Occurrence, cals []store.Calendar) (rest, waste []calendar.Occurrence) {
+	isWaste := map[string]bool{}
+	for _, c := range cals {
+		isWaste[c.ID] = c.Waste
+	}
+	for _, o := range occs {
+		if isWaste[o.CalendarID] {
+			waste = append(waste, o)
+		} else {
+			rest = append(rest, o)
+		}
+	}
+	return rest, waste
 }

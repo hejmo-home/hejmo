@@ -243,15 +243,27 @@ func (s *server) handlePersonSave(w http.ResponseWriter, r *http.Request) {
 	}
 	field, key := checkLook(people, person.ID, &look, &person)
 	if field == "" {
-		// A form without colour or marker keeps what the person has.
+		// A form without colour or marker keeps what the person has. A look
+		// that was edited (not just a rename) is stored as the palette colour
+		// and marker the pair check used, so the person leaves the legacy state.
 		if look.Color == "" {
 			look.Color = person.Color
 		}
 		if look.Shape == "" {
 			look.Shape = person.Shape
 		}
-		if (look.Color != person.Color || look.Shape != person.Shape) && look.Color != "" && look.Shape != "" && styleTaken(people, person.ID, look.Color, look.Shape) {
-			field, key = "shape", "people.error.taken"
+		if look.Color != person.Color || look.Shape != person.Shape {
+			for i, x := range people {
+				if x.ID == person.ID {
+					dc, ds := displayedLook(person, i)
+					if _, ok := paletteColor(look.Color); !ok {
+						look.Color = dc
+					}
+					if look.Shape == "" {
+						look.Shape = ds
+					}
+				}
+			}
 		}
 	}
 	if field != "" {

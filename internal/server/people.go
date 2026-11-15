@@ -43,11 +43,24 @@ func slotOf(p store.Person, i int) int {
 	return i%len(personColors) + 1
 }
 
-// styleTaken reports whether another person already has this colour with this
-// marker, which would make the two hard to tell apart.
+// displayedLook is the colour (palette colour) and marker the pages show for
+// the person at place i: their own, or for a person without a palette colour
+// or marker the one of their place.
+func displayedLook(p store.Person, i int) (color, shape string) {
+	shape = p.Shape
+	if shape == "" {
+		shape = markerShapes[i%len(markerShapes)]
+	}
+	return personColors[slotOf(p, i)-1], shape
+}
+
+// styleTaken reports whether another person already shows this colour with
+// this marker, which would make the two hard to tell apart. People are
+// compared by what the pages show, so a person without a palette colour or
+// marker counts with their place-based one.
 func styleTaken(people []store.Person, exceptID, color, shape string) bool {
-	for _, p := range people {
-		if p.ID != exceptID && p.Color != "" && p.Shape != "" && strings.EqualFold(p.Color, color) && p.Shape == shape {
+	for i, p := range people {
+		if c, s := displayedLook(p, i); p.ID != exceptID && strings.EqualFold(c, color) && s == shape {
 			return true
 		}
 	}
@@ -107,7 +120,21 @@ func checkLook(people []store.Person, exceptID string, in *personInput, cur *sto
 	if sameColor && sameShape {
 		return "", ""
 	}
-	if in.Color != "" && in.Shape != "" && styleTaken(people, exceptID, in.Color, in.Shape) {
+	// The pair that counts is what the person will show: a colour or marker
+	// they have not got (yet) is the one the pages show for them.
+	color, shape := in.Color, in.Shape
+	if cur != nil {
+		if i := slices.IndexFunc(people, func(x store.Person) bool { return x.ID == cur.ID }); i >= 0 {
+			dc, ds := displayedLook(*cur, i)
+			if _, ok := paletteColor(color); !ok {
+				color = dc
+			}
+			if shape == "" {
+				shape = ds
+			}
+		}
+	}
+	if color != "" && shape != "" && styleTaken(people, exceptID, color, shape) {
 		return "shape", "people.error.taken"
 	}
 	return "", ""

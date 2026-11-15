@@ -15,10 +15,7 @@ type personChip struct {
 func chipsOf(people []store.Person) []personChip {
 	out := make([]personChip, 0, len(people))
 	for i, p := range people {
-		shape := p.Shape
-		if shape == "" {
-			shape = markerShapes[i%len(markerShapes)]
-		}
+		_, shape := displayedLook(p, i)
 		out = append(out, personChip{ID: p.ID, Name: p.Name, Shape: shape, Slot: slotOf(p, i)})
 	}
 	return out

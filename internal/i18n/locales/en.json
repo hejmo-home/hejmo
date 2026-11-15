@@ -389,7 +389,6 @@
   "connections.switch.on": "Shown on the box",
   "connections.switch.off": "Off",
   "connections.more.color": "Colour",
-  "connections.more.interval": "Update every hour",
   "connections.off.title": "Switch off these calendars?",
   "connections.off.lead": "Its events disappear from the box and from the displays; nothing is deleted at the source.",
   "connections.off.confirm": "Yes, switch off and save",

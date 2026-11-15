@@ -389,7 +389,6 @@
   "connections.switch.on": "Auf der Box sichtbar",
   "connections.switch.off": "Aus",
   "connections.more.color": "Farbe",
-  "connections.more.interval": "Stündlich aktualisieren",
   "connections.off.title": "Diese Kalender ausschalten?",
   "connections.off.lead": "Seine Termine verschwinden von der Box und von den Displays; an der Quelle wird nichts gelöscht.",
   "connections.off.confirm": "Ja, ausschalten und speichern",

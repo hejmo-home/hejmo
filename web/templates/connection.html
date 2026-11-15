@@ -30,7 +30,7 @@
       {{if and $here (eq $.ErrorField "calendar")}}{{template "fieldError" (dict "Root" $ "Name" "calendar")}}{{end}}
     </fieldset>
     {{end}}
-    {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" (t "connections.more.interval") "Open" (eq .ErrorField "interval"))}}
+    {{template "moreOpen" (dict "Label" (t "calendars.more") "Open" (eq .ErrorField "interval"))}}
       <label>{{t "calendars.field.interval"}}
         <select name="interval"{{if eq .ErrorField "interval"}} aria-invalid="true" aria-describedby="err-interval"{{end}}>{{range .Intervals}}<option value="{{.}}"{{if eq . $.DefaultInterval}} selected{{end}}>{{.}}</option>{{end}}</select></label>
       {{template "fieldError" (dict "Root" . "Name" "interval")}}

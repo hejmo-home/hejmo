@@ -9,7 +9,6 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
-	"github.com/hejmo-home/hejmo/internal/task"
 )
 
 // Step states, in words on the card (ticket 133, design pass 2).
@@ -246,44 +245,44 @@ func audienceText(ids, groupIDs []string, people []store.Person, groups []store.
 }
 
 func (s *server) fillTasks(st *firstStep, h store.Household, people []store.Person, f func(string, ...string) string) error {
-	tasks, err := s.db.Tasks(h.ID)
+	count, by, err := s.db.CountTasks(h.ID)
 	if err != nil {
 		return err
 	}
-	settle(st, len(tasks) > 0, fsAction{"/tasks", f("firststeps.tasks.change")}, fsAction{"/tasks", f("firststeps.tasks.action")})
-	if len(tasks) == 0 {
+	settle(st, count > 0, fsAction{"/tasks", f("firststeps.tasks.change")}, fsAction{"/tasks", f("firststeps.tasks.action")})
+	if count == 0 {
 		st.Text = f("firststeps.tasks.text")
 		return nil
 	}
 	var names []string
 	for _, p := range people {
-		if slices.ContainsFunc(tasks, func(t task.Task) bool { return t.PersonID == p.ID }) {
+		if by[p.ID] > 0 {
 			names = append(names, p.Name)
 		}
 	}
 	key := "firststeps.tasks.summary.other"
-	if len(tasks) == 1 {
+	if count == 1 {
 		key = "firststeps.tasks.summary.one"
 	}
-	st.Subs = []fsSub{{true, f(key, "n", strconv.Itoa(len(tasks)), "names", strings.Join(names, ", "))}}
+	st.Subs = []fsSub{{true, f(key, "n", strconv.Itoa(count), "names", strings.Join(names, ", "))}}
 	return nil
 }
 
 func (s *server) fillMeals(st *firstStep, h store.Household, f func(string, ...string) string) error {
-	meals, err := s.db.Meals(h.ID, "2000-01-01", "2999-12-31")
+	count, err := s.db.CountMeals(h.ID)
 	if err != nil {
 		return err
 	}
-	settle(st, len(meals) > 0, fsAction{"/meals", f("firststeps.meals.change")}, fsAction{"/meals", f("firststeps.meals.action")})
-	if len(meals) == 0 {
+	settle(st, count > 0, fsAction{"/meals", f("firststeps.meals.change")}, fsAction{"/meals", f("firststeps.meals.action")})
+	if count == 0 {
 		st.Text = f("firststeps.meals.text")
 		return nil
 	}
 	key := "firststeps.meals.summary.other"
-	if len(meals) == 1 {
+	if count == 1 {
 		key = "firststeps.meals.summary.one"
 	}
-	st.Subs = []fsSub{{true, f(key, "n", strconv.Itoa(len(meals)))}}
+	st.Subs = []fsSub{{true, f(key, "n", strconv.Itoa(count))}}
 	return nil
 }
 

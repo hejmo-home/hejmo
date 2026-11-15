@@ -30,7 +30,8 @@ type eventItem struct {
 	Slot                        int    // colour slot of the first person in the audience, 0 = whole family
 	People                      []personChip
 	Groups                      []string
-	Who                         string // who it is for, in words (wholine); nobody left out
+	Who                         string         // who it is for, in words (wholine); nobody left out
+	WhoParts                    []wholine.Part // Who in pieces, one per name, for the page to keep whole
 	Repeats, ReadOnly           bool
 }
 
@@ -144,8 +145,9 @@ func (c *calendarContext) item(o calendar.Occurrence) eventItem {
 		it.Slot = it.People[0].Slot
 	}
 	lang := c.s.langOf(c.r)
-	it.Who = wholine.Of(wholine.Input{Household: c.household, Groups: c.wgroups, Audience: calendar.ViewersOf(o, c.audiences, c.viewers)},
-		func(key string) string { return c.s.i18n.T(lang, key) }).Text
+	who := wholine.Of(wholine.Input{Household: c.household, Groups: c.wgroups, Audience: calendar.ViewersOf(o, c.audiences, c.viewers)},
+		func(key string) string { return c.s.i18n.T(lang, key) })
+	it.Who, it.WhoParts = who.Text, who.Parts
 	it.Date = o.Start.In(c.loc).Format("02/01/2006")
 	return it
 }

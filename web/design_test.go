@@ -228,6 +228,17 @@ func TestWhoLineWrapsAndIsNeverCut(t *testing.T) {
 			}
 		}
 	}
+	// Names are never split: a name breaks only when wider than the card, and the
+	// who-line takes no automatic hyphens (the .ev/.bar rule above it has them).
+	for _, sel := range []string{".event .who", ".strip-item .who", ".ev .who, .bar .who"} {
+		rule := ruleFor(t, css, sel)
+		if strings.Contains(rule, "anywhere") || !strings.Contains(rule, "overflow-wrap: break-word") || !strings.Contains(rule, "hyphens: manual") {
+			t.Errorf("%s must use overflow-wrap: break-word and hyphens: manual: %s", sel, rule)
+		}
+	}
+	if rule := ruleFor(t, css, ".who .nm"); !strings.Contains(rule, "display: inline-block") || !strings.Contains(rule, "max-width: 100%") {
+		t.Errorf(".who .nm keeps a name whole: %q", rule)
+	}
 	if strings.Contains(css, ".markers") || strings.Contains(css, ".marker.small") {
 		t.Error("the stylesheet still has card markers")
 	}

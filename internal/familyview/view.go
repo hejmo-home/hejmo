@@ -66,6 +66,8 @@ type Event struct {
 	// Who says in words who the event is for, leaving out the column's own
 	// person (Q62); empty on a card for that person alone.
 	Who string
+	// WhoParts is Who in pieces, one per name, so the page keeps each name whole.
+	WhoParts []wholine.Part
 }
 
 // Progress is a person's task progress today (data arrives with 6.6).
@@ -99,9 +101,10 @@ type StripItem struct {
 	Title           string
 	Time            string // timed whole-household events only
 	AllDay          bool
-	Partial         bool   // partial public holiday
-	Who             string // who it is for, in square brackets, shown after the title; empty for the whole family
-	DayIndex        int    // multi-day: this is day DayIndex of DayCount (1-based)
+	Partial         bool           // partial public holiday
+	Who             string         // who it is for, in square brackets, shown after the title; empty for the whole family
+	WhoParts        []wholine.Part // Who in pieces, one per name
+	DayIndex        int            // multi-day: this is day DayIndex of DayCount (1-based)
 	DayCount        int
 	ContinuesBefore bool
 	ContinuesAfter  bool
@@ -163,7 +166,7 @@ func Build(in Input) View {
 		if !bar && !whole {
 			for i, p := range in.People {
 				if sees(in, p, o) {
-					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc, in.TimeFormat, whoLine(in, o, p.ID).Text))
+					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc, in.TimeFormat, whoLine(in, o, p.ID)))
 				}
 			}
 			continue
@@ -174,8 +177,9 @@ func Build(in Input) View {
 			if len(audience) == 0 {
 				continue
 			}
-			if w := whoLine(in, o, "").InBrackets; w != "" {
-				item.Who = "[" + w + "]"
+			if l := whoLine(in, o, ""); l.InBrackets != "" {
+				item.Who = "[" + l.InBrackets + "]"
+				item.WhoParts = append(append([]wholine.Part{{Text: "["}}, l.BracketParts...), wholine.Part{Text: "]"})
 			}
 		}
 		if bar {
@@ -210,7 +214,7 @@ func Build(in Input) View {
 			}
 			for i, p := range in.People {
 				if sees(in, p, o) && len(v.Columns[i].Tomorrow) < maxTomorrow {
-					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc, in.TimeFormat, whoLine(in, o, p.ID).Text))
+					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc, in.TimeFormat, whoLine(in, o, p.ID)))
 				}
 			}
 		}
@@ -233,8 +237,8 @@ func clock(o calendar.Occurrence, loc *time.Location, format store.TimeFormat) s
 	return fmt.Sprintf("%s–%s", o.Start.In(loc).Format(l), o.End.In(loc).Format(l))
 }
 
-func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat, who string) Event {
-	return Event{Title: o.Title, Time: clock(o, loc, format), Who: who}
+func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat, who wholine.Line) Event {
+	return Event{Title: o.Title, Time: clock(o, loc, format), Who: who.Text, WhoParts: who.Parts}
 }
 
 // ClockText is the time of day in the household's time format ("24h" or "12h").
@@ -290,9 +294,15 @@ func whoLine(in Input, o calendar.Occurrence, omit string) wholine.Line {
 		func(key string) string { return bundle.T(in.Lang, key) })
 }
 
+// wholeHousehold reports whether o is meant for the whole household: it has no
+// audience, or its effective audience lists everyone. Either way it belongs to
+// the family strip, never to a column.
 func wholeHousehold(in Input, o calendar.Occurrence) bool {
 	a := in.Calendars[o.CalendarID]
-	return len(a.People) == 0 && len(a.Groups) == 0 && len(o.People) == 0 && len(o.Groups) == 0
+	if len(a.People) == 0 && len(a.Groups) == 0 && len(o.People) == 0 && len(o.Groups) == 0 {
+		return true
+	}
+	return len(in.People) > 0 && len(audienceOf(in, o)) == len(in.People)
 }
 
 // sees reports whether p is in the effective audience of o (ADR 0011).

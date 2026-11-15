@@ -358,7 +358,6 @@ func TestEventCardsSayInWordsWhoTheEventIsFor(t *testing.T) {
 		timed("Football", at(14, 15, 0), at(14, 16, 0), "seb", "mia"),
 		timed("Dentist", at(14, 9, 0), at(14, 10, 0), "mama"),
 		timed("Parents' evening", at(14, 19, 0), at(14, 20, 0), "mama", "papa", "mia"),
-		timed("Cinema", at(14, 17, 0), at(14, 18, 0), "mama", "papa", "seb", "mia"),
 	)
 	who := func(name, title string) string {
 		t.Helper()
@@ -375,7 +374,6 @@ func TestEventCardsSayInWordsWhoTheEventIsFor(t *testing.T) {
 		{"Mia", "Football", "everyone except Mama and Papa"},
 		{"Mama", "Dentist", ""},
 		{"Mia", "Parents' evening", "everyone except Sebastian"},
-		{"Papa", "Cinema", "Whole family"},
 	} {
 		if got := who(c.column, c.title); got != c.want {
 			t.Errorf("%s column, %s: who-line = %q, want %q", c.column, c.title, got, c.want)
@@ -398,9 +396,10 @@ func TestWhoLineNamesTheSubgroupAndListsEveryoneElseInFull(t *testing.T) {
 			allDay("Besuch bei Oma", day(14), day(15), "Mama", "Papa"),
 			allDay("Ausflug", day(14), day(15), "Mia", "Jonas", "Ben", "Emma", "Lotta"),
 			allDay("Familientag", day(14), day(15)),
+			allDay("Kindertag", day(14), day(15), "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"),
 		}}
 	v := familyview.Build(in)
-	if got := column(t, v, "Emma").Events[0].Who; got != "mit Kinder" {
+	if got := column(t, v, "Emma").Events[0].Who; got != "mit Gruppe Kinder" {
 		t.Errorf("subgroup: %q", got)
 	}
 	if got := column(t, v, "Mia").Events[1].Who; got != "mit Mama, Papa, Jonas, Ben" {
@@ -410,10 +409,70 @@ func TestWhoLineNamesTheSubgroupAndListsEveryoneElseInFull(t *testing.T) {
 	for _, it := range v.Strip {
 		got[it.Title] = it.Who
 	}
-	want := map[string]string{"Besuch bei Oma": "[Mama, Papa]", "Ausflug": "[Mia, Jonas, Lotta, Ben, Emma]", "Familientag": ""}
+	want := map[string]string{"Besuch bei Oma": "[Mama, Papa]", "Ausflug": "[Mia, Jonas, Lotta, Ben, Emma]", "Familientag": "", "Kindertag": "[Kinder]"}
 	for title, w := range want {
 		if got[title] != w {
-			t.Errorf("all-day row, %s: %q, want %q", title, got[title], w)
+			t.Errorf("family strip, %s: %q, want %q", title, got[title], w)
 		}
 	}
+}
+
+// 5.22: Given an event for everyone listed, then it is a family strip item like
+// an event with no audience: no brackets, its time, and in no column.
+func TestEventForEveryoneListedGoesToTheStripLikeOneWithNoAudience(t *testing.T) {
+	var people []familyview.Person
+	names := []string{"Mama", "Papa", "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"}
+	for i, n := range names {
+		people = append(people, familyview.Person{ID: n, Name: n, Slot: i%6 + 1, Shape: "circle-filled"})
+	}
+	v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Lang: "en", People: people, Occurrences: []calendar.Occurrence{
+		timed("Cinema", at(14, 19, 0), at(14, 21, 0), names...),
+		timed("Family lunch", at(14, 12, 0), at(14, 13, 0)),
+	}})
+	var cinema []familyview.StripItem
+	for _, it := range v.Strip {
+		if it.Title == "Cinema" {
+			cinema = append(cinema, it)
+		}
+	}
+	if len(cinema) != 1 || cinema[0].Time != "19:00–21:00" || cinema[0].Who != "" || len(cinema[0].WhoParts) != 0 {
+		t.Errorf("Cinema in the strip = %+v", cinema)
+	}
+	for _, c := range v.Columns {
+		if len(c.Events) != 0 {
+			t.Errorf("%s column has %v, want none", c.Person.Name, titles(c.Events))
+		}
+	}
+}
+
+// 5.22: the who-line comes in parts, one per name, for the page to keep whole.
+func TestWhoLineComesInPartsOneNameEach(t *testing.T) {
+	v := build(at(14, 8, 0), timed("Football", at(14, 15, 0), at(14, 16, 0), "mama", "seb"), allDay2("Visit", "mama", "papa"))
+	e := column(t, v, "Mama").Events[0]
+	var names []string
+	for _, p := range e.WhoParts {
+		if p.Name {
+			names = append(names, p.Text)
+		}
+	}
+	if fmt.Sprint(names) != "[Papa Mia]" {
+		t.Errorf("card names = %v", names)
+	}
+	var item familyview.StripItem
+	for _, it := range v.Strip {
+		if it.Title == "Visit" {
+			item = it
+		}
+	}
+	got := ""
+	for _, p := range item.WhoParts {
+		got += p.Text
+	}
+	if got != item.Who || got != "[everyone except Sebastian and Mia]" {
+		t.Errorf("strip parts %q, who %q", got, item.Who)
+	}
+}
+
+func allDay2(title string, people ...string) calendar.Occurrence {
+	return allDay(title, day(14), day(15), people...)
 }

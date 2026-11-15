@@ -7,14 +7,15 @@ import (
 )
 
 var (
-	whoRe       = regexp.MustCompile(`<[a-z]+ class="who">([^<]*)<`)
+	whoRe       = regexp.MustCompile(`<(?:div|span) class="who">((?:[^<]|<span class="nm">[^<]*</span>)*)</(?:div|span)>`)
+	nmTagRe     = regexp.MustCompile(`</?span[^>]*>`)
 	markerOnRe  = regexp.MustCompile(`class="marker small"|class="markers"`)
 	headerMarkR = regexp.MustCompile(`<h2><a class="person-link"[^>]*><span class="marker" data-shape="[a-z-]+"></span>`)
 )
 
 // 5.22: Given an event for two people, then its card says in words who it is
 // for, in every theme: the column's own person is left out, a card for one
-// person names nobody, and no card or all-day item renders a person marker.
+// person names nobody, and no card or family strip item renders a person marker.
 // The column headers keep theirs, the legend for black and white.
 func TestCardsAndAllDayRowSayInWordsWhoTheEventIsFor(t *testing.T) {
 	for _, theme := range []string{"eink_color", "eink_bw", "screen"} {
@@ -26,7 +27,7 @@ func TestCardsAndAllDayRowSayInWordsWhoTheEventIsFor(t *testing.T) {
 		page := f.view(t, "en", f.at(14, 8, 0))
 
 		if markerOnRe.MatchString(page) {
-			t.Errorf("%s: a card or the all-day row renders a person marker", theme)
+			t.Errorf("%s: a card or the family strip renders a person marker", theme)
 		}
 		if got := len(headerMarkR.FindAllString(page, -1)); got != 4 {
 			t.Errorf("%s: %d column headers with a marker, want 4", theme, got)
@@ -41,8 +42,8 @@ func TestCardsAndAllDayRowSayInWordsWhoTheEventIsFor(t *testing.T) {
 			}
 		}
 		row := strip(t, page)
-		if !strings.Contains(row, `<span class="who">[everyone except Sebastian and Mia]</span>`) {
-			t.Errorf("%s: all-day row lacks the brackets:\n%s", theme, row)
+		if !strings.Contains(row, `<span class="who">[everyone except <span class="nm">Sebastian</span> and <span class="nm">Mia</span>]</span>`) {
+			t.Errorf("%s: family strip lacks the brackets:\n%s", theme, row)
 		}
 		if strings.Count(row, `class="who"`) != 1 {
 			t.Errorf("%s: the whole family needs no brackets:\n%s", theme, row)
@@ -50,10 +51,13 @@ func TestCardsAndAllDayRowSayInWordsWhoTheEventIsFor(t *testing.T) {
 	}
 }
 
+// plain is markup of a who-line without its name spans.
+func plain(s string) string { return nmTagRe.ReplaceAllString(s, "") }
+
 func flat(m [][]string) []string {
 	var out []string
 	for _, x := range m {
-		out = append(out, x[1])
+		out = append(out, plain(x[1]))
 	}
 	return out
 }
@@ -63,7 +67,7 @@ func TestWhoLineIsGerman(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	f.event(t, "Fußball", f.at(14, 15, 0), f.at(14, 16, 0), false, "Sebastian", "Mia")
 	page := f.view(t, "de", f.at(14, 8, 0))
-	if !strings.Contains(page, `<div class="who">alle außer Mama und Papa</div>`) {
+	if !strings.Contains(page, `<div class="who">alle außer <span class="nm">Mama</span> und <span class="nm">Papa</span></div>`) {
 		t.Errorf("no German who-line:\n%s", page)
 	}
 }
@@ -96,8 +100,56 @@ func TestWeekCalendarShowsTheWhoLineOnEveryCard(t *testing.T) {
 				card, _, _ = strings.Cut(chunk, "</li>")
 			}
 		}
-		if !strings.Contains(card, `<span class="who">`+want+`</span>`) {
+		if got := whoRe.FindStringSubmatch(card); got == nil || plain(got[1]) != want {
 			t.Errorf("%s card lacks %q:\n%s", title, want, card)
 		}
+		if title == "Football" && !strings.Contains(card, `<span class="nm">Mama</span> and <span class="nm">Papa</span>`) {
+			t.Errorf("names of the Football card are not in .nm spans:\n%s", card)
+		}
+	}
+}
+
+// 5.22: German subgroup is "mit Gruppe <name>" on the card and the bare name in
+// the strip's brackets; a group name is kept whole like a person's.
+func TestGermanSubgroupSaysGruppeOnTheCardAndNothingInTheBrackets(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	var ids []string
+	for _, n := range []string{"Sebastian", "Mia"} {
+		ids = append(ids, f.people[n].ID)
+	}
+	if _, err := f.db.CreateGroup(f.householdID, "Kinder", ids); err != nil {
+		t.Fatal(err)
+	}
+	f.event(t, "Schwimmen", f.at(14, 15, 0), f.at(14, 16, 0), false, "Sebastian", "Mia")
+	f.event(t, "Kindertag", f.at(14, 0, 0), f.at(15, 0, 0), true, "Sebastian", "Mia")
+	page := f.view(t, "de", f.at(14, 8, 0))
+	if !strings.Contains(page, `<div class="who">mit Gruppe <span class="nm">Kinder</span></div>`) {
+		t.Errorf("no German subgroup line:\n%s", page)
+	}
+	if row := strip(t, page); !strings.Contains(row, `<span class="who">[<span class="nm">Kinder</span>]</span>`) {
+		t.Errorf("no bare group name in the brackets:\n%s", row)
+	}
+}
+
+// 5.22: every name in a who-line sits in a .nm span, so it never splits across
+// lines: on a card, in the strip and in the web week.
+func TestEveryNameOfAWhoLineSitsInANameSpan(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	f.event(t, "Training", f.at(14, 17, 0), f.at(14, 18, 0), false, "Mama", "Papa", "Sebastian")
+	f.event(t, "Visit", f.at(14, 0, 0), f.at(15, 0, 0), true, "Mama", "Papa", "Sebastian")
+	page := f.view(t, "en", f.at(14, 8, 0))
+	for _, m := range whoRe.FindAllStringSubmatch(page, -1) {
+		text := plain(m[1])
+		if text == "Whole family" {
+			continue
+		}
+		for _, name := range []string{"Mama", "Papa", "Sebastian", "Mia"} {
+			if strings.Contains(text, name) && !regexp.MustCompile(`<span class="nm">`+name+`,?</span>`).MatchString(m[1]) {
+				t.Errorf("%s is not in a .nm span: %s", name, m[0])
+			}
+		}
+	}
+	if len(whoRe.FindAllString(page, -1)) < 4 {
+		t.Errorf("expected who-lines on the cards and the strip:\n%s", page)
 	}
 }

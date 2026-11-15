@@ -21,6 +21,55 @@ import (
 var family8 = []string{"Mama", "Papa", "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"}
 var shapes8 = []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled", "cross-filled", "star-filled"}
 
+// germanView is the family view in German for a household with long names,
+// showing three of its eight columns (Mama, Maximilian, Konstantin-Alexander).
+func germanView(t *testing.T, d func(day, h, m int) time.Time) string {
+	t.Helper()
+	names := []string{"Mama", "Papa", "Maximilian", "Anna-Lena", "Friederike", "Konstantin-Alexander", "Ben", "Emma"}
+	slots := []int{1, 2, 3, 4, 6, 5, 7, 8}
+	shapes := []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "diamond-filled", "triangle-filled", "cross-filled", "star-filled"}
+	var people []familyview.Person
+	for i, n := range names {
+		people = append(people, familyview.Person{ID: n, Name: n, Slot: slots[i], Shape: shapes[i]})
+	}
+	occ := func(title string, s, e time.Time, who ...string) calendar.Occurrence {
+		return calendar.Occurrence{EventID: title, CalendarID: "c", Title: title, Start: s, End: e, People: who}
+	}
+	allDay := func(title string, who ...string) calendar.Occurrence {
+		o := occ(title, d(16, 0, 0), d(17, 0, 0), who...)
+		o.AllDay = true
+		return o
+	}
+	kids := names[2:]
+	occs := []calendar.Occurrence{
+		allDay("Besuch bei Oma Hildegard", "Mama", "Papa"),
+		allDay("Ausflug Klasse 3b", "Maximilian", "Anna-Lena", "Friederike"),
+		allDay("Kindertag", kids...),
+		allDay("Papas Geburtstag"),
+		occ("Kino", d(16, 19, 0), d(16, 21, 0), names...),
+		occ("Zahnarzt", d(16, 8, 0), d(16, 9, 0), "Maximilian"),
+		occ("Wanderung", d(16, 10, 0), d(16, 12, 0), "Mama", "Maximilian", "Friederike", "Konstantin-Alexander", "Ben", "Emma"),
+		occ("Klavierunterricht", d(16, 15, 0), d(16, 16, 0), "Maximilian", "Friederike", "Konstantin-Alexander"),
+		occ("Schwimmen", d(16, 16, 30), d(16, 17, 30), kids...),
+		occ("Fußballtraining", d(16, 17, 0), d(16, 18, 0), "Papa", "Maximilian", "Konstantin-Alexander", "Ben", "Emma"),
+		occ("Elternabend Grundschule", d(16, 19, 30), d(16, 21, 0), "Mama", "Papa"),
+	}
+	v := familyview.Build(familyview.Input{Now: d(16, 8, 0), Lang: "de", Region: "DE-BY", People: people,
+		Groups: []wholine.Group{{Name: "Kinder", Members: kids}}, Occurrences: occs})
+	var shown []familyview.Column
+	for _, c := range v.Columns {
+		if c.Person.Name == "Mama" || c.Person.Name == "Maximilian" || c.Person.Name == "Konstantin-Alexander" {
+			shown = append(shown, c)
+		}
+	}
+	v.Columns = shown
+	out, err := server.RenderFamilyView("de", v)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return out
+}
+
 // TestWritePreview128 writes the self-contained preview page for ticket 5.22
 // (who an event is for: names instead of markers): the real family view and
 // the real week of the web interface, rendered by the real templates for the
@@ -36,7 +85,7 @@ func TestWritePreview128(t *testing.T) {
 	font, _ := web.Static.ReadFile("static/fonts/Figtree-wght.ttf")
 	style := strings.Replace(string(css), `url("/static/fonts/Figtree-wght.ttf")`, "url(data:font/ttf;base64,"+base64.StdEncoding.EncodeToString(font)+")", 1)
 
-	// The family view: one example per rule, in the columns and the all-day row.
+	// The family view: one example per rule, in the columns and the family strip.
 	d := func(day, h, m int) time.Time { return time.Date(2026, 11, day, h, m, 0, 0, berlinTZ) }
 	var people []familyview.Person
 	for i, n := range family8 {
@@ -57,6 +106,7 @@ func TestWritePreview128(t *testing.T) {
 		occ("Swimming", d(16, 16, 30), d(16, 17, 30), kids...),
 		occ("Hike", d(16, 10, 0), d(16, 12, 0), "Mama", "Sebastian", "Lotta", "Ben", "Emma", "Jonas"),
 		occ("Dinner out", d(16, 18, 30), d(16, 20, 0), "Mama", "Papa", "Sebastian", "Mia", "Jonas", "Lotta", "Ben"),
+		occ("Football training", d(16, 17, 0), d(16, 18, 0), "Papa", "Sebastian", "Jonas", "Ben", "Emma"),
 		occ("Cinema", d(16, 19, 0), d(16, 21, 0), family8...),
 		occ("Team meeting", d(16, 9, 30), d(16, 10, 30), "Papa"),
 		occ("Family lunch", d(16, 12, 30), d(16, 14, 0)),
@@ -70,6 +120,9 @@ func TestWritePreview128(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
+
+	// German, long names, three of the eight columns (section 5).
+	viewDE := germanView(t, d)
 
 	// The web week: the same family in a real box.
 	f := calendarBox(t)
@@ -103,6 +156,7 @@ func TestWritePreview128(t *testing.T) {
 	ev("Dentist", "2026-11-17", "08:00", "09:00", "Mia")
 	ev("Piano", "2026-11-17", "15:00", "16:00", "Mia", "Jonas", "Ben")
 	ev("Swimming", "2026-11-18", "16:30", "17:30", kids...)
+	ev("Football training", "2026-11-18", "17:00", "18:00", "Papa", "Sebastian", "Jonas", "Ben", "Emma")
 	ev("Dinner out", "2026-11-19", "18:30", "20:00", "Mama", "Papa", "Sebastian", "Mia", "Jonas", "Lotta", "Ben")
 	ev("Hike", "2026-11-20", "10:00", "12:00", "Mama", "Sebastian", "Lotta", "Ben", "Emma", "Jonas")
 	ev("Cinema", "2026-11-21", "19:00", "21:00", family8...)
@@ -120,10 +174,17 @@ func TestWritePreview128(t *testing.T) {
 	frame := func(theme string, w, h int) {
 		fmt.Fprintf(&body, `<figure><figcaption>%s, %d x %d</figcaption><div class="frame" data-theme="%s" style="width:%dpx;height:%dpx">%s</div></figure>`+"\n", themes[theme], w, h, theme, w, h, view)
 	}
-	week_ := func(theme string, w, h int) {
-		fmt.Fprintf(&body, `<figure><figcaption>%s, %d x %d</figcaption><iframe data-theme="%s" width="%d" height="%d" title="Week"></iframe></figure>`+"\n", themes[theme], w, h, theme, w, h)
+	frameDE := func(theme string, w, h int) {
+		fmt.Fprintf(&body, `<figure><figcaption>%s, %d x %d, German</figcaption><div class="frame" data-theme="%s" lang="de" style="width:%dpx;height:%dpx">%s</div></figure>`+"\n", themes[theme], w, h, theme, w, h, viewDE)
 	}
-	body.WriteString(`<h2>1. Family view, landscape 1024 x 768</h2><p class="note">Cards say who the event is for, in words, under the title; the column's own person is left out and a card for one person says nothing (Dentist, Team meeting). Markers stay only in the column headers, the legend for black and white. Rules by example, in Mia's, Sebastian's and Mama's columns: Piano is "with" the names (rule 4: Jonas, Ben), Swimming is the subgroup "with Kids" (rule 2), Hike is "everyone except Papa and Mia" (rule 3), Dinner out is "everyone except Emma" (rule 3), Cinema is "Whole family" (rule 1). Eight people sit in eight columns, six side by side, the rest scroll sideways; the whole view is shown scrolled to the left.</p><div class="row">
+	week_ := func(theme string, w, h int) {
+		caption := fmt.Sprintf("%s, %d x %d", themes[theme], w, h)
+		if w < 500 {
+			caption = fmt.Sprintf("Phone, light, %d x %d", w, h)
+		}
+		fmt.Fprintf(&body, `<figure><figcaption>%s</figcaption><iframe data-theme="%s" width="%d" height="%d" title="Week"></iframe></figure>`+"\n", caption, theme, w, h)
+	}
+	body.WriteString(`<h2>1. Family view, landscape 1024 x 768</h2><p class="note"><b>Design pass (Opus).</b> Each card says in words who the event is for, on its own line under the title. The column already names its person, so that person is left out, and a card for one person has no who-line (Dentist, Team meeting). Markers appear only in the column headers, where they are the legend for black and white. One example per rule: <b>rule 4</b>, the names: Piano "with Jonas, Ben" in Mia's column, and Football training "with Papa, Jonas, Ben, Emma" in Sebastian's column. The long list wraps at the spaces; names are never cut, hyphenated or replaced by "+2". <b>Rule 2</b>, the subgroup: Swimming "with Kids". <b>Rule 3</b>, everyone except one or two: Hike "everyone except Papa and Mia", Dinner out "everyone except Emma". <b>Rule 1</b>, the whole family: Cinema has all eight people, so it goes to the family strip with Family lunch and is not repeated as eight identical cards. With eight people, the columns that do not fit scroll sideways (the layout for eight is #76); every frame shows the view scrolled to the left.</p><div class="row">
 `)
 	frame("light", 1024, 768)
 	frame("dark", 1024, 768)
@@ -133,17 +194,33 @@ func TestWritePreview128(t *testing.T) {
 	frame("light", 768, 1024)
 	frame("dark", 768, 1024)
 	frame("bw", 768, 1024)
-	body.WriteString(`</div><h2>3. The all-day row</h2><p class="note">Title, then the who-line in square brackets: "Visit to Oma [Mama, Papa]", "School trip [Sebastian, Mia, Jonas]"; the six children are the subgroup ("[with Kids]"); the whole family has no brackets (Papa's birthday). It is the top row of every frame above.</p>
-<h2>4. The week in the web interface</h2><p class="note">Every card has the who-line under the time, with nobody left out ("Whole family" for events without an audience). No markers.</p><div class="row">
+	body.WriteString(`</div><h2>3. The family strip</h2><p class="note">The family strip is the top row of every frame above. Square brackets after the title say who the item is for, and they never contain "with". They hold the names (Visit to Oma [Mama, Papa], School trip [Sebastian, Mia, Jonas]), the subgroup name (Kids' day [Kids]) or the "everyone except" line. Whole-family items have no brackets (Papa's birthday, Family lunch, Cinema). Timed whole-family items show their time after the title.</p>
+<h2>4. The week in the web interface</h2><p class="note">Every card shows the who-line under the time. Nobody is left out, because the week has no person columns. Events for everyone, explicitly or with no audience, read "Whole family" (Family lunch, Cinema). The week has no markers. Football training shows a five-name list wrapping in a narrow day column. The 375 px phone frame is the narrowest case.</p><div class="row">
 `)
 	week_("light", 1024, 768)
 	week_("dark", 1024, 768)
 	week_("bw", 1024, 768)
 	week_("light", 768, 1024)
-	body.WriteString("</div>\n")
+	week_("light", 375, 812)
+	body.WriteString(`</div>
+<h2>5. German, long names, narrow columns</h2><p class="note">The same rules in German, with long names (Maximilian, Anna-Lena, Friederike, Konstantin-Alexander) and three of the eight columns. German words: „ganze Familie“, „alle außer Papa und Anna-Lena“, „mit Friederike, Konstantin-Alexander“. The subgroup line is „mit Gruppe Kinder“, which stays grammatical for any group name. „mit Kinder“ is wrong German, and the dative „mit den Kindern“ cannot be built from a free name. In the brackets the subgroup is the bare name: [Kinder]. Each name, with its comma, stays together on one line: Anna-Lena and Konstantin-Alexander move to the next line whole. A name breaks only when it is wider than the whole card.</p><div class="row">
+`)
+	frameDE("light", 768, 820)
+	frameDE("bw", 768, 820)
+	body.WriteString(`</div>
+<h2>6. The rules at a glance</h2><div class="note" style="background:#fff;color:#111;padding:12px;border-radius:12px"><table style="border-collapse:collapse;font-size:15px" cellpadding="6">
+<tr style="text-align:left;border-bottom:2px solid #111"><th>Rule (first match wins)</th><th>Card (English)</th><th>Card (German)</th><th>Family strip</th></tr>
+<tr><td>1 Everyone (explicitly or no audience)</td><td>Whole family (web week only; on the display it goes to the family strip)</td><td>ganze Familie</td><td>no brackets</td></tr>
+<tr><td>2 Exactly one subgroup</td><td>with Kids</td><td>mit Gruppe Kinder</td><td>[Kids] / [Kinder]</td></tr>
+<tr><td>3 Everyone except one or two (two or more people in the event)</td><td>everyone except Papa and Mia</td><td>alle außer Papa und Mia</td><td>[everyone except Papa and Mia]</td></tr>
+<tr><td>4 Otherwise</td><td>with Mia, Jonas, Ben</td><td>mit Mia, Jonas, Ben</td><td>[Mia, Jonas, Ben]</td></tr>
+<tr><td>Card in a person's column</td><td colspan="3">That person is left out of rule 4 names; rules 1 to 3 use the full set. Card for that person alone: no who-line.</td></tr>
+<tr><td>Never</td><td colspan="3">"+2", "…", cut or hyphenated names, markers on cards or in the strip.</td></tr>
+</table></div>
+`)
 
 	page := `<!doctype html>
-<!-- Generated by TestWritePreview128 from the real templates (ticket 5.22). The stylesheet, script and font are inlined copies of web/static and do not follow later changes. No external requests. -->
+<!-- Generated by TestWritePreview128 from the real templates (ticket 5.22), then revised by the design pass (Opus): Cinema in the family strip, [Kids] in brackets, Football training, unbroken who-line names, phone frame, sections 5 and 6. The generator must reproduce this page. The stylesheet, script and font are inlined copies of web/static and do not follow later changes. No external requests. -->
 <html lang="en"><head><meta charset="utf-8"><title>Hejmo preview 5.22 who an event is for</title>
 <style>` + style + `
 body{padding:16px;background:#888;font-family:Figtree,system-ui,sans-serif}

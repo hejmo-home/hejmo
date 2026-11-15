@@ -234,7 +234,7 @@ a { color: var(--accent); }
 /* Who an event is for is said in words (Q62): a line under the title that
    wraps, so the card grows; names are never cut. Markers stay in the column
    headers and the person chips. */
-.event .who { font-size: var(--fs-meta); font-weight: var(--fw-meta); overflow-wrap: anywhere; }
+.event .who { font-size: var(--fs-meta); font-weight: var(--fw-meta); overflow-wrap: break-word; hyphens: manual; }
 
 /* Family view building blocks (screens use them from ticket 5.3 on). */
 .tile, .column, .chip { background: var(--surface); }
@@ -309,7 +309,8 @@ body:has(.family-page) { overflow: hidden; }
 .strip .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
 .strip-item { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border-radius: var(--radius-card); padding: var(--pad-card); font-size: var(--fs-event-title); }
 .strip-item .title { font-weight: var(--fw-event-title); }
-.strip-item .who { font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: anywhere; }
+.strip-item .who { font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: break-word; hyphens: manual; }
+.who .nm { display: inline-block; max-width: 100%; }
 .strip-item .meta { font-size: var(--fs-meta); color: var(--text-secondary); }
 .strip-item[data-kind="holiday"] { background: var(--notice-bg); color: var(--notice-text); }
 .strip-item[data-kind="holiday"] .meta { color: var(--notice-text); }
@@ -524,7 +525,8 @@ details.danger form { margin: 0 0 10px; }
 .ev a.title:hover, .bar a.title:hover { text-decoration: underline; }
 .ev .meta, .bar .meta { font-size: var(--fs-meta); }
 .ev .icon, .bar .icon { stroke: currentColor; vertical-align: middle; }
-.ev .who, .bar .who { display: block; font-size: var(--fs-meta); overflow-wrap: anywhere; }
+.ev .who, .bar .who { display: block; font-size: var(--fs-meta); overflow-wrap: break-word; hyphens: manual; }
+.who .nm { display: inline-block; max-width: 100%; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 [data-theme="bw"] .bar, [data-theme="bw"] .wk-days .ev { background: var(--event-card); color: var(--text); border: 1.5px solid var(--text); }
 [data-theme="bw"] .wk-heads li[data-today] { border-bottom-width: 4px; }

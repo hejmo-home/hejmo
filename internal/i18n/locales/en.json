@@ -278,6 +278,7 @@
   "month.12": "December",
   "wholine.family": "Whole family",
   "wholine.with": "with %s",
+  "wholine.withGroup": "with %s",
   "wholine.except": "everyone except %s",
   "wholine.and": " and ",
   "family.cw": "CW",

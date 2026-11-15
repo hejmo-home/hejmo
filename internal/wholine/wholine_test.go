@@ -34,18 +34,18 @@ func TestLine(t *testing.T) {
 		name             string
 		in               wholine.Input
 		rule             wholine.Rule
-		en, de, brackets string // text on a card (en, de); the same in the all-day row's brackets (en)
+		en, de, brackets string // text on a card (en, de); what goes in the family strip's brackets (en)
 	}{
 		{"rule 1: everyone", wholine.Input{Household: household(4), Audience: ids("Mama", "Papa", "Sebastian", "Mia")},
 			1, "Whole family", "ganze Familie", ""},
 		{"rule 1 beats rule 2: a group that is everyone", wholine.Input{Household: household(2), Groups: []wholine.Group{{Name: "All", Members: ids("Mama", "Papa")}}, Audience: ids("Mama", "Papa")},
 			1, "Whole family", "ganze Familie", ""},
 		{"rule 2: exactly one subgroup", wholine.Input{Household: household(4), Groups: []wholine.Group{kids}, Audience: ids("Sebastian", "Mia")},
-			2, "with Kids", "mit Kids", "with Kids"},
+			2, "with Kids", "mit Gruppe Kids", "Kids"},
 		{"rule 2 beats rule 3: a subgroup that is all but two", wholine.Input{Household: household(4), Groups: []wholine.Group{kids}, Audience: ids("Mia", "Sebastian")},
-			2, "with Kids", "mit Kids", "with Kids"},
+			2, "with Kids", "mit Gruppe Kids", "Kids"},
 		{"rule 2 ignores group members who left the household", wholine.Input{Household: household(4), Groups: []wholine.Group{{Name: "Kids", Members: ids("Sebastian", "Mia", "ghost")}}, Audience: ids("Sebastian", "Mia")},
-			2, "with Kids", "mit Kids", "with Kids"},
+			2, "with Kids", "mit Gruppe Kids", "Kids"},
 		{"rule 2 needs the exact set", wholine.Input{Household: household(5), Groups: []wholine.Group{kids}, Audience: ids("Sebastian", "Mia", "Jonas")},
 			3, "everyone except Mama and Papa", "alle außer Mama und Papa", "everyone except Mama and Papa"},
 		{"rule 3: all but one", wholine.Input{Household: household(4), Audience: ids("Mama", "Sebastian", "Mia")},
@@ -76,7 +76,7 @@ func TestLine(t *testing.T) {
 		{"column: whole family", wholine.Input{Household: household(4), Audience: ids("Mama", "Papa", "Sebastian", "Mia"), Omit: "papa"},
 			1, "Whole family", "ganze Familie", ""},
 		{"column: subgroup", wholine.Input{Household: household(4), Groups: []wholine.Group{kids}, Audience: ids("Sebastian", "Mia"), Omit: "mia"},
-			2, "with Kids", "mit Kids", "with Kids"},
+			2, "with Kids", "mit Gruppe Kids", "Kids"},
 	}
 	for _, c := range cases {
 		t.Run(c.name, func(t *testing.T) {
@@ -95,5 +95,55 @@ func TestLine(t *testing.T) {
 				}
 			}
 		})
+	}
+}
+
+// The bare group name goes in the brackets in both languages (no "with", no "mit").
+func TestSubgroupInBracketsIsTheBareNameInBothLanguages(t *testing.T) {
+	tr := i18n.MustLoad()
+	in := wholine.Input{Household: household(4), Groups: []wholine.Group{{Name: "Kinder", Members: ids("Sebastian", "Mia")}}, Audience: ids("Sebastian", "Mia")}
+	for _, lang := range []string{"en", "de"} {
+		got := wholine.Of(in, func(key string) string { return tr.T(lang, key) })
+		if got.InBrackets != "Kinder" {
+			t.Errorf("%s: brackets %q, want Kinder", lang, got.InBrackets)
+		}
+	}
+}
+
+// Every name, with its trailing comma, is its own part, so a page can keep it
+// whole on one line; the parts add up to the text.
+func TestPartsKeepEveryNameWhole(t *testing.T) {
+	tr := i18n.MustLoad()
+	en := func(key string) string { return tr.T("en", key) }
+	cases := []struct {
+		name  string
+		in    wholine.Input
+		names []string // the parts marked as names, card
+		brk   []string // the same for the brackets
+	}{
+		{"rule 4", wholine.Input{Household: household(8), Audience: ids("Mama", "Papa", "Jonas")}, []string{"Mama,", "Papa,", "Jonas"}, []string{"Mama,", "Papa,", "Jonas"}},
+		{"rule 3", wholine.Input{Household: household(4), Audience: ids("Mama", "Papa")}, []string{"Sebastian", "Mia"}, []string{"Sebastian", "Mia"}},
+		{"rule 2", wholine.Input{Household: household(4), Groups: []wholine.Group{{Name: "Kids", Members: ids("Sebastian", "Mia")}}, Audience: ids("Sebastian", "Mia")}, []string{"Kids"}, []string{"Kids"}},
+		{"rule 1", wholine.Input{Household: household(2), Audience: ids("Mama", "Papa")}, nil, nil},
+	}
+	join := func(parts []wholine.Part) (text string, names []string) {
+		for _, p := range parts {
+			text += p.Text
+			if p.Name {
+				names = append(names, p.Text)
+			}
+		}
+		return
+	}
+	for _, c := range cases {
+		line := wholine.Of(c.in, en)
+		text, names := join(line.Parts)
+		if text != line.Text || strings.Join(names, "|") != strings.Join(c.names, "|") {
+			t.Errorf("%s: parts %q names %q, want text %q names %q", c.name, text, names, line.Text, c.names)
+		}
+		text, names = join(line.BracketParts)
+		if text != line.InBrackets || strings.Join(names, "|") != strings.Join(c.brk, "|") {
+			t.Errorf("%s: bracket parts %q names %q, want text %q names %q", c.name, text, names, line.InBrackets, c.brk)
+		}
 	}
 }

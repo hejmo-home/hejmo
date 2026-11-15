@@ -40,20 +40,31 @@ const (
 	NamesOnly Rule = 4
 )
 
+// Part is a piece of a line. Name parts are names (a person's, or a group's)
+// with their trailing comma: a page keeps each on one line.
+type Part struct {
+	Text string
+	Name bool
+}
+
 // Line is the who-line of an event.
 type Line struct {
 	Rule Rule
 	// Text is the line on a card: "Whole family", "with Kids", "everyone except
 	// Papa", "with Mia, Ben".
 	Text string
-	// InBrackets is the line in the all-day row, where it follows the title in
-	// square brackets: Text, but only the names for rule 4, and nothing for the
-	// whole family.
+	// InBrackets is the line in the family strip, where it follows the title in
+	// square brackets: "Kids" for a subgroup, only the names for rule 4, the
+	// "everyone except" line for rule 3, and nothing for the whole family. It
+	// never says "with".
 	InBrackets string
+	// Parts and BracketParts are Text and InBrackets in pieces; they add up to them.
+	Parts, BracketParts []Part
 }
 
 // Of words who the event is for. tr looks up a catalogue key in the language
-// of the page (wholine.family, wholine.with, wholine.except, wholine.and).
+// of the page (wholine.family, wholine.with, wholine.withGroup, wholine.except,
+// wholine.and).
 func Of(in Input, tr func(key string) string) Line {
 	var people []Person // the audience, in household order
 	for _, p := range in.Household {
@@ -68,12 +79,14 @@ func Of(in Input, tr func(key string) string) Line {
 		return Line{}
 	}
 	if len(people) == len(in.Household) {
-		return Line{Rule: Everyone, Text: tr("wholine.family")}
+		t := tr("wholine.family")
+		return Line{Rule: Everyone, Text: t, Parts: []Part{{Text: t}}}
 	}
 	for _, g := range in.Groups {
 		if sameSet(people, g.Members, in.Household) {
-			t := strings.Replace(tr("wholine.with"), "%s", g.Name, 1)
-			return Line{Rule: Subgroup, Text: t, InBrackets: t}
+			name := []Part{{Text: g.Name, Name: true}}
+			return Line{Rule: Subgroup, Text: text(tr("wholine.withGroup"), g.Name), InBrackets: g.Name,
+				Parts: fill(tr("wholine.withGroup"), name), BracketParts: name}
 		}
 	}
 	// "Everyone except" needs a group to be everyone but one or two; a lone
@@ -85,8 +98,8 @@ func Of(in Input, tr func(key string) string) Line {
 				left = append(left, p.Name)
 			}
 		}
-		t := strings.Replace(tr("wholine.except"), "%s", join(left, tr("wholine.and")), 1)
-		return Line{Rule: Except, Text: t, InBrackets: t}
+		parts := fill(tr("wholine.except"), joinParts(left, tr("wholine.and")))
+		return Line{Rule: Except, Text: plain(parts), InBrackets: plain(parts), Parts: parts, BracketParts: parts}
 	}
 	var others []string
 	for _, p := range people {
@@ -94,15 +107,51 @@ func Of(in Input, tr func(key string) string) Line {
 			others = append(others, p.Name)
 		}
 	}
-	list := strings.Join(others, ", ")
-	return Line{Rule: NamesOnly, Text: strings.Replace(tr("wholine.with"), "%s", list, 1), InBrackets: list}
+	list := joinParts(others, ", ")
+	return Line{Rule: NamesOnly, Text: text(tr("wholine.with"), plain(list)), InBrackets: plain(list),
+		Parts: fill(tr("wholine.with"), list), BracketParts: list}
 }
 
-func join(names []string, and string) string {
-	if len(names) == 2 {
-		return names[0] + and + names[1]
+func text(tmpl, s string) string { return strings.Replace(tmpl, "%s", s, 1) }
+
+func plain(parts []Part) string {
+	var b strings.Builder
+	for _, p := range parts {
+		b.WriteString(p.Text)
 	}
-	return strings.Join(names, ", ")
+	return b.String()
+}
+
+// fill puts parts where the template has %s.
+func fill(tmpl string, inner []Part) []Part {
+	before, after, _ := strings.Cut(tmpl, "%s")
+	var out []Part
+	if before != "" {
+		out = append(out, Part{Text: before})
+	}
+	out = append(out, inner...)
+	if after != "" {
+		out = append(out, Part{Text: after})
+	}
+	return out
+}
+
+// joinParts lists names. With "and" as the joiner (the catalogue's word, spaces
+// included) two names read "A and B"; with ", " every list is "A, B, C". A
+// comma stays attached to its name, so the pair never splits across lines.
+func joinParts(names []string, and string) []Part {
+	if len(names) == 2 && and != ", " {
+		return []Part{{Text: names[0], Name: true}, {Text: and}, {Text: names[1], Name: true}}
+	}
+	var out []Part
+	for i, n := range names {
+		if i == len(names)-1 {
+			out = append(out, Part{Text: n, Name: true})
+			break
+		}
+		out = append(out, Part{Text: n + ",", Name: true}, Part{Text: " "})
+	}
+	return out
 }
 
 // sameSet reports whether the people are exactly the members who are still in

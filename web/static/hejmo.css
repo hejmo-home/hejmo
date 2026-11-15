@@ -43,6 +43,12 @@
   --person-6: #3A7A74;
   --person-6-tint: #E7EFEE;
   --person-6-text: #1D3D3A;
+  --person-7: #5559A3;
+  --person-7-tint: #EBEBF4;
+  --person-7-text: #2A2C52;
+  --person-8: #B04A6A;
+  --person-8-tint: #F6E9ED;
+  --person-8-text: #582535;
   --accent-text: #FFFFFF;
   /* type scale: size and weight per element */
   --fs-date: 36px;        --fw-date: 700;
@@ -65,6 +71,8 @@
   --gap-section: 20px;
   --gap-cards: 10px;
   --pad-column: 16px;
+  --col-min: 144px; /* narrowest person column (ADR 0016) */
+  --cols-max: 6; /* person columns side by side in landscape; portrait below */
   --pad-card: 10px 12px;
   --marker-size: 14px;
   --marker-size-bw-column: 16px;
@@ -105,6 +113,12 @@
   --person-6: #6FB2AA;
   --person-6-tint: #35413D;
   --person-6-text: #D4E8E6;
+  --person-7: #8589D6;
+  --person-7-tint: #393946;
+  --person-7-text: #DADCF3;
+  --person-8: #D67188;
+  --person-8-tint: #493436;
+  --person-8-text: #F3D4DB;
   --accent-text: #1B1A18;
 }
 
@@ -139,6 +153,12 @@
     --person-6: #6FB2AA;
     --person-6-tint: #35413D;
     --person-6-text: #D4E8E6;
+    --person-7: #8589D6;
+    --person-7-tint: #393946;
+    --person-7-text: #DADCF3;
+    --person-8: #D67188;
+    --person-8-tint: #493436;
+    --person-8-text: #F3D4DB;
     --accent-text: #1B1A18;
   }
 }
@@ -176,6 +196,12 @@
   --person-6: #111111;
   --person-6-tint: #E4E4E1;
   --person-6-text: #111111;
+  --person-7: #111111;
+  --person-7-tint: #E4E4E1;
+  --person-7-text: #111111;
+  --person-8: #111111;
+  --person-8-tint: #E4E4E1;
+  --person-8-text: #111111;
   --accent-text: #FFFFFF;
   --fw-event-title: 700;
 }
@@ -210,7 +236,7 @@ input, select { font: inherit; color: var(--text); min-height: var(--touch-targe
 .log th, .log td { text-align: left; padding: 6px 12px 6px 0; vertical-align: top; }
 a { color: var(--accent); }
 
-/* Person slots: a person gets data-person="1".."6" (colour, tint, text on
+/* Person slots: a person gets data-person="1".."8" (colour, tint, text on
    tint). In bw every slot is black on a grey tint and differs by marker shape. */
 [data-person="1"] { --pc: var(--person-1); --pc-tint: var(--person-1-tint); --pc-text: var(--person-1-text); }
 [data-person="2"] { --pc: var(--person-2); --pc-tint: var(--person-2-tint); --pc-text: var(--person-2-text); }
@@ -218,6 +244,8 @@ a { color: var(--accent); }
 [data-person="4"] { --pc: var(--person-4); --pc-tint: var(--person-4-tint); --pc-text: var(--person-4-text); }
 [data-person="5"] { --pc: var(--person-5); --pc-tint: var(--person-5-tint); --pc-text: var(--person-5-text); }
 [data-person="6"] { --pc: var(--person-6); --pc-tint: var(--person-6-tint); --pc-text: var(--person-6-text); }
+[data-person="7"] { --pc: var(--person-7); --pc-tint: var(--person-7-tint); --pc-text: var(--person-7-text); }
+[data-person="8"] { --pc: var(--person-8); --pc-tint: var(--person-8-tint); --pc-text: var(--person-8-text); }
 
 /* Marker: circle in the person colour; in bw a shape (16px in the column
    header, 9px on an event, .marker.small). */
@@ -230,6 +258,8 @@ a { color: var(--accent); }
 [data-theme="bw"] .marker[data-shape="square-empty"] { border-radius: 0; background: transparent; }
 [data-theme="bw"] .marker[data-shape="triangle-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 [data-theme="bw"] .marker[data-shape="diamond-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+[data-theme="bw"] .marker[data-shape="cross-filled"] { border: 0; border-radius: 0; clip-path: polygon(34% 0, 66% 0, 66% 34%, 100% 34%, 100% 66%, 66% 66%, 66% 100%, 34% 100%, 34% 66%, 0 66%, 0 34%, 34% 34%); }
+[data-theme="bw"] .marker[data-shape="star-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 62% 36%, 100% 36%, 69% 58%, 81% 96%, 50% 73%, 19% 96%, 31% 58%, 0 36%, 38% 36%); }
 
 /* Event cards list their people as markers; only bw needs them (colour cards
    carry the person colour). */
@@ -265,10 +295,15 @@ a { color: var(--accent); }
 .brand { display: inline-flex; align-items: center; min-height: var(--touch-target); font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); color: var(--text); text-decoration: none; }
 .frame-bar .button { min-height: var(--touch-target); }
 .frame-bar form { margin: 0; }
-.frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-cards); }
+.frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: var(--gap-cards); }
+.frame-nav li { flex: none; }
 .frame-nav a { display: flex; align-items: center; min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
 .frame-nav a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
 [data-theme="bw"] .frame-nav a { border-width: 2px; }
+.back { display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; }
+.hub-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); }
+.hub-row strong { font-size: var(--fs-event-title); }
+[data-theme="bw"] .hub-row { text-decoration: underline; }
 .frame main { min-width: 0; }
 @media (max-width: 599px) {
   body.web { padding: var(--gap); }
@@ -276,16 +311,23 @@ a { color: var(--accent); }
 @media (min-width: 900px) {
   .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); align-items: start; }
   .frame.has-nav .frame-bar { grid-column: 1 / -1; }
-  .frame-nav ul { flex-direction: column; flex-wrap: nowrap; }
+  .frame-nav ul { flex-direction: column; overflow-x: visible; }
 }
 
-/* Family view (ticket 5.3; ADR 0015, 0016). The page fills the display;
-   columns share the width up to six people, from seven they scroll. */
-.family-page { height: calc(100vh - 2 * var(--margin)); min-height: 0; }
+/* Portrait shows at most four person columns (ticket 5.7, ADR 0016). The
+   display switches by itself when it is rotated. */
+@media (orientation: portrait) {
+  :root { --cols-max: 4; }
+}
+
+/* Family view (ticket 5.3, 5.7; ADR 0015, 0016). The page fills the display;
+   the columns share the width up to --cols-max people (6 landscape, 4
+   portrait), none narrower than --col-min; beyond that they scroll sideways. */
+.family-page { height: calc(100vh - 2 * var(--margin)); height: calc(100dvh - 2 * var(--margin)); min-height: 0; }
 .family-page > [data-view] { height: 100%; } /* the box swaps this one's content on a change (ticket 5.5) */
 body:has(.family-page) { overflow: hidden; }
 .fv { height: 100%; display: flex; flex-direction: column; gap: var(--gap-section); min-height: 0; }
-.fv-header { display: flex; justify-content: space-between; align-items: center; flex: none; }
+.fv-header { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: var(--gap); flex: none; }
 .fv-header .lab { font-size: var(--fs-label); color: var(--text-secondary); }
 .fv-header .date { font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
 .fv .chips { display: flex; gap: var(--gap); }
@@ -302,11 +344,11 @@ body:has(.family-page) { overflow: hidden; }
 .strip-item[data-kind="holiday"] .meta { color: var(--notice-text); }
 .strip-item.before { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .strip-item.after { border-top-right-radius: 0; border-bottom-right-radius: 0; }
-.fv-grid { flex: 1; min-height: 0; display: grid; grid-template-columns: repeat(var(--cols), minmax(0, 1fr)); grid-auto-rows: minmax(0, 1fr); gap: var(--gap); }
-.fv[data-scroll] .fv-grid { grid-template-columns: none; grid-auto-flow: column; grid-auto-columns: 200px; overflow-x: auto; }
+
+.fv-grid { --visible: min(var(--cols), var(--cols-max)); flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: max(var(--col-min), calc((100% - (var(--visible) - 1) * var(--gap)) / var(--visible))); grid-auto-rows: minmax(0, 1fr); gap: var(--gap); overflow-x: auto; }
 .fv .column { display: flex; flex-direction: column; gap: 0; min-height: 0; overflow: hidden; }
-.fv .person-link { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); color: inherit; text-decoration: none; }
-.fv .column h2 { flex: none; margin: 0 0 var(--gap-cards); font-size: var(--fs-person-name); font-weight: var(--fw-person-name); display: flex; align-items: center; gap: 8px; }
+.fv .person-link { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: 0; overflow-wrap: anywhere; color: inherit; text-decoration: none; } /* a long single-word name wraps at the column edge instead of being clipped */
+.fv .column h2 { flex: none; min-width: 0; margin: 0 0 var(--gap-cards); font-size: var(--fs-person-name); font-weight: var(--fw-person-name); display: flex; align-items: center; gap: 8px; }
 .fv .events { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: var(--gap-cards); align-content: start; }
 .fv .events .tomorrow { display: grid; gap: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); opacity: 0.6; }
 .strip.tomorrow { opacity: 0.6; } /* ADR 0016: tomorrow is faded so today's events stand out */
@@ -315,14 +357,24 @@ body:has(.family-page) { overflow: hidden; }
 .pbar { flex: none; display: flex; align-items: center; gap: 10px; padding-top: var(--gap-cards); }
 .pbar .progress { flex: 1; }
 .pbar .count { font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
-.fv-footer { flex: none; display: flex; gap: var(--gap); }
-.fv-footer .tile { flex: 1; min-width: 0; padding: var(--pad-column); }
+.fv-footer { flex: none; display: flex; flex-wrap: wrap; gap: var(--gap); }
+.fv-footer .tile { flex: 1 1 200px; min-width: 0; padding: var(--pad-column); }
 .fv-footer .lab { font-size: var(--fs-label); color: var(--text-secondary); }
 .fv-footer .ln { font-size: var(--fs-body); font-weight: 600; }
 .fv-footer .tile.alert { background: var(--notice-bg); color: var(--notice-text); border: 2px solid var(--accent); padding: calc(var(--pad-column) - 2px); }
 .fv-footer .tile.alert .lab { color: var(--notice-text); }
 .qr { width: min(60vw, 240px); margin: 0 0 12px; color: var(--text); }
 .qr svg { display: block; width: 100%; height: auto; }
+
+/* Quiet mode (ticket 5.9; ADR 0015). A normal screen goes black; an E-Ink
+   display shows a calm night page about the coming morning. Quiet mode takes
+   precedence over the theme: it uses the display's page background only. */
+.quiet.black { position: fixed; inset: 0; background: black; }
+.quiet.night { height: 100%; display: flex; flex-direction: column; justify-content: center; gap: var(--gap-section); max-width: 32em; margin: 0 auto; }
+.quiet.night .lab { font-size: var(--fs-label); color: var(--text-secondary); }
+.quiet.night .date { font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
+.quiet.night .night-item .title { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+.quiet.night .night-item .meta { font-size: var(--fs-meta); color: var(--text-secondary); }
 
 /* Shared form patterns (ticket 5.16; ADR 0017). Switch, person chips,
    segmented control, choice cards, weekday chips, "More options", detail-page
@@ -364,6 +416,17 @@ body:has(.family-page) { overflow: hidden; }
 [data-theme="bw"] .switch input::before { background: var(--text); }
 [data-theme="bw"] .switch input:checked { background: var(--text); }
 [data-theme="bw"] .switch input:checked::before { background: var(--surface); }
+
+/* Choose calendars: the event count of each calendar (ADR 0017). It is filled
+   in after the page has loaded; "empty" is the one that matters (a calendar
+   with nothing in the window), so it is a notice, and in black and white bold. */
+.count { font-size: var(--fs-meta); }
+.count[data-state="loading"] { font-style: italic; }
+.count[data-state="unknown"] { font-style: italic; }
+.count[data-state="empty"] { background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-field); padding: 2px 8px; justify-self: start; font-weight: 600; }
+[data-theme="bw"] .count[data-state="empty"] { background: none; color: var(--text); border: 2px solid var(--text); }
+.calchoice .card-row { margin-bottom: 4px; }
+.cards [data-events], .cards [data-last-run] { font-variant-numeric: tabular-nums; }
 
 /* Person chips: who is it for. Selected = tint + 2px border in the person
    colour + tick + bold. "Whole family" is neutral and selected by default. */
@@ -475,6 +538,8 @@ fieldset.look { display: flex; flex-wrap: wrap; gap: 8px; }
 .marker.preview[data-shape="square-empty"] { background: transparent; border: 2px solid var(--text); }
 .marker.preview[data-shape="triangle-filled"] { clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .marker.preview[data-shape="diamond-filled"] { clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
+.marker.preview[data-shape="cross-filled"] { clip-path: polygon(34% 0, 66% 0, 66% 34%, 100% 34%, 100% 66%, 66% 66%, 66% 100%, 34% 100%, 34% 66%, 0 66%, 0 34%, 34% 34%); }
+.marker.preview[data-shape="star-filled"] { clip-path: polygon(50% 0, 62% 36%, 100% 36%, 69% 58%, 81% 96%, 50% 73%, 19% 96%, 31% 58%, 0 36%, 38% 36%); }
 
 /* Phones (ticket 5.13): the QR code a phone scans, and the offline view. */
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }

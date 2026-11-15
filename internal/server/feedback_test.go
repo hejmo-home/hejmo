@@ -59,12 +59,12 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		form             url.Values
 		want             string
 	}{
-		{"settings", "/settings", "/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}, "Saved."},
+		{"settings", "/settings/household", "/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}, "Saved."},
 		{"task add", "/tasks", "/tasks", url.Values{"person": {tb.miaID}, "title": {"Read"}, "repeat": {"daily"}}, "Task added."},
 		{"task done", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"1"}}, "Marked as done."},
 		{"task reopen", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"0"}}, "Marked as open."},
 		{"calendar add", "/calendars", "/calendars", url.Values{"name": {"Choir"}, "url": {"https://example.org/a.ics"}, "color": {"#2F5E7A"}, "interval": {"60"}}, "Calendar added."},
-		{"calendar sync", "/calendars/" + calID + "/sync", "/calendars", url.Values{}, "Calendar updated."},
+		{"calendar sync", "/calendars/" + calID + "/sync", "/calendars", url.Values{}, "Updated at 1:00:00 PM. Events: 0 (new 0, changed 0, removed 0)."},
 		{"display pair", "/displays", "/displays", pairForm(code2), "Display paired."},
 		{"display settings", "/displays/" + displayID + "/settings", "/displays", url.Values{"show_tomorrow": {"on"}}, "Saved."},
 		{"share", "/caldav/calendars/" + calID + "/share", "/caldav", url.Values{"shared": {"on"}}, "Sharing through the box is on."},
@@ -91,8 +91,8 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 
 func TestSuccessLineIsGermanWithGermanLocale(t *testing.T) {
 	b := signedInBox(t)
-	b.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}})
-	if got := successLine(b.do(http.MethodGet, "/settings", nil, map[string]string{"Accept-Language": "de"}).body); got != "Gespeichert." {
+	b.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}})
+	if got := successLine(b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body); got != "Gespeichert." {
 		t.Fatalf("success line = %q", got)
 	}
 }
@@ -100,7 +100,7 @@ func TestSuccessLineIsGermanWithGermanLocale(t *testing.T) {
 // The line is not stored in the address, so it cannot be forged by a link.
 func TestSuccessLineCannotBeForgedByALink(t *testing.T) {
 	b := signedInBox(t)
-	for _, path := range []string{"/settings?saved=1", "/settings?flash=flash.saved", "/settings?success=Saved."} {
+	for _, path := range []string{"/settings/household?saved=1", "/settings/household?flash=flash.saved", "/settings/household?success=Saved."} {
 		if got := successLine(getEN(b, path).body); got != "" {
 			t.Errorf("%s shows %q", path, got)
 		}

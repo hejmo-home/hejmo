@@ -3,12 +3,18 @@ package server
 import (
 	"net/http"
 	"strings"
+	"sync"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-// dummyHash keeps sign-in timing equal for unknown usernames.
-var dummyHash, _ = auth.HashPassword("hejmo-timing-equaliser")
+// dummyHash keeps sign-in timing equal for unknown usernames. It is made on
+// first use (New does that), with the cost new hashes have at that time.
+var dummyHash = sync.OnceValue(func() string {
+	h, _ := auth.HashPassword("hejmo-timing-equaliser")
+	return h
+})
 
 func (s *server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 	if !s.db.Configured() {
@@ -31,10 +37,16 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	acc, err := s.db.AccountByUsername(username)
 	hash := acc.PasswordHash
 	if err != nil {
-		hash = dummyHash
+		hash = dummyHash()
 	}
 	passwordOK := auth.VerifyPassword(hash, r.PostFormValue("password"))
-	if err != nil || !passwordOK || !acc.TOTPConfirmed || !auth.VerifyTOTP(acc.TOTPSecret, r.PostFormValue("code"), s.now()) {
+	// Always run the second-factor check, whatever the password, so the time
+	// it takes does not tell whether the password is right.
+	secondOK := s.secondFactorOK(acc, r.PostFormValue("code"), err == nil && passwordOK)
+	// After a reset (ADR 0017) the password alone leads on to setting up new
+	// one-time codes; until they are confirmed the session reaches nothing else.
+	pendingSetup := err == nil && passwordOK && acc.TOTPReset && !acc.TOTPConfirmed
+	if err != nil || !passwordOK || (!pendingSetup && !secondOK) {
 		s.limiter.fail(key)
 		// Deliberately one error at the password field: it must not reveal which of
 		// username, password or code was wrong; the text names all three.
@@ -47,10 +59,52 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "login session", err)
 		return
 	}
+	if pendingSetup {
+		http.Redirect(w, r, "/setup/totp", http.StatusSeeOther)
+		return
+	}
 	if next == "" {
 		next = "/"
 	}
 	http.Redirect(w, r, next, http.StatusSeeOther)
+}
+
+// verifyRecoveryCode is a seam: tests count the verifications.
+var verifyRecoveryCode = auth.VerifyRecoveryCode
+
+// recoveryCodeSlots is how many recovery codes a set holds. A recovery-shaped
+// code is always checked against this many hashes (dummies fill the rest).
+const recoveryCodeSlots = 10
+
+// secondFactorOK accepts a current one-time code or an unused recovery code
+// of a confirmed account. A recovery code is spent by being accepted, but only
+// if spend is set (the password was right too).
+//
+// A recovery-shaped code always costs recoveryCodeSlots verifies, whether the
+// password is right, the account is unknown or unconfirmed, or fewer codes are
+// left, so timing reveals nothing about any of them.
+func (s *server) secondFactorOK(acc store.Account, code string, spend bool) bool {
+	if acc.TOTPConfirmed && auth.VerifyTOTP(acc.TOTPSecret, code, s.now()) {
+		return true
+	}
+	if !auth.LooksLikeRecoveryCode(code) {
+		return false
+	}
+	var codes []store.RecoveryCode
+	if acc.TOTPConfirmed {
+		codes, _ = s.db.UnusedRecoveryCodes(acc.PersonID) // on error: only dummies
+	}
+	matched := ""
+	for i := 0; i < max(recoveryCodeSlots, len(codes)); i++ { // check all, so timing does not tell which one matched
+		hash, id := dummyHash(), ""
+		if i < len(codes) {
+			hash, id = codes[i].Hash, codes[i].ID
+		}
+		if verifyRecoveryCode(hash, code) && id != "" {
+			matched = id
+		}
+	}
+	return matched != "" && spend && s.db.SpendRecoveryCode(matched) == nil
 }
 
 // localPath returns p if it is a path on this box, else "". It keeps the

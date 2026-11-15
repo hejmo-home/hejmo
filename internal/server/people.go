@@ -14,11 +14,11 @@ import (
 // maxPersonName is the longest name of a person or subgroup.
 const maxPersonName = 80
 
-// personColors are the six person colours of the "Nordic Calm" palette in slot
+// personColors are the eight person colours of the "Nordic Calm" palette in slot
 // order (DESIGN.md). A person's colour is one of them: the web interface, the
 // displays and the dark palette pick the matching slot, so changing the colour
 // changes it everywhere.
-var personColors = []string{"#B4583A", "#2F5E7A", "#4E7D52", "#9A7420", "#86587F", "#3A7A74"}
+var personColors = []string{"#B4583A", "#2F5E7A", "#4E7D52", "#9A7420", "#86587F", "#3A7A74", "#5559A3", "#B04A6A"}
 
 // paletteColor returns the palette colour written like c (case ignored).
 func paletteColor(c string) (string, bool) {
@@ -32,7 +32,7 @@ func paletteColor(c string) (string, bool) {
 
 func validShape(s string) bool { return slices.Contains(markerShapes, s) }
 
-// slotOf is the colour slot (1..6) of the person at place i in the household:
+// slotOf is the colour slot (1..8) of the person at place i in the household:
 // the slot of their palette colour, or one by place for a person without one.
 func slotOf(p store.Person, i int) int {
 	for j, c := range personColors {
@@ -56,7 +56,7 @@ func styleTaken(people []store.Person, exceptID, color, shape string) bool {
 
 // freeStyle picks a colour and marker no one has yet. A given colour or shape
 // is kept. The default pairs come first, so the example family keeps its
-// colours; then every combination of the six colours and six markers.
+// colours; then every combination of the eight colours and eight markers (from the ninth person on).
 func freeStyle(people []store.Person, color, shape string) (string, string, bool) {
 	try := func(c, s string) bool {
 		return (color == "" || c == color) && (shape == "" || s == shape) && !styleTaken(people, "", c, s)

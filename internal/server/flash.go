@@ -2,6 +2,8 @@ package server
 
 import (
 	"net/http"
+	"regexp"
+	"strconv"
 	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
@@ -14,23 +16,55 @@ const flashCookie = "hejmo_flash"
 
 // redirectSaved redirects to a page and has it show the success line key.
 func (s *server) redirectSaved(w http.ResponseWriter, r *http.Request, to, key string) {
+	s.setFlash(w, r, key)
+	http.Redirect(w, r, to, http.StatusSeeOther)
+}
+
+// setFlash has the next page this browser opens show the success line key.
+func (s *server) setFlash(w http.ResponseWriter, r *http.Request, key string) {
 	http.SetCookie(w, &http.Cookie{
 		Name: flashCookie, Value: key, Path: "/", MaxAge: 120,
 		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
 	})
-	http.Redirect(w, r, to, http.StatusSeeOther)
 }
 
-// takeFlash returns the success line key waiting for this browser and clears
-// it. Unknown values are ignored, so a forged cookie shows nothing.
-func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) string {
+// redirectSynced redirects to a page and has it show the result of the last
+// sync run of one calendar: the cookie holds the calendar's id, and the line
+// is built from what the box stored, so nothing from the request is shown.
+func (s *server) redirectSynced(w http.ResponseWriter, r *http.Request, to, calendarID string) {
+	s.redirectSaved(w, r, to, "flash.calendar_synced:"+calendarID)
+}
+
+var flashArg = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
+
+// takeFlash returns the success line waiting for this browser, as the key of
+// its text and an optional argument, and clears it. Unknown values are
+// ignored, so a forged cookie shows nothing.
+func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg string) {
 	c, err := r.Cookie(flashCookie)
 	if err != nil {
-		return ""
+		return "", ""
 	}
 	http.SetCookie(w, &http.Cookie{Name: flashCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
-	if !strings.HasPrefix(c.Value, "flash.") || s.i18n.T(i18n.Default, c.Value) == c.Value {
-		return ""
+	key, arg, _ = strings.Cut(c.Value, ":")
+	if !strings.HasPrefix(key, "flash.") || s.i18n.T(i18n.Default, key) == key || (arg != "" && !flashArg.MatchString(arg)) {
+		return "", ""
 	}
-	return c.Value
+	return key, arg
+}
+
+// successText is the text of a success line. After "Sync now" it says when
+// the calendar was updated and what the run did.
+func (s *server) successText(lang, key, arg string) string {
+	if key == "flash.calendar_synced" && arg != "" {
+		if h, err := s.db.HomeHousehold(); err == nil {
+			if c, err := s.db.SyncedCalendar(h.ID, arg); err == nil && !c.Sync.LastSuccess.IsZero() {
+				p := principal{household: h}
+				run := c.Sync.LastRun
+				return s.i18n.Format(lang, i18n.Msg("flash.calendar_synced_run", "time", c.Sync.LastSuccess.In(p.location()).Format(p.clockLayout()),
+					"events", strconv.Itoa(run.Events), "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))
+			}
+		}
+	}
+	return s.i18n.T(lang, key)
 }

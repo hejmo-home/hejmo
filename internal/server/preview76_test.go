@@ -18,7 +18,7 @@ import (
 // TestWritePreview76 writes the self-contained preview page for the product
 // owner's approval of ticket 5.21 (people in the web interface). Every frame
 // is a real page of the box, rendered by the real templates for the example
-// family (Mama, Papa, Sebastian, Mia); nothing is hand-written HTML. Each frame
+// family (Mama, Papa, Sebastian, Mia and four more children: eight people, the household maximum); nothing is hand-written HTML. Each frame
 // is an iframe, so the viewport sizes trigger the real media queries.
 // Run: HEJMO_WRITE_PREVIEW=../../docs/design/preview-76.html go test ./internal/server -run WritePreview76
 func TestWritePreview76(t *testing.T) {
@@ -34,6 +34,10 @@ func TestWritePreview76(t *testing.T) {
 	p.add(t, "Papa", "parent")
 	p.add(t, "Sebastian", "child")
 	mia := p.add(t, "Mia", "child")
+	var more []string
+	for _, name := range []string{"Jonas", "Lotta", "Ben", "Emma"} {
+		more = append(more, p.add(t, name, "child")["id"].(string))
+	}
 	sebastian := p.byName(t, "Sebastian")["id"].(string)
 	// The family strip shows markers of whoever an event is for.
 	if r := p.post("/groups", url.Values{"name": {"School children"}, "people": {sebastian, mia["id"].(string)}}); r.status != http.StatusSeeOther {
@@ -63,10 +67,6 @@ func TestWritePreview76(t *testing.T) {
 		t.Fatalf("clash = %d", clash.status)
 	}
 	groupPage := page("/groups/new")
-	// Mia gets a plum colour with a triangle: the display, chips and markers follow.
-	if r := p.save(mia["id"].(string), url.Values{"name": {"Mia"}, "color": {"#86587F"}, "shape": {"triangle-filled"}}); r.status != http.StatusSeeOther {
-		t.Fatalf("recolour = %d", r.status)
-	}
 	h, _ := p.db.HomeHousehold()
 	cal, _ := p.db.FamilyCalendar(h.ID)
 	day := func(hour, min int) time.Time { return time.Date(2026, 11, 14, hour, min, 0, 0, berlinTZ) }
@@ -75,6 +75,9 @@ func TestWritePreview76(t *testing.T) {
 		{Title: "Football", Start: day(15, 30), End: day(17, 0), People: []string{sebastian}},
 		{Title: "Parents' evening", Start: day(19, 0), End: day(21, 0), People: []string{p.byName(t, "Mama")["id"].(string), papa["id"].(string)}},
 		{Title: "Visit to Oma", Start: day(0, 0), End: day(0, 0).AddDate(0, 0, 1), AllDay: true, People: []string{mia["id"].(string), sebastian}},
+		{Title: "Birthday party", Start: day(14, 0), End: day(15, 0), People: []string{p.byName(t, "Mama")["id"].(string), papa["id"].(string), sebastian, mia["id"].(string), more[0], more[1], more[2], more[3]}},
+		{Title: "Choir", Start: day(17, 30), End: day(18, 30), People: []string{more[0], more[2]}},
+		{Title: "Judo", Start: day(16, 0), End: day(17, 0), People: []string{more[1], more[3]}},
 	} {
 		e.CalendarID = cal.ID
 		if _, err := p.db.CreateEvent(h.ID, e); err != nil {
@@ -82,6 +85,9 @@ func TestWritePreview76(t *testing.T) {
 		}
 	}
 	family := p.display.get("/display", "en").body
+	if n := strings.Count(family, `<section class="column"`); n != 8 {
+		t.Fatalf("%d columns on the display, want 8", n)
+	}
 
 	type frame struct {
 		theme string
@@ -119,8 +125,8 @@ func TestWritePreview76(t *testing.T) {
 	add("2. Add a person: name and adult or child; colour and marker under More options",
 		"One primary action. The box suggests the first free colour and marker, so the defaults never clash. More options is shown open here.",
 		"#new", addForm, append(append(desk("light", "dark", "bw"), portrait[0]), phone...)...)
-	add("3. Change a person: name, colour (six palette colours) and marker (six shapes)",
-		"The colour chips carry the colour name, the marker chips show the shape, so nothing relies on colour alone. In black and white every colour is black and only the marker tells people apart.",
+	add("3. Change a person: name, colour (eight palette colours) and marker (eight shapes)",
+		"The colour chips carry the colour name, the marker chips show the shape, so nothing relies on colour alone. In black and white every colour is black and only the marker tells people apart. The new eighth colour (raspberry) and marker (star) and the seventh (indigo, plus) join the choice; a household of up to eight people (two parents, six children) gets eight different colours and eight different shapes.",
 		"", edit, append(append(desk("light", "dark", "bw"), portrait[0]), phone...)...)
 	add("4. The same colour with the same marker is refused",
 		"Mia was given Papa's colour and marker. The error sits at the marker choice, and what was typed stays.",
@@ -128,9 +134,15 @@ func TestWritePreview76(t *testing.T) {
 	add("5. New subgroup: name and person chips",
 		"Subgroups are chosen with the same chips as everywhere else.",
 		"", groupPage, append(desk("light", "dark"), phone[0])...)
-	add("6. Result on the display: Mia now has a plum column with a triangle marker",
-		"After changing Mia's colour and marker on her page, her column, markers and personal view follow. The displays at 1024 x 768 (E-Ink colour tablet, here in light, dark and black and white) and in portrait.",
+	add("6. Result on the display: eight people, eight columns, eight colours and eight shapes",
+		"The family view at 1024 x 768 in light, dark and black and white, and in portrait. Eight columns do not fit side by side: six are shown and the rest scroll sideways (ADR 0016), here from the start. The Birthday party card lists all eight people: in black and white the eight shapes are told apart at 9 px on the card and at 16 px in each column header.",
 		"", family, append(desk("light", "dark", "bw"), portrait...)...)
+	add("7. The same family view scrolled to the last two columns (slots 7 and 8)",
+		"Scrolled sideways to Emma (slot 8, raspberry, star) next to Ben (slot 7, indigo, plus).",
+		`section.column[data-person='8']`, family, desk("light", "dark", "bw")...)
+	add("8. Landscape 1280 x 800 with eight people",
+		"A wider display still shows six columns before the sideways scroll starts.",
+		"", family, frame{"light", 1280, 800}, frame{"bw", 1280, 800})
 
 	var jsDocs strings.Builder
 	for i, h := range docs {
@@ -151,7 +163,7 @@ h1{font-size:22px}h2{font-size:18px;margin:28px 0 4px}.note{margin:0 0 10px;max-
 figure{margin:0 0 12px}figcaption{margin-bottom:6px;font-weight:700}
 iframe{border:0;background:#fff;display:block}
 </style></head><body>
-<h1>Hejmo 5.21 people in the web interface: preview with the example family (Mama, Papa, Sebastian, Mia): 1024 x 768 and portrait, light, dark and black and white; 375 px for phones</h1>
+<h1>Hejmo 5.21 people in the web interface: preview with the example family (Mama, Papa, Sebastian, Mia and four more children: eight people): 1024 x 768 and portrait, light, dark and black and white; 375 px for phones</h1>
 <noscript><p>This page needs JavaScript only to place the real pages into their frames.</p></noscript>
 ` + body.String() + `
 <template id="css">` + string(css) + `</template>

@@ -31,6 +31,23 @@ func (p principal) timeLayout() string {
 	return "02/01/2006 15:04"
 }
 
+// syncLayout is timeLayout with seconds: the times of sync runs and sync
+// problems, where "21:46:26" tells which run it was (ticket 5.17).
+func (p principal) syncLayout() string {
+	if p.household.TimeFormat == store.Time12h {
+		return "02/01/2006 3:04:05 PM"
+	}
+	return "02/01/2006 15:04:05"
+}
+
+// clockLayout is the time of day alone, with seconds, in the household's format.
+func (p principal) clockLayout() string {
+	if p.household.TimeFormat == store.Time12h {
+		return "3:04:05 PM"
+	}
+	return "15:04:05"
+}
+
 func formatTime(t time.Time, allDay bool, loc *time.Location) string {
 	if allDay {
 		return t.In(loc).Format(dateLayout)

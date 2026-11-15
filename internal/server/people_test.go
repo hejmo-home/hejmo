@@ -232,11 +232,11 @@ func TestOnlyThePaletteColoursAndKnownMarkersAreOffered(t *testing.T) {
 		}
 	}
 	page := p.en("/people/" + id).body
-	if n := strings.Count(page, `name="color"`); n != 6 {
-		t.Errorf("%d colour choices, want 6", n)
+	if n := strings.Count(page, `name="color"`); n != 8 {
+		t.Errorf("%d colour choices, want 8", n)
 	}
-	if n := strings.Count(page, `name="shape"`); n != 6 {
-		t.Errorf("%d marker choices, want 6", n)
+	if n := strings.Count(page, `name="shape"`); n != 8 {
+		t.Errorf("%d marker choices, want 8", n)
 	}
 }
 
@@ -514,10 +514,10 @@ func TestAPIChangesAndDeletesSubgroups(t *testing.T) {
 	}
 }
 
-func TestPeopleAreReachableFromSettingsAndNavigation(t *testing.T) {
+func TestPeopleAreReachableFromTheSettingsHub(t *testing.T) {
 	p := newPeopleBox(t)
-	if page := p.en("/").body; !strings.Contains(page, `href="/people"`) {
-		t.Errorf("navigation lacks People:\n%s", page)
+	if page := p.en("/").body; strings.Contains(page, `href="/people"`) {
+		t.Errorf("the navigation has People, which belongs to the Settings hub (ADR 0017):\n%s", page)
 	}
 	if page := p.en("/settings").body; !strings.Contains(page, `href="/people"`) {
 		t.Errorf("settings lack a link to People:\n%s", page)
@@ -594,5 +594,68 @@ func TestAPIGroupNamesAreAtMost80Characters(t *testing.T) {
 	}
 	if got := send(http.MethodPatch, "/groups/"+g["id"].(string), strings.Repeat("x", 81)); got != http.StatusUnprocessableEntity {
 		t.Fatalf("patch long name = %d, want 422", got)
+	}
+}
+
+// Product owner decision (15/11/2026, ticket 5.21 preview): a household holds
+// two parents and six children, each with their own colour AND their own marker
+// shape; only from the ninth person on do colours and shapes repeat.
+func TestEightPeopleGetDistinctColoursAndDistinctShapes(t *testing.T) {
+	p := newPeopleBox(t)
+	for _, n := range []struct{ name, role string }{{"Papa", "parent"}, {"Sebastian", "child"}, {"Mia", "child"}, {"Jonas", "child"}, {"Lotta", "child"}, {"Ben", "child"}, {"Emma", "child"}} {
+		p.add(t, n.name, n.role)
+	}
+	people := p.list(t)
+	if len(people) != 8 {
+		t.Fatalf("%d people, want 8", len(people))
+	}
+	colours, shapes := map[any]string{}, map[any]string{}
+	for _, x := range people {
+		name := x["name"].(string)
+		if other, dup := colours[x["color"]]; dup {
+			t.Errorf("%s and %s share the colour %v", name, other, x["color"])
+		}
+		if other, dup := shapes[x["shape"]]; dup {
+			t.Errorf("%s and %s share the shape %v", name, other, x["shape"])
+		}
+		colours[x["color"]], shapes[x["shape"]] = name, name
+	}
+	// Every person has their own colour slot on the display, 1 to 8.
+	page := p.display.get("/display", "en").body
+	for slot := 1; slot <= 8; slot++ {
+		if !strings.Contains(page, fmt.Sprintf(`<section class="column" data-person="%d"`, slot)) {
+			t.Errorf("no column in colour slot %d", slot)
+		}
+	}
+	// The ninth person reuses a colour and a shape, but never the pair.
+	p.add(t, "Oma", "parent")
+	ninth := p.byName(t, "Oma")
+	for _, x := range p.list(t) {
+		if x["name"] != "Oma" && x["color"] == ninth["color"] && x["shape"] == ninth["shape"] {
+			t.Errorf("the ninth person has the colour and shape of %v", x["name"])
+		}
+	}
+}
+
+// The eighth colour and marker can be chosen in the web form and through the API.
+func TestSeventhAndEighthColourAndMarkerAreAccepted(t *testing.T) {
+	p := newPeopleBox(t)
+	id := p.add(t, "Mia", "child")["id"].(string)
+	for _, look := range []struct{ color, shape string }{{"#5559A3", "cross-filled"}, {"#B04A6A", "star-filled"}} {
+		if r := p.save(id, url.Values{"name": {"Mia"}, "color": {look.color}, "shape": {look.shape}}); r.status != http.StatusSeeOther {
+			t.Fatalf("web %v = %d\n%s", look, r.status, r.body)
+		}
+		if got := p.byName(t, "Mia"); got["color"] != look.color || got["shape"] != look.shape {
+			t.Fatalf("saved %v", got)
+		}
+		if status, body, _ := p.api.call(http.MethodPatch, "/people/"+id, map[string]any{"color": look.color, "shape": look.shape}); status != http.StatusOK {
+			t.Fatalf("API %v = %d %v", look, status, body)
+		}
+	}
+	page := p.en("/people/" + id).body
+	for _, want := range []string{`value="#5559A3"`, `value="#B04A6A"`, `value="cross-filled"`, `value="star-filled"`} {
+		if !strings.Contains(page, want) {
+			t.Errorf("people form lacks %s", want)
+		}
 	}
 }

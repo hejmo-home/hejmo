@@ -17,6 +17,7 @@ var personStyles = []struct{ color, shape string }{
 	{"#B4583A", "circle-filled"}, {"#2F5E7A", "circle-empty"},
 	{"#4E7D52", "square-filled"}, {"#9A7420", "square-empty"},
 	{"#86587F", "triangle-filled"}, {"#3A7A74", "diamond-filled"},
+	{"#5559A3", "cross-filled"}, {"#B04A6A", "star-filled"},
 }
 
 func (s *server) handleSetupForm(w http.ResponseWriter, r *http.Request) {
@@ -114,24 +115,45 @@ func (s *server) createFirstParent(f setupForm, passwordHash, pinHash string) (s
 	return p.ID, s.db.SetDisplayPIN(h.ID, pinHash)
 }
 
+// setupAccount is the account behind a browser session that may set up
+// one-time codes. A paired phone's device session survives a reset but must not
+// take the new setup over: that is for the parent, after their password.
 func (s *server) setupAccount(r *http.Request) (store.Account, bool) {
-	p, ok := s.currentPerson(r)
-	if !ok {
+	p, ok := s.pendingPerson(r)
+	if !ok || s.phoneSession(r) {
 		return store.Account{}, false
 	}
 	acc, err := s.db.AccountByPerson(p.ID)
 	return acc, err == nil
 }
 
-func (s *server) handleSetupTOTPForm(w http.ResponseWriter, r *http.Request) {
-	if s.db.Configured() {
+// totpSetupAccount returns the account that is setting up one-time codes: the
+// first parent in the wizard, or a person whose codes were reset. Anyone else
+// is sent on.
+func (s *server) totpSetupAccount(w http.ResponseWriter, r *http.Request) (store.Account, bool) {
+	acc, ok := s.setupAccount(r)
+	switch {
+	case !ok:
+		http.Redirect(w, r, "/setup", http.StatusSeeOther)
+	case acc.TOTPConfirmed:
 		http.Redirect(w, r, "/", http.StatusSeeOther)
+	default:
+		return acc, true
+	}
+	return store.Account{}, false
+}
+
+func (s *server) handleSetupTOTPForm(w http.ResponseWriter, r *http.Request) {
+	acc, ok := s.totpSetupAccount(w, r)
+	if !ok {
 		return
 	}
-	acc, ok := s.setupAccount(r)
-	if !ok {
-		http.Redirect(w, r, "/setup", http.StatusSeeOther)
-		return
+	if acc.TOTPSecret == "" { // reset: a new secret for the new setup
+		acc.TOTPSecret = auth.NewTOTPSecret()
+		if err := s.db.SetTOTPSecret(acc.PersonID, acc.TOTPSecret); err != nil {
+			s.fail(w, "new TOTP secret", err)
+			return
+		}
 	}
 	s.renderTOTP(w, r, http.StatusOK, acc, "")
 }
@@ -150,24 +172,32 @@ func (s *server) renderTOTP(w http.ResponseWriter, r *http.Request, status int, 
 }
 
 func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
-	if s.db.Configured() {
-		http.Redirect(w, r, "/", http.StatusSeeOther)
+	acc, ok := s.totpSetupAccount(w, r)
+	if !ok {
 		return
 	}
-	acc, ok := s.setupAccount(r)
-	if !ok {
-		http.Redirect(w, r, "/setup", http.StatusSeeOther)
+	if acc.TOTPSecret == "" { // the setup page was not opened yet
+		http.Redirect(w, r, "/setup/totp", http.StatusSeeOther)
 		return
 	}
 	if !auth.VerifyTOTP(acc.TOTPSecret, r.PostFormValue("code"), s.now()) {
 		s.renderTOTP(w, r, http.StatusUnprocessableEntity, acc, "setup.error.code")
 		return
 	}
+	// The codes are stored before the confirmation: if storing fails, the
+	// person is not confirmed yet and can try again instead of being confirmed
+	// without ever seeing their codes.
+	codes, err := s.newRecoveryCodes(acc.PersonID)
+	if err != nil {
+		s.fail(w, "recovery codes", err)
+		return
+	}
 	if err := s.db.ConfirmTOTP(acc.PersonID); err != nil && !errors.Is(err, store.ErrNotFound) {
 		s.fail(w, "confirm TOTP", err)
 		return
 	}
-	s.redirectSaved(w, r, "/", "flash.setup_done")
+	s.setFlash(w, r, "flash.setup_done") // shown on the home page after the codes
+	s.showRecoveryCodes(w, r, codes)
 }
 
 // setupErrorField names the input of the setup form that an error belongs to.

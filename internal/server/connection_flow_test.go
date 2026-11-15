@@ -188,19 +188,21 @@ func TestConnectionCalendarErrorAppearsAtItsCalendar(t *testing.T) {
 	}
 }
 
-// Posting the same choice twice (double click, a second tab) hits the
-// "already synced" error; the calendar is then marked added and shows no
-// field, so the message has to show as a general error line.
-func TestConnectionCalendarAlreadySyncedShowsItsMessage(t *testing.T) {
+// Posting the same choice twice (double click, a second tab) is not an error:
+// the calendar is already on, so the second post changes nothing.
+func TestConnectionCalendarPostedTwiceIsSavedOnce(t *testing.T) {
 	b := signedInAPI(t).b
 	id := connectedBox(t, b)
-	form := url.Values{"calendar": {flowCalendar}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}}
-	if r := b.post("/connections/"+id+"/calendars", form); r.status == http.StatusUnprocessableEntity {
+	form := url.Values{"calendar": {flowCalendar}, "shown": {flowCalendar}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}}
+	if r := b.post("/connections/"+id+"/calendars", form); r.status != http.StatusSeeOther {
 		t.Fatalf("first post failed: %s", r.body)
 	}
-	r := b.do(http.MethodPost, "/connections/"+id+"/calendars", form, map[string]string{"Accept-Language": "en"})
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "This calendar is already synced.") || !strings.Contains(r.body, `class="error"`) {
-		t.Fatalf("message not shown: status %d\n%s", r.status, r.body)
+	if r := b.post("/connections/"+id+"/calendars", form); r.status != http.StatusSeeOther {
+		t.Fatalf("second post = %d\n%s", r.status, r.body)
+	}
+	h, _ := b.db.HomeHousehold()
+	if cals, _ := b.db.SyncedCalendars(h.ID); len(cals) != 1 {
+		t.Fatalf("calendars = %+v, want the calendar once", cals)
 	}
 }
 

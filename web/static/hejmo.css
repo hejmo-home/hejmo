@@ -617,3 +617,77 @@ textarea { width: 100%; font: inherit; color: var(--text); background: var(--sur
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
+
+/* ---- Shared with #133 (setup flow) and #134 (language switcher); whichever
+   ticket merges first adds these rules, the others reuse them unchanged. ---- */
+.frame { grid-template-columns: minmax(0, 1fr); }
+.frame-nav { min-width: 0; }
+.frame-tools { display: flex; align-items: center; gap: var(--gap-cards); margin-left: auto; }
+.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+[data-theme="bw"] .lang > summary { border: 2px solid var(--text); }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px var(--gap); }
+.actions .button { flex: 0 1 auto; }
+ol.howto .s > .actions { justify-self: stretch; }
+ol.howto { list-style: none; counter-reset: howto; margin: 0; padding: 0; display: grid; }
+ol.howto > li { counter-increment: howto; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-top: 1px solid var(--border); }
+ol.howto > li:first-child { border-top: 0; padding-top: 2px; }
+ol.howto > li:last-child { padding-bottom: 0; }
+ol.howto > li::before { content: counter(howto); width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+ol.howto .s { display: grid; gap: 6px; min-width: 0; justify-items: start; }
+ol.howto .s > b { font-size: var(--fs-event-title); font-weight: 700; }
+ol.howto .s > p { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+ol.howto .s > .f, ol.howto .s > details { justify-self: stretch; }
+ol.howto .path { font-weight: 600; }
+[data-theme="bw"] ol.howto > li::before { border-color: var(--text); color: var(--text); }
+[data-theme="bw"] .button.secondary { border-width: 2px; }
+.f .hint { margin: 0; }
+
+/* ---- New for #135: connecting iCloud and other CalDAV servers ---- */
+
+/* Frame fix (#135): from 900 px the navigation is a column on the left. The
+   "Back" link is a grid item of its own; without a fixed place it took the
+   right column and pushed main into the left max-content column, so one long
+   line (the old connection hint) set the width of the whole page and ran off
+   the right edge. Navigation spans both rows; back link and main stay right. */
+@media (min-width: 900px) {
+  .frame.has-nav > .frame-nav { grid-column: 1; grid-row: 2 / span 2; }
+  .frame.has-nav > .back, .frame.has-nav > main { grid-column: 2; }
+}
+/* Running text keeps the width of the cards beside it at every screen width. */
+.lead, main > .hint, section > .hint { max-width: 560px; }
+main > .hint, section > .hint { margin: 0 0 var(--gap); }
+
+/* Connect page: the service is chosen with choice cards; each service has its
+   own form with a numbered guide. Without JavaScript only the guide of the
+   chosen service shows (CSS :has). */
+.connect { display: grid; gap: var(--gap); max-width: 600px; min-width: 0; }
+.connect fieldset.choice legend { font-size: var(--fs-event-title); font-weight: 700; color: var(--text); }
+.connect:has(input[name="service"][value="icloud"]:checked) .guide:not([data-service="icloud"]),
+.connect:has(input[name="service"][value="caldav"]:checked) .guide:not([data-service="caldav"]) { display: none; }
+.guide { display: grid; gap: var(--gap); background: var(--surface); border-radius: var(--radius-tile); padding: var(--pad-column); min-width: 0; margin: 0; }
+.guide h2 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); overflow-wrap: anywhere; }
+.guide .s > .hint { margin: 0; }
+.guide .done-hint { margin: 0; color: var(--text-secondary); font-size: var(--fs-label); }
+
+/* Why a separate password: a calm box with a lock, before the steps. */
+.why { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 10px 12px; border-radius: var(--radius-card); background: var(--background); color: var(--text); font-size: var(--fs-label-large); overflow-wrap: anywhere; }
+.why .icon { flex: none; margin-top: 2px; }
+.why b { display: block; }
+[data-theme="bw"] .why { background: var(--surface); border: 2px solid var(--text); }
+
+/* Link to the service's own page: the address is the label, an arrow out of
+   the box says it leaves Hejmo, the line below says "new tab" in words. */
+a.out { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+a.out .icon { flex: none; stroke: currentColor; }
+@media (max-width: 599px) {
+  .guide .actions .button { flex: 1 1 100%; text-align: center; }
+  ol.howto > li { grid-template-columns: 28px minmax(0, 1fr); gap: 10px; }
+  ol.howto > li::before { width: 28px; height: 28px; }
+}
+
+/* Fix (#135): ".cards a" and ".steps a" (link colour) beat ".button", so a
+   link styled as a button inside a card had accent text on accent ground
+   (black on black in bw). Buttons keep their own text colour. */
+.cards a.button, .steps a.button { color: var(--accent-text); font-weight: 700; }
+.cards a.button.secondary, .steps a.button.secondary { color: var(--accent); }
+.guide details.more p { margin: 0; overflow-wrap: anywhere; }

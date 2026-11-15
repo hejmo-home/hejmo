@@ -29,10 +29,9 @@
 {{if .Items}}<nav class="frame-nav" aria-label="{{t "nav.label"}}"><ul>
   {{range .Items}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{t .Label}}</a></li>
   {{end}}</ul></nav>{{end}}
-{{if .BackHref}}<a class="back" href="{{.BackHref}}">{{t .BackLabel}}</a>{{end}}
 {{end}}
 <main id="content">
-{{with .Frame}}{{with .Success}}{{template "success" .}}{{end}}{{with .Error}}<p class="error" role="alert">{{.}}</p>{{end}}{{end}}
+{{with .Frame}}{{if .BackHref}}{{template "backLink" (dict "Href" .BackHref "Text" (t .BackLabel))}}{{end}}{{with .Success}}{{template "success" .}}{{end}}{{with .Error}}<p class="error" role="alert">{{.}}</p>{{end}}{{end}}
 {{end}}
 
 {{define "foot"}}

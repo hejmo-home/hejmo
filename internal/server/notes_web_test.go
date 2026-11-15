@@ -195,8 +195,12 @@ func TestNotePageChangesAndRemoves(t *testing.T) {
 	f.save("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Mia: Schwimmsachen"}}, "de")
 	p := f.page("de", "/notes/2026-11-16").body
 	mustContain(t, p, "<h1>Notiz für Montag, 16.11.</h1>", `class="lead"`, "Steht ab Sonntag 18:00 in der Kachel „Morgen“.",
-		"Mia: Schwimmsachen</textarea>", "18 von 120 Zeichen", ">Speichern<", `<details class="danger">`, "<summary>Notiz entfernen</summary>", "Ja, Notiz entfernen",
+		"Mia: Schwimmsachen</textarea>", "18 von 120 Zeichen", ">Speichern<", `<details class="danger">`, "Ja, Notiz entfernen",
 		`action="/notes/2026-11-16"`, `action="/notes/2026-11-16/delete"`)
+	// The shared danger pattern puts a warning icon in front of the summary text.
+	if !regexp.MustCompile(`<summary><svg [^>]*>.*?</svg>Notiz entfernen</summary>`).MatchString(p) {
+		t.Errorf("the summary does not read Notiz entfernen after the icon:\n%s", p)
+	}
 	if r := f.page("de", "/notes/2026-11-17"); r.status != http.StatusNotFound {
 		t.Fatalf("no such note = %d", r.status)
 	}
@@ -223,11 +227,11 @@ func TestNotePageChangesAndRemoves(t *testing.T) {
 	}
 }
 
-// The calendars page no longer holds the day note; the waste collection is a switch with its state in words.
+// The calendar page (not the list, not Home) holds the waste switch and no longer holds the day note; the waste collection is a switch with its state in words.
 func TestCalendarsPageHasTheWasteSwitch(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "6"), wasteEvent("p2", "Residual waste", "6"))
-	p := f.page("de", "/calendars").body
+	p := f.page("de", "/calendars/"+id).body
 	mustNotContain(t, p, "Notiz", "Als Müllabfuhr markieren", "Keine Müllabfuhr", "data-waste-state")
 	mustContain(t, p, `<form method="post" action="/calendars/`+id+`/waste"`, `role="switch" name="waste" checked aria-label="Müllabfuhr-Kalender"`,
 		"An: Die Termine stehen nur in der Kachel „Morgen“ und auf der Nachtseite, ab 18:00 als Erinnerung.",
@@ -236,21 +240,21 @@ func TestCalendarsPageHasTheWasteSwitch(t *testing.T) {
 	if !regexp.MustCompile(`(?s)<noscript>.*?type="submit".*?</noscript>`).MatchString(p) {
 		t.Fatal("no Save button in noscript")
 	}
-	en := f.page("en", "/calendars").body
+	en := f.page("en", "/calendars/"+id).body
 	mustContain(t, en, "Waste collection calendar", "On: its dates show only in the Tomorrow tile and on the night page, from 18:00 as the reminder.",
 		"Off: its events show like any other calendar.", "Next collection: Monday 16.11.</b> – Paper bin, Residual waste")
 	// Switched off, the line is gone.
 	f.save("/calendars/"+id+"/waste", url.Values{}, "de")
-	mustNotContain(t, f.page("de", "/calendars").body, "waste-next", ` checked aria-label="Müllabfuhr-Kalender"`)
+	mustNotContain(t, f.page("de", "/calendars/"+id).body, "waste-next", ` checked aria-label="Müllabfuhr-Kalender"`)
 }
 
 // Switched on without a collection in the next 30 days, the card says so.
 func TestCalendarsPageSaysWhenThereIsNoCollectionSoon(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
-	f.addWaste(t, wasteEvent("p1", "Paper bin", "6"))
+	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "6"))
 	f.now = f.at(17, 12, 0) // the collection has passed
-	mustContain(t, f.page("de", "/calendars").body, "Keine Abfuhr in den nächsten 30 Tagen.", "Stimmt die Adresse des Kalenders?")
-	mustContain(t, f.page("en", "/calendars").body, "No collection in the next 30 days.", "Is the calendar address right?")
+	mustContain(t, f.page("de", "/calendars/"+id).body, "Keine Abfuhr in den nächsten 30 Tagen.", "Stimmt die Adresse des Kalenders?")
+	mustContain(t, f.page("en", "/calendars/"+id).body, "No collection in the next 30 days.", "Is the calendar address right?")
 }
 
 // The flash after switching says when the next collection shows; without one it keeps to the state.

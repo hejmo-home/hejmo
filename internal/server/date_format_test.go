@@ -217,12 +217,12 @@ func TestEventSearchStarLogAndCalDAVListsFollowMonthFirst(t *testing.T) {
 	pages := map[string]*regexp.Regexp{
 		"/calendar/search?q=dentist": regexp.MustCompile(`11/17`),
 		"/tasks":                     regexp.MustCompile(`11/14`),
-		"/caldav":                    regexp.MustCompile(`Created \d\d/\d\d/\d{4}`), // the clock of a new token is the real one
-		linkTo(t, week, "Dentist"):   regexp.MustCompile(``),
+		"/caldav":                    regexp.MustCompile(`iPhone Mama`),
+		linkTo(t, week, "Dentist"):   nil,
 	}
 	for path, want := range pages {
 		body := getEN(f.box, path).body
-		if !want.MatchString(body) {
+		if want != nil && !want.MatchString(body) {
 			t.Errorf("%s lacks %s:\n%s", path, want, body)
 		}
 		if m := dayFirstDate.FindString(body); m != "" {
@@ -247,6 +247,38 @@ func TestDisplaysStayFreeOfNumericDatesWhenTheFormatSwitches(t *testing.T) {
 	for _, p := range paths {
 		if after := f.display.get(p, "en").body; after != before[p] {
 			t.Errorf("%s changed with the date format", p)
+		}
+	}
+}
+
+// The detail pages say their dates through datefmt too: a connection, a
+// display, a phone and a token, in both formats.
+func TestDetailPagesFollowTheDateFormat(t *testing.T) {
+	b := signedInBox(t)
+	connID := chosenConnection(t, b)
+	displayID := pairedDisplay(t, b, "Kitchen", "screen")
+	pairedPhone(t, b, personNamed(t, b, "Mama"), "Mama's phone")
+	h, _ := b.db.HomeHousehold()
+	phones, _ := b.db.Phones(h.ID)
+	tokenID, _ := newDeviceToken(t, b, "iPhone Mama")
+	pages := []string{"/connections/" + connID, "/displays/" + displayID, "/phones/" + phones[0].ID, "/caldav/tokens/" + tokenID}
+	// The token is stamped with the real clock, so its date is matched by shape.
+	dmy := regexp.MustCompile(`\b\d{2}\.\d{2}\.\d{4}\b`)
+	mdy := regexp.MustCompile(`\b\d{2}/\d{2}/\d{4}\b`)
+	for _, format := range []string{"dmy", "mdy"} {
+		useDateFormat(t, b, format)
+		want, other := dmy, mdy
+		if format == "mdy" {
+			want, other = mdy, dmy
+		}
+		for _, page := range pages {
+			body := getEN(b, page).body
+			if !want.MatchString(body) {
+				t.Errorf("%s (%s) has no date in that format:\n%s", page, format, body)
+			}
+			if m := other.FindString(body); m != "" {
+				t.Errorf("%s (%s) has the other format's date %q", page, format, m)
+			}
 		}
 	}
 }

@@ -66,7 +66,7 @@ func TestTemplatePagesNeedAParent(t *testing.T) {
 func TestTheTemplatesMenuInvitesToCreateTheFirstTemplate(t *testing.T) {
 	c := signedInAPI(t)
 	r := c.b.do(http.MethodGet, "/meals/templates", nil, en)
-	for _, want := range []string{"<h1>Meal plan templates</h1>", `<a class="back" href="/meals">Back to meal plan</a>`, `class="empty"`, `href="/meals/templates/new"`, "New template", `<a href="/meals" aria-current="page"`} {
+	for _, want := range []string{"<h1>Meal plan templates</h1>", `<a class="back" href="/meals">`, `class="empty"`, `href="/meals/templates/new"`, "New template", `<a href="/meals" aria-current="page"`} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("page lacks %q", want)
 		}
@@ -134,7 +134,7 @@ func TestTheTemplateFormHasEveryFieldOfTheDesign(t *testing.T) {
 	c := signedInAPI(t)
 	r := c.b.do(http.MethodGet, "/meals/templates/new", nil, en)
 	for _, want := range []string{
-		`<a class="back" href="/meals/templates">Back to templates</a>`, "<h1>New template</h1>", `class="steps wide tpl-form"`, `action="/meals/templates"`,
+		`<a class="back" href="/meals/templates">`, "<h1>New template</h1>", `class="steps wide tpl-form"`, `action="/meals/templates"`,
 		`name="name"`, `maxlength="60"`, "Which meals does it fill?", `name="fills" value="one"`, `name="fills" value="all"`, `<div class="mtpick-wrap"><fieldset class="choice mtpick">`, `name="mealtime" value="dinner"`,
 		`id="schedule"`, `class="every"`, `name="every"`, `min="1" max="52"`, `name="start"`, `class="weeks-hint"`, "<h2>Meals of the week</h2>",
 		`data-mt="breakfast"`, `name="tpl_7_dinner"`, `name="tpl_1_breakfast"`, "Save template", `class="savebar"`, "Week 46 · 09.11. – 15.11.", "Week 45 · 08.11. – 14.11.",

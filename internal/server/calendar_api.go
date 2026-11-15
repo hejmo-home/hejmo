@@ -40,6 +40,17 @@ func (p principal) clockSeconds(t time.Time) string {
 	return datefmt.ClockSeconds(p.household.TimeFormat, t.In(p.location()))
 }
 
+// when is a date and time of day with seconds in one phrase, as the overview
+// rows and the facts of detail pages say when something happened.
+func (p principal) when(t time.Time) string {
+	return datefmt.When(p.household.DateFormat, p.household.TimeFormat, t.In(p.location()))
+}
+
+// day is a date alone in the household's format.
+func (p principal) day(t time.Time) string {
+	return datefmt.Date(p.household.DateFormat, t.In(p.location()))
+}
+
 func formatTime(t time.Time, allDay bool, loc *time.Location) string {
 	if allDay {
 		return t.In(loc).Format(dateLayout)

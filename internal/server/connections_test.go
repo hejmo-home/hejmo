@@ -301,8 +301,12 @@ func TestWebConnectTickAndRemove(t *testing.T) {
 		t.Fatalf("add ticked = %d %q\n%s", r.status, r.location, r.body)
 	}
 	page := b.get("/calendars")
-	if !strings.Contains(page.body, "Family") || strings.Contains(page.body, "School") || !strings.Contains(page.body, "#B4583A") || !strings.Contains(page.body, caldavtest.User) {
+	if !strings.Contains(page.body, "Family") || strings.Contains(page.body, "School") || !strings.Contains(page.body, caldavtest.User) {
 		t.Fatalf("calendars page:\n%s", page.body)
+	}
+	// The colour moved to the connection's page with the other settings of its calendars (ADR 0017).
+	if detail := b.get("/connections/" + conns[0].ID); !strings.Contains(detail.body, `value="#B4583A"`) {
+		t.Fatalf("connection page lacks the colour:\n%s", detail.body)
 	}
 	sameList(t, occTitles(c.occurrences(t, november)), []string{"11-20T15:00 Swimming"})
 

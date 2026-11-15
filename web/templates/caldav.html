@@ -2,10 +2,7 @@
   <h1>{{t "caldav.title"}}</h1>
   {{template "syncNotice" .}}
   <p class="lead">{{t "caldav.intro"}}</p>
-  <ul class="cards">
-    <li><span class="hint">{{t "caldav.address"}}</span> <strong data-caldav-address>{{.Address}}</strong></li>
-    <li><span class="hint">{{t "caldav.username"}}</span> <strong>{{.Username}}</strong></li>
-  </ul>
+  {{template "facts" .Facts}}
 
   <section aria-labelledby="iosprofile">
     <h2 id="iosprofile">{{t "caldav.profile.title"}}</h2>
@@ -21,27 +18,12 @@
     </form>
   </section>
 
-  {{if .NewToken}}
-  <section aria-labelledby="newtoken">
-    <h2 id="newtoken">{{.NewTokenTitle}}</h2>
-    <p class="notice" role="status">{{t "caldav.token.once"}}</p>
-    <p class="secret" data-device-token="{{.NewToken}}">{{.NewToken}}</p>
-  </section>
-  {{end}}
-
   <section aria-labelledby="tokens">
     <h2 id="tokens">{{t "caldav.tokens"}}</h2>
-    {{if .Tokens}}
-    <ul class="cards">
-      {{range .Tokens}}
-      <li>
-        <strong>{{.Name}}</strong>
-        <span class="hint">{{t "caldav.token.owner"}} {{.Person}} · {{t "caldav.token.created"}} {{.Created}} · {{if .LastUsed}}{{t "caldav.token.last_used"}} {{.LastUsed}}{{else}}{{t "caldav.token.never"}}{{end}}</span>
-        {{template "dangerOpen" (dict "Label" (t "caldav.token.revoke"))}}
-          <p>{{t "caldav.token.revoke.explain"}}</p>
-          <form method="post" action="/caldav/tokens/{{.ID}}/revoke"><button class="button danger" type="submit">{{t "caldav.token.revoke.confirm"}}</button></form>
-        {{template "dangerClose"}}
-      </li>
+    <p class="hint">{{t "caldav.tokens.hint"}}</p>
+    {{if .Rows}}
+    <ul class="list-rows">
+      {{range .Rows}}{{template "rowLink" .}}
       {{end}}
     </ul>
     {{else}}{{template "empty" (dict "Text" (t "caldav.tokens.none") "Href" "#tokenform" "Action" (t "caldav.tokens.none.action"))}}{{end}}

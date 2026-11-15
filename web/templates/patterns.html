@@ -63,17 +63,51 @@
 </details>{{end}}
 
 {{/* Destructive actions live on a detail page, in a closed disclosure that says
-     what will happen; the red button inside is the confirmation. Argument:
-     Label (the summary). Close with dangerClose. */}}
+     what will happen; the red button inside is the confirmation. Arguments:
+     Label (the summary). With Confirm (the button text, which names the thing)
+     the box is complete: Explain (what happens), optionally Names (what
+     disappears, listed), Action (where the button posts) and CancelHref (the
+     "No, change nothing" link). Without Confirm the caller puts its own
+     content between dangerOpen and dangerClose. */}}
 {{define "dangerOpen"}}<details class="danger">
-  <summary>{{.Label}}</summary>{{end}}
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{.Label}}</summary>{{if .Confirm}}
+  <p>{{.Explain}}</p>{{with .Names}}
+  <ul>{{range .}}<li><strong>{{.}}</strong></li>{{end}}</ul>{{end}}
+  <div class="confirm">
+    <form method="post" action="{{.Action}}"><button class="button danger" type="submit">{{.Confirm}}</button></form>
+    <a href="{{.CancelHref}}">{{t "danger.cancel"}}</a>
+  </div>{{end}}{{end}}
 {{define "dangerClose"}}</details>{{end}}
+{{define "danger"}}{{template "dangerOpen" .}}{{template "dangerClose"}}{{end}}
+
+{{/* Who a line is for: the whole family, or people as marker plus name.
+     Arguments: Whole, People (person chips). */}}
+{{define "forWhom"}}{{if .Whole}}<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg> {{t "chips.whole_family"}}{{end}}{{range $i, $p := .People}}{{if $i}} {{end}}<span class="who"><span class="marker" data-person="{{$p.Slot}}" data-shape="{{$p.Shape}}" aria-hidden="true"></span>{{$p.Name}}</span>{{end}}{{end}}
+
+{{/* A problem or a warning in words, with an icon. Arguments: Kind (problem or
+     warn) and Text. */}}
+{{define "flag"}}<span class="flag {{.Kind}}"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{.Text}}</span>{{end}}
+
+{{/* One calm row of an overview that opens a detail page. Arguments: Href,
+     Title, Lines (each with Text and optionally Whole and People) and Flag
+     (optional, with Kind and Text). */}}
+{{define "rowLink"}}<li><a href="{{.Href}}"><span class="t"><b>{{.Title}}</b>{{range .Lines}}<span class="meta">{{.Text}}{{if or .Whole .People}} {{template "forWhom" .}}{{end}}</span>{{end}}{{with .Flag}}{{template "flag" .}}{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
+
+{{/* Facts of a thing: label and value pairs. The argument is a list of facts,
+     each with Label and one of Value, Flag (Kind and Text) or Whole/People. */}}
+{{define "facts"}}<dl class="facts">{{range .}}
+  <dt>{{.Label}}</dt>
+  <dd>{{if .Flag}}{{template "flag" .Flag}}{{else}}{{if or .Whole .People}}{{template "forWhom" .}}{{end}}{{.Value}}{{end}}</dd>{{end}}
+</dl>{{end}}
 
 {{/* Empty state: one sentence on what the thing is for and the first action. */}}
 {{define "empty"}}<div class="empty" data-empty>
   <p>{{.Text}}</p>
   <a class="button" href="{{.Href}}">{{.Action}}</a>
 </div>{{end}}
+
+{{/* The link back to the overview, first thing in main. Arguments: Href, Text. */}}
+{{define "backLink"}}<a class="back" href="{{.Href}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>{{.Text}}</a>{{end}}
 
 {{/* The line icon of a mealtime: sunrise, sun, apple, moon. Argument: the
      mealtime ("breakfast", "lunch", "snack", "dinner"). */}}

@@ -143,3 +143,10 @@ var hubItems = []hubItem{
 	{"/settings/household", "hub.household", "hub.household.hint", auth.Perm("settings", auth.Write)},
 	{"/otp", "hub.otp", "hub.otp.hint", auth.Perm("settings", auth.Write)},
 }
+
+// detailPages are the templates of detail pages (ticket 111, ADR 0017): they
+// start with a link back to their overview, which replaces the hub link.
+var detailPages = map[string]bool{
+	"display.html": true, "token.html": true, "token_once.html": true, "connection.html": true, "connection_off.html": true,
+	"calendar_detail.html": true, "phone.html": true,
+}

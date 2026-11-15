@@ -166,6 +166,14 @@ _Avoid_: mobile, client (alone), handset
 The long-lived, revocable access of a paired phone, which acts for one person.
 _Avoid_: remember-me, phone token
 
+**Overview and detail page**:
+An overview lists the things of one kind (displays, device tokens, connections, subscribed calendars, phones) as calm rows; each row opens the thing's detail page. Changing a thing and removing it, revoking it or disconnecting it happen only on its detail page, after a confirmation that names it.
+_Avoid_: list page (for the overview), settings page (for the detail page)
+
+**Device token**:
+The password a calendar app or CalDAV client on a phone uses, one per device and revocable on its own; shown once when created. It is a token of scope `calendars`, unlike an API token for other software.
+_Avoid_: app password, phone token (a phone has a device session)
+
 ## Everyday
 
 **List**:

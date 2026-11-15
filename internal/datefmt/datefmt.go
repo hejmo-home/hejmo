@@ -74,3 +74,10 @@ func DateTime(f store.DateFormat, tf store.TimeFormat, t time.Time) string {
 func DateTimeSeconds(f store.DateFormat, tf store.TimeFormat, t time.Time) string {
 	return Date(f, t) + nbsp + clock(tf, t, true)
 }
+
+// When is the date and the time with seconds in one phrase, a comma between
+// them ("24.12.2026, 18:30:15"): how overview rows and detail pages say when
+// something happened. The no-break space after the comma keeps the two together.
+func When(f store.DateFormat, tf store.TimeFormat, t time.Time) string {
+	return Date(f, t) + "," + nbsp + clock(tf, t, true)
+}

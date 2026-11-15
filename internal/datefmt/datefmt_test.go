@@ -103,3 +103,25 @@ func TestClockWithSeconds(t *testing.T) {
 		t.Errorf("24h: %q", got)
 	}
 }
+
+func TestWhen(t *testing.T) {
+	const nb = " "
+	cases := []struct {
+		name string
+		d    store.DateFormat
+		tf   store.TimeFormat
+		want string
+	}{
+		{"dmy 24h", store.DateDMY, store.Time24h, "14.11.2026," + nb + "13:00:00"},
+		{"dmy 12h", store.DateDMY, store.Time12h, "14.11.2026," + nb + "1:00:00" + nb + "PM"},
+		{"mdy 24h", store.DateMDY, store.Time24h, "11/14/2026," + nb + "13:00:00"},
+		{"mdy 12h", store.DateMDY, store.Time12h, "11/14/2026," + nb + "1:00:00" + nb + "PM"},
+	}
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			if got := datefmt.When(c.d, c.tf, afternoon); got != c.want {
+				t.Errorf("When = %q, want %q", got, c.want)
+			}
+		})
+	}
+}

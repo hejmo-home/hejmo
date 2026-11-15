@@ -179,6 +179,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /calendar/events/{id}/delete", s.handleEventDelete)
 	mux.HandleFunc("GET /calendars", s.handleCalendarsPage)
 	mux.HandleFunc("POST /calendars", s.handleCalendarAdd)
+	mux.HandleFunc("GET /calendars/{id}", s.handleCalendarPage)
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
 	mux.HandleFunc("POST /calendars/{id}/waste", s.handleCalendarWaste)
@@ -189,10 +190,12 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /connections", s.handleConnect)
 	mux.HandleFunc("GET /connections/{id}", s.handleConnectionPage)
 	mux.HandleFunc("POST /connections/{id}/calendars", s.handleConnectionCalendars)
+	mux.HandleFunc("POST /connections/{id}/credentials", s.handleConnectionCredentials)
 	mux.HandleFunc("POST /connections/{id}/delete", s.handleConnectionDelete)
 	mux.HandleFunc("GET /caldav", s.handleCalDAVPage)
 	mux.HandleFunc("POST /caldav/tokens", s.handleDeviceTokenCreate)
 	mux.HandleFunc("POST /caldav/profile", s.handleIOSProfile)
+	mux.HandleFunc("GET /caldav/tokens/{id}", s.handleDeviceTokenPage)
 	mux.HandleFunc("POST /caldav/tokens/{id}/revoke", s.handleDeviceTokenRevoke)
 	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
 	mux.HandleFunc("GET /people", s.handlePeoplePage)
@@ -228,11 +231,13 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /display/tasks/{id}/done", s.handleDisplayTaskDone)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
+	mux.HandleFunc("GET /displays/{id}", s.handleDisplayPage)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
 	mux.HandleFunc("GET /settings", s.handleSettingsHub)
 	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
 	mux.HandleFunc("GET /phones", s.handlePhonesPage)
+	mux.HandleFunc("GET /phones/{id}", s.handlePhonePage)
 	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)
 	mux.HandleFunc("POST /phones/pairings/{id}/confirm", s.handlePhonePairingConfirm)
 	mux.HandleFunc("POST /phones/{id}/revoke", s.handlePhoneRevoke)
@@ -281,6 +286,7 @@ func parsePages() *template.Template {
 		"t":    func(string) string { return "" },
 		"tf":   func(string, ...string) string { return "" },
 		"dict": dict,
+		"list": func(v ...any) []any { return v },
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
 		"repl": repl,
@@ -306,14 +312,19 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
 		fr.setLanguage(lang, r)
-		if key, arg := s.takeFlash(w, r); key == "flash.lang.error" {
+		if detailPages[name] && fr.Back { // a detail page links to its own overview, not to the hub
+			fr.Back, fr.BackHref, fr.BackLabel = false, "", ""
+		}
+		key, arg := s.takeFlash(w, r) // always consumed, so it cannot show later
+		switch own, _ := data["SuccessKey"].(string); {
+		case key == "flash.lang.error":
 			fr.Error = s.i18n.T(lang, key)
-		} else if key != "" {
+		case data["SuccessText"] != nil:
+			fr.Success, _ = data["SuccessText"].(string) // a page that shows the result itself, and names the thing
+		case own != "":
+			fr.Success = s.i18n.T(lang, own)
+		case key != "":
 			fr.Success = s.successText(lang, key, arg)
-		} else if key, ok := data["SuccessKey"].(string); ok {
-			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
-		} else if text, ok := data["SuccessText"].(string); ok {
-			fr.Success = text // a page that shows the result itself, with a name in it
 		}
 		data["Frame"] = fr
 	}

@@ -203,7 +203,7 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 func TestBlackAndWhiteMarkersUseDistinctShapes(t *testing.T) {
 	css := stylesheet(t)
 	seen := map[string]string{}
-	for _, shape := range []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled"} {
+	for _, shape := range []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled", "cross-filled", "star-filled"} {
 		m := regexp.MustCompile(`\[data-theme="bw"\] \.marker\[data-shape="` + shape + `"\]\s*\{([^}]*)\}`).FindStringSubmatch(css)
 		if m == nil {
 			t.Errorf("no bw marker rule for shape %s", shape)
@@ -328,7 +328,7 @@ func TestContrastOnEveryPaletteReachesAA(t *testing.T) {
 		check("text", "error-bg", 4.5)
 		check("error-text", "error-bg", 4.5)
 		check("notice-text", "notice-bg", 4.5)
-		for i := 1; i <= 6; i++ {
+		for i := 1; i <= 8; i++ {
 			n := strconv.Itoa(i)
 			check("person-"+n+"-text", "person-"+n+"-tint", 4.5) // text on person tints
 			check("person-"+n, "surface", 3)                     // marker against the column

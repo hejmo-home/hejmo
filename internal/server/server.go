@@ -187,6 +187,16 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /caldav/profile", s.handleIOSProfile)
 	mux.HandleFunc("POST /caldav/tokens/{id}/revoke", s.handleDeviceTokenRevoke)
 	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
+	mux.HandleFunc("GET /people", s.handlePeoplePage)
+	mux.HandleFunc("POST /people", s.handlePersonAdd)
+	mux.HandleFunc("GET /people/{id}", s.handlePersonPage)
+	mux.HandleFunc("POST /people/{id}", s.handlePersonSave)
+	mux.HandleFunc("POST /people/{id}/move", s.handlePersonMove)
+	mux.HandleFunc("GET /groups/new", s.handleGroupNew)
+	mux.HandleFunc("POST /groups", s.handleGroupCreate)
+	mux.HandleFunc("GET /groups/{id}", s.handleGroupPage)
+	mux.HandleFunc("POST /groups/{id}", s.handleGroupSave)
+	mux.HandleFunc("POST /groups/{id}/delete", s.handleGroupDelete)
 	mux.HandleFunc("GET /tasks", s.handleTasksPage)
 	mux.HandleFunc("POST /tasks", s.handleTaskAdd)
 	mux.HandleFunc("POST /tasks/stars", s.handleStarBooking)
@@ -253,6 +263,7 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 func parsePages() *template.Template {
 	return template.Must(template.New("").Funcs(template.FuncMap{
 		"t":    func(string) string { return "" },
+		"tf":   func(string, ...string) string { return "" },
 		"dict": dict,
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
@@ -298,7 +309,10 @@ func (s *server) execute(w io.Writer, name, lang string, data any) error {
 	if err != nil {
 		return err
 	}
-	tpl = tpl.Funcs(template.FuncMap{"t": func(key string) string { return s.i18n.T(lang, key) }})
+	tpl = tpl.Funcs(template.FuncMap{
+		"t":  func(key string) string { return s.i18n.T(lang, key) },
+		"tf": func(key string, kv ...string) string { return s.i18n.Format(lang, i18n.Msg(key, kv...)) },
+	})
 	return tpl.ExecuteTemplate(w, name, data)
 }
 

@@ -152,7 +152,7 @@ func (s *server) displayTheme(h store.Household, d store.Display) string {
 }
 
 // markerShapes are the black-and-white marker shapes in person slot order (DESIGN.md).
-var markerShapes = []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled"}
+var markerShapes = []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled", "cross-filled", "star-filled"}
 
 // familyView builds today's family view of the household.
 func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (familyview.View, error) {
@@ -218,11 +218,8 @@ func (s *server) displayData(h store.Household, lang string, days int) (displayD
 		}
 	}
 	for i, p := range people {
-		shape := p.Shape
-		if shape == "" {
-			shape = markerShapes[i%len(markerShapes)]
-		}
-		out.people = append(out.people, familyview.Person{ID: p.ID, Name: p.Name, Slot: i%len(markerShapes) + 1, Shape: shape, Groups: groupsOf[p.ID]})
+		_, shape := displayedLook(p, i)
+		out.people = append(out.people, familyview.Person{ID: p.ID, Name: p.Name, Slot: slotOf(p, i), Shape: shape, Groups: groupsOf[p.ID]})
 	}
 	return out, nil
 }

@@ -13,7 +13,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-// Person is one column of the family view. Slot (1..6) picks the person's
+// Person is one column of the family view. Slot (1..8) picks the person's
 // colour tokens; Shape is the black-and-white marker.
 type Person struct {
 	ID, Name string

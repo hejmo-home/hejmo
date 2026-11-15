@@ -49,7 +49,6 @@
       <fieldset>
         {{template "field" (dict "Root" . "Name" "code" "Label" (t "displays.code") "Value" (index .Form "Code") "Required" true "Inputmode" "numeric" "Pattern" "[0-9]{6}" "Max" 6 "Autocomplete" "off")}}
         {{template "field" (dict "Root" . "Name" "name" "Label" (t "displays.name") "Value" (index .Form "Name") "Required" true "Max" 80)}}
-        {{template "field" (dict "Root" . "Name" "room" "Label" (t "displays.room_label") "Value" (index .Form "Room") "Max" 80)}}
         {{$sel := index .Form "Type"}}
         {{template "optionsOpen" (dict "Class" "choice" "Legend" (t "displays.type"))}}
           {{range .Types}}{{template "option" (dict "Name" "type" "Value" (printf "%s" .) "Label" (t (printf "displays.type.%s" .)) "Hint" (t (printf "displays.type.%s.hint" .)) "Checked" (eq (printf "%s" .) $sel))}}{{end}}

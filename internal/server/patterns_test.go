@@ -107,7 +107,7 @@ func TestTaskPersonIsASingleChoiceChip(t *testing.T) {
 
 func TestSettingsUseSegmentedControls(t *testing.T) {
 	b := signedInBox(t)
-	page := getEN(b, "/settings").body
+	page := getEN(b, "/settings/household").body
 	for _, want := range []string{`<fieldset class="seg">`, `type="radio" name="time_format" value="24h" checked`, `type="radio" name="temperature_unit" value="c" checked`} {
 		if !strings.Contains(page, want) {
 			t.Errorf("settings lack %q:\n%s", want, page)

@@ -48,6 +48,10 @@ type Options struct {
 	// Done, when closed, ends open live streams so a shutdown does not wait
 	// for them. Nil means they end only when their client goes away.
 	Done <-chan struct{}
+	// CountTimeout is how long the box waits for a CalDAV server to count the
+	// events of one calendar before the count shows as unknown. Zero means 10
+	// seconds.
+	CountTimeout time.Duration
 	// UpdateDir is the data volume directory the host script of auto-update
 	// shares with the box (ADR 0018). Empty means updates are not managed by a
 	// host script: no settings file is written, no status is read and the
@@ -93,6 +97,7 @@ type server struct {
 	sync      *calsync.Service
 	weather   *weather.Service
 	live      time.Duration
+	countWait time.Duration
 	done      <-chan struct{}
 	updateDir string
 }
@@ -126,6 +131,9 @@ func New(opts Options) http.Handler {
 	s.updateDir = opts.UpdateDir
 	if s.live = opts.LiveInterval; s.live <= 0 {
 		s.live = 2 * time.Second
+	}
+	if s.countWait = opts.CountTimeout; s.countWait <= 0 {
+		s.countWait = 10 * time.Second
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
@@ -187,6 +195,9 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
+	mux.HandleFunc("GET /settings", s.handleSettingsHub)
+	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
+	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
 	mux.HandleFunc("GET /phones", s.handlePhonesPage)
 	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)
 	mux.HandleFunc("POST /phones/pairings/{id}/confirm", s.handlePhonePairingConfirm)
@@ -194,8 +205,6 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /phones/join/{code}", s.handlePhoneJoin)
 	mux.HandleFunc("GET /manifest.webmanifest", s.handleManifest)
 	mux.HandleFunc("GET /sw.js", s.handleServiceWorker)
-	mux.HandleFunc("GET /settings", s.handleSettingsPage)
-	mux.HandleFunc("POST /settings", s.handleSettingsSave)
 	mux.HandleFunc("POST /update/dismiss", s.handleUpdateDismiss)
 	mux.HandleFunc("POST /displays/{id}/settings", s.handleDisplaySettings)
 	s.routeAPI(mux)
@@ -255,8 +264,8 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	}
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
-		if key := s.takeFlash(w, r); key != "" {
-			fr.Success = s.i18n.T(lang, key)
+		if key, arg := s.takeFlash(w, r); key != "" {
+			fr.Success = s.successText(lang, key, arg)
 		} else if key, ok := data["SuccessKey"].(string); ok {
 			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
 		}

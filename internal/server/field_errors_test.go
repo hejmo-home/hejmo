@@ -56,8 +56,8 @@ func TestFormErrorsAppearAtTheFieldAndKeepOtherEntries(t *testing.T) {
 		{"calendar without name", "/calendars", url.Values{"name": {""}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}},
 			http.StatusUnprocessableEntity, "name", map[string]string{"url": "https://example.org/a.ics"}},
 		{"token without name", "/caldav/tokens", url.Values{"name": {""}}, http.StatusUnprocessableEntity, "name", nil},
-		{"display with a wrong code", "/displays", url.Values{"code": {"000000"}, "name": {"Hallway"}, "room": {"Entrance"}, "type": {"eink_bw"}},
-			http.StatusUnprocessableEntity, "code", map[string]string{"name": "Hallway", "room": "Entrance", "code": "000000"}},
+		{"display with a wrong code", "/displays", url.Values{"code": {"000000"}, "name": {"Hallway"}, "type": {"eink_bw"}},
+			http.StatusUnprocessableEntity, "code", map[string]string{"name": "Hallway", "code": "000000"}},
 	}
 	for _, c := range cases {
 		r := b.do(http.MethodPost, c.path, c.form, map[string]string{"Accept-Language": "en"})

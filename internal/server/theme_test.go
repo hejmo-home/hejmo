@@ -202,6 +202,9 @@ func TestQuietModeTakesPrecedenceOverTheTheme(t *testing.T) {
 		{"screen", "light", "dark", "light"},
 		{"eink_bw", "dark", "bw", "dark"},
 		{"eink_color", "dark", "light", "dark"},
+		{"screen", "auto", "dark", "light"},
+		{"eink_color", "auto", "light", "light"},
+		{"eink_bw", "auto", "bw", "bw"},
 	} {
 		f := newFamilyBox(t, c.typ)
 		f.atMunich(t)

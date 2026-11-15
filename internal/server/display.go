@@ -127,11 +127,8 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 // against the sun at the home location, or in quiet mode the palette of the
 // quiet page, whatever the setting.
 func (s *server) displayTheme(h store.Household, d store.Display) string {
-	loc := time.UTC
-	if l, err := time.LoadLocation(h.Timezone); err == nil {
-		loc = l
-	}
-	if d.Quiet.Active(s.householdNow(h)) {
+	now := s.householdNow(h)
+	if d.Quiet.Active(now) {
 		// Quiet mode takes precedence over the theme (ADR 0015): a normal
 		// screen shows a black page, an E-Ink display its own night page.
 		switch d.Type {
@@ -144,7 +141,7 @@ func (s *server) displayTheme(h store.Household, d store.Display) string {
 	}
 	t := theme.Resolve(theme.Input{
 		Setting: d.Theme, SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset,
-		Now: s.now().In(loc), Lat: h.Latitude, Lon: h.Longitude,
+		Now: now, Lat: h.Latitude, Lon: h.Longitude,
 	})
 	// Black-and-white E-Ink has its own light palette; dark uses the dark one.
 	if t == theme.Light && d.Type == store.DisplayEInkBW {

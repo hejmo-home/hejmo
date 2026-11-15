@@ -267,10 +267,15 @@ a { color: var(--accent); }
 .brand { display: inline-flex; align-items: center; min-height: var(--touch-target); font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); color: var(--text); text-decoration: none; }
 .frame-bar .button { min-height: var(--touch-target); }
 .frame-bar form { margin: 0; }
-.frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-cards); }
+.frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: var(--gap-cards); }
+.frame-nav li { flex: none; }
 .frame-nav a { display: flex; align-items: center; min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
 .frame-nav a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
 [data-theme="bw"] .frame-nav a { border-width: 2px; }
+.back { display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; }
+.hub-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); }
+.hub-row strong { font-size: var(--fs-event-title); }
+[data-theme="bw"] .hub-row { text-decoration: underline; }
 .frame main { min-width: 0; }
 @media (max-width: 599px) {
   body.web { padding: var(--gap); }
@@ -278,7 +283,7 @@ a { color: var(--accent); }
 @media (min-width: 900px) {
   .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); align-items: start; }
   .frame.has-nav .frame-bar { grid-column: 1 / -1; }
-  .frame-nav ul { flex-direction: column; flex-wrap: nowrap; }
+  .frame-nav ul { flex-direction: column; overflow-x: visible; }
 }
 
 /* Portrait shows at most four person columns (ticket 5.7, ADR 0016). The
@@ -383,6 +388,17 @@ body:has(.family-page) { overflow: hidden; }
 [data-theme="bw"] .switch input::before { background: var(--text); }
 [data-theme="bw"] .switch input:checked { background: var(--text); }
 [data-theme="bw"] .switch input:checked::before { background: var(--surface); }
+
+/* Choose calendars: the event count of each calendar (ADR 0017). It is filled
+   in after the page has loaded; "empty" is the one that matters (a calendar
+   with nothing in the window), so it is a notice, and in black and white bold. */
+.count { font-size: var(--fs-meta); }
+.count[data-state="loading"] { font-style: italic; }
+.count[data-state="unknown"] { font-style: italic; }
+.count[data-state="empty"] { background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-field); padding: 2px 8px; justify-self: start; font-weight: 600; }
+[data-theme="bw"] .count[data-state="empty"] { background: none; color: var(--text); border: 2px solid var(--text); }
+.calchoice .card-row { margin-bottom: 4px; }
+.cards [data-events], .cards [data-last-run] { font-variant-numeric: tabular-nums; }
 
 /* Person chips: who is it for. Selected = tint + 2px border in the person
    colour + tick + bold. "Whole family" is neutral and selected by default. */

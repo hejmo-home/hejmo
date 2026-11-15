@@ -27,7 +27,7 @@ func (b *box) settingsFile() string {
 // the host script through the settings file.
 func TestSettingsScreenSavesTheAutoUpdateMode(t *testing.T) {
 	b := signedInBox(t)
-	body := b.get("/settings").body
+	body := b.get("/settings/household").body
 	if !strings.Contains(body, `name="auto_update"`) || !strings.Contains(body, `value="on" checked`) {
 		t.Fatalf("auto-update not offered with on as default:\n%s", body)
 	}
@@ -39,21 +39,21 @@ func TestSettingsScreenSavesTheAutoUpdateMode(t *testing.T) {
 	form := func(mode string) url.Values {
 		return url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "auto_update": {mode}}
 	}
-	if r := b.post("/settings", form("notify")); r.status != http.StatusSeeOther {
+	if r := b.post("/settings/household", form("notify")); r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d", r.status)
 	}
 	if got := b.settingsFile(); got != "mode=notify\n" {
 		t.Fatalf("settings file = %q", got)
 	}
-	if body := b.get("/settings").body; !strings.Contains(body, `value="notify" checked`) {
+	if body := b.get("/settings/household").body; !strings.Contains(body, `value="notify" checked`) {
 		t.Fatalf("notify not selected:\n%s", body)
 	}
 	// A form without the field (older clients) leaves the mode alone.
-	b.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}})
-	if body := b.get("/settings").body; !strings.Contains(body, `value="notify" checked`) {
+	b.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}})
+	if body := b.get("/settings/household").body; !strings.Contains(body, `value="notify" checked`) {
 		t.Fatalf("mode changed by a form without it:\n%s", body)
 	}
-	if r := b.post("/settings", form("sometimes")); r.status != http.StatusUnprocessableEntity {
+	if r := b.post("/settings/household", form("sometimes")); r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("bad mode = %d, want 422", r.status)
 	}
 	if got := b.settingsFile(); got != "mode=notify\n" {
@@ -92,7 +92,7 @@ func TestAfterAnUpdateTheWebInterfaceShowsWhatIsNewOnce(t *testing.T) {
 	if r := b.post("/update/dismiss", url.Values{}); r.status != http.StatusSeeOther {
 		t.Fatalf("dismiss = %d", r.status)
 	}
-	if strings.Contains(b.get("/").body, "data-update-notice") || strings.Contains(b.get("/settings").body, "data-update-notice") {
+	if strings.Contains(b.get("/").body, "data-update-notice") || strings.Contains(b.get("/settings/household").body, "data-update-notice") {
 		t.Fatal("notice shown again after dismissing")
 	}
 	// The next event is a new notice.
@@ -115,7 +115,7 @@ func TestAfterARollbackParentsSeeTheReasonInBothLanguages(t *testing.T) {
 		}
 	}
 	// Also on the settings page, where parents look for it.
-	if !strings.Contains(b.get("/settings").body, `data-update-notice="rolled_back"`) {
+	if !strings.Contains(b.get("/settings/household").body, `data-update-notice="rolled_back"`) {
 		t.Fatal("no notice on the settings page")
 	}
 }
@@ -131,7 +131,7 @@ func TestARejectedImageIsReportedWithItsReason(t *testing.T) {
 
 func TestNotifyOnlyTellsParentsThatAnUpdateIsAvailable(t *testing.T) {
 	b := signedInBox(t)
-	b.post("/settings", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "auto_update": {"notify"}})
+	b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "auto_update": {"notify"}})
 	b.writeStatus("state=available\nversion=0.1.0\ntarget=0.2.0\ntime=2026-11-16T03:30:05Z\n")
 	body := b.get("/").body
 	if !strings.Contains(body, `data-update-notice="available"`) || !strings.Contains(body, "0.2.0") {
@@ -143,7 +143,7 @@ func TestNotifyOnlyTellsParentsThatAnUpdateIsAvailable(t *testing.T) {
 		t.Fatal("availability notice vanished by dismissing")
 	}
 	// Once the family switches auto-update on, a stale report is not shown.
-	b.post("/settings", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "auto_update": {"on"}})
+	b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "auto_update": {"on"}})
 	if strings.Contains(b.get("/").body, `data-update-notice="available"`) {
 		t.Fatal("stale availability shown with auto-update on")
 	}
@@ -187,7 +187,7 @@ func TestUpdateStatusWorksThroughTheAPI(t *testing.T) {
 // A plain Docker Compose install has no updater: the box must not promise updates.
 func TestWithoutAHostUpdaterTheSettingIsNotOffered(t *testing.T) {
 	b := signedInBox(t, withoutHostUpdater)
-	body := b.get("/settings").body
+	body := b.get("/settings/household").body
 	if strings.Contains(body, "auto_update") || strings.Contains(body, "03:30") {
 		t.Fatalf("auto-update offered without a host updater:\n%s", body)
 	}
@@ -195,7 +195,7 @@ func TestWithoutAHostUpdaterTheSettingIsNotOffered(t *testing.T) {
 		t.Fatal("the other settings are gone")
 	}
 	// Saving the rest of the form still works.
-	if r := b.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther {
+	if r := b.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d", r.status)
 	}
 }
@@ -210,7 +210,7 @@ func TestAPISaysWhetherAHostUpdaterManagesTheBox(t *testing.T) {
 
 func TestWithAHostUpdaterTheSettingIsOffered(t *testing.T) {
 	b := signedInBox(t)
-	if !strings.Contains(b.get("/settings").body, `name="auto_update"`) {
+	if !strings.Contains(b.get("/settings/household").body, `name="auto_update"`) {
 		t.Fatal("auto-update not offered")
 	}
 }
@@ -243,11 +243,11 @@ func TestSavingSettingsToleratesAFailingSettingsFile(t *testing.T) {
 	if err := os.RemoveAll(b.updateDir); err != nil {
 		t.Fatal(err)
 	}
-	r := b.post("/settings", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}, "auto_update": {"off"}})
+	r := b.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}, "auto_update": {"off"}})
 	if r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d, want 303 for a change that was stored", r.status)
 	}
-	if !strings.Contains(b.get("/settings").body, `value="off" checked`) {
+	if !strings.Contains(b.get("/settings/household").body, `value="off" checked`) {
 		t.Fatal("the change was not stored")
 	}
 }

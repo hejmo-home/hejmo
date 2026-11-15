@@ -85,9 +85,9 @@
      Step n of 4" in words and the progress of the four steps. Argument: the
      wizardView. Step 0 (welcome) and -1 (codes set up again later) show no
      progress. */}}
-{{define "wizard"}}<header class="frame-bar"><span class="brand">Hejmo</span>{{if gt .Step 0}}<span class="wiz-count">{{tf "setup.wizard.count" "n" (printf "%d" .Step)}}</span>{{else}}<span class="wiz-count">{{t "setup.wizard.count0"}}</span>{{end}}</header>
-{{if gt .Step 0}}<nav class="wsteps" aria-label="{{t "setup.wizard.progress"}}"><ol>
-{{range .Steps}}{{if eq .State "done"}}<li data-state="done"><span class="lab">{{template "tickIcon" 14}}{{t .Label}}<span class="sr"> {{t "setup.wizard.done"}}</span></span></li>
+{{define "wizard"}}<header class="frame-bar"><span class="brand">Hejmo</span><div class="frame-tools">{{with .Frame}}{{template "langSwitch" .}}{{end}}</div></header>
+{{if gt .W.Step 0}}<nav class="wsteps" aria-label="{{t "setup.wizard.progress"}}"><p class="wiz-count">{{tf "setup.wizard.count" "n" (printf "%d" .W.Step)}}</p><ol>
+{{range .W.Steps}}{{if eq .State "done"}}<li data-state="done"><span class="lab">{{template "tickIcon" 14}}{{t .Label}}<span class="sr"> {{t "setup.wizard.done"}}</span></span></li>
 {{else if eq .State "current"}}<li aria-current="step"><span class="lab"><span class="n">{{.N}}</span>{{t .Label}}</span></li>
 {{else}}<li><span class="lab"><span class="n">{{.N}}</span>{{t .Label}}</span></li>
 {{end}}{{end}}</ol></nav>{{end}}{{end}}

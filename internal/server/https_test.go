@@ -410,7 +410,7 @@ func TestTrustPageIsStepOneOfTheWizard(t *testing.T) {
 	b := newFreshBox(t)
 	b.post("/setup/https", url.Values{})
 	r := b.trustPage("/ca", "de", macUA)
-	for _, want := range []string{`class="wizard"`, "Einrichtung · Schritt 1 von 4", `aria-current="step"`, "Sichere Verbin\u00addung"} {
+	for _, want := range []string{`class="wizard"`, "Einrichtung: Schritt 1 von 4", `aria-current="step"`, "Sichere Verbin\u00addung"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("the wizard shell misses %q", want)
 		}

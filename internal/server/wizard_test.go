@@ -43,8 +43,11 @@ func TestWelcomePageListsTheFourStepsAndWhatYouNeed(t *testing.T) {
 	if strings.Contains(r.body, "Schritt 1 von 4") || strings.Contains(r.body, `class="wsteps"`) || strings.Contains(r.body, `class="frame-nav"`) {
 		t.Error("the welcome page has a step number, progress or navigation")
 	}
-	if !strings.Contains(r.body, `<span class="wiz-count">Einrichtung</span>`) {
-		t.Error("the welcome page brand bar does not say Einrichtung")
+	if strings.Contains(r.body, "wiz-count") {
+		t.Error("the welcome page has a step count")
+	}
+	if !strings.Contains(r.body, `<div class="frame-tools"><details class="lang">`) {
+		t.Error("the welcome page brand bar has no language switcher")
 	}
 	en := b.do(http.MethodGet, "/setup", nil, map[string]string{"Accept-Language": "en"})
 	if !strings.Contains(en.body, "Start setup") || !strings.Contains(en.body, "Welcome to Hejmo") {
@@ -56,13 +59,13 @@ func TestWelcomePageListsTheFourStepsAndWhatYouNeed(t *testing.T) {
 	}
 }
 
-// The wizard shell: brand bar, "Setup · Step n of 4" in words, the four named
+// The wizard shell: brand bar with the language switcher, "Setup: Step n of 4" above the progress, the four named
 // steps (done ones with a hidden "(erledigt)"), no navigation.
 func TestWizardShellShowsStepNumberAndProgress(t *testing.T) {
 	b := newBox(t)
 	page := de(b, "/setup").body
 	for _, want := range []string{
-		`class="wizard"`, "Einrichtung · Schritt 2 von 4", `<nav class="wsteps" aria-label="Fortschritt der Einrichtung">`,
+		`class="wizard"`, `<nav class="wsteps" aria-label="Fortschritt der Einrichtung"><p class="wiz-count">Einrichtung: Schritt 2 von 4</p>`,
 		`<li data-state="done"><span class="lab">`, `<span class="sr"> (erledigt)</span>`, `<li aria-current="step">`,
 		"Sichere Verbin\u00addung", "Einmal\u00adcode",
 	} {
@@ -72,6 +75,10 @@ func TestWizardShellShowsStepNumberAndProgress(t *testing.T) {
 	}
 	if strings.Contains(page, `class="frame-nav"`) || strings.Contains(page, "Abmelden") {
 		t.Error("the wizard shows the frame navigation or sign-out")
+	}
+	// The count is not in the brand bar any more: the switcher sits there.
+	if bar := page[:strings.Index(page, "</header>")]; strings.Contains(bar, "wiz-count") || !strings.Contains(bar, `class="frame-tools"`) {
+		t.Error("the brand bar still holds the step count or lacks the switcher")
 	}
 	if n := strings.Count(page, `aria-current="step"`); n != 1 {
 		t.Errorf("%d current steps", n)

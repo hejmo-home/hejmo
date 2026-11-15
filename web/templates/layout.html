@@ -17,14 +17,13 @@
 <body{{if .Frame}} class="web"{{end}}>
 {{if .Frame}}<a class="skip" href="#content">{{t "frame.skip"}}</a>{{end}}
 {{if .Wizard}}<div class="wizard">
-{{template "wizard" .Wizard}}
+{{template "wizard" (dict "W" .Wizard "Frame" .Frame)}}
 {{else}}<div{{if .Frame}} class="frame framed{{if .Frame.Items}} has-nav{{end}}"{{end}}>
 {{with .Frame}}
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
   <div class="frame-tools">
-    <details class="lang"><summary><img class="flag" src="/static/flags/{{.LangFlag}}.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">{{t "lang.label"}} </span>{{.LangName}}</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
-      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="{{.Next}}">{{range .Others}}<button type="submit" name="lang" value="{{.Code}}" lang="{{.Code}}"><img class="flag" src="/static/flags/{{.Flag}}.svg" alt="">{{.Name}}</button>{{end}}</form></details>
+    {{template "langSwitch" .}}
     {{if .SignedIn}}<form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">{{t "home.logout"}}</button></form>{{end}}
   </div>
 </header>
@@ -36,6 +35,10 @@
 <main id="content">
 {{with .Frame}}{{with .Success}}{{template "success" .}}{{end}}{{with .Error}}<p class="error" role="alert">{{.}}</p>{{end}}{{end}}
 {{end}}
+
+{{/* The language switcher of ticket 134, one component for the frame bar and the wizard bar. Argument: the frame. */}}
+{{define "langSwitch"}}<details class="lang"><summary><img class="flag" src="/static/flags/{{.LangFlag}}.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">{{t "lang.label"}} </span>{{.LangName}}</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="{{.Next}}">{{range .Others}}<button type="submit" name="lang" value="{{.Code}}" lang="{{.Code}}"><img class="flag" src="/static/flags/{{.Flag}}.svg" alt="">{{.Name}}</button>{{end}}</form></details>{{end}}
 
 {{define "foot"}}
 </main>

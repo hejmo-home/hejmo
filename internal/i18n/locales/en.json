@@ -1,8 +1,7 @@
 {
   "app.name": "Hejmo",
   "setup.wizard.progress": "Setup progress",
-  "setup.wizard.count": "Setup · Step {n} of 4",
-  "setup.wizard.count0": "Setup",
+  "setup.wizard.count": "Setup: Step {n} of 4",
   "setup.wizard.done": "(done)",
   "setup.wizard.step.1": "Secure connection",
   "setup.wizard.step.2": "Your account",

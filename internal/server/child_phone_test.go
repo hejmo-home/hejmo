@@ -65,6 +65,9 @@ func TestChildPhoneShowsOnlyTheChildsOwnTasks(t *testing.T) {
 	cp := newChildPhone(t)
 	cp.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": personNamed(t, cp.parent.b, "Sebastian").ID, "title": "Feed the cat", "repeat": "daily"})
 	page := cp.screen.get("/tasks", "en")
+	if page.status != http.StatusOK || !strings.Contains(page.body, "Brush teeth") {
+		t.Fatalf("child GET /tasks = %d, want 200 with Mia's own task\n%s", page.status, page.body)
+	}
 	if strings.Contains(page.body, "Feed the cat") || strings.Contains(page.body, "Sebastian") {
 		t.Errorf("Mia's phone shows Sebastian's tasks:\n%s", page.body)
 	}
@@ -72,8 +75,12 @@ func TestChildPhoneShowsOnlyTheChildsOwnTasks(t *testing.T) {
 
 func TestChildPhonePageIsGerman(t *testing.T) {
 	cp := newChildPhone(t)
-	if page := cp.screen.get("/tasks", "de"); page.status != http.StatusOK || !strings.Contains(page.body, "Aufgaben") {
-		t.Fatalf("de = %d", page.status)
+	page := cp.screen.get("/tasks", "de")
+	if page.status != http.StatusOK || !strings.Contains(page.body, "Deine Aufgaben für heute") {
+		t.Fatalf("de = %d, want the German child intro\n%s", page.status, page.body)
+	}
+	if strings.Contains(page.body, "Your tasks for today") {
+		t.Errorf("German page shows the English intro")
 	}
 }
 
@@ -100,6 +107,9 @@ func TestChildPhoneIsRefusedOtherTasksAndDeletingEvents(t *testing.T) {
 	}
 	if status, _, _ := cp.phone.call(http.MethodDelete, "/tasks/"+cp.miaTask, nil); status != http.StatusForbidden {
 		t.Errorf("child deletes task = %d, want 403", status)
+	}
+	if r := cp.screen.get("/tasks/"+cp.miaTask, "en"); r.status != http.StatusForbidden {
+		t.Errorf("child GET /tasks/{id} = %d, want 403", r.status)
 	}
 	if r := cp.screen.post("/tasks/"+cp.miaTask+"/delete", url.Values{}); r.status != http.StatusForbidden {
 		t.Errorf("web delete of task = %d, want 403", r.status)

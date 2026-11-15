@@ -9,7 +9,7 @@
     <ul class="cards">
       {{range .Tasks}}
       <li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
-        <strong>{{if $.Child}}{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}{{else}}<a href="/tasks/{{.ID}}">{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}</a>{{end}}</strong>
+        <strong>{{if not $.Child}}<a href="/tasks/{{.ID}}">{{end}}{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}{{if not $.Child}}</a>{{end}}</strong>
         <span class="hint">
           {{if eq .Repeat "once"}}{{t "tasks.repeat.once"}} {{.Date}}{{else if eq .Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}
           {{if .Part}} · {{t (printf "tasks.part.%s" .Part)}}{{end}}

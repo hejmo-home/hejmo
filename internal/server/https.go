@@ -234,6 +234,8 @@ func (s *server) handleTrustPage(w http.ResponseWriter, r *http.Request) {
 	data := map[string]any{"Fingerprint": s.pki.CAFingerprint()}
 	if !s.db.Configured() {
 		data["Continue"] = s.httpsOrigin(r) + "/setup"
+	} else if next := s.trustContinue(r); next != "" {
+		data["Continue"] = next // a phone on its way to pair (ticket 5.13)
 	}
 	s.render(w, r, http.StatusOK, "trust.html", data)
 }

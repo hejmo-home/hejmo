@@ -1,6 +1,7 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "home.title") "Frame" .Frame)}}
   <h1>{{t "home.hello"}} {{.Person.Name}}</h1>
   {{template "httpsNotice" .}}
+  {{template "updateNotice" .}}
   {{template "syncNotice" .}}
   <p class="lead">{{t "home.placeholder"}}</p>
 {{template "foot"}}

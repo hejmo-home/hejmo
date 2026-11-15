@@ -18,7 +18,7 @@ type navItem struct {
 
 var navItems = []navItem{
 	{"/", "nav.home", auth.Perm("events", auth.Read)},
-	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Write)},
+	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Read)},
 	{"/settings", "nav.settings", auth.Perm("settings", auth.Write)},
 }
 
@@ -56,7 +56,7 @@ func (s *server) frameFor(r *http.Request) frame {
 }
 
 // setupPaths are the screens reached from the Settings hub (ADR 0017).
-var setupPaths = []string{"/calendars", "/connections", "/caldav", "/displays", "/settings/household"}
+var setupPaths = []string{"/calendars", "/connections", "/caldav", "/displays", "/phones", "/settings/household"}
 
 func isSetupPath(path string) bool {
 	for _, p := range setupPaths {
@@ -78,5 +78,6 @@ var hubItems = []hubItem{
 	{"/calendars", "hub.connections", "hub.connections.hint", auth.Perm("calendars", auth.Write)},
 	{"/caldav", "hub.caldav", "hub.caldav.hint", auth.Perm("tokens", auth.Read)},
 	{"/displays", "hub.displays", "hub.displays.hint", auth.Perm("displays", auth.Write)},
+	{"/phones", "hub.phones", "hub.phones.hint", auth.Perm("tokens", auth.Write)},
 	{"/settings/household", "hub.household", "hub.household.hint", auth.Perm("settings", auth.Write)},
 }

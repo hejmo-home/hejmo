@@ -63,10 +63,13 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 
 ## Displays
 
-### T5. A stranger pairs their own screen, or guesses a pairing code
+### T5. A stranger pairs their own screen or phone, or guesses a pairing code
 
-- **Threat:** a display shows the family's day to whoever completes pairing.
+- **Threat:** a display or phone shows the family's day to whoever completes pairing.
 - **Check:** pairing needs a short code confirmed by a signed-in parent; codes expire; guessing codes and opening many pairing screens are rate-limited. `test:internal/server/displays_test.go`
+- **Check:** a phone's pairing code is random (128 bits, stored only as a hash), works for one phone and ten minutes, and the phone only gets its device session after a signed-in parent confirmed it and chose the person; a code seen over a shoulder is useless once used, expired or unconfirmed. `test:internal/server/phones_test.go`
+- **Check:** with the box's own CA the pairing code travels over plain HTTP (the trust page), so someone on the home network could open it before the real phone. The waiting phone and the phones screen therefore both show a six-digit number derived from the phone's secret; a parent confirms only a phone whose number matches the one in hand, and a second phone cannot take over a code that was opened. `test:internal/server/phones_test.go`
+- **Accepted risk:** a parent who confirms a waiting phone without comparing the number gives that phone a session; the screen asks for the comparison but cannot enforce it.
 
 ### T6. A lost or stolen display keeps access
 
@@ -86,7 +89,9 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 
 - **Threat:** a thief opens the web interface or syncs the calendar.
 - **Check:** device tokens are stored as hashes and can be revoked, after which they are refused. `test:internal/server/caldav_test.go`
-- **Accepted risk:** a browser session lasts 30 days and the box has no remote way to end it. It ends only when someone signs out on that phone; there is no password-change function and no session list, so a lost phone keeps its session until it expires. The phone's own lock screen is the protection until parents can end sessions remotely (#108).
+- **Check:** a paired phone's device session is listed on the phones screen and removed by a parent, after which the phone is signed out at its next request. `test:internal/server/phones_test.go`
+- **Check:** the service worker deletes the offline copy of the pages when the person signs in again or the box redirects to the sign-in page, and keeps only styles and scripts, which hold nothing personal. `test:web/test/sw.test.js`
+- **Accepted risk:** a browser session of a parent who signed in with a password lasts 30 days and the box has no remote way to end it; it ends only when someone signs out on that phone, so a lost phone keeps such a session until it expires. The phone's own lock screen is the protection until parents can end those sessions remotely (#108).
 
 ### T9. A child's account or token reaches parent functions
 
@@ -125,27 +130,27 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 
 ## Auto-update script
 
-The script is built in #101 and signed images come from #99. These threats list what that work must satisfy; the checks are tickets until then.
+The host-side script (`hejmo-update`, installed by `install.sh`) runs as root once a night; signed images come from the release workflow (#99). Its tests run it as a black box against a stand-in Docker.
 
 ### T15. A tampered or unpublished image is installed
 
 - **Threat:** the script pulls an image that was not released by the project, or a preview build.
-- **Check:** only images with a valid keyless cosign signature from the release workflow, only release tags without a pre-release suffix, previous image recorded by digest. #101 and #99
+- **Check:** only images with a valid keyless cosign signature from the release workflow, only release tags without a pre-release suffix, previous image recorded by digest. `test:internal/install/update_test.go` and `test:internal/release/workflows_test.go`
 
 ### T16. The box feeds the host script a malicious setting
 
 - **Threat:** a compromised box writes the status file the root-run script reads, and gets code executed on the host.
-- **Check:** the file has fixed keys and values; the script accepts nothing else and never runs or interpolates its content; the container gets no Docker socket. #101
+- **Check:** the file has fixed keys and values; the script accepts nothing else and never runs or interpolates its content; the container gets no Docker socket. A settings file that is a link, oversized or doubtful means "notify", never install; the status file is replaced, never written through a link. `test:internal/install/update_test.go`, `test:internal/update/update_test.go`
 
 ### T17. An update loses or corrupts the database
 
 - **Threat:** a bad release leaves the family without calendar and tasks.
-- **Check:** online backup before the update, wait for `/healthz`, return to the previous image and database on failure, notice to parents. #101
+- **Check:** online backup before the update, wait for `/healthz`, return to the previous image and database on failure, notice to parents. `test:internal/install/update_test.go`
 
 ### T18. The update script itself is replaced
 
 - **Threat:** auto-update becomes a way to change the host script.
-- **Check:** the script is updated only by re-running the install script, never by auto-update. #101
+- **Check:** the script is updated only by re-running the install script, never by auto-update. `test:internal/install/update_test.go`
 
 ## MCP
 

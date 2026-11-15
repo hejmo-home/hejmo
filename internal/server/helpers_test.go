@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"encoding/json"
 	"encoding/pem"
 	"io"
 	"net/http"
@@ -12,6 +13,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
 	"testing"
@@ -39,6 +41,8 @@ type box struct {
 	public  *fakePublic
 	weather *weather.Service // fetches from meteo, never from the internet
 	meteo   *fakeMeteo
+	// updateDir stands in for the data volume that the host script shares with the box.
+	updateDir string
 }
 
 // fakeMeteo stands in for Open-Meteo.
@@ -150,10 +154,19 @@ func (f *fakeFeeds) set(url, body string, err error) {
 	}
 }
 
+// boxOption changes how a test box is built.
+type boxOption func(*boxConfig)
+
+type boxConfig struct{ noHostUpdater bool }
+
+// withoutHostUpdater makes the box run like a plain Docker Compose install,
+// without the host updater of ADR 0018.
+func withoutHostUpdater(c *boxConfig) { c.noHostUpdater = true }
+
 // newBox returns a box whose HTTPS is set up, served over TLS like in production.
-func newBox(t *testing.T) *box {
+func newBox(t *testing.T, opts ...boxOption) *box {
 	t.Helper()
-	b := newFreshBox(t)
+	b := newFreshBox(t, opts...)
 	if err := b.pki.Provision("127.0.0.1", b.now); err != nil {
 		t.Fatal(err)
 	}
@@ -164,8 +177,12 @@ func newBox(t *testing.T) *box {
 }
 
 // newFreshBox returns a box that has not set up HTTPS yet, reachable over plain HTTP.
-func newFreshBox(t *testing.T) *box {
+func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	t.Helper()
+	var cfg boxConfig
+	for _, o := range opts {
+		o(&cfg)
+	}
 	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
 	if err != nil {
 		t.Fatal(err)
@@ -181,7 +198,7 @@ func newFreshBox(t *testing.T) *box {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
+	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time { return b.now }
 	b.sync = calsync.New(db, feeds, now)
 	b.meteo = &fakeMeteo{body: `{"current":{"temperature_2m":18.4,"weather_code":0,"is_day":1}}`, status: 200}
@@ -193,7 +210,11 @@ func newFreshBox(t *testing.T) *box {
 	}))
 	t.Cleanup(b.meteo.srv.Close)
 	b.weather = weather.New(weather.WithBaseURL(b.meteo.srv.URL), weather.WithClock(now))
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather})
+	updateDir := b.updateDir
+	if cfg.noHostUpdater {
+		updateDir, b.updateDir = "", ""
+	}
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()
@@ -314,4 +335,13 @@ func secretOn(t *testing.T, page string) string {
 		t.Fatalf("no TOTP secret on page:\n%s", page)
 	}
 	return m[1]
+}
+
+func itoa(n int) string { return strconv.Itoa(n) }
+
+func decodeJSON(t *testing.T, body string, v any) {
+	t.Helper()
+	if err := json.Unmarshal([]byte(body), v); err != nil {
+		t.Fatalf("not JSON: %v\n%s", err, body)
+	}
 }

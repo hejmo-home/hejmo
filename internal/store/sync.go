@@ -106,6 +106,11 @@ func (db *DB) CreateICSCalendar(householdID string, in NewICS) (SyncedCalendar, 
 	return db.SyncedCalendar(householdID, calID)
 }
 
+// DeferSync moves the next sync attempt of a calendar to at, and nothing else.
+func (db *DB) DeferSync(calendarID string, at time.Time) error {
+	return expectOne(db.sql.Exec(`UPDATE calendar_sync SET next_attempt_at = ? WHERE calendar_id = ?`, stamp(at), calendarID))
+}
+
 const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, c.shared, n.id, COALESCE(c.remote_url, n.url),
 	s.interval_minutes, s.started_at, s.last_attempt_at, s.last_success_at, s.next_attempt_at, s.failures, s.last_error_key, s.last_error_params
 	FROM calendars c JOIN calendar_connections n ON n.id = c.connection_id JOIN calendar_sync s ON s.calendar_id = c.id`

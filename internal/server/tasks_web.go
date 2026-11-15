@@ -49,7 +49,12 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 	}
 	var groups []personTasks
 	choices := chipsOf(people)
+	child := p.person.Role == store.RoleChild
 	for _, person := range people {
+		// A child's phone shows the child's own tasks only (ADR 0015).
+		if child && person.ID != p.person.ID {
+			continue
+		}
 		g := personTasks{Name: person.Name, Color: person.Color}
 		for _, t := range list {
 			if t.PersonID != person.ID {
@@ -65,14 +70,14 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		form = map[string]any{"Repeat": "daily", "Date": today, "Weekdays": []string{}}
 	}
 	data := map[string]any{
-		"Person": p.person, "Groups": groups, "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form,
+		"Person": p.person, "Groups": groups, "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form, "Child": child,
 		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
 	s.render(w, r, status, "tasks.html", data)
 }
 
 func (s *server) handleTasksPage(w http.ResponseWriter, r *http.Request) {
-	if p, ok := s.parentPage(w, r); ok {
+	if p, ok := s.memberPage(w, r); ok {
 		s.renderTasks(w, r, p, http.StatusOK, nil)
 	}
 }
@@ -106,13 +111,15 @@ func (s *server) handleTaskAdd(w http.ResponseWriter, r *http.Request) {
 }
 
 func (s *server) handleTaskDone(w http.ResponseWriter, r *http.Request) {
-	p, ok := s.parentPage(w, r)
+	p, ok := s.memberPage(w, r)
 	if !ok {
 		return
 	}
 	switch _, err := s.tickTask(p, r.PathValue("id"), r.PostFormValue("done") == "1"); {
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
+	case errors.Is(err, errNotYourTask):
+		http.Error(w, http.StatusText(http.StatusForbidden), http.StatusForbidden)
 	case errors.Is(err, store.ErrInvalid):
 		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
 	case err != nil:

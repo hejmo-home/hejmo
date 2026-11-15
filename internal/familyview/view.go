@@ -31,7 +31,7 @@ type Input struct {
 	Region string          // home region (ISO 3166-2)
 	People []Person        // display order
 	Groups []wholine.Group // subgroups with their members, for the who-line
-	// I18n words the who-line; without it events carry no who-line.
+	// I18n words the who-line; required, whoLine panics without it.
 	I18n        *i18n.Bundle
 	Calendars   map[string]calendar.Audience
 	Occurrences []calendar.Occurrence

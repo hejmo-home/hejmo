@@ -89,7 +89,7 @@ func (s *server) handleDisplayPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("id")
-	view, version, err := s.renderPersonal(h, s.langOf(r), id)
+	view, version, err := s.renderPersonal(h, s.displayLang(r), id)
 	if errors.Is(err, errNoPerson) {
 		// Gone meanwhile: back to the display, never to a bare error page
 		// (it has no display.js and would leave the kiosk stuck).
@@ -116,7 +116,7 @@ func (s *server) handleDisplayPersonView(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
-	markup, version, err := s.renderPersonal(h, s.langOf(r), r.PathValue("id"))
+	markup, version, err := s.renderPersonal(h, s.displayLang(r), r.PathValue("id"))
 	if errors.Is(err, errNoPerson) {
 		http.NotFound(w, r)
 		return

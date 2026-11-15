@@ -47,7 +47,6 @@ const browserSessionSelect = `SELECT s.id, s.device, s.created_at, s.last_seen_a
 	JOIN household_members m ON m.person_id = p.id AND m.household_id = ?
 	WHERE s.phone_id IS NULL AND s.expires_at > ?`
 
-
 func scanBrowserSession(r rowScanner) (BrowserSession, error) {
 	var b BrowserSession
 	var created, expires string

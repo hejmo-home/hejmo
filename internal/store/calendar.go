@@ -44,6 +44,8 @@ type Calendar struct {
 const (
 	localLayout = "2006-01-02T15:04:05"
 	dateLayout  = "2006-01-02"
+	// DayLayout formats a day (YYYY-MM-DD), the key of day notes.
+	DayLayout = dateLayout
 )
 
 // CreateGroup creates a subgroup with members.

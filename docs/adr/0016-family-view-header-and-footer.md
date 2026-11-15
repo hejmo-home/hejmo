@@ -33,6 +33,12 @@ The footer has **two tiles**; the task tile of ADR 0015 is dropped, because prog
 
 Proposed: the minimum column width is fixed at **144 px** (design token `column-min`), the "about 150 px" above rounded down so that six columns still fit the 1024 px reference display (968 px inside the margins). It applies to landscape as well as portrait. Landscape and portrait follow the viewport (`orientation`), so a rotated display switches by itself; there is no per-view scroll flag. The view counts 6 columns in landscape and 4 in portrait before it scrolls: 5 people on a 768x1024 portrait display show 4 columns, 4 people on a 375 px wide phone in portrait show 2.
 
+### Tomorrow tile as built (ticket 6.7)
+
+- A note is a **day note**: one per day, up to 120 characters, set by a parent in the web interface (calendars page) or the API (`/day-notes`). Before 18:00 the tile shows the note of today, from 18:00 the note of tomorrow replaces it. Notes of past days are deleted when a display renders.
+- Identical collection titles from several waste collection calendars are one line. Only read-only calendars can be marked as waste collection; their events stay out of the strip, columns and personal view.
+- Of "at most three lines": with a note and more than one collection too many, the tile shows one collection, "+N more" (N counts the collections not shown) and the note.
+
 ## Consequences
 
 - Tickets change: 5.3 (anchored progress bar, two-tile footer), 5.8 (header clock and weather, time format and temperature unit; renamed "Weather and time in the header"), 6.3 (meal cut-off times), 6.4 (renamed "Meal tile on the display"), 6.6 (progress in the columns instead of a tile), 6.7 (tomorrow tile states).

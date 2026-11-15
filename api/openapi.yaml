@@ -222,6 +222,59 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /day-notes:
+    get:
+      operationId: listDayNotes
+      summary: Notes for days, oldest day first (scope displays:read)
+      description: Notes of days that are over are deleted by the box, so only today and later are listed. Children are refused (403).
+      responses:
+        "200":
+          description: The notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DayNote" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /day-notes/{day}:
+    parameters:
+      - { name: day, in: path, required: true, schema: { type: string, format: date, example: "2026-11-16" } }
+    put:
+      operationId: setDayNote
+      summary: Set the note of a day, replacing an earlier one (scope displays:write)
+      description: |
+        A free-text note of up to 120 characters for one day (`YYYY-MM-DD`, household time). The family
+        view's tomorrow tile shows it as its last line from 18:00 the evening before until the end of that
+        day; before 18:00 it shows the note of today. A day with no valid date or text of 1 to 120
+        characters answers 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, minLength: 1, maxLength: 120 }
+      responses:
+        "200":
+          description: The note
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DayNote" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteDayNote
+      summary: Remove the note of a day (scope displays:delete)
+      responses:
+        "204": { description: Removed (also when the day had no note) }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /displays:
     get:
       operationId: listDisplays
@@ -540,7 +593,7 @@ paths:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     patch:
       operationId: updateCalendar
-      summary: Change a synced calendar (share through the box, name, colour, audience)
+      summary: Change a synced calendar (share through the box, waste collection, name, colour, audience)
       description: |
         Send at least one field. `share_through_box` switches sharing through the box for a synced
         calendar; the family calendar is always served to phones, asking to change it answers 422.
@@ -554,6 +607,7 @@ paths:
               type: object
               properties:
                 share_through_box: { type: boolean }
+                waste_collection: { type: boolean, description: "Only a read-only calendar can be marked, else 422" }
                 name: { type: string, minLength: 1 }
                 color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422" }
                 audience: { $ref: "#/components/schemas/Audience" }
@@ -999,13 +1053,14 @@ components:
         groups: { type: array, items: { type: string, format: uuid } }
     Calendar:
       type: object
-      required: [id, name, kind, color, read_only, share_through_box, audience]
+      required: [id, name, kind, color, read_only, share_through_box, waste_collection, audience]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         kind: { type: string, enum: [local, ics, caldav, google] }
         color: { type: string }
         read_only: { type: boolean, description: "The box never changes this calendar's events (always true for ICS)" }
+        waste_collection: { type: boolean, description: "A read-only calendar marked as the household's waste collection calendar: its events show only in the family view's tomorrow tile (reminder from 18:00) and on the night page, not in the strip, person columns or personal view" }
         share_through_box: { type: boolean, description: "Phones may subscribe to this calendar over CalDAV. Always true for the family calendar; on by default for ICS, off for CalDAV and Google" }
         audience: { $ref: "#/components/schemas/Audience" }
         sync: { $ref: "#/components/schemas/SyncState" }
@@ -1023,6 +1078,12 @@ components:
       type: string
       enum: [eink_bw, eink_color, screen]
       description: Black-and-white E-Ink, colour E-Ink or normal screen
+    DayNote:
+      type: object
+      required: [day, text]
+      properties:
+        day: { type: string, format: date }
+        text: { type: string }
     Display:
       type: object
       required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, quiet_mode, kiosk]

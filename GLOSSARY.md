@@ -208,6 +208,10 @@ _Avoid_: points log, history
 A read-only calendar marked as listing the household's waste collection days.
 _Avoid_: bin calendar, garbage feed
 
+**Day note**:
+A parent's free-text note (up to 120 characters) for one day, shown as the last line of the tomorrow tile from 18:00 the evening before until the end of that day, then deleted. A day has one note.
+_Avoid_: reminder (that is the waste collection highlight), memo
+
 ## Access
 
 **API token**:

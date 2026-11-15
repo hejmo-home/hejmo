@@ -142,7 +142,20 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
+	today := data.now.Format(store.DayLayout)
+	if err := s.db.PruneDayNotes(h.ID, today); err != nil { // a note is deleted once its day is over
+		return familyview.View{}, err
+	}
+	notes, err := s.db.DayNotes(h.ID)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	byDay := map[string]string{}
+	for _, n := range notes {
+		byDay[n.Day] = n.Text
+	}
 	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people,
+		Waste: data.waste, DayNotes: byDay, TomorrowLabel: s.i18n.T(lang, "family.tomorrow"), MoreFormat: s.i18n.T(lang, "family.more"),
 		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID),
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
 }
@@ -154,7 +167,10 @@ type displayData struct {
 	now         time.Time // in the household's time zone
 	people      []familyview.Person
 	calendars   map[string]calendar.Audience
-	occurrences []calendar.Occurrence
+	occurrences []calendar.Occurrence // without waste collections
+	// waste holds the occurrences of the waste collection calendars: they show
+	// only in the tomorrow tile and on the night page (ADR 0015).
+	waste []calendar.Occurrence
 }
 
 func (s *server) displayData(h store.Household, lang string, days int) (displayData, error) {
@@ -171,9 +187,11 @@ func (s *server) displayData(h store.Household, lang string, days int) (displayD
 	if err != nil {
 		return out, err
 	}
-	if out.occurrences, err = s.occurrences(h, lang, d0, end); err != nil {
+	all, err := s.occurrences(h, lang, d0, end)
+	if err != nil {
 		return out, err
 	}
+	out.occurrences, out.waste = splitWaste(all, cals)
 	for _, c := range cals {
 		out.calendars[c.ID] = c.Audience
 	}
@@ -275,4 +293,20 @@ func (s *server) pairDisplay(p principal, code string, in store.Display) (store.
 		s.limiter.reset(key)
 	}
 	return d, err
+}
+
+// splitWaste separates the occurrences of waste collection calendars from the rest.
+func splitWaste(occs []calendar.Occurrence, cals []store.Calendar) (rest, waste []calendar.Occurrence) {
+	isWaste := map[string]bool{}
+	for _, c := range cals {
+		isWaste[c.ID] = c.Waste
+	}
+	for _, o := range occs {
+		if isWaste[o.CalendarID] {
+			waste = append(waste, o)
+		} else {
+			rest = append(rest, o)
+		}
+	}
+	return rest, waste
 }

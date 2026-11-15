@@ -67,6 +67,7 @@ type calendarView struct {
 	ID, Name, Color, Audience, LastSuccess, LastError string
 	Events, Changes                                   string // the count and what the last run did; empty until a run succeeded
 	Stale                                             bool
+	Waste                                             bool
 	IntervalMinutes                                   int
 }
 
@@ -128,7 +129,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	byPerson := map[string][]calendarView{}
 	for _, c := range synced {
 		v := calendarView{ID: c.ID, Name: c.Name, Color: c.Color, LastSuccess: at(c.Sync.LastSuccess), LastError: s.say(r, c.Sync.LastError),
-			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes}
+			Stale: calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale, IntervalMinutes: c.Sync.IntervalMinutes, Waste: c.Waste}
 		if !c.Sync.LastSuccess.IsZero() {
 			run := c.Sync.LastRun
 			v.Events = s.say(r, i18n.Msg("calendars.events", "count", strconv.Itoa(run.Events)))
@@ -198,7 +199,13 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	for _, c := range synced {
 		taken = append(taken, c.Color)
 	}
+	notes, err := s.db.DayNotes(p.household.ID)
+	if err != nil {
+		s.fail(w, "day notes", err)
+		return
+	}
 	data := map[string]any{
+		"Notes": notes, "Tomorrow": s.householdNow(p.household).AddDate(0, 0, 1).Format(store.DayLayout),
 		"AutoColor": nextColors(taken, 1)[0],
 		"Person":    p.person, "Calendars": cals, "Log": log, "People": peopleChoices, "Groups": groupChoices,
 		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "Connections": connViews, "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,

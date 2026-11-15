@@ -16,7 +16,11 @@ func TestServiceWorkerWithNode(t *testing.T) {
 		}
 		t.Skip("node is not installed")
 	}
-	out, err := exec.Command(node, "--test", "test/").CombinedOutput()
+	// No path argument: node finds web/test/*.test.js itself. (A directory
+	// argument is read as a module by current node versions.)
+	cmd := exec.Command(node, "--test")
+	cmd.Dir = "."
+	out, err := cmd.CombinedOutput()
 	if err != nil {
 		t.Fatalf("node --test failed: %v\n%s", err, out)
 	}

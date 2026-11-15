@@ -15,6 +15,15 @@ const ASSET_CACHE = 'hejmo-assets-v1';
 const ASSETS = ['/static/hejmo.css', '/static/form.js', '/static/offline.js', '/static/fonts/Figtree-wght.ttf'];
 const MAX_PAGES = 30;
 const STAMP = 'x-hejmo-cached-at';
+// A box that does not answer (the phone is away from home) is given up on
+// after this long, so the kept copy shows instead of a spinner.
+const TIMEOUT_MS = 4000;
+
+function reach(url, options) {
+  const ctl = new AbortController();
+  const timer = setTimeout(() => ctl.abort(), TIMEOUT_MS);
+  return fetch(url, { ...options, signal: ctl.signal }).finally(() => clearTimeout(timer));
+}
 
 // Never kept: displays, the API and CalDAV, pairing and setup, sign-in.
 const SKIP = ['/display', '/api', '/dav', '/ca', '/setup', '/phones/join'];
@@ -47,7 +56,7 @@ self.addEventListener('fetch', (event) => {
 async function asset(req) {
   const cache = await caches.open(ASSET_CACHE);
   try {
-    const res = await fetch(req.url, { credentials: 'same-origin' });
+    const res = await reach(req.url, { credentials: 'same-origin' });
     if (res.ok) await cache.put(req.url, res.clone());
     return res;
   } catch (e) {
@@ -60,7 +69,7 @@ async function asset(req) {
 async function page(req) {
   let res;
   try {
-    res = await fetch(req.url, { credentials: 'same-origin', redirect: 'follow' });
+    res = await reach(req.url, { credentials: 'same-origin', redirect: 'follow' });
   } catch (e) {
     return offline(req);
   }

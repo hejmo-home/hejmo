@@ -34,6 +34,10 @@ type phoneView struct {
 // are filled only for the pairing a failed confirmation was about.
 type waitingView struct{ ID, Device, Expires, Verification, Name, Person, Error, ErrorField string }
 
+// confirmForm is the parent's entry on a waiting phone that was refused, shown
+// again with its error. The zero value is "no entry".
+type confirmForm struct{ PairingID, Name, Person, Error, ErrorField string }
+
 type phonePersonView struct{ ID, Name string }
 
 // pairingCode is a fresh pairing code and where its QR code leads.
@@ -82,7 +86,7 @@ func (s *server) trustContinue(r *http.Request) string {
 	return u.String()
 }
 
-func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principal, status int, code *pairingCode, form map[string]any) {
+func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principal, status int, code *pairingCode, form confirmForm) {
 	loc := p.location()
 	at := func(t time.Time) string {
 		if t.IsZero() {
@@ -113,8 +117,8 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 	var waitingViews []waitingView
 	for _, wp := range waiting {
 		v := waitingView{ID: wp.ID, Device: wp.Device, Expires: at(wp.ExpiresAt), Verification: verificationNumber(wp.ClaimHash)}
-		if form["PairingID"] == wp.ID {
-			v.Name, v.Person, v.Error, v.ErrorField = form["Name"].(string), form["Person"].(string), form["Error"].(string), form["ErrorField"].(string)
+		if form.PairingID == wp.ID {
+			v.Name, v.Person, v.Error, v.ErrorField = form.Name, form.Person, form.Error, form.ErrorField
 		}
 		waitingViews = append(waitingViews, v)
 	}
@@ -123,7 +127,7 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 		peopleViews = append(peopleViews, phonePersonView{pe.ID, pe.Name})
 	}
 	data := map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Form": form,
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID),
 		"Phones": phoneViews, "Waiting": waitingViews, "People": peopleViews,
 	}
 	if code != nil {
@@ -140,7 +144,7 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 
 func (s *server) handlePhonesPage(w http.ResponseWriter, r *http.Request) {
 	if p, ok := s.parentPage(w, r); ok {
-		s.renderPhones(w, r, p, http.StatusOK, nil, map[string]any{})
+		s.renderPhones(w, r, p, http.StatusOK, nil, confirmForm{})
 	}
 }
 
@@ -154,7 +158,7 @@ func (s *server) handlePhonePairingCreate(w http.ResponseWriter, r *http.Request
 		s.fail(w, "phone pairing", err)
 		return
 	}
-	s.renderPhones(w, r, p, http.StatusOK, &code, map[string]any{})
+	s.renderPhones(w, r, p, http.StatusOK, &code, confirmForm{})
 }
 
 func (s *server) handlePhonePairingConfirm(w http.ResponseWriter, r *http.Request) {
@@ -163,8 +167,8 @@ func (s *server) handlePhonePairingConfirm(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	name, person := r.PostFormValue("name"), r.PostFormValue("person")
-	form := func(key, field string) map[string]any {
-		return map[string]any{"Error": key, "ErrorField": field, "Name": name, "Person": person, "PairingID": r.PathValue("id")}
+	form := func(key, field string) confirmForm {
+		return confirmForm{PairingID: r.PathValue("id"), Name: name, Person: person, Error: key, ErrorField: field}
 	}
 	var fieldErr *store.FieldError
 	switch _, err := s.db.ConfirmPhonePairing(p.household.ID, r.PathValue("id"), person, name, s.now()); {

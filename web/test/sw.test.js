@@ -1,5 +1,5 @@
 // Tests of the service worker (ticket 5.13) with node's test runner:
-//   node --test web/test/
+//   cd web && node --test
 // sw.js is run in a sandbox with a small fake of the worker environment.
 const test = require('node:test');
 const assert = require('node:assert/strict');
@@ -40,8 +40,10 @@ function load(network) {
   const caches = fakeCaches();
   sandbox = {
     self: { addEventListener: (t, f) => { listeners[t] = f; }, skipWaiting() {}, clients: { claim: async () => {} } },
-    caches, Response, Headers, URL, Date, Promise,
-    fetch: async (u) => network(typeof u === 'string' ? u : u.url),
+    caches, Response, Headers, URL, Date, Promise, AbortController,
+    // Timers run at once-ish so the test of the timeout does not wait seconds.
+    setTimeout: (f) => setTimeout(f, 5), clearTimeout,
+    fetch: async (u, opts) => network(typeof u === 'string' ? u : u.url, opts),
   };
   vm.runInNewContext(source, sandbox);
   const run = async (type, extra) => {
@@ -138,4 +140,21 @@ test('every precached asset exists in web/static', () => {
   for (const a of JSON.parse(list[1].replace(/'/g, '"'))) {
     assert.ok(fs.existsSync(path.join(root, a.replace('/static/', 'static/'))), a + ' does not exist');
   }
+});
+
+test('a box that does not answer is given up on, and the kept page is shown', async () => {
+  const net = { up: true, hang: false };
+  const base = box(net);
+  const sw = load((u, opts) => {
+    if (!net.hang) return base(u);
+    if (!opts || !opts.signal) return new Promise(() => {}); // hangs for ever without a timeout
+    return new Promise((_, reject) => opts.signal.addEventListener('abort', () => reject(new TypeError('aborted'))));
+  });
+  await sw.run('install');
+  await sw.get('/', 'navigate');
+  net.hang = true;
+  const res = await sw.get('/', 'navigate');
+  assert.equal(res.status, 200);
+  assert.match(await res.text(), /data-offline="\d+"/);
+  assert.equal((await sw.get('/static/hejmo.css')).status, 200, 'assets fall back too');
 });

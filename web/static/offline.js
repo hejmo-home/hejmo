@@ -13,7 +13,12 @@
     return;
   }
 
-  var time = new Date(loaded).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  // hh:mm, with the date when the copy is not from today.
+  var when = new Date(loaded);
+  var time = when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (when.toDateString() !== new Date().toDateString()) {
+    time = when.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ', ' + time;
+  }
   var banner = document.createElement('p');
   banner.className = 'notice';
   banner.setAttribute('role', 'status');

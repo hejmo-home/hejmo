@@ -198,7 +198,7 @@ func TestConnectCalDAVLoginFailureDoesNotMentionApple(t *testing.T) {
 	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-password"`) {
 		t.Fatalf("status %d\n%s", r.status, r.body)
 	}
-	if strings.Contains(r.body, "app-spezifische") && strings.Contains(r.body, "Der Server hat Benutzername oder Passwort abgelehnt. Bei iCloud") {
+	if strings.Contains(r.body, "Der Server hat Benutzername oder Passwort abgelehnt. Bei iCloud") {
 		t.Error("a CalDAV login failure shows the generic text that sends the user to Apple")
 	}
 	if !strings.Contains(r.body, "Schritt 2") {

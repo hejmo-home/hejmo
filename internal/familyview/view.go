@@ -10,7 +10,9 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/holiday"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/wholine"
 )
 
 // Person is one column of the family view. Slot (1..8) picks the person's
@@ -24,10 +26,13 @@ type Person struct {
 
 // Input is everything Build needs. Occurrences must cover today and tomorrow.
 type Input struct {
-	Now         time.Time // in the household's time zone
-	Lang        string    // "de" or "en", for holiday names
-	Region      string    // home region (ISO 3166-2)
-	People      []Person  // display order
+	Now    time.Time       // in the household's time zone
+	Lang   string          // "de" or "en", for holiday names
+	Region string          // home region (ISO 3166-2)
+	People []Person        // display order
+	Groups []wholine.Group // subgroups with their members, for the who-line
+	// I18n words the who-line; required, whoLine panics without it.
+	I18n        *i18n.Bundle
 	Calendars   map[string]calendar.Audience
 	Occurrences []calendar.Occurrence
 	// ShowTomorrow is the display's setting "show tomorrow block", off by
@@ -39,9 +44,21 @@ type Input struct {
 	// TemperatureUnit is "c" (default) or "f".
 	Weather         *Weather
 	TemperatureUnit store.TemperatureUnit
+	// Waste holds the occurrences of the waste collection calendars (ADR 0015),
+	// kept apart from Occurrences: they feed only the tomorrow tile.
+	Waste []calendar.Occurrence
+	// DayNotes are the parents' notes by day (YYYY-MM-DD).
+	DayNotes map[string]string
+	// TomorrowLabel and TodayLabel come from the translations: the tile is
+	// labelled "Today" when it holds only today's note.
+	TomorrowLabel, TodayLabel string
 	// SyncStale: a synced calendar has gone 24 hours without a successful
 	// sync (ADR 0012). The header then shows an info symbol.
 	SyncStale bool
+	// TaskProgress is each person's task progress today, by person ID. A
+	// person without tasks due today has no entry (or a zero total) and
+	// shows no bar (ADR 0016).
+	TaskProgress map[string]Progress
 }
 
 // Weather is a reading for the weather chip; Icon names the symbol.
@@ -60,12 +77,13 @@ type WeatherChip struct {
 type Event struct {
 	Title string
 	Time  string // "09:00–10:00" or "9:00 AM–10:00 AM", by the household time format
-	// Markers are the people of the event in display order, so black-and-white
-	// mode tells them apart by shape.
-	Markers []Marker
+	// WhoParts say in words who the event is for, leaving out the column's own
+	// person (Q62); empty on a card for that person alone. One part per name, so
+	// the page keeps each name whole; wholine.Plain joins them.
+	WhoParts []wholine.Part
 }
 
-// Progress is a person's task progress today (data arrives with 6.6).
+// Progress is a person's task progress today: tasks done of tasks due (ticket 6.6, ADR 0016).
 type Progress struct{ Done, Total int }
 
 // Percent is the filled share of the bar, 0 to 100.
@@ -84,13 +102,6 @@ type Column struct {
 	Progress *Progress // nil: no bar
 }
 
-// Marker identifies a person on a strip item.
-type Marker struct {
-	Name  string
-	Slot  int
-	Shape string
-}
-
 // Strip item kinds.
 const (
 	KindEvent   = "event"
@@ -103,19 +114,44 @@ type StripItem struct {
 	Title           string
 	Time            string // timed whole-household events only
 	AllDay          bool
-	Partial         bool // partial public holiday
-	Markers         []Marker
-	DayIndex        int // multi-day: this is day DayIndex of DayCount (1-based)
+	Partial         bool           // partial public holiday
+	WhoParts        []wholine.Part // who it is for, in square brackets, shown after the title; empty for the whole family
+	DayIndex        int            // multi-day: this is day DayIndex of DayCount (1-based)
 	DayCount        int
 	ContinuesBefore bool
 	ContinuesAfter  bool
 }
 
-// Tile is a footer tile (content arrives with package 6).
+// Line kinds of a footer tile: a plain line (the meal tile) has no kind.
+const (
+	LineWaste = "waste"
+	LineNote  = "note"
+)
+
+// Line is one line of a footer tile. The kind lets the template draw a waste
+// collection and the parents' note differently.
+type Line struct {
+	Kind string
+	Text string
+	// NoteToday marks the note of today (before 18:00), not of tomorrow.
+	NoteToday bool
+}
+
+// Tile is a footer tile.
 type Tile struct {
 	Label string
-	Lines []string
+	Lines []Line
 	Alert bool
+}
+
+// HasWaste reports whether the tile holds a waste collection.
+func (t Tile) HasWaste() bool {
+	for _, l := range t.Lines {
+		if l.Kind == LineWaste {
+			return true
+		}
+	}
+	return false
 }
 
 // View is the data of one family view screen.
@@ -151,8 +187,13 @@ func Build(in Input) View {
 	v.Weather = Chip(in.Weather, in.TemperatureUnit)
 	v.ShowTomorrow = in.ShowTomorrow && now.Hour() >= tomorrowFromHour
 	v.SyncStale = in.SyncStale
+	v.TomorrowTile = tomorrowTile(in, now, d1)
 	for _, p := range in.People {
-		v.Columns = append(v.Columns, Column{Person: p})
+		col := Column{Person: p}
+		if pr, ok := in.TaskProgress[p.ID]; ok && pr.Total > 0 {
+			col.Progress = &pr
+		}
+		v.Columns = append(v.Columns, col)
 	}
 	loc := d0.Location()
 	occs := append([]calendar.Occurrence(nil), in.Occurrences...)
@@ -167,20 +208,19 @@ func Build(in Input) View {
 		if !bar && !whole {
 			for i, p := range in.People {
 				if sees(in, p, o) {
-					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc, in.TimeFormat, markers(in, o)))
+					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc, in.TimeFormat, whoLine(in, o, p.ID)))
 				}
 			}
 			continue
 		}
 		item := StripItem{Kind: KindEvent, Title: o.Title, AllDay: o.AllDay}
 		if !whole {
-			for _, p := range in.People {
-				if sees(in, p, o) {
-					item.Markers = append(item.Markers, Marker{Name: p.Name, Slot: p.Slot, Shape: p.Shape})
-				}
-			}
-			if len(item.Markers) == 0 {
+			audience := audienceOf(in, o)
+			if len(audience) == 0 {
 				continue
+			}
+			if l := whoLine(in, o, ""); len(l.BracketParts) > 0 {
+				item.WhoParts = append(append([]wholine.Part{{Text: "["}}, l.BracketParts...), wholine.Part{Text: "]"})
 			}
 		}
 		if bar {
@@ -215,7 +255,7 @@ func Build(in Input) View {
 			}
 			for i, p := range in.People {
 				if sees(in, p, o) && len(v.Columns[i].Tomorrow) < maxTomorrow {
-					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc, in.TimeFormat, markers(in, o)))
+					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc, in.TimeFormat, whoLine(in, o, p.ID)))
 				}
 			}
 		}
@@ -238,8 +278,8 @@ func clock(o calendar.Occurrence, loc *time.Location, format store.TimeFormat) s
 	return fmt.Sprintf("%s–%s", o.Start.In(loc).Format(l), o.End.In(loc).Format(l))
 }
 
-func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat, m []Marker) Event {
-	return Event{Title: o.Title, Time: clock(o, loc, format), Markers: m}
+func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat, who wholine.Line) Event {
+	return Event{Title: o.Title, Time: clock(o, loc, format), WhoParts: who.Parts}
 }
 
 // ClockText is the time of day in the household's time format ("24h" or "12h").
@@ -274,20 +314,36 @@ func Chip(w *Weather, unit store.TemperatureUnit) *WeatherChip {
 	return &WeatherChip{Text: fmt.Sprintf("%d°%s", n, sym), Icon: w.Icon}
 }
 
-// markers lists the people who see o, in display order.
-func markers(in Input, o calendar.Occurrence) []Marker {
-	var out []Marker
-	for _, p := range in.People {
-		if sees(in, p, o) {
-			out = append(out, Marker{Name: p.Name, Slot: p.Slot, Shape: p.Shape})
-		}
+// audienceOf lists the IDs of the people who see o, in display order.
+func audienceOf(in Input, o calendar.Occurrence) []string {
+	viewers := make([]calendar.Viewer, len(in.People))
+	for i, p := range in.People {
+		viewers[i] = calendar.Viewer{PersonID: p.ID, Groups: p.Groups}
 	}
-	return out
+	return calendar.ViewersOf(o, in.Calendars, viewers)
 }
 
+// whoLine words who o is for; omit is the person of the column it is shown in.
+func whoLine(in Input, o calendar.Occurrence, omit string) wholine.Line {
+	household := make([]wholine.Person, len(in.People))
+	for i, p := range in.People {
+		household[i] = wholine.Person{ID: p.ID, Name: p.Name}
+	}
+	if in.I18n == nil {
+		panic("familyview: Input.I18n is required to word the who-line")
+	}
+	return wholine.Of(wholine.Input{Household: household, Groups: in.Groups, Audience: audienceOf(in, o), Omit: omit}, in.I18n, in.Lang)
+}
+
+// wholeHousehold reports whether o is meant for the whole household: it has no
+// audience, or its effective audience lists everyone. Either way it belongs to
+// the family strip, never to a column.
 func wholeHousehold(in Input, o calendar.Occurrence) bool {
 	a := in.Calendars[o.CalendarID]
-	return len(a.People) == 0 && len(a.Groups) == 0 && len(o.People) == 0 && len(o.Groups) == 0
+	if len(a.People) == 0 && len(a.Groups) == 0 && len(o.People) == 0 && len(o.Groups) == 0 {
+		return true
+	}
+	return len(in.People) > 0 && len(audienceOf(in, o)) == len(in.People)
 }
 
 // sees reports whether p is in the effective audience of o (ADR 0011).

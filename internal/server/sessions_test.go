@@ -42,7 +42,7 @@ type browserResp struct {
 // no sign-in at all.
 func fresh(t *testing.T, b *box) {
 	t.Helper()
-	if _, err := b.db.SQL().Exec(`DELETE FROM sessions`); err != nil {
+	if _, err := b.db.SQL().Exec(`DELETE FROM sessions WHERE phone_id IS NULL`); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -390,6 +390,52 @@ func TestSessionPagesAreForSignedInParentsOnly(t *testing.T) {
 	// cannot be ended here.
 	if list := s.mama.get("/sessions", "en").body; strings.Contains(list, "Mia") {
 		t.Errorf("a paired phone is listed:\n%s", list)
+	}
+	var phoneID string
+	if err := s.db.SQL().QueryRow(`SELECT id FROM sessions WHERE phone_id IS NOT NULL LIMIT 1`).Scan(&phoneID); err == nil && phoneID != "" {
+		if r := s.mama.post("/sessions/"+phoneID+"/end", url.Values{}); r.status != http.StatusSeeOther || r.location != "/sessions?gone=1" {
+			t.Errorf("ending a phone session here = %d %q, want the gone redirect", r.status, r.location)
+		}
+	}
+}
+
+// A parent on a paired phone has no browser session of their own: with one
+// other browser signed in, "only this browser" would be wrong.
+func TestSessionsListOnAPairedPhoneDoesNotClaimItIsTheOnlyBrowser(t *testing.T) {
+	b, secret := configuredBox(t)
+	fresh(t, b)
+	h, _ := b.db.HomeHousehold()
+	people, err := b.db.People(h.ID)
+	if err != nil || len(people) == 0 {
+		t.Fatal(people, err)
+	}
+	loginWith(b, "mama", mamaPassword, totpNow(b, secret))
+	phone := pairedPhone(t, b, people[0], "Mama's phone")
+	r := phone.get("/sessions", "de")
+	if r.status != http.StatusOK {
+		t.Fatalf("parent phone GET /sessions = %d\n%s", r.status, r.body)
+	}
+	if strings.Contains(r.body, "Nur dieser Browser ist angemeldet.") || !strings.Contains(r.body, `href="/sessions/`) {
+		t.Errorf("wrong sentence or list on a paired phone:\n%s", r.body)
+	}
+}
+
+func TestSessionsListSaysWhenNoBrowserIsSignedIn(t *testing.T) {
+	b, secret := configuredBox(t)
+	fresh(t, b)
+	h, _ := b.db.HomeHousehold()
+	people, err := b.db.People(h.ID)
+	if err != nil || len(people) == 0 {
+		t.Fatal(people, err)
+	}
+	loginWith(b, "mama", mamaPassword, totpNow(b, secret))
+	phone := pairedPhone(t, b, people[0], "Mama's phone")
+	if _, err := b.db.SQL().Exec(`DELETE FROM sessions WHERE phone_id IS NULL`); err != nil {
+		t.Fatal(err)
+	}
+	r := phone.get("/sessions", "de")
+	if !strings.Contains(r.body, `data-empty`) || !strings.Contains(r.body, "Kein Browser ist angemeldet.") {
+		t.Errorf("no empty sentence:\n%s", r.body)
 	}
 }
 

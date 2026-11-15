@@ -186,14 +186,14 @@ func TestChangingAColourChangesColumnChipsAndMarkersEverywhere(t *testing.T) {
 			t.Errorf("%s keeps the old colour:\n%s", path, page)
 		}
 	}
-	// Events of Mia carry her marker in the strip.
+	// Events of Mia carry her tint on the card (no card markers since #128: the column header keeps the marker and the card takes its tint from the column).
 	f, _ := p.db.HomeHousehold()
 	cal, _ := p.db.FamilyCalendar(f.ID)
 	if _, err := p.db.CreateEvent(f.ID, calendar.Event{CalendarID: cal.ID, Title: "Swimming", Start: p.now, End: p.now.Add(3600e9), People: []string{id}}); err != nil {
 		t.Fatal(err)
 	}
-	if page := p.display.get("/display", "en").body; !strings.Contains(page, `class="marker small" data-person="3"`) {
-		t.Errorf("markers keep the old colour:\n%s", page)
+	if page := p.display.get("/display", "en").body; !regexp.MustCompile(`(?s)<section class="column" data-person="3" data-name="Mia">.*?<span class="marker" data-shape="circle-empty"></span>.*?<div class="event">.*?Swimming`).MatchString(page) {
+		t.Errorf("event card keeps the old colour:\n%s", page)
 	}
 }
 

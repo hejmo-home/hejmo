@@ -11,6 +11,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/web"
 )
@@ -52,7 +53,7 @@ func TestWriteDesignPreview27(t *testing.T) {
 		occ("Family lunch", d(1, 12, 30), d(1, 14, 0)),
 	}
 	build := func(people []familyview.Person) familyview.View {
-		v := familyview.Build(familyview.Input{Now: d(1, 8, 30), Lang: "en", Region: "DE-BY", People: people, Occurrences: occs})
+		v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: d(1, 8, 30), Lang: "en", Region: "DE-BY", People: people, Occurrences: occs})
 		v.Columns[0].Progress = &familyview.Progress{Done: 3, Total: 5}
 		v.Columns[3].Progress = &familyview.Progress{Done: 2, Total: 2}
 		return v
@@ -83,7 +84,7 @@ func TestWriteDesignPreview27(t *testing.T) {
 	frame("iPhone portrait", "light", 375, 812, build(four))
 	body.WriteString("</div><h2>Phone landscape 812x375, four people with a footer tile: the columns are short, the footer takes its share of the height</h2><div class=\"row\">\n")
 	phoneLandscape := build(four)
-	phoneLandscape.Meal = &familyview.Tile{Label: "Dinner", Lines: []string{"Pasta bake"}}
+	phoneLandscape.Meal = &familyview.Tile{Label: "Dinner", Lines: []familyview.Line{{Text: "Pasta bake"}}}
 	frame("iPhone landscape", "light", 812, 375, phoneLandscape)
 	body.WriteString("</div><h2>Long single-word name (\"Konstantinos\", 12 characters) in the narrowest column (144 px): the name wraps at the column edge instead of being clipped</h2><div class=\"row\">\n")
 	longName := append([]familyview.Person(nil), four...)

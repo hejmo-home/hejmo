@@ -10,6 +10,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/web"
 )
@@ -53,12 +54,12 @@ func TestWriteDesignPreview24(t *testing.T) {
 		occ("Parents' evening", d(2, 19, 0), d(2, 20, 30)),
 	}
 	build := func(showTomorrow bool) familyview.View {
-		v := familyview.Build(familyview.Input{Now: d(1, 18, 5), Lang: "en", Region: "DE-BY", People: people, Occurrences: occs, ShowTomorrow: showTomorrow})
+		v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: d(1, 18, 5), Lang: "en", Region: "DE-BY", People: people, Occurrences: occs, ShowTomorrow: showTomorrow})
 		v.Columns[0].Progress = &familyview.Progress{Done: 3, Total: 5}
 		v.Columns[2].Progress = &familyview.Progress{Done: 1, Total: 3}
 		v.Columns[3].Progress = &familyview.Progress{Done: 2, Total: 2}
-		v.Meal = &familyview.Tile{Label: "Dinner", Lines: []string{"Dinner: Pasta bake"}}
-		v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []string{"Paper bin", "Residual waste"}, Alert: true}
+		v.Meal = &familyview.Tile{Label: "Dinner", Lines: []familyview.Line{{Text: "Dinner: Pasta bake"}}}
+		v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []familyview.Line{{Kind: familyview.LineWaste, Text: "Paper bin"}, {Kind: familyview.LineWaste, Text: "Residual waste"}}, Alert: true}
 		return v
 	}
 	var body strings.Builder

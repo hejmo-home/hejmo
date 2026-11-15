@@ -76,7 +76,6 @@
   --pad-card: 10px 12px;
   --marker-size: 14px;
   --marker-size-bw-column: 16px;
-  --marker-size-bw-event: 9px;
   --journey-border: 1.5px;
   --icon-stroke: 1.8px;
   --touch-target: 44px;
@@ -248,10 +247,9 @@ a { color: var(--accent); }
 [data-person="8"] { --pc: var(--person-8); --pc-tint: var(--person-8-tint); --pc-text: var(--person-8-text); }
 
 /* Marker: circle in the person colour; in bw a shape (16px in the column
-   header, 9px on an event, .marker.small). */
+   header). */
 .marker { display: inline-block; width: var(--marker-size); height: var(--marker-size); border-radius: 50%; background: var(--pc); vertical-align: middle; flex: none; }
 [data-theme="bw"] .marker { width: var(--marker-size-bw-column); height: var(--marker-size-bw-column); background: var(--text); border: 2px solid var(--text); border-radius: 0; }
-[data-theme="bw"] .marker.small { width: var(--marker-size-bw-event); height: var(--marker-size-bw-event); border-width: 1.5px; }
 [data-theme="bw"] .marker[data-shape="circle-filled"] { border-radius: 50%; }
 [data-theme="bw"] .marker[data-shape="circle-empty"] { border-radius: 50%; background: transparent; }
 [data-theme="bw"] .marker[data-shape="square-filled"] { border-radius: 0; }
@@ -261,10 +259,10 @@ a { color: var(--accent); }
 [data-theme="bw"] .marker[data-shape="cross-filled"] { border: 0; border-radius: 0; clip-path: polygon(34% 0, 66% 0, 66% 34%, 100% 34%, 100% 66%, 66% 66%, 66% 100%, 34% 100%, 34% 66%, 0 66%, 0 34%, 34% 34%); }
 [data-theme="bw"] .marker[data-shape="star-filled"] { border: 0; border-radius: 0; clip-path: polygon(50% 0, 62% 36%, 100% 36%, 69% 58%, 81% 96%, 50% 73%, 19% 96%, 31% 58%, 0 36%, 38% 36%); }
 
-/* Event cards list their people as markers; only bw needs them (colour cards
-   carry the person colour). */
-.event .markers { display: none; }
-[data-theme="bw"] .event .markers { display: flex; gap: 4px; margin-bottom: 4px; }
+/* Who an event is for is said in words (Q62): a line under the title that
+   wraps, so the card grows; names are never cut. Markers stay in the column
+   headers and the person chips. */
+.event .who { font-size: var(--fs-meta); font-weight: var(--fw-meta); overflow-wrap: break-word; hyphens: manual; }
 
 /* Family view building blocks (screens use them from ticket 5.3 on). */
 .tile, .column, .chip { background: var(--surface); }
@@ -290,8 +288,7 @@ a { color: var(--accent); }
    stack them; wide screens put the navigation beside the content. */
 .skip { position: absolute; left: -9999px; }
 .skip:focus { position: static; display: inline-block; padding: 10px 12px; }
-/* One column that may shrink below the navigation's width, so the navigation scrolls sideways instead of widening the page (issue #108). */
-.frame { display: grid; grid-template-columns: minmax(0, 1fr); gap: var(--gap-section); align-content: start; }
+.frame { display: grid; gap: var(--gap-section); align-content: start; }
 .frame-bar { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); }
 .brand { display: inline-flex; align-items: center; min-height: var(--touch-target); font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); color: var(--text); text-decoration: none; }
 .frame-bar .button { min-height: var(--touch-target); }
@@ -340,6 +337,8 @@ body:has(.family-page) { overflow: hidden; }
 .strip .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
 .strip-item { display: inline-flex; align-items: center; gap: 8px; background: var(--surface); border-radius: var(--radius-card); padding: var(--pad-card); font-size: var(--fs-event-title); }
 .strip-item .title { font-weight: var(--fw-event-title); }
+.strip-item .who { font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: break-word; hyphens: manual; }
+.who .nm { display: inline-block; max-width: 100%; }
 .strip-item .meta { font-size: var(--fs-meta); color: var(--text-secondary); }
 .strip-item[data-kind="holiday"] { background: var(--notice-bg); color: var(--notice-text); }
 .strip-item[data-kind="holiday"] .meta { color: var(--notice-text); }
@@ -355,9 +354,6 @@ body:has(.family-page) { overflow: hidden; }
 .strip.tomorrow { opacity: 0.6; } /* ADR 0016: tomorrow is faded so today's events stand out */
 .fv .tomorrow .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
 .fv .event .meta { display: block; }
-.pbar { flex: none; display: flex; align-items: center; gap: 10px; padding-top: var(--gap-cards); }
-.pbar .progress { flex: 1; }
-.pbar .count { font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
 .fv-footer { flex: none; display: flex; flex-wrap: wrap; gap: var(--gap); }
 .fv-footer .tile { flex: 1 1 200px; min-width: 0; padding: var(--pad-column); }
 .fv-footer .lab { font-size: var(--fs-label); color: var(--text-secondary); }
@@ -586,9 +582,8 @@ fieldset.look .pchip:has(input:focus-visible)::after, fieldset.look .pchip[data-
 .ev a.title:hover, .bar a.title:hover { text-decoration: underline; }
 .ev .meta, .bar .meta { font-size: var(--fs-meta); }
 .ev .icon, .bar .icon { stroke: currentColor; vertical-align: middle; }
-.who { display: inline-flex; flex-wrap: wrap; gap: 4px; align-items: center; }
-.ev .marker, .bar .marker { width: 10px; height: 10px; }
-[data-theme="bw"] .ev .marker, [data-theme="bw"] .bar .marker { width: var(--marker-size-bw-event); height: var(--marker-size-bw-event); }
+.ev .who, .bar .who { display: block; font-size: var(--fs-meta); overflow-wrap: break-word; hyphens: manual; }
+.who .nm { display: inline-block; max-width: 100%; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 [data-theme="bw"] .bar, [data-theme="bw"] .wk-days .ev { background: var(--event-card); color: var(--text); border: 1.5px solid var(--text); }
 [data-theme="bw"] .wk-heads li[data-today] { border-bottom-width: 4px; }
@@ -638,3 +633,174 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .group-list .cards { margin: 0; }
 /* A notice that stands above the page title. */
 .notice.top { margin-bottom: 14px; }
+/* Frame: on wide screens the "Back to Settings" link and the content both sit
+   right of the navigation (the link used to take the second column alone and
+   push the navigation to full width). On a phone the navigation scrolls
+   sideways inside the screen instead of widening the page. */
+.frame > * { min-width: 0; }
+.frame { grid-template-columns: minmax(0, 1fr); } /* narrow screens: the nav row scrolls instead of widening the page */
+@media (min-width: 900px) {
+  .frame.has-nav > .frame-nav { grid-row: span 2; }
+  .frame.has-nav > .back, .frame.has-nav > main { grid-column: 2; }
+}
+
+/* Meal plan (ticket 6.3, ADR 0015): the week as one card per day, one row per
+   mealtime in the order of the day. A row is the mealtime (icon and word) and
+   the dish; a long dish wraps instead of being cut off. Two columns of days on
+   a tablet, one on a phone; inside a narrow card the word sits above the dish. */
+.weeknav { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap-cards); margin: 0 0 var(--gap); }
+.weeknav .wk { display: grid; gap: 0; min-width: 9em; text-align: center; flex: 1 1 auto; }
+.weeknav .wk strong { font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
+.weeknav .wk span { font-size: var(--fs-label); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.wbtn { display: inline-flex; align-items: center; gap: 4px; min-height: var(--touch-target); padding: 8px 14px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
+.wbtn .icon { stroke: currentColor; flex: none; }
+.wbtn.this { color: var(--accent); border-color: var(--accent); font-weight: 600; }
+[data-theme="bw"] .wbtn { border-width: 2px; }
+.weeknav-row { display: flex; flex-wrap: wrap; gap: var(--gap-cards); align-items: center; justify-content: space-between; max-width: 1200px; }
+@media (max-width: 599px) {
+  .weeknav .wk { order: -1; flex-basis: 100%; text-align: left; }
+  .weeknav .wbtn { flex: 1 1 auto; justify-content: center; }
+}
+.recipe { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 var(--gap-section); max-width: 720px; }
+.recipe .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.steps.wide { max-width: none; grid-template-columns: minmax(0, 1fr); }
+.meal-week > * { min-width: 0; }
+.meal-week { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 320px), 1fr)); gap: var(--gap); align-items: start; margin: 0 0 var(--gap-section); max-width: 1200px; }
+.steps .meal-week { margin: 0; }
+.meal-day { container-type: inline-size; background: var(--surface); border: 0; border-radius: var(--radius-tile); padding: 14px 16px 16px; display: grid; gap: 8px; min-width: 0; margin: 0; }
+.meal-day legend, .meal-day h2 { float: left; width: 100%; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); margin: 0 0 4px; padding: 0; }
+.meal-day .date { color: var(--text-secondary); font-weight: 400; font-size: var(--fs-label-large); font-variant-numeric: tabular-nums; }
+.meal-day .today { align-self: center; font-size: var(--fs-meta); font-weight: 700; color: var(--accent-text); background: var(--accent); border-radius: var(--radius-chip); padding: 2px 10px; }
+.meal-day[data-today] { outline: 3px solid var(--accent); outline-offset: -3px; }
+.mrow { display: grid; grid-template-columns: 8.2em minmax(0, 1fr); gap: 4px 10px; align-items: center; }
+.mt { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-label-large); color: var(--text-secondary); min-width: 0; }
+.mt .icon { flex: none; }
+.mrow textarea { font: inherit; color: var(--text); width: 100%; min-height: var(--touch-target); padding: 10px 12px; line-height: 1.35; border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); resize: none; overflow: hidden; field-sizing: content; min-width: 0; max-width: 100%; overflow-wrap: anywhere; }
+.mrow textarea:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+.mrow .ferr { grid-column: 2; }
+.mrow.invalid textarea { border: 2px solid var(--error-text); }
+[data-theme="bw"] .mrow textarea { border-color: var(--text); }
+@container (max-width: 270px) {
+  .mrow { grid-template-columns: minmax(0, 1fr); }
+  .mrow .ferr { grid-column: 1; }
+}
+/* Read view (children, ADR 0015): the planned dishes, large; an unplanned
+   mealtime is left out, an empty day says so in words. */
+.meal-day dl { margin: 0; display: grid; gap: 10px; }
+.meal-day dl > div { display: grid; gap: 2px; }
+.meal-day dt { font-size: var(--fs-label); }
+.meal-day dd { margin: 0 0 0 26px; font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: anywhere; }
+.meal-day .none { margin: 0; color: var(--text-secondary); }
+/* Save bar: the one primary action stays in reach while the week scrolls. */
+.savebar { position: sticky; bottom: 0; z-index: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; padding: 12px 0; margin-top: -4px; background: var(--background); border-top: 1px solid var(--border); max-width: 1200px; }
+.savebar .dirty { font-size: var(--fs-label); font-weight: 700; color: var(--text); }
+.form-error { display: flex; gap: 8px; align-items: flex-start; margin: 0 0 var(--gap); }
+.form-error .icon { flex: none; stroke: var(--error-text); margin-top: 2px; }
+.form-error a { color: var(--error-text); font-weight: 700; }
+[data-theme="bw"] .form-error { border: 2px solid var(--text); }
+
+/* Cut-off times (ADR 0016): one switch row per mealtime. Off = "Shown all
+   day"; on = the time it disappears, in a time capsule. */
+.cutoffs .cut { display: grid; gap: 6px; padding: 8px 0; border-top: 1px solid var(--border); }
+.cutoffs .cut:first-of-type { border-top: 0; }
+.cutoffs .card-row .t b { display: inline-flex; align-items: center; gap: 6px; }
+.cutoffs .at { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; padding-left: 26px; font-size: var(--fs-label-large); color: var(--text); }
+@supports selector(:has(a)) {
+  .cut:has(.switch input:not(:checked)) .at { display: none; }
+}
+
+/* Time capsule (shared, every time field): the time in a pill as on iOS. On
+   phones and tablets the system picker opens (input type="time"); on a computer
+   and on displays a picker panel opens below it: hours and minutes as tap
+   targets, no wheel, no scrolling (works with a mouse and on E-Ink). */
+.tcap { font: inherit; font-size: var(--fs-event-title); font-weight: 600; font-variant-numeric: tabular-nums; color: var(--text); min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--background); width: auto; }
+.tcap::-webkit-calendar-picker-indicator { display: none; }
+[data-theme="bw"] .tcap { border: 2px solid var(--text); background: var(--surface); }
+.tcap[aria-expanded="true"] { border: 2px solid var(--accent); }
+.tpick { display: grid; gap: 12px; width: min(100%, 340px); padding: 14px; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
+[data-theme="bw"] .tpick { border: 2px solid var(--text); }
+.tpick .now { font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); font-variant-numeric: tabular-nums; }
+.tpick fieldset { border: 0; margin: 0; padding: 0; min-width: 0; }
+.tpick .grid { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 6px; }
+.tpick legend { font-size: var(--fs-label); color: var(--text-secondary); padding: 0; margin: 0 0 6px; }
+.tpick label { position: relative; display: inline-flex; align-items: center; justify-content: center; min-height: var(--touch-target); border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); font-variant-numeric: tabular-nums; cursor: pointer; }
+.tpick input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; min-height: 0; padding: 0; }
+.tpick label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+.tpick label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] .tpick label { border-color: var(--text); }
+.tpick .done { justify-self: end; }
+
+/* Tomorrow tile (ticket 6.7, design pass): label row with the reminder in
+   words, a bin icon before each collection, the note set apart below. */
+.fv-footer .tile-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-bottom: 2px; }
+.fv-footer .flag { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: var(--accent-text); border-radius: var(--radius-chip); padding: 3px 12px; font-size: var(--fs-label); font-weight: 700; }
+.fv-footer .ln { overflow-wrap: anywhere; }
+.fv-footer .ln.waste { display: flex; gap: 8px; align-items: flex-start; }
+.fv-footer .ln.waste .icon { flex: none; margin-top: 1px; }
+.fv-footer .tile.alert .ln.waste .icon { stroke: var(--notice-text); }
+.fv-footer .ln.note { font-weight: 400; }
+.fv-footer .ln.waste + .ln.note { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+.fv-footer .tile.alert .ln.waste + .ln.note { border-top-color: currentColor; }
+.fv-footer .ln.note .day { font-weight: 700; margin-right: 6px; }
+[data-theme="bw"] .fv-footer .tile.alert { border-width: 3px; padding: calc(var(--pad-column) - 3px); }
+.quiet.night .night-item .ln.waste { display: flex; gap: 8px; align-items: center; font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+/* Day note card on Home (ticket 6.7, design pass). */
+.note-day .hint { margin: 0; }
+.note-day:not(:has(input[value="other"]:checked)) .other-day { display: none; }
+.seg label small { display: block; font-size: var(--fs-meta); font-weight: 400; }
+.seg label { flex-direction: column; }
+.counter { font-size: var(--fs-meta); color: var(--text-secondary); justify-self: end; font-variant-numeric: tabular-nums; }
+.cards a.note-row { color: var(--text); font-weight: 400; }
+.note-row { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); min-height: var(--touch-target); }
+.note-row .t { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.note-row .t b { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.note-row .go { margin-left: auto; flex: none; color: var(--accent); font-weight: 600; }
+.waste-next { font-size: var(--fs-label); }
+.waste-next b { font-weight: 700; }
+
+/* ---- Design pass 6.6: tasks on the display (ticket 6.6, preview-37) ---- */
+/* Family view: progress block anchored at the column bottom (ADR 0016), in words, tappable. */
+.pbar { flex: none; display: grid; gap: 6px; margin-top: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); min-height: var(--touch-target); align-content: center; color: inherit; text-decoration: none; }
+.pbar .progress { width: 100%; }
+.pbar .count { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pbar[data-all-done] .count { font-weight: 700; }
+.pbar .icon, .tasks-head .icon { flex: none; stroke: var(--pc); stroke-width: 2.4; }
+[data-theme="bw"] .pbar .icon, [data-theme="bw"] .tasks-head .icon { stroke: var(--text); }
+/* Long German words wrap inside event cards instead of being cut at the column edge. */
+.fv .events > *, .pv-day > * { min-width: 0; }
+.event .title { overflow-wrap: anywhere; hyphens: auto; }
+
+/* Personal view: tasks first and as wide as the week, progress in words on top. */
+.pv-header { justify-content: flex-start; flex-wrap: wrap; }
+.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: anywhere; }
+.pv-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.pv-tasks { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.tasks-head { flex: none; display: grid; gap: 8px; padding: var(--pad-column) var(--pad-column) 12px; border-bottom: 1px solid var(--border); }
+.tasks-head .count { display: flex; gap: 8px; align-items: center; font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); font-variant-numeric: tabular-nums; }
+.tasks-head .msg { margin: 0; max-width: none; font-size: var(--fs-event-title); font-weight: 700; }
+.tasks-head .msg .icon { stroke: var(--accent); }
+.pv-tasks .list { flex: 1; min-height: 0; overflow-y: auto; padding: 12px var(--pad-column) var(--pad-column); display: grid; gap: 14px; align-content: start; }
+.pv-tasks .part { display: grid; gap: var(--gap-cards); }
+.pv-tasks .part > .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.pv-tasks ul { gap: var(--gap-cards); }
+.pv-tasks li { display: grid; gap: 6px; }
+.big-check { gap: 12px; min-height: 64px; padding: 8px 12px 8px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); font-weight: 600; }
+[data-theme="bw"] .big-check { border: 2px solid var(--text); }
+.big-check .box { border-radius: var(--radius-field); }
+.big-check .box svg { display: none; }
+[data-done="true"] .big-check .box { background: var(--pc); border-color: var(--pc); }
+[data-theme="bw"] [data-done="true"] .big-check .box { background: var(--text); border-color: var(--text); }
+[data-done="true"] .big-check .box::after { content: none; }
+[data-done="true"] .big-check .box svg { display: block; stroke: var(--surface); stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.big-check .emoji { flex: none; width: 36px; font-size: 30px; line-height: 1; text-align: center; }
+.big-check .title { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
+[data-done="true"] .big-check .title { font-weight: 400; }
+[data-done="true"] .big-check { background: transparent; }
+.pv-tasks .ferr { margin-left: 4px; }
+.pv-body[data-no-tasks] { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.pv-body[data-no-tasks] .tasks-head { border-bottom: 0; padding-bottom: 0; }
+.pv-tasks .none { margin: 0; padding: 16px; border: 1.5px dashed var(--border); border-radius: var(--radius-card); color: var(--text-secondary); }
+@media (max-width: 599px) {
+  .pv-header h1 { font-size: var(--fs-key-figure); }
+  .pv-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
+}

@@ -1,12 +1,14 @@
 package server
 
 import (
+	"fmt"
 	"net/http"
 	"regexp"
 	"strconv"
 	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/task"
 )
 
 // flashCookie carries the success line across the redirect that follows a
@@ -35,7 +37,7 @@ func (s *server) redirectSynced(w http.ResponseWriter, r *http.Request, to, cale
 	s.redirectSaved(w, r, to, "flash.calendar_synced:"+calendarID)
 }
 
-var flashArg = regexp.MustCompile(`^[A-Za-z0-9_-]{1,96}$`)
+var flashArg = regexp.MustCompile(`^[A-Za-z0-9_-]{1,64}$`)
 
 // takeFlash returns the success line waiting for this browser, as the key of
 // its text and an optional argument, and clears it. Unknown values are
@@ -47,7 +49,7 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 	}
 	http.SetCookie(w, &http.Cookie{Name: flashCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
 	key, arg, _ = strings.Cut(c.Value, ":")
-	if !strings.HasPrefix(key, "flash.") || (s.i18n.T(i18n.Default, key) == key && key != flashSessionEnded) || (arg != "" && !flashArg.MatchString(arg)) {
+	if !strings.HasPrefix(key, "flash.") || (s.i18n.T(i18n.Default, key) == key) || (arg != "" && !flashArg.MatchString(arg)) {
 		return "", ""
 	}
 	return key, arg
@@ -60,7 +62,7 @@ func (s *server) successText(lang, key, arg string) string {
 		if text := s.sessionEndedText(lang, arg); text != "" {
 			return text
 		}
-		return s.i18n.T(lang, "flash.saved")
+		return s.i18n.T(lang, flashSessionEnded)
 	}
 	if key == "flash.calendar_synced" && arg != "" {
 		if h, err := s.db.HomeHousehold(); err == nil {
@@ -71,6 +73,20 @@ func (s *server) successText(lang, key, arg string) string {
 					"events", strconv.Itoa(run.Events), "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))
 			}
 		}
+	}
+	switch key {
+	case "flash.note_saved":
+		if arg != "" {
+			return s.noteSavedText(lang, arg)
+		}
+	case "flash.waste_on":
+		if arg != "" {
+			return s.wasteOnText(lang, arg)
+		}
+	case "flash.meals_saved":
+		// The line names the week that was saved; the cookie holds its Monday.
+		monday := requestedWeek(arg, s.now().Format(task.DateLayout))
+		return fmt.Sprintf(s.i18n.T(lang, key), isoWeek(monday))
 	}
 	return s.i18n.T(lang, key)
 }

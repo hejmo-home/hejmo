@@ -25,13 +25,13 @@
     {{range .Columns}}<section class="column" data-person="{{.Person.Slot}}" data-name="{{.Person.Name}}">
       <h2><a class="person-link" href="/display/person/{{.Person.ID}}"><span class="marker" data-shape="{{.Person.Shape}}"></span>{{.Person.Name}}</a></h2>
       <div class="events">
-        {{range .Events}}<div class="event">{{template "markers" .Markers}}<div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div>
+        {{range .Events}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div>{{if .WhoParts}}<div class="who">{{template "whoParts" .WhoParts}}</div>{{end}}</div>
         {{end}}{{if .Tomorrow}}<div class="tomorrow" data-tomorrow>
           <div class="lab">{{t "family.tomorrow"}}</div>
-          {{range .Tomorrow}}<div class="event">{{template "markers" .Markers}}<div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div>
+          {{range .Tomorrow}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div>{{if .WhoParts}}<div class="who">{{template "whoParts" .WhoParts}}</div>{{end}}</div>
           {{end}}</div>{{end}}
       </div>
-      {{with .Progress}}<div class="pbar" data-progress="{{printf "%d/%d" .Done .Total}}"><div class="progress"><span style="--pct:{{.Percent}}"></span></div><span class="count">{{printf "%d/%d" .Done .Total}}</span></div>{{end}}
+      {{template "progressBlock" .}}
     </section>
     {{end}}
   </main>
@@ -41,9 +41,9 @@
   </footer>{{end}}
 </div>{{end}}
 
-{{define "stripItem"}}<li class="strip-item{{if .ContinuesBefore}} before{{end}}{{if .ContinuesAfter}} after{{end}}" data-kind="{{.Kind}}"{{if gt .DayCount 1}} data-bar="{{printf "%d/%d" .DayIndex .DayCount}}"{{end}}>{{range .Markers}}<span class="marker small" data-person="{{.Slot}}" data-shape="{{.Shape}}" title="{{.Name}}"></span>{{end}}<span class="title">{{.Title}}</span>{{if .Time}} <span class="meta">{{.Time}}</span>{{end}}{{if gt .DayCount 1}} <span class="meta">{{t "family.day"}} {{printf "%d/%d" .DayIndex .DayCount}}</span>{{end}}{{if .Partial}} <span class="meta">{{t "family.partial"}}</span>{{end}}</li>{{end}}
+{{define "stripItem"}}<li class="strip-item{{if .ContinuesBefore}} before{{end}}{{if .ContinuesAfter}} after{{end}}" data-kind="{{.Kind}}"{{if gt .DayCount 1}} data-bar="{{printf "%d/%d" .DayIndex .DayCount}}"{{end}}><span class="title">{{.Title}}</span>{{if .WhoParts}} <span class="who">{{template "whoParts" .WhoParts}}</span>{{end}}{{if .Time}} <span class="meta">{{.Time}}</span>{{end}}{{if gt .DayCount 1}} <span class="meta">{{t "family.day"}} {{printf "%d/%d" .DayIndex .DayCount}}</span>{{end}}{{if .Partial}} <span class="meta">{{t "family.partial"}}</span>{{end}}</li>{{end}}
 
-{{define "tile"}}<div class="tile{{if .Tile.Alert}} alert{{end}}" data-tile="{{.Kind}}"><div class="lab">{{.Tile.Label}}</div>{{range .Tile.Lines}}<div class="ln">{{.}}</div>{{end}}</div>{{end}}
+{{define "binIcon"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9.5 7V4.5h5V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v5.5M14 11v5.5"/></svg>{{end}}{{define "tile"}}{{if eq .Kind "meal"}}<div class="tile" data-tile="meal"><div class="lab">{{.Tile.Label}}</div>{{range .Tile.Lines}}<div class="ln">{{.Text}}</div>{{end}}</div>{{else}}{{$waste := .Tile.HasWaste}}<div class="tile{{if .Tile.Alert}} alert{{end}}" data-tile="{{.Kind}}"><div class="tile-head"><span class="lab">{{.Tile.Label}}</span>{{if .Tile.Alert}}<span class="flag">{{t "family.put_out"}}</span>{{end}}</div>{{range .Tile.Lines}}{{if eq .Kind "waste"}}<div class="ln waste">{{template "binIcon"}}<span>{{.Text}}</span></div>{{else if eq .Kind "note"}}<div class="ln note">{{if and .NoteToday $waste}}<span class="day">{{t "family.today"}}</span>{{end}}{{.Text}}</div>{{else}}<div class="ln">{{.Text}}</div>{{end}}{{end}}</div>{{end}}{{end}}
 
 {{define "quietView"}}{{if .Black}}<div class="quiet black" data-quiet="black"></div>{{else}}<div class="quiet night" data-quiet="night" data-reload-seconds="{{.ReloadSeconds}}">
   <div class="lab">{{t "night.title"}}</div>
@@ -51,7 +51,7 @@
   <div class="date">{{.Night.Date.Day}}{{t "family.day_suffix"}} {{t (printf "month.%d" .Night.Date.Month)}}</div>
   {{with .Night.First}}<div class="night-item" data-first-event><div class="lab">{{t "night.first_event"}}</div><div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div></div></div>
   {{else}}<p class="lab" data-no-event>{{t "night.no_event"}}</p>{{end}}
-  {{with .Night.Waste}}<div class="night-item" data-waste><div class="lab">{{t "night.waste"}}</div>{{range .}}<div class="title">{{.}}</div>{{end}}</div>{{end}}
+  {{with .Night.Waste}}<div class="night-item" data-waste><div class="lab">{{t "night.waste"}}</div>{{range .}}<div class="ln waste">{{template "binIcon"}}<span>{{.}}</span></div>{{end}}</div>{{end}}
 </div>{{end}}{{end}}
 
 {{define "weatherIcon"}}<svg class="icon" viewBox="0 0 24 24" width="28" height="28" role="img" data-icon="{{.}}" aria-label="{{t (printf "weather.%s" .)}}">
@@ -64,5 +64,5 @@
   {{- else if eq . "thunderstorm"}}<path d="M7 14h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.3 1.6A3.3 3.3 0 0 0 7 14zM12.5 14l-2.5 4h3l-2 4"/>
   {{- else}}<path d="M7 18h10a4 4 0 0 0 .5-8 5.5 5.5 0 0 0-10.3 1.6A3.3 3.3 0 0 0 7 18z"/>
   {{- end}}</svg>{{end}}
-
-{{define "markers"}}{{if .}}<span class="markers" aria-hidden="true">{{range .}}<span class="marker small" data-person="{{.Slot}}" data-shape="{{.Shape}}" title="{{.Name}}"></span>{{end}}</span>{{end}}{{end}}
+{{define "tick"}}<svg class="icon" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{{end}}{{define "progressWords"}}{{if eq .Done .Total}}{{t "family.progress_all"}}{{else if eq .Total 1}}{{repl (t "family.progress_one") "{done}" (printf "%d" .Done)}}{{else}}{{repl (t "family.progress") "{done}" (printf "%d" .Done) "{total}" (printf "%d" .Total)}}{{end}}{{end}}{{define "progressBlock"}}{{$id := .Person.ID}}{{with .Progress}}<a class="pbar" href="/display/person/{{$id}}" data-progress="{{printf "%d/%d" .Done .Total}}"{{if eq .Done .Total}} data-all-done{{end}}><span class="count">{{if eq .Done .Total}}{{template "tick" 18}}{{end}}{{template "progressWords" .}}</span><span class="progress" role="img" aria-label="{{printf "%d/%d" .Done .Total}}"><span style="--pct:{{.Percent}}"></span></span></a>{{end}}{{end}}
+{{define "whoParts"}}{{range .}}{{if .Name}}<span class="nm">{{.Text}}</span>{{else}}{{.Text}}{{end}}{{end}}{{end}}

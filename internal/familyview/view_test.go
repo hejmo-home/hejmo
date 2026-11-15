@@ -2,12 +2,15 @@ package familyview_test
 
 import (
 	"fmt"
+	"strings"
 	"testing"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/wholine"
 )
 
 var berlin = func() *time.Location {
@@ -37,7 +40,7 @@ func timed(title string, start, end time.Time, people ...string) calendar.Occurr
 // build lays out the view with the display's "show tomorrow block" setting on,
 // so the 18:00 rule is what the tests exercise.
 func build(now time.Time, occs ...calendar.Occurrence) familyview.View {
-	return familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: family(), Occurrences: occs, ShowTomorrow: true})
+	return familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: family(), I18n: i18n.MustLoad(), Occurrences: occs, ShowTomorrow: true})
 }
 
 func column(t *testing.T, v familyview.View, name string) familyview.Column {
@@ -101,7 +104,7 @@ func TestEventWithTwoPeopleAppearsInBothColumns(t *testing.T) {
 func TestCalendarAudienceNarrowsTheColumns(t *testing.T) {
 	o := timed("Football", at(14, 15, 0), at(14, 16, 0), "seb", "mia")
 	o.CalendarID = "kids"
-	v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Lang: "en", Region: "DE-BY", People: family(),
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 8, 0), Lang: "en", Region: "DE-BY", People: family(),
 		Calendars:   map[string]calendar.Audience{"kids": {People: []string{"seb"}}},
 		Occurrences: []calendar.Occurrence{o}})
 	same(t, titles(column(t, v, "Sebastian").Events), []string{"Football"})
@@ -112,7 +115,7 @@ func TestSubgroupAudienceReachesItsMembers(t *testing.T) {
 	o := calendar.Occurrence{EventID: "x", CalendarID: "cal", Title: "School", Start: at(14, 8, 0), End: at(14, 12, 0), Groups: []string{"school"}}
 	ps := family()
 	ps[2].Groups = []string{"school"}
-	v := familyview.Build(familyview.Input{Now: at(14, 7, 0), Lang: "en", Region: "DE-BY", People: ps, Occurrences: []calendar.Occurrence{o}})
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 7, 0), Lang: "en", Region: "DE-BY", People: ps, Occurrences: []calendar.Occurrence{o}})
 	same(t, titles(column(t, v, "Sebastian").Events), []string{"School"})
 	same(t, titles(column(t, v, "Mia").Events), nil)
 }
@@ -153,11 +156,11 @@ func TestWholeHouseholdAndAllDayEventsGoToTheStripOnly(t *testing.T) {
 			t.Errorf("%s column has %v, want none", c.Person.Name, titles(c.Events))
 		}
 	}
-	// An all-day event with an audience carries the markers of its people.
-	if m := v.Strip[0].Markers; len(m) != 1 || m[0].Name != "Sebastian" || m[0].Slot != 3 || m[0].Shape != "square-filled" {
-		t.Errorf("markers = %+v", m)
+	// An all-day event with an audience says in brackets who it is for; the whole family needs none.
+	if w := wholine.Plain(v.Strip[0].WhoParts); w != "[Sebastian]" {
+		t.Errorf("who-line = %q", w)
 	}
-	if v.Strip[2].Time != "12:00–13:00" || !v.Strip[1].AllDay || len(v.Strip[1].Markers) != 0 {
+	if v.Strip[2].Time != "12:00–13:00" || !v.Strip[1].AllDay || len(v.Strip[1].WhoParts) != 0 {
 		t.Errorf("strip = %+v", v.Strip)
 	}
 }
@@ -190,20 +193,20 @@ func TestTimedEventOverMidnightIsAMultiDayBar(t *testing.T) {
 // 5.3: Given a public holiday in Bavaria, it is shown; none from other states.
 func TestHolidaysOfTheHomeRegionOnly(t *testing.T) {
 	// 2026-11-01 Allerheiligen: Bavaria yes, Berlin no.
-	by := familyview.Build(familyview.Input{Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "en", Region: "DE-BY", People: family()})
+	by := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "en", Region: "DE-BY", People: family()})
 	same(t, stripTitles(by), []string{"All Saints' Day"})
 	if by.Strip[0].Kind != familyview.KindHoliday {
 		t.Errorf("kind = %s", by.Strip[0].Kind)
 	}
-	be := familyview.Build(familyview.Input{Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "en", Region: "DE-BE", People: family()})
+	be := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "en", Region: "DE-BE", People: family()})
 	same(t, stripTitles(be), nil)
-	de := familyview.Build(familyview.Input{Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "de", Region: "DE-BY", People: family()})
+	de := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: time.Date(2026, 11, 1, 8, 0, 0, 0, berlin), Lang: "de", Region: "DE-BY", People: family()})
 	same(t, stripTitles(de), []string{"Allerheiligen"})
 }
 
 func TestStripListsHolidaysFirst(t *testing.T) {
 	now := time.Date(2026, 11, 1, 8, 0, 0, 0, berlin)
-	v := familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: family(),
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: now, Lang: "en", Region: "DE-BY", People: family(),
 		Occurrences: []calendar.Occurrence{timed("Brunch", at(1, 10, 0), at(1, 11, 0))}})
 	same(t, stripTitles(v), []string{"All Saints' Day", "Brunch"})
 }
@@ -237,7 +240,7 @@ func TestTomorrowBlockNeedsTheDisplaySetting(t *testing.T) {
 		timed("Piano", at(15, 15, 0), at(15, 16, 0), "mia"),
 		allDay("Tomorrow bar", day(15), day(16)),
 	}
-	v := familyview.Build(familyview.Input{Now: at(14, 19, 0), Lang: "en", Region: "DE-BY", People: family(), Occurrences: occs})
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 19, 0), Lang: "en", Region: "DE-BY", People: family(), Occurrences: occs})
 	if v.ShowTomorrow || len(column(t, v, "Mia").Tomorrow) != 0 || len(v.StripTomorrow) != 0 {
 		t.Fatalf("tomorrow shown with the setting off: %+v", v)
 	}
@@ -309,7 +312,7 @@ func TestTimesAreShownInTheHouseholdZoneWhateverZoneTheEventIsStoredIn(t *testin
 
 // ADR 0016: the clock and every event time follow the household's time format.
 func TestTimesFollowTheTimeFormat(t *testing.T) {
-	v := familyview.Build(familyview.Input{Now: at(14, 13, 5), Lang: "en", People: family(), TimeFormat: "12h",
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 13, 5), Lang: "en", People: family(), TimeFormat: "12h",
 		Occurrences: []calendar.Occurrence{timed("Dentist", at(14, 9, 0), at(14, 14, 30), "mama"), timed("Brunch", at(14, 10, 0), at(14, 11, 0))}})
 	if v.Clock != "1:05 PM" {
 		t.Errorf("clock = %q", v.Clock)
@@ -320,7 +323,7 @@ func TestTimesFollowTheTimeFormat(t *testing.T) {
 	if got := v.Strip[0].Time; got != "10:00 AM–11:00 AM" {
 		t.Errorf("strip = %q", got)
 	}
-	v = familyview.Build(familyview.Input{Now: at(14, 13, 5), Lang: "en", People: family(), TimeFormat: "24h"})
+	v = familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 13, 5), Lang: "en", People: family(), TimeFormat: "24h"})
 	if v.Clock != "13:05" {
 		t.Errorf("24h clock = %q", v.Clock)
 	}
@@ -330,7 +333,7 @@ func TestTimesFollowTheTimeFormat(t *testing.T) {
 func TestWeatherChipFollowsTheTemperatureUnit(t *testing.T) {
 	w := &familyview.Weather{TempC: 18.4, Icon: "clear"}
 	for unit, want := range map[store.TemperatureUnit]string{"": "18°C", store.Celsius: "18°C", store.Fahrenheit: "65°F"} {
-		v := familyview.Build(familyview.Input{Now: at(14, 8, 0), People: family(), Weather: w, TemperatureUnit: unit})
+		v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 8, 0), People: family(), Weather: w, TemperatureUnit: unit})
 		if v.Weather == nil || v.Weather.Text != want || v.Weather.Icon != "clear" {
 			t.Errorf("unit %q: %+v, want %q", unit, v.Weather, want)
 		}
@@ -340,28 +343,185 @@ func TestWeatherChipFollowsTheTemperatureUnit(t *testing.T) {
 		if want == "32°F" {
 			unit = store.Fahrenheit
 		}
-		v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Weather: &familyview.Weather{TempC: c}, TemperatureUnit: unit})
+		v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 8, 0), Weather: &familyview.Weather{TempC: c}, TemperatureUnit: unit})
 		if v.Weather.Text != want {
 			t.Errorf("%v = %q, want %q", c, v.Weather.Text, want)
 		}
 	}
-	if v := familyview.Build(familyview.Input{Now: at(14, 8, 0), People: family()}); v.Weather != nil {
+	if v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 8, 0), People: family()}); v.Weather != nil {
 		t.Error("weather chip without a reading")
 	}
 }
 
-// 5.4: Given an event with two people, each card carries the markers of both
-// people, so black-and-white mode tells them apart by shape.
-func TestEventCardsCarryTheMarkersOfEveryPersonOfTheEvent(t *testing.T) {
-	v := build(at(14, 8, 0), timed("Football", at(14, 15, 0), at(14, 16, 0), "seb", "mia"), timed("Dentist", at(14, 9, 0), at(14, 10, 0), "mama"))
-	want := []familyview.Marker{{Name: "Sebastian", Slot: 3, Shape: "square-filled"}, {Name: "Mia", Slot: 4, Shape: "square-empty"}}
-	for _, who := range []string{"Sebastian", "Mia"} {
-		evs := column(t, v, who).Events
-		if len(evs) != 1 || fmt.Sprint(evs[0].Markers) != fmt.Sprint(want) {
-			t.Errorf("%s: markers = %+v, want %+v", who, evs, want)
+// 5.22: Given an event, then its card says in words who it is for; the
+// column's own person is left out, and nobody is named on a card for one person.
+func TestEventCardsSayInWordsWhoTheEventIsFor(t *testing.T) {
+	v := build(at(14, 8, 0),
+		timed("Football", at(14, 15, 0), at(14, 16, 0), "seb", "mia"),
+		timed("Dentist", at(14, 9, 0), at(14, 10, 0), "mama"),
+		timed("Parents' evening", at(14, 19, 0), at(14, 20, 0), "mama", "papa", "mia"),
+	)
+	who := func(name, title string) string {
+		t.Helper()
+		for _, e := range column(t, v, name).Events {
+			if e.Title == title {
+				return wholine.Plain(e.WhoParts)
+			}
+		}
+		t.Fatalf("%s has no %q", name, title)
+		return ""
+	}
+	for _, c := range []struct{ column, title, want string }{
+		{"Sebastian", "Football", "everyone except Mama and Papa"},
+		{"Mia", "Football", "everyone except Mama and Papa"},
+		{"Mama", "Dentist", ""},
+		{"Mia", "Parents' evening", "everyone except Sebastian"},
+	} {
+		if got := who(c.column, c.title); got != c.want {
+			t.Errorf("%s column, %s: who-line = %q, want %q", c.column, c.title, got, c.want)
 		}
 	}
-	if m := column(t, v, "Mama").Events[0].Markers; len(m) != 1 || m[0].Shape != "circle-filled" {
-		t.Errorf("Dentist markers = %+v", m)
+}
+
+// 5.22: Given a subgroup and a big household, then the subgroup is named and
+// the others are listed in full: no count, no ellipsis.
+func TestWhoLineNamesTheSubgroupAndListsEveryoneElseInFull(t *testing.T) {
+	var people []familyview.Person
+	for i, n := range []string{"Mama", "Papa", "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"} {
+		people = append(people, familyview.Person{ID: n, Name: n, Slot: i + 1, Shape: "circle-filled"})
 	}
+	in := familyview.Input{Now: at(14, 8, 0), Lang: "de", I18n: i18n.MustLoad(), People: people,
+		Groups: []wholine.Group{{Name: "Kinder", Members: []string{"Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"}}},
+		Occurrences: []calendar.Occurrence{
+			timed("Schwimmen", at(14, 15, 0), at(14, 16, 0), "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"),
+			timed("Training", at(14, 17, 0), at(14, 18, 0), "Mia", "Jonas", "Ben", "Mama", "Papa"),
+			allDay("Besuch bei Oma", day(14), day(15), "Mama", "Papa"),
+			allDay("Ausflug", day(14), day(15), "Mia", "Jonas", "Ben", "Emma", "Lotta"),
+			allDay("Familientag", day(14), day(15)),
+			allDay("Kindertag", day(14), day(15), "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"),
+		}}
+	v := familyview.Build(in)
+	if got := wholine.Plain(column(t, v, "Emma").Events[0].WhoParts); got != "mit Gruppe Kinder" {
+		t.Errorf("subgroup: %q", got)
+	}
+	if got := wholine.Plain(column(t, v, "Mia").Events[1].WhoParts); got != "mit Mama, Papa, Jonas, Ben" {
+		t.Errorf("names: %q", got)
+	}
+	got := map[string]string{}
+	for _, it := range v.Strip {
+		got[it.Title] = wholine.Plain(it.WhoParts)
+	}
+	want := map[string]string{"Besuch bei Oma": "[Mama, Papa]", "Ausflug": "[Mia, Jonas, Lotta, Ben, Emma]", "Familientag": "", "Kindertag": "[Kinder]"}
+	for title, w := range want {
+		if got[title] != w {
+			t.Errorf("family strip, %s: %q, want %q", title, got[title], w)
+		}
+	}
+}
+
+// 6.6 (ADR 0016): a column shows today's task progress, done/total; a person
+// without tasks today shows no bar.
+func TestColumnShowsTodaysTaskProgressOfItsPerson(t *testing.T) {
+	v := familyview.Build(familyview.Input{Now: at(14, 9, 0), Lang: "en", Region: "DE-BY", People: family(),
+		TaskProgress: map[string]familyview.Progress{"mia": {Done: 1, Total: 3}, "seb": {Done: 2, Total: 2}}})
+	if p := column(t, v, "Mia").Progress; p == nil || *p != (familyview.Progress{Done: 1, Total: 3}) {
+		t.Errorf("Mia's progress = %v, want 1/3", p)
+	}
+	if p := column(t, v, "Sebastian").Progress; p == nil || p.Percent() != 100 {
+		t.Errorf("Sebastian's progress = %v, want complete", p)
+	}
+	for _, n := range []string{"Mama", "Papa"} {
+		if p := column(t, v, n).Progress; p != nil {
+			t.Errorf("%s has no tasks but shows %v", n, p)
+		}
+	}
+	zero := familyview.Build(familyview.Input{Now: at(14, 9, 0), Lang: "en", Region: "DE-BY", People: family(),
+		TaskProgress: map[string]familyview.Progress{"mia": {}}})
+	if p := column(t, zero, "Mia").Progress; p != nil {
+		t.Errorf("0/0 shows a bar: %v", p)
+	}
+}
+
+// 5.22: Given an event for everyone listed, then it is a family strip item like
+// an event with no audience: no brackets, its time, and in no column.
+func TestEventForEveryoneListedGoesToTheStripLikeOneWithNoAudience(t *testing.T) {
+	var people []familyview.Person
+	names := []string{"Mama", "Papa", "Sebastian", "Mia", "Jonas", "Lotta", "Ben", "Emma"}
+	for i, n := range names {
+		people = append(people, familyview.Person{ID: n, Name: n, Slot: i%6 + 1, Shape: "circle-filled"})
+	}
+	v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Lang: "en", I18n: i18n.MustLoad(), People: people, Occurrences: []calendar.Occurrence{
+		timed("Cinema", at(14, 19, 0), at(14, 21, 0), names...),
+		timed("Family lunch", at(14, 12, 0), at(14, 13, 0)),
+	}})
+	var cinema []familyview.StripItem
+	for _, it := range v.Strip {
+		if it.Title == "Cinema" {
+			cinema = append(cinema, it)
+		}
+	}
+	if len(cinema) != 1 || cinema[0].Time != "19:00–21:00" || len(cinema[0].WhoParts) != 0 {
+		t.Errorf("Cinema in the strip = %+v", cinema)
+	}
+	for _, c := range v.Columns {
+		if len(c.Events) != 0 {
+			t.Errorf("%s column has %v, want none", c.Person.Name, titles(c.Events))
+		}
+	}
+}
+
+// 5.22: the who-line comes in parts, one per name, for the page to keep whole.
+func TestWhoLineComesInPartsOneNameEach(t *testing.T) {
+	v := build(at(14, 8, 0), timed("Football", at(14, 15, 0), at(14, 16, 0), "mama", "seb"), allDay2("Visit", "mama", "papa"))
+	e := column(t, v, "Mama").Events[0]
+	var names []string
+	for _, p := range e.WhoParts {
+		if p.Name {
+			names = append(names, p.Text)
+		}
+	}
+	if fmt.Sprint(names) != "[Papa Mia]" {
+		t.Errorf("card names = %v", names)
+	}
+	var item familyview.StripItem
+	for _, it := range v.Strip {
+		if it.Title == "Visit" {
+			item = it
+		}
+	}
+	if got := wholine.Plain(item.WhoParts); got != "[everyone except Sebastian and Mia]" {
+		t.Errorf("strip parts %q", got)
+	}
+}
+
+func allDay2(title string, people ...string) calendar.Occurrence {
+	return allDay(title, day(14), day(15), people...)
+}
+
+// 5.22: in a household of one, every event is for the whole household, so it
+// goes to the family strip and the person's column stays empty (decided here,
+// locked in by this test).
+func TestSingleHouseholdEventsGoToTheStrip(t *testing.T) {
+	v := familyview.Build(familyview.Input{Now: at(14, 8, 0), Lang: "en", I18n: i18n.MustLoad(),
+		People:      []familyview.Person{{ID: "mama", Name: "Mama", Slot: 1, Shape: "circle-filled"}},
+		Occurrences: []calendar.Occurrence{timed("Dentist", at(14, 9, 0), at(14, 10, 0), "mama")}})
+	if len(v.Strip) != 1 || v.Strip[0].Title != "Dentist" || len(v.Strip[0].WhoParts) != 0 {
+		t.Errorf("strip = %+v", v.Strip)
+	}
+	if got := column(t, v, "Mama").Events; len(got) != 0 {
+		t.Errorf("column has %v, want none", titles(got))
+	}
+}
+
+func TestBuildPanicsWithoutI18n(t *testing.T) {
+	defer func() {
+		r := recover()
+		if r == nil {
+			t.Fatal("Build without I18n must panic")
+		}
+		if msg := fmt.Sprint(r); !strings.Contains(msg, "Input.I18n") {
+			t.Fatalf("panic must come from the I18n guard, got %q", msg)
+		}
+	}()
+	familyview.Build(familyview.Input{Now: at(14, 8, 0), Lang: "en", Region: "DE-BY", People: family(), Occurrences: []calendar.Occurrence{timed("x", at(14, 9, 0), at(14, 10, 0), "mama")}})
 }

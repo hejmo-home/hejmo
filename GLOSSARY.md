@@ -181,8 +181,16 @@ One line of text on a list that can be ticked off.
 _Avoid_: item (alone), list item
 
 **Meal plan**:
-The household's meals per day and mealtime (breakfast, lunch, dinner, snack).
+The household's meals per day and mealtime: one line of free text each. Every entry also shows in the calendar as an all-day event of the generated, read-only meal-plan calendar.
 _Avoid_: menu, food plan
+
+**Mealtime**:
+One of breakfast, lunch, snack or dinner, in the order of the day.
+_Avoid_: meal type, course
+
+**Cut-off time**:
+The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.
+_Avoid_: deadline, expiry
 
 **Task**:
 Something to be done once or repeatedly, ticked off when done; may belong to a routine, carry a star value and be split into subtasks.
@@ -211,6 +219,10 @@ _Avoid_: points log, history
 **Waste collection calendar**:
 A read-only calendar marked as listing the household's waste collection days.
 _Avoid_: bin calendar, garbage feed
+
+**Day note**:
+A parent's free-text note (up to 120 characters) for one day, shown as the last line of the tomorrow tile from 18:00 the evening before until the end of that day, then deleted. A day has one note. A parent sets it on Home (card "Note on the display"); a planned note is changed or removed on its own page.
+_Avoid_: reminder (that is the waste collection highlight), memo
 
 ## Access
 

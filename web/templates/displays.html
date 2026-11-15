@@ -25,8 +25,8 @@
           <label>{{t "displays.sunset_offset"}}
             <input type="number" name="sunset_offset" min="-180" max="180" step="1" value="{{.SunsetOffset}}"></label>
           <label><input type="checkbox" name="quiet"{{if .QuietOn}} checked{{end}}> {{t "displays.quiet"}}</label>
-          <label>{{t "displays.quiet_from"}} <input type="time" name="quiet_from" value="{{.QuietFrom}}"></label>
-          <label>{{t "displays.quiet_to"}} <input type="time" name="quiet_to" value="{{.QuietTo}}"></label>
+          <label>{{t "displays.quiet_from"}} <input class="tcap" type="time" name="quiet_from" value="{{.QuietFrom}}"></label>
+          <label>{{t "displays.quiet_to"}} <input class="tcap" type="time" name="quiet_to" value="{{.QuietTo}}"></label>
           <label>{{t "displays.kiosk_url"}} <input type="url" name="kiosk_url" value="{{.KioskURL}}"></label>
           <label>{{t "displays.kiosk_key"}} <input type="password" name="kiosk_key" autocomplete="off"></label>
           {{if .KioskKeySet}}<span class="hint">{{t "displays.kiosk_key_set"}}</span>{{end}}

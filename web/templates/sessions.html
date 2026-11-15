@@ -17,4 +17,5 @@
     {{end}}
   </div>
   {{if .OnlyThis}}<div class="empty" data-empty><p>{{t "sessions.only_this"}}</p></div>{{end}}
+  {{if .NoBrowser}}<div class="empty" data-empty><p>{{t "sessions.none"}}</p></div>{{end}}
 {{template "foot"}}

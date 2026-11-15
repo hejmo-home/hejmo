@@ -10,6 +10,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -290,7 +291,7 @@ func TestFamilyViewRendersOneColumnPerPersonWithoutScrollFlag(t *testing.T) {
 // ADR 0016: the progress bar sits at the bottom of the column, after the scrolling events;
 // the footer shows only the tiles that have content.
 func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
-	v := familyview.Build(familyview.Input{Now: time.Date(2026, 11, 14, 8, 0, 0, 0, berlinTZ), Lang: "en", Region: "DE-BY", People: []familyview.Person{
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: time.Date(2026, 11, 14, 8, 0, 0, 0, berlinTZ), Lang: "en", Region: "DE-BY", People: []familyview.Person{
 		{ID: "a", Name: "Mia", Slot: 4, Shape: "square-empty"}, {ID: "b", Name: "Papa", Slot: 2, Shape: "circle-empty"}}})
 	v.Columns[0].Progress = &familyview.Progress{Done: 3, Total: 5}
 	out, err := server.RenderFamilyView("en", v)
@@ -299,7 +300,7 @@ func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
 	}
 	col := columnRe.FindString(out)
 	i, j := strings.Index(col, `class="events"`), strings.Index(col, `data-progress="3/5"`)
-	if i < 0 || j < i || !strings.Contains(col, "--pct:60") || !strings.Contains(col, ">3/5<") {
+	if i < 0 || j < i || !strings.Contains(col, "--pct:60") || !strings.Contains(col, ">3 of 5 tasks done</span>") {
 		t.Fatalf("progress bar not after the events:\n%s", col)
 	}
 	if strings.Count(out, "data-progress") != 1 {
@@ -308,12 +309,12 @@ func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
 	if strings.Contains(out, "data-footer") {
 		t.Error("footer shown with both tiles empty")
 	}
-	v.Meal = &familyview.Tile{Label: "Dinner", Lines: []string{"Pasta bake"}}
+	v.Meal = &familyview.Tile{Label: "Dinner", Lines: []familyview.Line{{Text: "Pasta bake"}}}
 	one, _ := server.RenderFamilyView("en", v)
 	if !strings.Contains(one, "data-footer") || !strings.Contains(one, `data-tile="meal"`) || strings.Contains(one, `data-tile="tomorrow"`) {
 		t.Errorf("one tile: %s", one)
 	}
-	v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []string{"Paper bin"}, Alert: true}
+	v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []familyview.Line{{Kind: familyview.LineWaste, Text: "Paper bin"}}, Alert: true}
 	two, _ := server.RenderFamilyView("en", v)
 	if strings.Count(two, "data-tile=") != 2 || !strings.Contains(two, "tile alert") {
 		t.Errorf("two tiles: %s", two)
@@ -331,7 +332,7 @@ func TestFamilyViewMarkupSnapshot(t *testing.T) {
 	occ := func(title string, s, e time.Time, who ...string) calendar.Occurrence {
 		return calendar.Occurrence{EventID: title, CalendarID: "c", Title: title, Start: s, End: e, People: who}
 	}
-	v := familyview.Build(familyview.Input{Now: d(14, 18, 5), Lang: "en", Region: "DE-BY", People: people, ShowTomorrow: true, Occurrences: []calendar.Occurrence{
+	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: d(14, 18, 5), Lang: "en", Region: "DE-BY", People: people, ShowTomorrow: true, Occurrences: []calendar.Occurrence{
 		occ("Dentist", d(14, 9, 0), d(14, 10, 0), "mama"),
 		occ("Football", d(14, 15, 0), d(14, 16, 0), "seb", "mia"),
 		occ("Piano", d(15, 15, 0), d(15, 16, 0), "mia"),

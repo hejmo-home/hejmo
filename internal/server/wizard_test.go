@@ -121,7 +121,7 @@ func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 	}
 
 	public := de(b, "/setup/https?way=public")
-	for _, want := range []string{`action="/setup/https/public"`, `<ol class="howto">`, `href="https://desec.io/" target="_blank"`, `name="name"`, `name="token"`, `type="password"`, "Mehr Optionen", "Zertifikat holen", "Anderen Weg wählen", `href="/setup/https"`} {
+	for _, want := range []string{`action="/setup/https/public"`, `<ol class="howto">`, `href="https://desec.io/signup" target="_blank"`, `name="name"`, `name="token"`, `type="password"`, "Mehr Optionen", "Zertifikat holen", "Anderen Weg wählen", `href="/setup/https"`} {
 		if !strings.Contains(public.body, want) {
 			t.Errorf("public form misses %q", want)
 		}

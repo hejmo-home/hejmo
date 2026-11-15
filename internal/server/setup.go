@@ -195,7 +195,7 @@ func (s *server) renderTOTP(w http.ResponseWriter, r *http.Request, status int, 
 	s.render(w, r, status, "setup_totp.html", map[string]any{
 		"Secret": acc.TOTPSecret, "SecretGroups": groupsOfFour(acc.TOTPSecret), "Username": acc.Username,
 		"URI": template.URL(uri), // built here, safe scheme
-		"QR":  template.HTML(svg), "Phone": mobileBrowser(r), "Error": errKey, "ErrorField": totpErrorField(errKey), "Wizard": wizardAt(step),
+		"QR":  template.HTML(svg), "Phone": mobileBrowser(r), "InstallKey": authenticatorInstallKey(r), "Error": errKey, "ErrorField": totpErrorField(errKey), "Wizard": wizardAt(step),
 	})
 }
 
@@ -269,6 +269,20 @@ func groupsOfFour(key string) string {
 		b.WriteRune(c)
 	}
 	return b.String()
+}
+
+// authenticatorInstallKey picks the text that says where to get an authenticator
+// app: on an iPhone only the App Store, on an Android phone only Google Play,
+// on a computer (or a tablet) both stores.
+func authenticatorInstallKey(r *http.Request) string {
+	ua := strings.ToLower(r.UserAgent())
+	switch {
+	case strings.Contains(ua, "iphone") || strings.Contains(ua, "ipod"):
+		return "setup.totp.s1.install.ios"
+	case strings.Contains(ua, "android") && strings.Contains(ua, "mobile"):
+		return "setup.totp.s1.install.android"
+	}
+	return "setup.totp.s1.install.desktop"
 }
 
 // mobileBrowser reports whether the request comes from a phone, where the

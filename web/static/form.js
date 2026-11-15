@@ -230,6 +230,37 @@ document.addEventListener("click", function (e) {
   if (e.target.closest && e.target.closest("[data-print]")) window.print();
 });
 
+// "Copy" button (ticket 133, design pass 2): puts the text of data-copy on the
+// clipboard and says "Copied" in words (data-copied-text) for a moment. The box
+// may be opened over plain http, where navigator.clipboard does not exist: a
+// hidden field and the old copy command do the same there.
+document.addEventListener("click", function (e) {
+  var button = e.target.closest && e.target.closest("[data-copy]");
+  if (!button) return;
+  var text = button.getAttribute("data-copy");
+  function said() {
+    var idle = button.getAttribute("data-idle-text") || button.textContent;
+    button.setAttribute("data-idle-text", idle);
+    button.textContent = button.getAttribute("data-copied-text") || idle;
+    setTimeout(function () { button.textContent = idle; }, 2000);
+  }
+  function fallback() {
+    var field = document.createElement("textarea");
+    field.value = text;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.opacity = "0";
+    document.body.appendChild(field);
+    field.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (err) { ok = false; }
+    document.body.removeChild(field);
+    if (ok) said();
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(said, fallback);
+  else fallback();
+});
+
 // Language switcher (ticket 134). The menu is a <details> and works without
 // this script; the script adds what a native <details> lacks: Escape closes it
 // (focus goes back to its button) and so does a click outside it.

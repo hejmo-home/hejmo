@@ -11,7 +11,7 @@
         <p>{{t "setup.https.rebind.why"}}</p>
         <ol class="howto">
           <li><div class="s"><b>{{t "setup.https.rebind.s1.title"}}</b><p>{{rich (t "setup.https.rebind.s1.text")}}</p></div></li>
-          <li><div class="s"><b>{{t "setup.https.rebind.s2.title"}}</b><p>{{rich (t "setup.https.rebind.s2.text")}}</p><p class="addr">{{.Name}}</p></div></li>
+          <li><div class="s"><b>{{t "setup.https.rebind.s2.title"}}</b><p>{{rich (t "setup.https.rebind.s2.text")}}</p><div class="copyrow"><p class="addr">{{.Name}}</p><button class="button secondary" type="button" data-copy="{{.Name}}" data-copied-text="{{t "setup.https.rebind.copied"}}">{{t "setup.https.rebind.copy"}}</button></div></div></li>
           <li><div class="s"><b>{{t "setup.https.rebind.s3.title"}}</b><p>{{t "setup.https.rebind.s3.text"}}</p>
             <div class="actions"><button class="button" type="button" data-check-again>{{t "setup.https.check.again"}}</button></div></div></li>
         </ol>

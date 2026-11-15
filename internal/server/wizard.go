@@ -53,13 +53,23 @@ var (
 	richLink = regexp.MustCompile(`\[([^\]]+)\]\((https?://[^\s)]+)\)`)
 )
 
+// extIcon is the "opens elsewhere" icon after a link to an outside page.
+const extIcon = `<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg>`
+
 // rich turns a text of the locales into HTML: everything is escaped first,
 // then [[a › b]] becomes a menu path, **x** bold text and [text](https://…) a
-// link that opens in a new tab. Nothing from a request reaches it unescaped.
+// link that opens in a new tab. A link to an https page is drawn as an outside
+// link (underlined, with the icon); an http link is the home network's router. Nothing from a request reaches it unescaped.
 func rich(s string) template.HTML {
 	s = html.EscapeString(s)
 	s = richPath.ReplaceAllString(s, `<span class="path">$1</span>`)
 	s = richBold.ReplaceAllString(s, `<b>$1</b>`)
-	s = richLink.ReplaceAllString(s, `<a href="$2" target="_blank" rel="noopener noreferrer">$1</a>`)
+	s = richLink.ReplaceAllStringFunc(s, func(m string) string {
+		g := richLink.FindStringSubmatch(m)
+		if !strings.HasPrefix(g[2], "https://") { // an http link is an address in the home network, such as the router
+			return `<a href="` + g[2] + `" target="_blank" rel="noopener noreferrer">` + g[1] + `</a>`
+		}
+		return `<a class="ext" href="` + g[2] + `" target="_blank" rel="noopener noreferrer">` + g[1] + extIcon + `</a>`
+	})
 	return template.HTML(strings.TrimSpace(s)) // #nosec G203 -- escaped above
 }

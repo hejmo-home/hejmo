@@ -4,6 +4,11 @@
 //
 //	hejmo              start the box
 //	hejmo healthcheck  exit 0 if the local box answers /healthz (for Docker)
+//	hejmo reset-otp <username>
+//	                   reset an account's one-time codes (run inside the
+//	                   container; it opens the database directly and is not
+//	                   reachable over the network)
+//	hejmo backup FILE  write an online backup of the database to FILE (for the update script)
 package main
 
 import (
@@ -11,12 +16,14 @@ import (
 	"crypto/tls"
 	"errors"
 	"fmt"
+	"io"
 	"log/slog"
 	"net"
 	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
+	"strings"
 	"syscall"
 	"time"
 	_ "time/tzdata" // DST rules independent of the host system
@@ -27,6 +34,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/weather"
 )
 
 type config struct {
@@ -38,6 +46,10 @@ type config struct {
 	// HEJMO_SECRET_KEY_FILE (default: secret.key in the data volume). Point it
 	// at a Docker secret to keep the key off the data volume.
 	SecretKeyFile string
+	// UpdateDir is the data directory shared with the install script's host
+	// updater (ADR 0018); empty on a plain Docker Compose install, which has
+	// none. HEJMO_HOST_UPDATER=1 is set by the install script's compose file.
+	UpdateDir string
 }
 
 func loadConfig(getenv func(string) string) config {
@@ -58,6 +70,9 @@ func loadConfig(getenv func(string) string) config {
 	if v := getenv("HEJMO_SECRET_KEY_FILE"); v != "" {
 		cfg.SecretKeyFile = v
 	}
+	if getenv("HEJMO_HOST_UPDATER") == "1" {
+		cfg.UpdateDir = cfg.DataDir
+	}
 	return cfg
 }
 
@@ -70,7 +85,31 @@ func main() {
 		}
 		return
 	}
+	if len(os.Args) > 1 && os.Args[1] == "backup" {
+		dest := ""
+		if len(os.Args) > 2 {
+			dest = os.Args[2]
+		}
+		if err := backup(cfg, dest); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		return
+	}
 	logger := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	if len(os.Args) > 1 && os.Args[1] == "reset-otp" {
+		logger = commandLogger(os.Stderr, "/proc/1/fd/1", os.Getpid())
+		if len(os.Args) != 3 {
+			fmt.Fprintln(os.Stderr, "usage: hejmo reset-otp <username>")
+			os.Exit(2)
+		}
+		if err := resetOTP(cfg, os.Args[2], logger); err != nil {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
+		fmt.Printf("One-time codes of %s are reset. At the next sign-in, %s sets up new ones.\n", os.Args[2], os.Args[2])
+		return
+	}
 	if err := run(cfg, logger); err != nil {
 		logger.Error("box stopped", "err", err)
 		os.Exit(1)
@@ -119,7 +158,27 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-schedulerDone }()
 
-	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Done: ctx.Done()})
+	// The kiosk runner switches the front light of displays with a kiosk app
+	// off at sunset and in quiet mode (ADR 0005, 0015), checked every minute.
+	kioskRunner := server.NewKioskRunner(server.KioskOptions{DB: db, Logger: logger})
+	kioskDone := make(chan struct{})
+	go func() {
+		defer close(kioskDone)
+		kioskRunner.Run(ctx, time.Minute)
+	}()
+	defer func() { stop(); <-kioskDone }()
+
+	// The weather chip's reading: the box asks Open-Meteo every 15 minutes, a
+	// display never does (ADR 0016).
+	forecast := weather.New()
+	weatherDone := make(chan struct{})
+	go func() {
+		defer close(weatherDone)
+		forecast.Run(ctx, 15*time.Minute, homeOf{db}, func(err error) { logger.Warn("weather not refreshed", "err", err) })
+	}()
+	defer func() { stop(); <-weatherDone }()
+
+	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Done: ctx.Done(), UpdateDir: cfg.UpdateDir})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).
@@ -158,6 +217,42 @@ func run(cfg config, logger *slog.Logger) error {
 			return err
 		}
 	}
+	return nil
+}
+
+// commandLogger logs a command run inside the box's container. `docker compose
+// logs` shows only the output of the main process (PID 1), so the line is also
+// written to that process's stdout when this is not PID 1 and it is reachable.
+func commandLogger(stderr io.Writer, pid1Stdout string, pid int) *slog.Logger {
+	var w io.Writer = stderr
+	if pid != 1 {
+		if f, err := os.OpenFile(pid1Stdout, os.O_WRONLY|os.O_APPEND, 0); err == nil {
+			w = io.MultiWriter(stderr, f)
+		}
+	}
+	return slog.New(slog.NewTextHandler(w, nil))
+}
+
+// resetOTP is the last way back (ADR 0017): it removes an account's one-time
+// code secret and recovery codes and ends its browser sessions. Access to the
+// box's shell counts as proof of ownership.
+func resetOTP(cfg config, username string, logger *slog.Logger) error {
+	db, _, err := openDatabase(cfg)
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	acc, err := db.AccountByUsername(strings.TrimSpace(username))
+	if errors.Is(err, store.ErrNotFound) {
+		return fmt.Errorf("no account named %q", username)
+	}
+	if err != nil {
+		return err
+	}
+	if err := db.ResetOTP(acc.PersonID); err != nil {
+		return err
+	}
+	logger.Info("one-time codes reset", "account", strings.ToLower(acc.Username), "via", "command on the box")
 	return nil
 }
 
@@ -230,6 +325,20 @@ func tlsConfig(public *publiccert.Manager, certs *pki.Store) *tls.Config {
 	}}
 }
 
+// backup writes a consistent copy of the database to dest with SQLite's online
+// backup while the box keeps running (ADR 0018).
+func backup(cfg config, dest string) error {
+	if dest == "" {
+		return errors.New("usage: hejmo backup FILE")
+	}
+	db, err := store.Open(filepath.Join(cfg.DataDir, "hejmo.db"))
+	if err != nil {
+		return err
+	}
+	defer db.Close()
+	return db.Backup(dest)
+}
+
 // healthcheck asks the box at baseURL for /healthz.
 func healthcheck(baseURL string) error {
 	client := &http.Client{Timeout: 3 * time.Second}
@@ -251,4 +360,28 @@ func localURL(addr string) string {
 		port = "8080"
 	}
 	return "http://127.0.0.1:" + port
+}
+
+// homeOf gives the weather service the household's home location.
+type homeOf struct{ db *store.DB }
+
+func (h homeOf) Home() (lat, lon float64, name, country string, err error) {
+	hh, err := h.db.HomeHousehold()
+	if errors.Is(err, store.ErrNotFound) {
+		return 0, 0, "", "", weather.ErrNoHome
+	}
+	if err != nil {
+		return 0, 0, "", "", err
+	}
+	// The region (ISO 3166-2, e.g. DE-BY) starts with the country code.
+	country, _, _ = strings.Cut(hh.Region, "-")
+	return hh.Latitude, hh.Longitude, hh.HomeName, country, nil
+}
+
+func (h homeOf) SetCoordinates(lat, lon float64) error {
+	hh, err := h.db.HomeHousehold()
+	if err != nil {
+		return err
+	}
+	return h.db.SetHouseholdCoordinates(hh.ID, lat, lon)
 }

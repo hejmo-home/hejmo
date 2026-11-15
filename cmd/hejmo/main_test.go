@@ -4,6 +4,7 @@ import (
 	"context"
 	"crypto/tls"
 	"crypto/x509"
+	"errors"
 	"io"
 	"log/slog"
 	"net"
@@ -19,6 +20,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/weather"
 )
 
 func TestConfigDefaults(t *testing.T) {
@@ -350,5 +352,143 @@ func TestOwnCAIsNotCreatedBeforeSetupIsComplete(t *testing.T) {
 
 	if certs.Ready() {
 		t.Fatal("the own CA was created for the public name before setup was complete")
+	}
+}
+
+func TestResetOTPCommandResetsTheAccountAndLogsIt(t *testing.T) {
+	dir := t.TempDir()
+	cfg := config{DataDir: dir, SecretKeyFile: filepath.Join(dir, "secret.key")}
+	db, _, err := openDatabase(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
+	mama, _ := db.AddPerson(h.ID, store.Person{Name: "Mama", Role: store.RoleParent})
+	_ = db.CreateAccount(store.Account{PersonID: mama.ID, Username: "mama", PasswordHash: "h", TOTPSecret: "S"})
+	_ = db.ConfirmTOTP(mama.ID)
+	_ = db.ReplaceRecoveryCodes(mama.ID, []string{"x"})
+	_ = db.CreateSession("tok", mama.ID, time.Now().Add(time.Hour))
+	db.Close()
+
+	var logs strings.Builder
+	if err := resetOTP(cfg, "MAMA", slog.New(slog.NewTextHandler(&logs, nil))); err != nil {
+		t.Fatal(err)
+	}
+	if !strings.Contains(logs.String(), "one-time codes reset") || !strings.Contains(logs.String(), "account=mama") {
+		t.Errorf("reset not logged: %q", logs.String())
+	}
+	db, _, err = openDatabase(cfg)
+	if err != nil {
+		t.Fatal(err)
+	}
+	acc, _ := db.AccountByPerson(mama.ID)
+	if acc.TOTPConfirmed || acc.TOTPSecret != "" {
+		t.Errorf("account after reset = %+v", acc)
+	}
+	if codes, _ := db.UnusedRecoveryCodes(mama.ID); len(codes) != 0 {
+		t.Error("recovery codes kept")
+	}
+	if _, err := db.SessionPerson("tok", time.Now()); err == nil {
+		t.Error("browser session kept")
+	}
+	if err := resetOTP(cfg, "nobody", slog.New(slog.NewTextHandler(&logs, nil))); err == nil {
+		t.Error("unknown account accepted")
+	}
+}
+
+// docker compose logs shows only what the box's main process (PID 1) writes,
+// so a reset run by `docker compose exec` must reach its stdout too.
+func TestCommandLogReachesTheBoxMainProcessOutput(t *testing.T) {
+	var stderr strings.Builder
+	pid1 := filepath.Join(t.TempDir(), "stdout")
+	if err := os.WriteFile(pid1, nil, 0o600); err != nil {
+		t.Fatal(err)
+	}
+	commandLogger(&stderr, pid1, 4711).Info("one-time codes reset", "account", "mama")
+	got, _ := os.ReadFile(pid1)
+	if !strings.Contains(string(got), "account=mama") {
+		t.Errorf("box main process output = %q", got)
+	}
+	if !strings.Contains(stderr.String(), "account=mama") {
+		t.Errorf("stderr = %q", stderr.String())
+	}
+
+	// Without a reachable main process output, stderr alone still works.
+	stderr.Reset()
+	commandLogger(&stderr, filepath.Join(t.TempDir(), "missing"), 4711).Info("x", "k", "v")
+	if !strings.Contains(stderr.String(), "k=v") {
+		t.Errorf("stderr = %q", stderr.String())
+	}
+}
+
+// The weather service reads the home through homeOf: no household is
+// weather.ErrNoHome, the country is the start of the region, and found
+// coordinates are saved on the household.
+func TestHomeOfAdaptsTheHouseholdForTheWeather(t *testing.T) {
+	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	h := homeOf{db}
+	if _, _, _, _, err := h.Home(); !errors.Is(err, weather.ErrNoHome) {
+		t.Fatalf("without a household: %v", err)
+	}
+	if _, err := db.CreateHousehold(store.Household{Name: "Home", HomeName: "Pasing", Region: "DE-BY"}); err != nil {
+		t.Fatal(err)
+	}
+	lat, lon, name, country, err := h.Home()
+	if err != nil || lat != 0 || lon != 0 || name != "Pasing" || country != "DE" {
+		t.Fatalf("home = %v %v %q %q %v", lat, lon, name, country, err)
+	}
+	if err := h.SetCoordinates(48.15, 11.46); err != nil {
+		t.Fatal(err)
+	}
+	if lat, lon, _, _, _ := h.Home(); lat != 48.15 || lon != 11.46 {
+		t.Fatalf("coordinates not saved: %v %v", lat, lon)
+	}
+}
+
+// ADR 0018: the host script asks the running box for an online backup of its
+// database with `hejmo backup <file>` (docker exec), before it updates.
+func TestBackupCommandCopiesTheLiveDatabase(t *testing.T) {
+	dir := t.TempDir()
+	cfg := loadConfig(func(k string) string { return map[string]string{"HEJMO_DATA_DIR": dir}[k] })
+	live, err := store.Open(filepath.Join(dir, "hejmo.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer live.Close()
+	if _, err := live.CreateHousehold(store.Household{Name: "Familie"}); err != nil {
+		t.Fatal(err)
+	}
+	dest := filepath.Join(dir, "backup", "pre-update.db")
+	if err := os.MkdirAll(filepath.Dir(dest), 0o700); err != nil {
+		t.Fatal(err)
+	}
+	if err := backup(cfg, dest); err != nil {
+		t.Fatal(err)
+	}
+	cp, err := store.Open(dest)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer cp.Close()
+	if h, err := cp.HomeHousehold(); err != nil || h.Name != "Familie" {
+		t.Fatalf("backup content: %+v %v", h, err)
+	}
+	if err := backup(cfg, ""); err == nil {
+		t.Fatal("backup without a target succeeded")
+	}
+}
+
+// The box offers auto-update only where the install script's host updater runs.
+func TestUpdateDirIsSetOnlyWhenAHostUpdaterManagesTheBox(t *testing.T) {
+	plain := loadConfig(func(string) string { return "" })
+	if plain.UpdateDir != "" {
+		t.Fatalf("plain Compose install has UpdateDir %q", plain.UpdateDir)
+	}
+	managed := loadConfig(func(k string) string { return map[string]string{"HEJMO_HOST_UPDATER": "1", "HEJMO_DATA_DIR": "/d"}[k] })
+	if managed.UpdateDir != "/d" {
+		t.Fatalf("managed UpdateDir = %q, want the data dir", managed.UpdateDir)
 	}
 }

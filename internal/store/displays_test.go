@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/quiet"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -256,7 +257,7 @@ func TestShowTomorrowBlockIsAPerDisplaySettingOffByDefault(t *testing.T) {
 	}
 }
 
-func pairedDisplay(t *testing.T, typ store.DisplayType) (*store.DB, store.Household, store.Display) {
+func pairedDisplayOfType(t *testing.T, typ store.DisplayType) (*store.DB, store.Household, store.Display) {
 	t.Helper()
 	db, h := householdForDisplays(t)
 	d, _ := db.OpenPairing(h.ID, "hash-1", pairT0)
@@ -270,7 +271,7 @@ func pairedDisplay(t *testing.T, typ store.DisplayType) (*store.DB, store.Househ
 // ADR 0015: E-Ink light, normal screen automatic; offsets start at 0.
 func TestNewDisplaysGetTheDefaultThemeOfTheirType(t *testing.T) {
 	for typ, want := range map[store.DisplayType]string{store.DisplayEInkBW: "light", store.DisplayEInkColor: "light", store.DisplayScreen: "auto"} {
-		_, _, d := pairedDisplay(t, typ)
+		_, _, d := pairedDisplayOfType(t, typ)
 		if string(d.Theme) != want || d.SunriseOffset != 0 || d.SunsetOffset != 0 {
 			t.Errorf("%s: theme %q offsets %d/%d, want %q 0/0", typ, d.Theme, d.SunriseOffset, d.SunsetOffset, want)
 		}
@@ -278,7 +279,7 @@ func TestNewDisplaysGetTheDefaultThemeOfTheirType(t *testing.T) {
 }
 
 func TestDisplayThemeAndOffsetsAreSavedPerDisplay(t *testing.T) {
-	db, h, d := pairedDisplay(t, store.DisplayScreen)
+	db, h, d := pairedDisplayOfType(t, store.DisplayScreen)
 	if err := db.SetDisplayTheme(h.ID, d.ID, "auto", -30, 45); err != nil {
 		t.Fatal(err)
 	}
@@ -293,7 +294,7 @@ func TestDisplayThemeAndOffsetsAreSavedPerDisplay(t *testing.T) {
 }
 
 func TestDisplayThemeRefusesUnknownThemesAndOffsetsBeyond180(t *testing.T) {
-	db, h, d := pairedDisplay(t, store.DisplayScreen)
+	db, h, d := pairedDisplayOfType(t, store.DisplayScreen)
 	for _, c := range []struct {
 		theme     string
 		rise, set int
@@ -304,5 +305,99 @@ func TestDisplayThemeRefusesUnknownThemesAndOffsetsBeyond180(t *testing.T) {
 	}
 	if err := db.SetDisplayTheme(h.ID, "no-such-display", "dark", 0, 0); !errors.Is(err, store.ErrNotFound) {
 		t.Errorf("unknown display: err = %v, want ErrNotFound", err)
+	}
+}
+
+func pairedDisplay(t *testing.T) (*store.DB, store.Household, store.Display) {
+	t.Helper()
+	db, _ := openSealed(t)
+	h, err := db.CreateHousehold(store.Household{Name: "Family", HomeName: "Pasing", Region: "DE-BY"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	w, _ := db.OpenPairing(h.ID, "hash-q", pairT0)
+	d, err := db.ConfirmPairing(h.ID, w.Code, store.Display{Name: "Hallway", Type: store.DisplayEInkBW}, pairT0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return db, h, d
+}
+
+// ADR 0015: quiet mode is a per-display setting, off by default, suggesting 22:00 to 06:00.
+func TestDisplayQuietModeIsOffByDefaultAndSavedPerDisplay(t *testing.T) {
+	db, h, d := pairedDisplay(t)
+	if d.Quiet.Enabled || d.Quiet.FromText() != "22:00" || d.Quiet.ToText() != "06:00" {
+		t.Fatalf("default = %+v", d.Quiet)
+	}
+	s, _ := quiet.Parse(true, "21:30", "06:45")
+	if err := db.SetDisplayQuiet(h.ID, d.ID, s); err != nil {
+		t.Fatal(err)
+	}
+	list, _ := db.Displays(h.ID)
+	if got := list[0].Quiet; got != s {
+		t.Fatalf("quiet = %+v, want %+v", got, s)
+	}
+	if err := db.SetDisplayQuiet(h.ID, "nope", s); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("unknown display = %v", err)
+	}
+}
+
+func TestDisplayKioskAddressIsStoredAndTheKeySealed(t *testing.T) {
+	db, h, d := pairedDisplay(t)
+	key := "secret-api-key"
+	if err := db.SetDisplayKiosk(h.ID, d.ID, "http://192.168.1.20:8080", &key); err != nil {
+		t.Fatal(err)
+	}
+	list, _ := db.Displays(h.ID)
+	if list[0].KioskURL != "http://192.168.1.20:8080" || !list[0].KioskKeySet {
+		t.Fatalf("display = %+v", list[0])
+	}
+	got, err := db.DisplayKioskKey(h.ID, d.ID)
+	if err != nil || got != key {
+		t.Fatalf("key = %q, %v", got, err)
+	}
+	var raw string
+	if err := db.SQL().QueryRow(`SELECT kiosk_key FROM displays WHERE id = ?`, d.ID).Scan(&raw); err != nil || raw == "" || strings.Contains(raw, key) {
+		t.Fatalf("stored key = %q, %v: must be sealed", raw, err)
+	}
+	// Without a new key the old one stays; an empty key clears it.
+	if err := db.SetDisplayKiosk(h.ID, d.ID, "http://192.168.1.21:8080", nil); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := db.DisplayKioskKey(h.ID, d.ID); got != key {
+		t.Fatalf("key after keeping = %q", got)
+	}
+	empty := ""
+	_ = db.SetDisplayKiosk(h.ID, d.ID, "http://192.168.1.21:8080", &empty)
+	if got, _ := db.DisplayKioskKey(h.ID, d.ID); got != "" {
+		t.Fatalf("key after clearing = %q", got)
+	}
+	// An empty address removes the kiosk, key included.
+	_ = db.SetDisplayKiosk(h.ID, d.ID, "http://x:1", &key)
+	_ = db.SetDisplayKiosk(h.ID, d.ID, "", nil)
+	list, _ = db.Displays(h.ID)
+	if list[0].KioskURL != "" || list[0].KioskKeySet {
+		t.Fatalf("kiosk not removed: %+v", list[0])
+	}
+}
+
+func TestConfirmingNamesTheWrongField(t *testing.T) {
+	db, h := householdForDisplays(t)
+	d, _ := db.OpenPairing(h.ID, "hash-1", pairT0)
+	for _, c := range []struct {
+		in    store.Display
+		field string
+	}{
+		{store.Display{Name: " ", Type: store.DisplayScreen}, "name"},
+		{store.Display{Name: strings.Repeat("x", 81), Type: store.DisplayScreen}, "name"},
+		{store.Display{Name: "Hallway", Room: strings.Repeat("x", 81), Type: store.DisplayScreen}, "room"},
+		{store.Display{Name: "Hallway"}, "type"},
+		{store.Display{Name: "Hallway", Type: "hologram"}, "type"},
+	} {
+		_, err := db.ConfirmPairing(h.ID, d.Code, c.in, pairT0)
+		var fe *store.FieldError
+		if !errors.As(err, &fe) || fe.Field != c.field || !errors.Is(err, store.ErrInvalid) {
+			t.Errorf("ConfirmPairing(%+v) = %v, want a FieldError for %q", c.in, err, c.field)
+		}
 	}
 }

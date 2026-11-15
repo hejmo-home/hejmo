@@ -174,7 +174,7 @@ func TestWebPagesCarryTodaysSunTimesForAutomatic(t *testing.T) {
 	f.now = time.Date(2026, 6, 21, 12, 0, 0, 0, berlinTZ)
 	tag := htmlThemeRe.FindString(f.get("/settings").body)
 	rise, set := midsummer().Rise.Unix(), midsummer().Set.Unix()
-	if !strings.Contains(tag, `data-sun-rise="`+itoa(rise)+`"`) || !strings.Contains(tag, `data-sun-set="`+itoa(set)+`"`) {
+	if !strings.Contains(tag, `data-sun-rise="`+itoa64(rise)+`"`) || !strings.Contains(tag, `data-sun-set="`+itoa64(set)+`"`) {
 		t.Fatalf("html tag = %s, want sun times %d / %d", tag, rise, set)
 	}
 }
@@ -189,4 +189,4 @@ func TestSignedOutPagesCarryNoSunTimes(t *testing.T) {
 	}
 }
 
-func itoa(n int64) string { return strconv.FormatInt(n, 10) }
+func itoa64(n int64) string { return strconv.FormatInt(n, 10) }

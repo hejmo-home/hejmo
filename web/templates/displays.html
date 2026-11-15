@@ -1,6 +1,7 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "displays.title") "Frame" .Frame)}}
   <h1>{{t "displays.title"}}</h1>
   {{template "syncNotice" .}}
+  {{template "error" .}}
   <p class="lead">{{t "displays.intro"}}</p>
 
   <section aria-labelledby="paired">
@@ -13,7 +14,7 @@
         <strong>{{.Name}}</strong>
         <span class="hint">{{if .Room}}{{t "displays.room"}} {{.Room}} · {{end}}{{t (printf "displays.type.%s" .Type)}} · {{t "displays.paired_at"}} {{.Paired}} · {{if .LastSeen}}{{t "displays.last_seen"}} {{.LastSeen}}{{else}}{{t "displays.never"}}{{end}}</span>
         <form method="post" action="/displays/{{.ID}}/settings" class="row">
-          <label><input type="checkbox" name="show_tomorrow"{{if .ShowTomorrow}} checked{{end}}> {{t "displays.show_tomorrow"}}</label>
+          {{template "switch" (dict "Name" "show_tomorrow" "Label" (t "displays.show_tomorrow") "OnText" (t "displays.show_tomorrow.on") "OffText" (t "displays.show_tomorrow.off") "Checked" .ShowTomorrow)}}
           {{$th := .Theme}}
           <label>{{t "displays.theme"}}
             <select name="theme">
@@ -23,31 +24,36 @@
             <input type="number" name="sunrise_offset" min="-180" max="180" step="1" value="{{.SunriseOffset}}"></label>
           <label>{{t "displays.sunset_offset"}}
             <input type="number" name="sunset_offset" min="-180" max="180" step="1" value="{{.SunsetOffset}}"></label>
+          <label><input type="checkbox" name="quiet"{{if .QuietOn}} checked{{end}}> {{t "displays.quiet"}}</label>
+          <label>{{t "displays.quiet_from"}} <input type="time" name="quiet_from" value="{{.QuietFrom}}"></label>
+          <label>{{t "displays.quiet_to"}} <input type="time" name="quiet_to" value="{{.QuietTo}}"></label>
+          <label>{{t "displays.kiosk_url"}} <input type="url" name="kiosk_url" value="{{.KioskURL}}"></label>
+          <label>{{t "displays.kiosk_key"}} <input type="password" name="kiosk_key" autocomplete="off"></label>
+          {{if .KioskKeySet}}<span class="hint">{{t "displays.kiosk_key_set"}}</span>{{end}}
+          <span class="hint">{{t "displays.kiosk_hint"}}</span>
           <button class="button secondary" type="submit">{{t "displays.save"}}</button>
         </form>
-        <span class="row"><form method="post" action="/displays/{{.ID}}/unpair"><button class="button secondary" type="submit">{{t "displays.unpair"}}</button></form></span>
+        {{template "dangerOpen" (dict "Label" (t "displays.unpair"))}}
+          <p>{{t "displays.unpair.explain"}}</p>
+          <form method="post" action="/displays/{{.ID}}/unpair"><button class="button danger" type="submit">{{t "displays.unpair.confirm"}}</button></form>
+        {{template "dangerClose"}}
       </li>
       {{end}}
     </ul>
-    {{else}}<p class="lead">{{t "displays.none"}}</p>{{end}}
+    {{else}}{{template "empty" (dict "Text" (t "displays.none") "Href" "#new" "Action" (t "displays.none.action"))}}{{end}}
   </section>
 
   <section aria-labelledby="new">
     <h2 id="new">{{t "displays.new"}}</h2>
-    {{template "error" .}}
     <form method="post" action="/displays" class="steps">
       <fieldset>
-        <label>{{t "displays.code"}}
-          <input name="code" required inputmode="numeric" pattern="[0-9]{6}" maxlength="6" autocomplete="off" value="{{with .Form}}{{.Code}}{{end}}"></label>
-        <label>{{t "displays.name"}}
-          <input name="name" required maxlength="80" value="{{with .Form}}{{.Name}}{{end}}"></label>
-        <label>{{t "displays.room_label"}}
-          <input name="room" maxlength="80" value="{{with .Form}}{{.Room}}{{end}}"></label>
-        <label>{{t "displays.type"}}
-          <select name="type">
-            {{$sel := ""}}{{with .Form}}{{$sel = .Type}}{{end}}
-            {{range .Types}}<option value="{{.}}"{{if eq (printf "%s" .) $sel}} selected{{end}}>{{t (printf "displays.type.%s" .)}}</option>{{end}}
-          </select></label>
+        {{template "field" (dict "Root" . "Name" "code" "Label" (t "displays.code") "Value" (index .Form "Code") "Required" true "Inputmode" "numeric" "Pattern" "[0-9]{6}" "Max" 6 "Autocomplete" "off")}}
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "displays.name") "Value" (index .Form "Name") "Required" true "Max" 80)}}
+        {{template "field" (dict "Root" . "Name" "room" "Label" (t "displays.room_label") "Value" (index .Form "Room") "Max" 80)}}
+        {{$sel := index .Form "Type"}}
+        {{template "optionsOpen" (dict "Class" "choice" "Legend" (t "displays.type"))}}
+          {{range .Types}}{{template "option" (dict "Name" "type" "Value" (printf "%s" .) "Label" (t (printf "displays.type.%s" .)) "Hint" (t (printf "displays.type.%s.hint" .)) "Checked" (eq (printf "%s" .) $sel))}}{{end}}
+        {{template "optionsClose" (dict "Root" . "Name" "type")}}
       </fieldset>
       <button class="button" type="submit">{{t "displays.pair"}}</button>
     </form>

@@ -217,6 +217,25 @@ func TestBlackAndWhiteMarkersUseDistinctShapes(t *testing.T) {
 	}
 }
 
+// 5.4: card markers exist in the markup of every theme, but only bw shows
+// them (colour cards carry the person colour).
+func TestEventCardMarkersAreHiddenInColourAndShownInBlackAndWhite(t *testing.T) {
+	css := stylesheet(t)
+	display := func(sel string) string {
+		m := regexp.MustCompile(`display:\s*([a-z-]+)`).FindStringSubmatch(ruleFor(t, css, sel))
+		if m == nil {
+			t.Fatalf("%s has no display declaration", sel)
+		}
+		return m[1]
+	}
+	if got := display(".event .markers"); got != "none" {
+		t.Errorf(".event .markers display = %q, want none", got)
+	}
+	if got := display(`[data-theme="bw"] .event .markers`); got == "none" {
+		t.Errorf("bw .event .markers is hidden")
+	}
+}
+
 // Every colour in DESIGN.md equals the custom property of the same role in
 // that theme's CSS block, and every colour custom property has a token.
 func TestDesignColoursAndStylesheetAgreeBothWays(t *testing.T) {
@@ -380,6 +399,21 @@ func TestFrameNavigationTargetsAreTouchSized(t *testing.T) {
 	}
 }
 
+// 5.6: touch targets of the personal view are at least 44 px: the person link in
+// the family view, the way back and the large checkbox.
+func TestPersonalViewTargetsAreTouchSized(t *testing.T) {
+	css := stylesheet(t)
+	for _, sel := range []string{".fv .person-link", ".pv-back", ".big-check"} {
+		rule := ruleFor(t, css, sel)
+		if !strings.Contains(rule, "min-height: var(--touch-target)") {
+			t.Errorf("%s lacks min-height: var(--touch-target): %s", sel, rule)
+		}
+	}
+	if rule := ruleFor(t, css, ".big-check"); !strings.Contains(rule, "min-width: var(--touch-target)") {
+		t.Errorf(".big-check lacks min-width: var(--touch-target): %s", rule)
+	}
+}
+
 // 5.11: "follow the device" (ADR 0015) is the default: without data-theme the
 // dark palette applies when the device asks for it, with the same values.
 func TestDarkFollowsTheDeviceByDefaultWithTheSameValues(t *testing.T) {
@@ -439,17 +473,16 @@ func TestFamilyViewLayoutRulesFollowTheSpec(t *testing.T) {
 		return m[1]
 	}
 	for sel, wants := range map[string][]string{
-		".family-page":              {"height: calc(100vh - 2 * var(--margin))"},
-		".fv":                       {"display: flex", "flex-direction: column", "gap: var(--gap-section)"},
-		".fv-header":                {"display: flex", "justify-content: space-between", "flex: none"},
-		".fv-grid":                  {"display: grid", "grid-template-columns: repeat(var(--cols), minmax(0, 1fr))", "gap: var(--gap)", "flex: 1"},
-		".fv .events":               {"gap: var(--gap-cards)", "overflow-y: auto"},
-		".fv .events .tomorrow":     {"opacity: 0.6"}, // ADR 0016: the tomorrow block is faded
-		".strip.tomorrow":           {"opacity: 0.6"},
-		".fv-footer":                {"display: flex", "gap: var(--gap)", "flex: none"},
-		".fv-footer .tile":          {"flex: 1", "padding: var(--pad-column)"},
-		".strip-item":               {"background: var(--surface)", "border-radius: var(--radius-card)", "padding: var(--pad-card)"},
-		".fv[data-scroll] .fv-grid": {"grid-auto-columns: 200px", "overflow-x: auto"},
+		".family-page":          {"height: calc(100vh - 2 * var(--margin))"},
+		".fv":                   {"display: flex", "flex-direction: column", "gap: var(--gap-section)"},
+		".fv-header":            {"display: flex", "justify-content: space-between", "flex: none"},
+		".fv-grid":              {"display: grid", "grid-auto-flow: column", "gap: var(--gap)", "flex: 1"},
+		".fv .events":           {"gap: var(--gap-cards)", "overflow-y: auto"},
+		".fv .events .tomorrow": {"opacity: 0.6"}, // ADR 0016: the tomorrow block is faded
+		".strip.tomorrow":       {"opacity: 0.6"},
+		".fv-footer":            {"display: flex", "gap: var(--gap)", "flex: none"},
+		".fv-footer .tile":      {"flex: 1", "padding: var(--pad-column)"},
+		".strip-item":           {"background: var(--surface)", "border-radius: var(--radius-card)", "padding: var(--pad-card)"},
 	} {
 		body := rule(sel)
 		for _, w := range wants {

@@ -36,16 +36,43 @@ func (s *server) endSession(w http.ResponseWriter, r *http.Request) {
 	http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode})
 }
 
-// currentPerson resolves the session cookie to a household member.
+// currentPerson resolves the session cookie to a household member. A person
+// whose one-time codes were reset has a session only to set up new ones
+// (pendingPerson); nothing else is reachable until that is confirmed. A paired
+// phone's device session is exempt.
 func (s *server) currentPerson(r *http.Request) (store.Person, bool) {
+	p, ok := s.pendingPerson(r)
+	if !ok {
+		return store.Person{}, false
+	}
+	if s.phoneSession(r) {
+		return p, true
+	}
+	if acc, err := s.db.AccountByPerson(p.ID); err == nil && !acc.TOTPConfirmed {
+		return store.Person{}, false
+	}
+	return p, true
+}
+
+// phoneSession reports whether the request carries a paired phone's device session.
+func (s *server) phoneSession(r *http.Request) bool {
+	c, err := r.Cookie(sessionCookie)
+	return err == nil && s.db.IsPhoneSession(auth.HashToken(c.Value))
+}
+
+// pendingPerson resolves the session cookie even when the person still has to
+// confirm their one-time codes.
+func (s *server) pendingPerson(r *http.Request) (store.Person, bool) {
 	c, err := r.Cookie(sessionCookie)
 	if err != nil || c.Value == "" {
 		return store.Person{}, false
 	}
-	personID, err := s.db.SessionPerson(auth.HashToken(c.Value), s.now())
+	hash := auth.HashToken(c.Value)
+	personID, err := s.db.SessionPerson(hash, s.now())
 	if err != nil {
 		return store.Person{}, false
 	}
+	s.db.TouchPhoneSession(hash, s.now())
 	return s.member(personID)
 }
 

@@ -2,30 +2,75 @@
 
 **Your family's day in one place, under your own control.**
 
-Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. It runs locally on a small box such as a Raspberry Pi and shows the family's day on calm, low-power E-Ink displays on the wall. Calendar, tasks, lists, meal plan and shopping live together; all data stays at home.
+Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. A small box at home, such as a Raspberry Pi, collects your family's calendars, tasks, lists and meal plan and shows today on a wall display, tablet or phone: one column per person, so everyone sees at a glance what is on, what is done and what comes tomorrow. All data stays at home.
 
-- No subscription, no telemetry, no mandatory cloud
-- Open standards (CalDAV, iCalendar), connects to Google and iCloud
-- Open REST API; open to your own AI assistant, without built-in AI
-- Licensed under AGPL-3.0, developed in Europe
+![The family view on a wall display: date and time, all-day events, one column per person with today's events and task progress, the dinner plan and tomorrow's waste collection](docs/images/family-light.png)
 
-> **Status:** early development (pre-release 0.x). Not ready for everyday use yet.
+<sub>The family view (start screen of every display), landscape. Design preview with sample data.</sub>
 
-## Documentation
+## What it does
 
-- [Specification](docs/spec.md): features, data model, acceptance criteria, design
-- [Build handover](docs/handover.md): original work plan and guardrails
-- [Architecture decision records](docs/adr/): decisions that refine or override the specification
+- **Family view on the wall:** one column per person with today's events, a progress bar for today's tasks, all-day events and holidays on top, and tiles for today's meals and tomorrow's waste collection. Updates live, landscape or portrait.
+- **Calm on E-Ink:** every screen also works in black and white; people are told apart by marker shapes instead of colours.
+- **Your calendars, synced:** iCloud and any CalDAV server (two-way), Google Calendar, ICS subscriptions such as school or waste collection calendars. Your phones' calendar apps can subscribe to the box in turn.
+- **Web interface and phones:** week calendar, tasks, lists and meal plan in the browser; a phone is paired by QR code. Children get their own simple view.
+- **Private by design:** no subscription, no telemetry, no mandatory cloud. HTTPS with the box's own certificate authority or a free public name, sign-in with password and one-time codes.
+- **Open:** open standards (CalDAV, iCalendar), an open REST API, AGPL-3.0, developed in Europe. Open to your own AI assistant, without built-in AI.
 
-## Roadmap
+<table>
+<tr>
+<td width="50%"><img src="docs/images/family-bw.png" alt="The same family view in black and white for E-Ink displays, with filled and empty circles and squares as person markers"></td>
+<td width="50%"><img src="docs/images/web-calendar.png" alt="The week calendar in the web interface with multi-day events and events coloured by person"></td>
+</tr>
+<tr>
+<td><sub>Black and white for E-Ink displays</sub></td>
+<td><sub>Week calendar in the web interface</sub></td>
+</tr>
+</table>
+
+> **Status:** early development. Not ready for everyday use yet; the first public version will be **0.1**.
+
+## Feature roadmap
+
+✅ done · 🚧 in progress · ⏳ planned
+
+### 0.1: first public version
+
+| Area | Features | Status |
+|---|---|---|
+| Box and setup | Docker image for x86_64 and arm64, setup wizard, HTTPS (own certificate authority or a free deSEC name with Let's Encrypt) | ✅ |
+| People and sign-in | Parents and children, roles, password with one-time codes, display PIN, REST API with scoped tokens | ✅ |
+| | Recovery codes for one-time codes, people page | 🚧 |
+| | Passkeys | ⏳ |
+| Calendar | Series with "this / this and following / all", multi-day events, public holidays for Germany, Austria and Switzerland, search, subgroups | ✅ |
+| Sync | ICS subscriptions, iCloud and CalDAV (read), box as CalDAV server for your calendar apps, iOS profile | ✅ |
+| | Writing back to iCloud and CalDAV, Google Calendar | 🚧 |
+| Displays | Pairing by QR code, family view in colour and black and white, personal view, weather and time, live updates | ✅ |
+| | Portrait layout, quiet mode at night, themes by sunrise and sunset, home location | 🚧 |
+| Web interface and phones | Frame, shared form patterns, phone web app, children's phones | ✅ |
+| | Week calendar with editing, choosing calendars, settings hub | 🚧 |
+| Everyday | Simple tasks | ✅ |
+| | Lists, shared meal plan, meal tile, tasks on the display, waste collection reminder | ⏳ |
+| For children | Stars with a star log | 🚧 |
+| | Routines with ready-made templates, subtasks | ⏳ |
+| Connect | Tasks as VTODO lists in your calendar apps, MCP server for your own AI assistant (off by default) | ⏳ |
+| Operations | Release pipeline with signed images, install script and guide, auto-update at night with rollback, security checks, resource measurement for the Raspberry Pi | ✅ |
+
+### Later
 
 | Release | Content |
 |---|---|
-| **0.x (V1.0, family core)** | Box and setup wizard, people and roles, calendar with series and DACH holidays, sync (ICS, iCloud, Google), one E-Ink display with the family view, lists, meal plan, simple tasks, waste collection calendar |
-| **1.0 (V1.x)** | Stars and routines, subtasks, VTODO export, box as CalDAV/CardDAV server, Outlook, passkeys, screensaver, auto-update with rollback, MCP server, install guide |
-| **V2 / V3** | School, childcare and logistics; shared-custody model and multiple households (see the specification) |
+| **0.2 and later** | Outlook sync, photo screensaver, brightness control, choosing people per display |
+| **V2 / V3** | Rewards, streaks and badges for stars; leave-the-house reminder per person; box as CardDAV server; school, childcare and logistics; shared-custody model and multiple households (see the specification) |
 
-See [ADR 0003](docs/adr/0003-v1-scope-and-work-packages.md) for the work packages.
+The plan in detail: [ADR 0018](docs/adr/0018-path-to-0-1.md) (path to 0.1) and the [specification](docs/spec.md).
+
+## Documentation
+
+- Install guide: [English](docs/install.md), [Deutsch](docs/install.de.md) (Raspberry Pi OS: one command)
+- [Specification](docs/spec.md): features, data model, acceptance criteria, design
+- [Architecture decision records](docs/adr/): decisions that refine or override the specification
+- [Design system](DESIGN.md) and [glossary](GLOSSARY.md)
 
 ## Development
 
@@ -43,7 +88,15 @@ Health check: `GET /healthz` returns `{"status":"ok"}`. Data lives in `HEJMO_DAT
 
 Calendar passwords (iCloud app-specific passwords and other CalDAV logins) are stored encrypted with AES-256-GCM. The key is generated on first start in `/data/secret.key` (mode 0600); `HEJMO_SECRET_KEY_FILE` points to another file, such as a Docker secret. This protects a leaked database file or backup on its own. It does **not** protect a leaked data volume, because the key sits next to the database unless you move it. Keep the key with your backup if you want to restore connections; without it, connect the calendars again.
 
-On first start the box opens the **setup wizard**: HTTPS, home location (town and state/canton), first parent account with password and one-time codes (TOTP from any authenticator app, for example Aegis or FreeOTP), and the parent PIN for displays.
+On first start the box opens the **setup wizard**: HTTPS, home location (town and state/canton), first parent account with password and one-time codes (TOTP from any authenticator app, for example Aegis or FreeOTP), and the parent PIN for displays. The box then shows 10 recovery codes, each valid once in place of a one-time code.
+
+**Lost your one-time codes?** Use a recovery code, or ask another parent to reset them under *One-time codes* in the settings. As the last way back, run this on the box; it resets the account's one-time codes and signs it out of browsers, and the next sign-in sets up new ones:
+
+```bash
+docker compose exec hejmo /hejmo reset-otp <username>
+```
+
+The reset is logged as `one-time codes reset` in the box's log (`docker compose logs hejmo`).
 
 ## API
 

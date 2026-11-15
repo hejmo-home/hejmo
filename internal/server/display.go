@@ -96,9 +96,9 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		if s.now().Sub(d.LastSeen) > time.Minute {
 			_ = s.db.TouchDisplay(hash, s.now())
 		}
-		view, version, err := s.renderFamily(h, s.langOf(r), d.ShowTomorrow)
+		view, version, err := s.renderDisplayContent(h, d, s.langOf(r))
 		if err != nil {
-			s.fail(w, "family view", err)
+			s.fail(w, "display view", err)
 			return
 		}
 		s.render(w, r, http.StatusOK, "display_family.html", map[string]any{
@@ -146,36 +146,48 @@ var markerShapes = []string{"circle-filled", "circle-empty", "square-filled", "s
 
 // familyView builds today's family view of the household.
 func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (familyview.View, error) {
-	loc := time.UTC
-	if l, err := time.LoadLocation(h.Timezone); err == nil {
-		loc = l
-	}
-	now := s.now().In(loc)
-	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-	d2 := d0.AddDate(0, 0, 2)
-	people, err := s.db.People(h.ID)
+	data, err := s.displayData(h, lang, 2)
 	if err != nil {
 		return familyview.View{}, err
+	}
+	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people,
+		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID),
+		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
+}
+
+// displayData is what the views of a display are built from: the household's
+// people with their markers and groups, the calendars' audiences and the
+// occurrences of the next days starting today.
+type displayData struct {
+	now         time.Time // in the household's time zone
+	people      []familyview.Person
+	calendars   map[string]calendar.Audience
+	occurrences []calendar.Occurrence
+}
+
+func (s *server) displayData(h store.Household, lang string, days int) (displayData, error) {
+	now := s.householdNow(h)
+	loc := now.Location()
+	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
+	end := d0.AddDate(0, 0, days)
+	out := displayData{now: now, calendars: map[string]calendar.Audience{}}
+	people, err := s.db.People(h.ID)
+	if err != nil {
+		return out, err
 	}
 	cals, err := s.db.Calendars(h.ID)
 	if err != nil {
-		return familyview.View{}, err
+		return out, err
 	}
-	events, err := s.db.EventsBetween(h.ID, d0, d2)
-	if err != nil {
-		return familyview.View{}, err
+	if out.occurrences, err = s.occurrences(h, lang, d0, end); err != nil {
+		return out, err
 	}
-	occs, err := calendar.Expand(events, d0, d2)
-	if err != nil {
-		return familyview.View{}, err
-	}
-	in := familyview.Input{Now: now, Lang: lang, Region: h.Region, Calendars: map[string]calendar.Audience{}, Occurrences: occs, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID)}
 	for _, c := range cals {
-		in.Calendars[c.ID] = c.Audience
+		out.calendars[c.ID] = c.Audience
 	}
 	allGroups, err := s.db.Groups(h.ID) // one query for every person's memberships
 	if err != nil {
-		return familyview.View{}, err
+		return out, err
 	}
 	groupsOf := map[string][]string{}
 	for _, g := range allGroups {
@@ -184,19 +196,51 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 		}
 	}
 	for i, p := range people {
-		groups := groupsOf[p.ID]
 		shape := p.Shape
 		if shape == "" {
 			shape = markerShapes[i%len(markerShapes)]
 		}
-		in.People = append(in.People, familyview.Person{ID: p.ID, Name: p.Name, Slot: i%len(markerShapes) + 1, Shape: shape, Groups: groups})
+		out.people = append(out.people, familyview.Person{ID: p.ID, Name: p.Name, Slot: i%len(markerShapes) + 1, Shape: shape, Groups: groupsOf[p.ID]})
 	}
-	for i := range in.Occurrences {
-		if strings.TrimSpace(in.Occurrences[i].Title) == "" {
-			in.Occurrences[i].Title = s.i18n.T(lang, "event.untitled")
+	return out, nil
+}
+
+// householdNow is the current time in the household's time zone.
+func (s *server) householdNow(h store.Household) time.Time {
+	loc := time.UTC
+	if l, err := time.LoadLocation(h.Timezone); err == nil {
+		loc = l
+	}
+	return s.now().In(loc)
+}
+
+// occurrences returns the household's occurrences in [from, to), with a
+// placeholder for untitled events.
+func (s *server) occurrences(h store.Household, lang string, from, to time.Time) ([]calendar.Occurrence, error) {
+	events, err := s.db.EventsBetween(h.ID, from, to)
+	if err != nil {
+		return nil, err
+	}
+	occs, err := calendar.Expand(events, from, to)
+	if err != nil {
+		return nil, err
+	}
+	for i := range occs {
+		if strings.TrimSpace(occs[i].Title) == "" {
+			occs[i].Title = s.i18n.T(lang, "event.untitled")
 		}
 	}
-	return familyview.Build(in), nil
+	return occs, nil
+}
+
+// homeWeather is the last reading for the home, nil when there is none (or
+// only a stale one): the chip then hides. A display never fetches it itself.
+func (s *server) homeWeather(h store.Household) *familyview.Weather {
+	r, ok := s.weather.Latest(h.Latitude, h.Longitude)
+	if !ok {
+		return nil
+	}
+	return &familyview.Weather{TempC: r.TempC, Icon: string(r.Icon)}
 }
 
 // handleDisplayState tells a display whether it is still what its page says:

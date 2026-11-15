@@ -24,8 +24,11 @@ var apiRoutes = []APIRoute{
 	{"GET", "/people", auth.Perm("people", auth.Read), (*server).apiListPeople},
 	{"POST", "/people", auth.Perm("people", auth.Write), (*server).apiCreatePerson},
 	{"GET", "/people/{id}", auth.Perm("people", auth.Read), (*server).apiGetPerson},
+	{"POST", "/me/recovery-codes", auth.Perm("people", auth.Write), (*server).apiNewRecoveryCodes},
+	{"POST", "/people/{id}/reset-otp", auth.Perm("people", auth.Write), (*server).apiResetOTP},
 	{"GET", "/tokens", auth.Perm("tokens", auth.Read), (*server).apiListTokens},
 	{"POST", "/tokens", auth.Perm("tokens", auth.Write), (*server).apiCreateToken},
+	{"POST", "/caldav-profile", auth.Perm("tokens", auth.Write), (*server).apiIOSProfile},
 	{"DELETE", "/tokens/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokeToken},
 	{"GET", "/groups", auth.Perm("people", auth.Read), (*server).apiListGroups},
 	{"POST", "/groups", auth.Perm("people", auth.Write), (*server).apiCreateGroup},
@@ -43,6 +46,8 @@ var apiRoutes = []APIRoute{
 	{"GET", "/https", auth.Perm("settings", auth.Read), (*server).apiHTTPS},
 	{"GET", "/settings", auth.Perm("settings", auth.Read), (*server).apiGetSettings},
 	{"PATCH", "/settings", auth.Perm("settings", auth.Write), (*server).apiUpdateSettings},
+	{"GET", "/update", auth.Perm("settings", auth.Read), (*server).apiGetUpdate},
+	{"POST", "/update/dismiss", auth.Perm("settings", auth.Write), (*server).apiDismissUpdate},
 	{"GET", "/events", auth.Perm("events", auth.Read), (*server).apiListEvents},
 	{"POST", "/events", auth.Perm("events", auth.Write), (*server).apiCreateEvent},
 	{"PATCH", "/events/{id}", auth.Perm("events", auth.Write), (*server).apiUpdateEvent},
@@ -57,6 +62,11 @@ var apiRoutes = []APIRoute{
 	{"POST", "/displays", auth.Perm("displays", auth.Write), (*server).apiPairDisplay},
 	{"PATCH", "/displays/{id}", auth.Perm("displays", auth.Write), (*server).apiUpdateDisplay},
 	{"DELETE", "/displays/{id}", auth.Perm("displays", auth.Delete), (*server).apiRevokeDisplay},
+	{"GET", "/phones", auth.Perm("tokens", auth.Read), (*server).apiListPhones},
+	{"DELETE", "/phones/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokePhone},
+	{"GET", "/phones/pairings", auth.Perm("tokens", auth.Read), (*server).apiListPhonePairings},
+	{"POST", "/phones/pairings", auth.Perm("tokens", auth.Write), (*server).apiCreatePhonePairing},
+	{"POST", "/phones/pairings/{id}/confirm", auth.Perm("tokens", auth.Write), (*server).apiConfirmPhonePairing},
 }
 
 // APIRoutes lists the served endpoints (used by the contract test).

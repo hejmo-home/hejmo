@@ -154,6 +154,10 @@ _Avoid_: dark mode (alone), skin, colour scheme
 The scheduled night state of a display: a calm night page about the coming morning with the front light off, or a black page on a normal screen.
 _Avoid_: sleep mode (in prose), night mode, standby
 
+**Night page**:
+What an E-Ink display shows in quiet mode: the date of the coming morning, the household's first timed event of that day and its waste collection. A normal screen shows a black page instead.
+_Avoid_: sleep screen, standby page
+
 **Phone**:
 A smartphone paired with the box through a QR code that runs the web interface as an app for one person, adult or child. A phone's calendar app syncing over CalDAV is a CalDAV client, not a phone.
 _Avoid_: mobile, client (alone), handset
@@ -177,8 +181,28 @@ The household's meals per day and mealtime (breakfast, lunch, dinner, snack).
 _Avoid_: menu, food plan
 
 **Task**:
-Something to be done once or repeatedly, ticked off when done.
+Something to be done once or repeatedly, ticked off when done; may belong to a routine, carry a star value and be split into subtasks.
 _Avoid_: chore, todo, job
+
+**Routine**:
+The ordered sequence of one person's tasks for a part of the day, such as Mia's morning.
+_Avoid_: checklist, schedule, habit
+
+**Routine template**:
+A reusable routine without a person that a parent copies into a routine for someone.
+_Avoid_: preset, blueprint
+
+**Subtask**:
+One of the items a task is split into, each ticked off on its own; the task is done when all its subtasks are done.
+_Avoid_: step (alone), child task
+
+**Star**:
+A unit a person earns by ticking off a task worth stars, or that a parent books by hand; every change is recorded in the person's star log.
+_Avoid_: point, coin, reward (a reward is what stars are redeemed for)
+
+**Star log**:
+The record of every star booking of a person, with task or note, time and who booked it.
+_Avoid_: points log, history
 
 **Waste collection calendar**:
 A read-only calendar marked as listing the household's waste collection days.

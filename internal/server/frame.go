@@ -23,7 +23,8 @@ var navItems = []navItem{
 	{"/calendars", "nav.connections", auth.Perm("calendars", auth.Write)},
 	{"/caldav", "nav.caldav", auth.Perm("tokens", auth.Read)},
 	{"/displays", "nav.displays", auth.Perm("displays", auth.Write)},
-	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Write)},
+	{"/phones", "nav.phones", auth.Perm("tokens", auth.Write)},
+	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Read)},
 	{"/settings", "nav.settings", auth.Perm("settings", auth.Write)},
 }
 
@@ -40,6 +41,8 @@ type frame struct {
 	// seconds, 0 when unknown); the page script uses them for the browser
 	// theme "automatic" (ADR 0015).
 	SunRise, SunSet int64
+	// Success is the success line after a saved change, already translated.
+	Success string
 }
 
 // frameFor builds the frame for the person behind the request, or a bare

@@ -10,9 +10,8 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-// childSession returns a client with a session of the child Mia. Children
-// cannot sign in; their device sessions come with ticket 5.x, so the test
-// creates the session directly.
+// childSession returns a client with a session of the child Mia, created
+// directly. Tests of the pairing flow itself use pairedPhone.
 func childSession(t *testing.T, b *box) *box {
 	t.Helper()
 	h, err := b.db.HomeHousehold()

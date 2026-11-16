@@ -1,4 +1,5 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "recovery.title") "Frame" .Frame "Wizard" .Wizard)}}
+  {{if .Stale}}<p class="notice top" role="status">{{rich (t "recovery.stale")}}</p>{{end}}
   {{if .Reloaded}}<p class="notice top" role="status">{{rich (t "recovery.reloaded")}}</p>{{end}}
   <h1>{{t "recovery.title"}}</h1>
   <p class="lead">{{t "recovery.lead"}}</p>

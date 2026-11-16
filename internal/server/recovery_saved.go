@@ -47,6 +47,9 @@ func (s *server) isCurrentSet(personID string, codes []string) bool {
 	if err != nil || len(codes) == 0 || len(stored) != len(codes) {
 		return false
 	}
+	// Not rate-limited on purpose: the route needs a session, the work is
+	// capped at 10 checks, and a limiter would lock out a person who retries
+	// after a failed upload or a flaky connection.
 	ok := make([]bool, len(codes))
 	var wg sync.WaitGroup
 	gate := make(chan struct{}, 4) // Argon2id is slow on purpose, as when the codes are made
@@ -79,7 +82,7 @@ func (s *server) handleRecoveryCodesSaved(w http.ResponseWriter, r *http.Request
 			s.fail(w, "recovery codes", err)
 			return
 		}
-		s.showRecoveryCodes(w, r, p.person.ID, recoveryPage{Flow: flow, Codes: fresh, Reloaded: true, Refused: !ticked})
+		s.showRecoveryCodes(w, r, p.person.ID, recoveryPage{Flow: flow, Codes: fresh, Stale: true, Refused: !ticked})
 		return
 	}
 	if !ticked {

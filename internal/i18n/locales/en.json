@@ -693,6 +693,7 @@
   "recovery.saved.sub": "How is up to you: PDF, printout, photo or password manager.",
   "recovery.saved.error": "Tick the box once you have saved the codes. Without them you cannot get back into your account if your phone is lost.",
   "recovery.gate_hint": "You can continue once you have ticked the box.",
+  "recovery.stale": "These codes are no longer valid, here is a new set. The ones from before no longer work, not even in a PDF you already downloaded or on a photo.",
   "recovery.reloaded": "The page was reloaded. Because Hejmo shows codes only once, these are **new codes**. The ones from before no longer work, not even in a PDF you already downloaded or on a photo.",
   "recovery.pdf.ok": "PDF created: {file}. You will find it in your downloads.",
   "recovery.pdf.failed": "The PDF could not be made in this browser. Print the codes, take a photo of them or write them down.",

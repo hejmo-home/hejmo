@@ -7,6 +7,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 )
@@ -40,10 +41,14 @@ func savedForm(flow string, codes []string, tick bool) url.Values {
 // The card: who and where, the two ways to keep the codes, and the gate.
 func TestRecoveryCodesCardHasPDFPrintAndTheGate(t *testing.T) {
 	b, r, codes := wizardCodes(t)
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	acc, _ := b.db.AccountByUsername("mama")
+	set, _ := b.db.RecoverySet(acc.PersonID)
+	madeOn := set.CreatedAt.In(berlin).Format("02.01.2006") // the set's own date, not the box clock's
 	for _, want := range []string{
 		`<form class="rc" method="post" action="/account/recovery-codes/saved" data-rc>`,
 		"<h2>Your 10 codes</h2>",
-		`<p class="rc-for">For <b>mama</b> on <b>hejmo.local</b>, created on <b>14.11.2026</b></p>`,
+		`<p class="rc-for">For <b>mama</b> on <b>hejmo.local</b>, created on <b>` + madeOn + `</b></p>`,
 		"Download as PDF", "data-rc-pdf", `data-print>`, "Print",
 		"Hejmo keeps neither the codes nor the PDF.",
 		`<input type="checkbox" name="saved" value="1">`, "I have saved my recovery codes.", "PDF, printout, photo or password manager",
@@ -241,18 +246,25 @@ func docOn(t *testing.T, page string) map[string]any {
 func TestPDFDocHasFileNameTitleLabelsAndLanguageInGermanAndEnglish(t *testing.T) {
 	b, _, _ := wizardCodes(t)
 	b.public.name = "Küche Box/..\\x:y\"<z>.example"
+	// The dates are the set's own created_at (as My account shows it), not the
+	// box clock, which is on another day here.
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	acc, _ := b.db.AccountByUsername("mama")
+	set, _ := b.db.RecoverySet(acc.PersonID)
+	created := set.CreatedAt.In(berlin)
+	iso, shown := created.Format("2006-01-02"), created.Format("02.01.2006")
 	for _, tc := range []struct {
 		lang, file, title, box, user, created, page, prefixOK string
 	}{
-		{"en", "Hejmo-Recovery-codes-k-che-box-..-x-y--z-.example-mama-2026-11-14", "Recovery codes for Mama", "Box", "Username", "Created on", "Recovery codes · page 1 of 1", "Hejmo-Recovery-codes-"},
-		{"de", "Hejmo-Wiederherstellungscodes-k-che-box-..-x-y--z-.example-mama-2026-11-14", "Wiederherstellungscodes für Mama", "Box", "Benutzername", "Erstellt am", "Wiederherstellungscodes · Seite 1 von 1", "Hejmo-Wiederherstellungscodes-"},
+		{"en", "Hejmo-Recovery-codes-k-che-box-..-x-y--z-.example-mama-" + iso, "Recovery codes for Mama", "Box", "Username", "Created on", "Recovery codes · page 1 of 1", "Hejmo-Recovery-codes-"},
+		{"de", "Hejmo-Wiederherstellungscodes-k-che-box-..-x-y--z-.example-mama-" + iso, "Wiederherstellungscodes für Mama", "Box", "Benutzername", "Erstellt am", "Wiederherstellungscodes · Seite 1 von 1", "Hejmo-Wiederherstellungscodes-"},
 	} {
 		r := b.do(http.MethodPost, "/account/recovery-codes", url.Values{"fresh": {"1"}}, map[string]string{"Accept-Language": tc.lang})
 		if r.status != http.StatusOK {
 			t.Fatalf("%s: new codes = %d\n%s", tc.lang, r.status, r.body)
 		}
 		doc := docOn(t, r.body)
-		want := map[string]string{"file": tc.file, "title": tc.title, "boxLabel": tc.box, "userLabel": tc.user, "dateLabel": tc.created, "page": tc.page, "username": "mama", "date": "14.11.2026", "lang": tc.lang}
+		want := map[string]string{"file": tc.file, "title": tc.title, "boxLabel": tc.box, "userLabel": tc.user, "dateLabel": tc.created, "page": tc.page, "username": "mama", "date": shown, "lang": tc.lang}
 		for k, v := range want {
 			if doc[k] != v {
 				t.Errorf("%s: doc[%q] = %v, want %q", tc.lang, k, doc[k], v)
@@ -283,8 +295,8 @@ func TestCodesThatAreNotTheCurrentSetGetANewSetAndNeverCountAsSaved(t *testing.T
 		if len(shown) != 10 || strings.Contains(r.body, voidCodes[0]) || sameCodes(shown, current) {
 			t.Errorf("tick=%v: void codes were shown or the old set was kept: %v", tick, shown)
 		}
-		if !strings.Contains(r.body, "The page was reloaded.") {
-			t.Errorf("tick=%v: no reload notice\n%s", tick, r.body)
+		if !strings.Contains(r.body, "These codes are no longer valid, here is a new set.") || strings.Contains(r.body, "The page was reloaded.") {
+			t.Errorf("tick=%v: no stale notice\n%s", tick, r.body)
 		}
 		if r.status == http.StatusSeeOther {
 			t.Errorf("tick=%v: void codes let the wizard continue", tick)

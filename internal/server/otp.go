@@ -78,6 +78,7 @@ type recoveryPage struct {
 	Flow     string
 	Codes    []string
 	Reloaded bool // a new set made because the page was loaded again before the tick
+	Stale    bool // a new set made because the posted codes were not the current set
 	Refused  bool // continue without the tick: 422 with the error at the checkbox
 }
 
@@ -114,19 +115,25 @@ func (s *server) showRecoveryCodes(w http.ResponseWriter, r *http.Request, perso
 	if shell == nil && pg.Flow == flowInvite {
 		pg.Flow = flowAccount
 	}
-	today := s.now().In(principal{household: h}.location())
-	date := datefmt.Date(h.DateFormat, today)
+	loc := principal{household: h}.location()
+	// The date is the set's own, as My account shows it; the clock only stands
+	// in when the set cannot be read.
+	created := s.now().In(loc)
+	if set, err := s.db.RecoverySet(personID); err == nil && set.Exists && !set.CreatedAt.IsZero() {
+		created = set.CreatedAt.In(loc)
+	}
+	date := datefmt.Date(h.DateFormat, created)
 	status := http.StatusOK
 	if pg.Refused {
 		status = http.StatusUnprocessableEntity
 	}
 	w.Header().Set("Cache-Control", "no-store")
 	data := map[string]any{
-		"Codes": pg.Codes, "ContinueKey": continueKey, "Flow": pg.Flow, "Reloaded": pg.Reloaded, "Refused": pg.Refused,
+		"Codes": pg.Codes, "ContinueKey": continueKey, "Flow": pg.Flow, "Reloaded": pg.Reloaded, "Stale": pg.Stale, "Refused": pg.Refused,
 		"Username": acc.Username, "BoxName": s.boxName(), "Date": date, "Count": len(pg.Codes),
 		"ForText":   s.i18n.Format(lang, i18n.Msg("recovery.card.for", "username", acc.Username, "box", s.boxName(), "date", date)),
 		"CardTitle": s.i18n.Format(lang, i18n.Msg("recovery.card.title", "n", strconv.Itoa(len(pg.Codes)))),
-		"PDFDoc":    s.recoveryPDFDoc(lang, name, acc.Username, date, today.Format("2006-01-02")),
+		"PDFDoc":    s.recoveryPDFDoc(lang, name, acc.Username, date, created.Format("2006-01-02")),
 	}
 	if shell != nil {
 		data["Wizard"] = shell

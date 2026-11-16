@@ -314,10 +314,10 @@ func parsePages() *template.Template {
 		"t":    func(string) string { return "" },
 		"tf":   func(string, ...string) string { return "" },
 		"dict": dict,
-		"rich": rich,
 		"list": func(v ...any) []any { return v },
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
+		"rich": rich,
 		"repl": repl,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }

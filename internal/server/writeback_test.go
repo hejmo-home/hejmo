@@ -3,6 +3,7 @@ package server_test
 import (
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -91,32 +92,65 @@ func TestOnlyCalDAVCalendarsHaveTheReadOnlySwitch(t *testing.T) {
 	}
 }
 
-func TestCalendarsPageSwitchesTwoWayAndReadOnly(t *testing.T) {
+func TestConnectionPageSwitchesTwoWayAndReadOnly(t *testing.T) {
 	c, _, _, calID := twoWayCalendar(t)
+	synced, err := c.b.db.SyncedCalendar(mustHousehold(t, c).ID, calID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	connID := synced.ConnectionID
+	if connID == "" {
+		t.Fatal("calendar has no connection")
+	}
+	page := "/connections/" + connID
 	for lang, want := range map[string]string{"en": "Make read-only", "de": "Nur lesbar machen"} {
-		page := c.b.do(http.MethodGet, "/calendars", nil, map[string]string{"Accept-Language": lang})
-		if !strings.Contains(page.body, want) {
-			t.Fatalf("%s: no %q on the page:\n%s", lang, want, page.body)
+		r := c.b.do(http.MethodGet, page, nil, map[string]string{"Accept-Language": lang})
+		if !strings.Contains(r.body, want) {
+			t.Fatalf("%s: no %q on the page:\n%s", lang, want, r.body)
 		}
 	}
-	if r := c.b.post("/calendars/"+calID+"/read-only", url.Values{"read_only": {"1"}}); r.status != http.StatusSeeOther {
-		t.Fatalf("switch = %d", r.status)
+	// The calendars page no longer carries the switch (ADR 0017).
+	if r := c.b.do(http.MethodGet, "/calendars", nil, map[string]string{"Accept-Language": "en"}); strings.Contains(r.body, "Make read-only") {
+		t.Fatalf("switch still on the calendars page:\n%s", r.body)
+	}
+	r := c.b.post("/calendars/"+calID+"/read-only", url.Values{"read_only": {"1"}})
+	if r.status != http.StatusSeeOther || r.location != page {
+		t.Fatalf("switch = %d %q, want 303 to %s", r.status, r.location, page)
 	}
 	if cal, _ := c.b.db.Calendar(mustHousehold(t, c).ID, calID); !cal.ReadOnly {
 		t.Fatal("calendar not read-only after the form")
 	}
-	page := c.b.do(http.MethodGet, "/calendars", nil, map[string]string{"Accept-Language": "en"})
-	if !strings.Contains(page.body, "Allow changes on the box") {
-		t.Fatalf("no way back on the page:\n%s", page.body)
+	body := c.b.do(http.MethodGet, page, nil, map[string]string{"Accept-Language": "en"}).body
+	if !strings.Contains(body, "Allow changes on the box") {
+		t.Fatalf("no way back on the page:\n%s", body)
 	}
-	if r := c.b.post("/calendars/"+calID+"/read-only", url.Values{"read_only": {"0"}}); r.status != http.StatusSeeOther {
-		t.Fatalf("switch back = %d", r.status)
+	if r := c.b.post("/calendars/"+calID+"/read-only", url.Values{"read_only": {"0"}}); r.status != http.StatusSeeOther || r.location != page {
+		t.Fatalf("switch back = %d %q, want 303 to %s", r.status, r.location, page)
 	}
 	if cal, _ := c.b.db.Calendar(mustHousehold(t, c).ID, calID); cal.ReadOnly {
 		t.Fatal("calendar still read-only")
 	}
+	body = c.b.do(http.MethodGet, page, nil, map[string]string{"Accept-Language": "en"}).body
+	if !strings.Contains(body, "Make read-only") || !strings.Contains(body, "Two-way") {
+		t.Fatalf("hint or two-way label missing after switching back:\n%s", body)
+	}
 	if r := c.b.post("/calendars/00000000-0000-4000-8000-000000000000/read-only", url.Values{"read_only": {"1"}}); r.status != http.StatusNotFound {
 		t.Fatalf("unknown calendar = %d", r.status)
+	}
+}
+
+func TestEventsWrittenOnTheBoxCountInTheAPIsEventCount(t *testing.T) {
+	c, _, _, calID := twoWayCalendar(t)
+	for i, day := range []string{"21", "22"} {
+		status, ev, _ := c.call(http.MethodPost, "/events", map[string]any{"calendar_id": calID, "title": "Piano " + strconv.Itoa(i), "start": "2026-11-" + day + "T15:00:00+01:00", "end": "2026-11-" + day + "T16:00:00+01:00"})
+		if status != http.StatusCreated {
+			t.Fatalf("create = %d %v", status, ev)
+		}
+	}
+	c.b.sync.Wait()
+	sync, _ := c.calendarJSON(t, calID)["sync"].(map[string]any)
+	if sync["event_count"] != float64(2) {
+		t.Fatalf("sync = %v, want event_count 2 (written on the box)", sync)
 	}
 }
 

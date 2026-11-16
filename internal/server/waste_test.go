@@ -89,9 +89,9 @@ func TestWasteEventsStayOutOfTheStripAndColumns(t *testing.T) {
 	}
 }
 
-// Only read-only calendars can be waste collection (ADR 0015/0016). Every synced calendar is read-only for now
-// (CalDAV write-back has its own ticket), so the calendars page offers the switch on each of them; a writable
-// calendar is refused by the web form as it is by the API, and stays unmarked.
+// Only read-only calendars can be waste collection (ADR 0015/0016). A CalDAV calendar is two-way until it is
+// switched to read-only, so the test does that first; then the pages offer the switch on each synced calendar.
+// A writable calendar is refused by the web form as it is by the API, and stays unmarked.
 func TestOnlyReadOnlyCalendarsCanBeWasteCollection(t *testing.T) {
 	c, srv := radicaleBox(t)
 	family := srv.MakeCalendar(t, "family", "Family")
@@ -102,8 +102,11 @@ func TestOnlyReadOnlyCalendarsCanBeWasteCollection(t *testing.T) {
 	if status != http.StatusCreated {
 		t.Fatalf("add calendar = %d %v", status, cal)
 	}
-	if cal["read_only"] != true {
-		t.Fatalf("synced CalDAV calendar is not read-only: %v", cal)
+	if cal["read_only"] != false {
+		t.Fatalf("synced CalDAV calendar is not two-way: %v", cal)
+	}
+	if status, cal, _ = c.call(http.MethodPatch, "/calendars/"+cal["id"].(string), map[string]any{"read_only": true}); status != http.StatusOK || cal["read_only"] != true {
+		t.Fatalf("switch to read-only = %d %v", status, cal)
 	}
 	c.b.feeds.set(wasteFeed, feedOf(wasteEvent("p1", "Paper bin", "5")), nil)
 	if r := c.b.post("/calendars", url.Values{"name": {"Waste"}, "url": {wasteFeed}, "interval": {"60"}}); r.status != http.StatusSeeOther {

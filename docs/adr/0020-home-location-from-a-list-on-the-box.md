@@ -23,5 +23,6 @@ ADR 0019 made the parent type a place name and had the box look it up once at Op
 
 - The setup wizard no longer needs the internet; the weather still does.
 - A place that is not in the list (a hamlet under 500 inhabitants, a place outside DACH) cannot be picked; the page says to pick a larger town nearby. Raw coordinates stay possible through the API.
+- A household set up before the list (a stored name, no coordinates) whose name matches no place of the list cannot save any household setting until the parent picks a place: the household page always posts the home field, and text without a pick is refused.
 - The list is a snapshot: it is refreshed by running the tool and committing the result, with the release.
 - The binary grows by about 0.5 MB, and memory by a few MB.

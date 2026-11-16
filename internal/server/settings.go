@@ -212,7 +212,7 @@ func validCoordinates(lat, lon float64) bool {
 // settingsPage is what the household page shows: the stored settings, or what
 // was typed when the page is shown again.
 type settingsPage struct {
-	TimeFormat, TemperatureUnit, AutoUpdate string
+	DateFormat, TimeFormat, TemperatureUnit, AutoUpdate string
 	// Place is what the home location picker shows; nil shows the stored home.
 	Place   *placePick
 	Cutoffs meal.Cutoffs // what the cut-off fields hold
@@ -231,7 +231,7 @@ func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p princi
 	sample := s.dateSample(p.household)
 	data := map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Error": errKey, "ErrorField": errField, "Cutoffs": fields,
-		"DateFormat": string(p.household.DateFormat), "DateDMY": datefmt.Date(store.DateDMY, sample), "DateMDY": datefmt.Date(store.DateMDY, sample), "SampleYear": sample.Year(),
+		"DateFormat": form.DateFormat, "DateDMY": datefmt.Date(store.DateDMY, sample), "DateMDY": datefmt.Date(store.DateMDY, sample), "SampleYear": sample.Year(),
 		"TimeFormat": form.TimeFormat, "TemperatureUnit": form.TemperatureUnit,
 		"AutoUpdate": form.AutoUpdate, "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
 		"Place": cmp.Or(form.Place, s.storedPicker(r, p)),
@@ -298,7 +298,7 @@ type cutoffInput struct {
 
 // storedSettings is the page as stored.
 func storedSettings(h store.Household) settingsPage {
-	return settingsPage{string(h.TimeFormat), string(h.TemperatureUnit), string(h.AutoUpdate), nil, h.MealCutoffs}
+	return settingsPage{string(h.DateFormat), string(h.TimeFormat), string(h.TemperatureUnit), string(h.AutoUpdate), nil, h.MealCutoffs}
 }
 
 // handleSettingsHub shows the Settings hub: one calm row per setup screen.
@@ -345,9 +345,8 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 	for _, m := range meal.Mealtimes() {
 		c = c.With(m, postedCutoff(r.PostForm, m, c.For(m)))
 	}
-	typed := settingsPage{string(f), string(u), string(a), nil, c}
+	typed := settingsPage{string(d), string(f), string(u), string(a), nil, c}
 	if !d.Valid() {
-		p.household.DateFormat = "" // nothing is checked after a value the form should never send
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.date_format", "date_format", typed)
 		return
 	}

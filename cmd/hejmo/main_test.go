@@ -462,7 +462,7 @@ func TestHomeOfAdaptsTheHouseholdForTheWeather(t *testing.T) {
 	if lat, lon, err := h.Home(); err != nil || lat != 0 || lon != 0 {
 		t.Fatalf("home without a place = %v %v %v", lat, lon, err)
 	}
-	if err := db.SetHouseholdCoordinates(hh.ID, 48.15, 11.46); err != nil {
+	if err := setHome(db, hh, "Pasing", 48.15, 11.46); err != nil {
 		t.Fatal(err)
 	}
 	if lat, lon, err := h.Home(); err != nil || lat != 48.15 || lon != 11.46 {
@@ -513,4 +513,9 @@ func TestUpdateDirIsSetOnlyWhenAHostUpdaterManagesTheBox(t *testing.T) {
 	if managed.UpdateDir != "/d" {
 		t.Fatalf("managed UpdateDir = %q, want the data dir", managed.UpdateDir)
 	}
+}
+
+// setHome stores a home place through the settings save, keeping the rest.
+func setHome(db *store.DB, h store.Household, name string, lat, lon float64) error {
+	return db.SaveHouseholdSettings(h.ID, store.HouseholdSettings{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, MealCutoffs: h.MealCutoffs, Home: &store.Home{Name: name, Latitude: lat, Longitude: lon}})
 }

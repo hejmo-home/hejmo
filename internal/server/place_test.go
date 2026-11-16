@@ -786,3 +786,22 @@ func TestPlaceScriptIsLoadedOnlyWhereThePickerIs(t *testing.T) {
 		t.Errorf("place.js = %d", js.status)
 	}
 }
+
+func TestSettingsPlaceStepsKeepATypedDateFormat(t *testing.T) {
+	b := signedInBox(t)
+	pick := settingsForm()
+	pick.Set("date_format", "mdy")
+	pick.Set("home_name", "Obermen")
+	pick.Set("place_id", idObermenzing)
+	r := b.do(http.MethodPost, "/settings/household", pick, en)
+	if r.status != http.StatusOK || !strings.Contains(r.body, `value="mdy" checked`) || strings.Contains(r.body, `value="dmy" checked`) {
+		t.Fatalf("typed date format lost after a pick: %d\n%s", r.status, r.body)
+	}
+}
+
+func TestPlacesSearchRefusesALongName(t *testing.T) {
+	b := signedInBox(t)
+	if r := b.get("/places?name=" + strings.Repeat("a", 101)); r.status != http.StatusUnprocessableEntity {
+		t.Errorf("status = %d", r.status)
+	}
+}

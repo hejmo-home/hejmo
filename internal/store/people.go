@@ -245,11 +245,6 @@ func (db *DB) SaveHouseholdSettings(id string, in HouseholdSettings) error {
 		in.DateFormat, in.TimeFormat, in.TemperatureUnit, in.AutoUpdate, c.Breakfast, c.Lunch, c.Snack, c.Dinner, in.FirstStepsHidden, skipped, homeName, lat, lon, setPlace, placeID, now(), id))
 }
 
-// SetHouseholdCoordinates stores the coordinates of the household's home.
-func (db *DB) SetHouseholdCoordinates(id string, lat, lon float64) error {
-	return expectOne(db.sql.Exec(`UPDATE households SET latitude = ?, longitude = ?, updated_at = ? WHERE id = ?`, lat, lon, now(), id))
-}
-
 // Person is a family member as seen from one household.
 type Person struct {
 	ID     string

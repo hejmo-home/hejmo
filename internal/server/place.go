@@ -175,6 +175,10 @@ func (s *server) searchPlacesJSON(w http.ResponseWriter, r *http.Request) {
 		writeError(w, http.StatusUnprocessableEntity, "name is required")
 		return
 	}
+	if len([]rune(name)) > 100 { // no place name is longer; keeps the scan of the list cheap
+		writeError(w, http.StatusUnprocessableEntity, "name must be at most 100 characters")
+		return
+	}
 	lang := s.langOf(r)
 	if l := r.URL.Query().Get("lang"); l != "" {
 		if l != "de" && l != "en" {

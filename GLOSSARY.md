@@ -28,6 +28,10 @@ _Avoid_: permission level, user type
 The sign-in credentials of an adult person: username, password and one-time codes. Children have no account.
 _Avoid_: login, user
 
+**Invitation**:
+A one-time link (with a QR code) that a parent creates for an adult person without an account; valid once and for 7 days. The invited person opens it on their own device and chooses username and password themselves, then sets up one-time codes and recovery codes. The box stores only a hash of the link, so it is shown once; a new link replaces the old one, and a parent can withdraw it. States: open, used, expired, withdrawn.
+_Avoid_: invite code, sign-up link, registration
+
 **Parent PIN**:
 A short numeric code that unlocks management on a display. It is not a way to sign in.
 _Avoid_: display password, admin PIN
@@ -107,6 +111,10 @@ _Avoid_: local calendar, box calendar, default calendar
 **Calendar connection**:
 The link from the box to an outside calendar service or to a single calendar address, together with its credentials.
 _Avoid_: account, integration, provider (alone)
+
+**App-specific password**:
+A password created at the calendar service (Apple "app-specific password", Nextcloud "app password") for Hejmo alone and used in a calendar connection instead of the account's real password. The family can revoke it at the service at any time; Hejmo never asks for the real password. Not the same as a device token, which the box creates for CalDAV clients.
+_Avoid_: Apple ID password, iCloud password
 
 **Synced calendar**:
 A calendar whose events come from, and may be written back to, a calendar outside the box through a calendar connection.

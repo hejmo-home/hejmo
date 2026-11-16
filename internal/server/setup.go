@@ -256,16 +256,19 @@ func (s *server) renderTOTP(w http.ResponseWriter, r *http.Request, status int, 
 		s.fail(w, "qr code", err)
 		return
 	}
-	// In the first setup the page is step 3 of the wizard; after a reset of the
-	// one-time codes it is the same shell without the progress.
-	step := 0
+	// In the first setup the page is step 3 of the wizard, when accepting an
+	// invitation its last step; after a reset of the one-time codes it is the
+	// same shell without the progress.
+	shell := wizardAt(0)
 	if !s.db.Configured() {
-		step = 3
+		shell = wizardAt(3)
+	} else if inv := s.inviteShellFor(acc); inv != nil {
+		shell = inv
 	}
 	s.render(w, r, status, "setup_totp.html", map[string]any{
 		"Secret": acc.TOTPSecret, "SecretGroups": groupsOfFour(acc.TOTPSecret), "Username": acc.Username,
 		"URI": template.URL(uri), // built here, safe scheme
-		"QR":  template.HTML(svg), "Phone": mobileBrowser(r), "InstallKey": authenticatorInstallKey(r), "Error": errKey, "ErrorField": totpErrorField(errKey), "Wizard": wizardAt(step),
+		"QR":  template.HTML(svg), "Phone": mobileBrowser(r), "InstallKey": authenticatorInstallKey(r), "Error": errKey, "ErrorField": totpErrorField(errKey), "Wizard": shell,
 	})
 }
 
@@ -283,6 +286,7 @@ func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	first := !s.db.Configured() // the first parent's setup, not a reset
+	invited := s.inviteShellFor(acc)
 	// The codes are stored before the confirmation: if storing fails, the
 	// person is not confirmed yet and can try again instead of being confirmed
 	// without ever seeing their codes.
@@ -295,8 +299,15 @@ func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "confirm TOTP", err)
 		return
 	}
-	if first {
+	switch {
+	case first:
 		s.setFlash(w, r, "flash.setup_done:"+acc.PersonID) // shown on the home page after the codes
+	case invited != nil:
+		s.setFlash(w, r, "flash.invite_done:"+acc.PersonID)
+	}
+	if invited != nil {
+		s.showRecoveryCodesIn(w, r, codes, invited, "invite.recovery.continue")
+		return
 	}
 	s.showRecoveryCodes(w, r, codes, first)
 }

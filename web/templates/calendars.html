@@ -12,27 +12,8 @@
       {{range .ConnRows}}{{template "rowLink" .}}
       {{end}}
     </ul>
-    {{end}}
-    <h3>{{t "connections.add"}}</h3>
-    <p class="hint">{{t "connections.hint"}}</p>
-    {{$ce := dict "ErrorField" .ConnErrorField "Error" .ConnError}}
-    <form method="post" action="/connections" class="steps" autocomplete="off" data-connection-form>
-      <fieldset>
-        <div class="f{{if eq .ConnErrorField "provider"}} invalid{{end}}">
-          <label>{{t "connections.field.provider"}}
-            <select name="provider"{{if eq .ConnErrorField "provider"}} autofocus aria-invalid="true" aria-describedby="err-provider"{{end}}>
-              <option value="icloud"{{with .Form}}{{if eq .ConnProvider "icloud"}} selected{{end}}{{end}}>{{t "connections.provider.icloud"}}</option>
-              <option value="caldav"{{with .Form}}{{if eq .ConnProvider "caldav"}} selected{{end}}{{end}}>{{t "connections.provider.caldav"}}</option>
-            </select></label>
-          {{template "fieldError" (dict "Root" $ce "Name" "provider")}}
-        </div>
-        <div data-other-only>{{template "field" (dict "Root" $ce "Name" "url" "Label" (t "connections.field.url") "Value" (index .Form "ConnURL") "Inputmode" "url" "Autocapitalize" "none" "Placeholder" "https://…")}}</div>
-        <label class="check" data-other-only><input type="checkbox" name="single_calendar" value="1"{{with .Form}}{{if .ConnSingle}} checked{{end}}{{end}}> {{t "connections.field.single"}}</label>
-        {{template "field" (dict "Root" $ce "Name" "username" "Label" (t "connections.field.username") "Value" (index .Form "ConnUsername") "Required" true "Autocapitalize" "none")}}
-        {{template "field" (dict "Root" $ce "Name" "password" "Label" (t "connections.field.password") "Type" "password" "Required" true "Autocomplete" "off")}}
-      </fieldset>
-      <button class="button" type="submit">{{t "connections.submit"}}</button>
-    </form>
+    <p><a class="button secondary" href="/connections/new">{{t "connections.connect.more"}}</a></p>
+    {{else}}{{template "empty" (dict "Text" (t "connections.empty") "Href" "/connections/new" "Action" (t "connections.connect"))}}{{end}}
   </section>
 
   <section aria-labelledby="synced">
@@ -78,5 +59,4 @@
     </table>
     {{else}}<p class="hint">{{t "calendars.log.empty"}}</p>{{end}}
   </section>
-<script src="/static/connection-form.js" defer></script>
 {{template "foot"}}

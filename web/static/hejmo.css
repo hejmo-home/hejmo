@@ -1317,6 +1317,97 @@ fieldset.choice.mtpick { display: flex; flex-wrap: wrap; gap: 10px; }
 .f-card[aria-invalid="true"] select, .f-card[aria-invalid="true"] .every input { border: 2px solid var(--error-text); }
 .page-actions .button .icon { stroke: currentColor; vertical-align: -3px; margin-right: 6px; }
 
+/* ---- Step lists and action rows (#135; shared with the setup flow) ---- */
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px var(--gap); }
+.actions .button { flex: 0 1 auto; }
+ol.howto .s > .actions { justify-self: stretch; }
+ol.howto { list-style: none; counter-reset: howto; margin: 0; padding: 0; display: grid; }
+ol.howto > li { counter-increment: howto; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-top: 1px solid var(--border); }
+ol.howto > li:first-child { border-top: 0; padding-top: 2px; }
+ol.howto > li:last-child { padding-bottom: 0; }
+ol.howto > li::before { content: counter(howto); width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+ol.howto .s { display: grid; gap: 6px; min-width: 0; justify-items: start; }
+ol.howto .s > b { font-size: var(--fs-event-title); font-weight: 700; }
+ol.howto .s > p { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+ol.howto .s > .f, ol.howto .s > details { justify-self: stretch; }
+ol.howto .path { font-weight: 600; }
+[data-theme="bw"] ol.howto > li::before { border-color: var(--text); color: var(--text); }
+[data-theme="bw"] .guide .button.secondary { border-width: 2px; }
+.f .hint { margin: 0; }
+
+/* ---- New for #135: connecting iCloud and other CalDAV servers ---- */
+
+/* Running text keeps the width of the cards beside it at every screen width. */
+.lead, main > .hint, section > .hint { max-width: 560px; }
+main > .hint, section > .hint { margin: 0 0 var(--gap); }
+
+/* Connect page: the service is chosen with choice cards; each service has its
+   own form with a numbered guide. Without JavaScript only the guide of the
+   chosen service shows (CSS :has). */
+.connect { display: grid; gap: var(--gap); max-width: 600px; min-width: 0; }
+.connect fieldset.choice legend { font-size: var(--fs-event-title); font-weight: 700; color: var(--text); }
+.connect:has(input[name="service"][value="icloud"]:checked) .guide:not([data-service="icloud"]),
+.connect:has(input[name="service"][value="caldav"]:checked) .guide:not([data-service="caldav"]) { display: none; }
+.guide { display: grid; gap: var(--gap); background: var(--surface); border-radius: var(--radius-tile); padding: var(--pad-column); min-width: 0; margin: 0; }
+.guide h2 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); overflow-wrap: anywhere; }
+.guide .s > .hint { margin: 0; }
+.guide .done-hint { margin: 0; color: var(--text-secondary); font-size: var(--fs-label); }
+
+/* Why a separate password: a calm box with a lock, before the steps. */
+.why { display: flex; gap: 10px; align-items: flex-start; margin: 0; padding: 10px 12px; border-radius: var(--radius-card); background: var(--background); color: var(--text); font-size: var(--fs-label-large); overflow-wrap: anywhere; }
+.why .icon { flex: none; margin-top: 2px; }
+.why b { display: block; }
+[data-theme="bw"] .why { background: var(--surface); border: 2px solid var(--text); }
+
+/* Link to the service's own page: the address is the label, an arrow out of
+   the box says it leaves Hejmo, the line below says "new tab" in words. */
+a.out { display: inline-flex; align-items: center; gap: 8px; max-width: 100%; overflow-wrap: anywhere; text-align: left; }
+a.out .icon { flex: none; stroke: currentColor; }
+@media (max-width: 599px) {
+  .guide .actions .button { flex: 1 1 100%; text-align: center; }
+  ol.howto > li { grid-template-columns: 28px minmax(0, 1fr); gap: 10px; }
+  ol.howto > li::before { width: 28px; height: 28px; }
+}
+
+/* Fix (#135): ".cards a" and ".steps a" (link colour) beat ".button", so a
+   link styled as a button inside a card had accent text on accent ground
+   (black on black in bw). Buttons keep their own text colour. */
+.cards a.button, .steps a.button { color: var(--accent-text); font-weight: 700; }
+.cards a.button.secondary, .steps a.button.secondary { color: var(--accent); }
+.guide details.more p { margin: 0; overflow-wrap: anywhere; }
+
+
+/* ---- Invite a second parent (ticket 145) ---- */
+/* The person an invitation is for: marker and name as on the display. */
+.invitee, .steps p.invitee { display: flex; align-items: center; gap: 10px; margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); overflow-wrap: anywhere; }
+.invitee .marker { flex: none; }
+/* Validity line: clock icon and the date in words, never a countdown. */
+.valid { display: flex; align-items: flex-start; gap: 8px; margin: 0; }
+.valid .icon { flex: none; margin-top: 2px; stroke: var(--accent); }
+[data-theme="bw"] .valid .icon { stroke: var(--text); }
+/* A link shown once: wraps anywhere so a long address fits 375 px. */
+.once .secret.link { overflow-wrap: anywhere; word-break: break-all; font-size: var(--fs-label-large); letter-spacing: 0; }
+.once .pair-qr { margin: 0; justify-self: start; }
+[data-theme="bw"] .once .pair-qr { border: 2px solid var(--text); }
+/* Neutral state pill (open invitation), next to .flag.warn and .flag.problem. */
+.flag.open { background: var(--background); color: var(--text); border: 1px solid var(--border); }
+/* The wizard step bar with two or three steps (invitation) instead of four. */
+.wsteps ol[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wsteps ol[data-count="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.people .acc-state { font-weight: 600; color: var(--text); }
+.invite-page .actions, main > form.actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 var(--gap); }
+.wizard .actions { flex-wrap: wrap; align-items: center; }
+.wizard .actions form { margin: 0; }
+/* People overview: the account state is its own line under name and buttons. */
+.cards.people li > .hint { order: 3; flex: 1 1 100%; }
+/* #111's status pill .flag must not touch the flag image of the language switcher (#134). */
+.lang .flag, [data-theme="bw"] .lang .flag { padding: 0; border: 0; background: none; border-radius: 3px; }
+/* A how-it-works tile on a framed page (outside the wizard). */
+main > .tile.invite-how { display: grid; gap: 12px; padding: var(--pad-column); max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-section); }
+main > .tile.invite-how h2 { margin: 0; }
+[data-theme="bw"] main > .tile.invite-how { border: 2px solid var(--text); }
+.wizard .who { display: inline-flex; align-items: center; gap: 6px; vertical-align: bottom; }
+.steps .invitee span:not(.marker) { font-size: inherit; color: var(--text); }
 /* ticket 7.2 routines (preview-91). Uses existing tokens only. */
 
 /* Part of the day: word plus line icon (sunrise morning, sun after school, moon evening). */

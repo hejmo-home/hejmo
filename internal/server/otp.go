@@ -55,11 +55,20 @@ func (s *server) issueRecoveryCodes(w http.ResponseWriter, r *http.Request, pers
 // the codes are shown. In the first setup (wizard) it is the second half of
 // step 3 and leads on to the first steps; otherwise it sits in the frame.
 func (s *server) showRecoveryCodes(w http.ResponseWriter, r *http.Request, codes []string, wizard bool) {
-	w.Header().Set("Cache-Control", "no-store")
-	data := map[string]any{"Codes": codes, "ContinueKey": "recovery.continue"}
 	if wizard {
-		data["Wizard"] = wizardAt(3)
-		data["ContinueKey"] = "recovery.continue.wizard"
+		s.showRecoveryCodesIn(w, r, codes, wizardAt(3), "recovery.continue.wizard")
+		return
+	}
+	s.showRecoveryCodesIn(w, r, codes, nil, "recovery.continue")
+}
+
+// showRecoveryCodesIn shows a set of recovery codes in the given wizard shell
+// (nil: the page frame) with the given text on the last button.
+func (s *server) showRecoveryCodesIn(w http.ResponseWriter, r *http.Request, codes []string, shell *wizardView, continueKey string) {
+	w.Header().Set("Cache-Control", "no-store")
+	data := map[string]any{"Codes": codes, "ContinueKey": continueKey}
+	if shell != nil {
+		data["Wizard"] = shell
 	} else {
 		data["SuccessKey"] = "flash.recovery_codes_created"
 	}

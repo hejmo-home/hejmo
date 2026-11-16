@@ -114,7 +114,7 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 		row := rowView{Href: "/phones/" + ph.ID, Title: ph.Name, Lines: []rowLine{s.whoLine(r, chips, ph.PersonID, ph.PersonName)}}
 		switch {
 		case !ph.SessionEnds.IsZero() && !ph.SessionEnds.After(s.now()):
-			row.Flag = &flagView{"warn", s.say(r, i18n.Msg("phones.expired"))}
+			row.Flag = &flagView{Kind: "warn", Text: s.say(r, i18n.Msg("phones.expired"))}
 		case ph.LastSeen.IsZero():
 			row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("phones.never"))})
 		default:
@@ -244,7 +244,7 @@ func (s *server) handlePhonePage(w http.ResponseWriter, r *http.Request) {
 		{Label: s.say(r, i18n.Msg("phones.fact.paired")), Value: p.day(ph.PairedAt)},
 		last}
 	if !ph.SessionEnds.IsZero() && !ph.SessionEnds.After(s.now()) {
-		facts = append(facts, factView{Label: s.say(r, i18n.Msg("phones.fact.session")), Flag: &flagView{"warn", s.say(r, i18n.Msg("phones.expired"))}})
+		facts = append(facts, factView{Label: s.say(r, i18n.Msg("phones.fact.session")), Flag: &flagView{Kind: "warn", Text: s.say(r, i18n.Msg("phones.expired"))}})
 	}
 	s.render(w, r, http.StatusOK, "phone.html", map[string]any{"Person": p.person, "Phone": ph, "Facts": facts, "Title": ph.Name})
 }

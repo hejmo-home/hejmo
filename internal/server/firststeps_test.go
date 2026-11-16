@@ -5,6 +5,7 @@ import (
 	"net/url"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -128,8 +129,22 @@ func TestFirstStepsDoneContentAndTheMovingMainButton(t *testing.T) {
 	if n := strings.Count(chips, `class="marker"`); n != 8 || strings.Contains(chips, "+") {
 		t.Errorf("%d markers, or an abbreviation", n)
 	}
-	// Second parent entered, no phone yet: a partly done step lists its parts.
+	// Second parent entered but without an account (ticket 145): the step stays
+	// open, says so, and its main button leads to the invitation.
+	papa := personNamed(t, p.box, "Papa")
 	parents := stepOf(t, c, 2)
+	if !strings.Contains(parents, `<li data-state="open"><span class="dot" aria-hidden="true"></span><span>Papa ist eingetragen, hat aber noch kein Konto.<span class="vh"> (noch offen)</span>`) || !strings.Contains(parents, `data-state="open">Noch offen`) {
+		t.Errorf("parents step without an account:\n%s", parents)
+	}
+	if !strings.Contains(parents, `<a class="button" href="/people/`+papa.ID+`/invitation">Papa einladen</a>`) {
+		t.Errorf("the main button does not lead to the invitation:\n%s", parents)
+	}
+	// Papa has an account: the second parent is done, the main button moves to the phone.
+	if err := p.box.db.CreateAccount(store.Account{PersonID: papa.ID, Username: "papa", PasswordHash: "x", TOTPSecret: "S"}); err != nil {
+		t.Fatal(err)
+	}
+	c = card(homeDE(p.box))
+	parents = stepOf(t, c, 2)
 	if !strings.Contains(parents, `<li data-state="done">`) || !strings.Contains(parents, "Papa") || !strings.Contains(parents, `<li data-state="open"><span class="dot" aria-hidden="true"></span><span>Noch kein Handy verbunden.<span class="vh"> (noch offen)</span>`) || !strings.Contains(parents, `<span class="vh"> (erledigt)</span>`) {
 		t.Errorf("parents step:\n%s", parents)
 	}
@@ -143,7 +158,6 @@ func TestFirstStepsDoneContentAndTheMovingMainButton(t *testing.T) {
 		t.Error("more than one main button")
 	}
 	// A phone for Papa completes the step.
-	papa := personNamed(t, p.box, "Papa")
 	pairedPhone(t, p.box, papa, "Android")
 	parents = stepOf(t, card(homeDE(p.box)), 2)
 	if !strings.Contains(parents, `data-state="done">Erledigt</span>`) || !strings.Contains(parents, "Papa (Android)") {
@@ -392,11 +406,55 @@ func TestFirstStepsParentsStepNamesTheOtherParentNotTheViewer(t *testing.T) {
 	p := newPeopleBox(t)
 	p.add(t, "Papa", "parent")
 	papa, mama := personNamed(t, p.box, "Papa").ID, personNamed(t, p.box, "Mama").ID
+	if err := p.box.db.CreateAccount(store.Account{PersonID: papa, Username: "papa", PasswordHash: "x", TOTPSecret: "S"}); err != nil {
+		t.Fatal(err)
+	}
 	if status, _, _ := p.api.call(http.MethodPut, "/people/order", map[string]any{"ids": []string{papa, mama}}); status != http.StatusOK {
 		t.Fatalf("order = %d", status)
 	}
 	parents := stepOf(t, card(homeDE(p.box)), 2) // signed in as Mama
 	if !strings.Contains(parents, "Papa") || strings.Contains(parents, "Zweites Elternteil: Mama") {
 		t.Errorf("the step names the viewer:\n%s", parents)
+	}
+}
+
+// Ticket 145: step 2 counts an accepted invitation. While an invitation is open
+// it says until when the link works and the button leads to it.
+func TestFirstStepsParentsStepFollowsTheInvitation(t *testing.T) {
+	p := newPeopleBox(t)
+	// without any other adult the button asks to enter one
+	if parents := stepOf(t, card(homeDE(p.box)), 2); !strings.Contains(parents, `<a class="link" href="/people">Zweites Elternteil eintragen</a>`) {
+		t.Errorf("no second adult:\n%s", parents)
+	}
+	p.add(t, "Papa", "parent")
+	papa := personNamed(t, p.box, "Papa")
+	page := "/people/" + papa.ID + "/invitation"
+	if r := p.post(page, url.Values{}); r.status != http.StatusOK {
+		t.Fatalf("create invitation = %d", r.status)
+	}
+	parents := stepOf(t, card(homeDE(p.box)), 2)
+	for _, want := range []string{
+		`<li data-state="open"><span class="dot" aria-hidden="true"></span><span>Papa ist eingeladen, hat aber noch kein Konto. Der Link gilt bis Samstag, 21.11.2026, 13:00.`,
+		`<a class="button" href="` + page + `">Einladung ansehen</a>`, `data-state="open">Noch offen`,
+	} {
+		if !strings.Contains(parents, want) {
+			t.Errorf("open invitation: step lacks %q\n%s", want, parents)
+		}
+	}
+	// an expired link counts as no invitation: the button invites again
+	p.box.now = p.box.now.Add(8 * 24 * time.Hour)
+	if parents := stepOf(t, card(homeDE(p.box)), 2); !strings.Contains(parents, `<a class="button" href="`+page+`">Papa einladen</a>`) || strings.Contains(parents, "ist eingeladen") {
+		t.Errorf("expired invitation:\n%s", parents)
+	}
+}
+
+func TestFirstStepsParentsStepIsDoneWhenTheInvitationWasAccepted(t *testing.T) {
+	e := newInviteBox(t)
+	tok := e.create()
+	e.acceptAndSetUpCodes(tok)
+	e.signInMama()
+	parents := stepOf(t, card(homeDE(e.b)), 2)
+	if !strings.Contains(parents, `<li data-state="done">`) || !strings.Contains(parents, "Zweites Elternteil: Papa.") {
+		t.Errorf("accepted invitation does not count:\n%s", parents)
 	}
 }

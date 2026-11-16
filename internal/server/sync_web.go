@@ -82,13 +82,13 @@ func (s *server) syncFlag(r *http.Request, p principal, c store.SyncedCalendar, 
 		if fact {
 			key = "sync.flag.login_fact"
 		}
-		return &flagView{"problem", s.say(r, i18n.Msg(key, "when", p.when(c.Sync.LastAttempt)))}
+		return &flagView{Kind: "problem", Text: s.say(r, i18n.Msg(key, "when", p.when(c.Sync.LastAttempt)))}
 	case problem && stale:
-		return &flagView{"problem", s.say(r, i18n.Msg("sync.flag.stale_problem", "error", s.say(r, c.Sync.LastError)))}
+		return &flagView{Kind: "problem", Text: s.say(r, i18n.Msg("sync.flag.stale_problem", "error", s.say(r, c.Sync.LastError)))}
 	case problem:
-		return &flagView{"problem", s.say(r, i18n.Msg("sync.flag.problem", "error", s.say(r, c.Sync.LastError)))}
+		return &flagView{Kind: "problem", Text: s.say(r, i18n.Msg("sync.flag.problem", "error", s.say(r, c.Sync.LastError)))}
 	case stale:
-		return &flagView{"problem", s.say(r, i18n.Msg("sync.flag.stale"))}
+		return &flagView{Kind: "problem", Text: s.say(r, i18n.Msg("sync.flag.stale"))}
 	}
 	return nil
 }
@@ -211,11 +211,9 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		"AutoColor": nextColors(taken, 1)[0],
 		"Person":    p.person, "Rows": subscribed, "ConnRows": connRows, "Log": log, "People": peopleChoices, "Groups": groupChoices,
 		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
-		"ConnError": "", "ConnErrorField": "",
 	}
 	if form != nil {
 		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
-		data["ConnError"], data["ConnErrorField"] = form["ConnError"], form["ConnErrorField"]
 	}
 	s.render(w, r, status, "calendars.html", data)
 }

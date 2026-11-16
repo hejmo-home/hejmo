@@ -116,3 +116,28 @@ func TestWellKnownRedirectToAForeignHostIsRefused(t *testing.T) {
 }
 
 func asForeign(err error, target **caldavclient.ForeignHostError) bool { return errors.As(err, target) }
+
+// A proxy may forbid /.well-known while the server answers at the address
+// given; only a refused login ends the discovery.
+func TestCalendarsFallBackWhenWellKnownIsForbidden(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		switch r.URL.Path {
+		case "/.well-known/caldav":
+			http.Error(w, "no", http.StatusForbidden)
+		case "/":
+			multistatus(w, response("/", `<D:current-user-principal><D:href>/me/</D:href></D:current-user-principal>`))
+		case "/me/":
+			multistatus(w, response("/me/", `<C:calendar-home-set><D:href>/me/cals/</D:href></C:calendar-home-set>`))
+		case "/me/cals/":
+			multistatus(w, response("/me/cals/family/", `<D:resourcetype><D:collection/><C:calendar/></D:resourcetype><D:displayname>Family</D:displayname>`))
+		default:
+			http.NotFound(w, r)
+		}
+	}))
+	t.Cleanup(srv.Close)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	cals, err := c.Calendars(context.Background())
+	if err != nil || len(cals) != 1 {
+		t.Fatalf("Calendars() = %+v, %v, want the calendar found at the address given", cals, err)
+	}
+}

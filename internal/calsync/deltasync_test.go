@@ -2,6 +2,7 @@ package calsync_test
 
 import (
 	"context"
+	"errors"
 	"path/filepath"
 	"slices"
 	"strings"
@@ -28,6 +29,8 @@ type fakeServer struct {
 	asked    []string
 	fetched  []string
 	stateErr error
+	pageSize int      // sync-collection answers this many changes at a time (0: all)
+	hidden   []string // addresses the multiget leaves out of its answer
 }
 
 type fakeObject struct{ etag, data string }
@@ -102,13 +105,23 @@ func (r fakeRemote) Changes(_ context.Context, _ string, token string) (caldavcl
 	}
 	since := int(token[len("token-")] - '0')
 	out := caldavclient.Changes{Token: "token-" + r.f.stamp()}
-	seen := map[string]bool{}
-	for i := len(r.f.history) - 1; i >= 0; i-- {
-		c := r.f.history[i]
-		if c.version <= since || seen[c.url] {
-			continue
+	latest := map[string]fakeChange{}
+	for _, c := range r.f.history {
+		if c.version > since {
+			latest[c.url] = c
 		}
-		seen[c.url] = true
+	}
+	var pending []fakeChange
+	for _, c := range latest {
+		pending = append(pending, c)
+	}
+	slices.SortFunc(pending, func(a, b fakeChange) int { return a.version - b.version })
+	if r.f.pageSize > 0 && len(pending) > r.f.pageSize {
+		pending = pending[:r.f.pageSize]
+		out.Token = "token-" + string(rune('0'+pending[len(pending)-1].version))
+		out.Truncated = true
+	}
+	for _, c := range pending {
 		if c.gone {
 			out.Deleted = append(out.Deleted, c.url)
 		} else {
@@ -123,7 +136,7 @@ func (r fakeRemote) Fetch(_ context.Context, _ string, urls []string) ([]caldavc
 	r.f.fetched = append(r.f.fetched, urls...)
 	var out []caldavclient.Object
 	for _, u := range urls {
-		if o, ok := r.f.objects[u]; ok {
+		if o, ok := r.f.objects[u]; ok && !slices.Contains(r.f.hidden, u) {
 			out = append(out, caldavclient.Object{URL: u, ETag: o.etag, Data: []byte(o.data)})
 		}
 	}
@@ -316,5 +329,97 @@ func TestCTagAloneShortCircuitsAndAChangeIsListed(t *testing.T) {
 	fx.sync(t)
 	if fx.count("list") != 1 || fx.count("changes") != 0 {
 		t.Fatalf("asked = %v, want a listing", fx.asked)
+	}
+}
+
+// RFC 6578 3.6: a server may answer a sync-collection with only part of the
+// changes (507 on the collection) and a token to carry on from. The part that
+// came is applied, and the rest must arrive on later runs although the CTag of
+// the whole calendar has not moved since.
+func TestTruncatedSyncCollectionDeliversTheRestOnLaterRuns(t *testing.T) {
+	fx := newFakeFixture(t)
+	fx.sync(t)
+	fx.put(swim, "swim@test", "Swimming")
+	fx.put(piano, "piano@test", "Piano")
+	fx.pageSize = 1
+	fx.sync(t)
+	if got := fx.titles(t); !slices.Equal(got, []string{"Swimming"}) {
+		t.Fatalf("events after the partial answer = %v, want the first change", got)
+	}
+	for i := 0; i < 3; i++ {
+		fx.sync(t)
+	}
+	if got := fx.titles(t); !slices.Equal(got, []string{"Piano", "Swimming"}) {
+		t.Fatalf("events = %v, want the second change to arrive", got)
+	}
+}
+
+// A State that cannot be read for a reason other than the login or a foreign
+// host does not stop the sync: the ETags are listed and no state is kept.
+func TestStateFailureFallsBackToTheETagListing(t *testing.T) {
+	fx := newFakeFixture(t)
+	fx.stateErr = errors.New("PROPFIND: connection reset")
+	fx.put(swim, "swim@test", "Swimming")
+	fx.sync(t)
+	if fx.count("list") != 1 || fx.count("changes") != 0 {
+		t.Fatalf("asked = %v, want the listing", fx.asked)
+	}
+	if got := fx.titles(t); !slices.Equal(got, []string{"Swimming"}) {
+		t.Fatalf("events = %v", got)
+	}
+	if st, _ := fx.db.RemoteState(fx.cal.ID); st != (store.RemoteState{}) {
+		t.Fatalf("state = %+v, want none stored", st)
+	}
+	fx.sync(t)
+	if fx.count("list") != 1 || len(fx.fetched) != 0 {
+		t.Fatalf("asked = %v, downloaded = %v, want a listing and nothing downloaded", fx.asked, fx.fetched)
+	}
+}
+
+// A refused login or a foreign host found while reading the state fails the
+// run at once, with the same log entry as anywhere else in the sync.
+func TestStateFailureOfLoginOrForeignHostFailsTheRun(t *testing.T) {
+	cases := []struct {
+		name string
+		err  error
+		key  string
+	}{
+		{"unauthorized", &caldavclient.StatusError{Code: 401, Status: "401 Unauthorized"}, "sync.fail.login"},
+		{"foreign host", refusal("https://cal.example.org", "https://evil.test/cal/"), "sync.fail.foreign_host"},
+	}
+	for _, tc := range cases {
+		t.Run(tc.name, func(t *testing.T) {
+			fx := newFakeFixture(t)
+			fx.put(swim, "swim@test", "Swimming")
+			fx.stateErr = tc.err
+			fx.asked = nil
+			fx.clock = fx.clock.Add(5 * time.Minute)
+			if err := fx.svc.Sync(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+				t.Fatal("sync succeeded")
+			}
+			if fx.count("list") != 0 || fx.count("changes") != 0 {
+				t.Fatalf("asked = %v, want nothing after the state", fx.asked)
+			}
+			log, _ := fx.db.SyncLog(fx.h.ID, 10)
+			if len(log) != 1 || log[0].Kind != "failure" || log[0].Message.Key != tc.key {
+				t.Fatalf("log = %+v, want a failure %s", log, tc.key)
+			}
+		})
+	}
+}
+
+// An object the report names but the multiget leaves out must be asked for
+// again: the state of this run is not kept, so the next run lists.
+func TestObjectMissingFromTheMultigetIsRetriedOnTheNextRun(t *testing.T) {
+	fx := newFakeFixture(t)
+	fx.put(swim, "swim@test", "Swimming")
+	fx.sync(t)
+	fx.put(piano, "piano@test", "Piano")
+	fx.hidden = []string{piano}
+	fx.sync(t)
+	fx.hidden = nil
+	fx.sync(t)
+	if got := fx.titles(t); !slices.Equal(got, []string{"Piano", "Swimming"}) {
+		t.Fatalf("events = %v, want the left-out object to arrive", got)
 	}
 }

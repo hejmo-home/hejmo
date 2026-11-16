@@ -349,7 +349,7 @@ func (c *Client) principal(ctx context.Context) (*url.URL, error) {
 	}
 	var status *StatusError
 	var foreign *ForeignHostError
-	if errors.As(err, &foreign) || (errors.As(err, &status) && (status.Code == http.StatusUnauthorized || status.Code == http.StatusForbidden)) {
+	if errors.As(err, &foreign) || (errors.As(err, &status) && status.Code == http.StatusUnauthorized) {
 		return nil, err
 	}
 	return c.findHref(ctx, c.base, "d:current-user-principal")
@@ -831,6 +831,9 @@ type Changes struct {
 	Token   string
 	Changed []Object
 	Deleted []string
+	// Truncated says the server answered with only part of the changes (RFC
+	// 6578 3.6: 507 on the collection itself); Token is where to carry on.
+	Truncated bool
 }
 
 const changesBody = `<?xml version="1.0" encoding="utf-8"?>` +
@@ -894,7 +897,13 @@ func (c *Client) Changes(ctx context.Context, calendarURL, token string) (Change
 		if err := c.auth.permit(target); err != nil {
 			return Changes{}, err
 		}
+		if AddressKey(target.String()) == self && statusCode(r.Status) == http.StatusInsufficientStorage {
+			out.Truncated = true // the server has more changes than it sent
+		}
 		if strings.HasSuffix(target.Path, "/") || AddressKey(target.String()) == self {
+			if AddressKey(target.String()) == self && statusCode(r.Status) == http.StatusInsufficientStorage {
+				out.Truncated = true // the server has more changes than it sent
+			}
 			continue // a collection
 		}
 		if code := statusCode(r.Status); code == http.StatusNotFound || code == http.StatusGone {

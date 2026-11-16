@@ -139,3 +139,33 @@ func TestChangesRefusesAMemberOnAForeignHost(t *testing.T) {
 		t.Fatalf("Changes() = %v, want a ForeignHostError", err)
 	}
 }
+
+// RFC 6578 3.6: a server that cannot send all the changes answers with the
+// ones it has, a token to carry on from, and 507 on the collection itself.
+func TestChangesAnswerCutShortIsReported(t *testing.T) {
+	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusMultiStatus)
+		io.WriteString(w, `<?xml version="1.0"?><D:multistatus xmlns:D="DAV:">`+
+			`<D:response><D:href>/cal/new.ics</D:href><D:propstat><D:prop><D:getetag>"n1"</D:getetag></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response>`+
+			`<D:response><D:href>/cal/</D:href><D:status>HTTP/1.1 507 Insufficient Storage</D:status></D:response>`+
+			`<D:sync-token>tok-8</D:sync-token></D:multistatus>`)
+	}))
+	t.Cleanup(srv.Close)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	got, err := c.Changes(context.Background(), srv.URL+"/cal/", "tok-7")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if !got.Truncated || got.Token != "tok-8" || len(got.Changed) != 1 {
+		t.Fatalf("Changes() = %+v, want the partial answer marked truncated", got)
+	}
+}
+
+func TestChangesCompleteAnswerIsNotTruncated(t *testing.T) {
+	srv := syncServer(t, http.StatusMultiStatus, nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	got, err := c.Changes(context.Background(), srv.URL+"/cal/", "tok-7")
+	if err != nil || got.Truncated {
+		t.Fatalf("Changes() = %+v, %v, want a complete answer", got, err)
+	}
+}

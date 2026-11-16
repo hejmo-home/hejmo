@@ -167,6 +167,12 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 		}
 		run.listed = len(present)
 		next.SyncToken = ch.Token
+		if ch.Truncated {
+			// The server sent only part of the changes: carry on from the new
+			// token, but do not claim the calendar is up to date, or the next
+			// run would stop at the unchanged CTag.
+			next.CTag = ""
+		}
 		return nil
 	}
 	switch {
@@ -201,6 +207,11 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 		}
 	}
 	run.fetched = len(fetched)
+	if len(fetched) < len(toFetch) {
+		// The server left out objects it had named: forget its state, so the
+		// next run lists the ETags and asks for them again.
+		next = caldavclient.State{}
+	}
 	var changes []store.ObjectChange
 	var notes []i18n.Message
 	for _, o := range fetched {

@@ -220,3 +220,35 @@ func TestHouseholdHomeIsSavedWithTheSettingsAndRefusesBadCoordinates(t *testing.
 		t.Errorf("a refused save changed the household: %+v", got)
 	}
 }
+
+// ADR 0020: the home keeps the id of the place it was picked from, so the
+// region line can be rebuilt in the page language. Coordinates set without a
+// place leave it empty, and a save without a home leaves it alone.
+func TestHouseholdHomeKeepsTheIdOfThePickedPlace(t *testing.T) {
+	db, _ := openTemp(t)
+	h, _ := db.CreateHousehold(store.Household{Name: "Family", HomeName: "München", HomePlaceID: 2867714})
+	if got, _ := db.HomeHousehold(); got.HomePlaceID != 2867714 {
+		t.Fatalf("created with place id %d", got.HomePlaceID)
+	}
+	in := settings(store.Time24h, store.Celsius, store.UpdateOn)
+	if err := db.SaveHouseholdSettings(h.ID, in); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := db.HomeHousehold(); got.HomePlaceID != 2867714 {
+		t.Errorf("a save without a home changed the place id to %d", got.HomePlaceID)
+	}
+	in.Home = &store.Home{Name: "Pasing", Latitude: 48.1415, Longitude: 11.456, PlaceID: 2855334}
+	if err := db.SaveHouseholdSettings(h.ID, in); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := db.HomeHousehold(); got.HomePlaceID != 2855334 || got.HomeName != "Pasing" {
+		t.Errorf("saved place id %d, name %q", got.HomePlaceID, got.HomeName)
+	}
+	in.Home = &store.Home{Name: "By API", Latitude: 48.2, Longitude: 11.4}
+	if err := db.SaveHouseholdSettings(h.ID, in); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := db.HomeHousehold(); got.HomePlaceID != 0 {
+		t.Errorf("coordinates without a place must clear the place id, got %d", got.HomePlaceID)
+	}
+}

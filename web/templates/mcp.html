@@ -1,0 +1,60 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "mcp.title") "Frame" .Frame)}}
+  <h1>{{t "mcp.title"}}</h1>
+  <p class="lead">{{if .Enabled}}{{t "mcp.intro.on"}}{{else}}{{t "mcp.intro.off"}}{{end}}</p>
+  {{if and (not .Enabled) (not .Rows)}}{{template "mcpExplain" (dict "Heading" "h2")}}{{end}}
+  <form method="post" action="/mcp" class="steps">
+    <fieldset>
+      <legend>{{t "mcp.legend"}}</legend>
+      {{template "switch" (dict "Name" "mcp" "Label" (t "mcp.switch") "OnText" (t "mcp.switch.on") "OffText" (t "mcp.switch.off") "Checked" .Enabled)}}
+      <div class="when-on">
+        {{template "facts" (list (dict "Label" (t "mcp.address") "Value" .Address))}}
+        {{if .CAFirst}}<p class="notice" role="status">{{t "mcp.ca_first"}} <a href="/ca">{{t "mcp.ca_link"}}</a></p>{{end}}
+      </div>
+    </fieldset>
+    <button class="button{{if .Enabled}} secondary{{end}}" type="submit">{{t "mcp.save"}}</button>
+  </form>
+  {{if or .Enabled .Rows}}
+  <section aria-labelledby="tokens">
+    <h2 id="tokens">{{t "mcp.tokens"}}</h2>
+    {{if .Rows}}
+    <p class="hint">{{if .Enabled}}{{t "mcp.tokens.hint"}}{{else}}{{t "mcp.tokens.hint.off"}}{{end}}</p>
+    <ul class="list-rows">
+      {{range .Rows}}{{template "rowLink" .}}
+      {{end}}
+    </ul>
+    {{if .Enabled}}<a class="button" href="/mcp/tokens/new">{{t "mcp.token.new"}}</a>{{end}}
+    {{else}}{{template "empty" (dict "Text" (t "mcp.tokens.none") "Href" "/mcp/tokens/new" "Action" (t "mcp.tokens.none.action"))}}{{end}}
+  </section>
+  {{end}}
+  {{if .Rows}}<details class="more explain-more"><summary>{{t "mcp.explain.more"}}</summary>
+{{template "mcpExplain" (dict "Heading" "h3")}}</details>
+  {{else if .Enabled}}{{template "mcpExplain" (dict "Heading" "h2")}}{{end}}
+{{template "foot"}}
+
+{{/* What MCP is, in plain words, with what an assistant may and never may do.
+     Argument: Heading, "h2" when the card stands alone, "h3" inside the fold. */}}
+{{define "mcpExplain"}}<section class="explain" aria-labelledby="what">
+  {{if eq .Heading "h2"}}<h2 id="what">{{t "mcp.explain.title"}}</h2>{{else}}<h3 id="what">{{t "mcp.explain.title"}}</h3>{{end}}
+  <p>{{rich (t "mcp.explain.what")}}</p>
+  <p>{{t "mcp.explain.say"}}</p>
+  <ul>
+    <li>{{t "mcp.explain.say1"}}</li>
+    <li>{{t "mcp.explain.say2"}}</li>
+    <li>{{t "mcp.explain.say3"}}</li>
+  </ul>
+  <h3>{{t "mcp.explain.may"}}</h3>
+  <ul>
+    <li>{{t "mcp.explain.may1"}}</li>
+    <li>{{t "mcp.explain.may2"}}</li>
+  </ul>
+  <h3>{{t "mcp.explain.know"}}</h3>
+  <ul>
+    <li>{{t "mcp.explain.know1"}}</li>
+    <li>{{t "mcp.explain.know2"}}</li>
+    <li>{{t "mcp.explain.know3"}}</li>
+  </ul>
+  <ul class="links">
+    <li><a href="https://github.com/hejmo-home/hejmo/blob/main/docs/mcp.md" rel="noopener"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg>{{t "mcp.explain.guide"}}</a></li>
+    <li><a href="https://modelcontextprotocol.io/docs/getting-started/intro" rel="noopener"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg>{{t "mcp.explain.intro"}}</a></li>
+  </ul>
+</section>{{end}}

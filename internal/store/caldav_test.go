@@ -244,3 +244,27 @@ func TestRemovingOneCalDAVCalendarLeavesTheOtherAndTheConnection(t *testing.T) {
 		t.Fatalf("connection removed with one calendar: %+v", conns)
 	}
 }
+
+// PR 81 finding: the event count of a two-way calendar is what it holds now,
+// box writes included; the last run keeps what the last sync did.
+func TestSyncedCalendarEventCountIncludesEventsCreatedOnTheBox(t *testing.T) {
+	f := newDAVFixture(t)
+	if _, err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{obj(f.a.URL+"x.ics", "e", item("x@a", "", "From iCloud", at(2026, 11, 20, 15, 0)))}, nil, nil, t0, t0); err != nil {
+		t.Fatal(err)
+	}
+	for _, title := range []string{"Box one", "Box two"} {
+		if _, err := f.db.CreateEvent(f.h.ID, calendar.Event{CalendarID: f.a.ID, Title: title, Start: at(2026, 11, 21, 9, 0), End: at(2026, 11, 21, 10, 0)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := f.db.SyncedCalendar(f.h.ID, f.a.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Sync.EventCount != 3 {
+		t.Errorf("event count = %d, want 3 (1 synced + 2 written on the box)", got.Sync.EventCount)
+	}
+	if got.Sync.LastRun.Events != 1 || got.Sync.LastRun.New != 1 {
+		t.Errorf("last run = %+v, want the run's own numbers (1 event, 1 new)", got.Sync.LastRun)
+	}
+}

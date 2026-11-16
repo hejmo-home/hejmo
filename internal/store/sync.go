@@ -28,6 +28,7 @@ type SyncState struct {
 	Failures        int          // consecutive failures
 	LastError       i18n.Message // empty after a success
 	LastRun         SyncRun      // what the last successful run did
+	EventCount      int          // events the calendar holds now, box writes included (a series counts once)
 }
 
 // SyncRun is what one sync run did to a calendar's events. A series, with its
@@ -123,9 +124,10 @@ func (db *DB) DeferSync(calendarID string, at time.Time) error {
 	return expectOne(db.sql.Exec(`UPDATE calendar_sync SET next_attempt_at = ? WHERE calendar_id = ?`, stamp(at), calendarID))
 }
 
-const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, c.shared, n.id, COALESCE(c.remote_url, n.url),
+const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, c.shared, c.waste, n.id, COALESCE(c.remote_url, n.url),
 	s.interval_minutes, s.started_at, s.last_attempt_at, s.last_success_at, s.next_attempt_at, s.failures, s.last_error_key, s.last_error_params,
-	s.last_run_events, s.last_run_new, s.last_run_changed, s.last_run_removed
+	s.last_run_events, s.last_run_new, s.last_run_changed, s.last_run_removed,
+	(SELECT COUNT(*) FROM events ev WHERE ev.calendar_id = c.id AND ev.series_id IS NULL)
 	FROM calendars c JOIN calendar_connections n ON n.id = c.connection_id JOIN calendar_sync s ON s.calendar_id = c.id`
 
 // SyncedCalendar returns one synced calendar of a household.
@@ -161,9 +163,9 @@ func (db *DB) syncedCalendars(query string, args ...any) ([]SyncedCalendar, erro
 		var c SyncedCalendar
 		var started, attempt, success, next sql.NullString
 		var errKey, errParams string
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.ConnectionID, &c.URL,
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste, &c.ConnectionID, &c.URL,
 			&c.Sync.IntervalMinutes, &started, &attempt, &success, &next, &c.Sync.Failures, &errKey, &errParams,
-			&c.Sync.LastRun.Events, &c.Sync.LastRun.New, &c.Sync.LastRun.Changed, &c.Sync.LastRun.Removed); err != nil {
+			&c.Sync.LastRun.Events, &c.Sync.LastRun.New, &c.Sync.LastRun.Changed, &c.Sync.LastRun.Removed, &c.Sync.EventCount); err != nil {
 			rows.Close()
 			return nil, err
 		}

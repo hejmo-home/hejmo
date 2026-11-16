@@ -24,24 +24,44 @@ var apiRoutes = []APIRoute{
 	{"GET", "/people", auth.Perm("people", auth.Read), (*server).apiListPeople},
 	{"POST", "/people", auth.Perm("people", auth.Write), (*server).apiCreatePerson},
 	{"GET", "/people/{id}", auth.Perm("people", auth.Read), (*server).apiGetPerson},
+	{"PATCH", "/people/{id}", auth.Perm("people", auth.Write), (*server).apiUpdatePerson},
+	{"PUT", "/people/order", auth.Perm("people", auth.Write), (*server).apiOrderPeople},
+
 	{"GET", "/people/{id}/stars", auth.Perm("tasks", auth.Read), (*server).apiGetStars},
 	{"POST", "/people/{id}/stars", auth.Perm("tasks", auth.Write), (*server).apiBookStars},
+	{"GET", "/me/passkeys", auth.Perm("people", auth.Read), (*server).apiListPasskeys},
+	{"POST", "/me/passkeys/registration", auth.Perm("people", auth.Write), (*server).apiPasskeyBegin},
+	{"POST", "/me/passkeys", auth.Perm("people", auth.Write), (*server).apiPasskeyCreate},
+	{"PATCH", "/me/passkeys/{id}", auth.Perm("people", auth.Write), (*server).apiRenamePasskey},
+	{"DELETE", "/me/passkeys/{id}", auth.Perm("people", auth.Delete), (*server).apiDeletePasskey},
 	{"POST", "/me/recovery-codes", auth.Perm("people", auth.Write), (*server).apiNewRecoveryCodes},
+	{"GET", "/people/{id}/invitation", auth.Perm("tokens", auth.Read), (*server).apiGetInvitation},
+	{"POST", "/people/{id}/invitation", auth.Perm("tokens", auth.Write), (*server).apiCreateInvitation},
+	{"DELETE", "/people/{id}/invitation", auth.Perm("tokens", auth.Delete), (*server).apiWithdrawInvitation},
 	{"POST", "/people/{id}/reset-otp", auth.Perm("people", auth.Write), (*server).apiResetOTP},
 	{"GET", "/tokens", auth.Perm("tokens", auth.Read), (*server).apiListTokens},
 	{"POST", "/tokens", auth.Perm("tokens", auth.Write), (*server).apiCreateToken},
+	{"GET", "/mcp", auth.Perm("settings", auth.Read), (*server).apiGetMCP},
+	{"PUT", "/mcp", auth.Perm("settings", auth.Write), (*server).apiSetMCP},
+	{"POST", "/mcp/tokens", auth.Perm("tokens", auth.Write), (*server).apiCreateMCPToken},
 	{"POST", "/caldav-profile", auth.Perm("tokens", auth.Write), (*server).apiIOSProfile},
 	{"DELETE", "/tokens/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokeToken},
 	{"GET", "/groups", auth.Perm("people", auth.Read), (*server).apiListGroups},
 	{"POST", "/groups", auth.Perm("people", auth.Write), (*server).apiCreateGroup},
+	{"PATCH", "/groups/{id}", auth.Perm("people", auth.Write), (*server).apiUpdateGroup},
+	{"DELETE", "/groups/{id}", auth.Perm("people", auth.Write), (*server).apiDeleteGroup},
 	{"GET", "/calendars", auth.Perm("events", auth.Read), (*server).apiListCalendars},
 	{"POST", "/calendars", auth.Perm("events", auth.Write), (*server).apiAddCalendar},
 	{"PATCH", "/calendars/{id}", auth.Perm("events", auth.Write), (*server).apiUpdateCalendar},
+	{"GET", "/day-notes", auth.Perm("displays", auth.Read), (*server).apiListDayNotes},
+	{"PUT", "/day-notes/{day}", auth.Perm("displays", auth.Write), (*server).apiSetDayNote},
+	{"DELETE", "/day-notes/{day}", auth.Perm("displays", auth.Delete), (*server).apiDeleteDayNote},
 	{"DELETE", "/calendars/{id}", auth.Perm("events", auth.Delete), (*server).apiDeleteCalendar},
 	{"POST", "/calendars/{id}/sync", auth.Perm("events", auth.Write), (*server).apiSyncCalendar},
 	{"GET", "/calendar-connections", auth.Perm("settings", auth.Read), (*server).apiListConnections},
 	{"POST", "/calendar-connections", auth.Perm("settings", auth.Write), (*server).apiConnect},
 	{"DELETE", "/calendar-connections/{id}", auth.Perm("settings", auth.Delete), (*server).apiDeleteConnection},
+	{"PUT", "/calendar-connections/{id}/credentials", auth.Perm("settings", auth.Write), (*server).apiChangeConnectionPassword},
 	{"GET", "/calendar-connections/{id}/calendars", auth.Perm("settings", auth.Write), (*server).apiDiscover},
 	{"GET", "/calendar-connections/{id}/event-counts", auth.Perm("settings", auth.Write), (*server).apiEventCounts},
 	{"POST", "/calendar-connections/{id}/calendars", auth.Perm("settings", auth.Write), (*server).apiAddConnectionCalendar},
@@ -59,8 +79,50 @@ var apiRoutes = []APIRoute{
 	{"GET", "/search", auth.Perm("events", auth.Read), (*server).apiSearch},
 	{"GET", "/tasks", auth.Perm("tasks", auth.Read), (*server).apiListTasks},
 	{"POST", "/tasks", auth.Perm("tasks", auth.Write), (*server).apiCreateTask},
+	{"PATCH", "/tasks/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchTask},
 	{"DELETE", "/tasks/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeleteTask},
 	{"PUT", "/tasks/{id}/done", auth.Perm("tasks", auth.Complete), (*server).apiSetTaskDone},
+	{"POST", "/tasks/{id}/subtasks", auth.Perm("tasks", auth.Write), (*server).apiAddSubtask},
+	{"PATCH", "/tasks/{id}/subtasks/{sub_id}", auth.Perm("tasks", auth.Write), (*server).apiPatchSubtask},
+	{"DELETE", "/tasks/{id}/subtasks/{sub_id}", auth.Perm("tasks", auth.Write), (*server).apiDeleteSubtask},
+	{"POST", "/tasks/{id}/subtasks/{sub_id}/move", auth.Perm("tasks", auth.Write), (*server).apiMoveSubtask},
+	{"PUT", "/tasks/{id}/subtasks/{sub_id}/done", auth.Perm("tasks", auth.Complete), (*server).apiSetSubtaskDone},
+	{"GET", "/routines", auth.Perm("tasks", auth.Read), (*server).apiListRoutines},
+	{"POST", "/routines", auth.Perm("tasks", auth.Write), (*server).apiCreateRoutine},
+	{"GET", "/routines/{id}", auth.Perm("tasks", auth.Read), (*server).apiGetRoutine},
+	{"PATCH", "/routines/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchRoutine},
+	{"DELETE", "/routines/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDissolveRoutine},
+	{"POST", "/routines/{id}/tasks", auth.Perm("tasks", auth.Write), (*server).apiRoutineAddTask},
+	{"DELETE", "/routines/{id}/tasks/{task_id}", auth.Perm("tasks", auth.Write), (*server).apiRoutineRemoveTask},
+	{"PUT", "/routines/{id}/order", auth.Perm("tasks", auth.Write), (*server).apiRoutineOrder},
+	{"GET", "/routine-templates", auth.Perm("tasks", auth.Read), (*server).apiListRoutineTemplates},
+	{"POST", "/routine-templates", auth.Perm("tasks", auth.Write), (*server).apiSaveRoutineTemplate},
+	{"GET", "/routine-templates/{id}", auth.Perm("tasks", auth.Read), (*server).apiGetRoutineTemplate},
+	{"PATCH", "/routine-templates/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchRoutineTemplate},
+	{"DELETE", "/routine-templates/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeleteRoutineTemplate},
+	{"POST", "/routine-templates/{id}/steps", auth.Perm("tasks", auth.Write), (*server).apiAddTemplateStep},
+	{"PATCH", "/routine-templates/{id}/steps/{step_id}", auth.Perm("tasks", auth.Write), (*server).apiPatchTemplateStep},
+	{"DELETE", "/routine-templates/{id}/steps/{step_id}", auth.Perm("tasks", auth.Write), (*server).apiDeleteTemplateStep},
+	{"PUT", "/routine-templates/{id}/order", auth.Perm("tasks", auth.Write), (*server).apiTemplateOrder},
+	{"GET", "/lists", auth.Perm("lists", auth.Read), (*server).apiListLists},
+	{"POST", "/lists", auth.Perm("lists", auth.Write), (*server).apiCreateList},
+	{"GET", "/lists/{id}", auth.Perm("lists", auth.Read), (*server).apiGetList},
+	{"PATCH", "/lists/{id}", auth.Perm("lists", auth.Write), (*server).apiUpdateList},
+	{"DELETE", "/lists/{id}", auth.Perm("lists", auth.Delete), (*server).apiDeleteList},
+	{"POST", "/lists/{id}/entries", auth.Perm("lists", auth.Write), (*server).apiAddEntry},
+	{"DELETE", "/lists/{id}/entries/{entry}", auth.Perm("lists", auth.Delete), (*server).apiDeleteEntry},
+	{"PUT", "/lists/{id}/entries/{entry}/done", auth.Perm("lists", auth.Complete), (*server).apiSetEntryDone},
+	{"PUT", "/lists/{id}/entries/{entry}/position", auth.Perm("lists", auth.Write), (*server).apiMoveEntry},
+	{"DELETE", "/lists/{id}/completed-entries", auth.Perm("lists", auth.Delete), (*server).apiDeleteCompleted},
+	{"GET", "/meals", auth.Perm("meals", auth.Read), (*server).apiListMeals},
+	{"PUT", "/meals/{date}/{mealtime}", auth.Perm("meals", auth.Write), (*server).apiSetMeal},
+	{"DELETE", "/meals/{date}/{mealtime}", auth.Perm("meals", auth.Delete), (*server).apiDeleteMeal},
+	{"POST", "/meals/{date}/{mealtime}/restore", auth.Perm("meals", auth.Write), (*server).apiRestoreMeal},
+	{"GET", "/meal-templates", auth.Perm("meals", auth.Read), (*server).apiListMealTemplates},
+	{"POST", "/meal-templates", auth.Perm("meals", auth.Write), (*server).apiCreateMealTemplate},
+	{"GET", "/meal-templates/{id}", auth.Perm("meals", auth.Read), (*server).apiGetMealTemplate},
+	{"PUT", "/meal-templates/{id}", auth.Perm("meals", auth.Write), (*server).apiUpdateMealTemplate},
+	{"DELETE", "/meal-templates/{id}", auth.Perm("meals", auth.Delete), (*server).apiDeleteMealTemplate},
 	{"GET", "/displays", auth.Perm("displays", auth.Read), (*server).apiListDisplays},
 	{"POST", "/displays", auth.Perm("displays", auth.Write), (*server).apiPairDisplay},
 	{"PATCH", "/displays/{id}", auth.Perm("displays", auth.Write), (*server).apiUpdateDisplay},
@@ -139,6 +201,9 @@ func (s *server) authenticate(r *http.Request) (principal, bool) {
 		if err != nil {
 			return principal{}, false
 		}
+		if t.MCP { // a token made for MCP works there and nowhere else
+			return principal{}, false
+		}
 		s.touchToken(t)
 		p, err := s.db.Person(h.ID, t.PersonID)
 		return principal{household: h, person: p, scopes: t.Scopes}, err == nil
@@ -199,20 +264,26 @@ func (s *server) apiCreatePerson(w http.ResponseWriter, r *http.Request, p princ
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	if strings.TrimSpace(in.Name) == "" || !in.Role.Valid() {
-		writeError(w, http.StatusUnprocessableEntity, "name and a valid role are required")
+	if !in.Role.Valid() {
+		writeError(w, http.StatusUnprocessableEntity, "a valid role is required")
 		return
 	}
-	if in.Color == "" || in.Shape == "" {
-		people, _ := s.db.People(p.household.ID)
-		style := personStyles[len(people)%len(personStyles)]
-		if in.Color == "" {
-			in.Color = style.color
-		}
-		if in.Shape == "" {
-			in.Shape = style.shape
-		}
+	people, err := s.db.People(p.household.ID)
+	if err != nil {
+		s.fail(w, "list people", err)
+		return
 	}
+	look := personInput{in.Name, in.Color, in.Shape}
+	if field, _ := checkLook(people, "", &look, nil); field != "" {
+		writeError(w, http.StatusUnprocessableEntity, "invalid "+field)
+		return
+	}
+	var ok bool
+	if look.Color, look.Shape, ok = freeStyle(people, look.Color, look.Shape); !ok {
+		writeError(w, http.StatusUnprocessableEntity, "no free colour and marker left")
+		return
+	}
+	in.Name, in.Color, in.Shape = look.Name, look.Color, look.Shape
 	created, err := s.db.AddPerson(p.household.ID, store.Person{Name: in.Name, Role: in.Role, Color: in.Color, Shape: in.Shape, Symbol: in.Symbol})
 	if err != nil {
 		s.fail(w, "create person", err)
@@ -251,6 +322,7 @@ type tokenJSON struct {
 	Person     string  `json:"person"`
 	CreatedAt  string  `json:"created_at"`
 	LastUsedAt *string `json:"last_used_at"`
+	MCP        bool    `json:"mcp"`
 }
 
 func (s *server) apiListTokens(w http.ResponseWriter, _ *http.Request, p principal) {
@@ -262,7 +334,7 @@ func (s *server) apiListTokens(w http.ResponseWriter, _ *http.Request, p princip
 	loc := p.location()
 	out := make([]tokenJSON, 0, len(tokens))
 	for _, t := range tokens {
-		j := tokenJSON{ID: t.ID, Name: t.Name, Scopes: t.Scopes, Person: t.PersonName, CreatedAt: t.Created.In(loc).Format(time.RFC3339)}
+		j := tokenJSON{ID: t.ID, Name: t.Name, Scopes: t.Scopes, Person: t.PersonName, CreatedAt: t.Created.In(loc).Format(time.RFC3339), MCP: t.MCP}
 		if !t.LastUsed.IsZero() {
 			used := t.LastUsed.In(loc).Format(time.RFC3339)
 			j.LastUsedAt = &used
@@ -289,6 +361,11 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// writeFieldError is writeError for a refused field: the body names it.
+func writeFieldError(w http.ResponseWriter, status int, field, msg string) {
+	writeJSON(w, status, map[string]string{"error": msg, "field": field})
 }
 
 func writeError(w http.ResponseWriter, status int, msg string) {

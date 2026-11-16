@@ -21,6 +21,8 @@ func successLine(page string) string {
 	return strings.TrimSpace(regexp.MustCompile(`(?s)<svg.*?</svg>`).ReplaceAllString(m[1], ""))
 }
 
+var linkTags = regexp.MustCompile(`</?a[^>]*>`)
+
 func getEN(b *box, path string) resp {
 	b.t.Helper()
 	return b.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": "en"})
@@ -59,28 +61,28 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		form             url.Values
 		want             string
 	}{
-		{"settings", "/settings/household", "/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}, "Saved."},
-		{"task add", "/tasks", "/tasks", url.Values{"person": {tb.miaID}, "title": {"Read"}, "repeat": {"daily"}}, "Task added."},
+		{"settings", "/settings/household", "/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}, "Household settings saved."},
+		{"task add", "/tasks", "/tasks", url.Values{"person": {tb.miaID}, "title": {"Read"}, "repeat": {"daily"}}, "“Read” created for Mia. Add subtasks if Mia should tick it off in parts."},
 		{"task done", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"1"}}, "Marked as done."},
 		{"task reopen", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"0"}}, "Marked as open."},
 		{"calendar add", "/calendars", "/calendars", url.Values{"name": {"Choir"}, "url": {"https://example.org/a.ics"}, "color": {"#2F5E7A"}, "interval": {"60"}}, "Calendar added."},
-		{"calendar sync", "/calendars/" + calID + "/sync", "/calendars", url.Values{}, "Updated at 1:00:00 PM. Events: 0 (new 0, changed 0, removed 0)."},
+		{"calendar sync", "/calendars/" + calID + "/sync", "/calendars/" + calID, url.Values{}, "Updated at 1:00:00\u00a0PM. Events: 0 (new 0, changed 0, removed 0)."},
 		{"display pair", "/displays", "/displays", pairForm(code2), "Display paired."},
-		{"display settings", "/displays/" + displayID + "/settings", "/displays", url.Values{"show_tomorrow": {"on"}}, "Saved."},
+		{"display settings", "/displays/" + displayID + "/settings", "/displays/" + displayID, url.Values{"show_tomorrow": {"on"}}, "Saved."},
 		{"share", "/caldav/calendars/" + calID + "/share", "/caldav", url.Values{"shared": {"on"}}, "Sharing through the box is on."},
-		{"token revoke", "/caldav/tokens/" + tokenID + "/revoke", "/caldav", url.Values{}, "Access revoked."},
+		{"token revoke", "/caldav/tokens/" + tokenID + "/revoke", "/caldav", url.Values{}, "Access for “Phone” revoked."},
 		{"connection calendars", "/connections/" + connID + "/calendars", "/calendars", url.Values{"calendar": {flowCalendar}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}}, "Calendar added."},
 		{"task delete", "/tasks/" + taskID + "/delete", "/tasks", url.Values{}, "Task deleted."},
-		{"calendar remove", "/calendars/" + calID + "/delete", "/calendars", url.Values{}, "Calendar removed."},
-		{"connection remove", "/connections/" + connID + "/delete", "/calendars", url.Values{}, "Connection removed."},
-		{"display unpair", "/displays/" + displayID + "/unpair", "/displays", url.Values{}, "Display unpaired."},
+		{"calendar remove", "/calendars/" + calID + "/delete", "/calendars", url.Values{}, "“Holidays” removed."},
+		{"connection remove", "/connections/" + connID + "/delete", "/calendars", url.Values{}, "“u” disconnected."},
+		{"display unpair", "/displays/" + displayID + "/unpair", "/displays", url.Values{}, "“Hallway” unpaired."},
 	}
 	for _, s := range steps {
 		r := b.post(s.path, s.form)
 		if r.status != http.StatusSeeOther || r.location != s.page {
 			t.Fatalf("%s: POST = %d %q", s.name, r.status, r.location)
 		}
-		if got := successLine(getEN(b, s.page).body); got != s.want {
+		if got := linkTags.ReplaceAllString(successLine(getEN(b, s.page).body), ""); got != s.want { // a link inside the line is part of its words
 			t.Errorf("%s: success line = %q, want %q", s.name, got, s.want)
 		}
 		if got := successLine(getEN(b, s.page).body); got != "" {
@@ -92,7 +94,7 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 func TestSuccessLineIsGermanWithGermanLocale(t *testing.T) {
 	b := signedInBox(t)
 	b.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}})
-	if got := successLine(b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body); got != "Gespeichert." {
+	if got := successLine(b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body); got != "Haushaltseinstellungen gespeichert." {
 		t.Fatalf("success line = %q", got)
 	}
 }
@@ -125,7 +127,7 @@ func TestCreatingADeviceTokenShowsASuccessLine(t *testing.T) {
 	if r.status != http.StatusOK {
 		t.Fatalf("POST = %d", r.status)
 	}
-	if got := successLine(r.body); got != "Token created." {
+	if got := successLine(r.body); got != "Device token for “Phone” created." {
 		t.Errorf("success line = %q", got)
 	}
 	if !strings.Contains(r.body, "data-device-token=") {

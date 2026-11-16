@@ -1,10 +1,14 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "recovery.title") "Frame" .Frame)}}
+{{template "head" (dict "Lang" .Lang "Title" (t "recovery.title") "Frame" .Frame "Wizard" .Wizard)}}
   <h1>{{t "recovery.title"}}</h1>
-  <p class="lead">{{t "recovery.intro"}}</p>
+  <p class="lead">{{t "recovery.lead"}}</p>
   <p class="notice" role="status">{{t "recovery.shown_once"}}</p>
-  <ul class="recovery-codes">
-    {{range .Codes}}<li><code class="secret" data-recovery-code="{{.}}">{{.}}</code></li>
-    {{end}}
-  </ul>
-  <p><a class="button" href="/">{{t "recovery.continue"}}</a></p>
+  <form class="tile" method="get" action="/">
+    <ol class="codes">
+      {{range .Codes}}<li><code data-recovery-code="{{.}}">{{.}}</code></li>
+      {{end}}
+    </ol>
+    <div class="actions no-print"><button class="button secondary" type="button" data-print>{{t "recovery.print"}}</button></div>
+    <label class="confirm"><input type="checkbox" required>{{t "recovery.confirm"}}</label>
+    <div class="actions"><button class="button" type="submit">{{t .ContinueKey}}</button></div>
+  </form>
 {{template "foot"}}

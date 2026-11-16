@@ -257,6 +257,57 @@ func TestShowTomorrowBlockIsAPerDisplaySettingOffByDefault(t *testing.T) {
 	}
 }
 
+func pairedDisplayOfType(t *testing.T, typ store.DisplayType) (*store.DB, store.Household, store.Display) {
+	t.Helper()
+	db, h := householdForDisplays(t)
+	d, _ := db.OpenPairing(h.ID, "hash-1", pairT0)
+	paired, err := db.ConfirmPairing(h.ID, d.Code, store.Display{Name: "Hallway", Type: typ}, pairT0)
+	if err != nil {
+		t.Fatal(err)
+	}
+	return db, h, paired
+}
+
+// ADR 0015: E-Ink light, normal screen automatic; offsets start at 0.
+func TestNewDisplaysGetTheDefaultThemeOfTheirType(t *testing.T) {
+	for typ, want := range map[store.DisplayType]string{store.DisplayEInkBW: "light", store.DisplayEInkColor: "light", store.DisplayScreen: "auto"} {
+		_, _, d := pairedDisplayOfType(t, typ)
+		if string(d.Theme) != want || d.SunriseOffset != 0 || d.SunsetOffset != 0 {
+			t.Errorf("%s: theme %q offsets %d/%d, want %q 0/0", typ, d.Theme, d.SunriseOffset, d.SunsetOffset, want)
+		}
+	}
+}
+
+func TestDisplayThemeAndOffsetsAreSavedPerDisplay(t *testing.T) {
+	db, h, d := pairedDisplayOfType(t, store.DisplayScreen)
+	if err := db.SetDisplayTheme(h.ID, d.ID, "auto", -30, 45); err != nil {
+		t.Fatal(err)
+	}
+	list, _ := db.Displays(h.ID)
+	if list[0].Theme != "auto" || list[0].SunriseOffset != -30 || list[0].SunsetOffset != 45 {
+		t.Fatalf("saved = %+v", list[0])
+	}
+	got, _ := db.DisplayByToken("hash-1", pairT0)
+	if got.Theme != "auto" || got.SunriseOffset != -30 || got.SunsetOffset != 45 {
+		t.Fatalf("by token = %+v", got)
+	}
+}
+
+func TestDisplayThemeRefusesUnknownThemesAndOffsetsBeyond180(t *testing.T) {
+	db, h, d := pairedDisplayOfType(t, store.DisplayScreen)
+	for _, c := range []struct {
+		theme     string
+		rise, set int
+	}{{"sepia", 0, 0}, {"auto", -181, 0}, {"auto", 0, 181}} {
+		if err := db.SetDisplayTheme(h.ID, d.ID, store.Theme(c.theme), c.rise, c.set); !errors.Is(err, store.ErrInvalid) {
+			t.Errorf("%+v: err = %v, want ErrInvalid", c, err)
+		}
+	}
+	if err := db.SetDisplayTheme(h.ID, "no-such-display", "dark", 0, 0); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unknown display: err = %v, want ErrNotFound", err)
+	}
+}
+
 func pairedDisplay(t *testing.T) (*store.DB, store.Household, store.Display) {
 	t.Helper()
 	db, _ := openSealed(t)
@@ -348,5 +399,32 @@ func TestConfirmingNamesTheWrongField(t *testing.T) {
 		if !errors.As(err, &fe) || fe.Field != c.field || !errors.Is(err, store.ErrInvalid) {
 			t.Errorf("ConfirmPairing(%+v) = %v, want a FieldError for %q", c.in, err, c.field)
 		}
+	}
+}
+
+// Ticket 111: a paired display can be renamed and given another type.
+func TestPairedDisplayCanBeRenamedAndRetyped(t *testing.T) {
+	db, h := householdForDisplays(t)
+	d, _ := db.OpenPairing(h.ID, "hash-1", pairT0)
+	paired, err := db.ConfirmPairing(h.ID, d.Code, store.Display{Name: "Hallway", Type: store.DisplayEInkBW}, pairT0.Add(time.Minute))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetDisplayIdentity(h.ID, paired.ID, "  Kitchen ", store.DisplayScreen); err != nil {
+		t.Fatal(err)
+	}
+	list, _ := db.Displays(h.ID)
+	if list[0].Name != "Kitchen" || list[0].Type != store.DisplayScreen {
+		t.Errorf("display = %+v", list[0])
+	}
+	var fe *store.FieldError
+	if err := db.SetDisplayIdentity(h.ID, paired.ID, "", store.DisplayScreen); !errors.As(err, &fe) || fe.Field != "name" {
+		t.Errorf("blank name = %v, want a name error", err)
+	}
+	if err := db.SetDisplayIdentity(h.ID, paired.ID, "x", "hologram"); !errors.As(err, &fe) || fe.Field != "type" {
+		t.Errorf("unknown type = %v, want a type error", err)
+	}
+	if err := db.SetDisplayIdentity(h.ID, "nope", "x", store.DisplayScreen); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unknown display = %v", err)
 	}
 }

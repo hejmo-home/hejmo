@@ -16,6 +16,15 @@ type Account struct {
 	// TOTPReset is set once the codes were reset (ADR 0017): the next sign-in
 	// sets up new ones.
 	TOTPReset bool
+	// TOTPConfirmedAt is when the one-time code was set up; zero until then.
+	TOTPConfirmedAt time.Time
+	// TOTPResetAt and TOTPResetBy say when and by whom (a person ID) the codes
+	// were reset; zero and "" when they were not, or by the box's command line.
+	TOTPResetAt time.Time
+	TOTPResetBy string
+	// Language is the interface language the person chose (ticket 134), or ""
+	// when none was chosen yet.
+	Language string
 }
 
 // APIToken is a bearer token acting on behalf of a person, limited by scopes.
@@ -25,6 +34,9 @@ type APIToken struct {
 	Hash     string
 	PersonID string
 	Scopes   string
+	// MCP marks a token created for the MCP server (ticket 7.7): it works
+	// there and nowhere else, and no other token works there.
+	MCP bool
 	// Filled by APITokens only.
 	PersonName string
 	Created    time.Time
@@ -75,29 +87,32 @@ func (db *DB) ConfirmTOTP(personID string) error {
 
 // AccountByUsername looks up credentials (case-insensitive).
 func (db *DB) AccountByUsername(username string) (Account, error) {
-	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL
+	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, totp_confirmed_at, totp_reset_at, COALESCE(totp_reset_by, ''), COALESCE(language, '')
 		FROM accounts WHERE username = ?`, username))
 }
 
 // AccountByPerson looks up credentials by person.
 func (db *DB) AccountByPerson(personID string) (Account, error) {
-	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL
+	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, totp_confirmed_at, totp_reset_at, COALESCE(totp_reset_by, ''), COALESCE(language, '')
 		FROM accounts WHERE person_id = ?`, personID))
 }
 
 func (db *DB) scanAccount(row *sql.Row) (Account, error) {
 	var a Account
-	err := row.Scan(&a.PersonID, &a.Username, &a.PasswordHash, &a.TOTPSecret, &a.TOTPConfirmed, &a.TOTPReset)
+	var confirmedAt, resetAt sql.NullString
+	err := row.Scan(&a.PersonID, &a.Username, &a.PasswordHash, &a.TOTPSecret, &a.TOTPConfirmed, &a.TOTPReset, &confirmedAt, &resetAt, &a.TOTPResetBy, &a.Language)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Account{}, ErrNotFound
 	}
+	a.TOTPConfirmedAt, a.TOTPResetAt = parseStamp(confirmedAt), parseStamp(resetAt)
 	return a, err
 }
 
-// CreateSession stores a browser session by token hash.
-func (db *DB) CreateSession(tokenHash, personID string, expires time.Time) error {
-	_, err := db.sql.Exec(`INSERT INTO sessions (token_hash, person_id, created_at, expires_at) VALUES (?, ?, ?, ?)`,
-		tokenHash, personID, now(), expires.UTC().Format(time.RFC3339))
+// CreateSession stores a browser session by token hash. device holds the
+// derived device and browser keys, never the raw User-Agent.
+func (db *DB) CreateSession(tokenHash, personID, device string, created, expires time.Time) error {
+	_, err := db.sql.Exec(`INSERT INTO sessions (id, token_hash, person_id, device, created_at, last_seen_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		newID(), tokenHash, personID, device, stamp(created), stamp(created), stamp(expires))
 	return err
 }
 
@@ -132,8 +147,8 @@ func (db *DB) DeleteSession(tokenHash string) error {
 // CreateAPIToken stores a token (only its hash).
 func (db *DB) CreateAPIToken(t APIToken) (APIToken, error) {
 	t.ID = newID()
-	_, err := db.sql.Exec(`INSERT INTO api_tokens (id, name, token_hash, person_id, scopes, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-		t.ID, t.Name, t.Hash, t.PersonID, t.Scopes, now())
+	_, err := db.sql.Exec(`INSERT INTO api_tokens (id, name, token_hash, person_id, scopes, mcp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, t.Name, t.Hash, t.PersonID, t.Scopes, t.MCP, now())
 	return t, err
 }
 
@@ -141,8 +156,8 @@ func (db *DB) CreateAPIToken(t APIToken) (APIToken, error) {
 func (db *DB) APITokenByHash(hash string) (APIToken, error) {
 	var t APIToken
 	var used sql.NullString
-	err := db.sql.QueryRow(`SELECT id, name, token_hash, person_id, scopes, last_used_at FROM api_tokens
-		WHERE token_hash = ? AND revoked_at IS NULL`, hash).Scan(&t.ID, &t.Name, &t.Hash, &t.PersonID, &t.Scopes, &used)
+	err := db.sql.QueryRow(`SELECT id, name, token_hash, person_id, scopes, mcp, last_used_at FROM api_tokens
+		WHERE token_hash = ? AND revoked_at IS NULL`, hash).Scan(&t.ID, &t.Name, &t.Hash, &t.PersonID, &t.Scopes, &t.MCP, &used)
 	if errors.Is(err, sql.ErrNoRows) {
 		return APIToken{}, ErrNotFound
 	}
@@ -153,7 +168,7 @@ func (db *DB) APITokenByHash(hash string) (APIToken, error) {
 // APITokens lists a household's active (not revoked) tokens, oldest first.
 // The token hash is left out.
 func (db *DB) APITokens(householdID string) ([]APIToken, error) {
-	rows, err := db.sql.Query(`SELECT t.id, t.name, t.person_id, p.name, t.scopes, t.created_at, t.last_used_at
+	rows, err := db.sql.Query(`SELECT t.id, t.name, t.person_id, p.name, t.scopes, t.mcp, t.created_at, t.last_used_at
 		FROM api_tokens t JOIN household_members m ON m.person_id = t.person_id JOIN people p ON p.id = t.person_id
 		WHERE m.household_id = ? AND t.revoked_at IS NULL ORDER BY t.created_at, t.rowid`, householdID)
 	if err != nil {
@@ -165,7 +180,7 @@ func (db *DB) APITokens(householdID string) ([]APIToken, error) {
 		var t APIToken
 		var created string
 		var used sql.NullString
-		if err := rows.Scan(&t.ID, &t.Name, &t.PersonID, &t.PersonName, &t.Scopes, &created, &used); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.PersonID, &t.PersonName, &t.Scopes, &t.MCP, &created, &used); err != nil {
 			return nil, err
 		}
 		t.Created, t.LastUsed = parseStamp(sql.NullString{String: created, Valid: true}), parseStamp(used)
@@ -277,22 +292,53 @@ func (db *DB) SpendRecoveryCode(id string) error {
 
 // ResetOTP removes a person's one-time code secret and recovery codes and
 // ends their browser sessions. Device tokens and paired phones' device
-// sessions stay (ADR 0017). The next sign-in must set
-// up one-time codes again.
+// sessions stay (ADR 0017). The next sign-in must set up one-time codes again.
+// This is the reset from the box's command line; it names nobody as the one
+// who reset.
 func (db *DB) ResetOTP(personID string) error {
+	_, err := db.ResetOTPBy(personID, "", nil)
+	return err
+}
+
+// ResetOTPBy is ResetOTP by another parent (byID, who is remembered), which
+// also removes the given passkeys of the person in the same step (ADR 0018:
+// a passkey on the lost device could otherwise keep signing in). Only
+// passkeys of the person are removed; the others in removeIDs are ignored.
+// It returns the passkeys it removed.
+func (db *DB) ResetOTPBy(personID, byID string, removeIDs []string) ([]Passkey, error) {
 	tx, err := db.sql.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer tx.Rollback()
-	res, err := tx.Exec(`UPDATE accounts SET totp_secret = '', totp_confirmed_at = NULL, totp_reset_at = ? WHERE person_id = ?`, now(), personID)
+	by := sql.NullString{String: byID, Valid: byID != ""}
+	res, err := tx.Exec(`UPDATE accounts SET totp_secret = '', totp_confirmed_at = NULL, totp_reset_at = ?, totp_reset_by = ? WHERE person_id = ?`, now(), by, personID)
 	if err := expectOne(res, err); err != nil {
-		return err
+		return nil, err
 	}
 	for _, q := range []string{`DELETE FROM recovery_codes WHERE person_id = ?`, `DELETE FROM sessions WHERE person_id = ? AND phone_id IS NULL`} {
 		if _, err := tx.Exec(q, personID); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return tx.Commit()
+	var removed []Passkey
+	for _, id := range removeIDs {
+		p, err := scanPasskey(tx.QueryRow(`SELECT `+passkeyColumns+` FROM passkeys WHERE id = ? AND person_id = ?`, id, personID))
+		if errors.Is(err, sql.ErrNoRows) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		if _, err := tx.Exec(`DELETE FROM passkeys WHERE id = ?`, id); err != nil {
+			return nil, err
+		}
+		removed = append(removed, p)
+	}
+	return removed, tx.Commit()
+}
+
+// SetAccountLanguage stores the interface language a person chose.
+func (db *DB) SetAccountLanguage(personID, language string) error {
+	return expectOne(db.sql.Exec(`UPDATE accounts SET language = ? WHERE person_id = ?`, language, personID))
 }

@@ -72,9 +72,10 @@ func TestDevelopmentDatabaseWithOldMigrationNamesMigratesWithoutRerunning(t *tes
 		"0005_public_https.sql", "0006_displays.sql", "0007_tasks.sql", "0008_display_show_tomorrow.sql",
 		"0009_household_settings.sql", "0010_caldav.sql", "0011_caldav_writeback.sql",
 	}
-	// Only the rows of the first eleven migrations go back to counter names; later
-	// migrations (recovery codes, ...) stay recorded, as on a real dev database.
-	if _, err := db.SQL().Exec(`DELETE FROM schema_migrations WHERE version <= 202611142300`); err != nil {
+	// Only the rows of the eleven migrations that had counter names go back to them (the
+	// caldav write-back migration sorts after the display theme one); later migrations stay
+	// recorded, as on a real dev database.
+	if _, err := db.SQL().Exec(`DELETE FROM schema_migrations WHERE version <= 202611142200 OR version = 202611142300`); err != nil {
 		t.Fatal(err)
 	}
 	for i, name := range old {

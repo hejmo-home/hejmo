@@ -33,11 +33,17 @@ func (s *server) renderDisplayContent(h store.Household, d store.Display, lang s
 	v := quietView{Black: d.Type == store.DisplayScreen}
 	if !v.Black {
 		morning := d.Quiet.Morning(now)
-		occs, err := s.occurrences(h, lang, morning, morning.AddDate(0, 0, 1))
+		all, err := s.occurrences(h, lang, morning, morning.AddDate(0, 0, 1))
 		if err != nil {
 			return "", "", err
 		}
-		v.Night = familyview.BuildNight(familyview.NightInput{Morning: morning, Occurrences: occs, TimeFormat: h.TimeFormat})
+		cals, err := s.db.Calendars(h.ID)
+		if err != nil {
+			return "", "", err
+		}
+		occs, waste := splitWaste(all, cals)
+		v.Night = familyview.BuildNight(familyview.NightInput{Morning: morning, Occurrences: occs, TimeFormat: h.TimeFormat,
+			Waste: familyview.WasteTitles(waste, morning, morning.AddDate(0, 0, 1))})
 		v.ReloadSeconds = quietReloadSeconds
 	}
 	var buf bytes.Buffer

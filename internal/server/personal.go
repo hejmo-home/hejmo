@@ -49,18 +49,43 @@ func (s *server) personalView(h store.Household, lang, personID string) (familyv
 	if err != nil {
 		return familyview.PersonalView{}, err
 	}
-	in := familyview.PersonalInput{Now: data.now, Person: *person, Calendars: data.calendars, Occurrences: data.occurrences, TimeFormat: h.TimeFormat}
+	in := familyview.PersonalInput{Now: data.now, Person: *person, People: data.people, Calendars: data.calendars, Occurrences: data.occurrences, TimeFormat: h.TimeFormat}
 	for _, t := range due {
 		if t.PersonID == person.ID {
-			in.Tasks = append(in.Tasks, familyview.Task{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Part: string(t.PartOfDay), Done: t.Done, Stars: t.Stars})
+			in.Tasks = append(in.Tasks, viewTask(t))
 		}
 	}
+	routines, err := s.db.Routines(h.ID)
+	if err != nil {
+		return familyview.PersonalView{}, err
+	}
+	in.Routines = viewRoutines(routines, person.ID)
 	sums, err := s.db.StarSummaries(h.ID)
 	if err != nil {
 		return familyview.PersonalView{}, err
 	}
 	in.Stars = familyview.Stars{Shown: sums[person.ID].Shown, Balance: sums[person.ID].Balance}
 	return familyview.BuildPersonal(in), nil
+}
+
+// viewTask is a task due today as the personal view and a child's tasks page show it.
+func viewTask(t store.DayTask) familyview.Task {
+	k := familyview.Task{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Part: string(t.PartOfDay), Done: t.Done, Stars: t.Stars, RoutineID: t.RoutineID, Position: t.Position}
+	for _, s := range t.Subtasks {
+		k.Subtasks = append(k.Subtasks, familyview.Subtask{ID: s.ID, Title: s.Title, Emoji: s.Emoji, Done: s.Done})
+	}
+	return k
+}
+
+// viewRoutines are the routines of one person.
+func viewRoutines(all []task.Routine, personID string) []familyview.Routine {
+	var out []familyview.Routine
+	for _, r := range all {
+		if r.PersonID == personID {
+			out = append(out, familyview.Routine{ID: r.ID, Name: r.Name, Part: string(r.Part)})
+		}
+	}
+	return out
 }
 
 // renderPersonal renders a person's view markup and its version, like
@@ -89,7 +114,7 @@ func (s *server) handleDisplayPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("id")
-	view, version, err := s.renderPersonal(h, s.langOf(r), id)
+	view, version, err := s.renderPersonal(h, s.displayLang(r), id)
 	if errors.Is(err, errNoPerson) {
 		// Gone meanwhile: back to the display, never to a bare error page
 		// (it has no display.js and would leave the kiosk stuck).
@@ -103,7 +128,7 @@ func (s *server) handleDisplayPerson(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	s.render(w, r, http.StatusOK, "display_person.html", map[string]any{
 		"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Version": version,
-		"Theme": displayTheme(d), "ReturnSeconds": personalReturnSeconds,
+		"Theme": s.displayTheme(h, d), "ReturnSeconds": personalReturnSeconds,
 		"ViewURL": "/display/person/" + url.PathEscape(id) + "/view", "EventsURL": "/display/events?person=" + url.QueryEscape(id),
 	})
 }
@@ -116,7 +141,7 @@ func (s *server) handleDisplayPersonView(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
-	markup, version, err := s.renderPersonal(h, s.langOf(r), r.PathValue("id"))
+	markup, version, err := s.renderPersonal(h, s.displayLang(r), r.PathValue("id"))
 	if errors.Is(err, errNoPerson) {
 		http.NotFound(w, r)
 		return
@@ -179,5 +204,46 @@ func (s *server) handleDisplayTaskDone(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, back, http.StatusSeeOther)
 	default:
 		s.fail(w, "tick task", err)
+	}
+}
+
+// handleDisplaySubtaskDone ticks one subtask off or open again on a display.
+// Like a task, it needs no PIN and ticks only today; the last open subtask
+// completes the task (ADR 0018).
+func (s *server) handleDisplaySubtaskDone(w http.ResponseWriter, r *http.Request) {
+	if d, _, ok := s.currentDisplay(r); !ok || !d.Paired {
+		http.Redirect(w, r, "/display", http.StatusSeeOther)
+		return
+	}
+	h, err := s.db.HomeHousehold()
+	if err != nil {
+		s.fail(w, "household", err)
+		return
+	}
+	t, err := s.db.Task(h.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.Redirect(w, r, "/display", http.StatusSeeOther)
+		return
+	}
+	if err != nil {
+		s.fail(w, "task", err)
+		return
+	}
+	back := "/display/person/" + t.PersonID
+	done := r.PostFormValue("done") == "1"
+	if v := r.PostFormValue("done"); v != "1" && v != "0" {
+		http.Redirect(w, r, back, http.StatusSeeOther)
+		return
+	}
+	today := s.today(principal{household: h})
+	if day := r.PostFormValue("day"); day != "" && day != today {
+		http.Redirect(w, r, back, http.StatusSeeOther)
+		return
+	}
+	switch _, err = s.db.SetSubtaskDone(h.ID, t.ID, r.PathValue("sub_id"), today, done, "", s.now()); {
+	case err == nil, errors.Is(err, store.ErrNotFound), errors.Is(err, store.ErrInvalid):
+		http.Redirect(w, r, back, http.StatusSeeOther)
+	default:
+		s.fail(w, "tick subtask", err)
 	}
 }

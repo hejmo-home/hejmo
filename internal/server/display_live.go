@@ -70,7 +70,7 @@ func (s *server) handleDisplayView(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	markup, version, err := s.renderDisplayContent(h, d, s.langOf(r))
+	markup, version, err := s.renderDisplayContent(h, d, s.displayLang(r))
 	if err != nil {
 		s.fail(w, "family view", err)
 		return
@@ -101,8 +101,9 @@ func (s *server) handleDisplayEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Accel-Buffering", "no")
 	w.WriteHeader(http.StatusOK)
 
-	lang := s.langOf(r)
+	lang := s.displayLang(r)
 	person := r.URL.Query().Get("person") // a personal view follows its own version
+	listID := r.URL.Query().Get("list")   // so does the lists view of one list
 	hash, _ := displayToken(r)
 	last := ""
 	check := func() bool {
@@ -117,7 +118,12 @@ func (s *server) handleDisplayEvents(w http.ResponseWriter, r *http.Request) {
 			d = cur
 		}
 		var version string
-		if person != "" {
+		if listID != "" {
+			_, version, err = s.renderListsView(h, lang, listID, listsViewOptions{})
+			if errors.Is(err, errNoList) {
+				version, err = "gone", nil // the display returns to the family view
+			}
+		} else if person != "" {
 			_, version, err = s.renderPersonal(h, lang, person)
 			if errors.Is(err, errNoPerson) {
 				version, err = "gone", nil // the display returns to the family view

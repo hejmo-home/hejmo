@@ -9,8 +9,10 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/holiday"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/wholine"
 )
 
 // The calendar screen (ticket 5.12, ADR 0011 and 0015): the week, and creating,
@@ -29,6 +31,7 @@ type eventItem struct {
 	Slot                        int    // colour slot of the first person in the audience, 0 = whole family
 	People                      []personChip
 	Groups                      []string
+	WhoParts                    []wholine.Part // who it is for, in words (wholine, nobody left out), one part per name for the page to keep whole
 	Repeats, ReadOnly           bool
 }
 
@@ -54,9 +57,21 @@ type calendarContext struct {
 	groups    map[string]string
 	readOnly  map[string]bool
 	calendars []store.Calendar
+	// For the who-line: everyone in display order, the subgroups, and who sees
+	// what (the calendars' audiences).
+	household []wholine.Person
+	wgroups   []wholine.Group
+	viewers   []calendar.Viewer
+	audiences map[string]calendar.Audience
 }
 
 func (s *server) calendarContext(w http.ResponseWriter, r *http.Request, p principal) (*calendarContext, bool) {
+	// The family calendar is created on first use; make it exist before the calendars
+	// are listed, or the first "New event" form misses it (and the choice with it).
+	if err := s.db.EnsureFamilyCalendar(p.household.ID); err != nil {
+		s.fail(w, "family calendar", err)
+		return nil, false
+	}
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
 		s.fail(w, "people", err)
@@ -73,24 +88,32 @@ func (s *server) calendarContext(w http.ResponseWriter, r *http.Request, p princ
 		return nil, false
 	}
 	c := &calendarContext{s: s, r: r, p: p, loc: p.location(), chips: map[string]personChip{}, groups: map[string]string{}, readOnly: map[string]bool{}, calendars: cals}
+	c.audiences = map[string]calendar.Audience{}
+	memberOf := map[string][]string{}
 	for _, chip := range chipsOf(people) {
 		c.chips[chip.ID] = chip
 	}
 	for _, g := range groups {
 		c.groups[g.ID] = g.Name
+		c.wgroups = append(c.wgroups, wholine.Group{Name: g.Name, Members: g.Members})
+		for _, m := range g.Members {
+			memberOf[m] = append(memberOf[m], g.ID)
+		}
 	}
 	for _, cal := range cals {
 		c.readOnly[cal.ID] = cal.ReadOnly
+		c.audiences[cal.ID] = cal.Audience
+	}
+	for _, p := range people {
+		c.household = append(c.household, wholine.Person{ID: p.ID, Name: p.Name})
+		c.viewers = append(c.viewers, calendar.Viewer{PersonID: p.ID, Groups: memberOf[p.ID]})
 	}
 	return c, true
 }
 
 // clock formats a time of day the way the household wants it.
 func (c *calendarContext) clock(t time.Time) string {
-	if c.p.household.TimeFormat == store.Time12h {
-		return t.In(c.loc).Format("3:04 PM")
-	}
-	return t.In(c.loc).Format("15:04")
+	return datefmt.Clock(c.p.household.TimeFormat, t.In(c.loc))
 }
 
 // eventHref is the address of an occurrence's page: the series (or single
@@ -124,7 +147,10 @@ func (c *calendarContext) item(o calendar.Occurrence) eventItem {
 	if len(it.People) > 0 {
 		it.Slot = it.People[0].Slot
 	}
-	it.Date = o.Start.In(c.loc).Format("02/01/2006")
+	lang := c.s.langOf(c.r)
+	it.WhoParts = wholine.Of(wholine.Input{Household: c.household, Groups: c.wgroups, Audience: calendar.ViewersOf(o, c.audiences, c.viewers)},
+		c.s.i18n, lang).Parts
+	it.Date = datefmt.Date(c.p.household.DateFormat, o.Start.In(c.loc))
 	return it
 }
 
@@ -172,7 +198,7 @@ func (s *server) handleCalendarWeek(w http.ResponseWriter, r *http.Request) {
 	today := s.now().In(c.loc).Format(dateLayout)
 	for i := range days {
 		d := start.AddDate(0, 0, i)
-		days[i] = weekDay{ISO: d.Format(dateLayout), Date: d.Format("02/01"), Name: calendarWeekdays[i], Holiday: holidays[d.Format(dateLayout)], Today: d.Format(dateLayout) == today}
+		days[i] = weekDay{ISO: d.Format(dateLayout), Date: datefmt.Short(p.household.DateFormat, d), Name: calendarWeekdays[i], Holiday: holidays[d.Format(dateLayout)], Today: d.Format(dateLayout) == today}
 	}
 	for i, list := range calendar.WeekDays(occs, start) {
 		for _, o := range list {
@@ -188,9 +214,10 @@ func (s *server) handleCalendarWeek(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	_, week := start.ISOWeek()
+	from, to := datefmt.RangeParts(p.household.DateFormat, start, end.AddDate(0, 0, -1))
 	s.render(w, r, http.StatusOK, "calendar.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Days": days, "Bars": bars,
-		"Week": week, "From": start.Format("02/01"), "To": end.AddDate(0, 0, -1).Format("02/01/2006"),
+		"Week": week, "From": from, "To": to,
 		"Prev": weekLink(start.AddDate(0, 0, -7)), "Next": weekLink(end), "ThisWeek": weekLink(calendar.StartOfWeek(s.now().In(c.loc))),
 		"NewHref": "/calendar/new?date=" + start.Format(dateLayout), "Weekdays": calendarWeekdays,
 	})

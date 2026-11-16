@@ -1,0 +1,16 @@
+{{template "head" (dict "Lang" .Lang "Title" .Subject.Name "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/people" "Text" (t "people.back"))}}
+  <h1><span class="marker" data-person="{{.Subject.Slot}}" data-shape="{{.Subject.Shape}}" aria-hidden="true"></span> {{.Subject.Name}}</h1>
+  <p class="lead hint">{{t (printf "people.role.%s" .Role)}}</p>
+  {{with .SignIn}}<h2 class="rows-head">{{t "people.signin"}}</h2>
+  <ul class="list-rows">{{template "rowLink" .}}</ul>{{end}}
+  {{template "error" .}}
+  <form method="post" action="/people/{{.Subject.ID}}" class="steps">
+    {{$f := .Form}}
+    <fieldset>
+      {{template "field" (dict "Root" . "Name" "name" "Label" (t "people.field.name") "Value" (index $f "Name") "Required" true "Max" 80 "Autocomplete" "off")}}
+      {{template "look" (dict "Root" . "Color" (index $f "Color") "Shape" (index $f "Shape") "Colors" .Colors "Shapes" .Shapes)}}
+    </fieldset>
+    <button class="button" type="submit">{{t "people.save"}}</button>
+  </form>
+{{template "foot"}}

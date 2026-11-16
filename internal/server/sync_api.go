@@ -86,6 +86,7 @@ type calendarJSON struct {
 	Color    string       `json:"color"`
 	ReadOnly bool         `json:"read_only"`
 	Shared   bool         `json:"share_through_box"`
+	Waste    bool         `json:"waste_collection"`
 	Audience audienceJSON `json:"audience"`
 	Sync     *syncJSON    `json:"sync,omitempty"`
 }
@@ -95,8 +96,16 @@ type audienceJSON struct {
 	Groups []string `json:"groups"`
 }
 
-// langOf is the response language for a request (Accept-Language, else German).
+// langOf is the language of text a handler builds for a web page or its
+// scripts: the same as the page itself (pageLanguage), so a switch changes it
+// at once.
 func (s *server) langOf(r *http.Request) string {
+	return s.pageLanguage(r)
+}
+
+// displayLang is the language of a display: the browser's (Accept-Language,
+// else German), never a parent's choice.
+func (s *server) displayLang(r *http.Request) string {
 	return s.i18n.Match(r.Header.Get("Accept-Language"))
 }
 
@@ -127,13 +136,13 @@ func (s *server) syncState(r *http.Request, c store.SyncedCalendar, loc *time.Lo
 		LastAttemptAt:   ts(c.Sync.LastAttempt),
 		LastSuccessAt:   ts(c.Sync.LastSuccess),
 		LastError:       s.say(r, c.Sync.LastError),
-		EventCount:      c.Sync.LastRun.Events,
+		EventCount:      c.Sync.EventCount,
 		LastRun:         runJSON{c.Sync.LastRun.New, c.Sync.LastRun.Changed, c.Sync.LastRun.Removed},
 	}
 }
 
 func plainCalendarJSON(c store.Calendar) calendarJSON {
-	return calendarJSON{ID: c.ID, Name: c.Name, Kind: c.Kind, Color: c.Color, ReadOnly: c.ReadOnly, Shared: c.Shared,
+	return calendarJSON{ID: c.ID, Name: c.Name, Kind: c.Kind, Color: c.Color, ReadOnly: c.ReadOnly, Shared: c.Shared, Waste: c.Waste,
 		Audience: audienceJSON{nonNil(c.Audience.People), nonNil(c.Audience.Groups)}}
 }
 
@@ -358,17 +367,28 @@ func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p pri
 	var in struct {
 		Shared   *bool `json:"share_through_box"`
 		ReadOnly *bool `json:"read_only"`
+		Waste    *bool `json:"waste_collection"`
 		calendarChanges
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	if in.Shared == nil && in.ReadOnly == nil && !in.calendarChanges.any() {
-		writeError(w, http.StatusUnprocessableEntity, "send share_through_box, read_only, name, color or audience")
+	if in.Shared == nil && in.ReadOnly == nil && in.Waste == nil && !in.calendarChanges.any() {
+		writeError(w, http.StatusUnprocessableEntity, "send share_through_box, read_only, waste_collection, name, color or audience")
 		return
 	}
 	id := r.PathValue("id")
+	if in.Waste != nil { // refuse before anything is saved
+		c, err := s.db.Calendar(p.household.ID, id)
+		if s.storeError(w, "waste calendar", err) {
+			return
+		}
+		if !c.ReadOnly {
+			writeError(w, http.StatusUnprocessableEntity, "only a read-only calendar can be a waste collection calendar")
+			return
+		}
+	}
 	if in.calendarChanges.any() {
 		cal, err := s.db.SyncedCalendar(p.household.ID, id)
 		if errors.Is(err, store.ErrNotFound) {
@@ -400,6 +420,9 @@ func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p pri
 		if !*in.ReadOnly {
 			s.sync.PushSoon(p.household.ID, id) // changes queued before the switch
 		}
+	}
+	if in.Waste != nil && s.storeError(w, "waste calendar", s.db.SetCalendarWaste(p.household.ID, id, *in.Waste)) {
+		return
 	}
 	c, err := s.db.Calendar(p.household.ID, id)
 	if err != nil {

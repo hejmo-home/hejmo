@@ -60,6 +60,11 @@ func loadConfig(getenv func(string) string) config {
 	if v := getenv("HEJMO_HTTPS_ADDR"); v != "" {
 		cfg.HTTPSAddr = v
 	}
+	// Clients reach HTTPS on the port the box listens on unless a mapping
+	// (Docker, router) says otherwise: then the variable names the public port.
+	if _, port, err := net.SplitHostPort(cfg.HTTPSAddr); err == nil && port != "" {
+		cfg.PublicHTTPSPort = port
+	}
 	if v := getenv("HEJMO_PUBLIC_HTTPS_PORT"); v != "" {
 		cfg.PublicHTTPSPort = v
 	}

@@ -1,0 +1,70 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "people.title") "Frame" .Frame)}}
+  <h1>{{t "people.title"}}</h1>
+  {{template "syncNotice" .}}
+  <p class="lead">{{t "people.intro"}}</p>
+
+  <section aria-labelledby="family">
+    <h2 id="family">{{t "people.family"}}</h2>
+    <ul class="cards people" data-people>
+      {{range .People}}
+      <li data-person-row="{{.ID}}">
+        <strong class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><a href="/people/{{.ID}}">{{.Name}}</a></strong>
+        <span class="hint">{{t (printf "people.role.%s" .Role)}}{{if .Acc.Self}} · {{t "people.you"}}{{else if .Acc.State}} · <b class="acc-state">{{.Acc.State}}</b>{{if .Acc.Href}} · <a href="{{.Acc.Href}}">{{.Acc.LinkText}}</a>{{end}}{{end}}</span>
+        <span class="row">
+          {{if not .First}}<form method="post" action="/people/{{.ID}}/move"><button class="button secondary" type="submit" name="direction" value="up" aria-label="{{t "people.move_up"}}">{{t "people.up"}}</button></form>{{end}}
+          {{if not .Last}}<form method="post" action="/people/{{.ID}}/move"><button class="button secondary" type="submit" name="direction" value="down" aria-label="{{t "people.move_down"}}">{{t "people.down"}}</button></form>{{end}}
+        </span>
+      </li>
+      {{end}}
+    </ul>
+    <p class="hint">{{t "people.order_hint"}}</p>
+  </section>
+
+  <section aria-labelledby="groups">
+    <h2 id="groups">{{t "groups.title"}}</h2>
+    {{if .Groups}}
+    <ul class="cards">
+      {{range .Groups}}
+      <li>
+        <strong><a href="/groups/{{.ID}}">{{.Name}}</a></strong>
+        <span class="hint">{{if .Members}}{{range $i, $m := .Members}}{{if $i}}{{", "}}{{end}}{{$m.Name}}{{end}}{{else}}{{t "groups.no_members"}}{{end}}</span>
+      </li>
+      {{end}}
+    </ul>
+    {{else}}<p class="hint">{{t "groups.none"}}</p>{{end}}
+    <p><a class="button secondary" href="/groups/new">{{t "groups.new"}}</a></p>
+  </section>
+
+  <section aria-labelledby="new">
+    <h2 id="new">{{t "people.new"}}</h2>
+    {{template "error" .}}
+    <form method="post" action="/people" class="steps">
+      {{$f := .Form}}
+      <fieldset>
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "people.field.name") "Value" (index $f "Name") "Required" true "Max" 80 "Autocomplete" "off")}}
+        {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "people.field.role"))}}
+          {{template "option" (dict "Name" "role" "Value" "child" "Label" (t "people.role.child") "Checked" (ne (index $f "Role") "parent"))}}
+          {{template "option" (dict "Name" "role" "Value" "parent" "Label" (t "people.role.parent") "Checked" (eq (index $f "Role") "parent"))}}
+        {{template "optionsClose" (dict "Root" . "Name" "role")}}
+        {{template "moreOpen" (dict "Label" (t "people.more") "Open" (or (eq .ErrorField "color") (eq .ErrorField "shape")))}}
+          {{template "look" (dict "Root" . "Color" (index $f "Color") "Shape" (index $f "Shape") "Colors" .Colors "Shapes" .Shapes)}}
+        {{template "moreClose"}}
+      </fieldset>
+      <button class="button" type="submit">{{t "people.add"}}</button>
+    </form>
+  </section>
+{{template "foot"}}
+
+{{/* Colour and marker of a person: the eight palette colours and the eight
+     black-and-white markers, each naming who uses it (faded when taken, disabled
+     when the pair would be refused). Arguments: Root, Color, Shape, Colors, Shapes. */}}
+{{define "look"}}
+  {{template "optionsOpen" (dict "Class" "chips look" "Legend" (t "people.field.color"))}}
+    {{range .Colors}}{{$tip := tf "people.look.tip" "name" (t (printf "people.color.%d" .Slot)) "users" (or .Users (t "people.look.free"))}}<label class="pchip{{if .Users}} used{{end}}" data-person="{{.Slot}}" title="{{$tip}}"><input type="radio" name="color" value="{{.Hex}}" aria-label="{{$tip}}" data-taken-with="{{.TakenWith}}"{{if eq .Hex $.Color}} checked{{end}}{{if .Off}} disabled{{end}}><span class="marker" data-person="{{.Slot}}" data-shape="circle-filled" aria-hidden="true"></span>{{t (printf "people.color.%d" .Slot)}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+    {{end}}
+  {{template "optionsClose" (dict "Root" .Root "Name" "color")}}
+  {{template "optionsOpen" (dict "Class" "chips look" "Legend" (t "people.field.shape"))}}
+    {{range .Shapes}}{{$tip := tf "people.look.tip" "name" (t (printf "people.shape.%s" .Shape)) "users" (or .Users (t "people.look.free"))}}<label class="pchip shape{{if .Users}} used{{end}}" title="{{$tip}}"><input type="radio" name="shape" value="{{.Shape}}" aria-label="{{$tip}}" data-taken-with="{{.TakenWith}}"{{if eq .Shape $.Shape}} checked{{end}}{{if .Off}} disabled{{end}}><span class="marker preview" data-shape="{{.Shape}}" aria-hidden="true"></span>{{t (printf "people.shape.%s" .Shape)}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+    {{end}}
+  {{template "optionsClose" (dict "Root" .Root "Name" "shape")}}
+{{end}}

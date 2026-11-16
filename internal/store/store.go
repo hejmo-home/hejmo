@@ -2,12 +2,14 @@
 package store
 
 import (
+	"context"
 	"database/sql"
 	"embed"
 	"fmt"
 	"io/fs"
 	"regexp"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/secret"
@@ -172,6 +174,13 @@ func (db *DB) renameLegacy() error {
 	return tx.Commit()
 }
 
+// foreignKeysOffMarker, as the first line of a migration, runs it with foreign
+// keys off. SQLite cannot change a CHECK constraint in place; the table is
+// rebuilt (create, copy, drop, rename), and with foreign keys on the drop would
+// cascade into the rows of every child table. Before the migration commits,
+// every foreign key is checked, so the rebuild cannot leave a dangling reference.
+const foreignKeysOffMarker = "-- hejmo:foreign-keys-off\n"
+
 // apply runs every migration that is not recorded yet, oldest first. It looks
 // at the set of applied versions, not at the highest one: a branch merged later
 // can carry an older timestamp than a migration the database already has.
@@ -184,21 +193,65 @@ func (db *DB) apply(ms []migration) error {
 		if done > 0 {
 			continue
 		}
-		tx, err := db.sql.Begin()
-		if err != nil {
-			return err
-		}
-		if _, err := tx.Exec(m.body); err != nil {
-			tx.Rollback()
-			return fmt.Errorf("store: migration %s: %w", m.name, err)
-		}
-		if _, err := tx.Exec(`INSERT INTO schema_migrations (version, name) VALUES (?, ?)`, m.version, m.name); err != nil {
-			tx.Rollback()
-			return err
-		}
-		if err := tx.Commit(); err != nil {
+		if err := db.applyOne(m); err != nil {
 			return err
 		}
 	}
 	return nil
+}
+
+// applyOne runs one migration and records it, in one transaction.
+func (db *DB) applyOne(m migration) (err error) {
+	ctx := context.Background()
+	conn, err := db.sql.Conn(ctx) // foreign keys are a setting of the connection
+	if err != nil {
+		return err
+	}
+	defer conn.Close()
+	rebuild := strings.HasPrefix(m.body, foreignKeysOffMarker)
+	if rebuild {
+		if _, err := conn.ExecContext(ctx, `PRAGMA foreign_keys = OFF`); err != nil {
+			return err
+		}
+		defer func() {
+			if _, e := conn.ExecContext(ctx, `PRAGMA foreign_keys = ON`); e != nil && err == nil {
+				err = e
+			}
+		}()
+	}
+	tx, err := conn.BeginTx(ctx, nil)
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.ExecContext(ctx, m.body); err != nil {
+		return fmt.Errorf("store: migration %s: %w", m.name, err)
+	}
+	if rebuild {
+		if err := checkForeignKeys(ctx, tx); err != nil {
+			return fmt.Errorf("store: migration %s: %w", m.name, err)
+		}
+	}
+	if _, err := tx.ExecContext(ctx, `INSERT INTO schema_migrations (version, name) VALUES (?, ?)`, m.version, m.name); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// checkForeignKeys fails if any row refers to a row that does not exist.
+func checkForeignKeys(ctx context.Context, tx *sql.Tx) error {
+	rows, err := tx.QueryContext(ctx, `PRAGMA foreign_key_check`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	if rows.Next() {
+		var table, parent sql.NullString
+		var rowid, idx sql.NullInt64
+		if err := rows.Scan(&table, &rowid, &parent, &idx); err != nil {
+			return fmt.Errorf("read foreign key check result: %w", err)
+		}
+		return fmt.Errorf("row %d of %s refers to a missing row of %s", rowid.Int64, table.String, parent.String)
+	}
+	return rows.Err()
 }

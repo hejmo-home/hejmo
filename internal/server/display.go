@@ -7,14 +7,19 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"slices"
 	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/task"
+	"github.com/hejmo-home/hejmo/internal/theme"
+	"github.com/hejmo-home/hejmo/internal/wholine"
 )
 
 const (
@@ -95,13 +100,13 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		if s.now().Sub(d.LastSeen) > time.Minute {
 			_ = s.db.TouchDisplay(hash, s.now())
 		}
-		view, version, err := s.renderDisplayContent(h, d, s.langOf(r))
+		view, version, err := s.renderDisplayContent(h, d, s.displayLang(r))
 		if err != nil {
 			s.fail(w, "display view", err)
 			return
 		}
 		s.render(w, r, http.StatusOK, "display_family.html", map[string]any{
-			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Version": version, "Theme": displayTheme(d),
+			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Version": version, "Theme": s.displayTheme(h, d),
 		})
 		return
 	}
@@ -112,7 +117,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	pair := s.pairURL(r, d.Code)
-	svg, err := qrsvg.SVG(pair, s.i18n.T(s.langOf(r), "display.pair.qr"))
+	svg, err := qrsvg.SVG(pair, s.i18n.T(s.displayLang(r), "display.pair.qr"))
 	if err != nil {
 		s.fail(w, "qr code", err)
 		return
@@ -122,19 +127,35 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 	})
 }
 
-// displayTheme is the theme of a display's pages.
-//
-// Placeholder until the per-display themes ticket: a normal screen is always
-// light, although ADR 0015 gives it an automatic default theme.
-func displayTheme(d store.Display) string {
-	if d.Type == store.DisplayEInkBW {
+// displayTheme is the palette a display shows now: its theme setting resolved
+// against the sun at the home location, or in quiet mode the palette of the
+// quiet page, whatever the setting.
+func (s *server) displayTheme(h store.Household, d store.Display) string {
+	now := s.householdNow(h)
+	if d.Quiet.Active(now) {
+		// Quiet mode takes precedence over the theme (ADR 0015): a normal
+		// screen shows a black page, an E-Ink display its own night page.
+		switch d.Type {
+		case store.DisplayScreen:
+			return string(theme.Dark)
+		case store.DisplayEInkBW:
+			return "bw"
+		}
+		return string(theme.Light)
+	}
+	t := theme.Resolve(theme.Input{
+		Setting: d.Theme, SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset,
+		Now: now, Lat: h.Latitude, Lon: h.Longitude,
+	})
+	// Black-and-white E-Ink has its own light palette; dark uses the dark one.
+	if t == theme.Light && d.Type == store.DisplayEInkBW {
 		return "bw"
 	}
-	return "light"
+	return string(t)
 }
 
 // markerShapes are the black-and-white marker shapes in person slot order (DESIGN.md).
-var markerShapes = []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled"}
+var markerShapes = []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled", "cross-filled", "star-filled"}
 
 // familyView builds today's family view of the household.
 func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (familyview.View, error) {
@@ -142,9 +163,56 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
-	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people,
-		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID),
+	meals, cutoffs := s.mealsToday(h, data.now)
+	today := data.now.Format(store.DayLayout)
+	if err := s.db.PruneDayNotes(h.ID, today); err != nil { // a note is deleted once its day is over
+		return familyview.View{}, err
+	}
+	notes, err := s.db.DayNotes(h.ID)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	byDay := map[string]string{}
+	for _, n := range notes {
+		byDay[n.Day] = n.Text
+	}
+	due, err := s.db.TasksForDay(h.ID, data.now.Format(task.DateLayout))
+	if err != nil {
+		return familyview.View{}, err
+	}
+	byPerson := map[string][]familyview.Task{}
+	for _, t := range due {
+		byPerson[t.PersonID] = append(byPerson[t.PersonID], familyview.Task{Done: t.Done})
+	}
+	progress := map[string]familyview.Progress{}
+	for id, ts := range byPerson {
+		progress[id] = familyview.ProgressOf(ts)
+	}
+	lists, err := s.db.Lists(h.ID)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	return familyview.Build(familyview.Input{HasLists: len(lists) > 0, Meals: meals, MealCutoffs: cutoffs, Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
+		Waste: data.waste, DayNotes: byDay, TomorrowLabel: s.i18n.T(lang, "family.tomorrow"), TodayLabel: s.i18n.T(lang, "family.today"),
+		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID), TaskProgress: progress,
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
+}
+
+// mealsToday reads today's meals for the meal tile. If they cannot be read it
+// logs that and returns none: the family view renders without the tile
+// instead of failing.
+func (s *server) mealsToday(h store.Household, now time.Time) (map[meal.Mealtime]string, meal.Cutoffs) {
+	day := now.Format(store.DayLayout)
+	entries, err := s.db.Meals(h.ID, day, day)
+	if err != nil {
+		s.logger.Error("meal tile: reading today's meals", "err", err)
+		return nil, meal.Cutoffs{}
+	}
+	out := map[meal.Mealtime]string{}
+	for _, e := range entries {
+		out[e.Mealtime] = e.Text
+	}
+	return out, h.MealCutoffs
 }
 
 // displayData is what the views of a display are built from: the household's
@@ -153,11 +221,16 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 type displayData struct {
 	now         time.Time // in the household's time zone
 	people      []familyview.Person
+	groups      []wholine.Group // subgroups with their members, for the who-line
 	calendars   map[string]calendar.Audience
-	occurrences []calendar.Occurrence
+	occurrences []calendar.Occurrence // without waste collections
+	// waste holds the occurrences of the waste collection calendars: they show
+	// only in the tomorrow tile and on the night page (ADR 0015).
+	waste []calendar.Occurrence
 }
 
 func (s *server) displayData(h store.Household, lang string, days int) (displayData, error) {
+	s.rollMealPlan(h, lang) // the meal tile reads the meal-plan calendar
 	now := s.householdNow(h)
 	loc := now.Location()
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
@@ -171,9 +244,20 @@ func (s *server) displayData(h store.Household, lang string, days int) (displayD
 	if err != nil {
 		return out, err
 	}
-	if out.occurrences, err = s.occurrences(h, lang, d0, end); err != nil {
+	// The meal plan has its own place on a display (the meal tile), not the
+	// family strip, the person columns or the personal view (ADR 0015).
+	generated := map[string]bool{}
+	for _, c := range cals {
+		if c.Kind == "meals" {
+			generated[c.ID] = true
+		}
+	}
+	all, err := s.occurrences(h, lang, d0, end)
+	if err != nil {
 		return out, err
 	}
+	all = slices.DeleteFunc(all, func(o calendar.Occurrence) bool { return generated[o.CalendarID] })
+	out.occurrences, out.waste = splitWaste(all, cals)
 	for _, c := range cals {
 		out.calendars[c.ID] = c.Audience
 	}
@@ -183,16 +267,14 @@ func (s *server) displayData(h store.Household, lang string, days int) (displayD
 	}
 	groupsOf := map[string][]string{}
 	for _, g := range allGroups {
+		out.groups = append(out.groups, wholine.Group{Name: g.Name, Members: g.Members})
 		for _, m := range g.Members {
 			groupsOf[m] = append(groupsOf[m], g.ID)
 		}
 	}
 	for i, p := range people {
-		shape := p.Shape
-		if shape == "" {
-			shape = markerShapes[i%len(markerShapes)]
-		}
-		out.people = append(out.people, familyview.Person{ID: p.ID, Name: p.Name, Slot: i%len(markerShapes) + 1, Shape: shape, Groups: groupsOf[p.ID]})
+		_, shape := displayedLook(p, i)
+		out.people = append(out.people, familyview.Person{ID: p.ID, Name: p.Name, Slot: slotOf(p, i), Shape: shape, Groups: groupsOf[p.ID]})
 	}
 	return out, nil
 }
@@ -244,6 +326,9 @@ func (s *server) handleDisplayState(w http.ResponseWriter, r *http.Request) {
 		switch {
 		case d.Paired:
 			state["state"] = "paired"
+			if h, err := s.db.HomeHousehold(); err == nil {
+				state["theme"] = s.displayTheme(h, d)
+			}
 			if s.now().Sub(d.LastSeen) > time.Minute {
 				_ = s.db.TouchDisplay(hash, s.now())
 			}
@@ -275,4 +360,20 @@ func (s *server) pairDisplay(p principal, code string, in store.Display) (store.
 		s.limiter.reset(key)
 	}
 	return d, err
+}
+
+// splitWaste separates the occurrences of waste collection calendars from the rest.
+func splitWaste(occs []calendar.Occurrence, cals []store.Calendar) (rest, waste []calendar.Occurrence) {
+	isWaste := map[string]bool{}
+	for _, c := range cals {
+		isWaste[c.ID] = c.Waste
+	}
+	for _, o := range occs {
+		if isWaste[o.CalendarID] {
+			waste = append(waste, o)
+		} else {
+			rest = append(rest, o)
+		}
+	}
+	return rest, waste
 }

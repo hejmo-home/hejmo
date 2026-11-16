@@ -9,9 +9,14 @@ import (
 	"math/big"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/quiet"
+	"github.com/hejmo-home/hejmo/internal/theme"
 )
+
+// Theme is a display's theme setting: light, dark or auto (ADR 0015).
+type Theme = theme.Theme
 
 // PairingCodeLifetime is how long a pairing code can be confirmed.
 const PairingCodeLifetime = 10 * time.Minute
@@ -62,9 +67,13 @@ type Display struct {
 	// itself is read only by DisplayKioskKey.
 	KioskURL    string
 	KioskKeySet bool
+	// Theme is light, dark or auto; in auto the display turns dark at sunset
+	// and light at sunrise, each shifted by its offset in minutes (-180..180).
+	Theme                       Theme
+	SunriseOffset, SunsetOffset int
 }
 
-const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow, quiet_enabled, quiet_from, quiet_to, kiosk_url, kiosk_key != ''`
+const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow, quiet_enabled, quiet_from, quiet_to, kiosk_url, kiosk_key != '', theme, sunrise_offset, sunset_offset`
 
 type rowScanner interface{ Scan(...any) error }
 
@@ -74,7 +83,7 @@ func scanDisplay(r rowScanner, at time.Time) (Display, error) {
 	var code, expires, paired, seen sql.NullString
 	var qOn bool
 	var qFrom, qTo string
-	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow, &qOn, &qFrom, &qTo, &d.KioskURL, &d.KioskKeySet); err != nil {
+	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow, &qOn, &qFrom, &qTo, &d.KioskURL, &d.KioskKeySet, &d.Theme, &d.SunriseOffset, &d.SunsetOffset); err != nil {
 		return Display{}, err
 	}
 	if q, err := quiet.Parse(qOn, qFrom, qTo); err == nil {
@@ -192,10 +201,10 @@ func (db *DB) ConfirmPairing(householdID, code string, in Display, at time.Time)
 		return Display{}, &FieldError{"type", "a display needs a known type"}
 	}
 	var id string
-	err := db.sql.QueryRow(`UPDATE displays SET name = ?, room = ?, type = ?, paired_at = ?, last_seen_at = ?, pairing_code = NULL, code_expires_at = NULL
+	err := db.sql.QueryRow(`UPDATE displays SET name = ?, room = ?, type = ?, theme = ?, paired_at = ?, last_seen_at = ?, pairing_code = NULL, code_expires_at = NULL
 		WHERE household_id = ? AND pairing_code = ? AND code_expires_at > ? AND paired_at IS NULL AND revoked_at IS NULL
 		RETURNING id`,
-		in.Name, in.Room, string(in.Type), stamp(at), stamp(at), householdID, code, stamp(at)).Scan(&id)
+		in.Name, in.Room, string(in.Type), string(theme.DefaultFor(string(in.Type))), stamp(at), stamp(at), householdID, code, stamp(at)).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Display{}, ErrNotFound
 	}
@@ -235,11 +244,35 @@ func (db *DB) TouchDisplay(tokenHash string, t time.Time) error {
 	return expectOne(db.sql.Exec(`UPDATE displays SET last_seen_at = ? WHERE token_hash = ? AND revoked_at IS NULL`, stamp(t), tokenHash))
 }
 
+// SetDisplayIdentity renames one of the household's paired displays and sets
+// its type. The name is trimmed; a refused field is a *FieldError.
+func (db *DB) SetDisplayIdentity(householdID, id, name string, typ DisplayType) error {
+	name = strings.TrimSpace(name)
+	switch {
+	case name == "" || utf8.RuneCountInString(name) > 80:
+		return &FieldError{"name", "a display needs a name of at most 80 characters"}
+	case !typ.Valid():
+		return &FieldError{"type", "a display needs a known type"}
+	}
+	return expectOne(db.sql.Exec(`UPDATE displays SET name = ?, type = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
+		name, string(typ), householdID, id))
+}
+
 // SetDisplayShowTomorrow switches the "show tomorrow block" setting of one of
 // the household's paired displays.
 func (db *DB) SetDisplayShowTomorrow(householdID, id string, on bool) error {
 	return expectOne(db.sql.Exec(`UPDATE displays SET show_tomorrow = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
 		on, householdID, id))
+}
+
+// SetDisplayTheme saves the theme and the sunrise and sunset offsets (minutes,
+// -180..180) of one of the household's paired displays.
+func (db *DB) SetDisplayTheme(householdID, id string, t Theme, sunriseOffset, sunsetOffset int) error {
+	if !t.Valid() || !theme.ValidOffset(sunriseOffset) || !theme.ValidOffset(sunsetOffset) {
+		return fmt.Errorf("%w: theme light, dark or auto and offsets within 180 minutes", ErrInvalid)
+	}
+	return expectOne(db.sql.Exec(`UPDATE displays SET theme = ?, sunrise_offset = ?, sunset_offset = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
+		string(t), sunriseOffset, sunsetOffset, householdID, id))
 }
 
 // SetDisplayQuiet saves the quiet mode schedule of one of the household's

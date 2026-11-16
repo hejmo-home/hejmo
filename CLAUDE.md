@@ -30,11 +30,13 @@ Self-hosted, open-source family organizer: a Go box (Raspberry Pi, Docker) with 
 ```bash
 go test ./...                       # all tests
 go test -race -count=1 ./...        # as CI runs them (CI sets HEJMO_REQUIRE_RADICALE=1: no Docker means failure, not skip)
+node --test web/test                # the JavaScript tests alone (also run inside go test; CI sets HEJMO_REQUIRE_NODE=1: no node means failure, not skip)
+go test -run 'TestRenderedLayout$' ./internal/server  # the rendered layout check: every page in headless Chrome (chromedp) at 375, 768 and 1024 px, light and black-and-white, German and English; names broken, text overflowing, pages wider than the viewport fail it. Needs Chrome: skipped without, CI sets HEJMO_REQUIRE_CHROME=1 (x86_64) so no Chrome means failure; HEJMO_CHROME picks the binary, HEJMO_LAYOUT_SHOTS the directory for screenshots of failing pages
 gofmt -l . && go vet ./...          # formatting and vet (CI checks both)
 docker compose up -d --build --wait # run the box on http://localhost (HTTP) and https://localhost (HTTPS)
 ```
 
-Local tooling on the development Mac: Go in `~/.local/go/bin`, Homebrew in `/opt/homebrew/bin` (`gh`), Docker CLI in `/Applications/Docker.app/Contents/Resources/bin`. Non-interactive shells may need these on `PATH`.
+Local tooling on the development Mac: Go in `~/.local/go/bin`, Homebrew in `/opt/homebrew/bin` (`gh`, `node`), Docker CLI in `/Applications/Docker.app/Contents/Resources/bin`. Non-interactive shells may need these on `PATH`.
 
 ## Agent skills
 

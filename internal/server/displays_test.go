@@ -136,7 +136,8 @@ func TestConfirmedCodePairsTheDisplay(t *testing.T) {
 			t.Errorf("family view misses %q:\n%s", want, r.body)
 		}
 	}
-	if strings.Contains(r.body, "<svg") || codeRe.MatchString(r.body) {
+	// The Lists button of the header has a line icon of its own; a QR code is the other svg.
+	if body := regexp.MustCompile(`<a class="chip lists-link".*?</a>`).ReplaceAllString(r.body, ""); strings.Contains(body, "<svg") || codeRe.MatchString(r.body) {
 		t.Error("paired display still shows a pairing code or QR code")
 	}
 	if st := d.get("/display/state", ""); !strings.Contains(st.body, `"state":"paired"`) {
@@ -259,9 +260,12 @@ func TestRevokedDisplayShowsPairingScreenAgainWithinAMinute(t *testing.T) {
 		t.Fatalf("display.js = %d", js.status)
 	}
 
-	id := regexp.MustCompile(`/displays/([0-9a-f-]{36})/unpair`).FindStringSubmatch(b.get("/displays").body)
+	id := regexp.MustCompile(`/displays/([0-9a-f-]{36})"`).FindStringSubmatch(b.get("/displays").body)
 	if id == nil {
-		t.Fatal("no unpair button on the displays page")
+		t.Fatal("no row linking to the display's page on the displays page")
+	}
+	if !strings.Contains(b.get("/displays/"+id[1]).body, `/displays/`+id[1]+`/unpair"`) {
+		t.Fatal("no unpair button on the display's page")
 	}
 	if r := b.post("/displays/"+id[1]+"/unpair", url.Values{}); r.status != http.StatusSeeOther || r.location != "/displays" {
 		t.Fatalf("unpair = %d %q", r.status, r.location)
@@ -275,7 +279,7 @@ func TestRevokedDisplayShowsPairingScreenAgainWithinAMinute(t *testing.T) {
 	if !strings.Contains(again.body, `data-state="pairing"`) || strings.Contains(again.body, "Hallway") {
 		t.Fatalf("revoked display still shows the family view:\n%s", again.body)
 	}
-	if strings.Contains(b.get("/displays").body, "Hallway") {
+	if strings.Contains(b.get("/displays").body, `href="/displays/`+id[1]+`"`) {
 		t.Fatal("revoked display still listed")
 	}
 	// It can be paired again.

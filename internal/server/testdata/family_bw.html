@@ -22,49 +22,52 @@
     </div>
     <div class="chips">
       
-      <span class="chip" data-clock-zone="Europe/Berlin" data-clock-format="24h" data-clock>08:00</span>
+      <a class="chip lists-link" href="/display/lists"><svg class="icon" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5l1.5 1.5 2.5-2.5M3.5 12.5l1.5 1.5 2.5-2.5M3.5 18.5l1.5 1.5 2.5-2.5M11 7h9.5M11 13h9.5M11 19h9.5"/></svg>Lists</a><span class="chip" data-clock-zone="Europe/Berlin" data-clock-format="24h" data-clock>08:00</span>
       
     </div>
   </header>
   <div class="strip-wrap">
-    <ul class="strip" data-strip><li class="strip-item before after" data-kind="event" data-bar="2/3"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span><span class="marker small" data-person="2" data-shape="circle-empty" title="Papa"></span><span class="title">Grandparents visit</span> <span class="meta">Day 2/3</span></li></ul>
+    <ul class="strip" data-strip><li class="strip-item before after" data-kind="event" data-bar="2/3"><span class="title">Grandparents visit</span> <span class="who">[everyone except <span class="nm">Sebastian</span> and <span class="nm">Mia</span>]</span> <span class="meta">Day 2/3</span></li></ul>
     
   </div>
   <main class="fv-grid" style="--cols:4">
     <section class="column" data-person="1" data-name="Mama">
-      <h2><a class="person-link" href="/display/person/ID"><span class="marker" data-shape="circle-filled"></span>Mama</a></h2>
+      <h2><a class="person-link" href="/display/person/ID"><span class="marker" data-shape="circle-filled"></span><span class="person-name">Mama</span></a></h2>
       <div class="events">
-        <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="1" data-shape="circle-filled" title="Mama"></span></span><div class="meta">09:00–10:00</div><div class="title">Dentist</div></div>
+        <div class="event"><div class="meta">09:00–10:00</div><div class="title">Dentist</div></div>
         
       </div>
       
     </section>
     <section class="column" data-person="2" data-name="Papa">
-      <h2><a class="person-link" href="/display/person/ID"><span class="marker" data-shape="circle-empty"></span>Papa</a></h2>
+      <h2><a class="person-link" href="/display/person/ID"><span class="marker" data-shape="circle-empty"></span><span class="person-name">Papa</span></a></h2>
       <div class="events">
         
       </div>
       
     </section>
     <section class="column" data-person="3" data-name="Sebastian">
-      <h2><a class="person-link" href="/display/person/ID"><span class="marker" data-shape="square-filled"></span>Sebastian</a></h2>
+      <h2><a class="person-link" href="/display/person/ID"><span class="marker" data-shape="square-filled"></span><span class="person-name">Sebastian</span></a></h2>
       <div class="events">
-        <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:00</div><div class="title">Football</div></div>
+        <div class="event"><div class="meta">15:00–16:00</div><div class="title">Football</div><div class="who">everyone except <span class="nm">Mama</span> and <span class="nm">Papa</span></div></div>
         
       </div>
       
     </section>
     <section class="column" data-person="4" data-name="Mia">
-      <h2><a class="person-link" href="/display/person/ID"><span class="marker" data-shape="square-empty"></span>Mia</a></h2>
+      <h2><a class="person-link" href="/display/person/ID"><span class="marker" data-shape="square-empty"></span><span class="person-name">Mia</span></a></h2>
       <div class="events">
-        <div class="event"><span class="markers" aria-hidden="true"><span class="marker small" data-person="3" data-shape="square-filled" title="Sebastian"></span><span class="marker small" data-person="4" data-shape="square-empty" title="Mia"></span></span><div class="meta">15:00–16:00</div><div class="title">Football</div></div>
+        <div class="event"><div class="meta">15:00–16:00</div><div class="title">Football</div><div class="who">everyone except <span class="nm">Mama</span> and <span class="nm">Papa</span></div></div>
         
       </div>
       
     </section>
     
   </main>
-  
+  <footer class="fv-footer" data-footer>
+    <div class="tile meal" data-tile="meal"><div class="lab">Meals today</div><ul class="meals"><li class="meal-ln" data-mealtime="lunch"><span class="mt"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>Lunch</span><span class="dish">Tomato soup</span></li><li class="meal-ln" data-mealtime="dinner"><span class="mt"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>Dinner</span><span class="dish">Pasta bake</span></li></ul></div>
+    <div class="tile" data-tile="tomorrow"><div class="tile-head"><span class="lab">Tomorrow</span></div><div class="ln waste"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 7h16"/><path d="M9.5 7V4.5h5V7"/><path d="M6 7l1 13h10l1-13"/><path d="M10 11v5.5M14 11v5.5"/></svg><span>Paper bin</span></div></div>
+  </footer>
 </div></div>
   </div>
   <script src="/static/display.js" defer></script>
@@ -73,6 +76,8 @@
 </div>
 </body>
 </html>
+
+
 
 
 

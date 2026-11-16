@@ -160,7 +160,6 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 		{"--gap-cards", "10px", d.Spacing, "card-gap"},
 		{"--marker-size", "14px", d.Sizes, "marker"},
 		{"--marker-size-bw-column", "16px", d.Sizes, "marker-bw-column"},
-		{"--marker-size-bw-event", "9px", d.Sizes, "marker-bw-event"},
 		{"--journey-border", "1.5px", d.Sizes, "journey-border"},
 		{"--icon-stroke", "1.8px", d.Sizes, "icon-stroke"},
 		{"--touch-target", "44px", d.Sizes, "touch-target"},
@@ -195,6 +194,20 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 			t.Errorf("DESIGN.md typography.%s = %v", c.name, e)
 		}
 	}
+	// Phone title and the secret shown once (ticket 111): size only; the secret
+	// is monospace so that l, 1, O and 0 differ.
+	for _, c := range []struct{ name, size, family, weight string }{
+		{"title-phone", "28px", "Figtree", "700"},
+		{"secret", "19px", "ui-monospace", "600"},
+	} {
+		if got := root["--fs-"+c.name]; got != c.size {
+			t.Errorf("css --fs-%s = %q, want %s", c.name, got, c.size)
+		}
+		e := d.Typography[c.name]
+		if e["fontFamily"] != c.family || e["fontSize"] != c.size || e["fontWeight"] != c.weight {
+			t.Errorf("DESIGN.md typography.%s = %v", c.name, e)
+		}
+	}
 	if got := themed(t, css, "bw")["--fw-event-title"]; got != "700" {
 		t.Errorf("bw --fw-event-title = %q, want 700", got)
 	}
@@ -203,7 +216,7 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 func TestBlackAndWhiteMarkersUseDistinctShapes(t *testing.T) {
 	css := stylesheet(t)
 	seen := map[string]string{}
-	for _, shape := range []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled"} {
+	for _, shape := range []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled", "cross-filled", "star-filled"} {
 		m := regexp.MustCompile(`\[data-theme="bw"\] \.marker\[data-shape="` + shape + `"\]\s*\{([^}]*)\}`).FindStringSubmatch(css)
 		if m == nil {
 			t.Errorf("no bw marker rule for shape %s", shape)
@@ -217,22 +230,31 @@ func TestBlackAndWhiteMarkersUseDistinctShapes(t *testing.T) {
 	}
 }
 
-// 5.4: card markers exist in the markup of every theme, but only bw shows
-// them (colour cards carry the person colour).
-func TestEventCardMarkersAreHiddenInColourAndShownInBlackAndWhite(t *testing.T) {
+// 5.22: cards carry no person markers; the who-line wraps, so the card grows
+// and no name is ever cut (no ellipsis, no line clamp, no fixed height).
+func TestWhoLineWrapsAndIsNeverCut(t *testing.T) {
 	css := stylesheet(t)
-	display := func(sel string) string {
-		m := regexp.MustCompile(`display:\s*([a-z-]+)`).FindStringSubmatch(ruleFor(t, css, sel))
-		if m == nil {
-			t.Fatalf("%s has no display declaration", sel)
+	for _, sel := range []string{".event .who", ".strip-item .who", ".ev .who, .bar .who"} {
+		rule := ruleFor(t, css, sel)
+		for _, bad := range []string{"text-overflow", "line-clamp", "white-space: nowrap", "overflow: hidden", "height:"} {
+			if strings.Contains(rule, bad) {
+				t.Errorf("%s cuts the who-line: %s", sel, bad)
+			}
 		}
-		return m[1]
 	}
-	if got := display(".event .markers"); got != "none" {
-		t.Errorf(".event .markers display = %q, want none", got)
+	// Names are never split: a name breaks only when wider than the card, and the
+	// who-line takes no automatic hyphens (the .ev/.bar rule above it has them).
+	for _, sel := range []string{".event .who", ".strip-item .who", ".ev .who, .bar .who"} {
+		rule := ruleFor(t, css, sel)
+		if strings.Contains(rule, "anywhere") || !strings.Contains(rule, "overflow-wrap: break-word") || !strings.Contains(rule, "hyphens: manual") {
+			t.Errorf("%s must use overflow-wrap: break-word and hyphens: manual: %s", sel, rule)
+		}
 	}
-	if got := display(`[data-theme="bw"] .event .markers`); got == "none" {
-		t.Errorf("bw .event .markers is hidden")
+	if rule := ruleFor(t, css, ".who .nm"); !strings.Contains(rule, "display: inline-block") || !strings.Contains(rule, "max-width: 100%") {
+		t.Errorf(".who .nm keeps a name whole: %q", rule)
+	}
+	if strings.Contains(css, ".markers") || strings.Contains(css, ".marker.small") {
+		t.Error("the stylesheet still has card markers")
 	}
 }
 
@@ -328,7 +350,7 @@ func TestContrastOnEveryPaletteReachesAA(t *testing.T) {
 		check("text", "error-bg", 4.5)
 		check("error-text", "error-bg", 4.5)
 		check("notice-text", "notice-bg", 4.5)
-		for i := 1; i <= 6; i++ {
+		for i := 1; i <= 8; i++ {
 			n := strconv.Itoa(i)
 			check("person-"+n+"-text", "person-"+n+"-tint", 4.5) // text on person tints
 			check("person-"+n, "surface", 3)                     // marker against the column
@@ -370,7 +392,9 @@ func TestFontsLoadFromTheBoxOnly(t *testing.T) {
 	tmpl, _ := fs.Glob(web.Templates, "templates/*.html")
 	for _, f := range tmpl {
 		b, _ := fs.ReadFile(web.Templates, f)
-		if regexp.MustCompile(`(?:src|href)="(?:https?:)?//`).Match(b) {
+		// A link to a site the family is told to visit (deSEC, the router) is
+		// not a resource the page loads.
+		if regexp.MustCompile(`(?:src="|<link[^>]*href=")(?:https?:)?//`).Match(b) {
 			t.Errorf("%s loads an outside resource", f)
 		}
 	}
@@ -491,4 +515,39 @@ func TestFamilyViewLayoutRulesFollowTheSpec(t *testing.T) {
 			}
 		}
 	}
+}
+
+// #150: a person name in the family view never breaks inside the word. The
+// name sits in its own shrinkable element (span.person-name, min-width: 0), so
+// overflow-wrap: break-word applies at the column edge; hyphens only for words
+// of 12+ letters (#32/#86 rule, inside @supports). The layout itself is
+// checked in TestColumnReadabilitySnapshot and in a browser measurement.
+func TestFamilyViewPersonNamesDoNotBreakInsideWords(t *testing.T) {
+	css := stylesheet(t)
+	rule := ruleFor(t, css, ".fv .person-name")
+	for _, want := range []string{"min-width: 0;", "overflow-wrap: break-word;", "hyphens: manual;"} {
+		if !strings.Contains(rule, want) {
+			t.Errorf(".fv .person-name needs %q: %s", want, rule)
+		}
+	}
+	if strings.Contains(rule, "anywhere") {
+		t.Errorf(".fv .person-name must not use overflow-wrap: anywhere: %s", rule)
+	}
+	if !regexp.MustCompile(`@supports\s*\(\s*hyphenate-limit-chars:\s*12 5 5\s*\)\s*\{[^@]*\.fv \.person-name[^}]*hyphens:\s*auto[^}]*hyphenate-limit-chars:\s*12 5 5`).MatchString(css) {
+		t.Error("the family view hyphenates only words of 12+ letters (hyphenate-limit-chars: 12 5 5 inside @supports)")
+	}
+	if !familyTemplateHasNameSpan(t) {
+		t.Error("display_family.html must put the person name in span.person-name")
+	}
+}
+
+// familyTemplateHasNameSpan reports whether the family view template puts the
+// person name in its own span.person-name element.
+func familyTemplateHasNameSpan(t *testing.T) bool {
+	t.Helper()
+	tpl, err := os.ReadFile("templates/display_family.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.Contains(string(tpl), `<span class="person-name">{{.Person.Name}}</span>`)
 }

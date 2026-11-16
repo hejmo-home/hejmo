@@ -275,8 +275,8 @@ func TestWebConnectTickAndRemove(t *testing.T) {
 	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `role="alert"`) {
 		t.Fatalf("wrong password = %d\n%s", r.status, r.body)
 	}
-	if alert, add := strings.Index(r.body, `role="alert"`), strings.Index(r.body, `id="add"`); alert > add {
-		t.Fatal("the error is shown in the ICS section, not next to the connection form")
+	if !strings.Contains(r.body, `id="err-password"`) || !strings.Contains(r.body, `<div class="connect">`) {
+		t.Fatal("the error is not shown at the password of the connect page")
 	}
 	if strings.Contains(r.body, "pw-not-accepted-1") {
 		t.Fatal("the page echoes the password back")
@@ -301,8 +301,12 @@ func TestWebConnectTickAndRemove(t *testing.T) {
 		t.Fatalf("add ticked = %d %q\n%s", r.status, r.location, r.body)
 	}
 	page := b.get("/calendars")
-	if !strings.Contains(page.body, "Family") || strings.Contains(page.body, "School") || !strings.Contains(page.body, "#B4583A") || !strings.Contains(page.body, caldavtest.User) {
+	if !strings.Contains(page.body, "Family") || strings.Contains(page.body, "School") || !strings.Contains(page.body, caldavtest.User) {
 		t.Fatalf("calendars page:\n%s", page.body)
+	}
+	// The colour moved to the connection's page with the other settings of its calendars (ADR 0017).
+	if detail := b.get("/connections/" + conns[0].ID); !strings.Contains(detail.body, `value="#B4583A"`) {
+		t.Fatalf("connection page lacks the colour:\n%s", detail.body)
 	}
 	sameList(t, occTitles(c.occurrences(t, november)), []string{"11-20T15:00 Swimming"})
 
@@ -374,24 +378,9 @@ func TestDiscoveredCalendarOnAnotherHostOfTheServersDomainCanBeAdded(t *testing.
 	}
 }
 
-// iCloud has one fixed address and no single-calendar mode. The form hides
-// those two fields with a small script; without it they are still sent, and
-// the server must ignore them.
-func TestConnectionFormMarksFieldsOnlyOtherServersNeed(t *testing.T) {
+// Long words wrap and hidden things stay hidden (the connect page holds long addresses).
+func TestStylesheetWrapsLongWordsAndKeepsHiddenHidden(t *testing.T) {
 	c := signedInAPI(t)
-	r := c.b.get("/calendars")
-	if r.status != http.StatusOK {
-		t.Fatalf("calendars = %d", r.status)
-	}
-	if n := strings.Count(r.body, "data-other-only"); n != 2 {
-		t.Fatalf("%d fields marked other-server-only, want 2 (address, single calendar):\n%s", n, r.body)
-	}
-	if !strings.Contains(r.body, `src="/static/connection-form.js"`) {
-		t.Fatal("the page does not load the form script")
-	}
-	if js := c.b.get("/static/connection-form.js"); js.status != http.StatusOK || !strings.Contains(js.body, "data-other-only") {
-		t.Fatalf("form script = %d", js.status)
-	}
 	if css := c.b.get("/static/hejmo.css"); !strings.Contains(css.body, "overflow-wrap: anywhere") || !strings.Contains(css.body, "[hidden]") {
 		t.Fatal("stylesheet lacks wrapping of long words or the hidden rule")
 	}

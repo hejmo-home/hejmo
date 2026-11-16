@@ -61,7 +61,7 @@ func TestSessions(t *testing.T) {
 	db, _ := openTemp(t)
 	_, mama := seedParent(t, db)
 	at := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
-	if err := db.CreateSession("hash1", mama.ID, at.Add(time.Hour)); err != nil {
+	if err := db.CreateSession("hash1", mama.ID, "", at, at.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if id, err := db.SessionPerson("hash1", at); err != nil || id != mama.ID {
@@ -169,7 +169,7 @@ func TestResetOTPRemovesSecretCodesAndBrowserSessionsButKeepsTokensAndTheBoxConf
 	db, _ := openTemp(t)
 	mama := confirmedParent(t, db)
 	_ = db.ReplaceRecoveryCodes(mama.ID, []string{"h1"})
-	if err := db.CreateSession("tok", mama.ID, time.Now().Add(time.Hour)); err != nil {
+	if err := db.CreateSession("tok", mama.ID, "", time.Now(), time.Now().Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.CreateAPIToken(store.APIToken{Name: "phone", Hash: "x", PersonID: mama.ID, Scopes: "calendars"}); err != nil {
@@ -210,5 +210,29 @@ func TestResetOTPRemovesSecretCodesAndBrowserSessionsButKeepsTokensAndTheBoxConf
 	}
 	if acc, _ := db.AccountByPerson(mama.ID); !acc.TOTPConfirmed || acc.TOTPSecret != "NEW" {
 		t.Fatalf("after re-setup = %+v", acc)
+	}
+}
+
+func TestAccountLanguage(t *testing.T) {
+	db, _ := openTemp(t)
+	_, mama := seedParent(t, db)
+	_ = db.CreateAccount(store.Account{PersonID: mama.ID, Username: "mama", PasswordHash: "h", TOTPSecret: "S"})
+	acc, err := db.AccountByPerson(mama.ID)
+	if err != nil || acc.Language != "" {
+		t.Fatalf("new account language = %q, %v; want none", acc.Language, err)
+	}
+	if err := db.SetAccountLanguage(mama.ID, "en"); err != nil {
+		t.Fatal(err)
+	}
+	for _, get := range []func() (store.Account, error){
+		func() (store.Account, error) { return db.AccountByPerson(mama.ID) },
+		func() (store.Account, error) { return db.AccountByUsername("mama") },
+	} {
+		if acc, err := get(); err != nil || acc.Language != "en" {
+			t.Fatalf("language = %q, %v; want en", acc.Language, err)
+		}
+	}
+	if err := db.SetAccountLanguage("nobody", "en"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("unknown person: %v", err)
 	}
 }

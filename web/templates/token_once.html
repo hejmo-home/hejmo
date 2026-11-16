@@ -1,0 +1,14 @@
+{{template "head" (dict "Lang" .Lang "Title" .Name "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/caldav" "Text" (t "caldav.back"))}}
+  <h1>{{.Name}}</h1>
+  <section class="once" aria-labelledby="once-h">
+    <p id="once-h"><strong>{{t "caldav.once.lead"}}</strong> {{t "caldav.once.note"}}</p>
+    <p class="secret" data-device-token="{{.Token}}">{{.Token}}</p>
+    <div class="row">
+      <button class="button secondary" type="button" data-copy="{{.Token}}" data-copied="{{t "caldav.once.copied"}}" hidden>{{t "caldav.once.copy"}}</button>
+    </div>
+    {{template "facts" (list (dict "Label" (t "caldav.address") "Value" .Address) (dict "Label" (t "caldav.username") "Value" .Username) (dict "Label" (t "caldav.once.password") "Value" (t "caldav.once.password_value")))}}
+  </section>
+  <a class="button" href="/caldav/tokens/{{.ID}}">{{t "caldav.once.done"}}</a>
+  <script src="/static/token-copy.js" defer></script>
+{{template "foot"}}

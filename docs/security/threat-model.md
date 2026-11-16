@@ -91,7 +91,8 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 - **Check:** device tokens are stored as hashes and can be revoked, after which they are refused. `test:internal/server/caldav_test.go`
 - **Check:** a paired phone's device session is listed on the phones screen and removed by a parent, after which the phone is signed out at its next request. `test:internal/server/phones_test.go`
 - **Check:** the service worker deletes the offline copy of the pages when the person signs in again or the box redirects to the sign-in page, and keeps only styles and scripts, which hold nothing personal. `test:web/test/sw.test.js`
-- **Accepted risk:** a browser session of a parent who signed in with a password lasts 30 days and the box has no remote way to end it; it ends only when someone signs out on that phone, so a lost phone keeps such a session until it expires. The phone's own lock screen is the protection until parents can end those sessions remotely (#108).
+- **Check:** parent A ends parent B's browser session under Signed-in devices, after which B's next request is refused and lands on the sign-in page, which clears the cookie; a paired phone's session cannot be ended there, and a parent cannot end their own. `test:internal/server/sessions_test.go`
+- **Accepted risk:** a browser session lasts 30 days. A lost phone keeps its session until a parent ends it (the box does not know a phone is lost) or it expires; the phone's own lock screen is the protection meanwhile. Sessions made before #108 show as an unknown device with no last use, and a parent finds them by person and sign-in date.
 
 ### T9. A child's account or token reaches parent functions
 
@@ -151,6 +152,27 @@ The host-side script (`hejmo-update`, installed by `install.sh`) runs as root on
 
 - **Threat:** auto-update becomes a way to change the host script.
 - **Check:** the script is updated only by re-running the install script, never by auto-update. `test:internal/install/update_test.go`
+
+## Accounts
+
+### T22. An invitation link is guessed, intercepted or reused
+
+- **Threat:** someone other than the invited adult opens an invitation link and creates an account that can see and change everything a parent can.
+- **Check:** the link holds 20 random characters (about 99 bits) and is stored only as a hash, so the box cannot show it again; it works once and for 7 days, a new link withdraws the old one, and a parent can withdraw it. A used, expired or withdrawn link never creates an account, also when two requests race. `test:internal/store/invitations_test.go` `test:internal/server/invite_test.go`
+- **Check:** unknown or cut-off links answer with one page that names nobody and no date, and wrong tries per address are rate-limited like sign-ins; every try at the account form counts too. `test:internal/server/invite_test.go`
+- **Check:** the invited person chooses username and password on their own device, so no password passes through another person; the password is hashed with Argon2id and is never sent back to the browser. A parent can reset the new parent's one-time codes (ADR 0017). `test:internal/server/invite_test.go`
+- **Check:** only adults without an account can be invited; children keep device sessions (ADR 0010). Creating, withdrawing and accepting are logged with the names of the people. `test:internal/store/invitations_test.go` `test:internal/server/invite_api_test.go`
+- **Accepted risk:** whoever holds the link before the invited person can create the account, and the link travels over a chat or over the QR code on the parent's screen. The page tells the parent to send it only to that person, and the parent sees on the invitation page when it was used; a link used by the wrong person shows as "used". **There is no remedy yet:** a parent cannot remove a person or an account, and resetting the one-time codes (ADR 0017) keeps the password and leads the next password sign-in into code setup, so the holder of the account stays a full parent. The invitation page shows no reset link while the one-time code is not yet set up. Open for the product owner: a way for a parent to remove an account created through an invitation (own ticket). With the box's own CA the short address and the trust page are plain HTTP (like phone pairing, T5): the token is visible to someone who can read the home network's traffic until the invited device trusts the box; the account form itself is HTTPS only.
+
+### T23. A passkey signs in someone who should not be in, or outlives a lost device
+
+- **Threat:** someone creates a passkey for a parent's account (with a stolen device token or browser session) and signs in for good; or a passkey on a lost device keeps signing in after the parent's one-time codes were reset; or a passkey is used on a look-alike address.
+- **Check:** a passkey counts as password and one-time code together only because the box demands that the authenticator verified the user (fingerprint, face or PIN); a passkey whose authenticator did not is refused when it is created. `test:internal/passkey/passkey_test.go`
+- **Check:** passkeys are created and used only when the box is reached over HTTPS by its box name (the public name, or `hejmo.local` with the own CA), never by IP address; the relying-party ID is the box name and the origin is checked, so an answer made on another site or address is refused. `test:internal/server/passkeys_test.go`
+- **Check:** only a signed-in browser creates a passkey; the REST API refuses a device token there (403), because a passkey signs in for good and a stolen token must not be able to make one. A creation works once, for two minutes, and only for the person who began it. `test:internal/server/passkeys_test.go`
+- **Check:** a parent removes their own passkeys at once, and a revoked passkey cannot sign in. When another parent resets one-time codes, the page lists that parent's passkeys by name and removes the ticked ones in the same step; none is ticked in advance. A passkey made for an earlier box name is shown as no longer working and signs nobody in. `test:internal/server/passkeys_test.go`
+- **Check:** refused passkey sign-ins are rate-limited per client address; the counter of a passkey is stored and a passkey whose counter went back is refused (cloned). A sign-in after a reset still leads only to setting up new one-time codes. `test:internal/server/passkeys_test.go`
+- **Accepted risk:** a browser session that was stolen (T8) can create a passkey, because the page asks for no password first (design approved with the preview of #95). The parent sees the passkey in "My account" and removes it there; signing out everywhere is under "Signed-in devices". The browser keeps one flag cookie, `hejmo_passkey_used`, that says a passkey was used on this device; it holds no name and no secret.
 
 ## MCP
 

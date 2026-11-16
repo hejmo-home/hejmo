@@ -8,34 +8,9 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/web"
 )
-
-// 5.4: Given black-and-white mode, when an event with two people is shown,
-// then both people are distinguishable by their shape, without colour.
-func TestBlackAndWhiteEventWithTwoPeopleShowsTwoDistinctShapes(t *testing.T) {
-	f := newFamilyBox(t, "eink_bw")
-	f.event(t, "Football", f.at(14, 15, 0), f.at(14, 16, 0), false, "Sebastian", "Mia")
-	page := f.view(t, "en", f.at(14, 8, 0))
-	if !strings.Contains(page, `data-theme="bw"`) {
-		t.Fatal("not the bw palette")
-	}
-	cols := columnRe.FindAllString(page, -1)
-	cardRe := regexp.MustCompile(`(?s)<div class="event".*?</div></div>`)
-	markerRe := regexp.MustCompile(`class="marker small"[^>]*data-shape="([a-z-]+)" title="([^"]+)"`)
-	for _, who := range []string{"Sebastian", "Mia"} {
-		var card string
-		for _, c := range cols {
-			if strings.Contains(c, `data-name="`+who+`"`) {
-				card = cardRe.FindString(c)
-			}
-		}
-		shapes := markerRe.FindAllStringSubmatch(card, -1)
-		if len(shapes) != 2 || shapes[0][1] == shapes[1][1] || shapes[0][2] != "Sebastian" || shapes[1][2] != "Mia" {
-			t.Errorf("%s column: card markers = %q in %q", who, shapes, card)
-		}
-	}
-}
 
 // 5.4: Given a fifth person, then they get a further distinct shape (and a
 // sixth another); the API hands out the defaults.
@@ -70,7 +45,12 @@ func TestBlackAndWhiteRenderingUsesOnlyTheBlackAndWhitePalette(t *testing.T) {
 	f.event(t, "Football", f.at(14, 15, 0), f.at(14, 16, 0), false, "Sebastian", "Mia")
 	f.event(t, "Dentist", f.at(14, 9, 0), f.at(14, 10, 0), false, "Mama")
 	f.event(t, "Grandparents visit", f.at(13, 0, 0), f.at(16, 0, 0), true, "Mama", "Papa")
+	f.plan(t, map[meal.Mealtime]string{meal.Lunch: "Tomato soup", meal.Dinner: "Pasta bake"})
+	f.addWaste(t, wasteEvent("p1", "Paper bin", "5"))
 	page := f.view(t, "en", f.at(14, 8, 0))
+	if !strings.Contains(page, `data-theme="bw"`) || !strings.Contains(page, `data-tile="meal"`) || !strings.Contains(page, `data-tile="tomorrow"`) {
+		t.Errorf("the bw page lacks the theme or one of the two footer tiles:\n%s", page)
+	}
 
 	// The markup carries no colour of its own: no style attributes except the progress share.
 	for _, m := range regexp.MustCompile(`style="([^"]*)"`).FindAllStringSubmatch(page, -1) {

@@ -10,6 +10,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/web"
 )
@@ -53,14 +54,14 @@ func TestWriteDesignPreview(t *testing.T) {
 		occ("Parents' evening", d(2, 19, 0), d(2, 20, 30)),
 	}
 	build := func(now time.Time, filled, showTomorrow bool) familyview.View {
-		v := familyview.Build(familyview.Input{Now: now, Lang: "en", Region: "DE-BY", People: people, Occurrences: occs, ShowTomorrow: showTomorrow})
+		v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: now, Lang: "en", Region: "DE-BY", People: people, Occurrences: occs, ShowTomorrow: showTomorrow})
 		if filled {
 			// Slots filled for illustration: the data arrives with package 6 (6.4, 6.6, 6.7).
 			v.Columns[0].Progress = &familyview.Progress{Done: 3, Total: 5}
 			v.Columns[2].Progress = &familyview.Progress{Done: 1, Total: 3}
 			v.Columns[3].Progress = &familyview.Progress{Done: 2, Total: 2}
-			v.Meal = &familyview.Tile{Label: "Dinner", Lines: []string{"Dinner: Pasta bake"}}
-			v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []string{"Paper bin", "Residual waste"}, Alert: now.Hour() >= 18}
+			v.Meal = &familyview.MealTile{Label: "Dinner", Entries: []familyview.MealEntry{{Mealtime: "dinner", Dish: "Pasta bake"}}}
+			v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []familyview.Line{{Kind: familyview.LineWaste, Text: "Paper bin"}, {Kind: familyview.LineWaste, Text: "Residual waste"}}, Alert: now.Hour() >= 18}
 		}
 		return v
 	}

@@ -1,0 +1,21 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "setup.welcome.title") "Frame" .Frame "Wizard" .Wizard)}}
+  <h1>{{t "setup.welcome.title"}}</h1>
+  <p class="lead">{{t "setup.welcome.lead"}}</p>
+  <section class="tile">
+    <h2>{{t "setup.welcome.how"}}</h2>
+    <ol class="howto">
+      <li><div class="s"><b>{{t "setup.wizard.step.1"}}</b><p>{{t "setup.welcome.step.1"}}</p></div></li>
+      <li><div class="s"><b>{{t "setup.wizard.step.2"}}</b><p>{{t "setup.welcome.step.2"}}</p></div></li>
+      <li><div class="s"><b>{{t "setup.wizard.step.3"}}</b><p>{{t "setup.welcome.step.3"}}</p></div></li>
+      <li><div class="s"><b>{{t "setup.wizard.step.4"}}</b><p>{{t "setup.welcome.step.4"}}</p></div></li>
+    </ol>
+  </section>
+  <section class="tile">
+    <h2>{{t "setup.welcome.need"}}</h2>
+    <ul class="plain">
+      <li>{{rich (t "setup.welcome.need.app")}}</li>
+      <li>{{rich (t "setup.welcome.need.desec")}}</li>
+    </ul>
+  </section>
+  <div class="actions"><a class="button" href="/setup/https">{{t "setup.welcome.start"}}</a></div>
+{{template "foot"}}

@@ -212,3 +212,94 @@ func TestStarsShowOnlyForPeopleWithStarTasksOrBookings(t *testing.T) {
 		t.Fatalf("a booking shows stars: %+v", s)
 	}
 }
+
+// Acceptance (#122): changing a task's star value leaves credited ticks and
+// the star log as they are; unticking deducts the credited value.
+func TestSetTaskStarsLeavesCreditedTicksAndTheLogAlone(t *testing.T) {
+	f := newTaskFixture(t)
+	k := f.starTask(t, 2)
+	_ = f.db.SetTaskDone(f.h.ID, k.ID, "2026-11-14", true, "", taskNow)
+	before, _ := f.db.StarAccount(f.h.ID, f.mia.ID, 10)
+	if err := f.db.SetTaskStars(f.h.ID, k.ID, 5); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := f.db.Task(f.h.ID, k.ID)
+	if got.Stars != 5 {
+		t.Fatalf("stars = %d, want 5", got.Stars)
+	}
+	if n, ok, err := f.db.TaskDoneStars(k.ID, "2026-11-14"); err != nil || !ok || n != 2 {
+		t.Fatalf("credited = %d, %v, %v; want 2", n, ok, err)
+	}
+	after, _ := f.db.StarAccount(f.h.ID, f.mia.ID, 10)
+	if after.Balance != before.Balance || len(after.Entries) != len(before.Entries) {
+		t.Fatalf("log changed: %+v -> %+v", before, after)
+	}
+	_ = f.db.SetTaskDone(f.h.ID, k.ID, "2026-11-14", false, "", taskNow)
+	if b := f.balance(t, f.mia.ID); b != 0 {
+		t.Fatalf("balance after untick = %d, want 0 (credited value deducted, not the new one)", b)
+	}
+	if _, ok, _ := f.db.TaskDoneStars(k.ID, "2026-11-14"); ok {
+		t.Fatal("task still done")
+	}
+}
+
+func TestSetTaskStarsRefusesOutOfRangeAndUnknownTasks(t *testing.T) {
+	f := newTaskFixture(t)
+	k := f.starTask(t, 2)
+	for _, bad := range []int{-1, task.MaxStars + 1} {
+		err := f.db.SetTaskStars(f.h.ID, k.ID, bad)
+		var inv *task.InvalidError
+		if !errors.Is(err, store.ErrInvalid) || !errors.As(err, &inv) || inv.Field != "stars" {
+			t.Errorf("%d = %v, want ErrInvalid on field stars", bad, err)
+		}
+	}
+	if err := f.db.SetTaskStars(f.h.ID, k.ID, 0); err != nil {
+		t.Errorf("0 = %v", err)
+	}
+	if err := f.db.SetTaskStars(f.h.ID, "nope", 1); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unknown = %v, want ErrNotFound", err)
+	}
+	if err := f.db.SetTaskStars("other-household", k.ID, 1); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("foreign household = %v, want ErrNotFound", err)
+	}
+}
+
+// Product owner decision Q2: when the person who booked is removed, the
+// booking keeps their last name and is marked as removed.
+func TestARemovedBookersNameStaysInTheStarLog(t *testing.T) {
+	f := newTaskFixture(t)
+	if _, err := f.db.BookStars(f.h.ID, f.mia.ID, 3, "gift", f.mama.ID, taskNow); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.UpdatePerson(f.h.ID, f.mama.ID, "Mami", f.mama.Color, f.mama.Shape); err != nil {
+		t.Fatal(err)
+	}
+	entry := func() store.StarEntry {
+		acc, err := f.db.StarAccount(f.h.ID, f.mia.ID, 10)
+		if err != nil || len(acc.Entries) != 1 {
+			t.Fatalf("account = %+v, %v", acc, err)
+		}
+		return acc.Entries[0]
+	}
+	if e := entry(); e.BookedByName != "Mami" || e.BookedByRemoved {
+		t.Fatalf("before removal = %+v, want the current name, not removed", e)
+	}
+	if _, err := f.db.SQL().Exec(`DELETE FROM people WHERE id = ?`, f.mama.ID); err != nil {
+		t.Fatal(err)
+	}
+	if e := entry(); e.BookedByName != "Mami" || !e.BookedByRemoved || e.Delta != 3 {
+		t.Fatalf("after removal = %+v, want the last name and removed", e)
+	}
+}
+
+func TestADisplayBookingIsNotARemovedPerson(t *testing.T) {
+	f := newTaskFixture(t)
+	k := f.starTask(t, 2)
+	if err := f.db.SetTaskDone(f.h.ID, k.ID, "2026-11-14", true, "", taskNow); err != nil {
+		t.Fatal(err)
+	}
+	acc, _ := f.db.StarAccount(f.h.ID, f.mia.ID, 10)
+	if e := acc.Entries[0]; e.BookedByName != "" || e.BookedByRemoved {
+		t.Fatalf("display booking = %+v", e)
+	}
+}

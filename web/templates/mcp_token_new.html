@@ -1,0 +1,23 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "mcp.new.title") "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/mcp" "Text" (t "mcp.back"))}}
+  <h1>{{t "mcp.new.title"}}</h1>
+  <p class="lead">{{t "mcp.new.lead"}}</p>
+  <form method="post" action="/mcp/tokens" class="steps">
+    <fieldset>
+      <legend>{{t "mcp.new.what_for"}}</legend>
+      {{template "field" (dict "Root" . "Name" "name" "Label" (t "mcp.new.name") "Value" .Name "Required" true "Max" 80)}}
+      <p class="hint">{{t "mcp.new.acts_as.pre"}}<span class="who"><span class="marker" data-person="{{.Who.Slot}}" data-shape="{{.Who.Shape}}" aria-hidden="true"></span>{{.Who.Name}}</span>{{t "mcp.new.acts_as.post"}}</p>
+    </fieldset>
+    {{$bad := eq .ErrorField "scopes"}}<fieldset class="scopes{{if $bad}} invalid{{end}}"{{if $bad}} aria-describedby="err-scopes"{{end}}>
+      <legend>{{t "mcp.new.may"}}</legend>
+      <p class="hint">{{t "mcp.new.may.hint"}}</p>
+      {{range .Areas}}<div class="scope">
+          <span class="area" id="a-{{.Area}}"><b>{{.Name}}</b><span>{{.Desc}}</span></span>
+          <fieldset class="seg" aria-labelledby="a-{{.Area}}"><legend>{{.Name}}</legend><label><input type="radio" name="{{.Area}}" value="none"{{if eq .Level "none"}} checked{{end}}>{{t "mcp.level.none"}}</label><label><input type="radio" name="{{.Area}}" value="read"{{if eq .Level "read"}} checked{{end}}>{{t "mcp.level.read"}}</label><label><input type="radio" name="{{.Area}}" value="write"{{if eq .Level "write"}} checked{{end}}>{{t "mcp.level.write"}}</label></fieldset>
+        </div>
+      {{end}}{{template "fieldError" (dict "Root" . "Name" "scopes")}}
+      <p class="hint">{{t "mcp.new.never"}}</p>
+    </fieldset>
+    <button class="button" type="submit">{{t "mcp.new.create"}}</button>
+  </form>
+{{template "foot"}}

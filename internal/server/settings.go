@@ -156,16 +156,29 @@ type cutoffInput struct {
 	On                    bool // the switch: the mealtime disappears from displays at Value
 }
 
+// hubEntry is a hub row; State, when set, is the key of the word that opens its hint.
+type hubEntry struct {
+	hubItem
+	State string
+}
+
 // handleSettingsHub shows the Settings hub: one calm row per setup screen.
 func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
 	}
-	var items []hubItem
+	var items []hubEntry
 	for _, it := range hubItems {
 		if auth.RoleAllows(p.person.Role, it.Needs) {
-			items = append(items, it)
+			e := hubEntry{hubItem: it}
+			if it.Href == mcpPath { // the state comes first, so it shows without opening the page
+				e.State = "hub.mcp.off"
+				if p.household.MCPEnabled {
+					e.State = "hub.mcp.on"
+				}
+			}
+			items = append(items, e)
 		}
 	}
 	s.render(w, r, http.StatusOK, "settings.html", map[string]any{

@@ -98,6 +98,13 @@ var wholeFamilyTexts = map[string]bool{
 	"firststeps.lead":                true, // "eurem Familienleben"
 	"firststeps.settled":             true, // "eure Familie"
 	"firststeps.close.hint":          true, // "euren Tag"
+	"mcp.intro.off":                  true, // "eurer Hejmo-Box": the family's box
+	"mcp.intro.on":                   true, // "eurer Hejmo-Box"
+	"mcp.switch.off":                 true, // "eure Daten": the family's data
+	"mcp.area.events.desc":           true, // "eure anderen Kalender": the family's calendars
+	"mcp.explain.what":               true, // "eure Hejmo-Box"
+	"mcp.explain.know3":              true, // "eurem Heimnetz": the family's home network
+	"flash.mcp_off":                  true, // "eure Daten"
 	"firststeps.display.text":        true, // "euren Tag"
 }
 

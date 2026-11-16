@@ -1,0 +1,20 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "food.title") "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" (printf "/people/%s" .Subject.ID) "Text" .BackText)}}
+  <h1>{{t "food.title"}}</h1>
+  <p class="invitee for-person"><span class="marker" data-person="{{.Subject.Slot}}" data-shape="{{.Subject.Shape}}" aria-hidden="true"></span><span>{{.Subject.Name}}</span></p>
+  <p class="why health"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>{{t "food.why.title"}}</b>{{t "food.why.text"}}</span></p>
+  <form method="post" action="/people/{{.Subject.ID}}/food" class="steps food-form">
+    <fieldset class="choice diet"><legend>{{.DietLegend}}</legend>{{range .Diets}}<label><input type="radio" name="diet" value="{{.Value}}"{{if .Checked}} checked{{end}}><b>{{.Name}}</b><small>{{.Desc}}</small></label>{{end}}<p class="hint">{{t "food.diet.hint"}}</p></fieldset>
+    <fieldset class="choice allergens"><legend>{{t "food.allergens.legend"}}</legend><p class="hint">{{.AllergensHint}}</p><p class="hint caveat"><b>{{t "food.allergens.caveat.lead"}}</b> {{t "food.allergens.caveat.text"}}</p>{{range .Cards}}<label><input type="checkbox" name="allergens" value="{{.Key}}"{{if .Checked}} checked{{end}}><b>{{.Name}}</b><small>{{.Examples}}</small></label>{{end}}</fieldset>
+    <fieldset class="other"><legend>{{t "food.other.legend"}}</legend>
+      {{$bad := eq .ErrorField "other"}}<div class="f{{if $bad}} invalid{{end}}">
+        <label>{{t "food.other.label"}}<input name="other" type="text" value="{{.Other}}" maxlength="{{if $bad}}1000{{else}}200{{end}}" autocomplete="off" placeholder="{{t "food.other.placeholder"}}" data-food-other{{if $bad}} autofocus aria-invalid="true"{{end}} aria-describedby="{{if $bad}}err-other {{end}}hint-other"></label>
+        {{template "fieldError" (dict "Root" . "Name" "other")}}
+        <p class="hint" id="hint-other">{{t "food.other.hint"}}</p>
+      </div>
+      <div class="unchecked-sample"><p><b>{{t "food.sample.lead"}}</b> {{t "food.sample.text"}}</p><p><span class="unchecked"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.6M12 16.8v.4"/></svg><span data-food-sample data-template="{{.SampleTemplate}}" data-empty="{{.SampleEmpty}}">{{.Sample}}</span></span></p></div>
+    </fieldset>
+    <button class="button" type="submit">{{t "people.save"}}</button>
+  </form>
+  <script src="/static/food.js" defer></script>
+{{template "foot"}}

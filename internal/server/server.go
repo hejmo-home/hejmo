@@ -398,20 +398,15 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
 		fr.setLanguage(lang, r)
-		if detailPages[name] && fr.Back { // a detail page links to its own overview, not to the hub
-			fr.Back, fr.BackHref, fr.BackLabel = false, "", ""
-		}
 		if href, _ := data["BackHref"].(string); href != "" { // a page that leads back to a named page
 			text, _ := data["BackText"].(string)
 			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, href, "", text
 		}
-		if parts := crumbsFor(name, data); len(parts) > 0 { // a trail replaces the back link (ticket 182)
+		if parts := crumbsFor(name, data); len(parts) > 0 && data["Wizard"] == nil { // a trail replaces the back link (ticket 182); a wizard is a linear flow, not below Settings
 			for _, c := range parts {
-				label := c.Label
-				if isName(label) {
-					label = strings.TrimPrefix(label, "\x00")
-				} else {
-					label = s.i18n.T(lang, label)
+				label := c.Name
+				if c.Key != "" {
+					label = s.i18n.T(lang, c.Key)
 				}
 				fr.Crumbs = append(fr.Crumbs, crumbLink{c.Href, label})
 			}

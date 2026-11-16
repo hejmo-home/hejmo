@@ -1798,7 +1798,8 @@ details.more.explain-more { margin-top: var(--gap-section); }
 .crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; font-size: var(--fs-label-large); line-height: 1.35; }
 .crumbs li { display: flex; align-items: center; min-width: 0; max-width: 100%; }
 .crumbs .sep { flex: none; width: 16px; height: 16px; margin: 0 6px; stroke: var(--text-secondary); stroke-width: 2; fill: none; }
-.crumbs a, .crumbs [aria-current] { display: flex; align-items: center; min-width: 0; min-height: var(--touch-target); overflow-wrap: break-word; hyphens: auto; -webkit-hyphens: auto; hyphenate-limit-chars: 12 5 5; }
+.crumbs a, .crumbs [aria-current] { display: flex; align-items: center; min-width: 0; min-height: var(--touch-target); overflow-wrap: break-word; }
+@supports (hyphenate-limit-chars: 12 5 5) { .crumbs a, .crumbs [aria-current] { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } } /* only where the browser can keep short words whole (as the rules above) */
 .crumbs a { color: var(--accent); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
 .crumbs [aria-current] { color: var(--text-secondary); }
 [data-theme="bw"] .crumbs a { color: var(--text); text-decoration-thickness: 2px; }

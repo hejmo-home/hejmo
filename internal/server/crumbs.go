@@ -2,30 +2,29 @@ package server
 
 import (
 	"reflect"
-	"strings"
 )
 
 // crumb is one linked part of a breadcrumb trail (ticket 182, ADR 0017). The
 // last part of a trail is the page itself: the layout takes its text from the
 // page title, so a trail holds only the links above the page.
-type crumb struct{ Href, Label string }
+type crumb struct{ Href, Key, Name string } // Key is a locale key; Name, when set, is a name of the household shown as it is
 
 var (
-	crumbSettings = crumb{"/settings", "nav.settings"}
-	crumbMeals    = crumb{"/meals", "nav.meals"}
-	crumbTasks    = crumb{"/tasks", "nav.tasks"}
+	crumbSettings = crumb{"/settings", "nav.settings", ""}
+	crumbMeals    = crumb{"/meals", "nav.meals", ""}
+	crumbTasks    = crumb{"/tasks", "nav.tasks", ""}
 
-	crumbConnections = crumb{"/calendars", "hub.connections"}
-	crumbCalDAV      = crumb{"/caldav", "hub.caldav"}
-	crumbDisplays    = crumb{"/displays", "hub.displays"}
-	crumbPhones      = crumb{"/phones", "hub.phones"}
-	crumbMCP         = crumb{"/mcp", "hub.mcp"}
-	crumbPeople      = crumb{"/people", "hub.people"}
-	crumbAccount     = crumb{"/account", "hub.otp"}
-	crumbSessions    = crumb{"/sessions", "hub.sessions"}
+	crumbConnections = crumb{"/calendars", "hub.connections", ""}
+	crumbCalDAV      = crumb{"/caldav", "hub.caldav", ""}
+	crumbDisplays    = crumb{"/displays", "hub.displays", ""}
+	crumbPhones      = crumb{"/phones", "hub.phones", ""}
+	crumbMCP         = crumb{"/mcp", "hub.mcp", ""}
+	crumbPeople      = crumb{"/people", "hub.people", ""}
+	crumbAccount     = crumb{"/account", "hub.otp", ""}
+	crumbSessions    = crumb{"/sessions", "hub.sessions", ""}
 
-	crumbMealTemplates    = crumb{"/meals/templates", "meals.tpl.title"}
-	crumbRoutineTemplates = crumb{"/routines/templates", "routine.tpl.title"}
+	crumbMealTemplates    = crumb{"/meals/templates", "meals.tpl.title", ""}
+	crumbRoutineTemplates = crumb{"/routines/templates", "routine.tpl.title", ""}
 )
 
 // crumbTrails are the parts above the page, by template: every page below
@@ -57,28 +56,24 @@ func crumbsFor(name string, data map[string]any) []crumb {
 	switch name {
 	case "invitation.html", "food.html":
 		if id, who := lookup(data, "Subject", "ID"), lookup(data, "Subject", "Name"); id != "" {
-			return []crumb{crumbSettings, crumbPeople, {"/people/" + id, "\x00" + who}}
+			return []crumb{crumbSettings, crumbPeople, {Href: "/people/" + id, Name: who}}
 		}
 		return []crumb{crumbSettings, crumbPeople}
 	case "connection_off.html":
 		if id, who := lookup(data, "Connection", "ID"), lookup(data, "Connection", "Username"); id != "" {
-			return []crumb{crumbSettings, crumbConnections, {"/connections/" + id, "\x00" + who}}
+			return []crumb{crumbSettings, crumbConnections, {Href: "/connections/" + id, Name: who}}
 		}
 		return []crumb{crumbSettings, crumbConnections}
 	case "routine_template_step.html":
 		href, _ := data["BackHref"].(string)
 		text, _ := data["BackText"].(string)
 		if href != "" {
-			return []crumb{crumbTasks, crumbRoutineTemplates, {href, "\x00" + text}}
+			return []crumb{crumbTasks, crumbRoutineTemplates, {Href: href, Name: text}}
 		}
 		return []crumb{crumbTasks, crumbRoutineTemplates}
 	}
 	return crumbTrails[name]
 }
-
-// A label that starts with a NUL byte is a name of the household (shown as it
-// is); every other label is a locale key.
-func isName(label string) bool { return strings.HasPrefix(label, "\x00") }
 
 // lookup follows a path of map keys and struct fields through page data and
 // returns the string found, or "" when a step is missing.

@@ -306,3 +306,46 @@ func TestDietAndAllergiesPageHasFourParts(t *testing.T) {
 		t.Error("the back link is still there")
 	}
 }
+
+// The wizard is a linear flow and not below Settings: no trail, also on its recovery-code step.
+func TestWizardRecoveryCodeStepHasNoTrail(t *testing.T) {
+	b := newBox(t)
+	b.post("/setup", validSetupForm())
+	setup := b.get("/setup/totp")
+	r := b.post("/setup/totp", url.Values{"code": {totpNow(b, secretOn(t, setup.body))}})
+	if r.status != http.StatusOK || len(recoveryCodesOn(t, r.body)) != 10 {
+		t.Fatalf("recovery codes step = %d\n%s", r.status, r.body)
+	}
+	if strings.Contains(r.body, `class="crumbs"`) {
+		t.Errorf("the wizard's recovery-code step has a breadcrumb trail\n%s", r.body)
+	}
+}
+
+// After a refused save the group page keeps the saved name in trail and heading; a new group says so.
+func TestGroupPageKeepsTheSavedNameAfterARefusedSave(t *testing.T) {
+	p := newPeopleBox(t)
+	mia := p.add(t, "Mia", "child")["id"].(string)
+	if r := p.post("/groups", url.Values{"name": {"Kids"}, "people": {mia}}); r.status != http.StatusSeeOther {
+		t.Fatalf("create = %d", r.status)
+	}
+	_, _, groups := p.api.call(http.MethodGet, "/groups", nil)
+	id := groups[0].(map[string]any)["id"].(string)
+	long := strings.Repeat("x", 81)
+	for name, c := range map[string]struct {
+		path, saved string
+		name        string
+	}{
+		"edit, empty": {"/groups/" + id, "Kids", ""},
+		"edit, long":  {"/groups/" + id, "Kids", long},
+		"new, long":   {"/groups", "New subgroup", long},
+	} {
+		r := p.do(http.MethodPost, c.path, url.Values{"name": {c.name}, "people": {mia}}, en)
+		if r.status != http.StatusUnprocessableEntity {
+			t.Fatalf("%s: status = %d, want 422", name, r.status)
+		}
+		wantTrail(t, name, r.body, part("Settings", "/settings"), part("People", "/people"), part(c.saved, ""))
+		if h := headingText(r.body); h != c.saved {
+			t.Errorf("%s: h1 = %q, want %q", name, h, c.saved)
+		}
+	}
+}

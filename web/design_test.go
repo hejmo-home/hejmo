@@ -558,10 +558,14 @@ func familyTemplateHasNameSpan(t *testing.T) bool {
 func TestBreadcrumbTrailWrapsNamesAndHasTouchSizedParts(t *testing.T) {
 	css := stylesheet(t)
 	parts := ruleFor(t, css, ".crumbs a, .crumbs [aria-current]")
-	for _, want := range []string{"min-height: var(--touch-target)", "overflow-wrap: break-word", "hyphens: auto", "hyphenate-limit-chars: 12 5 5"} {
+	for _, want := range []string{"min-height: var(--touch-target)", "overflow-wrap: break-word"} {
 		if !strings.Contains(parts, want) {
 			t.Errorf("crumb parts lack %q: %s", want, parts)
 		}
+	}
+	// Hyphenation only where hyphenate-limit-chars is supported, so Safari does not hyphenate short words.
+	if !strings.Contains(css, "@supports (hyphenate-limit-chars: 12 5 5) { .crumbs a, .crumbs [aria-current] { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }") {
+		t.Error("crumb hyphenation is not guarded by @supports (hyphenate-limit-chars)")
 	}
 	for _, bad := range []string{"text-overflow", "line-clamp", "white-space: nowrap", "overflow: hidden"} {
 		if strings.Contains(parts, bad) {

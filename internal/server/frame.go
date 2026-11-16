@@ -175,10 +175,3 @@ var hubItems = []hubItem{
 	{"/account", "hub.otp", "hub.otp.hint", auth.Perm("settings", auth.Write)},
 	{"/sessions", "hub.sessions", "hub.sessions.hint", auth.Perm("settings", auth.Write)},
 }
-
-// detailPages are the templates of detail pages (ticket 111, ADR 0017): they
-// start with a link back to their overview, which replaces the hub link.
-var detailPages = map[string]bool{
-	"display.html": true, "token.html": true, "token_once.html": true, "connection.html": true, "connection_off.html": true,
-	"calendar_detail.html": true, "phone.html": true, "account.html": true, "account_reset.html": true, "passkey.html": true, "mcp_token.html": true, "mcp_token_new.html": true, "mcp_token_once.html": true, "connection_new.html": true, "person_edit.html": true, "invitation.html": true,
-}

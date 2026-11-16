@@ -18,7 +18,8 @@ Each ADR records one decision: context, decision, consequences. ADRs take preced
 | [0012](0012-calendar-sync.md) | Calendar sync | Accepted, amended by 0015, 0017, 0018, notes added in #19 |
 | [0013](0013-google-calendar-connection.md) | Google Calendar connection | Accepted |
 | [0014](0014-https-and-certificates.md) | HTTPS and certificates | Accepted, notes added in #45 |
-| [0015](0015-display-web-interface-and-everyday.md) | Display, web interface and everyday features | Accepted, amended by 0016, 0017, 0018, Q62 note added in #128 |
+| [0015](0015-display-web-interface-and-everyday.md) | Display, web interface and everyday features | Accepted, amended by 0016, 0017, 0018, 0019, Q62 note added in #128 |
 | [0016](0016-family-view-header-and-footer.md) | Family view header, columns and footer | Accepted, amended by 0018 and by the product owner on 15/11/2026 |
 | [0017](0017-web-interface-usability.md) | Web interface usability | Accepted |
-| [0018](0018-path-to-0-1.md) | Path to 0.1 | Accepted |
+| [0018](0018-path-to-0-1.md) | Path to 0.1 | Accepted, amended by 0019 |
+| [0019](0019-lists-article-library-and-diets.md) | Lists: article library, quantities, tile view and diets | Accepted |

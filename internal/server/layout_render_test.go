@@ -570,8 +570,6 @@ type knownLayoutProblem struct {
 }
 
 var knownLayoutProblems = []knownLayoutProblem{
-	{"/display", "name-broken-inside-the-word", 1024, []string{"Wilhelmine", "Leopoldine"}, 172, false},
-	{"/display", "name-broken-inside-the-word", 375, []string{"Maximilian", "Konstantin", "Wilhelmine", "Leopoldine"}, 172, false},
 	{"/calendar", "page-wider-than-viewport", 768, []string{"Kinderarztvorsorgeuntersuchung"}, 173, false},
 	{"/calendar", "text-overflows-its-box", 768, []string{"Kinderarztvorsorgeuntersuchung", "Elternabend", "Geburtstagsfeier"}, 173, false},
 	{"/calendar", "text-overflows-its-box", 1024, []string{"Kinderarztvorsorgeuntersuchung", "Geburtstagsfeier"}, 173, false},

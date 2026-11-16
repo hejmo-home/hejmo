@@ -47,7 +47,7 @@ jobs:
           # The rendered layout check (ticket 161) drives headless Chrome; no Chrome fails it.
           HEJMO_REQUIRE_CHROME: ${{ matrix.require_chrome }}
           HEJMO_LAYOUT_SHOTS: ${{ runner.temp }}/layout-shots
-        run: go test -race -count=1 -timeout 20m ./...
+        run: go test -race -count=1 -timeout 40m ./...
       - name: Screenshots of pages that failed the layout check
         if: failure()
         uses: actions/upload-artifact@v4

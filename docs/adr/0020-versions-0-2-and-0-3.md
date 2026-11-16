@@ -2,7 +2,7 @@
 
 - Status: Accepted
 - Date: 16/11/2026
-- Amends: [0005](0005-display-client-and-kiosk-adapter.md) (only open-source kiosk apps), [0007](0007-calendar-sync-in-v1.md) (how Outlook is connected), [0012](0012-calendar-sync.md) (CalDAV sync-collection and discovery; the CardDAV address book moves from V2 to 0.3), [0015](0015-display-web-interface-and-everyday.md) (full display layouts with blocks), [0018](0018-path-to-0-1.md) (contents of 0.2; 0.3 added; box as CardDAV server brought forward from V2), [0019](0019-lists-article-library-and-diets.md) (details of Reminders sync and "always on the list")
+- Amends: [0005](0005-display-client-and-kiosk-adapter.md) (only open-source kiosk apps), [0007](0007-calendar-sync-in-v1.md) (how Outlook is connected), [0012](0012-calendar-sync.md) (CalDAV sync-collection and discovery; the CardDAV address book moves from V2 to 0.3), [0015](0015-display-web-interface-and-everyday.md) (full display layouts with blocks), [0018](0018-path-to-0-1.md) (contents of 0.2; 0.3 added; box as CardDAV server and reward catalogue, streaks and badges brought forward from V2), [0019](0019-lists-article-library-and-diets.md) (details of Reminders sync and "always on the list"; recipes brought forward from V2 to 0.3)
 
 ## Context
 
@@ -24,8 +24,8 @@ ADR 0018 named what comes after 0.1 only as "0.2 and later". On 15/11/2026 and 1
   - #179 display brightness control
   - #180 choose people per display (full layouts)
 - **0.3** holds three tickets (Q31, 16/11/2026):
-  - #193 recipes linked to the meal plan and the shopping list
-  - #194 star rewards: catalogue, streaks and badges
+  - #193 recipes linked to the meal plan and the shopping list, brought forward from V2 (ADR 0019)
+  - #194 star rewards: catalogue, streaks and badges, brought forward from V2 (ADR 0018)
   - #195 box as address book (CardDAV server), brought forward from V2
 - **V3:** Immich as a photo source for the screensaver.
 - The grilling rounds on the details of 0.3 (where recipes come from, how rewards are redeemed, what a contact is) take place before building and are not decided here.
@@ -61,7 +61,6 @@ ADR 0018 named what comes after 0.1 only as "0.2 and later". On 15/11/2026 and 1
 - **Cloudflare:** `libdns/cloudflare` (MIT, no extra dependencies); a zone-scoped token (Zone:Read and Zone.DNS:Write, or the dual-token setup).
 - **INWX:** `libdns/inwx` (MIT, adds `pquerna/otp`); username, password and an optional 2FA shared secret. The wizard explains why the secret is needed and that a scoped token does not exist. Tests cover set, delete and cleanup of stale ACME TXT records.
 - **Hetzner:** no `libdns/hetzner/v2` (+4.6 MB, about 45 modules). Hejmo writes its **own thin libdns provider** over the Hetzner Cloud DNS REST API with `net/http` only, tested against a fake server. Never the deprecated DNS Console API.
-- The box never overwrites a name that already points to a public address.
 
 ### CalDAV (#54)
 
@@ -90,7 +89,7 @@ ADR 0018 named what comes after 0.1 only as "0.2 and later". On 15/11/2026 and 1
 
 ## Consequences
 
-- The ten 0.2 tickets keep their numbers; the 0.3 tickets #193 to #195 need a grilling round each before design.
+- The ten 0.2 tickets keep their numbers; the 0.3 tickets #193 to #195 need a grilling round each before building.
 - Moving the CardDAV address book to 0.3 brings people and contacts into the data model earlier than ADR 0018 planned.
-- Graph, two more DNS providers, Immich later and FreeKiosk add outbound connections and dependencies; the threat model gets an entry for each, and the make-or-buy notes of #57 and #177 stay on the tickets.
+- Graph, three more DNS providers, Immich later and the FreeKiosk REST interface add connections and dependencies; the threat model gets an entry for each, and the make-or-buy notes of #57 and #177 stay on the tickets.
 - The 0.1 plan of ADR 0018 does not change.

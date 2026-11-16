@@ -46,7 +46,9 @@ type hetznerRRSet struct {
 var errHetznerNotFound = errors.New("hetzner: not found")
 
 // do sends a request and decodes a JSON answer into out (when not nil). An
-// action that ended in an error is an error too.
+// action that ended in an error is an error too. Hetzner actions run
+// asynchronously: one that is still "running" is not waited for, so a later
+// failure of the record shows only when the certificate order fails.
 func (h *hetzner) do(ctx context.Context, method, path string, body, out any) error {
 	var rd io.Reader
 	if body != nil {

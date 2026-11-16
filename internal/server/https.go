@@ -241,8 +241,9 @@ func (s *server) handlePublicHTTPSSubmit(w http.ResponseWriter, r *http.Request)
 	case err == nil:
 		http.Redirect(w, r, "/setup/https/check", http.StatusSeeOther)
 	case errors.As(err, &taken):
-		// Nothing went wrong with the credentials: they stay as they are
-		// (the token is not shown, but the page does not ask for it again).
+		// Nothing went wrong with the credentials, but the box keeps none of
+		// them: the secret fields come back empty and the family pastes them
+		// again (the other fields keep their values).
 		s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, way, form, httpsError{
 			Key: "setup.https.error.name_taken", Field: "name", Text: s.nameTakenText(r, taken),
 		})
@@ -250,6 +251,9 @@ func (s *server) handlePublicHTTPSSubmit(w http.ResponseWriter, r *http.Request)
 		e := httpsError{Key: "setup.https.error.invalid"}
 		if errors.As(err, &inv) && slices.Contains([]string{"token", "username", "password", "otp_secret", "name", "lan_ip", "eab"}, inv.Field) {
 			e = httpsError{Key: "setup.https.error." + inv.Field, Field: inv.Field}
+			if inv.Field == "otp_secret" && req.OTPSecret == "" {
+				e.Key = "setup.https.error.otp_secret_missing" // nothing was typed: not "the 6-digit code"
+			}
 		}
 		s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, way, form, e)
 	default:
@@ -268,7 +272,7 @@ func failedStep(req publiccert.Request) httpsError {
 	}
 	switch req.Provider {
 	case "inwx":
-		e := httpsError{Key: key, Field: "password", FieldKey: "setup.https.error.password_again", Fields: map[string]string{"password": "setup.https.error.password_again"}}
+		e := httpsError{Key: key, Field: "password", FieldKey: "setup.https.error.password_again", Fields: map[string]string{"password": "setup.https.error.password_again"}} // #nosec G101 -- an i18n key, no credential
 		if req.TwoFA {
 			e.Fields["otp_secret"] = "setup.https.error.secret_again"
 		}
@@ -276,7 +280,7 @@ func failedStep(req publiccert.Request) httpsError {
 	case "cloudflare":
 		e := httpsError{Key: key, Field: "token", FieldKey: "setup.https.error.token_again"}
 		if req.ZoneToken != "" {
-			e.Fields = map[string]string{"token": "setup.https.error.token_again", "zone_token": "setup.https.error.zone_token_again"}
+			e.Fields = map[string]string{"token": "setup.https.error.token_again", "zone_token": "setup.https.error.zone_token_again"} // #nosec G101 -- an i18n key, no credential
 		}
 		return e
 	}

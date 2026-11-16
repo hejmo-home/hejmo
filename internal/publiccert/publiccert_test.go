@@ -592,20 +592,40 @@ func TestSetupRefusesANameThatAlreadyPointsToAPublicAddress(t *testing.T) {
 }
 
 func TestSetupReplacesAPrivateAddressOfAnEarlierBox(t *testing.T) {
-	for _, old := range []string{"192.168.178.99", "10.0.0.5", "172.16.3.4", "fd12:3456::1"} {
+	// old is the address already at the name; lan is the address of this try
+	// ("" means the default one). An address equal to the LAN address is the
+	// box's own record of a failed earlier attempt.
+	cases := []struct{ old, lan string }{
+		{"192.168.178.99", ""}, {"10.0.0.5", ""}, {"172.16.3.4", ""}, {"fd12:3456::1", ""},
+		{"100.64.1.20", ""}, {"169.254.3.4", ""}, {"fe80::1", ""}, {"127.0.0.1", ""},
+		{"2a02:8070:1234::20", "2a02:8070:1234::20"},
+		{"100.64.1.20", "100.64.1.20"},
+		{"169.254.3.4", "169.254.3.4"},
+		{"203.0.113.7", "203.0.113.7"},
+	}
+	for _, c := range cases {
 		r := newRig(t)
 		le := r.startCA(caOption{})
 		m := r.manager(map[string]string{"letsencrypt": le.URL})
 		typ := "A"
-		if strings.Contains(old, ":") {
+		if strings.Contains(c.old, ":") {
 			typ = "AAAA"
 		}
-		r.dns.put(boxName, libdns.RR{Name: "@", Type: typ, Data: old})
-		if err := m.Setup(context.Background(), request("letsencrypt")); err != nil {
-			t.Fatalf("%s: %v", old, err)
+		r.dns.put(boxName, libdns.RR{Name: "@", Type: typ, Data: c.old})
+		req := request("letsencrypt")
+		want := "192.168.178.20"
+		if c.lan != "" {
+			req.LANIP, want = c.lan, c.lan
 		}
-		if got := r.dns.addressOf(boxName); got != "192.168.178.20" {
-			t.Errorf("%s: A record = %q", old, got)
+		if err := m.Setup(context.Background(), req); err != nil {
+			t.Fatalf("%s: %v", c.old, err)
+		}
+		wantType := "A"
+		if strings.Contains(want, ":") {
+			wantType = "AAAA"
+		}
+		if got := r.dns.addressOfType(boxName, wantType); got != want {
+			t.Errorf("%s: A record = %q, want %q", c.old, got, want)
 		}
 	}
 }

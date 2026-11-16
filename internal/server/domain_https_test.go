@@ -241,6 +241,20 @@ func TestInwxFailureWithTwoFactorOffOnlyAsksForThePasswordAgain(t *testing.T) {
 	}
 }
 
+func TestInwxEmptySecretAsksForTheKeyNotTheCode(t *testing.T) {
+	b := newFreshBox(t)
+	b.public.failure = &publiccert.InvalidError{Field: "otp_secret"}
+	f := domainForm("inwx")
+	f.Set("twofa", "on")
+	r := b.do(http.MethodPost, "/setup/https/public", f, map[string]string{"Accept-Language": "en", "Origin": b.srv.URL})
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("status %d", r.status)
+	}
+	if !strings.Contains(r.body, "That is empty.") || strings.Contains(r.body, "probably the 6-digit code") {
+		t.Error("an empty secret field is not told apart from a wrong secret")
+	}
+}
+
 func TestInwxSecretInTheWrongFormIsShownAtTheField(t *testing.T) {
 	b := newFreshBox(t)
 	b.public.failure = &publiccert.InvalidError{Field: "otp_secret"}
@@ -312,7 +326,9 @@ func TestOwnDomainPageHasNoTextOverflowTraps(t *testing.T) {
 			t.Errorf("stylesheet misses %q", want)
 		}
 	}
-	_ = r
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `class="host"`) {
+		t.Errorf("the name-taken page does not render the long name as a wrapping .host: status %d", r.status)
+	}
 }
 
 // Every text the own-domain page asks for exists in both languages (a missing

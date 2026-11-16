@@ -539,10 +539,10 @@ func (m *Manager) Setup(ctx context.Context, req Request) error {
 		return fmt.Errorf("find the DNS zone of %s: %w", req.Name, err)
 	}
 	rel := libdns.RelativeName(req.Name+".", zone)
-	if err := m.prepareName(ctx, provider, req.Name, zone, rel); err != nil {
+	ip, _ := netip.ParseAddr(req.LANIP)
+	if err := m.prepareName(ctx, provider, req.Name, zone, rel, ip); err != nil {
 		return err
 	}
-	ip, _ := netip.ParseAddr(req.LANIP)
 	rec := libdns.Address{Name: rel, IP: ip, TTL: 5 * time.Minute}
 	if _, err := provider.SetRecords(ctx, zone, []libdns.Record{rec}); err != nil {
 		return fmt.Errorf("point %s to %s: %w", req.Name, req.LANIP, err)
@@ -583,10 +583,10 @@ func (m *Manager) Setup(ctx context.Context, req Request) error {
 
 // prepareName looks at what the zone holds for the name before anything is
 // written: a public address or a CNAME is never overwritten (the family's
-// website would be gone), a private address of an earlier box is replaced. Old
+// website would be gone), a private address of an earlier box (or the address of this very try) is replaced. Old
 // challenge records of this name are removed, so a provider that cannot handle
 // several values at one name is not confused by a failed earlier attempt.
-func (m *Manager) prepareName(ctx context.Context, provider DNSProvider, name, zone, rel string) error {
+func (m *Manager) prepareName(ctx context.Context, provider DNSProvider, name, zone, rel string, lan netip.Addr) error {
 	existing, err := provider.GetRecords(ctx, zone)
 	if err != nil {
 		return fmt.Errorf("list the records of %s: %w", zone, err)
@@ -602,7 +602,7 @@ func (m *Manager) prepareName(ctx context.Context, provider DNSProvider, name, z
 		case rr.Name == rel && rr.Type == "CNAME":
 			return m.nameTaken(name, zone, rr.Data)
 		case rr.Name == rel && (rr.Type == "A" || rr.Type == "AAAA"):
-			if ip, err := netip.ParseAddr(rr.Data); err != nil || !ip.IsPrivate() {
+			if ip, err := netip.ParseAddr(rr.Data); err != nil || !(ip == lan || notPublic(ip)) {
 				return m.nameTaken(name, zone, rr.Data)
 			}
 		case rr.Name == challenge && rr.Type == "TXT":
@@ -615,6 +615,16 @@ func (m *Manager) prepareName(ctx context.Context, provider DNSProvider, name, z
 		}
 	}
 	return nil
+}
+
+// cgnat is the shared address space 100.64.0.0/10 of carrier-grade NAT.
+var cgnat = netip.MustParsePrefix("100.64.0.0/10")
+
+// notPublic is an address that cannot be a website on the internet: a record
+// with it is an earlier box's, not the family's site.
+func notPublic(ip netip.Addr) bool {
+	ip = ip.Unmap()
+	return ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || cgnat.Contains(ip)
 }
 
 func (m *Manager) nameTaken(name, zone, address string) error {

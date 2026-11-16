@@ -137,11 +137,14 @@ func (f *fakeDNS) DeleteRecords(_ context.Context, zone string, recs []libdns.Re
 }
 
 // addressOf returns the A record set for name.
-func (f *fakeDNS) addressOf(name string) string {
+func (f *fakeDNS) addressOf(name string) string { return f.addressOfType(name, "A") }
+
+// addressOfType is the data of the first record of the type at the name.
+func (f *fakeDNS) addressOfType(name, typ string) string {
 	f.mu.Lock()
 	defer f.mu.Unlock()
 	for _, rr := range f.records[name] {
-		if rr.Type == "A" {
+		if rr.Type == typ {
 			return rr.Data
 		}
 	}

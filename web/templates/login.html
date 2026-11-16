@@ -1,5 +1,6 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "login.title") "Frame" .Frame)}}
   <h1>{{t "login.title"}}</h1>
+  {{if .SignedOut}}<p class="notice top" role="status" data-signed-out>{{t "login.signed_out"}}</p>{{end}}
   {{template "error" .}}
   <form method="post" action="/login" class="steps">
     {{if .Next}}<input type="hidden" name="next" value="{{.Next}}">{{end}}

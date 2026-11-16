@@ -96,8 +96,16 @@ type audienceJSON struct {
 	Groups []string `json:"groups"`
 }
 
-// langOf is the response language for a request (Accept-Language, else German).
+// langOf is the language of text a handler builds for a web page or its
+// scripts: the same as the page itself (pageLanguage), so a switch changes it
+// at once.
 func (s *server) langOf(r *http.Request) string {
+	return s.pageLanguage(r)
+}
+
+// displayLang is the language of a display: the browser's (Accept-Language,
+// else German), never a parent's choice.
+func (s *server) displayLang(r *http.Request) string {
 	return s.i18n.Match(r.Header.Get("Accept-Language"))
 }
 

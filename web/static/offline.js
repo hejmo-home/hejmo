@@ -13,12 +13,24 @@
     return;
   }
 
-  // hh:mm, with the date when the copy is not from today.
-  var when = new Date(loaded);
-  var time = when.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
-  if (when.toDateString() !== new Date().toDateString()) {
-    time = when.toLocaleDateString([], { day: 'numeric', month: 'short' }) + ', ' + time;
+  // The household's clock and date layout (ticket 149), written like the
+  // server does (internal/datefmt); the defaults are 24-hour and day-first.
+  var twelve = script.getAttribute('data-time-format') === '12h';
+  var monthFirst = script.getAttribute('data-date-format') === 'mdy';
+  function two(n) { return (n < 10 ? '0' : '') + n; }
+  function clock(d) {
+    if (!twelve) return two(d.getHours()) + ':' + two(d.getMinutes());
+    return (d.getHours() % 12 || 12) + ':' + two(d.getMinutes()) + '\u00a0' + (d.getHours() < 12 ? 'AM' : 'PM');
   }
+  function day(d) {
+    var dm = monthFirst ? two(d.getMonth() + 1) + '/' + two(d.getDate()) : two(d.getDate()) + '.' + two(d.getMonth() + 1);
+    return dm + (monthFirst ? '/' : '.') + d.getFullYear();
+  }
+
+  // The time, with the date when the copy is not from today.
+  var when = new Date(loaded);
+  var time = clock(when);
+  if (when.toDateString() !== new Date().toDateString()) time = day(when) + ', ' + time;
   var banner = document.createElement('p');
   banner.className = 'notice';
   banner.setAttribute('role', 'status');

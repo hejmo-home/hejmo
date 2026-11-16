@@ -6,6 +6,7 @@ import (
 	"net"
 	"net/http"
 	"net/url"
+	"path"
 	"strings"
 	"time"
 
@@ -22,7 +23,7 @@ const setupTimeout = 3 * time.Minute
 // over HTTP.
 func (s *server) requireHTTPS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.TLS != nil || !s.httpsReady() || s.plainHTTPAllowed(r.URL.Path) {
+		if r.TLS != nil || !s.httpsReady() || s.plainHTTPAllowed(r) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -30,11 +31,44 @@ func (s *server) requireHTTPS(next http.Handler) http.Handler {
 	})
 }
 
-func (s *server) plainHTTPAllowed(path string) bool {
-	switch path {
-	case "/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig":
+// plainStaticAsset reports whether the request is for one of the static files
+// the plain-HTTP pages need to look right before the device trusts the box:
+// stylesheet, font, icons and the flags of the language switcher. They are public and identical on every box, so
+// serving them in the clear leaks nothing. Scripts stay HTTPS-only (code
+// fetched over HTTP could be swapped). Only single files directly inside the
+// three directories match, and only for a clean, unencoded path: "..%2f" or
+// "%2e%2e" must not reach a script, and no directory listing is served.
+func plainStaticAsset(u *url.URL) bool {
+	p := u.Path
+	if p == "/static/hejmo.css" {
+		return u.RawPath == ""
+	}
+	if u.RawPath != "" || path.Clean(p) != p {
+		return false
+	}
+	for _, dir := range []string{"/static/fonts/", "/static/icons/", "/static/flags/"} {
+		if name, ok := strings.CutPrefix(p, dir); ok {
+			return name != "" && !strings.Contains(name, "/") && name != "." && name != ".."
+		}
+	}
+	return false
+}
+
+func (s *server) plainHTTPAllowed(r *http.Request) bool {
+	u := r.URL
+	if plainStaticAsset(u) {
 		return true
-	case "/setup/https/check", "/setup/https/own-ca", "/static/https-check.js", "/static/hejmo.css":
+	}
+	// The trust page has the language switcher (ticket 134): choosing a
+	// language sets only a cookie, so it may work before the box is trusted.
+	if u.Path == "/language" && r.Method == http.MethodPost {
+		return true
+	}
+	switch u.Path {
+	case "/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig":
+		// Pages to read: nothing is posted to them over HTTP.
+		return r.Method == http.MethodGet || r.Method == http.MethodHead
+	case "/setup/https/check", "/setup/https/own-ca", "/static/https-check.js":
 		// While the wizard tests the new name, the browser is still on the
 		// LAN address and has no other way to show the page.
 		return s.publicReady() && !s.db.Configured()

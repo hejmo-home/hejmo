@@ -9,6 +9,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/holiday"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/wholine"
@@ -106,10 +107,7 @@ func (s *server) calendarContext(w http.ResponseWriter, r *http.Request, p princ
 
 // clock formats a time of day the way the household wants it.
 func (c *calendarContext) clock(t time.Time) string {
-	if c.p.household.TimeFormat == store.Time12h {
-		return t.In(c.loc).Format("3:04 PM")
-	}
-	return t.In(c.loc).Format("15:04")
+	return datefmt.Clock(c.p.household.TimeFormat, t.In(c.loc))
 }
 
 // eventHref is the address of an occurrence's page: the series (or single
@@ -146,7 +144,7 @@ func (c *calendarContext) item(o calendar.Occurrence) eventItem {
 	lang := c.s.langOf(c.r)
 	it.WhoParts = wholine.Of(wholine.Input{Household: c.household, Groups: c.wgroups, Audience: calendar.ViewersOf(o, c.audiences, c.viewers)},
 		c.s.i18n, lang).Parts
-	it.Date = o.Start.In(c.loc).Format("02/01/2006")
+	it.Date = datefmt.Date(c.p.household.DateFormat, o.Start.In(c.loc))
 	return it
 }
 
@@ -194,7 +192,7 @@ func (s *server) handleCalendarWeek(w http.ResponseWriter, r *http.Request) {
 	today := s.now().In(c.loc).Format(dateLayout)
 	for i := range days {
 		d := start.AddDate(0, 0, i)
-		days[i] = weekDay{ISO: d.Format(dateLayout), Date: d.Format("02/01"), Name: calendarWeekdays[i], Holiday: holidays[d.Format(dateLayout)], Today: d.Format(dateLayout) == today}
+		days[i] = weekDay{ISO: d.Format(dateLayout), Date: datefmt.Short(p.household.DateFormat, d), Name: calendarWeekdays[i], Holiday: holidays[d.Format(dateLayout)], Today: d.Format(dateLayout) == today}
 	}
 	for i, list := range calendar.WeekDays(occs, start) {
 		for _, o := range list {
@@ -210,9 +208,10 @@ func (s *server) handleCalendarWeek(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	_, week := start.ISOWeek()
+	from, to := datefmt.RangeParts(p.household.DateFormat, start, end.AddDate(0, 0, -1))
 	s.render(w, r, http.StatusOK, "calendar.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Days": days, "Bars": bars,
-		"Week": week, "From": start.Format("02/01"), "To": end.AddDate(0, 0, -1).Format("02/01/2006"),
+		"Week": week, "From": from, "To": to,
 		"Prev": weekLink(start.AddDate(0, 0, -7)), "Next": weekLink(end), "ThisWeek": weekLink(calendar.StartOfWeek(s.now().In(c.loc))),
 		"NewHref": "/calendar/new?date=" + start.Format(dateLayout), "Weekdays": calendarWeekdays,
 	})

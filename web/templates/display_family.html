@@ -23,7 +23,7 @@
   </div>{{end}}
   <main class="fv-grid" style="--cols:{{len .Columns}}">
     {{range .Columns}}<section class="column" data-person="{{.Person.Slot}}" data-name="{{.Person.Name}}">
-      <h2><a class="person-link" href="/display/person/{{.Person.ID}}"><span class="marker" data-shape="{{.Person.Shape}}"></span>{{.Person.Name}}</a></h2>
+      <h2><a class="person-link" href="/display/person/{{.Person.ID}}"><span class="marker" data-shape="{{.Person.Shape}}"></span><span class="person-name">{{.Person.Name}}</span></a></h2>
       <div class="events">
         {{range .Events}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div>{{if .WhoParts}}<div class="who">{{template "whoParts" .WhoParts}}</div>{{end}}</div>
         {{end}}{{if .Tomorrow}}<div class="tomorrow" data-tomorrow>

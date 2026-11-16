@@ -7,6 +7,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -27,6 +28,7 @@ type starCard struct {
 
 type starEntryView struct {
 	Delta, Label, By, When string
+	ByRemoved              bool // the booker has been removed; By is their last name
 }
 
 // starLogLines is how many star log entries per person the tasks page shows.
@@ -39,10 +41,10 @@ type personTasks struct {
 
 var taskWeekdays = []string{"MO", "TU", "WE", "TH", "FR", "SA", "SU"}
 
-func newTaskView(t task.Task, today string, done bool) taskView {
+func newTaskView(f store.DateFormat, t task.Task, today string, done bool) taskView {
 	v := taskView{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat), Weekdays: t.Weekdays, Part: string(t.PartOfDay), Due: t.DueOn(today), Done: done, Stars: t.Stars}
 	if d, err := time.Parse(task.DateLayout, t.Date); err == nil {
-		v.Date = d.Format("02/01/2006")
+		v.Date = datefmt.Date(f, d)
 	}
 	return v
 }
@@ -91,7 +93,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			if t.PersonID != person.ID {
 				continue
 			}
-			g.Tasks = append(g.Tasks, newTaskView(t, today, doneToday[t.ID]))
+			g.Tasks = append(g.Tasks, newTaskView(p.household.DateFormat, t, today, doneToday[t.ID]))
 		}
 		if len(g.Tasks) > 0 {
 			groups = append(groups, g)
@@ -206,10 +208,6 @@ func taskErrorKey(field string) string {
 
 // starCardOf builds a person's star account for the page: balance and log, newest first.
 func (s *server) starCardOf(p principal, person store.Person, acc store.StarAccount) starCard {
-	layout := "02/01/2006 15:04"
-	if p.household.TimeFormat == store.Time12h {
-		layout = "02/01/2006 3:04 PM"
-	}
 	c := starCard{Name: person.Name, Color: person.Color, Balance: acc.Balance}
 	for _, e := range acc.Entries {
 		label := e.Note
@@ -220,7 +218,7 @@ func (s *server) starCardOf(p principal, person store.Person, acc store.StarAcco
 		if e.Delta > 0 {
 			delta = "+" + delta
 		}
-		c.Entries = append(c.Entries, starEntryView{Delta: delta, Label: label, By: e.BookedByName, When: e.At.In(p.location()).Format(layout)})
+		c.Entries = append(c.Entries, starEntryView{Delta: delta, Label: label, By: e.BookedByName, ByRemoved: e.BookedByRemoved, When: p.dateTime(e.At)})
 	}
 	return c
 }
@@ -283,6 +281,6 @@ func (s *server) handleTaskPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.render(w, r, http.StatusOK, "task.html", map[string]any{
-		"Person": p.person, "Task": newTaskView(t, today, doneToday[t.ID]), "Owner": owner, "SyncStale": s.syncStale(p.household.ID),
+		"Person": p.person, "Task": newTaskView(p.household.DateFormat, t, today, doneToday[t.ID]), "Owner": owner, "SyncStale": s.syncStale(p.household.ID),
 	})
 }

@@ -1,6 +1,11 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "setup.totp.title") "Frame" .Frame "Wizard" .Wizard)}}
+  {{if .ResetNotice}}<p class="notice" role="status" data-reset-notice>{{.ResetNotice}}</p>
+  <h1>{{t "setup.totp.title.reset"}}</h1>
+  <p class="lead">{{t "setup.totp.lead.reset"}}</p>
+  {{else}}
   <h1>{{t "setup.totp.title"}}</h1>
-  <p class="lead">{{t "setup.totp.lead"}}</p>
+  <p class="lead">{{if .HasPasskey}}{{t "setup.totp.lead.passkey"}}{{else}}{{t "setup.totp.lead"}}{{end}}</p>
+  {{end}}
   {{template "error" .}}
   <form class="tile" method="post" action="/setup/totp">
     <ol class="howto">

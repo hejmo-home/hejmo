@@ -27,8 +27,16 @@ var apiRoutes = []APIRoute{
 	{"PATCH", "/people/{id}", auth.Perm("people", auth.Write), (*server).apiUpdatePerson},
 	{"PUT", "/people/order", auth.Perm("people", auth.Write), (*server).apiOrderPeople},
 
+	{"GET", "/food", auth.Perm("health", auth.Read), (*server).apiListFood},
+	{"GET", "/people/{id}/food", auth.Perm("health", auth.Read), (*server).apiGetFood},
+	{"PUT", "/people/{id}/food", auth.Perm("health", auth.Write), (*server).apiPutFood},
 	{"GET", "/people/{id}/stars", auth.Perm("tasks", auth.Read), (*server).apiGetStars},
 	{"POST", "/people/{id}/stars", auth.Perm("tasks", auth.Write), (*server).apiBookStars},
+	{"GET", "/me/passkeys", auth.Perm("people", auth.Read), (*server).apiListPasskeys},
+	{"POST", "/me/passkeys/registration", auth.Perm("people", auth.Write), (*server).apiPasskeyBegin},
+	{"POST", "/me/passkeys", auth.Perm("people", auth.Write), (*server).apiPasskeyCreate},
+	{"PATCH", "/me/passkeys/{id}", auth.Perm("people", auth.Write), (*server).apiRenamePasskey},
+	{"DELETE", "/me/passkeys/{id}", auth.Perm("people", auth.Delete), (*server).apiDeletePasskey},
 	{"POST", "/me/recovery-codes", auth.Perm("people", auth.Write), (*server).apiNewRecoveryCodes},
 	{"GET", "/people/{id}/invitation", auth.Perm("tokens", auth.Read), (*server).apiGetInvitation},
 	{"POST", "/people/{id}/invitation", auth.Perm("tokens", auth.Write), (*server).apiCreateInvitation},
@@ -77,6 +85,11 @@ var apiRoutes = []APIRoute{
 	{"PATCH", "/tasks/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchTask},
 	{"DELETE", "/tasks/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeleteTask},
 	{"PUT", "/tasks/{id}/done", auth.Perm("tasks", auth.Complete), (*server).apiSetTaskDone},
+	{"POST", "/tasks/{id}/subtasks", auth.Perm("tasks", auth.Write), (*server).apiAddSubtask},
+	{"PATCH", "/tasks/{id}/subtasks/{sub_id}", auth.Perm("tasks", auth.Write), (*server).apiPatchSubtask},
+	{"DELETE", "/tasks/{id}/subtasks/{sub_id}", auth.Perm("tasks", auth.Write), (*server).apiDeleteSubtask},
+	{"POST", "/tasks/{id}/subtasks/{sub_id}/move", auth.Perm("tasks", auth.Write), (*server).apiMoveSubtask},
+	{"PUT", "/tasks/{id}/subtasks/{sub_id}/done", auth.Perm("tasks", auth.Complete), (*server).apiSetSubtaskDone},
 	{"GET", "/routines", auth.Perm("tasks", auth.Read), (*server).apiListRoutines},
 	{"POST", "/routines", auth.Perm("tasks", auth.Write), (*server).apiCreateRoutine},
 	{"GET", "/routines/{id}", auth.Perm("tasks", auth.Read), (*server).apiGetRoutine},
@@ -124,12 +137,29 @@ var apiRoutes = []APIRoute{
 	{"POST", "/phones/pairings/{id}/confirm", auth.Perm("tokens", auth.Write), (*server).apiConfirmPhonePairing},
 }
 
+// displayAPIRoutes are the endpoints a display uses before and after it is
+// paired. They take no person: opening a pairing needs no credentials, and
+// the state is read with the display's own token as bearer token.
+var displayAPIRoutes = []struct {
+	Method, Path string
+	handle       func(*server, http.ResponseWriter, *http.Request)
+}{
+	{"POST", "/display/pairing", (*server).apiOpenPairing},
+	{"GET", "/display/state", (*server).apiDisplayState},
+}
+
 // APIRoutes lists the served endpoints (used by the contract test).
-func APIRoutes() []APIRoute { return append([]APIRoute(nil), apiRoutes...) }
+func APIRoutes() []APIRoute {
+	out := append([]APIRoute(nil), apiRoutes...)
+	for _, r := range displayAPIRoutes {
+		out = append(out, APIRoute{Method: r.Method, Path: r.Path})
+	}
+	return out
+}
 
 // ServesAPIRoute reports whether method and path are served.
 func ServesAPIRoute(method, path string) bool {
-	for _, r := range apiRoutes {
+	for _, r := range APIRoutes() {
 		if strings.EqualFold(r.Method, method) && r.Path == path {
 			return true
 		}
@@ -153,6 +183,9 @@ func (s *server) routeAPI(mux *http.ServeMux) {
 		w.Header().Set("Content-Type", "application/yaml")
 		_, _ = w.Write(api.OpenAPI)
 	})
+	for _, r := range displayAPIRoutes {
+		mux.HandleFunc(r.Method+" /api/v1"+r.Path, func(w http.ResponseWriter, req *http.Request) { r.handle(s, w, req) })
+	}
 	for _, r := range apiRoutes {
 		mux.HandleFunc(r.Method+" /api/v1"+r.Path, func(w http.ResponseWriter, req *http.Request) {
 			p, ok := s.authenticate(req)
@@ -199,7 +232,7 @@ func (s *server) authenticate(r *http.Request) (principal, bool) {
 		return principal{household: h, person: p, scopes: t.Scopes}, err == nil
 	}
 	p, ok := s.currentPerson(r)
-	return principal{household: h, person: p, scopes: "write"}, ok
+	return principal{household: h, person: p, scopes: "write " + auth.HealthResource}, ok
 }
 
 type personJSON struct {

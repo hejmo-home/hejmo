@@ -112,6 +112,9 @@ var flashFields = map[string][]string{
 	"flash.routine_applied_own":    {"owner", "routine", "person", "tasks", "template", "origin"},
 	"flash.rtpl_moved":             {"title", "place", "total"},
 	"flash.routine_template_saved": {"name", "id"},
+	"flash.otp_reset":              {"name"},
+	"flash.otp_reset_passkey":      {"name", "possessive", "passkeys"},
+	"flash.otp_reset_passkeys":     {"name", "possessive", "passkeys"},
 }
 
 // redirectSavedFields is redirectSaved for a success line with several values,
@@ -204,6 +207,9 @@ func (s *server) successText(lang, key, arg string) string {
 			}
 		}
 	}
+	if strings.HasPrefix(key, "flash.sub_") && arg != "" {
+		return s.subFlashText(lang, key, arg) // "" when the box restarted: better none than a wrong line
+	}
 	if _, ok := flashFields[key]; ok && arg != "" {
 		return s.fieldsText(lang, key, arg)
 	}
@@ -269,6 +275,12 @@ func (s *server) successText(lang, key, arg string) string {
 // successHTML is the success line as markup: the text of successText escaped,
 // except the lines after a changed star value, which put the new value in bold.
 func (s *server) successHTML(lang, key, arg string) template.HTML {
+	if key == "flash.task_created" && arg != "" {
+		if line, ok := s.taskCreatedHTML(lang, arg); ok {
+			return template.HTML(line)
+		}
+		return template.HTML(html.EscapeString(s.i18n.T(lang, "flash.task_added")))
+	}
 	if key == "flash.routine_template_saved" && arg != "" {
 		return s.templateSavedHTML(lang, arg)
 	}

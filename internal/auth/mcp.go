@@ -21,7 +21,8 @@ func (l MCPLevel) Valid() bool { return l == MCPNone || l == MCPRead || l == MCP
 
 // MCPAreas are the resources an MCP token can be given, in the order the
 // token page shows them. Tasks cover routines, templates and star bookings.
-var MCPAreas = []string{"events", "lists", "tasks", "meals"}
+// "health" is diet and allergies: set apart, read only at most (ADR 0019).
+var MCPAreas = []string{"events", "lists", "tasks", "meals", HealthResource}
 
 // MCPScopes turns the choice per area into the token scopes: read only is
 // "<area>:read", read and change is "<area>" (every action). Areas left out
@@ -34,6 +35,9 @@ func MCPScopes(levels map[string]MCPLevel) (string, error) {
 		}
 		if !l.Valid() {
 			return "", fmt.Errorf("auth: unknown MCP level %q for %s", l, area)
+		}
+		if area == HealthResource && l == MCPWrite {
+			return "", fmt.Errorf("auth: an MCP token never changes health data")
 		}
 	}
 	var scopes []string

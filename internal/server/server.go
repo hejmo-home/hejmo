@@ -19,6 +19,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/passkey"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -86,15 +87,19 @@ type PublicHTTPS interface {
 }
 
 type server struct {
-	db         *store.DB
-	pki        *pki.Store
-	public     PublicHTTPS
-	httpsPort  string
-	now        func() time.Time
-	i18n       *i18n.Bundle
-	pages      *template.Template
-	logger     *slog.Logger
-	limiter    *loginLimiter
+	db        *store.DB
+	pki       *pki.Store
+	public    PublicHTTPS
+	httpsPort string
+	now       func() time.Time
+	i18n      *i18n.Bundle
+	pages     *template.Template
+	logger    *slog.Logger
+	limiter   *loginLimiter
+	// passkeyTries counts refused passkey sign-ins per client address.
+	passkeyTries *loginLimiter
+	// ceremonies holds the passkey ceremonies that are begun and not finished.
+	ceremonies *passkey.Ceremonies
 	opens      *loginLimiter // pairing screens opened, per client address
 	sync       *calsync.Service
 	weather    *weather.Service
@@ -141,6 +146,8 @@ func New(opts Options) http.Handler {
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
+	s.passkeyTries = newLoginLimiter(10, 10*time.Minute, s.now)
+	s.ceremonies = passkey.NewCeremonies(s.now)
 	s.pages = parsePages()
 	s.syncUpdateSettings()
 
@@ -164,9 +171,21 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /setup", s.handleSetupSubmit)
 	mux.HandleFunc("GET /setup/totp", s.handleSetupTOTPForm)
 	mux.HandleFunc("POST /setup/totp", s.handleSetupTOTPSubmit)
-	mux.HandleFunc("GET /otp", s.handleOTPPage)
-	mux.HandleFunc("POST /otp/recovery-codes", s.handleRecoveryCodesNew)
-	mux.HandleFunc("POST /otp/reset/{id}", s.handleOTPReset)
+	mux.HandleFunc("GET /setup/passkey", s.handlePasskeyOffer)
+	mux.HandleFunc("GET /otp", s.handleOTPMoved)
+	mux.HandleFunc("GET /account", s.handleAccountPage)
+	mux.HandleFunc("POST /account/recovery-codes", s.handleRecoveryCodesNew)
+	mux.HandleFunc("GET /account/reset/{id}", s.handleResetPage)
+	mux.HandleFunc("POST /account/reset/{id}", s.handleResetSubmit)
+	mux.HandleFunc("POST /account/passkeys", s.handlePasskeyOfferForm)
+	mux.HandleFunc("POST /account/passkeys/begin", s.handlePasskeyRegisterBegin)
+	mux.HandleFunc("POST /account/passkeys/finish", s.handlePasskeyRegisterFinish)
+	mux.HandleFunc("POST /account/passkeys/assert/begin", s.handlePasskeyAssertBegin)
+	mux.HandleFunc("GET /account/passkeys/{id}", s.handlePasskeyPage)
+	mux.HandleFunc("POST /account/passkeys/{id}", s.handlePasskeyRename)
+	mux.HandleFunc("POST /account/passkeys/{id}/remove", s.handlePasskeyRemove)
+	mux.HandleFunc("POST /login/passkey/begin", s.handleLoginPasskeyBegin)
+	mux.HandleFunc("POST /login/passkey/finish", s.handleLoginPasskeyFinish)
 	mux.HandleFunc("GET /sessions", s.handleSessionsPage)
 	mux.HandleFunc("GET /sessions/{id}", s.handleSessionPage)
 	mux.HandleFunc("POST /sessions/{id}/end", s.handleSessionEnd)
@@ -220,6 +239,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /people/{id}", s.handlePersonPage)
 	mux.HandleFunc("POST /people/{id}", s.handlePersonSave)
 	mux.HandleFunc("POST /people/{id}/move", s.handlePersonMove)
+	mux.HandleFunc("GET /people/{id}/food", s.handleFoodPage)
+	mux.HandleFunc("POST /people/{id}/food", s.handleFoodSave)
 	mux.HandleFunc("GET /groups/new", s.handleGroupNew)
 	mux.HandleFunc("POST /groups", s.handleGroupCreate)
 	mux.HandleFunc("GET /groups/{id}", s.handleGroupPage)
@@ -230,6 +251,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/stars", s.handleStarBooking)
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
+	mux.HandleFunc("POST /tasks/{id}/subtasks", s.handleSubtaskAdd)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}", s.handleSubtaskSave)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}/done", s.handleSubtaskDone)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}/move", s.handleSubtaskMove)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}/delete", s.handleSubtaskDelete)
 	mux.HandleFunc("POST /tasks/{id}/stars", s.handleTaskStars)
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("POST /tasks/{id}/routine", s.handleTaskLeaveRoutine)
@@ -282,6 +308,13 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /display/person/{id}", s.handleDisplayPerson)
 	mux.HandleFunc("GET /display/person/{id}/view", s.handleDisplayPersonView)
 	mux.HandleFunc("POST /display/tasks/{id}/done", s.handleDisplayTaskDone)
+	mux.HandleFunc("POST /display/tasks/{id}/subtasks/{sub_id}/done", s.handleDisplaySubtaskDone)
+	mux.HandleFunc("GET /display/lists", s.handleDisplayLists)
+	mux.HandleFunc("GET /display/lists/{id}", s.handleDisplayList)
+	mux.HandleFunc("GET /display/lists/{id}/view", s.handleDisplayListView)
+	mux.HandleFunc("POST /display/lists/{id}/entries", s.handleDisplayEntryAdd)
+	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/done", s.handleDisplayEntryDone)
+	mux.HandleFunc("POST /display/lists/{id}/completed/delete", s.handleDisplayTickedDelete)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("GET /displays/{id}", s.handleDisplayPage)

@@ -136,7 +136,8 @@ func TestConfirmedCodePairsTheDisplay(t *testing.T) {
 			t.Errorf("family view misses %q:\n%s", want, r.body)
 		}
 	}
-	if strings.Contains(r.body, "<svg") || codeRe.MatchString(r.body) {
+	// The Lists button of the header has a line icon of its own; a QR code is the other svg.
+	if body := regexp.MustCompile(`<a class="chip lists-link".*?</a>`).ReplaceAllString(r.body, ""); strings.Contains(body, "<svg") || codeRe.MatchString(r.body) {
 		t.Error("paired display still shows a pairing code or QR code")
 	}
 	if st := d.get("/display/state", ""); !strings.Contains(st.body, `"state":"paired"`) {

@@ -1,6 +1,6 @@
 # 0016. Family view header, columns and footer
 
-- Status: Accepted, amended by [0018](0018-path-to-0-1.md). Amended by the product owner on 15/11/2026 (see Amendment of 15/11/2026)
+- Status: Accepted, amended by [0018](0018-path-to-0-1.md). Amended by the product owner on 15/11/2026 (see Amendment of 15/11/2026) and on 16/11/2026 (see Amendment of 16/11/2026)
 - Date: 14/11/2026
 - Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; the leave-the-house countdown stays out of V1.0 and comes back per person in V2), [0015](0015-display-web-interface-and-everyday.md) (column limits per orientation, tomorrow block faded and off by default, footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
 
@@ -59,5 +59,15 @@ The product owner approved a deviation from the person-column decision above on 
 - **Progress in words:** routine and task progress in a person's column is shown in words (e.g. "1 of 3 tasks done") instead of a done/total bar. A person without tasks today still shows nothing. The block stays anchored to the bottom of the column.
 - **Block opens the personal view:** tapping a person's block opens their personal view.
 - **Tasks first:** the personal view shows the person's tasks first.
+
+Everything else in this ADR is unchanged.
+
+## Amendment of 16/11/2026 (ticket 6.2, lists on the display)
+
+The product owner approved the way into the lists on 16/11/2026 (preview-33).
+
+- **Header right: Lists button, time, weather.** The family view header gets a **Lists button** (list line icon and the word "Lists", with an accent border so it reads as a button, not as a status chip) before the clock. It opens the first list in the household's order; the display does not remember a choice. It is hidden when the household has no list.
+- **The footer keeps two tiles:** no third footer tile for lists, because the columns need the height. Tiles on the display come with #166.
+- The button never uses a person marker, so lists stay apart from the person columns.
 
 Everything else in this ADR is unchanged.

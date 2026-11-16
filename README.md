@@ -14,7 +14,7 @@ Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. A s
 - **Calm on E-Ink:** every screen also works in black and white; people are told apart by marker shapes instead of colours.
 - **Your calendars, synced:** iCloud and any CalDAV server (two-way), Google Calendar, ICS subscriptions such as school or waste collection calendars. Your phones' calendar apps can subscribe to the box in turn.
 - **Web interface and phones:** week calendar, tasks, lists and meal plan in the browser; a phone is paired by QR code. Children get their own simple view.
-- **Private by design:** no subscription, no telemetry, no mandatory cloud. HTTPS with the box's own certificate authority or a free public name, sign-in with password and one-time codes.
+- **Private by design:** no subscription, no telemetry, no mandatory cloud. HTTPS with the box's own certificate authority or a free public name, sign-in with a passkey, or password and one-time codes.
 - **Open:** open standards (CalDAV, iCalendar), an open REST API, AGPL-3.0, developed in Europe. Open to your own AI assistant, without built-in AI.
 
 <table>
@@ -41,7 +41,7 @@ Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. A s
 | Box and setup | Docker image for x86_64 and arm64, setup wizard, HTTPS (own certificate authority or a free deSEC name with Let's Encrypt) | ✅ |
 | People and sign-in | Parents and children, roles, password with one-time codes, display PIN, REST API with scoped tokens | ✅ |
 | | Recovery codes for one-time codes, people page | 🚧 |
-| | Passkeys | ⏳ |
+| | Passkeys (sign in with fingerprint, face or PIN; they work under the box's name, never by IP address) | ✅ |
 | Calendar | Series with "this / this and following / all", multi-day events, public holidays for Germany, Austria and Switzerland, search, subgroups | ✅ |
 | Sync | ICS subscriptions, iCloud and CalDAV (read), box as CalDAV server for your calendar apps, iOS profile | ✅ |
 | | Writing back to iCloud and CalDAV, Google Calendar | 🚧 |
@@ -90,7 +90,7 @@ Calendar passwords (iCloud app-specific passwords and other CalDAV logins) are s
 
 On first start the box opens the **setup wizard**: HTTPS, home location (town and state/canton), first parent account with password and one-time codes (TOTP from any authenticator app, for example Aegis or FreeOTP), and the parent PIN for displays. The box then shows 10 recovery codes, each valid once in place of a one-time code.
 
-**Lost your one-time codes?** Use a recovery code, or ask another parent to reset them under *One-time codes* in the settings. As the last way back, run this on the box; it resets the account's one-time codes and signs it out of browsers, and the next sign-in sets up new ones:
+**Lost your one-time codes?** Use a recovery code, or ask another parent to reset them under *My account* in the settings. As the last way back, run this on the box; it resets the account's one-time codes and signs it out of browsers, and the next sign-in sets up new ones:
 
 ```bash
 docker compose exec hejmo /hejmo reset-otp <username>
@@ -100,7 +100,7 @@ The reset is logged as `one-time codes reset` in the box's log (`docker compose 
 
 ## API
 
-The REST API lives under `/api/v1`; its OpenAPI description is served at `/api/v1/openapi.yaml` ([source](api/openapi.yaml)). Authenticate with a bearer token (`Authorization: Bearer hejmo_…`) created via `POST /api/v1/tokens`. Tokens are limited by scopes such as `read`, `write`, `lists` or `events:read`.
+The REST API lives under `/api/v1`; its OpenAPI description is served at `/api/v1/openapi.yaml` ([source](api/openapi.yaml)). Authenticate with a bearer token (`Authorization: Bearer hejmo_…`) created via `POST /api/v1/tokens`. Tokens are limited by scopes such as `read`, `write`, `lists` or `events:read`. `read` and `write` exclude health data (diet and allergies); that needs the explicit scope `health` or `health:read`.
 
 Calendar endpoints (work package 3):
 

@@ -56,6 +56,14 @@ _Avoid_: self-signed certificate, root cert
 A DNS name of the box (a free deSEC `dedyn.io` name or the family's own domain) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
 _Avoid_: domain, DynDNS
 
+**Passkey**:
+A WebAuthn credential of an adult's account, kept on a device or in a password manager, that replaces password and one-time code at sign-in and counts as both factors (ADR 0018). It is valid only for the box name it was created under; password and one-time code stay the way back.
+_Avoid_: security key, FIDO key, WebAuthn credential (in user-facing text)
+
+**Box name**:
+The name the box is served under: its public name or the Box CA's DNS name (e.g. `hejmo.local`), never an IP address. It is the relying-party ID of passkeys.
+_Avoid_: hostname, domain, relying party (in user-facing text)
+
 **Home region**:
 The German state, Austrian state or Swiss canton of the household, which decides its public holidays.
 _Avoid_: location, country, Bundesland (in code)
@@ -108,6 +116,14 @@ _Avoid_: account, integration, provider (alone)
 A password created at the calendar service (Apple "app-specific password", Nextcloud "app password") for Hejmo alone and used in a calendar connection instead of the account's real password. The family can revoke it at the service at any time; Hejmo never asks for the real password. Not the same as a device token, which the box creates for CalDAV clients.
 _Avoid_: Apple ID password, iCloud password
 
+**Service sign-in**:
+Allowing a calendar connection by signing in at the calendar service itself (Microsoft, Google) instead of entering an app-specific password. The box holds a permission the family can revoke at the service at any time; it never learns the password.
+_Avoid_: OAuth login, token login
+
+**App registration**:
+Hejmo's entry at a calendar service that makes service sign-ins possible at all. Every box uses the Hejmo project's registration unless the family enters its own.
+_Avoid_: client, Azure app
+
 **Synced calendar**:
 A calendar whose events come from, and may be written back to, a calendar outside the box through a calendar connection.
 _Avoid_: external calendar, remote calendar, feed
@@ -154,6 +170,14 @@ _Avoid_: display mode, device type
 The row above the person columns in the family view for events meant for the whole household, all-day and multi-day events, and public holidays.
 _Avoid_: banner, header events, all-day row
 
+**Layout**:
+What one display shows: the chosen people, their order and the blocks.
+_Avoid_: template (alone), view (alone)
+
+**Layout block**:
+One part of a display's layout, such as calendar, tasks, meals, weather or lists, which a parent switches on or off per display.
+_Avoid_: widget, tile, module
+
 **Theme**:
 Whether a display or the web interface is light or dark, switches automatically by sunrise and sunset, or follows the device.
 _Avoid_: dark mode (alone), skin, colour scheme
@@ -196,6 +220,30 @@ _Avoid_: checklist, note
 One line of text on a list that can be ticked off.
 _Avoid_: item (alone), list item
 
+**Article**:
+A thing that can be put on a list, from the article library: name, symbol or picture, department, the diets it fits and the allergens it contains.
+_Avoid_: product, item (alone)
+
+**Article library**:
+The household's articles: the ones Hejmo ships plus own articles, managed by parents.
+_Avoid_: catalogue, database
+
+**Quantity**:
+Number and unit of a list entry, such as 500 g or 1 dozen.
+_Avoid_: amount
+
+**Tile view**:
+A list shown as tiles with symbol or picture, name and tick; the default for children.
+_Avoid_: grid, gallery
+
+**Diet**:
+What a person eats: omnivore, vegetarian, pescatarian or vegan.
+_Avoid_: nutrition type
+
+**Allergy**:
+An allergen or intolerance of a person: one of the 14 main EU allergens or free text, which cannot be checked automatically.
+_Avoid_: intolerance (alone)
+
 **Meal plan**:
 The household's meals per day and mealtime: one line of free text each. Every entry also shows in the calendar as an all-day event of the generated, read-only meal-plan calendar.
 _Avoid_: menu, food plan
@@ -215,6 +263,10 @@ _Avoid_: override (in prose), exception
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.
 _Avoid_: deadline, expiry
+
+**Holiday mode**:
+A household-wide pause, with from and to dates, of all articles that are put on a list by themselves. The lists and settings say so while it is on.
+_Avoid_: vacation mode, skip
 
 **Task**:
 Something to be done once or repeatedly, ticked off when done; may belong to a routine, carry a star value and be split into subtasks.

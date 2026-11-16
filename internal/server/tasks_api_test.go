@@ -268,6 +268,7 @@ func TestPatchTaskRefusesBadBodiesAndUnknownTasks(t *testing.T) {
 	// Bad JSON and unknown fields stay 400.
 	for name, body := range map[string]string{
 		"other field": `{"stars":2,"title":"x"}`, "unknown field": `{"colour":"red"}`, "bad json": `{`,
+		"array body": `[1]`, "string body": `"x"`, "wrong type then other field": `{"title":"x","stars":"3"}`,
 	} {
 		if got := rawCall(t, tb.parent, http.MethodPatch, "/tasks/"+id, body); got != http.StatusBadRequest {
 			t.Errorf("%s = %d, want 400", name, got)

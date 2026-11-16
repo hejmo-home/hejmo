@@ -133,7 +133,7 @@ func (s *server) apiPatchTask(w http.ResponseWriter, r *http.Request, p principa
 	dec.DisallowUnknownFields()
 	if err := dec.Decode(&in); err != nil {
 		var wrongType *json.UnmarshalTypeError
-		if errors.As(err, &wrongType) {
+		if errors.As(err, &wrongType) && wrongType.Field == "stars" {
 			// Well-formed JSON, but not a whole number (a string, a fraction).
 			writeFieldError(w, http.StatusUnprocessableEntity, "stars", "stars must be a whole number")
 			return

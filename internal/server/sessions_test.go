@@ -158,7 +158,7 @@ func TestSettingsHubListsSignedInDevicesForParents(t *testing.T) {
 	}
 	// After one-time codes: last.
 	r := s.mama.get("/settings", "en")
-	inOrder(t, r.body, `href="/otp"`, `href="/sessions"`)
+	inOrder(t, r.body, `href="/account"`, `href="/sessions"`)
 }
 
 func TestSessionsListGroupsBrowsersByPerson(t *testing.T) {
@@ -479,7 +479,7 @@ func TestTheRawUserAgentIsNeverStoredOrShown(t *testing.T) {
 // page's back target is covered by TestSessionDetailOfAnotherBrowserOffersTheConfirmation.
 func TestBackLinkSitsInsideMain(t *testing.T) {
 	s := newSessionsBox(t)
-	for _, path := range []string{"/sessions", "/phones", "/otp"} {
+	for _, path := range []string{"/sessions", "/phones", "/account"} {
 		body := s.mama.get(path, "en").body
 		back, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main id="content">`)
 		if back < 0 || main < 0 || back < main {

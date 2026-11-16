@@ -445,7 +445,7 @@ func TestCommandLogReachesTheBoxMainProcessOutput(t *testing.T) {
 // The weather service reads the home through homeOf: no household is
 // weather.ErrNoHome, a household whose home has no location yet reports (0, 0)
 // and one with a picked place reports its coordinates. Nothing is looked up by
-// name any more (ADR 0020).
+// name any more (ADR 0021).
 func TestHomeOfAdaptsTheHouseholdForTheWeather(t *testing.T) {
 	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
 	if err != nil {

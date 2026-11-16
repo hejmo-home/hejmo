@@ -159,7 +159,7 @@ func (h *fakeHome) Home() (lat, lon float64, err error) {
 }
 
 // The weather follows the stored coordinates of the home, which come from a
-// place picked in the list on the box (ADR 0020).
+// place picked in the list on the box (ADR 0021).
 func TestKeepRefreshesTheWeatherAtTheStoredCoordinates(t *testing.T) {
 	fc, hits, q := openMeteo(t, sunny, 200)
 	s := weather.New(weather.WithBaseURL(fc.URL))

@@ -19,6 +19,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/passkey"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
@@ -87,19 +88,23 @@ type PublicHTTPS interface {
 }
 
 type server struct {
-	db         *store.DB
-	pki        *pki.Store
-	public     PublicHTTPS
-	httpsPort  string
-	now        func() time.Time
-	i18n       *i18n.Bundle
-	pages      *template.Template
-	logger     *slog.Logger
-	limiter    *loginLimiter
+	db        *store.DB
+	pki       *pki.Store
+	public    PublicHTTPS
+	httpsPort string
+	now       func() time.Time
+	i18n      *i18n.Bundle
+	pages     *template.Template
+	logger    *slog.Logger
+	limiter   *loginLimiter
+	// passkeyTries counts refused passkey sign-ins per client address.
+	passkeyTries *loginLimiter
+	// ceremonies holds the passkey ceremonies that are begun and not finished.
+	ceremonies *passkey.Ceremonies
 	opens      *loginLimiter // pairing screens opened, per client address
 	sync       *calsync.Service
 	weather    *weather.Service
-	places     *places.List // the list of places on the box, loaded at start-up (ADR 0020)
+	places     *places.List // the list of places on the box, loaded at start-up (ADR 0021)
 	live       time.Duration
 	countWait  time.Duration
 	done       <-chan struct{}
@@ -143,6 +148,8 @@ func New(opts Options) http.Handler {
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
+	s.passkeyTries = newLoginLimiter(10, 10*time.Minute, s.now)
+	s.ceremonies = passkey.NewCeremonies(s.now)
 	s.pages = parsePages()
 	s.syncUpdateSettings()
 
@@ -166,9 +173,21 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /setup", s.handleSetupSubmit)
 	mux.HandleFunc("GET /setup/totp", s.handleSetupTOTPForm)
 	mux.HandleFunc("POST /setup/totp", s.handleSetupTOTPSubmit)
-	mux.HandleFunc("GET /otp", s.handleOTPPage)
-	mux.HandleFunc("POST /otp/recovery-codes", s.handleRecoveryCodesNew)
-	mux.HandleFunc("POST /otp/reset/{id}", s.handleOTPReset)
+	mux.HandleFunc("GET /setup/passkey", s.handlePasskeyOffer)
+	mux.HandleFunc("GET /otp", s.handleOTPMoved)
+	mux.HandleFunc("GET /account", s.handleAccountPage)
+	mux.HandleFunc("POST /account/recovery-codes", s.handleRecoveryCodesNew)
+	mux.HandleFunc("GET /account/reset/{id}", s.handleResetPage)
+	mux.HandleFunc("POST /account/reset/{id}", s.handleResetSubmit)
+	mux.HandleFunc("POST /account/passkeys", s.handlePasskeyOfferForm)
+	mux.HandleFunc("POST /account/passkeys/begin", s.handlePasskeyRegisterBegin)
+	mux.HandleFunc("POST /account/passkeys/finish", s.handlePasskeyRegisterFinish)
+	mux.HandleFunc("POST /account/passkeys/assert/begin", s.handlePasskeyAssertBegin)
+	mux.HandleFunc("GET /account/passkeys/{id}", s.handlePasskeyPage)
+	mux.HandleFunc("POST /account/passkeys/{id}", s.handlePasskeyRename)
+	mux.HandleFunc("POST /account/passkeys/{id}/remove", s.handlePasskeyRemove)
+	mux.HandleFunc("POST /login/passkey/begin", s.handleLoginPasskeyBegin)
+	mux.HandleFunc("POST /login/passkey/finish", s.handleLoginPasskeyFinish)
 	mux.HandleFunc("GET /sessions", s.handleSessionsPage)
 	mux.HandleFunc("GET /sessions/{id}", s.handleSessionPage)
 	mux.HandleFunc("POST /sessions/{id}/end", s.handleSessionEnd)
@@ -232,6 +251,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/stars", s.handleStarBooking)
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
+	mux.HandleFunc("POST /tasks/{id}/subtasks", s.handleSubtaskAdd)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}", s.handleSubtaskSave)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}/done", s.handleSubtaskDone)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}/move", s.handleSubtaskMove)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}/delete", s.handleSubtaskDelete)
 	mux.HandleFunc("POST /tasks/{id}/stars", s.handleTaskStars)
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("POST /tasks/{id}/routine", s.handleTaskLeaveRoutine)
@@ -242,6 +266,16 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /routines/{id}/tasks", s.handleRoutineAddTask)
 	mux.HandleFunc("POST /routines/{id}/settings", s.handleRoutineSettings)
 	mux.HandleFunc("POST /routines/{id}/delete", s.handleRoutineDissolve)
+	mux.HandleFunc("POST /routines/{id}/template", s.handleRoutineSaveTemplate)
+	mux.HandleFunc("GET /routines/templates", s.handleRoutineTemplates)
+	mux.HandleFunc("GET /routines/templates/{id}", s.handleRoutineTemplatePage)
+	mux.HandleFunc("POST /routines/templates/{id}/move", s.handleTemplateMove)
+	mux.HandleFunc("POST /routines/templates/{id}/steps", s.handleTemplateAddStep)
+	mux.HandleFunc("POST /routines/templates/{id}/settings", s.handleTemplateSettings)
+	mux.HandleFunc("POST /routines/templates/{id}/delete", s.handleRoutineTemplateDelete)
+	mux.HandleFunc("GET /routines/templates/{id}/steps/{step}", s.handleTemplateStepPage)
+	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}", s.handleTemplateStepSave)
+	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}/delete", s.handleTemplateStepDelete)
 	mux.HandleFunc("GET /lists", s.handleListsPage)
 	mux.HandleFunc("POST /lists", s.handleListCreate)
 	mux.HandleFunc("GET /lists/{id}", s.handleListPage)
@@ -260,6 +294,13 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /meals/templates/{id}", s.handleTemplatePage)
 	mux.HandleFunc("POST /meals/templates/{id}", s.handleTemplateSave)
 	mux.HandleFunc("POST /meals/templates/{id}/delete", s.handleTemplateDelete)
+	mux.HandleFunc("GET /mcp", s.handleMCPPage)
+	mux.HandleFunc("POST /mcp", s.handleMCPPost)
+	mux.HandleFunc("DELETE /mcp", s.handleMCPEndpoint)
+	mux.HandleFunc("GET /mcp/tokens/new", s.handleMCPTokenNew)
+	mux.HandleFunc("POST /mcp/tokens", s.handleMCPTokenCreate)
+	mux.HandleFunc("GET /mcp/tokens/{id}", s.handleMCPTokenPage)
+	mux.HandleFunc("POST /mcp/tokens/{id}/revoke", s.handleMCPTokenRevoke)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
@@ -267,6 +308,13 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /display/person/{id}", s.handleDisplayPerson)
 	mux.HandleFunc("GET /display/person/{id}/view", s.handleDisplayPersonView)
 	mux.HandleFunc("POST /display/tasks/{id}/done", s.handleDisplayTaskDone)
+	mux.HandleFunc("POST /display/tasks/{id}/subtasks/{sub_id}/done", s.handleDisplaySubtaskDone)
+	mux.HandleFunc("GET /display/lists", s.handleDisplayLists)
+	mux.HandleFunc("GET /display/lists/{id}", s.handleDisplayList)
+	mux.HandleFunc("GET /display/lists/{id}/view", s.handleDisplayListView)
+	mux.HandleFunc("POST /display/lists/{id}/entries", s.handleDisplayEntryAdd)
+	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/done", s.handleDisplayEntryDone)
+	mux.HandleFunc("POST /display/lists/{id}/completed/delete", s.handleDisplayTickedDelete)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("GET /displays/{id}", s.handleDisplayPage)
@@ -354,6 +402,10 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		fr.setLanguage(lang, r)
 		if detailPages[name] && fr.Back { // a detail page links to its own overview, not to the hub
 			fr.Back, fr.BackHref, fr.BackLabel = false, "", ""
+		}
+		if href, _ := data["BackHref"].(string); href != "" { // a page that leads back to a named page
+			text, _ := data["BackText"].(string)
+			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, href, "", text
 		}
 		key, arg := s.takeFlash(w, r) // always consumed, so it cannot show later
 		switch own, _ := data["SuccessKey"].(string); {

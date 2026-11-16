@@ -301,16 +301,29 @@ func storedSettings(h store.Household) settingsPage {
 	return settingsPage{string(h.DateFormat), string(h.TimeFormat), string(h.TemperatureUnit), string(h.AutoUpdate), nil, h.MealCutoffs}
 }
 
+// hubEntry is a hub row; State, when set, is the key of the word that opens its hint.
+type hubEntry struct {
+	hubItem
+	State string
+}
+
 // handleSettingsHub shows the Settings hub: one calm row per setup screen.
 func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
 	}
-	var items []hubItem
+	var items []hubEntry
 	for _, it := range hubItems {
 		if auth.RoleAllows(p.person.Role, it.Needs) {
-			items = append(items, it)
+			e := hubEntry{hubItem: it}
+			if it.Href == mcpPath { // the state comes first, so it shows without opening the page
+				e.State = "hub.mcp.off"
+				if p.household.MCPEnabled {
+					e.State = "hub.mcp.on"
+				}
+			}
+			items = append(items, e)
 		}
 	}
 	s.render(w, r, http.StatusOK, "settings.html", map[string]any{
@@ -363,7 +376,7 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.cutoff", field, typed)
 		return
 	}
-	// The home place (ADR 0020): the page posts the id of a place of the list
+	// The home place (ADR 0021): the page posts the id of a place of the list
 	// and never coordinates. A form without place fields leaves the home alone.
 	home, done := s.homeOfForm(w, r, p, typed)
 	if done {

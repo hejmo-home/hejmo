@@ -10,10 +10,27 @@ info:
     (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens;
     actions: read, write, delete, complete).
 
-    The scope `calendars` is for a phone's calendar app: it opens the box's
-    CalDAV server at `/dav/` (HTTP Basic with the person's username and the
-    token as password, HTTPS only) and nothing in this REST API. Create one
-    token per device and revoke it on its own.
+    The scopes `calendars` and `tasks` are for a phone's calendar and
+    reminders apps: they open the box's CalDAV server at `/dav/` (HTTP Basic
+    with the person's username and the token as password, HTTPS only) and
+    nothing in this REST API. `calendars` opens the calendars (VEVENT),
+    `tasks` one task list per person (VTODO); a device token holds both. A
+    task list shows a once task as it is and a repeating task as today's
+    occurrence. Clients may change a task's title, notes, the day of a once
+    task and its completion (which credits or deducts its stars once);
+    creating and deleting tasks from a client is refused with 403. Create
+    one token per device and revoke it on its own.
+
+    The box also speaks MCP (Model Context Protocol, streamable HTTP, stateless)
+    at `/mcp`, for AI assistants (ADR 0018). It is off by default (`GET` and `PUT`
+    `/mcp` below), served over HTTPS only, and takes only a bearer token that was
+    created for MCP (`POST /mcp/tokens`). Its tools are the functions of this API
+    for events, lists, tasks (with routines, templates and stars) and the meal
+    plan, except managing calendars (`POST /calendars`, `PATCH` and `DELETE`
+    `/calendars/{id}`, `POST /calendars/{id}/sync` are no tools), run as the parent who made the token and with the token's scopes;
+    tools the scopes do not allow are not offered. Tokens, settings, people,
+    displays and phones are never tools. A token made for MCP works there only:
+    this REST API and CalDAV refuse it, and MCP refuses every other token.
   license:
     name: AGPL-3.0-or-later
     url: https://www.gnu.org/licenses/agpl-3.0.html
@@ -58,6 +75,116 @@ paths:
                     items: { type: string, example: K7QD2-M9XPA }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /me/passkeys:
+    get:
+      operationId: listPasskeys
+      summary: The caller's passkeys (scope people:read)
+      description: |
+        A passkey replaces password and one-time code at sign-in (ADR 0018). It is
+        valid only for the box name it was created under (`box_name`); `works` is
+        false once the box has another name. Only parents have passkeys.
+      responses:
+        "200":
+          description: The caller's passkeys, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Passkey" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createPasskey
+      summary: Finish creating a passkey (browser session, scope people:write)
+      description: |
+        Second step of creating a passkey: send what the browser's credentials
+        API answered to the options of `POST /me/passkeys/registration`. Only a
+        signed-in browser session may create a passkey, never a token and never a
+        paired phone's session: a passkey
+        signs in for good, so a stolen token must not be able to make one. The
+        box checks the answer: the authenticator must have verified the user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ceremony, credential]
+              properties:
+                ceremony: { type: string, description: "The `ceremony` of the first step. It works once, for two minutes." }
+                credential: { type: object, description: "The credential the browser created (`PublicKeyCredential`, as JSON)" }
+                name: { type: string, maxLength: 80, description: "Name of the passkey; the device it was made on when empty" }
+      responses:
+        "201":
+          description: The passkey
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Passkey" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/PasskeyName" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /me/passkeys/registration:
+    post:
+      operationId: beginPasskey
+      summary: Start creating a passkey (browser session, scope people:write)
+      description: |
+        First step of creating a passkey. The answer holds the options for
+        `navigator.credentials.create`. The request must come to the box under its
+        box name (GLOSSARY): over an IP address or another name it is refused with
+        409, because a passkey could not work there. A token and a paired phone's session
+        are refused with 403.
+      responses:
+        "200":
+          description: The ceremony to finish with `POST /me/passkeys`
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ceremony, options]
+                properties:
+                  ceremony: { type: string }
+                  options: { type: object, description: "WebAuthn PublicKeyCredentialCreationOptions as an object with the member publicKey" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/PasskeyName" }
+  /me/passkeys/{id}:
+    patch:
+      operationId: renamePasskey
+      summary: Rename a passkey of the caller (scope people:write)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80 }
+      responses:
+        "200":
+          description: The passkey
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Passkey" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: removePasskey
+      summary: Remove a passkey of the caller for good (scope people:delete)
+      description: Nobody can sign in with it afterwards. The caller's sessions stay.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /people/{id}/invitation:
     get:
       operationId: getInvitation
@@ -138,6 +265,14 @@ paths:
               properties:
                 password: { type: string, description: The caller's own password }
                 code: { type: string, description: The caller's own one-time code or an unused recovery code }
+                remove_passkeys:
+                  type: array
+                  items: { type: string, format: uuid }
+                  description: |
+                    Passkeys of the parent whose codes are reset to remove in the same
+                    step (ADR 0018): one that was on the lost device could keep signing
+                    in. Ids of other people's passkeys are ignored. None are removed by
+                    default.
       responses:
         "204": { description: Reset }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -282,6 +417,92 @@ paths:
                   name: { type: string }
                   scopes: { type: string }
                   token: { type: string, example: hejmo_… }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /mcp:
+    get:
+      operationId: getMCP
+      summary: Whether the MCP server is on, and its address (scope settings:read)
+      description: |
+        The address always starts with `https://`: MCP is served over HTTPS
+        only. A browser session may open the page of the web interface at the
+        same address.
+      responses:
+        "200":
+          description: State of the MCP server
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MCPState" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setMCP
+      summary: Switch the MCP server on or off (scope settings:write)
+      description: |
+        Off by default. Switching off needs no confirmation: tokens made for MCP
+        stay stored and work again once it is switched on; an open MCP session
+        stops at its next request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        "200":
+          description: The new state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MCPState" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /mcp/tokens:
+    post:
+      operationId: createMCPToken
+      summary: Create an API token for MCP, for the caller (scope tokens:write)
+      description: |
+        The areas events, lists, tasks (with routines, templates and stars) and
+        meals each get `none`, `read` (scope `<area>:read`) or `write` (scope
+        `<area>`, every action including adding, ticking off and deleting). An
+        area left out counts as `none`; at least one area needs `read` or
+        `write` (else 422). The token acts as the caller, who has to be a parent,
+        and never holds `read`, `write`, `tokens` or `settings`. The name is
+        unique among MCP tokens (not case-sensitive, else 422). The token value
+        is returned once and stored only as a hash. Creating one works while MCP
+        is off too; it works as soon as MCP is on. Revoke it with
+        `DELETE /tokens/{id}`; `GET /tokens` lists it with `mcp: true`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, areas]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80, example: Claude on Mama's laptop }
+                areas: { $ref: "#/components/schemas/MCPAreas" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, name, scopes, areas, token, address]
+                properties:
+                  id: { type: string, format: uuid }
+                  name: { type: string }
+                  scopes: { type: string, example: "events lists:read" }
+                  areas: { $ref: "#/components/schemas/MCPAreas" }
+                  token: { type: string, example: hejmo_… }
+                  address: { type: string, example: "https://hejmo.local/mcp" }
+        "400": { $ref: "#/components/responses/Invalid" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
@@ -667,6 +888,149 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/{id}/subtasks:
+    post:
+      operationId: addSubtask
+      summary: Add a subtask to a task (scope tasks:write, parents only)
+      description: |
+        A subtask is a title with an optional emoji (ADR 0018). It is added at
+        the end. A task has at most 10 subtasks, one level only: an 11th gives
+        422 with `field: subtasks`. If the task is already ticked off today,
+        the new subtask counts as done today, so the person loses no stars.
+        Answers with the task and its state today.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewSubtask" }
+      responses:
+        "201":
+          description: The task with its subtasks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/{id}/subtasks/{sub_id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: sub_id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: updateSubtask
+      summary: Change the title or emoji of a subtask (scope tasks:write, parents only)
+      description: Any other or unknown field is refused with 400.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                title: { type: string, minLength: 1, maxLength: 120 }
+                emoji: { type: string, maxLength: 16 }
+      responses:
+        "200":
+          description: The task with its subtasks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400":
+          description: Not valid JSON or an unknown field
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteSubtask
+      summary: Remove a subtask (scope tasks:write, parents only)
+      description: |
+        Removing the last open subtask completes the task for today and
+        credits its stars, because everything that is left is ticked. Removing
+        the only subtask leaves a plain task as it was. Answers with the task
+        and its state today.
+      responses:
+        "200":
+          description: The task with its remaining subtasks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /tasks/{id}/subtasks/{sub_id}/move:
+    post:
+      operationId: moveSubtask
+      summary: Move a subtask one place up or down (scope tasks:write, parents only)
+      description: Moving the first one up or the last one down changes nothing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: sub_id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [direction]
+              properties:
+                direction: { type: string, enum: [up, down] }
+      responses:
+        "200":
+          description: The task with its subtasks in the new order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/{id}/subtasks/{sub_id}/done:
+    put:
+      operationId: setSubtaskDone
+      summary: Tick a subtask off or back open for today (scope tasks:complete)
+      description: |
+        Parents may do this for every task, a child only for its own (else
+        403). The task must be due today, else 422. Ticks belong to today's
+        occurrence and start open again with the next one. Ticking the last
+        open subtask completes the task and credits its stars once; unticking
+        a subtask of a done task reopens the task and deducts them, the other
+        subtasks stay ticked. Ticking the task itself (`PUT /tasks/{id}/done`)
+        ticks all its subtasks and unticking a done task unticks all of them
+        (unticking an open task leaves its subtask ticks alone). Ticking
+        twice changes nothing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: sub_id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [done]
+              properties:
+                done: { type: boolean }
+      responses:
+        "200":
+          description: The task with its state today
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /routines:
     get:
       operationId: listRoutines
@@ -846,6 +1210,233 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routine-templates:
+    get:
+      operationId: listRoutineTemplates
+      summary: Routine templates, own first, then the ones that come with Hejmo (scope tasks:read)
+      description: |
+        A routine template is a routine without a person (ADR 0018). The
+        parent's own templates come first, oldest first, then the templates
+        that ship with Hejmo (`source: shipped`, ids such as `school-morning`),
+        in the language in use: their names and step titles follow the
+        request's language, German or English. Everyone, children included,
+        may read.
+      responses:
+        "200":
+          description: Own templates, then shipped ones
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RoutineTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: saveRoutineAsTemplate
+      summary: Save a routine as an own template (scope tasks:write, parents only)
+      description: |
+        Copies the routine's part of the day and its steps in order, with
+        emoji, star value and repetition. Once-only tasks are left out; a
+        routine with no other task is 422. What a person ticked, stars earned
+        and history stay with the person. The template is a copy: changing
+        the routine later does not change it. Without `name` the template is
+        called "<routine> von <person>" (English: "<routine> of <person>").
+        A name already used by an own template (ignoring case) is 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [routine_id]
+              additionalProperties: false
+              properties:
+                routine_id: { type: string, format: uuid }
+                name: { type: string, minLength: 1, maxLength: 60 }
+      responses:
+        "201":
+          description: The new template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routine-templates/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string }, description: "An own template's UUID or the id of a shipped one" }
+    get:
+      operationId: getRoutineTemplate
+      summary: One routine template with its steps (scope tasks:read)
+      responses:
+        "200":
+          description: The template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateRoutineTemplate
+      summary: Rename an own template or change its suggested part of the day (scope tasks:write, parents only)
+      description: |
+        Routines that were made from the template stay as they are. A
+        template that ships with Hejmo cannot be changed: 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1, maxLength: 60 }
+                part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+      responses:
+        "200":
+          description: The updated template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteRoutineTemplate
+      summary: Delete an own template (scope tasks:delete, parents only)
+      description: |
+        Routines that were made from the template stay as they are. A
+        template that ships with Hejmo cannot be deleted: 409.
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+  /routine-templates/{id}/steps:
+    post:
+      operationId: addRoutineTemplateStep
+      summary: Add a step at the end of an own template (scope tasks:write, parents only)
+      description: |
+        A step is never once-only (`repeat` is `daily` or `weekly`) and has
+        no subtasks. `stars` defaults to 1.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, repeat]
+              additionalProperties: false
+              properties:
+                title: { type: string, minLength: 1, maxLength: 120 }
+                emoji: { type: string, maxLength: 16 }
+                stars: { type: integer, minimum: 0, maximum: 100 }
+                repeat: { $ref: "#/components/schemas/TemplateRepeat" }
+                weekdays: { type: array, items: { $ref: "#/components/schemas/TaskWeekday" } }
+      responses:
+        "201":
+          description: The template with the new step at its end
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routine-templates/{id}/steps/{step_id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: step_id, in: path, required: true, schema: { type: string } }
+    patch:
+      operationId: updateRoutineTemplateStep
+      summary: Change a step of an own template (scope tasks:write, parents only)
+      description: |
+        Only the fields given change. Changing `repeat` to `daily` drops the
+        weekdays; `weekly` needs weekdays.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                title: { type: string, minLength: 1, maxLength: 120 }
+                emoji: { type: string, maxLength: 16 }
+                stars: { type: integer, minimum: 0, maximum: 100 }
+                repeat: { $ref: "#/components/schemas/TemplateRepeat" }
+                weekdays: { type: array, items: { $ref: "#/components/schemas/TaskWeekday" } }
+      responses:
+        "200":
+          description: The updated template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteRoutineTemplateStep
+      summary: Remove a step from an own template (scope tasks:write, parents only)
+      responses:
+        "200":
+          description: The template without the step
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" } # the last step of a template stays
+  /routine-templates/{id}/order:
+    put:
+      operationId: setRoutineTemplateOrder
+      summary: Put the steps of an own template in a new order (scope tasks:write, parents only)
+      description: |
+        `step_ids` must name every step of the template exactly once, else
+        422 and nothing changes.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [step_ids]
+              additionalProperties: false
+              properties:
+                step_ids:
+                  type: array
+                  items: { type: string }
+      responses:
+        "200":
+          description: The template in its new order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
         "422": { $ref: "#/components/responses/Invalid" }
   /meals:
     get:
@@ -1902,6 +2493,16 @@ components:
         color: { $ref: "#/components/schemas/PersonColor" }
         shape: { $ref: "#/components/schemas/PersonShape" }
         symbol: { type: string }
+    Passkey:
+      type: object
+      required: [id, name, created_at, last_used_at, box_name, works]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        created_at: { type: string, format: date-time }
+        last_used_at: { type: string, format: date-time, nullable: true, description: "Null until it was used" }
+        box_name: { type: string, description: "The box name the passkey was created for", example: hejmo.local }
+        works: { type: boolean, description: "False once the box has another name than `box_name`" }
     TaskRepeat:
       type: string
       enum: [once, daily, weekly]
@@ -1920,11 +2521,47 @@ components:
       enum: [morning, afterschool, evening]
     NewRoutine:
       type: object
-      required: [person_id, name, part_of_day]
+      required: [person_id]
+      description: |
+        Without `template_id`, `name` and `part_of_day` are required (else
+        422). With `template_id` the routine is made from a routine template
+        (own or shipped): its steps become new tasks of the person, an
+        independent copy that keeps no link to the template. Then `part_of_day`
+        defaults to the template's suggestion (any part of the day may be
+        chosen) and `name` to the stock name of the part ("Morgenroutine").
+        Shipped templates are copied in the language in use.
       properties:
         person_id: { type: string, format: uuid }
         name: { type: string, minLength: 1, maxLength: 60, example: Morgenroutine }
         part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+        template_id: { type: string, description: "An own template's UUID or the id of a shipped one", example: school-morning }
+    TemplateRepeat:
+      type: string
+      enum: [daily, weekly]
+      description: A template step is never once-only.
+    RoutineTemplate:
+      type: object
+      required: [id, name, part_of_day, source, steps]
+      properties:
+        id: { type: string, description: "A UUID for an own template, a readable id such as school-morning for a shipped one" }
+        name: { type: string }
+        part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+        source: { type: string, enum: [own, shipped] }
+        origin_routine: { type: string, description: "Own templates: the name of the routine it was saved from" }
+        origin_person: { type: string, description: "Own templates: the name of that routine's person" }
+        saved_at: { type: string, format: date-time, description: "Own templates: when it was saved" }
+        steps:
+          type: array
+          items:
+            type: object
+            required: [id, title, emoji, stars, repeat, weekdays]
+            properties:
+              id: { type: string }
+              title: { type: string }
+              emoji: { type: string }
+              stars: { type: integer, minimum: 0, maximum: 100 }
+              repeat: { $ref: "#/components/schemas/TemplateRepeat" }
+              weekdays: { type: array, items: { $ref: "#/components/schemas/TaskWeekday" } }
     Routine:
       type: object
       required: [id, person_id, name, part_of_day, task_ids]
@@ -1944,6 +2581,7 @@ components:
         person_id: { type: string, format: uuid }
         title: { type: string, minLength: 1, maxLength: 120, example: Brush teeth }
         emoji: { type: string, maxLength: 16, example: "🪥" }
+        notes: { type: string, maxLength: 2000, description: "Optional free text. CalDAV clients show it as the task's description and may change it" }
         repeat: { $ref: "#/components/schemas/TaskRepeat" }
         weekdays:
           type: array
@@ -1955,12 +2593,13 @@ components:
         routine_id: { type: string, format: uuid, description: "Create the task as the last step of this routine (of the same person). It takes the routine's part of the day and `part_of_day` is ignored" }
     Task:
       type: object
-      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, stars, routine_id, position, due, done]
+      required: [id, person_id, title, emoji, notes, repeat, weekdays, date, part_of_day, stars, routine_id, position, due, done, subtasks]
       properties:
         id: { type: string, format: uuid }
         person_id: { type: string, format: uuid }
         title: { type: string }
         emoji: { type: string }
+        notes: { type: string, description: "Free text; empty if none" }
         repeat: { $ref: "#/components/schemas/TaskRepeat" }
         weekdays:
           type: array
@@ -1971,7 +2610,26 @@ components:
         routine_id: { type: string, description: "The routine the task is a step of; empty for a single task" }
         position: { type: integer, description: "Place in the routine, from 1; 0 for a single task" }
         due: { type: boolean, description: "Due on the requested day" }
-        done: { type: boolean, description: "Ticked off on the requested day" }
+        done: { type: boolean, description: "Ticked off on the requested day. A task with subtasks is done when all of them are" }
+        subtasks:
+          type: array
+          description: The items the task is split into, in their order (at most 10); empty for a task without
+          items: { $ref: "#/components/schemas/Subtask" }
+    Subtask:
+      type: object
+      required: [id, title, emoji, position, done]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        emoji: { type: string }
+        position: { type: integer, description: "Place in the task, from 1" }
+        done: { type: boolean, description: "Ticked off on the requested day (each occurrence of the task starts open)" }
+    NewSubtask:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120, example: "Pencil case" }
+        emoji: { type: string, maxLength: 16, example: "✏️" }
     NewStarBooking:
       type: object
       required: [delta, note]
@@ -2084,7 +2742,7 @@ components:
         sync: { $ref: "#/components/schemas/SyncState" }
     ApiToken:
       type: object
-      required: [id, name, scopes, person, created_at, last_used_at]
+      required: [id, name, scopes, person, created_at, last_used_at, mcp]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: iPhone Mama }
@@ -2092,6 +2750,24 @@ components:
         person: { type: string, description: "Name of the person the token acts for" }
         created_at: { type: string, format: date-time }
         last_used_at: { type: string, format: date-time, nullable: true }
+        mcp: { type: boolean, description: "Created for the MCP server: it works there only, not in this API or CalDAV" }
+    MCPState:
+      type: object
+      required: [enabled, address]
+      properties:
+        enabled: { type: boolean }
+        address: { type: string, example: "https://hejmo.local/mcp", description: "Where an AI assistant reaches the MCP server; always https" }
+    MCPAreas:
+      type: object
+      description: What a token may do per area. An area left out counts as none.
+      properties:
+        events: { $ref: "#/components/schemas/MCPLevel" }
+        lists: { $ref: "#/components/schemas/MCPLevel" }
+        tasks: { $ref: "#/components/schemas/MCPLevel" }
+        meals: { $ref: "#/components/schemas/MCPLevel" }
+    MCPLevel:
+      type: string
+      enum: [none, read, write]
     DisplayType:
       type: string
       enum: [eink_bw, eink_color, screen]
@@ -2530,6 +3206,20 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Invalid:
       description: Request is well-formed but not valid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    PasskeyName:
+      description: |
+        The request did not reach the box under its box name (an IP address or
+        another name). Passkeys are created and used only under the box name.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    TemplateConflict:
+      description: |
+        An own template already has that name (`field: name`), or the template
+        ships with Hejmo and cannot be changed.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }

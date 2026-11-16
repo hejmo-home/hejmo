@@ -1,0 +1,12 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/mcp" "Text" (t "mcp.back"))}}
+  <h1>{{.Token.Name}}</h1>
+  <dl class="facts">{{range $i, $f := .Facts}}
+  <dt>{{$f.Label}}</dt>
+  <dd>{{if $f.Flag}}{{template "flag" $f.Flag}}{{else}}{{if or $f.Whole $f.People}}{{template "forWhom" $f}}{{end}}{{$f.Value}}{{end}}</dd>{{if and $.Off (eq $i 0)}}
+  <dt>{{$.StateLabel}}</dt>
+  <dd>{{template "flag" (dict "Kind" "warn" "Text" (t "mcp.state.off"))}} <a href="/mcp">{{t "mcp.state.switch_on"}}</a></dd>{{end}}{{end}}
+</dl>
+  <p class="hint">{{t "mcp.token.never_shown"}}</p>
+  {{template "danger" (dict "Label" (t "mcp.token.revoke") "Explain" (tf "mcp.token.revoke.explain" "name" .Token.Name) "Confirm" (tf "mcp.token.revoke.confirm" "name" .Token.Name) "Action" (printf "/mcp/tokens/%s/revoke" .Token.ID) "CancelHref" (printf "/mcp/tokens/%s" .Token.ID))}}
+{{template "foot"}}

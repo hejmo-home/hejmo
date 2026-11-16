@@ -1,0 +1,50 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "account.title") "Frame" .Frame)}}
+  {{with .Success}}{{template "success" .}}{{end}}
+  {{template "backLink" (dict "Href" "/settings" "Text" (t "account.back"))}}
+  <h1>{{t "account.title"}}</h1>
+  {{template "syncNotice" .}}
+  <p class="lead">{{tf "account.lead" "name" .Person.Name "username" .Username}}</p>
+  {{if eq .Flash "flash.otp_reset"}}{{template "resetHint"}}{{end}}
+  {{if eq .Flash "flash.otp_reset_passkey"}}{{template "resetHint"}}{{end}}
+  {{if eq .Flash "flash.otp_reset_passkeys"}}{{template "resetHint"}}{{end}}
+  <div data-passkey-scope data-redirect="/account">
+  <h2 class="rows-head">{{t "account.passkeys"}}</h2>
+  {{if .BrokenCount}}<p class="notice" role="status" data-passkey-renamed>{{t "account.passkeys.renamed.lead"}} <span class="host">{{.BoxName}}</span>{{tf .BrokenKey "old" .OldName "passkeys" .Broken}}</p>{{end}}
+  {{if .Passkeys}}
+  <ul class="list-rows">
+    {{range .Passkeys}}<li><a href="/account/passkeys/{{.ID}}"><span class="t"><b>{{.Name}}</b><span class="meta">{{.Meta}}</span>{{if .Flag}}<span class="flag {{.FlagKind}}">{{.Flag}}</span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    {{end}}
+  </ul>
+  {{if .AtBoxName}}
+  <div class="actions"><button class="button" type="button" data-passkey-add data-working="{{t "passkey.working"}}">{{template "keyIcon"}}{{if .BrokenCount}}{{tf "account.passkeys.new_here" "device" .ThisDevice}}{{else}}{{t "account.passkeys.another"}}{{end}}</button></div>
+  {{template "passkeyChecklines"}}
+  {{if .BrokenCount}}<p class="hint">{{t "account.passkeys.remove_old"}}</p>{{else}}<p class="hint">{{t "account.passkeys.where"}}</p>{{end}}
+  {{else}}{{template "passkeyIPNotice" .}}{{end}}
+  {{else}}
+  <div class="empty"><p>{{t "account.passkeys.empty"}}</p>{{if .AtBoxName}}<button class="button" type="button" data-passkey-add data-working="{{t "passkey.working"}}">{{template "keyIcon"}}{{tf "account.passkeys.create_here" "device" .ThisDevice}}</button>{{end}}</div>
+  {{if .AtBoxName}}{{template "passkeyChecklines"}}{{else}}{{template "passkeyIPNotice" .}}{{end}}
+  {{end}}
+  <p class="hint">{{t "account.passkeys.name_lead"}} <span class="host">{{.BoxName}}</span>{{t "account.passkeys.name_rest"}}</p>
+  </div>
+  <h2 class="rows-head">{{t "account.codes"}}</h2>
+  <dl class="facts"><dt>{{t "account.codes.otp"}}</dt><dd>{{tf "account.codes.since" "date" .CodesSince}}</dd><dt>{{t "account.codes.recovery"}}</dt><dd>{{.LeftText}}</dd></dl>
+  <form method="post" action="/account/recovery-codes" class="actions"><button class="button secondary" type="submit">{{t "otp.recovery.new"}}</button></form>
+  <p class="hint">{{t "otp.recovery.new_hint"}}</p>
+  <h2 class="rows-head">{{t "account.others"}}</h2>
+  {{if .Others}}
+  <ul class="list-rows">
+    {{range .Others}}<li><a href="/account/reset/{{.ID}}"><span class="t"><b class="who"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span>{{tf "account.others.title" "name" .Name}}</b><span class="meta">{{.Meta}}</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    {{end}}
+  </ul>
+  {{else}}<p class="hint">{{t "otp.reset.none"}}</p>{{end}}
+  <script src="/static/passkey.js" defer></script>
+{{template "foot"}}
+
+{{define "resetHint"}}<p class="hint" data-otp-reset>{{t "otp.reset.revoke"}} <a href="/phones">{{t "nav.phones"}}</a> {{t "otp.reset.revoke.and"}} <a href="/caldav">{{t "hub.caldav"}}</a>{{t "otp.reset.revoke.end"}}</p>{{end}}
+
+{{define "passkeyIPNotice"}}<p class="notice" data-passkey-ip>{{t "account.passkeys.ip.lead"}} {{t "login.passkey.ip.before"}} <span class="host">{{.HostHere}}</span> {{t "login.passkey.ip.after"}} <a href="{{.BoxURL}}">{{t "account.passkeys.ip.link.pre"}} <span class="host">{{.BoxName}}</span>{{with t "account.passkeys.ip.link.post"}} {{.}}{{end}}</a></p>{{end}}
+
+{{/* What the page shows while the browser asks, and when nothing was created; the script shows them. */}}
+{{define "passkeyChecklines"}}<p class="checkline" data-state="fail" role="alert" data-hook="fail" hidden>{{template "failIcon"}}<span><span>{{t "passkey.fail.title"}}</span><small>{{t "passkey.fail.text"}}</small></span></p>
+  <p class="checkline" data-state="fail" role="alert" data-hook="have" hidden>{{template "failIcon"}}<span><span>{{t "passkey.have.account"}}</span></span></p>
+  <p class="checkline" data-state="waiting" role="status" data-hook="waiting" hidden>{{template "clockIcon" 20}}<span><span>{{t "passkey.waiting.unknown"}}</span><small>{{t "passkey.waiting.text"}}</small></span></p>{{end}}

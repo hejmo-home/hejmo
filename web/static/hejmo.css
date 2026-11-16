@@ -1558,3 +1558,290 @@ p.hint.later { max-width: 560px; }
 /* Without JavaScript each suggestion is a submit button that fills its row. */
 .place-list li > button { display: grid; gap: 1px; width: 100%; min-height: inherit; align-content: center; padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
 .place-list li > button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
+/* ticket 7.4 subtasks (preview-93), on top of ticket 7.2. Uses existing tokens only. */
+
+/* Personal view and the child's tasks page: a task with subtasks is one card. The task's own
+   row (head) ticks all; each subtask below has its own big checkbox, indented, without stars. */
+.subgroup { display: grid; min-width: 0; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
+[data-theme="bw"] .subgroup { border: 2px solid var(--text); }
+li.has-subs[data-done="true"] > .subgroup { background: transparent; }
+.subgroup form { margin: 0; }
+.subgroup .big-check { border: 0; background: none; }
+.subgroup .big-check.head { padding: 8px 12px 8px 8px; }
+.big-check .tt { flex: 1; min-width: 0; display: grid; gap: 4px; }
+/* Progress of the subtasks: one small box per subtask (filled when done) and the same in words. */
+.subcount { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.pips { display: inline-flex; flex-wrap: wrap; gap: 4px; }
+.pips i { box-sizing: border-box; width: 12px; height: 12px; border: 2px solid var(--text-secondary); border-radius: 3px; }
+.pips i[data-done] { background: var(--pc); border-color: var(--pc); }
+[data-theme="bw"] .pips i { border-color: var(--text); }
+[data-theme="bw"] .pips i[data-done] { background: var(--text); }
+.subs { list-style: none; display: grid; gap: 4px; margin: 0 8px 0 56px; padding: 6px 0 8px; border-top: 1px solid var(--border); }
+.routine .subs { gap: 4px; }
+[data-theme="bw"] .subs { border-top: 1.5px solid var(--text); }
+.subgroup .big-check.sub { min-height: 56px; padding: 6px 12px 6px 8px; font-size: var(--fs-body); font-weight: 600; }
+.subgroup .big-check.sub .emoji { width: 30px; font-size: 24px; }
+/* Inside a routine the thick "next" border sits on the first open subtask of the next task. */
+.routine .subs li[data-next] .big-check { padding: 3px 9px 3px 5px; }
+[data-theme="bw"] .routine .subs li[data-next] .big-check { padding: 2px 8px 2px 4px; }
+@supports (hyphenate-limit-chars: 12 5 5) {
+  .big-check.sub .title, .sublist .st, .subrows .nm b { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
+}
+@media (max-width: 479px) {
+  .subgroup .big-check.head { padding: 6px 8px 6px 6px; }
+  .subs { margin: 0 6px 0 22px; }
+  .subgroup .big-check.sub { padding: 4px 8px 4px 6px; }
+  .routine .subs li[data-next] .big-check { padding: 1px 5px 1px 3px; }
+  [data-theme="bw"] .routine .subs li[data-next] .big-check { padding: 0 4px 0 2px; }
+  .subgroup .big-check.sub .emoji { width: 24px; font-size: 20px; }
+}
+
+/* Tasks page (parents): every subtask listed under its task with a small box; never a count alone. */
+.sublist { list-style: none; margin: 4px 0 0; padding: 0; display: grid; gap: 6px; min-width: 0; }
+.sublist li { display: flex; align-items: flex-start; gap: 8px; min-width: 0; font-size: var(--fs-label-large); }
+.sublist .st { min-width: 0; overflow-wrap: break-word; }
+.sublist .sbox { box-sizing: border-box; flex: none; width: 20px; height: 20px; margin-top: 1px; border: 2px solid var(--text-secondary); border-radius: 5px; display: inline-flex; align-items: center; justify-content: center; }
+.sublist .sbox svg { display: none; stroke: var(--surface); stroke-width: 3.2; }
+.sublist li[data-done] .sbox { background: var(--text-secondary); border-color: var(--text-secondary); }
+.sublist li[data-done] .sbox svg { display: block; }
+.sublist li[data-done] .st { text-decoration: line-through; color: var(--text-secondary); }
+[data-theme="bw"] .sublist .sbox { border-color: var(--text); }
+[data-theme="bw"] .sublist li[data-done] .sbox { background: var(--text); }
+.rsteps > li.has-subs { grid-template-areas: "nr nm acts" "nr meta acts" "nr subs subs"; }
+.rsteps .sublist { grid-area: subs; margin-top: 6px; }
+@media (max-width: 599px) {
+  .rsteps > li.has-subs { grid-template-areas: "nr nm" "nr meta" "nr subs" "nr acts"; }
+}
+
+/* Task page: card "Teilaufgaben". */
+.subcard { max-width: 560px; min-width: 0; margin: 0 0 var(--gap-section); padding: 16px; display: grid; gap: 10px; background: var(--surface); border-radius: var(--radius-tile); }
+[data-theme="bw"] .subcard { border: 2px solid var(--text); }
+.subcard-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 4px 12px; }
+.subcard h2 { margin: 0; font-size: var(--fs-person-name); }
+.subcard-head .state { font-size: var(--fs-label-large); font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.subcard > .hint { margin: 0; }
+.subempty { margin: 0; padding: 12px 14px; border: 1.5px dashed var(--border); border-radius: var(--radius-card); color: var(--text-secondary); }
+[data-theme="bw"] .subempty { border-color: var(--text); color: var(--text); }
+ol.subrows { list-style: none; margin: 0; padding: 0; display: grid; }
+ol.subrows > li { display: grid; grid-template-columns: 44px minmax(0, 1fr) auto; grid-template-areas: "box nm acts" "box more more"; gap: 2px 12px; align-items: center; padding: 10px 0 0; border-top: 1px solid var(--border); }
+ol.subrows .tb { grid-area: box; margin: 0; align-self: start; }
+.tickbox { box-sizing: border-box; width: var(--touch-target); height: var(--touch-target); padding: 0; border: 3px solid var(--text); border-radius: var(--radius-card); background: var(--surface); display: inline-flex; align-items: center; justify-content: center; cursor: pointer; }
+.tickbox svg { display: none; stroke: var(--surface); stroke-width: 3.2; }
+.subrows li[data-done] .tickbox { background: var(--pc); border-color: var(--pc); }
+[data-theme="bw"] .subrows li[data-done] .tickbox { background: var(--text); border-color: var(--text); }
+.subrows li[data-done] .tickbox svg { display: block; }
+.tickbox:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.subrows .nm { grid-area: nm; display: grid; gap: 2px; min-width: 0; }
+.subrows .nm b { font-weight: 600; overflow-wrap: break-word; }
+.subrows li[data-done] .nm b { font-weight: 400; text-decoration: line-through; color: var(--text-secondary); }
+.subrows .nm .hint { margin: 0; }
+.subrows .acts { grid-area: acts; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.subrows .acts form { margin: 0; }
+.subrows details.more { grid-area: more; border-top: 0; }
+.subrows details.more > summary { font-size: var(--fs-label); }
+.subrows details.more form.inner { display: grid; gap: 10px; }
+.subrows .pair, .subadd .pair { display: flex; flex-wrap: wrap; align-items: start; gap: 10px 16px; }
+.subrows .pair .f, .subadd .pair .f { flex: 1 1 200px; min-width: 0; }
+.subrows .pair .f.short, .subadd .pair .f.short { flex: 0 1 140px; }
+.subrows .remove { display: grid; gap: 8px; justify-items: start; padding-top: 10px; border-top: 1px dashed var(--border); }
+[data-theme="bw"] .subrows .remove { border-top-color: var(--text); }
+.subrows .remove p { margin: 0; }
+.subadd { display: grid; gap: 10px; padding-top: 12px; border-top: 1px solid var(--border); }
+.subadd .pair { margin: 0; }
+.subadd .button { justify-self: start; display: inline-flex; align-items: center; gap: 8px; }
+.subadd .button .icon { stroke: currentColor; }
+.subcard .hint.full { margin: 0; padding-top: 12px; border-top: 1px solid var(--border); }
+@media (max-width: 599px) {
+  ol.subrows > li { grid-template-columns: 44px minmax(0, 1fr); grid-template-areas: "box nm" "box acts" "box more"; }
+  .subrows .acts { justify-content: flex-start; padding-top: 6px; }
+}
+.subadd > .hint { margin: 0; }
+/* A subtask list inside a task card is not a card itself. */
+.cards .sublist li { display: flex; padding: 0; background: none; border: 0; border-radius: 0; }
+/* ticket 7.3 routine templates (preview-92). Uses existing tokens only. */
+/* Tasks page: "Neue Routine" and "Routine-Vorlagen" side by side. */
+.tasks-tools .row { display: flex; flex-wrap: wrap; gap: 8px 10px; }
+/* Template card in the Routine templates menu: the routine card (.rcard) without a person. */
+.tcard div.rhead { cursor: default; }
+.tcard .rsteps { padding-bottom: 0; }
+.tcard .tfoot { display: flex; flex-wrap: wrap; gap: 8px; padding: 6px 16px 16px; border-top: 1px solid var(--border); padding-top: 14px; }
+.tcard .tfoot .button { display: inline-flex; align-items: center; gap: 8px; }
+.tcard .tfoot .button .icon { stroke: currentColor; }
+/* Template cards sit two side by side when the page is wide enough; steps are compact. */
+.tgrid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 330px), 1fr)); gap: var(--gap-cards); align-items: start; max-width: 1140px; margin: 0 0 var(--gap-cards); }
+.tgrid .rcard { margin: 0; max-width: none; }
+.tcard .rsteps > li { padding: 7px 0; }
+.tcard .rsteps .nr { width: 26px; height: 26px; }
+.tcard .rsteps > li { grid-template-columns: 26px minmax(0, 1fr); grid-template-areas: "nr nm" "nr meta"; }
+.tgroup { max-width: 560px; margin: var(--gap-section) 0 6px; }
+.tgroup + .hint { max-width: 560px; margin: 0 0 12px; }
+/* Template choice on the New routine page: every step is named, a step never splits. */
+.choice .grp { margin: 8px 0 0; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); }
+.choice .grp:first-of-type { margin-top: 0; }
+.choice small .st { display: inline-block; max-width: 100%; overflow-wrap: break-word; }
+.choice small .tpart { font-weight: 700; color: var(--text); }
+.choice label { min-width: 0; }
+.choice label > span { min-width: 0; }
+/* "Als Vorlage speichern" on the routine page, and the note on what does not go in. */
+details.more .left-out { margin: 0; padding: 8px 12px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label); }
+[data-theme="bw"] details.more .left-out { border: 1.5px dashed var(--text); }
+.use-tpl { margin: 0 0 var(--gap-section); }
+.use-tpl .button { display: inline-flex; align-items: center; gap: 8px; }
+.use-tpl .button .icon { stroke: currentColor; }
+.steps .days-wrap { display: grid; gap: 6px; }
+.tcard .rhead b, .choice b, .choice small, .rsteps .nm, .facts dd, .msg { -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) {
+  .tcard .rhead b, .choice b, .choice small .st, .rsteps .nm, .facts dd, .msg { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
+}
+/* ticket 95: passkeys. Existing tokens only. */
+/* A box name or IP address in running text: never widens a 375 px page. */
+.host { font-weight: 600; overflow-wrap: anywhere; }
+/* "oder" between the two ways to sign in: a thin rule on each side. */
+.or { display: flex; align-items: center; gap: 12px; margin: 0; max-width: 560px; color: var(--text-secondary); font-size: var(--fs-label); }
+.or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--border); }
+[data-theme="bw"] .or::before, [data-theme="bw"] .or::after { border-top-color: var(--text); }
+.signin-pk { display: grid; gap: 8px; max-width: 560px; }
+.signin-pk .hint { margin: 0; }
+/* Buttons with a leading line icon (the key). */
+.button.pk, .button:has(> .icon) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.button > .icon { stroke: currentColor; flex: none; }
+/* The three reasons in the passkey offer: icon, bold lead-in, one sentence. */
+.pk-why { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.pk-why li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; }
+.pk-why .icon { margin-top: 2px; }
+.notice .icon.inl { vertical-align: -4px; stroke: currentColor; }
+.notice a, .error a { color: inherit; font-weight: 700; }
+/* Passkeys to remove together with a reset: 44 px rows with a 24 px box. */
+fieldset.pk-pick { border: 0; margin: 0 0 10px; padding: 0; min-width: 0; display: grid; gap: 4px; }
+fieldset.pk-pick legend { padding: 0; margin: 0 0 4px; font-weight: 700; color: var(--text); float: left; width: 100%; }
+fieldset.pk-pick .check { min-height: var(--touch-target); align-items: flex-start; gap: 12px; overflow-wrap: anywhere; }
+fieldset.pk-pick .check input { flex: none; width: 24px; height: 24px; margin: 2px 0 0; accent-color: var(--accent); }
+details.danger > p b { color: var(--text); }
+details.danger .f { margin: 0 0 10px; }
+details.danger details.more { margin: 0 0 10px; }
+.list-rows .t .flag { margin-top: 2px; }
+.rows-head + .notice { margin: 0 0 var(--gap-cards); }
+main > .hint { max-width: 560px; }
+`;
+
+/* MCP page (ticket 96, DESIGN.md) */
+.explain { max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-section); padding: 16px; background: var(--surface); border-radius: var(--radius-tile); }
+[data-theme="bw"] .explain { border: 2px solid var(--text); }
+.explain h2 { margin: 0 0 8px; }
+.explain h3 { font-size: var(--fs-event-title); margin: 16px 0 6px; }
+.explain p { margin: 0 0 8px; overflow-wrap: anywhere; }
+.explain ul { margin: 0 0 8px; padding-left: 20px; display: grid; gap: 6px; }
+.explain li { overflow-wrap: anywhere; }
+.links { list-style: none; padding: 0 !important; margin: 8px 0 0 !important; display: grid; gap: 0 !important; }
+.links a { display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-target); font-weight: 600; overflow-wrap: anywhere; }
+.links .icon { flex: none; stroke: currentColor; }
+details.more.explain-more { max-width: 560px; }
+details.more.explain-more .explain { margin-top: 8px; }
+.scope { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--border); }
+.scope:first-of-type { border-top: 0; padding-top: 4px; }
+.scope .area { display: grid; gap: 2px; }
+.scope .area b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: anywhere; }
+.scope .area span { font-size: var(--fs-meta); color: var(--text-secondary); }
+.steps fieldset.scopes { gap: 0; }
+.steps fieldset.scopes > legend { margin-bottom: 4px; }
+.steps fieldset.scopes.invalid { border: 2px solid var(--error-text); padding: 14px; }
+.scope fieldset.seg legend { position: absolute; left: -9999px; }
+.seg label { overflow-wrap: anywhere; }
+[data-theme="bw"] .seg label { border-width: 2px; }
+.facts .lines { display: grid; gap: 2px; }
+.when-on .facts { padding: 0; margin: 4px 0 0; background: none; border: 0 !important; }
+.when-on .notice { margin: 8px 0 0; }
+.scope fieldset.seg { display: flex; flex-wrap: wrap; gap: 0; padding: 0; background: none; border-radius: 0; }
+.scope .area b { color: var(--text); }
+.hint .who { display: inline; font-size: inherit; color: inherit; }
+.hint .who .marker { display: inline-block; vertical-align: -1px; margin-right: 4px; }
+details.more.explain-more { margin-top: var(--gap-section); }
+
+/* ---- Lists on the display (ticket 6.2, design pass, preview-33) ---- */
+/* Family view: one "Lists" button in the header, before the clock. It is a
+   button (accent border, icon and word), not a status chip; the list icon is a
+   line icon, never a person marker, so lists stay apart from person columns.
+   Hidden when the household has no list. */
+.fv .chips { flex-wrap: wrap; justify-content: flex-end; align-items: center; }
+.fv .lists-link { display: inline-flex; align-items: center; gap: 8px; min-height: var(--touch-target); padding: 8px 18px 8px 14px; border: 1.5px solid var(--accent); background: var(--surface); color: var(--text); font-size: var(--fs-person-name); font-weight: 700; text-decoration: none; }
+.fv .lists-link .icon { flex: none; width: 26px; height: 26px; }
+[data-theme="bw"] .fv .lists-link { border: 2px solid var(--text); }
+
+/* Lists view: header with the title, clock and the way back; a rail of all
+   lists (symbol, name, state in words) and the chosen list. The list's head
+   (name, state, add row, success line or field error) stays put while the
+   entries scroll, so the add row stays visible above the on-screen keyboard. */
+.lv { height: 100%; display: flex; flex-direction: column; gap: var(--gap-section); min-height: 0; }
+.lv-header { display: flex; flex-wrap: wrap; align-items: center; gap: var(--gap); flex: none; }
+.lv-header h1 { margin: 0 auto 0 0; display: flex; align-items: center; gap: 12px; font-size: var(--fs-date); font-weight: var(--fw-date); line-height: 1.1; }
+.lv-header h1 .icon { flex: none; width: 34px; height: 34px; }
+.lv-header .chip { font-variant-numeric: tabular-nums; }
+.lv-body { flex: 1; min-height: 0; display: grid; grid-template-columns: minmax(200px, 3fr) minmax(0, 7fr); gap: var(--gap); }
+.lv-rail { min-height: 0; overflow-y: auto; display: grid; gap: var(--gap-cards); align-content: start; margin: 0; padding: 0; list-style: none; }
+.lv-tab { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 8px 14px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-card); color: var(--text); text-decoration: none; }
+.lv-tab .t { display: grid; gap: 2px; min-width: 0; }
+.lv-tab b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); line-height: 1.25; overflow-wrap: break-word; }
+.lv-tab .state { font-size: var(--fs-label); color: var(--text-secondary); }
+.lv-tab[aria-current="page"] { border: 3px solid var(--accent); padding: 6.5px 12.5px; }
+.lv-tab[aria-current="page"] b { font-weight: 700; }
+[data-theme="bw"] .lv-tab { border: 2px solid var(--text); padding: 7.5px 13.5px; }
+[data-theme="bw"] .lv-tab[aria-current="page"] { border-width: 4px; padding: 5.5px 11.5px; background: var(--event-card); }
+.lv-list { min-height: 0; display: flex; flex-direction: column; overflow: hidden; background: var(--surface); border-radius: var(--radius-tile); }
+.lv-head { flex: none; display: grid; gap: 10px; padding: var(--pad-column) var(--pad-column) 12px; border-bottom: 1px solid var(--border); }
+.lv-head .list-title { margin: 0; font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); line-height: 1.2; }
+.lv-head .list-meta { margin: 0; font-size: var(--fs-label); color: var(--text-secondary); }
+.lv-head .add-entry { margin: 0; max-width: none; }
+.lv-head .msg { margin: 0; max-width: none; }
+.lv-head .ferr { margin-top: -4px; } /* under the add row, at the field it belongs to */
+.lv-entries { flex: 1; min-height: 0; overflow-y: auto; padding: 12px var(--pad-column) var(--pad-column); display: grid; gap: var(--gap-cards); align-content: start; }
+.lv-entries ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap-cards); }
+.lv-entries li { display: grid; gap: 6px; min-width: 0; }
+.lv-entries form { margin: 0; }
+.lv-entries .group-head { margin: 8px 0 0; max-width: none; }
+.lv-entries .group-head h2 { font-size: var(--fs-label); }
+.lv-entries .empty { margin: 0; max-width: none; }
+.lv-entries .empty.all-done { border-style: solid; }
+.lv-entries .empty.all-done p { display: flex; gap: 8px; align-items: center; color: var(--text); font-weight: 600; }
+.lv-entries .empty.all-done .icon { flex: none; }
+.lv-entries details.danger { max-width: none; margin-top: 8px; }
+.lv-entries details.danger[open] > summary { color: var(--text); }
+/* The entry just added keeps a 2 px frame until the next tap, so it can be
+   found in a list sorted A to Z. */
+.lv-entries li.added .big-check { border: 2px solid var(--accent); }
+[data-theme="bw"] .lv-entries li.added .big-check { border-width: 4px; border-color: var(--text); }
+.lv .big-check .title { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+.lv-tab b, .lv-head .list-title, .lv-head .msg { -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) {
+  .lv .big-check .title, .lv-tab b, .lv-head .list-title, .lv-head .msg { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
+}
+.lv-head .list-title > span:last-child { min-width: 0; }
+/* Portrait and phones: the lists become a wrapping row of chips above the list;
+   every list stays visible (no count, no "more"). */
+@media (max-width: 799px) {
+  .lv-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: auto minmax(0, 1fr); }
+  .lv-rail { display: flex; flex-wrap: wrap; }
+  .lv-rail li { min-width: 0; max-width: 100%; }
+  .lv-tab { min-height: var(--touch-target); border-radius: var(--radius-chip); padding: 6px 16px 6px 12px; gap: 10px; }
+  .lv-tab .t { display: flex; flex-wrap: wrap; align-items: baseline; column-gap: 8px; }
+  .lv-tab[aria-current="page"] { padding: 4.5px 14.5px 4.5px 10.5px; }
+  [data-theme="bw"] .lv-tab { padding: 5.5px 15.5px 5.5px 11.5px; }
+  [data-theme="bw"] .lv-tab[aria-current="page"] { padding: 3.5px 13.5px 3.5px 9.5px; }
+}
+@media (max-width: 599px) {
+  .fv .chips { justify-content: flex-start; }
+  .lv-header .chip { display: none; } /* a phone shows its own clock; the way back keeps its row */
+  .lv-header h1 { font-size: var(--fs-key-figure); }
+  .lv-header h1 .icon { width: 26px; height: 26px; }
+  /* A phone scrolls the whole page instead of three small scroll areas: all
+     lists, then the list's head, then its entries. */
+  body:has(.lv) { overflow: auto; }
+  .family-page:has(.lv) { height: auto; }
+  .lv, .lv-body, .lv-list, .lv-entries { display: block; height: auto; overflow: visible; }
+  .lv-header { margin-bottom: var(--gap-section); }
+  .lv-rail { margin-bottom: var(--gap); }
+  .lv-entries > * + * { margin-top: var(--gap-cards); }
+  .lv-tab .state { display: none; }
+  .lv-head .add-entry { flex-wrap: wrap; }
+  .lv-head .add-entry .f { flex: 1 1 12em; }
+}

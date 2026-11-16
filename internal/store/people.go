@@ -50,6 +50,8 @@ type Household struct {
 	// MealCutoffs are the times from which a mealtime is no longer shown on
 	// displays (ADR 0016).
 	MealCutoffs meal.Cutoffs
+	// MCPEnabled is whether the MCP server answers (ticket 7.7); off by default.
+	MCPEnabled bool
 	// FirstStepsHidden is set when a parent hid the first steps card on the start page.
 	FirstStepsHidden bool
 	// FirstStepsSkipped lists the steps of the card a parent skipped, in the
@@ -92,6 +94,12 @@ func (f TimeFormat) Valid() bool { return f == Time24h || f == Time12h }
 
 // Valid reports whether u is a known temperature unit.
 func (u TemperatureUnit) Valid() bool { return u == Celsius || u == Fahrenheit }
+
+// SetMCPEnabled switches the MCP server on or off (ticket 7.7). Tokens stay
+// stored either way.
+func (db *DB) SetMCPEnabled(id string, on bool) error {
+	return expectOne(db.sql.Exec(`UPDATE households SET mcp_enabled = ?, updated_at = ? WHERE id = ?`, on, now(), id))
+}
 
 // SetFirstStepsHidden shows or hides the first steps card on the start page.
 func (db *DB) SetFirstStepsHidden(id string, hidden bool) error {
@@ -289,14 +297,14 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 // Household loads a household by id.
 func (db *DB) Household(id string) (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled
 		FROM households WHERE id = ?`, id))
 }
 
 // HomeHousehold returns the household this box serves (V1: exactly one).
 func (db *DB) HomeHousehold() (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled
 		FROM households ORDER BY created_at, rowid LIMIT 1`))
 }
 
@@ -304,7 +312,7 @@ func (db *DB) scanHousehold(row *sql.Row) (Household, error) {
 	var h Household
 	var skipped string
 	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.HomePlaceID, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.DateFormat, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
-		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped)
+		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped, &h.MCPEnabled)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Household{}, ErrNotFound
 	}

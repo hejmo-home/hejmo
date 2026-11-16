@@ -53,6 +53,8 @@ type frame struct {
 	// leads one level up: the Settings hub for setup screens, the meal plan and
 	// the templates menu for the meal plan templates, the device list for a device.
 	BackHref, BackLabel string
+	// BackText is the text of the back link when it is a name and not a locale key.
+	BackText string
 	// Success is the success line after a saved change, already translated
 	// and escaped; a text of the locales may hold <b> around a figure.
 	Success template.HTML
@@ -86,6 +88,8 @@ func (s *server) frameFor(r *http.Request) frame {
 		f.BackHref, f.BackLabel = "/sessions", "sessions.back"
 	case f.Back:
 		f.BackHref, f.BackLabel = "/settings", "hub.back"
+	case strings.HasPrefix(r.URL.Path, "/routines/templates/"):
+		f.BackHref, f.BackLabel = "/routines/templates", "routine.tpl.title" // a template's pages lead back to the templates
 	case r.URL.Path == "/routines" || strings.HasPrefix(r.URL.Path, "/routines/"),
 		strings.HasPrefix(r.URL.Path, "/tasks/") && r.URL.Path != "/tasks/stars":
 		f.BackHref, f.BackLabel = "/tasks", "tasks.back" // the routine pages and the task page lead back to the tasks
@@ -151,9 +155,10 @@ var hubItems = []hubItem{
 	{"/caldav", "hub.caldav", "hub.caldav.hint", auth.Perm("tokens", auth.Read)},
 	{"/displays", "hub.displays", "hub.displays.hint", auth.Perm("displays", auth.Write)},
 	{"/phones", "hub.phones", "hub.phones.hint", auth.Perm("tokens", auth.Write)},
+	{"/mcp", "hub.mcp", "hub.mcp.hint", auth.Perm("tokens", auth.Write)},
 	{"/people", "hub.people", "hub.people.hint", auth.Perm("people", auth.Write)},
 	{"/settings/household", "hub.household", "hub.household.hint", auth.Perm("settings", auth.Write)},
-	{"/otp", "hub.otp", "hub.otp.hint", auth.Perm("settings", auth.Write)},
+	{"/account", "hub.otp", "hub.otp.hint", auth.Perm("settings", auth.Write)},
 	{"/sessions", "hub.sessions", "hub.sessions.hint", auth.Perm("settings", auth.Write)},
 }
 
@@ -161,5 +166,5 @@ var hubItems = []hubItem{
 // start with a link back to their overview, which replaces the hub link.
 var detailPages = map[string]bool{
 	"display.html": true, "token.html": true, "token_once.html": true, "connection.html": true, "connection_off.html": true,
-	"calendar_detail.html": true, "phone.html": true, "connection_new.html": true, "person_edit.html": true, "invitation.html": true,
+	"calendar_detail.html": true, "phone.html": true, "account.html": true, "account_reset.html": true, "passkey.html": true, "mcp_token.html": true, "mcp_token_new.html": true, "mcp_token_once.html": true, "connection_new.html": true, "person_edit.html": true, "invitation.html": true,
 }

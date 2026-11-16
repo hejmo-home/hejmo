@@ -17,7 +17,8 @@ import (
 var profilePasswordRe = regexp.MustCompile(`<key>CalDAVPassword</key>\s*<string>(hejmo_[^<]+)</string>`)
 
 // Ticket 74, ADR 0017: a signed-in parent downloads an iOS profile that holds
-// the box address, their user name and a new device token with scope calendars.
+// the box address, their user name and a new device token with scopes calendars and tasks (ticket 94: task lists
+// appear on iPhones set up by profile).
 func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 	c := signedInAPI(t)
 	b := c.b
@@ -39,12 +40,16 @@ func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 
 	// A new token with scope calendars exists, named after the device.
 	toks, _ := b.db.APITokens(h.ID)
-	if len(toks) != 1 || toks[0].Name != "iPhone Mama" || toks[0].Scopes != "calendars" || toks[0].PersonName != "Mama" {
+	if len(toks) != 1 || toks[0].Name != "iPhone Mama" || toks[0].Scopes != "calendars tasks" || toks[0].PersonName != "Mama" {
 		t.Fatalf("tokens = %+v", toks)
 	}
 	// It works as the CalDAV password, and lists like any device token.
-	if _, err := c.phoneWith(t, "mama", m[1]).calendars(); err != nil {
+	cals, err := c.phoneWith(t, "mama", m[1]).calendars()
+	if err != nil {
 		t.Fatalf("the token in the profile does not sync: %v", err)
+	}
+	if len(cals) < 2 {
+		t.Fatalf("the profile's token sees no task list: %v", cals)
 	}
 	if page := b.get("/caldav"); strings.Contains(page.body, m[1]) || !strings.Contains(page.body, "iPhone Mama") {
 		t.Fatalf("token page:\n%s", page.body)
@@ -168,17 +173,17 @@ func TestIOSProfileThroughTheAPI(t *testing.T) {
 		t.Fatalf("profile = %d %q\n%s", status, ct, raw)
 	}
 	toks, _ := c.b.db.APITokens(h.ID)
-	if len(toks) != 1 || toks[0].Scopes != "calendars" || toks[0].Name != "iPad Mama" {
+	if len(toks) != 1 || toks[0].Scopes != "calendars tasks" || toks[0].Name != "iPad Mama" {
 		t.Fatalf("tokens = %+v", toks)
 	}
-	if _, err := c.phoneWith(t, "mama", m[1]).calendars(); err != nil {
-		t.Fatalf("API profile token does not sync: %v", err)
+	if cals, err := c.phoneWith(t, "mama", m[1]).calendars(); err != nil || len(cals) < 2 {
+		t.Fatalf("API profile token does not sync calendars and task lists: %v %v", cals, err)
 	}
 	if _, st, _ := c.callRaw(http.MethodPost, "/caldav-profile", map[string]any{"name": " "}); st != http.StatusUnprocessableEntity {
 		t.Fatalf("empty name = %d, want 422", st)
 	}
 	// A read-only token and a device token must not mint further tokens.
-	for _, scopes := range []string{"read", "calendars"} {
+	for _, scopes := range []string{"read", "calendars", "calendars tasks"} {
 		if _, st, _ := c.withToken(c.newToken(scopes)).callRaw(http.MethodPost, "/caldav-profile", map[string]any{"name": "x"}); st != http.StatusForbidden {
 			t.Errorf("token %q = %d, want 403", scopes, st)
 		}

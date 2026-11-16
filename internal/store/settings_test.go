@@ -221,7 +221,7 @@ func TestHouseholdHomeIsSavedWithTheSettingsAndRefusesBadCoordinates(t *testing.
 	}
 }
 
-// ADR 0020: the home keeps the id of the place it was picked from, so the
+// ADR 0021: the home keeps the id of the place it was picked from, so the
 // region line can be rebuilt in the page language. Coordinates set without a
 // place leave it empty, and a save without a home leaves it alone.
 func TestHouseholdHomeKeepsTheIdOfThePickedPlace(t *testing.T) {

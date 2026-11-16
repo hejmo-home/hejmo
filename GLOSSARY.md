@@ -56,16 +56,24 @@ _Avoid_: self-signed certificate, root cert
 A DNS name of the box (a free deSEC `dedyn.io` name or the family's own domain) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
 _Avoid_: domain, DynDNS
 
+**Passkey**:
+A WebAuthn credential of an adult's account, kept on a device or in a password manager, that replaces password and one-time code at sign-in and counts as both factors (ADR 0018). It is valid only for the box name it was created under; password and one-time code stay the way back.
+_Avoid_: security key, FIDO key, WebAuthn credential (in user-facing text)
+
+**Box name**:
+The name the box is served under: its public name or the Box CA's DNS name (e.g. `hejmo.local`), never an IP address. It is the relying-party ID of passkeys.
+_Avoid_: hostname, domain, relying party (in user-facing text)
+
 **Home region**:
 The German state, Austrian state or Swiss canton of the household, which decides its public holidays.
 _Avoid_: location, country, Bundesland (in code)
 
 **Place list**:
-The list of towns, villages and districts of Germany, Austria and Switzerland that ships inside the box (GeoNames extract, CC BY 4.0, ADR 0020). The parent picks the home location from it while typing; nothing is looked up on the internet.
+The list of towns, villages and districts of Germany, Austria and Switzerland that ships inside the box (GeoNames extract, CC BY 4.0, ADR 0021). The parent picks the home location from it while typing; nothing is looked up on the internet.
 _Avoid_: geocoding, address search
 
 **Home location**:
-The latitude and longitude of the household's home, found from a place the parent picks in the list of places on the box (ADR 0020, which replaces the one-time lookup of ADR 0019). The household keeps the place's id, so the box can show its region in the page language. Sunrise and sunset (front light, themes) and the weather use it; the region does not (too coarse).
+The latitude and longitude of the household's home, found from a place the parent picks in the list of places on the box (ADR 0021, which replaces the one-time lookup of ADR 0020). The household keeps the place's id, so the box can show its region in the page language. Sunrise and sunset (front light, themes) and the weather use it; the region does not (too coarse).
 _Avoid_: position, address
 
 ## Calendar
@@ -191,7 +199,7 @@ An overview lists the things of one kind (displays, device tokens, connections, 
 _Avoid_: list page (for the overview), settings page (for the detail page)
 
 **Device token**:
-The password a calendar app or CalDAV client on a phone uses, one per device and revocable on its own; shown once when created. It is a token of scope `calendars`, unlike an API token for other software.
+The password a calendar app or CalDAV client on a phone uses, one per device and revocable on its own; shown once when created. It is a token of scopes `calendars` and `tasks`, unlike an API token for other software.
 _Avoid_: app password, phone token (a phone has a device session)
 
 ## Everyday
@@ -203,6 +211,30 @@ _Avoid_: checklist, note
 **List entry**:
 One line of text on a list that can be ticked off.
 _Avoid_: item (alone), list item
+
+**Article**:
+A thing that can be put on a list, from the article library: name, symbol or picture, department, the diets it fits and the allergens it contains.
+_Avoid_: product, item (alone)
+
+**Article library**:
+The household's articles: the ones Hejmo ships plus own articles, managed by parents.
+_Avoid_: catalogue, database
+
+**Quantity**:
+Number and unit of a list entry, such as 500 g or 1 dozen.
+_Avoid_: amount
+
+**Tile view**:
+A list shown as tiles with symbol or picture, name and tick; the default for children.
+_Avoid_: grid, gallery
+
+**Diet**:
+What a person eats: omnivore, vegetarian, pescatarian or vegan.
+_Avoid_: nutrition type
+
+**Allergy**:
+An allergen or intolerance of a person: one of the 14 main EU allergens or free text, which cannot be checked automatically.
+_Avoid_: intolerance (alone)
 
 **Meal plan**:
 The household's meals per day and mealtime: one line of free text each. Every entry also shows in the calendar as an all-day event of the generated, read-only meal-plan calendar.
@@ -228,6 +260,10 @@ _Avoid_: deadline, expiry
 Something to be done once or repeatedly, ticked off when done; may belong to a routine, carry a star value and be split into subtasks.
 _Avoid_: chore, todo, job
 
+**Task list**:
+One person's tasks as a CalDAV client sees them (VTODO), one per person, opened by the token scope `tasks`. A once task shows as it is, a repeating task as today's occurrence. Clients may change title, notes, the day of a once task and completion; creating and deleting happen only in Hejmo.
+_Avoid_: reminders list
+
 **Routine**:
 The ordered sequence of one person's tasks for a part of the day, such as Mia's morning. A person has at most one routine per part of the day, and a task is in at most one routine.
 _Avoid_: checklist, schedule, habit
@@ -237,7 +273,7 @@ When in the day a task or routine belongs: morning, after school, any time or ev
 _Avoid_: time slot, daypart
 
 **Routine template**:
-A reusable routine without a person that a parent copies into a routine for someone.
+A reusable routine without a person that a parent copies into a routine for someone. Hejmo ships some in German and English; parents add their own by saving a routine as a template. Using a template makes an independent copy: changing one never changes the other.
 _Avoid_: preset, blueprint
 
 **Subtask**:
@@ -267,8 +303,16 @@ A secret that lets software act on behalf of a person through the API, limited b
 _Avoid_: API key, access key
 
 **Device token**:
-An API token with the token scope `calendars`, created by a parent for one CalDAV client (for example "iPhone Mama") and used as the password next to the person's username. Revoked on its own.
+An API token with the token scopes `calendars` and `tasks`, created by a parent for one CalDAV client (for example "iPhone Mama") and used as the password next to the person's username. `calendars` opens the calendars, `tasks` the task lists (one per person); older device tokens with `calendars` alone still work and see no task lists. Revoked on its own.
 _Avoid_: app password, CalDAV password
+
+**MCP token**:
+An API token created by a parent for one AI assistant on one device (for example "Claude on Mama's laptop"), shown once when created. Per area (events, lists, tasks with routines, templates and stars, meal plan) it holds no right, read only (`<area>:read`) or read and change (`<area>`); it never holds `read`, `write`, `tokens` or `settings`. It works only at the MCP server, and no other API token does; it acts as the parent who made it. Revoked on its own.
+_Avoid_: assistant key, AI token
+
+**MCP server**:
+The box's endpoint for AI assistants (Model Context Protocol, `/mcp`). Off by default, served over HTTPS only, switched on by a parent on the page "AI assistants (MCP)". Its tools are the REST functions of the areas a token holds, except managing and syncing calendars; tokens, settings, people, displays and phones are never tools.
+_Avoid_: AI mode, assistant API
 
 **Share through the box**:
 The switch on a calendar that makes the box serve it to CalDAV clients. The family calendar is always shared; on by default for ICS calendars, off for CalDAV and Google calendars.

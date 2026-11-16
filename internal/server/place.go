@@ -14,7 +14,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/sun"
 )
 
-// The home location (ADR 0020, ticket 86): the parent picks a place from the
+// The home location (ADR 0021, ticket 86): the parent picks a place from the
 // list of places in Germany, Austria and Switzerland that ships on the box. The
 // form posts the place's id (place_id) and never coordinates; the box looks the
 // coordinates and the region up in the list. Nothing goes to the internet.

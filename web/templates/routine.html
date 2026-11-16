@@ -85,6 +85,16 @@
     </form>
   {{template "moreClose"}}
 
+  {{template "moreOpen" (dict "Label" (t "routine.tpl.save") "Summary" (t "routine.tpl.save.sum") "Open" (eq .ErrorField "tname"))}}
+    {{if .SaveBox.Count}}<form method="post" action="/routines/{{.Routine.ID}}/template" class="inner">
+      <p class="hint">{{tf "routine.tpl.save.what" "part" .SaveBox.PartAdv "tasks" .SaveBox.Tasks "name" .Owner.Name}}</p>
+      {{with .SaveBox.LeftOut}}<p class="left-out">{{.}}</p>{{end}}
+      {{template "field" (dict "Root" . "Name" "tname" "Label" (t "routine.tpl.field.name") "Value" (index .Save "Name") "Max" 60 "Hint" (t "routine.tpl.save.name.hint"))}}
+      <p class="hint">{{tf "routine.tpl.save.copy" "name" .Owner.Name}}</p>
+      <button class="button secondary" type="submit">{{t "routine.tpl.save"}}</button>
+    </form>{{else}}{{with .SaveBox.LeftOut}}<p class="left-out">{{.}}</p>{{end}}<p class="hint">{{t "routine.tpl.save.empty"}}</p>{{end}}
+  {{template "moreClose"}}
+
   {{$explain := tf "routine.dissolve.explain.empty" "name" .Routine.Name}}
   {{if and .Steps .DissolveAny}}{{$explain = tf "routine.dissolve.explain.any" "name" .Routine.Name "person" .Owner.Name}}{{else if .Steps}}{{$explain = tf "routine.dissolve.explain" "name" .Routine.Name "person" .Owner.Name "part" (t (printf "routine.part_adv.%s" .Routine.Part))}}{{end}}
   {{template "dangerOpen" (dict "Label" (t "routine.dissolve") "Confirm" (tf "routine.dissolve.confirm" "name" .Routine.Name) "Explain" $explain "Names" .TaskTitles "Action" (printf "/routines/%s/delete" .Routine.ID) "CancelHref" (printf "/routines/%s" .Routine.ID))}}{{template "dangerClose"}}

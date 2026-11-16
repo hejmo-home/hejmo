@@ -897,13 +897,11 @@ func (c *Client) Changes(ctx context.Context, calendarURL, token string) (Change
 		if err := c.auth.permit(target); err != nil {
 			return Changes{}, err
 		}
-		if AddressKey(target.String()) == self && statusCode(r.Status) == http.StatusInsufficientStorage {
+		isSelf := AddressKey(target.String()) == self
+		if isSelf && statusCode(r.Status) == http.StatusInsufficientStorage {
 			out.Truncated = true // the server has more changes than it sent
 		}
-		if strings.HasSuffix(target.Path, "/") || AddressKey(target.String()) == self {
-			if AddressKey(target.String()) == self && statusCode(r.Status) == http.StatusInsufficientStorage {
-				out.Truncated = true // the server has more changes than it sent
-			}
+		if strings.HasSuffix(target.Path, "/") || isSelf {
 			continue // a collection
 		}
 		if code := statusCode(r.Status); code == http.StatusNotFound || code == http.StatusGone {

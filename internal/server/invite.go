@@ -133,17 +133,12 @@ func (s *server) invitee(w http.ResponseWriter, r *http.Request, p principal) (s
 	return person, true
 }
 
-// factsOf builds the label and value pairs of the invitation page.
+// invitePage is the part of the invitation page that exists only right after
+// a new link was made: the link, its QR code and how long it works.
 type invitePage struct {
-	Subject store.Person
-	Chip    personChip
-	Kind    string
-	Facts   []factView
-	// Link, QR and Valid are set only on the page that shows a new link.
 	Link, Notice string
 	QR           template.HTML
 	Valid        string
-	ResetName    string
 }
 
 func (s *server) handleInvitationPage(w http.ResponseWriter, r *http.Request) {

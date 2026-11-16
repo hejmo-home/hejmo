@@ -101,6 +101,23 @@ func (s *server) deadPage(w http.ResponseWriter, r *http.Request, status int, ki
 	s.render(w, r, status, "invite_dead.html", data)
 }
 
+// deadInvite renders the page of a used, expired or withdrawn invitation and
+// reports whether it did; an open invitation renders nothing.
+func (s *server) deadInvite(w http.ResponseWriter, r *http.Request, v inviteView, inv store.Invitation) bool {
+	h := v.Household
+	switch inv.State(s.now()) {
+	case store.InvitationUsed:
+		s.deadPage(w, r, http.StatusGone, "used", map[string]any{"Inviter": v.Inviter, "Date": stampText(h, inv.AcceptedAt)})
+	case store.InvitationExpired:
+		s.deadPage(w, r, http.StatusGone, "expired", map[string]any{"Inviter": v.Inviter, "Date": v.Valid})
+	case store.InvitationWithdrawn:
+		s.deadPage(w, r, http.StatusGone, "withdrawn", map[string]any{"Inviter": v.Inviter, "Date": stampText(h, inv.WithdrawnAt)})
+	default:
+		return false
+	}
+	return true
+}
+
 // openInvite checks the link of the request. It answers with a page itself
 // and returns false when the link does not work, or when somebody else is
 // signed in on this device.
@@ -149,15 +166,7 @@ func (s *server) openInvite(w http.ResponseWriter, r *http.Request) (inviteView,
 		return inviteView{}, false
 	}
 	v.Valid, v.Possessive = s.validUntil(lang, h, inv.ExpiresAt), possessive(lang, v.Invitee.Name)
-	switch inv.State(s.now()) {
-	case store.InvitationUsed:
-		s.deadPage(w, r, http.StatusGone, "used", map[string]any{"Inviter": v.Inviter, "Date": stampText(h, inv.AcceptedAt)})
-		return inviteView{}, false
-	case store.InvitationExpired:
-		s.deadPage(w, r, http.StatusGone, "expired", map[string]any{"Inviter": v.Inviter, "Date": v.Valid})
-		return inviteView{}, false
-	case store.InvitationWithdrawn:
-		s.deadPage(w, r, http.StatusGone, "withdrawn", map[string]any{"Inviter": v.Inviter, "Date": stampText(h, inv.WithdrawnAt)})
+	if s.deadInvite(w, r, v, inv) {
 		return inviteView{}, false
 	}
 	if who, ok := s.currentPerson(r); ok { // somebody is signed in on this device
@@ -256,8 +265,14 @@ func (s *server) handleInviteAccountSubmit(w http.ResponseWriter, r *http.Reques
 		f.errText = s.i18n.Format(lang, i18n.Msg("invite.error.taken", "suggestion", suggestUsername(v.Invitee.Name)))
 		refuse("invite.error.taken", "username")
 		return
-	case errors.Is(err, store.ErrInvitationNotOpen), errors.Is(err, store.ErrNotFound):
-		s.deadPage(w, r, http.StatusGone, "used", map[string]any{"Inviter": v.Inviter, "Date": stampText(v.Household, s.now())})
+	case errors.Is(err, store.ErrInvitationNotOpen):
+		// it ended between opening the form and sending it
+		if !s.deadInvite(w, r, v, inv) {
+			s.deadPage(w, r, http.StatusGone, "unknown", nil)
+		}
+		return
+	case errors.Is(err, store.ErrNotFound):
+		s.deadPage(w, r, http.StatusNotFound, "unknown", nil)
 		return
 	case err != nil:
 		s.fail(w, "accept invitation", err)

@@ -201,3 +201,39 @@ func TestOpenInvitationsListsOnlyUnexpiredOpenOnes(t *testing.T) {
 		t.Fatalf("open = %+v, %v", open, err)
 	}
 }
+
+func TestTwoRequestsAcceptingTheSameLinkCreateOneAccount(t *testing.T) {
+	db, h, mama, papa, _ := householdWithPapa(t)
+	if _, err := db.CreateInvitation(h.ID, papa.ID, mama.ID, "hash-race", inviteT0); err != nil {
+		t.Fatal(err)
+	}
+	at := inviteT0.Add(time.Hour)
+	errs := make(chan error, 2)
+	start := make(chan struct{})
+	for _, name := range []string{"papa-a", "papa-b"} {
+		go func() {
+			<-start
+			_, err := db.AcceptInvitation("hash-race", at, store.Account{Username: name, PasswordHash: "ph", TOTPSecret: "S"})
+			errs <- err
+		}()
+	}
+	close(start)
+	var ok int
+	for range 2 {
+		if err := <-errs; err == nil {
+			ok++
+		}
+	}
+	if ok != 1 {
+		t.Fatalf("%d of 2 simultaneous accepts succeeded, want exactly 1", ok)
+	}
+	n := 0
+	for _, name := range []string{"papa-a", "papa-b"} {
+		if _, err := db.AccountByUsername(name); err == nil {
+			n++
+		}
+	}
+	if n != 1 {
+		t.Fatalf("%d accounts exist for the person, want 1", n)
+	}
+}

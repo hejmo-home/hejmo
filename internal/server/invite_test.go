@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -658,5 +659,29 @@ func TestBoxWithAPublicCertificateHasTwoStepsAndNoTrustPage(t *testing.T) {
 	e.en(http.MethodPost, "/invite/"+tok+"/account", acceptForm("papa", "papas long password"))
 	if totp := e.en(http.MethodGet, "/setup/totp", nil).body; !strings.Contains(totp, "Accepting the invitation: step 2 of 2") || !strings.Contains(totp, `data-count="2"`) {
 		t.Errorf("one-time code page\n%s", totp)
+	}
+}
+
+// A link that dies between opening the form and sending it shows its own
+// state, not "used".
+func TestLinkThatExpiresWhileTheFormIsOpenShowsExpiredNotUsed(t *testing.T) {
+	e := newInviteBox(t)
+	tok := e.create()
+	e.b.logout()
+	calls, expireAt := 0, 3 // the link runs out after the check that opened the form
+	handler := server.New(server.Options{DB: e.b.db, PKI: e.b.pki, Public: e.b.public, Now: func() time.Time {
+		calls++
+		at := e.b.now
+		if calls == expireAt {
+			e.b.now = e.b.now.Add(8 * 24 * time.Hour)
+		}
+		return at
+	}})
+	e.b.handler = handler
+	e.b.srv.Close()
+	e.b.srv = e.b.serveTLS()
+	r := e.en(http.MethodPost, "/invite/"+tok+"/account", acceptForm("papa", "papas long password"))
+	if r.status != http.StatusGone || !strings.Contains(r.body, "This invitation has expired") || strings.Contains(r.body, "already been used") {
+		t.Errorf("link expired while the form was open = %d %q\n%s", r.status, r.location, r.body)
 	}
 }

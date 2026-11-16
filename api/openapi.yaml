@@ -7,8 +7,9 @@ info:
     integrations. Authenticate with a bearer token (`Authorization: Bearer hejmo_…`)
     or a browser session. A token acts on behalf of a person and is limited by
     its scopes: `read`, `write`, `<resource>` or `<resource>:<action>`
-    (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens;
-    actions: read, write, delete, complete).
+    (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens, health;
+    actions: read, write, delete, complete). The resource `health` (diet and
+    allergies) is reached only by its own scope: `read` and `write` never include it.
 
     The scopes `calendars` and `tasks` are for a phone's calendar and
     reminders apps: they open the box's CalDAV server at `/dav/` (HTTP Basic
@@ -374,6 +375,71 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /food:
+    get:
+      operationId: listFood
+      summary: Diet and allergies of every person (scope health:read, parents only)
+      description: |
+        Health data (ADR 0019). Only the explicit scope `health` or `health:read`
+        reaches it: the broad scopes `read` and `write` do not, and children
+        never do (403). Every answer says that free-text allergies are not
+        checked automatically and cannot be filtered by.
+      responses:
+        "200":
+          description: One entry per person, in the order of the family view
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Food" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /people/{id}/food:
+    get:
+      operationId: getFood
+      summary: Diet and allergies of a person (scope health:read, parents only)
+      description: |
+        A person nobody has edited eats everything (`omnivore`) and has no
+        allergies. Health data: see `/food` for who may read it.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Diet and allergies
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Food" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setFood
+      summary: Set diet and allergies of a person (scope health:write, parents only)
+      description: |
+        Replaces everything. `allergens` are keys of the 14 main EU allergens
+        (once each, stored in the order of the schema). `other` is the free text,
+        one entry per item without commas, 200 characters at most in all; an
+        entry that names one of the 14 (or a common word for one: Laktose,
+        Gluten, Nüsse, Ei) is refused with 422 and the key to send in
+        `allergens` instead. MCP tokens can never change them: the MCP area
+        `health` is read only.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FoodUpdate" }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Food" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /people/order:
     put:
       operationId: orderPeople
@@ -494,7 +560,9 @@ paths:
       description: |
         The areas events, lists, tasks (with routines, templates and stars) and
         meals each get `none`, `read` (scope `<area>:read`) or `write` (scope
-        `<area>`, every action including adding, ticking off and deleting). An
+        `<area>`, every action including adding, ticking off and deleting). The
+        area `health` (diet and allergies) takes only `none` (default) or `read`.
+        An
         area left out counts as `none`; at least one area needs `read` or
         `write` (else 422). The token acts as the caller, who has to be a parent,
         and never holds `read`, `write`, `tokens` or `settings`. The name is
@@ -669,6 +737,52 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+  /display/pairing:
+    post:
+      operationId: openDisplayPairing
+      summary: Open a pairing as a new display (no credentials)
+      security: []
+      description: |
+        A display without a token asks the box for a six-digit pairing code,
+        valid for ten minutes, and its own token. The token is in this answer
+        only; the display keeps it and sends it as bearer token to
+        `GET /display/state` and to its page routes under `/display`. A parent
+        confirms the code with `POST /displays`, or by scanning the QR code
+        behind `pair_url`. This is what `GET /display` does for a browser.
+        Opening is limited per client address (10 in 10 minutes, shared with
+        `GET /display`; 429 with `Retry-After`), and the box keeps at most 20
+        waiting displays: opening one more drops the oldest.
+      responses:
+        "201":
+          description: A waiting display with its code and token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DisplayPairing" }
+        "409":
+          description: The box is not set up yet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /display/state:
+    get:
+      operationId: getDisplayState
+      summary: A display reads its state (its own token as bearer token)
+      security:
+        - displayBearer: []
+      description: |
+        `paired`, `pairing` (with its `code`) or `unpaired`: the token is
+        revoked or unknown, or its code ran out. An unpaired display opens a
+        new pairing. A paired display also gets the `theme` it shows now.
+        Poll it about every 30 seconds: a revoked display notices within a
+        minute. A request without a bearer token is refused with 401.
+      responses:
+        "200":
+          description: The state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DisplayState" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
   /displays/{id}:
     patch:
       operationId: updateDisplay
@@ -2439,6 +2553,7 @@ components:
   securitySchemes:
     bearer: { type: http, scheme: bearer }
     session: { type: apiKey, in: cookie, name: hejmo_session }
+    displayBearer: { type: http, scheme: bearer, description: "A display's own token from `POST /display/pairing`; it opens the display's routes only" }
   schemas:
     Role:
       type: string
@@ -2453,6 +2568,41 @@ components:
         color: { type: string, description: "Hex colour for colour mode: one of the eight palette colours (empty for a person added before colours were chosen)", example: "#B4583A" }
         shape: { type: string, description: "Marker for black-and-white mode", example: circle-filled }
         symbol: { type: string }
+    Diet:
+      type: string
+      enum: [omnivore, vegetarian, pescatarian, vegan]
+    Allergen:
+      type: string
+      description: The 14 main allergens of EU Regulation 1169/2011, Annex II
+      enum: [celery, gluten, crustaceans, eggs, fish, lupin, milk, molluscs, mustard, nuts, peanuts, sesame, soy, sulphites]
+    Food:
+      type: object
+      description: Diet and allergies of a person. Health data (ADR 0019).
+      required: [person_id, diet, allergens, other, other_note]
+      properties:
+        person_id: { type: string, format: uuid }
+        diet: { $ref: "#/components/schemas/Diet" }
+        allergens:
+          type: array
+          items: { $ref: "#/components/schemas/Allergen" }
+        other:
+          type: array
+          description: Free-text allergies and intolerances. The box cannot check or filter by them.
+          items: { type: string }
+        other_note: { type: string, description: "Always says that `other` is not checked automatically and not filterable (nicht automatisch geprüft, nicht filterbar)" }
+    FoodUpdate:
+      type: object
+      required: [diet]
+      properties:
+        diet: { type: string, description: "One of `Diet`; anything else gets 422", example: vegetarian }
+        allergens:
+          type: array
+          description: Keys of `Allergen`; an unknown key gets 422. Omitted means none (the entry is replaced as a whole)
+          items: { type: string }
+        other:
+          type: array
+          description: Free-text entries without commas; omitted means none
+          items: { type: string }
     PersonColor:
       type: string
       description: The eight person colours of the palette, in slot order
@@ -2748,6 +2898,9 @@ components:
         lists: { $ref: "#/components/schemas/MCPLevel" }
         tasks: { $ref: "#/components/schemas/MCPLevel" }
         meals: { $ref: "#/components/schemas/MCPLevel" }
+        health:
+          description: Diet and allergies (health data). Only `none` or `read`; `write` is refused with 422 and the default is `none`.
+          allOf: [{ $ref: "#/components/schemas/MCPLevel" }]
     MCPLevel:
       type: string
       enum: [none, read, write]
@@ -2777,6 +2930,22 @@ components:
         sunset_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes added to sunset before an automatic theme turns dark" }
         quiet_mode: { $ref: "#/components/schemas/QuietMode" }
         kiosk: { $ref: "#/components/schemas/Kiosk" }
+    DisplayPairing:
+      type: object
+      required: [token, state, code, code_expires_at, pair_url]
+      properties:
+        token: { type: string, description: "The display's own bearer token, shown once" }
+        state: { type: string, enum: [pairing] }
+        code: { type: string, pattern: "^[0-9]{6}$", example: "482916" }
+        code_expires_at: { type: string, format: date-time }
+        pair_url: { type: string, description: "Where a parent's phone confirms the code (the QR code on the page route)" }
+    DisplayState:
+      type: object
+      required: [state]
+      properties:
+        state: { type: string, enum: [paired, pairing, unpaired] }
+        code: { type: string, pattern: "^[0-9]{6}$", description: "Only while `pairing`" }
+        theme: { type: string, description: "Only while `paired`: the palette shown now (light, dark or bw)" }
     QuietMode:
       type: object
       description: The daily window, in the household's time zone, in which the display is quiet (ADR 0015). Off by default.

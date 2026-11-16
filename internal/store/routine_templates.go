@@ -175,7 +175,9 @@ func (db *DB) SaveRoutineAsTemplate(householdID, routineID, name string) (task.R
 	return tpl, nil
 }
 
-func ruleOf(s task.TemplateStep) string { return task.Task{Repeat: s.Repeat, Weekdays: s.Weekdays}.RRule() }
+func ruleOf(s task.TemplateStep) string {
+	return task.Task{Repeat: s.Repeat, Weekdays: s.Weekdays}.RRule()
+}
 
 // routineTasksIn lists a routine's tasks in order inside a transaction.
 func routineTasksIn(q rows, householdID, routineID string) ([]task.Task, error) {

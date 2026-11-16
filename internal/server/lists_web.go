@@ -25,6 +25,7 @@ type entryView struct {
 	Done     bool
 	First    bool
 	Last     bool
+	Added    bool // the entry just added on a display, framed until the next tap
 }
 
 func (s *server) newListView(lang string, l list.List, c store.EntryCount) listView {

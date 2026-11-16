@@ -1769,5 +1769,11 @@
   "mcp.token.revoke.confirm": "Yes, revoke access for “{name}”",
   "flash.mcp_on": "MCP is on. Create a token for your assistant now.",
   "flash.mcp_off": "MCP is off. No AI assistant can reach your data any more.",
-  "flash.mcp_token_created": "MCP token for “{name}” created."
+  "flash.mcp_token_created": "MCP token for “{name}” created.",
+  "display.lists.nav": "All lists",
+  "display.lists.error.text_empty": "Type the entry first, then tap Add.",
+  "display.lists.add_error": "Not added: the box cannot be reached. Your text is kept; tap Add again.",
+  "display.lists.all_done": "Everything on this list is ticked off.",
+  "display.lists.delete_ticked.explain": "The %d ticked-off entries of this list are deleted for good, on every display and phone. Open entries stay.",
+  "display.lists.delete_ticked.explain.one": "The ticked-off entry of this list is deleted for good, on every display and phone. Open entries stay."
 }

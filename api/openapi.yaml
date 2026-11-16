@@ -58,6 +58,114 @@ paths:
                     items: { type: string, example: K7QD2-M9XPA }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /me/passkeys:
+    get:
+      operationId: listPasskeys
+      summary: The caller's passkeys (scope people:read)
+      description: |
+        A passkey replaces password and one-time code at sign-in (ADR 0018). It is
+        valid only for the box name it was created under (`box_name`); `works` is
+        false once the box has another name. Only parents have passkeys.
+      responses:
+        "200":
+          description: The caller's passkeys, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Passkey" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createPasskey
+      summary: Finish creating a passkey (browser session, scope people:write)
+      description: |
+        Second step of creating a passkey: send what the browser's credentials
+        API answered to the options of `POST /me/passkeys/registration`. Only a
+        signed-in browser session may create a passkey, never a token: a passkey
+        signs in for good, so a stolen token must not be able to make one. The
+        box checks the answer: the authenticator must have verified the user.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [ceremony, credential]
+              properties:
+                ceremony: { type: string, description: "The `ceremony` of the first step. It works once, for two minutes." }
+                credential: { type: object, description: "The credential the browser created (`PublicKeyCredential`, as JSON)" }
+                name: { type: string, maxLength: 80, description: "Name of the passkey; the device it was made on when empty" }
+      responses:
+        "201":
+          description: The passkey
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Passkey" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/PasskeyName" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /me/passkeys/registration:
+    post:
+      operationId: beginPasskey
+      summary: Start creating a passkey (browser session, scope people:write)
+      description: |
+        First step of creating a passkey. The answer holds the options for
+        `navigator.credentials.create`. The request must come to the box under its
+        box name (GLOSSARY): over an IP address or another name it is refused with
+        409, because a passkey could not work there. A token is refused with 403.
+      responses:
+        "200":
+          description: The ceremony to finish with `POST /me/passkeys`
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [ceremony, options]
+                properties:
+                  ceremony: { type: string }
+                  options: { type: object, description: "WebAuthn PublicKeyCredentialCreationOptions as an object with the member publicKey" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/PasskeyName" }
+  /me/passkeys/{id}:
+    patch:
+      operationId: renamePasskey
+      summary: Rename a passkey of the caller (scope people:write)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80 }
+      responses:
+        "200":
+          description: The passkey
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Passkey" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: removePasskey
+      summary: Remove a passkey of the caller for good (scope people:delete)
+      description: Nobody can sign in with it afterwards. The caller's sessions stay.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /people/{id}/invitation:
     get:
       operationId: getInvitation
@@ -138,6 +246,14 @@ paths:
               properties:
                 password: { type: string, description: The caller's own password }
                 code: { type: string, description: The caller's own one-time code or an unused recovery code }
+                remove_passkeys:
+                  type: array
+                  items: { type: string, format: uuid }
+                  description: |
+                    Passkeys of the parent whose codes are reset to remove in the same
+                    step (ADR 0018): one that was on the lost device could keep signing
+                    in. Ids of other people's passkeys are ignored. None are removed by
+                    default.
       responses:
         "204": { description: Reset }
         "401": { $ref: "#/components/responses/Unauthorized" }
@@ -2087,6 +2203,16 @@ components:
         color: { $ref: "#/components/schemas/PersonColor" }
         shape: { $ref: "#/components/schemas/PersonShape" }
         symbol: { type: string }
+    Passkey:
+      type: object
+      required: [id, name, created_at, last_used_at, box_name, works]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        created_at: { type: string, format: date-time }
+        last_used_at: { type: string, format: date-time, nullable: true, description: "Null until it was used" }
+        box_name: { type: string, description: "The box name the passkey was created for", example: hejmo.local }
+        works: { type: boolean, description: "False once the box has another name than `box_name`" }
     TaskRepeat:
       type: string
       enum: [once, daily, weekly]
@@ -2733,6 +2859,13 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Invalid:
       description: Request is well-formed but not valid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    PasskeyName:
+      description: |
+        The request did not reach the box under its box name (an IP address or
+        another name). Passkeys are created and used only under the box name.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }

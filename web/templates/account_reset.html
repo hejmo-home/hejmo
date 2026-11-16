@@ -1,0 +1,48 @@
+{{template "head" (dict "Lang" .Lang "Title" (tf "account.reset.title" "name" .Target.Name) "Frame" .Frame)}}
+  <form method="post" action="/account/reset/{{.Target.ID}}" class="reset-page" data-passkey-scope>
+  {{template "backLink" (dict "Href" "/account" "Text" (t "account.title"))}}
+  <h1><span class="marker" data-person="{{.TargetChip.Slot}}" data-shape="{{.TargetChip.Shape}}" aria-hidden="true"></span> {{tf "account.reset.title" "name" .Target.Name}}</h1>
+  <p class="lead">{{tf "account.reset.lead" "name" .Target.Name}}</p>
+  <dl class="facts">
+    <dt>{{t "account.reset.fact.username"}}</dt><dd>{{.Username}}</dd>
+    <dt>{{t "account.codes.otp"}}</dt><dd>{{.CodesFact}}</dd>
+    <dt>{{t "account.passkeys"}}</dt><dd>{{if .PasskeyLines}}{{range $i, $l := .PasskeyLines}}{{if $i}}<br>{{end}}{{$l}}{{end}}{{else}}{{t "account.reset.passkeys.none"}}{{end}}</dd>
+  </dl>
+  {{template "dangerOpenAlways" (dict "Label" (t "account.reset.happens"))}}
+    <ul>
+      <li>{{tf "account.reset.happens.1" "name" .Target.Name "possessive" .Possessive}}</li>
+      <li>{{tf "account.reset.happens.2" "name" .Target.Name "possessive" .Possessive}}</li>
+      <li>{{tf "account.reset.happens.3" "name" .Target.Name "possessive" .Possessive}}</li>
+      <li>{{tf "account.reset.happens.4" "name" .Target.Name "possessive" .Possessive}}</li>
+    </ul>
+    {{if .Picks}}
+    <fieldset class="pk-pick">
+      <legend>{{tf "account.reset.pick" "name" .Target.Name}}</legend>
+      <p>{{tf "account.reset.pick.hint" "name" .Target.Name}}</p>
+      {{range .Picks}}<label class="check"><input type="checkbox" name="remove_passkey" value="{{.ID}}"{{if .Ticked}} checked{{end}}><span><b>{{.Name}}</b>, {{.Used}}</span></label>
+      {{end}}
+    </fieldset>
+    {{end}}
+    <p><b>{{t "account.reset.confirm.lead"}}</b>{{if .ViaPasskey}} {{t "account.reset.confirm.passkey"}}{{end}}</p>
+    {{if .ViaPasskey}}
+    {{if .PasskeyError}}<p class="error" role="alert" data-passkey-error>{{t .Error}}</p>{{end}}
+    <p class="error" role="alert" data-hook="fail" hidden>{{t "account.reset.error.passkey"}}</p>
+    <div class="confirm"><button class="button danger" type="button" data-passkey-confirm>{{template "keyIcon"}}{{t "account.reset.confirm.passkey.button"}}</button><a href="/account">{{t "danger.cancel"}}</a></div>
+    {{template "moreOpen" (dict "Label" (t "account.reset.instead") "Open" (and .ErrorField (not .PasskeyError)))}}
+      {{template "resetFields" .}}
+      <div class="actions"><button class="button secondary" type="submit">{{t "account.reset.submit.password"}}</button></div>
+    {{template "moreClose"}}
+    {{else}}
+    {{template "resetFields" .}}
+    <div class="confirm"><button class="button danger" type="submit">{{t "account.reset.confirm"}}</button><a href="/account">{{t "danger.cancel"}}</a></div>
+    {{end}}
+  {{template "dangerClose"}}
+  </form>
+  <script src="/static/passkey.js" defer></script>
+{{template "foot"}}
+
+{{define "resetFields"}}{{template "field" (dict "Root" . "Name" "password" "Label" (t "otp.reset.password") "Type" "password" "Autocomplete" "current-password")}}
+      {{template "field" (dict "Root" . "Name" "code" "Label" (t "otp.reset.code") "Autocomplete" "one-time-code" "Autocapitalize" "characters")}}{{end}}
+
+{{define "dangerOpenAlways"}}<details class="danger" open>
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{.Label}}</summary>{{end}}

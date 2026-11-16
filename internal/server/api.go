@@ -29,6 +29,11 @@ var apiRoutes = []APIRoute{
 
 	{"GET", "/people/{id}/stars", auth.Perm("tasks", auth.Read), (*server).apiGetStars},
 	{"POST", "/people/{id}/stars", auth.Perm("tasks", auth.Write), (*server).apiBookStars},
+	{"GET", "/me/passkeys", auth.Perm("people", auth.Read), (*server).apiListPasskeys},
+	{"POST", "/me/passkeys/registration", auth.Perm("people", auth.Write), (*server).apiPasskeyBegin},
+	{"POST", "/me/passkeys", auth.Perm("people", auth.Write), (*server).apiPasskeyCreate},
+	{"PATCH", "/me/passkeys/{id}", auth.Perm("people", auth.Write), (*server).apiRenamePasskey},
+	{"DELETE", "/me/passkeys/{id}", auth.Perm("people", auth.Delete), (*server).apiDeletePasskey},
 	{"POST", "/me/recovery-codes", auth.Perm("people", auth.Write), (*server).apiNewRecoveryCodes},
 	{"GET", "/people/{id}/invitation", auth.Perm("tokens", auth.Read), (*server).apiGetInvitation},
 	{"POST", "/people/{id}/invitation", auth.Perm("tokens", auth.Write), (*server).apiCreateInvitation},

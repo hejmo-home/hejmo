@@ -17,16 +17,24 @@ const (
 )
 
 func (s *server) startSession(w http.ResponseWriter, r *http.Request, personID string) error {
+	_, err := s.startSessionHash(w, r, personID)
+	return err
+}
+
+// startSessionHash is startSession that also returns the hash the session is
+// stored under, for a caller that adds to it (the passkey of a sign-in).
+func (s *server) startSessionHash(w http.ResponseWriter, r *http.Request, personID string) (string, error) {
 	token := auth.NewToken()
 	expires := s.now().Add(sessionDuration)
-	if err := s.db.CreateSession(auth.HashToken(token), personID, auth.DeviceLabel(r.UserAgent()), s.now(), expires); err != nil {
-		return err
+	hash := auth.HashToken(token)
+	if err := s.db.CreateSession(hash, personID, auth.DeviceLabel(r.UserAgent()), s.now(), expires); err != nil {
+		return "", err
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name: sessionCookie, Value: token, Path: "/", Expires: expires,
 		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
 	})
-	return nil
+	return hash, nil
 }
 
 func (s *server) endSession(w http.ResponseWriter, r *http.Request) {

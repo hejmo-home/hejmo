@@ -1532,3 +1532,33 @@ details.more .left-out { margin: 0; padding: 8px 12px; border-radius: var(--radi
 @supports (hyphenate-limit-chars: 12 5 5) {
   .tcard .rhead b, .choice b, .choice small .st, .rsteps .nm, .facts dd, .msg { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
 }
+/* ticket 95: passkeys. Existing tokens only. */
+/* A box name or IP address in running text: never widens a 375 px page. */
+.host { font-weight: 600; overflow-wrap: anywhere; }
+/* "oder" between the two ways to sign in: a thin rule on each side. */
+.or { display: flex; align-items: center; gap: 12px; margin: 0; max-width: 560px; color: var(--text-secondary); font-size: var(--fs-label); }
+.or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--border); }
+[data-theme="bw"] .or::before, [data-theme="bw"] .or::after { border-top-color: var(--text); }
+.signin-pk { display: grid; gap: 8px; max-width: 560px; }
+.signin-pk .hint { margin: 0; }
+/* Buttons with a leading line icon (the key). */
+.button.pk, .button:has(> .icon) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.button > .icon { stroke: currentColor; flex: none; }
+/* The three reasons in the passkey offer: icon, bold lead-in, one sentence. */
+.pk-why { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.pk-why li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; }
+.pk-why .icon { margin-top: 2px; }
+.notice .icon.inl { vertical-align: -4px; stroke: currentColor; }
+.notice a, .error a { color: inherit; font-weight: 700; }
+/* Passkeys to remove together with a reset: 44 px rows with a 24 px box. */
+fieldset.pk-pick { border: 0; margin: 0 0 10px; padding: 0; min-width: 0; display: grid; gap: 4px; }
+fieldset.pk-pick legend { padding: 0; margin: 0 0 4px; font-weight: 700; color: var(--text); float: left; width: 100%; }
+fieldset.pk-pick .check { min-height: var(--touch-target); align-items: flex-start; gap: 12px; overflow-wrap: anywhere; }
+fieldset.pk-pick .check input { flex: none; width: 24px; height: 24px; margin: 2px 0 0; accent-color: var(--accent); }
+details.danger > p b { color: var(--text); }
+details.danger .f { margin: 0 0 10px; }
+details.danger details.more { margin: 0 0 10px; }
+.list-rows .t .flag { margin-top: 2px; }
+.rows-head + .notice { margin: 0 0 var(--gap-cards); }
+main > .hint { max-width: 560px; }
+`;

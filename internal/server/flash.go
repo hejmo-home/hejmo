@@ -112,6 +112,9 @@ var flashFields = map[string][]string{
 	"flash.routine_applied_own":    {"owner", "routine", "person", "tasks", "template", "origin"},
 	"flash.rtpl_moved":             {"title", "place", "total"},
 	"flash.routine_template_saved": {"name", "id"},
+	"flash.otp_reset":              {"name"},
+	"flash.otp_reset_passkey":      {"name", "possessive", "passkeys"},
+	"flash.otp_reset_passkeys":     {"name", "possessive", "passkeys"},
 }
 
 // redirectSavedFields is redirectSaved for a success line with several values,

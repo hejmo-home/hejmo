@@ -65,6 +65,14 @@ func (s *server) inviteShellFor(acc store.Account) *wizardView {
 	return inviteWizard(2, false)
 }
 
+// inviteAccountShell is the shell of the step "Your account" of an invitation.
+func (s *server) inviteAccountShell() *wizardView {
+	if s.ownCA() {
+		return inviteWizard(2, true)
+	}
+	return inviteWizard(1, false)
+}
+
 // inviteView is what the pages of an invitation need to say.
 type inviteView struct {
 	Token      string
@@ -287,7 +295,7 @@ func (s *server) handleInviteAccountSubmit(w http.ResponseWriter, r *http.Reques
 		s.logger.Error("save account language", "err", err)
 	}
 	s.logger.Info("invitation accepted", "account", f.Username, "person", v.Invitee.Name, "invited by", v.Inviter)
-	http.Redirect(w, r, "/setup/totp", http.StatusSeeOther)
+	s.afterAccountCreated(w, r, v.Invitee.Name)
 }
 
 // handleInviteShort is the short plain-HTTP address of the QR code. Over HTTP

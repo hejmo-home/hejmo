@@ -1,0 +1,20 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "passkey.offer.title") "Frame" .Frame "Wizard" .Wizard)}}
+  <h1>{{t "passkey.offer.title"}}</h1>
+  <p class="lead">{{tf "passkey.offer.lead" "device" (t (printf "passkey.on.this.%s" .Device))}}</p>
+  <form class="tile" method="post" action="/account/passkeys" data-passkey-scope data-redirect="/setup/totp" data-no-support="/setup/totp">
+    <ul class="pk-why">
+      <li>{{template "keyIcon"}}<span><b>{{t "passkey.offer.how.lead"}}</b> {{t (printf "passkey.offer.how.%s" .Device)}}</span></li>
+      <li><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg><span><b>{{t "passkey.offer.back.lead"}}</b> {{t "passkey.offer.back"}}</span></li>
+      <li><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg><span><b>{{t "passkey.offer.name.lead"}}</b> <span class="host">{{.BoxName}}</span>. {{t "passkey.offer.name"}}</span></li>
+    </ul>
+    {{template "moreOpen" (dict "Label" (t "passkey.offer.name_field") "Summary" .Name)}}
+      <div class="f"><label>{{t "passkey.name.label"}}<input name="name" type="text" value="{{.Name}}" autocomplete="off" maxlength="80"></label><p class="hint">{{t "passkey.name.hint"}}</p></div>
+    {{template "moreClose"}}
+    {{if .Failed}}<p class="checkline" data-state="fail" role="alert" data-hook="fail">{{template "failIcon"}}<span><span>{{t "passkey.fail.title"}}</span><small>{{t "passkey.fail.text"}}</small></span></p>
+    {{else}}<p class="checkline" data-state="fail" role="alert" data-hook="fail" hidden>{{template "failIcon"}}<span><span>{{t "passkey.fail.title"}}</span><small>{{t "passkey.fail.text"}}</small></span></p>{{end}}
+    <p class="checkline" data-state="fail" role="alert" data-hook="have" hidden>{{template "failIcon"}}<span><span>{{t (printf "passkey.have.%s" .Device)}}</span></span></p>
+    <p class="checkline" data-state="waiting" role="status" data-hook="waiting" hidden>{{template "clockIcon" 20}}<span><span>{{t (printf "passkey.waiting.%s" .Device)}}</span><small>{{t "passkey.waiting.text"}}</small></span></p>
+    <div class="actions"><button class="button" type="submit" data-passkey-add data-working="{{t "passkey.working"}}" data-retry="{{t "passkey.retry"}}" data-label="{{if .Failed}}{{t "passkey.retry"}}{{else}}{{t "passkey.create"}}{{end}}">{{template "keyIcon"}}{{if .Failed}}{{t "passkey.retry"}}{{else}}{{t "passkey.create"}}{{end}}</button><a class="button" href="/setup/totp" data-hook="continue" hidden>{{t "passkey.continue"}}</a><a class="link" href="/setup/totp" data-hook="skip">{{t "passkey.offer.skip"}}</a></div>
+  </form>
+  <script src="/static/passkey.js" defer></script>
+{{template "foot"}}

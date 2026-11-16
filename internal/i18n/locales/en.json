@@ -336,6 +336,7 @@
   "home.child.stars.other": "{n} stars today",
   "home.child.check": "Tick off tasks",
   "home.logout": "Sign out",
+  "home.logout.child": "This phone stays signed in. A parent unpairs it under Settings → Phones.",
   "flash.setup_done_named": "Hejmo is set up. Welcome, {name}!",
   "sync.stale": "Some calendars could not be updated for more than 24 hours.",
   "sync.stale.link": "See what went wrong",

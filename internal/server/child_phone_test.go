@@ -144,3 +144,36 @@ func TestChildPhoneShowsNoSettingsOrDeviceManagement(t *testing.T) {
 		t.Errorf("child shows a QR code = %d, want 403", r.status)
 	}
 }
+
+// Q46 (ticket 197): a child's phone has no Sign out anywhere; a parent unpairs it.
+func TestChildsPhoneOffersNoSignOut(t *testing.T) {
+	b := signedInBox(t)
+	phone := pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
+	for _, page := range []string{"/", "/tasks", "/lists"} {
+		if body := phone.get(page, "en").body; strings.Contains(body, `action="/logout"`) || strings.Contains(body, "Sign out") {
+			t.Errorf("child's phone offers Sign out on %s", page)
+		}
+	}
+	// Parents are unchanged, on the browser and on their own phone.
+	if body := b.get("/").body; !strings.Contains(body, `action="/logout"`) {
+		t.Error("parent's browser lost Sign out")
+	}
+	pp := pairedPhone(t, b, personNamed(t, b, "Mama"), "Mama's phone")
+	if body := pp.get("/", "en").body; !strings.Contains(body, `action="/logout"`) {
+		t.Error("parent's phone lost Sign out")
+	}
+}
+
+func TestSignOutPostFromAChildsPhoneIsRefusedAndKeepsTheSession(t *testing.T) {
+	b := signedInBox(t)
+	phone := pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
+	for lang, want := range map[string]string{"en": "A parent unpairs", "de": "Eltern"} {
+		r := phone.postLang("/logout", url.Values{}, lang)
+		if r.status != http.StatusForbidden || !strings.Contains(r.body, want) {
+			t.Errorf("%s: child's sign-out = %d %q, want 403 with %q", lang, r.status, r.body, want)
+		}
+	}
+	if r := phone.get("/", "en"); r.status != http.StatusOK {
+		t.Errorf("child's phone after refused sign-out = %d, want still signed in", r.status)
+	}
+}

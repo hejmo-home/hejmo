@@ -336,6 +336,7 @@
   "home.child.stars.other": "{n} Sterne heute",
   "home.child.check": "Aufgaben abhaken",
   "home.logout": "Abmelden",
+  "home.logout.child": "Dieses Handy bleibt angemeldet. Eltern trennen es unter Einstellungen → Handys.",
   "flash.setup_done_named": "Hejmo ist eingerichtet. Willkommen, {name}!",
   "sync.stale": "Einige Kalender konnten seit mehr als 24 Stunden nicht aktualisiert werden.",
   "sync.stale.link": "Was ist schiefgelaufen?",

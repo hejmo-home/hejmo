@@ -2859,7 +2859,7 @@ components:
       description: Only on synced calendars. Displays read `state` to show the sync notice.
       required: [state, interval_minutes, last_attempt_at, last_success_at, last_error]
       properties:
-        event_count: { type: integer, description: "Events the calendar holds after the last successful run; a series counts once" }
+        event_count: { type: integer, description: "Events the calendar holds now, events written on the box included and not limited to the import window; a series counts once" }
         last_run:
           type: object
           description: What the last successful run did to the events. A failed run leaves it as it was.

@@ -63,7 +63,7 @@ func TestConnectionDetailHoldsFactsChooseCalendarsPasswordAndDisconnect(t *testi
 	for _, want := range []string{
 		`<a class="back" href="/calendars">`, "Back to calendar connections", "<h1>u</h1>",
 		"<dt>Service</dt>", "<dt>User name</dt>", "<dt>Last synced</dt>", "<dt>Connected since</dt>",
-		`<form method="post" action="/connections/` + id + `/calendars" class="steps"`, `class="calchoice"`, `role="switch"`, `name="calendar"`,
+		`<form method="post" action="/connections/` + id + `/calendars" class="steps"`, `class="calchoice is-on"`, `role="switch"`, `name="calendar"`,
 		"Save", `<section id="login"`, `name="password"`, "Check and save password", `action="/connections/` + id + `/credentials"`,
 		`<details class="danger">`, "Disconnect", "<strong>Home</strong>", `action="/connections/` + id + `/delete"`, "Yes, disconnect", "No, change nothing",
 	} {

@@ -16,6 +16,10 @@ type Account struct {
 	// TOTPReset is set once the codes were reset (ADR 0017): the next sign-in
 	// sets up new ones.
 	TOTPReset bool
+	// TOTPResetAt and TOTPResetBy say when and by whom (a person ID) the codes
+	// were reset; zero and "" when they were not, or by the box's command line.
+	TOTPResetAt time.Time
+	TOTPResetBy string
 	// Language is the interface language the person chose (ticket 134), or ""
 	// when none was chosen yet.
 	Language string
@@ -78,22 +82,24 @@ func (db *DB) ConfirmTOTP(personID string) error {
 
 // AccountByUsername looks up credentials (case-insensitive).
 func (db *DB) AccountByUsername(username string) (Account, error) {
-	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, COALESCE(language, '')
+	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, totp_reset_at, COALESCE(totp_reset_by, ''), COALESCE(language, '')
 		FROM accounts WHERE username = ?`, username))
 }
 
 // AccountByPerson looks up credentials by person.
 func (db *DB) AccountByPerson(personID string) (Account, error) {
-	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, COALESCE(language, '')
+	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, totp_reset_at, COALESCE(totp_reset_by, ''), COALESCE(language, '')
 		FROM accounts WHERE person_id = ?`, personID))
 }
 
 func (db *DB) scanAccount(row *sql.Row) (Account, error) {
 	var a Account
-	err := row.Scan(&a.PersonID, &a.Username, &a.PasswordHash, &a.TOTPSecret, &a.TOTPConfirmed, &a.TOTPReset, &a.Language)
+	var resetAt sql.NullString
+	err := row.Scan(&a.PersonID, &a.Username, &a.PasswordHash, &a.TOTPSecret, &a.TOTPConfirmed, &a.TOTPReset, &resetAt, &a.TOTPResetBy, &a.Language)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Account{}, ErrNotFound
 	}
+	a.TOTPResetAt = parseStamp(resetAt)
 	return a, err
 }
 
@@ -281,24 +287,50 @@ func (db *DB) SpendRecoveryCode(id string) error {
 
 // ResetOTP removes a person's one-time code secret and recovery codes and
 // ends their browser sessions. Device tokens and paired phones' device
-// sessions stay (ADR 0017). The next sign-in must set
-// up one-time codes again.
+// sessions stay (ADR 0017). The next sign-in must set up one-time codes again.
+// This is the reset from the box's command line; it names nobody as the one
+// who reset.
 func (db *DB) ResetOTP(personID string) error {
+	_, err := db.ResetOTPBy(personID, "", nil)
+	return err
+}
+
+// ResetOTPBy is ResetOTP by another parent (byID, who is remembered), which
+// also removes the given passkeys of the person in the same step (ADR 0018:
+// a passkey on the lost device could otherwise keep signing in). Only
+// passkeys of the person are removed; the others in removeIDs are ignored.
+// It returns the passkeys it removed.
+func (db *DB) ResetOTPBy(personID, byID string, removeIDs []string) ([]Passkey, error) {
 	tx, err := db.sql.Begin()
 	if err != nil {
-		return err
+		return nil, err
 	}
 	defer tx.Rollback()
-	res, err := tx.Exec(`UPDATE accounts SET totp_secret = '', totp_confirmed_at = NULL, totp_reset_at = ? WHERE person_id = ?`, now(), personID)
+	by := sql.NullString{String: byID, Valid: byID != ""}
+	res, err := tx.Exec(`UPDATE accounts SET totp_secret = '', totp_confirmed_at = NULL, totp_reset_at = ?, totp_reset_by = ? WHERE person_id = ?`, now(), by, personID)
 	if err := expectOne(res, err); err != nil {
-		return err
+		return nil, err
 	}
 	for _, q := range []string{`DELETE FROM recovery_codes WHERE person_id = ?`, `DELETE FROM sessions WHERE person_id = ? AND phone_id IS NULL`} {
 		if _, err := tx.Exec(q, personID); err != nil {
-			return err
+			return nil, err
 		}
 	}
-	return tx.Commit()
+	var removed []Passkey
+	for _, id := range removeIDs {
+		p, err := scanPasskey(tx.QueryRow(`SELECT `+passkeyColumns+` FROM passkeys WHERE id = ? AND person_id = ?`, id, personID))
+		if errors.Is(err, sql.ErrNoRows) {
+			continue
+		}
+		if err != nil {
+			return nil, err
+		}
+		if _, err := tx.Exec(`DELETE FROM passkeys WHERE id = ?`, id); err != nil {
+			return nil, err
+		}
+		removed = append(removed, p)
+	}
+	return removed, tx.Commit()
 }
 
 // SetAccountLanguage stores the interface language a person chose.

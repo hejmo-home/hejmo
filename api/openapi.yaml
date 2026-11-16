@@ -888,6 +888,149 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/{id}/subtasks:
+    post:
+      operationId: addSubtask
+      summary: Add a subtask to a task (scope tasks:write, parents only)
+      description: |
+        A subtask is a title with an optional emoji (ADR 0018). It is added at
+        the end. A task has at most 10 subtasks, one level only: an 11th gives
+        422 with `field: subtasks`. If the task is already ticked off today,
+        the new subtask counts as done today, so the person loses no stars.
+        Answers with the task and its state today.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewSubtask" }
+      responses:
+        "201":
+          description: The task with its subtasks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/{id}/subtasks/{sub_id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: sub_id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: updateSubtask
+      summary: Change the title or emoji of a subtask (scope tasks:write, parents only)
+      description: Any other or unknown field is refused with 400.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                title: { type: string, minLength: 1, maxLength: 120 }
+                emoji: { type: string, maxLength: 16 }
+      responses:
+        "200":
+          description: The task with its subtasks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400":
+          description: Not valid JSON or an unknown field
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteSubtask
+      summary: Remove a subtask (scope tasks:write, parents only)
+      description: |
+        Removing the last open subtask completes the task for today and
+        credits its stars, because everything that is left is ticked. Removing
+        the only subtask leaves a plain task as it was. Answers with the task
+        and its state today.
+      responses:
+        "200":
+          description: The task with its remaining subtasks
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /tasks/{id}/subtasks/{sub_id}/move:
+    post:
+      operationId: moveSubtask
+      summary: Move a subtask one place up or down (scope tasks:write, parents only)
+      description: Moving the first one up or the last one down changes nothing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: sub_id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [direction]
+              properties:
+                direction: { type: string, enum: [up, down] }
+      responses:
+        "200":
+          description: The task with its subtasks in the new order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/{id}/subtasks/{sub_id}/done:
+    put:
+      operationId: setSubtaskDone
+      summary: Tick a subtask off or back open for today (scope tasks:complete)
+      description: |
+        Parents may do this for every task, a child only for its own (else
+        403). The task must be due today, else 422. Ticks belong to today's
+        occurrence and start open again with the next one. Ticking the last
+        open subtask completes the task and credits its stars once; unticking
+        a subtask of a done task reopens the task and deducts them, the other
+        subtasks stay ticked. Ticking the task itself (`PUT /tasks/{id}/done`)
+        ticks all its subtasks and unticking a done task unticks all of them
+        (unticking an open task leaves its subtask ticks alone). Ticking
+        twice changes nothing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: sub_id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [done]
+              properties:
+                done: { type: boolean }
+      responses:
+        "200":
+          description: The task with its state today
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /routines:
     get:
       operationId: listRoutines
@@ -2408,7 +2551,7 @@ components:
         routine_id: { type: string, format: uuid, description: "Create the task as the last step of this routine (of the same person). It takes the routine's part of the day and `part_of_day` is ignored" }
     Task:
       type: object
-      required: [id, person_id, title, emoji, notes, repeat, weekdays, date, part_of_day, stars, routine_id, position, due, done]
+      required: [id, person_id, title, emoji, notes, repeat, weekdays, date, part_of_day, stars, routine_id, position, due, done, subtasks]
       properties:
         id: { type: string, format: uuid }
         person_id: { type: string, format: uuid }
@@ -2425,7 +2568,26 @@ components:
         routine_id: { type: string, description: "The routine the task is a step of; empty for a single task" }
         position: { type: integer, description: "Place in the routine, from 1; 0 for a single task" }
         due: { type: boolean, description: "Due on the requested day" }
-        done: { type: boolean, description: "Ticked off on the requested day" }
+        done: { type: boolean, description: "Ticked off on the requested day. A task with subtasks is done when all of them are" }
+        subtasks:
+          type: array
+          description: The items the task is split into, in their order (at most 10); empty for a task without
+          items: { $ref: "#/components/schemas/Subtask" }
+    Subtask:
+      type: object
+      required: [id, title, emoji, position, done]
+      properties:
+        id: { type: string, format: uuid }
+        title: { type: string }
+        emoji: { type: string }
+        position: { type: integer, description: "Place in the task, from 1" }
+        done: { type: boolean, description: "Ticked off on the requested day (each occurrence of the task starts open)" }
+    NewSubtask:
+      type: object
+      required: [title]
+      properties:
+        title: { type: string, minLength: 1, maxLength: 120, example: "Pencil case" }
+        emoji: { type: string, maxLength: 16, example: "✏️" }
     NewStarBooking:
       type: object
       required: [delta, note]

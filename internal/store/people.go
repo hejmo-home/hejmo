@@ -35,7 +35,8 @@ type Household struct {
 	Longitude float64
 	Region    string // ISO 3166-2, e.g. DE-BY
 	Timezone  string
-	// TimeFormat and TemperatureUnit are household settings (ADR 0016).
+	// DateFormat, TimeFormat and TemperatureUnit are household settings (ADR 0016, ticket #147).
+	DateFormat      DateFormat
 	TimeFormat      TimeFormat
 	TemperatureUnit TemperatureUnit
 	// AutoUpdate is the auto-update mode and UpdateAck the last update event
@@ -46,6 +47,18 @@ type Household struct {
 	// displays (ADR 0016).
 	MealCutoffs meal.Cutoffs
 }
+
+// DateFormat is how the household wants dates in numbers written.
+type DateFormat string
+
+// Date formats; day first (24.12.2026) is the default, month first is 12/24/2026.
+const (
+	DateDMY DateFormat = "dmy"
+	DateMDY DateFormat = "mdy"
+)
+
+// Valid reports whether f is a known date format.
+func (f DateFormat) Valid() bool { return f == DateDMY || f == DateMDY }
 
 // TimeFormat is how the household wants times shown.
 type TimeFormat string
@@ -71,13 +84,13 @@ func (f TimeFormat) Valid() bool { return f == Time24h || f == Time12h }
 // Valid reports whether u is a known temperature unit.
 func (u TemperatureUnit) Valid() bool { return u == Celsius || u == Fahrenheit }
 
-// UpdateHouseholdSettings stores the household's time format, temperature unit
+// UpdateHouseholdSettings stores the household's date format, time format, temperature unit
 // and auto-update mode in one statement, so a save is all or nothing.
-func (db *DB) UpdateHouseholdSettings(id string, f TimeFormat, u TemperatureUnit, a UpdateMode) error {
-	if !f.Valid() || !u.Valid() || !a.Valid() {
-		return errors.New("store: unknown time format, temperature unit or update mode")
+func (db *DB) UpdateHouseholdSettings(id string, d DateFormat, f TimeFormat, u TemperatureUnit, a UpdateMode) error {
+	if !d.Valid() || !f.Valid() || !u.Valid() || !a.Valid() {
+		return errors.New("store: unknown date format, time format, temperature unit or update mode")
 	}
-	return expectOne(db.sql.Exec(`UPDATE households SET time_format = ?, temperature_unit = ?, auto_update = ?, updated_at = ? WHERE id = ?`, f, u, a, now(), id))
+	return expectOne(db.sql.Exec(`UPDATE households SET date_format = ?, time_format = ?, temperature_unit = ?, auto_update = ?, updated_at = ? WHERE id = ?`, d, f, u, a, now(), id))
 }
 
 // SetMealCutoffs stores the times from which a mealtime is no longer shown on
@@ -123,7 +136,7 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 	if h.Timezone == "" {
 		h.Timezone = "Europe/Berlin"
 	}
-	h.TimeFormat, h.TemperatureUnit, h.AutoUpdate, h.MealCutoffs = Time24h, Celsius, UpdateOn, meal.DefaultCutoffs()
+	h.DateFormat, h.TimeFormat, h.TemperatureUnit, h.AutoUpdate, h.MealCutoffs = DateDMY, Time24h, Celsius, UpdateOn, meal.DefaultCutoffs()
 	h.ID = newID()
 	ts := now()
 	_, err := db.sql.Exec(`INSERT INTO households (id, name, home_name, latitude, longitude, region, timezone, created_at, updated_at)
@@ -134,21 +147,21 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 
 // Household loads a household by id.
 func (db *DB) Household(id string) (Household, error) {
-	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, time_format, temperature_unit, auto_update, update_ack,
+	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
 		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner
 		FROM households WHERE id = ?`, id))
 }
 
 // HomeHousehold returns the household this box serves (V1: exactly one).
 func (db *DB) HomeHousehold() (Household, error) {
-	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, time_format, temperature_unit, auto_update, update_ack,
+	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
 		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner
 		FROM households ORDER BY created_at, rowid LIMIT 1`))
 }
 
 func (db *DB) scanHousehold(row *sql.Row) (Household, error) {
 	var h Household
-	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
+	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.DateFormat, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
 		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Household{}, ErrNotFound

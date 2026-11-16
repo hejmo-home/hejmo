@@ -11,6 +11,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/holiday"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/wholine"
 )
@@ -55,6 +56,11 @@ type Input struct {
 	// SyncStale: a synced calendar has gone 24 hours without a successful
 	// sync (ADR 0012). The header then shows an info symbol.
 	SyncStale bool
+	// Meals is the effective meal per mealtime today (a plain entry, and later
+	// a template's default unless overridden for the day); empty text counts
+	// as not planned. MealCutoffs are the household's cut-off times.
+	Meals       map[meal.Mealtime]string
+	MealCutoffs meal.Cutoffs
 	// TaskProgress is each person's task progress today, by person ID. A
 	// person without tasks due today has no entry (or a zero total) and
 	// shows no bar (ADR 0016).
@@ -144,6 +150,20 @@ type Tile struct {
 	Alert bool
 }
 
+// MealEntry is one row of the meal tile.
+type MealEntry struct {
+	Mealtime meal.Mealtime
+	Dish     string
+}
+
+// MealTile is the meal tile of the footer (ADR 0016): the mealtimes of today
+// that are still to come. Label is "Meals today" for several entries, or the
+// mealtime's word for one. The tile is never highlighted.
+type MealTile struct {
+	Label   string
+	Entries []MealEntry
+}
+
 // HasWaste reports whether the tile holds a waste collection.
 func (t Tile) HasWaste() bool {
 	for _, l := range t.Lines {
@@ -168,7 +188,7 @@ type View struct {
 	ShowTomorrow  bool
 	SyncStale     bool // header notice: calendar not up to date
 	Columns       []Column
-	Meal          *Tile
+	Meal          *MealTile // nil: nothing planned that is still to come
 	TomorrowTile  *Tile
 }
 
@@ -195,6 +215,7 @@ func Build(in Input) View {
 		}
 		v.Columns = append(v.Columns, col)
 	}
+	v.Meal = mealTile(in)
 	loc := d0.Location()
 	occs := append([]calendar.Occurrence(nil), in.Occurrences...)
 	sort.SliceStable(occs, func(i, j int) bool { return occs[i].Start.Before(occs[j].Start) })
@@ -359,4 +380,31 @@ func multiDay(o calendar.Occurrence, loc *time.Location) bool {
 func firstDay(o calendar.Occurrence, loc *time.Location) time.Time {
 	s := o.Start.In(loc)
 	return time.Date(s.Year(), s.Month(), s.Day(), 0, 0, 0, 0, loc)
+}
+
+// mealTile keeps every mealtime planned for today whose cut-off is empty or
+// later than now, in the order of the day; nil when none is left.
+func mealTile(in Input) *MealTile {
+	hhmm := in.Now.Format("15:04")
+	var t MealTile
+	for _, m := range meal.Mealtimes() {
+		dish := in.Meals[m]
+		if dish == "" {
+			continue
+		}
+		// Cut-offs are stored as zero-padded HH:MM, so the string compare is a time compare.
+		if cut := in.MealCutoffs.For(m); cut != "" && cut <= hhmm {
+			continue
+		}
+		t.Entries = append(t.Entries, MealEntry{Mealtime: m, Dish: dish})
+	}
+	switch len(t.Entries) {
+	case 0:
+		return nil
+	case 1:
+		t.Label = in.I18n.T(in.Lang, "meals.mealtime."+string(t.Entries[0].Mealtime))
+	default:
+		t.Label = in.I18n.T(in.Lang, "family.meals_today")
+	}
+	return &t
 }

@@ -1944,5 +1944,11 @@
   "mcp.token.revoke.confirm": "Ja, Zugang für „{name}“ entziehen",
   "flash.mcp_on": "MCP ist an. Erstelle jetzt ein Token für deinen Assistenten.",
   "flash.mcp_off": "MCP ist aus. Kein KI-Assistent kommt mehr an eure Daten.",
-  "flash.mcp_token_created": "MCP-Token für „{name}“ erstellt."
+  "flash.mcp_token_created": "MCP-Token für „{name}“ erstellt.",
+  "display.lists.nav": "Alle Listen",
+  "display.lists.error.text_empty": "Gib zuerst den Eintrag ein und tippe dann auf Hinzufügen.",
+  "display.lists.add_error": "Nicht hinzugefügt: Die Box ist nicht erreichbar. Dein Text bleibt stehen; tippe noch einmal auf Hinzufügen.",
+  "display.lists.all_done": "Alles auf dieser Liste ist abgehakt.",
+  "display.lists.delete_ticked.explain": "Die %d abgehakten Einträge dieser Liste werden endgültig gelöscht, auf allen Displays und Handys. Offene Einträge bleiben.",
+  "display.lists.delete_ticked.explain.one": "Der abgehakte Eintrag dieser Liste wird endgültig gelöscht, auf allen Displays und Handys. Offene Einträge bleiben."
 }

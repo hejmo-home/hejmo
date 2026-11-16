@@ -1,5 +1,5 @@
 // Package places is the list of towns, villages and districts of Germany,
-// Austria and Switzerland that ships inside the box (ADR 0021). A parent picks
+// Austria and Switzerland that ships inside the box (ADR 0022). A parent picks
 // the home location from it while typing; nothing goes to the internet.
 //
 // The list is data/places.tsv.gz, built by tools/placelist from GeoNames (CC BY

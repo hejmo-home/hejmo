@@ -104,7 +104,7 @@ type server struct {
 	opens      *loginLimiter // pairing screens opened, per client address
 	sync       *calsync.Service
 	weather    *weather.Service
-	places     *places.List // the list of places on the box, loaded at start-up (ADR 0021)
+	places     *places.List // the list of places on the box, loaded at start-up (ADR 0022)
 	live       time.Duration
 	countWait  time.Duration
 	done       <-chan struct{}
@@ -241,6 +241,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /people/{id}", s.handlePersonPage)
 	mux.HandleFunc("POST /people/{id}", s.handlePersonSave)
 	mux.HandleFunc("POST /people/{id}/move", s.handlePersonMove)
+	mux.HandleFunc("GET /people/{id}/food", s.handleFoodPage)
+	mux.HandleFunc("POST /people/{id}/food", s.handleFoodSave)
 	mux.HandleFunc("GET /groups/new", s.handleGroupNew)
 	mux.HandleFunc("POST /groups", s.handleGroupCreate)
 	mux.HandleFunc("GET /groups/{id}", s.handleGroupPage)

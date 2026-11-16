@@ -69,11 +69,11 @@ The German state, Austrian state or Swiss canton of the household, which decides
 _Avoid_: location, country, Bundesland (in code)
 
 **Place list**:
-The list of towns, villages and districts of Germany, Austria and Switzerland that ships inside the box (GeoNames extract, CC BY 4.0, ADR 0021). The parent picks the home location from it while typing; nothing is looked up on the internet.
+The list of towns, villages and districts of Germany, Austria and Switzerland that ships inside the box (GeoNames extract, CC BY 4.0, ADR 0022). The parent picks the home location from it while typing; nothing is looked up on the internet.
 _Avoid_: geocoding, address search
 
 **Home location**:
-The latitude and longitude of the household's home, found from a place the parent picks in the list of places on the box (ADR 0021, which replaces the one-time lookup of ADR 0020). The household keeps the place's id, so the box can show its region in the page language. Sunrise and sunset (front light, themes) and the weather use it; the region does not (too coarse).
+The latitude and longitude of the household's home, found from a place the parent picks in the list of places on the box (ADR 0022, which replaces the one-time lookup of ADR 0021). The household keeps the place's id, so the box can show its region in the page language. Sunrise and sunset (front light, themes) and the weather use it; the region does not (too coarse).
 _Avoid_: position, address
 
 ## Calendar
@@ -124,6 +124,14 @@ _Avoid_: account, integration, provider (alone)
 A password created at the calendar service (Apple "app-specific password", Nextcloud "app password") for Hejmo alone and used in a calendar connection instead of the account's real password. The family can revoke it at the service at any time; Hejmo never asks for the real password. Not the same as a device token, which the box creates for CalDAV clients.
 _Avoid_: Apple ID password, iCloud password
 
+**Service sign-in**:
+Allowing a calendar connection by signing in at the calendar service itself (Microsoft, Google) instead of entering an app-specific password. The box holds a permission the family can revoke at the service at any time; it never learns the password.
+_Avoid_: OAuth login, token login
+
+**App registration**:
+Hejmo's entry at a calendar service that makes service sign-ins possible at all. Every box uses the Hejmo project's registration unless the family enters its own.
+_Avoid_: client, Azure app
+
 **Synced calendar**:
 A calendar whose events come from, and may be written back to, a calendar outside the box through a calendar connection.
 _Avoid_: external calendar, remote calendar, feed
@@ -169,6 +177,14 @@ _Avoid_: display mode, device type
 **Family strip**:
 The row above the person columns in the family view for events meant for the whole household, all-day and multi-day events, and public holidays.
 _Avoid_: banner, header events, all-day row
+
+**Layout**:
+What one display shows: the chosen people, their order and the blocks.
+_Avoid_: template (alone), view (alone)
+
+**Layout block**:
+One part of a display's layout, such as calendar, tasks, meals, weather or lists, which a parent switches on or off per display.
+_Avoid_: widget, tile, module
 
 **Theme**:
 Whether a display or the web interface is light or dark, switches automatically by sunrise and sunset, or follows the device.
@@ -255,6 +271,10 @@ _Avoid_: override (in prose), exception
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.
 _Avoid_: deadline, expiry
+
+**Holiday mode**:
+A household-wide pause, with from and to dates, of all articles that are put on a list by themselves. The lists and settings say so while it is on.
+_Avoid_: vacation mode, skip
 
 **Task**:
 Something to be done once or repeatedly, ticked off when done; may belong to a routine, carry a star value and be split into subtasks.

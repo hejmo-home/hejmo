@@ -124,7 +124,7 @@
      the tab order; the real Save button is the last one. */}}
 {{define "defaultSubmit"}}<button class="vh" type="submit" tabindex="-1" aria-hidden="true"></button>{{end}}
 
-{{/* The home location picker (ADR 0021, ticket 86), used by the setup wizard
+{{/* The home location picker (ADR 0022, ticket 86), used by the setup wizard
      and Settings → Household. Arguments: Place (the placePick view). The page
      posts place_id, the GeoNames id of a place of the list on the box, and never
      coordinates.
@@ -197,3 +197,6 @@
   </form>{{end}}
 
 {{define "failIcon"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.5"/></svg>{{end}}
+
+{{/* A free-text allergy the box cannot check (ticket 163): notice colours, a question icon and the words. The argument is the whole sentence. */}}
+{{define "unchecked"}}<span class="unchecked"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.6M12 16.8v.4"/></svg><span>{{.}}</span></span>{{end}}

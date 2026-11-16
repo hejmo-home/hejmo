@@ -1,4 +1,4 @@
-// Home location picker (ADR 0021, ticket 86): setup wizard and Settings →
+// Home location picker (ADR 0022, ticket 86): setup wizard and Settings →
 // Household. Everything works without this script: each suggestion is a submit
 // button and the server renders the list for the posted text. The script only
 // updates the list while you type (from GET /places, the list on the box;

@@ -1,12 +1,12 @@
-# 0021. Home location from a list on the box
+# 0022. Home location from a list on the box
 
 - Status: Accepted
 - Date: 16/11/2026
-- Amends: [0020](0020-home-location.md) (supersedes its points "Open-Meteo once" and "internet needed for the wizard": the place is picked from a list that ships on the box), [0016](0016-family-view-header-and-footer.md) (the weather no longer finds a home by name; it reads stored coordinates only)
+- Amends: [0021](0021-home-location.md) (supersedes its points "Open-Meteo once" and "internet needed for the wizard": the place is picked from a list that ships on the box), [0016](0016-family-view-header-and-footer.md) (the weather no longer finds a home by name; it reads stored coordinates only)
 
 ## Context
 
-ADR 0020 made the parent type a place name and had the box look it up once at Open-Meteo. The design pass of ticket #86 (product owner decision Q1 = a, 15/11/2026) replaced that by suggestions while typing: a parent should see the places that match after two letters, tell same-named places apart by their region, and pick one. A lookup per keystroke at a service on the internet does not fit a box whose families expect it to stay at home, and it makes the setup wizard depend on the internet.
+ADR 0021 made the parent type a place name and had the box look it up once at Open-Meteo. The design pass of ticket #86 (product owner decision Q1 = a, 15/11/2026) replaced that by suggestions while typing: a parent should see the places that match after two letters, tell same-named places apart by their region, and pick one. A lookup per keystroke at a service on the internet does not fit a box whose families expect it to stay at home, and it makes the setup wizard depend on the internet.
 
 ## Decision
 

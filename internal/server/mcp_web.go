@@ -130,7 +130,10 @@ func (s *server) handleMCPSave(w http.ResponseWriter, r *http.Request) {
 }
 
 // mcpAreaView is one area of the new-token form.
-type mcpAreaView struct{ Area, Name, Desc, Level string }
+type mcpAreaView struct {
+	Area, Name, Desc, Level string
+	Health                  bool // diet and allergies: set apart, read only at most, default none
+}
 
 func (s *server) mcpAreaViews(r *http.Request, levels map[string]string) []mcpAreaView {
 	out := make([]mcpAreaView, 0, len(auth.MCPAreas))
@@ -138,8 +141,11 @@ func (s *server) mcpAreaViews(r *http.Request, levels map[string]string) []mcpAr
 		level := levels[area]
 		if level == "" {
 			level = string(auth.MCPRead) // Q10 (15/11/2026): new tokens start read only
+			if area == auth.HealthResource {
+				level = string(auth.MCPNone) // Q17 (16/11/2026): health data only on an explicit grant
+			}
 		}
-		out = append(out, mcpAreaView{area, s.say(r, i18n.Msg("mcp.area."+area)), s.say(r, i18n.Msg("mcp.area."+area+".desc")), level})
+		out = append(out, mcpAreaView{area, s.say(r, i18n.Msg("mcp.area."+area)), s.say(r, i18n.Msg("mcp.area."+area+".desc")), level, area == auth.HealthResource})
 	}
 	return out
 }

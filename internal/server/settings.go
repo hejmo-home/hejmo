@@ -376,7 +376,7 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.cutoff", field, typed)
 		return
 	}
-	// The home place (ADR 0021): the page posts the id of a place of the list
+	// The home place (ADR 0022): the page posts the id of a place of the list
 	// and never coordinates. A form without place fields leaves the home alone.
 	home, done := s.homeOfForm(w, r, p, typed)
 	if done {

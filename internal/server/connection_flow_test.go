@@ -68,7 +68,7 @@ func TestConnectionErrorsAppearAtTheirField(t *testing.T) {
 			if !strings.Contains(form, `id="err-`+c.field+`"`) || strings.Count(r.body, `class="ferr"`) != 1 {
 				t.Errorf("want exactly one error with id err-%s:\n%s", c.field, form)
 			}
-			if !strings.Contains(form, `aria-describedby="err-`+c.field+`"`) {
+			if !strings.Contains(form, `aria-describedby="err-`+c.field) {
 				t.Errorf("field %s is not marked invalid:\n%s", c.field, form)
 			}
 			if strings.Contains(r.body, `<p class="error"`) {

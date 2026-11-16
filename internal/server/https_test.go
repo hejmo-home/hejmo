@@ -16,8 +16,11 @@ const iPhone = "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebK
 func TestFreshBoxAsksForHTTPSBeforeAnyPassword(t *testing.T) {
 	b := newFreshBox(t)
 
-	if r := b.get("/setup"); r.status != http.StatusSeeOther || r.location != "/setup/https" {
-		t.Fatalf("GET /setup = %d %q, want 303 to /setup/https", r.status, r.location)
+	// The first page says what is coming and leads to the HTTPS step; it
+	// does not ask for any password.
+	welcome := b.get("/setup")
+	if welcome.status != http.StatusOK || !strings.Contains(welcome.body, `href="/setup/https"`) || strings.Contains(welcome.body, `name="password"`) {
+		t.Fatalf("GET /setup before HTTPS = %d, want the welcome page with a link to /setup/https\n%s", welcome.status, welcome.body)
 	}
 	r := b.post("/setup", validSetupForm())
 	if r.status != http.StatusSeeOther || r.location != "/setup/https" {
@@ -32,10 +35,10 @@ func TestHTTPSStepIsSpokenInBothLanguages(t *testing.T) {
 	b := newFreshBox(t)
 	de := b.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": "de"})
 	en := b.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": "en"})
-	if de.status != http.StatusOK || !strings.Contains(de.body, "Verschlüsselung") || !strings.Contains(de.body, `action="/setup/https"`) {
+	if de.status != http.StatusOK || !strings.Contains(de.body, "Wie soll die Box sicher erreichbar sein?") || !strings.Contains(de.body, `name="way"`) {
 		t.Errorf("German HTTPS step:\n%s", de.body)
 	}
-	if en.status != http.StatusOK || !strings.Contains(en.body, "encryption") {
+	if en.status != http.StatusOK || !strings.Contains(en.body, "reach the box securely") {
 		t.Errorf("English HTTPS step:\n%s", en.body)
 	}
 }
@@ -229,32 +232,245 @@ func TestCACertificateDownload(t *testing.T) {
 	}
 }
 
-func TestTrustPageExplainsIPhoneAndroidAndBrowsers(t *testing.T) {
+func (b *box) trustPage(path, lang, userAgent string) resp {
+	return b.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": lang, "User-Agent": userAgent})
+}
+
+const (
+	androidUA = "Mozilla/5.0 (Linux; Android 15; Pixel 9) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Mobile Safari/537.36"
+	macUA     = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/19.0 Safari/605.1.15"
+	windowsUA = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+	linuxUA   = "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0"
+)
+
+// Ticket 133: the trust page detects the visitor's device from the User-Agent
+// and shows its four steps first; the other devices are links. The only main
+// button of the page is the download in step 1.
+func TestTrustPageDetectsTheDeviceAndShowsItsFourSteps(t *testing.T) {
 	b := newBox(t)
-	de := b.do(http.MethodGet, "/ca", nil, map[string]string{"Accept-Language": "de"})
-	for _, want := range []string{"iPhone", "DAVx5", "Firefox", "/ca/hejmo.mobileconfig", "/ca/hejmo-ca.crt", "Zertifikat"} {
-		if !strings.Contains(de.body, want) {
-			t.Errorf("German trust page misses %q", want)
-		}
+	cases := []struct {
+		name, ua, current string
+		wants             []string
+	}{
+		{"iPhone", iPhone, "ios", []string{"iPhone oder iPad: 4 Schritte", `href="/ca/hejmo.mobileconfig"`, "Profil laden", "Profil installieren", "Vertrauen einschalten", "Hierher zurückkommen", "Erkannt: iPhone oder iPad."}},
+		{"Android", androidUA, "android", []string{"Android: 4 Schritte", `href="/ca/hejmo-ca.crt"`, "Zertifikat laden", "CA-Zertifikat", "Warnung bestätigen", "Hersteller", "DAVx5"}},
+		{"Mac", macUA, "mac", []string{"Mac: 4 Schritte", "Schlüsselbund", "Anmeldung", "Immer vertrauen", "Firefox", "Erkannt: Mac."}},
+		{"Windows", windowsUA, "windows", []string{"Windows: 4 Schritte", "Vertrauenswürdige Stammzertifizierungsstellen", "Firefox"}},
+		{"Linux", linuxUA, "linux", []string{"Linux: 4 Schritte", "update-ca-certificates"}},
 	}
-	en := b.do(http.MethodGet, "/ca", nil, map[string]string{"Accept-Language": "en"})
-	if !strings.Contains(en.body, "certificate") || !strings.Contains(en.body, "DAVx5") {
-		t.Errorf("English trust page:\n%s", en.body)
+	for _, c := range cases {
+		t.Run(c.name, func(t *testing.T) {
+			r := b.trustPage("/ca", "de", c.ua)
+			for _, want := range c.wants {
+				if !strings.Contains(r.body, want) {
+					t.Errorf("trust page for %s misses %q", c.name, want)
+				}
+			}
+			if n := strings.Count(r.body, `aria-current="true"`); n != 1 || !strings.Contains(r.body, `href="?device=`+c.current+`" aria-current="true"`) {
+				t.Errorf("the device chooser marks %d devices, want only %s", n, c.current)
+			}
+			if n := strings.Count(r.body, `class="button" href=`) - strings.Count(r.body, `data-continue-link`); n != 1 {
+				t.Errorf("trust page has %d main buttons, want the download only", n)
+			}
+			for _, other := range []string{"ios", "android", "mac", "windows", "linux"} {
+				if !strings.Contains(r.body, `href="?device=`+other) {
+					t.Errorf("no link to %s", other)
+				}
+			}
+		})
+	}
+	en := b.trustPage("/ca", "en", macUA)
+	for _, want := range []string{"Keychain Access", "login", "Always Trust", "Detected: Mac."} {
+		if !strings.Contains(en.body, want) {
+			t.Errorf("English trust page misses %q", want)
+		}
 	}
 }
 
-func TestTrustPageHasAMacSectionWithKeychainSteps(t *testing.T) {
+// ?device= overrides the detection; unknown values and unknown agents fall back.
+func TestTrustPageDeviceOverrideAndFallback(t *testing.T) {
 	b := newBox(t)
-	de := b.do(http.MethodGet, "/ca", nil, map[string]string{"Accept-Language": "de"})
-	for _, want := range []string{"Mac", "Schlüsselbundverwaltung", "Anmeldung", "Hejmo box CA", "Vertrauen", "Immer vertrauen", "-25294"} {
-		if !strings.Contains(de.body, want) {
-			t.Errorf("German trust page misses %q", want)
+	r := b.trustPage("/ca?device=windows", "de", iPhone)
+	if !strings.Contains(r.body, "Windows: 4 Schritte") || strings.Contains(r.body, "Erkannt:") || !strings.Contains(r.body, "Gewählt: Windows.") {
+		t.Errorf("?device=windows on an iPhone:\n%s", r.body)
+	}
+	if r := b.trustPage("/ca?device=toaster", "de", androidUA); !strings.Contains(r.body, "Android: 4 Schritte") {
+		t.Errorf("an unknown device is not ignored:\n%s", r.body)
+	}
+	r = b.trustPage("/ca", "de", "curl/8.0")
+	if !strings.Contains(r.body, "nicht erkannt") || !strings.Contains(r.body, "iPhone oder iPad: 4 Schritte") {
+		t.Errorf("an unknown agent shows no hint or no first device:\n%s", r.body)
+	}
+	// An iPad asking for the desktop site looks like a Mac; the page script
+	// corrects that where there is a touch screen.
+	mac := b.trustPage("/ca", "de", macUA)
+	if !strings.Contains(mac.body, "data-detected") || !strings.Contains(mac.body, `data-device="mac"`) {
+		t.Errorf("the page does not tell its script that the Mac was a guess:\n%s", mac.body)
+	}
+	js := b.get("/static/https-check.js")
+	if !strings.Contains(js.body, "maxTouchPoints") || !strings.Contains(js.body, `"ios"`) {
+		t.Error("the script does not turn a touch Mac into an iPad")
+	}
+}
+
+// ChromeOS has no update-ca-certificates: it is not guessed as Linux.
+func TestChromeOSIsNotTakenForLinux(t *testing.T) {
+	const crOS = "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+	r := newBox(t).trustPage("/ca", "de", crOS)
+	if !strings.Contains(r.body, "nicht erkannt") {
+		t.Errorf("ChromeOS must count as unknown:\n%s", r.body)
+	}
+	if strings.Contains(r.body, `href="?device=linux" aria-current="true"`) {
+		t.Errorf("ChromeOS must not mark Linux as the current device:\n%s", r.body)
+	}
+}
+
+// An iPad is not called an iPhone in the check lines, Firefox on Android gets its note, and the Mac button is clicked.
+func TestTrustTextsForIPadFirefoxAndMac(t *testing.T) {
+	b := newBox(t)
+	ios := b.trustPage("/ca?device=ios", "de", iPhone)
+	if strings.Contains(ios.body, "Dein iPhone vertraut") || strings.Contains(ios.body, "iPhone ist nicht") {
+		t.Errorf("check lines name the iPhone only:\n%s", ios.body)
+	}
+	if a := b.trustPage("/ca", "de", androidUA); !strings.Contains(a.body, "Firefox") {
+		t.Error("Android misses the Firefox note")
+	}
+	if m := b.trustPage("/ca", "de", macUA); strings.Contains(m.body, "Tippe auf den Knopf") || !strings.Contains(m.body, "Klicke auf den Knopf") {
+		t.Error("Mac text must say Klicke")
+	}
+}
+
+// The iOS steps work on an iPad too, so they never say "das iPhone"; Windows
+// shows only SHA-1 at install time, so it gets no "compare, else do not install" hint.
+func TestTrustTextsFitIPadAndWindows(t *testing.T) {
+	const iPad = "Mozilla/5.0 (iPad; CPU OS 19_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1"
+	b := newBox(t)
+	ipad := b.trustPage("/ca", "de", iPad)
+	if !strings.Contains(ipad.body, "Profil laden") {
+		t.Fatalf("an iPad is not served the iOS steps:\n%s", ipad.body)
+	}
+	for _, bad := range []string{"das iPhone", "deines iPhones", "dein iPhone"} {
+		if strings.Contains(ipad.body, bad) {
+			t.Errorf("iOS steps on an iPad say %q", bad)
 		}
 	}
-	en := b.do(http.MethodGet, "/ca", nil, map[string]string{"Accept-Language": "en"})
-	for _, want := range []string{"Mac", "Keychain Access", "login", "Hejmo box CA", "Trust", "Always Trust", "-25294"} {
-		if !strings.Contains(en.body, want) {
-			t.Errorf("English trust page misses %q", want)
+	win := b.trustPage("/ca", "de", windowsUA)
+	if strings.Contains(win.body, "installiere das Zertifikat nicht") {
+		t.Error("Windows shows no SHA-256 at install time, so it must not be told to compare")
+	}
+	if !strings.Contains(win.body, "SHA-1") {
+		t.Error("Windows misses its SHA-1 note")
+	}
+}
+
+func TestDetectsDevicesFromTheUserAgent(t *testing.T) {
+	for ua, want := range map[string]string{iPhone: "ios", androidUA: "android", macUA: "mac", windowsUA: "windows", linuxUA: "linux"} {
+		b := newBox(t)
+		if r := b.trustPage("/ca", "en", ua); !strings.Contains(r.body, `href="?device=`+want+`" aria-current="true"`) {
+			t.Errorf("%q is not detected as %s", ua, want)
+		}
+	}
+}
+
+// The trust page checks by itself whether the device trusts the box (see
+// static/https-check.js): the HTTPS address it asks, the lines that tell the
+// state in words, and the way on, which stays hidden until the check passes.
+func TestTrustPageChecksByItselfAndContinuesOnlyWhenTrusted(t *testing.T) {
+	b := newBox(t)
+	host := strings.TrimPrefix(b.srv.URL, "https://")
+	host = host[:strings.LastIndex(host, ":")]
+	r := b.trustPage("/ca", "de", iPhone)
+	for _, want := range []string{
+		`data-check="trust"`, `data-check-url="https://` + host, `/healthz"`, `/static/https-check.js`,
+		`data-hook="waiting"`, `data-hook="ok"`, `data-hook="fail"`, `data-download`,
+		`Dein Gerät vertraut der Box noch nicht.`, `Dein Gerät vertraut der Box.`,
+		`href="https://` + host, `/setup" data-continue-link hidden>Weiter zu Schritt 2: Dein Konto`,
+		"Ohne Prüfung weiter", "Die Prüfung klappt nicht?",
+	} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("trust page misses %q", want)
+		}
+	}
+	// The failure after a download sits in the step that usually goes wrong
+	// (step 3 on iOS, Android and Mac), not at the end.
+	for _, ua := range []string{iPhone, androidUA, macUA} {
+		page := b.trustPage("/ca", "de", ua).body
+		step3 := page[strings.Index(page, "data-fail-step"):]
+		if i := strings.Index(step3, `data-hook="fail"`); i < 0 || i > strings.Index(step3, "</li>") {
+			t.Errorf("the failure line is not in the failing step for %q", ua)
+		}
+	}
+	js := b.get("/static/https-check.js")
+	for _, want := range []string{"visibilitychange", "no-cors", "data-download", "setTimeout"} {
+		if !strings.Contains(js.body, want) {
+			t.Errorf("the check script lacks %q", want)
+		}
+	}
+	// A plain-HTTP device must be able to load the script that checks.
+	if r := b.get("/static/https-check.js"); r.status != http.StatusOK {
+		t.Errorf("script = %d", r.status)
+	}
+}
+
+// A phone on its way to pair keeps its target and its label; the box does not
+// pretend it is the wizard.
+func TestTrustPageKeepsThePairingTargetAndHasNoWizardAfterSetup(t *testing.T) {
+	c := signedInAPI(t)
+	host := strings.TrimPrefix(c.b.srv.URL, "https://")
+	host = host[:strings.LastIndex(host, ":")] // the box answers on the default HTTPS port in its links
+	target := "https://" + host + "/phones/join/ABC123"
+	r := c.b.trustPage("/ca?continue="+url.QueryEscape(target), "de", iPhone)
+	if !strings.Contains(r.body, `href="`+target+`" data-continue-link hidden>Weiter mit der Einrichtung`) {
+		t.Errorf("the pairing target or its label is gone:\n%s", r.body)
+	}
+	if strings.Contains(r.body, "Schritt 2: Dein Konto") || strings.Contains(r.body, `class="wsteps"`) {
+		t.Error("a configured box shows the wizard on the trust page")
+	}
+	if !strings.Contains(r.body, `continue=`) {
+		t.Error("choosing another device would lose the pairing target")
+	}
+	// Without a pairing target there is nothing to continue to.
+	if r := c.b.trustPage("/ca", "de", iPhone); strings.Contains(r.body, "data-continue-link") || strings.Contains(r.body, "Ohne Prüfung weiter") {
+		t.Error("a configured box offers a way on without a target")
+	}
+}
+
+// During the first setup the trust page is step 1 of the wizard.
+func TestTrustPageIsStepOneOfTheWizard(t *testing.T) {
+	b := newFreshBox(t)
+	b.post("/setup/https", url.Values{})
+	r := b.trustPage("/ca", "de", macUA)
+	for _, want := range []string{`class="wizard"`, "Einrichtung: Schritt 1 von 4", `aria-current="step"`, "Sichere Verbin\u00addung"} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("the wizard shell misses %q", want)
+		}
+	}
+	if strings.Contains(r.body, `class="frame-nav"`) {
+		t.Error("the wizard has a navigation")
+	}
+}
+
+// The fingerprint is shown as 32 pairs, explained in plain words, with where
+// to find it on this device; Windows only shows SHA-1, so it says comparing
+// is not possible there.
+func TestTrustPageFingerprintInPlainWords(t *testing.T) {
+	b := newBox(t)
+	fp := b.pki.CAFingerprint()
+	pairs := strings.Split(fp, ":")
+	r := b.trustPage("/ca", "de", macUA)
+	if got := strings.Count(r.body, "<span>"); got < 32 {
+		t.Errorf("fingerprint grid has %d spans, want 32 pairs", got)
+	}
+	for _, want := range []string{`class="fp"`, "<span>" + pairs[0] + "</span>", "<span>" + pairs[31] + "</span>", "wie eine Seriennummer", "Fingerabdruck vergleichen (freiwillig)", "Schlüsselbundverwaltung", "Protokoll der Box"} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("fingerprint section misses %q", want)
+		}
+	}
+	win := b.trustPage("/ca", "de", windowsUA)
+	// Windows shows only SHA-1, but the grid and the mismatch hint stay for the comparison with the box log.
+	for _, want := range []string{`class="fp"`, "<span>" + pairs[0] + "</span>", "SHA-1", "Protokoll der Box"} {
+		if !strings.Contains(win.body, want) {
+			t.Errorf("Windows fingerprint section misses %q", want)
 		}
 	}
 }

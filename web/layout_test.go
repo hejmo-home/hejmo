@@ -175,8 +175,12 @@ func TestColumnReadabilitySnapshot(t *testing.T) {
 	const longest = "Sebastian"
 	const veryLong = "Konstantinos" // 12 characters, a single word: must wrap, not clip
 	need := func(name string) float64 { return float64(len(name))*0.51*fs + 8 + marker }
-	link := regexp.MustCompile(`(?m)^\.fv \.person-link\s*\{([^}]*)\}`).FindStringSubmatch(css)
-	wraps := link != nil && strings.Contains(link[1], "overflow-wrap: anywhere;") && strings.Contains(link[1], "min-width: 0;")
+	// A name wraps at the column edge only if it is its own shrinkable flex
+	// item (min-width: 0) with overflow-wrap: break-word, and the template
+	// puts the name in that element.
+	nameRule := regexp.MustCompile(`(?m)^\.fv \.person-name\s*\{([^}]*)\}`).FindStringSubmatch(css)
+	wraps := nameRule != nil && strings.Contains(nameRule[1], "overflow-wrap: break-word;") && strings.Contains(nameRule[1], "min-width: 0;") &&
+		familyTemplateHasNameSpan(t)
 
 	devices := []struct {
 		name string
@@ -234,5 +238,105 @@ func TestRunningTextAndLinkButtonsInCards(t *testing.T) {
 	if !strings.Contains(css, ".cards a.button, .steps a.button { color: var(--accent-text); font-weight: 700; }") ||
 		!strings.Contains(css, ".cards a.button.secondary, .steps a.button.secondary { color: var(--accent); }") {
 		t.Error("link buttons in cards and steps lose their text colour")
+	}
+}
+
+// Ticket 133: the navigation row of a framed page must not widen the page on a
+// 375 px phone. The grid has one column that may shrink to nothing, the
+// navigation may shrink and scrolls sideways inside its own row, and the
+// two-column grid with navigation starts at 900 px only.
+func TestFramedPagesAreNeverWiderThanAPhone(t *testing.T) {
+	css := stylesheet(t)
+	for _, want := range []string{
+		`.frame { grid-template-columns: minmax(0, 1fr); }`,
+		`.frame-nav { min-width: 0; }`,
+		`@media (min-width: 900px) { .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); } }`,
+	} {
+		if !strings.Contains(css, want) {
+			t.Errorf("stylesheet lacks %q", want)
+		}
+	}
+	// Design pass 2: the row wraps on a phone, nothing is cut or hidden (as in #86).
+	if !strings.Contains(css, `.frame-nav ul { flex-wrap: wrap; overflow-x: visible; }`) {
+		t.Error("the navigation row does not wrap")
+	}
+}
+
+// Ticket 133, design pass 2: the components of the first steps, the picker, the
+// today card, the child's day and the outside links exist; the language
+// switcher rules of #134 are there once only.
+func TestStylesheetHasTheDesignPass2Components(t *testing.T) {
+	css := stylesheet(t)
+	for _, sel := range []string{
+		`.wsteps .wiz-count {`, "a.ext {", ".copyrow {", ".place-pick {", ".place-list {", ".place-status.ok {", ".fs-bar {", ".fs-head {", ".fs-state[data-state=\"done\"]",
+		".fs-acts {", ".link.quiet {", ".fs-foot {", ".who-chips {", ".fs-sub, .fs-rows {", ".fs-rows .for {", ".today {", ".today-fam ", ".today-people {",
+		".tev", ".today-meal {", ".child-h .marker {", ".today.child {", ".ctasks {", ".icon.star {", `ol.howto > li[data-skipped]::before`, "button.hub-row {",
+	} {
+		if !strings.Contains(css, sel) {
+			t.Errorf("stylesheet lacks %q", sel)
+		}
+	}
+	if n := strings.Count(css, "\n.lang-menu {"); n != 1 {
+		t.Errorf("the language switcher rules are there %d times, want once", n)
+	}
+	if !regexp.MustCompile(`\.wsteps \.wiz-count \{[^}]*margin: 0 0 8px[^}]*text-align: left[^}]*color: var\(--text-secondary\)`).MatchString(css) {
+		t.Error("the step count is not left aligned with an 8 px gap")
+	}
+}
+
+// Ticket 133: the setup wizard's components exist in the stylesheet.
+func TestStylesheetHasTheWizardComponents(t *testing.T) {
+	css := stylesheet(t)
+	for _, sel := range []string{
+		".wizard {", ".wiz-count", ".wsteps ol", "ol.howto", ".devices", ".detected", `.checkline[data-state="waiting"]`,
+		`.checkline[data-state="ok"]`, `.checkline[data-state="fail"]`, ".fp {", ".addr", ".secret.grouped", "ol.codes", ".confirm",
+		".pw {", ".firststeps", ".actions", ".link {", ".button[disabled]", `[data-theme="bw"] .button[disabled]`, "@media print",
+	} {
+		if !strings.Contains(css, sel) {
+			t.Errorf("stylesheet lacks %q", sel)
+		}
+	}
+}
+
+// #150 AC 1: with 8 people the names from the issue (Maximilian, Anna-Lena,
+// Konstantin) must not break inside a word at 1024x768 and 768x1024, in both
+// themes. Widths are browser measurements (Figtree 700, 19 px, one line,
+// measured with getBoundingClientRect on a nowrap span); the snapshot's 0.51 em
+// estimate is too coarse here (121 px for Maximilian, the browser 94). Anna-Lena
+// may break at its hyphen, so only its longer half "Anna-" (5 of 9 characters)
+// has to fit; that half is the proportional share of the measured 94.7 px, not
+// a separate measurement. The bw theme has a 16 px marker and a 6 px gap in the
+// name row (.fv .person-link, the flex row of marker and name) (light: 14 px and 8 px); the room is the column minus padding, gap
+// and marker.
+func TestIssueNamesFitWithEightPeople(t *testing.T) {
+	css := stylesheet(t)
+	root := cssTokens(t, css, "light")
+	pad := px(t, root["--pad-column"])
+	measured := map[string]float64{"Maximilian": 93.7, "Anna-Lena": 94.7 * 5 / 9, "Konstantin": 94.6}
+	lightGap := px(t, regexp.MustCompile(`gap:\s*(\d+px)`).FindStringSubmatch(ruleFor(t, css, ".fv .person-link"))[1])
+	bwGap := lightGap
+	bwNameRow := regexp.MustCompile(`(?m)^\[data-theme="bw"\] \.fv \.person-link\s*\{[^}]*\}`)
+	if m := regexp.MustCompile(`gap:\s*(\d+px)`).FindStringSubmatch(bwNameRow.FindString(css)); m != nil {
+		bwGap = px(t, m[1])
+	}
+	for _, theme := range []struct {
+		name        string
+		marker, gap float64
+	}{
+		{"light", px(t, root["--marker-size"]), lightGap},
+		{"bw", px(t, themed(t, css, "bw")["--marker-size-bw-column"]), bwGap},
+	} {
+		for _, d := range []struct {
+			name string
+			w, h float64
+		}{{"1024x768", 1024, 768}, {"768x1024", 768, 1024}} {
+			_, colw := visibleColumns(t, css, d.w, d.h, 8)
+			room := colw - 2*pad - theme.gap - theme.marker
+			for n, w := range measured {
+				if w > room {
+					t.Errorf("%s %s, 8 people: %q needs %.1f px, the name has %.1f px", theme.name, d.name, n, w, room)
+				}
+			}
+		}
 	}
 }

@@ -243,8 +243,40 @@ type noteForm struct {
 
 func (s *server) renderHome(w http.ResponseWriter, r *http.Request, status int, person store.Person, h store.Household, form *noteForm) {
 	data := map[string]any{"Person": person, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": person.Role == store.RoleParent && s.httpsWarning(), "Update": s.parentUpdateNotice(person, h)}
+	first, err := s.firstSteps(person, h, s.langOf(r))
+	if err != nil {
+		s.fail(w, "first steps", err)
+		return
+	}
+	data["FirstSteps"] = first
+	lang := s.langOf(r)
+	if person.Role == store.RoleChild {
+		people, err := s.db.People(h.ID)
+		if err != nil {
+			s.fail(w, "child home", err)
+			return
+		}
+		child, err := s.childHome(h, lang, person, people)
+		if err != nil {
+			s.fail(w, "child home", err)
+			return
+		}
+		data["Child"] = child
+	}
 	if person.Role == store.RoleParent {
-		lang := s.langOf(r)
+		if first == nil { // the day comes after the first steps
+			people, err := s.db.People(h.ID)
+			if err != nil {
+				s.fail(w, "today", err)
+				return
+			}
+			today, err := s.todayCard(h, lang, people)
+			if err != nil {
+				s.fail(w, "today", err)
+				return
+			}
+			data["Today"] = today
+		}
 		now := s.householdNow(h)
 		if err := s.db.PruneDayNotes(h.ID, now.Format(store.DayLayout)); err != nil { // only today and later
 			s.fail(w, "day notes", err)

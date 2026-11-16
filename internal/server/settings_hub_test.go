@@ -37,7 +37,7 @@ func hubTargets(body string) []string {
 // 5.18: the navigation holds everyday screens only; setup screens sit under Settings (ADR 0017).
 func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
 	b := signedInBox(t)
-	want := []string{"/", "/calendar", "/tasks", "/meals", "/settings"}
+	want := []string{"/", "/calendar", "/tasks", "/meals", "/lists", "/settings"}
 	for _, page := range []string{"/", "/tasks", "/settings", "/calendars", "/displays"} {
 		got := navTargets(t, b.get(page).body)
 		if strings.Join(got, " ") != strings.Join(want, " ") {
@@ -141,12 +141,12 @@ func TestChildSeesNoSettingsPages(t *testing.T) {
 	}
 }
 
-// 5.18: at 375 px the navigation is one row with targets of at least 44 px.
-func TestNavigationFitsOneRowWithTouchTargets(t *testing.T) {
+// 5.18: at 375 px the navigation wraps onto further rows instead of scrolling (design pass 2 on 6.1), with targets of at least 44 px.
+func TestNavigationWrapsWithTouchTargets(t *testing.T) {
 	css := string(mustStatic(t, "static/hejmo.css"))
 	m := regexp.MustCompile(`\.frame-nav ul \{([^}]*)\}`).FindStringSubmatch(css)
-	if m == nil || !strings.Contains(m[1], "flex-wrap: nowrap") || !strings.Contains(m[1], "overflow-x: auto") {
-		t.Errorf("the navigation is not a single scrollable row: %v", m)
+	if m == nil || !strings.Contains(m[1], "flex-wrap: wrap") || strings.Contains(m[1], "overflow-x") {
+		t.Errorf("the navigation does not wrap: %v", m)
 	}
 	a := regexp.MustCompile(`\.frame-nav a \{([^}]*)\}`).FindStringSubmatch(css)
 	if a == nil || !strings.Contains(a[1], "min-height: var(--touch-target)") {

@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"slices"
 	"strings"
 	"time"
 
@@ -46,6 +47,11 @@ type Household struct {
 	// MealCutoffs are the times from which a mealtime is no longer shown on
 	// displays (ADR 0016).
 	MealCutoffs meal.Cutoffs
+	// FirstStepsHidden is set when a parent hid the first steps card on the start page.
+	FirstStepsHidden bool
+	// FirstStepsSkipped lists the steps of the card a parent skipped, in the
+	// order of FirstStepIDs.
+	FirstStepsSkipped []string
 }
 
 // DateFormat is how the household wants dates in numbers written.
@@ -84,23 +90,115 @@ func (f TimeFormat) Valid() bool { return f == Time24h || f == Time12h }
 // Valid reports whether u is a known temperature unit.
 func (u TemperatureUnit) Valid() bool { return u == Celsius || u == Fahrenheit }
 
-// UpdateHouseholdSettings stores the household's date format, time format, temperature unit
-// and auto-update mode in one statement, so a save is all or nothing.
-func (db *DB) UpdateHouseholdSettings(id string, d DateFormat, f TimeFormat, u TemperatureUnit, a UpdateMode) error {
-	if !d.Valid() || !f.Valid() || !u.Valid() || !a.Valid() {
-		return errors.New("store: unknown date format, time format, temperature unit or update mode")
-	}
-	return expectOne(db.sql.Exec(`UPDATE households SET date_format = ?, time_format = ?, temperature_unit = ?, auto_update = ?, updated_at = ? WHERE id = ?`, d, f, u, a, now(), id))
+// SetFirstStepsHidden shows or hides the first steps card on the start page.
+func (db *DB) SetFirstStepsHidden(id string, hidden bool) error {
+	return expectOne(db.sql.Exec(`UPDATE households SET first_steps_hidden = ?, updated_at = ? WHERE id = ?`, hidden, now(), id))
 }
 
-// SetMealCutoffs stores the times from which a mealtime is no longer shown on
-// displays (ADR 0016).
-func (db *DB) SetMealCutoffs(id string, c meal.Cutoffs) error {
-	if err := c.Validate(); err != nil {
-		return fmt.Errorf("%w: %w", ErrInvalid, err) // keeps the *meal.InvalidError and its field
+// FirstStepIDs are the steps of the first steps card, in the order the card
+// shows them (ticket 133).
+var FirstStepIDs = []string{"family", "parents", "calendars", "tasks", "meals", "display"}
+
+// UnknownStepError says which step id is not a first step. It matches
+// ErrInvalid with errors.Is.
+type UnknownStepError struct{ Step string }
+
+func (e *UnknownStepError) Error() string {
+	return fmt.Sprintf("%s: unknown first step %q", ErrInvalid, e.Step)
+}
+func (e *UnknownStepError) Unwrap() error { return ErrInvalid }
+
+// cleanFirstSteps checks a list of step ids and returns it without doubles, in
+// the order of the card.
+func cleanFirstSteps(steps []string) ([]string, error) {
+	var out []string
+	for _, id := range FirstStepIDs {
+		if slices.Contains(steps, id) {
+			out = append(out, id)
+		}
 	}
-	return expectOne(db.sql.Exec(`UPDATE households SET cutoff_breakfast = ?, cutoff_lunch = ?, cutoff_snack = ?, cutoff_dinner = ?, updated_at = ? WHERE id = ?`,
-		c.Breakfast, c.Lunch, c.Snack, c.Dinner, now(), id))
+	for _, s := range steps {
+		if !slices.Contains(FirstStepIDs, s) {
+			return nil, &UnknownStepError{Step: s}
+		}
+	}
+	return out, nil
+}
+
+// SetFirstStepSkipped skips a step of the first steps card, or takes the skip back.
+func (db *DB) SetFirstStepSkipped(id, step string, skipped bool) error {
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	var list string
+	if err := tx.QueryRow(`SELECT first_steps_skipped FROM households WHERE id = ?`, id).Scan(&list); errors.Is(err, sql.ErrNoRows) {
+		return ErrNotFound
+	} else if err != nil {
+		return err
+	}
+	steps := splitSteps(list)
+	if skipped {
+		steps = append(steps, step)
+	} else {
+		steps = slices.DeleteFunc(steps, func(s string) bool { return s == step })
+	}
+	steps, err = cleanFirstSteps(steps)
+	if err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`UPDATE households SET first_steps_skipped = ?, updated_at = ? WHERE id = ?`, strings.Join(steps, ","), now(), id); err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+func splitSteps(list string) []string {
+	if list == "" {
+		return nil
+	}
+	return strings.Split(list, ",")
+}
+
+// HouseholdSettings are the settings a parent can change. The first steps
+// state is optional: nil leaves what is stored alone, so a save of the other
+// settings never undoes a skip or hide made at the same time.
+type HouseholdSettings struct {
+	DateFormat       DateFormat
+	TimeFormat       TimeFormat
+	TemperatureUnit  TemperatureUnit
+	AutoUpdate       UpdateMode
+	MealCutoffs      meal.Cutoffs
+	FirstStepsHidden *bool
+	// FirstStepsSkipped is a pointer to a slice on purpose: nil keeps the
+	// stored list, a pointer to an empty list clears it.
+	FirstStepsSkipped *[]string
+}
+
+// SaveHouseholdSettings stores the settings in one statement, so a save is all
+// or nothing. Invalid values give ErrInvalid.
+func (db *DB) SaveHouseholdSettings(id string, in HouseholdSettings) error {
+	if !in.DateFormat.Valid() || !in.TimeFormat.Valid() || !in.TemperatureUnit.Valid() || !in.AutoUpdate.Valid() {
+		return fmt.Errorf("%w: unknown date format, time format, temperature unit or update mode", ErrInvalid)
+	}
+	if err := in.MealCutoffs.Validate(); err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalid, err)
+	}
+	var skipped *string // NULL keeps the stored list
+	if in.FirstStepsSkipped != nil {
+		clean, err := cleanFirstSteps(*in.FirstStepsSkipped)
+		if err != nil {
+			return err
+		}
+		list := strings.Join(clean, ",")
+		skipped = &list
+	}
+	c := in.MealCutoffs
+	return expectOne(db.sql.Exec(`UPDATE households SET date_format = ?, time_format = ?, temperature_unit = ?, auto_update = ?,
+		cutoff_breakfast = ?, cutoff_lunch = ?, cutoff_snack = ?, cutoff_dinner = ?,
+		first_steps_hidden = COALESCE(?, first_steps_hidden), first_steps_skipped = COALESCE(?, first_steps_skipped), updated_at = ? WHERE id = ?`,
+		in.DateFormat, in.TimeFormat, in.TemperatureUnit, in.AutoUpdate, c.Breakfast, c.Lunch, c.Snack, c.Dinner, in.FirstStepsHidden, skipped, now(), id))
 }
 
 // SetHouseholdCoordinates stores the coordinates of the household's home.
@@ -148,24 +246,26 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 // Household loads a household by id.
 func (db *DB) Household(id string) (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped
 		FROM households WHERE id = ?`, id))
 }
 
 // HomeHousehold returns the household this box serves (V1: exactly one).
 func (db *DB) HomeHousehold() (Household, error) {
 	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
-		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner
+		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped
 		FROM households ORDER BY created_at, rowid LIMIT 1`))
 }
 
 func (db *DB) scanHousehold(row *sql.Row) (Household, error) {
 	var h Household
+	var skipped string
 	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.DateFormat, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
-		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner)
+		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Household{}, ErrNotFound
 	}
+	h.FirstStepsSkipped = splitSteps(skipped)
 	return h, err
 }
 

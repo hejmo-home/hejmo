@@ -68,8 +68,19 @@ var apiRoutes = []APIRoute{
 	{"GET", "/search", auth.Perm("events", auth.Read), (*server).apiSearch},
 	{"GET", "/tasks", auth.Perm("tasks", auth.Read), (*server).apiListTasks},
 	{"POST", "/tasks", auth.Perm("tasks", auth.Write), (*server).apiCreateTask},
+	{"PATCH", "/tasks/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchTask},
 	{"DELETE", "/tasks/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeleteTask},
 	{"PUT", "/tasks/{id}/done", auth.Perm("tasks", auth.Complete), (*server).apiSetTaskDone},
+	{"GET", "/lists", auth.Perm("lists", auth.Read), (*server).apiListLists},
+	{"POST", "/lists", auth.Perm("lists", auth.Write), (*server).apiCreateList},
+	{"GET", "/lists/{id}", auth.Perm("lists", auth.Read), (*server).apiGetList},
+	{"PATCH", "/lists/{id}", auth.Perm("lists", auth.Write), (*server).apiUpdateList},
+	{"DELETE", "/lists/{id}", auth.Perm("lists", auth.Delete), (*server).apiDeleteList},
+	{"POST", "/lists/{id}/entries", auth.Perm("lists", auth.Write), (*server).apiAddEntry},
+	{"DELETE", "/lists/{id}/entries/{entry}", auth.Perm("lists", auth.Delete), (*server).apiDeleteEntry},
+	{"PUT", "/lists/{id}/entries/{entry}/done", auth.Perm("lists", auth.Complete), (*server).apiSetEntryDone},
+	{"PUT", "/lists/{id}/entries/{entry}/position", auth.Perm("lists", auth.Write), (*server).apiMoveEntry},
+	{"DELETE", "/lists/{id}/completed-entries", auth.Perm("lists", auth.Delete), (*server).apiDeleteCompleted},
 	{"GET", "/meals", auth.Perm("meals", auth.Read), (*server).apiListMeals},
 	{"PUT", "/meals/{date}/{mealtime}", auth.Perm("meals", auth.Write), (*server).apiSetMeal},
 	{"DELETE", "/meals/{date}/{mealtime}", auth.Perm("meals", auth.Delete), (*server).apiDeleteMeal},
@@ -313,6 +324,11 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// writeFieldError is writeError for a refused field: the body names it.
+func writeFieldError(w http.ResponseWriter, status int, field, msg string) {
+	writeJSON(w, status, map[string]string{"error": msg, "field": field})
 }
 
 func writeError(w http.ResponseWriter, status int, msg string) {

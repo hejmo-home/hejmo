@@ -7,6 +7,7 @@
     {{range .Hub}}
     <li><a class="hub-row" href="{{.Href}}"><strong>{{t .Label}}</strong><span class="hint">{{t .Hint}}</span></a></li>
     {{end}}
+    {{if .FirstStepsHidden}}<li><form method="post" action="/first-steps/show"><button class="hub-row" type="submit"><strong>{{t "hub.first_steps"}}</strong><span class="hint">{{t "hub.first_steps.hint"}}</span></button></form></li>{{end}}
   </ul>
   <fieldset class="steps" data-theme-choices>
     <legend>{{t "settings.theme"}}</legend>

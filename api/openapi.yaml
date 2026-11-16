@@ -530,6 +530,46 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
   /tasks/{id}:
+    patch:
+      operationId: updateTask
+      summary: Change a task's star value (scope tasks:write, parents only)
+      description: |
+        Only `stars` can be changed so far; any other or unknown field is
+        refused with 400. The new value counts from the next tick. Ticks that
+        are already credited keep their value: the star log and the stars
+        credited for done days stay as they are, and unticking deducts what was
+        credited. A missing value, a value that is not a whole number and a value
+        outside 0 to 100 give 422 with `field: stars`, as on POST /tasks.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: |
+                `stars` is a whole number from 0 to 100. The range is checked by
+                the box, so a value outside it gets the 422 below with a field
+                error. Any other field is refused with 400.
+              additionalProperties: false
+              properties:
+                stars: { type: integer, minimum: 0, maximum: 100 }
+      responses:
+        "200":
+          description: The updated task with its state today
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400":
+          description: Not valid JSON or an unknown field
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
     delete:
       operationId: deleteTask
       summary: Delete a task with its history (scope tasks:delete, parents only)
@@ -820,6 +860,207 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /lists:
+    get:
+      operationId: listLists
+      summary: The household's lists with their number of entries (scope lists:read)
+      description: |
+        Oldest first. Every list belongs to the household and has no audience.
+        A new box has the lists "Shopping" and "To-dos". Everyone, children
+        included, may read lists.
+      responses:
+        "200":
+          description: Lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/List" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createList
+      summary: Create a list (scope lists:write, parents only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewList" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/List" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getList
+      summary: One list with its entries in the order the list shows them (scope lists:read)
+      description: |
+        An alphabetical list orders its entries by text, ignoring case and
+        treating ä, ö, ü like a, o, u; a manual list follows the positions
+        set with `PUT /lists/{id}/entries/{entry}/position`.
+      responses:
+        "200":
+          description: The list with its entries
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListWithEntries" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateList
+      summary: Rename a list or change its colour, symbol or sorting (scope lists:write, parents only)
+      description: Switching the sorting keeps the manual order, so switching back restores it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ListChange" }
+      responses:
+        "200":
+          description: The changed list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/List" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteList
+      summary: Delete a list with all its entries (scope lists:delete, parents only)
+      description: A child is refused with 403.
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /lists/{id}/entries:
+    post:
+      operationId: addListEntry
+      summary: Add an entry at the end of a list (scope lists:write, parents only)
+      description: An alphabetical list shows it at its place by text.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, minLength: 1, maxLength: 200 }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntry" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}/entries/{entry}:
+    delete:
+      operationId: deleteListEntry
+      summary: Delete one entry (scope lists:delete, parents only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /lists/{id}/entries/{entry}/done:
+    put:
+      operationId: setListEntryDone
+      summary: Tick an entry off or back open (scope lists:complete)
+      description: Everyone, children included, may do this. Ticking twice changes nothing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [done]
+              properties:
+                done: { type: boolean }
+      responses:
+        "200":
+          description: The entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntry" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}/entries/{entry}/position:
+    put:
+      operationId: moveListEntry
+      summary: Move an entry to a place of a manually sorted list (scope lists:write, parents only)
+      description: Position 0 is first. Refused with 422 on an alphabetical list.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [position]
+              properties:
+                position: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: The entries in their new order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ListEntry" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}/completed-entries:
+    delete:
+      operationId: deleteCompletedListEntries
+      summary: Delete all ticked-off entries of a list (scope lists:delete, parents only)
+      description: Open entries stay.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: How many entries were deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted]
+                properties:
+                  deleted: { type: integer, minimum: 0 }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /groups:
     get:
       operationId: listGroups
@@ -1454,6 +1695,60 @@ components:
         entries:
           type: array
           items: { $ref: "#/components/schemas/StarEntry" }
+    ListColor:
+      type: string
+      description: The person colour slot 1 to 6 of DESIGN.md, by name
+      enum: [terracotta, blue, green, ochre, plum, teal]
+    ListSymbol:
+      type: string
+      description: The black-and-white symbol, in the order of the person colour slots
+      enum: [circle-filled, circle-empty, square-filled, square-empty, triangle-filled, diamond-filled]
+    ListSort:
+      type: string
+      enum: [manual, alphabetical]
+    NewList:
+      type: object
+      required: [name, color, symbol]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        color: { $ref: "#/components/schemas/ListColor" }
+        symbol: { $ref: "#/components/schemas/ListSymbol" }
+        sort: { allOf: [{ $ref: "#/components/schemas/ListSort" }], description: "Default manual" }
+    ListChange:
+      type: object
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        color: { $ref: "#/components/schemas/ListColor" }
+        symbol: { $ref: "#/components/schemas/ListSymbol" }
+        sort: { $ref: "#/components/schemas/ListSort" }
+    List:
+      type: object
+      required: [id, name, color, symbol, sort, open_count, done_count]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        color: { $ref: "#/components/schemas/ListColor" }
+        symbol: { $ref: "#/components/schemas/ListSymbol" }
+        sort: { $ref: "#/components/schemas/ListSort" }
+        open_count: { type: integer, description: "Entries not ticked off" }
+        done_count: { type: integer, description: "Entries ticked off" }
+    ListEntry:
+      type: object
+      required: [id, text, done]
+      properties:
+        id: { type: string, format: uuid }
+        text: { type: string }
+        done: { type: boolean }
+    ListWithEntries:
+      allOf:
+        - { $ref: "#/components/schemas/List" }
+        - type: object
+          required: [entries]
+          properties:
+            entries:
+              type: array
+              items: { $ref: "#/components/schemas/ListEntry" }
     Group:
       type: object
       required: [id, name, members]
@@ -1685,11 +1980,16 @@ components:
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
     Settings:
       type: object
-      required: [date_format, time_format, temperature_unit, auto_update, meal_cutoffs]
+      required: [date_format, time_format, temperature_unit, auto_update, first_steps_hidden, first_steps_skipped, meal_cutoffs]
       properties:
         date_format: { type: string, enum: [dmy, mdy], description: "Day first DD.MM.YYYY (default) or month first MM/DD/YYYY. Only how the web interface writes dates in numbers; this API, CalDAV and iCalendar stay ISO 8601" }
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
         temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
+        first_steps_hidden: { type: boolean, description: "Whether the first steps card on the start page is hidden (default false). A parent closes the card when all six steps are done or skipped, or hides it earlier." }
+        first_steps_skipped:
+          type: array
+          description: "The steps of the first steps card a parent skipped, in the order of the card (default empty)"
+          items: { type: string, enum: [family, parents, calendars, tasks, meals, display] }
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
         meal_cutoffs: { $ref: "#/components/schemas/MealCutoffs" }
     MealCutoffs:
@@ -1709,6 +2009,11 @@ components:
         time_format: { type: string, description: "24h or 12h" }
         temperature_unit: { type: string, description: "c or f" }
         auto_update: { type: string, description: "on, off or notify" }
+        first_steps_hidden: { type: boolean, description: "Hide or show the first steps card on the start page" }
+        first_steps_skipped:
+          type: array
+          description: "Replaces the list of skipped steps; an unknown step refuses the whole request with 422. Steps: family, parents, calendars, tasks, meals, display."
+          items: { type: string }
         meal_cutoffs:
           type: object
           description: "Only the mealtimes given change; a time outside hh:mm refuses the whole request with 422"
@@ -1870,6 +2175,7 @@ components:
       required: [error]
       properties:
         error: { type: string }
+        field: { type: string, description: "The refused field, when the error is about one" }
   responses:
     Unauthorized:
       description: Missing or invalid credentials

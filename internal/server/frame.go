@@ -1,6 +1,7 @@
 package server
 
 import (
+	"html/template"
 	"net/http"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ var navItems = []navItem{
 	{"/calendar", "nav.calendar", auth.Perm("events", auth.Write)},
 	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Read)},
 	{"/meals", "nav.meals", auth.Perm("meals", auth.Read)},
+	{"/lists", "nav.lists", auth.Perm("lists", auth.Read)},
 	{"/settings", "nav.settings", auth.Perm("settings", auth.Write)},
 }
 
@@ -51,8 +53,9 @@ type frame struct {
 	// leads one level up: the Settings hub for setup screens, the meal plan and
 	// the templates menu for the meal plan templates, the device list for a device.
 	BackHref, BackLabel string
-	// Success is the success line after a saved change, already translated.
-	Success string
+	// Success is the success line after a saved change, already translated
+	// and escaped; a text of the locales may hold <b> around a figure.
+	Success template.HTML
 	// Error is an error line shown above the page, already translated.
 	Error string
 	// The language switcher (ticket 134): the active language, its own name and

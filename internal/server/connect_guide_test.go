@@ -167,7 +167,7 @@ func TestConnectICloudLoginFailureShowsAtThePasswordAndKeepsTheUsername(t *testi
 		t.Error("the iCloud card is not checked")
 	}
 	form := formOf(t, block, "/connections")
-	if strings.Count(r.body, `class="ferr"`) != 1 || !strings.Contains(form, `id="err-password"`) || !strings.Contains(form, `aria-describedby="err-password"`) {
+	if strings.Count(r.body, `class="ferr"`) != 1 || !strings.Contains(form, `id="err-password"`) || !strings.Contains(form, `aria-describedby="err-password`) {
 		t.Fatalf("want one error at the password:\n%s", form)
 	}
 	if !strings.Contains(r.body, "iCloud hat die Anmeldung abgelehnt.") || !strings.Contains(r.body, "erstelle in Schritt 3 ein neues") {

@@ -6,12 +6,12 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"html"
 	"html/template"
 	"io"
 	"io/fs"
 	"log/slog"
 	"net/http"
-	"regexp"
 	"slices"
 	"strings"
 	"sync"
@@ -86,23 +86,24 @@ type PublicHTTPS interface {
 }
 
 type server struct {
-	db        *store.DB
-	pki       *pki.Store
-	public    PublicHTTPS
-	httpsPort string
-	now       func() time.Time
-	i18n      *i18n.Bundle
-	pages     *template.Template
-	logger    *slog.Logger
-	limiter   *loginLimiter
-	opens     *loginLimiter // pairing screens opened, per client address
-	sync      *calsync.Service
-	weather   *weather.Service
-	live      time.Duration
-	countWait time.Duration
-	done      <-chan struct{}
-	updateDir string
-	rolled    sync.Map // household id -> the day its meal plan calendar was last rolled forward
+	db         *store.DB
+	pki        *pki.Store
+	public     PublicHTTPS
+	httpsPort  string
+	now        func() time.Time
+	i18n       *i18n.Bundle
+	pages      *template.Template
+	logger     *slog.Logger
+	limiter    *loginLimiter
+	opens      *loginLimiter // pairing screens opened, per client address
+	sync       *calsync.Service
+	weather    *weather.Service
+	live       time.Duration
+	countWait  time.Duration
+	done       <-chan struct{}
+	updateDir  string
+	flashTexts flashTexts
+	rolled     sync.Map // household id -> the day its meal plan calendar was last rolled forward
 }
 
 // New returns the box's root HTTP handler.
@@ -174,6 +175,10 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /logout", s.handleLogout)
 	mux.HandleFunc("POST /language", s.handleLanguageSwitch)
 	mux.HandleFunc("GET /{$}", s.handleHome)
+	mux.HandleFunc("POST /first-steps/hide", s.handleFirstStepsHide)
+	mux.HandleFunc("POST /first-steps/show", s.handleFirstStepsShow)
+	mux.HandleFunc("POST /first-steps/skip", s.handleFirstStepSkip)
+	mux.HandleFunc("POST /first-steps/undo", s.handleFirstStepUndo)
 	mux.HandleFunc("GET /calendar", s.handleCalendarWeek)
 	mux.HandleFunc("GET /calendar/search", s.handleCalendarSearch)
 	mux.HandleFunc("GET /calendar/new", s.handleEventNew)
@@ -218,7 +223,18 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/stars", s.handleStarBooking)
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
+	mux.HandleFunc("POST /tasks/{id}/stars", s.handleTaskStars)
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
+	mux.HandleFunc("GET /lists", s.handleListsPage)
+	mux.HandleFunc("POST /lists", s.handleListCreate)
+	mux.HandleFunc("GET /lists/{id}", s.handleListPage)
+	mux.HandleFunc("POST /lists/{id}/settings", s.handleListSettings)
+	mux.HandleFunc("POST /lists/{id}/delete", s.handleListDelete)
+	mux.HandleFunc("POST /lists/{id}/entries", s.handleEntryAdd)
+	mux.HandleFunc("POST /lists/{id}/entries/{entry}/done", s.handleEntryDone)
+	mux.HandleFunc("POST /lists/{id}/entries/{entry}/delete", s.handleEntryDelete)
+	mux.HandleFunc("POST /lists/{id}/entries/{entry}/move", s.handleEntryMove)
+	mux.HandleFunc("POST /lists/{id}/completed/delete", s.handleTickedDelete)
 	mux.HandleFunc("GET /meals", s.handleMealsPage)
 	mux.HandleFunc("POST /meals", s.handleMealsSave)
 	mux.HandleFunc("GET /meals/templates", s.handleTemplatesPage)
@@ -276,7 +292,6 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	// The family view arrives with work package 5.
 	h, err := s.db.HomeHousehold()
 	if err != nil {
 		s.fail(w, "household", err)
@@ -310,7 +325,7 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
-	for _, k := range []string{"Error", "ErrorField"} { // templates compare them
+	for _, k := range []string{"Error", "ErrorField", "FieldError", "Flash"} { // templates compare them
 		if _, ok := data[k]; !ok {
 			data[k] = ""
 		}
@@ -325,15 +340,22 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		switch own, _ := data["SuccessKey"].(string); {
 		case key == "flash.lang.error":
 			fr.Error = s.i18n.T(lang, key)
+		case key != "" && status >= http.StatusBadRequest:
+			// A failed form shows no success line, not even one left over from before.
 		case data["SuccessText"] != nil:
-			fr.Success, _ = data["SuccessText"].(string) // a page that shows the result itself, and names the thing
+			text, _ := data["SuccessText"].(string)
+			fr.Success = template.HTML(html.EscapeString(text)) // a page that shows the result itself, and names the thing
 		case data["SuccessMsg"] != nil:
 			msg, _ := data["SuccessMsg"].(i18n.Message)
-			fr.Success = s.i18n.Format(lang, msg) // the same, with values filled in
+			fr.Success = template.HTML(html.EscapeString(s.i18n.Format(lang, msg))) // the same, with values filled in
 		case own != "":
-			fr.Success = s.i18n.T(lang, own)
+			fr.Success = template.HTML(html.EscapeString(s.i18n.T(lang, own))) // a page that shows the result itself
 		case key != "":
-			fr.Success = s.successText(lang, key, arg)
+			fr.Success = s.successHTML(lang, key, arg)
+			data["Flash"] = key
+		}
+		if inline, _ := data["SuccessInline"].(bool); inline {
+			data["Success"], fr.Success = fr.Success, "" // the page places the line itself
 		}
 		data["Frame"] = fr
 	}
@@ -365,16 +387,6 @@ func (s *server) execute(w io.Writer, name, lang string, data any) error {
 func (s *server) fail(w http.ResponseWriter, what string, err error) {
 	s.logger.Error(what, "err", err)
 	http.Error(w, http.StatusText(http.StatusInternalServerError), http.StatusInternalServerError)
-}
-
-// pathMark finds a menu name in a translated text: [[Settings]].
-var pathMark = regexp.MustCompile(`\[\[(.+?)\]\]`)
-
-// rich shows a translated text with its menu names ([[like this]]) set apart
-// as the names the person sees on the screen they are told to use. The text is
-// escaped first, so it cannot add markup of its own.
-func rich(text string) template.HTML {
-	return template.HTML(pathMark.ReplaceAllString(template.HTMLEscapeString(text), `<span class="path">$1</span>`))
 }
 
 // repl fills the {name} placeholders of a translated text: repl(text, "{n}", "3", ...).

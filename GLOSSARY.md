@@ -56,8 +56,12 @@ _Avoid_: domain, DynDNS
 The German state, Austrian state or Swiss canton of the household, which decides its public holidays.
 _Avoid_: location, country, Bundesland (in code)
 
+**Place list**:
+The list of towns, villages and districts of Germany, Austria and Switzerland that ships inside the box (GeoNames extract, CC BY 4.0, ADR 0020). The parent picks the home location from it while typing; nothing is looked up on the internet.
+_Avoid_: geocoding, address search
+
 **Home location**:
-The latitude and longitude of the household's home, found once from a place name the parent confirms (ADR 0019). Sunrise and sunset (front light, themes) and the weather use it; the region does not (too coarse).
+The latitude and longitude of the household's home, found from a place the parent picks in the list of places on the box (ADR 0020, which replaces the one-time lookup of ADR 0019). The household keeps the place's id, so the box can show its region in the page language. Sunrise and sunset (front light, themes) and the weather use it; the region does not (too coarse).
 _Avoid_: position, address
 
 ## Calendar

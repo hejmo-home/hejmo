@@ -1,222 +1,203 @@
 package server
 
 import (
-	"context"
-	"errors"
-	"fmt"
-	"math"
+	"html"
+	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
-	"github.com/hejmo-home/hejmo/internal/weather"
+	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/places"
+	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/sun"
 )
 
-// The home location (Q59): the parent types a place name, the box asks
-// Open-Meteo's geocoding once, shows what it found and stores the coordinates
-// the parent confirmed. Sunrise and sunset (the sun rule of displays, themes)
-// and the weather read the stored coordinates and never search again.
+// The home location (ADR 0020, ticket 86): the parent picks a place from the
+// list of places in Germany, Austria and Switzerland that ships on the box. The
+// form posts the place's id (place_id) and never coordinates; the box looks the
+// coordinates and the region up in the list. Nothing goes to the internet.
 
-// searchTimeout bounds a place search while a parent waits for the page.
-const searchTimeout = 8 * time.Second
-
-// placeOption is one place a search found, as a choice or card on the page.
+// placeOption is one suggestion of the open picker.
 type placeOption struct {
-	Name   string // what the parent would call it
-	Region string // "district, state, country", without empty or repeated parts
-	Value  string // "lat,lon"
-	Label  string // name and region in one line, carried along as place_label
-	Coords string // the coordinates in degrees
+	ID           int
+	Name, Region string
+	RegionCode   string
 }
 
-// placeView is what the confirmation part of a form shows.
-type placeView struct {
-	For string // the name the places were searched for or confirmed for
-	// Options are the places to choose from when several match; none is preselected.
-	Options []placeOption
-	// Found is the one place to confirm by saving: the single match of a
-	// search, or the place already chosen for For and carried along while
-	// other fields of the form are corrected.
-	Found *placeOption
+// chosenPlace is the picked place, confirmed in words.
+type chosenPlace struct {
+	ID           int
+	Name, Region string // Region is empty for a home set through the API: it has no place id
+	State        string // the line in bold: chosen, in use today with sun times, or pending
+	RegionCode   string
 }
 
-// regionText joins the parts of a place below its name, leaving out empty ones
-// and ones that repeat the name or an earlier part.
-func regionText(name string, parts ...string) string {
-	seen := map[string]bool{name: true}
-	var out []string
-	for _, p := range parts {
-		if p != "" && !seen[p] {
-			seen[p] = true
-			out = append(out, p)
+// placeKeep is the row of Settings that says which place stays in use while
+// another is being picked, and offers to keep it.
+type placeKeep struct{ Hint, Button string }
+
+// placeMissing is the dashed box of a household that has a name but no place.
+type placeMissing struct{ Title, Hint string }
+
+// placePick is what the placePicker partial shows: the open state (a field
+// with suggestions) or the confirmed state (the picked place in words).
+type placePick struct {
+	Chosen *chosenPlace
+	// Text is what is typed in the open field.
+	Text string
+	// Question and Options are the suggestions under the field.
+	Question string
+	Options  []placeOption
+	// Error is the text at the field (already in the page language).
+	Error   string
+	Keep    *placeKeep
+	Missing *placeMissing
+}
+
+// pickerInput is what a form posted about the place. A pick is a post that
+// carries the typed text and a place id (the button of a suggestion); a post
+// of the confirmed state carries the id only.
+type pickerInput struct {
+	Text    string // home_name, trimmed
+	HasText bool
+	ID      int // place_id, 0 if none or not a number
+	HasID   bool
+	Change  bool // the Change button
+	Keep    bool // the Keep button
+}
+
+func readPickerInput(r *http.Request) pickerInput {
+	_ = r.ParseForm()
+	in := pickerInput{Change: r.PostFormValue("place_change") != "", Keep: r.PostFormValue("place_keep") != ""}
+	if _, ok := r.PostForm["home_name"]; ok {
+		in.HasText, in.Text = true, strings.TrimSpace(r.PostFormValue("home_name"))
+	}
+	if v := strings.TrimSpace(r.PostFormValue("place_id")); v != "" {
+		in.HasID = true
+		if n, err := strconv.Atoi(v); err == nil && n > 0 {
+			in.ID = n
 		}
 	}
-	return strings.Join(out, ", ")
+	return in
 }
 
-func newPlaceOption(p weather.Place) placeOption {
-	o := placeOption{Name: p.Name, Region: regionText(p.Name, p.Area, p.Region, p.Country), Value: placeValue(p.Latitude, p.Longitude), Coords: coordinatesText(p.Latitude, p.Longitude)}
-	o.Label = regionText("", o.Name, o.Region)
-	return o
-}
-
-// formatCoord writes a coordinate the way the form carries it.
-func formatCoord(v float64) string { return strconv.FormatFloat(v, 'f', -1, 64) }
-
-func placeValue(lat, lon float64) string { return formatCoord(lat) + "," + formatCoord(lon) }
-
-// parsePlace reads a "lat,lon" value and checks the ranges.
-func parsePlace(v string) (lat, lon float64, ok bool) {
-	a, b, found := strings.Cut(v, ",")
-	if !found {
-		return 0, 0, false
+// suggestions are the places for what is typed: the question above them and
+// at most five options. The question says in words when more places match.
+func (s *server) suggestions(lang, text string) (question string, opts []placeOption, found int) {
+	list, more := s.places.Search(text, lang)
+	for _, p := range list {
+		opts = append(opts, placeOption{ID: p.ID, Name: p.Name, Region: p.Region, RegionCode: p.RegionCode})
 	}
-	lat, err1 := strconv.ParseFloat(strings.TrimSpace(a), 64)
-	lon, err2 := strconv.ParseFloat(strings.TrimSpace(b), 64)
-	if err1 != nil || err2 != nil || !validCoordinates(lat, lon) {
-		return 0, 0, false
-	}
-	return lat, lon, true
-}
-
-// validCoordinates reports whether lat and lon are real degrees. (0, 0) is
-// refused: the stored home treats it as "no location yet".
-func validCoordinates(lat, lon float64) bool {
-	if lat == 0 && lon == 0 {
-		return false
-	}
-	return !math.IsNaN(lat) && !math.IsNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180
-}
-
-// countryOfRegion is the ISO 3166-1 country code a region code (DE-BY) starts with.
-func countryOfRegion(region string) string {
-	c, _, _ := strings.Cut(region, "-")
-	return c
-}
-
-// errPlaceUnreachable is a search that failed for another reason than "no match".
-var errPlaceUnreachable = errors.New("place search unreachable")
-
-// searchPlaces looks a place name up, in the country of the region if given.
-func (s *server) searchPlaces(ctx context.Context, name, country, lang string) ([]weather.Place, error) {
-	ctx, cancel := context.WithTimeout(ctx, searchTimeout)
-	defer cancel()
-	places, err := s.weather.Search(ctx, name, country, lang)
 	switch {
-	case errors.Is(err, weather.ErrNoPlace):
-		return nil, weather.ErrNoPlace
-	case err != nil:
-		s.logger.Warn("place search failed", "err", err)
-		return nil, errPlaceUnreachable
+	case len(opts) == 0:
+	case more:
+		question = s.i18n.T(lang, "place.more5")
+	case len(opts) == 1:
+		question = s.i18n.T(lang, "place.one_match")
+	default:
+		question = s.i18n.Format(lang, i18n.Msg("place.n_match", "n", strconv.Itoa(len(opts))))
 	}
-	return places, nil
+	return question, opts, len(opts)
 }
 
-// placeErrorKey is the text of a failed search.
-func placeErrorKey(err error) string {
-	if errors.Is(err, weather.ErrNoPlace) {
-		return "place.error.none"
-	}
-	return "place.error.unreachable"
+// openPicker is the open field with the suggestions for text.
+func (s *server) openPicker(lang, text string) *placePick {
+	q, opts, _ := s.suggestions(lang, text)
+	return &placePick{Text: text, Question: q, Options: opts}
 }
 
-// resolvePlace decides what a form that carries a home name needs. If the form
-// holds a place confirmed for exactly this name, it returns its coordinates
-// (confirmed). Otherwise it searches: the result is either a view to confirm
-// or choose from, or the key of the error to show at the name field.
-func (s *server) resolvePlace(r *http.Request, name, region string) (lat, lon float64, confirmed bool, view *placeView, errKey string) {
-	if r.PostFormValue("place_for") == name {
-		if lat, lon, ok := parsePlace(r.PostFormValue("place")); ok {
-			return lat, lon, true, nil, ""
-		}
+// openPickerError is the open field with an error at it. A search without a
+// result says that no place was found; text that matches places asks to pick
+// one of them.
+func (s *server) openPickerError(lang, text string) *placePick {
+	v := s.openPicker(lang, text)
+	switch {
+	case text == "":
+		v.Error = s.i18n.T(lang, "setup.error.home")
+	case len(v.Options) == 0:
+		v.Error = s.i18n.Format(lang, i18n.Msg("place.error.none", "q", text))
+	default:
+		v.Error = s.i18n.T(lang, "place.error.pick")
 	}
-	places, err := s.searchPlaces(r.Context(), name, countryOfRegion(region), s.langOf(r))
-	if err != nil {
-		return 0, 0, false, nil, placeErrorKey(err)
-	}
-	v := &placeView{For: name}
-	if len(places) == 1 {
-		o := newPlaceOption(places[0])
-		v.Found = &o
-		return 0, 0, false, v, ""
-	}
-	for _, p := range places {
-		v.Options = append(v.Options, newPlaceOption(p))
-	}
-	return 0, 0, false, v, ""
+	return v
 }
 
-// confirmedPlace is the view that carries an already chosen place along.
-func confirmedPlace(r *http.Request, name string) *placeView {
-	if r.PostFormValue("place_for") != name {
-		return nil
-	}
-	lat, lon, ok := parsePlace(r.PostFormValue("place"))
-	if !ok {
-		return nil
-	}
-	o := placeOption{Name: coordinatesText(lat, lon), Value: placeValue(lat, lon)} // a choice among several places carries no label
-	if label := strings.TrimSpace(r.PostFormValue("place_label")); label != "" {
-		o.Label, o.Coords = label, coordinatesText(lat, lon)
-		o.Name, o.Region, _ = strings.Cut(label, ", ")
-	}
-	return &placeView{For: name, Found: &o}
+// pickError is the open field after a post that named no known place.
+func (s *server) pickError(lang, text string) *placePick {
+	v := s.openPicker(lang, text)
+	v.Error = s.i18n.T(lang, "place.error.pick")
+	return v
 }
 
-// coordinatesText shows coordinates in degrees, north and east positive. The
-// spaces are non-breaking so the coordinates never break across lines.
-func coordinatesText(lat, lon float64) string {
-	ns, ew := "N", "E"
-	if lat < 0 {
-		ns, lat = "S", -lat
+// chosenPicker is the confirmed state for a place; state is its line in bold.
+func chosenPicker(pl places.Place, state string) *placePick {
+	return &placePick{Chosen: &chosenPlace{ID: pl.ID, Name: pl.Name, Region: pl.Region, RegionCode: pl.RegionCode, State: state}}
+}
+
+// ErrorHTML is the error text for the field, ready for the fieldErrorHTML
+// partial.
+func (p *placePick) ErrorHTML() template.HTML { return template.HTML(html.EscapeString(p.Error)) }
+
+// sunLine is "In use · today sunrise 07:20, sunset 16:38" for a home, in the
+// household's time zone and format. Where there is no sunrise to name (polar
+// day or night), it says the place is chosen.
+func (s *server) sunLine(r *http.Request, p principal, lat, lon float64) string {
+	h := p.household
+	lang := s.langOf(r)
+	t := sun.On(s.now().In(p.location()), lat, lon)
+	if t.Kind != sun.Normal {
+		return s.i18n.T(lang, "place.chosen")
 	}
-	if lon < 0 {
-		ew, lon = "W", -lon
+	layout := "15:04"
+	if h.TimeFormat == store.Time12h {
+		layout = "3:04 PM"
 	}
-	return fmt.Sprintf("%s°\u00a0%s,\u00a0%s°\u00a0%s", strconv.FormatFloat(math.Round(lat*1e4)/1e4, 'f', -1, 64), ns, strconv.FormatFloat(math.Round(lon*1e4)/1e4, 'f', -1, 64), ew)
+	return s.i18n.Format(lang, i18n.Msg("place.in_use", "rise", t.Rise.Round(time.Minute).In(p.location()).Format(layout), "set", t.Set.Round(time.Minute).In(p.location()).Format(layout)))
 }
 
 // placeJSON is a place of the API's search.
 type placeJSON struct {
-	Label     string  `json:"label"`
-	Name      string  `json:"name"`
-	Latitude  float64 `json:"latitude"`
-	Longitude float64 `json:"longitude"`
+	ID         int     `json:"id"`
+	Name       string  `json:"name"`
+	Region     string  `json:"region"`
+	Latitude   float64 `json:"latitude"`
+	Longitude  float64 `json:"longitude"`
+	RegionCode string  `json:"region_code"`
 }
 
-// apiSearchPlaces lists the places that match ?name=, in the country of the
-// household's region unless ?country= says otherwise.
-func (s *server) apiSearchPlaces(w http.ResponseWriter, r *http.Request, p principal) {
+// searchPlacesJSON answers a search of the list on the box: at most five
+// places and whether more match. It never leaves the box.
+func (s *server) searchPlacesJSON(w http.ResponseWriter, r *http.Request) {
 	name := strings.TrimSpace(r.URL.Query().Get("name"))
 	if name == "" {
 		writeError(w, http.StatusUnprocessableEntity, "name is required")
 		return
 	}
-	country := countryOfRegion(p.household.Region)
-	if c, ok := r.URL.Query()["country"]; ok && len(c) > 0 {
-		country = strings.ToUpper(strings.TrimSpace(c[0]))
-		if !isAlpha2(country) {
-			writeError(w, http.StatusUnprocessableEntity, "country must be an ISO 3166-1 alpha-2 code such as DE")
+	lang := s.langOf(r)
+	if l := r.URL.Query().Get("lang"); l != "" {
+		if l != "de" && l != "en" {
+			writeError(w, http.StatusUnprocessableEntity, "lang must be de or en")
 			return
 		}
+		lang = l
 	}
-	places, err := s.searchPlaces(r.Context(), name, country, s.langOf(r))
-	out := []placeJSON{}
-	switch {
-	case errors.Is(err, weather.ErrNoPlace):
-	case err != nil:
-		writeError(w, http.StatusBadGateway, "the place search could not be reached")
-		return
-	default:
-		for _, pl := range places {
-			out = append(out, placeJSON{pl.Label(), pl.Name, pl.Latitude, pl.Longitude})
-		}
+	found, more := s.places.Search(name, lang)
+	out := make([]placeJSON, 0, len(found))
+	for _, p := range found {
+		out = append(out, placeJSON{p.ID, p.Name, p.Region, p.Lat, p.Lon, p.RegionCode})
 	}
-	writeJSON(w, http.StatusOK, map[string]any{"places": out})
+	writeJSON(w, http.StatusOK, map[string]any{"places": out, "more": more})
 }
 
-// isAlpha2 reports whether c is two letters A-Z.
-func isAlpha2(c string) bool {
-	return len(c) == 2 && c[0] >= 'A' && c[0] <= 'Z' && c[1] >= 'A' && c[1] <= 'Z'
+// apiSearchPlaces is GET /api/v1/places?name=&lang=.
+func (s *server) apiSearchPlaces(w http.ResponseWriter, r *http.Request, _ principal) {
+	s.searchPlacesJSON(w, r)
+}
+
+// handlePlaces is the same search for the pages' script, outside the API: the
+// setup wizard has no sign-in yet. It answers from the public list on the box.
+func (s *server) handlePlaces(w http.ResponseWriter, r *http.Request) {
+	s.searchPlacesJSON(w, r)
 }

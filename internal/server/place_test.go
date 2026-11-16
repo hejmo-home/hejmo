@@ -4,26 +4,32 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
 )
 
-// Q59 (ticket 5.x home location): the parent enters a place name, the box
-// geocodes it once, shows the resolved place for confirmation and stores
-// latitude and longitude. Tests use a fake geocoding server, never the real one.
+// The home location (ADR 0020, ticket 86): the parent picks a place from the
+// list of places on the box. The page posts place_id and never coordinates;
+// the box looks coordinates and region up. Nothing goes to the internet.
 
-// unconfirmedSetup is the setup form as sent first: a place name, no confirmed place yet.
-func unconfirmedSetup(name string) url.Values {
+// typedSetup is the setup form as sent while the parent still types the home:
+// the typed text, no place picked (what a browser without JavaScript sends when
+// Enter is pressed).
+func typedSetup(text string) url.Values {
 	f := validSetupForm()
-	f.Set("home_name", name)
-	f.Del("place")
-	f.Del("place_for")
+	f.Set("home_name", text)
+	f.Del("place_id")
+	f.Del("region")
 	return f
 }
 
-func radios(page, name string) []string {
-	re := regexp.MustCompile(`<input [^>]*type="radio"[^>]*name="` + name + `"[^>]*>`)
-	return re.FindAllString(page, -1)
+// pickedSetup is the setup form after a suggestion button was pressed.
+func pickedSetup(text, id string) url.Values {
+	f := typedSetup(text)
+	f.Set("place_id", id)
+	return f
 }
 
 func homeOf(t *testing.T, b *box) (lat, lon float64, name string) {
@@ -35,294 +41,512 @@ func homeOf(t *testing.T, b *box) (lat, lon float64, name string) {
 	return h.Latitude, h.Longitude, h.HomeName
 }
 
-func TestSetupShowsTheResolvedPlaceForConfirmationBeforeCreatingAnything(t *testing.T) {
-	b := newBox(t)
-	r := b.do(http.MethodPost, "/setup", unconfirmedSetup("Pasing"), en)
-	if r.status != http.StatusOK {
-		t.Fatalf("status = %d, want 200 (the place is to be confirmed)\n%s", r.status, r.body)
-	}
-	if !strings.Contains(r.body, "Pasing, Bavaria, Germany") {
-		t.Errorf("resolved place not shown:\n%s", r.body)
-	}
-	if rs := radios(r.body, "place"); len(rs) != 0 {
-		t.Errorf("a single match is a card, not a radio button: %q", rs)
-	}
-	if tag := inputTag(r.body, "place"); !strings.Contains(tag, `type="hidden"`) || !strings.Contains(tag, `value="48.15,11.46"`) {
-		t.Errorf("place = %q, want the match carried as a hidden value", tag)
-	}
-	if tag := inputTag(r.body, "place_label"); !strings.Contains(tag, `value="Pasing, Bavaria, Germany"`) {
-		t.Errorf("place_label = %q", tag)
-	}
-	for _, want := range []string{`role="status" data-place-found`, `<p class="place-q">Is this your home?</p>`, `<b>Pasing</b><small>Bavaria, Germany · 48.15° N, 11.46° E</small>`, "Not saved yet. Save to use this place, or change the name to search again."} {
-		if !strings.Contains(r.body, want) {
-			t.Errorf("found-place card misses %q", want)
-		}
-	}
-	// The card sits under the name field, above the state select.
-	if card, sel := strings.Index(r.body, "data-place-found"), strings.Index(r.body, `<select name="region">`); card < 0 || sel < 0 || card > sel {
-		t.Errorf("card at %d, state select at %d: the answer belongs under the question", card, sel)
-	}
-	if !strings.Contains(inputTag(r.body, "place_for"), `value="Pasing"`) {
-		t.Errorf("searched name not carried: %q", inputTag(r.body, "place_for"))
-	}
-	if b.db.Configured() {
-		t.Fatal("the household exists before the place was confirmed")
-	}
-	if got := b.geo.searches(); len(got) != 1 || got[0].Get("countryCode") != "DE" || got[0].Get("language") != "en" {
-		t.Errorf("searches = %v, want one search in the region's country and the page's language", got)
-	}
-	// Confirming it creates the household with the coordinates.
-	confirm := unconfirmedSetup("Pasing")
-	confirm.Set("place", "48.15,11.46")
-	confirm.Set("place_for", "Pasing")
-	if r := b.post("/setup", confirm); r.status != http.StatusSeeOther || r.location != "/setup/totp" {
-		t.Fatalf("confirm = %d %q\n%s", r.status, r.location, r.body)
-	}
-	if lat, lon, name := homeOf(t, b); lat != 48.15 || lon != 11.46 || name != "Pasing" {
-		t.Errorf("home = %v %v %q", lat, lon, name)
-	}
-	if n := len(b.geo.searches()); n != 1 {
-		t.Errorf("%d searches, want the place geocoded once", n)
-	}
+func options(page string) []string {
+	return regexp.MustCompile(`<li role="option"[^>]*>`).FindAllString(page, -1)
 }
 
-func TestSetupLetsTheParentChooseAmongSeveralPlaces(t *testing.T) {
-	b := newBox(t)
-	r := b.do(http.MethodPost, "/setup", unconfirmedSetup("Neustadt"), en)
-	rs := radios(r.body, "place")
-	if r.status != http.StatusOK || len(rs) != 2 {
-		t.Fatalf("status %d, choices %q", r.status, rs)
+// selectedRegion is the value of the selected option of the region select.
+func selectedRegion(page string) string {
+	m := regexp.MustCompile(`<option value="([^"]*)" selected>`).FindStringSubmatch(page)
+	if m == nil {
+		return "(none)"
 	}
-	for _, c := range rs {
-		if strings.Contains(c, "checked") {
-			t.Errorf("a place is preselected among several: %q", c)
-		}
-		if !strings.Contains(c, "required") {
-			t.Errorf("choice not required: %q", c)
-		}
+	return m[1]
+}
+
+func TestSetupSuggestsAtMostFivePlacesAndNeverPlusN(t *testing.T) {
+	b := newBox(t)
+	r := b.do(http.MethodPost, "/setup", typedSetup("Neustadt"), en)
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d, want 422 (no place picked)", r.status)
+	}
+	if n := len(options(r.body)); n != 5 {
+		t.Errorf("%d suggestions, want 5", n)
 	}
 	for _, want := range []string{
-		"<legend>Which Neustadt do you mean?</legend>",
-		"<b>Neustadt</b><small>Rhineland-Palatinate, Germany</small>", "<b>Neustadt</b><small>Coburg, Bavaria, Germany</small>", `value="50.25,11.88"`,
-		`<fieldset class="choice place-options" aria-describedby="place-more">`,
-		`<p class="hint" id="place-more">Not in the list? Add the district or a larger town nearby to the name.</p>`,
+		`<p class="place-q" id="pl-q">More than 5 places match; here are the 5 largest. Which one do you mean?</p>`,
+		`<ul class="place-list" id="pl" role="listbox" aria-labelledby="pl-q">`,
+		`<p class="hint">Not in the list? Keep typing, or pick a larger town nearby.</p>`,
+		`<p class="hint place-privacy">The list of places in Germany, Austria and Switzerland is on the box. Nothing goes to the internet while you type.</p>`,
+		"Pick your town in the list.",
+		`aria-expanded="true" aria-controls="pl" aria-autocomplete="list"`,
 	} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("page misses %q", want)
 		}
 	}
-	// The privacy line is always there, under the name field and not between the question and its options.
-	if priv := strings.Index(r.body, `<p class="hint place-privacy">Hejmo looks the place up once at Open-Meteo and sends only the name, the country and the page language.</p>`); priv < strings.Index(r.body, "place-more") || priv > strings.Index(r.body, `<select name="region">`) {
-		t.Errorf("privacy line at %d", priv)
+	if strings.Contains(r.body, "aria-selected=\"true\"") {
+		t.Error("a suggestion is highlighted before the arrow keys were used")
 	}
-	// Submitting without a choice asks again and creates nothing.
-	if r := b.post("/setup", unconfirmedSetup("Neustadt")); r.status != http.StatusOK || b.db.Configured() {
-		t.Fatalf("without choice: status %d configured %v", r.status, b.db.Configured())
+	if regexp.MustCompile(`\+\s*\d`).MatchString(regexp.MustCompile(`(?s)<ul class="place-list".*?</ul>`).FindString(r.body)) {
+		t.Error("the list shows a +N")
 	}
-	pick := unconfirmedSetup("Neustadt")
-	pick.Set("place", "50.25,11.88")
-	pick.Set("place_for", "Neustadt")
-	if r := b.post("/setup", pick); r.status != http.StatusSeeOther {
-		t.Fatalf("pick = %d", r.status)
+	one := b.do(http.MethodPost, "/setup", typedSetup("Pasing"), en)
+	if !strings.Contains(one.body, "1 place matches. Is this the one you mean?") || len(options(one.body)) != 1 {
+		t.Errorf("one match:\n%s", one.body)
 	}
-	if lat, lon, _ := homeOf(t, b); lat != 50.25 || lon != 11.88 {
-		t.Errorf("home = %v %v, want the second place", lat, lon)
+	two := b.do(http.MethodPost, "/setup", typedSetup("Obermenz"), en)
+	if len(options(two.body)) < 1 {
+		t.Errorf("Obermenz finds nothing:\n%s", two.body)
 	}
-}
-
-func TestSetupSearchesAgainWhenTheNameChangedAfterConfirming(t *testing.T) {
-	b := newBox(t)
-	f := unconfirmedSetup("Neustadt")
-	f.Set("place", "48.15,11.46") // confirmed for "Pasing", then the name was edited
-	f.Set("place_for", "Pasing")
-	if r := b.post("/setup", f); r.status != http.StatusOK || b.db.Configured() {
-		t.Fatalf("status %d configured %v, want a new search", r.status, b.db.Configured())
+	if m := regexp.MustCompile(`(\d) places match\. Which one do you mean\?`).FindStringSubmatch(b.do(http.MethodPost, "/setup", typedSetup("Pasin"), en).body); m != nil && m[1] != strconv.Itoa(len(options(b.do(http.MethodPost, "/setup", typedSetup("Pasin"), en).body))) {
+		t.Errorf("the question counts %s places but shows another number", m[1])
+	}
+	if g := b.do(http.MethodPost, "/setup", typedSetup("Neustadt"), de).body; !strings.Contains(g, "Mehr als 5 Orte passen, hier die 5 größten. Welchen meinst du?") || !strings.Contains(g, "Tippe weiter oder nimm einen größeren Ort in der Nähe.") {
+		t.Errorf("German question missing:\n%s", g)
 	}
 }
 
-func TestSetupRefusesCoordinatesOutOfRange(t *testing.T) {
+func TestSetupSuggestionsNameTheRegionInThePageLanguage(t *testing.T) {
 	b := newBox(t)
-	for _, bad := range []string{"91,11", "48,181", "x,y", "48", "48,11,3", "NaN,1"} {
+	if r := b.do(http.MethodPost, "/setup", typedSetup("Pasing"), en); !strings.Contains(r.body, "<b>Pasing</b><small>district of München, Bayern, Germany</small>") {
+		t.Errorf("English label:\n%s", r.body)
+	}
+	if r := b.do(http.MethodPost, "/setup", typedSetup("Pasing"), de); !strings.Contains(r.body, "<b>Pasing</b><small>Stadtteil von München, Bayern, Deutschland</small>") {
+		t.Errorf("German label:\n%s", r.body)
+	}
+}
+
+func TestSetupIgnoresPostedCoordinatesAndResolvesThePlaceID(t *testing.T) {
+	b := newBox(t)
+	f := validSetupForm()
+	for k, v := range map[string]string{"latitude": "1.5", "longitude": "2.5", "lat": "1.5", "lon": "2.5", "place": "1.5,2.5", "home_name_lat": "9"} {
+		f.Set(k, v)
+	}
+	if r := b.post("/setup", f); r.status != http.StatusSeeOther || r.location != "/setup/totp" {
+		t.Fatalf("setup = %d %q\n%s", r.status, r.location, r.body)
+	}
+	h, err := b.db.HomeHousehold()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if h.Latitude != 48.1415 || h.Longitude != 11.456 || h.HomeName != "Pasing" || h.HomePlaceID != 2855334 || h.Region != "DE-BY" {
+		t.Errorf("household = %+v, want Pasing from the list", h)
+	}
+}
+
+func TestSetupRefusesAnUnknownPlaceIDWithAFieldError(t *testing.T) {
+	b := newBox(t)
+	for _, bad := range []string{"999999999", "abc", "-5", "0", "48.15"} {
 		f := validSetupForm()
-		f.Set("place", bad)
-		if r := b.post("/setup", f); r.status != http.StatusOK || b.db.Configured() {
-			t.Errorf("place %q: status %d configured %v, want a new search", bad, r.status, b.db.Configured())
+		f.Set("place_id", bad)
+		r := b.do(http.MethodPost, "/setup", f, en)
+		tag := inputTag(r.body, "home_name")
+		if r.status != http.StatusUnprocessableEntity || !strings.Contains(tag, `aria-invalid="true"`) || !strings.Contains(r.body, "Pick your town in the list.") {
+			t.Errorf("place_id %q: status %d, home_name %q", bad, r.status, tag)
+		}
+		if b.db.Configured() {
+			t.Errorf("place_id %q created the household", bad)
 		}
 	}
 }
 
-func TestSetupShowsAFieldErrorWhenNoPlaceMatchesAndKeepsWhatWasTyped(t *testing.T) {
+// Without JavaScript: Enter shows the suggestions, a suggestion button picks,
+// the next submit creates the household.
+func TestSetupWithoutJavaScriptShowsSuggestionsThenTheConfirmedPlace(t *testing.T) {
 	b := newBox(t)
-	f := unconfirmedSetup("Nirgendwo")
-	r := b.do(http.MethodPost, "/setup", f, en)
-	if r.status != http.StatusUnprocessableEntity {
-		t.Fatalf("status = %d", r.status)
+	r := b.do(http.MethodPost, "/setup", typedSetup("München"), en)
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `<button type="submit" name="place_id" value="`+idMuenchen+`"`) {
+		t.Fatalf("suggestions: status %d\n%s", r.status, r.body)
 	}
-	tag := inputTag(r.body, "home_name")
-	if !strings.Contains(tag, `aria-invalid="true"`) || !strings.Contains(tag, `value="Nirgendwo"`) {
-		t.Errorf("home_name = %q", tag)
+	if !strings.Contains(inputTag(r.body, "home_name"), `value="München"`) || !strings.Contains(inputTag(r.body, "name"), `value="Mama"`) {
+		t.Error("what was typed is lost")
 	}
-	if !strings.Contains(r.body, "No place found") {
-		t.Errorf("no message:\n%s", r.body)
+	if selectedRegion(r.body) != "" {
+		t.Errorf("region = %q before a place was picked, want the empty option", selectedRegion(r.body))
 	}
-	if !strings.Contains(inputTag(r.body, "name"), `value="Mama"`) || b.db.Configured() {
-		t.Error("other entries lost or household created")
+	for _, want := range []string{`<option value="" selected>Set by the place you pick</option>`, `<p class="hint">For public holidays.</p>`} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("open wizard misses %q", want)
+		}
+	}
+	// The suggestion button: nothing is created, the place is shown confirmed.
+	p := b.do(http.MethodPost, "/setup", pickedSetup("München", idMuenchen), en)
+	if p.status != http.StatusOK || b.db.Configured() {
+		t.Fatalf("pick: status %d configured %v", p.status, b.db.Configured())
+	}
+	for _, want := range []string{
+		`<p class="lab">Town or district</p>`,
+		`<div class="place-status ok" role="status" data-location>`,
+		`<b>München</b><small>Bayern, Germany</small><small class="st">Chosen. Used for the weather and the sun times.</small>`,
+		`<button class="button secondary" type="submit" name="place_change" value="1">Change</button>`,
+		`<input type="hidden" name="place_id" value="` + idMuenchen + `">`,
+		`<p class="hint">Taken from the place. Sets the public holidays.</p>`,
+	} {
+		if !strings.Contains(p.body, want) {
+			t.Errorf("confirmed state misses %q", want)
+		}
+	}
+	if inputTag(p.body, "home_name") != "" {
+		t.Error("the confirmed state still has the text field")
+	}
+	if selectedRegion(p.body) != "DE-BY" || strings.Contains(p.body, `<option value="" selected>`) {
+		t.Errorf("region = %q, want DE-BY from the place and no empty option", selectedRegion(p.body))
+	}
+	// Create: the confirmed form carries the id and the region.
+	f := validSetupForm()
+	f.Set("place_id", idMuenchen)
+	f.Set("region", "DE-BY")
+	if r := b.post("/setup", f); r.status != http.StatusSeeOther || r.location != "/setup/totp" {
+		t.Fatalf("create = %d\n%s", r.status, r.body)
+	}
+	if _, _, name := homeOf(t, b); name != "München" {
+		t.Errorf("home name = %q, want the place's name", name)
 	}
 }
 
-func TestSetupShowsAFieldErrorWhenTheServiceIsUnreachable(t *testing.T) {
+func TestSetupChangeOpensThePickerAgainAndForgetsTheRegionOfThePlace(t *testing.T) {
 	b := newBox(t)
-	b.geo.setDown(true)
-	r := b.do(http.MethodPost, "/setup", unconfirmedSetup("Pasing"), en)
+	f := validSetupForm()
+	f.Set("place_id", idMuenchen)
+	f.Set("region", "DE-BY") // taken from the place
+	f.Set("place_change", "1")
+	r := b.do(http.MethodPost, "/setup", f, en)
+	if r.status != http.StatusOK || b.db.Configured() {
+		t.Fatalf("status %d configured %v", r.status, b.db.Configured())
+	}
+	if !strings.Contains(inputTag(r.body, "home_name"), `value="München"`) || len(options(r.body)) == 0 {
+		t.Errorf("the field is not open with suggestions for the place:\n%s", r.body)
+	}
+	if selectedRegion(r.body) != "" {
+		t.Errorf("region = %q, want it empty again (set by the next pick)", selectedRegion(r.body))
+	}
+	// An explicit change of the region stays.
+	f.Set("region", "AT-9")
+	if r := b.do(http.MethodPost, "/setup", f, en); selectedRegion(r.body) != "AT-9" {
+		t.Errorf("an explicit region = %q, want AT-9 kept", selectedRegion(r.body))
+	}
+}
+
+func TestSetupTakesTheRegionFromThePlaceAndKeepsAnExplicitChoice(t *testing.T) {
+	b := newBox(t)
+	f := validSetupForm()
+	f.Set("place_id", idMuenchen)
+	f.Del("region") // the select still says "Set by the place you pick"
+	if r := b.post("/setup", f); r.status != http.StatusSeeOther {
+		t.Fatalf("status %d\n%s", r.status, r.body)
+	}
+	if h, _ := b.db.HomeHousehold(); h.Region != "DE-BY" {
+		t.Errorf("region = %q, want DE-BY from München", h.Region)
+	}
+	b = newBox(t)
+	f.Set("region", "AT-9") // the parent chose another one
+	if r := b.post("/setup", f); r.status != http.StatusSeeOther {
+		t.Fatalf("status %d", r.status)
+	}
+	if h, _ := b.db.HomeHousehold(); h.Region != "AT-9" || h.HomeName != "München" {
+		t.Errorf("household = %+v, want the explicit region kept", h)
+	}
+	// A place of another country selects that country's region.
+	b = newBox(t)
+	g := validSetupForm()
+	g.Set("place_id", idWien)
+	g.Del("region")
+	b.post("/setup", g)
+	if h, _ := b.db.HomeHousehold(); h.Region != "AT-9" {
+		t.Errorf("Wien region = %q", h.Region)
+	}
+}
+
+func TestSetupNotFoundShowsTheErrorAtTheFieldAndKeepsTheText(t *testing.T) {
+	b := newBox(t)
+	r := b.do(http.MethodPost, "/setup", typedSetup("Pasingg"), en)
 	tag := inputTag(r.body, "home_name")
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(tag, `aria-invalid="true"`) || !strings.Contains(tag, `value="Pasing"`) {
-		t.Fatalf("status %d, home_name %q", r.status, tag)
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d", r.status)
 	}
-	if !strings.Contains(r.body, "could not be reached") || strings.Contains(r.body, "No place found") {
-		t.Errorf("wrong message:\n%s", r.body)
+	for _, want := range []string{`aria-invalid="true"`, `aria-describedby="err-home"`, `value="Pasingg"`, `aria-expanded="false"`} {
+		if !strings.Contains(tag, want) {
+			t.Errorf("input misses %q: %s", want, tag)
+		}
 	}
-	if b.db.Configured() {
-		t.Error("household created without a place")
+	for _, want := range []string{
+		`<div class="f place-pick invalid">`,
+		`<p class="ferr" id="err-home" role="alert">`,
+		`<span>No place called “Pasingg” found. Check the spelling, or pick a larger town nearby.</span>`,
+		`<p class="hint place-privacy">`,
+	} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("page misses %q", want)
+		}
 	}
-	de := b.do(http.MethodPost, "/setup", unconfirmedSetup("Pasing"), map[string]string{"Accept-Language": "de"})
-	if !strings.Contains(de.body, "nicht erreichbar") {
-		t.Errorf("German message missing:\n%s", de.body)
+	if len(options(r.body)) != 0 || b.db.Configured() {
+		t.Error("suggestions for a nothing, or household created")
+	}
+	if !strings.Contains(inputTag(r.body, "name"), `value="Mama"`) {
+		t.Error("other entries lost")
+	}
+	g := b.do(http.MethodPost, "/setup", typedSetup("Garmisch-Partenkirchn"), de)
+	if !strings.Contains(g.body, "Kein Ort „Garmisch-Partenkirchn“ gefunden. Prüf die Schreibweise oder nimm einen größeren Ort in der Nähe.") {
+		t.Errorf("German message:\n%s", g.body)
+	}
+	if e := b.do(http.MethodPost, "/setup", typedSetup(""), en); e.status != http.StatusUnprocessableEntity || !strings.Contains(e.body, "Please enter your town.") {
+		t.Errorf("empty text: status %d", e.status)
+	}
+}
+
+func TestSetupKeepsThePickedPlaceWhileOtherFieldsAreCorrected(t *testing.T) {
+	b := newBox(t)
+	f := validSetupForm()
+	f.Set("password", "x") // another field is wrong
+	r := b.do(http.MethodPost, "/setup", f, en)
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `<b>Pasing</b><small>district of München, Bayern, Germany</small>`) || !strings.Contains(inputTag(r.body, "place_id"), `value="`+idPasing+`"`) {
+		t.Errorf("status %d, the picked place is not carried along:\n%s", r.status, r.body)
+	}
+}
+
+func TestSetupPressingEnterDoesNotPressChange(t *testing.T) {
+	b := newBox(t)
+	r := b.do(http.MethodPost, "/setup", pickedSetup("München", idMuenchen), en)
+	form := formOf(t, r.body, "/setup")
+	first := regexp.MustCompile(`<button[^>]*type="submit"[^>]*>`).FindString(form)
+	if !strings.Contains(first, `tabindex="-1"`) || strings.Contains(first, "name=") {
+		t.Errorf("the first submit button of the form is %q: Enter would press it", first)
 	}
 }
 
 // --- Settings → Household ---
 
-func settingsForm(home string) url.Values {
-	return url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}, "home_name": {home}}
+func settingsForm() url.Values {
+	return url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}}
 }
 
-func TestHouseholdSettingsShowTheHomeAndItsLocation(t *testing.T) {
+func TestHouseholdSettingsShowTheHomeInUseWithSunTimes(t *testing.T) {
 	b := signedInBox(t)
 	r := b.do(http.MethodGet, "/settings/household", nil, en)
-	if tag := inputTag(r.body, "home_name"); !strings.Contains(tag, `value="Pasing"`) {
-		t.Errorf("home_name = %q", tag)
-	}
-	if !strings.Contains(r.body, `<div class="place-status" data-location>`) || !strings.Contains(r.body, "<b>In use: Pasing</b><small>48.15° N, 11.46° E · today sunrise ") {
-		t.Errorf("location not shown:\n%s", r.body)
-	}
-	if !regexp.MustCompile(`today sunrise \d\d:\d\d, sunset \d\d:\d\d</small>`).MatchString(r.body) {
-		t.Errorf("sun times of today missing:\n%s", r.body)
-	}
-	for _, want := range []string{"<legend>Home location</legend>", `<span class="hint">Sunrise and sunset (front light, themes) and the weather are taken for this place.</span>`, "Town"} {
+	for _, want := range []string{
+		"<legend>Home location</legend>",
+		`<span class="hint">Sunrise and sunset (front light, themes) and the weather are taken for this place.</span>`,
+		`<p class="lab">Town or district</p>`,
+		`<b>Pasing</b><small>district of München, Bayern, Germany</small><small class="st">In use · today sunrise `,
+		`<input type="hidden" name="place_id" value="` + idPasing + `">`,
+		`name="place_change" value="1">Change</button>`,
+	} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("page misses %q", want)
 		}
 	}
-	de := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body
-	for _, want := range []string{"<legend>Heimatort</legend>", "Ort", "<b>Verwendet: Pasing</b>", "heute Sonnenaufgang ", ", Sonnenuntergang ", "Sonnenaufgang und Sonnenuntergang (Vorderlicht, Themes) und das Wetter gelten für diesen Ort.", "Hejmo sucht den Ort einmal bei Open-Meteo und sendet nur den Namen, das Land und die Sprache der Seite."} {
-		if !strings.Contains(de, want) {
+	if !regexp.MustCompile(`In use · today sunrise \d\d:\d\d, sunset \d\d:\d\d</small>`).MatchString(r.body) {
+		t.Errorf("sun times of today missing:\n%s", r.body)
+	}
+	if strings.Contains(r.body, "place-keep") || strings.Contains(r.body, "° N") {
+		t.Error("keep row or coordinates shown for the place in use")
+	}
+	g := b.do(http.MethodGet, "/settings/household", nil, de).body
+	for _, want := range []string{"<legend>Heimatort</legend>", "Ort oder Stadtteil", "Stadtteil von München, Bayern, Deutschland", "In Verwendung · heute Sonnenaufgang ", ", Sonnenuntergang "} {
+		if !strings.Contains(g, want) {
 			t.Errorf("German page misses %q", want)
 		}
 	}
 }
 
-func TestChangingTheHomeAsksToConfirmAndSavesNothingYet(t *testing.T) {
+func TestSettingsChangeOpensThePickerAndKeepRestoresTheSavedPlace(t *testing.T) {
 	b := signedInBox(t)
-	r := b.do(http.MethodPost, "/settings/household", settingsForm("Neustadt"), en)
-	if r.status != http.StatusOK || len(radios(r.body, "place")) != 2 {
-		t.Fatalf("status %d, choices %q", r.status, radios(r.body, "place"))
+	f := settingsForm()
+	f.Set("place_id", idPasing)
+	f.Set("place_change", "1")
+	r := b.do(http.MethodPost, "/settings/household", f, en)
+	if r.status != http.StatusOK {
+		t.Fatalf("status = %d", r.status)
 	}
-	if lat, lon, name := homeOf(t, b); lat != 48.15 || lon != 11.46 || name != "Pasing" {
-		t.Errorf("home changed before confirming: %v %v %q", lat, lon, name)
+	if !strings.Contains(inputTag(r.body, "home_name"), `value="Pasing"`) || len(options(r.body)) == 0 {
+		t.Errorf("picker not open with suggestions:\n%s", r.body)
+	}
+	for _, want := range []string{
+		`<div class="place-keep" data-location><p class="hint">Until you save, Pasing stays in use.</p><button class="button secondary" type="submit" name="place_keep" value="1">Keep Pasing</button></div>`,
+		`value="12h" checked`, // what was typed stays
+	} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("page misses %q", want)
+		}
+	}
+	if h, _ := b.db.HomeHousehold(); h.TimeFormat == "12h" {
+		t.Error("Change saved the other settings")
+	}
+	// Keep: the saved place is back, nothing was saved.
+	k := settingsForm()
+	k.Set("home_name", "Obermen")
+	k.Set("place_keep", "1")
+	r = b.do(http.MethodPost, "/settings/household", k, en)
+	if r.status != http.StatusOK || !strings.Contains(r.body, `<b>Pasing</b>`) || !strings.Contains(r.body, "In use · today sunrise") || inputTag(r.body, "home_name") != "" || strings.Contains(r.body, "place-keep") {
+		t.Errorf("Keep did not restore the saved place: status %d\n%s", r.status, r.body)
+	}
+	if _, _, name := homeOf(t, b); name != "Pasing" {
+		t.Errorf("home = %q", name)
+	}
+	if g := b.do(http.MethodPost, "/settings/household", f, de).body; !strings.Contains(g, "Pasing behalten") || !strings.Contains(g, "Bis du speicherst, bleibt Pasing in Verwendung.") {
+		t.Errorf("German keep row:\n%s", g)
+	}
+}
+
+func TestSettingsPickShowsPendingThenSaveStoresThePlace(t *testing.T) {
+	b := signedInBox(t)
+	pick := settingsForm()
+	pick.Set("home_name", "Obermen")
+	pick.Set("place_id", idObermenzing)
+	r := b.do(http.MethodPost, "/settings/household", pick, en)
+	if r.status != http.StatusOK {
+		t.Fatalf("status = %d", r.status)
+	}
+	for _, want := range []string{`<b>Obermenzing</b>`, `Chosen, not saved yet. Until you save, Pasing stays in use.`, `<input type="hidden" name="place_id" value="` + idObermenzing + `">`, `value="12h" checked`} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("pending state misses %q", want)
+		}
+	}
+	if _, _, name := homeOf(t, b); name != "Pasing" {
+		t.Errorf("saved before Save: %q", name)
+	}
+	if h, _ := b.db.HomeHousehold(); h.TimeFormat == "12h" {
+		t.Error("other settings saved before Save")
+	}
+	// Save posts the id only.
+	save := settingsForm()
+	save.Set("place_id", idObermenzing)
+	if r := b.post("/settings/household", save); r.status != http.StatusSeeOther || r.location != "/settings/household" {
+		t.Fatalf("save = %d %q\n%s", r.status, r.location, r.body)
+	}
+	if page := b.do(http.MethodGet, "/settings/household", nil, en).body; !strings.Contains(page, "Saved. Sunrise, sunset and the weather now use Obermenzing.") || !strings.Contains(page, "In use · today sunrise") {
+		t.Errorf("after saving:\n%s", page)
 	}
 	h, _ := b.db.HomeHousehold()
-	if h.TimeFormat != "24h" {
-		t.Errorf("time format saved before confirming: %q", h.TimeFormat)
-	}
-	// Until the parent saves, the old place stays in use, and the status box gives way to a line saying so.
-	if !strings.Contains(r.body, `<p class="hint" data-location>Until you save, Pasing stays in use.</p>`) || strings.Contains(r.body, "place-status") {
-		t.Errorf("pending hint missing or status box still shown:\n%s", r.body)
-	}
-	// What was typed is kept.
-	if !strings.Contains(inputTag(r.body, "home_name"), `value="Neustadt"`) || !strings.Contains(r.body, `value="12h" checked`) || !strings.Contains(r.body, `value="f" checked`) {
-		t.Errorf("typed values not kept:\n%s", r.body)
-	}
-	// Choosing the second place saves the name, the coordinates and the other settings together.
-	f := settingsForm("Neustadt")
-	f.Set("place", "50.25,11.88")
-	f.Set("place_for", "Neustadt")
-	if r := b.post("/settings/household", f); r.status != http.StatusSeeOther || r.location != "/settings/household" {
-		t.Fatalf("confirm = %d %q", r.status, r.location)
-	}
-	if page := b.do(http.MethodGet, "/settings/household", nil, en).body; !strings.Contains(page, "Saved. Sunrise, sunset and weather now use Neustadt.") {
-		t.Errorf("success line after a changed location:\n%s", page)
-	}
-	h, _ = b.db.HomeHousehold()
-	if h.Latitude != 50.25 || h.Longitude != 11.88 || h.HomeName != "Neustadt" || h.TimeFormat != "12h" {
+	if h.HomeName != "Obermenzing" || h.HomePlaceID != 2859782 || h.Latitude == 48.1415 || h.TimeFormat != "12h" {
 		t.Errorf("household = %+v", h)
 	}
-	if !strings.Contains(b.do(http.MethodGet, "/settings/household", nil, en).body, "50.25° N, 11.88° E") {
-		t.Error("new location not shown")
+	// Saving the same place again is a plain save.
+	if r := b.post("/settings/household", save); r.status != http.StatusSeeOther {
+		t.Fatal(r.status)
+	}
+	if page := b.do(http.MethodGet, "/settings/household", nil, en).body; strings.Contains(page, "now use") {
+		t.Errorf("an unchanged place gets the plain success line:\n%s", page)
 	}
 }
 
-func TestSettingsWithoutChangingTheHomeDoNotSearchAgain(t *testing.T) {
+func TestSettingsTextWithoutAPickedPlaceIsAFieldErrorWithTheListOpen(t *testing.T) {
 	b := signedInBox(t)
-	before := len(b.geo.searches())
-	if r := b.post("/settings/household", settingsForm("Pasing")); r.status != http.StatusSeeOther {
-		t.Fatalf("status = %d", r.status)
-	}
-	if page := b.do(http.MethodGet, "/settings/household", nil, en).body; !strings.Contains(page, ">Household settings saved.</p>") || strings.Contains(page, "now use") {
-		t.Errorf("an unchanged location gets the plain success line:\n%s", page)
-	}
-	// A form without the field (older clients) leaves the home alone too.
-	if r := b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther {
-		t.Fatalf("status = %d", r.status)
-	}
-	if n := len(b.geo.searches()) - before; n != 0 {
-		t.Errorf("%d searches, want none", n)
-	}
-	if lat, lon, _ := homeOf(t, b); lat != 48.15 || lon != 11.46 {
-		t.Errorf("home = %v %v", lat, lon)
-	}
-}
-
-func TestSettingsSearchWhenTheHomeHasNoLocationYet(t *testing.T) {
-	b := signedInBox(t)
-	if _, err := b.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL`); err != nil {
-		t.Fatal(err)
-	}
-	r := b.do(http.MethodGet, "/settings/household", nil, en)
-	if !strings.Contains(r.body, `<div class="place-status missing" data-location>`) || !strings.Contains(r.body, "<b>No location yet</b><small>Sunrise, sunset and weather need one. Save to look up “Pasing”.</small>") {
-		t.Errorf("missing location not pointed out:\n%s", r.body)
-	}
-	if de := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body; !strings.Contains(de, "<b>Noch kein Standort</b><small>Sonnenaufgang, Sonnenuntergang und Wetter brauchen einen. Speichere, um „Pasing“ zu suchen.</small>") {
-		t.Errorf("German missing-location box:\n%s", de)
-	}
-	if r := b.post("/settings/household", settingsForm("Pasing")); r.status != http.StatusOK || !strings.Contains(r.body, "data-place-found") {
-		t.Fatalf("status %d: the unchanged name must be searched while there is no location", r.status)
-	}
-}
-
-func TestSettingsFieldErrorsForNoPlaceAndUnreachableKeepWhatWasTyped(t *testing.T) {
-	b := signedInBox(t)
-	r := b.do(http.MethodPost, "/settings/household", settingsForm("Nirgendwo"), en)
+	f := settingsForm()
+	f.Set("home_name", "Obermen")
+	r := b.do(http.MethodPost, "/settings/household", f, en)
 	tag := inputTag(r.body, "home_name")
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(tag, `aria-invalid="true"`) || !strings.Contains(tag, `value="Nirgendwo"`) || !strings.Contains(r.body, "No place found") {
-		t.Fatalf("no match: status %d, %q", r.status, tag)
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(tag, `aria-invalid="true"`) || !strings.Contains(tag, `value="Obermen"`) || !strings.Contains(r.body, "Pick your town in the list.") || len(options(r.body)) == 0 {
+		t.Fatalf("status %d, tag %q", r.status, tag)
 	}
-	if !strings.Contains(r.body, `value="12h" checked`) {
-		t.Error("other typed values lost")
+	if !strings.Contains(r.body, "Keep Pasing") || !strings.Contains(r.body, `value="12h" checked`) {
+		t.Errorf("keep row or typed values missing:\n%s", r.body)
 	}
-	if !strings.Contains(r.body, "<b>Still in use: Pasing</b>") {
-		t.Errorf("the location in use is not kept in view:\n%s", r.body)
+	f.Set("home_name", "Pasingg")
+	r = b.do(http.MethodPost, "/settings/household", f, en)
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "No place called “Pasingg” found.") || !strings.Contains(r.body, "Keep Pasing") || len(options(r.body)) != 0 {
+		t.Errorf("not found: status %d\n%s", r.status, r.body)
 	}
-	b.geo.setDown(true)
-	r = b.do(http.MethodPost, "/settings/household", settingsForm("Neustadt"), en)
-	tag = inputTag(r.body, "home_name")
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(tag, `value="Neustadt"`) || !strings.Contains(r.body, "could not be reached") {
-		t.Fatalf("unreachable: status %d, %q", r.status, tag)
+	f.Set("home_name", "  ")
+	if r := b.do(http.MethodPost, "/settings/household", f, en); r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "Please enter your town.") {
+		t.Errorf("empty text: status %d", r.status)
+	}
+	g := settingsForm()
+	g.Set("place_id", "999999999")
+	if r := b.do(http.MethodPost, "/settings/household", g, en); r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "Pick your town in the list.") {
+		t.Errorf("unknown place_id: status %d", r.status)
 	}
 	if _, _, name := homeOf(t, b); name != "Pasing" {
 		t.Errorf("home changed to %q", name)
 	}
-	if r := b.post("/settings/household", settingsForm("  ")); r.status != http.StatusUnprocessableEntity || !strings.Contains(inputTag(r.body, "home_name"), `aria-invalid="true"`) {
-		t.Errorf("empty name: status %d", r.status)
+}
+
+func TestSettingsWithoutPlaceFieldsLeaveTheHomeAlone(t *testing.T) {
+	b := signedInBox(t)
+	if r := b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("status = %d", r.status)
+	}
+	if page := b.do(http.MethodGet, "/settings/household", nil, en).body; !strings.Contains(page, ">Household settings saved.</p>") {
+		t.Errorf("plain success line missing:\n%s", page)
+	}
+	// Saving the place in use is a plain save too.
+	f := settingsForm()
+	f.Set("place_id", idPasing)
+	if r := b.post("/settings/household", f); r.status != http.StatusSeeOther {
+		t.Fatalf("status = %d", r.status)
+	}
+	if lat, lon, name := homeOf(t, b); lat != 48.1415 || lon != 11.456 || name != "Pasing" {
+		t.Errorf("home = %v %v %q", lat, lon, name)
+	}
+}
+
+// A household set up before the list of places has a name and no location: the
+// dashed box says so and the list is already open for the saved name.
+func TestOlderHouseholdWithoutLocationGetsSuggestionsForItsStoredName(t *testing.T) {
+	b := signedInBox(t)
+	if _, err := b.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL, home_place_id = NULL`); err != nil {
+		t.Fatal(err)
+	}
+	r := b.do(http.MethodGet, "/settings/household", nil, en)
+	for _, want := range []string{
+		`<div class="place-status missing" data-location>`,
+		`<b>No place chosen yet</b><small>Sunrise, sunset and the weather need one. Pick your town in the list below.</small>`,
+		`<p class="place-q" id="pl-q">1 place matches. Is this the one you mean?</p>`,
+		`value="Pasing"`,
+		`<button type="submit" name="place_id" value="` + idPasing + `"`,
+	} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("page misses %q", want)
+		}
+	}
+	if strings.Contains(r.body, "place-keep") || strings.Contains(r.body, "place-status ok") {
+		t.Error("keep row or place in use shown for a household without a place")
+	}
+	if g := b.do(http.MethodGet, "/settings/household", nil, de).body; !strings.Contains(g, "<b>Noch kein Ort gewählt</b><small>Sonnenaufgang, Sonnenuntergang und Wetter brauchen ihn. Wähle unten deinen Ort aus der Liste.</small>") {
+		t.Errorf("German dashed box:\n%s", g)
+	}
+	// Saving without picking asks to pick; picking from the list gives the household its place.
+	if r := b.post("/settings/household", settingsForm()); r.status != http.StatusOK && r.status != http.StatusSeeOther {
+		t.Errorf("a save without place fields = %d", r.status)
+	}
+	f := settingsForm()
+	f.Set("home_name", "Pasing")
+	if r := b.post("/settings/household", f); r.status != http.StatusUnprocessableEntity {
+		t.Errorf("text without a pick = %d, want 422", r.status)
+	}
+	f.Set("place_id", idPasing)
+	if r := b.do(http.MethodPost, "/settings/household", f, en); r.status != http.StatusOK || !strings.Contains(r.body, "Chosen. Used for the weather and the sun times.") {
+		t.Fatalf("pick = %d\n%s", r.status, r.body)
+	}
+	save := settingsForm()
+	save.Set("place_id", idPasing)
+	if r := b.post("/settings/household", save); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d", r.status)
+	}
+	if lat, _, _ := homeOf(t, b); lat != 48.1415 {
+		t.Errorf("latitude = %v", lat)
+	}
+}
+
+// A home set through the API has coordinates and no place id: the box shows
+// the name and today's sun times without a region.
+func TestHomeSetByCoordinatesShowsNameAndSunTimesWithoutARegion(t *testing.T) {
+	c := signedInAPI(t)
+	if status, _, _ := c.call(http.MethodPatch, "/settings", map[string]any{"home_name": "Zuhause", "latitude": 48.2, "longitude": 11.4}); status != http.StatusOK {
+		t.Fatalf("patch = %d", status)
+	}
+	r := c.b.do(http.MethodGet, "/settings/household", nil, en)
+	if !strings.Contains(r.body, `<b>Zuhause</b><small class="st">In use · today sunrise `) || inputTag(r.body, "place_id") != "" {
+		t.Errorf("home without a place id:\n%s", r.body)
+	}
+	// A save leaves it as it is.
+	if r := c.b.post("/settings/household", settingsForm()); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d", r.status)
+	}
+	if lat, _, name := homeOf(t, c.b); lat != 48.2 || name != "Zuhause" {
+		t.Errorf("home = %v %q", lat, name)
+	}
+}
+
+func TestSettingsWithInvalidFieldsKeepTheTypedPickerState(t *testing.T) {
+	b := signedInBox(t)
+	g := settingsForm()
+	g.Set("time_format", "25h")
+	g.Set("place_id", idPasing)
+	r := b.do(http.MethodPost, "/settings/household", g, en)
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `<b>Pasing</b>`) {
+		t.Errorf("status %d, picker lost:\n%s", r.status, r.body)
 	}
 }
 
@@ -330,10 +554,9 @@ func TestChangingTheHomeShowsTheWeatherThereAtOnce(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	f.homeWeather(t) // 18 degrees at the old location
 	f.meteo.set(`{"current":{"temperature_2m":3.0,"weather_code":3,"is_day":1}}`, 200)
-	g := settingsForm("Neustadt")
+	g := settingsForm()
 	g.Set("temperature_unit", "c")
-	g.Set("place", "50.25,11.88")
-	g.Set("place_for", "Neustadt")
+	g.Set("place_id", idObermenzing)
 	if r := f.post("/settings/household", g); r.status != http.StatusSeeOther {
 		t.Fatalf("status = %d", r.status)
 	}
@@ -342,16 +565,65 @@ func TestChangingTheHomeShowsTheWeatherThereAtOnce(t *testing.T) {
 	}
 }
 
+// --- The list stays on the box ---
+
+// outgoing records the requests made through http.DefaultTransport, which the
+// weather client uses.
+type outgoing struct {
+	mu   sync.Mutex
+	urls []string
+}
+
+func (o *outgoing) RoundTrip(r *http.Request) (*http.Response, error) {
+	o.mu.Lock()
+	o.urls = append(o.urls, r.URL.String())
+	o.mu.Unlock()
+	return nil, http.ErrNotSupported
+}
+
+func TestPlaceSearchNeverLeavesTheBox(t *testing.T) {
+	rec := &outgoing{}
+	old := http.DefaultTransport
+	http.DefaultTransport = rec
+	t.Cleanup(func() { http.DefaultTransport = old })
+	b := newBox(t)
+	b.do(http.MethodPost, "/setup", typedSetup("Neustadt"), en)
+	b.do(http.MethodPost, "/setup", typedSetup("Nirgendwo"), en)
+	b.do(http.MethodGet, "/places?name=Pasing", nil, en)
+	b.do(http.MethodPost, "/setup", pickedSetup("Pasing", idPasing), en)
+	rec.mu.Lock()
+	defer rec.mu.Unlock()
+	if len(rec.urls) != 0 {
+		t.Errorf("the box made %d outgoing requests while the parent typed: %v", len(rec.urls), rec.urls)
+	}
+}
+
+func TestPlacesEndpointOfThePagesAnswersFromTheListWithoutASignIn(t *testing.T) {
+	b := newBox(t)
+	r := b.do(http.MethodGet, "/places?name=Pasing&lang=de", nil, en)
+	var got struct {
+		Places []map[string]any `json:"places"`
+		More   bool             `json:"more"`
+	}
+	decodeJSON(t, r.body, &got)
+	if r.status != http.StatusOK || len(got.Places) != 1 || got.More || got.Places[0]["name"] != "Pasing" || got.Places[0]["region"] != "Stadtteil von München, Bayern, Deutschland" {
+		t.Fatalf("status %d: %s", r.status, r.body)
+	}
+	if r := b.do(http.MethodGet, "/places?name=Neustadt", nil, en); !strings.Contains(r.body, `"more":true`) {
+		t.Errorf("more missing: %s", r.body)
+	}
+}
+
 // --- /settings and /places API (parity with the web interface, ADR 0015) ---
 
 func TestSettingsAPIExposesAndChangesTheHomeLocation(t *testing.T) {
 	c := signedInAPI(t)
 	status, got, _ := c.call(http.MethodGet, "/settings", nil)
-	if status != http.StatusOK || got["home_name"] != "Pasing" || got["latitude"] != 48.15 || got["longitude"] != 11.46 {
+	if status != http.StatusOK || got["home_name"] != "Pasing" || got["latitude"] != 48.1415 || got["longitude"] != 11.456 || got["home_place_id"] != float64(2855334) {
 		t.Fatalf("get = %d %v", status, got)
 	}
 	status, got, _ = c.call(http.MethodPatch, "/settings", map[string]any{"home_name": "Neustadt", "latitude": 50.25, "longitude": 11.88})
-	if status != http.StatusOK || got["home_name"] != "Neustadt" || got["latitude"] != 50.25 || got["longitude"] != 11.88 {
+	if status != http.StatusOK || got["home_name"] != "Neustadt" || got["latitude"] != 50.25 || got["longitude"] != 11.88 || got["home_place_id"] != nil {
 		t.Fatalf("patch = %d %v", status, got)
 	}
 	if lat, lon, name := homeOf(t, c.b); lat != 50.25 || lon != 11.88 || name != "Neustadt" {
@@ -366,6 +638,29 @@ func TestSettingsAPIExposesAndChangesTheHomeLocation(t *testing.T) {
 	status, got, _ = c.call(http.MethodPatch, "/settings", map[string]any{"time_format": "12h"})
 	if status != http.StatusOK || got["latitude"] != -33.9 || got["home_name"] != "Neustadt" {
 		t.Fatalf("other setting = %d %v", status, got)
+	}
+}
+
+func TestSettingsAPITakesAPlaceByItsID(t *testing.T) {
+	c := signedInAPI(t)
+	status, got, _ := c.call(http.MethodPatch, "/settings", map[string]any{"home_place_id": 2867714})
+	if status != http.StatusOK || got["home_name"] != "München" || got["home_place_id"] != float64(2867714) || got["latitude"] != 48.1374 || got["longitude"] != 11.5755 {
+		t.Fatalf("patch = %d %v", status, got)
+	}
+	if h, _ := c.b.db.HomeHousehold(); h.HomePlaceID != 2867714 || h.HomeName != "München" {
+		t.Errorf("household = %+v", h)
+	}
+	for name, body := range map[string]map[string]any{
+		"unknown id":         {"home_place_id": 1},
+		"id and coordinates": {"home_place_id": 2867714, "latitude": 48.0, "longitude": 11.0},
+		"id and name":        {"home_place_id": 2867714, "home_name": "Anders"},
+	} {
+		if status, _, _ := c.call(http.MethodPatch, "/settings", body); status != http.StatusUnprocessableEntity {
+			t.Errorf("%s: status = %d, want 422", name, status)
+		}
+	}
+	if h, _ := c.b.db.HomeHousehold(); h.HomePlaceID != 2867714 {
+		t.Errorf("a refused patch changed the place id: %d", h.HomePlaceID)
 	}
 }
 
@@ -386,7 +681,7 @@ func TestSettingsAPIRefusesBadLocations(t *testing.T) {
 			t.Errorf("%s: status = %d, want 422", name, status)
 		}
 	}
-	if lat, lon, name := homeOf(t, c.b); lat != 48.15 || lon != 11.46 || name != "Pasing" {
+	if lat, lon, name := homeOf(t, c.b); lat != 48.1415 || lon != 11.456 || name != "Pasing" {
 		t.Errorf("a refused patch changed the home: %v %v %q", lat, lon, name)
 	}
 	ro := c.withToken(c.newToken("read"))
@@ -397,111 +692,97 @@ func TestSettingsAPIRefusesBadLocations(t *testing.T) {
 
 func TestSettingsAPIShowsAnUnknownLocationAsNull(t *testing.T) {
 	c := signedInAPI(t)
-	if _, err := c.b.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL`); err != nil {
+	if _, err := c.b.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL, home_place_id = NULL`); err != nil {
 		t.Fatal(err)
 	}
 	status, got, _ := c.call(http.MethodGet, "/settings", nil)
 	if status != http.StatusOK {
 		t.Fatalf("status = %d", status)
 	}
-	if v, ok := got["latitude"]; !ok || v != nil {
-		t.Errorf("latitude = %v (present %v), want null", v, ok)
+	for _, k := range []string{"latitude", "longitude", "home_place_id"} {
+		if v, ok := got[k]; !ok || v != nil {
+			t.Errorf("%s = %v (present %v), want null", k, v, ok)
+		}
 	}
 }
 
-func TestPlacesAPISearchesOnceAndListsWhatMatches(t *testing.T) {
+func TestPlacesAPIAnswersFromTheListOnTheBox(t *testing.T) {
 	c := signedInAPI(t)
-	before := len(c.b.geo.searches())
-	status, got, _ := c.call(http.MethodGet, "/places?name=Neustadt", nil)
+	status, got, _ := c.call(http.MethodGet, "/places?name=Pasing&lang=en", nil)
 	places, _ := got["places"].([]any)
-	if status != http.StatusOK || len(places) != 2 {
+	if status != http.StatusOK || len(places) != 1 || got["more"] != false {
 		t.Fatalf("status %d: %v", status, got)
 	}
-	first := places[1].(map[string]any)
-	if first["label"] != "Neustadt, Coburg, Bavaria, Germany" || first["latitude"] != 50.25 || first["longitude"] != 11.88 {
-		t.Errorf("place = %v", first)
+	p := places[0].(map[string]any)
+	if p["id"] != float64(2855334) || p["name"] != "Pasing" || p["region"] != "district of München, Bayern, Germany" || p["latitude"] != 48.1415 || p["longitude"] != 11.456 || p["region_code"] != "DE-BY" {
+		t.Errorf("place = %v", p)
 	}
-	qs := c.b.geo.searches()
-	if len(qs)-before != 1 || qs[len(qs)-1].Get("countryCode") != "DE" {
-		t.Errorf("searches = %v, want one in the household's country", qs)
+	// More than five: five items and more: true.
+	status, got, _ = c.call(http.MethodGet, "/places?name=Neustadt&lang=de", nil)
+	places, _ = got["places"].([]any)
+	if status != http.StatusOK || len(places) != 5 || got["more"] != true {
+		t.Errorf("Neustadt = %d, %d places, more %v", status, len(places), got["more"])
 	}
-	// No match is an empty list, not an error.
-	if status, got, _ := c.call(http.MethodGet, "/places?name=Nirgendwo", nil); status != http.StatusOK || len(got["places"].([]any)) != 0 {
+	if r := places[0].(map[string]any)["region"].(string); !strings.Contains(r, "Deutschland") {
+		t.Errorf("lang=de region = %q", r)
+	}
+	// No match is an empty list, not an error; there is no 502 any more.
+	if status, got, _ := c.call(http.MethodGet, "/places?name=Nirgendwo", nil); status != http.StatusOK || len(got["places"].([]any)) != 0 || got["more"] != false {
 		t.Errorf("no match = %d %v", status, got)
 	}
-	if status, _, _ := c.call(http.MethodGet, "/places?name=%20", nil); status != http.StatusUnprocessableEntity {
-		t.Errorf("no name = %d, want 422", status)
+	// One letter finds nothing: the search starts at two.
+	if status, got, _ := c.call(http.MethodGet, "/places?name=P", nil); status != http.StatusOK || len(got["places"].([]any)) != 0 {
+		t.Errorf("one letter = %d %v", status, got)
 	}
-	for _, bad := range []string{"DEU", "1", "D%C3%89", "D1"} {
-		if status, _, _ := c.call(http.MethodGet, "/places?name=Pasing&country="+bad, nil); status != http.StatusUnprocessableEntity {
-			t.Errorf("country %q = %d, want 422", bad, status)
+	for _, bad := range []string{"/places?name=%20"} {
+		if status, _, _ := c.call(http.MethodGet, bad, nil); status != http.StatusUnprocessableEntity {
+			t.Errorf("%s = %d, want 422", bad, status)
 		}
-	}
-	if status, _, _ := c.call(http.MethodGet, "/places?name=Pasing&country=at", nil); status != http.StatusOK {
-		t.Errorf("country at = %d, want 200", status)
-	}
-	c.b.geo.setDown(true)
-	if status, _, _ := c.call(http.MethodGet, "/places?name=Pasing", nil); status != http.StatusBadGateway {
-		t.Errorf("unreachable = %d, want 502", status)
 	}
 	if status, _, _ := c.withToken("nope").call(http.MethodGet, "/places?name=Pasing", nil); status != http.StatusUnauthorized {
 		t.Errorf("bad token = %d, want 401", status)
 	}
 }
 
-func TestSettingsWithInvalidFieldsKeepTheTypedHomeName(t *testing.T) {
+// --- Licences ---
+
+func TestLicencesPageCreditsGeoNames(t *testing.T) {
 	b := signedInBox(t)
-	g := settingsForm("Neustadt")
-	g.Set("time_format", "25h")
-	r := b.do(http.MethodPost, "/settings/household", g, en)
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(inputTag(r.body, "home_name"), `value="Neustadt"`) {
-		t.Errorf("status %d, home name tag %q", r.status, inputTag(r.body, "home_name"))
+	r := b.do(http.MethodGet, "/settings/licences", nil, en)
+	if r.status != http.StatusOK {
+		t.Fatalf("status = %d", r.status)
+	}
+	if !regexp.MustCompile(`Contains data from GeoNames \(https://www.geonames.org\), licensed CC BY 4.0, extract of \d{4}-\d\d-\d\d, filtered to DE/AT/CH and reformatted\.`).MatchString(r.body) {
+		t.Errorf("attribution missing:\n%s", r.body)
+	}
+	if hub := b.do(http.MethodGet, "/settings", nil, en).body; !strings.Contains(hub, `href="/settings/licences"`) {
+		t.Error("the Settings hub does not link to the licences")
+	}
+	signedOut := b.bareClient()
+	signedOut.CheckRedirect = func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }
+	if res, err := signedOut.Get(b.srv.URL + "/settings/licences"); err != nil || res.StatusCode != http.StatusSeeOther {
+		t.Errorf("signed out: %v %v", res, err)
 	}
 }
 
-func TestFoundPlaceCardAndPendingHintInGerman(t *testing.T) {
+// The script that updates the list while typing belongs to the two pages with
+// the picker, and to no other.
+func TestPlaceScriptIsLoadedOnlyWhereThePickerIs(t *testing.T) {
 	b := signedInBox(t)
-	b.geo.set("Pasing-Obermenzing", `{"results":[{"name":"Pasing-Obermenzing","latitude":48.16,"longitude":11.45,"country":"Deutschland","admin1":"Bayern","admin2":"Oberbayern"}]}`)
-	r := b.do(http.MethodPost, "/settings/household", settingsForm("Pasing-Obermenzing"), map[string]string{"Accept-Language": "de"})
-	for _, want := range []string{
-		`<p class="place-q">Ist das dein Zuhause?</p>`,
-		"<b>Pasing-Obermenzing</b><small>Oberbayern, Bayern, Deutschland · 48.16° N, 11.45° E</small>",
-		"Noch nicht gespeichert. Speichere, um diesen Ort zu verwenden, oder ändere den Namen, um neu zu suchen.",
-		`<p class="hint" data-location>Bis du speicherst, bleibt Pasing in Verwendung.</p>`,
-	} {
-		if !strings.Contains(r.body, want) {
-			t.Errorf("German page misses %q", want)
+	if r := b.do(http.MethodGet, "/settings/household", nil, en); !strings.Contains(r.body, `src="/static/place.js"`) {
+		t.Error("Settings → Household does not load place.js")
+	}
+	for _, page := range []string{"/settings", "/", "/people"} {
+		if r := b.do(http.MethodGet, page, nil, en); strings.Contains(r.body, "place.js") {
+			t.Errorf("%s loads place.js", page)
 		}
 	}
-	// Saving the card's hidden place stores it and names it in the success line.
-	f := settingsForm("Pasing-Obermenzing")
-	f.Set("place_for", "Pasing-Obermenzing")
-	f.Set("place", "48.16,11.45")
-	f.Set("place_label", "Pasing-Obermenzing, Oberbayern, Bayern, Deutschland")
-	if r := b.do(http.MethodPost, "/settings/household", f, map[string]string{"Accept-Language": "de"}); r.status != http.StatusSeeOther {
-		t.Fatalf("save = %d", r.status)
+	w := newBox(t)
+	if r := w.do(http.MethodGet, "/setup", nil, en); !strings.Contains(r.body, `src="/static/place.js"`) || !strings.Contains(r.body, `data-url="/places"`) {
+		t.Errorf("the wizard does not load place.js:\n%s", r.body)
 	}
-	if page := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body; !strings.Contains(page, "Gespeichert. Sonnenaufgang, Sonnenuntergang und Wetter gelten jetzt für Pasing-Obermenzing.") {
-		t.Errorf("German success line:\n%s", page)
-	}
-}
-
-func TestCarriedAlongPlaceRendersTheSameCard(t *testing.T) {
-	b := newBox(t)
-	f := validSetupForm()
-	f.Set("place_label", "Pasing, Bavaria, Germany")
-	f.Set("password", "x") // another field is wrong: the page comes back with the place carried along
-	r := b.do(http.MethodPost, "/setup", f, en)
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "<b>Pasing</b><small>Bavaria, Germany · 48.15° N, 11.46° E</small>") || !strings.Contains(r.body, "data-place-found") {
-		t.Errorf("status %d, carried card missing:\n%s", r.status, r.body)
-	}
-}
-
-// Coordinates never break across lines: every space inside is non-breaking.
-func TestCoordinatesDoNotBreak(t *testing.T) {
-	b := signedInBox(t)
-	r := b.do(http.MethodGet, "/settings/household", nil, en)
-	if !strings.Contains(r.body, "48.15\u00b0\u00a0N,\u00a011.46\u00b0\u00a0E") {
-		t.Errorf("coordinates are breakable:\n%s", r.body)
+	js := w.get("/static/place.js")
+	if js.status != http.StatusOK || !strings.Contains(js.body, "/places") && !strings.Contains(js.body, "cfg.url") {
+		t.Errorf("place.js = %d", js.status)
 	}
 }

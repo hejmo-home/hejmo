@@ -23,22 +23,26 @@ import (
 // before the home location was confirmed.
 func (f *familyBox) withoutLocation(t *testing.T) {
 	t.Helper()
-	if _, err := f.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL`); err != nil {
+	if _, err := f.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL, home_place_id = NULL`); err != nil {
 		t.Fatal(err)
 	}
 }
 
-// setHomeInSettings confirms Pasing (48.15, 11.46) under Settings → Household.
+// setHomeInSettings picks Pasing from the list of places under Settings →
+// Household and saves it.
 func (f *familyBox) setHomeInSettings(t *testing.T) {
 	t.Helper()
 	form := url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "home_name": {"Pasing"}}
-	if r := f.do(http.MethodPost, "/settings/household", form, en); r.status != http.StatusOK || !strings.Contains(r.body, "data-place-found") {
-		t.Fatalf("search step = %d", r.status)
+	if r := f.do(http.MethodPost, "/settings/household", form, en); r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `name="place_id" value="`+idPasing+`"`) {
+		t.Fatalf("suggestion step = %d", r.status)
 	}
-	form.Set("place", "48.15,11.46")
-	form.Set("place_for", "Pasing")
-	if r := f.post("/settings/household", form); r.status != http.StatusSeeOther {
-		t.Fatalf("confirm = %d\n%s", r.status, r.body)
+	form.Set("place_id", idPasing)
+	if r := f.do(http.MethodPost, "/settings/household", form, en); r.status != http.StatusOK || !strings.Contains(r.body, "Chosen. Used for the weather and the sun times.") {
+		t.Fatalf("pick step = %d", r.status)
+	}
+	save := url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "place_id": {idPasing}}
+	if r := f.post("/settings/household", save); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
 	}
 }
 
@@ -79,7 +83,7 @@ func TestAutomaticThemeFollowsSunsetAtTheHomeLocationSetInSettings(t *testing.T)
 	f := newFamilyBox(t, "screen")
 	f.withoutLocation(t)
 	f.setTheme(t, "auto", "0", "-30")
-	set := sun.On(time.Date(2026, 6, 21, 12, 0, 0, 0, berlinTZ), 48.15, 11.46).Set
+	set := sun.On(time.Date(2026, 6, 21, 12, 0, 0, 0, berlinTZ), 48.1415, 11.456).Set
 	if got := themeOf(t, f.view(t, "en", set.Add(-30*time.Minute))); got != "light" {
 		t.Fatalf("without a home location the theme is %q, want the light default", got)
 	}
@@ -101,26 +105,21 @@ func TestAutomaticThemeFollowsSunsetAtTheHomeLocationSetInSettings(t *testing.T)
 // as the box's main does.
 type storedHome struct{ db *store.DB }
 
-func (h storedHome) Home() (lat, lon float64, name, country string, err error) {
+func (h storedHome) Home() (lat, lon float64, err error) {
 	hh, err := h.db.HomeHousehold()
-	return hh.Latitude, hh.Longitude, hh.HomeName, "DE", err
+	return hh.Latitude, hh.Longitude, err
 }
-func (h storedHome) SetCoordinates(lat, lon float64) error { panic("must not geocode again") }
 
-// #28: the weather is fetched for the stored coordinates and the box does not
-// search the place again.
+// #28: the weather is fetched for the stored coordinates of the place picked
+// from the list.
 func TestWeatherUsesTheStoredHomeLocation(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	f.withoutLocation(t)
 	f.setHomeInSettings(t)
-	searches := len(f.geo.searches())
 	if err := f.weather.Keep(context.Background(), storedHome{f.db}); err != nil {
 		t.Fatalf("keep: %v", err)
 	}
-	if len(f.geo.searches()) != searches {
-		t.Error("the place was searched again although its coordinates are stored")
-	}
-	if r, ok := f.weather.Latest(48.15, 11.46); !ok || r.TempC != 18.4 || r.Icon != weather.Clear {
+	if r, ok := f.weather.Latest(48.1415, 11.456); !ok || r.TempC != 18.4 || r.Icon != weather.Clear {
 		t.Errorf("reading for the stored location = %v %v", r, ok)
 	}
 	if chip := chipRe.FindString(f.view(t, "en", f.at(14, 8, 0))); !strings.Contains(chip, "18°C") {

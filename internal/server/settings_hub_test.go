@@ -29,6 +29,9 @@ func hubTargets(body string) []string {
 	}
 	var out []string
 	for _, h := range hrefRe.FindAllStringSubmatch(m[1], -1) {
+		if h[1] == "/settings/licences" { // a quiet link below the rows, not a setup screen
+			continue
+		}
 		out = append(out, h[1])
 	}
 	return out

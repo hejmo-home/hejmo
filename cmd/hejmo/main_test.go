@@ -443,29 +443,30 @@ func TestCommandLogReachesTheBoxMainProcessOutput(t *testing.T) {
 }
 
 // The weather service reads the home through homeOf: no household is
-// weather.ErrNoHome, the country is the start of the region, and found
-// coordinates are saved on the household.
+// weather.ErrNoHome, a household whose home has no location yet reports (0, 0)
+// and one with a picked place reports its coordinates. Nothing is looked up by
+// name any more (ADR 0020).
 func TestHomeOfAdaptsTheHouseholdForTheWeather(t *testing.T) {
 	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	h := homeOf{db}
-	if _, _, _, _, err := h.Home(); !errors.Is(err, weather.ErrNoHome) {
+	if _, _, err := h.Home(); !errors.Is(err, weather.ErrNoHome) {
 		t.Fatalf("without a household: %v", err)
 	}
-	if _, err := db.CreateHousehold(store.Household{Name: "Home", HomeName: "Pasing", Region: "DE-BY"}); err != nil {
+	hh, err := db.CreateHousehold(store.Household{Name: "Home", HomeName: "Pasing", Region: "DE-BY"})
+	if err != nil {
 		t.Fatal(err)
 	}
-	lat, lon, name, country, err := h.Home()
-	if err != nil || lat != 0 || lon != 0 || name != "Pasing" || country != "DE" {
-		t.Fatalf("home = %v %v %q %q %v", lat, lon, name, country, err)
+	if lat, lon, err := h.Home(); err != nil || lat != 0 || lon != 0 {
+		t.Fatalf("home without a place = %v %v %v", lat, lon, err)
 	}
-	if err := h.SetCoordinates(48.15, 11.46); err != nil {
+	if err := db.SetHouseholdCoordinates(hh.ID, 48.15, 11.46); err != nil {
 		t.Fatal(err)
 	}
-	if lat, lon, _, _, _ := h.Home(); lat != 48.15 || lon != 11.46 {
-		t.Fatalf("coordinates not saved: %v %v", lat, lon)
+	if lat, lon, err := h.Home(); err != nil || lat != 48.15 || lon != 11.46 {
+		t.Fatalf("home with a place = %v %v %v", lat, lon, err)
 	}
 }
 

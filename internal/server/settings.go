@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"math"
 	"net/http"
 	"net/url"
 	"strings"
@@ -15,8 +16,8 @@ import (
 	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/meal"
+	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/store"
-	"github.com/hejmo-home/hejmo/internal/sun"
 	"github.com/hejmo-home/hejmo/internal/update"
 )
 
@@ -26,6 +27,9 @@ type settingsJSON struct {
 	TemperatureUnit store.TemperatureUnit `json:"temperature_unit"`
 	AutoUpdate      store.UpdateMode      `json:"auto_update"`
 	HomeName        string                `json:"home_name"`
+	// HomePlaceID is the id of the place in the list on the box (GET /places);
+	// null while the location was set by coordinates only.
+	HomePlaceID *int `json:"home_place_id"`
 	// Latitude and Longitude are null until the home has a location.
 	Latitude    *float64    `json:"latitude"`
 	Longitude   *float64    `json:"longitude"`
@@ -41,6 +45,9 @@ func settingsOf(h store.Household) settingsJSON {
 		MealCutoffs: cutoffsToJSON(h.MealCutoffs), FirstStepsHidden: h.FirstStepsHidden, FirstStepsSkipped: skippedOrEmpty(h.FirstStepsSkipped)}
 	if h.Latitude != 0 || h.Longitude != 0 {
 		out.Latitude, out.Longitude = &h.Latitude, &h.Longitude
+	}
+	if h.HomePlaceID != 0 {
+		out.HomePlaceID = &h.HomePlaceID
 	}
 	return out
 }
@@ -75,6 +82,7 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		TemperatureUnit *store.TemperatureUnit `json:"temperature_unit"`
 		AutoUpdate      *store.UpdateMode      `json:"auto_update"`
 		HomeName        *string                `json:"home_name"`
+		HomePlaceID     *int                   `json:"home_place_id"`
 		Latitude        *float64               `json:"latitude"`
 		Longitude       *float64               `json:"longitude"`
 		MealCutoffs     *struct {
@@ -123,7 +131,7 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, "meal_cutoffs: "+err.Error())
 		return
 	}
-	home, errMsg := homeOfPatch(p.household, in.HomeName, in.Latitude, in.Longitude)
+	home, errMsg := s.homeOfPatch(p.household, in.HomeName, in.HomePlaceID, in.Latitude, in.Longitude)
 	if errMsg != "" {
 		writeError(w, http.StatusUnprocessableEntity, errMsg)
 		return
@@ -153,10 +161,23 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 }
 
 // homeOfPatch reads the home of a settings patch: nil if it does not touch
-// the home, else the new home, or what is wrong with it. Latitude and
-// longitude come together, and a new name needs the coordinates of its place
-// (search with GET /places), so the name and the location never disagree.
-func homeOfPatch(h store.Household, name *string, lat, lon *float64) (*store.Home, string) {
+// the home, else the new home, or what is wrong with it. The home is either a
+// place of the list on the box (home_place_id: name and coordinates come from
+// the list) or explicit coordinates; latitude and longitude come together, and
+// a new name needs the coordinates of its place (find them with GET /places), so
+// the name and the location never disagree. Coordinates without a place id
+// clear the stored place id.
+func (s *server) homeOfPatch(h store.Household, name *string, placeID *int, lat, lon *float64) (*store.Home, string) {
+	if placeID != nil {
+		if name != nil || lat != nil || lon != nil {
+			return nil, "home_place_id replaces home_name, latitude and longitude: give only the place id"
+		}
+		pl, ok := s.places.Get(*placeID, "en")
+		if !ok {
+			return nil, "home_place_id is not a place in the list (find places with GET /places)"
+		}
+		return &store.Home{Name: pl.Name, Latitude: pl.Lat, Longitude: pl.Lon, PlaceID: pl.ID}, ""
+	}
 	if name == nil && lat == nil && lon == nil {
 		return nil, ""
 	}
@@ -164,7 +185,7 @@ func homeOfPatch(h store.Household, name *string, lat, lon *float64) (*store.Hom
 		return nil, "latitude and longitude must be given together"
 	}
 	if lat == nil {
-		return nil, "a new home_name needs latitude and longitude (find them with GET /places)"
+		return nil, "a new home_name needs latitude and longitude, or a home_place_id (find places with GET /places)"
 	}
 	if !validCoordinates(*lat, *lon) {
 		return nil, "latitude must be between -90 and 90 and longitude between -180 and 180"
@@ -179,12 +200,22 @@ func homeOfPatch(h store.Household, name *string, lat, lon *float64) (*store.Hom
 	return &home, ""
 }
 
+// validCoordinates reports whether lat and lon are real degrees. (0, 0) is
+// refused: the stored home treats it as "no location yet".
+func validCoordinates(lat, lon float64) bool {
+	if lat == 0 && lon == 0 {
+		return false
+	}
+	return !math.IsNaN(lat) && !math.IsNaN(lon) && lat >= -90 && lat <= 90 && lon >= -180 && lon <= 180
+}
+
 // settingsPage is what the household page shows: the stored settings, or what
 // was typed when the page is shown again.
 type settingsPage struct {
-	TimeFormat, TemperatureUnit, AutoUpdate, HomeName string
-	Place                                             *placeView
-	Cutoffs                                           meal.Cutoffs // what the cut-off fields hold
+	TimeFormat, TemperatureUnit, AutoUpdate string
+	// Place is what the home location picker shows; nil shows the stored home.
+	Place   *placePick
+	Cutoffs meal.Cutoffs // what the cut-off fields hold
 }
 
 // renderSettings shows the household settings. form is what the page holds
@@ -203,32 +234,58 @@ func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p princi
 		"DateFormat": string(p.household.DateFormat), "DateDMY": datefmt.Date(store.DateDMY, sample), "DateMDY": datefmt.Date(store.DateMDY, sample), "SampleYear": sample.Year(),
 		"TimeFormat": form.TimeFormat, "TemperatureUnit": form.TemperatureUnit,
 		"AutoUpdate": form.AutoUpdate, "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
-		"HomeName": form.HomeName, "Place": form.Place,
+		"Place": cmp.Or(form.Place, s.storedPicker(r, p)),
 	}
-	if p.household.Latitude != 0 || p.household.Longitude != 0 {
-		label := "place.in_use"
-		if errField == "home_name" { // the search failed: nothing changed
-			label = "place.still_in_use"
-		}
-		data["Location"] = map[string]string{"Name": p.household.HomeName, "Label": label, "Detail": s.locationDetail(r, p)}
+	if hasLocation(p.household) {
+		data["StoredHomeName"] = p.household.HomeName // what stays in use while another place is picked
 	}
 	s.render(w, r, status, "household.html", data)
 }
 
-// locationDetail is the second line of the location in use: its coordinates and
-// today's sunrise and sunset there, in the household's time zone and format.
-func (s *server) locationDetail(r *http.Request, p principal) string {
-	h := p.household
-	coords := coordinatesText(h.Latitude, h.Longitude)
-	t := sun.On(s.now().In(p.location()), h.Latitude, h.Longitude)
-	if t.Kind != sun.Normal { // polar day or night: no sunrise to name
-		return coords
+// hasLocation reports whether the household has a home location.
+func hasLocation(h store.Household) bool { return h.Latitude != 0 || h.Longitude != 0 }
+
+// storedPicker is the picker for the stored home: the place in use with
+// today's sun times, or, for a household without a location (set up before the
+// list of places), a dashed box and the open field with suggestions for the
+// stored name.
+func (s *server) storedPicker(r *http.Request, p principal) *placePick {
+	h, lang := p.household, s.langOf(r)
+	if !hasLocation(h) {
+		v := s.openPicker(lang, h.HomeName)
+		v.Missing = &placeMissing{Title: s.i18n.T(lang, "place.missing"), Hint: s.i18n.T(lang, "place.missing.hint")}
+		return v
 	}
-	layout := "15:04"
-	if h.TimeFormat == store.Time12h {
-		layout = "3:04 PM"
+	pl := places.Place{ID: h.HomePlaceID, Name: h.HomeName}
+	if got, ok := s.places.Get(h.HomePlaceID, lang); ok {
+		pl.Region, pl.RegionCode = got.Region, got.RegionCode
 	}
-	return s.i18n.Format(s.langOf(r), i18n.Msg("place.in_use.detail", "coords", coords, "rise", t.Rise.Round(time.Minute).In(p.location()).Format(layout), "set", t.Set.Round(time.Minute).In(p.location()).Format(layout)))
+	// A home set through the API has no place id, and so no region line.
+	v := chosenPicker(pl, s.sunLine(r, p, h.Latitude, h.Longitude))
+	v.Chosen.Name = h.HomeName
+	return v
+}
+
+// pendingPicker is the picker for a place that was picked and is not saved yet.
+func (s *server) pendingPicker(r *http.Request, p principal, pl places.Place) *placePick {
+	h, lang := p.household, s.langOf(r)
+	switch {
+	case hasLocation(h) && h.HomePlaceID == pl.ID:
+		return s.storedPicker(r, p)
+	case hasLocation(h):
+		return chosenPicker(pl, s.i18n.Format(lang, i18n.Msg("place.pending", "old", h.HomeName)))
+	}
+	return chosenPicker(pl, s.i18n.T(lang, "place.chosen"))
+}
+
+// withKeep adds the row that offers to keep the saved place, if there is one.
+func (s *server) withKeep(r *http.Request, p principal, v *placePick) *placePick {
+	if !hasLocation(p.household) {
+		return v
+	}
+	lang, old := s.langOf(r), p.household.HomeName
+	v.Keep = &placeKeep{Hint: s.i18n.Format(lang, i18n.Msg("place.keep_hint", "old", old)), Button: s.i18n.Format(lang, i18n.Msg("place.keep", "old", old))}
+	return v
 }
 
 // cutoffField is the name of a mealtime's time field in the settings form.
@@ -241,7 +298,7 @@ type cutoffInput struct {
 
 // storedSettings is the page as stored.
 func storedSettings(h store.Household) settingsPage {
-	return settingsPage{string(h.TimeFormat), string(h.TemperatureUnit), string(h.AutoUpdate), h.HomeName, nil, h.MealCutoffs}
+	return settingsPage{string(h.TimeFormat), string(h.TemperatureUnit), string(h.AutoUpdate), nil, h.MealCutoffs}
 }
 
 // handleSettingsHub shows the Settings hub: one calm row per setup screen.
@@ -288,10 +345,7 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 	for _, m := range meal.Mealtimes() {
 		c = c.With(m, postedCutoff(r.PostForm, m, c.For(m)))
 	}
-	typed := settingsPage{string(f), string(u), string(a), p.household.HomeName, nil, c}
-	if _, sent := r.PostForm["home_name"]; sent {
-		typed.HomeName = strings.TrimSpace(r.PostFormValue("home_name"))
-	}
+	typed := settingsPage{string(f), string(u), string(a), nil, c}
 	if !d.Valid() {
 		p.household.DateFormat = "" // nothing is checked after a value the form should never send
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.date_format", "date_format", typed)
@@ -310,29 +364,11 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.cutoff", field, typed)
 		return
 	}
-	// The home place (Q59): a form without the field leaves it alone. A new
-	// name, or a home that has no location yet, must be searched and
-	// confirmed before anything is saved.
-	var home *store.Home
-	if _, sent := r.PostForm["home_name"]; sent {
-		name := strings.TrimSpace(r.PostFormValue("home_name"))
-		switch {
-		case name == "":
-			s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "setup.error.home", "home_name", typed)
-			return
-		case name != p.household.HomeName || (p.household.Latitude == 0 && p.household.Longitude == 0):
-			lat, lon, confirmed, view, errKey := s.resolvePlace(r, name, p.household.Region)
-			if errKey != "" {
-				s.renderSettings(w, r, p, http.StatusUnprocessableEntity, errKey, "home_name", typed)
-				return
-			}
-			if !confirmed {
-				typed.Place = view
-				s.renderSettings(w, r, p, http.StatusOK, "", "", typed)
-				return
-			}
-			home = &store.Home{Name: name, Latitude: lat, Longitude: lon}
-		}
+	// The home place (ADR 0020): the page posts the id of a place of the list
+	// and never coordinates. A form without place fields leaves the home alone.
+	home, done := s.homeOfForm(w, r, p, typed)
+	if done {
+		return
 	}
 	if err := s.saveSettings(p.household, store.HouseholdSettings{DateFormat: d, TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c, Home: home}); err != nil {
 		s.fail(w, "update settings", err)
@@ -344,6 +380,62 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.redirectSaved(w, r, "/settings/household", "flash.household_saved")
+}
+
+// homeOfForm reads what the form posted about the home place. It either
+// renders the page again (a pick, Change or Keep that saves nothing, or an
+// error at the picker) and says so with done, or returns the home to save:
+// nil when the home stays as it is.
+func (s *server) homeOfForm(w http.ResponseWriter, r *http.Request, p principal, typed settingsPage) (home *store.Home, done bool) {
+	in, lang := readPickerInput(r), s.langOf(r)
+	show := func(status int, errKey string, v *placePick) {
+		typed.Place = v
+		errField := ""
+		if errKey != "" {
+			errField = "home_name"
+		}
+		s.renderSettings(w, r, p, status, errKey, errField, typed)
+	}
+	switch {
+	case in.Keep: // back to the saved place; nothing is saved
+		show(http.StatusOK, "", nil)
+	case in.Change: // open the field for the place that was shown
+		text := p.household.HomeName
+		if pl, ok := s.places.Get(in.ID, lang); ok {
+			text = pl.Name
+		}
+		show(http.StatusOK, "", s.withKeep(r, p, s.openPicker(lang, text)))
+	case in.HasText && in.HasID: // a suggestion was picked: show it, nothing is saved
+		pl, ok := s.places.Get(in.ID, lang)
+		if !ok {
+			show(http.StatusUnprocessableEntity, "place.error.pick", s.withKeep(r, p, s.pickError(lang, in.Text)))
+			break
+		}
+		show(http.StatusOK, "", s.pendingPicker(r, p, pl))
+	case in.HasText: // text, but no place picked
+		v := s.openPickerError(lang, in.Text)
+		key := "place.error.pick"
+		switch {
+		case in.Text == "":
+			key = "setup.error.home"
+		case len(v.Options) == 0:
+			key = "place.error.none"
+		}
+		show(http.StatusUnprocessableEntity, key, s.withKeep(r, p, v))
+	case in.HasID: // Save with the confirmed place
+		if hasLocation(p.household) && in.ID == p.household.HomePlaceID {
+			return nil, false
+		}
+		pl, ok := s.places.Get(in.ID, lang)
+		if !ok {
+			show(http.StatusUnprocessableEntity, "place.error.pick", s.withKeep(r, p, s.pickError(lang, "")))
+			break
+		}
+		return &store.Home{Name: pl.Name, Latitude: pl.Lat, Longitude: pl.Lon, PlaceID: pl.ID}, false
+	default:
+		return nil, false
+	}
+	return nil, true
 }
 
 // postedCutoff is the cut-off of a mealtime as the form sends it: a switch

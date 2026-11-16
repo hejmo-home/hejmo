@@ -5,14 +5,11 @@
   <p class="lead">{{t "settings.intro"}}</p>
   {{template "error" .}}
   <form method="post" action="/settings/household" class="steps">
+    {{template "defaultSubmit"}}
     <fieldset>
       <legend>{{t "setup.step.home"}}</legend>
       <span class="hint">{{t "settings.home.hint"}}</span>
-      {{template "field" (dict "Root" . "Name" "home_name" "Label" (t "setup.field.home_name") "Value" .HomeName "Required" true "Autocomplete" "address-level2")}}
-      {{template "placeChoice" (dict "Root" . "Place" .Place)}}
-      {{with .Place}}{{with $.Location}}<p class="hint" data-location>{{printf (t "place.pending") .Name}}</p>{{end}}
-      {{else}}{{with .Location}}<div class="place-status" data-location><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><div><b>{{printf (t .Label) .Name}}</b><small>{{.Detail}}</small></div></div>
-      {{else}}<div class="place-status missing" data-location><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><div><b>{{t "place.missing"}}</b><small>{{printf (t "place.missing.hint") $.HomeName}}</small></div></div>{{end}}{{end}}
+      {{template "placePicker" (dict "Place" .Place)}}
     </fieldset>
     {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.date_format") "Root" . "Name" "date_format")}}
       <p class="hint">{{t "settings.date_format.hint"}}</p>
@@ -45,4 +42,5 @@
     </fieldset>
     <button class="button" type="submit">{{t "settings.save"}}</button>
   </form>
+  <script src="/static/place.js" defer data-url="/places" data-one="{{t "place.one_match"}}" data-many="{{t "place.n_match"}}" data-more="{{t "place.more5"}}" data-not-there="{{t "place.not_there"}}" data-chosen="{{t "place.chosen"}}" data-change="{{t "place.change"}}" data-pending="{{t "place.pending"}}" data-old="{{.StoredHomeName}}"></script>
 {{template "foot"}}

@@ -1606,10 +1606,14 @@ paths:
         unknown value of any other field with 422.
 
         The home place sets where sunrise and sunset are computed (front light
-        of displays, themes) and which weather is shown. Give `latitude` and
-        `longitude` together (degrees, -90 to 90 and -180 to 180); a new
-        `home_name` needs them too. Find the coordinates of a place name with
-        `GET /places`. Out-of-range or lone coordinates are refused with 422.
+        of displays, themes) and which weather is shown. Give `home_place_id`,
+        the id of a place of the list on the box (find it with `GET /places`):
+        the name and the coordinates then come from the list, and giving
+        `home_name`, `latitude` or `longitude` as well is refused. Or give
+        `latitude` and `longitude` together (degrees, -90 to 90 and -180 to 180);
+        a new `home_name` needs them too, and the stored `home_place_id` becomes
+        null. An unknown place id, out-of-range or lone coordinates are refused
+        with 422.
       requestBody:
         required: true
         content:
@@ -1628,16 +1632,21 @@ paths:
   /places:
     get:
       operationId: searchPlaces
-      summary: Search places by name, to set the home location (scope settings:read)
+      summary: Search the places on the box, to set the home location (scope settings:read)
       description: |
-        Looks the name up with Open-Meteo's geocoding (only the name, the country
-        and the language are sent) and lists up to five places that match, so a parent can
-        confirm one before `PATCH /settings` stores its coordinates. The
-        search is limited to the country of the household's region unless
-        `country` says otherwise. No match is an empty list.
+        Searches the list of towns, villages and districts of Germany, Austria
+        and Switzerland that ships on the box (GeoNames, CC BY 4.0). The answer
+        comes from the box; nothing goes to the internet. Matching is case- and
+        diacritic-insensitive (ü = ue, ß = ss) over the name, the ASCII name and the
+        alternate names in German, English, French and Italian. It starts at two
+        letters (a shorter name is an empty list). Names that start with the
+        text come before names with a word that does, then larger places come
+        first. At most five places are listed; `more` says that more matched.
+        No match is an empty list. Use the `id` as `home_place_id` of
+        `PATCH /settings`.
       parameters:
-        - { name: name, in: query, required: true, schema: { type: string }, description: "The place name, for example München-Pasing; blank is refused with 422" }
-        - { name: country, in: query, required: false, schema: { type: string }, description: "ISO 3166-1 alpha-2 country code (two letters, else 422); default the household's country" }
+        - { name: name, in: query, required: true, schema: { type: string }, description: "The text to search for, for example Pasing; blank is refused with 422" }
+        - { name: lang, in: query, required: false, schema: { type: string, enum: [de, en] }, description: "The language of the region label; default the language of the request. Anything else is refused with 422" }
       responses:
         "200":
           description: The matching places, best match first
@@ -1645,17 +1654,13 @@ paths:
             application/json:
               schema:
                 type: object
-                required: [places]
+                required: [places, more]
                 properties:
-                  places: { type: array, items: { $ref: "#/components/schemas/Place" } }
+                  places: { type: array, maxItems: 5, items: { $ref: "#/components/schemas/Place" } }
+                  more: { type: boolean, description: "True if more than five places matched; the five largest are listed" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
-        "502":
-          description: The geocoding service could not be reached; try again later
-          content:
-            application/json:
-              schema: { $ref: "#/components/schemas/Error" }
   /update:
     get:
       operationId: getUpdate
@@ -2225,18 +2230,21 @@ components:
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
     Place:
       type: object
-      required: [label, name, latitude, longitude]
+      required: [id, name, region, latitude, longitude, region_code]
       properties:
-        label: { type: string, description: "The place as a person recognises it: name, district, state, country", example: "Pasing, Bavaria, Germany" }
-        name: { type: string }
+        id: { type: integer, description: "The GeoNames id; give it as home_place_id", example: 2855334 }
+        name: { type: string, example: Pasing }
+        region: { type: string, description: "What sets the place apart, in the language asked for: district of its town (when it is one), the area when two results would read the same, the state or canton and the country", example: "district of München, Bayern, Germany" }
         latitude: { type: number, format: double }
         longitude: { type: number, format: double }
+        region_code: { type: string, description: "ISO 3166-2 code of the state or canton, one of the regions of the setup form", example: DE-BY }
     Settings:
       type: object
-      required: [date_format, time_format, temperature_unit, auto_update, home_name, latitude, longitude, first_steps_hidden, first_steps_skipped, meal_cutoffs]
+      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, first_steps_hidden, first_steps_skipped, meal_cutoffs]
       properties:
         date_format: { type: string, enum: [dmy, mdy], description: "Day first DD.MM.YYYY (default) or month first MM/DD/YYYY. Only how the web interface writes dates in numbers; this API, CalDAV and iCalendar stay ISO 8601" }
-        home_name: { type: string, description: "The place name of the home, as the parent entered it" }
+        home_name: { type: string, description: "The name of the home place; the name of the place picked from the list" }
+        home_place_id: { type: integer, nullable: true, description: "The id of the place of the list on the box (GET /places) the home was picked from; null when the location was set by coordinates only" }
         latitude: { type: number, nullable: true, format: double, description: "Latitude of the home in degrees (north positive); null until the home has a location. Sunrise and sunset, themes and weather use it" }
         longitude: { type: number, nullable: true, format: double, description: "Longitude of the home in degrees (east positive); null until the home has a location" }
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
@@ -2262,6 +2270,7 @@ components:
       type: object
       properties:
         date_format: { type: string, description: "dmy or mdy; anything else is refused with 400" }
+        home_place_id: { type: integer, description: "A place of the list on the box (GET /places): name and coordinates come from it; not together with home_name, latitude or longitude" }
         home_name: { type: string, description: "New home place name; needs latitude and longitude" }
         latitude: { type: number, format: double, description: "-90 to 90; with longitude" }
         longitude: { type: number, format: double, description: "-180 to 180; with latitude. latitude 0 and longitude 0 together mean no location and are refused" }

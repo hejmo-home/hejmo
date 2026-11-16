@@ -626,20 +626,10 @@ textarea { width: 100%; font: inherit; color: var(--text); background: var(--sur
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
 
-/* Home location (#86): place choice, found place, location status. */
-.steps fieldset.place-options { padding: 0; background: none; border-radius: 0; gap: 8px; }
-.steps .place-options legend, .place-q { float: none; margin: 0 0 4px; padding: 0; font-size: var(--fs-event-title); font-weight: 700; color: var(--text); }
-.place-options .hint, .place-found .hint, .place-privacy, .steps [data-location] { margin: 0; }
-.place-found { display: grid; gap: 6px; padding: 12px 14px; border: 2px solid var(--accent); border-radius: var(--radius-card); background: var(--surface); }
-.place-found p { margin: 0; }
-.place-name b, .place-status b { display: block; font-size: var(--fs-event-title); font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
-.place-name small, .place-status small { display: block; color: var(--text-secondary); font-size: var(--fs-meta); overflow-wrap: anywhere; }
-.place-status { display: flex; gap: 10px; align-items: flex-start; padding: 10px 12px; border: 1px solid var(--border); border-radius: var(--radius-card); }
-.place-status .icon { flex: none; margin-top: 2px; }
+/* Home location (#86): the dashed "No place chosen yet" box. The picker itself is styled at the end of this file. */
 .place-status.missing { border: 2px dashed var(--text-secondary); }
-[data-theme="bw"] .place-status, [data-theme="bw"] .place-found { border: 2px solid var(--text); }
 [data-theme="bw"] .place-status.missing { border: 2px dashed var(--text); }
-
+.place-privacy, .steps [data-location] { margin: 0; }
 
 /* Page padding and line breaks (product owner feedback 15/11/2026, #32 and
    #86). The frame has one column that may be narrower than the navigation
@@ -1446,3 +1436,34 @@ p.hint.later { max-width: 560px; }
   .steps:has(input[name="source"][value="existing"]:checked) .src-new,
   .steps:has(input[name="source"][value="new"]:checked) .src-existing { display: none; }
 }
+
+/* Home location picker, Settings and wizard (#86, product owner decision Q1 =
+   a, 15/11/2026). Builds on the picker of ticket 133 (.place-pick, .place-list,
+   .place-status.ok): the confirmed box carries its state in words on its own
+   line (.st) and "Change" sits at the right; on phones "Change" moves under
+   the text so the name keeps the full width. While a new place is being
+   chosen in Settings, .place-keep says which place stays in use and offers to
+   keep it. Suggestions are not highlighted until the arrow keys move into
+   the list. No new tokens. */
+.place-status { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 6px 10px; }
+.place-status > div { display: grid; gap: 2px; }
+.place-status small { display: block; }
+.place-status .st { color: var(--text); font-weight: 600; font-size: var(--fs-meta); }
+.place-status .button { align-self: center; }
+.place-pick .hint, .place-pick .ferr { margin: 0; }
+.place-keep { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.place-keep .hint { flex: 1 1 14em; }
+.place-list li b, .place-status b { hyphens: manual; }
+.place-list { gap: 0; }
+.place-list li { border-radius: 0; }
+.place-list li + li { border-top: 1px solid var(--border); }
+.place-list li:hover { background: var(--background); }
+[data-theme="bw"] .place-list li + li { border-top-color: var(--text); }
+.place-pick .lab { display: block; }
+@media (max-width: 479px) {
+  .place-status { grid-template-columns: auto minmax(0, 1fr); }
+  .place-status .button { grid-column: 2; justify-self: start; }
+}
+/* Without JavaScript each suggestion is a submit button that fills its row. */
+.place-list li > button { display: grid; gap: 1px; width: 100%; min-height: inherit; align-content: center; padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.place-list li > button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }

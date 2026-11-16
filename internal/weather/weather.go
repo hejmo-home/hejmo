@@ -13,17 +13,12 @@ import (
 	"net/http"
 	"net/url"
 	"strconv"
-	"strings"
 	"sync"
 	"time"
 )
 
 // DefaultBaseURL is Open-Meteo's forecast endpoint.
 const DefaultBaseURL = "https://api.open-meteo.com/v1/forecast"
-
-// DefaultGeocodingURL is Open-Meteo's place search, used once to find the
-// coordinates of the home.
-const DefaultGeocodingURL = "https://geocoding-api.open-meteo.com/v1/search"
 
 // MaxAge is how long the last reading is still shown when refreshing fails;
 // after that the chip hides.
@@ -50,20 +45,12 @@ type Reading struct {
 	Icon  Icon
 }
 
-// NoPlaceBackoff is how long a home name that no place was found for is left
-// alone; changing the name searches again at once.
-const NoPlaceBackoff = 6 * time.Hour
-
 // defaultRetry is how soon Run asks again while the box has no reading and
 // nothing failed (for example before the household exists).
 const defaultRetry = time.Minute
 
 // ErrNoHome is what a Home returns while there is no household yet.
 var ErrNoHome = errors.New("weather: no home yet")
-
-// ErrNoPlace is the answer of a place search without a result; any other error
-// of a search means the service could not be reached or understood.
-var ErrNoPlace = errors.New("weather: no place found")
 
 type entry struct {
 	lat, lon float64
@@ -74,7 +61,6 @@ type entry struct {
 // Service fetches and caches the weather of one location (the home).
 type Service struct {
 	base string
-	geo  string
 	http *http.Client
 	now  func() time.Time
 	// retry is the wait of Run while there is no reading and no failure.
@@ -82,9 +68,6 @@ type Service struct {
 
 	mu   sync.Mutex
 	last *entry
-	// noPlace is the home name the last search found nothing for, and when.
-	noPlace   string
-	noPlaceAt time.Time
 }
 
 // Option configures a Service.
@@ -92,9 +75,6 @@ type Option func(*Service)
 
 // WithBaseURL points the service at another endpoint (tests).
 func WithBaseURL(u string) Option { return func(s *Service) { s.base = u } }
-
-// WithGeocodingURL points place search at another endpoint (tests).
-func WithGeocodingURL(u string) Option { return func(s *Service) { s.geo = u } }
 
 // WithClock sets the clock.
 func WithClock(now func() time.Time) Option { return func(s *Service) { s.now = now } }
@@ -104,7 +84,7 @@ func WithRetry(d time.Duration) Option { return func(s *Service) { s.retry = d }
 
 // New returns a service for Open-Meteo.
 func New(opts ...Option) *Service {
-	s := &Service{base: DefaultBaseURL, geo: DefaultGeocodingURL, http: &http.Client{Timeout: 15 * time.Second}, now: time.Now, retry: defaultRetry}
+	s := &Service{base: DefaultBaseURL, http: &http.Client{Timeout: 15 * time.Second}, now: time.Now, retry: defaultRetry}
 	for _, o := range opts {
 		o(s)
 	}
@@ -176,20 +156,17 @@ func iconFor(code int, day bool) Icon {
 
 // Home is the household's home location, as the weather needs it.
 type Home interface {
-	// Home returns the coordinates (both zero: not known yet), the home's
-	// name and its ISO 3166-1 country code (may be empty). ErrNoHome means
-	// there is no household yet; any other error is a real failure.
-	Home() (lat, lon float64, name, country string, err error)
-	// SetCoordinates keeps coordinates found for the home.
-	SetCoordinates(lat, lon float64) error
+	// Home returns the coordinates (both zero: no place picked yet). ErrNoHome
+	// means there is no household yet; any other error is a real failure.
+	Home() (lat, lon float64, err error)
 }
 
-// Keep does one round for the home: it finds the coordinates by the home's
-// name if they are not known (and keeps them) and refreshes the weather. A box
-// without a home yet (ErrNoHome) is not an error; a place that was not found is
-// reported once and then left alone for NoPlaceBackoff.
+// Keep does one round for the home: it refreshes the weather at the stored
+// coordinates. A box without a home yet (ErrNoHome), or whose home has no
+// location yet (set up before the place list; a parent picks one in Settings),
+// is not an error: nothing is looked up by name.
 func (s *Service) Keep(ctx context.Context, h Home) error {
-	lat, lon, name, country, err := h.Home()
+	lat, lon, err := h.Home()
 	if errors.Is(err, ErrNoHome) {
 		return nil
 	}
@@ -197,29 +174,9 @@ func (s *Service) Keep(ctx context.Context, h Home) error {
 		return err
 	}
 	if lat == 0 && lon == 0 {
-		if name == "" || s.inBackoff(name) {
-			return nil
-		}
-		if lat, lon, err = s.Geocode(ctx, name, country); err != nil {
-			if errors.Is(err, ErrNoPlace) {
-				s.mu.Lock()
-				s.noPlace, s.noPlaceAt = name, s.now()
-				s.mu.Unlock()
-			}
-			return err
-		}
-		if err := h.SetCoordinates(lat, lon); err != nil {
-			return err
-		}
+		return nil
 	}
 	return s.Refresh(ctx, lat, lon)
-}
-
-// inBackoff reports whether a search for name found nothing recently.
-func (s *Service) inBackoff(name string) bool {
-	s.mu.Lock()
-	defer s.mu.Unlock()
-	return s.noPlace == name && s.now().Sub(s.noPlaceAt) < NoPlaceBackoff
 }
 
 // hasReading reports whether there is any reading yet.
@@ -230,8 +187,8 @@ func (s *Service) hasReading() bool {
 }
 
 // Run calls Keep now and then every interval until ctx ends; failures go to
-// onErr. While there is no reading and nothing failed (no household yet, or a
-// place in back-off) it asks again sooner, so a display paired right after
+// onErr. While there is no reading and nothing failed (no household yet, or no
+// place picked yet) it asks again sooner, so a display paired right after
 // setup does not wait a whole interval for its chip.
 func (s *Service) Run(ctx context.Context, interval time.Duration, h Home, onErr func(error)) {
 	tick := time.NewTicker(interval)
@@ -257,76 +214,6 @@ func (s *Service) Run(ctx context.Context, interval time.Duration, h Home, onErr
 			timer.Stop()
 		}
 	}
-}
-
-// MaxPlaces is how many matching places a search lists.
-const MaxPlaces = 5
-
-// Place is a place found by name.
-type Place struct {
-	Name, Region, Country string // Region is the state, Country the country name
-	// Area is the district or county, when the service names one.
-	Area                string
-	Latitude, Longitude float64
-}
-
-// Label is the place as a parent recognises it: name, district, state, country.
-func (p Place) Label() string {
-	var parts []string
-	for _, s := range []string{p.Name, p.Area, p.Region, p.Country} {
-		if s != "" {
-			parts = append(parts, s)
-		}
-	}
-	return strings.Join(parts, ", ")
-}
-
-// Search lists up to MaxPlaces places that match name with Open-Meteo's
-// geocoding (no key). countryCode (ISO 3166-1 alpha-2) and language (the
-// language of the place names) may be empty. ErrNoPlace means nothing matched.
-func (s *Service) Search(ctx context.Context, name, countryCode, language string) ([]Place, error) {
-	return s.search(ctx, name, countryCode, language, MaxPlaces)
-}
-
-// search asks the geocoding service for at most count places.
-func (s *Service) search(ctx context.Context, name, countryCode, language string, count int) ([]Place, error) {
-	q := url.Values{"name": {name}, "count": {strconv.Itoa(count)}}
-	if countryCode != "" {
-		q.Set("countryCode", countryCode)
-	}
-	if language != "" {
-		q.Set("language", language)
-	}
-	var body struct {
-		Results []struct {
-			Name      string  `json:"name"`
-			Latitude  float64 `json:"latitude"`
-			Longitude float64 `json:"longitude"`
-			Country   string  `json:"country"`
-			Admin1    string  `json:"admin1"`
-			Admin2    string  `json:"admin2"`
-		} `json:"results"`
-	}
-	if err := s.getJSON(ctx, s.geo+"?"+q.Encode(), &body); err != nil {
-		return nil, err
-	}
-	if len(body.Results) == 0 {
-		return nil, fmt.Errorf("%w for %q", ErrNoPlace, name)
-	}
-	places := make([]Place, 0, len(body.Results))
-	for _, r := range body.Results {
-		places = append(places, Place{Name: r.Name, Region: r.Admin1, Country: r.Country, Area: r.Admin2, Latitude: r.Latitude, Longitude: r.Longitude})
-	}
-	return places, nil
-}
-
-// Geocode finds the coordinates of the first place that matches name.
-func (s *Service) Geocode(ctx context.Context, name, countryCode string) (lat, lon float64, err error) {
-	places, err := s.search(ctx, name, countryCode, "", 1)
-	if err != nil {
-		return 0, 0, err
-	}
-	return places[0].Latitude, places[0].Longitude, nil
 }
 
 // getJSON reads a JSON answer from Open-Meteo.

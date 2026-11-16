@@ -41,7 +41,6 @@ type box struct {
 	public  *fakePublic
 	weather *weather.Service // fetches from meteo, never from the internet
 	meteo   *fakeMeteo
-	geo     *fakeGeo // Open-Meteo's place search, never the real one
 	// updateDir stands in for the data volume that the host script shares with the box.
 	updateDir string
 }
@@ -58,58 +57,6 @@ func (m *fakeMeteo) set(body string, status int) {
 	m.mu.Lock()
 	defer m.mu.Unlock()
 	m.body, m.status = body, status
-}
-
-// fakeGeo stands in for Open-Meteo's geocoding API: it answers by the name
-// searched for. Tests never call the real service.
-type fakeGeo struct {
-	mu      sync.Mutex
-	answers map[string]string // name -> JSON body
-	down    bool
-	queries []url.Values
-	srv     *httptest.Server
-}
-
-func (g *fakeGeo) set(name, body string) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.answers[name] = body
-}
-
-func (g *fakeGeo) setDown(down bool) {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	g.down = down
-}
-
-// searches is how many place searches the box made.
-func (g *fakeGeo) searches() []url.Values {
-	g.mu.Lock()
-	defer g.mu.Unlock()
-	return append([]url.Values(nil), g.queries...)
-}
-
-func newFakeGeo(t *testing.T) *fakeGeo {
-	g := &fakeGeo{answers: map[string]string{
-		"Pasing":   `{"results":[{"name":"Pasing","latitude":48.15,"longitude":11.46,"country":"Germany","admin1":"Bavaria"}]}`,
-		"Neustadt": `{"results":[{"name":"Neustadt","latitude":49.35,"longitude":8.14,"country":"Germany","admin1":"Rhineland-Palatinate"},{"name":"Neustadt","latitude":50.25,"longitude":11.88,"country":"Germany","admin1":"Bavaria","admin2":"Coburg"}]}`,
-	}}
-	g.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		g.mu.Lock()
-		defer g.mu.Unlock()
-		g.queries = append(g.queries, r.URL.Query())
-		if g.down {
-			w.WriteHeader(http.StatusServiceUnavailable)
-			return
-		}
-		body, ok := g.answers[r.URL.Query().Get("name")]
-		if !ok {
-			body = `{"generationtime_ms":0.4}`
-		}
-		_, _ = w.Write([]byte(body))
-	}))
-	t.Cleanup(g.srv.Close)
-	return g
 }
 
 // fakePublic stands in for the public certificate manager: what it does
@@ -262,8 +209,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 		_, _ = w.Write([]byte(b.meteo.body))
 	}))
 	t.Cleanup(b.meteo.srv.Close)
-	b.geo = newFakeGeo(t)
-	b.weather = weather.New(weather.WithBaseURL(b.meteo.srv.URL), weather.WithGeocodingURL(b.geo.srv.URL), weather.WithClock(now))
+	b.weather = weather.New(weather.WithBaseURL(b.meteo.srv.URL), weather.WithClock(now))
 	updateDir := b.updateDir
 	if cfg.noHostUpdater {
 		updateDir, b.updateDir = "", ""
@@ -369,16 +315,23 @@ func serverWithHTTPSPort(b *box, port string) http.Handler {
 	return server.New(server.Options{DB: b.db, PKI: b.pki, Public: b.public, HTTPSPort: port, Now: func() time.Time { return b.now }})
 }
 
+// GeoNames ids of places of the list on the box (internal/places).
+const (
+	idMuenchen      = "2867714"
+	idPasing        = "2855334" // a district of München
+	idObermenzing   = "2859782" // another one
+	idSchmedeswurth = "13394048"
+	idWien          = "2761369"
+)
+
 func validSetupForm() url.Values {
 	return url.Values{
-		"home_name": {"Pasing"},
-		"region":    {"DE-BY"},
-		"place_for": {"Pasing"},
-		"place":     {"48.15,11.46"}, // the place the parent confirmed
-		"name":      {"Mama"},
-		"username":  {"mama"},
-		"password":  {"correct horse battery"},
-		"pin":       {"2468"},
+		"region":   {"DE-BY"},
+		"place_id": {idPasing}, // the place the parent picked from the list
+		"name":     {"Mama"},
+		"username": {"mama"},
+		"password": {"correct horse battery"},
+		"pin":      {"2468"},
 	}
 }
 

@@ -15,10 +15,14 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Chrome comes with the x86_64 runner image; the arm64 image has none, so
+          # the rendered layout check is required there only on x86_64.
           - arch: x86_64
             runner: ubuntu-24.04
+            require_chrome: "1"
           - arch: arm64
             runner: ubuntu-24.04-arm
+            require_chrome: ""
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -35,7 +39,17 @@ jobs:
           HEJMO_REQUIRE_RADICALE: "1"
           # The service worker is tested with node's test runner (web/test).
           HEJMO_REQUIRE_NODE: "1"
+          # The rendered layout check (ticket 161) drives headless Chrome; no Chrome fails it.
+          HEJMO_REQUIRE_CHROME: ${{ matrix.require_chrome }}
+          HEJMO_LAYOUT_SHOTS: ${{ runner.temp }}/layout-shots
         run: go test -race -count=1 -timeout 20m ./...
+      - name: Screenshots of pages that failed the layout check
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: layout-shots-${{ matrix.arch }}
+          path: ${{ runner.temp }}/layout-shots
+          if-no-files-found: ignore
 
   container:
     name: Container (${{ matrix.arch }})

@@ -1,0 +1,16 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "saver.title") "Theme" .Theme)}}
+  <div class="saver" data-display data-state="paired" data-saver data-display-type="{{.Display.Type}}" data-poll-seconds="{{.PollSeconds}}" data-interval="{{.Interval}}" data-has-photos="{{.HasPhotos}}" data-lang="{{.Lang}}" data-clock-zone="{{.ClockZone}}" data-clock-format="{{.ClockFormat}}" data-day-url="/display" data-photos-url="/display/saver/photos" data-photo-url="/display/photo/">
+    {{if .HasPhotos}}<img class="saver-photo" src="/display/photo/{{.First}}" alt="">
+    {{else}}<div class="saver-hint">
+      <svg class="icon big" width="64" height="64" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 17.5l5-5 4 4 2.5-2.5 4.5 4"/></svg>
+      {{if .AnyPhotos}}<h1>{{t "saver.hint2.title"}}</h1><p>{{.AlbumsText}}</p>
+      {{else}}<h1>{{t "saver.hint.title"}}</h1><p>{{t "saver.hint.text"}}</p>{{end}}
+      <p class="how"><b>{{t "saver.how"}}</b> {{t "saver.how.text"}}</p>
+      <a class="button big" href="/display"><svg class="icon" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="15" rx="2"/><path d="M3.5 9h17M9.2 9v10.5M14.8 9v10.5"/></svg>{{t "saver.back"}}</a>
+      <p class="tapany">{{t "saver.tap"}}</p>
+    </div>{{end}}
+    <div class="saver-when"><span class="t" data-clock>{{.Clock}}</span><span class="d" data-date>{{.Date}}</span></div>
+  </div>
+  <script src="/static/display.js" defer></script>
+  <script src="/static/saver.js" defer></script>
+{{template "foot"}}

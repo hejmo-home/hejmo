@@ -63,6 +63,23 @@
     restart();
   }
 
+  // The family view starts the photo screensaver after data-saver-seconds
+  // without a touch (ticket 178): the box serves it as a page of its own, and
+  // a touch there brings the day back at once. Refreshes do not count.
+  var saverAfter = Number(el.getAttribute("data-saver-seconds"));
+  var saverURL = el.getAttribute("data-saver-url");
+  if (saverAfter > 0 && saverURL) {
+    var saverTimer;
+    var saverRestart = function () {
+      clearTimeout(saverTimer);
+      saverTimer = setTimeout(function () { location.href = saverURL; }, saverAfter * 1000);
+    };
+    ["pointerdown", "touchstart", "keydown", "scroll"].forEach(function (name) {
+      document.addEventListener(name, saverRestart, { passive: true, capture: true });
+    });
+    saverRestart();
+  }
+
   // The family view by default; a personal view names its own addresses.
   var viewURL = el.getAttribute("data-view-url") || "/display/view";
   var eventsURL = el.getAttribute("data-events-url") || "/display/events";

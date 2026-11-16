@@ -7,6 +7,7 @@ import (
 	"strings"
 	"unicode/utf8"
 
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -16,6 +17,16 @@ type personRow struct {
 	personChip
 	Role        store.Role
 	First, Last bool
+	// Acc says in words whether an adult can sign in (ticket 145).
+	Acc accLine
+}
+
+// accLine is the account state in the role line of the people overview: for
+// yourself "That's you", for another adult the state in words and, where there
+// is something to do, a link.
+type accLine struct {
+	Self                  bool
+	State, Href, LinkText string
 }
 
 type groupRow struct {
@@ -105,7 +116,15 @@ func (s *server) renderPeople(w http.ResponseWriter, r *http.Request, p principa
 	rows := make([]personRow, len(people))
 	byID := map[string]personChip{}
 	for i, c := range chips {
-		rows[i] = personRow{c, people[i].Role, i == 0, i == len(people)-1}
+		rows[i] = personRow{personChip: c, Role: people[i].Role, First: i == 0, Last: i == len(people)-1}
+		if people[i].Role == store.RoleParent {
+			line, err := s.accLineOf(r, p, people[i])
+			if err != nil {
+				s.fail(w, "sign-in state", err)
+				return
+			}
+			rows[i].Acc = line
+		}
 		byID[c.ID] = c
 	}
 	var subgroups []groupRow
@@ -126,6 +145,34 @@ func (s *server) renderPeople(w http.ResponseWriter, r *http.Request, p principa
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "People": rows, "Groups": subgroups,
 		"Form": form, "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}))
+}
+
+// accLineOf words an adult's sign-in state for the people overview.
+func (s *server) accLineOf(r *http.Request, p principal, person store.Person) (accLine, error) {
+	if person.ID == p.person.ID {
+		return accLine{Self: true}, nil
+	}
+	st, err := s.signInOf(p.household.ID, person)
+	if err != nil {
+		return accLine{}, err
+	}
+	lang := s.langOf(r)
+	href := "/people/" + person.ID + "/invitation"
+	invite := accLine{Href: href, LinkText: s.i18n.Format(lang, i18n.Msg("people.acc.invite", "name", person.Name))}
+	switch st.Kind {
+	case signInOpen:
+		return accLine{State: s.i18n.T(lang, "people.acc.open"), Href: href, LinkText: s.i18n.T(lang, "people.acc.view")}, nil
+	case signInExpired:
+		invite.State = s.i18n.T(lang, "people.acc.expired")
+		return invite, nil
+	case signInAccount:
+		if st.OTPSet {
+			return accLine{State: s.i18n.T(lang, "people.acc.can")}, nil
+		}
+		return accLine{State: s.i18n.T(lang, "people.acc.otp_missing")}, nil
+	}
+	invite.State = s.i18n.T(lang, "people.acc.none")
+	return invite, nil
 }
 
 func (s *server) handlePeoplePage(w http.ResponseWriter, r *http.Request) {
@@ -197,10 +244,19 @@ func (s *server) renderPerson(w http.ResponseWriter, r *http.Request, p principa
 			form["Color"] = personColors[chip.Slot-1] // the colour the displays show for them
 		}
 	}
-	s.render(w, r, status, "person_edit.html", lookData(people, person.ID, map[string]any{
+	data := map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role,
 		"Form": form, "Error": form["Error"], "ErrorField": form["ErrorField"],
-	}))
+	}
+	if person.Role == store.RoleParent { // children get no account (ADR 0010)
+		row, err := s.signInRow(r, p, person)
+		if err != nil {
+			s.fail(w, "sign-in state", err)
+			return
+		}
+		data["SignIn"] = row
+	}
+	s.render(w, r, status, "person_edit.html", lookData(people, person.ID, data))
 }
 
 func (s *server) handlePersonPage(w http.ResponseWriter, r *http.Request) {

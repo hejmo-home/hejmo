@@ -150,3 +150,65 @@ func TestValidateNamesTheWrongField(t *testing.T) {
 		}
 	}
 }
+
+// ADR 0018: a routine has a name, a person and a part of the day (morning,
+// after school or evening).
+func TestRoutineValidate(t *testing.T) {
+	ok := task.Routine{PersonID: "p", Name: "Morgenroutine", Part: task.Morning}
+	if err := ok.Validate(); err != nil {
+		t.Fatalf("valid routine: %v", err)
+	}
+	for _, part := range []task.PartOfDay{task.Morning, task.AfterSchool, task.Evening} {
+		r := ok
+		r.Part = part
+		if err := r.Validate(); err != nil {
+			t.Errorf("part %q refused: %v", part, err)
+		}
+	}
+	with := func(f func(*task.Routine)) task.Routine { r := ok; f(&r); return r }
+	for _, c := range []struct {
+		name  string
+		r     task.Routine
+		field string
+	}{
+		{"no name", with(func(r *task.Routine) { r.Name = "  " }), "name"},
+		{"long name", with(func(r *task.Routine) { r.Name = strings.Repeat("x", task.MaxRoutineName+1) }), "name"},
+		{"no person", with(func(r *task.Routine) { r.PersonID = "" }), "person"},
+		{"any time", with(func(r *task.Routine) { r.Part = task.AnyTime }), "part"},
+		{"unknown part", with(func(r *task.Routine) { r.Part = "noon" }), "part"},
+	} {
+		var ie *task.InvalidError
+		err := c.r.Validate()
+		if !errors.As(err, &ie) || ie.Field != c.field || !errors.Is(err, task.ErrInvalid) {
+			t.Errorf("%s: Validate = %v, want InvalidError for %q", c.name, err, c.field)
+		}
+	}
+	long := with(func(r *task.Routine) { r.Name = strings.Repeat("ä", task.MaxRoutineName) })
+	if err := long.Validate(); err != nil {
+		t.Errorf("name of %d characters: %v", task.MaxRoutineName, err)
+	}
+}
+
+// "After school" exists only in routines (ADR 0018): a task outside a routine
+// cannot have it.
+func TestAfterSchoolIsOnlyForTasksInARoutine(t *testing.T) {
+	k := task.Task{Title: "x", PersonID: "p", Repeat: task.Daily, Date: "2026-11-14", PartOfDay: task.AfterSchool}
+	var ie *task.InvalidError
+	if err := k.Validate(); !errors.As(err, &ie) || ie.Field != "part" {
+		t.Fatalf("after school without a routine = %v, want InvalidError for part", err)
+	}
+	k.RoutineID = "r"
+	if err := k.Validate(); err != nil {
+		t.Fatalf("after school inside a routine: %v", err)
+	}
+}
+
+// The parts of a day in the order a day goes: morning, after school, any time, evening.
+func TestPartsOfTheDayAreOrdered(t *testing.T) {
+	want := []task.PartOfDay{task.Morning, task.AfterSchool, task.AnyTime, task.Evening}
+	for i := 1; i < len(want); i++ {
+		if want[i-1].Rank() >= want[i].Rank() {
+			t.Errorf("%q must come before %q", want[i-1], want[i])
+		}
+	}
+}

@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"io"
 	"net/http"
 	"strings"
 	"testing"
@@ -187,6 +188,13 @@ func TestParentDeletesTasksAndFiltersByPerson(t *testing.T) {
 // rawCall sends a body without the contract client, which would refuse it.
 func rawCall(t *testing.T, c *apiClient, method, path, body string) int {
 	t.Helper()
+	status, _ := rawCallBody(t, c, method, path, body)
+	return status
+}
+
+// rawCallBody is rawCall that also returns the answer body.
+func rawCallBody(t *testing.T, c *apiClient, method, path, body string) (int, string) {
+	t.Helper()
 	req, _ := http.NewRequest(method, c.b.srv.URL+"/api/v1"+path, strings.NewReader(body))
 	req.Header.Set("Content-Type", "application/json")
 	if c.token != "" {
@@ -201,8 +209,9 @@ func rawCall(t *testing.T, c *apiClient, method, path, body string) int {
 	if err != nil {
 		t.Fatal(err)
 	}
-	res.Body.Close()
-	return res.StatusCode
+	defer res.Body.Close()
+	out, _ := io.ReadAll(res.Body)
+	return res.StatusCode, string(out)
 }
 
 func TestMalformedJSONIsA400OnBothTaskWrites(t *testing.T) {
@@ -223,5 +232,59 @@ func TestTaskListRefusesAPersonThatIsNoUUID(t *testing.T) {
 	tb := newTaskBox(t)
 	if got := rawCall(t, tb.parent, http.MethodGet, "/tasks?person=mia", ""); got != http.StatusUnprocessableEntity {
 		t.Errorf("person=mia = %d, want 422", got)
+	}
+}
+
+// Acceptance (#122): PATCH /tasks/{id} changes the star value, nothing else.
+func TestPatchTaskChangesTheStarValueOnly(t *testing.T) {
+	tb := newTaskBox(t)
+	id := tb.newDaily(t, tb.miaID)
+	status, got, _ := tb.parent.call(http.MethodPatch, "/tasks/"+id, map[string]any{"stars": 4})
+	if status != http.StatusOK || got["stars"] != float64(4) || got["title"] != "Brush teeth" || got["id"] != id {
+		t.Fatalf("patch = %d %v", status, got)
+	}
+	if st := taskState(t, tb.parent, id, ""); st["stars"] != float64(4) {
+		t.Fatalf("stored = %v", st)
+	}
+	status, got, _ = tb.parent.call(http.MethodPatch, "/tasks/"+id, map[string]any{"stars": 0})
+	if status != http.StatusOK || got["stars"] != float64(0) {
+		t.Fatalf("patch 0 = %d %v", status, got)
+	}
+}
+
+func TestPatchTaskRefusesBadBodiesAndUnknownTasks(t *testing.T) {
+	tb := newTaskBox(t)
+	id := tb.newDaily(t, tb.miaID)
+	// Well-formed but invalid values: 422 with the field, like POST /tasks. The
+	// contract client would refuse some of these, so they go out raw.
+	for name, body := range map[string]string{
+		"too many": `{"stars":101}`, "negative": `{"stars":-1}`, "missing": `{}`, "quoted number": `{"stars":"3"}`, "fraction": `{"stars":2.5}`, "null": `{"stars":null}`,
+	} {
+		status, out := rawCallBody(t, tb.parent, http.MethodPatch, "/tasks/"+id, body)
+		if status != http.StatusUnprocessableEntity || !strings.Contains(out, `"field":"stars"`) {
+			t.Errorf("%s = %d %s, want 422 naming the field stars", name, status, out)
+		}
+	}
+	// Bad JSON and unknown fields stay 400.
+	for name, body := range map[string]string{
+		"other field": `{"stars":2,"title":"x"}`, "unknown field": `{"colour":"red"}`, "bad json": `{`,
+		"array body": `[1]`, "string body": `"x"`, "wrong type then other field": `{"title":"x","stars":"3"}`,
+	} {
+		if got := rawCall(t, tb.parent, http.MethodPatch, "/tasks/"+id, body); got != http.StatusBadRequest {
+			t.Errorf("%s = %d, want 400", name, got)
+		}
+	}
+	// POST /tasks answers the same value the same way.
+	if got := rawCall(t, tb.parent, http.MethodPost, "/tasks", `{"person_id":"`+tb.miaID+`","title":"x","repeat":"daily","stars":101}`); got != http.StatusUnprocessableEntity {
+		t.Errorf("POST stars=101 = %d, want 422", got)
+	}
+	if st := taskState(t, tb.parent, id, ""); st["stars"] != float64(1) {
+		t.Fatalf("a refused patch changed the value: %v", st)
+	}
+	if status, _, _ := tb.parent.call(http.MethodPatch, "/tasks/00000000-0000-0000-0000-000000000000", map[string]any{"stars": 2}); status != http.StatusNotFound {
+		t.Errorf("unknown = %d", status)
+	}
+	if status, _, _ := tb.child.call(http.MethodPatch, "/tasks/"+id, map[string]any{"stars": 2}); status != http.StatusForbidden {
+		t.Errorf("child = %d, want 403", status)
 	}
 }

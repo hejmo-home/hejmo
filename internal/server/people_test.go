@@ -516,7 +516,7 @@ func TestAPIChangesAndDeletesSubgroups(t *testing.T) {
 
 func TestPeopleAreReachableFromTheSettingsHub(t *testing.T) {
 	p := newPeopleBox(t)
-	if page := p.en("/").body; strings.Contains(page, `href="/people"`) {
+	if page := navHrefRe.FindString(p.en("/").body); strings.Contains(page, `href="/people"`) { // the first steps card on Home may link to it
 		t.Errorf("the navigation has People, which belongs to the Settings hub (ADR 0017):\n%s", page)
 	}
 	if page := p.en("/settings").body; !strings.Contains(page, `href="/people"`) {

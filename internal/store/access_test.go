@@ -61,7 +61,7 @@ func TestSessions(t *testing.T) {
 	db, _ := openTemp(t)
 	_, mama := seedParent(t, db)
 	at := time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
-	if err := db.CreateSession("hash1", mama.ID, at.Add(time.Hour)); err != nil {
+	if err := db.CreateSession("hash1", mama.ID, "", at, at.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if id, err := db.SessionPerson("hash1", at); err != nil || id != mama.ID {
@@ -169,7 +169,7 @@ func TestResetOTPRemovesSecretCodesAndBrowserSessionsButKeepsTokensAndTheBoxConf
 	db, _ := openTemp(t)
 	mama := confirmedParent(t, db)
 	_ = db.ReplaceRecoveryCodes(mama.ID, []string{"h1"})
-	if err := db.CreateSession("tok", mama.ID, time.Now().Add(time.Hour)); err != nil {
+	if err := db.CreateSession("tok", mama.ID, "", time.Now(), time.Now().Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	if _, err := db.CreateAPIToken(store.APIToken{Name: "phone", Hash: "x", PersonID: mama.ID, Scopes: "calendars"}); err != nil {

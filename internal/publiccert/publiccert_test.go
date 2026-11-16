@@ -625,7 +625,7 @@ func TestSetupReplacesAPrivateAddressOfAnEarlierBox(t *testing.T) {
 			wantType = "AAAA"
 		}
 		if got := r.dns.addressOfType(boxName, wantType); got != want {
-			t.Errorf("%s: A record = %q, want %q", c.old, got, want)
+			t.Errorf("%s: %s record = %q, want %q", c.old, wantType, got, want)
 		}
 	}
 }

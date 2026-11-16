@@ -162,6 +162,14 @@ _Avoid_: display mode, device type
 The row above the person columns in the family view for events meant for the whole household, all-day and multi-day events, and public holidays.
 _Avoid_: banner, header events, all-day row
 
+**Layout**:
+What one display shows: the chosen people, their order and the blocks.
+_Avoid_: template (alone), view (alone)
+
+**Layout block**:
+One part of a display's layout, such as calendar, tasks, meals, weather or lists, which a parent switches on or off per display.
+_Avoid_: widget, tile, module
+
 **Theme**:
 Whether a display or the web interface is light or dark, switches automatically by sunrise and sunset, or follows the device.
 _Avoid_: dark mode (alone), skin, colour scheme
@@ -247,6 +255,10 @@ _Avoid_: override (in prose), exception
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.
 _Avoid_: deadline, expiry
+
+**Holiday mode**:
+A household-wide pause, with from and to dates, of all articles that are put on a list by themselves. The lists and settings say so while it is on.
+_Avoid_: vacation mode, skip
 
 **Task**:
 Something to be done once or repeatedly, ticked off when done; may belong to a routine, carry a star value and be split into subtasks.

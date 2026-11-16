@@ -2,6 +2,8 @@ package server
 
 import (
 	"errors"
+	"html"
+	"html/template"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -255,11 +257,41 @@ func (s *server) serviceName(r *http.Request, c store.Connection) string {
 	if c.URL == iCloudServer {
 		return s.say(r, i18n.Msg("connections.provider.icloud"))
 	}
-	host := c.URL
+	return s.say(r, i18n.Msg("connections.service.caldav", "host", connectionHost(c)))
+}
+
+// connectionHost is the host of a connection's server, the way people read it.
+func connectionHost(c store.Connection) string {
 	if u, err := url.Parse(c.URL); err == nil && u.Host != "" {
-		host = u.Host
+		return u.Host
 	}
-	return s.say(r, i18n.Msg("connections.service.caldav", "host", host))
+	return c.URL
+}
+
+// sourceKicker says where the calendars of a connection live ("Calendar in
+// iCloud", "Calendar on cloud.example.org"): the small line above the name at
+// the source in a card of Choose calendars.
+func (s *server) sourceKicker(r *http.Request, c store.Connection) string {
+	if c.URL == iCloudServer {
+		return s.say(r, i18n.Msg("connections.card.source_icloud"))
+	}
+	return s.say(r, i18n.Msg("connections.card.source_host", "host", connectionHost(c)))
+}
+
+// nameHint is the sentence under "Name in Hejmo": renaming here does not
+// rename the calendar at the source, which keeps its name (shown in <q>). Empty
+// when the name at the source is not known. Names are escaped.
+func (s *server) nameHint(r *http.Request, c store.Connection, sourceName string) template.HTML {
+	if sourceName == "" {
+		return ""
+	}
+	key := "connections.card.hint_host"
+	if c.URL == iCloudServer {
+		key = "connections.card.hint_icloud"
+	}
+	const mark = "\x00name\x00"
+	text := html.EscapeString(s.say(r, i18n.Msg(key, "host", connectionHost(c), "name", mark)))
+	return template.HTML(strings.Replace(text, mark, "<q>"+html.EscapeString(sourceName)+"</q>", 1))
 }
 
 func (s *server) handleCalendarsPage(w http.ResponseWriter, r *http.Request) {

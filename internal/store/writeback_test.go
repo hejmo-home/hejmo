@@ -272,3 +272,21 @@ func TestChangeToACalendarSwitchedToReadOnlyIsRefusedNotStoredUnqueued(t *testin
 		t.Fatalf("the refused change was stored: %q", got.Title)
 	}
 }
+
+// ADR 0015/0016: only a read-only calendar can be waste collection, so switching
+// back to two-way takes the mark away.
+func TestSwitchingAWasteCalendarBackToTwoWayUnmarksIt(t *testing.T) {
+	f := newDAVFixture(t)
+	if err := f.db.SetCalendarReadOnly(f.h.ID, f.a.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.SetCalendarWaste(f.h.ID, f.a.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.SetCalendarReadOnly(f.h.ID, f.a.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	if c, _ := f.db.Calendar(f.h.ID, f.a.ID); c.ReadOnly || c.Waste {
+		t.Fatalf("after switching back: read-only %v, waste %v; want two-way and not waste", c.ReadOnly, c.Waste)
+	}
+}

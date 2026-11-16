@@ -13,7 +13,8 @@ import (
 )
 
 // SetCalendarReadOnly switches a CalDAV calendar between two-way and
-// read-only (ADR 0012). Other kinds have no switch: ICS calendars are always
+// read-only (ADR 0012). Switching to two-way also takes the waste collection
+// mark away: only a read-only calendar can have it (ADR 0015/0016). Other kinds have no switch: ICS calendars are always
 // read-only and the family calendar is not synced.
 func (db *DB) SetCalendarReadOnly(householdID, calendarID string, readOnly bool) error {
 	var kind string
@@ -27,7 +28,7 @@ func (db *DB) SetCalendarReadOnly(householdID, calendarID string, readOnly bool)
 	if kind != "caldav" {
 		return fmt.Errorf("%w: only calendars from CalDAV can be switched between two-way and read-only", ErrInvalid)
 	}
-	return expectOne(db.sql.Exec(`UPDATE calendars SET read_only = ?, updated_at = ? WHERE id = ? AND household_id = ?`, readOnly, now(), calendarID, householdID))
+	return expectOne(db.sql.Exec(`UPDATE calendars SET read_only = ?, waste = waste AND ?, updated_at = ? WHERE id = ? AND household_id = ?`, readOnly, readOnly, now(), calendarID, householdID))
 }
 
 // errReadOnly stops a box change to a calendar that was switched to read-only

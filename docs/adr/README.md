@@ -22,4 +22,4 @@ Each ADR records one decision: context, decision, consequences. ADRs take preced
 | [0016](0016-family-view-header-and-footer.md) | Family view header, columns and footer | Accepted, amended by 0018 and by the product owner on 15/11/2026 |
 | [0017](0017-web-interface-usability.md) | Web interface usability | Accepted |
 | [0018](0018-path-to-0-1.md) | Path to 0.1 | Accepted, amended by 0019 |
-| [0019](0019-lists-article-library-and-diets.md) | Lists: article library, quantities, tile view and diets | Accepted |
+| [0019](0019-lists-article-library-and-diets.md) | Lists: article library, quantities, tile view and diets | Accepted, amended by the product owner on 16/11/2026 |

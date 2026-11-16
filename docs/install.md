@@ -64,7 +64,7 @@ Back up `/opt/hejmo/data` including `secret.key` (it protects stored passwords a
 
 ## Trust the box's own CA
 
-Only needed if you chose the own CA. Open `http://<box address>/ca` on each device:
+Only needed if you chose the own CA. Open `http://<box address>/ca` on each device. The page recognises the device (iPhone or iPad, Android, Mac, Windows, Linux), shows its four steps first and checks by itself when the device trusts the box. You can compare the certificate's fingerprint there too (optional). In short:
 
 - **iPhone and iPad:** download the profile, install it in Settings, then switch it on under Settings, General, About, Certificate Trust Settings.
 - **Android:** download the certificate and install it as a CA certificate in the security settings. Chrome trusts it as a user certificate.

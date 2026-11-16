@@ -210,8 +210,9 @@ func TestMealsStayOutOfTheFamilyViewsColumnsAndStrip(t *testing.T) {
 		t.Fatal(err)
 	}
 	page := f.view(t, "en", f.at(14, 13, 0))
-	if strings.Contains(page, "Nudelauflauf") {
-		t.Fatalf("the family view shows the meal plan:\n%s", page)
+	body := footerRe.ReplaceAllString(page, "") // the meal tile has its own place
+	if strings.Contains(body, "Nudelauflauf") || !strings.Contains(footerRe.FindString(page), "Nudelauflauf") {
+		t.Fatalf("the meal plan must be in the meal tile only:\n%s", page)
 	}
 	f.event(t, "Swimming", f.at(14, 15, 0), f.at(14, 16, 0), false, "Mia")
 	if got := columns(t, f.view(t, "en", f.at(14, 13, 0)))["Mia"]; len(got) != 1 || got[0] != "Swimming" {

@@ -1,0 +1,19 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "meals.tpl.title") "Frame" .Frame)}}
+  <h1>{{t "meals.tpl.title"}}</h1>
+  <p class="lead">{{t "meals.tpl.lead"}}</p>
+  {{if .Templates}}
+  <div class="page-actions"><a class="button" href="/meals/templates/new"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "meals.tpl.new"}}</a></div>
+  <ul class="cards">
+    {{range .Templates}}<li><a class="tpl-row" href="/meals/templates/{{.ID}}"><strong>{{.Name}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></strong><span class="hint"><b>{{.Label}}</b> {{.On}}</span><span class="hint">{{.Schedule}}</span></a></li>
+    {{end}}
+  </ul>
+  <h2>{{t "meals.tpl.ahead.title"}}</h2>
+  <p class="hint">{{t "meals.tpl.ahead.hint"}}</p>
+  <ul class="ahead">
+    {{range .Ahead}}<li><div class="wkn"><b>{{printf (t "meals.week.label") .No}}</b><span>{{.Range}}</span> {{if .This}}<span class="today">{{t "meals.tpl.this_week"}}</span>{{end}}</div><div class="fills">{{range .Fills}}<span><b>{{.Name}}</b>{{t "meals.tpl.ahead.sep"}}{{.Meal}}</span>{{else}}<span class="free">{{t "meals.tpl.ahead.free"}}</span>{{end}}</div></li>
+    {{end}}
+  </ul>
+  {{else}}
+  {{template "empty" (dict "Text" (t "meals.tpl.empty") "Href" "/meals/templates/new" "Action" (t "meals.tpl.new"))}}
+  {{end}}
+{{template "foot"}}

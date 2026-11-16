@@ -1,0 +1,88 @@
+{{template "head" (dict "Lang" .Lang "Title" .List.Name "Frame" .Frame)}}
+{{if .Edit}}{{template "listEdit" .}}{{else}}{{template "listEveryday" .}}{{end}}
+{{template "foot"}}
+
+{{/* The ticked-off choice must survive every form: a hidden field repeats it. */}}
+{{define "keepHide"}}{{if .Hide}}<input type="hidden" name="ticked" value="hide">{{end}}{{end}}
+
+{{define "listTitle"}}<h1 class="list-title"><span class="marker" data-person="{{.List.Slot}}" data-shape="{{.List.Symbol}}" aria-hidden="true"></span><span>{{.List.Name}}</span></h1>{{end}}
+
+{{/* One everyday row: only the big tick box and the text. Arguments: Root, E. */}}
+{{define "tickRow"}}{{$root := .Root}}{{with .E}}<li{{if .Done}} data-done="true"{{end}}>
+    <form method="post" action="/lists/{{$root.List.ID}}/entries/{{.ID}}/done"><input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">{{template "keepHide" $root}}
+      <button class="big-check" type="submit" aria-label="{{if .Done}}{{t "lists.untick"}}{{else}}{{t "lists.tick"}}{{end}}: {{.Text}}"><span class="box" aria-hidden="true"></span><span class="title">{{if .Done}}<s>{{.Text}}</s>{{else}}{{.Text}}{{end}}</span></button></form>
+  </li>
+{{end}}{{end}}
+
+{{define "listEveryday"}}
+  <p><a class="back" href="/lists">{{t "lists.back"}}</a></p>
+  {{template "listTitle" .}}
+  {{template "syncNotice" .}}
+  <p class="hint list-meta">{{.Meta}}</p>
+
+  {{if not .Child}}<form method="post" action="/lists/{{.List.ID}}/entries" class="add-entry">
+    {{template "error" .}}
+    {{template "field" (dict "Root" . "Name" "text" "Label" (t "lists.field.entry") "Value" (index .Form "Text") "Required" true "Max" 200 "Autocomplete" "off" "Placeholder" (t "lists.field.entry.placeholder") "Autofocus" (eq .Flash "flash.entry_added"))}}
+    {{template "keepHide" .}}
+    <button class="button" type="submit">{{t "lists.add"}}</button>
+  </form>{{end}}
+
+  {{if not .List.Total}}{{if not .Child}}<div class="empty" data-empty><p>{{t "lists.empty.hint"}}</p></div>{{end}}{{end}}
+  {{if .Open}}<ul class="entries">
+  {{range .Open}}{{template "tickRow" (dict "Root" $ "E" .)}}{{end}}</ul>{{end}}
+  {{if and (not .Child) .List.Total}}<p class="tools"><a href="/lists/{{.List.ID}}?edit=1{{if .Hide}}&amp;ticked=hide{{end}}">{{if .Manual}}{{t "lists.tools"}}{{else}}{{t "lists.tools.az"}}{{end}}</a></p>{{end}}
+  {{if .List.Done}}{{if .Hide}}<p class="hidden-line">{{if eq .List.Done 1}}{{t "lists.hidden_line.one"}}{{else}}{{printf (t "lists.hidden_line") .List.Done}}{{end}} <a href="/lists/{{.List.ID}}">{{t "lists.group.show"}}</a></p>
+  {{else}}<div class="group-head"><h2>{{printf (t "lists.group") .List.Done}}</h2><a href="?ticked=hide">{{t "lists.group.hide"}}</a></div>
+  <ul class="entries">
+  {{range .Ticked}}{{template "tickRow" (dict "Root" $ "E" .)}}{{end}}</ul>{{end}}{{end}}
+
+  {{if not .Child}}
+  {{if .List.Done}}{{$done := .List.Done}}{{$label := printf (t "lists.delete_ticked") $done}}{{if eq $done 1}}{{$label = t "lists.delete_ticked.one"}}{{end}}{{template "dangerOpen" (dict "Label" $label)}}
+    <p>{{if eq $done 1}}{{t "lists.delete_ticked.explain.one"}}{{else}}{{printf (t "lists.delete_ticked.explain") $done}}{{end}}</p>
+    <form method="post" action="/lists/{{.List.ID}}/completed/delete">{{template "keepHide" .}}<button class="button danger" type="submit">{{if eq $done 1}}{{t "lists.delete_ticked.confirm.one"}}{{else}}{{printf (t "lists.delete_ticked.confirm") $done}}{{end}}</button></form>
+  {{template "dangerClose"}}{{end}}
+
+  <section class="list-settings" aria-labelledby="settings">
+    <form method="post" action="/lists/{{.List.ID}}/settings" class="steps">
+      {{template "keepHide" .}}
+      {{template "moreOpen" (dict "Label" (t "lists.settings") "ID" "settings" "Summary" .Summary "Open" (or .Form.SettingsOpen (eq .ErrorField "name")))}}
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "lists.field.name") "Value" (index .Form "Name") "Required" true "Max" 60)}}
+        {{template "listLook" (dict "Root" . "Form" .Form)}}
+        <button class="button" type="submit">{{t "lists.save"}}</button>
+      {{template "moreClose"}}
+    </form>
+  </section>
+
+  {{template "dangerOpen" (dict "Label" (t "lists.delete"))}}
+    <p>{{t "lists.delete.explain"}}</p>
+    <form method="post" action="/lists/{{.List.ID}}/delete"><button class="button danger" type="submit">{{t "lists.delete.confirm"}}</button></form>
+  {{template "dangerClose"}}
+  {{end}}
+{{end}}
+
+{{/* The view where a parent sorts and removes entries. Open entries move up and
+     down among each other; ticked-off ones can only be removed. */}}
+{{define "listEdit"}}
+<div class="edit">
+{{with .Success}}{{template "success" .}}{{end}}
+{{template "listTitle" .}}
+<p class="hint list-meta">{{if .Manual}}{{t "lists.tools"}}{{else}}{{t "lists.tools.az"}}{{end}}</p>
+<div class="edit-bar"><p>{{t "lists.edit.saved"}}</p><a class="button" href="/lists/{{.List.ID}}{{if .Hide}}?ticked=hide{{end}}">{{t "lists.edit.done"}}</a></div>
+{{if not .List.Total}}<div class="empty" data-empty><p>{{t "lists.empty.hint"}}</p></div>{{end}}
+{{if .Open}}<ul class="entries">
+  {{range .Open}}<li><span class="title">{{.Text}}</span><span class="row">
+    {{if $.Manual}}{{if not .First}}{{template "editButton" (dict "Root" $ "E" . "Action" "move" "Direction" "up" "Label" (t "lists.up") "Aria" (t "lists.up.label") "Icon" "M6 15l6-6 6 6")}}{{end}}
+    {{if not .Last}}{{template "editButton" (dict "Root" $ "E" . "Action" "move" "Direction" "down" "Label" (t "lists.down") "Aria" (t "lists.down.label") "Icon" "M6 9l6 6 6-6")}}{{end}}{{end}}
+    {{template "editButton" (dict "Root" $ "E" . "Action" "delete" "Label" (t "lists.remove") "Aria" (t "lists.remove") "Icon" "M6 6l12 12M18 6L6 18")}}</span></li>
+  {{end}}</ul>{{end}}
+{{if .Ticked}}<div class="group-head"><h2>{{printf (t "lists.group") .List.Done}}</h2></div>
+<ul class="entries">
+  {{range .Ticked}}<li><span class="title"><s>{{.Text}}</s></span><span class="row">
+    {{template "editButton" (dict "Root" $ "E" . "Action" "delete" "Label" (t "lists.remove") "Aria" (t "lists.remove") "Icon" "M6 6l12 12M18 6L6 18")}}</span></li>
+  {{end}}</ul>{{end}}
+</div>
+{{end}}
+
+{{/* One secondary button of the edit view: icon plus word. Arguments: Root, E,
+     Action (move or delete), Direction, Label, Aria, Icon (path). */}}
+{{define "editButton"}}<form method="post" action="/lists/{{.Root.List.ID}}/entries/{{.E.ID}}/{{.Action}}">{{with .Direction}}<input type="hidden" name="direction" value="{{.}}">{{end}}{{template "keepHide" .Root}}<button class="button secondary" type="submit" aria-label="{{.Aria}}: {{.E.Text}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="{{.Icon}}"/></svg>{{.Label}}</button></form>{{end}}

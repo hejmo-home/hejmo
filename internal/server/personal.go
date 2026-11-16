@@ -49,18 +49,39 @@ func (s *server) personalView(h store.Household, lang, personID string) (familyv
 	if err != nil {
 		return familyview.PersonalView{}, err
 	}
-	in := familyview.PersonalInput{Now: data.now, Person: *person, Calendars: data.calendars, Occurrences: data.occurrences, TimeFormat: h.TimeFormat}
+	in := familyview.PersonalInput{Now: data.now, Person: *person, People: data.people, Calendars: data.calendars, Occurrences: data.occurrences, TimeFormat: h.TimeFormat}
 	for _, t := range due {
 		if t.PersonID == person.ID {
-			in.Tasks = append(in.Tasks, familyview.Task{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Part: string(t.PartOfDay), Done: t.Done, Stars: t.Stars})
+			in.Tasks = append(in.Tasks, viewTask(t))
 		}
 	}
+	routines, err := s.db.Routines(h.ID)
+	if err != nil {
+		return familyview.PersonalView{}, err
+	}
+	in.Routines = viewRoutines(routines, person.ID)
 	sums, err := s.db.StarSummaries(h.ID)
 	if err != nil {
 		return familyview.PersonalView{}, err
 	}
 	in.Stars = familyview.Stars{Shown: sums[person.ID].Shown, Balance: sums[person.ID].Balance}
 	return familyview.BuildPersonal(in), nil
+}
+
+// viewTask is a task due today as the personal view and a child's tasks page show it.
+func viewTask(t store.DayTask) familyview.Task {
+	return familyview.Task{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Part: string(t.PartOfDay), Done: t.Done, Stars: t.Stars, RoutineID: t.RoutineID, Position: t.Position}
+}
+
+// viewRoutines are the routines of one person.
+func viewRoutines(all []task.Routine, personID string) []familyview.Routine {
+	var out []familyview.Routine
+	for _, r := range all {
+		if r.PersonID == personID {
+			out = append(out, familyview.Routine{ID: r.ID, Name: r.Name, Part: string(r.Part)})
+		}
+	}
+	return out
 }
 
 // renderPersonal renders a person's view markup and its version, like
@@ -89,7 +110,7 @@ func (s *server) handleDisplayPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("id")
-	view, version, err := s.renderPersonal(h, s.langOf(r), id)
+	view, version, err := s.renderPersonal(h, s.displayLang(r), id)
 	if errors.Is(err, errNoPerson) {
 		// Gone meanwhile: back to the display, never to a bare error page
 		// (it has no display.js and would leave the kiosk stuck).
@@ -116,7 +137,7 @@ func (s *server) handleDisplayPersonView(w http.ResponseWriter, r *http.Request)
 	if !ok {
 		return
 	}
-	markup, version, err := s.renderPersonal(h, s.langOf(r), r.PathValue("id"))
+	markup, version, err := s.renderPersonal(h, s.displayLang(r), r.PathValue("id"))
 	if errors.Is(err, errNoPerson) {
 		http.NotFound(w, r)
 		return

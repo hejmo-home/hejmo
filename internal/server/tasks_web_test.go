@@ -3,6 +3,7 @@ package server_test
 import (
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -267,6 +268,149 @@ func TestTaskDetailPageShowsTheStarValue(t *testing.T) {
 	id := list[0].(map[string]any)["id"].(string)
 	if page := b.do(http.MethodGet, "/tasks/"+id, nil, map[string]string{"Accept-Language": "en"}); !strings.Contains(page.body, `data-task-stars="3"`) {
 		t.Errorf("detail page lacks the star value:\n%s", page.body)
+	}
+}
+
+// Acceptance (#122): a parent changes a task's star value on its detail page.
+func TestParentChangesATasksStarValueOnItsDetailPage(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	id := tb.newDaily(t, tb.miaID)
+	en := map[string]string{"Accept-Language": "en"}
+	page := b.do(http.MethodGet, "/tasks/"+id, nil, en)
+	for _, want := range []string{`action="/tasks/` + id + `/stars"`, `name="stars"`, `value="1"`, `max="100"`, `id="hint-stars"`, `aria-describedby="hint-stars"`,
+		"Stars already credited stay as they are.", "Save stars"} {
+		if !strings.Contains(page.body, want) {
+			t.Fatalf("detail page lacks %q:\n%s", want, page.body)
+		}
+	}
+	for _, c := range []struct{ stars, line string }{
+		{"3", "Saved. Ticking off now earns <b>3 stars</b>."},
+		{"1", "Saved. Ticking off now earns <b>1 star</b>."},
+		{"0", "Saved. Ticking off now earns <b>no stars</b>."},
+	} {
+		r := b.post("/tasks/"+id+"/stars", url.Values{"stars": {c.stars}})
+		if r.status != http.StatusSeeOther || r.location != "/tasks/"+id {
+			t.Fatalf("save %s = %d %q\n%s", c.stars, r.status, r.location, r.body)
+		}
+		page := b.do(http.MethodGet, "/tasks/"+id, nil, en)
+		if !strings.Contains(page.body, c.line) || !strings.Contains(page.body, `value="`+c.stars+`"`) {
+			t.Fatalf("after saving %s the page lacks %q or the value:\n%s", c.stars, c.line, page.body)
+		}
+		if got := taskState(t, tb.parent, id, ""); got["stars"] != float64(mustAtoi(c.stars)) {
+			t.Fatalf("API stars = %v, want %s", got["stars"], c.stars)
+		}
+	}
+}
+
+func mustAtoi(s string) int { n, _ := strconv.Atoi(s); return n }
+
+func TestInvalidStarValueKeepsWhatWasTypedAndSavesNothing(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	id := tb.newDaily(t, tb.miaID)
+	for _, bad := range []string{"", " ", "abc", "-1", "101", "2.5"} {
+		r := b.do(http.MethodPost, "/tasks/"+id+"/stars", url.Values{"stars": {bad}}, map[string]string{"Accept-Language": "en"})
+		if r.status != http.StatusUnprocessableEntity {
+			t.Fatalf("%q = %d, want 422", bad, r.status)
+		}
+		for _, want := range []string{`role="alert"`, "Please enter a whole number of stars from 0 to 100.", `aria-invalid="true"`, `aria-describedby="err-stars hint-stars"`, `value="` + strings.TrimSpace(bad) + `"`} {
+			if !strings.Contains(r.body, want) {
+				t.Fatalf("%q: page lacks %q:\n%s", bad, want, r.body)
+			}
+		}
+		if got := taskState(t, tb.parent, id, ""); got["stars"] != float64(1) {
+			t.Fatalf("%q changed the value to %v", bad, got["stars"])
+		}
+	}
+}
+
+func TestStarValueOfUnknownTaskIs404AndAChildIsForbidden(t *testing.T) {
+	tb := newTaskBox(t)
+	id := tb.newDaily(t, tb.miaID)
+	if r := tb.parent.b.post("/tasks/00000000-0000-0000-0000-000000000000/stars", url.Values{"stars": {"2"}}); r.status != http.StatusNotFound {
+		t.Fatalf("unknown = %d", r.status)
+	}
+	child := childSession(t, tb.parent.b)
+	if r := child.post("/tasks/"+id+"/stars", url.Values{"stars": {"2"}}); r.status != http.StatusForbidden {
+		t.Fatalf("child = %d", r.status)
+	}
+	if got := taskState(t, tb.parent, id, ""); got["stars"] != float64(1) {
+		t.Fatalf("a child changed the value to %v", got["stars"])
+	}
+}
+
+// Acceptance (#122): ticks already credited keep their value, said in words.
+func TestDetailPageSaysWhatTodaysTickCredited(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	en := map[string]string{"Accept-Language": "en"}
+	id := tb.newDaily(t, tb.miaID)
+	if page := b.do(http.MethodGet, "/tasks/"+id, nil, en); strings.Contains(page.body, "Ticked off today already") {
+		t.Fatal("notice shown for an open task")
+	}
+	if r := b.post("/tasks/"+id+"/done", url.Values{"done": {"1"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("tick = %d", r.status)
+	}
+	b.post("/tasks/"+id+"/stars", url.Values{"stars": {"5"}})
+	page := b.do(http.MethodGet, "/tasks/"+id, nil, en)
+	for _, want := range []string{"<b>Ticked off today already:</b> Mia got <b>1 star</b> for it.", "exactly this <b>1 star</b> is deducted", `value="5"`} {
+		if !strings.Contains(page.body, want) {
+			t.Fatalf("page lacks %q:\n%s", want, page.body)
+		}
+	}
+	// Unticking deducts the credited star, not the new value.
+	b.post("/tasks/"+id+"/done", url.Values{"done": {"0"}})
+	status, stars, _ := tb.parent.call(http.MethodGet, "/people/"+tb.miaID+"/stars", nil)
+	if status != http.StatusOK || stars["balance"] != float64(0) {
+		t.Fatalf("balance after untick = %v", stars)
+	}
+	// More than one star, and none.
+	b.post("/tasks/"+id+"/stars", url.Values{"stars": {"2"}})
+	b.post("/tasks/"+id+"/done", url.Values{"done": {"1"}})
+	page = b.do(http.MethodGet, "/tasks/"+id, nil, en)
+	if want := "Mia got <b>2 stars</b> for it. They stay"; !strings.Contains(page.body, want) {
+		t.Fatalf("page lacks %q:\n%s", want, page.body)
+	}
+	b.post("/tasks/"+id+"/done", url.Values{"done": {"0"}})
+	b.post("/tasks/"+id+"/stars", url.Values{"stars": {"0"}})
+	b.post("/tasks/"+id+"/done", url.Values{"done": {"1"}})
+	page = b.do(http.MethodGet, "/tasks/"+id, nil, en)
+	if want := "<b>Ticked off today already</b>, and that earned no stars. If the task is reopened today, nothing is deducted."; !strings.Contains(page.body, want) {
+		t.Fatalf("page lacks %q:\n%s", want, page.body)
+	}
+}
+
+// The notice builds trusted markup by hand, so a name with markup in it must
+// come out escaped.
+func TestDetailPageEscapesTheOwnerNameInTheCreditedNotice(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	en := map[string]string{"Accept-Language": "en"}
+	id := tb.newDaily(t, tb.miaID)
+	if status, got, _ := tb.parent.call(http.MethodPatch, "/people/"+tb.miaID, map[string]any{"name": `Tom & "Jerry" <b>x</b>`}); status != http.StatusOK {
+		t.Fatalf("rename = %d %v", status, got)
+	}
+	b.post("/tasks/"+id+"/done", url.Values{"done": {"1"}})
+	page := b.do(http.MethodGet, "/tasks/"+id, nil, en)
+	if strings.Contains(page.body, "<b>x</b>") {
+		t.Fatalf("owner name came out as markup:\n%s", page.body)
+	}
+	if want := "Tom &amp; &#34;Jerry&#34; &lt;b&gt;x&lt;/b&gt; got <b>1 star</b>"; !strings.Contains(page.body, want) {
+		t.Fatalf("page lacks %q:\n%s", want, page.body)
+	}
+}
+
+// A forged star line cookie without a number shows nothing, not a raw verb.
+func TestForgedStarsFlashWithoutNumberShowsNothing(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	id := tb.newDaily(t, tb.miaID)
+	for _, v := range []string{"tasks.stars.saved.other", "tasks.stars.saved.other:abc", "tasks.stars.saved.one", "tasks.stars.saved.bogus:3"} {
+		page := b.do(http.MethodGet, "/tasks/"+id, nil, map[string]string{"Accept-Language": "en", "Cookie": "hejmo_flash=" + v})
+		if strings.Contains(page.body, "%d") || strings.Contains(page.body, "MISSING") || strings.Contains(page.body, "Saved. Ticking off") {
+			t.Errorf("cookie %q shows a line:\n%s", v, page.body)
+		}
 	}
 }
 

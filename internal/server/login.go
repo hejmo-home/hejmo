@@ -21,7 +21,16 @@ func (s *server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
-	s.render(w, r, http.StatusOK, "login.html", map[string]any{"Next": localPath(r.URL.Query().Get("next"))})
+	data := map[string]any{"Next": localPath(r.URL.Query().Get("next"))}
+	// A session cookie the box no longer knows (ended by a parent or run out):
+	// say why the sign-in page is shown, and drop the cookie.
+	if c, err := r.Cookie(sessionCookie); err == nil && c.Value != "" {
+		if _, err := s.db.SessionPerson(auth.HashToken(c.Value), s.now()); err != nil {
+			data["SignedOut"] = true
+			http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
+		}
+	}
+	s.render(w, r, http.StatusOK, "login.html", data)
 }
 
 func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
@@ -45,7 +54,9 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	secondOK := s.secondFactorOK(acc, r.PostFormValue("code"), err == nil && passwordOK)
 	// After a reset (ADR 0017) the password alone leads on to setting up new
 	// one-time codes; until they are confirmed the session reaches nothing else.
-	pendingSetup := err == nil && passwordOK && acc.TOTPReset && !acc.TOTPConfirmed
+	// The same holds for a parent who accepted an invitation and stopped before
+	// the one-time code (ticket 145): finished at the next sign-in.
+	pendingSetup := err == nil && passwordOK && !acc.TOTPConfirmed && (acc.TOTPReset || s.db.Configured())
 	if err != nil || !passwordOK || (!pendingSetup && !secondOK) {
 		s.limiter.fail(key)
 		// Deliberately one error at the password field: it must not reveal which of
@@ -58,6 +69,12 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	if err := s.startSession(w, r, acc.PersonID); err != nil {
 		s.fail(w, "login session", err)
 		return
+	}
+	if code := cookieLanguage(r); code != "" && acc.Language == "" {
+		// the choice made before sign-in becomes the account's
+		if err := s.db.SetAccountLanguage(acc.PersonID, code); err != nil {
+			s.logger.Error("save account language", "err", err)
+		}
 	}
 	if pendingSetup {
 		http.Redirect(w, r, "/setup/totp", http.StatusSeeOther)
@@ -125,5 +142,10 @@ func localPath(p string) string {
 
 func (s *server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	s.endSession(w, r)
+	// Whoever signs out on the page of an invitation comes back to it (ticket 145).
+	if next := localPath(r.PostFormValue("next")); strings.HasPrefix(next, "/invite/") {
+		http.Redirect(w, r, next, http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }

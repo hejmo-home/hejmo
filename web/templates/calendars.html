@@ -3,83 +3,27 @@
   {{template "httpsNotice" .}}
   {{template "syncNotice" .}}
 
-  <section aria-labelledby="synced">
-    <h2 id="synced">{{t "calendars.synced"}}</h2>
-    {{if .Calendars}}
-    {{range .Calendars}}
-    <section aria-label="{{.Name}}">
-      <h3>{{if .Color}}<input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{end}}{{.Name}}</h3>
-    <ul class="cards">
-      {{range .Calendars}}
-      <li>
-        <strong><input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{.Name}}</strong>
-        <span class="hint">{{t "calendars.readonly"}}{{if .Audience}} · {{t "calendars.for"}} {{.Audience}}{{end}}</span>
-        <span class="hint">
-          {{if .LastSuccess}}{{t "calendars.last_success"}} {{.LastSuccess}}{{else}}{{t "calendars.never"}}{{end}}
-          {{if .Stale}} · <span data-calendar-stale>{{t "calendars.stale"}}</span>{{end}}
-        </span>
-        {{if .Events}}<span class="hint" data-events>{{.Events}}</span>
-        <span class="hint" data-last-run>{{.Changes}}</span>{{end}}
-        {{if .LastError}}<span class="hint">{{t "calendars.last_error"}} {{.LastError}}</span>{{end}}
-        <form method="post" action="/calendars/{{.ID}}/waste" class="waste-form" data-autosubmit>
-          {{template "switch" (dict "Name" "waste" "Label" (t "calendars.waste.label") "OnText" (t "calendars.waste.on") "OffText" (t "calendars.waste.off") "Checked" .Waste)}}
-          <noscript><button class="button secondary" type="submit">{{t "calendars.waste.save"}}</button></noscript>
-        </form>
-        {{if .Waste}}<span class="waste-next">{{if .NextLabel}}<b>{{.NextLabel}}</b>{{.NextTitles}}{{else}}<b>{{t "calendars.waste.none"}}</b> {{t "calendars.waste.none_hint"}}{{end}}</span>{{end}}
-        <span class="row">
-          <form method="post" action="/calendars/{{.ID}}/sync"><button class="button" type="submit">{{t "calendars.sync_now"}}</button></form>
-        </span>
-        {{template "dangerOpen" (dict "Label" (t "calendars.remove"))}}
-          <p>{{t "calendars.remove.explain"}}</p>
-          <form method="post" action="/calendars/{{.ID}}/delete"><button class="button danger" type="submit">{{t "calendars.remove.confirm"}}</button></form>
-        {{template "dangerClose"}}
-      </li>
-      {{end}}
-    </ul>
-    </section>
-    {{end}}
-    {{else}}{{template "empty" (dict "Text" (t "calendars.none") "Href" "#add" "Action" (t "calendars.add.first"))}}{{end}}
-  </section>
+  <p class="lead">{{t "calendars.intro"}}</p>
 
   <section aria-labelledby="connections">
     <h2 id="connections">{{t "connections.title"}}</h2>
-    {{if .Connections}}
-    <ul class="cards">
-      {{range .Connections}}
-      <li>
-        <strong>{{.Username}}</strong>
-        <span class="hint">{{.URL}}</span>
-        <span class="row">
-          <a class="button" href="/connections/{{.ID}}">{{t "connections.choose"}}</a>
-        </span>
-        {{template "dangerOpen" (dict "Label" (t "connections.remove"))}}
-          <p>{{t "connections.remove.explain"}}</p>
-          <form method="post" action="/connections/{{.ID}}/delete"><button class="button danger" type="submit">{{t "connections.remove.confirm"}}</button></form>
-        {{template "dangerClose"}}
-      </li>
+    {{if .ConnRows}}
+    <ul class="list-rows">
+      {{range .ConnRows}}{{template "rowLink" .}}
       {{end}}
     </ul>
-    {{end}}
-    <h3>{{t "connections.add"}}</h3>
-    <p class="hint">{{t "connections.hint"}}</p>
-    {{$ce := dict "ErrorField" .ConnErrorField "Error" .ConnError}}
-    <form method="post" action="/connections" class="steps" autocomplete="off" data-connection-form>
-      <fieldset>
-        <div class="f{{if eq .ConnErrorField "provider"}} invalid{{end}}">
-          <label>{{t "connections.field.provider"}}
-            <select name="provider"{{if eq .ConnErrorField "provider"}} autofocus aria-invalid="true" aria-describedby="err-provider"{{end}}>
-              <option value="icloud"{{with .Form}}{{if eq .ConnProvider "icloud"}} selected{{end}}{{end}}>{{t "connections.provider.icloud"}}</option>
-              <option value="caldav"{{with .Form}}{{if eq .ConnProvider "caldav"}} selected{{end}}{{end}}>{{t "connections.provider.caldav"}}</option>
-            </select></label>
-          {{template "fieldError" (dict "Root" $ce "Name" "provider")}}
-        </div>
-        <div data-other-only>{{template "field" (dict "Root" $ce "Name" "url" "Label" (t "connections.field.url") "Value" (index .Form "ConnURL") "Inputmode" "url" "Autocapitalize" "none" "Placeholder" "https://…")}}</div>
-        <label class="check" data-other-only><input type="checkbox" name="single_calendar" value="1"{{with .Form}}{{if .ConnSingle}} checked{{end}}{{end}}> {{t "connections.field.single"}}</label>
-        {{template "field" (dict "Root" $ce "Name" "username" "Label" (t "connections.field.username") "Value" (index .Form "ConnUsername") "Required" true "Autocapitalize" "none")}}
-        {{template "field" (dict "Root" $ce "Name" "password" "Label" (t "connections.field.password") "Type" "password" "Required" true "Autocomplete" "off")}}
-      </fieldset>
-      <button class="button" type="submit">{{t "connections.submit"}}</button>
-    </form>
+    <p><a class="button secondary" href="/connections/new">{{t "connections.connect.more"}}</a></p>
+    {{else}}{{template "empty" (dict "Text" (t "connections.empty") "Href" "/connections/new" "Action" (t "connections.connect"))}}{{end}}
+  </section>
+
+  <section aria-labelledby="synced">
+    <h2 id="synced">{{t "calendars.synced"}}</h2>
+    {{if .Rows}}
+    <ul class="list-rows">
+      {{range .Rows}}{{template "rowLink" .}}
+      {{end}}
+    </ul>
+    {{else}}{{template "empty" (dict "Text" (t "calendars.none") "Href" "#add" "Action" (t "calendars.add.first"))}}{{end}}
   </section>
 
   <section aria-labelledby="add">
@@ -115,6 +59,4 @@
     </table>
     {{else}}<p class="hint">{{t "calendars.log.empty"}}</p>{{end}}
   </section>
-<script src="/static/connection-form.js" defer></script>
-<script src="/static/switch-submit.js" defer></script>
 {{template "foot"}}

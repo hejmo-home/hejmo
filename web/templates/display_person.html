@@ -41,7 +41,7 @@
 {{define "bigCheckRow"}}{{$k := .Task}}{{$r := .Root}}<li data-task="{{$k.ID}}" data-done="{{$k.Done}}"{{if $k.Next}} data-next{{end}}><form method="post" action="{{$r.Prefix}}/{{$k.ID}}/done">
   <input type="hidden" name="done" value="{{if $k.Done}}0{{else}}1{{end}}">{{with $r.Day}}
   <input type="hidden" name="day" value="{{.}}">{{end}}
-  <button class="big-check" type="submit" aria-pressed="{{$k.Done}}" aria-label="{{$k.Title}}: {{if $k.Done}}{{t "personal.task_done"}}{{else}}{{t "personal.task_open"}}{{end}}{{if $k.Next}}, {{t "personal.task_next"}}{{end}}{{if and $r.StarsShown $k.Stars}}, {{$k.Stars}} {{t "personal.stars"}}{{end}}"><span class="box" aria-hidden="true">{{template "tick" 30}}</span>{{if $k.Emoji}}<span class="emoji" aria-hidden="true">{{$k.Emoji}}</span>{{end}}<span class="title">{{$k.Title}}</span>{{if and $r.StarsShown $k.Stars}}<span class="task-stars" data-task-stars="{{$k.Stars}}">{{$k.Stars}}</span>{{end}}</button>
+  <button class="big-check" type="submit" aria-pressed="{{$k.Done}}" aria-label="{{$k.Title}}: {{if $k.Done}}{{t "personal.task_done"}}{{else}}{{t "personal.task_open"}}{{end}}{{if $k.Next}}, {{t "personal.task_next"}}{{end}}{{if and $r.StarsShown $k.Stars}}, {{$k.Stars}} {{t "personal.stars"}}{{end}}"><span class="box" aria-hidden="true">{{template "tick" 30}}</span>{{if $k.Emoji}}<span class="emoji" aria-hidden="true">{{$k.Emoji}}</span>{{end}}<span class="title">{{$k.Title}}</span>{{if and $r.StarsShown $k.Stars}}<span class="task-stars" data-task-stars="{{$k.Stars}}">{{$k.Stars}}<span class="sr"> {{t "personal.stars"}}</span></span>{{end}}</button>
 </form></li>{{end}}
 
 {{/* The line icon of a part of the day: sunrise (morning), sun (after school),

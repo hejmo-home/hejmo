@@ -22,7 +22,7 @@
       {{if .Steps}}<ol class="rsteps">
         {{range .Steps}}<li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
           <span class="nr" aria-hidden="true">{{.Nr}}</span>
-          <span class="nm"><a href="/tasks/{{.ID}}">{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}</a>{{template "taskStars" .}}</span>
+          <span class="nm"><a href="/tasks/{{.ID}}">{{if .Done}}<s>{{if .Emoji}}{{.Emoji}} {{end}}{{.Title}}</s>{{else}}{{if .Emoji}}{{.Emoji}} {{end}}{{.Title}}{{end}}</a>{{template "taskStars" .}}</span>
           <span class="hint">{{template "repeatText" .}} · {{template "dueState" .}}</span>
           {{if .Due}}<span class="acts"><form method="post" action="/tasks/{{.ID}}/done">
             <input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">

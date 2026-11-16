@@ -33,15 +33,18 @@ const (
 
 // displayToken returns the hash of the token in the display's cookie.
 // A display may send it as its cookie (the web pages) or as a bearer token
-// (the API, ADR 0015); a bearer header wins.
+// (the API, ADR 0015); a Bearer header wins.
 func displayToken(r *http.Request) (string, bool) {
 	if header := r.Header.Get("Authorization"); header != "" {
-		token, ok := strings.CutPrefix(header, "Bearer ")
-		token = strings.TrimSpace(token)
-		if !ok || token == "" {
-			return "", false
+		// Only a Bearer header is a display token; another scheme (say Basic
+		// auth added by a reverse proxy) leaves the cookie in charge.
+		if token, ok := strings.CutPrefix(header, "Bearer "); ok {
+			token = strings.TrimSpace(token)
+			if token == "" {
+				return "", false
+			}
+			return auth.HashToken(token), true
 		}
-		return auth.HashToken(token), true
 	}
 	c, err := r.Cookie(displayCookie)
 	if err != nil || c.Value == "" {

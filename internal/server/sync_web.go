@@ -211,11 +211,9 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		"AutoColor": nextColors(taken, 1)[0],
 		"Person":    p.person, "Rows": subscribed, "ConnRows": connRows, "Log": log, "People": peopleChoices, "Groups": groupChoices,
 		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
-		"ConnError": "", "ConnErrorField": "",
 	}
 	if form != nil {
 		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
-		data["ConnError"], data["ConnErrorField"] = form["ConnError"], form["ConnErrorField"]
 	}
 	s.render(w, r, status, "calendars.html", data)
 }

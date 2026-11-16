@@ -191,6 +191,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /calendars/{id}", s.handleCalendarPage)
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
+	mux.HandleFunc("GET /connections/new", s.handleConnectNew)
 	mux.HandleFunc("POST /calendars/{id}/waste", s.handleCalendarWaste)
 	mux.HandleFunc("POST /notes", s.handleNoteSave)
 	mux.HandleFunc("GET /notes/{day}", s.handleNotePage)
@@ -359,6 +360,9 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		case data["SuccessText"] != nil:
 			text, _ := data["SuccessText"].(string)
 			fr.Success = template.HTML(html.EscapeString(text)) // a page that shows the result itself, and names the thing
+		case data["SuccessMsg"] != nil:
+			msg, _ := data["SuccessMsg"].(i18n.Message)
+			fr.Success = template.HTML(html.EscapeString(s.i18n.Format(lang, msg))) // the same, with values filled in
 		case own != "":
 			fr.Success = template.HTML(html.EscapeString(s.i18n.T(lang, own))) // a page that shows the result itself
 		case key != "":

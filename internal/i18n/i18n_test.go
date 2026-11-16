@@ -86,6 +86,9 @@ func TestFormatFillsParameters(t *testing.T) {
 // where the whole family is meant; every such text is listed here with its key.
 var wholeFamilyTexts = map[string]bool{
 	"displays.none":                  true, // "euren Tag": the family's day on the wall
+	"connect.legend":                 true, // "eure Kalender": the family's calendars
+	"connect.lead":                   true, // "eure Termine": the family's events, kept by several people
+	"connections.empty":              true, // "eure Termine": the family's events on the box
 	"setup.welcome.lead":             true, // "eure Box": the family's box
 	"setup.welcome.step.2":           true, // "Euer Ort": the family's town
 	"setup.https.way.public.hint":    true, // "eure Box"
@@ -122,6 +125,64 @@ func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {
 	for key := range wholeFamilyTexts {
 		if _, ok := cat[key]; !ok {
 			t.Errorf("allow-list names unknown key %s", key)
+		}
+	}
+}
+
+// Ticket #135: the connect page and the calendars page have all their texts in
+// both languages, every text the template asks for exists, and Apple's own menu
+// names appear per locale.
+func TestConnectTextsExistInBothLanguages(t *testing.T) {
+	b := i18n.MustLoad()
+	keys := []string{
+		"connect.title", "connect.lead", "connect.legend", "connect.why.title", "connect.newtab.sr", "connect.newtab.after", "connect.done",
+		"connect.icloud.name", "connect.icloud.sub", "connect.icloud.heading", "connect.icloud.why", "connect.icloud.link.url", "connect.icloud.link.label",
+		"connect.icloud.step1.title", "connect.icloud.step1.text", "connect.icloud.step1.hint",
+		"connect.icloud.step2.title", "connect.icloud.step2.text", "connect.icloud.notfound.summary", "connect.icloud.notfound.text", "connect.icloud.notfound.help",
+		"connect.icloud.help.url", "connect.icloud.help.label", "connect.icloud.step3.title", "connect.icloud.step3.text", "connect.icloud.step4.title", "connect.icloud.step4.text",
+		"connect.icloud.username", "connect.icloud.password", "connect.icloud.password.hint", "connect.icloud.submit",
+		"connect.caldav.name", "connect.caldav.sub", "connect.caldav.heading", "connect.caldav.why", "connect.caldav.step1.title", "connect.caldav.step1.text",
+		"connect.caldav.step1.hint", "connect.caldav.help.url", "connect.caldav.help.label", "connect.caldav.step2.title", "connect.caldav.step2.text", "connect.caldav.step3.title",
+		"connect.caldav.url", "connect.caldav.url.hint", "connect.caldav.username", "connect.caldav.password", "connect.caldav.more", "connect.caldav.more.sum", "connect.caldav.single", "connect.caldav.submit",
+		"connections.title", "connections.empty", "connections.connect", "connections.connect.more",
+		"connections.success.icloud.none", "connections.success.icloud.one", "connections.success.icloud.many",
+		"connections.success.caldav.none", "connections.success.caldav.one", "connections.success.caldav.many",
+		"connections.error.login", "connections.error.login_icloud", "connections.error.login_caldav", "connections.error.server", "connections.error.server_icloud", "connections.error.server_saved",
+	}
+	for _, lang := range []string{"de", "en"} {
+		for _, k := range keys {
+			if got := b.T(lang, k); got == k || strings.TrimSpace(got) == "" {
+				t.Errorf("%s lacks %s", lang, k)
+			}
+		}
+	}
+	for _, k := range []string{"connections.hint", "connections.field.url", "connections.field.username", "connections.field.password", "connections.add", "connections.submit"} {
+		if got := b.T("de", k); got != k {
+			t.Errorf("%s should be gone, found %q", k, got)
+		}
+	}
+	// Apple's own menu names, per locale.
+	for lang, names := range map[string][]string{
+		"de": {"Anmelden und Sicherheit", "App-spezifische Passwörter", "Apple Account"},
+		"en": {"Sign-In and Security", "App-Specific Passwords", "Apple Account"},
+	} {
+		all := b.T(lang, "connect.icloud.step2.text") + b.T(lang, "connect.icloud.step2.title") + b.T(lang, "connect.icloud.why") + b.T(lang, "connect.icloud.username")
+		for _, n := range names {
+			if !strings.Contains(strings.ToLower(all), strings.ToLower(n)) {
+				t.Errorf("%s texts never name Apple's %q", lang, n)
+			}
+		}
+	}
+	// No address in a text, except the two link targets and the hint about how an address starts.
+	address := regexp.MustCompile(`(?i)https?://[a-z0-9]|\bappleid\.apple\.com|\baccount\.apple\.com`)
+	for _, lang := range []string{"de", "en"} {
+		for _, k := range keys {
+			if strings.HasSuffix(k, ".url") || strings.HasSuffix(k, ".label") {
+				continue
+			}
+			if m := address.FindString(b.T(lang, k)); m != "" {
+				t.Errorf("%s %s holds a plain-text address %q", lang, k, m)
+			}
 		}
 	}
 }

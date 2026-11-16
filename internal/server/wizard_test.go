@@ -13,8 +13,6 @@ import (
 	"github.com/hejmo-home/hejmo/internal/server"
 )
 
-var tagRe = regexp.MustCompile(`(?s)<[^>]*>`)
-
 func deGet(b *box, path string) resp {
 	return b.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": "de"})
 }

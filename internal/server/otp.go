@@ -3,7 +3,6 @@ package server
 import (
 	"encoding/json"
 	"errors"
-	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
@@ -131,7 +130,7 @@ func (s *server) showRecoveryCodes(w http.ResponseWriter, r *http.Request, perso
 	}
 	if shell != nil {
 		data["Wizard"] = shell
-	} else {
+	} else if !pg.Refused {
 		data["SuccessKey"] = "flash.recovery_codes_created"
 	}
 	s.render(w, r, status, "recovery_codes.html", data)
@@ -139,10 +138,11 @@ func (s *server) showRecoveryCodes(w http.ResponseWriter, r *http.Request, perso
 
 // recoveryPDFDoc is everything the page script needs to write the PDF: texts
 // in the page language and the file name. The codes come from the page.
-func (s *server) recoveryPDFDoc(lang, name, username, date, iso string) template.HTML {
+func (s *server) recoveryPDFDoc(lang, name, username, date, iso string) json.RawMessage {
 	t := func(key string) string { return s.i18n.T(lang, key) }
 	box := s.boxName()
 	doc := map[string]any{
+		"lang":     lang,
 		"file":     fileSafe(t("recovery.pdf.file_prefix") + "-" + box + "-" + username + "-" + iso),
 		"page":     t("recovery.pdf.page"),
 		"title":    s.i18n.Format(lang, i18n.Msg("recovery.pdf.title", "name", name)),
@@ -155,7 +155,9 @@ func (s *server) recoveryPDFDoc(lang, name, username, date, iso string) template
 		"ok":     t("recovery.pdf.ok"), "failed": t("recovery.pdf.failed"), "gateError": t("recovery.saved.error"),
 	}
 	raw, _ := json.Marshal(doc) // escapes < > & so it cannot end the script element
-	return template.HTML(raw)   // #nosec G203 -- JSON with HTML characters escaped
+	// A json.RawMessage, not template.HTML: inside the script element the
+	// template writes a Marshaler as it is, but would quote HTML as a string.
+	return raw
 }
 
 // fileSafe keeps a file name to letters, digits, dot, dash and underscore.

@@ -1,8 +1,10 @@
 package server_test
 
 import (
+	"encoding/json"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 
@@ -217,5 +219,143 @@ func TestAPIConfirmsTheRecoveryCodesAsSaved(t *testing.T) {
 	}
 	if set, _ := b.db.RecoverySet(acc.PersonID); set.SavedAt.IsZero() {
 		t.Fatal("not saved after the confirmation")
+	}
+}
+
+// docOn parses the JSON the card carries for the PDF script.
+func docOn(t *testing.T, page string) map[string]any {
+	t.Helper()
+	m := regexp.MustCompile(`(?s)<script type="application/json" data-rc-doc>(.*?)</script>`).FindStringSubmatch(page)
+	if m == nil {
+		t.Fatalf("the card carries no data-rc-doc\n%s", page)
+	}
+	var doc map[string]any
+	if err := json.Unmarshal([]byte(m[1]), &doc); err != nil {
+		t.Fatalf("data-rc-doc is no JSON: %v\n%s", err, m[1])
+	}
+	return doc
+}
+
+// The PDF's file name has the box name and the date; the texts and the document
+// language follow the page language; a box name with unsafe characters is made file-safe.
+func TestPDFDocHasFileNameTitleLabelsAndLanguageInGermanAndEnglish(t *testing.T) {
+	b, _, _ := wizardCodes(t)
+	b.public.name = "Küche Box/..\\x:y\"<z>.example"
+	for _, tc := range []struct {
+		lang, file, title, box, user, created, page, prefixOK string
+	}{
+		{"en", "Hejmo-Recovery-codes-k-che-box-..-x-y--z-.example-mama-2026-11-14", "Recovery codes for Mama", "Box", "Username", "Created on", "Recovery codes · page 1 of 1", "Hejmo-Recovery-codes-"},
+		{"de", "Hejmo-Wiederherstellungscodes-k-che-box-..-x-y--z-.example-mama-2026-11-14", "Wiederherstellungscodes für Mama", "Box", "Benutzername", "Erstellt am", "Wiederherstellungscodes · Seite 1 von 1", "Hejmo-Wiederherstellungscodes-"},
+	} {
+		r := b.do(http.MethodPost, "/account/recovery-codes", url.Values{"fresh": {"1"}}, map[string]string{"Accept-Language": tc.lang})
+		if r.status != http.StatusOK {
+			t.Fatalf("%s: new codes = %d\n%s", tc.lang, r.status, r.body)
+		}
+		doc := docOn(t, r.body)
+		want := map[string]string{"file": tc.file, "title": tc.title, "boxLabel": tc.box, "userLabel": tc.user, "dateLabel": tc.created, "page": tc.page, "username": "mama", "date": "14.11.2026", "lang": tc.lang}
+		for k, v := range want {
+			if doc[k] != v {
+				t.Errorf("%s: doc[%q] = %v, want %q", tc.lang, k, doc[k], v)
+			}
+		}
+		if file, _ := doc["file"].(string); strings.ContainsAny(file, "/\\:\"<>? ") || !strings.HasPrefix(file, tc.prefixOK) {
+			t.Errorf("%s: file name %q is not file-safe", tc.lang, file)
+		}
+		if how, _ := doc["how"].([]any); len(how) != 5 {
+			t.Errorf("%s: %d how-to lines, want 5", tc.lang, len(how))
+		}
+	}
+}
+
+var voidCodes = []string{"AAAAA-BBBBB", "CCCCC-DDDDD"}
+
+func sameCodes(a, b []string) bool { return strings.Join(a, ",") == strings.Join(b, ",") }
+
+// Codes that are well-formed but not the box's current set (a stale tab, the
+// Back button) are never shown as "the same codes": the box makes a new set
+// and says so. This holds without and with the tick; the tick never confirms
+// a set the person did not see.
+func TestCodesThatAreNotTheCurrentSetGetANewSetAndNeverCountAsSaved(t *testing.T) {
+	for _, tick := range []bool{false, true} {
+		b, _, current := wizardCodes(t)
+		r := b.do(http.MethodPost, "/account/recovery-codes/saved", savedForm("wizard", voidCodes, tick), enHeader)
+		shown := recoveryCodesOn(t, r.body)
+		if len(shown) != 10 || strings.Contains(r.body, voidCodes[0]) || sameCodes(shown, current) {
+			t.Errorf("tick=%v: void codes were shown or the old set was kept: %v", tick, shown)
+		}
+		if !strings.Contains(r.body, "The page was reloaded.") {
+			t.Errorf("tick=%v: no reload notice\n%s", tick, r.body)
+		}
+		if r.status == http.StatusSeeOther {
+			t.Errorf("tick=%v: void codes let the wizard continue", tick)
+		}
+		acc, _ := b.db.AccountByUsername("mama")
+		set, _ := b.db.RecoverySet(acc.PersonID)
+		if !set.SavedAt.IsZero() || set.Unused != 10 {
+			t.Errorf("tick=%v: saved=%v unused=%d after void codes", tick, set.SavedAt, set.Unused)
+		}
+		// The new set is the one on screen: ticking it works.
+		if done := b.do(http.MethodPost, "/account/recovery-codes/saved", savedForm("wizard", shown, true), enHeader); done.status != http.StatusSeeOther {
+			t.Errorf("tick=%v: ticking the new set = %d", tick, done.status)
+		}
+	}
+}
+
+// A tab with the previous set, ticked after a newer set was made, confirms nothing.
+func TestTheTickOfAnOlderSetDoesNotConfirmTheNewerOne(t *testing.T) {
+	b, _, first := wizardCodes(t)
+	second := recoveryCodesOn(t, b.do(http.MethodPost, "/account/recovery-codes", url.Values{}, enHeader).body)
+	r := b.do(http.MethodPost, "/account/recovery-codes/saved", savedForm("wizard", first, true), enHeader)
+	if r.status == http.StatusSeeOther {
+		t.Fatalf("the old set's tick let the wizard continue")
+	}
+	acc, _ := b.db.AccountByUsername("mama")
+	if set, _ := b.db.RecoverySet(acc.PersonID); !set.SavedAt.IsZero() {
+		t.Error("the newer set counts as saved though the person saw the older one")
+	}
+	third := recoveryCodesOn(t, r.body)
+	if sameCodes(third, first) || sameCodes(third, second) {
+		t.Errorf("the page shows a set that is void or was not made new: %v", third)
+	}
+}
+
+// The refused card on My account says nothing about success.
+func TestRefusedCardOnMyAccountShowsNoSuccessLine(t *testing.T) {
+	b, _, codes := wizardCodes(t)
+	b.do(http.MethodPost, "/account/recovery-codes/saved", savedForm("wizard", codes, true), enHeader)
+	fresh := recoveryCodesOn(t, b.do(http.MethodPost, "/account/recovery-codes", url.Values{"fresh": {"1"}}, enHeader).body)
+	r := b.do(http.MethodPost, "/account/recovery-codes/saved", savedForm("account", fresh, false), enHeader)
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "Tick the box once you have saved the codes.") {
+		t.Fatalf("refused = %d", r.status)
+	}
+	if strings.Contains(r.body, "New recovery codes created") {
+		t.Errorf("a refused card shows the success line\n%s", r.body)
+	}
+}
+
+// The invited parent's last step has the same gate.
+func TestTheGateAlsoHoldsInTheInviteFlow(t *testing.T) {
+	e := newInviteBox(t)
+	token := e.create()
+	e.b.logout()
+	e.en(http.MethodPost, "/invite/"+token+"/account", acceptForm("papa", "papas long password"))
+	secret := secretOn(t, e.en(http.MethodGet, "/setup/totp", nil).body)
+	code, _ := auth.TOTPCode(secret, e.b.now)
+	card := e.en(http.MethodPost, "/setup/totp", url.Values{"code": {code}})
+	codes := recoveryCodesOn(t, card.body)
+	if len(codes) != 10 || !strings.Contains(card.body, `name="flow" value="invite"`) {
+		t.Fatalf("invite card has %d codes\n%s", len(codes), card.body)
+	}
+	r := e.en(http.MethodPost, "/account/recovery-codes/saved", savedForm("invite", codes, false))
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-saved"`) || !sameCodes(recoveryCodesOn(t, r.body), codes) {
+		t.Fatalf("invite without tick = %d\n%s", r.status, r.body)
+	}
+	done := e.en(http.MethodPost, "/account/recovery-codes/saved", savedForm("invite", codes, true))
+	if done.status != http.StatusSeeOther || done.location != "/" {
+		t.Fatalf("invite with tick = %d %q", done.status, done.location)
+	}
+	acc, _ := e.b.db.AccountByUsername("papa")
+	if set, _ := e.b.db.RecoverySet(acc.PersonID); set.SavedAt.IsZero() {
+		t.Error("the invited parent's set is not marked as saved")
 	}
 }

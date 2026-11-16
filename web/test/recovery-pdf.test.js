@@ -104,10 +104,11 @@ function element(tag, attrs = {}) {
   return el;
 }
 
-function page({ blob = true } = {}) {
+function page({ blob = true, ticked = false } = {}) {
   const form = element('form');
   const save = element('div'); const gate = element('div');
   const pdfButton = element('button'); const box = element('input'); const submit = element('button', { 'aria-disabled': 'true' });
+  box.checked = ticked;
   const lock = element('p'); const actions = element('div'); const label = element('label');
   const docJson = element('script'); docJson.textContent = JSON.stringify(DOC);
   const codeEls = CODES.map((c) => element('code', { 'data-recovery-code': c }));
@@ -185,4 +186,30 @@ test('the tick makes the button available, clears the error and lets the form go
   p.box.fire('change');
   assert.equal(p.submit.attrs['aria-disabled'], 'true');
   assert.equal(p.lock.hidden, false);
+});
+
+test('a page restored with the box still ticked (back/forward cache) opens with the button available and the lock hint gone', () => {
+  const p = page({ ticked: true });
+  assert.equal('aria-disabled' in p.submit.attrs, false);
+  assert.equal(p.lock.hidden, true);
+});
+
+test('a page opened unticked stays locked', () => {
+  const p = page();
+  assert.equal(p.submit.attrs['aria-disabled'], 'true');
+  assert.notEqual(p.lock.hidden, true);
+});
+
+test('everything on the A4 sheet also lies inside the printable area of US Letter (0.25 in margin, what printers leave unprintable), so it prints whole on either paper', () => {
+  const pdf = latin1(load().build(DOC, CODES));
+  const stream = pdf.slice(pdf.indexOf('stream'), pdf.indexOf('endstream'));
+  const points = [];
+  for (const m of stream.matchAll(/(-?[\d.]+) (-?[\d.]+) (?:Td|m|l)\b/g)) points.push([Number(m[1]), Number(m[2])]);
+  assert.ok(points.length > 40, 'the page has content');
+  const A4H = 841.89, LW = 612, LH = 792, M = 18;
+  for (const [x, y] of points) {
+    assert.ok(x >= M && x <= LW - M, 'x ' + x + ' is inside the width of Letter');
+    const top = A4H - y; // measured from the top edge, as the sheet is laid out
+    assert.ok(top >= M && top <= LH - M, 'y ' + top + ' from the top is inside the height of Letter');
+  }
 });

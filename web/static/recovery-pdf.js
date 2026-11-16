@@ -151,7 +151,7 @@
     });
 
     // Footer: that the box keeps no readable copy, and the box name.
-    var fy = H - MT;
+    var fy = 792 - MT; // from the top of US Letter's height, so the footer stays on the sheet on Letter and on A4
     line(MX, fy - 22, W - MX, fy - 22, 0.75, 0.6);
     var boxW = width(doc.box, "F1", 9), showBox = boxW < 170;
     var fl = wrap(doc.footer, "F1", 9, contentW - (showBox ? boxW + 16 : 0));
@@ -251,6 +251,7 @@
   }
   if (box && submit) {
     box.addEventListener("change", sync);
+    sync(); // a page restored from the back/forward cache keeps its tick
     form.addEventListener("submit", function (e) {
       if (box.checked) return;
       e.preventDefault();

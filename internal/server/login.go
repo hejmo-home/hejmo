@@ -30,7 +30,31 @@ func (s *server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 			http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
 		}
 	}
+	s.withPasskeyWay(r, data)
 	s.render(w, r, http.StatusOK, "login.html", data)
+}
+
+// withPasskeyWay adds to the sign-in page what it says about passkeys
+// (ticket 95): the way to sign in with one when the box was reached by its
+// name, which of the two ways is the main action on this device, why there is
+// none over an IP address, and the error after a passkey that did not work.
+func (s *server) withPasskeyWay(r *http.Request, data map[string]any) {
+	if s.atBoxName(r) {
+		data["Passkey"] = true
+		if c, err := r.Cookie(passkeyUsedCookie); err == nil && c.Value == "1" {
+			data["PasskeyMain"] = true
+		}
+	} else if s.anyPasskey() {
+		data["PasskeyNotice"] = map[string]string{"Here": hostOf(r), "Name": s.boxName(), "URL": s.boxURL("/login")}
+	}
+	switch r.URL.Query().Get("passkey") {
+	case "gone":
+		data["PasskeyError"], data["PasskeyAnother"] = "login.passkey.gone", true
+	case "cancelled":
+		data["PasskeyError"] = "login.passkey.cancelled"
+	case "failed":
+		data["PasskeyError"] = "login.passkey.failed"
+	}
 }
 
 func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +64,7 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	data := map[string]any{"Username": username, "Next": next}
 	if s.limiter.blocked(key) {
 		data["Error"] = "login.error.limit"
+		s.withPasskeyWay(r, data)
 		s.render(w, r, http.StatusTooManyRequests, "login.html", data)
 		return
 	}
@@ -62,6 +87,7 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		// Deliberately one error at the password field: it must not reveal which of
 		// username, password or code was wrong; the text names all three.
 		data["Error"], data["ErrorField"] = "login.error.credentials", "password"
+		s.withPasskeyWay(r, data)
 		s.render(w, r, http.StatusUnauthorized, "login.html", data)
 		return
 	}

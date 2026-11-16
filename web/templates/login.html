@@ -2,13 +2,26 @@
   <h1>{{t "login.title"}}</h1>
   {{if .SignedOut}}<p class="notice top" role="status" data-signed-out>{{t "login.signed_out"}}</p>{{end}}
   {{template "error" .}}
-  <form method="post" action="/login" class="steps">
-    {{if .Next}}<input type="hidden" name="next" value="{{.Next}}">{{end}}
-    <fieldset>
-      {{template "field" (dict "Root" . "Name" "username" "Label" (t "setup.field.username") "Value" .Username "Required" true "Autocomplete" "username" "Autocapitalize" "none")}}
-      {{template "field" (dict "Root" . "Name" "password" "Label" (t "setup.field.password") "Type" "password" "Required" true "Autocomplete" "current-password")}}
-      {{template "field" (dict "Root" . "Name" "code" "Label" (t "login.code_or_recovery") "Autocomplete" "one-time-code" "Autocapitalize" "characters")}}
-    </fieldset>
-    <button class="button" type="submit">{{t "login.submit"}}</button>
-  </form>
+  {{if .PasskeyError}}<p class="error" role="alert" data-passkey-error>{{t .PasskeyError}}</p>{{end}}
+  {{with .PasskeyNotice}}<p class="notice" data-passkey-notice>{{template "keyIconInline"}} {{t "login.passkey.ip.lead"}} {{t "login.passkey.ip.before"}} <span class="host">{{.Here}}</span> {{t "login.passkey.ip.after"}} <a href="{{.URL}}">{{t "login.passkey.ip.link.pre"}} <span class="host">{{.Name}}</span>{{with t "login.passkey.ip.link.post"}} {{.}}{{end}}</a></p>{{end}}
+  {{if and .Passkey .PasskeyMain}}
+  <p class="lead">{{t "login.passkey.last"}}</p>
+  <div class="signin-pk" data-passkey-scope data-next="{{.Next}}">
+    <div class="actions"><button class="button pk" type="button" data-passkey-signin>{{template "keyIcon"}}{{t "login.passkey.button"}}</button></div>
+    <p class="hint">{{t "login.passkey.main.hint"}}</p>
+  </div>
+  {{template "moreOpen" (dict "Label" (t "login.passkey.other") "Open" (or .Error .ErrorField))}}
+    {{template "loginForm" (dict "Root" . "Primary" false)}}
+  {{template "moreClose"}}
+  {{else}}
+  {{template "loginForm" (dict "Root" . "Primary" true)}}
+  {{if .Passkey}}
+  <p class="or">{{t "login.passkey.or"}}</p>
+  <div class="signin-pk" data-passkey-scope data-next="{{.Next}}">
+    <div class="actions"><button class="button secondary pk" type="button" data-passkey-signin>{{template "keyIcon"}}{{if .PasskeyAnother}}{{t "login.passkey.another"}}{{else}}{{t "login.passkey.button"}}{{end}}</button></div>
+    {{if not .PasskeyAnother}}<p class="hint">{{t "login.passkey.hint"}}</p>{{end}}
+  </div>
+  {{end}}
+  {{end}}
+  {{if .Passkey}}<script src="/static/passkey.js" defer data-cancelled="/login?passkey=cancelled" data-gone="/login?passkey=gone" data-failed="/login?passkey=failed"></script>{{end}}
 {{template "foot"}}

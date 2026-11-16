@@ -37,7 +37,7 @@ const (
 )
 
 // alwaysNames are reachable on every box besides the name used during setup.
-var alwaysNames = []string{"hejmo.local", "localhost"}
+var alwaysNames = []string{"hejmo.local", "localhost"} // "hejmo.local" is the box name of passkeys (internal/passkey.LocalName)
 
 // Store keeps the CA and the box certificate in a directory (mode 0700).
 type Store struct {

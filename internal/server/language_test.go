@@ -285,8 +285,8 @@ func TestSwitcherOnSetupAndTrustPagesButNotOnDisplays(t *testing.T) {
 		}
 	}
 	b := signedInBox(t)
-	if r := b.get("/otp"); r.status != http.StatusOK || !strings.Contains(r.body, `<details class="lang">`) {
-		t.Errorf("/otp: %d, switcher missing", r.status)
+	if r := b.get("/account"); r.status != http.StatusOK || !strings.Contains(r.body, `<details class="lang">`) {
+		t.Errorf("/account: %d, switcher missing", r.status)
 	}
 	if r := b.get("/display"); strings.Contains(r.body, `class="lang"`) || strings.Contains(r.body, "/language") {
 		t.Errorf("display page carries the switcher:\n%s", r.body)
@@ -325,14 +325,14 @@ func TestFlagsAreServed(t *testing.T) {
 // a German browser that switched to English gets no German on the page.
 func TestHandlerBuiltTextFollowsTheSwitchedLanguage(t *testing.T) {
 	b := signedInBox(t)
-	b.post("/language", langForm("en", "/otp"))
+	b.post("/language", langForm("en", "/account"))
 	de := map[string]string{"Accept-Language": "de"}
-	page := b.do(http.MethodGet, "/otp", nil, de)
+	page := b.do(http.MethodGet, "/account", nil, de)
 	if pageLang(t, page.body) != "en" {
 		t.Fatalf("page language:\n%s", page.body)
 	}
-	if !strings.Contains(page.body, "Recovery codes left: ") || strings.Contains(page.body, "Wiederherstellungscodes") {
-		t.Errorf("/otp still has German handler text:\n%s", page.body)
+	if !strings.Contains(page.body, "of 10 left") || strings.Contains(page.body, "übrig") {
+		t.Errorf("/account still has German handler text:\n%s", page.body)
 	}
 	cals := b.do(http.MethodGet, "/calendars", nil, de)
 	if cals.status != http.StatusOK {
@@ -359,7 +359,7 @@ func TestHandlerBuiltTextFollowsTheSwitchedLanguage(t *testing.T) {
 // texts, headers); without the per-request memo each of those is a lookup.
 func TestPageLanguageIsLookedUpOncePerRequest(t *testing.T) {
 	b := signedInBox(t)
-	for _, path := range []string{"/", "/otp", "/calendars", "/calendar?week=2026-12-25"} {
+	for _, path := range []string{"/", "/account", "/calendars", "/calendar?week=2026-12-25"} {
 		stop := server.CountLanguageLookups(t)
 		page := b.get(path)
 		n := stop()

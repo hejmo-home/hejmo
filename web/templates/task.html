@@ -27,11 +27,12 @@
           {{if .CanUp}}<form method="post" action="/tasks/{{$.Task.ID}}/subtasks/{{.ID}}/move"><button class="button secondary sq" type="submit" name="direction" value="up" aria-label="{{tf "routine.move.up" "title" .Title}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>{{t "routine.up"}}</button></form>{{end}}
           {{if .CanDown}}<form method="post" action="/tasks/{{$.Task.ID}}/subtasks/{{.ID}}/move"><button class="button secondary sq" type="submit" name="direction" value="down" aria-label="{{tf "routine.move.down" "title" .Title}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>{{t "routine.down"}}</button></form>{{end}}
         </span>
-        {{template "moreOpen" (dict "Label" (t "tasks.sub.more"))}}
+        {{$edit := eq $.SubEditID .ID}}{{$root := dict "ErrorField" "" "Error" ""}}{{$title := .Title}}{{$emoji := .Emoji}}{{if $edit}}{{$root = $}}{{$title = index $.SubForm "Title"}}{{$emoji = index $.SubForm "Emoji"}}{{end}}
+        {{template "moreOpen" (dict "Label" (t "tasks.sub.more") "Open" $edit)}}
           <form method="post" action="/tasks/{{$.Task.ID}}/subtasks/{{.ID}}" class="inner">
             <div class="pair">
-              <div class="f"><label>{{t "tasks.sub.field.title"}}<input name="title" type="text" value="{{.Title}}" required maxlength="120"></label></div>
-              <div class="f short"><label>{{t "tasks.sub.field.emoji"}}<input name="emoji" type="text" value="{{.Emoji}}" maxlength="16"></label></div>
+              {{template "field" (dict "Root" $root "Name" "title" "Label" (t "tasks.sub.field.title") "Value" $title "Required" true "Max" 120)}}
+              {{template "field" (dict "Root" $root "Name" "emoji" "Label" (t "tasks.sub.field.emoji") "Value" $emoji "Max" 16 "Class" "short")}}
             </div>
             <button class="button secondary" type="submit">{{t "tasks.sub.save"}}</button>
           </form>
@@ -44,9 +45,10 @@
       {{end}}</ol>
     {{else}}<p class="subempty">{{.SubsEmpty}}</p>{{end}}
     {{if .SubsFull}}<p class="hint full">{{.SubsLimit}}</p>{{else}}<form method="post" action="/tasks/{{.Task.ID}}/subtasks" class="subadd" id="add">
+      {{$addRoot := .}}{{$addTitle := index .SubForm "Title"}}{{$addEmoji := index .SubForm "Emoji"}}{{if .SubEditID}}{{$addRoot = dict "ErrorField" "" "Error" ""}}{{$addTitle = ""}}{{$addEmoji = ""}}{{end}}
       <div class="pair">
-        {{template "field" (dict "Root" . "Name" "title" "Label" (t "tasks.sub.add.label") "Value" (index .SubForm "Title") "Max" 120 "Placeholder" (t "tasks.sub.add.placeholder"))}}
-        {{template "field" (dict "Root" . "Name" "emoji" "Label" (t "tasks.sub.field.emoji") "Value" (index .SubForm "Emoji") "Max" 16 "Class" "short")}}
+        {{template "field" (dict "Root" $addRoot "Name" "title" "Label" (t "tasks.sub.add.label") "Value" $addTitle "Max" 120 "Placeholder" (t "tasks.sub.add.placeholder"))}}
+        {{template "field" (dict "Root" $addRoot "Name" "emoji" "Label" (t "tasks.sub.field.emoji") "Value" $addEmoji "Max" 16 "Class" "short")}}
       </div>
       <p class="hint">{{t "tasks.sub.add.hint"}}</p>
       <button class="button secondary" type="submit"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "tasks.sub.add"}}</button>

@@ -199,3 +199,44 @@ func TestChildCannotEditSubtasksInTheWebInterface(t *testing.T) {
 		}
 	}
 }
+
+// With one subtask, removing it leaves a plain open task: no sentence about
+// completing the task.
+func TestRemoveSentenceIsNotShownForTheOnlySubtask(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	id := tb.newDaily(t, tb.miaID)
+	b.post("/tasks/"+id+"/subtasks", url.Values{"title": {"Books"}})
+	page := pageEN(b, "/tasks/"+id).body
+	if strings.Contains(page, "last open subtask") {
+		t.Errorf("one subtask must not announce that the task is done:\n%s", page)
+	}
+	if !strings.Contains(page, "Removing only deletes this subtask.") {
+		t.Errorf("the usual remove sentence is missing:\n%s", page)
+	}
+}
+
+// A refused edit shows the error at the field in that row, with what was typed.
+func TestSubtaskEditErrorsAppearInTheRowWithTheTypedValues(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	id, subs := tb.schoolBag(t)
+	r := b.do(http.MethodPost, "/tasks/"+id+"/subtasks/"+subs[1], url.Values{"title": {" "}, "emoji": {"✏️"}}, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("blank title = %d", r.status)
+	}
+	i := strings.Index(r.body, `data-sub="`+subs[1]+`"`)
+	j := strings.Index(r.body[i:], "</li>")
+	if i < 0 || j < 0 {
+		t.Fatalf("row not found:\n%s", r.body)
+	}
+	row := r.body[i : i+j]
+	for _, want := range []string{`aria-invalid="true"`, `role="alert"`, "Please enter a title for the subtask.", `value="✏️"`, "<details class=\"more\" open"} {
+		if !strings.Contains(row, want) {
+			t.Errorf("row lacks %q:\n%s", want, row)
+		}
+	}
+	if strings.Count(r.body, `role="alert"`) != 1 {
+		t.Errorf("the error must show once, at the field:\n%s", r.body)
+	}
+}

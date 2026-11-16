@@ -300,3 +300,20 @@ func TestSubtasksOfDayAreGroupedPerTaskAndDeletedWithTheTask(t *testing.T) {
 		t.Fatalf("subtasks outlived their task: %+v", by)
 	}
 }
+
+// Unticking a task that is already open leaves the ticks of its subtasks alone.
+func TestUntickingAnOpenTaskKeepsItsSubtaskTicks(t *testing.T) {
+	f := newTaskFixture(t)
+	k, subs := f.schoolBag(t)
+	for _, s := range subs[:2] {
+		if _, err := f.db.SetSubtaskDone(f.h.ID, k.ID, s.ID, subDay, true, "", taskNow); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := f.db.SetTaskDone(f.h.ID, k.ID, subDay, false, "", taskNow); err != nil {
+		t.Fatal(err)
+	}
+	if !f.subDone(t, k.ID, subs[0].ID, subDay) || !f.subDone(t, k.ID, subs[1].ID, subDay) {
+		t.Fatal("ticks of an open task were cleared")
+	}
+}

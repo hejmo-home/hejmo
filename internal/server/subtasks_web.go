@@ -86,6 +86,7 @@ func (s *server) subtaskTitle(p principal, taskID, subID string) string {
 
 // subtaskForm is what was typed into the form of a subtask that was refused.
 type subtaskForm struct {
+	ID           string // the subtask whose edit was refused; "" for the add form
 	Title, Emoji string
 	Error, Field string // text key and the field it belongs to; Field "" shows it above the page
 }
@@ -150,7 +151,7 @@ func (s *server) handleSubtaskSave(w http.ResponseWriter, r *http.Request) {
 	case err == nil:
 		s.redirectSavedSub(w, r, "/tasks/"+id+"#subs", "flash.sub_saved", strings.TrimSpace(title))
 	case errors.Is(err, store.ErrInvalid):
-		s.renderTaskPageWith(w, r, p, http.StatusUnprocessableEntity, nil, &subtaskForm{Error: subtaskErrorKey(err)})
+		s.renderTaskPageWith(w, r, p, http.StatusUnprocessableEntity, nil, &subtaskForm{ID: sub, Title: title, Emoji: emoji, Error: subtaskErrorKey(err), Field: subtaskErrorField(err)})
 	default:
 		s.subtaskFailed(w, r, err)
 	}
@@ -291,7 +292,7 @@ func (s *server) subtaskCard(data map[string]any, p principal, t task.Task, owne
 	for i, k := range view.Subs {
 		row := subRow{subView: k, CanUp: i > 0, CanDown: i < total-1}
 		row.Remove = s.i18n.T(lang, "tasks.sub.remove.explain")
-		if !k.Done && total-done == 1 && !taskDone.Done {
+		if total >= 2 && !k.Done && total-done == 1 && taskDone.Due && !taskDone.Done {
 			row.Remove = say("tasks.sub.remove.last", "title", k.Title)
 		}
 		rows = append(rows, row)

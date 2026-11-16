@@ -383,6 +383,7 @@ func (s *server) renderTaskPageWith(w http.ResponseWriter, r *http.Request, p pr
 	data["SubForm"] = map[string]string{}
 	if sub != nil {
 		data["SubForm"] = map[string]string{"Title": sub.Title, "Emoji": sub.Emoji}
+		data["SubEditID"] = sub.ID
 		data["Error"], data["ErrorField"] = sub.Error, sub.Field
 	}
 	if err := s.subtaskCard(data, p, t, owner.Name, lang); err != nil {

@@ -204,7 +204,7 @@ func (db *DB) DeleteTask(householdID, id string) error {
 // changes nothing. A change books the task's stars into the person's star log
 // in the same transaction: ticking credits them, unticking deducts what was
 // credited (ADR 0018). Ticking the task ticks all its subtasks for that day,
-// unticking it unticks all of them. by is the person who ticked, empty for a
+// unticking it unticks all of them (only if it was done; an open task keeps its single subtask ticks). by is the person who ticked, empty for a
 // display.
 func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at time.Time) error {
 	t, err := db.Task(householdID, id)
@@ -219,14 +219,15 @@ func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at 
 		return err
 	}
 	defer tx.Rollback()
-	if _, _, err := setTaskDoneTx(tx, t, day, done, by, at); err != nil {
+	changed, _, err := setTaskDoneTx(tx, t, day, done, by, at)
+	if err != nil {
 		return err
 	}
 	if done {
 		_, err = tx.Exec(`INSERT INTO subtask_done (subtask_id, day, completed_at, completed_by)
 			SELECT id, ?, ?, NULLIF(?, '') FROM subtasks WHERE task_id = ?
 			ON CONFLICT (subtask_id, day) DO NOTHING`, day, at.UTC().Format(time.RFC3339), by, id)
-	} else {
+	} else if changed { // unticking an open task leaves single subtask ticks alone
 		_, err = tx.Exec(`DELETE FROM subtask_done WHERE day = ? AND subtask_id IN (SELECT id FROM subtasks WHERE task_id = ?)`, day, id)
 	}
 	if err != nil {

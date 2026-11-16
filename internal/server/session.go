@@ -31,16 +31,6 @@ func (s *server) clearDeviceMarker(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// hasSession reports whether the request carries a session the box knows.
-func (s *server) hasSession(r *http.Request) bool {
-	c, err := r.Cookie(sessionCookie)
-	if err != nil || c.Value == "" {
-		return false
-	}
-	_, err = s.db.SessionPerson(auth.HashToken(c.Value), s.now())
-	return err == nil
-}
-
 func (s *server) startSession(w http.ResponseWriter, r *http.Request, personID string) error {
 	_, err := s.startSessionHash(w, r, personID)
 	return err

@@ -398,7 +398,7 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
 		fr.setLanguage(lang, r)
-		fr.PlainBrand, _ = data["PlainBrand"].(bool)
+		fr.PlainBrand = plainBrandPages[name]
 		if detailPages[name] && fr.Back { // a detail page links to its own overview, not to the hub
 			fr.Back, fr.BackHref, fr.BackLabel = false, "", ""
 		}

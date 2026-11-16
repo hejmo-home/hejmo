@@ -165,6 +165,10 @@ var hubItems = []hubItem{
 	{"/sessions", "hub.sessions", "hub.sessions.hint", auth.Perm("settings", auth.Write)},
 }
 
+// plainBrandPages are the templates whose brand is plain text, not a link: the
+// page of an unpaired device leads nowhere (ticket 199).
+var plainBrandPages = map[string]bool{"unpaired.html": true}
+
 // detailPages are the templates of detail pages (ticket 111, ADR 0017): they
 // start with a link back to their overview, which replaces the hub link.
 var detailPages = map[string]bool{

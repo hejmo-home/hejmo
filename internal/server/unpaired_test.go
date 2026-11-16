@@ -90,7 +90,6 @@ func TestEndedAdultBrowserSessionKeepsTheSignedOutNotice(t *testing.T) {
 
 func TestUnpairedPhoneRunOutSessionShowsThePageToo(t *testing.T) {
 	b, secret := configuredBox(t)
-	_ = secret
 	phone := pairedPhone(t, signedInFrom(t, b, secret), personNamed(t, b, "Mia"), "Phone")
 	b.now = b.now.Add(400 * 24 * time.Hour)
 	if r := phone.get("/login", "de"); !strings.Contains(r.body, "data-unpaired") {
@@ -150,7 +149,7 @@ func TestPairingAgainForgetsTheUnpairedPage(t *testing.T) {
 	}
 }
 
-func TestUnpairedMarkerIsHarmless(t *testing.T) {
+func TestPairingSetsTheDeviceMarker(t *testing.T) {
 	b := signedInBox(t)
 	path := showCode(t, b)
 	req, _ := http.NewRequest(http.MethodGet, b.srv.URL+path, nil)
@@ -173,5 +172,38 @@ func TestUnpairedMarkerIsHarmless(t *testing.T) {
 	}
 	if !found {
 		t.Error("pairing sets no marker cookie")
+	}
+}
+
+func TestPasskeyErrorOnAnUnpairedDeviceShowsTheSignIn(t *testing.T) {
+	_, phone, _ := unpairedPhone(t)
+	for _, v := range []string{"failed", "cancelled", "gone"} {
+		r := phone.get("/login?passkey="+v, "de")
+		if strings.Contains(r.body, "data-unpaired") || !strings.Contains(r.body, `name="password"`) {
+			t.Errorf("passkey=%s on an unpaired device did not show the sign-in:\n%s", v, r.body)
+		}
+	}
+}
+
+func TestUnpairedPageLinksToTheSignInWithTheNextPage(t *testing.T) {
+	_, phone, _ := unpairedPhone(t)
+	r := phone.get("/login?next=/tasks", "de")
+	if !strings.Contains(r.body, `href="/login?account=1&amp;next=%2ftasks"`) && !strings.Contains(r.body, `href="/login?account=1&amp;next=/tasks"`) && !strings.Contains(r.body, `href="/login?account=1&next=%2Ftasks"`) {
+		t.Errorf("sign-in link drops next:\n%s", r.body)
+	}
+}
+
+func TestPairingAgainAfterASecondRevokeShowsThePageAgain(t *testing.T) {
+	b, phone, _ := unpairedPhone(t)
+	path := showCode(t, b)
+	phone.get(path, "en")
+	confirmPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
+	phone.get(path, "en")
+	id := phoneIDRe.FindStringSubmatch(b.get("/phones").body)[1]
+	if r := b.post("/phones/"+id+"/revoke", url.Values{}); r.status != http.StatusSeeOther {
+		t.Fatalf("revoke = %d", r.status)
+	}
+	if r := phone.get("/login", "de"); !strings.Contains(r.body, "data-unpaired") {
+		t.Fatalf("second revoke did not show the page:\n%s", r.body)
 	}
 }

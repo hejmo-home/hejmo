@@ -14,7 +14,7 @@
   </section>
   {{template "moreOpen" (dict "Label" (t "unpaired.adult"))}}
     <p class="hint">{{t "unpaired.adult.hint"}}</p>
-    <a class="button secondary" href="/login?account=1">{{t "unpaired.adult.button"}}</a>
+    <a class="button secondary" href="/login?account=1{{if .Next}}&next={{.Next}}{{end}}">{{t "unpaired.adult.button"}}</a>
   {{template "moreClose"}}
 </div>
 {{template "foot"}}

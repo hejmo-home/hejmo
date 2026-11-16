@@ -54,7 +54,9 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	secondOK := s.secondFactorOK(acc, r.PostFormValue("code"), err == nil && passwordOK)
 	// After a reset (ADR 0017) the password alone leads on to setting up new
 	// one-time codes; until they are confirmed the session reaches nothing else.
-	pendingSetup := err == nil && passwordOK && acc.TOTPReset && !acc.TOTPConfirmed
+	// The same holds for a parent who accepted an invitation and stopped before
+	// the one-time code (ticket 145): finished at the next sign-in.
+	pendingSetup := err == nil && passwordOK && !acc.TOTPConfirmed && (acc.TOTPReset || s.db.Configured())
 	if err != nil || !passwordOK || (!pendingSetup && !secondOK) {
 		s.limiter.fail(key)
 		// Deliberately one error at the password field: it must not reveal which of
@@ -140,5 +142,10 @@ func localPath(p string) string {
 
 func (s *server) handleLogout(w http.ResponseWriter, r *http.Request) {
 	s.endSession(w, r)
+	// Whoever signs out on the page of an invitation comes back to it (ticket 145).
+	if next := localPath(r.PostFormValue("next")); strings.HasPrefix(next, "/invite/") {
+		http.Redirect(w, r, next, http.StatusSeeOther)
+		return
+	}
 	http.Redirect(w, r, "/login", http.StatusSeeOther)
 }

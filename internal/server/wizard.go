@@ -25,11 +25,16 @@ type wizardStep struct {
 type wizardView struct {
 	Step  int
 	Steps []wizardStep
+	// Total is the number of steps; CountKey and AriaKey name the texts above
+	// the progress ("Setup: step n of 4"). The invitation (ticket 145) has two
+	// or three steps and its own texts.
+	Total             int
+	CountKey, AriaKey string
 }
 
 // wizardAt returns the shell for step n of the first setup.
 func wizardAt(n int) *wizardView {
-	w := &wizardView{Step: n}
+	w := &wizardView{Step: n, Total: wizardSteps, CountKey: "setup.wizard.count", AriaKey: "setup.wizard.progress"}
 	if n < 1 {
 		return w
 	}

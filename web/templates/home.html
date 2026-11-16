@@ -1,4 +1,5 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "home.title") "Frame" .Frame)}}
+  {{with .PINFrom}}<p class="notice" role="status">{{tf "invite.done.pin" "name" .}}</p>{{end}}
   {{with .Child}}<h1 class="child-h"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span>{{t "home.hello"}} {{$.Person.Name}}</h1>
   {{else}}<h1>{{t "home.hello"}} {{.Person.Name}}</h1>{{end}}
   {{template "httpsNotice" .}}

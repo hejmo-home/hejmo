@@ -32,12 +32,46 @@ const (
 )
 
 // displayToken returns the hash of the token in the display's cookie.
+// A display may send it as its cookie (the web pages) or as a bearer token
+// (the API, ADR 0015); a Bearer header wins.
 func displayToken(r *http.Request) (string, bool) {
+	if header := r.Header.Get("Authorization"); header != "" {
+		// Only a Bearer header is a display token; another scheme (say Basic
+		// auth added by a reverse proxy) leaves the cookie in charge.
+		if token, ok := strings.CutPrefix(header, "Bearer "); ok {
+			token = strings.TrimSpace(token)
+			if token == "" {
+				return "", false
+			}
+			return auth.HashToken(token), true
+		}
+	}
 	c, err := r.Cookie(displayCookie)
 	if err != nil || c.Value == "" {
 		return "", false
 	}
 	return auth.HashToken(c.Value), true
+}
+
+// errPairingsLimited is returned while one address opened too many pairings.
+var errPairingsLimited = errors.New("too many pairings opened")
+
+// openPairing registers a new waiting display for a request that carries no
+// valid display token. It returns the display and its token, which only the
+// caller sees: the box keeps its hash. Opening is limited per client address.
+func (s *server) openPairing(r *http.Request, h store.Household) (store.Display, string, error) {
+	ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
+	if splitErr != nil {
+		ip = r.RemoteAddr
+	}
+	key := "open:" + ip
+	if s.opens.blocked(key) {
+		return store.Display{}, "", errPairingsLimited
+	}
+	s.opens.fail(key)
+	token := auth.NewToken()
+	d, err := s.db.OpenPairing(h.ID, auth.HashToken(token), s.now())
+	return d, token, err
 }
 
 // currentDisplay finds the display behind the request's token.
@@ -74,23 +108,18 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	d, hash, ok := s.currentDisplay(r)
 	if !ok {
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
-		}
-		key := "open:" + ip
-		if s.opens.blocked(key) {
+		var token string
+		d, token, err = s.openPairing(r, h)
+		if errors.Is(err, errPairingsLimited) {
 			w.Header().Set("Retry-After", "600")
 			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 			return
 		}
-		s.opens.fail(key)
-		token := auth.NewToken()
-		hash = auth.HashToken(token)
-		if d, err = s.db.OpenPairing(h.ID, hash, s.now()); err != nil {
+		if err != nil {
 			s.fail(w, "open pairing", err)
 			return
 		}
+		hash = auth.HashToken(token)
 		http.SetCookie(w, &http.Cookie{
 			Name: displayCookie, Value: token, Path: "/", Expires: s.now().AddDate(10, 0, 0),
 			HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
@@ -321,6 +350,14 @@ func (s *server) homeWeather(h store.Household) *familyview.Weather {
 // "paired", "pairing" (with its code) or "unpaired" (revoked, unknown or its
 // code ran out). The display's script reloads the page when this changes.
 func (s *server) handleDisplayState(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	_ = json.NewEncoder(w).Encode(s.displayState(r))
+}
+
+// displayState is the answer of the state check, for the page route and the
+// API route alike. It touches a paired display's last-seen time.
+func (s *server) displayState(r *http.Request) map[string]string {
 	state := map[string]string{"state": "unpaired"}
 	if d, hash, ok := s.currentDisplay(r); ok {
 		switch {
@@ -336,9 +373,7 @@ func (s *server) handleDisplayState(w http.ResponseWriter, r *http.Request) {
 			state["state"], state["code"] = "pairing", d.Code
 		}
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	_ = json.NewEncoder(w).Encode(state)
+	return state
 }
 
 // errTooManyAttempts is returned while too many wrong codes were entered.

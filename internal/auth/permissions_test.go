@@ -139,3 +139,48 @@ func TestMCPAccessReadsScopesBackAsAreaLevels(t *testing.T) {
 		}
 	}
 }
+
+// Ticket 163 (ADR 0019): diet and allergies are health data. Only an explicit
+// scope of the resource reaches them; the broad scopes and children do not.
+func TestHealthDataNeedsAnExplicitScopeAndAParent(t *testing.T) {
+	read, write := auth.Perm("health", auth.Read), auth.Perm("health", auth.Write)
+	for _, scopes := range []string{"read", "write", "people", "people:read"} {
+		if auth.ScopesAllow(scopes, read) || auth.ScopesAllow(scopes, write) {
+			t.Errorf("scopes %q reach health data", scopes)
+		}
+	}
+	if !auth.ScopesAllow("health:read", read) || auth.ScopesAllow("health:read", write) {
+		t.Error("health:read is read only")
+	}
+	if !auth.ScopesAllow("events health", write) {
+		t.Error("the resource scope allows everything on health")
+	}
+	if err := auth.ValidateScopes("health:read"); err != nil {
+		t.Error(err)
+	}
+	if !auth.RoleAllows(store.RoleParent, read) || !auth.RoleAllows(store.RoleParent, write) {
+		t.Error("parents read and change")
+	}
+	for _, p := range []auth.Permission{read, write} {
+		if auth.RoleAllows(store.RoleChild, p) {
+			t.Errorf("a child may %s", p)
+		}
+	}
+}
+
+func TestMCPHealthAreaIsReadOnlyAndNeverImplied(t *testing.T) {
+	if _, err := auth.MCPScopes(map[string]auth.MCPLevel{"events": auth.MCPRead, "health": auth.MCPWrite}); err == nil {
+		t.Error("an MCP token got change rights on health data")
+	}
+	s, err := auth.MCPScopes(map[string]auth.MCPLevel{"events": auth.MCPWrite, "health": auth.MCPRead})
+	if err != nil || s != "events health:read" {
+		t.Errorf("scopes = %q, %v", s, err)
+	}
+	s, _ = auth.MCPScopes(map[string]auth.MCPLevel{"events": auth.MCPWrite})
+	if auth.MCPAccess(s)["health"] != auth.MCPNone {
+		t.Error("health is none unless granted")
+	}
+	if auth.MCPAccess("health:read")["health"] != auth.MCPRead {
+		t.Error("health:read reads back as read")
+	}
+}

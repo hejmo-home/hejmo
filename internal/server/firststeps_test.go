@@ -423,7 +423,7 @@ func TestFirstStepsParentsStepNamesTheOtherParentNotTheViewer(t *testing.T) {
 func TestFirstStepsParentsStepFollowsTheInvitation(t *testing.T) {
 	p := newPeopleBox(t)
 	// without any other adult the button asks to enter one
-	if parents := stepOf(t, card(homeDE(p.box)), 2); !strings.Contains(parents, `<a class="button" href="/people">Zweites Elternteil eintragen</a>`) {
+	if parents := stepOf(t, card(homeDE(p.box)), 2); !strings.Contains(parents, `<a class="link" href="/people">Zweites Elternteil eintragen</a>`) {
 		t.Errorf("no second adult:\n%s", parents)
 	}
 	p.add(t, "Papa", "parent")

@@ -152,7 +152,7 @@ func TestCreatingAnInvitationShowsQRCodeAndLinkOnceAndStoresOnlyAHash(t *testing
 	r := e.en(http.MethodPost, e.page(), nil)
 	for _, want := range []string{
 		"Invitation for Papa created.", `class="once invite-once"`, `<div class="pair-qr"><svg`, "QR code of the invitation for Papa",
-		`class="valid"`, "Works once, until <b>Sunday, 21/11/2026, 12:00</b>.", "data-invite-link", `data-copy="http`, "Whoever has the link", `<a class="button" href="` + e.page() + `">Done</a>`,
+		`class="valid"`, "Works once, until <b>Saturday, 21.11.2026, 13:00</b>.", "data-invite-link", `data-copy="http`, "Whoever has the link", `<a class="button" href="` + e.page() + `">Done</a>`,
 	} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("created page lacks %q\n%s", want, r.body)
@@ -177,7 +177,7 @@ func TestCreatingAnInvitationShowsQRCodeAndLinkOnceAndStoresOnlyAHash(t *testing
 	if strings.Contains(later, tok) || strings.Contains(later, "data-invite-link") {
 		t.Errorf("the link is shown again\n%s", later)
 	}
-	for _, want := range []string{"<h1>Invitation for Papa</h1>", `<span class="flag open">`, "Open</span> Papa has not created an account yet.", "<dt>Valid until</dt>", "Sunday, 21/11/2026, 12:00, once", "<dt>Created</dt>", "14/11/2026, 12:00 by you", "Only visible when created", ">Create new link</button>", "The old one stops working.", `<details class="danger">`, "Withdraw invitation"} {
+	for _, want := range []string{"<h1>Invitation for Papa</h1>", `<span class="flag open">`, "Open</span> Papa has not created an account yet.", "<dt>Valid until</dt>", "Saturday, 21.11.2026, 13:00, once", "<dt>Created</dt>", "14.11.2026, 13:00 by you", "Only visible when created", ">Create new link</button>", "the old one stops working.", `<details class="danger">`, "Withdraw invitation"} {
 		if !strings.Contains(later, want) {
 			t.Errorf("state page lacks %q\n%s", want, later)
 		}
@@ -245,7 +245,7 @@ func TestLinkExpiresAfterSevenDaysAndTheParentSeesIt(t *testing.T) {
 	}
 	e.b.now = e.b.now.Add(2 * time.Minute)
 	r := e.en(http.MethodGet, "/invite/"+tok, nil)
-	if r.status != http.StatusGone || !strings.Contains(r.body, "This invitation has expired") || !strings.Contains(r.body, "Sunday, 21/11/2026, 12:00") || !strings.Contains(r.body, "Please ask Mama for a new invitation.") {
+	if r.status != http.StatusGone || !strings.Contains(r.body, "This invitation has expired") || !strings.Contains(r.body, "Saturday, 21.11.2026, 13:00") || !strings.Contains(r.body, "Please ask Mama for a new invitation.") {
 		t.Errorf("expired link = %d\n%s", r.status, r.body)
 	}
 	if r := e.en(http.MethodPost, "/invite/"+tok+"/account", acceptForm("papa", "papas long password")); r.status == http.StatusSeeOther {
@@ -254,7 +254,7 @@ func TestLinkExpiresAfterSevenDaysAndTheParentSeesIt(t *testing.T) {
 	// Mama signs in again and sees it in words, with one action.
 	e.signInMama()
 	page := e.en(http.MethodGet, e.page(), nil).body
-	for _, want := range []string{`<span class="flag warn">`, "Expired</span> on Sunday, 21/11/2026, 12:00. The link no longer works.", ">Create new invitation</button>"} {
+	for _, want := range []string{`<span class="flag warn">`, "Expired</span> on Saturday, 21.11.2026, 13:00. The link no longer works.", ">Create new invitation</button>"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("expired state lacks %q\n%s", want, page)
 		}
@@ -286,7 +286,7 @@ func TestInvitedParentOpensTheLinkAndSeesWhoInvitesAndWhoTheyAre(t *testing.T) {
 	r := e.en(http.MethodGet, "/invite/"+tok, nil)
 	for _, want := range []string{
 		`<div class="wizard">`, "<h1>Mama invites you to Hejmo</h1>", "You are registered as", `class="invitee"`, `data-shape="circle-empty"`, "<span>Papa</span>",
-		"about 5 minutes", "2FAS", "The invitation works once, until <b>Sunday, 21/11/2026, 12:00</b>.", `href="/invite/` + tok + `/account"`, "Create account",
+		"about 5 minutes", "2FAS", "The invitation works once, until <b>Saturday, 21.11.2026, 13:00</b>.", `href="/invite/` + tok + `/account"`, "Create account",
 	} {
 		if r.status != http.StatusOK || !strings.Contains(r.body, want) {
 			t.Fatalf("welcome = %d, lacks %q\n%s", r.status, want, r.body)
@@ -296,7 +296,7 @@ func TestInvitedParentOpensTheLinkAndSeesWhoInvitesAndWhoTheyAre(t *testing.T) {
 		t.Error("the name must not be editable")
 	}
 	form := e.en(http.MethodGet, "/invite/"+tok+"/account", nil).body
-	for _, want := range []string{"<h1>Your account</h1>", `name="username"`, `value="papa"`, `name="password"`, `minlength="10"`, `autocomplete="new-password"`, "Create account", "Step 1 of 3"} {
+	for _, want := range []string{"<h1>Your account</h1>", `name="username"`, `value="papa"`, `name="password"`, `minlength="10"`, `autocomplete="new-password"`, "Create account", "Accepting the invitation: step 2 of 3"} {
 		if !strings.Contains(form, want) {
 			t.Errorf("account form lacks %q\n%s", want, form)
 		}
@@ -329,7 +329,7 @@ func TestAcceptingTheInvitationGoesThroughTheWizardAndLandsSignedInOnHome(t *tes
 		t.Errorf("home before the code = %d %q", home.status, home.location)
 	}
 	totp := e.en(http.MethodGet, "/setup/totp", nil).body
-	for _, want := range []string{"Accepting the invitation: step 2 of 2", `data-count="2"`, "Your account", "(done)", `data-totp-secret="`} {
+	for _, want := range []string{"Accepting the invitation: step 3 of 3", `data-count="3"`, "Your account", "(done)", `data-totp-secret="`} {
 		if !strings.Contains(totp, want) {
 			t.Errorf("one-time code page lacks %q\n%s", want, totp)
 		}
@@ -340,7 +340,7 @@ func TestAcceptingTheInvitationGoesThroughTheWizardAndLandsSignedInOnHome(t *tes
 	}
 	code, _ := auth.TOTPCode(secret, e.b.now)
 	codes := e.en(http.MethodPost, "/setup/totp", url.Values{"code": {code}})
-	if codes.status != http.StatusOK || !strings.Contains(codes.body, "Done, to Hejmo") || !strings.Contains(codes.body, "Accepting the invitation: step 2 of 2") || strings.Count(codes.body, "data-recovery-code=") != 10 {
+	if codes.status != http.StatusOK || !strings.Contains(codes.body, "Done, to Hejmo") || !strings.Contains(codes.body, "Accepting the invitation: step 3 of 3") || strings.Count(codes.body, "data-recovery-code=") != 10 {
 		t.Fatalf("recovery codes = %d\n%s", codes.status, codes.body)
 	}
 	home := e.en(http.MethodGet, "/", nil)
@@ -522,7 +522,7 @@ func TestAcceptedInvitationPageShowsWhenAndThroughWhomAndLinksToTheReset(t *test
 	e.signInMama()
 	page := e.en(http.MethodGet, e.page(), nil).body
 	for _, want := range []string{
-		"<h1>Papa&#39;s sign-in</h1>", "Can sign in", "<dt>Username</dt><dd>papa</dd>", "<dt>Account created</dt>", "15/11/2026, 19:00 through your invitation", "<dt>One-time code</dt>", "Set up, 10 recovery codes",
+		"<h1>Papa&#39;s sign-in</h1>", "Can sign in", "<dt>Username</dt>", "<dt>Account created</dt>", "15.11.2026, 20:00 through your invitation", "<dt>One-time code</dt>", "Set up, 10 recovery codes",
 		`<a href="/otp#reset">Reset Papa&#39;s one-time codes</a>`,
 	} {
 		if !strings.Contains(page, want) {
@@ -635,11 +635,28 @@ func (e *inviteEnv) headerOfPost(path, header string) string {
 func getPlain(t *testing.T, url string) resp {
 	t.Helper()
 	c := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
-	res, err := c.Get(url)
+	req, _ := http.NewRequest(http.MethodGet, url, nil)
+	req.Header.Set("Accept-Language", "en")
+	res, err := c.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 	defer res.Body.Close()
 	raw, _ := io.ReadAll(res.Body)
 	return resp{res.StatusCode, res.Header.Get("Location"), string(raw)}
+}
+
+// Without the box's own CA there is no trust step: two steps instead of three.
+func TestBoxWithAPublicCertificateHasTwoStepsAndNoTrustPage(t *testing.T) {
+	e := newInviteBox(t)
+	e.b.public.name = "hejmo.example.org"
+	tok := e.create()
+	e.b.logout()
+	if form := e.en(http.MethodGet, "/invite/"+tok+"/account", nil).body; !strings.Contains(form, "Accepting the invitation: step 1 of 2") || !strings.Contains(form, `data-count="2"`) {
+		t.Errorf("account form\n%s", form)
+	}
+	e.en(http.MethodPost, "/invite/"+tok+"/account", acceptForm("papa", "papas long password"))
+	if totp := e.en(http.MethodGet, "/setup/totp", nil).body; !strings.Contains(totp, "Accepting the invitation: step 2 of 2") || !strings.Contains(totp, `data-count="2"`) {
+		t.Errorf("one-time code page\n%s", totp)
+	}
 }

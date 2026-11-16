@@ -408,6 +408,7 @@ var notRendered = map[string]string{
 	"/otp":                      "redirect",
 	"/i/{token}":                "redirect",
 	"/setup/https/check":        "answers a fragment for the setup page's script",
+	"/places":                   "JSON list of places for the home location picker",
 	"/phones/join/{code}":       "one-time pairing link of a phone",
 }
 
@@ -481,7 +482,6 @@ func wizardPages(t *testing.T) []layoutPage {
 	household := func() *box {
 		b := newBox(t)
 		form := validSetupForm()
-		form.Set("home_name", "Haus am Münchner Stadtrand")
 		form.Set("name", "Wilhelmine")
 		if r := b.post("/setup", form); r.status != http.StatusSeeOther {
 			t.Fatalf("POST /setup = %d", r.status)

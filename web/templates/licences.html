@@ -1,0 +1,21 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "licences.title") "Frame" .Frame)}}
+  <h1>{{t "licences.title"}}</h1>
+  {{template "syncNotice" .}}
+  <p class="lead">{{t "licences.lead"}}</p>
+  <ul class="cards">
+    <li class="card" data-licence="geonames">
+      <h2>{{t "licences.geonames.title"}}</h2>
+      <p>{{tf "licences.geonames.notice" "date" .PlacesDate}}</p>
+      <p class="hint">{{t "licences.geonames.what"}}</p>
+      <p><a class="ext" href="https://www.geonames.org" rel="noopener noreferrer">{{t "licences.geonames.site"}}</a> · <a class="ext" href="https://creativecommons.org/licenses/by/4.0/" rel="noopener noreferrer">{{t "licences.geonames.licence"}}</a></p>
+    </li>
+    <li class="card" data-licence="figtree">
+      <h2>{{t "licences.figtree.title"}}</h2>
+      <p class="hint">{{t "licences.figtree"}}</p>
+    </li>
+    <li class="card" data-licence="hejmo">
+      <h2>{{t "licences.hejmo.title"}}</h2>
+      <p class="hint">{{t "licences.hejmo"}}</p>
+    </li>
+  </ul>
+{{template "foot"}}

@@ -137,6 +137,16 @@ func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {
 	}
 }
 
+// The 12-hour example keeps its space non-breaking, so "2:30 PM" never breaks across lines.
+func TestTwelveHourExampleDoesNotBreak(t *testing.T) {
+	b := i18n.MustLoad()
+	for _, lang := range []string{"de", "en"} {
+		if got := b.T(lang, "settings.time_format.12h"); !strings.Contains(got, "(2:30 PM)") {
+			t.Errorf("%s settings.time_format.12h = %q, want 2:30 PM with a non-breaking space", lang, got)
+		}
+	}
+}
+
 // Ticket #135: the connect page and the calendars page have all their texts in
 // both languages, every text the template asks for exists, and Apple's own menu
 // names appear per locale.

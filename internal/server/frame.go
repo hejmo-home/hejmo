@@ -134,7 +134,7 @@ func (s *server) sunFrame() frame {
 // isSetupPath reports whether path is a screen reached from the Settings hub
 // (ADR 0017): a hub entry or a page below one. Connections hang off Calendars.
 func isSetupPath(path string) bool {
-	paths := []string{"/connections"}
+	paths := []string{"/connections", "/settings/licences"}
 	for _, it := range hubItems {
 		paths = append(paths, it.Href)
 	}

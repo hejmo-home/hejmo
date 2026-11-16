@@ -338,6 +338,7 @@ func (db *DB) EditTask(householdID, id string, e TaskEdit) error {
 		return err
 	}
 	oldDay := t.Date
+	before := t
 	if e.Title != nil {
 		t.Title = strings.TrimSpace(*e.Title)
 	}
@@ -352,6 +353,9 @@ func (db *DB) EditTask(householdID, id string, e TaskEdit) error {
 	}
 	if err := t.Validate(); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalid, err)
+	}
+	if t.Title == before.Title && t.Notes == before.Notes && t.Date == before.Date {
+		return nil // a no-op re-save must not change the ETag clients sync on
 	}
 	tx, err := db.sql.Begin()
 	if err != nil {

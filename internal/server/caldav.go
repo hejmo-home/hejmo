@@ -100,6 +100,11 @@ func scopedTo(scopes, resource string) bool {
 	return false
 }
 
+// canRead says whether a token's scopes cover reading a resource.
+func canRead(scopes, resource string) bool {
+	return scopedTo(scopes, resource) && auth.ScopesAllow(scopes, auth.Perm(resource, auth.Read))
+}
+
 // davAllows decides whether a token may make a request. Addresses that belong
 // to both resources are open for reading to a token of either; changing them
 // is calendar business.
@@ -109,7 +114,7 @@ func davAllows(scopes, method, path string) (bool, auth.Permission) {
 	if res == "" {
 		if action == auth.Read {
 			for _, r := range []string{"calendars", "tasks"} {
-				if scopedTo(scopes, r) && auth.ScopesAllow(scopes, auth.Perm(r, auth.Read)) {
+				if canRead(scopes, r) {
 					return true, auth.Perm(r, auth.Read)
 				}
 			}
@@ -250,7 +255,7 @@ func (b *davBackend) ListCalendars(ctx context.Context) ([]webcal.Calendar, erro
 		return nil, err
 	}
 	var out []webcal.Calendar
-	if auth.ScopesAllow(sess.scopes, auth.Perm("calendars", auth.Read)) && scopedTo(sess.scopes, "calendars") {
+	if canRead(sess.scopes, "calendars") {
 		cals, err := b.served(sess)
 		if err != nil {
 			return nil, err
@@ -259,7 +264,7 @@ func (b *davBackend) ListCalendars(ctx context.Context) ([]webcal.Calendar, erro
 			out = append(out, b.toCalendar(sess, c))
 		}
 	}
-	if auth.ScopesAllow(sess.scopes, auth.Perm("tasks", auth.Read)) && scopedTo(sess.scopes, "tasks") {
+	if canRead(sess.scopes, "tasks") {
 		lists, err := b.taskLists(sess)
 		if err != nil {
 			return nil, err

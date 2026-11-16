@@ -345,3 +345,27 @@ func TestATaskIsOnlyReachableThroughItsPersonsList(t *testing.T) {
 		t.Fatalf("PUT through Mama's list = %d, want 403", status)
 	}
 }
+
+// A client completing (or moving) an overdue once task gets its saved state
+// back, even though the finished task falls out of the listing window.
+func TestCompletingAnOverdueOnceTaskSucceedsAndRetriesAreHarmless(t *testing.T) {
+	tb := newDavTaskBox(t)
+	old, err := tb.c.b.db.AddTask(tb.h.ID, task.Task{PersonID: tb.mia.ID, Title: "Old chore", Repeat: task.Once, Date: "2026-11-01", Stars: 3})
+	if err != nil {
+		t.Fatal(err)
+	}
+	body := todoICS(old.ID, "SUMMARY:Old chore", "DUE;VALUE=DATE:20261101", "STATUS:COMPLETED")
+	for i := 0; i < 2; i++ {
+		if status := tb.put(tb.href(old), body, nil); status != http.StatusCreated && status != http.StatusNoContent {
+			t.Fatalf("complete #%d = %d", i, status)
+		}
+	}
+	if got := tb.balance(t); got != 3 {
+		t.Fatalf("stars = %d, want 3", got)
+	}
+	// Moving a done once task's due date far back also answers normally.
+	moved := todoICS(tb.swim.ID, "SUMMARY:Pack swim bag", "DUE;VALUE=DATE:20261101", "STATUS:COMPLETED")
+	if status := tb.put(tb.href(tb.swim), moved, nil); status != http.StatusCreated && status != http.StatusNoContent {
+		t.Fatalf("move = %d", status)
+	}
+}

@@ -124,23 +124,32 @@ func (b *davBackend) offeredTasks(sess *davSession, owner store.Person) ([]offer
 		if t.PersonID != owner.ID {
 			continue
 		}
-		o := offered{t: t, day: todayDay}
-		if t.Repeat == task.Once {
-			o.day = t.Date
-		} else if !t.DueOn(todayDay) {
-			continue
-		}
-		at, done, err := b.s.db.TaskCompletedAt(t.ID, o.day)
+		o, ok, err := b.offer(t, todayDay)
 		if err != nil {
 			return nil, err
 		}
-		o.done, o.at = done, at
-		if t.Repeat == task.Once && done && t.Date < recent {
-			continue
+		if ok && !(t.Repeat == task.Once && o.done && t.Date < recent) {
+			out = append(out, o)
 		}
-		out = append(out, o)
 	}
 	return out, nil
+}
+
+// offer shows one task as of today, whatever the listing window: false for a
+// repeating task that is not due today.
+func (b *davBackend) offer(t task.Task, todayDay string) (offered, bool, error) {
+	o := offered{t: t, day: todayDay}
+	if t.Repeat == task.Once {
+		o.day = t.Date
+	} else if !t.DueOn(todayDay) {
+		return o, false, nil
+	}
+	at, done, err := b.s.db.TaskCompletedAt(t.ID, o.day)
+	if err != nil {
+		return o, false, err
+	}
+	o.done, o.at = done, at
+	return o, true, nil
 }
 
 func (b *davBackend) todoObject(sess *davSession, owner store.Person, o offered) (webcal.CalendarObject, error) {
@@ -185,8 +194,8 @@ func (b *davBackend) listTodos(sess *davSession, p string) ([]webcal.CalendarObj
 	return out, nil
 }
 
-// offeredTask finds one task in the list it is asked for: nil if the list does
-// not offer it today.
+// offeredTask finds one task of the list it is asked for: nil if the person
+// has no such task, or it is a repeating one not due today.
 func (b *davBackend) offeredTask(sess *davSession, p string) (store.Person, *offered, error) {
 	owner, addr, err := b.taskListAt(sess, p)
 	if err != nil {
@@ -195,16 +204,21 @@ func (b *davBackend) offeredTask(sess *davSession, p string) (store.Person, *off
 	if addr.task == "" {
 		return owner, nil, httpError(http.StatusNotFound, "not a task")
 	}
-	list, err := b.offeredTasks(sess, owner)
+	// Looked up directly, not in the listing: a done once task more than a
+	// week back is no longer listed but a client still holds it, and its
+	// retries must find it.
+	t, err := b.s.db.Task(sess.house.ID, addr.task)
+	if errors.Is(err, store.ErrNotFound) || (err == nil && t.PersonID != owner.ID) {
+		return owner, nil, nil
+	}
 	if err != nil {
 		return owner, nil, err
 	}
-	for _, o := range list {
-		if o.t.ID == addr.task {
-			return owner, &o, nil
-		}
+	o, ok, err := b.offer(t, b.s.now().In(householdZone(sess.house)).Format(task.DateLayout))
+	if err != nil || !ok {
+		return owner, nil, err
 	}
-	return owner, nil, nil
+	return owner, &o, nil
 }
 
 func (b *davBackend) getTodo(sess *davSession, p string) (*webcal.CalendarObject, error) {
@@ -250,6 +264,9 @@ func (b *davBackend) putTodo(sess *davSession, p string, cal *ical.Calendar, opt
 		return nil, err
 	}
 
+	// EditTask and SetTaskDone are separate transactions on purpose: the edit
+	// is valid on its own, and a client that gets an error retries the whole
+	// PUT, which repeats both harmlessly.
 	change := store.TaskEdit{Title: &edit.Title, Notes: &edit.Notes}
 	if o.t.Repeat == task.Once && edit.Due != "" {
 		change.Date = &edit.Due

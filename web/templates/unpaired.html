@@ -1,0 +1,20 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "unpaired.title") "Frame" .Frame)}}
+<div class="unpaired" data-unpaired>
+  <svg class="pic" viewBox="0 0 104 104" aria-hidden="true"><rect x="28" y="6" width="48" height="92" rx="9"/><path d="M45 14h14"/><circle cx="52" cy="88" r="2.5"/><g class="cut" transform="rotate(-35 52 50)"><path d="M49 43h-9a7 7 0 0 0 0 14h9"/><path d="M55 43h9a7 7 0 0 1 0 14h-9"/><path d="M52 33v5M52 62v5M45 35l2 4M59 65l-2-4"/></g></svg>
+  <h1>{{t "unpaired.title"}}</h1>
+  <p class="kid"><svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><circle cx="8" cy="7" r="3"/><path d="M3 20v-2a5 5 0 0 1 10 0v2"/><circle cx="17" cy="9" r="2.3"/><path d="M14.5 20v-1.5a3.5 3.5 0 0 1 6.5-1.8"/></svg><span>{{t "unpaired.kid"}}</span></p>
+  <p class="cause">{{t "unpaired.cause"}}</p>
+  <section class="tile" aria-labelledby="again">
+    <h2 id="again">{{t "unpaired.parents.title"}}</h2>
+    <ol class="howto">
+      <li><div class="s"><b>{{t "unpaired.step1.title"}}</b><p>{{t "unpaired.step1.pre"}} <span class="path">{{t "unpaired.step1.path"}}</span> {{t "unpaired.step1.post"}}</p></div></li>
+      <li><div class="s"><b>{{t "unpaired.step2.title"}}</b><p>{{t "unpaired.step2.text"}}</p></div></li>
+      <li><div class="s"><b>{{t "unpaired.step3.title"}}</b><p>{{t "unpaired.step3.text"}}</p></div></li>
+    </ol>
+  </section>
+  {{template "moreOpen" (dict "Label" (t "unpaired.adult"))}}
+    <p class="hint">{{t "unpaired.adult.hint"}}</p>
+    <a class="button secondary" href="/login?account=1">{{t "unpaired.adult.button"}}</a>
+  {{template "moreClose"}}
+</div>
+{{template "foot"}}

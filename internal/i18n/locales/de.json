@@ -2079,5 +2079,20 @@
   "allergen.molluscs.examples": "Muscheln, Schnecken, Tintenfisch",
   "mcp.area.health": "Ernährung und Allergien",
   "mcp.area.health.desc": "Gesundheitsdaten jeder Person. Nur erlauben, wenn der Assistent sie braucht, zum Beispiel um passende Gerichte zu planen. Ändern kann sie nur ein Elternteil hier in Hejmo.",
-  "mcp.new.health_hint": "Allergien, die Hejmo nicht prüfen kann, bekommt der Assistent immer mit dem Hinweis „nicht automatisch geprüft, nicht filterbar“."
+  "mcp.new.health_hint": "Allergien, die Hejmo nicht prüfen kann, bekommt der Assistent immer mit dem Hinweis „nicht automatisch geprüft, nicht filterbar“.",
+  "unpaired.title": "Dieses Gerät ist nicht mehr gekoppelt",
+  "unpaired.kid": "Zeig dieses Gerät deinen Eltern. Sie können es neu koppeln.",
+  "unpaired.cause": "Darum zeigt Hejmo hier gerade nichts. Ein Elternteil hat das Gerät abgemeldet oder für jemand anderen gekoppelt, oder die Kopplung ist abgelaufen. Gelöscht ist nichts.",
+  "unpaired.parents.title": "Für Eltern: so koppelst du es neu",
+  "unpaired.step1.title": "QR-Code zeigen",
+  "unpaired.step1.pre": "Öffne Hejmo auf deinem Gerät oder Computer, dann",
+  "unpaired.step1.path": "Einstellungen › Handys",
+  "unpaired.step1.post": "und tippe auf „QR-Code anzeigen“.",
+  "unpaired.step2.title": "Code scannen",
+  "unpaired.step2.text": "Scanne den Code mit der Kamera dieses Geräts.",
+  "unpaired.step3.title": "Zahl vergleichen",
+  "unpaired.step3.text": "Wähle, für wen das Gerät ist, und bestätige, wenn beide Geräte dieselbe Zahl zeigen.",
+  "unpaired.adult": "Für Erwachsene: mit eigenem Konto anmelden",
+  "unpaired.adult.hint": "Du meldest dich dann nur in diesem Browser an, mit Benutzername und Passwort oder Passkey. Das Gerät bleibt dabei ungekoppelt.",
+  "unpaired.adult.button": "Zur Anmeldung"
 }

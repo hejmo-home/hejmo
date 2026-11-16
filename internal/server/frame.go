@@ -60,6 +60,9 @@ type frame struct {
 	Success template.HTML
 	// Error is an error line shown above the page, already translated.
 	Error string
+	// PlainBrand shows the brand as plain text, not a link: the page of an
+	// unpaired device leads nowhere (ticket 199).
+	PlainBrand bool
 	// The language switcher (ticket 134): the active language, its own name and
 	// flag file, the other languages, and the page to come back to.
 	LangName, LangFlag string

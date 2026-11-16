@@ -308,6 +308,7 @@ func (s *server) handlePhoneJoin(w http.ResponseWriter, r *http.Request) {
 			Name: sessionCookie, Value: token, Path: "/", Expires: expires,
 			HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
 		})
+		s.setDeviceMarker(w, r)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
 	case errors.Is(err, store.ErrPhonePending):
 		http.SetCookie(w, &http.Cookie{

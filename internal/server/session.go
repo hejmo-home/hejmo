@@ -14,7 +14,32 @@ import (
 const (
 	sessionCookie   = "hejmo_session"
 	sessionDuration = 30 * 24 * time.Hour
+	// deviceCookie marks a browser that was paired as a device (ticket 199). It
+	// holds no data; with it, a browser whose session ended shows "this device
+	// is no longer paired". It is forgotten at the next sign-in or sign-out.
+	deviceCookie    = "hejmo_device"
+	deviceMarkerAge = 400 * 24 * 60 * 60 // seconds; the longest a browser keeps a cookie
 )
+
+func (s *server) setDeviceMarker(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{Name: deviceCookie, Value: "1", Path: "/", MaxAge: deviceMarkerAge, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
+}
+
+func (s *server) clearDeviceMarker(w http.ResponseWriter, r *http.Request) {
+	if _, err := r.Cookie(deviceCookie); err == nil {
+		http.SetCookie(w, &http.Cookie{Name: deviceCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
+	}
+}
+
+// hasSession reports whether the request carries a session the box knows.
+func (s *server) hasSession(r *http.Request) bool {
+	c, err := r.Cookie(sessionCookie)
+	if err != nil || c.Value == "" {
+		return false
+	}
+	_, err = s.db.SessionPerson(auth.HashToken(c.Value), s.now())
+	return err == nil
+}
 
 func (s *server) startSession(w http.ResponseWriter, r *http.Request, personID string) error {
 	_, err := s.startSessionHash(w, r, personID)
@@ -27,6 +52,7 @@ func (s *server) startSessionHash(w http.ResponseWriter, r *http.Request, person
 	token := auth.NewToken()
 	expires := s.now().Add(sessionDuration)
 	hash := auth.HashToken(token)
+	s.clearDeviceMarker(w, r) // a sign-in ends the "no longer paired" page
 	if err := s.db.CreateSession(hash, personID, auth.DeviceLabel(r.UserAgent()), s.now(), expires); err != nil {
 		return "", err
 	}
@@ -38,6 +64,7 @@ func (s *server) startSessionHash(w http.ResponseWriter, r *http.Request, person
 }
 
 func (s *server) endSession(w http.ResponseWriter, r *http.Request) {
+	s.clearDeviceMarker(w, r)
 	if c, err := r.Cookie(sessionCookie); err == nil {
 		_ = s.db.DeleteSession(auth.HashToken(c.Value))
 	}

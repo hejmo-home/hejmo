@@ -379,7 +379,7 @@ func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p pri
 		return
 	}
 	id := r.PathValue("id")
-	if in.Waste != nil { // refuse before anything is saved
+	if in.Waste != nil && *in.Waste { // refuse before anything is saved; unmarking needs no read-only
 		c, err := s.db.Calendar(p.household.ID, id)
 		if s.storeError(w, "waste calendar", err) {
 			return

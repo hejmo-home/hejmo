@@ -301,3 +301,17 @@ func TestWasteIsCheckedAgainstTheStateAfterTheReadOnlySwitchInTheSameRequest(t *
 		t.Fatalf("a refused request changed the calendar: %v", cal)
 	}
 }
+
+// Only marking a calendar needs read-only; unmarking never does.
+func TestUnmarkingWasteNeverNeedsReadOnly(t *testing.T) {
+	c, _, _, calID := twoWayCalendar(t)
+	if status, cal, _ := c.call(http.MethodPatch, "/calendars/"+calID, map[string]any{"waste_collection": false}); status != http.StatusOK || cal["waste_collection"] != false {
+		t.Fatalf("waste_collection false on a two-way calendar = %d %v, want 200", status, cal)
+	}
+	if status, _, _ := c.call(http.MethodPatch, "/calendars/"+calID, map[string]any{"read_only": true, "waste_collection": true}); status != http.StatusOK {
+		t.Fatalf("read-only and waste = %d, want 200", status)
+	}
+	if status, cal, _ := c.call(http.MethodPatch, "/calendars/"+calID, map[string]any{"read_only": false, "waste_collection": false}); status != http.StatusOK || cal["read_only"] != false || cal["waste_collection"] != false {
+		t.Fatalf("two-way and not waste = %d %v, want 200", status, cal)
+	}
+}

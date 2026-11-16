@@ -602,3 +602,40 @@ func TestDeletionOnTheBoxDroppedByAReadOnlyCalendarIsLoggedWithoutAnObjectAddres
 		t.Fatalf("log = %+v, want a dropped-deletion entry", log)
 	}
 }
+
+// An import that leaves an object alone for a queued box change must not
+// store the server's state: the change outside would count as seen. Here the
+// box edit is taken back while the server moves the event, so nothing is left
+// to push and the next run must still import the outside time (delta path:
+// Radicale answers sync-collection).
+func TestObjectSkippedForAQueuedBoxChangeIsImportedWhenTheChangeIsGone(t *testing.T) {
+	fx := newDAVFixture(t, caldavtest.Password)
+	fx.srv.Put(t, fx.remote, "swim.ics", caldavtest.Event("swim@test", "Swimming", "20261120T150000", "20261120T160000"))
+	fx.syncAfter(t, 0)
+	berlin := fx.berlin(t)
+
+	fx.tamper.RefuseWrites(403)
+	e := fx.boxEvent(t, "Swimming")
+	e.Title = "Swim on the box"
+	if err := fx.db.ApplyChange(fx.h.ID, calendar.Change{Update: []calendar.Event{e}}); err != nil {
+		t.Fatal(err)
+	}
+	fx.srv.Put(t, fx.remote, "swim.ics", caldavtest.Event("swim@test", "Swimming", "20261120T170000", "20261120T180000"))
+	fx.clock = fx.clock.Add(5 * time.Minute)
+	if err := fx.svc.Sync(context.Background(), fx.h.ID, fx.cal.ID); err == nil {
+		t.Fatal("sync with a refused write succeeded")
+	}
+
+	// The box edit is taken back: the pending object now equals the stored text.
+	e = fx.boxEvent(t, "Swim on the box")
+	e.Title = "Swimming"
+	if err := fx.db.ApplyChange(fx.h.ID, calendar.Change{Update: []calendar.Event{e}}); err != nil {
+		t.Fatal(err)
+	}
+	fx.tamper.RefuseWrites(0)
+	fx.syncAfter(t, 5*time.Minute)
+	fx.syncAfter(t, 5*time.Minute)
+	if got := fx.boxEvent(t, "Swimming").Start.In(berlin).Hour(); got != 17 {
+		t.Fatalf("box starts at %d:00, want the outside time 17:00", got)
+	}
+}

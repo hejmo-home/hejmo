@@ -541,13 +541,13 @@ func (db *DB) strings(query string, args ...any) ([]string, error) {
 }
 
 // SetCalendarWaste marks a calendar as waste collection or unmarks it. Only
-// read-only calendars can be marked (ADR 0015).
+// read-only calendars can be marked (ADR 0015); unmarking always works.
 func (db *DB) SetCalendarWaste(householdID, calendarID string, waste bool) error {
 	c, err := db.Calendar(householdID, calendarID)
 	if err != nil {
 		return err
 	}
-	if !c.ReadOnly {
+	if waste && !c.ReadOnly {
 		return fmt.Errorf("%w: only a read-only calendar can be a waste collection calendar", ErrInvalid)
 	}
 	return expectOne(db.sql.Exec(`UPDATE calendars SET waste = ?, updated_at = ? WHERE id = ? AND household_id = ?`, waste, now(), calendarID, householdID))

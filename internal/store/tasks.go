@@ -162,6 +162,34 @@ func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at 
 	return tx.Commit()
 }
 
+// SetTaskStars changes the star value of a task (0 to task.MaxStars). It
+// counts from the next tick: task_done rows and the star log are not touched,
+// so credited ticks keep their value and unticking deducts what was credited
+// (ADR 0018).
+func (db *DB) SetTaskStars(householdID, id string, stars int) error {
+	if stars < 0 || stars > task.MaxStars {
+		return fmt.Errorf("%w: %w", ErrInvalid, &task.InvalidError{Field: "stars", Msg: fmt.Sprintf("stars must be between 0 and %d", task.MaxStars)})
+	}
+	res, err := db.sql.Exec(`UPDATE tasks SET stars = ?, updated_at = ? WHERE household_id = ? AND id = ?`, stars, now(), householdID, id)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// TaskDoneStars returns the stars credited when a task was ticked off on a
+// day, and whether it is ticked off that day.
+func (db *DB) TaskDoneStars(id, day string) (stars int, done bool, err error) {
+	err = db.sql.QueryRow(`SELECT stars FROM task_done WHERE task_id = ? AND day = ?`, id, day).Scan(&stars)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, false, nil
+	}
+	return stars, err == nil, err
+}
+
 // TaskDone reports whether a task is ticked off on a day.
 func (db *DB) TaskDone(id, day string) (bool, error) {
 	var n int

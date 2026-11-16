@@ -12,7 +12,7 @@
 {{end}}<link rel="stylesheet" href="/static/hejmo.css">{{if .Frame}}
 <script src="/static/theme.js"></script>
 <script src="/static/form.js" defer data-hour="{{t "picker.hour"}}" data-minute="{{t "picker.minute"}}" data-done="{{t "picker.done"}}"{{with .Frame}}{{with .TimeFormat}} data-time-format="{{.}}"{{end}}{{end}}></script>{{with .Frame}}{{if .SignedIn}}
-<script src="/static/offline.js" defer data-offline-text="{{t "offline.banner"}}"></script>{{end}}{{end}}{{end}}
+<script src="/static/offline.js" defer data-offline-text="{{t "offline.banner"}}" data-time-format="{{.TimeFormat}}" data-date-format="{{.DateFormat}}"></script>{{end}}{{end}}{{end}}
 </head>
 <body{{if .Frame}} class="web"{{end}}>
 {{if .Frame}}<a class="skip" href="#content">{{t "frame.skip"}}</a>{{end}}
@@ -30,10 +30,9 @@
 {{if .Items}}<nav class="frame-nav" aria-label="{{t "nav.label"}}"><ul>
   {{range .Items}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{t .Label}}</a></li>
   {{end}}</ul></nav>{{end}}
-{{if .Back}}<a class="back" href="/settings">{{t "hub.back"}}</a>{{end}}
 {{end}}{{end}}
 <main id="content">
-{{with .Frame}}{{with .Success}}{{template "success" .}}{{end}}{{with .Error}}<p class="error" role="alert">{{.}}</p>{{end}}{{end}}
+{{with .Frame}}{{if .BackHref}}{{template "backLink" (dict "Href" .BackHref "Text" (t .BackLabel))}}{{end}}{{with .Success}}{{template "success" .}}{{end}}{{with .Error}}<p class="error" role="alert">{{.}}</p>{{end}}{{end}}
 {{end}}
 
 {{/* The language switcher of ticket 134, one component for the frame bar and the wizard bar. Argument: the frame. */}}

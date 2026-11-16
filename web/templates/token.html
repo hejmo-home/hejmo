@@ -1,0 +1,7 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/caldav" "Text" (t "caldav.back"))}}
+  <h1>{{.Token.Name}}</h1>
+  {{template "facts" .Facts}}
+  <p class="hint">{{t "caldav.token.never_shown"}}</p>
+  {{template "danger" (dict "Label" (t "caldav.token.revoke") "Explain" (tf "caldav.token.revoke.explain" "name" .Token.Name) "Confirm" (t "caldav.token.revoke.confirm") "Action" (printf "/caldav/tokens/%s/revoke" .Token.ID) "CancelHref" (printf "/caldav/tokens/%s" .Token.ID))}}
+{{template "foot"}}

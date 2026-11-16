@@ -388,7 +388,7 @@ func TestResetOTPCommandResetsTheAccountAndLogsIt(t *testing.T) {
 	_ = db.CreateAccount(store.Account{PersonID: mama.ID, Username: "mama", PasswordHash: "h", TOTPSecret: "S"})
 	_ = db.ConfirmTOTP(mama.ID)
 	_ = db.ReplaceRecoveryCodes(mama.ID, []string{"x"})
-	_ = db.CreateSession("tok", mama.ID, time.Now().Add(time.Hour))
+	_ = db.CreateSession("tok", mama.ID, "", time.Now(), time.Now().Add(time.Hour))
 	db.Close()
 
 	var logs strings.Builder

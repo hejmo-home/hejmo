@@ -8,7 +8,7 @@ import (
 	"testing"
 )
 
-const nextTuesday = "2026-11-17" // the week of Monday 16/11/2026 follows the week of the test clock (Saturday 14/11/2026)
+const nextTuesday = "2026-11-17" // the week of Monday 16.11.2026 follows the week of the test clock (Saturday 14.11.2026)
 
 func mealField(day, mealtime string) string { return "meal_" + day + "_" + mealtime }
 
@@ -25,8 +25,8 @@ func TestMealsPageShowsTheWeekOfTodayWithAFieldPerDayAndMealtime(t *testing.T) {
 	if r.status != http.StatusOK {
 		t.Fatalf("page = %d", r.status)
 	}
-	// Saturday 14/11/2026 lies in the week of Monday 09/11 to Sunday 15/11.
-	for _, want := range []string{"09/11 – 15/11/2026", "<strong>Week 46</strong>", "Previous week", "Next week", "Monday", "Sunday", "Breakfast", "Lunch", "Snack", "Dinner",
+	// Saturday 14.11.2026 lies in the week of Monday 09.11. to Sunday 15.11..
+	for _, want := range []string{"09.11. – 15.11.2026", "<strong>Week 46</strong>", "Previous week", "Next week", "Monday", "Sunday", "Breakfast", "Lunch", "Snack", "Dinner",
 		`name="week" value="2026-11-09"`, `href="/meals?week=2026-11-02"`, `href="/meals?week=2026-11-16"`, `data-today`, `class="weeknav"`, `class="wbtn"`, `class="wk"`} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("page lacks %q", want)
@@ -70,7 +70,7 @@ func TestMealsPageTakesAnyDayOfAWeekAndFallsBackToTodaysWeek(t *testing.T) {
 	b := signedInBox(t)
 	for _, q := range []string{"2026-11-18", "2026-11-16", "2026-11-22"} { // Wednesday, Monday, Sunday of the same week
 		if r := b.get("/meals?week=" + q); !strings.Contains(r.body, `name="week" value="2026-11-16"`) {
-			t.Errorf("week=%s does not show the week of 16/11:\n%s", q, r.body)
+			t.Errorf("week=%s does not show the week of 16.11.:\n%s", q, r.body)
 		}
 	}
 	for _, q := range []string{"", "soon", "2026-13-40", "../etc"} {
@@ -147,7 +147,7 @@ func TestTooLongMealShowsAnErrorAtItsFieldKeepsWhatWasTypedAndSavesNothing(t *te
 	// The row is marked, the field points at its error and takes the focus, and a line above
 	// the week says nothing was saved and links to the field.
 	field := mealField("2026-11-18", "dinner")
-	for _, want := range []string{`<div class="mrow invalid">`, `aria-invalid="true"`, `aria-describedby="err-` + field + `"`, ` autofocus`,
+	for _, want := range []string{`<div class="mrow invalid" data-mt="dinner">`, `aria-invalid="true"`, `aria-describedby="err-` + field + `"`, ` autofocus`,
 		`class="error form-error" role="alert"`, "Nothing was saved. Please shorten", `<a href="#` + field + `">Wednesday, Dinner</a>`, "everything else you typed is still here."} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("error page lacks %q:\n%s", want, r.body)
@@ -178,7 +178,7 @@ func TestMealPlanTitlesFollowTheLanguageOfTheBrowserThatSaves(t *testing.T) {
 		t.Fatalf("calendar = %v", got)
 	}
 	page := c.b.do(http.MethodGet, "/meals?week=2026-11-16", nil, map[string]string{"Accept-Language": "de"})
-	for _, want := range []string{"Dienstag", "Abendessen", "Frühstück", "Woche 47 speichern", "<strong>Woche 47</strong>", "16/11 – 22/11/2026", "Vorherige Woche", "Zurück zu dieser Woche",
+	for _, want := range []string{"Dienstag", "Abendessen", "Frühstück", "Woche 47 speichern", "<strong>Woche 47</strong>", "16.11. – 22.11.2026", "Vorherige Woche", "Zurück zu dieser Woche",
 		"Rezepte-Bibliothek kommt in einer späteren Version – bis dahin einfach das Gericht eintragen.", "Änderungen noch nicht gespeichert", "Plane die Mahlzeiten für die Woche."} {
 		if !strings.Contains(page.body, want) {
 			t.Errorf("German page lacks %q", want)
@@ -251,10 +251,10 @@ func TestParentSeesTheRecipeNoteSaveBarAndDayHeaders(t *testing.T) {
 			t.Errorf("page lacks %q", want)
 		}
 	}
-	if !regexp.MustCompile(`<legend>Saturday <span class="date">14/11</span> <span class="today">Today</span></legend>`).MatchString(body) {
+	if !regexp.MustCompile(`<legend>Saturday <span class="date">14.11.</span> <span class="today">Today</span></legend>`).MatchString(body) {
 		t.Error("today's day header lacks the date and the Today label")
 	}
-	if !regexp.MustCompile(`<legend>Monday <span class="date">09/11</span></legend>`).MatchString(body) {
+	if !regexp.MustCompile(`<legend>Monday <span class="date">09.11.</span></legend>`).MatchString(body) {
 		t.Error("a day header lacks the date")
 	}
 }
@@ -262,7 +262,7 @@ func TestParentSeesTheRecipeNoteSaveBarAndDayHeaders(t *testing.T) {
 func TestOtherWeeksOfferBackToThisWeekAndTheEmptyHintNamesTheWeek(t *testing.T) {
 	b := signedInBox(t)
 	body := b.do(http.MethodGet, "/meals?week=2026-11-23", nil, map[string]string{"Accept-Language": "en"}).body
-	for _, want := range []string{`<a class="wbtn this" href="/meals">Back to this week</a>`, "<strong>Week 48</strong>", "23/11 – 29/11/2026",
+	for _, want := range []string{`<a class="wbtn this" href="/meals">Back to this week</a>`, "<strong>Week 48</strong>", "23.11. – 29.11.2026",
 		"Nothing planned for week 48 yet. Type a dish into any field, then save the week.", "Save week 48"} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page lacks %q", want)

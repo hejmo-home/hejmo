@@ -15,7 +15,7 @@ import (
 
 var tagRe = regexp.MustCompile(`(?s)<[^>]*>`)
 
-func de(b *box, path string) resp {
+func deGet(b *box, path string) resp {
 	return b.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": "de"})
 }
 
@@ -27,7 +27,7 @@ func inText(page string) string {
 // one main button to the HTTPS step. It has no step number yet.
 func TestWelcomePageListsTheFourStepsAndWhatYouNeed(t *testing.T) {
 	b := newFreshBox(t)
-	r := de(b, "/setup")
+	r := deGet(b, "/setup")
 	text := inText(r.body)
 	for _, want := range []string{
 		"Willkommen bei Hejmo", "etwa 15 Minuten", "So läuft die Einrichtung", "Sichere Verbin\u00addung", "Dein Konto", "Einmal\u00adcode", "Erste Schritte",
@@ -63,7 +63,7 @@ func TestWelcomePageListsTheFourStepsAndWhatYouNeed(t *testing.T) {
 // steps (done ones with a hidden "(erledigt)"), no navigation.
 func TestWizardShellShowsStepNumberAndProgress(t *testing.T) {
 	b := newBox(t)
-	page := de(b, "/setup").body
+	page := deGet(b, "/setup").body
 	for _, want := range []string{
 		`class="wizard"`, `<nav class="wsteps" aria-label="Fortschritt der Einrichtung"><p class="wiz-count">Einrichtung: Schritt 2 von 4</p>`,
 		`<li data-state="done"><span class="lab">`, `<span class="sr"> (erledigt)</span>`, `<li aria-current="step">`,
@@ -87,14 +87,14 @@ func TestWizardShellShowsStepNumberAndProgress(t *testing.T) {
 	// are the four steps; the shell counts them 1, 1, 2, 3, 3.
 	fresh := newFreshBox(t)
 	fresh.post("/setup/https/public", publicForm())
-	if r := de(fresh, "/setup/https/check"); !strings.Contains(r.body, "Schritt 1 von 4") {
+	if r := deGet(fresh, "/setup/https/check"); !strings.Contains(r.body, "Schritt 1 von 4") {
 		t.Error("the name check is not step 1")
 	}
-	if r := de(newFreshBox(t), "/setup/https"); !strings.Contains(r.body, "Schritt 1 von 4") {
+	if r := deGet(newFreshBox(t), "/setup/https"); !strings.Contains(r.body, "Schritt 1 von 4") {
 		t.Error("the HTTPS step is not step 1")
 	}
 	b.post("/setup", validSetupForm())
-	totp := de(b, "/setup/totp")
+	totp := deGet(b, "/setup/totp")
 	if !strings.Contains(totp.body, "Schritt 3 von 4") {
 		t.Errorf("the one-time code is not step 3:\n%s", totp.body)
 	}
@@ -107,7 +107,7 @@ func TestWizardShellShowsStepNumberAndProgress(t *testing.T) {
 // then only the form of the chosen way.
 func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 	b := newFreshBox(t)
-	choice := de(b, "/setup/https")
+	choice := deGet(b, "/setup/https")
 	for _, want := range []string{`<form class="tile" method="get" action="/setup/https">`, `<fieldset class="choice">`, `name="way" value="public" checked`, `name="way" value="own"`, "Mit öffentlichem Namen (empfohlen)", "Mit eigenem Zertifikat der Box"} {
 		if !strings.Contains(choice.body, want) {
 			t.Errorf("choice page misses %q", want)
@@ -120,7 +120,7 @@ func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 		t.Error("the own CA is selected by default")
 	}
 
-	public := de(b, "/setup/https?way=public")
+	public := deGet(b, "/setup/https?way=public")
 	for _, want := range []string{`action="/setup/https/public"`, `<ol class="howto">`, `href="https://desec.io/signup" target="_blank"`, `name="name"`, `name="token"`, `type="password"`, "Mehr Optionen", "Zertifikat holen", "Anderen Weg wählen", `href="/setup/https"`} {
 		if !strings.Contains(public.body, want) {
 			t.Errorf("public form misses %q", want)
@@ -134,7 +134,7 @@ func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 	if !regexp.MustCompile(`<details class="more">\s*<summary>[^<]*<svg[^>]*>.*?</svg>Mehr Optionen<span class="sum">127.0.0.1 · Let&#39;s Encrypt</span>`).MatchString(strings.ReplaceAll(public.body, "\n", "")) {
 		t.Errorf("More options is not closed with a summary of address and issuer:\n%s", public.body)
 	}
-	own := de(b, "/setup/https?way=own")
+	own := deGet(b, "/setup/https?way=own")
 	for _, want := range []string{`class="addr">127.0.0.1`, `action="/setup/https"`, "Zertifikat erstellen", "Anderen Weg wählen"} {
 		if !strings.Contains(own.body, want) {
 			t.Errorf("own CA page misses %q", want)
@@ -152,7 +152,7 @@ func TestWithoutAPublicNameOnlyTheOwnCAIsOffered(t *testing.T) {
 	b.srv.Close()
 	b.srv = b.plainServer()
 	for _, path := range []string{"/setup/https", "/setup/https?way=public", "/setup/https?way=own"} {
-		r := de(b, path)
+		r := deGet(b, path)
 		if !strings.Contains(r.body, "Zertifikat der Box erstellen") || strings.Contains(r.body, `name="token"`) || strings.Contains(r.body, "Anderen Weg wählen") {
 			t.Errorf("%s: want the own CA page without a way back:\n%s", path, r.body)
 		}
@@ -244,7 +244,7 @@ func (e errString) Error() string { return string(e) }
 // out by the form script, with a line in words. Nothing animates.
 func TestPublicFormHasABusyStateInWords(t *testing.T) {
 	b := newFreshBox(t)
-	r := de(b, "/setup/https?way=public")
+	r := deGet(b, "/setup/https?way=public")
 	for _, want := range []string{
 		`<form method="post" action="/setup/https/public" class="tile" data-busy>`, `data-busy-text="Zertifikat wird geholt …"`,
 		`data-hook="busy"`, "Das dauert meist unter einer Minute, höchstens 3 Minuten. Lass diese Seite offen.", "Die Box holt das Zertifikat …",
@@ -271,7 +271,7 @@ func TestPublicFormHasABusyStateInWords(t *testing.T) {
 // The Actalis keys only show for Actalis (the form's CSS keys off the choice).
 func TestActalisKeysShowOnlyForActalis(t *testing.T) {
 	b := newFreshBox(t)
-	r := de(b, "/setup/https?way=public")
+	r := deGet(b, "/setup/https?way=public")
 	if !strings.Contains(r.body, `<div class="when-actalis">`) || !strings.Contains(r.body, `name="eab_key_id"`) || !strings.Contains(r.body, `name="eab_hmac"`) {
 		t.Errorf("the Actalis fields are missing:\n%s", r.body)
 	}
@@ -287,7 +287,7 @@ func TestActalisKeysShowOnlyForActalis(t *testing.T) {
 func TestNameCheckShowsStatesAsCheckLines(t *testing.T) {
 	b := newFreshBox(t)
 	b.post("/setup/https/public", publicForm())
-	r := de(b, "/setup/https/check")
+	r := deGet(b, "/setup/https/check")
 	for _, want := range []string{
 		`data-state="waiting"`, "Prüfe …", `data-state="fail"`, "Dein Browser erreicht <b>mia.dedyn.io</b> noch nicht.", "Diese Seite prüft alle 5 Sekunden neu. Zuletzt: –",
 		`data-state="ok"`, `Dein Browser erreicht die Box unter <b>mia.dedyn.io</b>.`,
@@ -317,7 +317,7 @@ func TestNameCheckShowsStatesAsCheckLines(t *testing.T) {
 // with the state name only, "Show" for the password, the error at the field.
 func TestAccountPageHintsGroupedRegionsAndPasswordReveal(t *testing.T) {
 	b := newBox(t)
-	r := de(b, "/setup")
+	r := deGet(b, "/setup")
 	for _, want := range []string{
 		"<h1>Dein Konto</h1>", "Damit meldest du dich bei Hejmo an.", "<legend>Heimatort</legend>", `<p class="hint">Der Ort gibt Wetter, Sonnenauf- und -untergang, das Bundesland die Feiertage.</p>`, "<legend>Du</legend>", "<legend>Eltern-PIN</legend>",
 		"Für Wetter und Sonnenzeiten.", "Für die Feiertage.", "So erscheinst du auf dem Display.", "Damit meldest du dich an.", "Mindestens 10 Zeichen.",
@@ -378,7 +378,7 @@ func TestAccountPagePasswordErrorReplacesTheHintAndKeepsTheRest(t *testing.T) {
 func TestTOTPPageDesktopAndPhoneOrder(t *testing.T) {
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
-	desk := de(b, "/setup/totp").body
+	desk := deGet(b, "/setup/totp").body
 	secret := secretOn(t, desk)
 	grouped := regexp.MustCompile(`(.{4})`).ReplaceAllString(secret, "$1 ")
 	grouped = strings.TrimSpace(grouped)
@@ -439,7 +439,7 @@ func TestTOTPPageAfterAResetHasNoProgress(t *testing.T) {
 	if r := loginWith(b, "papa", "papa's long password", ""); r.location != "/setup/totp" {
 		t.Fatalf("sign-in after reset = %d %q", r.status, r.location)
 	}
-	r := de(b, "/setup/totp")
+	r := deGet(b, "/setup/totp")
 	if r.status != http.StatusOK || !strings.Contains(r.body, "Einmalcode einrichten") {
 		t.Fatalf("setup/totp after a reset = %d\n%s", r.status, r.body)
 	}

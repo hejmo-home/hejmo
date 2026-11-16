@@ -20,7 +20,7 @@ func extLink(href, text string) string {
 // as links and ends step 4 with the guided start page.
 func TestWelcomePageLinksTheAppsAndDeSEC(t *testing.T) {
 	b := newFreshBox(t)
-	body := de(b, "/setup").body
+	body := deGet(b, "/setup").body
 	for _, want := range []string{
 		extLink("https://2fas.com/", "2FAS"), extLink("https://getaegis.app/", "Aegis") + " (nur Android)",
 		extLink("https://support.google.com/accounts/answer/1066447", "Google Authenticator"), extLink("https://desec.io/signup", "deSEC"),
@@ -43,7 +43,7 @@ func TestWelcomePageLinksTheAppsAndDeSEC(t *testing.T) {
 // The deSEC form links each step to the page where it happens.
 func TestDeSECFormLinksSignupDomainsAndTokens(t *testing.T) {
 	b := newFreshBox(t)
-	body := de(b, "/setup/https?way=public").body
+	body := deGet(b, "/setup/https?way=public").body
 	signup := `<a class="link" href="https://desec.io/signup" target="_blank" rel="noopener noreferrer">Konto bei deSEC anlegen <svg`
 	for _, want := range []string{signup, extLink("https://desec.io/domains", "Domains"), extLink("https://desec.io/tokens", "Token Management")} {
 		if !strings.Contains(body, want) {
@@ -72,7 +72,7 @@ func TestTOTPStoreLinksFollowTheDevice(t *testing.T) {
 	aegisPlay := "https://play.google.com/store/apps/details?id=com.beemdevelopment.aegis"
 	googleApple := "https://apps.apple.com/app/google-authenticator/id388497605"
 
-	desk := de(b, "/setup/totp").body
+	desk := deGet(b, "/setup/totp").body
 	for _, want := range []string{"2FAS ist kostenlos: " + appStore2fas + " oder " + play2fas + ".", extLink("https://getaegis.app/", "Aegis"), extLink("https://support.google.com/accounts/answer/1066447", "Google Authenticator") + " gehen."} {
 		if !strings.Contains(desk, want) {
 			t.Errorf("computer page misses %q", want)
@@ -109,7 +109,7 @@ func TestTOTPStoreLinksFollowTheDevice(t *testing.T) {
 func TestRouterNameHasACopyButton(t *testing.T) {
 	b := newFreshBox(t)
 	b.post("/setup/https/public", publicForm())
-	body := de(b, "/setup/https/check").body
+	body := deGet(b, "/setup/https/check").body
 	want := `<div class="copyrow"><p class="addr">mia.dedyn.io</p><button class="button secondary" type="button" data-copy="mia.dedyn.io" data-copied-text="Kopiert">Kopieren</button></div>`
 	if !strings.Contains(body, want) {
 		t.Errorf("no copy row:\n%s", body)

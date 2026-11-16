@@ -38,7 +38,7 @@ func ageEvents(t *testing.T, db *store.DB, h store.Household, cal store.Calendar
 }
 
 func saveCutoffs(db *store.DB, id string, c meal.Cutoffs) error {
-	in := store.HouseholdSettings{TimeFormat: store.Time24h, TemperatureUnit: store.Celsius, AutoUpdate: store.UpdateOn, MealCutoffs: c}
+	in := store.HouseholdSettings{DateFormat: store.DateDMY, TimeFormat: store.Time24h, TemperatureUnit: store.Celsius, AutoUpdate: store.UpdateOn, MealCutoffs: c}
 	return db.SaveHouseholdSettings(id, in)
 }
 

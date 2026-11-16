@@ -35,7 +35,7 @@ jobs:
           HEJMO_REQUIRE_RADICALE: "1"
           # The service worker is tested with node's test runner (web/test).
           HEJMO_REQUIRE_NODE: "1"
-        run: go test -race -count=1 ./...
+        run: go test -race -count=1 -timeout 20m ./...
 
   container:
     name: Container (${{ matrix.arch }})

@@ -23,7 +23,7 @@ func childSession(t *testing.T, b *box) *box {
 		t.Fatal(err)
 	}
 	token := auth.NewToken()
-	if err := b.db.CreateSession(auth.HashToken(token), mia.ID, b.now.Add(time.Hour)); err != nil {
+	if err := b.db.CreateSession(auth.HashToken(token), mia.ID, "", b.now, b.now.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	c := *b

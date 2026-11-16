@@ -17,7 +17,7 @@ func TestHouseholdDefaultsTo24HourAndCelsius(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, err := db.Household(h.ID)
-	if err != nil || got.TimeFormat != store.Time24h || got.TemperatureUnit != store.Celsius {
+	if err != nil || got.DateFormat != store.DateDMY || got.TimeFormat != store.Time24h || got.TemperatureUnit != store.Celsius {
 		t.Fatalf("defaults = %+v, %v", got, err)
 	}
 }
@@ -29,13 +29,18 @@ func TestHouseholdSettingsPersistAndRejectUnknownValues(t *testing.T) {
 		t.Fatal(err)
 	}
 	got, _ := db.HomeHousehold()
-	if got.TimeFormat != store.Time12h || got.TemperatureUnit != store.Fahrenheit || got.AutoUpdate != store.UpdateNotify {
+	if got.DateFormat != store.DateMDY || got.TimeFormat != store.Time12h || got.TemperatureUnit != store.Fahrenheit || got.AutoUpdate != store.UpdateNotify {
 		t.Fatalf("saved = %+v", got)
 	}
 	for name, in := range map[string]store.HouseholdSettings{
 		"time format": settings("25h", store.Celsius, store.UpdateOn),
 		"unit":        settings(store.Time24h, "kelvin", store.UpdateOn),
 		"mode":        settings(store.Time24h, store.Celsius, "sometimes"),
+		"date format": func() store.HouseholdSettings {
+			in := settings(store.Time24h, store.Celsius, store.UpdateOn)
+			in.DateFormat = "ymd"
+			return in
+		}(),
 	} {
 		if err := db.SaveHouseholdSettings(h.ID, in); !errors.Is(err, store.ErrInvalid) {
 			t.Errorf("unknown %s: %v, want ErrInvalid", name, err)
@@ -47,7 +52,7 @@ func TestHouseholdSettingsPersistAndRejectUnknownValues(t *testing.T) {
 }
 
 func settings(f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode) store.HouseholdSettings {
-	return store.HouseholdSettings{TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: meal.DefaultCutoffs()}
+	return store.HouseholdSettings{DateFormat: store.DateMDY, TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: meal.DefaultCutoffs()}
 }
 
 // A settings save is all or nothing: a bad update mode must not leave the
@@ -59,7 +64,7 @@ func TestHouseholdSettingsSaveIsAllOrNothing(t *testing.T) {
 		t.Fatal("unknown update mode accepted")
 	}
 	got, _ := db.Household(h.ID)
-	if got.TimeFormat != store.Time24h || got.TemperatureUnit != store.Celsius || got.AutoUpdate != store.UpdateOn {
+	if got.DateFormat != store.DateDMY || got.TimeFormat != store.Time24h || got.TemperatureUnit != store.Celsius || got.AutoUpdate != store.UpdateOn {
 		t.Fatalf("a rejected save changed the settings: %+v", got)
 	}
 }
@@ -100,7 +105,7 @@ func TestSaveHouseholdSettingsIsAllOrNothing(t *testing.T) {
 	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
 	good := meal.Cutoffs{Breakfast: "10:00"}
 	yes, steps := true, []string{"tasks", "family"}
-	full := store.HouseholdSettings{TimeFormat: store.Time12h, TemperatureUnit: store.Fahrenheit, AutoUpdate: store.UpdateNotify, MealCutoffs: good, FirstStepsHidden: &yes, FirstStepsSkipped: &steps}
+	full := store.HouseholdSettings{DateFormat: store.DateDMY, TimeFormat: store.Time12h, TemperatureUnit: store.Fahrenheit, AutoUpdate: store.UpdateNotify, MealCutoffs: good, FirstStepsHidden: &yes, FirstStepsSkipped: &steps}
 	if err := db.SaveHouseholdSettings(h.ID, full); err != nil {
 		t.Fatal(err)
 	}

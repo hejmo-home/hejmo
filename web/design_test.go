@@ -194,6 +194,20 @@ func TestSpecDimensionsAndTypographyExistAsTokens(t *testing.T) {
 			t.Errorf("DESIGN.md typography.%s = %v", c.name, e)
 		}
 	}
+	// Phone title and the secret shown once (ticket 111): size only; the secret
+	// is monospace so that l, 1, O and 0 differ.
+	for _, c := range []struct{ name, size, family, weight string }{
+		{"title-phone", "28px", "Figtree", "700"},
+		{"secret", "19px", "ui-monospace", "600"},
+	} {
+		if got := root["--fs-"+c.name]; got != c.size {
+			t.Errorf("css --fs-%s = %q, want %s", c.name, got, c.size)
+		}
+		e := d.Typography[c.name]
+		if e["fontFamily"] != c.family || e["fontSize"] != c.size || e["fontWeight"] != c.weight {
+			t.Errorf("DESIGN.md typography.%s = %v", c.name, e)
+		}
+	}
 	if got := themed(t, css, "bw")["--fw-event-title"]; got != "700" {
 		t.Errorf("bw --fw-event-title = %q, want 700", got)
 	}
@@ -501,4 +515,39 @@ func TestFamilyViewLayoutRulesFollowTheSpec(t *testing.T) {
 			}
 		}
 	}
+}
+
+// #150: a person name in the family view never breaks inside the word. The
+// name sits in its own shrinkable element (span.person-name, min-width: 0), so
+// overflow-wrap: break-word applies at the column edge; hyphens only for words
+// of 12+ letters (#32/#86 rule, inside @supports). The layout itself is
+// checked in TestColumnReadabilitySnapshot and in a browser measurement.
+func TestFamilyViewPersonNamesDoNotBreakInsideWords(t *testing.T) {
+	css := stylesheet(t)
+	rule := ruleFor(t, css, ".fv .person-name")
+	for _, want := range []string{"min-width: 0;", "overflow-wrap: break-word;", "hyphens: manual;"} {
+		if !strings.Contains(rule, want) {
+			t.Errorf(".fv .person-name needs %q: %s", want, rule)
+		}
+	}
+	if strings.Contains(rule, "anywhere") {
+		t.Errorf(".fv .person-name must not use overflow-wrap: anywhere: %s", rule)
+	}
+	if !regexp.MustCompile(`@supports\s*\(\s*hyphenate-limit-chars:\s*12 5 5\s*\)\s*\{[^@]*\.fv \.person-name[^}]*hyphens:\s*auto[^}]*hyphenate-limit-chars:\s*12 5 5`).MatchString(css) {
+		t.Error("the family view hyphenates only words of 12+ letters (hyphenate-limit-chars: 12 5 5 inside @supports)")
+	}
+	if !familyTemplateHasNameSpan(t) {
+		t.Error("display_family.html must put the person name in span.person-name")
+	}
+}
+
+// familyTemplateHasNameSpan reports whether the family view template puts the
+// person name in its own span.person-name element.
+func familyTemplateHasNameSpan(t *testing.T) bool {
+	t.Helper()
+	tpl, err := os.ReadFile("templates/display_family.html")
+	if err != nil {
+		t.Fatal(err)
+	}
+	return strings.Contains(string(tpl), `<span class="person-name">{{.Person.Name}}</span>`)
 }

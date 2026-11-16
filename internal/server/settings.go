@@ -8,14 +8,17 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/update"
 )
 
 type settingsJSON struct {
+	DateFormat      store.DateFormat      `json:"date_format"`
 	TimeFormat      store.TimeFormat      `json:"time_format"`
 	TemperatureUnit store.TemperatureUnit `json:"temperature_unit"`
 	AutoUpdate      store.UpdateMode      `json:"auto_update"`
@@ -27,7 +30,7 @@ type settingsJSON struct {
 }
 
 func settingsOf(h store.Household) settingsJSON {
-	return settingsJSON{h.TimeFormat, h.TemperatureUnit, h.AutoUpdate, cutoffsToJSON(h.MealCutoffs), h.FirstStepsHidden, skippedOrEmpty(h.FirstStepsSkipped)}
+	return settingsJSON{h.DateFormat, h.TimeFormat, h.TemperatureUnit, h.AutoUpdate, cutoffsToJSON(h.MealCutoffs), h.FirstStepsHidden, skippedOrEmpty(h.FirstStepsSkipped)}
 }
 
 // skippedOrEmpty is the list for JSON: never null.
@@ -55,6 +58,7 @@ func (s *server) apiGetSettings(w http.ResponseWriter, _ *http.Request, p princi
 
 func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
+		DateFormat      *store.DateFormat      `json:"date_format"`
 		TimeFormat      *store.TimeFormat      `json:"time_format"`
 		TemperatureUnit *store.TemperatureUnit `json:"temperature_unit"`
 		AutoUpdate      *store.UpdateMode      `json:"auto_update"`
@@ -70,7 +74,10 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	f, u := p.household.TimeFormat, p.household.TemperatureUnit
+	d, f, u := p.household.DateFormat, p.household.TimeFormat, p.household.TemperatureUnit
+	if in.DateFormat != nil {
+		d = *in.DateFormat
+	}
 	if in.TimeFormat != nil {
 		f = *in.TimeFormat
 	}
@@ -89,6 +96,10 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			}
 		}
 	}
+	if !d.Valid() {
+		writeError(w, http.StatusBadRequest, "date_format must be dmy or mdy")
+		return
+	}
 	if !f.Valid() || !u.Valid() || !a.Valid() {
 		writeError(w, http.StatusUnprocessableEntity, "time_format must be 24h or 12h, temperature_unit c or f and auto_update on, off or notify")
 		return
@@ -97,7 +108,7 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, "meal_cutoffs: "+err.Error())
 		return
 	}
-	if err := s.saveSettings(p.household, store.HouseholdSettings{TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c, FirstStepsHidden: in.FirstStepsHidden, FirstStepsSkipped: in.FirstStepsSkipped}); err != nil {
+	if err := s.saveSettings(p.household, store.HouseholdSettings{DateFormat: d, TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c, FirstStepsHidden: in.FirstStepsHidden, FirstStepsSkipped: in.FirstStepsSkipped}); err != nil {
 		var unknown *store.UnknownStepError
 		if errors.As(err, &unknown) {
 			writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("first_steps_skipped: unknown step %q; steps are %s", unknown.Step, strings.Join(store.FirstStepIDs, ", ")))
@@ -132,9 +143,10 @@ func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p princi
 		at := cutoffs.For(m)
 		fields = append(fields, cutoffInput{Name: cutoffField(m), Mealtime: string(m), Value: cmp.Or(at, meal.SuggestedCutoff(m)), On: at != ""})
 	}
+	sample := s.dateSample(p.household)
 	s.render(w, r, status, "household.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Error": errKey, "ErrorField": errField, "Cutoffs": fields,
-		"TimeFormat": string(p.household.TimeFormat), "TemperatureUnit": string(p.household.TemperatureUnit),
+		"DateFormat": string(p.household.DateFormat), "DateDMY": datefmt.Date(store.DateDMY, sample), "DateMDY": datefmt.Date(store.DateMDY, sample), "SampleYear": sample.Year(), "TimeFormat": string(p.household.TimeFormat), "TemperatureUnit": string(p.household.TemperatureUnit),
 		"AutoUpdate": string(p.household.AutoUpdate), "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
 	})
 }
@@ -175,6 +187,10 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f, u := store.TimeFormat(r.PostFormValue("time_format")), store.TemperatureUnit(r.PostFormValue("temperature_unit"))
+	d := p.household.DateFormat
+	if v := r.PostFormValue("date_format"); v != "" { // a form without the field leaves it alone
+		d = store.DateFormat(v)
+	}
 	a := p.household.AutoUpdate
 	if v := r.PostFormValue("auto_update"); v != "" { // a form without the field leaves it alone
 		a = store.UpdateMode(v)
@@ -183,6 +199,11 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 	c := p.household.MealCutoffs
 	for _, m := range meal.Mealtimes() {
 		c = c.With(m, postedCutoff(r.PostForm, m, c.For(m)))
+	}
+	if !d.Valid() {
+		p.household.DateFormat = "" // nothing is checked after a value the form should never send
+		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.date_format", "date_format", c)
+		return
 	}
 	if !f.Valid() || !u.Valid() || !a.Valid() {
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.invalid", "", c)
@@ -197,7 +218,7 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.cutoff", field, c)
 		return
 	}
-	if err := s.saveSettings(p.household, store.HouseholdSettings{TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c}); err != nil {
+	if err := s.saveSettings(p.household, store.HouseholdSettings{DateFormat: d, TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c}); err != nil {
 		s.fail(w, "update settings", err)
 		return
 	}
@@ -240,4 +261,11 @@ func (s *server) saveSettings(h store.Household, in store.HouseholdSettings) err
 		s.logger.Error("write update settings", "err", err)
 	}
 	return nil
+}
+
+// dateSample is 24 December of the current year in the household's zone: the
+// sample date of the date format setting (ticket #147). 24 is above 12, so no
+// one reads it the wrong way round.
+func (s *server) dateSample(h store.Household) time.Time {
+	return time.Date(s.householdNow(h).Year(), time.December, 24, 12, 0, 0, 0, time.UTC)
 }

@@ -10,7 +10,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-func homeDE(b *box) string { return de(b, "/").body }
+func homeDE(b *box) string { return deGet(b, "/").body }
 
 var stepTitles = []string{"Familie eintragen", "Zweites Elternteil einladen", "Kalender verbinden", "Aufgaben oder Routine", "Einkaufsliste und Essensplan", "Erstes Display aufhängen"}
 
@@ -268,7 +268,7 @@ func TestFirstStepsCanBeHiddenAndShownAgain(t *testing.T) {
 	if card(homeDE(b)) == "" {
 		t.Fatal("no card to hide")
 	}
-	if strings.Contains(de(b, "/settings").body, "/first-steps/show") {
+	if strings.Contains(deGet(b, "/settings").body, "/first-steps/show") {
 		t.Error("Settings offers to show steps that are shown")
 	}
 	if r := b.post("/first-steps/hide", url.Values{}); r.status != http.StatusSeeOther || r.location != "/" {
@@ -284,7 +284,7 @@ func TestFirstStepsCanBeHiddenAndShownAgain(t *testing.T) {
 	if h, _ := b.db.HomeHousehold(); !h.FirstStepsHidden {
 		t.Error("hiding is not stored")
 	}
-	hub := de(b, "/settings").body
+	hub := deGet(b, "/settings").body
 	if !strings.Contains(hub, `<form method="post" action="/first-steps/show">`) || !strings.Contains(hub, "Erste Schritte anzeigen") {
 		t.Errorf("Settings has no entry to show the first steps again:\n%s", hub)
 	}
@@ -297,7 +297,7 @@ func TestFirstStepsCanBeHiddenAndShownAgain(t *testing.T) {
 	if h, _ := b.db.HomeHousehold(); h.FirstStepsHidden {
 		t.Error("showing is not stored")
 	}
-	if strings.Contains(de(b, "/settings").body, "/first-steps/show") {
+	if strings.Contains(deGet(b, "/settings").body, "/first-steps/show") {
 		t.Error("Settings still offers to show them")
 	}
 }

@@ -177,7 +177,7 @@ func TestTodayCardComesAfterTheFirstSteps(t *testing.T) {
 func childOf(t *testing.T, f *familyBox, name string) *box {
 	t.Helper()
 	token := auth.NewToken()
-	if err := f.db.CreateSession(auth.HashToken(token), f.people[name].ID, f.now.Add(time.Hour)); err != nil {
+	if err := f.db.CreateSession(auth.HashToken(token), f.people[name].ID, "", f.now, f.now.Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
 	c := *f.box

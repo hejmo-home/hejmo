@@ -176,7 +176,7 @@ func TestConnectionCalendarsNothingTickedIsAnError(t *testing.T) {
 	b := signedInAPI(t).b
 	id := connectedBox(t, b)
 	r := b.do(http.MethodPost, "/connections/"+id+"/calendars", url.Values{"interval": {"60"}}, map[string]string{"Accept-Language": "en"})
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `class="error"`) {
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `<p class="ferr" id="err-calendar" role="alert">`) || strings.Contains(r.body, `class="error"`) {
 		t.Fatalf("status %d\n%s", r.status, r.body)
 	}
 }

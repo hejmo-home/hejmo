@@ -355,8 +355,8 @@ body:has(.family-page) { overflow: hidden; }
 
 .fv-grid { --visible: min(var(--cols), var(--cols-max)); flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: max(var(--col-min), calc((100% - (var(--visible) - 1) * var(--gap)) / var(--visible))); grid-auto-rows: minmax(0, 1fr); gap: var(--gap); overflow-x: auto; }
 .fv .column { display: flex; flex-direction: column; gap: 0; min-height: 0; overflow: hidden; }
-.fv .person-link { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: 0; color: inherit; text-decoration: none; }
-.fv .person-name { min-width: 0; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* its own shrinkable flex item: a name never breaks inside a word; only a word wider than the column breaks at its edge (not clipped) */
+.fv .person-link { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; min-height: var(--touch-target); min-width: 0; color: inherit; text-decoration: none; }
+.fv .person-name { min-width: 0; max-width: 100%; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* its own shrinkable flex item: a name never breaks inside a word; only a word wider than the column breaks at its edge (not clipped) */
 @supports (hyphenate-limit-chars: 12 5 5) { .fv .person-name { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
 .fv .column h2 { flex: none; min-width: 0; margin: 0 0 var(--gap-cards); font-size: var(--fs-person-name); font-weight: var(--fw-person-name); display: flex; align-items: center; gap: 8px; }
 [data-theme="bw"] .fv .person-link { gap: 6px; } /* the bw marker is 2 px larger, so the gap is 2 px smaller and long names still fit (ticket 150) */
@@ -720,7 +720,7 @@ main > .back { margin: 0 0 4px; }
 .steps .pair .f.invalid { flex-basis: 100%; }
 @supports selector(:has(a)) {
   .steps fieldset:has(> .card-row .switch input:not(:checked)) > .when-on { display: none; }
-  .calchoice:has(> .card-row .switch input:not(:checked)) > :not(.card-row):not(input) { display: none; }
+  /* #183: replaced by the .calfields rules below */
 }
 .calchoice .status { font-size: var(--fs-meta); color: var(--text-secondary); }
 details.danger { box-sizing: border-box; }
@@ -1837,3 +1837,86 @@ p.why.health > span { display: grid; gap: 2px; }
 .unchecked-box ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
 .unchecked-box li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; overflow-wrap: break-word; }
 [data-theme="bw"] .unchecked-box { border-color: var(--text); }
+
+/* ==== New for #183: Choose calendars cards (preview-183) ==================== */
+/* One card per found calendar. Head: where it comes from (kicker), the name at
+   the source, the switch with its state in words. Facts: event count and last
+   sync, quiet. Fields only while the switch is on, below a hairline. */
+.calchoice { padding: 16px; gap: 0; }
+.calchoice > .card-row { align-items: flex-start; gap: var(--gap); margin: 0; }
+.calchoice .card-row .t { gap: 2px; flex: 1; }
+.calchoice .card-row .src { font-size: var(--fs-meta); color: var(--text-secondary); }
+.calchoice .card-row .t b { overflow-wrap: break-word; hyphens: manual; }
+[data-theme="bw"] .calchoice { border: 2px solid var(--text); }
+[data-theme="bw"] .calchoice.invalid { border-width: 4px; outline: 0; }
+.calchoice .switch { margin-top: 2px; }
+/* State in words: exactly one of the two, never both. */
+.calchoice .card-row .state { font-size: var(--fs-label); color: var(--text-secondary); }
+.calchoice .state .w { color: var(--text); font-weight: 700; font-size: inherit; }
+.calchoice .state .on-text, .calchoice .state .off-text { display: none; }
+.calchoice .state.is-on .on-text, .calchoice .state:not(.is-on) .off-text { display: inline; }
+@supports selector(:has(a)) {
+  .calchoice .card-row:has(.switch input:checked) .state .on-text { display: inline; }
+  .calchoice .card-row:has(.switch input:checked) .state .off-text { display: none; }
+  .calchoice .card-row:has(.switch input:not(:checked)) .state .on-text { display: none; }
+  .calchoice .card-row:has(.switch input:not(:checked)) .state .off-text { display: inline; }
+}
+.calfacts { margin: 8px 0 0; display: grid; gap: 2px; font-size: var(--fs-meta); color: var(--text-secondary); }
+.calfacts p { margin: 0; display: flex; gap: 6px; align-items: flex-start; overflow-wrap: anywhere; }
+.calfacts .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.calfacts span { color: inherit; font-size: inherit; }
+.calfacts .count[data-state] { font-style: normal; background: none; color: inherit; padding: 0; font-weight: 400; border: 0; }
+.calfacts .count .warn-text { display: none; }
+/* The line holds both icons and all three texts; the state picks (the script
+   sets data-state and the text in .ct; an empty calendar shows one of its two texts). */
+.calfacts .count .i-info, .calfacts .count .info-text { display: none; }
+.calfacts .count[data-state="unknown"] .i-cal, .calfacts .count[data-state="empty"] .i-cal { display: none; }
+.calfacts .count[data-state="unknown"] .i-info, .calfacts .count[data-state="empty"] .i-info { display: block; }
+.calfacts .count[data-state="empty"] .ct { display: none; }
+.calfacts .count[data-state="empty"] .info-text { display: inline; }
+/* An empty calendar is information while off; once switched on it is a warning:
+   the box would show nothing from it. */
+.calchoice.is-on .calfacts .count[data-state="empty"] { display: inline-flex; background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-field); padding: 3px 8px; font-weight: 600; font-size: var(--fs-label); }
+.calchoice.is-on .calfacts .count[data-state="empty"] .icon { stroke: currentColor; }
+.calchoice.is-on .calfacts .count[data-state="empty"] .warn-text { display: inline; }
+.calchoice.is-on .calfacts .count[data-state="empty"] .info-text { display: none; }
+[data-theme="bw"] .calchoice.is-on .calfacts .count[data-state="empty"] { background: none; color: var(--text); border: 2px solid var(--text); }
+@supports selector(:has(a)) {
+  .calchoice:has(> .card-row .switch input:checked) .calfacts .count[data-state="empty"] { display: inline-flex; background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-field); padding: 3px 8px; font-weight: 600; font-size: var(--fs-label); }
+  .calchoice:has(> .card-row .switch input:checked) .calfacts .count[data-state="empty"] .warn-text { display: inline; }
+  .calchoice:has(> .card-row .switch input:checked) .calfacts .count[data-state="empty"] .info-text { display: none; }
+  [data-theme="bw"] .calchoice:has(> .card-row .switch input:checked) .calfacts .count[data-state="empty"] { background: none; color: var(--text); border: 2px solid var(--text); }
+  .calchoice:has(> .card-row .switch input:not(:checked)) .calfacts .count[data-state="empty"] { background: none; color: var(--text-secondary); border: 0; padding: 0; font-weight: 400; font-size: var(--fs-meta); }
+  .calchoice:has(> .card-row .switch input:not(:checked)) .calfacts .count[data-state="empty"] .warn-text { display: none; }
+  .calchoice:has(> .card-row .switch input:not(:checked)) .calfacts .count[data-state="empty"] .info-text { display: inline; }
+}
+/* Fields: only while on (server: not rendered for off cards that are not synced;
+   CSS hides them the moment the switch goes off). */
+.calfields { display: grid; gap: var(--gap); margin-top: var(--gap); padding-top: var(--gap); border-top: 1px solid var(--border); }
+[data-theme="bw"] .calfields { border-top: 2px solid var(--text); }
+.calchoice:not(.is-on) > .calfields { display: none; }
+@supports selector(:has(a)) {
+  .calchoice:has(> .card-row .switch input:checked) > .calfields { display: grid; }
+  .calchoice:has(> .card-row .switch input:not(:checked)) > .calfields { display: none; }
+}
+.calfields .f > label { font-weight: 600; color: var(--text); }
+.calfields .f .hint { margin: 0; display: flex; gap: 6px; align-items: flex-start; }
+.calfields .f .hint .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.calfields .f .hint q { quotes: "„" "“"; font-weight: 600; color: var(--text); }
+:lang(en) .calfields .f .hint q { quotes: "“" "”"; }
+.calfields fieldset.chips { padding: 0; }
+.calfields fieldset.chips legend { font-size: var(--fs-label); font-weight: 600; color: var(--text); float: none; margin-bottom: 8px; }
+/* "More options" inside a card: the summary stays next to the label, never
+   pushed to the far right; a swatch shows the colour in use. */
+.calfields details.more { border-top: 0; margin: -4px 0 -10px; }
+.calchoice details.more > summary, .steps > details.more.all-cals > summary { flex-wrap: wrap; column-gap: 8px; row-gap: 0; }
+.calchoice details.more .sum, .steps > details.more.all-cals .sum { margin-left: 0; display: inline-flex; align-items: center; gap: 6px; }
+.calchoice details.more .sum::before, .steps > details.more.all-cals .sum::before { content: "·"; color: var(--text-secondary); }
+.swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--sw); border: 1px solid var(--border); flex: none; }
+[data-theme="bw"] .swatch { display: none; }
+.steps > details.more.all-cals { border-top: 1px solid var(--border); }
+.calchoice .ferr { margin-top: 10px; }
+.calchoice.invalid { outline: 2px solid var(--error-text); outline-offset: -2px; }
+.choose-none { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 8px; max-width: 560px; box-sizing: border-box; }
+[data-theme="bw"] .choose-none { border: 2px solid var(--text); }
+.choose-none p { margin: 0; }

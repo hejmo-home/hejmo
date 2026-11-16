@@ -10,10 +10,16 @@ info:
     (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens;
     actions: read, write, delete, complete).
 
-    The scope `calendars` is for a phone's calendar app: it opens the box's
-    CalDAV server at `/dav/` (HTTP Basic with the person's username and the
-    token as password, HTTPS only) and nothing in this REST API. Create one
-    token per device and revoke it on its own.
+    The scopes `calendars` and `tasks` are for a phone's calendar and
+    reminders apps: they open the box's CalDAV server at `/dav/` (HTTP Basic
+    with the person's username and the token as password, HTTPS only) and
+    nothing in this REST API. `calendars` opens the calendars (VEVENT),
+    `tasks` one task list per person (VTODO); a device token holds both. A
+    task list shows a once task as it is and a repeating task as today's
+    occurrence. Clients may change a task's title, notes, the day of a once
+    task and its completion (which credits or deducts its stars once);
+    creating and deleting tasks from a client is refused with 403. Create
+    one token per device and revoke it on its own.
   license:
     name: AGPL-3.0-or-later
     url: https://www.gnu.org/licenses/agpl-3.0.html
@@ -2165,6 +2171,7 @@ components:
         person_id: { type: string, format: uuid }
         title: { type: string, minLength: 1, maxLength: 120, example: Brush teeth }
         emoji: { type: string, maxLength: 16, example: "🪥" }
+        notes: { type: string, maxLength: 2000, description: "Optional free text. CalDAV clients show it as the task's description and may change it" }
         repeat: { $ref: "#/components/schemas/TaskRepeat" }
         weekdays:
           type: array
@@ -2176,12 +2183,13 @@ components:
         routine_id: { type: string, format: uuid, description: "Create the task as the last step of this routine (of the same person). It takes the routine's part of the day and `part_of_day` is ignored" }
     Task:
       type: object
-      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, stars, routine_id, position, due, done]
+      required: [id, person_id, title, emoji, notes, repeat, weekdays, date, part_of_day, stars, routine_id, position, due, done]
       properties:
         id: { type: string, format: uuid }
         person_id: { type: string, format: uuid }
         title: { type: string }
         emoji: { type: string }
+        notes: { type: string, description: "Free text; empty if none" }
         repeat: { $ref: "#/components/schemas/TaskRepeat" }
         weekdays:
           type: array

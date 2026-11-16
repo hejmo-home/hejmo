@@ -1,0 +1,34 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "routine.new") "Frame" .Frame)}}
+  <h1>{{t "routine.new"}}</h1>
+  <p class="lead">{{t "routine.new.lead"}}</p>
+  {{$f := .Form}}
+  <form method="post" action="/routines" class="steps">
+    <fieldset>
+      {{template "personChips" (dict "Root" . "Name" "person" "Legend" (t "routine.field.person") "People" .People "Selected" (strs (index $f "Person")) "Single" true)}}
+      {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "routine.field.part") "Root" . "Name" "part")}}
+        {{range $p := .Parts}}{{template "option" (dict "Name" "part" "Value" $p "Label" (t (printf "routine.part.%s" $p)) "Checked" (eq $p (index $f "Part")))}}{{end}}
+      </fieldset>
+      {{if and (eq .ErrorField "part") .ErrorHTML}}{{template "fieldErrorHTML" (dict "Name" "part" "HTML" .ErrorHTML)}}{{else}}{{template "fieldError" (dict "Root" . "Name" "part")}}{{end}}
+      <p class="hint">{{t "routine.part.hint"}}</p>
+    </fieldset>
+    <fieldset>
+      <fieldset class="choice"{{if eq .ErrorField "template"}} aria-invalid="true" aria-describedby="err-template"{{end}}>
+        <legend>{{t "routine.tpl.pick.legend"}}</legend>
+        <label><input type="radio" name="template" value=""{{if not (index $f "Template")}} checked{{end}}><b>{{t "routine.tpl.pick.none"}}</b><small>{{t "routine.tpl.pick.none.hint"}}</small></label>
+        {{if .OwnTemplates}}<p class="grp">{{t "routine.tpl.own"}}</p>
+        {{range .OwnTemplates}}{{template "tplPickCard" (dict "Pick" . "Chosen" (index $f "Template"))}}{{end}}{{end}}
+        <p class="grp">{{t "routine.tpl.shipped"}}</p>
+        {{range .ShippedTemplates}}{{template "tplPickCard" (dict "Pick" . "Chosen" (index $f "Template"))}}{{end}}
+        {{template "fieldError" (dict "Root" . "Name" "template")}}
+      </fieldset>
+      <p class="hint">{{t "routine.tpl.pick.hint"}}</p>
+      {{template "moreOpen" (dict "Label" (t "tasks.more") "Summary" (tf "routine.more.summary" "name" (index $f "Name")) "Open" (eq .ErrorField "name"))}}
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "routine.field.name") "Value" (index $f "Name") "Max" 60 "Hint" (t "routine.field.name.hint"))}}
+      {{template "moreClose"}}
+    </fieldset>
+    <button class="button" type="submit">{{t "routine.create"}}</button>
+  </form>
+{{template "foot"}}
+
+{{/* A template as a choice card: its part of the day and every step with its emoji, so the parent sees what the child will get. */}}
+{{define "tplPickCard"}}{{$p := .Pick}}<label><input type="radio" name="template" value="{{$p.ID}}"{{if eq $p.ID .Chosen}} checked{{end}}><b>{{$p.Name}}</b><small><span class="tpart">{{$p.Part}}</span> · {{$p.Count}} {{range $i, $s := $p.Steps}}{{if $i}} {{end}}<span class="st">{{$s}}</span>{{end}}</small></label>{{end}}

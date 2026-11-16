@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -24,11 +25,6 @@ const (
 	// confirmed.
 	phonePollSeconds = 3
 )
-
-type phoneView struct {
-	ID, Name, Person, Paired, LastSeen string
-	Expired                            bool
-}
 
 // waitingView is a phone that opened its code. The form fields and the error
 // are filled only for the pairing a failed confirmation was about.
@@ -87,12 +83,11 @@ func (s *server) trustContinue(r *http.Request) string {
 }
 
 func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principal, status int, code *pairingCode, form confirmForm) {
-	loc := p.location()
 	at := func(t time.Time) string {
 		if t.IsZero() {
 			return ""
 		}
-		return t.In(loc).Format(p.timeLayout())
+		return p.dateTime(t)
 	}
 	phones, err := s.db.Phones(p.household.ID)
 	if err != nil {
@@ -109,10 +104,23 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 		s.fail(w, "people", err)
 		return
 	}
-	var phoneViews []phoneView
+	chips, err := s.chipByPerson(p.household.ID)
+	if err != nil {
+		s.fail(w, "people", err)
+		return
+	}
+	var rows []rowView
 	for _, ph := range phones {
-		expired := !ph.SessionEnds.IsZero() && !ph.SessionEnds.After(s.now())
-		phoneViews = append(phoneViews, phoneView{ph.ID, ph.Name, ph.PersonName, at(ph.PairedAt), at(ph.LastSeen), expired})
+		row := rowView{Href: "/phones/" + ph.ID, Title: ph.Name, Lines: []rowLine{s.whoLine(r, chips, ph.PersonID, ph.PersonName)}}
+		switch {
+		case !ph.SessionEnds.IsZero() && !ph.SessionEnds.After(s.now()):
+			row.Flag = &flagView{Kind: "warn", Text: s.say(r, i18n.Msg("phones.expired"))}
+		case ph.LastSeen.IsZero():
+			row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("phones.never"))})
+		default:
+			row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("phones.last_seen_at", "when", p.when(ph.LastSeen)))})
+		}
+		rows = append(rows, row)
 	}
 	var waitingViews []waitingView
 	for _, wp := range waiting {
@@ -128,7 +136,7 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 	}
 	data := map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID),
-		"Phones": phoneViews, "Waiting": waitingViews, "People": peopleViews,
+		"Rows": rows, "Waiting": waitingViews, "People": peopleViews,
 	}
 	if code != nil {
 		svg, err := qrsvg.SVG(code.URL, s.i18n.T(s.langOf(r), "phones.qr.label"))
@@ -183,18 +191,85 @@ func (s *server) handlePhonePairingConfirm(w http.ResponseWriter, r *http.Reques
 	}
 }
 
+// phoneOf finds one of the household's paired phones.
+func (s *server) phoneOf(householdID, id string) (store.Phone, bool, error) {
+	phones, err := s.db.Phones(householdID)
+	if err != nil {
+		return store.Phone{}, false, err
+	}
+	for _, ph := range phones {
+		if ph.ID == id {
+			return ph, true, nil
+		}
+	}
+	return store.Phone{}, false, nil
+}
+
+func (s *server) handlePhonePage(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	ph, found, err := s.phoneOf(p.household.ID, r.PathValue("id"))
+	if err != nil {
+		s.fail(w, "phone", err)
+		return
+	}
+	if !found {
+		http.NotFound(w, r)
+		return
+	}
+	people, err := s.db.People(p.household.ID)
+	if err != nil {
+		s.fail(w, "people", err)
+		return
+	}
+	chips := chipsOf(people)
+	who := factView{Label: s.say(r, i18n.Msg("phones.fact.for")), Value: ph.PersonName}
+	can := "phones.can.child"
+	for i, c := range chips {
+		if c.ID == ph.PersonID {
+			who.Value, who.People = "", []personChip{c}
+			if people[i].Role == store.RoleParent {
+				can = "phones.can.parent"
+			}
+		}
+	}
+	last := factView{Label: s.say(r, i18n.Msg("phones.fact.last_seen")), Value: s.say(r, i18n.Msg("phones.never"))}
+	if !ph.LastSeen.IsZero() {
+		last.Value = p.when(ph.LastSeen)
+	}
+	facts := []factView{who,
+		{Label: s.say(r, i18n.Msg("phones.fact.can")), Value: s.say(r, i18n.Msg(can))},
+		{Label: s.say(r, i18n.Msg("phones.fact.paired")), Value: p.day(ph.PairedAt)},
+		last}
+	if !ph.SessionEnds.IsZero() && !ph.SessionEnds.After(s.now()) {
+		facts = append(facts, factView{Label: s.say(r, i18n.Msg("phones.fact.session")), Flag: &flagView{Kind: "warn", Text: s.say(r, i18n.Msg("phones.expired"))}})
+	}
+	s.render(w, r, http.StatusOK, "phone.html", map[string]any{"Person": p.person, "Phone": ph, "Facts": facts, "Title": ph.Name})
+}
+
 func (s *server) handlePhoneRevoke(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
 	}
-	switch err := s.db.RevokePhone(p.household.ID, r.PathValue("id")); {
+	ph, found, err := s.phoneOf(p.household.ID, r.PathValue("id"))
+	if err != nil {
+		s.fail(w, "phone", err)
+		return
+	}
+	if !found {
+		http.NotFound(w, r)
+		return
+	}
+	switch err := s.db.RevokePhone(p.household.ID, ph.ID); {
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
 	case err != nil:
 		s.fail(w, "revoke phone", err)
 	default:
-		s.redirectSaved(w, r, "/phones", "flash.phone_revoked")
+		s.redirectSavedNamed(w, r, "/phones", "flash.phone_revoked", ph.Name)
 	}
 }
 

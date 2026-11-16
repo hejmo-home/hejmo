@@ -7,42 +7,72 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 type connectionView struct {
 	ID, URL, Username string
+	// ICloud is set for iCloud; other servers show their host as the name.
+	ICloud bool
+	Host   string
 }
 
-// connectionErrorKey is the i18n key explaining an input error.
-func connectionErrorKey(e *inputError) string {
+func newConnectionView(c store.Connection) connectionView {
+	v := connectionView{ID: c.ID, URL: c.URL, Username: c.Username, ICloud: c.URL == iCloudServer}
+	if u, err := url.Parse(c.URL); err == nil {
+		v.Host = u.Host
+	}
+	return v
+}
+
+// connectionErrorKey is the i18n key explaining an input error. provider is
+// the service being connected ("icloud" or "caldav"); empty for a connection
+// that is already saved, where the guide's steps are not on the page.
+func connectionErrorKey(e *inputError, provider string) string {
 	switch e.Field {
 	case "name", "color", "interval", "audience":
 		return "calendars.error." + e.Field
 	case "url":
 		return "connections.error.url"
-	default: // provider, username, password, login, server
-		return "connections.error." + e.Field
+	case "login":
+		switch provider {
+		case "icloud":
+			return "connections.error.login_icloud"
+		case "caldav":
+			return "connections.error.login_caldav"
+		}
+	case "server":
+		switch provider {
+		case "icloud":
+			return "connections.error.server_icloud"
+		case "":
+			return "connections.error.server_saved"
+		}
 	}
+	return "connections.error." + e.Field // provider, username, password, login, server, foreign_host, downgrade
 }
 
-// connectionErrorField names the input of the connection form an error belongs
-// to. Address problems of iCloud show at the service, since iCloud hides the
-// address field.
+// connectionErrorField names the input of the connect page an error belongs
+// to; empty means it has no field and shows as a general message. A refused
+// login sits at the password. iCloud has no address field, so its server
+// problems show generally.
 func connectionErrorField(e *inputError, provider string) string {
 	switch e.Field {
-	case "provider", "username", "password", "url":
+	case "username", "password", "url":
 		return e.Field
 	case "login":
 		return "password"
+	case "server", "foreign_host", "downgrade":
+		if provider == "caldav" {
+			return "url"
+		}
 	}
-	if provider == "icloud" {
-		return "provider"
-	}
-	return "url" // server, foreign_host, downgrade
+	return ""
 }
 
 // selectionErrorField names what an error of the calendar choice belongs to:
@@ -55,10 +85,17 @@ func selectionErrorField(e *inputError) string {
 	return "calendar"
 }
 
+// wasteRow is a read-only calendar of a connection with its waste collection switch.
+type wasteRow struct {
+	ID, Name string
+	Waste    bool
+}
+
 // selectionCalendar is one calendar on the choice page with what the parent
 // entered for it, or what is stored, or the defaults. On means the switch is on.
 type selectionCalendar struct {
 	URL, Name, Color string
+	LastSync         string // when it last synced, in words; empty for a calendar that is not synced
 	Synced, On       bool
 	People, Groups   []string
 }
@@ -98,7 +135,7 @@ func selectionCalendars(found []discoveredJSON, form url.Values, synced []store.
 // renderSelection shows the calendars found on a connection so parents can
 // tick the ones to sync. Colour and audience are chosen per calendar. A
 // submitted form, if any, fills the page again.
-func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p principal, status int, conn store.Connection, found []discoveredJSON, form url.Values, errKey, errField, errCalendar string) {
+func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p principal, status int, conn store.Connection, found []discoveredJSON, form url.Values, errKey, errField, errCalendar string, success ...i18n.Message) {
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
 		s.fail(w, "people", err)
@@ -123,20 +160,70 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		s.fail(w, "synced calendars", err)
 		return
 	}
-	var mine []store.SyncedCalendar
+	mine := calendarsOf(all, conn.ID)
 	var taken []string
 	for _, c := range all {
 		taken = append(taken, c.Color)
-		if c.ConnectionID == conn.ID {
-			mine = append(mine, c)
+	}
+	// What the box knows about the connection: when it last synced, and
+	// whether the server refused the login.
+	var last time.Time
+	var refusedAt time.Time
+	var names []string
+	for _, c := range mine {
+		names = append(names, c.Name)
+		if c.Sync.LastSuccess.After(last) {
+			last = c.Sync.LastSuccess
+		}
+		if c.Sync.LastError.Key == loginFailKey && c.Sync.LastAttempt.After(refusedAt) {
+			refusedAt = c.Sync.LastAttempt
 		}
 	}
-	s.render(w, r, status, "connection.html", map[string]any{
-		"Person": p.person, "Connection": connectionView{ID: conn.ID, URL: conn.URL, Username: conn.Username},
-		"Found": selectionCalendars(found, form, mine, taken), "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
+	lastFact := factView{Label: s.say(r, i18n.Msg("connections.fact.last")), Value: s.say(r, i18n.Msg("sync.never"))}
+	if !last.IsZero() {
+		lastFact.Value = p.when(last)
+	}
+	for _, c := range mine {
+		if f := s.syncFlag(r, p, c, true); f != nil && (lastFact.Flag == nil || c.Sync.LastError.Key == loginFailKey) {
+			lastFact.Flag = f
+		}
+	}
+	facts := []factView{
+		{Label: s.say(r, i18n.Msg("connections.fact.service")), Value: s.serviceName(r, conn)},
+		{Label: s.say(r, i18n.Msg("connections.fact.username")), Value: conn.Username},
+		lastFact,
+		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: p.day(conn.CreatedAt)},
+	}
+	shown := selectionCalendars(found, form, mine, taken)
+	for i, c := range shown {
+		for _, m := range mine {
+			if c.Synced && caldavclient.AddressKey(m.URL) == caldavclient.AddressKey(c.URL) {
+				shown[i].LastSync = s.syncLast(r, p, m)
+			}
+		}
+	}
+	var wasteRows []wasteRow
+	for _, m := range mine {
+		if m.ReadOnly {
+			wasteRows = append(wasteRows, wasteRow{ID: m.ID, Name: m.Name, Waste: m.Waste})
+		}
+	}
+	data := map[string]any{
+		"Waste":  wasteRows,
+		"Person": p.person, "Connection": newConnectionView(conn), "Title": conn.Username,
+		"Found": shown, "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
 		"DefaultInterval": interval, "SyncStale": s.syncStale(p.household.ID),
 		"Error": errKey, "ErrorField": errField, "ErrorCalendar": errCalendar,
-	})
+		"Facts": facts, "Names": names, "ICloud": conn.URL == iCloudServer,
+		"LoginOpen": !refusedAt.IsZero() || errField == "password",
+	}
+	if !refusedAt.IsZero() {
+		data["Refused"] = s.say(r, i18n.Msg("connections.error.refused", "when", p.when(refusedAt)))
+	}
+	if len(success) > 0 {
+		data["SuccessMsg"] = success[0]
+	}
+	s.render(w, r, status, "connection.html", data)
 }
 
 func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
@@ -157,8 +244,10 @@ func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		if in.Provider == "icloud" {
 			in.URL, in.Single = "", false // iCloud ignores both; do not bring them back when the form is shown again
 		}
-		form := map[string]any{"ConnError": connectionErrorKey(bad), "ConnErrorField": connectionErrorField(bad, in.Provider), "ConnProvider": in.Provider, "ConnURL": in.URL, "ConnUsername": in.Username, "ConnSingle": in.Single}
-		s.renderCalendars(w, r, p, http.StatusUnprocessableEntity, form)
+		s.renderConnectNew(w, r, p, http.StatusUnprocessableEntity, in.Provider, map[string]any{
+			"Error": connectionErrorKey(bad, in.Provider), "ErrorField": connectionErrorField(bad, in.Provider),
+			"ConnURL": in.URL, "ConnUsername": in.Username, "ConnSingle": in.Single,
+		})
 		return
 	case err != nil:
 		s.fail(w, "connect", err)
@@ -169,7 +258,42 @@ func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "connect", err)
 		return
 	}
-	s.renderSelection(w, r, p, http.StatusOK, conn, marked, nil, "", "", "")
+	s.renderSelection(w, r, p, http.StatusOK, conn, marked, nil, "", "", "", connectedMessage(in.Provider, len(marked)))
+}
+
+// connectedMessage is the success line after connecting: what was connected
+// and how many calendars were found.
+func connectedMessage(provider string, n int) i18n.Message {
+	key := "connections.success." + provider
+	switch n {
+	case 0:
+		return i18n.Msg(key + ".none")
+	case 1:
+		return i18n.Msg(key + ".one")
+	}
+	return i18n.Msg(key+".many", "n", strconv.Itoa(n))
+}
+
+// renderConnectNew shows the connect page with the guide of one service
+// checked. Without a service, or with an unknown one, iCloud is checked.
+func (s *server) renderConnectNew(w http.ResponseWriter, r *http.Request, p principal, status int, service string, extra map[string]any) {
+	if service != "caldav" {
+		service = "icloud"
+	}
+	data := map[string]any{
+		"Person": p.person, "Service": service, "SyncStale": s.syncStale(p.household.ID),
+		"Error": "", "ErrorField": "", "ConnURL": "", "ConnUsername": "", "ConnSingle": false,
+	}
+	for k, v := range extra {
+		data[k] = v
+	}
+	s.render(w, r, status, "connection_new.html", data)
+}
+
+func (s *server) handleConnectNew(w http.ResponseWriter, r *http.Request) {
+	if p, ok := s.parentPage(w, r); ok {
+		s.renderConnectNew(w, r, p, http.StatusOK, r.URL.Query().Get("service"), nil)
+	}
 }
 
 func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
@@ -189,13 +313,102 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 	var bad *inputError
 	switch {
 	case errors.As(err, &bad):
-		s.renderSelection(w, r, p, http.StatusBadGateway, conn, nil, nil, connectionErrorKey(bad), "", "")
+		// The server cannot be asked now (the login was refused, or it is not
+		// reachable): the page still shows the calendars the box has, so the
+		// password can be replaced and the connection can be disconnected.
+		stored, serr := s.storedCalendars(p, conn)
+		if serr != nil {
+			s.fail(w, "synced calendars", serr)
+			return
+		}
+		errKey, status := connectionErrorKey(bad, ""), http.StatusBadGateway
+		if bad.Field == "login" {
+			status = http.StatusOK
+			if refused, _ := s.refusedSince(p, conn); refused {
+				errKey = "" // the line about the refused login says it
+			}
+		}
+		s.renderSelection(w, r, p, status, conn, stored, nil, errKey, "", "")
 		return
 	case err != nil:
 		s.fail(w, "discover", err)
 		return
 	}
 	s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "")
+}
+
+// calendarsOf picks the calendars of one connection out of the household's synced calendars.
+func calendarsOf(all []store.SyncedCalendar, connectionID string) []store.SyncedCalendar {
+	var mine []store.SyncedCalendar
+	for _, c := range all {
+		if c.ConnectionID == connectionID {
+			mine = append(mine, c)
+		}
+	}
+	return mine
+}
+
+// storedCalendars lists the calendars a connection has on the box, in the
+// shape of discovered ones, for when the server cannot be asked.
+func (s *server) storedCalendars(p principal, conn store.Connection) ([]discoveredJSON, error) {
+	all, err := s.db.SyncedCalendars(p.household.ID)
+	if err != nil {
+		return nil, err
+	}
+	var out []discoveredJSON
+	for _, c := range calendarsOf(all, conn.ID) {
+		out = append(out, discoveredJSON{URL: c.URL, Name: c.Name, Added: true, CalendarID: c.ID})
+	}
+	return out, nil
+}
+
+// refusedSince reports whether the last sync of one of the connection's
+// calendars was refused at login.
+func (s *server) refusedSince(p principal, conn store.Connection) (bool, error) {
+	all, err := s.db.SyncedCalendars(p.household.ID)
+	if err != nil {
+		return false, err
+	}
+	for _, c := range calendarsOf(all, conn.ID) {
+		if c.Sync.LastError.Key == loginFailKey {
+			return true, nil
+		}
+	}
+	return false, nil
+}
+
+// handleConnectionCredentials replaces the password of a connection after the
+// server accepted it. A refused login is shown at the password field and
+// leaves the old password in place.
+func (s *server) handleConnectionCredentials(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	conn, err := s.db.Connection(p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		s.fail(w, "connection", err)
+		return
+	}
+	err = s.changeConnectionPassword(r.Context(), p, conn.ID, r.PostFormValue("password"))
+	var bad *inputError
+	switch {
+	case errors.As(err, &bad):
+		// Never sent back: the new password is not put on the page again.
+		stored, serr := s.storedCalendars(p, conn)
+		if serr != nil {
+			s.fail(w, "synced calendars", serr)
+			return
+		}
+		s.renderSelection(w, r, p, http.StatusUnprocessableEntity, conn, stored, nil, connectionErrorKey(bad, ""), "password", "")
+	case err != nil:
+		s.fail(w, "change password", err)
+	default:
+		s.redirectSaved(w, r, "/connections/"+conn.ID, "flash.connection_password_saved")
+	}
 }
 
 // choiceKeep is a synced calendar that stays switched on, with what the
@@ -289,7 +502,7 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 		var bad *inputError
 		switch {
 		case errors.As(err, &bad):
-			show(connectionErrorKey(bad), selectionErrorField(bad), address)
+			show(connectionErrorKey(bad, ""), selectionErrorField(bad), address)
 			return false
 		case err != nil:
 			s.fail(w, "add calendar", err)
@@ -381,7 +594,7 @@ func (s *server) renderSwitchOffConfirmation(w http.ResponseWriter, r *http.Requ
 		names = append(names, c.Name)
 	}
 	s.render(w, r, http.StatusOK, "connection_off.html", map[string]any{
-		"Person": p.person, "Connection": connectionView{ID: conn.ID, URL: conn.URL, Username: conn.Username},
+		"Person": p.person, "Connection": newConnectionView(conn),
 		"Names": names, "Hidden": hidden, "SyncStale": s.syncStale(p.household.ID),
 	})
 }
@@ -397,12 +610,20 @@ func (s *server) handleConnectionDelete(w http.ResponseWriter, r *http.Request) 
 	if !ok {
 		return
 	}
-	if err := s.db.DeleteConnection(p.household.ID, r.PathValue("id")); errors.Is(err, store.ErrNotFound) {
+	conn, err := s.db.Connection(p.household.ID, r.PathValue("id"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	} else if err != nil {
+		s.fail(w, "connection", err)
+		return
+	}
+	if err := s.db.DeleteConnection(p.household.ID, conn.ID); errors.Is(err, store.ErrNotFound) {
 		http.NotFound(w, r)
 		return
 	} else if err != nil {
 		s.fail(w, "delete connection", err)
 		return
 	}
-	s.redirectSaved(w, r, "/calendars", "flash.connection_removed")
+	s.redirectSavedNamed(w, r, "/calendars", "flash.connection_removed", conn.Username)
 }

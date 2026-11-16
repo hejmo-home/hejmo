@@ -1,6 +1,7 @@
 package server
 
 import (
+	"html/template"
 	"net/http"
 	"strings"
 	"time"
@@ -23,6 +24,7 @@ var navItems = []navItem{
 	{"/calendar", "nav.calendar", auth.Perm("events", auth.Write)},
 	{"/tasks", "nav.tasks", auth.Perm("tasks", auth.Read)},
 	{"/meals", "nav.meals", auth.Perm("meals", auth.Read)},
+	{"/lists", "nav.lists", auth.Perm("lists", auth.Read)},
 	{"/settings", "nav.settings", auth.Perm("settings", auth.Write)},
 }
 
@@ -42,10 +44,27 @@ type frame struct {
 	// TimeFormat is the household's clock ("24h" or "12h"); the time picker
 	// follows it.
 	TimeFormat string
+	// DateFormat is the household's date layout ("dmy" or "mdy"); the offline
+	// line on phones writes its date that way.
+	DateFormat string
 	// Back is set on setup screens: they link back to the Settings hub.
 	Back bool
-	// Success is the success line after a saved change, already translated.
-	Success string
+	// BackHref and BackLabel (a locale key) are the link above the content that
+	// leads one level up: the Settings hub for setup screens, the meal plan and
+	// the templates menu for the meal plan templates, the device list for a device.
+	BackHref, BackLabel string
+	// BackText is the text of the back link when it is a name and not a locale key.
+	BackText string
+	// Success is the success line after a saved change, already translated
+	// and escaped; a text of the locales may hold <b> around a figure.
+	Success template.HTML
+	// Error is an error line shown above the page, already translated.
+	Error string
+	// The language switcher (ticket 134): the active language, its own name and
+	// flag file, the other languages, and the page to come back to.
+	LangName, LangFlag string
+	Others             []language
+	Next               string
 }
 
 // frameFor builds the frame for the person behind the request, or a bare
@@ -61,13 +80,29 @@ func (s *server) frameFor(r *http.Request) frame {
 	f.SignedIn = true
 	if h, err := s.db.HomeHousehold(); err == nil {
 		f.TimeFormat = string(h.TimeFormat)
+		f.DateFormat = string(h.DateFormat)
 	}
 	f.Back = isSetupPath(r.URL.Path)
+	switch {
+	case strings.HasPrefix(r.URL.Path, "/sessions/"):
+		f.BackHref, f.BackLabel = "/sessions", "sessions.back"
+	case f.Back:
+		f.BackHref, f.BackLabel = "/settings", "hub.back"
+	case strings.HasPrefix(r.URL.Path, "/routines/templates/"):
+		f.BackHref, f.BackLabel = "/routines/templates", "routine.tpl.title" // a template's pages lead back to the templates
+	case r.URL.Path == "/routines" || strings.HasPrefix(r.URL.Path, "/routines/"),
+		strings.HasPrefix(r.URL.Path, "/tasks/") && r.URL.Path != "/tasks/stars":
+		f.BackHref, f.BackLabel = "/tasks", "tasks.back" // the routine pages and the task page lead back to the tasks
+	case r.URL.Path == "/meals/templates":
+		f.BackHref, f.BackLabel = "/meals", "meals.tpl.back_plan"
+	case strings.HasPrefix(r.URL.Path, "/meals/templates/"):
+		f.BackHref, f.BackLabel = "/meals/templates", "meals.tpl.back_templates"
+	}
 	for _, it := range navItems {
 		if !auth.RoleAllows(p.Role, it.Needs) {
 			continue
 		}
-		cur := (it.Href == "/settings" && f.Back) || r.URL.Path == it.Href || (it.Href != "/" && strings.HasPrefix(r.URL.Path, it.Href+"/")) || (it.Href == "/" && strings.HasPrefix(r.URL.Path, "/notes/"))
+		cur := (it.Href == "/settings" && f.Back) || r.URL.Path == it.Href || (it.Href != "/" && strings.HasPrefix(r.URL.Path, it.Href+"/")) || (it.Href == "/" && strings.HasPrefix(r.URL.Path, "/notes/")) || (it.Href == "/tasks" && strings.HasPrefix(r.URL.Path, "/routines/"))
 		f.Items = append(f.Items, navLink{it.Href, it.Label, cur})
 	}
 	return f
@@ -123,4 +158,12 @@ var hubItems = []hubItem{
 	{"/people", "hub.people", "hub.people.hint", auth.Perm("people", auth.Write)},
 	{"/settings/household", "hub.household", "hub.household.hint", auth.Perm("settings", auth.Write)},
 	{"/otp", "hub.otp", "hub.otp.hint", auth.Perm("settings", auth.Write)},
+	{"/sessions", "hub.sessions", "hub.sessions.hint", auth.Perm("settings", auth.Write)},
+}
+
+// detailPages are the templates of detail pages (ticket 111, ADR 0017): they
+// start with a link back to their overview, which replaces the hub link.
+var detailPages = map[string]bool{
+	"display.html": true, "token.html": true, "token_once.html": true, "connection.html": true, "connection_off.html": true,
+	"calendar_detail.html": true, "phone.html": true, "connection_new.html": true, "person_edit.html": true, "invitation.html": true,
 }

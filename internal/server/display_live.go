@@ -70,7 +70,7 @@ func (s *server) handleDisplayView(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	markup, version, err := s.renderDisplayContent(h, d, s.langOf(r))
+	markup, version, err := s.renderDisplayContent(h, d, s.displayLang(r))
 	if err != nil {
 		s.fail(w, "family view", err)
 		return
@@ -101,7 +101,7 @@ func (s *server) handleDisplayEvents(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("X-Accel-Buffering", "no")
 	w.WriteHeader(http.StatusOK)
 
-	lang := s.langOf(r)
+	lang := s.displayLang(r)
 	person := r.URL.Query().Get("person") // a personal view follows its own version
 	hash, _ := displayToken(r)
 	last := ""

@@ -1,19 +1,29 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "setup.totp.title") "Frame" .Frame)}}
+{{template "head" (dict "Lang" .Lang "Title" (t "setup.totp.title") "Frame" .Frame "Wizard" .Wizard)}}
   <h1>{{t "setup.totp.title"}}</h1>
-  <p class="lead">{{t "setup.totp.intro"}}</p>
+  <p class="lead">{{t "setup.totp.lead"}}</p>
   {{template "error" .}}
-  <div class="steps">
-    <fieldset>
-      <legend>{{t "setup.totp.key"}}</legend>
-      <div class="qr">{{.QR}}</div>
-      <code class="secret" data-totp-secret="{{.Secret}}">{{.Secret}}</code>
-      <a class="hint" href="{{.URI}}">{{t "setup.totp.link"}}</a>
-    </fieldset>
-    <form method="post" action="/setup/totp">
-      <fieldset>
-        {{template "field" (dict "Root" . "Name" "code" "Label" (t "setup.totp.code") "Required" true "Inputmode" "numeric" "Pattern" "[0-9 ]{6,7}" "Autocomplete" "one-time-code" "Autofocus" true)}}
-      </fieldset>
-      <button class="button" type="submit">{{t "setup.totp.confirm"}}</button>
-    </form>
-  </div>
+  <form class="tile" method="post" action="/setup/totp">
+    <ol class="howto">
+      <li><div class="s"><b>{{t "setup.totp.s1.title"}}</b><p>{{t "setup.totp.s1.text"}}</p><p>{{rich (t .InstallKey)}}</p></div></li>
+      {{if .Phone}}
+      <li><div class="s"><b>{{t "setup.totp.phone.title"}}</b><p>{{t "setup.totp.phone.text"}}</p>
+        <a class="button secondary" href="{{.URI}}">{{t "setup.totp.link"}}</a>
+        {{template "moreOpen" (dict "Label" (t "setup.totp.other"))}}
+          <p>{{t "setup.totp.other.text"}}</p>
+          <div class="qr">{{.QR}}</div>
+        {{template "moreClose"}}</div></li>
+      {{else}}
+      <li><div class="s"><b>{{t "setup.totp.scan.title"}}</b><p>{{t "setup.totp.scan.text"}}</p>
+        <div class="qr">{{.QR}}</div>
+        {{template "moreOpen" (dict "Label" (t "setup.totp.key"))}}
+          <p>{{t "setup.totp.key.text"}}</p>
+          <p class="secret grouped" data-totp-secret="{{.Secret}}">{{.SecretGroups}}</p>
+          <p class="hint">{{tf "setup.totp.key.hint" "name" .Username}}</p>
+        {{template "moreClose"}}</div></li>
+      {{end}}
+      <li><div class="s"><b>{{t "setup.totp.s3.title"}}</b><p>{{t "setup.totp.s3.text"}}</p>
+        {{template "field" (dict "Root" . "Name" "code" "Label" (t "setup.totp.code") "Required" true "Inputmode" "numeric" "Pattern" "[0-9 ]{6,7}" "Autocomplete" "one-time-code")}}
+        <div class="actions"><button class="button" type="submit">{{t "setup.totp.confirm"}}</button></div></div></li>
+    </ol>
+  </form>
 {{template "foot"}}

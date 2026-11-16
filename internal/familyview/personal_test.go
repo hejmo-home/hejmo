@@ -187,3 +187,29 @@ func TestPersonalViewPartsGroupInOrder(t *testing.T) {
 		t.Errorf("no tasks: %+v", parts)
 	}
 }
+
+// Ticket 133 (child Home): an event that is for the whole household is marked,
+// so the child's page can say "with the whole family"; one for a part of it is not.
+func TestPersonalEventsKnowWhetherTheyAreForTheWholeFamily(t *testing.T) {
+	mia := family()[3]
+	v := familyview.BuildPersonal(familyview.PersonalInput{
+		Now: at(14, 9, 0), Person: mia, People: family(), Calendars: map[string]calendar.Audience{"cal": {}},
+		Occurrences: []calendar.Occurrence{
+			timed("Flea market", at(14, 11, 0), at(14, 13, 0)),
+			timed("Swimming", at(14, 15, 30), at(14, 16, 30), "mia"),
+			timed("Siblings", at(14, 17, 0), at(14, 18, 0), "mia", "seb"),
+		},
+	})
+	got := map[string]bool{}
+	for _, e := range v.Days[0].Events {
+		got[e.Title] = e.Family
+	}
+	if !got["Flea market"] || got["Swimming"] || got["Siblings"] || len(got) != 3 {
+		t.Errorf("family marks = %v", got)
+	}
+	// Without the household the view cannot tell, and marks nothing.
+	v = familyview.BuildPersonal(familyview.PersonalInput{Now: at(14, 9, 0), Person: mia, Calendars: map[string]calendar.Audience{"cal": {}}, Occurrences: []calendar.Occurrence{timed("Flea market", at(14, 11, 0), at(14, 13, 0))}})
+	if v.Days[0].Events[0].Family {
+		t.Error("an event is marked for the whole family without knowing the household")
+	}
+}

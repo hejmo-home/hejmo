@@ -38,6 +38,7 @@ type davSession struct {
 	person store.Person
 	house  store.Household
 	req    *http.Request
+	scopes string // the token's scopes: which lists the person may see
 }
 
 type davKey struct{}
@@ -58,27 +59,71 @@ func davChallenge(w http.ResponseWriter) {
 	http.Error(w, http.StatusText(http.StatusUnauthorized), http.StatusUnauthorized)
 }
 
-// davPermission is what a CalDAV request needs: reading, writing or deleting calendars.
-func davPermission(method string) auth.Permission {
-	switch method {
-	case http.MethodGet, http.MethodHead, http.MethodOptions, "PROPFIND", "REPORT":
-		return auth.Perm("calendars", auth.Read)
+// davResource says which resource an address belongs to: the task lists below
+// the calendar home are tasks, any other calendar is calendars, and the root,
+// the principal and the home set itself ("") belong to both.
+func davResource(p string) string {
+	_, rest, found := strings.Cut(p, "/calendars/")
+	if !found {
+		return ""
 	}
-	if method == http.MethodDelete {
-		return auth.Perm("calendars", auth.Delete)
+	first, _, _ := strings.Cut(rest, "/")
+	switch {
+	case first == "":
+		return ""
+	case strings.HasPrefix(first, taskListPrefix):
+		return "tasks"
 	}
-	return auth.Perm("calendars", auth.Write)
+	return "calendars"
 }
 
-// calendarScoped reports whether a token carries a calendars scope: ADR 0012
-// opens CalDAV to those only, not to plain read or write tokens.
-func calendarScoped(scopes string) bool {
+// davAction is what a CalDAV request does: read, write or delete.
+func davAction(method string) auth.Action {
+	switch method {
+	case http.MethodGet, http.MethodHead, http.MethodOptions, "PROPFIND", "REPORT":
+		return auth.Read
+	case http.MethodDelete:
+		return auth.Delete
+	}
+	return auth.Write
+}
+
+// scopedTo reports whether a token carries a scope of this resource: ADR 0012
+// opens CalDAV to calendars scopes only, ADR 0018 task lists to tasks scopes
+// only, not to plain read or write tokens.
+func scopedTo(scopes, resource string) bool {
 	for _, sc := range strings.Fields(scopes) {
-		if res, _, _ := strings.Cut(sc, ":"); res == "calendars" {
+		if res, _, _ := strings.Cut(sc, ":"); res == resource {
 			return true
 		}
 	}
 	return false
+}
+
+// canRead says whether a token's scopes cover reading a resource.
+func canRead(scopes, resource string) bool {
+	return scopedTo(scopes, resource) && auth.ScopesAllow(scopes, auth.Perm(resource, auth.Read))
+}
+
+// davAllows decides whether a token may make a request. Addresses that belong
+// to both resources are open for reading to a token of either; changing them
+// is calendar business.
+func davAllows(scopes, method, path string) (bool, auth.Permission) {
+	action := davAction(method)
+	res := davResource(path)
+	if res == "" {
+		if action == auth.Read {
+			for _, r := range []string{"calendars", "tasks"} {
+				if canRead(scopes, r) {
+					return true, auth.Perm(r, auth.Read)
+				}
+			}
+			return false, auth.Perm("calendars", auth.Read)
+		}
+		res = "calendars"
+	}
+	perm := auth.Perm(res, action)
+	return scopedTo(scopes, res) && auth.ScopesAllow(scopes, perm), perm
 }
 
 // davAuth signs a phone in with HTTP Basic: the person's username and a device
@@ -115,9 +160,9 @@ func (s *server) davAuth(next http.Handler) http.Handler {
 			davChallenge(w)
 			return
 		}
-		perm := davPermission(r.Method)
+		allowed, perm := davAllows(token.Scopes, r.Method, r.URL.Path)
 		// Children have no account; a token held by one is refused all the same.
-		if person.Role != store.RoleParent || !auth.RoleAllows(person.Role, perm) || !calendarScoped(token.Scopes) || !auth.ScopesAllow(token.Scopes, perm) {
+		if person.Role != store.RoleParent || !auth.RoleAllows(person.Role, perm) || !allowed {
 			http.Error(w, "forbidden: needs "+perm.String(), http.StatusForbidden)
 			return
 		}
@@ -129,7 +174,7 @@ func (s *server) davAuth(next http.Handler) http.Handler {
 				return
 			}
 		}
-		sess := &davSession{person: person, house: house, req: r}
+		sess := &davSession{person: person, house: house, req: r, scopes: token.Scopes}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), davKey{}, sess)))
 	})
 }
@@ -209,13 +254,22 @@ func (b *davBackend) ListCalendars(ctx context.Context) ([]webcal.Calendar, erro
 	if err != nil {
 		return nil, err
 	}
-	cals, err := b.served(sess)
-	if err != nil {
-		return nil, err
+	var out []webcal.Calendar
+	if canRead(sess.scopes, "calendars") {
+		cals, err := b.served(sess)
+		if err != nil {
+			return nil, err
+		}
+		for _, c := range cals {
+			out = append(out, b.toCalendar(sess, c))
+		}
 	}
-	out := make([]webcal.Calendar, 0, len(cals))
-	for _, c := range cals {
-		out = append(out, b.toCalendar(sess, c))
+	if canRead(sess.scopes, "tasks") {
+		lists, err := b.taskLists(sess)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, lists...)
 	}
 	return out, nil
 }
@@ -265,6 +319,9 @@ func (b *davBackend) GetCalendar(ctx context.Context, p string) (*webcal.Calenda
 	sess, err := b.session(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if isTaskPath(p) {
+		return b.getTaskList(sess, p)
 	}
 	c, addr, err := b.calendarAt(sess, p)
 	if err != nil {
@@ -345,6 +402,9 @@ func (b *davBackend) GetCalendarObject(ctx context.Context, p string, _ *webcal.
 	if err != nil {
 		return nil, err
 	}
+	if isTaskPath(p) {
+		return b.getTodo(sess, p)
+	}
 	c, addr, err := b.calendarAt(sess, p)
 	if err != nil {
 		return nil, err
@@ -368,6 +428,9 @@ func (b *davBackend) ListCalendarObjects(ctx context.Context, p string, _ *webca
 	if err != nil {
 		return nil, err
 	}
+	if isTaskPath(p) {
+		return b.listTodos(sess, p)
+	}
 	c, _, err := b.calendarAt(sess, p)
 	if err != nil {
 		return nil, err
@@ -390,6 +453,9 @@ func (b *davBackend) PutCalendarObject(ctx context.Context, p string, cal *ical.
 	sess, err := b.session(ctx)
 	if err != nil {
 		return nil, err
+	}
+	if isTaskPath(p) {
+		return b.putTodo(sess, p, cal, opts)
 	}
 	c, addr, err := b.calendarAt(sess, p)
 	if err != nil {
@@ -435,22 +501,8 @@ func (b *davBackend) PutCalendarObject(ctx context.Context, p string, cal *ical.
 
 // checkPreconditions applies If-Match and If-None-Match against the stored event.
 func checkPreconditions(existing *hcal.Object, ifMatch, ifNoneMatch webdav.ConditionalMatch) error {
-	failed := httpError(http.StatusPreconditionFailed, "the event changed in the meantime")
-	if ifNoneMatch.IsSet() && existing != nil {
-		return failed
-	}
-	if !ifMatch.IsSet() {
-		return nil
-	}
 	if existing == nil {
-		return failed
-	}
-	if ifMatch.IsWildcard() {
-		return nil
-	}
-	want, err := ifMatch.ETag()
-	if err != nil {
-		return httpError(http.StatusBadRequest, "unreadable If-Match")
+		return checkETag("", false, ifMatch, ifNoneMatch)
 	}
 	cal, err := existing.Calendar()
 	if err != nil {
@@ -459,6 +511,29 @@ func checkPreconditions(existing *hcal.Object, ifMatch, ifNoneMatch webdav.Condi
 	have, err := hcal.ETag(cal)
 	if err != nil {
 		return err
+	}
+	return checkETag(have, true, ifMatch, ifNoneMatch)
+}
+
+// checkETag applies If-Match and If-None-Match against the ETag of what is
+// stored (exists says whether anything is).
+func checkETag(have string, exists bool, ifMatch, ifNoneMatch webdav.ConditionalMatch) error {
+	failed := httpError(http.StatusPreconditionFailed, "the resource changed in the meantime")
+	if ifNoneMatch.IsSet() && exists {
+		return failed
+	}
+	if !ifMatch.IsSet() {
+		return nil
+	}
+	if !exists {
+		return failed
+	}
+	if ifMatch.IsWildcard() {
+		return nil
+	}
+	want, err := ifMatch.ETag()
+	if err != nil {
+		return httpError(http.StatusBadRequest, "unreadable If-Match")
 	}
 	if have != want {
 		return failed
@@ -514,6 +589,9 @@ func (b *davBackend) DeleteCalendarObject(ctx context.Context, p string) error {
 	sess, err := b.session(ctx)
 	if err != nil {
 		return err
+	}
+	if isTaskPath(p) {
+		return b.deleteTodo(sess, p)
 	}
 	c, addr, err := b.calendarAt(sess, p)
 	if err != nil {

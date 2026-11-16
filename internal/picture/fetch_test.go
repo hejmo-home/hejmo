@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/netip"
 	"strings"
+	"sync/atomic"
 	"testing"
 	"time"
 
@@ -215,7 +216,7 @@ func TestAWebPageAnErrorPageAndTextAreNamedForWhatTheyAre(t *testing.T) {
 }
 
 func TestADownloadOverTheLimitIsStoppedByItsDeclaredSizeAndWhileItStreams(t *testing.T) {
-	var streamed int
+	var streamed atomic.Int64
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
 		w.Header().Set("Content-Type", "image/jpeg")
 		if r.URL.Path == "/declared" {
@@ -228,7 +229,7 @@ func TestADownloadOverTheLimitIsStoppedByItsDeclaredSizeAndWhileItStreams(t *tes
 			if _, err := w.Write(chunk); err != nil {
 				return
 			}
-			streamed++
+			streamed.Add(1)
 		}
 	})
 	f := loopbackIsPublic()
@@ -239,7 +240,7 @@ func TestADownloadOverTheLimitIsStoppedByItsDeclaredSizeAndWhileItStreams(t *tes
 	if _, err := f.Fetch(context.Background(), srv.URL+"/stream"); !errors.As(err, &big) {
 		t.Errorf("stream: err = %v", err)
 	}
-	if streamed > 20 {
+	if streamed.Load() > 20 {
 		t.Errorf("the box read %d MB before it stopped", streamed)
 	}
 }

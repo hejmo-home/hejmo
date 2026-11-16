@@ -20,6 +20,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/passkey"
+	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -60,6 +61,9 @@ type Options struct {
 	// host script: no settings file is written, no status is read and the
 	// settings page does not offer auto-update.
 	UpdateDir string
+	// Pictures downloads the web images of own articles (ticket 164). Nil means
+	// a fetcher that only reaches public addresses; tests pass one that reaches their own server.
+	Pictures *picture.Fetcher
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -108,7 +112,11 @@ type server struct {
 	done       <-chan struct{}
 	updateDir  string
 	flashTexts flashTexts
-	rolled     sync.Map // household id -> the day its meal plan calendar was last rolled forward
+	// pictures holds pictures made from an upload or a web image until their article is saved (ticket 164).
+	pictures pendingPictures
+	// fetcher downloads web images, only from public addresses.
+	fetcher *picture.Fetcher
+	rolled  sync.Map // household id -> the day its meal plan calendar was last rolled forward
 }
 
 // New returns the box's root HTTP handler.
@@ -135,6 +143,9 @@ func New(opts Options) http.Handler {
 	}
 	if s.weather = opts.Weather; s.weather == nil {
 		s.weather = weather.New(weather.WithClock(s.now))
+	}
+	if s.fetcher = opts.Pictures; s.fetcher == nil {
+		s.fetcher = &picture.Fetcher{}
 	}
 	s.done = opts.Done
 	s.updateDir = opts.UpdateDir
@@ -276,6 +287,19 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /routines/templates/{id}/steps/{step}", s.handleTemplateStepPage)
 	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}", s.handleTemplateStepSave)
 	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}/delete", s.handleTemplateStepDelete)
+	mux.HandleFunc("GET /settings/lists", s.handleListsSettings)
+	mux.HandleFunc("POST /settings/lists", s.handleListsSettingsSave)
+	mux.HandleFunc("GET /settings/lists/library", s.handleLibrary)
+	mux.HandleFunc("GET /settings/lists/library/new", s.handleArticleNew)
+	mux.HandleFunc("POST /settings/lists/library", s.handleArticleCreate)
+	mux.HandleFunc("GET /settings/lists/library/suggest", s.handleArticleSuggest)
+	mux.HandleFunc("GET /settings/lists/library/picture/{token}", s.handlePendingPicture)
+	mux.HandleFunc("GET /settings/lists/library/{id}", s.handleArticle)
+	mux.HandleFunc("POST /settings/lists/library/{id}", s.handleArticleSave)
+	mux.HandleFunc("POST /settings/lists/library/{id}/hidden", s.handleArticleHidden)
+	mux.HandleFunc("POST /settings/lists/library/{id}/copy", s.handleArticleCopy)
+	mux.HandleFunc("POST /settings/lists/library/{id}/delete", s.handleArticleDelete)
+	mux.HandleFunc("GET /articles/{id}/picture", s.handleArticlePicture)
 	mux.HandleFunc("GET /lists", s.handleListsPage)
 	mux.HandleFunc("POST /lists", s.handleListCreate)
 	mux.HandleFunc("GET /lists/{id}", s.handleListPage)

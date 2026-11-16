@@ -192,6 +192,26 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	_, err = db.SaveRoutineAsTemplate(h, r.ID, "Morgenroutine für Grundschulkinder")
 	must(err)
 
+	// Diets, allergies and the article library (ticket 164): warnings that name people, own articles with a long name, a symbol and a photo, hiding switched on.
+	for who, food := range map[string]store.Food{
+		"Friedrich":    {Diet: "omnivore", Allergens: []string{"milk"}},
+		"Maximilian":   {Diet: "vegetarian", Allergens: []string{"peanuts", "nuts"}, Other: "Kiwi"},
+		"Anna-Lena":    {Diet: "pescatarian", Allergens: []string{"fish", "crustaceans", "molluscs"}},
+		"Konstantin":   {Diet: "omnivore", Allergens: []string{"milk"}},
+		"Sophie-Marie": {Diet: "vegan", Allergens: []string{"gluten", "soy", "celery"}, Other: "Erdbeeren, Tomaten, Pfirsiche (roh), Nachtschattengewächse"},
+		"Leopoldine":   {Diet: "omnivore", Other: "Kiwi"},
+	} {
+		must(db.SetPersonFood(h, f.people[who].ID, food))
+	}
+	knusper, err := db.CreateArticle(h, f.ids[0], store.OwnArticle{Name: "Haselnuss-Mandel-Knusperflocken mit Schokostückchen", Dept: "pantry", Kind: "veg", Allergens: []string{"nuts", "milk", "soy", "gluten"}, Unit1: "pack", Unit2: "g"},
+		&store.ArticlePicture{JPEG: testJPEG(t, 400, 512), Source: "upload", FromW: 3024, FromH: 4032, FromBytes: 3 << 20})
+	must(err)
+	_ = knusper
+	_, err = db.CreateArticle(h, f.ids[1], store.OwnArticle{Name: "Katzenfutter Huhn", Dept: "other", Kind: "nonfood", Unit1: "pack", PicSource: "symbol", Symbol: "🐈"}, nil)
+	must(err)
+	must(db.SetLibrarySettings(h, store.LibrarySettings{HideAllergen: true, Everyone: true, ConfirmedBy: f.ids[0]}))
+	must(db.SetArticleHidden(h, "walnuts", true))
+
 	// Groups, a calendar, a day note.
 	_, err = db.CreateGroup(h, "Kindergartenkinder-Elternbeirat", f.ids[:3])
 	must(err)
@@ -329,8 +349,12 @@ func pageShape(path string) string {
 	if i := strings.IndexAny(p, "?"); i >= 0 {
 		p = p[:i]
 	}
-	return isoDayRe.ReplaceAllString(uuidRe.ReplaceAllString(p, "{id}"), "{day}")
+	p = isoDayRe.ReplaceAllString(uuidRe.ReplaceAllString(p, "{id}"), "{day}")
+	return shippedArticleRe.ReplaceAllString(p, "$1/{article}")
 }
+
+// shippedArticleRe is the page of an article Hejmo ships: 248 pages of one kind, rendered once (ticket 164).
+var shippedArticleRe = regexp.MustCompile(`^(/settings/lists/library)/(?:[a-z0-9]+-)*[a-z0-9]+$`)
 
 // crawl follows every link of the signed-in parent from the start page and
 // returns one path per kind of page. Pages that only a form reaches are added by hand.
@@ -409,6 +433,10 @@ var notRendered = map[string]string{
 	"/i/{token}":                "redirect",
 	"/setup/https/check":        "answers a fragment for the setup page's script",
 	"/phones/join/{code}":       "one-time pairing link of a phone",
+
+	"/articles/{id}/picture":                  "an image",
+	"/settings/lists/library/picture/{token}": "an image",
+	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
 }
 
 // matches reports whether a request path is served by a route pattern.

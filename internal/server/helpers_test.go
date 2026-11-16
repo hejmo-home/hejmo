@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/secret"
@@ -157,7 +158,14 @@ func (f *fakeFeeds) set(url, body string, err error) {
 // boxOption changes how a test box is built.
 type boxOption func(*boxConfig)
 
-type boxConfig struct{ noHostUpdater bool }
+type boxConfig struct {
+	noHostUpdater bool
+	fetcher       *picture.Fetcher
+}
+
+// withFetcher makes the box download web images with this fetcher, which a test
+// lets reach its own server (the real one only reaches public addresses).
+func withFetcher(f *picture.Fetcher) boxOption { return func(c *boxConfig) { c.fetcher = f } }
 
 // withoutHostUpdater makes the box run like a plain Docker Compose install,
 // without the host updater of ADR 0018.
@@ -214,7 +222,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	if cfg.noHostUpdater {
 		updateDir, b.updateDir = "", ""
 	}
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir})
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()

@@ -33,7 +33,7 @@ function setup({ clipboard = true, execCommand = true } = {}) {
   };
   const navigator = { userAgent: '', platform: '', maxTouchPoints: 0 };
   if (clipboard) navigator.clipboard = { writeText(t) { written.push(t); return Promise.resolve(); } };
-  vm.runInNewContext(source, { document, window: {}, navigator, setTimeout(fn) { timers.push(fn); } });
+  vm.runInNewContext(source, { document, window: { addEventListener() {} }, navigator, setTimeout(fn) { timers.push(fn); } });
   const click = () => clicks.forEach((fn) => fn({ target: button }));
   return { button, written, timers, click };
 }

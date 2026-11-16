@@ -44,12 +44,23 @@ func (c countingRemote) List(ctx context.Context, cal string) ([]caldavclient.Ob
 	return objs, err
 }
 
-func (c countingRemote) Fetch(ctx context.Context, cal string, urls []string) ([]caldavclient.Object, error) {
-	if c.fx.beforeFetch != nil {
-		f := c.fx.beforeFetch
-		c.fx.beforeFetch = nil
+// Changes is where a delta sync reads the server's changes; when it only
+// learns of deletions nothing is downloaded, so the hook runs here too.
+func (c countingRemote) Changes(ctx context.Context, cal, token string) (caldavclient.Changes, error) {
+	c.fx.runBeforeFetch()
+	return c.Client.Changes(ctx, cal, token)
+}
+
+func (fx *davFixture) runBeforeFetch() {
+	if fx.beforeFetch != nil {
+		f := fx.beforeFetch
+		fx.beforeFetch = nil
 		f()
 	}
+}
+
+func (c countingRemote) Fetch(ctx context.Context, cal string, urls []string) ([]caldavclient.Object, error) {
+	c.fx.runBeforeFetch()
 	c.fx.fetched.Add(int32(len(urls)))
 	return c.Client.Fetch(ctx, cal, urls)
 }
@@ -326,6 +337,10 @@ func TestTemporaryServerErrorFailsTheRunAndTheChangeArrivesOnTheNextOne(t *testi
 // outside the server's domain.
 type foreignRemote struct{ calsync.Remote }
 
+func (foreignRemote) State(context.Context, string) (caldavclient.State, error) {
+	return caldavclient.State{}, refusal("https://caldav.example.org", "https://evil.test/cal/")
+}
+
 func (foreignRemote) List(context.Context, string) ([]caldavclient.Object, error) {
 	return nil, refusal("https://caldav.example.org", "https://evil.test/cal/")
 }
@@ -354,6 +369,10 @@ func TestForeignHostRefusalIsAClearEntryInTheSyncLog(t *testing.T) {
 }
 
 type downgradeRemote struct{ calsync.Remote }
+
+func (downgradeRemote) State(context.Context, string) (caldavclient.State, error) {
+	return caldavclient.State{}, refusal("https://caldav.example.org", "http://p1.example.org/cal/")
+}
 
 func (downgradeRemote) List(context.Context, string) ([]caldavclient.Object, error) {
 	return nil, refusal("https://caldav.example.org", "http://p1.example.org/cal/")

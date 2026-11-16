@@ -268,3 +268,36 @@ func TestSyncedCalendarEventCountIncludesEventsCreatedOnTheBox(t *testing.T) {
 		t.Errorf("last run = %+v, want the run's own numbers (1 event, 1 new)", got.Sync.LastRun)
 	}
 }
+
+// The CTag and sync token of the last successful run are kept with the run, so
+// the next one can ask the server for what changed (ticket 54). A run that
+// does not pass a state leaves it as it was; a failed run changes nothing.
+func TestRemoteStateIsKeptWithASuccessfulRun(t *testing.T) {
+	f := newDAVFixture(t)
+	if st, err := f.db.RemoteState(f.a.ID); err != nil || st != (store.RemoteState{}) {
+		t.Fatalf("RemoteState of a new calendar = %+v, %v, want empty", st, err)
+	}
+	next := t0.Add(5 * time.Minute)
+	u1 := f.a.URL + "a.ics"
+	if _, err := f.db.CompleteObjectSyncWithState(f.h.ID, f.a.ID, store.RemoteState{CTag: "c1", Token: "t1"},
+		[]store.ObjectChange{obj(u1, "e1", item("a@x", "", "Swimming", at(2026, 11, 20, 15, 0)))}, nil, nil, t0, next); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := f.db.RemoteState(f.a.ID); st != (store.RemoteState{CTag: "c1", Token: "t1"}) {
+		t.Fatalf("RemoteState = %+v, want c1 and t1", st)
+	}
+	// A run that knows no state (the plain call) leaves it alone.
+	if _, err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, nil, nil, nil, t0, next); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := f.db.RemoteState(f.a.ID); st != (store.RemoteState{CTag: "c1", Token: "t1"}) {
+		t.Fatalf("RemoteState after a plain run = %+v, want it kept", st)
+	}
+	// A server that offers neither: the stored state is cleared.
+	if _, err := f.db.CompleteObjectSyncWithState(f.h.ID, f.a.ID, store.RemoteState{}, nil, nil, nil, t0, next); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := f.db.RemoteState(f.a.ID); st != (store.RemoteState{}) {
+		t.Fatalf("RemoteState = %+v, want cleared", st)
+	}
+}

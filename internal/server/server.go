@@ -240,6 +240,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /people/{id}", s.handlePersonPage)
 	mux.HandleFunc("POST /people/{id}", s.handlePersonSave)
 	mux.HandleFunc("POST /people/{id}/move", s.handlePersonMove)
+	mux.HandleFunc("GET /people/{id}/food", s.handleFoodPage)
+	mux.HandleFunc("POST /people/{id}/food", s.handleFoodSave)
 	mux.HandleFunc("GET /groups/new", s.handleGroupNew)
 	mux.HandleFunc("POST /groups", s.handleGroupCreate)
 	mux.HandleFunc("GET /groups/{id}", s.handleGroupPage)

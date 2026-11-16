@@ -224,6 +224,33 @@ func (db *DB) RemoteObjects(calendarID string, withPending bool) (map[string]str
 // them, notes go to the log and the failure state is cleared. All or nothing.
 // It returns what the run did to the events.
 func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []ObjectChange, deleted []string, notes []i18n.Message, at, next time.Time) (SyncRun, error) {
+	return db.completeObjectSync(householdID, calendarID, nil, changed, deleted, notes, at, next)
+}
+
+// RemoteState is what a CalDAV server said about the version of a calendar
+// when the last run read it: the CTag and the RFC 6578 sync token. Either is
+// empty where the server offers none.
+type RemoteState struct {
+	CTag, Token string
+}
+
+// RemoteState returns the state kept by the last successful run.
+func (db *DB) RemoteState(calendarID string) (RemoteState, error) {
+	var st RemoteState
+	err := db.sql.QueryRow(`SELECT remote_ctag, remote_sync_token FROM calendar_sync WHERE calendar_id = ?`, calendarID).Scan(&st.CTag, &st.Token)
+	if errors.Is(err, sql.ErrNoRows) {
+		return st, ErrNotFound
+	}
+	return st, err
+}
+
+// CompleteObjectSyncWithState is CompleteObjectSync that also keeps the
+// server's state, in the same transaction, for the next run.
+func (db *DB) CompleteObjectSyncWithState(householdID, calendarID string, state RemoteState, changed []ObjectChange, deleted []string, notes []i18n.Message, at, next time.Time) (SyncRun, error) {
+	return db.completeObjectSync(householdID, calendarID, &state, changed, deleted, notes, at, next)
+}
+
+func (db *DB) completeObjectSync(householdID, calendarID string, state *RemoteState, changed []ObjectChange, deleted []string, notes []i18n.Message, at, next time.Time) (SyncRun, error) {
 	tx, err := db.sql.Begin()
 	if err != nil {
 		return SyncRun{}, err
@@ -312,6 +339,11 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 			etag = CASE WHEN ? AND pending > 0 THEN etag ELSE excluded.etag END,
 			raw = CASE WHEN ? THEN raw ELSE excluded.raw END,
 			pending = CASE WHEN ? AND NOT ? THEN 0 ELSE pending END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents, o.KeepEvents, o.DropPending, o.KeepEvents); err != nil {
+			return SyncRun{}, err
+		}
+	}
+	if state != nil {
+		if _, err := tx.Exec(`UPDATE calendar_sync SET remote_ctag = ?, remote_sync_token = ? WHERE calendar_id = ?`, state.CTag, state.Token, calendarID); err != nil {
 			return SyncRun{}, err
 		}
 	}

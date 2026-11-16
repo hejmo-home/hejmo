@@ -753,3 +753,162 @@ func AddressKey(address string) string {
 	}
 	return strings.ToLower(u.Host) + strings.TrimSuffix(u.Path, "/")
 }
+
+// State is what a calendar collection reports about its own version: the
+// CTag (calendarserver.org, a string that changes whenever anything in the
+// collection does) and the sync token of RFC 6578 (what Changes starts from).
+// Either is empty where the server offers none.
+type State struct {
+	CTag      string
+	SyncToken string
+}
+
+const stateBody = `<?xml version="1.0" encoding="utf-8"?>` +
+	`<d:propfind xmlns:d="DAV:" xmlns:cs="http://calendarserver.org/ns/"><d:prop><cs:getctag/><d:sync-token/></d:prop></d:propfind>`
+
+// State asks a calendar for its CTag and sync token. A server that has
+// neither answers with an empty State, not an error.
+func (c *Client) State(ctx context.Context, calendarURL string) (State, error) {
+	origin, _, err := c.origin(calendarURL)
+	if err != nil {
+		return State{}, err
+	}
+	dir := abs(origin, c.route(calendarURL))
+	req, err := http.NewRequestWithContext(ctx, "PROPFIND", dir, strings.NewReader(stateBody))
+	if err != nil {
+		return State{}, err
+	}
+	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
+	req.Header.Set("Depth", "0")
+	res, err := c.auth.Do(req)
+	if err != nil {
+		return State{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusMultiStatus {
+		return State{}, &StatusError{res.StatusCode, res.Status}
+	}
+	var ans struct {
+		Responses []struct {
+			Propstats []struct {
+				Status string `xml:"DAV: status"`
+				Prop   struct {
+					CTag      string `xml:"http://calendarserver.org/ns/ getctag"`
+					SyncToken string `xml:"DAV: sync-token"`
+				} `xml:"DAV: prop"`
+			} `xml:"DAV: propstat"`
+		} `xml:"DAV: response"`
+	}
+	if err := xml.NewDecoder(res.Body).Decode(&ans); err != nil {
+		return State{}, fmt.Errorf("reading the state of the calendar: %w", err)
+	}
+	var st State
+	for _, r := range ans.Responses {
+		for _, ps := range r.Propstats {
+			if statusCode(ps.Status)/100 != 2 {
+				continue
+			}
+			if v := strings.TrimSpace(ps.Prop.CTag); v != "" {
+				st.CTag = v
+			}
+			if v := strings.TrimSpace(ps.Prop.SyncToken); v != "" {
+				st.SyncToken = v
+			}
+		}
+	}
+	return st, nil
+}
+
+// ErrSyncUnavailable says the server cannot answer a sync-collection REPORT:
+// it does not offer RFC 6578, or it no longer knows the token. The caller
+// lists the ETags instead.
+var ErrSyncUnavailable = errors.New("the server cannot report changes since a sync token")
+
+// Changes is the answer to a sync-collection REPORT: the objects that are new
+// or changed since the token (address and ETag, no data), the addresses of
+// the ones that are gone, and the token to continue from.
+type Changes struct {
+	Token   string
+	Changed []Object
+	Deleted []string
+}
+
+const changesBody = `<?xml version="1.0" encoding="utf-8"?>` +
+	`<d:sync-collection xmlns:d="DAV:"><d:sync-token>%s</d:sync-token><d:sync-level>1</d:sync-level>` +
+	`<d:prop><d:getetag/></d:prop></d:sync-collection>`
+
+// Changes asks a calendar what changed since a sync token (RFC 6578). A
+// refusal other than a wrong login or a server fault (the REPORT is not
+// known, the token is not valid) is ErrSyncUnavailable.
+func (c *Client) Changes(ctx context.Context, calendarURL, token string) (Changes, error) {
+	origin, _, err := c.origin(calendarURL)
+	if err != nil {
+		return Changes{}, err
+	}
+	dir := abs(origin, c.route(calendarURL))
+	var esc bytes.Buffer
+	xml.EscapeText(&esc, []byte(token))
+	req, err := http.NewRequestWithContext(ctx, "REPORT", dir, strings.NewReader(fmt.Sprintf(changesBody, esc.String())))
+	if err != nil {
+		return Changes{}, err
+	}
+	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
+	req.Header.Set("Depth", "0")
+	res, err := c.auth.Do(req)
+	if err != nil {
+		var se *StatusError
+		if errors.As(err, &se) && se.Code == http.StatusForbidden {
+			return Changes{}, fmt.Errorf("%w: %v", ErrSyncUnavailable, err) // valid-sync-token precondition
+		}
+		return Changes{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusMultiStatus {
+		if code := res.StatusCode; code >= 400 && code < 500 && code != http.StatusUnauthorized && code != http.StatusRequestTimeout && code != http.StatusTooManyRequests || code == http.StatusNotImplemented {
+			return Changes{}, fmt.Errorf("%w: %s", ErrSyncUnavailable, res.Status)
+		}
+		return Changes{}, &StatusError{res.StatusCode, res.Status}
+	}
+	var ans struct {
+		reportAnswer
+		Token string `xml:"DAV: sync-token"`
+	}
+	if err := xml.NewDecoder(res.Body).Decode(&ans); err != nil {
+		return Changes{}, fmt.Errorf("reading the changes: %w", err)
+	}
+	if strings.TrimSpace(ans.Token) == "" {
+		return Changes{}, fmt.Errorf("%w: the answer has no new token", ErrSyncUnavailable)
+	}
+	at, _ := url.Parse(dir)
+	if res.Request != nil && res.Request.URL != nil {
+		at = res.Request.URL
+	}
+	self := AddressKey(dir)
+	out := Changes{Token: strings.TrimSpace(ans.Token)}
+	for _, r := range ans.Responses {
+		href, err := url.Parse(strings.TrimSpace(r.Href))
+		if err != nil || strings.TrimSpace(r.Href) == "" {
+			continue
+		}
+		target := at.ResolveReference(href)
+		if err := c.auth.permit(target); err != nil {
+			return Changes{}, err
+		}
+		if strings.HasSuffix(target.Path, "/") || AddressKey(target.String()) == self {
+			continue // a collection
+		}
+		if code := statusCode(r.Status); code == http.StatusNotFound || code == http.StatusGone {
+			out.Deleted = append(out.Deleted, target.String())
+			continue
+		}
+		etag := ""
+		for _, ps := range r.Propstats {
+			if statusCode(ps.Status)/100 == 2 && strings.TrimSpace(ps.Prop.ETag) != "" {
+				etag = unquoteETag(ps.Prop.ETag)
+				break
+			}
+		}
+		out.Changed = append(out.Changed, Object{URL: target.String(), ETag: etag})
+	}
+	return out, nil
+}

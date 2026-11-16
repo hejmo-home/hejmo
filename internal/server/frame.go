@@ -41,6 +41,9 @@ type frame struct {
 	// seconds, 0 when unknown); the page script uses them for the browser
 	// theme "automatic" (ADR 0015).
 	SunRise, SunSet int64
+	// SunPolar is set when the home location is known but the sun neither
+	// rises nor sets today (polar day or night): automatic has no times then.
+	SunPolar bool
 	// TimeFormat is the household's clock ("24h" or "12h"); the time picker
 	// follows it.
 	TimeFormat string
@@ -129,7 +132,7 @@ func (s *server) sunFrame() frame {
 	}
 	t := sun.On(s.now().In(loc), h.Latitude, h.Longitude)
 	if t.Kind != sun.Normal {
-		return frame{}
+		return frame{SunPolar: true}
 	}
 	return frame{SunRise: t.Rise.Unix(), SunSet: t.Set.Unix()}
 }

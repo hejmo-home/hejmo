@@ -538,6 +538,7 @@
   "theme.auto.hint": "Tagsüber hell, ab Sonnenuntergang dunkel",
   "theme.auto.child": "Geht erst, wenn ein Erwachsener den Ort eures Zuhauses eingetragen hat.",
   "theme.auto.parent": "Geht erst mit dem Ort eures Zuhauses.",
+  "theme.auto.polar": "Heute geht die Sonne hier nicht auf oder unter (Polartag oder Polarnacht), darum gibt es keine Zeiten.",
   "theme.auto.link": "Ort eintragen",
   "theme.device.phone": "Wie dein Handy",
   "theme.device.phone.hint": "Hell oder dunkel, so wie dein Handy eingestellt ist",

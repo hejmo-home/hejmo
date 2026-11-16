@@ -4,6 +4,7 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 // themePick is the theme chooser of the brand bar (ticket 125): from the
@@ -128,6 +129,26 @@ func TestWithoutHomeLocationAutomaticIsDisabledAndSaysWhy(t *testing.T) {
 	menu = themePick(t, b.get("/").body)
 	if !regexp.MustCompile(`value="auto" data-theme-choice disabled`).MatchString(menu) || !strings.Contains(menu, `Geht erst mit dem Ort eures Zuhauses. <a href="/settings/household">Ort eintragen</a>`) {
 		t.Errorf("parent: automatic is not disabled with a link to Household:\n%s", menu)
+	}
+}
+
+// #125: at a place with polar day or night there are no sun times either, but
+// the place is set: the reason must not say the place is missing.
+func TestPolarDayDisablesAutomaticWithoutSayingThePlaceIsMissing(t *testing.T) {
+	b := signedInBox(t)
+	if _, err := b.db.SQL().Exec(`UPDATE households SET latitude = 78.2, longitude = 15.6`); err != nil {
+		t.Fatal(err)
+	}
+	b.now = time.Date(2026, 6, 21, 12, 0, 0, 0, time.UTC)
+	menu := themePick(t, b.get("/").body)
+	if !regexp.MustCompile(`value="auto" data-theme-choice disabled`).MatchString(menu) {
+		t.Errorf("automatic is not disabled in polar day:\n%s", menu)
+	}
+	if strings.Contains(menu, "Ort eintragen") || strings.Contains(menu, "Geht erst mit dem Ort") {
+		t.Errorf("polar day is explained as a missing place:\n%s", menu)
+	}
+	if !strings.Contains(menu, "Polartag") {
+		t.Errorf("polar day is not named:\n%s", menu)
 	}
 }
 

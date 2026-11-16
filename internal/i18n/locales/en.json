@@ -538,6 +538,7 @@
   "theme.auto.hint": "Light by day, dark from sunset",
   "theme.auto.child": "Works once an adult has entered the place of your home.",
   "theme.auto.parent": "Works once your home has a place.",
+  "theme.auto.polar": "Today the sun neither rises nor sets here (polar day or night), so there are no times.",
   "theme.auto.link": "Enter the place",
   "theme.device.phone": "Like your phone",
   "theme.device.phone.hint": "Light or dark, the way your phone is set",

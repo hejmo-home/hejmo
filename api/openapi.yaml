@@ -1702,7 +1702,7 @@ paths:
         No match is an empty list. Use the `id` as `home_place_id` of
         `PATCH /settings`.
       parameters:
-        - { name: name, in: query, required: true, schema: { type: string }, description: "The text to search for, for example Pasing; blank is refused with 422" }
+        - { name: name, in: query, required: true, schema: { type: string, maxLength: 100 }, description: "The text to search for, for example Pasing; blank or longer than 100 characters is refused with 422" }
         - { name: lang, in: query, required: false, schema: { type: string, enum: [de, en] }, description: "The language of the region label; default the language of the request. Anything else is refused with 422" }
       responses:
         "200":

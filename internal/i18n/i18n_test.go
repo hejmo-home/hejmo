@@ -107,6 +107,10 @@ var wholeFamilyTexts = map[string]bool{
 	"flash.mcp_off":                  true, // "eure Daten"
 	"firststeps.display.text":        true, // "euren Tag"
 	"food.why.title":                 true, // "eurer Box": the family's box (preview 163)
+	"theme.auto.parent":              true, // "eures Zuhauses": the family's home
+	"theme.auto.child":               true, // "eures Zuhauses"
+	"theme.where.phone":              true, // "behalten ihr Design": everyone else
+	"theme.where.browser":            true, // "behalten ihr Design"
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

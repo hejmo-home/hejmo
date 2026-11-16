@@ -65,6 +65,10 @@ type frame struct {
 	LangName, LangFlag string
 	Others             []language
 	Next               string
+	// The theme chooser (ticket 125): a paired phone says "phone" where a
+	// browser says "browser", and a parent gets a link where a child is told to
+	// ask an adult.
+	ThemePhone, ThemeParent bool
 }
 
 // frameFor builds the frame for the person behind the request, or a bare
@@ -78,6 +82,8 @@ func (s *server) frameFor(r *http.Request) frame {
 	}
 	f := s.sunFrame()
 	f.SignedIn = true
+	f.ThemePhone = s.phoneSession(r)
+	f.ThemeParent = auth.RoleAllows(p.Role, auth.Perm("settings", auth.Write))
 	if h, err := s.db.HomeHousehold(); err == nil {
 		f.TimeFormat = string(h.TimeFormat)
 		f.DateFormat = string(h.DateFormat)

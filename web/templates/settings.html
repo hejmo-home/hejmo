@@ -9,12 +9,4 @@
     {{end}}
     {{if .FirstStepsHidden}}<li><form method="post" action="/first-steps/show"><button class="hub-row" type="submit"><strong>{{t "hub.first_steps"}}</strong><span class="hint">{{t "hub.first_steps.hint"}}</span></button></form></li>{{end}}
   </ul>
-  <fieldset class="steps" data-theme-choices>
-    <legend>{{t "settings.theme"}}</legend>
-    <p class="hint">{{t "settings.theme.hint"}}</p>
-    <label class="check"><input type="radio" name="browser_theme" data-theme-choice value="device"> {{t "settings.theme.device"}}</label>
-    <label class="check"><input type="radio" name="browser_theme" data-theme-choice value="light"> {{t "settings.theme.light"}}</label>
-    <label class="check"><input type="radio" name="browser_theme" data-theme-choice value="dark"> {{t "settings.theme.dark"}}</label>
-    <label class="check"><input type="radio" name="browser_theme" data-theme-choice value="auto"> {{t "settings.theme.auto"}}</label>
-  </fieldset>
 {{template "foot"}}

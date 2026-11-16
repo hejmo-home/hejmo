@@ -22,7 +22,7 @@ function setup() {
   const document = {
     addEventListener(ev, fn) { handlers[ev] = fn; },
     querySelectorAll() { return []; },
-    querySelector(sel) { return sel === 'details.lang[open]' && menu.open ? menu : null; },
+    querySelector(sel) { return sel === 'details.lang[open], details.theme-pick[open]' && menu.open ? menu : null; },
   };
   // The script also wires the meal plan fields and the time picker, which need a window and a navigator; no such elements exist here.
   vm.runInNewContext(source, { document, window: { addEventListener() {} }, navigator: { userAgent: '', platform: '', maxTouchPoints: 0 } });
@@ -34,6 +34,10 @@ test('Escape closes the open menu and returns focus to its button', () => {
   f.handlers.keydown({ key: 'Escape' });
   assert.equal(f.menu.open, false);
   assert.equal(f.summary.focused, true);
+});
+
+test('the theme menu closes the same way, as one menu at a time is open', () => {
+  assert.match(source, /details\.theme-pick\[open\]/);
 });
 
 test('other keys leave the menu open', () => {

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"sort"
 	"strings"
 	"time"
 
@@ -19,13 +20,18 @@ type DayTask struct {
 // AddTask stores a task. The person must belong to the household.
 func (db *DB) AddTask(householdID string, t task.Task) (task.Task, error) {
 	t.Title = strings.TrimSpace(t.Title)
-	if err := t.Validate(); err != nil {
-		return task.Task{}, fmt.Errorf("%w: %w", ErrInvalid, err) // keeps the *task.InvalidError and its field
+	if t.RoutineID == "" {
+		if err := t.Validate(); err != nil {
+			return task.Task{}, fmt.Errorf("%w: %w", ErrInvalid, err) // keeps the *task.InvalidError and its field
+		}
 	}
 	if _, err := db.Person(householdID, t.PersonID); errors.Is(err, ErrNotFound) {
 		return task.Task{}, fmt.Errorf("%w: %w", ErrInvalid, &task.InvalidError{Field: "person", Msg: "unknown person"})
 	} else if err != nil {
 		return task.Task{}, err
+	}
+	if t.RoutineID != "" {
+		return db.addRoutineTask(householdID, t)
 	}
 	t.ID = newID()
 	ts := now()
@@ -35,12 +41,59 @@ func (db *DB) AddTask(householdID string, t task.Task) (task.Task, error) {
 	return t, err
 }
 
-const taskColumns = `id, person_id, title, emoji, rrule, start_date, part_of_day, stars`
+func (db *DB) addRoutineTask(householdID string, t task.Task) (task.Task, error) {
+	bad := func(msg string) error {
+		return fmt.Errorf("%w: %w", ErrInvalid, &task.InvalidError{Field: "routine", Msg: msg})
+	}
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return task.Task{}, err
+	}
+	defer tx.Rollback()
+	r, err := routineIn(tx, householdID, t.RoutineID)
+	if errors.Is(err, ErrNotFound) {
+		return task.Task{}, bad("unknown routine")
+	} else if err != nil {
+		return task.Task{}, err
+	}
+	if r.PersonID != t.PersonID {
+		return task.Task{}, bad("a routine takes only tasks of its own person")
+	}
+	t.PartOfDay = r.Part
+	if err := t.Validate(); err != nil {
+		return task.Task{}, fmt.Errorf("%w: %w", ErrInvalid, err)
+	}
+	var last int
+	if err := tx.QueryRow(`SELECT COALESCE(MAX(routine_pos), 0) FROM tasks WHERE routine_id = ?`, r.ID).Scan(&last); err != nil {
+		return task.Task{}, err
+	}
+	t.ID, t.Position = newID(), last+1
+	ts := now()
+	if _, err := tx.Exec(`INSERT INTO tasks (id, household_id, person_id, title, emoji, rrule, start_date, part_of_day, stars, routine_id, routine_pos, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, householdID, t.PersonID, t.Title, t.Emoji, t.RRule(), t.Date, string(storedPart(r.Part)), t.Stars, r.ID, t.Position, ts, ts); err != nil {
+		return task.Task{}, err
+	}
+	return t, tx.Commit()
+}
+
+// storedPart is the part of the day a task keeps for itself: after school
+// exists only in routines, so a task of such a routine is stored for any time.
+func storedPart(p task.PartOfDay) task.PartOfDay {
+	if p == task.AfterSchool {
+		return task.AnyTime
+	}
+	return p
+}
+
+// taskFrom reads a task with the part of the day of its routine, if it has one.
+const taskFrom = `SELECT t.id, t.person_id, t.title, t.emoji, t.rrule, t.start_date, COALESCE(r.part, t.part_of_day), t.stars, COALESCE(t.routine_id, ''), t.routine_pos
+	FROM tasks t LEFT JOIN routines r ON r.id = t.routine_id`
 
 func scanTask(row interface{ Scan(...any) error }) (task.Task, error) {
 	var t task.Task
 	var rule, part string
-	if err := row.Scan(&t.ID, &t.PersonID, &t.Title, &t.Emoji, &rule, &t.Date, &part, &t.Stars); err != nil {
+	if err := row.Scan(&t.ID, &t.PersonID, &t.Title, &t.Emoji, &rule, &t.Date, &part, &t.Stars, &t.RoutineID, &t.Position); err != nil {
 		return task.Task{}, err
 	}
 	parsed, err := task.ParseRRule(rule)
@@ -53,7 +106,7 @@ func scanTask(row interface{ Scan(...any) error }) (task.Task, error) {
 
 // Tasks lists all tasks of a household, oldest first.
 func (db *DB) Tasks(householdID string) ([]task.Task, error) {
-	rows, err := db.sql.Query(`SELECT `+taskColumns+` FROM tasks WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
+	rows, err := db.sql.Query(taskFrom+` WHERE t.household_id = ? ORDER BY t.created_at, t.rowid`, householdID)
 	if err != nil {
 		return nil, err
 	}
@@ -66,16 +119,50 @@ func (db *DB) Tasks(householdID string) ([]task.Task, error) {
 		}
 		out = append(out, t)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	rankRoutineTasks(out)
+	return out, nil
+}
+
+// rankRoutineTasks turns the stored sort keys of routine tasks into their
+// places in the routine: 1, 2, 3 without gaps, whatever was deleted or moved.
+func rankRoutineTasks(list []task.Task) {
+	byRoutine := map[string][]int{}
+	for i, t := range list {
+		if t.RoutineID != "" {
+			byRoutine[t.RoutineID] = append(byRoutine[t.RoutineID], i)
+		}
+	}
+	for _, idx := range byRoutine {
+		sort.SliceStable(idx, func(a, b int) bool { return list[idx[a]].Position < list[idx[b]].Position })
+		for place, i := range idx {
+			list[i].Position = place + 1
+		}
+	}
 }
 
 // Task loads one task.
 func (db *DB) Task(householdID, id string) (task.Task, error) {
-	t, err := scanTask(db.sql.QueryRow(`SELECT `+taskColumns+` FROM tasks WHERE household_id = ? AND id = ?`, householdID, id))
+	t, err := scanTask(db.sql.QueryRow(taskFrom+` WHERE t.household_id = ? AND t.id = ?`, householdID, id))
 	if errors.Is(err, sql.ErrNoRows) {
 		return task.Task{}, ErrNotFound
 	}
-	return t, err
+	if err != nil || t.RoutineID == "" {
+		return t, err
+	}
+	// The place in the routine counts the tasks before it.
+	list, err := db.RoutineTasks(householdID, t.RoutineID)
+	if err != nil {
+		return task.Task{}, err
+	}
+	for _, k := range list {
+		if k.ID == t.ID {
+			return k, nil
+		}
+	}
+	return t, nil
 }
 
 // DeleteTask removes a task and its done days.

@@ -110,6 +110,9 @@ func NewClient(serverURL, user, password string, hc *http.Client) (*Client, erro
 		if err := auth.permit(req.URL); err != nil {
 			return err
 		}
+		if req.Context().Value(manualRedirect{}) != nil {
+			return http.ErrUseLastResponse
+		}
 		if prev != nil {
 			if err := prev(req, via); err != nil {
 				return err
@@ -260,15 +263,41 @@ type multistatus struct {
 // an address, but a server may name another host of its domain here. The host
 // is checked before the caller sends anything to it.
 func (c *Client) findHref(ctx context.Context, from *url.URL, prop string) (*url.URL, error) {
-	req, err := http.NewRequestWithContext(ctx, "PROPFIND", from.String(), strings.NewReader(fmt.Sprintf(propfindBody, prop)))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
-	req.Header.Set("Depth", "0")
-	res, err := c.auth.Do(req)
-	if err != nil {
-		return nil, err
+	var (
+		res *http.Response
+		at  = from
+	)
+	// A redirect for PROPFIND is followed by hand: Go's client turns a
+	// followed 301, 302 or 303 into a GET, and a server that redirects
+	// /.well-known/caldav (RFC 6764) means the same PROPFIND at the new address.
+	ctx = context.WithValue(ctx, manualRedirect{}, true)
+	for hops := 0; ; hops++ {
+		req, err := http.NewRequestWithContext(ctx, "PROPFIND", at.String(), strings.NewReader(fmt.Sprintf(propfindBody, prop)))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/xml; charset=utf-8")
+		req.Header.Set("Depth", "0")
+		res, err = c.auth.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		loc := res.Header.Get("Location")
+		if res.StatusCode < 300 || res.StatusCode > 399 || loc == "" {
+			break
+		}
+		res.Body.Close()
+		if hops >= 5 {
+			return nil, errors.New("stopped after 5 redirects")
+		}
+		ref, err := url.Parse(strings.TrimSpace(loc))
+		if err != nil {
+			return nil, fmt.Errorf("the server redirected to a malformed address: %w", err)
+		}
+		at = at.ResolveReference(ref)
+		if err := c.auth.permit(at); err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusMultiStatus {
@@ -293,10 +322,6 @@ func (c *Client) findHref(ctx context.Context, from *url.URL, prop string) (*url
 			}
 			// Resolve against the address that finally answered, which may
 			// be on another host than "from" after a redirect.
-			at := from
-			if res.Request != nil && res.Request.URL != nil {
-				at = res.Request.URL
-			}
 			target := at.ResolveReference(ref)
 			if err := c.auth.permit(target); err != nil {
 				return nil, err
@@ -307,9 +332,32 @@ func (c *Client) findHref(ctx context.Context, from *url.URL, prop string) (*url
 	return nil, fmt.Errorf("the server does not say where the %s is", strings.TrimPrefix(strings.TrimPrefix(prop, "c:"), "d:"))
 }
 
+// manualRedirect marks a request whose redirects the caller follows itself.
+type manualRedirect struct{}
+
+// principal finds the signed-in user's principal. A server entered as a bare
+// host (no path) is asked at /.well-known/caldav first (RFC 6764), then at the
+// address itself; an address with a path is used as given.
+func (c *Client) principal(ctx context.Context) (*url.URL, error) {
+	if p := strings.Trim(c.base.Path, "/"); p != "" {
+		return c.findHref(ctx, c.base, "d:current-user-principal")
+	}
+	known := c.base.ResolveReference(&url.URL{Path: "/.well-known/caldav"})
+	principal, err := c.findHref(ctx, known, "d:current-user-principal")
+	if err == nil {
+		return principal, nil
+	}
+	var status *StatusError
+	var foreign *ForeignHostError
+	if errors.As(err, &foreign) || (errors.As(err, &status) && (status.Code == http.StatusUnauthorized || status.Code == http.StatusForbidden)) {
+		return nil, err
+	}
+	return c.findHref(ctx, c.base, "d:current-user-principal")
+}
+
 // Calendars discovers the server's event calendars of the signed-in user.
 func (c *Client) Calendars(ctx context.Context) ([]Calendar, error) {
-	principal, err := c.findHref(ctx, c.base, "d:current-user-principal")
+	principal, err := c.principal(ctx)
 	if err != nil {
 		return nil, err
 	}

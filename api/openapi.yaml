@@ -667,6 +667,186 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /routines:
+    get:
+      operationId: listRoutines
+      summary: Routines of the household with their tasks in order (scope tasks:read)
+      description: |
+        A routine is the ordered sequence of one person's tasks for a part of
+        the day (ADR 0018). `task_ids` lists the routine's tasks in the order
+        the personal view shows them. Everyone, children included, may read.
+      parameters:
+        - { name: person, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Routines, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Routine" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    post:
+      operationId: createRoutine
+      summary: Create a routine for a person and a part of the day (scope tasks:write, parents only)
+      description: |
+        A person has at most one routine per part of the day: a second one is
+        409 and names the existing routine in `existing_routine_id`. Add its
+        tasks with `POST /tasks` (`routine_id`) or `POST /routines/{id}/tasks`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewRoutine" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routine" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/RoutineConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routines/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getRoutine
+      summary: One routine with its tasks in order (scope tasks:read)
+      responses:
+        "200":
+          description: The routine
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routine" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateRoutine
+      summary: Rename a routine or change its part of the day (scope tasks:write, parents only)
+      description: |
+        Changing the part of the day changes it for every task of the routine.
+        A part the person already has a routine for is 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1, maxLength: 60 }
+                part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+      responses:
+        "200":
+          description: The updated routine
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routine" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RoutineConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: dissolveRoutine
+      summary: Dissolve a routine; its tasks stay (scope tasks:delete, parents only)
+      description: |
+        Deletes the routine and no task: its tasks stay as single tasks of the
+        person with their part of the day (after school becomes any time),
+        their stars and their history.
+      responses:
+        "204": { description: Dissolved }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /routines/{id}/tasks:
+    post:
+      operationId: addTaskToRoutine
+      summary: Take a person's single task into the routine, at the end (scope tasks:write, parents only)
+      description: |
+        The task must be the routine's person's and in no routine (else 409 for
+        a task that is in one, 422 for another person's). It takes the
+        routine's part of the day. To create a new task in a routine, use
+        `POST /tasks` with `routine_id`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_id]
+              additionalProperties: false
+              properties:
+                task_id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The routine with the task at its end
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routine" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RoutineConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routines/{id}/tasks/{task_id}:
+    delete:
+      operationId: removeTaskFromRoutine
+      summary: Take a task out of the routine (scope tasks:write, parents only)
+      description: |
+        The task becomes a single task again and keeps the routine's part of
+        the day (after school becomes any time), its stars and its history.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: task_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Taken out }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routines/{id}/order:
+    put:
+      operationId: setRoutineOrder
+      summary: Put the routine's tasks in a new order (scope tasks:write, parents only)
+      description: |
+        `task_ids` must name every task of the routine exactly once, else 422
+        and nothing changes. The personal view shows the new order.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_ids]
+              additionalProperties: false
+              properties:
+                task_ids:
+                  type: array
+                  items: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The routine in its new order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routine" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /meals:
     get:
       operationId: listMeals
@@ -1688,8 +1868,33 @@ components:
       enum: [MO, TU, WE, TH, FR, SA, SU]
     TaskPartOfDay:
       type: string
-      enum: ["", morning, evening]
-      description: Empty means any time of the day
+      enum: ["", morning, afterschool, evening]
+      description: |
+        Empty means any time of the day. `afterschool` exists only in routines:
+        a task in a routine always reports its routine's part of the day, and a
+        task outside a routine cannot be `afterschool`.
+    RoutinePart:
+      type: string
+      enum: [morning, afterschool, evening]
+    NewRoutine:
+      type: object
+      required: [person_id, name, part_of_day]
+      properties:
+        person_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 60, example: Morgenroutine }
+        part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+    Routine:
+      type: object
+      required: [id, person_id, name, part_of_day, task_ids]
+      properties:
+        id: { type: string, format: uuid }
+        person_id: { type: string, format: uuid }
+        name: { type: string }
+        part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+        task_ids:
+          type: array
+          items: { type: string, format: uuid }
+          description: The routine's tasks in their order
     NewTask:
       type: object
       required: [person_id, title, repeat]
@@ -1705,9 +1910,10 @@ components:
         date: { type: string, format: date, description: "The day of a `once` task (required); the first day of a repeating one (default today)" }
         part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
         stars: { type: integer, minimum: 0, maximum: 100, description: "Stars credited when ticked off (0 allowed). Default: 1 for a child, 0 for an adult" }
+        routine_id: { type: string, format: uuid, description: "Create the task as the last step of this routine (of the same person). It takes the routine's part of the day and `part_of_day` is ignored" }
     Task:
       type: object
-      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, stars, due, done]
+      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, stars, routine_id, position, due, done]
       properties:
         id: { type: string, format: uuid }
         person_id: { type: string, format: uuid }
@@ -1720,6 +1926,8 @@ components:
         date: { type: string, format: date }
         part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
         stars: { type: integer, description: "Stars credited when ticked off, deducted when unticked" }
+        routine_id: { type: string, description: "The routine the task is a step of; empty for a single task" }
+        position: { type: integer, description: "Place in the routine, from 1; 0 for a single task" }
         due: { type: boolean, description: "Due on the requested day" }
         done: { type: boolean, description: "Ticked off on the requested day" }
     NewStarBooking:
@@ -2265,6 +2473,19 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
+    RoutineConflict:
+      description: |
+        The request clashes with what is stored: the person has a routine for
+        that part of the day already (`existing_routine_id`), or the task is in
+        a routine already. Nothing was saved.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error: { type: string }
+              existing_routine_id: { type: string, format: uuid }
     MealTemplateClash:
       description: The template fills a meal another template fills too; nothing was saved
       content:

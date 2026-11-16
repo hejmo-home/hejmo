@@ -217,8 +217,12 @@ Something to be done once or repeatedly, ticked off when done; may belong to a r
 _Avoid_: chore, todo, job
 
 **Routine**:
-The ordered sequence of one person's tasks for a part of the day, such as Mia's morning.
+The ordered sequence of one person's tasks for a part of the day, such as Mia's morning. A person has at most one routine per part of the day, and a task is in at most one routine.
 _Avoid_: checklist, schedule, habit
+
+**Part of the day**:
+When in the day a task or routine belongs: morning, after school, any time or evening. A task in a routine takes it from the routine; "after school" exists only in routines.
+_Avoid_: time slot, daypart
 
 **Routine template**:
 A reusable routine without a person that a parent copies into a routine for someone.

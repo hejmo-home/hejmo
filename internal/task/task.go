@@ -35,17 +35,35 @@ const (
 // PartOfDay optionally places a task in the morning or the evening.
 type PartOfDay string
 
-// Parts of the day. The empty value means any time.
+// Parts of the day. The empty value means any time. AfterSchool exists only
+// in routines (ADR 0018).
 const (
-	AnyTime PartOfDay = ""
-	Morning PartOfDay = "morning"
-	Evening PartOfDay = "evening"
+	AnyTime     PartOfDay = ""
+	Morning     PartOfDay = "morning"
+	AfterSchool PartOfDay = "afterschool"
+	Evening     PartOfDay = "evening"
 )
+
+// Rank orders the parts of a day as the day goes: morning, after school, any
+// time, evening.
+func (p PartOfDay) Rank() int {
+	switch p {
+	case Morning:
+		return 0
+	case AfterSchool:
+		return 1
+	case Evening:
+		return 3
+	}
+	return 2
+}
 
 // Limits of the input, as in api/openapi.yaml (NewTask), counted in characters.
 const (
 	MaxTitle = 120
 	MaxEmoji = 16
+	// MaxRoutineName is the longest name of a routine, in characters.
+	MaxRoutineName = 60
 	// MaxStars is the largest star value of one task.
 	MaxStars = 100
 	// MaxBooking is the largest amount of one manual star booking, up or down.
@@ -96,6 +114,42 @@ type Task struct {
 	Date      string   // YYYY-MM-DD in the household's time zone: the day of a once task, the first day of a repeating one
 	PartOfDay PartOfDay
 	Stars     int // credited when ticked off, deducted when unticked (ADR 0018); 0 allowed
+	// RoutineID is the routine the task belongs to, empty for a single task. A
+	// task belongs to at most one routine and takes its part of the day from it
+	// (ADR 0018). Position is its place in the routine, from 1.
+	RoutineID string
+	Position  int
+}
+
+// Routine is the ordered sequence of one person's tasks for a part of the day
+// (ADR 0018). The tasks carry their place; a person has at most one routine
+// per part of the day.
+type Routine struct {
+	ID       string
+	PersonID string
+	Name     string
+	Part     PartOfDay // Morning, AfterSchool or Evening
+}
+
+// Validate reports why a routine cannot be stored.
+func (r Routine) Validate() error {
+	bad := func(field, msg string) error { return &InvalidError{Field: field, Msg: msg} }
+	name := strings.TrimSpace(r.Name)
+	if name == "" {
+		return bad("name", "name required")
+	}
+	if utf8.RuneCountInString(name) > MaxRoutineName {
+		return bad("name", fmt.Sprintf("name may have at most %d characters", MaxRoutineName))
+	}
+	if r.PersonID == "" {
+		return bad("person", "person required")
+	}
+	switch r.Part {
+	case Morning, AfterSchool, Evening:
+	default:
+		return bad("part", "part of day must be morning, afterschool or evening")
+	}
+	return nil
 }
 
 // InvalidError says why a task cannot be stored and which field is wrong
@@ -151,6 +205,10 @@ func (t Task) Validate() error {
 	}
 	switch t.PartOfDay {
 	case AnyTime, Morning, Evening:
+	case AfterSchool:
+		if t.RoutineID == "" {
+			return bad("part", "after school exists only in routines")
+		}
 	default:
 		return bad("part", "part of day must be morning or evening")
 	}

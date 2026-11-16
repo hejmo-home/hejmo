@@ -295,7 +295,7 @@ a { color: var(--accent); }
 .brand { display: inline-flex; align-items: center; min-height: var(--touch-target); font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); color: var(--text); text-decoration: none; }
 .frame-bar .button { min-height: var(--touch-target); }
 .frame-bar form { margin: 0; }
-.frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: nowrap; overflow-x: auto; gap: var(--gap-cards); }
+.frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-cards); }
 .frame-nav li { flex: none; }
 .frame-nav a { display: flex; align-items: center; min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
 .frame-nav a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
@@ -311,7 +311,7 @@ a { color: var(--accent); }
 @media (min-width: 900px) {
   .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); align-items: start; }
   .frame.has-nav .frame-bar { grid-column: 1 / -1; }
-  .frame-nav ul { flex-direction: column; overflow-x: visible; }
+  .frame-nav ul { flex-direction: column; }
 }
 
 /* Portrait shows at most four person columns (ticket 5.7, ADR 0016). The
@@ -383,7 +383,7 @@ body:has(.family-page) { overflow: hidden; }
    danger zone, empty state, success line and field errors. Colours come from
    the tokens only; selection never relies on colour alone (border, tick,
    weight; in bw the person marker is a shape). */
-.msg { display: flex; gap: 10px; align-items: flex-start; border-radius: var(--radius-card); padding: 10px 12px; max-width: 560px; margin: 0 0 var(--gap); }
+.msg { display: flex; gap: 10px; align-items: flex-start; border-radius: var(--radius-card); padding: 10px 12px; max-width: 560px; margin: 0 0 var(--gap); min-width: 0; overflow-wrap: break-word; hyphens: auto; }
 .msg .icon { flex: none; margin-top: 2px; }
 .msg.ok { background: var(--surface); border: 1.5px solid var(--accent); color: var(--text); }
 [data-theme="bw"] .msg.ok { border-width: 2px; }
@@ -443,7 +443,7 @@ fieldset.chips legend, fieldset.seg legend, fieldset.days legend, fieldset.choic
 .pchip:has(input:checked) { background: var(--pc-tint); color: var(--pc-text); border: 2px solid var(--pc); padding: 5px 13px 5px 11px; font-weight: 700; }
 .pchip:has(input:checked) .tick { display: inline-block; }
 .pchip:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
-.pchip.all { --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
+.pchip.all, .pchip.plain { --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
 .pchip.group { border-style: dashed; --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
 [data-theme="bw"] .pchip:has(input:checked) { background: var(--event-card); border-width: 3px; padding: 4px 12px 4px 10px; }
 /* The Whole family checkbox stays ticked in the page while a person is chosen
@@ -488,7 +488,7 @@ details.more > summary { color: var(--accent); font-size: var(--fs-label-large);
 details.more > summary::-webkit-details-marker, details.danger > summary::-webkit-details-marker { display: none; }
 details.more .chev { stroke: var(--accent); }
 details.more[open] .chev { transform: rotate(90deg); }
-details.more .sum { margin-left: auto; color: var(--text-secondary); font-size: var(--fs-meta); }
+details.more .sum { margin-left: auto; color: var(--text-secondary); font-size: var(--fs-meta); min-width: 0; overflow-wrap: break-word; hyphens: auto; }
 details.more > div { display: grid; gap: 12px; padding: 2px 0 10px; }
 
 /* Destructive actions: only on a detail page, closed, explaining what happens. */
@@ -517,6 +517,7 @@ details.danger form { margin: 0 0 10px; }
 .pv-tasks form { margin: 0; }
 .big-check { display: flex; align-items: center; gap: 14px; width: 100%; min-height: var(--touch-target); min-width: var(--touch-target); padding: 8px 4px; border: 0; background: none; color: var(--text); font: inherit; font-size: var(--fs-event-title); text-align: left; cursor: pointer; }
 .big-check .box { flex: none; width: var(--touch-target); height: var(--touch-target); border: 3px solid var(--text); border-radius: var(--radius-card); display: inline-flex; align-items: center; justify-content: center; font-size: 28px; line-height: 1; }
+.big-check .title { flex: 1; min-width: 0; line-height: 1.3; overflow-wrap: break-word; hyphens: auto; }
 [data-done="true"] .big-check .title { text-decoration: line-through; color: var(--text-secondary); }
 [data-done="true"] .big-check .box::after { content: "\2713"; }
 
@@ -588,7 +589,6 @@ fieldset.look .pchip:has(input:focus-visible)::after, fieldset.look .pchip[data-
 .ev .meta, .bar .meta { font-size: var(--fs-meta); }
 .ev .icon, .bar .icon { stroke: currentColor; vertical-align: middle; }
 .ev .who, .bar .who { display: block; font-size: var(--fs-meta); overflow-wrap: break-word; hyphens: manual; }
-.who .nm { display: inline-block; max-width: 100%; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 [data-theme="bw"] .bar, [data-theme="bw"] .wk-days .ev { background: var(--event-card); color: var(--text); border: 1.5px solid var(--text); }
 [data-theme="bw"] .wk-heads li[data-today] { border-bottom-width: 4px; }
@@ -620,6 +620,47 @@ textarea { width: 100%; font: inherit; color: var(--text); background: var(--sur
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
 
+/* Lists (ticket 6.1; ADR 0015, 0017). The overview shows calm rows that open
+   a list. A list page has one add row on top, open entries with a large tick
+   target, and the ticked-off entries in their own group below. Moving and
+   removing happen in "Sort or remove", so the everyday rows stay calm. A list
+   wears a person colour slot and a black-and-white symbol. */
+.list-title { display: flex; align-items: center; gap: 12px; overflow-wrap: break-word; hyphens: auto; min-width: 0; }
+.list-title .marker { flex: none; }
+.list-title > span:last-child { min-width: 0; }
+.list-meta { margin: 0 0 var(--gap); }
+.add-entry { display: flex; gap: 8px; align-items: flex-end; max-width: 560px; margin: 0 0 var(--gap-section); }
+.add-entry .f { flex: 1; min-width: 0; }
+.add-entry .button { flex: none; }
+.entries { list-style: none; padding: 0; margin: 0 0 var(--gap); display: grid; gap: var(--gap-cards); max-width: 560px; }
+.entries li { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; background: var(--surface); border-radius: var(--radius-card); padding: 2px 12px; min-height: 60px; }
+.entries li form { margin: 0; }
+.entries li > form:first-child { flex: 1; min-width: 0; }
+.entries .title { min-width: 0; overflow-wrap: break-word; hyphens: auto; }
+.entries .row { display: flex; flex-wrap: wrap; gap: 6px; margin-left: auto; }
+.entries .row .button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: var(--fs-label-large); }
+.entries .row .icon { stroke: currentColor; }
+.edit .entries li { padding: 10px 12px; }
+.edit .entries li > .title { flex: 1 1 180px; font-size: var(--fs-event-title); }
+.list-settings details.more > summary { flex-wrap: wrap; }
+.group-head { display: flex; align-items: center; justify-content: space-between; gap: var(--gap); max-width: 560px; margin: var(--gap-section) 0 var(--gap-cards); }
+.group-head h2 { margin: 0; font-size: var(--fs-label-large); font-weight: 700; color: var(--text-secondary); }
+.group-head a, .tools a { display: inline-flex; align-items: center; min-height: var(--touch-target); font-weight: 600; }
+.tools { display: flex; flex-wrap: wrap; gap: 4px var(--gap-section); max-width: 560px; margin: 0 0 var(--gap); }
+.hidden-line { max-width: 560px; margin: var(--gap-section) 0 var(--gap); color: var(--text-secondary); }
+.hidden-line a { font-weight: 600; }
+.edit-bar { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: var(--gap); max-width: 560px; margin: 0 0 var(--gap); }
+.edit-bar p { margin: 0; color: var(--text-secondary); }
+.visually-hidden { position: absolute; width: 1px; height: 1px; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; }
+/* In black and white every colour slot is black, so the colour chips show the name only. */
+[data-theme="bw"] .colour-chips .marker { display: none; }
+/* The symbol chooser shows the shapes in every theme; elsewhere a shape appears in black and white only. */
+.marker.shaped { width: var(--marker-size); height: var(--marker-size); border-radius: 0; background: currentColor; border: 2px solid currentColor; }
+.marker.shaped[data-shape="circle-filled"] { border-radius: 50%; }
+.marker.shaped[data-shape="circle-empty"] { border-radius: 50%; background: transparent; }
+.marker.shaped[data-shape="square-empty"] { background: transparent; }
+.marker.shaped[data-shape="triangle-filled"] { border: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
+.marker.shaped[data-shape="diamond-filled"] { border: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
 /* Ticket #108 Signed-in devices: person group heading, session rows with a
    word tag for this browser, facts list on the detail page. */
 .who-head { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); overflow-wrap: anywhere; }
@@ -641,9 +682,6 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
    the right edge of a 375 px phone (left margin looks wrong, text does not wrap). */
 .frame { grid-template-columns: minmax(0, 1fr); }
 .frame > * { min-width: 0; }
-/* Under 900 px the navigation wraps onto a second line instead of hiding
-   screens past the right edge. */
-@media (max-width: 899px) { .frame-nav ul { flex-wrap: wrap; overflow-x: visible; } }
 .steps .card-row .t b { color: var(--text); }
 h1 { overflow-wrap: anywhere; hyphens: auto; }
 .back { gap: 6px; text-decoration: none; }
@@ -657,6 +695,8 @@ main > .back { margin: 0 0 4px; }
 .list-rows b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: anywhere; }
 .list-rows .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
 .list-rows .chev { margin-left: auto; flex: none; stroke: var(--text-secondary); }
+/* The Lists overview keeps long names whole-word with hyphens, not broken anywhere. */
+.list-rows.lists b { overflow-wrap: break-word; hyphens: auto; }
 .rows-head { font-size: var(--fs-label-large); font-weight: 700; color: var(--text-secondary); margin: var(--gap-section) 0 var(--gap-cards); max-width: 560px; overflow-wrap: anywhere; }
 .list-rows .who, .facts .who { display: inline-flex; align-items: center; gap: 6px; }
 .flag { display: inline-flex; align-items: flex-start; gap: 6px; padding: 3px 8px; border-radius: var(--radius-field); font-size: var(--fs-label); font-weight: 600; justify-self: start; overflow-wrap: anywhere; }

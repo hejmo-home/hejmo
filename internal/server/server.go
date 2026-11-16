@@ -85,23 +85,24 @@ type PublicHTTPS interface {
 }
 
 type server struct {
-	db        *store.DB
-	pki       *pki.Store
-	public    PublicHTTPS
-	httpsPort string
-	now       func() time.Time
-	i18n      *i18n.Bundle
-	pages     *template.Template
-	logger    *slog.Logger
-	limiter   *loginLimiter
-	opens     *loginLimiter // pairing screens opened, per client address
-	sync      *calsync.Service
-	weather   *weather.Service
-	live      time.Duration
-	countWait time.Duration
-	done      <-chan struct{}
-	updateDir string
-	rolled    sync.Map // household id -> the day its meal plan calendar was last rolled forward
+	db         *store.DB
+	pki        *pki.Store
+	public     PublicHTTPS
+	httpsPort  string
+	now        func() time.Time
+	i18n       *i18n.Bundle
+	pages      *template.Template
+	logger     *slog.Logger
+	limiter    *loginLimiter
+	opens      *loginLimiter // pairing screens opened, per client address
+	sync       *calsync.Service
+	weather    *weather.Service
+	live       time.Duration
+	countWait  time.Duration
+	done       <-chan struct{}
+	updateDir  string
+	flashTexts flashTexts
+	rolled     sync.Map // household id -> the day its meal plan calendar was last rolled forward
 }
 
 // New returns the box's root HTTP handler.
@@ -217,6 +218,16 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
+	mux.HandleFunc("GET /lists", s.handleListsPage)
+	mux.HandleFunc("POST /lists", s.handleListCreate)
+	mux.HandleFunc("GET /lists/{id}", s.handleListPage)
+	mux.HandleFunc("POST /lists/{id}/settings", s.handleListSettings)
+	mux.HandleFunc("POST /lists/{id}/delete", s.handleListDelete)
+	mux.HandleFunc("POST /lists/{id}/entries", s.handleEntryAdd)
+	mux.HandleFunc("POST /lists/{id}/entries/{entry}/done", s.handleEntryDone)
+	mux.HandleFunc("POST /lists/{id}/entries/{entry}/delete", s.handleEntryDelete)
+	mux.HandleFunc("POST /lists/{id}/entries/{entry}/move", s.handleEntryMove)
+	mux.HandleFunc("POST /lists/{id}/completed/delete", s.handleTickedDelete)
 	mux.HandleFunc("GET /meals", s.handleMealsPage)
 	mux.HandleFunc("POST /meals", s.handleMealsSave)
 	mux.HandleFunc("GET /meals/templates", s.handleTemplatesPage)
@@ -307,7 +318,7 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
-	for _, k := range []string{"Error", "ErrorField"} { // templates compare them
+	for _, k := range []string{"Error", "ErrorField", "Flash"} { // templates compare them
 		if _, ok := data[k]; !ok {
 			data[k] = ""
 		}
@@ -322,12 +333,18 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		switch own, _ := data["SuccessKey"].(string); {
 		case key == "flash.lang.error":
 			fr.Error = s.i18n.T(lang, key)
+		case key != "" && status >= http.StatusBadRequest:
+			// A failed form shows no success line, not even one left over from before.
 		case data["SuccessText"] != nil:
 			fr.Success, _ = data["SuccessText"].(string) // a page that shows the result itself, and names the thing
 		case own != "":
-			fr.Success = s.i18n.T(lang, own)
+			fr.Success = s.i18n.T(lang, own) // a page that shows the result itself
 		case key != "":
 			fr.Success = s.successText(lang, key, arg)
+			data["Flash"] = key
+		}
+		if inline, _ := data["SuccessInline"].(bool); inline {
+			data["Success"], fr.Success = fr.Success, "" // the page places the line itself
 		}
 		data["Frame"] = fr
 	}

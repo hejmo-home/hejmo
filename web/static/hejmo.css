@@ -585,7 +585,10 @@ fieldset.look .pchip:has(input:focus-visible)::after, fieldset.look .pchip[data-
 .bar.before { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .bar.after { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .wk-days > li { background: var(--surface); border-radius: var(--radius-card); padding: 6px; min-height: 180px; min-width: 0; display: grid; gap: var(--gap-cards); align-content: start; }
-.wk-days .ev { background: var(--pc-tint, var(--background)); display: grid; gap: 2px; padding: 8px 8px; }
+.wk-days .ev { background: var(--pc-tint, var(--background)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 8px 8px; }
+.wk-days .ev > * { min-width: 0; }
+.wk-days .ev .title { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* a long word breaks at the card edge instead of widening the day column; words of 12+ letters hyphenate where the browser can (ticket 173, same rules as 172) */
+@supports (hyphenate-limit-chars: 12 5 5) { .wk-days .ev .title { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
 .wk-days ul { display: grid; gap: var(--gap-cards); }
 .wk-dayname { display: none; margin: 0; font-size: var(--fs-person-name); }
 .wk-allday { display: none !important; }

@@ -551,3 +551,33 @@ func familyTemplateHasNameSpan(t *testing.T) bool {
 	}
 	return strings.Contains(string(tpl), `<span class="person-name">{{.Person.Name}}</span>`)
 }
+
+// Ticket 182 (preview 182): the breadcrumb trail wraps names and never cuts them,
+// hyphenates only words of 12+ letters, has touch-sized parts, and hides its last
+// part visually on phones (the heading right below says it).
+func TestBreadcrumbTrailWrapsNamesAndHasTouchSizedParts(t *testing.T) {
+	css := stylesheet(t)
+	parts := ruleFor(t, css, ".crumbs a, .crumbs [aria-current]")
+	for _, want := range []string{"min-height: var(--touch-target)", "overflow-wrap: break-word", "hyphens: auto", "hyphenate-limit-chars: 12 5 5"} {
+		if !strings.Contains(parts, want) {
+			t.Errorf("crumb parts lack %q: %s", want, parts)
+		}
+	}
+	for _, bad := range []string{"text-overflow", "line-clamp", "white-space: nowrap", "overflow: hidden"} {
+		if strings.Contains(parts, bad) {
+			t.Errorf("crumb parts cut a name: %s", bad)
+		}
+	}
+	if ol := ruleFor(t, css, ".crumbs ol"); !strings.Contains(ol, "flex-wrap: wrap") {
+		t.Errorf("the trail must wrap: %s", ol)
+	}
+	if !strings.Contains(css, `.crumbs li:last-child:not(:first-child)`) {
+		t.Error("the last part is not visually hidden on phones")
+	}
+	if rule := ruleFor(t, css, `[data-theme="bw"] .crumbs a`); !strings.Contains(rule, "text-decoration-thickness: 2px") {
+		t.Errorf("black-and-white links need a 2px underline: %s", rule)
+	}
+	if rule := ruleFor(t, css, ".frame-nav a[aria-current]"); !strings.Contains(rule, "background: var(--accent)") {
+		t.Errorf("the section you are in stays filled: %s", rule)
+	}
+}

@@ -120,6 +120,7 @@ var wholeFamilyTexts = map[string]bool{
 	"setup.https.domain.cloudflare.token.text": true, // "eure Domain": the family's domain
 	"setup.https.way.domain.hint":              true, // "eure Domain": the family's domain
 	"setup.https.domain.why.hetzner.text":      true, // "eure Domain": the family's domain
+	"food.why.title":                           true, // "eurer Box": the family's box (preview 163)
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

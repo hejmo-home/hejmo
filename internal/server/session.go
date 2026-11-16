@@ -103,7 +103,9 @@ func sameOrigin(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		if r.Header.Get("Authorization") != "" || originMatches(r) {
+		// Opening a pairing takes and sets no cookie and no credentials, so a
+		// display's API client, which sends neither Origin nor a token, may.
+		if r.Header.Get("Authorization") != "" || originMatches(r) || r.URL.Path == "/api/v1/display/pairing" {
 			next.ServeHTTP(w, r)
 			return
 		}

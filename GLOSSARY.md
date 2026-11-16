@@ -116,6 +116,14 @@ _Avoid_: account, integration, provider (alone)
 A password created at the calendar service (Apple "app-specific password", Nextcloud "app password") for Hejmo alone and used in a calendar connection instead of the account's real password. The family can revoke it at the service at any time; Hejmo never asks for the real password. Not the same as a device token, which the box creates for CalDAV clients.
 _Avoid_: Apple ID password, iCloud password
 
+**Service sign-in**:
+Allowing a calendar connection by signing in at the calendar service itself (Microsoft, Google) instead of entering an app-specific password. The box holds a permission the family can revoke at the service at any time; it never learns the password.
+_Avoid_: OAuth login, token login
+
+**App registration**:
+Hejmo's entry at a calendar service that makes service sign-ins possible at all. Every box uses the Hejmo project's registration unless the family enters its own.
+_Avoid_: client, Azure app
+
 **Synced calendar**:
 A calendar whose events come from, and may be written back to, a calendar outside the box through a calendar connection.
 _Avoid_: external calendar, remote calendar, feed

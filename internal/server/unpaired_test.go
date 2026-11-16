@@ -1,8 +1,10 @@
 package server_test
 
 import (
+	"html"
 	"net/http"
 	"net/url"
+	"regexp"
 	"strings"
 	"testing"
 	"time"
@@ -185,11 +187,21 @@ func TestPasskeyErrorOnAnUnpairedDeviceShowsTheSignIn(t *testing.T) {
 	}
 }
 
+var signInLinkRe = regexp.MustCompile(`href="(/login\?[^"]*account=1[^"]*)"`)
+
 func TestUnpairedPageLinksToTheSignInWithTheNextPage(t *testing.T) {
 	_, phone, _ := unpairedPhone(t)
 	r := phone.get("/login?next=/tasks", "de")
-	if !strings.Contains(r.body, `href="/login?account=1&amp;next=%2ftasks"`) && !strings.Contains(r.body, `href="/login?account=1&amp;next=/tasks"`) && !strings.Contains(r.body, `href="/login?account=1&next=%2Ftasks"`) {
-		t.Errorf("sign-in link drops next:\n%s", r.body)
+	m := signInLinkRe.FindStringSubmatch(r.body)
+	if m == nil {
+		t.Fatalf("no sign-in link on the unpaired page:\n%s", r.body)
+	}
+	u, err := url.Parse(html.UnescapeString(m[1]))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if q := u.Query(); u.Path != "/login" || q.Get("account") != "1" || q.Get("next") != "/tasks" {
+		t.Errorf("sign-in link = %q, want /login with account=1 and next=/tasks", m[1])
 	}
 }
 

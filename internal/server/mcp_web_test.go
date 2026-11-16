@@ -272,7 +272,7 @@ func TestMCPTokenDetailPageShowsRightsInWordsAndRevokesByName(t *testing.T) {
 	}
 	mcpHas(t, "detail", r.body,
 		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/mcp">AI assistants (MCP)</a>`, "<h1>Einkaufshelfer</h1>", "<dt>For</dt>", `class="marker"`,
-		"<dt>Reads and changes</dt>", "<dd>Lists</dd>", "<dt>Reads only</dt>", "<dd>Meal plan</dd>", "<dt>May not</dt>", "<dd>Events, Tasks (with routines and stars)</dd>",
+		"<dt>Reads and changes</dt>", "<dd>Lists</dd>", "<dt>Reads only</dt>", "<dd>Meal plan</dd>", "<dt>May not</dt>", "<dd>Events, Tasks (with routines and stars), Diet and allergies</dd>",
 		"<dt>Created on</dt>", "<dt>Last used</dt>", `class="flag warn"`, "Never used.",
 		"The box never shows the token itself again", "for other rights you create a new token and revoke this one",
 		`<details class="danger">`, "Revoke access", `action="/mcp/tokens/`+id+`/revoke"`, "Yes, revoke access for “Einkaufshelfer”", "No, change nothing")

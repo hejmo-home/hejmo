@@ -55,7 +55,7 @@ var crumbTrails = map[string][]crumb{
 // connection, a template's task below the template.
 func crumbsFor(name string, data map[string]any) []crumb {
 	switch name {
-	case "invitation.html":
+	case "invitation.html", "food.html":
 		if id, who := lookup(data, "Subject", "ID"), lookup(data, "Subject", "Name"); id != "" {
 			return []crumb{crumbSettings, crumbPeople, {"/people/" + id, "\x00" + who}}
 		}

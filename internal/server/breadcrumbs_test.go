@@ -296,3 +296,13 @@ func TestAfterAFieldErrorTrailAndHeadingKeepTheSavedName(t *testing.T) {
 		t.Error("what was typed is lost at the field")
 	}
 }
+
+// Diet and allergies hang off the person: four parts, like the invitation.
+func TestDietAndAllergiesPageHasFourParts(t *testing.T) {
+	e := newInviteBox(t)
+	body := e.en(http.MethodGet, "/people/"+e.mia.ID+"/food", nil).body
+	wantTrail(t, "food", body, part("Settings", "/settings"), part("People", "/people"), part("Mia", "/people/"+e.mia.ID), part("Diet and allergies", ""))
+	if strings.Contains(body, `class="back"`) {
+		t.Error("the back link is still there")
+	}
+}

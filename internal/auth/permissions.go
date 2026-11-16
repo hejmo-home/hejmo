@@ -19,7 +19,7 @@ const (
 )
 
 // Resources known to the permission model.
-var Resources = []string{"people", "events", "calendars", "tasks", "lists", "meals", "displays", "settings", "tokens"}
+var Resources = []string{"people", "events", "calendars", "tasks", "lists", "meals", "displays", "settings", "tokens", "health"}
 
 // Permission is a resource plus an action, e.g. events:write.
 type Permission struct {
@@ -41,25 +41,29 @@ func RoleAllows(role store.Role, p Permission) bool {
 		return true
 	case store.RoleChild:
 		if p.Action == Read {
-			return p.Resource != "tokens" && p.Resource != "settings" && p.Resource != "displays"
+			return p.Resource != "tokens" && p.Resource != "settings" && p.Resource != "displays" && p.Resource != "health"
 		}
 		return p.Action == Complete && (p.Resource == "tasks" || p.Resource == "lists")
 	}
 	return false
 }
 
+// HealthResource is diet and allergies (ADR 0019): health data. The broad
+// scopes "read" and "write" never reach it; only its own scope does.
+const HealthResource = "health"
+
 // ScopesAllow checks a token's space-separated scopes:
 //
-//	read             read everything
-//	write            everything
+//	read             read everything (except health data)
+//	write            everything (except health data)
 //	<res>            everything on one resource, e.g. lists
 //	<res>:<action>   one action on one resource
 func ScopesAllow(scopes string, p Permission) bool {
 	for _, s := range strings.Fields(scopes) {
 		switch {
-		case s == "write":
+		case s == "write" && p.Resource != HealthResource:
 			return true
-		case s == "read" && p.Action == Read:
+		case s == "read" && p.Action == Read && p.Resource != HealthResource:
 			return true
 		case s == p.Resource:
 			return true

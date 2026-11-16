@@ -226,6 +226,21 @@ func TestColumnReadabilitySnapshot(t *testing.T) {
 	}
 }
 
+// Ticket #135: running text keeps the width of the cards at every screen
+// width, and a link used as a button inside a card keeps its button text
+// colour. (The wide frame grid is covered by
+// TestFrameLayoutCoversTheBackLinkAndNarrowScreens.)
+func TestRunningTextAndLinkButtonsInCards(t *testing.T) {
+	css := stylesheet(t)
+	if !strings.Contains(css, ".lead, main > .hint, section > .hint { max-width: 560px; }") {
+		t.Error("running text is not limited to 560 px")
+	}
+	if !strings.Contains(css, ".cards a.button, .steps a.button { color: var(--accent-text); font-weight: 700; }") ||
+		!strings.Contains(css, ".cards a.button.secondary, .steps a.button.secondary { color: var(--accent); }") {
+		t.Error("link buttons in cards and steps lose their text colour")
+	}
+}
+
 // Ticket 133: the navigation row of a framed page must not widen the page on a
 // 375 px phone. The grid has one column that may shrink to nothing, the
 // navigation may shrink and scrolls sideways inside its own row, and the

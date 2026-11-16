@@ -104,6 +104,10 @@ _Avoid_: local calendar, box calendar, default calendar
 The link from the box to an outside calendar service or to a single calendar address, together with its credentials.
 _Avoid_: account, integration, provider (alone)
 
+**App-specific password**:
+A password created at the calendar service (Apple "app-specific password", Nextcloud "app password") for Hejmo alone and used in a calendar connection instead of the account's real password. The family can revoke it at the service at any time; Hejmo never asks for the real password. Not the same as a device token, which the box creates for CalDAV clients.
+_Avoid_: Apple ID password, iCloud password
+
 **Synced calendar**:
 A calendar whose events come from, and may be written back to, a calendar outside the box through a calendar connection.
 _Avoid_: external calendar, remote calendar, feed

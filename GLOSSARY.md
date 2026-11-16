@@ -216,6 +216,10 @@ _Avoid_: catalogue, database
 Number and unit of a list entry, such as 500 g or 1 dozen.
 _Avoid_: amount
 
+**Always on the list**:
+An article that Hejmo puts on a chosen list by itself on one weekday every X weeks (1 to 52) from a start week, optionally with a quantity, unless it already stands open on that list.
+_Avoid_: recurring item, staple, auto-add
+
 **Tile view**:
 A list shown as tiles with symbol or picture, name and tick; the default for children.
 _Avoid_: grid, gallery

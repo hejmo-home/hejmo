@@ -12,7 +12,7 @@
 const CACHE = 'hejmo-pages-v1';
 const ASSET_CACHE = 'hejmo-assets-v1';
 // Must list every asset web/templates/layout.html loads (checked by web/test/sw.test.js).
-const ASSETS = ['/static/hejmo.css', '/static/form.js', '/static/offline.js', '/static/theme.js', '/static/fonts/Figtree-wght.ttf'];
+const ASSETS = ['/static/hejmo.css', '/static/form.js', '/static/offline.js', '/static/theme.js', '/static/fonts/Figtree-wght.ttf', '/static/flags/de.svg', '/static/flags/gb.svg'];
 const MAX_PAGES = 30;
 const STAMP = 'x-hejmo-cached-at';
 // A box that does not answer (the phone is away from home) is given up on

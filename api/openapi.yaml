@@ -273,6 +273,59 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /day-notes:
+    get:
+      operationId: listDayNotes
+      summary: Notes for days, oldest day first (scope displays:read)
+      description: Notes of days that are over are deleted by the box when the list is read, so only today and later are listed. Children are refused (403).
+      responses:
+        "200":
+          description: The notes
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/DayNote" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /day-notes/{day}:
+    parameters:
+      - { name: day, in: path, required: true, schema: { type: string, format: date, example: "2026-11-16" } }
+    put:
+      operationId: setDayNote
+      summary: Set the note of a day, replacing an earlier one (scope displays:write)
+      description: |
+        A free-text note of up to 120 characters for one day (`YYYY-MM-DD`, household time). The family
+        view's tomorrow tile shows it as its last line from 18:00 the evening before until the end of that
+        day; before 18:00 it shows the note of today. A day that is not a date, or a text that is empty after
+        trimming spaces, answers 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, minLength: 1, maxLength: 120 }
+      responses:
+        "200":
+          description: The note
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DayNote" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteDayNote
+      summary: Remove the note of a day (scope displays:delete)
+      responses:
+        "204": { description: Removed (also when the day had no note) }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /displays:
     get:
       operationId: listDisplays
@@ -318,7 +371,7 @@ paths:
       operationId: updateDisplay
       summary: Change the settings of a paired display (scope displays:write)
       description: |
-        Only the fields sent are changed. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
+        Only the fields sent are changed. `name` (1 to 80 characters after trimming) and `type` (`eink_bw`, `eink_color` or `screen`) rename and retype the display; an empty or too long name, or an unknown type, is refused with 422. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
         `theme` and the two offsets set the display's theme (ADR 0015); an unknown theme or an offset outside -180..180 is refused with 422.
         `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015). Quiet mode takes precedence over the theme.
         `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to switch the front light off at sunset and in quiet mode; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
@@ -528,6 +581,11 @@ paths:
         most 62 days; give both or neither, else 422. Everyone, children
         included, may read the plan.
 
+        An entry is the effective meal: this week's adjustment if there is one,
+        else what a meal plan template fills in, else the hand-typed entry
+        (`source` and `template_dish` say which). A meal emptied for a week is
+        not listed.
+
         Every entry also appears as an all-day event "<Mealtime>: <text>" in
         the generated, read-only calendar of kind `meals` (see `/calendars`),
         which is shared through the box by default (ADR 0015).
@@ -555,6 +613,10 @@ paths:
         event title uses the language of the request (Accept-Language), for
         example "Dinner: Pasta bake". Saving the same text again changes
         nothing. An empty text is refused with 422: remove a meal with DELETE.
+
+        Where a meal plan template fills the day, the text is that week's
+        adjustment (`source` adjusted); typing the template's own dish is no
+        adjustment.
       parameters:
         - { name: date, in: path, required: true, schema: { type: string, format: date } }
         - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }
@@ -580,7 +642,10 @@ paths:
     delete:
       operationId: deleteMeal
       summary: Remove a planned meal and its calendar event (scope meals:delete, parents only)
-      description: Removing a meal that is not planned is not an error (204).
+      description: |
+        Removing a meal that is not planned is not an error (204). Where a meal
+        plan template fills the day, it empties the meal for that week (an
+        adjustment); `restoreMeal` brings the template's dish back.
       parameters:
         - { name: date, in: path, required: true, schema: { type: string, format: date } }
         - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }
@@ -589,6 +654,126 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /meals/{date}/{mealtime}/restore:
+    post:
+      operationId: restoreMeal
+      summary: Back to template, drop the week's change of a meal (scope meals:write, parents only)
+      description: |
+        Removes the adjustment of a meal, so the template's dish shows again
+        (and in the calendar). 404 if the meal is not adjusted.
+      parameters:
+        - { name: date, in: path, required: true, schema: { type: string, format: date } }
+        - { name: mealtime, in: path, required: true, schema: { $ref: "#/components/schemas/Mealtime" } }
+      responses:
+        "200":
+          description: The meal as it is now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Meal" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /meal-templates:
+    get:
+      operationId: listMealTemplates
+      summary: Meal plan templates, by name (scope meals:read)
+      description: |
+        A template is a week pattern from Monday to Sunday that fills the meal
+        plan by itself, every `interval` weeks from `start_week`.
+      responses:
+        "200":
+          description: Templates
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/MealTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createMealTemplate
+      summary: Create a meal plan template (scope meals:write, parents only)
+      description: |
+        Fills the meal plan and the meal-plan calendar from today on. Entries of
+        mealtimes the template does not fill are ignored; an empty entry leaves
+        that meal free. At least one entry must be filled (else 422).
+
+        Two templates may not fill the same mealtime on the same weekday of the
+        same week, from today on. Then nothing is saved and the answer is 409
+        with `clashes`: for each template it clashes with, the mealtime, the
+        weekdays and the first week.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewMealTemplate" }
+      responses:
+        "201":
+          description: The template as stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/MealTemplateClash" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /meal-templates/{id}:
+    get:
+      operationId: getMealTemplate
+      summary: One meal plan template (scope meals:read)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: updateMealTemplate
+      summary: Replace a meal plan template (scope meals:write, parents only)
+      description: |
+        Changes reach today and all later days, never days before today. Meals
+        adjusted for a week keep their change. Overlaps are refused as in
+        `createMealTemplate`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewMealTemplate" }
+      responses:
+        "200":
+          description: The template as stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MealTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/MealTemplateClash" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteMealTemplate
+      summary: Delete a meal plan template (scope meals:delete, parents only)
+      description: |
+        From today on its meals leave the plan and the calendar. Days before
+        today keep what they showed; meals adjusted for a week stay as plain
+        entries.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /people/{id}/stars:
     get:
       operationId: getStars
@@ -952,7 +1137,7 @@ paths:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     patch:
       operationId: updateCalendar
-      summary: Change a synced calendar (share through the box, name, colour, audience)
+      summary: Change a synced calendar (share through the box, waste collection, name, colour, audience)
       description: |
         Send at least one field. `share_through_box` switches sharing through the box for a synced
         calendar; the family calendar is always served to phones, asking to change it answers 422.
@@ -966,6 +1151,7 @@ paths:
               type: object
               properties:
                 share_through_box: { type: boolean }
+                waste_collection: { type: boolean, description: "Only a read-only calendar can be marked, else 422" }
                 name: { type: string, minLength: 1 }
                 color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422" }
                 audience: { $ref: "#/components/schemas/Audience" }
@@ -1056,6 +1242,32 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /calendar-connections/{id}/credentials:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    put:
+      operationId: changeConnectionPassword
+      summary: Replace the password of a connection, after the server accepted it (parents, scope settings:write)
+      description: |
+        Signs in with the new password and lists the server's calendars, as when connecting. Only if that
+        works is the password stored (encrypted with the box's key, never returned) and the connection's
+        calendars synced again at once. A refused login, a server that points to another domain and an
+        unreachable server answer 422 and keep the old password. For iCloud use an app-specific password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, minLength: 1, writeOnly: true }
+      responses:
+        "204": { description: The password was checked and stored }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /calendar-connections/{id}/calendars:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -1170,7 +1382,8 @@ paths:
       summary: Change household settings; omitted fields stay as they are (scope settings:write)
       description: |
         The time format applies to every time shown in the web interface and
-        on displays (ADR 0016). Unknown values are refused with 422.
+        on displays (ADR 0016). An unknown `date_format` is refused with 400, an
+        unknown value of any other field with 422.
       requestBody:
         required: true
         content:
@@ -1420,7 +1633,7 @@ components:
         note: { type: string, minLength: 1, maxLength: 120, example: "redeemed: ice cream" }
     StarEntry:
       type: object
-      required: [id, person_id, delta, note, task_id, task_title, day, booked_by, created_at]
+      required: [id, person_id, delta, note, task_id, task_title, day, booked_by, booked_by_removed, created_at]
       properties:
         id: { type: string, format: uuid }
         person_id: { type: string, format: uuid }
@@ -1429,7 +1642,8 @@ components:
         task_id: { type: string, description: "Of the ticked or unticked task; empty for a manual booking or once the task is deleted" }
         task_title: { type: string, description: "Title of the task at booking time" }
         day: { type: string, description: "The ticked day (YYYY-MM-DD); empty for a manual booking" }
-        booked_by: { type: string, description: "Name of the person who booked; empty when a display did" }
+        booked_by: { type: string, description: "Name of the person who booked; empty when a display did. Once that person is removed, their last name" }
+        booked_by_removed: { type: boolean, description: "True when the person who booked has been removed; clients show the name as removed" }
         created_at: { type: string, format: date-time }
     StarAccount:
       type: object
@@ -1510,13 +1724,14 @@ components:
         groups: { type: array, items: { type: string, format: uuid } }
     Calendar:
       type: object
-      required: [id, name, kind, color, read_only, share_through_box, audience]
+      required: [id, name, kind, color, read_only, share_through_box, waste_collection, audience]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         kind: { type: string, enum: [local, ics, caldav, google, meals], description: "meals is the meal plan, generated by the box: read-only, its events change only in the meal plan" }
         color: { type: string }
         read_only: { type: boolean, description: "The box never changes this calendar's events (always true for ICS)" }
+        waste_collection: { type: boolean, description: "A read-only calendar marked as the household's waste collection calendar: its events show only in the family view's tomorrow tile (reminder from 18:00) and on the night page, not in the strip, person columns or personal view" }
         share_through_box: { type: boolean, description: "Phones may subscribe to this calendar over CalDAV. Always true for the family calendar; on by default for ICS, off for CalDAV and Google" }
         audience: { $ref: "#/components/schemas/Audience" }
         sync: { $ref: "#/components/schemas/SyncState" }
@@ -1534,6 +1749,12 @@ components:
       type: string
       enum: [eink_bw, eink_color, screen]
       description: Black-and-white E-Ink, colour E-Ink or normal screen
+    DayNote:
+      type: object
+      required: [day, text]
+      properties:
+        day: { type: string, format: date }
+        text: { type: string }
     Display:
       type: object
       required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk]
@@ -1576,6 +1797,8 @@ components:
     UpdateDisplay:
       type: object
       properties:
+        name: { type: string, minLength: 1, maxLength: 80, description: "The new name, trimmed; empty or longer than 80 characters is refused with 422" }
+        type: { $ref: "#/components/schemas/DisplayType" }
         show_tomorrow: { type: boolean }
         theme: { $ref: "#/components/schemas/DisplayTheme" }
         sunrise_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes, -180 to 180, else 422" }
@@ -1717,8 +1940,9 @@ components:
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
     Settings:
       type: object
-      required: [time_format, temperature_unit, auto_update, meal_cutoffs]
+      required: [date_format, time_format, temperature_unit, auto_update, meal_cutoffs]
       properties:
+        date_format: { type: string, enum: [dmy, mdy], description: "Day first DD.MM.YYYY (default) or month first MM/DD/YYYY. Only how the web interface writes dates in numbers; this API, CalDAV and iCalendar stay ISO 8601" }
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
         temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
@@ -1736,6 +1960,7 @@ components:
     SettingsUpdate:
       type: object
       properties:
+        date_format: { type: string, description: "dmy or mdy; anything else is refused with 400" }
         time_format: { type: string, description: "24h or 12h" }
         temperature_unit: { type: string, description: "c or f" }
         auto_update: { type: string, description: "on, off or notify" }
@@ -1777,11 +2002,65 @@ components:
     Meal:
       type: object
       description: One entry of the shared meal plan, free text for a day and a mealtime.
-      required: [date, mealtime, text]
+      required: [date, mealtime, text, source]
       properties:
         date: { type: string, format: date }
         mealtime: { $ref: "#/components/schemas/Mealtime" }
         text: { type: string, maxLength: 200 }
+        source:
+          type: string
+          enum: [manual, template, adjusted]
+          description: |
+            Where the meal comes from: typed by hand, filled in by a meal plan
+            template, or a template's meal that was changed for this week.
+        template_id: { type: string, format: uuid, description: "The template that fills this meal (source template or adjusted)" }
+        template_dish: { type: string, description: "What the template fills in (source template or adjusted)" }
+    MealTemplateEntry:
+      type: object
+      required: [weekday, mealtime, text]
+      properties:
+        weekday: { type: integer, minimum: 1, maximum: 7, description: "1 Monday to 7 Sunday" }
+        mealtime: { $ref: "#/components/schemas/Mealtime" }
+        text: { type: string, maxLength: 200 }
+    NewMealTemplate:
+      type: object
+      required: [name, mealtimes, interval, start_week, entries]
+      properties:
+        name: { type: string, maxLength: 60 }
+        mealtimes: { type: string, enum: [all, one], description: "Fills all mealtimes of the day, or one" }
+        mealtime: { $ref: "#/components/schemas/Mealtime" }
+        interval: { type: integer, minimum: 1, maximum: 52, description: "Every n weeks, counted from the start week" }
+        start_week: { type: string, format: date, description: "The Monday of the start week" }
+        entries:
+          type: array
+          items: { $ref: "#/components/schemas/MealTemplateEntry" }
+    MealTemplate:
+      allOf:
+        - $ref: "#/components/schemas/NewMealTemplate"
+        - type: object
+          required: [id]
+          properties:
+            id: { type: string, format: uuid }
+    MealTemplateClash:
+      type: object
+      required: [error, clashes]
+      properties:
+        error: { type: string }
+        clashes:
+          type: array
+          items:
+            type: object
+            required: [template, mealtime, weekdays, first_week]
+            properties:
+              template:
+                type: object
+                required: [id, name]
+                properties:
+                  id: { type: string, format: uuid }
+                  name: { type: string }
+              mealtime: { $ref: "#/components/schemas/Mealtime" }
+              weekdays: { type: array, items: { type: integer, minimum: 1, maximum: 7 } }
+              first_week: { type: string, format: date, description: "Monday of the first week both fill the meal, from today on" }
     Event:
       type: object
       description: An event or series master. Times are RFC 3339 in the household's time zone; all-day events use dates with an exclusive end.
@@ -1867,6 +2146,11 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
+    MealTemplateClash:
+      description: The template fills a meal another template fills too; nothing was saved
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/MealTemplateClash" }
     TooManyRequests:
       description: Too many wrong attempts, try again later
       content:

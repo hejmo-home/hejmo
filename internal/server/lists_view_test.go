@@ -425,10 +425,10 @@ func TestDeleteTickedOffEntriesStatesTheNumberAndSitsBetweenTheGroupAndTheSettin
 	two, _ := listWith(t, b, "Two", []string{"a", "b"}, "a", "b", "c")
 	one, _ := listWith(t, b, "One", []string{"a"}, "a", "b")
 	body := getEN(b, "/lists/"+two).body
-	before(t, body, `<h2>Ticked off (2)</h2>`, `<summary>Delete ticked-off entries (2)</summary>`,
-		`<p>The 2 ticked-off entries of this list are deleted for good. Open entries stay.</p>`, `>Yes, delete 2 entries</button>`, `<section class="list-settings"`, `<summary>Delete list</summary>`)
+	before(t, body, `<h2>Ticked off (2)</h2>`, `Delete ticked-off entries (2)</summary>`,
+		`<p>The 2 ticked-off entries of this list are deleted for good. Open entries stay.</p>`, `>Yes, delete 2 entries</button>`, `<section class="list-settings"`, `Delete list</summary>`)
 	got := getEN(b, "/lists/"+one).body
-	for _, want := range []string{`<summary>Delete ticked-off entry (1)</summary>`, `The ticked-off entry of this list is deleted for good. Open entries stay.`, `>Yes, delete 1 entry</button>`} {
+	for _, want := range []string{`Delete ticked-off entry (1)</summary>`, `The ticked-off entry of this list is deleted for good. Open entries stay.`, `>Yes, delete 1 entry</button>`} {
 		if !strings.Contains(got, want) {
 			t.Errorf("singular lacks %q", want)
 		}

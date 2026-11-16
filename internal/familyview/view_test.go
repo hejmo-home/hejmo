@@ -419,6 +419,29 @@ func TestWhoLineNamesTheSubgroupAndListsEveryoneElseInFull(t *testing.T) {
 	}
 }
 
+// 6.6 (ADR 0016): a column shows today's task progress, done/total; a person
+// without tasks today shows no bar.
+func TestColumnShowsTodaysTaskProgressOfItsPerson(t *testing.T) {
+	v := familyview.Build(familyview.Input{Now: at(14, 9, 0), Lang: "en", Region: "DE-BY", People: family(),
+		TaskProgress: map[string]familyview.Progress{"mia": {Done: 1, Total: 3}, "seb": {Done: 2, Total: 2}}})
+	if p := column(t, v, "Mia").Progress; p == nil || *p != (familyview.Progress{Done: 1, Total: 3}) {
+		t.Errorf("Mia's progress = %v, want 1/3", p)
+	}
+	if p := column(t, v, "Sebastian").Progress; p == nil || p.Percent() != 100 {
+		t.Errorf("Sebastian's progress = %v, want complete", p)
+	}
+	for _, n := range []string{"Mama", "Papa"} {
+		if p := column(t, v, n).Progress; p != nil {
+			t.Errorf("%s has no tasks but shows %v", n, p)
+		}
+	}
+	zero := familyview.Build(familyview.Input{Now: at(14, 9, 0), Lang: "en", Region: "DE-BY", People: family(),
+		TaskProgress: map[string]familyview.Progress{"mia": {}}})
+	if p := column(t, zero, "Mia").Progress; p != nil {
+		t.Errorf("0/0 shows a bar: %v", p)
+	}
+}
+
 // 5.22: Given an event for everyone listed, then it is a family strip item like
 // an event with no audience: no brackets, its time, and in no column.
 func TestEventForEveryoneListedGoesToTheStripLikeOneWithNoAudience(t *testing.T) {

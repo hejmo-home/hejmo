@@ -106,7 +106,7 @@ func TestWizardShellShowsStepNumberAndProgress(t *testing.T) {
 func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 	b := newFreshBox(t)
 	choice := deGet(b, "/setup/https")
-	for _, want := range []string{`<form class="tile" method="get" action="/setup/https">`, `<fieldset class="choice">`, `name="way" value="public" checked`, `name="way" value="own"`, "Mit öffentlichem Namen (empfohlen)", "Mit eigenem Zertifikat der Box"} {
+	for _, want := range []string{`<form class="tile" method="get" action="/setup/https">`, `<fieldset class="choice">`, `name="way" value="public" checked`, `name="way" value="own"`, "Mit kostenlosem Namen (empfohlen)", "Mit eigenem Zertifikat der Box"} {
 		if !strings.Contains(choice.body, want) {
 			t.Errorf("choice page misses %q", want)
 		}
@@ -181,7 +181,7 @@ func TestPublicFormErrorsGoToTheirFields(t *testing.T) {
 		"name":   {"name", "Dieser Name geht nicht"},
 		"lan_ip": {"lan_ip", "keine Adresse im Heimnetz"},
 		"eab":    {"eab", "Schlüssel-ID und HMAC-Schlüssel"},
-		"token":  {"token", "Füge den Zugangstoken von deSEC ein"},
+		"token":  {"token", "Füge den Token ein"},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {

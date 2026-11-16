@@ -132,6 +132,8 @@ iframe{border:0;background:#fff;display:block}
   --fs-label: 14px;       --fw-label: 400;
   --fs-label-large: 15px; --fw-label-large: 400;
   --fs-meta: 13px;        --fw-meta: 400;
+  --fs-title-phone: 28px; /* h1 under 600 px */
+  --fs-secret: 19px;      /* a secret shown once, monospace */
   /* shapes and spacing */
   --radius-tile: 22px;
   --radius-chip: 18px;
@@ -420,16 +422,16 @@ body:has(.family-page) { overflow: hidden; }
 
 .fv-grid { --visible: min(var(--cols), var(--cols-max)); flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: max(var(--col-min), calc((100% - (var(--visible) - 1) * var(--gap)) / var(--visible))); grid-auto-rows: minmax(0, 1fr); gap: var(--gap); overflow-x: auto; }
 .fv .column { display: flex; flex-direction: column; gap: 0; min-height: 0; overflow: hidden; }
-.fv .person-link { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: 0; overflow-wrap: anywhere; color: inherit; text-decoration: none; } /* a long single-word name wraps at the column edge instead of being clipped */
+.fv .person-link { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: 0; color: inherit; text-decoration: none; }
+.fv .person-name { min-width: 0; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* its own shrinkable flex item: a name never breaks inside a word; only a word wider than the column breaks at its edge (not clipped) */
+@supports (hyphenate-limit-chars: 12 5 5) { .fv .person-name { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
 .fv .column h2 { flex: none; min-width: 0; margin: 0 0 var(--gap-cards); font-size: var(--fs-person-name); font-weight: var(--fw-person-name); display: flex; align-items: center; gap: 8px; }
+[data-theme="bw"] .fv .person-link { gap: 6px; } /* the bw marker is 2 px larger, so the gap is 2 px smaller and long names still fit (ticket 150) */
 .fv .events { flex: 1; min-height: 0; overflow-y: auto; display: grid; gap: var(--gap-cards); align-content: start; }
 .fv .events .tomorrow { display: grid; gap: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); opacity: 0.6; }
 .strip.tomorrow { opacity: 0.6; } /* ADR 0016: tomorrow is faded so today's events stand out */
 .fv .tomorrow .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
 .fv .event .meta { display: block; }
-.pbar { flex: none; display: flex; align-items: center; gap: 10px; padding-top: var(--gap-cards); }
-.pbar .progress { flex: 1; }
-.pbar .count { font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; }
 .fv-footer { flex: none; display: flex; flex-wrap: wrap; gap: var(--gap); }
 .fv-footer .tile { flex: 1 1 200px; min-width: 0; padding: var(--pad-column); }
 .fv-footer .lab { font-size: var(--fs-label); color: var(--text-secondary); }
@@ -660,7 +662,6 @@ fieldset.look .pchip:has(input:focus-visible)::after, fieldset.look .pchip[data-
 .ev .meta, .bar .meta { font-size: var(--fs-meta); }
 .ev .icon, .bar .icon { stroke: currentColor; vertical-align: middle; }
 .ev .who, .bar .who { display: block; font-size: var(--fs-meta); overflow-wrap: break-word; hyphens: manual; }
-.who .nm { display: inline-block; max-width: 100%; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 [data-theme="bw"] .bar, [data-theme="bw"] .wk-days .ev { background: var(--event-card); color: var(--text); border: 1.5px solid var(--text); }
 [data-theme="bw"] .wk-heads li[data-today] { border-bottom-width: 4px; }
@@ -697,14 +698,6 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
    target, and the ticked-off entries in their own group below. Moving and
    removing happen in "Sort or remove", so the everyday rows stay calm. A list
    wears a person colour slot and a black-and-white symbol. */
-.list-rows { list-style: none; padding: 0; margin: 0 0 var(--gap-section); display: grid; gap: var(--gap-cards); max-width: 560px; }
-.list-rows a { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; background: var(--surface); border-radius: var(--radius-tile); color: var(--text); text-decoration: none; }
-[data-theme="bw"] .list-rows a { border: 2px solid var(--text); }
-.list-rows .t { display: grid; gap: 2px; min-width: 0; }
-.list-rows a > .t { flex: 1; }
-.list-rows b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: break-word; hyphens: auto; }
-.list-rows .state { font-size: var(--fs-label); color: var(--text-secondary); }
-.list-rows .chev { margin-left: auto; flex: none; stroke: var(--text-secondary); }
 .list-title { display: flex; align-items: center; gap: 12px; overflow-wrap: break-word; hyphens: auto; min-width: 0; }
 .list-title .marker { flex: none; }
 .list-title > span:last-child { min-width: 0; }
@@ -741,15 +734,84 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .marker.shaped[data-shape="square-empty"] { background: transparent; }
 .marker.shaped[data-shape="triangle-filled"] { border: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .marker.shaped[data-shape="diamond-filled"] { border: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
-/* Frame: on wide screens the "Back to Settings" link and the content both sit
-   right of the navigation (the link used to take the second column alone and
-   push the navigation to full width). On a phone the navigation scrolls
-   sideways inside the screen instead of widening the page. */
+/* Ticket #108 Signed-in devices: person group heading, session rows with a
+   word tag for this browser, facts list on the detail page. */
+.who-head { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); overflow-wrap: anywhere; }
+.cards.sessions li { padding: 12px 16px; }
+.cards.sessions .hub-row { gap: 4px; }
+.cards.sessions .hub-row strong { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; overflow-wrap: anywhere; }
+.tag { display: inline-flex; align-items: center; min-height: 24px; padding: 1px 10px; border: 1.5px solid var(--accent); border-radius: var(--radius-chip); color: var(--accent); font-size: var(--fs-meta); font-weight: 700; text-decoration: none; }
+[data-theme="bw"] .tag { border-width: 2px; color: var(--text); border-color: var(--text); }
+[data-theme="bw"] .cards.sessions .hub-row strong { text-decoration: underline; }
+[data-theme="bw"] .cards.sessions .hub-row { text-decoration: none; }
+.group-list { display: grid; gap: var(--gap-section); max-width: 560px; margin: 0 0 20px; }
+.group-list .cards { margin: 0; }
+/* A notice that stands above the page title. */
+.notice.top { margin-bottom: 14px; }
+/* ---- Detail pages and calm overview rows (ticket 111, ADR 0017) ---- */
+/* Detail pages and calm overview rows (ADR 0017). */
+/* The frame's single column must be allowed to shrink: without minmax(0, 1fr) the
+   one-line navigation sets the column to its full width and pushes the page past
+   the right edge of a 375 px phone (left margin looks wrong, text does not wrap). */
+.frame { grid-template-columns: minmax(0, 1fr); }
 .frame > * { min-width: 0; }
-@media (min-width: 900px) {
-  .frame.has-nav > .frame-nav { grid-row: span 2; }
-  .frame.has-nav > .back, .frame.has-nav > main { grid-column: 2; }
+.steps .card-row .t b { color: var(--text); }
+h1 { overflow-wrap: anywhere; hyphens: auto; }
+.back { gap: 6px; text-decoration: none; }
+.back .icon { stroke: currentColor; }
+main > .back { margin: 0 0 4px; }
+.list-rows { list-style: none; padding: 0; margin: 0 0 var(--gap-section); display: grid; gap: var(--gap-cards); max-width: 560px; }
+.list-rows a { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; background: var(--surface); border-radius: var(--radius-tile); color: var(--text); text-decoration: none; }
+[data-theme="bw"] .list-rows a { border: 2px solid var(--text); }
+.list-rows a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.list-rows .t { display: grid; gap: 4px; min-width: 0; flex: 1; }
+.list-rows b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: anywhere; }
+.list-rows .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.list-rows .chev { margin-left: auto; flex: none; stroke: var(--text-secondary); }
+/* The Lists overview keeps long names whole-word with hyphens, not broken anywhere. */
+.list-rows.lists b { overflow-wrap: break-word; hyphens: auto; }
+.rows-head { font-size: var(--fs-label-large); font-weight: 700; color: var(--text-secondary); margin: var(--gap-section) 0 var(--gap-cards); max-width: 560px; overflow-wrap: anywhere; }
+.list-rows .who, .facts .who { display: inline-flex; align-items: center; gap: 6px; }
+.flag { display: inline-flex; align-items: flex-start; gap: 6px; padding: 3px 8px; border-radius: var(--radius-field); font-size: var(--fs-label); font-weight: 600; justify-self: start; overflow-wrap: anywhere; }
+.flag .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+.flag.problem { background: var(--error-bg); color: var(--error-text); }
+.flag.warn { background: var(--notice-bg); color: var(--notice-text); }
+[data-theme="bw"] .flag { background: none; color: var(--text); border: 2px solid var(--text); }
+.facts { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 10px 20px; margin: 0 0 var(--gap-section); padding: 16px; max-width: 560px; box-sizing: border-box; background: var(--surface); border-radius: var(--radius-tile); }
+.facts dt { color: var(--text-secondary); font-size: var(--fs-label); padding-top: 2px; }
+.facts dd { margin: 0; overflow-wrap: anywhere; display: flex; flex-wrap: wrap; gap: 6px 8px; align-items: center; }
+.facts .button { margin-top: 4px; }
+[data-theme="bw"] .facts { border: 2px solid var(--text); }
+.steps .pair { display: flex; flex-wrap: wrap; align-items: start; gap: 10px var(--gap); }
+.steps .pair .f { flex: 1 1 140px; min-width: 0; }
+.steps .pair .f.invalid { flex-basis: 100%; }
+@supports selector(:has(a)) {
+  .steps fieldset:has(> .card-row .switch input:not(:checked)) > .when-on { display: none; }
+  .calchoice:has(> .card-row .switch input:not(:checked)) > :not(.card-row):not(input) { display: none; }
 }
+.calchoice .status { font-size: var(--fs-meta); color: var(--text-secondary); }
+details.danger { box-sizing: border-box; }
+details.danger > summary .icon { stroke: var(--error-text); flex: none; }
+details.danger[open] { background: var(--surface); border: 2px solid var(--error-text); border-radius: var(--radius-tile); padding: 0 16px 6px; }
+details.danger ul { margin: 0 0 10px; padding-left: 20px; }
+details.danger li { overflow-wrap: anywhere; }
+details.danger .confirm { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; margin: 0 0 10px; }
+details.danger .confirm form { margin: 0; }
+details.danger .confirm a { display: inline-flex; align-items: center; min-height: var(--touch-target); font-weight: 600; }
+.button { max-width: 100%; white-space: normal; text-align: center; }
+.once { display: grid; gap: 12px; max-width: 560px; box-sizing: border-box; padding: 16px; margin: 0 0 var(--gap-section); background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius-tile); }
+.once p { margin: 0; }
+.once .secret { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-secret); font-weight: 600; letter-spacing: 0.04em; background: var(--background); border-radius: var(--radius-field); padding: 10px 12px; margin: 0; }
+.once .row { display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 599px) {
+  h1 { font-size: var(--fs-title-phone); }
+  .facts { grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 14px; }
+  .facts dd { margin-bottom: 10px; }
+  .facts dd:last-child { margin-bottom: 0; }
+  .list-rows a { padding: 12px 14px; }
+}
+.once .facts { margin: 0; padding: 0; background: none; border: 0; max-width: none; }
+.facts + .hint { max-width: 560px; }
 
 /* Meal plan (ticket 6.3, ADR 0015): the week as one card per day, one row per
    mealtime in the order of the day. A row is the mealtime (icon and word) and
@@ -836,6 +898,203 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .tpick label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
 [data-theme="bw"] .tpick label { border-color: var(--text); }
 .tpick .done { justify-self: end; }
+
+/* Tomorrow tile (ticket 6.7, design pass): label row with the reminder in
+   words, a bin icon before each collection, the note set apart below. */
+.fv-footer .tile-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin-bottom: 2px; }
+.fv-footer .flag { display: inline-flex; align-items: center; gap: 6px; background: var(--accent); color: var(--accent-text); border-radius: var(--radius-chip); padding: 3px 12px; font-size: var(--fs-label); font-weight: 700; }
+.fv-footer .ln { overflow-wrap: anywhere; }
+.fv-footer .ln.waste { display: flex; gap: 8px; align-items: flex-start; }
+.fv-footer .ln.waste .icon { flex: none; margin-top: 1px; }
+.fv-footer .tile.alert .ln.waste .icon { stroke: var(--notice-text); }
+.fv-footer .ln.note { font-weight: 400; }
+.fv-footer .ln.waste + .ln.note { margin-top: 6px; padding-top: 6px; border-top: 1px solid var(--border); }
+.fv-footer .tile.alert .ln.waste + .ln.note { border-top-color: currentColor; }
+.fv-footer .ln.note .day { font-weight: 700; margin-right: 6px; }
+[data-theme="bw"] .fv-footer .tile.alert { border-width: 3px; padding: calc(var(--pad-column) - 3px); }
+.quiet.night .night-item .ln.waste { display: flex; gap: 8px; align-items: center; font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+/* Day note card on Home (ticket 6.7, design pass). */
+.note-day .hint { margin: 0; }
+.note-day:not(:has(input[value="other"]:checked)) .other-day { display: none; }
+.seg label small { display: block; font-size: var(--fs-meta); font-weight: 400; }
+.seg label { flex-direction: column; }
+.counter { font-size: var(--fs-meta); color: var(--text-secondary); justify-self: end; font-variant-numeric: tabular-nums; }
+.cards a.note-row { color: var(--text); font-weight: 400; }
+.note-row { display: flex; align-items: center; gap: 12px; text-decoration: none; color: var(--text); min-height: var(--touch-target); }
+.note-row .t { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.note-row .t b { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.note-row .go { margin-left: auto; flex: none; color: var(--accent); font-weight: 600; }
+.waste-next { font-size: var(--fs-label); }
+.waste-next b { font-weight: 700; }
+
+/* Visually hidden text that screen readers still read; language switcher in the brand bar (ticket 134). */
+.vh { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+.frame-tools { display: flex; align-items: center; gap: var(--gap-cards); margin-left: auto; }
+.lang .flag { display: block; flex: none; padding: 0; gap: 0; border: 0; background: none; margin: 0; justify-self: auto; width: 24px; height: 16px; object-fit: cover; border-radius: 3px; outline: 1px solid var(--border); outline-offset: -1px; }
+[data-theme="bw"] .lang .flag { filter: grayscale(1); outline: 1px solid var(--text); }
+.lang { position: relative; }
+.lang > summary { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: var(--touch-target); padding: 0 12px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); font-weight: 600; cursor: pointer; list-style: none; }
+.lang > summary::-webkit-details-marker { display: none; }
+.lang > summary .chev { flex: none; width: 14px; height: 14px; }
+.lang[open] > summary { border-color: var(--accent); }
+.lang[open] > summary .chev { transform: rotate(180deg); }
+.lang > summary:focus-visible, .lang-menu button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] .lang > summary { border: 2px solid var(--text); }
+.lang-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; min-width: 200px; margin: 0; padding: 6px; display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); }
+[data-theme="bw"] .lang-menu { border: 2px solid var(--text); }
+.lang-menu button { display: flex; align-items: center; gap: 10px; width: 100%; min-height: var(--touch-target); padding: 8px 12px; border: 0; border-radius: var(--radius-field); background: none; color: var(--text); font: inherit; font-size: var(--fs-body); text-align: left; cursor: pointer; }
+.lang-menu button:hover { background: var(--background); }
+[data-theme="bw"] .lang-menu button:hover { text-decoration: underline; }
+/* Next to "Sign out" a narrow bar drops the visible name; flag and chevron stay and the name stays in the accessible name. */
+@media (max-width: 479px) {
+  .frame-tools:has(.signout) .lang-name { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}
+
+/* ---- Design pass 6.6: tasks on the display (ticket 6.6, preview-37) ---- */
+/* Family view: progress block anchored at the column bottom (ADR 0016), in words, tappable. */
+.pbar { flex: none; display: grid; gap: 6px; margin-top: var(--gap-cards); padding-top: var(--gap-cards); border-top: 1px solid var(--border); min-height: var(--touch-target); align-content: center; color: inherit; text-decoration: none; }
+.pbar .progress { width: 100%; }
+.pbar .count { display: flex; align-items: flex-start; gap: 6px; font-size: var(--fs-label); font-weight: 600; font-variant-numeric: tabular-nums; overflow-wrap: anywhere; }
+.pbar[data-all-done] .count { font-weight: 700; }
+.pbar .icon, .tasks-head .icon { flex: none; stroke: var(--pc); stroke-width: 2.4; }
+[data-theme="bw"] .pbar .icon, [data-theme="bw"] .tasks-head .icon { stroke: var(--text); }
+/* Long German words wrap inside event cards instead of being cut at the column edge. */
+.fv .events > *, .pv-day > * { min-width: 0; }
+.event .title { overflow-wrap: anywhere; hyphens: auto; }
+
+/* Personal view: tasks first and as wide as the week, progress in words on top. */
+.pv-header { justify-content: flex-start; flex-wrap: wrap; }
+.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: anywhere; }
+.pv-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+.pv-tasks { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
+.tasks-head { flex: none; display: grid; gap: 8px; padding: var(--pad-column) var(--pad-column) 12px; border-bottom: 1px solid var(--border); }
+.tasks-head .count { display: flex; gap: 8px; align-items: center; font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); font-variant-numeric: tabular-nums; }
+.tasks-head .msg { margin: 0; max-width: none; font-size: var(--fs-event-title); font-weight: 700; }
+.tasks-head .msg .icon { stroke: var(--accent); }
+.pv-tasks .list { flex: 1; min-height: 0; overflow-y: auto; padding: 12px var(--pad-column) var(--pad-column); display: grid; gap: 14px; align-content: start; }
+.pv-tasks .part { display: grid; gap: var(--gap-cards); }
+.pv-tasks .part > .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.pv-tasks ul { gap: var(--gap-cards); }
+.pv-tasks li { display: grid; gap: 6px; }
+.big-check { gap: 12px; min-height: 64px; padding: 8px 12px 8px 8px; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); font-weight: 600; }
+[data-theme="bw"] .big-check { border: 2px solid var(--text); }
+.big-check .box { border-radius: var(--radius-field); }
+.big-check .box svg { display: none; }
+[data-done="true"] .big-check .box { background: var(--pc); border-color: var(--pc); }
+[data-theme="bw"] [data-done="true"] .big-check .box { background: var(--text); border-color: var(--text); }
+[data-done="true"] .big-check .box::after { content: none; }
+[data-done="true"] .big-check .box svg { display: block; stroke: var(--surface); stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.big-check .emoji { flex: none; width: 36px; font-size: 30px; line-height: 1; text-align: center; }
+.big-check .title { flex: 1; min-width: 0; overflow-wrap: anywhere; line-height: 1.3; }
+[data-done="true"] .big-check .title { font-weight: 400; }
+[data-done="true"] .big-check { background: transparent; }
+.pv-tasks .ferr { margin-left: 4px; }
+.pv-body[data-no-tasks] { grid-template-columns: minmax(0, 1fr) minmax(0, 2fr); }
+.pv-body[data-no-tasks] .tasks-head { border-bottom: 0; padding-bottom: 0; }
+.pv-tasks .none { margin: 0; padding: 16px; border: 1.5px dashed var(--border); border-radius: var(--radius-card); color: var(--text-secondary); }
+@media (max-width: 599px) {
+  .pv-header h1 { font-size: var(--fs-key-figure); }
+  .pv-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
+}
+
+/* Ticket #147: a hint or an error inside a segmented control takes the full row
+   (the error used to become a third segment); an invalid group shows its 2px
+   error border like a field. */
+fieldset.seg > .hint, fieldset.seg > .ferr { flex: 0 0 100%; }
+fieldset.seg > .hint { margin: 0 0 10px; }
+fieldset.seg > .ferr { margin: 8px 0 0; }
+fieldset.seg[aria-invalid="true"] label { border: 2px solid var(--error-text); }
+.seg label b { font-variant-numeric: tabular-nums; }
+
+/* ---- Meal plan templates (ticket 6.9, design pass, preview-131) ---- */
+/* Meal plan: one card above the week says which templates fill it (names are
+   links) and that changes count for this week only; the button opens the
+   Templates menu. A dish that comes from a template says so under the field;
+   an adjusted one has the pill "Adjusted this week", the template's dish and
+   "Back to template". */
+.tpl-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 16px; max-width: 1200px; margin: 0 0 var(--gap); padding: 12px 16px; background: var(--surface); border-radius: var(--radius-card); }
+.tpl-sum p { flex: 1 1 22em; min-width: 0; margin: 0; }
+.tpl-sum p a { font-weight: 600; }
+.tpl-sum p, .mrow .src, .tpl-row, .ahead li, .weeks-hint, .tpl-form .ferr, main:has(.tpl-form) > .form-error { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) { .tpl-sum p, .mrow .src, .tpl-row, .ahead li, .weeks-hint, .tpl-form .ferr, main:has(.tpl-form) > .form-error { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
+.tpl-sum .mt-of { white-space: nowrap; -webkit-hyphens: manual; hyphens: manual; }
+.tpl-sum .button { display: inline-flex; align-items: center; gap: 8px; flex: none; }
+.tpl-sum .button .icon { stroke: currentColor; }
+[data-theme="bw"] .tpl-sum { border: 2px solid var(--text); }
+.mrow .src { grid-column: 2; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; margin-top: -2px; font-size: var(--fs-meta); color: var(--text-secondary); min-width: 0; }
+.mrow .src > span { min-width: 0; }
+.mrow .src .icon { flex: none; width: 16px; height: 16px; stroke: var(--text-secondary); }
+.mrow .src a { color: var(--text-secondary); }
+.mrow .src .adj { font-weight: 700; color: var(--notice-text); background: var(--notice-bg); border-radius: var(--radius-chip); padding: 2px 10px; }
+[data-theme="bw"] .mrow .src .adj { background: var(--surface); color: var(--text); border: 2px solid var(--text); padding: 0 8px; }
+.mrow .src .was { flex: 1 1 10em; }
+.mrow .src .was b { font-weight: 600; color: var(--text); }
+.mrow .src .button { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; font-size: var(--fs-label); }
+.mrow .src .button .icon { stroke: currentColor; }
+.mrow.adjusted textarea { border: 2px solid var(--notice-text); }
+[data-theme="bw"] .mrow.adjusted textarea { border: 2px dashed var(--text); }
+.mrow textarea::placeholder { color: var(--text-secondary); opacity: 1; font-style: italic; }
+@container (max-width: 270px) { .mrow .src { grid-column: 1; } }
+@container (max-width: 360px) { .mrow.adjusted .src { grid-column: 1 / -1; } .mrow.adjusted .src .was { flex-basis: 100%; } }
+
+/* Templates menu (/meals/templates): calm rows that open a template, and the
+   coming weeks in words (which template fills which mealtime). */
+.tpl-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); }
+.cards a.tpl-row { color: var(--text); font-weight: 400; }
+.tpl-row strong { display: flex; align-items: center; gap: 8px; font-size: var(--fs-event-title); font-weight: var(--fw-event-title); color: var(--accent); }
+.tpl-row strong .icon { flex: none; stroke: var(--accent); margin-left: auto; }
+.tpl-row .hint { overflow-wrap: break-word; }
+.tpl-row .hint b { color: var(--text); font-weight: 600; }
+[data-theme="bw"] .tpl-row strong { text-decoration: underline; }
+.ahead { list-style: none; margin: 0 0 var(--gap-section); padding: 4px 16px; background: var(--surface); border-radius: var(--radius-tile); max-width: 720px; container-type: inline-size; }
+.ahead li { display: grid; grid-template-columns: 11em minmax(0, 1fr); gap: 2px 12px; padding: 10px 0; border-top: 1px solid var(--border); }
+.ahead li:first-child { border-top: 0; }
+.ahead .wkn b { display: block; }
+.ahead .wkn span { font-size: var(--fs-label); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.ahead .wkn .today { display: inline-block; margin-top: 2px; font-size: var(--fs-meta); font-weight: 700; color: var(--accent-text); background: var(--accent); border-radius: var(--radius-chip); padding: 1px 9px; }
+.ahead .fills { display: grid; gap: 2px; }
+.ahead .fills .free { color: var(--text-secondary); }
+@container (max-width: 420px) { .ahead li { grid-template-columns: minmax(0, 1fr); } }
+.page-actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 var(--gap-section); }
+
+/* Template form: name, which meals, when it repeats (the weeks it fills in
+   words), then the week pattern as the meal plan's day cards without dates. */
+.tpl-form > fieldset, .tpl-form > .f-card { max-width: 720px; }
+.f-card { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 12px; border: 0; margin: 0; min-width: 0; }
+.f-card > legend { font-size: var(--fs-person-name); font-weight: 700; padding: 0; float: left; width: 100%; margin: 0 0 4px; }
+.f-card .hint { margin: 0; }
+.mtpick-wrap { container-type: inline-size; }
+fieldset.choice.mtpick { display: flex; flex-wrap: wrap; gap: 10px; }
+.mtpick label { flex: 1 1 100%; min-width: min(100%, max-content); max-width: 100%; }
+@container (min-width: 24em) { .mtpick label { flex-basis: calc(50% - 5px); } }
+.mtpick b { overflow-wrap: break-word; }
+.mtpick label { grid-template-columns: auto auto 1fr; }
+.mtpick input { grid-row: auto; }
+.mtpick .icon { stroke: var(--accent); }
+.every { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 10px; font-size: var(--fs-body); color: var(--text); }
+.every input { width: 4.5em; text-align: center; font-variant-numeric: tabular-nums; }
+.f.invalid .every input, .every input[aria-invalid="true"] { border: 2px solid var(--error-text); }
+.f-card select { width: 100%; }
+.weeks-hint { font-size: var(--fs-label); color: var(--text); background: var(--background); border-radius: var(--radius-field); padding: 8px 12px; overflow-wrap: break-word; font-variant-numeric: tabular-nums; }
+.weeks-hint b { font-weight: 700; }
+[data-theme="bw"] .weeks-hint { border: 1.5px solid var(--text); }
+.tpl-form h2 { font-size: var(--fs-person-name); margin: 8px 0 0; }
+.tpl-form > .hint { margin: -8px 0 0; }
+@supports selector(:has(a)) {
+  .tpl-form:has(input[name="fills"][value="all"]:checked) .mtpick { display: none; }
+  .tpl-form:has(input[name="fills"][value="one"]:checked):has(input[name="mealtime"][value="breakfast"]:checked) .mrow:not([data-mt="breakfast"]),
+  .tpl-form:has(input[name="fills"][value="one"]:checked):has(input[name="mealtime"][value="lunch"]:checked) .mrow:not([data-mt="lunch"]),
+  .tpl-form:has(input[name="fills"][value="one"]:checked):has(input[name="mealtime"][value="snack"]:checked) .mrow:not([data-mt="snack"]),
+  .tpl-form:has(input[name="fills"][value="one"]:checked):has(input[name="mealtime"][value="dinner"]:checked) .mrow:not([data-mt="dinner"]) { display: none; }
+}
+.mrow .src { margin: -2px 0 2px; }
+.mrow .src > span:not(.adj) { flex: 1 1 8em; }
+.ahead .wkn { display: grid; gap: 2px; align-content: start; }
+.ahead .wkn .today { justify-self: start; }
+.ahead .fills b { font-weight: 600; }
+.mtpick legend { margin: 4px 0 0; }
+.f-card[aria-invalid="true"] select, .f-card[aria-invalid="true"] .every input { border: 2px solid var(--error-text); }
+.page-actions .button .icon { stroke: currentColor; vertical-align: -3px; margin-right: 6px; }
 </template>
 <template id="js">// Shared form patterns (ticket 5.16). Everything works without this script:
 // the server reads "no person chosen" as the whole family. The script only
@@ -869,6 +1128,51 @@ document.addEventListener("change", function (e) {
     t.addEventListener("keydown", function (e) {
       if (e.key === "Enter" && !e.isComposing) { e.preventDefault(); t.form.requestSubmit(); }
     });
+  });
+})();
+
+// Meal plan template form: the sentence that spells out the weeks the template
+// fills follows the fields, and the save bar says when something is not saved
+// yet. The server builds the same sentence for the first render (and without
+// this script). The interval counts whole weeks from the start week, so the
+// turn of the year (2026 has a week 53) comes out right.
+(function () {
+  var hint = document.querySelector(".tpl-form .weeks-hint");
+  if (!hint) return;
+  var form = hint.closest("form");
+  var every = form.elements["every"], start = form.elements["start"];
+  var DAY = 86400000, WEEK = 7 * DAY, MAX = 8;
+  function parse(s) { var m = /^(\d{4})-(\d\d)-(\d\d)$/.exec(s || ""); return m ? Date.UTC(+m[1], +m[2] - 1, +m[3]) : NaN; }
+  function monday(ms) { return ms - ((new Date(ms).getUTCDay() + 6) % 7) * DAY; }
+  function isoYear(ms) { return new Date(ms + 3 * DAY).getUTCFullYear(); }
+  function isoWeek(ms) { var th = ms + 3 * DAY; return Math.floor((th - Date.UTC(new Date(th).getUTCFullYear(), 0, 1)) / WEEK) + 1; }
+  function pad(n) { return (n < 10 ? "0" : "") + n; }
+  function date(ms) { var d = new Date(ms), day = pad(d.getUTCDate()), mon = pad(d.getUTCMonth() + 1); return hint.getAttribute("data-date-format") === "mdy" ? mon + "/" + day + "/" + d.getUTCFullYear() : day + "." + mon + "." + d.getUTCFullYear(); }
+  function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
+  function build() {
+    var n = parseInt(every.value, 10), st = parse(start.value), today = monday(parse(hint.getAttribute("data-today")));
+    if (!(n >= 1 && n <= 52) || isNaN(st) || isNaN(today)) { hint.textContent = ""; return; }
+    var w = st;
+    if (today > st) w = st + Math.ceil(Math.round((today - st) / WEEK) / n) * n * WEEK;
+    var year = isoYear(w), k = 0, then = "", out = esc(hint.getAttribute("data-lead"));
+    for (var i = 0; i < 60; i++, w += n * WEEK) {
+      if (isoYear(w) !== year) {
+        then = esc(hint.getAttribute("data-then")).replace("{week}", "<b>" + isoWeek(w) + "</b>").replace("{year}", isoYear(w)).replace("{date}", date(w));
+        break;
+      }
+      if (k === MAX) break;
+      out += (k > 0 ? "," : "") + " <b>" + isoWeek(w) + "</b>" + (k === 0 && w === today ? esc(hint.getAttribute("data-this")) : "");
+      k++;
+    }
+    hint.innerHTML = out + then + esc(hint.getAttribute("data-tail"));
+  }
+  every.addEventListener("input", build);
+  start.addEventListener("change", build);
+  form.addEventListener("input", function () {
+    var d = form.querySelector(".savebar .dirty"); if (d) d.hidden = false;
+  });
+  form.addEventListener("change", function () {
+    var d = form.querySelector(".savebar .dirty"); if (d) d.hidden = false;
   });
 })();
 
@@ -1017,6 +1321,26 @@ document.addEventListener("change", function (e) {
     if (input && input.form && (input.name === "color" || input.name === "shape") && input.hasAttribute("data-taken-with")) sync(input.form);
   });
 })();
+
+// Language switcher (ticket 134). The menu is a <details> and works without
+// this script; the script adds what a native <details> lacks: Escape closes it
+// (focus goes back to its button) and so does a click outside it.
+(function () {
+  function open() {
+    return document.querySelector("details.lang[open]");
+  }
+  document.addEventListener("keydown", function (e) {
+    var menu = e.key === "Escape" && open();
+    if (!menu) return;
+    menu.removeAttribute("open");
+    var summary = menu.querySelector("summary");
+    if (summary) summary.focus();
+  });
+  document.addEventListener("click", function (e) {
+    var menu = open();
+    if (menu && !menu.contains(e.target)) menu.removeAttribute("open");
+  });
+})();
 </template>
 <template id="doc0" data-body-class="web">
 <a class="skip" href="#content">Skip to content</a>
@@ -1024,7 +1348,11 @@ document.addEventListener("change", function (e) {
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/gb.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Language: </span>English</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/lists"><button type="submit" name="lang" value="de" lang="de"><img class="flag" src="/static/flags/de.svg" alt="">Deutsch</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
@@ -1035,7 +1363,6 @@ document.addEventListener("change", function (e) {
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
 
-
 <main id="content">
 
 
@@ -1043,17 +1370,17 @@ document.addEventListener("change", function (e) {
   
   <p class="lead">Shopping, to-dos and anything else the family collects. Open a list to add entries and tick them off.</p>
 
-  <ul class="list-rows">
+  <ul class="list-rows lists">
     
-    <li data-list="cc874fef-27e3-48a1-888a-cc172c1fe699"><a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="state">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e"><a href="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="meta">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="836bfb3d-9195-4f61-8386-8c81185bac22"><a href="/lists/836bfb3d-9195-4f61-8386-8c81185bac22"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="state">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="306aa9c9-2e72-463a-959e-d56d3250d054"><a href="/lists/306aa9c9-2e72-463a-959e-d56d3250d054"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="meta">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="1d859bb0-d68e-41e8-90b6-56e611181221"><a href="/lists/1d859bb0-d68e-41e8-90b6-56e611181221"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="state">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="fe8124bf-b42d-4dd9-8421-e8c346a569dc"><a href="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="meta">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="cc18da93-3e71-4380-a14f-03ff63d58070"><a href="/lists/cc18da93-3e71-4380-a14f-03ff63d58070"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="state">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="542fd80b-d852-4a23-b089-a90b0e14aa48"><a href="/lists/542fd80b-d852-4a23-b089-a90b0e14aa48"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="meta">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="49a69029-89ee-4cc9-8e24-bc45f93d8760"><a href="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="state">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="2b34d242-3c42-4e91-aa52-262c2166ac3e"><a href="/lists/2b34d242-3c42-4e91-aa52-262c2166ac3e"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="meta">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
   </ul>
 
@@ -1110,7 +1437,11 @@ document.addEventListener("change", function (e) {
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/gb.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Language: </span>English</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e"><button type="submit" name="lang" value="de" lang="de"><img class="flag" src="/static/flags/de.svg" alt="">Deutsch</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
@@ -1121,7 +1452,6 @@ document.addEventListener("change", function (e) {
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
 
-
 <main id="content">
 <p class="msg ok" role="status" data-success><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>&#34;Pasta&#34; added.</p>
 
@@ -1131,7 +1461,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint list-meta">Sorted by hand. 5 open, 2 ticked off.</p>
 
-  <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries" class="add-entry">
+  <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries" class="add-entry">
     
     <div class="f">
   <label>New entry
@@ -1145,48 +1475,48 @@ document.addEventListener("change", function (e) {
   
   <ul class="entries">
   <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/7133b877-919e-4870-b93a-4c19c89022b5/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/3672d7a5-365f-44f3-bfe4-421e579a0eb9/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Bananas"><span class="box" aria-hidden="true"></span><span class="title">Bananas</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/4c9b8990-22cc-4e8d-9295-3b70324f627e/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Coffee for Papa"><span class="box" aria-hidden="true"></span><span class="title">Coffee for Papa</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/3985bced-a010-4471-9ce7-53eb87f3219a/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Birthday card for Mama"><span class="box" aria-hidden="true"></span><span class="title">Birthday card for Mama</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/96b65f7f-d3d0-45c4-bfe7-c2c3a34c3315/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><span class="box" aria-hidden="true"></span><span class="title">Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/3f08d1f5-e353-4a5c-a59c-b82654240a12/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/cdaa371c-c55e-4635-9a84-e7c23bc4e4b7/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Pasta"><span class="box" aria-hidden="true"></span><span class="title">Pasta</span></button></form>
   </li>
 </ul>
-  <p class="tools"><a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699?edit=1">Sort or remove entries</a></p>
+  <p class="tools"><a href="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e?edit=1">Sort or remove entries</a></p>
   <div class="group-head"><h2>Ticked off (2)</h2><a href="?ticked=hide">Hide</a></div>
   <ul class="entries">
   <li data-done="true">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/286a5832-041d-445d-befa-71547c09dcba/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/7747de3d-b6b2-4114-8bcb-0b58b7383548/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Mark as open: Oat milk"><span class="box" aria-hidden="true"></span><span class="title"><s>Oat milk</s></span></button></form>
   </li>
 <li data-done="true">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/c22c7568-6ab5-4a13-a83d-29ec50db1b42/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/d19cec00-e961-4c57-9cc2-b38ea4640e11/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Mark as open: Football socks for Sebastian"><span class="box" aria-hidden="true"></span><span class="title"><s>Football socks for Sebastian</s></span></button></form>
   </li>
 </ul>
 
   
   <details open class="danger">
-  <summary>Delete ticked-off entries (2)</summary>
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Delete ticked-off entries (2)</summary>
     <p>The 2 ticked-off entries of this list are deleted for good. Open entries stay.</p>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/completed/delete"><button class="button danger" type="submit">Yes, delete 2 entries</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/completed/delete"><button class="button danger" type="submit">Yes, delete 2 entries</button></form>
   </details>
 
   <section class="list-settings" aria-labelledby="settings">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/settings" class="steps">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/settings" class="steps">
       
       <details class="more">
   <summary id="settings"><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>List settings<span class="sum">Green, filled square, by hand</span></summary>
@@ -1231,9 +1561,9 @@ document.addEventListener("change", function (e) {
   </section>
 
   <details class="danger">
-  <summary>Delete list</summary>
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Delete list</summary>
     <p>The list is deleted for good, with all its entries.</p>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
   </details>
   
 
@@ -1247,7 +1577,11 @@ document.addEventListener("change", function (e) {
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/gb.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Language: </span>English</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e?edit=1"><button type="submit" name="lang" value="de" lang="de"><img class="flag" src="/static/flags/de.svg" alt="">Deutsch</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
@@ -1258,7 +1592,6 @@ document.addEventListener("change", function (e) {
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
 
-
 <main id="content">
 
 
@@ -1267,36 +1600,36 @@ document.addEventListener("change", function (e) {
 <p class="msg ok" role="status" data-success><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>&#34;Bananas&#34; moved up.</p>
 <h1 class="list-title"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span>Shopping</span></h1>
 <p class="hint list-meta">Sort or remove entries</p>
-<div class="edit-bar"><p>Changes are saved straight away.</p><a class="button" href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699">Done</a></div>
+<div class="edit-bar"><p>Changes are saved straight away.</p><a class="button" href="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e">Done</a></div>
 
 <ul class="entries">
   <li><span class="title">Bananas</span><span class="row">
     
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/7133b877-919e-4870-b93a-4c19c89022b5/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Bananas"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/7133b877-919e-4870-b93a-4c19c89022b5/delete"><button class="button secondary" type="submit" aria-label="Remove: Bananas"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/3672d7a5-365f-44f3-bfe4-421e579a0eb9/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Bananas"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/3672d7a5-365f-44f3-bfe4-421e579a0eb9/delete"><button class="button secondary" type="submit" aria-label="Remove: Bananas"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   <li><span class="title">Coffee for Papa</span><span class="row">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/delete"><button class="button secondary" type="submit" aria-label="Remove: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/4c9b8990-22cc-4e8d-9295-3b70324f627e/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/4c9b8990-22cc-4e8d-9295-3b70324f627e/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/4c9b8990-22cc-4e8d-9295-3b70324f627e/delete"><button class="button secondary" type="submit" aria-label="Remove: Coffee for Papa"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   <li><span class="title">Birthday card for Mama</span><span class="row">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/delete"><button class="button secondary" type="submit" aria-label="Remove: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/3985bced-a010-4471-9ce7-53eb87f3219a/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/3985bced-a010-4471-9ce7-53eb87f3219a/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/3985bced-a010-4471-9ce7-53eb87f3219a/delete"><button class="button secondary" type="submit" aria-label="Remove: Birthday card for Mama"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   <li><span class="title">Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle</span><span class="row">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/delete"><button class="button secondary" type="submit" aria-label="Remove: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/96b65f7f-d3d0-45c4-bfe7-c2c3a34c3315/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/96b65f7f-d3d0-45c4-bfe7-c2c3a34c3315/move"><input type="hidden" name="direction" value="down"><button class="button secondary" type="submit" aria-label="Move down: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg>Down</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/96b65f7f-d3d0-45c4-bfe7-c2c3a34c3315/delete"><button class="button secondary" type="submit" aria-label="Remove: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   <li><span class="title">Pasta</span><span class="row">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/3f08d1f5-e353-4a5c-a59c-b82654240a12/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Pasta"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/cdaa371c-c55e-4635-9a84-e7c23bc4e4b7/move"><input type="hidden" name="direction" value="up"><button class="button secondary" type="submit" aria-label="Move up: Pasta"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 15l6-6 6 6"/></svg>Up</button></form>
     
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/3f08d1f5-e353-4a5c-a59c-b82654240a12/delete"><button class="button secondary" type="submit" aria-label="Remove: Pasta"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/cdaa371c-c55e-4635-9a84-e7c23bc4e4b7/delete"><button class="button secondary" type="submit" aria-label="Remove: Pasta"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   </ul>
 <div class="group-head"><h2>Ticked off (2)</h2></div>
 <ul class="entries">
   <li><span class="title"><s>Oat milk</s></span><span class="row">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/286a5832-041d-445d-befa-71547c09dcba/delete"><button class="button secondary" type="submit" aria-label="Remove: Oat milk"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/7747de3d-b6b2-4114-8bcb-0b58b7383548/delete"><button class="button secondary" type="submit" aria-label="Remove: Oat milk"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   <li><span class="title"><s>Football socks for Sebastian</s></span><span class="row">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/c22c7568-6ab5-4a13-a83d-29ec50db1b42/delete"><button class="button secondary" type="submit" aria-label="Remove: Football socks for Sebastian"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/d19cec00-e961-4c57-9cc2-b38ea4640e11/delete"><button class="button secondary" type="submit" aria-label="Remove: Football socks for Sebastian"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>Remove</button></form></span></li>
   </ul>
 </div>
 
@@ -1310,7 +1643,11 @@ document.addEventListener("change", function (e) {
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/gb.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Language: </span>English</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc"><button type="submit" name="lang" value="de" lang="de"><img class="flag" src="/static/flags/de.svg" alt="">Deutsch</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
@@ -1321,7 +1658,6 @@ document.addEventListener("change", function (e) {
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
 
-
 <main id="content">
 
 
@@ -1331,7 +1667,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint list-meta">Sorted A to Z. 4 open, 1 ticked off.</p>
 
-  <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries" class="add-entry">
+  <form method="post" action="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc/entries" class="add-entry">
     
     <div class="f">
   <label>New entry
@@ -1345,40 +1681,40 @@ document.addEventListener("change", function (e) {
   
   <ul class="entries">
   <li>
-    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries/c97bf71c-8299-43ce-b394-fbe42cd8dff5/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc/entries/d6c3e8b3-9003-4246-99e7-02cafd076583/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Ärmelschoner"><span class="box" aria-hidden="true"></span><span class="title">Ärmelschoner</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries/0d7188a0-0e5a-4439-ad28-780a9a4be94c/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc/entries/1b0742e2-d8c6-4d2d-8448-b2af689bf748/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Charger"><span class="box" aria-hidden="true"></span><span class="title">Charger</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries/fa1bb04e-1f20-4f01-af2c-f8d63ce3debf/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc/entries/3f456617-8041-4f5f-b7f2-34b2a3ec1445/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Passports"><span class="box" aria-hidden="true"></span><span class="title">Passports</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries/adaa6e1c-680a-47c7-ada0-b4ea12737398/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc/entries/1b2afb86-2113-4f6b-95dd-e570116f9564/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Swimsuits"><span class="box" aria-hidden="true"></span><span class="title">Swimsuits</span></button></form>
   </li>
 </ul>
-  <p class="tools"><a href="/lists/1d859bb0-d68e-41e8-90b6-56e611181221?edit=1">Remove entries</a></p>
+  <p class="tools"><a href="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc?edit=1">Remove entries</a></p>
   <div class="group-head"><h2>Ticked off (1)</h2><a href="?ticked=hide">Hide</a></div>
   <ul class="entries">
   <li data-done="true">
-    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/entries/f08ee837-41ba-466c-b266-48a171fde877/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc/entries/ef537efb-f9b7-4fd7-81b0-72067f56b3de/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Mark as open: Sun hats"><span class="box" aria-hidden="true"></span><span class="title"><s>Sun hats</s></span></button></form>
   </li>
 </ul>
 
   
   <details class="danger">
-  <summary>Delete ticked-off entry (1)</summary>
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Delete ticked-off entry (1)</summary>
     <p>The ticked-off entry of this list is deleted for good. Open entries stay.</p>
-    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/completed/delete"><button class="button danger" type="submit">Yes, delete 1 entry</button></form>
+    <form method="post" action="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc/completed/delete"><button class="button danger" type="submit">Yes, delete 1 entry</button></form>
   </details>
 
   <section class="list-settings" aria-labelledby="settings">
-    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/settings" class="steps">
+    <form method="post" action="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc/settings" class="steps">
       
       <details class="more">
   <summary id="settings"><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>List settings<span class="sum">Plum, triangle, A to Z</span></summary>
@@ -1423,9 +1759,9 @@ document.addEventListener("change", function (e) {
   </section>
 
   <details class="danger">
-  <summary>Delete list</summary>
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Delete list</summary>
     <p>The list is deleted for good, with all its entries.</p>
-    <form method="post" action="/lists/1d859bb0-d68e-41e8-90b6-56e611181221/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
+    <form method="post" action="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
   </details>
   
 
@@ -1439,7 +1775,11 @@ document.addEventListener("change", function (e) {
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/gb.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Language: </span>English</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e?ticked=hide"><button type="submit" name="lang" value="de" lang="de"><img class="flag" src="/static/flags/de.svg" alt="">Deutsch</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
@@ -1450,7 +1790,6 @@ document.addEventListener("change", function (e) {
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
 
-
 <main id="content">
 
 
@@ -1460,7 +1799,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint list-meta">Sorted by hand. 5 open, 2 ticked off.</p>
 
-  <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries" class="add-entry">
+  <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries" class="add-entry">
     
     <div class="f">
   <label>New entry
@@ -1474,39 +1813,39 @@ document.addEventListener("change", function (e) {
   
   <ul class="entries">
   <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/7133b877-919e-4870-b93a-4c19c89022b5/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/3672d7a5-365f-44f3-bfe4-421e579a0eb9/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
       <button class="big-check" type="submit" aria-label="Tick off: Bananas"><span class="box" aria-hidden="true"></span><span class="title">Bananas</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/4c9b8990-22cc-4e8d-9295-3b70324f627e/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
       <button class="big-check" type="submit" aria-label="Tick off: Coffee for Papa"><span class="box" aria-hidden="true"></span><span class="title">Coffee for Papa</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/3985bced-a010-4471-9ce7-53eb87f3219a/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
       <button class="big-check" type="submit" aria-label="Tick off: Birthday card for Mama"><span class="box" aria-hidden="true"></span><span class="title">Birthday card for Mama</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/96b65f7f-d3d0-45c4-bfe7-c2c3a34c3315/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
       <button class="big-check" type="submit" aria-label="Tick off: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><span class="box" aria-hidden="true"></span><span class="title">Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/3f08d1f5-e353-4a5c-a59c-b82654240a12/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/cdaa371c-c55e-4635-9a84-e7c23bc4e4b7/done"><input type="hidden" name="done" value="1"><input type="hidden" name="ticked" value="hide">
       <button class="big-check" type="submit" aria-label="Tick off: Pasta"><span class="box" aria-hidden="true"></span><span class="title">Pasta</span></button></form>
   </li>
 </ul>
-  <p class="tools"><a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699?edit=1&amp;ticked=hide">Sort or remove entries</a></p>
-  <p class="hidden-line">2 ticked-off entries are hidden. <a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699">Show them</a></p>
+  <p class="tools"><a href="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e?edit=1&amp;ticked=hide">Sort or remove entries</a></p>
+  <p class="hidden-line">2 ticked-off entries are hidden. <a href="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e">Show them</a></p>
   
 
   
   <details class="danger">
-  <summary>Delete ticked-off entries (2)</summary>
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Delete ticked-off entries (2)</summary>
     <p>The 2 ticked-off entries of this list are deleted for good. Open entries stay.</p>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/completed/delete"><input type="hidden" name="ticked" value="hide"><button class="button danger" type="submit">Yes, delete 2 entries</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/completed/delete"><input type="hidden" name="ticked" value="hide"><button class="button danger" type="submit">Yes, delete 2 entries</button></form>
   </details>
 
   <section class="list-settings" aria-labelledby="settings">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/settings" class="steps">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/settings" class="steps">
       <input type="hidden" name="ticked" value="hide">
       <details class="more">
   <summary id="settings"><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>List settings<span class="sum">Green, filled square, by hand</span></summary>
@@ -1551,9 +1890,9 @@ document.addEventListener("change", function (e) {
   </section>
 
   <details class="danger">
-  <summary>Delete list</summary>
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Delete list</summary>
     <p>The list is deleted for good, with all its entries.</p>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
   </details>
   
 
@@ -1567,7 +1906,11 @@ document.addEventListener("change", function (e) {
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/gb.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Language: </span>English</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/lists"><button type="submit" name="lang" value="de" lang="de"><img class="flag" src="/static/flags/de.svg" alt="">Deutsch</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
@@ -1578,7 +1921,6 @@ document.addEventListener("change", function (e) {
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
 
-
 <main id="content">
 
 
@@ -1586,17 +1928,17 @@ document.addEventListener("change", function (e) {
   
   <p class="lead">Shopping, to-dos and anything else the family collects. Open a list to add entries and tick them off.</p>
 
-  <ul class="list-rows">
+  <ul class="list-rows lists">
     
-    <li data-list="cc874fef-27e3-48a1-888a-cc172c1fe699"><a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="state">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e"><a href="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="meta">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="836bfb3d-9195-4f61-8386-8c81185bac22"><a href="/lists/836bfb3d-9195-4f61-8386-8c81185bac22"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="state">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="306aa9c9-2e72-463a-959e-d56d3250d054"><a href="/lists/306aa9c9-2e72-463a-959e-d56d3250d054"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="meta">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="1d859bb0-d68e-41e8-90b6-56e611181221"><a href="/lists/1d859bb0-d68e-41e8-90b6-56e611181221"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="state">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="fe8124bf-b42d-4dd9-8421-e8c346a569dc"><a href="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="meta">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="cc18da93-3e71-4380-a14f-03ff63d58070"><a href="/lists/cc18da93-3e71-4380-a14f-03ff63d58070"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="state">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="542fd80b-d852-4a23-b089-a90b0e14aa48"><a href="/lists/542fd80b-d852-4a23-b089-a90b0e14aa48"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="meta">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="49a69029-89ee-4cc9-8e24-bc45f93d8760"><a href="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="state">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="2b34d242-3c42-4e91-aa52-262c2166ac3e"><a href="/lists/2b34d242-3c42-4e91-aa52-262c2166ac3e"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="meta">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
   </ul>
 
@@ -1653,7 +1995,11 @@ document.addEventListener("change", function (e) {
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/gb.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Language: </span>English</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/"><button type="submit" name="lang" value="de" lang="de"><img class="flag" src="/static/flags/de.svg" alt="">Deutsch</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
@@ -1664,7 +2010,6 @@ document.addEventListener("change", function (e) {
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
 
-
 <main id="content">
 
 
@@ -1672,17 +2017,17 @@ document.addEventListener("change", function (e) {
   
   <p class="lead">Shopping, to-dos and anything else the family collects. Open a list to add entries and tick them off.</p>
 
-  <ul class="list-rows">
+  <ul class="list-rows lists">
     
-    <li data-list="cc874fef-27e3-48a1-888a-cc172c1fe699"><a href="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="state">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e"><a href="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Shopping</b><span class="meta">5 open, 2 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="836bfb3d-9195-4f61-8386-8c81185bac22"><a href="/lists/836bfb3d-9195-4f61-8386-8c81185bac22"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="state">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="306aa9c9-2e72-463a-959e-d56d3250d054"><a href="/lists/306aa9c9-2e72-463a-959e-d56d3250d054"><span class="marker" data-person="2" data-shape="circle-empty" aria-hidden="true"></span><span class="t"><b>To-dos</b><span class="meta">3 open</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="1d859bb0-d68e-41e8-90b6-56e611181221"><a href="/lists/1d859bb0-d68e-41e8-90b6-56e611181221"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="state">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="fe8124bf-b42d-4dd9-8421-e8c346a569dc"><a href="/lists/fe8124bf-b42d-4dd9-8421-e8c346a569dc"><span class="marker" data-person="5" data-shape="triangle-filled" aria-hidden="true"></span><span class="t"><b>Holiday packing</b><span class="meta">4 open, 1 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="cc18da93-3e71-4380-a14f-03ff63d58070"><a href="/lists/cc18da93-3e71-4380-a14f-03ff63d58070"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="state">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="542fd80b-d852-4a23-b089-a90b0e14aa48"><a href="/lists/542fd80b-d852-4a23-b089-a90b0e14aa48"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Sebastian&#39;s birthday party: things to borrow from neighbours</b><span class="meta">All 5 ticked off</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="49a69029-89ee-4cc9-8e24-bc45f93d8760"><a href="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="state">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="2b34d242-3c42-4e91-aa52-262c2166ac3e"><a href="/lists/2b34d242-3c42-4e91-aa52-262c2166ac3e"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Gift ideas</b><span class="meta">No entries yet</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
   </ul>
 
@@ -1739,7 +2084,11 @@ document.addEventListener("change", function (e) {
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/gb.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Language: </span>English</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e"><button type="submit" name="lang" value="de" lang="de"><img class="flag" src="/static/flags/de.svg" alt="">Deutsch</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
@@ -1747,7 +2096,6 @@ document.addEventListener("change", function (e) {
   <li><a href="/meals">Meals</a></li>
   <li><a href="/lists" aria-current="page">Lists</a></li>
   </ul></nav>
-
 
 <main id="content">
 
@@ -1763,23 +2111,23 @@ document.addEventListener("change", function (e) {
   
   <ul class="entries">
   <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/7133b877-919e-4870-b93a-4c19c89022b5/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/3672d7a5-365f-44f3-bfe4-421e579a0eb9/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Bananas"><span class="box" aria-hidden="true"></span><span class="title">Bananas</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0c0346f7-74f1-41a4-9cc8-070e86a58e3e/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/4c9b8990-22cc-4e8d-9295-3b70324f627e/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Coffee for Papa"><span class="box" aria-hidden="true"></span><span class="title">Coffee for Papa</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/25eb0d85-0ad7-4730-88b5-b18924c7f16b/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/3985bced-a010-4471-9ce7-53eb87f3219a/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Birthday card for Mama"><span class="box" aria-hidden="true"></span><span class="title">Birthday card for Mama</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/0710ec43-1fae-4fb2-9a22-b205953b3f32/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/96b65f7f-d3d0-45c4-bfe7-c2c3a34c3315/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle"><span class="box" aria-hidden="true"></span><span class="title">Sunscreen for sensitive children&#39;s skin, factor 50, the big bottle</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/3f08d1f5-e353-4a5c-a59c-b82654240a12/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/cdaa371c-c55e-4635-9a84-e7c23bc4e4b7/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Tick off: Pasta"><span class="box" aria-hidden="true"></span><span class="title">Pasta</span></button></form>
   </li>
 </ul>
@@ -1787,11 +2135,11 @@ document.addEventListener("change", function (e) {
   <div class="group-head"><h2>Ticked off (2)</h2><a href="?ticked=hide">Hide</a></div>
   <ul class="entries">
   <li data-done="true">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/286a5832-041d-445d-befa-71547c09dcba/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/7747de3d-b6b2-4114-8bcb-0b58b7383548/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Mark as open: Oat milk"><span class="box" aria-hidden="true"></span><span class="title"><s>Oat milk</s></span></button></form>
   </li>
 <li data-done="true">
-    <form method="post" action="/lists/cc874fef-27e3-48a1-888a-cc172c1fe699/entries/c22c7568-6ab5-4a13-a83d-29ec50db1b42/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/7da02232-eb4f-4fa0-a6eb-a0c6bfdf030e/entries/d19cec00-e961-4c57-9cc2-b38ea4640e11/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Mark as open: Football socks for Sebastian"><span class="box" aria-hidden="true"></span><span class="title"><s>Football socks for Sebastian</s></span></button></form>
   </li>
 </ul>
@@ -1808,7 +2156,11 @@ document.addEventListener("change", function (e) {
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/gb.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Language: </span>English</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/lists/2b34d242-3c42-4e91-aa52-262c2166ac3e"><button type="submit" name="lang" value="de" lang="de"><img class="flag" src="/static/flags/de.svg" alt="">Deutsch</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Sign out</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Main navigation"><ul>
   <li><a href="/">Home</a></li>
@@ -1819,7 +2171,6 @@ document.addEventListener("change", function (e) {
   <li><a href="/settings">Settings</a></li>
   </ul></nav>
 
-
 <main id="content">
 
 
@@ -1829,7 +2180,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint list-meta">Sorted by hand. No entries yet.</p>
 
-  <form method="post" action="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760/entries" class="add-entry">
+  <form method="post" action="/lists/2b34d242-3c42-4e91-aa52-262c2166ac3e/entries" class="add-entry">
     
     <div class="f">
   <label>New entry
@@ -1849,7 +2200,7 @@ document.addEventListener("change", function (e) {
   
 
   <section class="list-settings" aria-labelledby="settings">
-    <form method="post" action="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760/settings" class="steps">
+    <form method="post" action="/lists/2b34d242-3c42-4e91-aa52-262c2166ac3e/settings" class="steps">
       
       <details class="more">
   <summary id="settings"><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>List settings<span class="sum">Ochre, diamond, by hand</span></summary>
@@ -1894,9 +2245,9 @@ document.addEventListener("change", function (e) {
   </section>
 
   <details class="danger">
-  <summary>Delete list</summary>
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Delete list</summary>
     <p>The list is deleted for good, with all its entries.</p>
-    <form method="post" action="/lists/49a69029-89ee-4cc9-8e24-bc45f93d8760/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
+    <form method="post" action="/lists/2b34d242-3c42-4e91-aa52-262c2166ac3e/delete"><button class="button danger" type="submit">Yes, delete the list</button></form>
   </details>
   
 
@@ -1910,7 +2261,11 @@ document.addEventListener("change", function (e) {
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/de.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Sprache: </span>Deutsch</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/lists"><button type="submit" name="lang" value="en" lang="en"><img class="flag" src="/static/flags/gb.svg" alt="">English</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Hauptnavigation"><ul>
   <li><a href="/">Start</a></li>
@@ -1921,7 +2276,6 @@ document.addEventListener("change", function (e) {
   <li><a href="/settings">Einstellungen</a></li>
   </ul></nav>
 
-
 <main id="content">
 
 
@@ -1929,13 +2283,13 @@ document.addEventListener("change", function (e) {
   
   <p class="lead">Einkaufen, To-dos und alles andere, was die Familie sammelt. Öffne eine Liste, um Einträge hinzuzufügen und abzuhaken.</p>
 
-  <ul class="list-rows">
+  <ul class="list-rows lists">
     
-    <li data-list="3dc36f58-d3f4-403d-9093-79a1ef275577"><a href="/lists/3dc36f58-d3f4-403d-9093-79a1ef275577"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Kindergeburtstag: Ausleihliste für die Nachbarschaftsgartenparty</b><span class="state">Alle 5 abgehakt</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="bd952d78-5832-4bff-8795-055cfb127afe"><a href="/lists/bd952d78-5832-4bff-8795-055cfb127afe"><span class="marker" data-person="1" data-shape="circle-filled" aria-hidden="true"></span><span class="t"><b>Kindergeburtstag: Ausleihliste für die Nachbarschaftsgartenparty</b><span class="meta">Alle 5 abgehakt</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="a0c2ecf0-c13c-4c57-9c97-3518d16c8387"><a href="/lists/a0c2ecf0-c13c-4c57-9c97-3518d16c8387"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Weihnachtsgeschenkideen</b><span class="state">Noch keine Einträge</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="21cce2e7-cbb5-4601-aafc-80ba2d0249fa"><a href="/lists/21cce2e7-cbb5-4601-aafc-80ba2d0249fa"><span class="marker" data-person="4" data-shape="diamond-filled" aria-hidden="true"></span><span class="t"><b>Weihnachtsgeschenkideen</b><span class="meta">Noch keine Einträge</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
-    <li data-list="26a346a7-0b6d-460e-a2a9-ed4adbfd12ad"><a href="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Wocheneinkauf Großfamilie</b><span class="state">6 offen, 1 abgehakt</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="e05174ae-39aa-4c31-916b-7596be461d7a"><a href="/lists/e05174ae-39aa-4c31-916b-7596be461d7a"><span class="marker" data-person="3" data-shape="square-filled" aria-hidden="true"></span><span class="t"><b>Wocheneinkauf Großfamilie</b><span class="meta">6 offen, 1 abgehakt</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     
   </ul>
 
@@ -1992,7 +2346,11 @@ document.addEventListener("change", function (e) {
 
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  <form method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  <div class="frame-tools">
+    <details class="lang"><summary><img class="flag" src="/static/flags/de.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Sprache: </span>Deutsch</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="/lists/e05174ae-39aa-4c31-916b-7596be461d7a"><button type="submit" name="lang" value="en" lang="en"><img class="flag" src="/static/flags/gb.svg" alt="">English</button></form></details>
+    <form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">Abmelden</button></form>
+  </div>
 </header>
 <nav class="frame-nav" aria-label="Hauptnavigation"><ul>
   <li><a href="/">Start</a></li>
@@ -2003,7 +2361,6 @@ document.addEventListener("change", function (e) {
   <li><a href="/settings">Einstellungen</a></li>
   </ul></nav>
 
-
 <main id="content">
 <p class="msg ok" role="status" data-success><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>„Sonnencreme für empfindliche Kinderhaut, Lichtschutzfaktor 50“ hinzugefügt.</p>
 
@@ -2013,7 +2370,7 @@ document.addEventListener("change", function (e) {
   
   <p class="hint list-meta">Von Hand sortiert. 6 offen, 1 abgehakt.</p>
 
-  <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries" class="add-entry">
+  <form method="post" action="/lists/e05174ae-39aa-4c31-916b-7596be461d7a/entries" class="add-entry">
     
     <div class="f">
   <label>Neuer Eintrag
@@ -2027,48 +2384,48 @@ document.addEventListener("change", function (e) {
   
   <ul class="entries">
   <li>
-    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/132fa849-3fc9-4e61-9c8c-07ed7ebc686a/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/e05174ae-39aa-4c31-916b-7596be461d7a/entries/c9581041-945b-49a5-b5cc-161db6784845/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Kinderwagenregenschutzverdeck für den Zwillingswagen"><span class="box" aria-hidden="true"></span><span class="title">Kinderwagenregenschutzverdeck für den Zwillingswagen</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/50697a7b-9315-4a9e-8d56-8b1603c4d9f0/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/e05174ae-39aa-4c31-916b-7596be461d7a/entries/2351a971-7e75-423e-b0d3-1d73a5ea1356/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Geburtstagsgeschenkpapier für Sebastians Kindergartenfreundin"><span class="box" aria-hidden="true"></span><span class="title">Geburtstagsgeschenkpapier für Sebastians Kindergartenfreundin</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/a40ea3ee-26ff-4672-ab46-9d24aa2247f3/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/e05174ae-39aa-4c31-916b-7596be461d7a/entries/12348e6e-2c08-4b9e-be5c-646a5de74ea0/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Sonnencreme für empfindliche Kinderhaut, Lichtschutzfaktor 50"><span class="box" aria-hidden="true"></span><span class="title">Sonnencreme für empfindliche Kinderhaut, Lichtschutzfaktor 50</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/6e6092a3-ea9e-45af-b205-8f374a28f1ef/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/e05174ae-39aa-4c31-916b-7596be461d7a/entries/69b1deb5-a9be-4137-ab45-d8461f9cc726/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Haushaltsreinigungsschwämme"><span class="box" aria-hidden="true"></span><span class="title">Haushaltsreinigungsschwämme</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/d117cd60-a097-4bab-8050-e99eb2dcecde/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/e05174ae-39aa-4c31-916b-7596be461d7a/entries/7e9e8cc8-812f-4fc8-95ca-a98d75977e3e/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Milch"><span class="box" aria-hidden="true"></span><span class="title">Milch</span></button></form>
   </li>
 <li>
-    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/f71c9e58-d29c-4038-b5b6-a4e0b5ab36cb/done"><input type="hidden" name="done" value="1">
+    <form method="post" action="/lists/e05174ae-39aa-4c31-916b-7596be461d7a/entries/81e542a1-b769-4de9-8a79-d1a532d523fe/done"><input type="hidden" name="done" value="1">
       <button class="big-check" type="submit" aria-label="Abhaken: Sonnencreme für empfindliche Kinderhaut, Lichtschutzfaktor 50"><span class="box" aria-hidden="true"></span><span class="title">Sonnencreme für empfindliche Kinderhaut, Lichtschutzfaktor 50</span></button></form>
   </li>
 </ul>
-  <p class="tools"><a href="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad?edit=1">Einträge sortieren oder entfernen</a></p>
+  <p class="tools"><a href="/lists/e05174ae-39aa-4c31-916b-7596be461d7a?edit=1">Einträge sortieren oder entfernen</a></p>
   <div class="group-head"><h2>Abgehakt (1)</h2><a href="?ticked=hide">Ausblenden</a></div>
   <ul class="entries">
   <li data-done="true">
-    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/entries/a8f5a8bc-96d1-4f22-b4fd-9bf2cd1786e8/done"><input type="hidden" name="done" value="0">
+    <form method="post" action="/lists/e05174ae-39aa-4c31-916b-7596be461d7a/entries/5fe72495-dc4d-4ac8-a95f-6b94ef30d6f1/done"><input type="hidden" name="done" value="0">
       <button class="big-check" type="submit" aria-label="Als offen markieren: Fußballschienbeinschoner für Maximilian-Alexander"><span class="box" aria-hidden="true"></span><span class="title"><s>Fußballschienbeinschoner für Maximilian-Alexander</s></span></button></form>
   </li>
 </ul>
 
   
   <details class="danger">
-  <summary>Abgehakten Eintrag löschen (1)</summary>
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Abgehakten Eintrag löschen (1)</summary>
     <p>Der abgehakte Eintrag dieser Liste wird endgültig gelöscht. Offene Einträge bleiben.</p>
-    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/completed/delete"><button class="button danger" type="submit">Ja, 1 Eintrag löschen</button></form>
+    <form method="post" action="/lists/e05174ae-39aa-4c31-916b-7596be461d7a/completed/delete"><button class="button danger" type="submit">Ja, 1 Eintrag löschen</button></form>
   </details>
 
   <section class="list-settings" aria-labelledby="settings">
-    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/settings" class="steps">
+    <form method="post" action="/lists/e05174ae-39aa-4c31-916b-7596be461d7a/settings" class="steps">
       
       <details class="more">
   <summary id="settings"><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>Listeneinstellungen<span class="sum">Grün, volles Quadrat, von Hand</span></summary>
@@ -2113,9 +2470,9 @@ document.addEventListener("change", function (e) {
   </section>
 
   <details class="danger">
-  <summary>Liste löschen</summary>
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>Liste löschen</summary>
     <p>Die Liste wird endgültig gelöscht, mit allen Einträgen.</p>
-    <form method="post" action="/lists/26a346a7-0b6d-460e-a2a9-ed4adbfd12ad/delete"><button class="button danger" type="submit">Ja, Liste löschen</button></form>
+    <form method="post" action="/lists/e05174ae-39aa-4c31-916b-7596be461d7a/delete"><button class="button danger" type="submit">Ja, Liste löschen</button></form>
   </details>
   
 

@@ -58,6 +58,23 @@ func sameStrings(a, b []string) bool {
 	return true
 }
 
+// The default lists are named in the language the setup is shown in: the
+// hejmo_lang cookie beats Accept-Language.
+func TestSetupNamesTheListsInTheChosenSetupLanguage(t *testing.T) {
+	b := newBox(t)
+	r := b.do(http.MethodPost, "/setup", validSetupForm(), map[string]string{"Accept-Language": "de-DE", "Cookie": "hejmo_lang=en"})
+	if r.status != http.StatusSeeOther {
+		t.Fatalf("setup = %d", r.status)
+	}
+	secret := secretOn(t, b.get("/setup/totp").body)
+	b.post("/setup/totp", url.Values{"code": {totpNow(b, secret)}})
+	h, _ := b.db.HomeHousehold()
+	lists, err := b.db.Lists(h.ID)
+	if err != nil || len(lists) != 2 || lists[0].Name != "Shopping" || lists[1].Name != "To-dos" {
+		t.Fatalf("lists = %v, %v; want Shopping and To-dos", lists, err)
+	}
+}
+
 // Acceptance: Given a new box, when setup is complete, then the lists
 // "Shopping" and "To-dos" exist.
 func TestNewBoxHasTheListsShoppingAndTodos(t *testing.T) {

@@ -3,9 +3,9 @@
   {{template "syncNotice" .}}
   <p class="lead">{{if .Child}}{{t "lists.intro.child"}}{{else}}{{t "lists.intro"}}{{end}}</p>
 
-  {{if .Lists}}<ul class="list-rows">
+  {{if .Lists}}<ul class="list-rows lists">
     {{range .Lists}}
-    <li data-list="{{.ID}}"><a href="/lists/{{.ID}}"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Symbol}}" aria-hidden="true"></span><span class="t"><b>{{.Name}}</b><span class="state">{{.State}}</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li data-list="{{.ID}}"><a href="/lists/{{.ID}}"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Symbol}}" aria-hidden="true"></span><span class="t"><b>{{.Name}}</b><span class="meta">{{.State}}</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
     {{end}}
   </ul>{{else}}{{if .Child}}<p class="lead">{{t "lists.none.child"}}</p>{{else}}{{template "empty" (dict "Text" (t "lists.none") "Href" "#new" "Action" (t "lists.none.action"))}}{{end}}{{end}}
 

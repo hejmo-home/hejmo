@@ -82,8 +82,8 @@ func TestFrameLayoutCoversTheBackLinkAndNarrowScreens(t *testing.T) {
 	if !strings.Contains(c, ".frame > * { min-width: 0; }") || !strings.Contains(c, ".frame { grid-template-columns: minmax(0, 1fr); }") {
 		t.Error("the frame's children may widen the page on a 375 px phone")
 	}
-	if !regexp.MustCompile(`@media \(max-width: 899px\) \{ \.frame-nav ul \{ flex-wrap: wrap; overflow-x: visible; \} \}`).MatchString(c) {
-		t.Error("the navigation does not wrap under 900 px")
+	if nav := regexp.MustCompile(`(?m)^\.frame-nav ul \{([^}]*)\}`).FindStringSubmatch(c); nav == nil || !strings.Contains(nav[1], "flex-wrap: wrap") || strings.Contains(nav[1], "overflow-x") {
+		t.Error("the navigation must wrap, not scroll sideways")
 	}
 	b := signedInBox(t)
 	body := b.get("/settings/household").body

@@ -61,8 +61,8 @@ func TestListsOverviewShowsOneRowPerListWithItsStateInWords(t *testing.T) {
 	_, _ = listWith(t, b, "Finished", []string{"p", "q"}, "p", "q")
 	_, _ = listWith(t, b, "Blank", nil)
 	body := getEN(b, "/lists").body
-	for _, want := range []string{`<ul class="list-rows">`, `<a href="/lists/` + open + `">`, `<span class="state">1 open, 1 ticked off</span>`,
-		`<span class="state">3 open</span>`, `<span class="state">All 2 ticked off</span>`, `<span class="state">No entries yet</span>`,
+	for _, want := range []string{`<ul class="list-rows lists">`, `<a href="/lists/` + open + `">`, `<span class="meta">1 open, 1 ticked off</span>`,
+		`<span class="meta">3 open</span>`, `<span class="meta">All 2 ticked off</span>`, `<span class="meta">No entries yet</span>`,
 		`<span class="t"><b>Mixed</b>`, `class="icon chev"`, `Shopping, to-dos and anything else the family collects. Open a list to add entries and tick them off.`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("overview lacks %q\n%s", want, body)
@@ -537,8 +537,8 @@ func TestListsStylesKeepLongTextInsideThePhoneWidth(t *testing.T) {
 		".frame-nav ul":                 {"flex-wrap: wrap"},
 		".big-check .title":             {"flex: 1", "min-width: 0", "line-height: 1.3", "overflow-wrap: break-word", "hyphens: auto"},
 		".entries .title":               {"min-width: 0", "overflow-wrap: break-word", "hyphens: auto"},
-		".list-rows b":                  {"overflow-wrap: break-word", "hyphens: auto"},
-		".list-rows a > .t":             {"flex: 1"},
+		".list-rows.lists b":            {"overflow-wrap: break-word", "hyphens: auto"},
+		".list-rows .t":                 {"min-width: 0", "flex: 1"},
 		".list-title":                   {"overflow-wrap: break-word", "hyphens: auto"},
 		".list-title > span:last-child": {"min-width: 0"},
 		".msg":                          {"min-width: 0", "overflow-wrap: break-word", "hyphens: auto"},
@@ -553,6 +553,13 @@ func TestListsStylesKeepLongTextInsideThePhoneWidth(t *testing.T) {
 		}
 		if strings.Contains(rule, "anywhere") {
 			t.Errorf("%s still breaks anywhere: %s", sel, rule)
+		}
+	}
+	// The overview rows are shared with the other overviews; each rule may be written once, so the
+	// stylesheet test sees the rule that applies.
+	for _, sel := range []string{".list-rows", ".list-rows a", ".list-rows .t", ".list-rows b", ".list-rows .chev"} {
+		if n := len(regexp.MustCompile(`(?m)^`+regexp.QuoteMeta(sel)+` \{`).FindAllString(css, -1)); n != 1 {
+			t.Errorf("%s is written %d times, want once", sel, n)
 		}
 	}
 	if nav := cssRule(t, css, ".frame-nav ul"); strings.Contains(nav, "overflow-x") || strings.Contains(nav, "nowrap") {

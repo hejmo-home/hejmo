@@ -337,11 +337,11 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 			// A failed form shows no success line, not even one left over from before.
 		case data["SuccessText"] != nil:
 			fr.Success, _ = data["SuccessText"].(string) // a page that shows the result itself, and names the thing
+		case own != "":
+			fr.Success = s.i18n.T(lang, own) // a page that shows the result itself
 		case key != "":
 			fr.Success = s.successText(lang, key, arg)
 			data["Flash"] = key
-		case own != "":
-			fr.Success = s.i18n.T(lang, own) // a page that shows the result itself
 		}
 		if inline, _ := data["SuccessInline"].(bool); inline {
 			data["Success"], fr.Success = fr.Success, "" // the page places the line itself

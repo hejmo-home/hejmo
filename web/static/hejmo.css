@@ -589,7 +589,6 @@ fieldset.look .pchip:has(input:focus-visible)::after, fieldset.look .pchip[data-
 .ev .meta, .bar .meta { font-size: var(--fs-meta); }
 .ev .icon, .bar .icon { stroke: currentColor; vertical-align: middle; }
 .ev .who, .bar .who { display: block; font-size: var(--fs-meta); overflow-wrap: break-word; hyphens: manual; }
-.who .nm { display: inline-block; max-width: 100%; }
 .sr { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 [data-theme="bw"] .bar, [data-theme="bw"] .wk-days .ev { background: var(--event-card); color: var(--text); border: 1.5px solid var(--text); }
 [data-theme="bw"] .wk-heads li[data-today] { border-bottom-width: 4px; }
@@ -626,14 +625,6 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
    target, and the ticked-off entries in their own group below. Moving and
    removing happen in "Sort or remove", so the everyday rows stay calm. A list
    wears a person colour slot and a black-and-white symbol. */
-.list-rows { list-style: none; padding: 0; margin: 0 0 var(--gap-section); display: grid; gap: var(--gap-cards); max-width: 560px; }
-.list-rows a { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; background: var(--surface); border-radius: var(--radius-tile); color: var(--text); text-decoration: none; }
-[data-theme="bw"] .list-rows a { border: 2px solid var(--text); }
-.list-rows .t { display: grid; gap: 2px; min-width: 0; }
-.list-rows a > .t { flex: 1; }
-.list-rows b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: break-word; hyphens: auto; }
-.list-rows .state { font-size: var(--fs-label); color: var(--text-secondary); }
-.list-rows .chev { margin-left: auto; flex: none; stroke: var(--text-secondary); }
 .list-title { display: flex; align-items: center; gap: 12px; overflow-wrap: break-word; hyphens: auto; min-width: 0; }
 .list-title .marker { flex: none; }
 .list-title > span:last-child { min-width: 0; }
@@ -670,10 +661,6 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .marker.shaped[data-shape="square-empty"] { background: transparent; }
 .marker.shaped[data-shape="triangle-filled"] { border: 0; clip-path: polygon(50% 0, 100% 100%, 0 100%); }
 .marker.shaped[data-shape="diamond-filled"] { border: 0; clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%); }
-/* Frame: on wide screens the "Back to Settings" link and the content both sit
-   right of the navigation (the link used to take the second column alone and
-   push the navigation to full width). On a phone the navigation scrolls
-   sideways inside the screen instead of widening the page. */
 /* Ticket #108 Signed-in devices: person group heading, session rows with a
    word tag for this browser, facts list on the detail page. */
 .who-head { display: flex; align-items: center; gap: 8px; margin: 0 0 8px; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); overflow-wrap: anywhere; }
@@ -695,9 +682,6 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
    the right edge of a 375 px phone (left margin looks wrong, text does not wrap). */
 .frame { grid-template-columns: minmax(0, 1fr); }
 .frame > * { min-width: 0; }
-/* Under 900 px the navigation wraps onto a second line instead of hiding
-   screens past the right edge. */
-@media (max-width: 899px) { .frame-nav ul { flex-wrap: wrap; overflow-x: visible; } }
 .steps .card-row .t b { color: var(--text); }
 h1 { overflow-wrap: anywhere; hyphens: auto; }
 .back { gap: 6px; text-decoration: none; }
@@ -711,6 +695,8 @@ main > .back { margin: 0 0 4px; }
 .list-rows b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: anywhere; }
 .list-rows .meta { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 8px; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
 .list-rows .chev { margin-left: auto; flex: none; stroke: var(--text-secondary); }
+/* The Lists overview keeps long names whole-word with hyphens, not broken anywhere. */
+.list-rows.lists b { overflow-wrap: break-word; hyphens: auto; }
 .rows-head { font-size: var(--fs-label-large); font-weight: 700; color: var(--text-secondary); margin: var(--gap-section) 0 var(--gap-cards); max-width: 560px; overflow-wrap: anywhere; }
 .list-rows .who, .facts .who { display: inline-flex; align-items: center; gap: 6px; }
 .flag { display: inline-flex; align-items: flex-start; gap: 6px; padding: 3px 8px; border-radius: var(--radius-field); font-size: var(--fs-label); font-weight: 600; justify-self: start; overflow-wrap: anywhere; }

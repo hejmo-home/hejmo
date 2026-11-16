@@ -67,7 +67,7 @@ func (s *server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "reset setup", err)
 		return
 	}
-	personID, err := s.createFirstParent(f, passwordHash, pinHash, s.i18n.Match(r.Header.Get("Accept-Language")))
+	personID, err := s.createFirstParent(f, passwordHash, pinHash, s.langOf(r))
 	if err != nil {
 		s.fail(w, "setup", err)
 		return

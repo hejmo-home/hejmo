@@ -260,6 +260,26 @@ _Avoid_: template (alone; clashes with routine template), preset, default plan
 A meal plan entry changed for one week where a meal plan template would fill it (also emptied). It keeps its change when the template changes, until "Back to template".
 _Avoid_: override (in prose), exception
 
+**Recipe**:
+A dish with portions, ingredients and steps that can be put on the meal plan; entered by a parent, imported from a web page or from Hejmo's starter collection, always with its source.
+_Avoid_: dish (alone), cooking instructions
+
+**Ingredient**:
+One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
+_Avoid_: component, item
+
+**Variety**:
+The more exact kind of an article, such as "Type 405" for flour, kept with an ingredient or list entry. Quantities add up only for the same variety.
+_Avoid_: variant, subtype
+
+**Pantry article**:
+An article usually at home, such as salt or oil, left out by default when a recipe's ingredients go onto a list.
+_Avoid_: staple, stock item
+
+**Cooking view**:
+A recipe shown for cooking on a device: large text, ingredients to tick and one step at a time, with the screen kept on.
+_Avoid_: kitchen mode, cook mode
+
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.
 _Avoid_: deadline, expiry

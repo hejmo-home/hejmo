@@ -37,6 +37,9 @@ type Subtask struct {
 	Next             bool
 }
 
+// SubtasksDoneCount is how many subtasks are ticked off, for templates.
+func (t Task) SubtasksDoneCount() int { d, _ := t.SubtasksDone(); return d }
+
 // SubtasksDone counts the subtasks ticked off and all subtasks.
 func (t Task) SubtasksDone() (done, total int) {
 	for _, s := range t.Subtasks {

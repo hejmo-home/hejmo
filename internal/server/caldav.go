@@ -63,10 +63,8 @@ func davChallenge(w http.ResponseWriter) {
 // the calendar home are tasks, any other calendar is calendars, and the root,
 // the principal and the home set itself ("") belong to both.
 func davResource(p string) string {
-	rest := p
-	if i := strings.Index(p, "/calendars/"); i >= 0 {
-		rest = p[i+len("/calendars/"):]
-	} else {
+	_, rest, found := strings.Cut(p, "/calendars/")
+	if !found {
 		return ""
 	}
 	first, _, _ := strings.Cut(rest, "/")

@@ -644,6 +644,52 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+  /display/pairing:
+    post:
+      operationId: openDisplayPairing
+      summary: Open a pairing as a new display (no credentials)
+      security: []
+      description: |
+        A display without a token asks the box for a six-digit pairing code,
+        valid for ten minutes, and its own token. The token is in this answer
+        only; the display keeps it and sends it as bearer token to
+        `GET /display/state` and to its page routes under `/display`. A parent
+        confirms the code with `POST /displays`, or by scanning the QR code
+        behind `pair_url`. This is what `GET /display` does for a browser.
+        Opening is limited per client address (10 in 10 minutes, shared with
+        `GET /display`; 429 with `Retry-After`), and the box keeps at most 20
+        waiting displays: opening one more drops the oldest.
+      responses:
+        "201":
+          description: A waiting display with its code and token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DisplayPairing" }
+        "409":
+          description: The box is not set up yet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /display/state:
+    get:
+      operationId: getDisplayState
+      summary: A display reads its state (its own token as bearer token)
+      security:
+        - displayBearer: []
+      description: |
+        `paired`, `pairing` (with its `code`) or `unpaired`: the token is
+        revoked or unknown, or its code ran out. An unpaired display opens a
+        new pairing. A paired display also gets the `theme` it shows now.
+        Poll it about every 30 seconds: a revoked display notices within a
+        minute. A request without a bearer token is refused with 401.
+      responses:
+        "200":
+          description: The state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DisplayState" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
   /displays/{id}:
     patch:
       operationId: updateDisplay
@@ -2414,6 +2460,7 @@ components:
   securitySchemes:
     bearer: { type: http, scheme: bearer }
     session: { type: apiKey, in: cookie, name: hejmo_session }
+    displayBearer: { type: http, scheme: bearer, description: "A display's own token from `POST /display/pairing`; it opens the display's routes only" }
   schemas:
     Role:
       type: string
@@ -2752,6 +2799,22 @@ components:
         sunset_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes added to sunset before an automatic theme turns dark" }
         quiet_mode: { $ref: "#/components/schemas/QuietMode" }
         kiosk: { $ref: "#/components/schemas/Kiosk" }
+    DisplayPairing:
+      type: object
+      required: [token, state, code, code_expires_at, pair_url]
+      properties:
+        token: { type: string, description: "The display's own bearer token, shown once" }
+        state: { type: string, enum: [pairing] }
+        code: { type: string, pattern: "^[0-9]{6}$", example: "482916" }
+        code_expires_at: { type: string, format: date-time }
+        pair_url: { type: string, description: "Where a parent's phone confirms the code (the QR code on the page route)" }
+    DisplayState:
+      type: object
+      required: [state]
+      properties:
+        state: { type: string, enum: [paired, pairing, unpaired] }
+        code: { type: string, pattern: "^[0-9]{6}$", description: "Only while `pairing`" }
+        theme: { type: string, description: "Only while `paired`: the palette shown now (light, dark or bw)" }
     QuietMode:
       type: object
       description: The daily window, in the household's time zone, in which the display is quiet (ADR 0015). Off by default.

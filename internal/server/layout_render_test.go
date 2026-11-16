@@ -580,9 +580,7 @@ type knownLayoutProblem struct {
 	platform   bool // Chrome's hyphenation decides: it may not occur in every Chrome, so it need not occur
 }
 
-var knownLayoutProblems = []knownLayoutProblem{
-	{"/account/reset/{id}", "name-broken-inside-the-word", 375, []string{"Sophie-Marie"}, 175, true}, // seen with Chrome on macOS, not with Chrome 157 on the Linux runners
-}
+var knownLayoutProblems = []knownLayoutProblem{}
 
 func (k knownLayoutProblem) covers(path string, width int, p layoutProblem) bool {
 	if k.path != pageShape(path) || k.kind != p.Kind || k.width != width {

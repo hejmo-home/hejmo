@@ -692,7 +692,7 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .frame { grid-template-columns: minmax(0, 1fr); }
 .frame > * { min-width: 0; }
 .steps .card-row .t b { color: var(--text); }
-h1 { overflow-wrap: anywhere; hyphens: auto; }
+h1 { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* a name in a heading breaks at a space or hyphen first, inside a word only when wider than the line (ticket 175) */
 .back { gap: 6px; text-decoration: none; }
 .back .icon { stroke: currentColor; }
 main > .back { margin: 0 0 4px; }

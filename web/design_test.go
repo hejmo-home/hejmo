@@ -551,3 +551,18 @@ func familyTemplateHasNameSpan(t *testing.T) bool {
 	}
 	return strings.Contains(string(tpl), `<span class="person-name">{{.Person.Name}}</span>`)
 }
+
+// Ticket 175: a heading holding a name (the reset page: "Einmalcodes von
+// Sophie-Marie zurücksetzen") breaks at spaces and hyphens first; a name breaks
+// inside a word only when it is wider than the line, and takes no automatic hyphens.
+func TestHeadingNameIsNotBrokenInsideTheWord(t *testing.T) {
+	css := stylesheet(t)
+	for _, m := range regexp.MustCompile(`(?m)^h1 \{([^}]*overflow-wrap[^}]*)\}`).FindAllStringSubmatch(css, -1) {
+		if strings.Contains(m[1], "anywhere") || !strings.Contains(m[1], "overflow-wrap: break-word") || !strings.Contains(m[1], "hyphens: manual") {
+			t.Errorf("h1 must use overflow-wrap: break-word and hyphens: manual: %s", m[1])
+		}
+	}
+	if !regexp.MustCompile(`(?m)^h1 \{[^}]*overflow-wrap`).MatchString(css) {
+		t.Error("no h1 rule sets overflow-wrap")
+	}
+}

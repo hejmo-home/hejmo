@@ -50,3 +50,9 @@ Lists (#32, #33) take only typed text. On 16/11/2026 the product owner asked whe
 - New tickets for each 0.1 item; Opus designs before code.
 - The data model grows by articles, pictures, quantities, diets and allergies; list entries keep their text so free text and sync stay simple.
 - Downloading web images is a new outbound request from the box; the threat model gets an entry (server-side request forgery).
+
+## Amendment of 16/11/2026 (units, product owner feedback on #165)
+
+- **Units are preset by location:** the home location's country decides which units are active (metric plus piece, dozen, pack and bunch in most countries; UK adds imperial units; US uses US customary). Parents switch further units on or off under Settings, Lists, Units. The add form offers only active units.
+- **Every article has one or two default units** (eggs: dozen, piece; flour: g, kg). Shipped articles carry them; own articles choose them.
+- **Totals convert:** quantities of the same article add up across convertible units (500 g + 1 kg = 1.5 kg; 1 dozen + 6 pieces = 18 pieces), shown in the article's first default unit where it fits. Units of different kinds stay side by side.

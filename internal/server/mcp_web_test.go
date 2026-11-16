@@ -209,6 +209,12 @@ func TestNewMCPTokenErrorsSitAtTheFieldAndKeepWhatWasTyped(t *testing.T) {
 	}
 	mcpHas(t, "no name", r.body, `<div class="f invalid">`, `aria-invalid="true"`, `id="err-name"`, "Give the token a name so you can find it again.",
 		`<input type="radio" name="lists" value="read" checked>`)
+	// No name and everything "No": both errors show at once, each at its place.
+	r = postEN(b, "/mcp/tokens", url.Values{"name": {""}, "events": {"none"}, "lists": {"none"}, "tasks": {"none"}, "meals": {"none"}})
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("both errors = %d", r.status)
+	}
+	mcpHas(t, "both errors", r.body, `<div class="f invalid">`, "Give the token a name so you can find it again.", `<fieldset class="scopes invalid" aria-describedby="err-scopes">`, `id="err-scopes"`)
 	// Everything "No": the error frames the area block.
 	r = postEN(b, "/mcp/tokens", url.Values{"name": {"Claude"}, "events": {"none"}, "lists": {"none"}, "tasks": {"none"}, "meals": {"none"}})
 	if r.status != http.StatusUnprocessableEntity {

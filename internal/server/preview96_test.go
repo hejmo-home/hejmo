@@ -119,6 +119,7 @@ func TestWritePreview96(t *testing.T) {
 	a1 := token(b, ids, "Mama", "Claude auf Mamas Laptop", "events lists tasks:read meals", created, moment(15, 7, 42, 13))
 	b2 := token(b, ids, "Papa", "Claude Desktop auf dem Arbeitslaptop von Papa (Büro im Dachgeschoss)", "events:read meals:read", created, moment(14, 21, 5, 44))
 	c3 := token(b, ids, "Papa", "Einkaufshelfer Papa", "lists", created, "")
+	page(b, "/settings") // takes the success line of switching on, which this state does not show
 	withTokens := page(b, "/mcp")
 	detail := page(b, "/mcp/tokens/"+b2)
 	revokeAsks := open(page(b, "/mcp/tokens/"+c3))

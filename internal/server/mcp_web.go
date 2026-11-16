@@ -145,14 +145,14 @@ func (s *server) mcpAreaViews(r *http.Request, levels map[string]string) []mcpAr
 	return out
 }
 
-func (s *server) renderMCPNew(w http.ResponseWriter, r *http.Request, p principal, status int, levels map[string]string, name, errKey, errField string) {
+func (s *server) renderMCPNew(w http.ResponseWriter, r *http.Request, p principal, status int, levels map[string]string, name, errKey, errField string, scopesError bool) {
 	chips, err := s.chipByPerson(p.household.ID)
 	if err != nil {
 		s.fail(w, "people", err)
 		return
 	}
 	s.render(w, r, status, "mcp_token_new.html", map[string]any{
-		"Person": p.person, "Who": chips[p.person.ID], "Areas": s.mcpAreaViews(r, levels), "Name": name, "Error": errKey, "ErrorField": errField,
+		"Person": p.person, "Who": chips[p.person.ID], "Areas": s.mcpAreaViews(r, levels), "Name": name, "Error": errKey, "ErrorField": errField, "ScopesError": scopesError,
 	})
 }
 
@@ -165,7 +165,7 @@ func (s *server) handleMCPTokenNew(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, mcpPath, http.StatusSeeOther)
 		return
 	}
-	s.renderMCPNew(w, r, p, http.StatusOK, nil, "", "", "")
+	s.renderMCPNew(w, r, p, http.StatusOK, nil, "", "", "", false)
 }
 
 // Reasons a new MCP token is refused; each is a 422 with its own text.
@@ -175,39 +175,54 @@ var (
 	errMCPScopes    = errors.New("mcp: a token needs at least one area")
 )
 
+// checkMCPToken says what is wrong with a new token: its name (empty, too
+// long or taken) and its areas (none given, or an unknown level) are checked
+// apart, so a form can show both at once.
+func (s *server) checkMCPToken(p principal, name string, levels map[string]auth.MCPLevel) (nameErr, scopesErr error, err error) {
+	if !validDeviceName(name) {
+		nameErr = errMCPName
+	} else {
+		existing, err := s.mcpTokens(p.household.ID)
+		if err != nil {
+			return nil, nil, err
+		}
+		for _, t := range existing {
+			if strings.EqualFold(t.Name, name) {
+				nameErr = errMCPNameTaken
+			}
+		}
+	}
+	if _, err := auth.MCPScopes(levels); err != nil {
+		scopesErr = errMCPScopes
+	}
+	return nameErr, scopesErr, nil
+}
+
 // createMCPToken makes a token for MCP for the parent p: the areas become the
 // token scopes, and the secret is returned once.
 func (s *server) createMCPToken(p principal, name string, levels map[string]auth.MCPLevel) (store.APIToken, string, error) {
-	if !validDeviceName(name) {
-		return store.APIToken{}, "", errMCPName
-	}
-	existing, err := s.mcpTokens(p.household.ID)
+	nameErr, scopesErr, err := s.checkMCPToken(p, name, levels)
 	if err != nil {
 		return store.APIToken{}, "", err
 	}
-	for _, t := range existing {
-		if strings.EqualFold(t.Name, name) {
-			return store.APIToken{}, "", errMCPNameTaken
-		}
+	if nameErr != nil {
+		return store.APIToken{}, "", nameErr
 	}
-	scopes, err := auth.MCPScopes(levels)
-	if err != nil {
-		return store.APIToken{}, "", errMCPScopes
+	if scopesErr != nil {
+		return store.APIToken{}, "", scopesErr
 	}
+	scopes, _ := auth.MCPScopes(levels)
 	value := auth.NewToken()
 	t, err := s.db.CreateAPIToken(store.APIToken{Name: name, Hash: auth.HashToken(value), PersonID: p.person.ID, Scopes: scopes, MCP: true})
 	return t, value, err
 }
 
-// mcpErrorText gives the text and the field of a refused token.
+// mcpError gives the text of a refused name and the field it belongs to.
 func mcpError(err error) (key, field string) {
-	switch {
-	case errors.Is(err, errMCPName):
-		return "mcp.error.name", "name"
-	case errors.Is(err, errMCPNameTaken):
+	if errors.Is(err, errMCPNameTaken) {
 		return "mcp.error.name_taken", "name"
 	}
-	return "mcp.error.scopes", "scopes"
+	return "mcp.error.name", "name"
 }
 
 func (s *server) handleMCPTokenCreate(w http.ResponseWriter, r *http.Request) {
@@ -228,12 +243,20 @@ func (s *server) handleMCPTokenCreate(w http.ResponseWriter, r *http.Request) {
 		}
 		posted[area], levels[area] = v, auth.MCPLevel(v)
 	}
-	t, value, err := s.createMCPToken(p, name, levels)
-	if errors.Is(err, errMCPName) || errors.Is(err, errMCPNameTaken) || errors.Is(err, errMCPScopes) {
-		key, field := mcpError(err)
-		s.renderMCPNew(w, r, p, http.StatusUnprocessableEntity, posted, name, key, field)
+	nameErr, scopesErr, err := s.checkMCPToken(p, name, levels)
+	if err != nil {
+		s.fail(w, "check mcp token", err)
 		return
 	}
+	if nameErr != nil || scopesErr != nil { // both are shown at once, each at its own place
+		key, field := "", ""
+		if nameErr != nil {
+			key, field = mcpError(nameErr)
+		}
+		s.renderMCPNew(w, r, p, http.StatusUnprocessableEntity, posted, name, key, field, scopesErr != nil)
+		return
+	}
+	t, value, err := s.createMCPToken(p, name, levels)
 	if err != nil {
 		s.fail(w, "create mcp token", err)
 		return

@@ -65,6 +65,11 @@ func (s *server) plainHTTPAllowed(r *http.Request) bool {
 	if u.Path == "/language" && r.Method == http.MethodPost {
 		return true
 	}
+	if strings.HasPrefix(u.Path, "/i/") && !strings.Contains(strings.TrimPrefix(u.Path, "/i/"), "/") {
+		// The short address of an invitation (ticket 145) shows the trust
+		// page of a box with its own CA before the device trusts the box.
+		return r.Method == http.MethodGet || r.Method == http.MethodHead
+	}
 	switch u.Path {
 	case "/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig", "/static/https-check.js":
 		// Pages to read: nothing is posted to them over HTTP. The trust page
@@ -290,6 +295,15 @@ func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request) {
 	http.Redirect(w, r, "/ca", http.StatusSeeOther)
 }
 
+// trustOptions says where the trust page leads on to and in which shell it is
+// shown. The zero value is the plain page (what a phone opens before pairing).
+type trustOptions struct {
+	Continue, ContinueKey string
+	Wizard                *wizardView
+	// Invite is set when the page is the first step of accepting an invitation.
+	Invite *inviteView
+}
+
 func (s *server) handleTrustPage(w http.ResponseWriter, r *http.Request) {
 	if s.publicInUse() { // a public certificate needs no trust step
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
@@ -299,6 +313,16 @@ func (s *server) handleTrustPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup/https", http.StatusSeeOther)
 		return
 	}
+	var opts trustOptions
+	if !s.db.Configured() {
+		opts = trustOptions{Continue: s.httpsOrigin(r) + "/setup", ContinueKey: "trust.continue.setup", Wizard: wizardAt(1)}
+	} else if next := s.trustContinue(r); next != "" {
+		opts = trustOptions{Continue: next, ContinueKey: "trust.continue"} // a phone on its way to pair (ticket 5.13)
+	}
+	s.renderTrust(w, r, opts)
+}
+
+func (s *server) renderTrust(w http.ResponseWriter, r *http.Request, opts trustOptions) {
 	page := s.trustDevice(r)
 	fp := s.pki.CAFingerprint()
 	download, downloadKey := "/ca/hejmo-ca.crt", "trust.download.cert"
@@ -309,17 +333,13 @@ func (s *server) handleTrustPage(w http.ResponseWriter, r *http.Request) {
 		"Device": page.Device, "Detected": page.Detected, "Known": page.Known,
 		"Steps": trustSteps(page.Device), "Fingerprint": fp, "Pairs": strings.Split(fp, ":"),
 		"Download": download, "DownloadKey": downloadKey, "CheckURL": s.httpsOrigin(r) + "/healthz",
+		"Continue": opts.Continue, "ContinueKey": opts.ContinueKey, "Invite": opts.Invite,
 	}
-	if !s.db.Configured() {
-		data["Continue"] = s.httpsOrigin(r) + "/setup"
-		data["ContinueKey"] = "trust.continue.setup"
-		data["Wizard"] = wizardAt(1)
-	} else if next := s.trustContinue(r); next != "" {
-		data["Continue"] = next // a phone on its way to pair (ticket 5.13)
-		data["ContinueKey"] = "trust.continue"
+	if opts.Wizard != nil {
+		data["Wizard"] = opts.Wizard
 	}
 	cont := "" // only a phone's pairing target travels with the device chooser
-	if s.db.Configured() {
+	if s.db.Configured() && opts.Invite == nil {
 		cont = s.trustContinue(r)
 	}
 	data["Devices"] = trustDeviceLinks(page.Device, cont)

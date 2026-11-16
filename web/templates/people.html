@@ -9,7 +9,7 @@
       {{range .People}}
       <li data-person-row="{{.ID}}">
         <strong class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><a href="/people/{{.ID}}">{{.Name}}</a></strong>
-        <span class="hint">{{t (printf "people.role.%s" .Role)}}</span>
+        <span class="hint">{{t (printf "people.role.%s" .Role)}}{{if .Acc.Self}} · {{t "people.you"}}{{else if .Acc.State}} · <b class="acc-state">{{.Acc.State}}</b>{{if .Acc.Href}} · <a href="{{.Acc.Href}}">{{.Acc.LinkText}}</a>{{end}}{{end}}</span>
         <span class="row">
           {{if not .First}}<form method="post" action="/people/{{.ID}}/move"><button class="button secondary" type="submit" name="direction" value="up" aria-label="{{t "people.move_up"}}">{{t "people.up"}}</button></form>{{end}}
           {{if not .Last}}<form method="post" action="/people/{{.ID}}/move"><button class="button secondary" type="submit" name="direction" value="down" aria-label="{{t "people.move_down"}}">{{t "people.down"}}</button></form>{{end}}

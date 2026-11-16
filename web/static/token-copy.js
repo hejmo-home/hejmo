@@ -17,7 +17,7 @@
     });
   });
   function selectToken() {
-    var el = document.querySelector("[data-device-token]");
+    var el = document.querySelector("[data-device-token], [data-invite-link]");
     if (!el) return;
     var range = document.createRange();
     range.selectNodeContents(el);

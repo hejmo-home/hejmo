@@ -6,8 +6,10 @@ import "time"
 // rows that open a detail page, which holds the facts, the one form and the
 // removal. These are the view types the shared partials in patterns.html take.
 
-// flagView is a problem or a warning in words (Kind: "problem" or "warn").
-type flagView struct{ Kind, Text string }
+// flagView is a problem or a warning in words (Kind: "problem" or "warn"), or
+// a calm state (Kind "open"). Icon picks another icon than the default one:
+// "clock" or "triangle" (ticket 145).
+type flagView struct{ Kind, Text, Icon string }
 
 // rowLine is one line under a row's title: words, and who it is for.
 type rowLine struct {

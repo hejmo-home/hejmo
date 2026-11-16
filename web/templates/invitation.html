@@ -1,0 +1,45 @@
+{{template "head" (dict "Lang" .Lang "Title" (tf (printf "invite.title.%s" .Kind) "name" .Subject.Name "possessive" .Possessive) "Frame" .Frame)}}
+  {{with .Success}}{{template "success" .}}{{end}}
+  {{template "backLink" (dict "Href" (printf "/people/%s" .Subject.ID) "Text" .Subject.Name)}}
+  {{if eq .Kind "new_link"}}
+  <h1>{{tf "invite.title.none" "name" .Subject.Name}}</h1>
+  <section class="once invite-once" aria-labelledby="once-h">
+    <p id="once-h"><strong>{{tf "invite.once.lead" "name" .Subject.Name}}</strong></p>
+    <div class="pair-qr">{{.QR}}</div>
+    <p class="valid">{{template "clockIcon" 18}}<span>{{rich (tf "invite.valid" "date" .Valid)}}</span></p>
+    {{with .Notice}}<p class="notice" role="status">{{tf . "possessive" $.Possessive}}</p>{{end}}
+    <p>{{tf "invite.once.link" "name" .Subject.Name}}</p>
+    <p class="secret link" data-invite-link>{{.Link}}</p>
+    <div class="row">
+      <button class="button secondary" type="button" data-copy="{{.Link}}" data-copied="{{t "invite.once.copied"}}" hidden>{{t "invite.once.copy"}}</button>
+    </div>
+    <p class="hint">{{tf "invite.once.hint" "name" .Subject.Name "possessive" .Possessive}}</p>
+  </section>
+  <a class="button" href="/people/{{.Subject.ID}}/invitation">{{t "invite.once.done"}}</a>
+  <script src="/static/token-copy.js" defer></script>
+  {{else if eq .Kind "none"}}
+  <h1>{{tf "invite.title.none" "name" .Subject.Name}}</h1>
+  <p class="lead">{{tf "invite.lead" "name" .Subject.Name}}</p>
+  <section class="tile invite-how">
+    <h2>{{t "invite.how"}}</h2>
+    <ol class="howto">
+      <li><div class="s"><b>{{t "invite.how.1.title"}}</b><p>{{rich (t "invite.how.1.text")}}</p></div></li>
+      <li><div class="s"><b>{{tf "invite.how.2.title" "name" .Subject.Name}}</b><p>{{tf "invite.how.2.text" "name" .Subject.Name}}</p></div></li>
+      <li><div class="s"><b>{{tf "invite.how.3.title" "name" .Subject.Name}}</b><p>{{tf "invite.how.3.text" "name" .Subject.Name "possessive" .Possessive}}</p></div></li>
+    </ol>
+  </section>
+  <form method="post" action="/people/{{.Subject.ID}}/invitation" class="actions"><button class="button" type="submit">{{t "invite.create"}}</button></form>
+  {{else}}
+  <h1>{{tf (printf "invite.title.%s" .Kind) "name" .Subject.Name "possessive" .Possessive}}</h1>
+  {{template "facts" .Facts}}
+  {{if eq .Kind "open"}}
+  <form method="post" action="/people/{{.Subject.ID}}/invitation" class="actions"><button class="button" type="submit">{{t "invite.new_link"}}</button></form>
+  <p class="hint">{{tf "invite.new_link.hint" "name" .Subject.Name}}</p>
+  {{template "danger" (dict "Label" (t "invite.withdraw") "Explain" (tf "invite.withdraw.explain" "name" .Subject.Name) "Confirm" (t "invite.withdraw.confirm") "Action" (printf "/people/%s/invitation/withdraw" .Subject.ID) "CancelHref" (printf "/people/%s/invitation" .Subject.ID))}}
+  {{else if eq .Kind "expired"}}
+  <form method="post" action="/people/{{.Subject.ID}}/invitation" class="actions"><button class="button" type="submit">{{t "invite.new_invitation"}}</button></form>
+  {{else if .CanReset}}
+  <p class="hint">{{tf "invite.account.lost" "name" .Subject.Name}} <a href="/otp#reset">{{tf "invite.account.reset" "name" .Subject.Name "possessive" .Possessive}}</a></p>
+  {{end}}
+  {{end}}
+{{template "foot"}}

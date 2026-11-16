@@ -82,7 +82,7 @@ func (s *server) firstSteps(p store.Person, h store.Household, lang string) (*fi
 	if err := s.fillFamily(&steps[0], people, f); err != nil {
 		return nil, err
 	}
-	if err := s.fillParents(&steps[1], h, p, people, f); err != nil {
+	if err := s.fillParents(&steps[1], h, p, people, lang, f); err != nil {
 		return nil, err
 	}
 	if err := s.fillCalendars(&steps[2], h, people, f, t); err != nil {
@@ -154,12 +154,30 @@ func (s *server) fillFamily(st *firstStep, people []store.Person, f func(string,
 
 // fillParents is the second parent and phones step. The second parent is a
 // parent other than the one looking at Home: who set the box up is not stored,
-// and the order of the people can change.
-func (s *server) fillParents(st *firstStep, h store.Household, viewer store.Person, people []store.Person, f func(string, ...string) string) error {
-	var second []string
-	for _, p := range people {
-		if p.Role == store.RoleParent && p.ID != viewer.ID {
-			second = append(second, p.Name)
+// and the order of the people can change. The parent counts once they have an
+// account, so an invitation that was accepted counts (ticket 145); while a link
+// is open the step says until when it works and leads to it.
+func (s *server) fillParents(st *firstStep, h store.Household, viewer store.Person, people []store.Person, lang string, f func(string, ...string) string) error {
+	var withAccount []string
+	var waiting *store.Person // the first other adult without an account
+	var openInv *store.Invitation
+	for i, p := range people {
+		if p.Role != store.RoleParent || p.ID == viewer.ID {
+			continue
+		}
+		state, err := s.signInOf(h.ID, p)
+		if err != nil {
+			return err
+		}
+		if state.Kind == signInAccount {
+			withAccount = append(withAccount, p.Name)
+		} else if waiting == nil || (state.Kind == signInOpen && openInv == nil) {
+			waiting = &people[i]
+			openInv = nil
+			if state.Kind == signInOpen {
+				inv := state.Invite
+				openInv = &inv
+			}
 		}
 	}
 	phones, err := s.db.Phones(h.ID)
@@ -170,19 +188,30 @@ func (s *server) fillParents(st *firstStep, h store.Household, viewer store.Pers
 	for _, ph := range phones {
 		list = append(list, ph.PersonName+" ("+ph.Name+")")
 	}
-	hasParent, hasPhone := len(second) > 0, len(phones) > 0
+	hasParent, hasPhone := len(withAccount) > 0, len(phones) > 0
 	var acts []fsAction
-	if !hasParent {
+	var waitingText string
+	switch {
+	case hasParent:
+	case openInv != nil:
+		acts = append(acts, fsAction{"/people/" + waiting.ID + "/invitation", f("firststeps.parents.view")})
+		waitingText = f("firststeps.parents.invited", "name", waiting.Name, "date", s.validUntil(lang, h, openInv.ExpiresAt))
+	case waiting != nil:
+		acts = append(acts, fsAction{"/people/" + waiting.ID + "/invitation", f("firststeps.parents.invite", "name", waiting.Name)})
+		waitingText = f("firststeps.parents.entered", "name", waiting.Name)
+	default:
 		acts = append(acts, fsAction{"/people", f("firststeps.parents.add")})
 	}
 	if !hasPhone {
 		acts = append(acts, fsAction{"/phones", f("firststeps.parents.phone")})
 	}
 	settle(st, hasParent && hasPhone, fsAction{"/phones", f("firststeps.parents.manage")}, acts...)
-	if hasParent || hasPhone {
+	if hasParent || hasPhone || waitingText != "" {
 		st.Subs = []fsSub{{hasParent, f("firststeps.parents.person.open")}, {hasPhone, f("firststeps.parents.phones.open")}}
 		if hasParent {
-			st.Subs[0].Text = f("firststeps.parents.person", "names", strings.Join(second, ", "))
+			st.Subs[0].Text = f("firststeps.parents.person", "names", strings.Join(withAccount, ", "))
+		} else if waitingText != "" {
+			st.Subs[0].Text = waitingText
 		}
 		if hasPhone {
 			st.Subs[1].Text = f("firststeps.parents.phones", "list", strings.Join(list, ", "))

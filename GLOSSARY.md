@@ -28,6 +28,10 @@ _Avoid_: permission level, user type
 The sign-in credentials of an adult person: username, password and one-time codes. Children have no account.
 _Avoid_: login, user
 
+**Invitation**:
+A one-time link (with a QR code) that a parent creates for an adult person without an account; valid once and for 7 days. The invited person opens it on their own device and chooses username and password themselves, then sets up one-time codes and recovery codes. The box stores only a hash of the link, so it is shown once; a new link replaces the old one, and a parent can withdraw it. States: open, used, expired, withdrawn.
+_Avoid_: invite code, sign-up link, registration
+
 **Parent PIN**:
 A short numeric code that unlocks management on a display. It is not a way to sign in.
 _Avoid_: display password, admin PIN

@@ -6,7 +6,7 @@
 
 ## Context
 
-ADR 0018 named what comes after 0.1 only as "0.2 and later". On 15/11/2026 and 16/11/2026 the product owner set the contents of 0.2 and 0.3 and decided the open questions on each ticket (grilling questions Q24 to Q45 and the decisions on #54, #57, #61, #125, #167, #168 and #177 to #180). This ADR records those decisions. Where a ticket still has open points, it says so.
+ADR 0018 named what comes after 0.1 only as "0.2 and later". On 15/11/2026 and 16/11/2026 the product owner set the contents of 0.2 and 0.3 and decided the open questions on each ticket (grilling questions Q24 to Q45 and the decisions on #54, #57, #61, #125, #167, #168 and #177 to #180). This ADR records those decisions.
 
 ## Decision
 
@@ -74,7 +74,7 @@ ADR 0018 named what comes after 0.1 only as "0.2 and later". On 15/11/2026 and 1
 - Unlike tasks (ADR 0018), **creating and deleting entries from Reminders is allowed**, since a list entry needs no person. A new entry is matched to an article by name, otherwise it stays free text.
 - **Only parents' devices** get lists in Reminders in 0.2, through their own profile. Old device tokens are not widened silently; a new profile is needed.
 - A quantity typed in Reminders is read only if the text ends in a number plus an active unit; a bare number uses the article's first default unit. A duplicate adds up by the quantity rule of ADR 0019.
-- **Open (Q42):** whether notes written in Reminders are kept. Until decided, notes, dates and flags set in Reminders are not kept.
+- **Notes (Q42, 16/11/2026):** notes written in Reminders are **kept**. Hejmo shows the note small under the entry (list, tile view, display); it can be edited in Hejmo and goes back to Reminders, like task notes. A ticked-off entry's note goes with it. Dates, times and flags from Reminders are still not stored.
 
 ### Articles always on the list (#168)
 

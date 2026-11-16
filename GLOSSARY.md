@@ -229,7 +229,7 @@ When in the day a task or routine belongs: morning, after school, any time or ev
 _Avoid_: time slot, daypart
 
 **Routine template**:
-A reusable routine without a person that a parent copies into a routine for someone.
+A reusable routine without a person that a parent copies into a routine for someone. Hejmo ships some in German and English; parents add their own by saving a routine as a template. Using a template makes an independent copy: changing one never changes the other.
 _Avoid_: preset, blueprint
 
 **Subtask**:

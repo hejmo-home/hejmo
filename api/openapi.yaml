@@ -847,6 +847,233 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /routine-templates:
+    get:
+      operationId: listRoutineTemplates
+      summary: Routine templates, own first, then the ones that come with Hejmo (scope tasks:read)
+      description: |
+        A routine template is a routine without a person (ADR 0018). The
+        parent's own templates come first, oldest first, then the templates
+        that ship with Hejmo (`source: shipped`, ids such as `school-morning`),
+        in the language in use: their names and step titles follow the
+        request's language, German or English. Everyone, children included,
+        may read.
+      responses:
+        "200":
+          description: Own templates, then shipped ones
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RoutineTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: saveRoutineAsTemplate
+      summary: Save a routine as an own template (scope tasks:write, parents only)
+      description: |
+        Copies the routine's part of the day and its steps in order, with
+        emoji, star value and repetition. Once-only tasks are left out; a
+        routine with no other task is 422. What a person ticked, stars earned
+        and history stay with the person. The template is a copy: changing
+        the routine later does not change it. Without `name` the template is
+        called "<routine> von <person>" (English: "<routine> of <person>").
+        A name already used by an own template (ignoring case) is 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [routine_id]
+              additionalProperties: false
+              properties:
+                routine_id: { type: string, format: uuid }
+                name: { type: string, minLength: 1, maxLength: 60 }
+      responses:
+        "201":
+          description: The new template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routine-templates/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string }, description: "An own template's UUID or the id of a shipped one" }
+    get:
+      operationId: getRoutineTemplate
+      summary: One routine template with its steps (scope tasks:read)
+      responses:
+        "200":
+          description: The template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateRoutineTemplate
+      summary: Rename an own template or change its suggested part of the day (scope tasks:write, parents only)
+      description: |
+        Routines that were made from the template stay as they are. A
+        template that ships with Hejmo cannot be changed: 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1, maxLength: 60 }
+                part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+      responses:
+        "200":
+          description: The updated template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteRoutineTemplate
+      summary: Delete an own template (scope tasks:delete, parents only)
+      description: |
+        Routines that were made from the template stay as they are. A
+        template that ships with Hejmo cannot be deleted: 409.
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+  /routine-templates/{id}/steps:
+    post:
+      operationId: addRoutineTemplateStep
+      summary: Add a step at the end of an own template (scope tasks:write, parents only)
+      description: |
+        A step is never once-only (`repeat` is `daily` or `weekly`) and has
+        no subtasks. `stars` defaults to 1.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, repeat]
+              additionalProperties: false
+              properties:
+                title: { type: string, minLength: 1, maxLength: 120 }
+                emoji: { type: string, maxLength: 16 }
+                stars: { type: integer, minimum: 0, maximum: 100 }
+                repeat: { $ref: "#/components/schemas/TemplateRepeat" }
+                weekdays: { type: array, items: { $ref: "#/components/schemas/TaskWeekday" } }
+      responses:
+        "201":
+          description: The template with the new step at its end
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routine-templates/{id}/steps/{step_id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: step_id, in: path, required: true, schema: { type: string } }
+    patch:
+      operationId: updateRoutineTemplateStep
+      summary: Change a step of an own template (scope tasks:write, parents only)
+      description: |
+        Only the fields given change. Changing `repeat` to `daily` drops the
+        weekdays; `weekly` needs weekdays.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                title: { type: string, minLength: 1, maxLength: 120 }
+                emoji: { type: string, maxLength: 16 }
+                stars: { type: integer, minimum: 0, maximum: 100 }
+                repeat: { $ref: "#/components/schemas/TemplateRepeat" }
+                weekdays: { type: array, items: { $ref: "#/components/schemas/TaskWeekday" } }
+      responses:
+        "200":
+          description: The updated template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteRoutineTemplateStep
+      summary: Remove a step from an own template (scope tasks:write, parents only)
+      responses:
+        "200":
+          description: The template without the step
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" } # the last step of a template stays
+  /routine-templates/{id}/order:
+    put:
+      operationId: setRoutineTemplateOrder
+      summary: Put the steps of an own template in a new order (scope tasks:write, parents only)
+      description: |
+        `step_ids` must name every step of the template exactly once, else
+        422 and nothing changes.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [step_ids]
+              additionalProperties: false
+              properties:
+                step_ids:
+                  type: array
+                  items: { type: string }
+      responses:
+        "200":
+          description: The template in its new order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /meals:
     get:
       operationId: listMeals
@@ -1878,11 +2105,47 @@ components:
       enum: [morning, afterschool, evening]
     NewRoutine:
       type: object
-      required: [person_id, name, part_of_day]
+      required: [person_id]
+      description: |
+        Without `template_id`, `name` and `part_of_day` are required (else
+        422). With `template_id` the routine is made from a routine template
+        (own or shipped): its steps become new tasks of the person, an
+        independent copy that keeps no link to the template. Then `part_of_day`
+        defaults to the template's suggestion (any part of the day may be
+        chosen) and `name` to the stock name of the part ("Morgenroutine").
+        Shipped templates are copied in the language in use.
       properties:
         person_id: { type: string, format: uuid }
         name: { type: string, minLength: 1, maxLength: 60, example: Morgenroutine }
         part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+        template_id: { type: string, description: "An own template's UUID or the id of a shipped one", example: school-morning }
+    TemplateRepeat:
+      type: string
+      enum: [daily, weekly]
+      description: A template step is never once-only.
+    RoutineTemplate:
+      type: object
+      required: [id, name, part_of_day, source, steps]
+      properties:
+        id: { type: string, description: "A UUID for an own template, a readable id such as school-morning for a shipped one" }
+        name: { type: string }
+        part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+        source: { type: string, enum: [own, shipped] }
+        origin_routine: { type: string, description: "Own templates: the name of the routine it was saved from" }
+        origin_person: { type: string, description: "Own templates: the name of that routine's person" }
+        saved_at: { type: string, format: date-time, description: "Own templates: when it was saved" }
+        steps:
+          type: array
+          items:
+            type: object
+            required: [id, title, emoji, stars, repeat, weekdays]
+            properties:
+              id: { type: string }
+              title: { type: string }
+              emoji: { type: string }
+              stars: { type: integer, minimum: 0, maximum: 100 }
+              repeat: { $ref: "#/components/schemas/TemplateRepeat" }
+              weekdays: { type: array, items: { $ref: "#/components/schemas/TaskWeekday" } }
     Routine:
       type: object
       required: [id, person_id, name, part_of_day, task_ids]
@@ -2470,6 +2733,13 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Invalid:
       description: Request is well-formed but not valid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    TemplateConflict:
+      description: |
+        An own template already has that name (`field: name`), or the template
+        ships with Hejmo and cannot be changed.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }

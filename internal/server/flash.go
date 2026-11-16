@@ -104,6 +104,53 @@ func (s *server) redirectSavedNamed(w http.ResponseWriter, r *http.Request, to, 
 	http.Redirect(w, r, to, http.StatusSeeOther)
 }
 
+// flashFields names the placeholders of success lines that carry several
+// values (the people, the routine and the template they are about). The values
+// travel in the box's memory like the text of an entry, never in the cookie.
+var flashFields = map[string][]string{
+	"flash.routine_applied":        {"owner", "routine", "person", "tasks", "template"},
+	"flash.routine_applied_own":    {"owner", "routine", "person", "tasks", "template", "origin"},
+	"flash.rtpl_moved":             {"title", "place", "total"},
+	"flash.routine_template_saved": {"name", "id"},
+}
+
+// redirectSavedFields is redirectSaved for a success line with several values,
+// given in the order of flashFields.
+func (s *server) redirectSavedFields(w http.ResponseWriter, r *http.Request, to, key string, values ...string) {
+	s.setFlash(w, r, key+":"+s.flashTexts.put(strings.Join(values, "\x1f"), s.now()))
+	http.Redirect(w, r, to, http.StatusSeeOther)
+}
+
+// fieldValues takes the values of a success line that carries several values,
+// by placeholder; false when the box restarted or the line is old.
+func (s *server) fieldValues(key, token string) (map[string]string, bool) {
+	text, ok := s.flashTexts.take(token, s.now())
+	names := flashFields[key]
+	values := strings.Split(text, "\x1f")
+	if !ok || len(values) != len(names) {
+		return nil, false
+	}
+	out := make(map[string]string, len(names))
+	for i, n := range names {
+		out[n] = values[i]
+	}
+	return out, true
+}
+
+// fieldsText is the text of a success line that carries several values; empty
+// when the box restarted or the line is old: better none than a wrong one.
+func (s *server) fieldsText(lang, key, token string) string {
+	values, ok := s.fieldValues(key, token)
+	if !ok {
+		return ""
+	}
+	kv := make([]string, 0, 2*len(values))
+	for _, n := range flashFields[key] {
+		kv = append(kv, n, values[n])
+	}
+	return s.i18n.Format(lang, i18n.Msg(key, kv...))
+}
+
 // starsSavedPrefix marks the success lines after a changed star value; their
 // argument is the new value.
 const starsSavedPrefix = "tasks.stars.saved."
@@ -156,6 +203,9 @@ func (s *server) successText(lang, key, arg string) string {
 				return s.i18n.Format(lang, i18n.Msg("flash.invite_done_named", "name", p.Name))
 			}
 		}
+	}
+	if _, ok := flashFields[key]; ok && arg != "" {
+		return s.fieldsText(lang, key, arg)
 	}
 	if strings.HasPrefix(key, "flash.entry_") && arg != "" {
 		text, ok := s.flashTexts.take(arg, s.now())
@@ -219,6 +269,9 @@ func (s *server) successText(lang, key, arg string) string {
 // successHTML is the success line as markup: the text of successText escaped,
 // except the lines after a changed star value, which put the new value in bold.
 func (s *server) successHTML(lang, key, arg string) template.HTML {
+	if key == "flash.routine_template_saved" && arg != "" {
+		return s.templateSavedHTML(lang, arg)
+	}
 	if strings.HasPrefix(key, starsSavedPrefix) {
 		text := s.i18n.T(lang, key)
 		if n, err := strconv.Atoi(arg); err == nil && key == starsSavedPrefix+"other" {

@@ -1,0 +1,23 @@
+{{template "head" (dict "Lang" .Lang "Title" .Step.Title "Frame" .Frame)}}
+  <h1>{{if .Step.Emoji}}{{.Step.Emoji}} {{end}}{{.Step.Title}}</h1>
+  <p class="lead">{{.Lead}}</p>
+  {{$f := .Form}}
+  <form method="post" action="/routines/templates/{{.Tpl.ID}}/steps/{{.Step.ID}}" class="steps">
+    <fieldset>
+      {{template "field" (dict "Root" . "Name" "title" "Label" (t "routine.tpl.step.title") "Value" (index $f "Title") "Max" 120)}}
+      <div class="pair">
+        {{template "field" (dict "Root" . "Name" "emoji" "Label" (t "routine.field.emoji") "Value" (index $f "Emoji") "Max" 16 "Class" "short" "Hint" (t "routine.field.emoji.hint"))}}
+        {{template "field" (dict "Root" . "Name" "stars" "Label" (t "tasks.stars.field") "Type" "number" "Value" (index $f "Stars") "Inputmode" "numeric" "Bounded" true "Lo" 0 "Hi" .MaxStars "Class" "short")}}
+      </div>
+      {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "tasks.field.repeat") "Root" . "Name" "repeat")}}
+        {{range $r := .Repeats}}{{template "option" (dict "Name" "repeat" "Value" $r "Label" (t (printf "tasks.repeat_option.%s" $r)) "Checked" (eq $r (index $f "Repeat")))}}{{end}}
+      {{template "optionsClose" (dict "Root" . "Name" "repeat")}}
+      {{template "optionsOpen" (dict "Class" "days" "When" "when-weekly" "Legend" (t "routine.tpl.step.weekdays") "Root" . "Name" "weekdays")}}
+        {{$chosen := strs (index $f "Weekdays")}}
+        {{range .Weekdays}}{{template "option" (dict "Type" "checkbox" "Name" "weekdays" "Value" . "Label" (t (printf "tasks.weekday.%s" .)) "Checked" (has $chosen .))}}{{end}}
+      {{template "optionsClose" (dict "Root" . "Name" "weekdays")}}
+    </fieldset>
+    <button class="button" type="submit">{{t "routine.tpl.step.save"}}</button>
+  </form>
+  {{if .Last}}<p class="hint">{{t "routine.tpl.step.last"}}</p>{{else}}{{template "dangerOpen" (dict "Label" (t "routine.tpl.step.remove") "Confirm" .Confirm "Explain" .Explain "Action" (printf "/routines/templates/%s/steps/%s/delete" .Tpl.ID .Step.ID) "CancelHref" (printf "/routines/templates/%s/steps/%s" .Tpl.ID .Step.ID))}}{{template "dangerClose"}}{{end}}
+{{template "foot"}}

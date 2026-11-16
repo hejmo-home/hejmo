@@ -1,0 +1,10 @@
+Contains data from GeoNames (https://www.geonames.org), licensed CC BY 4.0, extract of 2026-11-15, filtered to DE/AT/CH and reformatted.
+
+places.tsv.gz is an extract of the GeoNames dumps for Germany, Austria and Switzerland
+(https://download.geonames.org/export/dump/), made by tools/placelist: feature class P with population >= 500, plus every PPLX and PPLF; without PPLH, PPLQ, PPLW.
+Changes: filtered, reduced to the columns of the file, coordinates rounded to four decimals,
+names by language taken from the alternate names, parent town of districts added, regions
+mapped to ISO 3166-2.
+
+GeoNames is licensed under the Creative Commons Attribution 4.0 licence:
+https://creativecommons.org/licenses/by/4.0/legalcode

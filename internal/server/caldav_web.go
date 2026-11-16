@@ -42,6 +42,9 @@ func (s *server) deviceTokens(householdID string) ([]store.APIToken, error) {
 }
 
 func isDeviceToken(t store.APIToken) bool {
+	if t.MCP { // tokens made for MCP are not for calendar apps
+		return false
+	}
 	scopes := strings.Fields(t.Scopes)
 	for _, sc := range scopes {
 		if sc != "calendars" && sc != "tasks" {

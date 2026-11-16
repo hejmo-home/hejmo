@@ -155,6 +155,7 @@ var hubItems = []hubItem{
 	{"/caldav", "hub.caldav", "hub.caldav.hint", auth.Perm("tokens", auth.Read)},
 	{"/displays", "hub.displays", "hub.displays.hint", auth.Perm("displays", auth.Write)},
 	{"/phones", "hub.phones", "hub.phones.hint", auth.Perm("tokens", auth.Write)},
+	{"/mcp", "hub.mcp", "hub.mcp.hint", auth.Perm("tokens", auth.Write)},
 	{"/people", "hub.people", "hub.people.hint", auth.Perm("people", auth.Write)},
 	{"/settings/household", "hub.household", "hub.household.hint", auth.Perm("settings", auth.Write)},
 	{"/otp", "hub.otp", "hub.otp.hint", auth.Perm("settings", auth.Write)},
@@ -165,5 +166,5 @@ var hubItems = []hubItem{
 // start with a link back to their overview, which replaces the hub link.
 var detailPages = map[string]bool{
 	"display.html": true, "token.html": true, "token_once.html": true, "connection.html": true, "connection_off.html": true,
-	"calendar_detail.html": true, "phone.html": true, "connection_new.html": true, "person_edit.html": true, "invitation.html": true,
+	"calendar_detail.html": true, "phone.html": true, "mcp_token.html": true, "mcp_token_new.html": true, "mcp_token_once.html": true, "connection_new.html": true, "person_edit.html": true, "invitation.html": true,
 }

@@ -15,8 +15,10 @@ jobs:
       fail-fast: false
       matrix:
         include:
-          # Chrome comes with the x86_64 runner image; the arm64 image has none, so
-          # the rendered layout check is required there only on x86_64.
+          # Chrome comes with the x86_64 runner image (the "Chrome for the rendered
+          # layout check" step prints it: 157 on 16/11/2026). The arm64 image has
+          # none (the same step prints nothing there), so the rendered layout check
+          # is required, and runs, only on x86_64; on arm64 it skips.
           - arch: x86_64
             runner: ubuntu-24.04
             require_chrome: "1"

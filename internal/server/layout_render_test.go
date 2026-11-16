@@ -117,7 +117,8 @@ type layoutFixture struct {
 	*familyBox
 	ids []string // person IDs in layoutNames order
 
-	inviteToken string // the invitation of Maximilian, a parent without account
+	lists       []string // list IDs
+	inviteToken string   // the invitation of Maximilian, a parent without account
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -163,12 +164,14 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	// Lists with long entries.
 	l, err := db.CreateList(h, list.List{Name: "Wochenendeinkaufsliste", Color: "blue", Symbol: "circle-empty", Sort: list.Alphabetical})
 	must(err)
+	f.lists = append(f.lists, l.ID)
 	for _, e := range []string{"Haferflockenpackung groß", "Kartoffelsalatzutaten für Samstag", "Vollkornspaghetti", "Bio-Pfefferminztee"} {
 		_, err := db.AddEntry(h, l.ID, e)
 		must(err)
 	}
 	l2, err := db.CreateList(h, list.List{Name: "Urlaubsvorbereitungen Ostsee", Color: "green", Symbol: "circle-empty", Sort: list.Manual})
 	must(err)
+	f.lists = append(f.lists, l2.ID)
 	for _, e := range []string{"Sonnenschutzmittelflaschen einpacken", "Regenjacken", "Reiseapotheke prüfen"} {
 		_, err := db.AddEntry(h, l2.ID, e)
 		must(err)
@@ -387,6 +390,8 @@ var notRendered = map[string]string{
 	"/sw.js":                    "script",
 	"/display/state":            "JSON",
 	"/display/view":             "fragment of /display, rendered inside it",
+	"/display/lists":            "redirect to the first list",
+	"/display/lists/{id}/view":  "fragment of a list, rendered inside it",
 	"/display/events":           "event stream",
 	"/display/person/{id}/view": "fragment of the personal view, rendered inside it",
 	"/otp":                      "redirect",
@@ -428,6 +433,8 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(display, "/display")
 	add(display, "/display/person/"+f.ids[1])
 	add(display, "/display/person/"+f.ids[3])
+	add(display, "/display/lists/"+f.lists[0])
+	add(display, "/display/lists/"+f.lists[1])
 
 	// Signed out: the login page and the trust page.
 	f.logout()
@@ -559,15 +566,16 @@ type knownLayoutProblem struct {
 	width      int
 	mentions   []string // the finding must name one of these
 	issue      int
+	platform   bool // Chrome's hyphenation decides: it may not occur in every Chrome, so it need not occur
 }
 
 var knownLayoutProblems = []knownLayoutProblem{
-	{"/display", "name-broken-inside-the-word", 1024, []string{"Wilhelmine", "Leopoldine"}, 172},
-	{"/display", "name-broken-inside-the-word", 375, []string{"Maximilian", "Konstantin", "Wilhelmine", "Leopoldine"}, 172},
-	{"/calendar", "page-wider-than-viewport", 768, []string{"Kinderarztvorsorgeuntersuchung"}, 173},
-	{"/calendar", "text-overflows-its-box", 768, []string{"Kinderarztvorsorgeuntersuchung", "Elternabend", "Geburtstagsfeier"}, 173},
-	{"/calendar", "text-overflows-its-box", 1024, []string{"Kinderarztvorsorgeuntersuchung", "Geburtstagsfeier"}, 173},
-	{"/account/reset/{id}", "name-broken-inside-the-word", 375, []string{"Sophie-Marie"}, 175},
+	{"/display", "name-broken-inside-the-word", 1024, []string{"Wilhelmine", "Leopoldine"}, 172, false},
+	{"/display", "name-broken-inside-the-word", 375, []string{"Maximilian", "Konstantin", "Wilhelmine", "Leopoldine"}, 172, false},
+	{"/calendar", "page-wider-than-viewport", 768, []string{"Kinderarztvorsorgeuntersuchung"}, 173, false},
+	{"/calendar", "text-overflows-its-box", 768, []string{"Kinderarztvorsorgeuntersuchung", "Elternabend", "Geburtstagsfeier"}, 173, false},
+	{"/calendar", "text-overflows-its-box", 1024, []string{"Kinderarztvorsorgeuntersuchung", "Geburtstagsfeier"}, 173, false},
+	{"/account/reset/{id}", "name-broken-inside-the-word", 375, []string{"Sophie-Marie"}, 175, true}, // seen with Chrome on macOS, not with Chrome 157 on the Linux runners
 }
 
 func (k knownLayoutProblem) covers(path string, width int, p layoutProblem) bool {
@@ -682,7 +690,7 @@ func TestRenderedLayout(t *testing.T) {
 	// when a subtest was picked with -run, which sees only some of the pages.
 	if run := flag.Lookup("test.run"); run == nil || !strings.Contains(run.Value.String(), "/") {
 		for i, k := range knownLayoutProblems {
-			if !seen[i] {
+			if !seen[i] && !k.platform {
 				t.Errorf("known layout problem #%d (%s, %s, width %d) did not occur: remove it from knownLayoutProblems", k.issue, k.path, k.kind, k.width)
 			}
 		}

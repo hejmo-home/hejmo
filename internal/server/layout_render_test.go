@@ -572,9 +572,9 @@ type knownLayoutProblem struct {
 var knownLayoutProblems = []knownLayoutProblem{
 	{"/calendar", "page-wider-than-viewport", 768, []string{"Kinderarztvorsorgeuntersuchung"}, 173, false},
 	{"/calendar", "text-overflows-its-box", 768, []string{"Kinderarztvorsorgeuntersuchung", "Elternabend", "Geburtstagsfeier"}, 173, false},
+	{"/calendar", "text-overflows-its-box", 1024, []string{"Kinderarztvorsorgeuntersuchung", "Geburtstagsfeier"}, 173, false},
 	{"/calendar", "text-overflows-its-box", 1440, []string{"Kinderarztvorsorgeuntersuchung"}, 173, false},
 	{"/calendar", "text-overflows-its-box", 1900, []string{"Kinderarztvorsorgeuntersuchung"}, 173, false},
-	{"/calendar", "text-overflows-its-box", 1024, []string{"Kinderarztvorsorgeuntersuchung", "Geburtstagsfeier"}, 173, false},
 	{"/account/reset/{id}", "name-broken-inside-the-word", 375, []string{"Sophie-Marie"}, 175, true}, // seen with Chrome on macOS, not with Chrome 157 on the Linux runners
 }
 
@@ -590,9 +590,10 @@ func (k knownLayoutProblem) covers(path string, width int, p layoutProblem) bool
 	return false
 }
 
-// TestRenderedLayout renders every page at phone, tablet, display and desktop widths (the navigation stays beside the content from 1024 px up), in
-// light and black-and-white, in German and English, and fails with the page,
-// width, theme and element where text overflows or a name breaks.
+// TestRenderedLayout renders every page at phone, tablet, display and desktop
+// widths (the navigation stays beside the content from 1024 px up), in light
+// and black-and-white, in German and English, and fails with the page, width,
+// theme and element where text overflows or a name breaks.
 func TestRenderedLayout(t *testing.T) {
 	chrome := requireChrome(t)
 	f := newLayoutFixture(t)
@@ -717,6 +718,8 @@ func TestLayoutProbeFindsWhatItShould(t *testing.T) {
 		{"text in a block child, clipped", `<div ` + clip + `><p>Kinderarztvorsorgeuntersuchung</p></div>`, []string{"text-overflows-its-box"}, 0},
 		{"navigation stacked above the content at desktop width", `<div class="frame has-nav" style="display:block"><nav class="frame-nav">Menu</nav><main>Inhalt</main></div>`, []string{"navigation-not-beside-content"}, 1440},
 		{"navigation beside the content at desktop width", `<div class="frame has-nav" style="display:grid;grid-template-columns:100px 1fr"><nav class="frame-nav">Menu</nav><main>Inhalt</main></div>`, nil, 1440},
+		{"navigation stacked above the content at 1024, the threshold", `<div class="frame has-nav" style="display:block"><nav class="frame-nav">Menu</nav><main>Inhalt</main></div>`, []string{"navigation-not-beside-content"}, 1024},
+		{"navigation stacked above the content at 768, below the threshold", `<div class="frame has-nav" style="display:block"><nav class="frame-nav">Menu</nav><main>Inhalt</main></div>`, nil, 768},
 		{"text that fits", `<div ` + clip + `><a>kurz</a></div>`, nil, 0},
 		{"text that wraps", `<div ` + clip + `><a>ein Text mit vielen kurzen Wörtern</a></div>`, nil, 0},
 		{"an empty box", `<div ` + clip + `><a></a></div>`, nil, 0},

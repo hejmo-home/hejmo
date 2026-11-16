@@ -11,6 +11,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/holiday"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/wholine"
 )
@@ -44,9 +45,26 @@ type Input struct {
 	// TemperatureUnit is "c" (default) or "f".
 	Weather         *Weather
 	TemperatureUnit store.TemperatureUnit
+	// Waste holds the occurrences of the waste collection calendars (ADR 0015),
+	// kept apart from Occurrences: they feed only the tomorrow tile.
+	Waste []calendar.Occurrence
+	// DayNotes are the parents' notes by day (YYYY-MM-DD).
+	DayNotes map[string]string
+	// TomorrowLabel and TodayLabel come from the translations: the tile is
+	// labelled "Today" when it holds only today's note.
+	TomorrowLabel, TodayLabel string
 	// SyncStale: a synced calendar has gone 24 hours without a successful
 	// sync (ADR 0012). The header then shows an info symbol.
 	SyncStale bool
+	// Meals is the effective meal per mealtime today (a plain entry, and later
+	// a template's default unless overridden for the day); empty text counts
+	// as not planned. MealCutoffs are the household's cut-off times.
+	Meals       map[meal.Mealtime]string
+	MealCutoffs meal.Cutoffs
+	// TaskProgress is each person's task progress today, by person ID. A
+	// person without tasks due today has no entry (or a zero total) and
+	// shows no bar (ADR 0016).
+	TaskProgress map[string]Progress
 }
 
 // Weather is a reading for the weather chip; Icon names the symbol.
@@ -71,7 +89,7 @@ type Event struct {
 	WhoParts []wholine.Part
 }
 
-// Progress is a person's task progress today (data arrives with 6.6).
+// Progress is a person's task progress today: tasks done of tasks due (ticket 6.6, ADR 0016).
 type Progress struct{ Done, Total int }
 
 // Percent is the filled share of the bar, 0 to 100.
@@ -104,17 +122,57 @@ type StripItem struct {
 	AllDay          bool
 	Partial         bool           // partial public holiday
 	WhoParts        []wholine.Part // who it is for, in square brackets, shown after the title; empty for the whole family
+	Who             string         // WhoParts without the brackets, as plain text
 	DayIndex        int            // multi-day: this is day DayIndex of DayCount (1-based)
 	DayCount        int
 	ContinuesBefore bool
 	ContinuesAfter  bool
 }
 
-// Tile is a footer tile (content arrives with package 6).
+// Line kinds of a footer tile: a plain line (the meal tile) has no kind.
+const (
+	LineWaste = "waste"
+	LineNote  = "note"
+)
+
+// Line is one line of a footer tile. The kind lets the template draw a waste
+// collection and the parents' note differently.
+type Line struct {
+	Kind string
+	Text string
+	// NoteToday marks the note of today (before 18:00), not of tomorrow.
+	NoteToday bool
+}
+
+// Tile is a footer tile.
 type Tile struct {
 	Label string
-	Lines []string
+	Lines []Line
 	Alert bool
+}
+
+// MealEntry is one row of the meal tile.
+type MealEntry struct {
+	Mealtime meal.Mealtime
+	Dish     string
+}
+
+// MealTile is the meal tile of the footer (ADR 0016): the mealtimes of today
+// that are still to come. Label is "Meals today" for several entries, or the
+// mealtime's word for one. The tile is never highlighted.
+type MealTile struct {
+	Label   string
+	Entries []MealEntry
+}
+
+// HasWaste reports whether the tile holds a waste collection.
+func (t Tile) HasWaste() bool {
+	for _, l := range t.Lines {
+		if l.Kind == LineWaste {
+			return true
+		}
+	}
+	return false
 }
 
 // View is the data of one family view screen.
@@ -131,7 +189,7 @@ type View struct {
 	ShowTomorrow  bool
 	SyncStale     bool // header notice: calendar not up to date
 	Columns       []Column
-	Meal          *Tile
+	Meal          *MealTile // nil: nothing planned that is still to come
 	TomorrowTile  *Tile
 }
 
@@ -150,9 +208,15 @@ func Build(in Input) View {
 	v.Weather = Chip(in.Weather, in.TemperatureUnit)
 	v.ShowTomorrow = in.ShowTomorrow && now.Hour() >= tomorrowFromHour
 	v.SyncStale = in.SyncStale
+	v.TomorrowTile = tomorrowTile(in, now, d1)
 	for _, p := range in.People {
-		v.Columns = append(v.Columns, Column{Person: p})
+		col := Column{Person: p}
+		if pr, ok := in.TaskProgress[p.ID]; ok && pr.Total > 0 {
+			col.Progress = &pr
+		}
+		v.Columns = append(v.Columns, col)
 	}
+	v.Meal = mealTile(in)
 	loc := d0.Location()
 	occs := append([]calendar.Occurrence(nil), in.Occurrences...)
 	sort.SliceStable(occs, func(i, j int) bool { return occs[i].Start.Before(occs[j].Start) })
@@ -179,6 +243,7 @@ func Build(in Input) View {
 			}
 			if l := whoLine(in, o, ""); len(l.BracketParts) > 0 {
 				item.WhoParts = append(append([]wholine.Part{{Text: "["}}, l.BracketParts...), wholine.Part{Text: "]"})
+				item.Who = l.InBrackets
 			}
 		}
 		if bar {
@@ -317,4 +382,31 @@ func multiDay(o calendar.Occurrence, loc *time.Location) bool {
 func firstDay(o calendar.Occurrence, loc *time.Location) time.Time {
 	s := o.Start.In(loc)
 	return time.Date(s.Year(), s.Month(), s.Day(), 0, 0, 0, 0, loc)
+}
+
+// mealTile keeps every mealtime planned for today whose cut-off is empty or
+// later than now, in the order of the day; nil when none is left.
+func mealTile(in Input) *MealTile {
+	hhmm := in.Now.Format("15:04")
+	var t MealTile
+	for _, m := range meal.Mealtimes() {
+		dish := in.Meals[m]
+		if dish == "" {
+			continue
+		}
+		// Cut-offs are stored as zero-padded HH:MM, so the string compare is a time compare.
+		if cut := in.MealCutoffs.For(m); cut != "" && cut <= hhmm {
+			continue
+		}
+		t.Entries = append(t.Entries, MealEntry{Mealtime: m, Dish: dish})
+	}
+	switch len(t.Entries) {
+	case 0:
+		return nil
+	case 1:
+		t.Label = in.I18n.T(in.Lang, "meals.mealtime."+string(t.Entries[0].Mealtime))
+	default:
+		t.Label = in.I18n.T(in.Lang, "family.meals_today")
+	}
+	return &t
 }

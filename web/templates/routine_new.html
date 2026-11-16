@@ -1,0 +1,19 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "routine.new") "Frame" .Frame)}}
+  <h1>{{t "routine.new"}}</h1>
+  <p class="lead">{{t "routine.new.lead"}}</p>
+  {{$f := .Form}}
+  <form method="post" action="/routines" class="steps">
+    <fieldset>
+      {{template "personChips" (dict "Root" . "Name" "person" "Legend" (t "routine.field.person") "People" .People "Selected" (strs (index $f "Person")) "Single" true)}}
+      {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "routine.field.part") "Root" . "Name" "part")}}
+        {{range $p := .Parts}}{{template "option" (dict "Name" "part" "Value" $p "Label" (t (printf "routine.part.%s" $p)) "Checked" (eq $p (index $f "Part")))}}{{end}}
+      </fieldset>
+      {{if and (eq .ErrorField "part") .ErrorHTML}}{{template "fieldErrorHTML" (dict "Name" "part" "HTML" .ErrorHTML)}}{{else}}{{template "fieldError" (dict "Root" . "Name" "part")}}{{end}}
+      <p class="hint">{{t "routine.part.hint"}}</p>
+      {{template "moreOpen" (dict "Label" (t "tasks.more") "Summary" (tf "routine.more.summary" "name" (index $f "Name")) "Open" (eq .ErrorField "name"))}}
+        {{template "field" (dict "Root" . "Name" "name" "Label" (t "routine.field.name") "Value" (index $f "Name") "Max" 60 "Hint" (t "routine.field.name.hint"))}}
+      {{template "moreClose"}}
+    </fieldset>
+    <button class="button" type="submit">{{t "routine.create"}}</button>
+  </form>
+{{template "foot"}}

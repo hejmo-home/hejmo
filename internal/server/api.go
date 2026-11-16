@@ -42,11 +42,15 @@ var apiRoutes = []APIRoute{
 	{"GET", "/calendars", auth.Perm("events", auth.Read), (*server).apiListCalendars},
 	{"POST", "/calendars", auth.Perm("events", auth.Write), (*server).apiAddCalendar},
 	{"PATCH", "/calendars/{id}", auth.Perm("events", auth.Write), (*server).apiUpdateCalendar},
+	{"GET", "/day-notes", auth.Perm("displays", auth.Read), (*server).apiListDayNotes},
+	{"PUT", "/day-notes/{day}", auth.Perm("displays", auth.Write), (*server).apiSetDayNote},
+	{"DELETE", "/day-notes/{day}", auth.Perm("displays", auth.Delete), (*server).apiDeleteDayNote},
 	{"DELETE", "/calendars/{id}", auth.Perm("events", auth.Delete), (*server).apiDeleteCalendar},
 	{"POST", "/calendars/{id}/sync", auth.Perm("events", auth.Write), (*server).apiSyncCalendar},
 	{"GET", "/calendar-connections", auth.Perm("settings", auth.Read), (*server).apiListConnections},
 	{"POST", "/calendar-connections", auth.Perm("settings", auth.Write), (*server).apiConnect},
 	{"DELETE", "/calendar-connections/{id}", auth.Perm("settings", auth.Delete), (*server).apiDeleteConnection},
+	{"PUT", "/calendar-connections/{id}/credentials", auth.Perm("settings", auth.Write), (*server).apiChangeConnectionPassword},
 	{"GET", "/calendar-connections/{id}/calendars", auth.Perm("settings", auth.Write), (*server).apiDiscover},
 	{"GET", "/calendar-connections/{id}/event-counts", auth.Perm("settings", auth.Write), (*server).apiEventCounts},
 	{"POST", "/calendar-connections/{id}/calendars", auth.Perm("settings", auth.Write), (*server).apiAddConnectionCalendar},
@@ -65,11 +69,36 @@ var apiRoutes = []APIRoute{
 	{"GET", "/search", auth.Perm("events", auth.Read), (*server).apiSearch},
 	{"GET", "/tasks", auth.Perm("tasks", auth.Read), (*server).apiListTasks},
 	{"POST", "/tasks", auth.Perm("tasks", auth.Write), (*server).apiCreateTask},
+	{"PATCH", "/tasks/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchTask},
 	{"DELETE", "/tasks/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeleteTask},
 	{"PUT", "/tasks/{id}/done", auth.Perm("tasks", auth.Complete), (*server).apiSetTaskDone},
+	{"GET", "/routines", auth.Perm("tasks", auth.Read), (*server).apiListRoutines},
+	{"POST", "/routines", auth.Perm("tasks", auth.Write), (*server).apiCreateRoutine},
+	{"GET", "/routines/{id}", auth.Perm("tasks", auth.Read), (*server).apiGetRoutine},
+	{"PATCH", "/routines/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchRoutine},
+	{"DELETE", "/routines/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDissolveRoutine},
+	{"POST", "/routines/{id}/tasks", auth.Perm("tasks", auth.Write), (*server).apiRoutineAddTask},
+	{"DELETE", "/routines/{id}/tasks/{task_id}", auth.Perm("tasks", auth.Write), (*server).apiRoutineRemoveTask},
+	{"PUT", "/routines/{id}/order", auth.Perm("tasks", auth.Write), (*server).apiRoutineOrder},
+	{"GET", "/lists", auth.Perm("lists", auth.Read), (*server).apiListLists},
+	{"POST", "/lists", auth.Perm("lists", auth.Write), (*server).apiCreateList},
+	{"GET", "/lists/{id}", auth.Perm("lists", auth.Read), (*server).apiGetList},
+	{"PATCH", "/lists/{id}", auth.Perm("lists", auth.Write), (*server).apiUpdateList},
+	{"DELETE", "/lists/{id}", auth.Perm("lists", auth.Delete), (*server).apiDeleteList},
+	{"POST", "/lists/{id}/entries", auth.Perm("lists", auth.Write), (*server).apiAddEntry},
+	{"DELETE", "/lists/{id}/entries/{entry}", auth.Perm("lists", auth.Delete), (*server).apiDeleteEntry},
+	{"PUT", "/lists/{id}/entries/{entry}/done", auth.Perm("lists", auth.Complete), (*server).apiSetEntryDone},
+	{"PUT", "/lists/{id}/entries/{entry}/position", auth.Perm("lists", auth.Write), (*server).apiMoveEntry},
+	{"DELETE", "/lists/{id}/completed-entries", auth.Perm("lists", auth.Delete), (*server).apiDeleteCompleted},
 	{"GET", "/meals", auth.Perm("meals", auth.Read), (*server).apiListMeals},
 	{"PUT", "/meals/{date}/{mealtime}", auth.Perm("meals", auth.Write), (*server).apiSetMeal},
 	{"DELETE", "/meals/{date}/{mealtime}", auth.Perm("meals", auth.Delete), (*server).apiDeleteMeal},
+	{"POST", "/meals/{date}/{mealtime}/restore", auth.Perm("meals", auth.Write), (*server).apiRestoreMeal},
+	{"GET", "/meal-templates", auth.Perm("meals", auth.Read), (*server).apiListMealTemplates},
+	{"POST", "/meal-templates", auth.Perm("meals", auth.Write), (*server).apiCreateMealTemplate},
+	{"GET", "/meal-templates/{id}", auth.Perm("meals", auth.Read), (*server).apiGetMealTemplate},
+	{"PUT", "/meal-templates/{id}", auth.Perm("meals", auth.Write), (*server).apiUpdateMealTemplate},
+	{"DELETE", "/meal-templates/{id}", auth.Perm("meals", auth.Delete), (*server).apiDeleteMealTemplate},
 	{"GET", "/displays", auth.Perm("displays", auth.Read), (*server).apiListDisplays},
 	{"POST", "/displays", auth.Perm("displays", auth.Write), (*server).apiPairDisplay},
 	{"PATCH", "/displays/{id}", auth.Perm("displays", auth.Write), (*server).apiUpdateDisplay},
@@ -304,6 +333,11 @@ func writeJSON(w http.ResponseWriter, status int, v any) {
 	w.Header().Set("Content-Type", "application/json")
 	w.WriteHeader(status)
 	_ = json.NewEncoder(w).Encode(v)
+}
+
+// writeFieldError is writeError for a refused field: the body names it.
+func writeFieldError(w http.ResponseWriter, status int, field, msg string) {
+	writeJSON(w, status, map[string]string{"error": msg, "field": field})
 }
 
 func writeError(w http.ResponseWriter, status int, msg string) {

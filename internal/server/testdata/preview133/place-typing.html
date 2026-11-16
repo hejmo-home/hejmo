@@ -1,0 +1,131 @@
+
+
+<div class="wizard">
+<header class="frame-bar"><span class="brand">Hejmo</span><div class="frame-tools"><details class="lang"><summary><img class="flag" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%205%203%22%3E%3Crect%20width%3D%225%22%20height%3D%221%22%20y%3D%220%22%20fill%3D%22%23000000%22%2F%3E%3Crect%20width%3D%225%22%20height%3D%221%22%20y%3D%221%22%20fill%3D%22%23DD0000%22%2F%3E%3Crect%20width%3D%225%22%20height%3D%221%22%20y%3D%222%22%20fill%3D%22%23FFCE00%22%2F%3E%3C%2Fsvg%3E" alt="" width="24" height="16"><span class="lang-name"><span class="vh">Sprache: </span>Deutsch</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary><form class="lang-menu" method="post" action="/language"><button type="submit" name="lang" value="en" lang="en"><img class="flag" src="data:image/svg+xml,%3Csvg%20xmlns%3D%22http%3A%2F%2Fwww.w3.org%2F2000%2Fsvg%22%20viewBox%3D%220%200%2060%2030%22%3E%3CclipPath%20id%3D%22s%22%3E%3Cpath%20d%3D%22M0%2C0%20v30%20h60%20v-30%20z%22%2F%3E%3C%2FclipPath%3E%3CclipPath%20id%3D%22t%22%3E%3Cpath%20d%3D%22M30%2C15%20h30%20v15%20z%20v15%20h-30%20z%20h-30%20v-15%20z%20v-15%20h30%20z%22%2F%3E%3C%2FclipPath%3E%3Cg%20clip-path%3D%22url%28%23s%29%22%3E%3Cpath%20d%3D%22M0%2C0%20v30%20h60%20v-30%20z%22%20fill%3D%22%23012169%22%2F%3E%3Cpath%20d%3D%22M0%2C0%20L60%2C30%20M60%2C0%20L0%2C30%22%20stroke%3D%22%23fff%22%20stroke-width%3D%226%22%2F%3E%3Cpath%20d%3D%22M0%2C0%20L60%2C30%20M60%2C0%20L0%2C30%22%20clip-path%3D%22url%28%23t%29%22%20stroke%3D%22%23C8102E%22%20stroke-width%3D%224%22%2F%3E%3Cpath%20d%3D%22M30%2C0%20v30%20M0%2C15%20h60%22%20stroke%3D%22%23fff%22%20stroke-width%3D%2210%22%2F%3E%3Cpath%20d%3D%22M30%2C0%20v30%20M0%2C15%20h60%22%20stroke%3D%22%23C8102E%22%20stroke-width%3D%226%22%2F%3E%3C%2Fg%3E%3C%2Fsvg%3E" alt="">English</button></form></details></div></header>
+<nav class="wsteps" aria-label="Fortschritt der Einrichtung"><p class="wiz-count">Einrichtung: Schritt 2 von 4</p><ol>
+<li data-state="done"><span class="lab"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>Sichere Verbin­dung<span class="sr"> (erledigt)</span></span></li>
+<li aria-current="step"><span class="lab"><span class="n">2</span>Dein Konto</span></li>
+<li><span class="lab"><span class="n">3</span>Einmal­code</span></li>
+<li><span class="lab"><span class="n">4</span>Erste Schritte</span></li>
+</ol></nav>
+
+<main id="content">
+
+
+  <h1>Dein Konto</h1>
+  <p class="lead">Damit meldest du dich bei Hejmo an. Weitere Eltern und die Kinder trägst du danach ein.</p>
+  
+  <form method="post" action="/setup" class="steps">
+    <fieldset>
+      <legend>Heimatort</legend>
+      <p class="hint">Der Ort gibt Wetter, Sonnenauf- und -untergang, das Bundesland die Feiertage.</p>
+      <div class="f place-pick">
+  <label>Ort oder Stadtteil
+    <input name="home_name" type="text" value="Pas" role="combobox" aria-expanded="true" aria-controls="pl" aria-autocomplete="list" aria-activedescendant="pl-0" autocomplete="off" required></label>
+  <p class="place-q" id="pl-q">5 Orte passen. Welchen meinst du?</p>
+  <ul class="place-list" id="pl" role="listbox" aria-labelledby="pl-q"><li role="option" id="pl-0" aria-selected="true"><b>Pasing</b><small>Stadtteil von München, Bayern, Deutschland</small></li><li role="option" id="pl-1"><b>Passau</b><small>Bayern, Deutschland</small></li><li role="option" id="pl-2"><b>Pasewalk</b><small>Mecklenburg-Vorpommern, Deutschland</small></li><li role="option" id="pl-3"><b>Pasching</b><small>Oberösterreich, Österreich</small></li><li role="option" id="pl-4"><b>Pasing-Obermenzing</b><small>Stadtbezirk von München, Bayern, Deutschland</small></li></ul>
+  <p class="hint">Nicht dabei? Tippe weiter oder nimm einen größeren Ort in der Nähe.</p>
+</div>
+      <div class="f">
+        <label>Bundesland oder Kanton
+          <select name="region">
+            
+            <optgroup label="Deutschland">
+              <option value="DE-BW">Baden-Württemberg</option>
+              <option value="DE-BY" selected>Bayern</option>
+              <option value="DE-BE">Berlin</option>
+              <option value="DE-BB">Brandenburg</option>
+              <option value="DE-HB">Bremen</option>
+              <option value="DE-HH">Hamburg</option>
+              <option value="DE-HE">Hessen</option>
+              <option value="DE-MV">Mecklenburg-Vorpommern</option>
+              <option value="DE-NI">Niedersachsen</option>
+              <option value="DE-NW">Nordrhein-Westfalen</option>
+              <option value="DE-RP">Rheinland-Pfalz</option>
+              <option value="DE-SL">Saarland</option>
+              <option value="DE-SN">Sachsen</option>
+              <option value="DE-ST">Sachsen-Anhalt</option>
+              <option value="DE-SH">Schleswig-Holstein</option>
+              <option value="DE-TH">Thüringen</option>
+              </optgroup>
+            <optgroup label="Österreich">
+              <option value="AT-1">Burgenland</option>
+              <option value="AT-2">Kärnten</option>
+              <option value="AT-3">Niederösterreich</option>
+              <option value="AT-4">Oberösterreich</option>
+              <option value="AT-5">Salzburg</option>
+              <option value="AT-6">Steiermark</option>
+              <option value="AT-7">Tirol</option>
+              <option value="AT-8">Vorarlberg</option>
+              <option value="AT-9">Wien</option>
+              </optgroup>
+            <optgroup label="Schweiz">
+              <option value="CH-AG">Aargau</option>
+              <option value="CH-AI">Appenzell Innerrhoden</option>
+              <option value="CH-AR">Appenzell Ausserrhoden</option>
+              <option value="CH-BE">Bern</option>
+              <option value="CH-BL">Basel-Landschaft</option>
+              <option value="CH-BS">Basel-Stadt</option>
+              <option value="CH-FR">Freiburg</option>
+              <option value="CH-GE">Genf</option>
+              <option value="CH-GL">Glarus</option>
+              <option value="CH-GR">Graubünden</option>
+              <option value="CH-JU">Jura</option>
+              <option value="CH-LU">Luzern</option>
+              <option value="CH-NE">Neuenburg</option>
+              <option value="CH-NW">Nidwalden</option>
+              <option value="CH-OW">Obwalden</option>
+              <option value="CH-SG">St. Gallen</option>
+              <option value="CH-SH">Schaffhausen</option>
+              <option value="CH-SO">Solothurn</option>
+              <option value="CH-SZ">Schwyz</option>
+              <option value="CH-TG">Thurgau</option>
+              <option value="CH-TI">Tessin</option>
+              <option value="CH-UR">Uri</option>
+              <option value="CH-VD">Waadt</option>
+              <option value="CH-VS">Wallis</option>
+              <option value="CH-ZG">Zug</option>
+              <option value="CH-ZH">Zürich</option>
+              </optgroup>
+            
+          </select></label>
+        <p class="hint">Für die Feiertage.</p>
+        
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend>Du</legend>
+      <div class="f">
+  <label>Dein Name
+    <input name="name" type="text" value="" required autocomplete="given-name"></label>
+  <p class="hint">So erscheinst du auf dem Display.</p>
+  
+</div>
+      <div class="f">
+  <label>Benutzername
+    <input name="username" type="text" value="" required autocomplete="username" autocapitalize="none"></label>
+  <p class="hint">Damit meldest du dich an. Kleinbuchstaben sind am einfachsten.</p>
+  
+</div>
+      <div class="f">
+  <label>Passwort
+    <span class="pw"><input name="password" type="password" required minlength="10" autocomplete="new-password"><button class="button secondary" type="button" data-pw-toggle data-show-text="Anzeigen" data-hide-text="Verbergen" aria-pressed="false">Anzeigen</button></span></label>
+  <p class="hint">Mindestens 10 Zeichen.</p>
+  
+</div>
+    </fieldset>
+    <fieldset>
+      <legend>Eltern-PIN</legend>
+      <p class="hint">Die PIN brauchen Eltern am Display, zum Beispiel um eine ganze Liste zu löschen. Kinder sollten sie nicht kennen.</p>
+      <div class="f">
+  <label>PIN (4 bis 8 Ziffern)
+    <input name="pin" type="password" required pattern="[0-9]{4,8}" inputmode="numeric" autocomplete="off"></label>
+  
+  
+</div>
+    </fieldset>
+    <div class="actions"><button class="button" type="submit">Konto anlegen</button></div>
+  </form>
+
+</main>
+</div>

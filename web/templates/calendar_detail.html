@@ -1,0 +1,15 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/calendars" "Text" (t "calendars.back"))}}
+  <h1>{{.Calendar.Name}}</h1>
+  {{template "facts" .Facts}}
+  <form method="post" action="/calendars/{{.Calendar.ID}}/waste" class="waste-form" data-autosubmit>
+    {{template "switch" (dict "Name" "waste" "Label" (t "calendars.waste.label") "OnText" (t "calendars.waste.on") "OffText" (t "calendars.waste.off") "Checked" .Calendar.Waste)}}
+    <noscript><button class="button secondary" type="submit">{{t "calendars.waste.save"}}</button></noscript>
+  </form>
+  {{if .Calendar.Waste}}<p class="waste-next">{{if .NextLabel}}<b>{{.NextLabel}}</b>{{.NextTitles}}{{else}}<b>{{t "calendars.waste.none"}}</b> {{t "calendars.waste.none_hint"}}{{end}}</p>{{end}}
+  <form method="post" action="/calendars/{{.Calendar.ID}}/sync" class="steps">
+    <button class="button" type="submit">{{t "calendars.sync_now"}}</button>
+  </form>
+  {{template "danger" (dict "Label" (t "calendars.remove") "Explain" (tf "calendars.remove.explain" "name" .Calendar.Name) "Confirm" (t "calendars.remove.confirm") "Action" (printf "/calendars/%s/delete" .Calendar.ID) "CancelHref" (printf "/calendars/%s" .Calendar.ID))}}
+  <script src="/static/switch-submit.js" defer></script>
+{{template "foot"}}

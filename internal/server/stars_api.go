@@ -11,15 +11,16 @@ import (
 )
 
 type starEntryJSON struct {
-	ID        string `json:"id"`
-	PersonID  string `json:"person_id"`
-	Delta     int    `json:"delta"`
-	Note      string `json:"note"`
-	TaskID    string `json:"task_id"`
-	TaskTitle string `json:"task_title"`
-	Day       string `json:"day"`
-	BookedBy  string `json:"booked_by"`
-	CreatedAt string `json:"created_at"`
+	ID              string `json:"id"`
+	PersonID        string `json:"person_id"`
+	Delta           int    `json:"delta"`
+	Note            string `json:"note"`
+	TaskID          string `json:"task_id"`
+	TaskTitle       string `json:"task_title"`
+	Day             string `json:"day"`
+	BookedBy        string `json:"booked_by"`
+	BookedByRemoved bool   `json:"booked_by_removed"`
+	CreatedAt       string `json:"created_at"`
 }
 
 type starAccountJSON struct {
@@ -31,7 +32,7 @@ type starAccountJSON struct {
 
 func starEntryToJSON(e store.StarEntry, loc *time.Location) starEntryJSON {
 	return starEntryJSON{ID: e.ID, PersonID: e.PersonID, Delta: e.Delta, Note: e.Note, TaskID: e.TaskID, TaskTitle: e.TaskTitle,
-		Day: e.Day, BookedBy: e.BookedByName, CreatedAt: e.At.In(loc).Format(time.RFC3339)}
+		Day: e.Day, BookedBy: e.BookedByName, BookedByRemoved: e.BookedByRemoved, CreatedAt: e.At.In(loc).Format(time.RFC3339)}
 }
 
 func (s *server) apiGetStars(w http.ResponseWriter, r *http.Request, p principal) {

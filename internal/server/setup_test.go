@@ -22,7 +22,7 @@ func TestUnconfiguredBoxStartsSetupWizard(t *testing.T) {
 		t.Fatalf("GET / = %d %q, want 303 to /setup", r.status, r.location)
 	}
 	r := b.do(http.MethodGet, "/setup", nil, map[string]string{"Accept-Language": "de-DE"})
-	for _, want := range []string{"Hejmo einrichten", "Heimatort", "Erstes Elternkonto", "Eltern-PIN", `lang="de"`, `name="password"`, `value="DE-BY"`} {
+	for _, want := range []string{"Dein Konto", "Heimatort", "Eltern-PIN", `lang="de"`, `name="password"`, `value="DE-BY"`, "Konto anlegen"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("setup page misses %q", want)
 		}
@@ -32,7 +32,7 @@ func TestUnconfiguredBoxStartsSetupWizard(t *testing.T) {
 func TestSetupWizardSpeaksEnglish(t *testing.T) {
 	b := newBox(t)
 	r := b.do(http.MethodGet, "/setup", nil, map[string]string{"Accept-Language": "en-GB,en;q=0.9"})
-	for _, want := range []string{"Set up Hejmo", "Home location", "First parent account", "Parent PIN", `lang="en"`} {
+	for _, want := range []string{"Your account", "Home location", "The town gives the weather and the sunrise and sunset, the state the public holidays.", "Parent PIN", `lang="en"`, "Create account"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("setup page misses %q", want)
 		}
@@ -63,10 +63,15 @@ func TestSetupSavesAndConfirmsTOTP(t *testing.T) {
 	}
 
 	page := b.get("/setup/totp")
-	if page.status != http.StatusOK || !strings.Contains(page.body, "otpauth://totp/Hejmo:mama") {
+	if page.status != http.StatusOK {
 		t.Fatalf("GET /setup/totp = %d\n%s", page.status, page.body)
 	}
 	secret := secretOn(t, page.body)
+	// On a phone the page opens the authenticator app instead; the QR code is for another phone.
+	phone := b.do(http.MethodGet, "/setup/totp", nil, map[string]string{"User-Agent": iPhone})
+	if !strings.Contains(phone.body, `href="otpauth://totp/Hejmo:mama`) || strings.Contains(phone.body, "data-totp-secret") {
+		t.Errorf("phone page lacks the app link or shows the key:\n%s", phone.body)
+	}
 
 	r = b.do(http.MethodPost, "/setup/totp", url.Values{"code": {"000000"}}, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusUnprocessableEntity {
@@ -76,7 +81,7 @@ func TestSetupSavesAndConfirmsTOTP(t *testing.T) {
 		t.Error("wrong code shows no error message")
 	}
 	code, _ := auth.TOTPCode(secret, b.now)
-	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusOK || !strings.Contains(r.body, `href="/"`) {
+	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusOK || !strings.Contains(r.body, `action="/"`) {
 		t.Fatalf("right code = %d, want 200 with the recovery codes and a way on\n%s", r.status, r.body)
 	}
 	if !b.db.Configured() {
@@ -177,7 +182,7 @@ func TestSetupTOTPPageShowsQRCodeOfTheOtpauthURI(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	_, svg, ok := strings.Cut(page.body, "<svg")
+	_, svg, ok := strings.Cut(page.body, `<div class="qr"><svg`) // not the chevron of the language switcher
 	if !ok {
 		t.Fatalf("no QR code on the page\n%s", page.body)
 	}
@@ -213,7 +218,7 @@ func TestSetupTOTPPageShowsQRCodeOfTheOtpauthURI(t *testing.T) {
 	}
 
 	en := b.do(http.MethodGet, "/setup/totp", nil, map[string]string{"Accept-Language": "en"})
-	for _, want := range []string{secret, `class="hint" href="otpauth://totp/Hejmo:mama`, "Open in authenticator app", `aria-label="QR code of the one-time code key`} {
+	for _, want := range []string{secret, "Type the key", `aria-label="QR code of the one-time code key`} {
 		if !strings.Contains(en.body, want) {
 			t.Errorf("page misses %q", want)
 		}

@@ -160,6 +160,9 @@ func TestWholeHouseholdAndAllDayEventsGoToTheStripOnly(t *testing.T) {
 	if w := wholine.Plain(v.Strip[0].WhoParts); w != "[Sebastian]" {
 		t.Errorf("who-line = %q", w)
 	}
+	if v.Strip[0].Who != "Sebastian" {
+		t.Errorf("plain who-line = %q", v.Strip[0].Who)
+	}
 	if v.Strip[2].Time != "12:00–13:00" || !v.Strip[1].AllDay || len(v.Strip[1].WhoParts) != 0 {
 		t.Errorf("strip = %+v", v.Strip)
 	}
@@ -416,6 +419,29 @@ func TestWhoLineNamesTheSubgroupAndListsEveryoneElseInFull(t *testing.T) {
 		if got[title] != w {
 			t.Errorf("family strip, %s: %q, want %q", title, got[title], w)
 		}
+	}
+}
+
+// 6.6 (ADR 0016): a column shows today's task progress, done/total; a person
+// without tasks today shows no bar.
+func TestColumnShowsTodaysTaskProgressOfItsPerson(t *testing.T) {
+	v := familyview.Build(familyview.Input{Now: at(14, 9, 0), Lang: "en", Region: "DE-BY", People: family(),
+		TaskProgress: map[string]familyview.Progress{"mia": {Done: 1, Total: 3}, "seb": {Done: 2, Total: 2}}})
+	if p := column(t, v, "Mia").Progress; p == nil || *p != (familyview.Progress{Done: 1, Total: 3}) {
+		t.Errorf("Mia's progress = %v, want 1/3", p)
+	}
+	if p := column(t, v, "Sebastian").Progress; p == nil || p.Percent() != 100 {
+		t.Errorf("Sebastian's progress = %v, want complete", p)
+	}
+	for _, n := range []string{"Mama", "Papa"} {
+		if p := column(t, v, n).Progress; p != nil {
+			t.Errorf("%s has no tasks but shows %v", n, p)
+		}
+	}
+	zero := familyview.Build(familyview.Input{Now: at(14, 9, 0), Lang: "en", Region: "DE-BY", People: family(),
+		TaskProgress: map[string]familyview.Progress{"mia": {}}})
+	if p := column(t, zero, "Mia").Progress; p != nil {
+		t.Errorf("0/0 shows a bar: %v", p)
 	}
 }
 

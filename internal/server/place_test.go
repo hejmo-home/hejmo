@@ -12,8 +12,6 @@ import (
 // geocodes it once, shows the resolved place for confirmation and stores
 // latitude and longitude. Tests use a fake geocoding server, never the real one.
 
-var en = map[string]string{"Accept-Language": "en"}
-
 // unconfirmedSetup is the setup form as sent first: a place name, no confirmed place yet.
 func unconfirmedSetup(name string) url.Values {
 	f := validSetupForm()
@@ -210,13 +208,13 @@ func TestHouseholdSettingsShowTheHomeAndItsLocation(t *testing.T) {
 	if !regexp.MustCompile(`today sunrise \d\d:\d\d, sunset \d\d:\d\d</small>`).MatchString(r.body) {
 		t.Errorf("sun times of today missing:\n%s", r.body)
 	}
-	for _, want := range []string{"<legend>Home location</legend>", `<span class="hint">Sunrise and sunset (front light, themes) and the weather are taken for this place.</span>`, "Town or district"} {
+	for _, want := range []string{"<legend>Home location</legend>", `<span class="hint">Sunrise and sunset (front light, themes) and the weather are taken for this place.</span>`, "Town"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("page misses %q", want)
 		}
 	}
 	de := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body
-	for _, want := range []string{"<legend>Heimatort</legend>", "Ort oder Stadtteil", "<b>Verwendet: Pasing</b>", "heute Sonnenaufgang ", ", Sonnenuntergang ", "Sonnenaufgang und Sonnenuntergang (Vorderlicht, Themes) und das Wetter gelten für diesen Ort.", "Hejmo sucht den Ort einmal bei Open-Meteo und sendet nur den Namen, das Land und die Sprache der Seite."} {
+	for _, want := range []string{"<legend>Heimatort</legend>", "Ort", "<b>Verwendet: Pasing</b>", "heute Sonnenaufgang ", ", Sonnenuntergang ", "Sonnenaufgang und Sonnenuntergang (Vorderlicht, Themes) und das Wetter gelten für diesen Ort.", "Hejmo sucht den Ort einmal bei Open-Meteo und sendet nur den Namen, das Land und die Sprache der Seite."} {
 		if !strings.Contains(de, want) {
 			t.Errorf("German page misses %q", want)
 		}

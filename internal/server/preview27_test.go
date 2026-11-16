@@ -84,7 +84,7 @@ func TestWriteDesignPreview27(t *testing.T) {
 	frame("iPhone portrait", "light", 375, 812, build(four))
 	body.WriteString("</div><h2>Phone landscape 812x375, four people with a footer tile: the columns are short, the footer takes its share of the height</h2><div class=\"row\">\n")
 	phoneLandscape := build(four)
-	phoneLandscape.Meal = &familyview.Tile{Label: "Dinner", Lines: []string{"Pasta bake"}}
+	phoneLandscape.Meal = &familyview.MealTile{Label: "Dinner", Entries: []familyview.MealEntry{{Mealtime: "dinner", Dish: "Pasta bake"}}}
 	frame("iPhone landscape", "light", 812, 375, phoneLandscape)
 	body.WriteString("</div><h2>Long single-word name (\"Konstantinos\", 12 characters) in the narrowest column (144 px): the name wraps at the column edge instead of being clipped</h2><div class=\"row\">\n")
 	longName := append([]familyview.Person(nil), four...)

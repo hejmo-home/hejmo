@@ -14,6 +14,11 @@
       {{else}}{{with .Location}}<div class="place-status" data-location><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><div><b>{{printf (t .Label) .Name}}</b><small>{{.Detail}}</small></div></div>
       {{else}}<div class="place-status missing" data-location><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><div><b>{{t "place.missing"}}</b><small>{{printf (t "place.missing.hint") $.HomeName}}</small></div></div>{{end}}{{end}}
     </fieldset>
+    {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.date_format") "Root" . "Name" "date_format")}}
+      <p class="hint">{{t "settings.date_format.hint"}}</p>
+      {{template "option" (dict "Name" "date_format" "Value" "dmy" "Label" .DateDMY "Hint" (printf (t "settings.date_format.dmy.hint") .SampleYear) "Checked" (eq .DateFormat "dmy"))}}
+      {{template "option" (dict "Name" "date_format" "Value" "mdy" "Label" .DateMDY "Hint" (printf (t "settings.date_format.mdy.hint") .SampleYear) "Checked" (eq .DateFormat "mdy"))}}
+    {{template "optionsClose" (dict "Root" . "Name" "date_format")}}
     {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.time_format"))}}
       {{template "option" (dict "Name" "time_format" "Value" "24h" "Label" (t "settings.time_format.24h") "Checked" (eq .TimeFormat "24h"))}}
       {{template "option" (dict "Name" "time_format" "Value" "12h" "Label" (t "settings.time_format.12h") "Checked" (eq .TimeFormat "12h"))}}

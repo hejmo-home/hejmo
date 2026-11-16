@@ -14,13 +14,13 @@
   {{if not .Planned}}<p class="hint" data-empty>{{printf (t "meals.none") .WeekNo}}</p>{{end}}
   {{template "error" .}}
 
-  {{if .Editable}}<form method="post" action="/meals" class="steps wide">
+  {{if .Editable}}{{template "tplSummary" .}}<form method="post" action="/meals" class="steps wide">
     <input type="hidden" name="week" value="{{.Week}}">
     <div class="meal-week">
       {{range .Days}}
       <fieldset class="meal-day" data-day="{{.Date}}"{{if .Today}} data-today{{end}}>
         <legend>{{t (printf "meals.weekday.%d" .Weekday)}} <span class="date">{{.Short}}</span>{{if .Today}} <span class="today">{{t "meals.today"}}</span>{{end}}</legend>
-        {{range .Cells}}{{$bad := and $.ErrorField (eq $.ErrorField .Name)}}<div class="mrow{{if $bad}} invalid{{end}}"><label class="mt" for="{{.Name}}">{{template "mealIcon" .Mealtime}}{{t (printf "meals.mealtime.%s" .Mealtime)}}</label><textarea id="{{.Name}}" name="{{.Name}}" rows="1"{{if not $bad}} maxlength="200"{{end}}{{if $bad}} autofocus aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}>{{.Value}}</textarea>{{template "fieldError" (dict "Root" $ "Name" .Name)}}</div>
+        {{range .Cells}}{{$bad := and $.ErrorField (eq $.ErrorField .Name)}}<div class="mrow{{if eq .Kind "adjusted"}} adjusted{{end}}{{if $bad}} invalid{{end}}" data-mt="{{.Mealtime}}"><label class="mt" for="{{.Name}}">{{template "mealIcon" .Mealtime}}{{t (printf "meals.mealtime.%s" .Mealtime)}}</label><textarea id="{{.Name}}" name="{{.Name}}" rows="1"{{if not $bad}} maxlength="200"{{end}}{{if and (eq .Kind "adjusted") (not .Value)}} placeholder="{{t "meals.tpl.nothing"}}"{{end}}{{if $bad}} autofocus aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}>{{.Value}}</textarea>{{template "fieldError" (dict "Root" $ "Name" .Name)}}{{if eq .Kind "template"}}<p class="src">{{template "tplIcon"}}<span>{{t "meals.tpl.src"}} <a href="/meals/templates/{{.TemplateID}}">{{.TemplateName}}</a></span></p>{{else if eq .Kind "adjusted"}}<p class="src"><span class="adj">{{t "meals.tpl.adjusted"}}</span><span class="was">{{t "meals.tpl.was"}} <b>{{.TemplateDish}}</b></span>{{if .CanRestore}}<button class="button secondary" type="submit" name="restore" value="{{.Name}}" formnovalidate><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4v6h6"/><path d="M4.5 10A8 8 0 1 1 6 16.5"/></svg>{{t "meals.tpl.restore"}}</button>{{end}}</p>{{end}}</div>
         {{end}}
       </fieldset>
       {{end}}
@@ -38,3 +38,7 @@
   </div>
   {{end}}
 {{template "foot"}}
+
+{{define "tplIcon"}}<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="7" width="12" height="13" rx="2"/><path d="M8 4h10a2 2 0 0 1 2 2v11"/></svg>{{end}}
+
+{{define "tplSummary"}}<div class="tpl-sum">{{if .HasTemplates}}<p>{{.TemplateSummary}}</p><a class="button secondary" href="/meals/templates">{{template "tplIcon"}}{{t "meals.tpl.button"}}</a>{{else}}<p>{{t "meals.tpl.sum.invite"}}</p><a class="button secondary" href="/meals/templates/new">{{template "tplIcon"}}{{t "meals.tpl.create"}}</a>{{end}}</div>{{end}}

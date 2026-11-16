@@ -166,9 +166,21 @@ _Avoid_: sleep screen, standby page
 A smartphone paired with the box through a QR code that runs the web interface as an app for one person, adult or child. A phone's calendar app syncing over CalDAV is a CalDAV client, not a phone.
 _Avoid_: mobile, client (alone), handset
 
+**Browser session**:
+The sign-in of one person in one browser with username, password and one-time code; lasts 30 days. Ended by signing out in that browser or by a parent under "Signed-in devices"; a paired phone's access is a device session, not a browser session.
+_Avoid_: login (as a noun), cookie, session (alone)
+
 **Device session**:
 The long-lived, revocable access of a paired phone, which acts for one person.
 _Avoid_: remember-me, phone token
+
+**Overview and detail page**:
+An overview lists the things of one kind (displays, device tokens, connections, subscribed calendars, phones) as calm rows; each row opens the thing's detail page. Changing a thing and removing it, revoking it or disconnecting it happen only on its detail page, after a confirmation that names it.
+_Avoid_: list page (for the overview), settings page (for the detail page)
+
+**Device token**:
+The password a calendar app or CalDAV client on a phone uses, one per device and revocable on its own; shown once when created. It is a token of scope `calendars`, unlike an API token for other software.
+_Avoid_: app password, phone token (a phone has a device session)
 
 ## Everyday
 
@@ -188,6 +200,14 @@ _Avoid_: menu, food plan
 One of breakfast, lunch, snack or dinner, in the order of the day.
 _Avoid_: meal type, course
 
+**Meal plan template**:
+A week pattern from Monday to Sunday that fills one mealtime or all mealtimes of the meal plan by itself, every X weeks (1 to 52) from a start week. Two templates may never fill the same mealtime on the same day of the same week. Edited only in the Templates menu; its changes reach today and later, never days before today.
+_Avoid_: template (alone; clashes with routine template), preset, default plan
+
+**Adjusted meal**:
+A meal plan entry changed for one week where a meal plan template would fill it (also emptied). It keeps its change when the template changes, until "Back to template".
+_Avoid_: override (in prose), exception
+
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.
 _Avoid_: deadline, expiry
@@ -197,8 +217,12 @@ Something to be done once or repeatedly, ticked off when done; may belong to a r
 _Avoid_: chore, todo, job
 
 **Routine**:
-The ordered sequence of one person's tasks for a part of the day, such as Mia's morning.
+The ordered sequence of one person's tasks for a part of the day, such as Mia's morning. A person has at most one routine per part of the day, and a task is in at most one routine.
 _Avoid_: checklist, schedule, habit
+
+**Part of the day**:
+When in the day a task or routine belongs: morning, after school, any time or evening. A task in a routine takes it from the routine; "after school" exists only in routines.
+_Avoid_: time slot, daypart
 
 **Routine template**:
 A reusable routine without a person that a parent copies into a routine for someone.
@@ -219,6 +243,10 @@ _Avoid_: points log, history
 **Waste collection calendar**:
 A read-only calendar marked as listing the household's waste collection days.
 _Avoid_: bin calendar, garbage feed
+
+**Day note**:
+A parent's free-text note (up to 120 characters) for one day, shown as the last line of the tomorrow tile from 18:00 the evening before until the end of that day, then deleted. A day has one note. A parent sets it on Home (card "Note on the display"); a planned note is changed or removed on its own page.
+_Avoid_: reminder (that is the waste collection highlight), memo
 
 ## Access
 

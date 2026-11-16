@@ -139,3 +139,77 @@ func TestPersonalViewShowsAllDayOnTheLastDayWhenTheEventEndsAtMidnight(t *testin
 		t.Errorf("day after = %+v, want nothing", v.Days[3].Events)
 	}
 }
+
+func TestProgressOf(t *testing.T) {
+	task := func(done bool) familyview.Task { return familyview.Task{Done: done} }
+	for _, tc := range []struct {
+		name    string
+		tasks   []familyview.Task
+		want    familyview.Progress
+		percent int
+	}{
+		{"none", nil, familyview.Progress{}, 0},
+		{"nothing done", []familyview.Task{task(false), task(false)}, familyview.Progress{Done: 0, Total: 2}, 0},
+		{"some done", []familyview.Task{task(true), task(false), task(false)}, familyview.Progress{Done: 1, Total: 3}, 33},
+		{"all done", []familyview.Task{task(true), task(true)}, familyview.Progress{Done: 2, Total: 2}, 100},
+	} {
+		t.Run(tc.name, func(t *testing.T) {
+			p := familyview.ProgressOf(tc.tasks)
+			if p != tc.want || p.Percent() != tc.percent {
+				t.Errorf("ProgressOf = %+v (%d%%), want %+v (%d%%)", p, p.Percent(), tc.want, tc.percent)
+			}
+			v := personal(today(14, 9, 0), nil, tc.tasks...)
+			if v.Progress() != tc.want || v.Percent() != tc.percent {
+				t.Errorf("view progress = %+v (%d%%), want %+v (%d%%)", v.Progress(), v.Percent(), tc.want, tc.percent)
+			}
+		})
+	}
+}
+
+func TestPersonalViewPartsGroupInOrder(t *testing.T) {
+	mk := func(title, part string) familyview.Task { return familyview.Task{Title: title, Part: part} }
+	v := personal(today(14, 9, 0), nil, mk("e1", "evening"), mk("a1", ""), mk("m1", "morning"), mk("a2", ""), mk("m2", "morning"))
+	var got []string
+	for _, p := range v.Parts() {
+		var titles []string
+		for _, t := range p.Tasks {
+			titles = append(titles, t.Title)
+		}
+		got = append(got, p.Part+":"+strings.Join(titles, ","))
+	}
+	if want := "morning:m1,m2 :a1,a2 evening:e1"; strings.Join(got, " ") != want {
+		t.Errorf("Parts = %q, want %q", strings.Join(got, " "), want)
+	}
+	if parts := personal(today(14, 9, 0), nil, mk("a", "")).Parts(); len(parts) != 1 || parts[0].Part != "" {
+		t.Errorf("only any-time tasks: %+v", parts)
+	}
+	if parts := personal(today(14, 9, 0), nil).Parts(); len(parts) != 0 {
+		t.Errorf("no tasks: %+v", parts)
+	}
+}
+
+// Ticket 133 (child Home): an event that is for the whole household is marked,
+// so the child's page can say "with the whole family"; one for a part of it is not.
+func TestPersonalEventsKnowWhetherTheyAreForTheWholeFamily(t *testing.T) {
+	mia := family()[3]
+	v := familyview.BuildPersonal(familyview.PersonalInput{
+		Now: at(14, 9, 0), Person: mia, People: family(), Calendars: map[string]calendar.Audience{"cal": {}},
+		Occurrences: []calendar.Occurrence{
+			timed("Flea market", at(14, 11, 0), at(14, 13, 0)),
+			timed("Swimming", at(14, 15, 30), at(14, 16, 30), "mia"),
+			timed("Siblings", at(14, 17, 0), at(14, 18, 0), "mia", "seb"),
+		},
+	})
+	got := map[string]bool{}
+	for _, e := range v.Days[0].Events {
+		got[e.Title] = e.Family
+	}
+	if !got["Flea market"] || got["Swimming"] || got["Siblings"] || len(got) != 3 {
+		t.Errorf("family marks = %v", got)
+	}
+	// Without the household the view cannot tell, and marks nothing.
+	v = familyview.BuildPersonal(familyview.PersonalInput{Now: at(14, 9, 0), Person: mia, Calendars: map[string]calendar.Audience{"cal": {}}, Occurrences: []calendar.Occurrence{timed("Flea market", at(14, 11, 0), at(14, 13, 0))}})
+	if v.Days[0].Events[0].Family {
+		t.Error("an event is marked for the whole family without knowing the household")
+	}
+}

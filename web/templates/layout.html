@@ -12,24 +12,32 @@
 {{end}}<link rel="stylesheet" href="/static/hejmo.css">{{if .Frame}}
 <script src="/static/theme.js"></script>
 <script src="/static/form.js" defer data-hour="{{t "picker.hour"}}" data-minute="{{t "picker.minute"}}" data-done="{{t "picker.done"}}"{{with .Frame}}{{with .TimeFormat}} data-time-format="{{.}}"{{end}}{{end}}></script>{{with .Frame}}{{if .SignedIn}}
-<script src="/static/offline.js" defer data-offline-text="{{t "offline.banner"}}"></script>{{end}}{{end}}{{end}}
+<script src="/static/offline.js" defer data-offline-text="{{t "offline.banner"}}" data-time-format="{{.TimeFormat}}" data-date-format="{{.DateFormat}}"></script>{{end}}{{end}}{{end}}
 </head>
 <body{{if .Frame}} class="web"{{end}}>
 {{if .Frame}}<a class="skip" href="#content">{{t "frame.skip"}}</a>{{end}}
-<div{{if .Frame}} class="frame framed{{if .Frame.Items}} has-nav{{end}}"{{end}}>
+{{if .Wizard}}<div class="wizard">
+{{template "wizard" (dict "W" .Wizard "Frame" .Frame)}}
+{{else}}<div{{if .Frame}} class="frame framed{{if .Frame.Items}} has-nav{{end}}"{{end}}>
 {{with .Frame}}
 <header class="frame-bar">
   <a class="brand" href="/">Hejmo</a>
-  {{if .SignedIn}}<form method="post" action="/logout"><button class="button secondary" type="submit">{{t "home.logout"}}</button></form>{{end}}
+  <div class="frame-tools">
+    {{template "langSwitch" .}}
+    {{if .SignedIn}}<form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">{{t "home.logout"}}</button></form>{{end}}
+  </div>
 </header>
 {{if .Items}}<nav class="frame-nav" aria-label="{{t "nav.label"}}"><ul>
   {{range .Items}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{t .Label}}</a></li>
   {{end}}</ul></nav>{{end}}
-{{if .Back}}<a class="back" href="/settings">{{t "hub.back"}}</a>{{end}}
-{{end}}
+{{end}}{{end}}
 <main id="content">
-{{with .Frame}}{{with .Success}}{{template "success" .}}{{end}}{{end}}
+{{with .Frame}}{{if .BackHref}}{{template "backLink" (dict "Href" .BackHref "Text" (t .BackLabel))}}{{end}}{{with .Success}}{{template "success" .}}{{end}}{{with .Error}}<p class="error" role="alert">{{.}}</p>{{end}}{{end}}
 {{end}}
+
+{{/* The language switcher of ticket 134, one component for the frame bar and the wizard bar. Argument: the frame. */}}
+{{define "langSwitch"}}<details class="lang"><summary><img class="flag" src="/static/flags/{{.LangFlag}}.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">{{t "lang.label"}} </span>{{.LangName}}</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+      <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="{{.Next}}">{{range .Others}}<button type="submit" name="lang" value="{{.Code}}" lang="{{.Code}}"><img class="flag" src="/static/flags/{{.Flag}}.svg" alt="">{{.Name}}</button>{{end}}</form></details>{{end}}
 
 {{define "foot"}}
 </main>
@@ -38,7 +46,9 @@
 </html>
 {{end}}
 
-{{define "error"}}{{if and .Error (not .ErrorField)}}<p class="error" role="alert">{{t .Error}}</p>{{end}}{{end}}
+{{/* The page-level error. A page that reports a field error as well (FieldError
+     is its own text for the field) shows this one too. */}}
+{{define "error"}}{{if and .Error (or (not .ErrorField) .FieldError)}}<p class="error" role="alert">{{t .Error}}</p>{{end}}{{end}}
 
 {{define "syncNotice"}}{{if .SyncStale}}<p class="notice" role="status" data-sync-stale>{{t "sync.stale"}} <a href="/calendars">{{t "sync.stale.link"}}</a></p>{{end}}{{end}}
 

@@ -5,12 +5,14 @@ import (
 	"context"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
 	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -19,6 +21,7 @@ import (
 )
 
 type settingsJSON struct {
+	DateFormat      store.DateFormat      `json:"date_format"`
 	TimeFormat      store.TimeFormat      `json:"time_format"`
 	TemperatureUnit store.TemperatureUnit `json:"temperature_unit"`
 	AutoUpdate      store.UpdateMode      `json:"auto_update"`
@@ -27,6 +30,27 @@ type settingsJSON struct {
 	Latitude    *float64    `json:"latitude"`
 	Longitude   *float64    `json:"longitude"`
 	MealCutoffs cutoffsJSON `json:"meal_cutoffs"`
+	// FirstStepsHidden is whether the first steps card on the start page is hidden.
+	FirstStepsHidden bool `json:"first_steps_hidden"`
+	// FirstStepsSkipped lists the steps of that card a parent skipped, in the order of the card.
+	FirstStepsSkipped []string `json:"first_steps_skipped"`
+}
+
+func settingsOf(h store.Household) settingsJSON {
+	out := settingsJSON{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, HomeName: h.HomeName,
+		MealCutoffs: cutoffsToJSON(h.MealCutoffs), FirstStepsHidden: h.FirstStepsHidden, FirstStepsSkipped: skippedOrEmpty(h.FirstStepsSkipped)}
+	if h.Latitude != 0 || h.Longitude != 0 {
+		out.Latitude, out.Longitude = &h.Latitude, &h.Longitude
+	}
+	return out
+}
+
+// skippedOrEmpty is the list for JSON: never null.
+func skippedOrEmpty(l []string) []string {
+	if l == nil {
+		return []string{}
+	}
+	return l
 }
 
 // cutoffsJSON is the time per mealtime from which it is no longer shown on
@@ -40,20 +64,13 @@ type cutoffsJSON struct {
 
 func cutoffsToJSON(c meal.Cutoffs) cutoffsJSON { return cutoffsJSON(c) }
 
-func settingsOf(h store.Household) settingsJSON {
-	out := settingsJSON{TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, HomeName: h.HomeName, MealCutoffs: cutoffsToJSON(h.MealCutoffs)}
-	if h.Latitude != 0 || h.Longitude != 0 {
-		out.Latitude, out.Longitude = &h.Latitude, &h.Longitude
-	}
-	return out
-}
-
 func (s *server) apiGetSettings(w http.ResponseWriter, _ *http.Request, p principal) {
 	writeJSON(w, http.StatusOK, settingsOf(p.household))
 }
 
 func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
+		DateFormat      *store.DateFormat      `json:"date_format"`
 		TimeFormat      *store.TimeFormat      `json:"time_format"`
 		TemperatureUnit *store.TemperatureUnit `json:"temperature_unit"`
 		AutoUpdate      *store.UpdateMode      `json:"auto_update"`
@@ -63,12 +80,19 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		MealCutoffs     *struct {
 			Breakfast, Lunch, Snack, Dinner *string
 		} `json:"meal_cutoffs"`
+		// FirstStepsHidden hides or shows the first steps card on the start page.
+		FirstStepsHidden *bool `json:"first_steps_hidden"`
+		// FirstStepsSkipped replaces the list of skipped steps.
+		FirstStepsSkipped *[]string `json:"first_steps_skipped"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	f, u := p.household.TimeFormat, p.household.TemperatureUnit
+	d, f, u := p.household.DateFormat, p.household.TimeFormat, p.household.TemperatureUnit
+	if in.DateFormat != nil {
+		d = *in.DateFormat
+	}
 	if in.TimeFormat != nil {
 		f = *in.TimeFormat
 	}
@@ -87,6 +111,10 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 			}
 		}
 	}
+	if !d.Valid() {
+		writeError(w, http.StatusBadRequest, "date_format must be dmy or mdy")
+		return
+	}
 	if !f.Valid() || !u.Valid() || !a.Valid() {
 		writeError(w, http.StatusUnprocessableEntity, "time_format must be 24h or 12h, temperature_unit c or f and auto_update on, off or notify")
 		return
@@ -100,19 +128,28 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, errMsg)
 		return
 	}
-	if err := s.saveSettings(p.household, f, u, a, c, home); err != nil {
+	if err := s.saveSettings(p.household, store.HouseholdSettings{DateFormat: d, TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c, FirstStepsHidden: in.FirstStepsHidden, FirstStepsSkipped: in.FirstStepsSkipped, Home: home}); err != nil {
+		var unknown *store.UnknownStepError
+		if errors.As(err, &unknown) {
+			writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("first_steps_skipped: unknown step %q; steps are %s", unknown.Step, strings.Join(store.FirstStepIDs, ", ")))
+			return
+		}
+		if errors.Is(err, store.ErrInvalid) {
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
+		s.fail(w, "update settings", err)
+		return
+	}
+	saved, err := s.db.Household(p.household.ID)
+	if err != nil {
 		s.fail(w, "update settings", err)
 		return
 	}
 	if home != nil {
 		s.refreshWeather(home.Latitude, home.Longitude)
 	}
-	h := p.household
-	h.TimeFormat, h.TemperatureUnit, h.AutoUpdate, h.MealCutoffs = f, u, a, c
-	if home != nil {
-		h.HomeName, h.Latitude, h.Longitude = home.Name, home.Latitude, home.Longitude
-	}
-	writeJSON(w, http.StatusOK, settingsOf(h))
+	writeJSON(w, http.StatusOK, settingsOf(saved))
 }
 
 // homeOfPatch reads the home of a settings patch: nil if it does not touch
@@ -150,6 +187,8 @@ type settingsPage struct {
 	Cutoffs                                           meal.Cutoffs // what the cut-off fields hold
 }
 
+// renderSettings shows the household settings. form is what the page holds
+// (what was typed, after a refused save); errField names the field at fault.
 func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p principal, status int, errKey, errField string, form settingsPage) {
 	fields := make([]cutoffInput, 0, 4)
 	for _, m := range meal.Mealtimes() {
@@ -158,8 +197,10 @@ func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p princi
 		at := form.Cutoffs.For(m)
 		fields = append(fields, cutoffInput{Name: cutoffField(m), Mealtime: string(m), Value: cmp.Or(at, meal.SuggestedCutoff(m)), On: at != ""})
 	}
+	sample := s.dateSample(p.household)
 	data := map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Error": errKey, "ErrorField": errField, "Cutoffs": fields,
+		"DateFormat": string(p.household.DateFormat), "DateDMY": datefmt.Date(store.DateDMY, sample), "DateMDY": datefmt.Date(store.DateMDY, sample), "SampleYear": sample.Year(),
 		"TimeFormat": form.TimeFormat, "TemperatureUnit": form.TemperatureUnit,
 		"AutoUpdate": form.AutoUpdate, "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
 		"HomeName": form.HomeName, "Place": form.Place,
@@ -216,7 +257,7 @@ func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	s.render(w, r, http.StatusOK, "settings.html", map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Hub": items, "Update": s.updateNotice(p.household),
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Hub": items, "Update": s.updateNotice(p.household), "FirstStepsHidden": p.household.FirstStepsHidden,
 	})
 }
 
@@ -234,6 +275,10 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f, u := store.TimeFormat(r.PostFormValue("time_format")), store.TemperatureUnit(r.PostFormValue("temperature_unit"))
+	d := p.household.DateFormat
+	if v := r.PostFormValue("date_format"); v != "" { // a form without the field leaves it alone
+		d = store.DateFormat(v)
+	}
 	a := p.household.AutoUpdate
 	if v := r.PostFormValue("auto_update"); v != "" { // a form without the field leaves it alone
 		a = store.UpdateMode(v)
@@ -246,6 +291,11 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 	typed := settingsPage{string(f), string(u), string(a), p.household.HomeName, nil, c}
 	if _, sent := r.PostForm["home_name"]; sent {
 		typed.HomeName = strings.TrimSpace(r.PostFormValue("home_name"))
+	}
+	if !d.Valid() {
+		p.household.DateFormat = "" // nothing is checked after a value the form should never send
+		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.date_format", "date_format", typed)
+		return
 	}
 	if !f.Valid() || !u.Valid() || !a.Valid() {
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.invalid", "", typed)
@@ -284,7 +334,7 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 			home = &store.Home{Name: name, Latitude: lat, Longitude: lon}
 		}
 	}
-	if err := s.saveSettings(p.household, f, u, a, c, home); err != nil {
+	if err := s.saveSettings(p.household, store.HouseholdSettings{DateFormat: d, TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c, Home: home}); err != nil {
 		s.fail(w, "update settings", err)
 		return
 	}
@@ -326,29 +376,27 @@ func (s *server) refreshWeather(lat, lon float64) {
 	}
 }
 
-// saveSettings stores the household settings: the general ones (with the home) and the meal
-// cut-offs are two writes. The update
-// mode also goes to the host script; only a failing settings file is tolerated.
-func (s *server) saveSettings(h store.Household, f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode, c meal.Cutoffs, home *store.Home) error {
-	var err error
-	if home == nil {
-		err = s.db.UpdateHouseholdSettings(h.ID, f, u, a)
-	} else {
-		err = s.db.UpdateHouseholdSettingsAndHome(h.ID, f, u, a, *home)
-	}
-	if err != nil {
+// saveSettings stores the household settings (general ones, meal cut-offs and
+// the first steps state) in one write. The update mode also goes to the host script; only a
+// failing settings file is tolerated.
+func (s *server) saveSettings(h store.Household, in store.HouseholdSettings) error {
+	if err := s.db.SaveHouseholdSettings(h.ID, in); err != nil {
 		return err
 	}
-	if err := s.db.SetMealCutoffs(h.ID, c); err != nil {
-		return err
-	}
-	if a == h.AutoUpdate {
+	if in.AutoUpdate == h.AutoUpdate {
 		return nil
 	}
 	// The change is stored; a settings file that cannot be written must not turn
 	// it into an error. The box writes the file again at its next start.
-	if err := update.WriteSettings(s.updateDir, string(a)); err != nil {
+	if err := update.WriteSettings(s.updateDir, string(in.AutoUpdate)); err != nil {
 		s.logger.Error("write update settings", "err", err)
 	}
 	return nil
+}
+
+// dateSample is 24 December of the current year in the household's zone: the
+// sample date of the date format setting (ticket #147). 24 is above 12, so no
+// one reads it the wrong way round.
+func (s *server) dateSample(h store.Household) time.Time {
+	return time.Date(s.householdNow(h).Year(), time.December, 24, 12, 0, 0, 0, time.UTC)
 }

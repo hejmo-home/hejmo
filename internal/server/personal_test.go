@@ -407,3 +407,25 @@ func TestPersonalViewStarsAreGerman(t *testing.T) {
 		t.Error("no German label for the stars")
 	}
 }
+
+// #122: Given Mia's personal view shows a task worth 3 stars, when a parent
+// changes it to 5, then the view shows 5 and its version changes, so a
+// connected display repaints.
+func TestChangingATasksStarValueUpdatesThePersonalView(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	tk := f.starTask(t, "Mia", "Tidy room", 3)
+	before := f.personalPage(t, "en", "Mia", 14, 9).body
+	if !strings.Contains(before, `data-task-stars="3"`) {
+		t.Fatalf("before: 3 stars expected:\n%s", before)
+	}
+	if r := f.post("/tasks/"+tk.ID+"/stars", url.Values{"stars": {"5"}}); r.status != 303 {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+	after := f.personalPage(t, "en", "Mia", 14, 9).body
+	if !strings.Contains(after, `data-task-stars="5"`) || strings.Contains(after, `data-task-stars="3"`) {
+		t.Fatalf("after: 5 stars expected:\n%s", after)
+	}
+	if before == after {
+		t.Fatal("the view did not change, so a display would not repaint")
+	}
+}

@@ -153,7 +153,7 @@ func TestLiveQuietModeIsAnnouncedAndServed(t *testing.T) {
 func TestDisplaysPageEditsQuietModeAndKiosk(t *testing.T) {
 	f := newFamilyBox(t, "eink_bw")
 	for _, want := range []string{`name="quiet"`, `name="quiet_from"`, `name="quiet_to"`, `name="kiosk_url"`, `name="kiosk_key"`} {
-		if !strings.Contains(f.get("/displays").body, want) {
+		if !strings.Contains(f.get("/displays/"+f.displayID(t)).body, want) {
 			t.Fatalf("displays page misses %s", want)
 		}
 	}
@@ -161,7 +161,7 @@ func TestDisplaysPageEditsQuietModeAndKiosk(t *testing.T) {
 	if r := f.saveSettings(t, form); r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d", r.status)
 	}
-	p := f.get("/displays").body
+	p := f.get("/displays/" + f.displayID(t)).body
 	for _, want := range []string{`name="quiet" checked`, `value="21:30"`, `value="06:45"`, `value="http://192.168.1.20:8080"`} {
 		if !strings.Contains(p, want) {
 			t.Errorf("page misses %s", want)

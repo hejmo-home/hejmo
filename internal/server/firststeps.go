@@ -273,7 +273,10 @@ func (s *server) fillMeals(st *firstStep, h store.Household, f func(string, ...s
 	if err != nil {
 		return err
 	}
+	// The shopping list (#32) and the meal plan templates (#131) belong to this step.
+	more := []fsAction{{"/lists", f("firststeps.meals.lists")}, {"/meals/templates", f("firststeps.meals.templates")}}
 	settle(st, count > 0, fsAction{"/meals", f("firststeps.meals.change")}, fsAction{"/meals", f("firststeps.meals.action")})
+	st.Actions = append(st.Actions, more...)
 	if count == 0 {
 		st.Text = f("firststeps.meals.text")
 		return nil

@@ -169,13 +169,23 @@ func TestFirstStepsDoneContentAndTheMovingMainButton(t *testing.T) {
 		t.Errorf("tasks step:\n%s", tasks)
 	}
 	meals := stepOf(t, card(homeDE(p.box)), 5)
-	if strings.Contains(meals, "Erledigt") || !strings.Contains(meals, `<a class="button" href="/meals">Essensplan öffnen</a>`) || strings.Contains(meals, `href="/lists"`) {
-		t.Errorf("meals step before a plan exists (no lists page yet):\n%s", meals)
+	// Scope note on #133: #32 and #131 are on main, so step 5 links the meal plan,
+	// the shopping list and the meal plan templates.
+	if strings.Contains(meals, "Erledigt") || !strings.Contains(meals, `<a class="button" href="/meals">Essensplan öffnen</a>`) {
+		t.Errorf("meals step before a plan exists:\n%s", meals)
+	}
+	for _, want := range []string{`<a class="link" href="/lists">Einkaufsliste öffnen</a>`, `<a class="link" href="/meals/templates">Essensplan-Vorlagen</a>`} {
+		if !strings.Contains(meals, want) {
+			t.Errorf("meals step misses %q\n%s", want, meals)
+		}
+	}
+	if strings.Contains(meals, "späteren Version") {
+		t.Errorf("meals step still says the shopping list comes later:\n%s", meals)
 	}
 	p.post("/meals", url.Values{"week": {"2026-11-09"}, mealField("2026-11-14", "dinner"): {"Brotzeit"}})
 	meals = stepOf(t, card(homeDE(p.box)), 5)
-	if !strings.Contains(meals, `data-state="done">Erledigt</span>`) {
-		t.Errorf("meals step is not done with a plan:\n%s", meals)
+	if !strings.Contains(meals, `data-state="done">Erledigt</span>`) || !strings.Contains(meals, `href="/lists"`) || !strings.Contains(meals, `href="/meals/templates"`) {
+		t.Errorf("meals step is not done with a plan or lost its links:\n%s", meals)
 	}
 	c = card(homeDE(p.box))
 	if !strings.Contains(c, "6 von 6 erledigt") {

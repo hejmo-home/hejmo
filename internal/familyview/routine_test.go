@@ -9,8 +9,8 @@ import (
 )
 
 var (
-	morningRt     = familyview.Routine{ID: "r-morning", Name: "Morgenroutine", Part: "morning"}
-	afterRt = familyview.Routine{ID: "r-after", Name: "Nachmittag", Part: "afterschool"}
+	morningRt = familyview.Routine{ID: "r-morning", Name: "Morgenroutine", Part: "morning"}
+	afterRt   = familyview.Routine{ID: "r-after", Name: "Nachmittag", Part: "afterschool"}
 )
 
 func inRoutine(r familyview.Routine, pos int, title string, done bool) familyview.Task {
@@ -126,7 +126,7 @@ func TestPartsHoldRoutinesBeforeSingleTasks(t *testing.T) {
 		}
 		got = append(got, p.Part+"="+r+strings.Join(singles, ","))
 	}
-	want := "morningRt=[Morgenroutine:Zähne]Blumen afterschool=[Nachmittag:Hausaufgaben] =Katze evening=Abend"
+	want := "morning=[Morgenroutine:Zähne]Blumen afterschool=[Nachmittag:Hausaufgaben] =Katze evening=Abend"
 	if strings.Join(got, " ") != want {
 		t.Fatalf("parts = %q\nwant    %q", strings.Join(got, " "), want)
 	}

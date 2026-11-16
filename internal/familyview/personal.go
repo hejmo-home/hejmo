@@ -15,9 +15,21 @@ const PersonalDays = 7
 // Task is one of the person's tasks for today, shown with a large checkbox.
 type Task struct {
 	ID, Title, Emoji string
-	Part             string // "morning", "evening" or empty
+	Part             string // "morning", "afterschool", "evening" or empty
 	Done             bool
 	Stars            int // credited when ticked off; 0 shows nothing
+	// RoutineID is the routine the task is a step of, empty for a single task.
+	// Position is its place there (from 1). Next is set by BuildPersonal on the
+	// first open step of a routine.
+	RoutineID string
+	Position  int
+	Next      bool
+}
+
+// Routine is a person's routine (ADR 0018) as the personal view needs it.
+type Routine struct {
+	ID, Name string
+	Part     string // "morning", "afterschool" or "evening"
 }
 
 // Stars is a person's star balance (ADR 0018). Shown is false for people with
@@ -49,6 +61,7 @@ type PersonalInput struct {
 	Calendars   map[string]calendar.Audience
 	Occurrences []calendar.Occurrence
 	Tasks       []Task
+	Routines    []Routine // the person's routines; their tasks are Tasks with a RoutineID
 	Stars       Stars
 	// TimeFormat is the household's "24h" (default) or "12h" (ADR 0016).
 	TimeFormat store.TimeFormat
@@ -64,6 +77,7 @@ type PersonalView struct {
 	Days        []PersonalDay
 	Tasks       []Task
 	Stars       Stars
+	Routines    []Routine
 }
 
 // BuildPersonal lays out one person's view: their events for today and the
@@ -107,10 +121,10 @@ func BuildPersonal(in PersonalInput) PersonalView {
 		d.Events = append(allDay, timedEvents...)
 		v.Days = append(v.Days, d)
 	}
-	rank := map[task.PartOfDay]int{task.Morning: 0, task.AnyTime: 1, task.Evening: 2}
+	v.Routines = in.Routines
 	v.Tasks = append([]Task(nil), in.Tasks...)
 	sort.SliceStable(v.Tasks, func(i, j int) bool {
-		return rank[task.PartOfDay(v.Tasks[i].Part)] < rank[task.PartOfDay(v.Tasks[j].Part)]
+		return task.PartOfDay(v.Tasks[i].Part).Rank() < task.PartOfDay(v.Tasks[j].Part).Rank()
 	})
 	return v
 }
@@ -137,25 +151,65 @@ func ProgressOf(tasks []Task) Progress {
 	return p
 }
 
-// TaskPart is the tasks of one part of the day, in the stored order.
-type TaskPart struct {
-	Part  string // "morning", "" (any time today) or "evening"
-	Tasks []Task
+// RoutineBox is a routine on the personal view: its steps in the parents'
+// order with its own progress. Done steps keep their place.
+type RoutineBox struct {
+	ID, Name string
+	Tasks    []Task
+	Progress Progress
+	AllDone  bool
 }
 
-// Parts groups the tasks by part of the day, in the order morning, any time,
-// evening, leaving out the parts without tasks.
+// TaskPart is the content of one part of the day: the person's routine for it,
+// if it has a step due today, then the single tasks in the stored order.
+type TaskPart struct {
+	Part    string // "morning", "afterschool", "" (any time today) or "evening"
+	Routine *RoutineBox
+	Tasks   []Task
+}
+
+// Parts groups the tasks by part of the day, in the order morning, after
+// school, any time, evening, leaving out the parts without tasks. A step of a
+// routine the view does not know is shown like a single task.
 func (v PersonalView) Parts() []TaskPart {
+	known := map[string]Routine{}
+	for _, r := range v.Routines {
+		known[r.ID] = r
+	}
 	var parts []TaskPart
-	for _, part := range []string{string(task.Morning), string(task.AnyTime), string(task.Evening)} {
-		var ts []Task
+	for _, part := range []task.PartOfDay{task.Morning, task.AfterSchool, task.AnyTime, task.Evening} {
+		p := TaskPart{Part: string(part)}
+		var box *RoutineBox
 		for _, t := range v.Tasks {
-			if t.Part == part {
-				ts = append(ts, t)
+			if t.Part != p.Part {
+				continue
 			}
+			r, inRoutine := known[t.RoutineID]
+			if !inRoutine || t.RoutineID == "" {
+				p.Tasks = append(p.Tasks, t)
+				continue
+			}
+			if box == nil {
+				box = &RoutineBox{ID: r.ID, Name: r.Name}
+			}
+			box.Tasks = append(box.Tasks, t)
 		}
-		if len(ts) > 0 {
-			parts = append(parts, TaskPart{Part: part, Tasks: ts})
+		if box != nil {
+			sort.SliceStable(box.Tasks, func(i, j int) bool { return box.Tasks[i].Position < box.Tasks[j].Position })
+			box.Progress = ProgressOf(box.Tasks)
+			box.AllDone = box.Progress.Done == box.Progress.Total
+			if !box.AllDone {
+				for i := range box.Tasks {
+					if !box.Tasks[i].Done {
+						box.Tasks[i].Next = true
+						break
+					}
+				}
+			}
+			p.Routine = box
+		}
+		if p.Routine != nil || len(p.Tasks) > 0 {
+			parts = append(parts, p)
 		}
 	}
 	return parts

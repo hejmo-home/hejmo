@@ -71,9 +71,37 @@ type Display struct {
 	// and light at sunrise, each shifted by its offset in minutes (-180..180).
 	Theme                       Theme
 	SunriseOffset, SunsetOffset int
+	// Saver is the photo screensaver (ticket 178).
+	Saver Saver
 }
 
-const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow, quiet_enabled, quiet_from, quiet_to, kiosk_url, kiosk_key != '', theme, sunrise_offset, sunset_offset`
+// Saver is a display's screensaver setting: on by default, starting after
+// IdleMinutes without a touch and showing a new photo every IntervalMinutes
+// (15 on E-Ink, where each change flashes the screen). Albums are the albums it
+// shows; none means all albums, so a new album appears there by itself.
+type Saver struct {
+	Enabled                      bool
+	IdleMinutes, IntervalMinutes int
+	Albums                       []string
+}
+
+// Shows reports whether the screensaver shows album id.
+func (s Saver) Shows(albumID string) bool {
+	if !s.Enabled {
+		return false
+	}
+	if len(s.Albums) == 0 {
+		return true
+	}
+	for _, a := range s.Albums {
+		if a == albumID {
+			return true
+		}
+	}
+	return false
+}
+
+const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow, quiet_enabled, quiet_from, quiet_to, kiosk_url, kiosk_key != '', theme, sunrise_offset, sunset_offset, saver_enabled, saver_idle_minutes, saver_interval_minutes`
 
 type rowScanner interface{ Scan(...any) error }
 
@@ -83,7 +111,7 @@ func scanDisplay(r rowScanner, at time.Time) (Display, error) {
 	var code, expires, paired, seen sql.NullString
 	var qOn bool
 	var qFrom, qTo string
-	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow, &qOn, &qFrom, &qTo, &d.KioskURL, &d.KioskKeySet, &d.Theme, &d.SunriseOffset, &d.SunsetOffset); err != nil {
+	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow, &qOn, &qFrom, &qTo, &d.KioskURL, &d.KioskKeySet, &d.Theme, &d.SunriseOffset, &d.SunsetOffset, &d.Saver.Enabled, &d.Saver.IdleMinutes, &d.Saver.IntervalMinutes); err != nil {
 		return Display{}, err
 	}
 	if q, err := quiet.Parse(qOn, qFrom, qTo); err == nil {
@@ -185,7 +213,10 @@ func (db *DB) DisplayByToken(tokenHash string, at time.Time) (Display, error) {
 	if errors.Is(err, sql.ErrNoRows) {
 		return Display{}, ErrNotFound
 	}
-	return d, err
+	if err != nil {
+		return Display{}, err
+	}
+	return db.withSaverAlbums(d)
 }
 
 // ConfirmPairing pairs the waiting display that shows code, giving it the
@@ -201,17 +232,21 @@ func (db *DB) ConfirmPairing(householdID, code string, in Display, at time.Time)
 		return Display{}, &FieldError{"type", "a display needs a known type"}
 	}
 	var id string
-	err := db.sql.QueryRow(`UPDATE displays SET name = ?, room = ?, type = ?, theme = ?, paired_at = ?, last_seen_at = ?, pairing_code = NULL, code_expires_at = NULL
+	err := db.sql.QueryRow(`UPDATE displays SET name = ?, room = ?, type = ?, theme = ?, saver_interval_minutes = ?, paired_at = ?, last_seen_at = ?, pairing_code = NULL, code_expires_at = NULL
 		WHERE household_id = ? AND pairing_code = ? AND code_expires_at > ? AND paired_at IS NULL AND revoked_at IS NULL
 		RETURNING id`,
-		in.Name, in.Room, string(in.Type), string(theme.DefaultFor(string(in.Type))), stamp(at), stamp(at), householdID, code, stamp(at)).Scan(&id)
+		in.Name, in.Room, string(in.Type), string(theme.DefaultFor(string(in.Type))), defaultSaverInterval(in.Type), stamp(at), stamp(at), householdID, code, stamp(at)).Scan(&id)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Display{}, ErrNotFound
 	}
 	if err != nil {
 		return Display{}, err
 	}
-	return scanDisplay(db.sql.QueryRow(`SELECT `+displayColumns+` FROM displays WHERE id = ?`, id), at)
+	d, err := scanDisplay(db.sql.QueryRow(`SELECT `+displayColumns+` FROM displays WHERE id = ?`, id), at)
+	if err != nil {
+		return Display{}, err
+	}
+	return db.withSaverAlbums(d)
 }
 
 // Displays lists a household's paired displays, oldest first.
@@ -230,7 +265,10 @@ func (db *DB) Displays(householdID string) ([]Display, error) {
 		}
 		out = append(out, d)
 	}
-	return out, rows.Err()
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return out, db.attachSaverAlbums(out)
 }
 
 // RevokeDisplay unpairs a display: its token stops working.
@@ -331,4 +369,85 @@ func (db *DB) DisplayKioskKey(householdID, id string) (string, error) {
 		return "", errors.New("store: cannot open stored kiosk key (wrong key or altered text)")
 	}
 	return string(plain), nil
+}
+
+// defaultSaverInterval is how often a new display of this type changes the
+// photo: each change flashes an E-Ink screen, so it is slower there.
+func defaultSaverInterval(t DisplayType) int {
+	if t == DisplayEInkBW || t == DisplayEInkColor {
+		return 15
+	}
+	return 1
+}
+
+// attachSaverAlbums reads the albums each display chose for its screensaver.
+func (db *DB) attachSaverAlbums(ds []Display) error {
+	if len(ds) == 0 {
+		return nil
+	}
+	rows, err := db.sql.Query(`SELECT display_id, album_id FROM display_albums ORDER BY rowid`)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+	chosen := map[string][]string{}
+	for rows.Next() {
+		var d, a string
+		if err := rows.Scan(&d, &a); err != nil {
+			return err
+		}
+		chosen[d] = append(chosen[d], a)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+	for i := range ds {
+		ds[i].Saver.Albums = chosen[ds[i].ID]
+	}
+	return nil
+}
+
+func (db *DB) withSaverAlbums(d Display) (Display, error) {
+	one := []Display{d}
+	err := db.attachSaverAlbums(one)
+	return one[0], err
+}
+
+// SetDisplaySaver saves the screensaver settings of one of the household's
+// paired displays. Idle time and interval are 1 to 240 minutes; the albums
+// must be the household's, none meaning all albums.
+func (db *DB) SetDisplaySaver(householdID, id string, s Saver) error {
+	if s.IdleMinutes < 1 || s.IdleMinutes > 240 || s.IntervalMinutes < 1 || s.IntervalMinutes > 240 {
+		return fmt.Errorf("%w: the screensaver times are 1 to 240 minutes", ErrInvalid)
+	}
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := expectOne(tx.Exec(`UPDATE displays SET saver_enabled = ?, saver_idle_minutes = ?, saver_interval_minutes = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
+		s.Enabled, s.IdleMinutes, s.IntervalMinutes, householdID, id)); err != nil {
+		return err
+	}
+	if _, err := tx.Exec(`DELETE FROM display_albums WHERE display_id = ?`, id); err != nil {
+		return err
+	}
+	seen := map[string]bool{}
+	for _, a := range s.Albums {
+		if seen[a] {
+			continue
+		}
+		seen[a] = true
+		var n int
+		if err := tx.QueryRow(`SELECT COUNT(*) FROM albums WHERE household_id = ? AND id = ?`, householdID, a).Scan(&n); err != nil {
+			return err
+		}
+		if n == 0 {
+			return fmt.Errorf("%w: unknown album", ErrInvalid)
+		}
+		if _, err := tx.Exec(`INSERT INTO display_albums (display_id, album_id) VALUES (?, ?)`, id, a); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
 }

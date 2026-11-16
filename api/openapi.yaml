@@ -75,6 +75,31 @@ paths:
                     items: { type: string, example: K7QD2-M9XPA }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /me/recovery-codes/saved:
+    post:
+      operationId: confirmRecoveryCodesSaved
+      summary: Say that the caller saved their current recovery codes (parents only, scope people:write)
+      description: |
+        The web page asks for a tick before it continues ("I have saved my
+        recovery codes"); this is the same confirmation for API clients. The
+        box cannot know how the codes were kept and does not ask. Send it only
+        once the codes of the last `POST /me/recovery-codes` are saved: the web
+        page "My account" says "not confirmed as saved" until it arrives. A new
+        set clears the confirmation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [saved]
+              properties:
+                saved: { type: boolean, description: Must be true; false is refused. }
+      responses:
+        "204": { description: Confirmed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /me/passkeys:
     get:
       operationId: listPasskeys

@@ -81,7 +81,7 @@ func TestSetupSavesAndConfirmsTOTP(t *testing.T) {
 		t.Error("wrong code shows no error message")
 	}
 	code, _ := auth.TOTPCode(secret, b.now)
-	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusOK || !strings.Contains(r.body, `action="/"`) {
+	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusOK || !strings.Contains(r.body, `action="/account/recovery-codes/saved"`) {
 		t.Fatalf("right code = %d, want 200 with the recovery codes and a way on\n%s", r.status, r.body)
 	}
 	if !b.db.Configured() {

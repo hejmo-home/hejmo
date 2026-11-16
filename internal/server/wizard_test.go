@@ -448,9 +448,9 @@ func TestTOTPPageAfterAResetHasNoProgress(t *testing.T) {
 	}
 }
 
-// Ticket 133: the recovery codes are step 3 of the wizard in the first setup,
-// numbered, printable, with a required confirmation and a GET form to the
-// first steps; outside the wizard the same page sits in the frame.
+// Ticket 133 (card reworked in 176): the recovery codes are step 3 of the
+// wizard in the first setup, numbered, printable, with a required confirmation
+// that the box checks; outside the wizard the same page sits in the frame.
 func TestRecoveryCodesPageInTheWizardAndOutside(t *testing.T) {
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
@@ -458,9 +458,9 @@ func TestRecoveryCodesPageInTheWizardAndOutside(t *testing.T) {
 	code, _ := auth.TOTPCode(secret, b.now)
 	r := b.do(http.MethodPost, "/setup/totp", url.Values{"code": {code}}, map[string]string{"Accept-Language": "de"})
 	for _, want := range []string{
-		"Schritt 3 von 4", "<h1>Wiederherstellungs\u00adcodes sichern</h1>", "Du siehst die Codes nur jetzt.", `<ol class="codes">`, `class="actions no-print"`, `data-print>Drucken`,
-		`<label class="confirm"><input type="checkbox" required>Ich habe die Codes ausgedruckt oder gespeichert.`, `<form class="tile" method="get" action="/">`,
-		`class="button" type="submit">Weiter zu den ersten Schritten`,
+		"Schritt 3 von 4", "<h1>Wiederherstellungs\u00adcodes sichern</h1>", "Du siehst die Codes <b>nur jetzt</b>.", `<ol class="codes">`, `class="rc-save no-print"`, `data-print>`, "Drucken",
+		`<input type="checkbox" name="saved" value="1">`, "Ich habe meine Wiederherstellungs\u00adcodes gesichert.", `<form class="rc" method="post" action="/account/recovery-codes/saved" data-rc>`,
+		`type="submit" aria-disabled="true">Weiter zu den ersten Schritten`,
 	} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("wizard recovery page misses %q", want)
@@ -475,7 +475,7 @@ func TestRecoveryCodesPageInTheWizardAndOutside(t *testing.T) {
 	// Outside the wizard: in the frame, generic label.
 	secondParent(t, b)
 	out := b.post("/account/recovery-codes", url.Values{})
-	for _, want := range []string{`class="frame-nav"`, `class="button" type="submit">Weiter<`, `required>Ich habe die Codes`} {
+	for _, want := range []string{`class="frame-nav"`, `type="submit" aria-disabled="true">Fertig, zurück zu Mein Konto`, `name="saved" value="1"`} {
 		if !strings.Contains(out.body, want) {
 			t.Errorf("the recovery page outside the wizard misses %q", want)
 		}

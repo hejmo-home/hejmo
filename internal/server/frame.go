@@ -166,5 +166,5 @@ var hubItems = []hubItem{
 // start with a link back to their overview, which replaces the hub link.
 var detailPages = map[string]bool{
 	"display.html": true, "token.html": true, "token_once.html": true, "connection.html": true, "connection_off.html": true,
-	"calendar_detail.html": true, "phone.html": true, "account.html": true, "account_reset.html": true, "passkey.html": true, "mcp_token.html": true, "mcp_token_new.html": true, "mcp_token_once.html": true, "connection_new.html": true, "person_edit.html": true, "invitation.html": true,
+	"calendar_detail.html": true, "phone.html": true, "account.html": true, "account_reset.html": true, "passkey.html": true, "mcp_token.html": true, "mcp_token_new.html": true, "mcp_token_once.html": true, "connection_new.html": true, "person_edit.html": true, "invitation.html": true, "recovery_codes.html": true,
 }

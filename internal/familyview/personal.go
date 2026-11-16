@@ -24,6 +24,27 @@ type Task struct {
 	RoutineID string
 	Position  int
 	Next      bool
+	// Subtasks are the items the task is split into, with their state today
+	// (ADR 0018). Stars belong to the task only.
+	Subtasks []Subtask
+}
+
+// Subtask is one subtask of a task for today. Next is set by Parts on the
+// first open subtask of the next task of a routine, instead of on the task.
+type Subtask struct {
+	ID, Title, Emoji string
+	Done             bool
+	Next             bool
+}
+
+// SubtasksDone counts the subtasks ticked off and all subtasks.
+func (t Task) SubtasksDone() (done, total int) {
+	for _, s := range t.Subtasks {
+		if s.Done {
+			done++
+		}
+	}
+	return done, len(t.Subtasks)
 }
 
 // Routine is a person's routine (ADR 0018) as the personal view needs it.
@@ -208,7 +229,7 @@ func (v PersonalView) Parts() []TaskPart {
 			if !box.AllDone {
 				for i := range box.Tasks {
 					if !box.Tasks[i].Done {
-						box.Tasks[i].Next = true
+						box.Tasks[i].markNext()
 						break
 					}
 				}
@@ -224,3 +245,17 @@ func (v PersonalView) Parts() []TaskPart {
 
 // Percent is the filled share of the progress bar, 0 to 100.
 func (v PersonalView) Percent() int { return v.Progress().Percent() }
+
+// markNext marks a task as the next step. A task with subtasks gives the mark
+// to its first open subtask, so a child who cannot read sees where to go on.
+func (t *Task) markNext() {
+	subs := append([]Subtask(nil), t.Subtasks...)
+	for i := range subs {
+		if !subs[i].Done {
+			subs[i].Next = true
+			t.Subtasks = subs
+			return
+		}
+	}
+	t.Next = true
+}

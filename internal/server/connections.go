@@ -38,6 +38,9 @@ type discoveredJSON struct {
 	// CalendarID is the id of the synced calendar when Added: the calendar
 	// to change or to switch off with /calendars/{id}.
 	CalendarID string `json:"calendar_id,omitempty"`
+	// fromStore marks a calendar the box knows but the server was not asked
+	// about: Name is the name in Hejmo, not the name at the source (web only).
+	fromStore bool
 }
 
 func connectionOf(c store.Connection) connectionJSON {

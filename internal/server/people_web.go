@@ -19,6 +19,8 @@ type personRow struct {
 	First, Last bool
 	// Acc says in words whether an adult can sign in (ticket 145).
 	Acc accLine
+	// Food is the diet and allergies in words (ticket 163, ADR 0019).
+	Food foodView
 }
 
 // accLine is the account state in the role line of the people overview: for
@@ -113,10 +115,16 @@ func (s *server) renderPeople(w http.ResponseWriter, r *http.Request, p principa
 		return
 	}
 	chips := chipsOf(people)
+	lang := s.langOf(r)
+	foods, err := s.db.HouseholdFood(p.household.ID)
+	if err != nil {
+		s.fail(w, "food", err)
+		return
+	}
 	rows := make([]personRow, len(people))
 	byID := map[string]personChip{}
 	for i, c := range chips {
-		rows[i] = personRow{personChip: c, Role: people[i].Role, First: i == 0, Last: i == len(people)-1}
+		rows[i] = personRow{personChip: c, Role: people[i].Role, First: i == 0, Last: i == len(people)-1, Food: s.foodViewOf(lang, foods[c.ID])}
 		if people[i].Role == store.RoleParent {
 			line, err := s.accLineOf(r, p, people[i])
 			if err != nil {
@@ -248,6 +256,12 @@ func (s *server) renderPerson(w http.ResponseWriter, r *http.Request, p principa
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role,
 		"Form": form, "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
+	f, err := s.db.PersonFood(p.household.ID, person.ID)
+	if err != nil {
+		s.fail(w, "food", err)
+		return
+	}
+	data["Food"] = s.foodViewOf(s.langOf(r), f)
 	if person.Role == store.RoleParent { // children get no account (ADR 0010)
 		row, err := s.signInRow(r, p, person)
 		if err != nil {

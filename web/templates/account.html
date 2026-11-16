@@ -9,7 +9,7 @@
   {{if eq .Flash "flash.otp_reset_passkeys"}}{{template "resetHint"}}{{end}}
   <div data-passkey-scope data-redirect="/account">
   <h2 class="rows-head">{{t "account.passkeys"}}</h2>
-  {{if .BrokenCount}}<p class="notice" role="status" data-passkey-renamed>{{t "account.passkeys.renamed.lead"}} <span class="host">{{.BoxName}}</span>. {{tf .BrokenKey "old" .OldName "passkeys" .Broken}}</p>{{end}}
+  {{if .BrokenCount}}<p class="notice" role="status" data-passkey-renamed>{{t "account.passkeys.renamed.lead"}} <span class="host">{{.BoxName}}</span>{{tf .BrokenKey "old" .OldName "passkeys" .Broken}}</p>{{end}}
   {{if .Passkeys}}
   <ul class="list-rows">
     {{range .Passkeys}}<li><a href="/account/passkeys/{{.ID}}"><span class="t"><b>{{.Name}}</b><span class="meta">{{.Meta}}</span>{{if .Flag}}<span class="flag {{.FlagKind}}">{{.Flag}}</span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
@@ -40,7 +40,7 @@
   <script src="/static/passkey.js" defer></script>
 {{template "foot"}}
 
-{{define "resetHint"}}<p class="hint" data-otp-reset>{{t "otp.reset.revoke"}} <a href="/phones">{{t "nav.phones"}}</a> {{t "otp.reset.revoke.and"}} <a href="/caldav">{{t "hub.caldav"}}</a>.</p>{{end}}
+{{define "resetHint"}}<p class="hint" data-otp-reset>{{t "otp.reset.revoke"}} <a href="/phones">{{t "nav.phones"}}</a> {{t "otp.reset.revoke.and"}} <a href="/caldav">{{t "hub.caldav"}}</a>{{t "otp.reset.revoke.end"}}</p>{{end}}
 
 {{define "passkeyIPNotice"}}<p class="notice" data-passkey-ip>{{t "account.passkeys.ip.lead"}} {{t "login.passkey.ip.before"}} <span class="host">{{.HostHere}}</span> {{t "login.passkey.ip.after"}} <a href="{{.BoxURL}}">{{t "account.passkeys.ip.link.pre"}} <span class="host">{{.BoxName}}</span>{{with t "account.passkeys.ip.link.post"}} {{.}}{{end}}</a></p>{{end}}
 

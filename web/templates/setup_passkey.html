@@ -5,7 +5,7 @@
     <ul class="pk-why">
       <li>{{template "keyIcon"}}<span><b>{{t "passkey.offer.how.lead"}}</b> {{t (printf "passkey.offer.how.%s" .Device)}}</span></li>
       <li><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 12a8 8 0 0 1 14-5.3M20 12a8 8 0 0 1-14 5.3"/><path d="M18 3v4h-4M6 21v-4h4"/></svg><span><b>{{t "passkey.offer.back.lead"}}</b> {{t "passkey.offer.back"}}</span></li>
-      <li><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg><span><b>{{t "passkey.offer.name.lead"}}</b> <span class="host">{{.BoxName}}</span>. {{t "passkey.offer.name"}}</span></li>
+      <li><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.5 3 14.5 0 18M12 3c-3 3.5-3 14.5 0 18"/></svg><span><b>{{t "passkey.offer.name.lead"}}</b> <span class="host">{{.BoxName}}</span>{{t "passkey.offer.name"}}</span></li>
     </ul>
     {{template "moreOpen" (dict "Label" (t "passkey.offer.name_field") "Summary" .Name)}}
       <div class="f"><label>{{t "passkey.name.label"}}<input name="name" type="text" value="{{.Name}}" autocomplete="off" maxlength="80"></label><p class="hint">{{t "passkey.name.hint"}}</p></div>

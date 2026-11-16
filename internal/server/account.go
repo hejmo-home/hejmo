@@ -446,7 +446,7 @@ func (s *server) renderReset(w http.ResponseWriter, r *http.Request, p principal
 		if !pk.LastUsed.IsZero() {
 			used = s.i18n.Format(lang, i18n.Msg("passkey.meta.used", "when", s.whenWords(lang, p, pk.LastUsed, false)))
 		}
-		picks = append(picks, pickable{ID: pk.ID, Name: pk.Name, Used: used, Ticked: slices.Contains(f.Ticked, pk.ID)})
+		picks = append(picks, pickable{ID: pk.ID, Name: pk.Name, Used: ", " + used, Ticked: slices.Contains(f.Ticked, pk.ID)})
 		lines = append(lines, pk.Name+", "+used)
 	}
 	unused, err := s.db.UnusedRecoveryCodes(target.ID)

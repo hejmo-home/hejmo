@@ -19,7 +19,7 @@
     <fieldset class="pk-pick">
       <legend>{{tf "account.reset.pick" "name" .Target.Name}}</legend>
       <p>{{tf "account.reset.pick.hint" "name" .Target.Name}}</p>
-      {{range .Picks}}<label class="check"><input type="checkbox" name="remove_passkey" value="{{.ID}}"{{if .Ticked}} checked{{end}}><span><b>{{.Name}}</b>, {{.Used}}</span></label>
+      {{range .Picks}}<label class="check"><input type="checkbox" name="remove_passkey" value="{{.ID}}"{{if .Ticked}} checked{{end}}><span><b>{{.Name}}</b>{{.Used}}</span></label>
       {{end}}
     </fieldset>
     {{end}}

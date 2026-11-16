@@ -789,3 +789,39 @@ func TestPairedPhoneCannotCreateAPasskeyThroughTheAPI(t *testing.T) {
 		t.Errorf("%d passkeys exist, want none", n)
 	}
 }
+
+// ADR 0018, threat model T23: after Mama resets Papa's codes, a password alone
+// signs Papa in only as far as the new one-time codes. It must not create a
+// passkey: that would be a way in without a one-time code. The wizard and the
+// invitation (pending, never reset) are the cases that may.
+func TestPasswordOnlySessionAfterAResetCannotCreateAPasskey(t *testing.T) {
+	b, mamaSecret, _ := setupWithCodes(t)
+	papa, _ := secondParent(t, b)
+	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
+	own := url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
+	if r := b.at(boxName, http.MethodPost, "/account/reset/"+papa.ID, own); r.status != http.StatusSeeOther {
+		t.Fatalf("reset = %d", r.status)
+	}
+	b.logout()
+	// Papa signs in with the password only; his codes are reset.
+	if r := b.at(boxName, http.MethodPost, "/login", url.Values{"username": {"papa"}, "password": {"papa's long password"}}); r.status >= 400 {
+		t.Fatalf("password-only sign-in after the reset = %d %s", r.status, r.body)
+	}
+	if _, r := begin(t, b, boxName, "/account/passkeys/begin"); r.status != http.StatusForbidden {
+		t.Fatalf("begin after a reset = %d %s, want 403", r.status, r.body)
+	}
+	if n, _ := b.db.PasskeyCount(); n != 0 {
+		t.Errorf("%d passkeys exist, want none", n)
+	}
+}
+
+// Control for the test above: the wizard's pending session (never reset) may.
+func TestWizardSessionStillMayBeginAPasskey(t *testing.T) {
+	b := newBox(t)
+	if r := b.at(boxName, http.MethodPost, "/setup", validSetupForm()); r.status != http.StatusSeeOther {
+		t.Fatalf("setup = %d", r.status)
+	}
+	if _, r := begin(t, b, boxName, "/account/passkeys/begin"); r.status != http.StatusOK {
+		t.Fatalf("begin in the wizard = %d %s, want 200", r.status, r.body)
+	}
+}

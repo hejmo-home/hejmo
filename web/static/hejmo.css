@@ -1562,3 +1562,36 @@ details.danger details.more { margin: 0 0 10px; }
 .rows-head + .notice { margin: 0 0 var(--gap-cards); }
 main > .hint { max-width: 560px; }
 `;
+
+/* MCP page (ticket 96, DESIGN.md) */
+.explain { max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-section); padding: 16px; background: var(--surface); border-radius: var(--radius-tile); }
+[data-theme="bw"] .explain { border: 2px solid var(--text); }
+.explain h2 { margin: 0 0 8px; }
+.explain h3 { font-size: var(--fs-event-title); margin: 16px 0 6px; }
+.explain p { margin: 0 0 8px; overflow-wrap: anywhere; }
+.explain ul { margin: 0 0 8px; padding-left: 20px; display: grid; gap: 6px; }
+.explain li { overflow-wrap: anywhere; }
+.links { list-style: none; padding: 0 !important; margin: 8px 0 0 !important; display: grid; gap: 0 !important; }
+.links a { display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-target); font-weight: 600; overflow-wrap: anywhere; }
+.links .icon { flex: none; stroke: currentColor; }
+details.more.explain-more { max-width: 560px; }
+details.more.explain-more .explain { margin-top: 8px; }
+.scope { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--border); }
+.scope:first-of-type { border-top: 0; padding-top: 4px; }
+.scope .area { display: grid; gap: 2px; }
+.scope .area b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: anywhere; }
+.scope .area span { font-size: var(--fs-meta); color: var(--text-secondary); }
+.steps fieldset.scopes { gap: 0; }
+.steps fieldset.scopes > legend { margin-bottom: 4px; }
+.steps fieldset.scopes.invalid { border: 2px solid var(--error-text); padding: 14px; }
+.scope fieldset.seg legend { position: absolute; left: -9999px; }
+.seg label { overflow-wrap: anywhere; }
+[data-theme="bw"] .seg label { border-width: 2px; }
+.facts .lines { display: grid; gap: 2px; }
+.when-on .facts { padding: 0; margin: 4px 0 0; background: none; border: 0 !important; }
+.when-on .notice { margin: 8px 0 0; }
+.scope fieldset.seg { display: flex; flex-wrap: wrap; gap: 0; padding: 0; background: none; border-radius: 0; }
+.scope .area b { color: var(--text); }
+.hint .who { display: inline; font-size: inherit; color: inherit; }
+.hint .who .marker { display: inline-block; vertical-align: -1px; margin-right: 4px; }
+details.more.explain-more { margin-top: var(--gap-section); }

@@ -10,10 +10,27 @@ info:
     (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens;
     actions: read, write, delete, complete).
 
-    The scope `calendars` is for a phone's calendar app: it opens the box's
-    CalDAV server at `/dav/` (HTTP Basic with the person's username and the
-    token as password, HTTPS only) and nothing in this REST API. Create one
-    token per device and revoke it on its own.
+    The scopes `calendars` and `tasks` are for a phone's calendar and
+    reminders apps: they open the box's CalDAV server at `/dav/` (HTTP Basic
+    with the person's username and the token as password, HTTPS only) and
+    nothing in this REST API. `calendars` opens the calendars (VEVENT),
+    `tasks` one task list per person (VTODO); a device token holds both. A
+    task list shows a once task as it is and a repeating task as today's
+    occurrence. Clients may change a task's title, notes, the day of a once
+    task and its completion (which credits or deducts its stars once);
+    creating and deleting tasks from a client is refused with 403. Create
+    one token per device and revoke it on its own.
+
+    The box also speaks MCP (Model Context Protocol, streamable HTTP, stateless)
+    at `/mcp`, for AI assistants (ADR 0018). It is off by default (`GET` and `PUT`
+    `/mcp` below), served over HTTPS only, and takes only a bearer token that was
+    created for MCP (`POST /mcp/tokens`). Its tools are the functions of this API
+    for events, lists, tasks (with routines, templates and stars) and the meal
+    plan, except managing calendars (`POST /calendars`, `PATCH` and `DELETE`
+    `/calendars/{id}`, `POST /calendars/{id}/sync` are no tools), run as the parent who made the token and with the token's scopes;
+    tools the scopes do not allow are not offered. Tokens, settings, people,
+    displays and phones are never tools. A token made for MCP works there only:
+    this REST API and CalDAV refuse it, and MCP refuses every other token.
   license:
     name: AGPL-3.0-or-later
     url: https://www.gnu.org/licenses/agpl-3.0.html
@@ -82,7 +99,8 @@ paths:
       description: |
         Second step of creating a passkey: send what the browser's credentials
         API answered to the options of `POST /me/passkeys/registration`. Only a
-        signed-in browser session may create a passkey, never a token: a passkey
+        signed-in browser session may create a passkey, never a token and never a
+        paired phone's session: a passkey
         signs in for good, so a stolen token must not be able to make one. The
         box checks the answer: the authenticator must have verified the user.
       requestBody:
@@ -115,7 +133,8 @@ paths:
         First step of creating a passkey. The answer holds the options for
         `navigator.credentials.create`. The request must come to the box under its
         box name (GLOSSARY): over an IP address or another name it is refused with
-        409, because a passkey could not work there. A token is refused with 403.
+        409, because a passkey could not work there. A token and a paired phone's session
+        are refused with 403.
       responses:
         "200":
           description: The ceremony to finish with `POST /me/passkeys`
@@ -398,6 +417,92 @@ paths:
                   name: { type: string }
                   scopes: { type: string }
                   token: { type: string, example: hejmo_… }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /mcp:
+    get:
+      operationId: getMCP
+      summary: Whether the MCP server is on, and its address (scope settings:read)
+      description: |
+        The address always starts with `https://`: MCP is served over HTTPS
+        only. A browser session may open the page of the web interface at the
+        same address.
+      responses:
+        "200":
+          description: State of the MCP server
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MCPState" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setMCP
+      summary: Switch the MCP server on or off (scope settings:write)
+      description: |
+        Off by default. Switching off needs no confirmation: tokens made for MCP
+        stay stored and work again once it is switched on; an open MCP session
+        stops at its next request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        "200":
+          description: The new state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MCPState" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /mcp/tokens:
+    post:
+      operationId: createMCPToken
+      summary: Create an API token for MCP, for the caller (scope tokens:write)
+      description: |
+        The areas events, lists, tasks (with routines, templates and stars) and
+        meals each get `none`, `read` (scope `<area>:read`) or `write` (scope
+        `<area>`, every action including adding, ticking off and deleting). An
+        area left out counts as `none`; at least one area needs `read` or
+        `write` (else 422). The token acts as the caller, who has to be a parent,
+        and never holds `read`, `write`, `tokens` or `settings`. The name is
+        unique among MCP tokens (not case-sensitive, else 422). The token value
+        is returned once and stored only as a hash. Creating one works while MCP
+        is off too; it works as soon as MCP is on. Revoke it with
+        `DELETE /tokens/{id}`; `GET /tokens` lists it with `mcp: true`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, areas]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80, example: Claude on Mama's laptop }
+                areas: { $ref: "#/components/schemas/MCPAreas" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, name, scopes, areas, token, address]
+                properties:
+                  id: { type: string, format: uuid }
+                  name: { type: string }
+                  scopes: { type: string, example: "events lists:read" }
+                  areas: { $ref: "#/components/schemas/MCPAreas" }
+                  token: { type: string, example: hejmo_… }
+                  address: { type: string, example: "https://hejmo.local/mcp" }
+        "400": { $ref: "#/components/responses/Invalid" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
@@ -2291,6 +2396,7 @@ components:
         person_id: { type: string, format: uuid }
         title: { type: string, minLength: 1, maxLength: 120, example: Brush teeth }
         emoji: { type: string, maxLength: 16, example: "🪥" }
+        notes: { type: string, maxLength: 2000, description: "Optional free text. CalDAV clients show it as the task's description and may change it" }
         repeat: { $ref: "#/components/schemas/TaskRepeat" }
         weekdays:
           type: array
@@ -2302,12 +2408,13 @@ components:
         routine_id: { type: string, format: uuid, description: "Create the task as the last step of this routine (of the same person). It takes the routine's part of the day and `part_of_day` is ignored" }
     Task:
       type: object
-      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, stars, routine_id, position, due, done]
+      required: [id, person_id, title, emoji, notes, repeat, weekdays, date, part_of_day, stars, routine_id, position, due, done]
       properties:
         id: { type: string, format: uuid }
         person_id: { type: string, format: uuid }
         title: { type: string }
         emoji: { type: string }
+        notes: { type: string, description: "Free text; empty if none" }
         repeat: { $ref: "#/components/schemas/TaskRepeat" }
         weekdays:
           type: array
@@ -2431,7 +2538,7 @@ components:
         sync: { $ref: "#/components/schemas/SyncState" }
     ApiToken:
       type: object
-      required: [id, name, scopes, person, created_at, last_used_at]
+      required: [id, name, scopes, person, created_at, last_used_at, mcp]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: iPhone Mama }
@@ -2439,6 +2546,24 @@ components:
         person: { type: string, description: "Name of the person the token acts for" }
         created_at: { type: string, format: date-time }
         last_used_at: { type: string, format: date-time, nullable: true }
+        mcp: { type: boolean, description: "Created for the MCP server: it works there only, not in this API or CalDAV" }
+    MCPState:
+      type: object
+      required: [enabled, address]
+      properties:
+        enabled: { type: boolean }
+        address: { type: string, example: "https://hejmo.local/mcp", description: "Where an AI assistant reaches the MCP server; always https" }
+    MCPAreas:
+      type: object
+      description: What a token may do per area. An area left out counts as none.
+      properties:
+        events: { $ref: "#/components/schemas/MCPLevel" }
+        lists: { $ref: "#/components/schemas/MCPLevel" }
+        tasks: { $ref: "#/components/schemas/MCPLevel" }
+        meals: { $ref: "#/components/schemas/MCPLevel" }
+    MCPLevel:
+      type: string
+      enum: [none, read, write]
     DisplayType:
       type: string
       enum: [eink_bw, eink_color, screen]

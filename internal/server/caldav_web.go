@@ -15,15 +15,17 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-// deviceScope is the token scope of a phone's calendar app.
-const deviceScope = "calendars"
+// deviceScope is the token scopes of a new CalDAV client: its calendars and,
+// since ADR 0018, the task lists. Tokens made before that hold calendars only
+// and are device tokens all the same.
+const deviceScope = "calendars tasks"
 
 type sharedView struct {
 	ID, Name, Color string
 	Shared, Always  bool
 }
 
-// deviceTokens lists the household's device tokens (scope calendars only):
+// deviceTokens lists the household's device tokens (scopes calendars and tasks only):
 // the tokens other software uses through the API are not device tokens.
 func (s *server) deviceTokens(householdID string) ([]store.APIToken, error) {
 	tokens, err := s.db.APITokens(householdID)
@@ -40,8 +42,28 @@ func (s *server) deviceTokens(householdID string) ([]store.APIToken, error) {
 }
 
 func isDeviceToken(t store.APIToken) bool {
+	if t.MCP { // tokens made for MCP are not for calendar apps
+		return false
+	}
 	scopes := strings.Fields(t.Scopes)
-	return len(scopes) == 1 && scopes[0] == deviceScope
+	for _, sc := range scopes {
+		if sc != "calendars" && sc != "tasks" {
+			return false
+		}
+	}
+	return len(scopes) > 0
+}
+
+// scopeTextKey names the message that says what a device token may do.
+func scopeTextKey(t store.APIToken) string {
+	cal, tasks := scopedTo(t.Scopes, "calendars"), scopedTo(t.Scopes, "tasks")
+	switch {
+	case cal && tasks:
+		return "caldav.scope.calendars_tasks"
+	case tasks:
+		return "caldav.scope.tasks"
+	}
+	return "caldav.scope.calendars"
 }
 
 // chipByPerson looks up the marker and name of each person of the household.
@@ -195,7 +217,7 @@ func (s *server) handleDeviceTokenPage(w http.ResponseWriter, r *http.Request) {
 	s.render(w, r, http.StatusOK, "token.html", map[string]any{
 		"Person": p.person, "Token": t, "Title": t.Name,
 		"Facts": []factView{who,
-			{Label: s.say(r, i18n.Msg("caldav.fact.scope")), Value: s.say(r, i18n.Msg("caldav.scope."+deviceScope))},
+			{Label: s.say(r, i18n.Msg("caldav.fact.scope")), Value: s.say(r, i18n.Msg(scopeTextKey(t)))},
 			{Label: s.say(r, i18n.Msg("caldav.fact.created")), Value: p.when(t.Created)},
 			last},
 	})
@@ -204,8 +226,7 @@ func (s *server) handleDeviceTokenPage(w http.ResponseWriter, r *http.Request) {
 // iosProfile creates a new device token for the person and returns the iOS
 // configuration profile that holds it (ADR 0017). The box keeps no copy: the
 // token is stored hashed, the profile only exists in this answer.
-//
-// TODO(#94): add the tasks scope to this token once tasks sync over CalDAV.
+// The token opens the person's calendars and the task lists (ADR 0018).
 func (s *server) iosProfile(r *http.Request, p principal, name string) ([]byte, error) {
 	acc, err := s.db.AccountByPerson(p.person.ID)
 	if err != nil {

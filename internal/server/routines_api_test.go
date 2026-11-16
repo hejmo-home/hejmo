@@ -181,8 +181,8 @@ func TestExistingTaskJoinsAndLeavesARoutine(t *testing.T) {
 	if got := routineOf(t, tb.parent, rid); len(ids(got["task_ids"])) != 1 {
 		t.Fatalf("routine after leaving = %v", got)
 	}
-	if status, _, _ := tb.parent.call(http.MethodDelete, "/routines/"+rid+"/tasks/"+first, nil); status != http.StatusUnprocessableEntity {
-		t.Fatalf("leave twice = %d, want 422", status)
+	if status, _, _ := tb.parent.call(http.MethodDelete, "/routines/"+rid+"/tasks/"+first, nil); status != http.StatusNotFound {
+		t.Fatalf("leave twice = %d, want 404 (the task is no longer in this routine)", status)
 	}
 }
 

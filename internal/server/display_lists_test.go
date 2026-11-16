@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"io"
 	"net/http"
 	"net/url"
 	"os"
@@ -40,6 +41,22 @@ func (f *familyBox) onlyList(t *testing.T, name string, ticked []string, texts .
 		}
 	}
 	return listWith(t, f.box, name, ticked, texts...)
+}
+
+// postLang posts a form from the display in the given language.
+func (s *screen) postLang(path string, form url.Values, lang string) resp {
+	s.b.t.Helper()
+	req, _ := http.NewRequest(http.MethodPost, s.b.srv.URL+path, strings.NewReader(form.Encode()))
+	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
+	req.Header.Set("Origin", s.b.srv.URL)
+	req.Header.Set("Accept-Language", lang)
+	res, err := s.client.Do(req)
+	if err != nil {
+		s.b.t.Fatal(err)
+	}
+	defer res.Body.Close()
+	raw, _ := io.ReadAll(res.Body)
+	return resp{res.StatusCode, res.Header.Get("Location"), string(raw)}
 }
 
 func entryDone(t *testing.T, f *familyBox, listID, entryID string) bool {
@@ -362,7 +379,7 @@ func TestAddingWithoutTextOrTooLongShowsTheErrorAtTheField(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	id, _ := f.onlyList(t, "Shopping", nil, "Bananas")
 	f.now = f.at(14, 9, 0)
-	r := f.display.post("/display/lists/"+id+"/entries", url.Values{"text": {"   "}})
+	r := f.display.postLang("/display/lists/"+id+"/entries", url.Values{"text": {"   "}}, "en")
 	if r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("empty add = %d, want 422", r.status)
 	}
@@ -376,7 +393,7 @@ func TestAddingWithoutTextOrTooLongShowsTheErrorAtTheField(t *testing.T) {
 		t.Error("the error page is not the lists view")
 	}
 	long := strings.Repeat("a", 201)
-	r = f.display.post("/display/lists/"+id+"/entries", url.Values{"text": {long}})
+	r = f.display.postLang("/display/lists/"+id+"/entries", url.Values{"text": {long}}, "en")
 	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "Please enter the entry, up to 200 characters.") || !strings.Contains(r.body, `value="`+long+`"`) {
 		t.Errorf("too long: %d, text kept or message missing", r.status)
 	}
@@ -463,13 +480,13 @@ func TestListsViewIsGerman(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	id, _ := f.onlyList(t, "Einkauf", []string{"Brot"}, "Milch", "Brot")
 	body := f.listsPage(t, "de", "/display/lists/"+id).body
-	for _, want := range []string{`<html lang="de"`, `<nav aria-label="Alle Listen">`, "Zurück zur Familienansicht", "Von Hand sortiert. 1 offen, 1 abgehakt.", ">Neuer Eintrag<", "Hinzufügen", "Abgehakt (1)", "Abgehakte Einträge löschen (1)",
+	for _, want := range []string{`<html lang="de"`, `<nav aria-label="Alle Listen">`, "Zurück zur Familienansicht", "Von Hand sortiert. 1 offen, 1 abgehakt.", ">Neuer Eintrag<", "Hinzufügen", "Abgehakt (1)", "Abgehakten Eintrag löschen (1)",
 		"Ja, 1 Eintrag löschen", "Der abgehakte Eintrag dieser Liste wird endgültig gelöscht, auf allen Displays und Handys. Offene Einträge bleiben."} {
 		if !strings.Contains(body, want) {
 			t.Errorf("German lists view lacks %q", want)
 		}
 	}
-	r := f.display.post("/display/lists/"+id+"/entries", url.Values{"text": {""}})
+	r := f.display.postLang("/display/lists/"+id+"/entries", url.Values{"text": {""}}, "de")
 	if !strings.Contains(r.body, "Gib zuerst den Eintrag ein und tippe dann auf Hinzufügen.") {
 		t.Errorf("German empty error missing:\n%s", headRe.FindString(r.body))
 	}
@@ -508,5 +525,22 @@ func TestADR0016NamesTheListsButton(t *testing.T) {
 	}
 	if s := string(b); !strings.Contains(s, "Lists button") || !strings.Contains(s, "no third footer tile") {
 		t.Error("ADR 0016 does not record the Lists button in the header")
+	}
+}
+
+// The display's script adds in the background (partial=1): the box answers with
+// the new view markup alone (200), or with the view and the field error (422).
+func TestAddingInTheBackgroundAnswersWithTheViewAlone(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	id, _ := f.onlyList(t, "Shopping", nil, "Bananas")
+	f.now = f.at(14, 9, 0)
+	r := f.display.postLang("/display/lists/"+id+"/entries", url.Values{"text": {"Pasta"}, "partial": {"1"}}, "en")
+	es, _ := f.db.Entries(f.householdID, id)
+	if r.status != http.StatusOK || strings.Contains(r.body, "<html") || !strings.Contains(r.body, `class="added"`) || !strings.Contains(r.body, `&#34;Pasta&#34; added.`) || len(es) != 2 {
+		t.Errorf("partial add = %d, entries %v:\n%s", r.status, es, r.body)
+	}
+	bad := f.display.postLang("/display/lists/"+id+"/entries", url.Values{"text": {" "}, "partial": {"1"}}, "en")
+	if bad.status != http.StatusUnprocessableEntity || strings.Contains(bad.body, "<html") || !strings.Contains(bad.body, "Type the entry first, then tap Add.") {
+		t.Errorf("partial add without text = %d:\n%s", bad.status, bad.body)
 	}
 }

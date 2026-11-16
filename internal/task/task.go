@@ -64,6 +64,8 @@ const (
 	MaxEmoji = 16
 	// MaxRoutineName is the longest name of a routine, in characters.
 	MaxRoutineName = 60
+	// MaxSubtasks is the most subtasks one task can have (one level only).
+	MaxSubtasks = 10
 	// MaxStars is the largest star value of one task.
 	MaxStars = 100
 	// MaxBooking is the largest amount of one manual star booking, up or down.
@@ -280,4 +282,31 @@ func ParseRRule(rule string) (Task, error) {
 		return t, nil
 	}
 	return Task{}, fmt.Errorf("%w: unsupported rule %q", ErrInvalid, rule)
+}
+
+// Subtask is one of the items a task is split into (ADR 0018): a title with an
+// optional emoji, ticked off on its own for each occurrence of the task. It
+// has no stars of its own and no subtasks. Position is its place, from 1.
+type Subtask struct {
+	ID       string
+	TaskID   string
+	Title    string
+	Emoji    string
+	Position int
+}
+
+// Validate reports why a subtask cannot be stored.
+func (s Subtask) Validate() error {
+	bad := func(field, msg string) error { return &InvalidError{Field: field, Msg: msg} }
+	title := strings.TrimSpace(s.Title)
+	if title == "" {
+		return bad("title", "title required")
+	}
+	if utf8.RuneCountInString(title) > MaxTitle {
+		return bad("title", fmt.Sprintf("title may have at most %d characters", MaxTitle))
+	}
+	if utf8.RuneCountInString(strings.TrimSpace(s.Emoji)) > MaxEmoji {
+		return bad("emoji", fmt.Sprintf("emoji may have at most %d characters", MaxEmoji))
+	}
+	return nil
 }

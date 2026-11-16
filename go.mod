@@ -4,6 +4,8 @@ go 1.27.4
 
 require (
 	github.com/caddyserver/certmagic v0.25.6
+	github.com/chromedp/cdproto v0.160.1
+	github.com/chromedp/chromedp v0.23.1
 	github.com/emersion/go-ical v0.0.0-20261112170022-46c5b53a1723
 	github.com/emersion/go-webdav v0.7.0
 	github.com/fxamacker/cbor/v2 v2.9.4
@@ -29,6 +31,7 @@ require (
 	github.com/caddyserver/zerossl v0.1.6 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.8 // indirect
+	github.com/go-json-experiment/json v0.0.0-20260213210345-44df1a37e875 // indirect
 	github.com/go-openapi/jsonpointer v0.22.5 // indirect
 	github.com/go-openapi/swag/jsonname v0.25.5 // indirect
 	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect

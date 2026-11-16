@@ -241,7 +241,7 @@ func TestADownloadOverTheLimitIsStoppedByItsDeclaredSizeAndWhileItStreams(t *tes
 		t.Errorf("stream: err = %v", err)
 	}
 	if streamed.Load() > 20 {
-		t.Errorf("the box read %d MB before it stopped", streamed)
+		t.Errorf("the box read %d MB before it stopped", streamed.Load())
 	}
 }
 

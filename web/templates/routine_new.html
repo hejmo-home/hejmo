@@ -31,4 +31,4 @@
 {{template "foot"}}
 
 {{/* A template as a choice card: its part of the day and every step with its emoji, so the parent sees what the child will get. */}}
-{{define "tplPickCard"}}{{$p := .Pick}}<label><input type="radio" name="template" value="{{$p.ID}}"{{if eq $p.ID .Chosen}} checked{{end}}><b>{{$p.Name}}</b><small><span class="tpart">{{$p.Part}}</span> · {{$p.Count}}: {{range $i, $s := $p.Steps}}{{if $i}} {{end}}<span class="st">{{$s}}</span>{{end}}</small></label>{{end}}
+{{define "tplPickCard"}}{{$p := .Pick}}<label><input type="radio" name="template" value="{{$p.ID}}"{{if eq $p.ID .Chosen}} checked{{end}}><b>{{$p.Name}}</b><small><span class="tpart">{{$p.Part}}</span> · {{$p.Count}} {{range $i, $s := $p.Steps}}{{if $i}} {{end}}<span class="st">{{$s}}</span>{{end}}</small></label>{{end}}

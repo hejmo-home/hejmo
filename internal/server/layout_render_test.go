@@ -26,7 +26,11 @@ import (
 	"github.com/chromedp/cdproto/network"
 	"github.com/chromedp/chromedp"
 
+	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/caldavclient"
+	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/list"
+	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -112,6 +116,8 @@ var layoutNames = []string{"Friedrich", "Maximilian", "Anna-Lena", "Konstantin",
 type layoutFixture struct {
 	*familyBox
 	ids []string // person IDs in layoutNames order
+
+	inviteToken string // the invitation of Maximilian, a parent without account
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -204,12 +210,39 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	c.addICS(t, map[string]any{"kind": "ics", "name": "Schulkalender der Grundschule", "url": schoolFeed})
 	c.switchMCP(t, true)
 	c.newMCPToken(t, "Claude Desktop auf dem Küchenrechner", map[string]string{"lists": "write"})
+	// A paired phone, a calendar connection, a CalDAV device token.
+	pairedPhone(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
+	connectedBox(t, f.box)
+	f.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { // the connection page asks for event counts
+		return countingRemote{hostedRemote{found: []caldavclient.Calendar{{URL: flowCalendar, Name: "Familienkalender auf dem Nextcloud-Server"}}}}, nil
+	})
+	if r := f.post("/caldav/tokens", url.Values{"name": {"iPhone von Friedrich mit langem Gerätenamen"}}); r.status != http.StatusOK {
+		t.Fatalf("CalDAV token = %d\n%s", r.status, r.body)
+	}
+	// A passkey of the signed-in parent, created under the box's name.
+	if r := addPasskeyAt(t, f.box, passkeytest.New(), boxName, "Mac im Arbeitszimmer"); r.status != http.StatusOK {
+		t.Fatalf("passkey = %d %s", r.status, r.body)
+	}
+	// A second parent with an account (the page that resets his codes), and an
+	// invitation for a parent without one.
+	hash, _ := auth.HashPassword("sophie-maries long password")
+	must(db.CreateAccount(store.Account{PersonID: f.ids[6], Username: "sophie-marie", PasswordHash: hash, TOTPSecret: auth.NewTOTPSecret()}))
+	must(db.ConfirmTOTP(f.ids[6]))
+	inv := f.do(http.MethodPost, "/people/"+f.ids[1]+"/invitation", url.Values{}, nil)
+	if f.inviteToken = inviteTokenRe.FindString(inv.body); inv.status != http.StatusOK || f.inviteToken == "" {
+		t.Fatalf("invitation = %d, no token\n%s", inv.status, inv.body)
+	}
 	tpl := dinnerWeek("Wochenplan mit Lieblingsgerichten", "2026-11-16", 2)
 	if status, body := createTemplate(t, c, tpl); status != http.StatusCreated {
 		t.Fatalf("meal template = %d %v", status, body)
 	}
 	return f
 }
+
+// countingRemote is a CalDAV server that also answers the event count the connection page asks for.
+type countingRemote struct{ hostedRemote }
+
+func (countingRemote) CountEvents(context.Context, string, time.Time) (int, error) { return 3, nil }
 
 // layoutSite is one origin with the cookies a browser would carry to it.
 type layoutSite struct {
@@ -359,14 +392,7 @@ var notRendered = map[string]string{
 	"/otp":                      "redirect",
 	"/i/{token}":                "redirect",
 	"/setup/https/check":        "answers a fragment for the setup page's script",
-	"/invite/{token}":           "one-time link of an invitation: needs a secret the fixture does not hold",
-	"/invite/{token}/account":   "one-time link of an invitation",
 	"/phones/join/{code}":       "one-time pairing link of a phone",
-	"/connections/{id}":         "needs a calendar connection to an external server",
-	"/caldav/tokens/{id}":       "shown once, with the secret",
-	"/account/passkeys/{id}":    "needs a registered passkey",
-	"/account/reset/{id}":       "needs a second parent with an account",
-	"/phones/{id}":              "needs a paired phone",
 }
 
 // matches reports whether a request path is served by a route pattern.
@@ -408,6 +434,9 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	out := siteOf("signed out", f.box, f.client)
 	add(out, "/login")
 	add(out, "/ca")
+	// The invitation of a parent: the welcome page and the form for username and password.
+	add(out, "/invite/"+f.inviteToken)
+	add(out, "/invite/"+f.inviteToken+"/account")
 	return pages
 }
 
@@ -492,6 +521,21 @@ func TestEveryPageIsInTheRenderedLayoutCheck(t *testing.T) {
 	}
 }
 
+// startChrome starts headless Chrome and returns a context that drives it; the browser stops with the test.
+func startChrome(t *testing.T, chrome string) context.Context {
+	t.Helper()
+	alloc, cancelAlloc := chromedp.NewExecAllocator(context.Background(), append(chromedp.DefaultExecAllocatorOptions[:],
+		chromedp.ExecPath(chrome), chromedp.NoSandbox, chromedp.Flag("ignore-certificate-errors", true),
+		chromedp.Flag("hide-scrollbars", true), chromedp.Flag("host-resolver-rules", "MAP "+boxName+" 127.0.0.1"), chromedp.Flag("force-device-scale-factor", "1"))...)
+	t.Cleanup(cancelAlloc)
+	ctx, cancel := chromedp.NewContext(alloc)
+	t.Cleanup(cancel)
+	if _, err := chromedp.Call(ctx, network.ClearBrowserCookies, cdp.Empty{}); err != nil {
+		t.Fatalf("start Chrome %s: %v", chrome, err)
+	}
+	return ctx
+}
+
 // A viewport is a size the pages are rendered at. Heights follow the devices:
 // phone, tablet in portrait, E-Ink display in landscape (and the tablet and display
 // sizes serve both orientations of the display views).
@@ -506,7 +550,8 @@ type layoutProblem struct {
 	Detail string `json:"detail"`
 }
 
-// knownLayoutProblem is a finding the check made on main when it came in. Each
+// knownLayoutProblem is a finding the check made on main when it came in (path
+// as pageShape writes it). Each
 // has an issue; the entry goes when the issue is fixed (the check fails while
 // an entry no longer occurs, so the list cannot go stale).
 type knownLayoutProblem struct {
@@ -520,10 +565,13 @@ var knownLayoutProblems = []knownLayoutProblem{
 	{"/display", "name-broken-inside-the-word", 1024, []string{"Wilhelmine", "Leopoldine"}, 172},
 	{"/display", "name-broken-inside-the-word", 375, []string{"Maximilian", "Konstantin", "Wilhelmine", "Leopoldine"}, 172},
 	{"/calendar", "page-wider-than-viewport", 768, []string{"Kinderarztvorsorgeuntersuchung"}, 173},
+	{"/calendar", "text-overflows-its-box", 768, []string{"Kinderarztvorsorgeuntersuchung", "Elternabend", "Geburtstagsfeier"}, 173},
+	{"/calendar", "text-overflows-its-box", 1024, []string{"Kinderarztvorsorgeuntersuchung", "Geburtstagsfeier"}, 173},
+	{"/account/reset/{id}", "name-broken-inside-the-word", 375, []string{"Sophie-Marie"}, 175},
 }
 
 func (k knownLayoutProblem) covers(path string, width int, p layoutProblem) bool {
-	if k.path != path || k.kind != p.Kind || k.width != width {
+	if k.path != pageShape(path) || k.kind != p.Kind || k.width != width {
 		return false
 	}
 	for _, m := range k.mentions {
@@ -549,15 +597,7 @@ func TestRenderedLayout(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	alloc, cancelAlloc := chromedp.NewExecAllocator(context.Background(), append(chromedp.DefaultExecAllocatorOptions[:],
-		chromedp.ExecPath(chrome), chromedp.NoSandbox, chromedp.Flag("ignore-certificate-errors", true),
-		chromedp.Flag("hide-scrollbars", true), chromedp.Flag("host-resolver-rules", "MAP "+boxName+" 127.0.0.1"), chromedp.Flag("force-device-scale-factor", "1"))...)
-	defer cancelAlloc()
-	ctx, cancel := chromedp.NewContext(alloc)
-	defer cancel()
-	if _, err := chromedp.Call(ctx, network.ClearBrowserCookies, cdp.Empty{}); err != nil {
-		t.Fatalf("start Chrome %s: %v", chrome, err)
-	}
+	ctx := startChrome(t, chrome)
 	// The timeout comes after the first call: a timeout on that call would stop the browser.
 	ctx, cancelTimeout := context.WithTimeout(ctx, 15*time.Minute)
 	defer cancelTimeout()
@@ -606,6 +646,11 @@ func TestRenderedLayout(t *testing.T) {
 						if err != nil {
 							t.Fatalf("measure: %v", err)
 						}
+						// display.js sets data-theme to the server's on a state update (every 30 s);
+						// had one come in during the measurement, it measured the wrong theme.
+						if now, err := chromedp.Run(ctx, chromedp.Evaluate[string](`document.documentElement.getAttribute("data-theme")`)); err != nil || now != theme {
+							t.Fatalf("the page changed its theme to %q (%v) while it was measured as %q", now, err, theme)
+						}
 						var probs []layoutProblem
 						if err := json.Unmarshal([]byte(got), &probs); err != nil {
 							t.Fatalf("probe result %q: %v", got, err)
@@ -646,3 +691,52 @@ func TestRenderedLayout(t *testing.T) {
 
 // langCookieForTest is the language cookie of the box (language.go).
 const langCookieForTest = "hejmo_lang"
+
+// The probe itself is tested on small pages: each case is a page body, the
+// width it is rendered at, and the kinds of problem the probe must report.
+func TestLayoutProbeFindsWhatItShould(t *testing.T) {
+	ctx := startChrome(t, requireChrome(t))
+	const clip = `style="width:100px;overflow:hidden"`
+	for _, c := range []struct {
+		name, body string
+		want       []string
+	}{
+		{"text of the element itself, clipped", `<div ` + clip + `>Kinderarztvorsorgeuntersuchung</div>`, []string{"text-overflows-its-box"}},
+		{"text in an inline child, clipped", `<div ` + clip + `><a>Kinderarztvorsorgeuntersuchung</a></div>`, []string{"text-overflows-its-box"}},
+		{"text in nested inline children, clipped", `<div ` + clip + `><a><b>Kinderarztvorsorgeuntersuchung</b></a> <span>x</span></div>`, []string{"text-overflows-its-box"}},
+		{"text in a grid item, clipped (the calendar's event card)", `<div style="display:grid;width:100px;overflow:hidden"><a>Kinderarztvorsorgeuntersuchung</a> <span>14:00</span></div>`, []string{"text-overflows-its-box"}},
+		{"text in a block child, clipped", `<div ` + clip + `><p>Kinderarztvorsorgeuntersuchung</p></div>`, []string{"text-overflows-its-box"}},
+		{"text that fits", `<div ` + clip + `><a>kurz</a></div>`, nil},
+		{"text that wraps", `<div ` + clip + `><a>ein Text mit vielen kurzen Wörtern</a></div>`, nil},
+		{"an empty box", `<div ` + clip + `><a></a></div>`, nil},
+	} {
+		t.Run(c.name, func(t *testing.T) {
+			script := fmt.Sprintf(`(async () => {
+				document.body.innerHTML = %q;
+				%s
+				return JSON.stringify(await probe(375, []));
+			})()`, c.body, layoutProbeJS)
+			if _, err := chromedp.Call(ctx, emulation.SetDeviceMetricsOverride, emulation.SetDeviceMetricsOverrideParams{Width: 375, Height: 812, DeviceScaleFactor: 1}); err != nil {
+				t.Fatal(err)
+			}
+			if err := chromedp.Do(ctx, chromedp.Navigate("about:blank")); err != nil {
+				t.Fatal(err)
+			}
+			got, err := chromedp.Run(ctx, chromedp.Evaluate[string](script, chromedp.EvalAwaitPromise))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var probs []layoutProblem
+			if err := json.Unmarshal([]byte(got), &probs); err != nil {
+				t.Fatal(err)
+			}
+			var kinds []string
+			for _, p := range probs {
+				kinds = append(kinds, p.Kind)
+			}
+			if !slices.Equal(kinds, c.want) {
+				t.Errorf("problems = %v, want %v\n%s", kinds, c.want, got)
+			}
+		})
+	}
+}

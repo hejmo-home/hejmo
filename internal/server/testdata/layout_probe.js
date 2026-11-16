@@ -41,19 +41,27 @@ async function probe(width, names) {
     });
   }
 
-  // 2. No text container overflows its box.
+  // 2. No text container overflows its box. A box whose content is wider than
+  // the box is reported when no element inside it is wider than its own box
+  // (the ancestors are widened by it), and when it holds text: its own, from
+  // inline children (a link, a name in bold) or from grid and flex items (an
+  // event card). The text is clipped or sticks out; either way it does not fit.
+  const overflowing = [];
   for (const el of document.body.querySelectorAll("*")) {
     if (/^(INPUT|TEXTAREA|SELECT|SVG|SCRIPT|STYLE|OPTION)$/i.test(el.tagName) || el.closest("svg")) continue;
     const cs = getComputedStyle(el), r = el.getBoundingClientRect();
     if (hidden(el, cs, r) || cs.display === "inline" || cs.display === "contents" || scrolls(cs) || cs.textOverflow === "ellipsis") continue;
-    const ownText = [...el.childNodes].some((n) => n.nodeType === 3 && n.textContent.trim() !== "");
-    if (!ownText) continue;
-    if (el.scrollWidth > el.clientWidth + 1) {
-      problems.push({ kind: "text-overflows-its-box", el: describe(el), detail: "scrollWidth " + el.scrollWidth + " > clientWidth " + el.clientWidth });
-    }
+    if (el.scrollWidth > el.clientWidth + 1) overflowing.push(el);
+  }
+  for (const el of overflowing) {
+    if (overflowing.some((o) => o !== el && el.contains(o))) continue;
+    if (!(el.innerText || "").trim()) continue;
+    problems.push({ kind: "text-overflows-its-box", el: describe(el), detail: "scrollWidth " + el.scrollWidth + " > clientWidth " + el.clientWidth });
   }
 
   // 3. A person's name stays whole: it may wrap at a space or after a hyphen, never inside a word.
+  // The names are looked up in one text node at a time, so a name split across
+  // elements (<b>Max</b>imilian) is not checked.
   const walker = document.createTreeWalker(document.body, NodeFilter.SHOW_TEXT);
   for (let node; (node = walker.nextNode()); ) {
     const parent = node.parentElement;

@@ -33,6 +33,9 @@ jobs:
         run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
       - name: Vet
         run: go vet ./...
+      - name: Chrome for the rendered layout check
+        run: |
+          for c in google-chrome google-chrome-stable chromium chromium-browser chrome; do command -v "$c" && "$c" --version; done || true
       - name: Unit and integration tests
         env:
           # A missing container runtime fails the Radicale tests instead of skipping them.

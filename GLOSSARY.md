@@ -199,7 +199,7 @@ The sign-in of one person in one browser with username, password and one-time co
 _Avoid_: login (as a noun), cookie, session (alone)
 
 **Device session**:
-The long-lived, revocable access of a paired phone, which acts for one person.
+The long-lived, revocable access of a paired phone, which acts for one person. A browser that held one keeps a harmless marker cookie; when its device session has ended, `/login` shows "This device is no longer paired" instead of the sign-in, until a sign-in, a new pairing or a sign-out forgets the marker.
 _Avoid_: remember-me, phone token
 
 **Overview and detail page**:

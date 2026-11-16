@@ -65,6 +65,9 @@ type Input struct {
 	// person without tasks due today has no entry (or a zero total) and
 	// shows no bar (ADR 0016).
 	TaskProgress map[string]Progress
+	// HasLists: the household has at least one list. The header then shows the
+	// Lists button (ticket 6.2); without a list there is nothing to open.
+	HasLists bool
 }
 
 // Weather is a reading for the weather chip; Icon names the symbol.
@@ -188,6 +191,7 @@ type View struct {
 	StripTomorrow []StripItem
 	ShowTomorrow  bool
 	SyncStale     bool // header notice: calendar not up to date
+	HasLists      bool // header button to the lists
 	Columns       []Column
 	Meal          *MealTile // nil: nothing planned that is still to come
 	TomorrowTile  *Tile
@@ -208,6 +212,7 @@ func Build(in Input) View {
 	v.Weather = Chip(in.Weather, in.TemperatureUnit)
 	v.ShowTomorrow = in.ShowTomorrow && now.Hour() >= tomorrowFromHour
 	v.SyncStale = in.SyncStale
+	v.HasLists = in.HasLists
 	v.TomorrowTile = tomorrowTile(in, now, d1)
 	for _, p := range in.People {
 		col := Column{Person: p}
@@ -307,6 +312,9 @@ func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat, wh
 
 // ClockText is the time of day in the household's time format ("24h" or "12h").
 func ClockText(t time.Time, format store.TimeFormat) string { return t.Format(layout(format)) }
+
+// ClockFormat names the time format for the display's script ("24h" or "12h").
+func ClockFormat(format store.TimeFormat) string { return clockFormat(format) }
 
 // clockFormat names the time format for the display's script; 24h is the default.
 func clockFormat(format store.TimeFormat) string {

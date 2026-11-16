@@ -22,6 +22,25 @@ type taskView struct {
 	Weekdays                             []string
 	Due, Done                            bool
 	Stars                                int
+	Subs                                 []subView // in their order, with their state today
+	SubsDone                             int
+}
+
+// subView is a subtask as the pages show it.
+type subView struct {
+	ID, Title, Emoji string
+	Done             bool
+}
+
+// withSubs adds a task's subtasks and how many are ticked off.
+func (v taskView) withSubs(list []store.DaySubtask) taskView {
+	for _, k := range list {
+		v.Subs = append(v.Subs, subView{ID: k.ID, Title: k.Title, Emoji: k.Emoji, Done: k.Done})
+		if k.Done {
+			v.SubsDone++
+		}
+	}
+	return v
 }
 
 // starCard is a person's star account on the tasks page.
@@ -83,6 +102,11 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		s.fail(w, "routines", err)
 		return
 	}
+	subs, err := s.db.SubtasksByTask(p.household.ID, today)
+	if err != nil {
+		s.fail(w, "subtasks", err)
+		return
+	}
 	var cards []starCard
 	var groups []personTasks
 	choices := chipsOf(people)
@@ -112,7 +136,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 				}
 			}
 			sort.SliceStable(steps, func(i, j int) bool { return steps[i].Position < steps[j].Position })
-			card := routineCard{ID: rt.ID, Name: rt.Name, Part: string(rt.Part), Steps: routineSteps(p.household.DateFormat, steps, today, doneToday)}
+			card := routineCard{ID: rt.ID, Name: rt.Name, Part: string(rt.Part), Steps: routineSteps(p.household.DateFormat, steps, today, doneToday, subs)}
 			card.Done, card.Total = progressOfSteps(card.Steps)
 			g.Routines = append(g.Routines, card)
 		}
@@ -123,7 +147,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			if t.PersonID != person.ID || t.RoutineID != "" {
 				continue
 			}
-			g.Tasks = append(g.Tasks, newTaskView(p.household.DateFormat, t, today, doneToday[t.ID]))
+			g.Tasks = append(g.Tasks, newTaskView(p.household.DateFormat, t, today, doneToday[t.ID]).withSubs(subs[t.ID]))
 		}
 		g.Empty = len(g.Tasks) == 0 && len(g.Routines) == 0 && person.Role == store.RoleChild
 		if len(g.Tasks) > 0 || len(g.Routines) > 0 || g.Empty {
@@ -185,9 +209,9 @@ func (s *server) handleTaskAdd(w http.ResponseWriter, r *http.Request) {
 		}
 		stars = &n
 	}
-	switch _, err := s.createTask(p, in, stars); {
+	switch added, err := s.createTask(p, in, stars); {
 	case err == nil:
-		s.redirectSaved(w, r, "/tasks", "flash.task_added")
+		s.redirectSaved(w, r, "/tasks", "flash.task_created:"+added.ID)
 	case errors.Is(err, store.ErrInvalid):
 		var bad *task.InvalidError
 		field := ""
@@ -311,12 +335,21 @@ func (s *server) handleTaskPage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	s.renderTaskPage(w, r, p, http.StatusOK, "", "")
+	s.renderTaskPageWith(w, r, p, http.StatusOK, nil, nil)
 }
 
 // renderTaskPage renders the detail page of the task in the path. After a
 // refused star value it shows what was typed (typed) and the error at the field.
 func (s *server) renderTaskPage(w http.ResponseWriter, r *http.Request, p principal, status int, typed, errKey string) {
+	s.renderTaskPageWith(w, r, p, status, &starsForm{Typed: typed, ErrKey: errKey}, nil)
+}
+
+// starsForm is a star value that was refused: what was typed and the text.
+type starsForm struct{ Typed, ErrKey string }
+
+// renderTaskPageWith renders the task page with, if given, a refused star
+// value or a refused subtask form and its error at the field.
+func (s *server) renderTaskPageWith(w http.ResponseWriter, r *http.Request, p principal, status int, stars *starsForm, sub *subtaskForm) {
 	t, err := s.db.Task(p.household.ID, r.PathValue("id"))
 	if errors.Is(err, store.ErrNotFound) {
 		http.NotFound(w, r)
@@ -346,8 +379,19 @@ func (s *server) renderTaskPage(w http.ResponseWriter, r *http.Request, p princi
 		"Person": p.person, "Task": newTaskView(p.household.DateFormat, t, today, doneToday[t.ID]), "Owner": owner, "SyncStale": s.syncStale(p.household.ID),
 		"MaxStars": task.MaxStars, "StarsValue": strconv.Itoa(t.Stars),
 	}
-	if errKey != "" {
-		data["StarsValue"], data["Error"], data["ErrorField"] = typed, errKey, "stars"
+	if stars != nil && stars.ErrKey != "" {
+		data["StarsValue"], data["Error"], data["ErrorField"] = stars.Typed, stars.ErrKey, "stars"
+	}
+	lang := s.langOf(r)
+	data["SubForm"] = map[string]string{}
+	if sub != nil {
+		data["SubForm"] = map[string]string{"Title": sub.Title, "Emoji": sub.Emoji}
+		data["SubEditID"] = sub.ID
+		data["Error"], data["ErrorField"] = sub.Error, sub.Field
+	}
+	if err := s.subtaskCard(data, p, t, owner.Name, lang); err != nil {
+		s.fail(w, "subtasks", err)
+		return
 	}
 	if t.RoutineID != "" {
 		rt, err := s.db.Routine(p.household.ID, t.RoutineID)

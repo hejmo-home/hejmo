@@ -39,7 +39,7 @@
   {{else if eq .Kind "expired"}}
   <form method="post" action="/people/{{.Subject.ID}}/invitation" class="actions"><button class="button" type="submit">{{t "invite.new_invitation"}}</button></form>
   {{else if .CanReset}}
-  <p class="hint">{{tf "invite.account.lost" "name" .Subject.Name}} <a href="/otp#reset">{{tf "invite.account.reset" "name" .Subject.Name "possessive" .Possessive}}</a></p>
+  <p class="hint">{{tf "invite.account.lost" "name" .Subject.Name}} <a href="/account/reset/{{.Subject.ID}}">{{tf "invite.account.reset" "name" .Subject.Name "possessive" .Possessive}}</a></p>
   {{end}}
   {{end}}
 {{template "foot"}}

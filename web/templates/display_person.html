@@ -38,11 +38,30 @@
     <ol>{{range .Tasks}}{{template "bigCheckRow" (dict "Task" . "Root" $root)}}{{end}}</ol></section>{{end}}
   {{with .Tasks}}<ul>{{range .}}{{template "bigCheckRow" (dict "Task" . "Root" $root)}}{{end}}</ul>{{end}}</section>{{end}}{{end}}
 
-{{define "bigCheckRow"}}{{$k := .Task}}{{$r := .Root}}<li data-task="{{$k.ID}}" data-done="{{$k.Done}}"{{if $k.Next}} data-next{{end}}><form method="post" action="{{$r.Prefix}}/{{$k.ID}}/done">
+{{define "bigCheckRow"}}{{if .Task.Subtasks}}{{template "subgroupRow" .}}{{else}}{{$k := .Task}}{{$r := .Root}}<li data-task="{{$k.ID}}" data-done="{{$k.Done}}"{{if $k.Next}} data-next{{end}}><form method="post" action="{{$r.Prefix}}/{{$k.ID}}/done">
   <input type="hidden" name="done" value="{{if $k.Done}}0{{else}}1{{end}}">{{with $r.Day}}
   <input type="hidden" name="day" value="{{.}}">{{end}}
   <button class="big-check" type="submit" aria-pressed="{{$k.Done}}" aria-label="{{$k.Title}}: {{if $k.Done}}{{t "personal.task_done"}}{{else}}{{t "personal.task_open"}}{{end}}{{if $k.Next}}, {{t "personal.task_next"}}{{end}}{{if and $r.StarsShown $k.Stars}}, {{$k.Stars}} {{t "personal.stars"}}{{end}}"><span class="box" aria-hidden="true">{{template "tick" 30}}</span>{{if $k.Emoji}}<span class="emoji" aria-hidden="true">{{$k.Emoji}}</span>{{end}}<span class="title">{{$k.Title}}</span>{{if and $r.StarsShown $k.Stars}}<span class="task-stars" data-task-stars="{{$k.Stars}}">{{$k.Stars}}<span class="sr"> {{t "personal.stars"}}</span></span>{{end}}</button>
-</form></li>{{end}}
+</form></li>{{end}}{{end}}
+
+{{/* A task with subtasks is one card: the task's own checkbox (ticks all) with
+     its progress as one box per subtask and in words, then every subtask with
+     its own checkbox. Stars sit on the task only. Inside a routine the next
+     marker sits on the first open subtask, not on the task. */}}
+{{define "subgroupRow"}}{{$k := .Task}}{{$r := .Root}}{{$done := $k.SubtasksDoneCount}}<li class="has-subs" data-task="{{$k.ID}}" data-done="{{$k.Done}}"{{if $k.Next}} data-next{{end}}><div class="subgroup">
+  <form method="post" action="{{$r.Prefix}}/{{$k.ID}}/done">
+    <input type="hidden" name="done" value="{{if $k.Done}}0{{else}}1{{end}}">{{with $r.Day}}
+    <input type="hidden" name="day" value="{{.}}">{{end}}
+    <button class="big-check head" type="submit" aria-pressed="{{$k.Done}}" aria-label="{{$k.Title}}: {{if $k.Done}}{{tf "personal.task_done_subs" "done" (printf "%d" $done) "total" (printf "%d" (len $k.Subtasks))}}{{else}}{{tf "personal.task_open_subs" "done" (printf "%d" $done) "total" (printf "%d" (len $k.Subtasks))}}{{end}}{{if $k.Next}}, {{t "personal.task_next"}}{{end}}{{if and $r.StarsShown $k.Stars}}, {{$k.Stars}} {{t "personal.stars"}}{{end}}"><span class="box" aria-hidden="true">{{template "tick" 30}}</span>{{if $k.Emoji}}<span class="emoji" aria-hidden="true">{{$k.Emoji}}</span>{{end}}<span class="tt"><span class="title">{{$k.Title}}</span><span class="subcount"><span class="pips" aria-hidden="true">{{range $k.Subtasks}}<i{{if .Done}} data-done{{end}}></i>{{end}}</span><span>{{tf "routine.progress" "done" (printf "%d" $done) "total" (printf "%d" (len $k.Subtasks))}}</span></span></span>{{if and $r.StarsShown $k.Stars}}<span class="task-stars" data-task-stars="{{$k.Stars}}">{{$k.Stars}}<span class="sr"> {{t "personal.stars"}}</span></span>{{end}}</button>
+  </form>
+  <ol class="subs">{{range $k.Subtasks}}
+    <li data-done="{{.Done}}"{{if .Next}} data-next{{end}}><form method="post" action="{{$r.Prefix}}/{{$k.ID}}/subtasks/{{.ID}}/done">
+      <input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">{{with $r.Day}}
+      <input type="hidden" name="day" value="{{.}}">{{end}}
+      <button class="big-check sub" type="submit" aria-pressed="{{.Done}}" aria-label="{{tf "personal.sub_label" "title" .Title "task" $k.Title}}: {{if .Done}}{{t "personal.task_done"}}{{else}}{{t "personal.task_open"}}{{end}}{{if .Next}}, {{t "personal.task_next"}}{{end}}"><span class="box" aria-hidden="true">{{template "tick" 26}}</span><span class="emoji" aria-hidden="true">{{.Emoji}}</span><span class="title">{{.Title}}</span></button>
+    </form></li>{{end}}
+  </ol>
+</div></li>{{end}}
 
 {{/* The line icon of a part of the day: sunrise (morning), sun (after school),
      moon (evening); any time has none. */}}

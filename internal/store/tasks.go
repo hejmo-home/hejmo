@@ -14,7 +14,8 @@ import (
 // DayTask is a task due on one day, with whether it is done that day.
 type DayTask struct {
 	task.Task
-	Done bool
+	Done     bool
+	Subtasks []DaySubtask // in their order, with their state on that day
 }
 
 // AddTask stores a task. The person must belong to the household.
@@ -203,7 +204,9 @@ func (db *DB) DeleteTask(householdID, id string) error {
 // household's time zone). The task must be due that day. Doing either twice
 // changes nothing. A change books the task's stars into the person's star log
 // in the same transaction: ticking credits them, unticking deducts what was
-// credited (ADR 0018). by is the person who ticked, empty for a display.
+// credited (ADR 0018). Ticking the task ticks all its subtasks for that day,
+// unticking a done task unticks all of them (an open task keeps its single
+// subtask ticks). by is the person who ticked, empty for a display.
 func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at time.Time) error {
 	t, err := db.Task(householdID, id)
 	if err != nil {
@@ -217,37 +220,61 @@ func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at 
 		return err
 	}
 	defer tx.Rollback()
+	changed, _, err := setTaskDoneTx(tx, t, day, done, by, at)
+	if err != nil {
+		return err
+	}
+	if done {
+		_, err = tx.Exec(`INSERT INTO subtask_done (subtask_id, day, completed_at, completed_by)
+			SELECT id, ?, ?, NULLIF(?, '') FROM subtasks WHERE task_id = ?
+			ON CONFLICT (subtask_id, day) DO NOTHING`, day, at.UTC().Format(time.RFC3339), by, id)
+	} else if changed { // unticking an open task leaves single subtask ticks alone
+		_, err = tx.Exec(`DELETE FROM subtask_done WHERE day = ? AND subtask_id IN (SELECT id FROM subtasks WHERE task_id = ?)`, day, id)
+	}
+	if err != nil {
+		return err
+	}
+	return tx.Commit()
+}
+
+// setTaskDoneTx ticks a task for a day inside a transaction and books its
+// stars. It reports whether the task changed state and how many stars were
+// credited or deducted.
+func setTaskDoneTx(tx *sql.Tx, t task.Task, day string, done bool, by string, at time.Time) (changed bool, stars int, err error) {
 	var delta int
 	if done {
 		res, err := tx.Exec(`INSERT INTO task_done (task_id, day, completed_at, completed_by, stars) VALUES (?, ?, ?, NULLIF(?, ''), ?)
-			ON CONFLICT (task_id, day) DO NOTHING`, id, day, at.UTC().Format(time.RFC3339), by, t.Stars)
+			ON CONFLICT (task_id, day) DO NOTHING`, t.ID, day, at.UTC().Format(time.RFC3339), by, t.Stars)
 		if err != nil {
-			return err
+			return false, 0, err
 		}
 		if n, _ := res.RowsAffected(); n > 0 {
-			delta = t.Stars
+			changed, delta = true, t.Stars
 		}
 	} else {
 		var credited int
-		switch err := tx.QueryRow(`SELECT stars FROM task_done WHERE task_id = ? AND day = ?`, id, day).Scan(&credited); {
+		switch err := tx.QueryRow(`SELECT stars FROM task_done WHERE task_id = ? AND day = ?`, t.ID, day).Scan(&credited); {
 		case errors.Is(err, sql.ErrNoRows):
 		case err != nil:
-			return err
+			return false, 0, err
 		default:
-			if _, err := tx.Exec(`DELETE FROM task_done WHERE task_id = ? AND day = ?`, id, day); err != nil {
-				return err
+			if _, err := tx.Exec(`DELETE FROM task_done WHERE task_id = ? AND day = ?`, t.ID, day); err != nil {
+				return false, 0, err
 			}
-			delta = -credited
+			changed, delta = true, -credited
 		}
 	}
 	if delta != 0 {
 		if _, err := tx.Exec(`INSERT INTO star_log (id, person_id, delta, task_id, task_title, day, booked_by, created_at)
 			VALUES (?, ?, ?, ?, ?, ?, NULLIF(?, ''), ?)`,
 			newID(), t.PersonID, delta, t.ID, t.Title, day, by, at.UTC().Format(time.RFC3339)); err != nil {
-			return err
+			return false, 0, err
 		}
 	}
-	return tx.Commit()
+	if delta < 0 {
+		delta = -delta
+	}
+	return changed, delta, nil
 }
 
 // SetTaskStars changes the star value of a task (0 to task.MaxStars). It
@@ -316,10 +343,14 @@ func (db *DB) TasksForDay(householdID, day string) ([]DayTask, error) {
 	if err != nil {
 		return nil, err
 	}
+	subs, err := db.SubtasksByTask(householdID, day)
+	if err != nil {
+		return nil, err
+	}
 	var out []DayTask
 	for _, t := range all {
 		if t.DueOn(day) {
-			out = append(out, DayTask{t, done[t.ID]})
+			out = append(out, DayTask{Task: t, Done: done[t.ID], Subtasks: subs[t.ID]})
 		}
 	}
 	return out, nil

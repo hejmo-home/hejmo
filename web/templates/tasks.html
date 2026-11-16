@@ -3,18 +3,41 @@
   {{template "syncNotice" .}}
   <p class="lead">{{if .Child}}{{t "tasks.intro.child"}}{{else}}{{t "tasks.intro"}}{{end}}</p>
 
+  {{if .Child}}
+  {{if .ChildParts}}<div class="child-tasks" data-person="{{.ChildSlot}}">
+    <p class="count">{{template "progressWords" .ChildProgress}}{{if .StarsShown}} · <span class="chip stars" data-stars="{{.StarsBalance}}">{{.StarsBalance}}<span class="sr"> {{t "personal.stars"}}</span></span>{{end}}</p>
+    <div class="list">{{template "taskParts" (dict "Parts" .ChildParts "Prefix" "/tasks" "Day" "" "StarsShown" .StarsShown "Labels" true)}}</div>
+  </div>{{else}}<p class="lead">{{t "tasks.none.child"}}</p>{{end}}
+  {{else}}
+  <div class="tasks-tools">
+    <a class="button secondary" href="/routines/new"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "routine.new"}}</a>
+    <p class="hint">{{t "routine.tasks.hint"}}</p>
+  </div>
+
   {{range .Groups}}
   <section aria-label="{{.Name}}">
     <h2>{{.Name}}</h2>
-    <ul class="cards">
+    {{range .Routines}}<section class="rcard" aria-label="{{.Name}}">
+      <a class="rhead" href="/routines/{{.ID}}">{{template "partIconSized" (dict "Part" .Part "Size" 22)}}<span class="t"><b>{{.Name}}</b><span class="state">{{if not .Steps}}{{tf "routine.card.state.empty" "part" (t (printf "routine.part.%s" .Part))}}{{else if not .Total}}{{tf "routine.card.state.none" "part" (t (printf "routine.part.%s" .Part))}}{{else}}{{tf "routine.card.state" "part" (t (printf "routine.part.%s" .Part)) "done" (printf "%d" .Done) "total" (printf "%d" .Total)}}{{end}}</span></span><span class="open">{{t "routine.open"}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+      {{if .Steps}}<ol class="rsteps">
+        {{range .Steps}}<li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
+          <span class="nr" aria-hidden="true">{{.Nr}}</span>
+          <span class="nm"><a href="/tasks/{{.ID}}">{{if .Done}}<s>{{if .Emoji}}{{.Emoji}} {{end}}{{.Title}}</s>{{else}}{{if .Emoji}}{{.Emoji}} {{end}}{{.Title}}{{end}}</a>{{template "taskStars" .}}</span>
+          <span class="hint">{{template "repeatText" .}} · {{template "dueState" .}}</span>
+          {{if .Due}}<span class="acts"><form method="post" action="/tasks/{{.ID}}/done">
+            <input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">
+            <button class="button secondary" type="submit">{{if .Done}}{{t "tasks.untick"}}{{else}}{{t "tasks.tick"}}{{end}}</button>
+          </form></span>{{end}}
+        </li>
+        {{end}}</ol>{{end}}
+    </section>
+    {{end}}
+    {{if and .Routines .Tasks}}<h3 class="more-tasks">{{tf "tasks.more_of" "name" .Name}}</h3>{{end}}
+    {{if .Tasks}}<ul class="cards">
       {{range .Tasks}}
       <li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
-        <strong>{{if not $.Child}}<a href="/tasks/{{.ID}}">{{end}}{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}{{if not $.Child}}</a>{{end}}{{if .Stars}} <span class="task-stars" data-task-stars="{{.Stars}}">{{.Stars}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span>{{end}}</strong>
-        <span class="hint">
-          {{if eq .Repeat "once"}}{{t "tasks.repeat.once"}} {{.Date}}{{else if eq .Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}
-          {{if .Part}} · {{t (printf "tasks.part.%s" .Part)}}{{end}}
-          · {{if not .Due}}{{t "tasks.not_today"}}{{else if .Done}}{{t "tasks.done"}}{{else}}{{t "tasks.open"}}{{end}}
-        </span>
+        <strong><a href="/tasks/{{.ID}}">{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}</a>{{template "taskStars" .}}</strong>
+        <span class="hint">{{template "repeatText" .}}{{if .Part}} · {{t (printf "tasks.part.%s" .Part)}}{{end}} · {{template "dueState" .}}</span>
         {{if .Due}}
         <span class="row">
           <form method="post" action="/tasks/{{.ID}}/done">
@@ -25,9 +48,10 @@
         {{end}}
       </li>
       {{end}}
-    </ul>
+    </ul>{{end}}
   </section>
-  {{else}}{{if .Child}}<p class="lead">{{t "tasks.none.child"}}</p>{{else}}{{template "empty" (dict "Text" (t "tasks.none") "Href" "#new" "Action" (t "tasks.none.action"))}}{{end}}{{end}}
+  {{else}}{{template "empty" (dict "Text" (t "tasks.none") "Href" "#new" "Action" (t "tasks.none.action"))}}{{end}}
+  {{end}}
 
   {{if not .Child}}<section aria-labelledby="stars">
     <h2 id="stars">{{t "tasks.stars.title"}}</h2>
@@ -89,3 +113,12 @@
     </form>
   </section>{{end}}
 {{template "foot"}}
+
+{{/* Stars of a task as icon-less number with the unit for screen readers. */}}
+{{define "taskStars"}}{{if .Stars}} <span class="task-stars" data-task-stars="{{.Stars}}">{{.Stars}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span>{{end}}{{end}}
+
+{{/* How often a task comes back, in words. */}}
+{{define "repeatText"}}{{if eq .Repeat "once"}}{{t "tasks.repeat.once"}} {{.Date}}{{else if eq .Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}{{end}}
+
+{{/* Where a task stands today, in words. */}}
+{{define "dueState"}}{{if not .Due}}{{t "tasks.not_today"}}{{else if .Done}}{{t "tasks.done"}}{{else}}{{t "tasks.open"}}{{end}}{{end}}

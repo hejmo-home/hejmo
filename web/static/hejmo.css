@@ -692,7 +692,8 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .frame { grid-template-columns: minmax(0, 1fr); }
 .frame > * { min-width: 0; }
 .steps .card-row .t b { color: var(--text); }
-h1 { overflow-wrap: anywhere; hyphens: auto; }
+h1 { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* a name in a heading breaks at a space or hyphen first, inside a word only when wider than the line (ticket 175) */
+.h-name { min-width: 0; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* the name in a flex heading is its own shrinkable item: a word wider than the line breaks at the edge instead of widening the heading (ticket 175, as .fv .person-name) */
 .back { gap: 6px; text-decoration: none; }
 .back .icon { stroke: currentColor; }
 main > .back { margin: 0 0 4px; }
@@ -839,7 +840,7 @@ details.danger .confirm a { display: inline-flex; align-items: center; min-heigh
    no navigation, the progress of the four steps on top. Only existing tokens. */
 .wizard { max-width: 600px; margin: 0 auto; display: grid; gap: var(--gap-section); align-content: start; }
 .wizard main { display: grid; gap: var(--gap); min-width: 0; }
-.wizard h1 { margin: 0; overflow-wrap: anywhere; hyphens: manual; }
+.wizard h1 { margin: 0; min-width: 0; overflow-wrap: break-word; hyphens: manual; }
 .wizard h2 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
 .wizard p, .wizard .lead { margin: 0; }
 .wizard .notice, .wizard .error, .wizard .msg { max-width: none; margin: 0; }
@@ -1047,7 +1048,7 @@ fieldset.choice legend.sr { float: none; width: 1px; margin: -1px; }
 
 /* Personal view: tasks first and as wide as the week, progress in words on top. */
 .pv-header { justify-content: flex-start; flex-wrap: wrap; }
-.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: anywhere; }
+.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: break-word; hyphens: manual; }
 .pv-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .pv-tasks { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 .tasks-head { flex: none; display: grid; gap: 8px; padding: var(--pad-column) var(--pad-column) 12px; border-bottom: 1px solid var(--border); }

@@ -31,6 +31,9 @@ var navItems = []navItem{
 type navLink struct {
 	Href, Label string
 	Current     bool
+	// Section marks the screen whose sub-page this is (aria-current="true"):
+	// Settings stays filled on every page below the hub (ticket 182).
+	Section bool
 }
 
 // frame is the chrome around a web screen: brand bar, sign-out and navigation.
@@ -55,6 +58,10 @@ type frame struct {
 	BackHref, BackLabel string
 	// BackText is the text of the back link when it is a name and not a locale key.
 	BackText string
+	// Crumbs are the linked parts of the breadcrumb trail above the page (ticket
+	// 182); the page itself is the last part and comes from its title. A page
+	// with a trail has no back link.
+	Crumbs []crumbLink
 	// Success is the success line after a saved change, already translated
 	// and escaped; a text of the locales may hold <b> around a figure.
 	Success template.HTML
@@ -102,11 +109,18 @@ func (s *server) frameFor(r *http.Request) frame {
 		if !auth.RoleAllows(p.Role, it.Needs) {
 			continue
 		}
+		if it.Href == "/settings" && r.URL.Path != "/settings" && f.Back { // below the hub: filled, but not the page itself
+			f.Items = append(f.Items, navLink{it.Href, it.Label, false, true})
+			continue
+		}
 		cur := (it.Href == "/settings" && f.Back) || r.URL.Path == it.Href || (it.Href != "/" && strings.HasPrefix(r.URL.Path, it.Href+"/")) || (it.Href == "/" && strings.HasPrefix(r.URL.Path, "/notes/")) || (it.Href == "/tasks" && strings.HasPrefix(r.URL.Path, "/routines/"))
-		f.Items = append(f.Items, navLink{it.Href, it.Label, cur})
+		f.Items = append(f.Items, navLink{it.Href, it.Label, cur, false})
 	}
 	return f
 }
+
+// crumbLink is a crumb with its label translated or named, ready for the layout.
+type crumbLink struct{ Href, Label string }
 
 // sunFrame is a bare frame carrying today's sun times at the home location.
 func (s *server) sunFrame() frame {
@@ -131,7 +145,7 @@ func (s *server) sunFrame() frame {
 // isSetupPath reports whether path is a screen reached from the Settings hub
 // (ADR 0017): a hub entry or a page below one. Connections hang off Calendars.
 func isSetupPath(path string) bool {
-	paths := []string{"/connections"}
+	paths := []string{"/connections", "/groups"}
 	for _, it := range hubItems {
 		paths = append(paths, it.Href)
 	}

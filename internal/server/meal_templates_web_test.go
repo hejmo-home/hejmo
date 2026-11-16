@@ -134,7 +134,7 @@ func TestTheTemplateFormHasEveryFieldOfTheDesign(t *testing.T) {
 	c := signedInAPI(t)
 	r := c.b.do(http.MethodGet, "/meals/templates/new", nil, en)
 	for _, want := range []string{
-		`<a class="back" href="/meals/templates">`, "<h1>New template</h1>", `class="steps wide tpl-form"`, `action="/meals/templates"`,
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/meals/templates">Meal plan templates</a>`, "<h1>New template</h1>", `class="steps wide tpl-form"`, `action="/meals/templates"`,
 		`name="name"`, `maxlength="60"`, "Which meals does it fill?", `name="fills" value="one"`, `name="fills" value="all"`, `<div class="mtpick-wrap"><fieldset class="choice mtpick">`, `name="mealtime" value="dinner"`,
 		`id="schedule"`, `class="every"`, `name="every"`, `min="1" max="52"`, `name="start"`, `class="weeks-hint"`, "<h2>Meals of the week</h2>",
 		`data-mt="breakfast"`, `name="tpl_7_dinner"`, `name="tpl_1_breakfast"`, "Save template", `class="savebar"`, "Week 46 · 09.11. – 15.11.", "Week 45 · 08.11. – 14.11.",
@@ -329,7 +329,7 @@ func TestTemplatePagesAreGermanInDuForm(t *testing.T) {
 	saveTemplate(t, c, weekBForm("Woche B", "2026-11-16", "2"), de)
 	for path, wants := range map[string][]string{
 		"/meals/templates":       {"<h1>Essensplan-Vorlagen</h1>", "Neue Vorlage", "Die nächsten Wochen", "<b>Abendessen</b> von Montag bis Mittwoch", "Alle 2 Wochen ab Woche 47 (16.11.2026)", "Zurück zum Essensplan"},
-		"/meals/templates/new":   {"Welche Mahlzeiten füllt sie?", "Eine Mahlzeit am Tag", "Alle Mahlzeiten des Tages", "Welche Mahlzeit?", "Wann kommt sie dran?", "Startwoche", "Mahlzeiten der Woche", "Vorlage speichern", "Zurück zu den Vorlagen"},
+		"/meals/templates/new":   {"Welche Mahlzeiten füllt sie?", "Eine Mahlzeit am Tag", "Alle Mahlzeiten des Tages", "Welche Mahlzeit?", "Wann kommt sie dran?", "Startwoche", "Mahlzeiten der Woche", "Vorlage speichern", `<a href="/meals/templates">Essensplan-Vorlagen</a>`},
 		"/meals?week=2026-11-16": {"Vorlagen</a>", "Aus Vorlage"},
 	} {
 		body := c.b.do(http.MethodGet, path, nil, de).body

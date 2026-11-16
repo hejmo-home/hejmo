@@ -168,6 +168,7 @@ func TestTheLastPartIsTheHeadingOfThePageOnEveryPageBelowSettings(t *testing.T) 
 	b := signedInBox(t)
 	dispID := pairedDisplay(t, b, "Hallway", "screen")
 	connID := connectedBox(t, b)
+	switchMCPOnPage(t, b, true)
 	b.post("/caldav/tokens", url.Values{"name": {"Phone"}})
 	h, _ := b.db.HomeHousehold()
 	tokens, _ := b.db.APITokens(h.ID)
@@ -218,7 +219,10 @@ func TestTheCalendarConnectionsPageHasItsHubEntryAsHeading(t *testing.T) {
 
 func TestTheDeepestSettingsPageHasFourParts(t *testing.T) {
 	e := newInviteBox(t)
-	wantTrail(t, "invitation", e.en(http.MethodGet, e.page(), nil).body,
+	wantTrail(t, "invitation page", e.en(http.MethodGet, e.page(), nil).body,
+		part("Settings", "/settings"), part("People", "/people"), part("Papa", "/people/"+e.papa.ID), part("Invite Papa", ""))
+	e.create()
+	wantTrail(t, "open invitation", e.en(http.MethodGet, e.page(), nil).body,
 		part("Settings", "/settings"), part("People", "/people"), part("Papa", "/people/"+e.papa.ID), part("Invitation for Papa", ""))
 	wantTrail(t, "person", e.en(http.MethodGet, "/people/"+e.papa.ID, nil).body,
 		part("Settings", "/settings"), part("People", "/people"), part("Papa", ""))
@@ -271,7 +275,24 @@ func TestRoutineTemplatePagesShowTheTrailFromTwoLevels(t *testing.T) {
 	tplPage := tb.page(t, "/routines/templates/"+id)
 	wantTrail(t, "template", tplPage, part("Tasks", "/tasks"), part("Routine templates", "/routines/templates"), part("Evening routine of Mia", ""))
 	stepPage := tb.page(t, "/routines/templates/"+id+"/steps/"+step["id"].(string))
-	wantTrail(t, "step", stepPage, part("Tasks", "/tasks"), part("Routine templates", "/routines/templates"), part("Evening routine of Mia", "/routines/templates/"+id), part(headingText(stepPage), ""))
+	wantTrail(t, "step", stepPage, part("Tasks", "/tasks"), part("Routine templates", "/routines/templates"), part("Evening routine of Mia", "/routines/templates/"+id), part(step["title"].(string), ""))
 	// One level below Tasks keeps the link.
 	has(t, tb.page(t, "/routines/new"), `class="back"`)
+}
+
+// After a field error the trail and the heading keep the saved name until a save succeeds.
+func TestAfterAFieldErrorTrailAndHeadingKeepTheSavedName(t *testing.T) {
+	b := signedInBox(t)
+	id := pairedDisplay(t, b, "Hallway", "screen")
+	r := b.do(http.MethodPost, "/displays/"+id+"/settings", url.Values{"name": {"Corridor"}, "type": {"screen"}, "theme": {"auto"}, "quiet": {"on"}, "quiet_from": {"x"}, "quiet_to": {"y"}}, en)
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d, want 422\n%s", r.status, r.body)
+	}
+	wantTrail(t, "refused save", r.body, part("Settings", "/settings"), part("Displays", "/displays"), part("Hallway", ""))
+	if h := headingText(r.body); h != "Hallway" {
+		t.Errorf("h1 = %q, want the saved name", h)
+	}
+	if !strings.Contains(r.body, `value="Corridor"`) {
+		t.Error("what was typed is lost at the field")
+	}
 }

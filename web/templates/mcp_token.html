@@ -1,5 +1,4 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/mcp" "Text" (t "mcp.back"))}}
   <h1>{{.Token.Name}}</h1>
   <dl class="facts">{{range $i, $f := .Facts}}
   <dt>{{$f.Label}}</dt>

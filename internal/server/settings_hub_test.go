@@ -82,21 +82,21 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 	}
 }
 
-// 5.18: every setup page links back to the hub, and Settings stays marked in the navigation.
+// 5.18, ticket 182: every setup page links back to the hub in its trail, and Settings stays marked in the navigation.
 func TestSetupPagesLinkBackToSettings(t *testing.T) {
 	b := signedInBox(t)
 	b.post("/calendars", url.Values{"name": {"Feiertage"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
 	for _, page := range hubPages {
 		body := getEN(b, page).body
-		if !strings.Contains(body, `<a class="back" href="/settings">`) {
+		if !strings.Contains(body, `<a href="/settings">Settings</a>`) {
 			t.Errorf("%s has no link back to Settings", page)
 		}
-		// Ticket 111: the link sits inside main. As a grid item of the frame it
+		// Ticket 111: the trail sits inside main. As a grid item of the frame it
 		// broke the 1024 px layout.
-		if at, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main`); at < main {
-			t.Errorf("%s: the link back to Settings is outside main", page)
+		if at, main := strings.Index(body, `<nav class="crumbs"`), strings.Index(body, `<main`); at < main {
+			t.Errorf("%s: the trail is outside main", page)
 		}
-		if !strings.Contains(body, `<a href="/settings" aria-current="page"`) {
+		if !strings.Contains(body, `<a href="/settings" aria-current="true"`) {
 			t.Errorf("%s does not mark Settings as the current section", page)
 		}
 	}

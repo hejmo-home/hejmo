@@ -403,6 +403,18 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 			text, _ := data["BackText"].(string)
 			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, href, "", text
 		}
+		if parts := crumbsFor(name, data); len(parts) > 0 { // a trail replaces the back link (ticket 182)
+			for _, c := range parts {
+				label := c.Label
+				if isName(label) {
+					label = strings.TrimPrefix(label, "\x00")
+				} else {
+					label = s.i18n.T(lang, label)
+				}
+				fr.Crumbs = append(fr.Crumbs, crumbLink{c.Href, label})
+			}
+			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, "", "", ""
+		}
 		key, arg := s.takeFlash(w, r) // always consumed, so it cannot show later
 		switch own, _ := data["SuccessKey"].(string); {
 		case key == "flash.lang.error":

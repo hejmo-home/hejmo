@@ -87,9 +87,9 @@ func TestFrameLayoutCoversTheBackLinkAndNarrowScreens(t *testing.T) {
 	}
 	b := signedInBox(t)
 	body := b.get("/settings/household").body
-	back, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main id="content">`)
+	back, main := strings.Index(body, `<nav class="crumbs"`), strings.Index(body, `<main id="content">`)
 	if back < 0 || main < 0 || back < main {
-		t.Errorf("the Back to Settings link must sit inside main, before the content (%d, %d)", back, main)
+		t.Errorf("the trail through Settings must sit inside main, before the content (%d, %d)", back, main)
 	}
 	if !strings.Contains(body, `class="frame framed has-nav"`) {
 		t.Error("the household page is not a frame with navigation")

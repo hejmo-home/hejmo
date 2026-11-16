@@ -179,7 +179,7 @@ An overview lists the things of one kind (displays, device tokens, connections, 
 _Avoid_: list page (for the overview), settings page (for the detail page)
 
 **Device token**:
-The password a calendar app or CalDAV client on a phone uses, one per device and revocable on its own; shown once when created. It is a token of scope `calendars`, unlike an API token for other software.
+The password a calendar app or CalDAV client on a phone uses, one per device and revocable on its own; shown once when created. It is a token of scopes `calendars` and `tasks`, unlike an API token for other software.
 _Avoid_: app password, phone token (a phone has a device session)
 
 ## Everyday
@@ -215,6 +215,10 @@ _Avoid_: deadline, expiry
 **Task**:
 Something to be done once or repeatedly, ticked off when done; may belong to a routine, carry a star value and be split into subtasks.
 _Avoid_: chore, todo, job
+
+**Task list**:
+One person's tasks as a CalDAV client sees them (VTODO), one per person, opened by the token scope `tasks`. A once task shows as it is, a repeating task as today's occurrence. Clients may change title, notes, the day of a once task and completion; creating and deleting happen only in Hejmo.
+_Avoid_: reminders list
 
 **Routine**:
 The ordered sequence of one person's tasks for a part of the day, such as Mia's morning. A person has at most one routine per part of the day, and a task is in at most one routine.
@@ -255,7 +259,7 @@ A secret that lets software act on behalf of a person through the API, limited b
 _Avoid_: API key, access key
 
 **Device token**:
-An API token with the token scope `calendars`, created by a parent for one CalDAV client (for example "iPhone Mama") and used as the password next to the person's username. Revoked on its own.
+An API token with the token scopes `calendars` and `tasks`, created by a parent for one CalDAV client (for example "iPhone Mama") and used as the password next to the person's username. `calendars` opens the calendars, `tasks` the task lists (one per person); older device tokens with `calendars` alone still work and see no task lists. Revoked on its own.
 _Avoid_: app password, CalDAV password
 
 **Share through the box**:

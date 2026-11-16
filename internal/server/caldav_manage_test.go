@@ -116,7 +116,7 @@ func TestParentManagesDeviceTokensAndSharingInTheWebInterface(t *testing.T) {
 		t.Fatalf("token page after creation:\n%s", again.body)
 	}
 	_, _, list := c.call(http.MethodGet, "/tokens", nil)
-	if len(list) != 1 || list[0].(map[string]any)["name"] != "iPhone Mama" || list[0].(map[string]any)["scopes"] != "calendars" {
+	if len(list) != 1 || list[0].(map[string]any)["name"] != "iPhone Mama" || list[0].(map[string]any)["scopes"] != "calendars tasks" {
 		t.Fatalf("API list = %v", list)
 	}
 

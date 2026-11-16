@@ -17,6 +17,7 @@ type taskJSON struct {
 	PersonID  string   `json:"person_id"`
 	Title     string   `json:"title"`
 	Emoji     string   `json:"emoji"`
+	Notes     string   `json:"notes"`
 	Repeat    string   `json:"repeat"`
 	Weekdays  []string `json:"weekdays"`
 	Date      string   `json:"date"`
@@ -51,7 +52,7 @@ func taskToJSON(t task.Task, day string, done bool, subs []store.DaySubtask) tas
 	for _, k := range subs {
 		out = append(out, subtaskJSON{ID: k.ID, Title: k.Title, Emoji: k.Emoji, Position: k.Position, Done: k.Done})
 	}
-	return taskJSON{Subtasks: out, ID: t.ID, PersonID: t.PersonID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat),
+	return taskJSON{Subtasks: out, ID: t.ID, PersonID: t.PersonID, Title: t.Title, Emoji: t.Emoji, Notes: t.Notes, Repeat: string(t.Repeat),
 		Weekdays: nonNil(t.Weekdays), Date: t.Date, PartOfDay: string(t.PartOfDay), Stars: t.Stars, RoutineID: t.RoutineID, Position: t.Position, Due: t.DueOn(day), Done: done}
 }
 
@@ -110,6 +111,7 @@ func (s *server) apiCreateTask(w http.ResponseWriter, r *http.Request, p princip
 		PersonID  string   `json:"person_id"`
 		Title     string   `json:"title"`
 		Emoji     string   `json:"emoji"`
+		Notes     string   `json:"notes"`
 		Repeat    string   `json:"repeat"`
 		Weekdays  []string `json:"weekdays"`
 		Date      string   `json:"date"`
@@ -121,7 +123,7 @@ func (s *server) apiCreateTask(w http.ResponseWriter, r *http.Request, p princip
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	t, err := s.createTask(p, task.Task{PersonID: in.PersonID, Title: in.Title, Emoji: in.Emoji, Repeat: task.Repeat(in.Repeat),
+	t, err := s.createTask(p, task.Task{PersonID: in.PersonID, Title: in.Title, Emoji: in.Emoji, Notes: in.Notes, Repeat: task.Repeat(in.Repeat),
 		Weekdays: in.Weekdays, Date: in.Date, PartOfDay: task.PartOfDay(in.PartOfDay), RoutineID: in.RoutineID}, in.Stars)
 	switch {
 	case errors.Is(err, store.ErrInvalid):

@@ -1,0 +1,61 @@
+{{template "head" (dict "Lang" .Lang "Title" .Tpl.Name "Frame" .Frame)}}
+  <h1>{{.Tpl.Name}}</h1>
+  <dl class="facts">
+    <dt>{{t "routine.fact.part"}}</dt>
+    <dd>{{template "partIconSized" (dict "Part" .Tpl.Part "Size" 18)}}{{t (printf "routine.part.%s" .Tpl.Part)}}</dd>
+    {{if .Origin}}<dt>{{t "routine.tpl.fact.origin"}}</dt>
+    <dd>{{.Origin}}</dd>{{end}}
+  </dl>
+  <p class="use-tpl"><a class="button" href="/routines/new?template={{.Tpl.ID}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>{{t "routine.tpl.use"}}</a></p>
+
+  <section aria-labelledby="order">
+    <h2 id="order">{{t "routine.tpl.steps"}}</h2>
+    <p class="hint">{{t "routine.tpl.steps.hint"}}</p>
+    {{if .Tpl.Steps}}<ol class="rsteps order">
+      {{range .Tpl.Steps}}<li>
+        <span class="nr" aria-hidden="true">{{.Nr}}</span>
+        <span class="nm"><a href="/routines/templates/{{$.Tpl.ID}}/steps/{{.ID}}">{{if .Emoji}}{{.Emoji}} {{end}}{{.Title}}</a>{{template "taskStars" .}}</span>
+        <span class="hint">{{template "stepRepeat" .}}{{if not .Stars}} · {{t "routine.tpl.no_stars"}}{{end}}</span>
+        <span class="acts">
+          {{if .CanUp}}<form method="post" action="/routines/templates/{{$.Tpl.ID}}/move"><input type="hidden" name="step" value="{{.ID}}"><button class="button secondary sq" type="submit" name="direction" value="up" aria-label="{{tf "routine.move.up" "title" .Title}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 19V5M6 11l6-6 6 6"/></svg>{{t "routine.up"}}</button></form>{{end}}
+          {{if .CanDown}}<form method="post" action="/routines/templates/{{$.Tpl.ID}}/move"><input type="hidden" name="step" value="{{.ID}}"><button class="button secondary sq" type="submit" name="direction" value="down" aria-label="{{tf "routine.move.down" "title" .Title}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M6 13l6 6 6-6"/></svg>{{t "routine.down"}}</button></form>{{end}}
+        </span>
+      </li>
+      {{end}}</ol>
+    {{else}}<div class="empty" data-empty><p>{{t "routine.tpl.steps.empty"}}</p></div>{{end}}
+  </section>
+
+  {{$a := .Add}}
+  {{template "moreOpen" (dict "Label" (t "routine.add") "Summary" (t "routine.tpl.add.sum") "Open" (or (eq .ErrorField "title") (eq .ErrorField "emoji") (eq .ErrorField "stars") (eq .ErrorField "repeat") (eq .ErrorField "weekdays")))}}
+    <form method="post" action="/routines/templates/{{.Tpl.ID}}/steps" class="inner">
+      {{template "field" (dict "Root" . "Name" "title" "Label" (t "tasks.field.title") "Value" (index $a "Title") "Max" 120)}}
+      <div class="pair">
+        {{template "field" (dict "Root" . "Name" "emoji" "Label" (t "routine.field.emoji") "Value" (index $a "Emoji") "Max" 16 "Class" "short" "Hint" (t "routine.field.emoji.hint"))}}
+        {{template "field" (dict "Root" . "Name" "stars" "Label" (t "tasks.stars.field") "Type" "number" "Value" (index $a "Stars") "Inputmode" "numeric" "Bounded" true "Lo" 0 "Hi" .MaxStars "Class" "short")}}
+      </div>
+      {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "tasks.field.repeat") "Root" . "Name" "repeat")}}
+        {{range $r := .Repeats}}{{template "option" (dict "Name" "repeat" "Value" $r "Label" (t (printf "tasks.repeat_option.%s" $r)) "Checked" (eq $r (index $a "Repeat")))}}{{end}}
+      {{template "optionsClose" (dict "Root" . "Name" "repeat")}}
+      {{template "optionsOpen" (dict "Class" "days" "When" "when-weekly" "Legend" (t "tasks.field.weekdays") "Root" . "Name" "weekdays")}}
+        {{$chosen := strs (index $a "Weekdays")}}
+        {{range .Weekdays}}{{template "option" (dict "Type" "checkbox" "Name" "weekdays" "Value" . "Label" (t (printf "tasks.weekday.%s" .)) "Checked" (has $chosen .))}}{{end}}
+      {{template "optionsClose" (dict "Root" . "Name" "weekdays")}}
+      <p class="hint">{{t "routine.tpl.add.hint"}}</p>
+      <button class="button secondary" type="submit">{{t "routine.tpl.add.submit"}}</button>
+    </form>
+  {{template "moreClose"}}
+
+  {{$s := .Settings}}
+  {{template "moreOpen" (dict "Label" (t "routine.settings") "Summary" (printf "%s · %s" .Tpl.Name (t (printf "routine.part.%s" .Tpl.Part))) "Open" (or (eq .ErrorField "tname") (eq .ErrorField "part")))}}
+    <form method="post" action="/routines/templates/{{.Tpl.ID}}/settings" class="inner">
+      {{template "field" (dict "Root" . "Name" "tname" "Label" (t "routine.tpl.field.name") "Value" (index $s "Name") "Max" 60)}}
+      {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "routine.field.part") "Root" . "Name" "part")}}
+        {{range $p := .Parts}}{{template "option" (dict "Name" "part" "Value" $p "Label" (t (printf "routine.part.%s" $p)) "Checked" (eq $p (index $s "Part")))}}{{end}}
+      {{template "optionsClose" (dict "Root" . "Name" "part")}}
+      <p class="hint">{{t "routine.tpl.settings.hint"}}</p>
+      <button class="button secondary" type="submit">{{t "routine.settings.save"}}</button>
+    </form>
+  {{template "moreClose"}}
+
+  {{template "dangerOpen" (dict "Label" (t "routine.tpl.delete") "Confirm" .DeleteConfirm "Explain" .DeleteExplain "Action" (printf "/routines/templates/%s/delete" .Tpl.ID) "CancelHref" (printf "/routines/templates/%s" .Tpl.ID))}}{{template "dangerClose"}}
+{{template "foot"}}

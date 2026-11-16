@@ -10,13 +10,20 @@
   </div>{{else}}<p class="lead">{{t "tasks.none.child"}}</p>{{end}}
   {{else}}
   <div class="tasks-tools">
-    <a class="button secondary" href="/routines/new"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "routine.new"}}</a>
+    <div class="row">
+      <a class="button secondary" href="/routines/new"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "routine.new"}}</a>
+      <a class="button secondary" href="/routines/templates"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V6a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8a2 2 0 0 0 2 2h2"/></svg>{{t "routine.tpl.title"}}</a>
+    </div>
     <p class="hint">{{t "routine.tasks.hint"}}</p>
   </div>
 
   {{range .Groups}}
   <section aria-label="{{.Name}}">
     <h2>{{.Name}}</h2>
+    {{if .Empty}}<div class="empty" data-empty>
+      <p>{{tf "tasks.none.person" "name" .Name "template" $.SuggestedTemplate}}</p>
+      <a class="button secondary" href="/routines/new?person={{.ID}}">{{t "routine.new"}}</a>
+    </div>{{end}}
     {{range .Routines}}<section class="rcard" aria-label="{{.Name}}">
       <a class="rhead" href="/routines/{{.ID}}">{{template "partIconSized" (dict "Part" .Part "Size" 22)}}<span class="t"><b>{{.Name}}</b><span class="state">{{if not .Steps}}{{tf "routine.card.state.empty" "part" (t (printf "routine.part.%s" .Part))}}{{else if not .Total}}{{tf "routine.card.state.none" "part" (t (printf "routine.part.%s" .Part))}}{{else}}{{tf "routine.card.state" "part" (t (printf "routine.part.%s" .Part)) "done" (printf "%d" .Done) "total" (printf "%d" .Total)}}{{end}}</span></span><span class="open">{{t "routine.open"}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
       {{if .Steps}}<ol class="rsteps">

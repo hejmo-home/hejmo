@@ -72,6 +72,8 @@ const (
 	MaxBooking = 1000
 	// MaxNote is the longest note of a manual star booking, in characters.
 	MaxNote = 120
+	// MaxNotes is the longest free-text notes field of a task, in characters.
+	MaxNotes = 2000
 )
 
 // DefaultStars is the star value a new task gets: 1 for a child, 0 for an
@@ -121,6 +123,10 @@ type Task struct {
 	// (ADR 0018). Position is its place in the routine, from 1.
 	RoutineID string
 	Position  int
+	// Notes is an optional free text (ADR 0018), editable from CalDAV clients.
+	Notes string
+	// UpdatedAt is the last change of the task itself (not of its done days).
+	UpdatedAt time.Time
 }
 
 // Routine is the ordered sequence of one person's tasks for a part of the day
@@ -155,7 +161,7 @@ func (r Routine) Validate() error {
 }
 
 // InvalidError says why a task cannot be stored and which field is wrong
-// (title, emoji, person, date, weekdays, repeat or part). It matches
+// (title, emoji, notes, person, date, weekdays, repeat or part). It matches
 // ErrInvalid with errors.Is.
 type InvalidError struct{ Field, Msg string }
 
@@ -173,6 +179,9 @@ func (t Task) Validate() error {
 	}
 	if utf8.RuneCountInString(t.Emoji) > MaxEmoji {
 		return bad("emoji", fmt.Sprintf("emoji may have at most %d characters", MaxEmoji))
+	}
+	if utf8.RuneCountInString(t.Notes) > MaxNotes {
+		return bad("notes", fmt.Sprintf("notes may have at most %d characters", MaxNotes))
 	}
 	if t.Stars < 0 || t.Stars > MaxStars {
 		return bad("stars", fmt.Sprintf("stars must be between 0 and %d", MaxStars))

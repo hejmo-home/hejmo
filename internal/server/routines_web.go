@@ -79,7 +79,7 @@ func (s *server) isDefaultRoutineName(lang, name string) bool {
 // routineErrorKey is the text for an invalid routine field.
 func routineErrorKey(field string) string {
 	switch field {
-	case "name", "person", "part":
+	case "name", "person", "part", "template":
 		return "routine.error." + field
 	}
 	return "routine.error.part"
@@ -126,8 +126,15 @@ func (s *server) renderRoutineNew(w http.ResponseWriter, r *http.Request, p prin
 	if _, ok := form["Name"]; !ok {
 		form["Name"] = s.defaultRoutineName(lang, form["Part"].(string))
 	}
+	if _, ok := form["Template"]; !ok {
+		form["Template"] = ""
+	}
 	data := map[string]any{"Person": p.person, "People": chipsOf(people), "Form": form, "Parts": routineParts,
 		"Error": form["Error"], "ErrorField": form["ErrorField"], "ErrorHTML": form["ErrorHTML"], "SyncStale": s.syncStale(p.household.ID)}
+	if err := s.tplPickData(lang, p, data); err != nil {
+		s.fail(w, "routine templates", err)
+		return
+	}
 	s.render(w, r, status, "routine_new.html", data)
 }
 
@@ -139,6 +146,13 @@ func (s *server) handleRoutineNewPage(w http.ResponseWriter, r *http.Request) {
 	form := map[string]any{}
 	if who := r.URL.Query().Get("person"); who != "" {
 		form["Person"] = who
+	}
+	// Coming from "Use for someone": the template is chosen and the part of the
+	// day follows its suggestion. An unknown template is ignored.
+	if id := r.URL.Query().Get("template"); id != "" {
+		if tpl, err := s.routineTemplate(s.langOf(r), p.household.ID, id); err == nil {
+			form["Template"], form["Part"] = tpl.ID, string(tpl.Part)
+		}
 	}
 	s.renderRoutineNew(w, r, p, http.StatusOK, form)
 }
@@ -157,12 +171,27 @@ func (s *server) handleRoutineCreate(w http.ResponseWriter, r *http.Request) {
 			in.Name = s.defaultRoutineName(lang, string(in.Part))
 		}
 	}
-	rt, err := s.db.CreateRoutine(p.household.ID, in)
-	if err == nil {
+	var rt task.Routine
+	var err error
+	templateID := r.PostFormValue("template")
+	if templateID != "" {
+		tpl, terr := s.routineTemplate(lang, p.household.ID, templateID)
+		if errors.Is(terr, store.ErrNotFound) {
+			err = store.InvalidField("template", "unknown template")
+		} else if terr != nil {
+			s.fail(w, "routine template", terr)
+			return
+		} else if rt, err = s.db.CreateRoutineFromSteps(p.household.ID, in, tpl.Steps, s.today(p)); err == nil {
+			people, _ := s.db.People(p.household.ID)
+			who, _ := personNamedIn(people, rt.PersonID)
+			s.appliedFlash(w, r, p, lang, tpl, rt, who.Name)
+			return
+		}
+	} else if rt, err = s.db.CreateRoutine(p.household.ID, in); err == nil {
 		s.redirectSavedNamed(w, r, "/routines/"+rt.ID, "flash.routine_created", rt.Name)
 		return
 	}
-	form := map[string]any{"Person": in.PersonID, "Part": string(in.Part), "Name": typed}
+	form := map[string]any{"Person": in.PersonID, "Part": string(in.Part), "Name": typed, "Template": templateID}
 	var exists *store.RoutineExistsError
 	var bad *task.InvalidError
 	switch {
@@ -186,11 +215,13 @@ func (s *server) handleRoutineCreate(w http.ResponseWriter, r *http.Request) {
 
 // routinePageState is what a refused form on the routine page needs to show again.
 type routinePageState struct {
-	Add      map[string]any // what was typed in "Add task"
-	Settings map[string]any // what was typed under "Name and part of the day"
-	Error    string         // locale key
-	Field    string
-	HTML     template.HTML // an error that carries a link
+	Add       map[string]any // what was typed in "Add task"
+	Settings  map[string]any // what was typed under "Name and part of the day"
+	Error     string         // locale key
+	Field     string
+	HTML      template.HTML  // an error that carries a link
+	Save      map[string]any // what was typed under "Save as template"
+	ErrorText string         // an error text built by the server, for a field
 }
 
 // renderRoutine renders the routine page of the routine in the path.
@@ -247,7 +278,16 @@ func (s *server) renderRoutine(w http.ResponseWriter, r *http.Request, p princip
 	if settings == nil {
 		settings = map[string]any{"Name": rt.Name, "Part": string(rt.Part)}
 	}
+	save := st.Save
+	if save == nil {
+		save = map[string]any{}
+	}
+	box := s.saveBoxOf(s.langOf(r), p, rt, owner.Name, steps)
+	if _, ok := save["Name"]; !ok {
+		save["Name"] = box.Name
+	}
 	data := map[string]any{
+		"Save": save, "SaveBox": box, "ErrorText": st.ErrorText,
 		"Person": p.person, "Routine": rt, "Owner": chip, "OwnerName": owner.Name, "Steps": steps, "Free": free, "Done": done, "Total": total,
 		"Add": add, "Settings": settings, "Repeats": []string{"daily", "weekly", "once"}, "Weekdays": taskWeekdays, "Parts": routineParts, "MaxStars": task.MaxStars,
 		"Error": st.Error, "ErrorField": st.Field, "ErrorHTML": st.HTML, "SyncStale": s.syncStale(p.household.ID),

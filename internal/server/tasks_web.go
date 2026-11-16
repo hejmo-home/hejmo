@@ -59,9 +59,10 @@ type starEntryView struct {
 const starLogLines = 20
 
 type personTasks struct {
-	Name, Color string
-	Routines    []routineCard // the routines first (ADR 0018), then the single tasks
-	Tasks       []taskView
+	ID, Name, Color string
+	Empty           bool          // a child without tasks: the page suggests a routine template
+	Routines        []routineCard // the routines first (ADR 0018), then the single tasks
+	Tasks           []taskView
 }
 
 var taskWeekdays = []string{"MO", "TU", "WE", "TH", "FR", "SA", "SU"}
@@ -123,7 +124,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			}
 			cards = append(cards, s.starCardOf(p, person, acc))
 		}
-		g := personTasks{Name: person.Name, Color: person.Color}
+		g := personTasks{ID: person.ID, Name: person.Name, Color: person.Color}
 		for _, rt := range routines {
 			if rt.PersonID != person.ID {
 				continue
@@ -148,7 +149,8 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			}
 			g.Tasks = append(g.Tasks, newTaskView(p.household.DateFormat, t, today, doneToday[t.ID]).withSubs(subs[t.ID]))
 		}
-		if len(g.Tasks) > 0 || len(g.Routines) > 0 {
+		g.Empty = len(g.Tasks) == 0 && len(g.Routines) == 0 && person.Role == store.RoleChild
+		if len(g.Tasks) > 0 || len(g.Routines) > 0 || g.Empty {
 			groups = append(groups, g)
 		}
 	}
@@ -161,6 +163,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 	data := map[string]any{
 		"Person": p.person, "Groups": groups, "StarCards": cards, "StarForm": starForm, "StarError": starForm["Error"], "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form, "Child": child, "MaxStars": task.MaxStars,
 		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"], "ErrorField": form["ErrorField"],
+		"SuggestedTemplate": s.i18n.T(s.langOf(r), "routine.tpl."+task.Shipped[0].ID),
 	}
 	if child {
 		due, err := s.db.TasksForDay(p.household.ID, today)

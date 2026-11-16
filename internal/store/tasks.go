@@ -36,9 +36,9 @@ func (db *DB) AddTask(householdID string, t task.Task) (task.Task, error) {
 	}
 	t.ID = newID()
 	ts := now()
-	_, err := db.sql.Exec(`INSERT INTO tasks (id, household_id, person_id, title, emoji, rrule, start_date, part_of_day, stars, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		t.ID, householdID, t.PersonID, t.Title, t.Emoji, t.RRule(), t.Date, string(t.PartOfDay), t.Stars, ts, ts)
+	_, err := db.sql.Exec(`INSERT INTO tasks (id, household_id, person_id, title, emoji, notes, rrule, start_date, part_of_day, stars, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, householdID, t.PersonID, t.Title, t.Emoji, t.Notes, t.RRule(), t.Date, string(t.PartOfDay), t.Stars, ts, ts)
 	return t, err
 }
 
@@ -70,9 +70,9 @@ func (db *DB) addRoutineTask(householdID string, t task.Task) (task.Task, error)
 	}
 	t.ID, t.Position = newID(), last+1
 	ts := now()
-	if _, err := tx.Exec(`INSERT INTO tasks (id, household_id, person_id, title, emoji, rrule, start_date, part_of_day, stars, routine_id, routine_pos, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		t.ID, householdID, t.PersonID, t.Title, t.Emoji, t.RRule(), t.Date, string(storedPart(r.Part)), t.Stars, r.ID, t.Position, ts, ts); err != nil {
+	if _, err := tx.Exec(`INSERT INTO tasks (id, household_id, person_id, title, emoji, notes, rrule, start_date, part_of_day, stars, routine_id, routine_pos, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, householdID, t.PersonID, t.Title, t.Emoji, t.Notes, t.RRule(), t.Date, string(storedPart(r.Part)), t.Stars, r.ID, t.Position, ts, ts); err != nil {
 		return task.Task{}, err
 	}
 	return t, tx.Commit()
@@ -88,15 +88,16 @@ func storedPart(p task.PartOfDay) task.PartOfDay {
 }
 
 // taskFrom reads a task with the part of the day of its routine, if it has one.
-const taskFrom = `SELECT t.id, t.person_id, t.title, t.emoji, t.rrule, t.start_date, COALESCE(r.part, t.part_of_day), t.stars, COALESCE(t.routine_id, ''), t.routine_pos
+const taskFrom = `SELECT t.id, t.person_id, t.title, t.emoji, t.rrule, t.start_date, COALESCE(r.part, t.part_of_day), t.stars, COALESCE(t.routine_id, ''), t.routine_pos, t.notes, t.updated_at
 	FROM tasks t LEFT JOIN routines r ON r.id = t.routine_id`
 
 func scanTask(row interface{ Scan(...any) error }) (task.Task, error) {
 	var t task.Task
-	var rule, part string
-	if err := row.Scan(&t.ID, &t.PersonID, &t.Title, &t.Emoji, &rule, &t.Date, &part, &t.Stars, &t.RoutineID, &t.Position); err != nil {
+	var rule, part, updated string
+	if err := row.Scan(&t.ID, &t.PersonID, &t.Title, &t.Emoji, &rule, &t.Date, &part, &t.Stars, &t.RoutineID, &t.Position, &t.Notes, &updated); err != nil {
 		return task.Task{}, err
 	}
+	t.UpdatedAt, _ = time.Parse(time.RFC3339, updated)
 	parsed, err := task.ParseRRule(rule)
 	if err != nil {
 		return task.Task{}, err
@@ -204,8 +205,8 @@ func (db *DB) DeleteTask(householdID, id string) error {
 // changes nothing. A change books the task's stars into the person's star log
 // in the same transaction: ticking credits them, unticking deducts what was
 // credited (ADR 0018). Ticking the task ticks all its subtasks for that day,
-// unticking it unticks all of them (only if it was done; an open task keeps its single subtask ticks). by is the person who ticked, empty for a
-// display.
+// unticking a done task unticks all of them (an open task keeps its single
+// subtask ticks). by is the person who ticked, empty for a display.
 func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at time.Time) error {
 	t, err := db.Task(householdID, id)
 	if err != nil {
@@ -353,4 +354,68 @@ func (db *DB) TasksForDay(householdID, day string) ([]DayTask, error) {
 		}
 	}
 	return out, nil
+}
+
+// TaskEdit is a change to a task's own text and day; nil fields stay as they are.
+// Date only applies to a once task.
+type TaskEdit struct{ Title, Notes, Date *string }
+
+// EditTask changes a task's title, notes and, for a once task, its day. Done
+// days and credited stars stay: a done once task moved to another day stays
+// done on the new day.
+func (db *DB) EditTask(householdID, id string, e TaskEdit) error {
+	t, err := db.Task(householdID, id)
+	if err != nil {
+		return err
+	}
+	oldDay := t.Date
+	before := t
+	if e.Title != nil {
+		t.Title = strings.TrimSpace(*e.Title)
+	}
+	if e.Notes != nil {
+		t.Notes = strings.TrimSpace(*e.Notes)
+	}
+	if e.Date != nil {
+		if t.Repeat != task.Once {
+			return fmt.Errorf("%w: %w", ErrInvalid, &task.InvalidError{Field: "date", Msg: "only the day of a once task can change"})
+		}
+		t.Date = *e.Date
+	}
+	if err := t.Validate(); err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalid, err)
+	}
+	if t.Title == before.Title && t.Notes == before.Notes && t.Date == before.Date {
+		return nil // a no-op re-save must not change the ETag clients sync on
+	}
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`UPDATE tasks SET title = ?, notes = ?, start_date = ?, updated_at = ? WHERE household_id = ? AND id = ?`,
+		t.Title, t.Notes, t.Date, now(), householdID, id); err != nil {
+		return err
+	}
+	if t.Date != oldDay {
+		// A once task is due on its day only, so its done day moves with it.
+		if _, err := tx.Exec(`UPDATE task_done SET day = ? WHERE task_id = ? AND day = ?`, t.Date, id, oldDay); err != nil {
+			return err
+		}
+	}
+	return tx.Commit()
+}
+
+// TaskCompletedAt says when a task was ticked off on a day, and whether it is.
+func (db *DB) TaskCompletedAt(id, day string) (time.Time, bool, error) {
+	var at string
+	err := db.sql.QueryRow(`SELECT completed_at FROM task_done WHERE task_id = ? AND day = ?`, id, day).Scan(&at)
+	if errors.Is(err, sql.ErrNoRows) {
+		return time.Time{}, false, nil
+	}
+	if err != nil {
+		return time.Time{}, false, err
+	}
+	t, err := time.Parse(time.RFC3339, at)
+	return t, err == nil, err
 }

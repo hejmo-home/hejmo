@@ -245,6 +245,16 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /routines/{id}/tasks", s.handleRoutineAddTask)
 	mux.HandleFunc("POST /routines/{id}/settings", s.handleRoutineSettings)
 	mux.HandleFunc("POST /routines/{id}/delete", s.handleRoutineDissolve)
+	mux.HandleFunc("POST /routines/{id}/template", s.handleRoutineSaveTemplate)
+	mux.HandleFunc("GET /routines/templates", s.handleRoutineTemplates)
+	mux.HandleFunc("GET /routines/templates/{id}", s.handleRoutineTemplatePage)
+	mux.HandleFunc("POST /routines/templates/{id}/move", s.handleTemplateMove)
+	mux.HandleFunc("POST /routines/templates/{id}/steps", s.handleTemplateAddStep)
+	mux.HandleFunc("POST /routines/templates/{id}/settings", s.handleTemplateSettings)
+	mux.HandleFunc("POST /routines/templates/{id}/delete", s.handleRoutineTemplateDelete)
+	mux.HandleFunc("GET /routines/templates/{id}/steps/{step}", s.handleTemplateStepPage)
+	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}", s.handleTemplateStepSave)
+	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}/delete", s.handleTemplateStepDelete)
 	mux.HandleFunc("GET /lists", s.handleListsPage)
 	mux.HandleFunc("POST /lists", s.handleListCreate)
 	mux.HandleFunc("GET /lists/{id}", s.handleListPage)
@@ -356,6 +366,10 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		fr.setLanguage(lang, r)
 		if detailPages[name] && fr.Back { // a detail page links to its own overview, not to the hub
 			fr.Back, fr.BackHref, fr.BackLabel = false, "", ""
+		}
+		if href, _ := data["BackHref"].(string); href != "" { // a page that leads back to a named page
+			text, _ := data["BackText"].(string)
+			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, href, "", text
 		}
 		key, arg := s.takeFlash(w, r) // always consumed, so it cannot show later
 		switch own, _ := data["SuccessKey"].(string); {

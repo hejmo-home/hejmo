@@ -630,6 +630,35 @@ func TestSetupReplacesAPrivateAddressOfAnEarlierBox(t *testing.T) {
 	}
 }
 
+// An earlier box's record of the other address family is deleted, so the old
+// box cannot be resolved any more (a ULA AAAA while this try writes an A and
+// the other way round). A public record of the other family still refuses.
+func TestSetupRemovesAPrivateRecordOfTheOtherAddressFamily(t *testing.T) {
+	cases := []struct{ old, oldType, lan, wantType, goneType string }{
+		{"fd12:3456::1", "AAAA", "", "A", "AAAA"},
+		{"192.168.178.99", "A", "fd12:3456::20", "AAAA", "A"},
+	}
+	for _, c := range cases {
+		r := newRig(t)
+		le := r.startCA(caOption{})
+		m := r.manager(map[string]string{"letsencrypt": le.URL})
+		r.dns.put(boxName, libdns.RR{Name: "@", Type: c.oldType, Data: c.old})
+		req := request("letsencrypt")
+		if c.lan != "" {
+			req.LANIP = c.lan
+		}
+		if err := m.Setup(context.Background(), req); err != nil {
+			t.Fatalf("%s: %v", c.old, err)
+		}
+		if got := r.dns.addressOfType(boxName, c.goneType); got != "" {
+			t.Errorf("%s: %s record = %q, want none", c.old, c.goneType, got)
+		}
+		if got := r.dns.addressOfType(boxName, c.wantType); got != req.LANIP {
+			t.Errorf("%s: %s record = %q, want %q", c.old, c.wantType, got, req.LANIP)
+		}
+	}
+}
+
 // Stale challenge records of an earlier attempt are removed, so a provider
 // that cannot handle several values at one name is not confused.
 func TestSetupRemovesStaleChallengeRecordsOfThisName(t *testing.T) {

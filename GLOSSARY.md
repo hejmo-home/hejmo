@@ -266,6 +266,14 @@ _Avoid_: API key, access key
 An API token with the token scopes `calendars` and `tasks`, created by a parent for one CalDAV client (for example "iPhone Mama") and used as the password next to the person's username. `calendars` opens the calendars, `tasks` the task lists (one per person); older device tokens with `calendars` alone still work and see no task lists. Revoked on its own.
 _Avoid_: app password, CalDAV password
 
+**MCP token**:
+An API token created by a parent for one AI assistant on one device (for example "Claude on Mama's laptop"), shown once when created. Per area (events, lists, tasks with routines, templates and stars, meal plan) it holds no right, read only (`<area>:read`) or read and change (`<area>`); it never holds `read`, `write`, `tokens` or `settings`. It works only at the MCP server, and no other API token does; it acts as the parent who made it. Revoked on its own.
+_Avoid_: assistant key, AI token
+
+**MCP server**:
+The box's endpoint for AI assistants (Model Context Protocol, `/mcp`). Off by default, served over HTTPS only, switched on by a parent on the page "AI assistants (MCP)". Its tools are the REST functions of the areas a token holds; tokens, settings, people, displays and phones are never tools.
+_Avoid_: AI mode, assistant API
+
 **Share through the box**:
 The switch on a calendar that makes the box serve it to CalDAV clients. The family calendar is always shared; on by default for ICS calendars, off for CalDAV and Google calendars.
 _Avoid_: publish, export

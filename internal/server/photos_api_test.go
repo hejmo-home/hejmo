@@ -6,7 +6,6 @@ import (
 	"encoding/json"
 	"fmt"
 	"image"
-	"image/color"
 	"image/jpeg"
 	"mime/multipart"
 	"net/http"
@@ -24,8 +23,9 @@ func jpegPhoto(t *testing.T, w, h int) []byte {
 	t.Helper()
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	for y := range h {
+		row := img.Pix[y*img.Stride:]
 		for x := range w {
-			img.Set(x, y, color.RGBA{R: uint8(x * 255 / w), G: uint8(y * 255 / h), B: 120, A: 255})
+			row[x*4], row[x*4+1], row[x*4+2], row[x*4+3] = uint8(x*255/w), uint8(y*255/h), 120, 255
 		}
 	}
 	var b bytes.Buffer
@@ -122,7 +122,7 @@ func TestTheDefaultAlbumExistsFromTheStart(t *testing.T) {
 func TestUploadKeepsAShrunkCopyWithoutLocation(t *testing.T) {
 	c := signedInAPI(t)
 	album := defaultAlbum(t, c)
-	status, p := c.upload(album, "IMG_0001.jpg", jpegPhoto(t, 4000, 3000))
+	status, p := c.upload(album, "IMG_0001.jpg", jpegPhoto(t, 2400, 1800))
 	if status != http.StatusCreated || p["name"] != "IMG_0001.jpg" || p["hidden"] != false || p["album_id"] != album {
 		t.Fatalf("upload = %d %v", status, p)
 	}

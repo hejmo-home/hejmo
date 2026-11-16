@@ -18,11 +18,12 @@ import (
 func gradient(w, h int) *image.RGBA {
 	img := image.NewRGBA(image.Rect(0, 0, w, h))
 	for y := range h {
+		row := img.Pix[y*img.Stride:]
 		for x := range w {
 			if x < w/2 {
-				img.Set(x, y, color.RGBA{R: 255, A: 255})
+				row[x*4], row[x*4+3] = 255, 255
 			} else {
-				img.Set(x, y, color.RGBA{B: 255, A: 255})
+				row[x*4+2], row[x*4+3] = 255, 255
 			}
 		}
 	}
@@ -73,7 +74,7 @@ func decode(t *testing.T, raw []byte) image.Image {
 }
 
 func TestLargePhotoIsShrunkToDisplaySizeKeepingProportions(t *testing.T) {
-	res, err := photo.Process(bytes.NewReader(jpegOf(t, gradient(4000, 3000))))
+	res, err := photo.Process(bytes.NewReader(jpegOf(t, gradient(2800, 2100))))
 	if err != nil {
 		t.Fatal(err)
 	}

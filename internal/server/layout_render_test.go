@@ -544,11 +544,11 @@ func startChrome(t *testing.T, chrome string) context.Context {
 }
 
 // A viewport is a size the pages are rendered at. Heights follow the devices:
-// phone, tablet in portrait, E-Ink display in landscape (and the tablet and display
+// phone, tablet in portrait, E-Ink display in landscape, desktop browsers (and the tablet and display
 // sizes serve both orientations of the display views).
 type viewport struct{ w, h int }
 
-var layoutViewports = []viewport{{375, 812}, {768, 1024}, {1024, 768}}
+var layoutViewports = []viewport{{375, 812}, {768, 1024}, {1024, 768}, {1440, 900}, {1900, 1000}}
 
 // layoutProblem is one finding of the probe.
 type layoutProblem struct {
@@ -572,6 +572,8 @@ type knownLayoutProblem struct {
 var knownLayoutProblems = []knownLayoutProblem{
 	{"/calendar", "page-wider-than-viewport", 768, []string{"Kinderarztvorsorgeuntersuchung"}, 173, false},
 	{"/calendar", "text-overflows-its-box", 768, []string{"Kinderarztvorsorgeuntersuchung", "Elternabend", "Geburtstagsfeier"}, 173, false},
+	{"/calendar", "text-overflows-its-box", 1440, []string{"Kinderarztvorsorgeuntersuchung"}, 173, false},
+	{"/calendar", "text-overflows-its-box", 1900, []string{"Kinderarztvorsorgeuntersuchung"}, 173, false},
 	{"/calendar", "text-overflows-its-box", 1024, []string{"Kinderarztvorsorgeuntersuchung", "Geburtstagsfeier"}, 173, false},
 	{"/account/reset/{id}", "name-broken-inside-the-word", 375, []string{"Sophie-Marie"}, 175, true}, // seen with Chrome on macOS, not with Chrome 157 on the Linux runners
 }
@@ -588,7 +590,7 @@ func (k knownLayoutProblem) covers(path string, width int, p layoutProblem) bool
 	return false
 }
 
-// TestRenderedLayout renders every page at phone, tablet and display widths, in
+// TestRenderedLayout renders every page at phone, tablet, display and desktop widths (the navigation stays beside the content from 1024 px up), in
 // light and black-and-white, in German and English, and fails with the page,
 // width, theme and element where text overflows or a name breaks.
 func TestRenderedLayout(t *testing.T) {
@@ -706,23 +708,29 @@ func TestLayoutProbeFindsWhatItShould(t *testing.T) {
 	for _, c := range []struct {
 		name, body string
 		want       []string
+		width      int // 375 when 0
 	}{
-		{"text of the element itself, clipped", `<div ` + clip + `>Kinderarztvorsorgeuntersuchung</div>`, []string{"text-overflows-its-box"}},
-		{"text in an inline child, clipped", `<div ` + clip + `><a>Kinderarztvorsorgeuntersuchung</a></div>`, []string{"text-overflows-its-box"}},
-		{"text in nested inline children, clipped", `<div ` + clip + `><a><b>Kinderarztvorsorgeuntersuchung</b></a> <span>x</span></div>`, []string{"text-overflows-its-box"}},
-		{"text in a grid item, clipped (the calendar's event card)", `<div style="display:grid;width:100px;overflow:hidden"><a>Kinderarztvorsorgeuntersuchung</a> <span>14:00</span></div>`, []string{"text-overflows-its-box"}},
-		{"text in a block child, clipped", `<div ` + clip + `><p>Kinderarztvorsorgeuntersuchung</p></div>`, []string{"text-overflows-its-box"}},
-		{"text that fits", `<div ` + clip + `><a>kurz</a></div>`, nil},
-		{"text that wraps", `<div ` + clip + `><a>ein Text mit vielen kurzen Wörtern</a></div>`, nil},
-		{"an empty box", `<div ` + clip + `><a></a></div>`, nil},
+		{"text of the element itself, clipped", `<div ` + clip + `>Kinderarztvorsorgeuntersuchung</div>`, []string{"text-overflows-its-box"}, 0},
+		{"text in an inline child, clipped", `<div ` + clip + `><a>Kinderarztvorsorgeuntersuchung</a></div>`, []string{"text-overflows-its-box"}, 0},
+		{"text in nested inline children, clipped", `<div ` + clip + `><a><b>Kinderarztvorsorgeuntersuchung</b></a> <span>x</span></div>`, []string{"text-overflows-its-box"}, 0},
+		{"text in a grid item, clipped (the calendar's event card)", `<div style="display:grid;width:100px;overflow:hidden"><a>Kinderarztvorsorgeuntersuchung</a> <span>14:00</span></div>`, []string{"text-overflows-its-box"}, 0},
+		{"text in a block child, clipped", `<div ` + clip + `><p>Kinderarztvorsorgeuntersuchung</p></div>`, []string{"text-overflows-its-box"}, 0},
+		{"navigation stacked above the content at desktop width", `<div class="frame has-nav" style="display:block"><nav class="frame-nav">Menu</nav><main>Inhalt</main></div>`, []string{"navigation-not-beside-content"}, 1440},
+		{"navigation beside the content at desktop width", `<div class="frame has-nav" style="display:grid;grid-template-columns:100px 1fr"><nav class="frame-nav">Menu</nav><main>Inhalt</main></div>`, nil, 1440},
+		{"text that fits", `<div ` + clip + `><a>kurz</a></div>`, nil, 0},
+		{"text that wraps", `<div ` + clip + `><a>ein Text mit vielen kurzen Wörtern</a></div>`, nil, 0},
+		{"an empty box", `<div ` + clip + `><a></a></div>`, nil, 0},
 	} {
 		t.Run(c.name, func(t *testing.T) {
+			if c.width == 0 {
+				c.width = 375
+			}
 			script := fmt.Sprintf(`(async () => {
 				document.body.innerHTML = %q;
 				%s
-				return JSON.stringify(await probe(375, []));
-			})()`, c.body, layoutProbeJS)
-			if _, err := chromedp.Call(ctx, emulation.SetDeviceMetricsOverride, emulation.SetDeviceMetricsOverrideParams{Width: 375, Height: 812, DeviceScaleFactor: 1}); err != nil {
+				return JSON.stringify(await probe(%d, []));
+			})()`, c.body, layoutProbeJS, c.width)
+			if _, err := chromedp.Call(ctx, emulation.SetDeviceMetricsOverride, emulation.SetDeviceMetricsOverrideParams{Width: int64(c.width), Height: 812, DeviceScaleFactor: 1}); err != nil {
 				t.Fatal(err)
 			}
 			if err := chromedp.Do(ctx, chromedp.Navigate("about:blank")); err != nil {

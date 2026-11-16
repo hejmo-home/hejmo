@@ -64,6 +64,10 @@ type Result struct {
 	FromMetadata, Rotated bool
 }
 
+// one is taken while a picture is decoded: Process holds several full-size
+// copies at once, and a small machine has no room for two of them.
+var one = make(chan struct{}, 1)
+
 // Process reads a picture of at most MaxBytes and returns it as the stored JPEG.
 func Process(r io.Reader) (Result, error) {
 	data, err := io.ReadAll(io.LimitReader(r, MaxBytes+1))
@@ -83,6 +87,8 @@ func Process(r io.Reader) (Result, error) {
 	if cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width*cfg.Height > MaxPixels {
 		return Result{}, ErrTooManyPixels
 	}
+	one <- struct{}{}
+	defer func() { <-one }()
 	src, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {
 		return Result{}, ErrNotAnImage

@@ -2,7 +2,7 @@
 # key | German name | English name | department | what is in it | symbol | default units | allergens
 # what is in it: meat, fish, veg (vegetarian), vegan or nonfood. Default units: one or two keys of
 # internal/unit. Allergens: keys of the 14 main allergens of EU regulation 1169/2011 annex II, as a
-# product of this kind usually carries them (no traces). Reviewed line by line by the product owner.
+# product of this kind usually carries them (no traces). NOT yet reviewed by the product owner (ticket 164): change this line only after the review is done.
 # produce
 apples|Äpfel|Apples|produce|vegan|🍎|kg,piece|
 bananas|Bananen|Bananas|produce|vegan|🍌|piece,kg|

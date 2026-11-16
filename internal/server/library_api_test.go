@@ -5,7 +5,9 @@ import (
 	"context"
 	"io"
 	"net/http"
+	"net/http/httptest"
 	"strings"
+	"sync/atomic"
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3filter"
@@ -152,6 +154,24 @@ func TestAPictureFromTheWebIsDownloadedOnceAndAPrivateAddressIsRefused(t *testin
 	status, body, _ := c3.call(http.MethodPost, "/articles", map[string]any{"name": "y", "kind": "veg", "unit1": "piece", "picture_url": srv.URL + "/page"})
 	if status != http.StatusUnprocessableEntity || !strings.Contains(body["error"].(string), "web page") {
 		t.Errorf("web page = %d %v", status, body)
+	}
+}
+
+func TestAnInvalidArticleCausesNoDownload(t *testing.T) {
+	var hits atomic.Int32
+	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { hits.Add(1) }))
+	t.Cleanup(srv.Close)
+	c := signedInAPI(t, withFetcher(loopbackFetcher()))
+	for name, body := range map[string]map[string]any{
+		"blank name":       {"name": "   ", "kind": "veg", "unit1": "piece", "picture_url": srv.URL + "/a.jpg"},
+		"symbol and photo": {"name": "y", "kind": "veg", "unit1": "piece", "symbol": "🍎", "picture_url": srv.URL + "/a.jpg"},
+	} {
+		if status, _, _ := c.call(http.MethodPost, "/articles", body); status != http.StatusUnprocessableEntity {
+			t.Errorf("%s = %d", name, status)
+		}
+	}
+	if n := hits.Load(); n != 0 {
+		t.Errorf("%d downloads for requests that were refused anyway", n)
 	}
 }
 

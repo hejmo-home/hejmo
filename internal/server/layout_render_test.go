@@ -350,11 +350,17 @@ func pageShape(path string) string {
 		p = p[:i]
 	}
 	p = isoDayRe.ReplaceAllString(uuidRe.ReplaceAllString(p, "{id}"), "{day}")
+	if libraryNotArticle[p] {
+		return p
+	}
 	return shippedArticleRe.ReplaceAllString(p, "$1/{article}")
 }
 
 // shippedArticleRe is the page of an article Hejmo ships: 248 pages of one kind, rendered once (ticket 164).
 var shippedArticleRe = regexp.MustCompile(`^(/settings/lists/library)/(?:[a-z0-9]+-)*[a-z0-9]+$`)
+
+// libraryNotArticle are the paths under the library that the shape above would take for an article.
+var libraryNotArticle = map[string]bool{"/settings/lists/library/new": true, "/settings/lists/library/suggest": true}
 
 // crawl follows every link of the signed-in parent from the start page and
 // returns one path per kind of page. Pages that only a form reaches are added by hand.
@@ -464,7 +470,7 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 		}
 		pages = append(pages, layoutPage{s, path})
 	}
-	for _, p := range crawl(t, parent, "/calendar/search?q=Schwimm", "/calendar/new", "/tasks", "/routines/new?person="+f.ids[1]+"&part=morning") {
+	for _, p := range crawl(t, parent, "/calendar/search?q=Schwimm", "/calendar/new", "/tasks", "/settings/lists/library/walnuts", "/routines/new?person="+f.ids[1]+"&part=morning") {
 		add(parent, p)
 	}
 	// The display: the family view and the personal views of two people.
@@ -780,5 +786,18 @@ func TestLayoutProbeFindsWhatItShould(t *testing.T) {
 				t.Errorf("problems = %v, want %v\n%s", kinds, c.want, got)
 			}
 		})
+	}
+}
+
+func TestTheFormAndAShippedArticleAreDifferentPages(t *testing.T) {
+	form, article := pageShape("/settings/lists/library/new"), pageShape("/settings/lists/library/walnuts")
+	if form == article {
+		t.Errorf("the form and a shipped article share the shape %q, so the crawl renders only one of them", form)
+	}
+	if pageShape("/settings/lists/library/suggest") == article {
+		t.Error("suggest is no article")
+	}
+	if pageShape("/settings/lists/library/apples") != article {
+		t.Error("two shipped articles are two pages of one kind")
 	}
 }

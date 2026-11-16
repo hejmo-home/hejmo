@@ -125,7 +125,7 @@ func TestWhichAddressesAreCalledPublic(t *testing.T) {
 		"169.254.1.1": false, "100.64.0.1": false, "100.127.255.255": false, "0.0.0.0": false, "255.255.255.255": false,
 		"224.0.0.1": false, "192.0.0.1": false, "192.0.2.1": false, "198.18.0.1": false, "198.51.100.1": false, "203.0.113.1": false, "240.0.0.1": false,
 		"::1": false, "::": false, "fe80::1": false, "fc00::1": false, "fd12::1": false, "ff02::1": false, "::ffff:10.0.0.1": false, "::ffff:8.8.8.8": true,
-		"64:ff9b::7f00:1": false, "64:ff9b::808:808": true, "2001:db8::1": false,
+		"64:ff9b::7f00:1": false, "::7f00:1": false, "::808:808": false, "64:ff9b:1::1": false, "64:ff9b::808:808": true, "2001:db8::1": false,
 	} {
 		if got := picture.IsPublic(netip.MustParseAddr(addr)); got != want {
 			t.Errorf("IsPublic(%s) = %v, want %v", addr, got, want)

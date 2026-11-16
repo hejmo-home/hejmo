@@ -154,25 +154,21 @@ func (s *server) articleWrite(w http.ResponseWriter, r *http.Request, p principa
 	}
 	change := store.KeepPicture
 	var pic *store.ArticlePicture
+	fromWeb := in.PictureURL != nil && *in.PictureURL != ""
+	hasSymbol := in.Symbol != nil && *in.Symbol != ""
+	if hasSymbol && fromWeb {
+		writeError(w, http.StatusUnprocessableEntity, "give a symbol or a picture_url, not both")
+		return
+	}
 	switch {
-	case in.PictureURL != nil && *in.PictureURL != "":
-		res, err := s.fetcher.Fetch(r.Context(), *in.PictureURL)
-		if err != nil {
-			s.pictureErrorJSON(w, "picture_url", err)
-			return
-		}
-		pic = &store.ArticlePicture{JPEG: res.JPEG, Source: "web", Host: res.Host, FromW: res.FromW, FromH: res.FromH, FromBytes: res.FromBytes}
+	case fromWeb:
 		change = store.SetPicture
-	case in.Symbol != nil && *in.Symbol != "":
+	case hasSymbol:
 		cur.PicSource, cur.Symbol = "symbol", *in.Symbol
 		change = store.RemovePicture
 	case in.RemovePicture:
 		cur.PicSource, cur.Symbol = "", ""
 		change = store.RemovePicture
-	}
-	if in.Symbol != nil && *in.Symbol != "" && in.PictureURL != nil && *in.PictureURL != "" {
-		writeError(w, http.StatusUnprocessableEntity, "give a symbol or a picture_url, not both")
-		return
 	}
 	check := library.Input{Name: cur.Name, Dept: cur.Dept, Kind: cur.Kind, Allergens: cur.Allergens, Unit1: cur.Unit1, Unit2: cur.Unit2}
 	if cur.PicSource == "symbol" {
@@ -181,6 +177,15 @@ func (s *server) articleWrite(w http.ResponseWriter, r *http.Request, p principa
 	if errs := check.Validate(s.activeUnitsFor(p, existing)); len(errs) > 0 {
 		writeFieldError(w, http.StatusUnprocessableEntity, errs[0].Field, fieldMessage(errs[0]))
 		return
+	}
+	// Only a request that is valid otherwise may cause an outbound download.
+	if fromWeb {
+		res, err := s.fetcher.Fetch(r.Context(), *in.PictureURL)
+		if err != nil {
+			s.pictureErrorJSON(w, "picture_url", err)
+			return
+		}
+		pic = &store.ArticlePicture{JPEG: res.JPEG, Source: "web", Host: res.Host, FromW: res.FromW, FromH: res.FromH, FromBytes: res.FromBytes}
 	}
 	var saved store.OwnArticle
 	var err error

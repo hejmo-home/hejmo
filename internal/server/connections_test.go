@@ -400,6 +400,12 @@ func (o oneCalendarRemote) Calendar(context.Context, string) (caldavclient.Calen
 func (o oneCalendarRemote) List(context.Context, string) ([]caldavclient.Object, error) {
 	return nil, nil
 }
+func (o oneCalendarRemote) State(context.Context, string) (caldavclient.State, error) {
+	return caldavclient.State{}, nil
+}
+func (o oneCalendarRemote) Changes(context.Context, string, string) (caldavclient.Changes, error) {
+	return caldavclient.Changes{}, caldavclient.ErrSyncUnavailable
+}
 func (o oneCalendarRemote) Fetch(context.Context, string, []string) ([]caldavclient.Object, error) {
 	return nil, nil
 }

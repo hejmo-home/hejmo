@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"maps"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
@@ -17,6 +18,8 @@ type Remote interface {
 	Calendars(ctx context.Context) ([]caldavclient.Calendar, error)
 	Calendar(ctx context.Context, calendarURL string) (caldavclient.Calendar, error)
 	List(ctx context.Context, calendarURL string) ([]caldavclient.Object, error)
+	State(ctx context.Context, calendarURL string) (caldavclient.State, error)
+	Changes(ctx context.Context, calendarURL, token string) (caldavclient.Changes, error)
 	Fetch(ctx context.Context, calendarURL string, objectURLs []string) ([]caldavclient.Object, error)
 	CountEvents(ctx context.Context, calendarURL string, since time.Time) (int, error)
 }
@@ -90,31 +93,100 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 		return fail(MessageOf(err), err)
 	}
 
-	listed, err := remote.List(ctx, cal.URL)
-	if err != nil {
-		return failRemote(err)
-	}
-	run.listed = len(listed)
 	known, err := s.db.RemoteObjects(cal.ID)
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
 	}
-	var toFetch []string
-	present := map[string]bool{}
+	prev, err := s.db.RemoteState(cal.ID)
+	if err != nil {
+		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
+	}
+	// The server's state is read before anything else, so a change made while
+	// this run goes on shows up in the next one and is never skipped.
+	state, err := remote.State(ctx, cal.URL)
+	if err != nil {
+		if caldavclient.IsUnauthorized(err) || isForeign(err) {
+			return failRemote(err)
+		}
+		state = caldavclient.State{} // not asked for or not answered: list the ETags
+	}
+
+	var toFetch, deleted []string
 	etags := map[string]string{}
 	byPath := map[string]string{} // normalised address -> listed address
-	for _, o := range listed {
-		present[o.URL] = true
-		etags[o.URL] = o.ETag
-		byPath[caldavclient.AddressKey(o.URL)] = o.URL
-		if etag, ok := known[o.URL]; !ok || etag != o.ETag || o.ETag == "" {
-			toFetch = append(toFetch, o.URL)
+	next := caldavclient.State{CTag: state.CTag, SyncToken: state.SyncToken}
+	listing := func() error {
+		listed, err := remote.List(ctx, cal.URL)
+		if err != nil {
+			return err
 		}
+		run.listed = len(listed)
+		present := map[string]bool{}
+		for _, o := range listed {
+			present[o.URL] = true
+			etags[o.URL] = o.ETag
+			byPath[caldavclient.AddressKey(o.URL)] = o.URL
+			if etag, ok := known[o.URL]; !ok || etag != o.ETag || o.ETag == "" {
+				toFetch = append(toFetch, o.URL)
+			}
+		}
+		for u := range known {
+			if !present[u] {
+				deleted = append(deleted, u)
+			}
+		}
+		return nil
 	}
-	var deleted []string
-	for u := range known {
-		if !present[u] {
-			deleted = append(deleted, u)
+	delta := func(token string) error {
+		ch, err := remote.Changes(ctx, cal.URL, token)
+		if err != nil {
+			return err
+		}
+		keep := map[string]string{} // normalised address -> address the box holds
+		for u := range known {
+			keep[caldavclient.AddressKey(u)] = u
+		}
+		present := maps.Clone(known)
+		for _, u := range ch.Deleted {
+			if held, ok := keep[caldavclient.AddressKey(u)]; ok {
+				deleted = append(deleted, held)
+				delete(present, held)
+			}
+		}
+		for _, o := range ch.Changed {
+			addr := o.URL
+			if held, ok := keep[caldavclient.AddressKey(o.URL)]; ok {
+				addr = held
+			}
+			present[addr] = o.ETag
+			etags[addr] = o.ETag
+			byPath[caldavclient.AddressKey(addr)] = addr
+			if etag, ok := known[addr]; !ok || etag != o.ETag || o.ETag == "" {
+				toFetch = append(toFetch, addr)
+			}
+		}
+		run.listed = len(present)
+		next.SyncToken = ch.Token
+		return nil
+	}
+	switch {
+	case prev.CTag != "" && state.CTag == prev.CTag:
+		run.listed = len(known) // nothing changed since the last run
+	case prev.Token != "" && state.SyncToken != "":
+		err := delta(prev.Token)
+		if errors.Is(err, caldavclient.ErrSyncUnavailable) {
+			// No sync-collection, or the token is not known any more.
+			toFetch, deleted = nil, nil
+			clear(etags)
+			clear(byPath)
+			err = listing()
+		}
+		if err != nil {
+			return failRemote(err)
+		}
+	default:
+		if err := listing(); err != nil {
+			return failRemote(err)
 		}
 	}
 
@@ -122,9 +194,11 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	if err != nil {
 		zone = time.UTC
 	}
-	fetched, err := remote.Fetch(ctx, cal.URL, toFetch)
-	if err != nil {
-		return failRemote(err)
+	var fetched []caldavclient.Object
+	if len(toFetch) > 0 {
+		if fetched, err = remote.Fetch(ctx, cal.URL, toFetch); err != nil {
+			return failRemote(err)
+		}
 	}
 	run.fetched = len(fetched)
 	var changes []store.ObjectChange
@@ -157,10 +231,17 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	}
 	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
 	run.skipped = skipped(notes)
-	done, err := s.db.CompleteObjectSync(h.ID, cal.ID, changes, deleted, notes, at, at.Add(interval))
+	done, err := s.db.CompleteObjectSyncWithState(h.ID, cal.ID, store.RemoteState{CTag: next.CTag, Token: next.SyncToken}, changes, deleted, notes, at, at.Add(interval))
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), fmt.Errorf("could not store the events: %w", err))
 	}
 	run.done = done
 	return nil
+}
+
+// isForeign says whether err is the refusal to contact a host outside the
+// server's domain.
+func isForeign(err error) bool {
+	var foreign *caldavclient.ForeignHostError
+	return errors.As(err, &foreign)
 }

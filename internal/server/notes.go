@@ -250,6 +250,7 @@ func (s *server) renderHome(w http.ResponseWriter, r *http.Request, status int, 
 	}
 	data["FirstSteps"] = first
 	lang := s.langOf(r)
+	data["PINFrom"] = s.pinFrom(r, h, person) // after accepting an invitation: who has the PIN
 	if person.Role == store.RoleChild {
 		people, err := s.db.People(h.ID)
 		if err != nil {
@@ -452,4 +453,27 @@ func (s *server) handleNoteDelete(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	s.redirectSaved(w, r, "/", "flash.note_removed")
+}
+
+// pinFrom names who to ask for the parent PIN of the displays on the home page
+// right after accepting an invitation: the parent who invited. The display PIN
+// belongs to the household, not to the new account (ticket 145). Empty at any
+// other time.
+func (s *server) pinFrom(r *http.Request, h store.Household, person store.Person) string {
+	c, err := r.Cookie(flashCookie)
+	if err != nil {
+		return ""
+	}
+	key, arg, _ := strings.Cut(c.Value, ":")
+	if key != "flash.invite_done" || arg != person.ID {
+		return ""
+	}
+	inv, err := s.db.LatestInvitation(h.ID, person.ID)
+	if err != nil {
+		return ""
+	}
+	if by, err := s.db.Person(h.ID, inv.CreatedBy); err == nil {
+		return by.Name
+	}
+	return s.i18n.T(s.langOf(r), "invite.inviter.fallback")
 }

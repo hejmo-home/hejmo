@@ -82,13 +82,13 @@ func (s *server) syncFlag(r *http.Request, p principal, c store.SyncedCalendar, 
 		if fact {
 			key = "sync.flag.login_fact"
 		}
-		return &flagView{"problem", s.say(r, i18n.Msg(key, "when", p.when(c.Sync.LastAttempt)))}
+		return &flagView{Kind: "problem", Text: s.say(r, i18n.Msg(key, "when", p.when(c.Sync.LastAttempt)))}
 	case problem && stale:
-		return &flagView{"problem", s.say(r, i18n.Msg("sync.flag.stale_problem", "error", s.say(r, c.Sync.LastError)))}
+		return &flagView{Kind: "problem", Text: s.say(r, i18n.Msg("sync.flag.stale_problem", "error", s.say(r, c.Sync.LastError)))}
 	case problem:
-		return &flagView{"problem", s.say(r, i18n.Msg("sync.flag.problem", "error", s.say(r, c.Sync.LastError)))}
+		return &flagView{Kind: "problem", Text: s.say(r, i18n.Msg("sync.flag.problem", "error", s.say(r, c.Sync.LastError)))}
 	case stale:
-		return &flagView{"problem", s.say(r, i18n.Msg("sync.flag.stale"))}
+		return &flagView{Kind: "problem", Text: s.say(r, i18n.Msg("sync.flag.stale"))}
 	}
 	return nil
 }

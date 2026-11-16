@@ -58,6 +58,63 @@ paths:
                     items: { type: string, example: K7QD2-M9XPA }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /people/{id}/invitation:
+    get:
+      operationId: getInvitation
+      summary: The newest invitation of an adult (scope tokens:read)
+      description: |
+        The state of the newest invitation made for this person: `open`, `used`
+        (the person created their account), `expired` or `withdrawn`. The link
+        itself is not in the answer: the box keeps only a hash of it.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The invitation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Invitation" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    post:
+      operationId: createInvitation
+      summary: Invite an adult who has no account (scope tokens:write)
+      description: |
+        Creates an invitation link, valid once and for 7 days, and returns its
+        address once: show it as a QR code or send it to that person. A link
+        that is still open for the person is withdrawn, because a new link
+        replaces the old one. The invited person opens the address on their own
+        device and chooses username and password themselves, then sets up
+        one-time codes. With the box's own certificate authority the address
+        leads over the plain-HTTP trust page first (ADR 0014). Children cannot
+        be invited (422), and neither can a person who has an account (409).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "201":
+          description: The new invitation, with its address (only in this answer)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Invitation" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: The person has an account already }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: withdrawInvitation
+      summary: Withdraw the open invitation of an adult (scope tokens:delete)
+      description: The link stops working at once. 404 when no invitation is open.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Withdrawn }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /people/{id}/reset-otp:
     post:
       operationId: resetOneTimeCodes
@@ -2095,6 +2152,17 @@ components:
         id: { type: string, format: uuid }
         url: { type: string, format: uri, description: "The address to show as a QR code. Only in this answer." }
         expires_at: { type: string, format: date-time }
+    Invitation:
+      type: object
+      required: [state, created_at, expires_at, created_by, accepted_at, withdrawn_at]
+      properties:
+        state: { type: string, enum: [open, used, expired, withdrawn] }
+        created_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time, description: Seven days after it was created }
+        created_by: { type: string, format: uuid, nullable: true, description: The parent who created it; null if that person was removed }
+        accepted_at: { type: string, format: date-time, nullable: true }
+        withdrawn_at: { type: string, format: date-time, nullable: true, description: Also set when a newer link replaced it }
+        url: { type: string, format: uri, description: "The address to show as a QR code or send. Only in the answer of createInvitation." }
     ConfirmPhone:
       type: object
       required: [person_id, name]

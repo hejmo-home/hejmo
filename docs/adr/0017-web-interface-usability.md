@@ -62,6 +62,10 @@ The product owner tested the box with a real iCloud account on 14/11/2026. The m
 - **Subscribed calendar detail** also holds the switch for the waste collection calendar (ticket 6.7) and its colour; the list is not grouped by person any more, each row names its audience. The calendars of a connection have no page of their own, so the waste switch for the read-only calendars of a connection sits on the connection page, in a section of its own below the choice of calendars (also `waste_collection` on `PATCH /calendars/{id}`).
 - **Success lines name the thing** after removing it ("“Küche” unpaired."); the name travels in the one-time flash cookie as base64 text and is shown escaped. A success line a page shows itself is never replaced by a waiting one.
 
+### Setup of the one-time code after an invitation (ticket 145)
+
+- A parent who accepted an invitation and stopped before confirming the one-time code signs in with the password only and is led into code setup, as after a reset; this holds for any account that has not confirmed its code on a configured box, not only after a reset.
+
 ## Consequences
 
 - New tickets in package 5: management pages redesign (calendars and choose calendars with switch, chips, event count, feedback), settings hub and navigation, display settings question, tasks page patterns, iOS profile for CalDAV clients, recovery of one-time codes, people page.

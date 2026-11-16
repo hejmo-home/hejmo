@@ -1,0 +1,15 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "invite.account.title") "Frame" .Frame "Wizard" .Wizard)}}
+  <h1>{{t "invite.account.title"}}</h1>
+  <p class="lead">{{t "invite.account.lead"}}</p>
+  {{template "error" .}}
+  <form method="post" action="/invite/{{.V.Token}}/account" class="steps">
+    <fieldset>
+      <legend>{{t "invite.account.you"}}</legend>
+      <p class="invitee"><span class="marker" data-person="{{.V.Chip.Slot}}" data-shape="{{.V.Chip.Shape}}" aria-hidden="true"></span><span>{{.V.Invitee.Name}}</span></p>
+      <p class="hint">{{tf "invite.account.you.hint" "name" .V.Inviter}}</p>
+      {{template "field" (dict "Root" . "Name" "username" "Label" (t "invite.field.username") "Value" .Form.Username "Required" true "Autocomplete" "username" "Autocapitalize" "none" "Hint" (t "invite.field.username.hint"))}}
+      {{template "field" (dict "Root" . "Name" "password" "Label" (t "setup.field.password") "Type" "password" "Required" true "Min" 10 "Autocomplete" "new-password" "Hint" (t .PasswordHint) "Reveal" (dict "Show" (t "setup.password.show") "Hide" (t "setup.password.hide")))}}
+    </fieldset>
+    <div class="actions"><button class="button" type="submit">{{t "invite.account.create"}}</button></div>
+  </form>
+{{template "foot"}}

@@ -1,6 +1,7 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "trust.title") "Frame" .Frame "Wizard" .Wizard)}}
-  <h1>{{t "trust.title"}}</h1>
-  <p class="lead">{{t "trust.lead"}}</p>
+  {{if .Invite}}<h1>{{tf "invite.welcome.title" "name" .Invite.Inviter}}</h1>
+  <p class="lead">{{t "invite.trust.lead"}}</p>{{else}}<h1>{{t "trust.title"}}</h1>
+  <p class="lead">{{t "trust.lead"}}</p>{{end}}
   <nav class="devnav" aria-label="{{t "trust.devices.label"}}">
     <ul class="devices">
       {{range .Devices}}<li><a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{t (printf "trust.device.%s" .Key)}}</a></li>

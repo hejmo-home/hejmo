@@ -1345,6 +1345,38 @@ a.out .icon { flex: none; stroke: currentColor; }
 .cards a.button.secondary, .steps a.button.secondary { color: var(--accent); }
 .guide details.more p { margin: 0; overflow-wrap: anywhere; }
 
+
+/* ---- Invite a second parent (ticket 145) ---- */
+/* The person an invitation is for: marker and name as on the display. */
+.invitee, .steps p.invitee { display: flex; align-items: center; gap: 10px; margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); overflow-wrap: anywhere; }
+.invitee .marker { flex: none; }
+/* Validity line: clock icon and the date in words, never a countdown. */
+.valid { display: flex; align-items: flex-start; gap: 8px; margin: 0; }
+.valid .icon { flex: none; margin-top: 2px; stroke: var(--accent); }
+[data-theme="bw"] .valid .icon { stroke: var(--text); }
+/* A link shown once: wraps anywhere so a long address fits 375 px. */
+.once .secret.link { overflow-wrap: anywhere; word-break: break-all; font-size: var(--fs-label-large); letter-spacing: 0; }
+.once .pair-qr { margin: 0; justify-self: start; }
+[data-theme="bw"] .once .pair-qr { border: 2px solid var(--text); }
+/* Neutral state pill (open invitation), next to .flag.warn and .flag.problem. */
+.flag.open { background: var(--background); color: var(--text); border: 1px solid var(--border); }
+/* The wizard step bar with two or three steps (invitation) instead of four. */
+.wsteps ol[data-count="2"] { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+.wsteps ol[data-count="3"] { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+.people .acc-state { font-weight: 600; color: var(--text); }
+.invite-page .actions, main > form.actions { display: flex; flex-wrap: wrap; gap: 10px; margin: 0 0 var(--gap); }
+.wizard .actions { flex-wrap: wrap; align-items: center; }
+.wizard .actions form { margin: 0; }
+/* People overview: the account state is its own line under name and buttons. */
+.cards.people li > .hint { order: 3; flex: 1 1 100%; }
+/* #111's status pill .flag must not touch the flag image of the language switcher (#134). */
+.lang .flag, [data-theme="bw"] .lang .flag { padding: 0; border: 0; background: none; border-radius: 3px; }
+/* A how-it-works tile on a framed page (outside the wizard). */
+main > .tile.invite-how { display: grid; gap: 12px; padding: var(--pad-column); max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-section); }
+main > .tile.invite-how h2 { margin: 0; }
+[data-theme="bw"] main > .tile.invite-how { border: 2px solid var(--text); }
+.wizard .who { display: inline-flex; align-items: center; gap: 6px; vertical-align: bottom; }
+.steps .invitee span:not(.marker) { font-size: inherit; color: var(--text); }
 /* ticket 7.2 routines (preview-91). Uses existing tokens only. */
 
 /* Part of the day: word plus line icon (sunrise morning, sun after school, moon evening). */

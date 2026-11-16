@@ -1,0 +1,19 @@
+{{template "head" (dict "Lang" .Lang "Title" (tf "invite.welcome.title" "name" .V.Inviter) "Frame" .Frame "Wizard" .Wizard)}}
+  <h1>{{tf "invite.welcome.title" "name" .V.Inviter}}</h1>
+  <p class="lead">{{t "invite.welcome.lead"}}</p>
+  <section class="tile">
+    <h2>{{t "invite.welcome.as"}}</h2>
+    <p class="invitee"><span class="marker" data-person="{{.V.Chip.Slot}}" data-shape="{{.V.Chip.Shape}}" aria-hidden="true"></span><span>{{.V.Invitee.Name}}</span></p>
+    <p class="hint">{{t "invite.welcome.as.hint"}}</p>
+  </section>
+  <section class="tile">
+    <h2>{{t "invite.welcome.how"}}</h2>
+    <ol class="howto">
+      <li><div class="s"><b>{{t "setup.wizard.step.2"}}</b><p>{{t "invite.welcome.step.1"}}</p></div></li>
+      <li><div class="s"><b>{{t "setup.wizard.step.3"}}</b><p>{{t "invite.welcome.step.2"}}</p></div></li>
+    </ol>
+    <p class="hint">{{rich (t "invite.welcome.need")}}</p>
+  </section>
+  <p class="valid">{{template "clockIcon" 18}}<span>{{rich (tf "invite.welcome.valid" "date" .V.Valid)}}</span></p>
+  <div class="actions"><a class="button" href="/invite/{{.V.Token}}/account">{{t "invite.account.create"}}</a></div>
+{{template "foot"}}

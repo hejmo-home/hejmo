@@ -91,7 +91,7 @@ func (s *server) renderCalDAV(w http.ResponseWriter, r *http.Request, p principa
 	for _, t := range tokens {
 		row := rowView{Href: "/caldav/tokens/" + t.ID, Title: t.Name, Lines: []rowLine{s.whoLine(r, chips, t.PersonID, t.PersonName)}}
 		if t.LastUsed.IsZero() {
-			row.Flag = &flagView{"warn", s.say(r, i18n.Msg("caldav.token.flag.never"))}
+			row.Flag = &flagView{Kind: "warn", Text: s.say(r, i18n.Msg("caldav.token.flag.never"))}
 		} else {
 			row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("caldav.token.last_used_at", "when", p.when(t.LastUsed)))})
 		}
@@ -188,7 +188,7 @@ func (s *server) handleDeviceTokenPage(w http.ResponseWriter, r *http.Request) {
 	}
 	last := factView{Label: s.say(r, i18n.Msg("caldav.fact.last_used"))}
 	if t.LastUsed.IsZero() {
-		last.Flag = &flagView{"warn", s.say(r, i18n.Msg("caldav.token.flag.never"))}
+		last.Flag = &flagView{Kind: "warn", Text: s.say(r, i18n.Msg("caldav.token.flag.never"))}
 	} else {
 		last.Value = p.when(t.LastUsed)
 	}

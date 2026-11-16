@@ -46,7 +46,7 @@ func (s *server) renderDisplays(w http.ResponseWriter, r *http.Request, p princi
 
 // silentFlag warns that a display has not been in contact for a while.
 func (s *server) silentFlag(r *http.Request, p principal, d store.Display) *flagView {
-	return &flagView{"warn", s.say(r, i18n.Msg("displays.flag.silent", "when", p.when(d.LastSeen)))}
+	return &flagView{Kind: "warn", Text: s.say(r, i18n.Msg("displays.flag.silent", "when", p.when(d.LastSeen)))}
 }
 
 // displayPage is what the detail page of one display shows. The editable

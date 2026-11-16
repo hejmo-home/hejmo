@@ -49,7 +49,7 @@ func (s *server) personalView(h store.Household, lang, personID string) (familyv
 	if err != nil {
 		return familyview.PersonalView{}, err
 	}
-	in := familyview.PersonalInput{Now: data.now, Person: *person, Calendars: data.calendars, Occurrences: data.occurrences, TimeFormat: h.TimeFormat}
+	in := familyview.PersonalInput{Now: data.now, Person: *person, People: data.people, Calendars: data.calendars, Occurrences: data.occurrences, TimeFormat: h.TimeFormat}
 	for _, t := range due {
 		if t.PersonID == person.ID {
 			in.Tasks = append(in.Tasks, familyview.Task{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Part: string(t.PartOfDay), Done: t.Done, Stars: t.Stars})

@@ -109,7 +109,7 @@ func TestHomeHasTheNoteCard(t *testing.T) {
 		`<input type="radio" name="day" value="tomorrow" checked>Morgen<small>So 15.11.</small>`,
 		`<input type="radio" name="day" value="other">Anderer Tag`, `name="other"`,
 		`<textarea name="text" rows="2" maxlength="120"`, "0 von 120 Zeichen", "Notiz speichern", `action="/notes"`)
-	if n := strings.Count(p, `type="submit"`); n != 3 { // the card's button, the switcher's language and Sign out
+	if n := strings.Count(p, `type="submit"`) - strings.Count(card(p), `type="submit"`); n != 3 { // the card's button, the switcher's language and Sign out; the first steps have their own buttons
 		t.Fatalf("%d submit buttons", n)
 	}
 	en := f.page("en", "/").body

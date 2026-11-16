@@ -392,7 +392,9 @@ func TestFontsLoadFromTheBoxOnly(t *testing.T) {
 	tmpl, _ := fs.Glob(web.Templates, "templates/*.html")
 	for _, f := range tmpl {
 		b, _ := fs.ReadFile(web.Templates, f)
-		if regexp.MustCompile(`(?:src|href)="(?:https?:)?//`).Match(b) {
+		// A link to a site the family is told to visit (deSEC, the router) is
+		// not a resource the page loads.
+		if regexp.MustCompile(`(?:src="|<link[^>]*href=")(?:https?:)?//`).Match(b) {
 			t.Errorf("%s loads an outside resource", f)
 		}
 	}

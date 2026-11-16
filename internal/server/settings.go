@@ -4,8 +4,10 @@ import (
 	"cmp"
 	"encoding/json"
 	"errors"
+	"fmt"
 	"net/http"
 	"net/url"
+	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
@@ -21,6 +23,22 @@ type settingsJSON struct {
 	TemperatureUnit store.TemperatureUnit `json:"temperature_unit"`
 	AutoUpdate      store.UpdateMode      `json:"auto_update"`
 	MealCutoffs     cutoffsJSON           `json:"meal_cutoffs"`
+	// FirstStepsHidden is whether the first steps card on the start page is hidden.
+	FirstStepsHidden bool `json:"first_steps_hidden"`
+	// FirstStepsSkipped lists the steps of that card a parent skipped, in the order of the card.
+	FirstStepsSkipped []string `json:"first_steps_skipped"`
+}
+
+func settingsOf(h store.Household) settingsJSON {
+	return settingsJSON{h.DateFormat, h.TimeFormat, h.TemperatureUnit, h.AutoUpdate, cutoffsToJSON(h.MealCutoffs), h.FirstStepsHidden, skippedOrEmpty(h.FirstStepsSkipped)}
+}
+
+// skippedOrEmpty is the list for JSON: never null.
+func skippedOrEmpty(l []string) []string {
+	if l == nil {
+		return []string{}
+	}
+	return l
 }
 
 // cutoffsJSON is the time per mealtime from which it is no longer shown on
@@ -35,7 +53,7 @@ type cutoffsJSON struct {
 func cutoffsToJSON(c meal.Cutoffs) cutoffsJSON { return cutoffsJSON(c) }
 
 func (s *server) apiGetSettings(w http.ResponseWriter, _ *http.Request, p principal) {
-	writeJSON(w, http.StatusOK, settingsJSON{p.household.DateFormat, p.household.TimeFormat, p.household.TemperatureUnit, p.household.AutoUpdate, cutoffsToJSON(p.household.MealCutoffs)})
+	writeJSON(w, http.StatusOK, settingsOf(p.household))
 }
 
 func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p principal) {
@@ -47,6 +65,10 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		MealCutoffs     *struct {
 			Breakfast, Lunch, Snack, Dinner *string
 		} `json:"meal_cutoffs"`
+		// FirstStepsHidden hides or shows the first steps card on the start page.
+		FirstStepsHidden *bool `json:"first_steps_hidden"`
+		// FirstStepsSkipped replaces the list of skipped steps.
+		FirstStepsSkipped *[]string `json:"first_steps_skipped"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -86,11 +108,25 @@ func (s *server) apiUpdateSettings(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusUnprocessableEntity, "meal_cutoffs: "+err.Error())
 		return
 	}
-	if err := s.saveSettings(p.household, d, f, u, a, c); err != nil {
+	if err := s.saveSettings(p.household, store.HouseholdSettings{DateFormat: d, TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c, FirstStepsHidden: in.FirstStepsHidden, FirstStepsSkipped: in.FirstStepsSkipped}); err != nil {
+		var unknown *store.UnknownStepError
+		if errors.As(err, &unknown) {
+			writeError(w, http.StatusUnprocessableEntity, fmt.Sprintf("first_steps_skipped: unknown step %q; steps are %s", unknown.Step, strings.Join(store.FirstStepIDs, ", ")))
+			return
+		}
+		if errors.Is(err, store.ErrInvalid) {
+			writeError(w, http.StatusUnprocessableEntity, err.Error())
+			return
+		}
 		s.fail(w, "update settings", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, settingsJSON{d, f, u, a, cutoffsToJSON(c)})
+	saved, err := s.db.Household(p.household.ID)
+	if err != nil {
+		s.fail(w, "update settings", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, settingsOf(saved))
 }
 
 // cutoffField is the name of a mealtime's time field in the settings form.
@@ -133,7 +169,7 @@ func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	s.render(w, r, http.StatusOK, "settings.html", map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Hub": items, "Update": s.updateNotice(p.household),
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Hub": items, "Update": s.updateNotice(p.household), "FirstStepsHidden": p.household.FirstStepsHidden,
 	})
 }
 
@@ -182,7 +218,7 @@ func (s *server) handleSettingsSave(w http.ResponseWriter, r *http.Request) {
 		s.renderSettings(w, r, p, http.StatusUnprocessableEntity, "settings.error.cutoff", field, c)
 		return
 	}
-	if err := s.saveSettings(p.household, d, f, u, a, c); err != nil {
+	if err := s.saveSettings(p.household, store.HouseholdSettings{DateFormat: d, TimeFormat: f, TemperatureUnit: u, AutoUpdate: a, MealCutoffs: c}); err != nil {
 		s.fail(w, "update settings", err)
 		return
 	}
@@ -209,22 +245,19 @@ func postedCutoff(form url.Values, m meal.Mealtime, current string) string {
 	return at[0]
 }
 
-// saveSettings stores the household settings: the general ones and the meal
-// cut-offs are two writes. The update mode also goes to the host script; only a
+// saveSettings stores the household settings (general ones, meal cut-offs and
+// the first steps state) in one write. The update mode also goes to the host script; only a
 // failing settings file is tolerated.
-func (s *server) saveSettings(h store.Household, d store.DateFormat, f store.TimeFormat, u store.TemperatureUnit, a store.UpdateMode, c meal.Cutoffs) error {
-	if err := s.db.UpdateHouseholdSettings(h.ID, d, f, u, a); err != nil {
+func (s *server) saveSettings(h store.Household, in store.HouseholdSettings) error {
+	if err := s.db.SaveHouseholdSettings(h.ID, in); err != nil {
 		return err
 	}
-	if err := s.db.SetMealCutoffs(h.ID, c); err != nil {
-		return err
-	}
-	if a == h.AutoUpdate {
+	if in.AutoUpdate == h.AutoUpdate {
 		return nil
 	}
 	// The change is stored; a settings file that cannot be written must not turn
 	// it into an error. The box writes the file again at its next start.
-	if err := update.WriteSettings(s.updateDir, string(a)); err != nil {
+	if err := update.WriteSettings(s.updateDir, string(in.AutoUpdate)); err != nil {
 		s.logger.Error("write update settings", "err", err)
 	}
 	return nil

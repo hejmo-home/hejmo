@@ -27,17 +27,17 @@ func TestCataloguesHaveTheSameKeys(t *testing.T) {
 
 func TestTranslate(t *testing.T) {
 	b := i18n.MustLoad()
-	if got := b.T("de", "setup.title"); got != "Hejmo einrichten" {
+	if got := b.T("de", "setup.title"); got != "Dein Konto" {
 		t.Errorf("de setup.title = %q", got)
 	}
-	if got := b.T("en", "setup.title"); got != "Set up Hejmo" {
+	if got := b.T("en", "setup.title"); got != "Your account" {
 		t.Errorf("en setup.title = %q", got)
 	}
 }
 
 func TestUnknownLanguageFallsBackToDefault(t *testing.T) {
 	b := i18n.MustLoad()
-	if got := b.T("fr", "setup.title"); got != "Hejmo einrichten" {
+	if got := b.T("fr", "setup.title"); got != "Dein Konto" {
 		t.Errorf("fr setup.title = %q, want German fallback", got)
 	}
 }
@@ -85,9 +85,17 @@ func TestFormatFillsParameters(t *testing.T) {
 // ADR 0017: German texts address the user as "du". "eure"/"euer" stay only
 // where the whole family is meant; every such text is listed here with its key.
 var wholeFamilyTexts = map[string]bool{
-	"setup.https.intro": true, // "außerhalb eures Zuhauses": the whole home
-	"setup.intro":       true, // "eure Box": the family's box
-	"displays.none":     true, // "euren Tag": the family's day on the wall
+	"displays.none":                  true, // "euren Tag": the family's day on the wall
+	"setup.welcome.lead":             true, // "eure Box": the family's box
+	"setup.welcome.step.2":           true, // "Euer Ort": the family's town
+	"setup.https.way.public.hint":    true, // "eure Box"
+	"setup.https.public.lan_ip.hint": true, // "eure Geräte"
+	"setup.https.rebind.why":         true, // "bei euch zu Hause"
+	"setup.totp.lead":                true, // "eure Box"
+	"firststeps.lead":                true, // "eurem Familienleben"
+	"firststeps.settled":             true, // "eure Familie"
+	"firststeps.close.hint":          true, // "euren Tag"
+	"firststeps.display.text":        true, // "euren Tag"
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

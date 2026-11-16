@@ -832,6 +832,138 @@ details.danger .confirm a { display: inline-flex; align-items: center; min-heigh
 [data-theme="bw"] .tpick label { border-color: var(--text); }
 .tpick .done { justify-self: end; }
 
+/* Setup wizard (ticket #133, DESIGN.md "Setup wizard"). One centred column,
+   no navigation, the progress of the four steps on top. Only existing tokens. */
+.wizard { max-width: 600px; margin: 0 auto; display: grid; gap: var(--gap-section); align-content: start; }
+.wizard main { display: grid; gap: var(--gap); min-width: 0; }
+.wizard h1 { margin: 0; overflow-wrap: anywhere; hyphens: manual; }
+.wizard h2 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
+.wizard p, .wizard .lead { margin: 0; }
+.wizard .notice, .wizard .error, .wizard .msg { max-width: none; margin: 0; }
+.wizard .tile, .firststeps { background: var(--surface); border-radius: var(--radius-tile); padding: var(--pad-column); display: grid; gap: 12px; min-width: 0; }
+.actions { display: flex; flex-wrap: wrap; align-items: center; gap: 10px var(--gap); }
+.actions .button { flex: 0 1 auto; }
+ol.howto .s > .actions { justify-self: stretch; }
+.link { display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; }
+.wizard ul.plain { margin: 0; padding-left: 20px; display: grid; gap: 6px; }
+.wiz-count { font-size: var(--fs-label); color: var(--text-secondary); text-align: right; }
+@media (max-width: 599px) {
+  .wizard h1 { font-size: var(--fs-key-figure); }
+  .wizard .actions .button { flex: 1 1 100%; text-align: center; }
+  .wizard details.more > summary { flex-wrap: wrap; }
+}
+/* Frame fix found while drawing #133: the navigation row must not widen the
+   page on a 375 px phone (it scrolls sideways inside its own row instead). */
+.frame { grid-template-columns: minmax(0, 1fr); }
+.frame-nav { min-width: 0; }
+@media (min-width: 900px) { .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); } }
+
+/* .button as <button> keeps its look; disabled while the box works. */
+.button[disabled] { cursor: default; background: var(--border); color: var(--text-secondary); }
+[data-theme="bw"] .button[disabled] { background: var(--surface); color: var(--text); border: 2px dashed var(--text); }
+[data-theme="bw"] .button.secondary { border-width: 2px; }
+
+/* Progress through the four steps: a bar segment, number (tick when done) and
+   name per step. The current step is bold; "Schritt n von 4" stands in words
+   in the bar above. */
+.wsteps ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 6px; }
+.wsteps li { display: grid; gap: 6px; align-content: start; font-size: var(--fs-meta); color: var(--text-secondary); min-width: 0; }
+.wsteps li::before { content: ""; height: var(--progress-height); border-radius: var(--radius-progress); background: var(--border); }
+.wsteps li[data-state="done"]::before, .wsteps li[aria-current="step"]::before { background: var(--accent); }
+.wsteps li[aria-current="step"] { color: var(--text); font-weight: 700; }
+.wsteps .lab { overflow-wrap: normal; hyphens: manual; }
+.wsteps .n { font-variant-numeric: tabular-nums; margin-right: 4px; }
+.wsteps .icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 3px; }
+[data-theme="bw"] .wsteps li::before { background: var(--progress-track); }
+[data-theme="bw"] .wsteps li[data-state="done"]::before, [data-theme="bw"] .wsteps li[aria-current="step"]::before { background: var(--progress-fill); }
+/* Under 600 px the numbers give way to the names (the bar above says "Schritt n von 4"). */
+@media (max-width: 599px) { .wsteps .n { display: none; } }
+
+/* Numbered how-to: a ringed number, a bold title, a sentence, then the
+   action of that step. Used for every list of steps the family follows. */
+ol.howto { list-style: none; counter-reset: howto; margin: 0; padding: 0; display: grid; }
+ol.howto > li { counter-increment: howto; display: grid; grid-template-columns: 32px minmax(0, 1fr); gap: 12px; padding: 14px 0; border-top: 1px solid var(--border); }
+ol.howto > li:first-child { border-top: 0; padding-top: 2px; }
+ol.howto > li:last-child { padding-bottom: 0; }
+ol.howto > li::before { content: counter(howto); width: 32px; height: 32px; border-radius: 50%; border: 2px solid var(--accent); color: var(--accent); font-weight: 700; display: grid; place-items: center; font-variant-numeric: tabular-nums; }
+ol.howto > li[data-done]::before { content: "\2713"; background: var(--accent); color: var(--accent-text); }
+ol.howto .s { display: grid; gap: 6px; min-width: 0; justify-items: start; }
+ol.howto .s > b { font-size: var(--fs-event-title); font-weight: 700; }
+ol.howto .s > p { margin: 0; color: var(--text); overflow-wrap: anywhere; }
+ol.howto .s > .f, ol.howto .s > .checkline, ol.howto .s > .qr, ol.howto .s > details { justify-self: stretch; }
+ol.howto .path { font-weight: 600; }
+[data-theme="bw"] ol.howto > li::before { border-color: var(--text); color: var(--text); }
+[data-theme="bw"] ol.howto > li[data-done]::before { background: var(--text); color: var(--surface); }
+
+/* Device chooser on the trust page: links in the navigation chip look; the
+   detected device is selected and named in words below. */
+.devices { display: flex; flex-wrap: wrap; gap: 8px; margin: 0; padding: 0; list-style: none; }
+.devices a { display: inline-flex; align-items: center; min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
+.devices a[aria-current="true"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+[data-theme="bw"] .devices a { border-width: 2px; }
+.detected { font-size: var(--fs-label); color: var(--text-secondary); }
+
+/* Check line: the state of a check the page runs by itself, in words. */
+.checkline { display: flex; gap: 10px; align-items: flex-start; border-radius: var(--radius-card); padding: 10px 12px; margin: 0; }
+.checkline .icon { flex: none; margin-top: 2px; stroke: currentColor; }
+.checkline > span { display: grid; gap: 2px; min-width: 0; overflow-wrap: anywhere; }
+.checkline small { font-size: var(--fs-meta); }
+.checkline[data-state="waiting"] { background: var(--notice-bg); color: var(--notice-text); }
+.checkline[data-state="fail"] { background: var(--error-bg); color: var(--error-text); }
+.checkline[data-state="ok"] { background: var(--surface); border: 1.5px solid var(--accent); color: var(--text); }
+.checkline[data-state="ok"] .icon { stroke: var(--accent); }
+[data-theme="bw"] .checkline[data-state="ok"], [data-theme="bw"] .checkline[data-state="fail"] { border: 2px solid var(--text); }
+[data-theme="bw"] .checkline[data-state="fail"] { border-style: dashed; }
+
+/* Fingerprint: 32 pairs in a fixed grid (8 by 4) so lines can be compared. */
+.fp { display: grid; grid-template-columns: repeat(8, auto); justify-content: start; gap: 4px 10px; margin: 0; padding: 10px 12px; background: var(--background); border-radius: var(--radius-card); font-size: var(--fs-event-title); font-weight: 600; font-variant-numeric: tabular-nums; letter-spacing: 0.04em; }
+[data-theme="bw"] .fp { border: 2px solid var(--text); }
+/* An address or name the family must read exactly. */
+.addr { font-size: var(--fs-person-name); font-weight: 700; overflow-wrap: anywhere; }
+.secret.grouped { word-spacing: 0.4em; letter-spacing: 0.06em; }
+
+/* Recovery codes: numbered, two columns, readable and printable. */
+ol.codes { list-style: none; counter-reset: code; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 8px var(--gap); }
+ol.codes li { counter-increment: code; display: flex; align-items: baseline; gap: 8px; padding: 8px 10px; background: var(--background); border-radius: var(--radius-card); font-size: var(--fs-person-name); font-weight: 700; letter-spacing: 0.06em; font-variant-numeric: tabular-nums; white-space: nowrap; }
+ol.codes li::before { content: counter(code) "."; min-width: 1.6em; font-size: var(--fs-meta); font-weight: 400; color: var(--text-secondary); letter-spacing: 0; }
+@media (max-width: 479px) { ol.codes { grid-template-columns: minmax(0, 1fr); gap: 6px; } }
+[data-theme="bw"] ol.codes li { border: 1.5px solid var(--text); background: var(--surface); }
+.confirm { display: flex; align-items: flex-start; gap: 12px; min-height: var(--touch-target); font-size: var(--fs-body); color: var(--text); grid-template-columns: none; }
+.confirm input { flex: none; width: 24px; height: 24px; min-height: 0; margin: 2px 0 0; accent-color: var(--accent); }
+
+/* Password with a "Show" button in words. */
+.pw { display: flex; gap: 8px; }
+.pw input { flex: 1; min-width: 0; }
+.pw .button { flex: none; padding: 10px 14px; }
+.f .hint { margin: 0; }
+
+/* First steps on the start page after the wizard. */
+.firststeps { max-width: 600px; margin: 0 0 var(--gap-section); }
+.firststeps h2 { margin: 0; font-size: var(--fs-person-name); }
+.firststeps > p { margin: 0; color: var(--text-secondary); }
+.firststeps .done-who { display: flex; flex-wrap: wrap; gap: 4px 12px; color: var(--text-secondary); font-size: var(--fs-label); }
+.firststeps .done-who span { display: inline-flex; align-items: center; gap: 6px; }
+.firststeps .later { justify-self: start; font-size: var(--fs-label); }
+[data-theme="bw"] .firststeps .done-who .marker { width: 12px; height: 12px; }
+
+@media print {
+  body { background: white; padding: 0; }
+  .wizard > header, .wsteps, .no-print { display: none !important; }
+  ol.codes li { border: 1px solid black; background: white; color: black; }
+}
+
+/* Added while building #133: a column of blocks inside the wizard's single
+   column (the name check keeps its parts together for the page script), and the
+   Actalis account keys that only show while Actalis is the chosen issuer. */
+.stack { display: grid; gap: var(--gap); min-width: 0; }
+.when-actalis { display: none; }
+form:has(input[name="issuer"][value="actalis"]:checked) .when-actalis { display: grid; gap: 12px; }
+.devnav { display: grid; gap: 6px; min-width: 0; }
+button.link { background: none; border: 0; padding: 0; font: inherit; font-weight: 600; cursor: pointer; }
+.firststeps form { justify-self: start; margin: 0; }
+/* A legend that only screen readers see must not stretch the page (the choice legend floats at full width). */
+fieldset.choice legend.sr { float: none; width: 1px; margin: -1px; }
+
 /* Meal tile (ticket 6.4, ADR 0016). */
 .fv-footer .tile { container-type: inline-size; }
 .fv-footer .ln.dish, .fv-footer .dish { overflow-wrap: break-word; hyphens: auto; }
@@ -944,6 +1076,116 @@ details.danger .confirm a { display: inline-flex; align-items: center; min-heigh
   .pv-header h1 { font-size: var(--fs-key-figure); }
   .pv-body { grid-template-columns: minmax(0, 1fr); grid-template-rows: minmax(0, 3fr) minmax(0, 2fr); }
 }
+
+/* ---- Design pass by Opus on #133 (product owner feedback 15/11/2026) ---- */
+/* The language switcher (.vh, .frame-tools, .lang) comes from #134 and is not repeated here. */
+/* Navigation wraps on phones, nothing is cut (approved in #86 design pass 2). */
+.frame-nav ul { flex-wrap: wrap; overflow-x: visible; }
+/* The step count leaves the brand bar (room for the switcher) and heads the progress. */
+.wsteps .wiz-count { margin: 0 0 8px; text-align: left; font-size: var(--fs-label); color: var(--text-secondary); }
+/* Links to outside pages: always an underlined link with the "opens elsewhere" icon. */
+a.ext { color: var(--accent); font-weight: 600; text-decoration: underline; white-space: normal; }
+a.ext .icon { width: 14px; height: 14px; margin-left: 3px; vertical-align: -1px; }
+.copyrow { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.copyrow .addr { margin: 0; min-width: 0; }
+/* Home location picker: suggestions while typing, confirmed state, not found. Data source open (#86). */
+.place-pick { display: grid; gap: 6px; min-width: 0; }
+.place-pick .lab { margin: 0; font-size: var(--fs-label); color: var(--text-secondary); }
+.place-q { margin: 0; font-size: var(--fs-label); color: var(--text); font-weight: 700; }
+.place-list { list-style: none; margin: 0; padding: 4px; display: grid; gap: 2px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); }
+.place-list li { display: grid; gap: 1px; min-height: var(--touch-target); align-content: center; padding: 6px 10px; border-radius: var(--radius-field); cursor: pointer; min-width: 0; }
+.place-list li b { font-size: var(--fs-event-title); font-weight: 600; overflow-wrap: anywhere; }
+.place-list li small { font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: anywhere; }
+.place-list li[aria-selected="true"] { background: var(--background); outline: 2px solid var(--accent); outline-offset: -2px; }
+[data-theme="bw"] .place-list { border: 2px solid var(--text); }
+[data-theme="bw"] .place-list li[aria-selected="true"] { outline-color: var(--text); text-decoration: underline; }
+.place-status { display: flex; gap: 10px; align-items: center; padding: 10px 12px; border-radius: var(--radius-card); min-width: 0; }
+.place-status > div { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.place-status b { font-size: var(--fs-event-title); font-weight: 700; overflow-wrap: anywhere; }
+.place-status small { font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: anywhere; }
+.place-status .icon { flex: none; align-self: flex-start; margin-top: 2px; }
+.place-status.ok { border: 1.5px solid var(--accent); background: var(--surface); }
+.place-status .button { flex: none; }
+[data-theme="bw"] .place-status.ok { border: 2px solid var(--text); }
+.place-pick.invalid input { border: 2px solid var(--error-text); }
+/* First steps: six steps, state in words, skippable. */
+.firststeps .fs-progress { display: grid; gap: 6px; }
+.fs-bar { display: grid; grid-template-columns: repeat(6, minmax(0, 1fr)); gap: 4px; }
+.fs-bar span { height: var(--progress-height); border-radius: var(--radius-progress); background: var(--border); }
+.fs-bar span[data-state="done"] { background: var(--accent); }
+.fs-bar span[data-state="skipped"] { background: none; border: 1.5px dashed var(--text-secondary); }
+[data-theme="bw"] .fs-bar span { background: var(--progress-track); }
+[data-theme="bw"] .fs-bar span[data-state="done"] { background: var(--progress-fill); }
+[data-theme="bw"] .fs-bar span[data-state="skipped"] { background: none; border: 2px dashed var(--text); }
+.fs-count { font-size: var(--fs-label); font-weight: 700; }
+.fs-head { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 10px; margin: 0; }
+.fs-head b { font-size: var(--fs-event-title); font-weight: 700; }
+.fs-state { font-size: var(--fs-meta); font-weight: 600; padding: 1px 8px; border-radius: var(--radius-chip); border: 1px solid var(--border); color: var(--text-secondary); }
+.fs-state[data-state="done"] { border-color: var(--accent); color: var(--accent); }
+.fs-state[data-state="skipped"] { border-style: dashed; }
+[data-theme="bw"] .fs-state { border: 1.5px solid var(--text); color: var(--text); }
+[data-theme="bw"] .fs-state[data-state="skipped"] { border-style: dashed; }
+ol.howto > li[data-skipped]::before { content: "\2013"; border-style: dashed; border-color: var(--text-secondary); color: var(--text-secondary); }
+[data-theme="bw"] ol.howto > li[data-skipped]::before { border-color: var(--text); color: var(--text); }
+.fs-acts { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 20px; }
+.fs-acts form { margin: 0; flex-basis: 100%; }
+.link.quiet { color: var(--text-secondary); font-weight: 400; text-decoration: underline; }
+.fs-foot { display: grid; gap: 2px; justify-items: start; border-top: 1px solid var(--border); padding-top: 6px; }
+.fs-foot form { margin: 0; }
+.fs-foot .hint { margin: 0; }
+.firststeps.done .fs-foot { border: 0; gap: 8px; }
+.firststeps .msg { margin: 0; }
+.who-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.who-chips li { display: inline-flex; align-items: center; gap: 6px; padding: 3px 10px 3px 8px; border: 1px solid var(--border); border-radius: var(--radius-chip); font-size: var(--fs-label); overflow-wrap: anywhere; }
+[data-theme="bw"] .who-chips li { border: 1.5px solid var(--text); }
+.fs-sub, .fs-rows { list-style: none; margin: 0; padding: 0; display: grid; gap: 4px; font-size: var(--fs-label); }
+.fs-sub li { display: flex; gap: 8px; align-items: flex-start; }
+.fs-sub .icon { flex: none; width: 18px; height: 18px; margin-top: 1px; }
+.fs-sub .dot { flex: none; width: 12px; height: 12px; margin: 4px 3px 0; border-radius: 50%; border: 2px solid var(--text-secondary); }
+[data-theme="bw"] .fs-sub .dot { border-color: var(--text); }
+.fs-rows li { display: flex; flex-wrap: wrap; gap: 0 6px; padding: 4px 0; border-top: 1px solid var(--border); }
+.fs-rows li:first-child { border-top: 0; }
+.fs-rows .src { color: var(--text-secondary); }
+.fs-rows .for { flex-basis: 100%; color: var(--text-secondary); }
+/* Home: today. */
+.today { background: var(--surface); border-radius: var(--radius-tile); padding: var(--pad-column); display: grid; gap: 12px; max-width: 900px; margin: 0 0 var(--gap-section); min-width: 0; }
+.today-head { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 0 12px; }
+.today-head h2 { margin: 0; font-size: var(--fs-person-name); }
+.today .empty { margin: 0; max-width: none; }
+.today-fam, .today-people, .today .tev { list-style: none; margin: 0; padding: 0; }
+.today-fam li { display: flex; gap: 10px; padding: var(--pad-card); border-radius: var(--radius-card); background: var(--notice-bg); color: var(--notice-text); }
+.today-fam li > span:last-child { display: grid; min-width: 0; }
+.today .who { font-size: var(--fs-meta); }
+.today .tm { flex: none; font-variant-numeric: tabular-nums; font-weight: 600; min-width: 3.2em; }
+.today-people { display: grid; grid-template-columns: repeat(auto-fill, minmax(240px, 1fr)); gap: var(--gap-cards); }
+.today-people > li { display: grid; gap: 6px; align-content: start; padding: 10px 12px; border-radius: var(--radius-card); background: var(--pc-tint); color: var(--pc-text); min-width: 0; }
+[data-theme="bw"] .today-people > li { background: var(--surface); border: 2px solid var(--text); }
+.today-people h3 { margin: 0; display: flex; align-items: center; gap: 8px; font-size: var(--fs-event-title); overflow-wrap: anywhere; }
+.today .tev { display: grid; gap: 2px; font-size: var(--fs-label); }
+.today-people .progress, .today.child .progress { background: var(--surface); }
+[data-theme="bw"] .today-people .progress, [data-theme="bw"] .today.child .progress { background: var(--progress-track); }
+.today .tev li { display: flex; gap: 8px; overflow-wrap: anywhere; }
+.today .tev .none { color: inherit; opacity: 1; font-style: italic; }
+.today .pbar { display: grid; gap: 4px; color: inherit; text-decoration: none; min-height: var(--touch-target); align-content: center; }
+.today .pbar .count { display: inline-flex; flex-wrap: wrap; align-items: center; gap: 4px; font-size: var(--fs-label); font-weight: 600; }
+.icon.star { width: 16px; height: 16px; fill: currentColor; stroke: currentColor; stroke-width: 1; }
+.today-meal { margin: 0; font-size: var(--fs-label); }
+.child-h { display: flex; align-items: center; gap: 12px; }
+.child-h .marker { width: 28px; height: 28px; }
+.today.child { max-width: 600px; background: var(--pc-tint); color: var(--pc-text); }
+[data-theme="bw"] .today.child { background: var(--surface); border: 2px solid var(--text); }
+.today.child h3 { margin: 6px 0 0; font-size: var(--fs-event-title); }
+.today .tev.big { font-size: var(--fs-body); gap: 6px; }
+.ctasks { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+.ctasks li { display: flex; align-items: center; gap: 12px; min-height: var(--touch-target); padding: 4px 10px; border-radius: var(--radius-card); background: var(--surface); color: var(--text); font-size: var(--fs-event-title); }
+.ctasks .box { flex: none; width: 28px; height: 28px; border: 2px solid var(--text); border-radius: 8px; display: grid; place-items: center; }
+.ctasks li[data-done] .box { background: var(--text); }
+.ctasks li[data-done] .box .icon { stroke: var(--surface); }
+.ctasks li[data-done] .t { text-decoration: line-through; color: var(--text-secondary); }
+.ctasks .t { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+.ctasks .stars { display: inline-flex; align-items: center; gap: 2px; font-weight: 700; }
+/* A hub row that posts (Settings: show the first steps again) looks like the link rows. */
+button.hub-row { width: 100%; padding: 0; border: 0; background: none; font: inherit; text-align: left; cursor: pointer; }
 
 /* Ticket #147: a hint or an error inside a segmented control takes the full row
    (the error used to become a third segment); an invalid group shows its 2px

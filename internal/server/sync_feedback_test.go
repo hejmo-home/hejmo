@@ -8,6 +8,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -94,7 +95,7 @@ func TestSyncTimesOfTheCalendarsPageAndTheSyncProblemsShowSeconds(t *testing.T) 
 		t.Errorf("the page and the problem log must show 21:46:26:\n%s", log)
 	}
 
-	if err := b.db.UpdateHouseholdSettings(h.ID, store.DateDMY, store.Time12h, store.Celsius, store.UpdateOn); err != nil {
+	if err := b.db.SaveHouseholdSettings(h.ID, store.HouseholdSettings{DateFormat: store.DateDMY, TimeFormat: store.Time12h, TemperatureUnit: store.Celsius, AutoUpdate: store.UpdateOn, MealCutoffs: meal.DefaultCutoffs()}); err != nil {
 		t.Fatal(err)
 	}
 	page = getEN(b, "/calendars").body

@@ -69,6 +69,27 @@ func (db *DB) Tasks(householdID string) ([]task.Task, error) {
 	return out, rows.Err()
 }
 
+// CountTasks says how many tasks the household has and how many belong to each
+// person, without loading them.
+func (db *DB) CountTasks(householdID string) (int, map[string]int, error) {
+	rows, err := db.sql.Query(`SELECT person_id, COUNT(*) FROM tasks WHERE household_id = ? GROUP BY person_id`, householdID)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer rows.Close()
+	total, by := 0, map[string]int{}
+	for rows.Next() {
+		var id string
+		var n int
+		if err := rows.Scan(&id, &n); err != nil {
+			return 0, nil, err
+		}
+		total += n
+		by[id] = n
+	}
+	return total, by, rows.Err()
+}
+
 // Task loads one task.
 func (db *DB) Task(householdID, id string) (task.Task, error) {
 	t, err := scanTask(db.sql.QueryRow(`SELECT `+taskColumns+` FROM tasks WHERE household_id = ? AND id = ?`, householdID, id))

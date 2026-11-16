@@ -175,6 +175,10 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /logout", s.handleLogout)
 	mux.HandleFunc("POST /language", s.handleLanguageSwitch)
 	mux.HandleFunc("GET /{$}", s.handleHome)
+	mux.HandleFunc("POST /first-steps/hide", s.handleFirstStepsHide)
+	mux.HandleFunc("POST /first-steps/show", s.handleFirstStepsShow)
+	mux.HandleFunc("POST /first-steps/skip", s.handleFirstStepSkip)
+	mux.HandleFunc("POST /first-steps/undo", s.handleFirstStepUndo)
 	mux.HandleFunc("GET /calendar", s.handleCalendarWeek)
 	mux.HandleFunc("GET /calendar/search", s.handleCalendarSearch)
 	mux.HandleFunc("GET /calendar/new", s.handleEventNew)
@@ -287,7 +291,6 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	// The family view arrives with work package 5.
 	h, err := s.db.HomeHousehold()
 	if err != nil {
 		s.fail(w, "household", err)
@@ -305,6 +308,7 @@ func parsePages() *template.Template {
 		"list": func(v ...any) []any { return v },
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
+		"rich": rich,
 		"repl": repl,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
@@ -320,7 +324,7 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
-	for _, k := range []string{"Error", "ErrorField", "Flash"} { // templates compare them
+	for _, k := range []string{"Error", "ErrorField", "FieldError", "Flash"} { // templates compare them
 		if _, ok := data[k]; !ok {
 			data[k] = ""
 		}

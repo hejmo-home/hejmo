@@ -32,6 +32,9 @@ type PersonalEvent struct {
 	Title  string
 	Time   string // empty for all-day events
 	AllDay bool
+	// Family is true when the event is for the whole household (it needs
+	// PersonalInput.People to tell). The home page says "with the whole family".
+	Family bool
 }
 
 // PersonalDay is one day of the personal view.
@@ -44,8 +47,11 @@ type PersonalDay struct {
 // PersonalInput is everything BuildPersonal needs. Occurrences must cover
 // today and the next 6 days; Tasks are the person's tasks due today.
 type PersonalInput struct {
-	Now         time.Time // in the household's time zone
-	Person      Person
+	Now    time.Time // in the household's time zone
+	Person Person
+	// People is the whole household, in display order. Optional: without it no
+	// event is marked as being for the whole family.
+	People      []Person
 	Calendars   map[string]calendar.Audience
 	Occurrences []calendar.Occurrence
 	Tasks       []Task
@@ -75,7 +81,7 @@ func BuildPersonal(in PersonalInput) PersonalView {
 	v := PersonalView{Person: in.Person, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: loc.String(), ClockFormat: clockFormat(in.TimeFormat), Stars: in.Stars}
 	occs := append([]calendar.Occurrence(nil), in.Occurrences...)
 	sort.SliceStable(occs, func(i, j int) bool { return occs[i].Start.Before(occs[j].Start) })
-	finput := Input{Calendars: in.Calendars}
+	finput := Input{Calendars: in.Calendars, People: in.People}
 	var mine []calendar.Occurrence
 	for _, o := range occs {
 		if sees(finput, in.Person, o) {
@@ -91,17 +97,18 @@ func BuildPersonal(in PersonalInput) PersonalView {
 			if !o.Start.Before(next) || !o.End.After(day) {
 				continue
 			}
+			fam := len(in.People) > 0 && wholeHousehold(finput, o)
 			switch {
 			case o.AllDay:
-				allDay = append(allDay, PersonalEvent{Title: o.Title, AllDay: true})
+				allDay = append(allDay, PersonalEvent{Title: o.Title, AllDay: true, Family: fam})
 			case !multiDay(o, loc):
-				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: clock(o, loc, in.TimeFormat)})
+				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: clock(o, loc, in.TimeFormat), Family: fam})
 			case firstDay(o, loc).Equal(day):
-				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: o.Start.In(loc).Format(layout(in.TimeFormat))})
+				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: o.Start.In(loc).Format(layout(in.TimeFormat)), Family: fam})
 			case calendar.LastDay(o, loc).Equal(day) && !endsAtMidnight(o, loc):
-				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: "–" + o.End.In(loc).Format(layout(in.TimeFormat))})
+				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: "–" + o.End.In(loc).Format(layout(in.TimeFormat)), Family: fam})
 			default:
-				allDay = append(allDay, PersonalEvent{Title: o.Title, AllDay: true})
+				allDay = append(allDay, PersonalEvent{Title: o.Title, AllDay: true, Family: fam})
 			}
 		}
 		d.Events = append(allDay, timedEvents...)

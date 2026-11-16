@@ -122,6 +122,7 @@ type StripItem struct {
 	AllDay          bool
 	Partial         bool           // partial public holiday
 	WhoParts        []wholine.Part // who it is for, in square brackets, shown after the title; empty for the whole family
+	Who             string         // WhoParts without the brackets, as plain text
 	DayIndex        int            // multi-day: this is day DayIndex of DayCount (1-based)
 	DayCount        int
 	ContinuesBefore bool
@@ -242,6 +243,7 @@ func Build(in Input) View {
 			}
 			if l := whoLine(in, o, ""); len(l.BracketParts) > 0 {
 				item.WhoParts = append(append([]wholine.Part{{Text: "["}}, l.BracketParts...), wholine.Part{Text: "]"})
+				item.Who = l.InBrackets
 			}
 		}
 		if bar {

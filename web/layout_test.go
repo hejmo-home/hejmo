@@ -226,6 +226,63 @@ func TestColumnReadabilitySnapshot(t *testing.T) {
 	}
 }
 
+// Ticket 133: the navigation row of a framed page must not widen the page on a
+// 375 px phone. The grid has one column that may shrink to nothing, the
+// navigation may shrink and scrolls sideways inside its own row, and the
+// two-column grid with navigation starts at 900 px only.
+func TestFramedPagesAreNeverWiderThanAPhone(t *testing.T) {
+	css := stylesheet(t)
+	for _, want := range []string{
+		`.frame { grid-template-columns: minmax(0, 1fr); }`,
+		`.frame-nav { min-width: 0; }`,
+		`@media (min-width: 900px) { .frame.has-nav { grid-template-columns: max-content minmax(0, 1fr); } }`,
+	} {
+		if !strings.Contains(css, want) {
+			t.Errorf("stylesheet lacks %q", want)
+		}
+	}
+	// Design pass 2: the row wraps on a phone, nothing is cut or hidden (as in #86).
+	if !strings.Contains(css, `.frame-nav ul { flex-wrap: wrap; overflow-x: visible; }`) {
+		t.Error("the navigation row does not wrap")
+	}
+}
+
+// Ticket 133, design pass 2: the components of the first steps, the picker, the
+// today card, the child's day and the outside links exist; the language
+// switcher rules of #134 are there once only.
+func TestStylesheetHasTheDesignPass2Components(t *testing.T) {
+	css := stylesheet(t)
+	for _, sel := range []string{
+		`.wsteps .wiz-count {`, "a.ext {", ".copyrow {", ".place-pick {", ".place-list {", ".place-status.ok {", ".fs-bar {", ".fs-head {", ".fs-state[data-state=\"done\"]",
+		".fs-acts {", ".link.quiet {", ".fs-foot {", ".who-chips {", ".fs-sub, .fs-rows {", ".fs-rows .for {", ".today {", ".today-fam ", ".today-people {",
+		".tev", ".today-meal {", ".child-h .marker {", ".today.child {", ".ctasks {", ".icon.star {", `ol.howto > li[data-skipped]::before`, "button.hub-row {",
+	} {
+		if !strings.Contains(css, sel) {
+			t.Errorf("stylesheet lacks %q", sel)
+		}
+	}
+	if n := strings.Count(css, "\n.lang-menu {"); n != 1 {
+		t.Errorf("the language switcher rules are there %d times, want once", n)
+	}
+	if !regexp.MustCompile(`\.wsteps \.wiz-count \{[^}]*margin: 0 0 8px[^}]*text-align: left[^}]*color: var\(--text-secondary\)`).MatchString(css) {
+		t.Error("the step count is not left aligned with an 8 px gap")
+	}
+}
+
+// Ticket 133: the setup wizard's components exist in the stylesheet.
+func TestStylesheetHasTheWizardComponents(t *testing.T) {
+	css := stylesheet(t)
+	for _, sel := range []string{
+		".wizard {", ".wiz-count", ".wsteps ol", "ol.howto", ".devices", ".detected", `.checkline[data-state="waiting"]`,
+		`.checkline[data-state="ok"]`, `.checkline[data-state="fail"]`, ".fp {", ".addr", ".secret.grouped", "ol.codes", ".confirm",
+		".pw {", ".firststeps", ".actions", ".link {", ".button[disabled]", `[data-theme="bw"] .button[disabled]`, "@media print",
+	} {
+		if !strings.Contains(css, sel) {
+			t.Errorf("stylesheet lacks %q", sel)
+		}
+	}
+}
+
 // #150 AC 1: with 8 people the names from the issue (Maximilian, Anna-Lena,
 // Konstantin) must not break inside a word at 1024x768 and 768x1024, in both
 // themes. Widths are browser measurements (Figtree 700, 19 px, one line,

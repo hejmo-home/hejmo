@@ -57,7 +57,7 @@ func TestMealTileSnapshots(t *testing.T) {
 			add("several meals (07:15)", f.footer(t, "en", 14, 7, 15))
 			add("one meal (18:30)", f.footer(t, "en", 14, 18, 30))
 			add("past cut-off (14:00)", f.footer(t, "en", 14, 14, 0))
-			if err := f.db.SetMealCutoffs(f.householdID, meal.DefaultCutoffs().With(meal.Dinner, "20:00")); err != nil {
+			if err := f.db.SaveHouseholdSettings(f.householdID, store.HouseholdSettings{DateFormat: store.DateDMY, TimeFormat: store.Time24h, TemperatureUnit: store.Celsius, AutoUpdate: store.UpdateOn, MealCutoffs: meal.DefaultCutoffs().With(meal.Dinner, "20:00")}); err != nil {
 				t.Fatal(err)
 			}
 			if p := f.view(t, "en", f.at(14, 21, 0)); strings.Contains(p, "data-footer") || strings.Contains(p, "data-tile=") {

@@ -86,3 +86,27 @@ func TestBackupRefusesToOverwrite(t *testing.T) {
 		t.Fatal("second backup overwrote the first")
 	}
 }
+
+// Ticket 133: the first steps card can be hidden for the household.
+func TestFirstStepsCardCanBeHidden(t *testing.T) {
+	db, _ := openTemp(t)
+	h, _ := db.CreateHousehold(store.Household{Name: "Family"})
+	if got, _ := db.Household(h.ID); got.FirstStepsHidden {
+		t.Fatal("first steps hidden by default")
+	}
+	if err := db.SetFirstStepsHidden(h.ID, true); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := db.HomeHousehold(); !got.FirstStepsHidden {
+		t.Fatal("hiding was not stored")
+	}
+	if err := db.SetFirstStepsHidden(h.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := db.Household(h.ID); got.FirstStepsHidden {
+		t.Fatal("showing was not stored")
+	}
+	if err := db.SetFirstStepsHidden("missing", true); err == nil {
+		t.Fatal("unknown household accepted")
+	}
+}

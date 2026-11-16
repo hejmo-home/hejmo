@@ -1,28 +1,46 @@
-{{template "head" (dict "Lang" .Lang "Title" (t "trust.title") "Frame" .Frame)}}
+{{template "head" (dict "Lang" .Lang "Title" (t "trust.title") "Frame" .Frame "Wizard" .Wizard)}}
   <h1>{{t "trust.title"}}</h1>
-  <p class="lead">{{t "trust.intro"}}</p>
-  <div class="steps">
-    <fieldset>
-      <legend>{{t "trust.ios.title"}}</legend>
-      <span class="hint">{{t "trust.ios.steps"}}</span>
-      <a class="button" href="/ca/hejmo.mobileconfig">{{t "trust.ios.download"}}</a>
-    </fieldset>
-    <fieldset>
-      <legend>{{t "trust.android.title"}}</legend>
-      <span class="hint">{{t "trust.android.steps"}}</span>
-      <a class="button" href="/ca/hejmo-ca.crt">{{t "trust.cert.download"}}</a>
-    </fieldset>
-    <fieldset>
-      <legend>{{t "trust.mac.title"}}</legend>
-      <span class="hint">{{t "trust.mac.steps"}}</span>
-      <a class="button" href="/ca/hejmo-ca.crt">{{t "trust.cert.download"}}</a>
-    </fieldset>
-    <fieldset>
-      <legend>{{t "trust.browser.title"}}</legend>
-      <span class="hint">{{t "trust.browser.steps"}}</span>
-      <a class="button" href="/ca/hejmo-ca.crt">{{t "trust.cert.download"}}</a>
-    </fieldset>
-    <p class="hint">{{t "trust.fingerprint"}} <code>{{.Fingerprint}}</code></p>
-    {{if .Continue}}<a class="button" href="{{.Continue}}">{{t "trust.continue"}}</a>{{end}}
-  </div>
+  <p class="lead">{{t "trust.lead"}}</p>
+  <nav class="devnav" aria-label="{{t "trust.devices.label"}}">
+    <ul class="devices">
+      {{range .Devices}}<li><a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{t (printf "trust.device.%s" .Key)}}</a></li>
+      {{end}}
+    </ul>
+    <p class="detected">{{if not .Known}}{{t "trust.detected.unknown"}}{{else if .Detected}}{{tf "trust.detected" "device" (t (printf "trust.device.%s" .Device))}}{{else}}{{tf "trust.chosen" "device" (t (printf "trust.device.%s" .Device))}}{{end}}</p>
+  </nav>
+  <section class="tile" data-check="trust" data-check-url="{{.CheckURL}}" data-retry-seconds="5" data-device="{{.Device}}"{{if .Detected}} data-detected{{end}}>
+    <h2>{{tf "trust.steps.title" "device" (t (printf "trust.device.%s" .Device))}}</h2>
+    <ol class="howto">
+      {{range .Steps}}<li><div class="s"{{if .Fail}} data-fail-step{{end}}>
+        <b>{{t .Title}}</b>
+        <p{{if .After}} data-after="{{t .After}}"{{end}}>{{rich (t .Text)}}</p>
+        {{if .Hint}}<p class="hint">{{rich (t .Hint)}}</p>{{end}}
+        {{if .Download}}<a class="button" href="{{$.Download}}" data-download data-again-text="{{t "trust.download.again"}}">{{t $.DownloadKey}}</a>{{end}}
+        {{if .Fail}}{{template "checkline" (dict "State" "fail" "Text" (tf "trust.fail" "device" (t (printf "trust.%s.self" $.Device))) "Small" (rich (t .Fail)) "Hook" "fail" "Hidden" true)}}{{end}}
+        {{if .Last}}{{template "checkline" (dict "State" "waiting" "Text" (tf "trust.waiting" "device" (t (printf "trust.%s.self" $.Device))) "Small" (t "trust.waiting.last") "Hook" "waiting")}}
+        {{template "checkline" (dict "State" "ok" "Text" (tf "trust.ok" "device" (t (printf "trust.%s.self" $.Device))) "Hook" "ok" "Hidden" true)}}
+        {{if $.Continue}}<div class="actions"><a class="button" href="{{$.Continue}}" data-continue-link hidden>{{t $.ContinueKey}}</a></div>{{end}}{{end}}
+      </div></li>
+      {{end}}
+    </ol>
+    {{with (printf "trust.%s.after" .Device)}}{{if ne (t .) .}}<p class="hint">{{rich (t .)}}</p>{{end}}{{end}}
+  </section>
+  <details class="more" data-fp>
+    <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{t "trust.fp.title"}}</summary>
+    <div>
+      <p>{{rich (t "trust.fp.what")}}</p>
+      <div class="fp" aria-label="{{tf "trust.fp.aria" "fingerprint" .Fingerprint}}">{{range .Pairs}}<span>{{.}}</span>{{end}}</div>
+      <p class="hint">{{rich (t (printf "trust.%s.fp" .Device))}}</p>
+      <p class="hint">{{if eq .Device "windows"}}{{t "trust.windows.mismatch"}}{{else}}{{t "trust.fp.mismatch"}}{{end}}</p>
+    </div>
+  </details>
+  {{if .Continue}}<details class="more no-print">
+    <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{t "trust.skip.title"}}</summary>
+    <div>
+      <p>{{t "trust.skip.text"}}</p>
+      <a class="link" href="{{.Continue}}">{{t "trust.skip.link"}}</a>
+    </div>
+  </details>{{end}}
+  <p class="hint">{{t "trust.later"}}</p>
+  <script src="/static/https-check.js" defer></script>
 {{template "foot"}}

@@ -131,3 +131,21 @@ func TestTasksDoneOnListsOnlyThatDaysDoneTasks(t *testing.T) {
 		t.Fatalf("done on the 14th = %v, %v", got, err)
 	}
 }
+
+// The first steps card only needs to know how many tasks there are and whose
+// they are, so a count does it without loading the tasks.
+func TestCountTasksSaysHowManyAndWhoseWithoutLoadingThem(t *testing.T) {
+	f := newTaskFixture(t)
+	if n, by, err := f.db.CountTasks(f.h.ID); err != nil || n != 0 || len(by) != 0 {
+		t.Fatalf("empty = %d %v %v", n, by, err)
+	}
+	for _, who := range []string{f.mia.ID, f.mia.ID, f.mama.ID} {
+		if _, err := f.db.AddTask(f.h.ID, task.Task{PersonID: who, Title: "Tidy", Repeat: task.Daily, Date: "2026-11-14"}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	n, by, err := f.db.CountTasks(f.h.ID)
+	if err != nil || n != 3 || by[f.mia.ID] != 2 || by[f.mama.ID] != 1 {
+		t.Fatalf("counted = %d %v %v", n, by, err)
+	}
+}

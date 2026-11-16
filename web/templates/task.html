@@ -1,7 +1,6 @@
 {{template "head" (dict "Lang" .Lang "Title" .Task.Title "Frame" .Frame)}}
-  <p><a href="/tasks">{{t "tasks.back"}}</a></p>
   <h1>{{if .Task.Emoji}}{{.Task.Emoji}} {{end}}{{.Task.Title}}</h1>
-  <p class="lead"><span class="pchip" data-person="{{.Owner.Slot}}"><span class="marker" data-person="{{.Owner.Slot}}" data-shape="{{.Owner.Shape}}" aria-hidden="true"></span>{{.Owner.Name}}</span>{{if .Task.Stars}} <span class="task-stars" data-task-stars="{{.Task.Stars}}">{{.Task.Stars}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span>{{end}}</p>
+  <p class="lead"><span class="pchip static" data-person="{{.Owner.Slot}}"><span class="marker" data-person="{{.Owner.Slot}}" data-shape="{{.Owner.Shape}}" aria-hidden="true"></span>{{.Owner.Name}}</span>{{if .Task.Stars}} <span class="task-stars" data-task-stars="{{.Task.Stars}}">{{.Task.Stars}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span>{{end}}</p>
   <div class="task-today">
     <p class="hint">{{if eq .Task.Repeat "once"}}{{t "tasks.repeat.once"}} {{.Task.Date}}{{else if eq .Task.Repeat "daily"}}{{t "tasks.repeat.daily"}}{{else}}{{t "tasks.repeat.weekly"}} {{range $i, $d := .Task.Weekdays}}{{if $i}}{{", "}}{{end}}{{t (printf "tasks.weekday.%s" $d)}}{{end}}{{end}}{{if .Task.Part}} · {{t (printf "tasks.part.%s" .Task.Part)}}{{end}} · {{if not .Task.Due}}{{t "tasks.not_today"}}{{else if .Task.Done}}{{t "tasks.done"}}{{else}}{{t "tasks.open"}}{{end}}</p>
     {{if .Task.Due}}<form method="post" action="/tasks/{{.Task.ID}}/done">
@@ -9,6 +8,13 @@
       <button class="button secondary" type="submit">{{if .Task.Done}}{{t "tasks.untick"}}{{else}}{{t "tasks.tick"}}{{end}}</button>
     </form>{{end}}
   </div>
+  {{with .Routine}}<div class="in-routine">
+    <p>{{template "partIconSized" (dict "Part" $.RoutinePart "Size" 20)}}<span>{{$.RoutineIn}}</span></p>
+    {{template "moreOpen" (dict "Label" (t "routine.out"))}}
+      <p class="hint">{{$.RoutineOut}}</p>
+      <form method="post" action="/tasks/{{$.Task.ID}}/routine"><button class="button secondary" type="submit">{{t "routine.out.confirm"}}</button></form>
+    {{template "moreClose"}}
+  </div>{{end}}
   <form method="post" action="/tasks/{{.Task.ID}}/stars" class="steps">
     <fieldset>
       <legend>{{t "tasks.stars.legend"}}</legend>

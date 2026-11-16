@@ -6,11 +6,13 @@ import (
 	"html"
 	"html/template"
 	"net/http"
+	"sort"
 	"strconv"
 	"strings"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/datefmt"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -39,6 +41,7 @@ const starLogLines = 20
 
 type personTasks struct {
 	Name, Color string
+	Routines    []routineCard // the routines first (ADR 0018), then the single tasks
 	Tasks       []taskView
 }
 
@@ -74,6 +77,11 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		s.fail(w, "stars", err)
 		return
 	}
+	routines, err := s.db.Routines(p.household.ID)
+	if err != nil {
+		s.fail(w, "routines", err)
+		return
+	}
 	var cards []starCard
 	var groups []personTasks
 	choices := chipsOf(people)
@@ -92,13 +100,31 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			cards = append(cards, s.starCardOf(p, person, acc))
 		}
 		g := personTasks{Name: person.Name, Color: person.Color}
+		for _, rt := range routines {
+			if rt.PersonID != person.ID {
+				continue
+			}
+			var steps []task.Task
+			for _, t := range list {
+				if t.RoutineID == rt.ID {
+					steps = append(steps, t)
+				}
+			}
+			sort.SliceStable(steps, func(i, j int) bool { return steps[i].Position < steps[j].Position })
+			card := routineCard{ID: rt.ID, Name: rt.Name, Part: string(rt.Part), Steps: routineSteps(p.household.DateFormat, steps, today, doneToday)}
+			card.Done, card.Total = progressOfSteps(card.Steps)
+			g.Routines = append(g.Routines, card)
+		}
+		sort.SliceStable(g.Routines, func(i, j int) bool {
+			return task.PartOfDay(g.Routines[i].Part).Rank() < task.PartOfDay(g.Routines[j].Part).Rank()
+		})
 		for _, t := range list {
-			if t.PersonID != person.ID {
+			if t.PersonID != person.ID || t.RoutineID != "" {
 				continue
 			}
 			g.Tasks = append(g.Tasks, newTaskView(p.household.DateFormat, t, today, doneToday[t.ID]))
 		}
-		if len(g.Tasks) > 0 {
+		if len(g.Tasks) > 0 || len(g.Routines) > 0 {
 			groups = append(groups, g)
 		}
 	}
@@ -111,6 +137,22 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 	data := map[string]any{
 		"Person": p.person, "Groups": groups, "StarCards": cards, "StarForm": starForm, "StarError": starForm["Error"], "People": choices, "Weekdays": taskWeekdays, "Repeats": []string{"once", "daily", "weekly"}, "Form": form, "Child": child, "MaxStars": task.MaxStars,
 		"SyncStale": s.syncStale(p.household.ID), "Error": form["Error"], "ErrorField": form["ErrorField"],
+	}
+	if child {
+		due, err := s.db.TasksForDay(p.household.ID, today)
+		if err != nil {
+			s.fail(w, "tasks of the day", err)
+			return
+		}
+		parts, progress := childParts(due, routines, p.person.ID)
+		data["ChildParts"], data["ChildProgress"], data["ChildSlot"] = parts, progress, 0
+		for _, c := range choices {
+			if c.ID == p.person.ID {
+				data["ChildSlot"] = c.Slot
+			}
+		}
+		data["StarsShown"], data["StarsBalance"] = sums[p.person.ID].Shown, sums[p.person.ID].Balance
+		data["Day"] = today
 	}
 	s.render(w, r, status, "tasks.html", data)
 }
@@ -303,6 +345,29 @@ func (s *server) renderTaskPage(w http.ResponseWriter, r *http.Request, p princi
 	}
 	if errKey != "" {
 		data["StarsValue"], data["Error"], data["ErrorField"] = typed, errKey, "stars"
+	}
+	if t.RoutineID != "" {
+		rt, err := s.db.Routine(p.household.ID, t.RoutineID)
+		if err != nil {
+			s.fail(w, "routine", err)
+			return
+		}
+		list, err := s.db.RoutineTasks(p.household.ID, rt.ID)
+		if err != nil {
+			s.fail(w, "routine tasks", err)
+			return
+		}
+		data["Routine"], data["RoutinePlace"], data["RoutineTotal"] = rt, t.Position, len(list)
+		lang := s.langOf(r)
+		link := `<a href="/routines/` + html.EscapeString(rt.ID) + `">` + html.EscapeString(rt.Name) + `</a>`
+		data["RoutinePart"] = string(rt.Part)
+		data["RoutineIn"] = template.HTML(strings.NewReplacer("{routine}", link, "{person}", html.EscapeString(owner.Name),
+			"{place}", strconv.Itoa(t.Position), "{total}", strconv.Itoa(len(list))).Replace(html.EscapeString(s.i18n.T(lang, "routine.in"))))
+		key := "routine.out.explain"
+		if rt.Part == task.AfterSchool {
+			key += ".any"
+		}
+		data["RoutineOut"] = s.i18n.Format(lang, i18n.Msg(key, "title", t.Title, "person", owner.Name, "part", s.partWord(lang, string(rt.Part))))
 	}
 	if credited, done, err := s.db.TaskDoneStars(t.ID, today); err != nil {
 		s.fail(w, "credited stars", err)

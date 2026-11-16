@@ -1344,3 +1344,123 @@ a.out .icon { flex: none; stroke: currentColor; }
 .cards a.button, .steps a.button { color: var(--accent-text); font-weight: 700; }
 .cards a.button.secondary, .steps a.button.secondary { color: var(--accent); }
 .guide details.more p { margin: 0; overflow-wrap: anywhere; }
+
+/* ticket 7.2 routines (preview-91). Uses existing tokens only. */
+
+/* Part of the day: word plus line icon (sunrise morning, sun after school, moon evening). */
+.pv-tasks .part > .lab, .child-tasks .part > .lab { display: flex; align-items: center; gap: 6px; }
+.part > .lab .icon.part { flex: none; stroke: var(--text-secondary); }
+
+/* A routine on the personal view and the child's tasks page: a box in the person colour,
+   head with the routine name and its progress in words, tasks in the parents' order. */
+.routine { display: grid; gap: var(--gap-cards); padding: 10px; border: 2px solid var(--pc); border-radius: var(--radius-tile); min-width: 0; }
+[data-theme="bw"] .routine { border: 3px solid var(--text); }
+.routine-head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; padding: 2px 4px 0; min-width: 0; }
+.routine-head b { font-size: var(--fs-person-name); font-weight: var(--fw-person-name, 700); line-height: 1.25; min-width: 0; overflow-wrap: break-word; }
+.routine-head .rcount { display: inline-flex; align-items: center; gap: 6px; font-size: var(--fs-label-large); font-weight: 700; color: var(--text-secondary); white-space: nowrap; font-variant-numeric: tabular-nums; }
+.routine-head .rcount .icon { flex: none; stroke: var(--pc); stroke-width: 2.4; }
+.routine ol { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap-cards); }
+.routine li { display: grid; gap: 6px; }
+.routine li form { margin: 0; }
+/* The next open task of a routine: thick border in the person colour (bw: 4 px black). */
+.routine li[data-next] .big-check { border: 3px solid var(--pc); padding: 6.5px 10.5px 6.5px 6.5px; }
+[data-theme="bw"] .routine li[data-next] .big-check { border: 4px solid var(--text); padding: 6px 10px 6px 6px; }
+/* All done: the box takes the person tint, a tick stands before "4 von 4 erledigt". */
+.routine[data-all-done] { background: var(--pc-tint); }
+.routine[data-all-done] .rcount { color: var(--pc-text); }
+[data-theme="bw"] .routine[data-all-done] { background: var(--progress-track); }
+[data-theme="bw"] .routine[data-all-done] .rcount, [data-theme="bw"] .routine-head .rcount .icon { color: var(--text); stroke: var(--text); }
+.routine[data-all-done] .big-check { background: transparent; }
+
+/* Hyphenation only for words of 12 or more letters (as #86, #32, #131). */
+@supports (hyphenate-limit-chars: 12 5 5) {
+  .routine-head b, .big-check .title, .rhead b, .rsteps .nm, .in-routine p { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
+}
+
+/* Tasks page (parents): "Neue Routine" above the people. */
+.tasks-tools { display: grid; gap: 6px; justify-items: start; max-width: 560px; margin: 0 0 var(--gap-section); }
+.tasks-tools .button { display: inline-flex; align-items: center; gap: 8px; }
+.tasks-tools .button .icon { stroke: currentColor; }
+.tasks-tools .hint { margin: 0; }
+h3.more-tasks { font-size: var(--fs-label-large); color: var(--text-secondary); margin: var(--gap) 0 8px; }
+
+/* Routine card: head row opens the routine page, numbered tasks below in their order. */
+.rcard { max-width: 560px; margin: 0 0 var(--gap-cards); background: var(--surface); border-radius: var(--radius-tile); }
+[data-theme="bw"] .rcard { border: 2px solid var(--text); }
+.rhead { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; color: var(--text); text-decoration: none; border-bottom: 1px solid var(--border); }
+.rhead .icon.part { flex: none; stroke: var(--accent); }
+.rhead .t { flex: 1; display: grid; gap: 2px; min-width: 0; }
+.rhead b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: break-word; }
+.rhead .state { font-size: var(--fs-label); color: var(--text-secondary); }
+.rhead .open { flex: none; font-size: var(--fs-label); font-weight: 700; color: var(--accent); }
+.rhead .chev { flex: none; stroke: var(--accent); }
+@media (max-width: 479px) { .rhead .open { display: none; } .rhead .chev { stroke: var(--text-secondary); } }
+
+/* Numbered tasks of a routine (tasks page and routine page). */
+.rsteps { list-style: none; margin: 0; padding: 0 16px 4px; display: grid; }
+.rsteps > li { display: grid; grid-template-columns: 30px minmax(0, 1fr) auto; grid-template-areas: "nr nm acts" "nr meta acts"; gap: 2px 12px; align-items: center; padding: 12px 0; border-top: 1px solid var(--border); }
+.rsteps > li:first-child { border-top: 0; }
+.rsteps .nr { grid-area: nr; align-self: start; width: 30px; height: 30px; border: 1.5px solid var(--text-secondary); border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.rsteps > li[data-done] .nr { background: var(--text-secondary); color: var(--surface); }
+.rsteps .nm { grid-area: nm; font-weight: 600; min-width: 0; overflow-wrap: break-word; }
+.rsteps .hint { grid-area: meta; margin: 0; }
+.rsteps .acts { grid-area: acts; display: flex; flex-wrap: wrap; gap: 8px; justify-content: flex-end; }
+.rsteps .acts form { margin: 0; }
+.rsteps.order { background: var(--surface); border-radius: var(--radius-tile); max-width: 560px; margin: 0 0 var(--gap-section); }
+[data-theme="bw"] .rsteps.order { border: 2px solid var(--text); }
+.button.sq { display: inline-flex; align-items: center; gap: 6px; padding: 8px 14px; }
+.button.sq .icon { stroke: currentColor; }
+@media (max-width: 599px) {
+  .rsteps > li { grid-template-columns: 30px minmax(0, 1fr); grid-template-areas: "nr nm" "nr meta" "nr acts"; }
+  .rsteps .acts { justify-content: flex-start; padding-top: 6px; }
+}
+
+/* Routine page */
+.pchip.static { cursor: default; background: var(--pc-tint); color: var(--pc-text); border: 2px solid var(--pc); font-weight: 700; padding: 5px 13px 5px 11px; }
+[data-theme="bw"] .pchip.static { background: var(--surface); color: var(--text); border-color: var(--text); }
+.facts .icon.part { stroke: var(--accent); }
+.steps .pair { display: flex; flex-wrap: wrap; gap: 10px 16px; }
+details.more form.inner { display: grid; gap: 12px; }
+details.more form.inner .button { justify-self: start; }
+main > details.more { max-width: 560px; margin: 0 0 var(--gap); }
+.form-error a { color: inherit; font-weight: 700; }
+.ferr a { color: inherit; font-weight: 700; }
+p.hint.later { max-width: 560px; }
+
+/* Task detail page: which routine a task belongs to. */
+.in-routine { max-width: 560px; margin: 0 0 var(--gap-section); padding: 12px 16px 4px; background: var(--surface); border-radius: var(--radius-tile); border-left: 4px solid var(--accent); }
+[data-theme="bw"] .in-routine { border: 2px solid var(--text); border-left-width: 6px; }
+.in-routine > p { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 6px; }
+.in-routine > p .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.in-routine details.more > div { padding-bottom: 12px; }
+.in-routine details.more .hint { margin: 0; }
+
+/* Child's tasks page: the display's big checkboxes and routine boxes. */
+.child-tasks { max-width: 560px; display: grid; gap: 12px; }
+.child-tasks > .count { margin: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); }
+.child-tasks > .count .chip { font-size: var(--fs-event-title); padding: 4px 12px; border-radius: var(--radius-chip); background: var(--surface); }
+.child-tasks .list { display: grid; gap: 14px; }
+.child-tasks .part { display: grid; gap: var(--gap-cards); }
+.child-tasks .part > .lab { font-size: var(--fs-label); color: var(--text-secondary); font-weight: 700; }
+.child-tasks ul { list-style: none; margin: 0; padding: 0; display: grid; gap: var(--gap-cards); }
+.child-tasks form { margin: 0; }
+
+/* Narrow phones: the routine box gives its width back to the task titles, so a title
+   breaks only between words (or hyphenates a word of 12+ letters), never mid-word. */
+.routine .big-check .title, .child-tasks .big-check .title { overflow-wrap: break-word; }
+@media (max-width: 479px) {
+  .routine { padding: 8px 6px; gap: 8px; }
+  .routine ol { gap: 8px; }
+  .routine-head { padding: 0 4px; }
+  .routine .big-check, .child-tasks .big-check { gap: 8px; padding: 6px 8px 6px 6px; }
+  .routine li[data-next] .big-check { padding: 4.5px 6.5px 4.5px 4.5px; }
+  [data-theme="bw"] .routine li[data-next] .big-check { padding: 4px 6px 4px 4px; }
+  .routine .big-check .emoji, .child-tasks .big-check .emoji { width: 28px; font-size: 24px; }
+}
+
+/* Routine page: "Add task" shows the fields of the chosen source. Without :has both stay visible. */
+.steps .src { display: contents; }
+@supports selector(:has(a)) {
+  .steps:has(input[name="source"][value="existing"]:checked) .src-new,
+  .steps:has(input[name="source"][value="new"]:checked) .src-existing { display: none; }
+}

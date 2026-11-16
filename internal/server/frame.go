@@ -86,6 +86,9 @@ func (s *server) frameFor(r *http.Request) frame {
 		f.BackHref, f.BackLabel = "/sessions", "sessions.back"
 	case f.Back:
 		f.BackHref, f.BackLabel = "/settings", "hub.back"
+	case r.URL.Path == "/routines" || strings.HasPrefix(r.URL.Path, "/routines/"),
+		strings.HasPrefix(r.URL.Path, "/tasks/") && r.URL.Path != "/tasks/stars":
+		f.BackHref, f.BackLabel = "/tasks", "tasks.back" // the routine pages and the task page lead back to the tasks
 	case r.URL.Path == "/meals/templates":
 		f.BackHref, f.BackLabel = "/meals", "meals.tpl.back_plan"
 	case strings.HasPrefix(r.URL.Path, "/meals/templates/"):
@@ -95,7 +98,7 @@ func (s *server) frameFor(r *http.Request) frame {
 		if !auth.RoleAllows(p.Role, it.Needs) {
 			continue
 		}
-		cur := (it.Href == "/settings" && f.Back) || r.URL.Path == it.Href || (it.Href != "/" && strings.HasPrefix(r.URL.Path, it.Href+"/")) || (it.Href == "/" && strings.HasPrefix(r.URL.Path, "/notes/"))
+		cur := (it.Href == "/settings" && f.Back) || r.URL.Path == it.Href || (it.Href != "/" && strings.HasPrefix(r.URL.Path, it.Href+"/")) || (it.Href == "/" && strings.HasPrefix(r.URL.Path, "/notes/")) || (it.Href == "/tasks" && strings.HasPrefix(r.URL.Path, "/routines/"))
 		f.Items = append(f.Items, navLink{it.Href, it.Label, cur})
 	}
 	return f

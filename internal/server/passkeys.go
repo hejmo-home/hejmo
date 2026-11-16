@@ -26,7 +26,7 @@ import (
 // passkeyUsedCookie is the flag a browser keeps after a sign-in with a
 // passkey: no secret, no name, so a shared device does not tell who signed in.
 // With it the sign-in page makes the passkey the main action.
-const passkeyUsedCookie = "hejmo_passkey_used"
+const passkeyUsedCookie = "hejmo_passkey_used" // #nosec G101 -- a cookie name, not a credential
 
 // maxPasskeyName is the longest name of a passkey, in characters.
 const maxPasskeyName = 80
@@ -231,6 +231,12 @@ func (s *server) passkeySubject(w http.ResponseWriter, r *http.Request) (store.P
 		return store.Person{}, false
 	}
 	if p.Role != store.RoleParent {
+		writeJSON(w, http.StatusForbidden, map[string]string{"error": "forbidden"})
+		return store.Person{}, false
+	}
+	// After a reset the password alone must not create a passkey before new
+	// one-time codes exist: only the wizard and invitation case is pending.
+	if acc, err := s.db.AccountByPerson(p.ID); err == nil && !acc.TOTPConfirmed && acc.TOTPReset {
 		writeJSON(w, http.StatusForbidden, map[string]string{"error": "forbidden"})
 		return store.Person{}, false
 	}
@@ -511,18 +517,24 @@ func (s *server) apiListPasskeys(w http.ResponseWriter, _ *http.Request, p princ
 	writeJSON(w, http.StatusOK, out)
 }
 
-// browserOnly refuses a token: a passkey signs in for good, so only a signed-in
-// browser may create one (a stolen token must not be able to).
-func browserOnly(w http.ResponseWriter, r *http.Request) bool {
+// browserOnly refuses a token and a paired phone's session: a passkey signs in
+// for good, so only a signed-in browser may create one (a stolen token or a lost
+// phone must not be able to). The same rule as passkeySubject; a session that
+// still has to set up its one-time codes never reaches the API (currentPerson).
+func (s *server) browserOnly(w http.ResponseWriter, r *http.Request) bool {
 	if r.Header.Get("Authorization") != "" {
 		writeError(w, http.StatusForbidden, "passkeys are created in a signed-in browser, not with a token")
+		return false
+	}
+	if s.phoneSession(r) {
+		writeError(w, http.StatusForbidden, "passkeys are created in a signed-in browser, not on a paired phone")
 		return false
 	}
 	return true
 }
 
 func (s *server) apiPasskeyBegin(w http.ResponseWriter, r *http.Request, p principal) {
-	if !browserOnly(w, r) {
+	if !s.browserOnly(w, r) {
 		return
 	}
 	out, err := s.beginRegistration(r, p.person.ID)
@@ -535,7 +547,7 @@ func (s *server) apiPasskeyBegin(w http.ResponseWriter, r *http.Request, p princ
 }
 
 func (s *server) apiPasskeyCreate(w http.ResponseWriter, r *http.Request, p principal) {
-	if !browserOnly(w, r) {
+	if !s.browserOnly(w, r) {
 		return
 	}
 	var in registrationFinish

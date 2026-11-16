@@ -128,8 +128,8 @@ func (a *Authenticator) Create(options []byte, origin string) ([]byte, error) {
 	}
 	data.WriteByte(flags)
 	_ = binary.Write(&data, binary.BigEndian, uint32(0))
-	data.Write(make([]byte, 16)) // AAGUID: none
-	_ = binary.Write(&data, binary.BigEndian, uint16(len(c.id)))
+	data.Write(make([]byte, 16))                                 // AAGUID: none
+	_ = binary.Write(&data, binary.BigEndian, uint16(len(c.id))) // #nosec G115 -- the test authenticator's credential IDs are 32 bytes
 	data.Write(c.id)
 	data.Write(cose)
 	att, err := cbor.Marshal(map[string]any{"fmt": "none", "attStmt": map[string]any{}, "authData": data.Bytes()})

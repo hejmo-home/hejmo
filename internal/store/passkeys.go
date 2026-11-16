@@ -24,7 +24,7 @@ type Passkey struct {
 	LastUsed time.Time // zero = not used yet
 }
 
-const passkeyColumns = `id, person_id, credential_id, credential, name, rp_id, device, created_at, last_used_at`
+const passkeyColumns = /* #nosec G101 -- SQL column names, not a credential */ `id, person_id, credential_id, credential, name, rp_id, device, created_at, last_used_at`
 
 func scanPasskey(r rowScanner) (Passkey, error) {
 	var p Passkey

@@ -183,7 +183,8 @@ type ceremony struct {
 	until   time.Time
 }
 
-// maxCeremonies bounds the memory: sign-in ceremonies need no sign-in.
+// maxCeremonies bounds the memory per kind: sign-in ceremonies need no sign-in,
+// so they have their own cap and cannot push out the ceremonies of a parent.
 const maxCeremonies = 500
 
 // NewCeremonies returns an empty store that reads the time from now.
@@ -205,14 +206,21 @@ func (c *Ceremonies) Put(kind Kind, person string, session webauthn.SessionData)
 			delete(c.m, k)
 		}
 	}
-	for len(c.m) >= maxCeremonies { // drop the oldest
-		oldest, at := "", time.Time{}
+	for {
+		n, oldest, at := 0, "", time.Time{}
 		for k, v := range c.m {
+			if v.kind != kind {
+				continue
+			}
+			n++
 			if oldest == "" || v.until.Before(at) {
 				oldest, at = k, v.until
 			}
 		}
-		delete(c.m, oldest)
+		if n < maxCeremonies {
+			break
+		}
+		delete(c.m, oldest) // drop the oldest of its kind
 	}
 	c.m[id] = ceremony{kind: kind, person: person, session: session, until: now.Add(ceremonyTTL)}
 	return id

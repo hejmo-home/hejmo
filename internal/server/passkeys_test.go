@@ -746,3 +746,46 @@ func TestResetThroughTheAPIRemovesTickedPasskeys(t *testing.T) {
 		t.Fatalf("passkeys after = %+v", left)
 	}
 }
+
+// ADR 0017, T23: a paired phone never creates a passkey, through the API
+// either, before or after a reset of its parent's one-time codes.
+func TestPairedPhoneCannotCreateAPasskeyThroughTheAPI(t *testing.T) {
+	b, mamaSecret, _ := setupWithCodes(t)
+	papa, _ := secondParent(t, b)
+	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
+	phone := pairedPhone(t, b, papa, "Papa's phone")
+	call := func(path string) int {
+		t.Helper()
+		req, _ := http.NewRequest(http.MethodPost, b.srv.URL+"/api/v1"+path, strings.NewReader(`{"ceremony":"x","credential":{}}`))
+		req.Host = boxName
+		req.Header.Set("Content-Type", "application/json")
+		req.Header.Set("Origin", "https://"+boxName)
+		u, _ := url.Parse(b.srv.URL)
+		for _, c := range phone.client.Jar.Cookies(u) { // the jar keys cookies by Host, as asBrowserOn does
+			req.AddCookie(c)
+		}
+		res, err := phone.client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		return res.StatusCode
+	}
+	check := func(when string) {
+		t.Helper()
+		for _, path := range []string{"/me/passkeys/registration", "/me/passkeys"} {
+			if got := call(path); got != http.StatusForbidden {
+				t.Errorf("%s: phone POST %s = %d, want 403", when, path, got)
+			}
+		}
+	}
+	check("before a reset")
+	own := url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
+	if r := b.post("/account/reset/"+papa.ID, own); r.status != http.StatusSeeOther {
+		t.Fatalf("reset = %d", r.status)
+	}
+	check("after a reset")
+	if n, _ := b.db.PasskeyCount(); n != 0 {
+		t.Errorf("%d passkeys exist, want none", n)
+	}
+}

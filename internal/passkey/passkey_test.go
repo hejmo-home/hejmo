@@ -141,3 +141,18 @@ func TestCeremoniesWorkOnceForTheirKindAndPerson(t *testing.T) {
 		t.Error("a ceremony worked after it ran out")
 	}
 }
+
+// Sign-in ceremonies need no sign-in: flooding them must not push out the
+// registration of a parent who is in the middle of creating a passkey.
+func TestFloodOfSignInCeremoniesKeepsRegistrations(t *testing.T) {
+	now := time.Date(2026, 11, 16, 12, 0, 0, 0, time.UTC)
+	c := passkey.NewCeremonies(func() time.Time { return now })
+	reg := c.Put(passkey.Register, "p-1", webauthn.SessionData{Challenge: "x"})
+	for i := 0; i < 5000; i++ {
+		now = now.Add(time.Millisecond)
+		c.Put(passkey.SignIn, "", webauthn.SessionData{})
+	}
+	if _, ok := c.Take(reg, passkey.Register, "p-1"); !ok {
+		t.Fatal("a flood of sign-in ceremonies evicted a registration")
+	}
+}

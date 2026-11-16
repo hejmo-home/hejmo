@@ -268,6 +268,26 @@ _Avoid_: template (alone; clashes with routine template), preset, default plan
 A meal plan entry changed for one week where a meal plan template would fill it (also emptied). It keeps its change when the template changes, until "Back to template".
 _Avoid_: override (in prose), exception
 
+**Recipe**:
+A dish with portions, ingredients and steps that can be put on the meal plan; entered by a parent, imported from a web page or from Hejmo's starter collection, always with its source.
+_Avoid_: dish (alone), cooking instructions
+
+**Ingredient**:
+One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
+_Avoid_: component, item
+
+**Variety**:
+The more exact kind of an article, such as "Type 405" for flour, kept with an ingredient or list entry. Quantities add up only for the same variety.
+_Avoid_: variant, subtype
+
+**Pantry article**:
+An article usually at home, such as salt or oil, left out by default when a recipe's ingredients go onto a list.
+_Avoid_: staple, stock item
+
+**Cooking view**:
+A recipe shown for cooking on a device: large text, ingredients to tick and one step at a time, with the screen kept on.
+_Avoid_: kitchen mode, cook mode
+
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.
 _Avoid_: deadline, expiry
@@ -308,6 +328,30 @@ _Avoid_: point, coin, reward (a reward is what stars are redeemed for)
 The record of every star booking of a person, with task or note, time and who booked it.
 _Avoid_: points log, history
 
+**Reward**:
+Something a person can redeem stars for, from the household's reward catalogue kept by parents: a name, an emoji or picture, a star price, who it is for and an optional limit such as once a week.
+_Avoid_: prize, shop item
+
+**Redemption**:
+Exchanging stars for a reward. A child asks and a parent confirms, or a parent redeems directly; the stars leave the person's star log only on confirmation, and never below zero.
+_Avoid_: purchase, payout
+
+**Savings goal**:
+The one reward a person has chosen to save for; their personal view and the family view show the progress towards its star price.
+_Avoid_: wish, target
+
+**Streak**:
+The days in a row on which a person completed a routine, counting only the days the routine applies and skipping pause days. Shown with the week's count ("5 of 7") and the best streak so far.
+_Avoid_: chain, combo
+
+**Pause day**:
+A day a parent marks for a person (ill, holiday) on which routines do not count, so no streak breaks.
+_Avoid_: skip day, excuse
+
+**Badge**:
+A mark a person earns once for a milestone, such as a first complete routine or a 7-day streak; it is never taken away.
+_Avoid_: achievement, trophy, medal
+
 **Waste collection calendar**:
 A read-only calendar marked as listing the household's waste collection days.
 _Avoid_: bin calendar, garbage feed
@@ -315,6 +359,24 @@ _Avoid_: bin calendar, garbage feed
 **Day note**:
 A parent's free-text note (up to 120 characters) for one day, shown as the last line of the tomorrow tile from 18:00 the evening before until the end of that day, then deleted. A day has one note. A parent sets it on Home (card "Note on the display"); a planned note is changed or removed on its own page.
 _Avoid_: reminder (that is the waste collection highlight), memo
+
+## Contacts
+
+**Contact**:
+An entry in the household's address book: every person of the household, plus others such as grandparents, the daycare or the paediatrician. Served to parents' phones and kept in the box.
+_Avoid_: address (alone), vCard (alone), person (a person is a household member)
+
+**Hejmo name**:
+The name Hejmo and the displays show for a contact, such as "Oma Gerda", next to the full name "Gerda Müller". One per contact for the whole household.
+_Avoid_: alias, display name
+
+**Contact group**:
+A category a contact belongs to: family, childcare and school, doctors, emergency, other, or one a parent adds.
+_Avoid_: tag, label, category
+
+**Relation**:
+The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician".
+_Avoid_: connection, relationship type
 
 ## Access
 

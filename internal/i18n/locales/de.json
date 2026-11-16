@@ -1667,6 +1667,7 @@
   "routine.tpl.step.remove": "Aus der Vorlage entfernen",
   "routine.tpl.step.remove.explain": "„{title}“ verschwindet aus der Vorlage. Routinen, die schon aus der Vorlage angelegt sind, behalten die Aufgabe.",
   "routine.tpl.step.remove.confirm": "Ja, „{title}“ entfernen",
+  "routine.tpl.step.last": "Eine Vorlage braucht mindestens eine Aufgabe, darum bleibt diese hier.",
   "flash.rtpl_moved": "„{title}“ steht jetzt an Stelle {place} von {total}. Nur die Vorlage ist geändert. Routinen, die schon aus der Vorlage angelegt sind, bleiben, wie sie sind.",
   "flash.rtpl_saved": "Gespeichert: Die Vorlage heißt jetzt „{name}“. Nur die Vorlage ist geändert. Routinen, die schon aus der Vorlage angelegt sind, bleiben, wie sie sind.",
   "flash.rtpl_step_added": "„{name}“ gehört jetzt zur Vorlage. Nur die Vorlage ist geändert. Routinen, die schon aus der Vorlage angelegt sind, bleiben, wie sie sind.",

@@ -205,6 +205,17 @@ func TestTemplateNamesAreUniqueIgnoringCaseOfUmlauts(t *testing.T) {
 	}
 }
 
+func TestTemplateNamesAreUniqueIgnoringSharpS(t *testing.T) {
+	f := newTaskFixture(t)
+	r := f.miaEvening(t)
+	if _, err := f.db.SaveRoutineAsTemplate(f.h.ID, r.ID, "STRASSE"); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.db.SaveRoutineAsTemplate(f.h.ID, r.ID, "straße"); !errors.Is(err, store.ErrConflict) {
+		t.Fatalf("second save = %v, want a conflict", err)
+	}
+}
+
 func TestEditingAnOwnTemplate(t *testing.T) {
 	f := newTaskFixture(t)
 	tpl, _ := f.db.SaveRoutineAsTemplate(f.h.ID, f.miaEvening(t).ID, "Abend")

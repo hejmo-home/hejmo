@@ -1667,6 +1667,7 @@
   "routine.tpl.step.remove": "Remove from template",
   "routine.tpl.step.remove.explain": "“{title}” disappears from the template. Routines that were made from it keep the task.",
   "routine.tpl.step.remove.confirm": "Yes, remove “{title}”",
+  "routine.tpl.step.last": "A template needs at least one task, so this one stays.",
   "flash.rtpl_moved": "“{title}” is now at place {place} of {total}. Only the template is changed. Routines that were made from it stay as they are.",
   "flash.rtpl_saved": "Saved: the template is now called “{name}”. Only the template is changed. Routines that were made from it stay as they are.",
   "flash.rtpl_step_added": "“{name}” is now part of the template. Only the template is changed. Routines that were made from it stay as they are.",

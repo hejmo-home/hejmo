@@ -352,7 +352,7 @@ func (s *server) renderTemplateStep(w http.ResponseWriter, r *http.Request, p pr
 		form = map[string]any{"Title": step.Title, "Emoji": step.Emoji, "Stars": strconv.Itoa(step.Stars), "Repeat": string(step.Repeat), "Weekdays": step.Weekdays}
 	}
 	data := map[string]any{
-		"Person": p.person, "Tpl": t, "Step": step, "Form": form, "Repeats": []string{"daily", "weekly"}, "Weekdays": taskWeekdays, "MaxStars": task.MaxStars,
+		"Person": p.person, "Tpl": t, "Step": step, "Form": form, "Repeats": []string{"daily", "weekly"}, "Weekdays": taskWeekdays, "MaxStars": task.MaxStars, "Last": len(t.Steps) == 1,
 		"BackHref": "/routines/templates/" + t.ID, "BackText": t.Name,
 		"Lead":    s.i18n.Format(lang, i18n.Msg("routine.tpl.step.lead", "nr", strconv.Itoa(at+1), "total", strconv.Itoa(len(t.Steps)), "name", t.Name)),
 		"Explain": s.i18n.Format(lang, i18n.Msg("routine.tpl.step.remove.explain", "title", step.Title)),

@@ -19,5 +19,5 @@
     </fieldset>
     <button class="button" type="submit">{{t "routine.tpl.step.save"}}</button>
   </form>
-  {{template "dangerOpen" (dict "Label" (t "routine.tpl.step.remove") "Confirm" .Confirm "Explain" .Explain "Action" (printf "/routines/templates/%s/steps/%s/delete" .Tpl.ID .Step.ID) "CancelHref" (printf "/routines/templates/%s/steps/%s" .Tpl.ID .Step.ID))}}{{template "dangerClose"}}
+  {{if .Last}}<p class="hint">{{t "routine.tpl.step.last"}}</p>{{else}}{{template "dangerOpen" (dict "Label" (t "routine.tpl.step.remove") "Confirm" .Confirm "Explain" .Explain "Action" (printf "/routines/templates/%s/steps/%s/delete" .Tpl.ID .Step.ID) "CancelHref" (printf "/routines/templates/%s/steps/%s" .Tpl.ID .Step.ID))}}{{template "dangerClose"}}{{end}}
 {{template "foot"}}

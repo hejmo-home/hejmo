@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"errors"
 	"fmt"
+	"golang.org/x/text/cases"
 	"strings"
 	"time"
 
@@ -20,9 +21,9 @@ func (e *TemplateExistsError) Error() string {
 }
 func (e *TemplateExistsError) Unwrap() error { return ErrConflict }
 
-// nameKey is what names are compared by: case-folded for all of Unicode, so
-// "Übungen" and "übungen" are one name.
-func nameKey(name string) string { return strings.ToLower(name) }
+// nameKey is what names are compared by: full Unicode case folding, so
+// "Übungen" and "übungen" are one name, and so are "STRASSE" and "straße".
+func nameKey(name string) string { return cases.Fold().String(name) }
 
 func invalidField(field, msg string) error {
 	return fmt.Errorf("%w: %w", ErrInvalid, &task.InvalidError{Field: field, Msg: msg})
@@ -297,21 +298,17 @@ func (db *DB) DeleteTemplateStep(householdID, templateID, stepID string) error {
 	if err := ownsTemplate(db.sql, householdID, templateID); err != nil {
 		return err
 	}
-	var n int
-	if err := db.sql.QueryRow(`SELECT COUNT(*) FROM routine_template_steps WHERE template_id = ?`, templateID).Scan(&n); err != nil {
-		return err
-	}
-	if n == 1 {
-		var one int
-		if err := db.sql.QueryRow(`SELECT 1 FROM routine_template_steps WHERE id = ? AND template_id = ?`, stepID, templateID).Scan(&one); err == nil {
-			return invalidField("steps", "a template needs at least one step")
-		}
-	}
-	res, err := db.sql.Exec(`DELETE FROM routine_template_steps WHERE id = ? AND template_id = ?`, stepID, templateID)
+	// One statement, so two deletes at the same time cannot both pass the check.
+	res, err := db.sql.Exec(`DELETE FROM routine_template_steps WHERE id = ? AND template_id = ?
+		AND (SELECT COUNT(*) FROM routine_template_steps WHERE template_id = ?) > 1`, stepID, templateID, templateID)
 	if err != nil {
 		return err
 	}
 	if n, _ := res.RowsAffected(); n == 0 {
+		var one int
+		if err := db.sql.QueryRow(`SELECT 1 FROM routine_template_steps WHERE id = ? AND template_id = ?`, stepID, templateID).Scan(&one); err == nil {
+			return invalidField("steps", "a template needs at least one step")
+		}
 		return ErrNotFound
 	}
 	return nil

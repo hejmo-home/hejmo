@@ -324,3 +324,22 @@ func TestTemplateNamesAreEscaped(t *testing.T) {
 		lacks(t, tb.page(t, path), "<script>alert")
 	}
 }
+
+func TestTheLastStepOfATemplateOffersNoRemoveButANote(t *testing.T) {
+	tb := newTaskBox(t)
+	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "Evening routine of Mia")
+	id := tpl["id"].(string)
+	steps := tpl["steps"].([]any)
+	for _, s := range steps[1:] {
+		tb.mustPost(t, "/routines/templates/"+id+"/steps/"+s.(map[string]any)["id"].(string)+"/delete", url.Values{})
+	}
+	last := steps[0].(map[string]any)["id"].(string)
+	sp := tb.page(t, "/routines/templates/"+id+"/steps/"+last)
+	has(t, sp, "A template needs at least one task, so this one stays.")
+	lacks(t, sp, "Remove from template", `/delete"`)
+	r := tb.parent.b.do(http.MethodPost, "/routines/templates/"+id+"/steps/"+last+"/delete", url.Values{}, enHeader)
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("deleting the last step = %d, want 422", r.status)
+	}
+	has(t, tb.page(t, "/routines/templates/"+id), "Evening routine of Mia")
+}

@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"html/template"
 	"net/http"
 	"net/url"
 	"slices"
@@ -101,9 +102,13 @@ type writeRow struct {
 // entered for it, or what is stored, or the defaults. On means the switch is on.
 type selectionCalendar struct {
 	URL, Name, Color string
-	LastSync         string // when it last synced, in words; empty for a calendar that is not synced
-	Synced, On       bool
-	People, Groups   []string
+	// SourceName is the name at the source (iCloud, the CalDAV server): shown
+	// in the head, never editable. Empty when the server was not asked.
+	SourceName     string
+	Hint           template.HTML // "Only in Hejmo. ..." under the field; empty without a SourceName
+	LastSync       string        // when it last synced, in words; empty for a calendar that is not synced
+	Synced, On     bool
+	People, Groups []string
 }
 
 // selectionCalendars shows the discovered calendars with the values of a
@@ -119,6 +124,9 @@ func selectionCalendars(found []discoveredJSON, form url.Values, synced []store.
 	out := make([]selectionCalendar, 0, len(found))
 	for i, f := range found {
 		c := selectionCalendar{URL: f.URL, Name: f.Name, Color: colors[i]}
+		if !f.fromStore {
+			c.SourceName = f.Name
+		}
 		if stored, ok := byKey[caldavclient.AddressKey(f.URL)]; ok {
 			c.Synced, c.On, c.Name, c.Color = true, true, stored.Name, stored.Color
 			c.People, c.Groups = stored.Audience.People, stored.Audience.Groups
@@ -201,6 +209,9 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: p.day(conn.CreatedAt)},
 	}
 	shown := selectionCalendars(found, form, mine, taken)
+	for i := range shown {
+		shown[i].Hint = s.nameHint(r, conn, shown[i].SourceName)
+	}
 	for i, c := range shown {
 		for _, m := range mine {
 			if c.Synced && caldavclient.AddressKey(m.URL) == caldavclient.AddressKey(c.URL) {
@@ -227,7 +238,7 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		"Found": shown, "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
 		"DefaultInterval": interval, "SyncStale": s.syncStale(p.household.ID),
 		"Error": errKey, "ErrorField": errField, "ErrorCalendar": errCalendar,
-		"Facts": facts, "Names": names, "ICloud": conn.URL == iCloudServer,
+		"Facts": facts, "Names": names, "ICloud": conn.URL == iCloudServer, "Host": connectionHost(conn), "SourceKicker": s.sourceKicker(r, conn),
 		"LoginOpen": !refusedAt.IsZero() || errField == "password",
 	}
 	if !refusedAt.IsZero() {
@@ -370,7 +381,7 @@ func (s *server) storedCalendars(p principal, conn store.Connection) ([]discover
 	}
 	var out []discoveredJSON
 	for _, c := range calendarsOf(all, conn.ID) {
-		out = append(out, discoveredJSON{URL: c.URL, Name: c.Name, Added: true, CalendarID: c.ID})
+		out = append(out, discoveredJSON{URL: c.URL, Name: c.Name, Added: true, CalendarID: c.ID, fromStore: true})
 	}
 	return out, nil
 }
@@ -500,6 +511,8 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 		if derr != nil {
 			// Without calendars the error cannot sit at one; show it generally.
 			found, errField = nil, ""
+		} else if errField == "calendar" && errCalendar == "" && len(found) > 0 {
+			errCalendar = found[0].URL // nothing is switched on: the first card says so
 		} else if errField != "" && !shownIn(found, errCalendar) {
 			// An unknown calendar shows no field, so the message goes in the
 			// general error line.
@@ -508,7 +521,7 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 		s.renderSelection(w, r, p, http.StatusUnprocessableEntity, conn, found, r.PostForm, errKey, errField, errCalendar)
 	}
 	if len(chosen) == 0 && len(keep) == 0 && len(off) == 0 {
-		show("connections.error.none_ticked", "", "")
+		show("connections.error.none_ticked", "calendar", "") // at the first card's switch
 		return
 	}
 	check := func(err error, address string) bool {

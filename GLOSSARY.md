@@ -300,6 +300,30 @@ _Avoid_: point, coin, reward (a reward is what stars are redeemed for)
 The record of every star booking of a person, with task or note, time and who booked it.
 _Avoid_: points log, history
 
+**Reward**:
+Something a person can redeem stars for, from the household's reward catalogue kept by parents: a name, an emoji or picture, a star price, who it is for and an optional limit such as once a week.
+_Avoid_: prize, shop item
+
+**Redemption**:
+Exchanging stars for a reward. A child asks and a parent confirms, or a parent redeems directly; the stars leave the person's star log only on confirmation, and never below zero.
+_Avoid_: purchase, payout
+
+**Savings goal**:
+The one reward a person has chosen to save for; their personal view and the family view show the progress towards its star price.
+_Avoid_: wish, target
+
+**Streak**:
+The days in a row on which a person completed a routine, counting only the days the routine applies and skipping pause days. Shown with the week's count ("5 of 7") and the best streak so far.
+_Avoid_: chain, combo
+
+**Pause day**:
+A day a parent marks for a person (ill, holiday) on which routines do not count, so no streak breaks.
+_Avoid_: skip day, excuse
+
+**Badge**:
+A mark a person earns once for a milestone, such as a first complete routine or a 7-day streak; it is never taken away.
+_Avoid_: achievement, trophy, medal
+
 **Waste collection calendar**:
 A read-only calendar marked as listing the household's waste collection days.
 _Avoid_: bin calendar, garbage feed
@@ -307,6 +331,24 @@ _Avoid_: bin calendar, garbage feed
 **Day note**:
 A parent's free-text note (up to 120 characters) for one day, shown as the last line of the tomorrow tile from 18:00 the evening before until the end of that day, then deleted. A day has one note. A parent sets it on Home (card "Note on the display"); a planned note is changed or removed on its own page.
 _Avoid_: reminder (that is the waste collection highlight), memo
+
+## Contacts
+
+**Contact**:
+An entry in the household's address book: every person of the household, plus others such as grandparents, the daycare or the paediatrician. Served to parents' phones and kept in the box.
+_Avoid_: address (alone), vCard (alone), person (a person is a household member)
+
+**Hejmo name**:
+The name Hejmo and the displays show for a contact, such as "Oma Gerda", next to the full name "Gerda Müller". One per contact for the whole household.
+_Avoid_: alias, display name
+
+**Contact group**:
+A category a contact belongs to: family, childcare and school, doctors, emergency, other, or one a parent adds.
+_Avoid_: tag, label, category
+
+**Relation**:
+The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician".
+_Avoid_: connection, relationship type
 
 ## Access
 

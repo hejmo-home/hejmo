@@ -14,13 +14,7 @@
   {{$p := .Progress}}<div class="pv-body"{{if not .Tasks}} data-no-tasks{{end}}>
     <aside class="pv-tasks" data-tasks data-tick-error="{{t "personal.tick_error"}}">
       <div class="tasks-head"><div class="lab">{{t "personal.tasks"}}</div>{{if .Tasks}}{{if eq $p.Done $p.Total}}<p class="msg ok" role="status">{{template "tick" 20}}{{repl (t "personal.all_done") "{n}" (printf "%d" $p.Total)}}</p>{{else}}<div class="count">{{template "progressWords" $p}}</div>{{end}}<div class="progress" role="img" aria-label="{{printf "%d/%d" $p.Done $p.Total}}"><span style="--pct:{{.Percent}}"></span></div>{{end}}</div>
-      <div class="list">{{$parts := .Parts}}{{range $parts}}<section class="part">{{if gt (len $parts) 1}}<div class="lab">{{t (printf "personal.part_%s" (or .Part "anytime"))}}</div>{{end}}<ul>
-        {{range .Tasks}}<li data-task="{{.ID}}" data-done="{{.Done}}"><form method="post" action="/display/tasks/{{.ID}}/done">
-          <input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">
-          <input type="hidden" name="day" value="{{$.Date.Format "2006-01-02"}}">
-          <button class="big-check" type="submit" aria-pressed="{{.Done}}" aria-label="{{.Title}}: {{if .Done}}{{t "personal.task_done"}}{{else}}{{t "personal.task_open"}}{{end}}{{if and $.Stars.Shown .Stars}}, {{.Stars}} {{t "personal.stars"}}{{end}}"><span class="box" aria-hidden="true">{{template "tick" 30}}</span>{{if .Emoji}}<span class="emoji" aria-hidden="true">{{.Emoji}}</span>{{end}}<span class="title">{{.Title}}</span>{{if and $.Stars.Shown .Stars}}<span class="task-stars" data-task-stars="{{.Stars}}">{{.Stars}}</span>{{end}}</button>
-        </form></li>
-        {{end}}</ul></section>{{else}}<p class="none">{{t "personal.tasks_none"}}</p>{{end}}</div>
+      <div class="list">{{$parts := .Parts}}{{if $parts}}{{template "taskParts" (dict "Parts" $parts "Prefix" "/display/tasks" "Day" (.Date.Format "2006-01-02") "StarsShown" .Stars.Shown "Labels" (gt (len $parts) 1))}}{{else}}<p class="none">{{t "personal.tasks_none"}}</p>{{end}}</div>
     </aside>
     <main class="pv-days">
       {{range .Days}}<section class="pv-day" data-day="{{.Date.Format "2006-01-02"}}"{{if .Today}} data-today{{end}}>
@@ -32,3 +26,25 @@
     </main>
   </div>
 </div>{{end}}
+
+{{/* The tasks of a day by part of the day, as on the display and on a child's
+     phone: per part its routine (a box with its own progress, the steps in the
+     parents' order, the next open step marked) and then the single tasks.
+     Arguments: Parts (familyview.TaskPart list), Prefix (where a tick is
+     posted, followed by /ID/done), Day (sent along with a tick, may be empty),
+     StarsShown and Labels (name the parts). */}}
+{{define "taskParts"}}{{$root := .}}{{range .Parts}}<section class="part" data-part="{{or .Part "anytime"}}">{{if $root.Labels}}<div class="lab">{{template "partIcon" .Part}}{{t (printf "personal.part_%s" (or .Part "anytime"))}}</div>{{end}}
+  {{with .Routine}}<section class="routine"{{if .AllDone}} data-all-done{{end}} aria-label="{{.Name}}"><div class="routine-head"><b>{{.Name}}</b><span class="rcount"{{if .AllDone}} role="status"{{end}}>{{if .AllDone}}{{template "tick" 20}}{{end}}{{tf "routine.progress" "done" (printf "%d" .Progress.Done) "total" (printf "%d" .Progress.Total)}}</span></div>
+    <ol>{{range .Tasks}}{{template "bigCheckRow" (dict "Task" . "Root" $root)}}{{end}}</ol></section>{{end}}
+  {{with .Tasks}}<ul>{{range .}}{{template "bigCheckRow" (dict "Task" . "Root" $root)}}{{end}}</ul>{{end}}</section>{{end}}{{end}}
+
+{{define "bigCheckRow"}}{{$k := .Task}}{{$r := .Root}}<li data-task="{{$k.ID}}" data-done="{{$k.Done}}"{{if $k.Next}} data-next{{end}}><form method="post" action="{{$r.Prefix}}/{{$k.ID}}/done">
+  <input type="hidden" name="done" value="{{if $k.Done}}0{{else}}1{{end}}">{{with $r.Day}}
+  <input type="hidden" name="day" value="{{.}}">{{end}}
+  <button class="big-check" type="submit" aria-pressed="{{$k.Done}}" aria-label="{{$k.Title}}: {{if $k.Done}}{{t "personal.task_done"}}{{else}}{{t "personal.task_open"}}{{end}}{{if $k.Next}}, {{t "personal.task_next"}}{{end}}{{if and $r.StarsShown $k.Stars}}, {{$k.Stars}} {{t "personal.stars"}}{{end}}"><span class="box" aria-hidden="true">{{template "tick" 30}}</span>{{if $k.Emoji}}<span class="emoji" aria-hidden="true">{{$k.Emoji}}</span>{{end}}<span class="title">{{$k.Title}}</span>{{if and $r.StarsShown $k.Stars}}<span class="task-stars" data-task-stars="{{$k.Stars}}">{{$k.Stars}}</span>{{end}}</button>
+</form></li>{{end}}
+
+{{/* The line icon of a part of the day: sunrise (morning), sun (after school),
+     moon (evening); any time has none. */}}
+{{define "partIcon"}}{{template "partIconSized" (dict "Part" . "Size" 18)}}{{end}}
+{{define "partIconSized"}}{{$n := .Size}}{{if eq .Part "morning"}}<svg class="icon part" width="{{$n}}" height="{{$n}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg>{{else if eq .Part "afterschool"}}<svg class="icon part" width="{{$n}}" height="{{$n}}" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>{{else if eq .Part "evening"}}<svg class="icon part" width="{{$n}}" height="{{$n}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>{{end}}{{end}}

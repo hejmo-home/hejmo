@@ -150,7 +150,7 @@ func TestMovingAStepChangesTheOrderAndSaysWhereItWent(t *testing.T) {
 	rid, steps := tb.routineOfFour(t)
 	tb.mustPost(t, "/routines/"+rid+"/move", url.Values{"task": {steps[2]}, "direction": {"up"}})
 	p := tb.page(t, "/routines/"+rid)
-	has(t, p, `"Breakfast" is now at place 2 of 4`)
+	has(t, p, `“Breakfast” is now at place 2 of 4`)
 	if got := ids(routineOf(t, tb.parent, rid)["task_ids"]); got[0] != steps[0] || got[1] != steps[2] || got[2] != steps[1] || got[3] != steps[3] {
 		t.Fatalf("order = %v", got)
 	}

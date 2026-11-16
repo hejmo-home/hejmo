@@ -174,6 +174,10 @@ func (s *server) successText(lang, key, arg string) string {
 		}
 	}
 	switch key {
+	case "flash.routine_moved":
+		if arg != "" {
+			return s.routineMovedText(lang, arg)
+		}
 	case "flash.note_saved":
 		if arg != "" {
 			return s.noteSavedText(lang, arg)

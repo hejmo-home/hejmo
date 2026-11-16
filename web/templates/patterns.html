@@ -21,6 +21,11 @@
 {{/* The error text of a field or of a group of controls (chips, segments). */}}
 {{define "fieldError"}}{{if and .Root.ErrorField (eq .Root.ErrorField .Name)}}<p class="ferr" id="err-{{.Name}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{t .Root.Error}}</p>{{end}}{{end}}
 
+{{/* The error of a field whose text carries a link, built by the server with
+     the names escaped (HTML). The text sits in one span so that the flex row of
+     the error does not split it. Arguments: Name, HTML. */}}
+{{define "fieldErrorHTML"}}<p class="ferr" id="err-{{.Name}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.HTML}}</span></p>{{end}}
+
 {{/* Switch: "is it on?" with its state in words. Arguments: Name, Label,
      OnText, OffText, Checked, and optionally Mealtime (shows the mealtime's
      icon before the label) and AriaLabel (the name of the switch for screen

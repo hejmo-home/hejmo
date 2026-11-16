@@ -167,15 +167,15 @@ func (s *server) handleFoodSave(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	items, conflict := food.ParseOther(form.Other)
+	text := strings.Join(items, ", ")
 	switch {
 	case conflict != nil:
 		refuse("food.error.conflict", s.i18n.Format(lang, i18n.Msg("food.error.conflict", "word", conflict.Word, "card", s.allergenName(lang, conflict.Allergen))))
 		return
-	case !food.OtherFits(form.Other):
+	case !food.OtherFits(text):
 		refuse("food.error.long", s.i18n.T(lang, "food.error.long"))
 		return
 	}
-	text := strings.Join(items, ", ")
 	if err := s.db.SetPersonFood(p.household.ID, person.ID, store.Food{Diet: form.Diet, Allergens: allergens, Other: text}); err != nil {
 		s.fail(w, "set food", err)
 		return

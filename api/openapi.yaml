@@ -2520,15 +2520,16 @@ components:
         other_note: { type: string, description: "Always says that `other` is not checked automatically and not filterable (nicht automatisch geprüft, nicht filterbar)" }
     FoodUpdate:
       type: object
-      required: [diet, allergens, other]
+      required: [diet]
       properties:
         diet: { type: string, description: "One of `Diet`; anything else gets 422", example: vegetarian }
         allergens:
           type: array
-          description: Keys of `Allergen`; an unknown key gets 422
+          description: Keys of `Allergen`; an unknown key gets 422. Omitted means none (the entry is replaced as a whole)
           items: { type: string }
         other:
           type: array
+          description: Free-text entries without commas; omitted means none
           items: { type: string }
     PersonColor:
       type: string

@@ -138,6 +138,10 @@ func TestFreeTextNamingOneOfTheFourteenIsRefusedAtTheFieldAndNothingIsStored(t *
 	if long.status != http.StatusUnprocessableEntity || !strings.Contains(long.body, "At most 200 characters") {
 		t.Errorf("too long = %d", long.status)
 	}
+	// The limit counts the stored text, as the API does: duplicates and blanks do not use it up.
+	if r := p.saveFood(mia, url.Values{"diet": {"vegan"}, "other": {strings.Repeat("Kiwi  ,  ,", 30)}}); r.status != http.StatusSeeOther {
+		t.Errorf("text that fits once normalised = %d", r.status)
+	}
 	if bad := p.saveFood(mia, url.Values{"diet": {"keto"}}); bad.status != http.StatusUnprocessableEntity {
 		t.Errorf("unknown diet = %d", bad.status)
 	}
@@ -168,7 +172,7 @@ func TestChildrenCannotOpenOrSaveTheFoodPage(t *testing.T) {
 	}
 }
 
-func TestDisplaysAndPhonesNeverShowDietOrAllergies(t *testing.T) {
+func TestDisplaysNeverShowDietOrAllergies(t *testing.T) {
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	p.saveFood(mia, url.Values{"diet": {"vegan"}, "allergens": {"peanuts"}, "other": {"Kiwi"}})

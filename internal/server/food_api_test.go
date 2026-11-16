@@ -66,6 +66,15 @@ func TestFoodRefusesWhatIsNotADietAnAllergenOrFitting(t *testing.T) {
 	}
 }
 
+func TestFoodOmittedFieldsMeanNone(t *testing.T) {
+	c, mia, _ := newFoodBox(t)
+	c.call(http.MethodPut, "/people/"+mia+"/food", map[string]any{"diet": "vegan", "allergens": []string{"peanuts"}, "other": []string{"Kiwi"}})
+	status, f, _ := c.call(http.MethodPut, "/people/"+mia+"/food", map[string]any{"diet": "vegetarian"})
+	if status != http.StatusOK || f["diet"] != "vegetarian" || len(f["allergens"].([]any)) != 0 || len(f["other"].([]any)) != 0 {
+		t.Errorf("only diet = %d %v", status, f)
+	}
+}
+
 func TestChildrenCannotReadOrChangeDietAndAllergies(t *testing.T) {
 	tb := newTaskBox(t)
 	body := map[string]any{"diet": "vegan", "allergens": []string{}, "other": []string{}}

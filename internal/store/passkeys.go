@@ -114,3 +114,10 @@ func (db *DB) SessionPasskey(tokenHash string) (string, error) {
 	}
 	return id.String, err
 }
+
+// PasskeyCount is the number of passkeys on the box.
+func (db *DB) PasskeyCount() (int, error) {
+	var n int
+	err := db.sql.QueryRow(`SELECT COUNT(*) FROM passkeys`).Scan(&n)
+	return n, err
+}

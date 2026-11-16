@@ -16,6 +16,8 @@ type Account struct {
 	// TOTPReset is set once the codes were reset (ADR 0017): the next sign-in
 	// sets up new ones.
 	TOTPReset bool
+	// TOTPConfirmedAt is when the one-time code was set up; zero until then.
+	TOTPConfirmedAt time.Time
 	// TOTPResetAt and TOTPResetBy say when and by whom (a person ID) the codes
 	// were reset; zero and "" when they were not, or by the box's command line.
 	TOTPResetAt time.Time
@@ -82,24 +84,24 @@ func (db *DB) ConfirmTOTP(personID string) error {
 
 // AccountByUsername looks up credentials (case-insensitive).
 func (db *DB) AccountByUsername(username string) (Account, error) {
-	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, totp_reset_at, COALESCE(totp_reset_by, ''), COALESCE(language, '')
+	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, totp_confirmed_at, totp_reset_at, COALESCE(totp_reset_by, ''), COALESCE(language, '')
 		FROM accounts WHERE username = ?`, username))
 }
 
 // AccountByPerson looks up credentials by person.
 func (db *DB) AccountByPerson(personID string) (Account, error) {
-	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, totp_reset_at, COALESCE(totp_reset_by, ''), COALESCE(language, '')
+	return db.scanAccount(db.sql.QueryRow(`SELECT person_id, username, password_hash, totp_secret, totp_confirmed_at IS NOT NULL, totp_reset_at IS NOT NULL, totp_confirmed_at, totp_reset_at, COALESCE(totp_reset_by, ''), COALESCE(language, '')
 		FROM accounts WHERE person_id = ?`, personID))
 }
 
 func (db *DB) scanAccount(row *sql.Row) (Account, error) {
 	var a Account
-	var resetAt sql.NullString
-	err := row.Scan(&a.PersonID, &a.Username, &a.PasswordHash, &a.TOTPSecret, &a.TOTPConfirmed, &a.TOTPReset, &resetAt, &a.TOTPResetBy, &a.Language)
+	var confirmedAt, resetAt sql.NullString
+	err := row.Scan(&a.PersonID, &a.Username, &a.PasswordHash, &a.TOTPSecret, &a.TOTPConfirmed, &a.TOTPReset, &confirmedAt, &resetAt, &a.TOTPResetBy, &a.Language)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Account{}, ErrNotFound
 	}
-	a.TOTPResetAt = parseStamp(resetAt)
+	a.TOTPConfirmedAt, a.TOTPResetAt = parseStamp(confirmedAt), parseStamp(resetAt)
 	return a, err
 }
 

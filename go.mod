@@ -6,7 +6,9 @@ require (
 	github.com/caddyserver/certmagic v0.25.6
 	github.com/emersion/go-ical v0.0.0-20261112170022-46c5b53a1723
 	github.com/emersion/go-webdav v0.7.0
+	github.com/fxamacker/cbor/v2 v2.9.4
 	github.com/getkin/kin-openapi v0.153.0
+	github.com/go-webauthn/webauthn v0.18.2
 	github.com/letsencrypt/pebble/v2 v2.10.3
 	github.com/libdns/desec v1.1.1
 	github.com/libdns/libdns v1.1.1
@@ -29,6 +31,10 @@ require (
 	github.com/go-jose/go-jose/v4 v4.1.8 // indirect
 	github.com/go-openapi/jsonpointer v0.22.5 // indirect
 	github.com/go-openapi/swag/jsonname v0.25.5 // indirect
+	github.com/go-viper/mapstructure/v2 v2.5.0 // indirect
+	github.com/go-webauthn/x v0.3.1 // indirect
+	github.com/golang-jwt/jwt/v5 v5.3.1 // indirect
+	github.com/google/go-tpm v0.9.8 // indirect
 	github.com/google/jsonschema-go v0.4.3 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/gorilla/mux v1.8.0 // indirect
@@ -36,10 +42,13 @@ require (
 	github.com/letsencrypt/challtestsrv v1.4.2 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/ncruces/go-strftime v1.1.0 // indirect
+	github.com/philhofer/fwd v1.2.0 // indirect
 	github.com/remyoudompheng/bigfft v0.0.0-20230129092748-24d4a6f8daec // indirect
 	github.com/santhosh-tekuri/jsonschema/v6 v6.0.3 // indirect
 	github.com/segmentio/asm v1.1.3 // indirect
 	github.com/segmentio/encoding v0.5.4 // indirect
+	github.com/tinylib/msgp v1.6.4 // indirect
+	github.com/x448/float16 v0.8.4 // indirect
 	github.com/yosida95/uritemplate/v3 v3.0.2 // indirect
 	github.com/zeebo/blake3 v0.2.4 // indirect
 	go.uber.org/multierr v1.11.0 // indirect

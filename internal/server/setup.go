@@ -7,6 +7,8 @@ import (
 	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
+	"github.com/hejmo-home/hejmo/internal/datefmt"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/region"
@@ -97,7 +99,7 @@ func (s *server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "setup session", err)
 		return
 	}
-	http.Redirect(w, r, "/setup/totp", http.StatusSeeOther)
+	s.afterAccountCreated(w, r, f.Name)
 }
 
 func validateSetup(f setupForm) (passwordHash, pinHash, errKey string) {
@@ -199,7 +201,9 @@ func (s *server) renderTOTP(w http.ResponseWriter, r *http.Request, status int, 
 	} else if inv := s.inviteShellFor(acc); inv != nil {
 		shell = inv
 	}
+	passkeys, _ := s.db.Passkeys(acc.PersonID)
 	s.render(w, r, status, "setup_totp.html", map[string]any{
+		"ResetNotice": s.resetNotice(r, acc), "HasPasskey": len(passkeys) > 0,
 		"Secret": acc.TOTPSecret, "SecretGroups": groupsOfFour(acc.TOTPSecret), "Username": acc.Username,
 		"URI": template.URL(uri), // built here, safe scheme
 		"QR":  template.HTML(svg), "Phone": mobileBrowser(r), "InstallKey": authenticatorInstallKey(r), "Error": errKey, "ErrorField": totpErrorField(errKey), "Wizard": shell,
@@ -319,4 +323,31 @@ func (s *server) createDefaultLists(householdID, lang string) error {
 		}
 	}
 	return nil
+}
+
+// resetNotice says, on the page that sets up new one-time codes after a reset,
+// who reset them and when, and with which passkey the parent is signed in, if
+// they are (ADR 0018). Empty when the codes were not reset.
+func (s *server) resetNotice(r *http.Request, acc store.Account) string {
+	if !acc.TOTPReset || acc.TOTPConfirmed {
+		return ""
+	}
+	h, err := s.db.HomeHousehold()
+	if err != nil {
+		return ""
+	}
+	lang := s.langOf(r)
+	p := principal{household: h}
+	t := acc.TOTPResetAt.In(p.location())
+	when := []string{"date", datefmt.Date(h.DateFormat, t), "time", datefmt.Clock(h.TimeFormat, t)}
+	text := s.i18n.Format(lang, i18n.Msg("setup.reset.cli", when...))
+	if by, err := s.db.Person(h.ID, acc.TOTPResetBy); err == nil && acc.TOTPResetBy != "" {
+		text = s.i18n.Format(lang, i18n.Msg("setup.reset.by", append(when, "name", by.Name)...))
+	}
+	if id := s.sessionPasskey(r); id != "" {
+		if pk, err := s.db.Passkey(acc.PersonID, id); err == nil {
+			text += " " + s.i18n.Format(lang, i18n.Msg("setup.reset.passkey", "passkey", pk.Name))
+		}
+	}
+	return text + " " + s.i18n.T(lang, "setup.reset.next")
 }

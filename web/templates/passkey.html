@@ -1,0 +1,22 @@
+{{template "head" (dict "Lang" .Lang "Title" (tf "passkey.title" "name" .Passkey.Name) "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/account" "Text" (t "account.title"))}}
+  <h1>{{tf "passkey.title" "name" .Passkey.Name}}</h1>
+  <dl class="facts">
+    <dt>{{t "passkey.fact.state"}}</dt><dd>{{.State}}</dd>
+    <dt>{{t "passkey.fact.created"}}</dt><dd>{{.Created}}</dd>
+    <dt>{{t "passkey.fact.used"}}</dt><dd>{{.Used}}</dd>
+    <dt>{{t "passkey.fact.name"}}</dt><dd><span class="host">{{.BoxName}}</span></dd>
+  </dl>
+  <form method="post" action="/account/passkeys/{{.Passkey.ID}}" class="steps">
+    <fieldset>
+      <legend>{{t "passkey.rename"}}</legend>
+      {{template "field" (dict "Root" . "Name" "name" "Label" (t "passkey.name.label") "Value" .Name "Required" true "Max" 80 "Autocomplete" "off" "Hint" (t "passkey.rename.hint"))}}
+    </fieldset>
+    <div class="actions"><button class="button" type="submit">{{t "passkey.rename.save"}}</button></div>
+  </form>
+  {{template "dangerOpen" (dict "Label" (t "passkey.remove"))}}
+    <p>{{tf "passkey.remove.explain" "on" .OnDevice}}</p>
+    <p>{{tf .StaysKey "others" .Stays}}</p>
+    <div class="confirm"><form method="post" action="/account/passkeys/{{.Passkey.ID}}/remove"><button class="button danger" type="submit">{{t "passkey.remove.confirm"}}</button></form><a href="/account/passkeys/{{.Passkey.ID}}">{{t "danger.cancel"}}</a></div>
+  {{template "dangerClose"}}
+{{template "foot"}}

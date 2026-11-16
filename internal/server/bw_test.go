@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/web"
 )
 
@@ -44,7 +45,12 @@ func TestBlackAndWhiteRenderingUsesOnlyTheBlackAndWhitePalette(t *testing.T) {
 	f.event(t, "Football", f.at(14, 15, 0), f.at(14, 16, 0), false, "Sebastian", "Mia")
 	f.event(t, "Dentist", f.at(14, 9, 0), f.at(14, 10, 0), false, "Mama")
 	f.event(t, "Grandparents visit", f.at(13, 0, 0), f.at(16, 0, 0), true, "Mama", "Papa")
+	f.plan(t, map[meal.Mealtime]string{meal.Lunch: "Tomato soup", meal.Dinner: "Pasta bake"})
+	f.addWaste(t, wasteEvent("p1", "Paper bin", "5"))
 	page := f.view(t, "en", f.at(14, 8, 0))
+	if !strings.Contains(page, `data-theme="bw"`) || !strings.Contains(page, `data-tile="meal"`) || !strings.Contains(page, `data-tile="tomorrow"`) {
+		t.Errorf("the bw page lacks the theme or one of the two footer tiles:\n%s", page)
+	}
 
 	// The markup carries no colour of its own: no style attributes except the progress share.
 	for _, m := range regexp.MustCompile(`style="([^"]*)"`).FindAllStringSubmatch(page, -1) {

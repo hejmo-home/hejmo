@@ -272,6 +272,7 @@
   "wholine.except": "alle außer {names}",
   "wholine.and": " und ",
   "family.cw": "KW",
+  "family.meals_today": "Essen heute",
   "family.progress": "{done} von {total} Aufgaben erledigt",
   "family.progress_one": "{done} von 1 Aufgabe erledigt",
   "family.progress_all": "Alle Aufgaben erledigt",

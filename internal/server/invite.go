@@ -151,7 +151,7 @@ func (s *server) handleInvitationPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if person.ID == p.person.ID {
-		http.Redirect(w, r, "/otp", http.StatusSeeOther)
+		http.Redirect(w, r, "/account", http.StatusSeeOther)
 		return
 	}
 	s.renderInvitation(w, r, p, http.StatusOK, person, nil)
@@ -277,7 +277,7 @@ func (s *server) handleInvitationCreate(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	if person.ID == p.person.ID {
-		http.Redirect(w, r, "/otp", http.StatusSeeOther)
+		http.Redirect(w, r, "/account", http.StatusSeeOther)
 		return
 	}
 	inv, link, err := s.newInvitation(r, p, person)
@@ -430,7 +430,7 @@ func (s *server) signInRow(r *http.Request, p principal, person store.Person) (r
 		if err != nil {
 			return rowView{}, err
 		}
-		return rowView{Href: "/otp", Title: s.i18n.T(lang, "people.signin.self"), Lines: []rowLine{{Text: s.i18n.Format(lang, i18n.Msg("people.signin.self.text", "username", acc.Username))}}}, nil
+		return rowView{Href: "/account", Title: s.i18n.T(lang, "people.signin.self"), Lines: []rowLine{{Text: s.i18n.Format(lang, i18n.Msg("people.signin.self.text", "username", acc.Username))}}}, nil
 	}
 	st, err := s.signInOf(p.household.ID, person)
 	if err != nil {

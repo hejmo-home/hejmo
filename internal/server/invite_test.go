@@ -140,11 +140,11 @@ func TestPeopleOverviewAndPersonPageSayWhoCanSignIn(t *testing.T) {
 		t.Errorf("a child's page offers an account\n%s", child)
 	}
 	mama := personNamed(t, e.b, "Mama")
-	if own := e.en(http.MethodGet, "/people/"+mama.ID, nil).body; !strings.Contains(own, `href="/otp"`) || strings.Contains(own, "/invitation") {
+	if own := e.en(http.MethodGet, "/people/"+mama.ID, nil).body; !strings.Contains(own, `href="/account"`) || strings.Contains(own, "/invitation") {
 		t.Errorf("Mama's own row must lead to her account page, not an invitation\n%s", own)
 	}
-	if r := e.en(http.MethodGet, "/people/"+mama.ID+"/invitation", nil); r.status != http.StatusSeeOther || r.location != "/otp" {
-		t.Errorf("own invitation page = %d %q, want a redirect to /otp", r.status, r.location)
+	if r := e.en(http.MethodGet, "/people/"+mama.ID+"/invitation", nil); r.status != http.StatusSeeOther || r.location != "/account" {
+		t.Errorf("own invitation page = %d %q, want a redirect to /account", r.status, r.location)
 	}
 }
 
@@ -470,12 +470,12 @@ func TestAcceptedParentSignsInAndResetsTheFirstParentsOneTimeCodes(t *testing.T)
 	if r := e.b.post("/login", url.Values{"username": {"papa"}, "password": {"papas long password"}, "code": {code}}); r.status != http.StatusSeeOther {
 		t.Fatalf("Papa signs in = %d", r.status)
 	}
-	if page := e.en(http.MethodGet, "/otp", nil).body; !strings.Contains(page, "Mama") || !strings.Contains(page, `action="/otp/reset/`) {
+	if page := e.en(http.MethodGet, "/account", nil).body; !strings.Contains(page, "Mama") || !strings.Contains(page, `href="/account/reset/`) {
 		t.Fatalf("Papa cannot reach the reset of Mama's codes\n%s", page)
 	}
 	mama := personNamed(t, e.b, "Mama")
-	r := e.en(http.MethodPost, "/otp/reset/"+mama.ID, url.Values{"password": {"papas long password"}, "code": {code}})
-	if r.status != http.StatusOK {
+	r := e.en(http.MethodPost, "/account/reset/"+mama.ID, url.Values{"password": {"papas long password"}, "code": {code}})
+	if r.status != http.StatusSeeOther || r.location != "/account" {
 		t.Fatalf("reset = %d\n%s", r.status, r.body)
 	}
 	if acc, _ := e.b.db.AccountByPerson(mama.ID); acc.TOTPConfirmed || !acc.TOTPReset {
@@ -524,7 +524,7 @@ func TestAcceptedInvitationPageShowsWhenAndThroughWhomAndLinksToTheReset(t *test
 	page := e.en(http.MethodGet, e.page(), nil).body
 	for _, want := range []string{
 		"<h1>Papa&#39;s sign-in</h1>", "Can sign in", "<dt>Username</dt>", "<dt>Account created</dt>", "15.11.2026, 20:00 through your invitation", "<dt>One-time code</dt>", "Set up, 10 recovery codes",
-		`<a href="/otp#reset">Reset Papa&#39;s one-time codes</a>`,
+		`<a href="/account/reset/` + e.papa.ID + `">Reset Papa&#39;s one-time codes</a>`,
 	} {
 		if !strings.Contains(page, want) {
 			t.Errorf("sign-in page lacks %q\n%s", want, page)

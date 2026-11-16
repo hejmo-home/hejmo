@@ -146,7 +146,7 @@ func (s *server) davAuth(next http.Handler) http.Handler {
 			return
 		}
 		token, err := s.db.APITokenByHash(auth.HashToken(secret))
-		if err != nil || token.PersonID != acc.PersonID {
+		if err != nil || token.PersonID != acc.PersonID || token.MCP {
 			davChallenge(w)
 			return
 		}

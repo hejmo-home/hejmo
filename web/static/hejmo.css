@@ -1632,3 +1632,66 @@ details.more .left-out { margin: 0; padding: 8px 12px; border-radius: var(--radi
 @supports (hyphenate-limit-chars: 12 5 5) {
   .tcard .rhead b, .choice b, .choice small .st, .rsteps .nm, .facts dd, .msg { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
 }
+/* ticket 95: passkeys. Existing tokens only. */
+/* A box name or IP address in running text: never widens a 375 px page. */
+.host { font-weight: 600; overflow-wrap: anywhere; }
+/* "oder" between the two ways to sign in: a thin rule on each side. */
+.or { display: flex; align-items: center; gap: 12px; margin: 0; max-width: 560px; color: var(--text-secondary); font-size: var(--fs-label); }
+.or::before, .or::after { content: ""; flex: 1; border-top: 1px solid var(--border); }
+[data-theme="bw"] .or::before, [data-theme="bw"] .or::after { border-top-color: var(--text); }
+.signin-pk { display: grid; gap: 8px; max-width: 560px; }
+.signin-pk .hint { margin: 0; }
+/* Buttons with a leading line icon (the key). */
+.button.pk, .button:has(> .icon) { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.button > .icon { stroke: currentColor; flex: none; }
+/* The three reasons in the passkey offer: icon, bold lead-in, one sentence. */
+.pk-why { list-style: none; margin: 0; padding: 0; display: grid; gap: 12px; }
+.pk-why li { display: grid; grid-template-columns: 20px minmax(0, 1fr); gap: 10px; align-items: start; }
+.pk-why .icon { margin-top: 2px; }
+.notice .icon.inl { vertical-align: -4px; stroke: currentColor; }
+.notice a, .error a { color: inherit; font-weight: 700; }
+/* Passkeys to remove together with a reset: 44 px rows with a 24 px box. */
+fieldset.pk-pick { border: 0; margin: 0 0 10px; padding: 0; min-width: 0; display: grid; gap: 4px; }
+fieldset.pk-pick legend { padding: 0; margin: 0 0 4px; font-weight: 700; color: var(--text); float: left; width: 100%; }
+fieldset.pk-pick .check { min-height: var(--touch-target); align-items: flex-start; gap: 12px; overflow-wrap: anywhere; }
+fieldset.pk-pick .check input { flex: none; width: 24px; height: 24px; margin: 2px 0 0; accent-color: var(--accent); }
+details.danger > p b { color: var(--text); }
+details.danger .f { margin: 0 0 10px; }
+details.danger details.more { margin: 0 0 10px; }
+.list-rows .t .flag { margin-top: 2px; }
+.rows-head + .notice { margin: 0 0 var(--gap-cards); }
+main > .hint { max-width: 560px; }
+`;
+
+/* MCP page (ticket 96, DESIGN.md) */
+.explain { max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-section); padding: 16px; background: var(--surface); border-radius: var(--radius-tile); }
+[data-theme="bw"] .explain { border: 2px solid var(--text); }
+.explain h2 { margin: 0 0 8px; }
+.explain h3 { font-size: var(--fs-event-title); margin: 16px 0 6px; }
+.explain p { margin: 0 0 8px; overflow-wrap: anywhere; }
+.explain ul { margin: 0 0 8px; padding-left: 20px; display: grid; gap: 6px; }
+.explain li { overflow-wrap: anywhere; }
+.links { list-style: none; padding: 0 !important; margin: 8px 0 0 !important; display: grid; gap: 0 !important; }
+.links a { display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-target); font-weight: 600; overflow-wrap: anywhere; }
+.links .icon { flex: none; stroke: currentColor; }
+details.more.explain-more { max-width: 560px; }
+details.more.explain-more .explain { margin-top: 8px; }
+.scope { display: grid; gap: 6px; padding: 12px 0; border-top: 1px solid var(--border); }
+.scope:first-of-type { border-top: 0; padding-top: 4px; }
+.scope .area { display: grid; gap: 2px; }
+.scope .area b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: anywhere; }
+.scope .area span { font-size: var(--fs-meta); color: var(--text-secondary); }
+.steps fieldset.scopes { gap: 0; }
+.steps fieldset.scopes > legend { margin-bottom: 4px; }
+.steps fieldset.scopes.invalid { border: 2px solid var(--error-text); padding: 14px; }
+.scope fieldset.seg legend { position: absolute; left: -9999px; }
+.seg label { overflow-wrap: anywhere; }
+[data-theme="bw"] .seg label { border-width: 2px; }
+.facts .lines { display: grid; gap: 2px; }
+.when-on .facts { padding: 0; margin: 4px 0 0; background: none; border: 0 !important; }
+.when-on .notice { margin: 8px 0 0; }
+.scope fieldset.seg { display: flex; flex-wrap: wrap; gap: 0; padding: 0; background: none; border-radius: 0; }
+.scope .area b { color: var(--text); }
+.hint .who { display: inline; font-size: inherit; color: inherit; }
+.hint .who .marker { display: inline-block; vertical-align: -1px; margin-right: 4px; }
+details.more.explain-more { margin-top: var(--gap-section); }

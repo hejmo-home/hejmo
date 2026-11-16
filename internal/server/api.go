@@ -29,6 +29,11 @@ var apiRoutes = []APIRoute{
 
 	{"GET", "/people/{id}/stars", auth.Perm("tasks", auth.Read), (*server).apiGetStars},
 	{"POST", "/people/{id}/stars", auth.Perm("tasks", auth.Write), (*server).apiBookStars},
+	{"GET", "/me/passkeys", auth.Perm("people", auth.Read), (*server).apiListPasskeys},
+	{"POST", "/me/passkeys/registration", auth.Perm("people", auth.Write), (*server).apiPasskeyBegin},
+	{"POST", "/me/passkeys", auth.Perm("people", auth.Write), (*server).apiPasskeyCreate},
+	{"PATCH", "/me/passkeys/{id}", auth.Perm("people", auth.Write), (*server).apiRenamePasskey},
+	{"DELETE", "/me/passkeys/{id}", auth.Perm("people", auth.Delete), (*server).apiDeletePasskey},
 	{"POST", "/me/recovery-codes", auth.Perm("people", auth.Write), (*server).apiNewRecoveryCodes},
 	{"GET", "/people/{id}/invitation", auth.Perm("tokens", auth.Read), (*server).apiGetInvitation},
 	{"POST", "/people/{id}/invitation", auth.Perm("tokens", auth.Write), (*server).apiCreateInvitation},
@@ -36,6 +41,9 @@ var apiRoutes = []APIRoute{
 	{"POST", "/people/{id}/reset-otp", auth.Perm("people", auth.Write), (*server).apiResetOTP},
 	{"GET", "/tokens", auth.Perm("tokens", auth.Read), (*server).apiListTokens},
 	{"POST", "/tokens", auth.Perm("tokens", auth.Write), (*server).apiCreateToken},
+	{"GET", "/mcp", auth.Perm("settings", auth.Read), (*server).apiGetMCP},
+	{"PUT", "/mcp", auth.Perm("settings", auth.Write), (*server).apiSetMCP},
+	{"POST", "/mcp/tokens", auth.Perm("tokens", auth.Write), (*server).apiCreateMCPToken},
 	{"POST", "/caldav-profile", auth.Perm("tokens", auth.Write), (*server).apiIOSProfile},
 	{"DELETE", "/tokens/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokeToken},
 	{"GET", "/groups", auth.Perm("people", auth.Read), (*server).apiListGroups},
@@ -193,6 +201,9 @@ func (s *server) authenticate(r *http.Request) (principal, bool) {
 		if err != nil {
 			return principal{}, false
 		}
+		if t.MCP { // a token made for MCP works there and nowhere else
+			return principal{}, false
+		}
 		s.touchToken(t)
 		p, err := s.db.Person(h.ID, t.PersonID)
 		return principal{household: h, person: p, scopes: t.Scopes}, err == nil
@@ -311,6 +322,7 @@ type tokenJSON struct {
 	Person     string  `json:"person"`
 	CreatedAt  string  `json:"created_at"`
 	LastUsedAt *string `json:"last_used_at"`
+	MCP        bool    `json:"mcp"`
 }
 
 func (s *server) apiListTokens(w http.ResponseWriter, _ *http.Request, p principal) {
@@ -322,7 +334,7 @@ func (s *server) apiListTokens(w http.ResponseWriter, _ *http.Request, p princip
 	loc := p.location()
 	out := make([]tokenJSON, 0, len(tokens))
 	for _, t := range tokens {
-		j := tokenJSON{ID: t.ID, Name: t.Name, Scopes: t.Scopes, Person: t.PersonName, CreatedAt: t.Created.In(loc).Format(time.RFC3339)}
+		j := tokenJSON{ID: t.ID, Name: t.Name, Scopes: t.Scopes, Person: t.PersonName, CreatedAt: t.Created.In(loc).Format(time.RFC3339), MCP: t.MCP}
 		if !t.LastUsed.IsZero() {
 			used := t.LastUsed.In(loc).Format(time.RFC3339)
 			j.LastUsedAt = &used

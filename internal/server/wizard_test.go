@@ -432,7 +432,7 @@ func TestTOTPPageAfterAResetHasNoProgress(t *testing.T) {
 	b.logout()
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
 	own := url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
-	if r := b.post("/otp/reset/"+papa.ID, own); r.status != http.StatusOK {
+	if r := b.post("/account/reset/"+papa.ID, own); r.status != http.StatusSeeOther {
 		t.Fatalf("reset = %d", r.status)
 	}
 	b.logout()
@@ -440,7 +440,7 @@ func TestTOTPPageAfterAResetHasNoProgress(t *testing.T) {
 		t.Fatalf("sign-in after reset = %d %q", r.status, r.location)
 	}
 	r := deGet(b, "/setup/totp")
-	if r.status != http.StatusOK || !strings.Contains(r.body, "Einmalcode einrichten") {
+	if r.status != http.StatusOK || !strings.Contains(r.body, "Neue Einmalcodes einrichten") {
 		t.Fatalf("setup/totp after a reset = %d\n%s", r.status, r.body)
 	}
 	if strings.Contains(r.body, `class="wsteps"`) || strings.Contains(r.body, "Schritt 3 von 4") || !strings.Contains(r.body, `class="wizard"`) {
@@ -474,7 +474,7 @@ func TestRecoveryCodesPageInTheWizardAndOutside(t *testing.T) {
 	}
 	// Outside the wizard: in the frame, generic label.
 	secondParent(t, b)
-	out := b.post("/otp/recovery-codes", url.Values{})
+	out := b.post("/account/recovery-codes", url.Values{})
 	for _, want := range []string{`class="frame-nav"`, `class="button" type="submit">Weiter<`, `required>Ich habe die Codes`} {
 		if !strings.Contains(out.body, want) {
 			t.Errorf("the recovery page outside the wizard misses %q", want)

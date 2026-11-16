@@ -68,6 +68,23 @@ func (db *DB) CreateCalDAVConnection(householdID string, in NewCalDAVConnection)
 	return Connection{ID: id, HouseholdID: householdID, Kind: "caldav", URL: in.URL, Username: in.Username, Single: in.Single, CreatedAt: in.Now}, nil
 }
 
+// SetConnectionPassword replaces the password of a connection, sealed like the
+// first one. The caller has checked it against the server.
+func (db *DB) SetConnectionPassword(householdID, connectionID, password string) error {
+	if password == "" {
+		return fmt.Errorf("%w: password required", ErrInvalid)
+	}
+	if db.secrets == nil {
+		return errNoKey
+	}
+	raw, err := db.secrets.Seal([]byte(password))
+	if err != nil {
+		return err
+	}
+	return expectOne(db.sql.Exec(`UPDATE calendar_connections SET credential = ? WHERE id = ? AND household_id = ? AND kind = 'caldav'`,
+		base64.StdEncoding.EncodeToString(raw), connectionID, householdID))
+}
+
 // Connections lists a household's CalDAV connections.
 func (db *DB) Connections(householdID string) ([]Connection, error) {
 	rows, err := db.sql.Query(`SELECT id, household_id, kind, url, username, single_calendar, created_at FROM calendar_connections

@@ -9,6 +9,7 @@ import (
 	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/holiday"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -22,30 +23,32 @@ func (p principal) location() *time.Location {
 	return time.UTC
 }
 
-// timeLayout is how the household wants date and time shown in the web
-// interface (ADR 0016).
-func (p principal) timeLayout() string {
-	if p.household.TimeFormat == store.Time12h {
-		return "02/01/2006 3:04 PM"
-	}
-	return "02/01/2006 15:04"
+// dateTime is how the household wants date and time shown in the web
+// interface (ADR 0016, ticket #147).
+func (p principal) dateTime(t time.Time) string {
+	return datefmt.DateTime(p.household.DateFormat, p.household.TimeFormat, t.In(p.location()))
 }
 
-// syncLayout is timeLayout with seconds: the times of sync runs and sync
+// dateTimeSeconds is dateTime with seconds: the times of sync runs and sync
 // problems, where "21:46:26" tells which run it was (ticket 5.17).
-func (p principal) syncLayout() string {
-	if p.household.TimeFormat == store.Time12h {
-		return "02/01/2006 3:04:05 PM"
-	}
-	return "02/01/2006 15:04:05"
+func (p principal) dateTimeSeconds(t time.Time) string {
+	return datefmt.DateTimeSeconds(p.household.DateFormat, p.household.TimeFormat, t.In(p.location()))
 }
 
-// clockLayout is the time of day alone, with seconds, in the household's format.
-func (p principal) clockLayout() string {
-	if p.household.TimeFormat == store.Time12h {
-		return "3:04:05 PM"
-	}
-	return "15:04:05"
+// clockSeconds is the time of day alone, with seconds, in the household's format.
+func (p principal) clockSeconds(t time.Time) string {
+	return datefmt.ClockSeconds(p.household.TimeFormat, t.In(p.location()))
+}
+
+// when is a date and time of day with seconds in one phrase, as the overview
+// rows and the facts of detail pages say when something happened.
+func (p principal) when(t time.Time) string {
+	return datefmt.When(p.household.DateFormat, p.household.TimeFormat, t.In(p.location()))
+}
+
+// day is a date alone in the household's format.
+func (p principal) day(t time.Time) string {
+	return datefmt.Date(p.household.DateFormat, t.In(p.location()))
 }
 
 func formatTime(t time.Time, allDay bool, loc *time.Location) string {

@@ -120,9 +120,9 @@ func TestTickFromARevokedDisplayRedirectsToThePairingScreen(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	tk := f.task(t, "Mia", "Homework", task.Daily)
 	f.now = f.at(14, 9, 0)
-	id := regexp.MustCompile(`/displays/([0-9a-f-]{36})/unpair`).FindStringSubmatch(f.get("/displays").body)
+	id := regexp.MustCompile(`href="/displays/([0-9a-f-]{36})"`).FindStringSubmatch(f.get("/displays").body)
 	if id == nil {
-		t.Fatal("no unpair button on the displays page")
+		t.Fatal("no display row link on the displays page")
 	}
 	if r := f.post("/displays/"+id[1]+"/unpair", url.Values{}); r.status != http.StatusSeeOther {
 		t.Fatalf("unpair = %d", r.status)

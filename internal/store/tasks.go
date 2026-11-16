@@ -69,6 +69,27 @@ func (db *DB) Tasks(householdID string) ([]task.Task, error) {
 	return out, rows.Err()
 }
 
+// CountTasks says how many tasks the household has and how many belong to each
+// person, without loading them.
+func (db *DB) CountTasks(householdID string) (int, map[string]int, error) {
+	rows, err := db.sql.Query(`SELECT person_id, COUNT(*) FROM tasks WHERE household_id = ? GROUP BY person_id`, householdID)
+	if err != nil {
+		return 0, nil, err
+	}
+	defer rows.Close()
+	total, by := 0, map[string]int{}
+	for rows.Next() {
+		var id string
+		var n int
+		if err := rows.Scan(&id, &n); err != nil {
+			return 0, nil, err
+		}
+		total += n
+		by[id] = n
+	}
+	return total, by, rows.Err()
+}
+
 // Task loads one task.
 func (db *DB) Task(householdID, id string) (task.Task, error) {
 	t, err := scanTask(db.sql.QueryRow(`SELECT `+taskColumns+` FROM tasks WHERE household_id = ? AND id = ?`, householdID, id))
@@ -139,6 +160,34 @@ func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at 
 		}
 	}
 	return tx.Commit()
+}
+
+// SetTaskStars changes the star value of a task (0 to task.MaxStars). It
+// counts from the next tick: task_done rows and the star log are not touched,
+// so credited ticks keep their value and unticking deducts what was credited
+// (ADR 0018).
+func (db *DB) SetTaskStars(householdID, id string, stars int) error {
+	if stars < 0 || stars > task.MaxStars {
+		return fmt.Errorf("%w: %w", ErrInvalid, &task.InvalidError{Field: "stars", Msg: fmt.Sprintf("stars must be between 0 and %d", task.MaxStars)})
+	}
+	res, err := db.sql.Exec(`UPDATE tasks SET stars = ?, updated_at = ? WHERE household_id = ? AND id = ?`, stars, now(), householdID, id)
+	if err != nil {
+		return err
+	}
+	if n, _ := res.RowsAffected(); n == 0 {
+		return ErrNotFound
+	}
+	return nil
+}
+
+// TaskDoneStars returns the stars credited when a task was ticked off on a
+// day, and whether it is ticked off that day.
+func (db *DB) TaskDoneStars(id, day string) (stars int, done bool, err error) {
+	err = db.sql.QueryRow(`SELECT stars FROM task_done WHERE task_id = ? AND day = ?`, id, day).Scan(&stars)
+	if errors.Is(err, sql.ErrNoRows) {
+		return 0, false, nil
+	}
+	return stars, err == nil, err
 }
 
 // TaskDone reports whether a task is ticked off on a day.

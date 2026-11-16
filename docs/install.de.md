@@ -64,7 +64,7 @@ Sichere `/opt/hejmo/data` samt `secret.key` (sie schützt gespeicherte Passwört
 
 ## Der eigenen CA vertrauen
 
-Nur nötig, wenn du die eigene CA gewählt hast. Öffne auf jedem Gerät `http://<Adresse der Box>/ca`:
+Nur nötig, wenn du die eigene CA gewählt hast. Öffne auf jedem Gerät `http://<Adresse der Box>/ca`. Die Seite erkennt das Gerät (iPhone oder iPad, Android, Mac, Windows, Linux), zeigt zuerst dessen vier Schritte und prüft selbst, wann das Gerät der Box vertraut. Den Fingerabdruck des Zertifikats kannst du dort auch vergleichen (freiwillig). Kurz gesagt:
 
 - **iPhone und iPad:** Profil laden, in den Einstellungen installieren und dann unter Einstellungen, Allgemein, Info, Zertifikatsvertrauenseinstellungen aktivieren.
 - **Android:** Zertifikat laden und in den Sicherheitseinstellungen als CA-Zertifikat installieren. Chrome vertraut ihm als Nutzerzertifikat.

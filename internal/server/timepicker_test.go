@@ -18,7 +18,7 @@ func TestEveryTimeFieldIsATimeCapsule(t *testing.T) {
 	f := newFamilyBox(t, "eink_bw")
 	pages := map[string]string{
 		"household":      getEN(f.box, "/settings/household").body,
-		"displays":       f.get("/displays").body,
+		"display":        f.get("/displays/" + f.displayID(t)).body,
 		"calendar event": getEN(f.box, "/calendar/new").body,
 	}
 	for name, body := range pages {
@@ -69,27 +69,27 @@ func TestFormScriptHoldsThePickerAndTheMealPlanBehaviour(t *testing.T) {
 	}
 }
 
-// Frame fixes found while rendering the design pass: on a phone the
-// navigation must not widen the page, and on wide screens the "Back to
-// Settings" link sits above the content, not in the content column.
+// Frame fixes found while rendering the design pass (and moved on with ticket
+// 111): on a phone the navigation must not widen the page, and the "Back to
+// Settings" link sits inside main, in the content column, instead of being a
+// grid item of the frame that broke the 1024 px layout.
 func TestFrameLayoutCoversTheBackLinkAndNarrowScreens(t *testing.T) {
 	css, err := fs.ReadFile(web.Static, "static/hejmo.css")
 	if err != nil {
 		t.Fatal(err)
 	}
 	c := string(css)
-	if !strings.Contains(c, ".frame > * { min-width: 0; }") {
+	if !strings.Contains(c, ".frame > * { min-width: 0; }") || !strings.Contains(c, ".frame { grid-template-columns: minmax(0, 1fr); }") {
 		t.Error("the frame's children may widen the page on a 375 px phone")
 	}
-	wide := regexp.MustCompile(`(?s)@media \(min-width: 900px\) \{[^@]*?\.frame\.has-nav > \.frame-nav \{ grid-row: span 2; \}[^@]*?\.frame\.has-nav > \.back, \.frame\.has-nav > main \{ grid-column: 2; \}`)
-	if !wide.MatchString(c) {
-		t.Error("the Back link does not share the content column on wide screens")
+	if nav := regexp.MustCompile(`(?m)^\.frame-nav ul \{([^}]*)\}`).FindStringSubmatch(c); nav == nil || !strings.Contains(nav[1], "flex-wrap: wrap") || strings.Contains(nav[1], "overflow-x") {
+		t.Error("the navigation must wrap, not scroll sideways")
 	}
 	b := signedInBox(t)
 	body := b.get("/settings/household").body
 	back, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main id="content">`)
-	if back < 0 || main < back {
-		t.Errorf("the Back to Settings link must come before the content (%d, %d)", back, main)
+	if back < 0 || main < 0 || back < main {
+		t.Errorf("the Back to Settings link must sit inside main, before the content (%d, %d)", back, main)
 	}
 	if !strings.Contains(body, `class="frame framed has-nav"`) {
 		t.Error("the household page is not a frame with navigation")

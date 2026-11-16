@@ -7,6 +7,7 @@ import (
 	"net/http"
 	"net/url"
 	"path"
+	"slices"
 	"strings"
 	"time"
 
@@ -23,7 +24,7 @@ const setupTimeout = 3 * time.Minute
 // over HTTP.
 func (s *server) requireHTTPS(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		if r.TLS != nil || !s.httpsReady() || s.plainHTTPAllowed(r.URL) {
+		if r.TLS != nil || !s.httpsReady() || s.plainHTTPAllowed(r) {
 			next.ServeHTTP(w, r)
 			return
 		}
@@ -33,10 +34,10 @@ func (s *server) requireHTTPS(next http.Handler) http.Handler {
 
 // plainStaticAsset reports whether the request is for one of the static files
 // the plain-HTTP pages need to look right before the device trusts the box:
-// stylesheet, font and icons. They are public and identical on every box, so
+// stylesheet, font, icons and the flags of the language switcher. They are public and identical on every box, so
 // serving them in the clear leaks nothing. Scripts stay HTTPS-only (code
 // fetched over HTTP could be swapped). Only single files directly inside the
-// two directories match, and only for a clean, unencoded path: "..%2f" or
+// three directories match, and only for a clean, unencoded path: "..%2f" or
 // "%2e%2e" must not reach a script, and no directory listing is served.
 func plainStaticAsset(u *url.URL) bool {
 	p := u.Path
@@ -46,7 +47,7 @@ func plainStaticAsset(u *url.URL) bool {
 	if u.RawPath != "" || path.Clean(p) != p {
 		return false
 	}
-	for _, dir := range []string{"/static/fonts/", "/static/icons/"} {
+	for _, dir := range []string{"/static/fonts/", "/static/icons/", "/static/flags/"} {
 		if name, ok := strings.CutPrefix(p, dir); ok {
 			return name != "" && !strings.Contains(name, "/") && name != "." && name != ".."
 		}
@@ -54,14 +55,22 @@ func plainStaticAsset(u *url.URL) bool {
 	return false
 }
 
-func (s *server) plainHTTPAllowed(u *url.URL) bool {
+func (s *server) plainHTTPAllowed(r *http.Request) bool {
+	u := r.URL
 	if plainStaticAsset(u) {
 		return true
 	}
-	switch u.Path {
-	case "/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig":
+	// The trust page has the language switcher (ticket 134): choosing a
+	// language sets only a cookie, so it may work before the box is trusted.
+	if u.Path == "/language" && r.Method == http.MethodPost {
 		return true
-	case "/setup/https/check", "/setup/https/own-ca", "/static/https-check.js":
+	}
+	switch u.Path {
+	case "/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig", "/static/https-check.js":
+		// Pages to read: nothing is posted to them over HTTP. The trust page
+		// runs its own check script (ticket 133) before the device trusts the box.
+		return r.Method == http.MethodGet || r.Method == http.MethodHead
+	case "/setup/https/check", "/setup/https/own-ca":
 		// While the wizard tests the new name, the browser is still on the
 		// LAN address and has no other way to show the page.
 		return s.publicReady() && !s.db.Configured()
@@ -112,8 +121,23 @@ func (s *server) handleHTTPSForm(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
-	s.renderHTTPSStep(w, r, http.StatusOK, publicForm{Issuer: publiccert.LetsEncrypt}, "")
+	way := httpsChoice
+	switch r.URL.Query().Get("way") {
+	case "public":
+		way = httpsPublic
+	case "own":
+		way = httpsOwn
+	}
+	s.renderHTTPSStep(w, r, http.StatusOK, way, publicForm{Issuer: publiccert.LetsEncrypt}, httpsError{})
 }
+
+// The three pages of the wizard's first step: the choice between two ways, the
+// form of the public name and the own certificate authority.
+const (
+	httpsChoice = "choice"
+	httpsPublic = "public"
+	httpsOwn    = "own"
+)
 
 // publicForm is what the wizard's public-name form keeps between attempts.
 // Secrets (token, account key) are never sent back.
@@ -121,12 +145,23 @@ type publicForm struct {
 	Name, Issuer, LANIP, Email, EABKeyID string
 }
 
-func (s *server) renderHTTPSStep(w http.ResponseWriter, r *http.Request, status int, f publicForm, errKey string) {
+// httpsError is an error of the first step: Key is the page-level text, Field
+// the form field it belongs to and FieldKey a text of its own for that field
+// (when empty, the field shows Key).
+type httpsError struct{ Key, Field, FieldKey string }
+
+func (s *server) renderHTTPSStep(w http.ResponseWriter, r *http.Request, status int, way string, f publicForm, e httpsError) {
+	if s.public == nil && way != httpsOwn { // only the box's own certificate authority is on offer
+		way = httpsOwn
+	}
 	if f.LANIP == "" && net.ParseIP(hostOf(r)) != nil {
 		f.LANIP = hostOf(r)
 	}
 	s.render(w, r, status, "setup_https.html", map[string]any{
-		"Host": hostOf(r), "Form": f, "Public": s.public != nil, "Error": errKey, "HTTPSWarning": s.httpsWarning(),
+		"Way": way, "Host": hostOf(r), "Form": f, "Wizard": wizardAt(1), "Choice": s.public != nil,
+		"Error": e.Key, "ErrorField": e.Field, "FieldError": e.FieldKey, "HTTPSWarning": s.httpsWarning(),
+		// "More options" are open when the address is missing or was refused.
+		"MoreOpen": f.LANIP == "" || e.Field == "lan_ip",
 	})
 }
 
@@ -154,10 +189,16 @@ func (s *server) handlePublicHTTPSSubmit(w http.ResponseWriter, r *http.Request)
 	case err == nil:
 		http.Redirect(w, r, "/setup/https/check", http.StatusSeeOther)
 	case errors.Is(err, publiccert.ErrInvalid), errors.Is(err, publiccert.ErrUnknownProvider):
-		s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, form, "setup.https.public.invalid")
+		e := httpsError{Key: "setup.https.error.invalid"}
+		var inv *publiccert.InvalidError
+		if errors.As(err, &inv) && slices.Contains([]string{"token", "name", "lan_ip", "eab"}, inv.Field) {
+			e = httpsError{Key: "setup.https.error." + inv.Field, Field: inv.Field}
+		}
+		s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, httpsPublic, form, e)
 	default:
 		s.logger.Error("public HTTPS setup", "err", err) // the CA's text is English and technical: log only
-		s.renderHTTPSStep(w, r, http.StatusBadGateway, form, "setup.https.public.failed")
+		// The token is not sent back: the page says so at its field.
+		s.renderHTTPSStep(w, r, http.StatusBadGateway, httpsPublic, form, httpsError{Key: "setup.https.public.failed", Field: "token", FieldKey: "setup.https.error.token_again"})
 	}
 }
 
@@ -174,7 +215,7 @@ func (s *server) handleNameCheck(w http.ResponseWriter, r *http.Request) {
 	if s.db.Configured() {
 		next = "/"
 	}
-	s.render(w, r, http.StatusOK, "https_check.html", map[string]any{"Name": s.public.Name(), "CheckURL": origin + "/healthz", "Continue": origin + next})
+	s.render(w, r, http.StatusOK, "https_check.html", map[string]any{"Name": s.public.Name(), "CheckURL": origin + "/healthz", "Continue": origin + next, "Wizard": wizardAt(1)})
 }
 
 // handleSwitchToOwnCA is the way out of the name check: if the router cannot
@@ -240,7 +281,7 @@ func (s *server) handleHTTPSSubmit(w http.ResponseWriter, r *http.Request) {
 func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request) {
 	if err := s.pki.Provision(hostOf(r), s.now()); err != nil {
 		if errors.Is(err, pki.ErrInvalidHost) {
-			s.renderHTTPSStep(w, r, http.StatusBadRequest, publicForm{Issuer: publiccert.LetsEncrypt}, "setup.https.invalidhost")
+			s.renderHTTPSStep(w, r, http.StatusBadRequest, httpsOwn, publicForm{Issuer: publiccert.LetsEncrypt}, httpsError{Key: "setup.https.invalidhost"})
 			return
 		}
 		s.fail(w, "provision HTTPS", err)
@@ -258,12 +299,30 @@ func (s *server) handleTrustPage(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup/https", http.StatusSeeOther)
 		return
 	}
-	data := map[string]any{"Fingerprint": s.pki.CAFingerprint()}
+	page := s.trustDevice(r)
+	fp := s.pki.CAFingerprint()
+	download, downloadKey := "/ca/hejmo-ca.crt", "trust.download.cert"
+	if page.Device == devIOS {
+		download, downloadKey = "/ca/hejmo.mobileconfig", "trust.download.profile"
+	}
+	data := map[string]any{
+		"Device": page.Device, "Detected": page.Detected, "Known": page.Known,
+		"Steps": trustSteps(page.Device), "Fingerprint": fp, "Pairs": strings.Split(fp, ":"),
+		"Download": download, "DownloadKey": downloadKey, "CheckURL": s.httpsOrigin(r) + "/healthz",
+	}
 	if !s.db.Configured() {
 		data["Continue"] = s.httpsOrigin(r) + "/setup"
+		data["ContinueKey"] = "trust.continue.setup"
+		data["Wizard"] = wizardAt(1)
 	} else if next := s.trustContinue(r); next != "" {
 		data["Continue"] = next // a phone on its way to pair (ticket 5.13)
+		data["ContinueKey"] = "trust.continue"
 	}
+	cont := "" // only a phone's pairing target travels with the device chooser
+	if s.db.Configured() {
+		cont = s.trustContinue(r)
+	}
+	data["Devices"] = trustDeviceLinks(page.Device, cont)
 	s.render(w, r, http.StatusOK, "trust.html", data)
 }
 

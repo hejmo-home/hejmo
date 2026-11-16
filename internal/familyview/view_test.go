@@ -160,6 +160,9 @@ func TestWholeHouseholdAndAllDayEventsGoToTheStripOnly(t *testing.T) {
 	if w := wholine.Plain(v.Strip[0].WhoParts); w != "[Sebastian]" {
 		t.Errorf("who-line = %q", w)
 	}
+	if v.Strip[0].Who != "Sebastian" {
+		t.Errorf("plain who-line = %q", v.Strip[0].Who)
+	}
 	if v.Strip[2].Time != "12:00–13:00" || !v.Strip[1].AllDay || len(v.Strip[1].WhoParts) != 0 {
 		t.Errorf("strip = %+v", v.Strip)
 	}

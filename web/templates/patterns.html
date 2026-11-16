@@ -6,17 +6,21 @@
 
 {{/* A text field with its error. Arguments: Root (the page data), Name, Label,
      Value, and optionally Type, Required, Max, Min, Pattern, Autocomplete,
-     Autocapitalize, Inputmode, Placeholder, Spellcheck, Autofocus. A password
+     Autocapitalize, Inputmode, Placeholder, Spellcheck, Autofocus, Class (added
+     to the field, for example "short"), Hint (a quiet line under the field,
+     named by aria-describedby as hint-NAME) and Reveal (Show and Hide, the
+     words of a button that shows the password). A password
      field never gets a value. The field the page reports in ErrorField shows
      the error under it, is marked invalid and takes the focus. */}}
-{{define "field"}}{{$bad := and .Root.ErrorField (eq .Root.ErrorField .Name)}}{{$type := or .Type "text"}}<div class="f{{if $bad}} invalid{{end}}">
+{{define "field"}}{{$bad := and .Root.ErrorField (eq .Root.ErrorField .Name)}}{{$type := or .Type "text"}}<div class="f{{with .Class}} {{.}}{{end}}{{if $bad}} invalid{{end}}">
   <label>{{.Label}}
-    <input name="{{.Name}}" type="{{$type}}"{{if eq $type "time"}} class="tcap"{{end}}{{if ne $type "password"}} value="{{.Value}}"{{end}}{{if .Required}} required{{end}}{{with .Max}} maxlength="{{.}}"{{end}}{{with .Min}} minlength="{{.}}"{{end}}{{with .Pattern}} pattern="{{.}}"{{end}}{{if .Bounded}} min="{{.Lo}}" max="{{.Hi}}" step="1"{{end}}{{with .Inputmode}} inputmode="{{.}}"{{end}}{{with .Autocomplete}} autocomplete="{{.}}"{{end}}{{with .Autocapitalize}} autocapitalize="{{.}}"{{end}}{{with .Placeholder}} placeholder="{{.}}"{{end}}{{with .Spellcheck}} spellcheck="{{.}}"{{end}}{{if or $bad .Autofocus}} autofocus{{end}}{{if $bad}} aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}></label>
+    {{if .Reveal}}<span class="pw">{{end}}<input name="{{.Name}}" type="{{$type}}"{{if eq $type "time"}} class="tcap"{{end}}{{if ne $type "password"}} value="{{.Value}}"{{end}}{{if .Required}} required{{end}}{{with .Max}} maxlength="{{.}}"{{end}}{{with .Min}} minlength="{{.}}"{{end}}{{with .Pattern}} pattern="{{.}}"{{end}}{{if .Bounded}} min="{{.Lo}}" max="{{.Hi}}" step="1"{{end}}{{with .Inputmode}} inputmode="{{.}}"{{end}}{{with .Autocomplete}} autocomplete="{{.}}"{{end}}{{with .Autocapitalize}} autocapitalize="{{.}}"{{end}}{{with .Placeholder}} placeholder="{{.}}"{{end}}{{with .Spellcheck}} spellcheck="{{.}}"{{end}}{{if or $bad .Autofocus}} autofocus{{end}}{{if $bad}} aria-invalid="true"{{end}}{{if or $bad .Hint}} aria-describedby="{{if $bad}}err-{{.Name}}{{end}}{{if and $bad .Hint}} {{end}}{{if .Hint}}hint-{{.Name}}{{end}}"{{end}}>{{if .Reveal}}<button class="button secondary" type="button" data-pw-toggle data-show-text="{{.Reveal.Show}}" data-hide-text="{{.Reveal.Hide}}" aria-pressed="false">{{.Reveal.Show}}</button></span>{{end}}</label>
   {{template "fieldError" .}}
+  {{with .Hint}}<p class="hint" id="hint-{{$.Name}}">{{.}}</p>{{end}}
 </div>{{end}}
 
 {{/* The error text of a field or of a group of controls (chips, segments). */}}
-{{define "fieldError"}}{{if and .Root.ErrorField (eq .Root.ErrorField .Name)}}<p class="ferr" id="err-{{.Name}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{t .Root.Error}}</p>{{end}}{{end}}
+{{define "fieldError"}}{{if and .Root.ErrorField (eq .Root.ErrorField .Name)}}<p class="ferr" id="err-{{.Name}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{t (or .Root.FieldError .Root.Error)}}</p>{{end}}{{end}}
 
 {{/* Switch: "is it on?" with its state in words. Arguments: Name, Label,
      OnText, OffText, Checked, and optionally Mealtime (shows the mealtime's
@@ -48,25 +52,57 @@
 {{/* One of a few: Class "seg" (segmented control, short options), "choice"
      (choice cards with a one-line explanation) or "days" (round weekday chips,
      checkboxes). Open with optionsOpen, add an option per choice, then
-     optionsClose with Root and Name to show an error under the group. */}}
-{{define "optionsOpen"}}<fieldset class="{{.Class}}{{with .When}} {{.}}{{end}}"><legend>{{.Legend}}</legend>{{end}}
+     optionsClose with Root and Name to show an error under the group (give
+     optionsOpen Root and Name too and the group is marked invalid). */}}
+{{define "optionsOpen"}}<fieldset class="{{.Class}}{{with .When}} {{.}}{{end}}"{{if and .Root .Name .Root.ErrorField (eq .Root.ErrorField .Name)}} aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}><legend>{{.Legend}}</legend>{{end}}
 {{define "option"}}<label><input type="{{or .Type "radio"}}" name="{{.Name}}" value="{{.Value}}"{{if .Checked}} checked{{end}}>{{if .Hint}}<b>{{.Label}}</b><small>{{.Hint}}</small>{{else}}{{.Label}}{{end}}</label>{{end}}
 {{define "optionsClose"}}{{template "fieldError" .}}</fieldset>{{end}}
 
 {{/* "More options": fields with a good default. Arguments: Label, Summary (the
-     current value), Open. Close with moreClose. */}}
+     current value), Open and ID (of the summary, for aria-labelledby). Close with moreClose. */}}
 {{define "moreOpen"}}<details class="more"{{if .Open}} open{{end}}>
-  <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{.Label}}{{with .Summary}}<span class="sum">{{.}}</span>{{end}}</summary>
+  <summary{{with .ID}} id="{{.}}"{{end}}><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{.Label}}{{with .Summary}}<span class="sum">{{.}}</span>{{end}}</summary>
   <div>{{end}}
 {{define "moreClose"}}</div>
 </details>{{end}}
 
 {{/* Destructive actions live on a detail page, in a closed disclosure that says
-     what will happen; the red button inside is the confirmation. Argument:
-     Label (the summary). Close with dangerClose. */}}
+     what will happen; the red button inside is the confirmation. Arguments:
+     Label (the summary). With Confirm (the button text, which names the thing)
+     the box is complete: Explain (what happens), optionally Names (what
+     disappears, listed), Action (where the button posts) and CancelHref (the
+     "No, change nothing" link). Without Confirm the caller puts its own
+     content between dangerOpen and dangerClose. */}}
 {{define "dangerOpen"}}<details class="danger">
-  <summary>{{.Label}}</summary>{{end}}
+  <summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{.Label}}</summary>{{if .Confirm}}
+  <p>{{.Explain}}</p>{{with .Names}}
+  <ul>{{range .}}<li><strong>{{.}}</strong></li>{{end}}</ul>{{end}}
+  <div class="confirm">
+    <form method="post" action="{{.Action}}"><button class="button danger" type="submit">{{.Confirm}}</button></form>
+    <a href="{{.CancelHref}}">{{t "danger.cancel"}}</a>
+  </div>{{end}}{{end}}
 {{define "dangerClose"}}</details>{{end}}
+{{define "danger"}}{{template "dangerOpen" .}}{{template "dangerClose"}}{{end}}
+
+{{/* Who a line is for: the whole family, or people as marker plus name.
+     Arguments: Whole, People (person chips). */}}
+{{define "forWhom"}}{{if .Whole}}<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg> {{t "chips.whole_family"}}{{end}}{{range $i, $p := .People}}{{if $i}} {{end}}<span class="who"><span class="marker" data-person="{{$p.Slot}}" data-shape="{{$p.Shape}}" aria-hidden="true"></span>{{$p.Name}}</span>{{end}}{{end}}
+
+{{/* A problem or a warning in words, with an icon. Arguments: Kind (problem or
+     warn) and Text. */}}
+{{define "flag"}}<span class="flag {{.Kind}}"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{.Text}}</span>{{end}}
+
+{{/* One calm row of an overview that opens a detail page. Arguments: Href,
+     Title, Lines (each with Text and optionally Whole and People) and Flag
+     (optional, with Kind and Text). */}}
+{{define "rowLink"}}<li><a href="{{.Href}}"><span class="t"><b>{{.Title}}</b>{{range .Lines}}<span class="meta">{{.Text}}{{if or .Whole .People}} {{template "forWhom" .}}{{end}}</span>{{end}}{{with .Flag}}{{template "flag" .}}{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
+
+{{/* Facts of a thing: label and value pairs. The argument is a list of facts,
+     each with Label and one of Value, Flag (Kind and Text) or Whole/People. */}}
+{{define "facts"}}<dl class="facts">{{range .}}
+  <dt>{{.Label}}</dt>
+  <dd>{{if .Flag}}{{template "flag" .Flag}}{{else}}{{if or .Whole .People}}{{template "forWhom" .}}{{end}}{{.Value}}{{end}}</dd>{{end}}
+</dl>{{end}}
 
 {{/* Empty state: one sentence on what the thing is for and the first action. */}}
 {{define "empty"}}<div class="empty" data-empty>
@@ -74,6 +110,30 @@
   <a class="button" href="{{.Href}}">{{.Action}}</a>
 </div>{{end}}
 
+{{/* The link back to the overview, first thing in main. Arguments: Href, Text. */}}
+{{define "backLink"}}<a class="back" href="{{.Href}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>{{.Text}}</a>{{end}}
+
 {{/* The line icon of a mealtime: sunrise, sun, apple, moon. Argument: the
      mealtime ("breakfast", "lunch", "snack", "dinner"). */}}
 {{define "mealIcon"}}{{if eq . "breakfast"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 18h18M7 18a5 5 0 0 1 10 0M12 6v3M5.5 10.5l1.8 1.4M18.5 10.5l-1.8 1.4"/></svg>{{else if eq . "lunch"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6L7 7M17 17l1.4 1.4M5.6 18.4L7 17M17 7l1.4-1.4"/></svg>{{else if eq . "snack"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8c-2-1.5-6-1-6 4 0 4 2.5 8 4.5 8 .8 0 1-.4 1.5-.4s.7.4 1.5.4c2 0 4.5-4 4.5-8 0-5-4-5.5-6-4z"/><path d="M12 8c0-2 1-3.5 3-4"/></svg>{{else if eq . "dinner"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>{{end}}{{end}}
+
+{{/* The wizard shell of the first setup (ticket 133): brand bar with "Setup ·
+     Step n of 4" in words and the progress of the four steps. Argument: the
+     wizardView. Step 0 (welcome) and -1 (codes set up again later) show no
+     progress. */}}
+{{define "wizard"}}<header class="frame-bar"><span class="brand">Hejmo</span><div class="frame-tools">{{with .Frame}}{{template "langSwitch" .}}{{end}}</div></header>
+{{if gt .W.Step 0}}<nav class="wsteps" aria-label="{{t "setup.wizard.progress"}}"><p class="wiz-count">{{tf "setup.wizard.count" "n" (printf "%d" .W.Step)}}</p><ol>
+{{range .W.Steps}}{{if eq .State "done"}}<li data-state="done"><span class="lab">{{template "tickIcon" 14}}{{t .Label}}<span class="sr"> {{t "setup.wizard.done"}}</span></span></li>
+{{else if eq .State "current"}}<li aria-current="step"><span class="lab"><span class="n">{{.N}}</span>{{t .Label}}</span></li>
+{{else}}<li><span class="lab"><span class="n">{{.N}}</span>{{t .Label}}</span></li>
+{{end}}{{end}}</ol></nav>{{end}}{{end}}
+
+{{define "starIcon"}}<svg class="icon star" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.8l6-.7z"/></svg>{{end}}
+
+{{define "tickIcon"}}<svg class="icon" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{{end}}
+
+{{/* A check the page runs by itself, in words. Arguments: State (waiting, ok
+     or fail), Text, optionally Small (a second line), Hook (a data-hook value
+     the page script finds the line by) and Hidden (hidden until the script
+     shows it). */}}
+{{define "checkline"}}<p class="checkline" data-state="{{.State}}" role="status"{{with .Hook}} data-hook="{{.}}"{{end}}{{if .Hidden}} hidden{{end}}>{{if eq .State "ok"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{{else if eq .State "fail"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.5"/></svg>{{else}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>{{end}}<span><span>{{.Text}}</span>{{with .Small}}<small{{if $.Hook}} data-small{{end}}>{{.}}</small>{{end}}</span></p>{{end}}

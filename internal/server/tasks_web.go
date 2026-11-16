@@ -2,11 +2,15 @@ package server
 
 import (
 	"errors"
+	"fmt"
+	"html"
+	"html/template"
 	"net/http"
 	"strconv"
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -27,6 +31,7 @@ type starCard struct {
 
 type starEntryView struct {
 	Delta, Label, By, When string
+	ByRemoved              bool // the booker has been removed; By is their last name
 }
 
 // starLogLines is how many star log entries per person the tasks page shows.
@@ -39,10 +44,10 @@ type personTasks struct {
 
 var taskWeekdays = []string{"MO", "TU", "WE", "TH", "FR", "SA", "SU"}
 
-func newTaskView(t task.Task, today string, done bool) taskView {
+func newTaskView(f store.DateFormat, t task.Task, today string, done bool) taskView {
 	v := taskView{ID: t.ID, Title: t.Title, Emoji: t.Emoji, Repeat: string(t.Repeat), Weekdays: t.Weekdays, Part: string(t.PartOfDay), Due: t.DueOn(today), Done: done, Stars: t.Stars}
 	if d, err := time.Parse(task.DateLayout, t.Date); err == nil {
-		v.Date = d.Format("02/01/2006")
+		v.Date = datefmt.Date(f, d)
 	}
 	return v
 }
@@ -91,7 +96,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			if t.PersonID != person.ID {
 				continue
 			}
-			g.Tasks = append(g.Tasks, newTaskView(t, today, doneToday[t.ID]))
+			g.Tasks = append(g.Tasks, newTaskView(p.household.DateFormat, t, today, doneToday[t.ID]))
 		}
 		if len(g.Tasks) > 0 {
 			groups = append(groups, g)
@@ -206,10 +211,6 @@ func taskErrorKey(field string) string {
 
 // starCardOf builds a person's star account for the page: balance and log, newest first.
 func (s *server) starCardOf(p principal, person store.Person, acc store.StarAccount) starCard {
-	layout := "02/01/2006 15:04"
-	if p.household.TimeFormat == store.Time12h {
-		layout = "02/01/2006 3:04 PM"
-	}
 	c := starCard{Name: person.Name, Color: person.Color, Balance: acc.Balance}
 	for _, e := range acc.Entries {
 		label := e.Note
@@ -220,7 +221,7 @@ func (s *server) starCardOf(p principal, person store.Person, acc store.StarAcco
 		if e.Delta > 0 {
 			delta = "+" + delta
 		}
-		c.Entries = append(c.Entries, starEntryView{Delta: delta, Label: label, By: e.BookedByName, When: e.At.In(p.location()).Format(layout)})
+		c.Entries = append(c.Entries, starEntryView{Delta: delta, Label: label, By: e.BookedByName, ByRemoved: e.BookedByRemoved, When: p.dateTime(e.At)})
 	}
 	return c
 }
@@ -250,13 +251,27 @@ func (s *server) handleStarBooking(w http.ResponseWriter, r *http.Request) {
 	}
 }
 
-// handleTaskPage is the detail page of a task: what it is and, behind a
-// confirmation, deleting it (ADR 0017: destructive actions only on detail pages).
+// creditedView is what today's tick of a task credited, said in words on the
+// detail page. HTML comes from the locales with the person's name escaped.
+type creditedView struct {
+	Stars int
+	HTML  template.HTML
+}
+
+// handleTaskPage is the detail page of a task: what it is, its star value and,
+// behind a confirmation, deleting it (ADR 0017: destructive actions only on
+// detail pages).
 func (s *server) handleTaskPage(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
 	}
+	s.renderTaskPage(w, r, p, http.StatusOK, "", "")
+}
+
+// renderTaskPage renders the detail page of the task in the path. After a
+// refused star value it shows what was typed (typed) and the error at the field.
+func (s *server) renderTaskPage(w http.ResponseWriter, r *http.Request, p principal, status int, typed, errKey string) {
 	t, err := s.db.Task(p.household.ID, r.PathValue("id"))
 	if errors.Is(err, store.ErrNotFound) {
 		http.NotFound(w, r)
@@ -282,7 +297,74 @@ func (s *server) handleTaskPage(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "task state", err)
 		return
 	}
-	s.render(w, r, http.StatusOK, "task.html", map[string]any{
-		"Person": p.person, "Task": newTaskView(t, today, doneToday[t.ID]), "Owner": owner, "SyncStale": s.syncStale(p.household.ID),
-	})
+	data := map[string]any{
+		"Person": p.person, "Task": newTaskView(p.household.DateFormat, t, today, doneToday[t.ID]), "Owner": owner, "SyncStale": s.syncStale(p.household.ID),
+		"MaxStars": task.MaxStars, "StarsValue": strconv.Itoa(t.Stars),
+	}
+	if errKey != "" {
+		data["StarsValue"], data["Error"], data["ErrorField"] = typed, errKey, "stars"
+	}
+	if credited, done, err := s.db.TaskDoneStars(t.ID, today); err != nil {
+		s.fail(w, "credited stars", err)
+		return
+	} else if done {
+		data["Credited"] = s.creditedNotice(s.langOf(r), owner.Name, credited)
+	}
+	s.render(w, r, status, "task.html", data)
+}
+
+// creditedNotice says what today's tick credited and what reopening deducts.
+func (s *server) creditedNotice(lang, owner string, stars int) creditedView {
+	name := html.EscapeString(owner)
+	var text string
+	switch stars {
+	case 0:
+		text = s.i18n.T(lang, "tasks.stars.credited.zero")
+	case 1:
+		text = fmt.Sprintf(s.i18n.T(lang, "tasks.stars.credited.one"), name)
+	default:
+		text = fmt.Sprintf(s.i18n.T(lang, "tasks.stars.credited.other"), name, stars)
+	}
+	return creditedView{Stars: stars, HTML: template.HTML(text)}
+}
+
+// starsSavedKey is the text of the success line after a changed star value:
+// no stars, one, or several.
+func starsSavedKey(n int) string {
+	switch n {
+	case 0:
+		return "tasks.stars.saved.zero"
+	case 1:
+		return "tasks.stars.saved.one"
+	}
+	return "tasks.stars.saved.other"
+}
+
+// handleTaskStars changes a task's star value from its detail page. The value
+// counts from the next tick; credited ticks keep theirs.
+func (s *server) handleTaskStars(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	_ = r.ParseForm()
+	typed := strings.TrimSpace(r.PostFormValue("stars"))
+	n, convErr := strconv.Atoi(typed)
+	id := r.PathValue("id")
+	err := convErr
+	if err == nil {
+		err = s.db.SetTaskStars(p.household.ID, id, n)
+	} else {
+		err = store.ErrInvalid // not a whole number: refused with the field kept
+	}
+	switch {
+	case err == nil:
+		s.redirectSaved(w, r, "/tasks/"+id, starsSavedKey(n)+":"+strconv.Itoa(n))
+	case errors.Is(err, store.ErrNotFound):
+		http.NotFound(w, r)
+	case errors.Is(err, store.ErrInvalid):
+		s.renderTaskPage(w, r, p, http.StatusUnprocessableEntity, typed, "tasks.error.stars")
+	default:
+		s.fail(w, "set task stars", err)
+	}
 }

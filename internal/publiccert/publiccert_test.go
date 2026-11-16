@@ -189,21 +189,32 @@ func TestSetupRejectsWhatCannotWork(t *testing.T) {
 	r := newRig(t)
 	le := r.startCA(caOption{})
 	m := r.manager(map[string]string{"letsencrypt": le.URL})
-	cases := map[string]func(*publiccert.Request){
-		"no token":          func(q *publiccert.Request) { q.Token = "" },
-		"single label name": func(q *publiccert.Request) { q.Name = "mia" },
-		"wildcard name":     func(q *publiccert.Request) { q.Name = "*.dedyn.io" },
-		"name with slash":   func(q *publiccert.Request) { q.Name = "mia.dedyn.io/x" },
-		"bad LAN address":   func(q *publiccert.Request) { q.LANIP = "not-an-ip" },
-		"unspecified IP":    func(q *publiccert.Request) { q.LANIP = "0.0.0.0" },
-		"unknown issuer":    func(q *publiccert.Request) { q.Issuer = "cheapcerts" },
+	// Each refusal names the form field it belongs to, so the wizard can show
+	// the error at that field (ticket 133).
+	cases := map[string]struct {
+		mutate func(*publiccert.Request)
+		field  string
+	}{
+		"no token":          {func(q *publiccert.Request) { q.Token = "" }, "token"},
+		"single label name": {func(q *publiccert.Request) { q.Name = "mia" }, "name"},
+		"wildcard name":     {func(q *publiccert.Request) { q.Name = "*.dedyn.io" }, "name"},
+		"name with slash":   {func(q *publiccert.Request) { q.Name = "mia.dedyn.io/x" }, "name"},
+		"bad LAN address":   {func(q *publiccert.Request) { q.LANIP = "not-an-ip" }, "lan_ip"},
+		"unspecified IP":    {func(q *publiccert.Request) { q.LANIP = "0.0.0.0" }, "lan_ip"},
+		"unknown issuer":    {func(q *publiccert.Request) { q.Issuer = "cheapcerts" }, "issuer"},
+		"Actalis no keys":   {func(q *publiccert.Request) { q.Issuer = "actalis" }, "eab"},
 	}
-	for name, mutate := range cases {
+	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
 			q := request("letsencrypt")
-			mutate(&q)
-			if err := m.Setup(context.Background(), q); !errors.Is(err, publiccert.ErrInvalid) {
-				t.Errorf("err = %v, want ErrInvalid", err)
+			c.mutate(&q)
+			err := m.Setup(context.Background(), q)
+			if !errors.Is(err, publiccert.ErrInvalid) {
+				t.Fatalf("err = %v, want ErrInvalid", err)
+			}
+			var inv *publiccert.InvalidError
+			if !errors.As(err, &inv) || inv.Field != c.field {
+				t.Errorf("err = %v, want an InvalidError for field %q", err, c.field)
 			}
 		})
 	}

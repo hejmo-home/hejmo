@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
@@ -115,5 +116,29 @@ func TestTaskCompletionTimeIsKnownOnceDone(t *testing.T) {
 	at, ok, err := f.db.TaskCompletedAt(k.ID, "2026-11-20")
 	if err != nil || !ok || !at.Equal(taskNow) {
 		t.Fatalf("done task: %v %v %v", at, ok, err)
+	}
+}
+
+// Clients sync on the ETag (UpdatedAt): saving the same values again must not move it.
+func TestEditTaskWithIdenticalValuesLeavesUpdatedAtAlone(t *testing.T) {
+	f := newTaskFixture(t)
+	k := f.once(t)
+	const old = "2026-01-02T03:04:05Z"
+	if _, err := f.db.SQL().Exec(`UPDATE tasks SET updated_at = ? WHERE id = ?`, old, k.ID); err != nil {
+		t.Fatal(err)
+	}
+	same := store.TaskEdit{Title: sp(k.Title), Notes: sp(k.Notes), Date: sp(k.Date)}
+	if err := f.db.EditTask(f.h.ID, k.ID, same); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := f.db.Task(f.h.ID, k.ID)
+	if got.UpdatedAt.UTC().Format(time.RFC3339) != old {
+		t.Fatalf("UpdatedAt = %v after a no-op edit, want %s", got.UpdatedAt, old)
+	}
+	if err := f.db.EditTask(f.h.ID, k.ID, store.TaskEdit{Notes: sp("Goggles")}); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ := f.db.Task(f.h.ID, k.ID); got.UpdatedAt.UTC().Format(time.RFC3339) == old {
+		t.Fatal("a real edit did not move UpdatedAt")
 	}
 }

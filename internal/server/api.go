@@ -130,6 +130,18 @@ var apiRoutes = []APIRoute{
 	{"POST", "/displays", auth.Perm("displays", auth.Write), (*server).apiPairDisplay},
 	{"PATCH", "/displays/{id}", auth.Perm("displays", auth.Write), (*server).apiUpdateDisplay},
 	{"DELETE", "/displays/{id}", auth.Perm("displays", auth.Delete), (*server).apiRevokeDisplay},
+	{"GET", "/albums", auth.Perm("displays", auth.Read), (*server).apiListAlbums},
+	{"POST", "/albums", auth.Perm("displays", auth.Write), (*server).apiCreateAlbum},
+	{"GET", "/albums/{id}", auth.Perm("displays", auth.Read), (*server).apiGetAlbum},
+	{"PATCH", "/albums/{id}", auth.Perm("displays", auth.Write), (*server).apiRenameAlbum},
+	{"DELETE", "/albums/{id}", auth.Perm("displays", auth.Delete), (*server).apiDeleteAlbum},
+	{"GET", "/albums/{id}/photos", auth.Perm("displays", auth.Read), (*server).apiListAlbumPhotos},
+	{"POST", "/albums/{id}/photos", auth.Perm("displays", auth.Write), (*server).apiUploadPhoto},
+	{"PATCH", "/photos/{id}", auth.Perm("displays", auth.Write), (*server).apiUpdatePhoto},
+	{"DELETE", "/photos/{id}", auth.Perm("displays", auth.Delete), (*server).apiDeletePhoto},
+	{"GET", "/photos/{id}/image", auth.Perm("displays", auth.Read), (*server).apiPhotoImage},
+	{"GET", "/photo-storage", auth.Perm("displays", auth.Read), (*server).apiPhotoStorage},
+	{"PATCH", "/photo-storage", auth.Perm("displays", auth.Write), (*server).apiSetPhotoLimit},
 	{"GET", "/phones", auth.Perm("tokens", auth.Read), (*server).apiListPhones},
 	{"DELETE", "/phones/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokePhone},
 	{"GET", "/phones/pairings", auth.Perm("tokens", auth.Read), (*server).apiListPhonePairings},
@@ -146,6 +158,8 @@ var displayAPIRoutes = []struct {
 }{
 	{"POST", "/display/pairing", (*server).apiOpenPairing},
 	{"GET", "/display/state", (*server).apiDisplayState},
+	{"GET", "/display/saver", (*server).apiDisplaySaver},
+	{"GET", "/display/photos/{id}", (*server).apiDisplayPhoto},
 }
 
 // APIRoutes lists the served endpoints (used by the contract test).

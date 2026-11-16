@@ -136,6 +136,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		}
 		s.render(w, r, http.StatusOK, "display_family.html", map[string]any{
 			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Version": version, "Theme": s.displayTheme(h, d),
+			"SaverSeconds": s.saverSeconds(h, d),
 		})
 		return
 	}
@@ -411,4 +412,13 @@ func splitWaste(occs []calendar.Occurrence, cals []store.Calendar) (rest, waste 
 		}
 	}
 	return rest, waste
+}
+
+// saverSeconds is how long the family view waits without a touch before the
+// screensaver starts; 0 when the display has no screensaver now (off, or quiet mode).
+func (s *server) saverSeconds(h store.Household, d store.Display) int {
+	if !s.saverActive(h, d) {
+		return 0
+	}
+	return d.Saver.IdleMinutes * 60
 }

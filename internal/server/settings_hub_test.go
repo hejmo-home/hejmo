@@ -48,7 +48,7 @@ func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
 
 // hubPages are the setup screens the Settings hub holds. Add a new hub entry here; the tests
 // below also check that the hub shows nothing this list lacks.
-var hubPages = []string{"/calendars", "/caldav", "/displays", "/phones", "/mcp", "/people", "/settings/household", "/account", "/sessions"}
+var hubPages = []string{"/calendars", "/caldav", "/displays", "/photos", "/phones", "/mcp", "/people", "/settings/household", "/account", "/sessions"}
 
 // 5.18: every setup page is reachable from the Settings hub.
 func TestSettingsHubLinksEverySetupPage(t *testing.T) {

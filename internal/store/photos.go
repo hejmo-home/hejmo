@@ -362,6 +362,13 @@ func (db *DB) deletePhotos(householdID string, ids []string, folder bool) ([]str
 	return gone, tx.Commit()
 }
 
+// UpdateFolderPhoto records that a photo's source file changed and its copy was
+// made again.
+func (db *DB) UpdateFolderPhoto(householdID, id string, bytes int64, width, height int, stamp string) error {
+	return expectOne(db.sql.Exec(`UPDATE photos SET bytes = ?, width = ?, height = ?, source_stamp = ? WHERE household_id = ? AND id = ? AND source_path != ''`,
+		bytes, width, height, stamp, householdID, id))
+}
+
 // PhotoUsage is the space the household's photos take (the shrunk copies) and
 // how many photos there are.
 func (db *DB) PhotoUsage(householdID string) (bytes int64, photos int, err error) {

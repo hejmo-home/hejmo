@@ -60,6 +60,10 @@ type Options struct {
 	// host script: no settings file is written, no status is read and the
 	// settings page does not offer auto-update.
 	UpdateDir string
+	// PhotoDir is the data volume directory for the photo screensaver (ticket
+	// 178): the photo folder inside it and the shrunk copies the box keeps.
+	// Empty means the box keeps no photos.
+	PhotoDir string
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -107,6 +111,7 @@ type server struct {
 	countWait  time.Duration
 	done       <-chan struct{}
 	updateDir  string
+	photos     *photoBox // nil without a data directory for photos
 	flashTexts flashTexts
 	rolled     sync.Map // household id -> the day its meal plan calendar was last rolled forward
 }
@@ -138,6 +143,12 @@ func New(opts Options) http.Handler {
 	}
 	s.done = opts.Done
 	s.updateDir = opts.UpdateDir
+	if opts.PhotoDir != "" {
+		s.photos = newPhotoBox(opts.PhotoDir)
+		if opts.Done != nil {
+			go s.watchPhotoFolder(opts.Done)
+		}
+	}
 	if s.live = opts.LiveInterval; s.live <= 0 {
 		s.live = 2 * time.Second
 	}
@@ -301,10 +312,22 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /mcp/tokens", s.handleMCPTokenCreate)
 	mux.HandleFunc("GET /mcp/tokens/{id}", s.handleMCPTokenPage)
 	mux.HandleFunc("POST /mcp/tokens/{id}/revoke", s.handleMCPTokenRevoke)
+	mux.HandleFunc("GET /photos", s.handlePhotosPage)
+	mux.HandleFunc("POST /photos/upload", s.handlePhotosUpload)
+	mux.HandleFunc("POST /photos/albums", s.handleAlbumCreate)
+	mux.HandleFunc("POST /photos/limit", s.handleLimitSave)
+	mux.HandleFunc("GET /photos/albums/{id}", s.handleAlbumPage)
+	mux.HandleFunc("POST /photos/albums/{id}/rename", s.handleAlbumRename)
+	mux.HandleFunc("POST /photos/albums/{id}/delete", s.handleAlbumDelete)
+	mux.HandleFunc("POST /photos/albums/{id}/selection", s.handleSelection)
+	mux.HandleFunc("POST /photos/{id}/hidden", s.handlePhotoHidden)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
 	mux.HandleFunc("GET /display/events", s.handleDisplayEvents)
+	mux.HandleFunc("GET /display/saver", s.handleDisplaySaver)
+	mux.HandleFunc("GET /display/saver/photos", s.serveDisplaySaver)
+	mux.HandleFunc("GET /display/photo/{id}", s.serveDisplayPhoto)
 	mux.HandleFunc("GET /display/person/{id}", s.handleDisplayPerson)
 	mux.HandleFunc("GET /display/person/{id}/view", s.handleDisplayPersonView)
 	mux.HandleFunc("POST /display/tasks/{id}/done", s.handleDisplayTaskDone)

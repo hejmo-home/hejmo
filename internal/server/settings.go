@@ -159,7 +159,8 @@ type cutoffInput struct {
 // hubEntry is a hub row; State, when set, is the key of the word that opens its hint.
 type hubEntry struct {
 	hubItem
-	State string
+	State     string
+	StateText string // a state in words that was composed, not looked up
 }
 
 // handleSettingsHub shows the Settings hub: one calm row per setup screen.
@@ -177,6 +178,9 @@ func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 				if p.household.MCPEnabled {
 					e.State = "hub.mcp.on"
 				}
+			}
+			if it.Href == "/photos" {
+				e.StateText = s.photoHubState(s.langOf(r), p.household)
 			}
 			items = append(items, e)
 		}

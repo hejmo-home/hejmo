@@ -12,11 +12,14 @@ require (
 	github.com/getkin/kin-openapi v0.153.0
 	github.com/go-webauthn/webauthn v0.18.2
 	github.com/letsencrypt/pebble/v2 v2.10.3
+	github.com/libdns/cloudflare v0.2.2
 	github.com/libdns/desec v1.1.1
+	github.com/libdns/inwx v0.3.1
 	github.com/libdns/libdns v1.1.1
 	github.com/mholt/acmez/v3 v3.1.7
 	github.com/miekg/dns v1.1.73
 	github.com/modelcontextprotocol/go-sdk v1.8.0
+	github.com/pquerna/otp v1.5.0
 	github.com/teambition/rrule-go v1.8.2
 	go.uber.org/zap v1.28.0
 	go.yaml.in/yaml/v4 v4.0.0
@@ -28,6 +31,7 @@ require (
 )
 
 require (
+	github.com/boombuler/barcode v1.0.2 // indirect
 	github.com/caddyserver/zerossl v0.1.6 // indirect
 	github.com/dustin/go-humanize v1.1.0 // indirect
 	github.com/go-jose/go-jose/v4 v4.1.8 // indirect

@@ -14,6 +14,7 @@ import (
 	"sync/atomic"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/letsencrypt/pebble/v2/ca"
 	"github.com/letsencrypt/pebble/v2/db"
 	"github.com/letsencrypt/pebble/v2/va"
@@ -30,7 +31,8 @@ type fakeDNS struct {
 	mu      sync.Mutex
 	records map[string][]libdns.RR // fully qualified name (no trailing dot) -> records
 	addr    string                 // address of the name server
-	tokens  []string
+	// credentials the provider factory was asked to build a provider for.
+	credentials []publiccert.Credentials
 }
 
 func newFakeDNS(t *testing.T) *fakeDNS {
@@ -212,4 +214,52 @@ func listenPair(listen func(network, addr string) (net.Listener, error)) (net.Pa
 		lastErr = err
 	}
 	return nil, nil, lastErr
+}
+
+// GetRecords lists the zone's records (libdns.RecordGetter).
+func (f *fakeDNS) GetRecords(_ context.Context, zone string) ([]libdns.Record, error) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	zone = strings.TrimSuffix(zone, ".")
+	var out []libdns.Record
+	for n, rrs := range f.records {
+		if n != zone && !strings.HasSuffix(n, "."+zone) {
+			continue
+		}
+		for _, rr := range rrs {
+			rel := strings.TrimSuffix(strings.TrimSuffix(n, zone), ".")
+			if rel == "" {
+				rel = "@"
+			}
+			rr.Name = rel
+			rec, err := rr.Parse()
+			if err != nil {
+				return nil, err
+			}
+			out = append(out, rec)
+		}
+	}
+	return out, nil
+}
+
+// put adds records (relative names) to the zone before the test starts.
+func (f *fakeDNS) put(zone string, recs ...libdns.RR) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	for _, rr := range recs {
+		n := fqdn(zone, rr.Name)
+		f.records[n] = append(f.records[n], rr)
+	}
+}
+
+func (f *fakeDNS) txtAt(name string) []string {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	var out []string
+	for _, rr := range f.records[name] {
+		if rr.Type == "TXT" {
+			out = append(out, rr.Data)
+		}
+	}
+	return out
 }

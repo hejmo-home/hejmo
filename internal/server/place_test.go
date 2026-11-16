@@ -10,7 +10,7 @@ import (
 	"testing"
 )
 
-// The home location (ADR 0022, ticket 86): the parent picks a place from the
+// The home location (ADR 0023, ticket 86): the parent picks a place from the
 // list of places on the box. The page posts place_id and never coordinates;
 // the box looks coordinates and region up. Nothing goes to the internet.
 

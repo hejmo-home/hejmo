@@ -90,7 +90,7 @@ func (s *server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 		password: r.PostFormValue("password"),
 		pin:      strings.TrimSpace(r.PostFormValue("pin")),
 	}
-	// The home is a place of the list on the box (ADR 0022): the page posts
+	// The home is a place of the list on the box (ADR 0023): the page posts
 	// its id and never coordinates.
 	pl, status, errKey := s.setupPlace(r, &f)
 	if status != 0 {

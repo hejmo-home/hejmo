@@ -1,6 +1,6 @@
-# 0021. Home location
+# 0022. Home location
 
-- Status: Accepted, amended by [0022](0022-home-location-from-a-list-on-the-box.md) (the place is picked from a list on the box; no Open-Meteo lookup, no internet for the wizard)
+- Status: Accepted, amended by [0023](0023-home-location-from-a-list-on-the-box.md) (the place is picked from a list on the box; no Open-Meteo lookup, no internet for the wizard)
 - Date: 15/11/2026
 - Amends: [0015](0015-display-web-interface-and-everyday.md) (the sun position for quiet mode, the front light and themes comes from a confirmed home location), [0017](0017-web-interface-usability.md) (a place field with confirmation in the setup wizard and under Settings → Household)
 

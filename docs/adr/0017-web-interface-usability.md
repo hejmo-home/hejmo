@@ -1,6 +1,6 @@
 # 0017. Web interface usability
 
-- Status: Accepted, amended by [0021](0021-home-location.md)
+- Status: Accepted, amended by [0022](0022-home-location.md)
 - Date: 14/11/2026
 - Amends: [0006](0006-authentication.md) (recovery when the one-time code device is lost), [0010](0010-households-memberships-and-credentials.md) (recovery codes as a credential), [0012](0012-calendar-sync.md) (choosing calendars with a switch, also for synced calendars, and switching one off; calendar colour; sync log wording; event count before choosing a calendar; iOS profile for CalDAV clients), [0015](0015-display-web-interface-and-everyday.md) (navigation; one display question instead of name and room)
 

@@ -104,7 +104,7 @@ type server struct {
 	opens      *loginLimiter // pairing screens opened, per client address
 	sync       *calsync.Service
 	weather    *weather.Service
-	places     *places.List // the list of places on the box, loaded at start-up (ADR 0022)
+	places     *places.List // the list of places on the box, loaded at start-up (ADR 0023)
 	live       time.Duration
 	countWait  time.Duration
 	done       <-chan struct{}

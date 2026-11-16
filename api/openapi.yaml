@@ -26,7 +26,8 @@ info:
     `/mcp` below), served over HTTPS only, and takes only a bearer token that was
     created for MCP (`POST /mcp/tokens`). Its tools are the functions of this API
     for events, lists, tasks (with routines, templates and stars) and the meal
-    plan, run as the parent who made the token and with the token's scopes;
+    plan, except managing calendars (`POST /calendars`, `PATCH` and `DELETE`
+    `/calendars/{id}`, `POST /calendars/{id}/sync` are no tools), run as the parent who made the token and with the token's scopes;
     tools the scopes do not allow are not offered. Tokens, settings, people,
     displays and phones are never tools. A token made for MCP works there only:
     this REST API and CalDAV refuse it, and MCP refuses every other token.

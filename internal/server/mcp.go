@@ -258,7 +258,9 @@ func (r *recorder) Write(b []byte) (int, error) {
 // mcpCall runs the REST handler of a tool's route for the token's person and scopes.
 func (s *server) mcpCall(p principal, t mcpTool, route APIRoute) mcp.ToolHandler {
 	return func(ctx context.Context, call *mcp.CallToolRequest) (*mcp.CallToolResult, error) {
-		// The same check the REST API makes; the tool list already leaves out what is not allowed.
+		// Defence in depth: only allowed tools are registered, so this is not reached in
+		// practice. It is the same check the REST API makes, kept in case a tool is ever
+		// registered without the scope filter.
 		if !p.may(route.perm) {
 			return toolError("forbidden: this token does not allow %s", route.perm), nil
 		}

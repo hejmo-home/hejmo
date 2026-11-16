@@ -5,7 +5,6 @@ import (
 	"errors"
 	"net/http"
 	"strings"
-	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/i18n"
@@ -171,6 +170,7 @@ func (s *server) handleMCPTokenNew(w http.ResponseWriter, r *http.Request) {
 // Reasons a new MCP token is refused; each is a 422 with its own text.
 var (
 	errMCPName      = errors.New("mcp: a token needs a name")
+	errMCPNameLong  = errors.New("mcp: the name is at most 80 characters")
 	errMCPNameTaken = errors.New("mcp: there is a token with this name")
 	errMCPScopes    = errors.New("mcp: a token needs at least one area")
 )
@@ -179,9 +179,12 @@ var (
 // long or taken) and its areas (none given, or an unknown level) are checked
 // apart, so a form can show both at once.
 func (s *server) checkMCPToken(p principal, name string, levels map[string]auth.MCPLevel) (nameErr, scopesErr error, err error) {
-	if !validDeviceName(name) {
+	switch {
+	case name == "":
 		nameErr = errMCPName
-	} else {
+	case !validDeviceName(name):
+		nameErr = errMCPNameLong
+	default:
 		existing, err := s.mcpTokens(p.household.ID)
 		if err != nil {
 			return nil, nil, err
@@ -219,8 +222,11 @@ func (s *server) createMCPToken(p principal, name string, levels map[string]auth
 
 // mcpError gives the text of a refused name and the field it belongs to.
 func mcpError(err error) (key, field string) {
-	if errors.Is(err, errMCPNameTaken) {
+	switch {
+	case errors.Is(err, errMCPNameTaken):
 		return "mcp.error.name_taken", "name"
+	case errors.Is(err, errMCPNameLong):
+		return "mcp.error.name_long", "name"
 	}
 	return "mcp.error.name", "name"
 }
@@ -384,14 +390,13 @@ func (s *server) apiCreateMCPToken(w http.ResponseWriter, r *http.Request, p pri
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	if utf8.RuneCountInString(strings.TrimSpace(in.Name)) > 80 {
-		writeError(w, http.StatusUnprocessableEntity, "name is at most 80 characters")
-		return
-	}
 	t, value, err := s.createMCPToken(p, strings.TrimSpace(in.Name), in.Areas)
 	switch {
 	case errors.Is(err, errMCPName):
 		writeError(w, http.StatusUnprocessableEntity, "name is required")
+		return
+	case errors.Is(err, errMCPNameLong):
+		writeError(w, http.StatusUnprocessableEntity, "name is at most 80 characters")
 		return
 	case errors.Is(err, errMCPNameTaken):
 		writeError(w, http.StatusUnprocessableEntity, "there is already an MCP token with this name")

@@ -1742,6 +1742,7 @@
   "mcp.new.never": "Never possible: settings, tokens, people, displays and phones.",
   "mcp.new.create": "Create token",
   "mcp.error.name": "Give the token a name so you can find it again.",
+  "mcp.error.name_long": "The name is at most 80 characters.",
   "mcp.error.name_taken": "There is already an MCP token with this name. Choose another one.",
   "mcp.error.scopes": "Choose “Read only” or “Read and change” for at least one area.",
   "mcp.once.lead": "Enter the token in the AI assistant now.",

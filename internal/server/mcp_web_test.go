@@ -407,3 +407,19 @@ func TestMCPThroughTheRESTAPI(t *testing.T) {
 		t.Errorf("a read-only token switched MCP on: %d", status)
 	}
 }
+
+func TestMCPTokenNameOfMoreThan80CharactersIsRefusedWithItsOwnText(t *testing.T) {
+	long := strings.Repeat("ä", 81)
+	// The contract test client refuses 81 characters before they reach the server (maxLength in openapi.yaml), so only the edge that is allowed is tried here.
+	c := signedInAPI(t)
+	if status, _, _ := c.call(http.MethodPost, "/mcp/tokens", map[string]any{"name": strings.Repeat("ä", 80), "areas": map[string]string{"events": "read"}}); status != http.StatusCreated {
+		t.Errorf("REST, 80 characters = %d, want 201", status)
+	}
+	b := signedInBox(t)
+	switchMCPOnPage(t, b, true)
+	r := postEN(b, "/mcp/tokens", url.Values{"name": {long}, "events": {"read"}, "lists": {"none"}, "tasks": {"none"}, "meals": {"none"}})
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("page, 81 characters = %d", r.status)
+	}
+	mcpHas(t, "too long", r.body, `<div class="f invalid">`, "The name is at most 80 characters.")
+}

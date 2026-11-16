@@ -40,4 +40,4 @@ If your box uses its **own certificate**, the device the assistant runs on has t
 
 ## For developers
 
-The box serves MCP (streamable HTTP, stateless) at `/mcp`. The tools mirror the REST API functions for events, lists, tasks and the meal plan, run as the token's person with the token's scopes; a tool the scopes do not allow is not listed. See [`api/openapi.yaml`](../api/openapi.yaml) for `GET` and `PUT /api/v1/mcp` and `POST /api/v1/mcp/tokens`.
+The box serves MCP (streamable HTTP, stateless) at `/mcp`. The tools mirror the REST API functions for events, lists, tasks and the meal plan (not creating, changing, deleting or syncing calendars: `POST /calendars`, `PATCH` and `DELETE /calendars/{id}`, `POST /calendars/{id}/sync` are no tools), run as the token's person with the token's scopes; a tool the scopes do not allow is not listed. See [`api/openapi.yaml`](../api/openapi.yaml) for `GET` and `PUT /api/v1/mcp` and `POST /api/v1/mcp/tokens`.

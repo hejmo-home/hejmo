@@ -271,7 +271,7 @@ An API token created by a parent for one AI assistant on one device (for example
 _Avoid_: assistant key, AI token
 
 **MCP server**:
-The box's endpoint for AI assistants (Model Context Protocol, `/mcp`). Off by default, served over HTTPS only, switched on by a parent on the page "AI assistants (MCP)". Its tools are the REST functions of the areas a token holds; tokens, settings, people, displays and phones are never tools.
+The box's endpoint for AI assistants (Model Context Protocol, `/mcp`). Off by default, served over HTTPS only, switched on by a parent on the page "AI assistants (MCP)". Its tools are the REST functions of the areas a token holds, except managing and syncing calendars; tokens, settings, people, displays and phones are never tools.
 _Avoid_: AI mode, assistant API
 
 **Share through the box**:

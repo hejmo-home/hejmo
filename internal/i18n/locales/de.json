@@ -1742,6 +1742,7 @@
   "mcp.new.never": "Nie möglich: Einstellungen, Tokens, Personen, Displays und Handys.",
   "mcp.new.create": "Token erstellen",
   "mcp.error.name": "Gib dem Token einen Namen, damit du es später wiederfindest.",
+  "mcp.error.name_long": "Der Name darf höchstens 80 Zeichen lang sein.",
   "mcp.error.name_taken": "Ein MCP-Token mit diesem Namen gibt es schon. Wähle einen anderen.",
   "mcp.error.scopes": "Wähle bei mindestens einem Bereich „Nur lesen“ oder „Lesen und ändern“.",
   "mcp.once.lead": "Trag das Token jetzt im KI-Assistenten ein.",

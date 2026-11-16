@@ -21,6 +21,8 @@ func successLine(page string) string {
 	return strings.TrimSpace(regexp.MustCompile(`(?s)<svg.*?</svg>`).ReplaceAllString(m[1], ""))
 }
 
+var linkTags = regexp.MustCompile(`</?a[^>]*>`)
+
 func getEN(b *box, path string) resp {
 	b.t.Helper()
 	return b.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": "en"})
@@ -60,7 +62,7 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		want             string
 	}{
 		{"settings", "/settings/household", "/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}, "Household settings saved."},
-		{"task add", "/tasks", "/tasks", url.Values{"person": {tb.miaID}, "title": {"Read"}, "repeat": {"daily"}}, "Task added."},
+		{"task add", "/tasks", "/tasks", url.Values{"person": {tb.miaID}, "title": {"Read"}, "repeat": {"daily"}}, "“Read” created for Mia. Add subtasks if Mia should tick it off in parts."},
 		{"task done", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"1"}}, "Marked as done."},
 		{"task reopen", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"0"}}, "Marked as open."},
 		{"calendar add", "/calendars", "/calendars", url.Values{"name": {"Choir"}, "url": {"https://example.org/a.ics"}, "color": {"#2F5E7A"}, "interval": {"60"}}, "Calendar added."},
@@ -80,7 +82,7 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		if r.status != http.StatusSeeOther || r.location != s.page {
 			t.Fatalf("%s: POST = %d %q", s.name, r.status, r.location)
 		}
-		if got := successLine(getEN(b, s.page).body); got != s.want {
+		if got := linkTags.ReplaceAllString(successLine(getEN(b, s.page).body), ""); got != s.want { // a link inside the line is part of its words
 			t.Errorf("%s: success line = %q, want %q", s.name, got, s.want)
 		}
 		if got := successLine(getEN(b, s.page).body); got != "" {

@@ -7,8 +7,9 @@ info:
     integrations. Authenticate with a bearer token (`Authorization: Bearer hejmo_…`)
     or a browser session. A token acts on behalf of a person and is limited by
     its scopes: `read`, `write`, `<resource>` or `<resource>:<action>`
-    (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens;
-    actions: read, write, delete, complete).
+    (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens, health;
+    actions: read, write, delete, complete). The resource `health` (diet and
+    allergies) is reached only by its own scope: `read` and `write` never include it.
 
     The scopes `calendars` and `tasks` are for a phone's calendar and
     reminders apps: they open the box's CalDAV server at `/dav/` (HTTP Basic
@@ -349,6 +350,71 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /food:
+    get:
+      operationId: listFood
+      summary: Diet and allergies of every person (scope health:read, parents only)
+      description: |
+        Health data (ADR 0019). Only the explicit scope `health` or `health:read`
+        reaches it: the broad scopes `read` and `write` do not, and children
+        never do (403). Every answer says that free-text allergies are not
+        checked automatically and cannot be filtered by.
+      responses:
+        "200":
+          description: One entry per person, in the order of the family view
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Food" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /people/{id}/food:
+    get:
+      operationId: getFood
+      summary: Diet and allergies of a person (scope health:read, parents only)
+      description: |
+        A person nobody has edited eats everything (`omnivore`) and has no
+        allergies. Health data: see `/food` for who may read it.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Diet and allergies
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Food" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setFood
+      summary: Set diet and allergies of a person (scope health:write, parents only)
+      description: |
+        Replaces everything. `allergens` are keys of the 14 main EU allergens
+        (once each, stored in the order of the schema). `other` is the free text,
+        one entry per item without commas, 200 characters at most in all; an
+        entry that names one of the 14 (or a common word for one: Laktose,
+        Gluten, Nüsse, Ei) is refused with 422 and the key to send in
+        `allergens` instead. MCP tokens can never change them: the MCP area
+        `health` is read only.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FoodUpdate" }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Food" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /people/order:
     put:
       operationId: orderPeople
@@ -469,7 +535,9 @@ paths:
       description: |
         The areas events, lists, tasks (with routines, templates and stars) and
         meals each get `none`, `read` (scope `<area>:read`) or `write` (scope
-        `<area>`, every action including adding, ticking off and deleting). An
+        `<area>`, every action including adding, ticking off and deleting). The
+        area `health` (diet and allergies) takes only `none` (default) or `read`.
+        An
         area left out counts as `none`; at least one area needs `read` or
         `write` (else 422). The token acts as the caller, who has to be a parent,
         and never holds `read`, `write`, `tokens` or `settings`. The name is
@@ -2428,6 +2496,40 @@ components:
         color: { type: string, description: "Hex colour for colour mode: one of the eight palette colours (empty for a person added before colours were chosen)", example: "#B4583A" }
         shape: { type: string, description: "Marker for black-and-white mode", example: circle-filled }
         symbol: { type: string }
+    Diet:
+      type: string
+      enum: [omnivore, vegetarian, pescatarian, vegan]
+    Allergen:
+      type: string
+      description: The 14 main allergens of EU Regulation 1169/2011, Annex II
+      enum: [celery, gluten, crustaceans, eggs, fish, lupin, milk, molluscs, mustard, nuts, peanuts, sesame, soy, sulphites]
+    Food:
+      type: object
+      description: Diet and allergies of a person. Health data (ADR 0019).
+      required: [person_id, diet, allergens, other, other_note]
+      properties:
+        person_id: { type: string, format: uuid }
+        diet: { $ref: "#/components/schemas/Diet" }
+        allergens:
+          type: array
+          items: { $ref: "#/components/schemas/Allergen" }
+        other:
+          type: array
+          description: Free-text allergies and intolerances. The box cannot check or filter by them.
+          items: { type: string }
+        other_note: { type: string, description: "Always says that `other` is not checked automatically and not filterable (nicht automatisch geprüft, nicht filterbar)" }
+    FoodUpdate:
+      type: object
+      required: [diet, allergens, other]
+      properties:
+        diet: { type: string, description: "One of `Diet`; anything else gets 422", example: vegetarian }
+        allergens:
+          type: array
+          description: Keys of `Allergen`; an unknown key gets 422
+          items: { type: string }
+        other:
+          type: array
+          items: { type: string }
     PersonColor:
       type: string
       description: The eight person colours of the palette, in slot order
@@ -2723,6 +2825,9 @@ components:
         lists: { $ref: "#/components/schemas/MCPLevel" }
         tasks: { $ref: "#/components/schemas/MCPLevel" }
         meals: { $ref: "#/components/schemas/MCPLevel" }
+        health:
+          description: Diet and allergies (health data). Only `none` or `read`; `write` is refused with 422 and the default is `none`.
+          allOf: [{ $ref: "#/components/schemas/MCPLevel" }]
     MCPLevel:
       type: string
       enum: [none, read, write]

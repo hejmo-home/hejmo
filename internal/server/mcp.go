@@ -157,6 +157,8 @@ var mcpTools = []mcpTool{
 	{name: "set_meal", desc: "Plan a meal, or change the planned one.", method: "PUT", path: "/meals/{date}/{mealtime}", params: []mcpParam{mealDate, mealtime, req("text", "string", "What there is to eat (at most 200 characters)")}},
 	{name: "delete_meal", desc: "Remove a planned meal.", method: "DELETE", path: "/meals/{date}/{mealtime}", params: []mcpParam{mealDate, mealtime}},
 	{name: "restore_meal", desc: "Back to the template: drop this week's change of a meal.", method: "POST", path: "/meals/{date}/{mealtime}/restore", params: []mcpParam{mealDate, mealtime}},
+	{name: "list_diets_and_allergies", desc: "List every person's diet (omnivore, vegetarian, pescatarian, vegan) and allergies: the 14 main EU allergens by key, plus free text that is not checked automatically and cannot be filtered by. Health data, read only.", method: "GET", path: "/food"},
+	{name: "get_diet_and_allergies", desc: "Get one person's diet and allergies. Free-text allergies (other) are not checked automatically and cannot be filtered by. Health data, read only.", method: "GET", path: "/people/{id}/food", params: []mcpParam{idOf("person")}},
 	{name: "list_meal_templates", desc: "List the meal plan templates, by name.", method: "GET", path: "/meal-templates"},
 	{name: "get_meal_template", desc: "Get one meal plan template.", method: "GET", path: "/meal-templates/{id}", params: []mcpParam{idOf("template")}},
 	{name: "create_meal_template", desc: "Create a meal plan template.", method: "POST", path: "/meal-templates", params: mealTplBody},

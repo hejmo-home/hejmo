@@ -76,16 +76,17 @@ func TestNewRoutinePageOffersTheTemplatesAsChoiceCards(t *testing.T) {
 	has(t, tb.page(t, "/routines/new?template=nope"), `name="template" value="" checked`, `name="part" value="morning" checked`)
 }
 
-// Acceptance (#92, 1): Given "Morgen Schulkind", when a parent applies it to a child, then the child has a morning routine with its steps.
+// Acceptance (#92, 1): Given "Morgen Schulkind", when a parent applies it to Sebastian, then he has a morning routine with its steps.
 func TestParentAppliesAShippedTemplateInTheWebInterface(t *testing.T) {
 	tb := newTaskBox(t)
-	r := tb.mustPost(t, "/routines", url.Values{"person": {tb.miaID}, "part": {"morning"}, "template": {"school-morning"}, "name": {"Morning routine"}})
+	seb := tb.sebastian(t)
+	r := tb.mustPost(t, "/routines", url.Values{"person": {seb}, "part": {"morning"}, "template": {"school-morning"}, "name": {"Morning routine"}})
 	rid := routineIDAt(t, r.location)
 	p := tb.page(t, "/routines/"+rid)
-	has(t, p, "<h1>Morning routine</h1>", "data-success", "The routine “Morning routine” of Mia is created, with the 5 tasks of the template “School-child morning”", "It now belongs to Mia",
+	has(t, p, "<h1>Morning routine</h1>", "data-success", "The routine “Morning routine” of Sebastian is created, with the 5 tasks of the template “School-child morning”", "It now belongs to Sebastian",
 		"Get dressed", "Eat breakfast", "Pack your school bag")
 	got := routineOf(t, tb.parent, rid)
-	if got["person_id"] != tb.miaID || got["part_of_day"] != "morning" || len(ids(got["task_ids"])) != 5 {
+	if got["person_id"] != seb || got["part_of_day"] != "morning" || len(ids(got["task_ids"])) != 5 {
 		t.Fatalf("routine = %v", got)
 	}
 	// The routine keeps no mark of where it came from.
@@ -159,9 +160,10 @@ func TestRoutinePageOffersSavingAsATemplateAndExplainsWhatGoesIn(t *testing.T) {
 	lacks(t, p, `action="/routines/`+empty+`/template"`)
 }
 
-// Acceptance (#92, 3): Given a parent saves Mia's evening routine as a template, then it can be applied to another person.
+// Acceptance (#92, 3): Given a parent saves Mia's evening routine as a template, then it can be applied to Sebastian.
 func TestSavedTemplateIsAppliedToAnotherPersonInTheWebInterface(t *testing.T) {
 	tb := newTaskBox(t)
+	seb := tb.sebastian(t)
 	rid := tb.miaEveningRoutine(t)
 	r := tb.mustPost(t, "/routines/"+rid+"/template", url.Values{"tname": {"Evening routine of Mia"}})
 	if r.location != "/routines/"+rid {
@@ -173,12 +175,12 @@ func TestSavedTemplateIsAppliedToAnotherPersonInTheWebInterface(t *testing.T) {
 		t.Fatalf("the success line must lead to Use for someone:\n%s", p)
 	}
 	has(t, p, "data-success", "Saved as template “Evening routine of Mia”.", "Use for someone")
-	// The new routine's page: Mama gets an evening routine with Mia's steps.
-	r = tb.mustPost(t, "/routines", url.Values{"person": {tb.mamaID}, "part": {"evening"}, "template": {m[1]}, "name": {"Evening routine"}})
+	// The new routine's page: Sebastian gets an evening routine with Mia's steps.
+	r = tb.mustPost(t, "/routines", url.Values{"person": {seb}, "part": {"evening"}, "template": {m[1]}, "name": {"Evening routine"}})
 	p = tb.page(t, r.location)
 	has(t, p, "with the 3 tasks of the template “Evening routine of Mia”", "changes neither the template nor Mia&#39;s routine", "Zimmer aufräumen", "Duschen")
 	got := routineOf(t, tb.parent, routineIDAt(t, r.location))
-	if got["person_id"] != tb.mamaID || len(ids(got["task_ids"])) != 3 {
+	if got["person_id"] != seb || len(ids(got["task_ids"])) != 3 {
 		t.Fatalf("routine = %v", got)
 	}
 	k := taskState(t, tb.parent, ids(got["task_ids"])[1], "")

@@ -5,6 +5,7 @@ import (
 	"errors"
 	"net/http"
 	"time"
+	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -39,9 +40,14 @@ func (s *server) routineTemplate(lang, householdID, id string) (task.RoutineTemp
 	return s.db.RoutineTemplate(householdID, id)
 }
 
-// defaultTemplateName is the name a saved template is offered: "Abendroutine von Mia".
+// defaultTemplateName is the name a saved template is offered: "Abendroutine
+// von Mia", cut to the longest name a template may have.
 func (s *server) defaultTemplateName(lang, routine, person string) string {
-	return s.i18n.Format(lang, i18n.Msg("routine.tpl.default_name", "routine", routine, "person", person))
+	name := s.i18n.Format(lang, i18n.Msg("routine.tpl.default_name", "routine", routine, "person", person))
+	if utf8.RuneCountInString(name) > task.MaxRoutineName {
+		name = string([]rune(name)[:task.MaxRoutineName])
+	}
+	return name
 }
 
 // errShippedTemplate is returned for a change to a template that comes with Hejmo.

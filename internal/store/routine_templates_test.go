@@ -192,6 +192,19 @@ func TestTemplateNamesAreUniqueAmongOwnTemplates(t *testing.T) {
 	}
 }
 
+func TestTemplateNamesAreUniqueIgnoringCaseOfUmlauts(t *testing.T) {
+	f := newTaskFixture(t)
+	r := f.miaEvening(t)
+	if _, err := f.db.SaveRoutineAsTemplate(f.h.ID, r.ID, "Übungen"); err != nil {
+		t.Fatal(err)
+	}
+	_, err := f.db.SaveRoutineAsTemplate(f.h.ID, r.ID, "übungen")
+	var exists *store.TemplateExistsError
+	if !errors.As(err, &exists) || exists.Name != "Übungen" {
+		t.Fatalf("second save = %v, want TemplateExistsError naming the first", err)
+	}
+}
+
 func TestEditingAnOwnTemplate(t *testing.T) {
 	f := newTaskFixture(t)
 	tpl, _ := f.db.SaveRoutineAsTemplate(f.h.ID, f.miaEvening(t).ID, "Abend")
@@ -294,5 +307,27 @@ func TestApplyingRefusesWhatARoutineRefusesAndCreatesNothing(t *testing.T) {
 	}
 	if list, _ := f.db.Routines(f.h.ID); len(list) != 1 {
 		t.Fatalf("routines = %+v, want only the first", list)
+	}
+}
+
+func TestTheLastStepOfAnOwnTemplateCannotBeDeleted(t *testing.T) {
+	f := newTaskFixture(t)
+	tpl, err := f.db.SaveRoutineAsTemplate(f.h.ID, f.miaEvening(t).ID, "Abend")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, s := range tpl.Steps[1:] {
+		if err := f.db.DeleteTemplateStep(f.h.ID, tpl.ID, s.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := f.db.DeleteTemplateStep(f.h.ID, tpl.ID, tpl.Steps[0].ID); !errors.Is(err, store.ErrInvalid) {
+		t.Fatalf("last step: err = %v, want ErrInvalid", err)
+	}
+	if err := f.db.DeleteTemplateStep(f.h.ID, tpl.ID, "nope"); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unknown step: err = %v", err)
+	}
+	if got, _ := f.db.RoutineTemplate(f.h.ID, tpl.ID); len(got.Steps) != 1 {
+		t.Fatalf("steps = %+v", got.Steps)
 	}
 }

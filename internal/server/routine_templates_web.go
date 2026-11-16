@@ -406,7 +406,10 @@ func (s *server) handleTemplateStepDelete(w http.ResponseWriter, r *http.Request
 	if !ok {
 		return
 	}
-	if err := s.db.DeleteTemplateStep(p.household.ID, t.ID, step.ID); err != nil {
+	if err := s.db.DeleteTemplateStep(p.household.ID, t.ID, step.ID); errors.Is(err, store.ErrInvalid) {
+		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		return
+	} else if err != nil {
 		s.fail(w, "delete template step", err)
 		return
 	}
@@ -445,8 +448,7 @@ func (s *server) handleRoutineSaveTemplate(w http.ResponseWriter, r *http.Reques
 	name := strings.TrimSpace(r.PostFormValue("tname"))
 	tpl, err := s.db.SaveRoutineAsTemplate(p.household.ID, id, name)
 	if err == nil {
-		s.setFlash(w, r, "flash.routine_template_saved:"+s.flashTexts.put(tpl.Name+"\x1f"+tpl.ID, s.now()))
-		http.Redirect(w, r, "/routines/"+id, http.StatusSeeOther)
+		s.redirectSavedFields(w, r, "/routines/"+id, "flash.routine_template_saved", tpl.Name, tpl.ID)
 		return
 	}
 	st := routinePageState{Save: map[string]any{"Name": name}, Field: "tname"}
@@ -476,13 +478,12 @@ func (s *server) handleRoutineSaveTemplate(w http.ResponseWriter, r *http.Reques
 // template and leads straight to using it. The values travel in the box's
 // memory; the line is built from them with everything escaped.
 func (s *server) templateSavedHTML(lang, token string) template.HTML {
-	text, ok := s.flashTexts.take(token, s.now())
-	name, id, found := strings.Cut(text, "\x1f")
-	if !ok || !found {
+	v, ok := s.fieldValues("flash.routine_template_saved", token)
+	if !ok {
 		return ""
 	}
-	line := html.EscapeString(s.i18n.Format(lang, i18n.Msg("flash.routine_template_saved", "name", name, "use", "\x00")))
-	link := `<a href="/routines/new?template=` + html.EscapeString(id) + `">` + html.EscapeString(s.i18n.T(lang, "routine.tpl.use")) + `</a>`
+	line := html.EscapeString(s.i18n.Format(lang, i18n.Msg("flash.routine_template_saved", "name", v["name"], "use", "\x00")))
+	link := `<a href="/routines/new?template=` + html.EscapeString(v["id"]) + `">` + html.EscapeString(s.i18n.T(lang, "routine.tpl.use")) + `</a>`
 	return template.HTML(strings.Replace(line, "\x00", link, 1))
 }
 
@@ -517,11 +518,7 @@ func (s *server) saveBoxOf(lang string, p principal, rt task.Routine, owner stri
 		}
 		b.LeftOut = s.i18n.Format(lang, i18n.Msg(key, "list", strings.Join(out, ", ")))
 	}
-	name := s.defaultTemplateName(lang, rt.Name, owner)
-	if utf8.RuneCountInString(name) > task.MaxRoutineName {
-		name = string([]rune(name)[:task.MaxRoutineName])
-	}
-	b.Name = name
+	b.Name = s.defaultTemplateName(lang, rt.Name, owner)
 	return b
 }
 

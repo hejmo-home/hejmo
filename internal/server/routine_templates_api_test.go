@@ -2,7 +2,9 @@ package server_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
+	"unicode/utf8"
 )
 
 // miaEveningRoutine makes Mia's evening routine with three steps and returns its id.
@@ -20,6 +22,16 @@ func (tb taskBox) miaEveningRoutine(t *testing.T) string {
 		}
 	}
 	return rid
+}
+
+// sebastian adds the child the acceptance criteria of #92 apply templates to.
+func (tb taskBox) sebastian(t *testing.T) string {
+	t.Helper()
+	status, p, _ := tb.parent.call(http.MethodPost, "/people", map[string]any{"name": "Sebastian", "role": "child"})
+	if status != http.StatusCreated {
+		t.Fatalf("add Sebastian = %d %v", status, p)
+	}
+	return p["id"].(string)
 }
 
 func (tb taskBox) saveTemplate(t *testing.T, routineID, name string) map[string]any {
@@ -69,27 +81,28 @@ func TestShippedRoutineTemplatesAreListedInGerman(t *testing.T) {
 	}
 }
 
-// Acceptance (#92, 1): Given "Morgen Schulkind", when a parent applies it to Mia, she has a morning routine with its steps.
+// Acceptance (#92, 1): Given "Morgen Schulkind", when a parent applies it to Sebastian, he has a morning routine with its steps.
 func TestApplyingAShippedTemplateGivesThePersonARoutine(t *testing.T) {
 	tb := newTaskBox(t)
-	status, r, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": tb.miaID, "template_id": "school-morning"})
-	if status != http.StatusCreated || r["part_of_day"] != "morning" || r["person_id"] != tb.miaID || r["name"] != "Morgenroutine" || len(ids(r["task_ids"])) != 5 {
+	seb := tb.sebastian(t)
+	status, r, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": seb, "template_id": "school-morning"})
+	if status != http.StatusCreated || r["part_of_day"] != "morning" || r["person_id"] != seb || r["name"] != "Morgenroutine" || len(ids(r["task_ids"])) != 5 {
 		t.Fatalf("apply = %d %v", status, r)
 	}
 	first := taskState(t, tb.parent, ids(r["task_ids"])[0], "")
-	if first["title"] != "Anziehen" || first["emoji"] != "👕" || first["stars"] != float64(1) || first["repeat"] != "daily" || first["person_id"] != tb.miaID || first["routine_id"] != r["id"] {
+	if first["title"] != "Anziehen" || first["emoji"] != "👕" || first["stars"] != float64(1) || first["repeat"] != "daily" || first["person_id"] != seb || first["routine_id"] != r["id"] {
 		t.Fatalf("first step = %v", first)
 	}
 	// Any part of the day can be picked; the second morning routine is refused as always.
-	status, e, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": tb.miaID, "template_id": "school-morning"})
+	status, e, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": seb, "template_id": "school-morning"})
 	if status != http.StatusConflict || e["existing_routine_id"] != r["id"] {
 		t.Fatalf("second morning routine = %d %v", status, e)
 	}
-	status, ev, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": tb.miaID, "template_id": "school-morning", "part_of_day": "evening", "name": "Abend anders"})
+	status, ev, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": seb, "template_id": "school-morning", "part_of_day": "evening", "name": "Abend anders"})
 	if status != http.StatusCreated || ev["part_of_day"] != "evening" || ev["name"] != "Abend anders" {
 		t.Fatalf("evening from the morning template = %d %v", status, ev)
 	}
-	if status, _, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": tb.miaID, "template_id": "nope"}); status != http.StatusUnprocessableEntity {
+	if status, _, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": seb, "template_id": "nope"}); status != http.StatusUnprocessableEntity {
 		t.Fatalf("unknown template = %d, want 422", status)
 	}
 }
@@ -97,6 +110,7 @@ func TestApplyingAShippedTemplateGivesThePersonARoutine(t *testing.T) {
 // Acceptance (#92, 3): Given a parent saves Mia's evening routine as a template, it can be applied to another person.
 func TestSavedTemplateCanBeAppliedToAnotherPerson(t *testing.T) {
 	tb := newTaskBox(t)
+	seb := tb.sebastian(t)
 	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "")
 	if tpl["name"] != "Abendroutine von Mia" || tpl["source"] != "own" || tpl["part_of_day"] != "evening" || tpl["origin_routine"] != "Abendroutine" || tpl["origin_person"] != "Mia" || tpl["saved_at"] == nil {
 		t.Fatalf("template = %v", tpl)
@@ -104,8 +118,8 @@ func TestSavedTemplateCanBeAppliedToAnotherPerson(t *testing.T) {
 	if got := tplStepTitles(tpl); len(got) != 3 || got[1] != "Duschen" {
 		t.Fatalf("steps = %v", got)
 	}
-	status, r, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": tb.mamaID, "template_id": tpl["id"]})
-	if status != http.StatusCreated || r["part_of_day"] != "evening" || r["person_id"] != tb.mamaID || len(ids(r["task_ids"])) != 3 {
+	status, r, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": seb, "template_id": tpl["id"]})
+	if status != http.StatusCreated || r["part_of_day"] != "evening" || r["person_id"] != seb || len(ids(r["task_ids"])) != 3 {
 		t.Fatalf("apply = %d %v", status, r)
 	}
 	if status, _, list := tb.parent.call(http.MethodGet, "/routine-templates", nil); status != http.StatusOK || len(list) != 5 || list[0].(map[string]any)["id"] != tpl["id"] {
@@ -253,5 +267,36 @@ func TestChildCannotManageRoutineTemplates(t *testing.T) {
 	}
 	if status, _, _ := tb.child.call(http.MethodPost, "/routines", map[string]any{"person_id": tb.miaID, "template_id": "school-morning"}); status != http.StatusForbidden {
 		t.Errorf("child apply = %d, want 403", status)
+	}
+}
+
+func TestDefaultTemplateNameIsShortenedToTheLimit(t *testing.T) {
+	tb := newTaskBox(t)
+	rid := tb.newRoutine(t, tb.miaID, strings.Repeat("A", 58), "evening")
+	if status, r, _ := tb.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": tb.miaID, "routine_id": rid, "title": "Duschen", "repeat": "daily"}); status != http.StatusCreated {
+		t.Fatalf("create step = %d %v", status, r)
+	}
+	tpl := tb.saveTemplate(t, rid, "")
+	if name, _ := tpl["name"].(string); utf8.RuneCountInString(name) != 60 || !strings.HasPrefix(name, "AAAA") {
+		t.Fatalf("name = %q, want the default name cut to 60 characters", name)
+	}
+}
+
+func TestTheLastStepOfATemplateStays(t *testing.T) {
+	tb := newTaskBox(t)
+	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "Abend")
+	id := tpl["id"].(string)
+	steps := tpl["steps"].([]any)
+	for _, s := range steps[1:] {
+		if status, _, _ := tb.parent.call(http.MethodDelete, "/routine-templates/"+id+"/steps/"+s.(map[string]any)["id"].(string), nil); status != http.StatusOK {
+			t.Fatalf("delete step = %d", status)
+		}
+	}
+	if status, _, _ := tb.parent.call(http.MethodDelete, "/routine-templates/"+id+"/steps/"+steps[0].(map[string]any)["id"].(string), nil); status != http.StatusUnprocessableEntity {
+		t.Fatalf("delete last step = %d, want 422", status)
+	}
+	_, now, _ := tb.parent.call(http.MethodGet, "/routine-templates/"+id, nil)
+	if len(tplStepTitles(now)) != 1 {
+		t.Fatalf("steps = %v", tplStepTitles(now))
 	}
 }

@@ -108,9 +108,10 @@ func (s *server) redirectSavedNamed(w http.ResponseWriter, r *http.Request, to, 
 // values (the people, the routine and the template they are about). The values
 // travel in the box's memory like the text of an entry, never in the cookie.
 var flashFields = map[string][]string{
-	"flash.routine_applied":     {"owner", "routine", "person", "tasks", "template"},
-	"flash.routine_applied_own": {"owner", "routine", "person", "tasks", "template", "origin"},
-	"flash.rtpl_moved":          {"title", "place", "total"},
+	"flash.routine_applied":        {"owner", "routine", "person", "tasks", "template"},
+	"flash.routine_applied_own":    {"owner", "routine", "person", "tasks", "template", "origin"},
+	"flash.rtpl_moved":             {"title", "place", "total"},
+	"flash.routine_template_saved": {"name", "id"},
 }
 
 // redirectSavedFields is redirectSaved for a success line with several values,
@@ -120,18 +121,32 @@ func (s *server) redirectSavedFields(w http.ResponseWriter, r *http.Request, to,
 	http.Redirect(w, r, to, http.StatusSeeOther)
 }
 
-// fieldsText is the text of a success line that carries several values; empty
-// when the box restarted or the line is old: better none than a wrong one.
-func (s *server) fieldsText(lang, key, token string) string {
+// fieldValues takes the values of a success line that carries several values,
+// by placeholder; false when the box restarted or the line is old.
+func (s *server) fieldValues(key, token string) (map[string]string, bool) {
 	text, ok := s.flashTexts.take(token, s.now())
 	names := flashFields[key]
 	values := strings.Split(text, "\x1f")
 	if !ok || len(values) != len(names) {
+		return nil, false
+	}
+	out := make(map[string]string, len(names))
+	for i, n := range names {
+		out[n] = values[i]
+	}
+	return out, true
+}
+
+// fieldsText is the text of a success line that carries several values; empty
+// when the box restarted or the line is old: better none than a wrong one.
+func (s *server) fieldsText(lang, key, token string) string {
+	values, ok := s.fieldValues(key, token)
+	if !ok {
 		return ""
 	}
-	kv := make([]string, 0, 2*len(names))
-	for i, n := range names {
-		kv = append(kv, n, values[i])
+	kv := make([]string, 0, 2*len(values))
+	for _, n := range flashFields[key] {
+		kv = append(kv, n, values[n])
 	}
 	return s.i18n.Format(lang, i18n.Msg(key, kv...))
 }

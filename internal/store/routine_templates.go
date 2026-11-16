@@ -20,6 +20,10 @@ func (e *TemplateExistsError) Error() string {
 }
 func (e *TemplateExistsError) Unwrap() error { return ErrConflict }
 
+// nameKey is what names are compared by: case-folded for all of Unicode, so
+// "Übungen" and "übungen" are one name.
+func nameKey(name string) string { return strings.ToLower(name) }
+
 func invalidField(field, msg string) error {
 	return fmt.Errorf("%w: %w", ErrInvalid, &task.InvalidError{Field: field, Msg: msg})
 }
@@ -111,7 +115,7 @@ func (db *DB) templateNameTaken(err error, householdID, name string) error {
 		return err
 	}
 	var existing string
-	if qerr := db.sql.QueryRow(`SELECT name FROM routine_templates WHERE household_id = ? AND name = ?`, householdID, name).Scan(&existing); qerr == nil {
+	if qerr := db.sql.QueryRow(`SELECT name FROM routine_templates WHERE household_id = ? AND name_key = ?`, householdID, nameKey(name)).Scan(&existing); qerr == nil {
 		return &TemplateExistsError{Name: existing}
 	}
 	return err
@@ -156,8 +160,8 @@ func (db *DB) SaveRoutineAsTemplate(householdID, routineID, name string) (task.R
 	}
 	tpl.ID = newID()
 	ts := now()
-	if _, err := tx.Exec(`INSERT INTO routine_templates (id, household_id, name, part, origin_routine, origin_person, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
-		tpl.ID, householdID, tpl.Name, string(tpl.Part), tpl.OriginRoutine, tpl.OriginPerson, ts, ts); err != nil {
+	if _, err := tx.Exec(`INSERT INTO routine_templates (id, household_id, name, name_key, part, origin_routine, origin_person, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		tpl.ID, householdID, tpl.Name, nameKey(tpl.Name), string(tpl.Part), tpl.OriginRoutine, tpl.OriginPerson, ts, ts); err != nil {
 		return task.RoutineTemplate{}, db.templateNameTaken(err, householdID, tpl.Name)
 	}
 	for i := range tpl.Steps {
@@ -209,7 +213,7 @@ func (db *DB) UpdateRoutineTemplate(householdID, id, name string, part task.Part
 	if err := cur.Validate(); err != nil {
 		return fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
-	_, err = db.sql.Exec(`UPDATE routine_templates SET name = ?, part = ?, updated_at = ? WHERE household_id = ? AND id = ?`, cur.Name, string(part), now(), householdID, id)
+	_, err = db.sql.Exec(`UPDATE routine_templates SET name = ?, name_key = ?, part = ?, updated_at = ? WHERE household_id = ? AND id = ?`, cur.Name, nameKey(cur.Name), string(part), now(), householdID, id)
 	return db.templateNameTaken(err, householdID, cur.Name)
 }
 
@@ -287,10 +291,21 @@ func (db *DB) UpdateTemplateStep(householdID, templateID string, s task.Template
 	return nil
 }
 
-// DeleteTemplateStep removes a step from an own template.
+// DeleteTemplateStep removes a step from an own template. The last step stays
+// (ErrInvalid): saving refuses an empty routine, so a template is never empty.
 func (db *DB) DeleteTemplateStep(householdID, templateID, stepID string) error {
 	if err := ownsTemplate(db.sql, householdID, templateID); err != nil {
 		return err
+	}
+	var n int
+	if err := db.sql.QueryRow(`SELECT COUNT(*) FROM routine_template_steps WHERE template_id = ?`, templateID).Scan(&n); err != nil {
+		return err
+	}
+	if n == 1 {
+		var one int
+		if err := db.sql.QueryRow(`SELECT 1 FROM routine_template_steps WHERE id = ? AND template_id = ?`, stepID, templateID).Scan(&one); err == nil {
+			return invalidField("steps", "a template needs at least one step")
+		}
 	}
 	res, err := db.sql.Exec(`DELETE FROM routine_template_steps WHERE id = ? AND template_id = ?`, stepID, templateID)
 	if err != nil {

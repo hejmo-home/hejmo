@@ -5,13 +5,14 @@
 CREATE TABLE routine_templates (
     id             TEXT PRIMARY KEY,
     household_id   TEXT NOT NULL REFERENCES households(id) ON DELETE CASCADE,
-    name           TEXT NOT NULL COLLATE NOCASE,
+    name           TEXT NOT NULL,
+    name_key       TEXT NOT NULL, -- the name case-folded in Go: NOCASE would not fold umlauts
     part           TEXT NOT NULL CHECK (part IN ('morning', 'afterschool', 'evening')),
     origin_routine TEXT NOT NULL DEFAULT '',
     origin_person  TEXT NOT NULL DEFAULT '',
     created_at     TEXT NOT NULL,
     updated_at     TEXT NOT NULL,
-    UNIQUE (household_id, name)
+    UNIQUE (household_id, name_key)
 );
 
 CREATE TABLE routine_template_steps (

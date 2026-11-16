@@ -557,12 +557,21 @@ func familyTemplateHasNameSpan(t *testing.T) bool {
 // inside a word only when it is wider than the line, and takes no automatic hyphens.
 func TestHeadingNameIsNotBrokenInsideTheWord(t *testing.T) {
 	css := stylesheet(t)
-	for _, m := range regexp.MustCompile(`(?m)^h1 \{([^}]*overflow-wrap[^}]*)\}`).FindAllStringSubmatch(css, -1) {
-		if strings.Contains(m[1], "anywhere") || !strings.Contains(m[1], "overflow-wrap: break-word") || !strings.Contains(m[1], "hyphens: manual") {
-			t.Errorf("h1 must use overflow-wrap: break-word and hyphens: manual: %s", m[1])
+	unprefixedManual := regexp.MustCompile(`(^|[;\s])hyphens:\s*manual`)
+	for _, sel := range []string{`h1`, `\.wizard h1`, `\.pv-header h1`} {
+		rules := regexp.MustCompile(`(?m)^`+sel+` \{([^}]*)\}`).FindAllStringSubmatch(css, -1)
+		found := false
+		for _, m := range rules {
+			if !strings.Contains(m[1], "overflow-wrap") {
+				continue
+			}
+			found = true
+			if strings.Contains(m[1], "anywhere") || !strings.Contains(m[1], "overflow-wrap: break-word") || !unprefixedManual.MatchString(m[1]) || strings.Contains(m[1], "hyphens: auto") {
+				t.Errorf("%s must use overflow-wrap: break-word and hyphens: manual: %s", sel, m[1])
+			}
 		}
-	}
-	if !regexp.MustCompile(`(?m)^h1 \{[^}]*overflow-wrap`).MatchString(css) {
-		t.Error("no h1 rule sets overflow-wrap")
+		if !found {
+			t.Errorf("no %s rule sets overflow-wrap", sel)
+		}
 	}
 }

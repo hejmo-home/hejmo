@@ -387,3 +387,6 @@ func (db *DB) CreateRoutineFromSteps(householdID string, r task.Routine, steps [
 	}
 	return r, tx.Commit()
 }
+
+// InvalidField is an ErrInvalid that names the field at fault.
+func InvalidField(field, msg string) error { return invalidField(field, msg) }

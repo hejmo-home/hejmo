@@ -99,15 +99,22 @@ func (s *server) writeRoutine(w http.ResponseWriter, p principal, id string, sta
 
 func (s *server) apiCreateRoutine(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
-		PersonID  string `json:"person_id"`
-		Name      string `json:"name"`
-		PartOfDay string `json:"part_of_day"`
+		PersonID   string `json:"person_id"`
+		Name       string `json:"name"`
+		PartOfDay  string `json:"part_of_day"`
+		TemplateID string `json:"template_id"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	rt, err := s.db.CreateRoutine(p.household.ID, task.Routine{PersonID: in.PersonID, Name: in.Name, Part: task.PartOfDay(in.PartOfDay)})
+	var rt task.Routine
+	var err error
+	if in.TemplateID != "" {
+		rt, err = s.applyTemplate(p, s.langOf(r), in.TemplateID, in.PersonID, task.PartOfDay(in.PartOfDay), in.Name)
+	} else {
+		rt, err = s.db.CreateRoutine(p.household.ID, task.Routine{PersonID: in.PersonID, Name: in.Name, Part: task.PartOfDay(in.PartOfDay)})
+	}
 	if err != nil {
 		s.routineError(w, "create routine", err)
 		return

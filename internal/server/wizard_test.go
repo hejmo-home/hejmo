@@ -340,7 +340,7 @@ func TestAccountPageHintsGroupedRegionsAndPasswordReveal(t *testing.T) {
 	}
 }
 
-func TestAccountPagePasswordErrorReplacesTheHintAndKeepsTheRest(t *testing.T) {
+func TestAccountPagePasswordErrorKeepsTheHintAndTheRest(t *testing.T) {
 	b := newBox(t)
 	f := validSetupForm()
 	f.Set("password", "short")
@@ -354,8 +354,10 @@ func TestAccountPagePasswordErrorReplacesTheHintAndKeepsTheRest(t *testing.T) {
 			t.Errorf("password error page misses %q", want)
 		}
 	}
-	if strings.Contains(r.body, "Mindestens 10 Zeichen.") {
-		t.Error("the hint stays next to the error")
+	// The shared field component of main (#150) keeps the hint next to the error
+	// and names both in aria-describedby.
+	if !strings.Contains(r.body, "Mindestens 10 Zeichen.") || !strings.Contains(r.body, `aria-describedby="err-password hint-password"`) {
+		t.Error("the hint is gone or not described next to the error")
 	}
 	if strings.Contains(r.body, "short") {
 		t.Error("the password is echoed")
@@ -363,7 +365,7 @@ func TestAccountPagePasswordErrorReplacesTheHintAndKeepsTheRest(t *testing.T) {
 	if !strings.Contains(r.body, "Damit meldest du dich an.") {
 		t.Error("the other hints disappeared")
 	}
-	// The hint is back once the field is fine.
+	// A PIN error leaves the password hint as it is.
 	g := validSetupForm()
 	g.Set("pin", "12")
 	r = b.do(http.MethodPost, "/setup", g, map[string]string{"Accept-Language": "de"})

@@ -585,7 +585,10 @@ fieldset.look .pchip:has(input:focus-visible)::after, fieldset.look .pchip[data-
 .bar.before { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .bar.after { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .wk-days > li { background: var(--surface); border-radius: var(--radius-card); padding: 6px; min-height: 180px; min-width: 0; display: grid; gap: var(--gap-cards); align-content: start; }
-.wk-days .ev { background: var(--pc-tint, var(--background)); display: grid; gap: 2px; padding: 8px 8px; }
+.wk-days .ev { background: var(--pc-tint, var(--background)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 8px 8px; }
+.wk-days .ev > * { min-width: 0; }
+.wk-days .ev .title { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* a long word breaks at the card edge instead of widening the day column; words of 12+ letters hyphenate where the browser can (ticket 173, same rules as 172) */
+@supports (hyphenate-limit-chars: 12 5 5) { .wk-days .ev .title { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
 .wk-days ul { display: grid; gap: var(--gap-cards); }
 .wk-dayname { display: none; margin: 0; font-size: var(--fs-person-name); }
 .wk-allday { display: none !important; }
@@ -720,7 +723,7 @@ main > .back { margin: 0 0 4px; }
 .steps .pair .f.invalid { flex-basis: 100%; }
 @supports selector(:has(a)) {
   .steps fieldset:has(> .card-row .switch input:not(:checked)) > .when-on { display: none; }
-  .calchoice:has(> .card-row .switch input:not(:checked)) > :not(.card-row):not(input) { display: none; }
+  /* #183: replaced by the .calfields rules below */
 }
 .calchoice .status { font-size: var(--fs-meta); color: var(--text-secondary); }
 details.danger { box-sizing: border-box; }
@@ -1783,3 +1786,140 @@ details.more.explain-more { margin-top: var(--gap-section); }
   .lv-head .add-entry { flex-wrap: wrap; }
   .lv-head .add-entry .f { flex: 1 1 12em; }
 }
+
+/* ---- ticket 163: diet and allergies per person ---- */
+/* A free-text allergy the box cannot check: notice colours, a question icon and the words; bw dashed. */
+.unchecked { display: inline-flex; align-items: flex-start; gap: 6px; padding: 3px 8px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label); font-weight: 600; overflow-wrap: break-word; hyphens: manual; justify-self: start; max-width: 100%; box-sizing: border-box; }
+.unchecked .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+[data-theme="bw"] .unchecked { background: none; color: var(--text); border: 2px dashed var(--text); }
+/* People overview: the food line is its own line under name and role. */
+.cards.people li > .food { flex: 1 1 100%; order: 5; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: var(--fs-label); color: var(--text); overflow-wrap: break-word; }
+.cards.people li > .food .diet { font-weight: 700; }
+.list-rows .unchecked { margin-top: 2px; }
+/* Food page */
+.for-person { margin: 0 0 var(--gap) !important; }
+p.why.health { background: var(--surface); max-width: 560px; margin: 0 0 var(--gap-section); box-sizing: border-box; }
+p.why.health > span { display: grid; gap: 2px; }
+.food-form > fieldset.choice { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 10px; }
+.food-form > fieldset.choice > legend { font-size: var(--fs-person-name); font-weight: 700; color: var(--text); margin: 0 0 4px; }
+.food-form > fieldset.choice > .hint { margin: 0; grid-column: 1 / -1; }
+.food-form fieldset.allergens { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+.food-form fieldset.allergens > legend, .food-form fieldset.allergens > .hint { grid-column: 1 / -1; }
+.food-form .choice label { align-items: start; align-content: start; }
+.food-form .choice input { margin-top: 1px; }
+.food-form .choice b { overflow-wrap: break-word; hyphens: auto; }
+/* The caveat under the allergen cards: its own line, words kept whole. */
+.food-form > fieldset.choice > .hint.caveat { margin-top: -6px; hyphens: manual; }
+.food-form .hint.caveat b { color: var(--text); }
+.food-form .choice label:has(input:checked) b { font-weight: 800; }
+[data-theme="bw"] .food-form .choice label { border: 2px solid var(--text-secondary); padding: 11px 13px; }
+[data-theme="bw"] .food-form .choice label:has(input:checked) { border: 3px solid var(--text); padding: 10px 12px; background: var(--event-card); }
+[data-theme="bw"] .food-form > fieldset.choice, [data-theme="bw"] .food-form > fieldset.other { border: 2px solid var(--text); }
+.food-form .f input { width: 100%; }
+.unchecked-sample { display: grid; gap: 8px; margin: 0; padding: 10px 12px; border-radius: var(--radius-card); background: var(--background); color: var(--text); font-size: var(--fs-label-large); }
+.unchecked-sample p { margin: 0; }
+[data-theme="bw"] .unchecked-sample { background: var(--surface); border: 2px solid var(--text); }
+/* MCP: the health area is set apart, read only at most. */
+.scope.health { border-top: 2px solid var(--border); margin-top: 4px; }
+.scope.health .area b { display: inline-flex; align-items: center; gap: 6px; }
+.scope.health .area b .icon { stroke: var(--accent); flex: none; }
+[data-theme="bw"] .scope.health { border-top-color: var(--text); }
+/* Outlook (article library ticket): warning under an entry and the box of unchecked allergies under the list. */
+.entries li > .allergen-warn { flex: 1 1 100%; display: flex; align-items: flex-start; gap: 6px; margin: -4px 0 10px; padding: 4px 8px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label); font-weight: 600; overflow-wrap: break-word; }
+.entries li > .allergen-warn .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+/* A person inside a sentence (warning line, unchecked box): inline, so marker, bold name and text share one baseline;
+   the marker sits on the x-height middle and stays glued to the name. Never inline-flex: its baseline is the marker. */
+.allergen-warn .who, .unchecked-box .who { display: inline; font-weight: 700; }
+.allergen-warn .who .marker, .unchecked-box .who .marker { vertical-align: -0.1em; margin-right: 6px; }
+[data-theme="bw"] .allergen-warn .who .marker, [data-theme="bw"] .unchecked-box .who .marker { vertical-align: -0.15em; }
+[data-theme="bw"] .entries li > .allergen-warn { background: none; color: var(--text); border: 2px solid var(--text); }
+.unchecked-box { max-width: 560px; box-sizing: border-box; padding: 14px 16px; border-radius: var(--radius-tile); background: var(--surface); border: 2px dashed var(--notice-text); margin: 0 0 var(--gap-section); }
+.unchecked-box h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: var(--fs-event-title); }
+.unchecked-box h2 .icon { stroke: currentColor; flex: none; }
+.unchecked-box .hint { margin: 0 0 8px; }
+.unchecked-box ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.unchecked-box li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; overflow-wrap: break-word; }
+[data-theme="bw"] .unchecked-box { border-color: var(--text); }
+
+/* ==== New for #183: Choose calendars cards (preview-183) ==================== */
+/* One card per found calendar. Head: where it comes from (kicker), the name at
+   the source, the switch with its state in words. Facts: event count and last
+   sync, quiet. Fields only while the switch is on, below a hairline. */
+.calchoice { padding: 16px; gap: 0; }
+.calchoice > .card-row { align-items: flex-start; gap: var(--gap); margin: 0; }
+.calchoice .card-row .t { gap: 2px; flex: 1; }
+.calchoice .card-row .src { font-size: var(--fs-meta); color: var(--text-secondary); }
+.calchoice .card-row .t b { overflow-wrap: break-word; hyphens: manual; }
+[data-theme="bw"] .calchoice { border: 2px solid var(--text); }
+[data-theme="bw"] .calchoice.invalid { border-width: 4px; outline: 0; }
+.calchoice .switch { margin-top: 2px; }
+/* State in words: exactly one of the two, never both. */
+.calchoice .card-row .state { font-size: var(--fs-label); color: var(--text-secondary); }
+.calchoice .state .w { color: var(--text); font-weight: 700; font-size: inherit; }
+.calchoice .state .on-text, .calchoice .state .off-text { display: none; }
+.calchoice .state.is-on .on-text, .calchoice .state:not(.is-on) .off-text { display: inline; }
+@supports selector(:has(a)) {
+  .calchoice .card-row:has(.switch input:checked) .state .on-text { display: inline; }
+  .calchoice .card-row:has(.switch input:checked) .state .off-text { display: none; }
+  .calchoice .card-row:has(.switch input:not(:checked)) .state .on-text { display: none; }
+  .calchoice .card-row:has(.switch input:not(:checked)) .state .off-text { display: inline; }
+}
+.calfacts { margin: 8px 0 0; display: grid; gap: 2px; font-size: var(--fs-meta); color: var(--text-secondary); }
+.calfacts p { margin: 0; display: flex; gap: 6px; align-items: flex-start; overflow-wrap: anywhere; }
+.calfacts .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.calfacts span { color: inherit; font-size: inherit; }
+.calfacts .count[data-state] { font-style: normal; background: none; color: inherit; padding: 0; font-weight: 400; border: 0; }
+.calfacts .count .warn-text { display: none; }
+/* The line holds both icons and all three texts; the state picks (the script
+   sets data-state and the text in .ct; an empty calendar shows one of its two texts). */
+.calfacts .count .i-info, .calfacts .count .info-text { display: none; }
+.calfacts .count[data-state="unknown"] .i-cal, .calfacts .count[data-state="empty"] .i-cal { display: none; }
+.calfacts .count[data-state="unknown"] .i-info, .calfacts .count[data-state="empty"] .i-info { display: block; }
+.calfacts .count[data-state="empty"] .ct { display: none; }
+.calfacts .count[data-state="empty"] .info-text { display: inline; }
+/* An empty calendar is information while off; once switched on it is a warning:
+   the box would show nothing from it. */
+.calchoice.is-on .calfacts .count[data-state="empty"] { display: inline-flex; background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-field); padding: 3px 8px; font-weight: 600; font-size: var(--fs-label); }
+.calchoice.is-on .calfacts .count[data-state="empty"] .icon { stroke: currentColor; }
+.calchoice.is-on .calfacts .count[data-state="empty"] .warn-text { display: inline; }
+.calchoice.is-on .calfacts .count[data-state="empty"] .info-text { display: none; }
+[data-theme="bw"] .calchoice.is-on .calfacts .count[data-state="empty"] { background: none; color: var(--text); border: 2px solid var(--text); }
+@supports selector(:has(a)) {
+  .calchoice:has(> .card-row .switch input:checked) .calfacts .count[data-state="empty"] { display: inline-flex; background: var(--notice-bg); color: var(--notice-text); border-radius: var(--radius-field); padding: 3px 8px; font-weight: 600; font-size: var(--fs-label); }
+  .calchoice:has(> .card-row .switch input:checked) .calfacts .count[data-state="empty"] .warn-text { display: inline; }
+  .calchoice:has(> .card-row .switch input:checked) .calfacts .count[data-state="empty"] .info-text { display: none; }
+  [data-theme="bw"] .calchoice:has(> .card-row .switch input:checked) .calfacts .count[data-state="empty"] { background: none; color: var(--text); border: 2px solid var(--text); }
+  .calchoice:has(> .card-row .switch input:not(:checked)) .calfacts .count[data-state="empty"] { background: none; color: var(--text-secondary); border: 0; padding: 0; font-weight: 400; font-size: var(--fs-meta); }
+  .calchoice:has(> .card-row .switch input:not(:checked)) .calfacts .count[data-state="empty"] .warn-text { display: none; }
+  .calchoice:has(> .card-row .switch input:not(:checked)) .calfacts .count[data-state="empty"] .info-text { display: inline; }
+}
+/* Fields: only while on (server: not rendered for off cards that are not synced;
+   CSS hides them the moment the switch goes off). */
+.calfields { display: grid; gap: var(--gap); margin-top: var(--gap); padding-top: var(--gap); border-top: 1px solid var(--border); }
+[data-theme="bw"] .calfields { border-top: 2px solid var(--text); }
+.calchoice:not(.is-on) > .calfields { display: none; }
+@supports selector(:has(a)) {
+  .calchoice:has(> .card-row .switch input:checked) > .calfields { display: grid; }
+  .calchoice:has(> .card-row .switch input:not(:checked)) > .calfields { display: none; }
+}
+.calfields .f > label { font-weight: 600; color: var(--text); }
+.calfields .f .hint { margin: 0; display: flex; gap: 6px; align-items: flex-start; }
+.calfields .f .hint .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.calfields .f .hint q { quotes: "„" "“"; font-weight: 600; color: var(--text); }
+:lang(en) .calfields .f .hint q { quotes: "“" "”"; }
+.calfields fieldset.chips { padding: 0; }
+.calfields fieldset.chips legend { font-size: var(--fs-label); font-weight: 600; color: var(--text); float: none; margin-bottom: 8px; }
+/* "More options" inside a card: the summary stays next to the label, never
+   pushed to the far right; a swatch shows the colour in use. */
+.calfields details.more { border-top: 0; margin: -4px 0 -10px; }
+.calchoice details.more > summary, .steps > details.more.all-cals > summary { flex-wrap: wrap; column-gap: 8px; row-gap: 0; }
+.calchoice details.more .sum, .steps > details.more.all-cals .sum { margin-left: 0; display: inline-flex; align-items: center; gap: 6px; }
+.calchoice details.more .sum::before, .steps > details.more.all-cals .sum::before { content: "·"; color: var(--text-secondary); }
+.swatch { display: inline-block; width: 14px; height: 14px; border-radius: 50%; background: var(--sw); border: 1px solid var(--border); flex: none; }
+[data-theme="bw"] .swatch { display: none; }
+.steps > details.more.all-cals { border-top: 1px solid var(--border); }
+.calchoice .ferr { margin-top: 10px; }
+.calchoice.invalid { outline: 2px solid var(--error-text); outline-offset: -2px; }
+.choose-none { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 8px; max-width: 560px; box-sizing: border-box; }
+[data-theme="bw"] .choose-none { border: 2px solid var(--text); }
+.choose-none p { margin: 0; }

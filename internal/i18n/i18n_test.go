@@ -106,6 +106,7 @@ var wholeFamilyTexts = map[string]bool{
 	"mcp.explain.know3":              true, // "eurem Heimnetz": the family's home network
 	"flash.mcp_off":                  true, // "eure Daten"
 	"firststeps.display.text":        true, // "euren Tag"
+	"food.why.title":                 true, // "eurer Box": the family's box (preview 163)
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

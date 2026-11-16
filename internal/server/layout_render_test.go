@@ -215,10 +215,21 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	c.newMCPToken(t, "Claude Desktop auf dem Küchenrechner", map[string]string{"lists": "write"})
 	// A paired phone, a calendar connection, a CalDAV device token.
 	pairedPhone(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
-	connectedBox(t, f.box)
+	connID := connectedBox(t, f.box)
+	// Two calendars with long names (#183): the first is on, for all eight people and under a longer name of its own, the second is off.
 	f.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { // the connection page asks for event counts
-		return countingRemote{hostedRemote{found: []caldavclient.Calendar{{URL: flowCalendar, Name: "Familienkalender auf dem Nextcloud-Server"}}}}, nil
+		return countingRemote{hostedRemote{found: []caldavclient.Calendar{
+			{URL: flowCalendar, Name: "Familienkalender auf dem Nextcloud-Server"},
+			{URL: flowCalendar2, Name: "Schulferienkalender der Grundschule Pasing"},
+		}}}, nil
 	})
+	if r := f.post("/connections/"+connID+"/calendars", url.Values{
+		"calendar": {flowCalendar}, "shown": {flowCalendar, flowCalendar2}, "interval": {"15"},
+		"name_" + flowCalendar: {"Wochenendplanung der Familie Maier-Schmidt"}, "color_" + flowCalendar: {"#2F5E7A"},
+		"people_" + flowCalendar: f.ids,
+	}); r.status != http.StatusSeeOther {
+		t.Fatalf("choose calendars = %d\n%s", r.status, r.body)
+	}
 	if r := f.post("/caldav/tokens", url.Values{"name": {"iPhone von Friedrich mit langem Gerätenamen"}}); r.status != http.StatusOK {
 		t.Fatalf("CalDAV token = %d\n%s", r.status, r.body)
 	}
@@ -570,9 +581,6 @@ type knownLayoutProblem struct {
 }
 
 var knownLayoutProblems = []knownLayoutProblem{
-	{"/calendar", "page-wider-than-viewport", 768, []string{"Kinderarztvorsorgeuntersuchung"}, 173, false},
-	{"/calendar", "text-overflows-its-box", 768, []string{"Kinderarztvorsorgeuntersuchung", "Elternabend", "Geburtstagsfeier"}, 173, false},
-	{"/calendar", "text-overflows-its-box", 1024, []string{"Kinderarztvorsorgeuntersuchung", "Geburtstagsfeier"}, 173, false},
 	{"/account/reset/{id}", "name-broken-inside-the-word", 375, []string{"Sophie-Marie"}, 175, true}, // seen with Chrome on macOS, not with Chrome 157 on the Linux runners
 }
 

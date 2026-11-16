@@ -10,10 +10,27 @@ info:
     (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens;
     actions: read, write, delete, complete).
 
-    The scope `calendars` is for a phone's calendar app: it opens the box's
-    CalDAV server at `/dav/` (HTTP Basic with the person's username and the
-    token as password, HTTPS only) and nothing in this REST API. Create one
-    token per device and revoke it on its own.
+    The scopes `calendars` and `tasks` are for a phone's calendar and
+    reminders apps: they open the box's CalDAV server at `/dav/` (HTTP Basic
+    with the person's username and the token as password, HTTPS only) and
+    nothing in this REST API. `calendars` opens the calendars (VEVENT),
+    `tasks` one task list per person (VTODO); a device token holds both. A
+    task list shows a once task as it is and a repeating task as today's
+    occurrence. Clients may change a task's title, notes, the day of a once
+    task and its completion (which credits or deducts its stars once);
+    creating and deleting tasks from a client is refused with 403. Create
+    one token per device and revoke it on its own.
+
+    The box also speaks MCP (Model Context Protocol, streamable HTTP, stateless)
+    at `/mcp`, for AI assistants (ADR 0018). It is off by default (`GET` and `PUT`
+    `/mcp` below), served over HTTPS only, and takes only a bearer token that was
+    created for MCP (`POST /mcp/tokens`). Its tools are the functions of this API
+    for events, lists, tasks (with routines, templates and stars) and the meal
+    plan, except managing calendars (`POST /calendars`, `PATCH` and `DELETE`
+    `/calendars/{id}`, `POST /calendars/{id}/sync` are no tools), run as the parent who made the token and with the token's scopes;
+    tools the scopes do not allow are not offered. Tokens, settings, people,
+    displays and phones are never tools. A token made for MCP works there only:
+    this REST API and CalDAV refuse it, and MCP refuses every other token.
   license:
     name: AGPL-3.0-or-later
     url: https://www.gnu.org/licenses/agpl-3.0.html
@@ -58,6 +75,63 @@ paths:
                     items: { type: string, example: K7QD2-M9XPA }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /people/{id}/invitation:
+    get:
+      operationId: getInvitation
+      summary: The newest invitation of an adult (scope tokens:read)
+      description: |
+        The state of the newest invitation made for this person: `open`, `used`
+        (the person created their account), `expired` or `withdrawn`. The link
+        itself is not in the answer: the box keeps only a hash of it.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The invitation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Invitation" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    post:
+      operationId: createInvitation
+      summary: Invite an adult who has no account (scope tokens:write)
+      description: |
+        Creates an invitation link, valid once and for 7 days, and returns its
+        address once: show it as a QR code or send it to that person. A link
+        that is still open for the person is withdrawn, because a new link
+        replaces the old one. The invited person opens the address on their own
+        device and chooses username and password themselves, then sets up
+        one-time codes. With the box's own certificate authority the address
+        leads over the plain-HTTP trust page first (ADR 0014). Children cannot
+        be invited (422), and neither can a person who has an account (409).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "201":
+          description: The new invitation, with its address (only in this answer)
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Invitation" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { description: The person has an account already }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: withdrawInvitation
+      summary: Withdraw the open invitation of an adult (scope tokens:delete)
+      description: The link stops working at once. 404 when no invitation is open.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Withdrawn }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /people/{id}/reset-otp:
     post:
       operationId: resetOneTimeCodes
@@ -228,6 +302,92 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /mcp:
+    get:
+      operationId: getMCP
+      summary: Whether the MCP server is on, and its address (scope settings:read)
+      description: |
+        The address always starts with `https://`: MCP is served over HTTPS
+        only. A browser session may open the page of the web interface at the
+        same address.
+      responses:
+        "200":
+          description: State of the MCP server
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MCPState" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setMCP
+      summary: Switch the MCP server on or off (scope settings:write)
+      description: |
+        Off by default. Switching off needs no confirmation: tokens made for MCP
+        stay stored and work again once it is switched on; an open MCP session
+        stops at its next request.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+      responses:
+        "200":
+          description: The new state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/MCPState" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /mcp/tokens:
+    post:
+      operationId: createMCPToken
+      summary: Create an API token for MCP, for the caller (scope tokens:write)
+      description: |
+        The areas events, lists, tasks (with routines, templates and stars) and
+        meals each get `none`, `read` (scope `<area>:read`) or `write` (scope
+        `<area>`, every action including adding, ticking off and deleting). An
+        area left out counts as `none`; at least one area needs `read` or
+        `write` (else 422). The token acts as the caller, who has to be a parent,
+        and never holds `read`, `write`, `tokens` or `settings`. The name is
+        unique among MCP tokens (not case-sensitive, else 422). The token value
+        is returned once and stored only as a hash. Creating one works while MCP
+        is off too; it works as soon as MCP is on. Revoke it with
+        `DELETE /tokens/{id}`; `GET /tokens` lists it with `mcp: true`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name, areas]
+              properties:
+                name: { type: string, minLength: 1, maxLength: 80, example: Claude on Mama's laptop }
+                areas: { $ref: "#/components/schemas/MCPAreas" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [id, name, scopes, areas, token, address]
+                properties:
+                  id: { type: string, format: uuid }
+                  name: { type: string }
+                  scopes: { type: string, example: "events lists:read" }
+                  areas: { $ref: "#/components/schemas/MCPAreas" }
+                  token: { type: string, example: hejmo_… }
+                  address: { type: string, example: "https://hejmo.local/mcp" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /caldav-profile:
     post:
       operationId: createCalDAVProfile
@@ -371,7 +531,7 @@ paths:
       operationId: updateDisplay
       summary: Change the settings of a paired display (scope displays:write)
       description: |
-        Only the fields sent are changed. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
+        Only the fields sent are changed. `name` (1 to 80 characters after trimming) and `type` (`eink_bw`, `eink_color` or `screen`) rename and retype the display; an empty or too long name, or an unknown type, is refused with 422. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
         `theme` and the two offsets set the display's theme (ADR 0015); an unknown theme or an offset outside -180..180 is refused with 422.
         `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015). Quiet mode takes precedence over the theme.
         `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to switch the front light off at sunset and in quiet mode; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
@@ -530,6 +690,46 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
   /tasks/{id}:
+    patch:
+      operationId: updateTask
+      summary: Change a task's star value (scope tasks:write, parents only)
+      description: |
+        Only `stars` can be changed so far; any other or unknown field is
+        refused with 400. The new value counts from the next tick. Ticks that
+        are already credited keep their value: the star log and the stars
+        credited for done days stay as they are, and unticking deducts what was
+        credited. A missing value, a value that is not a whole number and a value
+        outside 0 to 100 give 422 with `field: stars`, as on POST /tasks.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              description: |
+                `stars` is a whole number from 0 to 100. The range is checked by
+                the box, so a value outside it gets the 422 below with a field
+                error. Any other field is refused with 400.
+              additionalProperties: false
+              properties:
+                stars: { type: integer, minimum: 0, maximum: 100 }
+      responses:
+        "200":
+          description: The updated task with its state today
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Task" }
+        "400":
+          description: Not valid JSON or an unknown field
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
     delete:
       operationId: deleteTask
       summary: Delete a task with its history (scope tasks:delete, parents only)
@@ -569,6 +769,413 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routines:
+    get:
+      operationId: listRoutines
+      summary: Routines of the household with their tasks in order (scope tasks:read)
+      description: |
+        A routine is the ordered sequence of one person's tasks for a part of
+        the day (ADR 0018). `task_ids` lists the routine's tasks in the order
+        the personal view shows them. Everyone, children included, may read.
+      parameters:
+        - { name: person, in: query, required: false, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Routines, oldest first
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Routine" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    post:
+      operationId: createRoutine
+      summary: Create a routine for a person and a part of the day (scope tasks:write, parents only)
+      description: |
+        A person has at most one routine per part of the day: a second one is
+        409 and names the existing routine in `existing_routine_id`. Add its
+        tasks with `POST /tasks` (`routine_id`) or `POST /routines/{id}/tasks`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewRoutine" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routine" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/RoutineConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routines/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getRoutine
+      summary: One routine with its tasks in order (scope tasks:read)
+      responses:
+        "200":
+          description: The routine
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routine" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateRoutine
+      summary: Rename a routine or change its part of the day (scope tasks:write, parents only)
+      description: |
+        Changing the part of the day changes it for every task of the routine.
+        A part the person already has a routine for is 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1, maxLength: 60 }
+                part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+      responses:
+        "200":
+          description: The updated routine
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routine" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RoutineConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: dissolveRoutine
+      summary: Dissolve a routine; its tasks stay (scope tasks:delete, parents only)
+      description: |
+        Deletes the routine and no task: its tasks stay as single tasks of the
+        person with their part of the day (after school becomes any time),
+        their stars and their history.
+      responses:
+        "204": { description: Dissolved }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /routines/{id}/tasks:
+    post:
+      operationId: addTaskToRoutine
+      summary: Take a person's single task into the routine, at the end (scope tasks:write, parents only)
+      description: |
+        The task must be the routine's person's and in no routine (else 409 for
+        a task that is in one, 422 for another person's). It takes the
+        routine's part of the day. To create a new task in a routine, use
+        `POST /tasks` with `routine_id`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_id]
+              additionalProperties: false
+              properties:
+                task_id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The routine with the task at its end
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routine" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RoutineConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routines/{id}/tasks/{task_id}:
+    delete:
+      operationId: removeTaskFromRoutine
+      summary: Take a task out of the routine (scope tasks:write, parents only)
+      description: |
+        The task becomes a single task again and keeps the routine's part of
+        the day (after school becomes any time), its stars and its history.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: task_id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Taken out }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routines/{id}/order:
+    put:
+      operationId: setRoutineOrder
+      summary: Put the routine's tasks in a new order (scope tasks:write, parents only)
+      description: |
+        `task_ids` must name every task of the routine exactly once, else 422
+        and nothing changes. The personal view shows the new order.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [task_ids]
+              additionalProperties: false
+              properties:
+                task_ids:
+                  type: array
+                  items: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The routine in its new order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Routine" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routine-templates:
+    get:
+      operationId: listRoutineTemplates
+      summary: Routine templates, own first, then the ones that come with Hejmo (scope tasks:read)
+      description: |
+        A routine template is a routine without a person (ADR 0018). The
+        parent's own templates come first, oldest first, then the templates
+        that ship with Hejmo (`source: shipped`, ids such as `school-morning`),
+        in the language in use: their names and step titles follow the
+        request's language, German or English. Everyone, children included,
+        may read.
+      responses:
+        "200":
+          description: Own templates, then shipped ones
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/RoutineTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: saveRoutineAsTemplate
+      summary: Save a routine as an own template (scope tasks:write, parents only)
+      description: |
+        Copies the routine's part of the day and its steps in order, with
+        emoji, star value and repetition. Once-only tasks are left out; a
+        routine with no other task is 422. What a person ticked, stars earned
+        and history stay with the person. The template is a copy: changing
+        the routine later does not change it. Without `name` the template is
+        called "<routine> von <person>" (English: "<routine> of <person>").
+        A name already used by an own template (ignoring case) is 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [routine_id]
+              additionalProperties: false
+              properties:
+                routine_id: { type: string, format: uuid }
+                name: { type: string, minLength: 1, maxLength: 60 }
+      responses:
+        "201":
+          description: The new template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routine-templates/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string }, description: "An own template's UUID or the id of a shipped one" }
+    get:
+      operationId: getRoutineTemplate
+      summary: One routine template with its steps (scope tasks:read)
+      responses:
+        "200":
+          description: The template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateRoutineTemplate
+      summary: Rename an own template or change its suggested part of the day (scope tasks:write, parents only)
+      description: |
+        Routines that were made from the template stay as they are. A
+        template that ships with Hejmo cannot be changed: 409.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                name: { type: string, minLength: 1, maxLength: 60 }
+                part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+      responses:
+        "200":
+          description: The updated template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteRoutineTemplate
+      summary: Delete an own template (scope tasks:delete, parents only)
+      description: |
+        Routines that were made from the template stay as they are. A
+        template that ships with Hejmo cannot be deleted: 409.
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+  /routine-templates/{id}/steps:
+    post:
+      operationId: addRoutineTemplateStep
+      summary: Add a step at the end of an own template (scope tasks:write, parents only)
+      description: |
+        A step is never once-only (`repeat` is `daily` or `weekly`) and has
+        no subtasks. `stars` defaults to 1.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [title, repeat]
+              additionalProperties: false
+              properties:
+                title: { type: string, minLength: 1, maxLength: 120 }
+                emoji: { type: string, maxLength: 16 }
+                stars: { type: integer, minimum: 0, maximum: 100 }
+                repeat: { $ref: "#/components/schemas/TemplateRepeat" }
+                weekdays: { type: array, items: { $ref: "#/components/schemas/TaskWeekday" } }
+      responses:
+        "201":
+          description: The template with the new step at its end
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /routine-templates/{id}/steps/{step_id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string } }
+      - { name: step_id, in: path, required: true, schema: { type: string } }
+    patch:
+      operationId: updateRoutineTemplateStep
+      summary: Change a step of an own template (scope tasks:write, parents only)
+      description: |
+        Only the fields given change. Changing `repeat` to `daily` drops the
+        weekdays; `weekly` needs weekdays.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              additionalProperties: false
+              properties:
+                title: { type: string, minLength: 1, maxLength: 120 }
+                emoji: { type: string, maxLength: 16 }
+                stars: { type: integer, minimum: 0, maximum: 100 }
+                repeat: { $ref: "#/components/schemas/TemplateRepeat" }
+                weekdays: { type: array, items: { $ref: "#/components/schemas/TaskWeekday" } }
+      responses:
+        "200":
+          description: The updated template
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteRoutineTemplateStep
+      summary: Remove a step from an own template (scope tasks:write, parents only)
+      responses:
+        "200":
+          description: The template without the step
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
+        "422": { $ref: "#/components/responses/Invalid" } # the last step of a template stays
+  /routine-templates/{id}/order:
+    put:
+      operationId: setRoutineTemplateOrder
+      summary: Put the steps of an own template in a new order (scope tasks:write, parents only)
+      description: |
+        `step_ids` must name every step of the template exactly once, else
+        422 and nothing changes.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [step_ids]
+              additionalProperties: false
+              properties:
+                step_ids:
+                  type: array
+                  items: { type: string }
+      responses:
+        "200":
+          description: The template in its new order
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/RoutineTemplate" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/TemplateConflict" }
         "422": { $ref: "#/components/responses/Invalid" }
   /meals:
     get:
@@ -820,6 +1427,207 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /lists:
+    get:
+      operationId: listLists
+      summary: The household's lists with their number of entries (scope lists:read)
+      description: |
+        Oldest first. Every list belongs to the household and has no audience.
+        A new box has the lists "Shopping" and "To-dos". Everyone, children
+        included, may read lists.
+      responses:
+        "200":
+          description: Lists
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/List" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createList
+      summary: Create a list (scope lists:write, parents only)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewList" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/List" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getList
+      summary: One list with its entries in the order the list shows them (scope lists:read)
+      description: |
+        An alphabetical list orders its entries by text, ignoring case and
+        treating ä, ö, ü like a, o, u; a manual list follows the positions
+        set with `PUT /lists/{id}/entries/{entry}/position`.
+      responses:
+        "200":
+          description: The list with its entries
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListWithEntries" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateList
+      summary: Rename a list or change its colour, symbol or sorting (scope lists:write, parents only)
+      description: Switching the sorting keeps the manual order, so switching back restores it.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ListChange" }
+      responses:
+        "200":
+          description: The changed list
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/List" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteList
+      summary: Delete a list with all its entries (scope lists:delete, parents only)
+      description: A child is refused with 403.
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /lists/{id}/entries:
+    post:
+      operationId: addListEntry
+      summary: Add an entry at the end of a list (scope lists:write, parents only)
+      description: An alphabetical list shows it at its place by text.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [text]
+              properties:
+                text: { type: string, minLength: 1, maxLength: 200 }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntry" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}/entries/{entry}:
+    delete:
+      operationId: deleteListEntry
+      summary: Delete one entry (scope lists:delete, parents only)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /lists/{id}/entries/{entry}/done:
+    put:
+      operationId: setListEntryDone
+      summary: Tick an entry off or back open (scope lists:complete)
+      description: Everyone, children included, may do this. Ticking twice changes nothing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [done]
+              properties:
+                done: { type: boolean }
+      responses:
+        "200":
+          description: The entry
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntry" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}/entries/{entry}/position:
+    put:
+      operationId: moveListEntry
+      summary: Move an entry to a place of a manually sorted list (scope lists:write, parents only)
+      description: Position 0 is first. Refused with 422 on an alphabetical list.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [position]
+              properties:
+                position: { type: integer, minimum: 0 }
+      responses:
+        "200":
+          description: The entries in their new order
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ListEntry" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /lists/{id}/completed-entries:
+    delete:
+      operationId: deleteCompletedListEntries
+      summary: Delete all ticked-off entries of a list (scope lists:delete, parents only)
+      description: Open entries stay.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: How many entries were deleted
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [deleted]
+                properties:
+                  deleted: { type: integer, minimum: 0 }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /groups:
     get:
       operationId: listGroups
@@ -1041,6 +1849,32 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /calendar-connections/{id}/credentials:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    put:
+      operationId: changeConnectionPassword
+      summary: Replace the password of a connection, after the server accepted it (parents, scope settings:write)
+      description: |
+        Signs in with the new password and lists the server's calendars, as when connecting. Only if that
+        works is the password stored (encrypted with the box's key, never returned) and the connection's
+        calendars synced again at once. A refused login, a server that points to another domain and an
+        unreachable server answer 422 and keep the old password. For iCloud use an app-specific password.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [password]
+              properties:
+                password: { type: string, minLength: 1, writeOnly: true }
+      responses:
+        "204": { description: The password was checked and stored }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /calendar-connections/{id}/calendars:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -1155,7 +1989,8 @@ paths:
       summary: Change household settings; omitted fields stay as they are (scope settings:write)
       description: |
         The time format applies to every time shown in the web interface and
-        on displays (ADR 0016). Unknown values are refused with 422.
+        on displays (ADR 0016). An unknown `date_format` is refused with 400, an
+        unknown value of any other field with 422.
       requestBody:
         required: true
         content:
@@ -1363,8 +2198,69 @@ components:
       enum: [MO, TU, WE, TH, FR, SA, SU]
     TaskPartOfDay:
       type: string
-      enum: ["", morning, evening]
-      description: Empty means any time of the day
+      enum: ["", morning, afterschool, evening]
+      description: |
+        Empty means any time of the day. `afterschool` exists only in routines:
+        a task in a routine always reports its routine's part of the day, and a
+        task outside a routine cannot be `afterschool`.
+    RoutinePart:
+      type: string
+      enum: [morning, afterschool, evening]
+    NewRoutine:
+      type: object
+      required: [person_id]
+      description: |
+        Without `template_id`, `name` and `part_of_day` are required (else
+        422). With `template_id` the routine is made from a routine template
+        (own or shipped): its steps become new tasks of the person, an
+        independent copy that keeps no link to the template. Then `part_of_day`
+        defaults to the template's suggestion (any part of the day may be
+        chosen) and `name` to the stock name of the part ("Morgenroutine").
+        Shipped templates are copied in the language in use.
+      properties:
+        person_id: { type: string, format: uuid }
+        name: { type: string, minLength: 1, maxLength: 60, example: Morgenroutine }
+        part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+        template_id: { type: string, description: "An own template's UUID or the id of a shipped one", example: school-morning }
+    TemplateRepeat:
+      type: string
+      enum: [daily, weekly]
+      description: A template step is never once-only.
+    RoutineTemplate:
+      type: object
+      required: [id, name, part_of_day, source, steps]
+      properties:
+        id: { type: string, description: "A UUID for an own template, a readable id such as school-morning for a shipped one" }
+        name: { type: string }
+        part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+        source: { type: string, enum: [own, shipped] }
+        origin_routine: { type: string, description: "Own templates: the name of the routine it was saved from" }
+        origin_person: { type: string, description: "Own templates: the name of that routine's person" }
+        saved_at: { type: string, format: date-time, description: "Own templates: when it was saved" }
+        steps:
+          type: array
+          items:
+            type: object
+            required: [id, title, emoji, stars, repeat, weekdays]
+            properties:
+              id: { type: string }
+              title: { type: string }
+              emoji: { type: string }
+              stars: { type: integer, minimum: 0, maximum: 100 }
+              repeat: { $ref: "#/components/schemas/TemplateRepeat" }
+              weekdays: { type: array, items: { $ref: "#/components/schemas/TaskWeekday" } }
+    Routine:
+      type: object
+      required: [id, person_id, name, part_of_day, task_ids]
+      properties:
+        id: { type: string, format: uuid }
+        person_id: { type: string, format: uuid }
+        name: { type: string }
+        part_of_day: { $ref: "#/components/schemas/RoutinePart" }
+        task_ids:
+          type: array
+          items: { type: string, format: uuid }
+          description: The routine's tasks in their order
     NewTask:
       type: object
       required: [person_id, title, repeat]
@@ -1372,6 +2268,7 @@ components:
         person_id: { type: string, format: uuid }
         title: { type: string, minLength: 1, maxLength: 120, example: Brush teeth }
         emoji: { type: string, maxLength: 16, example: "🪥" }
+        notes: { type: string, maxLength: 2000, description: "Optional free text. CalDAV clients show it as the task's description and may change it" }
         repeat: { $ref: "#/components/schemas/TaskRepeat" }
         weekdays:
           type: array
@@ -1380,14 +2277,16 @@ components:
         date: { type: string, format: date, description: "The day of a `once` task (required); the first day of a repeating one (default today)" }
         part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
         stars: { type: integer, minimum: 0, maximum: 100, description: "Stars credited when ticked off (0 allowed). Default: 1 for a child, 0 for an adult" }
+        routine_id: { type: string, format: uuid, description: "Create the task as the last step of this routine (of the same person). It takes the routine's part of the day and `part_of_day` is ignored" }
     Task:
       type: object
-      required: [id, person_id, title, emoji, repeat, weekdays, date, part_of_day, stars, due, done]
+      required: [id, person_id, title, emoji, notes, repeat, weekdays, date, part_of_day, stars, routine_id, position, due, done]
       properties:
         id: { type: string, format: uuid }
         person_id: { type: string, format: uuid }
         title: { type: string }
         emoji: { type: string }
+        notes: { type: string, description: "Free text; empty if none" }
         repeat: { $ref: "#/components/schemas/TaskRepeat" }
         weekdays:
           type: array
@@ -1395,6 +2294,8 @@ components:
         date: { type: string, format: date }
         part_of_day: { $ref: "#/components/schemas/TaskPartOfDay" }
         stars: { type: integer, description: "Stars credited when ticked off, deducted when unticked" }
+        routine_id: { type: string, description: "The routine the task is a step of; empty for a single task" }
+        position: { type: integer, description: "Place in the routine, from 1; 0 for a single task" }
         due: { type: boolean, description: "Due on the requested day" }
         done: { type: boolean, description: "Ticked off on the requested day" }
     NewStarBooking:
@@ -1427,6 +2328,60 @@ components:
         entries:
           type: array
           items: { $ref: "#/components/schemas/StarEntry" }
+    ListColor:
+      type: string
+      description: The person colour slot 1 to 6 of DESIGN.md, by name
+      enum: [terracotta, blue, green, ochre, plum, teal]
+    ListSymbol:
+      type: string
+      description: The black-and-white symbol, in the order of the person colour slots
+      enum: [circle-filled, circle-empty, square-filled, square-empty, triangle-filled, diamond-filled]
+    ListSort:
+      type: string
+      enum: [manual, alphabetical]
+    NewList:
+      type: object
+      required: [name, color, symbol]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        color: { $ref: "#/components/schemas/ListColor" }
+        symbol: { $ref: "#/components/schemas/ListSymbol" }
+        sort: { allOf: [{ $ref: "#/components/schemas/ListSort" }], description: "Default manual" }
+    ListChange:
+      type: object
+      minProperties: 1
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        color: { $ref: "#/components/schemas/ListColor" }
+        symbol: { $ref: "#/components/schemas/ListSymbol" }
+        sort: { $ref: "#/components/schemas/ListSort" }
+    List:
+      type: object
+      required: [id, name, color, symbol, sort, open_count, done_count]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        color: { $ref: "#/components/schemas/ListColor" }
+        symbol: { $ref: "#/components/schemas/ListSymbol" }
+        sort: { $ref: "#/components/schemas/ListSort" }
+        open_count: { type: integer, description: "Entries not ticked off" }
+        done_count: { type: integer, description: "Entries ticked off" }
+    ListEntry:
+      type: object
+      required: [id, text, done]
+      properties:
+        id: { type: string, format: uuid }
+        text: { type: string }
+        done: { type: boolean }
+    ListWithEntries:
+      allOf:
+        - { $ref: "#/components/schemas/List" }
+        - type: object
+          required: [entries]
+          properties:
+            entries:
+              type: array
+              items: { $ref: "#/components/schemas/ListEntry" }
     Group:
       type: object
       required: [id, name, members]
@@ -1455,7 +2410,7 @@ components:
         sync: { $ref: "#/components/schemas/SyncState" }
     ApiToken:
       type: object
-      required: [id, name, scopes, person, created_at, last_used_at]
+      required: [id, name, scopes, person, created_at, last_used_at, mcp]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: iPhone Mama }
@@ -1463,6 +2418,24 @@ components:
         person: { type: string, description: "Name of the person the token acts for" }
         created_at: { type: string, format: date-time }
         last_used_at: { type: string, format: date-time, nullable: true }
+        mcp: { type: boolean, description: "Created for the MCP server: it works there only, not in this API or CalDAV" }
+    MCPState:
+      type: object
+      required: [enabled, address]
+      properties:
+        enabled: { type: boolean }
+        address: { type: string, example: "https://hejmo.local/mcp", description: "Where an AI assistant reaches the MCP server; always https" }
+    MCPAreas:
+      type: object
+      description: What a token may do per area. An area left out counts as none.
+      properties:
+        events: { $ref: "#/components/schemas/MCPLevel" }
+        lists: { $ref: "#/components/schemas/MCPLevel" }
+        tasks: { $ref: "#/components/schemas/MCPLevel" }
+        meals: { $ref: "#/components/schemas/MCPLevel" }
+    MCPLevel:
+      type: string
+      enum: [none, read, write]
     DisplayType:
       type: string
       enum: [eink_bw, eink_color, screen]
@@ -1515,6 +2488,8 @@ components:
     UpdateDisplay:
       type: object
       properties:
+        name: { type: string, minLength: 1, maxLength: 80, description: "The new name, trimmed; empty or longer than 80 characters is refused with 422" }
+        type: { $ref: "#/components/schemas/DisplayType" }
         show_tomorrow: { type: boolean }
         theme: { $ref: "#/components/schemas/DisplayTheme" }
         sunrise_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes, -180 to 180, else 422" }
@@ -1563,6 +2538,17 @@ components:
         id: { type: string, format: uuid }
         url: { type: string, format: uri, description: "The address to show as a QR code. Only in this answer." }
         expires_at: { type: string, format: date-time }
+    Invitation:
+      type: object
+      required: [state, created_at, expires_at, created_by, accepted_at, withdrawn_at]
+      properties:
+        state: { type: string, enum: [open, used, expired, withdrawn] }
+        created_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time, description: Seven days after it was created }
+        created_by: { type: string, format: uuid, nullable: true, description: The parent who created it; null if that person was removed }
+        accepted_at: { type: string, format: date-time, nullable: true }
+        withdrawn_at: { type: string, format: date-time, nullable: true, description: Also set when a newer link replaced it }
+        url: { type: string, format: uri, description: "The address to show as a QR code or send. Only in the answer of createInvitation." }
     ConfirmPhone:
       type: object
       required: [person_id, name]
@@ -1656,10 +2642,16 @@ components:
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
     Settings:
       type: object
-      required: [time_format, temperature_unit, auto_update, meal_cutoffs]
+      required: [date_format, time_format, temperature_unit, auto_update, first_steps_hidden, first_steps_skipped, meal_cutoffs]
       properties:
+        date_format: { type: string, enum: [dmy, mdy], description: "Day first DD.MM.YYYY (default) or month first MM/DD/YYYY. Only how the web interface writes dates in numbers; this API, CalDAV and iCalendar stay ISO 8601" }
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
         temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
+        first_steps_hidden: { type: boolean, description: "Whether the first steps card on the start page is hidden (default false). A parent closes the card when all six steps are done or skipped, or hides it earlier." }
+        first_steps_skipped:
+          type: array
+          description: "The steps of the first steps card a parent skipped, in the order of the card (default empty)"
+          items: { type: string, enum: [family, parents, calendars, tasks, meals, display] }
         auto_update: { type: string, enum: [on, off, notify], description: "Auto-update (ADR 0018; has no effect unless GET /update says managed): on (default) installs new published versions at 03:30, off never checks, notify only tells parents that an update is available" }
         meal_cutoffs: { $ref: "#/components/schemas/MealCutoffs" }
     MealCutoffs:
@@ -1675,9 +2667,15 @@ components:
     SettingsUpdate:
       type: object
       properties:
+        date_format: { type: string, description: "dmy or mdy; anything else is refused with 400" }
         time_format: { type: string, description: "24h or 12h" }
         temperature_unit: { type: string, description: "c or f" }
         auto_update: { type: string, description: "on, off or notify" }
+        first_steps_hidden: { type: boolean, description: "Hide or show the first steps card on the start page" }
+        first_steps_skipped:
+          type: array
+          description: "Replaces the list of skipped steps; an unknown step refuses the whole request with 422. Steps: family, parents, calendars, tasks, meals, display."
+          items: { type: string }
         meal_cutoffs:
           type: object
           description: "Only the mealtimes given change; a time outside hh:mm refuses the whole request with 422"
@@ -1839,6 +2837,7 @@ components:
       required: [error]
       properties:
         error: { type: string }
+        field: { type: string, description: "The refused field, when the error is about one" }
   responses:
     Unauthorized:
       description: Missing or invalid credentials
@@ -1860,6 +2859,26 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
+    TemplateConflict:
+      description: |
+        An own template already has that name (`field: name`), or the template
+        ships with Hejmo and cannot be changed.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    RoutineConflict:
+      description: |
+        The request clashes with what is stored: the person has a routine for
+        that part of the day already (`existing_routine_id`), or the task is in
+        a routine already. Nothing was saved.
+      content:
+        application/json:
+          schema:
+            type: object
+            required: [error]
+            properties:
+              error: { type: string }
+              existing_routine_id: { type: string, format: uuid }
     MealTemplateClash:
       description: The template fills a meal another template fills too; nothing was saved
       content:

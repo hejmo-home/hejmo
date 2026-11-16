@@ -17,7 +17,7 @@ func tplField(weekday int, mealtime string) string {
 }
 
 // weekBForm is the form of a template that fills dinner Monday to Wednesday
-// every 2 weeks from the week of Monday 16/11/2026.
+// every 2 weeks from the week of Monday 16.11.2026.
 func weekBForm(name, start string, every string) url.Values {
 	return url.Values{
 		"name": {name}, "fills": {"one"}, "mealtime": {"dinner"}, "every": {every}, "start": {start},
@@ -66,7 +66,7 @@ func TestTemplatePagesNeedAParent(t *testing.T) {
 func TestTheTemplatesMenuInvitesToCreateTheFirstTemplate(t *testing.T) {
 	c := signedInAPI(t)
 	r := c.b.do(http.MethodGet, "/meals/templates", nil, en)
-	for _, want := range []string{"<h1>Meal plan templates</h1>", `<a class="back" href="/meals">Back to meal plan</a>`, `class="empty"`, `href="/meals/templates/new"`, "New template", `<a href="/meals" aria-current="page"`} {
+	for _, want := range []string{"<h1>Meal plan templates</h1>", `<a class="back" href="/meals">`, `class="empty"`, `href="/meals/templates/new"`, "New template", `<a href="/meals" aria-current="page"`} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("page lacks %q", want)
 		}
@@ -89,7 +89,7 @@ func TestParentCreatesATemplateAndTheMenuListsItWithTheComingWeeks(t *testing.T)
 	}
 	for _, want := range []string{
 		`<a class="tpl-row" href="/meals/templates/` + templateID(t, c, "Week B") + `">`, "Week B",
-		"<b>Dinner</b> on Monday to Wednesday", "Every 2 weeks from week 47 (16/11/2026) · next in week 47 (16/11 – 22/11)",
+		"<b>Dinner</b> on Monday to Wednesday", "Every 2 weeks from week 47 (16.11.2026) · next in week 47 (16.11. – 22.11.)",
 		"<h2>The coming weeks</h2>", `class="ahead"`, "<b>Week 46</b>", "No template – plan it yourself", `<span class="today">This week</span>`,
 		"<b>Week B</b>: dinner", `class="primary`,
 	} {
@@ -116,16 +116,16 @@ func TestTheTemplateFormListsTheWeeksItFillsAcrossTheTurnOfTheYear(t *testing.T)
 	if r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("status = %d", r.status)
 	}
-	if !strings.Contains(r.body, `Fills week <b>47</b>, <b>49</b>, <b>51</b>, <b>53</b>, then week <b>2</b> of 2027 (11/01/2027), and so on.`) {
+	if !strings.Contains(r.body, `Fills week <b>47</b>, <b>49</b>, <b>51</b>, <b>53</b>, then week <b>2</b> of 2027 (11.01.2027), and so on.`) {
 		t.Errorf("weeks hint missing:\n%s", r.body)
 	}
 	r = saveTemplate(t, c, bad, de)
-	if !strings.Contains(r.body, `Füllt Woche <b>47</b>, <b>49</b>, <b>51</b>, <b>53</b>, dann Woche <b>2</b> 2027 (11/01/2027) und so weiter.`) {
+	if !strings.Contains(r.body, `Füllt Woche <b>47</b>, <b>49</b>, <b>51</b>, <b>53</b>, dann Woche <b>2</b> 2027 (11.01.2027) und so weiter.`) {
 		t.Errorf("German weeks hint missing:\n%s", r.body)
 	}
 	// This week's week: the first week is marked.
 	bad.Set("start", "2026-11-09")
-	if r = saveTemplate(t, c, bad, en); !strings.Contains(r.body, `Fills week <b>46</b> (this week, from today), <b>48</b>, <b>50</b>, <b>52</b>, then week <b>1</b> of 2027 (04/01/2027), and so on.`) {
+	if r = saveTemplate(t, c, bad, en); !strings.Contains(r.body, `Fills week <b>46</b> (this week, from today), <b>48</b>, <b>50</b>, <b>52</b>, then week <b>1</b> of 2027 (04.01.2027), and so on.`) {
 		t.Errorf("this week's hint missing:\n%s", r.body)
 	}
 }
@@ -134,10 +134,10 @@ func TestTheTemplateFormHasEveryFieldOfTheDesign(t *testing.T) {
 	c := signedInAPI(t)
 	r := c.b.do(http.MethodGet, "/meals/templates/new", nil, en)
 	for _, want := range []string{
-		`<a class="back" href="/meals/templates">Back to templates</a>`, "<h1>New template</h1>", `class="steps wide tpl-form"`, `action="/meals/templates"`,
+		`<a class="back" href="/meals/templates">`, "<h1>New template</h1>", `class="steps wide tpl-form"`, `action="/meals/templates"`,
 		`name="name"`, `maxlength="60"`, "Which meals does it fill?", `name="fills" value="one"`, `name="fills" value="all"`, `<div class="mtpick-wrap"><fieldset class="choice mtpick">`, `name="mealtime" value="dinner"`,
 		`id="schedule"`, `class="every"`, `name="every"`, `min="1" max="52"`, `name="start"`, `class="weeks-hint"`, "<h2>Meals of the week</h2>",
-		`data-mt="breakfast"`, `name="tpl_7_dinner"`, `name="tpl_1_breakfast"`, "Save template", `class="savebar"`, "Week 46 · 09/11 – 15/11", "Week 45 · 08/11 – 14/11",
+		`data-mt="breakfast"`, `name="tpl_7_dinner"`, `name="tpl_1_breakfast"`, "Save template", `class="savebar"`, "Week 46 · 09.11. – 15.11.", "Week 45 · 08.11. – 14.11.",
 	} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("form lacks %q", want)
@@ -195,7 +195,7 @@ func TestAClashingTemplateIsRefusedNamingTheOtherEverythingTypedStaysAndNothingI
 	for _, want := range []string{
 		`Nothing was saved: this template clashes with “Week A” (see <a href="#schedule">When does it repeat?</a>). Everything you typed is still here.`,
 		`id="schedule" aria-invalid="true"`,
-		`“Week A” also fills dinner on Monday, Tuesday and Wednesday, first in week 47 (16/11 – 22/11/2026). Choose another start week or interval, or leave those days empty in one of the two templates.`,
+		`“Week A” also fills dinner on Monday, Tuesday and Wednesday, first in week 47 (16.11. – 22.11.2026). Choose another start week or interval, or leave those days empty in one of the two templates.`,
 		"Lentil soup", "Fish fingers", `value="Every week"`,
 	} {
 		if !strings.Contains(r.body, want) {
@@ -328,7 +328,7 @@ func TestTemplatePagesAreGermanInDuForm(t *testing.T) {
 	c := signedInAPI(t)
 	saveTemplate(t, c, weekBForm("Woche B", "2026-11-16", "2"), de)
 	for path, wants := range map[string][]string{
-		"/meals/templates":       {"<h1>Essensplan-Vorlagen</h1>", "Neue Vorlage", "Die nächsten Wochen", "<b>Abendessen</b> von Montag bis Mittwoch", "Alle 2 Wochen ab Woche 47 (16/11/2026)", "Zurück zum Essensplan"},
+		"/meals/templates":       {"<h1>Essensplan-Vorlagen</h1>", "Neue Vorlage", "Die nächsten Wochen", "<b>Abendessen</b> von Montag bis Mittwoch", "Alle 2 Wochen ab Woche 47 (16.11.2026)", "Zurück zum Essensplan"},
 		"/meals/templates/new":   {"Welche Mahlzeiten füllt sie?", "Eine Mahlzeit am Tag", "Alle Mahlzeiten des Tages", "Welche Mahlzeit?", "Wann kommt sie dran?", "Startwoche", "Mahlzeiten der Woche", "Vorlage speichern", "Zurück zu den Vorlagen"},
 		"/meals?week=2026-11-16": {"Vorlagen</a>", "Aus Vorlage"},
 	} {
@@ -419,5 +419,47 @@ func TestBackToTemplateOnAMealThatIsNotAdjustedAnyMoreStillSavesWhatWasTyped(t *
 	}
 	if list := mealsBetween(t, c, "2026-11-17", "2026-11-17"); len(list) != 1 || list[0]["text"] != "Lasagne" {
 		t.Fatalf("what was typed = %v", list)
+	}
+}
+
+// A clash that starts in week 53 names the year at both ends of its week.
+func TestAClashAcrossNewYearNamesBothYearsInEveryDateFormat(t *testing.T) {
+	for setting, want := range map[string]string{"dmy": "(28.12.2026 – 03.01.2027)", "mdy": "(12/28/2026 – 01/03/2027)"} {
+		t.Run(setting, func(t *testing.T) {
+			c := signedInAPI(t)
+			useDateFormat(t, c.b, setting)
+			saveTemplate(t, c, weekBForm("Week A", "2026-12-28", "2"), en)
+			r := saveTemplate(t, c, weekBForm("Every week", "2026-12-28", "1"), en)
+			if r.status != http.StatusConflict {
+				t.Fatalf("status = %d\n%s", r.status, r.body)
+			}
+			if !strings.Contains(r.body, "first in week 53 "+want) {
+				t.Errorf("page lacks %q\n%s", want, r.body)
+			}
+		})
+	}
+}
+
+// Month first: the menu, the options of the start week and the weeks hint.
+func TestTemplatePagesFollowTheMonthFirstDateFormat(t *testing.T) {
+	c := signedInAPI(t)
+	useDateFormat(t, c.b, "mdy")
+	saveTemplate(t, c, weekBForm("Week B", "2026-11-16", "2"), en)
+	menu := c.b.do(http.MethodGet, "/meals/templates", nil, en).body
+	for _, want := range []string{"Every 2 weeks from week 47 (11/16/2026) · next in week 47 (11/16 – 11/22)", "11/16 – 11/22", "11/09 – 11/15"} {
+		if !strings.Contains(menu, want) {
+			t.Errorf("menu lacks %q:\n%s", want, menu)
+		}
+	}
+	bad := weekBForm("", "2026-11-16", "2")
+	form := saveTemplate(t, c, bad, en).body
+	if want := `then week <b>2</b> of 2027 (01/11/2027), and so on.`; !strings.Contains(form, want) {
+		t.Errorf("form lacks %q:\n%s", want, form)
+	}
+	if !strings.Contains(form, `data-date-format="mdy"`) {
+		t.Errorf("form does not tell the script the format:\n%s", form)
+	}
+	if strings.Contains(form, "16.11.") {
+		t.Errorf("a day-first date is left on the form:\n%s", form)
 	}
 }

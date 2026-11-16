@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"html"
 	"html/template"
 	"io"
 	"io/fs"
@@ -85,23 +86,24 @@ type PublicHTTPS interface {
 }
 
 type server struct {
-	db        *store.DB
-	pki       *pki.Store
-	public    PublicHTTPS
-	httpsPort string
-	now       func() time.Time
-	i18n      *i18n.Bundle
-	pages     *template.Template
-	logger    *slog.Logger
-	limiter   *loginLimiter
-	opens     *loginLimiter // pairing screens opened, per client address
-	sync      *calsync.Service
-	weather   *weather.Service
-	live      time.Duration
-	countWait time.Duration
-	done      <-chan struct{}
-	updateDir string
-	rolled    sync.Map // household id -> the day its meal plan calendar was last rolled forward
+	db         *store.DB
+	pki        *pki.Store
+	public     PublicHTTPS
+	httpsPort  string
+	now        func() time.Time
+	i18n       *i18n.Bundle
+	pages      *template.Template
+	logger     *slog.Logger
+	limiter    *loginLimiter
+	opens      *loginLimiter // pairing screens opened, per client address
+	sync       *calsync.Service
+	weather    *weather.Service
+	live       time.Duration
+	countWait  time.Duration
+	done       <-chan struct{}
+	updateDir  string
+	flashTexts flashTexts
+	rolled     sync.Map // household id -> the day its meal plan calendar was last rolled forward
 }
 
 // New returns the box's root HTTP handler.
@@ -165,11 +167,18 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /otp", s.handleOTPPage)
 	mux.HandleFunc("POST /otp/recovery-codes", s.handleRecoveryCodesNew)
 	mux.HandleFunc("POST /otp/reset/{id}", s.handleOTPReset)
+	mux.HandleFunc("GET /sessions", s.handleSessionsPage)
+	mux.HandleFunc("GET /sessions/{id}", s.handleSessionPage)
+	mux.HandleFunc("POST /sessions/{id}/end", s.handleSessionEnd)
 	mux.HandleFunc("GET /login", s.handleLoginForm)
 	mux.HandleFunc("POST /login", s.handleLoginSubmit)
 	mux.HandleFunc("POST /logout", s.handleLogout)
 	mux.HandleFunc("POST /language", s.handleLanguageSwitch)
 	mux.HandleFunc("GET /{$}", s.handleHome)
+	mux.HandleFunc("POST /first-steps/hide", s.handleFirstStepsHide)
+	mux.HandleFunc("POST /first-steps/show", s.handleFirstStepsShow)
+	mux.HandleFunc("POST /first-steps/skip", s.handleFirstStepSkip)
+	mux.HandleFunc("POST /first-steps/undo", s.handleFirstStepUndo)
 	mux.HandleFunc("GET /calendar", s.handleCalendarWeek)
 	mux.HandleFunc("GET /calendar/search", s.handleCalendarSearch)
 	mux.HandleFunc("GET /calendar/new", s.handleEventNew)
@@ -179,8 +188,10 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /calendar/events/{id}/delete", s.handleEventDelete)
 	mux.HandleFunc("GET /calendars", s.handleCalendarsPage)
 	mux.HandleFunc("POST /calendars", s.handleCalendarAdd)
+	mux.HandleFunc("GET /calendars/{id}", s.handleCalendarPage)
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
+	mux.HandleFunc("GET /connections/new", s.handleConnectNew)
 	mux.HandleFunc("POST /calendars/{id}/waste", s.handleCalendarWaste)
 	mux.HandleFunc("POST /notes", s.handleNoteSave)
 	mux.HandleFunc("GET /notes/{day}", s.handleNotePage)
@@ -189,14 +200,23 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /connections", s.handleConnect)
 	mux.HandleFunc("GET /connections/{id}", s.handleConnectionPage)
 	mux.HandleFunc("POST /connections/{id}/calendars", s.handleConnectionCalendars)
+	mux.HandleFunc("POST /connections/{id}/credentials", s.handleConnectionCredentials)
 	mux.HandleFunc("POST /connections/{id}/delete", s.handleConnectionDelete)
 	mux.HandleFunc("GET /caldav", s.handleCalDAVPage)
 	mux.HandleFunc("POST /caldav/tokens", s.handleDeviceTokenCreate)
 	mux.HandleFunc("POST /caldav/profile", s.handleIOSProfile)
+	mux.HandleFunc("GET /caldav/tokens/{id}", s.handleDeviceTokenPage)
 	mux.HandleFunc("POST /caldav/tokens/{id}/revoke", s.handleDeviceTokenRevoke)
 	mux.HandleFunc("POST /caldav/calendars/{id}/share", s.handleCalendarShare)
 	mux.HandleFunc("GET /people", s.handlePeoplePage)
 	mux.HandleFunc("POST /people", s.handlePersonAdd)
+	mux.HandleFunc("GET /people/{id}/invitation", s.handleInvitationPage)
+	mux.HandleFunc("POST /people/{id}/invitation", s.handleInvitationCreate)
+	mux.HandleFunc("POST /people/{id}/invitation/withdraw", s.handleInvitationWithdraw)
+	mux.HandleFunc("GET /invite/{token}", s.handleInviteWelcome)
+	mux.HandleFunc("GET /invite/{token}/account", s.handleInviteAccountForm)
+	mux.HandleFunc("POST /invite/{token}/account", s.handleInviteAccountSubmit)
+	mux.HandleFunc("GET /i/{token}", s.handleInviteShort)
 	mux.HandleFunc("GET /people/{id}", s.handlePersonPage)
 	mux.HandleFunc("POST /people/{id}", s.handlePersonSave)
 	mux.HandleFunc("POST /people/{id}/move", s.handlePersonMove)
@@ -210,7 +230,36 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/stars", s.handleStarBooking)
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
+	mux.HandleFunc("POST /tasks/{id}/stars", s.handleTaskStars)
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
+	mux.HandleFunc("POST /tasks/{id}/routine", s.handleTaskLeaveRoutine)
+	mux.HandleFunc("GET /routines/new", s.handleRoutineNewPage)
+	mux.HandleFunc("POST /routines", s.handleRoutineCreate)
+	mux.HandleFunc("GET /routines/{id}", s.handleRoutinePage)
+	mux.HandleFunc("POST /routines/{id}/move", s.handleRoutineMove)
+	mux.HandleFunc("POST /routines/{id}/tasks", s.handleRoutineAddTask)
+	mux.HandleFunc("POST /routines/{id}/settings", s.handleRoutineSettings)
+	mux.HandleFunc("POST /routines/{id}/delete", s.handleRoutineDissolve)
+	mux.HandleFunc("POST /routines/{id}/template", s.handleRoutineSaveTemplate)
+	mux.HandleFunc("GET /routines/templates", s.handleRoutineTemplates)
+	mux.HandleFunc("GET /routines/templates/{id}", s.handleRoutineTemplatePage)
+	mux.HandleFunc("POST /routines/templates/{id}/move", s.handleTemplateMove)
+	mux.HandleFunc("POST /routines/templates/{id}/steps", s.handleTemplateAddStep)
+	mux.HandleFunc("POST /routines/templates/{id}/settings", s.handleTemplateSettings)
+	mux.HandleFunc("POST /routines/templates/{id}/delete", s.handleRoutineTemplateDelete)
+	mux.HandleFunc("GET /routines/templates/{id}/steps/{step}", s.handleTemplateStepPage)
+	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}", s.handleTemplateStepSave)
+	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}/delete", s.handleTemplateStepDelete)
+	mux.HandleFunc("GET /lists", s.handleListsPage)
+	mux.HandleFunc("POST /lists", s.handleListCreate)
+	mux.HandleFunc("GET /lists/{id}", s.handleListPage)
+	mux.HandleFunc("POST /lists/{id}/settings", s.handleListSettings)
+	mux.HandleFunc("POST /lists/{id}/delete", s.handleListDelete)
+	mux.HandleFunc("POST /lists/{id}/entries", s.handleEntryAdd)
+	mux.HandleFunc("POST /lists/{id}/entries/{entry}/done", s.handleEntryDone)
+	mux.HandleFunc("POST /lists/{id}/entries/{entry}/delete", s.handleEntryDelete)
+	mux.HandleFunc("POST /lists/{id}/entries/{entry}/move", s.handleEntryMove)
+	mux.HandleFunc("POST /lists/{id}/completed/delete", s.handleTickedDelete)
 	mux.HandleFunc("GET /meals", s.handleMealsPage)
 	mux.HandleFunc("POST /meals", s.handleMealsSave)
 	mux.HandleFunc("GET /meals/templates", s.handleTemplatesPage)
@@ -219,6 +268,13 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /meals/templates/{id}", s.handleTemplatePage)
 	mux.HandleFunc("POST /meals/templates/{id}", s.handleTemplateSave)
 	mux.HandleFunc("POST /meals/templates/{id}/delete", s.handleTemplateDelete)
+	mux.HandleFunc("GET /mcp", s.handleMCPPage)
+	mux.HandleFunc("POST /mcp", s.handleMCPPost)
+	mux.HandleFunc("DELETE /mcp", s.handleMCPEndpoint)
+	mux.HandleFunc("GET /mcp/tokens/new", s.handleMCPTokenNew)
+	mux.HandleFunc("POST /mcp/tokens", s.handleMCPTokenCreate)
+	mux.HandleFunc("GET /mcp/tokens/{id}", s.handleMCPTokenPage)
+	mux.HandleFunc("POST /mcp/tokens/{id}/revoke", s.handleMCPTokenRevoke)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
@@ -228,11 +284,13 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /display/tasks/{id}/done", s.handleDisplayTaskDone)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
+	mux.HandleFunc("GET /displays/{id}", s.handleDisplayPage)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
 	mux.HandleFunc("GET /settings", s.handleSettingsHub)
 	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
 	mux.HandleFunc("GET /phones", s.handlePhonesPage)
+	mux.HandleFunc("GET /phones/{id}", s.handlePhonePage)
 	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)
 	mux.HandleFunc("POST /phones/pairings/{id}/confirm", s.handlePhonePairingConfirm)
 	mux.HandleFunc("POST /phones/{id}/revoke", s.handlePhoneRevoke)
@@ -266,7 +324,6 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/login", http.StatusSeeOther)
 		return
 	}
-	// The family view arrives with work package 5.
 	h, err := s.db.HomeHousehold()
 	if err != nil {
 		s.fail(w, "household", err)
@@ -281,8 +338,10 @@ func parsePages() *template.Template {
 		"t":    func(string) string { return "" },
 		"tf":   func(string, ...string) string { return "" },
 		"dict": dict,
+		"list": func(v ...any) []any { return v },
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
+		"rich": rich,
 		"repl": repl,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
@@ -298,7 +357,7 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		data = map[string]any{}
 	}
 	data["Lang"] = lang
-	for _, k := range []string{"Error", "ErrorField"} { // templates compare them
+	for _, k := range []string{"Error", "ErrorField", "FieldError", "Flash"} { // templates compare them
 		if _, ok := data[k]; !ok {
 			data[k] = ""
 		}
@@ -306,14 +365,33 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
 		fr.setLanguage(lang, r)
-		if key, arg := s.takeFlash(w, r); key == "flash.lang.error" {
+		if detailPages[name] && fr.Back { // a detail page links to its own overview, not to the hub
+			fr.Back, fr.BackHref, fr.BackLabel = false, "", ""
+		}
+		if href, _ := data["BackHref"].(string); href != "" { // a page that leads back to a named page
+			text, _ := data["BackText"].(string)
+			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, href, "", text
+		}
+		key, arg := s.takeFlash(w, r) // always consumed, so it cannot show later
+		switch own, _ := data["SuccessKey"].(string); {
+		case key == "flash.lang.error":
 			fr.Error = s.i18n.T(lang, key)
-		} else if key != "" {
-			fr.Success = s.successText(lang, key, arg)
-		} else if key, ok := data["SuccessKey"].(string); ok {
-			fr.Success = s.i18n.T(lang, key) // a page that shows the result itself
-		} else if text, ok := data["SuccessText"].(string); ok {
-			fr.Success = text // a page that shows the result itself, with a name in it
+		case key != "" && status >= http.StatusBadRequest:
+			// A failed form shows no success line, not even one left over from before.
+		case data["SuccessText"] != nil:
+			text, _ := data["SuccessText"].(string)
+			fr.Success = template.HTML(html.EscapeString(text)) // a page that shows the result itself, and names the thing
+		case data["SuccessMsg"] != nil:
+			msg, _ := data["SuccessMsg"].(i18n.Message)
+			fr.Success = template.HTML(html.EscapeString(s.i18n.Format(lang, msg))) // the same, with values filled in
+		case own != "":
+			fr.Success = template.HTML(html.EscapeString(s.i18n.T(lang, own))) // a page that shows the result itself
+		case key != "":
+			fr.Success = s.successHTML(lang, key, arg)
+			data["Flash"] = key
+		}
+		if inline, _ := data["SuccessInline"].(bool); inline {
+			data["Success"], fr.Success = fr.Success, "" // the page places the line itself
 		}
 		data["Frame"] = fr
 	}

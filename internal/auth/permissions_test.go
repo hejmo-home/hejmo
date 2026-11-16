@@ -94,3 +94,48 @@ func TestCalendarsScopeCoversOnlyCalendars(t *testing.T) {
 		}
 	}
 }
+
+// Ticket 7.7 (ADR 0018): an MCP token's rights are three-way choices per area.
+func TestMCPScopesFromAreaChoices(t *testing.T) {
+	got, err := auth.MCPScopes(map[string]auth.MCPLevel{"events": auth.MCPRead, "lists": auth.MCPWrite, "tasks": auth.MCPNone, "meals": auth.MCPRead})
+	if err != nil || got != "events:read lists meals:read" {
+		t.Fatalf("auth.MCPScopes = %q, %v", got, err)
+	}
+	if err := auth.ValidateScopes(got); err != nil {
+		t.Errorf("the scopes are not valid: %v", err)
+	}
+	// Whatever is chosen, an MCP token never reaches tokens, settings, people or displays.
+	for _, res := range []string{"tokens", "settings", "people", "displays", "calendars"} {
+		if auth.ScopesAllow(got, auth.Perm(res, auth.Read)) {
+			t.Errorf("scopes %q allow reading %s", got, res)
+		}
+	}
+	if auth.ScopesAllow(got, auth.Perm("events", auth.Write)) || !auth.ScopesAllow(got, auth.Perm("lists", auth.Delete)) {
+		t.Errorf("scopes %q mix up read only and read and change", got)
+	}
+}
+
+func TestMCPScopesNeedOneAreaAndKnowOnlyOurAreas(t *testing.T) {
+	if _, err := auth.MCPScopes(map[string]auth.MCPLevel{"events": auth.MCPNone, "lists": auth.MCPNone, "tasks": auth.MCPNone, "meals": auth.MCPNone}); err == nil {
+		t.Error("a token that may do nothing was accepted")
+	}
+	if _, err := auth.MCPScopes(map[string]auth.MCPLevel{}); err == nil {
+		t.Error("no choice was accepted")
+	}
+	if _, err := auth.MCPScopes(map[string]auth.MCPLevel{"events": auth.MCPRead, "settings": auth.MCPWrite}); err == nil {
+		t.Error("an area outside MCP was accepted")
+	}
+	if _, err := auth.MCPScopes(map[string]auth.MCPLevel{"events": "sometimes"}); err == nil {
+		t.Error("an unknown level was accepted")
+	}
+}
+
+func TestMCPAccessReadsScopesBackAsAreaLevels(t *testing.T) {
+	got := auth.MCPAccess("events:read lists meals:read")
+	want := map[string]auth.MCPLevel{"events": auth.MCPRead, "lists": auth.MCPWrite, "tasks": auth.MCPNone, "meals": auth.MCPRead}
+	for area, level := range want {
+		if got[area] != level {
+			t.Errorf("%s = %q, want %q", area, got[area], level)
+		}
+	}
+}

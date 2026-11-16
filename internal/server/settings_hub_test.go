@@ -37,7 +37,7 @@ func hubTargets(body string) []string {
 // 5.18: the navigation holds everyday screens only; setup screens sit under Settings (ADR 0017).
 func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
 	b := signedInBox(t)
-	want := []string{"/", "/calendar", "/tasks", "/meals", "/settings"}
+	want := []string{"/", "/calendar", "/tasks", "/meals", "/lists", "/settings"}
 	for _, page := range []string{"/", "/tasks", "/settings", "/calendars", "/displays"} {
 		got := navTargets(t, b.get(page).body)
 		if strings.Join(got, " ") != strings.Join(want, " ") {
@@ -48,7 +48,7 @@ func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
 
 // hubPages are the setup screens the Settings hub holds. Add a new hub entry here; the tests
 // below also check that the hub shows nothing this list lacks.
-var hubPages = []string{"/calendars", "/caldav", "/displays", "/phones", "/people", "/settings/household", "/otp"}
+var hubPages = []string{"/calendars", "/caldav", "/displays", "/phones", "/mcp", "/people", "/settings/household", "/otp", "/sessions"}
 
 // 5.18: every setup page is reachable from the Settings hub.
 func TestSettingsHubLinksEverySetupPage(t *testing.T) {
@@ -67,7 +67,7 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 			t.Errorf("hub lacks a link to %s: %v", want, got)
 		}
 	}
-	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Phones", "People", "Household", "One-time codes"} {
+	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Phones", "People", "Household", "One-time codes", "Signed-in devices"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("hub lacks %q", want)
 		}
@@ -90,6 +90,11 @@ func TestSetupPagesLinkBackToSettings(t *testing.T) {
 		body := getEN(b, page).body
 		if !strings.Contains(body, `<a class="back" href="/settings">`) {
 			t.Errorf("%s has no link back to Settings", page)
+		}
+		// Ticket 111: the link sits inside main. As a grid item of the frame it
+		// broke the 1024 px layout.
+		if at, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main`); at < main {
+			t.Errorf("%s: the link back to Settings is outside main", page)
 		}
 		if !strings.Contains(body, `<a href="/settings" aria-current="page"`) {
 			t.Errorf("%s does not mark Settings as the current section", page)
@@ -136,12 +141,12 @@ func TestChildSeesNoSettingsPages(t *testing.T) {
 	}
 }
 
-// 5.18: at 375 px the navigation is one row with targets of at least 44 px.
-func TestNavigationFitsOneRowWithTouchTargets(t *testing.T) {
+// 5.18: at 375 px the navigation wraps onto further rows instead of scrolling (design pass 2 on 6.1), with targets of at least 44 px.
+func TestNavigationWrapsWithTouchTargets(t *testing.T) {
 	css := string(mustStatic(t, "static/hejmo.css"))
 	m := regexp.MustCompile(`\.frame-nav ul \{([^}]*)\}`).FindStringSubmatch(css)
-	if m == nil || !strings.Contains(m[1], "flex-wrap: nowrap") || !strings.Contains(m[1], "overflow-x: auto") {
-		t.Errorf("the navigation is not a single scrollable row: %v", m)
+	if m == nil || !strings.Contains(m[1], "flex-wrap: wrap") || strings.Contains(m[1], "overflow-x") {
+		t.Errorf("the navigation does not wrap: %v", m)
 	}
 	a := regexp.MustCompile(`\.frame-nav a \{([^}]*)\}`).FindStringSubmatch(css)
 	if a == nil || !strings.Contains(a[1], "min-height: var(--touch-target)") {

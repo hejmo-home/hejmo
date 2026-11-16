@@ -1,0 +1,20 @@
+{{template "head" (dict "Lang" .Lang "Title" .Session.Device "Frame" .Frame)}}
+  <h1>{{.Session.Device}}{{if .Session.Own}} <span class="tag">{{t "sessions.this"}}</span>{{end}}</h1>
+  <dl class="facts">
+    <dt>{{t "sessions.person"}}</dt><dd><span class="marker" data-person="{{.Session.Slot}}" data-shape="{{.Session.Shape}}" aria-hidden="true"></span>{{.Session.Person}}</dd>
+    <dt>{{t "sessions.device"}}</dt><dd>{{.Session.Device}}</dd>
+    <dt>{{t "sessions.last_used"}}</dt><dd>{{.Session.LastUsed}}</dd>
+    <dt>{{t "sessions.signed_in"}}</dt><dd>{{.Session.SignedInAt}}</dd>
+    <dt>{{t "sessions.ends"}}</dt><dd>{{.Session.Ends}}</dd>
+  </dl>
+  {{if .Session.Own}}
+  <p class="lead">{{t "sessions.own"}}</p>
+  <form method="post" action="/logout"><button class="button" type="submit">{{t "home.logout"}}</button></form>
+  {{else}}
+  {{template "dangerOpen" (dict "Label" (t "sessions.end"))}}
+    <p>{{tf "sessions.end.explain" "device" .Session.Device "person" .Session.Person}}</p>
+    <p>{{t "sessions.end.keep"}}</p>
+    <form method="post" action="/sessions/{{.Session.ID}}/end"><button class="button danger" type="submit">{{t "sessions.end.confirm"}}</button></form>
+  {{template "dangerClose"}}
+  {{end}}
+{{template "foot"}}

@@ -28,6 +28,9 @@ type APIToken struct {
 	Hash     string
 	PersonID string
 	Scopes   string
+	// MCP marks a token created for the MCP server (ticket 7.7): it works
+	// there and nowhere else, and no other token works there.
+	MCP bool
 	// Filled by APITokens only.
 	PersonName string
 	Created    time.Time
@@ -97,10 +100,11 @@ func (db *DB) scanAccount(row *sql.Row) (Account, error) {
 	return a, err
 }
 
-// CreateSession stores a browser session by token hash.
-func (db *DB) CreateSession(tokenHash, personID string, expires time.Time) error {
-	_, err := db.sql.Exec(`INSERT INTO sessions (token_hash, person_id, created_at, expires_at) VALUES (?, ?, ?, ?)`,
-		tokenHash, personID, now(), expires.UTC().Format(time.RFC3339))
+// CreateSession stores a browser session by token hash. device holds the
+// derived device and browser keys, never the raw User-Agent.
+func (db *DB) CreateSession(tokenHash, personID, device string, created, expires time.Time) error {
+	_, err := db.sql.Exec(`INSERT INTO sessions (id, token_hash, person_id, device, created_at, last_seen_at, expires_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		newID(), tokenHash, personID, device, stamp(created), stamp(created), stamp(expires))
 	return err
 }
 
@@ -135,8 +139,8 @@ func (db *DB) DeleteSession(tokenHash string) error {
 // CreateAPIToken stores a token (only its hash).
 func (db *DB) CreateAPIToken(t APIToken) (APIToken, error) {
 	t.ID = newID()
-	_, err := db.sql.Exec(`INSERT INTO api_tokens (id, name, token_hash, person_id, scopes, created_at) VALUES (?, ?, ?, ?, ?, ?)`,
-		t.ID, t.Name, t.Hash, t.PersonID, t.Scopes, now())
+	_, err := db.sql.Exec(`INSERT INTO api_tokens (id, name, token_hash, person_id, scopes, mcp, created_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
+		t.ID, t.Name, t.Hash, t.PersonID, t.Scopes, t.MCP, now())
 	return t, err
 }
 
@@ -144,8 +148,8 @@ func (db *DB) CreateAPIToken(t APIToken) (APIToken, error) {
 func (db *DB) APITokenByHash(hash string) (APIToken, error) {
 	var t APIToken
 	var used sql.NullString
-	err := db.sql.QueryRow(`SELECT id, name, token_hash, person_id, scopes, last_used_at FROM api_tokens
-		WHERE token_hash = ? AND revoked_at IS NULL`, hash).Scan(&t.ID, &t.Name, &t.Hash, &t.PersonID, &t.Scopes, &used)
+	err := db.sql.QueryRow(`SELECT id, name, token_hash, person_id, scopes, mcp, last_used_at FROM api_tokens
+		WHERE token_hash = ? AND revoked_at IS NULL`, hash).Scan(&t.ID, &t.Name, &t.Hash, &t.PersonID, &t.Scopes, &t.MCP, &used)
 	if errors.Is(err, sql.ErrNoRows) {
 		return APIToken{}, ErrNotFound
 	}
@@ -156,7 +160,7 @@ func (db *DB) APITokenByHash(hash string) (APIToken, error) {
 // APITokens lists a household's active (not revoked) tokens, oldest first.
 // The token hash is left out.
 func (db *DB) APITokens(householdID string) ([]APIToken, error) {
-	rows, err := db.sql.Query(`SELECT t.id, t.name, t.person_id, p.name, t.scopes, t.created_at, t.last_used_at
+	rows, err := db.sql.Query(`SELECT t.id, t.name, t.person_id, p.name, t.scopes, t.mcp, t.created_at, t.last_used_at
 		FROM api_tokens t JOIN household_members m ON m.person_id = t.person_id JOIN people p ON p.id = t.person_id
 		WHERE m.household_id = ? AND t.revoked_at IS NULL ORDER BY t.created_at, t.rowid`, householdID)
 	if err != nil {
@@ -168,7 +172,7 @@ func (db *DB) APITokens(householdID string) ([]APIToken, error) {
 		var t APIToken
 		var created string
 		var used sql.NullString
-		if err := rows.Scan(&t.ID, &t.Name, &t.PersonID, &t.PersonName, &t.Scopes, &created, &used); err != nil {
+		if err := rows.Scan(&t.ID, &t.Name, &t.PersonID, &t.PersonName, &t.Scopes, &t.MCP, &created, &used); err != nil {
 			return nil, err
 		}
 		t.Created, t.LastUsed = parseStamp(sql.NullString{String: created, Valid: true}), parseStamp(used)

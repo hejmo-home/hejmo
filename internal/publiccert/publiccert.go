@@ -407,28 +407,40 @@ func (m *Manager) recordRenewal(err error) {
 	}
 }
 
-func invalid(format string, args ...any) error {
-	return fmt.Errorf("%w: %s", ErrInvalid, fmt.Sprintf(format, args...))
+// InvalidError is an ErrInvalid that names the form field of the wizard it
+// belongs to: token, name, lan_ip, issuer or eab (the account keys of Actalis).
+type InvalidError struct {
+	Field string
+	msg   string
+}
+
+func (e *InvalidError) Error() string { return ErrInvalid.Error() + ": " + e.msg }
+
+// Is makes errors.Is(err, ErrInvalid) true.
+func (e *InvalidError) Is(target error) bool { return target == ErrInvalid }
+
+func invalid(field, format string, args ...any) error {
+	return &InvalidError{Field: field, msg: fmt.Sprintf(format, args...)}
 }
 
 func (r Request) validate() error {
 	if r.Token == "" {
-		return invalid("DNS token missing")
+		return invalid("token", "DNS token missing")
 	}
 	if !validName(r.Name) {
-		return invalid("%q is not a valid DNS name", r.Name)
+		return invalid("name", "%q is not a valid DNS name", r.Name)
 	}
 	if ip, err := netip.ParseAddr(r.LANIP); err != nil || ip.IsUnspecified() || ip.IsMulticast() {
-		return invalid("%q is not a valid LAN address", r.LANIP)
+		return invalid("lan_ip", "%q is not a valid LAN address", r.LANIP)
 	}
 	switch r.Issuer {
 	case LetsEncrypt:
 	case Actalis:
 		if r.EABKeyID == "" || r.EABHMAC == "" {
-			return invalid("Actalis needs the key ID and HMAC key of an Actalis account")
+			return invalid("eab", "Actalis needs the key ID and HMAC key of an Actalis account")
 		}
 	default:
-		return invalid("unknown issuer %q", r.Issuer)
+		return invalid("issuer", "unknown issuer %q", r.Issuer)
 	}
 	return nil
 }

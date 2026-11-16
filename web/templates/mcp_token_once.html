@@ -1,0 +1,15 @@
+{{template "head" (dict "Lang" .Lang "Title" .Name "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/mcp" "Text" (t "mcp.back"))}}
+  <h1>{{.Name}}</h1>
+  <section class="once" aria-labelledby="once-h">
+    <p id="once-h"><strong>{{t "mcp.once.lead"}}</strong> {{t "mcp.once.note"}}</p>
+    <p class="secret" data-device-token="{{.Token}}">{{.Token}}</p>
+    <div class="row">
+      <button class="button secondary" type="button" data-copy="{{.Token}}" data-copied="{{t "mcp.once.copied"}}" hidden>{{t "mcp.once.copy"}}</button>
+    </div>
+    {{template "facts" (list (dict "Label" (t "mcp.address") "Value" .Address) (dict "Label" (t "mcp.once.token") "Value" (t "mcp.once.token_value")) (dict "Label" (t "mcp.fact.writes") "Value" .Writes) (dict "Label" (t "mcp.fact.reads") "Value" .Reads))}}
+    <p class="hint">{{t "mcp.once.where"}} <a href="https://github.com/hejmo-home/hejmo/blob/main/docs/mcp.md" rel="noopener">{{t "mcp.once.guide"}}</a></p>
+  </section>
+  <a class="button" href="/mcp/tokens/{{.ID}}">{{t "mcp.once.done"}}</a>
+  <script src="/static/token-copy.js" defer></script>
+{{template "foot"}}

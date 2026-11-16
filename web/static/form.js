@@ -49,7 +49,7 @@ document.addEventListener("change", function (e) {
   function isoYear(ms) { return new Date(ms + 3 * DAY).getUTCFullYear(); }
   function isoWeek(ms) { var th = ms + 3 * DAY; return Math.floor((th - Date.UTC(new Date(th).getUTCFullYear(), 0, 1)) / WEEK) + 1; }
   function pad(n) { return (n < 10 ? "0" : "") + n; }
-  function date(ms) { var d = new Date(ms); return pad(d.getUTCDate()) + "/" + pad(d.getUTCMonth() + 1) + "/" + d.getUTCFullYear(); }
+  function date(ms) { var d = new Date(ms), day = pad(d.getUTCDate()), mon = pad(d.getUTCMonth() + 1); return hint.getAttribute("data-date-format") === "mdy" ? mon + "/" + day + "/" + d.getUTCFullYear() : day + "." + mon + "." + d.getUTCFullYear(); }
   function esc(t) { return String(t).replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;"); }
   function build() {
     var n = parseInt(every.value, 10), st = parse(start.value), today = monday(parse(hint.getAttribute("data-today")));
@@ -223,6 +223,88 @@ document.addEventListener("change", function (e) {
     if (input && input.form && (input.name === "color" || input.name === "shape") && input.hasAttribute("data-taken-with")) sync(input.form);
   });
 })();
+
+// Busy state (ticket 133): a form that takes a while (getting the certificate
+// can take up to 3 minutes) greys out its submit button, says what happens in
+// words and shows the hidden check line. Nothing animates (E-Ink). Without
+// this script the form works the same, the page just waits.
+(function () {
+  function reset(form) {
+    var button = form.querySelector("[data-busy-text]");
+    if (button && button.hasAttribute("data-idle-text")) {
+      button.disabled = false;
+      button.textContent = button.getAttribute("data-idle-text");
+    }
+    var line = form.querySelector('[data-hook="busy"]');
+    if (line) line.hidden = true;
+  }
+  document.addEventListener("submit", function (e) {
+    var form = e.target;
+    if (!form.hasAttribute || !form.hasAttribute("data-busy")) return;
+    var button = form.querySelector("[data-busy-text]");
+    if (!button) return;
+    button.setAttribute("data-idle-text", button.textContent);
+    // Disable after the browser has collected the form, so nothing is lost.
+    setTimeout(function () {
+      button.disabled = true;
+      button.textContent = button.getAttribute("data-busy-text");
+    }, 0);
+    var line = form.querySelector('[data-hook="busy"]');
+    if (line) line.hidden = false;
+  });
+  // Back from the page cache: the form is usable again.
+  window.addEventListener("pageshow", function (e) {
+    if (!e.persisted) return;
+    Array.prototype.forEach.call(document.querySelectorAll("form[data-busy]"), reset);
+  });
+})();
+
+// Password with a "Show" button in words (ticket 133).
+document.addEventListener("click", function (e) {
+  var button = e.target.closest && e.target.closest("[data-pw-toggle]");
+  if (!button) return;
+  var input = button.closest(".pw").querySelector("input");
+  var show = input.type === "password";
+  input.type = show ? "text" : "password";
+  button.textContent = button.getAttribute(show ? "data-hide-text" : "data-show-text");
+  button.setAttribute("aria-pressed", show ? "true" : "false");
+});
+
+// "Print" on the recovery codes page (ticket 133); the print styles show only the codes.
+document.addEventListener("click", function (e) {
+  if (e.target.closest && e.target.closest("[data-print]")) window.print();
+});
+
+// "Copy" button (ticket 133, design pass 2): puts the text of data-copy on the
+// clipboard and says "Copied" in words (data-copied-text) for a moment. The box
+// may be opened over plain http, where navigator.clipboard does not exist: a
+// hidden field and the old copy command do the same there.
+document.addEventListener("click", function (e) {
+  var button = e.target.closest && e.target.closest("[data-copy]");
+  if (!button) return;
+  var text = button.getAttribute("data-copy");
+  function said() {
+    var idle = button.getAttribute("data-idle-text") || button.textContent;
+    button.setAttribute("data-idle-text", idle);
+    button.textContent = button.getAttribute("data-copied-text") || idle;
+    setTimeout(function () { button.textContent = idle; }, 2000);
+  }
+  function fallback() {
+    var field = document.createElement("textarea");
+    field.value = text;
+    field.setAttribute("readonly", "");
+    field.style.position = "fixed";
+    field.style.opacity = "0";
+    document.body.appendChild(field);
+    field.select();
+    var ok = false;
+    try { ok = document.execCommand("copy"); } catch (err) { ok = false; }
+    document.body.removeChild(field);
+    if (ok) said();
+  }
+  if (navigator.clipboard && navigator.clipboard.writeText) navigator.clipboard.writeText(text).then(said, fallback);
+  else fallback();
+});
 
 // Language switcher (ticket 134). The menu is a <details> and works without
 // this script; the script adds what a native <details> lacks: Escape closes it

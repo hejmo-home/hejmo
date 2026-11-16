@@ -80,7 +80,7 @@ func TestPersonalViewTasksTile(t *testing.T) {
 	body := f.personalPage(t, "en", "Mia", 14, 9).body
 	for _, want := range []string{
 		`class="pv" data-person="`, `<aside class="pv-tasks"`, `<div class="tasks-head"><div class="lab">Tasks today</div><div class="count">1 of 3 tasks done</div><div class="progress" role="img" aria-label="1/3">`,
-		`<div class="list">`, `<div class="lab">Morning</div>`, `<div class="lab">Any time today</div>`, `<div class="lab">Evening</div>`,
+		`<div class="list">`, `</svg>Morning</div>`, `<div class="lab">Any time today</div>`, `</svg>Evening</div>`, `class="icon part"`,
 		`<span class="box" aria-hidden="true"><svg`, `<span class="emoji" aria-hidden="true">🪥</span><span class="title">Teeth</span>`,
 	} {
 		if !strings.Contains(body, want) {

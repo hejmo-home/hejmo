@@ -272,6 +272,12 @@ func mealCalendarID(tx *sql.Tx, householdID, name string) (string, error) {
 	return id, err
 }
 
+// CountMeals says how many entries the meal plan has, without loading them.
+func (db *DB) CountMeals(householdID string) (n int, err error) {
+	err = db.sql.QueryRow(`SELECT COUNT(*) FROM meal_plan WHERE household_id = ?`, householdID).Scan(&n)
+	return n, err
+}
+
 // Meals lists the entries from one day to another, both included (YYYY-MM-DD),
 // by day and then by mealtime in the order of the day. It reads the hand-typed
 // entries only, without templates or adjustments; the API and pages use

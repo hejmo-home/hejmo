@@ -102,15 +102,15 @@ func TestDarkThemeOnABlackAndWhiteEInkDisplayUsesTheDarkPalette(t *testing.T) {
 
 func TestDisplaysPageOffersThemeAndOffsets(t *testing.T) {
 	f := newFamilyBox(t, "screen")
-	p := f.get("/displays").body
-	for _, want := range []string{`name="theme"`, `<option value="auto" selected`, `name="sunrise_offset"`, `name="sunset_offset"`, `min="-180"`, `max="180"`} {
+	p := f.get("/displays/" + f.displayID(t)).body
+	for _, want := range []string{`name="theme"`, `value="auto" checked`, `name="sunrise_offset"`, `name="sunset_offset"`, `min="-180"`, `max="180"`} {
 		if !strings.Contains(p, want) {
 			t.Errorf("displays page misses %s", want)
 		}
 	}
 	f.setTheme(t, "dark", "-20", "35")
-	p = f.get("/displays").body
-	if !strings.Contains(p, `<option value="dark" selected`) || !strings.Contains(p, `value="-20"`) || !strings.Contains(p, `value="35"`) {
+	p = f.get("/displays/" + f.displayID(t)).body
+	if !strings.Contains(p, `value="dark" checked`) || !strings.Contains(p, `value="-20"`) || !strings.Contains(p, `value="35"`) {
 		t.Errorf("saved theme not shown:\n%s", p)
 	}
 }

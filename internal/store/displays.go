@@ -9,6 +9,7 @@ import (
 	"math/big"
 	"strings"
 	"time"
+	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/quiet"
 	"github.com/hejmo-home/hejmo/internal/theme"
@@ -241,6 +242,20 @@ func (db *DB) RevokeDisplay(householdID, id string, at time.Time) error {
 // TouchDisplay records that the display with tokenHash was seen at t.
 func (db *DB) TouchDisplay(tokenHash string, t time.Time) error {
 	return expectOne(db.sql.Exec(`UPDATE displays SET last_seen_at = ? WHERE token_hash = ? AND revoked_at IS NULL`, stamp(t), tokenHash))
+}
+
+// SetDisplayIdentity renames one of the household's paired displays and sets
+// its type. The name is trimmed; a refused field is a *FieldError.
+func (db *DB) SetDisplayIdentity(householdID, id, name string, typ DisplayType) error {
+	name = strings.TrimSpace(name)
+	switch {
+	case name == "" || utf8.RuneCountInString(name) > 80:
+		return &FieldError{"name", "a display needs a name of at most 80 characters"}
+	case !typ.Valid():
+		return &FieldError{"type", "a display needs a known type"}
+	}
+	return expectOne(db.sql.Exec(`UPDATE displays SET name = ?, type = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
+		name, string(typ), householdID, id))
 }
 
 // SetDisplayShowTomorrow switches the "show tomorrow block" setting of one of

@@ -413,3 +413,33 @@ func TestForgedStarsFlashWithoutNumberShowsNothing(t *testing.T) {
 		}
 	}
 }
+
+// Product owner decision Q2: a booking by a person who was removed keeps their
+// last name, shown as "<name> (removed)" on the page and flagged on the API.
+func TestStarLogKeepsTheNameOfARemovedBooker(t *testing.T) {
+	tb := newTaskBox(t)
+	b := tb.parent.b
+	_, papa, _ := tb.parent.call(http.MethodPost, "/people", map[string]any{"name": "Papa", "role": "parent"})
+	db := b.db.SQL()
+	if _, err := db.Exec(`INSERT INTO star_log (id, person_id, delta, note, booked_by, created_at) VALUES ('11111111-1111-4111-8111-111111111111', ?, 2, 'Geschenk', ?, '2026-11-15T10:00:00Z')`, tb.miaID, papa["id"]); err != nil {
+		t.Fatal(err)
+	}
+	entry := func() map[string]any {
+		return starAccount(t, tb.parent, tb.miaID)["entries"].([]any)[0].(map[string]any)
+	}
+	if e := entry(); e["booked_by"] != "Papa" || e["booked_by_removed"] != false {
+		t.Fatalf("before removal = %v", e)
+	}
+	if _, err := db.Exec(`DELETE FROM people WHERE id = ?`, papa["id"]); err != nil {
+		t.Fatal(err)
+	}
+	if e := entry(); e["booked_by"] != "Papa" || e["booked_by_removed"] != true {
+		t.Fatalf("after removal = %v", e)
+	}
+	for lang, want := range map[string]string{"en": "Papa (removed)", "de": "Papa (entfernt)"} {
+		page := b.do(http.MethodGet, "/tasks", nil, map[string]string{"Accept-Language": lang}).body
+		if !strings.Contains(page, want) {
+			t.Errorf("%s page lacks %q:\n%s", lang, want, page)
+		}
+	}
+}

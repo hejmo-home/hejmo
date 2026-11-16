@@ -248,11 +248,11 @@ func TestFamilyViewTomorrowBlockIsOffUntilTheDisplaySettingIsOn(t *testing.T) {
 
 func TestDisplaysPageShowsTheTomorrowSetting(t *testing.T) {
 	f := newFamilyBox(t, "screen")
-	if p := f.get("/displays").body; !strings.Contains(p, `name="show_tomorrow"`) || strings.Contains(p, `name="show_tomorrow" checked`) {
+	if p := f.get("/displays/" + f.displayID(t)).body; !strings.Contains(p, `name="show_tomorrow"`) || strings.Contains(p, `name="show_tomorrow" checked`) {
 		t.Fatalf("setting missing or on by default:\n%s", p)
 	}
 	f.showTomorrow(t, true)
-	if p := f.get("/displays").body; !strings.Contains(p, `name="show_tomorrow" checked`) {
+	if p := f.get("/displays/" + f.displayID(t)).body; !strings.Contains(p, `name="show_tomorrow" checked`) {
 		t.Fatal("setting not shown as on")
 	}
 	if r := f.post("/displays/unknown/settings", url.Values{}); r.status != 404 {
@@ -300,7 +300,7 @@ func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
 	}
 	col := columnRe.FindString(out)
 	i, j := strings.Index(col, `class="events"`), strings.Index(col, `data-progress="3/5"`)
-	if i < 0 || j < i || !strings.Contains(col, "--pct:60") || !strings.Contains(col, ">3/5<") {
+	if i < 0 || j < i || !strings.Contains(col, "--pct:60") || !strings.Contains(col, ">3 of 5 tasks done</span>") {
 		t.Fatalf("progress bar not after the events:\n%s", col)
 	}
 	if strings.Count(out, "data-progress") != 1 {
@@ -309,12 +309,12 @@ func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
 	if strings.Contains(out, "data-footer") {
 		t.Error("footer shown with both tiles empty")
 	}
-	v.Meal = &familyview.Tile{Label: "Dinner", Lines: []string{"Pasta bake"}}
+	v.Meal = &familyview.MealTile{Label: "Dinner", Entries: []familyview.MealEntry{{Mealtime: "dinner", Dish: "Pasta bake"}}}
 	one, _ := server.RenderFamilyView("en", v)
 	if !strings.Contains(one, "data-footer") || !strings.Contains(one, `data-tile="meal"`) || strings.Contains(one, `data-tile="tomorrow"`) {
 		t.Errorf("one tile: %s", one)
 	}
-	v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []string{"Paper bin"}, Alert: true}
+	v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Lines: []familyview.Line{{Kind: familyview.LineWaste, Text: "Paper bin"}}, Alert: true}
 	two, _ := server.RenderFamilyView("en", v)
 	if strings.Count(two, "data-tile=") != 2 || !strings.Contains(two, "tile alert") {
 		t.Errorf("two tiles: %s", two)

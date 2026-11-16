@@ -14,8 +14,10 @@ import (
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/task"
 	"github.com/hejmo-home/hejmo/internal/theme"
 	"github.com/hejmo-home/hejmo/internal/wholine"
 )
@@ -98,7 +100,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		if s.now().Sub(d.LastSeen) > time.Minute {
 			_ = s.db.TouchDisplay(hash, s.now())
 		}
-		view, version, err := s.renderDisplayContent(h, d, s.langOf(r))
+		view, version, err := s.renderDisplayContent(h, d, s.displayLang(r))
 		if err != nil {
 			s.fail(w, "display view", err)
 			return
@@ -115,7 +117,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		}
 	}
 	pair := s.pairURL(r, d.Code)
-	svg, err := qrsvg.SVG(pair, s.i18n.T(s.langOf(r), "display.pair.qr"))
+	svg, err := qrsvg.SVG(pair, s.i18n.T(s.displayLang(r), "display.pair.qr"))
 	if err != nil {
 		s.fail(w, "qr code", err)
 		return
@@ -161,9 +163,52 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
-	return familyview.Build(familyview.Input{Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
-		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID),
+	meals, cutoffs := s.mealsToday(h, data.now)
+	today := data.now.Format(store.DayLayout)
+	if err := s.db.PruneDayNotes(h.ID, today); err != nil { // a note is deleted once its day is over
+		return familyview.View{}, err
+	}
+	notes, err := s.db.DayNotes(h.ID)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	byDay := map[string]string{}
+	for _, n := range notes {
+		byDay[n.Day] = n.Text
+	}
+	due, err := s.db.TasksForDay(h.ID, data.now.Format(task.DateLayout))
+	if err != nil {
+		return familyview.View{}, err
+	}
+	byPerson := map[string][]familyview.Task{}
+	for _, t := range due {
+		byPerson[t.PersonID] = append(byPerson[t.PersonID], familyview.Task{Done: t.Done})
+	}
+	progress := map[string]familyview.Progress{}
+	for id, ts := range byPerson {
+		progress[id] = familyview.ProgressOf(ts)
+	}
+	return familyview.Build(familyview.Input{Meals: meals, MealCutoffs: cutoffs, Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
+		Waste: data.waste, DayNotes: byDay, TomorrowLabel: s.i18n.T(lang, "family.tomorrow"), TodayLabel: s.i18n.T(lang, "family.today"),
+		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID), TaskProgress: progress,
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
+}
+
+// mealsToday reads today's meals for the meal tile. If they cannot be read it
+// logs that and returns none: the family view renders without the tile
+// instead of failing.
+func (s *server) mealsToday(h store.Household, now time.Time) (map[meal.Mealtime]string, meal.Cutoffs) {
+	day := now.Format(store.DayLayout)
+	entries, err := s.db.Meals(h.ID, day, day)
+	if err != nil {
+		s.logger.Error("meal tile: reading today's meals", "err", err)
+		return nil, meal.Cutoffs{}
+	}
+	out := map[meal.Mealtime]string{}
+	for _, e := range entries {
+		out[e.Mealtime] = e.Text
+	}
+	return out, h.MealCutoffs
 }
 
 // displayData is what the views of a display are built from: the household's
@@ -174,10 +219,14 @@ type displayData struct {
 	people      []familyview.Person
 	groups      []wholine.Group // subgroups with their members, for the who-line
 	calendars   map[string]calendar.Audience
-	occurrences []calendar.Occurrence
+	occurrences []calendar.Occurrence // without waste collections
+	// waste holds the occurrences of the waste collection calendars: they show
+	// only in the tomorrow tile and on the night page (ADR 0015).
+	waste []calendar.Occurrence
 }
 
 func (s *server) displayData(h store.Household, lang string, days int) (displayData, error) {
+	s.rollMealPlan(h, lang) // the meal tile reads the meal-plan calendar
 	now := s.householdNow(h)
 	loc := now.Location()
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
@@ -199,10 +248,12 @@ func (s *server) displayData(h store.Household, lang string, days int) (displayD
 			generated[c.ID] = true
 		}
 	}
-	if out.occurrences, err = s.occurrences(h, lang, d0, end); err != nil {
+	all, err := s.occurrences(h, lang, d0, end)
+	if err != nil {
 		return out, err
 	}
-	out.occurrences = slices.DeleteFunc(out.occurrences, func(o calendar.Occurrence) bool { return generated[o.CalendarID] })
+	all = slices.DeleteFunc(all, func(o calendar.Occurrence) bool { return generated[o.CalendarID] })
+	out.occurrences, out.waste = splitWaste(all, cals)
 	for _, c := range cals {
 		out.calendars[c.ID] = c.Audience
 	}
@@ -305,4 +356,20 @@ func (s *server) pairDisplay(p principal, code string, in store.Display) (store.
 		s.limiter.reset(key)
 	}
 	return d, err
+}
+
+// splitWaste separates the occurrences of waste collection calendars from the rest.
+func splitWaste(occs []calendar.Occurrence, cals []store.Calendar) (rest, waste []calendar.Occurrence) {
+	isWaste := map[string]bool{}
+	for _, c := range cals {
+		isWaste[c.ID] = c.Waste
+	}
+	for _, o := range occs {
+		if isWaste[o.CalendarID] {
+			waste = append(waste, o)
+		} else {
+			rest = append(rest, o)
+		}
+	}
+	return rest, waste
 }

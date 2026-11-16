@@ -91,7 +91,8 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 - **Check:** device tokens are stored as hashes and can be revoked, after which they are refused. `test:internal/server/caldav_test.go`
 - **Check:** a paired phone's device session is listed on the phones screen and removed by a parent, after which the phone is signed out at its next request. `test:internal/server/phones_test.go`
 - **Check:** the service worker deletes the offline copy of the pages when the person signs in again or the box redirects to the sign-in page, and keeps only styles and scripts, which hold nothing personal. `test:web/test/sw.test.js`
-- **Accepted risk:** a browser session of a parent who signed in with a password lasts 30 days and the box has no remote way to end it; it ends only when someone signs out on that phone, so a lost phone keeps such a session until it expires. The phone's own lock screen is the protection until parents can end those sessions remotely (#108).
+- **Check:** parent A ends parent B's browser session under Signed-in devices, after which B's next request is refused and lands on the sign-in page, which clears the cookie; a paired phone's session cannot be ended there, and a parent cannot end their own. `test:internal/server/sessions_test.go`
+- **Accepted risk:** a browser session lasts 30 days. A lost phone keeps its session until a parent ends it (the box does not know a phone is lost) or it expires; the phone's own lock screen is the protection meanwhile. Sessions made before #108 show as an unknown device with no last use, and a parent finds them by person and sign-in date.
 
 ### T9. A child's account or token reaches parent functions
 

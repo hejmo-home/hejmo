@@ -32,10 +32,10 @@ type routineCard struct {
 }
 
 // routineSteps numbers the tasks of a routine, in their order.
-func routineSteps(f store.DateFormat, list []task.Task, today string, doneToday map[string]bool) []routineStep {
+func routineSteps(f store.DateFormat, list []task.Task, today string, doneToday map[string]bool, subs map[string][]store.DaySubtask) []routineStep {
 	out := make([]routineStep, 0, len(list))
 	for i, t := range list {
-		out = append(out, routineStep{taskView: newTaskView(f, t, today, doneToday[t.ID]), Nr: i + 1, CanUp: i > 0, CanDown: i < len(list)-1})
+		out = append(out, routineStep{taskView: newTaskView(f, t, today, doneToday[t.ID]).withSubs(subs[t.ID]), Nr: i + 1, CanUp: i > 0, CanDown: i < len(list)-1})
 	}
 	return out
 }
@@ -226,7 +226,7 @@ func (s *server) renderRoutine(w http.ResponseWriter, r *http.Request, p princip
 		s.fail(w, "task state", err)
 		return
 	}
-	steps := routineSteps(p.household.DateFormat, list, today, doneToday)
+	steps := routineSteps(p.household.DateFormat, list, today, doneToday, nil)
 	all, err := s.db.Tasks(p.household.ID)
 	if err != nil {
 		s.fail(w, "tasks", err)

@@ -107,6 +107,19 @@ var wholeFamilyTexts = map[string]bool{
 	"flash.mcp_off":                  true, // "eure Daten"
 	"firststeps.display.text":        true, // "euren Tag"
 	"food.why.title":                 true, // "eurer Box": the family's box (preview 163)
+	"art.sug.diet":                   true, // "bei euch": the family
+	"art.fits.nobody":                true,
+	"art.fits.all":                   true,
+	"artf.kind.hint":                 true,
+	"lib.own.empty":                  true, // "was ihr oft kauft", "eure Lieblingsmarke": the family
+	"lists.set.hide.none":            true,
+	"artf.url.hint":                  true, // "eurer Box": the family's box
+	"art.copy.hint":                  true, // "eure Marke"
+	"art.hide.off.diet":              true,
+	"artf.err.url.private":           true, // "euer eigenes Netz": the family's network
+	"lists.set.empty":                true,
+	"lib.lead":                       true, // "wenn ihr etwas auf eine Liste setzt"
+	"art.units.hint":                 true, // "bis ihr eine andere Einheit nehmt"
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

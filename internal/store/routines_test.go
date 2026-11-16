@@ -306,3 +306,15 @@ func TestDeletingATaskClosesTheGapInItsRoutine(t *testing.T) {
 		t.Fatalf("order = %v", got)
 	}
 }
+
+// Two requests that both pass the pre-check must not end in a raw SQLite
+// error: the loser of the race sees the same RoutineExistsError (409).
+func TestInsertRoutineMapsTheUniqueConstraintToRoutineExists(t *testing.T) {
+	f := newTaskFixture(t)
+	first := f.newRoutine(t, f.mia, "Morning routine", task.Morning)
+	err := f.db.InsertRoutineUnchecked(f.h.ID, task.Routine{PersonID: f.mia.ID, Name: "Other", Part: task.Morning})
+	var exists *store.RoutineExistsError
+	if !errors.As(err, &exists) || exists.Existing.ID != first.ID || !errors.Is(err, store.ErrConflict) {
+		t.Fatalf("second insert = %v, want RoutineExistsError for %s", err, first.ID)
+	}
+}

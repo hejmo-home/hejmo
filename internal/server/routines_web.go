@@ -376,6 +376,9 @@ func (s *server) handleRoutineMove(w http.ResponseWriter, r *http.Request) {
 	if _, err := s.db.Routine(p.household.ID, id); errors.Is(err, store.ErrNotFound) {
 		http.NotFound(w, r)
 		return
+	} else if err != nil {
+		s.fail(w, "routine", err)
+		return
 	}
 	at := -1
 	for i, t := range list {

@@ -311,3 +311,15 @@ func TestChildTasksPageShowsRoutineBoxesWithBigCheckboxes(t *testing.T) {
 		t.Error("steps are not in the parents' order")
 	}
 }
+
+// A done step on the tasks page strikes through its emoji and its title together.
+func TestTasksPageStrikesEmojiAndTitleOfADoneStep(t *testing.T) {
+	tb := newTaskBox(t)
+	rid := tb.newRoutine(t, tb.miaID, "Morning routine", "morning")
+	status, k, _ := tb.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": tb.miaID, "title": "Brush teeth", "emoji": "🪥", "repeat": "daily", "routine_id": rid})
+	if status != http.StatusCreated {
+		t.Fatalf("create step = %d %v", status, k)
+	}
+	tb.parent.call(http.MethodPut, "/tasks/"+k["id"].(string)+"/done", map[string]any{"done": true})
+	has(t, tb.page(t, "/tasks"), "<s>🪥 Brush teeth</s>")
+}

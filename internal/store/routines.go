@@ -71,10 +71,28 @@ func (db *DB) CreateRoutine(householdID string, r task.Routine) (task.Routine, e
 		return task.Routine{}, &RoutineExistsError{Existing: existing}
 	}
 	r.ID = newID()
+	return r, db.insertRoutine(householdID, r)
+}
+
+// insertRoutine writes the row. When a concurrent request got in between the
+// check and the write, the UNIQUE(person_id, part) constraint fails; that is
+// the same conflict as the check reports.
+func (db *DB) insertRoutine(householdID string, r task.Routine) error {
 	ts := now()
 	_, err := db.sql.Exec(`INSERT INTO routines (id, household_id, person_id, name, part, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		r.ID, householdID, r.PersonID, r.Name, string(r.Part), ts, ts)
-	return r, err
+	return db.routineConflict(err, r.PersonID, r.Part)
+}
+
+// routineConflict turns a unique-constraint failure into RoutineExistsError.
+func (db *DB) routineConflict(err error, personID string, part task.PartOfDay) error {
+	if !isUniqueViolation(err) {
+		return err
+	}
+	if existing, found, qerr := routineFor(db.sql, personID, part); qerr == nil && found {
+		return &RoutineExistsError{Existing: existing}
+	}
+	return err
 }
 
 // Routines lists the household's routines, oldest first.
@@ -137,7 +155,7 @@ func (db *DB) UpdateRoutine(householdID, id, name string, part task.PartOfDay) e
 		return &RoutineExistsError{Existing: existing}
 	}
 	_, err = db.sql.Exec(`UPDATE routines SET name = ?, part = ?, updated_at = ? WHERE household_id = ? AND id = ?`, next.Name, string(part), now(), householdID, id)
-	return err
+	return db.routineConflict(err, cur.PersonID, part)
 }
 
 // DissolveRoutine removes a routine and nothing else: its tasks stay as single

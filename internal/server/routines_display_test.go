@@ -153,3 +153,13 @@ func TestPersonalViewShowsPartsRoutinesAndTheNextStep(t *testing.T) {
 		}
 	}
 }
+
+// The star value of a step carries its unit for screen readers.
+func TestPersonalViewGivesTheStepStarsAUnitForScreenReaders(t *testing.T) {
+	f := newFamilyBox(t, "eink_color")
+	f.routineFor(t, "Mia", "Morning routine", task.Morning, "Brush teeth")
+	page := f.personalPage(t, "en", "Mia", 14, 8).body
+	if want := `data-task-stars="1">1<span class="sr"> Stars</span></span>`; !strings.Contains(page, want) {
+		t.Errorf("page lacks %q:\n%s", want, page)
+	}
+}

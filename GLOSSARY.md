@@ -208,6 +208,13 @@ _Avoid_: catalogue, database
 Number and unit of a list entry, such as 500 g or 1 dozen.
 _Avoid_: amount
 
+**Default unit**:
+One of the one or two units an article offers first when it is added, such as dozen and piece for eggs.
+_Avoid_: standard unit
+
+**Active units**:
+The units the household can choose when adding, preset by the home location's country and changed under Settings, Lists, Units.
+
 **Tile view**:
 A list shown as tiles with symbol or picture, name and tick; the default for children.
 _Avoid_: grid, gallery

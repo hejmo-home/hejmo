@@ -37,7 +37,7 @@
 {{end}}
 
 {{/* The language switcher of ticket 134, one component for the frame bar and the wizard bar. Argument: the frame. */}}
-{{define "langSwitch"}}<details class="lang" name="frame-tool"><summary><img class="flag" src="/static/flags/{{.LangFlag}}.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">{{t "lang.label"}} </span>{{.LangName}}</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
+{{define "langSwitch"}}<details class="lang"{{if .SignedIn}} name="frame-tool"{{end}}><summary><img class="flag" src="/static/flags/{{.LangFlag}}.svg" alt="" width="24" height="16"><span class="lang-name"><span class="vh">{{t "lang.label"}} </span>{{.LangName}}</span><svg class="icon chev" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></summary>
       <form class="lang-menu" method="post" action="/language"><input type="hidden" name="next" value="{{.Next}}">{{range .Others}}<button type="submit" name="lang" value="{{.Code}}" lang="{{.Code}}"><img class="flag" src="/static/flags/{{.Flag}}.svg" alt="">{{.Name}}</button>{{end}}</form></details>{{end}}
 
 {{/* The theme chooser of ticket 125, between the language switcher and Sign out. It stores the choice per

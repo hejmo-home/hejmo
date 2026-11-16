@@ -30,7 +30,7 @@ func TestDisplayPageWithADatabaseErrorIsA500NotA404(t *testing.T) {
 	if r := f.get("/displays/" + id); r.status != http.StatusInternalServerError {
 		t.Fatalf("display page with a broken database = %d, want 500", r.status)
 	}
-	if r := f.post("/displays/"+id+"/unpair", nil); r.status != http.StatusInternalServerError {
+	if r := f.post("/displays/"+id+"/unpair", url.Values{}); r.status != http.StatusInternalServerError {
 		t.Fatalf("unpair with a broken database = %d, want 500", r.status)
 	}
 	if r := f.get("/displays/nonsense"); r.status != http.StatusInternalServerError {

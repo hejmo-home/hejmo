@@ -1971,8 +1971,8 @@ p.why.health > span { display: grid; gap: 2px; }
 .swatch.sm .icon { width: 15px; height: 15px; }
 .swatch.sm.half .icon { display: none; }
 [data-theme="bw"] .swatch { border: 2px solid var(--text); }
-[data-theme="bw"] .swatch > [data-theme="light"] { --background: #FFFFFF; --text: #111111; }
-[data-theme="bw"] .swatch > [data-theme="dark"] { --background: #111111; --text: #FFFFFF; }
+[data-theme="bw"] .swatch > [data-theme="light"] { --background: var(--surface); }
+[data-theme="bw"] .swatch > [data-theme="dark"] { --background: var(--text); --text: var(--surface); }
 /* A narrow bar next to Sign out drops the visible word, as the language
    switcher does; the swatch still shows the state and the word stays in the
    accessible name ("Design: Dunkel"). */

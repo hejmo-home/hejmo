@@ -131,8 +131,8 @@ func TestConnectionPageSwitchesTwoWayAndReadOnly(t *testing.T) {
 		t.Fatal("calendar still read-only")
 	}
 	body = c.b.do(http.MethodGet, page, nil, map[string]string{"Accept-Language": "en"}).body
-	if !strings.Contains(body, "Make read-only") || !strings.Contains(body, "Two-way") {
-		t.Fatalf("hint or two-way label missing after switching back:\n%s", body)
+	if !strings.Contains(body, "Make read-only") || !strings.Contains(body, "Two-way") || !strings.Contains(body, "kept in the sync log for 30 days") {
+		t.Fatalf("button, hint or two-way label missing after switching back:\n%s", body)
 	}
 	if r := c.b.post("/calendars/00000000-0000-4000-8000-000000000000/read-only", url.Values{"read_only": {"1"}}); r.status != http.StatusNotFound {
 		t.Fatalf("unknown calendar = %d", r.status)
@@ -242,5 +242,26 @@ func TestEventsMadeInTheWebScreensOfATwoWayCalendarReachTheServer(t *testing.T) 
 	post(path+"/delete", url.Values{"occurrence": {occ}})
 	if got := srv.Get(t, remote+id+".ics"); got != "" {
 		t.Fatalf("deleted in the web screen, still outside: %q", got)
+	}
+}
+
+// The flash text after "Sync now" counts what the calendar holds, box writes included. (Only CalDAV
+// calendars take box writes and they have no page of their own, ADR 0017; the fact on the page of a
+// subscribed calendar is covered in sync_feedback_test.go.)
+func TestEventsWrittenOnTheBoxCountInTheSyncedFlash(t *testing.T) {
+	c, _, _, calID := twoWayCalendar(t)
+	for i, day := range []string{"21", "22"} {
+		status, ev, _ := c.call(http.MethodPost, "/events", map[string]any{"calendar_id": calID, "title": "Piano " + strconv.Itoa(i), "start": "2026-11-" + day + "T15:00:00+01:00", "end": "2026-11-" + day + "T16:00:00+01:00"})
+		if status != http.StatusCreated {
+			t.Fatalf("create = %d %v", status, ev)
+		}
+	}
+	c.b.sync.Wait()
+	r := c.b.post("/calendars/"+calID+"/sync", url.Values{})
+	if r.status != http.StatusSeeOther {
+		t.Fatalf("sync now = %d\n%s", r.status, r.body)
+	}
+	if got := successLine(getEN(c.b, r.location).body); !strings.Contains(got, "Events: 2 ") {
+		t.Errorf("flash after sync = %q, want it to count 2 events", got)
 	}
 }

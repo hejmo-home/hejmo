@@ -286,3 +286,18 @@ func TestNoteWithSurroundingSpaceCountsTrimmed(t *testing.T) {
 		t.Fatalf("note of 120 characters with spaces = %d", r.status)
 	}
 }
+
+// The waste check looks at the calendar as it will be after the same request switches it.
+func TestWasteIsCheckedAgainstTheStateAfterTheReadOnlySwitchInTheSameRequest(t *testing.T) {
+	c, _, _, calID := twoWayCalendar(t)
+	if status, cal, _ := c.call(http.MethodPatch, "/calendars/"+calID, map[string]any{"read_only": true, "waste_collection": true}); status != http.StatusOK || cal["read_only"] != true || cal["waste_collection"] != true {
+		t.Fatalf("read-only and waste at once = %d %v, want 200 with both set", status, cal)
+	}
+	// Two-way and waste together is refused, and nothing of it is saved.
+	if status, cal, _ := c.call(http.MethodPatch, "/calendars/"+calID, map[string]any{"read_only": false, "waste_collection": true}); status != http.StatusUnprocessableEntity {
+		t.Fatalf("two-way and waste at once = %d %v, want 422", status, cal)
+	}
+	if cal := c.calendarJSON(t, calID); cal["read_only"] != true || cal["waste_collection"] != true {
+		t.Fatalf("a refused request changed the calendar: %v", cal)
+	}
+}

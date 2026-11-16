@@ -384,7 +384,11 @@ func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p pri
 		if s.storeError(w, "waste calendar", err) {
 			return
 		}
-		if !c.ReadOnly {
+		readOnly := c.ReadOnly // as it will be after this request
+		if in.ReadOnly != nil {
+			readOnly = *in.ReadOnly
+		}
+		if !readOnly {
 			writeError(w, http.StatusUnprocessableEntity, "only a read-only calendar can be a waste collection calendar")
 			return
 		}

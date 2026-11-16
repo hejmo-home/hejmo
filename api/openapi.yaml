@@ -2012,7 +2012,7 @@ paths:
         `read_only` switches a CalDAV calendar between two-way (the default: events created, changed or deleted on the box
         are written back to the server right away, ADR 0012) and read-only (the box never writes; API edits answer 422).
         ICS and local calendars have no such switch and answer 422. Switching back to two-way pushes
-        changes still queued.
+        changes still queued and also removes `waste_collection` (only a read-only calendar can be a waste collection calendar).
         `name`, `color` and `audience` can only be changed on a synced calendar (else 422; 404 if no calendar has the id); a field
         left out stays as it is. Changing them sends nothing to the calendar's source.
       requestBody:
@@ -2023,7 +2023,7 @@ paths:
               type: object
               properties:
                 share_through_box: { type: boolean }
-                read_only: { type: boolean, description: "CalDAV calendars only" }
+                read_only: { type: boolean, description: "CalDAV calendars only; false (two-way) also clears waste_collection" }
                 waste_collection: { type: boolean, description: "Only a read-only calendar can be marked, else 422" }
                 name: { type: string, minLength: 1 }
                 color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422" }

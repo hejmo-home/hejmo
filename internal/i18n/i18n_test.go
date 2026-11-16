@@ -85,27 +85,41 @@ func TestFormatFillsParameters(t *testing.T) {
 // ADR 0017: German texts address the user as "du". "eure"/"euer" stay only
 // where the whole family is meant; every such text is listed here with its key.
 var wholeFamilyTexts = map[string]bool{
-	"displays.none":                  true, // "euren Tag": the family's day on the wall
-	"connect.legend":                 true, // "eure Kalender": the family's calendars
-	"connect.lead":                   true, // "eure Termine": the family's events, kept by several people
-	"connections.empty":              true, // "eure Termine": the family's events on the box
-	"setup.welcome.lead":             true, // "eure Box": the family's box
-	"setup.welcome.step.2":           true, // "Euer Ort": the family's town
-	"setup.https.way.public.hint":    true, // "eure Box"
-	"setup.https.public.lan_ip.hint": true, // "eure Geräte"
-	"setup.https.rebind.why":         true, // "bei euch zu Hause"
-	"setup.totp.lead":                true, // "eure Box"
-	"firststeps.lead":                true, // "eurem Familienleben"
-	"firststeps.settled":             true, // "eure Familie"
-	"firststeps.close.hint":          true, // "euren Tag"
-	"mcp.intro.off":                  true, // "eurer Hejmo-Box": the family's box
-	"mcp.intro.on":                   true, // "eurer Hejmo-Box"
-	"mcp.switch.off":                 true, // "eure Daten": the family's data
-	"mcp.area.events.desc":           true, // "eure anderen Kalender": the family's calendars
-	"mcp.explain.what":               true, // "eure Hejmo-Box"
-	"mcp.explain.know3":              true, // "eurem Heimnetz": the family's home network
-	"flash.mcp_off":                  true, // "eure Daten"
-	"firststeps.display.text":        true, // "euren Tag"
+	"displays.none":                            true, // "euren Tag": the family's day on the wall
+	"connect.legend":                           true, // "eure Kalender": the family's calendars
+	"connect.lead":                             true, // "eure Termine": the family's events, kept by several people
+	"connections.empty":                        true, // "eure Termine": the family's events on the box
+	"setup.welcome.lead":                       true, // "eure Box": the family's box
+	"setup.welcome.step.2":                     true, // "Euer Ort": the family's town
+	"setup.https.way.public.hint":              true, // "eure Box"
+	"setup.https.public.lan_ip.hint":           true, // "eure Geräte"
+	"setup.https.rebind.why":                   true, // "bei euch zu Hause"
+	"setup.totp.lead":                          true, // "eure Box"
+	"firststeps.lead":                          true, // "eurem Familienleben"
+	"firststeps.settled":                       true, // "eure Familie"
+	"firststeps.close.hint":                    true, // "euren Tag"
+	"mcp.intro.off":                            true, // "eurer Hejmo-Box": the family's box
+	"mcp.intro.on":                             true, // "eurer Hejmo-Box"
+	"mcp.switch.off":                           true, // "eure Daten": the family's data
+	"mcp.area.events.desc":                     true, // "eure anderen Kalender": the family's calendars
+	"mcp.explain.what":                         true, // "eure Hejmo-Box"
+	"mcp.explain.know3":                        true, // "eurem Heimnetz": the family's home network
+	"flash.mcp_off":                            true, // "eure Daten"
+	"firststeps.display.text":                  true, // "euren Tag"
+	"setup.https.domain.cloudflare.sub":        true, // "eure Domain": the family's domain
+	"setup.https.domain.legend":                true, // "eure Domain": the family's domain
+	"setup.https.way.domain":                   true, // "eure Domain": the family's domain
+	"setup.https.error.name_taken":             true, // "eure Domain": the family's domain
+	"setup.https.domain.name.text":             true, // "eure Domain": the family's domain
+	"setup.https.domain.hetzner.token.text":    true, // "eure Domain": the family's domain
+	"setup.https.public.failed.hetzner":        true, // "eure Domain": the family's domain
+	"setup.https.domain.other":                 true, // "eure Domain": the family's domain
+	"setup.https.public.failed.cloudflare":     true, // "eure Domain": the family's domain
+	"setup.https.domain.lead":                  true, // "eure Domain": the family's domain
+	"setup.https.domain.name.hint":             true, // "eure Domain": the family's domain
+	"setup.https.domain.cloudflare.token.text": true, // "eure Domain": the family's domain
+	"setup.https.way.domain.hint":              true, // "eure Domain": the family's domain
+	"setup.https.domain.why.hetzner.text":      true, // "eure Domain": the family's domain
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

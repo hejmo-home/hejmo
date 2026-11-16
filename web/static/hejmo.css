@@ -1783,3 +1783,25 @@ details.more.explain-more { margin-top: var(--gap-section); }
   .lv-head .add-entry { flex-wrap: wrap; }
   .lv-head .add-entry .f { flex: 1 1 12em; }
 }
+
+/* ticket 57: own domain at a DNS provider (Cloudflare, deSEC, Hetzner, INWX).
+   Existing tokens only; builds on .connect, .guide and .why of ticket 135. */
+/* Provider cards (name "dns", outside the forms): only the guide of the chosen
+   provider shows; before a choice no guide shows, only the .pick-first hint.
+   (Only where provider cards exist: the calendar connect page has none.) */
+.connect:has(input[name="dns"]):not(:has(input[name="dns"]:checked)) .guide { display: none; }
+.connect:has(input[name="dns"][value="cloudflare"]:checked) .guide:not([data-provider="cloudflare"]),
+.connect:has(input[name="dns"][value="desec"]:checked) .guide:not([data-provider="desec"]),
+.connect:has(input[name="dns"][value="hetzner"]:checked) .guide:not([data-provider="hetzner"]),
+.connect:has(input[name="dns"][value="inwx"]:checked) .guide:not([data-provider="inwx"]) { display: none; }
+.connect:has(input[name="dns"]:checked) .pick-first { display: none; }
+.connect > .hint { margin: 0; max-width: 560px; }
+/* A switch inside a guide step that reveals its fields while on (INWX
+   two-factor sign-in). Off: only the row with its state in words. */
+.switchset { display: grid; gap: 8px; justify-self: stretch; min-width: 0; }
+.switchset > .card-row { padding: 6px 0; }
+.switchset > .when-on { display: grid; gap: 8px; min-width: 0; }
+.switchset > .when-on > p { margin: 0; overflow-wrap: anywhere; }
+.switchset:has(> .card-row .switch input:not(:checked)) > .when-on { display: none; }
+/* Domain names in running text and errors never widen a 375 px page. */
+.ferr span, .error .host, .hint .host { overflow-wrap: anywhere; }

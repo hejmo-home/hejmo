@@ -1,4 +1,4 @@
-{{$title := t "setup.https.choice.title"}}{{if eq .Way "public"}}{{$title = t "setup.https.public.title"}}{{else if eq .Way "own"}}{{$title = t "setup.https.own.title"}}{{end -}}
+{{$title := t "setup.https.choice.title"}}{{if eq .Way "public"}}{{$title = t "setup.https.public.title"}}{{else if eq .Way "domain"}}{{$title = t "setup.https.domain.title"}}{{else if eq .Way "own"}}{{$title = t "setup.https.own.title"}}{{end -}}
 {{template "head" (dict "Lang" .Lang "Title" $title "Frame" .Frame "Wizard" .Wizard)}}
   <h1>{{$title}}</h1>
   {{if eq .Way "choice"}}
@@ -9,6 +9,7 @@
     <fieldset class="choice">
       <legend class="sr">{{t "setup.https.choice.legend"}}</legend>
       {{template "option" (dict "Name" "way" "Value" "public" "Checked" true "Label" (t "setup.https.way.public") "Hint" (t "setup.https.way.public.hint"))}}
+      {{template "option" (dict "Name" "way" "Value" "domain" "Label" (t "setup.https.way.domain") "Hint" (t "setup.https.way.domain.hint"))}}
       {{template "option" (dict "Name" "way" "Value" "own" "Label" (t "setup.https.way.own") "Hint" (t "setup.https.way.own.hint"))}}
     </fieldset>
     <div class="actions"><button class="button" type="submit">{{t "setup.https.choice.next"}}</button></div>
@@ -19,6 +20,7 @@
   {{template "error" .}}
   <form method="post" action="/setup/https/public" class="tile" data-busy>
     <input type="hidden" name="provider" value="desec">
+    <input type="hidden" name="way" value="public">
     <ol class="howto">
       <li><div class="s"><b>{{t "setup.https.public.s1.title"}}</b><p>{{t "setup.https.public.s1.text"}}</p>
         <a class="link" href="https://desec.io/signup" target="_blank" rel="noopener noreferrer">{{t "setup.https.public.s1.link"}} <svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg></a></div></li>
@@ -27,25 +29,49 @@
       <li><div class="s"><b>{{t "setup.https.public.s3.title"}}</b><p>{{rich (t "setup.https.public.s3.text")}}</p>
         {{template "field" (dict "Root" . "Name" "token" "Label" (t "setup.https.public.token") "Type" "password" "Required" true "Autocomplete" "off")}}</div></li>
     </ol>
-    {{$issuer := t "setup.https.public.issuer.letsencrypt"}}{{if eq .Form.Issuer "actalis"}}{{$issuer = t "setup.https.public.issuer.actalis"}}{{end}}
-    {{template "moreOpen" (dict "Label" (t "setup.https.more") "Summary" (printf "%s%s" (or (printf "%s · " .Form.LANIP) "") $issuer) "Open" .MoreOpen)}}
-      {{template "field" (dict "Root" . "Name" "lan_ip" "Label" (t "setup.https.public.lan_ip") "Value" .Form.LANIP "Required" true "Inputmode" "decimal" "Autocomplete" "off" "Spellcheck" "false" "Hint" (t "setup.https.public.lan_ip.hint"))}}
-      <fieldset class="choice">
-        <legend>{{t "setup.https.public.issuer"}}</legend>
-        {{template "option" (dict "Name" "issuer" "Value" "letsencrypt" "Checked" (ne .Form.Issuer "actalis") "Label" (t "setup.https.public.issuer.letsencrypt") "Hint" (t "setup.https.public.issuer.letsencrypt.hint"))}}
-        {{template "option" (dict "Name" "issuer" "Value" "actalis" "Checked" (eq .Form.Issuer "actalis") "Label" (t "setup.https.public.issuer.actalis") "Hint" (t "setup.https.public.issuer.actalis.hint"))}}
-      </fieldset>
-      <div class="when-actalis">
-        {{template "field" (dict "Root" . "Name" "eab_key_id" "Label" (t "setup.https.public.eab_key_id") "Value" .Form.EABKeyID "Autocomplete" "off" "Spellcheck" "false")}}
-        {{template "field" (dict "Root" . "Name" "eab_hmac" "Label" (t "setup.https.public.eab_hmac") "Type" "password" "Autocomplete" "off")}}
-        {{template "fieldError" (dict "Root" . "Name" "eab")}}
-      </div>
-      {{template "field" (dict "Root" . "Name" "email" "Label" (t "setup.https.public.email") "Value" .Form.Email "Type" "email" "Autocomplete" "email" "Hint" (t "setup.https.public.email.hint"))}}
-    {{template "moreClose"}}
-    <p class="hint">{{t "setup.https.public.terms"}}</p>
-    {{template "checkline" (dict "State" "waiting" "Text" (t "setup.https.public.busy") "Small" (t "setup.https.public.busy.hint") "Hook" "busy" "Hidden" true)}}
-    <div class="actions"><button class="button" type="submit" data-busy-text="{{t "setup.https.public.busy.button"}}">{{t "setup.https.public.create"}}</button><a class="link" href="/setup/https">{{t "setup.https.other"}}</a></div>
+    {{template "httpsTail" (dict "Root" . "Form" .Form "Open" .MoreOpen)}}
   </form>
+  {{else if eq .Way "domain"}}
+  <p class="lead">{{rich (t "setup.https.domain.lead")}}</p>
+  {{template "httpsNotice" .}}
+  <div class="connect">
+    <fieldset class="choice">
+      <legend>{{t "setup.https.domain.legend"}}</legend>
+      {{range .Providers}}{{template "option" (dict "Name" "dns" "Value" .ID "Checked" (eq $.Provider .ID) "Label" .Name "Hint" (t (printf "setup.https.domain.%s.sub" .ID)))}}
+      {{end}}
+    </fieldset>
+    <p class="hint">{{t "setup.https.domain.other"}} <a href="/setup/https">{{t "setup.https.other"}}</a></p>
+    <p class="hint pick-first">{{t "setup.https.domain.pickfirst"}}</p>
+    {{range .Providers}}{{$id := .ID}}{{$g := index $.Guides .ID}}
+    <form class="guide" data-provider="{{.ID}}" method="post" action="/setup/https/public" data-busy>
+      <input type="hidden" name="provider" value="{{.ID}}">
+      <input type="hidden" name="way" value="domain">
+      <h2>{{t (printf "setup.https.domain.%s.heading" .ID)}}</h2>
+      {{template "error" $g}}
+      {{if ne .ID "desec"}}<p class="why"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>{{t (printf "setup.https.domain.why.%s.title" .ID)}}</b>{{t (printf "setup.https.domain.why.%s.text" .ID)}}</span></p>{{end}}
+      <ol class="howto">
+        <li><div class="s"><b>{{t "setup.https.domain.name.title"}}</b><p>{{repl (t "setup.https.domain.name.text") "{provider}" .Name}}</p>
+          {{template "field" (dict "Root" $g "Name" "name" "Label" (t "setup.https.public.name") "Value" $.Form.Name "Required" true "Placeholder" "box.familie-mueller.de" "Autocomplete" "off" "Autocapitalize" "none" "Spellcheck" "false" "Hint" (t "setup.https.domain.name.hint"))}}</div></li>
+        {{if eq .ID "inwx"}}
+        <li><div class="s"><b>{{t "setup.https.domain.inwx.login.title"}}</b><p>{{t "setup.https.domain.inwx.login.text"}}</p>
+          {{template "field" (dict "Root" $g "Name" "username" "Label" (t "setup.https.domain.inwx.username") "Value" $.Form.Username "Required" true "Autocomplete" "off" "Autocapitalize" "none" "Spellcheck" "false")}}
+          {{template "field" (dict "Root" $g "Name" "password" "Label" (t "setup.https.domain.inwx.password") "Type" "password" "Required" true "Autocomplete" "off" "Autocapitalize" "none" "Spellcheck" "false")}}</div></li>
+        <li><div class="s"><b>{{t "setup.https.domain.inwx.twofa.title"}}</b><div class="switchset">
+          {{template "switch" (dict "Name" "twofa" "Label" (t "setup.https.domain.inwx.twofa") "OnText" (t "setup.https.domain.inwx.twofa.on") "OffText" (t "setup.https.domain.inwx.twofa.off") "Checked" $.Form.TwoFA "AriaLabel" (t "setup.https.domain.inwx.twofa.aria"))}}
+          <div class="when-on">
+            <p>{{rich (t "setup.https.domain.inwx.twofa.why")}}</p>
+            <p>{{rich (t "setup.https.domain.inwx.twofa.where")}}</p>
+            {{template "field" (dict "Root" $g "Name" "otp_secret" "Label" (t "setup.https.domain.inwx.secret") "Type" "password" "Autocomplete" "off" "Autocapitalize" "none" "Spellcheck" "false" "Hint" (t "setup.https.domain.inwx.secret.hint"))}}
+          </div></div></div></li>
+        {{else}}
+        <li><div class="s"><b>{{t (printf "setup.https.domain.%s.token.title" .ID)}}</b><p>{{rich (t (printf "setup.https.domain.%s.token.text" .ID))}}</p>
+          {{template "field" (dict "Root" $g "Name" "token" "Label" (t (printf "setup.https.domain.%s.token" .ID)) "Type" "password" "Required" true "Autocomplete" "off" "Autocapitalize" "none" "Spellcheck" "false")}}</div></li>
+        {{end}}
+      </ol>
+      {{template "httpsTail" (dict "Root" $g "Form" $.Form "Open" (index $g "MoreOpen") "Zone" (eq .ID "cloudflare"))}}
+    </form>
+    {{end}}
+  </div>
   {{else}}
   <p class="lead">{{t "setup.https.own.lead"}}</p>
   {{template "httpsNotice" .}}
@@ -60,3 +86,28 @@
   </form>
   {{end}}
 {{template "foot"}}
+
+{{/* What every guide ends with: "More options" (the second Cloudflare token when
+     Zone is set, the box's address, the certificate authority, an e-mail
+     address), the terms, the waiting line and the buttons. Arguments: Root (the
+     page or guide that carries the error), Form, Open and Zone. */}}
+{{define "httpsTail"}}{{$issuer := t "setup.https.public.issuer.letsencrypt"}}{{if eq .Form.Issuer "actalis"}}{{$issuer = t "setup.https.public.issuer.actalis"}}{{end}}
+    {{template "moreOpen" (dict "Label" (t "setup.https.more") "Summary" (printf "%s%s" (or (printf "%s · " .Form.LANIP) "") $issuer) "Open" .Open)}}
+      {{if .Zone}}{{template "field" (dict "Root" .Root "Name" "zone_token" "Label" (t "setup.https.domain.cloudflare.zone_token") "Type" "password" "Autocomplete" "off" "Autocapitalize" "none" "Spellcheck" "false" "Hint" (rich (t "setup.https.domain.cloudflare.zone_token.hint")))}}{{end}}
+      {{template "field" (dict "Root" .Root "Name" "lan_ip" "Label" (t "setup.https.public.lan_ip") "Value" .Form.LANIP "Required" true "Inputmode" "decimal" "Autocomplete" "off" "Spellcheck" "false" "Hint" (t "setup.https.public.lan_ip.hint"))}}
+      <fieldset class="choice">
+        <legend>{{t "setup.https.public.issuer"}}</legend>
+        {{template "option" (dict "Name" "issuer" "Value" "letsencrypt" "Checked" (ne .Form.Issuer "actalis") "Label" (t "setup.https.public.issuer.letsencrypt") "Hint" (t "setup.https.public.issuer.letsencrypt.hint"))}}
+        {{template "option" (dict "Name" "issuer" "Value" "actalis" "Checked" (eq .Form.Issuer "actalis") "Label" (t "setup.https.public.issuer.actalis") "Hint" (t "setup.https.public.issuer.actalis.hint"))}}
+      </fieldset>
+      <div class="when-actalis">
+        {{template "field" (dict "Root" .Root "Name" "eab_key_id" "Label" (t "setup.https.public.eab_key_id") "Value" .Form.EABKeyID "Autocomplete" "off" "Spellcheck" "false")}}
+        {{template "field" (dict "Root" .Root "Name" "eab_hmac" "Label" (t "setup.https.public.eab_hmac") "Type" "password" "Autocomplete" "off")}}
+        {{template "fieldError" (dict "Root" .Root "Name" "eab")}}
+      </div>
+      {{template "field" (dict "Root" .Root "Name" "email" "Label" (t "setup.https.public.email") "Value" .Form.Email "Type" "email" "Autocomplete" "email" "Hint" (t "setup.https.public.email.hint"))}}
+    {{template "moreClose"}}
+    <p class="hint">{{t "setup.https.public.terms"}}</p>
+    {{template "checkline" (dict "State" "waiting" "Text" (t "setup.https.public.busy") "Small" (t "setup.https.public.busy.hint") "Hook" "busy" "Hidden" true)}}
+    <div class="actions"><button class="button" type="submit" data-busy-text="{{t "setup.https.public.busy.button"}}">{{t "setup.https.public.create"}}</button><a class="link" href="/setup/https">{{t "setup.https.other"}}</a></div>
+{{end}}

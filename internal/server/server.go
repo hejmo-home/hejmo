@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"html"
 	"html/template"
 	"io"
 	"io/fs"
@@ -217,6 +218,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/stars", s.handleStarBooking)
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
+	mux.HandleFunc("POST /tasks/{id}/stars", s.handleTaskStars)
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("GET /lists", s.handleListsPage)
 	mux.HandleFunc("POST /lists", s.handleListCreate)
@@ -336,11 +338,12 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		case key != "" && status >= http.StatusBadRequest:
 			// A failed form shows no success line, not even one left over from before.
 		case data["SuccessText"] != nil:
-			fr.Success, _ = data["SuccessText"].(string) // a page that shows the result itself, and names the thing
+			text, _ := data["SuccessText"].(string)
+			fr.Success = template.HTML(html.EscapeString(text)) // a page that shows the result itself, and names the thing
 		case own != "":
-			fr.Success = s.i18n.T(lang, own) // a page that shows the result itself
+			fr.Success = template.HTML(html.EscapeString(s.i18n.T(lang, own))) // a page that shows the result itself
 		case key != "":
-			fr.Success = s.successText(lang, key, arg)
+			fr.Success = s.successHTML(lang, key, arg)
 			data["Flash"] = key
 		}
 		if inline, _ := data["SuccessInline"].(bool); inline {

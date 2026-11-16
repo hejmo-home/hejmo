@@ -1,6 +1,7 @@
 package server
 
 import (
+	"html/template"
 	"net/http"
 	"strings"
 	"time"
@@ -52,8 +53,9 @@ type frame struct {
 	// leads one level up: the Settings hub for setup screens, the meal plan and
 	// the templates menu for the meal plan templates, the device list for a device.
 	BackHref, BackLabel string
-	// Success is the success line after a saved change, already translated.
-	Success string
+	// Success is the success line after a saved change, already translated
+	// and escaped; a text of the locales may hold <b> around a figure.
+	Success template.HTML
 	// Error is an error line shown above the page, already translated.
 	Error string
 	// The language switcher (ticket 134): the active language, its own name and

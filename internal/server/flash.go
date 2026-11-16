@@ -5,6 +5,8 @@ import (
 	"encoding/base64"
 	"encoding/hex"
 	"fmt"
+	"html"
+	"html/template"
 	"net/http"
 	"regexp"
 	"strconv"
@@ -102,6 +104,10 @@ func (s *server) redirectSavedNamed(w http.ResponseWriter, r *http.Request, to, 
 	http.Redirect(w, r, to, http.StatusSeeOther)
 }
 
+// starsSavedPrefix marks the success lines after a changed star value; their
+// argument is the new value.
+const starsSavedPrefix = "tasks.stars.saved."
+
 const (
 	flashNamePrefix = "n~"
 	maxFlashName    = 80
@@ -122,8 +128,14 @@ func (s *server) takeFlash(w http.ResponseWriter, r *http.Request) (key, arg str
 	}
 	http.SetCookie(w, &http.Cookie{Name: flashCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
 	key, arg, _ = strings.Cut(c.Value, ":")
-	if !strings.HasPrefix(key, "flash.") || s.i18n.T(i18n.Default, key) == key || (arg != "" && !flashArg.MatchString(arg) && !flashNameArg.MatchString(arg)) {
+	if !(strings.HasPrefix(key, "flash.") || strings.HasPrefix(key, starsSavedPrefix)) || s.i18n.T(i18n.Default, key) == key || (arg != "" && !flashArg.MatchString(arg) && !flashNameArg.MatchString(arg)) {
 		return "", ""
+	}
+	if strings.HasPrefix(key, starsSavedPrefix) {
+		// These lines always carry the new value, and it must be a number.
+		if _, err := strconv.Atoi(arg); err != nil {
+			return "", ""
+		}
 	}
 	return key, arg
 }
@@ -184,4 +196,17 @@ func (s *server) successText(lang, key, arg string) string {
 		return fmt.Sprintf(s.i18n.T(lang, key), isoWeek(monday))
 	}
 	return s.i18n.T(lang, key)
+}
+
+// successHTML is the success line as markup: the text of successText escaped,
+// except the lines after a changed star value, which put the new value in bold.
+func (s *server) successHTML(lang, key, arg string) template.HTML {
+	if strings.HasPrefix(key, starsSavedPrefix) {
+		text := s.i18n.T(lang, key)
+		if n, err := strconv.Atoi(arg); err == nil && key == starsSavedPrefix+"other" {
+			text = fmt.Sprintf(text, n)
+		}
+		return template.HTML(text)
+	}
+	return template.HTML(html.EscapeString(s.successText(lang, key, arg)))
 }

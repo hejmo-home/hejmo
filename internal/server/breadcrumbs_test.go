@@ -90,6 +90,15 @@ func TestOverviewPagesBelowSettingsStartWithATrail(t *testing.T) {
 	}
 }
 
+func TestTheLicencesPageStartsWithATrail(t *testing.T) {
+	b := signedInBox(t)
+	body := getEN(b, "/settings/licences").body
+	wantTrail(t, "/settings/licences", body, part("Settings", "/settings"), part("Licences", ""))
+	if h := headingText(body); h != "Licences" {
+		t.Errorf("licences h1 = %q", h)
+	}
+}
+
 func TestTheTrailWordsAndLabelFollowTheLanguage(t *testing.T) {
 	b := signedInBox(t)
 	body := b.do(http.MethodGet, "/displays", nil, de).body

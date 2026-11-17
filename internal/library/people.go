@@ -129,3 +129,23 @@ func Suggest(a Article, people []Person, hiddenByHand bool, h Hiding) Suggestion
 	}
 	return Suggestion{Suggested: true}
 }
+
+// PersonWarning is one person and the allergens of an article that person
+// must avoid. The tile form of a warning has one line per person, so nobody
+// is hidden behind a count.
+type PersonWarning struct {
+	Person    string
+	Allergens []string
+}
+
+// PersonWarnings returns a line for every person the article affects, in the
+// order of the household.
+func PersonWarnings(a Article, people []Person) []PersonWarning {
+	var out []PersonWarning
+	for _, p := range people {
+		if hit := affecting(a, p); len(hit) > 0 {
+			out = append(out, PersonWarning{Person: p.ID, Allergens: hit})
+		}
+	}
+	return out
+}

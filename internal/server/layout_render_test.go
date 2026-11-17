@@ -116,6 +116,7 @@ var layoutNames = []string{"Friedrich", "Maximilian", "Anna-Lena", "Konstantin",
 type layoutFixture struct {
 	*familyBox
 	ids []string // person IDs in layoutNames order
+	kid *screen  // the phone of a child, which shows lists as tiles
 
 	lists       []string // list IDs
 	inviteToken string   // the invitation of Maximilian, a parent without account
@@ -166,7 +167,8 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	l, err := db.CreateList(h, list.List{Name: "Wochenendeinkaufsliste", Color: "blue", Symbol: "circle-empty", Sort: list.Alphabetical})
 	must(err)
 	f.lists = append(f.lists, l.ID)
-	for _, e := range []string{"Haferflockenpackung groß", "Kartoffelsalatzutaten für Samstag", "Vollkornspaghetti", "Bio-Pfefferminztee"} {
+	// Entries that name articles (#166): shipped ones that warn several people with long names, and the own articles made below, one with a photo and one with a symbol. The tiles of the child's phone show them.
+	for _, e := range []string{"Haferflockenpackung groß", "Kartoffelsalatzutaten für Samstag", "Vollkornspaghetti", "Bio-Pfefferminztee", "Toastbrot", "Milch", "Haselnuss-Mandel-Knusperflocken mit Schokostückchen", "Katzenfutter Huhn"} {
 		_, err := db.AddEntry(h, l.ID, e)
 		must(err)
 	}
@@ -235,7 +237,7 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	c.switchMCP(t, true)
 	c.newMCPToken(t, "Claude Desktop auf dem Küchenrechner", map[string]string{"lists": "write"})
 	// A paired phone, a calendar connection, a CalDAV device token.
-	pairedPhone(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
+	f.kid = pairedPhone(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
 	connID := connectedBox(t, f.box)
 	// Two calendars with long names (#183): the first is on, for all eight people and under a longer name of its own, the second is off.
 	f.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { // the connection page asks for event counts
@@ -470,6 +472,7 @@ var notRendered = map[string]string{
 	"/phones/join/{code}":       "one-time pairing link of a phone",
 
 	"/articles/{id}/picture":                  "an image",
+	"/display/articles/{id}/picture":          "an image",
 	"/settings/lists/library/picture/{token}": "an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
 }
@@ -502,6 +505,11 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	for _, p := range crawl(t, parent, "/calendar/search?q=Schwimm", "/calendar/new", "/tasks", "/settings/lists/library/walnuts", "/routines/new?person="+f.ids[1]+"&part=morning") {
 		add(parent, p)
 	}
+	// The child's phone shows lists as tiles by default (#166): the tiles of articles with a picture, a symbol and the warning of several people, and of free text.
+	kid := siteOf("child phone", f.box, f.kid.client)
+	add(kid, "/lists")
+	add(kid, "/lists/"+f.lists[0])
+	add(kid, "/lists/"+f.lists[1])
 	// The display: the family view and the personal views of two people.
 	display := siteOf("display", f.box, f.display.client)
 	add(display, "/display")
@@ -728,6 +736,22 @@ func TestEveryPageIsInTheRenderedLayoutCheck(t *testing.T) {
 				break
 			}
 		}
+	}
+}
+
+// The layout check can only find what its fixture shows: the child's phone
+// must lay out tiles of an article with a picture, one with a symbol, free
+// text, and a tile that warns several people (#166).
+func TestTheLayoutFixtureShowsEveryKindOfTile(t *testing.T) {
+	f := newLayoutFixture(t)
+	page := f.kid.get("/lists/"+f.lists[0], "en").body
+	for _, want := range []string{`<ul class="tiles"`, `<img src="/articles/`, `🐈`, `<span class="pic letter"`, `<span class="tile-warn">`} {
+		if !strings.Contains(page, want) {
+			t.Errorf("the child's tiles lack %q", want)
+		}
+	}
+	if toast := tileOf(t, page, "Toastbrot"); strings.Count(toast, `<span class="line">`) < 3 {
+		t.Errorf("the toast does not warn three people:\n%s", toast)
 	}
 }
 

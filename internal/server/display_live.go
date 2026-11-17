@@ -119,7 +119,7 @@ func (s *server) handleDisplayEvents(w http.ResponseWriter, r *http.Request) {
 		}
 		var version string
 		if listID != "" {
-			_, version, err = s.renderListsView(h, lang, listID, listsViewOptions{})
+			_, version, err = s.renderListsView(h, d, lang, listID, listsViewOptions{})
 			if errors.Is(err, errNoList) {
 				version, err = "gone", nil // the display returns to the family view
 			}

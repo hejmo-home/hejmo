@@ -476,6 +476,7 @@ func TestChildViewHasNoAddRowNoToolsAndTheTickedOffGroup(t *testing.T) {
 	cp := newChildPhone(t)
 	b := cp.parent.b
 	id, _ := listWith(t, b, "Shop", []string{"b", "c"}, "a", "b", "c")
+	cp.screen.post("/me/list-view", url.Values{"view": {"list"}, "list": {id}}) // children see tiles first (ticket 166); this is the list
 	body := cp.screen.get("/lists/"+id, "en").body
 	for _, want := range []string{`<p class="hint list-meta">1 open, 2 ticked off. Tap the box when you have it.</p>`, `<div class="group-head"><h2>Ticked off (2)</h2><a href="?ticked=hide">Hide</a></div>`} {
 		if !strings.Contains(body, want) {

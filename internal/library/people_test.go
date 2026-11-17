@@ -114,3 +114,21 @@ func TestSuggestionsFollowDietsHandAndAllergy(t *testing.T) {
 		t.Errorf("a household without people still gets suggestions: %+v", s)
 	}
 }
+
+func TestPersonWarningsNameEveryAffectedPersonOnTheirOwnLine(t *testing.T) {
+	a := library.Article{ID: "x", Kind: library.Veg, Allergens: []string{"milk", "nuts"}}
+	people := []library.Person{
+		{ID: "mia", Allergens: []string{"nuts"}},
+		{ID: "papa"},
+		{ID: "seb", Allergens: []string{"nuts"}},
+		{ID: "oma", Allergens: []string{"milk", "nuts", "soy"}},
+	}
+	got := library.PersonWarnings(a, people)
+	want := []library.PersonWarning{{Person: "mia", Allergens: []string{"nuts"}}, {Person: "seb", Allergens: []string{"nuts"}}, {Person: "oma", Allergens: []string{"milk", "nuts"}}}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("got %+v, want %+v (one line per person, even with the same allergens)", got, want)
+	}
+	if got := library.PersonWarnings(library.Article{Kind: library.NonFood, Allergens: []string{"nuts"}}, people); len(got) != 0 {
+		t.Errorf("non-food warned: %+v", got)
+	}
+}

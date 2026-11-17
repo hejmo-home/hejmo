@@ -1,6 +1,6 @@
 # 0017. Web interface usability
 
-- Status: Accepted
+- Status: Accepted, amended by [0022](0022-home-location.md)
 - Date: 14/11/2026
 - Amends: [0006](0006-authentication.md) (recovery when the one-time code device is lost), [0010](0010-households-memberships-and-credentials.md) (recovery codes as a credential), [0012](0012-calendar-sync.md) (choosing calendars with a switch, also for synced calendars, and switching one off; calendar colour; sync log wording; event count before choosing a calendar; iOS profile for CalDAV clients), [0015](0015-display-web-interface-and-everyday.md) (navigation; one display question instead of name and room; breadcrumb trail instead of back links, ticket 182)
 
@@ -67,7 +67,7 @@ The product owner tested the box with a real iCloud account on 14/11/2026. The m
 - **Every page below Settings starts with a breadcrumb trail** that replaces the back link: `Settings › <hub entry> › … › <this page>`, for example `Settings › People › Papa › Invitation for Papa`. Every part except the last is a link; the last is the page's own heading in plain text with `aria-current="page"`. The Settings hub is the top and has no trail. The trail is a `nav` with `aria-label` "Breadcrumb" (German "Seitenpfad") holding an `ol`.
 - **The side navigation stays on every sub-page** with Settings filled: `aria-current="page"` on the hub, `aria-current="true"` on every page below it.
 - **Words match what you tapped:** the trail word of an overview is its hub entry, and the overview's heading says the same. The page "Calendars" is therefore called **"Calendar connections"** (German "Kalender-Verbindungen"), so it is not mixed up with the screen Calendar. "Choose calendars" is a section of the connection page, not a part of the trail.
-- **Names are never cut:** parts wrap between words, only words of 12 or more letters are hyphenated, a single token longer than the line (an e-mail address) breaks at the line end as a last resort. Below 600 px the last part is only read out, because the heading right below says it.
+- **Names are never cut:** parts wrap between words, only words of 12 or more letters are hyphenated, a single token longer than the line (an e-mail address) breaks at the line end as a last resort. Hyphenation depends on browser support for `hyphenate-limit-chars` (Chrome and Edge); Safari and Firefox never hyphenate the trail, so there a word of 12 or more letters wider than the line breaks at the line end without a hyphen. Below 600 px the last part is only read out, because the heading right below says it.
 - **Order:** trail, then the success or error line, then the heading. After a field error, trail and heading keep the saved name.
 - **Everyday screens (Q93):** a page one level below a navigation screen (event, task, note, list, templates overview) keeps its single back link. From two levels deep the same trail is shown, for example `Meals › Meal plan templates › Weekend` and `Tasks › Routine templates › Morning routine › <step>`.
 

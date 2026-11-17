@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/hejmo-home/hejmo/internal/auth"
 )
 
 // Ticket 182 (ADR 0017, preview 182): every page below Settings starts with a
@@ -318,6 +320,28 @@ func TestWizardRecoveryCodeStepHasNoTrail(t *testing.T) {
 	}
 	if strings.Contains(r.body, `class="crumbs"`) {
 		t.Errorf("the wizard's recovery-code step has a breadcrumb trail\n%s", r.body)
+	}
+}
+
+// The same holds for an accepted invitation: its one-time code and recovery-code steps are the wizard.
+func TestInvitedParentWizardStepsHaveNoTrail(t *testing.T) {
+	e := newInviteBox(t)
+	tok := e.create()
+	e.b.logout()
+	e.en(http.MethodGet, "/invite/"+tok, nil)
+	if r := e.en(http.MethodPost, "/invite/"+tok+"/account", acceptForm("papa", "papas long password")); r.status != http.StatusSeeOther {
+		t.Fatalf("accept = %d\n%s", r.status, r.body)
+	}
+	totp := e.en(http.MethodGet, "/setup/totp", nil)
+	code, _ := auth.TOTPCode(secretOn(t, totp.body), e.b.now)
+	codes := e.en(http.MethodPost, "/setup/totp", url.Values{"code": {code}})
+	if codes.status != http.StatusOK || strings.Count(codes.body, "data-recovery-code=") != 10 {
+		t.Fatalf("recovery codes = %d\n%s", codes.status, codes.body)
+	}
+	for name, body := range map[string]string{"code step": totp.body, "recovery-code step": codes.body} {
+		if strings.Contains(body, `class="crumbs"`) {
+			t.Errorf("the invited parent's %s has a breadcrumb trail\n%s", name, body)
+		}
 	}
 }
 

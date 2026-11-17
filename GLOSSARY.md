@@ -68,6 +68,14 @@ _Avoid_: hostname, domain, relying party (in user-facing text)
 The German state, Austrian state or Swiss canton of the household, which decides its public holidays.
 _Avoid_: location, country, Bundesland (in code)
 
+**Place list**:
+The list of towns, villages and districts of Germany, Austria and Switzerland that ships inside the box (GeoNames extract, CC BY 4.0, ADR 0023). The parent picks the home location from it while typing; nothing is looked up on the internet.
+_Avoid_: geocoding, address search
+
+**Home location**:
+The latitude and longitude of the household's home, found from a place the parent picks in the list of places on the box (ADR 0023, which replaces the one-time lookup of ADR 0022). The household keeps the place's id, so the box can show its region in the page language. Sunrise and sunset (front light, themes) and the weather use it; the region does not (too coarse).
+_Avoid_: position, address
+
 ## Calendar
 
 **Calendar**:
@@ -259,6 +267,26 @@ _Avoid_: template (alone; clashes with routine template), preset, default plan
 **Adjusted meal**:
 A meal plan entry changed for one week where a meal plan template would fill it (also emptied). It keeps its change when the template changes, until "Back to template".
 _Avoid_: override (in prose), exception
+
+**Recipe**:
+A dish with portions, ingredients and steps that can be put on the meal plan; entered by a parent, imported from a web page or from Hejmo's starter collection, always with its source.
+_Avoid_: dish (alone), cooking instructions
+
+**Ingredient**:
+One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
+_Avoid_: component, item
+
+**Variety**:
+The more exact kind of an article, such as "Type 405" for flour, kept with an ingredient or list entry. Quantities add up only for the same variety.
+_Avoid_: variant, subtype
+
+**Pantry article**:
+An article usually at home, such as salt or oil, left out by default when a recipe's ingredients go onto a list.
+_Avoid_: staple, stock item
+
+**Cooking view**:
+A recipe shown for cooking on a device: large text, ingredients to tick and one step at a time, with the screen kept on.
+_Avoid_: kitchen mode, cook mode
 
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.

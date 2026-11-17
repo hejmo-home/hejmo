@@ -102,7 +102,11 @@ func TestSetupErrorsAppearAtTheFieldAndNeverReturnPasswords(t *testing.T) {
 	if tag := inputTag(r.body, "password"); !strings.Contains(tag, `aria-invalid="true"`) || strings.Contains(tag, "short") {
 		t.Errorf("password field = %q", tag)
 	}
-	for name, value := range map[string]string{"home_name": "Pasing", "name": "Mama", "username": "mama"} {
+	// The picked place stays confirmed (its id travels along).
+	if !strings.Contains(inputTag(r.body, "place_id"), `value="`+idPasing+`"`) || !strings.Contains(r.body, "<b>Pasing</b>") {
+		t.Errorf("the picked place is lost: %q", inputTag(r.body, "place_id"))
+	}
+	for name, value := range map[string]string{"name": "Mama", "username": "mama"} {
 		if !strings.Contains(inputTag(r.body, name), `value="`+value+`"`) {
 			t.Errorf("%s not kept: %q", name, inputTag(r.body, name))
 		}

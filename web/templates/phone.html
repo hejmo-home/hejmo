@@ -1,5 +1,6 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
   <h1>{{.Phone.Name}}</h1>
   {{template "facts" .Facts}}
+  <p class="hint">{{t "phones.hint.switch"}}</p>
   {{template "danger" (dict "Label" (t "phones.revoke") "Explain" (tf "phones.revoke.explain" "name" .Phone.Name) "Confirm" (tf "phones.revoke.confirm" "name" .Phone.Name) "Action" (printf "/phones/%s/revoke" .Phone.ID) "CancelHref" (printf "/phones/%s" .Phone.ID))}}
 {{template "foot"}}

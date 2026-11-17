@@ -517,6 +517,54 @@ func TestFamilyViewLayoutRulesFollowTheSpec(t *testing.T) {
 	}
 }
 
+// Design pass 2 of #86 (and #32): one shared block gives the page the same
+// padding on both sides and breaks long words; three-option choices stack on
+// phones.
+func TestPageKeepsItsPaddingAndBreaksLongWords(t *testing.T) {
+	css := stylesheet(t)
+	for _, want := range []string{
+		".frame { grid-template-columns: minmax(0, 1fr); }",
+		".frame > *, .steps fieldset, .steps fieldset > * { min-width: 0; }",
+		"body.web { overflow-wrap: anywhere; }",
+		"@supports (hyphenate-limit-chars: 12 5 5) { body.web { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }",
+		".frame-nav ul { flex-wrap: wrap; overflow-x: visible; }",
+		"input, select, textarea, .secret, .pairing-code { -webkit-hyphens: manual; hyphens: manual; }",
+		".choice label { grid-template-columns: auto minmax(0, 1fr); }",
+		".choice b, .choice small { grid-column: 2; }",
+		".place-status > div, .msg, .ferr { min-width: 0; }",
+	} {
+		if !strings.Contains(css, want) {
+			t.Errorf("stylesheet lacks %q", want)
+		}
+	}
+	// The wall display (body without .web) keeps its approved layout (ADR
+	// 0015/0016): no rule may break or hyphenate words for every body.
+	if regexp.MustCompile(`(?m)^body\s*\{[^}]*(overflow-wrap|hyphens)`).MatchString(css) {
+		t.Error("line-break rules must be scoped to body.web, not body")
+	}
+	if strings.Contains(css, "navigation scrolls") {
+		t.Error("the navigation wraps; a comment says it scrolls")
+	}
+	m := regexp.MustCompile(`(?s)@media \(max-width: 599px\) \{(.*?)\n\}`).FindAllStringSubmatch(css, -1)
+	var phone string
+	for _, x := range m {
+		phone += x[1]
+	}
+	for _, want := range []string{
+		"fieldset.seg:has(> label:nth-of-type(3)) { flex-direction: column; }",
+		"fieldset.seg:has(> label:nth-of-type(3)) label { flex: none; justify-content: flex-start; text-align: left; margin: -1px 0 0; border-radius: 0; }",
+		"fieldset.seg:has(> label:nth-of-type(3)) label:first-of-type { margin-top: 0; border-radius: var(--radius-field) var(--radius-field) 0 0; }",
+		"fieldset.seg:has(> label:nth-of-type(3)) label:last-of-type { border-radius: 0 0 var(--radius-field) var(--radius-field); }",
+	} {
+		if !strings.Contains(phone, want) {
+			t.Errorf("phone media query lacks %q", want)
+		}
+	}
+	if strings.Index(css, ".frame { grid-template-columns") < strings.Index(css, ".place-status.missing") {
+		t.Error("the shared block must follow the home-location block")
+	}
+}
+
 // #150: a person name in the family view never breaks inside the word. The
 // name sits in its own shrinkable element (span.person-name, min-width: 0), so
 // overflow-wrap: break-word applies at the column edge; hyphens only for words
@@ -583,5 +631,29 @@ func TestBreadcrumbTrailWrapsNamesAndHasTouchSizedParts(t *testing.T) {
 	}
 	if rule := ruleFor(t, css, ".frame-nav a[aria-current]"); !strings.Contains(rule, "background: var(--accent)") {
 		t.Errorf("the section you are in stays filled: %s", rule)
+	}
+}
+
+// Ticket 175: a heading holding a name (the reset page: "Einmalcodes von
+// Sophie-Marie zurücksetzen") breaks at spaces and hyphens first; a name breaks
+// inside a word only when it is wider than the line, and takes no automatic hyphens.
+func TestHeadingNameIsNotBrokenInsideTheWord(t *testing.T) {
+	css := stylesheet(t)
+	unprefixedManual := regexp.MustCompile(`(^|[;\s])hyphens:\s*manual`)
+	for _, sel := range []string{`h1`, `\.wizard h1`, `\.pv-header h1`} {
+		rules := regexp.MustCompile(`(?m)^`+sel+` \{([^}]*)\}`).FindAllStringSubmatch(css, -1)
+		found := false
+		for _, m := range rules {
+			if !strings.Contains(m[1], "overflow-wrap") {
+				continue
+			}
+			found = true
+			if strings.Contains(m[1], "anywhere") || !strings.Contains(m[1], "overflow-wrap: break-word") || !unprefixedManual.MatchString(m[1]) || strings.Contains(m[1], "hyphens: auto") {
+				t.Errorf("%s must use overflow-wrap: break-word and hyphens: manual: %s", sel, m[1])
+			}
+		}
+		if !found {
+			t.Errorf("no %s rule sets overflow-wrap", sel)
+		}
 	}
 }

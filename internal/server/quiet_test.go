@@ -353,7 +353,10 @@ func TestDisplaysWithoutKioskOrWithoutLocationAreLeftAlone(t *testing.T) {
 	if fake.count() != 0 {
 		t.Fatal("kiosk called without a kiosk app")
 	}
-	// A kiosk app but no home coordinates: the sun rule cannot apply, the schedule still does.
+	// A kiosk app but no home coordinates (a box set up before the home location was confirmed): the sun rule cannot apply, the schedule still does.
+	if _, err := f.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL`); err != nil {
+		t.Fatal(err)
+	}
 	f.saveSettings(t, url.Values{"kiosk_url": {"http://tablet:8080"}})
 	f.now = f.at(14, 17, 0)
 	run.Tick(context.Background())

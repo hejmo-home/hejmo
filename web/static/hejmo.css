@@ -628,6 +628,42 @@ textarea { width: 100%; font: inherit; color: var(--text); background: var(--sur
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
 
+/* Home location (#86): the dashed "No place chosen yet" box. The picker itself is styled at the end of this file. */
+.place-status.missing { border: 2px dashed var(--text-secondary); }
+[data-theme="bw"] .place-status.missing { border: 2px dashed var(--text); }
+.place-privacy, .steps [data-location] { margin: 0; }
+
+/* Page padding and line breaks (product owner feedback 15/11/2026, #32 and
+   #86). The frame has one column that may be narrower than the navigation
+   row, so the page keeps the same padding on both sides and the navigation
+   wraps inside it (it does not scroll sideways); fieldsets may shrink below
+   their content. On wide screens the "Back to Settings" link and the content
+   both sit right of the navigation, which spans both rows. Words break
+   at syllables in the page language (html lang), a word longer than the line
+   breaks anywhere; nothing is cut or runs over the edge. Continuation lines
+   start under the text, not under a radio or an icon. */
+.frame { grid-template-columns: minmax(0, 1fr); }
+.frame > *, .steps fieldset, .steps fieldset > * { min-width: 0; }
+body.web { overflow-wrap: anywhere; } /* web pages only: the wall display keeps its approved layout (ADR 0015/0016) */
+/* Hyphenation only where the long-word limit is understood: Safari lacks hyphenate-limit-chars and would split short words (die-sen). There long words just break. */
+@supports (hyphenate-limit-chars: 12 5 5) { body.web { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
+@media (min-width: 900px) {
+  .frame.has-nav > .frame-nav { grid-row: span 2; }
+  .frame.has-nav > .back, .frame.has-nav > main { grid-column: 2; }
+}
+.frame-nav ul { flex-wrap: wrap; overflow-x: visible; } /* every item visible, none cut at the edge */
+input, select, textarea, .secret, .pairing-code { -webkit-hyphens: manual; hyphens: manual; }
+.choice label { grid-template-columns: auto minmax(0, 1fr); }
+.choice b, .choice small { grid-column: 2; }
+.place-status > div, .msg, .ferr { min-width: 0; }
+/* A choice of three or more sentences stacks on phones, one full-width row each. */
+@media (max-width: 599px) {
+  fieldset.seg:has(> label:nth-of-type(3)) { flex-direction: column; }
+  fieldset.seg:has(> label:nth-of-type(3)) label { flex: none; justify-content: flex-start; text-align: left; margin: -1px 0 0; border-radius: 0; }
+  fieldset.seg:has(> label:nth-of-type(3)) label:first-of-type { margin-top: 0; border-radius: var(--radius-field) var(--radius-field) 0 0; }
+  fieldset.seg:has(> label:nth-of-type(3)) label:last-of-type { border-radius: 0 0 var(--radius-field) var(--radius-field); }
+}
+
 /* Lists (ticket 6.1; ADR 0015, 0017). The overview shows calm rows that open
    a list. A list page has one add row on top, open entries with a large tick
    target, and the ticked-off entries in their own group below. Moving and
@@ -685,13 +721,9 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .notice.top { margin-bottom: 14px; }
 /* ---- Detail pages and calm overview rows (ticket 111, ADR 0017) ---- */
 /* Detail pages and calm overview rows (ADR 0017). */
-/* The frame's single column must be allowed to shrink: without minmax(0, 1fr) the
-   one-line navigation sets the column to its full width and pushes the page past
-   the right edge of a 375 px phone (left margin looks wrong, text does not wrap). */
-.frame { grid-template-columns: minmax(0, 1fr); }
-.frame > * { min-width: 0; }
 .steps .card-row .t b { color: var(--text); }
-h1 { overflow-wrap: anywhere; hyphens: auto; }
+h1 { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* a name in a heading breaks at a space or hyphen first, inside a word only when wider than the line (ticket 175) */
+.h-name { min-width: 0; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* the name in a flex heading is its own shrinkable item: a word wider than the line breaks at the edge instead of widening the heading (ticket 175, as .fv .person-name) */
 .back { gap: 6px; text-decoration: none; }
 .back .icon { stroke: currentColor; }
 main > .back { margin: 0 0 4px; }
@@ -838,7 +870,7 @@ details.danger .confirm a { display: inline-flex; align-items: center; min-heigh
    no navigation, the progress of the four steps on top. Only existing tokens. */
 .wizard { max-width: 600px; margin: 0 auto; display: grid; gap: var(--gap-section); align-content: start; }
 .wizard main { display: grid; gap: var(--gap); min-width: 0; }
-.wizard h1 { margin: 0; overflow-wrap: anywhere; hyphens: manual; }
+.wizard h1 { margin: 0; min-width: 0; overflow-wrap: break-word; hyphens: manual; }
 .wizard h2 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
 .wizard p, .wizard .lead { margin: 0; }
 .wizard .notice, .wizard .error, .wizard .msg { max-width: none; margin: 0; }
@@ -1046,7 +1078,7 @@ fieldset.choice legend.sr { float: none; width: 1px; margin: -1px; }
 
 /* Personal view: tasks first and as wide as the week, progress in words on top. */
 .pv-header { justify-content: flex-start; flex-wrap: wrap; }
-.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: anywhere; }
+.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: break-word; hyphens: manual; }
 .pv-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .pv-tasks { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 .tasks-head { flex: none; display: grid; gap: 8px; padding: var(--pad-column) var(--pad-column) 12px; border-bottom: 1px solid var(--border); }
@@ -1498,6 +1530,37 @@ p.hint.later { max-width: 560px; }
   .steps:has(input[name="source"][value="existing"]:checked) .src-new,
   .steps:has(input[name="source"][value="new"]:checked) .src-existing { display: none; }
 }
+
+/* Home location picker, Settings and wizard (#86, product owner decision Q1 =
+   a, 15/11/2026). Builds on the picker of ticket 133 (.place-pick, .place-list,
+   .place-status.ok): the confirmed box carries its state in words on its own
+   line (.st) and "Change" sits at the right; on phones "Change" moves under
+   the text so the name keeps the full width. While a new place is being
+   chosen in Settings, .place-keep says which place stays in use and offers to
+   keep it. Suggestions are not highlighted until the arrow keys move into
+   the list. No new tokens. */
+.place-status { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 6px 10px; }
+.place-status > div { display: grid; gap: 2px; }
+.place-status small { display: block; }
+.place-status .st { color: var(--text); font-weight: 600; font-size: var(--fs-meta); }
+.place-status .button { align-self: center; }
+.place-pick .hint, .place-pick .ferr { margin: 0; }
+.place-keep { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.place-keep .hint { flex: 1 1 14em; }
+.place-list li b, .place-status b { hyphens: manual; }
+.place-list { gap: 0; }
+.place-list li { border-radius: 0; }
+.place-list li + li { border-top: 1px solid var(--border); }
+.place-list li:hover { background: var(--background); }
+[data-theme="bw"] .place-list li + li { border-top-color: var(--text); }
+.place-pick .lab { display: block; }
+@media (max-width: 479px) {
+  .place-status { grid-template-columns: auto minmax(0, 1fr); }
+  .place-status .button { grid-column: 2; justify-self: start; }
+}
+/* Without JavaScript each suggestion is a submit button that fills its row. */
+.place-list li > button { display: grid; gap: 1px; width: 100%; min-height: inherit; align-content: center; padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.place-list li > button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 
 /* ticket 7.4 subtasks (preview-93), on top of ticket 7.2. Uses existing tokens only. */
 

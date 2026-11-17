@@ -342,6 +342,27 @@ func (s *server) handleSwitchToOwnCA(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup/https", http.StatusSeeOther)
 		return
 	}
+	// Choosing the public name took the offline answer back, so the wizard
+	// asks again (ticket 201, Q142). The browser is on plain HTTP here, so the
+	// question is answered at this address, not at /setup/offline.
+	if !s.outboundBox().Asked {
+		var offline bool
+		switch r.PostFormValue("offline") {
+		case "on":
+			offline = true
+		case "off":
+		case "":
+			s.renderOfflineQuestionAt(w, r, http.StatusOK, false, "/setup/https/own-ca")
+			return
+		default:
+			s.renderOfflineQuestionAt(w, r, http.StatusUnprocessableEntity, true, "/setup/https/own-ca")
+			return
+		}
+		if err := s.db.AnswerOfflineQuestion(offline, s.now()); err != nil {
+			s.fail(w, "offline answer", err)
+			return
+		}
+	}
 	if err := s.public.Clear(); err != nil {
 		s.fail(w, "forget public HTTPS setup", err)
 		return

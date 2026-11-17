@@ -30,6 +30,9 @@ var forbidden = map[string][]string{
 // package of the DNS service, whose operations pass the gate, may use them.
 var forbiddenImports = []string{"github.com/miekg/dns", "github.com/caddyserver/certmagic", "github.com/mholt/acmez", "github.com/libdns/", "net/smtp", "net/rpc"}
 
+// outboundPath is package outbound's import path.
+const outboundPath = "github.com/hejmo-home/hejmo/internal/outbound"
+
 // exempt lists directories that are not the box: the package itself, developer
 // tools and test helpers. Test files are not checked.
 var exempt = []string{"internal/outbound", "tools", "cmd/hejmo-measure", "internal/caldavclient/caldavtest"}
@@ -54,6 +57,14 @@ func bypasses(fset *token.FileSet, f *ast.File, dir string) []string {
 			}
 		}
 	}
+	isOutbound := func(e ast.Expr) (*ast.SelectorExpr, bool) {
+		sel, ok := e.(*ast.SelectorExpr)
+		if !ok {
+			return nil, false
+		}
+		id, ok := sel.X.(*ast.Ident)
+		return sel, ok && names[id.Name] == outboundPath
+	}
 	ast.Inspect(f, func(n ast.Node) bool {
 		switch x := n.(type) {
 		case *ast.SelectorExpr:
@@ -64,10 +75,31 @@ func bypasses(fset *token.FileSet, f *ast.File, dir string) []string {
 			if slices.Contains(forbidden[names[id.Name]], x.Sel.Name) {
 				out = append(out, fset.Position(x.Pos()).String()+": "+id.Name+"."+x.Sel.Name)
 			}
+			if names[id.Name] == outboundPath && x.Sel.Name == "AllowAll" {
+				out = append(out, fset.Position(x.Pos()).String()+": outbound.AllowAll (for tests only)")
+			}
 		case *ast.CompositeLit:
 			if sel, ok := x.Type.(*ast.SelectorExpr); ok {
 				if id, ok := sel.X.(*ast.Ident); ok && names[id.Name] == "net/http" && sel.Sel.Name == "Client" {
 					out = append(out, fset.Position(x.Pos()).String()+": http.Client literal")
+				}
+				if o, ok := isOutbound(sel); ok && o.Sel.Name == "Gate" {
+					out = append(out, fset.Position(x.Pos()).String()+": outbound.Gate literal (a Gate without a policy)")
+				}
+			}
+		case *ast.CallExpr:
+			// (*outbound.Gate)(nil): a conversion of nil, a Gate that asks nobody.
+			if par, ok := x.Fun.(*ast.ParenExpr); ok && len(x.Args) == 1 {
+				if star, ok := par.X.(*ast.StarExpr); ok {
+					if o, ok := isOutbound(star.X); ok && o.Sel.Name == "Gate" {
+						out = append(out, fset.Position(x.Pos()).String()+": outbound.Gate nil Gate conversion")
+					}
+				}
+			}
+			// outbound.New(nil, ...): a Gate without a policy.
+			if o, ok := isOutbound(x.Fun); ok && o.Sel.Name == "New" && len(x.Args) > 0 {
+				if id, ok := x.Args[0].(*ast.Ident); ok && id.Name == "nil" {
+					out = append(out, fset.Position(x.Pos()).String()+": outbound.New without a policy")
 				}
 			}
 		}
@@ -121,6 +153,7 @@ import (
 	"net/http"
 	h2 "net/http"
 	"github.com/miekg/dns"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 )
 func f() {
 	http.Get("http://x")
@@ -131,6 +164,11 @@ func f() {
 	_ = &net.Dialer{}
 	net.LookupHost("x")
 	_ = dns.Client{}
+	_ = (*outbound.Gate)(nil).Client(outbound.ICS, 0)
+	_ = &outbound.Gate{}
+	_ = outbound.Gate{}
+	_ = outbound.New(nil, nil)
+	_ = outbound.AllowAll()
 }`
 	fset := token.NewFileSet()
 	f, err := parser.ParseFile(fset, "bad.go", bad, 0)
@@ -138,16 +176,25 @@ func f() {
 		t.Fatal(err)
 	}
 	got := bypasses(fset, f, "internal/server")
-	for _, want := range []string{"http.Get", "http.DefaultClient", "http.Client literal", "h2.Transport", "net.Dial", "net.Dialer", "net.LookupHost", "imports github.com/miekg/dns"} {
+	for _, want := range []string{"http.Get", "http.DefaultClient", "http.Client literal", "h2.Transport", "net.Dial", "net.Dialer", "net.LookupHost", "imports github.com/miekg/dns",
+		"nil Gate", "Gate literal", "New without a policy", "outbound.AllowAll"} {
 		if !slices.ContainsFunc(got, func(s string) bool { return strings.Contains(s, want) }) {
 			t.Errorf("the check missed %q; found %v", want, got)
 		}
 	}
 	// A client that is only passed around is fine.
 	ok := `package x
-import "net/http"
-type T struct{ c *http.Client }
-func f(c *http.Client) *http.Request { r, _ := http.NewRequest("GET", "/", nil); return r }`
+import (
+	"net/http"
+	"github.com/hejmo-home/hejmo/internal/outbound"
+)
+type T struct{ c *http.Client; g *outbound.Gate }
+func f(c *http.Client, g *outbound.Gate) *http.Request {
+	_ = g.Client(outbound.ICS, 0)
+	_ = outbound.New(outbound.Closed{}, nil)
+	r, _ := http.NewRequest("GET", "/", nil)
+	return r
+}`
 	f, _ = parser.ParseFile(fset, "ok.go", ok, 0)
 	if got := bypasses(fset, f, "internal/server"); len(got) != 0 {
 		t.Errorf("false alarm: %v", got)

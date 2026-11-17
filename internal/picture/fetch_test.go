@@ -33,7 +33,7 @@ func serve(t *testing.T, h http.HandlerFunc) *httptest.Server {
 // loopbackIsPublic lets the tests reach their own server on 127.0.0.1, and
 // nothing else: 127.0.0.2 stays private to prove the check runs.
 func loopbackIsPublic() *picture.Fetcher {
-	return &picture.Fetcher{Public: func(a netip.Addr) bool { return a == netip.MustParseAddr("127.0.0.1") }, Timeout: 3 * time.Second}
+	return &picture.Fetcher{Gate: outbound.AllowAll(), Public: func(a netip.Addr) bool { return a == netip.MustParseAddr("127.0.0.1") }, Timeout: 3 * time.Second}
 }
 
 func jpegHandler(t *testing.T) http.HandlerFunc {
@@ -73,7 +73,7 @@ func TestAddressesInTheOwnNetworkAreRefusedWhateverTheirSpelling(t *testing.T) {
 	hits := 0
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) { hits++; jpegHandler(t)(w, r) })
 	port := srv.Listener.Addr().(*net.TCPAddr).Port
-	f := &picture.Fetcher{Timeout: 2 * time.Second}
+	f := &picture.Fetcher{Gate: outbound.AllowAll(), Timeout: 2 * time.Second}
 	for _, u := range []string{
 		fmt.Sprintf("http://127.0.0.1:%d/a.jpg", port),
 		fmt.Sprintf("http://localhost:%d/a.jpg", port),
@@ -95,7 +95,7 @@ func TestAddressesInTheOwnNetworkAreRefusedWhateverTheirSpelling(t *testing.T) {
 }
 
 func TestThePrivateAddressIsNamedInTheError(t *testing.T) {
-	f := &picture.Fetcher{Timeout: 2 * time.Second}
+	f := &picture.Fetcher{Gate: outbound.AllowAll(), Timeout: 2 * time.Second}
 	for u, addr := range map[string]string{
 		"http://192.168.178.20/bilder/birne.jpg":   "192.168.178.20",
 		"http://10.0.0.5/x.jpg":                    "10.0.0.5",
@@ -269,7 +269,7 @@ func TestASlowServerIsGivenUpOn(t *testing.T) {
 }
 
 func TestAnUnreachableHostIsNotTheUsersFault(t *testing.T) {
-	f := &picture.Fetcher{Public: func(netip.Addr) bool { return true }, Timeout: time.Second}
+	f := &picture.Fetcher{Gate: outbound.AllowAll(), Public: func(netip.Addr) bool { return true }, Timeout: time.Second}
 	if _, err := f.Fetch(context.Background(), "http://127.0.0.1:1/a.jpg"); !errors.Is(err, picture.ErrUnreachable) {
 		t.Errorf("err = %v, want ErrUnreachable", err)
 	}

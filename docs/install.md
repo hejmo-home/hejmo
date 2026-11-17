@@ -100,6 +100,8 @@ With **offline mode** (the setup wizard asks right after you choose "Only in the
 
 With offline mode on (**Settings › Connections to the outside**), the box does not update itself, and neither does the nightly updater: the box writes `offline=yes` into the `update-settings` file and the updater contacts nothing. You bring new versions to the box yourself. After 90 days without an update (you can change the number on that page) parents see "Not updated for 90 days" with a link to this chapter.
 
+**On a box installed before offline mode existed, run the install script once first** (see "Updating and removing" below): an older updater does not know `offline=yes` and would keep checking for updates every night.
+
 Uploading an update file in the web interface does not exist yet (it is planned as its own step). Until then, do it by hand, from a computer with internet and the box's address at hand:
 
 1. **On a computer with internet**, find the newest version on the [releases page](https://github.com/hejmo-home/hejmo/releases) (use a number such as `0.2.4`, not a pre-release). Pull the image and check its signature, exactly as the updater does:
@@ -113,7 +115,11 @@ Uploading an update file in the web interface does not exist yet (it is planned 
 2. **Save the image to a file** and put it on a USB stick: `docker save ghcr.io/hejmo-home/hejmo:0.2.4 -o hejmo-0.2.4.tar`.
 3. **On the box**, mount the stick, back up the data (`sudo cp -a /opt/hejmo/data /opt/hejmo/data.before-0.2.4`), then load the image: `sudo docker load -i /media/usb/hejmo-0.2.4.tar`.
 4. **Switch the box to it:** set `HEJMO_IMAGE=ghcr.io/hejmo-home/hejmo:0.2.4` in `/opt/hejmo/.env`, then run `cd /opt/hejmo && sudo docker compose up -d`. Open the box and check that it works; the page "Connections to the outside" still shows that nothing went out.
-5. If the new version does not start, set `HEJMO_IMAGE` back to the old tag, stop the box and restore the data copy.
+5. **Tell the box that it was updated.** The box cannot see which image it runs, and it only learns about an update from the file the nightly updater writes. Without this step the page keeps showing the old version and parents keep seeing "Not updated for N days". Use the version you installed:
+   ```bash
+   sudo sh -c 'rm -f /opt/hejmo/data/update-status && printf "state=updated\nversion=0.2.4\ntime=%s\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > /opt/hejmo/data/update-status'
+   ```
+6. If the new version does not start, set `HEJMO_IMAGE` back to the old tag, stop the box and restore the data copy (and skip step 5).
 
 ## Time from the router
 

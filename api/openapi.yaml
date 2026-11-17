@@ -3084,6 +3084,7 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/Outbound" }
+        "400": { $ref: "#/components/responses/Invalid" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "502":

@@ -22,7 +22,17 @@ import (
 // renderOfflineQuestion is the wizard's question right after "Only in the home
 // network": should the box stay fully offline?
 func (s *server) renderOfflineQuestion(w http.ResponseWriter, r *http.Request, status int, withError bool) {
-	data := map[string]any{"Wizard": wizardAt(1), "Choice": s.public != nil, "Invalid": withError}
+	s.renderOfflineQuestionAt(w, r, status, withError, "")
+}
+
+// renderOfflineQuestionAt is the question whose form posts to action (empty:
+// /setup/offline). A custom action is the switch to the own CA after a stuck
+// public name; the way back to the public name is not offered there.
+func (s *server) renderOfflineQuestionAt(w http.ResponseWriter, r *http.Request, status int, withError bool, action string) {
+	data := map[string]any{"Wizard": wizardAt(1), "Choice": s.public != nil && action == "", "Invalid": withError, "Action": "/setup/offline"}
+	if action != "" {
+		data["Action"] = action
+	}
 	if withError {
 		data["ErrorField"], data["Error"] = "offline", "setup.offline.error"
 	}

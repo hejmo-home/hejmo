@@ -29,7 +29,13 @@ type hetzner struct {
 }
 
 func newHetzner(c Credentials, base string) *hetzner {
-	return &hetzner{token: c.Token, base: strings.TrimSuffix(base, "/"), client: (*outbound.Gate)(nil).Client(outbound.DNS, 30*time.Second)}
+	return &hetzner{token: c.Token, base: strings.TrimSuffix(base, "/"), client: outbound.New(outbound.Closed{}, nil).Client(outbound.DNS, 30*time.Second)}
+}
+
+// useGate sends the provider's requests through g (the Manager's gate). Until
+// then the provider refuses every connection.
+func (h *hetzner) useGate(g *outbound.Gate) {
+	h.client = g.Client(outbound.DNS, 30*time.Second)
 }
 
 type hetznerRecord struct {

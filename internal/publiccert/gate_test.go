@@ -130,3 +130,43 @@ func TestDeleteRecordsReportsWhatTheServiceRefused(t *testing.T) {
 		t.Error("nothing may change when the deletion fails")
 	}
 }
+
+type allowPolicy struct{}
+
+func (allowPolicy) Verdict(outbound.Service) outbound.Verdict { return outbound.VerdictAllowed }
+
+type contactRecorder struct{ contacted []string }
+
+func (c *contactRecorder) Refused(time.Time, outbound.Service, string) {}
+func (c *contactRecorder) Contacted(_ time.Time, s outbound.Service, target string) {
+	c.contacted = append(c.contacted, string(s)+" "+target)
+}
+
+// The Hetzner provider has an HTTP client of its own: it must be the
+// Manager's gate's, not an ungated one (Q144).
+func TestHetznerProviderUsesTheManagersGate(t *testing.T) {
+	f := newFakeHetzner(t)
+	creds := publiccert.Credentials{Token: "hz-token"}
+	// As the factory builds it, before the Manager hands it out: closed.
+	bare := publiccert.NewHetznerUngated(creds, f.srv.URL+"/v1")
+	if _, err := bare.GetRecords(context.Background(), providerZone); !errors.Is(err, outbound.ErrRefused) {
+		t.Fatalf("an ungated provider connected: %v", err)
+	}
+	build := publiccert.WithProviderFactory(func(string, publiccert.Credentials) (publiccert.DNSProvider, error) {
+		return publiccert.NewHetznerUngated(creds, f.srv.URL+"/v1"), nil
+	})
+	r := newRig(t)
+
+	rec := &contactRecorder{}
+	m := r.manager(nil, build, publiccert.WithGate(outbound.New(allowPolicy{}, rec)))
+	p, err := publiccert.ProviderOf(m, "hetzner", creds)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := p.GetRecords(context.Background(), providerZone); err != nil {
+		t.Fatalf("GetRecords through an open gate: %v", err)
+	}
+	if len(rec.contacted) == 0 || rec.contacted[len(rec.contacted)-1][:3] != "dns" {
+		t.Errorf("the request did not pass the gate: contacted = %v", rec.contacted)
+	}
+}

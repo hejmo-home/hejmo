@@ -105,9 +105,10 @@ func (e *RefusedError) Error() string {
 // Is makes errors.Is(err, ErrRefused) true.
 func (e *RefusedError) Is(target error) bool { return target == ErrRefused }
 
-// Gate is the box's door to the outside. The zero value and a nil *Gate let
-// everything through without keeping a record (tests and tools without a
-// database).
+// Gate is the box's door to the outside. A Gate without a policy (the zero
+// value, a nil *Gate, New(nil, ...)) fails closed: it refuses everything.
+// Tests that need a connection use AllowAll; the bypass check (bypass_test.go)
+// fails on that, on nil-Gate conversions and on Gate literals in the box's own code.
 type Gate struct {
 	policy Policy
 	ledger Ledger
@@ -118,6 +119,14 @@ type Gate struct {
 func New(policy Policy, ledger Ledger) *Gate {
 	return &Gate{policy: policy, ledger: ledger, now: time.Now}
 }
+
+type allowAll struct{}
+
+func (allowAll) Verdict(Service) Verdict { return VerdictAllowed }
+
+// AllowAll returns a Gate that lets everything through and keeps no record.
+// It is for tests only; the bypass check rejects it anywhere else.
+func AllowAll() *Gate { return &Gate{policy: allowAll{}, now: time.Now} }
 
 // SetClock sets the clock the ledger entries are stamped with (tests).
 func (g *Gate) SetClock(now func() time.Time) { g.now = now }
@@ -132,7 +141,7 @@ func (g *Gate) clock() time.Time {
 // Verdict is the answer for s now, without recording anything.
 func (g *Gate) Verdict(s Service) Verdict {
 	if g == nil || g.policy == nil {
-		return VerdictAllowed
+		return VerdictOffline // fail closed
 	}
 	return g.policy.Verdict(s)
 }
@@ -315,7 +324,8 @@ func homeAddr(a netip.Addr) bool {
 
 // CheckHome reports whether the address in rawURL is in the home network: an
 // address of a private, loopback or link-local range, "localhost", a name
-// ending in .local, .lan or .home.arpa, or a name without a dot. It looks at
+// ending in .local, .lan, .home.arpa or .fritz.box, or a name without a dot.
+// Other names (tablet.home, say) do not count, offline mode or not. It looks at
 // the text only and resolves nothing.
 func CheckHome(rawURL string) error {
 	u, err := url.Parse(rawURL)

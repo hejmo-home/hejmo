@@ -780,6 +780,9 @@ func (m *Manager) provider(name string, c Credentials) (DNSProvider, error) {
 	if err != nil {
 		return nil, err
 	}
+	if u, ok := p.(interface{ useGate(*outbound.Gate) }); ok {
+		u.useGate(m.gate) // a provider with its own HTTP client uses the Manager's gate
+	}
 	return gatedProvider(m.gate, name, p), nil
 }
 

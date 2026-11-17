@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/weather"
 )
@@ -38,7 +39,7 @@ func newLiveBox(t *testing.T, interval time.Duration) *liveBox {
 	f := newFamilyBox(t, "eink_bw")
 	c := &clock{t: f.at(14, 8, 0)}
 	// The weather reading ages with the live box's clock, not the family box's.
-	f.weather = weather.New(weather.WithBaseURL(f.meteo.srv.URL), weather.WithClock(c.now))
+	f.weather = weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL(f.meteo.srv.URL), weather.WithClock(c.now))
 	h := server.New(server.Options{DB: f.db, PKI: f.pki, Now: c.now, LiveInterval: interval, Weather: f.weather})
 	srv := httptest.NewUnstartedServer(h)
 	cert, err := f.pki.GetCertificate(nil)

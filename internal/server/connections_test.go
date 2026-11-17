@@ -212,7 +212,7 @@ func TestRemovingAConnectionRemovesItsEventsAndDeletesNothingOutside(t *testing.
 	}
 
 	// Outside, nothing changed.
-	remote, _ := caldavclient.NewClient(srv.URL, caldavtest.User, caldavtest.Password, nil)
+	remote, _ := caldavclient.NewClient(srv.URL, caldavtest.User, caldavtest.Password, openClient())
 	for _, cal := range []string{family, school} {
 		if objs, err := remote.List(context.Background(), cal); err != nil || len(objs) != 1 {
 			t.Fatalf("objects in %s after removal = %v, %v", cal, objs, err)

@@ -94,14 +94,14 @@ const maxFeedBytes = 16 << 20
 
 // HTTPFetcher fetches feeds over HTTP(S).
 type HTTPFetcher struct {
-	Client *http.Client // nil: a client of the ICS connection with a 30 second timeout
+	Client *http.Client // nil: a client that refuses every connection (the service gives it one from the gate)
 }
 
 // Fetch implements Fetcher.
 func (f HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	client := f.Client
 	if client == nil {
-		client = (*outbound.Gate)(nil).Client(outbound.ICS, 30*time.Second)
+		client = outbound.New(outbound.Closed{}, nil).Client(outbound.ICS, 30*time.Second)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -168,7 +168,7 @@ func (s *Service) SetDialer(d Dialer) { s.dial, s.ownDial = d, true }
 // SetGate sends the service's connections through the gate of the outside
 // connections (ticket 201): CalDAV servers are the calendar services, feeds
 // the ICS subscriptions. A fetcher or dialer set by the caller stays. Without a
-// gate the connections are made but not controlled (tests and tools).
+// gate every connection is refused.
 func (s *Service) SetGate(g *outbound.Gate) {
 	s.gate = g
 	if !s.ownFetch {

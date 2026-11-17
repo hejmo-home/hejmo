@@ -219,7 +219,7 @@ func TestSwitchingASyncedCalendarOffAsksFirstThenRemovesItsEventsAndSendsNothing
 	if n := dials.Load(); n != 0 {
 		t.Errorf("the box contacted the server %d times while switching a calendar off", n)
 	}
-	remote, _ := caldavclient.NewClient(srv.URL, caldavtest.User, caldavtest.Password, nil)
+	remote, _ := caldavclient.NewClient(srv.URL, caldavtest.User, caldavtest.Password, openClient())
 	if objs, err := remote.List(context.Background(), school); err != nil || len(objs) != 1 {
 		t.Errorf("the source lost its event: %v, %v", objs, err)
 	}

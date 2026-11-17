@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"os"
+	"os/exec"
 	"path/filepath"
 	"regexp"
 	"strings"
@@ -664,4 +665,53 @@ func TestAPausedCalendarSaysSoInTheAPI(t *testing.T) {
 			t.Errorf("sync = %v, want paused and not stale", sync)
 		}
 	}
+}
+
+// The manual update of the install guide ("Update without the internet"): the
+// box does not know its image, so the guide has a step that writes the status
+// file the nightly updater would write. This runs that very command.
+func TestTheManualUpdateOfTheGuideEndsTheReminderAndShowsTheNewVersion(t *testing.T) {
+	guide, err := os.ReadFile(filepath.Join("..", "..", "docs", "install.md"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	chapter := string(guide)
+	chapter = chapter[strings.Index(chapter, "## Update without the internet"):]
+	chapter = chapter[:strings.Index(chapter[3:], "\n## ")+3]
+	cmd := regexp.MustCompile("(?m)^\\s*sudo (sh -c '.*update-status')$").FindStringSubmatch(chapter)
+	if cmd == nil {
+		t.Fatalf("the guide has no step that writes the update-status file:\n%s", chapter)
+	}
+
+	b, secret := configuredBox(t)
+	signInLater(t, b, secret, b.now)
+	offlineOn(t, b)
+	installed, _ := b.db.OutboundBox()
+	signInLater(t, b, secret, installed.UpdatedAt.AddDate(0, 0, 91))
+	mustContain(t, getEN(b, "/").body, "Not updated for 91 days.")
+
+	// The guide's command, with the box's data folder and today's date swapped in.
+	bin := t.TempDir()
+	fakeDate := "#!/bin/sh\necho " + b.now.UTC().Format(time.RFC3339) + "\n"
+	if err := os.WriteFile(filepath.Join(bin, "date"), []byte(fakeDate), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	run := exec.Command("sh", "-c", strings.TrimSuffix(strings.TrimPrefix(strings.ReplaceAll(cmd[1], "/opt/hejmo/data", b.updateDir), "sh -c '"), "'"))
+	run.Env = append(os.Environ(), "PATH="+bin+string(os.PathListSeparator)+os.Getenv("PATH"))
+	if out, err := run.CombinedOutput(); err != nil {
+		t.Fatalf("the guide's command failed: %v\n%s", err, out)
+	}
+
+	page := getEN(b, "/").body
+	if strings.Contains(page, "Not updated for") {
+		t.Errorf("the reminder stays after the manual update:\n%s", page)
+	}
+	mustContain(t, getEN(b, "/settings/connections").body, "0.2.4")
+}
+
+func TestTheHouseholdSettingsPageSaysWhatOfflineModeSwitchesOff(t *testing.T) {
+	b := signedInBox(t)
+	mustNotContain(t, getEN(b, "/settings/household").body, `class="offline-note"`)
+	offlineOn(t, b)
+	mustContain(t, getEN(b, "/settings/household").body, `class="offline-note"`, "Offline mode is on.")
 }

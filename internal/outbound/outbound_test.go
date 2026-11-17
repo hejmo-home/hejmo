@@ -181,11 +181,24 @@ func TestCheckRefusesWorkThatIsNotHTTP(t *testing.T) {
 	}
 }
 
-func TestAGateWithoutPolicyConnects(t *testing.T) {
+func TestAGateWithoutPolicyRefuses(t *testing.T) {
 	srv, hits := outside(t)
-	var g *outbound.Gate // tests and tools without a database
-	if err := get(t, g.Client(outbound.Weather, time.Second), srv.URL); err != nil || hits.Load() != 1 {
-		t.Fatalf("nil gate: err=%v hits=%d", err, hits.Load())
+	var nilGate *outbound.Gate
+	for name, g := range map[string]*outbound.Gate{"nil": nilGate, "zero": {}, "no policy": outbound.New(nil, nil)} {
+		err := get(t, g.Client(outbound.Weather, time.Second), srv.URL)
+		if !errors.Is(err, outbound.ErrRefused) || hits.Load() != 0 {
+			t.Errorf("%s gate: err=%v hits=%d, want a refusal and no connection", name, err, hits.Load())
+		}
+		if g.Allowed(outbound.Weather) || g.Check(outbound.Weather, "x") == nil {
+			t.Errorf("%s gate lets a connection through", name)
+		}
+	}
+}
+
+func TestAllowAllConnectsForTests(t *testing.T) {
+	srv, hits := outside(t)
+	if err := get(t, outbound.AllowAll().Client(outbound.Weather, time.Second), srv.URL); err != nil || hits.Load() != 1 {
+		t.Fatalf("AllowAll: err=%v hits=%d", err, hits.Load())
 	}
 }
 

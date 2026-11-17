@@ -234,7 +234,7 @@ func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p princi
 		"DateFormat": form.DateFormat, "DateDMY": datefmt.Date(store.DateDMY, sample), "DateMDY": datefmt.Date(store.DateMDY, sample), "SampleYear": sample.Year(),
 		"TimeFormat": form.TimeFormat, "TemperatureUnit": form.TemperatureUnit,
 		"AutoUpdate": form.AutoUpdate, "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
-		"Place": cmp.Or(form.Place, s.storedPicker(r, p)),
+		"Place": cmp.Or(form.Place, s.storedPicker(r, p)), "OfflineNote": s.homeNote(r, p.person),
 	}
 	if hasLocation(p.household) {
 		data["StoredHomeName"] = p.household.HomeName // what stays in use while another place is picked

@@ -201,7 +201,7 @@ func TestHiddenArticlesAreNamedNotOfferedAndTheExactNameStillAdds(t *testing.T) 
 		t.Errorf("the free text row stays")
 	}
 	_, page := s.add(url.Values{"text": {"Peanut butter"}, "mode": {"quick"}})
-	if !strings.Contains(page.body, "Contains peanuts") || !strings.Contains(page.body, "Mia") {
+	if !strings.Contains(page.body, "Contains Peanuts") || !strings.Contains(page.body, "Mia") {
 		t.Errorf("typing the exact name adds the article, with its warning:\n%s", page.body)
 	}
 }
@@ -285,7 +285,7 @@ func TestAnArticleWithAnAllergenCarriesItsWarningInTheLineAndOnTheEntry(t *testi
 	s := newShop(t)
 	s.person("Mia", "child", "omnivore", "peanuts")
 	_, page := s.add(s.item("peanut-butter"))
-	if n := strings.Count(page.body, "Contains peanuts"); n < 2 {
+	if n := strings.Count(page.body, "Contains Peanuts"); n < 2 {
 		t.Errorf("the line and the entry both warn (%d):\n%s", n, page.body)
 	}
 }

@@ -413,11 +413,14 @@ func mobileBrowser(r *http.Request) bool {
 // createDefaultLists gives a new household the lists "Shopping" and "To-dos"
 // (ADR 0015), named in the language of the setup.
 func (s *server) createDefaultLists(householdID, lang string) error {
-	for _, d := range []struct{ key, color, symbol string }{
-		{"lists.default.shopping", "green", "square-filled"},
-		{"lists.default.todos", "blue", "circle-empty"},
+	for _, d := range []struct {
+		key, color, symbol string
+		suggestions        bool
+	}{
+		{"lists.default.shopping", "green", "square-filled", true},
+		{"lists.default.todos", "blue", "circle-empty", false}, // a to-do list does not suggest groceries
 	} {
-		if _, err := s.db.CreateList(householdID, list.List{Name: s.i18n.T(lang, d.key), Color: d.color, Symbol: d.symbol, Sort: list.Manual}); err != nil {
+		if _, err := s.db.CreateList(householdID, list.List{Name: s.i18n.T(lang, d.key), Color: d.color, Symbol: d.symbol, Sort: list.Manual, Suggestions: d.suggestions}); err != nil {
 			return err
 		}
 	}

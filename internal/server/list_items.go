@@ -44,6 +44,7 @@ type itemCtx struct {
 	lang   string
 	st     libState
 	active []string
+	listID string // the list the context was made for, "" if none
 }
 
 func (s *server) itemContext(p principal, lang string) (*itemCtx, error) {

@@ -333,16 +333,13 @@ func (c *itemCtx) hiddenLine(hidden []articleItem) template.HTML {
 		key = "lq.sugg.hidden.many"
 	}
 	line := htmlMsgJoin(c.s.i18n.T(c.lang, "lq.sugg.hidden"), "{names}", c.s.joinWords(c.lang, names))
-	line += " " + htmlMsgJoin(html.EscapeString(c.s.i18n.T(c.lang, key)), "{allergens}", html.EscapeString(c.s.allergenWords(c.lang, keys)), "{who}", string(c.s.whoHTML(c.st, who)))
+	line += " " + htmlMsgJoin(c.s.i18n.T(c.lang, key), "{allergens}", html.EscapeString(c.s.allergenWords(c.lang, keys)), "{who}", string(c.s.whoHTML(c.st, who)))
 	return template.HTML(`<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.6"/><path d="M4 4l16 16"/></svg><span><span class="tag exp">` + html.EscapeString(c.s.i18n.T(c.lang, "lib.tag.exp")) + `</span> ` + line + `</span>`)
 }
 
-// htmlMsgJoin fills placeholders of a text: the text is escaped by the caller, the values are markup.
+// htmlMsgJoin fills the placeholders of a plain text with values that are markup already (escaped by the caller); the text is escaped here.
 func htmlMsgJoin(text string, pairs ...string) string {
-	if !strings.Contains(text, "<") {
-		text = html.EscapeString(text)
-	}
-	return repl(text, pairs...)
+	return repl(html.EscapeString(text), pairs...)
 }
 
 // ---- sentences before saving

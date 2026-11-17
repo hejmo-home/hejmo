@@ -4,6 +4,8 @@ import (
 	"context"
 	"errors"
 	"net/http"
+
+	"github.com/hejmo-home/hejmo/internal/outbound"
 )
 
 // RenewNow renews the certificate now, whether or not it is due, the way
@@ -31,3 +33,8 @@ func NewCloudflare(c Credentials, client *http.Client) DNSProvider {
 	return newCloudflare(c, client)
 }
 func NewINWX(c Credentials, endpoint string) DNSProvider { return newINWX(c, endpoint) }
+
+// GatedProvider wraps a provider so that every call passes the gate.
+func GatedProvider(g *outbound.Gate, name string, p DNSProvider) DNSProvider {
+	return gatedProvider(g, name, p)
+}

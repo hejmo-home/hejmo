@@ -62,6 +62,21 @@ jobs:
           path: ${{ runner.temp }}/layout-shots
           if-no-files-found: ignore
 
+  # Aggregate: keeps the required checks "Test (x86_64)" and "Test (arm64)" of the
+  # branch protection alive, so renaming the shard jobs needs no settings change.
+  # Passes only when every shard of every architecture passed (a skipped or
+  # cancelled shard counts as a failure).
+  test-result:
+    name: Test (${{ matrix.arch }})
+    needs: test
+    if: always()
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
+    runs-on: ubuntu-24.04
+    steps:
+      - run: test "${{ needs.test.result }}" = success
+
   container:
     name: Container (${{ matrix.arch }})
     needs: test

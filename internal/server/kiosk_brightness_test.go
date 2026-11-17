@@ -142,7 +142,7 @@ func TestBrightnessFollowsTheSunOnceAtEachSwitch(t *testing.T) {
 	expect(t, "next day", fake.take(), "brightness 100")
 }
 
-func TestBrightnessUsesTheAdjustedValuesAndAppliesAChangeAtOnce(t *testing.T) {
+func TestBrightnessUsesTheAdjustedValuesAndAppliesAChangeAtTheNextTick(t *testing.T) {
 	f, fake := kioskBox(t, "eink_bw", url.Values{"bright_day": {"80"}, "bright_evening": {"25"}})
 	f.tick(f.at(14, 14, 0))
 	expect(t, "day", fake.take(), "brightness 80")

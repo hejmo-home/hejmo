@@ -74,3 +74,34 @@ func TestTheAPIShowsWhatTheDisplayDoesNow(t *testing.T) {
 		t.Fatalf("current while the kiosk app does not answer = %v", cur)
 	}
 }
+
+// The API works out the target fresh, like the settings page: right after a
+// change it says what the display will do and that nothing confirmed it yet.
+func TestTheAPIDoesNotConfirmAChangeThatWasNotSent(t *testing.T) {
+	fake := &fakeKiosk{}
+	c := signedInAPI(t, withKiosk(fake))
+	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
+	_, shown, _ := c.call(http.MethodPost, "/displays", map[string]any{"code": code, "name": "Kitchen", "type": "screen"})
+	id := shown["id"].(string)
+	c.call(http.MethodPatch, "/displays/"+id, map[string]any{"kiosk": map[string]any{"url": tablet}, "brightness": map[string]any{"evening": 25}})
+	if _, err := c.b.db.SQL().Exec(`UPDATE households SET latitude = 48.15, longitude = 11.46`); err != nil {
+		t.Fatal(err)
+	}
+	c.b.now = time.Date(2026, 11, 14, 17, 0, 0, 0, time.UTC)
+	c.b.kioskRun.Tick(t.Context())
+	status, got, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"brightness": map[string]any{"evening": 30}})
+	if status != http.StatusOK {
+		t.Fatalf("patch = %d %v", status, got)
+	}
+	cur, _ := got["brightness"].(map[string]any)["current"].(map[string]any)
+	if cur["percent"] != 30.0 || cur["confirmed"] != false || cur["reachable"] != true {
+		t.Fatalf("current right after the change = %v", cur)
+	}
+	c.b.now = c.b.now.Add(time.Minute)
+	c.b.kioskRun.Tick(t.Context())
+	_, _, list := c.call(http.MethodGet, "/displays", nil)
+	cur, _ = list[0].(map[string]any)["brightness"].(map[string]any)["current"].(map[string]any)
+	if cur["percent"] != 30.0 || cur["confirmed"] != true {
+		t.Fatalf("current after the tick = %v", cur)
+	}
+}

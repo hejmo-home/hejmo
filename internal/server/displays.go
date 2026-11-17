@@ -560,7 +560,7 @@ type kioskJSON struct {
 	APIKeySet bool   `json:"api_key_set"`
 }
 
-func (s *server) displayToJSON(d store.Display, loc *time.Location) displayJSON {
+func (s *server) displayToJSON(d store.Display, h store.Household, loc *time.Location) displayJSON {
 	j := displayJSON{ID: d.ID, Name: d.Name, Room: d.Room, Type: string(d.Type), PairedAt: d.PairedAt.In(loc).Format(time.RFC3339), ShowTomorrow: d.ShowTomorrow,
 		QuietMode: quietJSON{d.Quiet.Enabled, d.Quiet.FromText(), d.Quiet.ToText()}, Kiosk: kioskJSON{d.KioskURL, d.KioskKeySet},
 		Theme: string(d.Theme), SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset,
@@ -568,13 +568,14 @@ func (s *server) displayToJSON(d store.Display, loc *time.Location) displayJSON 
 	b := d.Brightness
 	j.Brightness = brightJSON{Day: b.Day, Evening: b.Evening, LightSource: string(b.Source), Quiet: brightQuiet{string(b.QuietMode), b.QuietLevel, b.WakeMinutes}}
 	if st, ok := s.kioskState(d); ok {
-		cur := &brightNow{Phase: string(st.Target.Phase), Confirmed: st.Confirmed, Reachable: st.Reachable, LightSensor: st.HasSensor}
-		if !st.Target.Auto {
-			pct := st.Target.Percent
+		t := s.plannedTarget(d, h, st.HasSensor, s.now().In(loc))
+		cur := &brightNow{Phase: string(t.Phase), Confirmed: confirmedTarget(st, t), Reachable: st.Reachable, LightSensor: st.HasSensor}
+		if !t.Auto {
+			pct := t.Percent
 			cur.Percent = &pct
 		}
-		if !st.Target.Since.IsZero() {
-			since := st.Target.Since.In(loc).Format(time.RFC3339)
+		if !t.Since.IsZero() {
+			since := t.Since.In(loc).Format(time.RFC3339)
 			cur.Since = &since
 		}
 		j.Brightness.Current = cur
@@ -595,7 +596,7 @@ func (s *server) apiListDisplays(w http.ResponseWriter, _ *http.Request, p princ
 	loc := p.location()
 	out := make([]displayJSON, 0, len(list))
 	for _, d := range list {
-		out = append(out, s.displayToJSON(d, loc))
+		out = append(out, s.displayToJSON(d, p.household, loc))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -609,7 +610,7 @@ func (s *server) apiPairDisplay(w http.ResponseWriter, r *http.Request, p princi
 	d, err := s.pairDisplay(p, strings.TrimSpace(in.Code), store.Display{Name: in.Name, Room: in.Room, Type: store.DisplayType(in.Type)})
 	switch {
 	case err == nil:
-		writeJSON(w, http.StatusCreated, s.displayToJSON(d, p.location()))
+		writeJSON(w, http.StatusCreated, s.displayToJSON(d, p.household, p.location()))
 	case errors.Is(err, errTooManyAttempts):
 		writeError(w, http.StatusTooManyRequests, "too many wrong codes, try again later")
 	case errors.Is(err, store.ErrNotFound):
@@ -703,7 +704,7 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 	}
 	for _, d := range list {
 		if d.ID == r.PathValue("id") {
-			writeJSON(w, http.StatusOK, s.displayToJSON(d, p.location()))
+			writeJSON(w, http.StatusOK, s.displayToJSON(d, p.household, p.location()))
 			return
 		}
 	}

@@ -123,10 +123,7 @@ func (s *server) fillBrightness(r *http.Request, p principal, v *displayPage, d 
 	}
 
 	// What the display does now, and whether the kiosk app confirmed it.
-	target := brightness.Plan(brightness.Input{
-		Settings: d.Brightness, Quiet: d.Quiet, Woken: s.kiosk != nil && s.kiosk.Woken(d.ID), Screen: d.Type == store.DisplayScreen, HasSensor: b.HasSensor,
-		SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset, Now: now, Lat: h.Latitude, Lon: h.Longitude,
-	})
+	target := s.plannedTarget(d, h, b.HasSensor, now)
 	if b.Available {
 		b.NowHead, b.NowTail, b.Problem = s.brightNow(lang, target, st, known, clock)
 	} else {
@@ -158,6 +155,22 @@ func (s *server) fillBrightness(r *http.Request, p principal, v *displayPage, d 
 	}
 	b.SunOpen = errField == "sunrise_offset" || errField == "sunset_offset"
 	v.Bright = b
+}
+
+// plannedTarget is what the display should do now, worked out fresh from its
+// settings: the runner's stored target can be up to a minute old.
+func (s *server) plannedTarget(d store.Display, h store.Household, sensor bool, now time.Time) brightness.Target {
+	return brightness.Plan(brightness.Input{
+		Settings: d.Brightness, Quiet: d.Quiet, Woken: s.kiosk != nil && s.kiosk.Woken(d.ID), Screen: d.Type == store.DisplayScreen, HasSensor: sensor,
+		SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset, Now: now, Lat: h.Latitude, Lon: h.Longitude,
+	})
+}
+
+// confirmedTarget says the kiosk app received exactly this target: the runner
+// confirmed one, and it is the one planned now (phase, percent, off, auto).
+func confirmedTarget(st KioskState, planned brightness.Target) bool {
+	t := st.Target
+	return st.Confirmed && t.Phase == planned.Phase && t.Percent == planned.Percent && t.Off == planned.Off && t.Auto == planned.Auto
 }
 
 // brightNow words what the display does now. The problem sentence replaces
@@ -204,11 +217,12 @@ func (s *server) brightNow(lang string, t brightness.Target, st KioskState, know
 		sentence = say("displays.bright.now.wake")
 	}
 	confirm := say("displays.bright.pending")
-	if known && st.Confirmed {
+	confirmed := known && confirmedTarget(st, t)
+	if confirmed {
 		confirm = say("displays.bright.confirmed")
 	}
 	if t.Phase == brightness.PhaseRoom {
-		if known && st.Confirmed {
+		if confirmed {
 			sentence = say("displays.bright.now.room", "t", clock(st.ConfirmedAt))
 		} else {
 			sentence = say("displays.bright.now.room_pending")

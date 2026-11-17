@@ -260,3 +260,21 @@ func TestBrightnessErrorsSitAtTheirFieldAndNameTheBlock(t *testing.T) {
 		t.Errorf("evening = %d after a refused save", got)
 	}
 }
+
+// A value that was changed but not yet sent is not shown as confirmed: the
+// page works out the new target and says the box passes it on.
+func TestBrightnessBlockDoesNotSayConfirmedForAChangeNotYetSent(t *testing.T) {
+	f, fake := kioskBox(t, "eink_bw", url.Values{"bright_evening": {"25"}})
+	f.tick(f.at(14, 17, 0))
+	fake.take()
+	b := bright(t, f.settingsPage(t, en))
+	want(t, "before the change", b, "Now 25 %", "The kiosk app confirmed it.")
+	f.saveSettings(t, url.Values{"bright_evening": {"30"}})
+	b = bright(t, f.settingsPage(t, en))
+	want(t, "after the change", b, "Now 30 %", "The box passes it on to the kiosk app within the next minute.")
+	wantNot(t, "after the change", b, "The kiosk app confirmed it.")
+	expect(t, "nothing sent yet", fake.take())
+	f.tick(f.at(14, 17, 1))
+	expect(t, "sent", fake.take(), "brightness 30")
+	want(t, "after the tick", bright(t, f.settingsPage(t, en)), "Now 30 %", "The kiosk app confirmed it.")
+}

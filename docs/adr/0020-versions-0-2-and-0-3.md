@@ -52,6 +52,12 @@ Details decided while building #178:
 - **Folder albums** are read by the box every five minutes and when a photos page is opened; they are changed only in the folder (rename, delete, move and add are refused), their photos can be hidden.
 - **Display side:** the family view starts the screensaver page `/display/saver` after the idle time; the page shuffles the photos without repeats, changes them with a hard cut and sends the display back to the day on a touch, in quiet mode, when switched off or unpaired.
 
+### Brightness (#179)
+
+- Brightness **follows the sun at the home location** (#86), dimmed or screen off in quiet hours. (Not switchable per display: see "No on/off switch" below.)
+- It goes through the kiosk adapter (FreeKiosk REST: `/api/brightness`, `/api/screen/off`); a plain browser shows a black page at night instead. The E-Ink front light stays experimental until tested on a device (ADR 0018).
+- **Only open-source kiosk apps** (FreeKiosk). There is no adapter for Fully Kiosk or any other proprietary kiosk app.
+
 Details decided while building #179 (grilling Q76 to Q82, preview approved 16/11/2026):
 
 - **Values per display:** Day (default 100 %) and Evening (default 40 %) switch at the same sun times and offsets as the display's automatic theme; without a home location Day applies all day. Quiet mode is off (default: E-Ink front light at 0 %, a normal screen switched off) or strongly dimmed (default 5 %). With a light sensor the display's brightness follows "sunlight" (default) or "room light" (FreeKiosk auto brightness); quiet mode applies either way. All values are adjustable, 1 to 100 %.
@@ -59,12 +65,6 @@ Details decided while building #179 (grilling Q76 to Q82, preview approved 16/11
 - **Touch in quiet mode:** only a display that quiet mode switched off wakes. Its page tells the box (`POST /display/wake`), which switches the screen on at Evening brightness for the display's wake minutes (default 1, up to 30) while the page shows the night page instead of black, then off again. A dimmed normal screen keeps the night page, faintly visible, all night.
 - **Kiosk adapter:** FreeKiosk's REST API only: `POST /api/brightness`, `/api/autoBrightness/enable`, `/api/screen/on` and `/off`, `GET /api/status` (whether the device reports a light sensor, and a check that the app answers). The runner asks once a minute and sends a command only when the target changes; a failure is retried and said in words on the settings page. In-memory state only, nothing new is stored but the six values. No new dependency.
 - **E-Ink front light stays experimental** until tested on a device; the block carries the tag "Experimentell".
-
-### Brightness (#179)
-
-- Brightness **follows the sun at the home location** (#86), dimmed or screen off in quiet hours, switchable per display.
-- It goes through the kiosk adapter (FreeKiosk REST: `/api/brightness`, `/api/screen/off`); a plain browser shows a black page at night instead. The E-Ink front light stays experimental until tested on a device (ADR 0018).
-- **Only open-source kiosk apps** (FreeKiosk). There is no adapter for Fully Kiosk or any other proprietary kiosk app.
 
 ### Display layouts (#180)
 

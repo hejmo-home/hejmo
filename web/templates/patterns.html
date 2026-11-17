@@ -118,6 +118,14 @@
 {{/* The link back to the overview, first thing in main. Arguments: Href, Text. */}}
 {{define "backLink"}}<a class="back" href="{{.Href}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>{{.Text}}</a>{{end}}
 
+{{/* The breadcrumb trail (ticket 182), first thing in main: every part but the
+     last is a link; the last is the page itself. Arguments: Parts (Href, Label), Last. */}}
+{{define "crumbs"}}<nav class="crumbs" aria-label="{{t "crumbs.label"}}"><ol>
+  {{range $i, $c := .Parts}}<li>{{if $i}}{{template "crumbSep"}}{{end}}<a href="{{$c.Href}}">{{$c.Label}}</a></li>
+  {{end}}<li>{{if .Parts}}{{template "crumbSep"}}{{end}}<span aria-current="page">{{.Last}}</span></li>
+</ol></nav>{{end}}
+{{define "crumbSep"}}<svg class="icon sep" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{end}}
+
 {{/* The first submit button of a form with the home location picker. Pressing
      Enter in a field presses the first submit button of the form; without this
      one it would be "Change" or the first suggestion. It is hidden and out of

@@ -1,6 +1,5 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "account.title") "Frame" .Frame)}}
   {{with .Success}}{{template "success" .}}{{end}}
-  {{template "backLink" (dict "Href" "/settings" "Text" (t "account.back"))}}
   <h1>{{t "account.title"}}</h1>
   {{template "syncNotice" .}}
   <p class="lead">{{tf "account.lead" "name" .Person.Name "username" .Username}}</p>

@@ -1,6 +1,5 @@
 {{template "head" (dict "Lang" .Lang "Title" (tf "account.reset.title" "name" .Target.Name) "Frame" .Frame)}}
   <form method="post" action="/account/reset/{{.Target.ID}}" class="reset-page" data-passkey-scope>
-  {{template "backLink" (dict "Href" "/account" "Text" (t "account.title"))}}
   <h1><span class="marker" data-person="{{.TargetChip.Slot}}" data-shape="{{.TargetChip.Shape}}" aria-hidden="true"></span> {{tf "account.reset.title" "name" .Target.Name}}</h1>
   <p class="lead">{{tf "account.reset.lead" "name" .Target.Name}}</p>
   <dl class="facts">

@@ -61,7 +61,7 @@ func TestDeviceTokenDetailShowsFactsAndConfirmsRevokingByName(t *testing.T) {
 		t.Fatalf("GET = %d", r.status)
 	}
 	for _, want := range []string{
-		`<a class="back" href="/caldav">`, "All device tokens", "<h1>iPhone Mama</h1>", "<dt>For</dt>", "<dt>Allowed</dt>", "Read calendars and tasks, save events, change tasks",
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/caldav">Calendar apps</a>`, "<h1>iPhone Mama</h1>", "<dt>For</dt>", "<dt>Allowed</dt>", "Read calendars and tasks, save events, change tasks",
 		"<dt>Created on</dt>", "<dt>Last used</dt>", "never shows the token itself again",
 		`<details class="danger">`, "Revoke access", `action="/caldav/tokens/` + id + `/revoke"`, "Yes, revoke access", "No, change nothing",
 	} {

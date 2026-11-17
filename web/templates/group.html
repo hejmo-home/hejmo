@@ -1,6 +1,5 @@
-{{template "head" (dict "Lang" .Lang "Title" (or .Group.Name (t "groups.new")) "Frame" .Frame)}}
-  <p><a href="/people">{{t "people.back"}}</a></p>
-  <h1>{{if .New}}{{t "groups.new"}}{{else}}{{.Group.Name}}{{end}}</h1>
+{{template "head" (dict "Lang" .Lang "Title" (or .Saved (t "groups.new")) "Frame" .Frame)}}
+  <h1>{{or .Saved (t "groups.new")}}</h1>
   <p class="lead">{{t "groups.intro"}}</p>
   {{template "error" .}}
   <form method="post" action="{{if .New}}/groups{{else}}/groups/{{.Group.ID}}{{end}}" class="steps">

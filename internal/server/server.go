@@ -406,12 +406,19 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 		fr := s.frameFor(r)
 		fr.setLanguage(lang, r)
 		fr.PlainBrand = plainBrandPages[name]
-		if detailPages[name] && fr.Back { // a detail page links to its own overview, not to the hub
-			fr.Back, fr.BackHref, fr.BackLabel = false, "", ""
-		}
 		if href, _ := data["BackHref"].(string); href != "" { // a page that leads back to a named page
 			text, _ := data["BackText"].(string)
 			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, href, "", text
+		}
+		if parts := crumbsFor(name, data); len(parts) > 0 && data["Wizard"] == nil { // a trail replaces the back link (ticket 182); a wizard is a linear flow, not below Settings
+			for _, c := range parts {
+				label := c.Name
+				if c.Key != "" {
+					label = s.i18n.T(lang, c.Key)
+				}
+				fr.Crumbs = append(fr.Crumbs, crumbLink{c.Href, label})
+			}
+			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, "", "", ""
 		}
 		key, arg := s.takeFlash(w, r) // always consumed, so it cannot show later
 		switch own, _ := data["SuccessKey"].(string); {

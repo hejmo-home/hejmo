@@ -1,5 +1,4 @@
 {{template "head" (dict "Lang" .Lang "Title" .Subject.Name "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/people" "Text" (t "people.back"))}}
   <h1><span class="marker" data-person="{{.Subject.Slot}}" data-shape="{{.Subject.Shape}}" aria-hidden="true"></span> {{.Subject.Name}}</h1>
   <p class="lead hint">{{t (printf "people.role.%s" .Role)}}</p>
   {{with .SignIn}}<h2 class="rows-head">{{t "people.signin"}}</h2>

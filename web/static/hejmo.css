@@ -304,7 +304,6 @@ a { color: var(--accent); }
 .frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-cards); }
 .frame-nav li { flex: none; }
 .frame-nav a { display: flex; align-items: center; min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
-.frame-nav a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
 [data-theme="bw"] .frame-nav a { border-width: 2px; }
 .back { display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; }
 .hub-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); }
@@ -1849,6 +1848,31 @@ details.more.explain-more { margin-top: var(--gap-section); }
   .lv-head .add-entry { flex-wrap: wrap; }
   .lv-head .add-entry .f { flex: 1 1 12em; }
 }
+
+/* ---- Breadcrumbs (ticket #182, design pass by Opus 16/11/2026; ADR 0017 amended) ----
+   Every page below Settings (and an everyday page two or more levels below its
+   screen) starts with the trail; it replaces the back link. Each part except the
+   last is a link; the last is the page's own name (its h1), plain text with
+   aria-current="page". Names wrap, never cut: breaks between words, hyphenation
+   only in words of 12+ letters, a single token longer than the line (an e-mail
+   address) breaks at the line end as a last resort. Under 600 px the last part
+   is only read out (the h1 right below says it). */
+.crumbs { margin: 0 0 4px; min-width: 0; }
+.crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; font-size: var(--fs-label-large); line-height: 1.35; }
+.crumbs li { display: flex; align-items: center; min-width: 0; max-width: 100%; }
+.crumbs .sep { flex: none; width: 16px; height: 16px; margin: 0 6px; stroke: var(--text-secondary); stroke-width: 2; fill: none; }
+.crumbs a, .crumbs [aria-current] { display: flex; align-items: center; min-width: 0; min-height: var(--touch-target); overflow-wrap: break-word; }
+@supports (hyphenate-limit-chars: 12 5 5) { .crumbs a, .crumbs [aria-current] { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } } /* only where the browser can keep short words whole (as the rules above) */
+.crumbs a { color: var(--accent); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.crumbs [aria-current] { color: var(--text-secondary); }
+[data-theme="bw"] .crumbs a { color: var(--text); text-decoration-thickness: 2px; }
+[data-theme="bw"] .crumbs [aria-current] { color: var(--text); }
+@media (max-width: 599px) {
+  .crumbs li:last-child:not(:first-child) { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}
+/* The navigation entry of the section you are in stays filled on its sub-pages
+   (aria-current="true"); the screen itself carries aria-current="page". */
+.frame-nav a[aria-current] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
 
 /* Recovery codes (ticket #176): one card .rc in the wizard and in the frame. */
 .rc { display: grid; gap: 14px; max-width: 600px; box-sizing: border-box; padding: var(--pad-column); margin: 0 0 var(--gap-section); background: var(--surface); border-radius: var(--radius-tile); min-width: 0; }

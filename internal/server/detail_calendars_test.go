@@ -37,7 +37,7 @@ func TestCalendarDetailShowsFactsSyncNowAndConfirmsRemoving(t *testing.T) {
 		t.Fatalf("GET = %d", r.status)
 	}
 	for _, want := range []string{
-		`<a class="back" href="/calendars">`, "Back to calendar connections", "<h1>School</h1>", "<dt>Address</dt>", feedURL172, "<dt>For</dt>", "Whole family",
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/calendars">Calendar connections</a>`, `<span aria-current="page">School</span>`, "<h1>School</h1>", "<dt>Address</dt>", feedURL172, "<dt>For</dt>", "Whole family",
 		"<dt>Last synced</dt>", "21:46:26", "<dt>Events</dt>", "2 (last 12 months and later)", "<dt>Last run</dt>", "2 new, 0 changed, 0 removed",
 		`action="/calendars/` + cal.ID + `/sync"`, "Sync now", `<details class="danger">`, "Remove calendar", `action="/calendars/` + cal.ID + `/delete"`,
 		"Yes, remove calendar", "No, change nothing",

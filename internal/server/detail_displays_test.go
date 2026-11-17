@@ -86,7 +86,7 @@ func TestDisplayDetailShowsEverythingAndConfirmsByName(t *testing.T) {
 		t.Fatalf("GET = %d", r.status)
 	}
 	for _, want := range []string{
-		`<a class="back" href="/displays">`, "All displays", "<h1>Hallway</h1>", `<dl class="facts">`, "Last seen", "Paired on",
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/displays">Displays</a>`, "<h1>Hallway</h1>", `<dl class="facts">`, "Last seen", "Paired on",
 		`<form method="post" action="/displays/` + id + `/settings" class="steps">`,
 		`name="name"`, `name="type"`, `name="show_tomorrow"`, `name="theme"`, `name="quiet"`, `name="quiet_from"`, `name="quiet_to"`,
 		`class="pair when-on"`, `<details class="more">`, "Kiosk app: not set up", `name="kiosk_url"`, `name="sunrise_offset"`,

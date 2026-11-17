@@ -1,5 +1,4 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/phones" "Text" (t "phones.back"))}}
   <h1>{{.Phone.Name}}</h1>
   {{template "facts" .Facts}}
   {{with .Repair}}{{$root := $}}

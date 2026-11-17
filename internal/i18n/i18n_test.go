@@ -123,6 +123,10 @@ var wholeFamilyTexts = map[string]bool{
 	"setup.https.domain.cloudflare.token.text": true, // "eure Domain": the family's domain
 	"setup.https.domain.why.hetzner.text":      true, // "eure Domain": the family's domain
 	"food.why.title":                           true, // "eurer Box": the family's box (preview 163)
+	"theme.auto.parent":                        true, // "eures Zuhauses": the family's home
+	"theme.auto.child":                         true, // "eures Zuhauses"
+	"theme.where.phone":                        true, // "behalten ihr Design": everyone else
+	"theme.where.browser":                      true, // "behalten ihr Design"
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

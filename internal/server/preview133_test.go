@@ -125,7 +125,7 @@ func TestWriteDesignPreview133(t *testing.T) {
 	welcome := get(f, "/setup", "")
 	add("Start: Willkommen", "Die erste Seite der neuen Box, noch ohne HTTPS: was kommt, wie lange es dauert, was man braucht, eine Hauptaktion. Neu: Sprachumschalter oben rechts; jede App und deSEC sind Links.", welcome)
 	add("Start: Sprache wählen (offen)", "Der Sprachumschalter aus #134 sitzt auf allen Seiten der Einrichtung oben rechts, vor dem ersten Satz. Vor der Anmeldung bleibt der Name auch am Handy sichtbar.", strings.Replace(welcome, `<details class="lang">`, `<details class="lang" open>`, 1))
-	add("Schritt 1: Weg wählen", "Zwei Auswahlkarten, kein Weg ist vorausgewählt.", get(f, "/setup/https", ""))
+	add("Schritt 1: Weg wählen", "Drei Auswahlkarten, kein Weg ist vorausgewählt.", get(f, "/setup/https", ""))
 	empty := f.do(http.MethodGet, "/setup/https?way=public", nil, map[string]string{"Accept-Language": "de", "Host": "hejmo.local"})
 	add("Schritt 1: Öffentlicher Name, leer", "Die Box wurde über hejmo.local geöffnet: die Adresse ist leer, „Mehr Optionen“ ist offen. Neu: jede deSEC-Seite ist ein Link (Konto, Domains, Token Management).", bodyOf(t, empty.body))
 	form := get(f, "/setup/https?way=public", "")

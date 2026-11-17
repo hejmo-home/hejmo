@@ -2059,6 +2059,270 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /articles:
+    get:
+      operationId: listArticles
+      summary: The article library, shipped and own articles (scope lists:read)
+      description: |
+        The articles Hejmo ships (`source: hejmo`, about 250, German and English
+        names) and the household's own ones (`source: own`). Optional `q` keeps
+        the articles whose name holds the text, ignoring case and umlauts.
+        `units` are the article's default units, `offered_units` those of them
+        that are switched on (piece when neither is). Articles say which
+        allergens they contain; who is warned about them is health data, see
+        `/articles/{id}/warnings`.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: The articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createArticle
+      summary: Add an own article (scope lists:write, parents only)
+      description: |
+        `kind` has no default: `meat`, `fish`, `veg`, `vegan` or `nonfood`.
+        Allergens are keys of the 14 main EU allergens and are cleared for
+        `nonfood`. `unit1` is required (default piece), `unit2` optional; both
+        must be switched on. A picture is either a `symbol` (an emoji of the Noto
+        Emoji set) or a `picture_url` that the box downloads once (http or
+        https, public addresses only, at most 15 MB, 10 seconds); the box stores a
+        scaled-down JPEG without metadata and never links to the address. A
+        photo is sent with `PUT /articles/{id}/picture`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleWrite" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}:
+    get:
+      operationId: getArticle
+      summary: One article, by its key (shipped) or id (own) (scope lists:read)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateArticle
+      summary: Change an own article (scope lists:write, parents only)
+      description: |
+        Fields left out keep their value. `symbol` replaces a picture by a
+        symbol, `picture_url` replaces it by a downloaded image,
+        `remove_picture` takes it away (the tile then shows the symbol of the
+        department). Articles from Hejmo cannot be changed (422): hide them or
+        copy them.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleWrite" }
+      responses:
+        "200":
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteArticle
+      summary: Delete an own article (scope lists:delete, parents only)
+      description: Entries on lists keep their text.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}/picture:
+    get:
+      operationId: getArticlePicture
+      summary: The stored picture of an own article, a JPEG of at most 512 px (scope lists:read)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The picture
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setArticlePicture
+      summary: Set the picture of an own article from a photo (scope lists:write, parents only)
+      description: |
+        The request body is the photo itself: JPEG, PNG, WebP or GIF, at most
+        15 MB. The box turns it upright, scales it to at most 512 px and
+        stores it as JPEG without metadata (place, camera). Refused with 422
+        when it is too large, not a picture or a web page.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema: { type: string, format: binary }
+          image/png:
+            schema: { type: string, format: binary }
+          image/webp:
+            schema: { type: string, format: binary }
+          image/gif:
+            schema: { type: string, format: binary }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}/hidden:
+    put:
+      operationId: setArticleHidden
+      summary: Hide an article from Hejmo by hand, or show it again (scope lists:write, parents only)
+      description: |
+        A hidden article is not suggested; typing it by hand still works. Own
+        articles are deleted, not hidden (422).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hidden]
+              properties:
+                hidden: { type: boolean }
+      responses:
+        "200":
+          description: The article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}/copy:
+    post:
+      operationId: copyArticle
+      summary: Make an own version of an article from Hejmo (scope lists:write, parents only)
+      description: |
+        Copies name (in the language of the request), department, units and
+        allergens as an own article and hides the original.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "201":
+          description: The own article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /articles/{id}/warnings:
+    get:
+      operationId: getArticleWarnings
+      summary: Who has to look out for an article, and whether Hejmo suggests it (scope health:read, parents only)
+      description: |
+        Health data: who is allergic and which diets an article suits. People
+        with exactly the same allergens share one entry. The answer is
+        experimental and without guarantee: it only knows the 14 main
+        allergens as tagged in the library, no traces, and cannot check free
+        text (`note`).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The warnings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleWarnings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /library/hiding:
+    get:
+      operationId: getLibraryHiding
+      summary: The experimental setting that hides articles with an allergen (scope health:read, parents only)
+      responses:
+        "200":
+          description: The setting
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hiding" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setLibraryHiding
+      summary: Switch the hiding on or off (scope health:write, parents only)
+      description: |
+        Off by default and experimental: Hejmo guarantees no completeness and
+        takes no liability. Switching it on needs `confirm: true`, which says
+        that the person behind the token read the notice; they are recorded
+        with the time. `everyone` hides for everyone with allergies, otherwise
+        only for `people`. Free text is never hidden.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+                everyone: { type: boolean }
+                people:
+                  type: array
+                  items: { type: string, format: uuid }
+                confirm: { type: boolean }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hiding" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /groups:
     get:
       operationId: listGroups
@@ -2913,6 +3177,100 @@ components:
         sort: { $ref: "#/components/schemas/ListSort" }
         open_count: { type: integer, description: "Entries not ticked off" }
         done_count: { type: integer, description: "Entries ticked off" }
+    Article:
+      type: object
+      required: [id, source, name_de, name_en, dept, kind, allergens, units, offered_units, symbol, picture, picture_source, hidden_by_hand, created_by, created_at]
+      properties:
+        id: { type: string, description: "The key of an article from Hejmo, the id of an own one" }
+        source: { type: string, enum: [hejmo, own] }
+        name_de: { type: string }
+        name_en: { type: string, description: The same as name_de for an own article }
+        dept:
+          type: string
+          enum: [produce, bakery, dairy, meat_fish, frozen, pantry, baking_spices, sweets, drinks, drugstore, household, baby, other]
+        kind: { type: string, enum: [meat, fish, veg, vegan, nonfood] }
+        allergens:
+          type: array
+          items: { type: string, enum: [celery, gluten, crustaceans, eggs, fish, lupin, milk, molluscs, mustard, nuts, peanuts, sesame, soy, sulphites] }
+        units:
+          type: array
+          description: One or two default units, the first is preselected when adding
+          items: { $ref: "#/components/schemas/Unit" }
+        offered_units:
+          type: array
+          description: The default units that are switched on; piece when neither is
+          items: { $ref: "#/components/schemas/Unit" }
+        symbol: { type: string, description: "The emoji of a shipped article or a chosen symbol, else empty" }
+        picture:
+          type: string
+          nullable: true
+          description: Where the stored picture is (GET), or null
+        picture_source: { type: string, enum: ["", symbol, upload, web] }
+        hidden_by_hand: { type: boolean }
+        created_by: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time, nullable: true }
+    Unit:
+      type: string
+      enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
+    ArticleWrite:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        dept:
+          type: string
+          enum: [produce, bakery, dairy, meat_fish, frozen, pantry, baking_spices, sweets, drinks, drugstore, household, baby, other]
+        kind: { type: string, enum: [meat, fish, veg, vegan, nonfood] }
+        allergens:
+          type: array
+          items: { type: string, enum: [celery, gluten, crustaceans, eggs, fish, lupin, milk, molluscs, mustard, nuts, peanuts, sesame, soy, sulphites] }
+        unit1: { $ref: "#/components/schemas/Unit" }
+        unit2:
+          type: string
+          description: "The optional second default unit, empty for none"
+        symbol: { type: string, description: "An emoji of the Noto Emoji set" }
+        picture_url: { type: string, description: "An http or https address of an image the box downloads once" }
+        remove_picture: { type: boolean }
+    ArticleWarnings:
+      type: object
+      required: [article_id, warnings, suits, does_not_suit, suggested, not_suggested_because, hidden_for, note]
+      properties:
+        article_id: { type: string }
+        warnings:
+          type: array
+          items:
+            type: object
+            required: [people, allergens]
+            properties:
+              people:
+                type: array
+                items: { type: string, format: uuid }
+              allergens:
+                type: array
+                items: { type: string }
+        suits:
+          type: array
+          items: { type: string, format: uuid }
+        does_not_suit:
+          type: array
+          items: { type: string, format: uuid }
+        suggested: { type: boolean }
+        not_suggested_because: { type: string, nullable: true, enum: [hand, allergy, diet, null] }
+        hidden_for:
+          type: array
+          items: { type: string, format: uuid }
+        note: { type: string }
+    Hiding:
+      type: object
+      required: [enabled, everyone, people, confirmed_by, confirmed_at, experimental]
+      properties:
+        enabled: { type: boolean }
+        everyone: { type: boolean }
+        people:
+          type: array
+          items: { type: string, format: uuid }
+        confirmed_by: { type: string, format: uuid, nullable: true }
+        confirmed_at: { type: string, format: date-time, nullable: true }
+        experimental: { type: boolean, description: "Always true" }
     ListEntry:
       type: object
       required: [id, text, done]

@@ -25,7 +25,7 @@ Lists (#32, #33) take only typed text. On 16/11/2026 the product owner asked whe
 ### Article library
 
 - An **article** is a thing that can be put on a list: name (de/en), symbol, department, the diets it fits, the allergens it contains.
-- The box ships about 250 articles in German and English. Symbols are emoji from **Noto Emoji** (Apache-2.0) as placeholders.
+- The box ships about 250 articles in German and English. Symbols are emoji characters (names from Unicode CLDR) drawn by the system font as placeholders; the **Noto Emoji** font (Apache-2.0) is not bundled, so a symbol looks as the device draws it.
 - Parents manage the library under Settings, Lists, Library: add **own articles**, hide shipped ones, change name, symbol, department, diets and allergens. An own article's picture is a **photo upload** or an **image address on the web**. The box downloads a web image once, never links to it; it accepts only http(s) addresses that resolve to public addresses, checks type and size, and stores every picture re-encoded and scaled down (at most 512 px, JPEG), metadata removed.
 - Free text stays possible; afterwards the box offers to add it to the library.
 - **Suggestions follow the household's diets:** an article is suggested when it fits at least one person's diet.

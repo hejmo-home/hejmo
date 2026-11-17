@@ -1,0 +1,30 @@
+{{template "head" (dict "Lang" .Lang "Title" .Name "Frame" .Frame)}}
+  <h1 class="art-title"><span class="art-sym big" aria-hidden="true">{{.Symbol}}</span><span>{{.Name}}</span></h1>
+  <dl class="facts">
+    <dt>{{t "art.f.from"}}</dt><dd>{{.From}}</dd>
+    <dt>{{t "art.f.dept"}}</dt><dd>{{.Dept}}</dd>
+    <dt>{{t "art.f.units"}}</dt><dd><span>{{.Units}}</span><span class="hint">{{.UnitsHint}}</span></dd>
+    <dt>{{t "art.f.kind"}}</dt><dd>{{.Kind}}</dd>
+    {{if .FitsAll}}<dt>{{t "art.f.fits"}}</dt><dd>{{.FitsAll}}</dd>
+    {{else if .FitsNobody}}<dt>{{t "art.f.fits"}}</dt><dd>{{.FitsNobody}}</dd>
+    <dt>{{t "art.f.notfits"}}</dt>{{template "dietGroups" .NotFits}}
+    {{else}}<dt>{{t "art.f.fits"}}</dt>{{template "dietGroups" .Fits}}
+    <dt>{{t "art.f.notfits"}}</dt>{{template "dietGroups" .NotFits}}{{end}}
+    {{if .IsFood}}<dt>{{t "art.f.contains"}}</dt><dd>{{.Contains}}</dd>{{end}}
+    {{if .Warns}}<dt>{{t "art.f.warning"}}</dt><dd>{{range .Warns}}{{.}}{{end}}</dd>{{end}}
+    {{if .Suggested}}<dt>{{t "art.f.suggested"}}</dt><dd>{{if .SuggestedExp}}<span class="tag exp">{{.Suggested}}</span><span class="hint">{{t "art.sug.allergy.hint"}} <a href="/settings/lists">{{t "art.sug.allergy.link"}}</a></span>{{else}}<span class="tag hidden-tag">{{.Suggested}}</span>{{end}}</dd>{{end}}
+    {{if .OnLists}}<dt>{{t "art.f.on"}}</dt><dd>{{.OnLists}}</dd>{{end}}
+  </dl>
+  <form method="post" action="/settings/lists/library/{{.ID}}/hidden" class="steps lib-form">
+    <fieldset>
+      <legend>{{t "art.hide.legend"}}</legend>
+      {{template "switch" (dict "Name" "hidden" "Label" (t "art.hide.label") "OnText" .HideOn "OffText" .HideOff "Checked" .Hidden "AriaLabel" .HideAria)}}
+    </fieldset>
+    <button class="button" type="submit">{{t "people.save"}}</button>
+  </form>
+  {{template "moreOpen" (dict "Label" (t "art.copy.summary"))}}
+    <p class="hint">{{t "art.copy.hint"}}</p>
+    <form method="post" action="/settings/lists/library/{{.ID}}/copy"><button class="button secondary" type="submit">{{t "art.copy.button"}}</button></form>
+  {{template "moreClose"}}
+{{template "foot"}}
+{{define "dietGroups"}}<dd class="people">{{range .}}<span class="pgrp"><span class="diet">{{printf "%s:" .Diet}}</span>{{range .Who}}<span class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}</span>{{end}}</span>{{end}}</dd>{{end}}

@@ -1,0 +1,100 @@
+{{template "head" (dict "Lang" .Lang "Title" (or .Name (t "artf.title")) "Frame" .Frame)}}
+  {{if .New}}<h1>{{t "artf.title"}}</h1>
+  <p class="lead">{{t "artf.lead"}}</p>
+  {{else}}<h1 class="art-title"><span class="art-sym big" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><span>{{.Name}}</span></h1>
+  <dl class="facts">
+    <dt>{{t "art.f.from"}}</dt><dd>{{.From}}</dd>
+    {{if .HasLists}}<dt>{{t "art.f.on"}}</dt><dd>{{.OnLists}}</dd>{{end}}
+    {{if .Warns}}<dt>{{t "art.f.warning"}}</dt><dd>{{range .Warns}}{{.}}{{end}}</dd>{{end}}
+  </dl>{{end}}
+  <form method="post" action="/settings/lists/library{{if not .New}}/{{.ID}}{{end}}" enctype="multipart/form-data" class="steps food-form article-form lib-form">
+    {{with .Token}}<input type="hidden" name="picture_token" value="{{.}}">{{end}}{{if .F.Replacing}}<input type="hidden" name="replacing" value="1">{{end}}
+    <fieldset>
+      <legend>{{t "artf.name.legend"}}</legend>
+      {{$bad := .Errs.name}}<div class="f place-pick{{if $bad}} invalid{{end}}" data-article-suggest="/settings/lists/library/suggest" data-self="{{.ID}}">
+        <label>{{t "artf.name.label"}}<textarea name="name" rows="2" maxlength="60" required autocomplete="off" aria-describedby="{{if $bad}}err-name {{end}}hint-name"{{if eq .FirstErr "name"}} autofocus aria-invalid="true"{{end}}>{{.F.Name}}</textarea></label>
+        {{template "aferr" (dict "Name" "name" "Text" $bad)}}
+        <p class="hint" id="hint-name">{{t "artf.name.hint"}}</p>
+        <div data-suggest-box hidden data-one="{{t "artf.sug.one"}}" data-many="{{t "artf.sug.many"}}" data-more="{{t "artf.sug.more"}}"></div>
+      </div>
+    </fieldset>
+    <fieldset class="chips dept-pick">
+      <legend>{{t "artf.dept.legend"}}</legend>
+      <p class="hint">{{t "artf.dept.hint"}}</p>
+      {{range .Depts}}<label class="pchip plain"><input type="radio" name="dept" value="{{.Key}}"{{if .Checked}} checked{{end}}><span class="dept-sym" aria-hidden="true">{{.Symbol}}</span>{{.Name}}{{template "tickIcon" 16}}</label>
+      {{end}}
+    </fieldset>
+    <fieldset class="pic">
+      <legend>{{t "artf.pic.legend"}} <span class="tag hidden-tag">{{t "artf.optional"}}</span></legend>
+      <p class="hint">{{t "artf.pic.hint"}}</p>
+      <fieldset class="seg"><legend class="sr">{{t "artf.pic.seg"}}</legend>
+        <label><input type="radio" name="pic_source" value="symbol"{{if eq .Source "symbol"}} checked{{end}}>{{t "artf.pic.symbol"}}</label>
+        <label><input type="radio" name="pic_source" value="upload"{{if eq .Source "upload"}} checked{{end}}>{{t "artf.pic.upload"}}</label>
+        <label><input type="radio" name="pic_source" value="web"{{if eq .Source "web"}} checked{{end}}>{{t "artf.pic.web"}}</label>
+      </fieldset>
+      {{if .ShowFallback}}<p class="pic-fallback"><span class="art-sym" aria-hidden="true">{{.DeptSymbol}}</span><span>{{.FallbackText}}</span></p>{{end}}
+      <div class="pic-panel symbol">
+        {{with .Chosen}}<p class="sym-chosen" role="status"><span class="art-sym" aria-hidden="true">{{.Emoji}}</span><span><b>{{template "tickIcon" 18}}<span>{{$.ChosenLabel}}</span></b><small>{{$.ChosenText}}</small></span></p>{{end}}
+        <div class="web-row"><div class="f"><label>{{t "artf.sym.search"}}<input type="search" name="symq" value="{{.F.SymQ}}" placeholder="{{t "artf.sym.placeholder"}}" aria-describedby="hint-symq"></label></div><button class="button secondary" type="submit" name="symsearch" value="1" formnovalidate>{{t "lib.search.button"}}</button></div>
+        <p class="hint" id="hint-symq">{{t "artf.sym.searchhint"}}</p>
+        {{if .SymNone}}<div class="empty" data-empty><p>{{.SymNone}}</p><button class="linklike" type="submit" name="symclear" value="1" formnovalidate>{{t "artf.sym.none.clear"}}</button></div>
+        {{else}}
+        {{if .SymHead}}<p class="results-head">{{.SymHead}} <button class="linklike" type="submit" name="symclear" value="1" formnovalidate>{{t "lib.result.clear"}}</button></p>{{end}}
+        <fieldset class="sym-grid"><legend{{if .SymSearching}} class="sr"{{end}}>{{.SymLegend}}</legend>
+          <div class="sym-tiles">{{range .Tiles}}<label class="sym-opt"><input type="radio" name="symbol" value="{{.Emoji}}"{{if .Checked}} checked{{end}}><span class="e" aria-hidden="true">{{.Emoji}}</span><span class="n">{{.Name}}</span>{{template "tickIcon" 16}}</label>{{end}}</div>
+        </fieldset>
+        {{if not .SymSearching}}<p class="hint">{{.SymMore}}</p>{{end}}
+        {{end}}
+        {{template "aferr" (dict "Name" "symbol" "Text" .Errs.symbol)}}
+      </div>
+      <div class="pic-panel upload">
+        {{if and .Result (eq .Result.Source "upload")}}{{template "picResult" .}}
+        {{else}}{{$pb := .Errs.photo}}<div class="f{{if $pb}} invalid{{end}}"><label>{{t "artf.photo.label"}}<input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-describedby="{{if $pb}}err-photo {{end}}hint-photo"{{if eq .FirstErr "photo"}} autofocus aria-invalid="true"{{end}}></label>
+        {{template "aferr" (dict "Name" "photo" "Text" $pb)}}
+        <p class="hint" id="hint-photo">{{t "artf.photo.hint"}}</p></div>{{end}}
+      </div>
+      <div class="pic-panel web">
+        {{if and .Result (eq .Result.Source "web")}}{{template "picResult" .}}
+        {{else}}{{$ub := .Errs.url}}<div class="web-row"><div class="f{{if $ub}} invalid{{end}}"><label>{{t "artf.url.label"}}<input type="url" name="url" value="{{.F.URL}}" inputmode="url" autocomplete="off" placeholder="https://…" data-fetch-url aria-describedby="{{if $ub}}err-url {{end}}hint-url"{{if eq .FirstErr "url"}} autofocus aria-invalid="true"{{end}}></label></div><button class="button secondary" type="submit" name="fetch" value="1" data-fetch data-busy="{{.Waiting}}" data-waiting="{{t "artf.url.waiting"}}" data-waiting-small="{{t "artf.url.waiting.small"}}">{{t "artf.url.fetch"}}</button></div>
+        {{template "aferr" (dict "Name" "url" "Text" $ub)}}
+        <p class="hint" id="hint-url">{{t "artf.url.hint"}}</p>{{end}}
+      </div>
+    </fieldset>
+    <fieldset class="units">
+      <legend>{{t "artf.units.legend"}}</legend>
+      <p class="hint">{{t "artf.units.hint"}}</p>
+      <fieldset class="chips"{{if .Errs.unit1}} aria-invalid="true"{{end}}><legend>{{t "artf.units.first"}}</legend>
+        {{range .Units1}}<label class="pchip plain"><input type="radio" name="unit1" value="{{.Key}}"{{if .Checked}} checked{{end}}>{{.Name}}{{template "tickIcon" 16}}</label>
+        {{end}}{{template "aferr" (dict "Name" "unit1" "Text" .Errs.unit1)}}
+      </fieldset>
+      <fieldset class="chips"{{if .Errs.unit2}} aria-invalid="true"{{end}}><legend>{{t "artf.units.second"}} <span class="tag hidden-tag">{{t "artf.optional"}}</span></legend>
+        <label class="pchip plain"><input type="radio" name="unit2" value=""{{if not .F.Unit2}} checked{{end}}>{{t "artf.units.none"}}{{template "tickIcon" 16}}</label>
+        {{range .Units2}}{{if .Same}}<label class="pchip plain same"><input type="radio" name="unit2" value="{{.Key}}" disabled>{{.Name}}</label>
+        {{else}}<label class="pchip plain"><input type="radio" name="unit2" value="{{.Key}}"{{if .Checked}} checked{{end}}>{{.Name}}{{template "tickIcon" 16}}</label>
+        {{end}}{{end}}{{template "aferr" (dict "Name" "unit2" "Text" .Errs.unit2)}}
+      </fieldset>
+      <p class="hint">{{t "artf.units.active"}}</p>
+    </fieldset>
+    <fieldset class="choice kind"{{if .Errs.kind}} aria-invalid="true" aria-describedby="err-kind"{{end}}>
+      <legend>{{t "artf.kind.legend"}}</legend>
+      <p class="hint">{{t "artf.kind.hint"}}</p>
+      {{range .Kinds}}<label><input type="radio" name="kind" value="{{.Key}}"{{if .Checked}} checked{{end}}><b>{{.Name}}</b><small>{{.Desc}}</small></label>
+      {{end}}{{template "aferr" (dict "Name" "kind" "Text" .Errs.kind)}}
+    </fieldset>
+    <fieldset class="choice allergens">
+      <legend>{{t "artf.allergens.legend"}}</legend>
+      <p class="hint">{{t "artf.allergens.hint"}}</p>
+      <p class="hint caveat"><b>{{t "food.allergens.caveat.lead"}}</b> {{t "food.allergens.caveat.text"}}</p>
+      {{range .Cards}}<label><input type="checkbox" name="allergens" value="{{.Key}}"{{if .Checked}} checked{{end}}><b>{{.Name}}</b><small>{{.Examples}}</small>{{with .Aff}}<small class="aff">{{.}}</small>{{end}}</label>
+      {{end}}
+    </fieldset>
+    <p class="hint nonfood-note">{{t "artf.nonfood.note"}}</p>
+    <button class="button" type="submit">{{if .New}}{{t "artf.submit.new"}}{{else}}{{t "people.save"}}{{end}}</button>
+  </form>
+  {{if not .New}}
+  {{template "dangerOpen" (dict "Label" (t "art.delete.summary") "Confirm" .DeleteConfirm "Explain" .DeleteExplain "Names" .Stays "Action" (printf "/settings/lists/library/%s/delete" .ID) "CancelHref" (printf "/settings/lists/library/%s" .ID))}}{{template "dangerClose"}}
+  {{end}}
+  <script src="/static/article.js" defer></script>
+{{template "foot"}}
+{{define "aferr"}}{{if .Text}}<p class="ferr" id="err-{{.Name}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.Text}}</span></p>{{end}}{{end}}
+{{define "picResult"}}<div class="pic-result" role="status"><img src="{{.Result.URL}}" alt="{{t "artf.res.alt"}}" width="132" height="132"><div><b>{{template "tickIcon" 18}}<span>{{.Result.Title}}</span></b><small>{{.Result.Text}}</small><span class="row"><button class="button secondary" type="submit" name="picture" value="replace" formnovalidate>{{t "artf.res.other"}}</button>{{if .Result.CanRemove}}<button class="button secondary" type="submit" name="picture" value="remove">{{t "artf.res.remove"}}</button>{{end}}</span></div></div>{{end}}

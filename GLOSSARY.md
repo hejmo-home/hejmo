@@ -236,6 +236,18 @@ _Avoid_: product, item (alone)
 The household's articles: the ones Hejmo ships plus own articles, managed by parents.
 _Avoid_: catalogue, database
 
+**Own article**:
+An article a parent made for the household, with one name for every language, a department, what is in it, allergens, one or two default units and optionally a symbol, a photo or a picture from the web. Shipped articles cannot be changed; "Eigene Fassung anlegen" copies one as an own article.
+_Avoid_: custom article, user article
+
+**Department**:
+The part of the shop an article belongs to (13, such as fruit and vegetables or drugstore). It sorts the library and decides which symbols are suggested first.
+_Avoid_: category, aisle
+
+**Hiding (of articles)**:
+The experimental household setting that leaves articles with an allergen of chosen people out of the suggestions and the tile picker. Off by default; it needs a parent's confirmation of the notice (no guarantee, no liability). A shipped article can also be hidden by hand.
+_Avoid_: filtering, blocking
+
 **Quantity**:
 Number and unit of a list entry, such as 500 g or 1 dozen.
 _Avoid_: amount

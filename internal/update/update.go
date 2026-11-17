@@ -18,7 +18,7 @@ import (
 
 // File names in the data volume.
 const (
-	SettingsFile = "update-settings" // written by the box: mode=on|off|notify
+	SettingsFile = "update-settings" // written by the box: mode=on|off|notify, and offline=yes while the script must stay offline
 	StatusFile   = "update-status"   // written by the host script
 )
 
@@ -48,6 +48,9 @@ type Status struct {
 	Target  string // the version offered or attempted
 	Reason  string
 	Time    string // RFC 3339 UTC; identifies the event, so a notice is shown once
+	// Checked is when the script last looked for a new version (RFC 3339 UTC);
+	// it is the last contact of the update check (ticket 201).
+	Checked string
 }
 
 var (
@@ -96,6 +99,10 @@ func ParseStatus(data []byte) Status {
 			if _, err := time.Parse(time.RFC3339, val); err == nil && len(val) <= 25 {
 				s.Time = val
 			}
+		case "checked":
+			if _, err := time.Parse(time.RFC3339, val); err == nil && len(val) <= 25 {
+				s.Checked = val
+			}
 		}
 	}
 	return s
@@ -127,7 +134,13 @@ func ReadStatus(dir string) Status {
 // WriteSettings tells the host script the household's mode (on, off or
 // notify). An empty dir means updates are not managed by a host script and
 // does nothing.
-func WriteSettings(dir, mode string) error {
+func WriteSettings(dir, mode string) error { return WriteState(dir, mode, false) }
+
+// WriteState is WriteSettings that also says whether the script must stay
+// offline (offline mode, or the update check switched off): then the file has a
+// second line, offline=yes, and the script contacts nothing. Online the line
+// is absent, so the file is the one of earlier versions.
+func WriteState(dir, mode string, offline bool) error {
 	if dir == "" {
 		return nil
 	}
@@ -144,6 +157,12 @@ func WriteSettings(dir, mode string) error {
 	if _, err := fmt.Fprintf(tmp, "mode=%s\n", mode); err != nil {
 		tmp.Close()
 		return err
+	}
+	if offline {
+		if _, err := fmt.Fprintf(tmp, "offline=yes\n"); err != nil {
+			tmp.Close()
+			return err
+		}
 	}
 	if err := tmp.Chmod(0o644); err != nil {
 		tmp.Close()

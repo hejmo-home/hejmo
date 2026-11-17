@@ -53,7 +53,7 @@ The box's own certificate authority, name-constrained to the box so it cannot vo
 _Avoid_: self-signed certificate, root cert
 
 **Public name**:
-A DNS name of the box (a free deSEC `dedyn.io` name or the family's own domain) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
+A DNS name of the box (a free deSEC `dedyn.io` name, or a name under the family's own domain at Cloudflare, deSEC, Hetzner or INWX) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
 _Avoid_: domain, DynDNS
 
 **Passkey**:

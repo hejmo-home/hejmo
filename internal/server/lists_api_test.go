@@ -61,6 +61,7 @@ func sameStrings(a, b []string) bool {
 // The default lists are named in the language the setup is shown in: the
 // hejmo_lang cookie beats Accept-Language.
 func TestSetupNamesTheListsInTheChosenSetupLanguage(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.do(http.MethodPost, "/setup", validSetupForm(), map[string]string{"Accept-Language": "de-DE", "Cookie": "hejmo_lang=en"})
 	if r.status != http.StatusSeeOther {
@@ -78,6 +79,7 @@ func TestSetupNamesTheListsInTheChosenSetupLanguage(t *testing.T) {
 // Acceptance: Given a new box, when setup is complete, then the lists
 // "Shopping" and "To-dos" exist.
 func TestNewBoxHasTheListsShoppingAndTodos(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.do(http.MethodPost, "/setup", validSetupForm(), map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusSeeOther {
@@ -97,6 +99,7 @@ func TestNewBoxHasTheListsShoppingAndTodos(t *testing.T) {
 }
 
 func TestNewBoxListsAreGermanForAGermanSetup(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, _, lists := c.call(http.MethodGet, "/lists", nil)
 	if len(lists) != 2 || lists[0].(map[string]any)["name"] != "Einkaufen" || lists[1].(map[string]any)["name"] != "To-dos" {
@@ -105,6 +108,7 @@ func TestNewBoxListsAreGermanForAGermanSetup(t *testing.T) {
 }
 
 func TestParentCreatesUpdatesAndDeletesLists(t *testing.T) {
+	t.Parallel()
 	lb := newListBox(t)
 	id := lb.newList(t, "Packing", "manual")
 	status, l, _ := lb.parent.call(http.MethodPatch, "/lists/"+id, map[string]any{"name": "Holiday packing", "color": "plum", "sort": "alphabetical"})
@@ -123,6 +127,7 @@ func TestParentCreatesUpdatesAndDeletesLists(t *testing.T) {
 }
 
 func TestListInputIsValidated(t *testing.T) {
+	t.Parallel()
 	lb := newListBox(t)
 	for name, body := range map[string]map[string]any{
 		"no name":   {"name": " ", "color": "blue", "symbol": "circle-empty"},
@@ -144,6 +149,7 @@ func TestListInputIsValidated(t *testing.T) {
 // Acceptance: Given a list with alphabetical sorting, when an entry is added,
 // then it appears in the correct alphabetical position.
 func TestAlphabeticalListShowsNewEntriesInPlace(t *testing.T) {
+	t.Parallel()
 	lb := newListBox(t)
 	id := lb.newList(t, "Shopping 2", "alphabetical")
 	for _, s := range []string{"Milk", "Apples", "Zucchini", "Bread"} {
@@ -155,6 +161,7 @@ func TestAlphabeticalListShowsNewEntriesInPlace(t *testing.T) {
 }
 
 func TestManualListMovesEntriesAndRefusesMovingInAlphabeticalLists(t *testing.T) {
+	t.Parallel()
 	lb := newListBox(t)
 	id := lb.newList(t, "Chores", "manual")
 	lb.addEntry(t, id, "a")
@@ -175,6 +182,7 @@ func TestManualListMovesEntriesAndRefusesMovingInAlphabeticalLists(t *testing.T)
 // Acceptance: Given a checked-off entry, when "Delete completed" is selected,
 // then only the checked-off entries disappear.
 func TestDeleteCompletedRemovesOnlyCheckedOffEntries(t *testing.T) {
+	t.Parallel()
 	lb := newListBox(t)
 	id := lb.newList(t, "Shopping 2", "manual")
 	milk, bread := lb.addEntry(t, id, "Milk"), lb.addEntry(t, id, "Bread")
@@ -194,6 +202,7 @@ func TestDeleteCompletedRemovesOnlyCheckedOffEntries(t *testing.T) {
 }
 
 func TestParentDeletesASingleEntry(t *testing.T) {
+	t.Parallel()
 	lb := newListBox(t)
 	id := lb.newList(t, "Shopping 2", "manual")
 	e := lb.addEntry(t, id, "Milk")
@@ -210,6 +219,7 @@ func TestParentDeletesASingleEntry(t *testing.T) {
 
 // Acceptance: Given a child, when they try to delete a list, then this is refused.
 func TestChildMayTickOffButNotDeleteListsOrAddEntries(t *testing.T) {
+	t.Parallel()
 	lb := newListBox(t)
 	id := lb.newList(t, "Shopping 2", "manual")
 	e := lb.addEntry(t, id, "Milk")
@@ -245,6 +255,7 @@ func statusOf(status int, _ map[string]any, _ []any) int { return status }
 
 // Acceptance: token scope `lists` works.
 func TestTokenScopeListsGivesAccessToListsOnly(t *testing.T) {
+	t.Parallel()
 	lb := newListBox(t)
 	id := lb.newList(t, "Shopping 2", "manual")
 	lists := lb.parent.withToken(lb.parent.newToken("lists"))

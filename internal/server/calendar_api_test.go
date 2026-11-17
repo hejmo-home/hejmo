@@ -57,6 +57,7 @@ func sameList(t *testing.T, got, want []string) {
 const november = "from=2026-11-01T00:00:00%2B01:00&to=2026-12-01T00:00:00%2B01:00"
 
 func TestCreateAndListEvents(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.createEvent(t, map[string]any{"title": "Swimming", "start": "2026-11-02T16:00:00+01:00", "end": "2026-11-02T17:00:00+01:00", "rrule": "FREQ=WEEKLY;COUNT=3"})
 	c.createEvent(t, map[string]any{"title": "Grandma visits", "all_day": true, "start": "2026-11-13", "end": "2026-11-16"})
@@ -74,6 +75,7 @@ func TestCreateAndListEvents(t *testing.T) {
 
 // Acceptance (Calendar and sync), end to end through the API.
 func TestEditThisAndFollowingThroughAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ev := c.createEvent(t, map[string]any{"title": "Football", "start": "2026-11-02T16:00:00+01:00", "end": "2026-11-02T17:00:00+01:00", "rrule": "FREQ=WEEKLY"})
 
@@ -104,6 +106,7 @@ func TestEditThisAndFollowingThroughAPI(t *testing.T) {
 // Acceptance (Platform): Given an API token with "read only", when it is used
 // to create an event, then the API answers 403.
 func TestReadOnlyTokenCannotCreateEvent(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ro := c.withToken(c.newToken("read"))
 	status, _, _ := ro.call(http.MethodPost, "/events", map[string]any{"title": "Nope", "start": "2026-11-02T16:00:00+01:00", "end": "2026-11-02T17:00:00+01:00"})
@@ -118,6 +121,7 @@ func TestReadOnlyTokenCannotCreateEvent(t *testing.T) {
 // Acceptance (People and permissions): Given a child profile, when it tries
 // to delete an event, then this is refused.
 func TestChildCannotDeleteEvent(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ev := c.createEvent(t, map[string]any{"title": "Dentist", "start": "2026-11-18T09:00:00+01:00", "end": "2026-11-18T10:00:00+01:00"})
 	child := c.withToken(childToken(t, c.b.db))
@@ -149,6 +153,7 @@ func childToken(t *testing.T, db *store.DB) string {
 
 // Acceptance (Calendar and sync): Bavarian holidays, and no others.
 func TestHolidaysForHomeRegion(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, body, list := c.call(http.MethodGet, "/holidays?from=2026-10-01&to=2026-12-01", nil)
 	if status != http.StatusOK {
@@ -163,6 +168,7 @@ func TestHolidaysForHomeRegion(t *testing.T) {
 }
 
 func TestPersonViewHonoursSubgroups(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	db := c.b.db
 	h, _ := db.HomeHousehold()
@@ -196,6 +202,7 @@ func TestPersonViewHonoursSubgroups(t *testing.T) {
 }
 
 func TestSearchAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.createEvent(t, map[string]any{"title": "Schwimmkurs", "location": "Westbad", "start": "2026-11-02T16:00:00+01:00", "end": "2026-11-02T17:00:00+01:00"})
 	status, body, list := c.call(http.MethodGet, "/search?q=westbad", nil)
@@ -207,6 +214,7 @@ func TestSearchAPI(t *testing.T) {
 // Ticket 5.12 (API parity with the web form): an event can be created in its
 // own time zone; an unknown zone is refused.
 func TestCreateEventInItsOwnTimeZone(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.createEvent(t, map[string]any{"title": "Call with Grandma", "timezone": "Pacific/Auckland", "start": "2026-11-14T09:00:00+13:00", "end": "2026-11-14T10:00:00+13:00", "rrule": "FREQ=WEEKLY"})
 	h, _ := c.b.db.HomeHousehold()

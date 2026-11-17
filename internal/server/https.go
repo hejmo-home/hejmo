@@ -2,6 +2,7 @@ package server
 
 import (
 	"context"
+	"encoding/json"
 	"errors"
 	"html"
 	"html/template"
@@ -137,6 +138,15 @@ func (s *server) handleHTTPSForm(w http.ResponseWriter, r *http.Request) {
 	case "own":
 		way = httpsOwn
 	}
+	// Right after "Only in the home network" the wizard asks whether the box
+	// stays fully offline (ticket 201, Q142); a public name needs the internet,
+	// so choosing it takes an earlier "yes" back.
+	if own := way == httpsOwn || s.public == nil; own && !s.outboundBox().Asked {
+		s.renderOfflineQuestion(w, r, http.StatusOK, false)
+		return
+	} else if !own {
+		s.takeOfflineAnswerBack()
+	}
 	// "Continue" without a choice (the form sends next=1, no way is preselected):
 	// the choice again, with the error under the cards.
 	if way == httpsChoice && r.URL.Query().Get("next") != "" && s.public != nil {
@@ -144,7 +154,16 @@ func (s *server) handleHTTPSForm(w http.ResponseWriter, r *http.Request) {
 			httpsError{Key: "setup.https.error.way", Field: "way"})
 		return
 	}
-	s.renderHTTPSStep(w, r, http.StatusOK, way, publicForm{Issuer: publiccert.LetsEncrypt}, httpsError{})
+	f := publicForm{Issuer: publiccert.LetsEncrypt}
+	if way == httpsOwn || s.public == nil { // the box asks the router for its own name (decision Q92); without the public service the own CA page is the only one
+		way = httpsOwn
+		f.RouterName = s.lookupRouterName(r.Context(), hostOf(r))
+		f.RouterHint = "none"
+		if f.RouterName != "" {
+			f.RouterHint = "found"
+		}
+	}
+	s.renderHTTPSStep(w, r, http.StatusOK, way, f, httpsError{})
 }
 
 // The pages of the wizard's first step: the choice between three ways, the
@@ -170,6 +189,10 @@ type publicForm struct {
 	Name, Issuer, LANIP, Email, EABKeyID string
 	Provider, Username                   string
 	TwoFA                                bool
+	// RouterName is what the router-name field of the own-CA page holds; RouterHint says where
+	// it comes from: "found" (the box asked the router), "none" (the router had no name for it)
+	// or "typed" (the family typed it).
+	RouterName, RouterHint string
 }
 
 // httpsError is an error of the first step: Key is the page-level text, Field
@@ -201,7 +224,17 @@ func (s *server) renderHTTPSStep(w http.ResponseWriter, r *http.Request, status 
 		}
 		guides[p.ID] = g
 	}
+	// The own-CA page lists the names the certificate will cover, and keeps
+	// "More options" open when it has a router name or the name was refused.
+	names, err := pki.PlannedNames(hostOf(r), f.RouterName)
+	if err != nil { // the typed name is wrong or the host unusable: show what holds without it
+		names, err = pki.PlannedNames(hostOf(r), "")
+	}
+	if err != nil {
+		names = []string{hostOf(r)}
+	}
 	s.render(w, r, status, "setup_https.html", map[string]any{
+		"CertNames": names, "RouterOpen": f.RouterName != "" || e.Field == "router_name",
 		"Way": way, "Host": hostOf(r), "Form": f, "Wizard": wizardAt(1), "Choice": s.public != nil, "Provider": f.Provider,
 		"Providers": domainProviders, "Guides": guides,
 		"Error": e.Key, "ErrorField": e.Field, "FieldError": e.FieldKey, "ErrorFields": e.Fields, "ErrorText": e.Text, "HTTPSWarning": s.httpsWarning(),
@@ -219,6 +252,7 @@ func (s *server) handlePublicHTTPSSubmit(w http.ResponseWriter, r *http.Request)
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
+	s.takeOfflineAnswerBack() // the DNS service is refused while offline
 	trim := func(k string) string { return strings.TrimSpace(r.PostFormValue(k)) }
 	req := publiccert.Request{
 		Name: strings.ToLower(trim("name")), Provider: trim("provider"), Token: trim("token"), Issuer: trim("issuer"),
@@ -332,14 +366,43 @@ func (s *server) handleSwitchToOwnCA(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup/https", http.StatusSeeOther)
 		return
 	}
+	// Choosing the public name took the offline answer back, so the wizard
+	// asks again (ticket 201, Q142). The browser is on plain HTTP here, so the
+	// question is answered at this address, not at /setup/offline.
+	asked, offline := s.outboundBox().Asked, false
+	if !asked {
+		switch r.PostFormValue("offline") {
+		case "on":
+			offline = true
+		case "off":
+		case "":
+			s.renderOfflineQuestionAt(w, r, http.StatusOK, false, "/setup/https/own-ca")
+			return
+		default:
+			s.renderOfflineQuestionAt(w, r, http.StatusUnprocessableEntity, true, "/setup/https/own-ca")
+			return
+		}
+	}
 	if err := s.public.Clear(); err != nil {
 		s.fail(w, "forget public HTTPS setup", err)
 		return
 	}
-	s.provisionOwnCA(w, r)
+	// The answer is stored last: if the public setup could not be forgotten or
+	// the own CA not made, the question stays open and a retry asks again.
+	s.provisionOwnCA(w, r, "", func() error {
+		if asked {
+			return nil
+		}
+		return s.db.AnswerOfflineQuestion(offline, s.now())
+	})
 }
 
 func (s *server) apiHTTPS(w http.ResponseWriter, r *http.Request, _ principal) {
+	writeJSON(w, http.StatusOK, s.httpsStatus())
+}
+
+// httpsStatus is how the box secures HTTPS now.
+func (s *server) httpsStatus() httpsJSON {
 	out := httpsJSON{Mode: "own-ca"}
 	if s.public != nil {
 		st := s.public.Status()
@@ -351,24 +414,73 @@ func (s *server) apiHTTPS(w http.ResponseWriter, r *http.Request, _ principal) {
 				exp := st.Expires.UTC().Format(time.RFC3339)
 				out.ExpiresAt = &exp
 			}
+			return out
 		}
 	}
-	writeJSON(w, http.StatusOK, out)
+	if s.pki.Ready() { // the box's own CA: the names its certificate covers and when the CA ends
+		out.Names, out.RouterName = s.pki.Names(), s.pki.RouterName()
+		exp := s.pki.CAExpires().UTC().Format(time.RFC3339)
+		out.ExpiresAt = &exp
+	}
+	return out
 }
 
 type httpsJSON struct {
-	Mode         string  `json:"mode"`
-	Name         string  `json:"name,omitempty"`
-	Issuer       string  `json:"issuer,omitempty"`
-	ExpiresAt    *string `json:"expires_at,omitempty"`
-	Warning      bool    `json:"warning"`
-	RenewalError string  `json:"renewal_error,omitempty"`
+	Mode         string   `json:"mode"`
+	Name         string   `json:"name,omitempty"`
+	Issuer       string   `json:"issuer,omitempty"`
+	ExpiresAt    *string  `json:"expires_at,omitempty"`
+	Names        []string `json:"names,omitempty"`
+	RouterName   string   `json:"router_name,omitempty"`
+	Warning      bool     `json:"warning"`
+	RenewalError string   `json:"renewal_error,omitempty"`
+}
+
+// apiSetRouterName is the settings page's form as an API call (ADR 0015): it
+// adds the router name and makes a new box CA, so every device must trust the
+// box again.
+func (s *server) apiSetRouterName(w http.ResponseWriter, r *http.Request, _ principal) {
+	var in struct {
+		RouterName *string `json:"router_name"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	if s.publicInUse() || !s.pki.Ready() {
+		writeError(w, http.StatusConflict, "the box uses a public name or has no CA yet: a router name belongs to the box's own CA")
+		return
+	}
+	if in.RouterName == nil {
+		writeError(w, http.StatusUnprocessableEntity, "router_name is required")
+		return
+	}
+	if err := s.pki.Reissue(*in.RouterName, s.now()); err != nil {
+		if _, ok := s.routerNameProblem(r, err, *in.RouterName); ok {
+			writeError(w, http.StatusUnprocessableEntity, "router_name: "+strings.TrimPrefix(err.Error(), "pki: "))
+			return
+		}
+		s.fail(w, "reissue box certificate", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, s.httpsStatus())
 }
 
 func (s *server) handleHTTPSSubmit(w http.ResponseWriter, r *http.Request) {
 	if s.db.Configured() || s.httpsReady() {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
+	}
+	// The router name is optional (decision Q92); a name that cannot go into
+	// the certificate comes back at its field, with what was typed.
+	router := strings.TrimSpace(r.PostFormValue("router_name"))
+	if router != "" {
+		if _, err := pki.PlannedNames(hostOf(r), router); err != nil && !errors.Is(err, pki.ErrInvalidHost) {
+			if e, ok := s.routerNameProblem(r, err, router); ok {
+				s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, httpsOwn, publicForm{Issuer: publiccert.LetsEncrypt, RouterName: router, RouterHint: "typed"}, e)
+				return
+			}
+		}
 	}
 	// Choosing the own CA forgets any public attempt, including its warning.
 	if s.public != nil {
@@ -377,17 +489,25 @@ func (s *server) handleHTTPSSubmit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	s.provisionOwnCA(w, r)
+	s.provisionOwnCA(w, r, router, nil)
 }
 
-func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request) {
-	if err := s.pki.Provision(hostOf(r), s.now()); err != nil {
+// provisionOwnCA makes the box's own CA and certificate and sends the browser
+// on to the trust page. after, if set, runs once that worked.
+func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request, routerName string, after func() error) {
+	if err := s.pki.ProvisionWithRouterName(hostOf(r), routerName, s.now()); err != nil {
 		if errors.Is(err, pki.ErrInvalidHost) {
 			s.renderHTTPSStep(w, r, http.StatusBadRequest, httpsOwn, publicForm{Issuer: publiccert.LetsEncrypt}, httpsError{Key: "setup.https.invalidhost"})
 			return
 		}
 		s.fail(w, "provision HTTPS", err)
 		return
+	}
+	if after != nil {
+		if err := after(); err != nil {
+			s.fail(w, "offline answer", err)
+			return
+		}
 	}
 	http.Redirect(w, r, "/ca", http.StatusSeeOther)
 }

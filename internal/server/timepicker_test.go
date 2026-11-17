@@ -15,6 +15,7 @@ var timeInputRe = regexp.MustCompile(`<input[^>]*type="time"[^>]*>`)
 // Ticket 6.3 design pass: every time field is a capsule (input.tcap), so the
 // shared picker and the pill look apply to all of them.
 func TestEveryTimeFieldIsATimeCapsule(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	pages := map[string]string{
 		"household":      getEN(f.box, "/settings/household").body,
@@ -35,6 +36,7 @@ func TestEveryTimeFieldIsATimeCapsule(t *testing.T) {
 }
 
 func TestPageHandsTheTimeFormatAndPickerTextsToTheScript(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := b.do("GET", "/settings/household", nil, map[string]string{"Accept-Language": "en"}).body
 	for _, want := range []string{`src="/static/form.js" defer data-hour="Hour"`, `data-minute="Minute"`, `data-done="Done" data-time-format="24h"`} {
@@ -58,6 +60,7 @@ func TestPageHandsTheTimeFormatAndPickerTextsToTheScript(t *testing.T) {
 // the capsule. It keeps the native picker on touch devices and works with the
 // 12-hour format.
 func TestFormScriptHoldsThePickerAndTheMealPlanBehaviour(t *testing.T) {
+	t.Parallel()
 	js, err := fs.ReadFile(web.Static, "static/form.js")
 	if err != nil {
 		t.Fatal(err)
@@ -74,6 +77,7 @@ func TestFormScriptHoldsThePickerAndTheMealPlanBehaviour(t *testing.T) {
 // Settings" link sits inside main, in the content column, instead of being a
 // grid item of the frame that broke the 1024 px layout.
 func TestFrameLayoutCoversTheBackLinkAndNarrowScreens(t *testing.T) {
+	t.Parallel()
 	css, err := fs.ReadFile(web.Static, "static/hejmo.css")
 	if err != nil {
 		t.Fatal(err)

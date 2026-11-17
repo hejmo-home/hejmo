@@ -273,3 +273,20 @@ func (in Input) Validate(active []string) []FieldErr {
 	}
 	return errs
 }
+
+// Resolve finds the article that the text of a list entry names: the whole
+// text equals the name in German or English, ignoring case, spaces and
+// umlauts. The first match wins, so a household's own articles (listed first)
+// beat shipped ones. Text that names no article stays free text.
+func Resolve(text string, all []Article) (Article, bool) {
+	t := Fold(text)
+	if t == "" {
+		return Article{}, false
+	}
+	for _, a := range all {
+		if Fold(a.De) == t || Fold(a.En) == t {
+			return a, true
+		}
+	}
+	return Article{}, false
+}

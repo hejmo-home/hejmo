@@ -49,6 +49,7 @@ func (c *apiClient) syncOf(t *testing.T, id string) map[string]any {
 // Acceptance: a feed with a weekly series and a cancelled occurrence shows the
 // series without that occurrence; webcal:// addresses are accepted.
 func TestAddingAnICSCalendarShowsItsEvents(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf(choirSeries), nil)
 
@@ -81,6 +82,7 @@ func mustHousehold(t *testing.T, c *apiClient) store.Household {
 }
 
 func TestAddICSCalendarValidatesInput(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h := mustHousehold(t, c)
 	for name, body := range map[string]map[string]any{
@@ -99,6 +101,7 @@ func TestAddICSCalendarValidatesInput(t *testing.T) {
 }
 
 func TestICSCalendarKeepsColourAudienceAndInterval(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h := mustHousehold(t, c)
 	mia, _ := c.b.db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
@@ -115,6 +118,7 @@ func TestICSCalendarKeepsColourAudienceAndInterval(t *testing.T) {
 
 // Acceptance: an event removed from the feed is gone after "sync now".
 func TestSyncNowRemovesEventsGoneFromTheFeed(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf("UID:a\r\nSUMMARY:Choir\r\nDTSTART:20261120T170000", "UID:b\r\nSUMMARY:Fair\r\nDTSTART:20261121T100000"), nil)
 	cal := c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
@@ -132,6 +136,7 @@ func TestSyncNowRemovesEventsGoneFromTheFeed(t *testing.T) {
 // Acceptance: an unreachable feed keeps the previous events; the failure is
 // in the sync log.
 func TestFailedSyncKeepsEventsAndIsInTheSyncLog(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf("UID:a\r\nSUMMARY:Choir\r\nDTSTART:20261120T170000"), nil)
 	cal := c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
@@ -159,6 +164,7 @@ func TestFailedSyncKeepsEventsAndIsInTheSyncLog(t *testing.T) {
 // Acceptance: after 24 hours without success the sync state is stale and
 // parents see a notice; one success clears it.
 func TestStaleAfter24HoursShowsNoticeUntilNextSuccess(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf("UID:a\r\nSUMMARY:Choir\r\nDTSTART:20261120T170000"), nil)
 	cal := c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
@@ -195,6 +201,7 @@ func TestStaleAfter24HoursShowsNoticeUntilNextSuccess(t *testing.T) {
 }
 
 func TestRemovingACalendarRemovesItsEvents(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf("UID:a\r\nSUMMARY:Choir\r\nDTSTART:20261120T170000"), nil)
 	cal := c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
@@ -221,6 +228,7 @@ func TestRemovingACalendarRemovesItsEvents(t *testing.T) {
 }
 
 func TestEventsOfAReadOnlyCalendarCannotBeCreatedOrEdited(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf("UID:a\r\nSUMMARY:Choir\r\nDTSTART:20261120T170000"), nil)
 	cal := c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
@@ -237,6 +245,7 @@ func TestEventsOfAReadOnlyCalendarCannotBeCreatedOrEdited(t *testing.T) {
 }
 
 func TestSyncEndpointsNeedTheRightRights(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf(), nil)
 	cal := c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
@@ -268,6 +277,7 @@ func TestSyncEndpointsNeedTheRightRights(t *testing.T) {
 }
 
 func TestWebAddsAndListsICSCalendars(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	h := mustHousehold(t, c)
@@ -321,6 +331,7 @@ func TestWebAddsAndListsICSCalendars(t *testing.T) {
 }
 
 func TestCalendarsPageNeedsASignedInParent(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	if r := b.get("/calendars"); r.status != http.StatusSeeOther || r.location != "/login?next=%2Fcalendars" {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
@@ -331,6 +342,7 @@ func TestCalendarsPageNeedsASignedInParent(t *testing.T) {
 }
 
 func TestUntitledFeedEventsGetALocalisedPlaceholder(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf("UID:a\r\nDTSTART:20261120T170000"), nil)
 	c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
@@ -340,6 +352,7 @@ func TestUntitledFeedEventsGetALocalisedPlaceholder(t *testing.T) {
 }
 
 func TestICSColorMustBeHexRGB(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf(), nil)
 	for _, bad := range []string{"red", "#12345", "#GGGGGG", "javascript:1"} {

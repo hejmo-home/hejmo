@@ -35,6 +35,7 @@ func newRepairFixture(t *testing.T) repairFixture {
 }
 
 func TestChildsPhonePageOffersPairingForAnotherPersonInOneConfirmation(t *testing.T) {
+	t.Parallel()
 	f := newRepairFixture(t)
 	body := getEN(f.b, "/phones/"+f.phoneID).body
 	for _, want := range []string{
@@ -74,6 +75,7 @@ func TestChildsPhonePageOffersPairingForAnotherPersonInOneConfirmation(t *testin
 }
 
 func TestParentsPhonePageHasNoRepairBox(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	pairedPhone(t, b, personNamed(t, b, "Mama"), "Mama's phone")
 	id := phoneIDRe.FindStringSubmatch(b.get("/phones").body)[1]
@@ -87,6 +89,7 @@ func TestParentsPhonePageHasNoRepairBox(t *testing.T) {
 }
 
 func TestRepairWithoutAPersonChangesNothingAndSaysSo(t *testing.T) {
+	t.Parallel()
 	f := newRepairFixture(t)
 	r := f.b.do(http.MethodPost, f.repairAction, url.Values{}, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusUnprocessableEntity {
@@ -106,6 +109,7 @@ func TestRepairWithoutAPersonChangesNothingAndSaysSo(t *testing.T) {
 }
 
 func TestRepairRefusesTheCurrentAndUnknownPersons(t *testing.T) {
+	t.Parallel()
 	f := newRepairFixture(t)
 	for name, person := range map[string]string{"current person": f.sebastian.ID, "unknown": "nobody"} {
 		if r := f.b.post(f.repairAction, url.Values{"person": {person}}); r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-person"`) {
@@ -121,6 +125,7 @@ func TestRepairRefusesTheCurrentAndUnknownPersons(t *testing.T) {
 }
 
 func TestRepairEndsTheOldSessionAndShowsTheNewCodeForThePerson(t *testing.T) {
+	t.Parallel()
 	f := newRepairFixture(t)
 	r := f.b.do(http.MethodPost, f.repairAction, url.Values{"person": {f.mia.ID}}, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusOK {
@@ -155,6 +160,7 @@ func TestRepairEndsTheOldSessionAndShowsTheNewCodeForThePerson(t *testing.T) {
 }
 
 func TestRepairedPhoneShowsWhoItIsForAndTheParentConfirmsWithThemPreselected(t *testing.T) {
+	t.Parallel()
 	f := newRepairFixture(t)
 	r := f.b.post(f.repairAction, url.Values{"person": {f.mia.ID}})
 	path := joinPath(t, r.body)
@@ -191,6 +197,7 @@ func TestRepairedPhoneShowsWhoItIsForAndTheParentConfirmsWithThemPreselected(t *
 
 // The ordinary pairing keeps asking: nobody is preselected, no name is filled in.
 func TestOrdinaryPairingIsNotPrefilled(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	path := showCode(t, b)
 	newScreen(b).get(path, "en")
@@ -209,6 +216,7 @@ func TestOrdinaryPairingIsNotPrefilled(t *testing.T) {
 }
 
 func TestPhoneNameFollowsTheLanguagesRuleForTheOwner(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ person, en, de string }{
 		{"Mia", "Mia’s phone", "Mias Handy"},
 		{"Jonas", "Jonas’s phone", "Jonas’ Handy"},
@@ -229,6 +237,7 @@ func TestPhoneNameFollowsTheLanguagesRuleForTheOwner(t *testing.T) {
 }
 
 func TestRepairPagesAreGerman(t *testing.T) {
+	t.Parallel()
 	f := newRepairFixture(t)
 	de := map[string]string{"Accept-Language": "de"}
 	body := f.b.do(http.MethodGet, "/phones/"+f.phoneID, nil, de).body
@@ -261,6 +270,7 @@ func TestRepairPagesAreGerman(t *testing.T) {
 }
 
 func TestOnlyParentsRepairPhones(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	h, _ := cp.parent.b.db.HomeHousehold()
 	phones, _ := cp.parent.b.db.Phones(h.ID)
@@ -278,6 +288,7 @@ func TestOnlyParentsRepairPhones(t *testing.T) {
 
 // ADR 0015: everything the web interface can do is also possible through the API.
 func TestRepairingAPhoneWorksThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	mia, sebastian := personNamed(t, c.b, "Mia"), personNamed(t, c.b, "Sebastian")
 	phone := pairedPhone(t, c.b, sebastian, "Sebastian's phone")
@@ -314,6 +325,7 @@ func TestRepairingAPhoneWorksThroughTheAPI(t *testing.T) {
 }
 
 func TestOnlyScopedParentsRepairPhonesThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ro := c.withToken(c.newToken("read"))
 	if status, _, _ := ro.call(http.MethodPost, "/phones/00000000-0000-4000-8000-000000000000/repair", map[string]any{"person_id": "x"}); status != http.StatusForbidden {

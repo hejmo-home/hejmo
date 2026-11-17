@@ -35,6 +35,7 @@ func formOf(t *testing.T, page, action string) string {
 // ADR 0017, ticket 5.16: a form error is shown at its field; the other
 // entries stay filled in, passwords never come back.
 func TestFormErrorsAppearAtTheFieldAndKeepOtherEntries(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	b.feeds.set("https://example.org/a.ics", feedOf(), nil)
@@ -92,6 +93,7 @@ func TestFormErrorsAppearAtTheFieldAndKeepOtherEntries(t *testing.T) {
 }
 
 func TestSetupErrorsAppearAtTheFieldAndNeverReturnPasswords(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	form := validSetupForm()
 	form.Set("password", "short")
@@ -122,6 +124,7 @@ func TestSetupErrorsAppearAtTheFieldAndNeverReturnPasswords(t *testing.T) {
 }
 
 func TestSetupCodeErrorAppearsAtTheCodeField(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	r := b.post("/setup/totp", url.Values{"code": {"000000"}})
@@ -131,6 +134,7 @@ func TestSetupCodeErrorAppearsAtTheCodeField(t *testing.T) {
 }
 
 func TestSignInErrorKeepsTheUsernameButNotThePassword(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	code, _ := auth.TOTPCode(secret, b.now)
 	r := b.post("/login", url.Values{"username": {"mama"}, "password": {"wrong password"}, "code": {code}})

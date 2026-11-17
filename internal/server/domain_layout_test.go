@@ -22,6 +22,7 @@ import (
 // error states after a submit, long names. No page may be wider than the
 // viewport (375 px phone first), no text may overflow its box.
 func TestOwnDomainPageFitsEveryProviderAndErrorState(t *testing.T) {
+	t.Parallel()
 	chrome := requireChrome(t)
 	ctx := startChrome(t, chrome)
 	ctx, cancel := context.WithTimeout(ctx, 10*time.Minute)
@@ -130,6 +131,7 @@ func TestOwnDomainPageFitsEveryProviderAndErrorState(t *testing.T) {
 
 // Before a choice, no guide shows, only the hint that says what happens next.
 func TestOwnDomainPageShowsOnlyTheHintBeforeAChoice(t *testing.T) {
+	t.Parallel()
 	chrome := requireChrome(t)
 	ctx := startChrome(t, chrome)
 	b := newFreshBox(t)

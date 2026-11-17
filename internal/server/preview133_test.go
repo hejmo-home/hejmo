@@ -78,6 +78,7 @@ func conceal(html, attr string) string {
 // downloaded certificate) are applied to the markup by hand, as the script does.
 // Run: HEJMO_WRITE_PREVIEW_133=../../docs/design/preview-133.html go test ./internal/server -run WriteDesignPreview133
 func TestWriteDesignPreview133(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_133")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_133 to the output path to write the preview")

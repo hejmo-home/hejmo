@@ -30,6 +30,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/list"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
@@ -92,6 +93,7 @@ func requireChrome(t *testing.T) string {
 // instead of skipping it, so CI cannot pass without running it. The test runs
 // it in a child process pointed at a Chrome that does not exist.
 func TestMissingChromeFailsWhenChromeIsRequired(t *testing.T) {
+	t.Parallel()
 	run := func(require string) (string, error) {
 		cmd := exec.Command(os.Args[0], "-test.run=^TestRenderedLayout$", "-test.v")
 		cmd.Env = []string{"PATH=", "HEJMO_CHROME=/nonexistent/chrome", "HEJMO_REQUIRE_CHROME=" + require}
@@ -116,6 +118,7 @@ var layoutNames = []string{"Friedrich", "Maximilian", "Anna-Lena", "Konstantin",
 type layoutFixture struct {
 	*familyBox
 	ids []string // person IDs in layoutNames order
+	kid *screen  // the phone of a child, which shows lists as tiles
 
 	lists       []string // list IDs
 	inviteToken string   // the invitation of Maximilian, a parent without account
@@ -166,7 +169,8 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	l, err := db.CreateList(h, list.List{Name: "Wochenendeinkaufsliste", Color: "blue", Symbol: "circle-empty", Sort: list.Alphabetical})
 	must(err)
 	f.lists = append(f.lists, l.ID)
-	for _, e := range []string{"Haferflockenpackung groß", "Kartoffelsalatzutaten für Samstag", "Vollkornspaghetti", "Bio-Pfefferminztee"} {
+	// Entries that name articles (#166): shipped ones that warn several people with long names, and the own articles made below, one with a photo and one with a symbol. The tiles of the child's phone show them.
+	for _, e := range []string{"Haferflockenpackung groß", "Kartoffelsalatzutaten für Samstag", "Vollkornspaghetti", "Bio-Pfefferminztee", "Toastbrot", "Milch", "Haselnuss-Mandel-Knusperflocken mit Schokostückchen", "Katzenfutter Huhn"} {
 		_, err := db.AddEntry(h, l.ID, e)
 		must(err)
 	}
@@ -235,7 +239,7 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	c.switchMCP(t, true)
 	c.newMCPToken(t, "Claude Desktop auf dem Küchenrechner", map[string]string{"lists": "write"})
 	// A paired phone, a calendar connection, a CalDAV device token.
-	pairedPhone(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
+	f.kid = pairedPhone(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
 	connID := connectedBox(t, f.box)
 	// Two calendars with long names (#183): the first is on, for all eight people and under a longer name of its own, the second is off.
 	f.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { // the connection page asks for event counts
@@ -470,6 +474,7 @@ var notRendered = map[string]string{
 	"/phones/join/{code}":       "one-time pairing link of a phone",
 
 	"/articles/{id}/picture":                  "an image",
+	"/display/articles/{id}/picture":          "an image",
 	"/settings/lists/library/picture/{token}": "an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
 }
@@ -502,6 +507,11 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	for _, p := range crawl(t, parent, "/calendar/search?q=Schwimm", "/calendar/new", "/tasks", "/settings/lists/library/walnuts", "/routines/new?person="+f.ids[1]+"&part=morning") {
 		add(parent, p)
 	}
+	// The child's phone shows lists as tiles by default (#166): the tiles of articles with a picture, a symbol and the warning of several people, and of free text.
+	kid := siteOf("child phone", f.box, f.kid.client)
+	add(kid, "/lists")
+	add(kid, "/lists/"+f.lists[0])
+	add(kid, "/lists/"+f.lists[1])
 	// The display: the family view and the personal views of two people.
 	display := siteOf("display", f.box, f.display.client)
 	add(display, "/display")
@@ -512,10 +522,19 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(display, "/display/saver")
 	add(siteOf("display hint", f.box, f.hint.client), "/display/saver")
 
+	// Offline mode (ticket 201): the pages as the box answers them while it is on.
+	pages = append(pages, offlinePages(t, f)...)
+
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
 	// the state after a continue without the tick.
 	pages = append(pages, recoveryCardPages(t, f)...)
+
+	// The settings page "Sichere Verbindung" (#216): the page itself is crawled
+	// from the hub; the box's answer to the form (success line, next step) and
+	// the form with a refused name are reached only by POST. A long router name
+	// must wrap, not widen the page.
+	pages = append(pages, secureConnectionPages(t, f)...)
 
 	// Signed out: the login page and the trust page.
 	f.logout()
@@ -528,6 +547,70 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	// The invitation of a parent: the welcome page and the form for username and password.
 	add(out, "/invite/"+f.inviteToken)
 	add(out, "/invite/"+f.inviteToken+"/account")
+	return pages
+}
+
+// offlinePages returns the pages of ticket 201 in the states a crawl does not
+// reach: with offline mode on (Home, the hub, the connections page with refused
+// attempts, the calendar pages with their paused tags and notices, the
+// confirmation to switch off) and with a public name (the change to the home
+// network, and its error). The box is put back as it was.
+func offlinePages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	parent := siteOf("app", f.box, f.client)
+	var pages []layoutPage
+	grab := func(name, path string) {
+		t.Helper()
+		out := map[string]string{}
+		for _, lang := range []string{"de", "en"} {
+			r := f.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": lang})
+			if r.status != http.StatusOK {
+				t.Fatalf("%s %s = %d", name, path, r.status)
+			}
+			out[lang] = r.body
+		}
+		pages = append(pages, layoutPage{site: parent, path: path + "?state=" + name, html: out})
+	}
+	db := f.box.db
+	if err := db.SetOffline(true, f.box.now); err != nil {
+		t.Fatal(err)
+	}
+	led := db.Outbound()
+	led.Refused(f.box.now, outbound.Calendars, "caldav.example.org")
+	led.Refused(f.box.now.Add(time.Minute), outbound.Images, "www.example-supermarkt.de/bilder/hafer-drink-barista-edition-1-liter-in-der-besonders-langen-verpackung.jpg")
+	hh, _ := db.HomeHousehold()
+	conns, err := db.Connections(hh.ID)
+	if err != nil || len(conns) == 0 {
+		t.Fatalf("the fixture has no calendar connection: %v", err)
+	}
+	connID := conns[0].ID
+	for _, p := range []struct{ name, path string }{
+		{"offline-home", "/"}, {"offline-hub", "/settings"}, {"offline-connections", "/settings/connections"}, {"offline-calendars", "/calendars"},
+		{"offline-connect", "/connections/new"}, {"offline-connection", "/connections/" + connID}, {"offline-switch-off", "/settings/connections/online"},
+	} {
+		grab(p.name, p.path)
+	}
+	if err := db.SetOffline(false, f.box.now); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetServiceEnabled(outbound.Calendars, false); err != nil {
+		t.Fatal(err)
+	}
+	grab("calendars-off", "/connections/new")
+	grab("connections-single", "/settings/connections")
+	if err := db.SetServiceEnabled(outbound.Calendars, true); err != nil {
+		t.Fatal(err)
+	}
+	f.box.public.name = "familie-maier-mit-einem-langen-namen.dedyn.io"
+	if err := db.SavePublicHTTPS(store.PublicHTTPS{Name: f.box.public.name, Zone: "dedyn.io", Provider: "desec", Issuer: "letsencrypt", LANIP: "192.168.178.40", Token: []byte("x")}); err != nil {
+		t.Fatal(err)
+	}
+	grab("public-name", "/settings/connections/offline")
+	grab("public-connections", "/settings/connections")
+	f.box.public.name = ""
+	if err := db.DeletePublicHTTPS(); err != nil {
+		t.Fatal(err)
+	}
 	return pages
 }
 
@@ -597,6 +680,33 @@ func recoveryCardPages(t *testing.T, f *layoutFixture) []layoutPage {
 	return mergeCardPages(pages)
 }
 
+const longRouterName = "das-wohnzimmer-der-familie-mueller.hejmo-box-mit-sehr-langem-namen.fritz.box"
+
+// secureConnectionPages returns the answers of the page "Sichere Verbindung"
+// that only a form reaches, in German and English: a refused name (422, the
+// error at the field, the input kept) and the entered name (200, the success
+// line and the next step). The fixture's signed-in parent posts the forms.
+func secureConnectionPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	site := siteOf("secure connection", f.box, f.client)
+	for _, lang := range []string{"de", "en"} {
+		hdr := map[string]string{"Accept-Language": lang}
+		refused := f.do(http.MethodPost, "/settings/https", url.Values{"router_name": {"hejmo box mit leerzeichen." + longRouterName}}, hdr)
+		if refused.status != http.StatusUnprocessableEntity {
+			t.Fatalf("secure connection, refused name = %d\n%s", refused.status, refused.body)
+		}
+		saved := f.do(http.MethodPost, "/settings/https", url.Values{"router_name": {lang + "-" + longRouterName}}, hdr)
+		if saved.status != http.StatusOK {
+			t.Fatalf("secure connection, entered name = %d\n%s", saved.status, saved.body)
+		}
+		pages = append(pages,
+			layoutPage{site: site, path: "/settings/https#refused", html: map[string]string{lang: refused.body}},
+			layoutPage{site: site, path: "/settings/https#entered", html: map[string]string{lang: saved.body}})
+	}
+	return mergeCardPages(pages)
+}
+
 // mergeCardPages joins the German and English markup of the same card into one page.
 func mergeCardPages(in []layoutPage) []layoutPage {
 	var out []layoutPage
@@ -631,6 +741,11 @@ func wizardPages(t *testing.T) []layoutPage {
 	add("fresh box", fresh, "/setup/https")
 	add("fresh box", fresh, "/setup/https?way=public")
 	add("fresh box", fresh, "/setup/https?way=domain")
+	add("fresh box", fresh, "/setup/offline") // the question of ticket 201
+	add("fresh box", fresh, "/setup/https?way=own")
+	// A router name found by the box, long enough to wrap on a phone.
+	named := newFreshBox(t, withResolver(&fakeResolver{names: map[string][]string{"127.0.0.1": {longRouterName + "."}}}))
+	add("fresh box with a router name", named, "/setup/https?way=own")
 
 	add("https box", newBox(t), "/setup")
 
@@ -660,6 +775,7 @@ func wizardPages(t *testing.T) []layoutPage {
 // Every GET route that answers a page is rendered by the check, or is listed
 // in notRendered with its reason: a page added later cannot slip through.
 func TestEveryPageIsInTheRenderedLayoutCheck(t *testing.T) {
+	t.Parallel()
 	f := newLayoutFixture(t)
 	pages := append(layoutPages(t, f), wizardPages(t)...)
 	for _, route := range htmlRoutes(t) {
@@ -691,6 +807,23 @@ func TestEveryPageIsInTheRenderedLayoutCheck(t *testing.T) {
 				break
 			}
 		}
+	}
+}
+
+// The layout check can only find what its fixture shows: the child's phone
+// must lay out tiles of an article with a picture, one with a symbol, free
+// text, and a tile that warns several people (#166).
+func TestTheLayoutFixtureShowsEveryKindOfTile(t *testing.T) {
+	t.Parallel()
+	f := newLayoutFixture(t)
+	page := f.kid.get("/lists/"+f.lists[0], "en").body
+	for _, want := range []string{`<ul class="tiles"`, `<img src="/articles/`, `🐈`, `<span class="pic letter"`, `<span class="tile-warn">`} {
+		if !strings.Contains(page, want) {
+			t.Errorf("the child's tiles lack %q", want)
+		}
+	}
+	if toast := tileOf(t, page, "Toastbrot"); strings.Count(toast, `<span class="line">`) < 3 {
+		t.Errorf("the toast does not warn three people:\n%s", toast)
 	}
 }
 
@@ -754,6 +887,7 @@ func (k knownLayoutProblem) covers(path string, width int, p layoutProblem) bool
 // and black-and-white, in German and English, and fails with the page, width,
 // theme and element where text overflows or a name breaks.
 func TestRenderedLayout(t *testing.T) {
+	t.Parallel()
 	chrome := requireChrome(t)
 	f := newLayoutFixture(t)
 	pages := append(layoutPages(t, f), wizardPages(t)...)
@@ -877,6 +1011,7 @@ const langCookieForTest = "hejmo_lang"
 // The probe itself is tested on small pages: each case is a page body, the
 // width it is rendered at, and the kinds of problem the probe must report.
 func TestLayoutProbeFindsWhatItShould(t *testing.T) {
+	t.Parallel()
 	ctx := startChrome(t, requireChrome(t))
 	const clip = `style="width:100px;overflow:hidden"`
 	for _, c := range []struct {
@@ -932,6 +1067,7 @@ func TestLayoutProbeFindsWhatItShould(t *testing.T) {
 }
 
 func TestTheFormAndAShippedArticleAreDifferentPages(t *testing.T) {
+	t.Parallel()
 	form, article := pageShape("/settings/lists/library/new"), pageShape("/settings/lists/library/walnuts")
 	if form == article {
 		t.Errorf("the form and a shipped article share the shape %q, so the crawl renders only one of them", form)
@@ -950,6 +1086,7 @@ func TestTheFormAndAShippedArticleAreDifferentPages(t *testing.T) {
 // Home) need a shrinkable box for the name, or the name overflows instead.
 // The check opens each heading at 300 px with a one-word name of 30 letters.
 func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
+	t.Parallel()
 	chrome := requireChrome(t)
 	const long = "Hubertusmariaaloisiusferdinand"
 	f := newFamilyBox(t, "eink_color")

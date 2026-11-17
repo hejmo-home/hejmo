@@ -48,6 +48,7 @@ func lacks(t *testing.T, page string, nots ...string) {
 }
 
 func TestNewRoutinePageOffersOnePersonAndThreePartsOfTheDay(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	p := tb.page(t, "/routines/new")
 	has(t, p, "New routine", `type="radio" name="person"`, `name="part" value="morning"`, `name="part" value="afterschool"`, `name="part" value="evening"`,
@@ -58,6 +59,7 @@ func TestNewRoutinePageOffersOnePersonAndThreePartsOfTheDay(t *testing.T) {
 }
 
 func TestParentCreatesARoutineInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	r := tb.mustPost(t, "/routines", url.Values{"person": {tb.miaID}, "part": {"afterschool"}, "name": {" Homework time "}})
 	m := regexp.MustCompile(`^/routines/([0-9a-f-]{36})$`).FindStringSubmatch(r.location)
@@ -77,6 +79,7 @@ func TestParentCreatesARoutineInTheWebInterface(t *testing.T) {
 }
 
 func TestSecondRoutineForThePartIsRefusedAtTheFieldAndNamesTheExistingOne(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	first := tb.newRoutine(t, tb.miaID, "Morning routine", "morning")
 	r := tb.parent.b.do(http.MethodPost, "/routines", url.Values{"person": {tb.miaID}, "part": {"morning"}, "name": {"Again"}}, enHeader)
@@ -99,6 +102,7 @@ func TestSecondRoutineForThePartIsRefusedAtTheFieldAndNamesTheExistingOne(t *tes
 }
 
 func TestRoutinePagesAreForParentsOnly(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	for _, path := range []string{"/routines/new", "/routines/00000000-0000-4000-8000-000000000000"} {
 		if r := cp.screen.get(path, "en"); r.status != http.StatusForbidden {
@@ -126,6 +130,7 @@ func (tb taskBox) routineOfFour(t *testing.T) (string, []string) {
 }
 
 func TestRoutinePageShowsFactsAndTheOrderWithMoveButtons(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid, steps := tb.routineOfFour(t)
 	tb.parent.call(http.MethodPut, "/tasks/"+steps[0]+"/done", map[string]any{"done": true})
@@ -146,6 +151,7 @@ func TestRoutinePageShowsFactsAndTheOrderWithMoveButtons(t *testing.T) {
 // Acceptance: Given a parent reorders steps, then the personal view shows the new order
 // (here: the stored order the view reads, and the sentence naming the new place).
 func TestMovingAStepChangesTheOrderAndSaysWhereItWent(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid, steps := tb.routineOfFour(t)
 	tb.mustPost(t, "/routines/"+rid+"/move", url.Values{"task": {steps[2]}, "direction": {"up"}})
@@ -171,6 +177,7 @@ func TestMovingAStepChangesTheOrderAndSaysWhereItWent(t *testing.T) {
 }
 
 func TestParentAddsANewTaskToTheRoutine(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.newRoutine(t, tb.miaID, "After school", "afterschool")
 	tb.mustPost(t, "/routines/"+rid+"/tasks", url.Values{"source": {"new"}, "title": {"Homework"}, "emoji": {"✏️"}, "stars": {"2"}, "repeat": {"daily"}})
@@ -199,6 +206,7 @@ func TestParentAddsANewTaskToTheRoutine(t *testing.T) {
 }
 
 func TestParentTakesAnExistingTaskIntoTheRoutine(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.newRoutine(t, tb.miaID, "Morning routine", "morning")
 	other := tb.newRoutine(t, tb.miaID, "Evening routine", "evening")
@@ -221,6 +229,7 @@ func TestParentTakesAnExistingTaskIntoTheRoutine(t *testing.T) {
 }
 
 func TestParentRenamesARoutineAndMovesItToAnotherPart(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid, steps := tb.routineOfFour(t)
 	evening := tb.newRoutine(t, tb.miaID, "Evening routine", "evening")
@@ -241,6 +250,7 @@ func TestParentRenamesARoutineAndMovesItToAnotherPart(t *testing.T) {
 }
 
 func TestDissolvingARoutineKeepsEveryTask(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid, steps := tb.routineOfFour(t)
 	p := tb.page(t, "/routines/"+rid)
@@ -260,6 +270,7 @@ func TestDissolvingARoutineKeepsEveryTask(t *testing.T) {
 }
 
 func TestTaskPageNamesItsRoutineAndLetsItLeave(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid, steps := tb.routineOfFour(t)
 	p := tb.page(t, "/tasks/"+steps[2])
@@ -276,6 +287,7 @@ func TestTaskPageNamesItsRoutineAndLetsItLeave(t *testing.T) {
 }
 
 func TestTasksPageShowsRoutineCardsBeforeTheOtherTasks(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid, steps := tb.routineOfFour(t)
 	tb.newDaily(t, tb.miaID) // a single task of Mia
@@ -300,6 +312,7 @@ func TestTasksPageShowsRoutineCardsBeforeTheOtherTasks(t *testing.T) {
 }
 
 func TestChildTasksPageShowsRoutineBoxesWithBigCheckboxes(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	tb := taskBox{parent: cp.parent, miaID: personNamed(t, cp.parent.b, "Mia").ID}
 	rid, steps := tb.routineOfFour(t)
@@ -314,6 +327,7 @@ func TestChildTasksPageShowsRoutineBoxesWithBigCheckboxes(t *testing.T) {
 
 // A done step on the tasks page strikes through its emoji and its title together.
 func TestTasksPageStrikesEmojiAndTitleOfADoneStep(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.newRoutine(t, tb.miaID, "Morning routine", "morning")
 	status, k, _ := tb.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": tb.miaID, "title": "Brush teeth", "emoji": "🪥", "repeat": "daily", "routine_id": rid})

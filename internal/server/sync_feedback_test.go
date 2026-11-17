@@ -32,6 +32,7 @@ func icsBox(t *testing.T) (*box, store.SyncedCalendar) {
 }
 
 func TestSyncNowShowsASuccessLineWithTimeEventCountAndChanges(t *testing.T) {
+	t.Parallel()
 	b, cal := icsBox(t)
 	b.now = b.now.Add(time.Hour) // 22:46:26 local
 	b.feeds.set(feedURL172, feedOf("UID:a\r\nSUMMARY:Choir rehearsal\r\nDTSTART:20261120T170000Z", "UID:c\r\nSUMMARY:Swim\r\nDTSTART:20261122T090000Z", "UID:d\r\nSUMMARY:Piano\r\nDTSTART:20261123T090000Z"), nil)
@@ -57,6 +58,7 @@ func TestSyncNowShowsASuccessLineWithTimeEventCountAndChanges(t *testing.T) {
 }
 
 func TestAFailedSyncNowShowsNoSuccessLine(t *testing.T) {
+	t.Parallel()
 	b, cal := icsBox(t)
 	getEN(b, "/calendars/"+cal.ID) // the line of adding the calendar is shown and gone
 	b.feeds.set(feedURL172, "", http.ErrHandlerTimeout)
@@ -67,6 +69,7 @@ func TestAFailedSyncNowShowsNoSuccessLine(t *testing.T) {
 }
 
 func TestCalendarRowShowsLastSuccessEventCountAndLastRunChanges(t *testing.T) {
+	t.Parallel()
 	b, cal := icsBox(t)
 	page := getEN(b, "/calendars/"+cal.ID).body
 	for _, want := range []string{"14.11.2026,\u00a021:46:26", "2 (last 12 months and later)", "2 new, 0 changed, 0 removed"} {
@@ -83,6 +86,7 @@ func TestCalendarRowShowsLastSuccessEventCountAndLastRunChanges(t *testing.T) {
 }
 
 func TestSyncTimesOfTheCalendarsPageAndTheSyncProblemsShowSeconds(t *testing.T) {
+	t.Parallel()
 	b, cal := icsBox(t)
 	h, _ := b.db.HomeHousehold()
 	at := b.now
@@ -106,6 +110,7 @@ func TestSyncTimesOfTheCalendarsPageAndTheSyncProblemsShowSeconds(t *testing.T) 
 }
 
 func TestSyncLogIsCalledSyncProblemsAndSaysWhereSuccessfulRunsShow(t *testing.T) {
+	t.Parallel()
 	b, _ := icsBox(t)
 	page := getEN(b, "/calendars").body
 	log := page[strings.Index(page, `id="log"`):]
@@ -122,6 +127,7 @@ func TestSyncLogIsCalledSyncProblemsAndSaysWhereSuccessfulRunsShow(t *testing.T)
 }
 
 func TestAPIReportsEventCountAndLastRunOfASyncedCalendar(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	b.feeds.set(feedURL172, feedOf("UID:a\r\nSUMMARY:Choir\r\nDTSTART:20261120T170000Z"), nil)
@@ -134,6 +140,7 @@ func TestAPIReportsEventCountAndLastRunOfASyncedCalendar(t *testing.T) {
 }
 
 func TestAPIChangesNameColourAndAudienceOfASyncedCalendarAndNothingElse(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	b.feeds.set(feedURL172, feedOf("UID:a\r\nSUMMARY:Choir\r\nDTSTART:20261120T170000Z"), nil)

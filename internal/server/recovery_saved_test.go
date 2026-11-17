@@ -40,6 +40,7 @@ func savedForm(flow string, codes []string, tick bool) url.Values {
 
 // The card: who and where, the two ways to keep the codes, and the gate.
 func TestRecoveryCodesCardHasPDFPrintAndTheGate(t *testing.T) {
+	t.Parallel()
 	b, r, codes := wizardCodes(t)
 	berlin, _ := time.LoadLocation("Europe/Berlin")
 	acc, _ := b.db.AccountByUsername("mama")
@@ -74,6 +75,7 @@ func TestRecoveryCodesCardHasPDFPrintAndTheGate(t *testing.T) {
 
 // Without the tick the box refuses, shows the same codes and says why at the field.
 func TestContinueWithoutTheTickIsRefusedAtTheField(t *testing.T) {
+	t.Parallel()
 	b, _, codes := wizardCodes(t)
 	r := b.do(http.MethodPost, "/account/recovery-codes/saved", savedForm("wizard", codes, false), enHeader)
 	if r.status != http.StatusUnprocessableEntity {
@@ -96,6 +98,7 @@ func TestContinueWithoutTheTickIsRefusedAtTheField(t *testing.T) {
 }
 
 func TestTheTickLetsTheWizardContinueAndMarksTheSetSaved(t *testing.T) {
+	t.Parallel()
 	b, _, codes := wizardCodes(t)
 	r := b.do(http.MethodPost, "/account/recovery-codes/saved", savedForm("wizard", codes, true), enHeader)
 	if r.status != http.StatusSeeOther || r.location != "/" {
@@ -112,6 +115,7 @@ func TestTheTickLetsTheWizardContinueAndMarksTheSetSaved(t *testing.T) {
 
 // Outside the wizard the page is in the frame, has no back link, and leads back to My account.
 func TestNewCodesOnMyAccountHaveNoBackLinkAndLeadBackWithASuccessLine(t *testing.T) {
+	t.Parallel()
 	b, _, codes := wizardCodes(t)
 	b.do(http.MethodPost, "/account/recovery-codes/saved", savedForm("wizard", codes, true), enHeader)
 	r := b.do(http.MethodPost, "/account/recovery-codes", url.Values{}, enHeader)
@@ -140,6 +144,7 @@ func TestNewCodesOnMyAccountHaveNoBackLinkAndLeadBackWithASuccessLine(t *testing
 
 // Leaving without the tick is caught later, in words, on My account.
 func TestMyAccountSaysWhenTheCodesWereNeverConfirmed(t *testing.T) {
+	t.Parallel()
 	b, _, _ := wizardCodes(t)
 	acct := b.do(http.MethodGet, "/account", nil, enHeader)
 	for _, want := range []string{`<span class="flag warn">`, "Not confirmed as saved", "Did you not save the codes from ", "? Create new ones; the current ones become invalid.", `name="fresh" value="1"`} {
@@ -152,6 +157,7 @@ func TestMyAccountSaysWhenTheCodesWereNeverConfirmed(t *testing.T) {
 // A reload before the tick gives a new set and says so; a deliberate "new codes"
 // from My account (which carries "fresh") does not claim a reload.
 func TestReloadBeforeTheTickMakesANewSetAndSaysSo(t *testing.T) {
+	t.Parallel()
 	b, _, first := wizardCodes(t)
 	again := b.do(http.MethodPost, "/account/recovery-codes", url.Values{}, enHeader)
 	second := recoveryCodesOn(t, again.body)
@@ -174,6 +180,7 @@ func TestReloadBeforeTheTickMakesANewSetAndSaysSo(t *testing.T) {
 }
 
 func TestReloadOfTheOneTimeCodeStepInTheWizardGivesANewSet(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	secret := secretOn(t, b.get("/setup/totp").body)
@@ -193,6 +200,7 @@ func TestReloadOfTheOneTimeCodeStepInTheWizardGivesANewSet(t *testing.T) {
 
 // Codes that do not look like codes are never echoed: a crafted POST gets a new set instead.
 func TestARefusedSubmitNeverEchoesAnythingButCodes(t *testing.T) {
+	t.Parallel()
 	b, _, _ := wizardCodes(t)
 	r := b.do(http.MethodPost, "/account/recovery-codes/saved", url.Values{"flow": {"wizard"}, "codes": {"<script>alert(1)</script>"}}, enHeader)
 	if strings.Contains(r.body, "alert(1)") {
@@ -205,6 +213,7 @@ func TestARefusedSubmitNeverEchoesAnythingButCodes(t *testing.T) {
 
 // API parity (ADR 0015): the same confirmation over the API.
 func TestAPIConfirmsTheRecoveryCodesAsSaved(t *testing.T) {
+	t.Parallel()
 	b, secret, _ := setupWithCodes(t)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, secret))
 	c := newAPIClient(t, b)
@@ -244,6 +253,7 @@ func docOn(t *testing.T, page string) map[string]any {
 // The PDF's file name has the box name and the date; the texts and the document
 // language follow the page language; a box name with unsafe characters is made file-safe.
 func TestPDFDocHasFileNameTitleLabelsAndLanguageInGermanAndEnglish(t *testing.T) {
+	t.Parallel()
 	b, _, _ := wizardCodes(t)
 	b.public.name = "Küche Box/..\\x:y\"<z>.example"
 	// The dates are the set's own created_at (as My account shows it), not the
@@ -288,6 +298,7 @@ func sameCodes(a, b []string) bool { return strings.Join(a, ",") == strings.Join
 // and says so. This holds without and with the tick; the tick never confirms
 // a set the person did not see.
 func TestCodesThatAreNotTheCurrentSetGetANewSetAndNeverCountAsSaved(t *testing.T) {
+	t.Parallel()
 	for _, tick := range []bool{false, true} {
 		b, _, current := wizardCodes(t)
 		r := b.do(http.MethodPost, "/account/recovery-codes/saved", savedForm("wizard", voidCodes, tick), enHeader)
@@ -315,6 +326,7 @@ func TestCodesThatAreNotTheCurrentSetGetANewSetAndNeverCountAsSaved(t *testing.T
 
 // A tab with the previous set, ticked after a newer set was made, confirms nothing.
 func TestTheTickOfAnOlderSetDoesNotConfirmTheNewerOne(t *testing.T) {
+	t.Parallel()
 	b, _, first := wizardCodes(t)
 	second := recoveryCodesOn(t, b.do(http.MethodPost, "/account/recovery-codes", url.Values{}, enHeader).body)
 	r := b.do(http.MethodPost, "/account/recovery-codes/saved", savedForm("wizard", first, true), enHeader)
@@ -333,6 +345,7 @@ func TestTheTickOfAnOlderSetDoesNotConfirmTheNewerOne(t *testing.T) {
 
 // The refused card on My account says nothing about success.
 func TestRefusedCardOnMyAccountShowsNoSuccessLine(t *testing.T) {
+	t.Parallel()
 	b, _, codes := wizardCodes(t)
 	b.do(http.MethodPost, "/account/recovery-codes/saved", savedForm("wizard", codes, true), enHeader)
 	fresh := recoveryCodesOn(t, b.do(http.MethodPost, "/account/recovery-codes", url.Values{"fresh": {"1"}}, enHeader).body)
@@ -347,6 +360,7 @@ func TestRefusedCardOnMyAccountShowsNoSuccessLine(t *testing.T) {
 
 // The invited parent's last step has the same gate.
 func TestTheGateAlsoHoldsInTheInviteFlow(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	token := e.create()
 	e.b.logout()

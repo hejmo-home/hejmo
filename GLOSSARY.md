@@ -52,6 +52,10 @@ _Avoid_: onboarding, installer
 The box's own certificate authority, name-constrained to the box so it cannot vouch for other sites. Devices trust it once (iOS profile, DAVx5 prompt, browser import). The fallback when no public name and certificate are used (ADR 0014).
 _Avoid_: self-signed certificate, root cert
 
+**Router name**:
+The name the family's router gives the box in the home network, for example `hejmo.fritz.box`. The Box CA can cover it besides `hejmo.local` and the box's LAN address, so a phone on a VPN opens the box without a warning. Adding it later makes a new Box CA, and every device must trust the box again (ADR 0014).
+_Avoid_: hostname, local name, DNS name (in user-facing text)
+
 **Public name**:
 A DNS name of the box (a free deSEC `dedyn.io` name, or a name under the family's own domain at Cloudflare, deSEC, Hetzner or INWX) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
 _Avoid_: domain, DynDNS
@@ -261,7 +265,7 @@ Number and unit of a list entry, such as 500 g or 1 dozen.
 _Avoid_: amount
 
 **Tile view**:
-A list shown as tiles with symbol or picture, name and tick; the default for children.
+A list shown as tiles with symbol or picture, name and tick; the default for children. The choice (tiles or list) is one per person for all lists and every device. A display is not a person and keeps its own view, tiles until someone switches it. An entry that names no article shows its first letter on a dashed ring instead of a picture.
 _Avoid_: grid, gallery
 
 **Diet**:
@@ -397,6 +401,28 @@ _Avoid_: tag, label, category
 **Relation**:
 The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician".
 _Avoid_: connection, relationship type
+
+## Offline mode and connections to the outside
+
+**Offline mode**:
+A household switch: the box opens no connection to anything outside the home network, and every single connection is off and locked. Calendar, tasks, lists, meals, displays and phones in the home network keep working, with the box's own CA. Asked in the setup wizard right after "Only in the home network". Switching it off lists first what goes outside again.
+_Avoid_: local mode, airplane mode
+
+**Connection to the outside**:
+One thing the box does on the internet that parents can switch: weather, update check, calendar services, ICS subscriptions, recipe import, web images; the DNS service has no switch of its own. Place search is not one: the list of places is on the box.
+_Avoid_: integration, external service
+
+**Gate** (outbound gate):
+The one place in the box through which every connection to the outside goes (`internal/outbound`). It refuses and records every attempt while the connection is off, and records the last contact when one goes through. A test fails if any other code makes a connection of its own.
+_Avoid_: firewall, proxy
+
+**Refused attempt**:
+A connection the gate stopped, with time, connection and target, shown newest first on the page "Connections to the outside". Nothing of it left the house.
+_Avoid_: blocked request, error
+
+**Paused** (calendar):
+The state of a calendar or connection whose connection to the outside is off: its events stay, it shows the tag "paused, offline mode", and it syncs again at once when the connection is on. Not a failure.
+_Avoid_: disabled, disconnected
 
 ## Access
 

@@ -47,6 +47,7 @@ func subState(t *testing.T, task map[string]any) []bool {
 // Acceptance: Given "Pack school bag" with three subtasks, when all three are
 // ticked, then the task is done and its stars are credited once.
 func TestTickingAllSubtasksCompletesTheTaskAndCreditsStarsOnce(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id, subs := tb.schoolBag(t)
 	for i, s := range subs {
@@ -70,6 +71,7 @@ func TestTickingAllSubtasksCompletesTheTaskAndCreditsStarsOnce(t *testing.T) {
 // Acceptance: Given a done task, when one subtask is unticked, then the task is
 // open again and its stars are deducted.
 func TestUntickingASubtaskReopensTheTaskAndDeductsStars(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id, subs := tb.schoolBag(t)
 	if status, k, _ := tb.parent.call(http.MethodPut, "/tasks/"+id+"/done", map[string]any{"done": true}); status != http.StatusOK {
@@ -97,6 +99,7 @@ func TestUntickingASubtaskReopensTheTaskAndDeductsStars(t *testing.T) {
 }
 
 func TestParentEditsSubtasks(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id, subs := tb.schoolBag(t)
 	status, k, _ := tb.parent.call(http.MethodPatch, "/tasks/"+id+"/subtasks/"+subs[0], map[string]any{"title": "Schoolbooks", "emoji": "📚"})
@@ -117,6 +120,7 @@ func TestParentEditsSubtasks(t *testing.T) {
 }
 
 func TestRemovingTheLastOpenSubtaskCompletesTheTask(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id, subs := tb.schoolBag(t)
 	for _, s := range subs[:2] {
@@ -129,6 +133,7 @@ func TestRemovingTheLastOpenSubtaskCompletesTheTask(t *testing.T) {
 }
 
 func TestSubtaskInputIsValidatedAndLimited(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id, _ := tb.schoolBag(t)
 	if status, _, _ := tb.parent.call(http.MethodPost, "/tasks/"+id+"/subtasks", map[string]any{"title": " "}); status != http.StatusUnprocessableEntity {
@@ -152,6 +157,7 @@ func TestSubtaskInputIsValidatedAndLimited(t *testing.T) {
 }
 
 func TestChildMayTickOwnSubtasksOnly(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id, subs := tb.schoolBag(t)
 	if status, _, _ := tb.child.call(http.MethodPost, "/tasks/"+id+"/subtasks", map[string]any{"title": "x"}); status != http.StatusForbidden {

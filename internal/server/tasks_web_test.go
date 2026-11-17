@@ -9,6 +9,7 @@ import (
 )
 
 func TestTasksPageNeedsASignedInParent(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	if r := b.get("/tasks"); r.status != http.StatusSeeOther || !strings.HasPrefix(r.location, "/login") {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
@@ -16,6 +17,7 @@ func TestTasksPageNeedsASignedInParent(t *testing.T) {
 }
 
 func TestParentCreatesAndDeletesTasksInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	r := b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"Brush teeth"}, "emoji": {"🪥"}, "repeat": {"weekly"}, "weekdays": {"MO", "TU"}, "part": {"morning"}})
@@ -49,6 +51,7 @@ func TestParentCreatesAndDeletesTasksInTheWebInterface(t *testing.T) {
 }
 
 func TestInvalidTaskFormShowsAnError(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	r := b.do(http.MethodPost, "/tasks", url.Values{"person": {tb.miaID}, "title": {" "}, "repeat": {"daily"}}, map[string]string{"Accept-Language": "en"})
@@ -64,6 +67,7 @@ func TestInvalidTaskFormShowsAnError(t *testing.T) {
 // Acceptance: Given a parent on the go, when they confirm a child's task in
 // the web interface, then it is stored as done.
 func TestParentConfirmsAChildsTaskInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id := tb.newDaily(t, tb.miaID)
@@ -88,6 +92,7 @@ func TestParentConfirmsAChildsTaskInTheWebInterface(t *testing.T) {
 }
 
 func TestTasksPageIsGerman(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	r := tb.parent.b.do(http.MethodGet, "/tasks", nil, map[string]string{"Accept-Language": "de"})
 	if r.status != http.StatusOK || !strings.Contains(r.body, "Aufgaben") {
@@ -96,6 +101,7 @@ func TestTasksPageIsGerman(t *testing.T) {
 }
 
 func TestTaskFormKeepsWeekdaysAndRepeatAfterAnError(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	r := tb.parent.b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {" "}, "repeat": {"weekly"}, "weekdays": {"TU", "FR"}})
 	if r.status != http.StatusUnprocessableEntity {
@@ -114,6 +120,7 @@ func TestTaskFormKeepsWeekdaysAndRepeatAfterAnError(t *testing.T) {
 // 7.1: the star value is a field of the new-task form (empty: the default of
 // the person) and shows on the task; the API sees the same value.
 func TestParentSetsAStarValueInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"Tidy room"}, "repeat": {"daily"}, "stars": {"3"}})
@@ -143,6 +150,7 @@ func TestParentSetsAStarValueInTheWebInterface(t *testing.T) {
 // 7.1: ticking in the web interface credits stars, and the page shows the
 // person's balance and star log.
 func TestWebTickCreditsStarsAndThePageShowsBalanceAndLog(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"Tidy room"}, "repeat": {"daily"}, "stars": {"3"}})
@@ -160,6 +168,7 @@ func TestWebTickCreditsStarsAndThePageShowsBalanceAndLog(t *testing.T) {
 // 7.1 acceptance: Given a parent books -5 with note "redeemed: ice cream",
 // then the balance and the log show it (web interface and API alike).
 func TestParentBooksStarsByHandInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	r := b.post("/tasks/stars", url.Values{"person": {tb.miaID}, "delta": {"-5"}, "note": {"redeemed: ice cream"}})
@@ -180,6 +189,7 @@ func TestParentBooksStarsByHandInTheWebInterface(t *testing.T) {
 }
 
 func TestInvalidStarBookingShowsAnErrorAndKeepsTheForm(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	for name, form := range map[string]url.Values{
@@ -202,6 +212,7 @@ func TestInvalidStarBookingShowsAnErrorAndKeepsTheForm(t *testing.T) {
 }
 
 func TestStarBookingPageIsForSignedInParentsOnly(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	if r := b.post("/tasks/stars", url.Values{"delta": {"5"}, "note": {"x"}}); r.status != http.StatusSeeOther || !strings.HasPrefix(r.location, "/login") {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
@@ -209,6 +220,7 @@ func TestStarBookingPageIsForSignedInParentsOnly(t *testing.T) {
 }
 
 func TestStarsOnTheTasksPageAreGerman(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	b.post("/tasks/stars", url.Values{"person": {tb.miaID}, "delta": {"2"}, "note": {"Geschenk"}})
@@ -223,6 +235,7 @@ func TestStarsOnTheTasksPageAreGerman(t *testing.T) {
 // 7.1: a child's phone shows neither the star accounts nor the booking form
 // (ADR 0015), so a child never sees siblings' balances.
 func TestChildPhoneShowsNoStarAccountsOrBookingForm(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	b := cp.parent.b
 	b.post("/tasks", url.Values{"person": {personNamed(t, b, "Mia").ID}, "title": {"Tidy room"}, "repeat": {"daily"}, "stars": {"3"}})
@@ -248,6 +261,7 @@ func TestChildPhoneShowsNoStarAccountsOrBookingForm(t *testing.T) {
 
 // 7.1: an invalid star value gets its own error text and the field is bounded.
 func TestInvalidStarValueHasItsOwnErrorAndTheFieldIsBounded(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	r := b.do(http.MethodPost, "/tasks", url.Values{"person": {tb.miaID}, "title": {"Tidy"}, "repeat": {"daily"}, "stars": {"101"}}, map[string]string{"Accept-Language": "en"})
@@ -261,6 +275,7 @@ func TestInvalidStarValueHasItsOwnErrorAndTheFieldIsBounded(t *testing.T) {
 
 // 7.1: the task detail page shows the star value.
 func TestTaskDetailPageShowsTheStarValue(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"Tidy room"}, "repeat": {"daily"}, "stars": {"3"}})
@@ -273,6 +288,7 @@ func TestTaskDetailPageShowsTheStarValue(t *testing.T) {
 
 // Acceptance (#122): a parent changes a task's star value on its detail page.
 func TestParentChangesATasksStarValueOnItsDetailPage(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id := tb.newDaily(t, tb.miaID)
@@ -306,6 +322,7 @@ func TestParentChangesATasksStarValueOnItsDetailPage(t *testing.T) {
 func mustAtoi(s string) int { n, _ := strconv.Atoi(s); return n }
 
 func TestInvalidStarValueKeepsWhatWasTypedAndSavesNothing(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id := tb.newDaily(t, tb.miaID)
@@ -326,6 +343,7 @@ func TestInvalidStarValueKeepsWhatWasTypedAndSavesNothing(t *testing.T) {
 }
 
 func TestStarValueOfUnknownTaskIs404AndAChildIsForbidden(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id := tb.newDaily(t, tb.miaID)
 	if r := tb.parent.b.post("/tasks/00000000-0000-0000-0000-000000000000/stars", url.Values{"stars": {"2"}}); r.status != http.StatusNotFound {
@@ -342,6 +360,7 @@ func TestStarValueOfUnknownTaskIs404AndAChildIsForbidden(t *testing.T) {
 
 // Acceptance (#122): ticks already credited keep their value, said in words.
 func TestDetailPageSaysWhatTodaysTickCredited(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	en := map[string]string{"Accept-Language": "en"}
@@ -384,6 +403,7 @@ func TestDetailPageSaysWhatTodaysTickCredited(t *testing.T) {
 // The notice builds trusted markup by hand, so a name with markup in it must
 // come out escaped.
 func TestDetailPageEscapesTheOwnerNameInTheCreditedNotice(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	en := map[string]string{"Accept-Language": "en"}
@@ -403,6 +423,7 @@ func TestDetailPageEscapesTheOwnerNameInTheCreditedNotice(t *testing.T) {
 
 // A forged star line cookie without a number shows nothing, not a raw verb.
 func TestForgedStarsFlashWithoutNumberShowsNothing(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id := tb.newDaily(t, tb.miaID)
@@ -417,6 +438,7 @@ func TestForgedStarsFlashWithoutNumberShowsNothing(t *testing.T) {
 // Product owner decision Q2: a booking by a person who was removed keeps their
 // last name, shown as "<name> (removed)" on the page and flagged on the API.
 func TestStarLogKeepsTheNameOfARemovedBooker(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	_, papa, _ := tb.parent.call(http.MethodPost, "/people", map[string]any{"name": "Papa", "role": "parent"})

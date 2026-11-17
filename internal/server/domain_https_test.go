@@ -41,6 +41,7 @@ func guideOf(t *testing.T, body, provider string) string {
 }
 
 func TestWizardChoiceOffersThreeEqualWays(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := b.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": "de"})
 	for _, want := range []string{"Es gibt drei Wege", `name="way" value="own"`, `name="way" value="public"`, `name="way" value="domain"`,
@@ -73,6 +74,7 @@ func TestWizardChoiceOffersThreeEqualWays(t *testing.T) {
 
 // Q62 a: with nothing preselected, "Continue" can be pressed without a choice.
 func TestWizardChoiceWithoutAWayAsksForOne(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := b.do(http.MethodGet, "/setup/https?next=1", nil, map[string]string{"Accept-Language": "de"})
 	if r.status != http.StatusUnprocessableEntity {
@@ -94,7 +96,9 @@ func TestWizardChoiceWithoutAWayAsksForOne(t *testing.T) {
 
 // Q62 a: the page of "Nur im Heimnetz" says what it means before the button.
 func TestHeimnetzPageSaysWhatItMeansBeforeTheButton(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
+	b.post("/setup/offline", url.Values{"offline": {"off"}}) // the question of ticket 201 comes first
 	r := b.do(http.MethodGet, "/setup/https?way=own", nil, map[string]string{"Accept-Language": "de"})
 	for _, want := range []string{"<h1>Nur im Heimnetz einrichten</h1>", `<ul class="homeonly">`, "Das bedeutet:", "nichts nach draußen"} {
 		if !strings.Contains(r.body, want) {
@@ -110,6 +114,7 @@ func TestHeimnetzPageSaysWhatItMeansBeforeTheButton(t *testing.T) {
 }
 
 func TestOwnDomainPageHasOneGuidePerProviderAndNoneChosen(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := b.do(http.MethodGet, "/setup/https?way=domain", nil, map[string]string{"Accept-Language": "de"})
 	if r.status != http.StatusOK {
@@ -178,6 +183,7 @@ func TestOwnDomainPageHasOneGuidePerProviderAndNoneChosen(t *testing.T) {
 }
 
 func TestOwnDomainFormsHandTheirCredentialsToTheManager(t *testing.T) {
+	t.Parallel()
 	cloudflare := domainForm("cloudflare")
 	cloudflare.Set("zone_token", "zone-4711")
 	inwxOn := domainForm("inwx")
@@ -212,6 +218,7 @@ func TestOwnDomainFormsHandTheirCredentialsToTheManager(t *testing.T) {
 // After a failure the secrets are never filled in again; the page opens at
 // the provider's own guide with the error inside it.
 func TestOwnDomainFailureComesBackInTheSameGuideWithoutSecrets(t *testing.T) {
+	t.Parallel()
 	type c struct {
 		form    url.Values
 		secrets []string
@@ -278,6 +285,7 @@ func TestOwnDomainFailureComesBackInTheSameGuideWithoutSecrets(t *testing.T) {
 }
 
 func TestInwxFailureWithTwoFactorOffOnlyAsksForThePasswordAgain(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.public.failure = errors.New("login refused")
 	r := b.do(http.MethodPost, "/setup/https/public", domainForm("inwx"), map[string]string{"Accept-Language": "de", "Origin": b.srv.URL})
@@ -294,6 +302,7 @@ func TestInwxFailureWithTwoFactorOffOnlyAsksForThePasswordAgain(t *testing.T) {
 }
 
 func TestInwxEmptySecretAsksForTheKeyNotTheCode(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.public.failure = &publiccert.InvalidError{Field: "otp_secret"}
 	f := domainForm("inwx")
@@ -308,6 +317,7 @@ func TestInwxEmptySecretAsksForTheKeyNotTheCode(t *testing.T) {
 }
 
 func TestInwxSecretInTheWrongFormIsShownAtTheField(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.public.failure = &publiccert.InvalidError{Field: "otp_secret"}
 	f := domainForm("inwx")
@@ -340,6 +350,7 @@ func TestInwxSecretInTheWrongFormIsShownAtTheField(t *testing.T) {
 }
 
 func TestTakenNameIsRefusedAtTheNameFieldAndTheTokenStaysUntouched(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.public.failure = &publiccert.NameTakenError{Name: "familie-mueller.de", Address: "203.0.113.7", Suggestion: "box.familie-mueller.de"}
 	f := domainForm("hetzner")
@@ -369,6 +380,7 @@ func TestTakenNameIsRefusedAtTheNameFieldAndTheTokenStaysUntouched(t *testing.T)
 }
 
 func TestOwnDomainPageHasNoTextOverflowTraps(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.public.failure = &publiccert.NameTakenError{Name: "familie-schmidt-oberhuber-mueller.de", Address: "203.0.113.7", Suggestion: "box.familie-schmidt-oberhuber-mueller.de"}
 	r := b.do(http.MethodPost, "/setup/https/public", domainForm("hetzner"), map[string]string{"Accept-Language": "de", "Origin": b.srv.URL})
@@ -386,6 +398,7 @@ func TestOwnDomainPageHasNoTextOverflowTraps(t *testing.T) {
 // Every text the own-domain page asks for exists in both languages (a missing
 // key would show as the key itself).
 func TestOwnDomainPageHasEveryTextInBothLanguages(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	for _, lang := range []string{"de", "en"} {
 		pages := []string{b.do(http.MethodGet, "/setup/https?way=domain", nil, map[string]string{"Accept-Language": lang}).body, b.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": lang}).body}

@@ -50,7 +50,7 @@ func syncServer(t *testing.T, reportStatus int, reportBody *string) *httptest.Se
 
 func TestStateReportsCTagAndSyncToken(t *testing.T) {
 	srv := syncServer(t, http.StatusMultiStatus, nil)
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	st, err := c.State(context.Background(), srv.URL+"/cal/")
 	if err != nil {
 		t.Fatal(err)
@@ -66,7 +66,7 @@ func TestStateOfAServerWithoutCTagOrToken(t *testing.T) {
 		multistatus(w, response("/cal/", `<D:displayname>Family</D:displayname>`))
 	}))
 	t.Cleanup(srv.Close)
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	st, err := c.State(context.Background(), srv.URL+"/cal/")
 	if err != nil || st != (caldavclient.State{}) {
 		t.Fatalf("State() = %+v, %v, want empty and no error", st, err)
@@ -76,7 +76,7 @@ func TestStateOfAServerWithoutCTagOrToken(t *testing.T) {
 func TestChangesReadsChangedGoneAndTheNewToken(t *testing.T) {
 	var report string
 	srv := syncServer(t, http.StatusMultiStatus, &report)
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	got, err := c.Changes(context.Background(), srv.URL+"/cal/", "tok-7")
 	if err != nil {
 		t.Fatal(err)
@@ -107,7 +107,7 @@ func TestChangesReadsChangedGoneAndTheNewToken(t *testing.T) {
 func TestChangesRefusedByTheServerMeansSyncUnavailable(t *testing.T) {
 	for _, status := range []int{http.StatusForbidden, http.StatusConflict, http.StatusBadRequest, http.StatusNotImplemented, http.StatusUnsupportedMediaType, http.StatusMethodNotAllowed} {
 		srv := syncServer(t, status, nil)
-		c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+		c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 		_, err := c.Changes(context.Background(), srv.URL+"/cal/", "stale")
 		if !errors.Is(err, caldavclient.ErrSyncUnavailable) {
 			t.Errorf("status %d: Changes() = %v, want ErrSyncUnavailable", status, err)
@@ -118,7 +118,7 @@ func TestChangesRefusedByTheServerMeansSyncUnavailable(t *testing.T) {
 // A server fault is a failure: the caller retries, it does not silently list.
 func TestChangesServerErrorFails(t *testing.T) {
 	srv := syncServer(t, http.StatusServiceUnavailable, nil)
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	_, err := c.Changes(context.Background(), srv.URL+"/cal/", "tok")
 	var se *caldavclient.StatusError
 	if err == nil || errors.Is(err, caldavclient.ErrSyncUnavailable) || !errors.As(err, &se) || se.Code != 503 {
@@ -132,7 +132,7 @@ func TestChangesRefusesAMemberOnAForeignHost(t *testing.T) {
 		io.WriteString(w, `<?xml version="1.0"?><D:multistatus xmlns:D="DAV:"><D:response><D:href>http://evil.example.net/cal/x.ics</D:href><D:propstat><D:prop><D:getetag>"x"</D:getetag></D:prop><D:status>HTTP/1.1 200 OK</D:status></D:propstat></D:response><D:sync-token>t</D:sync-token></D:multistatus>`)
 	}))
 	t.Cleanup(srv.Close)
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	_, err := c.Changes(context.Background(), srv.URL+"/cal/", "tok")
 	var foreign *caldavclient.ForeignHostError
 	if !errors.As(err, &foreign) {
@@ -151,7 +151,7 @@ func TestChangesAnswerCutShortIsReported(t *testing.T) {
 			`<D:sync-token>tok-8</D:sync-token></D:multistatus>`)
 	}))
 	t.Cleanup(srv.Close)
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	got, err := c.Changes(context.Background(), srv.URL+"/cal/", "tok-7")
 	if err != nil {
 		t.Fatal(err)
@@ -163,7 +163,7 @@ func TestChangesAnswerCutShortIsReported(t *testing.T) {
 
 func TestChangesCompleteAnswerIsNotTruncated(t *testing.T) {
 	srv := syncServer(t, http.StatusMultiStatus, nil)
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	got, err := c.Changes(context.Background(), srv.URL+"/cal/", "tok-7")
 	if err != nil || got.Truncated {
 		t.Fatalf("Changes() = %+v, %v, want a complete answer", got, err)

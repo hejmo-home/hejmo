@@ -74,6 +74,7 @@ func part(text, href string) crumbPart { return crumbPart{text, href} }
 
 // A sub-page of Settings: trail with the hub, the hub entry and the page itself.
 func TestOverviewPagesBelowSettingsStartWithATrail(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for _, c := range []struct{ path, entry string }{
 		{"/calendars", "Calendar connections"}, {"/caldav", "Calendar apps"}, {"/displays", "Displays"}, {"/phones", "Phones"},
@@ -91,6 +92,7 @@ func TestOverviewPagesBelowSettingsStartWithATrail(t *testing.T) {
 }
 
 func TestTheLicencesPageStartsWithATrail(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := getEN(b, "/settings/licences").body
 	wantTrail(t, "/settings/licences", body, part("Settings", "/settings"), part("Licences", ""))
@@ -100,6 +102,7 @@ func TestTheLicencesPageStartsWithATrail(t *testing.T) {
 }
 
 func TestTheTrailWordsAndLabelFollowTheLanguage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := b.do(http.MethodGet, "/displays", nil, de).body
 	if label, _, _ := trailOf(body); label != "Seitenpfad" {
@@ -112,6 +115,7 @@ func TestTheTrailWordsAndLabelFollowTheLanguage(t *testing.T) {
 }
 
 func TestTheTrailMarksItsLastPartAsTheCurrentPageAndHidesTheSeparators(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := getEN(b, "/people").body
 	for _, want := range []string{`<span aria-current="page">People</span>`, `<a href="/settings">Settings</a>`, `class="icon sep"`, `aria-hidden="true"`} {
@@ -122,6 +126,7 @@ func TestTheTrailMarksItsLastPartAsTheCurrentPageAndHidesTheSeparators(t *testin
 }
 
 func TestTheSettingsHubHasNoTrail(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := getEN(b, "/settings").body
 	if strings.Contains(body, `class="crumbs"`) {
@@ -134,6 +139,7 @@ func TestTheSettingsHubHasNoTrail(t *testing.T) {
 
 // The side navigation stays on every page below Settings, with Settings filled.
 func TestTheNavigationKeepsSettingsFilledOnEveryPageBelowIt(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "screen")
 	for _, path := range append([]string{"/connections/new", "/displays/" + id, "/groups/new"}, hubPages...) {
@@ -151,6 +157,7 @@ func TestTheNavigationKeepsSettingsFilledOnEveryPageBelowIt(t *testing.T) {
 }
 
 func TestADetailPageShowsTheTrailThroughItsOverviewAndNameOnly(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "eink_color")
 	r := getEN(b, "/displays/"+id)
@@ -162,6 +169,7 @@ func TestADetailPageShowsTheTrailThroughItsOverviewAndNameOnly(t *testing.T) {
 
 // Order inside main: trail, success line, heading.
 func TestTrailComesBeforeTheSuccessLineAndTheHeading(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "screen")
 	b.post("/displays/"+id+"/settings", url.Values{"name": {"Hallway"}, "type": {"screen"}, "theme": {"auto"}})
@@ -176,6 +184,7 @@ func TestTrailComesBeforeTheSuccessLineAndTheHeading(t *testing.T) {
 }
 
 func TestTheLastPartIsTheHeadingOfThePageOnEveryPageBelowSettings(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	dispID := pairedDisplay(t, b, "Hallway", "screen")
 	connID := connectedBox(t, b)
@@ -211,6 +220,7 @@ func TestTheLastPartIsTheHeadingOfThePageOnEveryPageBelowSettings(t *testing.T) 
 }
 
 func TestACalendarConnectionTrailHangsOffTheCalendarConnectionsEntry(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	connID := connectedBox(t, b)
 	wantTrail(t, "connection", getEN(b, "/connections/"+connID).body, part("Settings", "/settings"), part("Calendar connections", "/calendars"), part("u", ""))
@@ -219,6 +229,7 @@ func TestACalendarConnectionTrailHangsOffTheCalendarConnectionsEntry(t *testing.
 
 // Q93: the page "Calendars" is called "Calendar connections".
 func TestTheCalendarConnectionsPageHasItsHubEntryAsHeading(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if h := headingText(getEN(b, "/calendars").body); h != "Calendar connections" {
 		t.Errorf("English h1 = %q", h)
@@ -229,6 +240,7 @@ func TestTheCalendarConnectionsPageHasItsHubEntryAsHeading(t *testing.T) {
 }
 
 func TestTheDeepestSettingsPageHasFourParts(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	wantTrail(t, "invitation page", e.en(http.MethodGet, e.page(), nil).body,
 		part("Settings", "/settings"), part("People", "/people"), part("Papa", "/people/"+e.papa.ID), part("Invite Papa", ""))
@@ -240,6 +252,7 @@ func TestTheDeepestSettingsPageHasFourParts(t *testing.T) {
 }
 
 func TestNamesInTheTrailAreEscaped(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, `<b>Hall</b> & "co"`, "screen")
 	body := getEN(b, "/displays/"+id).body
@@ -251,6 +264,7 @@ func TestNamesInTheTrailAreEscaped(t *testing.T) {
 
 // Q93: everyday pages one level deep keep their back link; two levels deep they show the trail.
 func TestEverydayPagesKeepTheBackLinkOneLevelDeepAndShowTheTrailFromTwoLevels(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	body := c.b.do(http.MethodGet, "/meals/templates", nil, en).body
 	if !strings.Contains(body, `<a class="back" href="/meals">`) || strings.Contains(body, `class="crumbs"`) {
@@ -276,6 +290,7 @@ func TestEverydayPagesKeepTheBackLinkOneLevelDeepAndShowTheTrailFromTwoLevels(t 
 }
 
 func TestRoutineTemplatePagesShowTheTrailFromTwoLevels(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "Evening routine of Mia")
 	id := tpl["id"].(string)
@@ -293,6 +308,7 @@ func TestRoutineTemplatePagesShowTheTrailFromTwoLevels(t *testing.T) {
 
 // After a field error the trail and the heading keep the saved name until a save succeeds.
 func TestAfterAFieldErrorTrailAndHeadingKeepTheSavedName(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "screen")
 	r := b.do(http.MethodPost, "/displays/"+id+"/settings", url.Values{"name": {"Corridor"}, "type": {"screen"}, "theme": {"auto"}, "quiet": {"on"}, "quiet_from": {"x"}, "quiet_to": {"y"}}, en)
@@ -310,6 +326,7 @@ func TestAfterAFieldErrorTrailAndHeadingKeepTheSavedName(t *testing.T) {
 
 // Diet and allergies hang off the person: four parts, like the invitation.
 func TestDietAndAllergiesPageHasFourParts(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	body := e.en(http.MethodGet, "/people/"+e.mia.ID+"/food", nil).body
 	wantTrail(t, "food", body, part("Settings", "/settings"), part("People", "/people"), part("Mia", "/people/"+e.mia.ID), part("Diet and allergies", ""))
@@ -320,6 +337,7 @@ func TestDietAndAllergiesPageHasFourParts(t *testing.T) {
 
 // The wizard is a linear flow and not below Settings: no trail, also on its recovery-code step.
 func TestWizardRecoveryCodeStepHasNoTrail(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	setup := b.get("/setup/totp")
@@ -334,6 +352,7 @@ func TestWizardRecoveryCodeStepHasNoTrail(t *testing.T) {
 
 // The same holds for an accepted invitation: its one-time code and recovery-code steps are the wizard.
 func TestInvitedParentWizardStepsHaveNoTrail(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.logout()
@@ -356,6 +375,7 @@ func TestInvitedParentWizardStepsHaveNoTrail(t *testing.T) {
 
 // After a refused save the group page keeps the saved name in trail and heading; a new group says so.
 func TestGroupPageKeepsTheSavedNameAfterARefusedSave(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	if r := p.post("/groups", url.Values{"name": {"Kids"}, "people": {mia}}); r.status != http.StatusSeeOther {

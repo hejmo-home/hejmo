@@ -168,6 +168,7 @@ func (c *apiClient) withToken(token string) *apiClient {
 }
 
 func TestOpenAPIDocumentsEveryRoute(t *testing.T) {
+	t.Parallel()
 	doc := loadSpec(t)
 	for _, r := range server.APIRoutes() {
 		item := doc.Paths.Find(r.Path)
@@ -185,6 +186,7 @@ func TestOpenAPIDocumentsEveryRoute(t *testing.T) {
 }
 
 func TestOpenAPIFileIsServed(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	res, err := b.bareClient().Get(b.srv.URL + "/api/v1/openapi.yaml")
 	if err != nil {
@@ -198,6 +200,7 @@ func TestOpenAPIFileIsServed(t *testing.T) {
 }
 
 func TestAPIRequiresAuthentication(t *testing.T) {
+	t.Parallel()
 	c := newAPIClient(t, newBox(t))
 	if status, _, _ := c.call(http.MethodGet, "/people", nil); status != http.StatusUnauthorized {
 		t.Fatalf("anonymous = %d, want 401", status)
@@ -209,6 +212,7 @@ func TestAPIRequiresAuthentication(t *testing.T) {
 }
 
 func TestParentManagesPeopleViaSession(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, me, _ := c.call(http.MethodGet, "/me", nil)
 	if status != http.StatusOK || me["name"] != "Mama" || me["role"] != "parent" {
@@ -238,6 +242,7 @@ func TestParentManagesPeopleViaSession(t *testing.T) {
 // to create something, then the API answers 403. (The calendar variant of this
 // test follows with events in work package 3.)
 func TestReadOnlyTokenCannotWrite(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ro := c.withToken(c.newToken("read"))
 
@@ -253,6 +258,7 @@ func TestReadOnlyTokenCannotWrite(t *testing.T) {
 }
 
 func TestTokenRevocation(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, created, _ := c.call(http.MethodPost, "/tokens", map[string]any{"name": "Assistant", "scopes": "read"})
 	if status != http.StatusCreated {
@@ -271,6 +277,7 @@ func TestTokenRevocation(t *testing.T) {
 }
 
 func TestTokenScopesAreValidated(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	if status, _, _ := c.call(http.MethodPost, "/tokens", map[string]any{"name": "x", "scopes": "admin"}); status != http.StatusUnprocessableEntity {
 		t.Fatalf("unknown scope = %d, want 422", status)
@@ -278,6 +285,7 @@ func TestTokenScopesAreValidated(t *testing.T) {
 }
 
 func TestCookieAPIWritesNeedSameOrigin(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	req, _ := http.NewRequest(http.MethodPost, c.b.srv.URL+"/api/v1/people", strings.NewReader(`{"name":"Mia","role":"child"}`))
 	req.Header.Set("Content-Type", "application/json")

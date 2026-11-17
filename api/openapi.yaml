@@ -440,6 +440,50 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /people/{id}/list-view:
+    get:
+      operationId: getListView
+      summary: How a person sees lists, as tiles or as a list (scope lists:read)
+      description: |
+        One choice per person for all lists, on every device (ADR 0019). A
+        person who never chose has the default of the role (`default: true`):
+        children see tiles, adults the list.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The view
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setListView
+      summary: Choose how you see lists (scope lists:complete)
+      description: |
+        Everyone, children included, chooses their own view; nobody changes
+        another person's (403, not even a parent). It is not a change of any
+        list, so the scope is the one for ticking entries off. The view of a
+        display is `list_view` of `PATCH /displays/{id}`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ListViewChange" }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /people/order:
     put:
       operationId: orderPeople
@@ -791,6 +835,7 @@ paths:
         Only the fields sent are changed. `name` (1 to 80 characters after trimming) and `type` (`eink_bw`, `eink_color` or `screen`) rename and retype the display; an empty or too long name, or an unknown type, is refused with 422. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
         `theme` and the two offsets set the display's theme (ADR 0015); an unknown theme or an offset outside -180..180 is refused with 422.
         `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015). Quiet mode takes precedence over the theme.
+        `list_view` (`tiles` or `list`) is how the display shows lists; the display keeps its own view, tiles until it is switched (ADR 0019).
         `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to switch the front light off at sunset and in quiet mode; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -2683,6 +2728,7 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "422": { $ref: "#/components/responses/Invalid" }
   /calendars/{id}:
     parameters:
@@ -2747,6 +2793,7 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
   /calendar-connections:
     get:
@@ -2786,6 +2833,7 @@ paths:
               schema: { $ref: "#/components/schemas/CalendarConnection" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "422": { $ref: "#/components/responses/Invalid" }
   /calendar-connections/{id}:
     parameters:
@@ -2839,6 +2887,7 @@ paths:
               schema: { $ref: "#/components/schemas/CalendarConnection" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
     post:
@@ -2862,6 +2911,7 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /calendar-connections/{id}/event-counts:
@@ -2886,6 +2936,7 @@ paths:
                 items: { $ref: "#/components/schemas/EventCount" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /sync-log:
@@ -2914,6 +2965,10 @@ paths:
         plain HTTP, and phones must first trust the own CA (`/ca`); `renewal_error` says why.
         `public` is a publicly trusted certificate for the family's DNS name (ADR 0014); `warning` is set when its
         renewal failed or it is about to expire.
+
+        With the own CA, `names` lists what the box certificate is valid for (the box name, the address of the
+        box in the home network, and the router name if there is one), `router_name` is the name of the box in
+        the family's router (decision Q92) and `expires_at` is when the CA ends.
       responses:
         "200":
           description: HTTPS status
@@ -2922,6 +2977,45 @@ paths:
               schema: { $ref: "#/components/schemas/HTTPSStatus" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: setRouterName
+      summary: Add the box's name in the router to its certificate (parents, scope settings:write)
+      description: |
+        The page "Sichere Verbindung" of the web interface as an API call (decision Q92). Only with the box's own
+        CA. The box CA is name-constrained to the box, so a new name needs a **new CA**: it replaces the old one
+        and an earlier router name, and **every device must trust the box again** (trust page `/ca`, which
+        opens over plain HTTP; the CA's fingerprint changes). The name is lower-cased and a trailing dot is
+        dropped. It must have at least two labels of letters a to z, digits and hyphens, and must not be an
+        address or a name the certificate covers already (422). With a public name the box has no use for
+        it (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [router_name]
+              properties:
+                router_name: { type: string, example: hejmo.fritz.box, description: "The name the router shows for the box, for example hejmo.fritz.box" }
+      responses:
+        "200":
+          description: HTTPS status with the new certificate names
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HTTPSStatus" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: The box uses a public name, or has no CA yet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422":
+          description: The name is missing, cannot go into a certificate or is covered already
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /settings:
     get:
       operationId: getSettings
@@ -2998,6 +3092,94 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /outbound:
+    get:
+      operationId: getOutbound
+      summary: Offline mode, the connections to the outside, and what the box refused (scope settings:read)
+      description: |
+        The box makes every connection to the outside through one gate (ticket 201).
+        With `offline` true, the gate refuses all of them and records each attempt in
+        `refused`, newest first (at most 200); `connections` then show every switch as
+        `locked`. `enabled` is the state the connection is in now: with offline mode on
+        it is false for all, while the switches themselves are kept and come back when
+        offline mode goes off. The DNS service has no switch (`switchable` false): it is
+        in use while the box has a `public_name`. `last_contact` is the last time the box
+        reached the service (for `update`, the last time the host script looked).
+        Place search is not listed: the list of places is on the box.
+      responses:
+        "200":
+          description: The state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: updateOutbound
+      summary: Switch offline mode or single connections; omitted fields stay as they are (scope settings:write)
+      description: |
+        `offline` switches offline mode on or off; switching it off brings every
+        switch back as it was before. `connections` maps a connection id to its
+        switch; it is refused with 409 while offline mode is on (the switches are
+        locked), and with 422 for an id without a switch (`dns` among them).
+        Switching offline mode on while the box has a `public_name` is refused with
+        409: that needs the change to the home network (`POST /outbound/offline`).
+        `update_reminder_days` (7 to 365) is how many days without an update make
+        the web interface remind parents (offline mode).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OutboundUpdate" }
+      responses:
+        "200":
+          description: The state after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: The switches are locked by offline mode, or the public name must be left first
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /outbound/offline:
+    post:
+      operationId: goOffline
+      summary: Switch offline mode on, leaving a public name first if the box has one (scope settings:write)
+      description: |
+        The change the web page "Switch on offline mode" makes, in its order: with
+        `delete_dns` true the box first deletes its records at the DNS service (the
+        last connection to the outside), then forgets the public name, makes its own
+        certificate for its address at home and switches offline mode on. Every device
+        must trust the box's own CA again, and passkeys only work for the old name.
+        If the DNS service refuses, nothing is changed (502). Without a public name it
+        only switches offline mode on.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                delete_dns: { type: boolean, description: "Delete the box's DNS records at the DNS service first (default false)" }
+      responses:
+        "200":
+          description: The state after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "502":
+          description: The DNS service did not delete the records; nothing was changed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /update:
     get:
       operationId: getUpdate
@@ -3523,11 +3705,25 @@ components:
         experimental: { type: boolean, description: "Always true" }
     ListEntry:
       type: object
-      required: [id, text, done]
+      required: [id, text, done, article_id, symbol, picture]
       properties:
         id: { type: string, format: uuid }
         text: { type: string }
         done: { type: boolean }
+        article_id: { type: string, nullable: true, description: "The library article the text names (its name in German or English, ignoring case and umlauts): the key of a shipped article or the id of an own one. Null for free text." }
+        symbol: { type: string, nullable: true, description: "The emoji a tile shows for the article (its department's symbol when it has none). Null for free text and for an article that has a picture." }
+        picture: { type: string, nullable: true, description: "Path of the own article's picture, `GET /articles/{id}/picture`. Null without one." }
+    ListView:
+      type: object
+      required: [view, default]
+      properties:
+        view: { type: string, enum: [tiles, list] }
+        default: { type: boolean, description: "True while the person never chose: children then see tiles, adults the list" }
+    ListViewChange:
+      type: object
+      required: [view]
+      properties:
+        view: { type: string, enum: [tiles, list] }
     ListWithEntries:
       allOf:
         - { $ref: "#/components/schemas/List" }
@@ -3606,7 +3802,7 @@ components:
         text: { type: string }
     Display:
       type: object
-      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver]
+      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver, list_view]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: Hallway }
@@ -3621,6 +3817,7 @@ components:
         quiet_mode: { $ref: "#/components/schemas/QuietMode" }
         kiosk: { $ref: "#/components/schemas/Kiosk" }
         screensaver: { $ref: "#/components/schemas/Screensaver" }
+        list_view: { type: string, enum: [tiles, list], description: "How the display shows lists (ADR 0019). A display is not a person and keeps its own view, tiles until someone switches it at the display or here." }
     DisplayPairing:
       type: object
       required: [token, state, code, code_expires_at, pair_url]
@@ -3683,6 +3880,7 @@ components:
             url: { type: string, description: "http or https address; empty removes the kiosk app and its key" }
             api_key: { type: string, writeOnly: true, description: "Omitted or empty keeps the stored key" }
         screensaver: { $ref: "#/components/schemas/UpdateScreensaver" }
+        list_view: { type: string, enum: [tiles, list], description: "How the display shows lists (ADR 0019); anything else is refused with 422" }
     PairDisplay:
       type: object
       required: [code, name, type]
@@ -3754,7 +3952,8 @@ components:
             new: { type: integer }
             changed: { type: integer }
             removed: { type: integer }
-        state: { type: string, enum: [ok, stale], description: "stale = 24 hours without a successful sync; one success clears it" }
+        state: { type: string, enum: [ok, stale], description: "stale = 24 hours without a successful sync; one success clears it. A paused calendar is never stale" }
+        paused: { type: boolean, description: "True while the calendar's connection to the outside is off (offline mode, or the connection's own switch; see GET /outbound). The calendar keeps its events, is not tried and is not a problem; it syncs again at once when the connection is on" }
         interval_minutes: { type: integer, example: 60 }
         last_attempt_at: { type: string, format: date-time, nullable: true }
         last_success_at: { type: string, format: date-time, nullable: true }
@@ -3888,6 +4087,45 @@ components:
             lunch: { type: string }
             snack: { type: string }
             dinner: { type: string }
+    Outbound:
+      type: object
+      required: [offline, offline_since, update_reminder_days, public_name, connections, refused]
+      properties:
+        offline: { type: boolean }
+        offline_since: { type: string, nullable: true, format: date-time, description: "When offline mode was switched on; null while it is off" }
+        update_reminder_days: { type: integer, minimum: 7, maximum: 365, description: "Days without an update after which parents are reminded (offline mode)" }
+        public_name: { type: string, nullable: true, description: "The box's public DNS name, or null if it uses its own certificate" }
+        connections:
+          type: array
+          items:
+            type: object
+            required: [id, enabled, switchable, locked, last_contact]
+            properties:
+              id: { type: string, enum: [weather, update, calendars, ics, recipes, images, dns] }
+              enabled: { type: boolean, description: "Whether the connection may go outside now; false for all while offline mode is on" }
+              switchable: { type: boolean, description: "False for the DNS service, which has no switch" }
+              locked: { type: boolean, description: "True while offline mode is on" }
+              last_contact: { type: string, nullable: true, format: date-time }
+              target: { type: string, description: "The host last reached" }
+        refused:
+          type: array
+          description: "What the gate refused, newest first, at most 200"
+          items:
+            type: object
+            required: [at, service, target]
+            properties:
+              at: { type: string, format: date-time }
+              service: { type: string, enum: [weather, update, calendars, ics, recipes, images, dns, other] }
+              target: { type: string }
+    OutboundUpdate:
+      type: object
+      properties:
+        offline: { type: boolean }
+        connections:
+          type: object
+          description: "Connection id to switch (weather, update, calendars, ics, recipes, images)"
+          additionalProperties: { type: boolean }
+        update_reminder_days: { type: integer }
     UpdateStatus:
       type: object
       required: [mode, managed, state, notice]
@@ -3911,7 +4149,9 @@ components:
         mode: { type: string, enum: [own-ca, public] }
         name: { type: string, description: "Public DNS name of the box (mode public)" }
         issuer: { type: string, enum: [letsencrypt, actalis], description: "Chosen certificate authority (mode public)" }
-        expires_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time, description: "When the public certificate ends (mode public), or when the box's own CA ends (mode own-ca)" }
+        names: { type: array, items: { type: string }, description: "Names and addresses the box certificate is valid for (mode own-ca)" }
+        router_name: { type: string, description: "The name of the box in the router that the certificate covers (mode own-ca, only when there is one)" }
         warning: { type: boolean, description: "True if the public certificate could not be resumed, loaded, obtained or renewed, or expires within 7 days" }
         renewal_error: { type: string, description: "Why the last resume, load, order or renewal failed" }
     Mealtime: { type: string, enum: [breakfast, lunch, snack, dinner] }
@@ -4147,6 +4387,14 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Invalid:
       description: Request is well-formed but not valid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    OffNow:
+      description: |
+        The connection to the outside this needs is off: offline mode is on, or the
+        connection is switched off (`GET /outbound` says which). Nothing was sent
+        to the outside and nothing was changed.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }

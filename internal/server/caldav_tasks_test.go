@@ -108,6 +108,7 @@ func (tb davTaskBox) balance(t *testing.T) int {
 
 // Acceptance: the box's CalDAV interface offers one task list per person.
 func TestCalDAVOffersOneTaskListPerPersonWithTheTasksDueToday(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	cals, err := tb.ph.calendars()
 	if err != nil {
@@ -155,6 +156,7 @@ func TestCalDAVOffersOneTaskListPerPersonWithTheTasksDueToday(t *testing.T) {
 // Acceptance: Given a device token with only calendars scope, then task lists
 // are not visible.
 func TestTaskListsNeedTheTasksScope(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	only := tb.c.phone(t, "calendars")
 	cals, _ := only.calendars()
@@ -191,6 +193,7 @@ func TestTaskListsNeedTheTasksScope(t *testing.T) {
 }
 
 func TestChildTokensAreRefusedForTaskLists(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	_ = tb.c.b.db.CreateAccount(store.Account{PersonID: tb.mia.ID, Username: "mia", PasswordHash: "x", TOTPSecret: "S"})
 	_, _ = tb.c.b.db.CreateAPIToken(store.APIToken{Name: "kid", Hash: auth.HashToken("hejmo_kid"), PersonID: tb.mia.ID, Scopes: "calendars tasks"})
@@ -202,6 +205,7 @@ func TestChildTokensAreRefusedForTaskLists(t *testing.T) {
 // Acceptance: Given Mia's task completed in the iPhone Reminders app, then
 // after the next sync it is done in Hejmo and her stars are credited exactly once.
 func TestCompletingATaskInRemindersTicksItAndCreditsStarsOnce(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	done := todoICS(tb.cat.ID, "SUMMARY:Feed the cat", "DTSTART;VALUE=DATE:20261114", "STATUS:COMPLETED", "COMPLETED:20261114T110000Z")
 	for i := 0; i < 3; i++ { // clients resend; stars are credited once
@@ -233,6 +237,7 @@ func TestCompletingATaskInRemindersTicksItAndCreditsStarsOnce(t *testing.T) {
 // Completing a task in Reminders goes through SetTaskDone, so it ticks all
 // subtasks too, and un-completing a done task unticks them again (ticket 7.4).
 func TestCompletingATaskInRemindersTicksAndUntickItsSubtasks(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	for _, title := range []string{"Food", "Water"} {
 		if _, err := tb.c.b.db.AddSubtask(tb.h.ID, tb.cat.ID, task.Subtask{Title: title}, "2026-11-14", time.Now()); err != nil {
@@ -258,6 +263,7 @@ func TestCompletingATaskInRemindersTicksAndUntickItsSubtasks(t *testing.T) {
 }
 
 func TestCompletingAOnceTaskCreditsItsStarsOnItsOwnDay(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	tb.put(tb.href(tb.swim), todoICS(tb.swim.ID, "SUMMARY:Pack swim bag", "DUE;VALUE=DATE:20261120", "STATUS:COMPLETED"), nil)
 	if ok, _ := tb.c.b.db.TaskDone(tb.swim.ID, "2026-11-20"); !ok {
@@ -270,6 +276,7 @@ func TestCompletingAOnceTaskCreditsItsStarsOnItsOwnDay(t *testing.T) {
 
 // Acceptance: Given a title changed in the Reminders app, then Hejmo shows the new title.
 func TestChangedTitleNotesAndDueDateReachTheBoxAndNothingElseDoes(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	body := todoICS(tb.swim.ID, "SUMMARY:Pack the swimming bag", "DESCRIPTION:Towel and goggles", "DUE;VALUE=DATE:20261125", "STATUS:NEEDS-ACTION",
 		"PRIORITY:1", "RRULE:FREQ=DAILY", "X-APPLE-SORT-ORDER:5")
@@ -293,6 +300,7 @@ func TestChangedTitleNotesAndDueDateReachTheBoxAndNothingElseDoes(t *testing.T) 
 }
 
 func TestARepeatingTasksDayCannotBeChangedFromOutside(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	tb.put(tb.href(tb.cat), todoICS(tb.cat.ID, "SUMMARY:Feed the cats", "DUE;VALUE=DATE:20271224"), nil)
 	got, _ := tb.c.b.db.Task(tb.h.ID, tb.cat.ID)
@@ -304,6 +312,7 @@ func TestARepeatingTasksDayCannotBeChangedFromOutside(t *testing.T) {
 // Acceptance: Given a task created or deleted in the Reminders app, then the
 // box refuses it and the list is restored at the next sync.
 func TestCreatingAndDeletingTasksFromOutsideAreRefused(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	if status := tb.put(tb.listing+"new-task.ics", todoICS("new-task", "SUMMARY:Buy milk"), map[string]string{"If-None-Match": "*"}); status != http.StatusForbidden {
 		t.Fatalf("create = %d, want 403", status)
@@ -326,6 +335,7 @@ func TestCreatingAndDeletingTasksFromOutsideAreRefused(t *testing.T) {
 }
 
 func TestTaskWritesNeedTheWriteScopeAndAnInvalidSaveChangesNothing(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	ro := tb.c.phone(t, "tasks:read")
 	if status, _, _ := ro.raw("PUT", tb.href(tb.swim), todoICS(tb.swim.ID, "SUMMARY:Hacked"), map[string]string{"Content-Type": icsType}); status != http.StatusForbidden {
@@ -348,6 +358,7 @@ func TestTaskWritesNeedTheWriteScopeAndAnInvalidSaveChangesNothing(t *testing.T)
 }
 
 func TestStaleTaskWritesAreRefusedLikeEvents(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	_, hdr, _ := tb.ph.raw("GET", tb.href(tb.swim), "", nil)
 	first := hdr.Get("ETag")
@@ -364,6 +375,7 @@ func TestStaleTaskWritesAreRefusedLikeEvents(t *testing.T) {
 
 // Someone else's list or a task of another list is not reachable by address.
 func TestATaskIsOnlyReachableThroughItsPersonsList(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	mama := strings.Replace(tb.listing, tb.mia.ID, tb.mama.ID, 1)
 	if status, _, _ := tb.ph.raw("GET", mama+tb.swim.ID+".ics", "", nil); status != http.StatusNotFound {
@@ -377,6 +389,7 @@ func TestATaskIsOnlyReachableThroughItsPersonsList(t *testing.T) {
 // A client completing (or moving) an overdue once task gets its saved state
 // back, even though the finished task falls out of the listing window.
 func TestCompletingAnOverdueOnceTaskSucceedsAndRetriesAreHarmless(t *testing.T) {
+	t.Parallel()
 	tb := newDavTaskBox(t)
 	old, err := tb.c.b.db.AddTask(tb.h.ID, task.Task{PersonID: tb.mia.ID, Title: "Old chore", Repeat: task.Once, Date: "2026-11-01", Stars: 3})
 	if err != nil {

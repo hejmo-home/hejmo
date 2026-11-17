@@ -40,6 +40,10 @@ Lists (#32, #33) take only typed text. On 16/11/2026 the product owner asked whe
 ### Tile view
 
 - A list can be shown as **tiles** (symbol or picture, name, tick) or as a **list**. Children see tiles by default, adults the list; each person's choice is remembered.
+- **One choice per person for all lists**, stored in the box, so it holds on every device. Nobody changes another person's view, not even a parent. A **display** is not a person: it keeps its own view, tiles until someone at the display (no PIN, a view is harmless) or a parent over the API switches it.
+- **The whole tile is the tick button.** An entry shows the symbol or picture of the article its text names; the text names an article when it equals the article's name in German or English (ignoring case and umlauts), own articles first. An entry that names no article is free text and shows its first letter on a dashed ring, never a made-up picture. Until entries carry an article of their own (ticket 165), the name is the link.
+- **Allergen warnings on tiles** have one line per affected person with the allergens in words, never a count. A list that holds a food article ends with the note about free-text allergies, in both views and on the display.
+- The sort-or-remove view stays rows.
 
 ### Sync (0.2)
 

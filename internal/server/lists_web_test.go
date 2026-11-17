@@ -44,7 +44,7 @@ func TestParentCreatesAListAndAddsEntriesInTheWebInterface(t *testing.T) {
 		t.Errorf("no success line after creating")
 	}
 	id := strings.TrimPrefix(r.location, "/lists/")
-	if r := b.post("/lists/"+id+"/entries", url.Values{"text": {"Sunscreen"}}); r.status != http.StatusSeeOther || r.location != "/lists/"+id {
+	if r := b.post("/lists/"+id+"/entries", url.Values{"text": {"Sunscreen"}}); r.status != http.StatusSeeOther || !strings.HasPrefix(r.location, "/lists/"+id+"?added=") {
 		t.Fatalf("add = %d %q", r.status, r.location)
 	}
 	// API parity: the same entry is there.

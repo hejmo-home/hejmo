@@ -293,6 +293,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}/delete", s.handleTemplateStepDelete)
 	mux.HandleFunc("GET /settings/lists", s.handleListsSettings)
 	mux.HandleFunc("POST /settings/lists", s.handleListsSettingsSave)
+	mux.HandleFunc("POST /settings/lists/units", s.handleUnitsSave)
 	mux.HandleFunc("GET /settings/lists/library", s.handleLibrary)
 	mux.HandleFunc("GET /settings/lists/library/new", s.handleArticleNew)
 	mux.HandleFunc("POST /settings/lists/library", s.handleArticleCreate)

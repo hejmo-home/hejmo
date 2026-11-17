@@ -23,6 +23,9 @@ var (
 	crumbAccount     = crumb{"/account", "hub.otp", ""}
 	crumbSessions    = crumb{"/sessions", "hub.sessions", ""}
 
+	crumbLists   = crumb{"/settings/lists", "lists.set.title", ""}
+	crumbLibrary = crumb{"/settings/lists/library", "lib.title", ""}
+
 	crumbMealTemplates    = crumb{"/meals/templates", "meals.tpl.title", ""}
 	crumbRoutineTemplates = crumb{"/routines/templates", "routine.tpl.title", ""}
 )
@@ -34,7 +37,7 @@ var (
 var crumbTrails = map[string][]crumb{
 	"calendars.html": {crumbSettings}, "caldav.html": {crumbSettings}, "displays.html": {crumbSettings}, "phones.html": {crumbSettings},
 	"mcp.html": {crumbSettings}, "people.html": {crumbSettings}, "household.html": {crumbSettings}, "account.html": {crumbSettings}, "sessions.html": {crumbSettings},
-	"licences.html": {crumbSettings},
+	"licences.html": {crumbSettings}, "settings_lists.html": {crumbSettings},
 
 	"calendar_detail.html": {crumbSettings, crumbConnections}, "connection.html": {crumbSettings, crumbConnections}, "connection_new.html": {crumbSettings, crumbConnections},
 	"display.html": {crumbSettings, crumbDisplays},
@@ -44,6 +47,8 @@ var crumbTrails = map[string][]crumb{
 	"person_edit.html": {crumbSettings, crumbPeople}, "group.html": {crumbSettings, crumbPeople},
 	"account_reset.html": {crumbSettings, crumbAccount}, "passkey.html": {crumbSettings, crumbAccount}, "recovery_codes.html": {crumbSettings, crumbAccount},
 	"session.html": {crumbSettings, crumbSessions},
+
+	"library.html": {crumbSettings, crumbLists}, "article.html": {crumbSettings, crumbLists, crumbLibrary}, "article_form.html": {crumbSettings, crumbLists, crumbLibrary},
 
 	"meal_template.html":    {crumbMeals, crumbMealTemplates},
 	"routine_template.html": {crumbTasks, crumbRoutineTemplates},

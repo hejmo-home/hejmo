@@ -934,24 +934,27 @@ func TestNamesAndTextsAreEscapedEverywhere(t *testing.T) {
 	}
 }
 
-func TestEveryLibraryPageHasABackLinkInsideMain(t *testing.T) {
+// Ticket 182 replaced the back links of the pages below Settings by a trail
+// of links inside main; Settings stays marked as the current section.
+func TestEveryLibraryPageHasATrailBackToSettingsInsideMain(t *testing.T) {
 	l := newLibBox(t)
 	l.person("Mia", "child", "omnivore", "milk")
 	id := l.createArticle(articleForm())
-	for page, back := range map[string]string{
-		"/settings/lists":                `<a class="back" href="/settings">`,
-		"/settings/lists/library":        `<a class="back" href="/settings/lists">`,
-		"/settings/lists/library/new":    `<a class="back" href="/settings/lists/library">`,
-		"/settings/lists/library/apples": `<a class="back" href="/settings/lists/library">`,
-		"/settings/lists/library/" + id:  `<a class="back" href="/settings/lists/library">`,
+	for page, link := range map[string]string{
+		"/settings/lists":                `<a href="/settings">`,
+		"/settings/lists/library":        `<a href="/settings/lists">`,
+		"/settings/lists/library/new":    `<a href="/settings/lists/library">`,
+		"/settings/lists/library/apples": `<a href="/settings/lists/library">`,
+		"/settings/lists/library/" + id:  `<a href="/settings/lists/library">`,
 	} {
 		body := l.en(page).body
-		at, main := strings.Index(body, back), strings.Index(body, "<main")
-		if at < 0 || at < main {
-			t.Errorf("%s: back link %s missing or outside main", page, back)
+		nav, main := strings.Index(body, `<nav class="crumbs"`), strings.Index(body, "<main")
+		at := strings.Index(body, link)
+		if nav < main || at < nav {
+			t.Errorf("%s: the trail %s is missing or outside main", page, link)
 		}
-		if !strings.Contains(body, `<a href="/settings" aria-current="page"`) {
-			t.Errorf("%s does not mark Settings as current", page)
+		if !strings.Contains(body, `<a href="/settings" aria-current="true"`) {
+			t.Errorf("%s does not mark Settings as the current section", page)
 		}
 	}
 }

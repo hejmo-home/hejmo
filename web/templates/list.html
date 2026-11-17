@@ -8,7 +8,7 @@
 {{define "listTitle"}}<h1 class="list-title"><span class="marker" data-person="{{.List.Slot}}" data-shape="{{.List.Symbol}}" aria-hidden="true"></span><span>{{.List.Name}}</span></h1>{{end}}
 
 {{/* One everyday row: the big tick box and the text, and on a list with suggestions the quantity button, the article's warnings and the editor of its quantity. Arguments: Root, E. */}}
-{{define "tickRow"}}{{$root := .Root}}{{with .E}}<li id="e-{{.ID}}"{{if .Editing}} class="editing"{{else if .Added}} class="added"{{end}}{{if .Done}} data-done="true"{{else}} data-done="false"{{end}}>
+{{define "tickRow"}}{{$root := .Root}}{{with .E}}<li{{if not .Done}} id="e-{{.ID}}"{{end}}{{if .Editing}} class="editing"{{else if .Added}} class="added"{{end}}{{if .Done}} data-done="true"{{else}} data-done="false"{{end}}>
     <form method="post" action="/lists/{{$root.List.ID}}/entries/{{.ID}}/done"><input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">{{template "keepHide" $root}}
       <button class="big-check" type="submit" aria-label="{{if .Done}}{{t "lists.untick"}}{{else}}{{t "lists.tick"}}{{end}}: {{.Text}}{{if .Qty}}, {{.Qty}}{{end}}"><span class="box" aria-hidden="true"></span><span class="title">{{if .Done}}<s>{{.Text}}</s>{{else}}{{.Text}}{{end}}</span>{{if and .Qty (not .Suggest)}}<span class="qty">{{.Qty}}</span>{{end}}</button></form>
     {{if .Suggest}}<a class="qty-open{{if not .Qty}} none{{end}}" href="{{.Href}}"{{if .Editing}} aria-expanded="true"{{end}} aria-label="{{.Label}}">{{if .Qty}}{{.Qty}}{{else}}{{t "lq.entry.qty"}}{{end}}{{template "pen"}}</a>{{end}}
@@ -31,6 +31,7 @@
     <button class="button" type="submit">{{t "lists.add"}}</button>
   </form>{{end}}{{else if .Error}}{{template "error" .}}{{end}}
 
+  {{if .Suggest}}<script src="/static/adder.js" defer></script>{{end}}
   {{if not .List.Total}}{{if not .Child}}<div class="empty" data-empty><p>{{t "lists.empty.hint"}}</p></div>{{end}}{{end}}
   {{if .Open}}<ul class="entries">
   {{range .Open}}{{template "tickRow" (dict "Root" $ "E" .)}}{{end}}</ul>{{end}}

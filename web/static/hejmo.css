@@ -2512,3 +2512,6 @@ details.more-units .hint a { color: var(--accent); }
   .lv .qty-edit details.more-units { grid-column: 1 / -1; }
   .lv .qty-edit .amount .ferr { width: 0; min-width: 100%; box-sizing: border-box; } /* the error wraps under the stepper and never pushes the units aside */
 }
+/* ticket 165: a legend that only a screen reader reads keeps its 1 px: the width of the visible legends
+   (100%) would make it a page-wide box and widen the page. */
+fieldset.seg > legend.vh, fieldset.units > legend.vh, .adder fieldset.qty > legend.vh, .qty-edit fieldset.qty > legend.vh { float: none; width: 1px; margin: -1px; }

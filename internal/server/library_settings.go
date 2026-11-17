@@ -77,6 +77,12 @@ type settingsForm struct {
 }
 
 func (s *server) renderListsSettings(w http.ResponseWriter, r *http.Request, p principal, status int, form *settingsForm, errText string) {
+	s.renderListsSettingsUnits(w, r, p, status, form, errText, nil, "")
+}
+
+// renderListsSettingsUnits is renderListsSettings with the units a refused
+// form chose (nil: the stored ones) and the group that has none left on.
+func (s *server) renderListsSettingsUnits(w http.ResponseWriter, r *http.Request, p principal, status int, form *settingsForm, errText string, unitsOn []string, unitsErr string) {
 	lang := s.langOf(r)
 	st, err := s.libState(p, lang)
 	if err != nil {
@@ -125,6 +131,7 @@ func (s *server) renderListsSettings(w http.ResponseWriter, r *http.Request, p p
 		}
 	}
 	data := map[string]any{
+		"Units":  s.unitsForm(p, lang, unitsOn, unitsErr),
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID),
 		"LibrarySymbol": hejmoSymbol, "ShippedState": shipped, "OwnState": own,
 		"Anyone": len(withAllergies) > 0, "CanHide": len(holders) > 0,

@@ -1,0 +1,65 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "photos.title") "Frame" .Frame)}}
+  {{with .Added}}{{template "success" .}}{{end}}
+  <h1>{{t "photos.title"}}</h1>
+  <p class="lead">{{t "photos.lead"}}</p>
+  {{template "error" .}}
+  {{if .Pending}}<p class="notice" role="status" data-folder-pending>{{.PendingText}}</p>{{end}}
+
+  {{if .HasPhotos}}{{template "photoStorage" .}}{{end}}
+  {{with .Refused}}<div class="refused" role="alert"><p>{{$.RefusedTitle}}</p><ul>{{range .}}<li><b>{{.Name}}</b>{{with .Reason}}{{t "photos.reason_sep"}}{{.}}{{end}}</li>{{end}}</ul></div>{{end}}
+
+  <section class="upload" data-photo-upload data-api="/api/v1/albums/" data-texts="{{.Texts}}" data-limit="{{if .Space.Full}}full{{end}}">
+    {{if not .HasPhotos}}<h2>{{t "photos.empty.title"}}</h2><p>{{t "photos.empty.text"}}</p>
+    {{else}}<h2>{{t "photos.add.title"}}</h2>{{if .Space.Full}}<p>{{t "photos.add.full"}}</p>{{end}}{{end}}
+    <form method="post" action="/photos/upload" enctype="multipart/form-data" class="upload-form">
+      <div class="f"><label>{{t "photos.add.album"}}<select name="album">{{range .AlbumOptions}}<option value="{{.ID}}"{{if .Selected}} selected{{end}}>{{.Name}}</option>{{end}}</select></label></div>
+      {{template "photoPick" (dict "Disabled" .Space.Full)}}
+      <noscript><button class="button" type="submit">{{t "photos.add.send"}}</button></noscript>
+    </form>
+    <p class="hint">{{t "photos.add.hint"}}</p>
+    <div data-upload-progress hidden></div>
+  </section>
+  {{if not .HasPhotos}}{{template "photoStorage" .}}{{end}}
+
+  <h2 class="photos-h2">{{t "photos.albums"}}</h2>
+  {{template "toDisplays" .}}
+  <ul class="list-rows albums" data-albums>
+    {{range .Albums}}
+    <li class="arow"><a class="main" href="/photos/albums/{{.ID}}">{{if .Cover}}<img class="cover" src="/api/v1/photos/{{.Cover}}/image?size=thumbnail" alt="">{{else}}<span class="cover"><svg class="icon" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 17.5l5-5 4 4 2.5-2.5 4.5 4"/></svg></span>{{end}}<span class="t"><b>{{.Name}}</b><span class="meta">{{.Count}}</span>{{if .FromFolder}}<span class="meta"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg><span>{{tf "photos.from_folder" "folder" .Folder}}</span></span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+      <p class="shown"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="12" rx="1.5"/><path d="M9 20h6M12 16.5V20"/></svg>{{template "shownOn" .Displays}}</p></li>
+    {{end}}
+  </ul>
+
+  <div class="new-album">
+    {{template "moreOpen" (dict "Label" (t "photos.new") "Open" (eq .ErrorField "album_name"))}}
+      <form method="post" action="/photos/albums">
+        {{template "field" (dict "Root" . "Name" "album_name" "Label" (t "photos.new.name") "Value" .NewName "Required" true "Max" 80 "Placeholder" (t "photos.new.placeholder"))}}
+        <div class="row"><button class="button secondary" type="submit">{{t "photos.new.create"}}</button></div>
+      </form>
+    {{template "moreClose"}}
+  </div>
+
+  {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" .LimitSummary "Open" (eq .ErrorField "photo_limit"))}}
+    <form method="post" action="/photos/limit" class="steps">
+      {{template "field" (dict "Root" . "Name" "photo_limit" "Label" (t "photos.limit") "Type" "number" "Value" .Space.LimitGB "Bounded" true "Lo" 1 "Hi" 100000 "Class" "short" "Hint" .LimitHint)}}
+      <div><button class="button secondary" type="submit">{{t "photos.limit.save"}}</button></div>
+    </form>
+    <p class="hint folder-note"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg><span>{{t "photos.folder.how"}}</span></p>
+  {{template "moreClose"}}
+  <script src="/static/photos.js" defer></script>
+{{template "foot"}}
+
+{{/* The space the photos take, in words and as a bar. Argument: the page. */}}
+{{define "photoStorage"}}<section class="storage{{if .Space.Full}} full{{end}}"><div class="head"><b>{{t "photos.storage"}}</b><span class="fig">{{.Space.UsedText}}</span></div>
+  <div class="meter" role="img" aria-label="{{.Space.UsedText}}"><span style="--pct:{{.Space.Pct}}"></span></div>
+  {{if .Space.Full}}{{template "flag" (dict "Kind" "problem" "Text" (t "photos.full"))}}{{end}}
+  <p class="hint">{{.Space.Hint}}</p></section>{{end}}
+
+{{/* The one primary action: choose photos. Argument: Disabled. */}}
+{{define "photoPick"}}<label class="button pick"{{if .Disabled}} aria-disabled="true"{{end}}><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 16V5M7.5 9.5L12 5l4.5 4.5M5 19h14"/></svg>{{t "photos.pick"}}{{if not .Disabled}}<input type="file" name="file" multiple accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif,.jpg,.jpeg,.png" data-pick>{{end}}</label>{{end}}
+
+{{/* The way to the displays, where the albums of a display are chosen. */}}
+{{define "toDisplays"}}<p class="todisp"><span>{{t "photos.todisplays"}}</span><a class="link" href="/displays"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="4.5" width="17" height="12" rx="1.5"/><path d="M9 20h6M12 16.5V20"/></svg>{{t "photos.todisplays.link"}}</a></p>{{end}}
+
+{{/* "Shown on" followed by the displays, each a link to its screensaver block; the argument is the list of displays. */}}
+{{define "shownOn"}}{{if .}}<span>{{t "photos.shown_on"}} {{range $i, $d := .}}{{if $i}}{{t "photos.list_sep"}}{{end}}<a class="dn" href="/displays/{{$d.ID}}#bildschirmschoner" aria-label="{{tf "photos.display_settings" "name" $d.Name}}">{{tf "photos.quoted" "name" $d.Name}}</a>{{end}}</span>{{else}}<span>{{t "photos.shown_none"}}</span>{{end}}{{end}}

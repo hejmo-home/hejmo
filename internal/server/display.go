@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -136,6 +137,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		}
 		s.render(w, r, http.StatusOK, "display_family.html", map[string]any{
 			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Version": version, "Theme": s.displayTheme(h, d),
+			"SaverSeconds": s.saverSeconds(d),
 		})
 		return
 	}
@@ -349,6 +351,9 @@ func (s *server) homeWeather(h store.Household) *familyview.Weather {
 // handleDisplayState tells a display whether it is still what its page says:
 // "paired", "pairing" (with its code) or "unpaired" (revoked, unknown or its
 // code ran out). The display's script reloads the page when this changes.
+// A paired display also learns whether its screensaver is due now ("saver" is
+// "1": on and not in quiet mode) and after how many idle seconds it asks
+// ("saver_seconds", "0" when it is off).
 func (s *server) handleDisplayState(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	w.Header().Set("Cache-Control", "no-store")
@@ -363,8 +368,12 @@ func (s *server) displayState(r *http.Request) map[string]string {
 		switch {
 		case d.Paired:
 			state["state"] = "paired"
+			state["saver"], state["saver_seconds"] = "0", strconv.Itoa(s.saverSeconds(d))
 			if h, err := s.db.HomeHousehold(); err == nil {
 				state["theme"] = s.displayTheme(h, d)
+				if s.saverActive(h, d) {
+					state["saver"] = "1"
+				}
 			}
 			if s.now().Sub(d.LastSeen) > time.Minute {
 				_ = s.db.TouchDisplay(hash, s.now())
@@ -411,4 +420,16 @@ func splitWaste(occs []calendar.Occurrence, cals []store.Calendar) (rest, waste 
 		}
 	}
 	return rest, waste
+}
+
+// saverSeconds is how long the family view waits without a touch before it asks
+// the box whether the screensaver is due; 0 when the display has it switched
+// off. It is not 0 in quiet mode: the page is rendered once and stays for days,
+// so the timer must be there when the night ends. The box decides when the
+// timer fires (displayState).
+func (s *server) saverSeconds(d store.Display) int {
+	if !d.Paired || !d.Saver.Enabled {
+		return 0
+	}
+	return d.Saver.IdleMinutes * 60
 }

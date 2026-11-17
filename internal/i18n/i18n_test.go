@@ -140,6 +140,10 @@ var wholeFamilyTexts = map[string]bool{
 	"lists.set.empty":                          true,
 	"lib.lead":                                 true, // "wenn ihr etwas auf eine Liste setzt"
 	"art.units.hint":                           true, // "bis ihr eine andere Einheit nehmt"
+	"saver.hint.title":                         true, // "eure Fotos": the family's photos (preview 178)
+	"displays.saver.on":                        true, // "euren Alben": the family's albums
+	"photos.full.hint":                         true, // "ihr nicht mehr braucht": the family's photos
+	"photos.up.wait":                           true, // "Wartet": the state of a file, not an imperative
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

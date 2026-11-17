@@ -198,6 +198,14 @@ _Avoid_: sleep mode (in prose), night mode, standby
 What an E-Ink display shows in quiet mode: the date of the coming morning, the household's first timed event of that day and its waste collection. A normal screen shows a black page instead.
 _Avoid_: sleep screen, standby page
 
+**Screensaver**:
+The photos a display shows after nobody has touched it for a while, one at a time, with the time and date small in a corner; a touch brings back the day at once. It is off during quiet mode. Without photos it shows a hint where adults add them.
+_Avoid_: slideshow, photo frame, diashow
+
+**Album**:
+A named collection of screensaver photos; each photo is in exactly one album, and each display shows all albums or the ones chosen for it. A subfolder of the box's photo folder becomes an album by itself; only that source on the box is called a folder.
+_Avoid_: folder (for an album), gallery, collection
+
 **Phone**:
 A smartphone paired with the box through a QR code that runs the web interface as an app for one person, adult or child. A phone's calendar app syncing over CalDAV is a CalDAV client, not a phone.
 _Avoid_: mobile, client (alone), handset

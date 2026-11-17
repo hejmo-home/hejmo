@@ -185,7 +185,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-weatherDone }()
 
-	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Done: ctx.Done(), UpdateDir: cfg.UpdateDir})
+	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Done: ctx.Done(), UpdateDir: cfg.UpdateDir, PhotoDir: cfg.DataDir})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).

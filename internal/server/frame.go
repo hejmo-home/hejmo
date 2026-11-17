@@ -183,6 +183,7 @@ var hubItems = []hubItem{
 	{"/calendars", "hub.connections", "hub.connections.hint", auth.Perm("calendars", auth.Write)},
 	{"/caldav", "hub.caldav", "hub.caldav.hint", auth.Perm("tokens", auth.Read)},
 	{"/displays", "hub.displays", "hub.displays.hint", auth.Perm("displays", auth.Write)},
+	{"/photos", "hub.photos", "hub.photos.hint", auth.Perm("displays", auth.Write)},
 	{"/phones", "hub.phones", "hub.phones.hint", auth.Perm("tokens", auth.Write)},
 	{"/mcp", "hub.mcp", "hub.mcp.hint", auth.Perm("tokens", auth.Write)},
 	{"/people", "hub.people", "hub.people.hint", auth.Perm("people", auth.Write)},

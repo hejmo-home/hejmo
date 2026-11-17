@@ -75,15 +75,23 @@ func (c *apiClient) call(method, path string, body any) (int, map[string]any, []
 // callRaw is call for answers that are not JSON: the body, status and content
 // type, after both request and response were checked against openapi.yaml.
 func (c *apiClient) callRaw(method, path string, body any) (string, int, string) {
-	t := c.b.t
-	t.Helper()
+	c.b.t.Helper()
 	var raw []byte
+	ctype := ""
 	if body != nil {
 		raw, _ = json.Marshal(body)
+		ctype = "application/json"
 	}
+	return c.send(method, path, ctype, raw)
+}
+
+// send is callRaw for a body of any content type (a photo upload is multipart).
+func (c *apiClient) send(method, path, contentType string, raw []byte) (string, int, string) {
+	t := c.b.t
+	t.Helper()
 	req, _ := http.NewRequest(method, c.b.srv.URL+"/api/v1"+path, bytes.NewReader(raw))
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	if c.token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.token)

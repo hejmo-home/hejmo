@@ -119,6 +119,7 @@ type layoutFixture struct {
 
 	lists       []string // list IDs
 	inviteToken string   // the invitation of Maximilian, a parent without account
+	hint        *screen  // a display that shows the screensaver's hint
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -266,6 +267,27 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	if f.inviteToken = inviteTokenRe.FindString(inv.body); inv.status != http.StatusOK || f.inviteToken == "" {
 		t.Fatalf("invitation = %d, no token\n%s", inv.status, inv.body)
 	}
+	// Photos: albums with long names, a hidden photo, an album from the box's folder and a display that chose some.
+	def := defaultAlbum(t, c)
+	trip := newAlbum(t, c, "Geburtstagsfeier zum siebzigsten Geburtstag von Uroma Hildegard")
+	for _, a := range []string{def, trip} {
+		id := uploaded(t, c, a, "Sommerfestbild_mit_sehr_langem_Dateinamen_ohne_Leerzeichen.jpg")
+		uploaded(t, c, a, "IMG_0002.jpg")
+		c.call(http.MethodPatch, "/photos/"+id, map[string]any{"hidden": true})
+	}
+	folder := filepath.Join(f.photoDir, "photos", "Wochenendausflug zur Schwimmhalle")
+	must(os.MkdirAll(folder, 0o755))
+	must(os.WriteFile(filepath.Join(folder, "a.jpg"), jpegPhoto(t, 640, 480), 0o644))
+	_, _, shown := c.call(http.MethodGet, "/displays", nil)
+	c.call(http.MethodPatch, "/displays/"+shown[0].(map[string]any)["id"].(string), map[string]any{"screensaver": map[string]any{"album_ids": []string{trip}}})
+	// A second display whose only album is empty: it shows the hint.
+	f.hint = newScreen(f.box)
+	if r := f.post("/displays", pairForm(codeOn(t, f.hint.get("/display", "en").body))); r.status != http.StatusSeeOther {
+		t.Fatalf("pair the second display = %d", r.status)
+	}
+	empty := newAlbum(t, c, "Noch leeres Album mit einem sehr langen Namen für den Hinweis")
+	_, _, both := c.call(http.MethodGet, "/displays", nil)
+	c.call(http.MethodPatch, "/displays/"+both[1].(map[string]any)["id"].(string), map[string]any{"screensaver": map[string]any{"album_ids": []string{empty}}})
 	tpl := dinnerWeek("Wochenplan mit Lieblingsgerichten", "2026-11-16", 2)
 	if status, body := createTemplate(t, c, tpl); status != http.StatusCreated {
 		t.Fatalf("meal template = %d %v", status, body)
@@ -438,6 +460,8 @@ var notRendered = map[string]string{
 	"/display/lists":            "redirect to the first list",
 	"/display/lists/{id}/view":  "fragment of a list, rendered inside it",
 	"/display/events":           "event stream",
+	"/display/saver/photos":     "JSON",
+	"/display/photo/{id}":       "image",
 	"/display/person/{id}/view": "fragment of the personal view, rendered inside it",
 	"/otp":                      "redirect",
 	"/i/{token}":                "redirect",
@@ -485,6 +509,8 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(display, "/display/person/"+f.ids[3])
 	add(display, "/display/lists/"+f.lists[0])
 	add(display, "/display/lists/"+f.lists[1])
+	add(display, "/display/saver")
+	add(siteOf("display hint", f.box, f.hint.client), "/display/saver")
 
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in

@@ -177,6 +177,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /otp", s.handleOTPMoved)
 	mux.HandleFunc("GET /account", s.handleAccountPage)
 	mux.HandleFunc("POST /account/recovery-codes", s.handleRecoveryCodesNew)
+	mux.HandleFunc("POST /account/recovery-codes/saved", s.handleRecoveryCodesSaved)
 	mux.HandleFunc("GET /account/reset/{id}", s.handleResetPage)
 	mux.HandleFunc("POST /account/reset/{id}", s.handleResetSubmit)
 	mux.HandleFunc("POST /account/passkeys", s.handlePasskeyOfferForm)

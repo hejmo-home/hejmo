@@ -257,6 +257,9 @@ func (db *DB) ReplaceRecoveryCodes(personID string, hashes []string) error {
 	if _, err := tx.Exec(`DELETE FROM recovery_codes WHERE person_id = ?`, personID); err != nil {
 		return err
 	}
+	if _, err := tx.Exec(`UPDATE accounts SET recovery_codes_saved_at = NULL WHERE person_id = ?`, personID); err != nil {
+		return err
+	}
 	for _, h := range hashes {
 		if _, err := tx.Exec(`INSERT INTO recovery_codes (id, person_id, code_hash, created_at) VALUES (?, ?, ?, ?)`,
 			newID(), personID, h, now()); err != nil {
@@ -264,6 +267,42 @@ func (db *DB) ReplaceRecoveryCodes(personID string, hashes []string) error {
 		}
 	}
 	return tx.Commit()
+}
+
+// RecoverySet describes the person's current set of recovery codes without
+// the codes themselves (the box keeps only hashes).
+type RecoverySet struct {
+	// Exists is false when the person has no codes at all.
+	Exists bool
+	// CreatedAt is when the set was made; Unused how many of its codes are valid.
+	CreatedAt time.Time
+	Unused    int
+	// SavedAt is when the person confirmed they saved the set; zero until then.
+	SavedAt time.Time
+}
+
+// RecoverySet reports on the person's current set of recovery codes (ticket 176).
+func (db *DB) RecoverySet(personID string) (RecoverySet, error) {
+	var set RecoverySet
+	var created, saved sql.NullString
+	err := db.sql.QueryRow(`SELECT MIN(created_at), COUNT(*) FILTER (WHERE used_at IS NULL) FROM recovery_codes WHERE person_id = ?`, personID).Scan(&created, &set.Unused)
+	if err != nil {
+		return RecoverySet{}, err
+	}
+	set.Exists = created.Valid
+	set.CreatedAt = parseStamp(created)
+	err = db.sql.QueryRow(`SELECT recovery_codes_saved_at FROM accounts WHERE person_id = ?`, personID).Scan(&saved)
+	if err != nil && !errors.Is(err, sql.ErrNoRows) {
+		return RecoverySet{}, err
+	}
+	set.SavedAt = parseStamp(saved)
+	return set, nil
+}
+
+// ConfirmRecoveryCodesSaved records that the person says they saved their
+// current set. It returns ErrNotFound for a person without an account.
+func (db *DB) ConfirmRecoveryCodesSaved(personID string) error {
+	return expectOne(db.sql.Exec(`UPDATE accounts SET recovery_codes_saved_at = ? WHERE person_id = ?`, now(), personID))
 }
 
 // UnusedRecoveryCodes lists the person's recovery codes that are still valid.

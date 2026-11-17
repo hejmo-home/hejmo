@@ -180,3 +180,17 @@ func (s *server) apiGoOffline(w http.ResponseWriter, r *http.Request, p principa
 }
 
 func ptr[T any](v T) *T { return &v }
+
+// refuseOff answers 409 and returns true if connection svc is off: the request
+// would have to reach the outside. The body says where to see why.
+func (s *server) refuseOff(w http.ResponseWriter, svc outbound.Service) bool {
+	switch s.gate.Verdict(svc) {
+	case outbound.VerdictAllowed:
+		return false
+	case outbound.VerdictOffline:
+		writeError(w, http.StatusConflict, "offline mode is on: the box makes no connection to the outside (see GET /outbound)")
+	default:
+		writeError(w, http.StatusConflict, "the connection \""+string(svc)+"\" is switched off (see GET /outbound)")
+	}
+	return true
+}

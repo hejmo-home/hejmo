@@ -2683,6 +2683,7 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "422": { $ref: "#/components/responses/Invalid" }
   /calendars/{id}:
     parameters:
@@ -2747,6 +2748,7 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
   /calendar-connections:
     get:
@@ -2786,6 +2788,7 @@ paths:
               schema: { $ref: "#/components/schemas/CalendarConnection" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "422": { $ref: "#/components/responses/Invalid" }
   /calendar-connections/{id}:
     parameters:
@@ -2839,6 +2842,7 @@ paths:
               schema: { $ref: "#/components/schemas/CalendarConnection" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
     post:
@@ -2862,6 +2866,7 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /calendar-connections/{id}/event-counts:
@@ -2886,6 +2891,7 @@ paths:
                 items: { $ref: "#/components/schemas/EventCount" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /sync-log:
@@ -4273,6 +4279,14 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Invalid:
       description: Request is well-formed but not valid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    OffNow:
+      description: |
+        The connection to the outside this needs is off: offline mode is on, or the
+        connection is switched off (`GET /outbound` says which). Nothing was sent
+        to the outside and nothing was changed.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }

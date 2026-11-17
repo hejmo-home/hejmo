@@ -2887,5 +2887,8 @@
   "outside.stale.text": "Die Box läuft mit Hejmo {version} vom {date}. Neue Versionen bringen Sicherheitskorrekturen; im Offline-Modus bringst du sie selbst auf die Box.",
   "outside.stale.text_noversion": "Die Box wurde zuletzt am {date} aktualisiert. Neue Versionen bringen Sicherheitskorrekturen; im Offline-Modus bringst du sie selbst auf die Box.",
   "sync.fail.offline": "Offline-Modus ist an: kein Abgleich.",
-  "sync.fail.switched_off": "Diese Verbindung ist ausgeschaltet: kein Abgleich."
+  "sync.fail.switched_off": "Diese Verbindung ist ausgeschaltet: kein Abgleich.",
+  "outside.onbox.until": "bis {date}",
+  "outside.fact.sync": "Abgleich",
+  "outside.fact.last": "Letzter Abgleich"
 }

@@ -16,6 +16,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/meal"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -483,6 +484,9 @@ func postedCutoff(form url.Values, m meal.Mealtime, current string) string {
 // refreshWeather fetches the weather of a new home at once, so the chip does
 // not wait for the next round; a failure is left to that round.
 func (s *server) refreshWeather(lat, lon float64) {
+	if !s.gate.Allowed(outbound.Weather) {
+		return // switched off: nothing is fetched, nothing is refused over and over
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	if err := s.weather.Refresh(ctx, lat, lon); err != nil {

@@ -2887,5 +2887,8 @@
   "outside.stale.text": "The box runs Hejmo {version} from {date}. New versions bring security fixes; in offline mode you bring them to the box yourself.",
   "outside.stale.text_noversion": "The box was last updated on {date}. New versions bring security fixes; in offline mode you bring them to the box yourself.",
   "sync.fail.offline": "Offline mode is on: no sync.",
-  "sync.fail.switched_off": "This connection is switched off: no sync."
+  "sync.fail.switched_off": "This connection is switched off: no sync.",
+  "outside.onbox.until": "until {date}",
+  "outside.fact.sync": "Sync",
+  "outside.fact.last": "Last sync"
 }

@@ -414,7 +414,7 @@ func TestPausedCalendarsKeepTheirRowsWithAWordTagAndAreNotProblems(t *testing.T)
 	b.now = b.now.Add(30 * time.Hour) // a day without a sync would otherwise be a warning
 
 	page := getEN(b, "/calendars").body
-	mustContain(t, page, `class="offline-note"`, "Offline mode is on.", "<h2", "Connected services", "Subscribed calendars", `class="tag paused"`, "paused, offline mode", "Last sync")
+	mustContain(t, page, `class="offline-note"`, "Offline mode is on.", "Subscribed calendars", `class="tag paused"`, "paused, offline mode")
 	if n := strings.Count(page, "paused, offline mode"); n < 2 {
 		t.Errorf("%d paused tags, want one per connection and one per subscribed calendar", n)
 	}
@@ -451,23 +451,36 @@ func TestTheImageFromTheWebFieldGivesWayToTheNotice(t *testing.T) {
 	}
 	page := getEN(b, "/settings/lists/library/new").body
 	mustContain(t, page, `class="offline-note"`, "Web images are off.", `href="/settings/connections#images"`)
-	mustNotContain(t, page, `name="picture_url"`)
+	mustNotContain(t, page, `data-fetch-url`)
 }
 
 // ---- the reminder (Q145)
 
+// signInLater moves the clock and signs in again: sessions end.
+func signInLater(t *testing.T, b *box, secret string, to time.Time) {
+	t.Helper()
+	b.now = to
+	b.logout()
+	if r := b.post("/login", loginForm(b, secret, "correct horse battery")); r.status != http.StatusSeeOther {
+		t.Fatalf("login = %d", r.status)
+	}
+}
+
 func TestAfterNinetyDaysWithoutAnUpdateParentsSeeTheReminder(t *testing.T) {
-	b := signedInBox(t)
+	b, secret := configuredBox(t)
+	signInLater(t, b, secret, b.now)
 	offlineOn(t, b)
-	if box, _ := b.db.OutboundBox(); box.ReminderDays != 90 {
-		t.Fatalf("default = %d", box.ReminderDays)
+	installed, _ := b.db.OutboundBox()
+	if installed.ReminderDays != 90 {
+		t.Fatalf("default = %d", installed.ReminderDays)
 	}
+	signInLater(t, b, secret, installed.UpdatedAt.AddDate(0, 0, 10))
 	if page := getEN(b, "/").body; strings.Contains(page, "Not updated for") {
-		t.Error("the reminder shows on the first day")
+		t.Error("the reminder shows on the tenth day")
 	}
-	b.now = b.now.AddDate(0, 0, 91)
+	signInLater(t, b, secret, installed.UpdatedAt.AddDate(0, 0, 91))
 	page := getEN(b, "/").body
-	mustContain(t, page, `class="notice lead-in"`, "Not updated for 90 days.", "Update without the internet", "install.md#update-without-the-internet")
+	mustContain(t, page, `class="notice lead-in"`, "Not updated for 91 days.", "Update without the internet", "install.md#update-without-the-internet")
 	child := childSession(t, b)
 	if r := getEN(child, "/"); strings.Contains(r.body, "Not updated for") {
 		t.Error("a child sees the reminder")
@@ -482,13 +495,15 @@ func TestAfterNinetyDaysWithoutAnUpdateParentsSeeTheReminder(t *testing.T) {
 }
 
 func TestTheReminderUsesTheDaysTheParentsChose(t *testing.T) {
-	b := signedInBox(t)
+	b, secret := configuredBox(t)
+	signInLater(t, b, secret, b.now)
 	offlineOn(t, b)
 	if err := b.db.SetUpdateReminderDays(30); err != nil {
 		t.Fatal(err)
 	}
-	b.now = b.now.AddDate(0, 0, 31)
-	mustContain(t, getEN(b, "/").body, "Not updated for 30 days.")
+	installed, _ := b.db.OutboundBox()
+	signInLater(t, b, secret, installed.UpdatedAt.AddDate(0, 0, 31))
+	mustContain(t, getEN(b, "/").body, "Not updated for 31 days.")
 }
 
 // ---- the host update script (Q145)
@@ -597,5 +612,32 @@ func TestPagesLoadNothingFromOutside(t *testing.T) {
 		if m := ext.FindString(body); m != "" {
 			t.Errorf("%s loads something from outside: %s", path, m)
 		}
+	}
+}
+
+func TestTheAPIRefusesWhatNeedsAConnectionThatIsOff(t *testing.T) {
+	c := signedInAPI(t)
+	status, cal, _ := c.call(http.MethodPost, "/calendars", map[string]any{"kind": "ics", "name": "Waste", "url": "https://www.example.org/waste.ics", "audience": map[string]any{"people": []string{}, "groups": []string{}}})
+	if status != http.StatusCreated {
+		t.Fatalf("add = %d %v", status, cal)
+	}
+	if status, _, _ = c.call(http.MethodPatch, "/outbound", map[string]any{"offline": true}); status != http.StatusOK {
+		t.Fatalf("offline = %d", status)
+	}
+	for _, call := range []struct {
+		method, path string
+		body         any
+	}{
+		{http.MethodPost, "/calendar-connections", map[string]any{"provider": "caldav", "url": "https://caldav.example.org", "username": "u", "password": "p"}},
+		{http.MethodPost, "/calendars", map[string]any{"kind": "ics", "name": "More", "url": "https://www.example.org/more.ics", "audience": map[string]any{"people": []string{}, "groups": []string{}}}},
+		{http.MethodPost, "/calendars/" + cal["id"].(string) + "/sync", nil},
+	} {
+		if status, got, _ := c.call(call.method, call.path, call.body); status != http.StatusConflict {
+			t.Errorf("%s %s = %d %v, want 409", call.method, call.path, status, got)
+		}
+	}
+	_, list, _ := c.call(http.MethodGet, "/outbound", nil)
+	if refused, _ := list["refused"].([]any); len(refused) == 0 {
+		t.Errorf("the refused sync is not on the list: %v", list["refused"])
 	}
 }

@@ -13,6 +13,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -268,6 +269,9 @@ func (s *server) apiListConnections(w http.ResponseWriter, _ *http.Request, p pr
 }
 
 func (s *server) apiConnect(w http.ResponseWriter, r *http.Request, p principal) {
+	if s.refuseOff(w, outbound.Calendars) {
+		return
+	}
 	var in newConnectionInput
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -292,6 +296,9 @@ func (s *server) apiConnect(w http.ResponseWriter, r *http.Request, p principal)
 }
 
 func (s *server) apiDiscover(w http.ResponseWriter, r *http.Request, p principal) {
+	if s.refuseOff(w, outbound.Calendars) {
+		return
+	}
 	conn, err := s.db.Connection(p.household.ID, r.PathValue("id"))
 	if s.storeError(w, "connection", err) {
 		return
@@ -326,6 +333,9 @@ type eventCountJSON struct {
 // The calendars are asked together, each with its own timeout, so one slow
 // calendar shows as unknown and does not hold up the others.
 func (s *server) apiEventCounts(w http.ResponseWriter, r *http.Request, p principal) {
+	if s.refuseOff(w, outbound.Calendars) {
+		return
+	}
 	conn, err := s.db.Connection(p.household.ID, r.PathValue("id"))
 	if s.storeError(w, "connection", err) {
 		return
@@ -374,6 +384,9 @@ func (s *server) eventCount(r *http.Request, address string, n int, err error) e
 }
 
 func (s *server) apiAddConnectionCalendar(w http.ResponseWriter, r *http.Request, p principal) {
+	if s.refuseOff(w, outbound.Calendars) {
+		return
+	}
 	var in newCalendarInput
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")

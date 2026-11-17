@@ -12,6 +12,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -288,6 +289,9 @@ func (s *server) apiAddCalendar(w http.ResponseWriter, r *http.Request, p princi
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
+	if in.Kind == "ics" && s.refuseOff(w, outbound.ICS) {
+		return
+	}
 	cal, err := s.addICS(r, p, in)
 	var bad *inputError
 	switch {
@@ -307,6 +311,11 @@ func (s *server) apiSyncCalendar(w http.ResponseWriter, r *http.Request, p princ
 	err := s.sync.Sync(r.Context(), p.household.ID, r.PathValue("id"))
 	if errors.Is(err, store.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "synced calendar not found")
+		return
+	}
+	var refused *outbound.RefusedError
+	if errors.As(err, &refused) { // paused: not a failure
+		s.refuseOff(w, refused.Service)
 		return
 	}
 	// Any other error is a sync failure; it is in the log and in the state below.

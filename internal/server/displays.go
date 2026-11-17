@@ -126,9 +126,8 @@ func (s *server) handleDisplayPage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	d, found := s.displayOf(p.household.ID, r.PathValue("id"))
-	if !found {
-		http.NotFound(w, r)
+	d, ok := s.displayOf(w, r, p.household.ID)
+	if !ok {
 		return
 	}
 	s.renderDisplay(w, r, p, http.StatusOK, d, nil, "", "")
@@ -172,9 +171,8 @@ func (s *server) handleDisplayUnpair(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	d, found := s.displayOf(p.household.ID, r.PathValue("id"))
-	if !found {
-		http.NotFound(w, r)
+	d, ok := s.displayOf(w, r, p.household.ID)
+	if !ok {
 		return
 	}
 	switch err := s.db.RevokeDisplay(p.household.ID, d.ID, s.now()); {
@@ -243,19 +241,9 @@ func (c *saverChange) apply(cur store.Saver) (store.Saver, error) {
 
 // changeDisplay validates and saves a change, for the web interface and the API alike.
 func (s *server) changeDisplay(householdID, id string, c displayChange) error {
-	list, err := s.db.Displays(householdID)
+	cur, err := s.db.Display(householdID, id)
 	if err != nil {
 		return err
-	}
-	var cur store.Display
-	found := false
-	for _, d := range list {
-		if d.ID == id {
-			cur, found = d, true
-		}
-	}
-	if !found {
-		return store.ErrNotFound
 	}
 	name, typ := cur.Name, cur.Type
 	if c.Name != nil {
@@ -307,13 +295,12 @@ func (s *server) changeDisplay(householdID, id string, c displayChange) error {
 			return err
 		}
 	}
+	tomorrow := cur.ShowTomorrow
 	if c.ShowTomorrow != nil {
-		if err := s.db.SetDisplayShowTomorrow(householdID, id, *c.ShowTomorrow); err != nil {
-			return err
-		}
+		tomorrow = *c.ShowTomorrow
 	}
-	if th != cur.Theme || rise != cur.SunriseOffset || set != cur.SunsetOffset {
-		if err := s.db.SetDisplayTheme(householdID, id, th, rise, set); err != nil {
+	if tomorrow != cur.ShowTomorrow || th != cur.Theme || rise != cur.SunriseOffset || set != cur.SunsetOffset {
+		if err := s.db.SetDisplayLook(householdID, id, store.DisplayLook{ShowTomorrow: tomorrow, Theme: th, SunriseOffset: rise, SunsetOffset: set}); err != nil {
 			return err
 		}
 	}
@@ -373,9 +360,8 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = r.ParseForm()
-	d, found := s.displayOf(p.household.ID, r.PathValue("id"))
-	if !found {
-		http.NotFound(w, r)
+	d, ok := s.displayOf(w, r, p.household.ID)
+	if !ok {
 		return
 	}
 	refuse := func(key, field string) {
@@ -608,16 +594,18 @@ func (s *server) apiRevokeDisplay(w http.ResponseWriter, r *http.Request, p prin
 	}
 }
 
-// displayOf finds one of the household's paired displays.
-func (s *server) displayOf(householdID, id string) (store.Display, bool) {
-	list, err := s.db.Displays(householdID)
-	if err != nil {
-		return store.Display{}, false
-	}
-	for _, d := range list {
-		if d.ID == id {
-			return d, true
-		}
+// displayOf finds the household's paired display the request names. When it
+// answers itself it returns false: 404 for an unknown display, 500 for a
+// database error.
+func (s *server) displayOf(w http.ResponseWriter, r *http.Request, householdID string) (store.Display, bool) {
+	d, err := s.db.Display(householdID, r.PathValue("id"))
+	switch {
+	case err == nil:
+		return d, true
+	case errors.Is(err, store.ErrNotFound):
+		http.NotFound(w, r)
+	default:
+		s.fail(w, "display", err)
 	}
 	return store.Display{}, false
 }

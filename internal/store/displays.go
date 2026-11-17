@@ -271,6 +271,16 @@ func (db *DB) Displays(householdID string) ([]Display, error) {
 	return out, db.attachSaverAlbums(out)
 }
 
+// Display returns one of the household's paired displays, or ErrNotFound.
+func (db *DB) Display(householdID, id string) (Display, error) {
+	d, err := scanDisplay(db.sql.QueryRow(`SELECT `+displayColumns+` FROM displays
+		WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`, householdID, id), time.Time{})
+	if errors.Is(err, sql.ErrNoRows) {
+		return Display{}, ErrNotFound
+	}
+	return d, err
+}
+
 // RevokeDisplay unpairs a display: its token stops working.
 func (db *DB) RevokeDisplay(householdID, id string, at time.Time) error {
 	return expectOne(db.sql.Exec(`UPDATE displays SET revoked_at = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
@@ -296,21 +306,23 @@ func (db *DB) SetDisplayIdentity(householdID, id, name string, typ DisplayType) 
 		name, string(typ), householdID, id))
 }
 
-// SetDisplayShowTomorrow switches the "show tomorrow block" setting of one of
-// the household's paired displays.
-func (db *DB) SetDisplayShowTomorrow(householdID, id string, on bool) error {
-	return expectOne(db.sql.Exec(`UPDATE displays SET show_tomorrow = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
-		on, householdID, id))
+// DisplayLook is what a display shows and how: the tomorrow block (ADR 0016)
+// and the theme with its sunrise and sunset offsets in minutes, -180..180
+// (ADR 0015). They are saved together.
+type DisplayLook struct {
+	ShowTomorrow                bool
+	Theme                       Theme
+	SunriseOffset, SunsetOffset int
 }
 
-// SetDisplayTheme saves the theme and the sunrise and sunset offsets (minutes,
-// -180..180) of one of the household's paired displays.
-func (db *DB) SetDisplayTheme(householdID, id string, t Theme, sunriseOffset, sunsetOffset int) error {
-	if !t.Valid() || !theme.ValidOffset(sunriseOffset) || !theme.ValidOffset(sunsetOffset) {
+// SetDisplayLook saves the look of one of the household's paired displays in
+// one statement, so a save is never partial.
+func (db *DB) SetDisplayLook(householdID, id string, l DisplayLook) error {
+	if !l.Theme.Valid() || !theme.ValidOffset(l.SunriseOffset) || !theme.ValidOffset(l.SunsetOffset) {
 		return fmt.Errorf("%w: theme light, dark or auto and offsets within 180 minutes", ErrInvalid)
 	}
-	return expectOne(db.sql.Exec(`UPDATE displays SET theme = ?, sunrise_offset = ?, sunset_offset = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
-		string(t), sunriseOffset, sunsetOffset, householdID, id))
+	return expectOne(db.sql.Exec(`UPDATE displays SET show_tomorrow = ?, theme = ?, sunrise_offset = ?, sunset_offset = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
+		l.ShowTomorrow, string(l.Theme), l.SunriseOffset, l.SunsetOffset, householdID, id))
 }
 
 // SetDisplayQuiet saves the quiet mode schedule of one of the household's

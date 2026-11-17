@@ -27,6 +27,9 @@ var apiRoutes = []APIRoute{
 	{"PATCH", "/people/{id}", auth.Perm("people", auth.Write), (*server).apiUpdatePerson},
 	{"PUT", "/people/order", auth.Perm("people", auth.Write), (*server).apiOrderPeople},
 
+	{"GET", "/food", auth.Perm("health", auth.Read), (*server).apiListFood},
+	{"GET", "/people/{id}/food", auth.Perm("health", auth.Read), (*server).apiGetFood},
+	{"PUT", "/people/{id}/food", auth.Perm("health", auth.Write), (*server).apiPutFood},
 	{"GET", "/people/{id}/stars", auth.Perm("tasks", auth.Read), (*server).apiGetStars},
 	{"POST", "/people/{id}/stars", auth.Perm("tasks", auth.Write), (*server).apiBookStars},
 	{"GET", "/me/passkeys", auth.Perm("people", auth.Read), (*server).apiListPasskeys},
@@ -69,6 +72,7 @@ var apiRoutes = []APIRoute{
 	{"GET", "/https", auth.Perm("settings", auth.Read), (*server).apiHTTPS},
 	{"GET", "/settings", auth.Perm("settings", auth.Read), (*server).apiGetSettings},
 	{"PATCH", "/settings", auth.Perm("settings", auth.Write), (*server).apiUpdateSettings},
+	{"GET", "/places", auth.Perm("settings", auth.Read), (*server).apiSearchPlaces},
 	{"GET", "/update", auth.Perm("settings", auth.Read), (*server).apiGetUpdate},
 	{"POST", "/update/dismiss", auth.Perm("settings", auth.Write), (*server).apiDismissUpdate},
 	{"GET", "/events", auth.Perm("events", auth.Read), (*server).apiListEvents},
@@ -229,7 +233,7 @@ func (s *server) authenticate(r *http.Request) (principal, bool) {
 		return principal{household: h, person: p, scopes: t.Scopes}, err == nil
 	}
 	p, ok := s.currentPerson(r)
-	return principal{household: h, person: p, scopes: "write"}, ok
+	return principal{household: h, person: p, scopes: "write " + auth.HealthResource}, ok
 }
 
 type personJSON struct {

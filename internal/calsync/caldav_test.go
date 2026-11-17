@@ -320,6 +320,10 @@ func TestTemporaryServerErrorFailsTheRunAndTheChangeArrivesOnTheNextOne(t *testi
 // outside the server's domain.
 type foreignRemote struct{ calsync.Remote }
 
+func (foreignRemote) State(context.Context, string) (caldavclient.State, error) {
+	return caldavclient.State{}, refusal("https://caldav.example.org", "https://evil.test/cal/")
+}
+
 func (foreignRemote) List(context.Context, string) ([]caldavclient.Object, error) {
 	return nil, refusal("https://caldav.example.org", "https://evil.test/cal/")
 }
@@ -348,6 +352,10 @@ func TestForeignHostRefusalIsAClearEntryInTheSyncLog(t *testing.T) {
 }
 
 type downgradeRemote struct{ calsync.Remote }
+
+func (downgradeRemote) State(context.Context, string) (caldavclient.State, error) {
+	return caldavclient.State{}, refusal("https://caldav.example.org", "http://p1.example.org/cal/")
+}
 
 func (downgradeRemote) List(context.Context, string) ([]caldavclient.Object, error) {
 	return nil, refusal("https://caldav.example.org", "http://p1.example.org/cal/")

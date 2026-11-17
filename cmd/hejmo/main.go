@@ -370,23 +370,13 @@ func localURL(addr string) string {
 // homeOf gives the weather service the household's home location.
 type homeOf struct{ db *store.DB }
 
-func (h homeOf) Home() (lat, lon float64, name, country string, err error) {
+func (h homeOf) Home() (lat, lon float64, err error) {
 	hh, err := h.db.HomeHousehold()
 	if errors.Is(err, store.ErrNotFound) {
-		return 0, 0, "", "", weather.ErrNoHome
+		return 0, 0, weather.ErrNoHome
 	}
 	if err != nil {
-		return 0, 0, "", "", err
+		return 0, 0, err
 	}
-	// The region (ISO 3166-2, e.g. DE-BY) starts with the country code.
-	country, _, _ = strings.Cut(hh.Region, "-")
-	return hh.Latitude, hh.Longitude, hh.HomeName, country, nil
-}
-
-func (h homeOf) SetCoordinates(lat, lon float64) error {
-	hh, err := h.db.HomeHousehold()
-	if err != nil {
-		return err
-	}
-	return h.db.SetHouseholdCoordinates(hh.ID, lat, lon)
+	return hh.Latitude, hh.Longitude, nil
 }

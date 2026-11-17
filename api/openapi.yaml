@@ -440,6 +440,50 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /people/{id}/list-view:
+    get:
+      operationId: getListView
+      summary: How a person sees lists, as tiles or as a list (scope lists:read)
+      description: |
+        One choice per person for all lists, on every device (ADR 0019). A
+        person who never chose has the default of the role (`default: true`):
+        children see tiles, adults the list.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The view
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setListView
+      summary: Choose how you see lists (scope lists:complete)
+      description: |
+        Everyone, children included, chooses their own view; nobody changes
+        another person's (403, not even a parent). It is not a change of any
+        list, so the scope is the one for ticking entries off. The view of a
+        display is `list_view` of `PATCH /displays/{id}`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ListViewChange" }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /people/order:
     put:
       operationId: orderPeople
@@ -791,6 +835,7 @@ paths:
         Only the fields sent are changed. `name` (1 to 80 characters after trimming) and `type` (`eink_bw`, `eink_color` or `screen`) rename and retype the display; an empty or too long name, or an unknown type, is refused with 422. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
         `theme` and the two offsets set the display's theme (ADR 0015); an unknown theme or an offset outside -180..180 is refused with 422.
         `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015). Quiet mode takes precedence over the theme.
+        `list_view` (`tiles` or `list`) is how the display shows lists; the display keeps its own view, tiles until it is switched (ADR 0019).
         `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to switch the front light off at sunset and in quiet mode; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -3523,11 +3568,25 @@ components:
         experimental: { type: boolean, description: "Always true" }
     ListEntry:
       type: object
-      required: [id, text, done]
+      required: [id, text, done, article_id, symbol, picture]
       properties:
         id: { type: string, format: uuid }
         text: { type: string }
         done: { type: boolean }
+        article_id: { type: string, nullable: true, description: "The library article the text names (its name in German or English, ignoring case and umlauts): the key of a shipped article or the id of an own one. Null for free text." }
+        symbol: { type: string, nullable: true, description: "The emoji a tile shows for the article (its department's symbol when it has none). Null for free text and for an article that has a picture." }
+        picture: { type: string, nullable: true, description: "Path of the own article's picture, `GET /articles/{id}/picture`. Null without one." }
+    ListView:
+      type: object
+      required: [view, default]
+      properties:
+        view: { type: string, enum: [tiles, list] }
+        default: { type: boolean, description: "True while the person never chose: children then see tiles, adults the list" }
+    ListViewChange:
+      type: object
+      required: [view]
+      properties:
+        view: { type: string, enum: [tiles, list] }
     ListWithEntries:
       allOf:
         - { $ref: "#/components/schemas/List" }
@@ -3606,7 +3665,7 @@ components:
         text: { type: string }
     Display:
       type: object
-      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver]
+      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver, list_view]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: Hallway }
@@ -3621,6 +3680,7 @@ components:
         quiet_mode: { $ref: "#/components/schemas/QuietMode" }
         kiosk: { $ref: "#/components/schemas/Kiosk" }
         screensaver: { $ref: "#/components/schemas/Screensaver" }
+        list_view: { type: string, enum: [tiles, list], description: "How the display shows lists (ADR 0019). A display is not a person and keeps its own view, tiles until someone switches it at the display or here." }
     DisplayPairing:
       type: object
       required: [token, state, code, code_expires_at, pair_url]
@@ -3683,6 +3743,7 @@ components:
             url: { type: string, description: "http or https address; empty removes the kiosk app and its key" }
             api_key: { type: string, writeOnly: true, description: "Omitted or empty keeps the stored key" }
         screensaver: { $ref: "#/components/schemas/UpdateScreensaver" }
+        list_view: { type: string, enum: [tiles, list], description: "How the display shows lists (ADR 0019); anything else is refused with 422" }
     PairDisplay:
       type: object
       required: [code, name, type]

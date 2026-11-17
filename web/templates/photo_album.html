@@ -1,0 +1,75 @@
+{{template "head" (dict "Lang" .Lang "Title" .Album.Name "Frame" .Frame)}}
+  {{template "backLink" (dict "Href" "/photos" "Text" (t "photos.album.back"))}}
+  {{with .Added}}{{template "success" .}}{{end}}
+  <h1>{{.Album.Name}}</h1>
+  {{template "error" .}}
+  <dl class="facts">
+    <dt>{{t "photos.album.fact.photos"}}</dt><dd>{{.Count}}</dd>
+    <dt>{{t "photos.album.fact.origin"}}</dt><dd>{{.Origin}}</dd>
+    <dt>{{t "photos.shown_on"}}</dt><dd>{{if .Displays}}<span class="dnl">{{range $i, $d := .Displays}}{{if $i}}{{t "photos.list_sep"}}{{end}}<a class="dn" href="/displays/{{$d.ID}}#bildschirmschoner" aria-label="{{tf "photos.display_settings" "name" $d.Name}}">{{tf "photos.quoted" "name" $d.Name}}</a>{{end}}</span>{{else}}{{t "photos.shown_none"}}{{end}}{{template "toDisplays" .}}</dd>
+  </dl>
+
+  {{if .Album.FromFolder}}
+  <p class="notice folder-note"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 7.5a2 2 0 0 1 2-2h4l2 2h7a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2h-13a2 2 0 0 1-2-2z"/></svg><span>{{tf "photos.album.folder_note" "folder" .Album.Folder}}</span></p>
+  {{else}}
+  <section class="upload" data-photo-upload data-api="/api/v1/albums/" data-album="{{.Album.ID}}" data-album-name="{{.Album.Name}}" data-texts="{{.Texts}}" data-limit="{{if .Full}}full{{end}}">
+    <h2>{{t "photos.album.add"}}</h2>
+    {{if .Full}}<p>{{t "photos.add.full"}}</p>{{end}}
+    <form method="post" action="/photos/upload" enctype="multipart/form-data" class="upload-form">
+      <input type="hidden" name="album" value="{{.Album.ID}}">
+      {{template "photoPick" (dict "Disabled" .Full)}}
+      <noscript><button class="button" type="submit">{{t "photos.add.send"}}</button></noscript>
+    </form>
+    <p class="hint">{{t "photos.add.hint"}}</p>
+    <div data-upload-progress hidden></div>
+  </section>
+  {{end}}
+
+  <h2 class="photos-h2">{{.CountTitle}}</h2>
+  {{if .Photos}}<p class="hint photos-hint">{{if .Album.FromFolder}}{{t "photos.grid.hint.folder"}}{{else}}{{t "photos.grid.hint"}}{{end}}</p>
+  <ul class="pgrid" data-photo-grid>
+    {{range .Photos}}<li class="ph{{if .Hidden}} hidden{{end}}" id="photo-{{.ID}}"><div class="img"><img src="/api/v1/photos/{{.ID}}/image?size=thumbnail" alt="{{.Name}}" loading="lazy">{{if not $.Album.FromFolder}}<label class="sel"><input type="checkbox" name="photo" value="{{.ID}}" form="selection" aria-label="{{tf "photos.select" "name" .Name}}"></label>{{end}}{{if .Hidden}}<span class="hid"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 4l16 16M10.5 6.2A9 9 0 0 1 12 6c4.5 0 8 3.6 9.5 6a14 14 0 0 1-2.6 3.2M6.6 7.6A14 14 0 0 0 2.5 12c1.5 2.4 5 6 9.5 6 1.1 0 2.1-.2 3-.6M9.9 9.9a3 3 0 0 0 4.2 4.2"/></svg>{{t "photos.hidden_tag"}}</span>{{end}}</div>
+      <form method="post" action="/photos/{{.ID}}/hidden" data-autosubmit>
+        <input type="hidden" name="album" value="{{$.Album.ID}}">
+        <div class="card-row"><span class="t"><span class="lab">{{t "photos.on_displays"}}</span><span class="state{{if not .Hidden}} is-on{{end}}"><span class="on-text">{{t "photos.shown"}}</span><span class="off-text">{{t "photos.hidden"}}</span></span></span>
+          <label class="switch"><input type="checkbox" role="switch" name="shown" value="1"{{if not .Hidden}} checked{{end}} aria-label="{{tf "photos.show_on_displays" "name" .Name}}"></label></div>
+        <noscript><button class="button secondary" type="submit">{{t "photos.hide.save"}}</button></noscript>
+      </form></li>
+    {{end}}
+  </ul>{{end}}
+
+  {{if not .Album.FromFolder}}
+  <form class="selbar" id="selection" method="post" action="/photos/albums/{{.Album.ID}}/selection" data-selection data-n-one="{{t "photos.sel.count.one"}}" data-n-other="{{t "photos.sel.count.other"}}" data-delete-one="{{t "photos.sel.delete.one"}}" data-delete-other="{{t "photos.sel.delete.other"}}" data-confirm-one="{{t "photos.sel.confirm.one"}}" data-confirm-other="{{t "photos.sel.confirm.other"}}" data-explain-one="{{t "photos.sel.explain.one"}}" data-explain-other="{{t "photos.sel.explain.other"}}">
+    <p class="count" data-sel-count>{{t "photos.sel.count.other" }}</p>
+    <div class="row"><div class="f"><label>{{t "photos.sel.move_to"}}<select name="target">{{range .Targets}}<option value="{{.ID}}"{{if .Here}} selected{{end}}>{{.Name}}{{if .Here}} {{t "photos.sel.here"}}{{end}}</option>{{end}}</select></label></div>
+      <button class="button" type="submit" name="do" value="move">{{t "photos.sel.move"}}</button>
+      <button class="quiet" type="button" data-sel-clear>{{t "photos.sel.clear"}}</button></div>
+    <details class="danger"><summary><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span data-sel-delete>{{t "photos.sel.delete.other"}}</span></summary>
+      <p data-sel-explain>{{t "photos.sel.explain.other"}}</p>
+      <div class="confirm"><button class="button danger" type="submit" name="do" value="delete" data-sel-confirm>{{t "photos.sel.confirm.other"}}</button><a href="/photos/albums/{{.Album.ID}}">{{t "danger.cancel"}}</a></div></details>
+  </form>
+
+  <section class="steps album-tools">
+    {{template "moreOpen" (dict "Label" (t "photos.rename") "Summary" .Album.Name "Open" (eq .ErrorField "album_name"))}}
+      <form method="post" action="/photos/albums/{{.Album.ID}}/rename">
+        {{template "field" (dict "Root" . "Name" "album_name" "Label" (t "photos.new.name") "Value" .RenameValue "Required" true "Max" 80)}}
+        <div><button class="button secondary" type="submit">{{t "photos.rename.save"}}</button></div>
+      </form>
+    {{template "moreClose"}}
+  </section>
+
+  {{if not .Album.Default}}
+  {{template "dangerOpen" (dict "Label" (t "photos.delete"))}}
+    <p>{{.DeleteExplain}}</p>
+    {{if .Displays}}<p>{{t "photos.delete.displays"}}</p>
+    <ul>{{range .AfterDelete}}<li><a class="dn" href="/displays/{{.ID}}#bildschirmschoner" aria-label="{{tf "photos.display_settings" "name" .Name}}"><strong>{{tf "photos.quoted" "name" .Name}}</strong></a>{{t "photos.reason_sep"}}{{.After}}</li>{{end}}</ul>{{end}}
+    <div class="confirm">
+      <form method="post" action="/photos/albums/{{.Album.ID}}/delete"><button class="button danger" type="submit">{{.DeleteConfirm}}</button></form>
+      <a href="/photos/albums/{{.Album.ID}}">{{t "danger.cancel"}}</a>
+    </div>
+  {{template "dangerClose"}}
+  {{end}}
+  {{end}}
+  <script src="/static/photos.js" defer></script>
+  <script src="/static/switch-submit.js" defer></script>
+{{template "foot"}}

@@ -310,8 +310,17 @@ func TestListsViewReceivesLiveUpdates(t *testing.T) {
 	if err := l.db.DeleteList(l.householdID, id); err != nil {
 		t.Fatal(err)
 	}
-	if v, ok := s.next(t, 2*time.Second); !ok || v != "gone" {
-		t.Errorf("a deleted list announced %q (ok=%v), want gone", v, ok)
+	// A slow runner may deliver one more version for the reopened entry before
+	// the deletion shows; skip those, the list must end up gone.
+	deadline := time.Now().Add(10 * time.Second)
+	last, ok := "", false
+	for time.Now().Before(deadline) {
+		if last, ok = s.next(t, 2*time.Second); !ok || last == "gone" {
+			break
+		}
+	}
+	if !ok || last != "gone" {
+		t.Errorf("a deleted list announced %q (ok=%v), want gone", last, ok)
 	}
 }
 

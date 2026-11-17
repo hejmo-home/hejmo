@@ -219,3 +219,95 @@ test('saving a quantity posts in the background; a refusal keeps the editor open
   await tick();
   assert.equal(p.state.requests[4].url, '/display/lists/L1/view?added=E7&r=tok1', 'closed, the entry framed and the line kept');
 });
+
+// The family view with the screensaver timer (ticket 178). The page is rendered
+// once and stays for days: the timer asks the box whether the screensaver is due.
+function family(answers, attrs) {
+  const timers = [];
+  const intervals = [];
+  const requests = [];
+  const display = element({ attrs: Object.assign({
+    'data-display': '', 'data-state': 'paired', 'data-poll-seconds': '30', 'data-version': 'v1',
+    'data-saver-seconds': '600', 'data-saver-url': '/display/saver',
+  }, attrs) });
+  display.querySelector = () => null; // no view needed here
+  const listeners = {};
+  const document = {
+    querySelector: (sel) => (sel === '[data-display]' ? display : null),
+    addEventListener: (n, fn) => { (listeners[n] = listeners[n] || []).push(fn); },
+  };
+  const fetch = (url) => {
+    requests.push(url);
+    const body = answers.shift();
+    if (!body) return Promise.reject(new Error('down'));
+    return Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(body) });
+  };
+  const location = { href: '', reload() { location.reloaded = true; } };
+  const setTimeout = (fn, ms) => { const t = { fn, ms, live: true }; timers.push(t); return t; };
+  const clearTimeout = (t) => { if (t) t.live = false; };
+  const sandbox = { document, fetch, Intl, Date, encodeURIComponent, location, setInterval: (fn) => intervals.push(fn), setTimeout, clearTimeout };
+  sandbox.window = sandbox;
+  vm.runInNewContext(source, sandbox);
+  const live = () => timers.filter((t) => t.live);
+  return { timers, live, intervals, requests, location, listeners };
+}
+
+test('the idle timer asks the box and starts the screensaver only when it is due', async () => {
+  const p = family([
+    { state: 'paired', saver: '0', saver_seconds: '600' }, // quiet mode: not due
+    { state: 'paired', saver: '1', saver_seconds: '600' }, // the day begins
+  ]);
+  assert.equal(p.live().length, 1);
+  assert.equal(p.live()[0].ms, 600 * 1000);
+
+  p.live()[0].fn();
+  await tick();
+  assert.deepEqual(p.requests, ['/display/state']);
+  assert.equal(p.location.href, '', 'quiet mode: the display stays on the day');
+  assert.equal(p.live().length, 1, 'and asks again after the idle time');
+  assert.equal(p.live()[0].ms, 600 * 1000);
+
+  p.live()[0].fn();
+  await tick();
+  assert.equal(p.location.href, '/display/saver', 'the next time it is due');
+});
+
+test('the idle timer follows the idle minutes the box announces', async () => {
+  const p = family([{ state: 'paired', saver: '0', saver_seconds: '300' }]);
+  p.live()[0].fn();
+  await tick();
+  assert.equal(p.live()[0].ms, 300 * 1000);
+});
+
+test('a touch restarts the idle timer, an unreachable box too', async () => {
+  const p = family([]); // every request fails
+  const first = p.live()[0];
+  p.listeners.pointerdown.forEach((fn) => fn({}));
+  assert.ok(!first.live, 'the old countdown is gone');
+  assert.equal(p.live().length, 1);
+  p.live()[0].fn();
+  await tick();
+  assert.equal(p.location.href, '');
+  assert.equal(p.live().length, 1, 'it tries again later');
+});
+
+test('a family view with the screensaver off has no countdown, but listens for it being switched on', () => {
+  const p = family([], { 'data-saver-seconds': '0' });
+  assert.equal(p.live().length, 0);
+  assert.ok(p.listeners.pointerdown.length > 0);
+});
+
+test('the poll starts the countdown when the screensaver is switched on, and ends it when switched off', async () => {
+  const p = family([
+    { state: 'paired', saver: '1', saver_seconds: '300' },
+    { state: 'paired', saver: '0', saver_seconds: '0' },
+  ], { 'data-saver-seconds': '0' });
+  p.intervals[0]();
+  await tick();
+  assert.equal(p.live().length, 1);
+  assert.equal(p.live()[0].ms, 300 * 1000);
+  p.intervals[0]();
+  await tick();
+  assert.equal(p.live().length, 0);
+  assert.ok(!p.location.reloaded);
+});

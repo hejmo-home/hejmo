@@ -773,7 +773,7 @@ paths:
       description: |
         `paired`, `pairing` (with its `code`) or `unpaired`: the token is
         revoked or unknown, or its code ran out. An unpaired display opens a
-        new pairing. A paired display also gets the `theme` it shows now.
+        new pairing. A paired display also gets the `theme` it shows now and, for its photo screensaver, `saver` and `saver_seconds`.
         Poll it about every 30 seconds: a revoked display notices within a
         minute. A request without a bearer token is refused with 401.
       responses:
@@ -819,6 +819,256 @@ paths:
         "204": { description: Unpaired }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /albums:
+    get:
+      operationId: listAlbums
+      summary: Albums of screensaver photos (scope displays:read)
+      description: |
+        The default album comes first. Each album says which displays show it
+        (a display that chose no album shows all albums). Children are refused (403).
+      responses:
+        "200":
+          description: Albums
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Album" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createAlbum
+      summary: Make an album (scope displays:write)
+      description: The name is trimmed, 1 to 80 characters and unique in any letter case, else 422 with `field` `album_name`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlbumName" }
+      responses:
+        "201":
+          description: The new album
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Album" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /albums/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getAlbum
+      summary: One album (scope displays:read)
+      responses:
+        "200":
+          description: The album
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Album" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: renameAlbum
+      summary: Rename an uploaded album (scope displays:write)
+      description: A folder album is renamed in the folder on the box and is refused with 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlbumName" }
+      responses:
+        "200":
+          description: The album
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Album" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteAlbum
+      summary: Delete an uploaded album with its photos (scope displays:delete)
+      description: |
+        The photos of the album are deleted from the box. A display that showed
+        only this album shows all albums afterwards. The default album and folder
+        albums cannot be deleted (422).
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /albums/{id}/photos:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: listAlbumPhotos
+      summary: The photos of an album, newest first (scope displays:read)
+      responses:
+        "200":
+          description: Photos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Photo" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      operationId: uploadPhoto
+      summary: Add one photo to an uploaded album (scope displays:write)
+      description: |
+        Send a JPEG or PNG as `multipart/form-data` in the part `file`. The web
+        interface converts HEIC photos to JPEG in the browser first; HEIC sent here
+        is refused with 422. The box keeps only a copy shrunk to display size, without
+        location data or any other metadata. A file over 64 MB is refused with 413;
+        when the photo does not fit in the space for photos the box answers 507 and
+        deletes nothing. A folder album takes no uploads (422).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: The photo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Photo" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "413": { $ref: "#/components/responses/TooLarge" }
+        "422": { $ref: "#/components/responses/Invalid" }
+        "507": { $ref: "#/components/responses/PhotosFull" }
+  /photos/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: updatePhoto
+      summary: Hide or show a photo on displays, or move it to another album (scope displays:write)
+      description: |
+        `hidden` switches "don't show on displays". `album_id` moves an uploaded photo
+        to another uploaded album; photos and albums that come from the box's folder
+        are changed in the folder (422), but their photos can be hidden.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdatePhoto" }
+      responses:
+        "200":
+          description: The photo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Photo" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deletePhoto
+      summary: Delete an uploaded photo from the box (scope displays:delete)
+      description: A photo from the box's folder is deleted in the folder (422).
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /photos/{id}/image:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: size, in: query, required: false, schema: { type: string, enum: [display, thumbnail], default: display }, description: "`thumbnail` is 400 pixels on the long edge" }
+    get:
+      operationId: getPhotoImage
+      summary: The stored copy of a photo (scope displays:read)
+      responses:
+        "200":
+          description: A JPEG
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /photo-storage:
+    get:
+      operationId: getPhotoStorage
+      summary: The space for photos (scope displays:read)
+      responses:
+        "200":
+          description: Space used and the limit
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PhotoStorage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: setPhotoLimit
+      summary: Set the limit for photos (scope displays:write)
+      description: At least 1 GB, else 422. Lowering it below what is used deletes nothing; the box only refuses new photos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [limit_gb]
+              properties:
+                limit_gb: { type: integer, description: "1 to 100000, else 422" }
+      responses:
+        "200":
+          description: The space for photos
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PhotoStorage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /display/saver:
+    get:
+      operationId: getDisplaySaver
+      summary: A display reads what its screensaver shows (its own token as bearer token)
+      security:
+        - displayBearer: []
+      description: |
+        `active` is false when the display has the screensaver off, is in quiet
+        mode or is not paired: it then shows the day. `photos` are the photos to
+        show, in no particular order (the display shuffles them and shows each
+        once before any repeats); hidden photos and photos of albums the display
+        does not show are left out. Fetch each with `GET /display/photos/{id}`.
+      responses:
+        "200":
+          description: The screensaver
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DisplaySaver" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /display/photos/{id}:
+    get:
+      operationId: getDisplayPhoto
+      summary: A display fetches a photo (its own token as bearer token)
+      security:
+        - displayBearer: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: A JPEG
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
   /phones:
     get:
@@ -3532,7 +3782,7 @@ components:
         text: { type: string }
     Display:
       type: object
-      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk]
+      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: Hallway }
@@ -3546,6 +3796,7 @@ components:
         sunset_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes added to sunset before an automatic theme turns dark" }
         quiet_mode: { $ref: "#/components/schemas/QuietMode" }
         kiosk: { $ref: "#/components/schemas/Kiosk" }
+        screensaver: { $ref: "#/components/schemas/Screensaver" }
     DisplayPairing:
       type: object
       required: [token, state, code, code_expires_at, pair_url]
@@ -3562,6 +3813,8 @@ components:
         state: { type: string, enum: [paired, pairing, unpaired] }
         code: { type: string, pattern: "^[0-9]{6}$", description: "Only while `pairing`" }
         theme: { type: string, description: "Only while `paired`: the palette shown now (light, dark or bw)" }
+        saver: { type: string, enum: ["0", "1"], description: "Only while `paired`: `1` when the photo screensaver is due now (on, and not in quiet mode)" }
+        saver_seconds: { type: string, pattern: "^[0-9]+$", description: "Only while `paired`: the idle seconds after which the family view asks again; `0` when the screensaver is off" }
     QuietMode:
       type: object
       description: The daily window, in the household's time zone, in which the display is quiet (ADR 0015). Off by default.
@@ -3605,6 +3858,7 @@ components:
           properties:
             url: { type: string, description: "http or https address; empty removes the kiosk app and its key" }
             api_key: { type: string, writeOnly: true, description: "Omitted or empty keeps the stored key" }
+        screensaver: { $ref: "#/components/schemas/UpdateScreensaver" }
     PairDisplay:
       type: object
       required: [code, name, type]
@@ -3958,6 +4212,93 @@ components:
         end: { type: string }
         people: { type: array, items: { type: string, format: uuid } }
         groups: { type: array, items: { type: string, format: uuid } }
+    Screensaver:
+      type: object
+      description: |
+        The photo screensaver of a display (ADR 0020). On by default; it never runs
+        in quiet mode. A new E-Ink display changes the photo every 15 minutes, any
+        other display every minute.
+      required: [enabled, idle_minutes, interval_minutes, album_ids]
+      properties:
+        enabled: { type: boolean }
+        idle_minutes: { type: integer, minimum: 1, maximum: 240, example: 10, description: "Minutes without a touch before the photos start" }
+        interval_minutes: { type: integer, minimum: 1, maximum: 240, example: 1, description: "Minutes each photo stays" }
+        album_ids: { type: array, items: { type: string, format: uuid }, description: "The albums it shows; empty means all albums, including albums made later" }
+    UpdateScreensaver:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        idle_minutes: { type: integer, description: "1 to 240, else 422" }
+        interval_minutes: { type: integer, description: "1 to 240, else 422" }
+        album_ids: { type: array, items: { type: string, format: uuid }, description: "An empty list means all albums; an unknown album is refused with 422" }
+    DisplaySaver:
+      type: object
+      required: [active, interval_seconds, display_type, photos]
+      properties:
+        active: { type: boolean }
+        interval_seconds: { type: integer }
+        display_type: { $ref: "#/components/schemas/DisplayType" }
+        photos: { type: array, items: { type: string, format: uuid } }
+    AlbumName:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+    Album:
+      type: object
+      required: [id, name, source, folder, default, photo_count, hidden_count, cover_photo_id, displays]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        source: { type: string, enum: [upload, folder], description: "`folder`: it comes from a subfolder of the box's photo folder and is changed only there" }
+        folder: { type: string, description: "The subfolder name, empty for an uploaded album" }
+        default: { type: boolean, description: "The album that takes the first uploads and the photos lying directly in the folder; it cannot be deleted" }
+        photo_count: { type: integer }
+        hidden_count: { type: integer, description: "How many of the photos are hidden from displays" }
+        cover_photo_id: { type: string, nullable: true, format: uuid }
+        displays:
+          type: array
+          description: The displays that show this album
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+    Photo:
+      type: object
+      required: [id, album_id, name, hidden, width, height, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        album_id: { type: string, format: uuid }
+        name: { type: string, description: "The file name it came with" }
+        hidden: { type: boolean, description: "Don't show on displays" }
+        width: { type: integer }
+        height: { type: integer }
+        created_at: { type: string, format: date-time }
+    UpdatePhoto:
+      type: object
+      properties:
+        hidden: { type: boolean }
+        album_id: { type: string, format: uuid }
+    PhotoStorage:
+      type: object
+      required: [used_bytes, limit_bytes, limit_gb, photo_count, full, waiting]
+      properties:
+        used_bytes: { type: integer, format: int64 }
+        limit_bytes: { type: integer, format: int64 }
+        limit_gb: { type: integer, example: 2 }
+        photo_count: { type: integer }
+        full: { type: boolean, description: "Whether another photo would be refused" }
+        waiting:
+          type: array
+          description: Photos in the box's folder that wait for space, by folder (empty name is the folder itself)
+          items:
+            type: object
+            required: [folder, count]
+            properties:
+              folder: { type: string }
+              count: { type: integer }
     Error:
       type: object
       required: [error]
@@ -4017,6 +4358,16 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/MealTemplateClash" }
+    TooLarge:
+      description: The file is larger than 64 MB
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    PhotosFull:
+      description: The space for photos is full; nothing was deleted
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
     TooManyRequests:
       description: Too many wrong attempts, try again later
       content:

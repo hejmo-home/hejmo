@@ -395,7 +395,7 @@ func TestShippedArticlePageSaysEverythingInWordsAndCannotBeEdited(t *testing.T) 
 	if r.status != http.StatusOK {
 		t.Fatalf("GET = %d", r.status)
 	}
-	libHas(t, "article page", r.body, `<a href="/settings/lists/library">Article library</a>`, `<h1 class="art-title"><span class="art-sym big" aria-hidden="true">🥜</span><span>Peanut butter</span></h1>`,
+	libHas(t, "article page", r.body, `<a href="/settings/lists/library">Article library</a>`, "Article library", `<h1 class="art-title"><span class="art-sym big" aria-hidden="true">🥜</span><span>Peanut butter</span></h1>`,
 		"Comes from", "Hejmo · German: Erdnussbutter", "Pantry and breakfast", "piece and g", "When adding, piece is preselected until you use another unit.", "Vegan: nothing from animals",
 		"everyone at your home", "Peanuts", `Contains Peanuts: `, "Mia</span> is allergic", "Hide by hand", "Off. Hejmo suggests Peanut butter.", "Make own version", "Copy as own article")
 	libHasNot(t, "shipped page", r.body, `name="name"`, "<textarea", "Delete article")
@@ -940,18 +940,18 @@ func TestEveryLibraryPageHasATrailBackToSettingsInsideMain(t *testing.T) {
 	l := newLibBox(t)
 	l.person("Mia", "child", "omnivore", "milk")
 	id := l.createArticle(articleForm())
-	for page, link := range map[string]string{
-		"/settings/lists":                `<a href="/settings">`,
-		"/settings/lists/library":        `<a href="/settings/lists">`,
-		"/settings/lists/library/new":    `<a href="/settings/lists/library">`,
-		"/settings/lists/library/apples": `<a href="/settings/lists/library">`,
-		"/settings/lists/library/" + id:  `<a href="/settings/lists/library">`,
+	for page, up := range map[string]string{
+		"/settings/lists":                `<a href="/settings">Settings</a>`,
+		"/settings/lists/library":        `<a href="/settings/lists">Lists</a>`,
+		"/settings/lists/library/new":    `<a href="/settings/lists/library">Article library</a>`,
+		"/settings/lists/library/apples": `<a href="/settings/lists/library">Article library</a>`,
+		"/settings/lists/library/" + id:  `<a href="/settings/lists/library">Article library</a>`,
 	} {
 		body := l.en(page).body
 		nav, main := strings.Index(body, `<nav class="crumbs"`), strings.Index(body, "<main")
-		at := strings.Index(body, link)
+		at := strings.Index(body, up)
 		if nav < main || at < nav {
-			t.Errorf("%s: the trail %s is missing or outside main", page, link)
+			t.Errorf("%s: the trail %s is missing or outside main", page, up)
 		}
 		if !strings.Contains(body, `<a href="/settings" aria-current="true"`) {
 			t.Errorf("%s does not mark Settings as the current section", page)

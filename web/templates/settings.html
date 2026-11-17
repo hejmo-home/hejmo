@@ -5,7 +5,7 @@
   <p class="lead">{{t "hub.intro"}}</p>
   <ul class="cards hub">
     {{range .Hub}}
-    <li><a class="hub-row" href="{{.Href}}"><strong>{{t .Label}}</strong><span class="hint">{{with .State}}<b>{{t .}}</b> {{end}}{{t .Hint}}</span></a></li>
+    <li><a class="hub-row" href="{{.Href}}"><strong>{{t .Label}}</strong><span class="hint">{{with .State}}<b>{{t .}}</b> {{end}}{{with .StateText}}<b>{{.}}</b> {{end}}{{t .Hint}}</span></a></li>
     {{end}}
     {{if .FirstStepsHidden}}<li><form method="post" action="/first-steps/show"><button class="hub-row" type="submit"><strong>{{t "hub.first_steps"}}</strong><span class="hint">{{t "hub.first_steps.hint"}}</span></button></form></li>{{end}}
   </ul>

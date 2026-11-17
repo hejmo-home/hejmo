@@ -23,6 +23,7 @@ import (
 	"net"
 	"os"
 	"path/filepath"
+	"slices"
 	"strings"
 	"sync"
 	"text/template"
@@ -55,6 +56,9 @@ type Store struct {
 	nextRenew time.Time
 	// warnedCA is set once the "CA expires soon" warning has been logged.
 	warnedCA bool
+	// routerName is the name of the box in the family's router that the
+	// certificate covers (decision Q92), or "".
+	routerName string
 }
 
 // Option configures a Store.
@@ -107,6 +111,11 @@ func Open(dir string, opts ...Option) (*Store, error) {
 	if err != nil {
 		return nil, err
 	}
+	if name, err := os.ReadFile(s.path(routerNameFile)); err == nil {
+		s.routerName = strings.TrimSpace(string(name))
+	} else if !errors.Is(err, os.ErrNotExist) {
+		return nil, err
+	}
 	s.setLeaf(&leafCert)
 	return s, nil
 }
@@ -123,6 +132,14 @@ func (s *Store) Ready() bool {
 // Provision creates the CA and the box certificate for host (the name or IP
 // the browser used to reach the box). It fails if the store is already set up.
 func (s *Store) Provision(host string, now time.Time) error {
+	return s.ProvisionWithRouterName(host, "", now)
+}
+
+// ProvisionWithRouterName is Provision for a box that also has a name in the
+// family's router (decision Q92): the CA permits that name and the certificate
+// covers it. An empty routerName means none. A name that CleanRouterName
+// refuses fails before anything is created.
+func (s *Store) ProvisionWithRouterName(host, routerName string, now time.Time) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	if s.leaf != nil {
@@ -132,10 +149,46 @@ func (s *Store) Provision(host string, now time.Time) error {
 	if err != nil {
 		return err
 	}
+	router := ""
+	if strings.TrimSpace(routerName) != "" {
+		if router, err = CleanRouterName(routerName, displayNames(dns, ips)); err != nil {
+			return err
+		}
+		dns = append(dns, router)
+	}
 
-	caKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	caDER, caKey, err := newCA(now, dns, ips)
 	if err != nil {
 		return err
+	}
+	if err := writeKey(s.path("ca-key.pem"), caKey); err != nil {
+		return err
+	}
+	if err := writeFile(s.path("ca.pem"), pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caDER}), 0o644); err != nil {
+		return err
+	}
+	if router != "" {
+		if err := writeFile(s.path(routerNameFile), []byte(router+"\n"), 0o644); err != nil {
+			return err
+		}
+	}
+	if err := s.issueLocked(now, caDER, caKey, dns, ips); err != nil {
+		return err
+	}
+	s.caDER, s.caKey, s.routerName = caDER, caKey, router // published only once the box is ready
+	s.logger.Info("box CA created; its fingerprint is what a device shows when trusting it", "sha256", fingerprint(caDER))
+	return nil
+}
+
+// routerNameFile keeps the router name next to the CA, so the settings page
+// can show it. The certificate alone cannot say which of its names it is.
+const routerNameFile = "router-name"
+
+// newCA creates a CA that is name-constrained to the box's names.
+func newCA(now time.Time, dns []string, ips []net.IP) ([]byte, *ecdsa.PrivateKey, error) {
+	caKey, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
+	if err != nil {
+		return nil, nil, err
 	}
 	tpl := &x509.Certificate{
 		SerialNumber:                serial(),
@@ -151,20 +204,87 @@ func (s *Store) Provision(host string, now time.Time) error {
 		PermittedIPRanges:           ipRanges(ips),
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tpl, tpl, &caKey.PublicKey, caKey)
+	return der, caKey, err
+}
+
+// Reissue gives the box a new CA and certificate that also cover routerName,
+// the name of the box in the family's router, and drops an earlier router
+// name. The CA is name-constrained, so an existing CA cannot vouch for a new
+// name: every device must trust the box again (ADR 0014). The new files are
+// written under temporary names first, so a failure leaves the box as it was.
+func (s *Store) Reissue(routerName string, now time.Time) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	if s.leaf == nil || s.leaf.Leaf == nil {
+		return errors.New("pki: HTTPS is not set up")
+	}
+	cur := s.leaf.Leaf
+	name, err := CleanRouterName(routerName, displayNames(cur.DNSNames, cur.IPAddresses))
 	if err != nil {
 		return err
 	}
-	if err := writeKey(s.path("ca-key.pem"), caKey); err != nil {
+	dns := slices.DeleteFunc(slices.Clone(cur.DNSNames), func(n string) bool { return s.routerName != "" && n == s.routerName })
+	dns = append(dns, name)
+	ips := cur.IPAddresses
+
+	caDER, caKey, err := newCA(now, dns, ips)
+	if err != nil {
 		return err
 	}
-	if err := writeFile(s.path("ca.pem"), pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}), 0o644); err != nil {
+	boxPEM, leaf, err := s.buildLeaf(now, caDER, caKey, dns, ips)
+	if err != nil {
 		return err
 	}
-	if err := s.issueLocked(now, der, caKey, dns, ips); err != nil {
+	keyDER, err := x509.MarshalPKCS8PrivateKey(caKey)
+	if err != nil {
 		return err
 	}
-	s.caDER, s.caKey = der, caKey // published only once the box is ready
-	s.logger.Info("box CA created; its fingerprint is what a device shows when trusting it", "sha256", fingerprint(der))
+	// box.pem is last: it is the file that says the box is ready.
+	err = s.replaceFiles(
+		stagedFile{"ca-key.pem", pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER}), 0o600},
+		stagedFile{"ca.pem", pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: caDER}), 0o644},
+		stagedFile{routerNameFile, []byte(name + "\n"), 0o644},
+		stagedFile{"box.pem", boxPEM, 0o600},
+	)
+	if err != nil {
+		return err
+	}
+	s.caDER, s.caKey, s.routerName, s.warnedCA = caDER, caKey, name, false
+	s.setLeaf(leaf)
+	s.logger.Info("box CA replaced for a new name; every device must trust it again", "name", name, "sha256", fingerprint(caDER))
+	return nil
+}
+
+type stagedFile struct {
+	name string
+	data []byte
+	perm os.FileMode
+}
+
+// replaceFiles replaces several files of the store as one step: all are
+// written under temporary names, and only when that worked are they renamed
+// into place, so a full disk or a missing permission leaves the old files.
+func (s *Store) replaceFiles(files ...stagedFile) error {
+	temps := make([]string, 0, len(files))
+	cleanup := func() {
+		for _, t := range temps {
+			os.Remove(t)
+		}
+	}
+	for _, f := range files {
+		tmp, err := stage(s.dir, f.data, f.perm)
+		if err != nil {
+			cleanup()
+			return err
+		}
+		temps = append(temps, tmp)
+	}
+	for i, f := range files {
+		if err := os.Rename(temps[i], s.path(f.name)); err != nil {
+			cleanup()
+			return err
+		}
+	}
 	return nil
 }
 
@@ -227,13 +347,28 @@ func ipRanges(ips []net.IP) []*net.IPNet {
 }
 
 func (s *Store) issueLocked(now time.Time, caDER []byte, caKey crypto.Signer, dns []string, ips []net.IP) error {
-	ca, err := x509.ParseCertificate(caDER)
+	boxPEM, leaf, err := s.buildLeaf(now, caDER, caKey, dns, ips)
 	if err != nil {
 		return err
 	}
+	// One file, replaced atomically, so certificate and key always match.
+	if err := writeFile(s.path("box.pem"), boxPEM, 0o600); err != nil {
+		return err
+	}
+	s.setLeaf(leaf)
+	return nil
+}
+
+// buildLeaf makes the box certificate for the names, signed by the CA, and
+// the file content that holds it with its key. It writes nothing.
+func (s *Store) buildLeaf(now time.Time, caDER []byte, caKey crypto.Signer, dns []string, ips []net.IP) ([]byte, *tls.Certificate, error) {
+	ca, err := x509.ParseCertificate(caDER)
+	if err != nil {
+		return nil, nil, err
+	}
 	key, err := ecdsa.GenerateKey(elliptic.P256(), rand.Reader)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	notAfter := leafExpiry(now, ca)
 	if notAfter.Equal(ca.NotAfter) && !s.warnedCA {
@@ -252,20 +387,15 @@ func (s *Store) issueLocked(now time.Time, caDER []byte, caKey crypto.Signer, dn
 	}
 	der, err := x509.CreateCertificate(rand.Reader, tpl, ca, &key.PublicKey, caKey)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
 	keyDER, err := x509.MarshalPKCS8PrivateKey(key)
 	if err != nil {
-		return err
+		return nil, nil, err
 	}
-	// One file, replaced atomically, so certificate and key always match.
 	boxPEM := append(pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: der}),
 		pem.EncodeToMemory(&pem.Block{Type: "PRIVATE KEY", Bytes: keyDER})...)
-	if err := writeFile(s.path("box.pem"), boxPEM, 0o600); err != nil {
-		return err
-	}
-	s.setLeaf(&tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key})
-	return nil
+	return boxPEM, &tls.Certificate{Certificate: [][]byte{der}, PrivateKey: key}, nil
 }
 
 // leafExpiry is when a certificate issued now ends: a certificate cannot
@@ -351,6 +481,141 @@ func (s *Store) CAPEM() []byte {
 	return pem.EncodeToMemory(&pem.Block{Type: "CERTIFICATE", Bytes: s.caDER})
 }
 
+// Names are the names and addresses the box certificate covers, as the
+// settings page lists them: the box name first, then the address of the box in
+// the home network, then the router name. Names that only serve the box itself
+// (localhost, 127.0.0.1) are left out.
+func (s *Store) Names() []string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if s.leaf == nil || s.leaf.Leaf == nil {
+		return nil
+	}
+	return displayNames(s.leaf.Leaf.DNSNames, s.leaf.Leaf.IPAddresses)
+}
+
+// LANAddress is the address of the box in the home network that the
+// certificate covers, or "" when the box was set up under a name.
+func (s *Store) LANAddress() string {
+	for _, n := range s.Names() {
+		if net.ParseIP(n) != nil {
+			return n
+		}
+	}
+	return ""
+}
+
+// RouterName is the name of the box in the family's router that the
+// certificate covers, or "" when it has none.
+func (s *Store) RouterName() string {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	return s.routerName
+}
+
+// CAExpires is when the CA ends (10 years after it was made).
+func (s *Store) CAExpires() time.Time {
+	s.mu.RLock()
+	defer s.mu.RUnlock()
+	if ca, err := x509.ParseCertificate(s.caDER); err == nil {
+		return ca.NotAfter
+	}
+	return time.Time{}
+}
+
+// PlannedNames are the names Provision would cover for host and routerName
+// (empty for none), in the order of Names. It reports what the wizard shows
+// before the certificate exists, and refuses what Provision would refuse.
+func PlannedNames(host, routerName string) ([]string, error) {
+	dns, ips, err := boxNames(host)
+	if err != nil {
+		return nil, err
+	}
+	shown := displayNames(dns, ips)
+	if strings.TrimSpace(routerName) != "" {
+		name, err := CleanRouterName(routerName, shown)
+		if err != nil {
+			return nil, err
+		}
+		dns = append(dns, name)
+	}
+	return displayNames(dns, ips), nil
+}
+
+// displayNames orders the names of a certificate for people. The last address
+// is the box's own loopback address that every certificate has; it is shown
+// only when it is the address the box was reached under.
+func displayNames(dns []string, ips []net.IP) []string {
+	var out []string
+	add := func(n string) {
+		if !slices.Contains(out, n) {
+			out = append(out, n)
+		}
+	}
+	if slices.Contains(dns, alwaysNames[0]) {
+		add(alwaysNames[0])
+	}
+	if n := len(ips); n > 0 && ips[n-1].Equal(net.IPv4(127, 0, 0, 1)) {
+		ips = ips[:n-1]
+		if n == 2 && ips[0].Equal(net.IPv4(127, 0, 0, 1)) { // the box was reached under 127.0.0.1
+			ips = ips[:1]
+		}
+	}
+	for _, ip := range ips {
+		add(ip.String())
+	}
+	for _, n := range dns {
+		if n != "localhost" {
+			add(n)
+		}
+	}
+	return out
+}
+
+// Why a router name is refused. Each has its own text on the page.
+var (
+	ErrNameEmpty      = errors.New("pki: the name is empty")
+	ErrNameNoDot      = errors.New("pki: the name needs a dot")
+	ErrNameChars      = errors.New("pki: the name may hold only letters a to z, digits, hyphens and dots")
+	ErrNameIsAddress  = errors.New("pki: an address is not a name")
+	ErrAddressCovered = errors.New("pki: the certificate covers this address already")
+	ErrNameCovered    = errors.New("pki: the certificate covers this name already")
+)
+
+// CleanRouterName checks a name of the box in the router and returns it as the
+// certificate holds it: lower case, without spaces around it and without the
+// dot that ends a full DNS name. covered are the names and addresses the
+// certificate covers already (see Names).
+func CleanRouterName(raw string, covered []string) (string, error) {
+	name := strings.TrimSuffix(strings.ToLower(strings.TrimSpace(raw)), ".")
+	if name == "" {
+		return "", ErrNameEmpty
+	}
+	if ip := net.ParseIP(name); ip != nil {
+		for _, c := range covered {
+			if cip := net.ParseIP(c); cip != nil && cip.Equal(ip) {
+				return "", ErrAddressCovered
+			}
+		}
+		return "", ErrNameIsAddress
+	}
+	for _, c := range name {
+		if !(c >= 'a' && c <= 'z' || c >= '0' && c <= '9' || c == '-' || c == '.') {
+			return "", ErrNameChars
+		}
+	}
+	if !strings.Contains(name, ".") {
+		return "", ErrNameNoDot
+	}
+	if !validDNSName(name) {
+		return "", ErrNameChars
+	}
+	if slices.Contains(covered, name) || name == "localhost" {
+		return "", ErrNameCovered
+	}
+	return name, nil
+}
+
 var profileTemplate = template.Must(template.New("profile").Parse(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
 <plist version="1.0">
@@ -430,23 +695,39 @@ func writeKey(path string, key *ecdsa.PrivateKey) error {
 // writeFile replaces path atomically: it writes a temporary file next to it
 // and renames it, so a crash never leaves a half-written file.
 func writeFile(path string, data []byte, perm os.FileMode) error {
-	tmp, err := os.CreateTemp(filepath.Dir(path), ".tmp-*")
+	tmp, err := stage(filepath.Dir(path), data, perm)
 	if err != nil {
 		return err
 	}
-	defer os.Remove(tmp.Name())
-	if _, err := tmp.Write(data); err != nil {
-		tmp.Close()
+	if err := os.Rename(tmp, path); err != nil {
+		os.Remove(tmp)
 		return err
+	}
+	return nil
+}
+
+// stage writes data to a new temporary file in dir and returns its name.
+func stage(dir string, data []byte, perm os.FileMode) (string, error) {
+	tmp, err := os.CreateTemp(dir, ".tmp-*")
+	if err != nil {
+		return "", err
+	}
+	fail := func(err error) (string, error) {
+		tmp.Close()
+		os.Remove(tmp.Name())
+		return "", err
+	}
+	if _, err := tmp.Write(data); err != nil {
+		return fail(err)
 	}
 	if err := tmp.Chmod(perm); err != nil {
-		tmp.Close()
-		return err
+		return fail(err)
 	}
 	if err := tmp.Close(); err != nil {
-		return err
+		os.Remove(tmp.Name())
+		return "", err
 	}
-	return os.Rename(tmp.Name(), path)
+	return tmp.Name(), nil
 }
 
 func parseKey(keyPEM []byte) (crypto.Signer, error) {

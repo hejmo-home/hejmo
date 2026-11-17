@@ -32,11 +32,35 @@
   var state = el.getAttribute("data-state");
   var code = el.getAttribute("data-code") || "";
   var every = Number(el.getAttribute("data-poll-seconds")) || 30;
+  var saverAfter = Number(el.getAttribute("data-saver-seconds")) || 0;
+  var saverURL = el.getAttribute("data-saver-url");
+  var saverTimer;
+  function saverRestart() {
+    clearTimeout(saverTimer);
+    if (saverAfter > 0) saverTimer = setTimeout(saverDue, saverAfter * 1000);
+  }
+  // saverSeconds takes over the idle seconds the box announced.
+  function saverSeconds(s) {
+    if (!saverURL || s.saver_seconds === undefined) return;
+    var n = Number(s.saver_seconds) || 0;
+    if (n !== saverAfter) { saverAfter = n; saverRestart(); }
+  }
+  function saverDue() {
+    fetch("/display/state", { cache: "no-store", credentials: "same-origin" })
+      .then(function (r) { return r.json(); })
+      .then(function (s) {
+        if (s.state === "paired" && s.saver === "1") { location.href = saverURL; return; }
+        saverSeconds(s);
+        saverRestart();
+      })
+      .catch(saverRestart);
+  }
   function check() {
     fetch("/display/state", { cache: "no-store", credentials: "same-origin" })
       .then(function (r) { return r.json(); })
       .then(function (s) {
         if (s.state !== state || (s.code || "") !== code) { location.reload(); return; }
+        saverSeconds(s);
         // Automatic themes switch at sunset and sunrise without a reload (ADR 0015).
         if (s.theme && document.documentElement.getAttribute("data-theme") !== s.theme) {
           document.documentElement.setAttribute("data-theme", s.theme);
@@ -61,6 +85,21 @@
       document.addEventListener(name, restart, { passive: true, capture: true });
     });
     restart();
+  }
+
+  // The family view starts the photo screensaver after data-saver-seconds
+  // without a touch (ticket 178): the box serves it as a page of its own, and
+  // a touch there brings the day back at once. Refreshes do not count.
+  // The page is rendered once and stays for days, so the timer is there
+  // whenever the screensaver is on (also in quiet mode), and when it fires the
+  // display asks the box (/display/state) whether the screensaver is due now.
+  // The same answer, and the regular check, carry the idle seconds: switching
+  // the screensaver on or changing the minutes reaches the display without a reload.
+  if (saverURL) {
+    ["pointerdown", "touchstart", "keydown", "scroll"].forEach(function (name) {
+      document.addEventListener(name, saverRestart, { passive: true, capture: true });
+    });
+    saverRestart();
   }
 
   // The family view by default; a personal view names its own addresses.

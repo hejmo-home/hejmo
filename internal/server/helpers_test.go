@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/secret"
@@ -43,6 +44,8 @@ type box struct {
 	meteo   *fakeMeteo
 	// updateDir stands in for the data volume that the host script shares with the box.
 	updateDir string
+	// photoDir stands in for the data volume: the photo folder and the stored photos.
+	photoDir string
 }
 
 // fakeMeteo stands in for Open-Meteo.
@@ -157,7 +160,14 @@ func (f *fakeFeeds) set(url, body string, err error) {
 // boxOption changes how a test box is built.
 type boxOption func(*boxConfig)
 
-type boxConfig struct{ noHostUpdater bool }
+type boxConfig struct {
+	noHostUpdater bool
+	fetcher       *picture.Fetcher
+}
+
+// withFetcher makes the box download web images with this fetcher, which a test
+// lets reach its own server (the real one only reaches public addresses).
+func withFetcher(f *picture.Fetcher) boxOption { return func(c *boxConfig) { c.fetcher = f } }
 
 // withoutHostUpdater makes the box run like a plain Docker Compose install,
 // without the host updater of ADR 0018.
@@ -198,7 +208,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
+	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), photoDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time { return b.now }
 	b.sync = calsync.New(db, feeds, now)
 	b.meteo = &fakeMeteo{body: `{"current":{"temperature_2m":18.4,"weather_code":0,"is_day":1}}`, status: 200}
@@ -214,7 +224,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	if cfg.noHostUpdater {
 		updateDir, b.updateDir = "", ""
 	}
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir})
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()
@@ -315,14 +325,23 @@ func serverWithHTTPSPort(b *box, port string) http.Handler {
 	return server.New(server.Options{DB: b.db, PKI: b.pki, Public: b.public, HTTPSPort: port, Now: func() time.Time { return b.now }})
 }
 
+// GeoNames ids of places of the list on the box (internal/places).
+const (
+	idMuenchen      = "2867714"
+	idPasing        = "2855334" // a district of München
+	idObermenzing   = "2859782" // another one
+	idSchmedeswurth = "13394048"
+	idWien          = "2761369"
+)
+
 func validSetupForm() url.Values {
 	return url.Values{
-		"home_name": {"Pasing"},
-		"region":    {"DE-BY"},
-		"name":      {"Mama"},
-		"username":  {"mama"},
-		"password":  {"correct horse battery"},
-		"pin":       {"2468"},
+		"region":   {"DE-BY"},
+		"place_id": {idPasing}, // the place the parent picked from the list
+		"name":     {"Mama"},
+		"username": {"mama"},
+		"password": {"correct horse battery"},
+		"pin":      {"2468"},
 	}
 }
 

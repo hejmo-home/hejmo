@@ -37,7 +37,7 @@ func TestPhoneDetailShowsFactsInWordsAndConfirmsRemovingByName(t *testing.T) {
 		}
 		name := strings.ReplaceAll(ph.Name, "'", "&#39;")
 		for _, want := range []string{
-			`<a class="back" href="/phones">`, "All phones", "<h1>" + name + "</h1>", "<dt>For</dt>", "<dt>Allowed</dt>", rights[ph.Name],
+			`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/phones">Phones</a>`, "<h1>" + name + "</h1>", "<dt>For</dt>", "<dt>Allowed</dt>", rights[ph.Name],
 			"<dt>Paired on</dt>", "<dt>Last seen</dt>", `<details class="danger">`, "Remove phone", `action="/phones/` + ph.ID + `/revoke"`,
 			"Yes, remove “" + name + "”", "No, change nothing",
 		} {

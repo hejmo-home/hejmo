@@ -205,3 +205,58 @@ func TestDeletingTheSessionOfAPhoneRemovesThePhone(t *testing.T) {
 		t.Fatalf("phones after sign-out = %+v", list)
 	}
 }
+
+// #198: re-pairing ends the phone and its device session at once and leaves a
+// pairing code that says whom the phone is for next.
+func TestRepairingAPhoneEndsItsSessionAndLeavesACodeForTheNextPerson(t *testing.T) {
+	db, h, mia := householdWithMia(t)
+	sebastian, _ := db.AddPerson(h.ID, store.Person{Name: "Sebastian", Role: store.RoleChild})
+	ph := pairPhone(t, db, h, sebastian, "Sebastian's phone")
+	later := phoneT0.Add(time.Hour)
+
+	pr, err := db.RepairPhone(h.ID, ph.ID, mia.ID, "repair-code", later)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if pr.ForPersonID != mia.ID || !pr.ExpiresAt.Equal(later.Add(store.PairingCodeLifetime)) {
+		t.Fatalf("pairing = %+v, want for Mia, expiring after the usual lifetime", pr)
+	}
+	if _, err := db.SessionPerson("session-Sebastian's phone", later); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("old session after re-pairing = %v, want ErrNotFound", err)
+	}
+	if list, _ := db.Phones(h.ID); len(list) != 0 {
+		t.Errorf("phones after re-pairing = %+v, want none", list)
+	}
+	// The new code works like any other: the phone opens it, a parent confirms.
+	if err := db.JoinPhonePairing("repair-code", "claim-new", "Safari on iPhone", later); err != nil {
+		t.Fatal(err)
+	}
+	if for_, ok, err := db.PairingForPerson("repair-code", "claim-new", later); err != nil || !ok || for_.ID != mia.ID || for_.Name != "Mia" {
+		t.Fatalf("pairing for = %+v %v %v, want Mia", for_, ok, err)
+	}
+	waiting, _ := db.PendingPhonePairings(h.ID, later)
+	if len(waiting) != 1 || waiting[0].ForPersonID != mia.ID {
+		t.Fatalf("waiting = %+v, want one for Mia", waiting)
+	}
+}
+
+func TestRepairingNeedsAnotherPersonOfTheHousehold(t *testing.T) {
+	db, h, mia := householdWithMia(t)
+	ph := pairPhone(t, db, h, mia, "Mia's phone")
+	var fe *store.FieldError
+	if _, err := db.RepairPhone(h.ID, ph.ID, mia.ID, "c1", phoneT0); !errors.As(err, &fe) || fe.Field != "person" {
+		t.Errorf("same person = %v, want a person field error", err)
+	}
+	if _, err := db.RepairPhone(h.ID, ph.ID, "", "c2", phoneT0); !errors.As(err, &fe) || fe.Field != "person" {
+		t.Errorf("no person = %v, want a person field error", err)
+	}
+	if _, err := db.RepairPhone(h.ID, ph.ID, "nobody", "c3", phoneT0); !errors.As(err, &fe) || fe.Field != "person" {
+		t.Errorf("unknown person = %v, want a person field error", err)
+	}
+	if list, _ := db.Phones(h.ID); len(list) != 1 {
+		t.Fatalf("a refused re-pairing removed the phone: %+v", list)
+	}
+	if _, err := db.RepairPhone(h.ID, "unknown", mia.ID, "c4", phoneT0); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unknown phone = %v, want ErrNotFound", err)
+	}
+}

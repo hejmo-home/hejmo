@@ -145,8 +145,8 @@ func (db *DB) ConnectionCredentials(householdID, connectionID string) (user, pas
 	return user, string(plain), nil
 }
 
-// AddCalDAVCalendar adds a calendar of a connection. It is read-only (write-back
-// follows with its own ticket) and due for its first sync at once.
+// AddCalDAVCalendar adds a calendar of a connection. It is two-way (parents can
+// switch it to read-only) and due for its first sync at once.
 func (db *DB) AddCalDAVCalendar(householdID, connectionID string, in NewCalDAVCalendar) (SyncedCalendar, error) {
 	if strings.TrimSpace(in.Name) == "" || strings.TrimSpace(in.RemoteURL) == "" {
 		return SyncedCalendar{}, fmt.Errorf("%w: name and address required", ErrInvalid)
@@ -164,7 +164,7 @@ func (db *DB) AddCalDAVCalendar(householdID, connectionID string, in NewCalDAVCa
 	}
 	defer tx.Rollback()
 	if _, err := tx.Exec(`INSERT INTO calendars (id, household_id, name, kind, color, connection_id, remote_url, read_only, created_at, updated_at)
-		VALUES (?, ?, ?, 'caldav', ?, ?, ?, 1, ?, ?)`, calID, householdID, strings.TrimSpace(in.Name), in.Color, connectionID, in.RemoteURL, ts, ts); err != nil {
+		VALUES (?, ?, ?, 'caldav', ?, ?, ?, 0, ?, ?)`, calID, householdID, strings.TrimSpace(in.Name), in.Color, connectionID, in.RemoteURL, ts, ts); err != nil {
 		return SyncedCalendar{}, err
 	}
 	if err := writeAudience(tx, "calendar_audience", "calendar_id", calID, in.Audience); err != nil {
@@ -194,12 +194,16 @@ type ObjectChange struct {
 	URL, ETag, Raw string
 	Items          []SyncItem
 	KeepEvents     bool
+	// DropPending also drops the box's queued changes to the object: the
+	// outside version wins (a read-only calendar has nothing to push them to).
+	DropPending bool
 }
 
 // RemoteObjects returns the ETag of every remote object the box holds for a
-// calendar, by address.
-func (db *DB) RemoteObjects(calendarID string) (map[string]string, error) {
-	rows, err := db.sql.Query(`SELECT url, etag FROM remote_objects WHERE calendar_id = ?`, calendarID)
+// calendar, by address. Objects with changes waiting to be pushed are left
+// out (see PendingObjects) unless withPending is set.
+func (db *DB) RemoteObjects(calendarID string, withPending bool) (map[string]string, error) {
+	rows, err := db.sql.Query(`SELECT url, etag FROM remote_objects WHERE calendar_id = ? AND (pending = 0 OR ?)`, calendarID, withPending)
 	if err != nil {
 		return nil, err
 	}
@@ -220,20 +224,68 @@ func (db *DB) RemoteObjects(calendarID string) (map[string]string, error) {
 // them, notes go to the log and the failure state is cleared. All or nothing.
 // It returns what the run did to the events.
 func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []ObjectChange, deleted []string, notes []i18n.Message, at, next time.Time) (SyncRun, error) {
+	return db.completeObjectSync(householdID, calendarID, nil, changed, deleted, notes, at, next)
+}
+
+// RemoteState is what a CalDAV server said about the version of a calendar
+// when the last run read it: the CTag and the RFC 6578 sync token. Either is
+// empty where the server offers none.
+type RemoteState struct {
+	CTag, Token string
+}
+
+// RemoteState returns the state kept by the last successful run.
+func (db *DB) RemoteState(calendarID string) (RemoteState, error) {
+	var st RemoteState
+	err := db.sql.QueryRow(`SELECT remote_ctag, remote_sync_token FROM calendar_sync WHERE calendar_id = ?`, calendarID).Scan(&st.CTag, &st.Token)
+	if errors.Is(err, sql.ErrNoRows) {
+		return st, ErrNotFound
+	}
+	return st, err
+}
+
+// CompleteObjectSyncWithState is CompleteObjectSync that also keeps the
+// server's state, in the same transaction, for the next run.
+func (db *DB) CompleteObjectSyncWithState(householdID, calendarID string, state RemoteState, changed []ObjectChange, deleted []string, notes []i18n.Message, at, next time.Time) (SyncRun, error) {
+	return db.completeObjectSync(householdID, calendarID, &state, changed, deleted, notes, at, next)
+}
+
+func (db *DB) completeObjectSync(householdID, calendarID string, state *RemoteState, changed []ObjectChange, deleted []string, notes []i18n.Message, at, next time.Time) (SyncRun, error) {
 	tx, err := db.sql.Begin()
 	if err != nil {
 		return SyncRun{}, err
 	}
 	defer tx.Rollback()
-	var one int
-	if err := tx.QueryRow(`SELECT 1 FROM calendars WHERE id = ? AND household_id = ? AND connection_id IS NOT NULL`, calendarID, householdID).Scan(&one); err != nil {
+	var readOnly bool
+	if err := tx.QueryRow(`SELECT read_only FROM calendars WHERE id = ? AND household_id = ? AND connection_id IS NOT NULL`, calendarID, householdID).Scan(&readOnly); err != nil {
 		if errors.Is(err, sql.ErrNoRows) {
 			return SyncRun{}, ErrNotFound
 		}
 		return SyncRun{}, err
 	}
+	// A box edit that landed after the caller read its queue is still queued
+	// here. In a two-way calendar it must survive the import: the push settles
+	// it against the outside version as a conflict (ADR 0012).
+	queued := func(url string) (bool, error) {
+		var n int
+		err := tx.QueryRow(`SELECT pending FROM remote_objects WHERE calendar_id = ? AND url = ?`, calendarID, url).Scan(&n)
+		if errors.Is(err, sql.ErrNoRows) {
+			return false, nil
+		}
+		return n > 0, err
+	}
 	changes := newRunChanges()
 	for _, url := range deleted {
+		if q, err := queued(url); err != nil {
+			return SyncRun{}, err
+		} else if q {
+			if !readOnly {
+				continue
+			}
+			if err := logDropped(tx, householdID, calendarID, url, at); err != nil {
+				return SyncRun{}, err
+			}
+		}
 		gone, err := topLevelEvents(tx, calendarID, url)
 		if err != nil {
 			return SyncRun{}, err
@@ -250,6 +302,18 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 	}
 	for _, o := range changed {
 		url := o.URL
+		if q, err := queued(o.URL); err != nil {
+			return SyncRun{}, err
+		} else if q {
+			if !o.DropPending {
+				continue
+			}
+			if !o.KeepEvents {
+				if err := logDropped(tx, householdID, calendarID, o.URL, at); err != nil {
+					return SyncRun{}, err
+				}
+			}
+		}
 		if !o.KeepEvents {
 			got, err := replaceSyncedEvents(tx, householdID, calendarID, o.Items, &url)
 			if err != nil {
@@ -265,9 +329,21 @@ func (db *DB) CompleteObjectSync(householdID, calendarID string, changed []Objec
 				changes.gone[id] = true
 			}
 		}
-		// An unreadable object keeps the last good text, not the junk.
+		// An unreadable object keeps the last good text, not the junk. If the
+		// box change to it stays queued, the ETag stays too: it names the
+		// version that change was made against, so a later push meets a 412 and
+		// settles the change as a conflict instead of overwriting a version the
+		// box never read.
 		if _, err := tx.Exec(`INSERT INTO remote_objects (calendar_id, url, etag, raw) VALUES (?, ?, ?, ?)
-			ON CONFLICT (calendar_id, url) DO UPDATE SET etag = excluded.etag, raw = CASE WHEN ? THEN raw ELSE excluded.raw END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents); err != nil {
+			ON CONFLICT (calendar_id, url) DO UPDATE SET
+			etag = CASE WHEN ? AND pending > 0 THEN etag ELSE excluded.etag END,
+			raw = CASE WHEN ? THEN raw ELSE excluded.raw END,
+			pending = CASE WHEN ? AND NOT ? THEN 0 ELSE pending END`, calendarID, o.URL, o.ETag, o.Raw, o.KeepEvents, o.KeepEvents, o.DropPending, o.KeepEvents); err != nil {
+			return SyncRun{}, err
+		}
+	}
+	if state != nil {
+		if _, err := tx.Exec(`UPDATE calendar_sync SET remote_ctag = ?, remote_sync_token = ? WHERE calendar_id = ?`, state.CTag, state.Token, calendarID); err != nil {
 			return SyncRun{}, err
 		}
 	}
@@ -295,4 +371,36 @@ func topLevelEvents(tx *sql.Tx, calendarID, object string) ([]string, error) {
 		out = append(out, id)
 	}
 	return out, rows.Err()
+}
+
+// logDropped records the box's queued changes to an object that a read-only
+// calendar is about to overwrite or remove, so what the family typed is not
+// lost without a trace. The log keeps the box's version for 30 days.
+func logDropped(tx *sql.Tx, householdID, calendarID, url string, at time.Time) error {
+	rows, err := tx.Query(`SELECT title, start_local FROM events WHERE calendar_id = ? AND remote_url = ? ORDER BY series_id IS NOT NULL, start_local, id`, calendarID, url)
+	if err != nil {
+		return err
+	}
+	var titles []string
+	var detail strings.Builder
+	for rows.Next() {
+		var title, start string
+		if err := rows.Scan(&title, &start); err != nil {
+			rows.Close()
+			return err
+		}
+		titles = append(titles, title)
+		fmt.Fprintf(&detail, "%s (%s)\n", title, start)
+	}
+	if err := rows.Close(); err != nil {
+		return err
+	}
+	msg := i18n.Msg("sync.conflict.dropped_read_only_deleted") // the box had deleted it: no title left to name
+	if len(titles) > 0 {
+		msg = i18n.Msg("sync.conflict.dropped_read_only", "title", titles[0])
+	}
+	if err := writeLogDetail(tx, householdID, calendarID, at, "conflict", msg, detail.String()); err != nil {
+		return err
+	}
+	return pruneLog(tx, at)
 }

@@ -111,7 +111,7 @@ func (s *server) renderFood(w http.ResponseWriter, r *http.Request, p principal,
 	f := func(key string) string { return s.i18n.Format(lang, i18n.Msg(key, "name", person.Name)) }
 	data := map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip,
-		"BackText": f("food.back"), "DietLegend": f("food.diet.legend"), "AllergensHint": f("food.allergens.hint"),
+		"DietLegend": f("food.diet.legend"), "AllergensHint": f("food.allergens.hint"),
 		"Diets": diets, "Cards": cards, "Other": form.Other, "Sample": sample,
 		"SampleTemplate": s.i18n.T(lang, "food.unchecked"), "SampleEmpty": s.i18n.T(lang, "food.sample.empty"),
 		"Error": errKey, "ErrorText": errText,

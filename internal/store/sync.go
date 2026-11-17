@@ -28,6 +28,7 @@ type SyncState struct {
 	Failures        int          // consecutive failures
 	LastError       i18n.Message // empty after a success
 	LastRun         SyncRun      // what the last successful run did
+	EventCount      int          // events the calendar holds now, box writes included (a series counts once)
 }
 
 // SyncRun is what one sync run did to a calendar's events. A series, with its
@@ -68,6 +69,8 @@ type SyncLogEntry struct {
 	At           time.Time
 	Kind         string // failure, conflict, note
 	Message      i18n.Message
+	// Detail is the version that lost a conflict (iCalendar text), else empty.
+	Detail string
 }
 
 func stamp(t time.Time) string { return t.UTC().Format(time.RFC3339) }
@@ -123,7 +126,8 @@ func (db *DB) DeferSync(calendarID string, at time.Time) error {
 
 const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, c.shared, c.waste, n.id, COALESCE(c.remote_url, n.url),
 	s.interval_minutes, s.started_at, s.last_attempt_at, s.last_success_at, s.next_attempt_at, s.failures, s.last_error_key, s.last_error_params,
-	s.last_run_events, s.last_run_new, s.last_run_changed, s.last_run_removed
+	s.last_run_events, s.last_run_new, s.last_run_changed, s.last_run_removed,
+	(SELECT COUNT(*) FROM events ev WHERE ev.calendar_id = c.id AND ev.series_id IS NULL)
 	FROM calendars c JOIN calendar_connections n ON n.id = c.connection_id JOIN calendar_sync s ON s.calendar_id = c.id`
 
 // SyncedCalendar returns one synced calendar of a household.
@@ -161,7 +165,7 @@ func (db *DB) syncedCalendars(query string, args ...any) ([]SyncedCalendar, erro
 		var errKey, errParams string
 		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste, &c.ConnectionID, &c.URL,
 			&c.Sync.IntervalMinutes, &started, &attempt, &success, &next, &c.Sync.Failures, &errKey, &errParams,
-			&c.Sync.LastRun.Events, &c.Sync.LastRun.New, &c.Sync.LastRun.Changed, &c.Sync.LastRun.Removed); err != nil {
+			&c.Sync.LastRun.Events, &c.Sync.LastRun.New, &c.Sync.LastRun.Changed, &c.Sync.LastRun.Removed, &c.Sync.EventCount); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -297,8 +301,12 @@ func (db *DB) FailSync(householdID, calendarID string, message i18n.Message, at,
 }
 
 func writeLog(tx *sql.Tx, householdID, calendarID string, at time.Time, kind string, message i18n.Message) error {
-	_, err := tx.Exec(`INSERT INTO sync_log (id, household_id, calendar_id, at, kind, message_key, params) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		newID(), householdID, calendarID, stamp(at), kind, message.Key, packParams(message))
+	return writeLogDetail(tx, householdID, calendarID, at, kind, message, "")
+}
+
+func writeLogDetail(tx *sql.Tx, householdID, calendarID string, at time.Time, kind string, message i18n.Message, detail string) error {
+	_, err := tx.Exec(`INSERT INTO sync_log (id, household_id, calendar_id, at, kind, message_key, params, detail) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		newID(), householdID, calendarID, stamp(at), kind, message.Key, packParams(message), detail)
 	return err
 }
 
@@ -327,7 +335,7 @@ func pruneLog(tx *sql.Tx, now time.Time) error {
 
 // SyncLog returns the newest entries of a household's sync log first.
 func (db *DB) SyncLog(householdID string, limit int) ([]SyncLogEntry, error) {
-	rows, err := db.sql.Query(`SELECT l.id, l.calendar_id, c.name, l.at, l.kind, l.message_key, l.params FROM sync_log l
+	rows, err := db.sql.Query(`SELECT l.id, l.calendar_id, c.name, l.at, l.kind, l.message_key, l.params, l.detail FROM sync_log l
 		JOIN calendars c ON c.id = l.calendar_id WHERE l.household_id = ? ORDER BY l.at DESC, l.rowid DESC LIMIT ?`, householdID, limit)
 	if err != nil {
 		return nil, err
@@ -337,7 +345,7 @@ func (db *DB) SyncLog(householdID string, limit int) ([]SyncLogEntry, error) {
 	for rows.Next() {
 		var e SyncLogEntry
 		var at, key, params string
-		if err := rows.Scan(&e.ID, &e.CalendarID, &e.CalendarName, &at, &e.Kind, &key, &params); err != nil {
+		if err := rows.Scan(&e.ID, &e.CalendarID, &e.CalendarName, &at, &e.Kind, &key, &params, &e.Detail); err != nil {
 			return nil, err
 		}
 		e.Message = unpackMessage(key, params)

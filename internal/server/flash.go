@@ -112,6 +112,10 @@ var flashFields = map[string][]string{
 	"flash.routine_applied_own":    {"owner", "routine", "person", "tasks", "template", "origin"},
 	"flash.rtpl_moved":             {"title", "place", "total"},
 	"flash.routine_template_saved": {"name", "id"},
+	"flash.photo_moved":            {"n", "album"},
+	"flash.photos_moved":           {"n", "album"},
+	"flash.photo_deleted":          {"n"},
+	"flash.photos_deleted":         {"n"},
 	"flash.otp_reset":              {"name"},
 	"flash.otp_reset_passkey":      {"name", "possessive", "passkeys"},
 	"flash.otp_reset_passkeys":     {"name", "possessive", "passkeys"},
@@ -239,11 +243,15 @@ func (s *server) successText(lang, key, arg string) string {
 				p := principal{household: h}
 				run := c.Sync.LastRun
 				return s.i18n.Format(lang, i18n.Msg("flash.calendar_synced_run", "time", p.clockSeconds(c.Sync.LastSuccess),
-					"events", strconv.Itoa(run.Events), "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))
+					"events", strconv.Itoa(c.Sync.EventCount), "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))
 			}
 		}
 	}
 	switch key {
+	case "flash.home_saved": // names the place that was stored
+		if h, err := s.db.HomeHousehold(); err == nil {
+			return s.i18n.Format(lang, i18n.Msg(key, "place", h.HomeName))
+		}
 	case "flash.routine_moved":
 		if arg != "" {
 			return s.routineMovedText(lang, arg)

@@ -58,7 +58,7 @@ func TestFTS5IsAvailable(t *testing.T) {
 	}
 }
 
-// Until the timestamp convention, migrations were numbered 0001 to 0010.
+// Until the timestamp convention, migrations were numbered 0001 to 0011.
 // Development databases hold those names; they must map onto the renamed
 // files instead of running every migration a second time.
 func TestDevelopmentDatabaseWithOldMigrationNamesMigratesWithoutRerunning(t *testing.T) {
@@ -70,11 +70,12 @@ func TestDevelopmentDatabaseWithOldMigrationNamesMigratesWithoutRerunning(t *tes
 	old := []string{
 		"0001_people_and_access.sql", "0002_calendar.sql", "0003_sync.sql", "0004_share_through_box.sql",
 		"0005_public_https.sql", "0006_displays.sql", "0007_tasks.sql", "0008_display_show_tomorrow.sql",
-		"0009_household_settings.sql", "0010_caldav.sql",
+		"0009_household_settings.sql", "0010_caldav.sql", "0011_caldav_writeback.sql",
 	}
-	// Only the rows of the first ten migrations go back to counter names; later
-	// migrations stay recorded, as on a real dev database.
-	if _, err := db.SQL().Exec(`DELETE FROM schema_migrations WHERE version <= 202611142200`); err != nil {
+	// Only the rows of the eleven migrations that had counter names go back to them (the
+	// caldav write-back migration sorts after the display theme one); later migrations stay
+	// recorded, as on a real dev database.
+	if _, err := db.SQL().Exec(`DELETE FROM schema_migrations WHERE version <= 202611142200 OR version = 202611142300`); err != nil {
 		t.Fatal(err)
 	}
 	for i, name := range old {

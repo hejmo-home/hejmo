@@ -1,0 +1,37 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "lib.title") "Frame" .Frame)}}
+  <h1>{{t "lib.title"}}</h1>
+  <p class="lead">{{t "lib.lead"}}</p>
+  <p><a class="button" href="/settings/lists/library/new">{{t "lib.new"}}</a></p>
+  <form class="lib-search" method="get" action="/settings/lists/library" role="search">
+    <div class="f"><label>{{t "lib.search.label"}}<input name="q" type="search" value="{{.Q}}" placeholder="{{t "lib.search.placeholder"}}"></label></div>
+    {{if ne .F "all"}}<input type="hidden" name="f" value="{{.F}}">{{end}}
+    <button class="button secondary" type="submit">{{t "lib.search.button"}}</button>
+  </form>
+  <nav class="lib-filter" aria-label="{{t "lib.filter.label"}}"><ul>{{range .Filters}}
+    <li><a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{.Text}}</a></li>{{end}}
+  </ul></nav>
+  {{if .Flat}}
+  <section aria-labelledby="res">
+    <h2 id="res">{{.ResultTitle}}</h2>
+    {{if .Rows}}
+    <p class="results-head">{{.Head}} <a href="{{.ClearHref}}">{{t "lib.result.clear"}}</a></p>
+    {{template "articleRows" .Rows}}
+    {{else}}
+    <div class="empty" data-empty><p>{{.NoneText}}</p>{{if .NewHref}}<a class="button secondary" href="{{.NewHref}}">{{.NewText}}</a>{{else}}<a href="{{.ClearHref}}">{{t "lib.result.clear"}}</a>{{end}}</div>
+    {{end}}
+  </section>
+  {{else}}
+  <section aria-labelledby="own">
+    <h2 id="own">{{t "lib.own.title"}}</h2>
+    {{if .OwnRows}}{{template "articleRows" .OwnRows}}{{else}}<div class="empty" data-empty><p>{{t "lib.own.empty"}}</p></div>{{end}}
+  </section>
+  <section aria-labelledby="hej">
+    <h2 id="hej">{{t "lib.shipped.title"}}</h2>
+    <p class="hint">{{.ShippedHint}}</p>
+    {{range .Depts}}<details class="dept"><summary><span class="dept-sym" aria-hidden="true">{{.Symbol}}</span><span class="t"><b>{{.Name}}</b><span class="meta">{{.Meta}}</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></summary>
+      {{template "articleRows" .Rows}}</details>
+    {{end}}
+  </section>
+  {{end}}
+  {{template "freeBox" (dict "Title" (t "lib.free.title") "Hint" (t "lib.free.hint") "People" .FreeText)}}
+{{template "foot"}}

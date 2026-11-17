@@ -296,3 +296,36 @@ func TestBrightnessIsSentAgainWhenATabletAnswersAfterAnOutage(t *testing.T) {
 	f.tick(f.at(14, 17, 3))
 	expect(t, "next tick", fake.take())
 }
+
+// A wake looks only at the woken display: the other tablet is not contacted.
+func TestAWakeTicksOnlyTheWokenDisplay(t *testing.T) {
+	f, fake := kioskBox(t, "screen", quietForm(nil))
+	first := f.displayID(t)
+	code := codeOn(t, newScreen(f.box).get("/display", "en").body)
+	if r := f.post("/displays", pairForm(code)); r.status != http.StatusSeeOther {
+		t.Fatalf("pair the second display = %d", r.status)
+	}
+	ds, _ := f.db.Displays(f.householdID)
+	for _, d := range ds {
+		if d.ID != first {
+			form := quietForm(url.Values{"kiosk_url": {"http://192.168.1.21:8080"}, "kiosk_key": {"k-2"}})
+			if r := f.post("/displays/"+d.ID+"/settings", form); r.status != http.StatusSeeOther {
+				t.Fatalf("second display settings = %d", r.status)
+			}
+		}
+	}
+	// No tick yet: the second tablet still has its quiet-mode screen_off to receive.
+	f.now = f.at(14, 23, 5)
+	f.kioskRun.Wake(first)
+	f.runLater()
+	fake.mu.Lock()
+	defer fake.mu.Unlock()
+	for _, who := range fake.who {
+		if who != tablet+" k-1" {
+			t.Fatalf("the wake contacted %q; calls = %q, who = %q", who, fake.calls, fake.who)
+		}
+	}
+	if len(fake.who) == 0 {
+		t.Fatal("the wake contacted no display")
+	}
+}

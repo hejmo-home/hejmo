@@ -519,6 +519,12 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	// the state after a continue without the tick.
 	pages = append(pages, recoveryCardPages(t, f)...)
 
+	// The settings page "Sichere Verbindung" (#216): the page itself is crawled
+	// from the hub; the box's answer to the form (success line, next step) and
+	// the form with a refused name are reached only by POST. A long router name
+	// must wrap, not widen the page.
+	pages = append(pages, secureConnectionPages(t, f)...)
+
 	// Signed out: the login page and the trust page.
 	f.logout()
 	out := siteOf("signed out", f.box, f.client)
@@ -599,6 +605,33 @@ func recoveryCardPages(t *testing.T, f *layoutFixture) []layoutPage {
 	return mergeCardPages(pages)
 }
 
+const longRouterName = "das-wohnzimmer-der-familie-mueller.hejmo-box-mit-sehr-langem-namen.fritz.box"
+
+// secureConnectionPages returns the answers of the page "Sichere Verbindung"
+// that only a form reaches, in German and English: a refused name (422, the
+// error at the field, the input kept) and the entered name (200, the success
+// line and the next step). The fixture's signed-in parent posts the forms.
+func secureConnectionPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	site := siteOf("secure connection", f.box, f.client)
+	for _, lang := range []string{"de", "en"} {
+		hdr := map[string]string{"Accept-Language": lang}
+		refused := f.do(http.MethodPost, "/settings/https", url.Values{"router_name": {"hejmo box mit leerzeichen." + longRouterName}}, hdr)
+		if refused.status != http.StatusUnprocessableEntity {
+			t.Fatalf("secure connection, refused name = %d\n%s", refused.status, refused.body)
+		}
+		saved := f.do(http.MethodPost, "/settings/https", url.Values{"router_name": {lang + "-" + longRouterName}}, hdr)
+		if saved.status != http.StatusOK {
+			t.Fatalf("secure connection, entered name = %d\n%s", saved.status, saved.body)
+		}
+		pages = append(pages,
+			layoutPage{site: site, path: "/settings/https#refused", html: map[string]string{lang: refused.body}},
+			layoutPage{site: site, path: "/settings/https#entered", html: map[string]string{lang: saved.body}})
+	}
+	return mergeCardPages(pages)
+}
+
 // mergeCardPages joins the German and English markup of the same card into one page.
 func mergeCardPages(in []layoutPage) []layoutPage {
 	var out []layoutPage
@@ -633,6 +666,10 @@ func wizardPages(t *testing.T) []layoutPage {
 	add("fresh box", fresh, "/setup/https")
 	add("fresh box", fresh, "/setup/https?way=public")
 	add("fresh box", fresh, "/setup/https?way=domain")
+	add("fresh box", fresh, "/setup/https?way=own")
+	// A router name found by the box, long enough to wrap on a phone.
+	named := newFreshBox(t, withResolver(&fakeResolver{names: map[string][]string{"127.0.0.1": {longRouterName + "."}}}))
+	add("fresh box with a router name", named, "/setup/https?way=own")
 
 	add("https box", newBox(t), "/setup")
 

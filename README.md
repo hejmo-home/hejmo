@@ -8,18 +8,19 @@ Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. A s
 
 <sub>The family view (start screen of every display), landscape. Design preview with sample data.</sub>
 
-> **Status (16/11/2026): pre-release.** No version has been published yet. Until the first public release, **0.1**, builds from `main` are previews: not for everyday use, and data may need to be set up again. See the [roadmap](#roadmap) and the [status notes](#status-notes).
+> **Status (17/11/2026): pre-release.** No version has been published yet. Until the first public release, **0.1**, builds from `main` are previews: not for everyday use, and data may need to be set up again. See the [roadmap](#roadmap) and the [status notes](#status-notes).
 
 ## What works in `main` today
 
-- **Family view and displays:** one column per person with today's events, task progress, the family strip for all-day events and public holidays, weather and time, and tiles for today's meals and tomorrow's waste collection. Live updates, landscape and portrait, black-and-white mode with marker shapes, themes by sunrise and sunset, a sync notice and a personal view per person. Displays are paired by QR code.
+- **Family view and displays:** one column per person with today's events, task progress, the family strip for all-day events and public holidays, weather and time for the home location (picked from a place list on the box), and tiles for today's meals and tomorrow's waste collection. Live updates, landscape and portrait, black-and-white mode with marker shapes, themes by sunrise and sunset, a photo screensaver with albums, a sync notice and a personal view per person. Displays are paired by QR code.
 - **Quiet mode:** a night page and front light control through the kiosk adapter (FreeKiosk). Experimental, see [status notes](#status-notes).
 - **Calendar:** events and series with the edit scopes this, this and following, all; multi-day events, public holidays for Germany, Austria and Switzerland, search, subgroups and audiences. The web interface has a week calendar with editing and a page to choose calendars.
-- **Calendar sync:** ICS subscriptions and iCloud or any CalDAV server (read only; write-back is open, see below). The box is itself a CalDAV server for your calendar apps, with an iOS profile and one task list per person (VTODO). Nothing syncs through a cloud of ours.
+- **Calendar sync:** ICS subscriptions and two-way sync with iCloud or any CalDAV server (fast sync-collection and `.well-known` discovery). The box is itself a CalDAV server for your calendar apps, with an iOS profile and one task list per person (VTODO). Nothing syncs through a cloud of ours.
 - **Tasks:** simple tasks, routines with ready-made routine templates, subtasks, stars with a star log, and task progress per person on the display.
-- **Lists and meals:** shared lists in the web interface and on the display; diet and allergies per person; a shared meal plan with meal plan templates; waste collection reminder; day notes.
-- **People and phones:** parents and children, roles, invitations for a second parent, phones paired by QR code (children get their own simple view), parents can end a lost phone's session. German and English interface.
-- **Sign-in and HTTPS:** setup wizard, HTTPS with the Box CA or a free public name (deSEC, Let's Encrypt), passkeys, password with one-time codes and recovery codes, parent PIN for displays.
+- **Lists and meals:** shared lists in the web interface and on the display, with an article library (own articles and pictures), quantities with units by country and a tile view for children; diet and allergies per person with allergen warnings; a shared meal plan with meal plan templates; waste collection reminder; day notes.
+- **People and phones:** parents and children, roles, invitations for a second parent, phones paired by QR code (children get their own simple view and cannot sign out), re-pairing a phone for another person in one step, a clear page when a device is no longer paired, parents can end a lost phone's session. Theme chooser (light, dark, automatic) for everyone; settings pages with breadcrumbs. German and English interface.
+- **Sign-in and HTTPS:** setup wizard, HTTPS "only in the home network" with the Box CA or a public name (free deSEC name, or your own domain at Cloudflare, deSEC, Hetzner or INWX, with Let's Encrypt), a router name in the box certificate and a guide for reaching home by VPN, passkeys, password with one-time codes and recovery codes (PDF download), parent PIN for displays.
+- **Offline mode:** one switch stops every connection from the box to the outside; the page "Connections to the outside" shows each one, its last contact and every refused attempt.
 - **Open interfaces:** REST API under `/api/v1` with scoped tokens ([OpenAPI](api/openapi.yaml)), and an MCP server for your own AI assistant, off by default ([guide](docs/mcp.md)). Hejmo has no built-in AI.
 - **Operations:** Docker image for x86_64 and arm64, install script for Raspberry Pi OS, release pipeline with signed images, auto-update at night with rollback, security checks and resource measurement in CI.
 
@@ -40,38 +41,37 @@ The plan is in [ADR 0002](docs/adr/0002-goals-and-release-model.md) (release mod
 
 ### 0.1: first public release
 
-[Milestone 0.1](https://github.com/hejmo-home/hejmo/milestone/1): 33 tickets done, 10 open.
+[Milestone 0.1](https://github.com/hejmo-home/hejmo/milestone/1): 43 tickets done, 3 open.
 
 **Done:** everything listed above except the open items below, including the install script and [install guide](docs/install.md), release pipeline, auto-update with rollback, passkeys, routines, stars, subtasks, VTODO export, MCP server and diet and allergies per person.
 
 **Still open:**
 
-- Calendar sync write-back: two-way CalDAV and iCloud ([#17](https://github.com/hejmo-home/hejmo/issues/17)), Google Calendar connection ([#18](https://github.com/hejmo-home/hejmo/issues/18)).
-- Home location with coordinates, which weather, sunrise and sunset themes and the quiet mode sun rule need ([#86](https://github.com/hejmo-home/hejmo/issues/86)).
-- Lists: article library with own articles and pictures ([#164](https://github.com/hejmo-home/hejmo/issues/164)), suggestions and quantities ([#165](https://github.com/hejmo-home/hejmo/issues/165)), tile view ([#166](https://github.com/hejmo-home/hejmo/issues/166)).
-- Recovery codes as PDF download with a required "saved" checkbox ([#176](https://github.com/hejmo-home/hejmo/issues/176)).
-- Polish: settings breadcrumbs and side navigation ([#182](https://github.com/hejmo-home/hejmo/issues/182)), a hyphenated name breaking inside the word at 375 px ([#175](https://github.com/hejmo-home/hejmo/issues/175)), a child's phone "Sign out" ([#197](https://github.com/hejmo-home/hejmo/issues/197)).
+- Google Calendar connection ([#18](https://github.com/hejmo-home/hejmo/issues/18)) with its relay page ([#232](https://github.com/hejmo-home/hejmo/issues/232)).
+- One choice page for all ways to add a calendar ([#231](https://github.com/hejmo-home/hejmo/issues/231)).
 
 ### 0.2
 
 [Milestone 0.2](https://github.com/hejmo-home/hejmo/milestone/2), contents per ADR 0020:
 
 - CalDAV: sync-collection and `.well-known` discovery ([#54](https://github.com/hejmo-home/hejmo/issues/54), merged)
-- Public name: more DNS providers, Cloudflare, INWX and Hetzner ([#57](https://github.com/hejmo-home/hejmo/issues/57))
+- Public name: more DNS providers, Cloudflare, INWX and Hetzner ([#57](https://github.com/hejmo-home/hejmo/issues/57), merged); VPN guide and router name ([#216](https://github.com/hejmo-home/hejmo/issues/216), merged)
 - API access for displays: open a pairing and read its state ([#61](https://github.com/hejmo-home/hejmo/issues/61), merged)
-- Theme chooser for children's phones ([#125](https://github.com/hejmo-home/hejmo/issues/125))
+- Theme chooser for everyone ([#125](https://github.com/hejmo-home/hejmo/issues/125), merged)
 - Sync lists with Apple Reminders ([#167](https://github.com/hejmo-home/hejmo/issues/167))
 - Articles always on the list ([#168](https://github.com/hejmo-home/hejmo/issues/168))
 - Outlook calendar sync ([#177](https://github.com/hejmo-home/hejmo/issues/177))
-- Photo screensaver for displays ([#178](https://github.com/hejmo-home/hejmo/issues/178))
+- Photo screensaver for displays ([#178](https://github.com/hejmo-home/hejmo/issues/178), merged)
 - Display brightness control ([#179](https://github.com/hejmo-home/hejmo/issues/179))
 - Choose people and blocks per display, full layouts ([#180](https://github.com/hejmo-home/hejmo/issues/180))
+- Offline mode ([#201](https://github.com/hejmo-home/hejmo/issues/201), merged); uploading an update file ([#221](https://github.com/hejmo-home/hejmo/issues/221))
+- "Personal device" instead of "phone" ([#203](https://github.com/hejmo-home/hejmo/issues/203)); family view at 375 px ([#208](https://github.com/hejmo-home/hejmo/issues/208))
 
 ### 0.3
 
-[Milestone 0.3](https://github.com/hejmo-home/hejmo/milestone/3), contents per ADR 0020; the details are decided before building:
+[Milestone 0.3](https://github.com/hejmo-home/hejmo/milestone/3), contents per ADR 0020, details decided in [ADR 0021](docs/adr/0021-version-0-3-recipes-rewards-address-book.md):
 
-- Recipes linked to the meal plan and shopping list ([#193](https://github.com/hejmo-home/hejmo/issues/193))
+- Recipes linked to the meal plan and shopping list, with a starter collection of 200 dishes in German and English ([#193](https://github.com/hejmo-home/hejmo/issues/193))
 - Star rewards: catalogue, streaks and badges ([#194](https://github.com/hejmo-home/hejmo/issues/194))
 - Box as address book, a CardDAV server ([#195](https://github.com/hejmo-home/hejmo/issues/195))
 

@@ -38,7 +38,7 @@ var (
 var crumbTrails = map[string][]crumb{
 	"calendars.html": {crumbSettings}, "caldav.html": {crumbSettings}, "displays.html": {crumbSettings}, "photos.html": {crumbSettings}, "settings_lists.html": {crumbSettings}, "phones.html": {crumbSettings},
 	"mcp.html": {crumbSettings}, "people.html": {crumbSettings}, "household.html": {crumbSettings}, "account.html": {crumbSettings}, "sessions.html": {crumbSettings},
-	"licences.html": {crumbSettings},
+	"licences.html": {crumbSettings}, "https_settings.html": {crumbSettings},
 
 	"calendar_detail.html": {crumbSettings, crumbConnections}, "connection.html": {crumbSettings, crumbConnections}, "connection_new.html": {crumbSettings, crumbConnections},
 	"library.html": {crumbSettings, crumbLists}, "article.html": {crumbSettings, crumbLists, crumbLibrary}, "article_form.html": {crumbSettings, crumbLists, crumbLibrary},

@@ -164,8 +164,8 @@ func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {
 		if wholeFamilyTexts[key] {
 			continue
 		}
-		// "ihr eigenes Zertifikat" refers to the box, not to the reader.
-		clean := strings.ReplaceAll(text, "ihr eigenes", "")
+		// "ihr eigenes Zertifikat" and "ihr Zertifikat" (the certificate of the box) refer to the box, not to the reader.
+		clean := strings.NewReplacer("ihr eigenes", "", "ihr Zertifikat", "").Replace(text)
 		if m := plural.FindString(clean); m != "" {
 			t.Errorf("de %s uses %q instead of du: %s", key, m, text)
 		}

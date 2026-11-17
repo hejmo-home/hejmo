@@ -1,6 +1,7 @@
 package brightness_test
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -147,5 +148,17 @@ func TestValidation(t *testing.T) {
 	}
 	if !brightness.QuietDim.Valid() || !brightness.QuietOff.Valid() || brightness.QuietMode("x").Valid() || !brightness.SourceRoom.Valid() || brightness.Source("moon").Valid() {
 		t.Error("modes and sources are not validated")
+	}
+}
+
+func TestValidateNamesTheFirstRefusedValue(t *testing.T) {
+	if err := brightness.Defaults().Validate(); err != nil {
+		t.Fatal(err)
+	}
+	s := brightness.Defaults()
+	s.Evening, s.WakeMinutes = 140, 0
+	var r *brightness.Refused
+	if err := s.Validate(); !errors.As(err, &r) || r.Field != "bright_evening" {
+		t.Fatalf("err = %v, want bright_evening", err)
 	}
 }

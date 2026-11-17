@@ -332,19 +332,9 @@ func (db *DB) SetDisplayLook(householdID, id string, l DisplayLook) error {
 // SetDisplayBrightness saves the brightness values of one of the household's
 // paired displays; a refused value is a *FieldError named like its form field.
 func (db *DB) SetDisplayBrightness(householdID, id string, b brightness.Settings) error {
-	switch {
-	case !brightness.ValidPercent(b.Day):
-		return &FieldError{"bright_day", "the day brightness is 1 to 100 percent"}
-	case !brightness.ValidPercent(b.Evening):
-		return &FieldError{"bright_evening", "the evening brightness is 1 to 100 percent"}
-	case !b.QuietMode.Valid():
-		return &FieldError{"quiet_light", "quiet mode is off or dimmed"}
-	case !brightness.ValidPercent(b.QuietLevel):
-		return &FieldError{"bright_quiet", "the dimmed brightness is 1 to 100 percent"}
-	case !brightness.ValidWake(b.WakeMinutes):
-		return &FieldError{"wake_minutes", "a touch wakes the display for 1 to 30 minutes"}
-	case !b.Source.Valid():
-		return &FieldError{"light_source", "the brightness follows the sun or the room light"}
+	var refused *brightness.Refused
+	if err := b.Validate(); errors.As(err, &refused) {
+		return &FieldError{refused.Field, refused.Msg}
 	}
 	return expectOne(db.sql.Exec(`UPDATE displays SET bright_day = ?, bright_evening = ?, bright_quiet_mode = ?, bright_quiet = ?, wake_minutes = ?, light_source = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
 		b.Day, b.Evening, string(b.QuietMode), b.QuietLevel, b.WakeMinutes, string(b.Source), householdID, id))

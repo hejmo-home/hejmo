@@ -33,9 +33,9 @@ type familyBox struct {
 	householdID string
 }
 
-func newFamilyBox(t *testing.T, displayType string) *familyBox {
+func newFamilyBox(t *testing.T, displayType string, opts ...boxOption) *familyBox {
 	t.Helper()
-	b := signedInBox(t)
+	b := signedInBox(t, opts...)
 	h, _ := b.db.HomeHousehold()
 	f := &familyBox{box: b, people: map[string]store.Person{}, householdID: h.ID}
 	ps, _ := b.db.People(h.ID)

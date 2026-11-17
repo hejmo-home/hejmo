@@ -63,6 +63,31 @@ func Defaults() Settings {
 	return Settings{Day: 100, Evening: 40, Source: SourceSun, QuietMode: QuietOff, QuietLevel: 5, WakeMinutes: 1}
 }
 
+// Refused is the first value of Settings that is not allowed: Field names it
+// like its form field and its API property, Msg says why.
+type Refused struct{ Field, Msg string }
+
+func (r *Refused) Error() string { return r.Field + ": " + r.Msg }
+
+// Validate returns nil, or a *Refused naming the first value that is not allowed.
+func (s Settings) Validate() error {
+	switch {
+	case !ValidPercent(s.Day):
+		return &Refused{"bright_day", "the day brightness is 1 to 100 percent"}
+	case !ValidPercent(s.Evening):
+		return &Refused{"bright_evening", "the evening brightness is 1 to 100 percent"}
+	case !s.QuietMode.Valid():
+		return &Refused{"quiet_light", "quiet mode is off or dimmed"}
+	case !ValidPercent(s.QuietLevel):
+		return &Refused{"bright_quiet", "the dimmed brightness is 1 to 100 percent"}
+	case !ValidWake(s.WakeMinutes):
+		return &Refused{"wake_minutes", "a touch wakes the display for 1 to 30 minutes"}
+	case !s.Source.Valid():
+		return &Refused{"light_source", "the brightness follows the sun or the room light"}
+	}
+	return nil
+}
+
 // Phase names why a target applies.
 type Phase string
 

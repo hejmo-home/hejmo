@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/brightness"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/kiosk"
 	"github.com/hejmo-home/hejmo/internal/quiet"
@@ -204,6 +205,44 @@ type displayChange struct {
 	SunriseOffset, SunsetOffset *int
 	// Saver is the photo screensaver (ticket 178).
 	Saver *saverChange
+	// Brightness is what the kiosk app sets by time of day and in quiet mode (ticket 179).
+	Brightness *brightChange
+}
+
+// brightChange is a change of a display's brightness values; nil fields stay as they are.
+type brightChange struct {
+	Day, Evening, QuietLevel, WakeMinutes *int
+	QuietMode, Source                     *string
+}
+
+// apply returns the brightness values after the change, or a *store.FieldError naming the wrong one.
+func (c *brightChange) apply(cur brightness.Settings) (brightness.Settings, error) {
+	if c == nil {
+		return cur, nil
+	}
+	if c.Day != nil {
+		cur.Day = *c.Day
+	}
+	if c.Evening != nil {
+		cur.Evening = *c.Evening
+	}
+	if c.QuietLevel != nil {
+		cur.QuietLevel = *c.QuietLevel
+	}
+	if c.WakeMinutes != nil {
+		cur.WakeMinutes = *c.WakeMinutes
+	}
+	if c.QuietMode != nil {
+		cur.QuietMode = brightness.QuietMode(*c.QuietMode)
+	}
+	if c.Source != nil {
+		cur.Source = brightness.Source(*c.Source)
+	}
+	var refused *brightness.Refused
+	if err := cur.Validate(); errors.As(err, &refused) {
+		return cur, &store.FieldError{Field: refused.Field, Msg: refused.Msg}
+	}
+	return cur, nil
 }
 
 // saverChange is a change of a display's screensaver; nil fields stay as they are.
@@ -290,6 +329,10 @@ func (s *server) changeDisplay(householdID, id string, c displayChange) error {
 	if err != nil {
 		return err
 	}
+	bright, err := c.Brightness.apply(cur.Brightness)
+	if err != nil {
+		return err
+	}
 	if name != cur.Name || typ != cur.Type { // the store trims and validates both
 		if err := s.db.SetDisplayIdentity(householdID, id, name, typ); err != nil {
 			return err
@@ -314,6 +357,11 @@ func (s *server) changeDisplay(householdID, id string, c displayChange) error {
 			if errors.Is(err, store.ErrInvalid) && c.Saver != nil && c.Saver.Albums != nil {
 				return &store.FieldError{Field: "saver_albums", Msg: "an album of the screensaver is unknown"}
 			}
+			return err
+		}
+	}
+	if bright != cur.Brightness {
+		if err := s.db.SetDisplayBrightness(householdID, id, bright); err != nil {
 			return err
 		}
 	}
@@ -409,6 +457,22 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 		}
 		c.Saver.Albums = &albums
 	}
+	bc := &brightChange{QuietMode: optional(r, "quiet_light"), Source: optional(r, "light_source")}
+	for _, f := range []struct {
+		field string
+		into  **int
+	}{{"bright_day", &bc.Day}, {"bright_evening", &bc.Evening}, {"bright_quiet", &bc.QuietLevel}, {"wake_minutes", &bc.WakeMinutes}} {
+		if _, posted := r.PostForm[f.field]; !posted {
+			continue
+		}
+		v, err := strconv.Atoi(strings.TrimSpace(r.PostForm.Get(f.field)))
+		if err != nil {
+			refuse("displays.error."+f.field, f.field)
+			return
+		}
+		*f.into = &v
+	}
+	c.Brightness = bc
 	var fieldErr *store.FieldError
 	switch err := s.changeDisplay(p.household.ID, d.ID, c); {
 	case errors.Is(err, store.ErrNotFound):

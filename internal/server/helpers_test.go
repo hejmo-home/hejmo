@@ -46,6 +46,8 @@ type box struct {
 	updateDir string
 	// photoDir stands in for the data volume: the photo folder and the stored photos.
 	photoDir string
+	// kioskRun is the runner behind withKiosk; nil without a fake kiosk app.
+	kioskRun *server.KioskRunner
 }
 
 // fakeMeteo stands in for Open-Meteo.
@@ -163,7 +165,12 @@ type boxOption func(*boxConfig)
 type boxConfig struct {
 	noHostUpdater bool
 	fetcher       *picture.Fetcher
+	kiosk         *fakeKiosk
 }
+
+// withKiosk connects the box to a fake kiosk app (the fake FreeKiosk of the
+// kiosk adapter tests): its runner is reachable as box.kioskRun.
+func withKiosk(k *fakeKiosk) boxOption { return func(c *boxConfig) { c.kiosk = k } }
 
 // withFetcher makes the box download web images with this fetcher, which a test
 // lets reach its own server (the real one only reaches public addresses).
@@ -224,7 +231,12 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	if cfg.noHostUpdater {
 		updateDir, b.updateDir = "", ""
 	}
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir})
+	var kioskRun *server.KioskRunner
+	if cfg.kiosk != nil {
+		kioskRun = server.NewKioskRunner(server.KioskOptions{DB: db, Factory: cfg.kiosk.factory(), Now: now, After: func(time.Duration, func()) {}})
+		b.kioskRun = kioskRun
+	}
+	b.handler = server.New(server.Options{Kiosk: kioskRun, DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()

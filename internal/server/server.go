@@ -73,6 +73,11 @@ type Options struct {
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
 	Logger *slog.Logger
+	// Kiosk is the runner that sets the brightness of displays with a kiosk
+	// app (ticket 179). The settings page reads its state and a touch on a
+	// quiet display wakes it through it. Nil means displays are not driven:
+	// no state is shown and a touch wakes nothing.
+	Kiosk *KioskRunner
 }
 
 // PublicHTTPS is the box's publicly trusted certificate, set up through the
@@ -117,7 +122,8 @@ type server struct {
 	countWait  time.Duration
 	done       <-chan struct{}
 	updateDir  string
-	photos     *photoBox // nil without a data directory for photos
+	kiosk      *KioskRunner // nil when displays are not driven
+	photos     *photoBox    // nil without a data directory for photos
 	flashTexts flashTexts
 	// pictures holds pictures made from an upload or a web image until their article is saved (ticket 164).
 	pictures pendingPictures
@@ -155,6 +161,7 @@ func New(opts Options) http.Handler {
 		s.fetcher = &picture.Fetcher{}
 	}
 	s.done = opts.Done
+	s.kiosk = opts.Kiosk
 	s.updateDir = opts.UpdateDir
 	if opts.PhotoDir != "" {
 		s.photos = newPhotoBox(opts.PhotoDir)

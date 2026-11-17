@@ -44,8 +44,8 @@ type SyncedCalendar struct {
 	ConnectionID string
 	// SourceReadOnly says the source shares the calendar for viewing only (Google), so it can never be two-way.
 	SourceReadOnly bool
-	URL          string // the feed or calendar address
-	Sync         SyncState
+	URL            string // the feed or calendar address
+	Sync           SyncState
 }
 
 // NewICS describes an ICS subscription to create.

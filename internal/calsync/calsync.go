@@ -143,10 +143,10 @@ type Service struct {
 	// ownFetch and ownDial say that a test or caller set its own; the gate then
 	// does not replace them.
 	ownFetch, ownDial, ownGoogle bool
-	locks             sync.Map // calendar id -> *sync.Mutex: one sync per calendar at a time
-	pushes            sync.WaitGroup
-	bundle            *i18n.Bundle
-	lang              string // language of the readable audience line
+	locks                        sync.Map // calendar id -> *sync.Mutex: one sync per calendar at a time
+	pushes                       sync.WaitGroup
+	bundle                       *i18n.Bundle
+	lang                         string // language of the readable audience line
 }
 
 func (s *Service) lock(calendarID string) *sync.Mutex {

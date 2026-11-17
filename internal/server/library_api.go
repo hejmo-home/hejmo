@@ -321,7 +321,7 @@ func (s *server) apiCopyArticle(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	lang := s.langOf(r)
-	active := s.activeUnits(p.household.ID)
+	active := s.activeUnits(p.household)
 	own := store.OwnArticle{Name: a.Name(lang), Dept: a.Dept, Kind: string(a.Kind), Allergens: a.Allergens, Unit1: s.offeredUnits(p, a)[0]}
 	if len(a.Units) > 1 && slices.Contains(active, a.Units[1]) && a.Units[1] != own.Unit1 {
 		own.Unit2 = a.Units[1]

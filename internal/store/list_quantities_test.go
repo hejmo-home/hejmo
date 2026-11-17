@@ -11,7 +11,9 @@ import (
 )
 
 func show(defaults ...string) list.Show {
-	return func(base float64, kind unit.Kind) string { return unit.ShowUnit(base, kind, defaults, unit.DefaultActive) }
+	return func(base float64, kind unit.Kind) string {
+		return unit.ShowUnit(base, kind, defaults, unit.DefaultActive)
+	}
 }
 
 func shopping(t *testing.T) (*store.DB, store.Household, list.List) {
@@ -213,7 +215,7 @@ func TestTheHouseholdsUnitsStartWithTheCountryAndStayOnceChanged(t *testing.T) {
 		t.Fatal(err)
 	}
 	on, custom, _ = db.ActiveUnits(h.ID)
-	if !custom || !reflect.DeepEqual(on, []string{"piece", "g", "kg", "oz", "l"}) {
+	if !custom || !reflect.DeepEqual(on, []string{"piece", "g", "kg", "l", "oz"}) {
 		t.Errorf("%v %v", on, custom)
 	}
 	err = db.SetActiveUnits(h.ID, []string{"piece", "g"})

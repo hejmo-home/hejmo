@@ -94,7 +94,7 @@ func (s *server) renderArticleForm(w http.ResponseWriter, r *http.Request, p pri
 	if errs == nil {
 		errs = map[string]string{}
 	}
-	active := s.activeUnits(p.household.ID)
+	active := s.activeUnits(p.household)
 	if f.Dept == "" || !library.ValidDept(f.Dept) {
 		f.Dept = library.DefaultDept
 	}
@@ -558,7 +558,7 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 // activeUnitsFor is the units the form may use: the ones switched on, and the
 // ones an existing article already has (they stay, so saving does not change them).
 func (s *server) activeUnitsFor(p principal, existing *store.OwnArticle) []string {
-	active := slices.Clone(s.activeUnits(p.household.ID))
+	active := slices.Clone(s.activeUnits(p.household))
 	if existing != nil {
 		for _, k := range []string{existing.Unit1, existing.Unit2} {
 			if k != "" && !slices.Contains(active, k) {

@@ -185,7 +185,7 @@ func (s *server) unitLong(lang, key string) string {
 // offeredUnits are the article's default units that are switched on; piece
 // when neither is.
 func (s *server) offeredUnits(p principal, a library.Article) []string {
-	return unit.Offered(a.Units, s.activeUnits(p.household.ID))
+	return unit.Offered(a.Units, s.activeUnits(p.household))
 }
 
 func (s *server) unitsWords(lang string, keys []string) string {

@@ -32,6 +32,7 @@ func newChildPhone(t *testing.T) childPhone {
 
 // 5.14: Given a phone paired for Mia, when it ticks off Mia's task, then it is done.
 func TestChildPhoneTicksOffTheChildsOwnTask(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	page := cp.screen.get("/tasks", "en")
 	if page.status != http.StatusOK || !strings.Contains(page.body, "Brush teeth") {
@@ -62,6 +63,7 @@ func TestChildPhoneTicksOffTheChildsOwnTask(t *testing.T) {
 }
 
 func TestChildPhoneShowsOnlyTheChildsOwnTasks(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	cp.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": personNamed(t, cp.parent.b, "Sebastian").ID, "title": "Feed the cat", "repeat": "daily"})
 	page := cp.screen.get("/tasks", "en")
@@ -74,6 +76,7 @@ func TestChildPhoneShowsOnlyTheChildsOwnTasks(t *testing.T) {
 }
 
 func TestChildPhonePageIsGerman(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	page := cp.screen.get("/tasks", "de")
 	if page.status != http.StatusOK || !strings.Contains(page.body, "Deine Aufgaben für heute") {
@@ -87,6 +90,7 @@ func TestChildPhonePageIsGerman(t *testing.T) {
 // 5.14: Given a phone paired for Mia, when it tries to tick off Sebastian's
 // task or delete an event, then this is refused.
 func TestChildPhoneIsRefusedOtherTasksAndDeletingEvents(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	if r := cp.screen.post("/tasks/"+cp.sebastianTask+"/done", url.Values{"done": {"1"}}); r.status != http.StatusForbidden {
 		t.Errorf("web tick of Sebastian's task = %d, want 403", r.status)
@@ -121,6 +125,7 @@ func TestChildPhoneIsRefusedOtherTasksAndDeletingEvents(t *testing.T) {
 
 // 5.14: Given a phone paired for Mia, then it shows no settings or device management.
 func TestChildPhoneShowsNoSettingsOrDeviceManagement(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	for _, page := range []string{"/", "/tasks"} {
 		body := cp.screen.get(page, "en").body
@@ -147,6 +152,7 @@ func TestChildPhoneShowsNoSettingsOrDeviceManagement(t *testing.T) {
 
 // Q46 (ticket 197): a child's phone has no Sign out anywhere; a parent unpairs it.
 func TestChildsPhoneOffersNoSignOut(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	phone := pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
 	for _, page := range []string{"/", "/tasks", "/lists"} {
@@ -165,6 +171,7 @@ func TestChildsPhoneOffersNoSignOut(t *testing.T) {
 }
 
 func TestSignOutPostFromAChildsPhoneIsRefusedAndKeepsTheSession(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	phone := pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
 	for lang, want := range map[string]string{"en": "A parent removes", "de": "Eltern entfernen"} {
@@ -183,6 +190,7 @@ func TestSignOutPostFromAChildsPhoneIsRefusedAndKeepsTheSession(t *testing.T) {
 // place where they do it: one sentence on the overview, a line under the box
 // title on a child's phone, du-style in EN and DE.
 func TestParentsSeeHowToHandAPhoneOnOrSwitchThePerson(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
 	m := phoneIDRe.FindStringSubmatch(b.get("/phones").body)
@@ -205,6 +213,7 @@ func TestParentsSeeHowToHandAPhoneOnOrSwitchThePerson(t *testing.T) {
 // A child's phone that opens someone else's invitation link gets no Sign out
 // button, only the way home and a note that a parent's device is needed.
 func TestChildsPhoneOpeningAForeignInvitationOffersNoSignOut(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	phone := pairedPhone(t, e.b, e.mia, "Mia's phone")

@@ -31,6 +31,7 @@ func getEN(b *box, path string) resp {
 // ADR 0017, ticket 5.16: every web page that saves something shows a success
 // line afterwards, once.
 func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	b.feeds.set("https://example.org/a.ics", feedOf(), nil)
@@ -92,6 +93,7 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 }
 
 func TestSuccessLineIsGermanWithGermanLocale(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}})
 	if got := successLine(b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body); got != "Haushaltseinstellungen gespeichert." {
@@ -101,6 +103,7 @@ func TestSuccessLineIsGermanWithGermanLocale(t *testing.T) {
 
 // The line is not stored in the address, so it cannot be forged by a link.
 func TestSuccessLineCannotBeForgedByALink(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for _, path := range []string{"/settings/household?saved=1", "/settings/household?flash=flash.saved", "/settings/household?success=Saved."} {
 		if got := successLine(getEN(b, path).body); got != "" {
@@ -110,6 +113,7 @@ func TestSuccessLineCannotBeForgedByALink(t *testing.T) {
 }
 
 func TestFinishingSetupShowsASuccessLine(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	secret := secretOn(t, b.get("/setup/totp").body)
@@ -122,6 +126,7 @@ func TestFinishingSetupShowsASuccessLine(t *testing.T) {
 
 // Creating a device token shows its value once, together with a success line.
 func TestCreatingADeviceTokenShowsASuccessLine(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.do(http.MethodPost, "/caldav/tokens", url.Values{"name": {"Phone"}}, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusOK {

@@ -39,6 +39,7 @@ func hubTargets(body string) []string {
 
 // 5.18: the navigation holds everyday screens only; setup screens sit under Settings (ADR 0017).
 func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	want := []string{"/", "/calendar", "/tasks", "/meals", "/lists", "/settings"}
 	for _, page := range []string{"/", "/tasks", "/settings", "/calendars", "/displays"} {
@@ -55,6 +56,7 @@ var hubPages = []string{"/calendars", "/caldav", "/displays", "/photos", "/phone
 
 // 5.18: every setup page is reachable from the Settings hub.
 func TestSettingsHubLinksEverySetupPage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := getEN(b, "/settings")
 	if r.status != http.StatusOK {
@@ -87,6 +89,7 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 
 // 5.18, ticket 182: every setup page links back to the hub in its trail, and Settings stays marked in the navigation.
 func TestSetupPagesLinkBackToSettings(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.post("/calendars", url.Values{"name": {"Feiertage"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
 	for _, page := range hubPages {
@@ -113,6 +116,7 @@ func TestSetupPagesLinkBackToSettings(t *testing.T) {
 
 // 5.18: the household page holds the time format and temperature unit.
 func TestHouseholdPageSavesFormats(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.get("/settings/household")
 	if r.status != http.StatusOK || !strings.Contains(r.body, `name="time_format"`) {
@@ -128,6 +132,7 @@ func TestHouseholdPageSavesFormats(t *testing.T) {
 
 // 5.18: a child's device session sees neither Settings nor its pages.
 func TestChildSeesNoSettingsPages(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	child := childSession(t, b)
 	body := child.get("/").body
@@ -146,6 +151,7 @@ func TestChildSeesNoSettingsPages(t *testing.T) {
 
 // 5.18: at 375 px the navigation wraps onto further rows instead of scrolling (design pass 2 on 6.1), with targets of at least 44 px.
 func TestNavigationWrapsWithTouchTargets(t *testing.T) {
+	t.Parallel()
 	css := string(mustStatic(t, "static/hejmo.css"))
 	m := regexp.MustCompile(`\.frame-nav ul \{([^}]*)\}`).FindStringSubmatch(css)
 	if m == nil || !strings.Contains(m[1], "flex-wrap: wrap") || strings.Contains(m[1], "overflow-x") {
@@ -162,6 +168,7 @@ func TestNavigationWrapsWithTouchTargets(t *testing.T) {
 
 // 5.18 / ADR 0017: a display is described by one question, where it hangs; there is no room field.
 func TestDisplayFormAsksWhereItHangs(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := getEN(b, "/displays").body
 	if !strings.Contains(body, "Where does it hang?") {

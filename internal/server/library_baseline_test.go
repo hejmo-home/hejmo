@@ -39,6 +39,7 @@ const baselineProbe = `(() => {
 })()`
 
 func TestAPersonsNameInAWarningSharesTheBaselineOfTheTextAroundIt(t *testing.T) {
+	t.Parallel()
 	chrome := requireChrome(t)
 	f := newLayoutFixture(t)
 	site := siteOf("app", f.box, f.client)

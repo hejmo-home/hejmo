@@ -13,6 +13,7 @@ const nextTuesday = "2026-11-17" // the week of Monday 16.11.2026 follows the we
 func mealField(day, mealtime string) string { return "meal_" + day + "_" + mealtime }
 
 func TestMealsPageNeedsASignedInPerson(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	if r := b.get("/meals"); r.status != http.StatusSeeOther || !strings.HasPrefix(r.location, "/login") {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
@@ -20,6 +21,7 @@ func TestMealsPageNeedsASignedInPerson(t *testing.T) {
 }
 
 func TestMealsPageShowsTheWeekOfTodayWithAFieldPerDayAndMealtime(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.do(http.MethodGet, "/meals", nil, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusOK {
@@ -67,6 +69,7 @@ func TestMealsPageShowsTheWeekOfTodayWithAFieldPerDayAndMealtime(t *testing.T) {
 }
 
 func TestMealsPageTakesAnyDayOfAWeekAndFallsBackToTodaysWeek(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for _, q := range []string{"2026-11-18", "2026-11-16", "2026-11-22"} { // Wednesday, Monday, Sunday of the same week
 		if r := b.get("/meals?week=" + q); !strings.Contains(r.body, `name="week" value="2026-11-16"`) {
@@ -83,6 +86,7 @@ func TestMealsPageTakesAnyDayOfAWeekAndFallsBackToTodaysWeek(t *testing.T) {
 // Acceptance: Given a shared meal plan, when a dinner is entered for Tuesday,
 // then it appears in the calendar on Tuesday (web interface, with API parity).
 func TestParentPlansADinnerInTheWebInterfaceAndItAppearsInTheCalendar(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	r := b.do(http.MethodPost, "/meals", url.Values{"week": {"2026-11-16"}, mealField(nextTuesday, "dinner"): {"  Pasta bake "}, mealField(nextTuesday, "lunch"): {""}},
@@ -105,6 +109,7 @@ func TestParentPlansADinnerInTheWebInterfaceAndItAppearsInTheCalendar(t *testing
 
 // Acceptance: Given a meal changed, then the calendar shows the new meal.
 func TestChangingAndClearingMealsInTheWebInterfaceUpdatesTheCalendar(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	en := map[string]string{"Accept-Language": "en"}
@@ -117,6 +122,7 @@ func TestChangingAndClearingMealsInTheWebInterfaceUpdatesTheCalendar(t *testing.
 }
 
 func TestAFormMissingFieldsLeavesThoseMealsAlone(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	putMeal(t, c, nextTuesday, "dinner", "Pasta bake")
 	c.b.post("/meals", url.Values{"week": {"2026-11-16"}, mealField(nextTuesday, "lunch"): {"Soup"}})
@@ -131,6 +137,7 @@ func TestAFormMissingFieldsLeavesThoseMealsAlone(t *testing.T) {
 }
 
 func TestTooLongMealShowsAnErrorAtItsFieldKeepsWhatWasTypedAndSavesNothing(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	r := b.do(http.MethodPost, "/meals", url.Values{"week": {"2026-11-16"}, mealField(nextTuesday, "lunch"): {"Soup"},
@@ -162,6 +169,7 @@ func TestTooLongMealShowsAnErrorAtItsFieldKeepsWhatWasTypedAndSavesNothing(t *te
 }
 
 func TestFormErrorIsGermanInDuForm(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	r := c.b.do(http.MethodPost, "/meals", url.Values{"week": {"2026-11-16"}, mealField("2026-11-18", "dinner"): {strings.Repeat("x", 201)}}, map[string]string{"Accept-Language": "de"})
 	for _, want := range []string{"Nichts wurde gespeichert. Bitte kürze", `>Mittwoch, Abendessen</a>`, "alles andere, was du eingetragen hast, ist noch da."} {
@@ -172,6 +180,7 @@ func TestFormErrorIsGermanInDuForm(t *testing.T) {
 }
 
 func TestMealPlanTitlesFollowTheLanguageOfTheBrowserThatSaves(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.do(http.MethodPost, "/meals", url.Values{"week": {"2026-11-16"}, mealField(nextTuesday, "dinner"): {"Nudelauflauf"}}, map[string]string{"Accept-Language": "de"})
 	if got := occTitles(c.occurrences(t, "from=2026-11-17T00:00:00%2B01:00&to=2026-11-18T00:00:00%2B01:00")); len(got) != 1 || got[0] != "11-17 Abendessen: Nudelauflauf" {
@@ -187,6 +196,7 @@ func TestMealPlanTitlesFollowTheLanguageOfTheBrowserThatSaves(t *testing.T) {
 }
 
 func TestChildSeesTheMealPlanButCannotChangeIt(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.post("/meals", url.Values{"week": {"2026-11-16"}, mealField(nextTuesday, "dinner"): {"Pasta bake"}})
 	child := childSession(t, b)
@@ -215,6 +225,7 @@ func TestChildSeesTheMealPlanButCannotChangeIt(t *testing.T) {
 }
 
 func TestMealsPageUsesSharedPatternsAndNoInlineStyles(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := b.get("/meals").body
 	for _, want := range []string{`class="f`, `href="/static/hejmo.css"`, `type="submit"`} {
@@ -231,6 +242,7 @@ func TestMealsPageUsesSharedPatternsAndNoInlineStyles(t *testing.T) {
 }
 
 func TestMealsPageShowsAnEmptyHintWhileNothingIsPlanned(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if body := b.do(http.MethodGet, "/meals", nil, map[string]string{"Accept-Language": "en"}).body; !strings.Contains(body, "Nothing planned for week 46 yet") {
 		t.Errorf("no hint:\n%s", body)
@@ -242,6 +254,7 @@ func TestMealsPageShowsAnEmptyHintWhileNothingIsPlanned(t *testing.T) {
 }
 
 func TestParentSeesTheRecipeNoteSaveBarAndDayHeaders(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := b.do(http.MethodGet, "/meals", nil, map[string]string{"Accept-Language": "en"}).body
 	for _, want := range []string{`<p class="hint recipe"><svg class="icon"`, "A recipe library comes in a later version – until then, just type the dish.",
@@ -260,6 +273,7 @@ func TestParentSeesTheRecipeNoteSaveBarAndDayHeaders(t *testing.T) {
 }
 
 func TestOtherWeeksOfferBackToThisWeekAndTheEmptyHintNamesTheWeek(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := b.do(http.MethodGet, "/meals?week=2026-11-23", nil, map[string]string{"Accept-Language": "en"}).body
 	for _, want := range []string{`<a class="wbtn this" href="/meals">Back to this week</a>`, "<strong>Week 48</strong>", "23.11. – 29.11.2026",
@@ -275,6 +289,7 @@ func TestOtherWeeksOfferBackToThisWeekAndTheEmptyHintNamesTheWeek(t *testing.T) 
 }
 
 func TestMealsSuccessLineNamesTheWeekAndTheCalendarIsCalledLikeThePage(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	r := c.b.do(http.MethodPost, "/meals", url.Values{"week": {"2026-11-09"}, mealField("2026-11-10", "dinner"): {"x"}}, map[string]string{"Accept-Language": "de"})
 	if got := successLine(c.b.do(http.MethodGet, r.location, nil, map[string]string{"Accept-Language": "de"}).body); got != "Essensplan für Woche 46 gespeichert." {

@@ -31,6 +31,7 @@ func (f *familyBox) task(t *testing.T, who, title string, repeat task.Repeat) ta
 // 5.6: tapping a profile on the display opens the personal view: each person's
 // name in the family view is a link of its own.
 func TestFamilyViewColumnsLinkToThePersonalView(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	page := f.view(t, "en", f.at(14, 9, 0))
 	for n, p := range f.people {
@@ -43,6 +44,7 @@ func TestFamilyViewColumnsLinkToThePersonalView(t *testing.T) {
 // 5.6 (ADR 0015): the personal view shows the person's events for today and the
 // next 6 days, nothing of other people and nothing beyond.
 func TestPersonalViewShowsEventsOfSevenDays(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.event(t, "Swimming", f.at(14, 16, 0), f.at(14, 17, 0), false, "Mia")
 	f.event(t, "Piano", f.at(20, 15, 0), f.at(20, 16, 0), false, "Mia")
@@ -69,6 +71,7 @@ func TestPersonalViewShowsEventsOfSevenDays(t *testing.T) {
 
 // 5.6: the personal view is German on a German browser.
 func TestPersonalViewIsGerman(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	r := f.personalPage(t, "de", "Mia", 14, 9)
 	if !strings.Contains(r.body, "Zurück zur Familienansicht") {
@@ -78,6 +81,7 @@ func TestPersonalViewIsGerman(t *testing.T) {
 
 // 5.6: only a paired display opens it; unknown people are not found.
 func TestPersonalViewNeedsAPairedDisplayAndAKnownPerson(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	stranger := newScreen(f.box)
 	if r := stranger.get("/display/person/"+f.people["Mia"].ID, "en"); r.status != 303 || r.location != "/display" {
@@ -101,6 +105,7 @@ var (
 // then the display returns to the family view. The page carries the delay and
 // the target; display.js does the counting.
 func TestPersonalViewReturnsToTheFamilyViewAfter30Seconds(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	r := f.personalPage(t, "en", "Mia", 14, 9)
 	if m := returnSecondsRe.FindStringSubmatch(r.body); m == nil || m[1] != "30" {
@@ -117,6 +122,7 @@ func TestPersonalViewReturnsToTheFamilyViewAfter30Seconds(t *testing.T) {
 // 5.6: Given interaction within 30 seconds, then the timer restarts. The
 // script restarts the countdown on every touch, key press and scroll.
 func TestDisplayScriptRestartsTheTimerOnInteraction(t *testing.T) {
+	t.Parallel()
 	b, err := os.ReadFile("../../web/static/display.js")
 	if err != nil {
 		t.Fatal(err)
@@ -137,6 +143,7 @@ func TestDisplayScriptRestartsTheTimerOnInteraction(t *testing.T) {
 // 5.6 (ADR 0015): today's tasks of the person show with large checkboxes, ticked
 // or not; other people's tasks and tasks not due today stay out.
 func TestPersonalViewShowsTodaysTasksWithLargeCheckboxes(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	open := f.task(t, "Mia", "Homework", task.Daily)
 	done := f.task(t, "Mia", "Feed the cat", task.Daily)
@@ -166,6 +173,7 @@ func TestPersonalViewShowsTodaysTasksWithLargeCheckboxes(t *testing.T) {
 
 // 5.6 (ADR 0015): a display may tick tasks off and open again without the parent PIN.
 func TestDisplayTicksATaskOffAndOpenAgain(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	tk := f.task(t, "Mia", "Homework", task.Daily)
 	f.now = f.at(14, 9, 0)
@@ -189,6 +197,7 @@ func TestDisplayTicksATaskOffAndOpenAgain(t *testing.T) {
 
 // 5.6: only a paired display may tick; a task that is not due today or does not exist is refused.
 func TestDisplayTickingIsRefusedForUnpairedDisplaysAndUnknownTasks(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	tk := f.task(t, "Mia", "Homework", task.Daily)
 	f.now = f.at(14, 9, 0)
@@ -203,6 +212,7 @@ func TestDisplayTickingIsRefusedForUnpairedDisplaysAndUnknownTasks(t *testing.T)
 // A failed tick goes back to the personal view (or the display home), never to a bare error page
 // that would leave the kiosk stuck without display.js.
 func TestDisplayFailedTicksGoBackToTheDisplay(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	tk := f.task(t, "Mia", "Homework", task.Daily)
 	f.now = f.at(14, 9, 0)
@@ -223,6 +233,7 @@ func TestDisplayFailedTicksGoBackToTheDisplay(t *testing.T) {
 // (ADR 0015: the REST API can do everything a display can) it only ticks today:
 // a tap on a page left over from an earlier day ticks nothing and shows today.
 func TestDisplayTickRefusesAnyDayButToday(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	tk := f.task(t, "Mia", "Homework", task.Daily)
 	f.now = f.at(14, 9, 0)
@@ -253,6 +264,7 @@ var (
 // then the box announces a new version of that view and serves its markup for a
 // partial refresh. Changes of other people and the clock do not move it.
 func TestPersonalViewReceivesLiveUpdates(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
 	id := l.people["Mia"].ID
 	_, _, page := l.get("/display/person/" + id)
@@ -298,6 +310,7 @@ func TestPersonalViewReceivesLiveUpdates(t *testing.T) {
 // 5.6 x 5.5: the live endpoints of a personal view are for paired displays, and
 // a person who is gone sends the display back instead of leaving it stuck.
 func TestPersonalLiveEndpointsNeedAPairedDisplayAndAKnownPerson(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
 	id := l.people["Mia"].ID
 	stranger := newScreen(l.box)
@@ -323,6 +336,7 @@ func TestPersonalLiveEndpointsNeedAPairedDisplayAndAKnownPerson(t *testing.T) {
 // the page carries both, and a refresh is no interaction (the script restarts
 // the countdown only from input events, once at load).
 func TestPersonalViewKeepsItsReturnTimerWhileLive(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	r := f.personalPage(t, "en", "Mia", 14, 9)
 	for _, want := range []string{`data-return-seconds="30"`, `data-return-url="/display"`, `data-events-url=`, `data-view-url=`} {
@@ -358,6 +372,7 @@ func (f *familyBox) starTask(t *testing.T, who, title string, stars int) task.Ta
 // her balance rises by 3 and a log entry is created; the personal view shows
 // the balance and the task's star value.
 func TestDisplayTickCreditsStarsAndThePersonalViewShowsTheBalance(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	tk := f.starTask(t, "Mia", "Tidy room", 3)
 	before := f.personalPage(t, "en", "Mia", 14, 9).body
@@ -386,6 +401,7 @@ func TestDisplayTickCreditsStarsAndThePersonalViewShowsTheBalance(t *testing.T) 
 
 // ADR 0018: stars show only for people with a task worth stars or a booking.
 func TestPersonalViewShowsNoStarsForAPersonWithoutStarTasks(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.starTask(t, "Papa", "Take out bins", 0)
 	body := f.personalPage(t, "en", "Papa", 14, 9).body
@@ -401,6 +417,7 @@ func TestPersonalViewShowsNoStarsForAPersonWithoutStarTasks(t *testing.T) {
 }
 
 func TestPersonalViewStarsAreGerman(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.starTask(t, "Mia", "Zimmer aufräumen", 2)
 	if !strings.Contains(f.personalPage(t, "de", "Mia", 14, 9).body, "Sterne") {
@@ -412,6 +429,7 @@ func TestPersonalViewStarsAreGerman(t *testing.T) {
 // changes it to 5, then the view shows 5 and its version changes, so a
 // connected display repaints.
 func TestChangingATasksStarValueUpdatesThePersonalView(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	tk := f.starTask(t, "Mia", "Tidy room", 3)
 	before := f.personalPage(t, "en", "Mia", 14, 9).body

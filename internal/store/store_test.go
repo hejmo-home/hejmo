@@ -1,15 +1,15 @@
 package store_test
 
 import (
-	"path/filepath"
 	"testing"
 
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/store/storetest"
 )
 
 func openTemp(t *testing.T) (*store.DB, string) {
 	t.Helper()
-	path := filepath.Join(t.TempDir(), "hejmo.db")
+	path := storetest.Path(t)
 	db, err := store.Open(path)
 	if err != nil {
 		t.Fatal(err)

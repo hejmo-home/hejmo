@@ -21,6 +21,7 @@ func listIDByName(t *testing.T, c *apiClient, name string) string {
 }
 
 func TestListsPagesNeedASignedInMember(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	for _, path := range []string{"/lists", "/lists/x"} {
 		if r := b.get(path); r.status != http.StatusSeeOther || !strings.HasPrefix(r.location, "/login") {
@@ -30,6 +31,7 @@ func TestListsPagesNeedASignedInMember(t *testing.T) {
 }
 
 func TestParentCreatesAListAndAddsEntriesInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	r := b.post("/lists", url.Values{"name": {"Packing"}, "color": {"plum"}, "symbol": {"triangle-filled"}, "sort": {"manual"}})
@@ -58,6 +60,7 @@ func TestParentCreatesAListAndAddsEntriesInTheWebInterface(t *testing.T) {
 }
 
 func TestInvalidListFormsShowErrorsAtTheFieldAndKeepWhatWasTyped(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.do(http.MethodPost, "/lists", url.Values{"name": {" "}, "color": {"blue"}, "symbol": {"circle-empty"}, "sort": {"alphabetical"}}, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-name"`) {
@@ -85,6 +88,7 @@ func firstListID(t *testing.T, b *box) string {
 
 // Acceptance (web): an alphabetical list shows a new entry in its place.
 func TestAlphabeticalListPageShowsEntriesInOrder(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.post("/lists", url.Values{"name": {"Drinks"}, "color": {"teal"}, "symbol": {"diamond-filled"}, "sort": {"alphabetical"}})
 	id := strings.TrimPrefix(r.location, "/lists/")
@@ -103,6 +107,7 @@ func TestAlphabeticalListPageShowsEntriesInOrder(t *testing.T) {
 }
 
 func TestManualListPageMovesEntries(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := firstListID(t, b)
 	h, _ := b.db.HomeHousehold()
@@ -127,6 +132,7 @@ func TestManualListPageMovesEntries(t *testing.T) {
 // Acceptance (web): "Delete completed" removes only checked-off entries; they
 // can also be hidden.
 func TestDeleteCompletedAndHideCompletedInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := firstListID(t, b)
 	h, _ := b.db.HomeHousehold()
@@ -160,6 +166,7 @@ func TestDeleteCompletedAndHideCompletedInTheWebInterface(t *testing.T) {
 }
 
 func TestParentChangesAndDeletesAListInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := firstListID(t, b)
 	if r := b.post("/lists/"+id+"/settings", url.Values{"name": {"Weekly shop"}, "color": {"ochre"}, "symbol": {"square-empty"}, "sort": {"alphabetical"}}); r.status != http.StatusSeeOther || r.location != "/lists/"+id {
@@ -187,6 +194,7 @@ func TestParentChangesAndDeletesAListInTheWebInterface(t *testing.T) {
 
 // Acceptance (web): a child ticks off, but cannot delete a list or add entries.
 func TestChildPhoneTicksOffListEntriesButDeletesNothing(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	b := cp.parent.b
 	id := firstListID(t, b)
@@ -234,6 +242,7 @@ func TestChildPhoneTicksOffListEntriesButDeletesNothing(t *testing.T) {
 }
 
 func TestListsPageIsGermanAndEscapesText(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := firstListID(t, b)
 	b.post("/lists/"+id+"/entries", url.Values{"text": {hostileTitle}})

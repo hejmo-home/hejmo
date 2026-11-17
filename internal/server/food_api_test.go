@@ -17,6 +17,7 @@ func newFoodBox(t *testing.T) (*apiClient, string, string) {
 }
 
 func TestFoodDefaultsToOmnivoreWithNoAllergies(t *testing.T) {
+	t.Parallel()
 	c, mia, _ := newFoodBox(t)
 	status, f, _ := c.call(http.MethodGet, "/people/"+mia+"/food", nil)
 	if status != http.StatusOK || f["diet"] != "omnivore" || len(f["allergens"].([]any)) != 0 || len(f["other"].([]any)) != 0 || f["person_id"] != mia {
@@ -25,6 +26,7 @@ func TestFoodDefaultsToOmnivoreWithNoAllergies(t *testing.T) {
 }
 
 func TestParentSetsDietAndAllergiesAndReadsThemBack(t *testing.T) {
+	t.Parallel()
 	c, mia, _ := newFoodBox(t)
 	status, f, _ := c.call(http.MethodPut, "/people/"+mia+"/food", map[string]any{"diet": "vegetarian", "allergens": []string{"peanuts", "nuts", "peanuts"}, "other": []string{"Kiwi"}})
 	if status != http.StatusOK {
@@ -45,6 +47,7 @@ func TestParentSetsDietAndAllergiesAndReadsThemBack(t *testing.T) {
 }
 
 func TestFoodRefusesWhatIsNotADietAnAllergenOrFitting(t *testing.T) {
+	t.Parallel()
 	c, mia, _ := newFoodBox(t)
 	for name, body := range map[string]map[string]any{
 		"unknown diet":      {"diet": "keto", "allergens": []string{}, "other": []string{}},
@@ -67,6 +70,7 @@ func TestFoodRefusesWhatIsNotADietAnAllergenOrFitting(t *testing.T) {
 }
 
 func TestFoodOmittedFieldsMeanNone(t *testing.T) {
+	t.Parallel()
 	c, mia, _ := newFoodBox(t)
 	c.call(http.MethodPut, "/people/"+mia+"/food", map[string]any{"diet": "vegan", "allergens": []string{"peanuts"}, "other": []string{"Kiwi"}})
 	status, f, _ := c.call(http.MethodPut, "/people/"+mia+"/food", map[string]any{"diet": "vegetarian"})
@@ -76,6 +80,7 @@ func TestFoodOmittedFieldsMeanNone(t *testing.T) {
 }
 
 func TestChildrenCannotReadOrChangeDietAndAllergies(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	body := map[string]any{"diet": "vegan", "allergens": []string{}, "other": []string{}}
 	if status, _, _ := tb.child.call(http.MethodPut, "/people/"+tb.miaID+"/food", body); status != http.StatusForbidden {
@@ -90,6 +95,7 @@ func TestChildrenCannotReadOrChangeDietAndAllergies(t *testing.T) {
 }
 
 func TestOnlyTheExplicitHealthScopeReachesDietAndAllergies(t *testing.T) {
+	t.Parallel()
 	c, mia, _ := newFoodBox(t)
 	body := map[string]any{"diet": "vegan", "allergens": []string{}, "other": []string{}}
 	for _, scopes := range []string{"read", "write", "people", "people:read events"} {
@@ -111,6 +117,7 @@ func TestOnlyTheExplicitHealthScopeReachesDietAndAllergies(t *testing.T) {
 }
 
 func TestPeopleAnswersNeverCarryDietOrAllergies(t *testing.T) {
+	t.Parallel()
 	c, mia, _ := newFoodBox(t)
 	c.call(http.MethodPut, "/people/"+mia+"/food", map[string]any{"diet": "vegan", "allergens": []string{"peanuts"}, "other": []string{"Kiwi"}})
 	for _, path := range []string{"/people", "/people/" + mia, "/me", "/groups"} {

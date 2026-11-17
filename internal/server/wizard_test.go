@@ -24,6 +24,7 @@ func inText(page string) string {
 // Ticket 133: the first page lists the four steps, says what you need and has
 // one main button to the HTTPS step. It has no step number yet.
 func TestWelcomePageListsTheFourStepsAndWhatYouNeed(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := deGet(b, "/setup")
 	text := inText(r.body)
@@ -60,6 +61,7 @@ func TestWelcomePageListsTheFourStepsAndWhatYouNeed(t *testing.T) {
 // The wizard shell: brand bar with the language switcher, "Setup: Step n of 4" above the progress, the four named
 // steps (done ones with a hidden "(erledigt)"), no navigation.
 func TestWizardShellShowsStepNumberAndProgress(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	page := deGet(b, "/setup").body
 	for _, want := range []string{
@@ -104,6 +106,7 @@ func TestWizardShellShowsStepNumberAndProgress(t *testing.T) {
 // Ticket 133: a choice page first (none selected, Q62 a), submitted as a GET;
 // then only the form of the chosen way.
 func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	choice := deGet(b, "/setup/https")
 	for _, want := range []string{`<form class="tile" method="get" action="/setup/https">`, `<fieldset class="choice">`, `name="way" value="public"`, `name="way" value="own"`, "Mit kostenlosem Namen bei deSEC", "Nur im Heimnetz"} {
@@ -146,6 +149,7 @@ func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 
 // Without a certificate manager there is no choice: straight to the own CA.
 func TestWithoutAPublicNameOnlyTheOwnCAIsOffered(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.handler = server.New(server.Options{DB: b.db, PKI: b.pki, Now: func() time.Time { return b.now }})
 	b.srv.Close()
@@ -162,6 +166,7 @@ func TestWithoutAPublicNameOnlyTheOwnCAIsOffered(t *testing.T) {
 // The address is the box's default; with no IP address in the URL (the box
 // opened as hejmo.local) the field is empty and "More options" is open.
 func TestMoreOptionsAreOpenWhenTheAddressIsMissingOrRefused(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := b.do(http.MethodGet, "/setup/https?way=public", nil, map[string]string{"Host": "hejmo.local", "Accept-Language": "de"})
 	if !strings.Contains(r.body, `<details class="more" open>`) {
@@ -179,6 +184,7 @@ func TestMoreOptionsAreOpenWhenTheAddressIsMissingOrRefused(t *testing.T) {
 
 // Each 422 goes to its field with its own text; everything else stays filled.
 func TestPublicFormErrorsGoToTheirFields(t *testing.T) {
+	t.Parallel()
 	cases := map[string]struct{ field, text string }{
 		"name":   {"name", "Dieser Name geht nicht"},
 		"lan_ip": {"lan_ip", "keine Adresse im Heimnetz"},
@@ -217,6 +223,7 @@ func TestPublicFormErrorsGoToTheirFields(t *testing.T) {
 // The 502: a page-level error with the two usual causes, and the token field
 // says why it is empty. Name, address, issuer and email stay.
 func TestPublicFailureShowsPageErrorAndAskForTheTokenAgain(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.public.failure = errString("obtain certificate: dns says no")
 	f := publicForm()
@@ -243,6 +250,7 @@ func (e errString) Error() string { return string(e) }
 // While the box gets the certificate (up to 3 minutes) the button is greyed
 // out by the form script, with a line in words. Nothing animates.
 func TestPublicFormHasABusyStateInWords(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := deGet(b, "/setup/https?way=public")
 	for _, want := range []string{
@@ -270,6 +278,7 @@ func TestPublicFormHasABusyStateInWords(t *testing.T) {
 
 // The Actalis keys only show for Actalis (the form's CSS keys off the choice).
 func TestActalisKeysShowOnlyForActalis(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := deGet(b, "/setup/https?way=public")
 	if !strings.Contains(r.body, `<div class="when-actalis">`) || !strings.Contains(r.body, `name="eab_key_id"`) || !strings.Contains(r.body, `name="eab_hmac"`) {
@@ -285,6 +294,7 @@ func TestActalisKeysShowOnlyForActalis(t *testing.T) {
 // as a numbered tile, and the own-CA switch under "Router lässt sich nicht
 // ändern?" as a secondary button.
 func TestNameCheckShowsStatesAsCheckLines(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.post("/setup/https/public", publicForm())
 	r := deGet(b, "/setup/https/check")
@@ -316,6 +326,7 @@ func TestNameCheckShowsStatesAsCheckLines(t *testing.T) {
 // Ticket 133: account page: hints under the fields, regions grouped by country
 // with the state name only, "Show" for the password, the error at the field.
 func TestAccountPageHintsGroupedRegionsAndPasswordReveal(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := deGet(b, "/setup")
 	for _, want := range []string{
@@ -341,6 +352,7 @@ func TestAccountPageHintsGroupedRegionsAndPasswordReveal(t *testing.T) {
 }
 
 func TestAccountPagePasswordErrorKeepsTheHintAndTheRest(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	f := validSetupForm()
 	f.Set("password", "short")
@@ -378,6 +390,7 @@ func TestAccountPagePasswordErrorKeepsTheHintAndTheRest(t *testing.T) {
 // key, in groups of four, sits under "More options"; on a phone the button
 // that opens the app comes first and the QR code is for another phone.
 func TestTOTPPageDesktopAndPhoneOrder(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	desk := deGet(b, "/setup/totp").body
@@ -418,6 +431,7 @@ func TestTOTPPageDesktopAndPhoneOrder(t *testing.T) {
 }
 
 func TestTOTPWrongCodeNamesTheTwoCauses(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	r := b.do(http.MethodPost, "/setup/totp", url.Values{"code": {"000000"}}, map[string]string{"Accept-Language": "de"})
@@ -428,6 +442,7 @@ func TestTOTPWrongCodeNamesTheTwoCauses(t *testing.T) {
 
 // After a reset of the one-time codes the same page shows no step progress.
 func TestTOTPPageAfterAResetHasNoProgress(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, papaSecret := secondParent(t, b)
 	loginWith(b, "papa", "papa's long password", totpNow(b, papaSecret))
@@ -454,6 +469,7 @@ func TestTOTPPageAfterAResetHasNoProgress(t *testing.T) {
 // wizard in the first setup, numbered, printable, with a required confirmation
 // that the box checks; outside the wizard the same page sits in the frame.
 func TestRecoveryCodesPageInTheWizardAndOutside(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	secret := secretOn(t, b.get("/setup/totp").body)

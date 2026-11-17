@@ -8,6 +8,7 @@ import (
 )
 
 func TestPhonesOverviewListsRowsThatOpenTheDetailPage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	pairedPhone(t, b, personNamed(t, b, "Mama"), "Mama's phone")
 	body := getEN(b, "/phones").body
@@ -24,6 +25,7 @@ func TestPhonesOverviewListsRowsThatOpenTheDetailPage(t *testing.T) {
 }
 
 func TestPhoneDetailShowsFactsInWordsAndConfirmsRemovingByName(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	pairedPhone(t, b, personNamed(t, b, "Mama"), "Mama's phone")
 	pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
@@ -52,6 +54,7 @@ func TestPhoneDetailShowsFactsInWordsAndConfirmsRemovingByName(t *testing.T) {
 }
 
 func TestRemovingAPhoneNamesItInTheSuccessLine(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	pairedPhone(t, b, personNamed(t, b, "Mama"), "Old phone")
 	id := phoneIDRe.FindStringSubmatch(b.get("/phones").body)[1]

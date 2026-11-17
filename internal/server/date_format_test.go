@@ -16,6 +16,7 @@ import (
 // Ticket #147: the household page offers the date format first, with the sample
 // date 24 December in numbers and in words, and one hint.
 func TestSettingsScreenOffersTheDateFormatFirst(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	en := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "en"}).body
 	year := "2026" // the test clock stands at 14/11/2026
@@ -41,6 +42,7 @@ func TestSettingsScreenOffersTheDateFormatFirst(t *testing.T) {
 }
 
 func TestSettingsScreenSavesTheDateFormat(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if r := b.post("/settings/household", url.Values{"date_format": {"mdy"}, "time_format": {"24h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther || r.location != "/settings/household" {
 		t.Fatalf("save = %d %q", r.status, r.location)
@@ -56,6 +58,7 @@ func TestSettingsScreenSavesTheDateFormat(t *testing.T) {
 }
 
 func TestSettingsScreenRefusesAnUnknownDateFormatAtTheField(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.do(http.MethodPost, "/settings/household", url.Values{"date_format": {"ymd"}, "time_format": {"24h"}, "temperature_unit": {"c"}}, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusUnprocessableEntity {
@@ -75,6 +78,7 @@ func TestSettingsScreenRefusesAnUnknownDateFormatAtTheField(t *testing.T) {
 }
 
 func TestDateFormatWorksThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, got, _ := c.call(http.MethodGet, "/settings", nil)
 	if status != http.StatusOK || got["date_format"] != "dmy" {
@@ -103,6 +107,7 @@ func useDateFormat(t *testing.T, b *box, format string) {
 // Ticket #147: every date in numbers follows the setting. The test clock stands
 // at Saturday 14/11/2026, 13:00 in Berlin.
 func TestDatesInNumbersFollowTheHouseholdDateFormat(t *testing.T) {
+	t.Parallel()
 	formats := []struct {
 		name, setting                                         string
 		week, weekDay, weekRange, mealWeek, mealDay, taskDate string
@@ -137,6 +142,7 @@ func TestDatesInNumbersFollowTheHouseholdDateFormat(t *testing.T) {
 
 // A week across New Year names the year at both ends.
 func TestAWeekAcrossNewYearNamesBothYears(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for setting, want := range map[string]string{"dmy": "28.12.2026 to 03.01.2027", "mdy": "12/28/2026 to 01/03/2027"} {
 		useDateFormat(t, b, setting)
@@ -150,6 +156,7 @@ func TestAWeekAcrossNewYearNamesBothYears(t *testing.T) {
 }
 
 func TestHomeAndNotePageFollowTheDateFormat(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.save("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Mia: Schwimmsachen"}}, "en")
 	useDateFormat(t, f.box, "mdy")
@@ -167,6 +174,7 @@ func TestHomeAndNotePageFollowTheDateFormat(t *testing.T) {
 // The QR code of a phone pairing says until when it is valid, and the sync
 // problems carry the date with the time and seconds.
 func TestPhoneExpiryAndSyncLogFollowTheDateFormat(t *testing.T) {
+	t.Parallel()
 	b, cal := icsBox(t)
 	useDateFormat(t, b, "mdy")
 	r := b.post("/phones/pairings", url.Values{})
@@ -184,6 +192,7 @@ func TestPhoneExpiryAndSyncLogFollowTheDateFormat(t *testing.T) {
 
 // Machine formats keep ISO 8601; no hand-built numeric layout remains outside datefmt.
 func TestNoHandBuiltNumericDateLayoutsRemainInTheServer(t *testing.T) {
+	t.Parallel()
 	files, _ := filepath.Glob("*.go")
 	for _, name := range files {
 		if strings.HasSuffix(name, "_test.go") {
@@ -207,6 +216,7 @@ var dayFirstDate = regexp.MustCompile(`\b\d{2}\.\d{2}\.(\d{4})?`)
 // Month first on the pages the first round missed: event, search, star log and
 // the CalDAV lists. Nothing on them is left day first.
 func TestEventSearchStarLogAndCalDAVListsFollowMonthFirst(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	f.postEvent(t, eventForm("Dentist", "2026-11-17", "10:00", "11:00"))
 	f.box.post("/tasks/stars", url.Values{"person": {f.people["Mia"].ID}, "delta": {"3"}, "note": {"weekend chores"}})
@@ -233,6 +243,7 @@ func TestEventSearchStarLogAndCalDAVListsFollowMonthFirst(t *testing.T) {
 
 // The displays keep dates in words: switching the format changes nothing on them.
 func TestDisplaysStayFreeOfNumericDatesWhenTheFormatSwitches(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	f.event(t, "Dentist", f.at(16, 10, 0), f.at(16, 11, 0), false, "Mia")
 	paths := []string{"/display", "/display/view"}
@@ -254,6 +265,7 @@ func TestDisplaysStayFreeOfNumericDatesWhenTheFormatSwitches(t *testing.T) {
 // The detail pages say their dates through datefmt too: a connection, a
 // display, a phone and a token, in both formats.
 func TestDetailPagesFollowTheDateFormat(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	connID := chosenConnection(t, b)
 	displayID := pairedDisplay(t, b, "Kitchen", "screen")

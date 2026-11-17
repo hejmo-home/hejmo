@@ -20,6 +20,7 @@ var profilePasswordRe = regexp.MustCompile(`<key>CalDAVPassword</key>\s*<string>
 // the box address, their user name and a new device token with scopes calendars and tasks (ticket 94: task lists
 // appear on iPhones set up by profile).
 func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	h, _ := familyOf(t, c)
@@ -80,6 +81,7 @@ func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 }
 
 func TestIOSProfileDownloadHeadersAndFieldError(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	req, _ := http.NewRequest(http.MethodPost, b.srv.URL+"/caldav/profile", strings.NewReader(url.Values{"profile_name": {"iPhone Mama"}}.Encode()))
@@ -112,6 +114,7 @@ func TestIOSProfileDownloadHeadersAndFieldError(t *testing.T) {
 }
 
 func TestIOSProfileIsForSignedInParentsOverHTTPSOnly(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	if r := b.post("/caldav/profile", url.Values{"profile_name": {"x"}}); r.status != http.StatusSeeOther || r.location != "/login" {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
@@ -139,6 +142,7 @@ func TestIOSProfileIsForSignedInParentsOverHTTPSOnly(t *testing.T) {
 }
 
 func TestIOSProfileFlowPointsToTheCAProfileOnlyForTheOwnCA(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	page := c.b.do(http.MethodGet, "/caldav", nil, map[string]string{"Accept-Language": "en"})
 	if !strings.Contains(page.body, `action="/caldav/profile"`) || !strings.Contains(page.body, `data-ca-profile-first`) || !strings.Contains(page.body, "/ca") {
@@ -152,6 +156,7 @@ func TestIOSProfileFlowPointsToTheCAProfileOnlyForTheOwnCA(t *testing.T) {
 }
 
 func TestIOSProfileTextsAreInBothLanguages(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	de := c.b.do(http.MethodGet, "/caldav", nil, map[string]string{"Accept-Language": "de"})
 	if !strings.Contains(de.body, "Profil für iPhone") {
@@ -165,6 +170,7 @@ func TestIOSProfileTextsAreInBothLanguages(t *testing.T) {
 
 // API parity (ADR 0015): the same profile through the REST API, own account only.
 func TestIOSProfileThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h, _ := familyOf(t, c)
 	raw, status, ct := c.callRaw(http.MethodPost, "/caldav-profile", map[string]any{"name": "iPad Mama"})
@@ -214,6 +220,7 @@ func plainBoxSignedIn(t *testing.T) *apiClient {
 }
 
 func TestIOSProfileIsRefusedOnPlainHTTPBeforeHTTPSIsSetUp(t *testing.T) {
+	t.Parallel()
 	c := plainBoxSignedIn(t)
 	b := c.b
 	h, _ := familyOf(t, c)
@@ -234,6 +241,7 @@ func TestIOSProfileIsRefusedOnPlainHTTPBeforeHTTPSIsSetUp(t *testing.T) {
 }
 
 func TestIOSProfileTakesNamesByCharactersAndAPIRejectsBrokenJSONWith400(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	name := strings.Repeat("ä", 80) // 160 bytes, 80 characters: within the limit
 	if r := c.b.post("/caldav/profile", url.Values{"profile_name": {name}}); r.status != http.StatusOK {

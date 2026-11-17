@@ -106,6 +106,7 @@ func callTool(s *mcp.ClientSession, name string, args map[string]any) (string, b
 var allAreas = map[string]string{"events": "write", "lists": "write", "tasks": "write", "meals": "write"}
 
 func TestMCPRefusesConnectionsWhileSwitchedOff(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	c := tb.parent
 	token := c.newMCPToken(t, "Claude", allAreas) // MCP is off by default
@@ -123,6 +124,7 @@ func TestMCPRefusesConnectionsWhileSwitchedOff(t *testing.T) {
 }
 
 func TestMCPStopsAnOpenSessionWhenSwitchedOffOrRevoked(t *testing.T) {
+	t.Parallel()
 	c := newTaskBox(t).parent
 	c.switchMCP(t, true)
 	status, tok, _ := c.call(http.MethodPost, "/mcp/tokens", map[string]any{"name": "Claude", "areas": map[string]any{"lists": "write"}})
@@ -147,6 +149,7 @@ func TestMCPStopsAnOpenSessionWhenSwitchedOffOrRevoked(t *testing.T) {
 }
 
 func TestMCPTokenWithEventsReadOnlyCannotCreateAnEvent(t *testing.T) {
+	t.Parallel()
 	c := newTaskBox(t).parent
 	c.switchMCP(t, true)
 	s := c.mcpSession(t, c.newMCPToken(t, "Kalender lesen", map[string]string{"events": "read"}))
@@ -175,6 +178,7 @@ func TestMCPTokenWithEventsReadOnlyCannotCreateAnEvent(t *testing.T) {
 }
 
 func TestMCPRefusesAnOrdinaryAPIToken(t *testing.T) {
+	t.Parallel()
 	c := newTaskBox(t).parent
 	c.switchMCP(t, true)
 	ordinary := c.newToken("write")
@@ -193,6 +197,7 @@ func TestMCPRefusesAnOrdinaryAPIToken(t *testing.T) {
 }
 
 func TestMCPRefusesATokenOfAChild(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	tb.parent.switchMCP(t, true)
 	const secret = "hejmo_test_child_mcp"
@@ -206,6 +211,7 @@ func TestMCPRefusesATokenOfAChild(t *testing.T) {
 }
 
 func TestMCPRefusesWithoutAnyToken(t *testing.T) {
+	t.Parallel()
 	c := newTaskBox(t).parent
 	c.switchMCP(t, true)
 	if s, err := c.mcpConnect(""); err == nil {
@@ -219,6 +225,7 @@ func TestMCPRefusesWithoutAnyToken(t *testing.T) {
 }
 
 func TestMCPIsServedOnlyOverHTTPS(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t) // HTTPS is not set up: reachable over plain HTTP only
 	h, err := b.db.CreateHousehold(store.Household{Name: "Family"})
 	if err != nil {
@@ -249,6 +256,7 @@ func TestMCPIsServedOnlyOverHTTPS(t *testing.T) {
 // The tool list holds events, lists, tasks and the meal plan, and never
 // anything that manages tokens, settings, people, displays or phones.
 func TestMCPToolListHasNoTokenOrSettingsTools(t *testing.T) {
+	t.Parallel()
 	c := newTaskBox(t).parent
 	c.switchMCP(t, true)
 	s := c.mcpSession(t, c.newMCPToken(t, "Alles", allAreas))
@@ -284,6 +292,7 @@ func TestMCPToolListHasNoTokenOrSettingsTools(t *testing.T) {
 }
 
 func TestMCPToolsDoWhatTheRESTFunctionsDo(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	c := tb.parent
 	c.switchMCP(t, true)
@@ -342,6 +351,7 @@ func TestMCPToolsDoWhatTheRESTFunctionsDo(t *testing.T) {
 
 // Scopes are enforced unchanged: lists:read lets an assistant read lists and nothing else.
 func TestMCPEnforcesScopesPerAreaAndAction(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	c := tb.parent
 	c.switchMCP(t, true)
@@ -362,6 +372,7 @@ func TestMCPEnforcesScopesPerAreaAndAction(t *testing.T) {
 }
 
 func TestMCPNotesTheUseOfTheToken(t *testing.T) {
+	t.Parallel()
 	c := newTaskBox(t).parent
 	c.switchMCP(t, true)
 	token := c.newMCPToken(t, "Claude", allAreas)

@@ -39,6 +39,7 @@ func typing(page string) string {
 // white). The places come from the list on the box.
 // Run: HEJMO_WRITE_PREVIEW_86=$PWD/docs/design/preview-86.html go test ./internal/server -run WriteDesignPreview86
 func TestWriteDesignPreview86(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_86")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_86 to the output path to write the preview")

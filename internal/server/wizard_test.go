@@ -135,6 +135,7 @@ func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 	if !regexp.MustCompile(`<details class="more">\s*<summary>[^<]*<svg[^>]*>.*?</svg>Mehr Optionen<span class="sum">127.0.0.1 · Let&#39;s Encrypt</span>`).MatchString(strings.ReplaceAll(public.body, "\n", "")) {
 		t.Errorf("More options is not closed with a summary of address and issuer:\n%s", public.body)
 	}
+	b.post("/setup/offline", url.Values{"offline": {"off"}}) // the question of ticket 201 comes first
 	own := deGet(b, "/setup/https?way=own")
 	for _, want := range []string{`<ul class="certnames"><li>hejmo.local</li><li>127.0.0.1</li></ul>`, `action="/setup/https"`, "Zertifikat erstellen", "Anderen Weg wählen"} {
 		if !strings.Contains(own.body, want) {
@@ -153,6 +154,7 @@ func TestWithoutAPublicNameOnlyTheOwnCAIsOffered(t *testing.T) {
 	b.handler = server.New(server.Options{DB: b.db, PKI: b.pki, Now: func() time.Time { return b.now }})
 	b.srv.Close()
 	b.srv = b.plainServer()
+	b.post("/setup/offline", url.Values{"offline": {"off"}}) // the question of ticket 201 comes first
 	for _, path := range []string{"/setup/https", "/setup/https?way=public", "/setup/https?way=own"} {
 		r := deGet(b, path)
 		if !strings.Contains(r.body, "Nur im Heimnetz einrichten") || strings.Contains(r.body, `name="token"`) || strings.Contains(r.body, "Anderen Weg wählen") {

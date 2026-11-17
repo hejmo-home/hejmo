@@ -1,0 +1,36 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "hub.outside") "Frame" .Frame)}}
+  <h1>{{t "hub.outside"}}</h1>
+  <p class="lead">{{t "outside.lead"}}</p>
+  {{template "error" .}}
+  <form method="post" action="/settings/connections" class="steps">
+    <fieldset class="offline-main">
+      <legend class="sr">{{t "outside.main"}}</legend>
+      <div class="card-row"><span class="t"><b>{{t "outside.main"}}</b><span class="state{{if .Offline}} is-on{{end}}"><span class="on-text"><b>{{t "outside.state.on"}}</b> {{t "outside.main.on"}}</span><span class="off-text"><b>{{t "outside.state.off"}}</b> {{t "outside.main.off"}}</span></span></span><label class="switch"><input type="checkbox" role="switch" name="offline"{{if .Offline}} checked{{end}} aria-label="{{t "outside.main"}}"></label></div>
+      {{if and .Offline .Since}}<p class="proof"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>{{tf "outside.proof" "when" .Since}}</span></p>{{end}}
+    </fieldset>
+    <fieldset>
+      <legend>{{t "outside.single"}}</legend>
+      <p class="hint flat">{{if .Offline}}{{t "outside.single.hint.on"}}{{else}}{{t "outside.single.hint.off"}}{{end}}</p>
+      <ul class="conns">{{range .Rows}}<li id="{{.ID}}"><div class="card-row"><span class="t"><b>{{.Name}}</b><span class="state{{if .On}} is-on{{end}}">{{if .Locked}}{{if .HasSwitch}}<svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>{{end}}{{end}}{{.State}}{{if .Offer}} <a href="/settings/connections/offline">{{t "outside.dns.offer"}}</a>{{end}}</span><small>{{.Purpose}}</small>{{if .HasSwitch}}<small>{{tf "outside.goes" "to" .Goes}}</small>{{end}}{{if or .HasSwitch .Last}}<small class="last"><b>{{t "outside.last"}}</b> {{if .Last}}{{.Last}}{{if .Before}} {{t "outside.last.before"}}{{end}}{{else}}{{t "outside.last.never"}}{{end}}</small>{{end}}</span>{{if .HasSwitch}}<label class="switch"><input type="checkbox" role="switch" name="{{.ID}}"{{if .Checked}} checked{{end}}{{if .Locked}} disabled{{end}} aria-label="{{.Name}}"></label>{{end}}</div></li>
+{{end}}</ul>
+    </fieldset>
+    {{if .Offline}}<fieldset>
+      <legend>{{t "outside.updates"}}</legend>
+      <p class="hint flat">{{t "outside.updates.hint"}} {{.Installed}}</p>
+      <p class="flat">{{t "outside.updates.how"}} <a class="ext" href="{{.Guide}}" target="_blank" rel="noopener">{{t "outside.updates.guide"}}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg></a></p>
+      <div class="f short{{if eq .ErrorField "update_reminder_days"}} invalid{{end}}"><label>{{t "outside.updates.days"}}<input name="update_reminder_days" type="number" inputmode="numeric" min="7" max="365" value="{{.Days}}"{{if eq .ErrorField "update_reminder_days"}} aria-invalid="true" aria-describedby="err-update_reminder_days"{{end}}></label>{{template "fieldError" (dict "Root" . "Name" "update_reminder_days")}}<p class="hint">{{t "outside.updates.days.hint"}}</p></div>
+    </fieldset>{{end}}
+    <div class="actions"><button class="button" type="submit">{{t "settings.save"}}</button></div>
+  </form>
+  {{if .Offline}}<section class="block" aria-labelledby="refused">
+    <h2 id="refused">{{t "outside.refused"}}</h2>
+    {{if .Refused}}<p class="hint">{{t "outside.refused.hint"}}</p><ol class="refused">{{range .Refused}}<li><time>{{.At}}</time><b>{{.Name}}</b><span class="to">{{tf "outside.refused.to" "target" .Target}}</span></li>{{end}}</ol>
+    {{else}}<div class="empty"><p>{{t "outside.refused.empty"}}</p></div>{{end}}
+  </section>{{end}}
+  <section class="explain" aria-labelledby="scope">
+  <h2 id="scope">{{t "outside.scope"}}</h2>
+  <p><b>{{t "outside.scope.host"}}</b> {{t "outside.scope.host.text"}}</p>
+  <p>{{t "outside.scope.time.text"}} <a class="ext" href="{{.TimeGuide}}" target="_blank" rel="noopener">{{t "outside.scope.time.link"}}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg></a></p>
+  <p><b>{{t "outside.scope.mcp"}}</b> {{t "outside.scope.mcp.text"}}{{with .Scope}} {{.}}{{end}} <a href="/mcp">{{t "outside.scope.mcp.link"}}</a></p>
+</section>
+{{template "foot"}}

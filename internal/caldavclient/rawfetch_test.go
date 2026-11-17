@@ -79,7 +79,7 @@ func multigetServer(t *testing.T, objects map[string]string, extra string, repor
 
 func fetchByName(t *testing.T, srvURL string, names ...string) (map[string]caldavclient.Object, error) {
 	t.Helper()
-	c, err := caldavclient.NewClient(srvURL, "u", "p", nil)
+	c, err := caldavclient.NewClient(srvURL, "u", "p", openClient())
 	if err != nil {
 		t.Fatal(err)
 	}

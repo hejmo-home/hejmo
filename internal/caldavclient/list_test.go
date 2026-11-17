@@ -66,7 +66,7 @@ func iCloudLikeCalendar(t *testing.T, report *string, hrefOverride string) *http
 func TestListToleratesMembersWithAMissingResourcetype(t *testing.T) {
 	var report string
 	srv := iCloudLikeCalendar(t, &report, "")
-	c, err := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, err := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,7 +93,7 @@ func TestListToleratesMembersWithAMissingResourcetype(t *testing.T) {
 func TestListAsksForCalendarObjectsOnly(t *testing.T) {
 	var report string
 	srv := iCloudLikeCalendar(t, &report, "")
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	if _, err := c.List(context.Background(), srv.URL+"/cal/"); err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +111,7 @@ func TestListAsksForCalendarObjectsOnly(t *testing.T) {
 
 func TestListRefusesAnObjectOnAForeignHost(t *testing.T) {
 	srv := iCloudLikeCalendar(t, nil, "http://evil.example.net/cal/x.ics")
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	_, err := c.List(context.Background(), srv.URL+"/cal/")
 	var foreign *caldavclient.ForeignHostError
 	if !errors.As(err, &foreign) {
@@ -121,7 +121,7 @@ func TestListRefusesAnObjectOnAForeignHost(t *testing.T) {
 
 func TestListReportsAMissingCalendarAsAStatusError(t *testing.T) {
 	srv := iCloudLikeCalendar(t, nil, "")
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	_, err := c.List(context.Background(), srv.URL+"/gone/")
 	var se *caldavclient.StatusError
 	if !errors.As(err, &se) || se.Code != http.StatusNotFound {
@@ -143,7 +143,7 @@ func TestListLeavesOutMembersThatAreGoneAndReadsAnETagWithoutAStatusLine(t *test
 		io.WriteString(w, body)
 	}))
 	defer srv.Close()
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	objs, err := c.List(context.Background(), srv.URL+"/cal/")
 	if err != nil {
 		t.Fatal(err)

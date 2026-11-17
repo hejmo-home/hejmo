@@ -26,6 +26,7 @@ import (
 	ical "github.com/emersion/go-ical"
 	"github.com/emersion/go-webdav"
 	davcal "github.com/emersion/go-webdav/caldav"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -93,15 +94,16 @@ type Client struct {
 	dav map[string]*davcal.Client // by scheme://host
 }
 
-// NewClient returns a Client for the server at serverURL. A nil hc uses an
-// HTTP client with a 30 second timeout.
+// NewClient returns a Client for the server at serverURL. A nil hc is a
+// client that refuses every connection: the caller must bring one from the
+// outside gate.
 func NewClient(serverURL, user, password string, hc *http.Client) (*Client, error) {
 	base, err := url.Parse(strings.TrimSpace(serverURL))
 	if err != nil || (base.Scheme != "http" && base.Scheme != "https") || base.Host == "" {
 		return nil, errors.New("not a web address")
 	}
 	if hc == nil {
-		hc = &http.Client{Timeout: 30 * time.Second}
+		hc = outbound.New(outbound.Closed{}, nil).Client(outbound.Calendars, 30*time.Second)
 	}
 	auth := &authClient{base: base, user: user, password: password}
 	cp := *hc // do not change the caller's client

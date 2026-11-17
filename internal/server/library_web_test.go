@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/list"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -119,7 +120,7 @@ func testJPEG(t *testing.T, w, h int) []byte {
 
 // loopbackFetcher lets the box reach the test's own server, and nothing else.
 func loopbackFetcher() *picture.Fetcher {
-	return &picture.Fetcher{Public: func(a netip.Addr) bool { return a == netip.MustParseAddr("127.0.0.1") }, Timeout: 3 * time.Second}
+	return &picture.Fetcher{Gate: outbound.AllowAll(), Public: func(a netip.Addr) bool { return a == netip.MustParseAddr("127.0.0.1") }, Timeout: 3 * time.Second}
 }
 
 func imageServer(t *testing.T, w, h int) *httptest.Server {

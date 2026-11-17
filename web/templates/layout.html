@@ -80,3 +80,10 @@
   {{if and .Reason (ne .Reason "rollback_failed")}}<p>{{t (printf "update.reason.%s" .Reason)}}</p>{{end}}
   {{if .Dismissible}}<form method="post" action="/update/dismiss"><button class="button" type="submit">{{t "update.dismiss"}}</button></form>{{end}}
 </div>{{end}}{{end}}
+
+{{/* The notice that offline mode (or one connection) is off, with "Change" (ticket 201). A chosen state, not a warning.
+     Argument: the note (Lead, Text, Href), or nothing. */}}
+{{define "offlineNote"}}{{with .}}<div class="offline-note" role="status"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="8"/><path d="M4 12h16M12 4c2.6 2.6 2.6 13.4 0 16M12 4c-2.6 2.6-2.6 13.4 0 16"/><path d="M3.5 3.5l17 17"/></svg><p><b>{{.Lead}}</b> {{.Text}}</p><a href="{{.Href}}">{{t "outside.note.change"}}</a></div>{{end}}{{end}}
+
+{{/* "Not updated for n days" on the parents' Home (ticket 201, Q145). Argument: the reminder, or nothing. */}}
+{{define "staleUpdate"}}{{with .}}<div class="notice lead-in" role="status"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><p><b>{{.Lead}}</b> {{.Text}} <a class="ext" href="{{.GuideURL}}" target="_blank" rel="noopener">{{.Link}}<svg class="icon" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6M20 4l-9 9M18 14v5H5V6h5"/></svg></a></p></div>{{end}}{{end}}

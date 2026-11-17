@@ -16,9 +16,9 @@ import (
 	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/meal"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/store"
-	"github.com/hejmo-home/hejmo/internal/update"
 )
 
 type settingsJSON struct {
@@ -234,7 +234,7 @@ func (s *server) renderSettings(w http.ResponseWriter, r *http.Request, p princi
 		"DateFormat": form.DateFormat, "DateDMY": datefmt.Date(store.DateDMY, sample), "DateMDY": datefmt.Date(store.DateMDY, sample), "SampleYear": sample.Year(),
 		"TimeFormat": form.TimeFormat, "TemperatureUnit": form.TemperatureUnit,
 		"AutoUpdate": form.AutoUpdate, "UpdateManaged": s.updateDir != "", "Update": s.updateNotice(p.household),
-		"Place": cmp.Or(form.Place, s.storedPicker(r, p)),
+		"Place": cmp.Or(form.Place, s.storedPicker(r, p)), "OfflineNote": s.homeNote(r, p.person),
 	}
 	if hasLocation(p.household) {
 		data["StoredHomeName"] = p.household.HomeName // what stays in use while another place is picked
@@ -324,6 +324,12 @@ func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 					e.State = "hub.mcp.on"
 				}
 			}
+			if it.Href == connectionsPath {
+				e.State = "hub.outside.off"
+				if s.offline() {
+					e.State = "hub.outside.on"
+				}
+			}
 			if it.Href == httpsSettingsPath {
 				e.State = s.httpsHubState()
 			}
@@ -335,6 +341,7 @@ func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 	}
 	s.render(w, r, http.StatusOK, "settings.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Hub": items, "Update": s.updateNotice(p.household), "FirstStepsHidden": p.household.FirstStepsHidden,
+		"OfflineNote": s.homeNote(r, p.person),
 	})
 }
 
@@ -480,6 +487,9 @@ func postedCutoff(form url.Values, m meal.Mealtime, current string) string {
 // refreshWeather fetches the weather of a new home at once, so the chip does
 // not wait for the next round; a failure is left to that round.
 func (s *server) refreshWeather(lat, lon float64) {
+	if !s.gate.Allowed(outbound.Weather) {
+		return // switched off: nothing is fetched, nothing is refused over and over
+	}
 	ctx, cancel := context.WithTimeout(context.Background(), 3*time.Second)
 	defer cancel()
 	if err := s.weather.Refresh(ctx, lat, lon); err != nil {
@@ -499,9 +509,7 @@ func (s *server) saveSettings(h store.Household, in store.HouseholdSettings) err
 	}
 	// The change is stored; a settings file that cannot be written must not turn
 	// it into an error. The box writes the file again at its next start.
-	if err := update.WriteSettings(s.updateDir, string(in.AutoUpdate)); err != nil {
-		s.logger.Error("write update settings", "err", err)
-	}
+	s.writeUpdateSettings(in.AutoUpdate)
 	return nil
 }
 

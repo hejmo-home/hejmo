@@ -22,6 +22,7 @@ import (
 	"time"
 
 	"github.com/caddyserver/certmagic"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/libdns/libdns"
@@ -51,6 +52,10 @@ var ErrInvalid = errors.New("publiccert: invalid request")
 
 // ErrUnknownProvider means the DNS provider is not supported.
 var ErrUnknownProvider = errors.New("publiccert: unknown DNS provider")
+
+// ErrDeleteRecords means the DNS service refused to delete the box's records
+// (or could not be reached); nothing was changed.
+var ErrDeleteRecords = errors.New("publiccert: the DNS records could not be deleted")
 
 // ErrNameTaken means the name already points to a public address or is a
 // CNAME: the box never overwrites it, the family's website could be gone.
@@ -163,6 +168,11 @@ func WithResolvers(r []string) Option { return func(m *Manager) { m.resolvers = 
 // WithLogger sets where problems are logged.
 func WithLogger(l *slog.Logger) Option { return func(m *Manager) { m.logger = l } }
 
+// WithGate sends every call to a DNS service and certificate authority through
+// the gate of the outside connections (ticket 201); this is the DNS service
+// row of "Connections to the outside". Without a gate nothing is controlled.
+func WithGate(g *outbound.Gate) Option { return func(m *Manager) { m.gate = g } }
+
 // WithClock sets the clock behind expiry warnings.
 func WithClock(now func() time.Time) Option { return func(m *Manager) { m.now = now } }
 
@@ -183,6 +193,7 @@ type Manager struct {
 	logger      *slog.Logger
 	now         func() time.Time
 	zeroSSLEAB  string
+	gate        *outbound.Gate
 
 	mu     sync.RWMutex
 	cfg    *certmagic.Config
@@ -527,7 +538,10 @@ func (m *Manager) Setup(ctx context.Context, req Request) error {
 	if err := req.validate(); err != nil {
 		return err
 	}
-	provider, err := m.providers(req.Provider, req.credentials())
+	if err := m.gate.Check(outbound.DNS, providerHost(req.Provider)); err != nil {
+		return err
+	}
+	provider, err := m.provider(req.Provider, req.credentials())
 	if err != nil {
 		return err
 	}
@@ -656,7 +670,7 @@ func (m *Manager) nameTaken(name, zone, address string) error {
 // resuming is true for a stored setup being resumed at start: only then does a
 // failed order count as a broken setup (see onEvent).
 func (m *Manager) newConfig(req Request, resuming bool) (*certmagic.Config, *certmagic.Cache, error) {
-	provider, err := m.providers(req.Provider, req.credentials())
+	provider, err := m.provider(req.Provider, req.credentials())
 	if err != nil {
 		return nil, nil, err
 	}
@@ -744,7 +758,7 @@ func (m *Manager) zeroSSLAccountKeys(ctx context.Context, email string) (*acme.E
 		return nil, err
 	}
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
-	res, err := http.DefaultClient.Do(req)
+	res, err := m.gate.Client(outbound.DNS, 30*time.Second).Do(req)
 	if err != nil {
 		return nil, fmt.Errorf("ZeroSSL account keys: %w", err)
 	}
@@ -758,4 +772,152 @@ func (m *Manager) zeroSSLAccountKeys(ctx context.Context, email string) (*acme.E
 		return nil, fmt.Errorf("ZeroSSL account keys: status %d", res.StatusCode)
 	}
 	return &acme.EAB{KeyID: out.KeyID, MACKey: out.HMAC}, nil
+}
+
+// provider builds the DNS provider client; every call it makes passes the gate.
+func (m *Manager) provider(name string, c Credentials) (DNSProvider, error) {
+	p, err := m.providers(name, c)
+	if err != nil {
+		return nil, err
+	}
+	if u, ok := p.(interface{ useGate(*outbound.Gate) }); ok {
+		u.useGate(m.gate) // a provider with its own HTTP client uses the Manager's gate
+	}
+	return gatedProvider(m.gate, name, p), nil
+}
+
+// providerHost is where the DNS provider's API lives, as the ledger shows it.
+func providerHost(provider string) string {
+	switch provider {
+	case "desec":
+		return "desec.io"
+	case "cloudflare":
+		return "api.cloudflare.com"
+	case "hetzner":
+		return "api.hetzner.cloud"
+	case "inwx":
+		return "api.domrobot.com"
+	}
+	return provider
+}
+
+// gated is a DNS provider whose every call asks the gate first and marks its
+// requests as the DNS service's, so a library that falls back to the default
+// HTTP client is still counted and stopped.
+type gated struct {
+	DNSProvider
+	g    *outbound.Gate
+	host string
+}
+
+func gatedProvider(g *outbound.Gate, name string, p DNSProvider) DNSProvider {
+	return &gated{DNSProvider: p, g: g, host: providerHost(name)}
+}
+
+func (p *gated) pass(ctx context.Context) (context.Context, error) {
+	if err := p.g.Check(outbound.DNS, p.host); err != nil {
+		return ctx, err
+	}
+	return outbound.WithService(ctx, outbound.DNS), nil
+}
+
+func (p *gated) done(err error) {
+	if err == nil {
+		p.g.Contacted(outbound.DNS, p.host)
+	}
+}
+
+func (p *gated) GetRecords(ctx context.Context, zone string) ([]libdns.Record, error) {
+	ctx, err := p.pass(ctx)
+	if err != nil {
+		return nil, err
+	}
+	r, err := p.DNSProvider.GetRecords(ctx, zone)
+	p.done(err)
+	return r, err
+}
+
+func (p *gated) SetRecords(ctx context.Context, zone string, recs []libdns.Record) ([]libdns.Record, error) {
+	ctx, err := p.pass(ctx)
+	if err != nil {
+		return nil, err
+	}
+	r, err := p.DNSProvider.SetRecords(ctx, zone, recs)
+	p.done(err)
+	return r, err
+}
+
+func (p *gated) AppendRecords(ctx context.Context, zone string, recs []libdns.Record) ([]libdns.Record, error) {
+	ctx, err := p.pass(ctx)
+	if err != nil {
+		return nil, err
+	}
+	r, err := p.DNSProvider.AppendRecords(ctx, zone, recs)
+	p.done(err)
+	return r, err
+}
+
+func (p *gated) DeleteRecords(ctx context.Context, zone string, recs []libdns.Record) ([]libdns.Record, error) {
+	ctx, err := p.pass(ctx)
+	if err != nil {
+		return nil, err
+	}
+	r, err := p.DNSProvider.DeleteRecords(ctx, zone, recs)
+	p.done(err)
+	return r, err
+}
+
+// DeleteRecords removes the box's records at the DNS service: the address of
+// the public name and any challenge records left behind. It keeps the setup
+// itself; leaving the public name (Clear) is the caller's next step, after
+// this has worked. On failure nothing is changed and the error matches
+// ErrDeleteRecords (or the gate's ErrRefused).
+func (m *Manager) DeleteRecords(ctx context.Context) error {
+	m.setupMu.Lock()
+	defer m.setupMu.Unlock()
+	saved, ok, err := m.db.PublicHTTPS()
+	if err != nil {
+		return err
+	}
+	if !ok {
+		return nil // no public name, no records
+	}
+	if err := m.gate.Check(outbound.DNS, providerHost(saved.Provider)); err != nil {
+		return err
+	}
+	req, err := m.requestFrom(saved)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrDeleteRecords, err)
+	}
+	provider, err := m.provider(req.Provider, req.credentials())
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrDeleteRecords, err)
+	}
+	zone, err := certmagic.FindZoneByFQDN(ctx, zap.NewNop(), saved.Name, certmagic.RecursiveNameservers(m.resolvers))
+	if err != nil {
+		return fmt.Errorf("%w: find the zone of %s: %v", ErrDeleteRecords, saved.Name, err)
+	}
+	rel := libdns.RelativeName(saved.Name+".", zone)
+	challenge := "_acme-challenge"
+	if rel != "@" {
+		challenge += "." + rel
+	}
+	existing, err := provider.GetRecords(ctx, zone)
+	if err != nil {
+		return fmt.Errorf("%w: %v", ErrDeleteRecords, err)
+	}
+	var del []libdns.Record
+	for _, rec := range existing {
+		rr := rec.RR()
+		if rr.Name == rel && (rr.Type == "A" || rr.Type == "AAAA") || rr.Name == challenge && rr.Type == "TXT" {
+			del = append(del, rec)
+		}
+	}
+	if len(del) == 0 {
+		return nil
+	}
+	if _, err := provider.DeleteRecords(ctx, zone, del); err != nil {
+		return fmt.Errorf("%w: %v", ErrDeleteRecords, err)
+	}
+	return nil
 }

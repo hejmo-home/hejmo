@@ -178,8 +178,10 @@ func TestSignOutPostFromAChildsPhoneIsRefusedAndKeepsTheSession(t *testing.T) {
 	}
 }
 
-// Q46 / PO criterion on #197: parents see how to hand a phone to someone else
-// or switch the person (remove it, pair it again), in du-style EN and DE.
+// Q46 / PO criterion on #197, drawn by #198: parents see how to hand a phone to
+// someone else or switch the person (pair it for another person), once, at the
+// place where they do it: one sentence on the overview, a line under the box
+// title on a child's phone, du-style in EN and DE.
 func TestParentsSeeHowToHandAPhoneOnOrSwitchThePerson(t *testing.T) {
 	b := signedInBox(t)
 	pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
@@ -187,11 +189,11 @@ func TestParentsSeeHowToHandAPhoneOnOrSwitchThePerson(t *testing.T) {
 	if m == nil {
 		t.Fatal("no paired phone on the phones page")
 	}
-	for _, path := range []string{"/phones", "/phones/" + m[1]} {
-		for lang, want := range map[string]string{
-			"en": "To give a phone to someone else or switch the person, remove it here and pair it again.",
-			"de": "Willst du ein Handy jemand anderem geben oder die Person wechseln, entferne es hier und koppele es neu.",
-		} {
+	for path, wants := range map[string]map[string]string{
+		"/phones":         {"en": "Tap a phone to remove it or pair it for another person.", "de": "Tippe auf ein Handy, um es zu entfernen oder für eine andere Person zu koppeln."},
+		"/phones/" + m[1]: {"en": "Does someone else get this phone? Pair it again in one step here. Mia cannot sign out on this phone.", "de": "Bekommt jemand anderes dieses Handy? Hier koppelst du es in einem Schritt neu. Mia kann sich auf dem Handy nicht selbst abmelden."},
+	} {
+		for lang, want := range wants {
 			r := b.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": lang})
 			if r.status != http.StatusOK || !strings.Contains(r.body, want) {
 				t.Errorf("%s (%s) = %d, lacks the hint %q", path, lang, r.status, want)

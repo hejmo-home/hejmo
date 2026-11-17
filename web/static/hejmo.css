@@ -1849,6 +1849,27 @@ details.more.explain-more { margin-top: var(--gap-section); }
   .lv-head .add-entry .f { flex: 1 1 12em; }
 }
 
+/* ticket 57: own domain at a DNS provider (Cloudflare, deSEC, Hetzner, INWX).
+   Existing tokens only; builds on .connect, .guide and .why of ticket 135. */
+/* Provider cards (name "dns", outside the forms): only the guide of the chosen
+   provider shows; before a choice no guide shows, only the .pick-first hint.
+   (Only where provider cards exist: the calendar connect page has none.) */
+.connect:has(input[name="dns"]):not(:has(input[name="dns"]:checked)) .guide { display: none; }
+.connect:has(input[name="dns"][value="cloudflare"]:checked) .guide:not([data-provider="cloudflare"]),
+.connect:has(input[name="dns"][value="desec"]:checked) .guide:not([data-provider="desec"]),
+.connect:has(input[name="dns"][value="hetzner"]:checked) .guide:not([data-provider="hetzner"]),
+.connect:has(input[name="dns"][value="inwx"]:checked) .guide:not([data-provider="inwx"]) { display: none; }
+.connect:has(input[name="dns"]:checked) .pick-first { display: none; }
+.connect > .hint { margin: 0; max-width: 560px; }
+/* A switch inside a guide step that reveals its fields while on (INWX
+   two-factor sign-in). Off: only the row with its state in words. */
+.switchset { display: grid; gap: 8px; justify-self: stretch; min-width: 0; }
+.switchset > .card-row { padding: 6px 0; }
+.switchset > .when-on { display: grid; gap: 8px; min-width: 0; }
+.switchset > .when-on > p { margin: 0; overflow-wrap: anywhere; }
+.switchset:has(> .card-row .switch input:not(:checked)) > .when-on { display: none; }
+/* Domain names in running text and errors never widen a 375 px page. */
+.ferr span, .error .host, .hint .host { overflow-wrap: anywhere; }
 /* ---- Breadcrumbs (ticket #182, design pass by Opus 16/11/2026; ADR 0017 amended) ----
    Every page below Settings (and an everyday page two or more levels below its
    screen) starts with the trail; it replaces the back link. Each part except the
@@ -2038,6 +2059,14 @@ p.why.health > span { display: grid; gap: 2px; }
 [data-theme="bw"] .choose-none { border: 2px solid var(--text); }
 .choose-none p { margin: 0; }
 
+/* ticket 57, product owner decision Q62 a: the three ways of the HTTPS step are
+   equal choices. Each card says the same three things in the same order: what
+   the way means, what you need, what it costs. Labels in words, no icons. */
+.choice small.way { display: grid; gap: 4px; }
+.choice small.way > span { display: block; }
+.choice small.way .k { font-weight: 700; color: var(--text); }
+/* The page of the way "Nur im Heimnetz": what it means, before the button. */
+.homeonly { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; max-width: 560px; }
 /* ---- Screensaver, photos and albums (ticket 178, no new tokens) ---- */
 
 /* Screensaver on the display: one photo that fills the screen (cover), on the theme background. */

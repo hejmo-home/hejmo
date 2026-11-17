@@ -101,12 +101,12 @@ func TestWizardShellShowsStepNumberAndProgress(t *testing.T) {
 	}
 }
 
-// Ticket 133: a choice page first (public name selected), submitted as a GET;
+// Ticket 133: a choice page first (none selected, Q62 a), submitted as a GET;
 // then only the form of the chosen way.
 func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 	b := newFreshBox(t)
 	choice := deGet(b, "/setup/https")
-	for _, want := range []string{`<form class="tile" method="get" action="/setup/https">`, `<fieldset class="choice">`, `name="way" value="public" checked`, `name="way" value="own"`, "Mit öffentlichem Namen (empfohlen)", "Mit eigenem Zertifikat der Box"} {
+	for _, want := range []string{`<form class="tile" method="get" action="/setup/https">`, `<fieldset class="choice">`, `name="way" value="public"`, `name="way" value="own"`, "Mit kostenlosem Namen bei deSEC", "Nur im Heimnetz"} {
 		if !strings.Contains(choice.body, want) {
 			t.Errorf("choice page misses %q", want)
 		}
@@ -114,8 +114,8 @@ func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 	if strings.Contains(choice.body, `name="token"`) || strings.Contains(choice.body, `action="/setup/https"`+` method="post"`) {
 		t.Error("the choice page shows a form already")
 	}
-	if strings.Contains(choice.body, `value="own" checked`) {
-		t.Error("the own CA is selected by default")
+	if strings.Contains(choice.body, " checked") {
+		t.Error("a way is selected by default")
 	}
 
 	public := deGet(b, "/setup/https?way=public")
@@ -151,7 +151,7 @@ func TestWithoutAPublicNameOnlyTheOwnCAIsOffered(t *testing.T) {
 	b.srv = b.plainServer()
 	for _, path := range []string{"/setup/https", "/setup/https?way=public", "/setup/https?way=own"} {
 		r := deGet(b, path)
-		if !strings.Contains(r.body, "Zertifikat der Box erstellen") || strings.Contains(r.body, `name="token"`) || strings.Contains(r.body, "Anderen Weg wählen") {
+		if !strings.Contains(r.body, "Nur im Heimnetz einrichten") || strings.Contains(r.body, `name="token"`) || strings.Contains(r.body, "Anderen Weg wählen") {
 			t.Errorf("%s: want the own CA page without a way back:\n%s", path, r.body)
 		}
 	}
@@ -181,7 +181,7 @@ func TestPublicFormErrorsGoToTheirFields(t *testing.T) {
 		"name":   {"name", "Dieser Name geht nicht"},
 		"lan_ip": {"lan_ip", "keine Adresse im Heimnetz"},
 		"eab":    {"eab", "Schlüssel-ID und HMAC-Schlüssel"},
-		"token":  {"token", "Füge den Zugangstoken von deSEC ein"},
+		"token":  {"token", "Füge den Token ein"},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {

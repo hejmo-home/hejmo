@@ -85,54 +85,68 @@ func TestFormatFillsParameters(t *testing.T) {
 // ADR 0017: German texts address the user as "du". "eure"/"euer" stay only
 // where the whole family is meant; every such text is listed here with its key.
 var wholeFamilyTexts = map[string]bool{
-	"displays.none":                  true, // "euren Tag": the family's day on the wall
-	"connect.legend":                 true, // "eure Kalender": the family's calendars
-	"connect.lead":                   true, // "eure Termine": the family's events, kept by several people
-	"connections.empty":              true, // "eure Termine": the family's events on the box
-	"setup.welcome.lead":             true, // "eure Box": the family's box
-	"setup.welcome.step.2":           true, // "Euer Ort": the family's town
-	"setup.https.way.public.hint":    true, // "eure Box"
-	"setup.https.public.lan_ip.hint": true, // "eure Geräte"
-	"setup.https.rebind.why":         true, // "bei euch zu Hause"
-	"setup.totp.lead":                true, // "eure Box"
-	"firststeps.lead":                true, // "eurem Familienleben"
-	"firststeps.settled":             true, // "eure Familie"
-	"firststeps.close.hint":          true, // "euren Tag"
-	"mcp.intro.off":                  true, // "eurer Hejmo-Box": the family's box
-	"mcp.intro.on":                   true, // "eurer Hejmo-Box"
-	"mcp.switch.off":                 true, // "eure Daten": the family's data
-	"mcp.area.events.desc":           true, // "eure anderen Kalender": the family's calendars
-	"mcp.explain.what":               true, // "eure Hejmo-Box"
-	"mcp.explain.know3":              true, // "eurem Heimnetz": the family's home network
-	"flash.mcp_off":                  true, // "eure Daten"
-	"firststeps.display.text":        true, // "euren Tag"
-	"food.why.title":                 true, // "eurer Box": the family's box (preview 163)
-	"saver.hint.title":               true, // "eure Fotos": the family's photos (preview 178)
-	"displays.saver.on":              true, // "euren Alben": the family's albums
-	"photos.full.hint":               true, // "ihr nicht mehr braucht": the family's photos
-	"photos.up.wait":                 true, // "Wartet": the state of a file, not an imperative
-	"art.sug.diet":                   true, // "bei euch": the family
-	"art.fits.nobody":                true,
-	"art.fits.all":                   true,
-	"artf.kind.hint":                 true,
-	"lib.own.empty":                  true, // "was ihr oft kauft", "eure Lieblingsmarke": the family
-	"lists.set.hide.none":            true,
-	"artf.url.hint":                  true, // "eurer Box": the family's box
-	"art.copy.hint":                  true, // "eure Marke"
-	"art.hide.off.diet":              true,
-	"artf.err.url.private":           true, // "euer eigenes Netz": the family's network
-	"lists.set.empty":                true,
-	"lib.lead":                       true, // "wenn ihr etwas auf eine Liste setzt"
-	"art.units.hint":                 true, // "bis ihr eine andere Einheit nehmt"
-
-	"connect.outlook.appid":      true, // "eurer eigenen App-Registrierung": the family's
-	"connect.outlook.appid.hint": true, // "wenn ihr ... eine eigene angelegt habt": the family
-	"outlook.fail.consent.ask":   true, // "Schick ihr": the IT
-
-	"theme.auto.parent":   true, // "eures Zuhauses": the family's home
-	"theme.auto.child":    true, // "eures Zuhauses"
-	"theme.where.phone":   true, // "behalten ihr Design": everyone else
-	"theme.where.browser": true, // "behalten ihr Design"
+	"displays.none":                            true, // "euren Tag": the family's day on the wall
+	"connect.legend":                           true, // "eure Kalender": the family's calendars
+	"connect.lead":                             true, // "eure Termine": the family's events, kept by several people
+	"connections.empty":                        true, // "eure Termine": the family's events on the box
+	"setup.welcome.lead":                       true, // "eure Box": the family's box
+	"setup.welcome.step.2":                     true, // "Euer Ort": the family's town
+	"setup.https.way.public.cost":              true, // "eure Box"
+	"setup.https.way.domain.cost":              true, // "eure Box"
+	"setup.https.way.own.means":                true, // "bei euch zu Hause"
+	"setup.https.way.domain.means":             true, // "eurer Domain": the family's domain
+	"setup.https.public.lan_ip.hint":           true, // "eure Geräte"
+	"setup.https.rebind.why":                   true, // "bei euch zu Hause"
+	"setup.totp.lead":                          true, // "eure Box"
+	"firststeps.lead":                          true, // "eurem Familienleben"
+	"firststeps.settled":                       true, // "eure Familie"
+	"firststeps.close.hint":                    true, // "euren Tag"
+	"mcp.intro.off":                            true, // "eurer Hejmo-Box": the family's box
+	"mcp.intro.on":                             true, // "eurer Hejmo-Box"
+	"mcp.switch.off":                           true, // "eure Daten": the family's data
+	"mcp.area.events.desc":                     true, // "eure anderen Kalender": the family's calendars
+	"mcp.explain.what":                         true, // "eure Hejmo-Box"
+	"mcp.explain.know3":                        true, // "eurem Heimnetz": the family's home network
+	"flash.mcp_off":                            true, // "eure Daten"
+	"firststeps.display.text":                  true, // "euren Tag"
+	"setup.https.domain.cloudflare.sub":        true, // "eure Domain": the family's domain
+	"setup.https.domain.legend":                true, // "eure Domain": the family's domain
+	"setup.https.way.domain":                   true, // "eure Domain": the family's domain
+	"setup.https.error.name_taken":             true, // "eure Domain": the family's domain
+	"setup.https.domain.name.text":             true, // "eure Domain": the family's domain
+	"setup.https.domain.hetzner.token.text":    true, // "eure Domain": the family's domain
+	"setup.https.public.failed.hetzner":        true, // "eure Domain": the family's domain
+	"setup.https.domain.other":                 true, // "eure Domain": the family's domain
+	"setup.https.public.failed.cloudflare":     true, // "eure Domain": the family's domain
+	"setup.https.domain.lead":                  true, // "eure Domain": the family's domain
+	"setup.https.domain.name.hint":             true, // "eure Domain": the family's domain
+	"setup.https.domain.cloudflare.token.text": true, // "eure Domain": the family's domain
+	"setup.https.domain.why.hetzner.text":      true, // "eure Domain": the family's domain
+	"food.why.title":                           true, // "eurer Box": the family's box (preview 163)
+	"theme.auto.parent":                        true, // "eures Zuhauses": the family's home
+	"theme.auto.child":                         true, // "eures Zuhauses"
+	"theme.where.phone":                        true, // "behalten ihr Design": everyone else
+	"theme.where.browser":                      true, // "behalten ihr Design"
+	"art.sug.diet":                             true, // "bei euch": the family
+	"art.fits.nobody":                          true,
+	"art.fits.all":                             true,
+	"artf.kind.hint":                           true,
+	"lib.own.empty":                            true, // "was ihr oft kauft", "eure Lieblingsmarke": the family
+	"lists.set.hide.none":                      true,
+	"artf.url.hint":                            true, // "eurer Box": the family's box
+	"art.copy.hint":                            true, // "eure Marke"
+	"art.hide.off.diet":                        true,
+	"artf.err.url.private":                     true, // "euer eigenes Netz": the family's network
+	"lists.set.empty":                          true,
+	"lib.lead":                                 true, // "wenn ihr etwas auf eine Liste setzt"
+	"art.units.hint":                           true, // "bis ihr eine andere Einheit nehmt"
+	"saver.hint.title":                         true, // "eure Fotos": the family's photos (preview 178)
+	"displays.saver.on":                        true, // "euren Alben": the family's albums
+	"photos.full.hint":                         true, // "ihr nicht mehr braucht": the family's photos
+	"photos.up.wait":                           true, // "Wartet": the state of a file, not an imperative
+	"connect.outlook.appid":                    true, // "eurer eigenen App-Registrierung": the family's
+	"connect.outlook.appid.hint":               true, // "wenn ihr ... eine eigene angelegt habt": the family
+	"outlook.fail.consent.ask":                 true, // "Schick ihr": the IT
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

@@ -12,15 +12,16 @@
      words of a button that shows the password). A password
      field never gets a value. The field the page reports in ErrorField shows
      the error under it, is marked invalid and takes the focus. */}}
-{{define "field"}}{{$bad := and .Root.ErrorField (eq .Root.ErrorField .Name)}}{{$type := or .Type "text"}}<div class="f{{with .Class}} {{.}}{{end}}{{if $bad}} invalid{{end}}">
+{{define "field"}}{{$bad := or (and .Root.ErrorField (eq .Root.ErrorField .Name)) (errIn .Root .Name)}}{{$type := or .Type "text"}}<div class="f{{with .Class}} {{.}}{{end}}{{if $bad}} invalid{{end}}">
   <label>{{.Label}}
     {{if .Reveal}}<span class="pw">{{end}}<input name="{{.Name}}" type="{{$type}}"{{if eq $type "time"}} class="tcap"{{end}}{{if ne $type "password"}} value="{{.Value}}"{{end}}{{if .Required}} required{{end}}{{with .Max}} maxlength="{{.}}"{{end}}{{with .Min}} minlength="{{.}}"{{end}}{{with .Pattern}} pattern="{{.}}"{{end}}{{if .Bounded}} min="{{.Lo}}" max="{{.Hi}}" step="1"{{end}}{{with .Inputmode}} inputmode="{{.}}"{{end}}{{with .Autocomplete}} autocomplete="{{.}}"{{end}}{{with .Autocapitalize}} autocapitalize="{{.}}"{{end}}{{with .Placeholder}} placeholder="{{.}}"{{end}}{{with .Spellcheck}} spellcheck="{{.}}"{{end}}{{if or $bad .Autofocus}} autofocus{{end}}{{if $bad}} aria-invalid="true"{{end}}{{if or $bad .Hint}} aria-describedby="{{if $bad}}err-{{.Name}}{{end}}{{if and $bad .Hint}} {{end}}{{if .Hint}}hint-{{.Name}}{{end}}"{{end}}>{{if .Reveal}}<button class="button secondary" type="button" data-pw-toggle data-show-text="{{.Reveal.Show}}" data-hide-text="{{.Reveal.Hide}}" aria-pressed="false">{{.Reveal.Show}}</button></span>{{end}}</label>
   {{template "fieldError" .}}
   {{with .Hint}}<p class="hint" id="hint-{{$.Name}}">{{.}}</p>{{end}}
 </div>{{end}}
 
-{{/* The error text of a field or of a group of controls (chips, segments). */}}
-{{define "fieldError"}}{{if and .Root.ErrorField (eq .Root.ErrorField .Name)}}<p class="ferr" id="err-{{.Name}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{with .Root.ErrorText}}{{.}}{{else}}{{t (or .Root.FieldError .Root.Error)}}{{end}}</p>{{end}}{{end}}
+{{/* The error text of a field or of a group of controls (chips, segments). A
+     page can name several fields at once in ErrorFields (field to text key). */}}
+{{define "fieldError"}}{{if or (and .Root.ErrorField (eq .Root.ErrorField .Name)) (errIn .Root .Name)}}<p class="ferr" id="err-{{.Name}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{with .Root.ErrorText}}{{.}}{{else}}{{t (or (errKey .Root .Name) .Root.FieldError .Root.Error)}}{{end}}</span></p>{{end}}{{end}}
 
 {{/* The error of a field whose text carries a link, built by the server with
      the names escaped (HTML). The text sits in one span so that the flex row of

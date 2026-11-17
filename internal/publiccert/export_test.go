@@ -3,6 +3,7 @@ package publiccert
 import (
 	"context"
 	"errors"
+	"net/http"
 )
 
 // RenewNow renews the certificate now, whether or not it is due, the way
@@ -17,3 +18,16 @@ func (m *Manager) RenewNow(ctx context.Context) error {
 	}
 	return cfg.RenewCertSync(ctx, name, true)
 }
+
+// HetznerBaseURL is where the Hetzner provider talks to by default.
+const HetznerBaseURL = hetznerBaseURL
+
+// DefaultProviders is the factory the box uses.
+var DefaultProviders = defaultProviders
+
+// NewHetzner, NewCloudflare and NewINWX build a provider against a fake API.
+func NewHetzner(c Credentials, baseURL string) DNSProvider { return newHetzner(c, baseURL) }
+func NewCloudflare(c Credentials, client *http.Client) DNSProvider {
+	return newCloudflare(c, client)
+}
+func NewINWX(c Credentials, endpoint string) DNSProvider { return newINWX(c, endpoint) }

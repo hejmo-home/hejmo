@@ -6,8 +6,10 @@ import (
 	"net/http/httptest"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 )
 
 func TestHTTPFetcher(t *testing.T) {
@@ -25,7 +27,7 @@ func TestHTTPFetcher(t *testing.T) {
 		}
 	}))
 	defer srv.Close()
-	f := calsync.HTTPFetcher{}
+	f := calsync.HTTPFetcher{Client: outbound.AllowAll().Client(outbound.ICS, 30*time.Second)}
 	ctx := context.Background()
 
 	if body, err := f.Fetch(ctx, srv.URL+"/ok.ics"); err != nil || !strings.HasPrefix(string(body), "BEGIN:VCALENDAR") {

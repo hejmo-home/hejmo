@@ -60,6 +60,9 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
 	}
+	if err := s.refuse(cal.Kind, conn.URL); err != nil {
+		return err // the changes stay queued until the connection is on again
+	}
 	user, password, err := s.db.ConnectionCredentials(h.ID, cal.ConnectionID)
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.credentials", "detail", err.Error()), err)

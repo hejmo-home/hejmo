@@ -12,6 +12,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/caldavclient/caldavtest"
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -93,6 +94,7 @@ func newDAVFixture(t *testing.T, password string) *davFixture {
 		t.Fatal(err)
 	}
 	fx.svc = calsync.New(db, nil, func() time.Time { return fx.clock })
+	fx.svc.SetGate(outbound.AllowAll()) // the tests use their own fetcher or dialer, or a local server
 	fx.svc.SetDialer(func(serverURL, user, pass string) (calsync.Remote, error) {
 		c, err := caldavclient.NewClient(serverURL, user, pass, fx.tamper.Client())
 		return countingRemote{c, fx}, err

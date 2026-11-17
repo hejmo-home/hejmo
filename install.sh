@@ -155,8 +155,9 @@ write_if_changed "$DIR/hejmo-update" 0755 <<'UPDATER' || true
 # switch it returns to the previous image (recorded by digest) and database.
 #
 # It talks to the box only through two small files in the data volume, both
-# with fixed keys and values: update-settings (written by the box) and
-# update-status (written here). It reads nothing else from the data volume,
+# with fixed keys and values: update-settings (written by the box; mode=on, off
+# or notify, and offline=yes while offline mode is on or the update check is
+# switched off, then it contacts nothing) and update-status (written here). It reads nothing else from the data volume,
 # never sources, evals or interpolates what it reads, and the container has no
 # Docker socket.
 set -uo pipefail
@@ -182,6 +183,8 @@ if mv --help 2>&1 | grep -q -- ' -T'; then MV+=(-T); fi
 mkdir -p "$HOLD"
 chmod 0700 "$HOLD"
 
+CHECKED=""
+
 # report STATE [VERSION [TARGET [REASON]]] replaces the status file. It is built
 # in the root-only directory and moved over the old file, so a link the
 # container planted is replaced, never written through.
@@ -193,6 +196,7 @@ report() {
 		if [ -n "${3:-}" ]; then printf 'target=%s\n' "$3"; fi
 		if [ -n "${4:-}" ]; then printf 'reason=%s\n' "$4"; fi
 		printf 'time=%s\n' "$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+		if [ -n "$CHECKED" ]; then printf 'checked=%s\n' "$CHECKED"; fi
 	} >"$tmp"
 	chmod 0644 "$tmp"
 	if [ -L "$STATUS" ]; then rm -f "$STATUS"; fi
@@ -215,6 +219,29 @@ read_mode() {
 		fi
 	fi
 	echo notify
+}
+
+# offline: the box says, with the exact line offline=yes, that this script must
+# not connect to anything (offline mode, or the update check switched off).
+# Anything else, a link included, means online.
+offline_requested() {
+	[ -f "$SETTINGS" ] && [ ! -L "$SETTINGS" ] && head -c 256 "$SETTINGS" | grep -qx 'offline=yes'
+}
+
+# mark_checked records, in the status file, when the release feed was last
+# asked. The report parents have not seen yet stays as it is.
+mark_checked() {
+	local tmp="$HOLD/status.$$"
+	CHECKED="$(date -u +%Y-%m-%dT%H:%M:%SZ)"
+	{
+		if [ -f "$STATUS" ] && [ ! -L "$STATUS" ]; then
+			head -c 1024 "$STATUS" | grep -E '^(state|version|target|reason|time)=' || true
+		fi
+		printf 'checked=%s\n' "$CHECKED"
+	} >"$tmp"
+	chmod 0644 "$tmp"
+	if [ -L "$STATUS" ]; then rm -f "$STATUS"; fi
+	"${MV[@]}" "$tmp" "$STATUS"
 }
 
 # The newest published release, as x.y.z; fails on anything else.
@@ -280,10 +307,16 @@ if [ "$mode" = off ]; then
 	exit 0
 fi
 
+if offline_requested; then
+	log "offline mode: no check for updates"
+	exit 0
+fi
+
 latest="$(latest_version)" || {
 	log "cannot tell the newest version (offline?); trying again tomorrow"
 	exit 0
 }
+mark_checked
 current="$(current_version)"
 # A box that does not know its version (a preview build has no version label)
 # may be newer than the release; installing it could be a downgrade onto a

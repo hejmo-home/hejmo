@@ -1,6 +1,6 @@
 # 0005. Display client and kiosk adapter
 
-- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md), [0018](0018-path-to-0-1.md)
+- Status: Accepted, amended by [0015](0015-display-web-interface-and-everyday.md), [0018](0018-path-to-0-1.md), [0020](0020-versions-0-2-and-0-3.md)
 - Date: 14/11/2026
 
 ## Context
@@ -23,7 +23,7 @@ Onyx Boox devices drive the front light through vendor settings that ordinary ap
 - Hardware control (sleep mode, front light, keep awake) runs through a **kiosk adapter** interface in the box.
 - V1.0 ships one adapter: **FreeKiosk via its REST API**. It is the recommended display app.
 - An MQTT adapter (FullScreendy) follows when needed; MQTT arrives with Home Assistant in V3 anyway.
-- The acceptance criterion "brightness follows sunset" is weakened to **"front light off at night"**; smooth dimming only where the device allows it.
+- The acceptance criterion "brightness follows sunset" is weakened to **"front light off at night"**; smooth dimming only where the device allows it. (Superseded in 0.2 by [0020](0020-versions-0-2-and-0-3.md): brightness by time of day, ticket 179.)
 - An own Android wrapper app remains an option for V2 if both apps fail on the reference tablet.
 
 ## Consequences

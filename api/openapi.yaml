@@ -827,6 +827,26 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/DisplayState" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+  /display/wake:
+    post:
+      operationId: wakeDisplay
+      summary: A touch on a quiet display wakes it (its own token as bearer token)
+      security:
+        - displayBearer: []
+      description: |
+        Ticket 179. In quiet mode a display whose kiosk app switched it off (quiet
+        mode `off` in `brightness.quiet.mode`) is woken by a touch: the display's
+        page posts here, and the box keeps it awake for `brightness.quiet.wake_minutes`
+        at evening brightness with the night page, then switches it off again.
+        The answer is 204 whether or not it woke anything: outside quiet mode, while
+        quiet mode only dims, and on a display without a kiosk app nothing changes.
+        An `Authorization` header that is not a bearer token is refused with 401, the
+        token of a display that is not paired with 403.
+      responses:
+        "204":
+          description: Noted
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /displays/{id}:
     patch:
       operationId: updateDisplay
@@ -834,9 +854,10 @@ paths:
       description: |
         Only the fields sent are changed. `name` (1 to 80 characters after trimming) and `type` (`eink_bw`, `eink_color` or `screen`) rename and retype the display; an empty or too long name, or an unknown type, is refused with 422. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
         `theme` and the two offsets set the display's theme (ADR 0015); an unknown theme or an offset outside -180..180 is refused with 422.
-        `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015). Quiet mode takes precedence over the theme.
+        `quiet_mode` sets the daily window in which the display shows the night page (ADR 0015). Quiet mode takes precedence over the theme. What it does to the light depends on `brightness.quiet.mode`: with `off` the front light goes off (E-Ink) or the screen goes off (normal screen, the page is black meanwhile); with `dim` the night page stays visible and the display is only dimmed to `brightness.quiet.level`. See `Brightness`.
         `list_view` (`tiles` or `list`) is how the display shows lists; the display keeps its own view, tiles until it is switched (ADR 0019).
-        `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to switch the front light off at sunset and in quiet mode; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
+        `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to set the brightness; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
+        `brightness` sets the brightness values by time of day and in quiet mode (ticket 179); see `Brightness`.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -3802,7 +3823,7 @@ components:
         text: { type: string }
     Display:
       type: object
-      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver, list_view]
+      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver, brightness, list_view]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: Hallway }
@@ -3817,6 +3838,55 @@ components:
         quiet_mode: { $ref: "#/components/schemas/QuietMode" }
         kiosk: { $ref: "#/components/schemas/Kiosk" }
         screensaver: { $ref: "#/components/schemas/Screensaver" }
+        brightness: { $ref: "#/components/schemas/Brightness" }
+    Brightness:
+      type: object
+      description: |
+        How bright the display is (ticket 179, ADR 0020). It needs a kiosk app: the box sets
+        the brightness (E-Ink: the front light) through it, and without one only the values
+        are stored. `day` and `evening` switch at the same sun times and offsets as the
+        automatic theme (ADR 0015); without a home location `day` applies all day.
+      required: [day, evening, light_source, quiet, current]
+      properties:
+        day: { type: integer, minimum: 1, maximum: 100, description: "Percent from sunrise to sunset; default 100" }
+        evening: { type: integer, minimum: 1, maximum: 100, description: "Percent from sunset to sunrise; default 40" }
+        light_source:
+          type: string
+          enum: [sun, room]
+          description: "`sun`: day and evening by the sun. `room`: the device's light sensor regulates (only effective when the device reports one); quiet mode applies either way"
+        quiet:
+          type: object
+          description: What quiet mode does to the light, and the wake after a touch
+          required: [mode, level, wake_minutes]
+          properties:
+            mode: { type: string, enum: [off, dim], description: "`off`: the front light (E-Ink) or the screen (normal screen) goes off. `dim`: dimmed to `level`" }
+            level: { type: integer, minimum: 1, maximum: 100, description: "Percent for `dim`; default 5" }
+            wake_minutes: { type: integer, minimum: 1, maximum: 30, description: "How long a touch wakes a display that quiet mode switched off, at evening brightness; default 1" }
+        current:
+          type: object
+          nullable: true
+          description: What the display should do now and whether the kiosk app confirmed it. Null without a kiosk app or before the box has checked it (it checks every minute).
+          required: [phase, percent, since, confirmed, reachable, light_sensor]
+          properties:
+            phase: { type: string, enum: [day, evening, room, quiet_off, quiet_dim, wake] }
+            percent: { type: integer, nullable: true, description: "Null while the light sensor regulates (`room`, or a `wake` under it)" }
+            since: { type: string, format: date-time, nullable: true, description: "When this phase began; null without a home location" }
+            confirmed: { type: boolean, description: "The kiosk app received it" }
+            reachable: { type: boolean, description: "The kiosk app answered at the last check; the box retries every minute" }
+            light_sensor: { type: boolean, description: "The device reports a light sensor, so `light_source: room` has an effect" }
+    UpdateBrightness:
+      type: object
+      description: Only the fields sent change. A value outside its range, an unknown mode or source is refused with 422.
+      properties:
+        day: { type: integer, minimum: 1, maximum: 100 }
+        evening: { type: integer, minimum: 1, maximum: 100 }
+        light_source: { type: string, enum: [sun, room] }
+        quiet:
+          type: object
+          properties:
+            mode: { type: string, enum: [off, dim] }
+            level: { type: integer, minimum: 1, maximum: 100 }
+            wake_minutes: { type: integer, minimum: 1, maximum: 30 }
         list_view: { type: string, enum: [tiles, list], description: "How the display shows lists (ADR 0019). A display is not a person and keeps its own view, tiles until someone switches it at the display or here." }
     DisplayPairing:
       type: object
@@ -3880,6 +3950,7 @@ components:
             url: { type: string, description: "http or https address; empty removes the kiosk app and its key" }
             api_key: { type: string, writeOnly: true, description: "Omitted or empty keeps the stored key" }
         screensaver: { $ref: "#/components/schemas/UpdateScreensaver" }
+        brightness: { $ref: "#/components/schemas/UpdateBrightness" }
         list_view: { type: string, enum: [tiles, list], description: "How the display shows lists (ADR 0019); anything else is refused with 422" }
     PairDisplay:
       type: object

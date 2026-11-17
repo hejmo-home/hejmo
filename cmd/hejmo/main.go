@@ -173,8 +173,8 @@ func run(cfg config, logger *slog.Logger) error {
 	// Background pushes of box changes finish before the database closes.
 	defer syncer.Wait()
 
-	// The kiosk runner switches the front light of displays with a kiosk app
-	// off at sunset and in quiet mode (ADR 0005, 0015), checked every minute.
+	// The kiosk runner sets the brightness of displays with a kiosk app by the
+	// sun and in quiet mode (ADR 0005, 0020), checked every minute.
 	kioskRunner := server.NewKioskRunner(server.KioskOptions{DB: db, Logger: logger})
 	kioskDone := make(chan struct{})
 	go func() {
@@ -193,7 +193,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-weatherDone }()
 
-	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Gate: gate, Done: ctx.Done(), UpdateDir: cfg.UpdateDir, PhotoDir: cfg.DataDir})
+	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Gate: gate, Done: ctx.Done(), UpdateDir: cfg.UpdateDir, PhotoDir: cfg.DataDir, Kiosk: kioskRunner})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).

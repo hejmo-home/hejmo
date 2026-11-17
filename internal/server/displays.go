@@ -9,6 +9,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/brightness"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/kiosk"
 	"github.com/hejmo-home/hejmo/internal/list"
@@ -68,6 +69,8 @@ type displayPage struct {
 	SaverOnText, SaverSummary, QuietNote string
 	AllAlbums, NoPhotos, EInk            bool
 	Albums                               []saverAlbum
+	// The brightness block (ticket 179).
+	Bright brightPage
 }
 
 // saverAlbum is one album chip of the screensaver block.
@@ -107,6 +110,7 @@ func newDisplayPage(d store.Display, in url.Values) displayPage {
 func (s *server) renderDisplay(w http.ResponseWriter, r *http.Request, p principal, status int, d store.Display, in url.Values, errKey, errField string) {
 	page := newDisplayPage(d, in)
 	s.fillSaver(r, p, &page, d, in)
+	s.fillBrightness(r, p, &page, d, in, errField)
 	facts := []factView{}
 	if d.LastSeen.IsZero() {
 		facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.last_seen")), Value: s.say(r, i18n.Msg("displays.never"))})
@@ -116,10 +120,14 @@ func (s *server) renderDisplay(w http.ResponseWriter, r *http.Request, p princip
 		facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.last_seen")), Value: p.when(d.LastSeen)})
 	}
 	facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.paired")), Value: p.day(d.PairedAt)})
-	s.render(w, r, status, "display.html", map[string]any{
+	data := map[string]any{
 		"Person": p.person, "D": page, "Facts": facts, "Error": errKey, "ErrorField": errField,
 		"Title": d.Name,
-	})
+	}
+	if brightFields[errField] { // the sentence on top names the block, the field says what is wrong
+		data["Error"], data["FieldError"] = "displays.error.bright_block", errKey
+	}
+	s.render(w, r, status, "display.html", data)
 }
 
 func (s *server) handleDisplayPage(w http.ResponseWriter, r *http.Request) {
@@ -205,6 +213,44 @@ type displayChange struct {
 	SunriseOffset, SunsetOffset *int
 	// Saver is the photo screensaver (ticket 178).
 	Saver *saverChange
+	// Brightness is what the kiosk app sets by time of day and in quiet mode (ticket 179).
+	Brightness *brightChange
+}
+
+// brightChange is a change of a display's brightness values; nil fields stay as they are.
+type brightChange struct {
+	Day, Evening, QuietLevel, WakeMinutes *int
+	QuietMode, Source                     *string
+}
+
+// apply returns the brightness values after the change, or a *store.FieldError naming the wrong one.
+func (c *brightChange) apply(cur brightness.Settings) (brightness.Settings, error) {
+	if c == nil {
+		return cur, nil
+	}
+	if c.Day != nil {
+		cur.Day = *c.Day
+	}
+	if c.Evening != nil {
+		cur.Evening = *c.Evening
+	}
+	if c.QuietLevel != nil {
+		cur.QuietLevel = *c.QuietLevel
+	}
+	if c.WakeMinutes != nil {
+		cur.WakeMinutes = *c.WakeMinutes
+	}
+	if c.QuietMode != nil {
+		cur.QuietMode = brightness.QuietMode(*c.QuietMode)
+	}
+	if c.Source != nil {
+		cur.Source = brightness.Source(*c.Source)
+	}
+	var refused *brightness.Refused
+	if err := cur.Validate(); errors.As(err, &refused) {
+		return cur, &store.FieldError{Field: refused.Field, Msg: refused.Msg}
+	}
+	return cur, nil
 }
 
 // saverChange is a change of a display's screensaver; nil fields stay as they are.
@@ -291,6 +337,10 @@ func (s *server) changeDisplay(householdID, id string, c displayChange) error {
 	if err != nil {
 		return err
 	}
+	bright, err := c.Brightness.apply(cur.Brightness)
+	if err != nil {
+		return err
+	}
 	if name != cur.Name || typ != cur.Type { // the store trims and validates both
 		if err := s.db.SetDisplayIdentity(householdID, id, name, typ); err != nil {
 			return err
@@ -315,6 +365,11 @@ func (s *server) changeDisplay(householdID, id string, c displayChange) error {
 			if errors.Is(err, store.ErrInvalid) && c.Saver != nil && c.Saver.Albums != nil {
 				return &store.FieldError{Field: "saver_albums", Msg: "an album of the screensaver is unknown"}
 			}
+			return err
+		}
+	}
+	if bright != cur.Brightness {
+		if err := s.db.SetDisplayBrightness(householdID, id, bright); err != nil {
 			return err
 		}
 	}
@@ -410,6 +465,22 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 		}
 		c.Saver.Albums = &albums
 	}
+	bc := &brightChange{QuietMode: optional(r, "quiet_light"), Source: optional(r, "light_source")}
+	for _, f := range []struct {
+		field string
+		into  **int
+	}{{"bright_day", &bc.Day}, {"bright_evening", &bc.Evening}, {"bright_quiet", &bc.QuietLevel}, {"wake_minutes", &bc.WakeMinutes}} {
+		if _, posted := r.PostForm[f.field]; !posted {
+			continue
+		}
+		v, err := strconv.Atoi(strings.TrimSpace(r.PostForm.Get(f.field)))
+		if err != nil {
+			refuse("displays.error."+f.field, f.field)
+			return
+		}
+		*f.into = &v
+	}
+	c.Brightness = bc
 	var fieldErr *store.FieldError
 	switch err := s.changeDisplay(p.household.ID, d.ID, c); {
 	case errors.Is(err, store.ErrNotFound):
@@ -430,20 +501,46 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 }
 
 type displayJSON struct {
-	ID            string    `json:"id"`
-	Name          string    `json:"name"`
-	Room          string    `json:"room"`
-	Type          string    `json:"type"`
-	PairedAt      string    `json:"paired_at"`
-	LastSeenAt    *string   `json:"last_seen_at"`
-	ShowTomorrow  bool      `json:"show_tomorrow"`
-	QuietMode     quietJSON `json:"quiet_mode"`
-	Kiosk         kioskJSON `json:"kiosk"`
-	Theme         string    `json:"theme"`
-	SunriseOffset int       `json:"sunrise_offset"`
-	SunsetOffset  int       `json:"sunset_offset"`
-	Screensaver   saverJSON `json:"screensaver"`
-	ListView      string    `json:"list_view"`
+	ID            string     `json:"id"`
+	Name          string     `json:"name"`
+	Room          string     `json:"room"`
+	Type          string     `json:"type"`
+	PairedAt      string     `json:"paired_at"`
+	LastSeenAt    *string    `json:"last_seen_at"`
+	ShowTomorrow  bool       `json:"show_tomorrow"`
+	QuietMode     quietJSON  `json:"quiet_mode"`
+	Kiosk         kioskJSON  `json:"kiosk"`
+	Theme         string     `json:"theme"`
+	SunriseOffset int        `json:"sunrise_offset"`
+	SunsetOffset  int        `json:"sunset_offset"`
+	Screensaver   saverJSON  `json:"screensaver"`
+	Brightness    brightJSON `json:"brightness"`
+	ListView      string     `json:"list_view"`
+}
+
+// brightJSON is a display's brightness: the values, and what the kiosk app
+// was last told to do (null without a kiosk app or before the box checked it).
+type brightJSON struct {
+	Day         int         `json:"day"`
+	Evening     int         `json:"evening"`
+	LightSource string      `json:"light_source"`
+	Quiet       brightQuiet `json:"quiet"`
+	Current     *brightNow  `json:"current"`
+}
+
+type brightQuiet struct {
+	Mode        string `json:"mode"`
+	Level       int    `json:"level"`
+	WakeMinutes int    `json:"wake_minutes"`
+}
+
+type brightNow struct {
+	Phase       string  `json:"phase"`
+	Percent     *int    `json:"percent"`
+	Since       *string `json:"since"`
+	Confirmed   bool    `json:"confirmed"`
+	Reachable   bool    `json:"reachable"`
+	LightSensor bool    `json:"light_sensor"`
 }
 
 type saverJSON struct {
@@ -465,11 +562,26 @@ type kioskJSON struct {
 	APIKeySet bool   `json:"api_key_set"`
 }
 
-func displayToJSON(d store.Display, loc *time.Location) displayJSON {
+func (s *server) displayToJSON(d store.Display, h store.Household, loc *time.Location) displayJSON {
 	j := displayJSON{ID: d.ID, Name: d.Name, Room: d.Room, Type: string(d.Type), PairedAt: d.PairedAt.In(loc).Format(time.RFC3339), ShowTomorrow: d.ShowTomorrow,
 		QuietMode: quietJSON{d.Quiet.Enabled, d.Quiet.FromText(), d.Quiet.ToText()}, Kiosk: kioskJSON{d.KioskURL, d.KioskKeySet},
 		Theme: string(d.Theme), SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset,
 		Screensaver: saverJSON{d.Saver.Enabled, d.Saver.IdleMinutes, d.Saver.IntervalMinutes, append([]string{}, d.Saver.Albums...)}, ListView: string(d.ListView)}
+	b := d.Brightness
+	j.Brightness = brightJSON{Day: b.Day, Evening: b.Evening, LightSource: string(b.Source), Quiet: brightQuiet{string(b.QuietMode), b.QuietLevel, b.WakeMinutes}}
+	if st, ok := s.kioskState(d); ok {
+		t := s.plannedTarget(d, h, st.HasSensor, s.now().In(loc))
+		cur := &brightNow{Phase: string(t.Phase), Confirmed: confirmedTarget(st, t), Reachable: st.Reachable, LightSensor: st.HasSensor}
+		if !t.Auto {
+			pct := t.Percent
+			cur.Percent = &pct
+		}
+		if !t.Since.IsZero() {
+			since := t.Since.In(loc).Format(time.RFC3339)
+			cur.Since = &since
+		}
+		j.Brightness.Current = cur
+	}
 	if !d.LastSeen.IsZero() {
 		seen := d.LastSeen.In(loc).Format(time.RFC3339)
 		j.LastSeenAt = &seen
@@ -486,7 +598,7 @@ func (s *server) apiListDisplays(w http.ResponseWriter, _ *http.Request, p princ
 	loc := p.location()
 	out := make([]displayJSON, 0, len(list))
 	for _, d := range list {
-		out = append(out, displayToJSON(d, loc))
+		out = append(out, s.displayToJSON(d, p.household, loc))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -500,7 +612,7 @@ func (s *server) apiPairDisplay(w http.ResponseWriter, r *http.Request, p princi
 	d, err := s.pairDisplay(p, strings.TrimSpace(in.Code), store.Display{Name: in.Name, Room: in.Room, Type: store.DisplayType(in.Type)})
 	switch {
 	case err == nil:
-		writeJSON(w, http.StatusCreated, displayToJSON(d, p.location()))
+		writeJSON(w, http.StatusCreated, s.displayToJSON(d, p.household, p.location()))
 	case errors.Is(err, errTooManyAttempts):
 		writeError(w, http.StatusTooManyRequests, "too many wrong codes, try again later")
 	case errors.Is(err, store.ErrNotFound):
@@ -535,6 +647,16 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 			URL    *string `json:"url"`
 			APIKey *string `json:"api_key"`
 		} `json:"kiosk"`
+		Brightness *struct {
+			Day         *int    `json:"day"`
+			Evening     *int    `json:"evening"`
+			LightSource *string `json:"light_source"`
+			Quiet       *struct {
+				Mode        *string `json:"mode"`
+				Level       *int    `json:"level"`
+				WakeMinutes *int    `json:"wake_minutes"`
+			} `json:"quiet"`
+		} `json:"brightness"`
 		ListView *string `json:"list_view"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
@@ -555,6 +677,12 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 	}
 	if k := in.Kiosk; k != nil {
 		c.KioskURL, c.KioskKey = k.URL, k.APIKey
+	}
+	if b := in.Brightness; b != nil {
+		c.Brightness = &brightChange{Day: b.Day, Evening: b.Evening, Source: b.LightSource}
+		if q := b.Quiet; q != nil {
+			c.Brightness.QuietMode, c.Brightness.QuietLevel, c.Brightness.WakeMinutes = q.Mode, q.Level, q.WakeMinutes
+		}
 	}
 	if sv := in.Screensaver; sv != nil {
 		c.Saver = &saverChange{Enabled: sv.Enabled, IdleMinutes: sv.IdleMinutes, Interval: sv.IntervalMinutes, Albums: sv.AlbumIDs}
@@ -593,7 +721,7 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 	}
 	for _, d := range displays {
 		if d.ID == r.PathValue("id") {
-			writeJSON(w, http.StatusOK, displayToJSON(d, p.location()))
+			writeJSON(w, http.StatusOK, s.displayToJSON(d, p.household, p.location()))
 			return
 		}
 	}

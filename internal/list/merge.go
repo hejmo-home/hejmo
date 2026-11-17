@@ -131,7 +131,7 @@ var ErrNotOpen = errors.New("list: the entry is not open")
 // Quantity for none) comes to. It replaces and never adds. The amount typed is
 // the amount: a change of unit within one kind converts the number before it
 // gets here. When another open entry of the article has the same kind (or, for
-// "none", any quantity), this entry goes into it: one article, one kind, one
+// "none", any other entry), this entry goes into it: one article, one kind, one
 // entry.
 func PlanSet(entries []Entry, id string, to Quantity, show Show) (SetPlan, error) {
 	var cur *Entry
@@ -144,8 +144,15 @@ func PlanSet(entries []Entry, id string, to Quantity, show Show) (SetPlan, error
 		return SetPlan{}, ErrNotOpen
 	}
 	p := SetPlan{Entry: *cur, Before: cur.Qty}
-	for _, e := range entries {
-		if e.ID == id || !e.Same(cur.ArticleID, cur.Text) || e.Qty.None() {
+	var bare *Entry // another entry of the article without a quantity
+	for i, e := range entries {
+		if e.ID == id || e.Done || !e.Same(cur.ArticleID, cur.Text) {
+			continue
+		}
+		if e.Qty.None() {
+			if bare == nil {
+				bare = &entries[i]
+			}
 			continue
 		}
 		if to.None() {
@@ -157,6 +164,10 @@ func PlanSet(entries []Entry, id string, to Quantity, show Show) (SetPlan, error
 			p.Action, p.Into, p.Result = SetMerged, e, sum.shown(show)
 			return p, nil
 		}
+	}
+	if to.None() && bare != nil { // one article, one entry without a quantity
+		p.Action, p.Into, p.Result = SetMerged, *bare, bare.Qty
+		return p, nil
 	}
 	p.Action, p.Result = SetOnly, to.shown(show)
 	return p, nil

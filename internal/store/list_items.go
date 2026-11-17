@@ -232,6 +232,6 @@ func (db *DB) LinkEntryArticle(householdID, listID, entryID, articleID, name str
 	if _, err := db.List(householdID, listID); err != nil {
 		return err
 	}
-	res, err := db.sql.Exec(`UPDATE list_entries SET article_id = ?, text = ? WHERE id = ? AND list_id = ? AND article_id = ''`, articleID, strings.TrimSpace(name), entryID, listID)
+	res, err := db.sql.Exec(`UPDATE list_entries SET article_id = ?, text = ? WHERE id = ? AND list_id = ? AND article_id = '' AND done = 0`, articleID, strings.TrimSpace(name), entryID, listID)
 	return expectOne(res, err)
 }

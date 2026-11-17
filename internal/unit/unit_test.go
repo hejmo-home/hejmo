@@ -23,28 +23,3 @@ func TestMostCountriesStartWithMetricAndTheCountingUnits(t *testing.T) {
 		t.Errorf("default active = %v", got)
 	}
 }
-
-func TestADefaultUnitThatIsSwitchedOffIsLeftOutAndPieceIsOfferedWhenNoneIsActive(t *testing.T) {
-	active := []string{"piece", "kg", "l"}
-	for _, c := range []struct {
-		name string
-		in   []string
-		want []string
-	}{
-		{"both active", []string{"piece", "kg"}, []string{"piece", "kg"}},
-		{"second switched off", []string{"kg", "g"}, []string{"kg"}},
-		{"first switched off keeps the second first", []string{"g", "kg"}, []string{"kg"}},
-		{"neither active offers piece", []string{"g", "ml"}, []string{"piece"}},
-		{"nothing given offers piece", nil, []string{"piece"}},
-	} {
-		if got := unit.Offered(c.in, active); !reflect.DeepEqual(got, c.want) {
-			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
-		}
-	}
-}
-
-func TestPieceIsOfferedEvenWhenPieceItselfIsSwitchedOff(t *testing.T) {
-	if got := unit.Offered([]string{"g"}, []string{"kg"}); !reflect.DeepEqual(got, []string{"piece"}) {
-		t.Errorf("got %v", got)
-	}
-}

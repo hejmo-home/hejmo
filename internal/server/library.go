@@ -177,10 +177,11 @@ func (s *server) unitLong(lang, key string) string {
 	return s.i18n.T(lang, "unit."+key+".long")
 }
 
-// offeredUnits are the article's default units that are switched on; piece
-// when neither is.
+// offeredUnits are the units the add card offers for the article: its default
+// units, a switched-off one replaced by the nearest active unit of its kind
+// (unit.Effective); piece when nothing is left.
 func (s *server) offeredUnits(p principal, a library.Article) []string {
-	return unit.Offered(a.Units, s.activeUnits(p.household))
+	return unit.Effective(a.Units, s.activeUnits(p.household))
 }
 
 func (s *server) unitsWords(lang string, keys []string) string {

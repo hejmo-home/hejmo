@@ -335,6 +335,12 @@ func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p princi
 			return
 		}
 	}
+	// An amount read from the API is rounded; sent back, it is the amount it was read from.
+	for _, e := range es {
+		if e.ID == id && keepsAmount(e.Qty, to, chosen) {
+			to.Base = e.Qty.Base
+		}
+	}
 	res, err := s.db.SetQuantity(p.household.ID, listID, id, to, chosen, c.show(art))
 	switch {
 	case errors.Is(err, list.ErrNotOpen):

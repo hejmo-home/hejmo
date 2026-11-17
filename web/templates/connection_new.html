@@ -41,7 +41,7 @@
     <form class="guide" data-service="outlook" method="post" action="/connections/outlook" autocomplete="off">
       <h2>{{t "connect.outlook.heading"}}</h2>
       {{template "error" $ol}}
-      {{if and (not .OutlookConfigured) (not $ol.Error)}}<p class="error" role="alert">{{t "outlook.error.no_app"}}</p>{{end}}
+      {{if and (eq .Service "outlook") (not .OutlookConfigured) (not $ol.Error)}}<p class="error" role="alert">{{t "outlook.error.no_app"}}</p>{{end}}
       <p class="why"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>{{t "outlook.why.title"}}</b>{{t "connect.outlook.why"}}</span></p>
       <ol class="howto">
         <li><div class="s"><b>{{t "connect.outlook.step1.title"}}</b><p>{{t "connect.outlook.step1.text"}}</p></div></li>

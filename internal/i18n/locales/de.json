@@ -2728,8 +2728,7 @@
   "outlook.fail.consent.hint": "Sobald die IT Hejmo freigegeben hat, holst du einen neuen Code.",
   "outlook.fail.wrong": "Das war ein anderes Microsoft-Konto.",
   "outlook.fail.wrong.sub": "Angemeldet hast du dich mit {other}. Neu verbinden geht nur mit {account}, sonst gehörten die Kalender nicht mehr zusammen.",
-  "outlook.fail.wrong.more": "Du willst {other} zusätzlich verbinden? Das geht über",
-  "outlook.fail.wrong.link": "Kalender verbinden",
+  "outlook.fail.wrong.more": "Du willst {other} zusätzlich verbinden? Das geht über [Kalender verbinden](/connections/new?service=outlook).",
   "outlook.fail.down": "Microsoft antwortet gerade nicht.",
   "outlook.fail.down.sub": "Es gibt keinen neuen Code. Versuche es in ein paar Minuten noch einmal.",
   "outlook.fail.other": "Die Anmeldung hat nicht geklappt.",
@@ -2797,5 +2796,6 @@
   "outlook.response.declined": "Abgesagt (in Outlook)",
   "outlook.response.notResponded": "Noch nicht geantwortet (in Outlook)",
   "outlook.response.organizer": "Du hast eingeladen",
-  "sync.flag.outlook_signin": "Anmeldung abgelaufen: Outlook neu verbinden"
+  "sync.flag.outlook_signin": "Anmeldung abgelaufen: Outlook neu verbinden",
+  "outlook.remove.url.label": "account.live.com/consent/Manage"
 }

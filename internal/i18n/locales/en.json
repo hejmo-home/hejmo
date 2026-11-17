@@ -2728,8 +2728,7 @@
   "outlook.fail.consent.hint": "Once your IT has approved Hejmo, get a new code.",
   "outlook.fail.wrong": "That was a different Microsoft account.",
   "outlook.fail.wrong.sub": "You signed in with {other}. Reconnecting only works with {account}, otherwise the calendars would no longer belong together.",
-  "outlook.fail.wrong.more": "Do you want to connect {other} as well? You can do that under",
-  "outlook.fail.wrong.link": "Connect a calendar",
+  "outlook.fail.wrong.more": "Do you want to connect {other} as well? You can do that under [Connect a calendar](/connections/new?service=outlook).",
   "outlook.fail.down": "Microsoft is not answering right now.",
   "outlook.fail.down.sub": "There is no new code. Try again in a few minutes.",
   "outlook.fail.other": "The sign-in did not work.",
@@ -2797,5 +2796,6 @@
   "outlook.response.declined": "Declined (in Outlook)",
   "outlook.response.notResponded": "Not answered yet (in Outlook)",
   "outlook.response.organizer": "You are the organiser",
-  "sync.flag.outlook_signin": "Sign-in expired: reconnect Outlook"
+  "sync.flag.outlook_signin": "Sign-in expired: reconnect Outlook",
+  "outlook.remove.url.label": "account.live.com/consent/Manage"
 }

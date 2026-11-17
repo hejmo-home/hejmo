@@ -149,3 +149,27 @@ func TestEventWritesGoToGraph(t *testing.T) {
 		t.Fatalf("get after delete: err = %v, want ErrNotFound", err)
 	}
 }
+
+func TestTheBoxAsksForCalendarAndProfileAccessOnly(t *testing.T) {
+	want := []string{"Calendars.ReadWrite", "offline_access", "User.Read"}
+	if len(graph.Scopes) != len(want) {
+		t.Fatalf("scopes = %v, want exactly %v (no mail, no contacts, no files)", graph.Scopes, want)
+	}
+	for i := range want {
+		if graph.Scopes[i] != want[i] {
+			t.Errorf("scope %d = %q, want %q", i, graph.Scopes[i], want[i])
+		}
+	}
+}
+
+func TestALinkOutsideGraphIsNeverFollowedAndNoTokenGoesThere(t *testing.T) {
+	fake, c := newClient(t)
+	fake.AddCalendar("cal-1", "Kalender")
+	other := graphtest.New() // somebody else's server
+	defer other.Close()
+	s := c.Session("app-1", "refresh-0", func(string) {})
+	_, err := s.Delta(context.Background(), "cal-1", other.URL+"/v1.0/me/calendars/cal-1/calendarView/delta?$deltatoken=1", time.Now(), time.Now())
+	if err == nil || len(other.Requests) != 0 {
+		t.Fatalf("a link to another host was followed: err %v, %d requests there", err, len(other.Requests))
+	}
+}

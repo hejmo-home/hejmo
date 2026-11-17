@@ -7,6 +7,7 @@ import (
 	"html"
 	"html/template"
 	"net/http"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
@@ -646,6 +647,9 @@ func (s *server) outlookInvite(r *http.Request, c *calendarContext, master calen
 	return v
 }
 
+// internalLink is [text](/path), a link inside the box, in an escaped text.
+var internalLink = regexp.MustCompile(`\[([^\]]+)\]\((/[^\s)]*)\)`)
+
 // withHost is rich with named values (an address) shown as the bold,
 // breakable host of the Outlook pages. Pairs: placeholder, value.
 func withHost(text string, kv ...string) template.HTML {
@@ -653,5 +657,6 @@ func withHost(text string, kv ...string) template.HTML {
 	for i := 0; i+1 < len(kv); i += 2 {
 		text = strings.Replace(text, html.EscapeString(kv[i]), `<b class="host">`+html.EscapeString(kv[i+1])+`</b>`, 1)
 	}
+	text = internalLink.ReplaceAllString(text, `<a href="$2">$1</a>`)
 	return template.HTML(text) // #nosec G203 -- rich escapes the text, the values are escaped above
 }

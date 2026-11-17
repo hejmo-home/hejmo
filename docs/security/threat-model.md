@@ -185,6 +185,19 @@ The host-side script (`hejmo-update`, installed by `install.sh`) runs as root on
 - **Check:** only parents add or change articles; a token needs the scope `lists:write`. Uploaded photos take the same road and need no network at all. `test:internal/server/library_api_test.go`
 - **Accepted risk:** the box can be made to fetch any public address, so a parent (or a token with `lists:write`) can make it send one request to a public site, which then sees the box's public address. The request carries nothing else.
 
+## Outlook connection
+
+### T25. The Microsoft sign-in is stolen, misused or sent somewhere else
+
+- **Threat:** the box signs in to a Microsoft account (device code, ADR 0020) and holds a refresh token that can read and change that account's calendars. The token could be read from a copied data volume; the code could be used by a stranger to put their own account on the box, or the box could be made to send the token to another host through a link in an answer; the app could ask for more than calendars.
+- **Check:** the refresh token is sealed with AES-256-GCM like every calendar credential and never shown, returned by the API or logged; a rotated token replaces the old one. `test:internal/store/outlook_test.go` `test:internal/server/outlook_test.go`
+- **Check:** only parents start or finish a sign-in, a sign-in belongs to the household that began it and lives for an hour in memory, the code is requested only on a click and is valid for 15 minutes, and a reconnect accepts only the account it is for. `test:internal/server/outlook_test.go`
+- **Check:** the box talks to the two Microsoft hosts only (the identity platform and Graph, both fixed in the program, tests point them at a fake). A link Graph sends (next page, delta link) is followed only below the Graph address, so the access token goes nowhere else. The app asks for `Calendars.ReadWrite`, `offline_access` and `User.Read` and nothing else (no mail, contacts or files). `test:internal/graph/graph_test.go`
+- **Check:** invitations with attendees are never changed from the box, so no message goes to other people from it; a calendar Outlook locks (shared, birthdays) is never written. `test:internal/store/outlook_test.go` `test:internal/calsync/outlook_test.go`
+- **Check:** when Microsoft ends the sign-in (90 days unused, password change, revoked) the box stops asking, keeps the old events and tells parents with "Reconnect Outlook" until they sign in again. `test:internal/calsync/outlook_test.go` `test:internal/server/outlook_test.go`
+- **Accepted risk:** whoever can enter the code at Microsoft while it is shown (15 minutes) and signs in with their own account puts that account's calendars on the box; the page is shown only to a signed-in parent and the connection names the account, so a parent sees it, and the connection can be disconnected. A family's own app registration cannot be publisher-verified, so Microsoft shows an "unverified app" warning for it.
+- **Open (#201):** the connection is made by `internal/graph` with its own HTTP client. When #201 (offline mode, one outbound place) is merged, it moves through that place; until then #201 must list this connection (login.microsoftonline.com, graph.microsoft.com) among the box's outbound connections.
+
 ## MCP
 
 The MCP server is built in #96.

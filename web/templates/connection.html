@@ -19,7 +19,7 @@
         <label class="switch"><input type="checkbox" role="switch" name="calendar" value="{{$cal.URL}}"{{if $cal.On}} checked{{end}} aria-label="{{or $cal.SourceName $cal.Name}}"{{if and $here (eq $.ErrorField "calendar")}} aria-invalid="true" aria-describedby="err-calendar"{{end}}></label>
       </div>
       <div class="calfacts">
-        {{if $.Outlook}}{{with index $.Cards $cal.URL}}<p class="acc{{if eq .AccessKind "ro"}} ro{{end}}"><span>{{rich .Access}}</span></p>{{end}}{{end}}
+        {{if $.Outlook}}{{with index $.Cards $cal.URL}}<p class="acc{{if eq .AccessKind "ro"}} ro{{end}}">{{if eq .AccessKind "ro"}}<svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>{{else}}<svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>{{end}}<span>{{rich .Access}}</span></p>{{end}}{{end}}
         <p class="count" data-count-for="{{$cal.URL}}" data-state="loading">{{template "calIcon"}}{{template "infoIcon"}}<span class="ct">{{t "connections.count.nojs"}}</span><span class="info-text">{{t "connections.count.empty"}}</span><span class="warn-text">{{t "connections.count.empty_on"}}</span></p>{{if $cal.LastSync}}
         <p class="sync"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>{{$cal.LastSync}}</p>{{end}}
       </div>
@@ -95,7 +95,7 @@
   {{template "dangerOpen" (dict "Label" (t "connections.remove"))}}
     <p>{{t "outlook.remove.explain"}}</p>
     {{with .Gone}}<ul>{{range .}}<li><strong>{{.Name}}</strong>{{if .Source}} {{repl (t "outlook.remove.source") "{name}" .Source}}{{end}}</li>{{end}}</ul>{{end}}
-    <p>{{t "outlook.remove.permission"}} <a href="{{t "outlook.remove.url"}}" target="_blank" rel="noopener">account.live.com/consent/Manage</a> {{t "connect.newtab.after"}}</p>
+    <p>{{t "outlook.remove.permission"}} <a href="{{t "outlook.remove.url"}}" target="_blank" rel="noopener">{{t "outlook.remove.url.label"}}</a> {{t "connect.newtab.after"}}</p>
     <div class="confirm">
       <form method="post" action="/connections/{{.Connection.ID}}/delete"><button class="button danger" type="submit">{{repl (t "outlook.remove.confirm") "{account}" .Connection.Username}}</button></form>
       <a href="/connections/{{.Connection.ID}}">{{t "danger.cancel"}}</a>

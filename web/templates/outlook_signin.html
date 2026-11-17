@@ -20,7 +20,7 @@
       <p class="hint">{{t "outlook.fail.consent.hint"}}</p>
       {{else if eq .State "wrong_account"}}
       <p class="checkline" data-state="fail" role="alert">{{template "failIcon"}}<span><b>{{t "outlook.fail.wrong"}}</b><small>{{repl (repl (t "outlook.fail.wrong.sub") "{other}" .Other) "{account}" .Account}}</small></span></p>
-      <p class="hint">{{host (t "outlook.fail.wrong.more") "{other}" .Other}} <a href="/connections/new?service=outlook">{{t "outlook.fail.wrong.link"}}</a>.</p>
+      <p class="hint">{{host (t "outlook.fail.wrong.more") "{other}" .Other}}</p>
       {{else if eq .State "down"}}
       <p class="checkline" data-state="fail" role="alert">{{template "failIcon"}}<span><b>{{t "outlook.fail.down"}}</b><small>{{t "outlook.fail.down.sub"}}</small></span></p>
       {{else}}

@@ -1,7 +1,10 @@
 package store_test
 
 import (
+	"bytes"
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 	"time"
 
@@ -186,4 +189,23 @@ func eventTitled(t *testing.T, db *store.DB, householdID, title string) calendar
 	}
 	t.Fatalf("no event %q", title)
 	return calendar.Event{}
+}
+
+func TestTheRefreshTokenIsNotReadableInTheDatabaseFileWithoutTheKey(t *testing.T) {
+	db, path := openSealed(t)
+	h, _ := seedParent(t, db)
+	if _, err := db.CreateOutlookConnection(h.ID, store.NewOutlookConnection{Account: "mama@example.org", RefreshToken: "xxxx-refresh-secret-xxxx", Now: t0}); err != nil {
+		t.Fatal(err)
+	}
+	db.SQL().Exec(`PRAGMA wal_checkpoint(TRUNCATE)`)
+	db.Close()
+	for _, name := range []string{path, path + "-wal"} {
+		raw, err := os.ReadFile(name)
+		if err != nil {
+			continue
+		}
+		if bytes.Contains(raw, []byte("xxxx-refresh-secret-xxxx")) {
+			t.Fatalf("%s holds the refresh token in plain text", filepath.Base(name))
+		}
+	}
 }

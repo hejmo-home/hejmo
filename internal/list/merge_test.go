@@ -184,3 +184,20 @@ func TestOnlyAnOpenEntryCanChange(t *testing.T) {
 		t.Errorf("gone: %v", err)
 	}
 }
+
+func TestRemovingTheQuantityAlsoMergesIntoAnotherEntryWithoutOne(t *testing.T) {
+	es := []list.Entry{
+		{ID: "a", Text: "Mehl", ArticleID: "flour", Qty: q(500, "g")},
+		{ID: "b", Text: "Mehl", ArticleID: "flour"},
+	}
+	p, _ := list.PlanSet(es, "a", list.Quantity{}, showFor("g"))
+	if p.Action != list.SetMerged || p.Into.ID != "b" || !p.Result.None() {
+		t.Errorf("one entry without quantity is enough: %+v", p)
+	}
+	// An entry with a quantity is preferred as the one that stays.
+	es = append(es, list.Entry{ID: "c", Text: "Mehl", ArticleID: "flour", Qty: q(2, "pack")})
+	p, _ = list.PlanSet(es, "a", list.Quantity{}, showFor("g"))
+	if p.Action != list.SetMerged || p.Into.ID != "c" || p.Result.Base != 2 {
+		t.Errorf("%+v", p)
+	}
+}

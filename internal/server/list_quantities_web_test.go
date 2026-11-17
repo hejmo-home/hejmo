@@ -565,3 +565,23 @@ func TestAUnitOfTheSameKindKeepsTheExactAmountEvenWhenTheNumberWasRounded(t *tes
 		t.Errorf("0.5 dozen = 6 pieces: %+v", es[0].Qty)
 	}
 }
+
+func TestWithoutScriptATapOnAUnitKeepsTheAmountNotTheNumber(t *testing.T) {
+	s := newShop(t)
+	id := s.seed("sugar", "Sugar", 500, "g")
+	// Without JavaScript the chip changes and the field still says 500: that is 500 g in kg.
+	r := s.postEN(s.path("/entries/"+id+"/quantity"), url.Values{"qmode": {"qty"}, "amount": {"500"}, "qunit": {"kg"}})
+	if r.status != http.StatusSeeOther {
+		t.Fatalf("%d", r.status)
+	}
+	es, _ := s.db.Entries(s.h.ID, s.id)
+	if es[0].Qty.Base != 500 {
+		t.Errorf("a tap on a unit does not change the amount: %+v", es[0].Qty)
+	}
+	// Another number with the unit is the new amount.
+	s.postEN(s.path("/entries/"+id+"/quantity"), url.Values{"qmode": {"qty"}, "amount": {"2"}, "qunit": {"kg"}})
+	es, _ = s.db.Entries(s.h.ID, s.id)
+	if es[0].Qty.Base != 2000 {
+		t.Errorf("2 kg: %+v", es[0].Qty)
+	}
+}

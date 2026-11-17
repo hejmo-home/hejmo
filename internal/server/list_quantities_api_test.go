@@ -273,3 +273,33 @@ func TestAnEntryMergesOnlyWithOpenEntriesOverTheAPI(t *testing.T) {
 		t.Errorf("%d %v", status, e2)
 	}
 }
+
+func TestAnAmountReadBackFromTheAPIKeepsTheTotal(t *testing.T) {
+	lb := newListBox(t)
+	id := lb.shopList(t)
+	_, e := lb.add(t, id, map[string]any{"article_id": "eggs", "amount": 5, "unit": "piece"})
+	eid := e["id"].(string)
+	// A client that rounds 5 pieces to 0.42 dozen and sends that back changes nothing.
+	status, e, _ := lb.parent.call(http.MethodPatch, "/lists/"+id+"/entries/"+eid, map[string]any{"amount": 0.42, "unit": "dozen"})
+	if status != http.StatusOK || e["amount"] != 5.0 || e["unit"] != "piece" {
+		t.Errorf("%d %v", status, e)
+	}
+	// Another number is the new amount.
+	status, e, _ = lb.parent.call(http.MethodPatch, "/lists/"+id+"/entries/"+eid, map[string]any{"amount": 0.5, "unit": "dozen"})
+	if status != http.StatusOK || e["amount"] != 6.0 {
+		t.Errorf("%d %v", status, e)
+	}
+}
+
+func TestTheArticleAPIOffersTheNearestActiveUnitInPlaceOfOneThatIsOff(t *testing.T) {
+	c := signedInAPI(t)
+	if status, u, _ := c.call(http.MethodPut, "/units", map[string]any{"active": []string{"piece", "g", "l"}}); status != http.StatusOK {
+		t.Fatalf("%d %v", status, u)
+	}
+	// Bananas default to piece and kg; kg is off, so g takes its place, as on the add card.
+	status, a, _ := c.call(http.MethodGet, "/articles/bananas", nil)
+	got, _ := a["offered_units"].([]any)
+	if status != http.StatusOK || len(got) != 2 || got[0] != "piece" || got[1] != "g" {
+		t.Errorf("%d offered = %v", status, a["offered_units"])
+	}
+}

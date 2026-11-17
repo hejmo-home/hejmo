@@ -304,9 +304,9 @@ func TestListsViewReceivesLiveUpdates(t *testing.T) {
 		t.Fatalf("no new version within 10 seconds (got %q, ok=%v)", v, ok)
 	}
 	code, hdr, body := l.get(view[1])
-	// Under load the list can change again between the announcement and the
-	// fetch; then the stream announces the version the view now shows. Read on
-	// until the two agree.
+	// Under load other content of the view (the clock, an entry) can change
+	// between the announcement and the fetch; then the stream announces the
+	// version the view now shows. Read on until the two agree.
 	for i := 0; i < 5 && hdr.Get("X-Hejmo-View") != v; i++ {
 		next, ok := s.next(t, 2*time.Second)
 		if !ok {

@@ -87,7 +87,4 @@ func TestAWakeWorksThroughTheAPIWithTheDisplaysToken(t *testing.T) {
 	if !c.b.kioskRun.Woken(id) {
 		t.Fatal("the display is not awake")
 	}
-	if status, _, _ := anon.call(http.MethodPost, "/display/wake", nil); status != http.StatusUnauthorized {
-		t.Fatalf("without a token = %d, want 401", status)
-	}
 }

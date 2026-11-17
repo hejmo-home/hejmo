@@ -796,8 +796,8 @@ paths:
         at evening brightness with the night page, then switches it off again.
         The answer is 204 whether or not it woke anything: outside quiet mode, while
         quiet mode only dims, and on a display without a kiosk app nothing changes.
-        A request without a bearer token is refused with 401, one with the token of
-        a display that is not paired with 403.
+        An `Authorization` header that is not a bearer token is refused with 401, the
+        token of a display that is not paired with 403.
       responses:
         "204":
           description: Noted

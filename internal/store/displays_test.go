@@ -230,7 +230,7 @@ func TestShowTomorrowBlockIsAPerDisplaySettingOffByDefault(t *testing.T) {
 	if a.ShowTomorrow || b.ShowTomorrow {
 		t.Fatal("tomorrow block on by default")
 	}
-	if err := db.SetDisplayShowTomorrow(h.ID, a.ID, true); err != nil {
+	if err := setShowTomorrow(db, h.ID, a.ID, true); err != nil {
 		t.Fatal(err)
 	}
 	gotA, _ := db.DisplayByToken("hash-a", pairT0)
@@ -242,17 +242,17 @@ func TestShowTomorrowBlockIsAPerDisplaySettingOffByDefault(t *testing.T) {
 	if len(list) != 2 || !list[0].ShowTomorrow || list[1].ShowTomorrow {
 		t.Fatalf("Displays = %+v", list)
 	}
-	if err := db.SetDisplayShowTomorrow(h.ID, a.ID, false); err != nil {
+	if err := setShowTomorrow(db, h.ID, a.ID, false); err != nil {
 		t.Fatal(err)
 	}
 	if got, _ := db.DisplayByToken("hash-a", pairT0); got.ShowTomorrow {
 		t.Fatal("setting not switched off")
 	}
 	other, _ := db.CreateHousehold(store.Household{Name: "Neighbours"})
-	if err := db.SetDisplayShowTomorrow(other.ID, a.ID, true); !errors.Is(err, store.ErrNotFound) {
+	if err := setShowTomorrow(db, other.ID, a.ID, true); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("other household sets it: %v", err)
 	}
-	if err := db.SetDisplayShowTomorrow(h.ID, "nope", true); !errors.Is(err, store.ErrNotFound) {
+	if err := setShowTomorrow(db, h.ID, "nope", true); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("unknown display: %v", err)
 	}
 }
@@ -280,7 +280,7 @@ func TestNewDisplaysGetTheDefaultThemeOfTheirType(t *testing.T) {
 
 func TestDisplayThemeAndOffsetsAreSavedPerDisplay(t *testing.T) {
 	db, h, d := pairedDisplayOfType(t, store.DisplayScreen)
-	if err := db.SetDisplayTheme(h.ID, d.ID, "auto", -30, 45); err != nil {
+	if err := db.SetDisplayLook(h.ID, d.ID, store.DisplayLook{Theme: "auto", SunriseOffset: -30, SunsetOffset: 45}); err != nil {
 		t.Fatal(err)
 	}
 	list, _ := db.Displays(h.ID)
@@ -299,11 +299,11 @@ func TestDisplayThemeRefusesUnknownThemesAndOffsetsBeyond180(t *testing.T) {
 		theme     string
 		rise, set int
 	}{{"sepia", 0, 0}, {"auto", -181, 0}, {"auto", 0, 181}} {
-		if err := db.SetDisplayTheme(h.ID, d.ID, store.Theme(c.theme), c.rise, c.set); !errors.Is(err, store.ErrInvalid) {
+		if err := db.SetDisplayLook(h.ID, d.ID, store.DisplayLook{Theme: store.Theme(c.theme), SunriseOffset: c.rise, SunsetOffset: c.set}); !errors.Is(err, store.ErrInvalid) {
 			t.Errorf("%+v: err = %v, want ErrInvalid", c, err)
 		}
 	}
-	if err := db.SetDisplayTheme(h.ID, "no-such-display", "dark", 0, 0); !errors.Is(err, store.ErrNotFound) {
+	if err := db.SetDisplayLook(h.ID, "no-such-display", store.DisplayLook{Theme: "dark", SunriseOffset: 0, SunsetOffset: 0}); !errors.Is(err, store.ErrNotFound) {
 		t.Errorf("unknown display: err = %v, want ErrNotFound", err)
 	}
 }
@@ -426,5 +426,58 @@ func TestPairedDisplayCanBeRenamedAndRetyped(t *testing.T) {
 	}
 	if err := db.SetDisplayIdentity(h.ID, "nope", "x", store.DisplayScreen); !errors.Is(err, store.ErrNotFound) {
 		t.Errorf("unknown display = %v", err)
+	}
+}
+
+// setShowTomorrow switches the tomorrow block, keeping the display's look otherwise.
+func setShowTomorrow(db *store.DB, householdID, id string, on bool) error {
+	d, err := db.Display(householdID, id)
+	if err != nil {
+		return err
+	}
+	return db.SetDisplayLook(householdID, id, store.DisplayLook{ShowTomorrow: on, Theme: d.Theme, SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset})
+}
+
+// #104 leftover: one display is read by its id, not by listing all of them.
+func TestDisplayIsFoundByIDWithinItsHousehold(t *testing.T) {
+	db, h, d := pairedDisplayOfType(t, store.DisplayScreen)
+	got, err := db.Display(h.ID, d.ID)
+	if err != nil || got.ID != d.ID || got.Name != "Hallway" {
+		t.Fatalf("Display = %+v, %v", got, err)
+	}
+	other, _ := db.CreateHousehold(store.Household{Name: "Neighbours"})
+	if _, err := db.Display(other.ID, d.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("other household: err = %v, want ErrNotFound", err)
+	}
+	if _, err := db.Display(h.ID, "nope"); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unknown id: err = %v, want ErrNotFound", err)
+	}
+	if err := db.RevokeDisplay(h.ID, d.ID, pairT0); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.Display(h.ID, d.ID); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unpaired display: err = %v, want ErrNotFound", err)
+	}
+}
+
+// #104 leftover: the tomorrow block and the theme are one statement; a refused
+// theme leaves the tomorrow block as it was.
+func TestDisplayLookIsSavedWhole(t *testing.T) {
+	db, h, d := pairedDisplayOfType(t, store.DisplayScreen)
+	if err := db.SetDisplayLook(h.ID, d.ID, store.DisplayLook{ShowTomorrow: true, Theme: "dark", SunriseOffset: 10, SunsetOffset: -10}); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := db.Display(h.ID, d.ID)
+	if !got.ShowTomorrow || got.Theme != "dark" || got.SunriseOffset != 10 || got.SunsetOffset != -10 {
+		t.Fatalf("saved = %+v", got)
+	}
+	if _, err := db.SQL().Exec(`CREATE TRIGGER no_theme BEFORE UPDATE OF theme ON displays BEGIN SELECT RAISE(ABORT, 'no'); END`); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetDisplayLook(h.ID, d.ID, store.DisplayLook{ShowTomorrow: false, Theme: "light"}); err == nil {
+		t.Fatal("a refused update is not an error")
+	}
+	if after, _ := db.Display(h.ID, d.ID); !after.ShowTomorrow || after.Theme != "dark" {
+		t.Fatalf("a failed save changed the display: %+v", after)
 	}
 }

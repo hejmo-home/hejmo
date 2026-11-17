@@ -41,6 +41,7 @@
       {{range .Rows}}{{template "rowLink" .}}
       {{end}}
     </ul>
+    <p class="hint">{{t "phones.hint.switch"}}</p>
     {{else}}{{template "empty" (dict "Text" (t "phones.none") "Href" "#add" "Action" (t "phones.none.action"))}}{{end}}
   </section>
 

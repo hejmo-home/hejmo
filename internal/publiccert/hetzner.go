@@ -6,6 +6,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"io"
 	"net/http"
 	"net/url"
@@ -28,7 +29,7 @@ type hetzner struct {
 }
 
 func newHetzner(c Credentials, base string) *hetzner {
-	return &hetzner{token: c.Token, base: strings.TrimSuffix(base, "/"), client: &http.Client{Timeout: 30 * time.Second}}
+	return &hetzner{token: c.Token, base: strings.TrimSuffix(base, "/"), client: (*outbound.Gate)(nil).Client(outbound.DNS, 30*time.Second)}
 }
 
 type hetznerRecord struct {

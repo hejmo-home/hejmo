@@ -19,6 +19,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey"
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
@@ -69,6 +70,9 @@ type Options struct {
 	// Pictures downloads the web images of own articles (ticket 164). Nil means
 	// a fetcher that only reaches public addresses; tests pass one that reaches their own server.
 	Pictures *picture.Fetcher
+	// Gate is the box's door to the outside (ticket 201). Nil means a gate
+	// backed by DB, which is what the box uses.
+	Gate *outbound.Gate
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -112,7 +116,8 @@ type server struct {
 	opens      *loginLimiter // pairing screens opened, per client address
 	sync       *calsync.Service
 	weather    *weather.Service
-	places     *places.List // the list of places on the box, loaded at start-up (ADR 0023)
+	gate       *outbound.Gate // every connection to the outside, and its switches
+	places     *places.List   // the list of places on the box, loaded at start-up (ADR 0023)
 	live       time.Duration
 	countWait  time.Duration
 	done       <-chan struct{}
@@ -145,14 +150,18 @@ func New(opts Options) http.Handler {
 	if s.logger == nil {
 		s.logger = slog.Default()
 	}
+	if s.gate = opts.Gate; s.gate == nil {
+		s.gate = outbound.New(s.db.Outbound(), s.db.Outbound())
+	}
 	if s.sync = opts.Sync; s.sync == nil {
 		s.sync = calsync.New(s.db, nil, s.now)
+		s.sync.SetGate(s.gate)
 	}
 	if s.weather = opts.Weather; s.weather == nil {
-		s.weather = weather.New(weather.WithClock(s.now))
+		s.weather = weather.New(weather.WithClock(s.now), weather.WithGate(s.gate))
 	}
 	if s.fetcher = opts.Pictures; s.fetcher == nil {
-		s.fetcher = &picture.Fetcher{}
+		s.fetcher = &picture.Fetcher{Gate: s.gate}
 	}
 	s.done = opts.Done
 	s.updateDir = opts.UpdateDir

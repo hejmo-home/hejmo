@@ -15,6 +15,8 @@ import (
 	"strconv"
 	"sync"
 	"time"
+
+	"github.com/hejmo-home/hejmo/internal/outbound"
 )
 
 // DefaultBaseURL is Open-Meteo's forecast endpoint.
@@ -62,6 +64,7 @@ type entry struct {
 type Service struct {
 	base string
 	http *http.Client
+	gate *outbound.Gate
 	now  func() time.Time
 	// retry is the wait of Run while there is no reading and no failure.
 	retry time.Duration
@@ -76,6 +79,11 @@ type Option func(*Service)
 // WithBaseURL points the service at another endpoint (tests).
 func WithBaseURL(u string) Option { return func(s *Service) { s.base = u } }
 
+// WithGate sends the service's requests through the gate of the outside
+// connections (ticket 201): the weather is one connection that parents can
+// switch off, and offline mode stops it.
+func WithGate(g *outbound.Gate) Option { return func(s *Service) { s.gate = g } }
+
 // WithClock sets the clock.
 func WithClock(now func() time.Time) Option { return func(s *Service) { s.now = now } }
 
@@ -84,10 +92,11 @@ func WithRetry(d time.Duration) Option { return func(s *Service) { s.retry = d }
 
 // New returns a service for Open-Meteo.
 func New(opts ...Option) *Service {
-	s := &Service{base: DefaultBaseURL, http: &http.Client{Timeout: 15 * time.Second}, now: time.Now, retry: defaultRetry}
+	s := &Service{base: DefaultBaseURL, now: time.Now, retry: defaultRetry}
 	for _, o := range opts {
 		o(s)
 	}
+	s.http = s.gate.Client(outbound.Weather, 15*time.Second)
 	return s
 }
 
@@ -166,6 +175,9 @@ type Home interface {
 // location yet (set up before the place list; a parent picks one in Settings),
 // is not an error: nothing is looked up by name.
 func (s *Service) Keep(ctx context.Context, h Home) error {
+	if !s.gate.Allowed(outbound.Weather) {
+		return nil // switched off: not even tried, so nothing is refused over and over
+	}
 	lat, lon, err := h.Home()
 	if errors.Is(err, ErrNoHome) {
 		return nil

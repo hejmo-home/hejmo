@@ -26,6 +26,7 @@ import (
 	ical "github.com/emersion/go-ical"
 	"github.com/emersion/go-webdav"
 	davcal "github.com/emersion/go-webdav/caldav"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -101,7 +102,7 @@ func NewClient(serverURL, user, password string, hc *http.Client) (*Client, erro
 		return nil, errors.New("not a web address")
 	}
 	if hc == nil {
-		hc = &http.Client{Timeout: 30 * time.Second}
+		hc = (*outbound.Gate)(nil).Client(outbound.Calendars, 30*time.Second)
 	}
 	auth := &authClient{base: base, user: user, password: password}
 	cp := *hc // do not change the caller's client

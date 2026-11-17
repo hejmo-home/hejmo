@@ -2577,6 +2577,108 @@ fieldset.choice.invalid label { border: 2px solid var(--error-text); padding: 11
 /* Lines under a legend that sit flush with it (the preview's inline style, as a class). */
 .steps p.flat { margin: 0; }
 .steps p.hint.flat { clear: both; }
+/* ---- ticket 166: tile view for lists (ADR 0019, preview-166) ---- */
+/* View switch: two buttons with icon and word, the current one filled in
+   accent (bw: black). It saves at once (one POST per button, no script) and the
+   page answers with a success line that says whom the choice applies to. */
+.view-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px var(--gap); max-width: 760px; margin: 0 0 var(--gap); }
+.view-row .list-meta { margin: 0; flex: 1 1 15em; min-width: 0; }
+.view-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 0; margin: 0; }
+.view-switch .lab { margin-right: 10px; font-size: var(--fs-label); color: var(--text-secondary); }
+.view-switch button { position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: var(--touch-target); padding: 8px 14px 8px 12px; margin: 0 0 0 -1px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-label-large); cursor: pointer; }
+.view-switch button:first-of-type { margin-left: 0; border-radius: var(--radius-field) 0 0 var(--radius-field); }
+.view-switch button:last-of-type { border-radius: 0 var(--radius-field) var(--radius-field) 0; }
+.view-switch button .icon { flex: none; stroke: currentColor; }
+.view-switch button[aria-pressed="true"] { z-index: 1; background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+.view-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 2; }
+[data-theme="bw"] .view-switch button { border: 2px solid var(--text); margin-left: -2px; }
+[data-theme="bw"] .view-switch button:first-of-type { margin-left: 0; }
+.view-switch[aria-invalid="true"] button { border: 2px solid var(--error-text); }
+.view-switch .ferr { flex: 0 0 100%; margin: 8px 0 0; }
+
+/* Tiles: one tile per entry, the whole tile is the tick button (at least
+   148 px wide and high). Picture or symbol on top, the tick box in the top
+   right corner, the name in full below (hyphenates only words of 12+
+   letters), then the quantity and any allergen warning in words. */
+.tiles { list-style: none; margin: 0 0 var(--gap); padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 148px), 1fr)); gap: var(--gap-cards); max-width: 760px; }
+.tiles > li { display: grid; grid-template-rows: 1fr auto; gap: 6px; min-width: 0; }
+.tiles form { margin: 0; display: grid; }
+.tile-check { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; box-sizing: border-box; width: 100%; min-width: 0; min-height: 148px; padding: 12px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-tile); background: var(--surface); color: var(--text); font: inherit; text-align: center; cursor: pointer; }
+.tile-check:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tile-check .pic { flex: none; box-sizing: border-box; width: 64px; height: 64px; margin: 4px 0 2px; border-radius: var(--radius-card); background: var(--background); display: grid; place-items: center; font-size: 42px; line-height: 1; overflow: hidden; }
+.tile-check .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Free text has no article and so no picture: its first letter, on a dashed
+   ring, so it never looks like a symbol it is not. */
+.tile-check .pic.letter { background: none; border: 2px dashed var(--border); font-size: 32px; font-weight: 700; color: var(--text-secondary); }
+.tile-check .box { position: absolute; top: 8px; right: 8px; box-sizing: border-box; width: 32px; height: 32px; border: 3px solid var(--text); border-radius: var(--radius-field); background: var(--surface); display: grid; place-items: center; }
+.tile-check .box svg { display: none; }
+.tile-check .title { max-width: 100%; font-size: var(--fs-event-title); font-weight: 600; line-height: 1.25; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) {
+  .tile-check .title { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
+}
+.tile-check .qty { font-size: var(--fs-label); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.tile-check .qty span { white-space: nowrap; }
+/* Allergen warning on a tile (#164 in short): one notice-coloured block with
+   the heading "Allergie-Warnung" and one line per affected person: marker,
+   name and that person's allergens in words. Never a count. */
+.tile-warn { align-self: stretch; display: grid; gap: 2px; margin-top: 2px; padding: 5px 8px 6px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-meta); text-align: left; overflow-wrap: break-word; }
+.tile-warn .h { display: flex; align-items: center; gap: 5px; font-weight: 700; }
+.tile-warn .icon { flex: none; width: 16px; height: 16px; stroke: currentColor; }
+.tile-warn .line { display: block; min-width: 0; }
+.tile-warn .who { display: inline-flex; align-items: center; gap: 4px; margin-right: 4px; font-weight: 700; }
+.tile-warn .who .marker { flex: none; }
+[data-theme="bw"] .tile-warn { background: none; color: var(--text); border: 2px solid var(--text); }
+/* Ticked off: the box fills in the list colour with a white tick (bw: black),
+   the name is struck through, the picture turns grey and the tile loses its
+   white card, as the tick rows do. */
+.tiles [data-done="true"] .tile-check { background: transparent; border-style: dashed; }
+.tiles [data-done="true"] .tile-check .box { background: var(--pc); border-color: var(--pc); }
+.tiles [data-done="true"] .tile-check .box svg { display: block; stroke: var(--surface); stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.tiles [data-done="true"] .tile-check .title { font-weight: 400; color: var(--text-secondary); text-decoration: line-through; }
+.tiles [data-done="true"] .tile-check .pic { filter: grayscale(1); }
+/* The entry just added keeps a frame until the next tap (as #33). */
+.tiles li.added .tile-check { border: 2px solid var(--accent); padding: 11.5px 9.5px; }
+.tiles li[aria-invalid="true"] .tile-check { border: 2px solid var(--error-text); padding: 11.5px 9.5px; }
+.tiles > li > .ferr { margin: 0; }
+[data-theme="bw"] .tile-check { border: 2px solid var(--text); padding: 11.5px 9.5px; }
+[data-theme="bw"] .tile-check .pic { filter: grayscale(1); background: var(--surface); border: 2px solid var(--text); }
+[data-theme="bw"] .tile-check .pic.letter { border: 2px dashed var(--text); color: var(--text); }
+[data-theme="bw"] .tiles [data-done="true"] .tile-check { background: var(--progress-track); border-style: solid; }
+[data-theme="bw"] .tiles [data-done="true"] .tile-check .title { color: var(--text); }
+[data-theme="bw"] .tiles [data-done="true"] .tile-check .box { background: var(--text); border-color: var(--text); }
+[data-theme="bw"] .tiles li.added .tile-check { border: 4px solid var(--text); padding: 9.5px 7.5px; }
+[data-theme="bw"] .tiles li[aria-invalid="true"] .tile-check { border: 4px dashed var(--text); padding: 9.5px 7.5px; }
+
+.list-tiles .unchecked-box { max-width: 760px; }
+/* A phone: two tiles side by side from 320 px; the box and picture shrink a little. */
+@media (max-width: 420px) {
+  .tiles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); }
+  .tile-check { min-height: 136px; }
+}
+
+/* On the display (#33): the tiles fill the list's scroll area; the view switch
+   sits in the list's head next to the state line. */
+.lv-head .view-row { margin: 0; max-width: none; }
+.lv-entries ul.tiles { max-width: none; margin: 0; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); }
+.lv-entries .unchecked-box { max-width: none; margin: 8px 0 0; }
+.lv .tile-check .title { -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) {
+  .lv .tile-check .title { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
+}
+@media (max-width: 599px) {
+  .lv-entries ul.tiles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 128px), 1fr)); }
+  .lv-entries ul.tiles > * + *, .lv-entries .tile-warn * + * { margin-top: 0; }
+  /* A phone used as a display: the list card gives width back to the tiles. */
+  .lv-head { padding: 12px 10px 10px; }
+  .lv-entries { padding: 10px; }
+  .lv .tile-check { padding: 10px 4px; }
+  [data-theme="bw"] .lv .tile-check { padding: 9.5px 3.5px; }
+  .lv .tile-check .title { font-size: var(--fs-label-large); }
+  .lv .tile-check .pic { width: 56px; height: 56px; font-size: 36px; }
+}
+/* In the tile view the groups and actions below the tiles take the tiles' width. */
+main:has(.tiles) .group-head, main:has(.tiles) .hidden-line, main:has(.tiles) .tools, main:has(.tiles) details.danger { max-width: 760px; }
+
 /* ticket 57, product owner decision Q92: the names the box certificate covers,
    one per line so a long router name never widens a 375 px page. */
 .certnames { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; font-weight: 700; overflow-wrap: anywhere; }

@@ -4,7 +4,9 @@ import (
 	"encoding/json"
 	"errors"
 	"net/http"
+	"strings"
 
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -24,18 +26,42 @@ type entryJSON struct {
 	ID   string `json:"id"`
 	Text string `json:"text"`
 	Done bool   `json:"done"`
+	// ArticleID, Symbol and Picture say what a tile shows (ADR 0019): the
+	// library article the text names, its symbol or the address of its own
+	// picture. All three are null for free text.
+	ArticleID *string `json:"article_id"`
+	Symbol    *string `json:"symbol"`
+	Picture   *string `json:"picture"`
 }
 
 func listToJSON(l list.List, c store.EntryCount) listJSON {
 	return listJSON{ID: l.ID, Name: l.Name, Color: l.Color, Symbol: l.Symbol, Sort: string(l.Sort), OpenCount: c.Open, DoneCount: c.Done}
 }
 
-func entriesToJSON(es []list.Entry) []entryJSON {
+// entriesToJSON turns entries into their JSON; with a library their articles
+// are looked up (tiles need them), without it they are left null.
+func (s *server) entriesToJSON(p principal, es []list.Entry) ([]entryJSON, error) {
+	lk, err := s.newListLooks(p, i18n.Default, "/articles/")
+	if err != nil {
+		return nil, err
+	}
+	all := lk.articles()
 	out := make([]entryJSON, 0, len(es))
 	for _, e := range es {
-		out = append(out, entryJSON{e.ID, e.Text, e.Done})
+		j := entryJSON{ID: e.ID, Text: e.Text, Done: e.Done}
+		if look, _, ok := lk.resolve(e.Text, all); ok {
+			j.ArticleID = &look.ArticleID
+			if look.Symbol != "" {
+				j.Symbol = &look.Symbol
+			}
+			if look.Picture != "" {
+				pic := strings.SplitN(look.Picture, "?", 2)[0]
+				j.Picture = &pic
+			}
+		}
+		out = append(out, j)
 	}
-	return out
+	return out, nil
 }
 
 // listError answers a failed list operation with the matching status.
@@ -79,9 +105,13 @@ func (s *server) apiGetList(w http.ResponseWriter, r *http.Request, p principal)
 		s.fail(w, "entries", err)
 		return
 	}
+	entries, err := s.entriesToJSON(p, es)
+	if err != nil {
+		s.fail(w, "entry looks", err)
+		return
+	}
 	j := listToJSON(l, countOf(es))
-	j.Entries = new([]entryJSON)
-	*j.Entries = entriesToJSON(es)
+	j.Entries = &entries
 	writeJSON(w, http.StatusOK, j)
 }
 
@@ -172,7 +202,12 @@ func (s *server) apiAddEntry(w http.ResponseWriter, r *http.Request, p principal
 		s.listError(w, "add entry", err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, entryJSON{e.ID, e.Text, false})
+	one, err := s.entriesToJSON(p, []list.Entry{e})
+	if err != nil {
+		s.fail(w, "entry looks", err)
+		return
+	}
+	writeJSON(w, http.StatusCreated, one[0])
 }
 
 // entryState renders one entry after a change.
@@ -180,7 +215,11 @@ func (s *server) entryState(p principal, listID, id string) (entryJSON, error) {
 	es, err := s.db.Entries(p.household.ID, listID)
 	for _, e := range es {
 		if e.ID == id {
-			return entryJSON{e.ID, e.Text, e.Done}, nil
+			one, err := s.entriesToJSON(p, []list.Entry{e})
+			if err != nil {
+				return entryJSON{}, err
+			}
+			return one[0], nil
 		}
 	}
 	if err == nil {
@@ -236,7 +275,12 @@ func (s *server) apiMoveEntry(w http.ResponseWriter, r *http.Request, p principa
 		s.fail(w, "entries", err)
 		return
 	}
-	writeJSON(w, http.StatusOK, entriesToJSON(es))
+	entries, err := s.entriesToJSON(p, es)
+	if err != nil {
+		s.fail(w, "entry looks", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, entries)
 }
 
 func (s *server) apiDeleteEntry(w http.ResponseWriter, r *http.Request, p principal) {
@@ -254,4 +298,74 @@ func (s *server) apiDeleteCompleted(w http.ResponseWriter, r *http.Request, p pr
 		return
 	}
 	writeJSON(w, http.StatusOK, map[string]int{"deleted": n})
+}
+
+// listViewJSON says how a person sees lists: Default is true while the person
+// never chose, so the view is the default of the role.
+type listViewJSON struct {
+	View    string `json:"view"`
+	Default bool   `json:"default"`
+}
+
+func (s *server) personListViewJSON(p principal, id string) (listViewJSON, error) {
+	person, err := s.db.Person(p.household.ID, id)
+	if err != nil {
+		return listViewJSON{}, err
+	}
+	v, err := s.db.PersonListView(p.household.ID, id)
+	if err != nil {
+		return listViewJSON{}, err
+	}
+	if v == "" {
+		return listViewJSON{View: string(list.DefaultView(person.Role == store.RoleChild)), Default: true}, nil
+	}
+	return listViewJSON{View: string(v)}, nil
+}
+
+func (s *server) apiGetListView(w http.ResponseWriter, r *http.Request, p principal) {
+	j, err := s.personListViewJSON(p, r.PathValue("id"))
+	if err != nil {
+		s.listViewError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, j)
+}
+
+// apiPutListView remembers the view of the person who asks: nobody changes
+// another person's view, not even a parent.
+func (s *server) apiPutListView(w http.ResponseWriter, r *http.Request, p principal) {
+	id := r.PathValue("id")
+	if id != p.person.ID {
+		if _, err := s.db.Person(p.household.ID, id); err != nil {
+			s.listViewError(w, err)
+			return
+		}
+		writeError(w, http.StatusForbidden, "everyone chooses their own view of lists")
+		return
+	}
+	var in struct {
+		View string `json:"view"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	view, ok := list.ParseView(in.View)
+	if !ok {
+		writeError(w, http.StatusUnprocessableEntity, "view must be tiles or list")
+		return
+	}
+	if err := s.db.SetPersonListView(p.household.ID, id, view); err != nil {
+		s.listViewError(w, err)
+		return
+	}
+	writeJSON(w, http.StatusOK, listViewJSON{View: string(view)})
+}
+
+func (s *server) listViewError(w http.ResponseWriter, err error) {
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "person not found")
+		return
+	}
+	s.fail(w, "list view", err)
 }

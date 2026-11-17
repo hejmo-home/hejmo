@@ -11,6 +11,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/kiosk"
+	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/quiet"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/theme"
@@ -442,6 +443,7 @@ type displayJSON struct {
 	SunriseOffset int       `json:"sunrise_offset"`
 	SunsetOffset  int       `json:"sunset_offset"`
 	Screensaver   saverJSON `json:"screensaver"`
+	ListView      string    `json:"list_view"`
 }
 
 type saverJSON struct {
@@ -467,7 +469,7 @@ func displayToJSON(d store.Display, loc *time.Location) displayJSON {
 	j := displayJSON{ID: d.ID, Name: d.Name, Room: d.Room, Type: string(d.Type), PairedAt: d.PairedAt.In(loc).Format(time.RFC3339), ShowTomorrow: d.ShowTomorrow,
 		QuietMode: quietJSON{d.Quiet.Enabled, d.Quiet.FromText(), d.Quiet.ToText()}, Kiosk: kioskJSON{d.KioskURL, d.KioskKeySet},
 		Theme: string(d.Theme), SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset,
-		Screensaver: saverJSON{d.Saver.Enabled, d.Saver.IdleMinutes, d.Saver.IntervalMinutes, append([]string{}, d.Saver.Albums...)}}
+		Screensaver: saverJSON{d.Saver.Enabled, d.Saver.IdleMinutes, d.Saver.IntervalMinutes, append([]string{}, d.Saver.Albums...)}, ListView: string(d.ListView)}
 	if !d.LastSeen.IsZero() {
 		seen := d.LastSeen.In(loc).Format(time.RFC3339)
 		j.LastSeenAt = &seen
@@ -533,10 +535,19 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 			URL    *string `json:"url"`
 			APIKey *string `json:"api_key"`
 		} `json:"kiosk"`
+		ListView *string `json:"list_view"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
+	}
+	var view list.View
+	if in.ListView != nil {
+		var ok bool
+		if view, ok = list.ParseView(*in.ListView); !ok {
+			writeError(w, http.StatusUnprocessableEntity, "list_view must be tiles or list")
+			return
+		}
 	}
 	c := displayChange{Name: in.Name, Type: in.Type, ShowTomorrow: in.ShowTomorrow, Theme: in.Theme, SunriseOffset: in.SunriseOffset, SunsetOffset: in.SunsetOffset}
 	if q := in.QuietMode; q != nil {
@@ -569,12 +580,18 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 		s.fail(w, "update display", err)
 		return
 	}
-	list, err := s.db.Displays(p.household.ID)
+	if in.ListView != nil {
+		if err := s.db.SetDisplayListView(p.household.ID, r.PathValue("id"), view); err != nil {
+			s.fail(w, "update display", err)
+			return
+		}
+	}
+	displays, err := s.db.Displays(p.household.ID)
 	if err != nil {
 		s.fail(w, "update display", err)
 		return
 	}
-	for _, d := range list {
+	for _, d := range displays {
 		if d.ID == r.PathValue("id") {
 			writeJSON(w, http.StatusOK, displayToJSON(d, p.location()))
 			return

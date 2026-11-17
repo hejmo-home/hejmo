@@ -11,6 +11,7 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/quiet"
 	"github.com/hejmo-home/hejmo/internal/theme"
 )
@@ -73,6 +74,8 @@ type Display struct {
 	SunriseOffset, SunsetOffset int
 	// Saver is the photo screensaver (ticket 178).
 	Saver Saver
+	// ListView is how the display shows lists (ADR 0019): tiles until someone switches it.
+	ListView list.View
 }
 
 // Saver is a display's screensaver setting: on by default, starting after
@@ -101,7 +104,7 @@ func (s Saver) Shows(albumID string) bool {
 	return false
 }
 
-const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow, quiet_enabled, quiet_from, quiet_to, kiosk_url, kiosk_key != '', theme, sunrise_offset, sunset_offset, saver_enabled, saver_idle_minutes, saver_interval_minutes`
+const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow, quiet_enabled, quiet_from, quiet_to, kiosk_url, kiosk_key != '', theme, sunrise_offset, sunset_offset, saver_enabled, saver_idle_minutes, saver_interval_minutes, COALESCE((SELECT view FROM display_list_view WHERE display_id = displays.id), 'tiles')`
 
 type rowScanner interface{ Scan(...any) error }
 
@@ -111,7 +114,7 @@ func scanDisplay(r rowScanner, at time.Time) (Display, error) {
 	var code, expires, paired, seen sql.NullString
 	var qOn bool
 	var qFrom, qTo string
-	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow, &qOn, &qFrom, &qTo, &d.KioskURL, &d.KioskKeySet, &d.Theme, &d.SunriseOffset, &d.SunsetOffset, &d.Saver.Enabled, &d.Saver.IdleMinutes, &d.Saver.IntervalMinutes); err != nil {
+	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow, &qOn, &qFrom, &qTo, &d.KioskURL, &d.KioskKeySet, &d.Theme, &d.SunriseOffset, &d.SunsetOffset, &d.Saver.Enabled, &d.Saver.IdleMinutes, &d.Saver.IntervalMinutes, &d.ListView); err != nil {
 		return Display{}, err
 	}
 	if q, err := quiet.Parse(qOn, qFrom, qTo); err == nil {

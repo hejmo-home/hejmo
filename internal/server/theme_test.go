@@ -160,10 +160,10 @@ func TestWebInterfaceFollowsTheDeviceByDefault(t *testing.T) {
 
 func TestWebInterfaceOffersLightDarkAutomaticAndFollowTheDevice(t *testing.T) {
 	b := signedInBox(t)
-	p := b.get("/settings").body
+	p := b.get("/").body
 	for _, v := range []string{"device", "light", "dark", "auto"} {
 		if !strings.Contains(p, `data-theme-choice value="`+v+`"`) && !strings.Contains(p, `value="`+v+`" data-theme-choice`) {
-			t.Errorf("settings page misses the choice %q", v)
+			t.Errorf("page misses the choice %q", v)
 		}
 	}
 }

@@ -132,13 +132,13 @@ func TestInvalidQuantitiesAreRefused(t *testing.T) {
 	lb := newListBox(t)
 	id := lb.shopList(t)
 	for name, body := range map[string]map[string]any{
-		"zero":             {"article_id": "eggs", "amount": 0, "unit": "piece"},
-		"negative":         {"article_id": "eggs", "amount": -1, "unit": "piece"},
-		"too much":         {"article_id": "eggs", "amount": 10000, "unit": "piece"},
-		"unknown unit":     {"article_id": "eggs", "amount": 1, "unit": "stone"},
+		"zero":              {"article_id": "eggs", "amount": 0, "unit": "piece"},
+		"negative":          {"article_id": "eggs", "amount": -1, "unit": "piece"},
+		"too much":          {"article_id": "eggs", "amount": 10000, "unit": "piece"},
+		"unknown unit":      {"article_id": "eggs", "amount": 1, "unit": "stone"},
 		"unit switched off": {"article_id": "eggs", "amount": 1, "unit": "lb"},
-		"unknown article":  {"article_id": "unicorn", "amount": 1, "unit": "piece"},
-		"no text":          {"amount": 1, "unit": "piece"},
+		"unknown article":   {"article_id": "unicorn", "amount": 1, "unit": "piece"},
+		"no text":           {"amount": 1, "unit": "piece"},
 	} {
 		if status, e := lb.add(t, id, body); status != http.StatusUnprocessableEntity && status != http.StatusBadRequest {
 			t.Errorf("%s = %d %v", name, status, e)

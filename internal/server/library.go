@@ -41,11 +41,6 @@ type libState struct {
 	own      []store.OwnArticle
 }
 
-// activeUnits are the units the household switched on. Ticket 165 adds the
-// setting (Settings, Lists, Units, preset by the country of the home); until
-// then every household has the preset of most countries.
-func (s *server) activeUnits(string) []string { return unit.DefaultActive }
-
 func (s *server) libState(p principal, lang string) (libState, error) {
 	st := libState{p: p, lang: lang, chips: map[string]personChip{}}
 	var err error

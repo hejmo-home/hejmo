@@ -10,30 +10,68 @@ import (
 )
 
 type listJSON struct {
-	ID        string       `json:"id"`
-	Name      string       `json:"name"`
-	Color     string       `json:"color"`
-	Symbol    string       `json:"symbol"`
-	Sort      string       `json:"sort"`
-	OpenCount int          `json:"open_count"`
-	DoneCount int          `json:"done_count"`
-	Entries   *[]entryJSON `json:"entries,omitempty"`
+	ID     string `json:"id"`
+	Name   string `json:"name"`
+	Color  string `json:"color"`
+	Symbol string `json:"symbol"`
+	Sort   string `json:"sort"`
+	// Suggestions says the list offers articles of the library and takes quantities.
+	Suggestions bool         `json:"suggestions"`
+	OpenCount   int          `json:"open_count"`
+	DoneCount   int          `json:"done_count"`
+	Entries     *[]entryJSON `json:"entries,omitempty"`
 }
 
 type entryJSON struct {
-	ID   string `json:"id"`
-	Text string `json:"text"`
-	Done bool   `json:"done"`
+	ID        string   `json:"id"`
+	Text      string   `json:"text"`
+	Done      bool     `json:"done"`
+	ArticleID string   `json:"article_id,omitempty"`
+	Amount    *float64 `json:"amount,omitempty"`
+	Unit      string   `json:"unit,omitempty"`
+}
+
+// qtyJSON is a quantity: the number as shown, in its unit.
+type qtyJSON struct {
+	Amount float64 `json:"amount"`
+	Unit   string  `json:"unit"`
+}
+
+// entryResultJSON is an entry after adding to a list or changing a quantity,
+// with what happened.
+type entryResultJSON struct {
+	entryJSON
+	// Result is added, added_to, filled or exists after adding; set or merged
+	// after changing a quantity.
+	Result string `json:"result"`
+	// Previous is the quantity the entry had before, when it changed.
+	Previous *qtyJSON `json:"previous,omitempty"`
+}
+
+func entryToJSON(e list.Entry) entryJSON {
+	j := entryJSON{ID: e.ID, Text: e.Text, Done: e.Done, ArticleID: e.ArticleID}
+	if !e.Qty.None() {
+		a := formatJSONAmount(e.Qty)
+		j.Amount, j.Unit = &a, e.Qty.Unit
+	}
+	return j
+}
+
+func previousJSON(q list.Quantity) *qtyJSON {
+	if q.None() {
+		return nil
+	}
+	return &qtyJSON{formatJSONAmount(q), q.Unit}
 }
 
 func listToJSON(l list.List, c store.EntryCount) listJSON {
-	return listJSON{ID: l.ID, Name: l.Name, Color: l.Color, Symbol: l.Symbol, Sort: string(l.Sort), OpenCount: c.Open, DoneCount: c.Done}
+	return listJSON{ID: l.ID, Name: l.Name, Color: l.Color, Symbol: l.Symbol, Sort: string(l.Sort), Suggestions: l.Suggestions, OpenCount: c.Open, DoneCount: c.Done}
 }
 
 func entriesToJSON(es []list.Entry) []entryJSON {
 	out := make([]entryJSON, 0, len(es))
 	for _, e := range es {
-		out = append(out, entryJSON{e.ID, e.Text, e.Done})
+		out = append(out, entryToJSON(e))
 	}
 	return out
 }
@@ -100,6 +138,7 @@ func countOf(es []list.Entry) store.EntryCount {
 func (s *server) apiCreateList(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
 		Name, Color, Symbol, Sort string
+		Suggestions               *bool
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -108,7 +147,8 @@ func (s *server) apiCreateList(w http.ResponseWriter, r *http.Request, p princip
 	if in.Sort == "" {
 		in.Sort = string(list.Manual)
 	}
-	l, err := s.db.CreateList(p.household.ID, list.List{Name: in.Name, Color: in.Color, Symbol: in.Symbol, Sort: list.Sort(in.Sort)})
+	suggestions := in.Suggestions == nil || *in.Suggestions // on for a new list
+	l, err := s.db.CreateList(p.household.ID, list.List{Name: in.Name, Color: in.Color, Symbol: in.Symbol, Sort: list.Sort(in.Sort), Suggestions: suggestions})
 	if err != nil {
 		s.listError(w, "create list", err)
 		return
@@ -119,6 +159,7 @@ func (s *server) apiCreateList(w http.ResponseWriter, r *http.Request, p princip
 func (s *server) apiUpdateList(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
 		Name, Color, Symbol, Sort *string
+		Suggestions               *bool
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -141,6 +182,9 @@ func (s *server) apiUpdateList(w http.ResponseWriter, r *http.Request, p princip
 	if in.Sort != nil {
 		l.Sort = list.Sort(*in.Sort)
 	}
+	if in.Suggestions != nil {
+		l.Suggestions = *in.Suggestions
+	}
 	if l, err = s.db.UpdateList(p.household.ID, l); err != nil {
 		s.listError(w, "update list", err)
 		return
@@ -161,18 +205,152 @@ func (s *server) apiDeleteList(w http.ResponseWriter, r *http.Request, p princip
 	w.WriteHeader(http.StatusNoContent)
 }
 
+// apiAddEntry puts an entry on a list. A list with suggestions takes an
+// article of the library (article_id, or the text of its exact name) and a
+// quantity; the same article with a unit of the same kind adds up, and adding
+// something that is already there makes no second entry. A list without
+// suggestions takes plain text.
 func (s *server) apiAddEntry(w http.ResponseWriter, r *http.Request, p principal) {
-	var in struct{ Text string }
+	var in struct {
+		Text      string   `json:"text"`
+		ArticleID string   `json:"article_id"`
+		Amount    *float64 `json:"amount"`
+		Unit      string   `json:"unit"`
+	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	e, err := s.db.AddEntry(p.household.ID, r.PathValue("id"), in.Text)
+	l, err := s.db.List(p.household.ID, r.PathValue("id"))
+	if err != nil {
+		s.listError(w, "list", err)
+		return
+	}
+	if !l.Suggestions {
+		if in.ArticleID != "" || in.Amount != nil || in.Unit != "" {
+			writeFieldError(w, http.StatusUnprocessableEntity, "article_id", "this list has no articles and no quantities")
+			return
+		}
+		e, err := s.db.AddEntry(p.household.ID, l.ID, in.Text)
+		if err != nil {
+			s.listError(w, "add entry", err)
+			return
+		}
+		writeJSON(w, http.StatusCreated, entryResultJSON{entryJSON: entryToJSON(e), Result: "added"})
+		return
+	}
+	c, err := s.itemContext(p, s.langOf(r))
+	if err != nil {
+		s.fail(w, "library state", err)
+		return
+	}
+	it := itemIn{Text: in.Text, ArticleID: in.ArticleID, Unit: in.Unit}
+	if in.Amount != nil {
+		it.Qty, it.Amount = true, numberText(*in.Amount)
+	} else if in.Unit != "" {
+		writeFieldError(w, http.StatusUnprocessableEntity, "amount", "a unit needs an amount")
+		return
+	}
+	rs, err := c.resolve(it)
+	if ie, ok := asItemError(err); ok {
+		writeFieldError(w, http.StatusUnprocessableEntity, apiField(ie.Field), ie.Error())
+		return
+	} else if err != nil {
+		s.fail(w, "add entry", err)
+		return
+	}
+	res, err := s.db.AddItem(p.household.ID, l.ID, rs.Item, c.show(rs.Article))
 	if err != nil {
 		s.listError(w, "add entry", err)
 		return
 	}
-	writeJSON(w, http.StatusCreated, entryJSON{e.ID, e.Text, false})
+	out := entryResultJSON{entryJSON: entryToJSON(res.Entry), Result: string(res.Plan.Action), Previous: previousJSON(res.Plan.Before)}
+	status := http.StatusOK
+	if res.Plan.Action == list.AddedNew {
+		out.Result, status = "added", http.StatusCreated
+	} else if res.Plan.Action == list.AddedTo {
+		out.Result = "added_to"
+	}
+	writeJSON(w, status, out)
+}
+
+// apiField is the name of an input field in the JSON of the API.
+func apiField(f itemField) string {
+	if f == fieldItem {
+		return "article_id"
+	}
+	return string(f)
+}
+
+// apiSetQuantity changes the quantity of an open entry: the amount replaces
+// the old one and never adds to it. "amount": null takes the quantity away.
+func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p principal) {
+	var in struct {
+		Amount json.RawMessage `json:"amount"`
+		Unit   string          `json:"unit"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.Amount == nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON: amount is required (a number or null)")
+		return
+	}
+	l, err := s.db.List(p.household.ID, r.PathValue("id"))
+	if err != nil {
+		s.listError(w, "list", err)
+		return
+	}
+	if !l.Suggestions {
+		writeFieldError(w, http.StatusUnprocessableEntity, "amount", "this list has no quantities")
+		return
+	}
+	c, err := s.itemContext(p, s.langOf(r))
+	if err != nil {
+		s.fail(w, "library state", err)
+		return
+	}
+	var to list.Quantity
+	var art *articleItem
+	listID, id := l.ID, r.PathValue("entry")
+	es, err := s.db.Entries(p.household.ID, listID)
+	if err != nil {
+		s.fail(w, "entries", err)
+		return
+	}
+	for _, e := range es {
+		if e.ID == id {
+			if a, ok := c.article(e.ArticleID); ok {
+				art = &a
+			}
+		}
+	}
+	chosen := ""
+	if string(in.Amount) != "null" {
+		var f float64
+		if err := json.Unmarshal(in.Amount, &f); err != nil {
+			writeFieldError(w, http.StatusUnprocessableEntity, "amount", "amount must be a number or null")
+			return
+		}
+		if to, chosen, err = c.quantity(art, numberText(f), in.Unit); err != nil {
+			ie, _ := asItemError(err)
+			writeFieldError(w, http.StatusUnprocessableEntity, apiField(ie.Field), ie.Error())
+			return
+		}
+	}
+	res, err := s.db.SetQuantity(p.household.ID, listID, id, to, chosen, c.show(art))
+	switch {
+	case errors.Is(err, list.ErrNotOpen):
+		writeError(w, http.StatusConflict, "the entry is ticked off or gone")
+		return
+	case err != nil:
+		s.listError(w, "set quantity", err)
+		return
+	}
+	e, out := res.Plan.Entry, entryResultJSON{Result: string(res.Plan.Action), Previous: previousJSON(res.Plan.Before)}
+	if res.Plan.Action == list.SetMerged {
+		e = res.Plan.Into
+	}
+	e.Qty = res.Plan.Result
+	out.entryJSON = entryToJSON(e)
+	writeJSON(w, http.StatusOK, out)
 }
 
 // entryState renders one entry after a change.
@@ -180,7 +358,7 @@ func (s *server) entryState(p principal, listID, id string) (entryJSON, error) {
 	es, err := s.db.Entries(p.household.ID, listID)
 	for _, e := range es {
 		if e.ID == id {
-			return entryJSON{e.ID, e.Text, e.Done}, nil
+			return entryToJSON(e), nil
 		}
 	}
 	if err == nil {

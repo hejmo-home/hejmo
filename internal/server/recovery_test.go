@@ -403,7 +403,8 @@ func TestRecoveryAndResetThroughTheAPI(t *testing.T) {
 // is right, so a recovery-shaped code costs the same number of verifies in
 // every case (counted through a seam, not timed).
 func TestRecoveryCodeSignInDoesTheSameWorkWhateverTheOutcome(t *testing.T) {
-	t.Parallel()
+	// Serial on purpose: CountRecoveryVerifies swaps the package variable
+	// verifyRecoveryCode, which parallel tests would race on and miscount.
 	b, _, codes := setupWithCodes(t)
 	verifies := func(user, password, code string) (int, int) {
 		stop := server.CountRecoveryVerifies()
@@ -438,7 +439,8 @@ func TestRecoveryCodeSignInDoesTheSameWorkWhateverTheOutcome(t *testing.T) {
 // Same for the reset confirmation: a recovery-shaped code costs the same
 // number of verifies whether or not the password is right.
 func TestResetConfirmationDoesTheSameWorkWhateverTheOutcome(t *testing.T) {
-	t.Parallel()
+	// Serial on purpose: CountRecoveryVerifies swaps the package variable
+	// verifyRecoveryCode, which parallel tests would race on and miscount.
 	b, mamaSecret, codes := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))

@@ -179,7 +179,7 @@ func (s *server) openInvite(w http.ResponseWriter, r *http.Request) (inviteView,
 	}
 	if who, ok := s.currentPerson(r); ok { // somebody is signed in on this device
 		chip, _ := s.chipOf(h.ID, who.ID)
-		s.deadPage(w, r, http.StatusOK, "other", map[string]any{"Invitee": v.Invitee, "InviteeChip": v.Chip, "Who": chip, "Token": token})
+		s.deadPage(w, r, http.StatusOK, "other", map[string]any{"Invitee": v.Invitee, "InviteeChip": v.Chip, "Who": chip, "Token": token, "ChildPhone": s.childPhoneSession(r, who)})
 		return inviteView{}, false
 	}
 	return v, true

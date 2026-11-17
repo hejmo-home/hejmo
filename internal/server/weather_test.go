@@ -8,13 +8,18 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/weather"
 )
 
 // homeWeather gives the home its coordinates and fetches Open-Meteo's answer.
 func (f *familyBox) homeWeather(t *testing.T) {
 	t.Helper()
-	if err := f.db.SetHouseholdCoordinates(f.householdID, 48.15, 11.46); err != nil {
+	h, err := f.db.HomeHousehold()
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.SaveHouseholdSettings(h.ID, store.HouseholdSettings{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, MealCutoffs: h.MealCutoffs, Home: &store.Home{Name: h.HomeName, Latitude: 48.15, Longitude: 11.46}}); err != nil {
 		t.Fatal(err)
 	}
 	if err := f.weather.Refresh(context.Background(), 48.15, 11.46); err != nil {

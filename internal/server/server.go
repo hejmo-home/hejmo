@@ -22,6 +22,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/passkey"
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
+	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/weather"
@@ -107,6 +108,7 @@ type server struct {
 	opens      *loginLimiter // pairing screens opened, per client address
 	sync       *calsync.Service
 	weather    *weather.Service
+	places     *places.List // the list of places on the box, loaded at start-up (ADR 0023)
 	live       time.Duration
 	countWait  time.Duration
 	done       <-chan struct{}
@@ -128,7 +130,7 @@ func New(opts Options) http.Handler {
 	if opts.PKI == nil {
 		panic("server: Options.PKI is required")
 	}
-	s := &server{db: opts.DB, pki: opts.PKI, public: opts.Public, httpsPort: opts.HTTPSPort, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad()}
+	s := &server{db: opts.DB, pki: opts.PKI, public: opts.Public, httpsPort: opts.HTTPSPort, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad(), places: places.Embedded()}
 	if s.httpsPort == "" {
 		s.httpsPort = "443"
 	}
@@ -344,6 +346,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /displays/{id}", s.handleDisplayPage)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
 	mux.HandleFunc("GET /settings", s.handleSettingsHub)
+	mux.HandleFunc("GET /places", s.handlePlaces)
+	mux.HandleFunc("GET /settings/licences", s.handleLicences)
 	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
 	mux.HandleFunc("GET /phones", s.handlePhonesPage)

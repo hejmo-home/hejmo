@@ -105,7 +105,8 @@ func TestSetupRejectsInvalidInput(t *testing.T) {
 		"no name":        func(f url.Values) { f.Set("name", " ") },
 		"no username":    func(f url.Values) { f.Set("username", "") },
 		"unknown region": func(f url.Values) { f.Set("region", "XX-YY") },
-		"no home":        func(f url.Values) { f.Set("home_name", "") },
+		"no home":        func(f url.Values) { f.Del("place_id") },
+		"unknown place":  func(f url.Values) { f.Set("place_id", "42") },
 	}
 	for name, mutate := range cases {
 		t.Run(name, func(t *testing.T) {

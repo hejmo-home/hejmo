@@ -138,7 +138,7 @@ func Plan(in Input) Target {
 	if in.Quiet.Active(in.Now) {
 		since := in.Quiet.Since(in.Now)
 		switch {
-		case in.Woken:
+		case in.Woken && s.QuietMode == QuietOff: // a dimmed display is not switched off, there is nothing to wake
 			t := Target{Phase: PhaseWake, Percent: s.Evening, Since: in.Now}
 			if s.Source == SourceRoom && in.HasSensor {
 				t.Auto, t.Percent = true, 0

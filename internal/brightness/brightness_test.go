@@ -129,6 +129,11 @@ func TestAWokenDisplayShowsAtEveningBrightness(t *testing.T) {
 	if got := brightness.Plan(in); !got.Auto || got.Phase != brightness.PhaseWake {
 		t.Fatalf("woken under room light = %+v", got)
 	}
+	in.Settings.QuietMode = brightness.QuietDim // a dimmed display is not switched off: nothing to wake
+	if got := brightness.Plan(in); got.Phase != brightness.PhaseQuietDim {
+		t.Fatalf("wake while dimmed = %+v", got)
+	}
+	in.Settings.QuietMode = brightness.QuietOff
 	in.Woken, in.Quiet.Enabled = true, false // not in quiet mode: a wake changes nothing
 	if got := brightness.Plan(in); got.Phase == brightness.PhaseWake {
 		t.Fatalf("wake outside quiet mode = %+v", got)

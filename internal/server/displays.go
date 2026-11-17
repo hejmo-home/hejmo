@@ -68,6 +68,8 @@ type displayPage struct {
 	SaverOnText, SaverSummary, QuietNote string
 	AllAlbums, NoPhotos, EInk            bool
 	Albums                               []saverAlbum
+	// The brightness block (ticket 179).
+	Bright brightPage
 }
 
 // saverAlbum is one album chip of the screensaver block.
@@ -107,6 +109,7 @@ func newDisplayPage(d store.Display, in url.Values) displayPage {
 func (s *server) renderDisplay(w http.ResponseWriter, r *http.Request, p principal, status int, d store.Display, in url.Values, errKey, errField string) {
 	page := newDisplayPage(d, in)
 	s.fillSaver(r, p, &page, d, in)
+	s.fillBrightness(r, p, &page, d, in, errField)
 	facts := []factView{}
 	if d.LastSeen.IsZero() {
 		facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.last_seen")), Value: s.say(r, i18n.Msg("displays.never"))})
@@ -116,10 +119,14 @@ func (s *server) renderDisplay(w http.ResponseWriter, r *http.Request, p princip
 		facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.last_seen")), Value: p.when(d.LastSeen)})
 	}
 	facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.paired")), Value: p.day(d.PairedAt)})
-	s.render(w, r, status, "display.html", map[string]any{
+	data := map[string]any{
 		"Person": p.person, "D": page, "Facts": facts, "Error": errKey, "ErrorField": errField,
 		"Title": d.Name,
-	})
+	}
+	if brightFields[errField] { // the sentence on top names the block, the field says what is wrong
+		data["Error"], data["FieldError"] = "displays.error.bright_block", errKey
+	}
+	s.render(w, r, status, "display.html", data)
 }
 
 func (s *server) handleDisplayPage(w http.ResponseWriter, r *http.Request) {

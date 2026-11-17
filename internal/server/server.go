@@ -333,6 +333,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)
 	mux.HandleFunc("POST /phones/pairings/{id}/confirm", s.handlePhonePairingConfirm)
 	mux.HandleFunc("POST /phones/{id}/revoke", s.handlePhoneRevoke)
+	mux.HandleFunc("POST /phones/{id}/repair", s.handlePhoneRepair)
 	mux.HandleFunc("GET /phones/join/{code}", s.handlePhoneJoin)
 	mux.HandleFunc("GET /manifest.webmanifest", s.handleManifest)
 	mux.HandleFunc("GET /sw.js", s.handleServiceWorker)

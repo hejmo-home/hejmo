@@ -222,6 +222,13 @@ func (db *DB) CreateEvent(householdID string, e calendar.Event) (calendar.Event,
 	if err := insertEvent(tx, householdID, e); err != nil {
 		return calendar.Event{}, err
 	}
+	m := &pushMarker{tx: tx}
+	if err := m.assign([]string{e.ID}); err != nil {
+		return calendar.Event{}, err
+	}
+	if err := m.flush(); err != nil {
+		return calendar.Event{}, err
+	}
 	return e, tx.Commit()
 }
 
@@ -232,6 +239,19 @@ func (db *DB) ApplyChange(householdID string, ch calendar.Change) error {
 		return err
 	}
 	defer tx.Rollback()
+	// Objects the changed events came from need a push, also where the events
+	// leave them (a changed occurrence that moves to a new series).
+	m := &pushMarker{tx: tx}
+	for _, e := range ch.Update {
+		if err := m.old(e.ID); err != nil {
+			return err
+		}
+	}
+	for _, id := range ch.Delete {
+		if err := m.old(id); err != nil {
+			return err
+		}
+	}
 	// Create first: updated overrides may point at a newly created series.
 	for _, e := range ch.Create {
 		if err := insertEvent(tx, householdID, e); err != nil {
@@ -247,6 +267,19 @@ func (db *DB) ApplyChange(householdID string, ch calendar.Change) error {
 		if err := expectOne(tx.Exec(`DELETE FROM events WHERE id = ? AND household_id = ?`, id, householdID)); err != nil {
 			return err
 		}
+	}
+	var changed []string
+	for _, e := range ch.Create {
+		changed = append(changed, e.ID)
+	}
+	for _, e := range ch.Update {
+		changed = append(changed, e.ID)
+	}
+	if err := m.assign(changed); err != nil {
+		return err
+	}
+	if err := m.flush(); err != nil {
+		return err
 	}
 	return tx.Commit()
 }
@@ -508,13 +541,13 @@ func (db *DB) strings(query string, args ...any) ([]string, error) {
 }
 
 // SetCalendarWaste marks a calendar as waste collection or unmarks it. Only
-// read-only calendars can be marked (ADR 0015).
+// read-only calendars can be marked (ADR 0015); unmarking always works.
 func (db *DB) SetCalendarWaste(householdID, calendarID string, waste bool) error {
 	c, err := db.Calendar(householdID, calendarID)
 	if err != nil {
 		return err
 	}
-	if !c.ReadOnly {
+	if waste && !c.ReadOnly {
 		return fmt.Errorf("%w: only a read-only calendar can be a waste collection calendar", ErrInvalid)
 	}
 	return expectOne(db.sql.Exec(`UPDATE calendars SET waste = ?, updated_at = ? WHERE id = ? AND household_id = ?`, waste, now(), calendarID, householdID))

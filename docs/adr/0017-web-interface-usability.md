@@ -2,7 +2,7 @@
 
 - Status: Accepted, amended by [0022](0022-home-location.md)
 - Date: 14/11/2026
-- Amends: [0006](0006-authentication.md) (recovery when the one-time code device is lost), [0010](0010-households-memberships-and-credentials.md) (recovery codes as a credential), [0012](0012-calendar-sync.md) (choosing calendars with a switch, also for synced calendars, and switching one off; calendar colour; sync log wording; event count before choosing a calendar; iOS profile for CalDAV clients), [0015](0015-display-web-interface-and-everyday.md) (navigation; one display question instead of name and room)
+- Amends: [0006](0006-authentication.md) (recovery when the one-time code device is lost), [0010](0010-households-memberships-and-credentials.md) (recovery codes as a credential), [0012](0012-calendar-sync.md) (choosing calendars with a switch, also for synced calendars, and switching one off; calendar colour; sync log wording; event count before choosing a calendar; iOS profile for CalDAV clients), [0015](0015-display-web-interface-and-everyday.md) (navigation; one display question instead of name and room; breadcrumb trail instead of back links, ticket 182)
 
 ## Context
 
@@ -54,13 +54,22 @@ The product owner tested the box with a real iCloud account on 14/11/2026. The m
 
 ### Overviews and detail pages (ticket 111, product owner 15/11/2026)
 
-- Displays, device tokens, calendar connections, subscribed calendars and phones are listed as **calm rows** that open a **detail page**; the overview has no switch, form, "Sync now" or remove, only one primary action (add or pair). A detail page has a link back to its overview (not the hub), the name as heading, a facts card, one form with one primary action and then the closed red "danger" box. Its confirmation names the thing on the red button, says what disappears (a connection lists its calendars by name) and offers "No, change nothing".
+- Displays, device tokens, calendar connections, subscribed calendars and phones are listed as **calm rows** that open a **detail page**; the overview has no switch, form, "Sync now" or remove, only one primary action (add or pair). A detail page has a breadcrumb trail through its overview (not only a link back; see "Breadcrumbs" below), the name as heading, a facts card, one form with one primary action and then the closed red "danger" box. Its confirmation names the thing on the red button, says what disappears (a connection lists its calendars by name) and offers "No, change nothing".
 - **State in words:** last contact, last use, last sync with seconds. A display that has not been in contact for **15 minutes** gets a warning ("Check power and Wi-Fi"). A token never used, a phone session that ran out, a refused login and a sync problem are flags with what to do.
 - **Display detail** holds name and type (renaming and retyping work through the API as well), the tomorrow block, light/dark/auto (for every type: a dark theme on a black-and-white E-Ink display takes the dark palette, ADR 0015), quiet mode (times only while it is on) and, under More options, sun offsets and the kiosk app.
 - **New device token:** the answer to creating it is its own page that shows the token once (not stored, not redirected) with a copy button, the server address, user name and the primary link to the token's detail page. Reloading that page asks the browser to send the creation again and makes a **second** token; the page says "Fertig" so that nobody needs to reload, and the surplus token is revoked on its detail page.
 - **New password for a connection** (also `PUT /calendar-connections/{id}/credentials`): checked against the server like a new connection, stored encrypted, the connection's calendars sync again at once, one after another within 30 seconds (what is left waits for its next turn). Without it a revoked app-specific password forced disconnecting and reconnecting, which loses names, colours and audiences.
 - **Subscribed calendar detail** also holds the switch for the waste collection calendar (ticket 6.7) and its colour; the list is not grouped by person any more, each row names its audience. The calendars of a connection have no page of their own, so the waste switch for the read-only calendars of a connection sits on the connection page, in a section of its own below the choice of calendars (also `waste_collection` on `PATCH /calendars/{id}`).
 - **Success lines name the thing** after removing it ("“Küche” unpaired."); the name travels in the one-time flash cookie as base64 text and is shown escaped. A success line a page shows itself is never replaced by a waiting one.
+
+### Breadcrumbs (ticket 182, product owner 16/11/2026, Q93; preview `docs/design/preview-182.html`)
+
+- **Every page below Settings starts with a breadcrumb trail** that replaces the back link: `Settings › <hub entry> › … › <this page>`, for example `Settings › People › Papa › Invitation for Papa`. Every part except the last is a link; the last is the page's own heading in plain text with `aria-current="page"`. The Settings hub is the top and has no trail. The trail is a `nav` with `aria-label` "Breadcrumb" (German "Seitenpfad") holding an `ol`.
+- **The side navigation stays on every sub-page** with Settings filled: `aria-current="page"` on the hub, `aria-current="true"` on every page below it.
+- **Words match what you tapped:** the trail word of an overview is its hub entry, and the overview's heading says the same. The page "Calendars" is therefore called **"Calendar connections"** (German "Kalender-Verbindungen"), so it is not mixed up with the screen Calendar. "Choose calendars" is a section of the connection page, not a part of the trail.
+- **Names are never cut:** parts wrap between words, only words of 12 or more letters are hyphenated, a single token longer than the line (an e-mail address) breaks at the line end as a last resort. Hyphenation depends on browser support for `hyphenate-limit-chars` (Chrome and Edge); Safari and Firefox never hyphenate the trail, so there a word of 12 or more letters wider than the line breaks at the line end without a hyphen. Below 600 px the last part is only read out, because the heading right below says it.
+- **Order:** trail, then the success or error line, then the heading. After a field error, trail and heading keep the saved name.
+- **Everyday screens (Q93):** a page one level below a navigation screen (event, task, note, list, templates overview) keeps its single back link. From two levels deep the same trail is shown, for example `Meals › Meal plan templates › Weekend` and `Tasks › Routine templates › Morning routine › <step>`.
 
 ### Setup of the one-time code after an invitation (ticket 145)
 
@@ -69,5 +78,5 @@ The product owner tested the box with a real iCloud account on 14/11/2026. The m
 ## Consequences
 
 - New tickets in package 5: management pages redesign (calendars and choose calendars with switch, chips, event count, feedback), settings hub and navigation, display settings question, tasks page patterns, iOS profile for CalDAV clients, recovery of one-time codes, people page.
-- The sync engine stores per run the event count in the import window and the number of new, changed and removed events.
+- The sync engine stores per run the event count in the import window and the number of new, changed and removed events. Note (#17, write-back): the event count shown for a synced calendar (`sync.event_count`, calendar page, flash text) is the number of events the calendar holds now, events written on the box included and not limited to the import window; the count before choosing a calendar still uses the import window.
 - Each of these tickets shows a preview before merge where it changes layouts (CLAUDE.md design rule).

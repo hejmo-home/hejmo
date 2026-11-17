@@ -847,6 +847,37 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /phones/{id}/repair:
+    post:
+      operationId: repairPhone
+      summary: Give a phone to another person in one step (scope tokens:write)
+      description: |
+        Removes the phone, ends its device session at once and returns a new
+        pairing code that says whom the phone is for next. The code follows the
+        usual rules of `createPhonePairing` (valid once, ten minutes, the
+        household's limit of open codes). The phone opens it, the waiting phone
+        shows the person, and a parent confirms it with `confirmPhonePairing`
+        (the waiting list names the person in `for_person_id`). `person_id` must
+        be another member of the household than the phone's current person (422
+        otherwise, and nothing changes). Nothing of the person the phone had
+        (events, tasks, stars) is touched.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RepairPhone" }
+      responses:
+        "201":
+          description: The new pairing code, for the chosen person
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NewPhonePairing" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /phones/pairings:
     get:
       operationId: listPhonePairings
@@ -2028,6 +2059,270 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /articles:
+    get:
+      operationId: listArticles
+      summary: The article library, shipped and own articles (scope lists:read)
+      description: |
+        The articles Hejmo ships (`source: hejmo`, about 250, German and English
+        names) and the household's own ones (`source: own`). Optional `q` keeps
+        the articles whose name holds the text, ignoring case and umlauts.
+        `units` are the article's default units, `offered_units` those of them
+        that are switched on (piece when neither is). Articles say which
+        allergens they contain; who is warned about them is health data, see
+        `/articles/{id}/warnings`.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: The articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createArticle
+      summary: Add an own article (scope lists:write, parents only)
+      description: |
+        `kind` has no default: `meat`, `fish`, `veg`, `vegan` or `nonfood`.
+        Allergens are keys of the 14 main EU allergens and are cleared for
+        `nonfood`. `unit1` is required (default piece), `unit2` optional; both
+        must be switched on. A picture is either a `symbol` (an emoji of the Noto
+        Emoji set) or a `picture_url` that the box downloads once (http or
+        https, public addresses only, at most 15 MB, 10 seconds); the box stores a
+        scaled-down JPEG without metadata and never links to the address. A
+        photo is sent with `PUT /articles/{id}/picture`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleWrite" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}:
+    get:
+      operationId: getArticle
+      summary: One article, by its key (shipped) or id (own) (scope lists:read)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateArticle
+      summary: Change an own article (scope lists:write, parents only)
+      description: |
+        Fields left out keep their value. `symbol` replaces a picture by a
+        symbol, `picture_url` replaces it by a downloaded image,
+        `remove_picture` takes it away (the tile then shows the symbol of the
+        department). Articles from Hejmo cannot be changed (422): hide them or
+        copy them.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleWrite" }
+      responses:
+        "200":
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteArticle
+      summary: Delete an own article (scope lists:delete, parents only)
+      description: Entries on lists keep their text.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}/picture:
+    get:
+      operationId: getArticlePicture
+      summary: The stored picture of an own article, a JPEG of at most 512 px (scope lists:read)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The picture
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setArticlePicture
+      summary: Set the picture of an own article from a photo (scope lists:write, parents only)
+      description: |
+        The request body is the photo itself: JPEG, PNG, WebP or GIF, at most
+        15 MB. The box turns it upright, scales it to at most 512 px and
+        stores it as JPEG without metadata (place, camera). Refused with 422
+        when it is too large, not a picture or a web page.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema: { type: string, format: binary }
+          image/png:
+            schema: { type: string, format: binary }
+          image/webp:
+            schema: { type: string, format: binary }
+          image/gif:
+            schema: { type: string, format: binary }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}/hidden:
+    put:
+      operationId: setArticleHidden
+      summary: Hide an article from Hejmo by hand, or show it again (scope lists:write, parents only)
+      description: |
+        A hidden article is not suggested; typing it by hand still works. Own
+        articles are deleted, not hidden (422).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hidden]
+              properties:
+                hidden: { type: boolean }
+      responses:
+        "200":
+          description: The article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}/copy:
+    post:
+      operationId: copyArticle
+      summary: Make an own version of an article from Hejmo (scope lists:write, parents only)
+      description: |
+        Copies name (in the language of the request), department, units and
+        allergens as an own article and hides the original.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "201":
+          description: The own article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /articles/{id}/warnings:
+    get:
+      operationId: getArticleWarnings
+      summary: Who has to look out for an article, and whether Hejmo suggests it (scope health:read, parents only)
+      description: |
+        Health data: who is allergic and which diets an article suits. People
+        with exactly the same allergens share one entry. The answer is
+        experimental and without guarantee: it only knows the 14 main
+        allergens as tagged in the library, no traces, and cannot check free
+        text (`note`).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The warnings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleWarnings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /library/hiding:
+    get:
+      operationId: getLibraryHiding
+      summary: The experimental setting that hides articles with an allergen (scope health:read, parents only)
+      responses:
+        "200":
+          description: The setting
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hiding" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setLibraryHiding
+      summary: Switch the hiding on or off (scope health:write, parents only)
+      description: |
+        Off by default and experimental: Hejmo guarantees no completeness and
+        takes no liability. Switching it on needs `confirm: true`, which says
+        that the person behind the token read the notice; they are recorded
+        with the time. `everyone` hides for everyone with allergies, otherwise
+        only for `people`. Free text is never hidden.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+                everyone: { type: boolean }
+                people:
+                  type: array
+                  items: { type: string, format: uuid }
+                confirm: { type: boolean }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hiding" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /groups:
     get:
       operationId: listGroups
@@ -2144,12 +2439,16 @@ paths:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     patch:
       operationId: updateCalendar
-      summary: Change a synced calendar (share through the box, waste collection, name, colour, audience)
+      summary: Change a synced calendar (share through the box, two-way / read-only, waste collection, name, colour, audience)
       description: |
         Send at least one field. `share_through_box` switches sharing through the box for a synced
         calendar; the family calendar is always served to phones, asking to change it answers 422.
+        `read_only` switches a CalDAV calendar between two-way (the default: events created, changed or deleted on the box
+        are written back to the server right away, ADR 0012) and read-only (the box never writes; API edits answer 422).
+        ICS and local calendars have no such switch and answer 422. Switching back to two-way pushes
+        changes still queued and also removes `waste_collection` (only a read-only calendar can be a waste collection calendar).
         `name`, `color` and `audience` can only be changed on a synced calendar (else 422; 404 if no calendar has the id); a field
-        left out stays as it is. Nothing is sent to the calendar's source.
+        left out stays as it is. Changing them sends nothing to the calendar's source.
       requestBody:
         required: true
         content:
@@ -2158,6 +2457,7 @@ paths:
               type: object
               properties:
                 share_through_box: { type: boolean }
+                read_only: { type: boolean, description: "CalDAV calendars only; false (two-way) also clears waste_collection" }
                 waste_collection: { type: boolean, description: "Only a read-only calendar can be marked, else 422" }
                 name: { type: string, minLength: 1 }
                 color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422" }
@@ -2298,7 +2598,7 @@ paths:
         Adds the calendar with its colour and audience and syncs it once right away; if that
         first sync fails the calendar is still added (see the sync log) and the scheduler retries.
         `url` must be a calendar on the connection's server and not yet synced. These calendars
-        are read-only for now; delta sync runs every 5 minutes by default.
+        are two-way (see `PATCH /calendars/{id}`); delta sync runs every 5 minutes by default.
       requestBody:
         required: true
         content:
@@ -2498,6 +2798,10 @@ paths:
     post:
       operationId: createEvent
       summary: Create an event or a series
+      description: |
+        In a two-way CalDAV calendar the event is written to the server right away (in the background; if the
+        server is down it is queued and written with the next sync). In a read-only calendar the answer is 422.
+        Changing and deleting events (`PATCH`/`DELETE /events/{id}`) work the same way.
       requestBody:
         required: true
         content:
@@ -2873,6 +3177,100 @@ components:
         sort: { $ref: "#/components/schemas/ListSort" }
         open_count: { type: integer, description: "Entries not ticked off" }
         done_count: { type: integer, description: "Entries ticked off" }
+    Article:
+      type: object
+      required: [id, source, name_de, name_en, dept, kind, allergens, units, offered_units, symbol, picture, picture_source, hidden_by_hand, created_by, created_at]
+      properties:
+        id: { type: string, description: "The key of an article from Hejmo, the id of an own one" }
+        source: { type: string, enum: [hejmo, own] }
+        name_de: { type: string }
+        name_en: { type: string, description: The same as name_de for an own article }
+        dept:
+          type: string
+          enum: [produce, bakery, dairy, meat_fish, frozen, pantry, baking_spices, sweets, drinks, drugstore, household, baby, other]
+        kind: { type: string, enum: [meat, fish, veg, vegan, nonfood] }
+        allergens:
+          type: array
+          items: { type: string, enum: [celery, gluten, crustaceans, eggs, fish, lupin, milk, molluscs, mustard, nuts, peanuts, sesame, soy, sulphites] }
+        units:
+          type: array
+          description: One or two default units, the first is preselected when adding
+          items: { $ref: "#/components/schemas/Unit" }
+        offered_units:
+          type: array
+          description: The default units that are switched on; piece when neither is
+          items: { $ref: "#/components/schemas/Unit" }
+        symbol: { type: string, description: "The emoji of a shipped article or a chosen symbol, else empty" }
+        picture:
+          type: string
+          nullable: true
+          description: Where the stored picture is (GET), or null
+        picture_source: { type: string, enum: ["", symbol, upload, web] }
+        hidden_by_hand: { type: boolean }
+        created_by: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time, nullable: true }
+    Unit:
+      type: string
+      enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
+    ArticleWrite:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        dept:
+          type: string
+          enum: [produce, bakery, dairy, meat_fish, frozen, pantry, baking_spices, sweets, drinks, drugstore, household, baby, other]
+        kind: { type: string, enum: [meat, fish, veg, vegan, nonfood] }
+        allergens:
+          type: array
+          items: { type: string, enum: [celery, gluten, crustaceans, eggs, fish, lupin, milk, molluscs, mustard, nuts, peanuts, sesame, soy, sulphites] }
+        unit1: { $ref: "#/components/schemas/Unit" }
+        unit2:
+          type: string
+          description: "The optional second default unit, empty for none"
+        symbol: { type: string, description: "An emoji of the Noto Emoji set" }
+        picture_url: { type: string, description: "An http or https address of an image the box downloads once" }
+        remove_picture: { type: boolean }
+    ArticleWarnings:
+      type: object
+      required: [article_id, warnings, suits, does_not_suit, suggested, not_suggested_because, hidden_for, note]
+      properties:
+        article_id: { type: string }
+        warnings:
+          type: array
+          items:
+            type: object
+            required: [people, allergens]
+            properties:
+              people:
+                type: array
+                items: { type: string, format: uuid }
+              allergens:
+                type: array
+                items: { type: string }
+        suits:
+          type: array
+          items: { type: string, format: uuid }
+        does_not_suit:
+          type: array
+          items: { type: string, format: uuid }
+        suggested: { type: boolean }
+        not_suggested_because: { type: string, nullable: true, enum: [hand, allergy, diet, null] }
+        hidden_for:
+          type: array
+          items: { type: string, format: uuid }
+        note: { type: string }
+    Hiding:
+      type: object
+      required: [enabled, everyone, people, confirmed_by, confirmed_at, experimental]
+      properties:
+        enabled: { type: boolean }
+        everyone: { type: boolean }
+        people:
+          type: array
+          items: { type: string, format: uuid }
+        confirmed_by: { type: string, format: uuid, nullable: true }
+        confirmed_at: { type: string, format: date-time, nullable: true }
+        experimental: { type: boolean, description: "Always true" }
     ListEntry:
       type: object
       required: [id, text, done]
@@ -2910,7 +3308,7 @@ components:
         name: { type: string }
         kind: { type: string, enum: [local, ics, caldav, google, meals], description: "meals is the meal plan, generated by the box: read-only, its events change only in the meal plan" }
         color: { type: string }
-        read_only: { type: boolean, description: "The box never changes this calendar's events (always true for ICS)" }
+        read_only: { type: boolean, description: "The box never changes this calendar's events outside (always true for ICS; false by default for CalDAV and Google, where a parent can switch it on)" }
         waste_collection: { type: boolean, description: "A read-only calendar marked as the household's waste collection calendar: its events show only in the family view's tomorrow tile (reminder from 18:00) and on the night page, not in the strip, person columns or personal view" }
         share_through_box: { type: boolean, description: "Phones may subscribe to this calendar over CalDAV. Always true for the family calendar; on by default for ICS, off for CalDAV and Google" }
         audience: { $ref: "#/components/schemas/Audience" }
@@ -3051,12 +3449,13 @@ components:
         last_seen_at: { type: string, format: date-time, nullable: true }
     PhonePairing:
       type: object
-      required: [id, device, verification, expires_at]
+      required: [id, device, verification, expires_at, for_person_id]
       properties:
         id: { type: string, format: uuid }
         device: { type: string, example: Safari on iPhone, description: "What the phone said about itself" }
         verification: { type: string, example: "483 920", description: "Six-digit number the waiting phone shows. Confirm only if it matches the number on the phone in your hand." }
         expires_at: { type: string, format: date-time }
+        for_person_id: { type: string, format: uuid, nullable: true, description: "Whom the phone is for next when the code came from `repairPhone`; null for an ordinary code" }
     NewPhonePairing:
       type: object
       required: [id, url, expires_at]
@@ -3064,6 +3463,12 @@ components:
         id: { type: string, format: uuid }
         url: { type: string, format: uri, description: "The address to show as a QR code. Only in this answer." }
         expires_at: { type: string, format: date-time }
+        person_id: { type: string, format: uuid, description: "Only for `repairPhone`: whom the phone is for next" }
+    RepairPhone:
+      type: object
+      required: [person_id]
+      properties:
+        person_id: { type: string, format: uuid, description: "Whom the phone is for next: a member of the household other than the phone's current person" }
     Invitation:
       type: object
       required: [state, created_at, expires_at, created_by, accepted_at, withdrawn_at]
@@ -3086,7 +3491,7 @@ components:
       description: Only on synced calendars. Displays read `state` to show the sync notice.
       required: [state, interval_minutes, last_attempt_at, last_success_at, last_error]
       properties:
-        event_count: { type: integer, description: "Events the calendar holds after the last successful run; a series counts once" }
+        event_count: { type: integer, description: "Events the calendar holds now, events written on the box included and not limited to the import window; a series counts once" }
         last_run:
           type: object
           description: What the last successful run did to the events. A failed run leaves it as it was.
@@ -3166,6 +3571,7 @@ components:
         at: { type: string, format: date-time }
         kind: { type: string, enum: [failure, conflict, note] }
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
+        detail: { type: string, description: "For a conflict: the version that lost, as iCalendar text. Kept for 30 days with the entry. Absent for other entries" }
     Place:
       type: object
       required: [id, name, region, latitude, longitude, region_code]

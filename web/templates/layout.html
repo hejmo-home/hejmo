@@ -21,7 +21,7 @@
 {{else}}<div{{if .Frame}} class="frame framed{{if .Frame.Items}} has-nav{{end}}"{{end}}>
 {{with .Frame}}
 <header class="frame-bar">
-  <a class="brand" href="/">Hejmo</a>
+  {{if .PlainBrand}}<span class="brand">Hejmo</span>{{else}}<a class="brand" href="/">Hejmo</a>{{end}}
   <div class="frame-tools">
     {{template "langSwitch" .}}
     {{if .SignedIn}}{{template "themePick" .}}{{end}}
@@ -29,11 +29,11 @@
   </div>
 </header>
 {{if .Items}}<nav class="frame-nav" aria-label="{{t "nav.label"}}"><ul>
-  {{range .Items}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{end}}>{{t .Label}}</a></li>
+  {{range .Items}}<li><a href="{{.Href}}"{{if .Current}} aria-current="page"{{else if .Section}} aria-current="true"{{end}}>{{t .Label}}</a></li>
   {{end}}</ul></nav>{{end}}
 {{end}}{{end}}
 <main id="content">
-{{with .Frame}}{{if .BackHref}}{{template "backLink" (dict "Href" .BackHref "Text" (or .BackText (t .BackLabel)))}}{{end}}{{with .Success}}{{template "success" .}}{{end}}{{with .Error}}<p class="error" role="alert">{{.}}</p>{{end}}{{end}}
+{{with .Frame}}{{if .Crumbs}}{{template "crumbs" (dict "Parts" .Crumbs "Last" $.Title)}}{{else if .BackHref}}{{template "backLink" (dict "Href" .BackHref "Text" (or .BackText (t .BackLabel)))}}{{end}}{{with .Success}}{{template "success" .}}{{end}}{{with .Error}}<p class="error" role="alert">{{.}}</p>{{end}}{{end}}
 {{end}}
 
 {{/* The language switcher of ticket 134, one component for the frame bar and the wizard bar. Argument: the frame. */}}

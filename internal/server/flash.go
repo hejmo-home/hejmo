@@ -239,7 +239,7 @@ func (s *server) successText(lang, key, arg string) string {
 				p := principal{household: h}
 				run := c.Sync.LastRun
 				return s.i18n.Format(lang, i18n.Msg("flash.calendar_synced_run", "time", p.clockSeconds(c.Sync.LastSuccess),
-					"events", strconv.Itoa(run.Events), "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))
+					"events", strconv.Itoa(c.Sync.EventCount), "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))
 			}
 		}
 	}

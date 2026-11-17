@@ -20,6 +20,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/passkey"
+	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
@@ -61,6 +62,9 @@ type Options struct {
 	// host script: no settings file is written, no status is read and the
 	// settings page does not offer auto-update.
 	UpdateDir string
+	// Pictures downloads the web images of own articles (ticket 164). Nil means
+	// a fetcher that only reaches public addresses; tests pass one that reaches their own server.
+	Pictures *picture.Fetcher
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -110,7 +114,11 @@ type server struct {
 	done       <-chan struct{}
 	updateDir  string
 	flashTexts flashTexts
-	rolled     sync.Map // household id -> the day its meal plan calendar was last rolled forward
+	// pictures holds pictures made from an upload or a web image until their article is saved (ticket 164).
+	pictures pendingPictures
+	// fetcher downloads web images, only from public addresses.
+	fetcher *picture.Fetcher
+	rolled  sync.Map // household id -> the day its meal plan calendar was last rolled forward
 }
 
 // New returns the box's root HTTP handler.
@@ -137,6 +145,9 @@ func New(opts Options) http.Handler {
 	}
 	if s.weather = opts.Weather; s.weather == nil {
 		s.weather = weather.New(weather.WithClock(s.now))
+	}
+	if s.fetcher = opts.Pictures; s.fetcher == nil {
+		s.fetcher = &picture.Fetcher{}
 	}
 	s.done = opts.Done
 	s.updateDir = opts.UpdateDir
@@ -213,6 +224,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /calendars/{id}", s.handleCalendarPage)
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
+	mux.HandleFunc("POST /calendars/{id}/read-only", s.handleCalendarReadOnly)
 	mux.HandleFunc("GET /connections/new", s.handleConnectNew)
 	mux.HandleFunc("POST /calendars/{id}/waste", s.handleCalendarWaste)
 	mux.HandleFunc("POST /notes", s.handleNoteSave)
@@ -279,6 +291,19 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /routines/templates/{id}/steps/{step}", s.handleTemplateStepPage)
 	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}", s.handleTemplateStepSave)
 	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}/delete", s.handleTemplateStepDelete)
+	mux.HandleFunc("GET /settings/lists", s.handleListsSettings)
+	mux.HandleFunc("POST /settings/lists", s.handleListsSettingsSave)
+	mux.HandleFunc("GET /settings/lists/library", s.handleLibrary)
+	mux.HandleFunc("GET /settings/lists/library/new", s.handleArticleNew)
+	mux.HandleFunc("POST /settings/lists/library", s.handleArticleCreate)
+	mux.HandleFunc("GET /settings/lists/library/suggest", s.handleArticleSuggest)
+	mux.HandleFunc("GET /settings/lists/library/picture/{token}", s.handlePendingPicture)
+	mux.HandleFunc("GET /settings/lists/library/{id}", s.handleArticle)
+	mux.HandleFunc("POST /settings/lists/library/{id}", s.handleArticleSave)
+	mux.HandleFunc("POST /settings/lists/library/{id}/hidden", s.handleArticleHidden)
+	mux.HandleFunc("POST /settings/lists/library/{id}/copy", s.handleArticleCopy)
+	mux.HandleFunc("POST /settings/lists/library/{id}/delete", s.handleArticleDelete)
+	mux.HandleFunc("GET /articles/{id}/picture", s.handleArticlePicture)
 	mux.HandleFunc("GET /lists", s.handleListsPage)
 	mux.HandleFunc("POST /lists", s.handleListCreate)
 	mux.HandleFunc("GET /lists/{id}", s.handleListPage)
@@ -332,6 +357,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)
 	mux.HandleFunc("POST /phones/pairings/{id}/confirm", s.handlePhonePairingConfirm)
 	mux.HandleFunc("POST /phones/{id}/revoke", s.handlePhoneRevoke)
+	mux.HandleFunc("POST /phones/{id}/repair", s.handlePhoneRepair)
 	mux.HandleFunc("GET /phones/join/{code}", s.handlePhoneJoin)
 	mux.HandleFunc("GET /manifest.webmanifest", s.handleManifest)
 	mux.HandleFunc("GET /sw.js", s.handleServiceWorker)
@@ -405,12 +431,20 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
 		fr.setLanguage(lang, r)
-		if detailPages[name] && fr.Back { // a detail page links to its own overview, not to the hub
-			fr.Back, fr.BackHref, fr.BackLabel = false, "", ""
-		}
+		fr.PlainBrand = plainBrandPages[name]
 		if href, _ := data["BackHref"].(string); href != "" { // a page that leads back to a named page
 			text, _ := data["BackText"].(string)
 			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, href, "", text
+		}
+		if parts := crumbsFor(name, data); len(parts) > 0 && data["Wizard"] == nil { // a trail replaces the back link (ticket 182); a wizard is a linear flow, not below Settings
+			for _, c := range parts {
+				label := c.Name
+				if c.Key != "" {
+					label = s.i18n.T(lang, c.Key)
+				}
+				fr.Crumbs = append(fr.Crumbs, crumbLink{c.Href, label})
+			}
+			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, "", "", ""
 		}
 		key, arg := s.takeFlash(w, r) // always consumed, so it cannot show later
 		switch own, _ := data["SuccessKey"].(string); {

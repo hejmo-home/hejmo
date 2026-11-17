@@ -61,7 +61,7 @@ func TestConnectionDetailHoldsFactsChooseCalendarsPasswordAndDisconnect(t *testi
 		t.Fatalf("GET = %d\n%s", r.status, r.body)
 	}
 	for _, want := range []string{
-		`<a class="back" href="/calendars">`, "Back to calendar connections", "<h1>u</h1>",
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/calendars">Calendar connections</a>`, "<h1>u</h1>",
 		"<dt>Service</dt>", "<dt>User name</dt>", "<dt>Last synced</dt>", "<dt>Connected since</dt>",
 		`<form method="post" action="/connections/` + id + `/calendars" class="steps"`, `class="calchoice is-on"`, `role="switch"`, `name="calendar"`,
 		"Save", `<section id="login"`, `name="password"`, "Check and save password", `action="/connections/` + id + `/credentials"`,

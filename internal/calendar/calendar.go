@@ -31,6 +31,18 @@ type Event struct {
 	Groups []string
 	// UpdatedAt is when the box last stored the event. Zero for events not read from the store.
 	UpdatedAt time.Time
+	// Invitation is set for an event other people are invited to (Outlook):
+	// the box shows it but never changes it, since a change would send a
+	// message to every attendee.
+	Invitation *Invitation
+}
+
+// Invitation says who invited and what the family's account answered, with a
+// link to the event at its source.
+type Invitation struct {
+	Organizer string
+	Response  string // Graph's answer: accepted, tentativelyAccepted, declined, notResponded, organizer
+	WebLink   string
 }
 
 // Recurring reports whether e is a series master.

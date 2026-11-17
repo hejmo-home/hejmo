@@ -26,11 +26,11 @@ type NewOutlookConnection struct {
 // parents switched on. RemoteID is Graph's id of the calendar. SourceLocked
 // calendars (shared with the account, birthdays) are read-only for good.
 type NewOutlookCalendar struct {
-	Name, RemoteID, Color, SourceOwner string
-	Audience                           calendar.Audience
-	IntervalMinutes                    int
-	SourceLocked                       bool
-	Now                                time.Time
+	Name, RemoteID, Color, SourceOwner, SourceName string
+	Audience                                       calendar.Audience
+	IntervalMinutes                                int
+	SourceLocked                                   bool
+	Now                                            time.Time
 }
 
 func (db *DB) seal(plain string) (string, error) {
@@ -150,9 +150,9 @@ func (db *DB) AddOutlookCalendar(householdID, connectionID string, in NewOutlook
 		return SyncedCalendar{}, err
 	}
 	defer tx.Rollback()
-	if _, err := tx.Exec(`INSERT INTO calendars (id, household_id, name, kind, color, connection_id, remote_url, read_only, source_locked, source_owner, created_at, updated_at)
-		VALUES (?, ?, ?, 'outlook', ?, ?, ?, ?, ?, ?, ?, ?)`, calID, householdID, strings.TrimSpace(in.Name), in.Color, connectionID, in.RemoteID,
-		in.SourceLocked, in.SourceLocked, in.SourceOwner, ts, ts); err != nil {
+	if _, err := tx.Exec(`INSERT INTO calendars (id, household_id, name, kind, color, connection_id, remote_url, read_only, source_locked, source_owner, source_name, created_at, updated_at)
+		VALUES (?, ?, ?, 'outlook', ?, ?, ?, ?, ?, ?, ?, ?, ?)`, calID, householdID, strings.TrimSpace(in.Name), in.Color, connectionID, in.RemoteID,
+		in.SourceLocked, in.SourceLocked, in.SourceOwner, in.SourceName, ts, ts); err != nil {
 		return SyncedCalendar{}, err
 	}
 	if err := writeAudience(tx, "calendar_audience", "calendar_id", calID, in.Audience); err != nil {

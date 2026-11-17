@@ -216,3 +216,14 @@
 {{define "articleRows"}}<ul class="list-rows articles">{{range .}}
   <li><a href="{{.Href}}"><span class="art-sym" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><span class="t"><b>{{.Name}}</b><span class="meta">{{range $i, $m := .Meta}}<span>{{if $i}}· {{end}}{{$m}}</span>{{end}}</span>{{if .Tags}}<span class="tags">{{range .Tags}}<span class="{{.Class}}">{{.Text}}</span>{{end}}</span>{{end}}{{range .Warns}}{{.}}{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
 </ul>{{end}}
+
+{{/* The notice that a Microsoft sign-in has ended (ticket 177, Q37): one
+     sentence per account with its own secondary button, never a count.
+     Argument: the notice (Items, Intro, Many, Who) or nothing; Home adds who may sign in. */}}
+{{define "reconnectNotice"}}{{with .Reconnect}}<div class="notice act reconnect" role="alert">
+  <p class="head"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{t "outlook.reconnect.title"}}</span></p>
+  <p>{{.Intro}}</p>
+  {{if .Many}}<ul class="reconn">{{range .Items}}<li><span class="t"><b class="host">{{.Account}}</b><small>{{repl (t "outlook.reconnect.since") "{since}" .Since}}</small></span>
+    <form method="post" action="/connections/{{.ID}}/reconnect"><button class="button secondary" type="submit" aria-label="{{repl (t "outlook.reconnect.label") "{account}" .Account}}">{{t "outlook.reconnect.each"}}</button></form></li>{{end}}</ul>
+  {{else}}{{if $.ReconnectHome}}<p class="hint">{{.Who}}</p>{{end}}{{range .Items}}<form method="post" action="/connections/{{.ID}}/reconnect"><button class="button secondary" type="submit">{{t "outlook.reconnect.title"}}</button></form>{{end}}{{end}}
+</div>{{end}}{{end}}

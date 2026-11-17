@@ -25,7 +25,7 @@ INSERT INTO calendar_connections_new (rowid, id, household_id, kind, url, create
 DROP TABLE calendar_connections;
 ALTER TABLE calendar_connections_new RENAME TO calendar_connections;
 
--- source_locked: Outlook says the calendar is not the account's to change
+-- source_name: the calendar's name in Outlook. source_locked: Outlook says the calendar is not the account's to change
 -- (shared with it, birthdays, holidays); source_owner names who shared it.
 CREATE TABLE calendars_new (
     id            TEXT PRIMARY KEY,
@@ -41,7 +41,8 @@ CREATE TABLE calendars_new (
     remote_url    TEXT,
     waste         INTEGER NOT NULL DEFAULT 0,
     source_locked INTEGER NOT NULL DEFAULT 0,
-    source_owner  TEXT NOT NULL DEFAULT ''
+    source_owner  TEXT NOT NULL DEFAULT '',
+    source_name   TEXT NOT NULL DEFAULT ''
 );
 INSERT INTO calendars_new (rowid, id, household_id, name, kind, color, created_at, updated_at, connection_id, read_only, shared, remote_url, waste)
     SELECT rowid, id, household_id, name, kind, color, created_at, updated_at, connection_id, read_only, shared, remote_url, waste FROM calendars;

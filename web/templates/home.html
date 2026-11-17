@@ -5,6 +5,7 @@
   {{template "httpsNotice" .}}
   {{template "updateNotice" .}}
   {{template "syncNotice" .}}
+  {{template "reconnectNotice" .}}
   {{with .FirstSteps}}<section class="firststeps{{if .Settled}} done{{end}}" data-firststeps>
     <h2>{{t "firststeps.title"}}</h2>
     {{if .Settled}}<p class="msg ok" role="status">{{template "tickIcon" 20}}{{t "firststeps.settled"}}</p>{{else}}<p>{{t "firststeps.lead"}}</p>{{end}}

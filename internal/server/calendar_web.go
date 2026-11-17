@@ -585,6 +585,9 @@ func (s *server) renderEventPage(w http.ResponseWriter, r *http.Request, c *cale
 	f.AllDay = occ.AllDay
 	extra := map[string]any{"EventID": r.PathValue("id"), "Item": c.item(occ), "Recurring": master.Recurring(), "ReadOnly": c.readOnly[occ.CalendarID],
 		"CalendarName": c.calendarName(occ.CalendarID), "Zone": master.Start.Location().String(), "CurrentRepeat": f.Repeat}
+	if inv := master.Invitation; inv != nil {
+		extra["Invite"] = s.outlookInvite(r, c, master, occ)
+	}
 	s.renderEventForm(w, r, c, status, "edit", f, extra, bad)
 }
 

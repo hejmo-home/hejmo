@@ -38,6 +38,10 @@ type discoveredJSON struct {
 	// CalendarID is the id of the synced calendar when Added: the calendar
 	// to change or to switch off with /calendars/{id}.
 	CalendarID string `json:"calendar_id,omitempty"`
+	// ReadOnly and SharedBy say what Outlook allows: a calendar it locks (shared
+	// with the account, birthdays), and who shared it, "Name (address)".
+	ReadOnly bool   `json:"read_only,omitempty"`
+	SharedBy string `json:"shared_by,omitempty"`
 	// fromStore marks a calendar the box knows but the server was not asked
 	// about: Name is the name in Hejmo, not the name at the source (web only).
 	fromStore bool
@@ -91,6 +95,9 @@ func (s *server) connect(r *http.Request, p principal, in newConnectionInput) (s
 
 // rediscover lists a connection's calendars again, marking those already synced.
 func (s *server) rediscover(ctx context.Context, p principal, conn store.Connection) ([]discoveredJSON, error) {
+	if conn.Kind == "outlook" {
+		return s.rediscoverOutlook(ctx, p, conn)
+	}
 	user, password, err := s.db.ConnectionCredentials(p.household.ID, conn.ID)
 	if err != nil {
 		return nil, err
@@ -214,6 +221,9 @@ func (s *server) addConnectionCalendar(r *http.Request, p principal, connectionI
 	if err != nil {
 		return store.SyncedCalendar{}, err
 	}
+	if conn.Kind == "outlook" {
+		return s.addOutlookCalendar(r, p, conn, in, opts)
+	}
 	cal, err := s.db.AddCalDAVCalendar(p.household.ID, conn.ID, store.NewCalDAVCalendar{
 		Name: in.Name, RemoteURL: strings.TrimSpace(in.URL), Color: opts.color, Audience: opts.audience, IntervalMinutes: opts.interval, Now: s.now(),
 	})
@@ -233,10 +243,14 @@ func (s *server) checkConnectionCalendar(p principal, conn store.Connection, in 
 	if strings.TrimSpace(in.Name) == "" {
 		return calendarSettings{}, &inputError{"name", "name is required"}
 	}
-	remote, err := url.Parse(strings.TrimSpace(in.URL))
-	base, _ := url.Parse(conn.URL)
-	if err != nil || base == nil || remote.Host == "" || caldavclient.CheckSameDomain(base, remote) != nil {
-		return calendarSettings{}, &inputError{"calendar", "url must be a calendar on the connection's server"}
+	if conn.Kind != "outlook" { // an Outlook calendar is named by Microsoft's id, not by an address
+		remote, err := url.Parse(strings.TrimSpace(in.URL))
+		base, _ := url.Parse(conn.URL)
+		if err != nil || base == nil || remote.Host == "" || caldavclient.CheckSameDomain(base, remote) != nil {
+			return calendarSettings{}, &inputError{"calendar", "url must be a calendar on the connection's server"}
+		}
+	} else if strings.TrimSpace(in.URL) == "" {
+		return calendarSettings{}, &inputError{"calendar", "calendar is required"}
 	}
 	opts, err := s.calendarOptions(p, in, defaultCalDAVSync)
 	if err != nil {
@@ -345,6 +359,14 @@ func (s *server) apiEventCounts(w http.ResponseWriter, r *http.Request, p princi
 		s.fail(w, "credentials", err)
 		return
 	}
+	count := func(ctx context.Context, address string) (int, error) {
+		return s.sync.CountEvents(ctx, conn.URL, user, password, address)
+	}
+	if conn.Kind == "outlook" {
+		count = func(ctx context.Context, id string) (int, error) {
+			return s.sync.CountOutlook(ctx, p.household.ID, conn.ID, id)
+		}
+	}
 	out := make([]eventCountJSON, len(found))
 	var wg sync.WaitGroup
 	for i, f := range found {
@@ -353,7 +375,7 @@ func (s *server) apiEventCounts(w http.ResponseWriter, r *http.Request, p princi
 			defer wg.Done()
 			ctx, cancel := context.WithTimeout(r.Context(), s.countWait)
 			defer cancel()
-			n, err := s.sync.CountEvents(ctx, conn.URL, user, password, f.URL)
+			n, err := count(ctx, f.URL)
 			out[i] = s.eventCount(r, f.URL, n, err)
 		}()
 	}
@@ -411,4 +433,32 @@ func foreignHostError(e *caldavclient.ForeignHostError) *inputError {
 		return &inputError{"downgrade", e.Error()}
 	}
 	return &inputError{"foreign_host", e.Error()}
+}
+
+// addOutlookCalendar stores a calendar the parent switched on and runs its
+// first sync. Whether Outlook lets the account change it is asked again here, so
+// a calendar shared with the account is never made two-way.
+func (s *server) addOutlookCalendar(r *http.Request, p principal, conn store.Connection, in newCalendarInput, opts calendarSettings) (store.SyncedCalendar, error) {
+	found, err := s.rediscoverOutlook(r.Context(), p, conn)
+	if err != nil {
+		return store.SyncedCalendar{}, err
+	}
+	var pick *discoveredJSON
+	for i := range found {
+		if found[i].URL == strings.TrimSpace(in.URL) {
+			pick = &found[i]
+		}
+	}
+	if pick == nil {
+		return store.SyncedCalendar{}, &inputError{"calendar", "this calendar is not in the Outlook account"}
+	}
+	cal, err := s.db.AddOutlookCalendar(p.household.ID, conn.ID, store.NewOutlookCalendar{
+		Name: in.Name, RemoteID: pick.URL, Color: opts.color, Audience: opts.audience, IntervalMinutes: opts.interval, Now: s.now(),
+		SourceLocked: pick.ReadOnly, SourceOwner: pick.SharedBy, SourceName: pick.Name,
+	})
+	if err != nil {
+		return store.SyncedCalendar{}, err
+	}
+	_ = s.sync.Sync(r.Context(), p.household.ID, cal.ID)
+	return s.db.SyncedCalendar(p.household.ID, cal.ID)
 }

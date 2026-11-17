@@ -61,7 +61,8 @@ func connectOutlook(t *testing.T, b *box, fake *graphtest.Server) string {
 	if r.status != http.StatusOK || m == nil {
 		t.Fatalf("signed-in page = %d, no way on:\n%s", r.status, r.body)
 	}
-	return strings.TrimPrefix(m[1], "/connections/")
+	id, _, _ := strings.Cut(strings.TrimPrefix(m[1], "/connections/"), "?")
+	return id
 }
 
 func TestOutlookIsAChoiceCardWithTheGuide(t *testing.T) {
@@ -149,8 +150,8 @@ func TestApprovingTheSignInCreatesTheConnectionAndMovesOnToChoosingCalendars(t *
 	if len(conns) != 1 || conns[0].Kind != "outlook" || conns[0].ID != id {
 		t.Fatalf("connections = %+v", conns)
 	}
-	page := b.do(http.MethodGet, "/connections/"+id, nil, de).body
-	for _, want := range []string{"mama@example.org", "Mit Outlook verbunden", "Kalender auswählen", "Was die Box in Outlook ändern darf", "Deine eigenen Kalender:",
+	page := b.do(http.MethodGet, "/connections/"+id+"?connected=new", nil, de).body
+	for _, want := range []string{"mama@example.org", "Mit Outlook verbunden. 2 Kalender gefunden", "Kalender auswählen", "Was die Box in Outlook ändern darf", "Deine eigenen Kalender:",
 		"Kalender in Outlook", "Lesen und ändern:", "Geteilt von Papa Maier (papa@example.org)", "Nur lesen:", "Papa Maier hat ihn mit dir geteilt",
 		"Anmeldung bei Microsoft", "Neu bei Microsoft anmelden", "Hejmo-Projekt", `Nur in Hejmo. In Outlook heißt er weiter <q>Kalender</q>`} {
 		if !strings.Contains(page, want) {
@@ -340,6 +341,7 @@ func TestReconnectingNeedsTheSameAccountAndKeepsWhatWasChosen(t *testing.T) {
 	fake.Set(func(s *graphtest.Server) { s.Account = "mama@example.org" })
 	again := b.do(http.MethodPost, flow+"/new", url.Values{}, de)
 	b.do(http.MethodGet, again.location, nil, de)
+	fake.SetDeviceState("approved")
 	later(b, 10*time.Second)
 	done := b.do(http.MethodGet, again.location, nil, de)
 	if done.status != http.StatusOK || !strings.Contains(done.body, "Angemeldet als mama@example.org.") {
@@ -352,7 +354,7 @@ func TestReconnectingNeedsTheSameAccountAndKeepsWhatWasChosen(t *testing.T) {
 	if len(conns) != 1 || conns[0].ID != id {
 		t.Fatalf("reconnecting made another connection: %+v", conns)
 	}
-	if page := b.do(http.MethodGet, "/calendars", nil, de).body; strings.Contains(page, "Outlook neu verbinden") {
+	if page := b.do(http.MethodGet, "/calendars", nil, de).body; strings.Contains(page, `class="notice act reconnect"`) {
 		t.Error("the notice stays after reconnecting")
 	}
 }
@@ -419,6 +421,7 @@ func TestOutlookSignInThroughTheAPI(t *testing.T) {
 	c := signedInAPI(t)
 	fake := withGraph(t, c.b, "app-1")
 	fake.AddCalendar("cal-1", "Kalender")
+	fake.AddShared("cal-2", "Kalender von Papa", "Papa Maier", "papa@example.org")
 	status, in, _ := c.call(http.MethodPost, "/calendar-connections/outlook/sign-ins", map[string]any{})
 	if status != http.StatusCreated || in["user_code"] != "B7KQ2M9XL" || in["verification_uri"] != "https://microsoft.com/devicelogin" || in["state"] != "waiting" || in["id"] == "" {
 		t.Fatalf("start = %d %v", status, in)

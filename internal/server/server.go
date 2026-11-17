@@ -123,6 +123,8 @@ type server struct {
 	pictures pendingPictures
 	// fetcher downloads web images, only from public addresses.
 	fetcher *picture.Fetcher
+	// outlook holds the device sign-ins of Outlook that are begun and not finished (ticket 177).
+	outlook outlookFlows
 	rolled  sync.Map // household id -> the day its meal plan calendar was last rolled forward
 }
 
@@ -243,6 +245,10 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /notes/{day}", s.handleNoteChange)
 	mux.HandleFunc("POST /notes/{day}/delete", s.handleNoteDelete)
 	mux.HandleFunc("POST /connections", s.handleConnect)
+	mux.HandleFunc("POST /connections/outlook", s.handleOutlookStart)
+	mux.HandleFunc("GET /connections/outlook/{flow}", s.handleOutlookFlow)
+	mux.HandleFunc("POST /connections/outlook/{flow}/new", s.handleOutlookFlowNew)
+	mux.HandleFunc("POST /connections/{id}/reconnect", s.handleOutlookReconnect)
 	mux.HandleFunc("GET /connections/{id}", s.handleConnectionPage)
 	mux.HandleFunc("POST /connections/{id}/calendars", s.handleConnectionCalendars)
 	mux.HandleFunc("POST /connections/{id}/credentials", s.handleConnectionCredentials)
@@ -429,6 +435,7 @@ func parsePages() *template.Template {
 		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
 		"strs": strs,
 		"rich": rich,
+		"host": withHost,
 		"repl": repl,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }

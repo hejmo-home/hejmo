@@ -1,0 +1,58 @@
+{{template "head" (dict "Lang" .Lang "Title" (or (and .Reconnect (t "outlook.reconnect.title")) (t "outlook.signin.title")) "Frame" .Frame "Refresh" .Refresh)}}
+  <h1>{{if .Reconnect}}{{t "outlook.reconnect.title"}}{{else}}{{t "outlook.signin.title"}}{{end}}</h1>
+  <p class="lead">{{if .Reconnect}}{{host (t "outlook.reconnect.lead") "{account}" .Account}}{{else}}{{t "outlook.signin.lead"}}{{end}}</p>
+  <div class="connect">
+    <div class="guide">
+    {{if eq .State "waiting"}}{{template "outlookSteps" .}}
+    {{else if eq .State "ok"}}{{template "outlookSteps" .}}
+    {{else}}
+      {{if eq .State "expired"}}
+      <p class="checkline" data-state="fail" role="alert">{{template "failIcon"}}<span><b>{{t "outlook.fail.expired"}}</b><small>{{repl (t "outlook.fail.expired.sub") "{time}" .ValidUntil}}</small></span></p>
+      {{else if eq .State "declined"}}
+      <p class="checkline" data-state="fail" role="alert">{{template "failIcon"}}<span><b>{{t "outlook.fail.declined"}}</b><small>{{t "outlook.fail.declined.sub"}}</small></span></p>
+      <p>{{rich (t "outlook.fail.declined.next")}}</p>
+      {{else if eq .State "consent"}}
+      <p class="checkline" data-state="fail" role="alert">{{template "failIcon"}}<span><b>{{t "outlook.fail.consent"}}</b><small>{{t "outlook.fail.consent.sub"}}</small></span></p>
+      <p>{{t "outlook.fail.consent.text"}}</p>
+      <ul class="opts"><li>{{rich (t "outlook.fail.consent.ask")}}</li></ul>
+      <dl class="facts"><dt>{{t "outlook.fail.consent.app"}}</dt><dd>Hejmo</dd><dt>{{t "outlook.fail.consent.appid"}}</dt><dd class="host">{{.AppID}}</dd><dt>{{t "outlook.fail.consent.needs"}}</dt><dd>{{t "outlook.fail.consent.scopes"}}</dd></dl>
+      <ul class="opts"><li>{{rich (t "outlook.fail.consent.personal")}}</li></ul>
+      <p class="hint">{{t "outlook.fail.consent.hint"}}</p>
+      {{else if eq .State "wrong_account"}}
+      <p class="checkline" data-state="fail" role="alert">{{template "failIcon"}}<span><b>{{t "outlook.fail.wrong"}}</b><small>{{repl (repl (t "outlook.fail.wrong.sub") "{other}" .Other) "{account}" .Account}}</small></span></p>
+      <p class="hint">{{host (t "outlook.fail.wrong.more") "{other}" .Other}} <a href="/connections/new?service=outlook">{{t "outlook.fail.wrong.link"}}</a>.</p>
+      {{else if eq .State "down"}}
+      <p class="checkline" data-state="fail" role="alert">{{template "failIcon"}}<span><b>{{t "outlook.fail.down"}}</b><small>{{t "outlook.fail.down.sub"}}</small></span></p>
+      {{else}}
+      <p class="checkline" data-state="fail" role="alert">{{template "failIcon"}}<span><b>{{t "outlook.fail.other"}}</b><small>{{t "outlook.fail.other.sub"}}</small></span></p>
+      {{end}}
+      <form method="post" action="{{.NewAction}}" class="actions"><button class="button" type="submit">{{t "outlook.signin.new"}}</button></form>
+    {{end}}
+    </div>
+    {{if ne .State "ok"}}<p class="cancel"><a class="link quiet" href="{{.CancelHref}}">{{t "outlook.signin.cancel"}}</a></p>{{end}}
+  </div>
+{{template "foot"}}
+{{define "failIcon"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9 9l6 6M15 9l-6 6"/></svg>{{end}}
+{{define "outlookSteps"}}{{$done := eq .State "ok"}}
+      <ol class="howto">
+        <li{{if $done}} data-done{{end}}><div class="s"><b>{{t "outlook.signin.step1.title"}}</b>
+          {{if $done}}<p>{{t "outlook.signin.step1.done"}}</p>{{else}}<p>{{t "outlook.signin.step1.text"}}</p>
+          <div class="devcode"><p class="code" data-device-token aria-label="{{printf (t "outlook.signin.code.label") .CodeSpaced}}">{{.Code}}</p>
+            <div class="row"><button class="button secondary" type="button" data-copy="{{.Code}}" data-copied="{{t "outlook.signin.copied"}}" hidden><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>{{t "outlook.signin.copy"}}</button></div>
+            <p class="valid"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span>{{rich (repl (t "outlook.signin.valid") "{time}" (printf "**%s**" .ValidUntil))}}</span></p></div>{{end}}
+        </div></li>
+        <li{{if $done}} data-done{{end}}><div class="s"><b>{{t "outlook.signin.step2.title"}}</b>
+          {{if $done}}<p>{{t "outlook.signin.step2.done"}}</p>{{else}}<a class="button out" href="{{.VerifyURL}}" target="_blank" rel="noopener">{{.VerifyHost}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg><span class="vh">{{t "connect.newtab.sr"}}</span></a>
+          <p class="hint">{{t "outlook.signin.step2.hint"}}</p>{{end}}
+        </div></li>
+        <li{{if $done}} data-done{{end}}><div class="s"><b>{{t "outlook.signin.step3.title"}}</b>
+          {{if $done}}<p>{{t "outlook.signin.step3.done"}}</p>{{else if .Reconnect}}<p>{{host (t "outlook.signin.step3.reconnect") "{account}" .Account}}</p>
+          <p class="hint">{{t "outlook.signin.step3.reconnect.hint"}}</p>{{else}}<p>{{rich (t "outlook.signin.step3.text")}}</p>{{end}}
+        </div></li>
+        <li{{if $done}} data-done{{end}}><div class="s"><b>{{t "outlook.signin.step4.title"}}</b>
+          {{if $done}}<p class="checkline" data-state="ok"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span><b>{{repl (t "outlook.signin.ok") "{account}" .Account}}</b><small>{{t "outlook.signin.ok.sub"}}</small></span></p>
+          {{else}}<p class="checkline" data-state="waiting" role="status"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 3h10M7 21h10M8 3c0 5 8 5 8 9s-8 4-8 9M16 3c0 5-8 5-8 9s8 4 8 9"/></svg><span><b>{{t "outlook.signin.waiting"}}</b><small>{{repl (t "outlook.signin.waiting.sub") "{time}" .LastPolled}}</small></span></p>{{end}}
+        </div></li>
+      </ol>
+      <script src="/static/token-copy.js" defer></script>
+{{end}}

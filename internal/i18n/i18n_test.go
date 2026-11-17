@@ -125,6 +125,10 @@ var wholeFamilyTexts = map[string]bool{
 	"lib.lead":                       true, // "wenn ihr etwas auf eine Liste setzt"
 	"art.units.hint":                 true, // "bis ihr eine andere Einheit nehmt"
 
+	"connect.outlook.appid":      true, // "eurer eigenen App-Registrierung": the family's
+	"connect.outlook.appid.hint": true, // "wenn ihr ... eine eigene angelegt habt": the family
+	"outlook.fail.consent.ask":   true, // "Schick ihr": the IT
+
 	"theme.auto.parent":   true, // "eures Zuhauses": the family's home
 	"theme.auto.child":    true, // "eures Zuhauses"
 	"theme.where.phone":   true, // "behalten ihr Design": everyone else

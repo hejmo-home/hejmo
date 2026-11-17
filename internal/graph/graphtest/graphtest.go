@@ -242,6 +242,7 @@ func (s *Server) deviceCode(w http.ResponseWriter, r *http.Request) {
 		oauthError(w, 400, "unauthorized_client", "Application with identifier was not found in the directory", 700016)
 		return
 	}
+	s.DeviceState = "pending" // every new code starts out waiting
 	writeJSON(w, 200, map[string]any{"device_code": "DEVCODE", "user_code": "B7KQ2M9XL", "verification_uri": "https://microsoft.com/devicelogin", "expires_in": 900, "interval": 5})
 }
 

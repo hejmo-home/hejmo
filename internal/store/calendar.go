@@ -43,6 +43,8 @@ type Calendar struct {
 	// calendar, so it is read-only for good; SourceOwner names who shared it.
 	SourceLocked bool
 	SourceOwner  string
+	// SourceName is the calendar's name at its source (Outlook).
+	SourceName string
 }
 
 const (
@@ -125,14 +127,14 @@ func (db *DB) CreateCalendar(c Calendar) (Calendar, error) {
 
 // Calendars lists a household's calendars with their audiences.
 func (db *DB) Calendars(householdID string) ([]Calendar, error) {
-	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color, read_only, shared, waste, source_locked, source_owner FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
+	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color, read_only, shared, waste, source_locked, source_owner, source_name FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
 	if err != nil {
 		return nil, err
 	}
 	var out []Calendar
 	for rows.Next() {
 		var c Calendar
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste, &c.SourceLocked, &c.SourceOwner); err != nil {
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste, &c.SourceLocked, &c.SourceOwner, &c.SourceName); err != nil {
 			rows.Close()
 			return nil, err
 		}

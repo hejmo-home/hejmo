@@ -249,6 +249,14 @@ func (s *server) renderHome(w http.ResponseWriter, r *http.Request, status int, 
 		return
 	}
 	data["FirstSteps"] = first
+	if person.Role == store.RoleParent {
+		notice, err := s.reconnectNotice(r, principal{person: person, household: h})
+		if err != nil {
+			s.fail(w, "reconnect notice", err)
+			return
+		}
+		data["Reconnect"], data["ReconnectHome"] = notice, true
+	}
 	lang := s.langOf(r)
 	data["PINFrom"] = s.pinFrom(r, h, person) // after accepting an invitation: who has the PIN
 	if person.Role == store.RoleChild {

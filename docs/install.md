@@ -72,6 +72,25 @@ Only needed if you chose the own CA. Open `http://<box address>/ca` on each devi
 
 The CA is name-constrained to the box, so it cannot vouch for other websites. The page shows the CA's fingerprint; the box also writes it to its log (`docker logs hejmo`).
 
+## Away from home: WireGuard with the FRITZ!Box
+
+The box lives in your home network, so a phone away from home does not reach it by itself. A VPN puts the phone back into the home network; with a FRITZ!Box you need no extra service for that, because FRITZ!OS 7.50 and newer has WireGuard built in. Nothing of this goes through Hejmo: the VPN connects your phone to your router only.
+
+You need:
+
+- A FRITZ!Box with FRITZ!OS 7.50 or newer that can be reached from the internet. With a shared address (CGNAT, DS-Lite) this works only over IPv6 or with a public address from your provider.
+- The WireGuard app on the phone: [App Store](https://apps.apple.com/app/wireguard/id1441195209) (iPhone, iPad), [Google Play](https://play.google.com/store/apps/details?id=com.wireguard.android) (Android), other systems at [wireguard.com/install](https://www.wireguard.com/install/).
+
+Set it up (about 10 minutes, once per phone, at home):
+
+1. Open the FRITZ!Box at [http://fritz.box](http://fritz.box) and go to **Internet**, **Permit Access**, **VPN (WireGuard)**. Add a connection and choose to connect a single device to the home network. Give it a name such as "Mama's phone". The FRITZ!Box offers a free MyFRITZ address so the phone finds it when your home address changes; accept it.
+2. The FRITZ!Box shows a QR code. In the WireGuard app on the phone add a tunnel by scanning it.
+3. Switch the tunnel on, away from home or on mobile data, and open the box under its address in the home network (the page **Settings**, **Secure connection** shows it).
+
+Open the box by its address or by the name the router gives it, not as `hejmo.local`: through a VPN a phone usually cannot find `hejmo.local`. In the FRITZ!Box the name of the box is under **Home Network**, **Network**, at the box's device (for example `hejmo.fritz.box`; you can rename it there). Enter that name once in the setup wizard under **More options**, or later under **Settings**, **Secure connection**, **Name in the router**. A name added later needs a new certificate of the box, and every device has to trust the box again (previous chapter).
+
+Other VPNs work the same way as long as they put the phone into your home network. This guide covers WireGuard in the FRITZ!Box only.
+
 ## Displays and phones
 
 - **Displays:** open the box's display address on the display's browser. It shows a QR code and a six-digit code. In the web interface, open **Displays**, enter the code and give the display a name, room and type. An E-Ink display (black and white or colour) is **experimental**; a normal screen, such as an old tablet, works fully.

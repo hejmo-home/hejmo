@@ -43,6 +43,9 @@ func Slot(color string) int {
 type List struct {
 	ID, Name, Color, Symbol string
 	Sort                    Sort
+	// Suggestions says the list offers articles from the library while typing
+	// and takes quantities (ticket 165). A to-do list switches it off.
+	Suggestions bool
 }
 
 // Entry is one line of text on a list that can be ticked off.
@@ -50,6 +53,10 @@ type Entry struct {
 	ID, Text string
 	Done     bool
 	Position int
+	// ArticleID is the article of the library the entry was made from, "" for free text.
+	ArticleID string
+	// Qty is how much of it; none for an entry without quantity.
+	Qty Quantity
 }
 
 // InvalidError says which field of a list is wrong.

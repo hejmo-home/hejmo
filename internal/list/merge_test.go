@@ -9,7 +9,9 @@ import (
 
 // showFor is how the box shows a total: the article's default units first.
 func showFor(defaults ...string) list.Show {
-	return func(base float64, kind unit.Kind) string { return unit.ShowUnit(base, kind, defaults, unit.DefaultActive) }
+	return func(base float64, kind unit.Kind) string {
+		return unit.ShowUnit(base, kind, defaults, unit.DefaultActive)
+	}
 }
 
 func q(amount float64, u string) list.Quantity { return list.NewQuantity(amount, u) }

@@ -2577,3 +2577,16 @@ fieldset.choice.invalid label { border: 2px solid var(--error-text); padding: 11
 /* Lines under a legend that sit flush with it (the preview's inline style, as a class). */
 .steps p.flat { margin: 0; }
 .steps p.hint.flat { clear: both; }
+/* ticket 57, product owner decision Q92: the names the box certificate covers,
+   one per line so a long router name never widens a 375 px page. */
+.certnames { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; font-weight: 700; overflow-wrap: anywhere; }
+.tile .certnames { font-size: var(--fs-person-name); }
+.facts .certnames { font-weight: 400; }
+.choice small.way a { overflow-wrap: anywhere; }
+/* Settings "Sichere Verbindung": one tile per topic (facts, from outside, router name). */
+main > .tile.netblock { display: grid; gap: 12px; padding: var(--pad-column); max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-section); min-width: 0; }
+main > .tile.netblock h2, main > .tile.netblock p { margin: 0; }
+main > .tile.netblock .button { justify-self: start; }
+[data-theme="bw"] main > .tile.netblock { border: 2px solid var(--text); }
+/* The form of the page "Nur im Heimnetz" holds its tiles and "More options". */
+.wizard form.homeform { display: grid; gap: var(--gap); min-width: 0; }

@@ -72,6 +72,27 @@ Nur nötig, wenn du die eigene CA gewählt hast. Öffne auf jedem Gerät `http:/
 
 Die CA ist auf die Box namensbeschränkt und kann daher nicht für andere Websites bürgen. Die Seite zeigt den Fingerabdruck der CA; die Box schreibt ihn auch ins Log (`docker logs hejmo`).
 
+## Von unterwegs: WireGuard mit der FRITZ!Box
+
+Die Box steht in deinem Heimnetz, ein Handy unterwegs erreicht sie deshalb nicht von selbst. Ein VPN holt das Handy zurück ins Heimnetz. Mit einer FRITZ!Box brauchst du dafür keinen weiteren Dienst, denn FRITZ!OS 7.50 und neuer hat WireGuard eingebaut. Nichts davon läuft über Hejmo: Das VPN verbindet dein Handy nur mit deinem Router.
+
+Du brauchst:
+
+- Eine FRITZ!Box mit FRITZ!OS 7.50 oder neuer, die aus dem Internet erreichbar ist.
+- Die WireGuard-App auf dem Handy: [App Store](https://apps.apple.com/app/wireguard/id1441195209) (iPhone, iPad), [Google Play](https://play.google.com/store/apps/details?id=com.wireguard.android) (Android), andere Systeme unter [wireguard.com/install](https://www.wireguard.com/install/).
+
+**Geteilte Adresse (DS-Lite, CGNAT)?** Viele Anbieter teilen eine IPv4-Adresse unter mehreren Kunden, dann erreicht von außen über IPv4 nichts deine FRITZ!Box. Du erkennst es in der FRITZ!Box unter **Internet**, **Online-Monitor**: Dort steht ein DS-Lite-Tunnel, oder die IPv4-Adresse beginnt im Bereich 100.64.0.0/10 (100.64.x.x bis 100.127.x.x). Das VPN klappt oft trotzdem über IPv6, wenn das Mobilfunknetz des Handys es anbietet; dann musst du nichts weiter tun. Andernfalls frage deinen Anbieter nach einer öffentlichen IPv4-Adresse.
+
+So richtest du es ein (etwa 10 Minuten, einmal pro Handy, zu Hause):
+
+1. Öffne die FRITZ!Box unter [http://fritz.box](http://fritz.box) und gehe zu **Internet**, **Freigaben**, **VPN (WireGuard)**. Füge eine Verbindung hinzu und wähle, ein einzelnes Gerät mit dem Heimnetz zu verbinden. Gib ihr einen Namen wie „Handy von Mama“. Die FRITZ!Box bietet eine kostenlose MyFRITZ-Adresse an, damit das Handy sie findet, wenn sich deine Adresse zu Hause ändert; nimm sie an.
+2. Die FRITZ!Box zeigt einen QR-Code. Füge in der WireGuard-App auf dem Handy einen Tunnel hinzu, indem du ihn scannst.
+3. Schalte den Tunnel ein, unterwegs oder mit mobilen Daten, und öffne die Box unter ihrer Adresse im Heimnetz (die Seite **Einstellungen**, **Sichere Verbindung** zeigt sie).
+
+Öffne die Box mit ihrer Adresse oder dem Namen, den der Router ihr gibt, nicht als `hejmo.local`: Über ein VPN findet ein Handy `hejmo.local` meist nicht. In der FRITZ!Box steht der Name der Box unter **Heimnetz**, **Netzwerk**, beim Gerät der Box (zum Beispiel `hejmo.fritz.box`; dort kannst du ihn auch ändern). Trage diesen Namen einmal im Einrichtungsassistenten unter **Mehr Optionen** ein, oder später unter **Einstellungen**, **Sichere Verbindung**, **Name im Router**. Ein später ergänzter Name braucht ein neues Zertifikat der Box, und jedes Gerät muss der Box noch einmal vertrauen (voriges Kapitel).
+
+Andere VPNs funktionieren genauso, solange sie das Handy in dein Heimnetz holen. Diese Anleitung behandelt nur WireGuard in der FRITZ!Box.
+
 ## Displays und Handys
 
 - **Displays:** Öffne im Browser des Displays die Display-Adresse der Box. Es zeigt einen QR-Code und einen sechsstelligen Code. Öffne in der Weboberfläche **Displays**, gib den Code ein und vergib Name, Raum und Typ. Ein E-Ink-Display (schwarz-weiß oder farbig) ist **experimentell**; ein normaler Bildschirm, etwa ein altes Tablet, funktioniert vollständig.

@@ -8,7 +8,7 @@
     <input type="hidden" name="next" value="1">
     <fieldset class="choice">
       <legend class="sr">{{t "setup.https.choice.legend"}}</legend>
-      {{template "wayOption" (dict "Value" "own" "Label" (t "setup.https.way.own") "Means" (t "setup.https.way.own.means") "Need" (t "setup.https.way.own.need") "Cost" (t "setup.https.way.own.cost"))}}
+      {{template "wayOption" (dict "Value" "own" "Label" (t "setup.https.way.own") "Means" (t "setup.https.way.own.means") "Need" (t "setup.https.way.own.need") "Cost" (t "setup.https.way.own.cost") "Away" true)}}
       {{template "wayOption" (dict "Value" "public" "Label" (t "setup.https.way.public") "Means" (t "setup.https.way.public.means") "Need" (t "setup.https.way.public.need") "Cost" (t "setup.https.way.public.cost"))}}
       {{template "wayOption" (dict "Value" "domain" "Label" (t "setup.https.way.domain") "Means" (t "setup.https.way.domain.means") "Need" (t "setup.https.way.domain.need") "Cost" (t "setup.https.way.domain.cost"))}}
       {{template "fieldError" (dict "Root" . "Name" "way")}}
@@ -77,21 +77,33 @@
   <p class="lead">{{t "setup.https.own.lead"}}</p>
   {{template "httpsNotice" .}}
   {{template "error" .}}
+  <form method="post" action="/setup/https" class="homeform">
   <section class="tile">
-    <p>{{t "setup.https.own.for"}}</p>
-    <p class="addr">{{.Host}}</p>
+    <p>{{t "setup.https.own.names"}}</p>
+    <ul class="certnames">{{range .CertNames}}<li>{{.}}</li>{{end}}</ul>
     <p class="hint">{{t "setup.https.own.hint"}}</p>
   </section>
+  {{$summary := t "https.router.summary.none"}}{{if .Form.RouterName}}{{$summary = repl (t "https.router.summary.name") "{name}" .Form.RouterName}}{{end}}
+  {{template "moreOpen" (dict "Label" (t "setup.https.more") "Summary" $summary "Open" .RouterOpen)}}
+    {{$bad := and .ErrorField (eq .ErrorField "router_name")}}
+    <div class="f{{if $bad}} invalid{{end}}">
+      <label>{{t "https.router.optional"}}
+        <input name="router_name" type="text" value="{{.Form.RouterName}}" autocomplete="off" autocapitalize="none" spellcheck="false" placeholder="hejmo.fritz.box"{{if $bad}} autofocus aria-invalid="true"{{end}} aria-describedby="{{if $bad}}err-router_name {{end}}hint-router_name hint-router_name2">
+      </label>
+      {{template "fieldError" (dict "Root" . "Name" "router_name")}}
+      <p class="hint" id="hint-router_name">{{t (printf "https.router.hint.%s" (or .Form.RouterHint "none"))}}</p>
+      <p class="hint" id="hint-router_name2">{{t "https.router.why"}}</p>
+    </div>
+  {{template "moreClose"}}
   <section class="tile">
     <p><b>{{t "setup.https.own.means"}}</b></p>
     <ul class="homeonly">
-      <li>{{t "setup.https.own.means.1"}}</li>
+      <li>{{t "setup.https.own.means.1"}} {{template "vpnLink"}}</li>
       <li>{{t "setup.https.own.means.2"}}</li>
       <li>{{t "setup.https.own.means.3"}}</li>
     </ul>
   </section>
-  <form method="post" action="/setup/https">
-    <div class="actions"><button class="button" type="submit">{{t "setup.https.own.create"}}</button>{{if .Choice}}<a class="link" href="/setup/https">{{t "setup.https.other"}}</a>{{end}}</div>
+  <div class="actions"><button class="button" type="submit">{{t "setup.https.own.create"}}</button>{{if .Choice}}<a class="link" href="/setup/https">{{t "setup.https.other"}}</a>{{end}}</div>
   </form>
   {{end}}
 {{template "foot"}}
@@ -123,4 +135,7 @@
 
 {{/* One way of the first step: the same three lines in the same order, so the ways
      compare in words (Q62 a). Arguments: Value, Label, Means, Need, Cost. */}}
-{{define "wayOption"}}<label><input type="radio" name="way" value="{{.Value}}"><b>{{.Label}}</b><small class="way"><span>{{.Means}}</span><span><span class="k">{{t "setup.https.way.need"}}</span> {{.Need}}</span><span><span class="k">{{t "setup.https.way.cost"}}</span> {{.Cost}}</span></small></label>{{end}}
+{{define "wayOption"}}<label><input type="radio" name="way" value="{{.Value}}"><b>{{.Label}}</b><small class="way"><span>{{.Means}}</span><span><span class="k">{{t "setup.https.way.need"}}</span> {{.Need}}</span><span><span class="k">{{t "setup.https.way.cost"}}</span> {{.Cost}}</span>{{if .Away}}<span><span class="k">{{t "setup.https.way.away"}}</span> {{t "https.vpn.text"}} {{template "vpnLink"}}</span>{{end}}</small></label>{{end}}
+
+{{/* The link to the guide for a VPN into the home network; it opens a new tab, so the setup stays open. */}}
+{{define "vpnLink"}}<a href="{{t "https.vpn.url"}}" target="_blank" rel="noopener">{{t "https.vpn.link"}}</a>{{end}}

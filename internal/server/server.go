@@ -11,6 +11,7 @@ import (
 	"io"
 	"io/fs"
 	"log/slog"
+	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -73,6 +74,10 @@ type Options struct {
 	// Gate is the box's door to the outside (ticket 201). Nil means a gate
 	// backed by DB, which is what the box uses.
 	Gate *outbound.Gate
+	// Resolver looks up the name of the box's LAN address in the router, to
+	// prefill the router name of the HTTPS step (decision Q92). Nil means the
+	// system resolver; tests pass a fake.
+	Resolver NameResolver
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -99,7 +104,14 @@ type PublicHTTPS interface {
 	Clear() error
 }
 
+// NameResolver finds the names a DNS server knows for an address (a reverse
+// lookup). *net.Resolver implements it.
+type NameResolver interface {
+	LookupAddr(ctx context.Context, addr string) ([]string, error)
+}
+
 type server struct {
+	resolver  NameResolver
 	db        *store.DB
 	pki       *pki.Store
 	public    PublicHTTPS
@@ -143,6 +155,9 @@ func New(opts Options) http.Handler {
 	s := &server{db: opts.DB, pki: opts.PKI, public: opts.Public, httpsPort: opts.HTTPSPort, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad(), places: places.Embedded()}
 	if s.httpsPort == "" {
 		s.httpsPort = "443"
+	}
+	if s.resolver = opts.Resolver; s.resolver == nil {
+		s.resolver = net.DefaultResolver
 	}
 	if s.now == nil {
 		s.now = time.Now
@@ -392,6 +407,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /settings/connections/offline", s.handleOfflineOn)
 	mux.HandleFunc("GET /settings/connections/online", s.handleOnlinePage)
 	mux.HandleFunc("POST /settings/connections/online", s.handleOnline)
+	mux.HandleFunc("GET /settings/https", s.handleHTTPSSettings)
+	mux.HandleFunc("POST /settings/https", s.handleHTTPSSettingsSave)
 	mux.HandleFunc("GET /phones", s.handlePhonesPage)
 	mux.HandleFunc("GET /phones/{id}", s.handlePhonePage)
 	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)

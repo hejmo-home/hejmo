@@ -17,7 +17,7 @@ Each ADR records one decision: context, decision, consequences. ADRs take preced
 | [0011](0011-calendar-model.md) | Calendar model | Accepted |
 | [0012](0012-calendar-sync.md) | Calendar sync | Accepted, amended by 0015, 0017, 0018, 0020, 0021, 0024, notes added in #19 |
 | [0013](0013-google-calendar-connection.md) | Google Calendar connection | Accepted |
-| [0014](0014-https-and-certificates.md) | HTTPS and certificates | Accepted, amended by 0024, notes added in #45 |
+| [0014](0014-https-and-certificates.md) | HTTPS and certificates | Accepted, amended by 0024, notes added in #45, #14 and #216 |
 | [0015](0015-display-web-interface-and-everyday.md) | Display, web interface and everyday features | Accepted, amended by 0016, 0017, 0018, 0019, 0020, 0021, 0022, Q62 note added in #128 |
 | [0016](0016-family-view-header-and-footer.md) | Family view header, columns and footer | Accepted, amended by 0018, 0023 and by the product owner on 15/11/2026 and 16/11/2026 |
 | [0017](0017-web-interface-usability.md) | Web interface usability | Accepted, amended by 0022 |

@@ -330,6 +330,9 @@ func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 					e.State = "hub.outside.on"
 				}
 			}
+			if it.Href == httpsSettingsPath {
+				e.State = s.httpsHubState()
+			}
 			if it.Href == "/photos" {
 				e.StateText = s.photoHubState(s.langOf(r), p.household)
 			}

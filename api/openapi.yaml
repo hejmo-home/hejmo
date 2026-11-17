@@ -2920,6 +2920,10 @@ paths:
         plain HTTP, and phones must first trust the own CA (`/ca`); `renewal_error` says why.
         `public` is a publicly trusted certificate for the family's DNS name (ADR 0014); `warning` is set when its
         renewal failed or it is about to expire.
+
+        With the own CA, `names` lists what the box certificate is valid for (the box name, the address of the
+        box in the home network, and the router name if there is one), `router_name` is the name of the box in
+        the family's router (decision Q92) and `expires_at` is when the CA ends.
       responses:
         "200":
           description: HTTPS status
@@ -2928,6 +2932,45 @@ paths:
               schema: { $ref: "#/components/schemas/HTTPSStatus" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: setRouterName
+      summary: Add the box's name in the router to its certificate (parents, scope settings:write)
+      description: |
+        The page "Sichere Verbindung" of the web interface as an API call (decision Q92). Only with the box's own
+        CA. The box CA is name-constrained to the box, so a new name needs a **new CA**: it replaces the old one
+        and an earlier router name, and **every device must trust the box again** (trust page `/ca`, which
+        opens over plain HTTP; the CA's fingerprint changes). The name is lower-cased and a trailing dot is
+        dropped. It must have at least two labels of letters a to z, digits and hyphens, and must not be an
+        address or a name the certificate covers already (422). With a public name the box has no use for
+        it (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [router_name]
+              properties:
+                router_name: { type: string, example: hejmo.fritz.box, description: "The name the router shows for the box, for example hejmo.fritz.box" }
+      responses:
+        "200":
+          description: HTTPS status with the new certificate names
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HTTPSStatus" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: The box uses a public name, or has no CA yet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422":
+          description: The name is missing, cannot go into a certificate or is covered already
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /settings:
     get:
       operationId: getSettings
@@ -4045,7 +4088,9 @@ components:
         mode: { type: string, enum: [own-ca, public] }
         name: { type: string, description: "Public DNS name of the box (mode public)" }
         issuer: { type: string, enum: [letsencrypt, actalis], description: "Chosen certificate authority (mode public)" }
-        expires_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time, description: "When the public certificate ends (mode public), or when the box's own CA ends (mode own-ca)" }
+        names: { type: array, items: { type: string }, description: "Names and addresses the box certificate is valid for (mode own-ca)" }
+        router_name: { type: string, description: "The name of the box in the router that the certificate covers (mode own-ca, only when there is one)" }
         warning: { type: boolean, description: "True if the public certificate could not be resumed, loaded, obtained or renewed, or expires within 7 days" }
         renewal_error: { type: string, description: "Why the last resume, load, order or renewal failed" }
     Mealtime: { type: string, enum: [breakfast, lunch, snack, dinner] }

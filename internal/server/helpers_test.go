@@ -173,7 +173,11 @@ type boxOption func(*boxConfig)
 type boxConfig struct {
 	noHostUpdater bool
 	fetcher       *picture.Fetcher
+	resolver      server.NameResolver
 }
+
+// withResolver makes the box ask this resolver for the router's name of its address.
+func withResolver(r server.NameResolver) boxOption { return func(c *boxConfig) { c.resolver = r } }
 
 // withFetcher makes the box download web images with this fetcher, which a test
 // lets reach its own server (the real one only reaches public addresses).
@@ -199,7 +203,7 @@ func newBox(t *testing.T, opts ...boxOption) *box {
 // newFreshBox returns a box that has not set up HTTPS yet, reachable over plain HTTP.
 func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	t.Helper()
-	var cfg boxConfig
+	cfg := boxConfig{resolver: &fakeResolver{}} // no test asks the real DNS
 	for _, o := range opts {
 		o(&cfg)
 	}
@@ -236,7 +240,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	if cfg.noHostUpdater {
 		updateDir, b.updateDir = "", ""
 	}
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir})
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir, Resolver: cfg.resolver})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()

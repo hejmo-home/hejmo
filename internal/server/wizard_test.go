@@ -134,7 +134,7 @@ func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 	}
 	b.post("/setup/offline", url.Values{"offline": {"off"}}) // the question of ticket 201 comes first
 	own := deGet(b, "/setup/https?way=own")
-	for _, want := range []string{`class="addr">127.0.0.1`, `action="/setup/https"`, "Zertifikat erstellen", "Anderen Weg wählen"} {
+	for _, want := range []string{`<ul class="certnames"><li>hejmo.local</li><li>127.0.0.1</li></ul>`, `action="/setup/https"`, "Zertifikat erstellen", "Anderen Weg wählen"} {
 		if !strings.Contains(own.body, want) {
 			t.Errorf("own CA page misses %q", want)
 		}

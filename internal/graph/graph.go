@@ -438,3 +438,31 @@ func (s *Session) UpdateEvent(ctx context.Context, id string, body map[string]an
 func (s *Session) DeleteEvent(ctx context.Context, id string) error {
 	return s.do(ctx, http.MethodDelete, "/me/events/"+url.PathEscape(id), nil, nil)
 }
+
+// AudienceExtension is the name of the hidden open extension that carries an
+// event's audience (who it is for) on the box's side of an Outlook event.
+const AudienceExtension = "com.hejmo.audience"
+
+// SetAudience writes the hidden audience extension of an event: it is created,
+// or changed if it already exists.
+func (s *Session) SetAudience(ctx context.Context, eventID, value string) error {
+	ext := map[string]any{"@odata.type": "microsoft.graph.openTypeExtension", "extensionName": AudienceExtension, "audience": value}
+	err := s.do(ctx, http.MethodPost, "/me/events/"+url.PathEscape(eventID)+"/extensions", ext, nil)
+	var se *StatusError
+	if errors.As(err, &se) && (se.Code == http.StatusConflict || se.Code == http.StatusBadRequest) {
+		return s.do(ctx, http.MethodPatch, "/me/events/"+url.PathEscape(eventID)+"/extensions/"+AudienceExtension, map[string]any{"audience": value}, nil)
+	}
+	return err
+}
+
+// CountEvents counts a calendar's events the way Outlook keeps them: a series
+// is one event. Birthdays and holidays count as they are.
+func (s *Session) CountEvents(ctx context.Context, calendarID string, since time.Time) (int, error) {
+	q := url.Values{"$count": {"true"}, "$top": {"1"}, "$select": {"id"},
+		"$filter": {"type eq 'seriesMaster' or end/dateTime ge '" + since.UTC().Format("2006-01-02T15:04:05") + "'"}}
+	var out struct {
+		Count int `json:"@odata.count"`
+	}
+	err := s.do(ctx, http.MethodGet, "/me/calendars/"+url.PathEscape(calendarID)+"/events?"+q.Encode(), nil, &out)
+	return out.Count, err
+}

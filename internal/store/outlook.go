@@ -220,3 +220,8 @@ func (db *DB) OutlookCreated(calendarID, address, graphID string, rev int, chang
 	}
 	return tx.Commit()
 }
+
+// SeriesObjects lists the remote objects of a calendar that hold a series.
+func (db *DB) SeriesObjects(calendarID string) ([]string, error) {
+	return db.strings(`SELECT DISTINCT remote_url FROM events WHERE calendar_id = ? AND rrule != '' AND series_id IS NULL AND remote_url IS NOT NULL`, calendarID)
+}

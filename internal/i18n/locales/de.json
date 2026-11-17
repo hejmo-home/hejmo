@@ -684,6 +684,8 @@
   "tasks.stars.error.invalid": "Bitte wähle eine Person, gib eine ganze Zahl von Sternen ungleich 0 ein und schreibe eine Notiz dazu.",
   "tasks.create": "Aufgabe hinzufügen",
   "tasks.error.invalid": "Bitte wähle eine Person und gib einen Titel ein. Eine einmalige Aufgabe braucht ein Datum, eine wöchentliche mindestens einen Wochentag.",
+  "sync.fail.outlook_signin": "Die Anmeldung bei Microsoft ist abgelaufen. Ein Elternteil muss Outlook neu verbinden.",
+  "sync.fail.outlook_app": "Für Outlook ist keine App-Registrierung hinterlegt: Trage unter „Weitere Optionen“ die App-ID einer eigenen App-Registrierung ein.",
   "sync.audience_line": "Für: {names}",
   "sync.conflict.outside_won": "„{title}“ wurde auf der Box und außerhalb geändert. Die spätere Änderung, außerhalb gemacht, blieb erhalten; die Version der Box steht hier 30 Tage lang.",
   "sync.conflict.box_won": "„{title}“ wurde auf der Box und außerhalb geändert. Die spätere Änderung, auf der Box gemacht, blieb erhalten; die Version von außerhalb steht hier 30 Tage lang.",

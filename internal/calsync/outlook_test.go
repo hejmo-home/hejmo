@@ -94,7 +94,7 @@ func (fx *outlookFx) events(t *testing.T) map[string]calendar.Event {
 func (fx *outlookFx) series() {
 	fx.fake.Put("cal-1", map[string]any{"id": "m1", "type": "seriesMaster", "subject": "Fußball",
 		"start": dt("11-02", "15:00"), "end": dt("11-02", "16:00"),
-		"recurrence": map[string]any{"pattern": map[string]any{"type": "weekly", "interval": 1, "daysOfWeek": []string{"monday"}, "firstDayOfWeek": "monday"}, "range": map[string]any{"type": "noEnd"}}})
+		"recurrence": map[string]any{"pattern": map[string]any{"type": "weekly", "interval": 1, "daysOfWeek": []string{"monday"}, "firstDayOfWeek": "monday"}, "range": map[string]any{"type": "endDate", "endDate": "2026-11-30"}}})
 	for _, d := range []string{"11-02", "11-23", "11-30"} {
 		in := gev("Fußball", d, "15:00", "16:00")
 		in["id"], in["seriesMasterId"], in["type"] = "i-"+d, "m1", "occurrence"
@@ -152,7 +152,7 @@ func TestLaterSyncsAskOnlyForWhatChangedAndRefreshAWholeSeries(t *testing.T) {
 	fx.fake.Put("cal-1", gev("Schwimmen", "11-21", "10:00", "11:00"))
 	fx.series()
 	fx.mustSync(t)
-	mastersBefore := fx.fake.Count("GET /v1.0/me/events/m1")
+	mastersBefore := fx.fake.Count("GET /v1.0/me/events/m1/instances")
 
 	// A change to one occurrence refreshes the whole series (Q51); a removed single event goes.
 	changed := fx.fake.Event("cal-1", "i-11-23")
@@ -169,8 +169,8 @@ func TestLaterSyncsAskOnlyForWhatChangedAndRefreshAWholeSeries(t *testing.T) {
 	if _, ok := evs["Schwimmen"]; !ok {
 		t.Error("untouched event vanished")
 	}
-	if fx.fake.Count("GET /v1.0/me/events/m1") != mastersBefore+1 {
-		t.Errorf("series master read %d times after the change, want one more than before", fx.fake.Count("GET /v1.0/me/events/m1")-mastersBefore)
+	if fx.fake.Count("GET /v1.0/me/events/m1/instances") != mastersBefore+1 {
+		t.Errorf("series read %d times after the change, want once", fx.fake.Count("GET /v1.0/me/events/m1/instances")-mastersBefore)
 	}
 	// Nothing changed: no event is read at all.
 	reads := fx.fake.Count("GET /v1.0/me/events/")
@@ -267,9 +267,7 @@ func TestOutsideChangeWinsAConflictAndTheLoserStaysInTheLog(t *testing.T) {
 	// Outlook changes it later than the box did.
 	later := fx.fake.Event("cal-1", id)
 	later["subject"] = "Zahnarzt (Outlook)"
-	fx.fake.Put("cal-1", later)
-	fx.fake.Set(func(*graphtest.Server) {})
-	fx.clock = fx.clock.Add(-time.Hour) // the box change is older than Outlook's real clock
+	fx.fake.PutAt("cal-1", later, time.Now().Add(time.Hour))
 	_ = fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID)
 	if got := fx.fake.Event("cal-1", id)["subject"]; got != "Zahnarzt (Outlook)" {
 		t.Fatalf("Outlook now says %v, want its own later change to win", got)
@@ -284,6 +282,26 @@ func TestOutsideChangeWinsAConflictAndTheLoserStaysInTheLog(t *testing.T) {
 	}
 	if !conflict {
 		t.Fatalf("no conflict logged with the losing version: %+v", log)
+	}
+}
+
+func TestBoxChangeWinsWhenItIsTheLaterOne(t *testing.T) {
+	fx := newOutlookFx(t)
+	id := fx.fake.Put("cal-1", gev("Zahnarzt", "11-20", "08:30", "09:00"))
+	fx.mustSync(t)
+	e := fx.events(t)["Zahnarzt"]
+	e.Title = "Zahnarzt (Box)"
+	if err := fx.db.ApplyChange(fx.h.ID, calendar.Change{Update: []calendar.Event{e}}); err != nil {
+		t.Fatal(err)
+	}
+	other := fx.fake.Event("cal-1", id)
+	other["subject"] = "Zahnarzt (Outlook)"
+	fx.fake.PutAt("cal-1", other, time.Now().Add(-time.Hour))
+	if err := fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID); err != nil {
+		t.Fatal(err)
+	}
+	if got := fx.fake.Event("cal-1", id)["subject"]; got != "Zahnarzt (Box)" {
+		t.Fatalf("Outlook says %v, want the box's later change", got)
 	}
 }
 
@@ -360,3 +378,35 @@ var _ = errors.New
 var _ = graph.ErrReauth
 
 var berlinZone, _ = time.LoadLocation("Europe/Berlin")
+
+func TestASeriesCreatedOnTheBoxIsWrittenWithItsRecurrence(t *testing.T) {
+	fx := newOutlookFx(t)
+	start := time.Date(2026, 11, 20, 17, 0, 0, 0, berlinZone)
+	if _, err := fx.db.CreateEvent(fx.h.ID, calendar.Event{CalendarID: fx.cal.ID, Title: "Chor", Start: start, End: start.Add(time.Hour), RRule: "FREQ=WEEKLY;BYDAY=FR"}); err != nil {
+		t.Fatal(err)
+	}
+	if err := fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID); err != nil {
+		t.Fatal(err)
+	}
+	ids := fx.fake.Events("cal-1")
+	if len(ids) != 1 {
+		t.Fatalf("Outlook holds %v", ids)
+	}
+	rec, _ := fx.fake.Event("cal-1", ids[0])["recurrence"].(map[string]any)
+	if rec == nil || rec["pattern"].(map[string]any)["type"] != "weekly" {
+		t.Fatalf("recurrence = %+v", rec)
+	}
+}
+
+func TestNothingIsWrittenForASharedReadOnlyCalendar(t *testing.T) {
+	fx := newOutlookFx(t)
+	fx.fake.AddShared("cal-2", "Papa", "Papa Maier", "papa@example.org")
+	shared, err := fx.db.AddOutlookCalendar(fx.h.ID, fx.conn.ID, store.NewOutlookCalendar{Name: "Papa", RemoteID: "cal-2", SourceLocked: true, IntervalMinutes: 5, Now: fx.clock})
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := time.Date(2026, 11, 20, 17, 0, 0, 0, berlinZone)
+	if _, err := fx.db.CreateEvent(fx.h.ID, calendar.Event{CalendarID: shared.ID, Title: "X", Start: start, End: start.Add(time.Hour)}); err == nil {
+		t.Fatal("an event was created in a calendar that Outlook locks")
+	}
+}

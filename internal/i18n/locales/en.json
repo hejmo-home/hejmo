@@ -684,6 +684,8 @@
   "tasks.stars.error.invalid": "Please choose a person, enter a whole number of stars other than 0 and add a note.",
   "tasks.create": "Add task",
   "tasks.error.invalid": "Please choose a person and enter a title. A once task needs a date, a weekly task at least one weekday.",
+  "sync.fail.outlook_signin": "The Microsoft sign-in has expired. A parent needs to reconnect Outlook.",
+  "sync.fail.outlook_app": "No app registration is set up for Outlook: enter your own app ID under \"More options\".",
   "sync.audience_line": "For: {names}",
   "sync.conflict.outside_won": "\"{title}\" was changed on the box and outside. The later change, made outside, was kept; the box's version is kept here for 30 days.",
   "sync.conflict.box_won": "\"{title}\" was changed on the box and outside. The later change, made on the box, was kept; the outside version is kept here for 30 days.",

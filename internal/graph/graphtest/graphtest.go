@@ -98,10 +98,17 @@ func (s *Server) AddShared(id, name, ownerName, ownerAddress string) {
 func (s *Server) Put(calendarID string, ev map[string]any) string {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	return s.put(calendarID, ev)
+	return s.put(calendarID, ev, time.Time{})
 }
 
-func (s *Server) put(calendarID string, ev map[string]any) string {
+// PutAt is Put with the time Outlook says the event was last modified.
+func (s *Server) PutAt(calendarID string, ev map[string]any, modified time.Time) string {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	return s.put(calendarID, ev, modified)
+}
+
+func (s *Server) put(calendarID string, ev map[string]any, mod time.Time) string {
 	if s.events[calendarID] == nil {
 		s.events[calendarID] = map[string]map[string]any{}
 	}
@@ -116,7 +123,10 @@ func (s *Server) put(calendarID string, ev map[string]any) string {
 	}
 	s.version++
 	ev["changeKey"] = fmt.Sprintf("ck-%d", s.version)
-	ev["lastModifiedDateTime"] = time.Now().UTC().Format("2006-01-02T15:04:05.0000000Z")
+	if mod.IsZero() {
+		mod = time.Now()
+	}
+	ev["lastModifiedDateTime"] = mod.UTC().Format("2006-01-02T15:04:05.0000000Z")
 	s.events[calendarID][id] = ev
 	s.changes[calendarID] = append(s.changes[calendarID], change{s.version, id, false})
 	return id
@@ -289,13 +299,23 @@ func (s *Server) graph(w http.ResponseWriter, r *http.Request) {
 		}
 		body := s.body(r)
 		s.record(r, body)
-		id := s.put(parts[2], body)
+		id := s.put(parts[2], body, time.Time{})
 		writeJSON(w, 201, s.events[parts[2]][id])
+	case len(parts) == 4 && parts[1] == "calendars" && parts[3] == "events" && r.Method == http.MethodGet:
+		n := 0
+		for _, e := range s.events[parts[2]] {
+			if e["type"] != "occurrence" && e["type"] != "exception" {
+				n++
+			}
+		}
+		writeJSON(w, 200, map[string]any{"@odata.count": n, "value": []any{}})
 	case len(parts) == 4 && parts[1] == "events" && parts[3] == "instances":
 		s.instances(w, r, parts[2])
 	case len(parts) == 3 && parts[1] == "events":
 		s.eventCall(w, r, parts[2])
-	case len(parts) == 4 && parts[1] == "events" && parts[3] == "extensions":
+	case len(parts) >= 4 && parts[1] == "events" && parts[3] == "extensions":
+		body := s.body(r)
+		s.record(r, body)
 		writeJSON(w, 201, map[string]any{})
 	default:
 		http.NotFound(w, r)
@@ -355,7 +375,7 @@ func (s *Server) eventCall(w http.ResponseWriter, r *http.Request, id string) {
 		for k, v := range body {
 			merged[k] = v
 		}
-		s.put(cal, merged)
+		s.put(cal, merged, time.Time{})
 		writeJSON(w, 200, merged)
 	}
 }

@@ -35,6 +35,7 @@ func connectedBox(t *testing.T, b *box) string {
 
 // Ticket 5.16 applies to the connection flow too: errors sit at their field.
 func TestConnectionErrorsAppearAtTheirField(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		name  string
 		form  url.Values
@@ -79,6 +80,7 @@ func TestConnectionErrorsAppearAtTheirField(t *testing.T) {
 }
 
 func TestConnectionCalendarChoiceUsesTheWholeFamilyChip(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	id := connectedBox(t, b)
 	h, _ := b.db.HomeHousehold()
@@ -101,6 +103,7 @@ func TestConnectionCalendarChoiceUsesTheWholeFamilyChip(t *testing.T) {
 }
 
 func TestConnectionCalendarChoiceStoresAChosenPerson(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	id := connectedBox(t, b)
 	h, _ := b.db.HomeHousehold()
@@ -125,6 +128,7 @@ func twoCalendarBox(t *testing.T) (*box, string) {
 }
 
 func TestConnectionCalendarErrorKeepsWhatWasEntered(t *testing.T) {
+	t.Parallel()
 	b, id := twoCalendarBox(t)
 	h, _ := b.db.HomeHousehold()
 	mia, _ := b.db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
@@ -161,6 +165,7 @@ func TestConnectionCalendarErrorKeepsWhatWasEntered(t *testing.T) {
 }
 
 func TestConnectionCalendarErrorSurvivesFailedRediscovery(t *testing.T) {
+	t.Parallel()
 	b, id := twoCalendarBox(t)
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
 		return errRemote{err: errors.New("offline in test")}, nil
@@ -173,6 +178,7 @@ func TestConnectionCalendarErrorSurvivesFailedRediscovery(t *testing.T) {
 }
 
 func TestConnectionCalendarsNothingTickedIsAnError(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	id := connectedBox(t, b)
 	r := b.do(http.MethodPost, "/connections/"+id+"/calendars", url.Values{"interval": {"60"}}, map[string]string{"Accept-Language": "en"})
@@ -182,6 +188,7 @@ func TestConnectionCalendarsNothingTickedIsAnError(t *testing.T) {
 }
 
 func TestConnectionCalendarErrorAppearsAtItsCalendar(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	id := connectedBox(t, b)
 	form := url.Values{"calendar": {flowCalendar}, "name_" + flowCalendar: {""}, "interval": {"60"}}
@@ -197,6 +204,7 @@ func TestConnectionCalendarErrorAppearsAtItsCalendar(t *testing.T) {
 // Posting the same choice twice (double click, a second tab) is not an error:
 // the calendar is already on, so the second post changes nothing.
 func TestConnectionCalendarPostedTwiceIsSavedOnce(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	id := connectedBox(t, b)
 	form := url.Values{"calendar": {flowCalendar}, "shown": {flowCalendar}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}}
@@ -214,6 +222,7 @@ func TestConnectionCalendarPostedTwiceIsSavedOnce(t *testing.T) {
 
 // An error on a calendar URL that is not on the server has no field to sit at, so it is shown generally.
 func TestConnectionCalendarUnknownAddressShowsGeneralError(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	id := connectedBox(t, b)
 	form := url.Values{"calendar": {flowCalendar + "-nope"}, "name_" + flowCalendar + "-nope": {" "}, "interval": {"60"}}
@@ -225,6 +234,7 @@ func TestConnectionCalendarUnknownAddressShowsGeneralError(t *testing.T) {
 
 // The same calendar sent twice is saved once and does not end in a 500.
 func TestConnectionCalendarRepeatedValueIsSavedOnce(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	id := connectedBox(t, b)
 	form := url.Values{"calendar": {flowCalendar, flowCalendar}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}}

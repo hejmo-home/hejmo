@@ -42,6 +42,7 @@ func ids(v any) []string {
 }
 
 func TestParentCreatesReadsAndListsRoutines(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id := tb.newRoutine(t, tb.miaID, "Morgenroutine", "morning")
 	r := routineOf(t, tb.parent, id)
@@ -61,6 +62,7 @@ func TestParentCreatesReadsAndListsRoutines(t *testing.T) {
 }
 
 func TestRoutineInputIsValidated(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	for name, body := range map[string]map[string]any{
 		"blank name":  {"person_id": tb.miaID, "name": " ", "part_of_day": "morning"},
@@ -75,6 +77,7 @@ func TestRoutineInputIsValidated(t *testing.T) {
 // The contract client refuses these before they are sent, so the box's own
 // checks are exercised with raw requests.
 func TestRoutineLimitsOfTheContractAreEnforced(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	for name, body := range map[string]string{
 		"blank part":   `{"person_id":"` + tb.miaID + `","name":"x","part_of_day":""}`,
@@ -90,6 +93,7 @@ func TestRoutineLimitsOfTheContractAreEnforced(t *testing.T) {
 
 // At most one routine per person and part of the day: 409 naming the existing one.
 func TestSecondRoutineForTheSamePartIsAConflict(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	first := tb.newRoutine(t, tb.miaID, "Morgenroutine", "morning")
 	status, r, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": tb.miaID, "name": "Noch eine", "part_of_day": "morning"})
@@ -101,6 +105,7 @@ func TestSecondRoutineForTheSamePartIsAConflict(t *testing.T) {
 }
 
 func TestChildCannotChangeRoutines(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	if status, _, _ := tb.child.call(http.MethodPost, "/routines", map[string]any{"person_id": tb.miaID, "name": "x", "part_of_day": "morning"}); status != http.StatusForbidden {
 		t.Fatalf("child create = %d, want 403", status)
@@ -116,6 +121,7 @@ func TestChildCannotChangeRoutines(t *testing.T) {
 
 // Acceptance: Given a task in a routine, then it takes the routine's part of the day.
 func TestTaskInARoutineTakesItsPartOfDay(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.newRoutine(t, tb.miaID, "Nachmittag", "afterschool")
 	status, k, _ := tb.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": tb.miaID, "title": "Hausaufgaben", "repeat": "daily", "part_of_day": "evening", "routine_id": rid})
@@ -140,6 +146,7 @@ func TestTaskInARoutineTakesItsPartOfDay(t *testing.T) {
 }
 
 func TestStepFromAnotherPersonIsRefused(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.newRoutine(t, tb.miaID, "Morgenroutine", "morning")
 	if status, _, _ := tb.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": tb.mamaID, "title": "x", "repeat": "daily", "routine_id": rid}); status != http.StatusUnprocessableEntity {
@@ -151,6 +158,7 @@ func TestStepFromAnotherPersonIsRefused(t *testing.T) {
 }
 
 func TestExistingTaskJoinsAndLeavesARoutine(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.newRoutine(t, tb.miaID, "Morgenroutine", "morning")
 	first := tb.newStep(t, rid, tb.miaID, "Zähne putzen")
@@ -188,6 +196,7 @@ func TestExistingTaskJoinsAndLeavesARoutine(t *testing.T) {
 
 // Acceptance: Given a parent reorders steps, then the new order is what the API (and so the view) reads.
 func TestParentReordersTheSteps(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.newRoutine(t, tb.miaID, "Morgenroutine", "morning")
 	a, b, c := tb.newStep(t, rid, tb.miaID, "A"), tb.newStep(t, rid, tb.miaID, "B"), tb.newStep(t, rid, tb.miaID, "C")
@@ -212,6 +221,7 @@ func TestParentReordersTheSteps(t *testing.T) {
 }
 
 func TestDissolvingARoutineKeepsItsTasks(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.newRoutine(t, tb.miaID, "Nachmittag", "afterschool")
 	step := tb.newStep(t, rid, tb.miaID, "Hausaufgaben")
@@ -230,6 +240,7 @@ func TestDissolvingARoutineKeepsItsTasks(t *testing.T) {
 }
 
 func TestPatchRoutineNameAndConflict(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	morning := tb.newRoutine(t, tb.miaID, "Morgenroutine", "morning")
 	evening := tb.newRoutine(t, tb.miaID, "Abendroutine", "evening")
@@ -247,6 +258,7 @@ func TestPatchRoutineNameAndConflict(t *testing.T) {
 // The star account, the progress and VTODO export are not touched by routines:
 // a routine step is an ordinary task for ticking.
 func TestRoutineStepIsTickedLikeAnyTask(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.newRoutine(t, tb.miaID, "Morgenroutine", "morning")
 	step := tb.newStep(t, rid, tb.miaID, "Zähne putzen")

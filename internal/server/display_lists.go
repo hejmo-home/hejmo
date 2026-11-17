@@ -5,9 +5,11 @@ import (
 	"html/template"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -34,10 +36,15 @@ type listsViewData struct {
 	TickError, AddErrorText string
 	// A list with suggestions (ticket 165) has the add card with both modes and
 	// a quantity button on every open entry.
-	Suggest bool
-	A       adderView
-	Base    string
-	Gone    string // the line when the entry to change was ticked off or removed meanwhile
+	Suggest   bool
+	A         adderView
+	Base      string
+	Gone      string // the line when the entry to change was ticked off or removed meanwhile
+	View      string // "tiles" or "list": the view of this display
+	Tiles     bool
+	ViewLine  string // the success line after switching the view
+	ViewError string // the view could not be saved
+	FreeText  []freeTextPerson
 }
 
 // errNoList means the list of a lists view is gone (deleted meanwhile).
@@ -56,10 +63,13 @@ type listsViewOptions struct {
 	ErrField string
 	ErrKey   string
 	Gone     bool
+
+	ViewSaved bool // the view of the display was just switched: say so
+	ViewError bool // the choice could not be saved
 }
 
 // listsView builds the view of one list for a display.
-func (s *server) listsView(h store.Household, lang, listID string, o listsViewOptions) (listsViewData, error) {
+func (s *server) listsView(h store.Household, d store.Display, lang, listID string, o listsViewOptions) (listsViewData, error) {
 	lists, err := s.db.Lists(h.ID)
 	if err != nil {
 		return listsViewData{}, err
@@ -86,6 +96,13 @@ func (s *server) listsView(h store.Household, lang, listID string, o listsViewOp
 	}
 	c := countOf(es)
 	v.Current = s.newListView(lang, *cur, c)
+	v.View, v.Tiles = string(d.ListView), d.ListView == list.Tiles
+	switch {
+	case o.ViewError:
+		v.ViewError = s.viewErrorText(lang, d.ListView)
+	case o.ViewSaved:
+		v.ViewLine = s.i18n.Format(lang, i18n.Msg("display.lists.view_saved."+string(d.ListView), "name", d.Name))
+	}
 	if cur.Suggestions {
 		ic, err := s.itemContext(principal{household: h}, lang)
 		if err != nil {
@@ -99,12 +116,21 @@ func (s *server) listsView(h store.Household, lang, listID string, o listsViewOp
 		if o.Gone {
 			v.Gone = s.i18n.T(lang, "lq.err.gone")
 		}
+		// Tiles show the article, its symbol or picture; the rows keep their own warnings.
+		lk, err := s.newListLooks(principal{household: h}, lang, "/display/articles/")
+		if err != nil {
+			return v, err
+		}
+		lk.apply(v.Open, v.Ticked)
 		v.Meta = s.listMeta(lang, *cur, v.Current.State, false)
 		v.Empty = len(es) == 0
 		v.AllDone = len(es) > 0 && c.Open == 0
 		now := s.householdNow(h)
 		v.Clock, v.ClockZone, v.ClockFormat = familyview.ClockText(now, h.TimeFormat), now.Location().String(), familyview.ClockFormat(h.TimeFormat)
 		v.TickError = s.i18n.T(lang, "personal.tick_error")
+		if v.Tiles {
+			v.TickError = s.i18n.T(lang, "lists.tile.error")
+		}
 		v.AddErrorText = s.i18n.T(lang, "display.lists.add_error")
 		return v, nil
 	}
@@ -121,6 +147,17 @@ func (s *server) listsView(h store.Household, lang, listID string, o listsViewOp
 			v.Open = append(v.Open, ev)
 		}
 	}
+	lk, err := s.newListLooks(principal{household: h}, lang, "/display/articles/")
+	if err != nil {
+		return v, err
+	}
+	v.FreeText = lk.freeTextNote(lk.apply(v.Open, v.Ticked))
+	switch {
+	case o.ViewError:
+		v.ViewError = s.viewErrorText(lang, d.ListView)
+	case o.ViewSaved:
+		v.ViewLine = s.i18n.Format(lang, i18n.Msg("display.lists.view_saved."+string(d.ListView), "name", d.Name))
+	}
 	v.Meta = s.listMeta(lang, *cur, v.Current.State, false)
 	v.Empty = len(es) == 0
 	v.AllDone = len(es) > 0 && c.Open == 0
@@ -128,14 +165,17 @@ func (s *server) listsView(h store.Household, lang, listID string, o listsViewOp
 	now := s.householdNow(h)
 	v.Clock, v.ClockZone, v.ClockFormat = familyview.ClockText(now, h.TimeFormat), now.Location().String(), familyview.ClockFormat(h.TimeFormat)
 	v.TickError = s.i18n.T(lang, "personal.tick_error")
+	if v.Tiles {
+		v.TickError = s.i18n.T(lang, "lists.tile.error")
+	}
 	v.AddErrorText = s.i18n.T(lang, "display.lists.add_error")
 	return v, nil
 }
 
 // renderListsView renders the lists view markup and its version (the markup
 // without the clock, like the other views of a display).
-func (s *server) renderListsView(h store.Household, lang, listID string, o listsViewOptions) (template.HTML, string, error) {
-	v, err := s.listsView(h, lang, listID, o)
+func (s *server) renderListsView(h store.Household, d store.Display, lang, listID string, o listsViewOptions) (template.HTML, string, error) {
+	v, err := s.listsView(h, d, lang, listID, o)
 	if err != nil {
 		return "", "", err
 	}
@@ -152,7 +192,7 @@ const listsReturnSeconds = personalReturnSeconds
 // (added), the entry whose quantity is open (qty) and the line to keep (r).
 func (s *server) viewOptions(r *http.Request) listsViewOptions {
 	q := r.URL.Query()
-	o := listsViewOptions{Added: q.Get("added"), Edit: q.Get("qty")}
+	o := listsViewOptions{Added: q.Get("added"), Edit: q.Get("qty"), ViewSaved: q.Get("view") == "saved"}
 	if token := q.Get("r"); token != "" {
 		if out, ok := s.peekOutcome(token); ok {
 			o.Out = &out
@@ -189,7 +229,7 @@ func (s *server) handleDisplayLists(w http.ResponseWriter, r *http.Request) {
 
 // listsPage renders the whole page of a list, with the status of the answer.
 func (s *server) listsPage(w http.ResponseWriter, r *http.Request, d store.Display, h store.Household, id string, status int, o listsViewOptions) {
-	view, version, err := s.renderListsView(h, s.displayLang(r), id, o)
+	view, version, err := s.renderListsView(h, d, s.displayLang(r), id, o)
 	if errors.Is(err, errNoList) {
 		// Gone meanwhile: back to the display, never to a bare error page
 		// (it has no display.js and would leave the kiosk stuck).
@@ -227,11 +267,11 @@ func (s *server) handleDisplayList(w http.ResponseWriter, r *http.Request) {
 // script to swap in (partial update). 404 when the list is gone: the script
 // then returns to the family view.
 func (s *server) handleDisplayListView(w http.ResponseWriter, r *http.Request) {
-	_, h, ok := s.pairedDisplay(w, r)
+	d, h, ok := s.pairedDisplay(w, r)
 	if !ok {
 		return
 	}
-	markup, version, err := s.renderListsView(h, s.displayLang(r), r.PathValue("id"), s.viewOptions(r))
+	markup, version, err := s.renderListsView(h, d, s.displayLang(r), r.PathValue("id"), s.viewOptions(r))
 	if errors.Is(err, errNoList) {
 		http.NotFound(w, r)
 		return
@@ -290,7 +330,7 @@ func (s *server) handleDisplayEntryAdd(w http.ResponseWriter, r *http.Request) {
 	e, err := s.db.AddEntry(h.ID, l.ID, text)
 	switch {
 	case err == nil && partial:
-		s.writeView(w, r, h, l.ID, http.StatusOK, listsViewOptions{Added: e.ID}, e.ID, "")
+		s.writeView(w, r, h, d, l.ID, http.StatusOK, listsViewOptions{Added: e.ID}, e.ID, "")
 	case err == nil:
 		http.Redirect(w, r, listsURL(l.ID)+"?added="+url.QueryEscape(e.ID), http.StatusSeeOther)
 	case errors.Is(err, store.ErrInvalid):
@@ -300,7 +340,7 @@ func (s *server) handleDisplayEntryAdd(w http.ResponseWriter, r *http.Request) {
 		}
 		o := listsViewOptions{Text: text, Error: s.i18n.T(s.displayLang(r), key)}
 		if partial {
-			s.writeView(w, r, h, l.ID, http.StatusUnprocessableEntity, o, "", "")
+			s.writeView(w, r, h, d, l.ID, http.StatusUnprocessableEntity, o, "", "")
 			return
 		}
 		s.listsPage(w, r, d, h, l.ID, http.StatusUnprocessableEntity, o)
@@ -311,8 +351,8 @@ func (s *server) handleDisplayEntryAdd(w http.ResponseWriter, r *http.Request) {
 
 // writeView answers a background post with the view markup alone. added and
 // token go back in headers, so the script can ask for the same view again.
-func (s *server) writeView(w http.ResponseWriter, r *http.Request, h store.Household, listID string, status int, o listsViewOptions, added, token string) {
-	markup, version, err := s.renderListsView(h, s.displayLang(r), listID, o)
+func (s *server) writeView(w http.ResponseWriter, r *http.Request, h store.Household, d store.Display, listID string, status int, o listsViewOptions, added, token string) {
+	markup, version, err := s.renderListsView(h, d, s.displayLang(r), listID, o)
 	if err != nil {
 		s.fail(w, "lists view", err)
 		return
@@ -344,7 +384,7 @@ func (s *server) displayAddItem(w http.ResponseWriter, r *http.Request, d store.
 		o := listsViewOptions{Form: map[string]any{"Text": text, "Mode": r.PostFormValue("mode"), "Amount": in.Amount, "Unit": in.Unit, "Article": in.ArticleID},
 			ErrField: string(ie.Field), ErrKey: itemErrorKey(ie.Field, true)}
 		if partial {
-			s.writeView(w, r, h, l.ID, http.StatusUnprocessableEntity, o, "", "")
+			s.writeView(w, r, h, d, l.ID, http.StatusUnprocessableEntity, o, "", "")
 			return
 		}
 		s.listsPage(w, r, d, h, l.ID, http.StatusUnprocessableEntity, o)
@@ -361,7 +401,7 @@ func (s *server) displayAddItem(w http.ResponseWriter, r *http.Request, d store.
 			o.ErrKey = "lists.error.text"
 		}
 		if partial {
-			s.writeView(w, r, h, l.ID, http.StatusUnprocessableEntity, o, "", "")
+			s.writeView(w, r, h, d, l.ID, http.StatusUnprocessableEntity, o, "", "")
 			return
 		}
 		s.listsPage(w, r, d, h, l.ID, http.StatusUnprocessableEntity, o)
@@ -377,7 +417,7 @@ func (s *server) displayAddItem(w http.ResponseWriter, r *http.Request, d store.
 	}
 	token := s.putOutcome(out)
 	if partial {
-		s.writeView(w, r, h, l.ID, http.StatusOK, listsViewOptions{Added: out.EntryID, Out: &out}, out.EntryID, token)
+		s.writeView(w, r, h, d, l.ID, http.StatusOK, listsViewOptions{Added: out.EntryID, Out: &out}, out.EntryID, token)
 		return
 	}
 	http.Redirect(w, r, listsURL(l.ID)+"?"+url.Values{"added": {out.EntryID}, "r": {token}}.Encode(), http.StatusSeeOther)
@@ -407,7 +447,7 @@ func (s *server) handleDisplayEntryQuantity(w http.ResponseWriter, r *http.Reque
 	_, out, err := c.changeQuantity(l.ID, id, post)
 	respond := func(status int, o listsViewOptions, added, token string) {
 		if partial {
-			s.writeView(w, r, h, l.ID, status, o, added, token)
+			s.writeView(w, r, h, d, l.ID, status, o, added, token)
 			return
 		}
 		s.listsPage(w, r, d, h, l.ID, status, o)
@@ -422,7 +462,7 @@ func (s *server) handleDisplayEntryQuantity(w http.ResponseWriter, r *http.Reque
 	default:
 		token := s.putOutcome(out)
 		if partial {
-			s.writeView(w, r, h, l.ID, http.StatusOK, listsViewOptions{Added: out.EntryID, Out: &out}, out.EntryID, token)
+			s.writeView(w, r, h, d, l.ID, http.StatusOK, listsViewOptions{Added: out.EntryID, Out: &out}, out.EntryID, token)
 			return
 		}
 		http.Redirect(w, r, listsURL(l.ID)+"?"+url.Values{"added": {out.EntryID}, "r": {token}}.Encode(), http.StatusSeeOther)
@@ -498,4 +538,57 @@ func (s *server) handleDisplayTickedDelete(w http.ResponseWriter, r *http.Reques
 		return
 	}
 	http.Redirect(w, r, listsURL(l.ID), http.StatusSeeOther)
+}
+
+// handleDisplayListViewChoice remembers the view of lists of this display,
+// tiles or the list. A display is not a person: anyone at it may switch it
+// without a PIN, and the choice holds for everyone who stands in front of it.
+func (s *server) handleDisplayListViewChoice(w http.ResponseWriter, r *http.Request) {
+	d, ok := s.pairedDisplayOrRedirect(w, r)
+	if !ok {
+		return
+	}
+	h, err := s.db.HomeHousehold()
+	if err != nil {
+		s.fail(w, "household", err)
+		return
+	}
+	_ = r.ParseForm()
+	l, err := s.db.List(h.ID, r.PostFormValue("list"))
+	if errors.Is(err, store.ErrNotFound) {
+		http.Redirect(w, r, "/display", http.StatusSeeOther)
+		return
+	} else if err != nil {
+		s.fail(w, "list", err)
+		return
+	}
+	view, valid := list.ParseView(r.PostFormValue("view"))
+	if !valid {
+		s.listsPage(w, r, d, h, l.ID, http.StatusUnprocessableEntity, listsViewOptions{ViewError: true})
+		return
+	}
+	if err := s.db.SetDisplayListView(h.ID, d.ID, view); err != nil {
+		s.fail(w, "save display list view", err)
+		return
+	}
+	http.Redirect(w, r, listsURL(l.ID)+"?view=saved", http.StatusSeeOther)
+}
+
+// handleDisplayArticlePicture serves the picture of an own article to a paired
+// display, which has no session: the tiles show it.
+func (s *server) handleDisplayArticlePicture(w http.ResponseWriter, r *http.Request) {
+	_, h, ok := s.pairedDisplay(w, r)
+	if !ok {
+		return
+	}
+	b, err := s.db.ArticlePicture(h.ID, r.PathValue("id"))
+	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	w.Header().Set("Content-Type", "image/jpeg")
+	w.Header().Set("Content-Length", strconv.Itoa(len(b)))
+	w.Header().Set("Cache-Control", "private, max-age=31536000, immutable") // the address changes with the picture
+	w.Header().Set("X-Content-Type-Options", "nosniff")
+	_, _ = w.Write(b)
 }

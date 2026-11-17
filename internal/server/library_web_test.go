@@ -18,6 +18,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/list"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -119,7 +120,7 @@ func testJPEG(t *testing.T, w, h int) []byte {
 
 // loopbackFetcher lets the box reach the test's own server, and nothing else.
 func loopbackFetcher() *picture.Fetcher {
-	return &picture.Fetcher{Public: func(a netip.Addr) bool { return a == netip.MustParseAddr("127.0.0.1") }, Timeout: 3 * time.Second}
+	return &picture.Fetcher{Gate: outbound.AllowAll(), Public: func(a netip.Addr) bool { return a == netip.MustParseAddr("127.0.0.1") }, Timeout: 3 * time.Second}
 }
 
 func imageServer(t *testing.T, w, h int) *httptest.Server {
@@ -180,6 +181,7 @@ func (l libBox) createArticle(f url.Values) string {
 }
 
 func TestSettingsHubHasAListsRowAfterPeopleForParentsOnly(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	hub := l.en("/settings").body
 	libHas(t, "hub", hub, `href="/settings/lists"`, "<strong>Lists</strong>")
@@ -198,6 +200,7 @@ func TestSettingsHubHasAListsRowAfterPeopleForParentsOnly(t *testing.T) {
 }
 
 func TestListsPageStatesTheLibraryInWordsAndSaysThereAreNoAllergiesYet(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	r := l.en("/settings/lists")
 	if r.status != http.StatusOK {
@@ -212,6 +215,7 @@ func TestListsPageStatesTheLibraryInWordsAndSaysThereAreNoAllergiesYet(t *testin
 }
 
 func TestListsPageWarnsInWordsListsAllergiesAndOffersTheExperimentalHidingOffByDefault(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	mia := l.person("Mia", "child", "vegetarian", "peanuts", "nuts")
 	l.db.SetPersonFood(l.h.ID, mia.ID, store.Food{Diet: "vegetarian", Allergens: []string{"peanuts", "nuts"}, Other: "Kiwi"})
@@ -235,6 +239,7 @@ func TestListsPageWarnsInWordsListsAllergiesAndOffersTheExperimentalHidingOffByD
 }
 
 func TestSwitchingHidingOnNeedsTheTickAndTheErrorSitsAtTheTick(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	l.person("Mia", "child", "omnivore", "peanuts")
 	r := l.postEN("/settings/lists", url.Values{"hide": {"on"}, "whole_family": {"1"}})
@@ -255,6 +260,7 @@ func TestSwitchingHidingOnNeedsTheTickAndTheErrorSitsAtTheTick(t *testing.T) {
 }
 
 func TestConfirmedHidingIsStoredWhoAndWhenAndHidesFromTheSuggestions(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	mia := l.person("Mia", "child", "omnivore", "peanuts")
 	r := l.postEN("/settings/lists", url.Values{"hide": {"on"}, "whole_family": {"1"}, "liability": {"on"}})
@@ -288,6 +294,7 @@ func TestConfirmedHidingIsStoredWhoAndWhenAndHidesFromTheSuggestions(t *testing.
 }
 
 func TestLibraryShowsOwnArticlesFirstAndShippedOnesInClosedDepartmentCardsWithCountsInWords(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	mia := l.person("Mia", "child", "omnivore", "nuts")
 	l.db.SetPersonFood(l.h.ID, mia.ID, store.Food{Diet: "omnivore", Allergens: []string{"nuts"}, Other: "Kiwi"})
@@ -320,11 +327,13 @@ func TestLibraryShowsOwnArticlesFirstAndShippedOnesInClosedDepartmentCardsWithCo
 }
 
 func TestOwnArticlesStartWithAnEmptyStateSentence(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	libHas(t, "library", l.en("/settings/lists/library").body, `class="empty" data-empty`, "No own articles yet. Add what you often buy")
 }
 
 func TestLibrarySearchIgnoresUmlautsFindsOwnAndShippedAndNamesEachPersonInTheWarnings(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	l.person("Mia", "child", "omnivore", "nuts")
 	l.person("Konstantin", "child", "omnivore", "milk")
@@ -353,6 +362,7 @@ func TestLibrarySearchIgnoresUmlautsFindsOwnAndShippedAndNamesEachPersonInTheWar
 }
 
 func TestTwoPeopleWithTheSameAllergenShareOneWarningLineThatNamesBoth(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	l.person("Konstantin", "child", "omnivore", "milk")
 	l.person("Papa", "parent", "omnivore", "milk")
@@ -364,6 +374,7 @@ func TestTwoPeopleWithTheSameAllergenShareOneWarningLineThatNamesBoth(t *testing
 }
 
 func TestNoMatchOffersTheNameAsAnOwnArticle(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	r := l.en("/settings/lists/library?q=Quinoa-Pops").body
 	libHas(t, "no match", r, `class="empty" data-empty`, "No article is called “Quinoa-Pops” or contains the word.", `href="/settings/lists/library/new?name=Quinoa-Pops"`, "Add “Quinoa-Pops” as own article")
@@ -372,6 +383,7 @@ func TestNoMatchOffersTheNameAsAnOwnArticle(t *testing.T) {
 }
 
 func TestFiltersShowOnlyWarnedOrHiddenArticles(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	l.person("Mia", "child", "omnivore", "peanuts")
 	l.postEN("/settings/lists/library/walnuts/hidden", url.Values{"hidden": {"on"}})
@@ -387,6 +399,7 @@ func TestFiltersShowOnlyWarnedOrHiddenArticles(t *testing.T) {
 }
 
 func TestShippedArticlePageSaysEverythingInWordsAndCannotBeEdited(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	mia := l.person("Mia", "child", "omnivore", "peanuts")
 	l.person("Sebastian", "child", "vegetarian")
@@ -411,6 +424,7 @@ func TestShippedArticlePageSaysEverythingInWordsAndCannotBeEdited(t *testing.T) 
 }
 
 func TestWhoAnArticleSuitsIsNamedByDietAndNeverCounted(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	l.person("Mia", "child", "vegetarian")
 	l.person("Charlotte-Sophie", "child", "vegan")
@@ -428,6 +442,7 @@ func TestWhoAnArticleSuitsIsNamedByDietAndNeverCounted(t *testing.T) {
 }
 
 func TestAnArticleNobodySuitsIsNotSuggestedAndSaysWhy(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	l.db.SetPersonFood(l.h.ID, l.mama.ID, store.Food{Diet: "vegan"})
 	body := l.en("/settings/lists/library/beef-steak").body
@@ -435,6 +450,7 @@ func TestAnArticleNobodySuitsIsNotSuggestedAndSaysWhy(t *testing.T) {
 }
 
 func TestHidingByHandIsStoredShownAsAWordAndUndone(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	r := l.postEN("/settings/lists/library/walnuts/hidden", url.Values{"hidden": {"on"}})
 	if r.status != http.StatusSeeOther || r.location != "/settings/lists/library/walnuts" {
@@ -451,6 +467,7 @@ func TestHidingByHandIsStoredShownAsAWordAndUndone(t *testing.T) {
 }
 
 func TestCopyingAShippedArticleMakesAnOwnOneWithItsUnitsAndHidesTheOriginal(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	r := l.postEN("/settings/lists/library/peanut-butter/copy", url.Values{})
 	if r.status != http.StatusSeeOther {
@@ -471,6 +488,7 @@ func TestCopyingAShippedArticleMakesAnOwnOneWithItsUnitsAndHidesTheOriginal(t *t
 }
 
 func TestOwnArticleFormFollowsThePreviewOrderAndHasNoPreselectedKindOrPicture(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	mia := l.person("Mia", "child", "omnivore", "peanuts")
 	_ = mia
@@ -506,6 +524,7 @@ func TestOwnArticleFormFollowsThePreviewOrderAndHasNoPreselectedKindOrPicture(t 
 }
 
 func TestSymbolSearchFindsGermanAndEnglishNamesAndSaysWhenNothingMatches(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	r := l.postEN("/settings/lists/library", url.Values{"name": {"Katzenfutter Huhn"}, "dept": {"other"}, "pic_source": {"symbol"}, "symq": {"katze"}, "symsearch": {"1"}, "unit1": {"piece"}})
 	if r.status != http.StatusOK {
@@ -528,6 +547,7 @@ func TestSymbolSearchFindsGermanAndEnglishNamesAndSaysWhenNothingMatches(t *test
 }
 
 func TestOwnArticleWithAChosenSymbolIsCreatedAndShownWithIt(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	f := articleForm()
 	f.Set("pic_source", "symbol")
@@ -552,6 +572,7 @@ func TestOwnArticleWithAChosenSymbolIsCreatedAndShownWithIt(t *testing.T) {
 }
 
 func TestOwnArticleKindHasNoDefaultAndTheErrorSitsAtTheGroup(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	f := articleForm()
 	f.Del("kind")
@@ -566,6 +587,7 @@ func TestOwnArticleKindHasNoDefaultAndTheErrorSitsAtTheGroup(t *testing.T) {
 }
 
 func TestOwnArticleNeedsANameAndKeepsWhatWasTyped(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	f := articleForm()
 	f.Set("name", "   ")
@@ -585,6 +607,7 @@ func TestOwnArticleNeedsANameAndKeepsWhatWasTyped(t *testing.T) {
 }
 
 func TestNonFoodArticlesDropTheirAllergens(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	f := articleForm()
 	f.Set("allergens", "milk")
@@ -596,6 +619,7 @@ func TestNonFoodArticlesDropTheirAllergens(t *testing.T) {
 }
 
 func TestUnitsOnlyOfferedOnesAreAcceptedAndTheSecondDiffersFromTheFirst(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	body := l.en("/settings/lists/library/new").body
 	libHasNot(t, "units", body, `value="oz"`, `value="lb"`, `value="gallon_us"`)
@@ -620,6 +644,7 @@ func TestUnitsOnlyOfferedOnesAreAcceptedAndTheSecondDiffersFromTheFirst(t *testi
 }
 
 func TestAPhotoIsScaledDownAndStoredWithoutMetadataAndServedToEveryone(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	f := articleForm()
 	f.Set("pic_source", "upload")
@@ -661,6 +686,7 @@ func TestAPhotoIsScaledDownAndStoredWithoutMetadataAndServedToEveryone(t *testin
 }
 
 func TestAPhotoStaysWhileTheRestOfTheFormIsCorrected(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	f := articleForm()
 	f.Set("pic_source", "upload")
@@ -692,6 +718,7 @@ func TestAPhotoStaysWhileTheRestOfTheFormIsCorrected(t *testing.T) {
 }
 
 func TestPhotoErrorsStandAtTheFieldAndSaveNothing(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	f := articleForm()
 	f.Set("pic_source", "upload")
@@ -717,6 +744,7 @@ func TestPhotoErrorsStandAtTheFieldAndSaveNothing(t *testing.T) {
 }
 
 func TestAnImageFromTheWebIsDownloadedOnceStoredScaledAndTheAddressForgotten(t *testing.T) {
+	t.Parallel()
 	srv := imageServer(t, 1200, 1200)
 	l := newLibBox(t, withFetcher(loopbackFetcher()))
 	f := articleForm()
@@ -754,6 +782,7 @@ func TestAnImageFromTheWebIsDownloadedOnceStoredScaledAndTheAddressForgotten(t *
 }
 
 func TestSavingWithAWebAddressFetchesItWithoutPressingGetPicture(t *testing.T) {
+	t.Parallel()
 	srv := imageServer(t, 600, 400)
 	l := newLibBox(t, withFetcher(loopbackFetcher()))
 	f := articleForm()
@@ -768,6 +797,7 @@ func TestSavingWithAWebAddressFetchesItWithoutPressingGetPicture(t *testing.T) {
 }
 
 func TestWebAddressErrorsStandAtTheFieldAndNameWhatIsWrong(t *testing.T) {
+	t.Parallel()
 	srv := imageServer(t, 100, 100)
 	l := newLibBox(t, withFetcher(loopbackFetcher()))
 	post := func(u string) resp {
@@ -813,6 +843,7 @@ func post2(l libBox, u string) string {
 }
 
 func TestAnotherPictureStartsOverAndRemovingGoesBackToTheDepartmentSymbol(t *testing.T) {
+	t.Parallel()
 	srv := imageServer(t, 300, 300)
 	l := newLibBox(t, withFetcher(loopbackFetcher()))
 	f := articleForm()
@@ -852,6 +883,7 @@ func TestAnotherPictureStartsOverAndRemovingGoesBackToTheDepartmentSymbol(t *tes
 }
 
 func TestChangingAnOwnArticleAndDeletingItKeepsTheEntriesOnTheListsAsText(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	id := l.createArticle(articleForm())
 	lst, err := l.db.CreateList(l.h.ID, listFor("Einkauf"))
@@ -879,6 +911,7 @@ func TestChangingAnOwnArticleAndDeletingItKeepsTheEntriesOnTheListsAsText(t *tes
 }
 
 func TestAnOwnArticleWarnsByNameInEveryPlaceItShows(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	l.person("Charlotte-Sophie", "child", "omnivore", "gluten", "soy")
 	f := articleForm()
@@ -895,6 +928,7 @@ func TestAnOwnArticleWarnsByNameInEveryPlaceItShows(t *testing.T) {
 }
 
 func TestNameSuggestionsListUpToFiveSimilarArticlesWithoutTheArticleItself(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	f := articleForm()
 	f.Set("name", "Hafer-Drink Barista")
@@ -918,6 +952,7 @@ func TestNameSuggestionsListUpToFiveSimilarArticlesWithoutTheArticleItself(t *te
 }
 
 func TestNamesAndTextsAreEscapedEverywhere(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	p := l.person(`<b>Mia</b>`, "child", "omnivore", "milk")
 	_ = p
@@ -937,6 +972,7 @@ func TestNamesAndTextsAreEscapedEverywhere(t *testing.T) {
 // Ticket 182 replaced the back links of the pages below Settings by a trail
 // of links inside main; Settings stays marked as the current section.
 func TestEveryLibraryPageHasATrailBackToSettingsInsideMain(t *testing.T) {
+	t.Parallel()
 	l := newLibBox(t)
 	l.person("Mia", "child", "omnivore", "milk")
 	id := l.createArticle(articleForm())

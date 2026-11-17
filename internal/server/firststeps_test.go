@@ -48,6 +48,7 @@ func setupHome(t *testing.T) *box {
 // the parent's name and the first steps card with six steps in the designed
 // order, each with its state in words, the progress in words and the footer.
 func TestHomeAfterSetupShowsWelcomeAndTheSixFirstSteps(t *testing.T) {
+	t.Parallel()
 	b := setupHome(t)
 	page := homeDE(b)
 	if m := successRe.FindStringSubmatch(page); m == nil || !strings.Contains(m[1], "Hejmo ist eingerichtet. Willkommen, Mama!") {
@@ -101,6 +102,7 @@ func TestHomeAfterSetupShowsWelcomeAndTheSixFirstSteps(t *testing.T) {
 // Steps become done as the box fills. A done step says what exists; the main
 // button moves on. The card stays until a parent closes it.
 func TestFirstStepsDoneContentAndTheMovingMainButton(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t) // a signed-in parent with one paired display "Hallway"
 	c := card(homeDE(p.box))
 	if !strings.Contains(c, "1 von 6 erledigt") || !strings.Contains(stepOf(t, c, 6), `data-state="done">Erledigt</span>`) || !strings.Contains(stepOf(t, c, 6), "Display „Hallway“ ist verbunden.") {
@@ -210,6 +212,7 @@ func TestFirstStepsDoneContentAndTheMovingMainButton(t *testing.T) {
 // Every open step can be skipped; a skipped step has a dashed ring, says so in
 // words and offers "Doch machen". The count says how many were skipped.
 func TestFirstStepsCanBeSkippedAndTakenBack(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if r := b.post("/first-steps/skip", url.Values{"step": {"tasks"}}); r.status != http.StatusSeeOther || r.location != "/" {
 		t.Fatalf("skip = %d %q", r.status, r.location)
@@ -260,6 +263,7 @@ func TestFirstStepsCanBeSkippedAndTakenBack(t *testing.T) {
 // When every step is done or skipped the card says so with the success line and
 // one main action, "Erste Schritte schließen".
 func TestFirstStepsAllSettledShowASuccessLineAndClose(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for _, id := range store.FirstStepIDs[:5] {
 		b.post("/first-steps/skip", url.Values{"step": {id}})
@@ -288,6 +292,7 @@ func TestFirstStepsAllSettledShowASuccessLineAndClose(t *testing.T) {
 // Hiding is stored per household (parents only). Home then says where the
 // steps are; Settings offers to show them again, and the API has parity.
 func TestFirstStepsCanBeHiddenAndShownAgain(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if card(homeDE(b)) == "" {
 		t.Fatal("no card to hide")
@@ -327,6 +332,7 @@ func TestFirstStepsCanBeHiddenAndShownAgain(t *testing.T) {
 }
 
 func TestFirstStepsAreNotForChildrenAndNeedAParent(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	child := p.add(t, "Mia", "child")
 	h, _ := p.db.HomeHousehold()
@@ -353,6 +359,7 @@ func TestFirstStepsAreNotForChildrenAndNeedAParent(t *testing.T) {
 
 // API parity (ADR 0015): the same through GET and PATCH /settings, contract-checked.
 func TestFirstStepsStateThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	if _, body, _ := c.call(http.MethodGet, "/settings", nil); body["first_steps_hidden"] != false || len(body["first_steps_skipped"].([]any)) != 0 {
 		t.Fatalf("settings = %v", body)
@@ -386,6 +393,7 @@ func strs(v any) []string {
 // The API refuses an unknown first step with 422 (openapi.yaml) and says which
 // field is wrong; other invalid values keep their own messages.
 func TestSettingsAPIRefusesAnUnknownFirstStepAndSaysWhy(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, body, _ := c.call(http.MethodPatch, "/settings", map[string]any{"first_steps_skipped": []string{"nonsense"}})
 	if msg, _ := body["error"].(string); status != http.StatusUnprocessableEntity || !strings.HasPrefix(msg, "first_steps_skipped:") || !strings.Contains(msg, `"nonsense"`) || !strings.Contains(msg, "family, parents, calendars, tasks, meals, display") {
@@ -403,6 +411,7 @@ func TestSettingsAPIRefusesAnUnknownFirstStepAndSaysWhy(t *testing.T) {
 // The second parent is a parent other than the one looking at Home, whatever
 // the order of the people is.
 func TestFirstStepsParentsStepNamesTheOtherParentNotTheViewer(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	p.add(t, "Papa", "parent")
 	papa, mama := personNamed(t, p.box, "Papa").ID, personNamed(t, p.box, "Mama").ID
@@ -421,6 +430,7 @@ func TestFirstStepsParentsStepNamesTheOtherParentNotTheViewer(t *testing.T) {
 // Ticket 145: step 2 counts an accepted invitation. While an invitation is open
 // it says until when the link works and the button leads to it.
 func TestFirstStepsParentsStepFollowsTheInvitation(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	// without any other adult the button asks to enter one
 	if parents := stepOf(t, card(homeDE(p.box)), 2); !strings.Contains(parents, `<a class="link" href="/people">Zweites Elternteil eintragen</a>`) {
@@ -449,6 +459,7 @@ func TestFirstStepsParentsStepFollowsTheInvitation(t *testing.T) {
 }
 
 func TestFirstStepsParentsStepIsDoneWhenTheInvitationWasAccepted(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.acceptAndSetUpCodes(tok)

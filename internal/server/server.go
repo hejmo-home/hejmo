@@ -19,6 +19,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey"
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
@@ -69,6 +70,13 @@ type Options struct {
 	// Pictures downloads the web images of own articles (ticket 164). Nil means
 	// a fetcher that only reaches public addresses; tests pass one that reaches their own server.
 	Pictures *picture.Fetcher
+	// Gate is the box's door to the outside (ticket 201). Nil means a gate
+	// backed by DB, which is what the box uses.
+	Gate *outbound.Gate
+	// Resolver looks up the name of the box's LAN address in the router, to
+	// prefill the router name of the HTTPS step (decision Q92). Nil means the
+	// resolver of the home network (package outbound); tests pass a fake.
+	Resolver NameResolver
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -95,7 +103,14 @@ type PublicHTTPS interface {
 	Clear() error
 }
 
+// NameResolver finds the names a DNS server knows for an address (a reverse
+// lookup). *net.Resolver implements it.
+type NameResolver interface {
+	LookupAddr(ctx context.Context, addr string) ([]string, error)
+}
+
 type server struct {
+	resolver  NameResolver
 	db        *store.DB
 	pki       *pki.Store
 	public    PublicHTTPS
@@ -112,7 +127,8 @@ type server struct {
 	opens      *loginLimiter // pairing screens opened, per client address
 	sync       *calsync.Service
 	weather    *weather.Service
-	places     *places.List // the list of places on the box, loaded at start-up (ADR 0023)
+	gate       *outbound.Gate // every connection to the outside, and its switches
+	places     *places.List   // the list of places on the box, loaded at start-up (ADR 0023)
 	live       time.Duration
 	countWait  time.Duration
 	done       <-chan struct{}
@@ -139,20 +155,27 @@ func New(opts Options) http.Handler {
 	if s.httpsPort == "" {
 		s.httpsPort = "443"
 	}
+	if s.resolver = opts.Resolver; s.resolver == nil {
+		s.resolver = outbound.HomeResolver{}
+	}
 	if s.now == nil {
 		s.now = time.Now
 	}
 	if s.logger == nil {
 		s.logger = slog.Default()
 	}
+	if s.gate = opts.Gate; s.gate == nil {
+		s.gate = outbound.New(s.db.Outbound(), s.db.Outbound())
+	}
 	if s.sync = opts.Sync; s.sync == nil {
 		s.sync = calsync.New(s.db, nil, s.now)
+		s.sync.SetGate(s.gate)
 	}
 	if s.weather = opts.Weather; s.weather == nil {
-		s.weather = weather.New(weather.WithClock(s.now))
+		s.weather = weather.New(weather.WithClock(s.now), weather.WithGate(s.gate))
 	}
 	if s.fetcher = opts.Pictures; s.fetcher == nil {
-		s.fetcher = &picture.Fetcher{}
+		s.fetcher = &picture.Fetcher{Gate: s.gate}
 	}
 	s.done = opts.Done
 	s.updateDir = opts.UpdateDir
@@ -187,6 +210,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /setup/https", s.handleHTTPSSubmit)
 	mux.HandleFunc("POST /setup/https/public", s.handlePublicHTTPSSubmit)
 	mux.HandleFunc("GET /setup/https/check", s.handleNameCheck)
+	mux.HandleFunc("GET /setup/offline", s.handleOfflineQuestion)
+	mux.HandleFunc("POST /setup/offline", s.handleOfflineAnswer)
 	mux.HandleFunc("POST /setup/https/own-ca", s.handleSwitchToOwnCA)
 	mux.HandleFunc("GET /ca", s.handleTrustPage)
 	mux.HandleFunc("GET /ca/hejmo-ca.crt", s.handleCACert)
@@ -320,6 +345,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /lists", s.handleListCreate)
 	mux.HandleFunc("GET /lists/{id}", s.handleListPage)
 	mux.HandleFunc("POST /lists/{id}/settings", s.handleListSettings)
+	mux.HandleFunc("POST /me/list-view", s.handleListView)
 	mux.HandleFunc("POST /lists/{id}/delete", s.handleListDelete)
 	mux.HandleFunc("POST /lists/{id}/entries", s.handleEntryAdd)
 	mux.HandleFunc("GET /lists/{id}/suggest", s.handleListSuggest)
@@ -371,6 +397,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /display/lists/{id}/suggest", s.handleDisplayListSuggest)
 	mux.HandleFunc("GET /display/lists/{id}/quantity", s.handleDisplayListQuantity)
 	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/quantity", s.handleDisplayEntryQuantity)
+	mux.HandleFunc("POST /display/list-view", s.handleDisplayListViewChoice)
+	mux.HandleFunc("GET /display/articles/{id}/picture", s.handleDisplayArticlePicture)
 	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/done", s.handleDisplayEntryDone)
 	mux.HandleFunc("POST /display/lists/{id}/completed/delete", s.handleDisplayTickedDelete)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
@@ -382,6 +410,14 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /settings/licences", s.handleLicences)
 	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
+	mux.HandleFunc("GET /settings/connections", s.handleConnectionsPage)
+	mux.HandleFunc("POST /settings/connections", s.handleConnectionsSave)
+	mux.HandleFunc("GET /settings/connections/offline", s.handleOfflineOnPage)
+	mux.HandleFunc("POST /settings/connections/offline", s.handleOfflineOn)
+	mux.HandleFunc("GET /settings/connections/online", s.handleOnlinePage)
+	mux.HandleFunc("POST /settings/connections/online", s.handleOnline)
+	mux.HandleFunc("GET /settings/https", s.handleHTTPSSettings)
+	mux.HandleFunc("POST /settings/https", s.handleHTTPSSettingsSave)
 	mux.HandleFunc("GET /phones", s.handlePhonesPage)
 	mux.HandleFunc("GET /phones/{id}", s.handlePhonePage)
 	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)
@@ -429,14 +465,16 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 // parsePages parses the embedded templates; "t" is replaced per render.
 func parsePages() *template.Template {
 	return template.Must(template.New("").Funcs(template.FuncMap{
-		"t":    func(string) string { return "" },
-		"tf":   func(string, ...string) string { return "" },
-		"dict": dict,
-		"list": func(v ...any) []any { return v },
-		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
-		"strs": strs,
-		"rich": rich,
-		"repl": repl,
+		"t":      func(string) string { return "" },
+		"tf":     func(string, ...string) string { return "" },
+		"dict":   dict,
+		"list":   func(v ...any) []any { return v },
+		"has":    func(list []string, v string) bool { return slices.Contains(list, v) },
+		"errIn":  errIn,
+		"errKey": errKey,
+		"strs":   strs,
+		"rich":   rich,
+		"repl":   repl,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
 
@@ -529,6 +567,25 @@ func (s *server) fail(w http.ResponseWriter, what string, err error) {
 
 // repl fills the {name} placeholders of a translated text: repl(text, "{n}", "3", ...).
 func repl(text string, pairs ...string) string { return strings.NewReplacer(pairs...).Replace(text) }
+
+// errIn reports whether a page names the field in its ErrorFields (field to
+// text key), for pages whose error belongs to several fields at once.
+func errIn(root any, field string) bool {
+	_, ok := errKey0(root)[field]
+	return ok
+}
+
+// errKey is the text key ErrorFields gives the field, or "".
+func errKey(root any, field string) string { return errKey0(root)[field] }
+
+func errKey0(root any) map[string]string {
+	if m, ok := root.(map[string]any); ok {
+		if f, ok := m["ErrorFields"].(map[string]string); ok {
+			return f
+		}
+	}
+	return nil
+}
 
 // dict builds a map for passing several values to a sub-template.
 func dict(kv ...any) map[string]any {

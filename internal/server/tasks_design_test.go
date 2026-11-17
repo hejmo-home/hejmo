@@ -16,6 +16,7 @@ import (
 // says it in words, text before the bar, and the whole block opens the
 // personal view.
 func TestFamilyProgressBlockIsALinkWithWordsBeforeTheBar(t *testing.T) {
+	t.Parallel()
 	cases := []struct {
 		lang        string
 		done, total int
@@ -63,6 +64,7 @@ func TestFamilyProgressBlockIsALinkWithWordsBeforeTheBar(t *testing.T) {
 // The personal view: tasks first, grouped by part of the day, with the
 // progress in words on top.
 func TestPersonalViewTasksTile(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	mk := func(title, part string) task.Task {
 		tk, err := f.db.AddTask(f.householdID, task.Task{PersonID: f.people["Mia"].ID, Title: title, Emoji: "🪥", PartOfDay: task.PartOfDay(part), Repeat: task.Daily, Date: "2026-11-14"})
@@ -112,6 +114,7 @@ func TestPersonalViewTasksTile(t *testing.T) {
 
 // One part of the day shows no heading; all done shows the success line.
 func TestPersonalViewSinglePartAndAllDone(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	a := f.task(t, "Mia", "Homework", task.Daily)
 	b := f.task(t, "Mia", "Cat", task.Daily)
@@ -138,6 +141,7 @@ func TestPersonalViewSinglePartAndAllDone(t *testing.T) {
 }
 
 func TestPersonalViewWithoutTasks(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	body := f.personalPage(t, "en", "Mia", 14, 9).body
 	for _, want := range []string{`<div class="pv-body" data-no-tasks>`, `<div class="tasks-head"><div class="lab">Tasks today</div></div>`, `<p class="none">No tasks today</p>`} {
@@ -154,6 +158,7 @@ func TestPersonalViewWithoutTasks(t *testing.T) {
 // (display.js, nothing to render on the server side).
 // Smoke check only: it looks for the markers in display.js, it does not run the script.
 func TestDisplayScriptReportsFailedTicks(t *testing.T) {
+	t.Parallel()
 	b, err := os.ReadFile("../../web/static/display.js")
 	if err != nil {
 		t.Fatal(err)

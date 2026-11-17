@@ -20,6 +20,7 @@ import (
 // real template for the example family, in each theme a display can show.
 // Run: HEJMO_WRITE_PREVIEW_52=$PWD/docs/design/preview-52.html go test ./internal/server -run WriteThemePreview
 func TestWriteThemePreview(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_52")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_52 to the output path to write the preview")

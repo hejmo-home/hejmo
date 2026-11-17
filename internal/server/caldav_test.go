@@ -144,6 +144,7 @@ const icsType = "text/calendar; charset=utf-8"
 // family calendar, then it sees all events its role is allowed to see, and no
 // others.
 func TestPhoneSeesTheFamilyCalendarAndOnlyWhatIsShared(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h, family := familyOf(t, c)
 	mia, _ := c.b.db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
@@ -183,6 +184,7 @@ func TestPhoneSeesTheFamilyCalendarAndOnlyWhatIsShared(t *testing.T) {
 // Acceptance: Given a calendar with "share through the box" off, then it is
 // not listed for phones (and cannot be reached by its address).
 func TestUnsharedCalendarIsNeitherListedNorReachable(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h, _ := familyOf(t, c)
 	c.b.feeds.set(schoolFeed, feedOf("UID:trip\r\nSUMMARY:School trip\r\nDTSTART:20261125T080000Z\r\nDTEND:20261125T120000Z"), nil)
@@ -206,6 +208,7 @@ func TestUnsharedCalendarIsNeitherListedNorReachable(t *testing.T) {
 
 // Acceptance: Given a revoked device token, when the phone syncs, then it is refused.
 func TestRevokedDeviceTokenIsRefused(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, created, _ := c.call(http.MethodPost, "/tokens", map[string]any{"name": "iPhone Mama", "scopes": "calendars"})
 	if status != http.StatusCreated {
@@ -227,6 +230,7 @@ func TestRevokedDeviceTokenIsRefused(t *testing.T) {
 }
 
 func TestOnlyDeviceCredentialsOpenTheCalendarServer(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	token := c.newToken("calendars")
 	other := func(user, secret string) int {
@@ -267,6 +271,7 @@ func TestOnlyDeviceCredentialsOpenTheCalendarServer(t *testing.T) {
 }
 
 func TestChildrenAndOtherAddressesAreRefused(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h, _ := familyOf(t, c)
 	token := c.newToken("calendars")
@@ -286,6 +291,7 @@ func TestChildrenAndOtherAddressesAreRefused(t *testing.T) {
 // Acceptance: Given an event changed on the phone, when it is saved, then it
 // appears on the box immediately; a stale If-Match gets 412.
 func TestEventSavedOnThePhoneAppearsOnTheBoxAndStaleWritesAreRefused(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ph := c.phone(t, "calendars")
 	family := ph.calendarNamed("Family")
@@ -341,6 +347,7 @@ func TestEventSavedOnThePhoneAppearsOnTheBoxAndStaleWritesAreRefused(t *testing.
 }
 
 func TestPhoneEditsKeepWhatThePhoneDoesNotShow(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h, family := familyOf(t, c)
 	mia, _ := c.b.db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
@@ -360,6 +367,7 @@ func TestPhoneEditsKeepWhatThePhoneDoesNotShow(t *testing.T) {
 }
 
 func TestPhoneCanSaveRecurringEventsWithChangedOccurrences(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ph := c.phone(t, "calendars")
 	href := ph.calendarNamed("Family").Path + "choir.ics"
@@ -383,6 +391,7 @@ func TestPhoneCanSaveRecurringEventsWithChangedOccurrences(t *testing.T) {
 }
 
 func TestPhoneCannotChangeSubscribedCalendarsOrNameClashes(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf("UID:trip\r\nSUMMARY:School trip\r\nDTSTART:20261125T080000Z\r\nDTEND:20261125T120000Z"), nil)
 	c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
@@ -418,6 +427,7 @@ func TestPhoneCannotChangeSubscribedCalendarsOrNameClashes(t *testing.T) {
 }
 
 func TestCalendarServerNeedsHTTPS(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t) // no certificate yet: plain HTTP
 	req, _ := http.NewRequest("PROPFIND", b.srv.URL+"/dav/", nil)
 	req.SetBasicAuth("mama", "hejmo_x")
@@ -444,6 +454,7 @@ func TestCalendarServerNeedsHTTPS(t *testing.T) {
 }
 
 func TestWellKnownCalDAVPointsToTheServer(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	if r := b.get("/.well-known/caldav"); r.status != http.StatusMovedPermanently && r.status != http.StatusPermanentRedirect || r.location != "/dav/" {
 		t.Fatalf("/.well-known/caldav = %d %q", r.status, r.location)
@@ -477,6 +488,7 @@ func at(y int, m time.Month, d, hh, mm int) time.Time {
 
 // Deleting needs the delete right, as it does through the REST API.
 func TestDeletingOverCalDAVNeedsTheDeleteRight(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	owner := c.phone(t, "calendars")
 	family := owner.calendarNamed("Family")
@@ -498,6 +510,7 @@ func TestDeletingOverCalDAVNeedsTheDeleteRight(t *testing.T) {
 
 // Only the calendars scope opens CalDAV (ADR 0012); plain read and write tokens do not.
 func TestOnlyCalendarScopesOpenCalDAV(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	for _, scope := range []string{"read", "write"} {
 		ph := c.phone(t, scope)
@@ -514,6 +527,7 @@ func TestOnlyCalendarScopesOpenCalDAV(t *testing.T) {
 // Pins today's behaviour: the name a phone picks is the event's id and UID,
 // whatever UID the phone sent inside the object.
 func TestTheResourceNameBecomesTheEventUID(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ph := c.phone(t, "calendars")
 	family := ph.calendarNamed("Family")

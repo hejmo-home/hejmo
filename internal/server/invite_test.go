@@ -92,6 +92,7 @@ func (e *inviteEnv) acceptAndSetUpCodes(token string) string {
 // --- the inviting parent ---
 
 func TestAdultWithoutAccountShowsHowToInviteAndChildrenGetNoInvitation(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	r := e.en(http.MethodGet, e.page(), nil)
 	for _, want := range []string{
@@ -120,6 +121,7 @@ func TestAdultWithoutAccountShowsHowToInviteAndChildrenGetNoInvitation(t *testin
 }
 
 func TestPeopleOverviewAndPersonPageSayWhoCanSignIn(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	overview := e.en(http.MethodGet, "/people", nil).body
 	for _, want := range []string{"Adult · That&#39;s you", "Adult · <b class=\"acc-state\">No account yet</b> · <a href=\"" + e.page() + "\">Invite Papa</a>"} {
@@ -149,6 +151,7 @@ func TestPeopleOverviewAndPersonPageSayWhoCanSignIn(t *testing.T) {
 }
 
 func TestCreatingAnInvitationShowsQRCodeAndLinkOnceAndStoresOnlyAHash(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	r := e.en(http.MethodPost, e.page(), nil)
 	for _, want := range []string{
@@ -190,6 +193,7 @@ func TestCreatingAnInvitationShowsQRCodeAndLinkOnceAndStoresOnlyAHash(t *testing
 }
 
 func TestANewLinkReplacesTheOldOne(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	first := e.create()
 	e.b.now = e.b.now.Add(time.Hour)
@@ -207,6 +211,7 @@ func TestANewLinkReplacesTheOldOne(t *testing.T) {
 }
 
 func TestWithdrawingAsksFirstAndMakesTheLinkUseless(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	if r := e.en(http.MethodGet, e.page()+"/withdraw", nil); r.status != http.StatusNotFound && r.status != http.StatusMethodNotAllowed {
@@ -237,6 +242,7 @@ func TestWithdrawingAsksFirstAndMakesTheLinkUseless(t *testing.T) {
 }
 
 func TestLinkExpiresAfterSevenDaysAndTheParentSeesIt(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.now = e.b.now.Add(7*24*time.Hour - time.Minute)
@@ -281,6 +287,7 @@ func (e *inviteEnv) signInMama() {
 // --- the invited parent ---
 
 func TestInvitedParentOpensTheLinkAndSeesWhoInvitesAndWhoTheyAre(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.logout()
@@ -313,6 +320,7 @@ func TestInvitedParentOpensTheLinkAndSeesWhoInvitesAndWhoTheyAre(t *testing.T) {
 }
 
 func TestAcceptingTheInvitationGoesThroughTheWizardAndLandsSignedInOnHome(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.logout()
@@ -367,6 +375,7 @@ func TestAcceptingTheInvitationGoesThroughTheWizardAndLandsSignedInOnHome(t *tes
 }
 
 func TestInvitedParentChoosesTheirOwnPasswordAndKeepsTheUsernameOnError(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.logout()
@@ -394,6 +403,7 @@ func TestInvitedParentChoosesTheirOwnPasswordAndKeepsTheUsernameOnError(t *testi
 }
 
 func TestChosenLanguageBecomesTheAccountLanguage(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.logout()
@@ -409,6 +419,7 @@ func TestChosenLanguageBecomesTheAccountLanguage(t *testing.T) {
 }
 
 func TestUnknownOrCutOffLinksTellNothingAndAreRateLimited(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.logout()
@@ -438,6 +449,7 @@ func inviteGuess(i int) string {
 }
 
 func TestSignedInAsSomeoneElseTheInvitationStaysOpenAndSignOutComesBack(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	r := e.en(http.MethodGet, "/invite/"+tok, nil) // Mama scans Papa's code on her own phone
@@ -462,6 +474,7 @@ func TestSignedInAsSomeoneElseTheInvitationStaysOpenAndSignOutComesBack(t *testi
 
 // ADR 0017: the second parent can sign in and reset the first parent's one-time codes.
 func TestAcceptedParentSignsInAndResetsTheFirstParentsOneTimeCodes(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	secret := e.acceptAndSetUpCodes(tok)
@@ -484,6 +497,7 @@ func TestAcceptedParentSignsInAndResetsTheFirstParentsOneTimeCodes(t *testing.T)
 }
 
 func TestParentStopsBeforeTheOneTimeCodeAndFinishesAtTheNextSignIn(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.logout()
@@ -516,6 +530,7 @@ func TestParentStopsBeforeTheOneTimeCodeAndFinishesAtTheNextSignIn(t *testing.T)
 }
 
 func TestAcceptedInvitationPageShowsWhenAndThroughWhomAndLinksToTheReset(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.now = e.b.now.Add(31 * time.Hour)
@@ -546,6 +561,7 @@ func TestAcceptedInvitationPageShowsWhenAndThroughWhomAndLinksToTheReset(t *test
 }
 
 func TestOnlyAParentCanInvite(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	phone := pairedPhone(t, e.b, e.mia, "Mia's phone") // a child's device session
 	if r := phone.get(e.page(), "en"); r.status != http.StatusForbidden {
@@ -561,6 +577,7 @@ func TestOnlyAParentCanInvite(t *testing.T) {
 
 // A box with a public certificate has no trust step: the link is an HTTPS link.
 func TestBoxWithAPublicCertificateGivesAnHTTPSLink(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	e.b.public.name = "hejmo.example.org"
 	r := e.en(http.MethodPost, e.page(), nil)
@@ -573,6 +590,7 @@ func TestBoxWithAPublicCertificateGivesAnHTTPSLink(t *testing.T) {
 // With the box's own CA the QR code leads over plain HTTP to the trust page
 // first, like phone pairing (5.13), and then on to the invitation.
 func TestShortPlainHTTPAddressLeadsThroughTheTrustPageToTheInvitation(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.logout()
@@ -599,6 +617,7 @@ func TestShortPlainHTTPAddressLeadsThroughTheTrustPageToTheInvitation(t *testing
 }
 
 func TestShortAddressRedirectsToTheInvitationWhenThePublicNameIsUsed(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.logout()
@@ -649,6 +668,7 @@ func getPlain(t *testing.T, url string) resp {
 
 // Without the box's own CA there is no trust step: two steps instead of three.
 func TestBoxWithAPublicCertificateHasTwoStepsAndNoTrustPage(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	e.b.public.name = "hejmo.example.org"
 	tok := e.create()
@@ -665,6 +685,7 @@ func TestBoxWithAPublicCertificateHasTwoStepsAndNoTrustPage(t *testing.T) {
 // A link that dies between opening the form and sending it shows its own
 // state, not "used".
 func TestLinkThatExpiresWhileTheFormIsOpenShowsExpiredNotUsed(t *testing.T) {
+	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
 	e.b.logout()

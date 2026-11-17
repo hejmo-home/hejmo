@@ -25,6 +25,7 @@ import (
 // real templates, built from the real view models.
 // Run: HEJMO_WRITE_PREVIEW_37=../../docs/design/preview-37.html go test ./internal/server -run WriteDesignPreview37
 func TestWriteDesignPreview37(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_37")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_37 to the output path to write the preview")

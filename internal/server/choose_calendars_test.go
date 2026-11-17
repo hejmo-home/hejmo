@@ -65,6 +65,7 @@ func davConnection(t *testing.T, c *apiClient, srv *caldavtest.Server) string {
 }
 
 func TestChooseCalendarsShowsNoEventsForACalendarWhoseOnlyEventIsFrom2016(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	old := srv.MakeCalendar(t, "old", "Piano 2016")
 	family := srv.MakeCalendar(t, "family", "Family")
@@ -128,6 +129,7 @@ func withCountTimeout(b *box, d time.Duration) {
 }
 
 func TestEventCountIsUnknownWhenTheServerDoesNotAnswerInTimeAndThePageStillLoads(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	withCountTimeout(b, 100*time.Millisecond)
 	if r := b.post("/login", loginForm(b, secret, "correct horse battery")); r.status != http.StatusSeeOther {
@@ -155,6 +157,7 @@ func TestEventCountIsUnknownWhenTheServerDoesNotAnswerInTimeAndThePageStillLoads
 }
 
 func TestEveryFoundCalendarHasTheSwitchAlsoSyncedOnes(t *testing.T) {
+	t.Parallel()
 	b, id := twoCalendarBox(t)
 	b.post("/connections/"+id+"/calendars", url.Values{"calendar": {flowCalendar}, "shown": {flowCalendar, flowCalendar2}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}})
 
@@ -181,6 +184,7 @@ func TestEveryFoundCalendarHasTheSwitchAlsoSyncedOnes(t *testing.T) {
 }
 
 func TestSwitchingASyncedCalendarOffAsksFirstThenRemovesItsEventsAndSendsNothingToTheServer(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	b := c.b
 	family := srv.MakeCalendar(t, "family", "Family")
@@ -219,7 +223,7 @@ func TestSwitchingASyncedCalendarOffAsksFirstThenRemovesItsEventsAndSendsNothing
 	if n := dials.Load(); n != 0 {
 		t.Errorf("the box contacted the server %d times while switching a calendar off", n)
 	}
-	remote, _ := caldavclient.NewClient(srv.URL, caldavtest.User, caldavtest.Password, nil)
+	remote, _ := caldavclient.NewClient(srv.URL, caldavtest.User, caldavtest.Password, openClient())
 	if objs, err := remote.List(context.Background(), school); err != nil || len(objs) != 1 {
 		t.Errorf("the source lost its event: %v, %v", objs, err)
 	}
@@ -239,6 +243,7 @@ func TestSwitchingASyncedCalendarOffAsksFirstThenRemovesItsEventsAndSendsNothing
 }
 
 func TestChooseCalendarsEditsNameColourAndAudienceOfASyncedCalendar(t *testing.T) {
+	t.Parallel()
 	b, id := twoCalendarBox(t)
 	h, _ := b.db.HomeHousehold()
 	mia, _ := b.db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
@@ -264,6 +269,7 @@ func TestChooseCalendarsEditsNameColourAndAudienceOfASyncedCalendar(t *testing.T
 }
 
 func TestCalendarColourIsPickedAutomaticallyAndChangedUnderMoreOptions(t *testing.T) {
+	t.Parallel()
 	b, id := twoCalendarBox(t)
 	page := formOf(t, getEN(b, "/connections/"+id).body, "/connections/"+id+"/calendars")
 	colour := regexp.MustCompile(`name="color_[^"]*" type="color" value="(#[0-9A-Fa-f]{6})"`).FindAllStringSubmatch(page, -1)

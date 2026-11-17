@@ -325,3 +325,27 @@ func TestCompletionsStartWithTheLettersThenWordsThenAnywhereOwnFirst(t *testing.
 		t.Errorf("the English name finds too, and max cuts: %v", got)
 	}
 }
+
+func TestResolveFindsTheArticleAnEntryNames(t *testing.T) {
+	own := library.Article{ID: "own-1", Own: true, De: "Käse", En: "Käse", Dept: "dairy", Kind: library.Veg, Symbol: "🧀"}
+	all := []library.Article{own}
+	all = append(all, library.Shipped()...)
+	for text, want := range map[string]string{
+		"Milch":             "milk",
+		"  milch ":          "milk",  // case and spaces do not matter
+		"MILK":              "milk",  // either language
+		"Käse":              "own-1", // an own article wins over a shipped one of the same name
+		"kase":              "own-1", // ä is like a
+		"Nuss-Nougat-Creme": "nut-nougat-spread",
+	} {
+		a, ok := library.Resolve(text, all)
+		if !ok || a.ID != want {
+			t.Errorf("Resolve(%q) = %q, %v, want %q", text, a.ID, ok, want)
+		}
+	}
+	for _, text := range []string{"Geschenkpapier für Sebastians Kindergeburtstag", "", "Mil", "Milch und Honig"} {
+		if a, ok := library.Resolve(text, all); ok {
+			t.Errorf("Resolve(%q) = %q: free text must stay free text", text, a.ID)
+		}
+	}
+}

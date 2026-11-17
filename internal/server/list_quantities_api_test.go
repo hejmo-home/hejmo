@@ -157,7 +157,7 @@ func TestAListWithoutSuggestionsTakesPlainTextOnly(t *testing.T) {
 		t.Errorf("quantity on a to-do list = %d %v", status, e)
 	}
 	for i := 0; i < 2; i++ { // as before: no merging, no library
-		if status, e := lb.add(t, id, map[string]any{"text": "Eier"}); status != http.StatusCreated || (e["article_id"] != nil && e["article_id"] != "") {
+		if status, e := lb.add(t, id, map[string]any{"text": "Eier"}); status != http.StatusCreated || e["amount"] != nil {
 			t.Fatalf("plain = %d %v", status, e)
 		}
 	}

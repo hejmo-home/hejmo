@@ -55,6 +55,7 @@ func before(t *testing.T, body string, parts ...string) {
 }
 
 func TestListsOverviewShowsOneRowPerListWithItsStateInWords(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	open, _ := listWith(t, b, "Mixed", []string{"b"}, "a", "b")
 	_, _ = listWith(t, b, "Only open", nil, "x", "y", "z")
@@ -80,6 +81,7 @@ func TestListsOverviewShowsOneRowPerListWithItsStateInWords(t *testing.T) {
 }
 
 func TestListLookNamesWhatIsChosenAndKeepsItAfterAnError(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	en := getEN(b, "/lists").body
 	for _, want := range []string{`<span class="sum">Green, filled square, by hand</span>`, `class="chips colour-chips"><legend>Colour on colour screens</legend>`,
@@ -104,6 +106,7 @@ func TestListLookNamesWhatIsChosenAndKeepsItAfterAnError(t *testing.T) {
 }
 
 func TestListPageHeaderBackLinkTitleAndMeta(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, _ := listWith(t, b, "Packing", []string{"b", "c"}, "a", "b", "c")
 	body := getEN(b, "/lists/"+id).body
@@ -133,6 +136,7 @@ func TestListPageHeaderBackLinkTitleAndMeta(t *testing.T) {
 }
 
 func TestAddRowSitsAboveTheEntriesAndTheFieldIsFocusedOnlyAfterAnAdd(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, _ := listWith(t, b, "Shop", nil, "Milk")
 	page := getEN(b, "/lists/"+id).body
@@ -166,6 +170,7 @@ func TestAddRowSitsAboveTheEntriesAndTheFieldIsFocusedOnlyAfterAnAdd(t *testing.
 }
 
 func TestSuccessLinesNeverShowTextFromAForgedCookie(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, _ := listWith(t, b, "Shop", nil, "Milk")
 	got := b.do(http.MethodGet, "/lists/"+id, nil, map[string]string{"Accept-Language": "en", "Cookie": "hejmo_flash=flash.entry_added:deadbeef"}).body
@@ -175,6 +180,7 @@ func TestSuccessLinesNeverShowTextFromAForgedCookie(t *testing.T) {
 }
 
 func TestEverydayRowsHaveOnlyTheBigCheckForm(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, _ := listWith(t, b, "Shop", []string{"c"}, "a", "b", "c")
 	body := getEN(b, "/lists/"+id).body
@@ -196,6 +202,7 @@ func TestEverydayRowsHaveOnlyTheBigCheckForm(t *testing.T) {
 }
 
 func TestTickedOffEntriesFormTheirOwnGroupAndUntickingReturnsThemToTheirPlace(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, ids := listWith(t, b, "Shop", []string{"b"}, "a", "b", "c", "d")
 	body := getEN(b, "/lists/"+id).body
@@ -220,6 +227,7 @@ func TestTickedOffEntriesFormTheirOwnGroupAndUntickingReturnsThemToTheirPlace(t 
 }
 
 func TestHiddenTickedOffEntriesShowALineAndTheChoiceSurvivesEveryRedirect(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, ids := listWith(t, b, "Shop", []string{"x", "y"}, "a", "b", "x", "y")
 	body := getEN(b, "/lists/"+id+"?ticked=hide").body
@@ -269,6 +277,7 @@ func TestHiddenTickedOffEntriesShowALineAndTheChoiceSurvivesEveryRedirect(t *tes
 }
 
 func TestToolsLinkIsForParentsAndOnlyWhenThereAreEntries(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	b := cp.parent.b
 	id, _ := listWith(t, b, "Shop", nil, "a")
@@ -298,6 +307,7 @@ func TestToolsLinkIsForParentsAndOnlyWhenThereAreEntries(t *testing.T) {
 }
 
 func TestEditViewOffersUpDownAndRemoveOverOpenEntriesOnly(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, ids := listWith(t, b, "Shop", []string{"b"}, "a", "b", "c")
 	page := getEN(b, "/lists/"+id+"?edit=1&ticked=hide").body
@@ -370,6 +380,7 @@ func entryOrder(t *testing.T, b *box, listID string) []string {
 }
 
 func TestMovingPassesTheNeighbouringOpenEntryAndSkipsTickedOffOnes(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, ids := listWith(t, b, "Shop", []string{"t"}, "a", "t", "c", "d")
 	// c moves up past the ticked-off t and the open a (an insert).
@@ -406,6 +417,7 @@ func TestMovingPassesTheNeighbouringOpenEntryAndSkipsTickedOffOnes(t *testing.T)
 }
 
 func TestRemovingAnEntryReturnsToTheEditViewWithASuccessLine(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, ids := listWith(t, b, "Shop", nil, "a", "Pasta")
 	r := b.post("/lists/"+id+"/entries/"+ids["Pasta"]+"/delete", url.Values{})
@@ -421,6 +433,7 @@ func TestRemovingAnEntryReturnsToTheEditViewWithASuccessLine(t *testing.T) {
 }
 
 func TestDeleteTickedOffEntriesStatesTheNumberAndSitsBetweenTheGroupAndTheSettings(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	two, _ := listWith(t, b, "Two", []string{"a", "b"}, "a", "b", "c")
 	one, _ := listWith(t, b, "One", []string{"a"}, "a", "b")
@@ -446,6 +459,7 @@ func TestDeleteTickedOffEntriesStatesTheNumberAndSitsBetweenTheGroupAndTheSettin
 }
 
 func TestListSettingsDisclosureSaysWhatIsChosen(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, _ := listWith(t, b, "Shop", nil, "a")
 	body := getEN(b, "/lists/"+id).body
@@ -460,6 +474,7 @@ func TestListSettingsDisclosureSaysWhatIsChosen(t *testing.T) {
 }
 
 func TestEmptyListShowsTheAddRowAndOneSentence(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, _ := listWith(t, b, "Gifts", nil)
 	body := getEN(b, "/lists/"+id).body
@@ -473,9 +488,11 @@ func TestEmptyListShowsTheAddRowAndOneSentence(t *testing.T) {
 }
 
 func TestChildViewHasNoAddRowNoToolsAndTheTickedOffGroup(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	b := cp.parent.b
 	id, _ := listWith(t, b, "Shop", []string{"b", "c"}, "a", "b", "c")
+	cp.screen.post("/me/list-view", url.Values{"view": {"list"}, "list": {id}}) // children see tiles first (ticket 166); this is the list
 	body := cp.screen.get("/lists/"+id, "en").body
 	for _, want := range []string{`<p class="hint list-meta">1 open, 2 ticked off. Tap the box when you have it.</p>`, `<div class="group-head"><h2>Ticked off (2)</h2><a href="?ticked=hide">Hide</a></div>`} {
 		if !strings.Contains(body, want) {
@@ -500,6 +517,7 @@ func TestChildViewHasNoAddRowNoToolsAndTheTickedOffGroup(t *testing.T) {
 }
 
 func TestFailedFormsShowNoStaleSuccessLine(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, ids := listWith(t, b, "Shop", nil, "a")
 	if r := b.post("/lists/"+id+"/entries/"+ids["a"]+"/done", url.Values{"done": {"1"}}); r.status != http.StatusSeeOther {
@@ -527,6 +545,7 @@ func cssRule(t *testing.T, css, selector string) string {
 // Design pass 2 on 6.1: nothing is wider than a 375 px screen, and long words
 // break and hyphenate under the page language.
 func TestListsStylesKeepLongTextInsideThePhoneWidth(t *testing.T) {
+	t.Parallel()
 	raw, err := fs.ReadFile(web.Static, "static/hejmo.css")
 	if err != nil {
 		t.Fatal(err)
@@ -568,6 +587,7 @@ func TestListsStylesKeepLongTextInsideThePhoneWidth(t *testing.T) {
 }
 
 func TestEveryListsPageCarriesThePageLanguageForHyphenation(t *testing.T) {
+	t.Parallel()
 	for _, lang := range []string{"en", "de"} {
 		b := signedInBox(t)
 		id, _ := listWith(t, b, "Wocheneinkauf Großfamilie", []string{"a"}, "a", "b")

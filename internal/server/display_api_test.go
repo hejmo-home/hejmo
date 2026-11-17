@@ -22,6 +22,7 @@ func openAPIPairing(c *apiClient) (int, map[string]any) {
 }
 
 func TestDisplayOpensAPairingAndReadsItsStateThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	anon := newAPIClient(t, c.b) // a display has no session and no token yet
 
@@ -74,6 +75,7 @@ func TestDisplayOpensAPairingAndReadsItsStateThroughTheAPI(t *testing.T) {
 }
 
 func TestDisplayStateNeedsABearerToken(t *testing.T) {
+	t.Parallel()
 	anon := newAPIClient(t, newBox(t))
 	if status, _, _ := anon.call(http.MethodGet, "/display/state", nil); status != http.StatusUnauthorized {
 		t.Fatalf("no token = %d, want 401", status)
@@ -84,6 +86,7 @@ func TestDisplayStateNeedsABearerToken(t *testing.T) {
 }
 
 func TestDisplayTokenOpensNothingElseInTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, opened := openAPIPairing(newAPIClient(t, c.b))
 	d := c.withToken(opened["token"].(string))
@@ -97,6 +100,7 @@ func TestDisplayTokenOpensNothingElseInTheAPI(t *testing.T) {
 }
 
 func TestPairingOpenedThroughTheAPIIsLimitedPerAddress(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	anon := newAPIClient(t, b)
 	// Ten pairing pages use up the allowance of this address ...
@@ -117,6 +121,7 @@ func TestPairingOpenedThroughTheAPIIsLimitedPerAddress(t *testing.T) {
 }
 
 func TestPairingNeedsASetUpBox(t *testing.T) {
+	t.Parallel()
 	anon := newAPIClient(t, newBox(t))
 	if status, body := openAPIPairing(anon); status != http.StatusConflict || body["error"] == nil {
 		t.Fatalf("open on a box not set up = %d %v, want 409 with an error", status, body)
@@ -124,6 +129,7 @@ func TestPairingNeedsASetUpBox(t *testing.T) {
 }
 
 func TestWaitingDisplaysOpenedThroughTheAPIAreCapped(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	anon := newAPIClient(t, b)
 	// Each opens from its own address, so the per-address limit does not
@@ -162,6 +168,7 @@ func TestWaitingDisplaysOpenedThroughTheAPIAreCapped(t *testing.T) {
 }
 
 func TestOtherAuthorizationSchemesLeaveTheDisplayCookieAlone(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	s := newScreen(b)
 	if r := s.get("/display", "en"); r.status != http.StatusOK {

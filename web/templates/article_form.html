@@ -55,6 +55,7 @@
       </div>
       <div class="pic-panel web">
         {{if and .Result (eq .Result.Source "web")}}{{template "picResult" .}}
+        {{else if .ImageNote}}{{template "offlineNote" .ImageNote}}
         {{else}}{{$ub := .Errs.url}}<div class="web-row"><div class="f{{if $ub}} invalid{{end}}"><label>{{t "artf.url.label"}}<input type="url" name="url" value="{{.F.URL}}" inputmode="url" autocomplete="off" placeholder="https://…" data-fetch-url aria-describedby="{{if $ub}}err-url {{end}}hint-url"{{if eq .FirstErr "url"}} autofocus aria-invalid="true"{{end}}></label></div><button class="button secondary" type="submit" name="fetch" value="1" data-fetch data-busy="{{.Waiting}}" data-waiting="{{t "artf.url.waiting"}}" data-waiting-small="{{t "artf.url.waiting.small"}}">{{t "artf.url.fetch"}}</button></div>
         {{template "aferr" (dict "Name" "url" "Text" $ub)}}
         <p class="hint" id="hint-url">{{t "artf.url.hint"}}</p>{{end}}

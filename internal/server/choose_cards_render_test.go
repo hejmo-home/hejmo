@@ -36,6 +36,7 @@ type cardSeen struct {
 }
 
 func TestChooseCalendarCardsInTheBrowserShowOneStateAndFieldsOnlyWhileOn(t *testing.T) {
+	t.Parallel()
 	chrome := requireChrome(t)
 	b, id := cardsBox(t)
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {

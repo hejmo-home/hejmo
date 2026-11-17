@@ -34,6 +34,7 @@ func mealsBetween(t *testing.T, c *apiClient, from, to string) []map[string]any 
 // Acceptance: Given a shared meal plan, when a dinner is entered for Tuesday,
 // then it appears in the calendar on Tuesday.
 func TestADinnerEnteredForTuesdayAppearsInTheCalendarOnTuesday(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, m := putMeal(t, c, tuesday, "dinner", "Nudelauflauf")
 	if status != http.StatusOK || m["date"] != tuesday || m["mealtime"] != "dinner" || m["text"] != "Nudelauflauf" {
@@ -62,6 +63,7 @@ func TestADinnerEnteredForTuesdayAppearsInTheCalendarOnTuesday(t *testing.T) {
 
 // Acceptance: Given a meal changed, then the calendar shows the new meal.
 func TestAChangedMealShowsInTheCalendar(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	putMeal(t, c, tuesday, "dinner", "Nudelauflauf")
 	if status, m := putMeal(t, c, tuesday, "dinner", "Suppe"); status != http.StatusOK || m["text"] != "Suppe" {
@@ -77,6 +79,7 @@ func TestAChangedMealShowsInTheCalendar(t *testing.T) {
 }
 
 func TestAMealIsRemovedWithDelete(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	putMeal(t, c, tuesday, "dinner", "Nudelauflauf")
 	putMeal(t, c, tuesday, "lunch", "Suppe")
@@ -95,6 +98,7 @@ func TestAMealIsRemovedWithDelete(t *testing.T) {
 }
 
 func TestMealsAreListedInTheOrderOfTheDay(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	for _, in := range [][3]string{{"2026-11-18", "dinner", "d"}, {tuesday, "dinner", "c"}, {tuesday, "snack", "b2"}, {tuesday, "breakfast", "a"}, {"2026-11-30", "dinner", "x"}} {
 		putMeal(t, c, in[0], in[1], in[2])
@@ -114,6 +118,7 @@ func TestMealsAreListedInTheOrderOfTheDay(t *testing.T) {
 }
 
 func TestMealInputIsValidatedByTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	long, _ := json.Marshal(map[string]string{"text": strings.Repeat("ä", 201)})
 	if got := rawCall(t, c, http.MethodPut, "/meals/"+tuesday+"/dinner", string(long)); got != http.StatusUnprocessableEntity {
@@ -154,6 +159,7 @@ func TestMealInputIsValidatedByTheAPI(t *testing.T) {
 // ADR 0015: the events of the generated calendar change only in the meal plan;
 // writes in the calendar are refused.
 func TestMealEventsCannotBeChangedInTheCalendar(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	putMeal(t, c, tuesday, "dinner", "Nudelauflauf")
 	occ := c.occurrences(t, "from=2026-11-17T00:00:00%2B01:00&to=2026-11-18T00:00:00%2B01:00")[0]
@@ -178,6 +184,7 @@ func TestMealEventsCannotBeChangedInTheCalendar(t *testing.T) {
 // ADR 0015: "Share through the box" is on by default, so a phone finds the
 // meals as a calendar, and CalDAV clients cannot write to it.
 func TestMealCalendarIsSharedToPhonesAndReadOnlyThere(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	putMeal(t, c, tuesday, "dinner", "Nudelauflauf")
 	p := c.phone(t, "calendars")
@@ -205,6 +212,7 @@ func TestMealCalendarIsSharedToPhonesAndReadOnlyThere(t *testing.T) {
 // ADR 0015: on displays the meal plan is not shown in the family strip or the
 // person columns (ticket 6.4 shows it in the meal tile).
 func TestMealsStayOutOfTheFamilyViewsColumnsAndStrip(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	if err := f.db.SetMeals(f.householdID, []store.Meal{{Day: "2026-11-14", Mealtime: "dinner", Text: "Nudelauflauf"}}, mealOptionsForTest()); err != nil {
 		t.Fatal(err)
@@ -221,6 +229,7 @@ func TestMealsStayOutOfTheFamilyViewsColumnsAndStrip(t *testing.T) {
 }
 
 func TestChildMayReadButNotChangeTheMealPlan(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	putMeal(t, tb.parent, tuesday, "dinner", "Nudelauflauf")
 	if list := mealsBetween(t, tb.child, tuesday, tuesday); len(list) != 1 {
@@ -238,6 +247,7 @@ func TestChildMayReadButNotChangeTheMealPlan(t *testing.T) {
 }
 
 func TestMealScopesLimitATokenToTheMealPlan(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	putMeal(t, c, tuesday, "dinner", "Nudelauflauf")
 	read := c.withToken(c.newToken("meals:read"))

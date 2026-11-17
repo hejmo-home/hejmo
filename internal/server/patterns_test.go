@@ -42,6 +42,7 @@ func chips(page string) map[string]bool {
 // also without JavaScript, so the "Whole family" chip is a plain checkbox that
 // the server renders selected and that people can only add to.
 func TestAudienceChipsDefaultToTheWholeFamilyWithoutJavaScript(t *testing.T) {
+	t.Parallel()
 	b, ids := patternBox(t)
 	b.feeds.set("https://example.org/a.ics", feedOf(), nil)
 	got := chips(getEN(b, "/calendars").body)
@@ -78,6 +79,7 @@ func TestAudienceChipsDefaultToTheWholeFamilyWithoutJavaScript(t *testing.T) {
 }
 
 func TestChosenPeopleStayChosenAfterAnError(t *testing.T) {
+	t.Parallel()
 	b, ids := patternBox(t)
 	r := b.do(http.MethodPost, "/calendars", url.Values{"name": {""}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}, "people": {ids["Mia"], ids["Sebastian"]}}, map[string]string{"Accept-Language": "en"})
 	got := chips(r.body)
@@ -87,6 +89,7 @@ func TestChosenPeopleStayChosenAfterAnError(t *testing.T) {
 }
 
 func TestTaskPersonIsASingleChoiceChip(t *testing.T) {
+	t.Parallel()
 	b, ids := patternBox(t)
 	page := getEN(b, "/tasks").body
 	if !strings.Contains(page, `type="radio" name="person"`) || strings.Contains(page, "<select name=\"person\"") {
@@ -106,6 +109,7 @@ func TestTaskPersonIsASingleChoiceChip(t *testing.T) {
 }
 
 func TestSettingsUseSegmentedControls(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	page := getEN(b, "/settings/household").body
 	for _, want := range []string{`<fieldset class="seg">`, `type="radio" name="time_format" value="24h" checked`, `type="radio" name="temperature_unit" value="c" checked`} {
@@ -116,6 +120,7 @@ func TestSettingsUseSegmentedControls(t *testing.T) {
 }
 
 func TestTaskFormShowsDependentFieldsOnlyWhenTheyApply(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	page := getEN(b, "/tasks").body
 	for _, want := range []string{`<fieldset class="seg">`, `name="repeat" value="daily" checked`, `class="when when-once"`, `class="days when-weekly"`} {
@@ -126,6 +131,7 @@ func TestTaskFormShowsDependentFieldsOnlyWhenTheyApply(t *testing.T) {
 }
 
 func TestDisplaySwitchAndChoiceCards(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	d := newScreen(b)
 	b.post("/displays", pairForm(codeOn(t, d.get("/display", "en").body)))
@@ -141,6 +147,7 @@ func TestDisplaySwitchAndChoiceCards(t *testing.T) {
 }
 
 func TestOptionsWithGoodDefaultsSitUnderMoreOptions(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	page := getEN(b, "/calendars").body
 	i := strings.Index(page, `<details class="more"`)
@@ -162,6 +169,7 @@ func TestOptionsWithGoodDefaultsSitUnderMoreOptions(t *testing.T) {
 }
 
 func TestEmptyStatesExplainAndOfferTheFirstAction(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for _, path := range []string{"/tasks", "/displays", "/caldav", "/calendars"} {
 		page := getEN(b, path).body
@@ -173,6 +181,7 @@ func TestEmptyStatesExplainAndOfferTheFirstAction(t *testing.T) {
 
 // ADR 0017: destructive actions live on the detail page, behind a confirmation.
 func TestDeletingATaskHappensOnItsDetailPageAfterConfirming(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id := tb.newDaily(t, tb.miaID)
@@ -208,6 +217,7 @@ func TestDeletingATaskHappensOnItsDetailPageAfterConfirming(t *testing.T) {
 // disconnect. Every such action lives on the detail page the row opens, in a
 // closed disclosure, and the overview rows lead there.
 func TestNoDestructiveFormOnAnyOverview(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	b.feeds.set("https://example.org/a.ics", feedOf(), nil)

@@ -20,6 +20,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/food"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/library"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/unit"
@@ -266,7 +267,7 @@ func (s *server) renderArticleForm(w http.ResponseWriter, r *http.Request, p pri
 		"Chosen":       chosen, "ChosenText": chosenText, "ChosenLabel": chosenLabel, "Tiles": tiles, "SymHead": symHead, "SymLegend": symLegend, "SymNone": symNone, "SymSearching": strings.TrimSpace(f.SymQ) != "",
 		"SymMore": s.i18n.Format(lang, i18n.Msg("artf.sym.more", "count", s.symbolCount(lang))), "SymCapped": capped,
 		"Units1": units1, "Units2": units2, "Kinds": kinds, "Cards": cards, "IsNonFood": f.Kind == string(library.NonFood),
-		"Errs": errs, "FirstErr": first, "Waiting": s.i18n.T(lang, "artf.url.busy"),
+		"ImageNote": s.noteFor(r, outbound.Images, "outside.note.image"), "Errs": errs, "FirstErr": first, "Waiting": s.i18n.T(lang, "artf.url.busy"),
 		"Token": f.Token, "ID": "", "Name": "",
 	}
 	if existing != nil {
@@ -641,6 +642,8 @@ func (s *server) urlError(lang, raw string, err error) string {
 	var big *picture.TooLargeError
 	var status *picture.StatusError
 	switch {
+	case errors.Is(err, outbound.ErrRefused):
+		return s.i18n.T(lang, "outside.note.image")
 	case errors.As(err, &private):
 		return s.i18n.Format(lang, i18n.Msg("artf.err.url.private", "addr", private.Addr))
 	case errors.Is(err, picture.ErrWebPage):

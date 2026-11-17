@@ -21,6 +21,7 @@ import (
 // page and the real connect page, rendered by the real templates. Run:
 // HEJMO_WRITE_PREVIEW_135=$PWD/docs/design/preview-135.html go test ./internal/server -run WritePreview135
 func TestWritePreview135(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_135")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_135 to the output path to write the preview")

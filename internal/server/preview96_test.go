@@ -22,6 +22,7 @@ import (
 // 1024 x 768, 768 x 1024 and 375 px wide, in light, dark and black-and-white.
 // Run: HEJMO_WRITE_PREVIEW_96=$PWD/docs/design/preview-96.html go test ./internal/server -run WritePreview96
 func TestWritePreview96(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_96")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_96 to the output path to write the preview")

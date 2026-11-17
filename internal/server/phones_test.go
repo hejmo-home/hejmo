@@ -105,6 +105,7 @@ func pairedPhone(t *testing.T, b *box, person store.Person, name string) *screen
 // 5.13: Given a QR code shown by a parent, when a phone opens it and the parent
 // confirms, then the phone has a device session for that account.
 func TestPhoneOpensTheQRCodeAndGetsADeviceSessionAfterTheParentConfirms(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.post("/phones/pairings", url.Values{})
 	for _, want := range []string{"<svg", `role="img"`, "data-join-url"} {
@@ -149,6 +150,7 @@ func TestPhoneOpensTheQRCodeAndGetsADeviceSessionAfterTheParentConfirms(t *testi
 
 // 5.13: Given an expired or used pairing code, then pairing is refused.
 func TestExpiredUnknownAndUsedPairingCodesAreRefused(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	refused := func(what, path string, phone *screen) {
 		t.Helper()
@@ -180,6 +182,7 @@ func TestExpiredUnknownAndUsedPairingCodesAreRefused(t *testing.T) {
 }
 
 func TestACodeConfirmedTooLateIsRefusedToo(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	path := showCode(t, b)
 	phone := newScreen(b)
@@ -194,6 +197,7 @@ func TestACodeConfirmedTooLateIsRefusedToo(t *testing.T) {
 }
 
 func TestConfirmingNeedsANameAndAPerson(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	path := showCode(t, b)
 	newScreen(b).get(path, "en")
@@ -209,6 +213,7 @@ func TestConfirmingNeedsANameAndAPerson(t *testing.T) {
 
 // 5.13: Given a revoked device session, when the phone loads the app, then it is signed out.
 func TestRevokedPhoneIsSignedOut(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	phone := pairedPhone(t, b, personNamed(t, b, "Mama"), "Old phone")
 	if r := phone.get("/", "en"); r.status != http.StatusOK {
@@ -233,6 +238,7 @@ func TestRevokedPhoneIsSignedOut(t *testing.T) {
 }
 
 func TestSigningOutOnThePhoneRemovesIt(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	phone := pairedPhone(t, b, personNamed(t, b, "Mama"), "Phone")
 	req, _ := http.NewRequest(http.MethodPost, b.srv.URL+"/logout", nil)
@@ -248,6 +254,7 @@ func TestSigningOutOnThePhoneRemovesIt(t *testing.T) {
 }
 
 func TestPhoneSessionIsLongLived(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	phone := pairedPhone(t, b, personNamed(t, b, "Mama"), "Phone")
 	b.now = b.now.Add(300 * 24 * time.Hour)
@@ -262,6 +269,7 @@ func TestPhoneSessionIsLongLived(t *testing.T) {
 
 // ADR 0015: a child's phone acts with the child's role.
 func TestChildsPhoneHasTheChildsRoleOnly(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	phone := pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
 	if r := phone.get("/phones", "en"); r.status != http.StatusForbidden {
@@ -276,6 +284,7 @@ func TestChildsPhoneHasTheChildsRoleOnly(t *testing.T) {
 }
 
 func TestOnlyParentsSeeThePhonesScreen(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.logout()
 	if r := b.get("/phones"); r.status != http.StatusSeeOther {
@@ -287,6 +296,7 @@ func TestOnlyParentsSeeThePhonesScreen(t *testing.T) {
 }
 
 func TestPhonesScreenIsTranslated(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for lang, want := range map[string]string{"en": "Add a phone", "de": "Handy hinzufügen"} {
 		r := b.do(http.MethodGet, "/phones", nil, map[string]string{"Accept-Language": lang})
@@ -298,6 +308,7 @@ func TestPhonesScreenIsTranslated(t *testing.T) {
 
 // 5.13: With the box's own CA the QR flow points phones to installing the CA first.
 func TestWithTheBoxsOwnCAThePhoneGetsTheTrustPageFirst(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.post("/phones/pairings", url.Values{})
 	raw := html.UnescapeString(joinURLRe.FindStringSubmatch(r.body)[1])
@@ -320,6 +331,7 @@ func TestWithTheBoxsOwnCAThePhoneGetsTheTrustPageFirst(t *testing.T) {
 }
 
 func TestWithAPublicCertificateTheQRCodeLeadsStraightToThePairing(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.public.name = "mia.dedyn.io"
 	r := b.post("/phones/pairings", url.Values{})
@@ -331,6 +343,7 @@ func TestWithAPublicCertificateTheQRCodeLeadsStraightToThePairing(t *testing.T) 
 
 // 5.13: The web interface is installable (valid manifest, icons).
 func TestWebInterfaceIsInstallable(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.logout()
 	m := b.get("/manifest.webmanifest")
@@ -383,6 +396,7 @@ func TestWebInterfaceIsInstallable(t *testing.T) {
 }
 
 func TestServiceWorkerIsServedFromTheRootScope(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.logout()
 	req, _ := http.NewRequest(http.MethodGet, b.srv.URL+"/sw.js", nil)
@@ -401,6 +415,7 @@ func TestServiceWorkerIsServedFromTheRootScope(t *testing.T) {
 // the timestamp and offers no changes. The service worker and offline.js do
 // this in the browser; the box hands both the texts and the scripts.
 func TestOfflineViewGetsItsTextsInBothLanguagesAndItsScripts(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for lang, want := range map[string]string{"en": "As of {time}, not connected", "de": "Stand {time}, nicht verbunden"} {
 		r := b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": lang})
@@ -424,6 +439,7 @@ func TestOfflineViewGetsItsTextsInBothLanguagesAndItsScripts(t *testing.T) {
 
 // Review of #118: the QR code carries a translated accessible label.
 func TestQRCodeHasATranslatedAccessibleLabel(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for lang, want := range map[string]string{"en": "QR code to pair a phone", "de": "QR-Code zum Koppeln eines Handys"} {
 		r := b.do(http.MethodPost, "/phones/pairings", url.Values{}, map[string]string{"Accept-Language": lang})
@@ -439,6 +455,7 @@ var verificationRe = regexp.MustCompile(`data-verification="([0-9 ]+)"`)
 // the phone shows a number the parent compares before confirming. A phone that
 // is not the one in the parent's hand shows another number.
 func TestPhoneAndParentSeeTheSameVerificationNumber(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	path := showCode(t, b)
 	phone := newScreen(b)
@@ -464,6 +481,7 @@ func TestPhoneAndParentSeeTheSameVerificationNumber(t *testing.T) {
 }
 
 func TestVerificationNumberIsInTheAPIToo(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, shown, _ := c.call(http.MethodPost, "/phones/pairings", nil)
 	path := joinPath(t, `data-join-url="`+shown["url"].(string)+`"`)
@@ -477,6 +495,7 @@ func TestVerificationNumberIsInTheAPIToo(t *testing.T) {
 
 // Review of #118: a phone whose device session ran out is shown as expired.
 func TestPhoneWithAnExpiredSessionIsListedAsExpired(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	b.post("/login", loginForm(b, secret, "correct horse battery"))
 	pairedPhone(t, b, personNamed(t, b, "Mama"), "Old phone")
@@ -492,6 +511,7 @@ func TestPhoneWithAnExpiredSessionIsListedAsExpired(t *testing.T) {
 
 // Review of #118: the dark scheme gets its own status bar colour.
 func TestThemeColourFollowsTheColourScheme(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.logout()
 	head := b.get("/login").body
@@ -509,6 +529,7 @@ func TestThemeColourFollowsTheColourScheme(t *testing.T) {
 // The box hands both to offline.js as data attributes, in either page language,
 // so the script needs no request while offline.
 func TestOfflineScriptGetsTheHouseholdTimeAndDateFormat(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for _, lang := range []string{"en", "de"} {
 		r := b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": lang})

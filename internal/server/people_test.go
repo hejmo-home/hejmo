@@ -95,6 +95,7 @@ func columnOrder(page string) []string {
 }
 
 func TestPeoplePageNeedsASignedInParent(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	if r := b.get("/people"); r.status != http.StatusSeeOther || !strings.HasPrefix(r.location, "/login") {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
@@ -115,6 +116,7 @@ func TestPeoplePageNeedsASignedInParent(t *testing.T) {
 
 // Acceptance: Given a parent adds the child Mia, then she gets a column on the displays.
 func TestAddedChildGetsAColumnOnTheDisplays(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	if got := columnOrder(p.display.get("/display", "en").body); len(got) != 1 {
 		t.Fatalf("columns before = %v", got)
@@ -139,6 +141,7 @@ func TestAddedChildGetsAColumnOnTheDisplays(t *testing.T) {
 }
 
 func TestAddingAPersonNeedsANameAndKeepsWhatWasTyped(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	r := p.do(http.MethodPost, "/people", url.Values{"name": {" "}, "role": {"child"}}, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-name"`) {
@@ -155,6 +158,7 @@ func TestAddingAPersonNeedsANameAndKeepsWhatWasTyped(t *testing.T) {
 
 // Acceptance: Changing a person's colour changes their column, chips and markers everywhere.
 func TestChangingAColourChangesColumnChipsAndMarkersEverywhere(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")
 	id := mia["id"].(string)
@@ -198,6 +202,7 @@ func TestChangingAColourChangesColumnChipsAndMarkersEverywhere(t *testing.T) {
 }
 
 func TestPersonCanBeRenamedAndNeedsAName(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	id := p.add(t, "Mia", "child")["id"].(string)
 	if r := p.save(id, url.Values{"name": {"Mia Maier"}, "color": {"#2F5E7A"}, "shape": {"circle-empty"}}); r.status != http.StatusSeeOther {
@@ -219,6 +224,7 @@ func TestPersonCanBeRenamedAndNeedsAName(t *testing.T) {
 }
 
 func TestOnlyThePaletteColoursAndKnownMarkersAreOffered(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	id := p.add(t, "Mia", "child")["id"].(string)
 	for name, f := range map[string]url.Values{
@@ -243,6 +249,7 @@ func TestOnlyThePaletteColoursAndKnownMarkersAreOffered(t *testing.T) {
 // Acceptance: Colours and markers stay distinguishable (no two people with the
 // same marker shape and colour).
 func TestNoTwoPeopleShareMarkerShapeAndColour(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mama := p.byName(t, "Mama")
 	mia := p.add(t, "Mia", "child")
@@ -291,6 +298,7 @@ func TestNoTwoPeopleShareMarkerShapeAndColour(t *testing.T) {
 }
 
 func TestAddingAPersonLetsTheParentPickColourAndMarker(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	r := p.post("/people", url.Values{"name": {"Mia"}, "role": {"child"}, "color": {"#9A7420"}, "shape": {"diamond-filled"}})
 	if r.status != http.StatusSeeOther {
@@ -307,6 +315,7 @@ func TestAddingAPersonLetsTheParentPickColourAndMarker(t *testing.T) {
 }
 
 func TestParentOrdersPeopleForTheFamilyView(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	p.add(t, "Papa", "parent")
 	mia := p.add(t, "Mia", "child")["id"].(string)
@@ -348,6 +357,7 @@ func TestParentOrdersPeopleForTheFamilyView(t *testing.T) {
 }
 
 func TestAPIChangesAPersonAndTheOrder(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	papa := p.add(t, "Papa", "parent")["id"].(string)
@@ -404,6 +414,7 @@ func TestAPIChangesAPersonAndTheOrder(t *testing.T) {
 }
 
 func TestParentManagesSubgroups(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	sebastian := p.add(t, "Sebastian", "child")["id"].(string)
@@ -469,6 +480,7 @@ func TestParentManagesSubgroups(t *testing.T) {
 }
 
 func TestSubgroupInUseIsNotDeleted(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	h, _ := p.db.HomeHousehold()
@@ -489,6 +501,7 @@ func TestSubgroupInUseIsNotDeleted(t *testing.T) {
 }
 
 func TestAPIChangesAndDeletesSubgroups(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	status, g, _ := p.api.call(http.MethodPost, "/groups", map[string]any{"name": "School children", "members": []string{mia}})
@@ -515,6 +528,7 @@ func TestAPIChangesAndDeletesSubgroups(t *testing.T) {
 }
 
 func TestPeopleAreReachableFromTheSettingsHub(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	if page := navHrefRe.FindString(p.en("/").body); strings.Contains(page, `href="/people"`) { // the first steps card on Home may link to it
 		t.Errorf("the navigation has People, which belongs to the Settings hub (ADR 0017):\n%s", page)
@@ -525,6 +539,7 @@ func TestPeopleAreReachableFromTheSettingsHub(t *testing.T) {
 }
 
 func TestPeoplePageIsGerman(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	p.add(t, "Mia", "child")
 	page := p.do(http.MethodGet, "/people", nil, map[string]string{"Accept-Language": "de"}).body
@@ -538,6 +553,7 @@ func TestPeoplePageIsGerman(t *testing.T) {
 // A person stored with a colour outside the palette (the old API took any hex)
 // can still be renamed; only a colour or marker that is sent is checked.
 func TestAPIRenamesAPersonWithALegacyColour(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	h, _ := p.db.HomeHousehold()
 	legacy, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#123456", Shape: "circle-empty"})
@@ -572,6 +588,7 @@ func TestAPIRenamesAPersonWithALegacyColour(t *testing.T) {
 }
 
 func TestAPIGroupNamesAreAtMost80Characters(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	// The contract refuses a long name before it is sent; the box refuses it too.
 	send := func(method, path, name string) int {
@@ -601,6 +618,7 @@ func TestAPIGroupNamesAreAtMost80Characters(t *testing.T) {
 // two parents and six children, each with their own colour AND their own marker
 // shape; only from the ninth person on do colours and shapes repeat.
 func TestEightPeopleGetDistinctColoursAndDistinctShapes(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	for _, n := range []struct{ name, role string }{{"Papa", "parent"}, {"Sebastian", "child"}, {"Mia", "child"}, {"Jonas", "child"}, {"Lotta", "child"}, {"Ben", "child"}, {"Emma", "child"}} {
 		p.add(t, n.name, n.role)
@@ -639,6 +657,7 @@ func TestEightPeopleGetDistinctColoursAndDistinctShapes(t *testing.T) {
 
 // The eighth colour and marker can be chosen in the web form and through the API.
 func TestSeventhAndEighthColourAndMarkerAreAccepted(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	id := p.add(t, "Mia", "child")["id"].(string)
 	for _, look := range []struct{ color, shape string }{{"#5559A3", "cross-filled"}, {"#B04A6A", "star-filled"}} {

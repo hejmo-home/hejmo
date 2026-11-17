@@ -59,6 +59,7 @@ func firstAlbumID(t *testing.T, page string) string {
 }
 
 func TestSettingsHubOffersPhotosAfterDisplaysAndNamesItsState(t *testing.T) {
+	t.Parallel()
 	b, c := photoBoxWith(t)
 	hub := b.get("/settings").body
 	if i, j := strings.Index(hub, `href="/displays"`), strings.Index(hub, `href="/photos"`); i < 0 || j < i || j > strings.Index(hub, `href="/phones"`) {
@@ -75,6 +76,7 @@ func TestSettingsHubOffersPhotosAfterDisplaysAndNamesItsState(t *testing.T) {
 }
 
 func TestPhotosPageWithoutPhotosExplainsAndOffersTheFirstAction(t *testing.T) {
+	t.Parallel()
 	b, _ := photoBoxWith(t)
 	r := b.get("/photos")
 	if r.status != http.StatusOK {
@@ -92,6 +94,7 @@ func TestPhotosPageWithoutPhotosExplainsAndOffersTheFirstAction(t *testing.T) {
 }
 
 func TestPhotosPageNamesStorageAlbumsAndTheDisplaysThatShowThem(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	c := newAPIClient(t, f.box)
 	c.cookie = true
@@ -118,6 +121,7 @@ func TestPhotosPageNamesStorageAlbumsAndTheDisplaysThatShowThem(t *testing.T) {
 }
 
 func TestUploadWithoutScriptAddsPhotosAndNamesWhatWasRefused(t *testing.T) {
+	t.Parallel()
 	b, c := photoBoxWith(t)
 	def := defaultAlbum(t, c)
 	r := b.postFiles("/photos/upload", map[string]string{"album": def}, map[string][]byte{"IMG_1.jpg": jpegPhoto(t, 640, 480), "Reiseplan Gardasee.pdf": []byte("%PDF-1.7")})
@@ -135,6 +139,7 @@ func TestUploadWithoutScriptAddsPhotosAndNamesWhatWasRefused(t *testing.T) {
 }
 
 func TestFullStoragePageSaysSoAndLocksUploads(t *testing.T) {
+	t.Parallel()
 	b, c := photoBoxWith(t)
 	def := defaultAlbum(t, c)
 	h, _ := b.db.HomeHousehold()
@@ -156,6 +161,7 @@ func TestFullStoragePageSaysSoAndLocksUploads(t *testing.T) {
 }
 
 func TestAlbumPageHidesPhotosAndMovesAndDeletesThroughASelection(t *testing.T) {
+	// Not parallel: reading photos has a wall-clock budget per request, which a loaded machine overruns.
 	b, c := photoBoxWith(t)
 	def := defaultAlbum(t, c)
 	other := newAlbum(t, c, "Oma und Opa")
@@ -207,6 +213,7 @@ func householdIDOf(b *box) string {
 }
 
 func TestDeletingAnAlbumNamesItsPhotosAndEveryAffectedDisplay(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	c := newAPIClient(t, f.box)
 	c.cookie = true
@@ -237,6 +244,7 @@ func TestDeletingAnAlbumNamesItsPhotosAndEveryAffectedDisplay(t *testing.T) {
 }
 
 func TestNewAlbumNeedsAFreeName(t *testing.T) {
+	t.Parallel()
 	b, c := photoBoxWith(t)
 	if r := b.post("/photos/albums", url.Values{"album_name": {"Oma und Opa"}}); r.status != http.StatusSeeOther || !strings.Contains(r.location, "/photos/albums/") {
 		t.Fatalf("create = %d %s", r.status, r.location)
@@ -253,6 +261,7 @@ func TestNewAlbumNeedsAFreeName(t *testing.T) {
 }
 
 func TestPhotoLimitCanBeChangedAndIsChecked(t *testing.T) {
+	t.Parallel()
 	b, _ := photoBoxWith(t)
 	if r := b.post("/photos/limit", url.Values{"photo_limit": {"5"}}); r.status != http.StatusSeeOther {
 		t.Fatalf("set limit = %d", r.status)
@@ -266,6 +275,7 @@ func TestPhotoLimitCanBeChangedAndIsChecked(t *testing.T) {
 }
 
 func TestOnlyAdultsSeeThePhotoPages(t *testing.T) {
+	t.Parallel()
 	b, _ := photoBoxWith(t)
 	kid := childSession(t, b)
 	for _, path := range []string{"/photos", "/photos/albums/" + firstAlbumID(t, b.get("/photos").body)} {
@@ -279,6 +289,7 @@ func TestOnlyAdultsSeeThePhotoPages(t *testing.T) {
 }
 
 func TestNothingOnThePhotoPagesNamesADevice(t *testing.T) {
+	t.Parallel()
 	// The browser converts photos from any phone or computer: no text says iPhone.
 	for _, lang := range []string{"de", "en"} {
 		raw, err := os.ReadFile(fmt.Sprintf("../i18n/locales/%s.json", lang))
@@ -297,6 +308,7 @@ func TestNothingOnThePhotoPagesNamesADevice(t *testing.T) {
 // album, a photo lying directly in the folder is in the default album, and an
 // album from a folder is changed only in the folder.
 func TestSubfoldersBecomeAlbumsAndLooseFilesGoToTheDefaultAlbum(t *testing.T) {
+	// Not parallel: reading photos has a wall-clock budget per request, which a loaded machine overruns.
 	b, c := photoBoxWith(t)
 	root := filepath.Join(b.photoDir, "photos")
 	writeFile := func(rel string, data []byte) {
@@ -381,6 +393,7 @@ func TestSubfoldersBecomeAlbumsAndLooseFilesGoToTheDefaultAlbum(t *testing.T) {
 func firstStatus(status int, _ map[string]any, _ []any) int { return status }
 
 func TestFolderPhotosWaitWhenThereIsNoSpaceAndTheBoxDeletesNothing(t *testing.T) {
+	// Not parallel: reading photos has a wall-clock budget per request, which a loaded machine overruns.
 	b, c := photoBoxWith(t)
 	h := householdIDOf(b)
 	def := defaultAlbum(t, c)

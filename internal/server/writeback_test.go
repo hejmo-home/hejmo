@@ -27,6 +27,7 @@ func twoWayCalendar(t *testing.T) (*apiClient, *caldavtest.Server, string, strin
 }
 
 func TestACalDAVCalendarIsTwoWayAndEventsEditedOnTheBoxReachTheServer(t *testing.T) {
+	t.Parallel()
 	c, srv, remote, calID := twoWayCalendar(t)
 	_, cal, _ := c.call(http.MethodGet, "/calendars", nil)
 	for _, x := range cal {
@@ -60,6 +61,7 @@ func TestACalDAVCalendarIsTwoWayAndEventsEditedOnTheBoxReachTheServer(t *testing
 }
 
 func TestAReadOnlyCalDAVCalendarRefusesEditsAndTwoWayAllowsThemAgain(t *testing.T) {
+	t.Parallel()
 	c, _, _, calID := twoWayCalendar(t)
 	event := map[string]any{"calendar_id": calID, "title": "Piano", "start": "2026-11-21T15:00:00+01:00", "end": "2026-11-21T16:00:00+01:00"}
 
@@ -81,6 +83,7 @@ func TestAReadOnlyCalDAVCalendarRefusesEditsAndTwoWayAllowsThemAgain(t *testing.
 }
 
 func TestOnlyCalDAVCalendarsHaveTheReadOnlySwitch(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf(), nil)
 	ics := c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
@@ -93,6 +96,7 @@ func TestOnlyCalDAVCalendarsHaveTheReadOnlySwitch(t *testing.T) {
 }
 
 func TestConnectionPageSwitchesTwoWayAndReadOnly(t *testing.T) {
+	t.Parallel()
 	c, _, _, calID := twoWayCalendar(t)
 	synced, err := c.b.db.SyncedCalendar(mustHousehold(t, c).ID, calID)
 	if err != nil {
@@ -140,6 +144,7 @@ func TestConnectionPageSwitchesTwoWayAndReadOnly(t *testing.T) {
 }
 
 func TestEventsWrittenOnTheBoxCountInTheAPIsEventCount(t *testing.T) {
+	t.Parallel()
 	c, _, _, calID := twoWayCalendar(t)
 	for i, day := range []string{"21", "22"} {
 		status, ev, _ := c.call(http.MethodPost, "/events", map[string]any{"calendar_id": calID, "title": "Piano " + strconv.Itoa(i), "start": "2026-11-" + day + "T15:00:00+01:00", "end": "2026-11-" + day + "T16:00:00+01:00"})
@@ -155,6 +160,7 @@ func TestEventsWrittenOnTheBoxCountInTheAPIsEventCount(t *testing.T) {
 }
 
 func TestSyncLogShowsTheVersionThatLostAConflict(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h := mustHousehold(t, c)
 	c.b.feeds.set(schoolFeed, feedOf(), nil)
@@ -179,6 +185,7 @@ func TestSyncLogShowsTheVersionThatLostAConflict(t *testing.T) {
 func msgOf(key string, kv ...string) i18n.Message { return i18n.Msg(key, kv...) }
 
 func TestAnEventSavedOnAPhoneInASharedTwoWayCalendarReachesTheServer(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	remote := srv.MakeCalendar(t, "shared", "Shared")
 	conn := c.connect(t, davCreds(srv))
@@ -210,6 +217,7 @@ func TestAnEventSavedOnAPhoneInASharedTwoWayCalendarReachesTheServer(t *testing.
 // The week view's own screens (create, edit, delete) must write back to a
 // two-way CalDAV calendar just as the API does.
 func TestEventsMadeInTheWebScreensOfATwoWayCalendarReachTheServer(t *testing.T) {
+	t.Parallel()
 	c, srv, remote, calID := twoWayCalendar(t)
 	b := c.b
 	post := func(path string, form url.Values) {
@@ -249,6 +257,7 @@ func TestEventsMadeInTheWebScreensOfATwoWayCalendarReachTheServer(t *testing.T) 
 // calendars take box writes and they have no page of their own, ADR 0017; the fact on the page of a
 // subscribed calendar is covered in sync_feedback_test.go.)
 func TestEventsWrittenOnTheBoxCountInTheSyncedFlash(t *testing.T) {
+	t.Parallel()
 	c, _, _, calID := twoWayCalendar(t)
 	for i, day := range []string{"21", "22"} {
 		status, ev, _ := c.call(http.MethodPost, "/events", map[string]any{"calendar_id": calID, "title": "Piano " + strconv.Itoa(i), "start": "2026-11-" + day + "T15:00:00+01:00", "end": "2026-11-" + day + "T16:00:00+01:00"})

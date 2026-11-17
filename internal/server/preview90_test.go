@@ -22,6 +22,7 @@ import (
 // by a box holding the example family.
 // Run: HEJMO_WRITE_PREVIEW_90=../../docs/design/preview-90.html go test ./internal/server -run WriteDesignPreview90
 func TestWriteDesignPreview90(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_90")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_90 to the output path to write the preview")

@@ -43,6 +43,7 @@ func shopOnDisplay(t *testing.T) (*familyBox, string, map[string]string) {
 		}
 		ids[e.text] = r.Entry.ID
 	}
+	f.showRows(t) // the editor belongs to the rows, tiles show the quantity only
 	f.now = f.at(14, 9, 0)
 	return f, l.ID, ids
 }

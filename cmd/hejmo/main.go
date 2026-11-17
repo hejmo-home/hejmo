@@ -29,6 +29,7 @@ import (
 	_ "time/tzdata" // DST rules independent of the host system
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/secret"
@@ -136,10 +137,16 @@ func run(cfg config, logger *slog.Logger) error {
 		return err
 	}
 
+	// The one door to the outside (ticket 201): every connection of the box
+	// goes through it, and offline mode closes it. A library that falls back to
+	// the default HTTP client is stopped there too.
+	gate := outbound.New(db.Outbound(), db.Outbound())
+	defer outbound.InstallDefault(gate)()
+
 	// A public certificate (ADR 0014), if the family chose a name in the
 	// wizard: its DNS token is sealed with a key file (ADR 0012), by default
 	// next to the database.
-	public, err := publiccert.New(filepath.Join(cfg.DataDir, "tls", "public"), db, sealer, publiccert.WithLogger(logger))
+	public, err := publiccert.New(filepath.Join(cfg.DataDir, "tls", "public"), db, sealer, publiccert.WithLogger(logger), publiccert.WithGate(gate))
 	if err != nil {
 		return err
 	}
@@ -156,6 +163,7 @@ func run(cfg config, logger *slog.Logger) error {
 	// syncs on its own interval (60 minutes for ICS by default).
 	syncer := calsync.New(db, nil, nil)
 	syncer.SetLogger(logger)
+	syncer.SetGate(gate)
 	schedulerDone := make(chan struct{})
 	go func() {
 		defer close(schedulerDone)
@@ -177,7 +185,7 @@ func run(cfg config, logger *slog.Logger) error {
 
 	// The weather chip's reading: the box asks Open-Meteo every 15 minutes, a
 	// display never does (ADR 0016).
-	forecast := weather.New()
+	forecast := weather.New(weather.WithGate(gate))
 	weatherDone := make(chan struct{})
 	go func() {
 		defer close(weatherDone)
@@ -185,7 +193,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-weatherDone }()
 
-	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Done: ctx.Done(), UpdateDir: cfg.UpdateDir, PhotoDir: cfg.DataDir})
+	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Gate: gate, Done: ctx.Done(), UpdateDir: cfg.UpdateDir, PhotoDir: cfg.DataDir})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).
@@ -357,7 +365,7 @@ func backup(cfg config, dest string) error {
 
 // healthcheck asks the box at baseURL for /healthz.
 func healthcheck(baseURL string) error {
-	client := &http.Client{Timeout: 3 * time.Second}
+	client := outbound.Local(3 * time.Second)
 	res, err := client.Get(baseURL + "/healthz")
 	if err != nil {
 		return err

@@ -23,6 +23,7 @@ func (c *apiClient) calendarJSON(t *testing.T, id string) map[string]any {
 // ADR 0012: the family calendar is always served; ICS calendars are shared by
 // default; a parent can switch sharing off for synced calendars.
 func TestShareThroughTheBoxIsVisibleAndChangeableThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, family := familyOf(t, c)
 	c.b.feeds.set(schoolFeed, feedOf(), nil)
@@ -52,6 +53,7 @@ func TestShareThroughTheBoxIsVisibleAndChangeableThroughTheAPI(t *testing.T) {
 }
 
 func TestDeviceTokensAreListedWithoutTheirSecret(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, made, _ := c.call(http.MethodPost, "/tokens", map[string]any{"name": "iPhone Mama", "scopes": "calendars"})
 	if status != http.StatusCreated {
@@ -89,6 +91,7 @@ var deviceTokenRe = regexp.MustCompile(`data-device-token="(hejmo_[^"]+)"`)
 // A parent creates a device token ("iPhone Mama") in the web interface and
 // uses it as the password; tokens are revoked one by one.
 func TestParentManagesDeviceTokensAndSharingInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	h, _ := familyOf(t, c)
@@ -154,6 +157,7 @@ func TestParentManagesDeviceTokensAndSharingInTheWebInterface(t *testing.T) {
 }
 
 func TestCalDAVPageIsGerman(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	page := c.b.do(http.MethodGet, "/caldav", nil, map[string]string{"Accept-Language": "de"})
 	if !strings.Contains(page.body, "Kalender-Apps") {
@@ -162,6 +166,7 @@ func TestCalDAVPageIsGerman(t *testing.T) {
 }
 
 func TestCalDAVPageNeedsASignedInParent(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	if r := b.get("/caldav"); r.status != http.StatusSeeOther || r.location != "/login?next=%2Fcaldav" {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
@@ -172,6 +177,7 @@ func TestCalDAVPageNeedsASignedInParent(t *testing.T) {
 }
 
 func TestUsingATokenOverTheRESTAPIMarksItAsUsed(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, made, _ := c.call(http.MethodPost, "/tokens", map[string]any{"name": "script", "scopes": "read"})
 	if status, _, _ := c.withToken(made["token"].(string)).call(http.MethodGet, "/me", nil); status != http.StatusOK {
@@ -184,6 +190,7 @@ func TestUsingATokenOverTheRESTAPIMarksItAsUsed(t *testing.T) {
 }
 
 func TestMalformedCalendarPatchIsABadRequest(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, family := familyOf(t, c)
 	req, _ := http.NewRequest(http.MethodPatch, c.b.srv.URL+"/api/v1/calendars/"+family.ID, strings.NewReader("{"))

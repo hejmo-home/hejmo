@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/weather"
 )
 
@@ -37,7 +38,7 @@ var t0 = time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)
 func TestRefreshReadsTemperatureAndIconFromOpenMeteo(t *testing.T) {
 	srv, _, q := openMeteo(t, sunny, 200)
 	now := t0
-	s := weather.New(weather.WithBaseURL(srv.URL), weather.WithClock(func() time.Time { return now }))
+	s := weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL(srv.URL), weather.WithClock(func() time.Time { return now }))
 	if _, ok := s.Latest(48.15, 11.46); ok {
 		t.Fatal("reading before any refresh")
 	}
@@ -64,7 +65,7 @@ func TestIconsFollowTheWMOCodeAndDaylight(t *testing.T) {
 	} {
 		body := `{"current":{"temperature_2m":1,"weather_code":` + itoa(c.code) + `,"is_day":` + itoa(c.day) + `}}`
 		srv, _, _ := openMeteo(t, body, 200)
-		s := weather.New(weather.WithBaseURL(srv.URL))
+		s := weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL(srv.URL))
 		if err := s.Refresh(context.Background(), 1, 2); err != nil {
 			t.Fatal(err)
 		}
@@ -80,7 +81,7 @@ func itoa(i int) string { return strconv.Itoa(i) }
 func TestLastValueStaysWhileOpenMeteoIsUnreachableThenHides(t *testing.T) {
 	good, _, _ := openMeteo(t, sunny, 200)
 	now := t0
-	s := weather.New(weather.WithBaseURL(good.URL), weather.WithClock(func() time.Time { return now }))
+	s := weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL(good.URL), weather.WithClock(func() time.Time { return now }))
 	if err := s.Refresh(context.Background(), 1, 2); err != nil {
 		t.Fatal(err)
 	}
@@ -112,7 +113,7 @@ func TestErrorAnswersAndGarbageKeepTheLastValue(t *testing.T) {
 				_, _ = w.Write([]byte(cur.Load().(string)))
 			}))
 			defer srv.Close()
-			s := weather.New(weather.WithBaseURL(srv.URL), weather.WithClock(func() time.Time { return t0 }))
+			s := weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL(srv.URL), weather.WithClock(func() time.Time { return t0 }))
 			if err := s.Refresh(context.Background(), 1, 2); err != nil {
 				t.Fatal(err)
 			}
@@ -131,7 +132,7 @@ func TestErrorAnswersAndGarbageKeepTheLastValue(t *testing.T) {
 // The reading belongs to the location it was fetched for.
 func TestReadingIsOnlyForItsLocation(t *testing.T) {
 	srv, _, _ := openMeteo(t, sunny, 200)
-	s := weather.New(weather.WithBaseURL(srv.URL))
+	s := weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL(srv.URL))
 	_ = s.Refresh(context.Background(), 1, 2)
 	if _, ok := s.Latest(3, 4); ok {
 		t.Fatal("reading for another location")
@@ -162,7 +163,7 @@ func (h *fakeHome) Home() (lat, lon float64, err error) {
 // place picked in the list on the box (ADR 0023).
 func TestKeepRefreshesTheWeatherAtTheStoredCoordinates(t *testing.T) {
 	fc, hits, q := openMeteo(t, sunny, 200)
-	s := weather.New(weather.WithBaseURL(fc.URL))
+	s := weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL(fc.URL))
 	if err := s.Keep(context.Background(), &fakeHome{lat: 48.15, lon: 11.46}); err != nil {
 		t.Fatal(err)
 	}
@@ -178,7 +179,7 @@ func TestKeepRefreshesTheWeatherAtTheStoredCoordinates(t *testing.T) {
 // picks a place) is not looked up by name any more: nothing goes out.
 func TestKeepDoesNothingWhileTheHomeHasNoLocation(t *testing.T) {
 	fc, hits, _ := openMeteo(t, sunny, 200)
-	s := weather.New(weather.WithBaseURL(fc.URL))
+	s := weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL(fc.URL))
 	for i := 0; i < 2; i++ {
 		if err := s.Keep(context.Background(), &fakeHome{}); err != nil {
 			t.Fatal(err)
@@ -190,7 +191,7 @@ func TestKeepDoesNothingWhileTheHomeHasNoLocation(t *testing.T) {
 }
 
 func TestKeepReportsFailuresAndDoesNothingWithoutAHome(t *testing.T) {
-	s := weather.New(weather.WithBaseURL("http://127.0.0.1:1"))
+	s := weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL("http://127.0.0.1:1"))
 	if err := s.Keep(context.Background(), &fakeHome{err: weather.ErrNoHome}); err != nil {
 		t.Fatalf("no home must not be an error: %v", err)
 	}
@@ -201,7 +202,7 @@ func TestKeepReportsFailuresAndDoesNothingWithoutAHome(t *testing.T) {
 
 // Only "no home yet" is quiet; a real database error is reported.
 func TestKeepReportsDatabaseErrors(t *testing.T) {
-	s := weather.New(weather.WithBaseURL("http://127.0.0.1:1"))
+	s := weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL("http://127.0.0.1:1"))
 	if err := s.Keep(context.Background(), &fakeHome{err: errors.New("disk I/O error")}); err == nil {
 		t.Fatal("database error swallowed")
 	}
@@ -211,7 +212,7 @@ func TestKeepReportsDatabaseErrors(t *testing.T) {
 // created after the box started.
 func TestRunRetriesSoonWhileThereIsNoReading(t *testing.T) {
 	fc, _, _ := openMeteo(t, sunny, 200)
-	s := weather.New(weather.WithBaseURL(fc.URL), weather.WithRetry(5*time.Millisecond))
+	s := weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL(fc.URL), weather.WithRetry(5*time.Millisecond))
 	home := &fakeHome{err: weather.ErrNoHome}
 	ctx, cancel := context.WithCancel(context.Background())
 	done := make(chan struct{})

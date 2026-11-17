@@ -2171,5 +2171,20 @@
   "allergen.molluscs.examples": "Mussels, snails, squid",
   "mcp.area.health": "Diet and allergies",
   "mcp.area.health.desc": "Health data of every person. Allow only if the assistant needs it, for example to plan fitting meals. Only a parent can change it here in Hejmo.",
-  "mcp.new.health_hint": "Allergies that Hejmo cannot check always reach the assistant with the note “not checked automatically, not filterable”."
+  "mcp.new.health_hint": "Allergies that Hejmo cannot check always reach the assistant with the note “not checked automatically, not filterable”.",
+  "unpaired.title": "This device is no longer paired",
+  "unpaired.kid": "Show this device to your parents. They can pair it again.",
+  "unpaired.cause": "That is why Hejmo shows nothing here right now. A parent removed the device or paired it for someone else, or the pairing ran out. Nothing has been deleted.",
+  "unpaired.parents.title": "For parents: how to pair it again",
+  "unpaired.step1.title": "Show the QR code",
+  "unpaired.step1.pre": "Open Hejmo on your device or computer, then",
+  "unpaired.step1.path": "Settings › Phones",
+  "unpaired.step1.post": "and tap \"Show QR code\".",
+  "unpaired.step2.title": "Scan the code",
+  "unpaired.step2.text": "Scan the code with the camera of this device.",
+  "unpaired.step3.title": "Compare the number",
+  "unpaired.step3.text": "Choose who the device is for and confirm when both devices show the same number.",
+  "unpaired.adult": "For adults: sign in with your own account",
+  "unpaired.adult.hint": "You then sign in in this browser only, with username and password or a passkey. The device stays unpaired.",
+  "unpaired.adult.button": "Go to sign-in"
 }

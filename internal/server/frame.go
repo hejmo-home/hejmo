@@ -65,6 +65,9 @@ type frame struct {
 	Success template.HTML
 	// Error is an error line shown above the page, already translated.
 	Error string
+	// PlainBrand shows the brand as plain text, not a link: the page of an
+	// unpaired device leads nowhere (ticket 199).
+	PlainBrand bool
 	// The language switcher (ticket 134): the active language, its own name and
 	// flag file, the other languages, and the page to come back to.
 	LangName, LangFlag string
@@ -173,6 +176,10 @@ var hubItems = []hubItem{
 	{"/account", "hub.otp", "hub.otp.hint", auth.Perm("settings", auth.Write)},
 	{"/sessions", "hub.sessions", "hub.sessions.hint", auth.Perm("settings", auth.Write)},
 }
+
+// plainBrandPages are the templates whose brand is plain text, not a link: the
+// page of an unpaired device leads nowhere (ticket 199).
+var plainBrandPages = map[string]bool{"unpaired.html": true}
 
 // detailPages are the templates of detail pages (ticket 111, ADR 0017): they
 // start with a link back to their overview, which replaces the hub link.

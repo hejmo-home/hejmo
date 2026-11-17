@@ -10,6 +10,7 @@ import (
 // area "health", and then at most read only.
 
 func TestMCPGivesDietAndAllergiesOnlyWithTheHealthGrant(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	c := tb.parent
 	c.switchMCP(t, true)
@@ -46,6 +47,7 @@ func TestMCPGivesDietAndAllergiesOnlyWithTheHealthGrant(t *testing.T) {
 }
 
 func TestMCPTokenCannotBeGivenChangeRightsOnHealthDataAndDefaultsToNone(t *testing.T) {
+	t.Parallel()
 	c := newTaskBox(t).parent
 	if status, _, _ := c.call(http.MethodPost, "/mcp/tokens", map[string]any{"name": "Böse", "areas": map[string]string{"events": "read", "health": "write"}}); status != http.StatusUnprocessableEntity {
 		t.Errorf("health write = %d, want 422", status)

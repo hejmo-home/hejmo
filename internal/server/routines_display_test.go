@@ -41,6 +41,7 @@ func routineBox(t *testing.T, page string) string {
 // Acceptance: Given Mia's morning routine with four steps, when all are
 // ticked off, then the progress shows 4/4.
 func TestPersonalViewShowsFourOfFourWhenTheMorningRoutineIsDone(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	_, steps := f.routineFor(t, "Mia", "Morning routine", task.Morning, "Brush teeth", "Get dressed", "Breakfast", "Pack school bag")
 	f.now = f.at(14, 7, 0)
@@ -69,6 +70,7 @@ func TestPersonalViewShowsFourOfFourWhenTheMorningRoutineIsDone(t *testing.T) {
 // ADR 0018 / 0016: the head count and the family column count every task of
 // today, routine steps and single tasks together; the family view shows no routine bar.
 func TestProgressCountsRoutineStepsAndSingleTasksTogether(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	_, steps := f.routineFor(t, "Mia", "Morning routine", task.Morning, "Brush teeth", "Get dressed", "Breakfast")
 	f.task(t, "Mia", "Feed the cat", task.Daily)
@@ -90,6 +92,7 @@ func TestProgressCountsRoutineStepsAndSingleTasksTogether(t *testing.T) {
 
 // Acceptance: Given a parent reorders steps, then the personal view shows the new order.
 func TestPersonalViewShowsTheParentsNewOrder(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	r, steps := f.routineFor(t, "Mia", "Morning routine", task.Morning, "Brush teeth", "Get dressed", "Breakfast")
 	order := func() string {
@@ -113,6 +116,7 @@ func TestPersonalViewShowsTheParentsNewOrder(t *testing.T) {
 // The display shows the parts in order, with the routine in its part, the
 // first open step marked for children who cannot read, and done steps in place.
 func TestPersonalViewShowsPartsRoutinesAndTheNextStep(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.routineFor(t, "Mia", "Morning routine", task.Morning, "Brush teeth", "Get dressed", "Breakfast")
 	f.routineFor(t, "Mia", "After school", task.AfterSchool, "Homework")
@@ -156,6 +160,7 @@ func TestPersonalViewShowsPartsRoutinesAndTheNextStep(t *testing.T) {
 
 // The star value of a step carries its unit for screen readers.
 func TestPersonalViewGivesTheStepStarsAUnitForScreenReaders(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.routineFor(t, "Mia", "Morning routine", task.Morning, "Brush teeth")
 	page := f.personalPage(t, "en", "Mia", 14, 8).body

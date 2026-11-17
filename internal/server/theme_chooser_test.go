@@ -33,6 +33,7 @@ func atHome(t *testing.T, b *box) {
 // switcher and Sign out, with the four choices in the order light, dark,
 // automatic, follow the device.
 func TestParentFindsTheThemeChooserInTheBrandBar(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	page := getEN(b, "/").body
 	bar := page[strings.Index(page, `<header class="frame-bar">`):strings.Index(page, "</header>")]
@@ -64,6 +65,7 @@ func TestParentFindsTheThemeChooserInTheBrandBar(t *testing.T) {
 
 // #125: language and theme menus are one exclusive group: opening one closes the other.
 func TestLanguageAndThemeMenusAreOneExclusiveGroup(t *testing.T) {
+	t.Parallel()
 	page := getEN(signedInBox(t), "/").body
 	if !strings.Contains(page, `<details class="lang" name="frame-tool"`) || !strings.Contains(page, `<details class="theme-pick" name="frame-tool"`) {
 		t.Errorf("language and theme menus do not share details name=frame-tool:\n%s", page)
@@ -72,6 +74,7 @@ func TestLanguageAndThemeMenusAreOneExclusiveGroup(t *testing.T) {
 
 // #125: the chooser reaches children: a child's phone has no Settings, but the brand bar.
 func TestChildsPhoneHasTheThemeChooserAndSaysPhone(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	for _, path := range []string{"/", "/tasks"} {
 		menu := themePick(t, cp.screen.get(path, "de").body)
@@ -88,6 +91,7 @@ func TestChildsPhoneHasTheThemeChooserAndSaysPhone(t *testing.T) {
 
 // #125: a browser session (not a paired phone) says browser and device.
 func TestBrowserChooserSaysBrowserAndDevice(t *testing.T) {
+	t.Parallel()
 	menu := themePick(t, signedInBox(t).get("/").body)
 	for _, w := range []string{"<legend>Design in diesem Browser</legend>", "Wie dein Gerät", "Gilt nur in diesem Browser. Alle anderen behalten ihr Design."} {
 		if !strings.Contains(menu, w) {
@@ -98,6 +102,7 @@ func TestBrowserChooserSaysBrowserAndDevice(t *testing.T) {
 
 // #125: the chooser is one place for everyone, so the Settings hub is a plain list again.
 func TestSettingsHubHasNoThemeBlock(t *testing.T) {
+	t.Parallel()
 	page := signedInBox(t).get("/settings").body
 	main := page[strings.Index(page, `<main`):]
 	if strings.Contains(main, "browser_theme") || strings.Contains(main, "data-theme-choices") {
@@ -107,6 +112,7 @@ func TestSettingsHubHasNoThemeBlock(t *testing.T) {
 
 // #125: the chooser is for signed-in pages; sign-in shows none.
 func TestSignedOutPagesHaveNoThemeChooser(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.logout()
 	if body := b.get("/login").body; strings.Contains(body, "theme-pick") {
@@ -117,6 +123,7 @@ func TestSignedOutPagesHaveNoThemeChooser(t *testing.T) {
 // #125: without a home location there are no sun times: "automatic" cannot be
 // chosen and says why; a child reads that an adult must enter the place.
 func TestWithoutHomeLocationAutomaticIsDisabledAndSaysWhy(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	noHome(t, cp.parent.b)
 	menu := themePick(t, cp.screen.get("/", "de").body)
@@ -137,6 +144,7 @@ func TestWithoutHomeLocationAutomaticIsDisabledAndSaysWhy(t *testing.T) {
 // #125: at a place with polar day or night there are no sun times either, but
 // the place is set: the reason must not say the place is missing.
 func TestPolarDayDisablesAutomaticWithoutSayingThePlaceIsMissing(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if _, err := b.db.SQL().Exec(`UPDATE households SET latitude = 78.2, longitude = 15.6`); err != nil {
 		t.Fatal(err)
@@ -156,6 +164,7 @@ func TestPolarDayDisablesAutomaticWithoutSayingThePlaceIsMissing(t *testing.T) {
 
 // #125: with a home location automatic works.
 func TestWithHomeLocationAutomaticCanBeChosen(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	atHome(t, b)
 	menu := themePick(t, b.get("/").body)
@@ -166,6 +175,7 @@ func TestWithHomeLocationAutomaticCanBeChosen(t *testing.T) {
 
 // #125: the success and error lines have their words from the locales, which the script reads.
 func TestChooserCarriesTheLinesTheScriptShows(t *testing.T) {
+	t.Parallel()
 	menu := themePick(t, getEN(signedInBox(t), "/").body)
 	for _, w := range []string{`data-saved="Saved: {name}."`, `data-error="Could not be saved in this browser. The theme lasts until the page reloads."`} {
 		if !strings.Contains(menu, w) {

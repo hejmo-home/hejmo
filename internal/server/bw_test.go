@@ -15,6 +15,7 @@ import (
 // 5.4: Given a fifth person, then they get a further distinct shape (and a
 // sixth another); the API hands out the defaults.
 func TestFifthAndSixthPersonGetFurtherDistinctShapes(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	shapes := map[string]string{}
 	_, me, _ := c.call(http.MethodGet, "/me", nil)
@@ -41,6 +42,7 @@ func TestFifthAndSixthPersonGetFurtherDistinctShapes(t *testing.T) {
 // colour a bw page can resolve to comes from the bw palette of DESIGN.md, and
 // the markup of the example family is held in a golden file.
 func TestBlackAndWhiteRenderingUsesOnlyTheBlackAndWhitePalette(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	f.event(t, "Football", f.at(14, 15, 0), f.at(14, 16, 0), false, "Sebastian", "Mia")
 	f.event(t, "Dentist", f.at(14, 9, 0), f.at(14, 10, 0), false, "Mama")

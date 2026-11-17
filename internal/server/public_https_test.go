@@ -19,6 +19,7 @@ func publicForm() url.Values {
 }
 
 func TestWizardOffersPublicNameBesideTheOwnCA(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	for lang, wants := range map[string][]string{
 		"de": {"deSEC", "Zugangstoken", "Actalis", `action="/setup/https/public"`, `name="lan_ip"`, `value="127.0.0.1"`},
@@ -36,6 +37,7 @@ func TestWizardOffersPublicNameBesideTheOwnCA(t *testing.T) {
 // Acceptance: given a deSEC token, when the wizard finishes, then the box
 // serves a certificate for the chosen name.
 func TestPublicSetupHandsTheWizardInputToTheCertificateManager(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := b.post("/setup/https/public", publicForm())
 	if r.status != http.StatusSeeOther || r.location != "/setup/https/check" {
@@ -57,6 +59,7 @@ func TestPublicSetupHandsTheWizardInputToTheCertificateManager(t *testing.T) {
 
 // Acceptance: given Actalis selected, then certificates are requested from Actalis.
 func TestActalisChoiceAndItsAccountKeysReachTheManager(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	f := publicForm()
 	f.Set("issuer", "actalis")
@@ -72,6 +75,7 @@ func TestActalisChoiceAndItsAccountKeysReachTheManager(t *testing.T) {
 }
 
 func TestPublicSetupFailuresAreExplainedAndTheFormComesBackWithoutTheToken(t *testing.T) {
+	t.Parallel()
 	cases := map[string]struct {
 		err    error
 		status int
@@ -106,6 +110,7 @@ func TestPublicSetupFailuresAreExplainedAndTheFormComesBackWithoutTheToken(t *te
 }
 
 func TestPublicSetupIsClosedOnceHTTPSOrTheBoxIsSetUp(t *testing.T) {
+	t.Parallel()
 	b := newBox(t) // own CA already in place
 	if r := b.post("/setup/https/public", publicForm()); r.status != http.StatusSeeOther || r.location != "/setup" {
 		t.Fatalf("POST after HTTPS = %d %q", r.status, r.location)
@@ -118,6 +123,7 @@ func TestPublicSetupIsClosedOnceHTTPSOrTheBoxIsSetUp(t *testing.T) {
 // Acceptance: given a name that does not resolve from the browser, then the
 // wizard shows the rebind help and checks again.
 func TestNameCheckPageShowsRebindHelpAndRetries(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.post("/setup/https/public", publicForm())
 
@@ -142,6 +148,7 @@ func TestNameCheckPageShowsRebindHelpAndRetries(t *testing.T) {
 }
 
 func TestNameCheckKeepsAConfiguredHTTPSPortInItsLinks(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.handler = serverWithHTTPSPort(b, "8443")
 	b.srv.Close()
@@ -154,6 +161,7 @@ func TestNameCheckKeepsAConfiguredHTTPSPortInItsLinks(t *testing.T) {
 }
 
 func TestNameCheckNeedsAPublicName(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	if r := b.get("/setup/https/check"); r.status != http.StatusSeeOther || r.location != "/setup/https" {
 		t.Fatalf("check page without public name = %d %q", r.status, r.location)
@@ -161,6 +169,7 @@ func TestNameCheckNeedsAPublicName(t *testing.T) {
 }
 
 func TestWithAPublicNameHTTPRedirectsToThatNameNotTheAddressUsed(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.post("/setup/https/public", publicForm())
 	plain := b.plainServer()
@@ -187,6 +196,7 @@ func TestWithAPublicNameHTTPRedirectsToThatNameNotTheAddressUsed(t *testing.T) {
 }
 
 func TestTrustPageOfTheOwnCAIsNotForPublicNames(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.post("/setup/https/public", publicForm())
 	if r := b.get("/ca"); r.status != http.StatusSeeOther || r.location != "/setup" {
@@ -197,6 +207,7 @@ func TestTrustPageOfTheOwnCAIsNotForPublicNames(t *testing.T) {
 // Acceptance: given a certificate that cannot be renewed, then parents see a
 // warning in the web interface (and the API).
 func TestParentsSeeAWarningWhenTheCertificateCannotBeRenewed(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	b.public.name = "mia.dedyn.io"
@@ -226,6 +237,7 @@ func TestParentsSeeAWarningWhenTheCertificateCannotBeRenewed(t *testing.T) {
 }
 
 func TestOwnCAModeReportsNoWarning(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, body, _ := c.call(http.MethodGet, "/https", nil)
 	if status != http.StatusOK || body["mode"] != "own-ca" || body["warning"] != false {
@@ -240,6 +252,7 @@ func TestOwnCAModeReportsNoWarning(t *testing.T) {
 // not trap the family: the check page offers the box's own CA instead, which
 // forgets the public setup (ADR 0014).
 func TestNameCheckPageOffersTheOwnCAAndSwitchingForgetsThePublicSetup(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.post("/setup/https/public", publicForm())
 	for lang, want := range map[string]string{"de": "Router lässt sich nicht ändern?", "en": "Cannot change the router?"} {
@@ -263,6 +276,7 @@ func TestNameCheckPageOffersTheOwnCAAndSwitchingForgetsThePublicSetup(t *testing
 }
 
 func TestSwitchingToTheOwnCAIsClosedOnceTheBoxIsSetUpOrHasNoPublicName(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.public.name = "mia.dedyn.io"
 	if r := c.b.post("/setup/https/own-ca", url.Values{}); r.status != http.StatusSeeOther || r.location != "/setup" {
@@ -284,6 +298,7 @@ func TestSwitchingToTheOwnCAIsClosedOnceTheBoxIsSetUpOrHasNoPublicName(t *testin
 // A stored setup that cannot be resumed (lost secret.key) leaves the box up;
 // parents and the wizard are told.
 func TestParentsAndTheWizardSeeAWarningWhenThePublicSetupCannotBeResumed(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.public.status = publiccert.Status{Warning: true, RenewalError: "publiccert: DNS token: cipher: message authentication failed"}
 	if r := c.b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": "en"}); !strings.Contains(r.body, "data-https-warning") {
@@ -305,6 +320,7 @@ func TestParentsAndTheWizardSeeAWarningWhenThePublicSetupCannotBeResumed(t *test
 // The family's browser may give up while the CA is slow; the order must not
 // be cancelled partway through.
 func TestPublicSetupSurvivesTheBrowserGivingUp(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.public.gate = make(chan struct{})
 	req, _ := http.NewRequest(http.MethodPost, b.srv.URL+"/setup/https/public", strings.NewReader(publicForm().Encode()))
@@ -334,6 +350,7 @@ func TestPublicSetupSurvivesTheBrowserGivingUp(t *testing.T) {
 // (name set, warning raised): plain HTTP must keep redirecting, never serve
 // login, API or CalDAV (ADR 0014).
 func TestConfiguredBoxWithAWarnedPublicSetupStillRedirectsHTTP(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	b.public.name = "mia.dedyn.io"
@@ -355,6 +372,7 @@ func TestConfiguredBoxWithAWarnedPublicSetupStillRedirectsHTTP(t *testing.T) {
 // A failed public attempt may leave a warning in the manager; choosing the
 // box's own CA afterwards must leave none behind.
 func TestOwnCAAfterAFailedPublicAttemptLeavesNoWarning(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.public.failure = errors.New("acme: the CA is down")
 	b.public.warnOnFailure = true
@@ -372,6 +390,7 @@ func TestOwnCAAfterAFailedPublicAttemptLeavesNoWarning(t *testing.T) {
 // A stored public setup whose certificate could not be obtained: the manager
 // is ready but has nothing to serve, so the box's own CA is what phones get.
 func TestOwnCAFallbackWithoutAPublicCertificateIsReportedAndOffersItsTrustPage(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	b.public.name, b.public.noCert = "mia.dedyn.io", true
@@ -390,6 +409,7 @@ func TestOwnCAFallbackWithoutAPublicCertificateIsReportedAndOffersItsTrustPage(t
 // name check and could not obtain the certificate): the wizard must not
 // redirect away from the HTTPS step, and the own CA must be choosable.
 func TestWizardOffersTheHTTPSStepAgainWhenThePublicCertificateIsMissing(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.public.name, b.public.noCert = "mia.dedyn.io", true
 	if r := b.get("/setup/https"); r.status != http.StatusOK {
@@ -404,6 +424,7 @@ func TestWizardOffersTheHTTPSStepAgainWhenThePublicCertificateIsMissing(t *testi
 // The box restarted during the name check: its public certificate is there,
 // no own CA was made for the public name, and the own CA can still be chosen.
 func TestOwnCAChoiceAfterARestartDuringTheNameCheck(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.public.name = "mia.dedyn.io" // as after Start with the stored setup
 	r := b.post("/setup/https/own-ca", url.Values{})

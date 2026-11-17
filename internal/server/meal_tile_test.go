@@ -40,6 +40,7 @@ const longDish = "Kartoffel-Lauch-Suppe mit geräucherten Forellenfilets, Meerre
 
 // 6.4: the four states of the preview, in colour and black and white, plus a long German dish.
 func TestMealTileSnapshots(t *testing.T) {
+	t.Parallel()
 	for _, tc := range []struct{ name, display string }{{"colour", "eink_color"}, {"bw", "eink_bw"}} {
 		t.Run(tc.name, func(t *testing.T) {
 			f := newFamilyBox(t, tc.display)
@@ -91,6 +92,7 @@ func compareGolden(t *testing.T, golden, got string) {
 
 // 6.4: the markup of the meal tile follows the preview.
 func TestMealTileMarkup(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.plan(t, dayPlan)
 	several := f.footer(t, "en", 14, 7, 15)
@@ -117,6 +119,7 @@ func TestMealTileMarkup(t *testing.T) {
 // 6.4: a mealtime vanishes at its cut-off minute without interaction: the
 // version the display's event stream announces changes, so the display swaps the view.
 func TestMealTileCutoffChangesTheViewVersion(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.plan(t, dayPlan)
 	version := func(h, m int) string {
@@ -129,6 +132,7 @@ func TestMealTileCutoffChangesTheViewVersion(t *testing.T) {
 
 // 6.4: if the meal plan cannot be read the view renders without the tile, not with an error.
 func TestMealTileIsLeftOutWhenTheMealsCannotBeRead(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.plan(t, dayPlan)
 	if !strings.Contains(f.view(t, "en", f.at(14, 7, 15)), `data-tile="meal"`) {
@@ -144,6 +148,7 @@ func TestMealTileIsLeftOutWhenTheMealsCannotBeRead(t *testing.T) {
 
 // ADR 0015/0016: regression guard: the display page's language is set so the browser can hyphenate.
 func TestDisplayPageSetsLanguageForHyphenation(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	if p := f.view(t, "de", f.at(14, 8, 0)); !strings.Contains(p, `<html lang="de"`) {
 		t.Errorf("no lang on the display page")

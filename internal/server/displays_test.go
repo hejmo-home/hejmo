@@ -64,6 +64,7 @@ func pairForm(code string) url.Values {
 
 // 5.2: Given an unpaired display, when it starts, then it shows a QR code and a six-digit code.
 func TestUnpairedDisplayShowsQRCodeAndSixDigitCode(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	d := newScreen(b)
 	r := d.get("/display", "en")
@@ -92,6 +93,7 @@ func TestUnpairedDisplayShowsQRCodeAndSixDigitCode(t *testing.T) {
 }
 
 func TestPairingScreenIsGermanOnRequestAndNeverCached(t *testing.T) {
+	t.Parallel()
 	d := newScreen(signedInBox(t))
 	req, _ := http.NewRequest(http.MethodGet, d.b.srv.URL+"/display", nil)
 	req.Header.Set("Accept-Language", "de-DE")
@@ -115,6 +117,7 @@ func TestPairingScreenIsGermanOnRequestAndNeverCached(t *testing.T) {
 }
 
 func TestBoxWithoutSetupSendsDisplaysToSetup(t *testing.T) {
+	t.Parallel()
 	r := newScreen(newBox(t)).get("/display", "")
 	if r.status != http.StatusSeeOther || r.location != "/setup" {
 		t.Fatalf("GET /display = %d %q, want 303 to /setup", r.status, r.location)
@@ -123,6 +126,7 @@ func TestBoxWithoutSetupSendsDisplaysToSetup(t *testing.T) {
 
 // 5.2: Given a confirmed code, then the display receives a token and shows the family view placeholder.
 func TestConfirmedCodePairsTheDisplay(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	d := newScreen(b)
 	code := codeOn(t, d.get("/display", "en").body)
@@ -150,6 +154,7 @@ func TestConfirmedCodePairsTheDisplay(t *testing.T) {
 }
 
 func TestParentSeesPairedDisplaysAndOpensTheQRLinkWithCodePrefilled(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	d := newScreen(b)
 	code := codeOn(t, d.get("/display", "en").body)
@@ -174,6 +179,7 @@ func TestParentSeesPairedDisplaysAndOpensTheQRLinkWithCodePrefilled(t *testing.T
 
 // 5.2: Given a wrong or expired code, then pairing is refused.
 func TestWrongOrExpiredCodeIsRefused(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	d := newScreen(b)
 	code := codeOn(t, d.get("/display", "en").body)
@@ -205,6 +211,7 @@ func TestWrongOrExpiredCodeIsRefused(t *testing.T) {
 }
 
 func TestGuessingCodesIsLimited(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	d := newScreen(b)
 	code := codeOn(t, d.get("/display", "en").body)
@@ -226,6 +233,7 @@ func TestGuessingCodesIsLimited(t *testing.T) {
 }
 
 func TestConfirmingNeedsNameAndKnownType(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	code := codeOn(t, newScreen(b).get("/display", "en").body)
 	for _, form := range []url.Values{
@@ -241,6 +249,7 @@ func TestConfirmingNeedsNameAndKnownType(t *testing.T) {
 // 5.2: Given a paired display, when its token is revoked in the web interface,
 // then it shows the pairing screen again within one minute.
 func TestRevokedDisplayShowsPairingScreenAgainWithinAMinute(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	d := newScreen(b)
 	code := codeOn(t, d.get("/display", "en").body)
@@ -289,6 +298,7 @@ func TestRevokedDisplayShowsPairingScreenAgainWithinAMinute(t *testing.T) {
 }
 
 func TestDisplaysAreManagedByParentsOnly(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	if r := b.get("/displays"); r.status != http.StatusSeeOther || r.location != "/setup" {
 		t.Fatalf("unconfigured = %d %q", r.status, r.location)
@@ -303,6 +313,7 @@ func TestDisplaysAreManagedByParentsOnly(t *testing.T) {
 }
 
 func TestDisplayLinkIsOnTheSettingsHub(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if r := b.get("/settings"); !strings.Contains(r.body, `href="/displays"`) {
 		t.Fatal("no link to the displays page")
@@ -312,6 +323,7 @@ func TestDisplayLinkIsOnTheSettingsHub(t *testing.T) {
 // A client that keeps opening pairing screens is slowed down, and the
 // waiting rows it leaves behind stay bounded.
 func TestOpeningManyPairingScreensIsLimited(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	refused := 0
 	for i := 0; i < 40; i++ {
@@ -331,6 +343,7 @@ func TestOpeningManyPairingScreensIsLimited(t *testing.T) {
 }
 
 func TestEvictedWaitingDisplayGetsANewPairingScreen(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	first := newScreen(b)
 	first.get("/display", "en")
@@ -344,6 +357,7 @@ func TestEvictedWaitingDisplayGetsANewPairingScreen(t *testing.T) {
 }
 
 func TestSignInFromTheQRLinkReturnsToTheDisplaysPageWithTheCode(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	code := codeOn(t, newScreen(b).get("/display", "en").body)
 	r := b.get("/displays?code=" + code)
@@ -368,6 +382,7 @@ var checkedTypeRe = regexp.MustCompile(`<input type="radio" name="type" value="(
 
 // ADR 0017: the type cards start with one choice, as the old select did.
 func TestFreshPairingFormHasADisplayTypeChecked(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for _, path := range []string{"/displays", "/displays?code=123456"} {
 		m := checkedTypeRe.FindStringSubmatch(getEN(b, path).body)
@@ -379,6 +394,7 @@ func TestFreshPairingFormHasADisplayTypeChecked(t *testing.T) {
 
 // A form error is shown at its field: the code, the name or the type.
 func TestPairingErrorsAreShownAtTheWrongField(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	d := newScreen(b)
 	code := codeOn(t, d.get("/display", "en").body)

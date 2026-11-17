@@ -30,6 +30,7 @@ func setFood(t *testing.T, b *box, who string, f store.Food) {
 }
 
 func TestAdultsSeeTheListAndChildrenSeeTilesUntilTheyChoose(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	b := cp.parent.b
 	id, _ := tileList(t, b, nil, "Milk", "Bananas")
@@ -64,6 +65,7 @@ func TestAdultsSeeTheListAndChildrenSeeTilesUntilTheyChoose(t *testing.T) {
 }
 
 func TestChoosingTilesIsRememberedForEveryListAndOnlyForThePerson(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	b := cp.parent.b
 	id, _ := tileList(t, b, nil, "Milk")
@@ -109,6 +111,7 @@ func TestChoosingTilesIsRememberedForEveryListAndOnlyForThePerson(t *testing.T) 
 }
 
 func TestAViewThatCannotBeSavedShowsTheErrorUnderTheSwitchAndKeepsTheOldView(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, _ := tileList(t, b, nil, "Milk")
 	r := b.do(http.MethodPost, "/me/list-view", url.Values{"view": {"grid"}, "list": {id}}, map[string]string{"Accept-Language": "en"})
@@ -145,6 +148,7 @@ func tileOf(t *testing.T, page, name string) string {
 }
 
 func TestATileIsTheWholeTickButtonWithPictureOrSymbolOrLetter(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	b := cp.parent.b
 	h, _ := b.db.HomeHousehold()
@@ -202,6 +206,7 @@ func TestATileIsTheWholeTickButtonWithPictureOrSymbolOrLetter(t *testing.T) {
 }
 
 func TestATileWarnsWithOneLinePerPersonNeverACount(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	setFood(t, b, "Mia", store.Food{Diet: "omnivore", Allergens: []string{"milk", "nuts"}})
 	setFood(t, b, "Sebastian", store.Food{Diet: "omnivore", Allergens: []string{"milk"}})
@@ -234,6 +239,7 @@ func TestATileWarnsWithOneLinePerPersonNeverACount(t *testing.T) {
 }
 
 func TestTheListViewShowsTheSameWarningAsTheLongSentence(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	setFood(t, b, "Mia", store.Food{Diet: "omnivore", Allergens: []string{"milk"}})
 	id, _ := tileList(t, b, nil, "Milk", "Bananas")
@@ -247,6 +253,7 @@ func TestTheListViewShowsTheSameWarningAsTheLongSentence(t *testing.T) {
 }
 
 func TestFreeTextAllergiesEndEveryListWithFoodInBothViews(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	setFood(t, b, "Mia", store.Food{Diet: "omnivore", Other: "Kiwi"})
 	food, _ := tileList(t, b, nil, "Milk")
@@ -275,6 +282,7 @@ func TestFreeTextAllergiesEndEveryListWithFoodInBothViews(t *testing.T) {
 }
 
 func TestTilesOfAnEmptyOrFinishedListSayWhatThatMeansToAChild(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	b := cp.parent.b
 	empty, _ := listWith(t, b, "Nothing", nil)
@@ -290,6 +298,7 @@ func TestTilesOfAnEmptyOrFinishedListSayWhatThatMeansToAChild(t *testing.T) {
 }
 
 func TestTheSortOrRemoveViewStaysRowsAndHidingTickedWorksInTiles(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, _ := tileList(t, b, []string{"Cheese"}, "Milk", "Cheese")
 	b.post("/me/list-view", url.Values{"view": {"tiles"}, "list": {id}})
@@ -310,6 +319,7 @@ func TestTheSortOrRemoveViewStaysRowsAndHidingTickedWorksInTiles(t *testing.T) {
 }
 
 func TestListViewHasAPIParity(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	mia := personNamed(t, c.b, "Mia")
 	mama := personNamed(t, c.b, "Mama")
@@ -345,6 +355,7 @@ func TestListViewHasAPIParity(t *testing.T) {
 }
 
 func TestEntriesOfTheAPICarryTheirSymbolOrPicture(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h, _ := c.b.db.HomeHousehold()
 	art, _ := c.b.db.CreateArticle(h.ID, personNamed(t, c.b, "Mama").ID, store.OwnArticle{Name: "Oat drink barista", Dept: "dairy", Kind: "vegan", Unit1: "l"}, &store.ArticlePicture{JPEG: testJPEG(t, 400, 400), Source: "upload"})
@@ -367,6 +378,7 @@ func TestEntriesOfTheAPICarryTheirSymbolOrPicture(t *testing.T) {
 }
 
 func TestADisplaysViewIsReadAndChangedThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
 	_, shown, _ := c.call(http.MethodPost, "/displays", map[string]any{"code": code, "name": "Kitchen", "type": "screen"})
@@ -392,6 +404,7 @@ func TestADisplaysViewIsReadAndChangedThroughTheAPI(t *testing.T) {
 }
 
 func TestOnlyTilesLoadTheScriptThatShowsAnUnsavedTick(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, _ := tileList(t, b, nil, "Milk")
 	if page := getEN(b, "/lists/"+id).body; strings.Contains(page, "tiles.js") {

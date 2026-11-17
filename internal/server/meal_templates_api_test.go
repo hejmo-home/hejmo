@@ -26,6 +26,7 @@ func createTemplate(t *testing.T, c *apiClient, in map[string]any) (int, map[str
 
 // Acceptance: create, edit and delete templates (name, meal types, entries per weekday and meal type, interval 1-52 weeks, start week).
 func TestTemplatesCanBeCreatedReadEditedAndDeletedOverTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, tpl := createTemplate(t, c, dinnerWeek("Week B", weekStart, 2))
 	id, _ := tpl["id"].(string)
@@ -60,6 +61,7 @@ func TestTemplatesCanBeCreatedReadEditedAndDeletedOverTheAPI(t *testing.T) {
 
 // The contract itself refuses an interval outside 1 to 52 (minimum, maximum).
 func TestInvalidTemplatesAreRefusedWith422(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	for name, edit := range map[string]func(map[string]any){
 		"no name":          func(m map[string]any) { m["name"] = " " },
@@ -80,6 +82,7 @@ func TestInvalidTemplatesAreRefusedWith422(t *testing.T) {
 
 // Acceptance: overlapping templates are refused at save with a message naming the clash (template, weekday, meal type, first affected week).
 func TestOverlappingTemplatesAreRefusedWith409NamingTheClash(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, a := createTemplate(t, c, dinnerWeek("Week A", weekStart, 2))
 	if status, body := createTemplate(t, c, dinnerWeek("Week B", "2026-11-23", 2)); status != http.StatusCreated {
@@ -107,6 +110,7 @@ func TestOverlappingTemplatesAreRefusedWith409NamingTheClash(t *testing.T) {
 
 // Acceptance: the meal plan shows template entries; editing a week's entry overrides only that week; "Back to template" restores it.
 func TestTheMealPlanFollowsTemplatesAndAWeeksChangeStaysInThatWeek(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, tpl := createTemplate(t, c, dinnerWeek("Week B", weekStart, 2))
 	const mon, tue, nextWed = "2026-11-16", "2026-11-17", "2026-12-02"
@@ -151,6 +155,7 @@ func TestTheMealPlanFollowsTemplatesAndAWeeksChangeStaysInThatWeek(t *testing.T)
 }
 
 func TestOnlyParentsChangeTemplatesAndEveryoneReadsThem(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	_, tpl := createTemplate(t, tb.parent, dinnerWeek("Week B", weekStart, 2))
 	if status, _ := createTemplate(t, tb.child, dinnerWeek("Mine", weekStart, 1)); status != http.StatusForbidden {

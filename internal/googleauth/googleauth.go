@@ -11,7 +11,6 @@ import (
 	"crypto/rand"
 	"crypto/sha256"
 	"encoding/base64"
-	"encoding/binary"
 	"encoding/hex"
 	"encoding/json"
 	"errors"
@@ -19,11 +18,13 @@ import (
 	"io"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 )
 
-// The fixed values (ADR 0013, ticket 18).
+// The fixed values (ADR 0013, ticket 18): public addresses, no credentials.
+// #nosec G101 -- addresses of Google and of the relay page
 const (
 	// RelayRedirectURI is the static page in repository hejmo-home/hejmo-home.github.io.
 	RelayRedirectURI = "https://hejmo-home.github.io/oauth/"
@@ -125,11 +126,11 @@ type StateToken struct{ Token, Nonce string }
 // the expiry, sealed with the box's key, so a value the box did not make, or
 // that was changed, does not open.
 func NewStateToken(s Signer, now time.Time) (StateToken, error) {
-	plain := make([]byte, 24)
-	if _, err := rand.Read(plain[:16]); err != nil {
+	nonce := make([]byte, 16)
+	if _, err := rand.Read(nonce); err != nil {
 		return StateToken{}, err
 	}
-	binary.BigEndian.PutUint64(plain[16:], uint64(now.Add(StateLifetime).Unix()))
+	plain := append(nonce, strconv.FormatInt(now.Add(StateLifetime).Unix(), 10)...)
 	sealed, err := s.Seal(plain)
 	if err != nil {
 		return StateToken{}, err
@@ -145,10 +146,14 @@ func VerifyStateToken(s Signer, token string, now time.Time) (string, error) {
 		return "", ErrStateUnknown
 	}
 	plain, err := s.Open(sealed)
-	if err != nil || len(plain) != 24 {
+	if err != nil || len(plain) <= 16 {
 		return "", ErrStateUnknown
 	}
-	if now.Unix() > int64(binary.BigEndian.Uint64(plain[16:])) {
+	expires, err := strconv.ParseInt(string(plain[16:]), 10, 64)
+	if err != nil {
+		return "", ErrStateUnknown
+	}
+	if now.Unix() > expires {
 		return "", ErrStateExpired
 	}
 	return hex.EncodeToString(plain[:16]), nil

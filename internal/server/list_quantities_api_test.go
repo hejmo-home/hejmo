@@ -303,3 +303,26 @@ func TestTheArticleAPIOffersTheNearestActiveUnitInPlaceOfOneThatIsOff(t *testing
 		t.Errorf("%d offered = %v", status, a["offered_units"])
 	}
 }
+
+// The stored link is the article of an entry; the text names one only for an
+// entry that has none, and never a hand-hidden article (as when adding).
+func TestAHandHiddenArticleTypedAsTextStaysFreeTextInTheAPIAnswers(t *testing.T) {
+	lb := newListBox(t)
+	id := lb.shopList(t)
+	if status, _, _ := lb.parent.call(http.MethodPut, "/articles/eggs/hidden", map[string]any{"hidden": true}); status != http.StatusOK {
+		t.Fatalf("hide = %d", status)
+	}
+	status, e := lb.add(t, id, map[string]any{"text": "Eier"})
+	if status != http.StatusCreated || e["article_id"] != nil || e["symbol"] != nil {
+		t.Fatalf("typed = %d %v", status, e)
+	}
+	if got := entryOf(t, lb.parent, id, 0); got["article_id"] != nil || got["symbol"] != nil {
+		t.Errorf("listed: %v", got)
+	}
+	// Picked by hand, the stored link stays whatever the library says now.
+	other := lb.newList(t, "Wocheneinkauf", "manual")
+	status, e = lb.add(t, other, map[string]any{"article_id": "eggs", "amount": 6, "unit": "piece"})
+	if status != http.StatusCreated || e["article_id"] != "eggs" || e["symbol"] == nil {
+		t.Fatalf("picked = %d %v", status, e)
+	}
+}

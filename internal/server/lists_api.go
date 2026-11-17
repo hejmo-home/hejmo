@@ -79,8 +79,9 @@ func listToJSON(l list.List, c store.EntryCount) listJSON {
 	return listJSON{ID: l.ID, Name: l.Name, Color: l.Color, Symbol: l.Symbol, Sort: string(l.Sort), Suggestions: l.Suggestions, OpenCount: c.Open, DoneCount: c.Done}
 }
 
-// entriesToJSON turns entries into their JSON; with a library their articles
-// are looked up (tiles need them), without it they are left null.
+// entriesToJSON turns entries into their JSON with their looks (tiles need
+// them): the stored article first, else the article the text names exactly;
+// free text stays null.
 func (s *server) entriesToJSON(p principal, es []list.Entry) ([]entryJSON, error) {
 	lk, err := s.newListLooks(p, i18n.Default, "/articles/")
 	if err != nil {
@@ -90,7 +91,7 @@ func (s *server) entriesToJSON(p principal, es []list.Entry) ([]entryJSON, error
 	out := make([]entryJSON, 0, len(es))
 	for _, e := range es {
 		j := entryToJSON(e)
-		if look, _, ok := lk.resolve(e.Text, all); ok {
+		if look, _, ok := lk.resolve(e.ArticleID, e.Text, all); ok {
 			j.ArticleID = &look.ArticleID
 			if look.Symbol != "" {
 				j.Symbol = &look.Symbol

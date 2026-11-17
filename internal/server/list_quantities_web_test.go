@@ -629,3 +629,30 @@ func TestOnTheWebExactlyOneKgReplacesAnEntryOf1004g(t *testing.T) {
 		t.Errorf("1 kg: %+v", es[0].Qty)
 	}
 }
+
+// Tiles show the quantity of an entry (the editor belongs to the list view);
+// a hand-hidden article typed as text is a letter, not the article's symbol.
+func TestATileShowsTheQuantityAndKeepsTheStoredLink(t *testing.T) {
+	s := newShop(t)
+	s.seed("eggs", "Eggs", 6, "piece")
+	if err := s.db.SetPersonListView(s.h.ID, s.mama.ID, list.Tiles); err != nil {
+		t.Fatal(err)
+	}
+	body := s.en(s.path("")).body
+	tile := tileOf(t, body, "Eggs")
+	if !strings.Contains(tile, `<span class="qty">6 pieces</span>`) || !strings.Contains(tile, "🥚") {
+		t.Errorf("the tile of 6 eggs:\n%s", tile)
+	}
+	// Hidden by hand, an entry of the stored article keeps its symbol; the same text without a link is a letter.
+	if err := s.db.SetArticleHidden(s.h.ID, "eggs", true); err != nil {
+		t.Fatal(err)
+	}
+	s.seed("", "Eier", 0, "")
+	body = s.en(s.path("")).body
+	if tile := tileOf(t, body, "Eggs"); !strings.Contains(tile, "🥚") {
+		t.Errorf("the stored link is the article:\n%s", tile)
+	}
+	if tile := tileOf(t, body, "Eier"); strings.Contains(tile, "🥚") || !strings.Contains(tile, `letter`) {
+		t.Errorf("free text typed after hiding is a letter:\n%s", tile)
+	}
+}

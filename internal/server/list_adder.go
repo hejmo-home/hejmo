@@ -625,7 +625,7 @@ func (c *itemCtx) entryViews(es []list.Entry, o entryOpts) (open, ticked []entry
 		o.Added = o.Out.EntryID
 	}
 	for _, e := range es {
-		ev := entryView{ID: e.ID, Text: e.Text, Done: e.Done, Added: e.ID == o.Added, Qty: c.qtyWords(e.Qty)}
+		ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done, Added: e.ID == o.Added, Qty: c.qtyWords(e.Qty)}
 		if e.Done {
 			ticked = append(ticked, ev)
 			continue

@@ -135,7 +135,7 @@ func (s *server) listsView(h store.Household, d store.Display, lang, listID stri
 		return v, nil
 	}
 	for _, e := range es {
-		ev := entryView{ID: e.ID, Text: e.Text, Done: e.Done}
+		ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done}
 		switch {
 		case e.Done:
 			v.Ticked = append(v.Ticked, ev)

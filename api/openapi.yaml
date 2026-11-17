@@ -3849,7 +3849,7 @@ components:
         id: { type: string, format: uuid }
         text: { type: string }
         done: { type: boolean }
-        article_id: { type: string, nullable: true, description: "The library article the text names (its name in German or English, ignoring case and umlauts): the key of a shipped article or the id of an own one. Null for free text." }
+        article_id: { type: string, nullable: true, description: "The library article of the entry: the one stored when it was added from the library, else (an entry without one) the article its text names exactly in German or English, ignoring case and umlauts; never an article hidden by hand. The key of a shipped article or the id of an own one. Null for free text." }
         symbol: { type: string, nullable: true, description: "The emoji a tile shows for the article (its department's symbol when it has none). Null for free text and for an article that has a picture." }
         picture: { type: string, nullable: true, description: "Path of the own article's picture, `GET /articles/{id}/picture`. Null without one." }
         amount: { type: number, description: "How much, as shown (rounded: g and ml whole, else at most two decimals); missing without a quantity" }

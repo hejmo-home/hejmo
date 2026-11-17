@@ -24,11 +24,12 @@ type listView struct {
 // entryView is one entry; First and Last tell whether no other open entry
 // comes before or after it, which is what moving up and down depends on.
 type entryView struct {
-	ID, Text string
-	Done     bool
-	First    bool
-	Last     bool
-	Added    bool // the entry just added or changed, framed until the next tap
+	ID, Text  string
+	ArticleID string // the stored article, "" for free text
+	Done      bool
+	First     bool
+	Last      bool
+	Added     bool // the entry just added or changed, framed until the next tap
 	// Suggest is set on a list with suggestions: the entry shows its quantity
 	// as a button that opens the editor (ticket 165).
 	Suggest bool
@@ -254,7 +255,7 @@ func (s *server) renderList(w http.ResponseWriter, r *http.Request, p principal,
 		data["FreeBox"] = map[string]any{"Title": t(s, lang, "lq.unchecked.title"), "Hint": t(s, lang, "lq.unchecked.hint"), "People": s.freeText(ic.st)}
 	} else {
 		for _, e := range es {
-			ev := entryView{ID: e.ID, Text: e.Text, Done: e.Done}
+			ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done}
 			if !e.Qty.None() {
 				ev.Qty = s.qtyWordsFor(p, lang, e.Qty)
 			}

@@ -146,3 +146,31 @@ func TestADisplayListWithoutSuggestionsIsAsBefore(t *testing.T) {
 		t.Errorf("a to-do list on a display has the plain add row:\n%s", body)
 	}
 }
+
+func TestAConvertedNumberOnTheDisplayIsTheAmountInTheUnitChosen(t *testing.T) {
+	f, id, ids := shopOnDisplay(t)
+	r := f.display.postLang("/display/lists/"+id+"/entries/"+ids["Eggs"]+"/quantity", url.Values{"qmode": {"qty"}, "amount": {"2"}, "qunit": {"dozen"}, "converted": {"1"}, "partial": {"1"}}, "en")
+	if r.status != http.StatusOK {
+		t.Fatalf("%d\n%s", r.status, r.body)
+	}
+	es, _ := f.db.Entries(f.householdID, id)
+	if es[0].Qty.Base != 24 {
+		t.Errorf("2 dozen = 24 pieces: %+v", es[0].Qty)
+	}
+}
+
+// In tiles the display shows the quantity; the editor belongs to the rows.
+func TestADisplayTileShowsTheQuantityOfAnEntry(t *testing.T) {
+	f, id, _ := shopOnDisplay(t)
+	if err := f.db.SetDisplayListView(f.householdID, f.displayID(t), list.Tiles); err != nil {
+		t.Fatal(err)
+	}
+	body := f.display.get("/display/lists/"+id+"/view", "en").body
+	tile := tileOf(t, body, "Eggs")
+	if !strings.Contains(tile, `<span class="qty">6 pieces</span>`) || !strings.Contains(tile, "🥚") {
+		t.Errorf("the tile of 6 eggs:\n%s", tile)
+	}
+	if bananas := tileOf(t, body, "Bananas"); strings.Contains(bananas, `class="qty"`) {
+		t.Errorf("no quantity, none shown:\n%s", bananas)
+	}
+}

@@ -146,7 +146,8 @@ func (s *server) handleHTTPSForm(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f := publicForm{Issuer: publiccert.LetsEncrypt}
-	if way == httpsOwn { // the box asks the router for its own name (decision Q92)
+	if way == httpsOwn || s.public == nil { // the box asks the router for its own name (decision Q92); without the public service the own CA page is the only one
+		way = httpsOwn
 		f.RouterName = s.lookupRouterName(r.Context(), hostOf(r))
 		f.RouterHint = "none"
 		if f.RouterName != "" {

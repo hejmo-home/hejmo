@@ -520,3 +520,28 @@ func TestTheSuggestionSwitchIsInTheListSettings(t *testing.T) {
 		t.Errorf("on again")
 	}
 }
+
+func TestAddingFreeTextToTheLibraryTurnsTheEntryIntoTheArticleAndReturnsToTheList(t *testing.T) {
+	s := newShop(t)
+	_, page := s.add(url.Values{"text": {"Quinoa-Pops"}, "mode": {"quick"}})
+	m := regexp.MustCompile(`href="(/settings/lists/library/new\?[^"]+)"`).FindStringSubmatch(page.body)
+	if m == nil {
+		t.Fatalf("no link to the library form:\n%s", page.body)
+	}
+	form := s.en(strings.ReplaceAll(m[1], "&amp;", "&")).body
+	for _, want := range []string{"Quinoa-Pops", `name="list" value="` + s.id + `"`, `name="entry" value=`} {
+		if !strings.Contains(form, want) {
+			t.Errorf("the library form lacks %q:\n%s", want, form)
+		}
+	}
+	es, _ := s.db.Entries(s.h.ID, s.id)
+	f := url.Values{"name": {"Quinoa-Pops"}, "dept": {"pantry"}, "kind": {"vegan"}, "unit1": {"pack"}, "list": {s.id}, "entry": {es[0].ID}}
+	r := s.postEN("/settings/lists/library", f)
+	if r.status != http.StatusSeeOther || !strings.HasPrefix(r.location, "/lists/"+s.id) {
+		t.Fatalf("save = %d %q", r.status, r.location)
+	}
+	es, _ = s.db.Entries(s.h.ID, s.id)
+	if len(es) != 1 || es[0].ArticleID == "" || es[0].Text != "Quinoa-Pops" {
+		t.Errorf("the entry became the article: %+v", es)
+	}
+}

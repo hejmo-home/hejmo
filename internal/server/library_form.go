@@ -42,6 +42,10 @@ type artForm struct {
 	PicSource, Symbol, SymQ, URL   string
 	Token                          string
 	Replacing                      bool
+	// FromList and FromEntry say the form was opened from the success line of a
+	// list ("Add to the library", ticket 165): after saving the entry becomes the
+	// article and the person goes back to the list.
+	FromList, FromEntry string
 }
 
 func (s *server) formOf(o store.OwnArticle) artForm {
@@ -348,7 +352,7 @@ func (s *server) handleArticleNew(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "library state", err)
 		return
 	}
-	f := artForm{Dept: library.DefaultDept, Name: strings.TrimSpace(r.URL.Query().Get("name"))}
+	f := artForm{Dept: library.DefaultDept, Name: strings.TrimSpace(r.URL.Query().Get("name")), FromList: r.URL.Query().Get("list"), FromEntry: r.URL.Query().Get("entry")}
 	if len([]rune(f.Name)) > library.MaxName {
 		f.Name = string([]rune(f.Name)[:library.MaxName])
 	}
@@ -391,6 +395,7 @@ func (s *server) readForm(w http.ResponseWriter, r *http.Request) (f artForm, fi
 	f = artForm{
 		Name: v("name"), Dept: v("dept"), Kind: v("kind"), Unit1: v("unit1"), Unit2: v("unit2"), Allergens: r.PostForm["allergens"],
 		PicSource: v("pic_source"), Symbol: v("symbol"), SymQ: strings.TrimSpace(v("symq")), URL: strings.TrimSpace(v("url")), Token: v("picture_token"), Replacing: v("replacing") != "",
+		FromList: v("list"), FromEntry: v("entry"),
 	}
 	return f, file, nil
 }
@@ -549,6 +554,12 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 	}
 	s.pictures.drop(f.Token)
 	if existing == nil {
+		if f.FromList != "" && f.FromEntry != "" { // the entry the person came from becomes the article
+			if err := s.db.LinkEntryArticle(p.household.ID, f.FromList, f.FromEntry, saved.ID, saved.Name); err == nil {
+				s.redirectSavedNamed(w, r, listURL(r, f.FromList, false), "flash.article_created", saved.Name)
+				return
+			}
+		}
 		s.redirectSavedNamed(w, r, libraryPath, "flash.article_created", saved.Name)
 		return
 	}

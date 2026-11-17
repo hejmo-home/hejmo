@@ -223,3 +223,15 @@ func (db *DB) ResetActiveUnits(householdID string) error {
 	_, err := db.sql.Exec(`DELETE FROM household_units WHERE household_id = ?`, householdID)
 	return err
 }
+
+// LinkEntryArticle makes an open entry of free text the article it was added
+// to the library as: the entry keeps its quantity and takes the article's id
+// and its name. Another entry that stands for the same article and has the same
+// kind of quantity is not merged; the next add does that.
+func (db *DB) LinkEntryArticle(householdID, listID, entryID, articleID, name string) error {
+	if _, err := db.List(householdID, listID); err != nil {
+		return err
+	}
+	res, err := db.sql.Exec(`UPDATE list_entries SET article_id = ?, text = ? WHERE id = ? AND list_id = ? AND article_id = ''`, articleID, strings.TrimSpace(name), entryID, listID)
+	return expectOne(res, err)
+}

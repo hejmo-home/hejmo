@@ -2013,6 +2013,30 @@ p.why.health > span { display: grid; gap: 2px; }
 .choose-none { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 8px; max-width: 560px; box-sizing: border-box; }
 [data-theme="bw"] .choose-none { border: 2px solid var(--text); }
 .choose-none p { margin: 0; }
+
+/* ticket 198: pair a child's phone for another person (new, see DESIGN.md). */
+details.repair { box-sizing: border-box; border-top: 1px solid var(--border); margin-top: var(--gap-section); max-width: 560px; }
+details.repair > summary { display: flex; align-items: flex-start; gap: 10px; min-height: var(--touch-target); padding: 10px 0; cursor: pointer; list-style: none; }
+details.repair > summary::-webkit-details-marker { display: none; }
+details.repair > summary .icon { flex: none; margin-top: 1px; stroke: var(--accent); }
+details.repair > summary .t { display: grid; gap: 2px; min-width: 0; }
+details.repair > summary b { color: var(--accent); font-size: var(--fs-label-large); }
+details.repair > summary .hint { color: var(--text-secondary); font-size: var(--fs-label); overflow-wrap: break-word; hyphens: manual; }
+details.repair[open] { background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius-tile); padding: 0 16px 6px; }
+details.repair[open] > summary .hint { display: none; }
+details.repair form { display: grid; gap: 14px; margin: 0 0 10px; }
+details.repair .notice { margin: 0; display: grid; gap: 6px; }
+details.repair .notice p { margin: 0; }
+details.repair .confirm { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+details.repair .confirm a { display: inline-flex; align-items: center; min-height: var(--touch-target); font-weight: 600; }
+details.repair .button { white-space: normal; text-align: left; }
+details.repair + details.danger { margin-top: 0; }
+[data-theme="bw"] details.repair[open] { border-color: var(--text); }
+[data-theme="bw"] details.repair .notice { border: 2px solid var(--text); }
+.invitee.join-for { margin: 4px 0 16px; font-size: var(--fs-key-figure); }
+.invitee .lbl { font-size: var(--fs-label); font-weight: 400; color: var(--text-secondary); }
+.verification { font-size: var(--fs-key-figure); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
 /* ---- New for #125: theme chooser in the brand bar (ADR 0015, 0017) ---- */
 /* One chooser for everyone signed in, parents and children's phones, beside
    the language switcher: both are choices of this browser or phone. The menu

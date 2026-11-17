@@ -53,12 +53,28 @@ The box's own certificate authority, name-constrained to the box so it cannot vo
 _Avoid_: self-signed certificate, root cert
 
 **Public name**:
-A DNS name of the box (a free deSEC `dedyn.io` name or the family's own domain) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
+A DNS name of the box (a free deSEC `dedyn.io` name, or a name under the family's own domain at Cloudflare, deSEC, Hetzner or INWX) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
 _Avoid_: domain, DynDNS
+
+**Passkey**:
+A WebAuthn credential of an adult's account, kept on a device or in a password manager, that replaces password and one-time code at sign-in and counts as both factors (ADR 0018). It is valid only for the box name it was created under; password and one-time code stay the way back.
+_Avoid_: security key, FIDO key, WebAuthn credential (in user-facing text)
+
+**Box name**:
+The name the box is served under: its public name or the Box CA's DNS name (e.g. `hejmo.local`), never an IP address. It is the relying-party ID of passkeys.
+_Avoid_: hostname, domain, relying party (in user-facing text)
 
 **Home region**:
 The German state, Austrian state or Swiss canton of the household, which decides its public holidays.
 _Avoid_: location, country, Bundesland (in code)
+
+**Place list**:
+The list of towns, villages and districts of Germany, Austria and Switzerland that ships inside the box (GeoNames extract, CC BY 4.0, ADR 0023). The parent picks the home location from it while typing; nothing is looked up on the internet.
+_Avoid_: geocoding, address search
+
+**Home location**:
+The latitude and longitude of the household's home, found from a place the parent picks in the list of places on the box (ADR 0023, which replaces the one-time lookup of ADR 0022). The household keeps the place's id, so the box can show its region in the page language. Sunrise and sunset (front light, themes) and the weather use it; the region does not (too coarse).
+_Avoid_: position, address
 
 ## Calendar
 
@@ -108,16 +124,24 @@ _Avoid_: account, integration, provider (alone)
 A password created at the calendar service (Apple "app-specific password", Nextcloud "app password") for Hejmo alone and used in a calendar connection instead of the account's real password. The family can revoke it at the service at any time; Hejmo never asks for the real password. Not the same as a device token, which the box creates for CalDAV clients.
 _Avoid_: Apple ID password, iCloud password
 
+**Service sign-in**:
+Allowing a calendar connection by signing in at the calendar service itself (Microsoft, Google) instead of entering an app-specific password. The box holds a permission the family can revoke at the service at any time; it never learns the password.
+_Avoid_: OAuth login, token login
+
+**App registration**:
+Hejmo's entry at a calendar service that makes service sign-ins possible at all. Every box uses the Hejmo project's registration unless the family enters its own.
+_Avoid_: client, Azure app
+
 **Synced calendar**:
 A calendar whose events come from, and may be written back to, a calendar outside the box through a calendar connection.
 _Avoid_: external calendar, remote calendar, feed
 
 **Read-only calendar**:
-A synced calendar whose events the box shows but never changes outside. ICS subscriptions are always read-only.
+A synced calendar whose events the box shows but never changes outside. ICS subscriptions are always read-only; a parent can switch a CalDAV calendar between read-only and two-way (the default).
 _Avoid_: subscribed calendar, imported calendar
 
 **Sync conflict**:
-The same event changed both on the box and outside since the last sync.
+The same event changed both on the box and outside since the last sync. The later change wins; the other version stays in the sync log for 30 days.
 _Avoid_: collision, clash
 
 **Sync log**:
@@ -154,6 +178,14 @@ _Avoid_: display mode, device type
 The row above the person columns in the family view for events meant for the whole household, all-day and multi-day events, and public holidays.
 _Avoid_: banner, header events, all-day row
 
+**Layout**:
+What one display shows: the chosen people, their order and the blocks.
+_Avoid_: template (alone), view (alone)
+
+**Layout block**:
+One part of a display's layout, such as calendar, tasks, meals, weather or lists, which a parent switches on or off per display.
+_Avoid_: widget, tile, module
+
 **Theme**:
 Whether a display or the web interface is light or dark, switches automatically by sunrise and sunset, or follows the device.
 _Avoid_: dark mode (alone), skin, colour scheme
@@ -166,6 +198,14 @@ _Avoid_: sleep mode (in prose), night mode, standby
 What an E-Ink display shows in quiet mode: the date of the coming morning, the household's first timed event of that day and its waste collection. A normal screen shows a black page instead.
 _Avoid_: sleep screen, standby page
 
+**Screensaver**:
+The photos a display shows after nobody has touched it for a while, one at a time, with the time and date small in a corner; a touch brings back the day at once. It is off during quiet mode. Without photos it shows a hint where adults add them.
+_Avoid_: slideshow, photo frame, diashow
+
+**Album**:
+A named collection of screensaver photos; each photo is in exactly one album, and each display shows all albums or the ones chosen for it. A subfolder of the box's photo folder becomes an album by itself; only that source on the box is called a folder.
+_Avoid_: folder (for an album), gallery, collection
+
 **Phone**:
 A smartphone paired with the box through a QR code that runs the web interface as an app for one person, adult or child. A phone's calendar app syncing over CalDAV is a CalDAV client, not a phone.
 _Avoid_: mobile, client (alone), handset
@@ -175,7 +215,7 @@ The sign-in of one person in one browser with username, password and one-time co
 _Avoid_: login (as a noun), cookie, session (alone)
 
 **Device session**:
-The long-lived, revocable access of a paired phone, which acts for one person.
+The long-lived, revocable access of a paired phone, which acts for one person. A browser that held one keeps a harmless marker cookie; when its device session has ended, `/login` shows "This device is no longer paired" instead of the sign-in, until a sign-in or a sign-out forgets the marker; a new pairing sets the marker again.
 _Avoid_: remember-me, phone token
 
 **Overview and detail page**:
@@ -203,6 +243,18 @@ _Avoid_: product, item (alone)
 **Article library**:
 The household's articles: the ones Hejmo ships plus own articles, managed by parents.
 _Avoid_: catalogue, database
+
+**Own article**:
+An article a parent made for the household, with one name for every language, a department, what is in it, allergens, one or two default units and optionally a symbol, a photo or a picture from the web. Shipped articles cannot be changed; "Eigene Fassung anlegen" copies one as an own article.
+_Avoid_: custom article, user article
+
+**Department**:
+The part of the shop an article belongs to (13, such as fruit and vegetables or drugstore). It sorts the library and decides which symbols are suggested first.
+_Avoid_: category, aisle
+
+**Hiding (of articles)**:
+The experimental household setting that leaves articles with an allergen of chosen people out of the suggestions and the tile picker. Off by default; it needs a parent's confirmation of the notice (no guarantee, no liability). A shipped article can also be hidden by hand.
+_Avoid_: filtering, blocking
 
 **Quantity**:
 Number and unit of a list entry, such as 500 g or 1 dozen.
@@ -236,9 +288,33 @@ _Avoid_: template (alone; clashes with routine template), preset, default plan
 A meal plan entry changed for one week where a meal plan template would fill it (also emptied). It keeps its change when the template changes, until "Back to template".
 _Avoid_: override (in prose), exception
 
+**Recipe**:
+A dish with portions, ingredients and steps that can be put on the meal plan; entered by a parent, imported from a web page or from Hejmo's starter collection, always with its source.
+_Avoid_: dish (alone), cooking instructions
+
+**Ingredient**:
+One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
+_Avoid_: component, item
+
+**Variety**:
+The more exact kind of an article, such as "Type 405" for flour, kept with an ingredient or list entry. Quantities add up only for the same variety.
+_Avoid_: variant, subtype
+
+**Pantry article**:
+An article usually at home, such as salt or oil, left out by default when a recipe's ingredients go onto a list.
+_Avoid_: staple, stock item
+
+**Cooking view**:
+A recipe shown for cooking on a device: large text, ingredients to tick and one step at a time, with the screen kept on.
+_Avoid_: kitchen mode, cook mode
+
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.
 _Avoid_: deadline, expiry
+
+**Holiday mode**:
+A household-wide pause, with from and to dates, of all articles that are put on a list by themselves. The lists and settings say so while it is on.
+_Avoid_: vacation mode, skip
 
 **Task**:
 Something to be done once or repeatedly, ticked off when done; may belong to a routine, carry a star value and be split into subtasks.
@@ -272,6 +348,30 @@ _Avoid_: point, coin, reward (a reward is what stars are redeemed for)
 The record of every star booking of a person, with task or note, time and who booked it.
 _Avoid_: points log, history
 
+**Reward**:
+Something a person can redeem stars for, from the household's reward catalogue kept by parents: a name, an emoji or picture, a star price, who it is for and an optional limit such as once a week.
+_Avoid_: prize, shop item
+
+**Redemption**:
+Exchanging stars for a reward. A child asks and a parent confirms, or a parent redeems directly; the stars leave the person's star log only on confirmation, and never below zero.
+_Avoid_: purchase, payout
+
+**Savings goal**:
+The one reward a person has chosen to save for; their personal view and the family view show the progress towards its star price.
+_Avoid_: wish, target
+
+**Streak**:
+The days in a row on which a person completed a routine, counting only the days the routine applies and skipping pause days. Shown with the week's count ("5 of 7") and the best streak so far.
+_Avoid_: chain, combo
+
+**Pause day**:
+A day a parent marks for a person (ill, holiday) on which routines do not count, so no streak breaks.
+_Avoid_: skip day, excuse
+
+**Badge**:
+A mark a person earns once for a milestone, such as a first complete routine or a 7-day streak; it is never taken away.
+_Avoid_: achievement, trophy, medal
+
 **Waste collection calendar**:
 A read-only calendar marked as listing the household's waste collection days.
 _Avoid_: bin calendar, garbage feed
@@ -279,6 +379,24 @@ _Avoid_: bin calendar, garbage feed
 **Day note**:
 A parent's free-text note (up to 120 characters) for one day, shown as the last line of the tomorrow tile from 18:00 the evening before until the end of that day, then deleted. A day has one note. A parent sets it on Home (card "Note on the display"); a planned note is changed or removed on its own page.
 _Avoid_: reminder (that is the waste collection highlight), memo
+
+## Contacts
+
+**Contact**:
+An entry in the household's address book: every person of the household, plus others such as grandparents, the daycare or the paediatrician. Served to parents' phones and kept in the box.
+_Avoid_: address (alone), vCard (alone), person (a person is a household member)
+
+**Hejmo name**:
+The name Hejmo and the displays show for a contact, such as "Oma Gerda", next to the full name "Gerda Müller". One per contact for the whole household.
+_Avoid_: alias, display name
+
+**Contact group**:
+A category a contact belongs to: family, childcare and school, doctors, emergency, other, or one a parent adds.
+_Avoid_: tag, label, category
+
+**Relation**:
+The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician".
+_Avoid_: connection, relationship type
 
 ## Access
 

@@ -15,10 +15,16 @@ jobs:
       fail-fast: false
       matrix:
         include:
+          # Chrome comes with the x86_64 runner image (the "Chrome for the rendered
+          # layout check" step prints it: 157 on 16/11/2026). The arm64 image has
+          # none (the same step prints nothing there), so the rendered layout check
+          # is required, and runs, only on x86_64; on arm64 it skips.
           - arch: x86_64
             runner: ubuntu-24.04
+            require_chrome: "1"
           - arch: arm64
             runner: ubuntu-24.04-arm
+            require_chrome: ""
     runs-on: ${{ matrix.runner }}
     steps:
       - uses: actions/checkout@v4
@@ -29,13 +35,26 @@ jobs:
         run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
       - name: Vet
         run: go vet ./...
+      - name: Chrome for the rendered layout check
+        run: |
+          for c in google-chrome google-chrome-stable chromium chromium-browser chrome; do command -v "$c" && "$c" --version; done || true
       - name: Unit and integration tests
         env:
           # A missing container runtime fails the Radicale tests instead of skipping them.
           HEJMO_REQUIRE_RADICALE: "1"
           # The service worker is tested with node's test runner (web/test).
           HEJMO_REQUIRE_NODE: "1"
-        run: go test -race -count=1 -timeout 20m ./...
+          # The rendered layout check (ticket 161) drives headless Chrome; no Chrome fails it.
+          HEJMO_REQUIRE_CHROME: ${{ matrix.require_chrome }}
+          HEJMO_LAYOUT_SHOTS: ${{ runner.temp }}/layout-shots
+        run: go test -race -count=1 -timeout 40m ./...
+      - name: Screenshots of pages that failed the layout check
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: layout-shots-${{ matrix.arch }}
+          path: ${{ runner.temp }}/layout-shots
+          if-no-files-found: ignore
 
   container:
     name: Container (${{ matrix.arch }})

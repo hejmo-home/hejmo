@@ -171,6 +171,15 @@ type Tamper struct {
 	broken   []string
 	refuse   int      // status answered for REPORTs and for downloads of refused files
 	refusing []string // file names whose download is refused
+	writes   int      // status answered for PUT and DELETE
+}
+
+// RefuseWrites makes every PUT and DELETE answer with status until it is
+// called with 0: a server that is down for writes.
+func (tp *Tamper) RefuseWrites(status int) {
+	tp.mu.Lock()
+	defer tp.mu.Unlock()
+	tp.writes = status
 }
 
 // Refuse makes every REPORT, and the download of the named objects, answer
@@ -187,6 +196,9 @@ func (tp *Tamper) Refuse(status int, files ...string) {
 func (tp *Tamper) refused(req *http.Request) int {
 	tp.mu.Lock()
 	defer tp.mu.Unlock()
+	if tp.writes != 0 && (req.Method == http.MethodPut || req.Method == http.MethodDelete) {
+		return tp.writes
+	}
 	switch {
 	case tp.refuse == 0:
 		return 0
@@ -262,6 +274,26 @@ func (tr tamper) RoundTrip(req *http.Request) (*http.Response, error) {
 	res.ContentLength = int64(len(out))
 	res.Header.Del("Content-Length")
 	return res, nil
+}
+
+// Get returns the text of an object, or "" if there is none.
+func (s *Server) Get(t *testing.T, objectURL string) string {
+	t.Helper()
+	req, _ := http.NewRequestWithContext(context.Background(), http.MethodGet, objectURL, nil)
+	req.SetBasicAuth(User, Password)
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	b, _ := io.ReadAll(res.Body)
+	if res.StatusCode == http.StatusNotFound {
+		return ""
+	}
+	if res.StatusCode != http.StatusOK {
+		t.Fatalf("GET %s: status %d", objectURL, res.StatusCode)
+	}
+	return string(b)
 }
 
 // Delete removes an object.

@@ -308,10 +308,11 @@ document.addEventListener("click", function (e) {
 
 // Language switcher (ticket 134). The menu is a <details> and works without
 // this script; the script adds what a native <details> lacks: Escape closes it
-// (focus goes back to its button) and so does a click outside it.
+// (focus goes back to its button) and so does a click outside it. The theme
+// chooser of ticket 125 is the same kind of menu.
 (function () {
   function open() {
-    return document.querySelector("details.lang[open]");
+    return document.querySelector("details.lang[open], details.theme-pick[open]");
   }
   document.addEventListener("keydown", function (e) {
     var menu = e.key === "Escape" && open();

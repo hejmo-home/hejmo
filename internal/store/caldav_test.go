@@ -89,9 +89,9 @@ func TestCreatingAConnectionWithoutAKeyFailsInsteadOfStoringPlainText(t *testing
 	}
 }
 
-func TestCalDAVCalendarsAreReadOnlyUntilWriteBackExistsAndDueAtOnce(t *testing.T) {
+func TestCalDAVCalendarsAreTwoWayByDefaultAndDueAtOnce(t *testing.T) {
 	f := newDAVFixture(t)
-	if f.a.Kind != "caldav" || !f.a.ReadOnly || f.a.URL != "https://caldav.example.org/mama/family/" || f.a.ConnectionID != f.conn.ID || f.a.Sync.IntervalMinutes != 5 {
+	if f.a.Kind != "caldav" || f.a.ReadOnly || f.a.URL != "https://caldav.example.org/mama/family/" || f.a.ConnectionID != f.conn.ID || f.a.Sync.IntervalMinutes != 5 {
 		t.Fatalf("calendar = %+v", f.a)
 	}
 	due, _ := f.db.DueCalendars(t0)
@@ -118,7 +118,7 @@ func TestObjectSyncAddsChangesAndDeletesPerObject(t *testing.T) {
 	}, nil, nil, t0, next); err != nil {
 		t.Fatal(err)
 	}
-	known, err := f.db.RemoteObjects(f.a.ID)
+	known, err := f.db.RemoteObjects(f.a.ID, false)
 	if err != nil || len(known) != 2 || known[u1] != "e1" || known[u2] != "e2" {
 		t.Fatalf("RemoteObjects = %v, %v", known, err)
 	}
@@ -142,7 +142,7 @@ func TestObjectSyncAddsChangesAndDeletesPerObject(t *testing.T) {
 	if after[0].ID != id["Swimming"] {
 		t.Fatal("event id changed across syncs")
 	}
-	known, _ = f.db.RemoteObjects(f.a.ID)
+	known, _ = f.db.RemoteObjects(f.a.ID, false)
 	if len(known) != 1 || known[u1] != "e1b" {
 		t.Fatalf("RemoteObjects after = %v", known)
 	}
@@ -171,7 +171,7 @@ func TestUnreadableObjectKeepsItsEventsButRemembersItsETag(t *testing.T) {
 	if got := titles(t, f2(f), f.a.ID); len(got) != 1 || got[0] != "Swimming" {
 		t.Fatalf("events = %v, want the last good Swimming", got)
 	}
-	known, _ := f.db.RemoteObjects(f.a.ID)
+	known, _ := f.db.RemoteObjects(f.a.ID, false)
 	if len(known) != 2 || known[u1] != "e2" || known[u2] != "n1" {
 		t.Fatalf("RemoteObjects = %v", known)
 	}
@@ -224,7 +224,7 @@ func TestRemovingAConnectionRemovesItsCalendarsEventsAndNothingElse(t *testing.T
 	if _, err := f.db.SyncedCalendar(f.h.ID, f.a.ID); err == nil {
 		t.Fatal("calendar survived its connection")
 	}
-	if left, _ := f.db.RemoteObjects(f.a.ID); len(left) != 0 {
+	if left, _ := f.db.RemoteObjects(f.a.ID, false); len(left) != 0 {
 		t.Fatalf("remote objects survived: %v", left)
 	}
 	if conns, _ := f.db.Connections(f.h.ID); len(conns) != 0 {
@@ -242,5 +242,62 @@ func TestRemovingOneCalDAVCalendarLeavesTheOtherAndTheConnection(t *testing.T) {
 	}
 	if conns, _ := f.db.Connections(f.h.ID); len(conns) != 1 {
 		t.Fatalf("connection removed with one calendar: %+v", conns)
+	}
+}
+
+// PR 81 finding: the event count of a two-way calendar is what it holds now,
+// box writes included; the last run keeps what the last sync did.
+func TestSyncedCalendarEventCountIncludesEventsCreatedOnTheBox(t *testing.T) {
+	f := newDAVFixture(t)
+	if _, err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, []store.ObjectChange{obj(f.a.URL+"x.ics", "e", item("x@a", "", "From iCloud", at(2026, 11, 20, 15, 0)))}, nil, nil, t0, t0); err != nil {
+		t.Fatal(err)
+	}
+	for _, title := range []string{"Box one", "Box two"} {
+		if _, err := f.db.CreateEvent(f.h.ID, calendar.Event{CalendarID: f.a.ID, Title: title, Start: at(2026, 11, 21, 9, 0), End: at(2026, 11, 21, 10, 0)}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	got, err := f.db.SyncedCalendar(f.h.ID, f.a.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got.Sync.EventCount != 3 {
+		t.Errorf("event count = %d, want 3 (1 synced + 2 written on the box)", got.Sync.EventCount)
+	}
+	if got.Sync.LastRun.Events != 1 || got.Sync.LastRun.New != 1 {
+		t.Errorf("last run = %+v, want the run's own numbers (1 event, 1 new)", got.Sync.LastRun)
+	}
+}
+
+// The CTag and sync token of the last successful run are kept with the run, so
+// the next one can ask the server for what changed (ticket 54). A run that
+// does not pass a state leaves it as it was; a failed run changes nothing.
+func TestRemoteStateIsKeptWithASuccessfulRun(t *testing.T) {
+	f := newDAVFixture(t)
+	if st, err := f.db.RemoteState(f.a.ID); err != nil || st != (store.RemoteState{}) {
+		t.Fatalf("RemoteState of a new calendar = %+v, %v, want empty", st, err)
+	}
+	next := t0.Add(5 * time.Minute)
+	u1 := f.a.URL + "a.ics"
+	if _, err := f.db.CompleteObjectSyncWithState(f.h.ID, f.a.ID, store.RemoteState{CTag: "c1", Token: "t1"},
+		[]store.ObjectChange{obj(u1, "e1", item("a@x", "", "Swimming", at(2026, 11, 20, 15, 0)))}, nil, nil, t0, next); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := f.db.RemoteState(f.a.ID); st != (store.RemoteState{CTag: "c1", Token: "t1"}) {
+		t.Fatalf("RemoteState = %+v, want c1 and t1", st)
+	}
+	// A run that knows no state (the plain call) leaves it alone.
+	if _, err := f.db.CompleteObjectSync(f.h.ID, f.a.ID, nil, nil, nil, t0, next); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := f.db.RemoteState(f.a.ID); st != (store.RemoteState{CTag: "c1", Token: "t1"}) {
+		t.Fatalf("RemoteState after a plain run = %+v, want it kept", st)
+	}
+	// A server that offers neither: the stored state is cleared.
+	if _, err := f.db.CompleteObjectSyncWithState(f.h.ID, f.a.ID, store.RemoteState{}, nil, nil, nil, t0, next); err != nil {
+		t.Fatal(err)
+	}
+	if st, _ := f.db.RemoteState(f.a.ID); st != (store.RemoteState{}) {
+		t.Fatalf("RemoteState = %+v, want cleared", st)
 	}
 }

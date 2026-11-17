@@ -146,74 +146,46 @@ func TestDefaultEndpointIsOpenMeteoOverHTTPS(t *testing.T) {
 	}
 }
 
-// The home name is turned into coordinates by Open-Meteo's geocoding (no key).
-func TestGeocodeFindsTheHomeByName(t *testing.T) {
-	var q url.Values
-	srv := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		q = r.URL.Query()
-		_, _ = w.Write([]byte(`{"results":[{"latitude":48.15,"longitude":11.46,"name":"Pasing"}]}`))
-	}))
-	defer srv.Close()
-	s := weather.New(weather.WithGeocodingURL(srv.URL))
-	lat, lon, err := s.Geocode(context.Background(), "Pasing", "DE")
-	if err != nil || lat != 48.15 || lon != 11.46 {
-		t.Fatalf("geocode = %v %v %v", lat, lon, err)
-	}
-	if q.Get("name") != "Pasing" || q.Get("countryCode") != "DE" || q.Get("count") != "1" {
-		t.Errorf("query = %v", q)
-	}
-	empty := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) { _, _ = w.Write([]byte(`{}`)) }))
-	defer empty.Close()
-	if _, _, err := weather.New(weather.WithGeocodingURL(empty.URL)).Geocode(context.Background(), "Nowhere", ""); err == nil {
-		t.Fatal("unknown place found")
-	}
-	if weather.DefaultGeocodingURL != "https://geocoding-api.open-meteo.com/v1/search" {
-		t.Errorf("default geocoding = %q", weather.DefaultGeocodingURL)
-	}
-}
-
 type fakeHome struct {
-	mu            sync.Mutex
-	lat, lon      float64
-	name, country string
-	stored        int
-	err           error
+	mu       sync.Mutex
+	lat, lon float64
+	err      error
 }
 
-func (h *fakeHome) Home() (lat, lon float64, name, country string, err error) {
+func (h *fakeHome) Home() (lat, lon float64, err error) {
 	h.mu.Lock()
 	defer h.mu.Unlock()
-	return h.lat, h.lon, h.name, h.country, h.err
-}
-func (h *fakeHome) SetCoordinates(lat, lon float64) error {
-	h.mu.Lock()
-	defer h.mu.Unlock()
-	h.lat, h.lon, h.stored = lat, lon, h.stored+1
-	return nil
+	return h.lat, h.lon, h.err
 }
 
-// A home without coordinates is looked up once and the answer is kept; the
-// weather then follows from the coordinates.
-func TestKeepLooksUpTheHomeOnceAndRefreshesItsWeather(t *testing.T) {
-	var geoHits atomic.Int32
-	geo := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		geoHits.Add(1)
-		_, _ = w.Write([]byte(`{"results":[{"latitude":48.15,"longitude":11.46}]}`))
-	}))
-	defer geo.Close()
-	fc, _, _ := openMeteo(t, sunny, 200)
-	s := weather.New(weather.WithBaseURL(fc.URL), weather.WithGeocodingURL(geo.URL))
-	home := &fakeHome{name: "Pasing", country: "DE"}
-	for i := 0; i < 2; i++ {
-		if err := s.Keep(context.Background(), home); err != nil {
-			t.Fatal(err)
-		}
+// The weather follows the stored coordinates of the home, which come from a
+// place picked in the list on the box (ADR 0023).
+func TestKeepRefreshesTheWeatherAtTheStoredCoordinates(t *testing.T) {
+	fc, hits, q := openMeteo(t, sunny, 200)
+	s := weather.New(weather.WithBaseURL(fc.URL))
+	if err := s.Keep(context.Background(), &fakeHome{lat: 48.15, lon: 11.46}); err != nil {
+		t.Fatal(err)
 	}
-	if geoHits.Load() != 1 || home.stored != 1 {
-		t.Errorf("geocoded %d times, stored %d", geoHits.Load(), home.stored)
+	if hits.Load() != 1 || q.Get("latitude") != "48.15" || q.Get("longitude") != "11.46" {
+		t.Errorf("hits %d, query %v", hits.Load(), *q)
 	}
 	if r, ok := s.Latest(48.15, 11.46); !ok || r.TempC != 18.4 {
 		t.Fatalf("latest = %+v %v", r, ok)
+	}
+}
+
+// A home without coordinates (a box set up before the picker, until a parent
+// picks a place) is not looked up by name any more: nothing goes out.
+func TestKeepDoesNothingWhileTheHomeHasNoLocation(t *testing.T) {
+	fc, hits, _ := openMeteo(t, sunny, 200)
+	s := weather.New(weather.WithBaseURL(fc.URL))
+	for i := 0; i < 2; i++ {
+		if err := s.Keep(context.Background(), &fakeHome{}); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if hits.Load() != 0 {
+		t.Errorf("%d requests for a home without location", hits.Load())
 	}
 }
 
@@ -232,45 +204,6 @@ func TestKeepReportsDatabaseErrors(t *testing.T) {
 	s := weather.New(weather.WithBaseURL("http://127.0.0.1:1"))
 	if err := s.Keep(context.Background(), &fakeHome{err: errors.New("disk I/O error")}); err == nil {
 		t.Fatal("database error swallowed")
-	}
-}
-
-// A place that is not found is not searched again every round.
-func TestKeepBacksOffAfterNoPlaceFound(t *testing.T) {
-	var geoHits atomic.Int32
-	geo := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		geoHits.Add(1)
-		_, _ = w.Write([]byte(`{}`))
-	}))
-	defer geo.Close()
-	now := t0
-	s := weather.New(weather.WithGeocodingURL(geo.URL), weather.WithClock(func() time.Time { return now }))
-	home := &fakeHome{name: "Nowhereville"}
-	if err := s.Keep(context.Background(), home); err == nil {
-		t.Fatal("first failed search not reported")
-	}
-	for i := 0; i < 3; i++ {
-		if err := s.Keep(context.Background(), home); err != nil {
-			t.Fatalf("round during back-off: %v", err)
-		}
-	}
-	if geoHits.Load() != 1 {
-		t.Fatalf("searched %d times during back-off", geoHits.Load())
-	}
-	home.mu.Lock()
-	home.name = "Pasing" // the location was corrected
-	home.mu.Unlock()
-	_ = s.Keep(context.Background(), home)
-	if geoHits.Load() != 2 {
-		t.Fatalf("corrected name not searched, hits %d", geoHits.Load())
-	}
-	now = now.Add(weather.NoPlaceBackoff + time.Minute)
-	home.mu.Lock()
-	home.name = "Nowhereville"
-	home.mu.Unlock()
-	_ = s.Keep(context.Background(), home)
-	if geoHits.Load() != 3 {
-		t.Fatalf("not searched again after back-off, hits %d", geoHits.Load())
 	}
 }
 

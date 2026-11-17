@@ -61,8 +61,8 @@ func TestConnectNewShowsBothGuidesWithExactlyOneServiceChecked(t *testing.T) {
 		if strings.Contains(block, `form="`) {
 			t.Errorf("%s: the choice cards must not use a form attribute", path)
 		}
-		if !regexp.MustCompile(`<a class="back" href="/calendars">.*Zurück zu den Kalender-Verbindungen</a>`).MatchString(r.body) {
-			t.Errorf("%s: no back link to the calendars:\n%s", path, r.body)
+		if !strings.Contains(r.body, `<a href="/calendars">Kalender-Verbindungen</a>`) {
+			t.Errorf("%s: no trail through the calendar connections:\n%s", path, r.body)
 		}
 		if !strings.Contains(r.body, "<h1>Kalender verbinden</h1>") {
 			t.Errorf("%s: no title", path)
@@ -253,8 +253,8 @@ func TestConnectSuccessLineAndBackLinkOnTheChoosePage(t *testing.T) {
 	if !strings.Contains(r.body, "Mit iCloud verbunden. 2 Kalender gefunden: Schalte ein, was die Box zeigen soll.") {
 		t.Errorf("no success line:\n%s", r.body)
 	}
-	if !regexp.MustCompile(`<a class="back" href="/calendars">.*Zurück zu den Kalender-Verbindungen</a>`).MatchString(r.body) || strings.Contains(r.body, `<p><a href="/calendars">`) {
-		t.Error("the choose page has no back link")
+	if !strings.Contains(r.body, `<a href="/calendars">Kalender-Verbindungen</a>`) || strings.Contains(r.body, `<p><a href="/calendars">`) {
+		t.Error("the choose page has no trail through the calendar connections")
 	}
 	r = b.post("/connections", url.Values{"provider": {"caldav"}, "url": {"https://caldav.example.org"}, "username": {"u"}, "password": {"pw-1"}})
 	if !strings.Contains(r.body, "Verbunden. 2 Kalender gefunden: Schalte ein, was die Box zeigen soll.") {

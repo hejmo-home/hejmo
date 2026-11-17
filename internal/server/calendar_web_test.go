@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 // calendarBox is the example family with a paired display and the parent signed in.
@@ -441,5 +443,27 @@ func TestAPIRefusesATimezoneWhenChangingAnEvent(t *testing.T) {
 	status, _, _ := c.call(http.MethodPatch, "/events/"+ev["id"].(string), map[string]any{"timezone": "Europe/London"})
 	if status != http.StatusUnprocessableEntity {
 		t.Fatalf("patch with timezone = %d", status)
+	}
+}
+
+// PR 81 finding: right after connecting a CalDAV calendar the household has no
+// family calendar yet (it is created on first use). The first visit to the
+// "New event" form must still offer both calendars.
+func TestNewEventFormOffersEveryWritableCalendarOnTheFirstVisit(t *testing.T) {
+	b := signedInAPI(t).b
+	h, _ := b.db.HomeHousehold()
+	conn, err := b.db.CreateCalDAVConnection(h.ID, store.NewCalDAVConnection{URL: "https://caldav.example.org/", Username: "u@example.org", Password: "xxxx-xxxx-xxxx-xxxx", Now: b.now})
+	if err != nil {
+		t.Fatal(err)
+	}
+	work, err := b.db.AddCalDAVCalendar(h.ID, conn.ID, store.NewCalDAVCalendar{Name: "Work", RemoteURL: "https://caldav.example.org/work/", Color: "#2F5E7A", IntervalMinutes: 60, Now: b.now})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for visit := 1; visit <= 2; visit++ {
+		page := getEN(b, "/calendar/new").body
+		if !strings.Contains(page, `<select name="calendar">`) || !strings.Contains(page, `value="`+work.ID+`"`) || !strings.Contains(page, ">Family</option>") {
+			t.Fatalf("visit %d: no calendar choice with Work and Family:\n%s", visit, page)
+		}
 	}
 }

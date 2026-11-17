@@ -25,7 +25,7 @@ Lists (#32, #33) take only typed text. On 16/11/2026 the product owner asked whe
 ### Article library
 
 - An **article** is a thing that can be put on a list: name (de/en), symbol, department, the diets it fits, the allergens it contains.
-- The box ships about 250 articles in German and English. Symbols are emoji from **Noto Emoji** (Apache-2.0) as placeholders.
+- The box ships about 250 articles in German and English. Symbols are emoji characters (names from Unicode CLDR) drawn by the system font as placeholders; the **Noto Emoji** font (Apache-2.0) is not bundled, so a symbol looks as the device draws it.
 - Parents manage the library under Settings, Lists, Library: add **own articles**, hide shipped ones, change name, symbol, department, diets and allergens. An own article's picture is a **photo upload** or an **image address on the web**. The box downloads a web image once, never links to it; it accepts only http(s) addresses that resolve to public addresses, checks type and size, and stores every picture re-encoded and scaled down (at most 512 px, JPEG), metadata removed.
 - Free text stays possible; afterwards the box offers to add it to the library.
 - **Suggestions follow the household's diets:** an article is suggested when it fits at least one person's diet.
@@ -50,3 +50,9 @@ Lists (#32, #33) take only typed text. On 16/11/2026 the product owner asked whe
 - New tickets for each 0.1 item; Opus designs before code.
 - The data model grows by articles, pictures, quantities, diets and allergies; list entries keep their text so free text and sync stay simple.
 - Downloading web images is a new outbound request from the box; the threat model gets an entry (server-side request forgery).
+
+## Amendment of 16/11/2026 (units, product owner feedback on #165)
+
+- **Units are preset by location:** the home location's country decides which units are active (metric plus piece, dozen, pack and bunch in most countries; UK adds imperial units; US uses US customary). Parents switch further units on or off under Settings, Lists, Units. The add form offers only active units.
+- **Every article has one or two default units** (eggs: dozen, piece; flour: g, kg). Shipped articles carry them; own articles choose them.
+- **Totals convert:** quantities of the same article add up across convertible units (500 g + 1 kg = 1.5 kg; 1 dozen + 6 pieces = 18 pieces), shown in the article's first default unit where it fits. Units of different kinds stay side by side.

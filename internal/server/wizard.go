@@ -55,6 +55,7 @@ func wizardAt(n int) *wizardView {
 var (
 	richPath = regexp.MustCompile(`\[\[(.+?)\]\]`)
 	richBold = regexp.MustCompile(`\*\*(.+?)\*\*`)
+	richHost = regexp.MustCompile(`\(\((.+?)\)\)`)
 	richLink = regexp.MustCompile(`\[([^\]]+)\]\((https?://[^\s)]+)\)`)
 )
 
@@ -62,13 +63,14 @@ var (
 const extIcon = `<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg>`
 
 // rich turns a text of the locales into HTML: everything is escaped first,
-// then [[a › b]] becomes a menu path, **x** bold text and [text](https://…) a
+// then [[a › b]] becomes a menu path, ((name)) a host name that may wrap, **x** bold text and [text](https://…) a
 // link that opens in a new tab. A link to an https page is drawn as an outside
 // link (underlined, with the icon); an http link is the home network's router. Nothing from a request reaches it unescaped.
 func rich(s string) template.HTML {
 	s = html.EscapeString(s)
 	s = richPath.ReplaceAllString(s, `<span class="path">$1</span>`)
 	s = richBold.ReplaceAllString(s, `<b>$1</b>`)
+	s = richHost.ReplaceAllString(s, `<span class="host">$1</span>`)
 	s = richLink.ReplaceAllStringFunc(s, func(m string) string {
 		g := richLink.FindStringSubmatch(m)
 		if !strings.HasPrefix(g[2], "https://") { // an http link is an address in the home network, such as the router

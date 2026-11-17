@@ -29,6 +29,9 @@ func hubTargets(body string) []string {
 	}
 	var out []string
 	for _, h := range hrefRe.FindAllStringSubmatch(m[1], -1) {
+		if h[1] == "/settings/licences" { // a quiet link below the rows, not a setup screen
+			continue
+		}
 		out = append(out, h[1])
 	}
 	return out
@@ -48,7 +51,7 @@ func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
 
 // hubPages are the setup screens the Settings hub holds. Add a new hub entry here; the tests
 // below also check that the hub shows nothing this list lacks.
-var hubPages = []string{"/calendars", "/caldav", "/displays", "/phones", "/mcp", "/people", "/settings/household", "/otp", "/sessions"}
+var hubPages = []string{"/calendars", "/caldav", "/displays", "/photos", "/phones", "/mcp", "/people", "/settings/lists", "/settings/household", "/account", "/sessions"}
 
 // 5.18: every setup page is reachable from the Settings hub.
 func TestSettingsHubLinksEverySetupPage(t *testing.T) {
@@ -67,7 +70,7 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 			t.Errorf("hub lacks a link to %s: %v", want, got)
 		}
 	}
-	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Phones", "People", "Household", "One-time codes", "Signed-in devices"} {
+	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Phones", "People", "Lists", "Household", "My account", "Signed-in devices"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("hub lacks %q", want)
 		}
@@ -82,21 +85,21 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 	}
 }
 
-// 5.18: every setup page links back to the hub, and Settings stays marked in the navigation.
+// 5.18, ticket 182: every setup page links back to the hub in its trail, and Settings stays marked in the navigation.
 func TestSetupPagesLinkBackToSettings(t *testing.T) {
 	b := signedInBox(t)
 	b.post("/calendars", url.Values{"name": {"Feiertage"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
 	for _, page := range hubPages {
 		body := getEN(b, page).body
-		if !strings.Contains(body, `<a class="back" href="/settings">`) {
+		if !strings.Contains(body, `<a href="/settings">Settings</a>`) {
 			t.Errorf("%s has no link back to Settings", page)
 		}
-		// Ticket 111: the link sits inside main. As a grid item of the frame it
+		// Ticket 111: the trail sits inside main. As a grid item of the frame it
 		// broke the 1024 px layout.
-		if at, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main`); at < main {
-			t.Errorf("%s: the link back to Settings is outside main", page)
+		if at, main := strings.Index(body, `<nav class="crumbs"`), strings.Index(body, `<main`); at < main {
+			t.Errorf("%s: the trail is outside main", page)
 		}
-		if !strings.Contains(body, `<a href="/settings" aria-current="page"`) {
+		if !strings.Contains(body, `<a href="/settings" aria-current="true"`) {
 			t.Errorf("%s does not mark Settings as the current section", page)
 		}
 	}

@@ -19,6 +19,8 @@ type personRow struct {
 	First, Last bool
 	// Acc says in words whether an adult can sign in (ticket 145).
 	Acc accLine
+	// Food is the diet and allergies in words (ticket 163, ADR 0019).
+	Food foodView
 }
 
 // accLine is the account state in the role line of the people overview: for
@@ -113,10 +115,16 @@ func (s *server) renderPeople(w http.ResponseWriter, r *http.Request, p principa
 		return
 	}
 	chips := chipsOf(people)
+	lang := s.langOf(r)
+	foods, err := s.db.HouseholdFood(p.household.ID)
+	if err != nil {
+		s.fail(w, "food", err)
+		return
+	}
 	rows := make([]personRow, len(people))
 	byID := map[string]personChip{}
 	for i, c := range chips {
-		rows[i] = personRow{personChip: c, Role: people[i].Role, First: i == 0, Last: i == len(people)-1}
+		rows[i] = personRow{personChip: c, Role: people[i].Role, First: i == 0, Last: i == len(people)-1, Food: s.foodViewOf(lang, foods[c.ID])}
 		if people[i].Role == store.RoleParent {
 			line, err := s.accLineOf(r, p, people[i])
 			if err != nil {
@@ -248,6 +256,12 @@ func (s *server) renderPerson(w http.ResponseWriter, r *http.Request, p principa
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role,
 		"Form": form, "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
+	f, err := s.db.PersonFood(p.household.ID, person.ID)
+	if err != nil {
+		s.fail(w, "food", err)
+		return
+	}
+	data["Food"] = s.foodViewOf(s.langOf(r), f)
 	if person.Role == store.RoleParent { // children get no account (ADR 0010)
 		row, err := s.signInRow(r, p, person)
 		if err != nil {
@@ -346,20 +360,20 @@ func (s *server) handlePersonMove(w http.ResponseWriter, r *http.Request) {
 
 // Subgroups.
 
-func (s *server) renderGroup(w http.ResponseWriter, r *http.Request, p principal, status int, g store.Group, isNew bool, errKey, errField string) {
+func (s *server) renderGroup(w http.ResponseWriter, r *http.Request, p principal, status int, g store.Group, saved string, isNew bool, errKey, errField string) {
 	people, ok := s.peopleOf(w, p)
 	if !ok {
 		return
 	}
 	s.render(w, r, status, "group.html", map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Group": g, "New": isNew, "People": chipsOf(people),
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Group": g, "Saved": saved, "New": isNew, "People": chipsOf(people),
 		"Error": errKey, "ErrorField": errField,
 	})
 }
 
 func (s *server) handleGroupNew(w http.ResponseWriter, r *http.Request) {
 	if p, ok := s.parentPage(w, r); ok {
-		s.renderGroup(w, r, p, http.StatusOK, store.Group{}, true, "", "")
+		s.renderGroup(w, r, p, http.StatusOK, store.Group{}, "", true, "", "")
 	}
 }
 
@@ -379,7 +393,7 @@ func (s *server) handleGroupCreate(w http.ResponseWriter, r *http.Request) {
 	}
 	g := groupFromForm(r)
 	if !groupNameOK(g.Name) {
-		s.renderGroup(w, r, p, http.StatusUnprocessableEntity, g, true, "groups.error.name", "name")
+		s.renderGroup(w, r, p, http.StatusUnprocessableEntity, g, "", true, "groups.error.name", "name")
 		return
 	}
 	if _, err := s.db.CreateGroup(p.household.ID, g.Name, g.Members); err != nil {
@@ -408,7 +422,7 @@ func (s *server) handleGroupPage(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if g, ok := s.groupFor(w, r, p); ok {
-		s.renderGroup(w, r, p, http.StatusOK, g, false, "", "")
+		s.renderGroup(w, r, p, http.StatusOK, g, g.Name, false, "", "")
 	}
 }
 
@@ -424,7 +438,7 @@ func (s *server) handleGroupSave(w http.ResponseWriter, r *http.Request) {
 	in := groupFromForm(r)
 	in.ID = g.ID
 	if !groupNameOK(in.Name) {
-		s.renderGroup(w, r, p, http.StatusUnprocessableEntity, in, false, "groups.error.name", "name")
+		s.renderGroup(w, r, p, http.StatusUnprocessableEntity, in, g.Name, false, "groups.error.name", "name")
 		return
 	}
 	if err := s.db.UpdateGroup(p.household.ID, g.ID, in.Name, in.Members); err != nil {
@@ -445,7 +459,7 @@ func (s *server) handleGroupDelete(w http.ResponseWriter, r *http.Request) {
 	}
 	switch err := s.db.DeleteGroup(p.household.ID, g.ID); {
 	case errors.Is(err, store.ErrInUse):
-		s.renderGroup(w, r, p, http.StatusConflict, g, false, "groups.error.in_use", "")
+		s.renderGroup(w, r, p, http.StatusConflict, g, g.Name, false, "groups.error.in_use", "")
 	case err != nil:
 		s.fail(w, "delete group", err)
 	default:

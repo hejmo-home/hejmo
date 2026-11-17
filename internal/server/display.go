@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"slices"
+	"strconv"
 	"strings"
 	"time"
 
@@ -32,12 +33,46 @@ const (
 )
 
 // displayToken returns the hash of the token in the display's cookie.
+// A display may send it as its cookie (the web pages) or as a bearer token
+// (the API, ADR 0015); a Bearer header wins.
 func displayToken(r *http.Request) (string, bool) {
+	if header := r.Header.Get("Authorization"); header != "" {
+		// Only a Bearer header is a display token; another scheme (say Basic
+		// auth added by a reverse proxy) leaves the cookie in charge.
+		if token, ok := strings.CutPrefix(header, "Bearer "); ok {
+			token = strings.TrimSpace(token)
+			if token == "" {
+				return "", false
+			}
+			return auth.HashToken(token), true
+		}
+	}
 	c, err := r.Cookie(displayCookie)
 	if err != nil || c.Value == "" {
 		return "", false
 	}
 	return auth.HashToken(c.Value), true
+}
+
+// errPairingsLimited is returned while one address opened too many pairings.
+var errPairingsLimited = errors.New("too many pairings opened")
+
+// openPairing registers a new waiting display for a request that carries no
+// valid display token. It returns the display and its token, which only the
+// caller sees: the box keeps its hash. Opening is limited per client address.
+func (s *server) openPairing(r *http.Request, h store.Household) (store.Display, string, error) {
+	ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
+	if splitErr != nil {
+		ip = r.RemoteAddr
+	}
+	key := "open:" + ip
+	if s.opens.blocked(key) {
+		return store.Display{}, "", errPairingsLimited
+	}
+	s.opens.fail(key)
+	token := auth.NewToken()
+	d, err := s.db.OpenPairing(h.ID, auth.HashToken(token), s.now())
+	return d, token, err
 }
 
 // currentDisplay finds the display behind the request's token.
@@ -74,23 +109,18 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Cache-Control", "no-store")
 	d, hash, ok := s.currentDisplay(r)
 	if !ok {
-		ip, _, splitErr := net.SplitHostPort(r.RemoteAddr)
-		if splitErr != nil {
-			ip = r.RemoteAddr
-		}
-		key := "open:" + ip
-		if s.opens.blocked(key) {
+		var token string
+		d, token, err = s.openPairing(r, h)
+		if errors.Is(err, errPairingsLimited) {
 			w.Header().Set("Retry-After", "600")
 			http.Error(w, http.StatusText(http.StatusTooManyRequests), http.StatusTooManyRequests)
 			return
 		}
-		s.opens.fail(key)
-		token := auth.NewToken()
-		hash = auth.HashToken(token)
-		if d, err = s.db.OpenPairing(h.ID, hash, s.now()); err != nil {
+		if err != nil {
 			s.fail(w, "open pairing", err)
 			return
 		}
+		hash = auth.HashToken(token)
 		http.SetCookie(w, &http.Cookie{
 			Name: displayCookie, Value: token, Path: "/", Expires: s.now().AddDate(10, 0, 0),
 			HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
@@ -107,6 +137,7 @@ func (s *server) handleDisplay(w http.ResponseWriter, r *http.Request) {
 		}
 		s.render(w, r, http.StatusOK, "display_family.html", map[string]any{
 			"Display": d, "PollSeconds": displayPollSeconds, "View": view, "Version": version, "Theme": s.displayTheme(h, d),
+			"SaverSeconds": s.saverSeconds(d),
 		})
 		return
 	}
@@ -188,7 +219,11 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	for id, ts := range byPerson {
 		progress[id] = familyview.ProgressOf(ts)
 	}
-	return familyview.Build(familyview.Input{Meals: meals, MealCutoffs: cutoffs, Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
+	lists, err := s.db.Lists(h.ID)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	return familyview.Build(familyview.Input{HasLists: len(lists) > 0, Meals: meals, MealCutoffs: cutoffs, Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
 		Waste: data.waste, DayNotes: byDay, TomorrowLabel: s.i18n.T(lang, "family.tomorrow"), TodayLabel: s.i18n.T(lang, "family.today"),
 		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID), TaskProgress: progress,
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
@@ -316,14 +351,29 @@ func (s *server) homeWeather(h store.Household) *familyview.Weather {
 // handleDisplayState tells a display whether it is still what its page says:
 // "paired", "pairing" (with its code) or "unpaired" (revoked, unknown or its
 // code ran out). The display's script reloads the page when this changes.
+// A paired display also learns whether its screensaver is due now ("saver" is
+// "1": on and not in quiet mode) and after how many idle seconds it asks
+// ("saver_seconds", "0" when it is off).
 func (s *server) handleDisplayState(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	w.Header().Set("Cache-Control", "no-store")
+	_ = json.NewEncoder(w).Encode(s.displayState(r))
+}
+
+// displayState is the answer of the state check, for the page route and the
+// API route alike. It touches a paired display's last-seen time.
+func (s *server) displayState(r *http.Request) map[string]string {
 	state := map[string]string{"state": "unpaired"}
 	if d, hash, ok := s.currentDisplay(r); ok {
 		switch {
 		case d.Paired:
 			state["state"] = "paired"
+			state["saver"], state["saver_seconds"] = "0", strconv.Itoa(s.saverSeconds(d))
 			if h, err := s.db.HomeHousehold(); err == nil {
 				state["theme"] = s.displayTheme(h, d)
+				if s.saverActive(h, d) {
+					state["saver"] = "1"
+				}
 			}
 			if s.now().Sub(d.LastSeen) > time.Minute {
 				_ = s.db.TouchDisplay(hash, s.now())
@@ -332,9 +382,7 @@ func (s *server) handleDisplayState(w http.ResponseWriter, r *http.Request) {
 			state["state"], state["code"] = "pairing", d.Code
 		}
 	}
-	w.Header().Set("Content-Type", "application/json")
-	w.Header().Set("Cache-Control", "no-store")
-	_ = json.NewEncoder(w).Encode(state)
+	return state
 }
 
 // errTooManyAttempts is returned while too many wrong codes were entered.
@@ -372,4 +420,16 @@ func splitWaste(occs []calendar.Occurrence, cals []store.Calendar) (rest, waste 
 		}
 	}
 	return rest, waste
+}
+
+// saverSeconds is how long the family view waits without a touch before it asks
+// the box whether the screensaver is due; 0 when the display has it switched
+// off. It is not 0 in quiet mode: the page is rendered once and stays for days,
+// so the timer must be there when the night ends. The box decides when the
+// timer fires (displayState).
+func (s *server) saverSeconds(d store.Display) int {
+	if !d.Paired || !d.Saver.Enabled {
+		return 0
+	}
+	return d.Saver.IdleMinutes * 60
 }

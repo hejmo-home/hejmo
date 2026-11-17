@@ -24,13 +24,54 @@ func (s *server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 	data := map[string]any{"Next": localPath(r.URL.Query().Get("next"))}
 	// A session cookie the box no longer knows (ended by a parent or run out):
 	// say why the sign-in page is shown, and drop the cookie.
+	sessionEnded, signedIn := false, false
 	if c, err := r.Cookie(sessionCookie); err == nil && c.Value != "" {
-		if _, err := s.db.SessionPerson(auth.HashToken(c.Value), s.now()); err != nil {
-			data["SignedOut"] = true
+		if _, err := s.db.SessionPerson(auth.HashToken(c.Value), s.now()); err == nil {
+			signedIn = true
+		} else {
+			sessionEnded = true
 			http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
 		}
 	}
+	// A browser that was paired as a device (ticket 199) and has no session
+	// any more gets the page "no longer paired", not the password form, until
+	// an adult asks for the sign-in (?account=1). A fresh browser has no marker.
+	if c, err := r.Cookie(deviceCookie); err == nil && c.Value == "1" {
+		// ?account=1 is the adult's request; so is ?passkey=, the way back from a passkey sign-in that did not work.
+		q := r.URL.Query()
+		if q.Get("account") != "1" && q.Get("passkey") == "" && !signedIn {
+			w.Header().Set("Cache-Control", "no-store")
+			s.render(w, r, http.StatusOK, "unpaired.html", map[string]any{"Next": data["Next"]})
+			return
+		}
+		sessionEnded = false // the adult knows already; no notice on the way to the sign-in
+	}
+	data["SignedOut"] = sessionEnded
+	s.withPasskeyWay(r, data)
 	s.render(w, r, http.StatusOK, "login.html", data)
+}
+
+// withPasskeyWay adds to the sign-in page what it says about passkeys
+// (ticket 95): the way to sign in with one when the box was reached by its
+// name, which of the two ways is the main action on this device, why there is
+// none over an IP address, and the error after a passkey that did not work.
+func (s *server) withPasskeyWay(r *http.Request, data map[string]any) {
+	if s.atBoxName(r) {
+		data["Passkey"] = true
+		if c, err := r.Cookie(passkeyUsedCookie); err == nil && c.Value == "1" {
+			data["PasskeyMain"] = true
+		}
+	} else if s.anyPasskey() {
+		data["PasskeyNotice"] = map[string]string{"Here": hostOf(r), "Name": s.boxName(), "URL": s.boxURL("/login")}
+	}
+	switch r.URL.Query().Get("passkey") {
+	case "gone":
+		data["PasskeyError"], data["PasskeyAnother"] = "login.passkey.gone", true
+	case "cancelled":
+		data["PasskeyError"] = "login.passkey.cancelled"
+	case "failed":
+		data["PasskeyError"] = "login.passkey.failed"
+	}
 }
 
 func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
@@ -40,6 +81,7 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 	data := map[string]any{"Username": username, "Next": next}
 	if s.limiter.blocked(key) {
 		data["Error"] = "login.error.limit"
+		s.withPasskeyWay(r, data)
 		s.render(w, r, http.StatusTooManyRequests, "login.html", data)
 		return
 	}
@@ -62,6 +104,7 @@ func (s *server) handleLoginSubmit(w http.ResponseWriter, r *http.Request) {
 		// Deliberately one error at the password field: it must not reveal which of
 		// username, password or code was wrong; the text names all three.
 		data["Error"], data["ErrorField"] = "login.error.credentials", "password"
+		s.withPasskeyWay(r, data)
 		s.render(w, r, http.StatusUnauthorized, "login.html", data)
 		return
 	}
@@ -141,6 +184,11 @@ func localPath(p string) string {
 }
 
 func (s *server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	// A stale page must not end a child's phone session either (Q46).
+	if p, ok := s.currentPerson(r); ok && s.childPhoneSession(r, p) {
+		http.Error(w, s.i18n.T(s.langOf(r), "home.logout.child"), http.StatusForbidden)
+		return
+	}
 	s.endSession(w, r)
 	// Whoever signs out on the page of an invitation comes back to it (ticket 145).
 	if next := localPath(r.PostFormValue("next")); strings.HasPrefix(next, "/invite/") {

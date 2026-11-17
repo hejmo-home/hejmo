@@ -13,6 +13,7 @@ import (
 	"errors"
 	"fmt"
 	"sort"
+	"strings"
 	"time"
 
 	ical "github.com/emersion/go-ical"
@@ -65,7 +66,14 @@ func (o Object) ModTime() time.Time {
 
 // Calendar renders the object as iCalendar. The same object always gives the
 // same bytes, so the ETag follows the content.
-func (o Object) Calendar() (*ical.Calendar, error) {
+func (o Object) Calendar() (*ical.Calendar, error) { return o.render(nil) }
+
+// Audience tells what goes out for an event's audience: the value of
+// X-HEJMO-AUDIENCE and the readable line at the end of the description. Both
+// are empty for the whole family.
+type Audience func(calendar.Event) (value, line string)
+
+func (o Object) render(aud Audience) (*ical.Calendar, error) {
 	cal := ical.NewCalendar()
 	cal.Props.SetText(ical.PropVersion, "2.0")
 	cal.Props.SetText(ical.PropProductID, prodID)
@@ -94,12 +102,12 @@ func (o Object) Calendar() (*ical.Calendar, error) {
 		cal.Children = append(cal.Children, timezone(n, zones[n], minYear-1, max(maxYear, 2037)))
 	}
 	for _, e := range events {
-		cal.Children = append(cal.Children, vevent(o.UID, o.Master.ID, e))
+		cal.Children = append(cal.Children, vevent(o.UID, o.Master.ID, e, aud))
 	}
 	return cal, nil
 }
 
-func vevent(uid, masterID string, e calendar.Event) *ical.Component {
+func vevent(uid, masterID string, e calendar.Event, aud Audience) *ical.Component {
 	if uid == "" {
 		uid = masterID
 	}
@@ -115,8 +123,17 @@ func vevent(uid, masterID string, e calendar.Event) *ical.Component {
 		c.Props.Set(p)
 	}
 	c.Props.SetText(ical.PropSummary, e.Title)
-	if e.Description != "" {
-		c.Props.SetText(ical.PropDescription, e.Description)
+	desc := e.Description
+	if aud != nil {
+		if value, line := aud(e); value != "" {
+			desc = withAudienceLine(desc, line)
+			ap := ical.NewProp(icsfeed.AudienceProp)
+			ap.Value = value
+			c.Props.Set(ap)
+		}
+	}
+	if desc != "" {
+		c.Props.SetText(ical.PropDescription, desc)
 	}
 	if e.Location != "" {
 		c.Props.SetText(ical.PropLocation, e.Location)
@@ -252,4 +269,15 @@ func Parse(cal *ical.Calendar, zone *time.Location) (Object, error) {
 		return Object{}, fmt.Errorf("%w: no event found", ErrInvalid)
 	}
 	return out, nil
+}
+
+// withAudienceLine puts the readable audience line at the end of a description.
+func withAudienceLine(desc, line string) string {
+	switch {
+	case line == "":
+		return desc
+	case strings.TrimSpace(desc) == "":
+		return line
+	}
+	return strings.TrimRight(desc, " \t\r\n") + "\n\n" + line
 }

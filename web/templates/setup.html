@@ -3,20 +3,22 @@
   <p class="lead">{{t "setup.lead"}}</p>
   {{template "error" .}}
   <form method="post" action="/setup" class="steps">
+    {{template "defaultSubmit"}}
     <fieldset>
       <legend>{{t "setup.step.home"}}</legend>
       <p class="hint">{{t "setup.step.home.hint"}}</p>
-      {{template "field" (dict "Root" . "Name" "home_name" "Label" (t "setup.field.home_name") "Value" .Form.HomeName "Required" true "Autocomplete" "address-level2" "Hint" (t "setup.field.home_name.hint"))}}
+      {{template "placePicker" (dict "Place" .Form.Place)}}
       <div class="f">
         <label>{{t "setup.field.region"}}
           <select name="region">
-            {{$sel := .Form.Region}}
+            {{$sel := .Form.Region}}{{if not $sel}}<option value="" selected>{{t "place.region_empty"}}</option>
+            {{end}}
             {{range .RegionGroups}}<optgroup label="{{t (printf "setup.country.%s" .Country)}}">
               {{range .Regions}}<option value="{{.Code}}"{{if eq .Code $sel}} selected{{end}}>{{.Name}}</option>
               {{end}}</optgroup>
             {{end}}
           </select></label>
-        <p class="hint">{{t "setup.field.region.hint"}}</p>
+        <p class="hint">{{if .RegionTaken}}{{t "setup.field.region.taken"}}{{else}}{{t "setup.field.region.hint"}}{{end}}</p>
         {{template "fieldError" (dict "Root" . "Name" "region")}}
       </div>
     </fieldset>
@@ -33,4 +35,5 @@
     </fieldset>
     <div class="actions"><button class="button" type="submit">{{t "setup.start"}}</button></div>
   </form>
+  <script src="/static/place.js" defer data-url="/places" data-one="{{t "place.one_match"}}" data-many="{{t "place.n_match"}}" data-more="{{t "place.more5"}}" data-not-there="{{t "place.not_there"}}" data-chosen="{{t "place.chosen"}}" data-change="{{t "place.change"}}" data-taken="{{t "setup.field.region.taken"}}"></script>
 {{template "foot"}}

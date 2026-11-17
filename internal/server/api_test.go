@@ -26,6 +26,9 @@ type apiClient struct {
 	router routers.Router
 	token  string
 	cookie bool
+	// host, when set, is the Host header of the request: the browser reached the
+	// box under that name (passkeys, ticket 95).
+	host string
 }
 
 func loadSpec(t *testing.T) *openapi3.T {
@@ -72,15 +75,23 @@ func (c *apiClient) call(method, path string, body any) (int, map[string]any, []
 // callRaw is call for answers that are not JSON: the body, status and content
 // type, after both request and response were checked against openapi.yaml.
 func (c *apiClient) callRaw(method, path string, body any) (string, int, string) {
-	t := c.b.t
-	t.Helper()
+	c.b.t.Helper()
 	var raw []byte
+	ctype := ""
 	if body != nil {
 		raw, _ = json.Marshal(body)
+		ctype = "application/json"
 	}
+	return c.send(method, path, ctype, raw)
+}
+
+// send is callRaw for a body of any content type (a photo upload is multipart).
+func (c *apiClient) send(method, path, contentType string, raw []byte) (string, int, string) {
+	t := c.b.t
+	t.Helper()
 	req, _ := http.NewRequest(method, c.b.srv.URL+"/api/v1"+path, bytes.NewReader(raw))
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	if c.token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.token)
@@ -101,6 +112,16 @@ func (c *apiClient) callRaw(method, path string, body any) (string, int, string)
 	req.Body = io.NopCloser(bytes.NewReader(raw))
 	req.ContentLength = int64(len(raw)) // the validator applied schema defaults to the length, not to raw
 
+	if c.host != "" {
+		req.Host = c.host // after the routing, which goes by the address of the test server
+		if c.cookie {     // the Go client keeps cookies per Host header: carry the session over by hand
+			req.Header.Set("Origin", "https://"+c.host)
+			u, _ := url.Parse(c.b.srv.URL)
+			for _, ck := range c.b.client.Jar.Cookies(u) {
+				req.AddCookie(ck)
+			}
+		}
+	}
 	client := c.b.bareClient()
 	if c.cookie {
 		client = c.b.client
@@ -143,7 +164,7 @@ func (c *apiClient) newToken(scopes string) string {
 }
 
 func (c *apiClient) withToken(token string) *apiClient {
-	return &apiClient{b: c.b, router: c.router, token: token}
+	return &apiClient{b: c.b, router: c.router, token: token, host: c.host}
 }
 
 func TestOpenAPIDocumentsEveryRoute(t *testing.T) {

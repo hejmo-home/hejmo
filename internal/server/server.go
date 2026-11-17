@@ -19,7 +19,10 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/passkey"
+	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
+	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/weather"
@@ -59,6 +62,13 @@ type Options struct {
 	// host script: no settings file is written, no status is read and the
 	// settings page does not offer auto-update.
 	UpdateDir string
+	// PhotoDir is the data volume directory for the photo screensaver (ticket
+	// 178): the photo folder inside it and the shrunk copies the box keeps.
+	// Empty means the box keeps no photos.
+	PhotoDir string
+	// Pictures downloads the web images of own articles (ticket 164). Nil means
+	// a fetcher that only reaches public addresses; tests pass one that reaches their own server.
+	Pictures *picture.Fetcher
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
@@ -86,24 +96,34 @@ type PublicHTTPS interface {
 }
 
 type server struct {
-	db         *store.DB
-	pki        *pki.Store
-	public     PublicHTTPS
-	httpsPort  string
-	now        func() time.Time
-	i18n       *i18n.Bundle
-	pages      *template.Template
-	logger     *slog.Logger
-	limiter    *loginLimiter
+	db        *store.DB
+	pki       *pki.Store
+	public    PublicHTTPS
+	httpsPort string
+	now       func() time.Time
+	i18n      *i18n.Bundle
+	pages     *template.Template
+	logger    *slog.Logger
+	limiter   *loginLimiter
+	// passkeyTries counts refused passkey sign-ins per client address.
+	passkeyTries *loginLimiter
+	// ceremonies holds the passkey ceremonies that are begun and not finished.
+	ceremonies *passkey.Ceremonies
 	opens      *loginLimiter // pairing screens opened, per client address
 	sync       *calsync.Service
 	weather    *weather.Service
+	places     *places.List // the list of places on the box, loaded at start-up (ADR 0023)
 	live       time.Duration
 	countWait  time.Duration
 	done       <-chan struct{}
 	updateDir  string
+	photos     *photoBox // nil without a data directory for photos
 	flashTexts flashTexts
-	rolled     sync.Map // household id -> the day its meal plan calendar was last rolled forward
+	// pictures holds pictures made from an upload or a web image until their article is saved (ticket 164).
+	pictures pendingPictures
+	// fetcher downloads web images, only from public addresses.
+	fetcher *picture.Fetcher
+	rolled  sync.Map // household id -> the day its meal plan calendar was last rolled forward
 }
 
 // New returns the box's root HTTP handler.
@@ -115,7 +135,7 @@ func New(opts Options) http.Handler {
 	if opts.PKI == nil {
 		panic("server: Options.PKI is required")
 	}
-	s := &server{db: opts.DB, pki: opts.PKI, public: opts.Public, httpsPort: opts.HTTPSPort, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad()}
+	s := &server{db: opts.DB, pki: opts.PKI, public: opts.Public, httpsPort: opts.HTTPSPort, now: opts.Now, logger: opts.Logger, i18n: i18n.MustLoad(), places: places.Embedded()}
 	if s.httpsPort == "" {
 		s.httpsPort = "443"
 	}
@@ -131,8 +151,17 @@ func New(opts Options) http.Handler {
 	if s.weather = opts.Weather; s.weather == nil {
 		s.weather = weather.New(weather.WithClock(s.now))
 	}
+	if s.fetcher = opts.Pictures; s.fetcher == nil {
+		s.fetcher = &picture.Fetcher{}
+	}
 	s.done = opts.Done
 	s.updateDir = opts.UpdateDir
+	if opts.PhotoDir != "" {
+		s.photos = newPhotoBox(opts.PhotoDir)
+		if opts.Done != nil {
+			go s.watchPhotoFolder(opts.Done)
+		}
+	}
 	if s.live = opts.LiveInterval; s.live <= 0 {
 		s.live = 2 * time.Second
 	}
@@ -141,6 +170,8 @@ func New(opts Options) http.Handler {
 	}
 	s.limiter = newLoginLimiter(5, 15*time.Minute, s.now)
 	s.opens = newLoginLimiter(10, 10*time.Minute, s.now)
+	s.passkeyTries = newLoginLimiter(10, 10*time.Minute, s.now)
+	s.ceremonies = passkey.NewCeremonies(s.now)
 	s.pages = parsePages()
 	s.syncUpdateSettings()
 
@@ -164,9 +195,22 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /setup", s.handleSetupSubmit)
 	mux.HandleFunc("GET /setup/totp", s.handleSetupTOTPForm)
 	mux.HandleFunc("POST /setup/totp", s.handleSetupTOTPSubmit)
-	mux.HandleFunc("GET /otp", s.handleOTPPage)
-	mux.HandleFunc("POST /otp/recovery-codes", s.handleRecoveryCodesNew)
-	mux.HandleFunc("POST /otp/reset/{id}", s.handleOTPReset)
+	mux.HandleFunc("GET /setup/passkey", s.handlePasskeyOffer)
+	mux.HandleFunc("GET /otp", s.handleOTPMoved)
+	mux.HandleFunc("GET /account", s.handleAccountPage)
+	mux.HandleFunc("POST /account/recovery-codes", s.handleRecoveryCodesNew)
+	mux.HandleFunc("POST /account/recovery-codes/saved", s.handleRecoveryCodesSaved)
+	mux.HandleFunc("GET /account/reset/{id}", s.handleResetPage)
+	mux.HandleFunc("POST /account/reset/{id}", s.handleResetSubmit)
+	mux.HandleFunc("POST /account/passkeys", s.handlePasskeyOfferForm)
+	mux.HandleFunc("POST /account/passkeys/begin", s.handlePasskeyRegisterBegin)
+	mux.HandleFunc("POST /account/passkeys/finish", s.handlePasskeyRegisterFinish)
+	mux.HandleFunc("POST /account/passkeys/assert/begin", s.handlePasskeyAssertBegin)
+	mux.HandleFunc("GET /account/passkeys/{id}", s.handlePasskeyPage)
+	mux.HandleFunc("POST /account/passkeys/{id}", s.handlePasskeyRename)
+	mux.HandleFunc("POST /account/passkeys/{id}/remove", s.handlePasskeyRemove)
+	mux.HandleFunc("POST /login/passkey/begin", s.handleLoginPasskeyBegin)
+	mux.HandleFunc("POST /login/passkey/finish", s.handleLoginPasskeyFinish)
 	mux.HandleFunc("GET /sessions", s.handleSessionsPage)
 	mux.HandleFunc("GET /sessions/{id}", s.handleSessionPage)
 	mux.HandleFunc("POST /sessions/{id}/end", s.handleSessionEnd)
@@ -191,6 +235,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /calendars/{id}", s.handleCalendarPage)
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
+	mux.HandleFunc("POST /calendars/{id}/read-only", s.handleCalendarReadOnly)
 	mux.HandleFunc("GET /connections/new", s.handleConnectNew)
 	mux.HandleFunc("POST /calendars/{id}/waste", s.handleCalendarWaste)
 	mux.HandleFunc("POST /notes", s.handleNoteSave)
@@ -220,6 +265,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /people/{id}", s.handlePersonPage)
 	mux.HandleFunc("POST /people/{id}", s.handlePersonSave)
 	mux.HandleFunc("POST /people/{id}/move", s.handlePersonMove)
+	mux.HandleFunc("GET /people/{id}/food", s.handleFoodPage)
+	mux.HandleFunc("POST /people/{id}/food", s.handleFoodSave)
 	mux.HandleFunc("GET /groups/new", s.handleGroupNew)
 	mux.HandleFunc("POST /groups", s.handleGroupCreate)
 	mux.HandleFunc("GET /groups/{id}", s.handleGroupPage)
@@ -230,6 +277,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /tasks/stars", s.handleStarBooking)
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
+	mux.HandleFunc("POST /tasks/{id}/subtasks", s.handleSubtaskAdd)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}", s.handleSubtaskSave)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}/done", s.handleSubtaskDone)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}/move", s.handleSubtaskMove)
+	mux.HandleFunc("POST /tasks/{id}/subtasks/{sub_id}/delete", s.handleSubtaskDelete)
 	mux.HandleFunc("POST /tasks/{id}/stars", s.handleTaskStars)
 	mux.HandleFunc("POST /tasks/{id}/delete", s.handleTaskDelete)
 	mux.HandleFunc("POST /tasks/{id}/routine", s.handleTaskLeaveRoutine)
@@ -250,6 +302,19 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /routines/templates/{id}/steps/{step}", s.handleTemplateStepPage)
 	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}", s.handleTemplateStepSave)
 	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}/delete", s.handleTemplateStepDelete)
+	mux.HandleFunc("GET /settings/lists", s.handleListsSettings)
+	mux.HandleFunc("POST /settings/lists", s.handleListsSettingsSave)
+	mux.HandleFunc("GET /settings/lists/library", s.handleLibrary)
+	mux.HandleFunc("GET /settings/lists/library/new", s.handleArticleNew)
+	mux.HandleFunc("POST /settings/lists/library", s.handleArticleCreate)
+	mux.HandleFunc("GET /settings/lists/library/suggest", s.handleArticleSuggest)
+	mux.HandleFunc("GET /settings/lists/library/picture/{token}", s.handlePendingPicture)
+	mux.HandleFunc("GET /settings/lists/library/{id}", s.handleArticle)
+	mux.HandleFunc("POST /settings/lists/library/{id}", s.handleArticleSave)
+	mux.HandleFunc("POST /settings/lists/library/{id}/hidden", s.handleArticleHidden)
+	mux.HandleFunc("POST /settings/lists/library/{id}/copy", s.handleArticleCopy)
+	mux.HandleFunc("POST /settings/lists/library/{id}/delete", s.handleArticleDelete)
+	mux.HandleFunc("GET /articles/{id}/picture", s.handleArticlePicture)
 	mux.HandleFunc("GET /lists", s.handleListsPage)
 	mux.HandleFunc("POST /lists", s.handleListCreate)
 	mux.HandleFunc("GET /lists/{id}", s.handleListPage)
@@ -275,18 +340,39 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /mcp/tokens", s.handleMCPTokenCreate)
 	mux.HandleFunc("GET /mcp/tokens/{id}", s.handleMCPTokenPage)
 	mux.HandleFunc("POST /mcp/tokens/{id}/revoke", s.handleMCPTokenRevoke)
+	mux.HandleFunc("GET /photos", s.handlePhotosPage)
+	mux.HandleFunc("POST /photos/upload", s.handlePhotosUpload)
+	mux.HandleFunc("POST /photos/albums", s.handleAlbumCreate)
+	mux.HandleFunc("POST /photos/limit", s.handleLimitSave)
+	mux.HandleFunc("GET /photos/albums/{id}", s.handleAlbumPage)
+	mux.HandleFunc("POST /photos/albums/{id}/rename", s.handleAlbumRename)
+	mux.HandleFunc("POST /photos/albums/{id}/delete", s.handleAlbumDelete)
+	mux.HandleFunc("POST /photos/albums/{id}/selection", s.handleSelection)
+	mux.HandleFunc("POST /photos/{id}/hidden", s.handlePhotoHidden)
 	mux.HandleFunc("GET /display", s.handleDisplay)
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
 	mux.HandleFunc("GET /display/events", s.handleDisplayEvents)
+	mux.HandleFunc("GET /display/saver", s.handleDisplaySaver)
+	mux.HandleFunc("GET /display/saver/photos", s.serveDisplaySaver)
+	mux.HandleFunc("GET /display/photo/{id}", s.serveDisplayPhoto)
 	mux.HandleFunc("GET /display/person/{id}", s.handleDisplayPerson)
 	mux.HandleFunc("GET /display/person/{id}/view", s.handleDisplayPersonView)
 	mux.HandleFunc("POST /display/tasks/{id}/done", s.handleDisplayTaskDone)
+	mux.HandleFunc("POST /display/tasks/{id}/subtasks/{sub_id}/done", s.handleDisplaySubtaskDone)
+	mux.HandleFunc("GET /display/lists", s.handleDisplayLists)
+	mux.HandleFunc("GET /display/lists/{id}", s.handleDisplayList)
+	mux.HandleFunc("GET /display/lists/{id}/view", s.handleDisplayListView)
+	mux.HandleFunc("POST /display/lists/{id}/entries", s.handleDisplayEntryAdd)
+	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/done", s.handleDisplayEntryDone)
+	mux.HandleFunc("POST /display/lists/{id}/completed/delete", s.handleDisplayTickedDelete)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
 	mux.HandleFunc("POST /displays", s.handleDisplayPair)
 	mux.HandleFunc("GET /displays/{id}", s.handleDisplayPage)
 	mux.HandleFunc("POST /displays/{id}/unpair", s.handleDisplayUnpair)
 	mux.HandleFunc("GET /settings", s.handleSettingsHub)
+	mux.HandleFunc("GET /places", s.handlePlaces)
+	mux.HandleFunc("GET /settings/licences", s.handleLicences)
 	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
 	mux.HandleFunc("GET /phones", s.handlePhonesPage)
@@ -294,6 +380,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /phones/pairings", s.handlePhonePairingCreate)
 	mux.HandleFunc("POST /phones/pairings/{id}/confirm", s.handlePhonePairingConfirm)
 	mux.HandleFunc("POST /phones/{id}/revoke", s.handlePhoneRevoke)
+	mux.HandleFunc("POST /phones/{id}/repair", s.handlePhoneRepair)
 	mux.HandleFunc("GET /phones/join/{code}", s.handlePhoneJoin)
 	mux.HandleFunc("GET /manifest.webmanifest", s.handleManifest)
 	mux.HandleFunc("GET /sw.js", s.handleServiceWorker)
@@ -335,14 +422,16 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 // parsePages parses the embedded templates; "t" is replaced per render.
 func parsePages() *template.Template {
 	return template.Must(template.New("").Funcs(template.FuncMap{
-		"t":    func(string) string { return "" },
-		"tf":   func(string, ...string) string { return "" },
-		"dict": dict,
-		"list": func(v ...any) []any { return v },
-		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
-		"strs": strs,
-		"rich": rich,
-		"repl": repl,
+		"t":      func(string) string { return "" },
+		"tf":     func(string, ...string) string { return "" },
+		"dict":   dict,
+		"list":   func(v ...any) []any { return v },
+		"has":    func(list []string, v string) bool { return slices.Contains(list, v) },
+		"errIn":  errIn,
+		"errKey": errKey,
+		"strs":   strs,
+		"rich":   rich,
+		"repl":   repl,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
 
@@ -365,12 +454,20 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
 		fr.setLanguage(lang, r)
-		if detailPages[name] && fr.Back { // a detail page links to its own overview, not to the hub
-			fr.Back, fr.BackHref, fr.BackLabel = false, "", ""
-		}
+		fr.PlainBrand = plainBrandPages[name]
 		if href, _ := data["BackHref"].(string); href != "" { // a page that leads back to a named page
 			text, _ := data["BackText"].(string)
 			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, href, "", text
+		}
+		if parts := crumbsFor(name, data); len(parts) > 0 && data["Wizard"] == nil { // a trail replaces the back link (ticket 182); a wizard is a linear flow, not below Settings
+			for _, c := range parts {
+				label := c.Name
+				if c.Key != "" {
+					label = s.i18n.T(lang, c.Key)
+				}
+				fr.Crumbs = append(fr.Crumbs, crumbLink{c.Href, label})
+			}
+			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, "", "", ""
 		}
 		key, arg := s.takeFlash(w, r) // always consumed, so it cannot show later
 		switch own, _ := data["SuccessKey"].(string); {
@@ -427,6 +524,25 @@ func (s *server) fail(w http.ResponseWriter, what string, err error) {
 
 // repl fills the {name} placeholders of a translated text: repl(text, "{n}", "3", ...).
 func repl(text string, pairs ...string) string { return strings.NewReplacer(pairs...).Replace(text) }
+
+// errIn reports whether a page names the field in its ErrorFields (field to
+// text key), for pages whose error belongs to several fields at once.
+func errIn(root any, field string) bool {
+	_, ok := errKey0(root)[field]
+	return ok
+}
+
+// errKey is the text key ErrorFields gives the field, or "".
+func errKey(root any, field string) string { return errKey0(root)[field] }
+
+func errKey0(root any) map[string]string {
+	if m, ok := root.(map[string]any); ok {
+		if f, ok := m["ErrorFields"].(map[string]string); ok {
+			return f
+		}
+	}
+	return nil
+}
 
 // dict builds a map for passing several values to a sub-template.
 func dict(kv ...any) map[string]any {

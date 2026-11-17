@@ -14,22 +14,47 @@ import (
 const (
 	sessionCookie   = "hejmo_session"
 	sessionDuration = 30 * 24 * time.Hour
+	// deviceCookie marks a browser that was paired as a device (ticket 199). It
+	// holds no data; with it, a browser whose session ended shows "this device
+	// is no longer paired". It is forgotten at the next sign-in or sign-out.
+	deviceCookie    = "hejmo_device"
+	deviceMarkerAge = 400 * 24 * 60 * 60 // seconds; the longest a browser keeps a cookie
 )
 
+func (s *server) setDeviceMarker(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{Name: deviceCookie, Value: "1", Path: "/", MaxAge: deviceMarkerAge, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
+}
+
+func (s *server) clearDeviceMarker(w http.ResponseWriter, r *http.Request) {
+	if _, err := r.Cookie(deviceCookie); err == nil {
+		http.SetCookie(w, &http.Cookie{Name: deviceCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
+	}
+}
+
 func (s *server) startSession(w http.ResponseWriter, r *http.Request, personID string) error {
+	_, err := s.startSessionHash(w, r, personID)
+	return err
+}
+
+// startSessionHash is startSession that also returns the hash the session is
+// stored under, for a caller that adds to it (the passkey of a sign-in).
+func (s *server) startSessionHash(w http.ResponseWriter, r *http.Request, personID string) (string, error) {
 	token := auth.NewToken()
 	expires := s.now().Add(sessionDuration)
-	if err := s.db.CreateSession(auth.HashToken(token), personID, auth.DeviceLabel(r.UserAgent()), s.now(), expires); err != nil {
-		return err
+	hash := auth.HashToken(token)
+	s.clearDeviceMarker(w, r) // a sign-in ends the "no longer paired" page
+	if err := s.db.CreateSession(hash, personID, auth.DeviceLabel(r.UserAgent()), s.now(), expires); err != nil {
+		return "", err
 	}
 	http.SetCookie(w, &http.Cookie{
 		Name: sessionCookie, Value: token, Path: "/", Expires: expires,
 		HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
 	})
-	return nil
+	return hash, nil
 }
 
 func (s *server) endSession(w http.ResponseWriter, r *http.Request) {
+	s.clearDeviceMarker(w, r)
 	if c, err := r.Cookie(sessionCookie); err == nil {
 		_ = s.db.DeleteSession(auth.HashToken(c.Value))
 	}
@@ -58,6 +83,12 @@ func (s *server) currentPerson(r *http.Request) (store.Person, bool) {
 func (s *server) phoneSession(r *http.Request) bool {
 	c, err := r.Cookie(sessionCookie)
 	return err == nil && s.db.IsPhoneSession(auth.HashToken(c.Value))
+}
+
+// childPhoneSession reports whether the request carries a child's phone's
+// device session, which cannot be signed out on the phone (Q46).
+func (s *server) childPhoneSession(r *http.Request, p store.Person) bool {
+	return p.Role == store.RoleChild && s.phoneSession(r)
 }
 
 // pendingPerson resolves the session cookie even when the person still has to
@@ -95,7 +126,9 @@ func sameOrigin(next http.Handler) http.Handler {
 			next.ServeHTTP(w, r)
 			return
 		}
-		if r.Header.Get("Authorization") != "" || originMatches(r) {
+		// Opening a pairing takes and sets no cookie and no credentials, so a
+		// display's API client, which sends neither Origin nor a token, may.
+		if r.Header.Get("Authorization") != "" || originMatches(r) || r.URL.Path == "/api/v1/display/pairing" {
 			next.ServeHTTP(w, r)
 			return
 		}

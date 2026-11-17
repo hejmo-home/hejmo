@@ -18,6 +18,10 @@
 // after a parent confirmed the code, revoked the display, or the code ran out.
 // The same answer carries the theme the display should show now.
 //
+// A quiet display that a kiosk app switched off (ticket 179) marks its page
+// with data-wake-url: a touch, or the screen coming back on, posts there so the
+// box wakes the display for a few minutes.
+//
 // A personal view (ticket 5.6) works the same way on its own addresses
 // (data-view-url, data-events-url), and returns to the family view after
 // data-return-seconds without interaction; refreshes do not count as one.
@@ -136,6 +140,24 @@
       });
   }
   armReload();
+  // Quiet mode with a kiosk app (ticket 179, Q79): the page it shows names
+  // data-wake-url, and a touch, or the screen coming back on, tells the box to
+  // wake the display for a while. The box decides; at most one message every 15 seconds.
+  var wakeSent = 0;
+  function wake() {
+    var q = view.querySelector("[data-wake-url]");
+    if (!q) return;
+    var now = Date.now();
+    if (now - wakeSent < 15000) return;
+    wakeSent = now;
+    fetch(q.getAttribute("data-wake-url"), { method: "POST", cache: "no-store", credentials: "same-origin" }).catch(function () {});
+  }
+  ["pointerdown", "touchstart", "keydown"].forEach(function (name) {
+    document.addEventListener(name, wake, { passive: true, capture: true });
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState !== "hidden") wake();
+  });
   // The field marked data-keep survives a redraw: what is typed in it and its
   // focus (a change from another display must not take the keyboard away).
   function holdField() {

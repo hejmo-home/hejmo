@@ -360,6 +360,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
 	mux.HandleFunc("GET /display/events", s.handleDisplayEvents)
+	mux.HandleFunc("POST /display/wake", s.handleDisplayWake)
 	mux.HandleFunc("GET /display/saver", s.handleDisplaySaver)
 	mux.HandleFunc("GET /display/saver/photos", s.serveDisplaySaver)
 	mux.HandleFunc("GET /display/photo/{id}", s.serveDisplayPhoto)

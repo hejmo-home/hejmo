@@ -783,6 +783,26 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/DisplayState" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+  /display/wake:
+    post:
+      operationId: wakeDisplay
+      summary: A touch on a quiet display wakes it (its own token as bearer token)
+      security:
+        - displayBearer: []
+      description: |
+        Ticket 179. In quiet mode a display whose kiosk app switched it off (quiet
+        mode `off` in `brightness.quiet.mode`) is woken by a touch: the display's
+        page posts here, and the box keeps it awake for `brightness.quiet.wake_minutes`
+        at evening brightness with the night page, then switches it off again.
+        The answer is 204 whether or not it woke anything: outside quiet mode, while
+        quiet mode only dims, and on a display without a kiosk app nothing changes.
+        A request without a bearer token is refused with 401, one with the token of
+        a display that is not paired with 403.
+      responses:
+        "204":
+          description: Noted
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /displays/{id}:
     patch:
       operationId: updateDisplay

@@ -217,3 +217,46 @@ func (s *server) brightNow(lang string, t brightness.Target, st KioskState, know
 	}
 	return head, strings.TrimSpace(sentence + " " + confirm), ""
 }
+
+// handleDisplayWake is a touch on a quiet display (Q79): the display's script
+// posts it, and the box keeps a display that quiet mode switched off awake for
+// the display's wake minutes, at evening brightness with the night page. A
+// touch outside quiet mode, or on a display without a kiosk app, changes
+// nothing.
+func (s *server) handleDisplayWake(w http.ResponseWriter, r *http.Request) {
+	d, h, ok := s.pairedDisplay(w, r)
+	if !ok {
+		return
+	}
+	s.wake(d, h)
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusNoContent)
+}
+
+// apiDisplayWake is POST /display/wake on the API: the same, with the
+// display's token as bearer token.
+func (s *server) apiDisplayWake(w http.ResponseWriter, r *http.Request) {
+	if !strings.HasPrefix(r.Header.Get("Authorization"), "Bearer ") {
+		writeError(w, http.StatusUnauthorized, "unauthorized")
+		return
+	}
+	d, _, ok := s.currentDisplay(r)
+	h, err := s.db.HomeHousehold()
+	switch {
+	case !ok || !d.Paired:
+		writeError(w, http.StatusForbidden, "not a paired display")
+		return
+	case err != nil:
+		s.fail(w, "household", err)
+		return
+	}
+	s.wake(d, h)
+	w.Header().Set("Cache-Control", "no-store")
+	w.WriteHeader(http.StatusNoContent)
+}
+
+func (s *server) wake(d store.Display, h store.Household) {
+	if s.kiosk != nil && listensForWake(d) && d.Quiet.Active(s.householdNow(h)) {
+		s.kiosk.Wake(d.ID)
+	}
+}

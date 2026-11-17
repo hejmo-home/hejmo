@@ -173,6 +173,7 @@ var displayAPIRoutes = []struct {
 }{
 	{"POST", "/display/pairing", (*server).apiOpenPairing},
 	{"GET", "/display/state", (*server).apiDisplayState},
+	{"POST", "/display/wake", (*server).apiDisplayWake},
 	{"GET", "/display/saver", (*server).apiDisplaySaver},
 	{"GET", "/display/photos/{id}", (*server).apiDisplayPhoto},
 }

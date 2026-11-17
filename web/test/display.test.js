@@ -249,3 +249,55 @@ test('the poll starts the countdown when the screensaver is switched on, and end
   assert.equal(p.live().length, 0);
   assert.ok(!p.location.reloaded);
 });
+
+// The quiet page of a display a kiosk app switched off listens for a touch
+// (ticket 179): it tells the box, at most every 15 seconds, and only when the
+// markup in the view names an address.
+function quiet(wakeURL) {
+  const requests = [];
+  const listeners = {};
+  const display = element({ attrs: { 'data-display': '', 'data-state': 'paired', 'data-poll-seconds': '30', 'data-version': 'v1' } });
+  const view = element({ addEventListener() {}, querySelectorAll: () => [] });
+  view.querySelector = (sel) => (sel === '[data-wake-url]' && view.wake ? view.wake : null);
+  view.wake = wakeURL ? element({ attrs: { 'data-wake-url': wakeURL } }) : null;
+  display.querySelector = (sel) => (sel === '[data-view]' ? view : null);
+  let now = 1000000;
+  class FakeDate extends Date { static now() { return now; } }
+  const document = {
+    querySelector: (sel) => (sel === '[data-display]' ? display : null),
+    addEventListener: (n, fn) => { (listeners[n] = listeners[n] || []).push(fn); },
+    visibilityState: 'visible',
+  };
+  const fetch = (url, init) => { requests.push({ url, init }); return Promise.resolve({ ok: true, status: 204 }); };
+  class EventSource { constructor() { this.on = {}; } addEventListener() {} }
+  const sandbox = { document, fetch, EventSource, Intl, Date: FakeDate, encodeURIComponent, location: { href: '', reload() {} }, setInterval: () => 0, setTimeout: () => 0, clearTimeout() {} };
+  sandbox.window = sandbox;
+  vm.runInNewContext(source, sandbox);
+  return { requests, listeners, view, advance(ms) { now += ms; } };
+}
+
+test('a touch on a quiet page with a wake address tells the box, at most every 15 seconds', () => {
+  const p = quiet('/display/wake');
+  p.listeners.pointerdown.forEach((fn) => fn({}));
+  assert.equal(p.requests.length, 1);
+  assert.equal(p.requests[0].url, '/display/wake');
+  assert.equal(p.requests[0].init.method, 'POST');
+  p.listeners.touchstart.forEach((fn) => fn({}));
+  assert.equal(p.requests.length, 1, 'a second touch right after is not sent');
+  p.advance(16000);
+  p.listeners.pointerdown.forEach((fn) => fn({}));
+  assert.equal(p.requests.length, 2, 'a later touch keeps the display awake');
+});
+
+test('the screen coming back on counts as a touch', () => {
+  const p = quiet('/display/wake');
+  p.listeners.visibilitychange.forEach((fn) => fn({}));
+  assert.equal(p.requests.length, 1);
+});
+
+test('a page without a wake address sends nothing', () => {
+  const p = quiet('');
+  p.listeners.pointerdown.forEach((fn) => fn({}));
+  p.listeners.visibilitychange.forEach((fn) => fn({}));
+  assert.equal(p.requests.length, 0);
+});

@@ -158,6 +158,11 @@ func (p *outlookPush) update(ctx context.Context, po store.PendingObject, remote
 			return err
 		}
 		changeKey = updated.ChangeKey
+	} else {
+		// The audience line is part of the notes: nothing to PATCH means the
+		// audience is unchanged, and writing it again would only bump the
+		// change key for nothing.
+		prop = ""
 	}
 	if err := p.db.PushDone(p.cal.ID, po.URL, po.Rev, changeKey, ""); err != nil {
 		return err

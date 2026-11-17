@@ -533,3 +533,39 @@ func TestAnOwnCalendarWithAnUnfamiliarOwnerAddressIsNotShared(t *testing.T) {
 		t.Errorf("own calendar = %+v", found[1])
 	}
 }
+
+func TestAPushWithNothingToChangeWritesNoAudienceAndKeepsTheKey(t *testing.T) {
+	fx := newOutlookFx(t)
+	start := time.Date(2026, 11, 24, 8, 30, 0, 0, berlinZone)
+	created, err := fx.db.CreateEvent(fx.h.ID, calendar.Event{CalendarID: fx.cal.ID, Title: "Kinderarzt", Start: start, End: start.Add(30 * time.Minute), People: []string{fx.mia.ID}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	push := func() {
+		t.Helper()
+		if err := fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	push()
+	id := fx.fake.Events("cal-1")[0]
+	ext := "POST /v1.0/me/events/" + id + "/extensions"
+	count := func() int {
+		n := 0
+		for _, r := range fx.fake.Requests {
+			if r == ext {
+				n++
+			}
+		}
+		return n
+	}
+	before := count()
+	// The same event again: a new revision, but nothing to PATCH.
+	if err := fx.db.ApplyChange(fx.h.ID, calendar.Change{Update: []calendar.Event{created}}); err != nil {
+		t.Fatal(err)
+	}
+	push()
+	if got := count(); got != before {
+		t.Errorf("audience written again with nothing changed: %d -> %d", before, got)
+	}
+}

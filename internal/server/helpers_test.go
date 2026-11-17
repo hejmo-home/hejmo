@@ -72,6 +72,8 @@ type fakePublic struct {
 	got     []publiccert.Request
 	failure error
 	cleared int
+	// clearErr, if set, is what Clear returns.
+	clearErr error
 	// noCert makes a ready manager have no certificate to serve: the setup is
 	// stored but the certificate could not be obtained.
 	noCert bool
@@ -110,6 +112,9 @@ func (f *fakePublic) DeleteRecords(context.Context) error {
 func (f *fakePublic) Clear() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.clearErr != nil {
+		return f.clearErr
+	}
 	f.name, f.status, f.cleared = "", publiccert.Status{}, f.cleared+1
 	return nil
 }

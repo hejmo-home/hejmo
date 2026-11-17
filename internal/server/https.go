@@ -369,8 +369,8 @@ func (s *server) handleSwitchToOwnCA(w http.ResponseWriter, r *http.Request) {
 	// Choosing the public name took the offline answer back, so the wizard
 	// asks again (ticket 201, Q142). The browser is on plain HTTP here, so the
 	// question is answered at this address, not at /setup/offline.
-	if !s.outboundBox().Asked {
-		var offline bool
+	asked, offline := s.outboundBox().Asked, false
+	if !asked {
 		switch r.PostFormValue("offline") {
 		case "on":
 			offline = true
@@ -382,16 +382,19 @@ func (s *server) handleSwitchToOwnCA(w http.ResponseWriter, r *http.Request) {
 			s.renderOfflineQuestionAt(w, r, http.StatusUnprocessableEntity, true, "/setup/https/own-ca")
 			return
 		}
-		if err := s.db.AnswerOfflineQuestion(offline, s.now()); err != nil {
-			s.fail(w, "offline answer", err)
-			return
-		}
 	}
 	if err := s.public.Clear(); err != nil {
 		s.fail(w, "forget public HTTPS setup", err)
 		return
 	}
-	s.provisionOwnCA(w, r, "")
+	// The answer is stored last: if the public setup could not be forgotten or
+	// the own CA not made, the question stays open and a retry asks again.
+	s.provisionOwnCA(w, r, "", func() error {
+		if asked {
+			return nil
+		}
+		return s.db.AnswerOfflineQuestion(offline, s.now())
+	})
 }
 
 func (s *server) apiHTTPS(w http.ResponseWriter, r *http.Request, _ principal) {
@@ -486,10 +489,12 @@ func (s *server) handleHTTPSSubmit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	s.provisionOwnCA(w, r, router)
+	s.provisionOwnCA(w, r, router, nil)
 }
 
-func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request, routerName string) {
+// provisionOwnCA makes the box's own CA and certificate and sends the browser
+// on to the trust page. after, if set, runs once that worked.
+func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request, routerName string, after func() error) {
 	if err := s.pki.ProvisionWithRouterName(hostOf(r), routerName, s.now()); err != nil {
 		if errors.Is(err, pki.ErrInvalidHost) {
 			s.renderHTTPSStep(w, r, http.StatusBadRequest, httpsOwn, publicForm{Issuer: publiccert.LetsEncrypt}, httpsError{Key: "setup.https.invalidhost"})
@@ -497,6 +502,12 @@ func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request, routerNa
 		}
 		s.fail(w, "provision HTTPS", err)
 		return
+	}
+	if after != nil {
+		if err := after(); err != nil {
+			s.fail(w, "offline answer", err)
+			return
+		}
 	}
 	http.Redirect(w, r, "/ca", http.StatusSeeOther)
 }

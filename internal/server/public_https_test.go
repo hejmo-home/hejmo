@@ -445,3 +445,28 @@ func TestSwitchingToTheOwnCAAsksWhetherTheBoxStaysOffline(t *testing.T) {
 		t.Errorf("box = %+v, want asked and offline", box)
 	}
 }
+
+// Review of ticket 201: the answer is stored only once the public setup is
+// forgotten and the own CA is made. A failure in between leaves the question
+// open, so a retry asks again instead of finding offline mode on over a
+// public setup that is still stored.
+func TestSwitchingToTheOwnCAStoresTheOfflineAnswerOnlyOnceItWorked(t *testing.T) {
+	b := newFreshBox(t)
+	b.post("/setup/https/public", publicForm())
+	b.public.clearErr = errors.New("disk full")
+	if r := b.post("/setup/https/own-ca", url.Values{"offline": {"on"}}); r.status != http.StatusInternalServerError {
+		t.Fatalf("POST own-ca with a failing Clear = %d, want 500", r.status)
+	}
+	if box, _ := b.db.OutboundBox(); box.Asked || box.Offline {
+		t.Fatalf("box = %+v, want the question still open and offline mode off", box)
+	}
+	b.public.clearErr = nil
+	r := b.do(http.MethodPost, "/setup/https/own-ca", url.Values{}, map[string]string{"Accept-Language": "en"})
+	mustContain(t, r.body, "Should the box stay fully offline?")
+	if r := b.post("/setup/https/own-ca", url.Values{"offline": {"on"}}); r.status != http.StatusSeeOther || r.location != "/ca" {
+		t.Fatalf("retry = %d %q, want 303 /ca", r.status, r.location)
+	}
+	if box, _ := b.db.OutboundBox(); !box.Asked || !box.Offline {
+		t.Errorf("box = %+v, want asked and offline", box)
+	}
+}

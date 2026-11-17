@@ -138,7 +138,7 @@ func TestOwnSignOutOnTheDeviceForgetsTheMarker(t *testing.T) {
 	}
 }
 
-func TestPairingAgainForgetsTheUnpairedPage(t *testing.T) {
+func TestPairingAgainShowsThePairedHomeInsteadOfTheUnpairedPage(t *testing.T) {
 	b, phone, _ := unpairedPhone(t)
 	path := showCode(t, b)
 	phone.get(path, "en")

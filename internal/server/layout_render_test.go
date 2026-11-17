@@ -629,6 +629,8 @@ func wizardPages(t *testing.T) []layoutPage {
 	}
 	fresh := newFreshBox(t)
 	add("fresh box", fresh, "/setup/https")
+	add("fresh box", fresh, "/setup/https?way=public")
+	add("fresh box", fresh, "/setup/https?way=domain")
 
 	add("https box", newBox(t), "/setup")
 

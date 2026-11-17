@@ -11,7 +11,6 @@ import (
 	"io"
 	"io/fs"
 	"log/slog"
-	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -76,7 +75,7 @@ type Options struct {
 	Gate *outbound.Gate
 	// Resolver looks up the name of the box's LAN address in the router, to
 	// prefill the router name of the HTTPS step (decision Q92). Nil means the
-	// system resolver; tests pass a fake.
+	// resolver of the home network (package outbound); tests pass a fake.
 	Resolver NameResolver
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
@@ -157,7 +156,7 @@ func New(opts Options) http.Handler {
 		s.httpsPort = "443"
 	}
 	if s.resolver = opts.Resolver; s.resolver == nil {
-		s.resolver = net.DefaultResolver
+		s.resolver = outbound.HomeResolver{}
 	}
 	if s.now == nil {
 		s.now = time.Now

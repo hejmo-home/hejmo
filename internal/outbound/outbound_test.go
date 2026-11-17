@@ -236,7 +236,7 @@ func TestLocalReachesOnlyTheHomeNetwork(t *testing.T) {
 			t.Errorf("Local %s = %v, want ErrNotHome", u, err)
 		}
 	}
-	for _, u := range []string{"http://192.168.178.40:8080/", "http://10.0.0.5/", "http://hejmo.local/", "http://tablet/"} {
+	for _, u := range []string{"http://192.168.178.40:8080/", "http://10.0.0.5/", "http://hejmo.local/", "http://tablet/", "http://tablet.home/", "http://nas.internal/"} {
 		if err := outbound.CheckHome(u); err != nil {
 			t.Errorf("CheckHome(%s) = %v, want home network", u, err)
 		}
@@ -278,5 +278,19 @@ func TestServicesListIsStableAndValid(t *testing.T) {
 	}
 	if outbound.Service("nonsense").Valid() || outbound.Other.Valid() {
 		t.Error("only the listed connections are valid single switches")
+	}
+}
+
+// The reverse lookup of the box's address (router name, decision Q92) goes
+// through this package: it asks the DNS only about addresses of the home network.
+func TestHomeResolverLooksUpOnlyHomeAddresses(t *testing.T) {
+	for _, a := range []string{"8.8.8.8", "2001:db8::1", "not an address"} {
+		names, err := outbound.HomeResolver{}.LookupAddr(context.Background(), a)
+		if !errors.Is(err, outbound.ErrNotHome) || len(names) != 0 {
+			t.Errorf("LookupAddr(%s) = %v, %v, want ErrNotHome before any lookup", a, names, err)
+		}
+	}
+	if _, err := (outbound.HomeResolver{}).LookupAddr(context.Background(), "192.168.178.40"); errors.Is(err, outbound.ErrNotHome) {
+		t.Errorf("a home address was refused: %v", err)
 	}
 }

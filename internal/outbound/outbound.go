@@ -324,8 +324,8 @@ func homeAddr(a netip.Addr) bool {
 
 // CheckHome reports whether the address in rawURL is in the home network: an
 // address of a private, loopback or link-local range, "localhost", a name
-// ending in .local, .lan, .home.arpa or .fritz.box, or a name without a dot.
-// Other names (tablet.home, say) do not count, offline mode or not. It looks at
+// ending in .local, .lan, .home, .internal, .home.arpa or .fritz.box, or a name
+// without a dot. Other names do not count, offline mode or not. It looks at
 // the text only and resolves nothing.
 func CheckHome(rawURL string) error {
 	u, err := url.Parse(rawURL)
@@ -342,10 +342,25 @@ func CheckHome(rawURL string) error {
 	if h == "localhost" || !strings.Contains(h, ".") {
 		return nil
 	}
-	for _, suffix := range []string{".local", ".lan", ".home.arpa", ".fritz.box"} {
+	for _, suffix := range []string{".local", ".lan", ".home", ".internal", ".home.arpa", ".fritz.box"} {
 		if strings.HasSuffix(h, suffix) {
 			return nil
 		}
 	}
 	return ErrNotHome
+}
+
+// HomeResolver does the reverse lookup of an address in the DNS of the home
+// network (the router's name for the box). It answers only for addresses of
+// the home network: any other address is refused with ErrNotHome before a
+// request goes out, so the lookup never leaves the house.
+type HomeResolver struct{}
+
+// LookupAddr returns the names the DNS knows for addr.
+func (HomeResolver) LookupAddr(ctx context.Context, addr string) ([]string, error) {
+	a, err := netip.ParseAddr(addr)
+	if err != nil || !homeAddr(a.Unmap()) {
+		return nil, ErrNotHome
+	}
+	return net.DefaultResolver.LookupAddr(ctx, a.String())
 }

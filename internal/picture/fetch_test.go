@@ -9,6 +9,7 @@ import (
 	"net/http/httptest"
 	"net/netip"
 	"strings"
+	"sync"
 	"sync/atomic"
 	"testing"
 	"time"
@@ -274,7 +275,12 @@ func TestAnUnreachableHostIsNotTheUsersFault(t *testing.T) {
 }
 
 func TestACancelledDownloadStopsWaitingForTheDecodeSlot(t *testing.T) {
-	srv := serve(t, jpegHandler(t))
+	sent := make(chan struct{})
+	var once sync.Once
+	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
+		jpegHandler(t)(w, r)
+		once.Do(func() { close(sent) })
+	})
 	release := picture.Hold() // another picture is being decoded
 	defer release()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -285,12 +291,17 @@ func TestACancelledDownloadStopsWaitingForTheDecodeSlot(t *testing.T) {
 		_, err := f.Fetch(ctx, srv.URL+"/media/hafer.jpg")
 		done <- err
 	}()
+	select {
+	case <-sent: // the whole picture is on its way, so the fetch is waiting for the slot
+	case <-time.After(2 * time.Second):
+		t.Fatal("the server was never asked for the picture")
+	}
 	time.Sleep(100 * time.Millisecond)
 	cancel()
 	select {
 	case err := <-done:
-		if err == nil {
-			t.Error("a cancelled download succeeded")
+		if !errors.Is(err, picture.ErrTimeout) {
+			t.Errorf("err = %v, want ErrTimeout", err)
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("a cancelled download kept waiting for the decode slot")

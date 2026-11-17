@@ -947,17 +947,19 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 	parent := siteOf("parent", f.box, f.client)
 	f.logout()
 	out := siteOf("signed out", f.box, f.client)
-	for _, c := range []struct {
+	type headingCase struct {
 		site layoutSite
 		path string
 		h1   string // the heading that holds the name
 		name string // the name it holds
-	}{
+	}
+	cases := []headingCase{
 		{display, "/display/person/" + mia.ID, ".pv-header h1", long},
 		{phone, "/", "h1.child-h", long},
 		{out, "/invite/" + token, ".wizard h1", long},
 		{parent, "/settings/lists/library/" + art.ID, "h1.art-title", longArticle},
-	} {
+	}
+	for _, c := range cases {
 		if status, body := c.site.get(t, c.path); status != http.StatusOK || !strings.Contains(body, c.name) {
 			t.Fatalf("%s %s = %d, want a page naming %s", c.site.name, c.path, status, c.name)
 		}
@@ -966,17 +968,7 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 	ctx := startChrome(t, chrome)
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
-	for _, c := range []struct {
-		site layoutSite
-		path string
-		h1   string
-		name string
-	}{
-		{display, "/display/person/" + mia.ID, ".pv-header h1", long},
-		{phone, "/", "h1.child-h", long},
-		{out, "/invite/" + token, ".wizard h1", long},
-		{parent, "/settings/lists/library/" + art.ID, "h1.art-title", longArticle},
-	} {
+	for _, c := range cases {
 		t.Run(c.site.name+c.path, func(t *testing.T) {
 			baseURL, _ := url.Parse(c.site.chromeBase())
 			if _, err := chromedp.Call(ctx, network.ClearBrowserCookies, cdp.Empty{}); err != nil {

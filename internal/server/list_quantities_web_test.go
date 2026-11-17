@@ -545,3 +545,23 @@ func TestAddingFreeTextToTheLibraryTurnsTheEntryIntoTheArticleAndReturnsToTheLis
 		t.Errorf("the entry became the article: %+v", es)
 	}
 }
+
+func TestAUnitOfTheSameKindKeepsTheExactAmountEvenWhenTheNumberWasRounded(t *testing.T) {
+	s := newShop(t)
+	id := s.seed("eggs", "Eggs", 5, "piece")
+	// The page converted 5 pieces to 0,4167 dozen when the unit was tapped; saving that keeps 5 pieces.
+	r := s.postEN(s.path("/entries/"+id+"/quantity"), url.Values{"qmode": {"qty"}, "amount": {"0.4167"}, "qunit": {"dozen"}})
+	if r.status != http.StatusSeeOther {
+		t.Fatalf("%d", r.status)
+	}
+	es, _ := s.db.Entries(s.h.ID, s.id)
+	if es[0].Qty.Base != 5 || es[0].Qty.Unit != "piece" {
+		t.Errorf("exact: %+v", es[0].Qty)
+	}
+	// A different number is the new amount.
+	s.postEN(s.path("/entries/"+id+"/quantity"), url.Values{"qmode": {"qty"}, "amount": {"0.5"}, "qunit": {"dozen"}})
+	es, _ = s.db.Entries(s.h.ID, s.id)
+	if es[0].Qty.Base != 6 {
+		t.Errorf("0.5 dozen = 6 pieces: %+v", es[0].Qty)
+	}
+}

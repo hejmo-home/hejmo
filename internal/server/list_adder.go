@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"html"
 	"html/template"
+	"math"
 	"net/http"
 	"net/url"
 	"slices"
@@ -761,6 +762,14 @@ func (c *itemCtx) changeQuantity(listID, entryID string, post *editPost) (store.
 	if post.Mode != "none" {
 		if to, chosen, err = c.quantity(art, post.Amount, post.Unit); err != nil {
 			return store.SetResult{}, outcome{}, err
+		}
+		// A tap on a unit of the same kind converts the number and keeps the amount
+		// (500 g to 0,5 kg; 5 pieces to 0,4167 dozen): a number that is only that
+		// conversion, rounded as the page writes it, is the amount itself, not its rounding.
+		if cur := es[at].Qty; !cur.None() && cur.Kind() == to.Kind() {
+			if math.Abs(unit.FromBase(cur.Base, chosen)-to.Amount()) <= 0.00005+1e-9 {
+				to.Base = cur.Base
+			}
 		}
 	}
 	res, err := c.s.db.SetQuantity(c.p.household.ID, listID, entryID, to, chosen, c.show(art))

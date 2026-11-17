@@ -259,6 +259,14 @@ _Avoid_: standard unit
 **Active units**:
 The units the household can choose when adding, preset by the home location's country and changed under Settings, Lists, Units.
 
+**Kind of unit**:
+What a unit measures: pieces (piece, dozen), weight, volume, and pack and bunch, which count only themselves. Only units of one kind convert into each other and add up; another kind of the same article gets its own entry under the old one.
+_Avoid_: dimension, type
+
+**Total**:
+The quantity of an entry after adding up or changing. It is kept exactly (in pieces, grams or millilitres) and shown in the article's first default unit where it fits, otherwise in the clearest unit of its kind.
+_Avoid_: sum
+
 **Tile view**:
 A list shown as tiles with symbol or picture, name and tick; the default for children.
 _Avoid_: grid, gallery

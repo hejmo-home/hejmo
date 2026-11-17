@@ -33,6 +33,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
+	"github.com/hejmo-home/hejmo/internal/unit"
 )
 
 // The rendered layout check (ticket 161, retro of 16/11/2026): the layout tests
@@ -162,11 +163,23 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	f.event(t, "Zahnarzttermin", f.at(16, 9, 0), f.at(16, 10, 0), false, "Konstantin", "Wilhelmine", "Sophie-Marie")
 
 	// Lists with long entries.
-	l, err := db.CreateList(h, list.List{Name: "Wochenendeinkaufsliste", Color: "blue", Symbol: "circle-empty", Sort: list.Alphabetical})
+	l, err := db.CreateList(h, list.List{Name: "Wochenendeinkaufsliste", Color: "blue", Symbol: "circle-empty", Sort: list.Alphabetical, Suggestions: true})
 	must(err)
 	f.lists = append(f.lists, l.ID)
 	for _, e := range []string{"Haferflockenpackung groß", "Kartoffelsalatzutaten für Samstag", "Vollkornspaghetti", "Bio-Pfefferminztee"} {
 		_, err := db.AddEntry(h, l.ID, e)
+		must(err)
+	}
+	// Articles with quantities (ticket 165): a quantity button on every open entry, warnings under it, one ticked off.
+	for _, q := range []struct {
+		text, art, unit string
+		amount          float64
+	}{{"Milch", "milk", "l", 3}, {"Eier", "eggs", "piece", 6}, {"Erdnussbutter", "peanut-butter", "pack", 1}, {"Bananen", "bananas", "", 0}, {"Zucker", "sugar", "g", 500}} {
+		it := store.Item{Text: q.text, ArticleID: q.art}
+		if q.unit != "" {
+			it.Qty = list.NewQuantity(q.amount, q.unit)
+		}
+		_, err := db.AddItem(h, l.ID, it, func(base float64, _ unit.Kind) string { return q.unit })
 		must(err)
 	}
 	l2, err := db.CreateList(h, list.List{Name: "Urlaubsvorbereitungen Ostsee", Color: "green", Symbol: "circle-empty", Sort: list.Manual})

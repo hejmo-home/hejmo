@@ -90,3 +90,22 @@ func asInvalid(err error, target **list.InvalidError) bool {
 	}
 	return ok
 }
+
+func TestViewsDefaultByRoleAndParse(t *testing.T) {
+	if got := list.DefaultView(true); got != list.Tiles {
+		t.Errorf("child default = %q, want tiles", got)
+	}
+	if got := list.DefaultView(false); got != list.Rows {
+		t.Errorf("adult default = %q, want list", got)
+	}
+	for in, want := range map[string]list.View{"tiles": list.Tiles, "list": list.Rows} {
+		if got, ok := list.ParseView(in); !ok || got != want {
+			t.Errorf("ParseView(%q) = %q, %v", in, got, ok)
+		}
+	}
+	for _, in := range []string{"", "grid", "TILES", "rows"} {
+		if _, ok := list.ParseView(in); ok {
+			t.Errorf("ParseView(%q) accepted", in)
+		}
+	}
+}

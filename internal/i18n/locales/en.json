@@ -2461,5 +2461,20 @@
   "artf.err.url.notimage": "There is no JPEG, PNG, WebP or GIF at this address.",
   "artf.err.url.redirects": "The address redirects too often. Copy the address of the picture itself.",
   "artf.err.url.pixels": "The picture at this address has too many pixels. Use a smaller picture.",
-  "artf.err.toobig": "The form is too large. Hejmo takes photos up to 15 MB."
+  "artf.err.toobig": "The form is too large. Hejmo takes photos up to 15 MB.",
+  "unpaired.title": "This device is no longer paired",
+  "unpaired.kid": "Show this device to your parents. They can pair it again.",
+  "unpaired.cause": "That is why Hejmo shows nothing here right now. A parent removed the device or paired it for someone else, or the pairing ran out. Nothing has been deleted.",
+  "unpaired.parents.title": "For parents: how to pair it again",
+  "unpaired.step1.title": "Show the QR code",
+  "unpaired.step1.pre": "Open Hejmo on your device or computer, then",
+  "unpaired.step1.path": "Settings › Phones",
+  "unpaired.step1.post": "and tap \"Show QR code\".",
+  "unpaired.step2.title": "Scan the code",
+  "unpaired.step2.text": "Scan the code with the camera of this device.",
+  "unpaired.step3.title": "Compare the number",
+  "unpaired.step3.text": "Choose who the device is for and confirm when both devices show the same number.",
+  "unpaired.adult": "For adults: sign in with your own account",
+  "unpaired.adult.hint": "You then sign in in this browser only, with username and password or a passkey. The device stays unpaired.",
+  "unpaired.adult.button": "Go to sign-in"
 }

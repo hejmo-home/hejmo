@@ -2461,5 +2461,20 @@
   "artf.err.url.notimage": "Unter dieser Adresse liegt kein JPEG, PNG, WebP oder GIF.",
   "artf.err.url.redirects": "Die Adresse leitet zu oft weiter. Kopiere die Adresse des Bildes selbst.",
   "artf.err.url.pixels": "Das Bild unter dieser Adresse hat zu viele Pixel. Nimm ein kleineres Bild.",
-  "artf.err.toobig": "Das Formular ist zu groß. Hejmo nimmt Fotos bis 15 MB."
+  "artf.err.toobig": "Das Formular ist zu groß. Hejmo nimmt Fotos bis 15 MB.",
+  "unpaired.title": "Dieses Gerät ist nicht mehr gekoppelt",
+  "unpaired.kid": "Zeig dieses Gerät deinen Eltern. Sie können es neu koppeln.",
+  "unpaired.cause": "Darum zeigt Hejmo hier gerade nichts. Ein Elternteil hat das Gerät abgemeldet oder für jemand anderen gekoppelt, oder die Kopplung ist abgelaufen. Gelöscht ist nichts.",
+  "unpaired.parents.title": "Für Eltern: so koppelst du es neu",
+  "unpaired.step1.title": "QR-Code zeigen",
+  "unpaired.step1.pre": "Öffne Hejmo auf deinem Gerät oder Computer, dann",
+  "unpaired.step1.path": "Einstellungen › Handys",
+  "unpaired.step1.post": "und tippe auf „QR-Code anzeigen“.",
+  "unpaired.step2.title": "Code scannen",
+  "unpaired.step2.text": "Scanne den Code mit der Kamera dieses Geräts.",
+  "unpaired.step3.title": "Zahl vergleichen",
+  "unpaired.step3.text": "Wähle, für wen das Gerät ist, und bestätige, wenn beide Geräte dieselbe Zahl zeigen.",
+  "unpaired.adult": "Für Erwachsene: mit eigenem Konto anmelden",
+  "unpaired.adult.hint": "Du meldest dich dann nur in diesem Browser an, mit Benutzername und Passwort oder Passkey. Das Gerät bleibt dabei ungekoppelt.",
+  "unpaired.adult.button": "Zur Anmeldung"
 }

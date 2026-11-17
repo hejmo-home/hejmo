@@ -3,9 +3,12 @@ package server_test
 import (
 	"net/http"
 	"net/url"
+	"os"
+	"path/filepath"
 	"regexp"
 	"strings"
 	"testing"
+	"time"
 )
 
 func displayIDOf(t *testing.T, c *apiClient) string {
@@ -156,8 +159,8 @@ func TestScreensaverNeverRunsInQuietModeOrWhenOff(t *testing.T) {
 	if r := f.display.get("/display/saver", "de"); r.status != http.StatusSeeOther || r.location != "/display" {
 		t.Errorf("saver in quiet mode = %d %s, want a redirect to the day", r.status, r.location)
 	}
-	if page := f.display.get("/display", "de").body; strings.Contains(page, "data-saver-seconds") {
-		t.Error("the family view starts the screensaver in quiet mode")
+	if st := f.display.get("/display/state", "de").body; !strings.Contains(st, `"saver":"0"`) {
+		t.Errorf("the state says the screensaver runs in quiet mode: %s", st)
 	}
 	f.post("/displays/"+id+"/settings", url.Values{"saver_idle": {"10"}, "saver_interval": {"1"}, "saver_all": {"1"}})
 	f.post("/displays/"+id+"/settings", url.Values{"quiet_from": {"22:00"}, "quiet_to": {"06:00"}})
@@ -175,5 +178,93 @@ func TestBlackAndWhiteEInkMarksItsScreensaverForGreyscale(t *testing.T) {
 	r := f.display.get("/display/saver", "de")
 	if !strings.Contains(r.body, `data-display-type="eink_bw"`) || !strings.Contains(r.body, `data-interval="900"`) {
 		t.Errorf("E-Ink page:\n%s", r.body)
+	}
+}
+
+// The family view of a display is rendered once and stays on the screen for
+// days. The idle timer must therefore be there whenever the screensaver is
+// switched on, also at night, and ask the box (the display state) whether the
+// screensaver is due when it fires.
+func TestScreensaverStartsAgainAfterQuietModeWithoutReloadingTheFamilyView(t *testing.T) {
+	f, c, id := saverFixture(t, "screen")
+	uploaded(t, c, defaultAlbum(t, c), "a.jpg")
+	f.post("/displays/"+id+"/settings", url.Values{"quiet": {"1"}, "quiet_from": {"12:00"}, "quiet_to": {"14:00"}, "saver": {"1"}, "saver_idle": {"10"}, "saver_interval": {"1"}, "saver_all": {"1"}})
+
+	// In the night the page is rendered: it carries the timer all the same.
+	page := f.display.get("/display", "de").body
+	if !strings.Contains(page, `data-saver-seconds="600"`) || !strings.Contains(page, `data-saver-url="/display/saver"`) {
+		t.Errorf("the family view rendered in quiet mode has no timer:\n%s", page)
+	}
+	if st := f.display.get("/display/state", "de").body; !strings.Contains(st, `"saver":"0"`) || !strings.Contains(st, `"saver_seconds":"600"`) {
+		t.Errorf("state in quiet mode = %s, want the saver not due and 600 seconds", st)
+	}
+
+	// The day begins; the same page asks again.
+	f.now = f.at(14, 14, 30)
+	if st := f.display.get("/display/state", "de").body; !strings.Contains(st, `"saver":"1"`) || !strings.Contains(st, `"saver_seconds":"600"`) {
+		t.Errorf("state after quiet mode = %s, want the saver due", st)
+	}
+	if r := f.display.get("/display/saver", "de"); r.status != http.StatusOK {
+		t.Errorf("saver after quiet mode = %d, want the page", r.status)
+	}
+
+	// Switched off or changed: the display hears of it without a reload.
+	f.post("/displays/"+id+"/settings", url.Values{"saver_idle": {"10"}, "saver_interval": {"1"}, "saver_all": {"1"}})
+	if st := f.display.get("/display/state", "de").body; !strings.Contains(st, `"saver":"0"`) || !strings.Contains(st, `"saver_seconds":"0"`) {
+		t.Errorf("state with the screensaver off = %s", st)
+	}
+	f.post("/displays/"+id+"/settings", url.Values{"saver": {"1"}, "saver_idle": {"5"}, "saver_interval": {"1"}, "saver_all": {"1"}})
+	if st := f.display.get("/display/state", "de").body; !strings.Contains(st, `"saver":"1"`) || !strings.Contains(st, `"saver_seconds":"300"`) {
+		t.Errorf("state after switching on with 5 minutes = %s", st)
+	}
+}
+
+func TestADisplayGetsOnlyThePhotosItShows(t *testing.T) {
+	f, c, id := saverFixture(t, "screen")
+	def := defaultAlbum(t, c)
+	shown := uploaded(t, c, def, "shown.jpg")
+	hidden := uploaded(t, c, def, "hidden.jpg")
+	c.call(http.MethodPatch, "/photos/"+hidden, map[string]any{"hidden": true})
+	trip := newAlbum(t, c, "Urlaub")
+	other := uploaded(t, c, trip, "trip.jpg")
+	if got := f.display.get("/display/photo/"+shown, ""); got.status != http.StatusOK {
+		t.Fatalf("a shown photo = %d", got.status)
+	}
+	if got := f.display.get("/display/photo/"+hidden, ""); got.status != http.StatusNotFound {
+		t.Errorf("a hidden photo (Q38) = %d, want 404", got.status)
+	}
+	c.call(http.MethodPatch, "/displays/"+id, map[string]any{"screensaver": map[string]any{"album_ids": []string{def}}})
+	if got := f.display.get("/display/photo/"+other, ""); got.status != http.StatusNotFound {
+		t.Errorf("a photo of an album the display does not show = %d, want 404", got.status)
+	}
+	if got := f.display.get("/display/photo/"+shown, ""); got.status != http.StatusOK {
+		t.Errorf("a photo of a chosen album = %d", got.status)
+	}
+}
+
+// A folder photo that changed keeps its id: what a display or browser has
+// cached must not hide the new copy.
+func TestAPhotoWhoseStoredCopyWasMadeAgainIsNotServedFromTheCache(t *testing.T) {
+	f, c, _ := saverFixture(t, "screen")
+	id := uploaded(t, c, defaultAlbum(t, c), "a.jpg")
+	later := time.Date(2030, 1, 1, 12, 0, 0, 0, time.UTC)
+	if err := os.Chtimes(filepath.Join(f.photoDir, "photo-files", id+".jpg"), later, later); err != nil {
+		t.Fatal(err)
+	}
+	status := func(since time.Time) int {
+		req, _ := http.NewRequest(http.MethodGet, f.box.srv.URL+"/display/photo/"+id, nil)
+		req.Header.Set("If-Modified-Since", since.UTC().Format(http.TimeFormat))
+		res, err := f.display.client.Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		return res.StatusCode
+	}
+	if got := status(later.Add(-time.Hour)); got != http.StatusOK {
+		t.Errorf("a copy made after the cached one = %d, want 200", got)
+	}
+	if got := status(later); got != http.StatusNotModified {
+		t.Errorf("an unchanged copy = %d, want 304", got)
 	}
 }

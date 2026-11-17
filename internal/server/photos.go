@@ -353,8 +353,14 @@ func (s *server) serveStoredPhoto(w http.ResponseWriter, r *http.Request, ph sto
 	}
 	defer f.Close()
 	w.Header().Set("Content-Type", "image/jpeg")
-	w.Header().Set("Cache-Control", "private, max-age=3600")
-	http.ServeContent(w, r, "", ph.Created, f)
+	// The id of a folder photo stays when its file changes; the time of the
+	// stored copy tells. no-cache: ask the box each time, it answers 304 if unchanged.
+	modified := ph.Created
+	if st, err := f.Stat(); err == nil {
+		modified = st.ModTime()
+	}
+	w.Header().Set("Cache-Control", "private, no-cache")
+	http.ServeContent(w, r, "", modified, f)
 }
 
 func (s *server) apiPhotoImage(w http.ResponseWriter, r *http.Request, p principal) {

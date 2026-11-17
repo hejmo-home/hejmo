@@ -122,7 +122,7 @@ func shrink(src *image.RGBA, w, h int) *image.RGBA {
 			}
 			n := x1 - x0
 			for c := range 4 {
-				out[x*4+c] = uint8(sum[c] / n)
+				out[x*4+c] = uint8(sum[c] / n) // #nosec G115 -- an average of bytes is at most 255
 			}
 		}
 	}
@@ -135,7 +135,7 @@ func shrink(src *image.RGBA, w, h int) *image.RGBA {
 			for sy := y0; sy < y1; sy++ {
 				sum += int(across.Pix[sy*across.Stride+x])
 			}
-			out[x] = uint8(sum / (y1 - y0))
+			out[x] = uint8(sum / (y1 - y0)) // #nosec G115 -- an average of bytes is at most 255
 		}
 	}
 	return down

@@ -34,8 +34,8 @@ func newPhotoBox(dir string) *photoBox {
 
 // waitingFolder says how many photos of one folder wait for space.
 type waitingFolder struct {
-	Folder string
-	Count  int
+	Folder string `json:"folder"`
+	Count  int    `json:"count"`
 }
 
 // folderState is what the last scan of the folder left open.

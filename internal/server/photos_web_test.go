@@ -396,8 +396,14 @@ func TestFolderPhotosWaitWhenThereIsNoSpaceAndTheBoxDeletesNothing(t *testing.T)
 	if !strings.Contains(page, "3 Fotos aus dem Ordner „Sommerfest 2026“ warten, bis wieder Platz ist.") {
 		t.Errorf("the waiting photos are not named:\n%s", page)
 	}
-	if _, err := b.db.Photo(h, "x"); err == nil {
-		t.Skip()
+	// The API names the same waiting folder, with the keys of the contract.
+	_, st, _ := c.call(http.MethodGet, "/photo-storage", nil)
+	waiting, _ := st["waiting"].([]any)
+	if len(waiting) != 1 {
+		t.Fatalf("waiting = %v, want one folder", st["waiting"])
+	}
+	if w, _ := waiting[0].(map[string]any); w["folder"] != "Sommerfest 2026" || w["count"] != float64(3) {
+		t.Errorf("waiting folder = %v, want folder and count", waiting[0])
 	}
 	// Room again: the photos are read.
 	if status, _, _ := c.call(http.MethodPatch, "/photo-storage", map[string]any{"limit_gb": 3}); status != http.StatusOK {

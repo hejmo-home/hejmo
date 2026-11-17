@@ -5,7 +5,43 @@
 // the box now and then whether the screensaver is still on (quiet mode, a
 // switch in the settings) and for new photos; display.js (loaded first) keeps
 // the display's theme current and notices when it is no longer paired.
-(function () {
+(function (global) {
+  // The shuffle bag (Q68): each photo once, in random order, before any comes
+  // again. The photo the box put on the page counts as shown in the first
+  // round; a new round never opens with the photo just shown. random is
+  // Math.random in the page, a fixed sequence in the tests.
+  function createBag(random) {
+    var bag = [];
+    var started = false;
+    function shuffle(a) {
+      for (var i = a.length - 1; i > 0; i--) {
+        var j = Math.floor(random() * (i + 1));
+        var t = a[i]; a[i] = a[j]; a[j] = t;
+      }
+      return a;
+    }
+    return {
+      // next takes the next photo of the bag out; current is the one on screen.
+      next: function (known, current) {
+        if (!known.length) return "";
+        if (!bag.length) {
+          var round = known.slice();
+          if (!started) round = round.filter(function (id) { return id !== current; });
+          if (!round.length) round = known.slice();
+          bag = shuffle(round);
+          if (bag.length > 1 && bag[bag.length - 1] === current) bag.unshift(bag.pop());
+        }
+        started = true;
+        return bag.pop();
+      },
+      // keep drops what is no longer there; photos that came wait for the next round.
+      keep: function (known) {
+        bag = bag.filter(function (id) { return known.indexOf(id) >= 0; });
+      }
+    };
+  }
+  global.HejmoSaver = { createBag: createBag };
+
   var root = document.querySelector("[data-saver]");
   if (!root) return;
   var dayURL = root.getAttribute("data-day-url") || "/display";
@@ -45,25 +81,12 @@
 
   // The photos: a shuffled bag, each shown once before any returns.
   var img = root.querySelector(".saver-photo");
-  var bag = [];
+  var bag = createBag(Math.random);
   var current = img ? (img.getAttribute("src") || "").replace(photoURL, "") : "";
   var known = [];
-  function shuffle(a) {
-    for (var i = a.length - 1; i > 0; i--) {
-      var j = Math.floor(Math.random() * (i + 1));
-      var t = a[i]; a[i] = a[j]; a[j] = t;
-    }
-    return a;
-  }
   function next() {
     if (!known.length || !img) return;
-    if (!bag.length) {
-      bag = shuffle(known.slice());
-      if (bag.length > 1 && bag[bag.length - 1] === current) { // the photo just shown does not open the next round
-        bag.unshift(bag.pop());
-      }
-    }
-    var id = bag.pop();
+    var id = bag.next(known, current);
     var loader = new Image();
     loader.onload = function () { img.src = photoURL + id; current = id; };
     loader.src = photoURL + id;
@@ -76,11 +99,11 @@
         if (!s.active) { leave(); return; }
         if ((s.photos.length > 0) !== hasPhotos) { location.reload(); return; }
         known = s.photos;
-        bag = bag.filter(function (id) { return known.indexOf(id) >= 0; });
+        bag.keep(known);
       })
       .catch(function () {});
   }
   load();
   setInterval(load, 5 * 60 * 1000);
   if (hasPhotos) setInterval(next, interval);
-})();
+})(window);

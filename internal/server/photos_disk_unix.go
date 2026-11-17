@@ -2,7 +2,10 @@
 
 package server
 
-import "syscall"
+import (
+	"math"
+	"syscall"
+)
 
 // freeDiskBytes is the space left on the volume that holds dir.
 func freeDiskBytes(dir string) (int64, bool) {
@@ -10,5 +13,10 @@ func freeDiskBytes(dir string) (int64, bool) {
 	if err := syscall.Statfs(dir, &st); err != nil {
 		return 0, false
 	}
-	return int64(st.Bavail) * int64(st.Bsize), true
+	// Multiply unsigned and cap at the largest int64: the types differ per platform.
+	avail, size := uint64(st.Bavail), uint64(st.Bsize) // #nosec G115 -- block counts and sizes are never negative
+	if size != 0 && avail > math.MaxInt64/size {
+		return math.MaxInt64, true
+	}
+	return int64(avail * size), true // #nosec G115 -- capped above
 }

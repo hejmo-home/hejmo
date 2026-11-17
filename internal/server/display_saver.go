@@ -77,8 +77,8 @@ func (s *server) apiDisplayPhoto(w http.ResponseWriter, r *http.Request) {
 	s.serveDisplayPhoto(w, r)
 }
 
-// serveDisplayPhoto sends a photo to a paired display. A display gets any photo
-// of the household by its id; the id is a random UUID.
+// serveDisplayPhoto sends a photo to a paired display, but only one the display
+// shows: not a hidden photo (Q38), not one of an album it did not choose (Q69).
 func (s *server) serveDisplayPhoto(w http.ResponseWriter, r *http.Request) {
 	d, _, ok := s.currentDisplay(r)
 	if !ok || !d.Paired {
@@ -92,6 +92,10 @@ func (s *server) serveDisplayPhoto(w http.ResponseWriter, r *http.Request) {
 	}
 	ph, err := s.db.Photo(h.ID, r.PathValue("id"))
 	if err != nil {
+		http.NotFound(w, r)
+		return
+	}
+	if ph.Hidden || !d.Saver.Shows(ph.AlbumID) {
 		http.NotFound(w, r)
 		return
 	}

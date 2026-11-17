@@ -748,7 +748,7 @@ paths:
       description: |
         `paired`, `pairing` (with its `code`) or `unpaired`: the token is
         revoked or unknown, or its code ran out. An unpaired display opens a
-        new pairing. A paired display also gets the `theme` it shows now.
+        new pairing. A paired display also gets the `theme` it shows now and, for its photo screensaver, `saver` and `saver_seconds`.
         Poll it about every 30 seconds: a revoked display notices within a
         minute. A request without a bearer token is refused with 401.
       responses:
@@ -3172,6 +3172,8 @@ components:
         state: { type: string, enum: [paired, pairing, unpaired] }
         code: { type: string, pattern: "^[0-9]{6}$", description: "Only while `pairing`" }
         theme: { type: string, description: "Only while `paired`: the palette shown now (light, dark or bw)" }
+        saver: { type: string, enum: ["0", "1"], description: "Only while `paired`: `1` when the photo screensaver is due now (on, and not in quiet mode)" }
+        saver_seconds: { type: string, pattern: "^[0-9]+$", description: "Only while `paired`: the idle seconds after which the family view asks again; `0` when the screensaver is off" }
     QuietMode:
       type: object
       description: The daily window, in the household's time zone, in which the display is quiet (ADR 0015). Off by default.

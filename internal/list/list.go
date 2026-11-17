@@ -104,3 +104,31 @@ func Order(entries []Entry, s Sort) []Entry {
 	})
 	return out
 }
+
+// View is how a list is shown (ADR 0019): as tiles (picture or symbol, name,
+// tick) or as rows.
+type View string
+
+// The views.
+const (
+	Tiles View = "tiles"
+	Rows  View = "list"
+)
+
+// DefaultView is the view of someone who has not chosen: children see tiles,
+// adults the list.
+func DefaultView(child bool) View {
+	if child {
+		return Tiles
+	}
+	return Rows
+}
+
+// ParseView reads a view as the forms and the API name it.
+func ParseView(s string) (View, bool) {
+	switch v := View(s); v {
+	case Tiles, Rows:
+		return v, true
+	}
+	return "", false
+}

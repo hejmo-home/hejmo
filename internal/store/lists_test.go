@@ -204,3 +204,56 @@ func TestEntryCountsPerList(t *testing.T) {
 		t.Fatalf("counts = %+v, %v", counts, err)
 	}
 }
+
+func TestListViewIsRememberedPerPersonAndPerDisplay(t *testing.T) {
+	db, _ := openTemp(t)
+	h, _ := db.CreateHousehold(store.Household{Name: "F", HomeName: "P", Region: "DE-BY"})
+	mama, _ := db.AddPerson(h.ID, store.Person{Name: "Mama", Role: store.RoleParent})
+	mia, _ := db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
+	if v, err := db.PersonListView(h.ID, mama.ID); err != nil || v != "" {
+		t.Fatalf("no choice yet = %q, %v (empty means the default of the role)", v, err)
+	}
+	if err := db.SetPersonListView(h.ID, mama.ID, list.Tiles); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetPersonListView(h.ID, mia.ID, list.Rows); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetPersonListView(h.ID, mama.ID, list.Rows); err != nil { // replaces
+		t.Fatal(err)
+	}
+	if err := db.SetPersonListView(h.ID, mama.ID, list.Tiles); err != nil {
+		t.Fatal(err)
+	}
+	if v, _ := db.PersonListView(h.ID, mama.ID); v != list.Tiles {
+		t.Errorf("Mama = %q", v)
+	}
+	if v, _ := db.PersonListView(h.ID, mia.ID); v != list.Rows {
+		t.Errorf("Mia = %q", v)
+	}
+	if err := db.SetPersonListView(h.ID, "nobody", list.Tiles); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("stranger = %v", err)
+	}
+	if err := db.SetPersonListView(h.ID, mama.ID, "grid"); !errors.Is(err, store.ErrInvalid) {
+		t.Errorf("unknown view = %v", err)
+	}
+}
+
+func TestDisplayListViewDefaultsToTilesAndIsRemembered(t *testing.T) {
+	db, h, d := pairedDisplay(t)
+	if v, err := db.DisplayListView(h.ID, d.ID); err != nil || v != list.Tiles {
+		t.Fatalf("default = %q, %v", v, err)
+	}
+	if err := db.SetDisplayListView(h.ID, d.ID, list.Rows); err != nil {
+		t.Fatal(err)
+	}
+	if v, _ := db.DisplayListView(h.ID, d.ID); v != list.Rows {
+		t.Errorf("after switching = %q", v)
+	}
+	if err := db.SetDisplayListView(h.ID, "nobody", list.Rows); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("stranger = %v", err)
+	}
+	if err := db.SetDisplayListView(h.ID, d.ID, "grid"); !errors.Is(err, store.ErrInvalid) {
+		t.Errorf("unknown view = %v", err)
+	}
+}

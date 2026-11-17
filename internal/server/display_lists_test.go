@@ -170,6 +170,7 @@ var (
 // the chosen list, whose head stays put above the entries.
 func TestListsViewShowsTheRailAndTheChosenList(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
+	f.showRows(t) // this test is about the rows of the lists view; tiles are tested apart (ticket 166)
 	shop, _ := f.onlyList(t, "Shopping", []string{"Oat milk", "Bread"}, "Bananas", "Coffee", "Oat milk", "Bread")
 	todo, _ := listWith(t, f.box, "To-dos", nil, "Call plumber")
 	gift, _ := listWith(t, f.box, "Gift ideas", nil)
@@ -233,6 +234,7 @@ func TestListsViewSaysHowTheListIsSorted(t *testing.T) {
 // off, then it is ticked off in the web interface.
 func TestTickingOnTheDisplayTicksInTheWebInterface(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
+	f.showRows(t) // this test is about the rows of the lists view; tiles are tested apart (ticket 166)
 	id, ids := f.onlyList(t, "Shopping", nil, "Bananas", "Coffee")
 	f.now = f.at(14, 9, 0)
 	back := "/display/lists/" + id
@@ -271,6 +273,7 @@ func TestTickingOnTheDisplayTicksInTheWebInterface(t *testing.T) {
 // not move it. A deleted list sends the display back.
 func TestListsViewReceivesLiveUpdates(t *testing.T) {
 	l := newLiveBox(t, 10*time.Millisecond)
+	l.showRows(t) // this test is about the rows of the lists view; tiles are tested apart (ticket 166)
 	id, ids := l.onlyList(t, "Shopping", nil, "Bananas", "Coffee")
 	_, _, page := l.get("/display/lists/" + id)
 	pageVersion, events, view := versionRe.FindStringSubmatch(page), eventsURLRe.FindStringSubmatch(page), viewURLRe.FindStringSubmatch(page)
@@ -329,6 +332,7 @@ func TestListsViewReceivesLiveUpdates(t *testing.T) {
 // and the field empty again.
 func TestAddingOnTheDisplayShowsTheEntryAndSaysSo(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
+	f.showRows(t) // this test is about the rows of the lists view; tiles are tested apart (ticket 166)
 	id, _ := f.onlyList(t, "Shopping", nil, "Bananas")
 	f.now = f.at(14, 9, 0)
 	r := f.display.post("/display/lists/"+id+"/entries", url.Values{"text": {"  Pasta "}})
@@ -464,6 +468,7 @@ func TestEmptyAndFinishedListsHaveTheirOwnLine(t *testing.T) {
 // without interaction (display.js counts; typing counts as interaction).
 func TestListsViewReturnsToTheFamilyViewAfter30Seconds(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
+	f.showRows(t) // this test is about the rows of the lists view; tiles are tested apart (ticket 166)
 	id, _ := f.onlyList(t, "Shopping", nil, "Bananas")
 	body := f.listsPage(t, "en", "/display/lists/"+id).body
 	for _, want := range []string{`data-return-seconds="30"`, `data-return-url="/display"`, `data-view-url="/display/lists/` + id + `/view"`,
@@ -551,5 +556,14 @@ func TestAddingInTheBackgroundAnswersWithTheViewAlone(t *testing.T) {
 	bad := f.display.postLang("/display/lists/"+id+"/entries", url.Values{"text": {" "}, "partial": {"1"}}, "en")
 	if bad.status != http.StatusUnprocessableEntity || strings.Contains(bad.body, "<html") || !strings.Contains(bad.body, "Type the entry first, then tap Add.") {
 		t.Errorf("partial add without text = %d:\n%s", bad.status, bad.body)
+	}
+}
+
+// showRows puts the display on the list view of the #33 rows; a display shows
+// tiles until it is switched (ticket 166).
+func (f *familyBox) showRows(t *testing.T) {
+	t.Helper()
+	if err := f.db.SetDisplayListView(f.householdID, f.displayID(t), list.Rows); err != nil {
+		t.Fatal(err)
 	}
 }

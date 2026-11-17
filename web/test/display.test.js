@@ -301,3 +301,42 @@ test('a page without a wake address sends nothing', () => {
   p.listeners.visibilitychange.forEach((fn) => fn({}));
   assert.equal(p.requests.length, 0);
 });
+
+// Ticket 166 (preview-166): a tile is a tick button like a row. If the box
+// cannot be reached, the tile stays open, is marked invalid (red frame) and the
+// error stands under it; the next tap clears both.
+function tileForm(p) {
+  const li = element();
+  li.queryFerr = () => li.children.find((c) => c.className === 'ferr') || null;
+  li.querySelector = (sel) => (sel === '.ferr' ? li.queryFerr() : null);
+  li.removeAttribute = (n) => { delete li.attrs[n]; };
+  const form = element({ action: '/display/lists/L1/entries/E1/done' });
+  form.parentNode = li;
+  const host = element({ attrs: { 'data-tick-error': 'Not saved. Tap again.' } });
+  form.closest = (sel) => (sel === '[data-tick-error]' ? host : null);
+  form.querySelector = (sel) => (/tile-check/.test(sel) ? element({ className: 'tile-check' }) : null);
+  return { form, li };
+}
+
+test('a tile that cannot be saved stays open with a red frame and the error under it', async () => {
+  const p = lists({ responses: [{ reject: true }] });
+  const { form, li } = tileForm(p);
+  const e = submitEvent(form);
+  p.state.listeners.submit(e);
+  await tick();
+  assert.ok(e.prevented, 'the tick is posted in the background');
+  assert.equal(li.attrs['aria-invalid'], 'true', 'the tile is marked invalid');
+  const line = li.queryFerr();
+  assert.ok(line, 'the error stands under the tile');
+  assert.equal(line.children[line.children.length - 1].text, 'Not saved. Tap again.');
+});
+
+test('the next tap on a tile clears its error and its red frame', async () => {
+  const p = lists({ responses: [{ reject: true }, { status: 200, body: '<p>ok</p>', headers: { 'X-Hejmo-View': 'v2' } }] });
+  const { form, li } = tileForm(p);
+  p.state.listeners.submit(submitEvent(form));
+  await tick();
+  p.state.listeners.submit(submitEvent(form));
+  assert.ok(!li.queryFerr(), 'the old error is gone');
+  assert.ok(!('aria-invalid' in li.attrs), 'and the frame with it');
+});

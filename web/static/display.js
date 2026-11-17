@@ -304,13 +304,14 @@
       addEntry(e, form, host);
       return;
     }
-    var btn = form.querySelector && form.querySelector(".big-check");
+    var btn = form.querySelector && form.querySelector(".big-check, .tile-check");
     var tile = form.closest && form.closest("[data-tick-error]");
     if (!btn || !tile || !window.fetch || !window.FormData) return;
     e.preventDefault();
     var row = form.parentNode;
     var old = row.querySelector(".ferr");
     if (old) row.removeChild(old);
+    if (row.removeAttribute) row.removeAttribute("aria-invalid"); // a tile's red frame goes with the old error
     var body = new URLSearchParams(new FormData(form));
     fetch(form.action, { method: "POST", body: body, credentials: "same-origin", cache: "no-store" })
       .then(function (r) {
@@ -322,6 +323,7 @@
       })
       .catch(function () {
         row.appendChild(errorLine(tile.getAttribute("data-tick-error")));
+        if (btn.className && /tile-check/.test(btn.className)) row.setAttribute("aria-invalid", "true");
       });
   });
 

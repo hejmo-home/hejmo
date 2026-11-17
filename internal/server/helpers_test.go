@@ -20,6 +20,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
@@ -78,6 +79,9 @@ type fakePublic struct {
 	warnOnFailure bool
 	// gate, if set, holds Setup back until it is closed.
 	gate chan struct{}
+	// deleted counts DeleteRecords calls; deleteErr, if set, is what they return.
+	deleted   int
+	deleteErr error
 	// ctxErr and ctxDeadline describe the context the last Setup ended with.
 	ctxErr      error
 	ctxDeadline bool
@@ -96,6 +100,12 @@ func (f *fakePublic) Status() publiccert.Status {
 	st := f.status
 	st.Name = f.name
 	return st
+}
+func (f *fakePublic) DeleteRecords(context.Context) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.deleted++
+	return f.deleteErr
 }
 func (f *fakePublic) Clear() error {
 	f.mu.Lock()
@@ -210,7 +220,9 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	}
 	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), photoDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time { return b.now }
+	gate := outbound.New(db.Outbound(), db.Outbound()) // as the box has it: the switches of the database
 	b.sync = calsync.New(db, feeds, now)
+	b.sync.SetGate(gate)
 	b.meteo = &fakeMeteo{body: `{"current":{"temperature_2m":18.4,"weather_code":0,"is_day":1}}`, status: 200}
 	b.meteo.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b.meteo.mu.Lock()
@@ -219,7 +231,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 		_, _ = w.Write([]byte(b.meteo.body))
 	}))
 	t.Cleanup(b.meteo.srv.Close)
-	b.weather = weather.New(weather.WithBaseURL(b.meteo.srv.URL), weather.WithClock(now))
+	b.weather = weather.New(weather.WithBaseURL(b.meteo.srv.URL), weather.WithClock(now), weather.WithGate(gate))
 	updateDir := b.updateDir
 	if cfg.noHostUpdater {
 		updateDir, b.updateDir = "", ""

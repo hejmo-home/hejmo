@@ -1850,6 +1850,33 @@ details.more.explain-more { margin-top: var(--gap-section); }
   .lv-head .add-entry .f { flex: 1 1 12em; }
 }
 
+/* Recovery codes (ticket #176): one card .rc in the wizard and in the frame. */
+.rc { display: grid; gap: 14px; max-width: 600px; box-sizing: border-box; padding: var(--pad-column); margin: 0 0 var(--gap-section); background: var(--surface); border-radius: var(--radius-tile); min-width: 0; }
+.wizard .rc { margin: 0; }
+.rc h2 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
+.rc-for { margin: -8px 0 0; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.rc-for b { color: var(--text); font-weight: 600; }
+.rc-save { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--border); }
+.rc-save .actions { margin: 0; }
+.rc-save .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.rc-save .hint, .rc-gate .hint { margin: 0; }
+.rc-save .msg, .rc-save .ferr { margin: 0; max-width: none; }
+.rc-save .msg .fname { white-space: normal; overflow-wrap: anywhere; }
+.rc-gate { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+.rc-gate .actions { margin: 0; }
+.rc-gate .confirm { font-weight: 600; padding: 8px 10px; border-radius: var(--radius-field); border: 2px solid transparent; }
+.rc-gate .confirm .sub { display: block; font-weight: 400; font-size: var(--fs-label); color: var(--text-secondary); margin-top: 2px; }
+.rc-gate .confirm[aria-invalid="true"], .rc-gate .confirm:has(input[aria-invalid="true"]) { border-color: var(--error-text); }
+.rc-gate .confirm:has(input:checked) { border-color: transparent; }
+.button[aria-disabled="true"] { cursor: default; background: var(--border); color: var(--text-secondary); }
+[data-theme="bw"] .button[aria-disabled="true"] { background: var(--surface); color: var(--text); border: 2px dashed var(--text); }
+.rc-gate .gate-hint { display: flex; gap: 8px; align-items: flex-start; }
+.rc-gate .gate-hint .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+[data-theme="bw"] .rc-save, [data-theme="bw"] .rc-gate { border-top: 2px solid var(--text); }
+[data-theme="bw"] .rc { border: 2px solid var(--text); }
+@media print { .rc-gate, .rc .msg, .rc .ferr { display: none !important; } .rc { border: 0; padding: 0; } }
+@media (max-width: 599px) { .rc-save .actions .button { flex: 1 1 100%; } .rc-gate .actions .button { flex: 1 1 100%; } }
+
 /* ---- ticket 163: diet and allergies per person ---- */
 /* A free-text allergy the box cannot check: notice colours, a question icon and the words; bw dashed. */
 .unchecked { display: inline-flex; align-items: flex-start; gap: 6px; padding: 3px 8px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label); font-weight: 600; overflow-wrap: break-word; hyphens: manual; justify-self: start; max-width: 100%; box-sizing: border-box; }
@@ -2154,3 +2181,62 @@ fieldset.units fieldset.chips legend, fieldset.sym-grid legend:not(.sr) { font-s
 .empty .linklike { margin-left: 0; }
 /* A legend only for screen readers takes no room, whatever fieldset it sits in (the picture choice, the symbol results). */
 fieldset legend.sr { float: none; width: 1px; margin: -1px; padding: 0; }
+
+/* ---- New for #125: theme chooser in the brand bar (ADR 0015, 0017) ---- */
+/* One chooser for everyone signed in, parents and children's phones, beside
+   the language switcher: both are choices of this browser or phone. The menu
+   hangs from the right edge of the brand bar, so it never runs off a 375 px
+   screen. */
+.frame-bar { position: relative; }
+.theme-pick { position: static; }
+.theme-pick > summary { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: var(--touch-target); padding: 0 12px 0 8px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); font-weight: 600; cursor: pointer; list-style: none; }
+.theme-pick > summary::-webkit-details-marker { display: none; }
+.theme-pick > summary .chev { flex: none; width: 14px; height: 14px; }
+.theme-pick[open] > summary { border-color: var(--accent); }
+.theme-pick[open] > summary .chev { transform: rotate(180deg); }
+.theme-pick > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] .theme-pick > summary { border: 2px solid var(--text); }
+.theme-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; box-sizing: border-box; width: min(380px, 100%); margin: 0; padding: 12px; display: grid; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); min-inline-size: 0; }
+[data-theme="bw"] .theme-menu { border: 2px solid var(--text); }
+.theme-menu legend { float: left; width: 100%; padding: 0 4px 8px; font-size: var(--fs-event-title); font-weight: 700; }
+.theme-opt { position: relative; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 10px; border: 2px solid transparent; border-radius: var(--radius-field); color: var(--text); cursor: pointer; }
+.theme-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.theme-opt:hover { background: var(--background); }
+.theme-opt:has(input:checked) { border-color: var(--accent); background: var(--background); }
+.theme-opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.theme-opt .opt-text { display: grid; gap: 2px; min-width: 0; overflow-wrap: break-word; hyphens: auto; }
+.theme-opt .opt-name { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: var(--fs-event-title); font-weight: 700; }
+.theme-opt small { color: var(--text-secondary); font-size: var(--fs-label); }
+.theme-opt .opt-state { display: none; font-size: var(--fs-meta); font-weight: 700; color: var(--accent-text); background: var(--accent); border-radius: var(--radius-chip); padding: 1px 10px; }
+.theme-opt:has(input:checked) .opt-state { display: inline-block; }
+.theme-opt:has(input:disabled) { cursor: default; background: none; }
+.theme-opt:has(input:disabled) .opt-name { color: var(--text-secondary); }
+.theme-opt:has(input:disabled) .swatch { border-style: dashed; }
+.theme-opt small a { color: var(--accent); font-weight: 600; }
+[data-theme="bw"] .theme-opt:has(input:checked) { border: 3px solid var(--text); padding: 7px 9px; background: var(--surface); }
+[data-theme="bw"] .theme-opt:hover { background: none; text-decoration: underline; }
+.theme-menu .msg, .theme-menu .error { margin: 6px 0 0; max-width: none; }
+.theme-menu .where { margin: 6px 4px 0; }
+/* Swatch: a tiny page in the theme it stands for, so a child who cannot read
+   yet sees what each choice looks like. Light shows a sun, dark a moon,
+   automatic both, "follow the device" a phone with both halves. */
+.swatch { flex: none; width: 44px; height: 44px; box-sizing: border-box; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; overflow: hidden; border: 1.5px solid var(--text-secondary); border-radius: var(--radius-field); }
+.swatch > span { display: grid; place-items: center; background: var(--background); color: var(--text); }
+.swatch .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
+.swatch.half .icon { width: 16px; height: 16px; }
+.swatch.phone { width: 30px; margin: 0 7px; border-radius: 8px; border-width: 2px; grid-auto-flow: row; grid-auto-rows: 1fr; grid-auto-columns: auto; }
+.swatch.sm { width: 26px; height: 26px; border-radius: 8px; }
+.swatch.sm.phone { width: 18px; margin: 0 4px; border-radius: 5px; }
+.swatch.sm .icon { width: 15px; height: 15px; }
+.swatch.sm.half .icon { display: none; }
+[data-theme="bw"] .swatch { border: 2px solid var(--text); }
+[data-theme="bw"] .swatch > [data-theme="light"] { --background: var(--surface); }
+[data-theme="bw"] .swatch > [data-theme="dark"] { --background: var(--text); --text: var(--surface); }
+/* A narrow bar next to Sign out drops the visible word, as the language
+   switcher does; the swatch still shows the state and the word stays in the
+   accessible name ("Design: Dunkel"). */
+@media (max-width: 479px) {
+  .frame-tools:has(.signout) .theme-name { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .frame-tools { gap: 8px; }
+  .frame-bar .signout .button { padding-inline: 12px; }
+}

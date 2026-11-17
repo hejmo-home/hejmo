@@ -120,6 +120,11 @@ var wholeFamilyTexts = map[string]bool{
 	"lists.set.empty":                true,
 	"lib.lead":                       true, // "wenn ihr etwas auf eine Liste setzt"
 	"art.units.hint":                 true, // "bis ihr eine andere Einheit nehmt"
+
+	"theme.auto.parent":   true, // "eures Zuhauses": the family's home
+	"theme.auto.child":    true, // "eures Zuhauses"
+	"theme.where.phone":   true, // "behalten ihr Design": everyone else
+	"theme.where.browser": true, // "behalten ihr Design"
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

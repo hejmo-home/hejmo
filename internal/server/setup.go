@@ -277,6 +277,9 @@ func (s *server) renderTOTP(w http.ResponseWriter, r *http.Request, status int, 
 }
 
 func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
+	if s.reloadedRecoveryStep(w, r) {
+		return
+	}
 	acc, ok := s.totpSetupAccount(w, r)
 	if !ok {
 		return
@@ -303,17 +306,47 @@ func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "confirm TOTP", err)
 		return
 	}
+	flow := flowAccount
 	switch {
 	case first:
+		flow = flowWizard
 		s.setFlash(w, r, "flash.setup_done:"+acc.PersonID) // shown on the home page after the codes
 	case invited != nil:
+		flow = flowInvite
 		s.setFlash(w, r, "flash.invite_done:"+acc.PersonID)
 	}
-	if invited != nil {
-		s.showRecoveryCodesIn(w, r, codes, invited, "invite.recovery.continue")
-		return
+	s.showRecoveryCodes(w, r, acc.PersonID, recoveryPage{Flow: flow, Codes: codes})
+}
+
+// recoveryFlowOf says which of the three places an account's recovery codes
+// belong to (for a page that is opened again after the one-time code step).
+func (s *server) recoveryFlowOf(acc store.Account) string {
+	switch {
+	case s.inviteShellFor(acc) != nil:
+		return flowInvite
+	case acc.TOTPReset:
+		return flowAccount
 	}
-	s.showRecoveryCodes(w, r, codes, first)
+	return flowWizard
+}
+
+// reloadedRecoveryStep handles the one-time code form posted again after it
+// succeeded (a reload of the page that showed the codes). While the set was
+// never confirmed as saved, a valid code makes a new set, because the old
+// codes cannot be shown again; otherwise it goes on as before.
+func (s *server) reloadedRecoveryStep(w http.ResponseWriter, r *http.Request) bool {
+	acc, ok := s.setupAccount(r)
+	if !ok || !acc.TOTPConfirmed || !s.unsavedSet(acc.PersonID) || acc.TOTPSecret == "" ||
+		!auth.VerifyTOTP(acc.TOTPSecret, r.PostFormValue("code"), s.now()) {
+		return false
+	}
+	codes, err := s.newRecoveryCodes(acc.PersonID)
+	if err != nil {
+		s.fail(w, "recovery codes", err)
+		return true
+	}
+	s.showRecoveryCodes(w, r, acc.PersonID, recoveryPage{Flow: s.recoveryFlowOf(acc), Codes: codes, Reloaded: true})
+	return true
 }
 
 // setupErrorField names the input of the setup form that an error belongs to.

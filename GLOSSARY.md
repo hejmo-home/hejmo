@@ -137,11 +137,11 @@ A calendar whose events come from, and may be written back to, a calendar outsid
 _Avoid_: external calendar, remote calendar, feed
 
 **Read-only calendar**:
-A synced calendar whose events the box shows but never changes outside. ICS subscriptions are always read-only.
+A synced calendar whose events the box shows but never changes outside. ICS subscriptions are always read-only; a parent can switch a CalDAV calendar between read-only and two-way (the default).
 _Avoid_: subscribed calendar, imported calendar
 
 **Sync conflict**:
-The same event changed both on the box and outside since the last sync.
+The same event changed both on the box and outside since the last sync. The later change wins; the other version stays in the sync log for 30 days.
 _Avoid_: collision, clash
 
 **Sync log**:

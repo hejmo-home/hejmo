@@ -75,6 +75,12 @@ func (r fakeRemote) Calendars(context.Context) ([]caldavclient.Calendar, error) 
 func (r fakeRemote) Calendar(context.Context, string) (caldavclient.Calendar, error) {
 	return caldavclient.Calendar{}, nil
 }
+func (r fakeRemote) Put(context.Context, string, string, string) (string, error) {
+	return "", errors.New("fake server: read-only in these tests")
+}
+func (r fakeRemote) Delete(context.Context, string, string) error {
+	return errors.New("fake server: read-only in these tests")
+}
 func (r fakeRemote) CountEvents(context.Context, string, time.Time) (int, error) { return 0, nil }
 
 func (r fakeRemote) State(context.Context, string) (caldavclient.State, error) {

@@ -98,8 +98,10 @@ func checkMigrationNames(names []string) error {
 
 // legacyMigrationNames maps the counter names used before the timestamp
 // convention to the renamed files, so a development database keeps its history.
-// Only the files that existed then are listed; a branch that still has an
-// unreleased numbered migration renames its own file.
+// Only the files that existed then are listed. The one exception is
+// 0011_caldav_writeback.sql, which existed only on a development branch and is
+// listed so databases that applied it keep their history; any other unreleased
+// numbered migration renames its own file.
 var legacyMigrationNames = map[string]string{
 	"0001_people_and_access.sql":     "202611141227_people_and_access.sql",
 	"0002_calendar.sql":              "202611141408_calendar.sql",
@@ -111,6 +113,7 @@ var legacyMigrationNames = map[string]string{
 	"0008_display_show_tomorrow.sql": "202611142047_display_show_tomorrow.sql",
 	"0009_household_settings.sql":    "202611142100_household_settings.sql",
 	"0010_caldav.sql":                "202611142200_caldav.sql",
+	"0011_caldav_writeback.sql":      "202611142300_caldav_writeback.sql",
 }
 
 func migrations() ([]migration, error) {

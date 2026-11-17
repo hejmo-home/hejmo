@@ -54,7 +54,7 @@
     <table class="log">
       <thead><tr><th>{{t "calendars.log.when"}}</th><th>{{t "calendars.log.calendar"}}</th><th>{{t "calendars.log.what"}}</th></tr></thead>
       <tbody>
-        {{range .Log}}<tr><td>{{.At}}</td><td>{{.Calendar}}</td><td>{{.Message}}</td></tr>{{end}}
+        {{range .Log}}<tr><td>{{.At}}</td><td>{{.Calendar}}</td><td>{{.Message}}{{if .Detail}}<details><summary>{{t "calendars.log.version"}}</summary><pre>{{.Detail}}</pre></details>{{end}}</td></tr>{{end}}
       </tbody>
     </table>
     {{else}}<p class="hint">{{t "calendars.log.empty"}}</p>{{end}}

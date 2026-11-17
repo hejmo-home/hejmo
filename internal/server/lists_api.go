@@ -337,7 +337,7 @@ func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p princi
 	}
 	// An amount read from the API is rounded; sent back, it is the amount it was read from.
 	for _, e := range es {
-		if e.ID == id && keepsAmount(e.Qty, to, chosen) {
+		if e.ID == id && keepsAmount(e.Qty, to, chosen, true) {
 			to.Base = e.Qty.Base
 		}
 	}

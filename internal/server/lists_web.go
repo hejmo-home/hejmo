@@ -483,7 +483,7 @@ func (s *server) handleEntryQuantity(w http.ResponseWriter, r *http.Request) {
 	}
 	c.listID = l.ID
 	id := r.PathValue("entry")
-	post := &editPost{EntryID: id, Mode: r.PostFormValue("qmode"), Amount: r.PostFormValue("amount"), Unit: r.PostFormValue("qunit")}
+	post := &editPost{EntryID: id, Mode: r.PostFormValue("qmode"), Amount: r.PostFormValue("amount"), Unit: r.PostFormValue("qunit"), Converted: r.PostFormValue("converted") == "1"}
 	res, o, err := c.changeQuantity(l.ID, id, post)
 	switch ie, isItem := asItemError(err); {
 	case isItem:

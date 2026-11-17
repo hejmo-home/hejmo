@@ -585,3 +585,47 @@ func TestWithoutScriptATapOnAUnitKeepsTheAmountNotTheNumber(t *testing.T) {
 		t.Errorf("2 kg: %+v", es[0].Qty)
 	}
 }
+
+// With the script the page converts the number itself and says so (converted=1):
+// the number typed is then the amount, whatever the unit chosen.
+func TestWithScriptTheNumberTypedIsTheAmount(t *testing.T) {
+	s := newShop(t)
+	id := s.seed("eggs", "Eggs", 2, "piece")
+	r := s.postEN(s.path("/entries/"+id+"/quantity"), url.Values{"qmode": {"qty"}, "amount": {"2"}, "qunit": {"dozen"}, "converted": {"1"}})
+	if r.status != http.StatusSeeOther {
+		t.Fatalf("%d", r.status)
+	}
+	es, _ := s.db.Entries(s.h.ID, s.id)
+	if es[0].Qty.Base != 24 {
+		t.Errorf("2 dozen = 24 pieces: %+v", es[0].Qty)
+	}
+	kg := s.seed("flour", "Flour", 1000, "g")
+	s.postEN(s.path("/entries/"+kg+"/quantity"), url.Values{"qmode": {"qty"}, "amount": {"1000"}, "qunit": {"kg"}, "converted": {"1"}})
+	es, _ = s.db.Entries(s.h.ID, s.id)
+	for _, e := range es {
+		if e.ID == kg && e.Qty.Base != 1000000 {
+			t.Errorf("1000 kg: %+v", e.Qty)
+		}
+	}
+}
+
+func TestTheEditorCarriesTheFieldTheScriptFills(t *testing.T) {
+	s := newShop(t)
+	id := s.seed("eggs", "Eggs", 2, "piece")
+	body := s.en(s.path("") + "?qty=" + id).body
+	if !strings.Contains(body, `<input type="hidden" name="converted" value="">`) {
+		t.Errorf("the editor lacks the field that tells the box the page converted the number:\n%s", body)
+	}
+}
+
+// A number only rounded as the page writes it is the amount itself; the API
+// answers with the amount, so a client that sends exactly 1 kg gets 1 kg.
+func TestOnTheWebExactlyOneKgReplacesAnEntryOf1004g(t *testing.T) {
+	s := newShop(t)
+	id := s.seed("flour", "Flour", 1004, "g")
+	s.postEN(s.path("/entries/"+id+"/quantity"), url.Values{"qmode": {"qty"}, "amount": {"1"}, "qunit": {"kg"}, "converted": {"1"}})
+	es, _ := s.db.Entries(s.h.ID, s.id)
+	if es[0].Qty.Base != 1000 {
+		t.Errorf("1 kg: %+v", es[0].Qty)
+	}
+}

@@ -50,6 +50,7 @@
 {{/* The editor of a quantity, directly under its entry. Argument: editorView. */}}
 {{define "qtyEditor"}}<form class="qty-edit" id="qe-{{.Anchor}}" method="post" action="{{.Action}}" data-mode="{{.Mode}}" aria-labelledby="qt-{{.Anchor}}" data-editor>
       {{if .Hide}}<input type="hidden" name="ticked" value="hide">{{end}}
+      <input type="hidden" name="converted" value="">
       <div class="qe-top"><h3 class="qe-title" id="qt-{{.Anchor}}">{{t "lq.edit.title"}}</h3>
         <fieldset class="seg mode"><legend class="vh">{{t "lq.edit.mode.legend"}}</legend>
           <label><input type="radio" name="qmode" value="none"{{if eq .Mode "none"}} checked{{end}}>{{t "lq.mode.quick"}}</label>

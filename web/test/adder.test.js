@@ -47,3 +47,11 @@ test('a unit of the same kind keeps the amount: 500 g are 0.5 kg', () => {
   assert.equal(a.convert(0.5, 1000, 1), 500);
   assert.equal(a.convert(1, 12, 1), 12);
 });
+
+test('the editor tells the box that the page converted the number', () => {
+  const field = { value: '' };
+  const form = { querySelector: (sel) => (sel === 'input[name="converted"]' ? field : null) };
+  a.markConverted(form);
+  assert.equal(field.value, '1');
+  a.markConverted({ querySelector: () => null }); // no field, nothing to do
+});

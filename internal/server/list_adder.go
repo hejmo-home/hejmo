@@ -579,7 +579,13 @@ func (c *itemCtx) articleOf(e list.Entry) *articleItem {
 }
 
 // editPost is what the editor of a quantity posted, kept to show it again after an error.
-type editPost struct{ EntryID, Mode, Amount, Unit string }
+// editPost is what the editor of a quantity posted. Converted is set by the
+// script of the page, which converts the number itself when a unit of the same
+// kind is tapped; without it the number is still the one of the old unit.
+type editPost struct {
+	EntryID, Mode, Amount, Unit string
+	Converted                   bool
+}
 
 func editPostOf(form map[string]any) *editPost {
 	v, _ := form["EditPost"].(*editPost)
@@ -764,8 +770,9 @@ func (c *itemCtx) changeQuantity(listID, entryID string, post *editPost) (store.
 		// conversion, rounded as the page writes it, is the amount itself, not its rounding.
 		// Without JavaScript the number is not converted by the page: the unit changed
 		// and the number is still the old one as it was shown, so it is converted here.
+		// A post of the script says so (Converted); then the number typed is the amount.
 		cur := es[at].Qty
-		if keepsAmount(cur, to, chosen) || (!cur.None() && cur.Kind() == to.Kind() && chosen != cur.Unit && to.Amount() == unit.Round(cur.Amount(), cur.Unit)) {
+		if keepsAmount(cur, to, chosen, false) || (!post.Converted && !cur.None() && cur.Kind() == to.Kind() && chosen != cur.Unit && to.Amount() == unit.Round(cur.Amount(), cur.Unit)) {
 			to.Base = cur.Base
 		}
 	}

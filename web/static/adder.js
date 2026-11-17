@@ -39,7 +39,14 @@
   // convert keeps the amount when the unit changes within one kind.
   function convert(amount, fromSize, toSize) { return amount * fromSize / toSize; }
 
-  var api = { step: step, parse: parse, stepUp: stepUp, stepDown: stepDown, show: show, convert: convert };
+  // markConverted tells the box that this page converts the number of the editor
+  // when a unit is tapped; a post without it comes from a page without the script.
+  function markConverted(form) {
+    var c = form.querySelector('input[name="converted"]');
+    if (c) c.value = "1";
+  }
+
+  var api = { step: step, parse: parse, stepUp: stepUp, stepDown: stepDown, show: show, convert: convert, markConverted: markConverted };
   if (typeof module !== "undefined" && module.exports) module.exports = api;
   if (typeof document === "undefined" || !document.addEventListener) return;
 
@@ -282,6 +289,7 @@
     for (var j = 0; j < eds.length; j++) {
       var u = eds[j].querySelector('input[name="qunit"]:checked');
       if (u) eds[j].setAttribute("data-unit", u.value);
+      markConverted(eds[j]);
       syncMinus(eds[j]);
     }
   }

@@ -403,7 +403,7 @@ func (s *server) handleDisplayEntryQuantity(w http.ResponseWriter, r *http.Reque
 	}
 	c.listID = l.ID
 	id := r.PathValue("entry")
-	post := &editPost{EntryID: id, Mode: r.PostFormValue("qmode"), Amount: r.PostFormValue("amount"), Unit: r.PostFormValue("qunit")}
+	post := &editPost{EntryID: id, Mode: r.PostFormValue("qmode"), Amount: r.PostFormValue("amount"), Unit: r.PostFormValue("qunit"), Converted: r.PostFormValue("converted") == "1"}
 	_, out, err := c.changeQuantity(l.ID, id, post)
 	respond := func(status int, o listsViewOptions, added, token string) {
 		if partial {

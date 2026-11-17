@@ -213,12 +213,14 @@ func numberText(f float64) string { return strconv.FormatFloat(f, 'f', -1, 64) }
 // keepsAmount says whether the number sent for an entry that has the quantity
 // cur is only that quantity written in the chosen unit of its kind, and so the
 // amount itself and not its rounding: 500 g as 0,5 kg, 5 pieces as 0,4167 dozen
-// (the number of a page) or 0,42 dozen (the amount of the API). The caller then
-// keeps cur.Base.
-func keepsAmount(cur, to list.Quantity, chosen string) bool {
+// (the number of a page). The API answers with the amount, which is the amount
+// as it is shown (0,42 dozen); only a caller that passes api accepts that
+// rounded number, so a page never keeps 1004 g when 1 kg is typed. The caller
+// then keeps cur.Base.
+func keepsAmount(cur, to list.Quantity, chosen string, api bool) bool {
 	if cur.None() || to.None() || cur.Kind() != to.Kind() {
 		return false
 	}
 	exact := unit.FromBase(cur.Base, chosen)
-	return math.Abs(exact-to.Amount()) <= 0.00005+1e-9 || unit.Round(exact, chosen) == to.Amount()
+	return math.Abs(exact-to.Amount()) <= 0.00005+1e-9 || (api && unit.Round(exact, chosen) == to.Amount())
 }

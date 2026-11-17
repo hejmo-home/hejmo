@@ -39,6 +39,14 @@ func TestWasteCollectionMarkingOnAReadOnlyCalendar(t *testing.T) {
 	}
 }
 
+// Unmarking never needs a read-only calendar (a two-way calendar is not waste, so it must be possible).
+func TestUnmarkingWasteOnATwoWayCalendarWorks(t *testing.T) {
+	f := newCalFixture(t)
+	if err := f.db.SetCalendarWaste(f.h.ID, f.cal.ID, false); err != nil {
+		t.Fatalf("unmarking a two-way calendar = %v, want nil", err)
+	}
+}
+
 // ADR 0015/0016: a note belongs to a day; a day has one note; past notes are deleted.
 func TestDayNotesAreSetReplacedAndPruned(t *testing.T) {
 	f := newCalFixture(t)

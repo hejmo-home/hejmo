@@ -144,6 +144,19 @@ var wholeFamilyTexts = map[string]bool{
 	"displays.saver.on":                        true, // "euren Alben": the family's albums
 	"photos.full.hint":                         true, // "ihr nicht mehr braucht": the family's photos
 	"photos.up.wait":                           true, // "Wartet": the state of a file, not an imperative
+	"google.s.warn.text":                       true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.replace.text_many":                 true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.s1.hint":                           true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.reg.lead":                          true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.why.text":                          true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.s.warn.title":                      true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.s4.hint":                           true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.error.client_rejected":             true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.notice.seven":                      true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.fact.app.own":                      true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.replace.text_none":                 true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.signin.lead":                       true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.replace.text_one_a":                true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

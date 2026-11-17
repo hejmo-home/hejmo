@@ -3143,5 +3143,7 @@
   "flash.google_signed_in": "Signed in at Google. The calendars sync again now.",
   "sync.fail.google_signin": "Google no longer accepts the sign-in: sign in at Google again",
   "sync.fail.google_client": "Google does not accept the client ID or client secret: check the app registration",
-  "sync.fail.google_app": "No app registration is entered for Google"
+  "sync.fail.google_app": "No app registration is entered for Google",
+  "google.sk.addr.sample": "http://127.0.0.1:8099/?state=hj1.Zm9vYmFy.Kq7&code=4/0AVMBsJh9xR2…&scope=https://www.googleapis.com/auth/calendar",
+  "google.sk.allow.tick": "✓"
 }

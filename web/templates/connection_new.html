@@ -86,7 +86,7 @@
       </dl>
       <div class="actions"><button class="button" type="submit" name="action" value="continue">{{t "google.continue"}}</button></div>
       {{template "moreOpen" (dict "Label" (t "google.replace") "Summary" (t "google.replace.sum") "Open" .GReplace)}}
-        <p>{{if .GApp.Accounts}}{{if gt (len .GApp.Accounts) 1}}{{t "google.replace.text_many"}} {{range $i, $a := .GApp.Accounts}}{{if $i}}, {{end}}<b class="host">{{$a}}</b>{{end}}.{{else}}{{t "google.replace.text_one_a"}} <b class="host">{{index .GApp.Accounts 0}}</b> {{t "google.replace.text_one_b"}}{{end}}{{else}}{{t "google.replace.text_none"}}{{end}}</p>
+        <p>{{if .GApp.Accounts}}{{if gt (len .GApp.Accounts) 1}}{{t "google.replace.text_many"}} {{.GApp.AccountsHTML}}{{else}}{{t "google.replace.text_one_a"}} <b class="host">{{index .GApp.Accounts 0}}</b> {{t "google.replace.text_one_b"}}{{end}}{{else}}{{t "google.replace.text_none"}}{{end}}</p>
         {{template "gApp" (dict "Root" $g "ClientID" .GClientID "Retype" (and $g.Error (eq .Service "google")))}}
         <button class="button secondary" type="submit" name="action" value="replace">{{t "google.submit"}}</button>
       {{template "moreClose"}}

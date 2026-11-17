@@ -35,7 +35,7 @@
         <li><div class="s"><b>{{t "google.fallback.s2.title"}}</b><p>{{rich (t "google.fallback.s2.text")}}</p></div></li>
         <li><div class="s"><b>{{t "google.fallback.s3.title"}}</b><p>{{t "google.fallback.s3.text"}}</p>
           <figure class="sketch"><figcaption>{{t "google.sk.addr.caption"}}</figcaption><div class="sk">
-            <span class="addr"><mark>http://127.0.0.1:8099/?state=hj1.Zm9vYmFy.Kq7&amp;code=4/0AVMBsJh9xR2…&amp;scope=https://www.googleapis.com/auth/calendar</mark></span>
+            <span class="addr"><mark>{{t "google.sk.addr.sample"}}</mark></span>
             <p class="err"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.5"/></svg><span>{{t "google.sk.addr.err"}}</span></p>
             <p class="dim">{{t "google.sk.addr.dim"}}</p>
             <p class="tap">{{t "google.sk.addr.tap"}}<span class="say">{{t "google.sk.addr.say"}}</span></p></div></figure></div></li>
@@ -45,7 +45,7 @@
             <p class="hint">{{t "google.fallback.hint"}}</p></div></div></li>
       </ol>
       <div class="actions"><button class="button" type="submit">{{t "google.fallback.submit"}}</button></div>
-      <p class="cancel">{{if not $s.Forced}}<a class="link" href="{{template "gSignInHref" $s}}">{{t "google.fallback.back"}}</a>{{end}}<a class="link" href="/calendars">{{t "google.cancel"}}</a></p>
+      <p class="cancel">{{if not $s.Forced}}<a class="link" href="{{$s.SignInHref}}">{{t "google.fallback.back"}}</a>{{end}}<a class="link" href="/calendars">{{t "google.cancel"}}</a></p>
     </form>
     <form id="google-open" method="post" action="/connections/google/start"><input type="hidden" name="way" value="fallback">{{with $s.ConnectionID}}<input type="hidden" name="connection" value="{{.}}">{{end}}</form>
   {{else}}
@@ -62,7 +62,7 @@
         <li><div class="s"><b>{{t "google.s.allow.title"}}</b><p>{{rich (t "google.s.allow.text")}}</p>
           <figure class="sketch"><figcaption>{{t "google.sk.allow.caption"}}</figcaption><div class="sk">
             <p class="t1">{{t "google.sk.allow.title"}}</p>
-            <p class="box"><i>✓</i><span>{{t "google.sk.allow.box"}}</span></p>
+            <p class="box"><i>{{t "google.sk.allow.tick"}}</i><span>{{t "google.sk.allow.box"}}</span></p>
             <p class="tap">{{t "google.sk.allow.continue"}}<span class="say">{{t "google.sk.allow.say"}}</span></p></div></figure>
           <p class="hint">{{t "google.s.allow.hint"}}</p></div></li>
         <li><div class="s"><b>{{t "google.s.back.title"}}</b><p>{{t "google.s.back.text"}}</p></div></li>
@@ -79,11 +79,10 @@
       {{template "moreClose"}}
       {{template "moreOpen" (dict "Label" (t "google.noreturn.summary"))}}
         <p>{{t "google.noreturn.text"}}</p>
-        <a class="button secondary" href="{{template "gSignInHref" $s}}{{if $s.ConnectionID}}&amp;{{else}}?{{end}}way=fallback">{{t "google.noreturn.link"}}</a>
+        <a class="button secondary" href="{{$s.FallbackHref}}">{{t "google.noreturn.link"}}</a>
       {{template "moreClose"}}
       <p class="cancel"><a class="link" href="/calendars">{{t "google.cancel"}}</a></p>
     </form>
   {{end}}
   </div>
 {{template "foot"}}
-{{define "gSignInHref"}}/connections/google/signin{{if .ConnectionID}}?connection={{.ConnectionID}}{{end}}{{end}}

@@ -525,6 +525,10 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	// Offline mode (ticket 201): the pages as the box answers them while it is on.
 	pages = append(pages, offlinePages(t, f)...)
 
+	// Google (ticket 18): the guide, the sign-in in its variants, the failures that replace the steps,
+	// Choose calendars with its access lines, and the notices to sign in again.
+	pages = append(pages, googlePages(t, f)...)
+
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
 	// the state after a continue without the tick.
@@ -950,7 +954,7 @@ func TestRenderedLayout(t *testing.T) {
 						t.Fatalf("open: %v", err)
 					}
 					if got, err := chromedp.Run(ctx, chromedp.Evaluate[string](`document.documentElement.lang`)); err != nil || got != lang {
-						t.Fatalf("the page is in %q (%v), not in %q: the check would measure the wrong language", got, err, lang)
+						t.Fatalf("%s: the page is in %q (%v), not in %q: the check would measure the wrong language", page.path, got, err, lang)
 					}
 					for _, theme := range []string{"light", "bw"} {
 						script := fmt.Sprintf(`(async () => {

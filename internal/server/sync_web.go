@@ -433,7 +433,7 @@ func (s *server) handleCalendarPage(w http.ResponseWriter, r *http.Request) {
 	} else {
 		last.Value = p.when(c.Sync.LastSuccess)
 	}
-	facts := []factView{{Label: s.say(r, i18n.Msg("calendars.fact.address")), Value: c.URL}, forFact,
+	facts := []factView{{Label: s.say(r, i18n.Msg("calendars.fact.address")), Value: c.URL, Host: c.Kind == "google"}, forFact,
 		{Label: s.say(r, i18n.Msg("calendars.fact.color")), Value: c.Color}, last}
 	if !c.Sync.LastSuccess.IsZero() {
 		run := c.Sync.LastRun

@@ -125,12 +125,8 @@ func (s *server) renderGoogleSignIn(w http.ResponseWriter, r *http.Request, p pr
 	}
 	in.Origin = origin
 	if in.Forced {
-		in.HomeIP = homeIPOrigin(r)
-		if in.HomeIP != "" {
-			in.HomeIP += googleSignInPath
-			if in.ConnectionID != "" {
-				in.HomeIP += "?" + url.Values{"connection": {in.ConnectionID}}.Encode()
-			}
+		if ip := homeIPOrigin(r); ip != "" {
+			in.HomeIP = ip + in.SignInHref()
 		}
 	}
 	title, lead := "google.signin.title", "google.signin.lead"
@@ -153,6 +149,23 @@ func (s *server) renderGoogleSignIn(w http.ResponseWriter, r *http.Request, p pr
 		data["ProblemTitle"], data["ProblemText"] = s.problemText(lang, in)
 	}
 	s.render(w, r, status, "google_signin.html", data)
+}
+
+// SignInHref is the page "Sign in at Google" for this sign-in.
+func (g googleSignIn) SignInHref() string {
+	if g.ConnectionID == "" {
+		return googleSignInPath
+	}
+	return googleSignInPath + "?" + url.Values{"connection": {g.ConnectionID}}.Encode()
+}
+
+// FallbackHref is the same page on the fallback way.
+func (g googleSignIn) FallbackHref() string {
+	q := url.Values{"way": {"fallback"}}
+	if g.ConnectionID != "" {
+		q.Set("connection", g.ConnectionID)
+	}
+	return googleSignInPath + "?" + q.Encode()
 }
 
 // accountText is a translated sentence with the Google account in {account}

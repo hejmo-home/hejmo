@@ -44,6 +44,7 @@ type googleFake struct {
 	failCode   string // what the exchange answers: "", "invalid_grant", "invalid_client"
 	noScope    bool   // the exchange grants no calendar scope
 	cals       []map[string]any
+	custom     []map[string]any // the calendar list of a test that needs its own
 }
 
 func newGoogleFake(t *testing.T, b *box) *googleFake {
@@ -61,7 +62,9 @@ func newGoogleFake(t *testing.T, b *box) *googleFake {
 		g.mu.Lock()
 		defer g.mu.Unlock()
 		items := g.cals
-		if g.account != "mama@gmail.com" { // a sign-in with another account: that account's own primary calendar
+		if g.custom != nil {
+			items = g.custom
+		} else if g.account != "mama@gmail.com" { // a sign-in with another account: that account's own primary calendar
 			items = []map[string]any{{"id": g.account, "summary": g.account, "accessRole": "owner", "primary": true}}
 		}
 		_ = json.NewEncoder(w).Encode(map[string]any{"items": items})

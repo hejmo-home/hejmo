@@ -241,6 +241,8 @@ input, select { font: inherit; color: var(--text); min-height: var(--touch-targe
 .check input { min-height: 0; width: 20px; height: 20px; }
 .log { border-collapse: collapse; max-width: 100%; font-size: var(--fs-label); }
 .log th, .log td { text-align: left; padding: 6px 12px 6px 0; vertical-align: top; }
+/* The name of the calendar keeps its words whole: the column of a long message must not squeeze it (ticket 18, a Google failure line is long). */
+.log td:nth-child(2) { overflow-wrap: break-word; }
 a { color: var(--accent); }
 
 /* Person slots: a person gets data-person="1".."8" (colour, tint, text on

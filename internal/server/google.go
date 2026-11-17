@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"errors"
+	"html"
+	"html/template"
 	"net"
 	"net/http"
 	"net/netip"
@@ -424,6 +426,8 @@ type googleAppView struct {
 	ClientID   string
 	By, Since  string
 	Accounts   []string // Google accounts already connected
+	// AccountsHTML lists them as names that may wrap, separated by commas and ended by a full stop.
+	AccountsHTML template.HTML
 }
 
 func (s *server) googleAppView(r *http.Request, p principal) (googleAppView, error) {
@@ -443,11 +447,14 @@ func (s *server) googleAppView(r *http.Request, p principal) (googleAppView, err
 	if err != nil {
 		return v, err
 	}
+	var names []string
 	for _, c := range conns {
 		if c.Kind == "google" {
 			v.Accounts = append(v.Accounts, c.Username)
+			names = append(names, `<b class="host">`+html.EscapeString(c.Username)+`</b>`)
 		}
 	}
+	v.AccountsHTML = template.HTML(strings.Join(names, ", ") + ".") // #nosec G203 -- the accounts are escaped
 	return v, nil
 }
 

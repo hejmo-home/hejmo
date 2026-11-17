@@ -52,6 +52,10 @@ _Avoid_: onboarding, installer
 The box's own certificate authority, name-constrained to the box so it cannot vouch for other sites. Devices trust it once (iOS profile, DAVx5 prompt, browser import). The fallback when no public name and certificate are used (ADR 0014).
 _Avoid_: self-signed certificate, root cert
 
+**Router name**:
+The name the family's router gives the box in the home network, for example `hejmo.fritz.box`. The Box CA can cover it besides `hejmo.local` and the box's LAN address, so a phone on a VPN opens the box without a warning. Adding it later makes a new Box CA, and every device must trust the box again (ADR 0014).
+_Avoid_: hostname, local name, DNS name (in user-facing text)
+
 **Public name**:
 A DNS name of the box (a free deSEC `dedyn.io` name, or a name under the family's own domain at Cloudflare, deSEC, Hetzner or INWX) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
 _Avoid_: domain, DynDNS

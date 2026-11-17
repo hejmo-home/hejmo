@@ -1,5 +1,6 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
-  <h1>{{.Connection.Username}}</h1>
+  <h1{{if .Google}} class="host"{{end}}>{{.Connection.Username}}</h1>
+  {{range .GNotices}}{{template "gNotice" (dict "N" . "Home" false "Console" $.GConsole)}}{{end}}
   {{with .Refused}}<p class="error" role="alert">{{.}} <a href="#login">{{t "connections.error.refused_link"}}</a></p>{{end}}
   {{if and .Error (not .ErrorField)}}{{template "error" .}}{{end}}
   {{template "facts" .Facts}}
@@ -7,16 +8,21 @@
   <form method="post" action="/connections/{{.Connection.ID}}/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/{{.Connection.ID}}/event-counts" data-count-loading="{{t "connections.count.loading"}}" data-count-unknown="{{t "connections.count.unknown"}}">
     <h2>{{t "connections.choose.heading"}}</h2>
     <p class="lead">{{t "connections.choose.lead"}}</p>
+    {{if .Google}}<div class="why access"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><div><b>{{t "google.access.title"}}</b><ul>
+      <li><b>{{t "google.access.l1.b"}}</b> {{t "google.access.l1.t"}}</li>
+      <li><b>{{t "google.access.l2.b"}}</b> {{t "google.access.l2.t"}}</li>
+      <li><b>{{t "google.access.l3.b"}}</b> {{t "google.access.l3.t"}}</li></ul></div></div>{{end}}
     {{range $cal := .Found}}
     {{$here := eq $.ErrorCalendar $cal.URL}}
     <input type="hidden" name="shown" value="{{$cal.URL}}">
     <fieldset class="calchoice{{if $cal.On}} is-on{{end}}{{if and $here (eq $.ErrorField "calendar")}} invalid{{end}}">
       <div class="card-row">
-        <span class="t"><span class="src">{{$.SourceKicker}}</span><b>{{or $cal.SourceName $cal.Name}}</b>
+        <span class="t"><span class="src">{{or $cal.Source $.SourceKicker}}</span><b>{{or $cal.SourceName $cal.Name}}</b>
           <span class="state{{if $cal.On}} is-on{{end}}"><span class="on-text"><span class="w">{{t "connections.state.on"}}</span> {{t "connections.state.on_rest"}}</span><span class="off-text"><span class="w">{{t "connections.state.off"}}</span> {{t "connections.state.off_rest"}}</span></span></span>
         <label class="switch"><input type="checkbox" role="switch" name="calendar" value="{{$cal.URL}}"{{if $cal.On}} checked{{end}} aria-label="{{or $cal.SourceName $cal.Name}}"{{if and $here (eq $.ErrorField "calendar")}} aria-invalid="true" aria-describedby="err-calendar"{{end}}></label>
       </div>
       <div class="calfacts">
+        {{with $cal.AccessLabel}}<p class="acc"><span><b>{{.}}</b> {{$cal.AccessText}}</span></p>{{end}}
         <p class="count" data-count-for="{{$cal.URL}}" data-state="loading">{{template "calIcon"}}{{template "infoIcon"}}<span class="ct">{{t "connections.count.nojs"}}</span><span class="info-text">{{t "connections.count.empty"}}</span><span class="warn-text">{{t "connections.count.empty_on"}}</span></p>{{if $cal.LastSync}}
         <p class="sync"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>{{$cal.LastSync}}</p>{{end}}
       </div>
@@ -53,11 +59,11 @@
     {{range .WriteBack}}
     <div class="card-row">
       <span class="t"><b>{{.Name}}</b>
-        <span class="hint">{{if .TwoWay}}{{t "calendars.two_way"}}{{else}}{{t "connections.writeback.readonly"}}{{end}}</span></span>
-      {{if .TwoWay}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="1"><button class="button secondary" type="submit" title="{{t "calendars.make_read_only_hint"}}">{{t "calendars.make_read_only"}}</button></form>
+        <span class="hint">{{if .Locked}}{{t "google.writeback.locked"}}{{else if .TwoWay}}{{t "calendars.two_way"}}{{else}}{{t "connections.writeback.readonly"}}{{end}}</span></span>
+      {{if .Locked}}{{else if .TwoWay}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="1"><button class="button secondary" type="submit" title="{{t "calendars.make_read_only_hint"}}">{{t "calendars.make_read_only"}}</button></form>
       {{else}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="0"><button class="button secondary" type="submit">{{t "calendars.make_two_way"}}</button></form>{{end}}
     </div>
-    {{if .TwoWay}}<p class="hint">{{t "calendars.make_read_only_hint"}}</p>{{end}}
+    {{if and .TwoWay (not .Locked)}}<p class="hint">{{t "calendars.make_read_only_hint"}}</p>{{end}}
     {{end}}
   </section>
   {{end}}
@@ -73,14 +79,37 @@
   </section>
   {{end}}
 
-  <section id="login" class="steps">{{template "moreOpen" (dict "Label" (t "connections.login") "Summary" (t "connections.login.summary") "Open" .LoginOpen)}}
+  {{if .Google}}<section id="login" class="steps">{{template "moreOpen" (dict "Label" (t "google.login.label") "Summary" (t "google.login.summary") "Open" true)}}
+    <p>{{if .GNotices}}{{t "google.login.text_expired"}}{{else}}{{t "google.login.text"}}{{end}}</p>
+    <a class="button secondary" href="/connections/google/signin?connection={{.Connection.ID}}">{{t "google.resignin.title"}}</a>
+    <form method="post" action="/connections/google/app" autocomplete="off">
+      <input type="hidden" name="connection" value="{{.Connection.ID}}">
+      {{template "moreOpen" (dict "Label" (t "google.replace") "Summary" (t "google.replace.sum") "Open" (or (eq .ErrorField "client_id") (eq .ErrorField "client_secret")))}}
+        <p>{{if gt (len .GAccounts) 1}}{{t "google.replace.text_many"}} {{range $i, $a := .GAccounts}}{{if $i}}, {{end}}<b class="host">{{$a}}</b>{{end}}.{{else}}{{t "google.replace.text_one_a"}} <b class="host">{{.Connection.Username}}</b> {{t "google.replace.text_one_b"}}{{end}}</p>
+        {{template "gApp" (dict "Root" . "ClientID" "" "Retype" false)}}
+        <button class="button secondary" type="submit" name="action" value="replace">{{t "google.submit"}}</button>
+      {{template "moreClose"}}
+    </form>
+  {{template "moreClose"}}</section>
+  {{else}}<section id="login" class="steps">{{template "moreOpen" (dict "Label" (t "connections.login") "Summary" (t "connections.login.summary") "Open" .LoginOpen)}}
     <form method="post" action="/connections/{{.Connection.ID}}/credentials" class="steps" autocomplete="off">
       {{template "field" (dict "Root" . "Name" "password" "Label" (t "connections.login.field") "Type" "password" "Required" true "Autocomplete" "new-password")}}
       <button class="button secondary" type="submit">{{t "connections.login.submit"}}</button>
     </form>
   {{template "moreClose"}}</section>
 
-  {{template "danger" (dict "Label" (t "connections.remove") "Explain" (or (and .ICloud (t "connections.remove.explain_icloud")) (t "connections.remove.explain")) "Names" .Names "Confirm" (t "connections.remove.confirm") "Action" (printf "/connections/%s/delete" .Connection.ID) "CancelHref" (printf "/connections/%s" .Connection.ID))}}
+  {{end}}
+
+  {{if .Google}}{{template "dangerOpen" (dict "Label" (t "connections.remove"))}}
+    <p>{{.Explain}}</p>
+    <ul>{{range .Names}}<li><strong>{{.}}</strong></li>{{end}}</ul>
+    <p>{{rich (tf "google.remove.access" "url" .GConsole.access)}}</p>
+    <div class="confirm">
+      <form method="post" action="/connections/{{.Connection.ID}}/delete"><button class="button danger" type="submit">{{tf "google.remove.confirm" "name" .Connection.Username}}</button></form>
+      <a href="/connections/{{.Connection.ID}}">{{t "danger.cancel"}}</a>
+    </div>
+  {{template "dangerClose"}}
+  {{else}}{{template "danger" (dict "Label" (t "connections.remove") "Explain" (or (and .ICloud (t "connections.remove.explain_icloud")) (t "connections.remove.explain")) "Names" .Names "Confirm" (t "connections.remove.confirm") "Action" (printf "/connections/%s/delete" .Connection.ID) "CancelHref" (printf "/connections/%s" .Connection.ID))}}{{end}}
   <script src="/static/connection-counts.js" defer></script>
 {{template "foot"}}
 {{define "calIcon"}}<svg class="icon i-cal" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>{{end}}

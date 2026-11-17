@@ -29,6 +29,7 @@ type rowView struct {
 // factView is one label and value of a detail page's facts card.
 type factView struct {
 	Label, Value string
+	Host         bool // a name that may wrap anywhere (an account, a client ID)
 	Flag         *flagView
 	Whole        bool
 	People       []personChip

@@ -2,6 +2,7 @@
   {{with .PINFrom}}<p class="notice" role="status">{{tf "invite.done.pin" "name" .}}</p>{{end}}
   {{with .Child}}<h1 class="child-h"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span><span class="h-name">{{t "home.hello"}} {{$.Person.Name}}</span></h1>
   {{else}}<h1>{{t "home.hello"}} {{.Person.Name}}</h1>{{end}}
+  {{range .GNotices}}{{template "gNotice" (dict "N" . "Home" true "Console" $.GConsole)}}{{end}}
   {{template "offlineNote" .OfflineNote}}
   {{template "staleUpdate" .StaleUpdate}}
   {{template "httpsNotice" .}}

@@ -69,12 +69,47 @@ func (t *googleTokens) forget(connID string) {
 	delete(t.by, connID)
 }
 
+// googleAccess returns a valid access token of a Google connection, renewed
+// from the stored refresh token when the last one ran out. On failure the
+// message is for the sync log. A refresh token that Google rejects
+// (invalid_grant) marks the connection "sign in again"; while it waits for a
+// new sign-in Google is not asked again.
+func (s *Service) googleAccess(ctx context.Context, h store.Household, conn store.Connection, at time.Time) (string, i18n.Message, error) {
+	if !conn.SignInNeededAt.IsZero() {
+		return "", i18n.Msg("sync.fail.google_signin"), fmt.Errorf("%w: waiting for a new sign-in", googleauth.ErrInvalidGrant)
+	}
+	if token, ok := s.tokens.get(conn.ID, at); ok {
+		return token, i18n.Message{}, nil
+	}
+	clientID, clientSecret, err := s.db.GoogleAppSecret(h.ID)
+	if err != nil {
+		return "", i18n.Msg("sync.fail.google_app"), err
+	}
+	_, refresh, err := s.db.ConnectionCredentials(h.ID, conn.ID)
+	if err != nil {
+		return "", i18n.Msg("sync.fail.credentials", "detail", err.Error()), err
+	}
+	tok, err := s.google.Refresh(ctx, clientID, clientSecret, refresh, at)
+	switch {
+	case errors.Is(err, googleauth.ErrInvalidGrant):
+		s.tokens.forget(conn.ID)
+		if merr := s.db.MarkSignInNeeded(h.ID, conn.ID, at); merr != nil {
+			err = errors.Join(err, merr)
+		}
+		return "", i18n.Msg("sync.fail.google_signin"), err
+	case errors.Is(err, googleauth.ErrInvalidClient):
+		return "", i18n.Msg("sync.fail.google_client"), err
+	case err != nil:
+		return "", MessageOf(err), err
+	}
+	s.tokens.set(conn.ID, accessToken{tok.Access, tok.Expires})
+	_ = s.db.MarkTokenRenewed(h.ID, conn.ID, at)
+	return tok.Access, i18n.Message{}, nil
+}
+
 // remoteFor connects to the server of a connection: a CalDAV server with its
-// password, or Google with an access token renewed from the stored refresh
-// token. On failure the message is for the sync log. A refresh token that
-// Google rejects (invalid_grant) marks the connection "sign in again" and is
-// logged; nothing else is changed. While a connection waits for a new sign-in
-// Google is not asked again.
+// password, or Google's CalDAV API with an access token (see googleAccess). On
+// failure the message is for the sync log.
 func (s *Service) remoteFor(ctx context.Context, h store.Household, conn store.Connection, at time.Time) (Remote, i18n.Message, error) {
 	if conn.Kind != "google" {
 		user, password, err := s.db.ConnectionCredentials(h.ID, conn.ID)
@@ -87,39 +122,50 @@ func (s *Service) remoteFor(ctx context.Context, h store.Household, conn store.C
 		}
 		return remote, i18n.Message{}, nil
 	}
-	if !conn.SignInNeededAt.IsZero() {
-		return nil, i18n.Msg("sync.fail.google_signin"), fmt.Errorf("%w: waiting for a new sign-in", googleauth.ErrInvalidGrant)
-	}
-	token, ok := s.tokens.get(conn.ID, at)
-	if !ok {
-		clientID, clientSecret, err := s.db.GoogleAppSecret(h.ID)
-		if err != nil {
-			return nil, i18n.Msg("sync.fail.google_app"), err
-		}
-		_, refresh, err := s.db.ConnectionCredentials(h.ID, conn.ID)
-		if err != nil {
-			return nil, i18n.Msg("sync.fail.credentials", "detail", err.Error()), err
-		}
-		tok, err := s.google.Refresh(ctx, clientID, clientSecret, refresh, at)
-		switch {
-		case errors.Is(err, googleauth.ErrInvalidGrant):
-			s.tokens.forget(conn.ID)
-			if merr := s.db.MarkSignInNeeded(h.ID, conn.ID, at); merr != nil {
-				err = errors.Join(err, merr)
-			}
-			return nil, i18n.Msg("sync.fail.google_signin"), err
-		case errors.Is(err, googleauth.ErrInvalidClient):
-			return nil, i18n.Msg("sync.fail.google_client"), err
-		case err != nil:
-			return nil, MessageOf(err), err
-		}
-		token = tok.Access
-		s.tokens.set(conn.ID, accessToken{token, tok.Expires})
-		_ = s.db.MarkTokenRenewed(h.ID, conn.ID, at)
+	token, msg, err := s.googleAccess(ctx, h, conn, at)
+	if err != nil {
+		return nil, msg, err
 	}
 	remote, err := s.googleDial(token)
 	if err != nil {
 		return nil, i18n.Msg("sync.fail.address", "detail", err.Error()), err
 	}
 	return remote, i18n.Message{}, nil
+}
+
+// GoogleClient is the client for Google's token service and calendar list, so
+// the web interface can finish a sign-in with the same gate and fakes.
+func (s *Service) GoogleClient() *googleauth.Client { return s.google }
+
+// RememberGoogleToken keeps the access token of a sign-in that just finished,
+// so the first sync does not ask Google for another.
+func (s *Service) RememberGoogleToken(connectionID string, t googleauth.Tokens) {
+	s.tokens.set(connectionID, accessToken{t.Access, t.Expires})
+}
+
+// GoogleCalendars lists the calendars of a Google connection's account.
+func (s *Service) GoogleCalendars(ctx context.Context, h store.Household, conn store.Connection) ([]googleauth.Calendar, error) {
+	token, _, err := s.googleAccess(ctx, h, conn, s.now())
+	if err != nil {
+		return nil, err
+	}
+	cals, err := s.google.Calendars(ctx, token)
+	if errors.Is(err, googleauth.ErrUnauthorized) { // the token ran out early: renew once
+		s.tokens.forget(conn.ID)
+		if token, _, err = s.googleAccess(ctx, h, conn, s.now()); err != nil {
+			return nil, err
+		}
+		cals, err = s.google.Calendars(ctx, token)
+	}
+	return cals, err
+}
+
+// CountConnectionEvents asks the server of a stored connection how many events
+// a calendar has in the import window, as CountEvents does for a CalDAV server.
+func (s *Service) CountConnectionEvents(ctx context.Context, h store.Household, conn store.Connection, calendarURL string) (int, error) {
+	remote, _, err := s.remoteFor(ctx, h, conn, s.now())
+	if err != nil {
+		return 0, err
+	}
+	return remote.CountEvents(ctx, calendarURL, s.now().AddDate(-1, 0, 0))
 }

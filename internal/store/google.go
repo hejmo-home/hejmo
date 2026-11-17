@@ -10,6 +10,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/googleauth"
+	"github.com/hejmo-home/hejmo/internal/secret"
 )
 
 // Errors of a started sign-in at Google.
@@ -301,3 +302,43 @@ func (db *DB) AddGoogleCalendar(householdID, connectionID string, in NewGoogleCa
 	}
 	return db.SyncedCalendar(householdID, calID)
 }
+
+// StashGoogleToken keeps the refresh token of a sign-in with another account
+// than the connection that asked for it, on the used login, so the parent can
+// add that account as a new connection instead of signing in again.
+func (db *DB) StashGoogleToken(householdID, nonce, account, refreshToken string) error {
+	sealed, err := db.seal(refreshToken)
+	if err != nil {
+		return err
+	}
+	return expectOne(db.sql.Exec(`UPDATE google_login SET pending_account = ?, pending_token = ? WHERE nonce = ? AND household_id = ?`, account, sealed, nonce, householdID))
+}
+
+// TakeStashedGoogleToken returns the stashed account and refresh token once
+// and forgets them; ErrNotFound if there are none.
+func (db *DB) TakeStashedGoogleToken(householdID, nonce string) (account, refreshToken string, err error) {
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return "", "", err
+	}
+	defer tx.Rollback()
+	var acc, sealed sql.NullString
+	err = tx.QueryRow(`SELECT pending_account, pending_token FROM google_login WHERE nonce = ? AND household_id = ?`, nonce, householdID).Scan(&acc, &sealed)
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && !sealed.Valid) {
+		return "", "", ErrNotFound
+	}
+	if err != nil {
+		return "", "", err
+	}
+	if _, err := tx.Exec(`UPDATE google_login SET pending_account = NULL, pending_token = NULL WHERE nonce = ?`, nonce); err != nil {
+		return "", "", err
+	}
+	if err := tx.Commit(); err != nil {
+		return "", "", err
+	}
+	token, err := db.unseal(sealed.String)
+	return acc.String, token, err
+}
+
+// Sealer is the box's key, for values that the box signs without storing them.
+func (db *DB) Sealer() *secret.Sealer { return db.secrets }

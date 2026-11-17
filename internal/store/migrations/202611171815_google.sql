@@ -20,6 +20,8 @@ CREATE TABLE google_login (
     verifier      TEXT NOT NULL,           -- sealed, base64
     redirect_uri  TEXT NOT NULL,
     connection_id TEXT,                    -- set when an existing connection signs in again
+    pending_account TEXT,                  -- a sign-in with another account than the connection's, offered as a new connection
+    pending_token   TEXT,                  -- its refresh token, sealed
     created_at    TEXT NOT NULL,
     expires_at    TEXT NOT NULL,
     used_at       TEXT

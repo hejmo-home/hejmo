@@ -189,3 +189,32 @@ func TestGoogleLoginIsUsedOnceAndOnlyBeforeItExpires(t *testing.T) {
 		t.Fatal("the PKCE verifier is stored in plain text")
 	}
 }
+
+func TestAWrongAccountSignInIsKeptOnceForTheNewConnection(t *testing.T) {
+	f := newGoogleFixture(t)
+	login := store.GoogleLogin{Nonce: "n9", PersonID: f.person.ID, Verifier: "v", RedirectURI: googleauth.RelayRedirectURI, ExpiresAt: t0.Add(15 * time.Minute)}
+	f.db.CreateGoogleLogin(f.h.ID, login, t0)
+	if _, err := f.db.TakeGoogleLogin(f.h.ID, "n9", t0); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.StashGoogleToken(f.h.ID, "n9", "papa@gmail.com", "1//papa-refresh"); err != nil {
+		t.Fatal(err)
+	}
+	account, token, err := f.db.TakeStashedGoogleToken(f.h.ID, "n9")
+	if err != nil || account != "papa@gmail.com" || token != "1//papa-refresh" {
+		t.Fatalf("stash = %q %q %v", account, token, err)
+	}
+	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n9"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("second take: %v", err)
+	}
+	other, _ := f.db.CreateHousehold(store.Household{Name: "Other"})
+	f.db.StashGoogleToken(f.h.ID, "n9", "papa@gmail.com", "1//papa-refresh")
+	if _, _, err := f.db.TakeStashedGoogleToken(other.ID, "n9"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("another household takes it: %v", err)
+	}
+	f.db.SQL().Exec(`PRAGMA wal_checkpoint(TRUNCATE)`)
+	f.db.Close()
+	if raw, err := os.ReadFile(f.path); err == nil && bytes.Contains(raw, []byte("1//papa-refresh")) {
+		t.Fatal("the stashed refresh token is stored in plain text")
+	}
+}

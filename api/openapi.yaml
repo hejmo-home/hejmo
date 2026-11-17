@@ -2005,9 +2005,12 @@ paths:
       description: |
         The amount **replaces** the old quantity and never adds to it. The
         caller converts a change of unit within one kind (500 g to 0.5 kg keeps
-        the amount); the total is shown by the same rules as when adding. When
+        the amount). `amount` is rounded as shown (two decimals, whole g and ml);
+        sending back the rounded number of the entry's own quantity, in any unit
+        of its kind, keeps the exact total. The total is shown by the same rules
+        as when adding. When
         the article is already on the list in the new kind (or, for `amount:
-        null`, with any quantity), this entry goes into it (`result: merged`,
+        null`, with any other entry), this entry goes into it (`result: merged`,
         the answer is the entry that stays); otherwise `result: set`.
         `amount: null` takes the quantity away. An entry that is ticked off or
         gone answers 409. Only on lists with `suggestions`.
@@ -2195,8 +2198,10 @@ paths:
         The articles Hejmo ships (`source: hejmo`, about 250, German and English
         names) and the household's own ones (`source: own`). Optional `q` keeps
         the articles whose name holds the text, ignoring case and umlauts.
-        `units` are the article's default units, `offered_units` those of them
-        that are switched on (piece when neither is). Articles say which
+        `units` are the article's default units, `offered_units` the ones the
+        add card offers: those that are switched on, a switched-off one
+        replaced by the nearest active unit of its kind (kg by g), piece when
+        nothing is left. Articles say which
         allergens they contain; who is warned about them is health data, see
         `/articles/{id}/warnings`.
       parameters:

@@ -44,6 +44,14 @@ ADR 0018 named what comes after 0.1 only as "0.2 and later". On 15/11/2026 and 1
 - **Sources in 0.2:** upload to the box and a folder on the box. iPhone HEIC photos are converted in the browser on upload. **Immich albums come in V3.** No iCloud shared albums (no official interface).
 - **Privacy:** the box keeps only a copy resized to display size, with location data removed. Per photo a switch "don't show on displays". No face recognition.
 
+Details decided while building #178:
+
+- **Where it lives:** the photo folder is `<data>/photos` (every subfolder an album, loose files in the default album "Unsere Fotos"); the box keeps only its shrunk copies in `<data>/photo-files`, so originals are never kept. A photo is shrunk to 2048 px on its long edge and re-encoded as JPEG (this drops the location and all other metadata); the page also keeps a 400 px thumbnail. The space limit (default 2 GB, set on the Photos page) counts these copies. At the limit uploads are refused with 507, folder photos wait, and nothing is deleted.
+- **Permissions:** photos and albums use the scopes of `displays` (parents only; children never have them). No new scope.
+- **HEIC in the browser:** the browser's own decoder first (Safari has one), else libheif-js 1.23.5 (libheif compiled to WebAssembly, LGPL-3.0, compatible with AGPL-3.0), vendored in `web/static/vendor/libheif` (JavaScript 91 KB, WebAssembly 1.4 MB) and loaded only when a HEIC photo is chosen. Alternatives looked at: heic2any (MIT wrapper, bundles the same libheif, 2.7 MB), heic-decode (ISC, a Node wrapper of libheif-js). The box itself accepts only JPEG and PNG.
+- **Folder albums** are read by the box every five minutes and when a photos page is opened; they are changed only in the folder (rename, delete, move and add are refused), their photos can be hidden.
+- **Display side:** the family view starts the screensaver page `/display/saver` after the idle time; the page shuffles the photos without repeats, changes them with a hard cut and sends the display back to the day on a touch, in quiet mode, when switched off or unpaired.
+
 ### Brightness (#179)
 
 - Brightness **follows the sun at the home location** (#86), dimmed or screen off in quiet hours, switchable per display.

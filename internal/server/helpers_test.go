@@ -44,6 +44,8 @@ type box struct {
 	meteo   *fakeMeteo
 	// updateDir stands in for the data volume that the host script shares with the box.
 	updateDir string
+	// photoDir stands in for the data volume: the photo folder and the stored photos.
+	photoDir string
 }
 
 // fakeMeteo stands in for Open-Meteo.
@@ -206,7 +208,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
+	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), photoDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time { return b.now }
 	b.sync = calsync.New(db, feeds, now)
 	b.meteo = &fakeMeteo{body: `{"current":{"temperature_2m":18.4,"weather_code":0,"is_day":1}}`, status: 200}
@@ -222,7 +224,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	if cfg.noHostUpdater {
 		updateDir, b.updateDir = "", ""
 	}
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher})
+	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()

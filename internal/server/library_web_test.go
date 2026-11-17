@@ -297,7 +297,7 @@ func TestLibraryShowsOwnArticlesFirstAndShippedOnesInClosedDepartmentCardsWithCo
 	if r.status != http.StatusOK {
 		t.Fatalf("GET = %d", r.status)
 	}
-	libHas(t, "library", r.body, `<a class="back" href="/settings/lists">`, "Back to Lists", "<h1>Article library</h1>", `class="button" href="/settings/lists/library/new">Add own article`,
+	libHas(t, "library", r.body, `<a href="/settings/lists">Lists</a>`, "<h1>Article library</h1>", `class="button" href="/settings/lists/library/new">Add own article`,
 		`class="lib-search"`, `role="search"`, `class="lib-filter"`, `aria-current="true">All</a>`, "With allergy warning", ">Hidden</a>",
 		`<h2 id="own">Own articles</h2>`, "Katzenfutter Huhn", `<h2 id="hej">Articles from Hejmo</h2>`, "248 articles in German and English.",
 		`<details class="dept"><summary>`, "Fruit and vegetables", "46 articles", "Sweets and snacks", "17 articles · 1 hidden by hand · ", "with allergy warning",
@@ -316,7 +316,7 @@ func TestLibraryShowsOwnArticlesFirstAndShippedOnesInClosedDepartmentCardsWithCo
 		t.Errorf("the library shows a count in place of a name")
 	}
 	de := l.de("/settings/lists/library").body
-	libHas(t, "German library", de, "Zurück zu Listen", "Eigenen Artikel anlegen", "Obst und Gemüse", "46 Artikel", "Artikel von Hejmo")
+	libHas(t, "German library", de, `<a href="/settings/lists">Listen</a>`, "Eigenen Artikel anlegen", "Obst und Gemüse", "46 Artikel", "Artikel von Hejmo")
 }
 
 func TestOwnArticlesStartWithAnEmptyStateSentence(t *testing.T) {
@@ -395,7 +395,7 @@ func TestShippedArticlePageSaysEverythingInWordsAndCannotBeEdited(t *testing.T) 
 	if r.status != http.StatusOK {
 		t.Fatalf("GET = %d", r.status)
 	}
-	libHas(t, "article page", r.body, `<a class="back" href="/settings/lists/library">`, "Article library", `<h1 class="art-title"><span class="art-sym big" aria-hidden="true">🥜</span><span>Peanut butter</span></h1>`,
+	libHas(t, "article page", r.body, `<a href="/settings/lists/library">Article library</a>`, "Article library", `<h1 class="art-title"><span class="art-sym big" aria-hidden="true">🥜</span><span>Peanut butter</span></h1>`,
 		"Comes from", "Hejmo · German: Erdnussbutter", "Pantry and breakfast", "piece and g", "When adding, piece is preselected until you use another unit.", "Vegan: nothing from animals",
 		"everyone at your home", "Peanuts", `Contains Peanuts: `, "Mia</span> is allergic", "Hide by hand", "Off. Hejmo suggests Peanut butter.", "Make own version", "Copy as own article")
 	libHasNot(t, "shipped page", r.body, `name="name"`, "<textarea", "Delete article")
@@ -938,19 +938,20 @@ func TestEveryLibraryPageHasABackLinkInsideMain(t *testing.T) {
 	l := newLibBox(t)
 	l.person("Mia", "child", "omnivore", "milk")
 	id := l.createArticle(articleForm())
-	for page, back := range map[string]string{
-		"/settings/lists":                `<a class="back" href="/settings">`,
-		"/settings/lists/library":        `<a class="back" href="/settings/lists">`,
-		"/settings/lists/library/new":    `<a class="back" href="/settings/lists/library">`,
-		"/settings/lists/library/apples": `<a class="back" href="/settings/lists/library">`,
-		"/settings/lists/library/" + id:  `<a class="back" href="/settings/lists/library">`,
+	// Ticket 182: the trail replaces the back link and sits inside main.
+	for page, up := range map[string]string{
+		"/settings/lists":                `<a href="/settings">Settings</a>`,
+		"/settings/lists/library":        `<a href="/settings/lists">Lists</a>`,
+		"/settings/lists/library/new":    `<a href="/settings/lists/library">Article library</a>`,
+		"/settings/lists/library/apples": `<a href="/settings/lists/library">Article library</a>`,
+		"/settings/lists/library/" + id:  `<a href="/settings/lists/library">Article library</a>`,
 	} {
 		body := l.en(page).body
-		at, main := strings.Index(body, back), strings.Index(body, "<main")
+		at, main := strings.Index(body, up), strings.Index(body, "<main")
 		if at < 0 || at < main {
-			t.Errorf("%s: back link %s missing or outside main", page, back)
+			t.Errorf("%s: trail link %s missing or outside main", page, up)
 		}
-		if !strings.Contains(body, `<a href="/settings" aria-current="page"`) {
+		if !strings.Contains(body, `<a href="/settings" aria-current="true"`) {
 			t.Errorf("%s does not mark Settings as current", page)
 		}
 	}

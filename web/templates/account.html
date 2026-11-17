@@ -26,9 +26,9 @@
   <p class="hint">{{t "account.passkeys.name_lead"}} <span class="host">{{.BoxName}}</span>{{t "account.passkeys.name_rest"}}</p>
   </div>
   <h2 class="rows-head">{{t "account.codes"}}</h2>
-  <dl class="facts"><dt>{{t "account.codes.otp"}}</dt><dd>{{tf "account.codes.since" "date" .CodesSince}}</dd><dt>{{t "account.codes.recovery"}}</dt><dd>{{.LeftText}}</dd></dl>
-  <form method="post" action="/account/recovery-codes" class="actions"><button class="button secondary" type="submit">{{t "otp.recovery.new"}}</button></form>
-  <p class="hint">{{t "otp.recovery.new_hint"}}</p>
+  <dl class="facts"><dt>{{t "account.codes.otp"}}</dt><dd>{{tf "account.codes.since" "date" .CodesSince}}</dd><dt>{{t "account.codes.recovery"}}</dt><dd>{{.LeftText}}{{if .CodesUnsaved}}<span class="flag warn"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{t "account.codes.unsaved"}}</span>{{end}}</dd></dl>
+  <form method="post" action="/account/recovery-codes" class="actions">{{if .CodesUnsaved}}<input type="hidden" name="fresh" value="1">{{end}}<button class="button secondary" type="submit">{{t "otp.recovery.new"}}</button></form>
+  <p class="hint">{{if .CodesUnsaved}}{{.UnsavedHint}}{{else}}{{t "otp.recovery.new_hint"}}{{end}}</p>
   <h2 class="rows-head">{{t "account.others"}}</h2>
   {{if .Others}}
   <ul class="list-rows">

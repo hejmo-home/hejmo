@@ -97,7 +97,7 @@ func TestBrightnessBlockShowsTheStateAndTheValuesAfterTheNightBlock(t *testing.T
 	}
 	want(t, "wake", b, "Ein Tippen weckt es für", "mit Abend-Helligkeit (40 %)")
 	wantNot(t, "block", b, " disabled", `class="bright unavailable`, "Experimentell", `name="light_source"`)
-	want(t, "no sensor", b, "Dieses Gerät meldet keinen Lichtsensor, darum gilt das Sonnenlicht bei euch.")
+	want(t, "no sensor", b, "Dieses Gerät meldet keinen Lichtsensor, darum gilt das Sonnenlicht.")
 	// The kiosk app fields moved into the block.
 	if !strings.Contains(b, `name="kiosk_url"`) || !strings.Contains(b, `name="kiosk_key"`) {
 		t.Error("kiosk fields are not in the Brightness block")
@@ -201,7 +201,7 @@ func TestBrightnessWithoutAHomeLocationSaysDayAppliesAllDay(t *testing.T) {
 	f, _ := kioskBox(t, "screen", nil)
 	f.withoutLocation(t)
 	b := bright(t, f.settingsPage(t, de))
-	want(t, "no location", b, "Die Box kennt euren Wohnort nicht", "gilt den ganzen Tag „Tagsüber“.", "Wohnort eintragen")
+	want(t, "no location", b, "Die Box kennt deinen Wohnort nicht", "gilt den ganzen Tag „Tagsüber“.", "Wohnort eintragen")
 	wantNot(t, "block", b, "heute 07:")
 	if !strings.Contains(b, `class="flag warn"`) || !strings.Contains(b, `href="/settings/household"`) {
 		t.Error("no warning with a link to the household settings")

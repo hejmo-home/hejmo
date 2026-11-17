@@ -13,7 +13,7 @@ Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. A s
 ## What works in `main` today
 
 - **Family view and displays:** one column per person with today's events, task progress, the family strip for all-day events and public holidays, weather and time, and tiles for today's meals and tomorrow's waste collection. Live updates, landscape and portrait, black-and-white mode with marker shapes, themes by sunrise and sunset, a sync notice and a personal view per person. Displays are paired by QR code.
-- **Quiet mode:** a night page and front light control through the kiosk adapter (FreeKiosk). Experimental, see [status notes](#status-notes).
+- **Quiet mode and brightness:** a night page, and through the kiosk adapter (FreeKiosk, [setup](docs/freekiosk.md)) brightness by sunrise and sunset, off or dimmed at night, per display. Front light on E-Ink is experimental, see [status notes](#status-notes).
 - **Calendar:** events and series with the edit scopes this, this and following, all; multi-day events, public holidays for Germany, Austria and Switzerland, search, subgroups and audiences. The web interface has a week calendar with editing and a page to choose calendars.
 - **Calendar sync:** ICS subscriptions and iCloud or any CalDAV server (read only; write-back is open, see below). The box is itself a CalDAV server for your calendar apps, with an iOS profile and one task list per person (VTODO). Nothing syncs through a cloud of ours.
 - **Tasks:** simple tasks, routines with ready-made routine templates, subtasks, stars with a star log, and task progress per person on the display.

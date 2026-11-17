@@ -137,11 +137,11 @@ A calendar whose events come from, and may be written back to, a calendar outsid
 _Avoid_: external calendar, remote calendar, feed
 
 **Read-only calendar**:
-A synced calendar whose events the box shows but never changes outside. ICS subscriptions are always read-only.
+A synced calendar whose events the box shows but never changes outside. ICS subscriptions are always read-only; a parent can switch a CalDAV calendar between read-only and two-way (the default).
 _Avoid_: subscribed calendar, imported calendar
 
 **Sync conflict**:
-The same event changed both on the box and outside since the last sync.
+The same event changed both on the box and outside since the last sync. The later change wins; the other version stays in the sync log for 30 days.
 _Avoid_: collision, clash
 
 **Sync log**:
@@ -207,7 +207,7 @@ The sign-in of one person in one browser with username, password and one-time co
 _Avoid_: login (as a noun), cookie, session (alone)
 
 **Device session**:
-The long-lived, revocable access of a paired phone, which acts for one person.
+The long-lived, revocable access of a paired phone, which acts for one person. A browser that held one keeps a harmless marker cookie; when its device session has ended, `/login` shows "This device is no longer paired" instead of the sign-in, until a sign-in or a sign-out forgets the marker; a new pairing sets the marker again.
 _Avoid_: remember-me, phone token
 
 **Overview and detail page**:

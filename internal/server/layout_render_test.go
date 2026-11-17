@@ -462,6 +462,9 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	out := siteOf("signed out", f.box, f.client)
 	add(out, "/login")
 	add(out, "/ca")
+	// A phone whose device session was removed (ticket 199), on a box of its own.
+	oldBox, oldPhone, _ := unpairedPhone(t)
+	add(siteOf("unpaired device", oldBox, oldPhone.client), "/login")
 	// The invitation of a parent: the welcome page and the form for username and password.
 	add(out, "/invite/"+f.inviteToken)
 	add(out, "/invite/"+f.inviteToken+"/account")

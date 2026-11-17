@@ -21,7 +21,7 @@
 {{else}}<div{{if .Frame}} class="frame framed{{if .Frame.Items}} has-nav{{end}}"{{end}}>
 {{with .Frame}}
 <header class="frame-bar">
-  <a class="brand" href="/">Hejmo</a>
+  {{if .PlainBrand}}<span class="brand">Hejmo</span>{{else}}<a class="brand" href="/">Hejmo</a>{{end}}
   <div class="frame-tools">
     {{template "langSwitch" .}}
     {{if .SignedIn}}{{template "themePick" .}}{{end}}

@@ -24,12 +24,29 @@ func (s *server) handleLoginForm(w http.ResponseWriter, r *http.Request) {
 	data := map[string]any{"Next": localPath(r.URL.Query().Get("next"))}
 	// A session cookie the box no longer knows (ended by a parent or run out):
 	// say why the sign-in page is shown, and drop the cookie.
+	sessionEnded, signedIn := false, false
 	if c, err := r.Cookie(sessionCookie); err == nil && c.Value != "" {
-		if _, err := s.db.SessionPerson(auth.HashToken(c.Value), s.now()); err != nil {
-			data["SignedOut"] = true
+		if _, err := s.db.SessionPerson(auth.HashToken(c.Value), s.now()); err == nil {
+			signedIn = true
+		} else {
+			sessionEnded = true
 			http.SetCookie(w, &http.Cookie{Name: sessionCookie, Value: "", Path: "/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil})
 		}
 	}
+	// A browser that was paired as a device (ticket 199) and has no session
+	// any more gets the page "no longer paired", not the password form, until
+	// an adult asks for the sign-in (?account=1). A fresh browser has no marker.
+	if c, err := r.Cookie(deviceCookie); err == nil && c.Value == "1" {
+		// ?account=1 is the adult's request; so is ?passkey=, the way back from a passkey sign-in that did not work.
+		q := r.URL.Query()
+		if q.Get("account") != "1" && q.Get("passkey") == "" && !signedIn {
+			w.Header().Set("Cache-Control", "no-store")
+			s.render(w, r, http.StatusOK, "unpaired.html", map[string]any{"Next": data["Next"]})
+			return
+		}
+		sessionEnded = false // the adult knows already; no notice on the way to the sign-in
+	}
+	data["SignedOut"] = sessionEnded
 	s.withPasskeyWay(r, data)
 	s.render(w, r, http.StatusOK, "login.html", data)
 }

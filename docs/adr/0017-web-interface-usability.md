@@ -78,5 +78,5 @@ The product owner tested the box with a real iCloud account on 14/11/2026. The m
 ## Consequences
 
 - New tickets in package 5: management pages redesign (calendars and choose calendars with switch, chips, event count, feedback), settings hub and navigation, display settings question, tasks page patterns, iOS profile for CalDAV clients, recovery of one-time codes, people page.
-- The sync engine stores per run the event count in the import window and the number of new, changed and removed events.
+- The sync engine stores per run the event count in the import window and the number of new, changed and removed events. Note (#17, write-back): the event count shown for a synced calendar (`sync.event_count`, calendar page, flash text) is the number of events the calendar holds now, events written on the box included and not limited to the import window; the count before choosing a calendar still uses the import window.
 - Each of these tickets shows a preview before merge where it changes layouts (CLAUDE.md design rule).

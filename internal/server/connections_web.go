@@ -92,6 +92,12 @@ type wasteRow struct {
 	Waste    bool
 }
 
+// writeRow is a CalDAV calendar of a connection with its two-way / read-only switch.
+type writeRow struct {
+	ID, Name string
+	TwoWay   bool
+}
+
 // selectionCalendar is one calendar on the choice page with what the parent
 // entered for it, or what is stored, or the defaults. On means the switch is on.
 type selectionCalendar struct {
@@ -219,9 +225,16 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 			wasteRows = append(wasteRows, wasteRow{ID: m.ID, Name: m.Name, Waste: m.Waste})
 		}
 	}
+	var writeRows []writeRow
+	for _, m := range mine {
+		if m.Kind == "caldav" {
+			writeRows = append(writeRows, writeRow{ID: m.ID, Name: m.Name, TwoWay: !m.ReadOnly})
+		}
+	}
 	data := map[string]any{
-		"Waste":  wasteRows,
-		"Person": p.person, "Connection": newConnectionView(conn), "Title": conn.Username,
+		"Waste":     wasteRows,
+		"WriteBack": writeRows,
+		"Person":    p.person, "Connection": newConnectionView(conn), "Title": conn.Username,
 		"Found": shown, "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
 		"DefaultInterval": interval, "SyncStale": s.syncStale(p.household.ID),
 		"Error": errKey, "ErrorField": errField, "ErrorCalendar": errCalendar,

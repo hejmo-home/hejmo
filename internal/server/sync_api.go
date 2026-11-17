@@ -136,7 +136,7 @@ func (s *server) syncState(r *http.Request, c store.SyncedCalendar, loc *time.Lo
 		LastAttemptAt:   ts(c.Sync.LastAttempt),
 		LastSuccessAt:   ts(c.Sync.LastSuccess),
 		LastError:       s.say(r, c.Sync.LastError),
-		EventCount:      c.Sync.LastRun.Events,
+		EventCount:      c.Sync.EventCount,
 		LastRun:         runJSON{c.Sync.LastRun.New, c.Sync.LastRun.Changed, c.Sync.LastRun.Removed},
 	}
 }
@@ -365,25 +365,30 @@ func (s *server) calendarExists(householdID, id string) error {
 
 func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
-		Shared *bool `json:"share_through_box"`
-		Waste  *bool `json:"waste_collection"`
+		Shared   *bool `json:"share_through_box"`
+		ReadOnly *bool `json:"read_only"`
+		Waste    *bool `json:"waste_collection"`
 		calendarChanges
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	if in.Shared == nil && in.Waste == nil && !in.calendarChanges.any() {
-		writeError(w, http.StatusUnprocessableEntity, "send share_through_box, waste_collection, name, color or audience")
+	if in.Shared == nil && in.ReadOnly == nil && in.Waste == nil && !in.calendarChanges.any() {
+		writeError(w, http.StatusUnprocessableEntity, "send share_through_box, read_only, waste_collection, name, color or audience")
 		return
 	}
 	id := r.PathValue("id")
-	if in.Waste != nil { // refuse before anything is saved
+	if in.Waste != nil && *in.Waste { // refuse before anything is saved; unmarking needs no read-only
 		c, err := s.db.Calendar(p.household.ID, id)
 		if s.storeError(w, "waste calendar", err) {
 			return
 		}
-		if !c.ReadOnly {
+		readOnly := c.ReadOnly // as it will be after this request
+		if in.ReadOnly != nil {
+			readOnly = *in.ReadOnly
+		}
+		if !readOnly {
 			writeError(w, http.StatusUnprocessableEntity, "only a read-only calendar can be a waste collection calendar")
 			return
 		}
@@ -412,6 +417,14 @@ func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p pri
 	if in.Shared != nil && s.storeError(w, "share calendar", s.db.SetCalendarShared(p.household.ID, id, *in.Shared)) {
 		return
 	}
+	if in.ReadOnly != nil {
+		if s.storeError(w, "switch calendar", s.db.SetCalendarReadOnly(p.household.ID, id, *in.ReadOnly)) {
+			return
+		}
+		if !*in.ReadOnly {
+			s.sync.PushSoon(p.household.ID, id) // changes queued before the switch
+		}
+	}
 	if in.Waste != nil && s.storeError(w, "waste calendar", s.db.SetCalendarWaste(p.household.ID, id, *in.Waste)) {
 		return
 	}
@@ -435,6 +448,7 @@ func (s *server) apiDeleteCalendar(w http.ResponseWriter, r *http.Request, p pri
 }
 
 type syncLogJSON struct {
+	Detail       string `json:"detail,omitempty"`
 	ID           string `json:"id"`
 	CalendarID   string `json:"calendar_id"`
 	CalendarName string `json:"calendar_name"`
@@ -451,7 +465,7 @@ func (s *server) apiSyncLog(w http.ResponseWriter, r *http.Request, p principal)
 	}
 	out := make([]syncLogJSON, 0, len(entries))
 	for _, e := range entries {
-		out = append(out, syncLogJSON{e.ID, e.CalendarID, e.CalendarName, e.At.In(p.location()).Format(time.RFC3339), e.Kind, s.say(r, e.Message)})
+		out = append(out, syncLogJSON{e.Detail, e.ID, e.CalendarID, e.CalendarName, e.At.In(p.location()).Format(time.RFC3339), e.Kind, s.say(r, e.Message)})
 	}
 	writeJSON(w, http.StatusOK, out)
 }

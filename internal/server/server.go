@@ -213,6 +213,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /calendars/{id}", s.handleCalendarPage)
 	mux.HandleFunc("POST /calendars/{id}/sync", s.handleCalendarSync)
 	mux.HandleFunc("POST /calendars/{id}/delete", s.handleCalendarDelete)
+	mux.HandleFunc("POST /calendars/{id}/read-only", s.handleCalendarReadOnly)
 	mux.HandleFunc("GET /connections/new", s.handleConnectNew)
 	mux.HandleFunc("POST /calendars/{id}/waste", s.handleCalendarWaste)
 	mux.HandleFunc("POST /notes", s.handleNoteSave)
@@ -404,6 +405,7 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 	if !strings.HasPrefix(name, "display_") {
 		fr := s.frameFor(r)
 		fr.setLanguage(lang, r)
+		fr.PlainBrand = plainBrandPages[name]
 		if href, _ := data["BackHref"].(string); href != "" { // a page that leads back to a named page
 			text, _ := data["BackText"].(string)
 			fr.Back, fr.BackHref, fr.BackLabel, fr.BackText = false, href, "", text

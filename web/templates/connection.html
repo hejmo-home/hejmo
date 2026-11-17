@@ -47,6 +47,20 @@
     <h2>{{t "connections.choose.heading"}}</h2>
     <div class="choose-none"><p><strong>{{t "connections.choose.none"}}</strong></p><p class="hint">{{if .ICloud}}{{t "connections.choose.none_hint_icloud"}}{{else}}{{repl (t "connections.choose.none_hint_host") "{host}" .Host}}{{end}}</p></div>
   </section>{{end}}
+  {{if .WriteBack}}
+  <section class="steps">
+    <h2>{{t "connections.writeback.heading"}}</h2>
+    {{range .WriteBack}}
+    <div class="card-row">
+      <span class="t"><b>{{.Name}}</b>
+        <span class="hint">{{if .TwoWay}}{{t "calendars.two_way"}}{{else}}{{t "connections.writeback.readonly"}}{{end}}</span></span>
+      {{if .TwoWay}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="1"><button class="button secondary" type="submit" title="{{t "calendars.make_read_only_hint"}}">{{t "calendars.make_read_only"}}</button></form>
+      {{else}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="0"><button class="button secondary" type="submit">{{t "calendars.make_two_way"}}</button></form>{{end}}
+    </div>
+    {{if .TwoWay}}<p class="hint">{{t "calendars.make_read_only_hint"}}</p>{{end}}
+    {{end}}
+  </section>
+  {{end}}
   {{if .Waste}}
   <section class="steps">
     <h2>{{t "connections.waste.heading"}}</h2>

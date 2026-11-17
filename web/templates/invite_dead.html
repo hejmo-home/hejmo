@@ -6,11 +6,16 @@
     <p class="invitee"><span class="marker" data-person="{{.InviteeChip.Slot}}" data-shape="{{.InviteeChip.Shape}}" aria-hidden="true"></span><span>{{.Invitee.Name}}</span></p>
     <p>{{t "invite.dead.other.as.pre"}} <span class="who"><span class="marker" data-person="{{.Who.Slot}}" data-shape="{{.Who.Shape}}" aria-hidden="true"></span>{{.Who.Name}}</span>{{t "invite.dead.other.as.post"}}</p>
   </section>
-  <p>{{tf "invite.dead.other.text" "name" .Invitee.Name}}</p>
+  {{if .ChildPhone}}<p>{{t "invite.dead.other.child"}}</p>
+  <div class="actions">
+    <a class="link" href="/">{{t "invite.dead.other.home"}}</a>
+  </div>
+  {{else}}<p>{{tf "invite.dead.other.text" "name" .Invitee.Name}}</p>
   <div class="actions">
     <form method="post" action="/logout"><input type="hidden" name="next" value="/invite/{{.Token}}"><button class="button" type="submit">{{tf "invite.dead.other.logout" "name" .Invitee.Name}}</button></form>
     <a class="link" href="/">{{t "invite.dead.other.home"}}</a>
   </div>
+  {{end}}
   {{else}}
   <h1>{{t (printf "invite.dead.%s.title" .Kind)}}</h1>
   <p class="lead">{{tf (printf "invite.dead.%s.lead" .Kind) "date" .Date "inviter" .Inviter}}</p>

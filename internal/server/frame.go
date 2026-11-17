@@ -36,7 +36,9 @@ type navLink struct {
 // frame is the chrome around a web screen: brand bar, sign-out and navigation.
 type frame struct {
 	SignedIn bool
-	Items    []navLink
+	// NoSignOut hides Sign out: a child's phone stays signed in; a parent unpairs it (Q46).
+	NoSignOut bool
+	Items     []navLink
 	// SunRise and SunSet are today's sun times at the home location (Unix
 	// seconds, 0 when unknown); the page script uses them for the browser
 	// theme "automatic" (ADR 0015).
@@ -78,6 +80,7 @@ func (s *server) frameFor(r *http.Request) frame {
 	}
 	f := s.sunFrame()
 	f.SignedIn = true
+	f.NoSignOut = s.childPhoneSession(r, p)
 	if h, err := s.db.HomeHousehold(); err == nil {
 		f.TimeFormat = string(h.TimeFormat)
 		f.DateFormat = string(h.DateFormat)
@@ -131,7 +134,7 @@ func (s *server) sunFrame() frame {
 // isSetupPath reports whether path is a screen reached from the Settings hub
 // (ADR 0017): a hub entry or a page below one. Connections hang off Calendars.
 func isSetupPath(path string) bool {
-	paths := []string{"/connections"}
+	paths := []string{"/connections", "/settings/licences"}
 	for _, it := range hubItems {
 		paths = append(paths, it.Href)
 	}

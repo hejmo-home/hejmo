@@ -318,9 +318,9 @@ func TestAccountPageHintsGroupedRegionsAndPasswordReveal(t *testing.T) {
 	r := deGet(b, "/setup")
 	for _, want := range []string{
 		"<h1>Dein Konto</h1>", "Damit meldest du dich bei Hejmo an.", "<legend>Heimatort</legend>", `<p class="hint">Der Ort gibt Wetter, Sonnenauf- und -untergang, das Bundesland die Feiertage.</p>`, "<legend>Du</legend>", "<legend>Eltern-PIN</legend>",
-		"Für Wetter und Sonnenzeiten.", "Für die Feiertage.", "So erscheinst du auf dem Display.", "Damit meldest du dich an.", "Mindestens 10 Zeichen.",
+		"Ort oder Stadtteil", "Kommt mit dem gewählten Ort", "Die Liste der Orte in Deutschland, Österreich und der Schweiz liegt auf der Box.", "Für die Feiertage.", "So erscheinst du auf dem Display.", "Damit meldest du dich an.", "Mindestens 10 Zeichen.",
 		"Die PIN brauchen Eltern am Display", "PIN (4 bis 8 Ziffern)", `<optgroup label="Deutschland">`, `<optgroup label="Österreich">`, `<optgroup label="Schweiz">`,
-		`<option value="DE-BY" selected>Bayern</option>`, `<span class="pw">`, `data-pw-toggle data-show-text="Anzeigen" data-hide-text="Verbergen"`, "Konto anlegen",
+		`<option value="" selected>Kommt mit dem gewählten Ort</option>`, `<option value="DE-BY">Bayern</option>`, `<span class="pw">`, `data-pw-toggle data-show-text="Anzeigen" data-hide-text="Verbergen"`, "Konto anlegen",
 	} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("account page misses %q", want)
@@ -342,12 +342,12 @@ func TestAccountPagePasswordErrorKeepsTheHintAndTheRest(t *testing.T) {
 	b := newBox(t)
 	f := validSetupForm()
 	f.Set("password", "short")
-	f.Set("home_name", "Garmisch-Partenkirchen")
+	f.Set("place_id", "2922530") // Garmisch-Partenkirchen
 	r := b.do(http.MethodPost, "/setup", f, map[string]string{"Accept-Language": "de"})
 	if r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("status %d", r.status)
 	}
-	for _, want := range []string{`class="ferr" id="err-password"`, "Das Passwort ist zu kurz. Es braucht mindestens 10 Zeichen.", `value="Garmisch-Partenkirchen"`, `value="mama"`, `value="Mama"`, `aria-invalid="true"`} {
+	for _, want := range []string{`class="ferr" id="err-password"`, "Das Passwort ist zu kurz. Es braucht mindestens 10 Zeichen.", `<b>Garmisch-Partenkirchen</b>`, `value="mama"`, `value="Mama"`, `aria-invalid="true"`} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("password error page misses %q", want)
 		}

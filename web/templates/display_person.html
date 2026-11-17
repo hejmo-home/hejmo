@@ -7,7 +7,7 @@
 
 {{define "personalView"}}<div class="pv" data-person="{{.Person.Slot}}" data-personal="{{.Person.Name}}">
   <header class="pv-header">
-    <h1><span class="marker" data-person="{{.Person.Slot}}" data-shape="{{.Person.Shape}}"></span>{{.Person.Name}}</h1>
+    <h1><span class="marker" data-person="{{.Person.Slot}}" data-shape="{{.Person.Shape}}"></span><span class="h-name">{{.Person.Name}}</span></h1>
     <div class="chips">{{if .Stars.Shown}}<span class="chip stars" data-stars="{{.Stars.Balance}}">{{.Stars.Balance}}<span class="sr"> {{t "personal.stars"}}</span></span>{{end}}<span class="chip" data-clock-zone="{{.ClockZone}}" data-clock-format="{{.ClockFormat}}" data-clock>{{.Clock}}</span></div>
     <a class="pv-back" href="/display">{{t "personal.back"}}</a>
   </header>

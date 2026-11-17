@@ -73,6 +73,7 @@ var apiRoutes = []APIRoute{
 	{"GET", "/https", auth.Perm("settings", auth.Read), (*server).apiHTTPS},
 	{"GET", "/settings", auth.Perm("settings", auth.Read), (*server).apiGetSettings},
 	{"PATCH", "/settings", auth.Perm("settings", auth.Write), (*server).apiUpdateSettings},
+	{"GET", "/places", auth.Perm("settings", auth.Read), (*server).apiSearchPlaces},
 	{"GET", "/update", auth.Perm("settings", auth.Read), (*server).apiGetUpdate},
 	{"POST", "/update/dismiss", auth.Perm("settings", auth.Write), (*server).apiDismissUpdate},
 	{"GET", "/events", auth.Perm("events", auth.Read), (*server).apiListEvents},

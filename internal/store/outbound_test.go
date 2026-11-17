@@ -184,19 +184,20 @@ func TestTheUpdateReminderDaysAreBounded(t *testing.T) {
 
 func TestTheDateOfTheLastUpdateOnlyMovesForward(t *testing.T) {
 	db, _ := openTemp(t)
-	if err := db.NoteUpdated(offT0); err != nil {
+	base := time.Now().UTC().Truncate(time.Second).Add(time.Hour) // after the install date of the fresh box
+	if err := db.NoteUpdated(base); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.NoteUpdated(offT0.Add(-24 * time.Hour)); err != nil {
+	if err := db.NoteUpdated(base.Add(-30 * time.Minute)); err != nil {
 		t.Fatal(err)
 	}
-	if box, _ := db.OutboundBox(); !box.UpdatedAt.Equal(offT0) {
-		t.Errorf("updated at %v, want %v", box.UpdatedAt, offT0)
+	if box, _ := db.OutboundBox(); !box.UpdatedAt.Equal(base) {
+		t.Errorf("updated at %v, want %v", box.UpdatedAt, base)
 	}
-	if err := db.NoteUpdated(offT0.Add(24 * time.Hour)); err != nil {
+	if err := db.NoteUpdated(base.Add(24 * time.Hour)); err != nil {
 		t.Fatal(err)
 	}
-	if box, _ := db.OutboundBox(); !box.UpdatedAt.Equal(offT0.Add(24 * time.Hour)) {
+	if box, _ := db.OutboundBox(); !box.UpdatedAt.Equal(base.Add(24 * time.Hour)) {
 		t.Errorf("updated at %v", box.UpdatedAt)
 	}
 }

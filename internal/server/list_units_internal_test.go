@@ -10,6 +10,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/library"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/unit"
 )
 
 // unitBox is a server with only what the units need: a household in a country.
@@ -94,4 +95,46 @@ func TestMilkInTheUKOffersPintsFirstAndNoLabels(t *testing.T) {
 
 func libraryArticle(id string, units []string) library.Article {
 	return library.Article{ID: id, De: id, En: id, Units: units}
+}
+
+// Every unit of ADR 0019 reads in words in both languages, in the singular and the plural.
+func TestEveryUnitReadsInBothLanguagesWithAndWithoutALabel(t *testing.T) {
+	s, h := unitBox(t, "DE-BY")
+	all := unit.All
+	for _, lang := range []string{"de", "en"} {
+		c := &itemCtx{s: s, p: principal{household: h}, lang: lang, active: all}
+		for _, k := range all {
+			one, many := c.qtyWords(list.NewQuantity(1, k)), c.qtyWords(list.NewQuantity(2, k))
+			for _, got := range []string{one, many, c.chip(k, "").Label} {
+				if strings.Contains(got, "unit.") || strings.TrimSpace(got) == "" {
+					t.Errorf("%s %s: %q is not words", lang, k, got)
+				}
+			}
+			if !strings.HasPrefix(one, "1 ") || !strings.HasPrefix(many, "2 ") {
+				t.Errorf("%s %s: %q, %q", lang, k, one, many)
+			}
+			for _, key := range []string{"unit." + k + ".one", "unit." + k + ".other", "unit." + k + ".long"} {
+				if s.i18n.T(lang, key) == key {
+					t.Errorf("%s lacks %s", lang, key)
+				}
+			}
+		}
+	}
+	// The plural in German and English.
+	de := &itemCtx{s: s, p: principal{household: h}, lang: "de", active: unit.DefaultActive}
+	en := &itemCtx{s: s, p: principal{household: h}, lang: "en", active: unit.DefaultActive}
+	for _, c := range []struct {
+		ctx  *itemCtx
+		q    list.Quantity
+		want string
+	}{
+		{de, list.NewQuantity(1, "pack"), "1 Packung"}, {de, list.NewQuantity(2, "pack"), "2 Packungen"}, {de, list.NewQuantity(0.5, "pack"), "0,5 Packungen"},
+		{de, list.NewQuantity(6, "piece"), "6 Stück"}, {de, list.NewQuantity(2, "dozen"), "2 Dutzend"}, {de, list.NewQuantity(1500, "g"), "1500 g"},
+		{en, list.NewQuantity(2, "pack"), "2 packs"}, {en, list.NewQuantity(1, "bunch"), "1 bunch"}, {en, list.NewQuantity(2, "bunch"), "2 bunches"},
+		{en, list.NewQuantity(1.5, "l"), "1.5 l"},
+	} {
+		if got := c.ctx.qtyWords(c.q); got != c.want {
+			t.Errorf("%s: %q, want %q", c.ctx.lang, got, c.want)
+		}
+	}
 }

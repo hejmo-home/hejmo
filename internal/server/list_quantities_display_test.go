@@ -25,7 +25,9 @@ func shopOnDisplay(t *testing.T) (*familyBox, string, map[string]string) {
 		t.Fatal(err)
 	}
 	ids := map[string]string{}
-	show := func(b float64, k unit.Kind) string { return unit.ShowUnit(b, k, []string{"dozen", "piece"}, unit.DefaultActive) }
+	show := func(b float64, k unit.Kind) string {
+		return unit.ShowUnit(b, k, []string{"dozen", "piece"}, unit.DefaultActive)
+	}
 	for _, e := range []struct {
 		text, art string
 		amount    float64
@@ -89,7 +91,7 @@ func TestAnyoneAtADisplayAddsInTheBackgroundAndGetsTheLineBackInTheView(t *testi
 func TestAMissingAmountOnTheDisplayIsAnErrorAtTheNumber(t *testing.T) {
 	f, id, _ := shopOnDisplay(t)
 	r := f.display.postLang("/display/lists/"+id+"/entries", url.Values{"article": {"eggs"}, "mode": {"qty"}, "amount": {""}, "unit": {"dozen"}, "partial": {"1"}}, "en")
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "How much? Tap + or enter a number above 0.") || !strings.Contains(r.body, `id="err-amount"`) {
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "How much? Tap &#43; or enter a number above 0.") || !strings.Contains(r.body, `id="err-amount"`) {
 		t.Errorf("%d\n%s", r.status, r.body)
 	}
 	es, _ := f.db.Entries(f.householdID, id)
@@ -118,7 +120,7 @@ func TestTheEditorOpensUnderTheEntryOnTheDisplayAndSavesInTheBackground(t *testi
 		t.Errorf("%+v", es[0])
 	}
 	bad := f.display.postLang("/display/lists/"+id+"/entries/"+ids["Eggs"]+"/quantity", url.Values{"qmode": {"qty"}, "amount": {""}, "qunit": {"piece"}, "partial": {"1"}}, "en")
-	if bad.status != http.StatusUnprocessableEntity || !strings.Contains(bad.body, "How much? Tap + or enter a number above 0.") || !strings.Contains(bad.body, `class="qty-edit"`) {
+	if bad.status != http.StatusUnprocessableEntity || !strings.Contains(bad.body, "How much? Tap &#43; or enter a number above 0.") || !strings.Contains(bad.body, `class="qty-edit"`) {
 		t.Errorf("an empty number = %d\n%s", bad.status, bad.body)
 	}
 	if es, _ := f.db.Entries(f.householdID, id); es[0].Qty.Base != 10 {
@@ -139,7 +141,7 @@ func TestADisplayListWithoutSuggestionsIsAsBefore(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	id, _ := f.onlyList(t, "To-dos", nil, "Call grandma")
 	body := f.listsPage(t, "en", "/display/lists/"+id).body
-	if strings.Contains(body, "adder") || strings.Contains(body, "qty-open") {
+	if strings.Contains(body, `class="add-entry adder"`) || strings.Contains(body, "qty-open") {
 		t.Errorf("a to-do list on a display has the plain add row:\n%s", body)
 	}
 }

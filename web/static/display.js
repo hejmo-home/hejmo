@@ -25,7 +25,10 @@
 // The lists view (ticket 6.2) works like a personal view and adds a field: a
 // redraw never clears or takes the focus from the field marked data-keep, and
 // adding an entry posts in the background (partial=1), shows the box's answer
-// and keeps the new entry named (?added=) until the next tap.
+// and keeps the new entry named (?added=) until the next tap. On a list with
+// suggestions (ticket 165) the quantity of an entry opens under it: the script
+// names the open entry (?qty=) and the line that says what happened (?r=), and
+// saves the editor in the background like an added entry.
 (function () {
   var el = document.querySelector("[data-display]");
   if (!el) return;
@@ -74,6 +77,17 @@
   // The entry just added on the lists view: refreshes name it (?added=) so its
   // row keeps a frame, until the next tap.
   var addedId = "";
+  // The entry whose quantity is open, and the token of the line that says what
+  // the last add or change did (kept in the box's memory for two minutes).
+  var editId = "";
+  var resultToken = "";
+  function viewQuery() {
+    var q = [];
+    if (addedId) q.push("added=" + encodeURIComponent(addedId));
+    if (editId) q.push("qty=" + encodeURIComponent(editId));
+    if (resultToken) q.push("r=" + encodeURIComponent(resultToken));
+    return q.length ? "?" + q.join("&") : "";
+  }
   function armReload() {
     var q = view.querySelector("[data-reload-seconds]");
     if (!q) {
@@ -124,7 +138,7 @@
   function refresh() {
     if (loading) return;
     loading = true;
-    fetch(viewURL + (addedId ? "?added=" + encodeURIComponent(addedId) : ""), { cache: "no-store", credentials: "same-origin" })
+    fetch(viewURL + viewQuery(), { cache: "no-store", credentials: "same-origin" })
       .then(function (r) {
         // A personal view whose person is gone has nothing left to show.
         if (r.status === 404 && target) location.href = target;
@@ -206,10 +220,11 @@
         if (!r.ok && r.status !== 422) throw new Error("add " + r.status);
         var v = r.headers.get("X-Hejmo-View") || "";
         var id = r.ok ? r.headers.get("X-Hejmo-Added") || "" : "";
+        var token = r.ok ? r.headers.get("X-Hejmo-Result") || "" : "";
         return r.text().then(function (html) {
           swap(html, false);
           version = v;
-          if (r.ok) addedId = id;
+          if (r.ok) { addedId = id; resultToken = token; editId = ""; }
           var f = view.querySelector("[data-keep]");
           if (f && f.focus) f.focus();
           var row = view.querySelector(".added");
@@ -224,10 +239,50 @@
         group.appendChild(line);
       });
   }
+  // The editor of a quantity saves in the background: 200 shows the entry
+  // changed, 422 keeps the editor open with the error at the number, 409 says
+  // the entry was ticked off or removed meanwhile.
+  function saveQuantity(e, form) {
+    e.preventDefault();
+    var body = new URLSearchParams(new FormData(form));
+    body.set("partial", "1");
+    fetch(form.action, { method: "POST", body: body, credentials: "same-origin", cache: "no-store" })
+      .then(function (r) {
+        if (r.redirected && new URL(r.url).pathname === "/display") { location.href = "/display"; return; }
+        if (!r.ok && r.status !== 422 && r.status !== 409) throw new Error("quantity " + r.status);
+        var v = r.headers.get("X-Hejmo-View") || "";
+        return r.text().then(function (html) {
+          swap(html, true);
+          version = v;
+          if (r.ok) { addedId = r.headers.get("X-Hejmo-Added") || ""; resultToken = r.headers.get("X-Hejmo-Result") || ""; editId = ""; }
+          else if (r.status === 409) editId = "";
+        });
+      })
+      .catch(function () {
+        var row = form.parentNode;
+        var old = row.querySelector(".ferr.save");
+        if (old) row.removeChild(old);
+        var line = errorLine(form.closest("[data-tick-error]") ? form.closest("[data-tick-error]").getAttribute("data-tick-error") : "");
+        line.className += " save";
+        row.appendChild(line);
+      });
+  }
+  // The quantity button opens or closes the editor of its entry.
+  view.addEventListener("click", function (e) {
+    var open = e.target.closest && e.target.closest("[data-qty-open]");
+    var close = e.target.closest && e.target.closest("[data-qty-close]");
+    if (!open && !close) return;
+    e.preventDefault();
+    addedId = "";
+    resultToken = "";
+    editId = open && open.getAttribute("data-qty-open") !== editId ? open.getAttribute("data-qty-open") : "";
+    refresh();
+  });
   // The frame of the entry just added goes at the next tap.
   document.addEventListener("pointerdown", function () {
     if (!addedId) return;
     addedId = "";
+    resultToken = "";
     var rows = view.querySelectorAll(".added");
     for (var i = 0; i < rows.length; i++) rows[i].classList.remove("added");
   }, { passive: true, capture: true });
@@ -241,6 +296,10 @@
     var host = form.closest && form.closest("[data-add-error]");
     if (host && /(^| )add-entry( |$)/.test(form.className || "") && window.fetch && window.FormData) {
       addEntry(e, form, host);
+      return;
+    }
+    if (/(^| )qty-edit( |$)/.test(form.className || "") && window.fetch && window.FormData) {
+      saveQuantity(e, form);
       return;
     }
     var btn = form.querySelector && form.querySelector(".big-check");

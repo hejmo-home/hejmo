@@ -462,6 +462,17 @@ func (s *server) takeOutcome(token string) (outcome, bool) {
 	return o, json.Unmarshal([]byte(text), &o) == nil
 }
 
+// peekOutcome is takeOutcome for a display, whose view is asked for again and
+// again while the line stays.
+func (s *server) peekOutcome(token string) (outcome, bool) {
+	text, ok := s.flashTexts.peek(token, s.now())
+	if !ok {
+		return outcome{}, false
+	}
+	var o outcome
+	return o, json.Unmarshal([]byte(text), &o) == nil
+}
+
 // resultView is a success line with what goes with it.
 type resultView struct {
 	Line  template.HTML
@@ -766,7 +777,10 @@ func (c *itemCtx) changeQuantity(listID, entryID string, post *editPost) (store.
 
 // writeFragment answers the script of the add card with markup alone.
 func (s *server) writeFragment(w http.ResponseWriter, r *http.Request, p principal, l list.List, kind string) {
-	lang := s.langOf(r)
+	s.writeFragmentLang(w, r, p, l, kind, s.langOf(r))
+}
+
+func (s *server) writeFragmentLang(w http.ResponseWriter, r *http.Request, p principal, l list.List, kind, lang string) {
 	c, err := s.itemContext(p, lang)
 	if err != nil {
 		s.fail(w, "library state", err)

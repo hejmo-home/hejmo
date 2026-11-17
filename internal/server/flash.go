@@ -79,6 +79,15 @@ func (f *flashTexts) take(token string, now time.Time) (string, bool) {
 	return v.text, ok && !now.After(v.until)
 }
 
+// peek returns the text of a token without using it up: a display asks for
+// its view again and again while the line it shows stays.
+func (f *flashTexts) peek(token string, now time.Time) (string, bool) {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	v, ok := f.m[token]
+	return v.text, ok && !now.After(v.until)
+}
+
 // redirectSavedText is redirectSaved for a success line that names text from
 // the request, such as the entry that was added.
 func (s *server) redirectSavedText(w http.ResponseWriter, r *http.Request, to, key, text string) {

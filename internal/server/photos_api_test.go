@@ -121,7 +121,7 @@ func TestTheDefaultAlbumExistsFromTheStart(t *testing.T) {
 }
 
 func TestUploadKeepsAShrunkCopyWithoutLocation(t *testing.T) {
-	t.Parallel()
+	// Not parallel: reading photos has a wall-clock budget per request, which a loaded machine overruns.
 	c := signedInAPI(t)
 	album := defaultAlbum(t, c)
 	status, p := c.upload(album, "IMG_0001.jpg", jpegPhoto(t, 2400, 1800))

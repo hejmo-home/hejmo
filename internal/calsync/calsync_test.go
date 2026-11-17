@@ -3,7 +3,6 @@ package calsync_test
 import (
 	"context"
 	"errors"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -13,6 +12,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/store/storetest"
 )
 
 func TestStateIsStaleAfter24HoursWithoutSuccess(t *testing.T) {
@@ -90,7 +90,7 @@ type fixture struct {
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
+	db, err := store.Open(storetest.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -161,7 +161,7 @@ func TestFullStoragePageSaysSoAndLocksUploads(t *testing.T) {
 }
 
 func TestAlbumPageHidesPhotosAndMovesAndDeletesThroughASelection(t *testing.T) {
-	t.Parallel()
+	// Not parallel: reading photos has a wall-clock budget per request, which a loaded machine overruns.
 	b, c := photoBoxWith(t)
 	def := defaultAlbum(t, c)
 	other := newAlbum(t, c, "Oma und Opa")
@@ -308,7 +308,7 @@ func TestNothingOnThePhotoPagesNamesADevice(t *testing.T) {
 // album, a photo lying directly in the folder is in the default album, and an
 // album from a folder is changed only in the folder.
 func TestSubfoldersBecomeAlbumsAndLooseFilesGoToTheDefaultAlbum(t *testing.T) {
-	t.Parallel()
+	// Not parallel: reading photos has a wall-clock budget per request, which a loaded machine overruns.
 	b, c := photoBoxWith(t)
 	root := filepath.Join(b.photoDir, "photos")
 	writeFile := func(rel string, data []byte) {
@@ -393,7 +393,7 @@ func TestSubfoldersBecomeAlbumsAndLooseFilesGoToTheDefaultAlbum(t *testing.T) {
 func firstStatus(status int, _ map[string]any, _ []any) int { return status }
 
 func TestFolderPhotosWaitWhenThereIsNoSpaceAndTheBoxDeletesNothing(t *testing.T) {
-	t.Parallel()
+	// Not parallel: reading photos has a wall-clock budget per request, which a loaded machine overruns.
 	b, c := photoBoxWith(t)
 	h := householdIDOf(b)
 	def := defaultAlbum(t, c)

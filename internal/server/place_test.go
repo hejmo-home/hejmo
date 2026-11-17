@@ -601,6 +601,7 @@ func (o *outgoing) RoundTrip(r *http.Request) (*http.Response, error) {
 }
 
 func TestPlaceSearchNeverLeavesTheBox(t *testing.T) {
+	// Not parallel: it swaps http.DefaultTransport.
 	rec := &outgoing{}
 	old := http.DefaultTransport
 	http.DefaultTransport = rec

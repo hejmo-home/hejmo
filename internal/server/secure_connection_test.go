@@ -219,6 +219,7 @@ func TestReverseLookupSkipsWhatACertificateCannotCarryAndSurvivesFailure(t *test
 // Without the public certificate service only the own CA is on offer, and the page
 // of the choice is already that page: it asks the router too.
 func TestOwnCAOnlyBoxAsksTheRouterToo(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	resolver := &fakeResolver{names: map[string][]string{lanAddress: {"hejmo.fritz.box."}}}
 	h := server.New(server.Options{DB: b.db, PKI: b.pki, Now: func() time.Time { return b.now }, Resolver: resolver})

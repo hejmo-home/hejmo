@@ -372,6 +372,7 @@ func TestHandlerBuiltTextFollowsTheSwitchedLanguage(t *testing.T) {
 // A signed-in page reads the language several times (frame, handler-built
 // texts, headers); without the per-request memo each of those is a lookup.
 func TestPageLanguageIsLookedUpOncePerRequest(t *testing.T) {
+	// Not parallel: it swaps the package-level languageLookups hook.
 	b := signedInBox(t)
 	for _, path := range []string{"/", "/account", "/calendars", "/calendar?week=2026-12-25"} {
 		stop := server.CountLanguageLookups(t)

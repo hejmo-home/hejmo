@@ -107,6 +107,10 @@ var wholeFamilyTexts = map[string]bool{
 	"flash.mcp_off":                  true, // "eure Daten"
 	"firststeps.display.text":        true, // "euren Tag"
 	"food.why.title":                 true, // "eurer Box": the family's box (preview 163)
+	"theme.auto.parent":              true, // "eures Zuhauses": the family's home
+	"theme.auto.child":               true, // "eures Zuhauses"
+	"theme.where.phone":              true, // "behalten ihr Design": everyone else
+	"theme.where.browser":            true, // "behalten ihr Design"
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {
@@ -133,6 +137,16 @@ func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {
 	for key := range wholeFamilyTexts {
 		if _, ok := cat[key]; !ok {
 			t.Errorf("allow-list names unknown key %s", key)
+		}
+	}
+}
+
+// The 12-hour example keeps its space non-breaking, so "2:30 PM" never breaks across lines.
+func TestTwelveHourExampleDoesNotBreak(t *testing.T) {
+	b := i18n.MustLoad()
+	for _, lang := range []string{"de", "en"} {
+		if got := b.T(lang, "settings.time_format.12h"); !strings.Contains(got, "(2:30 PM)") {
+			t.Errorf("%s settings.time_format.12h = %q, want 2:30 PM with a non-breaking space", lang, got)
 		}
 	}
 }

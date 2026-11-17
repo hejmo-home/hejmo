@@ -68,6 +68,12 @@ func (s *server) phoneSession(r *http.Request) bool {
 	return err == nil && s.db.IsPhoneSession(auth.HashToken(c.Value))
 }
 
+// childPhoneSession reports whether the request carries a child's phone's
+// device session, which cannot be signed out on the phone (Q46).
+func (s *server) childPhoneSession(r *http.Request, p store.Person) bool {
+	return p.Role == store.RoleChild && s.phoneSession(r)
+}
+
 // pendingPerson resolves the session cookie even when the person still has to
 // confirm their one-time codes.
 func (s *server) pendingPerson(r *http.Request) (store.Person, bool) {

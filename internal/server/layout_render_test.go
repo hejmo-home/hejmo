@@ -313,6 +313,10 @@ func (s layoutSite) get(t *testing.T, path string) (int, string) {
 type layoutPage struct {
 	site layoutSite
 	path string
+	// html is a page that only a form reaches (a POST answer): per language, the
+	// markup the box sent. Chrome opens the box, then writes this into the page,
+	// so the stylesheet and scripts load as they do for the person.
+	html map[string]string
 }
 
 var (
@@ -408,6 +412,7 @@ var notRendered = map[string]string{
 	"/otp":                      "redirect",
 	"/i/{token}":                "redirect",
 	"/setup/https/check":        "answers a fragment for the setup page's script",
+	"/places":                   "JSON list of places for the home location picker",
 	"/phones/join/{code}":       "one-time pairing link of a phone",
 }
 
@@ -434,7 +439,7 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 		if status, _ := s.get(t, path); status != http.StatusOK {
 			t.Fatalf("%s %s = %d, want 200", s.name, path, status)
 		}
-		pages = append(pages, layoutPage{s, path})
+		pages = append(pages, layoutPage{site: s, path: path})
 	}
 	for _, p := range crawl(t, parent, "/calendar/search?q=Schwimm", "/calendar/new", "/tasks", "/routines/new?person="+f.ids[1]+"&part=morning") {
 		add(parent, p)
@@ -447,6 +452,11 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(display, "/display/lists/"+f.lists[0])
 	add(display, "/display/lists/"+f.lists[1])
 
+	// The card of recovery codes (#176) is reached only by POST: rendered with
+	// the box's answer, in the wizard, the invitation and My account, and in
+	// the state after a continue without the tick.
+	pages = append(pages, recoveryCardPages(t, f)...)
+
 	// Signed out: the login page and the trust page.
 	f.logout()
 	out := siteOf("signed out", f.box, f.client)
@@ -456,6 +466,87 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(out, "/invite/"+f.inviteToken)
 	add(out, "/invite/"+f.inviteToken+"/account")
 	return pages
+}
+
+// recoveryCardPages returns the card of recovery codes as the box answers it,
+// in German and English: the card (200) and the card after a continue without
+// the tick (422, the error at the checkbox), in the setup wizard, the
+// invitation's last step and My account. The wizard and the invitation each get
+// a box of their own, because their steps move on.
+func recoveryCardPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	add := func(name string, s layoutSite, card, refused map[string]string) {
+		pages = append(pages, layoutPage{site: s, path: "/account/recovery-codes#" + name, html: card}, layoutPage{site: s, path: "/account/recovery-codes#" + name + "-refused", html: refused})
+	}
+	// answer posts the continue without the tick for the codes on the card.
+	answer := func(do func(method, path string, form url.Values) resp, flow, card string) string {
+		t.Helper()
+		codes := recoveryCodesOn(t, card)
+		if len(codes) != 10 {
+			t.Fatalf("%s: the card shows %d codes", flow, len(codes))
+		}
+		r := do(http.MethodPost, "/account/recovery-codes/saved", savedForm(flow, codes, false))
+		if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-saved"`) {
+			t.Fatalf("%s: continue without the tick = %d\n%s", flow, r.status, r.body)
+		}
+		return r.body
+	}
+	for _, lang := range []string{"de", "en"} {
+		hdr := map[string]string{"Accept-Language": lang}
+		// The wizard.
+		b := newBox(t)
+		b.do(http.MethodPost, "/setup", validSetupForm(), hdr)
+		secret := secretOn(t, b.do(http.MethodGet, "/setup/totp", nil, hdr).body)
+		code, _ := auth.TOTPCode(secret, b.now)
+		card := b.do(http.MethodPost, "/setup/totp", url.Values{"code": {code}}, hdr)
+		if card.status != http.StatusOK {
+			t.Fatalf("wizard card = %d\n%s", card.status, card.body)
+		}
+		do := func(b *box) func(string, string, url.Values) resp {
+			return func(method, path string, form url.Values) resp { return b.do(method, path, form, hdr) }
+		}
+		refused := answer(do(b), "wizard", card.body)
+		add("wizard", siteOf("recovery card, wizard", b, b.client), map[string]string{lang: card.body}, map[string]string{lang: refused})
+
+		// The invited parent's last step.
+		e := newInviteBox(t)
+		token := e.create()
+		e.b.logout()
+		e.b.do(http.MethodPost, "/invite/"+token+"/account", acceptForm("papa", "papas long password"), hdr)
+		secret = secretOn(t, e.b.do(http.MethodGet, "/setup/totp", nil, hdr).body)
+		code, _ = auth.TOTPCode(secret, e.b.now)
+		card = e.b.do(http.MethodPost, "/setup/totp", url.Values{"code": {code}}, hdr)
+		if card.status != http.StatusOK {
+			t.Fatalf("invitation card = %d\n%s", card.status, card.body)
+		}
+		refused = answer(do(e.b), "invite", card.body)
+		add("invite", siteOf("recovery card, invitation", e.b, e.b.client), map[string]string{lang: card.body}, map[string]string{lang: refused})
+
+		// My account: the signed-in parent of the fixture asks for new codes.
+		card = f.do(http.MethodPost, "/account/recovery-codes", url.Values{"fresh": {"1"}}, hdr)
+		if card.status != http.StatusOK {
+			t.Fatalf("My account card = %d\n%s", card.status, card.body)
+		}
+		refused = answer(do(f.box), "account", card.body)
+		add("account", siteOf("recovery card, My account", f.box, f.client), map[string]string{lang: card.body}, map[string]string{lang: refused})
+	}
+	return mergeCardPages(pages)
+}
+
+// mergeCardPages joins the German and English markup of the same card into one page.
+func mergeCardPages(in []layoutPage) []layoutPage {
+	var out []layoutPage
+	for _, p := range in {
+		if i := slices.IndexFunc(out, func(o layoutPage) bool { return o.path == p.path }); i >= 0 {
+			for lang, h := range p.html {
+				out[i].html[lang] = h
+			}
+			continue
+		}
+		out = append(out, p)
+	}
+	return out
 }
 
 // wizardPages returns the setup wizard's pages. Each page gets a box in the
@@ -471,7 +562,7 @@ func wizardPages(t *testing.T) []layoutPage {
 		if status, _ := s.get(t, path); status != http.StatusOK {
 			t.Fatalf("%s %s = %d, want 200", name, path, status)
 		}
-		pages = append(pages, layoutPage{s, path})
+		pages = append(pages, layoutPage{site: s, path: path})
 	}
 	fresh := newFreshBox(t)
 	add("fresh box", fresh, "/setup/https")
@@ -481,7 +572,6 @@ func wizardPages(t *testing.T) []layoutPage {
 	household := func() *box {
 		b := newBox(t)
 		form := validSetupForm()
-		form.Set("home_name", "Haus am Münchner Stadtrand")
 		form.Set("name", "Wilhelmine")
 		if r := b.post("/setup", form); r.status != http.StatusSeeOther {
 			t.Fatalf("POST /setup = %d", r.status)
@@ -580,9 +670,7 @@ type knownLayoutProblem struct {
 	platform   bool // Chrome's hyphenation decides: it may not occur in every Chrome, so it need not occur
 }
 
-var knownLayoutProblems = []knownLayoutProblem{
-	{"/account/reset/{id}", "name-broken-inside-the-word", 375, []string{"Sophie-Marie"}, 175, true}, // seen with Chrome on macOS, not with Chrome 157 on the Linux runners
-}
+var knownLayoutProblems = []knownLayoutProblem{}
 
 func (k knownLayoutProblem) covers(path string, width int, p layoutProblem) bool {
 	if k.path != pageShape(path) || k.kind != p.Kind || k.width != width {
@@ -643,7 +731,21 @@ func TestRenderedLayout(t *testing.T) {
 						if _, err := chromedp.Call(ctx, emulation.SetDeviceMetricsOverride, emulation.SetDeviceMetricsOverrideParams{Width: int64(vp.w), Height: int64(vp.h), DeviceScaleFactor: 1}); err != nil {
 							return err
 						}
-						return chromedp.Do(ctx, chromedp.Navigate(page.site.chromeBase()+page.path))
+						if page.html == nil {
+							return chromedp.Do(ctx, chromedp.Navigate(page.site.chromeBase()+page.path))
+						}
+						// A page only a form reaches: open the box, then write the answer into the document.
+						if err := chromedp.Do(ctx, chromedp.Navigate(page.site.chromeBase()+"/healthz")); err != nil {
+							return err
+						}
+						markup, _ := json.Marshal(page.html[lang])
+						_, err := chromedp.Run(ctx, chromedp.Evaluate[string](fmt.Sprintf(`(async () => {
+							await new Promise(r => setTimeout(r, 0));
+							document.open(); document.write(%s); document.close();
+							while (document.readyState !== "complete") await new Promise(r => setTimeout(r, 20));
+							return "ok";
+						})()`, markup), chromedp.EvalAwaitPromise))
+						return err
 					}()
 					if err != nil {
 						t.Fatalf("open: %v", err)
@@ -759,6 +861,95 @@ func TestLayoutProbeFindsWhatItShould(t *testing.T) {
 			}
 			if !slices.Equal(kinds, c.want) {
 				t.Errorf("problems = %v, want %v\n%s", kinds, c.want, got)
+			}
+		})
+	}
+}
+
+// A name wider than the line breaks inside the word at the line's edge, in
+// every heading, whatever the heading's layout (#175): headings that are grid
+// items (the wizard's) or flex containers (the personal view's, the child's
+// Home) need a shrinkable box for the name, or the name overflows instead.
+// The check opens each heading at 300 px with a one-word name of 30 letters.
+func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
+	chrome := requireChrome(t)
+	const long = "Hubertusmariaaloisiusferdinand"
+	f := newFamilyBox(t, "eink_color")
+	h, db := f.householdID, f.db
+	for _, old := range []string{"Mia", "Papa", "Mama"} {
+		p := f.people[old]
+		if err := db.UpdatePerson(h, p.ID, long, p.Color, p.Shape); err != nil {
+			t.Fatal(err)
+		}
+	}
+	mia, papa := f.people["Mia"], f.people["Papa"]
+	mia.Name = long
+	display := siteOf("display", f.box, f.display.client)
+	phone := siteOf("child's phone", f.box, pairedPhone(t, f.box, mia, "Handy").client)
+	inv := f.do(http.MethodPost, "/people/"+papa.ID+"/invitation", url.Values{}, nil)
+	token := inviteTokenRe.FindString(inv.body)
+	if inv.status != http.StatusOK || token == "" {
+		t.Fatalf("invitation = %d, no token\n%s", inv.status, inv.body)
+	}
+	f.logout()
+	out := siteOf("signed out", f.box, f.client)
+	for _, c := range []struct {
+		site layoutSite
+		path string
+		h1   string // the heading that holds the name
+	}{
+		{display, "/display/person/" + mia.ID, ".pv-header h1"},
+		{phone, "/", "h1.child-h"},
+		{out, "/invite/" + token, ".wizard h1"},
+	} {
+		if status, body := c.site.get(t, c.path); status != http.StatusOK || !strings.Contains(body, long) {
+			t.Fatalf("%s %s = %d, want a page naming %s", c.site.name, c.path, status, long)
+		}
+	}
+
+	ctx := startChrome(t, chrome)
+	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
+	defer cancel()
+	for _, c := range []struct {
+		site layoutSite
+		path string
+		h1   string
+	}{
+		{display, "/display/person/" + mia.ID, ".pv-header h1"},
+		{phone, "/", "h1.child-h"},
+		{out, "/invite/" + token, ".wizard h1"},
+	} {
+		t.Run(c.site.name+c.path, func(t *testing.T) {
+			baseURL, _ := url.Parse(c.site.chromeBase())
+			if _, err := chromedp.Call(ctx, network.ClearBrowserCookies, cdp.Empty{}); err != nil {
+				t.Fatal(err)
+			}
+			for _, ck := range append([]*http.Cookie{{Name: langCookieForTest, Value: "en"}}, c.site.cookies...) {
+				if _, err := chromedp.Call(ctx, network.SetCookie, network.SetCookieParams{Name: ck.Name, Value: ck.Value, URL: baseURL.String()}); err != nil {
+					t.Fatal(err)
+				}
+			}
+			if _, err := chromedp.Call(ctx, emulation.SetDeviceMetricsOverride, emulation.SetDeviceMetricsOverrideParams{Width: 300, Height: 812, DeviceScaleFactor: 1}); err != nil {
+				t.Fatal(err)
+			}
+			if err := chromedp.Do(ctx, chromedp.Navigate(c.site.chromeBase()+c.path)); err != nil {
+				t.Fatal(err)
+			}
+			got, err := chromedp.Run(ctx, chromedp.Evaluate[string](fmt.Sprintf(`(() => {
+				const h = document.querySelector(%q);
+				if (!h || !h.textContent.includes(%q)) return "no heading with the name";
+				const r = h.getBoundingClientRect();
+				return JSON.stringify({scroll: h.scrollWidth, box: h.clientWidth, right: Math.round(r.right), page: document.documentElement.scrollWidth});
+			})()`, c.h1, long)))
+			if err != nil {
+				t.Fatal(err)
+			}
+			var m struct{ Scroll, Box, Right, Page int }
+			if err := json.Unmarshal([]byte(got), &m); err != nil {
+				t.Fatalf("measure %q: %v", got, err)
+			}
+			if m.Scroll > m.Box || m.Right > 300 || m.Page > 300 {
+				t.Errorf("%s at 300 px: the name overflows its heading (heading scrollWidth %d > clientWidth %d, right edge %d, page %d wide)", c.h1, m.Scroll, m.Box, m.Right, m.Page)
 			}
 		})
 	}

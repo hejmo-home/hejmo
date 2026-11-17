@@ -629,6 +629,42 @@ textarea { width: 100%; font: inherit; color: var(--text); background: var(--sur
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
 
+/* Home location (#86): the dashed "No place chosen yet" box. The picker itself is styled at the end of this file. */
+.place-status.missing { border: 2px dashed var(--text-secondary); }
+[data-theme="bw"] .place-status.missing { border: 2px dashed var(--text); }
+.place-privacy, .steps [data-location] { margin: 0; }
+
+/* Page padding and line breaks (product owner feedback 15/11/2026, #32 and
+   #86). The frame has one column that may be narrower than the navigation
+   row, so the page keeps the same padding on both sides and the navigation
+   wraps inside it (it does not scroll sideways); fieldsets may shrink below
+   their content. On wide screens the "Back to Settings" link and the content
+   both sit right of the navigation, which spans both rows. Words break
+   at syllables in the page language (html lang), a word longer than the line
+   breaks anywhere; nothing is cut or runs over the edge. Continuation lines
+   start under the text, not under a radio or an icon. */
+.frame { grid-template-columns: minmax(0, 1fr); }
+.frame > *, .steps fieldset, .steps fieldset > * { min-width: 0; }
+body.web { overflow-wrap: anywhere; } /* web pages only: the wall display keeps its approved layout (ADR 0015/0016) */
+/* Hyphenation only where the long-word limit is understood: Safari lacks hyphenate-limit-chars and would split short words (die-sen). There long words just break. */
+@supports (hyphenate-limit-chars: 12 5 5) { body.web { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
+@media (min-width: 900px) {
+  .frame.has-nav > .frame-nav { grid-row: span 2; }
+  .frame.has-nav > .back, .frame.has-nav > main { grid-column: 2; }
+}
+.frame-nav ul { flex-wrap: wrap; overflow-x: visible; } /* every item visible, none cut at the edge */
+input, select, textarea, .secret, .pairing-code { -webkit-hyphens: manual; hyphens: manual; }
+.choice label { grid-template-columns: auto minmax(0, 1fr); }
+.choice b, .choice small { grid-column: 2; }
+.place-status > div, .msg, .ferr { min-width: 0; }
+/* A choice of three or more sentences stacks on phones, one full-width row each. */
+@media (max-width: 599px) {
+  fieldset.seg:has(> label:nth-of-type(3)) { flex-direction: column; }
+  fieldset.seg:has(> label:nth-of-type(3)) label { flex: none; justify-content: flex-start; text-align: left; margin: -1px 0 0; border-radius: 0; }
+  fieldset.seg:has(> label:nth-of-type(3)) label:first-of-type { margin-top: 0; border-radius: var(--radius-field) var(--radius-field) 0 0; }
+  fieldset.seg:has(> label:nth-of-type(3)) label:last-of-type { border-radius: 0 0 var(--radius-field) var(--radius-field); }
+}
+
 /* Lists (ticket 6.1; ADR 0015, 0017). The overview shows calm rows that open
    a list. A list page has one add row on top, open entries with a large tick
    target, and the ticked-off entries in their own group below. Moving and
@@ -686,13 +722,9 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .notice.top { margin-bottom: 14px; }
 /* ---- Detail pages and calm overview rows (ticket 111, ADR 0017) ---- */
 /* Detail pages and calm overview rows (ADR 0017). */
-/* The frame's single column must be allowed to shrink: without minmax(0, 1fr) the
-   one-line navigation sets the column to its full width and pushes the page past
-   the right edge of a 375 px phone (left margin looks wrong, text does not wrap). */
-.frame { grid-template-columns: minmax(0, 1fr); }
-.frame > * { min-width: 0; }
 .steps .card-row .t b { color: var(--text); }
-h1 { overflow-wrap: anywhere; hyphens: auto; }
+h1 { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* a name in a heading breaks at a space or hyphen first, inside a word only when wider than the line (ticket 175) */
+.h-name { min-width: 0; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* the name in a flex heading is its own shrinkable item: a word wider than the line breaks at the edge instead of widening the heading (ticket 175, as .fv .person-name) */
 .back { gap: 6px; text-decoration: none; }
 .back .icon { stroke: currentColor; }
 main > .back { margin: 0 0 4px; }
@@ -839,7 +871,7 @@ details.danger .confirm a { display: inline-flex; align-items: center; min-heigh
    no navigation, the progress of the four steps on top. Only existing tokens. */
 .wizard { max-width: 600px; margin: 0 auto; display: grid; gap: var(--gap-section); align-content: start; }
 .wizard main { display: grid; gap: var(--gap); min-width: 0; }
-.wizard h1 { margin: 0; overflow-wrap: anywhere; hyphens: manual; }
+.wizard h1 { margin: 0; min-width: 0; overflow-wrap: break-word; hyphens: manual; }
 .wizard h2 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
 .wizard p, .wizard .lead { margin: 0; }
 .wizard .notice, .wizard .error, .wizard .msg { max-width: none; margin: 0; }
@@ -1047,7 +1079,7 @@ fieldset.choice legend.sr { float: none; width: 1px; margin: -1px; }
 
 /* Personal view: tasks first and as wide as the week, progress in words on top. */
 .pv-header { justify-content: flex-start; flex-wrap: wrap; }
-.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: anywhere; }
+.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: break-word; hyphens: manual; }
 .pv-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .pv-tasks { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 .tasks-head { flex: none; display: grid; gap: 8px; padding: var(--pad-column) var(--pad-column) 12px; border-bottom: 1px solid var(--border); }
@@ -1500,6 +1532,37 @@ p.hint.later { max-width: 560px; }
   .steps:has(input[name="source"][value="new"]:checked) .src-existing { display: none; }
 }
 
+/* Home location picker, Settings and wizard (#86, product owner decision Q1 =
+   a, 15/11/2026). Builds on the picker of ticket 133 (.place-pick, .place-list,
+   .place-status.ok): the confirmed box carries its state in words on its own
+   line (.st) and "Change" sits at the right; on phones "Change" moves under
+   the text so the name keeps the full width. While a new place is being
+   chosen in Settings, .place-keep says which place stays in use and offers to
+   keep it. Suggestions are not highlighted until the arrow keys move into
+   the list. No new tokens. */
+.place-status { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 6px 10px; }
+.place-status > div { display: grid; gap: 2px; }
+.place-status small { display: block; }
+.place-status .st { color: var(--text); font-weight: 600; font-size: var(--fs-meta); }
+.place-status .button { align-self: center; }
+.place-pick .hint, .place-pick .ferr { margin: 0; }
+.place-keep { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.place-keep .hint { flex: 1 1 14em; }
+.place-list li b, .place-status b { hyphens: manual; }
+.place-list { gap: 0; }
+.place-list li { border-radius: 0; }
+.place-list li + li { border-top: 1px solid var(--border); }
+.place-list li:hover { background: var(--background); }
+[data-theme="bw"] .place-list li + li { border-top-color: var(--text); }
+.place-pick .lab { display: block; }
+@media (max-width: 479px) {
+  .place-status { grid-template-columns: auto minmax(0, 1fr); }
+  .place-status .button { grid-column: 2; justify-self: start; }
+}
+/* Without JavaScript each suggestion is a submit button that fills its row. */
+.place-list li > button { display: grid; gap: 1px; width: 100%; min-height: inherit; align-content: center; padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.place-list li > button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 /* ticket 7.4 subtasks (preview-93), on top of ticket 7.2. Uses existing tokens only. */
 
 /* Personal view and the child's tasks page: a task with subtasks is one card. The task's own
@@ -1787,6 +1850,33 @@ details.more.explain-more { margin-top: var(--gap-section); }
   .lv-head .add-entry .f { flex: 1 1 12em; }
 }
 
+/* Recovery codes (ticket #176): one card .rc in the wizard and in the frame. */
+.rc { display: grid; gap: 14px; max-width: 600px; box-sizing: border-box; padding: var(--pad-column); margin: 0 0 var(--gap-section); background: var(--surface); border-radius: var(--radius-tile); min-width: 0; }
+.wizard .rc { margin: 0; }
+.rc h2 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
+.rc-for { margin: -8px 0 0; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.rc-for b { color: var(--text); font-weight: 600; }
+.rc-save { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--border); }
+.rc-save .actions { margin: 0; }
+.rc-save .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.rc-save .hint, .rc-gate .hint { margin: 0; }
+.rc-save .msg, .rc-save .ferr { margin: 0; max-width: none; }
+.rc-save .msg .fname { white-space: normal; overflow-wrap: anywhere; }
+.rc-gate { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+.rc-gate .actions { margin: 0; }
+.rc-gate .confirm { font-weight: 600; padding: 8px 10px; border-radius: var(--radius-field); border: 2px solid transparent; }
+.rc-gate .confirm .sub { display: block; font-weight: 400; font-size: var(--fs-label); color: var(--text-secondary); margin-top: 2px; }
+.rc-gate .confirm[aria-invalid="true"], .rc-gate .confirm:has(input[aria-invalid="true"]) { border-color: var(--error-text); }
+.rc-gate .confirm:has(input:checked) { border-color: transparent; }
+.button[aria-disabled="true"] { cursor: default; background: var(--border); color: var(--text-secondary); }
+[data-theme="bw"] .button[aria-disabled="true"] { background: var(--surface); color: var(--text); border: 2px dashed var(--text); }
+.rc-gate .gate-hint { display: flex; gap: 8px; align-items: flex-start; }
+.rc-gate .gate-hint .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+[data-theme="bw"] .rc-save, [data-theme="bw"] .rc-gate { border-top: 2px solid var(--text); }
+[data-theme="bw"] .rc { border: 2px solid var(--text); }
+@media print { .rc-gate, .rc .msg, .rc .ferr { display: none !important; } .rc { border: 0; padding: 0; } }
+@media (max-width: 599px) { .rc-save .actions .button { flex: 1 1 100%; } .rc-gate .actions .button { flex: 1 1 100%; } }
+
 /* ---- ticket 163: diet and allergies per person ---- */
 /* A free-text allergy the box cannot check: notice colours, a question icon and the words; bw dashed. */
 .unchecked { display: inline-flex; align-items: flex-start; gap: 6px; padding: 3px 8px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label); font-weight: 600; overflow-wrap: break-word; hyphens: manual; justify-self: start; max-width: 100%; box-sizing: border-box; }
@@ -1923,3 +2013,61 @@ p.why.health > span { display: grid; gap: 2px; }
 .choose-none { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 8px; max-width: 560px; box-sizing: border-box; }
 [data-theme="bw"] .choose-none { border: 2px solid var(--text); }
 .choose-none p { margin: 0; }
+/* ---- New for #125: theme chooser in the brand bar (ADR 0015, 0017) ---- */
+/* One chooser for everyone signed in, parents and children's phones, beside
+   the language switcher: both are choices of this browser or phone. The menu
+   hangs from the right edge of the brand bar, so it never runs off a 375 px
+   screen. */
+.frame-bar { position: relative; }
+.theme-pick { position: static; }
+.theme-pick > summary { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: var(--touch-target); padding: 0 12px 0 8px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); font-weight: 600; cursor: pointer; list-style: none; }
+.theme-pick > summary::-webkit-details-marker { display: none; }
+.theme-pick > summary .chev { flex: none; width: 14px; height: 14px; }
+.theme-pick[open] > summary { border-color: var(--accent); }
+.theme-pick[open] > summary .chev { transform: rotate(180deg); }
+.theme-pick > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] .theme-pick > summary { border: 2px solid var(--text); }
+.theme-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; box-sizing: border-box; width: min(380px, 100%); margin: 0; padding: 12px; display: grid; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); min-inline-size: 0; }
+[data-theme="bw"] .theme-menu { border: 2px solid var(--text); }
+.theme-menu legend { float: left; width: 100%; padding: 0 4px 8px; font-size: var(--fs-event-title); font-weight: 700; }
+.theme-opt { position: relative; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 10px; border: 2px solid transparent; border-radius: var(--radius-field); color: var(--text); cursor: pointer; }
+.theme-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.theme-opt:hover { background: var(--background); }
+.theme-opt:has(input:checked) { border-color: var(--accent); background: var(--background); }
+.theme-opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.theme-opt .opt-text { display: grid; gap: 2px; min-width: 0; overflow-wrap: break-word; hyphens: auto; }
+.theme-opt .opt-name { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: var(--fs-event-title); font-weight: 700; }
+.theme-opt small { color: var(--text-secondary); font-size: var(--fs-label); }
+.theme-opt .opt-state { display: none; font-size: var(--fs-meta); font-weight: 700; color: var(--accent-text); background: var(--accent); border-radius: var(--radius-chip); padding: 1px 10px; }
+.theme-opt:has(input:checked) .opt-state { display: inline-block; }
+.theme-opt:has(input:disabled) { cursor: default; background: none; }
+.theme-opt:has(input:disabled) .opt-name { color: var(--text-secondary); }
+.theme-opt:has(input:disabled) .swatch { border-style: dashed; }
+.theme-opt small a { color: var(--accent); font-weight: 600; }
+[data-theme="bw"] .theme-opt:has(input:checked) { border: 3px solid var(--text); padding: 7px 9px; background: var(--surface); }
+[data-theme="bw"] .theme-opt:hover { background: none; text-decoration: underline; }
+.theme-menu .msg, .theme-menu .error { margin: 6px 0 0; max-width: none; }
+.theme-menu .where { margin: 6px 4px 0; }
+/* Swatch: a tiny page in the theme it stands for, so a child who cannot read
+   yet sees what each choice looks like. Light shows a sun, dark a moon,
+   automatic both, "follow the device" a phone with both halves. */
+.swatch { flex: none; width: 44px; height: 44px; box-sizing: border-box; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; overflow: hidden; border: 1.5px solid var(--text-secondary); border-radius: var(--radius-field); }
+.swatch > span { display: grid; place-items: center; background: var(--background); color: var(--text); }
+.swatch .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
+.swatch.half .icon { width: 16px; height: 16px; }
+.swatch.phone { width: 30px; margin: 0 7px; border-radius: 8px; border-width: 2px; grid-auto-flow: row; grid-auto-rows: 1fr; grid-auto-columns: auto; }
+.swatch.sm { width: 26px; height: 26px; border-radius: 8px; }
+.swatch.sm.phone { width: 18px; margin: 0 4px; border-radius: 5px; }
+.swatch.sm .icon { width: 15px; height: 15px; }
+.swatch.sm.half .icon { display: none; }
+[data-theme="bw"] .swatch { border: 2px solid var(--text); }
+[data-theme="bw"] .swatch > [data-theme="light"] { --background: var(--surface); }
+[data-theme="bw"] .swatch > [data-theme="dark"] { --background: var(--text); --text: var(--surface); }
+/* A narrow bar next to Sign out drops the visible word, as the language
+   switcher does; the swatch still shows the state and the word stays in the
+   accessible name ("Design: Dunkel"). */
+@media (max-width: 479px) {
+  .frame-tools:has(.signout) .theme-name { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .frame-tools { gap: 8px; }
+  .frame-bar .signout .button { padding-inline: 12px; }
+}

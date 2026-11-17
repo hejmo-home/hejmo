@@ -10,6 +10,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/list"
+	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/region"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -32,16 +33,25 @@ func (s *server) handleSetupForm(w http.ResponseWriter, r *http.Request) {
 		s.render(w, r, http.StatusOK, "setup_welcome.html", map[string]any{"Wizard": wizardAt(0)})
 		return
 	}
-	s.renderSetup(w, r, http.StatusOK, setupForm{Region: "DE-BY"}, "")
+	s.renderSetup(w, r, http.StatusOK, setupForm{Place: &placePick{}}, "")
 }
 
 type setupForm struct {
-	HomeName, Region, Name, Username, password, pin string
+	// Region is the state or canton, "" until a place is chosen: the place
+	// then sets it (the parent may still change it).
+	Region, Name, Username, password, pin string
+	// Place is what the home location picker shows.
+	Place *placePick
 }
 
 func (s *server) renderSetup(w http.ResponseWriter, r *http.Request, status int, f setupForm, errKey string) {
+	if f.Place == nil {
+		f.Place = &placePick{}
+	}
 	s.render(w, r, status, "setup.html", map[string]any{
 		"Form": f, "RegionGroups": regionGroups(), "Error": errKey, "ErrorField": setupErrorField(errKey, f), "Wizard": wizardAt(2),
+		// The hint under the region says where the region comes from.
+		"RegionTaken": f.Place.Chosen != nil && f.Region != "" && f.Region == f.Place.Chosen.RegionCode,
 	})
 }
 
@@ -74,13 +84,23 @@ func (s *server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	f := setupForm{
-		HomeName: strings.TrimSpace(r.PostFormValue("home_name")),
 		Region:   r.PostFormValue("region"),
 		Name:     strings.TrimSpace(r.PostFormValue("name")),
 		Username: strings.TrimSpace(r.PostFormValue("username")),
 		password: r.PostFormValue("password"),
 		pin:      strings.TrimSpace(r.PostFormValue("pin")),
 	}
+	// The home is a place of the list on the box (ADR 0023): the page posts
+	// its id and never coordinates.
+	pl, status, errKey := s.setupPlace(r, &f)
+	if status != 0 {
+		s.renderSetup(w, r, status, f, errKey)
+		return
+	}
+	if f.Region == "" {
+		f.Region = pl.RegionCode
+	}
+	f.Place = chosenPicker(pl, s.i18n.T(s.langOf(r), "place.chosen"))
 	passwordHash, pinHash, errKey := validateSetup(f)
 	if errKey != "" {
 		s.renderSetup(w, r, http.StatusUnprocessableEntity, f, errKey)
@@ -90,7 +110,7 @@ func (s *server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "reset setup", err)
 		return
 	}
-	personID, err := s.createFirstParent(f, passwordHash, pinHash, s.langOf(r))
+	personID, err := s.createFirstParent(f, pl, passwordHash, pinHash, s.langOf(r))
 	if err != nil {
 		s.fail(w, "setup", err)
 		return
@@ -102,10 +122,56 @@ func (s *server) handleSetupSubmit(w http.ResponseWriter, r *http.Request) {
 	s.afterAccountCreated(w, r, f.Name)
 }
 
-func validateSetup(f setupForm) (passwordHash, pinHash, errKey string) {
-	if f.HomeName == "" {
-		return "", "", "setup.error.home"
+// setupPlace reads the place of a setup post. It returns the place to create
+// the household with, or a status other than 0 when the page is to be shown
+// again: 200 for a pick or Change (nothing is created yet), 422 with the key
+// of the error at the picker. f.Place and f.Region are set for the page.
+func (s *server) setupPlace(r *http.Request, f *setupForm) (pl places.Place, status int, errKey string) {
+	in, lang := readPickerInput(r), s.langOf(r)
+	chosen := func(pl places.Place) { f.Place = chosenPicker(pl, s.i18n.T(lang, "place.chosen")) }
+	switch {
+	case in.Change: // open the field again; a region that came from the place goes with it
+		text := in.Text
+		if old, ok := s.places.Get(in.ID, lang); ok {
+			text = old.Name
+			if f.Region == old.RegionCode {
+				f.Region = ""
+			}
+		}
+		f.Place = s.openPicker(lang, text)
+		return pl, http.StatusOK, ""
+	case in.HasText && in.HasID: // a suggestion was picked
+		pl, ok := s.places.Get(in.ID, lang)
+		if !ok {
+			f.Place = s.pickError(lang, in.Text)
+			return pl, http.StatusUnprocessableEntity, "place.error.pick"
+		}
+		chosen(pl)
+		if f.Region == "" {
+			f.Region = pl.RegionCode
+		}
+		return pl, http.StatusOK, ""
+	case in.HasText || !in.HasID: // text and no place, or nothing at all
+		f.Place = s.openPickerError(lang, in.Text)
+		key := "place.error.pick"
+		switch {
+		case in.Text == "":
+			key = "setup.error.home"
+		case len(f.Place.Options) == 0:
+			key = "place.error.none"
+		}
+		return pl, http.StatusUnprocessableEntity, key
 	}
+	pl, ok := s.places.Get(in.ID, lang)
+	if !ok {
+		f.Place = s.pickError(lang, "")
+		return pl, http.StatusUnprocessableEntity, "place.error.pick"
+	}
+	chosen(pl)
+	return pl, 0, ""
+}
+
+func validateSetup(f setupForm) (passwordHash, pinHash, errKey string) {
 	if _, ok := region.Lookup(f.Region); !ok {
 		return "", "", "setup.error.region"
 	}
@@ -123,8 +189,8 @@ func validateSetup(f setupForm) (passwordHash, pinHash, errKey string) {
 	return passwordHash, pinHash, ""
 }
 
-func (s *server) createFirstParent(f setupForm, passwordHash, pinHash, lang string) (string, error) {
-	h, err := s.db.CreateHousehold(store.Household{Name: f.HomeName, HomeName: f.HomeName, Region: f.Region})
+func (s *server) createFirstParent(f setupForm, pl places.Place, passwordHash, pinHash, lang string) (string, error) {
+	h, err := s.db.CreateHousehold(store.Household{Name: pl.Name, HomeName: pl.Name, HomePlaceID: pl.ID, Latitude: pl.Lat, Longitude: pl.Lon, Region: f.Region})
 	if err != nil {
 		return "", err
 	}
@@ -211,6 +277,9 @@ func (s *server) renderTOTP(w http.ResponseWriter, r *http.Request, status int, 
 }
 
 func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
+	if s.reloadedRecoveryStep(w, r) {
+		return
+	}
 	acc, ok := s.totpSetupAccount(w, r)
 	if !ok {
 		return
@@ -237,23 +306,53 @@ func (s *server) handleSetupTOTPSubmit(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "confirm TOTP", err)
 		return
 	}
+	flow := flowAccount
 	switch {
 	case first:
+		flow = flowWizard
 		s.setFlash(w, r, "flash.setup_done:"+acc.PersonID) // shown on the home page after the codes
 	case invited != nil:
+		flow = flowInvite
 		s.setFlash(w, r, "flash.invite_done:"+acc.PersonID)
 	}
-	if invited != nil {
-		s.showRecoveryCodesIn(w, r, codes, invited, "invite.recovery.continue")
-		return
+	s.showRecoveryCodes(w, r, acc.PersonID, recoveryPage{Flow: flow, Codes: codes})
+}
+
+// recoveryFlowOf says which of the three places an account's recovery codes
+// belong to (for a page that is opened again after the one-time code step).
+func (s *server) recoveryFlowOf(acc store.Account) string {
+	switch {
+	case s.inviteShellFor(acc) != nil:
+		return flowInvite
+	case acc.TOTPReset:
+		return flowAccount
 	}
-	s.showRecoveryCodes(w, r, codes, first)
+	return flowWizard
+}
+
+// reloadedRecoveryStep handles the one-time code form posted again after it
+// succeeded (a reload of the page that showed the codes). While the set was
+// never confirmed as saved, a valid code makes a new set, because the old
+// codes cannot be shown again; otherwise it goes on as before.
+func (s *server) reloadedRecoveryStep(w http.ResponseWriter, r *http.Request) bool {
+	acc, ok := s.setupAccount(r)
+	if !ok || !acc.TOTPConfirmed || !s.unsavedSet(acc.PersonID) || acc.TOTPSecret == "" ||
+		!auth.VerifyTOTP(acc.TOTPSecret, r.PostFormValue("code"), s.now()) {
+		return false
+	}
+	codes, err := s.newRecoveryCodes(acc.PersonID)
+	if err != nil {
+		s.fail(w, "recovery codes", err)
+		return true
+	}
+	s.showRecoveryCodes(w, r, acc.PersonID, recoveryPage{Flow: s.recoveryFlowOf(acc), Codes: codes, Reloaded: true})
+	return true
 }
 
 // setupErrorField names the input of the setup form that an error belongs to.
 func setupErrorField(errKey string, f setupForm) string {
 	switch errKey {
-	case "setup.error.home":
+	case "setup.error.home", "place.error.none", "place.error.pick":
 		return "home_name"
 	case "setup.error.region":
 		return "region"

@@ -29,13 +29,16 @@ func (r Role) Valid() bool { return r == RoleParent || r == RoleChild }
 
 // Household is the family one box serves.
 type Household struct {
-	ID        string
-	Name      string
-	HomeName  string
-	Latitude  float64
-	Longitude float64
-	Region    string // ISO 3166-2, e.g. DE-BY
-	Timezone  string
+	ID       string
+	Name     string
+	HomeName string
+	// HomePlaceID is the GeoNames id of the place the home was picked from (0:
+	// none, for coordinates set through the API); see internal/places.
+	HomePlaceID int
+	Latitude    float64
+	Longitude   float64
+	Region      string // ISO 3166-2, e.g. DE-BY
+	Timezone    string
 	// DateFormat, TimeFormat and TemperatureUnit are household settings (ADR 0016, ticket #147).
 	DateFormat      DateFormat
 	TimeFormat      TimeFormat
@@ -182,6 +185,31 @@ type HouseholdSettings struct {
 	// FirstStepsSkipped is a pointer to a slice on purpose: nil keeps the
 	// stored list, a pointer to an empty list clears it.
 	FirstStepsSkipped *[]string
+	// Home is the home place; nil leaves the stored place and its
+	// coordinates alone.
+	Home *Home
+}
+
+// Home is a household's home: the place's name, its coordinates and the id of
+// the place in the list on the box (0 when the coordinates came without one).
+type Home struct {
+	Name                string
+	Latitude, Longitude float64
+	PlaceID             int
+}
+
+func (h Home) validate() error {
+	// Written so that NaN fails too.
+	if !(h.Latitude >= -90 && h.Latitude <= 90 && h.Longitude >= -180 && h.Longitude <= 180) {
+		return fmt.Errorf("%w: home coordinates out of range", ErrInvalid)
+	}
+	if h.Latitude == 0 && h.Longitude == 0 { // stored as "no location yet"
+		return fmt.Errorf("%w: home coordinates (0, 0) mean no location", ErrInvalid)
+	}
+	if strings.TrimSpace(h.Name) == "" {
+		return fmt.Errorf("%w: home name required", ErrInvalid)
+	}
+	return nil
 }
 
 // SaveHouseholdSettings stores the settings in one statement, so a save is all
@@ -202,16 +230,27 @@ func (db *DB) SaveHouseholdSettings(id string, in HouseholdSettings) error {
 		list := strings.Join(clean, ",")
 		skipped = &list
 	}
+	var homeName *string // NULL keeps the stored home
+	var lat, lon *float64
+	var placeID any // NULL
+	setPlace := 0   // 1: write home_place_id (also NULL), 0: keep it
+	if in.Home != nil {
+		if err := in.Home.validate(); err != nil {
+			return err
+		}
+		homeName, lat, lon = &in.Home.Name, &in.Home.Latitude, &in.Home.Longitude
+		setPlace = 1
+		if in.Home.PlaceID != 0 {
+			placeID = in.Home.PlaceID
+		}
+	}
 	c := in.MealCutoffs
 	return expectOne(db.sql.Exec(`UPDATE households SET date_format = ?, time_format = ?, temperature_unit = ?, auto_update = ?,
 		cutoff_breakfast = ?, cutoff_lunch = ?, cutoff_snack = ?, cutoff_dinner = ?,
-		first_steps_hidden = COALESCE(?, first_steps_hidden), first_steps_skipped = COALESCE(?, first_steps_skipped), updated_at = ? WHERE id = ?`,
-		in.DateFormat, in.TimeFormat, in.TemperatureUnit, in.AutoUpdate, c.Breakfast, c.Lunch, c.Snack, c.Dinner, in.FirstStepsHidden, skipped, now(), id))
-}
-
-// SetHouseholdCoordinates stores the coordinates of the household's home.
-func (db *DB) SetHouseholdCoordinates(id string, lat, lon float64) error {
-	return expectOne(db.sql.Exec(`UPDATE households SET latitude = ?, longitude = ?, updated_at = ? WHERE id = ?`, lat, lon, now(), id))
+		first_steps_hidden = COALESCE(?, first_steps_hidden), first_steps_skipped = COALESCE(?, first_steps_skipped),
+		home_name = COALESCE(?, home_name), latitude = COALESCE(?, latitude), longitude = COALESCE(?, longitude),
+		home_place_id = CASE WHEN ? = 1 THEN ? ELSE home_place_id END, updated_at = ? WHERE id = ?`,
+		in.DateFormat, in.TimeFormat, in.TemperatureUnit, in.AutoUpdate, c.Breakfast, c.Lunch, c.Snack, c.Dinner, in.FirstStepsHidden, skipped, homeName, lat, lon, setPlace, placeID, now(), id))
 }
 
 // Person is a family member as seen from one household.
@@ -245,22 +284,26 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 	h.DateFormat, h.TimeFormat, h.TemperatureUnit, h.AutoUpdate, h.MealCutoffs = DateDMY, Time24h, Celsius, UpdateOn, meal.DefaultCutoffs()
 	h.ID = newID()
 	ts := now()
-	_, err := db.sql.Exec(`INSERT INTO households (id, name, home_name, latitude, longitude, region, timezone, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		h.ID, h.Name, h.HomeName, h.Latitude, h.Longitude, h.Region, h.Timezone, ts, ts)
+	var placeID any // NULL
+	if h.HomePlaceID != 0 {
+		placeID = h.HomePlaceID
+	}
+	_, err := db.sql.Exec(`INSERT INTO households (id, name, home_name, home_place_id, latitude, longitude, region, timezone, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		h.ID, h.Name, h.HomeName, placeID, h.Latitude, h.Longitude, h.Region, h.Timezone, ts, ts)
 	return h, err
 }
 
 // Household loads a household by id.
 func (db *DB) Household(id string) (Household, error) {
-	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
+	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
 		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled
 		FROM households WHERE id = ?`, id))
 }
 
 // HomeHousehold returns the household this box serves (V1: exactly one).
 func (db *DB) HomeHousehold() (Household, error) {
-	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
+	return db.scanHousehold(db.sql.QueryRow(`SELECT id, name, home_name, COALESCE(home_place_id, 0), COALESCE(latitude, 0), COALESCE(longitude, 0), region, timezone, date_format, time_format, temperature_unit, auto_update, update_ack,
 		cutoff_breakfast, cutoff_lunch, cutoff_snack, cutoff_dinner, first_steps_hidden, first_steps_skipped, mcp_enabled
 		FROM households ORDER BY created_at, rowid LIMIT 1`))
 }
@@ -268,7 +311,7 @@ func (db *DB) HomeHousehold() (Household, error) {
 func (db *DB) scanHousehold(row *sql.Row) (Household, error) {
 	var h Household
 	var skipped string
-	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.DateFormat, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
+	err := row.Scan(&h.ID, &h.Name, &h.HomeName, &h.HomePlaceID, &h.Latitude, &h.Longitude, &h.Region, &h.Timezone, &h.DateFormat, &h.TimeFormat, &h.TemperatureUnit, &h.AutoUpdate, &h.UpdateAck,
 		&h.MealCutoffs.Breakfast, &h.MealCutoffs.Lunch, &h.MealCutoffs.Snack, &h.MealCutoffs.Dinner, &h.FirstStepsHidden, &skipped, &h.MCPEnabled)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Household{}, ErrNotFound

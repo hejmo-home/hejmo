@@ -36,11 +36,16 @@ type navLink struct {
 // frame is the chrome around a web screen: brand bar, sign-out and navigation.
 type frame struct {
 	SignedIn bool
-	Items    []navLink
+	// NoSignOut hides Sign out: a child's phone stays signed in; a parent unpairs it (Q46).
+	NoSignOut bool
+	Items     []navLink
 	// SunRise and SunSet are today's sun times at the home location (Unix
 	// seconds, 0 when unknown); the page script uses them for the browser
 	// theme "automatic" (ADR 0015).
 	SunRise, SunSet int64
+	// SunPolar is set when the home location is known but the sun neither
+	// rises nor sets today (polar day or night): automatic has no times then.
+	SunPolar bool
 	// TimeFormat is the household's clock ("24h" or "12h"); the time picker
 	// follows it.
 	TimeFormat string
@@ -65,6 +70,10 @@ type frame struct {
 	LangName, LangFlag string
 	Others             []language
 	Next               string
+	// The theme chooser (ticket 125): a paired phone says "phone" where a
+	// browser says "browser", and a parent gets a link where a child is told to
+	// ask an adult.
+	ThemePhone, ThemeParent bool
 }
 
 // frameFor builds the frame for the person behind the request, or a bare
@@ -78,6 +87,9 @@ func (s *server) frameFor(r *http.Request) frame {
 	}
 	f := s.sunFrame()
 	f.SignedIn = true
+	f.ThemePhone = s.phoneSession(r)
+	f.ThemeParent = auth.RoleAllows(p.Role, auth.Perm("settings", auth.Write))
+	f.NoSignOut = s.childPhoneSession(r, p)
 	if h, err := s.db.HomeHousehold(); err == nil {
 		f.TimeFormat = string(h.TimeFormat)
 		f.DateFormat = string(h.DateFormat)
@@ -123,7 +135,7 @@ func (s *server) sunFrame() frame {
 	}
 	t := sun.On(s.now().In(loc), h.Latitude, h.Longitude)
 	if t.Kind != sun.Normal {
-		return frame{}
+		return frame{SunPolar: true}
 	}
 	return frame{SunRise: t.Rise.Unix(), SunSet: t.Set.Unix()}
 }
@@ -131,7 +143,7 @@ func (s *server) sunFrame() frame {
 // isSetupPath reports whether path is a screen reached from the Settings hub
 // (ADR 0017): a hub entry or a page below one. Connections hang off Calendars.
 func isSetupPath(path string) bool {
-	paths := []string{"/connections"}
+	paths := []string{"/connections", "/settings/licences"}
 	for _, it := range hubItems {
 		paths = append(paths, it.Href)
 	}
@@ -166,5 +178,5 @@ var hubItems = []hubItem{
 // start with a link back to their overview, which replaces the hub link.
 var detailPages = map[string]bool{
 	"display.html": true, "token.html": true, "token_once.html": true, "connection.html": true, "connection_off.html": true,
-	"calendar_detail.html": true, "phone.html": true, "account.html": true, "account_reset.html": true, "passkey.html": true, "mcp_token.html": true, "mcp_token_new.html": true, "mcp_token_once.html": true, "connection_new.html": true, "person_edit.html": true, "invitation.html": true,
+	"calendar_detail.html": true, "phone.html": true, "account.html": true, "account_reset.html": true, "passkey.html": true, "mcp_token.html": true, "mcp_token_new.html": true, "mcp_token_once.html": true, "connection_new.html": true, "person_edit.html": true, "invitation.html": true, "recovery_codes.html": true,
 }

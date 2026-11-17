@@ -85,14 +85,14 @@ func TestHouseholdKeepsItsHomeCoordinates(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.SetHouseholdCoordinates(h.ID, 48.15, 11.46); err != nil {
+	if err := db.SaveHouseholdSettings(h.ID, store.HouseholdSettings{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, MealCutoffs: h.MealCutoffs, Home: &store.Home{Name: "Pasing", Latitude: 48.15, Longitude: 11.46}}); err != nil {
 		t.Fatal(err)
 	}
 	got, err := db.HomeHousehold()
 	if err != nil || got.Latitude != 48.15 || got.Longitude != 11.46 {
 		t.Fatalf("household = %+v, %v", got, err)
 	}
-	if err := db.SetHouseholdCoordinates("unknown", 1, 2); err == nil {
+	if err := db.SaveHouseholdSettings("unknown", store.HouseholdSettings{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, MealCutoffs: h.MealCutoffs}); err == nil {
 		t.Fatal("unknown household accepted")
 	}
 }

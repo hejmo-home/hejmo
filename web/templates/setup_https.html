@@ -4,13 +4,14 @@
   {{if eq .Way "choice"}}
   <p class="lead">{{t "setup.https.choice.lead"}}</p>
   {{template "httpsNotice" .}}
-  {{template "error" .}}
   <form class="tile" method="get" action="/setup/https">
+    <input type="hidden" name="next" value="1">
     <fieldset class="choice">
       <legend class="sr">{{t "setup.https.choice.legend"}}</legend>
-      {{template "option" (dict "Name" "way" "Value" "public" "Checked" true "Label" (t "setup.https.way.public") "Hint" (t "setup.https.way.public.hint"))}}
-      {{template "option" (dict "Name" "way" "Value" "domain" "Label" (t "setup.https.way.domain") "Hint" (t "setup.https.way.domain.hint"))}}
-      {{template "option" (dict "Name" "way" "Value" "own" "Label" (t "setup.https.way.own") "Hint" (t "setup.https.way.own.hint"))}}
+      {{template "wayOption" (dict "Value" "own" "Label" (t "setup.https.way.own") "Means" (t "setup.https.way.own.means") "Need" (t "setup.https.way.own.need") "Cost" (t "setup.https.way.own.cost"))}}
+      {{template "wayOption" (dict "Value" "public" "Label" (t "setup.https.way.public") "Means" (t "setup.https.way.public.means") "Need" (t "setup.https.way.public.need") "Cost" (t "setup.https.way.public.cost"))}}
+      {{template "wayOption" (dict "Value" "domain" "Label" (t "setup.https.way.domain") "Means" (t "setup.https.way.domain.means") "Need" (t "setup.https.way.domain.need") "Cost" (t "setup.https.way.domain.cost"))}}
+      {{template "fieldError" (dict "Root" . "Name" "way")}}
     </fieldset>
     <div class="actions"><button class="button" type="submit">{{t "setup.https.choice.next"}}</button></div>
   </form>
@@ -81,6 +82,14 @@
     <p class="addr">{{.Host}}</p>
     <p class="hint">{{t "setup.https.own.hint"}}</p>
   </section>
+  <section class="tile">
+    <p><b>{{t "setup.https.own.means"}}</b></p>
+    <ul class="homeonly">
+      <li>{{t "setup.https.own.means.1"}}</li>
+      <li>{{t "setup.https.own.means.2"}}</li>
+      <li>{{t "setup.https.own.means.3"}}</li>
+    </ul>
+  </section>
   <form method="post" action="/setup/https">
     <div class="actions"><button class="button" type="submit">{{t "setup.https.own.create"}}</button>{{if .Choice}}<a class="link" href="/setup/https">{{t "setup.https.other"}}</a>{{end}}</div>
   </form>
@@ -111,3 +120,7 @@
     {{template "checkline" (dict "State" "waiting" "Text" (t "setup.https.public.busy") "Small" (t "setup.https.public.busy.hint") "Hook" "busy" "Hidden" true)}}
     <div class="actions"><button class="button" type="submit" data-busy-text="{{t "setup.https.public.busy.button"}}">{{t "setup.https.public.create"}}</button><a class="link" href="/setup/https">{{t "setup.https.other"}}</a></div>
 {{end}}
+
+{{/* One way of the first step: the same three lines in the same order, so the ways
+     compare in words (Q62 a). Arguments: Value, Label, Means, Need, Cost. */}}
+{{define "wayOption"}}<label><input type="radio" name="way" value="{{.Value}}"><b>{{.Label}}</b><small class="way"><span>{{.Means}}</span><span><span class="k">{{t "setup.https.way.need"}}</span> {{.Need}}</span><span><span class="k">{{t "setup.https.way.cost"}}</span> {{.Cost}}</span></small></label>{{end}}

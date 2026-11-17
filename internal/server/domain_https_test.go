@@ -40,20 +40,72 @@ func guideOf(t *testing.T, body, provider string) string {
 	return m
 }
 
-func TestWizardChoiceOffersThreeWays(t *testing.T) {
+func TestWizardChoiceOffersThreeEqualWays(t *testing.T) {
 	b := newFreshBox(t)
 	r := b.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": "de"})
-	for _, want := range []string{"Es gibt drei Wege.", `value="public" checked`, `value="domain"`, `value="own"`, "Mit kostenlosem Namen (empfohlen)", "Mit eurer eigenen Domain", "Cloudflare, deSEC, Hetzner oder INWX"} {
+	for _, want := range []string{"Es gibt drei Wege", `name="way" value="own"`, `name="way" value="public"`, `name="way" value="domain"`,
+		"Nur im Heimnetz", "Mit kostenlosem Namen bei deSEC", "Mit eurer eigenen Domain", "Cloudflare, deSEC, Hetzner oder INWX",
+		`<small class="way">`, `<span class="k">Du brauchst:</span>`, `<span class="k">Dafür:</span>`} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("choice page misses %q", want)
 		}
 	}
-	if strings.Index(r.body, `value="public"`) > strings.Index(r.body, `value="domain"`) || strings.Index(r.body, `value="domain"`) > strings.Index(r.body, `value="own"`) {
-		t.Error("the ways are not in the order public, domain, own")
+	// Product owner decision Q62 a: equal ways, own CA first, none preselected or recommended.
+	if i, j, k := strings.Index(r.body, `value="own"`), strings.Index(r.body, `value="public"`), strings.Index(r.body, `value="domain"`); i > j || j > k {
+		t.Error("the ways are not in the order own CA, deSEC, own domain")
+	}
+	for _, bad := range []string{" checked", "empfohlen"} {
+		if strings.Contains(r.body, bad) {
+			t.Errorf("the choice page has %q: no way may be preselected or recommended", bad)
+		}
+	}
+	if n := strings.Count(r.body, `<small class="way">`); n != 3 {
+		t.Errorf("%d way texts, want 3", n)
+	}
+	if strings.Contains(r.body, "ferr") {
+		t.Error("the first visit already shows the error")
 	}
 	en := b.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": "en"})
-	if !strings.Contains(en.body, "three ways") {
-		t.Error("English lead does not say three ways")
+	if !strings.Contains(en.body, "three ways") || strings.Contains(en.body, "recommended") {
+		t.Error("English page does not say three ways, or recommends one")
+	}
+}
+
+// Q62 a: with nothing preselected, "Continue" can be pressed without a choice.
+func TestWizardChoiceWithoutAWayAsksForOne(t *testing.T) {
+	b := newFreshBox(t)
+	r := b.do(http.MethodGet, "/setup/https?next=1", nil, map[string]string{"Accept-Language": "de"})
+	if r.status != http.StatusUnprocessableEntity {
+		t.Errorf("status %d, want 422", r.status)
+	}
+	for _, want := range []string{`class="ferr"`, "Wähle einen der drei Wege.", `value="own"`} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("page misses %q:\n%s", want, r.body)
+		}
+	}
+	if strings.Contains(r.body, " checked") {
+		t.Error("a way is preselected after the error")
+	}
+	ok := b.do(http.MethodGet, "/setup/https?next=1&way=own", nil, map[string]string{"Accept-Language": "de"})
+	if ok.status != http.StatusOK || strings.Contains(ok.body, "Wähle einen der drei Wege.") {
+		t.Errorf("a chosen way still gets the error (status %d)", ok.status)
+	}
+}
+
+// Q62 a: the page of "Nur im Heimnetz" says what it means before the button.
+func TestHeimnetzPageSaysWhatItMeansBeforeTheButton(t *testing.T) {
+	b := newFreshBox(t)
+	r := b.do(http.MethodGet, "/setup/https?way=own", nil, map[string]string{"Accept-Language": "de"})
+	for _, want := range []string{"<h1>Nur im Heimnetz einrichten</h1>", `<ul class="homeonly">`, "Das bedeutet:", "nichts nach draußen"} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("page misses %q", want)
+		}
+	}
+	if strings.Count(r.body, `<ul class="homeonly">`) != 1 || strings.Count(r.body, "<li>") < 3 {
+		t.Error("want one list of at least three points")
+	}
+	if strings.Index(r.body, `class="homeonly"`) > strings.Index(r.body, "Zertifikat erstellen</button>") {
+		t.Error("the list comes after the button")
 	}
 }
 

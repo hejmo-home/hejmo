@@ -2007,3 +2007,12 @@ p.why.health > span { display: grid; gap: 2px; }
 .choose-none { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 8px; max-width: 560px; box-sizing: border-box; }
 [data-theme="bw"] .choose-none { border: 2px solid var(--text); }
 .choose-none p { margin: 0; }
+
+/* ticket 57, product owner decision Q62 a: the three ways of the HTTPS step are
+   equal choices. Each card says the same three things in the same order: what
+   the way means, what you need, what it costs. Labels in words, no icons. */
+.choice small.way { display: grid; gap: 4px; }
+.choice small.way > span { display: block; }
+.choice small.way .k { font-weight: 700; color: var(--text); }
+/* The page of the way "Nur im Heimnetz": what it means, before the button. */
+.homeonly { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; max-width: 560px; }

@@ -91,7 +91,10 @@ var wholeFamilyTexts = map[string]bool{
 	"connections.empty":                        true, // "eure Termine": the family's events on the box
 	"setup.welcome.lead":                       true, // "eure Box": the family's box
 	"setup.welcome.step.2":                     true, // "Euer Ort": the family's town
-	"setup.https.way.public.hint":              true, // "eure Box"
+	"setup.https.way.public.cost":              true, // "eure Box"
+	"setup.https.way.domain.cost":              true, // "eure Box"
+	"setup.https.way.own.means":                true, // "bei euch zu Hause"
+	"setup.https.way.domain.means":             true, // "eurer Domain": the family's domain
 	"setup.https.public.lan_ip.hint":           true, // "eure Geräte"
 	"setup.https.rebind.why":                   true, // "bei euch zu Hause"
 	"setup.totp.lead":                          true, // "eure Box"
@@ -118,7 +121,6 @@ var wholeFamilyTexts = map[string]bool{
 	"setup.https.domain.lead":                  true, // "eure Domain": the family's domain
 	"setup.https.domain.name.hint":             true, // "eure Domain": the family's domain
 	"setup.https.domain.cloudflare.token.text": true, // "eure Domain": the family's domain
-	"setup.https.way.domain.hint":              true, // "eure Domain": the family's domain
 	"setup.https.domain.why.hetzner.text":      true, // "eure Domain": the family's domain
 	"food.why.title":                           true, // "eurer Box": the family's box (preview 163)
 }

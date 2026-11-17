@@ -583,12 +583,13 @@ func (m *Manager) Setup(ctx context.Context, req Request) error {
 
 // prepareName looks at what the zone holds for the name before anything is
 // written: a public address or a CNAME is never overwritten (the family's
-// website would be gone), a private address of an earlier box (or the address of this very try) is replaced:
-// one of the same type by SetRecords, one of the other address family (a ULA
-// AAAA while this try writes an A) is deleted here, so the old box cannot be
-// resolved any more. Old challenge records of this name are removed, so a
-// provider that cannot handle several values at one name is not confused by a
-// failed earlier attempt.
+// website would be gone). A private address of an earlier box (or the address
+// of this very try) is replaced: one of the same type by SetRecords, one of
+// the other address family (a ULA AAAA while this try writes an A) is deleted
+// here, so the old box cannot be resolved any more; if that fails, so does the
+// setup. Old challenge records of this name are removed, so a provider that
+// cannot handle several values at one name is not confused by a failed
+// earlier attempt (a failure to remove them is only logged).
 func (m *Manager) prepareName(ctx context.Context, provider DNSProvider, name, zone, rel string, lan netip.Addr) error {
 	existing, err := provider.GetRecords(ctx, zone)
 	if err != nil {
@@ -602,7 +603,7 @@ func (m *Manager) prepareName(ctx context.Context, provider DNSProvider, name, z
 	if lan.Is6() && !lan.Is4In6() {
 		ownType = "AAAA"
 	}
-	var stale []libdns.Record
+	var stale, otherFamily []libdns.Record
 	for _, rec := range existing {
 		rr := rec.RR()
 		switch {
@@ -613,10 +614,15 @@ func (m *Manager) prepareName(ctx context.Context, provider DNSProvider, name, z
 				return m.nameTaken(name, zone, rr.Data)
 			}
 			if rr.Type != ownType {
-				stale = append(stale, rec) // an earlier box's record of the other family
+				otherFamily = append(otherFamily, rec) // an earlier box's record of the other family
 			}
 		case rr.Name == challenge && rr.Type == "TXT":
 			stale = append(stale, rec)
+		}
+	}
+	if len(otherFamily) > 0 {
+		if _, err := provider.DeleteRecords(ctx, zone, otherFamily); err != nil {
+			return fmt.Errorf("remove the address of an earlier box at %s: %w", name, err)
 		}
 	}
 	if len(stale) > 0 {

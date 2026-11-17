@@ -659,6 +659,23 @@ func TestSetupRemovesAPrivateRecordOfTheOtherAddressFamily(t *testing.T) {
 	}
 }
 
+// An earlier box's record of the other address family that cannot be deleted
+// stops the setup: the old box would stay resolvable at the name.
+func TestSetupFailsWhenAnEarlierBoxsRecordCannotBeDeleted(t *testing.T) {
+	r := newRig(t)
+	le := r.startCA(caOption{})
+	m := r.manager(map[string]string{"letsencrypt": le.URL})
+	r.dns.put(boxName, libdns.RR{Name: "@", Type: "AAAA", Data: "fd12:3456::1"})
+	r.dns.failDelete = errors.New("provider says no")
+	err := m.Setup(context.Background(), request("letsencrypt"))
+	if err == nil || !strings.Contains(err.Error(), "provider says no") {
+		t.Fatalf("Setup = %v, want the delete error", err)
+	}
+	if got := r.dns.addressOf(boxName); got != "" {
+		t.Errorf("an address was written (%q) although the old record stays", got)
+	}
+}
+
 // Stale challenge records of an earlier attempt are removed, so a provider
 // that cannot handle several values at one name is not confused.
 func TestSetupRemovesStaleChallengeRecordsOfThisName(t *testing.T) {

@@ -31,6 +31,8 @@ type fakeDNS struct {
 	mu      sync.Mutex
 	records map[string][]libdns.RR // fully qualified name (no trailing dot) -> records
 	addr    string                 // address of the name server
+	// failDelete, when set, is what DeleteRecords returns instead of deleting.
+	failDelete error
 	// credentials the provider factory was asked to build a provider for.
 	credentials []publiccert.Credentials
 }
@@ -122,6 +124,9 @@ func (f *fakeDNS) SetRecords(_ context.Context, zone string, recs []libdns.Recor
 func (f *fakeDNS) DeleteRecords(_ context.Context, zone string, recs []libdns.Record) ([]libdns.Record, error) {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.failDelete != nil {
+		return nil, f.failDelete
+	}
 	for _, r := range recs {
 		rr := r.RR()
 		n := fqdn(zone, rr.Name)

@@ -137,6 +137,13 @@ func (s *server) handleHTTPSForm(w http.ResponseWriter, r *http.Request) {
 	case "own":
 		way = httpsOwn
 	}
+	// "Continue" without a choice (the form sends next=1, no way is preselected):
+	// the choice again, with the error under the cards.
+	if way == httpsChoice && r.URL.Query().Get("next") != "" && s.public != nil {
+		s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, way, publicForm{Issuer: publiccert.LetsEncrypt},
+			httpsError{Key: "setup.https.error.way", Field: "way"})
+		return
+	}
 	s.renderHTTPSStep(w, r, http.StatusOK, way, publicForm{Issuer: publiccert.LetsEncrypt}, httpsError{})
 }
 

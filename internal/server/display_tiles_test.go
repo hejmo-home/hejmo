@@ -14,6 +14,7 @@ import (
 // lists view (#33). A display is not a person: it keeps its own view.
 
 func TestADisplayShowsListsAsTilesUntilSomeoneSwitchesItWithoutAPIN(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id, ids := f.onlyList(t, "Shopping", []string{"Cheese"}, "Milk", "Party hats", "Cheese")
 	page := f.listsPage(t, "en", "/display/lists/"+id).body
@@ -70,6 +71,7 @@ func TestADisplayShowsListsAsTilesUntilSomeoneSwitchesItWithoutAPIN(t *testing.T
 }
 
 func TestDisplayViewErrorsAndUnpairedScreens(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id, _ := f.onlyList(t, "Shopping", nil, "Milk")
 	r := f.display.postLang("/display/list-view", url.Values{"view": {"grid"}, "list": {id}}, "en")
@@ -90,6 +92,7 @@ func TestDisplayViewErrorsAndUnpairedScreens(t *testing.T) {
 }
 
 func TestDisplayTilesCarryWarningsPicturesAndTheFreeTextNote(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	if err := f.db.SetPersonFood(f.householdID, f.people["Mia"].ID, store.Food{Diet: "omnivore", Allergens: []string{"milk"}, Other: "Kiwi"}); err != nil {
 		t.Fatal(err)
@@ -124,6 +127,7 @@ func TestDisplayTilesCarryWarningsPicturesAndTheFreeTextNote(t *testing.T) {
 }
 
 func TestTheEntryJustAddedKeepsItsFrameInTiles(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id, _ := f.onlyList(t, "Shopping", nil, "Milk")
 	r := f.display.post("/display/lists/"+id+"/entries", url.Values{"text": {"Pasta"}})

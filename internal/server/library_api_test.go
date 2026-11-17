@@ -66,6 +66,7 @@ func (c *apiClient) putBytes(path, contentType string, body []byte) (int, map[st
 }
 
 func TestTheLibraryListsShippedAndOwnArticlesAndSearchesByName(t *testing.T) {
+	t.Parallel()
 	c, _ := newArticleAPI(t)
 	status, _, list := c.call(http.MethodGet, "/articles", nil)
 	if status != http.StatusOK || len(list) != 248 {
@@ -88,6 +89,7 @@ func TestTheLibraryListsShippedAndOwnArticlesAndSearchesByName(t *testing.T) {
 }
 
 func TestAnOwnArticleIsCreatedWithASymbolChangedAndDeleted(t *testing.T) {
+	t.Parallel()
 	c, _ := newArticleAPI(t)
 	status, a, _ := c.call(http.MethodPost, "/articles", map[string]any{"name": " Katzenfutter  Huhn ", "dept": "other", "kind": "nonfood", "allergens": []string{"milk"}, "unit1": "pack", "symbol": "🐈"})
 	if status != http.StatusCreated {
@@ -110,6 +112,7 @@ func TestAnOwnArticleIsCreatedWithASymbolChangedAndDeleted(t *testing.T) {
 }
 
 func TestAnArticleThatBreaksTheRulesIsRefusedWithItsField(t *testing.T) {
+	t.Parallel()
 	c, _ := newArticleAPI(t)
 	for name, body := range map[string]map[string]any{
 		"no name":         {"dept": "other", "kind": "veg", "unit1": "piece"},
@@ -133,6 +136,7 @@ func TestAnArticleThatBreaksTheRulesIsRefusedWithItsField(t *testing.T) {
 }
 
 func TestAPictureFromTheWebIsDownloadedOnceAndAPrivateAddressIsRefused(t *testing.T) {
+	t.Parallel()
 	srv := imageServer(t, 1200, 1200)
 	c, _ := newArticleAPI(t)
 	status, a, _ := c.call(http.MethodPost, "/articles", map[string]any{"name": "Hafer-Drink", "dept": "drinks", "kind": "vegan", "unit1": "l", "picture_url": srv.URL + "/a.jpg"})
@@ -158,6 +162,7 @@ func TestAPictureFromTheWebIsDownloadedOnceAndAPrivateAddressIsRefused(t *testin
 }
 
 func TestAnInvalidArticleCausesNoDownload(t *testing.T) {
+	t.Parallel()
 	var hits atomic.Int32
 	srv := httptest.NewServer(http.HandlerFunc(func(http.ResponseWriter, *http.Request) { hits.Add(1) }))
 	t.Cleanup(srv.Close)
@@ -176,6 +181,7 @@ func TestAnInvalidArticleCausesNoDownload(t *testing.T) {
 }
 
 func TestAPhotoIsSentAsTheBodyAndComesBackScaledDown(t *testing.T) {
+	t.Parallel()
 	c, _ := newArticleAPI(t)
 	_, a, _ := c.call(http.MethodPost, "/articles", map[string]any{"name": "Windeln", "dept": "baby", "kind": "nonfood", "unit1": "pack"})
 	id := a["id"].(string)
@@ -196,6 +202,7 @@ func TestAPhotoIsSentAsTheBodyAndComesBackScaledDown(t *testing.T) {
 }
 
 func TestShippedArticlesAreHiddenOrCopiedNeverChanged(t *testing.T) {
+	t.Parallel()
 	c, _ := newArticleAPI(t)
 	status, a, _ := c.call(http.MethodPut, "/articles/walnuts/hidden", map[string]any{"hidden": true})
 	if status != http.StatusOK || a["hidden_by_hand"] != true {
@@ -225,6 +232,7 @@ func TestShippedArticlesAreHiddenOrCopiedNeverChanged(t *testing.T) {
 }
 
 func TestWarningsNameThePeopleAndAreHealthDataForTheHealthScopeOnly(t *testing.T) {
+	t.Parallel()
 	c, mia := newArticleAPI(t)
 	c.call(http.MethodPut, "/people/"+mia+"/food", map[string]any{"diet": "vegetarian", "allergens": []string{"peanuts", "nuts"}, "other": []string{"Kiwi"}})
 	status, w, _ := c.call(http.MethodGet, "/articles/nut-nougat-spread/warnings", nil)
@@ -263,6 +271,7 @@ func TestWarningsNameThePeopleAndAreHealthDataForTheHealthScopeOnly(t *testing.T
 }
 
 func TestChildrenReadTheLibraryButChangeNothing(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	if status, _, _ := tb.child.call(http.MethodGet, "/articles", nil); status != http.StatusOK {
 		t.Errorf("child list = %d", status)
@@ -285,6 +294,7 @@ func TestChildrenReadTheLibraryButChangeNothing(t *testing.T) {
 }
 
 func TestHidingNeedsConfirmationAndRecordsWhoConfirmedAndWhen(t *testing.T) {
+	t.Parallel()
 	c, mia := newArticleAPI(t)
 	c.call(http.MethodPut, "/people/"+mia+"/food", map[string]any{"diet": "omnivore", "allergens": []string{"peanuts"}})
 	_, h, _ := c.call(http.MethodGet, "/library/hiding", nil)

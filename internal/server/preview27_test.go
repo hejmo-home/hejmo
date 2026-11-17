@@ -22,6 +22,7 @@ import (
 // the media query (orientation) and the column minimum act on a true viewport.
 // Run: HEJMO_WRITE_PREVIEW=../../docs/design/preview-27.html go test ./internal/server -run WriteDesignPreview27
 func TestWriteDesignPreview27(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW to the output path to write the preview")

@@ -77,6 +77,7 @@ func germanView(t *testing.T, d func(day, h, m int) time.Time) string {
 // example family of eight. Run:
 // HEJMO_WRITE_PREVIEW_128=$PWD/docs/design/preview-128.html go test ./internal/server -run WritePreview128
 func TestWritePreview128(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_128")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_128 to the output path to write the preview")

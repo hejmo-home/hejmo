@@ -10,6 +10,7 @@ import (
 
 // ADR 0016: the household settings screen offers time format and temperature unit.
 func TestSettingsScreenSavesTimeFormatAndUnit(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.get("/settings/household")
 	if r.status != http.StatusOK || !strings.Contains(r.body, `name="time_format"`) || !strings.Contains(r.body, `name="temperature_unit"`) {
@@ -32,6 +33,7 @@ func TestSettingsScreenSavesTimeFormatAndUnit(t *testing.T) {
 
 // ADR 0016: the time format applies to every time shown in the web interface.
 func TestWebTimesFollowTheHouseholdTimeFormat(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	d := newScreen(b)
 	b.post("/displays", pairForm(codeOn(t, d.get("/display", "en").body)))
@@ -64,6 +66,7 @@ func TestWebTimesFollowTheHouseholdTimeFormat(t *testing.T) {
 }
 
 func TestChildCannotOpenSettings(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	child := childSession(t, b)
 	if r := child.get("/settings/household"); r.status != http.StatusForbidden {
@@ -76,6 +79,7 @@ func TestChildCannotOpenSettings(t *testing.T) {
 
 // ADR 0015: everything the web interface can do is also possible through the API.
 func TestSettingsWorkThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, got, _ := c.call(http.MethodGet, "/settings", nil)
 	if status != http.StatusOK || got["time_format"] != "24h" || got["temperature_unit"] != "c" {
@@ -98,6 +102,7 @@ func TestSettingsWorkThroughTheAPI(t *testing.T) {
 // is no longer shown on displays. Ticket 6.3 design pass: a switch row per
 // mealtime with its state in words; off means no cut-off.
 func TestSettingsScreenShowsAndSavesTheMealCutoffTimes(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	page := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "en"})
 	for _, want := range []string{`name="cutoff_breakfast"`, `value="10:00"`, `name="cutoff_lunch"`, `value="13:30"`, `name="cutoff_snack"`, `value="16:30"`, `name="cutoff_dinner"`, "Breakfast", "Dinner",
@@ -139,6 +144,7 @@ func TestSettingsScreenShowsAndSavesTheMealCutoffTimes(t *testing.T) {
 }
 
 func TestSwitchedOffMealtimeStoresNoCutoffWhateverTheTimeFieldHolds(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for _, off := range []url.Values{{"cutoff_snack_on": {"off"}}, {}} { // an explicit "off" and an unchecked box (not sent)
 		form := url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "cutoff_snack": {"17:45"}}
@@ -156,6 +162,7 @@ func TestSwitchedOffMealtimeStoresNoCutoffWhateverTheTimeFieldHolds(t *testing.T
 }
 
 func TestSwitchedOnMealtimeWithAnEmptyTimeStartsAtItsSuggestedTime(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "cutoff_dinner": {""}, "cutoff_dinner_on": {"on"}})
 	if h, _ := b.db.HomeHousehold(); h.MealCutoffs.Dinner != "20:00" {
@@ -164,6 +171,7 @@ func TestSwitchedOnMealtimeWithAnEmptyTimeStartsAtItsSuggestedTime(t *testing.T)
 }
 
 func TestSettingsScreenShowsTheSwitchStatesInGerman(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	page := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body
 	for _, want := range []string{"Verschwindet zu einer festen Uhrzeit von Displays", "Den ganzen Tag sichtbar", "Verschwindet um", "Frühstück", "Abendessen", "Displays zeigen die Mahlzeiten von heute."} {
@@ -174,6 +182,7 @@ func TestSettingsScreenShowsTheSwitchStatesInGerman(t *testing.T) {
 }
 
 func TestSettingsFormWithoutCutoffFieldsLeavesThemAlone(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if r := b.post("/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d", r.status)
@@ -185,6 +194,7 @@ func TestSettingsFormWithoutCutoffFieldsLeavesThemAlone(t *testing.T) {
 }
 
 func TestInvalidCutoffShowsAnErrorAtItsFieldAndSavesNothing(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.do(http.MethodPost, "/settings/household", url.Values{"time_format": {"12h"}, "temperature_unit": {"f"}, "cutoff_breakfast": {"09:30"}, "cutoff_breakfast_on": {"on"}, "cutoff_snack": {"25:61"}, "cutoff_snack_on": {"on"}},
 		map[string]string{"Accept-Language": "en"})
@@ -202,6 +212,7 @@ func TestInvalidCutoffShowsAnErrorAtItsFieldAndSavesNothing(t *testing.T) {
 
 // ADR 0015: everything the web interface can do is also possible through the API.
 func TestMealCutoffsWorkThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, got, _ := c.call(http.MethodGet, "/settings", nil)
 	want := map[string]any{"breakfast": "10:00", "lunch": "13:30", "snack": "16:30", "dinner": ""}

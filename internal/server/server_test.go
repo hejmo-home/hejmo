@@ -9,6 +9,7 @@ import (
 )
 
 func TestHealthzReportsOK(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	res, err := b.bareClient().Get(b.srv.URL + "/healthz")
 	if err != nil {
@@ -21,6 +22,7 @@ func TestHealthzReportsOK(t *testing.T) {
 }
 
 func TestHealthzRejectsNonGet(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	if r := b.post("/healthz", url.Values{}); r.status != http.StatusMethodNotAllowed {
 		t.Fatalf("status = %d, want 405", r.status)
@@ -29,6 +31,7 @@ func TestHealthzRejectsNonGet(t *testing.T) {
 
 // Figtree is served by the box itself (no outside font CDN).
 func TestServesFigtreeFromTheBox(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	for path, magic := range map[string]string{
 		"/static/fonts/Figtree-wght.ttf": "\x00\x01\x00\x00",

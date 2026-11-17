@@ -48,6 +48,7 @@ func (f *familyBox) setHomeInSettings(t *testing.T) {
 // #29 and #179: the brightness switches from Day to Evening at sunset at the
 // home location (fake FreeKiosk API); without a home location Day applies all day.
 func TestBrightnessFollowsSunsetAtTheHomeLocationSetInSettings(t *testing.T) {
+	t.Parallel()
 	fake := &fakeKiosk{}
 	f := newFamilyBox(t, "eink_bw", withKiosk(fake))
 	f.withoutLocation(t)
@@ -67,6 +68,7 @@ func TestBrightnessFollowsSunsetAtTheHomeLocationSetInSettings(t *testing.T) {
 // #52: the theme switch by sunrise and sunset works on a box whose home
 // location was set in the web interface.
 func TestAutomaticThemeFollowsSunsetAtTheHomeLocationSetInSettings(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	f.withoutLocation(t)
 	f.setTheme(t, "auto", "0", "-30")
@@ -100,6 +102,7 @@ func (h storedHome) Home() (lat, lon float64, err error) {
 // #28: the weather is fetched for the stored coordinates of the place picked
 // from the list.
 func TestWeatherUsesTheStoredHomeLocation(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.withoutLocation(t)
 	f.setHomeInSettings(t)

@@ -34,6 +34,7 @@ var subGroupRe = regexp.MustCompile(`(?s)<li class="has-subs"[^>]*>.*?</li>\s*</
 // card: the task's own checkbox with stars, then every subtask with its own
 // checkbox and no stars, the progress as boxes and in words.
 func TestPersonalViewShowsATaskWithItsSubtasksAsOneCard(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	k, subs := f.bagFor(t, "Mia", "")
 	if err := f.db.SetTaskDone(f.householdID, f.task(t, "Mia", "Feed the cat", task.Daily).ID, "2026-11-14", true, "", f.at(14, 7, 0)); err != nil {
@@ -81,6 +82,7 @@ func TestPersonalViewShowsATaskWithItsSubtasksAsOneCard(t *testing.T) {
 // Acceptance: Given the last subtask ticked on a display, the task is done and
 // its stars are credited once; unticking a subtask reopens it.
 func TestDisplayTicksSubtasksAndTheTask(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	k, subs := f.bagFor(t, "Mia", "")
 	f.now = f.at(14, 7, 0)
@@ -128,6 +130,7 @@ func TestDisplayTicksSubtasksAndTheTask(t *testing.T) {
 // Inside a routine the "next" marker moves to the first open subtask of the
 // next task; outside routines nothing is marked.
 func TestNextMarkerSitsOnTheFirstOpenSubtaskInARoutine(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	r, steps := f.routineFor(t, "Mia", "Morning routine", task.Morning, "Brush teeth")
 	_ = steps
@@ -155,6 +158,7 @@ func TestNextMarkerSitsOnTheFirstOpenSubtaskInARoutine(t *testing.T) {
 
 // Subtasks outside a routine are never marked next.
 func TestNothingIsMarkedNextOutsideRoutines(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.bagFor(t, "Mia", "")
 	if page := f.personalPage(t, "en", "Mia", 14, 8).body; strings.Contains(page, "data-next") {
@@ -165,6 +169,7 @@ func TestNothingIsMarkedNextOutsideRoutines(t *testing.T) {
 // Acceptance: subtasks are tickable on phones: the child's tasks page shows
 // the same cards, and the child ticks only subtasks of their own tasks.
 func TestChildPhoneTicksSubtasks(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	tb := taskBox{parent: cp.parent}
 	mia := personNamed(t, cp.parent.b, "Mia")

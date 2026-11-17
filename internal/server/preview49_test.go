@@ -21,6 +21,7 @@ import (
 // is an iframe, so the viewport widths trigger the real media queries.
 // Run: HEJMO_WRITE_PREVIEW=../../docs/design/preview-49.html go test ./internal/server -run WritePreview49
 func TestWritePreview49(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW to the output path to write the preview")

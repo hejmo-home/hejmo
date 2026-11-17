@@ -55,6 +55,7 @@ func selectedRegion(page string) string {
 }
 
 func TestSetupSuggestsAtMostFivePlacesAndNeverPlusN(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.do(http.MethodPost, "/setup", typedSetup("Neustadt"), en)
 	if r.status != http.StatusUnprocessableEntity {
@@ -98,6 +99,7 @@ func TestSetupSuggestsAtMostFivePlacesAndNeverPlusN(t *testing.T) {
 }
 
 func TestSetupSuggestionsNameTheRegionInThePageLanguage(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	if r := b.do(http.MethodPost, "/setup", typedSetup("Pasing"), en); !strings.Contains(r.body, "<b>Pasing</b><small>district of München, Bayern, Germany</small>") {
 		t.Errorf("English label:\n%s", r.body)
@@ -108,6 +110,7 @@ func TestSetupSuggestionsNameTheRegionInThePageLanguage(t *testing.T) {
 }
 
 func TestSetupIgnoresPostedCoordinatesAndResolvesThePlaceID(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	f := validSetupForm()
 	for k, v := range map[string]string{"latitude": "1.5", "longitude": "2.5", "lat": "1.5", "lon": "2.5", "place": "1.5,2.5", "home_name_lat": "9"} {
@@ -126,6 +129,7 @@ func TestSetupIgnoresPostedCoordinatesAndResolvesThePlaceID(t *testing.T) {
 }
 
 func TestSetupRefusesAnUnknownPlaceIDWithAFieldError(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	for _, bad := range []string{"999999999", "abc", "-5", "0", "48.15"} {
 		f := validSetupForm()
@@ -144,6 +148,7 @@ func TestSetupRefusesAnUnknownPlaceIDWithAFieldError(t *testing.T) {
 // Without JavaScript: Enter shows the suggestions, a suggestion button picks,
 // the next submit creates the household.
 func TestSetupWithoutJavaScriptShowsSuggestionsThenTheConfirmedPlace(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.do(http.MethodPost, "/setup", typedSetup("München"), en)
 	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `<button type="submit" name="place_id" value="`+idMuenchen+`"`) {
@@ -196,6 +201,7 @@ func TestSetupWithoutJavaScriptShowsSuggestionsThenTheConfirmedPlace(t *testing.
 }
 
 func TestSetupChangeOpensThePickerAgainAndForgetsTheRegionOfThePlace(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	f := validSetupForm()
 	f.Set("place_id", idMuenchen)
@@ -219,6 +225,7 @@ func TestSetupChangeOpensThePickerAgainAndForgetsTheRegionOfThePlace(t *testing.
 }
 
 func TestSetupTakesTheRegionFromThePlaceAndKeepsAnExplicitChoice(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	f := validSetupForm()
 	f.Set("place_id", idMuenchen)
@@ -249,6 +256,7 @@ func TestSetupTakesTheRegionFromThePlaceAndKeepsAnExplicitChoice(t *testing.T) {
 }
 
 func TestSetupNotFoundShowsTheErrorAtTheFieldAndKeepsTheText(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.do(http.MethodPost, "/setup", typedSetup("Pasingg"), en)
 	tag := inputTag(r.body, "home_name")
@@ -286,6 +294,7 @@ func TestSetupNotFoundShowsTheErrorAtTheFieldAndKeepsTheText(t *testing.T) {
 }
 
 func TestSetupKeepsThePickedPlaceWhileOtherFieldsAreCorrected(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	f := validSetupForm()
 	f.Set("password", "x") // another field is wrong
@@ -296,6 +305,7 @@ func TestSetupKeepsThePickedPlaceWhileOtherFieldsAreCorrected(t *testing.T) {
 }
 
 func TestSetupPressingEnterDoesNotPressChange(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.do(http.MethodPost, "/setup", pickedSetup("München", idMuenchen), en)
 	form := formOf(t, r.body, "/setup")
@@ -312,6 +322,7 @@ func settingsForm() url.Values {
 }
 
 func TestHouseholdSettingsShowTheHomeInUseWithSunTimes(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.do(http.MethodGet, "/settings/household", nil, en)
 	for _, want := range []string{
@@ -341,6 +352,7 @@ func TestHouseholdSettingsShowTheHomeInUseWithSunTimes(t *testing.T) {
 }
 
 func TestSettingsChangeOpensThePickerAndKeepRestoresTheSavedPlace(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	f := settingsForm()
 	f.Set("place_id", idPasing)
@@ -380,6 +392,7 @@ func TestSettingsChangeOpensThePickerAndKeepRestoresTheSavedPlace(t *testing.T) 
 }
 
 func TestSettingsPickShowsPendingThenSaveStoresThePlace(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	pick := settingsForm()
 	pick.Set("home_name", "Obermen")
@@ -422,6 +435,7 @@ func TestSettingsPickShowsPendingThenSaveStoresThePlace(t *testing.T) {
 }
 
 func TestSettingsTextWithoutAPickedPlaceIsAFieldErrorWithTheListOpen(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	f := settingsForm()
 	f.Set("home_name", "Obermen")
@@ -453,6 +467,7 @@ func TestSettingsTextWithoutAPickedPlaceIsAFieldErrorWithTheListOpen(t *testing.
 }
 
 func TestSettingsWithoutPlaceFieldsLeaveTheHomeAlone(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if r := b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}}); r.status != http.StatusSeeOther {
 		t.Fatalf("status = %d", r.status)
@@ -474,6 +489,7 @@ func TestSettingsWithoutPlaceFieldsLeaveTheHomeAlone(t *testing.T) {
 // A household set up before the list of places has a name and no location: the
 // dashed box says so and the list is already open for the saved name.
 func TestOlderHouseholdWithoutLocationGetsSuggestionsForItsStoredName(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if _, err := b.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL, home_place_id = NULL`); err != nil {
 		t.Fatal(err)
@@ -522,6 +538,7 @@ func TestOlderHouseholdWithoutLocationGetsSuggestionsForItsStoredName(t *testing
 // A home set through the API has coordinates and no place id: the box shows
 // the name and today's sun times without a region.
 func TestHomeSetByCoordinatesShowsNameAndSunTimesWithoutARegion(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	if status, _, _ := c.call(http.MethodPatch, "/settings", map[string]any{"home_name": "Zuhause", "latitude": 48.2, "longitude": 11.4}); status != http.StatusOK {
 		t.Fatalf("patch = %d", status)
@@ -540,6 +557,7 @@ func TestHomeSetByCoordinatesShowsNameAndSunTimesWithoutARegion(t *testing.T) {
 }
 
 func TestSettingsWithInvalidFieldsKeepTheTypedPickerState(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	g := settingsForm()
 	g.Set("time_format", "25h")
@@ -551,6 +569,7 @@ func TestSettingsWithInvalidFieldsKeepTheTypedPickerState(t *testing.T) {
 }
 
 func TestChangingTheHomeShowsTheWeatherThereAtOnce(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.homeWeather(t) // 18 degrees at the old location
 	f.meteo.set(`{"current":{"temperature_2m":3.0,"weather_code":3,"is_day":1}}`, 200)
@@ -599,6 +618,7 @@ func TestPlaceSearchNeverLeavesTheBox(t *testing.T) {
 }
 
 func TestPlacesEndpointOfThePagesAnswersFromTheListWithoutASignIn(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.do(http.MethodGet, "/places?name=Pasing&lang=de", nil, en)
 	var got struct {
@@ -617,6 +637,7 @@ func TestPlacesEndpointOfThePagesAnswersFromTheListWithoutASignIn(t *testing.T) 
 // --- /settings and /places API (parity with the web interface, ADR 0015) ---
 
 func TestSettingsAPIExposesAndChangesTheHomeLocation(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, got, _ := c.call(http.MethodGet, "/settings", nil)
 	if status != http.StatusOK || got["home_name"] != "Pasing" || got["latitude"] != 48.1415 || got["longitude"] != 11.456 || got["home_place_id"] != float64(2855334) {
@@ -642,6 +663,7 @@ func TestSettingsAPIExposesAndChangesTheHomeLocation(t *testing.T) {
 }
 
 func TestSettingsAPITakesAPlaceByItsID(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, got, _ := c.call(http.MethodPatch, "/settings", map[string]any{"home_place_id": 2867714})
 	if status != http.StatusOK || got["home_name"] != "München" || got["home_place_id"] != float64(2867714) || got["latitude"] != 48.1374 || got["longitude"] != 11.5755 {
@@ -665,6 +687,7 @@ func TestSettingsAPITakesAPlaceByItsID(t *testing.T) {
 }
 
 func TestSettingsAPIRefusesBadLocations(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	for name, body := range map[string]map[string]any{
 		"latitude too big":     {"latitude": 91.0, "longitude": 0.0},
@@ -691,6 +714,7 @@ func TestSettingsAPIRefusesBadLocations(t *testing.T) {
 }
 
 func TestSettingsAPIShowsAnUnknownLocationAsNull(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	if _, err := c.b.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL, home_place_id = NULL`); err != nil {
 		t.Fatal(err)
@@ -707,6 +731,7 @@ func TestSettingsAPIShowsAnUnknownLocationAsNull(t *testing.T) {
 }
 
 func TestPlacesAPIAnswersFromTheListOnTheBox(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, got, _ := c.call(http.MethodGet, "/places?name=Pasing&lang=en", nil)
 	places, _ := got["places"].([]any)
@@ -747,6 +772,7 @@ func TestPlacesAPIAnswersFromTheListOnTheBox(t *testing.T) {
 // --- Licences ---
 
 func TestLicencesPageCreditsGeoNames(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.do(http.MethodGet, "/settings/licences", nil, en)
 	if r.status != http.StatusOK {
@@ -768,6 +794,7 @@ func TestLicencesPageCreditsGeoNames(t *testing.T) {
 // The script that updates the list while typing belongs to the two pages with
 // the picker, and to no other.
 func TestPlaceScriptIsLoadedOnlyWhereThePickerIs(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if r := b.do(http.MethodGet, "/settings/household", nil, en); !strings.Contains(r.body, `src="/static/place.js"`) {
 		t.Error("Settings → Household does not load place.js")
@@ -788,6 +815,7 @@ func TestPlaceScriptIsLoadedOnlyWhereThePickerIs(t *testing.T) {
 }
 
 func TestSettingsPlaceStepsKeepATypedDateFormat(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	pick := settingsForm()
 	pick.Set("date_format", "mdy")
@@ -800,6 +828,7 @@ func TestSettingsPlaceStepsKeepATypedDateFormat(t *testing.T) {
 }
 
 func TestPlacesSearchRefusesALongName(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if r := b.get("/places?name=" + strings.Repeat("a", 101)); r.status != http.StatusUnprocessableEntity {
 		t.Errorf("status = %d", r.status)

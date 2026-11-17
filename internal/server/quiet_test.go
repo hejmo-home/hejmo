@@ -40,6 +40,7 @@ func (f *familyBox) quietOn(t *testing.T) {
 
 // 5.9: Given quiet mode from 22:00 to 06:00, when it turns 22:00, then the display switches to quiet mode.
 func TestDisplaySwitchesToQuietModeAt2200AndBackAt0600(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	f.quietOn(t)
 	f.event(t, "Dentist", f.at(15, 9, 0), f.at(15, 10, 0), false, "Mia")
@@ -58,6 +59,7 @@ func TestDisplaySwitchesToQuietModeAt2200AndBackAt0600(t *testing.T) {
 }
 
 func TestQuietModeIsOffUnlessSwitchedOn(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	if p := f.view(t, "en", f.at(14, 23, 0)); strings.Contains(p, "data-quiet") {
 		t.Fatal("quiet by default")
@@ -68,6 +70,7 @@ func TestQuietModeIsOffUnlessSwitchedOn(t *testing.T) {
 // household's first timed event and its waste collection. At 02:00 on
 // Sunday it still shows Sunday.
 func TestNightPageShowsTheComingMorning(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.quietOn(t)
 	f.event(t, "Swimming", f.at(15, 10, 0), f.at(15, 11, 0), false, "Sebastian")
@@ -93,6 +96,7 @@ func TestNightPageShowsTheComingMorning(t *testing.T) {
 }
 
 func TestNightPageWithoutEventsSaysSo(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	f.quietOn(t)
 	if p := f.view(t, "en", f.at(14, 23, 0)); !strings.Contains(p, "data-no-event") {
@@ -102,6 +106,7 @@ func TestNightPageWithoutEventsSaysSo(t *testing.T) {
 
 // 5.9: a normal screen goes black; without a kiosk app that is the whole story.
 func TestNormalScreenShowsABlackPageInQuietMode(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	f.quietOn(t)
 	f.event(t, "Dentist", f.at(15, 9, 0), f.at(15, 10, 0), false, "Mia")
@@ -114,6 +119,7 @@ func TestNormalScreenShowsABlackPageInQuietMode(t *testing.T) {
 // ADR 0015: against ghosting an E-Ink display reloads once an hour, only in
 // quiet mode.
 func TestEInkDisplaysReloadOncePerHourInQuietModeOnly(t *testing.T) {
+	t.Parallel()
 	for typ, want := range map[string]bool{"eink_bw": true, "eink_color": true, "screen": false} {
 		f := newFamilyBox(t, typ)
 		f.quietOn(t)
@@ -129,6 +135,7 @@ func TestEInkDisplaysReloadOncePerHourInQuietModeOnly(t *testing.T) {
 
 // The partial view and the live version follow quiet mode too.
 func TestLiveQuietModeIsAnnouncedAndServed(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
 	l.quietOn(t)
 	l.clock.set(l.at(14, 21, 59))
@@ -145,6 +152,7 @@ func TestLiveQuietModeIsAnnouncedAndServed(t *testing.T) {
 }
 
 func TestDisplaysPageEditsQuietModeAndKiosk(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	for _, want := range []string{`name="quiet"`, `name="quiet_from"`, `name="quiet_to"`, `name="kiosk_url"`, `name="kiosk_key"`} {
 		if !strings.Contains(f.get("/displays/"+f.displayID(t)).body, want) {
@@ -181,6 +189,7 @@ func TestDisplaysPageEditsQuietModeAndKiosk(t *testing.T) {
 }
 
 func TestQuietModeAndKioskWorkThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
 	_, shown, _ := c.call(http.MethodPost, "/displays", map[string]any{"code": code, "name": "Hall", "type": "eink_bw"})

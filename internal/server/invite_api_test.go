@@ -11,6 +11,7 @@ import (
 
 // Ticket 145: the same invitation through the REST API, contract-checked.
 func TestInvitationsWorkThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, papa, _ := c.call(http.MethodPost, "/people", map[string]any{"name": "Papa", "role": "parent"})
 	_, mia, _ := c.call(http.MethodPost, "/people", map[string]any{"name": "Mia", "role": "child"})
@@ -66,6 +67,7 @@ func TestInvitationsWorkThroughTheAPI(t *testing.T) {
 }
 
 func TestInvitationAPIStatesAndRights(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, papa, _ := c.call(http.MethodPost, "/people", map[string]any{"name": "Papa", "role": "parent"})
 	path := "/people/" + papa["id"].(string) + "/invitation"

@@ -71,6 +71,7 @@ func wantNot(t *testing.T, what, text string, parts ...string) {
 // #179, preview Q1 and Q3: its own block after "Nachts", the state in words on
 // top, Day and Evening with today's sun times, then quiet mode.
 func TestBrightnessBlockShowsTheStateAndTheValuesAfterTheNightBlock(t *testing.T) {
+	t.Parallel()
 	f, _ := kioskBox(t, "screen", quietForm(url.Values{"bright_evening": {"40"}}))
 	f.tick(f.at(14, 17, 0)) // 17:00, after the sun set at 16:3x: Evening since sunset
 	page := squash(f.settingsPage(t, de))
@@ -111,6 +112,7 @@ func TestBrightnessBlockShowsTheStateAndTheValuesAfterTheNightBlock(t *testing.T
 }
 
 func TestBrightnessBlockInEnglishSaysTheSame(t *testing.T) {
+	t.Parallel()
 	f, _ := kioskBox(t, "screen", quietForm(nil))
 	f.tick(f.at(14, 14, 0))
 	b := bright(t, f.settingsPage(t, en))
@@ -119,6 +121,7 @@ func TestBrightnessBlockInEnglishSaysTheSame(t *testing.T) {
 
 // Q80: without a kiosk app the block is greyed out, says why and links the guide.
 func TestBrightnessBlockWithoutAKioskAppIsGreyedOutWithTheReasonAndTheGuide(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen", withKiosk(&fakeKiosk{}))
 	f.quietOn(t)
 	b := bright(t, f.settingsPage(t, de))
@@ -146,6 +149,7 @@ func TestBrightnessBlockWithoutAKioskAppIsGreyedOutWithTheReasonAndTheGuide(t *t
 }
 
 func TestBrightnessGuideLinksToTheFreeKioskGuideInTheRepository(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	b := bright(t, f.settingsPage(t, de))
 	if !strings.Contains(b, `href="https://github.com/hejmo-home/hejmo/blob/main/docs/freekiosk.md"`) {
@@ -155,6 +159,7 @@ func TestBrightnessGuideLinksToTheFreeKioskGuideInTheRepository(t *testing.T) {
 
 // Q78: the choice sun or room light only when the device reports a sensor.
 func TestRoomLightIsOfferedOnlyWithASensor(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "eink_bw", url.Values{"light_source": {"room"}})
 	fake.mu.Lock()
 	fake.sensor = true
@@ -172,6 +177,7 @@ func TestRoomLightIsOfferedOnlyWithASensor(t *testing.T) {
 
 // Q77: Off or dimmed, one explanation per display type; wake time only with Off, level only with Dimmed.
 func TestQuietChoiceExplainsWhatHappensPerDisplayType(t *testing.T) {
+	t.Parallel()
 	f, _ := kioskBox(t, "eink_bw", quietForm(nil))
 	want(t, "E-Ink", bright(t, f.settingsPage(t, de)), "Frontlicht aus. Die Nachtseite bleibt stehen, im Dunkeln ist sie nicht zu sehen.", "Die Nachtseite bleibt leise sichtbar.")
 	s, _ := kioskBox(t, "screen", quietForm(nil))
@@ -179,6 +185,7 @@ func TestQuietChoiceExplainsWhatHappensPerDisplayType(t *testing.T) {
 }
 
 func TestQuietBrightnessIsASentenceWhileQuietModeIsOff(t *testing.T) {
+	t.Parallel()
 	f, _ := kioskBox(t, "screen", nil)
 	b := bright(t, f.settingsPage(t, de))
 	want(t, "quiet off", b, "Der Ruhemodus ist aus. Nachts gilt die Abend-Helligkeit. Einschalten kannst du ihn oben unter „Nachts“.")
@@ -186,6 +193,7 @@ func TestQuietBrightnessIsASentenceWhileQuietModeIsOff(t *testing.T) {
 }
 
 func TestBrightnessShowsTheErrorWhenTheKioskAppDoesNotAnswer(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "screen", nil)
 	fake.setFail(true)
 	f.tick(f.at(14, 17, 0))
@@ -198,6 +206,7 @@ func TestBrightnessShowsTheErrorWhenTheKioskAppDoesNotAnswer(t *testing.T) {
 }
 
 func TestBrightnessWithoutAHomeLocationSaysDayAppliesAllDay(t *testing.T) {
+	t.Parallel()
 	f, _ := kioskBox(t, "screen", nil)
 	f.withoutLocation(t)
 	b := bright(t, f.settingsPage(t, de))
@@ -210,6 +219,7 @@ func TestBrightnessWithoutAHomeLocationSaysDayAppliesAllDay(t *testing.T) {
 
 // Saving: the form values reach the store, and the page shows them again.
 func TestBrightnessValuesAreSavedFromTheForm(t *testing.T) {
+	t.Parallel()
 	f, _ := kioskBox(t, "screen", quietForm(nil))
 	form := url.Values{"bright_day": {"80"}, "bright_evening": {"25"}, "quiet_light": {"dim"}, "bright_quiet": {"3"}, "wake_minutes": {"5"}}
 	if r := f.saveSettings(t, quietForm(form)); r.status != http.StatusSeeOther {
@@ -225,6 +235,7 @@ func TestBrightnessValuesAreSavedFromTheForm(t *testing.T) {
 
 // The wake time reads "Minute" for 1 and "Minuten" otherwise.
 func TestWakeUnitFollowsTheNumber(t *testing.T) {
+	t.Parallel()
 	f, _ := kioskBox(t, "screen", quietForm(url.Values{"wake_minutes": {"1"}}))
 	if b := bright(t, f.settingsPage(t, de)); !strings.Contains(b, `<span class="unit">Minute</span>`) {
 		t.Error("1 is not Minute")
@@ -237,6 +248,7 @@ func TestWakeUnitFollowsTheNumber(t *testing.T) {
 
 // Preview 7: a number outside its range is refused at its field; the sentence on top names the block.
 func TestBrightnessErrorsSitAtTheirFieldAndNameTheBlock(t *testing.T) {
+	t.Parallel()
 	f, _ := kioskBox(t, "screen", quietForm(nil))
 	r := f.do(http.MethodPost, "/displays/"+f.displayID(t)+"/settings", url.Values{"bright_evening": {"140"}, "wake_minutes": {"0"}}, de)
 	if r.status != http.StatusUnprocessableEntity {
@@ -264,6 +276,7 @@ func TestBrightnessErrorsSitAtTheirFieldAndNameTheBlock(t *testing.T) {
 // A value that was changed but not yet sent is not shown as confirmed: the
 // page works out the new target and says the box passes it on.
 func TestBrightnessBlockDoesNotSayConfirmedForAChangeNotYetSent(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "eink_bw", url.Values{"bright_evening": {"25"}})
 	f.tick(f.at(14, 17, 0))
 	fake.take()

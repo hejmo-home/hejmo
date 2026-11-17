@@ -26,6 +26,7 @@ func saverFixture(t *testing.T, typ string) (*familyBox, *apiClient, string) {
 }
 
 func TestDisplayPageHasTheScreensaverBlockBetweenWhatItShowsAndNight(t *testing.T) {
+	t.Parallel()
 	f, c, id := saverFixture(t, "screen")
 	uploaded(t, c, defaultAlbum(t, c), "a.jpg")
 	page := f.get("/displays/" + id).body
@@ -46,6 +47,7 @@ func TestDisplayPageHasTheScreensaverBlockBetweenWhatItShowsAndNight(t *testing.
 }
 
 func TestDisplayWithoutPhotosOffersToAddSome(t *testing.T) {
+	t.Parallel()
 	f, _, id := saverFixture(t, "screen")
 	page := f.get("/displays/" + id).body
 	if !strings.Contains(page, "Noch keine Fotos.") || !strings.Contains(page, "Fotos hinzufügen") || strings.Contains(page, `name="saver_album"`) {
@@ -54,6 +56,7 @@ func TestDisplayWithoutPhotosOffersToAddSome(t *testing.T) {
 }
 
 func TestSavingTheScreensaverBlockChoosesAlbumsAndMinutes(t *testing.T) {
+	t.Parallel()
 	f, c, id := saverFixture(t, "eink_bw")
 	trip := newAlbum(t, c, "Urlaub")
 	uploaded(t, c, trip, "a.jpg")
@@ -84,6 +87,7 @@ func TestSavingTheScreensaverBlockChoosesAlbumsAndMinutes(t *testing.T) {
 }
 
 func TestScreensaverPageShowsAPhotoWithTimeAndDateInWords(t *testing.T) {
+	t.Parallel()
 	f, c, _ := saverFixture(t, "screen")
 	uploaded(t, c, defaultAlbum(t, c), "a.jpg")
 	r := f.display.get("/display/saver", "de")
@@ -123,6 +127,7 @@ func regexpFirst(s, re string) string {
 }
 
 func TestScreensaverWithoutPhotosShowsAHintWithABigWayBack(t *testing.T) {
+	t.Parallel()
 	f, c, id := saverFixture(t, "screen")
 	r := f.display.get("/display/saver", "de").body
 	for _, want := range []string{"Hier erscheinen bald eure Fotos", "tippt auf „Einstellungen“ und dann auf „Fotos“", `class="button big" href="/display"`, "Zurück zum Tag", "Oder tippe irgendwo auf den Bildschirm.", "13:00"} {
@@ -150,6 +155,7 @@ func TestScreensaverWithoutPhotosShowsAHintWithABigWayBack(t *testing.T) {
 }
 
 func TestScreensaverNeverRunsInQuietModeOrWhenOff(t *testing.T) {
+	t.Parallel()
 	f, c, id := saverFixture(t, "screen")
 	uploaded(t, c, defaultAlbum(t, c), "a.jpg")
 	if page := f.display.get("/display", "de").body; !strings.Contains(page, `data-saver-seconds="600"`) {
@@ -173,6 +179,7 @@ func TestScreensaverNeverRunsInQuietModeOrWhenOff(t *testing.T) {
 }
 
 func TestBlackAndWhiteEInkMarksItsScreensaverForGreyscale(t *testing.T) {
+	t.Parallel()
 	f, c, _ := saverFixture(t, "eink_bw")
 	uploaded(t, c, defaultAlbum(t, c), "a.jpg")
 	r := f.display.get("/display/saver", "de")
@@ -186,6 +193,7 @@ func TestBlackAndWhiteEInkMarksItsScreensaverForGreyscale(t *testing.T) {
 // switched on, also at night, and ask the box (the display state) whether the
 // screensaver is due when it fires.
 func TestScreensaverStartsAgainAfterQuietModeWithoutReloadingTheFamilyView(t *testing.T) {
+	t.Parallel()
 	f, c, id := saverFixture(t, "screen")
 	uploaded(t, c, defaultAlbum(t, c), "a.jpg")
 	f.post("/displays/"+id+"/settings", url.Values{"quiet": {"1"}, "quiet_from": {"12:00"}, "quiet_to": {"14:00"}, "saver": {"1"}, "saver_idle": {"10"}, "saver_interval": {"1"}, "saver_all": {"1"}})
@@ -220,6 +228,7 @@ func TestScreensaverStartsAgainAfterQuietModeWithoutReloadingTheFamilyView(t *te
 }
 
 func TestADisplayGetsOnlyThePhotosItShows(t *testing.T) {
+	t.Parallel()
 	f, c, id := saverFixture(t, "screen")
 	def := defaultAlbum(t, c)
 	shown := uploaded(t, c, def, "shown.jpg")
@@ -245,6 +254,7 @@ func TestADisplayGetsOnlyThePhotosItShows(t *testing.T) {
 // A folder photo that changed keeps its id: what a display or browser has
 // cached must not hide the new copy.
 func TestAPhotoWhoseStoredCopyWasMadeAgainIsNotServedFromTheCache(t *testing.T) {
+	t.Parallel()
 	f, c, _ := saverFixture(t, "screen")
 	id := uploaded(t, c, defaultAlbum(t, c), "a.jpg")
 	later := time.Date(2030, 1, 1, 12, 0, 0, 0, time.UTC)

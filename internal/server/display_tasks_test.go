@@ -29,6 +29,7 @@ func progressOf(t *testing.T, page, who string) string {
 // 6.6 (ADR 0016): each column shows the person's task progress today as
 // done/total; a person without tasks today shows no bar.
 func TestFamilyViewColumnsShowTodaysTaskProgress(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	a := f.task(t, "Mia", "Homework", task.Daily)
 	f.task(t, "Mia", "Feed the cat", task.Daily)
@@ -55,6 +56,7 @@ func TestFamilyViewColumnsShowTodaysTaskProgress(t *testing.T) {
 // the web interface, then it is immediately visible as done on the display:
 // in the personal view and in the progress of the family view.
 func TestParentsConfirmationShowsOnTheDisplayImmediately(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	tk := f.task(t, "Mia", "Homework", task.Daily)
 	f.now = f.at(14, 9, 0)
@@ -75,6 +77,7 @@ func TestParentsConfirmationShowsOnTheDisplayImmediately(t *testing.T) {
 // 6.6 x 5.5: a tick, from either side, makes the box announce a new version of
 // the family view and of the personal view within the live interval.
 func TestTickingAnnouncesNewVersionsOfBothViews(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
 	tk := l.task(t, "Mia", "Homework", task.Daily)
 	family := l.open(t)
@@ -100,6 +103,7 @@ func TestTickingAnnouncesNewVersionsOfBothViews(t *testing.T) {
 // web page reads the same state; the web page shows it on the next load, not live), and the family view
 // counts it.
 func TestTickOnTheDisplayIsDoneInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	tk := f.task(t, "Mia", "Homework", task.Daily)
 	f.now = f.at(14, 9, 0)
@@ -117,6 +121,7 @@ func TestTickOnTheDisplayIsDoneInTheWebInterface(t *testing.T) {
 // The display script treats a redirected tick as "go back to /display"
 // (revoked display, deleted task). This pins the server side of that contract.
 func TestTickFromARevokedDisplayRedirectsToThePairingScreen(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	tk := f.task(t, "Mia", "Homework", task.Daily)
 	f.now = f.at(14, 9, 0)

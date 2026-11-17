@@ -11,6 +11,7 @@ import (
 // Q79: a touch while quiet mode switched the display off wakes it for the
 // adjustable minutes at evening brightness, showing the night page.
 func TestATouchWakesAQuietDisplayWithTheNightPage(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "screen", quietForm(url.Values{"wake_minutes": {"2"}}))
 	f.tick(f.at(14, 23, 0))
 	fake.take()
@@ -33,6 +34,7 @@ func TestATouchWakesAQuietDisplayWithTheNightPage(t *testing.T) {
 }
 
 func TestOnlyAQuietDisplayWithAKioskAppAndQuietModeOffListensForATouch(t *testing.T) {
+	t.Parallel()
 	// A kiosk app and Off: the black page listens.
 	f, _ := kioskBox(t, "screen", quietForm(nil))
 	if p := f.view(t, "en", f.at(14, 23, 0)); !strings.Contains(p, "data-wake-url") {
@@ -62,6 +64,7 @@ func TestOnlyAQuietDisplayWithAKioskAppAndQuietModeOffListensForATouch(t *testin
 }
 
 func TestWakeNeedsAPairedDisplay(t *testing.T) {
+	t.Parallel()
 	f, _ := kioskBox(t, "screen", nil)
 	if r := newScreen(f.box).post("/display/wake", nil); r.status != http.StatusForbidden {
 		t.Errorf("an unknown browser = %d, want 403", r.status)
@@ -70,6 +73,7 @@ func TestWakeNeedsAPairedDisplay(t *testing.T) {
 
 // ADR 0015 parity: the wake is on the API too, with the display's token.
 func TestAWakeWorksThroughTheAPIWithTheDisplaysToken(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t, withKiosk(&fakeKiosk{}))
 	anon := newAPIClient(t, c.b)
 	_, opened := openAPIPairing(anon)

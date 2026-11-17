@@ -109,6 +109,7 @@ func uploaded(t *testing.T, c *apiClient, album, name string) string {
 }
 
 func TestTheDefaultAlbumExistsFromTheStart(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	list := albums(t, c)
 	if len(list) != 1 || list[0]["default"] != true || list[0]["name"] != "Unsere Fotos" || list[0]["source"] != "upload" {
@@ -120,6 +121,7 @@ func TestTheDefaultAlbumExistsFromTheStart(t *testing.T) {
 }
 
 func TestUploadKeepsAShrunkCopyWithoutLocation(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	album := defaultAlbum(t, c)
 	status, p := c.upload(album, "IMG_0001.jpg", jpegPhoto(t, 2400, 1800))
@@ -152,6 +154,7 @@ func TestUploadKeepsAShrunkCopyWithoutLocation(t *testing.T) {
 }
 
 func TestSomethingThatIsNoPhotoIsRefusedWithAReason(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	album := defaultAlbum(t, c)
 	for name, data := range map[string][]byte{"Reiseplan.pdf": []byte("%PDF-1.7"), "foto.heic": append([]byte{0, 0, 0, 24}, []byte("ftypheic")...)} {
@@ -166,6 +169,7 @@ func TestSomethingThatIsNoPhotoIsRefusedWithAReason(t *testing.T) {
 }
 
 func TestFullStorageRefusesNewPhotosAndDeletesNothing(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	album := defaultAlbum(t, c)
 	keep := uploaded(t, c, album, "first.jpg")
@@ -198,6 +202,7 @@ func TestFullStorageRefusesNewPhotosAndDeletesNothing(t *testing.T) {
 }
 
 func TestPhotoCanBeHiddenFromDisplays(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	album := defaultAlbum(t, c)
 	id := uploaded(t, c, album, "a.jpg")
@@ -215,6 +220,7 @@ func TestPhotoCanBeHiddenFromDisplays(t *testing.T) {
 }
 
 func TestAlbumsAreMadeRenamedMovedAndDeleted(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	def := defaultAlbum(t, c)
 	trip := newAlbum(t, c, "Urlaub Gardasee 2026")
@@ -253,6 +259,7 @@ func TestAlbumsAreMadeRenamedMovedAndDeleted(t *testing.T) {
 }
 
 func TestOnlyAdultsManagePhotos(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	album := defaultAlbum(t, c)
 	id := uploaded(t, c, album, "a.jpg")
@@ -270,6 +277,7 @@ func TestOnlyAdultsManagePhotos(t *testing.T) {
 }
 
 func TestADisplayReadsItsPhotosAndNobodyElseCan(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	anon := newAPIClient(t, c.b)
 	_, opened := openAPIPairing(anon)
@@ -300,6 +308,7 @@ func TestADisplayReadsItsPhotosAndNobodyElseCan(t *testing.T) {
 }
 
 func TestDisplaySettingsCarryTheScreensaver(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	anon := newAPIClient(t, c.b)
 	_, opened := openAPIPairing(anon)

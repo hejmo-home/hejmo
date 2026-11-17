@@ -126,6 +126,7 @@ func eq(t *testing.T, got, want []string) {
 
 // 5.3: Given events for Mama and Mia, each appears in the right column in chronological order.
 func TestFamilyViewPutsEventsInTheRightColumnsInOrder(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.event(t, "Swimming", f.at(14, 16, 0), f.at(14, 17, 0), false, "Mia")
 	f.event(t, "Dentist", f.at(14, 9, 0), f.at(14, 10, 0), false, "Mama")
@@ -141,6 +142,7 @@ func TestFamilyViewPutsEventsInTheRightColumnsInOrder(t *testing.T) {
 
 // 5.3: Given an event with audience Sebastian and Mia, it appears in both their columns.
 func TestFamilyViewShowsAnEventInEachColumnOfItsAudience(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.event(t, "Football", f.at(14, 15, 0), f.at(14, 16, 0), false, "Sebastian", "Mia")
 	cols := columns(t, f.view(t, "en", f.at(14, 8, 0)))
@@ -151,6 +153,7 @@ func TestFamilyViewShowsAnEventInEachColumnOfItsAudience(t *testing.T) {
 
 // 5.3: Given a public holiday in Bavaria, it is shown (and none from other states).
 func TestFamilyViewShowsTheHolidaysOfTheHomeRegion(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	en := f.view(t, "en", f.at(1, 8, 0)) // All Saints' Day: Bavaria
 	if s := strip(t, en); !strings.Contains(s, "All Saints") || !strings.Contains(s, `data-kind="holiday"`) {
@@ -166,6 +169,7 @@ func TestFamilyViewShowsTheHolidaysOfTheHomeRegion(t *testing.T) {
 
 // 5.3: Given an event spanning three days, it appears on each day as part of one bar.
 func TestFamilyViewShowsAThreeDayEventOnEachDayAsOneBar(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.event(t, "Grandparents visit", f.at(13, 0, 0), f.at(16, 0, 0), true, "Mama", "Papa")
 	for day, want := range map[int]string{13: `data-bar="1/3"`, 14: `data-bar="2/3"`, 15: `data-bar="3/3"`} {
@@ -180,6 +184,7 @@ func TestFamilyViewShowsAThreeDayEventOnEachDayAsOneBar(t *testing.T) {
 }
 
 func TestFamilyViewHeaderShowsDateWeekAndClockWithoutLeaveTime(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	en := f.view(t, "en", f.at(14, 7, 58))
 	for _, want := range []string{"Saturday", "CW 46", "14 November", `data-clock>07:58<`} {
@@ -214,6 +219,7 @@ func (f *familyBox) showTomorrow(t *testing.T, on bool) {
 }
 
 func TestFamilyViewTomorrowBlockAppearsFrom1800(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.showTomorrow(t, true)
 	f.event(t, "Piano", f.at(15, 15, 0), f.at(15, 16, 0), false, "Mia")
@@ -229,6 +235,7 @@ func TestFamilyViewTomorrowBlockAppearsFrom1800(t *testing.T) {
 
 // ADR 0016: off by default; switching it on and off is per display.
 func TestFamilyViewTomorrowBlockIsOffUntilTheDisplaySettingIsOn(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.event(t, "Piano", f.at(15, 15, 0), f.at(15, 16, 0), false, "Mia")
 	f.event(t, "Brunch", f.at(15, 10, 0), f.at(15, 11, 0), false)
@@ -247,6 +254,7 @@ func TestFamilyViewTomorrowBlockIsOffUntilTheDisplaySettingIsOn(t *testing.T) {
 }
 
 func TestDisplaysPageShowsTheTomorrowSetting(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	if p := f.get("/displays/" + f.displayID(t)).body; !strings.Contains(p, `name="show_tomorrow"`) || strings.Contains(p, `name="show_tomorrow" checked`) {
 		t.Fatalf("setting missing or on by default:\n%s", p)
@@ -261,6 +269,7 @@ func TestDisplaysPageShowsTheTomorrowSetting(t *testing.T) {
 }
 
 func TestFamilyViewUsesThePaletteOfTheDisplayType(t *testing.T) {
+	t.Parallel()
 	bw := newFamilyBox(t, "eink_bw")
 	if p := bw.view(t, "en", bw.at(14, 8, 0)); !strings.Contains(p, `data-theme="bw"`) {
 		t.Error("E-Ink black-and-white display lacks the bw palette")
@@ -275,6 +284,7 @@ func TestFamilyViewUsesThePaletteOfTheDisplayType(t *testing.T) {
 // orientation is the stylesheet's job (web/layout_test.go), so the markup
 // carries the count and no view-dependent scroll flag.
 func TestFamilyViewRendersOneColumnPerPersonWithoutScrollFlag(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	for _, n := range []string{"Oma", "Opa", "Tante"} {
 		f.db.AddPerson(f.householdID, store.Person{Name: n, Role: store.RoleChild})
@@ -291,6 +301,7 @@ func TestFamilyViewRendersOneColumnPerPersonWithoutScrollFlag(t *testing.T) {
 // ADR 0016: the progress bar sits at the bottom of the column, after the scrolling events;
 // the footer shows only the tiles that have content.
 func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
+	t.Parallel()
 	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: time.Date(2026, 11, 14, 8, 0, 0, 0, berlinTZ), Lang: "en", Region: "DE-BY", People: []familyview.Person{
 		{ID: "a", Name: "Mia", Slot: 4, Shape: "square-empty"}, {ID: "b", Name: "Papa", Slot: 2, Shape: "circle-empty"}}})
 	v.Columns[0].Progress = &familyview.Progress{Done: 3, Total: 5}
@@ -324,6 +335,7 @@ func TestRenderedViewAnchorsProgressAndHidesEmptyTiles(t *testing.T) {
 // 5.3: Layout matches the spec values (snapshot of the markup, not a pixel render; the
 // stylesheet values are held by web/design_test.go).
 func TestFamilyViewMarkupSnapshot(t *testing.T) {
+	t.Parallel()
 	loc := berlinTZ
 	d := func(day, h, m int) time.Time { return time.Date(2026, 11, day, h, m, 0, 0, loc) }
 	people := []familyview.Person{

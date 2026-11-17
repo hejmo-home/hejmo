@@ -9,6 +9,7 @@ import (
 // 179 (ADR 0015: API parity with the web form): the brightness values of a
 // display through the API, contract-checked against openapi.yaml.
 func TestBrightnessValuesWorkThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
 	_, shown, _ := c.call(http.MethodPost, "/displays", map[string]any{"code": code, "name": "Kitchen", "type": "screen"})
@@ -50,6 +51,7 @@ func TestBrightnessValuesWorkThroughTheAPI(t *testing.T) {
 
 // The API says what the display does now and whether the kiosk app confirmed it.
 func TestTheAPIShowsWhatTheDisplayDoesNow(t *testing.T) {
+	t.Parallel()
 	fake := &fakeKiosk{}
 	c := signedInAPI(t, withKiosk(fake))
 	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
@@ -78,6 +80,7 @@ func TestTheAPIShowsWhatTheDisplayDoesNow(t *testing.T) {
 // The API works out the target fresh, like the settings page: right after a
 // change it says what the display will do and that nothing confirmed it yet.
 func TestTheAPIDoesNotConfirmAChangeThatWasNotSent(t *testing.T) {
+	t.Parallel()
 	fake := &fakeKiosk{}
 	c := signedInAPI(t, withKiosk(fake))
 	code := codeOn(t, newScreen(c.b).get("/display", "en").body)

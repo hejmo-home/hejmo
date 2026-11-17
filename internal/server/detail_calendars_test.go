@@ -11,6 +11,7 @@ import (
 )
 
 func TestCalendarsOverviewListsRowsThatOpenTheirDetailPages(t *testing.T) {
+	t.Parallel()
 	b, cal := icsBox(t)
 	connID := connectedBox(t, b)
 	body := getEN(b, "/calendars").body
@@ -31,6 +32,7 @@ func TestCalendarsOverviewListsRowsThatOpenTheirDetailPages(t *testing.T) {
 }
 
 func TestCalendarDetailShowsFactsSyncNowAndConfirmsRemoving(t *testing.T) {
+	t.Parallel()
 	b, cal := icsBox(t)
 	r := getEN(b, "/calendars/"+cal.ID)
 	if r.status != http.StatusOK {
@@ -52,6 +54,7 @@ func TestCalendarDetailShowsFactsSyncNowAndConfirmsRemoving(t *testing.T) {
 }
 
 func TestSyncNowReturnsToTheDetailPageWithTheSuccessLine(t *testing.T) {
+	t.Parallel()
 	b, cal := icsBox(t)
 	b.now = b.now.Add(time.Hour)
 	if r := b.post("/calendars/"+cal.ID+"/sync", url.Values{}); r.status != http.StatusSeeOther || r.location != "/calendars/"+cal.ID {
@@ -67,6 +70,7 @@ func TestSyncNowReturnsToTheDetailPageWithTheSuccessLine(t *testing.T) {
 }
 
 func TestRemovingACalendarNamesItAndLeavesTheOverview(t *testing.T) {
+	t.Parallel()
 	b, cal := icsBox(t)
 	getEN(b, "/calendars") // the line of adding is shown and gone
 	if r := b.post("/calendars/"+cal.ID+"/delete", url.Values{}); r.status != http.StatusSeeOther || r.location != "/calendars" {
@@ -78,6 +82,7 @@ func TestRemovingACalendarNamesItAndLeavesTheOverview(t *testing.T) {
 }
 
 func TestAFailedSyncIsAProblemFlagOnTheRowAndTheFacts(t *testing.T) {
+	t.Parallel()
 	b, cal := icsBox(t)
 	b.now = b.now.Add(time.Hour)
 	b.feeds.set(feedURL172, "", http.ErrHandlerTimeout)
@@ -92,6 +97,7 @@ func TestAFailedSyncIsAProblemFlagOnTheRowAndTheFacts(t *testing.T) {
 }
 
 func TestACalendarOfAConnectionHasNoPageOfItsOwn(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	connID := connectedBox(t, b)
 	r := b.do(http.MethodPost, "/connections/"+connID+"/calendars", url.Values{"calendar": {flowCalendar}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}}, nil)
@@ -108,6 +114,7 @@ func TestACalendarOfAConnectionHasNoPageOfItsOwn(t *testing.T) {
 // ADR 0017: who a subscribed calendar is for is told by the person's marker
 // and name, subgroups by name, or "Whole family" when nobody is chosen.
 func TestSubscribedCalendarRowsSayWhoTheyAreFor(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h := mustHousehold(t, c)
 	mia, _ := c.b.db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})

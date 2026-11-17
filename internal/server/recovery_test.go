@@ -42,6 +42,7 @@ func loginWith(b *box, user, password, code string) resp {
 
 // 5.20: when one-time codes are set up, the box shows 10 recovery codes.
 func TestSetupShowsTenRecoveryCodesOnce(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	secret := secretOn(t, b.get("/setup/totp").body)
@@ -58,6 +59,7 @@ func TestSetupShowsTenRecoveryCodesOnce(t *testing.T) {
 
 // 5.20: a recovery code signs in once; the code is spent.
 func TestRecoveryCodeSignsInOnceAndNeedsThePassword(t *testing.T) {
+	t.Parallel()
 	b, _, codes := setupWithCodes(t)
 	if r := loginWith(b, "mama", "wrong horse battery", codes[0]); r.status != http.StatusUnauthorized {
 		t.Fatalf("recovery code with wrong password = %d, want 401", r.status)
@@ -79,6 +81,7 @@ func TestRecoveryCodeSignsInOnceAndNeedsThePassword(t *testing.T) {
 
 // 5.20: recovery codes are stored hashed.
 func TestRecoveryCodesAreStoredHashed(t *testing.T) {
+	t.Parallel()
 	b, _, codes := setupWithCodes(t)
 	rows, err := b.db.SQL().Query(`SELECT code_hash FROM recovery_codes`)
 	if err != nil {
@@ -105,6 +108,7 @@ func TestRecoveryCodesAreStoredHashed(t *testing.T) {
 }
 
 func TestNewSetOfRecoveryCodesVoidsTheOldOne(t *testing.T) {
+	t.Parallel()
 	b, secret, old := setupWithCodes(t)
 	loginWith(b, "mama", "correct horse battery", func() string { c, _ := auth.TOTPCode(secret, b.now); return c }())
 	r := b.post("/account/recovery-codes", url.Values{})
@@ -143,6 +147,7 @@ func totpNow(b *box, secret string) string { c, _ := auth.TOTPCode(secret, b.now
 
 // 5.20: when parent A resets parent B's one-time codes, B sets them up again at the next sign-in.
 func TestParentResetsAnotherParentsOneTimeCodes(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, papaSecret := secondParent(t, b)
 	// Papa is signed in on a browser when Mama resets him.
@@ -226,6 +231,7 @@ func TestParentResetsAnotherParentsOneTimeCodes(t *testing.T) {
 }
 
 func TestParentCannotResetTheirOwnCodes(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
 	mama, _ := b.db.AccountByUsername("mama")
@@ -239,6 +245,7 @@ func TestParentCannotResetTheirOwnCodes(t *testing.T) {
 }
 
 func TestChildrenCannotUseTheOneTimeCodePagesOrEndpoints(t *testing.T) {
+	t.Parallel()
 	b, _, _ := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	mia := childSession(t, b)
@@ -266,6 +273,7 @@ func TestChildrenCannotUseTheOneTimeCodePagesOrEndpoints(t *testing.T) {
 }
 
 func TestResetOfAnUnknownOrNonParentTargetIsNotFound(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
 	h, _ := b.db.HomeHousehold()
@@ -289,6 +297,7 @@ func TestResetOfAnUnknownOrNonParentTargetIsNotFound(t *testing.T) {
 
 // The reset confirmation also accepts an unused recovery code, which is then spent.
 func TestRecoveryCodeConfirmsAResetAndIsSpent(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, codes := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
@@ -308,6 +317,7 @@ func TestRecoveryCodeConfirmsAResetAndIsSpent(t *testing.T) {
 // After five failed confirmations the web form and the API both answer 429,
 // even with the right password and code.
 func TestResetConfirmationIsRateLimitedOnWebAndAPI(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
@@ -334,6 +344,7 @@ func TestResetConfirmationIsRateLimitedOnWebAndAPI(t *testing.T) {
 
 // The error appears at the form that failed, not at page level.
 func TestResetErrorShowsAtTheFailingParent(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
@@ -349,6 +360,7 @@ func TestResetErrorShowsAtTheFailingParent(t *testing.T) {
 }
 
 func TestRecoveryCodeCountReadsRightForOne(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
 	mama, _ := b.db.AccountByUsername("mama")
@@ -360,6 +372,7 @@ func TestRecoveryCodeCountReadsRightForOne(t *testing.T) {
 
 // Parity: the same through the REST API, contract-checked against openapi.yaml.
 func TestRecoveryAndResetThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
@@ -450,6 +463,7 @@ func TestResetConfirmationDoesTheSameWorkWhateverTheOutcome(t *testing.T) {
 // A person whose codes were reset may only set new ones up: a still-valid API
 // token must not mint recovery codes for the account in that state.
 func TestPendingAccountCannotMintRecoveryCodesWithAToken(t *testing.T) {
+	t.Parallel()
 	b, secret, _ := setupWithCodes(t)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, secret))
 	session := newAPIClient(t, b)
@@ -470,6 +484,7 @@ func TestPendingAccountCannotMintRecoveryCodesWithAToken(t *testing.T) {
 
 // The wizard ends on the recovery codes; the welcome line follows on the home page.
 func TestSetupWelcomeFollowsTheRecoveryCodes(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	secret := secretOn(t, b.get("/setup/totp").body)
@@ -484,6 +499,7 @@ func TestSetupWelcomeFollowsTheRecoveryCodes(t *testing.T) {
 }
 
 func TestRecoveryCodesPageAndResetFormsUseSharedPatterns(t *testing.T) {
+	t.Parallel()
 	b, secret, _ := setupWithCodes(t)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, secret))
 	papa, _ := secondParent(t, b)
@@ -499,6 +515,7 @@ func TestRecoveryCodesPageAndResetFormsUseSharedPatterns(t *testing.T) {
 // ADR 0017: after a reset the parent's password is followed by a new setup. A
 // paired phone keeps its session but must not take that setup over.
 func TestResetParentsPhoneCannotSetUpTheirOneTimeCodes(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, papaSecret := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))

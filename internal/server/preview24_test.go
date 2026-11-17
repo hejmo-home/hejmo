@@ -20,6 +20,7 @@ import (
 // the real view model with the real template for the example family.
 // Run: HEJMO_WRITE_PREVIEW_24=../../docs/design/preview-24.html go test ./internal/server -run WriteDesignPreview24
 func TestWriteDesignPreview24(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_24")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_24 to the output path to write the preview")

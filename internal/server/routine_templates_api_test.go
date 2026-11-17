@@ -56,6 +56,7 @@ func tplStepTitles(tpl map[string]any) []string {
 }
 
 func TestShippedRoutineTemplatesAreListedInGerman(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	status, _, list := tb.parent.call(http.MethodGet, "/routine-templates", nil)
 	if status != http.StatusOK || len(list) != 4 {
@@ -83,6 +84,7 @@ func TestShippedRoutineTemplatesAreListedInGerman(t *testing.T) {
 
 // Acceptance (#92, 1): Given "Morgen Schulkind", when a parent applies it to Sebastian, he has a morning routine with its steps.
 func TestApplyingAShippedTemplateGivesThePersonARoutine(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	seb := tb.sebastian(t)
 	status, r, _ := tb.parent.call(http.MethodPost, "/routines", map[string]any{"person_id": seb, "template_id": "school-morning"})
@@ -109,6 +111,7 @@ func TestApplyingAShippedTemplateGivesThePersonARoutine(t *testing.T) {
 
 // Acceptance (#92, 3): Given a parent saves Mia's evening routine as a template, it can be applied to another person.
 func TestSavedTemplateCanBeAppliedToAnotherPerson(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	seb := tb.sebastian(t)
 	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "")
@@ -129,6 +132,7 @@ func TestSavedTemplateCanBeAppliedToAnotherPerson(t *testing.T) {
 
 // Acceptance (#92, 2): changing the copy does not change the template, and vice versa.
 func TestTemplateAndRoutineMadeFromItStayIndependent(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "Abend")
 	id := tpl["id"].(string)
@@ -184,6 +188,7 @@ func (tb taskBox) miaEveningRoutineID(t *testing.T) string {
 }
 
 func TestSavingATemplateRefusesWhatCannotBeSaved(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.miaEveningRoutine(t)
 	tb.saveTemplate(t, rid, "Abend")
@@ -205,6 +210,7 @@ func TestSavingATemplateRefusesWhatCannotBeSaved(t *testing.T) {
 }
 
 func TestEditingAnOwnTemplateInTheAPI(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "Abend")
 	id := tpl["id"].(string)
@@ -235,6 +241,7 @@ func TestEditingAnOwnTemplateInTheAPI(t *testing.T) {
 }
 
 func TestShippedAndForeignTemplatesCannotBeChanged(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	for _, c := range []struct {
 		method, path string
@@ -256,6 +263,7 @@ func TestShippedAndForeignTemplatesCannotBeChanged(t *testing.T) {
 }
 
 func TestChildCannotManageRoutineTemplates(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.miaEveningRoutine(t)
 	tpl := tb.saveTemplate(t, rid, "Abend")
@@ -271,6 +279,7 @@ func TestChildCannotManageRoutineTemplates(t *testing.T) {
 }
 
 func TestDefaultTemplateNameIsShortenedToTheLimit(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.newRoutine(t, tb.miaID, strings.Repeat("A", 58), "evening")
 	if status, r, _ := tb.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": tb.miaID, "routine_id": rid, "title": "Duschen", "repeat": "daily"}); status != http.StatusCreated {
@@ -283,6 +292,7 @@ func TestDefaultTemplateNameIsShortenedToTheLimit(t *testing.T) {
 }
 
 func TestTheLastStepOfATemplateStays(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "Abend")
 	id := tpl["id"].(string)

@@ -92,6 +92,7 @@ func requireChrome(t *testing.T) string {
 // instead of skipping it, so CI cannot pass without running it. The test runs
 // it in a child process pointed at a Chrome that does not exist.
 func TestMissingChromeFailsWhenChromeIsRequired(t *testing.T) {
+	t.Parallel()
 	run := func(require string) (string, error) {
 		cmd := exec.Command(os.Args[0], "-test.run=^TestRenderedLayout$", "-test.v")
 		cmd.Env = []string{"PATH=", "HEJMO_CHROME=/nonexistent/chrome", "HEJMO_REQUIRE_CHROME=" + require}
@@ -707,6 +708,7 @@ func wizardPages(t *testing.T) []layoutPage {
 // Every GET route that answers a page is rendered by the check, or is listed
 // in notRendered with its reason: a page added later cannot slip through.
 func TestEveryPageIsInTheRenderedLayoutCheck(t *testing.T) {
+	t.Parallel()
 	f := newLayoutFixture(t)
 	pages := append(layoutPages(t, f), wizardPages(t)...)
 	for _, route := range htmlRoutes(t) {
@@ -745,6 +747,7 @@ func TestEveryPageIsInTheRenderedLayoutCheck(t *testing.T) {
 // must lay out tiles of an article with a picture, one with a symbol, free
 // text, and a tile that warns several people (#166).
 func TestTheLayoutFixtureShowsEveryKindOfTile(t *testing.T) {
+	t.Parallel()
 	f := newLayoutFixture(t)
 	page := f.kid.get("/lists/"+f.lists[0], "en").body
 	for _, want := range []string{`<ul class="tiles"`, `<img src="/articles/`, `🐈`, `<span class="pic letter"`, `<span class="tile-warn">`} {
@@ -817,6 +820,7 @@ func (k knownLayoutProblem) covers(path string, width int, p layoutProblem) bool
 // and black-and-white, in German and English, and fails with the page, width,
 // theme and element where text overflows or a name breaks.
 func TestRenderedLayout(t *testing.T) {
+	t.Parallel()
 	chrome := requireChrome(t)
 	f := newLayoutFixture(t)
 	pages := append(layoutPages(t, f), wizardPages(t)...)
@@ -940,6 +944,7 @@ const langCookieForTest = "hejmo_lang"
 // The probe itself is tested on small pages: each case is a page body, the
 // width it is rendered at, and the kinds of problem the probe must report.
 func TestLayoutProbeFindsWhatItShould(t *testing.T) {
+	t.Parallel()
 	ctx := startChrome(t, requireChrome(t))
 	const clip = `style="width:100px;overflow:hidden"`
 	for _, c := range []struct {
@@ -995,6 +1000,7 @@ func TestLayoutProbeFindsWhatItShould(t *testing.T) {
 }
 
 func TestTheFormAndAShippedArticleAreDifferentPages(t *testing.T) {
+	t.Parallel()
 	form, article := pageShape("/settings/lists/library/new"), pageShape("/settings/lists/library/walnuts")
 	if form == article {
 		t.Errorf("the form and a shipped article share the shape %q, so the crawl renders only one of them", form)
@@ -1013,6 +1019,7 @@ func TestTheFormAndAShippedArticleAreDifferentPages(t *testing.T) {
 // Home) need a shrinkable box for the name, or the name overflows instead.
 // The check opens each heading at 300 px with a one-word name of 30 letters.
 func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
+	t.Parallel()
 	chrome := requireChrome(t)
 	const long = "Hubertusmariaaloisiusferdinand"
 	f := newFamilyBox(t, "eink_color")

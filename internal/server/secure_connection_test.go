@@ -94,6 +94,7 @@ func routerBox(t *testing.T, names ...string) (*box, *fakeResolver) {
 // Acceptance: the card "Nur im Heimnetz" has a fourth line "Unterwegs?" with a
 // link to the WireGuard chapter; the link opens a new tab; no other card has it.
 func TestOwnCACardHasTheAwayLineWithAGuideLinkAndNoOtherCardDoes(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	for lang, c := range map[string]struct{ label, text, link, url string }{
 		"de": {"Unterwegs?", "Mit einem VPN wie WireGuard (z.\u00a0B. in der FRITZ!Box) bist du auch von unterwegs im Heimnetz.", "Anleitung für WireGuard", guideDE},
@@ -122,6 +123,7 @@ func TestOwnCACardHasTheAwayLineWithAGuideLinkAndNoOtherCardDoes(t *testing.T) {
 // Acceptance: the page "Nur im Heimnetz" lists the names (ul.certnames); the
 // first point of ul.homeonly names the VPN way with the link.
 func TestOwnCAPageListsTheNamesAndNamesTheVPNWayFirst(t *testing.T) {
+	t.Parallel()
 	b, _ := routerBox(t)
 	r := ownPage(b, "de")
 	if r.status != http.StatusOK {
@@ -151,6 +153,7 @@ func TestOwnCAPageListsTheNamesAndNamesTheVPNWayFirst(t *testing.T) {
 // Acceptance: "More options" has the optional router name, empty when the box
 // finds none (frame 2).
 func TestRouterNameFieldIsEmptyAndClosedWhenTheRouterKnowsNoName(t *testing.T) {
+	t.Parallel()
 	b, resolver := routerBox(t)
 	body := ownPage(b, "de").body
 	if got := resolver.lookups(); !slices.Equal(got, []string{lanAddress}) {
@@ -174,6 +177,7 @@ func TestRouterNameFieldIsEmptyAndClosedWhenTheRouterKnowsNoName(t *testing.T) {
 // address, fake resolver) and prefills the field; the name is in the list and
 // "More options" is open and names it (frame 14).
 func TestRouterNameIsPrefilledByAReverseLookupOfTheBoxAddress(t *testing.T) {
+	t.Parallel()
 	b, resolver := routerBox(t, "Hejmo.Fritz.Box.")
 	body := ownPage(b, "de").body
 	if got := resolver.lookups(); !slices.Equal(got, []string{lanAddress}) {
@@ -191,6 +195,7 @@ func TestRouterNameIsPrefilledByAReverseLookupOfTheBoxAddress(t *testing.T) {
 }
 
 func TestReverseLookupSkipsWhatACertificateCannotCarryAndSurvivesFailure(t *testing.T) {
+	t.Parallel()
 	// The first usable name wins; "hejmo.local" is covered anyway, "localhost" and an address are no router names.
 	b, _ := routerBox(t, "localhost.", "hejmo.local.", "wohn zimmer.lan.", "box.lan.", "other.lan.")
 	if got := certNamesOn(t, ownPage(b, "de").body); !slices.Equal(got, []string{"hejmo.local", lanAddress, "box.lan"}) {
@@ -227,6 +232,7 @@ func TestOwnCAOnlyBoxAsksTheRouterToo(t *testing.T) {
 }
 
 func TestReverseLookupOnlyAsksAboutAddressesOfTheHomeNetwork(t *testing.T) {
+	t.Parallel()
 	resolver := &fakeResolver{names: map[string][]string{"8.8.8.8": {"dns.google."}}}
 	b := newFreshBox(t, withResolver(resolver))
 	for _, host := range []string{"8.8.8.8", "hejmo.local", "box.example.org"} {
@@ -241,6 +247,7 @@ func TestReverseLookupOnlyAsksAboutAddressesOfTheHomeNetwork(t *testing.T) {
 }
 
 func TestOwnCAPageIsGermanAndEnglish(t *testing.T) {
+	t.Parallel()
 	b, _ := routerBox(t, "hejmo.fritz.box.")
 	en := ownPage(b, "en").body
 	for _, want := range []string{"The certificate is valid for these addresses:", "Name in the router: hejmo.fritz.box", "Name in the router (optional)", "The box found this name in your router.", guideEN} {
@@ -253,6 +260,7 @@ func TestOwnCAPageIsGermanAndEnglish(t *testing.T) {
 // Acceptance: the certificate covers the entered router name; an empty field
 // means none, as before.
 func TestCreatingTheCertificateWithARouterName(t *testing.T) {
+	t.Parallel()
 	b, _ := routerBox(t)
 	r := ownPost(b, "de", url.Values{"router_name": {" Hejmo.Fritz.Box "}})
 	if r.status != http.StatusSeeOther || r.location != "/ca" {
@@ -267,6 +275,7 @@ func TestCreatingTheCertificateWithARouterName(t *testing.T) {
 }
 
 func TestCreatingTheCertificateWithoutARouterNameStaysAsBefore(t *testing.T) {
+	t.Parallel()
 	b, _ := routerBox(t)
 	if r := ownPost(b, "de", url.Values{"router_name": {""}}); r.status != http.StatusSeeOther || r.location != "/ca" {
 		t.Fatalf("POST = %d %q", r.status, r.location)
@@ -279,6 +288,7 @@ func TestCreatingTheCertificateWithoutARouterNameStaysAsBefore(t *testing.T) {
 // Acceptance (name validation): the error is at the field, in words, and what
 // was typed stays; nothing is created.
 func TestRefusedRouterNameComesBackAtTheFieldAndCreatesNothing(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct{ typed, want string }{
 		{"hejmo", "Der Name braucht einen Punkt, zum Beispiel hejmo.fritz.box. So zeigt ihn die FRITZ!Box beim Gerät der Box."},
 		{"hejmo box.fritz.box", "Nur Buchstaben a bis z, Ziffern, Bindestrich und Punkte."},
@@ -307,6 +317,7 @@ func TestRefusedRouterNameComesBackAtTheFieldAndCreatesNothing(t *testing.T) {
 // Acceptance: the hub has the row "Sichere Verbindung" after "Haushalt", with
 // the way in words as its state.
 func TestSettingsHubHasTheRowSichereVerbindungAfterHaushalt(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := b.do(http.MethodGet, "/settings", nil, map[string]string{"Accept-Language": "de"}).body
 	for _, want := range []string{`<a class="hub-row" href="/settings/https">`, `<strong>Sichere Verbindung</strong>`, `<b>Nur im Heimnetz.</b> Für welche Adressen das Zertifikat der Box gilt, Name im Router und der Weg von unterwegs über ein VPN.`} {
@@ -327,6 +338,7 @@ func TestSettingsHubHasTheRowSichereVerbindungAfterHaushalt(t *testing.T) {
 // Acceptance: the page has breadcrumbs (#182), the facts and the three tiles
 // (frame 16).
 func TestSettingsPageShowsFactsAndTheTwoTiles(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.do(http.MethodGet, "/settings/https", nil, map[string]string{"Accept-Language": "de"})
 	if r.status != http.StatusOK {
@@ -358,6 +370,7 @@ func TestSettingsPageShowsFactsAndTheTwoTiles(t *testing.T) {
 
 // Acceptance: the form states the cost first, before the one button.
 func TestRouterNameFormStatesTheCostBeforeTheButton(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := b.do(http.MethodGet, "/settings/https", nil, map[string]string{"Accept-Language": "de"}).body
 	form := regexp.MustCompile(`(?s)<form method="post" action="/settings/https" class="tile netblock">.*?</form>`).FindString(body)
@@ -380,6 +393,7 @@ func TestRouterNameFormStatesTheCostBeforeTheButton(t *testing.T) {
 // page itself (it comes over the old connection), with the success line and the
 // one next step "Der Box neu vertrauen" (frame 18).
 func TestEnteringTheRouterNameMakesANewCAAndLeadsToTrustingTheBoxAgain(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	before := b.pki.CAFingerprint()
 	r := postDE(b, "/settings/https", url.Values{"router_name": {"hejmo.fritz.box"}})
@@ -429,6 +443,7 @@ func postDE(b *box, path string, form url.Values) resp {
 }
 
 func TestNewCAKeepsTheBoxServingAndTheOldNamesCovered(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if r := postDE(b, "/settings/https", url.Values{"router_name": {"hejmo.fritz.box"}}); r.status != http.StatusOK {
 		t.Fatalf("POST = %d", r.status)
@@ -442,6 +457,7 @@ func TestNewCAKeepsTheBoxServingAndTheOldNamesCovered(t *testing.T) {
 
 // Acceptance: field errors keep the input; the CA stays as it was.
 func TestSettingsFormErrorsStayAtTheFieldAndKeepTheInput(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct{ typed, want string }{
 		{"hejmo", "Der Name braucht einen Punkt, zum Beispiel hejmo.fritz.box. So zeigt ihn die FRITZ!Box beim Gerät der Box."},
 		{"hejmo box.fritz.box", "Nur Buchstaben a bis z, Ziffern, Bindestrich und Punkte."},
@@ -472,6 +488,7 @@ func TestSettingsFormErrorsStayAtTheFieldAndKeepTheInput(t *testing.T) {
 }
 
 func TestSettingsPageIsEnglishToo(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := getEN(b, "/settings/https").body
 	for _, want := range []string{"<h1>Secure connection</h1>", "Home network only. The box issues its own certificate.", "<h2>Away from home</h2>", guideEN, "<h2>Name in the router</h2>",
@@ -488,6 +505,7 @@ func TestSettingsPageIsEnglishToo(t *testing.T) {
 
 // Acceptance: public ways show no router-name form: weg, name and "Von unterwegs".
 func TestPublicNameShowsNoRouterNameForm(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.public.name = "mia.dedyn.io"
 	body := b.do(http.MethodGet, "/settings/https", nil, map[string]string{"Accept-Language": "de"}).body
@@ -508,6 +526,7 @@ func TestPublicNameShowsNoRouterNameForm(t *testing.T) {
 }
 
 func TestOnlyParentsOpenTheSecureConnectionPage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	child := childSession(t, b)
 	if r := child.get("/settings/https"); r.status != http.StatusForbidden {
@@ -528,6 +547,7 @@ func TestOnlyParentsOpenTheSecureConnectionPage(t *testing.T) {
 
 // ADR 0015: everything the page does is also possible through the API.
 func TestAPIReportsTheNamesAndSetsTheRouterName(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, body, _ := c.call(http.MethodGet, "/https", nil)
 	names, _ := body["names"].([]any)
@@ -555,6 +575,7 @@ func TestAPIReportsTheNamesAndSetsTheRouterName(t *testing.T) {
 }
 
 func TestAPIRouterNameNeedsTheSettingsWriteScope(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	read := c.withToken(c.newToken("settings:read"))
 	if status, _, _ := read.call(http.MethodGet, "/https", nil); status != http.StatusOK {

@@ -126,6 +126,7 @@ func expect(t *testing.T, what string, got []string, want ...string) {
 // 179, Q34, Q76: Day brightness by day, Evening after sunset at the home
 // location, each sent once when it begins (tested against a fake kiosk API).
 func TestBrightnessFollowsTheSunOnceAtEachSwitch(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "eink_bw", nil)
 	f.tick(f.at(14, 14, 0)) // the sun sets in Munich at about 16:36
 	if !reflect.DeepEqual(fake.who, []string{tablet + " k-1"}) {
@@ -143,6 +144,7 @@ func TestBrightnessFollowsTheSunOnceAtEachSwitch(t *testing.T) {
 }
 
 func TestBrightnessUsesTheAdjustedValuesAndAppliesAChangeAtTheNextTick(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "eink_bw", url.Values{"bright_day": {"80"}, "bright_evening": {"25"}})
 	f.tick(f.at(14, 14, 0))
 	expect(t, "day", fake.take(), "brightness 80")
@@ -155,6 +157,7 @@ func TestBrightnessUsesTheAdjustedValuesAndAppliesAChangeAtTheNextTick(t *testin
 
 // Q77: quiet mode off is the front light at 0 % on E-Ink and the screen off on a normal screen.
 func TestQuietModeOffSwitchesTheFrontLightOrTheScreenOff(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "eink_bw", quietForm(url.Values{"quiet_from": {"12:00"}, "quiet_to": {"14:00"}}))
 	f.tick(f.at(14, 11, 59))
 	fake.take()
@@ -175,6 +178,7 @@ func TestQuietModeOffSwitchesTheFrontLightOrTheScreenOff(t *testing.T) {
 }
 
 func TestQuietModeCanDimInsteadOfSwitchingOff(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "screen", quietForm(url.Values{"quiet_from": {"12:00"}, "quiet_to": {"14:00"}, "quiet_light": {"dim"}, "bright_quiet": {"7"}}))
 	f.tick(f.at(14, 11, 59))
 	fake.take()
@@ -184,6 +188,7 @@ func TestQuietModeCanDimInsteadOfSwitchingOff(t *testing.T) {
 
 // Q78: room light is offered only when the device reports a sensor; then its sensor regulates.
 func TestRoomLightHandsTheBrightnessToTheDevicesSensorOnlyWhenItHasOne(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "screen", url.Values{"light_source": {"room"}})
 	f.tick(f.at(14, 14, 0))
 	expect(t, "room light without a sensor", fake.take(), "brightness 100") // the sun values keep working
@@ -198,6 +203,7 @@ func TestRoomLightHandsTheBrightnessToTheDevicesSensorOnlyWhenItHasOne(t *testin
 
 // Q79: a touch in quiet mode wakes a switched-off display for a minute at evening brightness.
 func TestATouchWakesTheDisplayForAMinuteInQuietMode(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "screen", quietForm(url.Values{"wake_minutes": {"2"}}))
 	f.tick(f.at(14, 23, 0))
 	expect(t, "quiet", fake.take(), "screen_off")
@@ -212,6 +218,7 @@ func TestATouchWakesTheDisplayForAMinuteInQuietMode(t *testing.T) {
 }
 
 func TestAWakeOutsideQuietModeChangesNothing(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "screen", nil)
 	f.tick(f.at(14, 14, 0))
 	fake.take()
@@ -221,6 +228,7 @@ func TestAWakeOutsideQuietModeChangesNothing(t *testing.T) {
 }
 
 func TestBrightnessIsRetriedAfterAFailureAndTheStateSaysSo(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "eink_bw", nil)
 	id := f.displayID(t)
 	fake.setFail(true)
@@ -242,6 +250,7 @@ func TestBrightnessIsRetriedAfterAFailureAndTheStateSaysSo(t *testing.T) {
 }
 
 func TestDisplaysWithoutKioskOrWithoutLocationAreLeftAlone(t *testing.T) {
+	t.Parallel()
 	fake := &fakeKiosk{}
 	f := newFamilyBox(t, "eink_bw", withKiosk(fake))
 	f.quietOn(t)
@@ -263,6 +272,7 @@ func TestDisplaysWithoutKioskOrWithoutLocationAreLeftAlone(t *testing.T) {
 }
 
 func TestRemovingTheKioskAppForgetsItsState(t *testing.T) {
+	t.Parallel()
 	f, _ := kioskBox(t, "eink_bw", nil)
 	f.tick(f.at(14, 14, 0))
 	f.saveSettings(t, url.Values{"kiosk_url": {""}})
@@ -276,6 +286,7 @@ func TestRemovingTheKioskAppForgetsItsState(t *testing.T) {
 // first answer after a failure sends the target again, even when it is the
 // one that was sent before.
 func TestBrightnessIsSentAgainWhenATabletAnswersAfterAnOutage(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "eink_bw", nil)
 	id := f.displayID(t)
 	f.tick(f.at(14, 17, 0))
@@ -299,6 +310,7 @@ func TestBrightnessIsSentAgainWhenATabletAnswersAfterAnOutage(t *testing.T) {
 
 // A wake looks only at the woken display: the other tablet is not contacted.
 func TestAWakeTicksOnlyTheWokenDisplay(t *testing.T) {
+	t.Parallel()
 	f, fake := kioskBox(t, "screen", quietForm(nil))
 	first := f.displayID(t)
 	code := codeOn(t, newScreen(f.box).get("/display", "en").body)

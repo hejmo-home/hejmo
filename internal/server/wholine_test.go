@@ -18,6 +18,7 @@ var (
 // person names nobody, and no card or family strip item renders a person marker.
 // The column headers keep theirs, the legend for black and white.
 func TestCardsAndAllDayRowSayInWordsWhoTheEventIsFor(t *testing.T) {
+	t.Parallel()
 	for _, theme := range []string{"eink_color", "eink_bw", "screen"} {
 		f := newFamilyBox(t, theme)
 		f.event(t, "Football", f.at(14, 15, 0), f.at(14, 16, 0), false, "Sebastian", "Mia")
@@ -64,6 +65,7 @@ func flat(m [][]string) []string {
 
 // 5.22: the German page uses the German words.
 func TestWhoLineIsGerman(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.event(t, "Fußball", f.at(14, 15, 0), f.at(14, 16, 0), false, "Sebastian", "Mia")
 	page := f.view(t, "de", f.at(14, 8, 0))
@@ -75,6 +77,7 @@ func TestWhoLineIsGerman(t *testing.T) {
 // 5.22: the web week shows the who-line under the time on every card, with
 // nobody left out, and no person markers.
 func TestWeekCalendarShowsTheWhoLineOnEveryCard(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	ev := func(title, date string, who ...string) {
 		v := eventForm(title, date, "15:00", "16:00")
@@ -112,6 +115,7 @@ func TestWeekCalendarShowsTheWhoLineOnEveryCard(t *testing.T) {
 // 5.22: German subgroup is "mit Gruppe <name>" on the card and the bare name in
 // the strip's brackets; a group name is kept whole like a person's.
 func TestGermanSubgroupSaysGruppeOnTheCardAndNothingInTheBrackets(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	var ids []string
 	for _, n := range []string{"Sebastian", "Mia"} {
@@ -134,6 +138,7 @@ func TestGermanSubgroupSaysGruppeOnTheCardAndNothingInTheBrackets(t *testing.T) 
 // 5.22: every name in a who-line sits in a .nm span, so it never splits across
 // lines: on a card, in the strip and in the web week.
 func TestEveryNameOfAWhoLineSitsInANameSpan(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.event(t, "Training", f.at(14, 17, 0), f.at(14, 18, 0), false, "Mama", "Papa", "Sebastian")
 	f.event(t, "Visit", f.at(14, 0, 0), f.at(15, 0, 0), true, "Mama", "Papa", "Sebastian")

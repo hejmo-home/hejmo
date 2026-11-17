@@ -21,6 +21,7 @@ func routineIDAt(t *testing.T, location string) string {
 }
 
 func TestTasksPageLeadsToTheTemplatesAndSuggestsOneToAChildWithoutTasks(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	p := tb.page(t, "/tasks")
 	has(t, p, `href="/routines/templates"`, "Routine templates", "Mia has no tasks yet", "School-child morning", `href="/routines/new?person=`+tb.miaID+`"`)
@@ -31,6 +32,7 @@ func TestTasksPageLeadsToTheTemplatesAndSuggestsOneToAChildWithoutTasks(t *testi
 }
 
 func TestTemplatesMenuListsOwnFirstThenTheOnesFromHejmoInTheLanguageInUse(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	p := tb.page(t, "/routines/templates")
 	has(t, p, "<h1>Routine templates</h1>", "All tasks", "Your templates", "No templates of your own yet", "Save as template", `href="/tasks"`,
@@ -51,6 +53,7 @@ func TestTemplatesMenuListsOwnFirstThenTheOnesFromHejmoInTheLanguageInUse(t *tes
 }
 
 func TestTemplatesPagesAreForParentsOnly(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	for _, path := range []string{"/routines/templates", "/routines/templates/evening"} {
 		if r := cp.screen.get(path, "en"); r.status != http.StatusForbidden {
@@ -60,6 +63,7 @@ func TestTemplatesPagesAreForParentsOnly(t *testing.T) {
 }
 
 func TestNewRoutinePageOffersTheTemplatesAsChoiceCards(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "Evening routine of Mia")
 	p := tb.page(t, "/routines/new")
@@ -78,6 +82,7 @@ func TestNewRoutinePageOffersTheTemplatesAsChoiceCards(t *testing.T) {
 
 // Acceptance (#92, 1): Given "Morgen Schulkind", when a parent applies it to Sebastian, then he has a morning routine with its steps.
 func TestParentAppliesAShippedTemplateInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	seb := tb.sebastian(t)
 	r := tb.mustPost(t, "/routines", url.Values{"person": {seb}, "part": {"morning"}, "template": {"school-morning"}, "name": {"Morning routine"}})
@@ -94,6 +99,7 @@ func TestParentAppliesAShippedTemplateInTheWebInterface(t *testing.T) {
 }
 
 func TestAShippedTemplateIsCopiedInGerman(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	de := map[string]string{"Accept-Language": "de"}
 	r := tb.parent.b.do(http.MethodPost, "/routines", url.Values{"person": {tb.miaID}, "part": {"afterschool"}, "template": {"school-afternoon"}, "name": {"Nachmittag"}}, de)
@@ -105,6 +111,7 @@ func TestAShippedTemplateIsCopiedInGerman(t *testing.T) {
 }
 
 func TestAnyPartOfTheDayCanBePickedForATemplate(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	r := tb.mustPost(t, "/routines", url.Values{"person": {tb.miaID}, "part": {"evening"}, "template": {"school-morning"}, "name": {""}})
 	got := routineOf(t, tb.parent, routineIDAt(t, r.location))
@@ -114,6 +121,7 @@ func TestAnyPartOfTheDayCanBePickedForATemplate(t *testing.T) {
 }
 
 func TestTemplateAndPersonStayChosenWhenThePartIsTaken(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	first := tb.newRoutine(t, tb.miaID, "Morning routine", "morning")
 	r := tb.parent.b.do(http.MethodPost, "/routines", url.Values{"person": {tb.miaID}, "part": {"morning"}, "template": {"school-morning"}, "name": {"Morning routine"}}, enHeader)
@@ -134,6 +142,7 @@ func TestTemplateAndPersonStayChosenWhenThePartIsTaken(t *testing.T) {
 }
 
 func TestRoutinePageOffersSavingAsATemplateAndExplainsWhatGoesIn(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.miaEveningRoutine(t)
 	p := tb.page(t, "/routines/"+rid)
@@ -162,6 +171,7 @@ func TestRoutinePageOffersSavingAsATemplateAndExplainsWhatGoesIn(t *testing.T) {
 
 // Acceptance (#92, 3): Given a parent saves Mia's evening routine as a template, then it can be applied to Sebastian.
 func TestSavedTemplateIsAppliedToAnotherPersonInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	seb := tb.sebastian(t)
 	rid := tb.miaEveningRoutine(t)
@@ -190,6 +200,7 @@ func TestSavedTemplateIsAppliedToAnotherPersonInTheWebInterface(t *testing.T) {
 }
 
 func TestSavingATemplateRefusesATakenNameAtTheFieldAndSuggestsAnother(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.miaEveningRoutine(t)
 	tb.saveTemplate(t, rid, "Evening routine of Mia")
@@ -213,6 +224,7 @@ func TestSavingATemplateRefusesATakenNameAtTheFieldAndSuggestsAnother(t *testing
 }
 
 func TestOwnTemplatePageShowsFactsStepsAndTheOtherSections(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "Evening routine of Mia")
 	id := tpl["id"].(string)
@@ -235,6 +247,7 @@ func TestOwnTemplatePageShowsFactsStepsAndTheOtherSections(t *testing.T) {
 
 // Acceptance (#92, 2): changing the copy does not change the template, and the other way round.
 func TestChangingTheTemplateLeavesTheRoutineAloneAndSaysSo(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "Evening routine of Mia")
 	id := tpl["id"].(string)
@@ -317,6 +330,7 @@ func TestChangingTheTemplateLeavesTheRoutineAloneAndSaysSo(t *testing.T) {
 }
 
 func TestTemplateNamesAreEscaped(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	rid := tb.miaEveningRoutine(t)
 	tb.mustPost(t, "/routines/"+rid+"/template", url.Values{"tname": {`<script>alert(1)</script>`}})
@@ -326,6 +340,7 @@ func TestTemplateNamesAreEscaped(t *testing.T) {
 }
 
 func TestTheLastStepOfATemplateOffersNoRemoveButANote(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	tpl := tb.saveTemplate(t, tb.miaEveningRoutine(t), "Evening routine of Mia")
 	id := tpl["id"].(string)

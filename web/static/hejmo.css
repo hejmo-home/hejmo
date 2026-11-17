@@ -2534,6 +2534,96 @@ details.repair + details.danger { margin-top: 0; }
   .lvl .lt { flex-basis: 100%; }
   .unitf { margin-left: 34px; }
 }
+/* ticket 201: offline mode and "Verbindungen nach außen". Existing tokens only. */
+/* The notice that offline mode (or one connection) is off, with "Ändern".
+   A chosen state, not a warning: surface card, not notice colours. */
+.offline-note { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap); padding: 6px 14px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-card); color: var(--text); }
+.offline-note > .icon { flex: none; stroke: var(--accent); align-self: flex-start; margin-top: 10px; }
+.offline-note > p { margin: 0; padding: 8px 0; flex: 1 1 240px; min-width: 0; overflow-wrap: break-word; }
+.offline-note > a { flex: none; margin-left: auto; display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.wizard .offline-note, main > .offline-note { margin: 0 0 var(--gap); }
+[data-theme="bw"] .offline-note { border: 2px solid var(--text); }
+[data-theme="bw"] .offline-note > .icon { stroke: var(--text); }
+[data-theme="bw"] .offline-note > a { color: var(--text); text-decoration-thickness: 2px; }
+/* A warning notice with a lead-in and a link (90 days without update). */
+.notice.lead-in { margin: 0 0 var(--gap-section); display: flex; gap: 10px; align-items: flex-start; }
+.notice.lead-in > .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+.notice.lead-in p { margin: 0; overflow-wrap: break-word; }
+.notice.lead-in a { color: inherit; font-weight: 700; }
+[data-theme="bw"] .notice.lead-in { border: 2px solid var(--text); }
+/* The main switch card and its proof line. */
+.steps fieldset.offline-main { gap: 12px; }
+.offline-main .card-row .t b { font-size: var(--fs-person-name); }
+.steps .offline-main .state { font-size: var(--fs-label-large); color: var(--text); }
+.proof { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-weight: 700; color: var(--text); overflow-wrap: break-word; }
+.proof .icon { flex: none; margin-top: 2px; }
+.proof time { white-space: nowrap; }
+/* One row per connection: name, what it is for, where it goes, last contact, switch. */
+.conns { list-style: none; margin: 0; padding: 0; display: grid; }
+.steps .conns > li, .conns > li { display: grid; gap: 4px; padding: 14px 0; border-top: 1px solid var(--border); border-radius: 0; background: none; min-width: 0; }
+.conns > li:first-child { border-top: 0; padding-top: 4px; }
+.conns > li:last-child { padding-bottom: 0; }
+.conns .card-row { align-items: flex-start; }
+.conns .card-row .t { gap: 3px; }
+.steps .conns .t > small, .conns .t > small { display: block; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.steps .conns .t > small.last, .conns .t > small.last { color: var(--text); }
+.conns .t > small.last b { font-size: inherit; font-weight: 700; }
+.conns .names, .meta, .facts dd { hyphens: manual; }
+.conns .names { font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.steps .conns .state, .conns .state { font-size: var(--fs-label); color: var(--text); font-weight: 600; }
+.conns .state .icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; stroke: currentColor; }
+/* Locked switch: still a switch, visibly off and not movable. */
+.switch input:disabled { border-style: dashed; cursor: not-allowed; }
+.switch:has(input:disabled) { cursor: not-allowed; }
+[data-theme="bw"] .conns > li { border-top-color: var(--text); }
+/* Refused attempts: newest first, time, service and target in words. */
+ol.refused { list-style: none; margin: 0 0 var(--gap); padding: 0; max-width: 560px; background: var(--surface); border-radius: var(--radius-tile); }
+ol.refused li { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 16px; padding: 10px 16px; border-top: 1px solid var(--border); }
+ol.refused li:first-child { border-top: 0; }
+ol.refused time { font-variant-numeric: tabular-nums; font-size: var(--fs-label); color: var(--text-secondary); white-space: nowrap; padding-top: 1px; }
+ol.refused b { font-weight: 600; color: var(--text); }
+.card-row .t .state b { font-size: inherit; font-weight: 700; }
+main > section.explain { max-width: 560px; box-sizing: border-box; background: var(--surface); border-radius: var(--radius-tile); padding: 16px; }
+[data-theme="bw"] main > section.explain { border: 2px solid var(--text); }
+ol.refused .to { grid-column: 2; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+@media (max-width: 480px) { ol.refused li { grid-template-columns: minmax(0, 1fr); } ol.refused .to { grid-column: 1; } }
+[data-theme="bw"] ol.refused { border: 2px solid var(--text); }
+[data-theme="bw"] ol.refused li { border-top-color: var(--text); }
+[data-theme="bw"] ol.refused time, [data-theme="bw"] ol.refused .to { color: var(--text); }
+section.block { max-width: 560px; margin: 0 0 var(--gap-section); }
+section.block > h2 { margin: 0 0 6px; }
+section.block > p { margin: 0 0 10px; }
+/* Paused calendar connection: a word tag, not a problem flag. */
+.tag.paused { border-color: var(--text-secondary); color: var(--text); gap: 4px; }
+.tag.paused .icon { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.4; }
+[data-theme="bw"] .tag.paused { border: 2px dashed var(--text); }
+/* Confirmation pages: what goes outside again, grouped, every thing by name. */
+.conns.plain { max-width: 560px; background: var(--surface); border-radius: var(--radius-tile); padding: 6px 16px 14px; box-sizing: border-box; margin: 0 0 var(--gap); }
+.conns.plain > li:first-child { padding-top: 10px; }
+.conns.plain b { font-size: var(--fs-event-title); }
+[data-theme="bw"] .conns.plain, [data-theme="bw"] .cost { border: 2px solid var(--text); }
+.cost { max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap); padding: 16px; background: var(--surface); border-radius: var(--radius-tile); }
+.cost h2 { margin: 0 0 8px; font-size: var(--fs-person-name); }
+.cost ul { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.cost li { overflow-wrap: break-word; }
+.cost .devs { display: block; }
+.cost .devs b { font-weight: 700; }
+.cost .who { display: inline-flex; align-items: center; gap: 6px; margin-right: 10px; white-space: nowrap; font-weight: 600; }
+.confirm-page .actions { margin-top: 4px; }
+ol.howto .s > .confirm { justify-self: stretch; }
+ol.howto .s > .ferr { justify-self: stretch; }
+.confirm.invalid input { outline: 2px solid var(--error-text); outline-offset: 2px; }
+fieldset.choice.invalid label { border: 2px solid var(--error-text); padding: 11px 13px; }
+.wizard fieldset.choice { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+.hub-row .hint b { color: var(--text); }
+.calsum { list-style: none; margin: 0 0 var(--gap-section); padding: 0; display: grid; gap: var(--gap-cards); max-width: 560px; }
+.calsum li { background: var(--surface); border-radius: var(--radius-tile); padding: 12px 16px; display: grid; gap: 4px; }
+.calsum b { font-size: var(--fs-event-title); }
+.calsum small { font-size: var(--fs-label); color: var(--text-secondary); }
+[data-theme="bw"] .calsum li { border: 2px solid var(--text); }
+/* Lines under a legend that sit flush with it (the preview's inline style, as a class). */
+.steps p.flat { margin: 0; }
+.steps p.hint.flat { clear: both; }
 /* ---- ticket 166: tile view for lists (ADR 0019, preview-166) ---- */
 /* View switch: two buttons with icon and word, the current one filled in
    accent (bw: black). It saves at once (one POST per button, no script) and the

@@ -263,7 +263,7 @@ func TestNameCheckPageOffersTheOwnCAAndSwitchingForgetsThePublicSetup(t *testing
 	}
 
 	// The browser is still on plain HTTP: the public name cannot be reached.
-	r := b.post("/setup/https/own-ca", url.Values{})
+	r := b.post("/setup/https/own-ca", url.Values{"offline": {"off"}}) // with the answer to "Should the box stay fully offline?"
 	if r.status != http.StatusSeeOther || r.location != "/ca" {
 		t.Fatalf("POST own-ca = %d %q, want 303 /ca", r.status, r.location)
 	}
@@ -415,7 +415,7 @@ func TestWizardOffersTheHTTPSStepAgainWhenThePublicCertificateIsMissing(t *testi
 	if r := b.get("/setup/https"); r.status != http.StatusOK {
 		t.Fatalf("GET /setup/https = %d %q, want the step again", r.status, r.location)
 	}
-	r := b.post("/setup/https/own-ca", url.Values{})
+	r := b.post("/setup/https/own-ca", url.Values{"offline": {"off"}}) // with the answer to "Should the box stay fully offline?"
 	if r.status != http.StatusSeeOther || r.location != "/ca" || !b.pki.Ready() {
 		t.Fatalf("POST own-ca = %d %q ready=%v, want 303 /ca", r.status, r.location, b.pki.Ready())
 	}
@@ -426,12 +426,68 @@ func TestWizardOffersTheHTTPSStepAgainWhenThePublicCertificateIsMissing(t *testi
 func TestOwnCAChoiceAfterARestartDuringTheNameCheck(t *testing.T) {
 	t.Parallel()
 	b := newFreshBox(t)
-	b.public.name = "mia.dedyn.io" // as after Start with the stored setup
-	r := b.post("/setup/https/own-ca", url.Values{})
+	b.public.name = "mia.dedyn.io"                                     // as after Start with the stored setup
+	r := b.post("/setup/https/own-ca", url.Values{"offline": {"off"}}) // with the answer to "Should the box stay fully offline?"
 	if r.status != http.StatusSeeOther || r.location != "/ca" {
 		t.Fatalf("POST own-ca = %d %q, want 303 /ca", r.status, r.location)
 	}
 	if r := b.get("/ca"); r.status != http.StatusOK || !strings.Contains(r.body, b.pki.CAFingerprint()) {
 		t.Errorf("GET /ca = %d", r.status)
+	}
+}
+
+// Ticket 201, Q142: the way out of a stuck public name is another way into the
+// home network, so the wizard asks "Should the box stay fully offline?" here
+// too: the answer was taken back when the public form was submitted. The
+// browser is on plain HTTP (the public name does not work), so the question
+// is answered at the same address.
+func TestSwitchingToTheOwnCAAsksWhetherTheBoxStaysOffline(t *testing.T) {
+	b := newFreshBox(t)
+	b.post("/setup/https/public", publicForm())
+	if box, _ := b.db.OutboundBox(); box.Asked {
+		t.Fatal("the public form left the offline question answered")
+	}
+	r := b.do(http.MethodPost, "/setup/https/own-ca", url.Values{}, map[string]string{"Accept-Language": "en"})
+	if r.status != http.StatusOK {
+		t.Fatalf("POST own-ca = %d %q, want the offline question", r.status, r.location)
+	}
+	mustContain(t, r.body, "Should the box stay fully offline?", `action="/setup/https/own-ca"`, `name="offline" value="on"`)
+	mustNotContain(t, r.body, `href="/setup/https"`) // the way back needs the public name
+	if b.pki.Ready() || b.public.cleared != 0 {
+		t.Errorf("the own CA was set up (ready=%v) or the public setup forgotten (%d) before the question was answered", b.pki.Ready(), b.public.cleared)
+	}
+	if r := b.post("/setup/https/own-ca", url.Values{"offline": {"maybe"}}); r.status != http.StatusUnprocessableEntity || b.pki.Ready() {
+		t.Errorf("a made-up answer = %d (ready=%v), want 422 and nothing set up", r.status, b.pki.Ready())
+	}
+	if r := b.post("/setup/https/own-ca", url.Values{"offline": {"on"}}); r.status != http.StatusSeeOther || r.location != "/ca" || !b.pki.Ready() || b.public.cleared != 1 {
+		t.Fatalf("answered: POST own-ca = %d %q ready=%v cleared=%d, want 303 /ca", r.status, r.location, b.pki.Ready(), b.public.cleared)
+	}
+	if box, _ := b.db.OutboundBox(); !box.Asked || !box.Offline {
+		t.Errorf("box = %+v, want asked and offline", box)
+	}
+}
+
+// Review of ticket 201: the answer is stored only once the public setup is
+// forgotten and the own CA is made. A failure in between leaves the question
+// open, so a retry asks again instead of finding offline mode on over a
+// public setup that is still stored.
+func TestSwitchingToTheOwnCAStoresTheOfflineAnswerOnlyOnceItWorked(t *testing.T) {
+	b := newFreshBox(t)
+	b.post("/setup/https/public", publicForm())
+	b.public.clearErr = errors.New("disk full")
+	if r := b.post("/setup/https/own-ca", url.Values{"offline": {"on"}}); r.status != http.StatusInternalServerError {
+		t.Fatalf("POST own-ca with a failing Clear = %d, want 500", r.status)
+	}
+	if box, _ := b.db.OutboundBox(); box.Asked || box.Offline {
+		t.Fatalf("box = %+v, want the question still open and offline mode off", box)
+	}
+	b.public.clearErr = nil
+	r := b.do(http.MethodPost, "/setup/https/own-ca", url.Values{}, map[string]string{"Accept-Language": "en"})
+	mustContain(t, r.body, "Should the box stay fully offline?")
+	if r := b.post("/setup/https/own-ca", url.Values{"offline": {"on"}}); r.status != http.StatusSeeOther || r.location != "/ca" {
+		t.Fatalf("retry = %d %q, want 303 /ca", r.status, r.location)
+	}
+	if box, _ := b.db.OutboundBox(); !box.Asked || !box.Offline {
+		t.Errorf("box = %+v, want asked and offline", box)
 	}
 }

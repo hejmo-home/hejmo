@@ -12,6 +12,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -71,6 +72,9 @@ type syncJSON struct {
 	// successful run (a series counts once); LastRun says what that run did.
 	EventCount int     `json:"event_count"`
 	LastRun    runJSON `json:"last_run"`
+	// Paused is set while the calendar's connection to the outside is off
+	// (offline mode or its switch): it is not tried, and it is not stale.
+	Paused bool `json:"paused"`
 }
 
 type runJSON struct {
@@ -130,8 +134,13 @@ func (s *server) syncState(r *http.Request, c store.SyncedCalendar, loc *time.Lo
 		v := t.In(loc).Format(time.RFC3339)
 		return &v
 	}
+	state, paused := calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess), !s.gate.Allowed(serviceOfKind(c.Kind))
+	if paused {
+		state = calsync.OK
+	}
 	return &syncJSON{
-		State:           calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess),
+		Paused:          paused,
+		State:           state,
 		IntervalMinutes: c.Sync.IntervalMinutes,
 		LastAttemptAt:   ts(c.Sync.LastAttempt),
 		LastSuccessAt:   ts(c.Sync.LastSuccess),
@@ -288,6 +297,9 @@ func (s *server) apiAddCalendar(w http.ResponseWriter, r *http.Request, p princi
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
+	if in.Kind == "ics" && s.refuseOff(w, outbound.ICS) {
+		return
+	}
 	cal, err := s.addICS(r, p, in)
 	var bad *inputError
 	switch {
@@ -307,6 +319,11 @@ func (s *server) apiSyncCalendar(w http.ResponseWriter, r *http.Request, p princ
 	err := s.sync.Sync(r.Context(), p.household.ID, r.PathValue("id"))
 	if errors.Is(err, store.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "synced calendar not found")
+		return
+	}
+	var refused *outbound.RefusedError
+	if errors.As(err, &refused) { // paused: not a failure
+		s.refuseOff(w, refused.Service)
 		return
 	}
 	// Any other error is a sync failure; it is in the log and in the state below.

@@ -30,6 +30,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/list"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
@@ -523,6 +524,9 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(display, "/display/saver")
 	add(siteOf("display hint", f.box, f.hint.client), "/display/saver")
 
+	// Offline mode (ticket 201): the pages as the box answers them while it is on.
+	pages = append(pages, offlinePages(t, f)...)
+
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
 	// the state after a continue without the tick.
@@ -545,6 +549,70 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	// The invitation of a parent: the welcome page and the form for username and password.
 	add(out, "/invite/"+f.inviteToken)
 	add(out, "/invite/"+f.inviteToken+"/account")
+	return pages
+}
+
+// offlinePages returns the pages of ticket 201 in the states a crawl does not
+// reach: with offline mode on (Home, the hub, the connections page with refused
+// attempts, the calendar pages with their paused tags and notices, the
+// confirmation to switch off) and with a public name (the change to the home
+// network, and its error). The box is put back as it was.
+func offlinePages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	parent := siteOf("app", f.box, f.client)
+	var pages []layoutPage
+	grab := func(name, path string) {
+		t.Helper()
+		out := map[string]string{}
+		for _, lang := range []string{"de", "en"} {
+			r := f.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": lang})
+			if r.status != http.StatusOK {
+				t.Fatalf("%s %s = %d", name, path, r.status)
+			}
+			out[lang] = r.body
+		}
+		pages = append(pages, layoutPage{site: parent, path: path + "?state=" + name, html: out})
+	}
+	db := f.box.db
+	if err := db.SetOffline(true, f.box.now); err != nil {
+		t.Fatal(err)
+	}
+	led := db.Outbound()
+	led.Refused(f.box.now, outbound.Calendars, "caldav.example.org")
+	led.Refused(f.box.now.Add(time.Minute), outbound.Images, "www.example-supermarkt.de/bilder/hafer-drink-barista-edition-1-liter-in-der-besonders-langen-verpackung.jpg")
+	hh, _ := db.HomeHousehold()
+	conns, err := db.Connections(hh.ID)
+	if err != nil || len(conns) == 0 {
+		t.Fatalf("the fixture has no calendar connection: %v", err)
+	}
+	connID := conns[0].ID
+	for _, p := range []struct{ name, path string }{
+		{"offline-home", "/"}, {"offline-hub", "/settings"}, {"offline-connections", "/settings/connections"}, {"offline-calendars", "/calendars"},
+		{"offline-connect", "/connections/new"}, {"offline-connection", "/connections/" + connID}, {"offline-switch-off", "/settings/connections/online"},
+	} {
+		grab(p.name, p.path)
+	}
+	if err := db.SetOffline(false, f.box.now); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetServiceEnabled(outbound.Calendars, false); err != nil {
+		t.Fatal(err)
+	}
+	grab("calendars-off", "/connections/new")
+	grab("connections-single", "/settings/connections")
+	if err := db.SetServiceEnabled(outbound.Calendars, true); err != nil {
+		t.Fatal(err)
+	}
+	f.box.public.name = "familie-maier-mit-einem-langen-namen.dedyn.io"
+	if err := db.SavePublicHTTPS(store.PublicHTTPS{Name: f.box.public.name, Zone: "dedyn.io", Provider: "desec", Issuer: "letsencrypt", LANIP: "192.168.178.40", Token: []byte("x")}); err != nil {
+		t.Fatal(err)
+	}
+	grab("public-name", "/settings/connections/offline")
+	grab("public-connections", "/settings/connections")
+	f.box.public.name = ""
+	if err := db.DeletePublicHTTPS(); err != nil {
+		t.Fatal(err)
+	}
 	return pages
 }
 
@@ -675,6 +743,7 @@ func wizardPages(t *testing.T) []layoutPage {
 	add("fresh box", fresh, "/setup/https")
 	add("fresh box", fresh, "/setup/https?way=public")
 	add("fresh box", fresh, "/setup/https?way=domain")
+	add("fresh box", fresh, "/setup/offline") // the question of ticket 201
 	add("fresh box", fresh, "/setup/https?way=own")
 	// A router name found by the box, long enough to wrap on a phone.
 	named := newFreshBox(t, withResolver(&fakeResolver{names: map[string][]string{"127.0.0.1": {longRouterName + "."}}}))

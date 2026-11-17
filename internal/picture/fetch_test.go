@@ -14,6 +14,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/picture"
 )
 
@@ -32,7 +33,7 @@ func serve(t *testing.T, h http.HandlerFunc) *httptest.Server {
 // loopbackIsPublic lets the tests reach their own server on 127.0.0.1, and
 // nothing else: 127.0.0.2 stays private to prove the check runs.
 func loopbackIsPublic() *picture.Fetcher {
-	return &picture.Fetcher{Public: func(a netip.Addr) bool { return a == netip.MustParseAddr("127.0.0.1") }, Timeout: 3 * time.Second}
+	return &picture.Fetcher{Gate: outbound.AllowAll(), Public: func(a netip.Addr) bool { return a == netip.MustParseAddr("127.0.0.1") }, Timeout: 3 * time.Second}
 }
 
 func jpegHandler(t *testing.T) http.HandlerFunc {
@@ -72,7 +73,7 @@ func TestAddressesInTheOwnNetworkAreRefusedWhateverTheirSpelling(t *testing.T) {
 	hits := 0
 	srv := serve(t, func(w http.ResponseWriter, r *http.Request) { hits++; jpegHandler(t)(w, r) })
 	port := srv.Listener.Addr().(*net.TCPAddr).Port
-	f := &picture.Fetcher{Timeout: 2 * time.Second}
+	f := &picture.Fetcher{Gate: outbound.AllowAll(), Timeout: 2 * time.Second}
 	for _, u := range []string{
 		fmt.Sprintf("http://127.0.0.1:%d/a.jpg", port),
 		fmt.Sprintf("http://localhost:%d/a.jpg", port),
@@ -94,7 +95,7 @@ func TestAddressesInTheOwnNetworkAreRefusedWhateverTheirSpelling(t *testing.T) {
 }
 
 func TestThePrivateAddressIsNamedInTheError(t *testing.T) {
-	f := &picture.Fetcher{Timeout: 2 * time.Second}
+	f := &picture.Fetcher{Gate: outbound.AllowAll(), Timeout: 2 * time.Second}
 	for u, addr := range map[string]string{
 		"http://192.168.178.20/bilder/birne.jpg":   "192.168.178.20",
 		"http://10.0.0.5/x.jpg":                    "10.0.0.5",
@@ -268,7 +269,7 @@ func TestASlowServerIsGivenUpOn(t *testing.T) {
 }
 
 func TestAnUnreachableHostIsNotTheUsersFault(t *testing.T) {
-	f := &picture.Fetcher{Public: func(netip.Addr) bool { return true }, Timeout: time.Second}
+	f := &picture.Fetcher{Gate: outbound.AllowAll(), Public: func(netip.Addr) bool { return true }, Timeout: time.Second}
 	if _, err := f.Fetch(context.Background(), "http://127.0.0.1:1/a.jpg"); !errors.Is(err, picture.ErrUnreachable) {
 		t.Errorf("err = %v, want ErrUnreachable", err)
 	}
@@ -305,5 +306,44 @@ func TestACancelledDownloadStopsWaitingForTheDecodeSlot(t *testing.T) {
 		}
 	case <-time.After(2 * time.Second):
 		t.Fatal("a cancelled download kept waiting for the decode slot")
+	}
+}
+
+// Ticket 201: a web image is a connection to the outside like any other; with
+// web images switched off, or offline mode on, nothing is downloaded and the
+// attempt is recorded with the address (without its query).
+type gatePolicy struct{ v outbound.Verdict }
+
+func (p gatePolicy) Verdict(outbound.Service) outbound.Verdict { return p.v }
+
+type gateLedger struct {
+	mu      sync.Mutex
+	refused []string
+}
+
+func (l *gateLedger) Refused(_ time.Time, s outbound.Service, target string) {
+	l.mu.Lock()
+	defer l.mu.Unlock()
+	l.refused = append(l.refused, string(s)+" "+target)
+}
+func (l *gateLedger) Contacted(time.Time, outbound.Service, string) {}
+
+func TestAWebImageIsRefusedWhileItsConnectionIsOff(t *testing.T) {
+	var requests atomic.Int32
+	srv := serve(t, func(w http.ResponseWriter, r *http.Request) { requests.Add(1); jpegHandler(t)(w, r) })
+	led := &gateLedger{}
+	f := loopbackIsPublic()
+	f.Gate = outbound.New(gatePolicy{outbound.VerdictOffline}, led)
+
+	_, err := f.Fetch(context.Background(), srv.URL+"/media/hafer.jpg?token=secret")
+	if !errors.Is(err, outbound.ErrRefused) {
+		t.Fatalf("Fetch = %v, want refused", err)
+	}
+	if requests.Load() != 0 {
+		t.Error("the server was contacted")
+	}
+	host := strings.TrimPrefix(srv.URL, "http://")
+	if len(led.refused) != 1 || led.refused[0] != "images "+host+"/media/hafer.jpg" {
+		t.Errorf("refused = %v, want the address without its query", led.refused)
 	}
 }

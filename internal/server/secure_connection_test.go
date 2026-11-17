@@ -69,8 +69,14 @@ func certNamesOn(t *testing.T, body string) []string {
 }
 
 // ownPage is the wizard's page "Nur im Heimnetz" as a browser on the LAN address sees it.
+// The wizard asks whether the box stays offline before this page (ticket 201), so the helper answers "no" first.
 func ownPage(b *box, lang string) resp {
 	b.t.Helper()
+	if box, _ := b.db.OutboundBox(); !box.Asked {
+		if err := b.db.AnswerOfflineQuestion(false, b.now); err != nil {
+			b.t.Fatal(err)
+		}
+	}
 	req, _ := http.NewRequest(http.MethodGet, b.srv.URL+"/setup/https?way=own", nil)
 	req.Header.Set("Accept-Language", lang)
 	return b.asBrowserOn(lanAddress, req)
@@ -218,6 +224,9 @@ func TestOwnCAOnlyBoxAsksTheRouterToo(t *testing.T) {
 	h := server.New(server.Options{DB: b.db, PKI: b.pki, Now: func() time.Time { return b.now }, Resolver: resolver})
 	srv := httptest.NewServer(h)
 	t.Cleanup(srv.Close)
+	if err := b.db.AnswerOfflineQuestion(false, b.now); err != nil { // the wizard asks this first (ticket 201)
+		t.Fatal(err)
+	}
 	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/setup/https", nil)
 	req.Host = lanAddress
 	res, err := http.DefaultClient.Do(req)

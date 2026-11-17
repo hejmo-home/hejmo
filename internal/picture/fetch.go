@@ -10,8 +10,9 @@ import (
 	"net/netip"
 	"net/url"
 	"strings"
-	"syscall"
 	"time"
+
+	"github.com/hejmo-home/hejmo/internal/outbound"
 )
 
 // DefaultTimeout is the longest a download may take, from the first byte sent
@@ -65,6 +66,10 @@ type Fetcher struct {
 	Public func(netip.Addr) bool
 	// Timeout is the longest the download may take; zero means DefaultTimeout.
 	Timeout time.Duration
+	// Gate is the box's door to the outside (ticket 201): with web images
+	// switched off or offline mode on, nothing is downloaded. Nil lets every
+	// public address through (tests and tools).
+	Gate *outbound.Gate
 }
 
 func (f *Fetcher) public(a netip.Addr) bool {
@@ -97,35 +102,26 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (Fetched, error) {
 	ctx, cancel := context.WithTimeout(ctx, timeout)
 	defer cancel()
 
-	dialer := &net.Dialer{
+	client := f.Gate.NewClient(outbound.Images, outbound.ClientConfig{
 		Timeout: timeout,
-		Control: func(_, address string, _ syscall.RawConn) error {
-			ap, err := netip.ParseAddrPort(address)
-			if err != nil {
-				return &PrivateError{Addr: address}
-			}
-			if a := ap.Addr().Unmap(); !f.public(a) {
+		AllowAddr: func(a netip.Addr) error {
+			if !f.public(a) {
 				return &PrivateError{Addr: a.String()}
 			}
 			return nil
 		},
-	}
-	client := &http.Client{
-		Transport: &http.Transport{
-			Proxy:                  nil, // an environment proxy would bypass the check
-			DialContext:            dialer.DialContext,
-			TLSHandshakeTimeout:    timeout,
-			ResponseHeaderTimeout:  timeout,
-			DisableKeepAlives:      true,
-			MaxResponseHeaderBytes: 64 << 10,
-		},
+		TLSHandshakeTimeout:   timeout,
+		ResponseHeaderTimeout: timeout,
+		NoKeepAlive:           true,
+		MaxHeaderBytes:        64 << 10,
+		RecordPath:            true,
 		CheckRedirect: func(_ *http.Request, via []*http.Request) error {
 			if len(via) > maxRedirects {
 				return ErrTooManyRedirects
 			}
 			return nil
 		},
-	}
+	})
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u.String(), nil)
 	if err != nil {
 		return Fetched{}, ErrAddress
@@ -163,6 +159,8 @@ func fetchError(ctx context.Context, err error) error {
 	switch {
 	case errors.As(err, &private):
 		return private
+	case errors.Is(err, outbound.ErrRefused):
+		return err // offline mode or switched off: the caller says so in words
 	case errors.Is(err, ErrTooManyRedirects):
 		return ErrTooManyRedirects
 	case errors.Is(err, context.DeadlineExceeded) || ctx.Err() != nil:

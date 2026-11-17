@@ -98,6 +98,7 @@ func TestWizardChoiceWithoutAWayAsksForOne(t *testing.T) {
 func TestHeimnetzPageSaysWhatItMeansBeforeTheButton(t *testing.T) {
 	t.Parallel()
 	b := newFreshBox(t)
+	b.post("/setup/offline", url.Values{"offline": {"off"}}) // the question of ticket 201 comes first
 	r := b.do(http.MethodGet, "/setup/https?way=own", nil, map[string]string{"Accept-Language": "de"})
 	for _, want := range []string{"<h1>Nur im Heimnetz einrichten</h1>", `<ul class="homeonly">`, "Das bedeutet:", "nichts nach draußen"} {
 		if !strings.Contains(r.body, want) {

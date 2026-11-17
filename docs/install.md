@@ -113,6 +113,45 @@ The install script also sets up a nightly update check (a systemd timer, `hejmo-
 - The updater script itself changes only when you run the install script again. Check the last run with `sudo journalctl -u hejmo-update`.
 - If going back fails too (the backup cannot be restored), the box stays **stopped** on purpose, and parents cannot see a notice because the box is down. If the box does not answer after a night with an update, run `sudo journalctl -u hejmo-update` to see what happened.
 
+## Offline mode
+
+With **offline mode** (the setup wizard asks right after you choose "Only in the home network"; later **Settings › Connections to the outside**) the box makes no connection to anything outside your home network: no weather, no iCloud, Google or other calendar servers, no subscribed calendars, no web images, no DNS service. Calendar, tasks, lists, meals, displays and phones in the home network keep working. The page lists every connection with its last contact and, while offline mode is on, every attempt the box refused. With a public name, offline mode needs the change to "Only in the home network" first; the page shows what that costs.
+
+## Update without the internet
+
+With offline mode on (**Settings › Connections to the outside**), the box does not update itself, and neither does the nightly updater: the box writes `offline=yes` into the `update-settings` file and the updater contacts nothing. You bring new versions to the box yourself. After 90 days without an update (you can change the number on that page) parents see "Not updated for 90 days" with a link to this chapter.
+
+**On a box installed before offline mode existed, run the install script once first** (see "Updating and removing" below): an older updater does not know `offline=yes` and would keep checking for updates every night.
+
+Uploading an update file in the web interface does not exist yet (it is planned as its own step). Until then, do it by hand, from a computer with internet and the box's address at hand:
+
+1. **On a computer with internet**, find the newest version on the [releases page](https://github.com/hejmo-home/hejmo/releases) (use a number such as `0.2.4`, not a pre-release). Pull the image and check its signature, exactly as the updater does:
+   ```bash
+   docker pull ghcr.io/hejmo-home/hejmo:0.2.4
+   docker run --rm ghcr.io/sigstore/cosign/cosign:v2.5.3 verify ghcr.io/hejmo-home/hejmo:0.2.4 \
+     --certificate-identity https://github.com/hejmo-home/hejmo/.github/workflows/release.yml@refs/tags/v0.2.4 \
+     --certificate-oidc-issuer https://token.actions.githubusercontent.com
+   ```
+   Go on only if it prints the signature. An unsigned or wrongly signed image must not be installed.
+2. **Save the image to a file** and put it on a USB stick: `docker save ghcr.io/hejmo-home/hejmo:0.2.4 -o hejmo-0.2.4.tar`.
+3. **On the box**, mount the stick, back up the data (`sudo cp -a /opt/hejmo/data /opt/hejmo/data.before-0.2.4`), then load the image: `sudo docker load -i /media/usb/hejmo-0.2.4.tar`.
+4. **Switch the box to it:** set `HEJMO_IMAGE=ghcr.io/hejmo-home/hejmo:0.2.4` in `/opt/hejmo/.env`, then run `cd /opt/hejmo && sudo docker compose up -d`. Open the box and check that it works; the page "Connections to the outside" still shows that nothing went out.
+5. **Tell the box that it was updated.** The box cannot see which image it runs, and it only learns about an update from the file the nightly updater writes. Without this step the page keeps showing the old version and parents keep seeing "Not updated for N days". Use the version you installed:
+   ```bash
+   sudo sh -c 'rm -f /opt/hejmo/data/update-status && printf "state=updated\nversion=0.2.4\ntime=%s\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > /opt/hejmo/data/update-status'
+   ```
+6. If the new version does not start, set `HEJMO_IMAGE` back to the old tag, stop the box and restore the data copy (and skip step 5).
+
+## Time from the router
+
+Hejmo's offline mode covers Hejmo only. The device the box runs on (Raspberry Pi OS, for example) can still fetch the time from the internet (NTP) and load its own system updates. To keep the time without the internet, point the device at your router, which many routers (a FRITZ!Box, for one) offer as a time server:
+
+1. In the FRITZ!Box, open **Home Network › Network › Network Settings** and note the box's address (usually `192.168.178.1`). Under **Home Network Settings** make sure *Time server (NTP)* for the home network is on.
+2. On the box, edit `/etc/systemd/timesyncd.conf` and set `NTP=192.168.178.1` and `FallbackNTP=` (empty), then run `sudo systemctl restart systemd-timesyncd`.
+3. Check with `timedatectl timesync-status` that the server is the router.
+
+The menu names differ between FRITZ!OS versions; the router's own help shows where the time server setting is. A box whose clock is wrong cannot validate certificates or sign anyone in, so check the time after the first start.
+
 ## Updating and removing
 
 - Re-running the install script keeps your settings and data and refreshes the updater and the systemd units; it does not update the box itself.

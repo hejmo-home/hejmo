@@ -13,6 +13,8 @@ import (
 	"net/url"
 	"strings"
 	"time"
+
+	"github.com/hejmo-home/hejmo/internal/outbound"
 )
 
 // Status is what the kiosk app reports about its device.
@@ -56,7 +58,7 @@ type FreeKiosk struct {
 // NewFreeKiosk returns the FreeKiosk adapter for the app at baseURL, for
 // example "http://192.168.1.20:8080".
 func NewFreeKiosk(baseURL, apiKey string) Adapter {
-	return &FreeKiosk{base: strings.TrimRight(baseURL, "/"), key: apiKey, client: &http.Client{Timeout: 10 * time.Second}}
+	return &FreeKiosk{base: strings.TrimRight(baseURL, "/"), key: apiKey, client: outbound.Local(10 * time.Second)}
 }
 
 // ValidURL reports whether s is an http or https address with a host.

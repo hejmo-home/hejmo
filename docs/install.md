@@ -78,8 +78,10 @@ The box lives in your home network, so a phone away from home does not reach it 
 
 You need:
 
-- A FRITZ!Box with FRITZ!OS 7.50 or newer that can be reached from the internet. With a shared address (CGNAT, DS-Lite) this works only over IPv6 or with a public address from your provider.
+- A FRITZ!Box with FRITZ!OS 7.50 or newer that can be reached from the internet.
 - The WireGuard app on the phone: [App Store](https://apps.apple.com/app/wireguard/id1441195209) (iPhone, iPad), [Google Play](https://play.google.com/store/apps/details?id=com.wireguard.android) (Android), other systems at [wireguard.com/install](https://www.wireguard.com/install/).
+
+**Shared address (DS-Lite, CGNAT)?** Many providers share one IPv4 address between customers, and then nothing reaches your FRITZ!Box from outside over IPv4. You recognise it in the FRITZ!Box under **Internet**, **Online Monitor**: it shows a DS-Lite tunnel, or the IPv4 address starts in the range 100.64.0.0/10 (100.64.x.x to 100.127.x.x). The VPN often still works over IPv6 when the mobile network of the phone offers it; then you need to do nothing more. Otherwise ask your provider for a public IPv4 address.
 
 Set it up (about 10 minutes, once per phone, at home):
 

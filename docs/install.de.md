@@ -78,8 +78,10 @@ Die Box steht in deinem Heimnetz, ein Handy unterwegs erreicht sie deshalb nicht
 
 Du brauchst:
 
-- Eine FRITZ!Box mit FRITZ!OS 7.50 oder neuer, die aus dem Internet erreichbar ist. Bei einer geteilten Adresse (CGNAT, DS-Lite) geht das nur über IPv6 oder mit einer öffentlichen Adresse deines Anbieters.
+- Eine FRITZ!Box mit FRITZ!OS 7.50 oder neuer, die aus dem Internet erreichbar ist.
 - Die WireGuard-App auf dem Handy: [App Store](https://apps.apple.com/app/wireguard/id1441195209) (iPhone, iPad), [Google Play](https://play.google.com/store/apps/details?id=com.wireguard.android) (Android), andere Systeme unter [wireguard.com/install](https://www.wireguard.com/install/).
+
+**Geteilte Adresse (DS-Lite, CGNAT)?** Viele Anbieter teilen eine IPv4-Adresse unter mehreren Kunden, dann erreicht von außen über IPv4 nichts deine FRITZ!Box. Du erkennst es in der FRITZ!Box unter **Internet**, **Online-Monitor**: Dort steht ein DS-Lite-Tunnel, oder die IPv4-Adresse beginnt im Bereich 100.64.0.0/10 (100.64.x.x bis 100.127.x.x). Das VPN klappt oft trotzdem über IPv6, wenn das Mobilfunknetz des Handys es anbietet; dann musst du nichts weiter tun. Andernfalls frage deinen Anbieter nach einer öffentlichen IPv4-Adresse.
 
 So richtest du es ein (etwa 10 Minuten, einmal pro Handy, zu Hause):
 

@@ -211,7 +211,8 @@ func newCA(now time.Time, dns []string, ips []net.IP) ([]byte, *ecdsa.PrivateKey
 // the name of the box in the family's router, and drops an earlier router
 // name. The CA is name-constrained, so an existing CA cannot vouch for a new
 // name: every device must trust the box again (ADR 0014). The new files are
-// written under temporary names first, so a failure leaves the box as it was.
+// written under temporary names first, so a failure while writing them leaves
+// the box as it was (a failed rename is not rolled back; repeat Reissue).
 func (s *Store) Reissue(routerName string, now time.Time) error {
 	s.mu.Lock()
 	defer s.mu.Unlock()

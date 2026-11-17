@@ -117,6 +117,28 @@ func TestWireGuardChapterIsInBothGuidesAndEveryAddressIsALink(t *testing.T) {
 	}
 }
 
+// Product owner's addition on #216 (17/11/2026): the chapter says how to
+// recognise a shared address (DS-Lite, CGNAT), that IPv6 often still works,
+// and else to ask the provider for a public IPv4 address.
+func TestWireGuardChapterExplainsSharedAddresses(t *testing.T) {
+	for _, g := range []struct {
+		file, heading string
+		want          []string
+	}{
+		{"docs/install.md", "## Away from home: WireGuard with the FRITZ!Box",
+			[]string{"Online Monitor", "DS-Lite", "100.64.0.0/10", "IPv6", "public IPv4 address"}},
+		{"docs/install.de.md", "## Von unterwegs: WireGuard mit der FRITZ!Box",
+			[]string{"Online-Monitor", "DS-Lite", "100.64.0.0/10", "IPv6", "öffentlichen IPv4-Adresse"}},
+	} {
+		text := chapter(t, read(t, g.file), g.heading)
+		for _, w := range g.want {
+			if !strings.Contains(text, w) {
+				t.Errorf("%s: the chapter lacks %q", g.file, w)
+			}
+		}
+	}
+}
+
 // The links of the web interface point at the chapter's anchor, in the guide of the same language.
 func TestTheWebInterfaceLinksToTheWireGuardChapter(t *testing.T) {
 	for lang, g := range map[string]struct{ file, heading string }{

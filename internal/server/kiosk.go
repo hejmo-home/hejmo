@@ -135,7 +135,7 @@ func (k *KioskRunner) Wake(displayID string) bool {
 		k.mu.Lock()
 		k.woken[d.ID] = k.opts.Now().Add(span)
 		k.mu.Unlock()
-		tick := func() { k.Tick(context.Background()) }
+		tick := func() { k.tick(context.Background(), d.ID) }
 		k.opts.After(0, tick)
 		k.opts.After(span+time.Second, tick)
 		return true
@@ -144,7 +144,10 @@ func (k *KioskRunner) Wake(displayID string) bool {
 }
 
 // Tick looks at every paired display once.
-func (k *KioskRunner) Tick(ctx context.Context) {
+func (k *KioskRunner) Tick(ctx context.Context) { k.tick(ctx, "") }
+
+// tick looks at one display, or at every one when only is empty.
+func (k *KioskRunner) tick(ctx context.Context, only string) {
 	k.tickMu.Lock()
 	defer k.tickMu.Unlock()
 	h, err := k.opts.DB.HomeHousehold()
@@ -163,6 +166,9 @@ func (k *KioskRunner) Tick(ctx context.Context) {
 	now := k.opts.Now()
 	local := now.In(loc)
 	for _, d := range displays {
+		if only != "" && d.ID != only {
+			continue
+		}
 		if d.KioskURL == "" {
 			delete(k.applied, d.ID)
 			k.mu.Lock()
@@ -185,6 +191,9 @@ func (k *KioskRunner) tickDisplay(ctx context.Context, h store.Household, d stor
 	}
 	fail := func(what string, err error) {
 		k.opts.Logger.Warn("kiosk: "+what+", will retry", "display", d.ID, "err", err)
+		// The tablet may have restarted and lost the brightness: forget what
+		// was sent, so the first answer afterwards sends the target again.
+		delete(k.applied, d.ID)
 		target := plan(prev.HasSensor) // before the lock: it asks Woken
 		k.mu.Lock()
 		k.state[d.ID] = KioskState{HasSensor: prev.HasSensor, Target: target}

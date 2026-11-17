@@ -271,3 +271,28 @@ func TestRemovingTheKioskAppForgetsItsState(t *testing.T) {
 		t.Fatal("state kept after the kiosk app was removed")
 	}
 }
+
+// A tablet that restarted during an outage has lost its brightness, so the
+// first answer after a failure sends the target again, even when it is the
+// one that was sent before.
+func TestBrightnessIsSentAgainWhenATabletAnswersAfterAnOutage(t *testing.T) {
+	f, fake := kioskBox(t, "eink_bw", nil)
+	id := f.displayID(t)
+	f.tick(f.at(14, 17, 0))
+	expect(t, "first send", fake.take(), "brightness 40")
+	fake.setFail(true)
+	f.tick(f.at(14, 17, 1))
+	st, _ := f.kioskRun.State(id)
+	if st.Reachable || st.Confirmed {
+		t.Fatalf("state during the outage = %+v", st)
+	}
+	fake.setFail(false)
+	f.tick(f.at(14, 17, 2))
+	expect(t, "after the outage", fake.take(), "brightness 40")
+	st, _ = f.kioskRun.State(id)
+	if !st.Reachable || !st.Confirmed || !st.ConfirmedAt.Equal(f.at(14, 17, 2)) {
+		t.Fatalf("state after the outage = %+v", st)
+	}
+	f.tick(f.at(14, 17, 3))
+	expect(t, "next tick", fake.take())
+}

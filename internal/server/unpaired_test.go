@@ -219,3 +219,19 @@ func TestPairingAgainAfterASecondRevokeShowsThePageAgain(t *testing.T) {
 		t.Fatalf("second revoke did not show the page:\n%s", r.body)
 	}
 }
+
+// A phone re-paired for another person (#198) ends its device session the same
+// way a removal does, so it shows the unpaired page too.
+func TestPhoneRepairedForAnotherPersonShowsTheUnpairedPage(t *testing.T) {
+	f := newRepairFixture(t)
+	if r := f.b.post(f.repairAction, url.Values{"person": {f.mia.ID}}); r.status != http.StatusOK {
+		t.Fatalf("repair = %d\n%s", r.status, r.body)
+	}
+	got := f.phone.get("/login", "en")
+	if got.status != http.StatusOK || !strings.Contains(got.body, "data-unpaired") {
+		t.Errorf("re-paired phone = %d, want the unpaired page\n%s", got.status, got.body)
+	}
+	if strings.Contains(got.body, `name="password"`) {
+		t.Error("re-paired phone shows the sign-in")
+	}
+}

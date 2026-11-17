@@ -10,10 +10,14 @@ permissions:
 
 jobs:
   test:
-    name: Test (${{ matrix.arch }})
+    name: Test (${{ matrix.arch }}, shard ${{ matrix.shard }})
     strategy:
       fail-fast: false
+      # Three shards per architecture (ticket 228): ci/test-shard.sh runs half of
+      # the internal/server tests in shards 1 and 2 and every other package in 3.
       matrix:
+        shard: [1, 2, 3]
+        arch: [x86_64, arm64]
         include:
           # Chrome comes with the x86_64 runner image (the "Chrome for the rendered
           # layout check" step prints it: 157 on 16/11/2026). The arm64 image has
@@ -32,8 +36,10 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Formatting
+        if: matrix.shard == 1
         run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
       - name: Vet
+        if: matrix.shard == 1
         run: go vet ./...
       - name: Chrome for the rendered layout check
         run: |
@@ -47,12 +53,12 @@ jobs:
           # The rendered layout check (ticket 161) drives headless Chrome; no Chrome fails it.
           HEJMO_REQUIRE_CHROME: ${{ matrix.require_chrome }}
           HEJMO_LAYOUT_SHOTS: ${{ runner.temp }}/layout-shots
-        run: go test -race -count=1 -timeout 40m ./...
+        run: ci/test-shard.sh ${{ matrix.shard }} -race -count=1 -timeout 25m
       - name: Screenshots of pages that failed the layout check
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: layout-shots-${{ matrix.arch }}
+          name: layout-shots-${{ matrix.arch }}-${{ matrix.shard }}
           path: ${{ runner.temp }}/layout-shots
           if-no-files-found: ignore
 

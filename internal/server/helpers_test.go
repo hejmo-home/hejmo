@@ -315,14 +315,23 @@ func serverWithHTTPSPort(b *box, port string) http.Handler {
 	return server.New(server.Options{DB: b.db, PKI: b.pki, Public: b.public, HTTPSPort: port, Now: func() time.Time { return b.now }})
 }
 
+// GeoNames ids of places of the list on the box (internal/places).
+const (
+	idMuenchen      = "2867714"
+	idPasing        = "2855334" // a district of München
+	idObermenzing   = "2859782" // another one
+	idSchmedeswurth = "13394048"
+	idWien          = "2761369"
+)
+
 func validSetupForm() url.Values {
 	return url.Values{
-		"home_name": {"Pasing"},
-		"region":    {"DE-BY"},
-		"name":      {"Mama"},
-		"username":  {"mama"},
-		"password":  {"correct horse battery"},
-		"pin":       {"2468"},
+		"region":   {"DE-BY"},
+		"place_id": {idPasing}, // the place the parent picked from the list
+		"name":     {"Mama"},
+		"username": {"mama"},
+		"password": {"correct horse battery"},
+		"pin":      {"2468"},
 	}
 }
 

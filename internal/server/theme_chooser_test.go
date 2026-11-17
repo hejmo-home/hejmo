@@ -118,6 +118,7 @@ func TestSignedOutPagesHaveNoThemeChooser(t *testing.T) {
 // chosen and says why; a child reads that an adult must enter the place.
 func TestWithoutHomeLocationAutomaticIsDisabledAndSaysWhy(t *testing.T) {
 	cp := newChildPhone(t)
+	noHome(t, cp.parent.b)
 	menu := themePick(t, cp.screen.get("/", "de").body)
 	if !regexp.MustCompile(`value="auto" data-theme-choice disabled`).MatchString(menu) || !strings.Contains(menu, "Geht erst, wenn ein Erwachsener den Ort eures Zuhauses eingetragen hat.") {
 		t.Errorf("child: automatic is not disabled with its reason:\n%s", menu)
@@ -126,6 +127,7 @@ func TestWithoutHomeLocationAutomaticIsDisabledAndSaysWhy(t *testing.T) {
 		t.Errorf("a child gets a link:\n%s", menu)
 	}
 	b := signedInBox(t)
+	noHome(t, b)
 	menu = themePick(t, b.get("/").body)
 	if !regexp.MustCompile(`value="auto" data-theme-choice disabled`).MatchString(menu) || !strings.Contains(menu, `Geht erst mit dem Ort eures Zuhauses. <a href="/settings/household">Ort eintragen</a>`) {
 		t.Errorf("parent: automatic is not disabled with a link to Household:\n%s", menu)
@@ -169,5 +171,13 @@ func TestChooserCarriesTheLinesTheScriptShows(t *testing.T) {
 		if !strings.Contains(menu, w) {
 			t.Errorf("chooser lacks %q:\n%s", w, menu)
 		}
+	}
+}
+
+// noHome clears the home location a fresh box now starts with (#86).
+func noHome(t *testing.T, b *box) {
+	t.Helper()
+	if _, err := b.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL, home_place_id = NULL`); err != nil {
+		t.Fatal(err)
 	}
 }

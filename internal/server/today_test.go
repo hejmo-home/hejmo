@@ -210,7 +210,7 @@ func TestChildHomeShowsTheirDayAndTasks(t *testing.T) {
 	}
 	main := p[i:]
 	for _, want := range []string{
-		`<h1 class="child-h"><span class="marker" data-person="` + "", "</span>Hallo Mia</h1>",
+		`<h1 class="child-h"><span class="marker" data-person="` + "", `</span><span class="h-name">Hallo Mia</span></h1>`,
 		`<section class="today child" data-person="`, `<h2>Dein Tag heute</h2>`,
 		`<ul class="tev big"><li><span class="tm">11:00</span><span>Flohmarkt <span class="who">mit der ganzen Familie</span></span></li><li><span class="tm">15:30</span><span>Schwimmkurs</span></li></ul>`,
 		`<h3>Deine Aufgaben</h3><ul class="ctasks"><li data-done><span class="box">`, `<span class="t">Zähne putzen</span><span class="stars"><svg class="icon star"`, `</svg>1</span></li>`,

@@ -266,7 +266,7 @@ func (s *server) apiPutArticlePicture(w http.ResponseWriter, r *http.Request, p 
 	if !ok {
 		return
 	}
-	res, err := picture.Process(http.MaxBytesReader(w, r.Body, picture.MaxBytes+1))
+	res, err := picture.ProcessContext(r.Context(), http.MaxBytesReader(w, r.Body, picture.MaxBytes+1))
 	if err != nil {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {

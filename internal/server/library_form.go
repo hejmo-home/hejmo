@@ -2,6 +2,7 @@ package server
 
 import (
 	"bytes"
+	"context"
 	"crypto/rand"
 	"encoding/hex"
 	"errors"
@@ -457,7 +458,7 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 		f.PicSource = pend.Source
 	}
 	if file != nil && f.PicSource == "upload" && action != "replace" {
-		if res, perr := s.processUpload(file); perr != nil {
+		if res, perr := s.processUpload(r.Context(), file); perr != nil {
 			errs["photo"] = s.photoError(lang, file, perr)
 		} else {
 			s.pictures.drop(f.Token)
@@ -568,7 +569,7 @@ func (s *server) activeUnitsFor(p principal, existing *store.OwnArticle) []strin
 	return active
 }
 
-func (s *server) processUpload(h *multipart.FileHeader) (picture.Result, error) {
+func (s *server) processUpload(ctx context.Context, h *multipart.FileHeader) (picture.Result, error) {
 	if h.Size > picture.MaxBytes {
 		return picture.Result{}, &picture.TooLargeError{Bytes: h.Size}
 	}
@@ -577,7 +578,7 @@ func (s *server) processUpload(h *multipart.FileHeader) (picture.Result, error) 
 		return picture.Result{}, err
 	}
 	defer f.Close()
-	return picture.Process(io.LimitReader(f, picture.MaxBytes+1))
+	return picture.ProcessContext(ctx, io.LimitReader(f, picture.MaxBytes+1))
 }
 
 func pendingFrom(res picture.Result, source, host, file string) pendingPicture {

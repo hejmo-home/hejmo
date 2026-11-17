@@ -2,6 +2,7 @@ package picture_test
 
 import (
 	"bytes"
+	"context"
 	"encoding/base64"
 	"encoding/binary"
 	"errors"
@@ -13,6 +14,7 @@ import (
 	"image/png"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/picture"
 )
@@ -226,5 +228,73 @@ func TestAPictureWithAHugeNumberOfPixelsIsRefusedBeforeItIsDecoded(t *testing.T)
 	chunk("IEND", nil)
 	if _, err := picture.Process(&b); !errors.Is(err, picture.ErrTooManyPixels) {
 		t.Errorf("err = %v, want ErrTooManyPixels", err)
+	}
+}
+
+func TestAPictureOfThirtyMegapixelsIsRefusedBeforeItIsDecoded(t *testing.T) {
+	// 6000 x 5000 = 30 MP: more than a 1 GB box can decode next to everything else.
+	var b bytes.Buffer
+	b.Write([]byte("\x89PNG\r\n\x1a\n"))
+	chunk := func(kind string, data []byte) {
+		binary.Write(&b, binary.BigEndian, uint32(len(data)))
+		b.WriteString(kind)
+		b.Write(data)
+		sum := crc32.NewIEEE()
+		sum.Write([]byte(kind))
+		sum.Write(data)
+		binary.Write(&b, binary.BigEndian, sum.Sum32())
+	}
+	ihdr := make([]byte, 13)
+	binary.BigEndian.PutUint32(ihdr[0:], 6000)
+	binary.BigEndian.PutUint32(ihdr[4:], 5000)
+	ihdr[8], ihdr[9] = 8, 2
+	chunk("IHDR", ihdr)
+	chunk("IEND", nil)
+	if _, err := picture.Process(&b); !errors.Is(err, picture.ErrTooManyPixels) {
+		t.Errorf("err = %v, want ErrTooManyPixels", err)
+	}
+}
+
+func TestTwoPicturesAreNotDecodedAtTheSameTime(t *testing.T) {
+	release := picture.Hold() // a picture is being decoded
+	done := make(chan error, 1)
+	go func() {
+		_, err := picture.Process(bytes.NewReader(encodeJPEG(t, gradient(120, 80))))
+		done <- err
+	}()
+	select {
+	case <-done:
+		t.Fatal("a second picture was decoded while the first still held the slot")
+	case <-time.After(150 * time.Millisecond):
+	}
+	release()
+	select {
+	case err := <-done:
+		if err != nil {
+			t.Errorf("err = %v after the slot was free", err)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("the waiting picture was never decoded after the slot was free")
+	}
+}
+
+func TestACancelledRequestStopsWaitingForTheSlot(t *testing.T) {
+	release := picture.Hold()
+	defer release()
+	ctx, cancel := context.WithCancel(context.Background())
+	done := make(chan error, 1)
+	go func() {
+		_, err := picture.ProcessContext(ctx, bytes.NewReader(encodeJPEG(t, gradient(120, 80))))
+		done <- err
+	}()
+	time.Sleep(50 * time.Millisecond)
+	cancel()
+	select {
+	case err := <-done:
+		if !errors.Is(err, context.Canceled) {
+			t.Errorf("err = %v, want context.Canceled", err)
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("a cancelled request kept waiting for the slot")
 	}
 }

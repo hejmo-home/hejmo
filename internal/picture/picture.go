@@ -7,6 +7,7 @@ package picture
 
 import (
 	"bytes"
+	"context"
 	"errors"
 	"fmt"
 	"image"
@@ -32,7 +33,7 @@ const (
 	MaxSide = 512
 	// MaxPixels is the most pixels a picture may have before it is decoded; a
 	// small file can claim a gigantic image.
-	MaxPixels = 40_000_000
+	MaxPixels = 24_000_000
 	quality   = 85
 )
 
@@ -69,7 +70,10 @@ type Result struct {
 var one = make(chan struct{}, 1)
 
 // Process reads a picture of at most MaxBytes and returns it as the stored JPEG.
-func Process(r io.Reader) (Result, error) {
+func Process(r io.Reader) (Result, error) { return ProcessContext(context.Background(), r) }
+
+// ProcessContext is Process, but stops waiting for the decode slot when ctx is done.
+func ProcessContext(ctx context.Context, r io.Reader) (Result, error) {
 	data, err := io.ReadAll(io.LimitReader(r, MaxBytes+1))
 	if err != nil {
 		return Result{}, err
@@ -87,7 +91,11 @@ func Process(r io.Reader) (Result, error) {
 	if cfg.Width <= 0 || cfg.Height <= 0 || cfg.Width*cfg.Height > MaxPixels {
 		return Result{}, ErrTooManyPixels
 	}
-	one <- struct{}{}
+	select {
+	case one <- struct{}{}:
+	case <-ctx.Done():
+		return Result{}, ctx.Err()
+	}
 	defer func() { <-one }()
 	src, _, err := image.Decode(bytes.NewReader(data))
 	if err != nil {

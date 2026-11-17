@@ -2574,3 +2574,6 @@ fieldset.choice.invalid label { border: 2px solid var(--error-text); padding: 11
 .calsum b { font-size: var(--fs-event-title); }
 .calsum small { font-size: var(--fs-label); color: var(--text-secondary); }
 [data-theme="bw"] .calsum li { border: 2px solid var(--text); }
+/* Lines under a legend that sit flush with it (the preview's inline style, as a class). */
+.steps p.flat { margin: 0; }
+.steps p.hint.flat { clear: both; }

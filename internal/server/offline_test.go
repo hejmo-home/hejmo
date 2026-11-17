@@ -641,3 +641,27 @@ func TestTheAPIRefusesWhatNeedsAConnectionThatIsOff(t *testing.T) {
 		t.Errorf("the refused sync is not on the list: %v", list["refused"])
 	}
 }
+
+func TestAPausedCalendarSaysSoInTheAPI(t *testing.T) {
+	c := signedInAPI(t)
+	status, cal, _ := c.call(http.MethodPost, "/calendars", map[string]any{"kind": "ics", "name": "Waste", "url": "https://www.example.org/waste.ics", "audience": map[string]any{"people": []string{}, "groups": []string{}}})
+	if status != http.StatusCreated {
+		t.Fatalf("add = %d", status)
+	}
+	if sync, _ := cal["sync"].(map[string]any); sync["paused"] != false {
+		t.Errorf("a calendar of a connection that is on is not paused: %v", sync)
+	}
+	c.call(http.MethodPatch, "/outbound", map[string]any{"offline": true})
+	c.b.now = c.b.now.Add(48 * time.Hour) // without the pause, two days without a sync would be stale
+	_, _, list := c.call(http.MethodGet, "/calendars", nil)
+	for _, raw := range list {
+		cc := raw.(map[string]any)
+		if cc["id"] != cal["id"] {
+			continue
+		}
+		sync := cc["sync"].(map[string]any)
+		if sync["paused"] != true || sync["state"] != "ok" {
+			t.Errorf("sync = %v, want paused and not stale", sync)
+		}
+	}
+}

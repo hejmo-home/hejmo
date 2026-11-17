@@ -398,6 +398,28 @@ _Avoid_: tag, label, category
 The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician".
 _Avoid_: connection, relationship type
 
+## Offline mode and connections to the outside
+
+**Offline mode**:
+A household switch: the box opens no connection to anything outside the home network, and every single connection is off and locked. Calendar, tasks, lists, meals, displays and phones in the home network keep working, with the box's own CA. Asked in the setup wizard right after "Only in the home network". Switching it off lists first what goes outside again.
+_Avoid_: local mode, airplane mode
+
+**Connection to the outside**:
+One thing the box does on the internet that parents can switch: weather, update check, calendar services, ICS subscriptions, recipe import, web images; the DNS service has no switch of its own. Place search is not one: the list of places is on the box.
+_Avoid_: integration, external service
+
+**Gate** (outbound gate):
+The one place in the box through which every connection to the outside goes (`internal/outbound`). It refuses and records every attempt while the connection is off, and records the last contact when one goes through. A test fails if any other code makes a connection of its own.
+_Avoid_: firewall, proxy
+
+**Refused attempt**:
+A connection the gate stopped, with time, connection and target, shown newest first on the page "Connections to the outside". Nothing of it left the house.
+_Avoid_: blocked request, error
+
+**Paused** (calendar):
+The state of a calendar or connection whose connection to the outside is off: its events stay, it shows the tag "paused, offline mode", and it syncs again at once when the connection is on. Not a failure.
+_Avoid_: disabled, disconnected
+
 ## Access
 
 **API token**:

@@ -72,6 +72,9 @@ type syncJSON struct {
 	// successful run (a series counts once); LastRun says what that run did.
 	EventCount int     `json:"event_count"`
 	LastRun    runJSON `json:"last_run"`
+	// Paused is set while the calendar's connection to the outside is off
+	// (offline mode or its switch): it is not tried, and it is not stale.
+	Paused bool `json:"paused"`
 }
 
 type runJSON struct {
@@ -131,8 +134,13 @@ func (s *server) syncState(r *http.Request, c store.SyncedCalendar, loc *time.Lo
 		v := t.In(loc).Format(time.RFC3339)
 		return &v
 	}
+	state, paused := calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess), !s.gate.Allowed(serviceOfKind(c.Kind))
+	if paused {
+		state = calsync.OK
+	}
 	return &syncJSON{
-		State:           calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess),
+		Paused:          paused,
+		State:           state,
 		IntervalMinutes: c.Sync.IntervalMinutes,
 		LastAttemptAt:   ts(c.Sync.LastAttempt),
 		LastSuccessAt:   ts(c.Sync.LastSuccess),

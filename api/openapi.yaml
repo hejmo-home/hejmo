@@ -3847,7 +3847,8 @@ components:
             new: { type: integer }
             changed: { type: integer }
             removed: { type: integer }
-        state: { type: string, enum: [ok, stale], description: "stale = 24 hours without a successful sync; one success clears it" }
+        state: { type: string, enum: [ok, stale], description: "stale = 24 hours without a successful sync; one success clears it. A paused calendar is never stale" }
+        paused: { type: boolean, description: "True while the calendar's connection to the outside is off (offline mode, or the connection's own switch; see GET /outbound). The calendar keeps its events, is not tried and is not a problem; it syncs again at once when the connection is on" }
         interval_minutes: { type: integer, example: 60 }
         last_attempt_at: { type: string, format: date-time, nullable: true }
         last_success_at: { type: string, format: date-time, nullable: true }

@@ -25,11 +25,15 @@ var errNoKey = errors.New("store: no encryption key set for credentials")
 type Connection struct {
 	ID          string
 	HouseholdID string
-	Kind        string // caldav
+	Kind        string // caldav or google
 	URL         string // server address, or the calendar address for a single calendar
 	Username    string
 	Single      bool // URL is one calendar, added by hand; nothing to discover
 	CreatedAt   time.Time
+	// Google only (ticket 18): when Google issued the refresh token, when it
+	// last gave a new access token, and since when Google refuses it (zero
+	// while the sign-in works).
+	SignedInAt, TokenRenewedAt, SignInNeededAt time.Time
 }
 
 // NewCalDAVConnection describes a CalDAV or iCloud connection to create.
@@ -87,8 +91,8 @@ func (db *DB) SetConnectionPassword(householdID, connectionID, password string) 
 
 // Connections lists a household's CalDAV connections.
 func (db *DB) Connections(householdID string) ([]Connection, error) {
-	rows, err := db.sql.Query(`SELECT id, household_id, kind, url, username, single_calendar, created_at FROM calendar_connections
-		WHERE household_id = ? AND kind = 'caldav' ORDER BY created_at, rowid`, householdID)
+	rows, err := db.sql.Query(`SELECT id, household_id, kind, url, username, single_calendar, created_at, signed_in_at, token_renewed_at, signin_needed_at FROM calendar_connections
+		WHERE household_id = ? AND kind IN ('caldav', 'google') ORDER BY created_at, rowid`, householdID)
 	if err != nil {
 		return nil, err
 	}
@@ -97,10 +101,12 @@ func (db *DB) Connections(householdID string) ([]Connection, error) {
 	for rows.Next() {
 		var c Connection
 		var created string
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Kind, &c.URL, &c.Username, &c.Single, &created); err != nil {
+		var signedIn, renewed, needed sql.NullString
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Kind, &c.URL, &c.Username, &c.Single, &created, &signedIn, &renewed, &needed); err != nil {
 			return nil, err
 		}
 		c.CreatedAt, _ = time.Parse(time.RFC3339, created)
+		c.SignedInAt, c.TokenRenewedAt, c.SignInNeededAt = parseStamp(signedIn), parseStamp(renewed), parseStamp(needed)
 		out = append(out, c)
 	}
 	return out, rows.Err()
@@ -120,13 +126,14 @@ func (db *DB) Connection(householdID, connectionID string) (Connection, error) {
 	return Connection{}, ErrNotFound
 }
 
-// ConnectionCredentials returns the user name and the unsealed password.
+// ConnectionCredentials returns the user name and the unsealed password; for a
+// Google connection the Google account and the unsealed refresh token.
 func (db *DB) ConnectionCredentials(householdID, connectionID string) (user, password string, err error) {
 	if db.secrets == nil {
 		return "", "", errNoKey
 	}
 	var sealed string
-	err = db.sql.QueryRow(`SELECT username, credential FROM calendar_connections WHERE id = ? AND household_id = ? AND kind = 'caldav'`,
+	err = db.sql.QueryRow(`SELECT username, credential FROM calendar_connections WHERE id = ? AND household_id = ? AND kind IN ('caldav', 'google')`,
 		connectionID, householdID).Scan(&user, &sealed)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", "", ErrNotFound
@@ -183,7 +190,7 @@ func (db *DB) AddCalDAVCalendar(householdID, connectionID string, in NewCalDAVCa
 // DeleteConnection removes a connection with all its calendars and their
 // events. Nothing is deleted outside the box.
 func (db *DB) DeleteConnection(householdID, connectionID string) error {
-	return expectOne(db.sql.Exec(`DELETE FROM calendar_connections WHERE id = ? AND household_id = ? AND kind = 'caldav'`, connectionID, householdID))
+	return expectOne(db.sql.Exec(`DELETE FROM calendar_connections WHERE id = ? AND household_id = ? AND kind IN ('caldav', 'google')`, connectionID, householdID))
 }
 
 // ObjectChange is one remote object that is new or changed: its address,

@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/googleauth"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
 	"github.com/hejmo-home/hejmo/internal/outbound"
@@ -134,14 +135,18 @@ type Service struct {
 	now    func() time.Time
 	logger *slog.Logger
 	dial   Dialer
-	gate   *outbound.Gate
+	// google talks to Google's token service, googleDial to its CalDAV API; tokens keeps the access tokens.
+	google     *googleauth.Client
+	googleDial GoogleDialer
+	tokens     googleTokens
+	gate       *outbound.Gate
 	// ownFetch and ownDial say that a test or caller set its own; the gate then
 	// does not replace them.
-	ownFetch, ownDial bool
-	locks             sync.Map // calendar id -> *sync.Mutex: one sync per calendar at a time
-	pushes            sync.WaitGroup
-	bundle            *i18n.Bundle
-	lang              string // language of the readable audience line
+	ownFetch, ownDial, ownGoogle bool
+	locks                        sync.Map // calendar id -> *sync.Mutex: one sync per calendar at a time
+	pushes                       sync.WaitGroup
+	bundle                       *i18n.Bundle
+	lang                         string // language of the readable audience line
 }
 
 func (s *Service) lock(calendarID string) *sync.Mutex {
@@ -177,11 +182,14 @@ func (s *Service) SetGate(g *outbound.Gate) {
 	if !s.ownDial {
 		s.dial = dialer(g)
 	}
+	if !s.ownGoogle {
+		s.google, s.googleDial = googleauth.New(g.Client(outbound.Calendars, 30*time.Second)), googleDialer(g)
+	}
 }
 
 // serviceOf is the connection a calendar kind belongs to.
 func serviceOf(kind string) outbound.Service {
-	if kind == "caldav" {
+	if kind == "caldav" || kind == "google" {
 		return outbound.Calendars
 	}
 	return outbound.ICS
@@ -270,7 +278,7 @@ func (s *Service) sync(ctx context.Context, householdID, calendarID string, run 
 		}
 		return cause
 	}
-	if cal.Kind == "caldav" {
+	if cal.Kind == "caldav" || cal.Kind == "google" {
 		return s.syncCalDAV(ctx, cal, h, at, run, fail)
 	}
 	feedURL, err := icsfeed.NormalizeURL(cal.URL)

@@ -25,8 +25,17 @@ func (db *DB) SetCalendarReadOnly(householdID, calendarID string, readOnly bool)
 	if err != nil {
 		return err
 	}
-	if kind != "caldav" {
-		return fmt.Errorf("%w: only calendars from CalDAV can be switched between two-way and read-only", ErrInvalid)
+	if kind != "caldav" && kind != "google" {
+		return fmt.Errorf("%w: only calendars from CalDAV or Google can be switched between two-way and read-only", ErrInvalid)
+	}
+	if !readOnly { // Google shares some calendars for viewing only: they stay read-only
+		var locked bool
+		if err := db.sql.QueryRow(`SELECT source_read_only FROM calendars WHERE id = ?`, calendarID).Scan(&locked); err != nil {
+			return err
+		}
+		if locked {
+			return fmt.Errorf("%w: this calendar is shared for viewing only, so it cannot be two-way", ErrInvalid)
+		}
 	}
 	return expectOne(db.sql.Exec(`UPDATE calendars SET read_only = ?, waste = waste AND ?, updated_at = ? WHERE id = ? AND household_id = ?`, readOnly, readOnly, now(), calendarID, householdID))
 }
@@ -60,7 +69,7 @@ func (m *pushMarker) old(eventID string) error {
 	var cal, address string
 	var readOnly bool
 	err := m.tx.QueryRow(`SELECT e.calendar_id, e.remote_url, c.read_only FROM events e JOIN calendars c ON c.id = e.calendar_id
-		WHERE e.id = ? AND e.remote_url IS NOT NULL AND c.kind = 'caldav'`, eventID).Scan(&cal, &address, &readOnly)
+		WHERE e.id = ? AND e.remote_url IS NOT NULL AND c.kind IN ('caldav', 'google')`, eventID).Scan(&cal, &address, &readOnly)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -86,7 +95,7 @@ func (m *pushMarker) row(id string) (eventRow, bool, error) {
 	var readOnly bool
 	err := m.tx.QueryRow(`SELECT e.calendar_id, c.remote_url, e.series_id, e.recurrence_id, e.remote_url, e.remote_key, c.read_only
 		FROM events e JOIN calendars c ON c.id = e.calendar_id
-		WHERE e.id = ? AND c.kind = 'caldav' AND c.remote_url IS NOT NULL`, id).
+		WHERE e.id = ? AND c.kind IN ('caldav', 'google') AND c.remote_url IS NOT NULL`, id).
 		Scan(&r.calendarID, &r.base, &r.seriesID, &r.recurrenceID, &r.remoteURL, &r.remoteKey, &readOnly)
 	if errors.Is(err, sql.ErrNoRows) {
 		return r, false, nil

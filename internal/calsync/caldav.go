@@ -80,13 +80,9 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
 	}
-	user, password, err := s.db.ConnectionCredentials(h.ID, cal.ConnectionID)
+	remote, msg, err := s.remoteFor(ctx, h, conn, at)
 	if err != nil {
-		return fail(i18n.Msg("sync.fail.credentials", "detail", err.Error()), err)
-	}
-	remote, err := s.dial(conn.URL, user, password)
-	if err != nil {
-		return fail(i18n.Msg("sync.fail.address", "detail", err.Error()), err)
+		return fail(msg, err)
 	}
 	failRemote := func(err error) error { return fail(remoteMessage(err), err) }
 

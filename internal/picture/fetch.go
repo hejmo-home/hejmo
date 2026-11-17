@@ -147,7 +147,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (Fetched, error) {
 	if mt, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type")); mt == "text/html" || mt == "application/xhtml+xml" {
 		return Fetched{}, ErrWebPage
 	}
-	res, err := Process(resp.Body)
+	res, err := ProcessContext(ctx, resp.Body)
 	if err != nil {
 		var te *TooLargeError
 		if errors.As(err, &te) || errors.Is(err, ErrNotAnImage) || errors.Is(err, ErrWebPage) || errors.Is(err, ErrTooManyPixels) {

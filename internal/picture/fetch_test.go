@@ -272,3 +272,27 @@ func TestAnUnreachableHostIsNotTheUsersFault(t *testing.T) {
 		t.Errorf("err = %v, want ErrUnreachable", err)
 	}
 }
+
+func TestACancelledDownloadStopsWaitingForTheDecodeSlot(t *testing.T) {
+	srv := serve(t, jpegHandler(t))
+	release := picture.Hold() // another picture is being decoded
+	defer release()
+	ctx, cancel := context.WithCancel(context.Background())
+	f := loopbackIsPublic()
+	f.Timeout = 30 * time.Second
+	done := make(chan error, 1)
+	go func() {
+		_, err := f.Fetch(ctx, srv.URL+"/media/hafer.jpg")
+		done <- err
+	}()
+	time.Sleep(100 * time.Millisecond)
+	cancel()
+	select {
+	case err := <-done:
+		if err == nil {
+			t.Error("a cancelled download succeeded")
+		}
+	case <-time.After(2 * time.Second):
+		t.Fatal("a cancelled download kept waiting for the decode slot")
+	}
+}

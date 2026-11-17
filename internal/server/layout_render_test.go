@@ -938,19 +938,28 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 	if inv.status != http.StatusOK || token == "" {
 		t.Fatalf("invitation = %d, no token\n%s", inv.status, inv.body)
 	}
+	// An own article of the library: its name may be 60 characters without a space.
+	const longArticle = "Haselnussmandelknusperflockenmitschokostueckchenundrosinen12"
+	art, err := db.CreateArticle(h, papa.ID, store.OwnArticle{Name: longArticle, Dept: "pantry", Kind: "veg", Unit1: "pack"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent := siteOf("parent", f.box, f.client)
 	f.logout()
 	out := siteOf("signed out", f.box, f.client)
 	for _, c := range []struct {
 		site layoutSite
 		path string
 		h1   string // the heading that holds the name
+		name string // the name it holds
 	}{
-		{display, "/display/person/" + mia.ID, ".pv-header h1"},
-		{phone, "/", "h1.child-h"},
-		{out, "/invite/" + token, ".wizard h1"},
+		{display, "/display/person/" + mia.ID, ".pv-header h1", long},
+		{phone, "/", "h1.child-h", long},
+		{out, "/invite/" + token, ".wizard h1", long},
+		{parent, "/settings/lists/library/" + art.ID, "h1.art-title", longArticle},
 	} {
-		if status, body := c.site.get(t, c.path); status != http.StatusOK || !strings.Contains(body, long) {
-			t.Fatalf("%s %s = %d, want a page naming %s", c.site.name, c.path, status, long)
+		if status, body := c.site.get(t, c.path); status != http.StatusOK || !strings.Contains(body, c.name) {
+			t.Fatalf("%s %s = %d, want a page naming %s", c.site.name, c.path, status, c.name)
 		}
 	}
 
@@ -961,10 +970,12 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 		site layoutSite
 		path string
 		h1   string
+		name string
 	}{
-		{display, "/display/person/" + mia.ID, ".pv-header h1"},
-		{phone, "/", "h1.child-h"},
-		{out, "/invite/" + token, ".wizard h1"},
+		{display, "/display/person/" + mia.ID, ".pv-header h1", long},
+		{phone, "/", "h1.child-h", long},
+		{out, "/invite/" + token, ".wizard h1", long},
+		{parent, "/settings/lists/library/" + art.ID, "h1.art-title", longArticle},
 	} {
 		t.Run(c.site.name+c.path, func(t *testing.T) {
 			baseURL, _ := url.Parse(c.site.chromeBase())
@@ -987,7 +998,7 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 				if (!h || !h.textContent.includes(%q)) return "no heading with the name";
 				const r = h.getBoundingClientRect();
 				return JSON.stringify({scroll: h.scrollWidth, box: h.clientWidth, right: Math.round(r.right), page: document.documentElement.scrollWidth});
-			})()`, c.h1, long)))
+			})()`, c.h1, c.name)))
 			if err != nil {
 				t.Fatal(err)
 			}

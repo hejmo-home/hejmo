@@ -257,9 +257,10 @@ func TestAPictureOfThirtyMegapixelsIsRefusedBeforeItIsDecoded(t *testing.T) {
 
 func TestTwoPicturesAreNotDecodedAtTheSameTime(t *testing.T) {
 	release := picture.Hold() // a picture is being decoded
+	data := encodeJPEG(t, gradient(120, 80))
 	done := make(chan error, 1)
 	go func() {
-		_, err := picture.Process(bytes.NewReader(encodeJPEG(t, gradient(120, 80))))
+		_, err := picture.Process(bytes.NewReader(data))
 		done <- err
 	}()
 	select {
@@ -282,9 +283,10 @@ func TestACancelledRequestStopsWaitingForTheSlot(t *testing.T) {
 	release := picture.Hold()
 	defer release()
 	ctx, cancel := context.WithCancel(context.Background())
+	data := encodeJPEG(t, gradient(120, 80))
 	done := make(chan error, 1)
 	go func() {
-		_, err := picture.ProcessContext(ctx, bytes.NewReader(encodeJPEG(t, gradient(120, 80))))
+		_, err := picture.ProcessContext(ctx, bytes.NewReader(data))
 		done <- err
 	}()
 	time.Sleep(50 * time.Millisecond)

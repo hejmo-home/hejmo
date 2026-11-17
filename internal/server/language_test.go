@@ -285,7 +285,7 @@ func TestSwitcherOnSetupAndTrustPagesButNotOnDisplays(t *testing.T) {
 		}
 	}
 	b := signedInBox(t)
-	if r := b.get("/account"); r.status != http.StatusOK || !strings.Contains(r.body, `<details class="lang">`) {
+	if r := b.get("/account"); r.status != http.StatusOK || !strings.Contains(r.body, `<details class="lang" name="frame-tool">`) {
 		t.Errorf("/account: %d, switcher missing", r.status)
 	}
 	if r := b.get("/display"); strings.Contains(r.body, `class="lang"`) || strings.Contains(r.body, "/language") {

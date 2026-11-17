@@ -43,6 +43,9 @@ type frame struct {
 	// seconds, 0 when unknown); the page script uses them for the browser
 	// theme "automatic" (ADR 0015).
 	SunRise, SunSet int64
+	// SunPolar is set when the home location is known but the sun neither
+	// rises nor sets today (polar day or night): automatic has no times then.
+	SunPolar bool
 	// TimeFormat is the household's clock ("24h" or "12h"); the time picker
 	// follows it.
 	TimeFormat string
@@ -67,6 +70,10 @@ type frame struct {
 	LangName, LangFlag string
 	Others             []language
 	Next               string
+	// The theme chooser (ticket 125): a paired phone says "phone" where a
+	// browser says "browser", and a parent gets a link where a child is told to
+	// ask an adult.
+	ThemePhone, ThemeParent bool
 }
 
 // frameFor builds the frame for the person behind the request, or a bare
@@ -80,6 +87,8 @@ func (s *server) frameFor(r *http.Request) frame {
 	}
 	f := s.sunFrame()
 	f.SignedIn = true
+	f.ThemePhone = s.phoneSession(r)
+	f.ThemeParent = auth.RoleAllows(p.Role, auth.Perm("settings", auth.Write))
 	f.NoSignOut = s.childPhoneSession(r, p)
 	if h, err := s.db.HomeHousehold(); err == nil {
 		f.TimeFormat = string(h.TimeFormat)
@@ -126,7 +135,7 @@ func (s *server) sunFrame() frame {
 	}
 	t := sun.On(s.now().In(loc), h.Latitude, h.Longitude)
 	if t.Kind != sun.Normal {
-		return frame{}
+		return frame{SunPolar: true}
 	}
 	return frame{SunRise: t.Rise.Unix(), SunSet: t.Set.Unix()}
 }

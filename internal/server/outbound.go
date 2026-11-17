@@ -223,7 +223,7 @@ func joinAnd(list []string, and string) string {
 // confirmation pages name.
 type outsideFacts struct {
 	Connections []store.Connection
-	ConnLabels  []string // "name" of each connection
+	ConnLabels  []string // the user name of each connection
 	ConnHosts   []string
 	ICS         []store.SyncedCalendar
 	ICSHosts    []string
@@ -349,10 +349,6 @@ func (s *server) outsideRows(r *http.Request, p principal, box store.OutboundBox
 				row.Purpose = template.HTML(html.EscapeString(T("outside.calendars.for_none")))
 				row.Goes = T("outside.calendars.to_none")
 				break
-			}
-			labels := make([]string, len(facts.Connections))
-			for i, c := range facts.Connections {
-				labels[i] = c.Username
 			}
 			var b strings.Builder
 			b.WriteString(html.EscapeString(T("outside.calendars.for")) + " ")

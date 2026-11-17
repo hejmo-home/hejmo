@@ -117,7 +117,7 @@ Eine Update-Datei in der Weboberfläche hochzuladen gibt es noch nicht (das ist 
 
 ## Uhrzeit vom Router
 
-Der Offline-Modus von Hejmo gilt nur für Hejmo. Das Gerät, auf dem die Box läuft (zum Beispiel Raspberry Pi OS), kann weiter die Uhrzeit aus dem Internet holen (NTP) und eigene System-Updates laden. Damit es die Uhrzeit ohne Internet bekommt, richte es auf euren Router aus, den viele Router (etwa die FRITZ!Box) als Zeitserver anbieten:
+Der Offline-Modus von Hejmo gilt nur für Hejmo. Das Gerät, auf dem die Box läuft (zum Beispiel Raspberry Pi OS), kann weiter die Uhrzeit aus dem Internet holen (NTP) und eigene System-Updates laden. Damit es die Uhrzeit ohne Internet bekommt, richte es auf deinen Router aus, den viele Router (etwa die FRITZ!Box) als Zeitserver anbieten:
 
 1. In der FRITZ!Box öffnest du **Heimnetz › Netzwerk › Netzwerkeinstellungen** und notierst die Adresse der FRITZ!Box (meist `192.168.178.1`). Unter **Heimnetz-Einstellungen** muss *Zeitserver (NTP)* für das Heimnetz an sein.
 2. Auf der Box bearbeitest du `/etc/systemd/timesyncd.conf`, setzt `NTP=192.168.178.1` und `FallbackNTP=` (leer) und startest mit `sudo systemctl restart systemd-timesyncd` neu.

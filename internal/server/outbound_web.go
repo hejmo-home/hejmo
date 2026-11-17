@@ -193,7 +193,7 @@ func (s *server) handleConnectionsSave(w http.ResponseWriter, r *http.Request) {
 
 type costView struct {
 	Name, Provider, Address string
-	Displays, Phones, Apps  []string
+	Displays, Phones, Apps  string // the names, joined by commas
 	Passkeys                []personChip
 	Lead                    template.HTML
 	NewAddress              template.HTML
@@ -210,23 +210,25 @@ func (s *server) costOf(r *http.Request, p principal) (costView, bool, error) {
 	if err != nil {
 		return v, false, err
 	}
+	var displays, phones, apps []string
 	for _, d := range ds {
-		v.Displays = append(v.Displays, d.Name)
+		displays = append(displays, d.Name)
 	}
 	ph, err := s.db.Phones(p.household.ID)
 	if err != nil {
 		return v, false, err
 	}
 	for _, x := range ph {
-		v.Phones = append(v.Phones, x.Name)
+		phones = append(phones, x.Name)
 	}
 	toks, err := s.deviceTokens(p.household.ID)
 	if err != nil {
 		return v, false, err
 	}
 	for _, t := range toks {
-		v.Apps = append(v.Apps, t.Name)
+		apps = append(apps, t.Name)
 	}
+	v.Displays, v.Phones, v.Apps = strings.Join(displays, ", "), strings.Join(phones, ", "), strings.Join(apps, ", ")
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
 		return v, false, err

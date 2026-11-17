@@ -10,7 +10,7 @@
      row, success line or field error) stays put; only the entries scroll. */}}
 {{define "listsView"}}<div class="lv" data-person="{{.Current.Slot}}">
   <header class="lv-header">
-    <h1><svg class="icon" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5l1.5 1.5 2.5-2.5M3.5 12.5l1.5 1.5 2.5-2.5M3.5 18.5l1.5 1.5 2.5-2.5M11 7h9.5M11 13h9.5M11 19h9.5"/></svg>{{t "lists.title"}}</h1>
+    <h1><svg class="icon" width="26" height="26" viewBox="0 0 24 24" aria-hidden="true"><path d="M3.5 6.5l1.5 1.5 2.5-2.5M3.5 12.5l1.5 1.5 2.5-2.5M3.5 18.5l1.5 1.5 2.5-2.5M11 7h9.5M11 13h9.5M11 19h9.5"/></svg><span class="h-name">{{t "lists.title"}}</span></h1>
     <span class="chip" data-clock-zone="{{.ClockZone}}" data-clock-format="{{.ClockFormat}}" data-clock>{{.Clock}}</span>
     <a class="pv-back" href="/display">{{t "personal.back"}}</a>
   </header>

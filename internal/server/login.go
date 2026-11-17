@@ -184,6 +184,11 @@ func localPath(p string) string {
 }
 
 func (s *server) handleLogout(w http.ResponseWriter, r *http.Request) {
+	// A stale page must not end a child's phone session either (Q46).
+	if p, ok := s.currentPerson(r); ok && s.childPhoneSession(r, p) {
+		http.Error(w, s.i18n.T(s.langOf(r), "home.logout.child"), http.StatusForbidden)
+		return
+	}
 	s.endSession(w, r)
 	// Whoever signs out on the page of an invitation comes back to it (ticket 145).
 	if next := localPath(r.PostFormValue("next")); strings.HasPrefix(next, "/invite/") {

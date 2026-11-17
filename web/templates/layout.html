@@ -24,7 +24,7 @@
   {{if .PlainBrand}}<span class="brand">Hejmo</span>{{else}}<a class="brand" href="/">Hejmo</a>{{end}}
   <div class="frame-tools">
     {{template "langSwitch" .}}
-    {{if .SignedIn}}<form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">{{t "home.logout"}}</button></form>{{end}}
+    {{if and .SignedIn (not .NoSignOut)}}<form class="signout" method="post" action="/logout"><button class="button secondary" type="submit">{{t "home.logout"}}</button></form>{{end}}
   </div>
 </header>
 {{if .Items}}<nav class="frame-nav" aria-label="{{t "nav.label"}}"><ul>

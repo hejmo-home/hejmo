@@ -120,8 +120,8 @@ func (s *server) albumReply(w http.ResponseWriter, status int, householdID, id s
 	s.fail(w, "album", err)
 }
 
-// photoError answers a refused photo operation with the matching status.
-func (s *server) photoError(w http.ResponseWriter, what string, err error) {
+// photoOpError answers a refused photo operation with the matching status.
+func (s *server) photoOpError(w http.ResponseWriter, what string, err error) {
 	var fe *store.FieldError
 	switch {
 	case errors.Is(err, store.ErrNotFound):
@@ -149,7 +149,7 @@ func (s *server) apiCreateAlbum(w http.ResponseWriter, r *http.Request, p princi
 	}
 	a, err := s.db.CreateAlbum(p.household.ID, in.Name)
 	if err != nil {
-		s.photoError(w, "create album", err)
+		s.photoOpError(w, "create album", err)
 		return
 	}
 	s.albumReply(w, http.StatusCreated, p.household.ID, a.ID)
@@ -161,7 +161,7 @@ func (s *server) apiGetAlbum(w http.ResponseWriter, r *http.Request, p principal
 		return
 	}
 	if _, err := s.db.Album(p.household.ID, r.PathValue("id")); err != nil {
-		s.photoError(w, "album", err)
+		s.photoOpError(w, "album", err)
 		return
 	}
 	s.albumReply(w, http.StatusOK, p.household.ID, r.PathValue("id"))
@@ -174,7 +174,7 @@ func (s *server) apiRenameAlbum(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	if err := s.db.RenameAlbum(p.household.ID, r.PathValue("id"), in.Name); err != nil {
-		s.photoError(w, "rename album", err)
+		s.photoOpError(w, "rename album", err)
 		return
 	}
 	s.albumReply(w, http.StatusOK, p.household.ID, r.PathValue("id"))
@@ -182,7 +182,7 @@ func (s *server) apiRenameAlbum(w http.ResponseWriter, r *http.Request, p princi
 
 func (s *server) apiDeleteAlbum(w http.ResponseWriter, r *http.Request, p principal) {
 	if err := s.deleteAlbum(p.household.ID, r.PathValue("id")); err != nil {
-		s.photoError(w, "delete album", err)
+		s.photoOpError(w, "delete album", err)
 		return
 	}
 	w.WriteHeader(http.StatusNoContent)
@@ -214,7 +214,7 @@ func (s *server) removePhotoFiles(ids []string) {
 
 func (s *server) apiListAlbumPhotos(w http.ResponseWriter, r *http.Request, p principal) {
 	if _, err := s.db.Album(p.household.ID, r.PathValue("id")); err != nil {
-		s.photoError(w, "album photos", err)
+		s.photoOpError(w, "album photos", err)
 		return
 	}
 	list, err := s.db.Photos(p.household.ID, r.PathValue("id"))
@@ -275,7 +275,7 @@ func (s *server) apiUploadPhoto(w http.ResponseWriter, r *http.Request, p princi
 	if err := r.ParseMultipartForm(8 << 20); err != nil {
 		var tooBig *http.MaxBytesError
 		if errors.As(err, &tooBig) {
-			s.photoError(w, "upload", photo.ErrTooLarge)
+			s.photoOpError(w, "upload", photo.ErrTooLarge)
 			return
 		}
 		writeError(w, http.StatusUnprocessableEntity, "send the photo as multipart/form-data in the part file")
@@ -290,7 +290,7 @@ func (s *server) apiUploadPhoto(w http.ResponseWriter, r *http.Request, p princi
 	defer f.Close()
 	ph, err := s.addPhoto(p.household.ID, r.PathValue("id"), hdr.Filename, f)
 	if err != nil {
-		s.photoError(w, "upload", err)
+		s.photoOpError(w, "upload", err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, photoToJSON(ph))
@@ -307,24 +307,24 @@ func (s *server) apiUpdatePhoto(w http.ResponseWriter, r *http.Request, p princi
 	}
 	id := r.PathValue("id")
 	if _, err := s.db.Photo(p.household.ID, id); err != nil {
-		s.photoError(w, "update photo", err)
+		s.photoOpError(w, "update photo", err)
 		return
 	}
 	if in.AlbumID != nil {
 		if err := s.db.MovePhotos(p.household.ID, []string{id}, *in.AlbumID); err != nil {
-			s.photoError(w, "move photo", err)
+			s.photoOpError(w, "move photo", err)
 			return
 		}
 	}
 	if in.Hidden != nil {
 		if err := s.db.SetPhotoHidden(p.household.ID, id, *in.Hidden); err != nil {
-			s.photoError(w, "hide photo", err)
+			s.photoOpError(w, "hide photo", err)
 			return
 		}
 	}
 	ph, err := s.db.Photo(p.household.ID, id)
 	if err != nil {
-		s.photoError(w, "update photo", err)
+		s.photoOpError(w, "update photo", err)
 		return
 	}
 	writeJSON(w, http.StatusOK, photoToJSON(ph))
@@ -333,7 +333,7 @@ func (s *server) apiUpdatePhoto(w http.ResponseWriter, r *http.Request, p princi
 func (s *server) apiDeletePhoto(w http.ResponseWriter, r *http.Request, p principal) {
 	gone, err := s.db.DeletePhotos(p.household.ID, []string{r.PathValue("id")})
 	if err != nil {
-		s.photoError(w, "delete photo", err)
+		s.photoOpError(w, "delete photo", err)
 		return
 	}
 	if len(gone) == 0 {
@@ -438,7 +438,7 @@ func (s *server) apiSetPhotoLimit(w http.ResponseWriter, r *http.Request, p prin
 		return
 	}
 	if err := s.db.SetPhotoLimitGB(p.household.ID, *in.LimitGB); err != nil {
-		s.photoError(w, "photo limit", err)
+		s.photoOpError(w, "photo limit", err)
 		return
 	}
 	s.apiPhotoStorage(w, r, p)

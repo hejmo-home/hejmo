@@ -1,6 +1,5 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/displays" "Text" (t "displays.back"))}}
-  <h1>{{.D.Name}}</h1>
+  <h1>{{.Title}}</h1>
   {{template "error" .}}
   {{template "facts" .Facts}}
 

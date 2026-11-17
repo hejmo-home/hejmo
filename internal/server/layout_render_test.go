@@ -193,6 +193,26 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	_, err = db.SaveRoutineAsTemplate(h, r.ID, "Morgenroutine für Grundschulkinder")
 	must(err)
 
+	// Diets, allergies and the article library (ticket 164): warnings that name people, own articles with a long name, a symbol and a photo, hiding switched on.
+	for who, food := range map[string]store.Food{
+		"Friedrich":    {Diet: "omnivore", Allergens: []string{"milk"}},
+		"Maximilian":   {Diet: "vegetarian", Allergens: []string{"peanuts", "nuts"}, Other: "Kiwi"},
+		"Anna-Lena":    {Diet: "pescatarian", Allergens: []string{"fish", "crustaceans", "molluscs"}},
+		"Konstantin":   {Diet: "omnivore", Allergens: []string{"milk"}},
+		"Sophie-Marie": {Diet: "vegan", Allergens: []string{"gluten", "soy", "celery"}, Other: "Erdbeeren, Tomaten, Pfirsiche (roh), Nachtschattengewächse"},
+		"Leopoldine":   {Diet: "omnivore", Other: "Kiwi"},
+	} {
+		must(db.SetPersonFood(h, f.people[who].ID, food))
+	}
+	knusper, err := db.CreateArticle(h, f.ids[0], store.OwnArticle{Name: "Haselnuss-Mandel-Knusperflocken mit Schokostückchen", Dept: "pantry", Kind: "veg", Allergens: []string{"nuts", "milk", "soy", "gluten"}, Unit1: "pack", Unit2: "g"},
+		&store.ArticlePicture{JPEG: testJPEG(t, 400, 512), Source: "upload", FromW: 3024, FromH: 4032, FromBytes: 3 << 20})
+	must(err)
+	_ = knusper
+	_, err = db.CreateArticle(h, f.ids[1], store.OwnArticle{Name: "Katzenfutter Huhn", Dept: "other", Kind: "nonfood", Unit1: "pack", PicSource: "symbol", Symbol: "🐈"}, nil)
+	must(err)
+	must(db.SetLibrarySettings(h, store.LibrarySettings{HideAllergen: true, Everyone: true, ConfirmedBy: f.ids[0]}))
+	must(db.SetArticleHidden(h, "walnuts", true))
+
 	// Groups, a calendar, a day note.
 	_, err = db.CreateGroup(h, "Kindergartenkinder-Elternbeirat", f.ids[:3])
 	must(err)
@@ -355,8 +375,18 @@ func pageShape(path string) string {
 	if i := strings.IndexAny(p, "?"); i >= 0 {
 		p = p[:i]
 	}
-	return isoDayRe.ReplaceAllString(uuidRe.ReplaceAllString(p, "{id}"), "{day}")
+	p = isoDayRe.ReplaceAllString(uuidRe.ReplaceAllString(p, "{id}"), "{day}")
+	if libraryNotArticle[p] {
+		return p
+	}
+	return shippedArticleRe.ReplaceAllString(p, "$1/{article}")
 }
+
+// shippedArticleRe is the page of an article Hejmo ships: 248 pages of one kind, rendered once (ticket 164).
+var shippedArticleRe = regexp.MustCompile(`^(/settings/lists/library)/(?:[a-z0-9]+-)*[a-z0-9]+$`)
+
+// libraryNotArticle are the paths under the library that the shape above would take for an article.
+var libraryNotArticle = map[string]bool{"/settings/lists/library/new": true, "/settings/lists/library/suggest": true}
 
 // crawl follows every link of the signed-in parent from the start page and
 // returns one path per kind of page. Pages that only a form reaches are added by hand.
@@ -438,6 +468,10 @@ var notRendered = map[string]string{
 	"/setup/https/check":        "answers a fragment for the setup page's script",
 	"/places":                   "JSON list of places for the home location picker",
 	"/phones/join/{code}":       "one-time pairing link of a phone",
+
+	"/articles/{id}/picture":                  "an image",
+	"/settings/lists/library/picture/{token}": "an image",
+	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
 }
 
 // matches reports whether a request path is served by a route pattern.
@@ -465,7 +499,7 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 		}
 		pages = append(pages, layoutPage{site: s, path: path})
 	}
-	for _, p := range crawl(t, parent, "/calendar/search?q=Schwimm", "/calendar/new", "/tasks", "/routines/new?person="+f.ids[1]+"&part=morning") {
+	for _, p := range crawl(t, parent, "/calendar/search?q=Schwimm", "/calendar/new", "/tasks", "/settings/lists/library/walnuts", "/routines/new?person="+f.ids[1]+"&part=morning") {
 		add(parent, p)
 	}
 	// The display: the family view and the personal views of two people.
@@ -895,6 +929,19 @@ func TestLayoutProbeFindsWhatItShould(t *testing.T) {
 	}
 }
 
+func TestTheFormAndAShippedArticleAreDifferentPages(t *testing.T) {
+	form, article := pageShape("/settings/lists/library/new"), pageShape("/settings/lists/library/walnuts")
+	if form == article {
+		t.Errorf("the form and a shipped article share the shape %q, so the crawl renders only one of them", form)
+	}
+	if pageShape("/settings/lists/library/suggest") == article {
+		t.Error("suggest is no article")
+	}
+	if pageShape("/settings/lists/library/apples") != article {
+		t.Error("two shipped articles are two pages of one kind")
+	}
+}
+
 // A name wider than the line breaks inside the word at the line's edge, in
 // every heading, whatever the heading's layout (#175): headings that are grid
 // items (the wizard's) or flex containers (the personal view's, the child's
@@ -920,34 +967,37 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 	if inv.status != http.StatusOK || token == "" {
 		t.Fatalf("invitation = %d, no token\n%s", inv.status, inv.body)
 	}
+	// An own article of the library: its name may be 60 characters without a space.
+	const longArticle = "Haselnussmandelknusperflockenmitschokostueckchenundrosinen12"
+	art, err := db.CreateArticle(h, papa.ID, store.OwnArticle{Name: longArticle, Dept: "pantry", Kind: "veg", Unit1: "pack"}, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	parent := siteOf("parent", f.box, f.client)
 	f.logout()
 	out := siteOf("signed out", f.box, f.client)
-	for _, c := range []struct {
+	type headingCase struct {
 		site layoutSite
 		path string
 		h1   string // the heading that holds the name
-	}{
-		{display, "/display/person/" + mia.ID, ".pv-header h1"},
-		{phone, "/", "h1.child-h"},
-		{out, "/invite/" + token, ".wizard h1"},
-	} {
-		if status, body := c.site.get(t, c.path); status != http.StatusOK || !strings.Contains(body, long) {
-			t.Fatalf("%s %s = %d, want a page naming %s", c.site.name, c.path, status, long)
+		name string // the name it holds
+	}
+	cases := []headingCase{
+		{display, "/display/person/" + mia.ID, ".pv-header h1", long},
+		{phone, "/", "h1.child-h", long},
+		{out, "/invite/" + token, ".wizard h1", long},
+		{parent, "/settings/lists/library/" + art.ID, "h1.art-title", longArticle},
+	}
+	for _, c := range cases {
+		if status, body := c.site.get(t, c.path); status != http.StatusOK || !strings.Contains(body, c.name) {
+			t.Fatalf("%s %s = %d, want a page naming %s", c.site.name, c.path, status, c.name)
 		}
 	}
 
 	ctx := startChrome(t, chrome)
 	ctx, cancel := context.WithTimeout(ctx, 2*time.Minute)
 	defer cancel()
-	for _, c := range []struct {
-		site layoutSite
-		path string
-		h1   string
-	}{
-		{display, "/display/person/" + mia.ID, ".pv-header h1"},
-		{phone, "/", "h1.child-h"},
-		{out, "/invite/" + token, ".wizard h1"},
-	} {
+	for _, c := range cases {
 		t.Run(c.site.name+c.path, func(t *testing.T) {
 			baseURL, _ := url.Parse(c.site.chromeBase())
 			if _, err := chromedp.Call(ctx, network.ClearBrowserCookies, cdp.Empty{}); err != nil {
@@ -969,7 +1019,7 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 				if (!h || !h.textContent.includes(%q)) return "no heading with the name";
 				const r = h.getBoundingClientRect();
 				return JSON.stringify({scroll: h.scrollWidth, box: h.clientWidth, right: Math.round(r.right), page: document.documentElement.scrollWidth});
-			})()`, c.h1, long)))
+			})()`, c.h1, c.name)))
 			if err != nil {
 				t.Fatal(err)
 			}

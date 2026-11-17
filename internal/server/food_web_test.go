@@ -43,7 +43,7 @@ func TestFoodPageOffersFourDietsAndFourteenAllergensInTheOrderOfThePageLanguage(
 	if de.status != http.StatusOK {
 		t.Fatalf("GET = %d", de.status)
 	}
-	foodHas(t, "food page", de.body, "<h1>Essen und Allergien</h1>", "Zurück zu Mia", "Bleibt in eurer Box", `class="why health"`,
+	foodHas(t, "food page", de.body, "<h1>Essen und Allergien</h1>", `<a href="/people/`+mia+`">Mia</a>`, "Bleibt in eurer Box", `class="why health"`,
 		`<form method="post" action="/people/`+mia+`/food" class="steps food-form">`, "Wie isst Mia?",
 		`value="omnivore" checked`, "Experimentell, ohne Gewähr:", `class="hint caveat"`, `name="other"`, `maxlength="200"`, "Das prüft Hejmo nicht automatisch und kann nicht danach filtern.")
 	if n := strings.Count(de.body, `type="radio" name="diet"`); n != 4 {

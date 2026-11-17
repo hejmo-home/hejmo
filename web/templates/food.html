@@ -1,5 +1,4 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "food.title") "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" (printf "/people/%s" .Subject.ID) "Text" .BackText)}}
   <h1>{{t "food.title"}}</h1>
   <p class="invitee for-person"><span class="marker" data-person="{{.Subject.Slot}}" data-shape="{{.Subject.Shape}}" aria-hidden="true"></span><span>{{.Subject.Name}}</span></p>
   <p class="why health"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>{{t "food.why.title"}}</b>{{t "food.why.text"}}</span></p>

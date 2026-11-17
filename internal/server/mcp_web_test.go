@@ -91,7 +91,7 @@ func TestMCPPageFirstVisitExplainsBeforeTheSwitch(t *testing.T) {
 		t.Fatalf("GET /mcp = %d", r.status)
 	}
 	mcpHas(t, "/mcp", r.body,
-		`<a class="back" href="/settings">`, "<h1>AI assistants (MCP)</h1>", "As long as MCP is off, no assistant can reach your data.",
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/settings">Settings</a>`, "<h1>AI assistants (MCP)</h1>", "As long as MCP is off, no assistant can reach your data.",
 		`<section class="explain" aria-labelledby="what">`, "<h2 id=\"what\">What is MCP?</h2>", "<b>MCP</b> (Model Context Protocol)",
 		"Put milk and oats on the shopping list.", "What an assistant may do", "Good to know",
 		`<ul class="links">`, `href="https://github.com/hejmo-home/hejmo/blob/main/docs/mcp.md"`, `href="https://modelcontextprotocol.io/docs/getting-started/intro"`, "(English)",
@@ -149,7 +149,7 @@ func TestNewMCPTokenFormDefaultsEveryAreaToReadOnly(t *testing.T) {
 		t.Fatalf("GET = %d", r.status)
 	}
 	mcpHas(t, "new token", r.body,
-		`<a class="back" href="/mcp">`, "All MCP tokens", "<h1>New MCP token</h1>", "One token per assistant and device.",
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/mcp">AI assistants (MCP)</a>`, "<h1>New MCP token</h1>", "One token per assistant and device.",
 		`<form method="post" action="/mcp/tokens" class="steps">`, `name="name"`, `maxlength="80"`, "required",
 		"The assistant acts as you, ", `class="marker"`, ". What it enters, the box enters under your name.",
 		`<fieldset class="scopes">`, "What may the assistant do?", "“Change” also means adding, ticking off and deleting.",
@@ -271,7 +271,7 @@ func TestMCPTokenDetailPageShowsRightsInWordsAndRevokesByName(t *testing.T) {
 		t.Fatalf("GET = %d", r.status)
 	}
 	mcpHas(t, "detail", r.body,
-		`<a class="back" href="/mcp">`, "All MCP tokens", "<h1>Einkaufshelfer</h1>", "<dt>For</dt>", `class="marker"`,
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/mcp">AI assistants (MCP)</a>`, "<h1>Einkaufshelfer</h1>", "<dt>For</dt>", `class="marker"`,
 		"<dt>Reads and changes</dt>", "<dd>Lists</dd>", "<dt>Reads only</dt>", "<dd>Meal plan</dd>", "<dt>May not</dt>", "<dd>Events, Tasks (with routines and stars), Diet and allergies</dd>",
 		"<dt>Created on</dt>", "<dt>Last used</dt>", `class="flag warn"`, "Never used.",
 		"The box never shows the token itself again", "for other rights you create a new token and revoke this one",

@@ -24,7 +24,6 @@ import (
 )
 
 // The fixed values (ADR 0013, ticket 18): public addresses, no credentials.
-// #nosec G101 -- addresses of Google and of the relay page
 const (
 	// RelayRedirectURI is the static page in repository hejmo-home/hejmo-home.github.io.
 	RelayRedirectURI = "https://hejmo-home.github.io/oauth/"
@@ -43,7 +42,7 @@ const (
 type Endpoints struct{ Auth, Token, CalendarList string }
 
 // DefaultEndpoints are Google's own.
-var DefaultEndpoints = Endpoints{
+var DefaultEndpoints = Endpoints{ // #nosec G101 -- public addresses of Google, no credential
 	Auth:         "https://accounts.google.com/o/oauth2/v2/auth",
 	Token:        "https://oauth2.googleapis.com/token",
 	CalendarList: "https://www.googleapis.com/calendar/v3/users/me/calendarList",

@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"html"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -154,7 +155,10 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 		}
 		data["Code"] = map[string]any{"URL": code.URL, "QR": template.HTML(svg), "Expires": at(code.Expires)}
 		if code.ForPerson != nil {
-			data["Repair"] = map[string]any{"OldName": code.OldName, "For": *code.ForPerson}
+			// "Works once, until <b>Monday, 16.11.2026, 17:52</b>."
+			valid := html.EscapeString(s.say(r, i18n.Msg("phones.repair.valid", "when", "\x00")))
+			valid = strings.Replace(valid, "\x00", "<b>"+html.EscapeString(p.dateTime(code.Expires))+"</b>", 1)
+			data["Repair"] = map[string]any{"OldName": code.OldName, "For": *code.ForPerson, "Valid": template.HTML(valid)}
 			data["SuccessMsg"] = i18n.Msg("phones.repair.done", "phone", code.OldName)
 		}
 	}

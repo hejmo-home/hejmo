@@ -1041,7 +1041,7 @@
   "phones.repair.done": "„{phone}“ ist abgemeldet. Scanne jetzt den Code.",
   "phones.repair.scan": "Scanne diesen Code mit der Kamera des Handys, das bisher „{phone}“ hieß.",
   "phones.repair.for": "Danach ist es für",
-  "phones.repair.valid": "Funktioniert einmal, bis",
+  "phones.repair.valid": "Funktioniert einmal, bis {when}.",
   "phones.repair.next": "Das Handy zeigt dann eine Zahl. Bestätige es hier, wenn sie gleich ist.",
   "phones.default_name": "{whose} Handy",
   "phones.join.for": "Für",

@@ -8,7 +8,7 @@
     <p id="once-h"><strong>{{tf "phones.repair.scan" "phone" $.Repair.OldName}}</strong></p>
     <p class="invitee"><span class="lbl">{{t "phones.repair.for"}}</span><span class="marker" data-person="{{$.Repair.For.Slot}}" data-shape="{{$.Repair.For.Shape}}" aria-hidden="true"></span>{{$.Repair.For.Name}}</p>
     <div class="pair-qr" data-join-url="{{.URL}}">{{.QR}}</div>
-    <p class="valid"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span>{{t "phones.repair.valid"}} <b>{{.Expires}}</b>.</span></p>
+    <p class="valid"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span>{{$.Repair.Valid}}</span></p>
     {{if $.CAFirst}}<p class="notice" role="status" data-ca-first>{{t "phones.qr.ca_first"}}</p>{{end}}
     <p class="hint">{{t "phones.repair.next"}}</p>
     <div class="row"><a class="button secondary" href="/phones">{{t "phones.qr.check"}}</a></div>

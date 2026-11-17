@@ -1041,7 +1041,7 @@
   "phones.repair.done": "“{phone}” is signed out. Scan the code now.",
   "phones.repair.scan": "Scan this code with the camera of the phone that used to be called “{phone}”.",
   "phones.repair.for": "Afterwards it is for",
-  "phones.repair.valid": "Works once, until",
+  "phones.repair.valid": "Works once, until {when}.",
   "phones.repair.next": "The phone then shows a number. Confirm it here if it is the same.",
   "phones.default_name": "{whose} phone",
   "phones.join.for": "For",

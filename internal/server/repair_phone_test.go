@@ -284,8 +284,8 @@ func TestRepairingAPhoneWorksThroughTheAPI(t *testing.T) {
 	_, _, list := c.call(http.MethodGet, "/phones", nil)
 	id := list[0].(map[string]any)["id"].(string)
 
-	if status, _, _ := c.call(http.MethodPost, "/phones/"+id+"/repair", map[string]any{}); status != http.StatusUnprocessableEntity {
-		t.Fatalf("no person = %d, want 422", status)
+	if status, _, _ := c.call(http.MethodPost, "/phones/"+id+"/repair", map[string]any{"person_id": "00000000-0000-4000-8000-000000000000"}); status != http.StatusUnprocessableEntity {
+		t.Fatalf("unknown person = %d, want 422", status)
 	}
 	if status, _, _ := c.call(http.MethodPost, "/phones/"+id+"/repair", map[string]any{"person_id": sebastian.ID}); status != http.StatusUnprocessableEntity {
 		t.Fatalf("same person = %d, want 422", status)

@@ -3,13 +3,18 @@ package server_test
 import (
 	"context"
 	"errors"
+	"io"
 	"net/http"
+	"net/http/httptest"
 	"net/url"
 	"regexp"
 	"slices"
 	"strings"
 	"sync"
 	"testing"
+	"time"
+
+	"github.com/hejmo-home/hejmo/internal/server"
 )
 
 // Ticket 216 (decision Q92, preview 57 frames 0, 1/2, 14 to 18): the VPN line,
@@ -197,6 +202,27 @@ func TestReverseLookupSkipsWhatACertificateCannotCarryAndSurvivesFailure(t *test
 	r := ownPage(f, "de")
 	if got := certNamesOn(t, r.body); r.status != http.StatusOK || len(got) != 2 || !strings.Contains(r.body, `name="router_name" type="text" value=""`) {
 		t.Errorf("a failing lookup = %d, want the page with an empty field:\n%s", r.status, r.body)
+	}
+}
+
+// Without the public certificate service only the own CA is on offer, and the page
+// of the choice is already that page: it asks the router too.
+func TestOwnCAOnlyBoxAsksTheRouterToo(t *testing.T) {
+	b := newFreshBox(t)
+	resolver := &fakeResolver{names: map[string][]string{lanAddress: {"hejmo.fritz.box."}}}
+	h := server.New(server.Options{DB: b.db, PKI: b.pki, Now: func() time.Time { return b.now }, Resolver: resolver})
+	srv := httptest.NewServer(h)
+	t.Cleanup(srv.Close)
+	req, _ := http.NewRequest(http.MethodGet, srv.URL+"/setup/https", nil)
+	req.Host = lanAddress
+	res, err := http.DefaultClient.Do(req)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer res.Body.Close()
+	raw, _ := io.ReadAll(res.Body)
+	if body := string(raw); !strings.Contains(body, `name="router_name" type="text" value="hejmo.fritz.box"`) || !strings.Contains(body, "Die Box hat diesen Namen in deinem Router gefunden.") {
+		t.Errorf("the own-CA-only page did not ask the router:\n%s", body)
 	}
 }
 

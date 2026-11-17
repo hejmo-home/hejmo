@@ -1,5 +1,4 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/calendars" "Text" (t "calendars.back"))}}
   <h1>{{.Connection.Username}}</h1>
   {{with .Refused}}<p class="error" role="alert">{{.}} <a href="#login">{{t "connections.error.refused_link"}}</a></p>{{end}}
   {{if and .Error (not .ErrorField)}}{{template "error" .}}{{end}}
@@ -11,36 +10,57 @@
     {{range $cal := .Found}}
     {{$here := eq $.ErrorCalendar $cal.URL}}
     <input type="hidden" name="shown" value="{{$cal.URL}}">
-    <fieldset class="calchoice">
+    <fieldset class="calchoice{{if $cal.On}} is-on{{end}}{{if and $here (eq $.ErrorField "calendar")}} invalid{{end}}">
       <div class="card-row">
-        <span class="t"><b>{{$cal.Name}}</b>
-          <span class="state{{if $cal.On}} is-on{{end}}"><span class="on-text">{{t "connections.switch.on"}}</span><span class="off-text">{{t "connections.switch.off"}}</span></span>
-          <span class="hint count" data-count-for="{{$cal.URL}}" data-state="loading">{{t "connections.count.nojs"}}</span>{{if $cal.LastSync}}
-          <span class="status">{{$cal.LastSync}}</span>{{end}}</span>
-        <label class="switch"><input type="checkbox" role="switch" name="calendar" value="{{$cal.URL}}"{{if $cal.On}} checked{{end}} aria-label="{{$cal.Name}}"{{if and $here (eq $.ErrorField "calendar")}} aria-invalid="true" aria-describedby="err-calendar"{{end}}></label>
+        <span class="t"><span class="src">{{$.SourceKicker}}</span><b>{{or $cal.SourceName $cal.Name}}</b>
+          <span class="state{{if $cal.On}} is-on{{end}}"><span class="on-text"><span class="w">{{t "connections.state.on"}}</span> {{t "connections.state.on_rest"}}</span><span class="off-text"><span class="w">{{t "connections.state.off"}}</span> {{t "connections.state.off_rest"}}</span></span></span>
+        <label class="switch"><input type="checkbox" role="switch" name="calendar" value="{{$cal.URL}}"{{if $cal.On}} checked{{end}} aria-label="{{or $cal.SourceName $cal.Name}}"{{if and $here (eq $.ErrorField "calendar")}} aria-invalid="true" aria-describedby="err-calendar"{{end}}></label>
       </div>
-      <label>{{t "calendars.field.name"}}
-        <input name="name_{{$cal.URL}}" value="{{$cal.Name}}"{{if and $here (eq $.ErrorField "name")}} aria-invalid="true" aria-describedby="err-name"{{end}}></label>
-      {{if and $here (eq $.ErrorField "name")}}{{template "fieldError" (dict "Root" $ "Name" "name")}}{{end}}
-      {{$chipRoot := dict "ErrorField" "" "Error" ""}}
-      {{if and $here (eq $.ErrorField "audience")}}{{$chipRoot = dict "ErrorField" (printf "people_%s" $cal.URL) "Error" $.Error}}{{end}}
-      {{template "personChips" (dict "Root" $chipRoot "Name" (printf "people_%s" $cal.URL) "GroupsName" (printf "groups_%s" $cal.URL) "Legend" (t "calendars.field.audience") "People" $.People "Selected" $cal.People "Groups" $.Groups "SelectedGroups" $cal.Groups "Whole" true)}}
-      {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" (t "connections.more.color") "Open" (and $here (eq $.ErrorField "color")))}}
-        <label>{{t "calendars.field.color"}}
-          <input name="color_{{$cal.URL}}" type="color" value="{{$cal.Color}}"{{if and $here (eq $.ErrorField "color")}} aria-invalid="true" aria-describedby="err-color"{{end}}></label>
-        {{if and $here (eq $.ErrorField "color")}}{{template "fieldError" (dict "Root" $ "Name" "color")}}{{end}}
-      {{template "moreClose"}}
+      <div class="calfacts">
+        <p class="count" data-count-for="{{$cal.URL}}" data-state="loading">{{template "calIcon"}}{{template "infoIcon"}}<span class="ct">{{t "connections.count.nojs"}}</span><span class="info-text">{{t "connections.count.empty"}}</span><span class="warn-text">{{t "connections.count.empty_on"}}</span></p>{{if $cal.LastSync}}
+        <p class="sync"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>{{$cal.LastSync}}</p>{{end}}
+      </div>
       {{if and $here (eq $.ErrorField "calendar")}}{{template "fieldError" (dict "Root" $ "Name" "calendar")}}{{end}}
+      <div class="calfields">
+        <div class="f{{if and $here (eq $.ErrorField "name")}} invalid{{end}}"><label>{{t "connections.card.name"}}<input name="name_{{$cal.URL}}" value="{{$cal.Name}}"{{if and $here (eq $.ErrorField "name")}} aria-invalid="true" aria-describedby="err-name"{{end}}></label>
+          {{if and $here (eq $.ErrorField "name")}}{{template "fieldError" (dict "Root" $ "Name" "name")}}{{end}}
+          {{with $cal.Hint}}<p class="hint">{{template "infoIcon"}}<span>{{.}}</span></p>{{end}}</div>
+        {{$chipRoot := dict "ErrorField" "" "Error" ""}}
+        {{if and $here (eq $.ErrorField "audience")}}{{$chipRoot = dict "ErrorField" (printf "people_%s" $cal.URL) "Error" $.Error}}{{end}}
+        {{template "personChips" (dict "Root" $chipRoot "Name" (printf "people_%s" $cal.URL) "GroupsName" (printf "groups_%s" $cal.URL) "Legend" (t "calendars.field.audience") "People" $.People "Selected" $cal.People "Groups" $.Groups "SelectedGroups" $cal.Groups "Whole" true)}}
+        <details class="more"{{if and $here (eq $.ErrorField "color")}} open{{end}}><summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{t "calendars.more"}}<span class="sum"><span class="swatch" style="--sw:{{$cal.Color}}"></span>{{t "connections.more.color"}}</span></summary>
+          <div><label>{{t "calendars.field.color"}}
+            <input name="color_{{$cal.URL}}" type="color" value="{{$cal.Color}}"{{if and $here (eq $.ErrorField "color")}} aria-invalid="true" aria-describedby="err-color"{{end}}></label>
+          {{if and $here (eq $.ErrorField "color")}}{{template "fieldError" (dict "Root" $ "Name" "color")}}{{end}}</div>
+        </details>
+      </div>
     </fieldset>
     {{end}}
-    {{template "moreOpen" (dict "Label" (t "calendars.more") "Open" (eq .ErrorField "interval"))}}
+    {{template "moreOpen" (dict "Label" (t "connections.more.all") "Class" "all-cals" "Summary" (repl (t "connections.more.all_summary") "{minutes}" (printf "%d" .DefaultInterval)) "Open" (eq .ErrorField "interval"))}}
       <label>{{t "calendars.field.interval"}}
         <select name="interval"{{if eq .ErrorField "interval"}} aria-invalid="true" aria-describedby="err-interval"{{end}}>{{range .Intervals}}<option value="{{.}}"{{if eq . $.DefaultInterval}} selected{{end}}>{{.}}</option>{{end}}</select></label>
       {{template "fieldError" (dict "Root" . "Name" "interval")}}
     {{template "moreClose"}}
     <button class="button" type="submit">{{t "connections.choose.submit"}}</button>
   </form>
-  {{else}}<p class="lead">{{t "connections.choose.none"}}</p>{{end}}
+  {{else}}<section class="steps">
+    <h2>{{t "connections.choose.heading"}}</h2>
+    <div class="choose-none"><p><strong>{{t "connections.choose.none"}}</strong></p><p class="hint">{{if .ICloud}}{{t "connections.choose.none_hint_icloud"}}{{else}}{{repl (t "connections.choose.none_hint_host") "{host}" .Host}}{{end}}</p></div>
+  </section>{{end}}
+  {{if .WriteBack}}
+  <section class="steps">
+    <h2>{{t "connections.writeback.heading"}}</h2>
+    {{range .WriteBack}}
+    <div class="card-row">
+      <span class="t"><b>{{.Name}}</b>
+        <span class="hint">{{if .TwoWay}}{{t "calendars.two_way"}}{{else}}{{t "connections.writeback.readonly"}}{{end}}</span></span>
+      {{if .TwoWay}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="1"><button class="button secondary" type="submit" title="{{t "calendars.make_read_only_hint"}}">{{t "calendars.make_read_only"}}</button></form>
+      {{else}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="0"><button class="button secondary" type="submit">{{t "calendars.make_two_way"}}</button></form>{{end}}
+    </div>
+    {{if .TwoWay}}<p class="hint">{{t "calendars.make_read_only_hint"}}</p>{{end}}
+    {{end}}
+  </section>
+  {{end}}
   {{if .Waste}}
   <section class="steps">
     <h2>{{t "connections.waste.heading"}}</h2>
@@ -63,3 +83,5 @@
   {{template "danger" (dict "Label" (t "connections.remove") "Explain" (or (and .ICloud (t "connections.remove.explain_icloud")) (t "connections.remove.explain")) "Names" .Names "Confirm" (t "connections.remove.confirm") "Action" (printf "/connections/%s/delete" .Connection.ID) "CancelHref" (printf "/connections/%s" .Connection.ID))}}
   <script src="/static/connection-counts.js" defer></script>
 {{template "foot"}}
+{{define "calIcon"}}<svg class="icon i-cal" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>{{end}}
+{{define "infoIcon"}}<svg class="icon i-info" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 11v6M12 7.5v.5"/></svg>{{end}}

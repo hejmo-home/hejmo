@@ -2,6 +2,8 @@ package server
 
 import (
 	"errors"
+	"html"
+	"html/template"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -65,7 +67,7 @@ func (s *server) syncStale(householdID string) bool {
 	return false
 }
 
-type logView struct{ At, Calendar, Kind, Message string }
+type logView struct{ At, Calendar, Kind, Message, Detail string }
 
 type choice struct{ ID, Name string }
 
@@ -201,7 +203,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	var log []logView
 	for _, e := range entries {
-		log = append(log, logView{at(e.At), e.CalendarName, e.Kind, s.say(r, e.Message)})
+		log = append(log, logView{at(e.At), e.CalendarName, e.Kind, s.say(r, e.Message), e.Detail})
 	}
 	var taken []string
 	for _, c := range synced {
@@ -255,11 +257,41 @@ func (s *server) serviceName(r *http.Request, c store.Connection) string {
 	if c.URL == iCloudServer {
 		return s.say(r, i18n.Msg("connections.provider.icloud"))
 	}
-	host := c.URL
+	return s.say(r, i18n.Msg("connections.service.caldav", "host", connectionHost(c)))
+}
+
+// connectionHost is the host of a connection's server, the way people read it.
+func connectionHost(c store.Connection) string {
 	if u, err := url.Parse(c.URL); err == nil && u.Host != "" {
-		host = u.Host
+		return u.Host
 	}
-	return s.say(r, i18n.Msg("connections.service.caldav", "host", host))
+	return c.URL
+}
+
+// sourceKicker says where the calendars of a connection live ("Calendar in
+// iCloud", "Calendar on cloud.example.org"): the small line above the name at
+// the source in a card of Choose calendars.
+func (s *server) sourceKicker(r *http.Request, c store.Connection) string {
+	if c.URL == iCloudServer {
+		return s.say(r, i18n.Msg("connections.card.source_icloud"))
+	}
+	return s.say(r, i18n.Msg("connections.card.source_host", "host", connectionHost(c)))
+}
+
+// nameHint is the sentence under "Name in Hejmo": renaming here does not
+// rename the calendar at the source, which keeps its name (shown in <q>). Empty
+// when the name at the source is not known. Names are escaped.
+func (s *server) nameHint(r *http.Request, c store.Connection, sourceName string) template.HTML {
+	if sourceName == "" {
+		return ""
+	}
+	key := "connections.card.hint_host"
+	if c.URL == iCloudServer {
+		key = "connections.card.hint_icloud"
+	}
+	const mark = "\x00name\x00"
+	text := html.EscapeString(s.say(r, i18n.Msg(key, "host", connectionHost(c), "name", mark)))
+	return template.HTML(strings.Replace(text, mark, "<q>"+html.EscapeString(sourceName)+"</q>", 1))
 }
 
 func (s *server) handleCalendarsPage(w http.ResponseWriter, r *http.Request) {
@@ -341,7 +373,7 @@ func (s *server) handleCalendarPage(w http.ResponseWriter, r *http.Request) {
 	if !c.Sync.LastSuccess.IsZero() {
 		run := c.Sync.LastRun
 		facts = append(facts,
-			factView{Label: s.say(r, i18n.Msg("calendars.fact.events")), Value: s.say(r, i18n.Msg("calendars.fact.events_value", "count", strconv.Itoa(run.Events)))},
+			factView{Label: s.say(r, i18n.Msg("calendars.fact.events")), Value: s.say(r, i18n.Msg("calendars.fact.events_value", "count", strconv.Itoa(c.Sync.EventCount)))},
 			factView{Label: s.say(r, i18n.Msg("calendars.fact.run")), Value: s.say(r, i18n.Msg("calendars.fact.run_value", "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))})
 	}
 	page := map[string]any{"Person": p.person, "Calendar": c, "Facts": facts, "Title": c.Name}
@@ -424,4 +456,34 @@ func intervalChosen(form map[string]any) int {
 		return n
 	}
 	return 60
+}
+
+// handleCalendarReadOnly switches a CalDAV calendar between two-way and read-only.
+func (s *server) handleCalendarReadOnly(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	_ = r.ParseForm()
+	readOnly := r.PostFormValue("read_only") == "1"
+	err := s.db.SetCalendarReadOnly(p.household.ID, r.PathValue("id"), readOnly)
+	switch {
+	case errors.Is(err, store.ErrNotFound):
+		http.NotFound(w, r)
+		return
+	case errors.Is(err, store.ErrInvalid):
+		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		return
+	case err != nil:
+		s.fail(w, "switch calendar", err)
+		return
+	}
+	if !readOnly {
+		s.sync.PushSoon(p.household.ID, r.PathValue("id"))
+	}
+	if c, err := s.db.SyncedCalendar(p.household.ID, r.PathValue("id")); err == nil && c.ConnectionID != "" {
+		http.Redirect(w, r, "/connections/"+c.ConnectionID, http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
 }

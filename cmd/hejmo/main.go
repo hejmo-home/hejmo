@@ -162,6 +162,8 @@ func run(cfg config, logger *slog.Logger) error {
 		syncer.Run(ctx, time.Minute)
 	}()
 	defer func() { stop(); <-schedulerDone }()
+	// Background pushes of box changes finish before the database closes.
+	defer syncer.Wait()
 
 	// The kiosk runner switches the front light of displays with a kiosk app
 	// off at sunset and in quiet mode (ADR 0005, 0015), checked every minute.
@@ -195,6 +197,15 @@ func run(cfg config, logger *slog.Logger) error {
 		TLSConfig:         tlsConfig(public, certs),
 	}
 	servers := []*http.Server{httpSrv, httpsSrv}
+	// Whatever way run returns, the servers stop before syncer.Wait runs (defers
+	// run last-in first), so no handler can start a push while Wait is waiting.
+	defer func() {
+		stopped, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+		defer cancel()
+		for _, srv := range servers {
+			_ = srv.Shutdown(stopped)
+		}
+	}()
 	errc := make(chan error, len(servers))
 	go func() {
 		logger.Info("box listening (HTTP)", "addr", cfg.Addr)
@@ -370,23 +381,13 @@ func localURL(addr string) string {
 // homeOf gives the weather service the household's home location.
 type homeOf struct{ db *store.DB }
 
-func (h homeOf) Home() (lat, lon float64, name, country string, err error) {
+func (h homeOf) Home() (lat, lon float64, err error) {
 	hh, err := h.db.HomeHousehold()
 	if errors.Is(err, store.ErrNotFound) {
-		return 0, 0, "", "", weather.ErrNoHome
+		return 0, 0, weather.ErrNoHome
 	}
 	if err != nil {
-		return 0, 0, "", "", err
+		return 0, 0, err
 	}
-	// The region (ISO 3166-2, e.g. DE-BY) starts with the country code.
-	country, _, _ = strings.Cut(hh.Region, "-")
-	return hh.Latitude, hh.Longitude, hh.HomeName, country, nil
-}
-
-func (h homeOf) SetCoordinates(lat, lon float64) error {
-	hh, err := h.db.HomeHousehold()
-	if err != nil {
-		return err
-	}
-	return h.db.SetHouseholdCoordinates(hh.ID, lat, lon)
+	return hh.Latitude, hh.Longitude, nil
 }

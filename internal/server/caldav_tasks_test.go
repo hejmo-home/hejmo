@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strings"
 	"testing"
+	"time"
 
 	ical "github.com/emersion/go-ical"
 	"github.com/emersion/go-webdav/caldav"
@@ -227,6 +228,33 @@ func TestCompletingATaskInRemindersTicksItAndCreditsStarsOnce(t *testing.T) {
 	if got := tb.balance(t); got != 0 {
 		t.Fatalf("stars after un-completing = %d, want 0", got)
 	}
+}
+
+// Completing a task in Reminders goes through SetTaskDone, so it ticks all
+// subtasks too, and un-completing a done task unticks them again (ticket 7.4).
+func TestCompletingATaskInRemindersTicksAndUntickItsSubtasks(t *testing.T) {
+	tb := newDavTaskBox(t)
+	for _, title := range []string{"Food", "Water"} {
+		if _, err := tb.c.b.db.AddSubtask(tb.h.ID, tb.cat.ID, task.Subtask{Title: title}, "2026-11-14", time.Now()); err != nil {
+			t.Fatal(err)
+		}
+	}
+	allDone := func(want bool) {
+		t.Helper()
+		subs, err := tb.c.b.db.Subtasks(tb.h.ID, tb.cat.ID, "2026-11-14")
+		if err != nil || len(subs) != 2 {
+			t.Fatalf("subtasks = %v, %v", subs, err)
+		}
+		for _, k := range subs {
+			if k.Done != want {
+				t.Fatalf("subtask %q done = %v, want %v", k.Title, k.Done, want)
+			}
+		}
+	}
+	tb.put(tb.href(tb.cat), todoICS(tb.cat.ID, "SUMMARY:Feed the cat", "DTSTART;VALUE=DATE:20261114", "STATUS:COMPLETED", "COMPLETED:20261114T110000Z"), nil)
+	allDone(true)
+	tb.put(tb.href(tb.cat), todoICS(tb.cat.ID, "SUMMARY:Feed the cat", "STATUS:NEEDS-ACTION"), nil)
+	allDone(false)
 }
 
 func TestCompletingAOnceTaskCreditsItsStarsOnItsOwnDay(t *testing.T) {

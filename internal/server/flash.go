@@ -112,6 +112,9 @@ var flashFields = map[string][]string{
 	"flash.routine_applied_own":    {"owner", "routine", "person", "tasks", "template", "origin"},
 	"flash.rtpl_moved":             {"title", "place", "total"},
 	"flash.routine_template_saved": {"name", "id"},
+	"flash.otp_reset":              {"name"},
+	"flash.otp_reset_passkey":      {"name", "possessive", "passkeys"},
+	"flash.otp_reset_passkeys":     {"name", "possessive", "passkeys"},
 }
 
 // redirectSavedFields is redirectSaved for a success line with several values,
@@ -204,6 +207,9 @@ func (s *server) successText(lang, key, arg string) string {
 			}
 		}
 	}
+	if strings.HasPrefix(key, "flash.sub_") && arg != "" {
+		return s.subFlashText(lang, key, arg) // "" when the box restarted: better none than a wrong line
+	}
 	if _, ok := flashFields[key]; ok && arg != "" {
 		return s.fieldsText(lang, key, arg)
 	}
@@ -233,11 +239,15 @@ func (s *server) successText(lang, key, arg string) string {
 				p := principal{household: h}
 				run := c.Sync.LastRun
 				return s.i18n.Format(lang, i18n.Msg("flash.calendar_synced_run", "time", p.clockSeconds(c.Sync.LastSuccess),
-					"events", strconv.Itoa(run.Events), "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))
+					"events", strconv.Itoa(c.Sync.EventCount), "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))
 			}
 		}
 	}
 	switch key {
+	case "flash.home_saved": // names the place that was stored
+		if h, err := s.db.HomeHousehold(); err == nil {
+			return s.i18n.Format(lang, i18n.Msg(key, "place", h.HomeName))
+		}
 	case "flash.routine_moved":
 		if arg != "" {
 			return s.routineMovedText(lang, arg)
@@ -269,6 +279,12 @@ func (s *server) successText(lang, key, arg string) string {
 // successHTML is the success line as markup: the text of successText escaped,
 // except the lines after a changed star value, which put the new value in bold.
 func (s *server) successHTML(lang, key, arg string) template.HTML {
+	if key == "flash.task_created" && arg != "" {
+		if line, ok := s.taskCreatedHTML(lang, arg); ok {
+			return template.HTML(line)
+		}
+		return template.HTML(html.EscapeString(s.i18n.T(lang, "flash.task_added")))
+	}
 	if key == "flash.routine_template_saved" && arg != "" {
 		return s.templateSavedHTML(lang, arg)
 	}

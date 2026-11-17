@@ -158,7 +158,7 @@ func TestSettingsHubListsSignedInDevicesForParents(t *testing.T) {
 	}
 	// After one-time codes: last.
 	r := s.mama.get("/settings", "en")
-	inOrder(t, r.body, `href="/otp"`, `href="/sessions"`)
+	inOrder(t, r.body, `href="/account"`, `href="/sessions"`)
 }
 
 func TestSessionsListGroupsBrowsersByPerson(t *testing.T) {
@@ -233,7 +233,7 @@ func TestSessionDetailOfAnotherBrowserOffersTheConfirmation(t *testing.T) {
 		t.Fatalf("detail = %d\n%s", r.status, r.body)
 	}
 	inOrder(t, r.body,
-		`class="back" href="/sessions"`, "Zurück zu den angemeldeten Geräten",
+		`<nav class="crumbs" aria-label="Seitenpfad">`, `<a href="/sessions">Angemeldete Geräte</a>`,
 		"<h1>Android-Handy · Chrome</h1>",
 		`<dl class="facts">`, "Person", "Papa", "Gerät und Browser", "Android-Handy · Chrome",
 		"Zuletzt benutzt", "heute, 07:48", "Angemeldet am", "11.11.2026, 19:02", "Meldet sich von selbst ab am", "11.12.2026",
@@ -475,15 +475,15 @@ func TestTheRawUserAgentIsNeverStoredOrShown(t *testing.T) {
 	}
 }
 
-// The back link is the first thing inside main (ADR 0017). The detail
-// page's back target is covered by TestSessionDetailOfAnotherBrowserOffersTheConfirmation.
-func TestBackLinkSitsInsideMain(t *testing.T) {
+// The breadcrumb trail is the first thing inside main (ADR 0017, ticket 182). The detail
+// page's trail is covered by TestSessionDetailOfAnotherBrowserOffersTheConfirmation.
+func TestTrailSitsInsideMain(t *testing.T) {
 	s := newSessionsBox(t)
-	for _, path := range []string{"/sessions", "/phones", "/otp"} {
+	for _, path := range []string{"/sessions", "/phones", "/account"} {
 		body := s.mama.get(path, "en").body
-		back, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main id="content">`)
-		if back < 0 || main < 0 || back < main {
-			t.Errorf("%s: the back link must come first inside main (%d, %d)", path, back, main)
+		back, main := strings.Index(body, `<main id="content">`+"\n"+`<nav class="crumbs"`), strings.Index(body, `<main id="content">`)
+		if back < 0 || main < 0 {
+			t.Errorf("%s: the trail must come first inside main (%d, %d)", path, back, main)
 		}
 	}
 }

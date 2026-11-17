@@ -1,9 +1,10 @@
 {{template "head" (dict "Lang" .Lang "Title" .Subject.Name "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/people" "Text" (t "people.back"))}}
   <h1><span class="marker" data-person="{{.Subject.Slot}}" data-shape="{{.Subject.Shape}}" aria-hidden="true"></span> {{.Subject.Name}}</h1>
   <p class="lead hint">{{t (printf "people.role.%s" .Role)}}</p>
   {{with .SignIn}}<h2 class="rows-head">{{t "people.signin"}}</h2>
   <ul class="list-rows">{{template "rowLink" .}}</ul>{{end}}
+  <h2 class="rows-head">{{t "food.title"}}</h2>
+  <ul class="list-rows food-row"><li><a href="/people/{{.Subject.ID}}/food"><span class="t"><b>{{.Food.Diet}}</b>{{with .Food.Allergies}}<span class="meta">{{.}}</span>{{end}}{{with .Food.None}}<span class="meta">{{.}}</span>{{end}}{{with .Food.Unchecked}}{{template "unchecked" .}}{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li></ul>
   {{template "error" .}}
   <form method="post" action="/people/{{.Subject.ID}}" class="steps">
     {{$f := .Form}}

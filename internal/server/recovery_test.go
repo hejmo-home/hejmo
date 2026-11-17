@@ -51,7 +51,7 @@ func TestSetupShowsTenRecoveryCodesOnce(t *testing.T) {
 	if len(codes) != 10 {
 		t.Fatalf("setup shows %d recovery codes, want 10\n%s", len(codes), r.body)
 	}
-	if page := b.get("/otp").body; len(recoveryCodesOn(t, page)) != 0 || strings.Contains(page, codes[0]) {
+	if page := b.get("/account").body; len(recoveryCodesOn(t, page)) != 0 || strings.Contains(page, codes[0]) {
 		t.Fatal("recovery codes are shown again after the first time")
 	}
 }
@@ -107,7 +107,7 @@ func TestRecoveryCodesAreStoredHashed(t *testing.T) {
 func TestNewSetOfRecoveryCodesVoidsTheOldOne(t *testing.T) {
 	b, secret, old := setupWithCodes(t)
 	loginWith(b, "mama", "correct horse battery", func() string { c, _ := auth.TOTPCode(secret, b.now); return c }())
-	r := b.post("/otp/recovery-codes", url.Values{})
+	r := b.post("/account/recovery-codes", url.Values{})
 	fresh := recoveryCodesOn(t, r.body)
 	if r.status != http.StatusOK || len(fresh) != 10 {
 		t.Fatalf("new set = %d with %d codes\n%s", r.status, len(fresh), r.body)
@@ -152,20 +152,24 @@ func TestParentResetsAnotherParentsOneTimeCodes(t *testing.T) {
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
 	papaPhone := pairedPhone(t, b, papa, "Papa's phone")
 
-	if page := b.get("/otp").body; !strings.Contains(page, "/otp/reset/"+papa.ID) || strings.Contains(page, "/otp/reset/"+papa.ID+"x") {
+	if page := b.get("/account").body; !strings.Contains(page, "/account/reset/"+papa.ID) || strings.Contains(page, "/account/reset/"+papa.ID+"x") {
 		t.Fatalf("the page offers no reset for the other parent:\n%s", page)
 	}
 	wrong := url.Values{"password": {"wrong horse battery"}, "code": {totpNow(b, mamaSecret)}}
-	if r := b.post("/otp/reset/"+papa.ID, wrong); r.status != http.StatusUnprocessableEntity {
+	if r := b.post("/account/reset/"+papa.ID, wrong); r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("reset with a wrong password = %d, want 422", r.status)
 	}
 	if acc, _ := b.db.AccountByPerson(papa.ID); !acc.TOTPConfirmed {
 		t.Fatal("reset went through without the right password")
 	}
 	own := url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
-	r := b.post("/otp/reset/"+papa.ID, own)
-	if r.status != http.StatusOK || !strings.Contains(r.body, "Papa") {
-		t.Fatalf("reset = %d\n%s", r.status, r.body)
+	r := b.post("/account/reset/"+papa.ID, own)
+	if r.status != http.StatusSeeOther || r.location != "/account" {
+		t.Fatalf("reset = %d %q\n%s", r.status, r.location, r.body)
+	}
+	r = b.get("/account")
+	if !strings.Contains(successLine(r.body), "Papa") {
+		t.Fatalf("the page after the reset does not name Papa\n%s", r.body)
 	}
 	if !strings.Contains(r.body, "data-otp-reset") || !strings.Contains(r.body, `href="/caldav"`) {
 		t.Fatalf("the success page does not remind to revoke paired devices:\n%s", r.body)
@@ -226,7 +230,7 @@ func TestParentCannotResetTheirOwnCodes(t *testing.T) {
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
 	mama, _ := b.db.AccountByUsername("mama")
 	own := url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
-	if r := b.post("/otp/reset/"+mama.PersonID, own); r.status != http.StatusForbidden {
+	if r := b.post("/account/reset/"+mama.PersonID, own); r.status != http.StatusForbidden {
 		t.Fatalf("own reset = %d, want 403", r.status)
 	}
 	if acc, _ := b.db.AccountByPerson(mama.PersonID); !acc.TOTPConfirmed {
@@ -238,14 +242,14 @@ func TestChildrenCannotUseTheOneTimeCodePagesOrEndpoints(t *testing.T) {
 	b, _, _ := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	mia := childSession(t, b)
-	if r := mia.get("/otp"); r.status != http.StatusForbidden {
+	if r := mia.get("/account"); r.status != http.StatusForbidden {
 		t.Fatalf("child GET /otp = %d, want 403", r.status)
 	}
 	form := url.Values{"password": {"x"}, "code": {"1"}}
-	if r := mia.post("/otp/reset/"+papa.ID, form); r.status != http.StatusForbidden {
+	if r := mia.post("/account/reset/"+papa.ID, form); r.status != http.StatusForbidden {
 		t.Fatalf("child reset = %d, want 403", r.status)
 	}
-	if r := mia.post("/otp/recovery-codes", url.Values{}); r.status != http.StatusForbidden {
+	if r := mia.post("/account/recovery-codes", url.Values{}); r.status != http.StatusForbidden {
 		t.Fatalf("child new codes = %d, want 403", r.status)
 	}
 	if acc, _ := b.db.AccountByPerson(papa.ID); !acc.TOTPConfirmed {
@@ -270,7 +274,7 @@ func TestResetOfAnUnknownOrNonParentTargetIsNotFound(t *testing.T) {
 		return url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
 	}
 	for _, id := range []string{"no-such-person", mia.ID} {
-		if r := b.post("/otp/reset/"+id, form()); r.status != http.StatusNotFound {
+		if r := b.post("/account/reset/"+id, form()); r.status != http.StatusNotFound {
 			t.Errorf("web reset of %q = %d, want 404", id, r.status)
 		}
 	}
@@ -288,8 +292,8 @@ func TestRecoveryCodeConfirmsAResetAndIsSpent(t *testing.T) {
 	b, mamaSecret, codes := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
-	r := b.post("/otp/reset/"+papa.ID, url.Values{"password": {"correct horse battery"}, "code": {codes[0]}})
-	if r.status != http.StatusOK {
+	r := b.post("/account/reset/"+papa.ID, url.Values{"password": {"correct horse battery"}, "code": {codes[0]}})
+	if r.status != http.StatusSeeOther {
 		t.Fatalf("reset with a recovery code = %d\n%s", r.status, r.body)
 	}
 	if acc, _ := b.db.AccountByPerson(papa.ID); acc.TOTPConfirmed {
@@ -309,12 +313,12 @@ func TestResetConfirmationIsRateLimitedOnWebAndAPI(t *testing.T) {
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
 	bad := url.Values{"password": {"wrong horse battery"}, "code": {"000000"}}
 	for i := 0; i < 5; i++ {
-		if r := b.post("/otp/reset/"+papa.ID, bad); r.status != http.StatusUnprocessableEntity {
+		if r := b.post("/account/reset/"+papa.ID, bad); r.status != http.StatusUnprocessableEntity {
 			t.Fatalf("failed attempt %d = %d, want 422", i+1, r.status)
 		}
 	}
 	good := url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
-	r := b.post("/otp/reset/"+papa.ID, good)
+	r := b.post("/account/reset/"+papa.ID, good)
 	if r.status != http.StatusTooManyRequests || !strings.Contains(r.body, "15") {
 		t.Fatalf("web after the limit = %d, want 429\n%s", r.status, r.body)
 	}
@@ -333,8 +337,8 @@ func TestResetErrorShowsAtTheFailingParent(t *testing.T) {
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
-	r := b.post("/otp/reset/"+papa.ID, url.Values{"password": {"wrong horse battery"}, "code": {"000000"}})
-	form := r.body[strings.Index(r.body, `action="/otp/reset/`+papa.ID):]
+	r := b.post("/account/reset/"+papa.ID, url.Values{"password": {"wrong horse battery"}, "code": {"000000"}})
+	form := r.body[strings.Index(r.body, `action="/account/reset/`+papa.ID):]
 	form = form[:strings.Index(form, "</form>")]
 	if !strings.Contains(form, `role="alert"`) {
 		t.Fatalf("no error inside the form of the failing parent:\n%s", r.body)
@@ -349,7 +353,7 @@ func TestRecoveryCodeCountReadsRightForOne(t *testing.T) {
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
 	mama, _ := b.db.AccountByUsername("mama")
 	_ = b.db.ReplaceRecoveryCodes(mama.PersonID, []string{auth.HashRecoveryCode("AAAAA-BBBBB")})
-	if page := b.get("/otp").body; strings.Contains(page, "1 recovery codes") || strings.Contains(page, "1 Wiederherstellungscodes") {
+	if page := b.get("/account").body; strings.Contains(page, "1 recovery codes") || strings.Contains(page, "1 Wiederherstellungscodes") {
 		t.Fatalf("grammar of count 1:\n%s", page)
 	}
 }
@@ -425,7 +429,7 @@ func TestResetConfirmationDoesTheSameWorkWhateverTheOutcome(t *testing.T) {
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
 	verifies := func(password, code string) int {
 		stop := server.CountRecoveryVerifies()
-		b.post("/otp/reset/"+papa.ID, url.Values{"password": {password}, "code": {code}})
+		b.post("/account/reset/"+papa.ID, url.Values{"password": {password}, "code": {code}})
 		return stop()
 	}
 	wrongPw := verifies("wrong horse battery", "ZZZZZ-ZZZZZ")
@@ -482,13 +486,13 @@ func TestSetupWelcomeFollowsTheRecoveryCodes(t *testing.T) {
 func TestRecoveryCodesPageAndResetFormsUseSharedPatterns(t *testing.T) {
 	b, secret, _ := setupWithCodes(t)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, secret))
-	secondParent(t, b)
-	r := b.post("/otp/recovery-codes", url.Values{})
+	papa, _ := secondParent(t, b)
+	r := b.post("/account/recovery-codes", url.Values{})
 	if !successRe.MatchString(r.body) {
 		t.Fatalf("recovery codes page shows no success line\n%s", r.body)
 	}
-	if !strings.Contains(b.get("/otp").body, "oder einem Wiederherstellungscode") {
-		t.Fatal("the reset intro does not mention that a recovery code works")
+	if !strings.Contains(b.get("/account/reset/"+papa.ID).body, "Dein Einmalcode oder Wiederherstellungscode") {
+		t.Fatal("the reset page does not mention that a recovery code works")
 	}
 }
 
@@ -500,7 +504,7 @@ func TestResetParentsPhoneCannotSetUpTheirOneTimeCodes(t *testing.T) {
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
 	papaPhone := pairedPhone(t, b, papa, "Papa's phone")
 	own := url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
-	if r := b.post("/otp/reset/"+papa.ID, own); r.status != http.StatusOK {
+	if r := b.post("/account/reset/"+papa.ID, own); r.status != http.StatusSeeOther {
 		t.Fatalf("reset = %d", r.status)
 	}
 
@@ -517,7 +521,7 @@ func TestResetParentsPhoneCannotSetUpTheirOneTimeCodes(t *testing.T) {
 	if post.status == http.StatusOK {
 		t.Fatalf("phone POST /setup/totp = 200, want refused\n%s", post.body)
 	}
-	if r := papaPhone.post("/otp/recovery-codes", url.Values{}); r.status == http.StatusOK {
+	if r := papaPhone.post("/account/recovery-codes", url.Values{}); r.status == http.StatusOK {
 		t.Fatalf("phone minted recovery codes while the account is pending\n%s", r.body)
 	}
 	if acc, _ := b.db.AccountByPerson(papa.ID); acc.TOTPConfirmed {

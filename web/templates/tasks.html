@@ -27,13 +27,14 @@
     {{range .Routines}}<section class="rcard" aria-label="{{.Name}}">
       <a class="rhead" href="/routines/{{.ID}}">{{template "partIconSized" (dict "Part" .Part "Size" 22)}}<span class="t"><b>{{.Name}}</b><span class="state">{{if not .Steps}}{{tf "routine.card.state.empty" "part" (t (printf "routine.part.%s" .Part))}}{{else if not .Total}}{{tf "routine.card.state.none" "part" (t (printf "routine.part.%s" .Part))}}{{else}}{{tf "routine.card.state" "part" (t (printf "routine.part.%s" .Part)) "done" (printf "%d" .Done) "total" (printf "%d" .Total)}}{{end}}</span></span><span class="open">{{t "routine.open"}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
       {{if .Steps}}<ol class="rsteps">
-        {{range .Steps}}<li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
+        {{range .Steps}}<li data-task="{{.ID}}"{{if .Done}} data-done{{end}}{{if .Subs}} class="has-subs"{{end}}>
           <span class="nr" aria-hidden="true">{{.Nr}}</span>
           <span class="nm"><a href="/tasks/{{.ID}}">{{if .Done}}<s>{{if .Emoji}}{{.Emoji}} {{end}}{{.Title}}</s>{{else}}{{if .Emoji}}{{.Emoji}} {{end}}{{.Title}}{{end}}</a>{{template "taskStars" .}}</span>
-          <span class="hint">{{template "repeatText" .}} · {{template "dueState" .}}</span>
+          <span class="hint">{{template "repeatText" .}} · {{template "dueState" .}}{{template "subProgress" .}}</span>
+          {{template "subList" .}}
           {{if .Due}}<span class="acts"><form method="post" action="/tasks/{{.ID}}/done">
             <input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">
-            <button class="button secondary" type="submit">{{if .Done}}{{t "tasks.untick"}}{{else}}{{t "tasks.tick"}}{{end}}</button>
+            <button class="button secondary" type="submit">{{template "tickText" .}}</button>
           </form></span>{{end}}
         </li>
         {{end}}</ol>{{end}}
@@ -44,12 +45,13 @@
       {{range .Tasks}}
       <li data-task="{{.ID}}"{{if .Done}} data-done{{end}}>
         <strong><a href="/tasks/{{.ID}}">{{if .Emoji}}{{.Emoji}} {{end}}{{if .Done}}<s>{{.Title}}</s>{{else}}{{.Title}}{{end}}</a>{{template "taskStars" .}}</strong>
-        <span class="hint">{{template "repeatText" .}}{{if .Part}} · {{t (printf "tasks.part.%s" .Part)}}{{end}} · {{template "dueState" .}}</span>
+        <span class="hint">{{template "repeatText" .}}{{if .Part}} · {{t (printf "tasks.part.%s" .Part)}}{{end}} · {{template "dueState" .}}{{template "subProgress" .}}</span>
+        {{template "subList" .}}
         {{if .Due}}
         <span class="row">
           <form method="post" action="/tasks/{{.ID}}/done">
             <input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">
-            <button class="button secondary" type="submit">{{if .Done}}{{t "tasks.untick"}}{{else}}{{t "tasks.tick"}}{{end}}</button>
+            <button class="button secondary" type="submit">{{template "tickText" .}}</button>
           </form>
         </span>
         {{end}}
@@ -129,3 +131,12 @@
 
 {{/* Where a task stands today, in words. */}}
 {{define "dueState"}}{{if not .Due}}{{t "tasks.not_today"}}{{else if .Done}}{{t "tasks.done"}}{{else}}{{t "tasks.open"}}{{end}}{{end}}
+
+{{/* "· 1 of 3 subtasks done" after the state of a task with subtasks. */}}
+{{define "subProgress"}}{{if .Subs}} · {{tf "tasks.subs.of" "done" (printf "%d" .SubsDone) "total" (printf "%d" (len .Subs))}}{{end}}{{end}}
+
+{{/* Every subtask of a task with a small box and its state in words. */}}
+{{define "subList"}}{{if .Subs}}<ul class="sublist" aria-label="{{t "tasks.subs.title"}}">{{range .Subs}}<li{{if .Done}} data-done{{end}}><span class="sbox" aria-hidden="true">{{template "tick" 14}}</span><span class="st">{{if .Emoji}}{{.Emoji}} {{end}}{{.Title}}<span class="sr">{{if .Done}}{{t "tasks.subs.sr_done"}}{{else}}{{t "tasks.subs.sr_open"}}{{end}}</span></span></li>{{end}}</ul>{{end}}{{end}}
+
+{{/* What the tick button of a task says: a task with subtasks ticks all of them. */}}
+{{define "tickText"}}{{if .Subs}}{{if .Done}}{{t "tasks.untick_all"}}{{else}}{{t "tasks.tick_all"}}{{end}}{{else if .Done}}{{t "tasks.untick"}}{{else}}{{t "tasks.tick"}}{{end}}{{end}}

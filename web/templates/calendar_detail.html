@@ -1,5 +1,4 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/calendars" "Text" (t "calendars.back"))}}
   <h1>{{.Calendar.Name}}</h1>
   {{template "facts" .Facts}}
   <form method="post" action="/calendars/{{.Calendar.ID}}/waste" class="waste-form" data-autosubmit>

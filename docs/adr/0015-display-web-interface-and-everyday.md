@@ -1,6 +1,6 @@
 # 0015. Display, web interface and everyday features
 
-- Status: Accepted, amended by [0016](0016-family-view-header-and-footer.md), [0017](0017-web-interface-usability.md), [0018](0018-path-to-0-1.md), and in two places by Q62 (ticket 5.22, #128; see the notes in Family view and Calendar screen)
+- Status: Accepted, amended by [0016](0016-family-view-header-and-footer.md), [0017](0017-web-interface-usability.md), [0018](0018-path-to-0-1.md), [0019](0019-lists-article-library-and-diets.md), [0020](0020-versions-0-2-and-0-3.md), [0022](0022-home-location.md), and in two places by Q62 (ticket 5.22, #128; see the notes in Family view and Calendar screen)
 - Date: 14/11/2026
 - Amends: [0003](0003-v1-scope-and-work-packages.md) (package 5 gains web interface frame, calendar screen, phone web app, children's phones and themes; sleep mode becomes quiet mode), [0005](0005-display-client-and-kiosk-adapter.md) (sleep mode becomes quiet mode with a night page), [0006](0006-authentication.md) (children's phones without an account), [0008](0008-design-takes-precedence-over-version-plan.md) (footer tiles), [0010](0010-households-memberships-and-credentials.md) (child rights limited to own tasks), [0012](0012-calendar-sync.md) (meal-plan calendar shared through the box by default)
 
@@ -23,7 +23,7 @@ Work packages 5 (display) and 6 (everyday) were sliced from `docs/spec.md` witho
 
 - Three display types: **E-Ink black-and-white**, **E-Ink colour**, **normal screen** (touch tablet, touch monitor or smartphone browser paired as a display). They differ in palette, default theme and refresh behaviour only.
 - Every display has a **theme**: light, dark or automatic. Automatic switches to dark at sunset and to light at sunrise, with **two offsets per display** (one for sunrise, one for sunset), each from **−180 to +180 minutes**; sunrise and sunset are computed locally from the home location. Defaults: E-Ink light, normal screen automatic. **Quiet mode** takes precedence over the theme.
-- The web interface offers light, dark, automatic (sun times at the home location, no offsets) or **follow the device** (`prefers-color-scheme`, default), stored per browser or phone.
+- The web interface offers light, dark, automatic (sun times at the home location, no offsets) or **follow the device** (`prefers-color-scheme`, default), stored per browser or phone. Amended by ticket 125 (#125): the chooser sits in the brand bar beside the language switcher on every signed-in page, for children's phones as well as parents (it left the Settings hub); without a home location "automatic" cannot be chosen and a stored "automatic" behaves and shows as "follow the device".
 - The **dark palette** is derived from "Nordic Calm" (muted person colours, contrast at least 4.5:1, no shadows) and recorded in `DESIGN.md`, which ticket 5.1 creates. The product owner approves a preview (light, dark, black-and-white) before that ticket is merged. More generally, any ticket that changes palettes or layouts (e.g. 5.1, 5.3, 5.4, 5.7) waits for her approval of a preview; this exception to the auto-merge rule is noted in `CLAUDE.md`.
 
 ### Family view

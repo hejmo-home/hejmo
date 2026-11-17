@@ -417,7 +417,7 @@ func (s *server) googleCard(r *http.Request, c *selectionCalendar, found []disco
 	switch {
 	case d.SharedBy != "":
 		c.Source = s.say(r, i18n.Msg("google.card.shared_by", "owner", d.SharedBy))
-	case d.Reason == "shared":
+	case d.Shared:
 		c.Source = s.say(r, i18n.Msg("google.card.shared"))
 	default:
 		c.Source = s.say(r, i18n.Msg("google.card.source"))

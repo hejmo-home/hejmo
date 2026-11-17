@@ -2795,11 +2795,176 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /google:
+    get:
+      operationId: getGoogleApp
+      summary: The family's Google app registration (parents, scope settings:read)
+      description: |
+        Google lets programs reach calendars only with an app registration (an OAuth client of type
+        "Web application"). Each family creates its own at Google (ADR 0013); the box keeps one per household.
+        This returns the client ID, the two redirect URIs and the scope to enter at Google, and the Google
+        accounts already connected. The client secret is stored encrypted and never returned.
+      responses:
+        "200":
+          description: The app registration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GoogleApp" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setGoogleApp
+      summary: Enter or replace the Google app registration (parents, scope settings:write)
+      description: |
+        Stores the client ID (it ends with `.apps.googleusercontent.com`, else 422 with `field`
+        `client_id`) and the client secret (encrypted). Another client ID applies to all Google connections:
+        their sign-ins belong to the old client, so they are marked `needs_signin` and listed in
+        `sign_in_again`. The same client ID with a new secret keeps them. Nothing is sent to Google.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client_id, client_secret]
+              properties:
+                client_id: { type: string, example: "318046275519-k7q2m9xlb4tn0c8e1rvd6hf3ys5pjw2a.apps.googleusercontent.com" }
+                client_secret: { type: string, writeOnly: true, description: "Shown by Google only once. Stored encrypted, never returned" }
+      responses:
+        "200":
+          description: The app registration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GoogleApp" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422":
+          description: The client ID or the client secret is not valid; `field` names it
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /google/authorize:
+    post:
+      operationId: startGoogleSignIn
+      summary: Start signing in at Google (parents, scope settings:write)
+      description: |
+        Makes the PKCE pair (S256) and a `state` that the box signs, valid for 15 minutes and for one use,
+        and returns the address at Google to open in a browser. Nothing is created before this call.
+        `way` `relay` sends Google's answer through the static page `https://hejmo-home.github.io/oauth/`,
+        which forwards it to the box (`https://<box>/connections/google/callback`); it only works when the
+        relay page may go back to the address this request reached the box under (https, or http to an
+        address in the home network), else the answer says `fallback`. On the `fallback` way Google sends
+        the browser to `http://127.0.0.1:8099/`, which shows an error; the address in the address bar is
+        then given to `POST /google/callback` as `url`. With `connection_id` an existing Google connection
+        signs in again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                way: { type: string, enum: [relay, fallback], default: relay }
+                connection_id: { type: string, format: uuid, description: "A Google connection that signs in again" }
+      responses:
+        "200":
+          description: Where to send the browser
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url, way, redirect_uri, expires_at]
+                properties:
+                  url: { type: string, description: "The address at Google" }
+                  way: { type: string, enum: [relay, fallback], description: "The way that will be used" }
+                  redirect_uri: { type: string }
+                  expires_at: { type: string, format: date-time }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/OffNow" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /google/callback:
+    post:
+      operationId: finishGoogleSignIn
+      summary: Finish signing in at Google (parents, scope settings:write)
+      description: |
+        Takes what Google sent back, either the whole address from the address bar of the fallback way
+        (`url`) or its parts (`code`, `state`, `error`, `scope`). The `state` must be one the box made,
+        not older than 15 minutes and not used before; the code is then exchanged with the PKCE verifier and
+        the refresh token is stored encrypted. A new Google account becomes a connection (201); an account
+        that already has a connection, or a connection that signs in again, gets the new refresh token
+        (200) and its calendars sync again at once. Tick calendars with `POST /calendar-connections/{id}/calendars`.
+        Otherwise 422 with `problem`: `state_unknown`, `state_expired`, `state_used`, `cancelled`,
+        `code_rejected`, `scope_missing`, `client_rejected`, `wrong_account` (another Google account than the
+        connection that asked; `account` and `nonce` are then given: `POST /google/adopt` adds it as a new
+        connection), `not_a_callback`, `unreachable`, `no_app`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url: { type: string, example: "http://127.0.0.1:8099/?state=hj1.aHR0cHM6Ly9ib3g.AbCd&code=4%2F0AVMB&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar" }
+                code: { type: string }
+                state: { type: string }
+                error: { type: string, example: access_denied }
+                scope: { type: string }
+      responses:
+        "200":
+          description: An existing connection signed in again
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CalendarConnection" }
+        "201":
+          description: Connected
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CalendarConnection" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
+        "422":
+          description: The sign-in did not work; `problem` says why and nothing was stored
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, problem]
+                properties:
+                  error: { type: string }
+                  problem: { type: string, enum: [state_unknown, state_expired, state_used, cancelled, code_rejected, scope_missing, client_rejected, wrong_account, not_a_callback, unreachable, no_app] }
+                  account: { type: string, description: "With wrong_account: the Google account that signed in" }
+                  nonce: { type: string, description: "With wrong_account: for POST /google/adopt" }
+  /google/adopt:
+    post:
+      operationId: addStashedGoogleAccount
+      summary: Add the account of a sign-in that was for another connection as a new connection (parents, scope settings:write)
+      description: The `nonce` comes from a `wrong_account` answer of `POST /google/callback`. It works once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nonce]
+              properties:
+                nonce: { type: string }
+      responses:
+        "201":
+          description: Connected
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CalendarConnection" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /calendar-connections:
     get:
       operationId: listCalendarConnections
-      summary: CalDAV and iCloud connections (parents, scope settings:read)
-      description: Never contains a password.
+      summary: CalDAV, iCloud and Google connections (parents, scope settings:read)
+      description: Never contains a password, a refresh token or a client secret.
       responses:
         "200":
           description: Connections
@@ -2852,7 +3017,7 @@ paths:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     put:
       operationId: changeConnectionPassword
-      summary: Replace the password of a connection, after the server accepted it (parents, scope settings:write)
+      summary: Replace the password of a connection, after the server accepted it (parents, scope settings:write; not for Google)
       description: |
         Signs in with the new password and lists the server's calendars, as when connecting. Only if that
         works is the password stored (encrypted with the box's key, never returned) and the connection's
@@ -3973,10 +4138,12 @@ components:
       required: [id, kind, url, username, single_calendar]
       properties:
         id: { type: string, format: uuid }
-        kind: { type: string, enum: [caldav] }
+        kind: { type: string, enum: [caldav, google], description: "google: signed in at Google with the family's own app registration (`/google`); `username` is then the Google account and `url` Google's CalDAV API" }
         url: { type: string, example: "https://caldav.icloud.com" }
         username: { type: string }
         single_calendar: { type: boolean }
+        needs_signin: { type: boolean, description: "Google only: Google no longer accepts the stored sign-in (invalid_grant): the connection must sign in again (`POST /google/authorize` with its id). Its calendars keep their events and queued changes. Absent when the sign-in works" }
+        signin_needed_at: { type: string, format: date-time, description: "Google only, with `needs_signin`: since when" }
         calendars:
           type: array
           description: The server's event calendars. Only on connect and on discovery.
@@ -3988,6 +4155,30 @@ components:
               name: { type: string }
               added: { type: boolean, description: "Already synced through this connection" }
               calendar_id: { type: string, format: uuid, description: "The synced calendar, when `added`: change it with PATCH /calendars/{id}, switch it off with DELETE /calendars/{id}" }
+              access: { type: string, enum: [read_write, read_only], description: "Google only: whether the box may change events in this calendar. `read_only` calendars (shared for viewing only, birthdays, holidays) are added read-only and can never be switched to two-way" }
+              reason: { type: string, enum: [writable, shared, birthdays, google], description: "Google only: why (`shared` = shared with this account for viewing only)" }
+              shared: { type: boolean, description: "Google only: another account owns the calendar and shares it with this one" }
+              shared_by: { type: string, description: "Google only: the account that shares the calendar, when it is known" }
+    GoogleApp:
+      type: object
+      required: [configured, redirect_uris, scope, accounts]
+      properties:
+        configured: { type: boolean, description: "The family has entered its app registration (OAuth client)" }
+        client_id: { type: string, description: "Ends with .apps.googleusercontent.com. The client secret is never returned" }
+        registered_at: { type: string, format: date-time }
+        redirect_uris:
+          type: object
+          description: The two redirect URIs to enter at Google (exact match). Values to type in, not links
+          required: [relay, fallback]
+          properties:
+            relay: { type: string, example: "https://hejmo-home.github.io/oauth/" }
+            fallback: { type: string, example: "http://127.0.0.1:8099/" }
+        scope: { type: string, example: "https://www.googleapis.com/auth/calendar" }
+        accounts: { type: array, items: { type: string }, description: "Google accounts already connected" }
+        sign_in_again:
+          type: array
+          items: { type: string }
+          description: Only in the answer to a PUT that changed the client ID. The Google accounts that must sign in again, because their sign-ins belong to the old client
     EventCount:
       type: object
       required: [url, state, count, text]

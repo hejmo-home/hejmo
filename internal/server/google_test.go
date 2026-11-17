@@ -15,6 +15,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/googleauth"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -666,6 +667,435 @@ func TestWhereTheRelayPageMayGoBack(t *testing.T) {
 	} {
 		if got := server.RelayUsable(origin); got != want {
 			t.Errorf("RelayUsable(%q) = %v, want %v", origin, got, want)
+		}
+	}
+}
+
+// ---- Choose calendars ----
+
+// signedInBox is a box with one Google account signed in and calendars to choose from.
+func (gb googleBox) chooseCalendars(t *testing.T, lang string) string {
+	t.Helper()
+	id := gb.signIn(t)
+	return gb.b.do(http.MethodGet, "/connections/"+id, nil, map[string]string{"Accept-Language": lang}).body
+}
+
+func TestChooseCalendarsShowsWhatTheBoxMayChangeAtGoogle(t *testing.T) {
+	t.Parallel()
+	gb := newGoogleBox(t)
+	page := gb.chooseCalendars(t, "de")
+	for _, want := range []string{
+		"Was die Box in Google ändern darf", "Farben aus Google",
+		`<span class="src">Kalender in Google</span><b>mama@gmail.com</b>`, "<b>Lesen und ändern:</b> Was du auf der Box einträgst, steht auch in Google.",
+		`<span class="src">Geteilt von papa@gmail.com</span><b>Papa Arbeit</b>`, "<b>Nur lesen:</b> Nur zum Ansehen mit dir geteilt. Ändern geht nur in Google.",
+		"<b>Nur lesen:</b> Google füllt ihn aus deinen Kontakten.",
+		`<span class="src">Mit dir geteilt</span>`, // a calendar of a group, shared by someone: no account to name
+		"Verschlüsselt", // the secret is stored encrypted, never shown
+	} {
+		if want == "Verschlüsselt" {
+			want = "verschlüsselt gespeichert; wird nicht mehr angezeigt"
+		}
+		if !strings.Contains(page, want) {
+			t.Errorf("page lacks %q", want)
+		}
+	}
+	for _, want := range []string{"Google-Konto", "Anmeldung", "App-Registrierung", "eure eigene", gClientID, "Clientschlüssel", "Zuletzt abgeglichen", "noch nicht"} {
+		if !strings.Contains(page, want) {
+			t.Errorf("facts lack %q", want)
+		}
+	}
+	if strings.Contains(page, gSecret) {
+		t.Error("the client secret is on the page")
+	}
+	// Name in Hejmo matters most here: Google names the main calendar after the account.
+	if !strings.Contains(page, "In Google heißt er weiter") {
+		t.Error("no hint that the name is only in Hejmo")
+	}
+	if n := strings.Count(page, `name="name_https://apidata.googleusercontent.com/caldav/v2/`); n != 4 {
+		t.Errorf("%d calendar cards with a name field, want 4", n)
+	}
+	en := gb.b.do(http.MethodGet, "/connections/"+gb.connections(t)[0].ID, nil, map[string]string{"Accept-Language": "en"}).body
+	for _, want := range []string{"What the box may change at Google", "<b>Read and change:</b>", "<b>Read only:</b>", "Shared by papa@gmail.com"} {
+		if !strings.Contains(en, want) {
+			t.Errorf("English page lacks %q", want)
+		}
+	}
+}
+
+func TestTickedGoogleCalendarsAreSyncedAndAReadOnlyShareCanNeverBeTwoWay(t *testing.T) {
+	t.Parallel()
+	gb := newGoogleBox(t)
+	id := gb.signIn(t)
+	cal := func(email string) string { return googleauth.CalendarURL(googleauth.CalDAVBase, email) }
+	form := url.Values{"calendar": {cal("mama@gmail.com"), cal("papa@gmail.com")}, "interval": {"15"},
+		"name_" + cal("mama@gmail.com"): {"Mama"}, "name_" + cal("papa@gmail.com"): {"Papa Arbeit"}, "whole_family": {"1"}}
+	if r := gb.b.post("/connections/"+id+"/calendars", form); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+	cals, err := gb.b.db.SyncedCalendars(gb.h.ID)
+	if err != nil || len(cals) != 2 {
+		t.Fatalf("calendars = %+v, %v", cals, err)
+	}
+	by := map[string]store.SyncedCalendar{}
+	for _, c := range cals {
+		by[c.Name] = c
+	}
+	mama, papa := by["Mama"], by["Papa Arbeit"]
+	if mama.Kind != "google" || mama.ReadOnly || mama.SourceReadOnly || mama.URL != cal("mama@gmail.com") || mama.Sync.IntervalMinutes != 15 {
+		t.Errorf("own calendar = %+v", mama)
+	}
+	if !papa.ReadOnly || !papa.SourceReadOnly {
+		t.Errorf("a calendar shared for viewing is not read-only: %+v", papa)
+	}
+	// The connection page offers "Nur lesbar machen" for the own calendar, and says why the share cannot change.
+	page := gb.b.get("/connections/" + id).body
+	if !strings.Contains(page, `action="/calendars/`+mama.ID+`/read-only"`) || strings.Contains(page, `action="/calendars/`+papa.ID+`/read-only"`) {
+		t.Errorf("the write-back switches are wrong:\n%s", page)
+	}
+	if !strings.Contains(page, "Nur lesbar: Er ist nur zum Ansehen mit dir geteilt.") {
+		t.Error("no reason why the shared calendar is not two-way")
+	}
+	if r := gb.b.post("/calendars/"+papa.ID+"/read-only", url.Values{"read_only": {"0"}}); r.status < 400 {
+		t.Errorf("a read-only share was made two-way: %d", r.status)
+	}
+	// The event counts come from Google's CalDAV API.
+	c := newAPIClient(t, gb.b)
+	c.cookie = true
+	status, _, list := c.call(http.MethodGet, "/calendar-connections/"+id+"/event-counts", nil)
+	if status != http.StatusOK || len(list) != 4 {
+		t.Fatalf("event counts = %d %v", status, list)
+	}
+	if list[0].(map[string]any)["count"].(float64) != 214 {
+		t.Errorf("counts = %v", list[0])
+	}
+}
+
+func TestRemovingAGoogleConnectionSaysWhatHappensAtGoogle(t *testing.T) {
+	t.Parallel()
+	gb := newGoogleBox(t)
+	id := gb.signIn(t)
+	page := gb.b.get("/connections/" + id).body
+	for _, want := range []string{"Verbindung trennen", "In Google wird nichts gelöscht", "myaccount.google.com/connections", "Die App-Registrierung bleibt auf der Box", "Ja, „mama@gmail.com“ trennen"} {
+		if !strings.Contains(page, want) {
+			t.Errorf("page lacks %q", want)
+		}
+	}
+	if r := gb.b.post("/connections/"+id+"/delete", url.Values{}); r.status != http.StatusSeeOther {
+		t.Fatalf("delete = %d", r.status)
+	}
+	if len(gb.connections(t)) != 0 {
+		t.Fatal("still connected")
+	}
+	if _, err := gb.b.db.GoogleApp(gb.h.ID); err != nil {
+		t.Error("the app registration went with the connection: other accounts would need the setup again")
+	}
+}
+
+// ---- sign in again ----
+
+// signInAgainBox is a box whose Google account Google has stopped accepting.
+func signInAgainBox(t *testing.T) (googleBox, string) {
+	t.Helper()
+	gb := newGoogleBox(t)
+	id := gb.signIn(t)
+	cal := googleauth.CalendarURL(googleauth.CalDAVBase, "mama@gmail.com")
+	gb.b.post("/connections/"+id+"/calendars", url.Values{"calendar": {cal}, "name_" + cal: {"Mama"}, "interval": {"15"}, "whole_family": {"1"}})
+	gb.g.set(func(g *googleFake) { g.failToken = "invalid_grant" })
+	gb.b.now = gb.b.now.Add(2 * time.Hour) // the access token ran out
+	cals, _ := gb.b.db.SyncedCalendars(gb.h.ID)
+	if err := gb.b.sync.Sync(context.Background(), gb.h.ID, cals[0].ID); err == nil {
+		t.Fatal("the sync did not fail")
+	}
+	return gb, id
+}
+
+// Acceptance: a refresh token rejected with invalid_grant marks the connection
+// "sign in again" and the sync log has an entry.
+func TestInvalidGrantMarksTheConnectionAndIsShownToParents(t *testing.T) {
+	t.Parallel()
+	gb, id := signInAgainBox(t)
+	conn, _ := gb.b.db.Connection(gb.h.ID, id)
+	if conn.SignInNeededAt.IsZero() {
+		t.Fatal("not marked")
+	}
+	log, _ := gb.b.db.SyncLog(gb.h.ID, 10)
+	if len(log) != 1 || log[0].Message.Key != "sync.fail.google_signin" {
+		t.Fatalf("sync log = %+v", log)
+	}
+	notice := func(page string) {
+		t.Helper()
+		for _, want := range []string{`class="notice act reconnect"`, "Bei Google neu anmelden", "Google nimmt die Anmeldung für <b class=\"host\">mama@gmail.com</b> nicht mehr an.", "Häufige Gründe", `action="/connections/google/signin"`, `name="connection" value="` + id + `"`} {
+			if !strings.Contains(page, want) {
+				t.Errorf("notice lacks %q", want)
+			}
+		}
+		if strings.Contains(page, "genau 7 Tage") {
+			t.Error("the 7 day hint for a sign-in that lasted two hours")
+		}
+	}
+	start := gb.b.get("/")
+	notice(start.body)
+	if !strings.Contains(start.body, "Neu anmelden kann sich, wer das Passwort dieses Google-Kontos kennt.") {
+		t.Error("Start does not say who can sign in again")
+	}
+	calendars := gb.b.get("/calendars")
+	notice(calendars.body)
+	if !strings.Contains(calendars.body, `<span class="flag problem">`) || !strings.Contains(calendars.body, "Anmeldung abgelaufen: bei Google neu anmelden") {
+		t.Errorf("the connection row has no problem flag:\n%s", calendars.body)
+	}
+	notice(gb.b.get("/connections/" + id).body)
+	// The calendars stay and keep their events: the page of the connection still opens and says what to do.
+	if r := gb.b.get("/connections/" + id); r.status != http.StatusOK || !strings.Contains(r.body, "Mama") {
+		t.Errorf("connection page = %d", r.status)
+	}
+}
+
+func TestSignInAgainNoticeIsForParentsOnly(t *testing.T) {
+	t.Parallel()
+	gb, _ := signInAgainBox(t)
+	scr := pairedPhone(t, gb.b, personNamed(t, gb.b, "Mia"), "Mia's phone")
+	if r := scr.get("/", "de"); r.status != http.StatusOK || strings.Contains(r.body, "Google") {
+		t.Errorf("a child's Start shows the notice: %d", r.status)
+	}
+}
+
+func TestAfterSevenDaysTheNoticePointsToTesting(t *testing.T) {
+	t.Parallel()
+	gb := newGoogleBox(t)
+	id := gb.signIn(t)
+	cal := googleauth.CalendarURL(googleauth.CalDAVBase, "mama@gmail.com")
+	gb.b.post("/connections/"+id+"/calendars", url.Values{"calendar": {cal}, "name_" + cal: {"Mama"}, "interval": {"15"}, "whole_family": {"1"}})
+	gb.g.set(func(g *googleFake) { g.failToken = "invalid_grant" })
+	gb.b.now = gb.b.now.Add(7*24*time.Hour + 10*time.Minute) // exactly what an app on "Testing" gives
+	cals, _ := gb.b.db.SyncedCalendars(gb.h.ID)
+	_ = gb.b.sync.Sync(context.Background(), gb.h.ID, cals[0].ID)
+	page := gb.b.get("/calendars").body
+	if !strings.Contains(page, "Die Anmeldung hielt genau 7 Tage.") || !strings.Contains(page, "https://console.cloud.google.com/auth/audience") || strings.Contains(page, "Häufige Gründe") {
+		t.Errorf("no pointer to \"Testen\":\n%s", page)
+	}
+}
+
+func TestSigningInAgainKeepsTheConnectionAndItsCalendars(t *testing.T) {
+	t.Parallel()
+	gb, id := signInAgainBox(t)
+	gb.g.set(func(g *googleFake) { g.failToken = "" })
+	page := gb.b.get("/connections/google/signin?connection=" + id)
+	for _, want := range []string{"Bei Google neu anmelden", `<b class="host">mama@gmail.com</b>`, "Mit dem richtigen Konto anmelden", "Anderes Konto verwenden", `name="connection" value="` + id + `"`} {
+		if !strings.Contains(page.body, want) {
+			t.Errorf("page lacks %q", want)
+		}
+	}
+	loc := gb.start(t, url.Values{"connection": {id}})
+	if u, _ := url.Parse(loc); u.Query().Get("login_hint") != "mama@gmail.com" {
+		t.Errorf("login_hint = %q", u.Query().Get("login_hint"))
+	}
+	state, _ := gb.g.hand(loc, "again")
+	r := gb.b.get(googleCallback(state, "again"))
+	if r.status != http.StatusSeeOther || r.location != "/connections/"+id {
+		t.Fatalf("callback = %d %q\n%s", r.status, r.location, r.body)
+	}
+	conns := gb.connections(t)
+	if len(conns) != 1 || conns[0].ID != id || !conns[0].SignInNeededAt.IsZero() {
+		t.Fatalf("connections = %+v", conns)
+	}
+	_, token, _ := gb.b.db.ConnectionCredentials(gb.h.ID, id)
+	if token != "1//refresh-again" {
+		t.Errorf("refresh token = %q", token)
+	}
+	if cals, _ := gb.b.db.SyncedCalendars(gb.h.ID); len(cals) != 1 || cals[0].Name != "Mama" || cals[0].Sync.LastError.Key != "" {
+		t.Errorf("calendars = %+v: they sync again at once", cals)
+	}
+	if after := gb.b.get("/connections/" + id).body; !strings.Contains(after, "Bei Google angemeldet.") || strings.Contains(after, "notice act reconnect") {
+		t.Error("no success line, or the notice is still there")
+	}
+}
+
+func TestAnotherAccountIsNotThrownAwayButOfferedAsANewConnection(t *testing.T) {
+	t.Parallel()
+	gb, id := signInAgainBox(t)
+	gb.g.set(func(g *googleFake) { g.failToken, g.account = "", "papa@gmail.com" })
+	state, _ := gb.g.hand(gb.start(t, url.Values{"connection": {id}}), "papa")
+	r := gb.b.get(googleCallback(state, "papa"))
+	for _, want := range []string{"Das war ein anderes Google-Konto.", "Du hast dich als papa@gmail.com angemeldet. Diese Verbindung gehört zu mama@gmail.com; nichts wurde geändert.",
+		"Noch einmal mit mama@gmail.com anmelden", "papa@gmail.com als neue Verbindung hinzufügen", `formaction="/connections/google/adopt"`} {
+		if !strings.Contains(r.body, want) {
+			t.Errorf("page lacks %q\n%s", want, r.body)
+		}
+	}
+	if r.status != http.StatusConflict {
+		t.Errorf("status = %d", r.status)
+	}
+	if conns := gb.connections(t); len(conns) != 1 || conns[0].SignInNeededAt.IsZero() {
+		t.Fatalf("the connection was changed: %+v", conns)
+	}
+	m := regexp.MustCompile(`name="nonce" value="([0-9a-f]+)"`).FindStringSubmatch(r.body)
+	if m == nil {
+		t.Fatal("no nonce to adopt the sign-in")
+	}
+	add := gb.b.post("/connections/google/adopt", url.Values{"nonce": {m[1]}})
+	if add.status != http.StatusSeeOther || !strings.HasPrefix(add.location, "/connections/") {
+		t.Fatalf("adopt = %d %q", add.status, add.location)
+	}
+	conns := gb.connections(t)
+	if len(conns) != 2 || conns[1].Username != "papa@gmail.com" || conns[1].Kind != "google" {
+		t.Fatalf("connections = %+v", conns)
+	}
+	if _, token, _ := gb.b.db.ConnectionCredentials(gb.h.ID, conns[1].ID); token != "1//refresh-papa" {
+		t.Errorf("token = %q", token)
+	}
+	// Once only.
+	if again := gb.b.post("/connections/google/adopt", url.Values{"nonce": {m[1]}}); again.location == add.location && len(gb.connections(t)) != 2 {
+		t.Error("the same sign-in was added twice")
+	}
+}
+
+// A second account signs in with the same app registration and needs no setup again.
+func TestASecondAccountNeedsOnlyTheSignIn(t *testing.T) {
+	t.Parallel()
+	gb := newGoogleBox(t)
+	gb.signIn(t)
+	page := formOf(t, gb.b.get("/connections/new?service=google").body, "/connections/google/app")
+	if strings.Contains(page, `<ol class="howto">`) || !strings.Contains(page, "Schon verbunden") || !strings.Contains(page, `class="host">mama@gmail.com`) {
+		t.Errorf("a registered box does not offer the short way:\n%s", page)
+	}
+	gb.g.set(func(g *googleFake) { g.account = "papa@gmail.com" })
+	if r := gb.b.post("/connections/google/app", url.Values{"action": {"continue"}}); r.status != http.StatusSeeOther || r.location != "/connections/google/signin" {
+		t.Fatalf("continue = %d %q", r.status, r.location)
+	}
+	state, _ := gb.g.hand(gb.start(t, nil), "p2")
+	if r := gb.b.get(googleCallback(state, "p2")); r.status != http.StatusSeeOther {
+		t.Fatalf("second sign-in = %d", r.status)
+	}
+	if conns := gb.connections(t); len(conns) != 2 || conns[1].Username != "papa@gmail.com" {
+		t.Fatalf("connections = %+v", conns)
+	}
+}
+
+func TestAnotherAppRegistrationNamesWhoMustSignInAgain(t *testing.T) {
+	t.Parallel()
+	gb := newGoogleBox(t)
+	id := gb.signIn(t)
+	page := gb.b.get("/connections/" + id).body
+	if !strings.Contains(page, "mama@gmail.com</b> muss sich danach neu anmelden") {
+		t.Errorf("the page does not say who has to sign in again:\n%s", page)
+	}
+	r := gb.b.post("/connections/google/app", url.Values{"action": {"replace"}, "connection": {id}, "client_id": {"999-other.apps.googleusercontent.com"}, "client_secret": {"GOCSPX-new"}})
+	if r.status != http.StatusSeeOther || r.location != "/connections/google/signin?connection="+id {
+		t.Fatalf("replace = %d %q", r.status, r.location)
+	}
+	if conn, _ := gb.b.db.Connection(gb.h.ID, id); conn.SignInNeededAt.IsZero() {
+		t.Error("a sign-in that belongs to the old client still counts")
+	}
+}
+
+// ---- gates and the API ----
+
+func TestGoogleStopsWhenTheCalendarServicesAreOff(t *testing.T) {
+	t.Parallel()
+	gb := newGoogleBox(t)
+	gb.register(t)
+	if err := gb.b.db.SetServiceEnabled(outbound.Calendars, false); err != nil {
+		t.Fatal(err)
+	}
+	for _, c := range []struct{ method, path string }{{http.MethodPost, "/connections/google/start"}, {http.MethodPost, "/connections/google/paste"}, {http.MethodPost, "/connections/google/app"}} {
+		if r := gb.b.do(c.method, c.path, url.Values{"address": {"x"}}, nil); r.status != http.StatusSeeOther || r.location != "/connections/new" {
+			t.Errorf("%s %s = %d %q, want back to the page that says why", c.method, c.path, r.status, r.location)
+		}
+	}
+	if r := gb.b.get("/connections/new?service=google"); !strings.Contains(r.body, "offline-note") {
+		t.Error("the connect page does not say that calendar services are off")
+	}
+}
+
+func TestGoogleThroughTheAPI(t *testing.T) {
+	t.Parallel()
+	gb := newGoogleBox(t)
+	c := newAPIClient(t, gb.b)
+	c.cookie = true
+	status, app, _ := c.call(http.MethodGet, "/google", nil)
+	if status != http.StatusOK || app["configured"] != false || app["redirect_uris"] == nil {
+		t.Fatalf("GET /google = %d %v", status, app)
+	}
+	redirects := app["redirect_uris"].(map[string]any)
+	if redirects["relay"] != googleauth.RelayRedirectURI || redirects["fallback"] != googleauth.FallbackRedirectURI || app["scope"] != googleauth.Scope {
+		t.Errorf("fixed values = %v", app)
+	}
+	if status, body, _ := c.call(http.MethodPut, "/google", map[string]any{"client_id": "nope", "client_secret": gSecret}); status != http.StatusUnprocessableEntity || body["field"] != "client_id" {
+		t.Fatalf("a bad client ID = %d %v", status, body)
+	}
+	status, app, _ = c.call(http.MethodPut, "/google", map[string]any{"client_id": gClientID, "client_secret": gSecret})
+	if status != http.StatusOK || app["configured"] != true || app["client_id"] != gClientID {
+		t.Fatalf("PUT /google = %d %v", status, app)
+	}
+	if _, has := app["client_secret"]; has {
+		t.Error("the secret is returned")
+	}
+	status, start, _ := c.call(http.MethodPost, "/google/authorize", map[string]any{})
+	if status != http.StatusOK || start["way"] != "relay" || start["redirect_uri"] != googleauth.RelayRedirectURI {
+		t.Fatalf("authorize = %d %v", status, start)
+	}
+	state, _ := gb.g.hand(start["url"].(string), "api-code")
+	status, conn, _ := c.call(http.MethodPost, "/google/callback", map[string]any{"state": state, "code": "api-code", "scope": googleauth.Scope})
+	if status != http.StatusCreated || conn["kind"] != "google" || conn["username"] != "mama@gmail.com" {
+		t.Fatalf("callback = %d %v", status, conn)
+	}
+	id := conn["id"].(string)
+	// The same state again: 422 and a word for it.
+	if status, body, _ := c.call(http.MethodPost, "/google/callback", map[string]any{"state": state, "code": "api-code"}); status != http.StatusUnprocessableEntity || body["problem"] != "state_used" {
+		t.Fatalf("second callback = %d %v", status, body)
+	}
+	// The calendars come from Google, with their access.
+	status, found, _ := c.call(http.MethodGet, "/calendar-connections/"+id+"/calendars", nil)
+	if status != http.StatusOK {
+		t.Fatalf("discover = %d %v", status, found)
+	}
+	cals := found["calendars"].([]any)
+	if len(cals) != 4 || cals[0].(map[string]any)["access"] != "read_write" || cals[1].(map[string]any)["access"] != "read_only" {
+		t.Errorf("calendars = %v", cals)
+	}
+	// A pasted fallback address works through the API too.
+	start2 := func() (string, string) {
+		_, s, _ := c.call(http.MethodPost, "/google/authorize", map[string]any{"way": "fallback", "connection_id": id})
+		st, _ := gb.g.hand(s["url"].(string), "fb")
+		return st, s["redirect_uri"].(string)
+	}
+	st, redirect := start2()
+	if redirect != googleauth.FallbackRedirectURI {
+		t.Errorf("fallback redirect = %q", redirect)
+	}
+	status, conn2, _ := c.call(http.MethodPost, "/google/callback", map[string]any{"url": "http://127.0.0.1:8099/?state=" + url.QueryEscape(st) + "&code=fb&scope=" + url.QueryEscape(googleauth.Scope)})
+	if status != http.StatusOK || conn2["id"] != id {
+		t.Fatalf("sign in again = %d %v", status, conn2)
+	}
+	// No password for a Google connection; a password connection cannot be made with Google.
+	if status, _, _ := c.call(http.MethodPut, "/calendar-connections/"+id+"/credentials", map[string]any{"password": "x"}); status != http.StatusUnprocessableEntity {
+		t.Errorf("a password for a Google connection = %d", status)
+	}
+	// The connection list says when Google stops accepting it.
+	cal := googleauth.CalendarURL(googleauth.CalDAVBase, "mama@gmail.com")
+	if status, body, _ := c.call(http.MethodPost, "/calendar-connections/"+id+"/calendars", map[string]any{"url": cal, "name": "Mama"}); status != http.StatusCreated {
+		t.Fatalf("tick a calendar = %d %v", status, body)
+	}
+	gb.g.set(func(g *googleFake) { g.failToken = "invalid_grant" })
+	gb.b.now = gb.b.now.Add(3 * time.Hour)
+	cals2, _ := gb.b.db.SyncedCalendars(gb.h.ID)
+	_ = gb.b.sync.Sync(context.Background(), gb.h.ID, cals2[0].ID)
+	_, _, list := c.call(http.MethodGet, "/calendar-connections", nil)
+	if len(list) != 1 || list[0].(map[string]any)["needs_signin"] != true || list[0].(map[string]any)["signin_needed_at"] == nil {
+		t.Errorf("connection list = %v", list)
+	}
+}
+
+func TestGoogleAPIIsRefusedWhileCalendarServicesAreOff(t *testing.T) {
+	t.Parallel()
+	gb := newGoogleBox(t)
+	c := newAPIClient(t, gb.b)
+	c.cookie = true
+	c.call(http.MethodPut, "/google", map[string]any{"client_id": gClientID, "client_secret": gSecret})
+	_ = gb.b.db.SetServiceEnabled(outbound.Calendars, false)
+	for _, call := range []struct{ method, path string }{{http.MethodPost, "/google/authorize"}, {http.MethodPost, "/google/callback"}} {
+		if status, _, _ := c.call(call.method, call.path, map[string]any{"url": "http://127.0.0.1:8099/?state=a&code=b"}); status != http.StatusConflict {
+			t.Errorf("%s %s = %d, want 409", call.method, call.path, status)
 		}
 	}
 }

@@ -362,8 +362,12 @@ func googleDiscovered(cals []googleauth.Calendar, account string) []discoveredJS
 		default:
 			d.Access, d.Reason = "read_write", "writable"
 		}
-		if c.AccessRole != "owner" && c.ID != account && strings.Contains(c.ID, "@") && !strings.Contains(c.ID, "#") && !strings.HasSuffix(c.ID, "calendar.google.com") {
-			d.SharedBy = c.ID
+		google := strings.HasSuffix(c.ID, "@group.v.calendar.google.com") // Google's own calendars: birthdays, holidays
+		if c.AccessRole != "owner" && !google {
+			d.Shared = true
+			if strings.Contains(c.ID, "@") && !strings.HasSuffix(c.ID, "calendar.google.com") { // the id of a person's own calendar is their account
+				d.SharedBy = c.ID
+			}
 		}
 		if d.Name == "" {
 			d.Name = c.ID

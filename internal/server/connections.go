@@ -49,6 +49,8 @@ type discoveredJSON struct {
 	Reason string `json:"reason,omitempty"`
 	// SharedBy is the Google account that shares the calendar with this one, when known.
 	SharedBy string `json:"shared_by,omitempty"`
+	// Shared says another account owns the calendar and shares it with this one.
+	Shared bool `json:"shared,omitempty"`
 	// fromStore marks a calendar the box knows but the server was not asked
 	// about: Name is the name in Hejmo, not the name at the source (web only).
 	fromStore bool

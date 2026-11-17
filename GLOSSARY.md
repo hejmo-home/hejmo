@@ -261,7 +261,7 @@ Number and unit of a list entry, such as 500 g or 1 dozen.
 _Avoid_: amount
 
 **Tile view**:
-A list shown as tiles with symbol or picture, name and tick; the default for children.
+A list shown as tiles with symbol or picture, name and tick; the default for children. The choice (tiles or list) is one per person for all lists and every device. A display is not a person and keeps its own view, tiles until someone switches it. An entry that names no article shows its first letter on a dashed ring instead of a picture.
 _Avoid_: grid, gallery
 
 **Diet**:

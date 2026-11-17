@@ -275,12 +275,12 @@ func TestTilesOfAnEmptyOrFinishedListSayWhatThatMeansToAChild(t *testing.T) {
 	b := cp.parent.b
 	empty, _ := listWith(t, b, "Nothing", nil)
 	page := cp.screen.get("/lists/"+empty, "en").body
-	if !strings.Contains(page, `data-empty`) || !strings.Contains(page, "Mama or Papa can add something.") || strings.Contains(page, `<ul class="tiles"`) {
+	if !strings.Contains(page, `data-empty`) || !strings.Contains(page, "Mama can add something.") || strings.Contains(page, `<ul class="tiles"`) {
 		t.Errorf("empty list for a child:\n%s", page)
 	}
 	done, _ := listWith(t, b, "Done", []string{"Milk"}, "Milk")
 	page = cp.screen.get("/lists/"+done, "en").body
-	if !strings.Contains(page, "All 1 ticked off. Tap a tile to make it open again.") || !strings.Contains(page, `class="empty all-done"`) || !strings.Contains(page, "Everything is ticked off.") {
+	if !strings.Contains(page, "All 1 ticked off. Tap a tile to open it again.") || !strings.Contains(page, `class="empty all-done"`) || !strings.Contains(page, "Everything is ticked off.") {
 		t.Errorf("finished list for a child:\n%s", page)
 	}
 }
@@ -326,9 +326,9 @@ func TestListViewHasAPIParity(t *testing.T) {
 	if page := getEN(c.b, "/lists/"+id).body; !strings.Contains(page, `<ul class="tiles"`) {
 		t.Errorf("web page ignores the API choice")
 	}
-	for _, bad := range []any{map[string]any{"view": "grid"}, map[string]any{}, map[string]any{"view": 3}} {
-		if status, _, _ := c.call(http.MethodPut, "/people/"+mama.ID+"/list-view", bad); status != http.StatusUnprocessableEntity {
-			t.Errorf("put %v = %d, want 422", bad, status)
+	for _, bad := range []string{`{"view":"grid"}`, `{}`, `{"view":""}`} { // the contract refuses them, so they go raw
+		if status := rawCall(t, c, http.MethodPut, "/people/"+mama.ID+"/list-view", bad); status != http.StatusUnprocessableEntity {
+			t.Errorf("put %s = %d, want 422", bad, status)
 		}
 	}
 	// Only your own: a parent does not change someone else's view.
@@ -344,7 +344,7 @@ func TestEntriesOfTheAPICarryTheirSymbolOrPicture(t *testing.T) {
 	c := signedInAPI(t)
 	h, _ := c.b.db.HomeHousehold()
 	art, _ := c.b.db.CreateArticle(h.ID, personNamed(t, c.b, "Mama").ID, store.OwnArticle{Name: "Oat drink barista", Dept: "dairy", Kind: "vegan", Unit1: "l"}, &store.ArticlePicture{JPEG: testJPEG(t, 400, 400), Source: "upload"})
-	id, _ := tileList(t, c.b, nil, "Milk", "Oat drink barista", "Gift wrap")
+	id, _ := tileList(t, c.b, nil, "Milk", "Oat drink barista", "Party hats")
 	_, got, _ := c.call(http.MethodGet, "/lists/"+id, nil)
 	byText := map[string]map[string]any{}
 	for _, e := range got["entries"].([]any) {
@@ -357,9 +357,46 @@ func TestEntriesOfTheAPICarryTheirSymbolOrPicture(t *testing.T) {
 	if m := byText["Oat drink barista"]; m["article_id"] != art.ID || m["picture"] == nil || !strings.HasPrefix(m["picture"].(string), "/articles/"+art.ID+"/picture") {
 		t.Errorf("own = %v", m)
 	}
-	if m := byText["Gift wrap"]; m["article_id"] != nil || m["symbol"] != nil || m["picture"] != nil {
+	if m := byText["Party hats"]; m["article_id"] != nil || m["symbol"] != nil || m["picture"] != nil {
 		t.Errorf("free text = %v", m)
 	}
 }
 
 var _ = list.Tiles
+
+func TestADisplaysViewIsReadAndChangedThroughTheAPI(t *testing.T) {
+	c := signedInAPI(t)
+	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
+	_, shown, _ := c.call(http.MethodPost, "/displays", map[string]any{"code": code, "name": "Kitchen", "type": "screen"})
+	id := shown["id"].(string)
+	if shown["list_view"] != "tiles" {
+		t.Errorf("a new display shows %v, want tiles", shown["list_view"])
+	}
+	status, got, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"list_view": "list"})
+	if status != http.StatusOK || got["list_view"] != "list" {
+		t.Fatalf("patch = %d %v", status, got)
+	}
+	h, _ := c.b.db.HomeHousehold()
+	if v, _ := c.b.db.DisplayListView(h.ID, id); v != list.Rows {
+		t.Errorf("stored %q", v)
+	}
+	// Other fields leave the view alone.
+	if _, got, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"name": "Hall"}); got["list_view"] != "list" {
+		t.Errorf("renaming changed the view: %v", got)
+	}
+	if status := rawCall(t, c, http.MethodPatch, "/displays/"+id, `{"list_view":"grid"}`); status != http.StatusUnprocessableEntity {
+		t.Errorf("unknown view = %d, want 422", status)
+	}
+}
+
+func TestOnlyTilesLoadTheScriptThatShowsAnUnsavedTick(t *testing.T) {
+	b := signedInBox(t)
+	id, _ := tileList(t, b, nil, "Milk")
+	if page := getEN(b, "/lists/"+id).body; strings.Contains(page, "tiles.js") {
+		t.Errorf("the list view loads the tile script")
+	}
+	b.post("/me/list-view", url.Values{"view": {"tiles"}, "list": {id}})
+	if page := getEN(b, "/lists/"+id).body; !strings.Contains(page, `<script src="/static/tiles.js" defer data-error="Not saved. Tap again."></script>`) {
+		t.Errorf("tiles lack the script:\n%s", page)
+	}
+}

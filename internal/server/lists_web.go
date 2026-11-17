@@ -8,6 +8,7 @@ import (
 	"slices"
 	"strings"
 
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -26,6 +27,7 @@ type entryView struct {
 	First    bool
 	Last     bool
 	Added    bool // the entry just added on a display, framed until the next tap
+	Look     entryLook
 }
 
 func (s *server) newListView(lang string, l list.List, c store.EntryCount) listView {
@@ -227,17 +229,112 @@ func (s *server) renderList(w http.ResponseWriter, r *http.Request, p principal,
 		}
 	}
 	child := p.person.Role == store.RoleChild
-	lv := s.newListView(s.langOf(r), l, c)
+	view, err := s.listViewOf(p)
+	if err != nil {
+		s.fail(w, "list view", err)
+		return
+	}
+	lang := s.langOf(r)
+	lv := s.newListView(lang, l, c)
 	data := s.listChoices()
-	data["Meta"] = s.listMeta(s.langOf(r), l, lv.State, child)
+	tiles := view == list.Tiles && !edit
+	data["Meta"] = s.listMeta(lang, l, lv.State, child)
+	if child && tiles {
+		data["Meta"] = s.tilesMeta(lang, lv.State, c)
+	}
+	if !edit { // looks, warnings and the free-text note belong to the everyday view
+		lk, err := s.newListLooks(p, lang, "/articles/")
+		if err != nil {
+			s.fail(w, "list looks", err)
+			return
+		}
+		data["FreeText"] = lk.freeTextNote(lk.apply(open, ticked))
+	}
+	if child && len(es) == 0 {
+		data["ChildEmpty"] = s.childEmptyText(lang, p.household.ID)
+	}
 	data["Person"], data["List"], data["Open"], data["Ticked"], data["Form"] = p.person, lv, open, ticked, form
 	data["Child"], data["Hide"], data["Edit"] = child, hideTicked(r), edit
+	data["View"], data["Tiles"], data["AllDone"] = string(view), tiles, len(es) > 0 && c.Open == 0
+	data["ViewError"] = ""
+	if _, bad := form["ViewError"]; bad {
+		data["ViewError"] = s.viewErrorText(lang, view)
+	}
 	data["SuccessInline"] = edit
 	data["Manual"] = l.Sort == list.Manual
 	data["Summary"] = s.listSummary(r, form)
 	data["SyncStale"] = s.syncStale(p.household.ID)
 	data["Error"], data["ErrorField"] = errKey, errField
 	s.render(w, r, status, "list.html", data)
+}
+
+// tilesMeta is the line under a child's list in tiles: the state and what a
+// tap does.
+func (s *server) tilesMeta(lang, state string, c store.EntryCount) string {
+	switch {
+	case c.Open == 0 && c.Done == 0:
+		return fmt.Sprintf(s.i18n.T(lang, "lists.meta.plain"), state)
+	case c.Open == 0:
+		return fmt.Sprintf(s.i18n.T(lang, "lists.meta.child.tiles_done"), state)
+	}
+	return fmt.Sprintf(s.i18n.T(lang, "lists.meta.child.tiles"), state)
+}
+
+// childEmptyText tells a child that nothing is on the list and who can add: the
+// parents, by name.
+func (s *server) childEmptyText(lang, householdID string) string {
+	people, err := s.db.People(householdID)
+	var parents []string
+	if err == nil {
+		for _, x := range people {
+			if x.Role == store.RoleParent {
+				parents = append(parents, x.Name)
+			}
+		}
+	}
+	switch len(parents) {
+	case 0:
+		return s.i18n.T(lang, "lists.empty.child.none")
+	case 1:
+		return s.i18n.Format(lang, i18n.Msg("lists.empty.child.one", "name", parents[0]))
+	}
+	return s.i18n.Format(lang, i18n.Msg("lists.empty.child.many", "names", strings.Join(parents[:len(parents)-1], ", ")+" "+s.i18n.T(lang, "lists.or")+" "+parents[len(parents)-1]))
+}
+
+// viewErrorText says that the view was not saved and which one stays.
+func (s *server) viewErrorText(lang string, v list.View) string {
+	return s.i18n.Format(lang, i18n.Msg("lists.view.error", "view", s.i18n.T(lang, "lists.view."+string(v))))
+}
+
+// handleListView remembers the view of lists of the person who asks: tiles or
+// the list, for all lists and every device. Children choose for themselves.
+func (s *server) handleListView(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.memberPage(w, r)
+	if !ok {
+		return
+	}
+	_ = r.ParseForm()
+	id := r.PostFormValue("list")
+	l, lerr := s.db.List(p.household.ID, id)
+	view, valid := list.ParseView(r.PostFormValue("view"))
+	switch {
+	case !valid:
+		if lerr != nil {
+			http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+			return
+		}
+		s.renderList(w, r, p, http.StatusUnprocessableEntity, l, false, map[string]any{"Text": "", "ViewError": true}, "", "")
+		return
+	}
+	if err := s.db.SetPersonListView(p.household.ID, p.person.ID, view); err != nil {
+		s.fail(w, "save list view", err)
+		return
+	}
+	to := "/lists"
+	if lerr == nil {
+		to = listURL(r, l.ID, false)
+	}
+	s.redirectSaved(w, r, to, "flash.list_view_"+string(view))
 }
 
 // listPage loads the list of a request or answers 404.

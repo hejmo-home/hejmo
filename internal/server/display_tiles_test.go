@@ -15,7 +15,7 @@ import (
 
 func TestADisplayShowsListsAsTilesUntilSomeoneSwitchesItWithoutAPIN(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
-	id, ids := f.onlyList(t, "Shopping", []string{"Cheese"}, "Milk", "Gift wrap", "Cheese")
+	id, ids := f.onlyList(t, "Shopping", []string{"Cheese"}, "Milk", "Party hats", "Cheese")
 	page := f.listsPage(t, "en", "/display/lists/"+id).body
 	if !strings.Contains(page, `<ul class="tiles">`) || strings.Contains(page, `class="big-check"`) {
 		t.Fatalf("a display does not show tiles by default:\n%s", page)
@@ -33,7 +33,7 @@ func TestADisplayShowsListsAsTilesUntilSomeoneSwitchesItWithoutAPIN(t *testing.T
 	if !strings.Contains(milk, `action="/display/lists/`+id+`/entries/`+ids["Milk"]+`/done"`) || !strings.Contains(milk, "🥛") {
 		t.Errorf("Milk tile:\n%s", milk)
 	}
-	if !strings.Contains(tileOf(t, page, "Gift wrap"), `pic letter`) {
+	if !strings.Contains(tileOf(t, page, "Party hats"), `pic letter`) {
 		t.Errorf("free text has no letter")
 	}
 	if !strings.Contains(page, `data-tick-error="Not saved. Tap again."`) {
@@ -49,7 +49,7 @@ func TestADisplayShowsListsAsTilesUntilSomeoneSwitchesItWithoutAPIN(t *testing.T
 	if !strings.Contains(page, `class="big-check"`) || strings.Contains(page, `<ul class="tiles">`) || !strings.Contains(page, `value="list" aria-pressed="true"`) {
 		t.Errorf("the display did not switch to the list:\n%s", page)
 	}
-	if !strings.Contains(page, "data-success") || !strings.Contains(page, "Remembered: This display (“Hallway”) now shows lists as a list.") && !strings.Contains(page, "This display (“Hallway”) now shows lists as a list.") {
+	if !strings.Contains(page, "data-success") || !strings.Contains(page, "Saved: This display (“Hallway”) now shows lists as a list.") {
 		t.Errorf("the line does not name the display:\n%s", page)
 	}
 	if v, _ := f.db.DisplayListView(f.householdID, f.displayID(t)); v != list.Rows {

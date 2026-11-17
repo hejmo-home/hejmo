@@ -470,6 +470,7 @@ var notRendered = map[string]string{
 	"/phones/join/{code}":       "one-time pairing link of a phone",
 
 	"/articles/{id}/picture":                  "an image",
+	"/display/articles/{id}/picture":          "an image",
 	"/settings/lists/library/picture/{token}": "an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
 }

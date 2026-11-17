@@ -26,6 +26,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/store/storetest"
 	"github.com/hejmo-home/hejmo/internal/weather"
 )
 
@@ -197,7 +198,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	for _, o := range opts {
 		o(&cfg)
 	}
-	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
+	db, err := store.Open(storetest.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}

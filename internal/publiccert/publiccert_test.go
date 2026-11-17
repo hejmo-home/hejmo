@@ -20,6 +20,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/store/storetest"
 	"github.com/libdns/libdns"
 )
 
@@ -39,7 +40,7 @@ type rig struct {
 func newRig(t *testing.T) *rig {
 	t.Helper()
 	r := &rig{t: t, dns: newFakeDNS(t), dir: t.TempDir(), now: time.Now()}
-	r.dbPath = filepath.Join(r.dir, "hejmo.db")
+	r.dbPath = storetest.Path(t)
 	var err error
 	if r.db, err = store.Open(r.dbPath); err != nil {
 		t.Fatal(err)

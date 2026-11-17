@@ -14,6 +14,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/store/storetest"
 )
 
 // fakeServer is a CalDAV server as the sync sees it, scripted: objects with
@@ -160,7 +161,7 @@ type fakeFixture struct {
 
 func newFakeFixture(t *testing.T) *fakeFixture {
 	t.Helper()
-	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
+	db, err := store.Open(storetest.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}

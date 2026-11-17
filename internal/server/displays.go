@@ -493,19 +493,45 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 }
 
 type displayJSON struct {
-	ID            string    `json:"id"`
-	Name          string    `json:"name"`
-	Room          string    `json:"room"`
-	Type          string    `json:"type"`
-	PairedAt      string    `json:"paired_at"`
-	LastSeenAt    *string   `json:"last_seen_at"`
-	ShowTomorrow  bool      `json:"show_tomorrow"`
-	QuietMode     quietJSON `json:"quiet_mode"`
-	Kiosk         kioskJSON `json:"kiosk"`
-	Theme         string    `json:"theme"`
-	SunriseOffset int       `json:"sunrise_offset"`
-	SunsetOffset  int       `json:"sunset_offset"`
-	Screensaver   saverJSON `json:"screensaver"`
+	ID            string     `json:"id"`
+	Name          string     `json:"name"`
+	Room          string     `json:"room"`
+	Type          string     `json:"type"`
+	PairedAt      string     `json:"paired_at"`
+	LastSeenAt    *string    `json:"last_seen_at"`
+	ShowTomorrow  bool       `json:"show_tomorrow"`
+	QuietMode     quietJSON  `json:"quiet_mode"`
+	Kiosk         kioskJSON  `json:"kiosk"`
+	Theme         string     `json:"theme"`
+	SunriseOffset int        `json:"sunrise_offset"`
+	SunsetOffset  int        `json:"sunset_offset"`
+	Screensaver   saverJSON  `json:"screensaver"`
+	Brightness    brightJSON `json:"brightness"`
+}
+
+// brightJSON is a display's brightness: the values, and what the kiosk app
+// was last told to do (null without a kiosk app or before the box checked it).
+type brightJSON struct {
+	Day         int         `json:"day"`
+	Evening     int         `json:"evening"`
+	LightSource string      `json:"light_source"`
+	Quiet       brightQuiet `json:"quiet"`
+	Current     *brightNow  `json:"current"`
+}
+
+type brightQuiet struct {
+	Mode        string `json:"mode"`
+	Level       int    `json:"level"`
+	WakeMinutes int    `json:"wake_minutes"`
+}
+
+type brightNow struct {
+	Phase       string  `json:"phase"`
+	Percent     *int    `json:"percent"`
+	Since       *string `json:"since"`
+	Confirmed   bool    `json:"confirmed"`
+	Reachable   bool    `json:"reachable"`
+	LightSensor bool    `json:"light_sensor"`
 }
 
 type saverJSON struct {
@@ -527,11 +553,25 @@ type kioskJSON struct {
 	APIKeySet bool   `json:"api_key_set"`
 }
 
-func displayToJSON(d store.Display, loc *time.Location) displayJSON {
+func (s *server) displayToJSON(d store.Display, loc *time.Location) displayJSON {
 	j := displayJSON{ID: d.ID, Name: d.Name, Room: d.Room, Type: string(d.Type), PairedAt: d.PairedAt.In(loc).Format(time.RFC3339), ShowTomorrow: d.ShowTomorrow,
 		QuietMode: quietJSON{d.Quiet.Enabled, d.Quiet.FromText(), d.Quiet.ToText()}, Kiosk: kioskJSON{d.KioskURL, d.KioskKeySet},
 		Theme: string(d.Theme), SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset,
 		Screensaver: saverJSON{d.Saver.Enabled, d.Saver.IdleMinutes, d.Saver.IntervalMinutes, append([]string{}, d.Saver.Albums...)}}
+	b := d.Brightness
+	j.Brightness = brightJSON{Day: b.Day, Evening: b.Evening, LightSource: string(b.Source), Quiet: brightQuiet{string(b.QuietMode), b.QuietLevel, b.WakeMinutes}}
+	if st, ok := s.kioskState(d); ok {
+		cur := &brightNow{Phase: string(st.Target.Phase), Confirmed: st.Confirmed, Reachable: st.Reachable, LightSensor: st.HasSensor}
+		if !st.Target.Auto {
+			pct := st.Target.Percent
+			cur.Percent = &pct
+		}
+		if !st.Target.Since.IsZero() {
+			since := st.Target.Since.In(loc).Format(time.RFC3339)
+			cur.Since = &since
+		}
+		j.Brightness.Current = cur
+	}
 	if !d.LastSeen.IsZero() {
 		seen := d.LastSeen.In(loc).Format(time.RFC3339)
 		j.LastSeenAt = &seen
@@ -548,7 +588,7 @@ func (s *server) apiListDisplays(w http.ResponseWriter, _ *http.Request, p princ
 	loc := p.location()
 	out := make([]displayJSON, 0, len(list))
 	for _, d := range list {
-		out = append(out, displayToJSON(d, loc))
+		out = append(out, s.displayToJSON(d, loc))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -562,7 +602,7 @@ func (s *server) apiPairDisplay(w http.ResponseWriter, r *http.Request, p princi
 	d, err := s.pairDisplay(p, strings.TrimSpace(in.Code), store.Display{Name: in.Name, Room: in.Room, Type: store.DisplayType(in.Type)})
 	switch {
 	case err == nil:
-		writeJSON(w, http.StatusCreated, displayToJSON(d, p.location()))
+		writeJSON(w, http.StatusCreated, s.displayToJSON(d, p.location()))
 	case errors.Is(err, errTooManyAttempts):
 		writeError(w, http.StatusTooManyRequests, "too many wrong codes, try again later")
 	case errors.Is(err, store.ErrNotFound):
@@ -597,6 +637,16 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 			URL    *string `json:"url"`
 			APIKey *string `json:"api_key"`
 		} `json:"kiosk"`
+		Brightness *struct {
+			Day         *int    `json:"day"`
+			Evening     *int    `json:"evening"`
+			LightSource *string `json:"light_source"`
+			Quiet       *struct {
+				Mode        *string `json:"mode"`
+				Level       *int    `json:"level"`
+				WakeMinutes *int    `json:"wake_minutes"`
+			} `json:"quiet"`
+		} `json:"brightness"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -608,6 +658,12 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 	}
 	if k := in.Kiosk; k != nil {
 		c.KioskURL, c.KioskKey = k.URL, k.APIKey
+	}
+	if b := in.Brightness; b != nil {
+		c.Brightness = &brightChange{Day: b.Day, Evening: b.Evening, Source: b.LightSource}
+		if q := b.Quiet; q != nil {
+			c.Brightness.QuietMode, c.Brightness.QuietLevel, c.Brightness.WakeMinutes = q.Mode, q.Level, q.WakeMinutes
+		}
 	}
 	if sv := in.Screensaver; sv != nil {
 		c.Saver = &saverChange{Enabled: sv.Enabled, IdleMinutes: sv.IdleMinutes, Interval: sv.IntervalMinutes, Albums: sv.AlbumIDs}
@@ -640,7 +696,7 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 	}
 	for _, d := range list {
 		if d.ID == r.PathValue("id") {
-			writeJSON(w, http.StatusOK, displayToJSON(d, p.location()))
+			writeJSON(w, http.StatusOK, s.displayToJSON(d, p.location()))
 			return
 		}
 	}

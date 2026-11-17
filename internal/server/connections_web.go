@@ -208,6 +208,9 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		lastFact,
 		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: p.day(conn.CreatedAt)},
 	}
+	if conn.Kind == "outlook" {
+		facts = s.outlookFacts(r, p, conn, last)
+	}
 	shown := selectionCalendars(found, form, mine, taken)
 	for i := range shown {
 		shown[i].Hint = s.nameHint(r, conn, shown[i].SourceName)
@@ -227,7 +230,7 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 	}
 	var writeRows []writeRow
 	for _, m := range mine {
-		if m.Kind == "caldav" {
+		if m.Kind == "caldav" || (m.Kind == "outlook" && !m.SourceLocked) {
 			writeRows = append(writeRows, writeRow{ID: m.ID, Name: m.Name, TwoWay: !m.ReadOnly})
 		}
 	}
@@ -240,6 +243,11 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		"Error": errKey, "ErrorField": errField, "ErrorCalendar": errCalendar,
 		"Facts": facts, "Names": names, "ICloud": conn.URL == iCloudServer, "Host": connectionHost(conn), "SourceKicker": s.sourceKicker(r, conn),
 		"LoginOpen": !refusedAt.IsZero() || errField == "password",
+	}
+	if conn.Kind == "outlook" {
+		data["Outlook"], data["Cards"], data["Gone"] = true, s.outlookCards(r, found, mine), outlookGoneOf(mine)
+		data["Refused"], data["LoginOpen"] = nil, false
+		refusedAt = time.Time{}
 	}
 	if !refusedAt.IsZero() {
 		data["Refused"] = s.say(r, i18n.Msg("connections.error.refused", "when", p.when(refusedAt)))
@@ -301,13 +309,14 @@ func connectedMessage(provider string, n int) i18n.Message {
 // renderConnectNew shows the connect page with the guide of one service
 // checked. Without a service, or with an unknown one, iCloud is checked.
 func (s *server) renderConnectNew(w http.ResponseWriter, r *http.Request, p principal, status int, service string, extra map[string]any) {
-	if service != "caldav" {
+	if service != "caldav" && service != "outlook" {
 		service = "icloud"
 	}
 	data := map[string]any{
 		"Person": p.person, "Service": service, "SyncStale": s.syncStale(p.household.ID),
 		"Error": "", "ErrorField": "", "ConnURL": "", "ConnUsername": "", "ConnSingle": false,
 	}
+	s.outlookGuide(data, "")
 	for k, v := range extra {
 		data[k] = v
 	}
@@ -333,6 +342,17 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "connection", err)
 		return
 	}
+	if conn.Kind == "outlook" && !conn.ReauthSince.IsZero() {
+		// Microsoft ended the sign-in: asking would only fail. The page shows what
+		// the box has, says so in its facts, and offers the new sign-in.
+		stored, serr := s.storedCalendars(p, conn)
+		if serr != nil {
+			s.fail(w, "synced calendars", serr)
+			return
+		}
+		s.renderSelection(w, r, p, http.StatusOK, conn, stored, nil, "", "", "")
+		return
+	}
 	found, err := s.rediscover(r.Context(), p, conn)
 	var bad *inputError
 	switch {
@@ -346,7 +366,7 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		errKey, status := connectionErrorKey(bad, ""), http.StatusBadGateway
-		if bad.Field == "login" {
+		if bad.Field == "login" || bad.Field == "reauth" {
 			status = http.StatusOK
 			if refused, _ := s.refusedSince(p, conn); refused {
 				errKey = "" // the line about the refused login says it
@@ -357,6 +377,16 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "discover", err)
 		return
+	}
+	if conn.Kind == "outlook" {
+		switch r.URL.Query().Get("connected") {
+		case "new":
+			s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "", connectedMessage("outlook", len(found)))
+			return
+		case "again":
+			s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "", i18n.Msg("connections.success.outlook_again"))
+			return
+		}
 	}
 	s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "")
 }

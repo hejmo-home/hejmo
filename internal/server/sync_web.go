@@ -209,7 +209,13 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	for _, c := range synced {
 		taken = append(taken, c.Color)
 	}
+	notice, err := s.reconnectNotice(r, p)
+	if err != nil {
+		s.fail(w, "reconnect notice", err)
+		return
+	}
 	data := map[string]any{
+		"Reconnect": notice,
 		"AutoColor": nextColors(taken, 1)[0],
 		"Person":    p.person, "Rows": subscribed, "ConnRows": connRows, "Log": log, "People": peopleChoices, "Groups": groupChoices,
 		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
@@ -241,6 +247,9 @@ func (s *server) connectionRow(r *http.Request, p principal, c store.Connection,
 	} else {
 		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("connections.on_box", "names", strings.Join(names, ", ")))})
 	}
+	if c.Kind == "outlook" && !c.ReauthSince.IsZero() {
+		flag = &flagView{Kind: "problem", Text: s.say(r, i18n.Msg("sync.flag.outlook_signin"))}
+	}
 	switch {
 	case flag != nil:
 		row.Flag = flag
@@ -254,6 +263,9 @@ func (s *server) connectionRow(r *http.Request, p principal, c store.Connection,
 
 // serviceName names the service of a connection: iCloud, or the CalDAV server's host.
 func (s *server) serviceName(r *http.Request, c store.Connection) string {
+	if c.Kind == "outlook" {
+		return s.say(r, i18n.Msg("connections.provider.outlook"))
+	}
 	if c.URL == iCloudServer {
 		return s.say(r, i18n.Msg("connections.provider.icloud"))
 	}
@@ -288,6 +300,9 @@ func (s *server) nameHint(r *http.Request, c store.Connection, sourceName string
 	key := "connections.card.hint_host"
 	if c.URL == iCloudServer {
 		key = "connections.card.hint_icloud"
+	}
+	if c.Kind == "outlook" {
+		key = "outlook.card.hint"
 	}
 	const mark = "\x00name\x00"
 	text := html.EscapeString(s.say(r, i18n.Msg(key, "host", connectionHost(c), "name", mark)))

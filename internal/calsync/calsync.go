@@ -13,6 +13,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/graph"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -129,6 +130,7 @@ type Service struct {
 	pushes sync.WaitGroup
 	bundle *i18n.Bundle
 	lang   string // language of the readable audience line
+	graph  *graph.Client
 }
 
 func (s *Service) lock(calendarID string) *sync.Mutex {
@@ -221,6 +223,9 @@ func (s *Service) sync(ctx context.Context, householdID, calendarID string, run 
 	}
 	if cal.Kind == "caldav" {
 		return s.syncCalDAV(ctx, cal, h, at, run, fail)
+	}
+	if cal.Kind == "outlook" {
+		return s.syncOutlook(ctx, cal, h, at, run, fail)
 	}
 	feedURL, err := icsfeed.NormalizeURL(cal.URL)
 	if err != nil {

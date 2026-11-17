@@ -25,8 +25,17 @@ func (db *DB) SetCalendarReadOnly(householdID, calendarID string, readOnly bool)
 	if err != nil {
 		return err
 	}
-	if kind != "caldav" {
-		return fmt.Errorf("%w: only calendars from CalDAV can be switched between two-way and read-only", ErrInvalid)
+	if kind != "caldav" && kind != "outlook" {
+		return fmt.Errorf("%w: only calendars from CalDAV or Outlook can be switched between two-way and read-only", ErrInvalid)
+	}
+	if !readOnly {
+		var locked bool
+		if err := db.sql.QueryRow(`SELECT source_locked FROM calendars WHERE id = ?`, calendarID).Scan(&locked); err != nil {
+			return err
+		}
+		if locked {
+			return fmt.Errorf("%w: the source does not let this calendar be changed", ErrInvalid)
+		}
 	}
 	return expectOne(db.sql.Exec(`UPDATE calendars SET read_only = ?, waste = waste AND ?, updated_at = ? WHERE id = ? AND household_id = ?`, readOnly, readOnly, now(), calendarID, householdID))
 }
@@ -35,9 +44,14 @@ func (db *DB) SetCalendarReadOnly(householdID, calendarID string, readOnly bool)
 // after the caller checked, so no change is stored that could never be queued.
 var errReadOnly = fmt.Errorf("%w: this is a read-only calendar: its events are changed at their source", ErrInvalid)
 
+// errInvited stops a box change to an event other people are invited to: it
+// would send a message to every attendee, so it is changed at its source.
+var errInvited = fmt.Errorf("%w: other people are invited to this event: it is changed at its source", ErrInvalid)
+
 // pushMarker records, inside the transaction of a box change, which remote
 // objects the change touches, so the change is written to the server later
-// even if the box is offline now. Only two-way CalDAV calendars qualify.
+// even if the box is offline now. Only two-way CalDAV and Outlook calendars
+// qualify.
 type pushMarker struct {
 	tx   *sql.Tx
 	seen map[[2]string]bool // calendar id, object address
@@ -58,9 +72,9 @@ func (m *pushMarker) add(calendarID, address string) {
 // old marks the object an existing event belongs to.
 func (m *pushMarker) old(eventID string) error {
 	var cal, address string
-	var readOnly bool
-	err := m.tx.QueryRow(`SELECT e.calendar_id, e.remote_url, c.read_only FROM events e JOIN calendars c ON c.id = e.calendar_id
-		WHERE e.id = ? AND e.remote_url IS NOT NULL AND c.kind = 'caldav'`, eventID).Scan(&cal, &address, &readOnly)
+	var readOnly, invited bool
+	err := m.tx.QueryRow(`SELECT e.calendar_id, e.remote_url, c.read_only, e.invited FROM events e JOIN calendars c ON c.id = e.calendar_id
+		WHERE e.id = ? AND e.remote_url IS NOT NULL AND c.kind IN ('caldav', 'outlook')`, eventID).Scan(&cal, &address, &readOnly, &invited)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -70,24 +84,27 @@ func (m *pushMarker) old(eventID string) error {
 	if readOnly {
 		return errReadOnly
 	}
+	if invited {
+		return errInvited
+	}
 	m.add(cal, address)
 	return nil
 }
 
 type eventRow struct {
-	id, calendarID, base string
-	seriesID             sql.NullString
-	recurrenceID         sql.NullString
-	remoteURL, remoteKey sql.NullString
+	id, calendarID, base, kind string
+	seriesID                   sql.NullString
+	recurrenceID               sql.NullString
+	remoteURL, remoteKey       sql.NullString
 }
 
 func (m *pushMarker) row(id string) (eventRow, bool, error) {
 	r := eventRow{id: id}
 	var readOnly bool
-	err := m.tx.QueryRow(`SELECT e.calendar_id, c.remote_url, e.series_id, e.recurrence_id, e.remote_url, e.remote_key, c.read_only
+	err := m.tx.QueryRow(`SELECT e.calendar_id, c.remote_url, e.series_id, e.recurrence_id, e.remote_url, e.remote_key, c.read_only, c.kind
 		FROM events e JOIN calendars c ON c.id = e.calendar_id
-		WHERE e.id = ? AND c.kind = 'caldav' AND c.remote_url IS NOT NULL`, id).
-		Scan(&r.calendarID, &r.base, &r.seriesID, &r.recurrenceID, &r.remoteURL, &r.remoteKey, &readOnly)
+		WHERE e.id = ? AND c.kind IN ('caldav', 'outlook') AND c.remote_url IS NOT NULL`, id).
+		Scan(&r.calendarID, &r.base, &r.seriesID, &r.recurrenceID, &r.remoteURL, &r.remoteKey, &readOnly, &r.kind)
 	if errors.Is(err, sql.ErrNoRows) {
 		return r, false, nil
 	}
@@ -131,6 +148,11 @@ func (m *pushMarker) assign(ids []string) error {
 		}
 		if !address.Valid {
 			address = sql.NullString{String: strings.TrimSuffix(r.base, "/") + "/" + url.PathEscape(masterID) + ".ics", Valid: true}
+			if r.kind == "outlook" {
+				// Outlook names the event itself: until it is created, the box's
+				// own id stands in for the address (see OutlookCreated).
+				address.String = NewOutlookPrefix + masterID
+			}
 			uid = sql.NullString{String: masterID, Valid: true}
 			if _, err := m.tx.Exec(`UPDATE events SET remote_url = ?, remote_key = ? WHERE id = ?`, address.String, uid.String, masterID); err != nil {
 				return err
@@ -149,6 +171,9 @@ func (m *pushMarker) assign(ids []string) error {
 	}
 	return nil
 }
+
+// NewOutlookPrefix starts the address of an Outlook event not yet created.
+const NewOutlookPrefix = "new:"
 
 // OverrideKey is the key a changed occurrence is known by outside: its
 // series' UID and its original start.

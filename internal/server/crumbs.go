@@ -15,6 +15,7 @@ var (
 	crumbTasks    = crumb{"/tasks", "nav.tasks", ""}
 
 	crumbConnections = crumb{"/calendars", "hub.connections", ""}
+	crumbConnect     = crumb{"/connections/new", "connect.title", ""}
 	crumbCalDAV      = crumb{"/caldav", "hub.caldav", ""}
 	crumbDisplays    = crumb{"/displays", "hub.displays", ""}
 	crumbPhotos      = crumb{"/photos", "hub.photos", ""}
@@ -69,6 +70,11 @@ func crumbsFor(name string, data map[string]any) []crumb {
 			return []crumb{crumbSettings, crumbConnections, {Href: "/connections/" + id, Name: who}}
 		}
 		return []crumb{crumbSettings, crumbConnections}
+	case "outlook_signin.html":
+		if id, who := lookup(data, "ConnectionID"), lookup(data, "Account"); id != "" {
+			return []crumb{crumbSettings, crumbConnections, {Href: "/connections/" + id, Name: who}}
+		}
+		return []crumb{crumbSettings, crumbConnections, crumbConnect}
 	case "routine_template_step.html":
 		href, _ := data["BackHref"].(string)
 		text, _ := data["BackText"].(string)

@@ -25,11 +25,17 @@ var errNoKey = errors.New("store: no encryption key set for credentials")
 type Connection struct {
 	ID          string
 	HouseholdID string
-	Kind        string // caldav
+	Kind        string // caldav or outlook
 	URL         string // server address, or the calendar address for a single calendar
 	Username    string
 	Single      bool // URL is one calendar, added by hand; nothing to discover
 	CreatedAt   time.Time
+	// For an Outlook connection: the family's own app ID (empty: the project's),
+	// when the sign-in was last renewed, and since when Microsoft has ended it
+	// (zero: it is valid).
+	ClientID    string
+	RenewedAt   time.Time
+	ReauthSince time.Time
 }
 
 // NewCalDAVConnection describes a CalDAV or iCloud connection to create.
@@ -81,14 +87,14 @@ func (db *DB) SetConnectionPassword(householdID, connectionID, password string) 
 	if err != nil {
 		return err
 	}
-	return expectOne(db.sql.Exec(`UPDATE calendar_connections SET credential = ? WHERE id = ? AND household_id = ? AND kind = 'caldav'`,
+	return expectOne(db.sql.Exec(`UPDATE calendar_connections SET credential = ? WHERE id = ? AND household_id = ? AND kind IN ('caldav', 'outlook')`,
 		base64.StdEncoding.EncodeToString(raw), connectionID, householdID))
 }
 
 // Connections lists a household's CalDAV connections.
 func (db *DB) Connections(householdID string) ([]Connection, error) {
-	rows, err := db.sql.Query(`SELECT id, household_id, kind, url, username, single_calendar, created_at FROM calendar_connections
-		WHERE household_id = ? AND kind = 'caldav' ORDER BY created_at, rowid`, householdID)
+	rows, err := db.sql.Query(`SELECT id, household_id, kind, url, username, single_calendar, created_at, client_id, renewed_at, reauth_since FROM calendar_connections
+		WHERE household_id = ? AND kind IN ('caldav', 'outlook') ORDER BY created_at, rowid`, householdID)
 	if err != nil {
 		return nil, err
 	}
@@ -96,11 +102,13 @@ func (db *DB) Connections(householdID string) ([]Connection, error) {
 	var out []Connection
 	for rows.Next() {
 		var c Connection
-		var created string
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Kind, &c.URL, &c.Username, &c.Single, &created); err != nil {
+		var created, renewed, reauth string
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Kind, &c.URL, &c.Username, &c.Single, &created, &c.ClientID, &renewed, &reauth); err != nil {
 			return nil, err
 		}
 		c.CreatedAt, _ = time.Parse(time.RFC3339, created)
+		c.RenewedAt, _ = time.Parse(time.RFC3339, renewed)
+		c.ReauthSince, _ = time.Parse(time.RFC3339, reauth)
 		out = append(out, c)
 	}
 	return out, rows.Err()
@@ -126,7 +134,7 @@ func (db *DB) ConnectionCredentials(householdID, connectionID string) (user, pas
 		return "", "", errNoKey
 	}
 	var sealed string
-	err = db.sql.QueryRow(`SELECT username, credential FROM calendar_connections WHERE id = ? AND household_id = ? AND kind = 'caldav'`,
+	err = db.sql.QueryRow(`SELECT username, credential FROM calendar_connections WHERE id = ? AND household_id = ? AND kind IN ('caldav', 'outlook')`,
 		connectionID, householdID).Scan(&user, &sealed)
 	if errors.Is(err, sql.ErrNoRows) {
 		return "", "", ErrNotFound
@@ -183,7 +191,7 @@ func (db *DB) AddCalDAVCalendar(householdID, connectionID string, in NewCalDAVCa
 // DeleteConnection removes a connection with all its calendars and their
 // events. Nothing is deleted outside the box.
 func (db *DB) DeleteConnection(householdID, connectionID string) error {
-	return expectOne(db.sql.Exec(`DELETE FROM calendar_connections WHERE id = ? AND household_id = ? AND kind = 'caldav'`, connectionID, householdID))
+	return expectOne(db.sql.Exec(`DELETE FROM calendar_connections WHERE id = ? AND household_id = ? AND kind IN ('caldav', 'outlook')`, connectionID, householdID))
 }
 
 // ObjectChange is one remote object that is new or changed: its address,

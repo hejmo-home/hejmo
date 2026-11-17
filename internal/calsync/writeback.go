@@ -15,6 +15,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/caldav"
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/graph"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -34,7 +35,7 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 	if err != nil {
 		return err
 	}
-	if cal.Kind != "caldav" || cal.ReadOnly {
+	if (cal.Kind != "caldav" && cal.Kind != "outlook") || cal.ReadOnly {
 		return nil
 	}
 	h, err := s.db.Household(householdID)
@@ -54,6 +55,15 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
 	}
 	if len(pending) == 0 {
+		return nil
+	}
+	if cal.Kind == "outlook" {
+		err := s.withOutlook(ctx, h.ID, cal.ConnectionID, func(sess *graph.Session, _ store.Connection) error {
+			return s.pushOutlook(ctx, sess, cal, h)
+		})
+		if err != nil {
+			return fail(pushMessageOutlook(err), err)
+		}
 		return nil
 	}
 	conn, err := s.db.Connection(h.ID, cal.ConnectionID)

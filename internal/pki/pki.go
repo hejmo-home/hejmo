@@ -128,6 +128,26 @@ func (s *Store) Provision(host string, now time.Time) error {
 	if s.leaf != nil {
 		return errors.New("pki: already provisioned")
 	}
+	return s.provisionLocked(host, now)
+}
+
+// Reprovision replaces the CA and the box certificate with new ones for host:
+// the standby CA of a public name is limited to that name and cannot vouch for
+// the box's address at home (offline mode, ticket 201). Every device must trust
+// the new CA. If the new ones cannot be made, the old ones stay.
+func (s *Store) Reprovision(host string, now time.Time) error {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	leaf, caDER, caKey, expiry := s.leaf, s.caDER, s.caKey, s.expiry
+	s.leaf = nil
+	if err := s.provisionLocked(host, now); err != nil {
+		s.leaf, s.caDER, s.caKey, s.expiry = leaf, caDER, caKey, expiry
+		return err
+	}
+	return nil
+}
+
+func (s *Store) provisionLocked(host string, now time.Time) error {
 	dns, ips, err := boxNames(host)
 	if err != nil {
 		return err

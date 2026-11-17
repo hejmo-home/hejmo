@@ -18,7 +18,6 @@ import (
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/store"
-	"github.com/hejmo-home/hejmo/internal/update"
 )
 
 type settingsJSON struct {
@@ -324,6 +323,12 @@ func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 					e.State = "hub.mcp.on"
 				}
 			}
+			if it.Href == connectionsPath {
+				e.State = "hub.outside.off"
+				if s.offline() {
+					e.State = "hub.outside.on"
+				}
+			}
 			if it.Href == "/photos" {
 				e.StateText = s.photoHubState(s.langOf(r), p.household)
 			}
@@ -332,6 +337,7 @@ func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 	}
 	s.render(w, r, http.StatusOK, "settings.html", map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Hub": items, "Update": s.updateNotice(p.household), "FirstStepsHidden": p.household.FirstStepsHidden,
+		"OfflineNote": s.homeNote(r, p.person),
 	})
 }
 
@@ -496,9 +502,7 @@ func (s *server) saveSettings(h store.Household, in store.HouseholdSettings) err
 	}
 	// The change is stored; a settings file that cannot be written must not turn
 	// it into an error. The box writes the file again at its next start.
-	if err := update.WriteSettings(s.updateDir, string(in.AutoUpdate)); err != nil {
-		s.logger.Error("write update settings", "err", err)
-	}
+	s.writeUpdateSettings(in.AutoUpdate)
 	return nil
 }
 

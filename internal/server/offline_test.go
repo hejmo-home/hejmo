@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/outbound"
+	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -34,7 +35,7 @@ func TestWizardAsksWhetherTheBoxStaysOfflineRightAfterChoosingTheHomeNetwork(t *
 		t.Fatalf("status = %d", r.status)
 	}
 	mustContain(t, r.body, "Should the box stay fully offline?", `action="/setup/offline"`, `name="offline" value="on"`, `name="offline" value="off"`,
-		"Yes, fully offline", "No, only what is needed may go out", "For that:", "Settings › Connections to the outside")
+		"Yes, fully offline", "No, only what is needed may go out", "In return:", "Settings › Connections to the outside")
 	mustNotContain(t, r.body, " checked") // neither answer is preselected: both ways are equal
 	if !strings.Contains(r.body, "Step 1 of 4") {
 		t.Errorf("the question is part of step 1:\n%s", r.body)
@@ -234,7 +235,7 @@ func TestSwitchingOffAsksFirstWhatGoesOutsideAgain(t *testing.T) {
 	}
 	page := getEN(b, "/settings/connections/online").body
 	mustContain(t, page, "Switch off offline mode?", "Goes outside again at once", "Only when you use it", "Stays off",
-		"api.open-meteo.com", "caldav.example.org", "School holidays", "www.example.org", "Web images", "was already off before offline mode",
+		"api.open-meteo.com", "caldav.example.org", "School holidays", "www.example.org", "Web images", "Was already off before offline mode",
 		`action="/settings/connections/online"`, "Yes, switch off offline mode", "No, stay offline", "Connections to the outside")
 
 	r = b.post("/settings/connections/online", url.Values{})
@@ -365,13 +366,13 @@ func TestParentsSeeTheOfflineNoticeOnHomeAndHubAndChildrenDoNot(t *testing.T) {
 	}
 }
 
-func TestTheHubRowSaysTheStateInWords(t *testing.T) {
+func TestTheHubRowSaysTheStateInWordsAndComesAfterHousehold(t *testing.T) {
 	b := signedInBox(t)
-	mustContain(t, getEN(b, "/settings").body, "<b>Offline mode off.</b>")
-	if strings.Index(getEN(b, "/settings").body, `href="/settings/connections"`) < strings.Index(getEN(b, "/settings").body, `href="/settings/household"`) {
-		return
+	page := getEN(b, "/settings").body
+	mustContain(t, page, "<b>Offline mode off.</b>")
+	if strings.Index(page, `href="/settings/connections"`) < strings.Index(page, `href="/settings/household"`) {
+		t.Error("the row belongs after Household")
 	}
-	t.Error("the row belongs after Household")
 }
 
 func TestAPageWhoseFeatureNeedsTheOutsideShowsTheNoticeInsteadOfTheForm(t *testing.T) {
@@ -499,7 +500,7 @@ func (b *box) updateSettings() string {
 
 func TestTheHostUpdateScriptIsToldToStayOfflineThroughTheSettingsFile(t *testing.T) {
 	b := signedInBox(t)
-	b.post("/settings/connections", url.Values{"offline": {"on"}})
+	b.post("/settings/connections", url.Values{"offline": {"on"}, "weather": {"on"}, "update": {"on"}, "calendars": {"on"}, "ics": {"on"}, "recipes": {"on"}, "images": {"on"}})
 	if got := b.updateSettings(); got != "mode=on\noffline=yes\n" {
 		t.Errorf("settings file while offline = %q", got)
 	}
@@ -517,7 +518,9 @@ func TestTheHostUpdateScriptIsToldToStayOfflineThroughTheSettingsFile(t *testing
 func TestTheBoxWritesTheOfflineKeyAtStartToo(t *testing.T) {
 	b := signedInBox(t)
 	offlineOn(t, b)
-	_ = serverWithHTTPSPort(b, "443") // a new server over the same database, as after a restart
+	_ = server.New(server.Options{DB: b.db, PKI: b.pki, Public: b.public, UpdateDir: b.updateDir, Now: func() time.Time { return b.now }}) // a new server over the same database, as after a restart
+	_ = os.Remove(filepath.Join(b.updateDir, "update-settings"))
+	_ = server.New(server.Options{DB: b.db, PKI: b.pki, Public: b.public, UpdateDir: b.updateDir, Now: func() time.Time { return b.now }})
 	if got := b.updateSettings(); got != "mode=on\noffline=yes\n" {
 		t.Errorf("settings file after start = %q", got)
 	}

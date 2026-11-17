@@ -137,6 +137,15 @@ func (s *server) handleHTTPSForm(w http.ResponseWriter, r *http.Request) {
 	case "own":
 		way = httpsOwn
 	}
+	// Right after "Only in the home network" the wizard asks whether the box
+	// stays fully offline (ticket 201, Q142); a public name needs the internet,
+	// so choosing it takes an earlier "yes" back.
+	if own := way == httpsOwn || s.public == nil; own && !s.outboundBox().Asked {
+		s.renderOfflineQuestion(w, r, http.StatusOK, false)
+		return
+	} else if !own {
+		s.takeOfflineAnswerBack()
+	}
 	// "Continue" without a choice (the form sends next=1, no way is preselected):
 	// the choice again, with the error under the cards.
 	if way == httpsChoice && r.URL.Query().Get("next") != "" && s.public != nil {
@@ -219,6 +228,7 @@ func (s *server) handlePublicHTTPSSubmit(w http.ResponseWriter, r *http.Request)
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
+	s.takeOfflineAnswerBack() // the DNS service is refused while offline
 	trim := func(k string) string { return strings.TrimSpace(r.PostFormValue(k)) }
 	req := publiccert.Request{
 		Name: strings.ToLower(trim("name")), Provider: trim("provider"), Token: trim("token"), Issuer: trim("issuer"),

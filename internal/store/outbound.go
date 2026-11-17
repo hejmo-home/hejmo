@@ -68,6 +68,12 @@ func (db *DB) AnswerOfflineQuestion(offline bool, at time.Time) error {
 	return err
 }
 
+// ResetOfflineQuestion takes the wizard's answer back: online, not asked.
+func (db *DB) ResetOfflineQuestion() error {
+	_, err := db.sql.Exec(`UPDATE outbound_box SET offline = 0, offline_since = NULL, asked = 0 WHERE id = 1`)
+	return err
+}
+
 // SetUpdateReminderDays sets after how many days without an update parents are reminded.
 func (db *DB) SetUpdateReminderDays(days int) error {
 	if days < MinReminderDays || days > MaxReminderDays {

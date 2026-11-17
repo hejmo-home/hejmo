@@ -2998,6 +2998,93 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /outbound:
+    get:
+      operationId: getOutbound
+      summary: Offline mode, the connections to the outside, and what the box refused (scope settings:read)
+      description: |
+        The box makes every connection to the outside through one gate (ticket 201).
+        With `offline` true, the gate refuses all of them and records each attempt in
+        `refused`, newest first (at most 200); `connections` then show every switch as
+        `locked`. `enabled` is the state the connection is in now: with offline mode on
+        it is false for all, while the switches themselves are kept and come back when
+        offline mode goes off. The DNS service has no switch (`switchable` false): it is
+        in use while the box has a `public_name`. `last_contact` is the last time the box
+        reached the service (for `update`, the last time the host script looked).
+        Place search is not listed: the list of places is on the box.
+      responses:
+        "200":
+          description: The state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: updateOutbound
+      summary: Switch offline mode or single connections; omitted fields stay as they are (scope settings:write)
+      description: |
+        `offline` switches offline mode on or off; switching it off brings every
+        switch back as it was before. `connections` maps a connection id to its
+        switch; it is refused with 409 while offline mode is on (the switches are
+        locked), and with 422 for an id without a switch (`dns` among them).
+        Switching offline mode on while the box has a `public_name` is refused with
+        409: that needs the change to the home network (`POST /outbound/offline`).
+        `update_reminder_days` (7 to 365) is how many days without an update make
+        the web interface remind parents (offline mode).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OutboundUpdate" }
+      responses:
+        "200":
+          description: The state after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: The switches are locked by offline mode, or the public name must be left first
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /outbound/offline:
+    post:
+      operationId: goOffline
+      summary: Switch offline mode on, leaving a public name first if the box has one (scope settings:write)
+      description: |
+        The change the web page "Switch on offline mode" makes, in its order: with
+        `delete_dns` true the box first deletes its records at the DNS service (the
+        last connection to the outside), then forgets the public name, makes its own
+        certificate for its address at home and switches offline mode on. Every device
+        must trust the box's own CA again, and passkeys only work for the old name.
+        If the DNS service refuses, nothing is changed (502). Without a public name it
+        only switches offline mode on.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                delete_dns: { type: boolean, description: "Delete the box's DNS records at the DNS service first (default false)" }
+      responses:
+        "200":
+          description: The state after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "502":
+          description: The DNS service did not delete the records; nothing was changed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /update:
     get:
       operationId: getUpdate
@@ -3888,6 +3975,45 @@ components:
             lunch: { type: string }
             snack: { type: string }
             dinner: { type: string }
+    Outbound:
+      type: object
+      required: [offline, offline_since, update_reminder_days, public_name, connections, refused]
+      properties:
+        offline: { type: boolean }
+        offline_since: { type: string, nullable: true, format: date-time, description: "When offline mode was switched on; null while it is off" }
+        update_reminder_days: { type: integer, minimum: 7, maximum: 365, description: "Days without an update after which parents are reminded (offline mode)" }
+        public_name: { type: string, nullable: true, description: "The box's public DNS name, or null if it uses its own certificate" }
+        connections:
+          type: array
+          items:
+            type: object
+            required: [id, enabled, switchable, locked, last_contact]
+            properties:
+              id: { type: string, enum: [weather, update, calendars, ics, recipes, images, dns] }
+              enabled: { type: boolean, description: "Whether the connection may go outside now; false for all while offline mode is on" }
+              switchable: { type: boolean, description: "False for the DNS service, which has no switch" }
+              locked: { type: boolean, description: "True while offline mode is on" }
+              last_contact: { type: string, nullable: true, format: date-time }
+              target: { type: string, description: "The host last reached" }
+        refused:
+          type: array
+          description: "What the gate refused, newest first, at most 200"
+          items:
+            type: object
+            required: [at, service, target]
+            properties:
+              at: { type: string, format: date-time }
+              service: { type: string, enum: [weather, update, calendars, ics, recipes, images, dns, other] }
+              target: { type: string }
+    OutboundUpdate:
+      type: object
+      properties:
+        offline: { type: boolean }
+        connections:
+          type: object
+          description: "Connection id to switch (weather, update, calendars, ics, recipes, images)"
+          additionalProperties: { type: boolean }
+        update_reminder_days: { type: integer }
     UpdateStatus:
       type: object
       required: [mode, managed, state, notice]

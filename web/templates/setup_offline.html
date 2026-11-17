@@ -1,0 +1,16 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "setup.offline.title") "Frame" .Frame "Wizard" .Wizard)}}
+  <h1>{{t "setup.offline.title"}}</h1>
+  <p class="lead">{{t "setup.offline.lead"}}</p>
+  <form class="tile" method="post" action="/setup/offline">
+    <fieldset class="choice{{if .Invalid}} invalid{{end}}"{{if .Invalid}} aria-invalid="true" aria-describedby="err-offline"{{end}}>
+      <legend class="sr">{{t "setup.offline.legend"}}</legend>
+      {{template "offlineOption" (dict "Value" "on" "Label" (t "setup.offline.yes") "Means" (t "setup.offline.yes.means") "Cost" (t "setup.offline.yes.cost"))}}
+      {{template "offlineOption" (dict "Value" "off" "Label" (t "setup.offline.no") "Means" (t "setup.offline.no.means") "Cost" (t "setup.offline.no.cost"))}}
+      {{template "fieldError" (dict "Root" . "Name" "offline")}}
+    </fieldset>
+    <p class="hint">{{t "setup.offline.hint"}}</p>
+    <div class="actions"><button class="button" type="submit">{{t "setup.offline.next"}}</button>{{if .Choice}}<a class="link" href="/setup/https">{{t "setup.https.other"}}</a>{{end}}</div>
+  </form>
+{{template "foot"}}
+
+{{define "offlineOption"}}<label><input type="radio" name="offline" value="{{.Value}}"><b>{{.Label}}</b><small class="way"><span>{{.Means}}</span><span><span class="k">{{t "setup.https.way.cost"}}</span> {{.Cost}}</span></small></label>{{end}}

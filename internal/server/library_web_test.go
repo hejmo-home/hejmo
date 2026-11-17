@@ -297,7 +297,7 @@ func TestLibraryShowsOwnArticlesFirstAndShippedOnesInClosedDepartmentCardsWithCo
 	if r.status != http.StatusOK {
 		t.Fatalf("GET = %d", r.status)
 	}
-	libHas(t, "library", r.body, `<a class="back" href="/settings/lists">`, "Back to Lists", "<h1>Article library</h1>", `class="button" href="/settings/lists/library/new">Add own article`,
+	libHas(t, "library", r.body, `<a href="/settings/lists">Lists</a>`, "<h1>Article library</h1>", `class="button" href="/settings/lists/library/new">Add own article`,
 		`class="lib-search"`, `role="search"`, `class="lib-filter"`, `aria-current="true">All</a>`, "With allergy warning", ">Hidden</a>",
 		`<h2 id="own">Own articles</h2>`, "Katzenfutter Huhn", `<h2 id="hej">Articles from Hejmo</h2>`, "248 articles in German and English.",
 		`<details class="dept"><summary>`, "Fruit and vegetables", "46 articles", "Sweets and snacks", "17 articles · 1 hidden by hand · ", "with allergy warning",
@@ -316,7 +316,7 @@ func TestLibraryShowsOwnArticlesFirstAndShippedOnesInClosedDepartmentCardsWithCo
 		t.Errorf("the library shows a count in place of a name")
 	}
 	de := l.de("/settings/lists/library").body
-	libHas(t, "German library", de, "Zurück zu Listen", "Eigenen Artikel anlegen", "Obst und Gemüse", "46 Artikel", "Artikel von Hejmo")
+	libHas(t, "German library", de, `<a href="/settings/lists">Listen</a>`, "Eigenen Artikel anlegen", "Obst und Gemüse", "46 Artikel", "Artikel von Hejmo")
 }
 
 func TestOwnArticlesStartWithAnEmptyStateSentence(t *testing.T) {
@@ -395,7 +395,7 @@ func TestShippedArticlePageSaysEverythingInWordsAndCannotBeEdited(t *testing.T) 
 	if r.status != http.StatusOK {
 		t.Fatalf("GET = %d", r.status)
 	}
-	libHas(t, "article page", r.body, `<a class="back" href="/settings/lists/library">`, "Article library", `<h1 class="art-title"><span class="art-sym big" aria-hidden="true">🥜</span><span>Peanut butter</span></h1>`,
+	libHas(t, "article page", r.body, `<a href="/settings/lists/library">Article library</a>`, `<h1 class="art-title"><span class="art-sym big" aria-hidden="true">🥜</span><span>Peanut butter</span></h1>`,
 		"Comes from", "Hejmo · German: Erdnussbutter", "Pantry and breakfast", "piece and g", "When adding, piece is preselected until you use another unit.", "Vegan: nothing from animals",
 		"everyone at your home", "Peanuts", `Contains Peanuts: `, "Mia</span> is allergic", "Hide by hand", "Off. Hejmo suggests Peanut butter.", "Make own version", "Copy as own article")
 	libHasNot(t, "shipped page", r.body, `name="name"`, "<textarea", "Delete article")

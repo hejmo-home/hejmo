@@ -293,6 +293,39 @@ func TestValidateAnOwnArticle(t *testing.T) {
 	}
 }
 
+func TestCompletionsStartWithTheLettersThenWordsThenAnywhereOwnFirst(t *testing.T) {
+	all := []library.Article{
+		{ID: "ice", De: "Vanilleeis", En: "Vanilla ice cream"},
+		{ID: "eggs", De: "Eier", En: "Eggs"},
+		{ID: "noodles", De: "Eiernudeln", En: "Egg noodles"},
+		{ID: "x", De: "Süßes Ei", En: "Sweet egg", Own: true},
+		{ID: "own", De: "Eigelb", En: "Eigelb", Own: true},
+		{ID: "salad", De: "Eisbergsalat", En: "Iceberg lettuce"},
+	}
+	var ids []string
+	for _, a := range library.Complete("Ei", all, 5) {
+		ids = append(ids, a.ID)
+	}
+	want := []string{"own", "eggs", "noodles", "salad", "x"}
+	if len(ids) != len(want) {
+		t.Fatalf("got %v, want %v", ids, want)
+	}
+	for i := range want {
+		if ids[i] != want[i] {
+			t.Fatalf("got %v, want %v", ids, want)
+		}
+	}
+	if got := library.Complete("e", all, 5); got != nil {
+		t.Errorf("one letter is no search: %v", got)
+	}
+	if got := library.Complete("qq", all, 5); got != nil {
+		t.Errorf("%v", got)
+	}
+	if got := library.Complete("egg", all, 2); len(got) != 2 {
+		t.Errorf("the English name finds too, and max cuts: %v", got)
+	}
+}
+
 func TestResolveFindsTheArticleAnEntryNames(t *testing.T) {
 	own := library.Article{ID: "own-1", Own: true, De: "Käse", En: "Käse", Dept: "dairy", Kind: library.Veg, Symbol: "🧀"}
 	all := []library.Article{own}

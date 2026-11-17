@@ -158,6 +158,68 @@ test('an add that cannot reach the box says so under the field and keeps the tex
   assert.equal(line.children[line.children.length - 1].text, 'Not added: the box cannot be reached.');
 });
 
+// Ticket 165: the quantity of an entry opens under it, and the editor saves in the background.
+const tapOn = (attrs) => ({
+  target: { closest: (sel) => (sel === '[data-qty-open]' && attrs.open ? { getAttribute: () => attrs.open } : sel === '[data-qty-close]' && attrs.close ? {} : null) },
+  preventDefault() { this.prevented = true; },
+});
+
+test('the quantity button opens the editor of its entry in the view, and a second tap closes it', async () => {
+  const p = lists({ responses: [{ status: 200, body: '<p>editor</p>', headers: { 'X-Hejmo-View': 'v2' } }, { status: 200, body: '<p>closed</p>', headers: { 'X-Hejmo-View': 'v3' } }] });
+  const open = tapOn({ open: 'E7' });
+  p.state.listeners.click(open);
+  await tick();
+  assert.ok(open.prevented);
+  assert.equal(p.state.requests[0].url, '/display/lists/L1/view?qty=E7');
+  assert.equal(p.view.html, '<p>editor</p>');
+  p.state.listeners.click(tapOn({ open: 'E7' }));
+  await tick();
+  assert.equal(p.state.requests[1].url, '/display/lists/L1/view', 'the same button closes it');
+});
+
+test('the editor stays open in refreshes, and Cancel closes it', async () => {
+  const p = lists();
+  p.state.listeners.click(tapOn({ open: 'E7' }));
+  await tick();
+  p.announce('v8');
+  await tick();
+  assert.equal(p.state.requests[1].url, '/display/lists/L1/view?qty=E7');
+  p.state.listeners.click(tapOn({ close: true }));
+  await tick();
+  assert.equal(p.state.requests[2].url, '/display/lists/L1/view');
+});
+
+test('saving a quantity posts in the background; a refusal keeps the editor open, a save closes it and names the line', async () => {
+  const p = lists({ responses: [
+    { status: 200, body: '<p>editor</p>', headers: { 'X-Hejmo-View': 'v6' } },
+    { status: 422, body: '<p>error</p>', headers: { 'X-Hejmo-View': 'v7' } },
+    { status: 200, body: '<p>refreshed</p>', headers: { 'X-Hejmo-View': 'v9' } },
+    { status: 200, body: '<p>saved</p>', headers: { 'X-Hejmo-View': 'v8', 'X-Hejmo-Added': 'E7', 'X-Hejmo-Result': 'tok1' } },
+  ] });
+  p.state.listeners.click(tapOn({ open: 'E7' }));
+  await tick();
+  const editor = element({ className: 'qty-edit', action: '/display/lists/L1/entries/E7/quantity' });
+  editor.parentNode = element();
+  editor.closest = () => null;
+  const e = submitEvent(editor);
+  p.state.listeners.submit(e);
+  await tick();
+  assert.ok(e.prevented, 'the editor is not posted the old way');
+  const req = p.state.requests[1];
+  assert.equal(req.url, '/display/lists/L1/entries/E7/quantity');
+  assert.equal(req.init.body.get('partial'), '1');
+  assert.equal(p.view.html, '<p>error</p>');
+  p.announce('v9');
+  await tick();
+  assert.equal(p.state.requests[2].url, '/display/lists/L1/view?qty=E7', 'still open after a refusal');
+  p.state.listeners.submit(submitEvent(editor));
+  await tick();
+  assert.equal(p.view.html, '<p>saved</p>');
+  p.announce('v10');
+  await tick();
+  assert.equal(p.state.requests[4].url, '/display/lists/L1/view?added=E7&r=tok1', 'closed, the entry framed and the line kept');
+});
+
 // The family view with the screensaver timer (ticket 178). The page is rendered
 // once and stays for days: the timer asks the box whether the screensaver is due.
 function family(answers, attrs) {

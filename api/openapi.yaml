@@ -2241,7 +2241,29 @@ paths:
     post:
       operationId: addListEntry
       summary: Add an entry at the end of a list (scope lists:write, parents only)
-      description: An alphabetical list shows it at its place by text.
+      description: |
+        An alphabetical list shows it at its place by text.
+
+        A list with `suggestions` takes an article of the library (`article_id`,
+        the key of a shipped article or the id of an own one; or the exact name
+        in `text`, in German or English, which is the same) and a quantity
+        (`amount` and `unit`). The entry's text is then the article's name in
+        the language of the request. Only open entries merge:
+
+        - the same article (or the same text, ignoring case) with a unit of the
+          same kind **adds up** (500 g + 1 kg = 1.5 kg; 6 pieces + 1 dozen = 18
+          pieces), the total shown in the article's first default unit where it
+          fits (`result: added_to`, status 200);
+        - an entry without quantity takes the quantity (`filled`, 200);
+        - adding without a quantity something that is already there makes no
+          second entry (`exists`, 200);
+        - another kind (piece, pack, bunch, weight, volume) gets its own entry
+          directly under the old one (`added`, 201).
+
+        `unit` is optional: the unit last used for the article, otherwise its
+        first default unit. `amount` is a number above 0 up to 9999; a unit
+        that is switched off (`GET /units`) is refused. A list without
+        suggestions takes plain `text` only.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -2250,21 +2272,72 @@ paths:
           application/json:
             schema:
               type: object
-              required: [text]
               properties:
                 text: { type: string, minLength: 1, maxLength: 200 }
+                article_id: { type: string, description: "Key of a shipped article or id of an own one" }
+                amount: { type: number, description: "Above 0, at most 9999; anything else is refused with 422" }
+                unit: { type: string, description: "A key of `GET /units`; one that is switched off is refused with 422" }
       responses:
+        "200":
+          description: Merged into an entry that was there, or already there
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntryResult" }
         "201":
           description: Created
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ListEntry" }
+              schema: { $ref: "#/components/schemas/ListEntryResult" }
         "400": { $ref: "#/components/responses/Invalid" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /lists/{id}/entries/{entry}:
+    patch:
+      operationId: setListEntryQuantity
+      summary: Change the quantity of an open entry (scope lists:write, parents only)
+      description: |
+        The amount **replaces** the old quantity and never adds to it. The
+        caller converts a change of unit within one kind (500 g to 0.5 kg keeps
+        the amount). `amount` is rounded as shown (two decimals, whole g and ml);
+        sending back the rounded number of the entry's own quantity, in any unit
+        of its kind, keeps the exact total. The total is shown by the same rules
+        as when adding. When
+        the article is already on the list in the new kind (or, for `amount:
+        null`, with any other entry), this entry goes into it (`result: merged`,
+        the answer is the entry that stays); otherwise `result: set`.
+        `amount: null` takes the quantity away. An entry that is ticked off or
+        gone answers 409. Only on lists with `suggestions`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount: { type: number, nullable: true, description: "Above 0, at most 9999; null takes the quantity away" }
+                unit: { type: string, description: "A key of `GET /units`; one that is switched off is refused with 422" }
+      responses:
+        "200":
+          description: The entry now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntryResult" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: The entry is ticked off or gone
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
     delete:
       operationId: deleteListEntry
       summary: Delete one entry (scope lists:delete, parents only)
@@ -2354,6 +2427,64 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /units:
+    get:
+      operationId: getUnits
+      summary: The units a quantity can have in this household (scope lists:read)
+      description: |
+        `active` are the units that can be chosen when adding. They follow the
+        country of the home (`country`) until a parent changes them (`custom:
+        true`): metric plus piece, dozen, pack and bunch in most countries; the
+        United Kingdom adds imperial units; the United States use US customary.
+        `units` lists every unit of the catalogue with its group, kind
+        (`count`, `pack`, `bunch`, `weight`, `volume`: only units of one kind
+        convert into each other) and size in pieces, grams or millilitres.
+      responses:
+        "200":
+          description: The units
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Units" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setUnits
+      summary: Switch units on and off (scope lists:write, parents only)
+      description: |
+        Piece is always on; unknown keys are dropped. Weight and volume each
+        keep at least one unit, otherwise 422 names the group in `field`
+        (`weight` or `volume`). Switching a unit off changes no entry that is
+        already on a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active: { type: array, items: { type: string }, description: "Keys of `GET /units`" }
+      responses:
+        "200":
+          description: The units now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Units" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: resetUnits
+      summary: Go back to the preset of the home's country (scope lists:write, parents only)
+      responses:
+        "200":
+          description: The units now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Units" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /articles:
     get:
       operationId: listArticles
@@ -2362,8 +2493,10 @@ paths:
         The articles Hejmo ships (`source: hejmo`, about 250, German and English
         names) and the household's own ones (`source: own`). Optional `q` keeps
         the articles whose name holds the text, ignoring case and umlauts.
-        `units` are the article's default units, `offered_units` those of them
-        that are switched on (piece when neither is). Articles say which
+        `units` are the article's default units, `offered_units` the ones the
+        add card offers: those that are switched on, a switched-off one
+        replaced by the nearest active unit of its kind (kg by g), piece when
+        nothing is left. Articles say which
         allergens they contain; who is warned about them is health data, see
         `/articles/{id}/warnings`.
       parameters:
@@ -3590,6 +3723,7 @@ components:
         color: { $ref: "#/components/schemas/ListColor" }
         symbol: { $ref: "#/components/schemas/ListSymbol" }
         sort: { allOf: [{ $ref: "#/components/schemas/ListSort" }], description: "Default manual" }
+        suggestions: { type: boolean, description: "Suggestions from the article library and quantities; default true" }
     ListChange:
       type: object
       minProperties: 1
@@ -3598,15 +3732,17 @@ components:
         color: { $ref: "#/components/schemas/ListColor" }
         symbol: { $ref: "#/components/schemas/ListSymbol" }
         sort: { $ref: "#/components/schemas/ListSort" }
+        suggestions: { type: boolean }
     List:
       type: object
-      required: [id, name, color, symbol, sort, open_count, done_count]
+      required: [id, name, color, symbol, sort, suggestions, open_count, done_count]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         color: { $ref: "#/components/schemas/ListColor" }
         symbol: { $ref: "#/components/schemas/ListSymbol" }
         sort: { $ref: "#/components/schemas/ListSort" }
+        suggestions: { type: boolean, description: "The list offers articles of the library while typing and takes quantities (a to-do list switches it off)" }
         open_count: { type: integer, description: "Entries not ticked off" }
         done_count: { type: integer, description: "Entries ticked off" }
     Article:
@@ -3703,6 +3839,9 @@ components:
         confirmed_by: { type: string, format: uuid, nullable: true }
         confirmed_at: { type: string, format: date-time, nullable: true }
         experimental: { type: boolean, description: "Always true" }
+    UnitKey:
+      type: string
+      enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
     ListEntry:
       type: object
       required: [id, text, done, article_id, symbol, picture]
@@ -3710,9 +3849,45 @@ components:
         id: { type: string, format: uuid }
         text: { type: string }
         done: { type: boolean }
-        article_id: { type: string, nullable: true, description: "The library article the text names (its name in German or English, ignoring case and umlauts): the key of a shipped article or the id of an own one. Null for free text." }
+        article_id: { type: string, nullable: true, description: "The library article of the entry: the one stored when it was added from the library, else (an entry without one) the article its text names exactly in German or English, ignoring case and umlauts; never an article hidden by hand. The key of a shipped article or the id of an own one. Null for free text." }
         symbol: { type: string, nullable: true, description: "The emoji a tile shows for the article (its department's symbol when it has none). Null for free text and for an article that has a picture." }
         picture: { type: string, nullable: true, description: "Path of the own article's picture, `GET /articles/{id}/picture`. Null without one." }
+        amount: { type: number, description: "How much, as shown (rounded: g and ml whole, else at most two decimals); missing without a quantity" }
+        unit: { $ref: "#/components/schemas/UnitKey" }
+    ListEntryResult:
+      allOf:
+        - { $ref: "#/components/schemas/ListEntry" }
+        - type: object
+          required: [result]
+          properties:
+            result:
+              type: string
+              enum: [added, added_to, filled, exists, set, merged]
+              description: What happened to the entry (see `addListEntry` and `setListEntryQuantity`)
+            previous:
+              type: object
+              description: The quantity the entry had before, when it changed
+              required: [amount, unit]
+              properties:
+                amount: { type: number }
+                unit: { $ref: "#/components/schemas/UnitKey" }
+    Units:
+      type: object
+      required: [country, custom, active, units]
+      properties:
+        country: { type: string, description: "ISO 3166-1 alpha-2 country of the home, empty without a place", example: DE }
+        custom: { type: boolean, description: "A parent changed the units; false while they follow the country" }
+        active: { type: array, items: { $ref: "#/components/schemas/UnitKey" } }
+        units:
+          type: array
+          items:
+            type: object
+            required: [key, group, kind, size]
+            properties:
+              key: { $ref: "#/components/schemas/UnitKey" }
+              group: { type: string, enum: [count, weight, volume] }
+              kind: { type: string, enum: [count, pack, bunch, weight, volume] }
+              size: { type: number, description: "In pieces, grams or millilitres" }
     ListView:
       type: object
       required: [view, default]

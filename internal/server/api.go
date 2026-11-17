@@ -146,6 +146,7 @@ var apiRoutes = []APIRoute{
 	{"DELETE", "/displays/{id}", auth.Perm("displays", auth.Delete), (*server).apiRevokeDisplay},
 	{"GET", "/phones", auth.Perm("tokens", auth.Read), (*server).apiListPhones},
 	{"DELETE", "/phones/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokePhone},
+	{"POST", "/phones/{id}/repair", auth.Perm("tokens", auth.Write), (*server).apiRepairPhone},
 	{"GET", "/phones/pairings", auth.Perm("tokens", auth.Read), (*server).apiListPhonePairings},
 	{"POST", "/phones/pairings", auth.Perm("tokens", auth.Write), (*server).apiCreatePhonePairing},
 	{"POST", "/phones/pairings/{id}/confirm", auth.Perm("tokens", auth.Write), (*server).apiConfirmPhonePairing},

@@ -847,6 +847,37 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /phones/{id}/repair:
+    post:
+      operationId: repairPhone
+      summary: Give a phone to another person in one step (scope tokens:write)
+      description: |
+        Removes the phone, ends its device session at once and returns a new
+        pairing code that says whom the phone is for next. The code follows the
+        usual rules of `createPhonePairing` (valid once, ten minutes, the
+        household's limit of open codes). The phone opens it, the waiting phone
+        shows the person, and a parent confirms it with `confirmPhonePairing`
+        (the waiting list names the person in `for_person_id`). `person_id` must
+        be another member of the household than the phone's current person (422
+        otherwise, and nothing changes). Nothing of the person the phone had
+        (events, tasks, stars) is touched.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RepairPhone" }
+      responses:
+        "201":
+          description: The new pairing code, for the chosen person
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NewPhonePairing" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /phones/pairings:
     get:
       operationId: listPhonePairings
@@ -3409,12 +3440,13 @@ components:
         last_seen_at: { type: string, format: date-time, nullable: true }
     PhonePairing:
       type: object
-      required: [id, device, verification, expires_at]
+      required: [id, device, verification, expires_at, for_person_id]
       properties:
         id: { type: string, format: uuid }
         device: { type: string, example: Safari on iPhone, description: "What the phone said about itself" }
         verification: { type: string, example: "483 920", description: "Six-digit number the waiting phone shows. Confirm only if it matches the number on the phone in your hand." }
         expires_at: { type: string, format: date-time }
+        for_person_id: { type: string, format: uuid, nullable: true, description: "Whom the phone is for next when the code came from `repairPhone`; null for an ordinary code" }
     NewPhonePairing:
       type: object
       required: [id, url, expires_at]
@@ -3422,6 +3454,12 @@ components:
         id: { type: string, format: uuid }
         url: { type: string, format: uri, description: "The address to show as a QR code. Only in this answer." }
         expires_at: { type: string, format: date-time }
+        person_id: { type: string, format: uuid, description: "Only for `repairPhone`: whom the phone is for next" }
+    RepairPhone:
+      type: object
+      required: [person_id]
+      properties:
+        person_id: { type: string, format: uuid, description: "Whom the phone is for next: a member of the household other than the phone's current person" }
     Invitation:
       type: object
       required: [state, created_at, expires_at, created_by, accepted_at, withdrawn_at]

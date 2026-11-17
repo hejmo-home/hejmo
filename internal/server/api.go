@@ -146,6 +146,7 @@ var apiRoutes = []APIRoute{
 	{"PATCH", "/photo-storage", auth.Perm("displays", auth.Write), (*server).apiSetPhotoLimit},
 	{"GET", "/phones", auth.Perm("tokens", auth.Read), (*server).apiListPhones},
 	{"DELETE", "/phones/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokePhone},
+	{"POST", "/phones/{id}/repair", auth.Perm("tokens", auth.Write), (*server).apiRepairPhone},
 	{"GET", "/phones/pairings", auth.Perm("tokens", auth.Read), (*server).apiListPhonePairings},
 	{"POST", "/phones/pairings", auth.Perm("tokens", auth.Write), (*server).apiCreatePhonePairing},
 	{"POST", "/phones/pairings/{id}/confirm", auth.Perm("tokens", auth.Write), (*server).apiConfirmPhonePairing},

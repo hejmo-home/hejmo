@@ -121,6 +121,8 @@ Mit dem **Offline-Modus** (der Einrichtungsassistent fragt gleich nach „Nur im
 
 Mit Offline-Modus (**Einstellungen › Verbindungen nach außen**) aktualisiert sich die Box nicht selbst, und der nächtliche Updater auch nicht: Die Box schreibt `offline=yes` in die Datei `update-settings`, der Updater verbindet sich mit nichts. Neue Versionen bringst du selbst auf die Box. Nach 90 Tagen ohne Update (die Zahl kannst du auf dieser Seite ändern) sehen Eltern „Seit 90 Tagen nicht aktualisiert“ mit einem Link zu diesem Kapitel.
 
+**Auf einer Box, die vor dem Offline-Modus installiert wurde, führe zuerst einmal das Installationsskript aus** (siehe „Aktualisieren und entfernen“ unten): Ein älterer Updater kennt `offline=yes` nicht und würde jede Nacht weiter nach Updates suchen.
+
 Eine Update-Datei in der Weboberfläche hochzuladen gibt es noch nicht (das ist ein eigener Schritt). Bis dahin geht es von Hand, von einem Computer mit Internet aus und mit der Adresse der Box zur Hand:
 
 1. **Auf einem Computer mit Internet** suchst du die neueste Version auf der [Release-Seite](https://github.com/hejmo-home/hejmo/releases) (eine Nummer wie `0.2.4`, keine Vorabversion). Lade das Image und prüfe seine Signatur, genau wie der Updater:
@@ -134,7 +136,11 @@ Eine Update-Datei in der Weboberfläche hochzuladen gibt es noch nicht (das ist 
 2. **Speichere das Image in eine Datei** und kopiere sie auf einen USB-Stick: `docker save ghcr.io/hejmo-home/hejmo:0.2.4 -o hejmo-0.2.4.tar`.
 3. **Auf der Box** bindest du den Stick ein, sicherst die Daten (`sudo cp -a /opt/hejmo/data /opt/hejmo/data.vor-0.2.4`) und lädst das Image: `sudo docker load -i /media/usb/hejmo-0.2.4.tar`.
 4. **Stelle die Box darauf um:** Trage in `/opt/hejmo/.env` `HEJMO_IMAGE=ghcr.io/hejmo-home/hejmo:0.2.4` ein und führe `cd /opt/hejmo && sudo docker compose up -d` aus. Öffne die Box und prüfe, dass alles läuft; die Seite „Verbindungen nach außen“ zeigt weiter, dass nichts nach draußen ging.
-5. Startet die neue Version nicht, setze `HEJMO_IMAGE` auf das alte Tag zurück, stoppe die Box und spiele die Datensicherung zurück.
+5. **Sag der Box, dass sie aktualisiert wurde.** Die Box sieht nicht, welches Image läuft; von einem Update erfährt sie nur aus der Datei, die der nächtliche Updater schreibt. Ohne diesen Schritt zeigt die Seite weiter die alte Version, und Eltern sehen weiter „Seit N Tagen nicht aktualisiert“. Nimm die Version, die du installiert hast:
+   ```bash
+   sudo sh -c 'rm -f /opt/hejmo/data/update-status && printf "state=updated\nversion=0.2.4\ntime=%s\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > /opt/hejmo/data/update-status'
+   ```
+6. Startet die neue Version nicht, setze `HEJMO_IMAGE` auf das alte Tag zurück, stoppe die Box und spiele die Datensicherung zurück (und überspringe Schritt 5).
 
 ## Uhrzeit vom Router
 

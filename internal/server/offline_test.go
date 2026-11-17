@@ -671,16 +671,28 @@ func TestAPausedCalendarSaysSoInTheAPI(t *testing.T) {
 // box does not know its image, so the guide has a step that writes the status
 // file the nightly updater would write. This runs that very command.
 func TestTheManualUpdateOfTheGuideEndsTheReminderAndShowsTheNewVersion(t *testing.T) {
-	guide, err := os.ReadFile(filepath.Join("..", "..", "docs", "install.md"))
+	for _, g := range []struct{ file, heading, olderBoxes string }{
+		{"install.md", "## Update without the internet", "run the install script once first"},
+		{"install.de.md", "## Update ohne Internet", "führe zuerst einmal das Installationsskript aus"},
+	} {
+		t.Run(g.file, func(t *testing.T) { manualUpdateOfTheGuide(t, g.file, g.heading, g.olderBoxes) })
+	}
+}
+
+func manualUpdateOfTheGuide(t *testing.T, file, heading, olderBoxes string) {
+	guide, err := os.ReadFile(filepath.Join("..", "..", "docs", file))
 	if err != nil {
 		t.Fatal(err)
 	}
 	chapter := string(guide)
-	chapter = chapter[strings.Index(chapter, "## Update without the internet"):]
+	chapter = chapter[strings.Index(chapter, heading):]
 	chapter = chapter[:strings.Index(chapter[3:], "\n## ")+3]
+	if !strings.Contains(chapter, olderBoxes) {
+		t.Errorf("%s has no note that a box installed before offline mode runs the install script once", file)
+	}
 	cmd := regexp.MustCompile("(?m)^\\s*sudo (sh -c '.*update-status')$").FindStringSubmatch(chapter)
 	if cmd == nil {
-		t.Fatalf("the guide has no step that writes the update-status file:\n%s", chapter)
+		t.Fatalf("%s has no step that writes the update-status file:\n%s", file, chapter)
 	}
 
 	b, secret := configuredBox(t)

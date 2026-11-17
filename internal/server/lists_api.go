@@ -49,7 +49,7 @@ func (s *server) entriesToJSON(p principal, es []list.Entry) ([]entryJSON, error
 	out := make([]entryJSON, 0, len(es))
 	for _, e := range es {
 		j := entryJSON{ID: e.ID, Text: e.Text, Done: e.Done}
-		if look := lk.lookOf(e.Text, all); look.ArticleID != "" {
+		if look, _, ok := lk.resolve(e.Text, all); ok {
 			j.ArticleID = &look.ArticleID
 			if look.Symbol != "" {
 				j.Symbol = &look.Symbol

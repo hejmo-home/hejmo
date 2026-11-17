@@ -2736,7 +2736,7 @@
   "lists.view.prefix": "Ansicht:",
   "lists.view.tiles": "Kacheln",
   "lists.view.list": "Liste",
-  "lists.view.error": "Nicht gespeichert, die Ansicht bleibt „{view}“. Prüfe das WLAN und tippe noch einmal.",
+  "lists.view.error": "Nicht gespeichert, die Ansicht bleibt „{view}“. Tippe noch einmal.",
   "flash.list_view_tiles": "Gemerkt: Du siehst Listen ab jetzt als Kacheln, auf jedem Gerät. Für die anderen ändert sich nichts.",
   "flash.list_view_list": "Gemerkt: Du siehst Listen ab jetzt als Liste, auf jedem Gerät. Für die anderen ändert sich nichts.",
   "display.lists.view_saved.tiles": "Gemerkt: Dieses Display („{name}“) zeigt Listen ab jetzt als Kacheln.",

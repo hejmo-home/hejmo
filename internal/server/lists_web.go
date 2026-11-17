@@ -316,6 +316,10 @@ func (s *server) handleListView(w http.ResponseWriter, r *http.Request) {
 	_ = r.ParseForm()
 	id := r.PostFormValue("list")
 	l, lerr := s.db.List(p.household.ID, id)
+	if lerr != nil && !errors.Is(lerr, store.ErrNotFound) {
+		s.fail(w, "list", lerr)
+		return
+	}
 	view, valid := list.ParseView(r.PostFormValue("view"))
 	switch {
 	case !valid:

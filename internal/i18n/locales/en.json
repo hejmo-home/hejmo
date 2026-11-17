@@ -2736,7 +2736,7 @@
   "lists.view.prefix": "View:",
   "lists.view.tiles": "Tiles",
   "lists.view.list": "List",
-  "lists.view.error": "Not saved, the view stays “{view}”. Check the Wi-Fi and tap again.",
+  "lists.view.error": "Not saved, the view stays “{view}”. Tap again.",
   "flash.list_view_tiles": "Saved: From now on you see lists as tiles, on every device. Nothing changes for the others.",
   "flash.list_view_list": "Saved: From now on you see lists as a list, on every device. Nothing changes for the others.",
   "display.lists.view_saved.tiles": "Saved: This display (“{name}”) now shows lists as tiles.",

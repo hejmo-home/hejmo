@@ -213,8 +213,12 @@ func TestATileWarnsWithOneLinePerPersonNeverACount(t *testing.T) {
 	if !strings.Contains(milk, `<span class="tile-warn"><span class="h">`) || !strings.Contains(milk, "Allergy warning</span>") {
 		t.Fatalf("no warning block:\n%s", milk)
 	}
-	if n := strings.Count(milk, `<li><span class="who">`); n != 2 {
+	if n := strings.Count(milk, `<span class="line"><span class="who">`); n != 2 {
 		t.Errorf("%d lines, want one for Mia and one for Sebastian:\n%s", n, milk)
+	}
+	// A button holds phrasing content only: no list inside it, one span per line.
+	if strings.Contains(milk, "<ul") {
+		t.Errorf("the warning builds a list inside the tile button:\n%s", milk)
 	}
 	for _, want := range []string{"Mia:</span>", "Sebastian:</span>", "Milk and lactose"} {
 		if !strings.Contains(milk, want) {
@@ -361,8 +365,6 @@ func TestEntriesOfTheAPICarryTheirSymbolOrPicture(t *testing.T) {
 		t.Errorf("free text = %v", m)
 	}
 }
-
-var _ = list.Tiles
 
 func TestADisplaysViewIsReadAndChangedThroughTheAPI(t *testing.T) {
 	c := signedInAPI(t)

@@ -82,11 +82,7 @@ func (s *server) listsView(h store.Household, d store.Display, lang, listID stri
 	}
 	c := countOf(es)
 	v.Current = s.newListView(lang, *cur, c)
-	view, err := s.db.DisplayListView(h.ID, d.ID)
-	if err != nil {
-		return v, err
-	}
-	v.View, v.Tiles = string(view), view == list.Tiles
+	v.View, v.Tiles = string(d.ListView), d.ListView == list.Tiles
 	for _, e := range es {
 		ev := entryView{ID: e.ID, Text: e.Text, Done: e.Done}
 		switch {
@@ -107,9 +103,9 @@ func (s *server) listsView(h store.Household, d store.Display, lang, listID stri
 	v.FreeText = lk.freeTextNote(lk.apply(v.Open, v.Ticked))
 	switch {
 	case o.ViewError:
-		v.ViewError = s.viewErrorText(lang, view)
+		v.ViewError = s.viewErrorText(lang, d.ListView)
 	case o.ViewSaved:
-		v.ViewLine = s.i18n.Format(lang, i18n.Msg("display.lists.view_saved."+string(view), "name", d.Name))
+		v.ViewLine = s.i18n.Format(lang, i18n.Msg("display.lists.view_saved."+string(d.ListView), "name", d.Name))
 	}
 	v.Meta = s.listMeta(lang, *cur, v.Current.State, false)
 	v.Empty = len(es) == 0

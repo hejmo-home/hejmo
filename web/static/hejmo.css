@@ -2534,9 +2534,7 @@ details.repair + details.danger { margin-top: 0; }
 .tile-warn { align-self: stretch; display: grid; gap: 2px; margin-top: 2px; padding: 5px 8px 6px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-meta); text-align: left; overflow-wrap: break-word; }
 .tile-warn .h { display: flex; align-items: center; gap: 5px; font-weight: 700; }
 .tile-warn .icon { flex: none; width: 16px; height: 16px; stroke: currentColor; }
-.tile-warn ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 2px; }
-.tile-warn li, .lv-entries .tile-warn li { display: block; min-width: 0; }
-.lv-entries .tile-warn ul { gap: 2px; }
+.tile-warn .line { display: block; min-width: 0; }
 .tile-warn .who { display: inline-flex; align-items: center; gap: 4px; margin-right: 4px; font-weight: 700; }
 .tile-warn .who .marker { flex: none; }
 [data-theme="bw"] .tile-warn { background: none; color: var(--text); border: 2px solid var(--text); }

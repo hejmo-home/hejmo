@@ -60,18 +60,28 @@ func (l listLooks) articles() []library.Article {
 	return all
 }
 
-// lookOf is the look of one entry's text.
-func (l listLooks) lookOf(text string, all []library.Article) entryLook {
+// resolve is the article, symbol or picture of one entry's text, without the
+// warnings: the API needs no sentences.
+func (l listLooks) resolve(text string, all []library.Article) (entryLook, library.Article, bool) {
 	a, ok := library.Resolve(text, all)
 	if !ok {
 		first, _ := utf8.DecodeRuneInString(strings.TrimSpace(text))
-		return entryLook{Letter: string(unicode.ToUpper(first))}
+		return entryLook{Letter: string(unicode.ToUpper(first))}, a, false
 	}
 	it, _ := l.st.item(a.ID)
 	look := entryLook{ArticleID: a.ID, Symbol: symbolOf(it), Food: a.Kind != library.NonFood}
 	if it.own != nil && it.own.HasPicture {
 		look.Picture = l.pic + it.own.ID + "/picture?v=" + strconv.FormatInt(it.own.PictureAt.Unix(), 10)
 		look.Symbol = ""
+	}
+	return look, a, true
+}
+
+// lookOf is the look of one entry's text, with its warnings.
+func (l listLooks) lookOf(text string, all []library.Article) entryLook {
+	look, a, ok := l.resolve(text, all)
+	if !ok {
+		return look
 	}
 	for _, w := range library.PersonWarnings(a, l.st.persons) {
 		look.Warns = append(look.Warns, tileWarn{Chip: l.st.chips[w.Person], Allergens: l.s.allergenWords(l.st.lang, w.Allergens)})

@@ -56,6 +56,14 @@ func (s *Service) withOutlook(ctx context.Context, householdID, connectionID str
 	if err != nil {
 		return err
 	}
+	h, err := s.db.Household(householdID)
+	if err != nil {
+		return err
+	}
+	zone, err := time.LoadLocation(h.Timezone)
+	if err != nil {
+		zone = time.UTC
+	}
 	g := s.Graph()
 	clientID := g.AppID(conn.ClientID)
 	if clientID == "" {
@@ -65,7 +73,7 @@ func (s *Service) withOutlook(ctx context.Context, householdID, connectionID str
 		if err := s.db.SaveRefreshToken(conn.ID, refresh, s.now()); err != nil {
 			s.logger.Error("outlook: keeping the new sign-in failed", "err", err)
 		}
-	})
+	}).InZone(zone)
 	err = fn(sess, conn)
 	if errors.Is(err, graph.ErrReauth) {
 		_ = s.db.MarkReauth(conn.ID, s.now())
@@ -92,7 +100,10 @@ func (s *Service) DiscoverOutlook(ctx context.Context, householdID, connectionID
 		}
 		for _, c := range cals {
 			f := OutlookFound{ID: c.ID, Name: c.Name}
-			if !strings.EqualFold(c.OwnerAddress, conn.Username) && c.OwnerAddress != "" {
+			// Shared with the account: someone else's address and not the
+			// account's to share. The address alone is no signal, for personal
+			// accounts can name an outlook_…@outlook.com owner of their own.
+			if !c.CanShare && !strings.EqualFold(c.OwnerAddress, conn.Username) && c.OwnerAddress != "" {
 				f.SharedBy = c.OwnerName + " (" + c.OwnerAddress + ")"
 				if c.OwnerName == "" {
 					f.SharedBy = c.OwnerAddress

@@ -3830,6 +3830,7 @@ components:
         url: { type: string, example: "https://caldav.icloud.com" }
         username: { type: string, description: "The Apple ID or CalDAV user name; for Outlook the Microsoft account" }
         single_calendar: { type: boolean }
+        reauth_since: { type: string, format: date-time, description: "Outlook only: when the Microsoft sign-in ended. Until it is renewed (a new sign-in through the reconnect page) no new events arrive; the old ones stay. Absent while the sign-in is valid." }
         calendars:
           type: array
           description: The server's event calendars. Only on connect and on discovery.
@@ -4070,6 +4071,15 @@ components:
         rrule: { type: string, description: "RFC 5545 RRULE value, empty for single events", example: "FREQ=WEEKLY;BYDAY=MO" }
         people: { type: array, items: { type: string, format: uuid } }
         groups: { type: array, items: { type: string, format: uuid } }
+        invitation: { $ref: "#/components/schemas/EventInvitation" }
+    EventInvitation:
+      type: object
+      description: Other people are invited to this event (Outlook). It is read-only on the box, also in a calendar that is not, because a change would send a message to every attendee; changing or deleting it answers 422. Change it at its source (`web_link`).
+      required: [organizer, response, web_link]
+      properties:
+        organizer: { type: string }
+        response: { type: string, description: "The account's answer in Outlook", enum: ["", accepted, tentativelyAccepted, declined, notResponded, organizer] }
+        web_link: { type: string }
     NewEvent:
       type: object
       required: [title, start, end]
@@ -4113,6 +4123,7 @@ components:
         end: { type: string }
         people: { type: array, items: { type: string, format: uuid } }
         groups: { type: array, items: { type: string, format: uuid } }
+        invitation: { $ref: "#/components/schemas/EventInvitation" }
     Screensaver:
       type: object
       description: |

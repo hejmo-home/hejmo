@@ -121,7 +121,7 @@ type SignIn struct {
 }
 
 // Token is what a finished sign-in gives; only the refresh token is kept.
-type Token struct{ Refresh, Access string }
+type Token struct{ Refresh string }
 
 // StartSignIn asks Microsoft for a device code.
 func (c *Client) StartSignIn(ctx context.Context, clientID string) (SignIn, error) {
@@ -181,7 +181,7 @@ func (c *Client) PollSignIn(ctx context.Context, clientID string, s SignIn) (Tok
 	var r tokenReply
 	_ = json.Unmarshal(body, &r)
 	if res.StatusCode == http.StatusOK && r.RefreshToken != "" {
-		return Token{Refresh: r.RefreshToken, Access: r.AccessToken}, nil
+		return Token{Refresh: r.RefreshToken}, nil
 	}
 	switch {
 	case r.Error == "authorization_pending":
@@ -209,6 +209,11 @@ type Session struct {
 	clientID string
 	saved    func(refresh string)
 
+	// zone is the zone Graph is asked to give times in; without it Graph
+	// answers in UTC, which would put a series' occurrences on the wrong
+	// side of a clock change.
+	zone *time.Location
+
 	mu      sync.Mutex
 	refresh string
 	tok     *oauth2.Token
@@ -217,6 +222,13 @@ type Session struct {
 // Session opens a session from a stored refresh token.
 func (c *Client) Session(clientID, refresh string, saved func(refresh string)) *Session {
 	return &Session{c: c, clientID: clientID, refresh: refresh, saved: saved}
+}
+
+// InZone asks Graph for every time in loc, the household's zone, and returns
+// the session.
+func (s *Session) InZone(loc *time.Location) *Session {
+	s.zone = loc
+	return s
 }
 
 func (s *Session) token(ctx context.Context) (string, error) {
@@ -271,8 +283,12 @@ func (s *Session) do(ctx context.Context, method, target string, in, out any) er
 	req.Header.Set("Authorization", "Bearer "+tok)
 	req.Header.Set("Accept", "application/json")
 	// Immutable ids stay the same when an event moves between calendars; the
-	// body comes as plain text; times keep the event's own zone.
-	req.Header.Set("Prefer", `IdType="ImmutableId", outlook.body-content-type="text", odata.maxpagesize=100`)
+	// body comes as plain text; times come in the household's zone.
+	prefer := `IdType="ImmutableId", outlook.body-content-type="text", odata.maxpagesize=100`
+	if s.zone != nil {
+		prefer += `, outlook.timezone="` + zoneName(s.zone) + `"`
+	}
+	req.Header.Set("Prefer", prefer)
 	if in != nil {
 		req.Header.Set("Content-Type", "application/json")
 	}
@@ -328,7 +344,10 @@ func (s *Session) Me(ctx context.Context) (Account, error) {
 // Calendar is a calendar of the account, own or shared with it.
 type Calendar struct {
 	ID, Name, OwnerName, OwnerAddress string
-	CanEdit                           bool
+	// CanEdit: the account may change its events. CanShare: the account owns
+	// the calendar (or manages it for the owner); one shared with the account
+	// is not.
+	CanEdit, CanShare bool
 }
 
 // Calendars lists the account's calendars.
@@ -338,10 +357,11 @@ func (s *Session) Calendars(ctx context.Context) ([]Calendar, error) {
 	for pages := 0; next != "" && pages < 20; pages++ {
 		var page struct {
 			Value []struct {
-				ID      string `json:"id"`
-				Name    string `json:"name"`
-				CanEdit bool   `json:"canEdit"`
-				Owner   struct {
+				ID       string `json:"id"`
+				Name     string `json:"name"`
+				CanEdit  bool   `json:"canEdit"`
+				CanShare bool   `json:"canShare"`
+				Owner    struct {
 					Name    string `json:"name"`
 					Address string `json:"address"`
 				} `json:"owner"`
@@ -352,7 +372,7 @@ func (s *Session) Calendars(ctx context.Context) ([]Calendar, error) {
 			return nil, err
 		}
 		for _, v := range page.Value {
-			out = append(out, Calendar{ID: v.ID, Name: v.Name, CanEdit: v.CanEdit, OwnerName: v.Owner.Name, OwnerAddress: v.Owner.Address})
+			out = append(out, Calendar{ID: v.ID, Name: v.Name, CanEdit: v.CanEdit, CanShare: v.CanShare, OwnerName: v.Owner.Name, OwnerAddress: v.Owner.Address})
 		}
 		next = page.Next
 	}

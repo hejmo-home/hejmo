@@ -61,6 +61,7 @@ type Occurrence struct {
 	Start, End   time.Time
 	People       []string
 	Groups       []string
+	Invitation   *Invitation // set when other people are invited: the event changes only at its source
 }
 
 // ValidateRRule checks an RRULE value.
@@ -135,7 +136,7 @@ func occurrence(e Event, start, recurrenceID time.Time, seriesID string) Occurre
 	return Occurrence{
 		EventID: e.ID, SeriesID: seriesID, RecurrenceID: recurrenceID, CalendarID: e.CalendarID,
 		Title: e.Title, Description: e.Description, Location: e.Location, AllDay: e.AllDay,
-		Start: start, End: end, People: e.People, Groups: e.Groups,
+		Start: start, End: end, People: e.People, Groups: e.Groups, Invitation: e.Invitation,
 	}
 }
 

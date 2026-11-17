@@ -3,6 +3,7 @@ package graph
 import (
 	"errors"
 	"fmt"
+	"reflect"
 	"sort"
 	"strconv"
 	"strings"
@@ -430,4 +431,73 @@ func BodyOf(e calendar.Event, audienceLine string) (map[string]any, error) {
 		body["recurrence"] = rec
 	}
 	return body, nil
+}
+
+func plain(s string) string { return strings.TrimSpace(strings.ReplaceAll(s, "\r\n", "\n")) }
+
+// ChangesOf is BodyOf for an event Outlook already holds: only the fields the
+// box models and that differ from remote. What the box does not model (the
+// formatting of the notes, a location's address and coordinates) stays as
+// Outlook has it. The result is empty when nothing changed. household is the
+// zone remote's times are in.
+func ChangesOf(e calendar.Event, audienceLine string, remote Event, household *time.Location) (map[string]any, error) {
+	full, err := BodyOf(e, audienceLine)
+	if err != nil {
+		return nil, err
+	}
+	out := map[string]any{}
+	if remote.Subject != e.Title {
+		out["subject"] = full["subject"]
+	}
+	have := ""
+	if remote.Body != nil {
+		have = plain(remote.Body.Content)
+	}
+	if want := plain(full["body"].(map[string]any)["content"].(string)); want != have {
+		out["body"] = full["body"]
+	}
+	place := ""
+	if remote.Location != nil {
+		place = remote.Location.DisplayName
+	}
+	if place != e.Location {
+		out["location"] = full["location"]
+	}
+	if remote.IsAllDay != e.AllDay {
+		out["isAllDay"] = full["isAllDay"]
+	}
+	rs, _, serr := remote.Start.parse(household)
+	re, _, eerr := remote.End.parse(household)
+	if serr != nil || eerr != nil || !rs.Equal(e.Start) || !re.Equal(e.End) || remote.IsAllDay != e.AllDay {
+		out["start"], out["end"] = full["start"], full["end"]
+	}
+	if rec, ok := full["recurrence"]; ok {
+		if serr != nil || remote.Recurrence == nil || !sameRecurrence(rec.(*Recurrence), *remote.Recurrence, rs) {
+			out["recurrence"] = rec
+		}
+	}
+	return out, nil
+}
+
+// sameRecurrence compares a recurrence the box wrote with the one Outlook
+// has, both brought into the same form.
+func sameRecurrence(want *Recurrence, have Recurrence, start time.Time) bool {
+	rule, err := RRuleOf(have, start.Location())
+	if err != nil {
+		return false
+	}
+	h, err := RecurrenceOf(rule, start)
+	if err != nil {
+		return false
+	}
+	a, b := *want, *h
+	a.Pattern.DaysOfWeek = sortedCopy(a.Pattern.DaysOfWeek)
+	b.Pattern.DaysOfWeek = sortedCopy(b.Pattern.DaysOfWeek)
+	return reflect.DeepEqual(a, b)
+}
+
+func sortedCopy(in []string) []string {
+	out := append([]string(nil), in...)
+	sort.Strings(out)
+	return out
 }

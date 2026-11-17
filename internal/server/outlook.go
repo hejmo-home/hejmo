@@ -37,7 +37,6 @@ const (
 	flowDown     = "down"
 
 	outlookFlowKeep = time.Hour
-	msConsentPage   = "https://account.live.com/consent/Manage"
 )
 
 type outlookFlow struct {

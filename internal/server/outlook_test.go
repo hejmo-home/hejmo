@@ -272,6 +272,11 @@ func TestAnExpiredSignInShowsReconnectOutlookToParentsWithAccountAndTime(t *test
 	if page := b.do(http.MethodGet, "/", nil, de).body; !strings.Contains(page, "Neu anmelden kann sich, wer das Passwort dieses Microsoft-Kontos kennt.") {
 		t.Error("the parents' home does not say who has to sign in")
 	}
+	api := newAPIClient(t, b)
+	api.cookie = true
+	if status, _, conns := api.call(http.MethodGet, "/calendar-connections", nil); status != http.StatusOK || len(conns) != 1 || conns[0].(map[string]any)["reauth_since"] == nil {
+		t.Errorf("the API does not say the sign-in ended: %d %v", status, conns)
+	}
 	list := b.do(http.MethodGet, "/calendars", nil, de).body
 	if !strings.Contains(list, "Anmeldung abgelaufen: Outlook neu verbinden") {
 		t.Errorf("the connection row carries no problem flag in words:\n%s", list)
@@ -388,6 +393,15 @@ func TestAnInvitationWithAttendeesIsReadOnlyWithALinkToOutlook(t *testing.T) {
 	if status, _, _ := c.call(http.MethodPatch, "/events/"+evs[0].ID, map[string]any{"title": "Neu"}); status != http.StatusUnprocessableEntity {
 		t.Errorf("changing an invitation through the API = %d, want 422", status)
 	}
+	// ADR 0015: the API says what the page says, so a client need not learn it from the 422.
+	status, _, list := c.call(http.MethodGet, "/events?from=2026-11-01T00:00:00Z&to=2026-12-01T00:00:00Z", nil)
+	if status != http.StatusOK || len(list) != 1 {
+		t.Fatalf("events = %d %v", status, list)
+	}
+	inv, _ := list[0].(map[string]any)["invitation"].(map[string]any)
+	if inv["organizer"] != "Huber, Annemarie" || inv["response"] != "accepted" || inv["web_link"] != "https://outlook.live.com/owa/?itemid=elternabend" {
+		t.Errorf("occurrence invitation = %v", list[0])
+	}
 }
 
 func TestDisconnectingNamesEveryCalendarAndDeletesNothingInOutlook(t *testing.T) {
@@ -397,7 +411,7 @@ func TestDisconnectingNamesEveryCalendarAndDeletesNothingInOutlook(t *testing.T)
 	chooseOutlook(t, b, id, "cal-1", "cal-2")
 	page := b.do(http.MethodGet, "/connections/"+id, nil, de).body
 	for _, want := range []string{"Verbindung trennen", "Diese Kalender und ihre Termine verschwinden von der Box und von den Displays. In Outlook wird nichts gelöscht.",
-		"<strong>Name cal-1</strong> (in Outlook „Kalender“)", "<strong>Name cal-2</strong> (in Outlook „Kalender von Papa“)", "account.live.com/consent/Manage", "Ja, „mama@example.org“ trennen", "Nein, nichts ändern"} {
+		"<strong>Name cal-1</strong> (in Outlook „Kalender“)", "<strong>Name cal-2</strong> (in Outlook „Kalender von Papa“)", "account.live.com/consent/Manage", "myapps.microsoft.com", "Ja, „mama@example.org“ trennen", "Nein, nichts ändern"} {
 		if !strings.Contains(page, want) {
 			t.Errorf("disconnect section misses %q\n%s", want, page)
 		}

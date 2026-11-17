@@ -10,10 +10,13 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"net/url"
+	"regexp"
 	"strconv"
 	"strings"
 	"sync"
 	"time"
+
+	"github.com/hejmo-home/hejmo/internal/icsfeed"
 )
 
 // Server is the fake. Auth lives under /common/oauth2/v2.0, Graph under /v1.0.
@@ -53,12 +56,17 @@ type Server struct {
 	Bodies map[string][]map[string]any
 	// FailWrites makes POST, PATCH and DELETE on events answer this status.
 	FailWrites int
+
+	// zone is the time zone the current request asked for with the Prefer
+	// header outlook.timezone; like real Graph, the fake answers in UTC
+	// without it.
+	zone string
 }
 
 // Calendar is a calendar of the account.
 type Calendar struct {
 	ID, Name, OwnerName, OwnerAddress string
-	CanEdit                           bool
+	CanEdit, CanShare                 bool
 }
 
 type change struct {
@@ -83,7 +91,7 @@ func (s *Server) GraphBase() string { return s.URL + "/v1.0" }
 func (s *Server) AddCalendar(id, name string) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
-	s.Calendars = append(s.Calendars, Calendar{ID: id, Name: name, OwnerName: s.Name, OwnerAddress: s.Account, CanEdit: true})
+	s.Calendars = append(s.Calendars, Calendar{ID: id, Name: name, OwnerName: s.Name, OwnerAddress: s.Account, CanEdit: true, CanShare: true})
 }
 
 // AddShared adds a calendar another person shared, read-only.
@@ -204,6 +212,7 @@ func (s *Server) serve(w http.ResponseWriter, r *http.Request) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	s.Requests = append(s.Requests, r.Method+" "+r.URL.Path)
+	s.zone = preferredZone(r.Header.Get("Prefer"))
 	switch {
 	case strings.HasPrefix(r.URL.Path, "/common/oauth2/v2.0/devicecode"):
 		s.deviceCode(w, r)
@@ -285,7 +294,7 @@ func (s *Server) graph(w http.ResponseWriter, r *http.Request) {
 	case path == "/me/calendars":
 		var vals []map[string]any
 		for _, c := range s.Calendars {
-			vals = append(vals, map[string]any{"id": c.ID, "name": c.Name, "canEdit": c.CanEdit,
+			vals = append(vals, map[string]any{"id": c.ID, "name": c.Name, "canEdit": c.CanEdit, "canShare": c.CanShare,
 				"owner": map[string]any{"name": c.OwnerName, "address": c.OwnerAddress}})
 		}
 		writeJSON(w, 200, map[string]any{"value": vals})
@@ -301,7 +310,7 @@ func (s *Server) graph(w http.ResponseWriter, r *http.Request) {
 		body := s.body(r)
 		s.record(r, body)
 		id := s.put(parts[2], body, time.Time{})
-		writeJSON(w, 201, s.events[parts[2]][id])
+		writeJSON(w, 201, s.shown(s.events[parts[2]][id]))
 	case len(parts) == 4 && parts[1] == "calendars" && parts[3] == "events" && r.Method == http.MethodGet:
 		n := 0
 		for _, e := range s.events[parts[2]] {
@@ -317,10 +326,81 @@ func (s *Server) graph(w http.ResponseWriter, r *http.Request) {
 	case len(parts) >= 4 && parts[1] == "events" && parts[3] == "extensions":
 		body := s.body(r)
 		s.record(r, body)
+		// Real Graph changes an event's change key when an extension is written.
+		if cal, ev := s.find(parts[2]); ev != nil {
+			s.put(cal, ev, time.Time{})
+		}
 		writeJSON(w, 201, map[string]any{})
 	default:
 		http.NotFound(w, r)
 	}
+}
+
+var htmlTags = regexp.MustCompile(`<[^>]*>`)
+
+func preferredZone(prefer string) string {
+	const key = `outlook.timezone="`
+	if i := strings.Index(prefer, key); i >= 0 {
+		rest := prefer[i+len(key):]
+		if j := strings.IndexByte(rest, '"'); j >= 0 {
+			return rest[:j]
+		}
+	}
+	return "UTC"
+}
+
+// shown is a copy of a stored event with start and end in the zone the
+// request asked for. All-day events keep their date and only take the name.
+func (s *Server) shown(ev map[string]any) map[string]any {
+	out := map[string]any{}
+	for k, v := range ev {
+		out[k] = v
+	}
+	zone := s.zone
+	if zone == "" {
+		zone = "UTC"
+	}
+	if b, ok := ev["body"].(map[string]any); ok && b["contentType"] == "html" {
+		content, _ := b["content"].(string)
+		out["body"] = map[string]any{"contentType": "text", "content": htmlTags.ReplaceAllString(content, "")}
+	}
+	allDay, _ := ev["isAllDay"].(bool)
+	for _, k := range []string{"start", "end"} {
+		in, ok := ev[k].(map[string]any)
+		if !ok {
+			continue
+		}
+		dt, _ := in["dateTime"].(string)
+		from, _ := in["timeZone"].(string)
+		if allDay {
+			out[k] = map[string]any{"dateTime": dt, "timeZone": zone}
+			continue
+		}
+		out[k] = map[string]any{"dateTime": convertTime(dt, from, zone), "timeZone": zone}
+	}
+	return out
+}
+
+func location(name string) *time.Location {
+	if iana, ok := icsfeed.WindowsZones[name]; ok {
+		name = iana
+	}
+	loc, err := time.LoadLocation(name)
+	if err != nil {
+		return time.UTC
+	}
+	return loc
+}
+
+func convertTime(dt, from, to string) string {
+	if i := strings.IndexByte(dt, '.'); i >= 0 {
+		dt = dt[:i]
+	}
+	t, err := time.ParseInLocation("2006-01-02T15:04:05", dt, location(from))
+	if err != nil {
+		return dt
+	}
+	return t.In(location(to)).Format("2006-01-02T15:04:05.0000000")
 }
 
 func (s *Server) body(r *http.Request) map[string]any {
@@ -352,7 +432,7 @@ func (s *Server) eventCall(w http.ResponseWriter, r *http.Request, id string) {
 			writeJSON(w, 404, map[string]any{"error": map[string]any{"code": "ErrorItemNotFound"}})
 			return
 		}
-		writeJSON(w, 200, ev)
+		writeJSON(w, 200, s.shown(ev))
 	case http.MethodPatch, http.MethodDelete:
 		if s.FailWrites != 0 {
 			writeJSON(w, s.FailWrites, map[string]any{"error": map[string]any{"code": "ErrorAccessDenied"}})
@@ -377,7 +457,7 @@ func (s *Server) eventCall(w http.ResponseWriter, r *http.Request, id string) {
 			merged[k] = v
 		}
 		s.put(cal, merged, time.Time{})
-		writeJSON(w, 200, merged)
+		writeJSON(w, 200, s.shown(merged))
 	}
 }
 
@@ -386,7 +466,7 @@ func (s *Server) instances(w http.ResponseWriter, r *http.Request, master string
 	var vals []map[string]any
 	for _, e := range s.events[cal] {
 		if e["seriesMasterId"] == master {
-			vals = append(vals, e)
+			vals = append(vals, s.shown(e))
 		}
 	}
 	writeJSON(w, 200, map[string]any{"value": vals})
@@ -396,7 +476,7 @@ func (s *Server) view(w http.ResponseWriter, r *http.Request, cal string) {
 	var vals []map[string]any
 	for _, e := range s.events[cal] {
 		if e["type"] != "seriesMaster" {
-			vals = append(vals, e)
+			vals = append(vals, s.shown(e))
 		}
 	}
 	writeJSON(w, 200, map[string]any{"value": vals})
@@ -429,7 +509,7 @@ func (s *Server) delta(w http.ResponseWriter, r *http.Request, cal string) {
 		if c.removed {
 			all = append(all, map[string]any{"id": c.id, "@removed": map[string]any{"reason": "deleted"}})
 		} else if e := s.events[cal][c.id]; e != nil && e["type"] != "seriesMaster" {
-			all = append(all, e)
+			all = append(all, s.shown(e))
 		}
 	}
 	size := s.PageSize

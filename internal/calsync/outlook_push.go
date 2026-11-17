@@ -13,6 +13,16 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
+// outlookPush is what writing one Outlook calendar needs, passed around as one.
+type outlookPush struct {
+	*Service
+	sess     *graph.Session
+	cal      store.SyncedCalendar
+	h        store.Household
+	audience func(calendar.Event) (prop, line string)
+	zone     *time.Location // the household's: the times of Outlook's answers
+}
+
 // pushOutlook writes every queued object of an Outlook calendar. It returns the
 // first problem after trying the others; a problem that makes the others
 // pointless (the sign-in ended) stops it at once. The caller holds the lock.
@@ -25,9 +35,14 @@ func (s *Service) pushOutlook(ctx context.Context, sess *graph.Session, cal stor
 	if err != nil {
 		return err
 	}
+	zone, err := time.LoadLocation(h.Timezone)
+	if err != nil {
+		zone = time.UTC
+	}
+	p := &outlookPush{Service: s, sess: sess, cal: cal, h: h, audience: opts.Audience, zone: zone}
 	var first error
 	for _, po := range pending {
-		if err := s.pushOutlookObject(ctx, sess, cal, h, po, opts.Audience); err != nil {
+		if err := p.object(ctx, po); err != nil {
 			if outlookAborts(err) {
 				return err
 			}
@@ -39,36 +54,36 @@ func (s *Service) pushOutlook(ctx context.Context, sess *graph.Session, cal stor
 	return first
 }
 
-func (s *Service) pushOutlookObject(ctx context.Context, sess *graph.Session, cal store.SyncedCalendar, h store.Household, po store.PendingObject, audience func(calendar.Event) (string, string)) error {
-	content, err := s.db.ObjectEvents(h.ID, cal.ID, po.URL)
+func (p *outlookPush) object(ctx context.Context, po store.PendingObject) error {
+	content, err := p.db.ObjectEvents(p.h.ID, p.cal.ID, po.URL)
 	if err != nil {
 		return err
 	}
 	isNew := strings.HasPrefix(po.URL, store.NewOutlookPrefix)
 	if len(content.Events) == 0 {
-		return s.pushOutlookDelete(ctx, sess, cal, h, po, isNew)
+		return p.delete(ctx, po, isNew)
 	}
 	master, overrides := splitObject(content)
 	if isNew {
-		return s.createOutlook(ctx, sess, cal, po, master, overrides, audience)
+		return p.create(ctx, po, master, overrides)
 	}
-	remote, err := sess.GetEvent(ctx, po.URL)
+	remote, err := p.sess.GetEvent(ctx, po.URL)
 	if errors.Is(err, graph.ErrNotFound) {
 		// Deleted outside while changed here: the box's change stands.
-		return s.recreateOutlook(ctx, sess, cal, h, po, master, overrides, audience)
+		return p.recreate(ctx, po, master, overrides)
 	}
 	if err != nil {
 		return err
 	}
 	if remote.ChangeKey != po.ETag && po.ETag != "" {
 		if !boxWinsAt(remote.LastModified, po.ChangedAt) {
-			return s.outlookOutsideWins(ctx, sess, cal, h, po, remote, i18n.Msg("sync.conflict.outside_won", "title", master.Title), master.Title)
+			return p.outsideWins(ctx, po, remote, i18n.Msg("sync.conflict.outside_won", "title", master.Title), master.Title)
 		}
-		if err := s.db.LogConflict(h.ID, cal.ID, i18n.Msg("sync.conflict.box_won", "title", master.Title), describe(remote), s.now()); err != nil {
+		if err := p.db.LogConflict(p.h.ID, p.cal.ID, i18n.Msg("sync.conflict.box_won", "title", master.Title), describe(remote), p.now()); err != nil {
 			return err
 		}
 	}
-	return s.updateOutlook(ctx, sess, cal, po, master, overrides, audience)
+	return p.update(ctx, po, remote, master, overrides)
 }
 
 func splitObject(c store.ObjectContent) (calendar.Event, []calendar.Event) {
@@ -101,67 +116,96 @@ func describe(e graph.Event) string {
 	return fmt.Sprintf("%s (%s)", e.Subject, when)
 }
 
-func (s *Service) outlookBody(e calendar.Event, audience func(calendar.Event) (string, string)) (map[string]any, string, error) {
-	prop, line := audience(e)
+func (p *outlookPush) body(e calendar.Event) (map[string]any, string, error) {
+	prop, line := p.audience(e)
 	body, err := graph.BodyOf(e, line)
 	return body, prop, err
 }
 
-func (s *Service) createOutlook(ctx context.Context, sess *graph.Session, cal store.SyncedCalendar, po store.PendingObject, master calendar.Event, overrides []calendar.Event, audience func(calendar.Event) (string, string)) error {
-	body, prop, err := s.outlookBody(master, audience)
+func (p *outlookPush) create(ctx context.Context, po store.PendingObject, master calendar.Event, overrides []calendar.Event) error {
+	body, prop, err := p.body(master)
 	if err != nil {
 		return err
 	}
-	created, err := sess.CreateEvent(ctx, cal.URL, body)
+	created, err := p.sess.CreateEvent(ctx, p.cal.URL, body)
 	if err != nil {
 		return err
 	}
-	if err := s.db.OutlookCreated(cal.ID, po.URL, created.ID, po.Rev, created.ChangeKey); err != nil {
+	if err := p.db.OutlookCreated(p.cal.ID, po.URL, created.ID, po.Rev, created.ChangeKey); err != nil {
 		return err
 	}
-	return s.afterWrite(ctx, sess, created.ID, prop, master, overrides, audience)
+	return p.afterWrite(ctx, created.ID, po.Rev, prop, master, overrides)
 }
 
-func (s *Service) recreateOutlook(ctx context.Context, sess *graph.Session, cal store.SyncedCalendar, h store.Household, po store.PendingObject, master calendar.Event, overrides []calendar.Event, audience func(calendar.Event) (string, string)) error {
-	if err := s.createOutlook(ctx, sess, cal, po, master, overrides, audience); err != nil {
+func (p *outlookPush) recreate(ctx context.Context, po store.PendingObject, master calendar.Event, overrides []calendar.Event) error {
+	if err := p.create(ctx, po, master, overrides); err != nil {
 		return err
 	}
-	return s.db.LogConflict(h.ID, cal.ID, i18n.Msg("sync.conflict.deleted_outside", "title", master.Title), "", s.now())
+	return p.db.LogConflict(p.h.ID, p.cal.ID, i18n.Msg("sync.conflict.deleted_outside", "title", master.Title), "", p.now())
 }
 
-func (s *Service) updateOutlook(ctx context.Context, sess *graph.Session, cal store.SyncedCalendar, po store.PendingObject, master calendar.Event, overrides []calendar.Event, audience func(calendar.Event) (string, string)) error {
-	body, prop, err := s.outlookBody(master, audience)
+// update writes what the box changed against remote, the event as Outlook has
+// it now (CODING_STANDARDS 2).
+func (p *outlookPush) update(ctx context.Context, po store.PendingObject, remote graph.Event, master calendar.Event, overrides []calendar.Event) error {
+	changes, prop, err := p.changes(master, remote)
 	if err != nil {
 		return err
 	}
-	updated, err := sess.UpdateEvent(ctx, po.URL, body)
-	if err != nil {
+	changeKey := remote.ChangeKey
+	if len(changes) > 0 {
+		updated, err := p.sess.UpdateEvent(ctx, po.URL, changes)
+		if err != nil {
+			return err
+		}
+		changeKey = updated.ChangeKey
+	}
+	if err := p.db.PushDone(p.cal.ID, po.URL, po.Rev, changeKey, ""); err != nil {
 		return err
 	}
-	if err := s.db.PushDone(cal.ID, po.URL, po.Rev, updated.ChangeKey, ""); err != nil {
-		return err
-	}
-	return s.afterWrite(ctx, sess, po.URL, prop, master, overrides, audience)
+	return p.afterWrite(ctx, po.URL, po.Rev, prop, master, overrides)
+}
+
+func (p *outlookPush) changes(e calendar.Event, remote graph.Event) (map[string]any, string, error) {
+	prop, line := p.audience(e)
+	changes, err := graph.ChangesOf(e, line, remote, p.zone)
+	return changes, prop, err
 }
 
 // afterWrite sets the hidden audience extension and writes the changed and
-// removed occurrences of a series.
-func (s *Service) afterWrite(ctx context.Context, sess *graph.Session, id, audienceProp string, master calendar.Event, overrides []calendar.Event, audience func(calendar.Event) (string, string)) error {
-	if audienceProp != "" {
-		if err := sess.SetAudience(ctx, id, audienceProp); err != nil {
-			return err
-		}
+// removed occurrences of a series. These writes change the event's change key
+// again, so the key kept is read last: a second edit of the box before the
+// next import must not look like a change made outside.
+func (p *outlookPush) afterWrite(ctx context.Context, id string, rev int, audienceProp string, master calendar.Event, overrides []calendar.Event) error {
+	wrote, err := p.writeParts(ctx, id, audienceProp, master, overrides)
+	if err != nil || !wrote {
+		return err
 	}
-	if len(overrides) == 0 && len(master.ExDates) == 0 {
-		return nil
-	}
-	from := master.Start.AddDate(0, 0, -1)
-	to := s.now().AddDate(outlookFutureYears, 0, 0)
-	instances, err := sess.Instances(ctx, id, from, to)
+	now, err := p.sess.GetEvent(ctx, id)
 	if err != nil {
 		return err
 	}
-	find := func(start time.Time) string {
+	return p.db.PushDone(p.cal.ID, id, rev, now.ChangeKey, "")
+}
+
+func (p *outlookPush) writeParts(ctx context.Context, id, audienceProp string, master calendar.Event, overrides []calendar.Event) (bool, error) {
+	sess := p.sess
+	wrote := false
+	if audienceProp != "" {
+		if err := sess.SetAudience(ctx, id, audienceProp); err != nil {
+			return wrote, err
+		}
+		wrote = true
+	}
+	if len(overrides) == 0 && len(master.ExDates) == 0 {
+		return wrote, nil
+	}
+	from := master.Start.AddDate(0, 0, -1)
+	to := p.now().AddDate(outlookFutureYears, 0, 0)
+	instances, err := sess.Instances(ctx, id, from, to)
+	if err != nil {
+		return wrote, err
+	}
+	find := func(start time.Time) (graph.Event, bool) {
 		for _, in := range instances {
 			var at time.Time
 			if in.Type == "exception" {
@@ -170,32 +214,37 @@ func (s *Service) afterWrite(ctx context.Context, sess *graph.Session, id, audie
 				at, _, _ = parseStart(in)
 			}
 			if at.Equal(start) {
-				return in.ID
+				return in, true
 			}
 		}
-		return ""
+		return graph.Event{}, false
 	}
 	for _, o := range overrides {
-		inst := find(o.RecurrenceID)
-		if inst == "" {
+		inst, ok := find(o.RecurrenceID)
+		if !ok {
 			continue
 		}
-		body, _, err := s.outlookBody(o, audience)
+		changes, _, err := p.changes(o, inst)
 		if err != nil {
-			return err
+			return wrote, err
 		}
-		if _, err := sess.UpdateEvent(ctx, inst, body); err != nil {
-			return err
+		if len(changes) == 0 {
+			continue
 		}
+		if _, err := sess.UpdateEvent(ctx, inst.ID, changes); err != nil {
+			return wrote, err
+		}
+		wrote = true
 	}
 	for _, x := range master.ExDates {
-		if inst := find(x); inst != "" {
-			if err := sess.DeleteEvent(ctx, inst); err != nil && !errors.Is(err, graph.ErrNotFound) {
-				return err
+		if inst, ok := find(x); ok {
+			if err := sess.DeleteEvent(ctx, inst.ID); err != nil && !errors.Is(err, graph.ErrNotFound) {
+				return wrote, err
 			}
+			wrote = true
 		}
 	}
-	return nil
+	return wrote, nil
 }
 
 func parseStart(e graph.Event) (time.Time, string, error) {
@@ -203,38 +252,35 @@ func parseStart(e graph.Event) (time.Time, string, error) {
 	return it.Event.Start, it.UnknownZone, err
 }
 
-func (s *Service) pushOutlookDelete(ctx context.Context, sess *graph.Session, cal store.SyncedCalendar, h store.Household, po store.PendingObject, isNew bool) error {
+func (p *outlookPush) delete(ctx context.Context, po store.PendingObject, isNew bool) error {
 	if isNew || po.ETag == "" {
-		return s.db.PushDeleted(cal.ID, po.URL, po.Rev) // never left the box
+		return p.db.PushDeleted(p.cal.ID, po.URL, po.Rev) // never left the box
 	}
-	remote, err := sess.GetEvent(ctx, po.URL)
+	remote, err := p.sess.GetEvent(ctx, po.URL)
 	if errors.Is(err, graph.ErrNotFound) {
-		return s.db.PushDeleted(cal.ID, po.URL, po.Rev)
+		return p.db.PushDeleted(p.cal.ID, po.URL, po.Rev)
 	}
 	if err != nil {
 		return err
 	}
 	if remote.ChangeKey != po.ETag && !boxWinsAt(remote.LastModified, po.ChangedAt) {
-		return s.outlookOutsideWins(ctx, sess, cal, h, po, remote, i18n.Msg("sync.conflict.deleted_on_box", "title", remote.Subject), "")
+		return p.outsideWins(ctx, po, remote, i18n.Msg("sync.conflict.deleted_on_box", "title", remote.Subject), "")
 	}
-	if err := sess.DeleteEvent(ctx, po.URL); err != nil && !errors.Is(err, graph.ErrNotFound) {
+	if err := p.sess.DeleteEvent(ctx, po.URL); err != nil && !errors.Is(err, graph.ErrNotFound) {
 		return err
 	}
-	return s.db.PushDeleted(cal.ID, po.URL, po.Rev)
+	return p.db.PushDeleted(p.cal.ID, po.URL, po.Rev)
 }
 
-// outlookOutsideWins makes the box say what Outlook says and keeps the box's
+// outsideWins makes the box say what Outlook says and keeps the box's
 // version in the log.
-func (s *Service) outlookOutsideWins(ctx context.Context, sess *graph.Session, cal store.SyncedCalendar, h store.Household, po store.PendingObject, remote graph.Event, msg i18n.Message, boxTitle string) error {
-	at := s.now()
-	zone, err := time.LoadLocation(h.Timezone)
-	if err != nil {
-		zone = time.UTC
-	}
+func (p *outlookPush) outsideWins(ctx context.Context, po store.PendingObject, remote graph.Event, msg i18n.Message, boxTitle string) error {
+	at := p.now()
+	zone := p.zone
 	var items []graph.Item
 	if remote.Type == "seriesMaster" {
 		from, to := at.AddDate(-1, 0, 0), at.AddDate(outlookFutureYears, 0, 0)
-		instances, err := sess.Instances(ctx, remote.ID, from, to)
+		instances, err := p.sess.Instances(ctx, remote.ID, from, to)
 		if err != nil {
 			return err
 		}
@@ -248,14 +294,14 @@ func (s *Service) outlookOutsideWins(ctx context.Context, sess *graph.Session, c
 		}
 		items = []graph.Item{it}
 	}
-	names, err := s.audienceNames(h.ID)
+	names, err := p.audienceNames(p.h.ID)
 	if err != nil {
 		return err
 	}
 	change := store.ObjectChange{URL: po.URL, ETag: remote.ChangeKey}
 	for _, it := range items {
-		s.readAudience(&it.Event, names)
+		p.readAudience(&it.Event, names)
 		change.Items = append(change.Items, store.SyncItem{Key: it.Key, SeriesKey: it.SeriesKey, Event: it.Event})
 	}
-	return s.db.ResolveToOutside(h.ID, cal.ID, change, po.Rev, store.Conflict{Message: msg, Detail: boxTitle}, at)
+	return p.db.ResolveToOutside(p.h.ID, p.cal.ID, change, po.Rev, store.Conflict{Message: msg, Detail: boxTitle}, at)
 }

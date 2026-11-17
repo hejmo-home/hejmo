@@ -410,3 +410,126 @@ func TestNothingIsWrittenForASharedReadOnlyCalendar(t *testing.T) {
 		t.Fatal("an event was created in a calendar that Outlook locks")
 	}
 }
+
+// Graph answers in UTC unless the box asks for the household's zone. A weekly
+// 08:00 series made in winter must keep its 08:00 after the clocks change.
+func TestASeriesAcrossTheEndOfMarchKeepsItsLocalTime(t *testing.T) {
+	fx := newOutlookFx(t)
+	local := func(d time.Time) map[string]any {
+		return map[string]any{"dateTime": d.Format("2006-01-02T15:04:05.0000000"), "timeZone": "W. Europe Standard Time"}
+	}
+	first := time.Date(2026, 2, 2, 8, 0, 0, 0, berlinZone)
+	fx.fake.Put("cal-1", map[string]any{"id": "m1", "type": "seriesMaster", "subject": "Frühschwimmen",
+		"start": local(first), "end": local(first.Add(time.Hour)),
+		"recurrence": map[string]any{"pattern": map[string]any{"type": "weekly", "interval": 1, "daysOfWeek": []string{"monday"}, "firstDayOfWeek": "monday"}, "range": map[string]any{"type": "endDate", "endDate": "2026-04-20"}}})
+	for d := first; d.Before(time.Date(2026, 4, 21, 0, 0, 0, 0, berlinZone)); d = d.AddDate(0, 0, 7) {
+		in := map[string]any{"id": "i-" + d.Format("01-02"), "seriesMasterId": "m1", "type": "occurrence", "subject": "Frühschwimmen",
+			"start": local(d), "end": local(d.Add(time.Hour))}
+		fx.fake.Put("cal-1", in)
+	}
+	fx.clock = time.Date(2026, 1, 20, 12, 0, 0, 0, time.UTC)
+	fx.mustSync(t)
+
+	master := fx.events(t)["Frühschwimmen"]
+	if master.Start.In(berlinZone).Hour() != 8 || master.Start.Location().String() != "Europe/Berlin" {
+		t.Errorf("series starts %v, want 08:00 Europe/Berlin", master.Start)
+	}
+	if len(master.ExDates) != 0 {
+		t.Errorf("occurrences were dropped as removed: %v", master.ExDates)
+	}
+}
+
+func TestABoxEditChangesOnlyTheFieldsThatChanged(t *testing.T) {
+	fx := newOutlookFx(t)
+	id := fx.fake.Put("cal-1", gev("Kinderarzt", "11-24", "08:30", "09:00"))
+	html := fx.fake.Event("cal-1", id)
+	html["body"] = map[string]any{"contentType": "html", "content": "<p>Impfpass <b>mitbringen</b></p>"}
+	html["location"] = map[string]any{"displayName": "Praxis Huber", "locationUri": "https://example.org/praxis",
+		"address":     map[string]any{"street": "Hauptstraße 1", "city": "München"},
+		"coordinates": map[string]any{"latitude": 48.14, "longitude": 11.46}}
+	fx.fake.Put("cal-1", html)
+	fx.mustSync(t)
+
+	e := fx.events(t)["Kinderarzt"]
+	e.Start, e.End = e.Start.Add(time.Hour), e.End.Add(time.Hour)
+	if err := fx.db.ApplyChange(fx.h.ID, calendar.Change{Update: []calendar.Event{e}}); err != nil {
+		t.Fatal(err)
+	}
+	if err := fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID); err != nil {
+		t.Fatal(err)
+	}
+
+	bodies := fx.fake.Bodies["PATCH /v1.0/me/events/"+id]
+	if len(bodies) != 1 {
+		t.Fatalf("PATCH bodies = %v", bodies)
+	}
+	for _, k := range []string{"subject", "body", "location", "isAllDay", "recurrence"} {
+		if _, ok := bodies[0][k]; ok {
+			t.Errorf("PATCH sent %q, which did not change: %v", k, bodies[0])
+		}
+	}
+	if _, ok := bodies[0]["start"]; !ok {
+		t.Errorf("PATCH did not send the new start: %v", bodies[0])
+	}
+	got := fx.fake.Event("cal-1", id)
+	if got["body"].(map[string]any)["contentType"] != "html" {
+		t.Errorf("the formatted notes were flattened: %v", got["body"])
+	}
+	loc := got["location"].(map[string]any)
+	if loc["address"] == nil || loc["coordinates"] == nil || loc["locationUri"] == nil {
+		t.Errorf("the location lost its address: %v", loc)
+	}
+}
+
+func TestTheStoredChangeKeyIsTheOneAfterTheBoxsOwnWrites(t *testing.T) {
+	fx := newOutlookFx(t)
+	start := time.Date(2026, 11, 24, 8, 30, 0, 0, berlinZone)
+	created, err := fx.db.CreateEvent(fx.h.ID, calendar.Event{CalendarID: fx.cal.ID, Title: "Kinderarzt", Start: start, End: start.Add(30 * time.Minute), People: []string{fx.mia.ID}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	push := func() {
+		t.Helper()
+		if err := fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID); err != nil {
+			t.Fatal(err)
+		}
+	}
+	push()
+	id := fx.fake.Events("cal-1")[0]
+	known, _ := fx.db.RemoteObjects(fx.cal.ID, true)
+	if want := fx.fake.Event("cal-1", id)["changeKey"]; known[id] != want {
+		t.Fatalf("stored change key %q, Outlook has %q", known[id], want)
+	}
+	// A second edit before the next import is no conflict with the box's own write.
+	created.Title = "Kinderarzt (Kontrolle)"
+	if err := fx.db.ApplyChange(fx.h.ID, calendar.Change{Update: []calendar.Event{created}}); err != nil {
+		t.Fatal(err)
+	}
+	push()
+	log, _ := fx.db.SyncLog(fx.h.ID, 10)
+	for _, l := range log {
+		if l.Kind == "conflict" {
+			t.Errorf("false conflict logged: %+v", l)
+		}
+	}
+	known, _ = fx.db.RemoteObjects(fx.cal.ID, true)
+	if want := fx.fake.Event("cal-1", id)["changeKey"]; known[id] != want {
+		t.Errorf("after the second edit stored change key %q, Outlook has %q", known[id], want)
+	}
+}
+
+func TestAnOwnCalendarWithAnUnfamiliarOwnerAddressIsNotShared(t *testing.T) {
+	fx := newOutlookFx(t)
+	// Personal accounts made with a non-Microsoft e-mail can name an
+	// outlook_…@outlook.com owner for their own calendars.
+	fx.fake.Set(func(s *graphtest.Server) {
+		s.Calendars = append(s.Calendars, graphtest.Calendar{ID: "cal-3", Name: "Privat", OwnerName: "Mama Maier", OwnerAddress: "outlook_1A2B@outlook.com", CanEdit: true, CanShare: true})
+	})
+	found, err := fx.svc.DiscoverOutlook(context.Background(), fx.h.ID, fx.conn.ID)
+	if err != nil || len(found) != 2 {
+		t.Fatalf("found = %+v, %v", found, err)
+	}
+	if found[1].Locked || found[1].SharedBy != "" {
+		t.Errorf("own calendar = %+v", found[1])
+	}
+}

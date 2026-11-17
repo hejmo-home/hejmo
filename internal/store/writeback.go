@@ -50,7 +50,8 @@ var errInvited = fmt.Errorf("%w: other people are invited to this event: it is c
 
 // pushMarker records, inside the transaction of a box change, which remote
 // objects the change touches, so the change is written to the server later
-// even if the box is offline now. Only two-way CalDAV calendars qualify.
+// even if the box is offline now. Only two-way CalDAV and Outlook calendars
+// qualify.
 type pushMarker struct {
 	tx   *sql.Tx
 	seen map[[2]string]bool // calendar id, object address

@@ -23,12 +23,15 @@ const (
 )
 
 type connectionJSON struct {
-	ID        string           `json:"id"`
-	Kind      string           `json:"kind"`
-	URL       string           `json:"url"`
-	Username  string           `json:"username"`
-	Single    bool             `json:"single_calendar"`
-	Calendars []discoveredJSON `json:"calendars,omitempty"`
+	ID       string `json:"id"`
+	Kind     string `json:"kind"`
+	URL      string `json:"url"`
+	Username string `json:"username"`
+	Single   bool   `json:"single_calendar"`
+	// ReauthSince is when the Microsoft sign-in ended (Outlook only); no new
+	// events arrive until it is renewed.
+	ReauthSince *time.Time       `json:"reauth_since,omitempty"`
+	Calendars   []discoveredJSON `json:"calendars,omitempty"`
 }
 
 type discoveredJSON struct {
@@ -48,7 +51,11 @@ type discoveredJSON struct {
 }
 
 func connectionOf(c store.Connection) connectionJSON {
-	return connectionJSON{ID: c.ID, Kind: c.Kind, URL: c.URL, Username: c.Username, Single: c.Single}
+	out := connectionJSON{ID: c.ID, Kind: c.Kind, URL: c.URL, Username: c.Username, Single: c.Single}
+	if !c.ReauthSince.IsZero() {
+		out.ReauthSince = &c.ReauthSince
+	}
+	return out
 }
 
 type newConnectionInput struct {

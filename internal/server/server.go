@@ -430,14 +430,16 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 // parsePages parses the embedded templates; "t" is replaced per render.
 func parsePages() *template.Template {
 	return template.Must(template.New("").Funcs(template.FuncMap{
-		"t":    func(string) string { return "" },
-		"tf":   func(string, ...string) string { return "" },
-		"dict": dict,
-		"list": func(v ...any) []any { return v },
-		"has":  func(list []string, v string) bool { return slices.Contains(list, v) },
-		"strs": strs,
-		"rich": rich,
-		"repl": repl,
+		"t":      func(string) string { return "" },
+		"tf":     func(string, ...string) string { return "" },
+		"dict":   dict,
+		"list":   func(v ...any) []any { return v },
+		"has":    func(list []string, v string) bool { return slices.Contains(list, v) },
+		"errIn":  errIn,
+		"errKey": errKey,
+		"strs":   strs,
+		"rich":   rich,
+		"repl":   repl,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
 
@@ -530,6 +532,25 @@ func (s *server) fail(w http.ResponseWriter, what string, err error) {
 
 // repl fills the {name} placeholders of a translated text: repl(text, "{n}", "3", ...).
 func repl(text string, pairs ...string) string { return strings.NewReplacer(pairs...).Replace(text) }
+
+// errIn reports whether a page names the field in its ErrorFields (field to
+// text key), for pages whose error belongs to several fields at once.
+func errIn(root any, field string) bool {
+	_, ok := errKey0(root)[field]
+	return ok
+}
+
+// errKey is the text key ErrorFields gives the field, or "".
+func errKey(root any, field string) string { return errKey0(root)[field] }
+
+func errKey0(root any) map[string]string {
+	if m, ok := root.(map[string]any); ok {
+		if f, ok := m["ErrorFields"].(map[string]string); ok {
+			return f
+		}
+	}
+	return nil
+}
 
 // dict builds a map for passing several values to a sub-template.
 func dict(kv ...any) map[string]any {

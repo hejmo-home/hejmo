@@ -24,7 +24,6 @@ import (
 	"github.com/caddyserver/certmagic"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
-	"github.com/libdns/desec"
 	"github.com/libdns/libdns"
 	"github.com/mholt/acmez/v3/acme"
 	"go.uber.org/zap"
@@ -53,35 +52,75 @@ var ErrInvalid = errors.New("publiccert: invalid request")
 // ErrUnknownProvider means the DNS provider is not supported.
 var ErrUnknownProvider = errors.New("publiccert: unknown DNS provider")
 
+// ErrNameTaken means the name already points to a public address or is a
+// CNAME: the box never overwrites it, the family's website could be gone.
+var ErrNameTaken = errors.New("publiccert: the name is in use")
+
+// NameTakenError says what the name points to and offers another name.
+type NameTakenError struct {
+	Name       string
+	Address    string // the public address, or the target of the CNAME
+	Suggestion string
+}
+
+func (e *NameTakenError) Error() string {
+	return fmt.Sprintf("%s: %s already points to %s", ErrNameTaken, e.Name, e.Address)
+}
+
+// Is makes errors.Is(err, ErrNameTaken) true.
+func (e *NameTakenError) Is(target error) bool { return target == ErrNameTaken }
+
 // DNSProvider is what the box needs from a DNS provider: setting the box's
-// address record, and the TXT records of the DNS-01 challenge.
+// address record, the TXT records of the DNS-01 challenge, and listing the zone
+// (to see what a name already points to before it is overwritten).
 type DNSProvider interface {
 	certmagic.DNSProvider
 	libdns.RecordSetter
-}
-
-// ProviderFactory builds the DNS provider client for an API token.
-type ProviderFactory func(provider, token string) (DNSProvider, error)
-
-func defaultProviders(provider, token string) (DNSProvider, error) {
-	switch provider {
-	case "desec":
-		return &desec.Provider{Token: token}, nil
-	}
-	return nil, ErrUnknownProvider
+	libdns.RecordGetter
 }
 
 // Request is what the wizard collects.
 type Request struct {
 	Name     string // DNS name of the box, e.g. familie.dedyn.io
 	Provider string // DNS provider, see Providers
-	Token    string // API token of the DNS provider
-	Issuer   string // LetsEncrypt or Actalis
-	LANIP    string // the box's address on the home network
-	Email    string // optional contact for the certificate authority; needed for the ZeroSSL fallback
+	Token    string // API token of the DNS provider (deSEC, Hetzner, Cloudflare)
+	// ZoneToken is Cloudflare's optional second token that only reads zones.
+	ZoneToken string
+	// Username and Password sign in at INWX. TwoFA says INWX asks for a code
+	// from an app; OTPSecret is then the shared secret that makes the codes.
+	Username, Password, OTPSecret string
+	TwoFA                         bool
+	Issuer                        string // LetsEncrypt or Actalis
+	LANIP                         string // the box's address on the home network
+	Email                         string // optional contact for the certificate authority; needed for the ZeroSSL fallback
 	// EABKeyID and EABHMAC are the issuer's external account binding
 	// (required for Actalis): key identifier and base64url HMAC key.
 	EABKeyID, EABHMAC string
+}
+
+func (r Request) credentials() Credentials {
+	return Credentials{Token: r.Token, ZoneToken: r.ZoneToken, Username: r.Username, Password: r.Password, OTPSecret: r.OTPSecret}
+}
+
+// sealable is what is sealed with the box's key. A deSEC-style setup with a
+// single token keeps the plain token (the format of earlier versions); several
+// credentials are stored as JSON.
+func (c Credentials) sealable() []byte {
+	if c.ZoneToken == "" && c.Username == "" && c.Password == "" && c.OTPSecret == "" {
+		return []byte(c.Token)
+	}
+	b, _ := json.Marshal(c)
+	return b
+}
+
+func openCredentials(plain []byte) Credentials {
+	if len(plain) > 0 && plain[0] == '{' {
+		var c Credentials
+		if json.Unmarshal(plain, &c) == nil {
+			return c
+		}
+	}
+	return Credentials{Token: string(plain)}
 }
 
 // Status is what the web interface shows.
@@ -270,11 +309,13 @@ func (m *Manager) serveStored(ctx context.Context, saved store.PublicHTTPS) erro
 }
 
 func (m *Manager) requestFrom(s store.PublicHTTPS) (Request, error) {
-	token, err := m.sealer.Open(s.Token)
+	plain, err := m.sealer.Open(s.Token)
 	if err != nil {
-		return Request{}, fmt.Errorf("publiccert: DNS token: %w", err)
+		return Request{}, fmt.Errorf("publiccert: DNS credentials: %w", err)
 	}
-	req := Request{Name: s.Name, Provider: s.Provider, Token: string(token), Issuer: s.Issuer, LANIP: s.LANIP, Email: s.Email, EABKeyID: s.EABKeyID}
+	c := openCredentials(plain)
+	req := Request{Name: s.Name, Provider: s.Provider, Token: c.Token, ZoneToken: c.ZoneToken, Username: c.Username, Password: c.Password, OTPSecret: c.OTPSecret, TwoFA: c.OTPSecret != "",
+		Issuer: s.Issuer, LANIP: s.LANIP, Email: s.Email, EABKeyID: s.EABKeyID}
 	if len(s.EABHMAC) > 0 {
 		hmac, err := m.sealer.Open(s.EABHMAC)
 		if err != nil {
@@ -408,7 +449,8 @@ func (m *Manager) recordRenewal(err error) {
 }
 
 // InvalidError is an ErrInvalid that names the form field of the wizard it
-// belongs to: token, name, lan_ip, issuer or eab (the account keys of Actalis).
+// belongs to: token, username, password, otp_secret, name, lan_ip, issuer or
+// eab (the account keys of Actalis).
 type InvalidError struct {
 	Field string
 	msg   string
@@ -424,7 +466,17 @@ func invalid(field, format string, args ...any) error {
 }
 
 func (r Request) validate() error {
-	if r.Token == "" {
+	if r.Provider == "inwx" {
+		if r.Username == "" {
+			return invalid("username", "INWX user name missing")
+		}
+		if r.Password == "" {
+			return invalid("password", "INWX password missing")
+		}
+		if r.TwoFA && !validSecret(r.OTPSecret) {
+			return invalid("otp_secret", "the INWX shared secret is missing or not base32 of 16 to 32 characters")
+		}
+	} else if r.Token == "" {
 		return invalid("token", "DNS token missing")
 	}
 	if !validName(r.Name) {
@@ -467,10 +519,15 @@ func validName(name string) bool {
 // the attempt failed; nothing is stored then.
 func (m *Manager) Setup(ctx context.Context, req Request) error {
 	req.Name = strings.ToLower(strings.TrimSpace(req.Name))
+	if req.TwoFA {
+		req.OTPSecret = cleanSecret(req.OTPSecret)
+	} else {
+		req.OTPSecret = "" // a secret of a switched-off 2FA is not kept
+	}
 	if err := req.validate(); err != nil {
 		return err
 	}
-	provider, err := m.providers(req.Provider, req.Token)
+	provider, err := m.providers(req.Provider, req.credentials())
 	if err != nil {
 		return err
 	}
@@ -481,8 +538,12 @@ func (m *Manager) Setup(ctx context.Context, req Request) error {
 	if err != nil {
 		return fmt.Errorf("find the DNS zone of %s: %w", req.Name, err)
 	}
+	rel := libdns.RelativeName(req.Name+".", zone)
 	ip, _ := netip.ParseAddr(req.LANIP)
-	rec := libdns.Address{Name: libdns.RelativeName(req.Name+".", zone), IP: ip, TTL: 5 * time.Minute}
+	if err := m.prepareName(ctx, provider, req.Name, zone, rel, ip); err != nil {
+		return err
+	}
+	rec := libdns.Address{Name: rel, IP: ip, TTL: 5 * time.Minute}
 	if _, err := provider.SetRecords(ctx, zone, []libdns.Record{rec}); err != nil {
 		return fmt.Errorf("point %s to %s: %w", req.Name, req.LANIP, err)
 	}
@@ -499,7 +560,7 @@ func (m *Manager) Setup(ctx context.Context, req Request) error {
 		m.mu.Unlock()
 		return fmt.Errorf("obtain certificate for %s: %w", req.Name, err)
 	}
-	sealedToken, err := m.sealer.Seal([]byte(req.Token))
+	sealedToken, err := m.sealer.Seal(req.credentials().sealable())
 	if err != nil {
 		cache.Stop()
 		return err
@@ -520,11 +581,82 @@ func (m *Manager) Setup(ctx context.Context, req Request) error {
 	return nil
 }
 
+// prepareName looks at what the zone holds for the name before anything is
+// written: a public address or a CNAME is never overwritten (the family's
+// website would be gone). A private address of an earlier box (or the address
+// of this very try) is replaced: one of the same type by SetRecords, one of
+// the other address family (a ULA AAAA while this try writes an A) is deleted
+// here, so the old box cannot be resolved any more; if that fails, so does the
+// setup. Old challenge records of this name are removed, so a provider that
+// cannot handle several values at one name is not confused by a failed
+// earlier attempt (a failure to remove them is only logged).
+func (m *Manager) prepareName(ctx context.Context, provider DNSProvider, name, zone, rel string, lan netip.Addr) error {
+	existing, err := provider.GetRecords(ctx, zone)
+	if err != nil {
+		return fmt.Errorf("list the records of %s: %w", zone, err)
+	}
+	challenge := "_acme-challenge"
+	if rel != "@" {
+		challenge += "." + rel
+	}
+	ownType := "A"
+	if lan.Is6() && !lan.Is4In6() {
+		ownType = "AAAA"
+	}
+	var stale, otherFamily []libdns.Record
+	for _, rec := range existing {
+		rr := rec.RR()
+		switch {
+		case rr.Name == rel && rr.Type == "CNAME":
+			return m.nameTaken(name, zone, rr.Data)
+		case rr.Name == rel && (rr.Type == "A" || rr.Type == "AAAA"):
+			if ip, err := netip.ParseAddr(rr.Data); err != nil || !(ip == lan || notPublic(ip)) {
+				return m.nameTaken(name, zone, rr.Data)
+			}
+			if rr.Type != ownType {
+				otherFamily = append(otherFamily, rec) // an earlier box's record of the other family
+			}
+		case rr.Name == challenge && rr.Type == "TXT":
+			stale = append(stale, rec)
+		}
+	}
+	if len(otherFamily) > 0 {
+		if _, err := provider.DeleteRecords(ctx, zone, otherFamily); err != nil {
+			return fmt.Errorf("remove the address of an earlier box at %s: %w", name, err)
+		}
+	}
+	if len(stale) > 0 {
+		if _, err := provider.DeleteRecords(ctx, zone, stale); err != nil {
+			m.logger.Warn("stale records not removed", "name", name, "err", err) // a real problem shows when ordering
+		}
+	}
+	return nil
+}
+
+// cgnat is the shared address space 100.64.0.0/10 of carrier-grade NAT.
+var cgnat = netip.MustParsePrefix("100.64.0.0/10")
+
+// notPublic is an address that cannot be a website on the internet: a record
+// with it is an earlier box's, not the family's site.
+func notPublic(ip netip.Addr) bool {
+	ip = ip.Unmap()
+	return ip.IsPrivate() || ip.IsLoopback() || ip.IsLinkLocalUnicast() || cgnat.Contains(ip)
+}
+
+func (m *Manager) nameTaken(name, zone, address string) error {
+	zone = strings.TrimSuffix(zone, ".")
+	suggestion := "box." + zone
+	if name == suggestion {
+		suggestion = "hejmo." + zone
+	}
+	return &NameTakenError{Name: name, Address: address, Suggestion: suggestion}
+}
+
 // newConfig builds the CertMagic configuration: the chosen issuer first, ZeroSSL as fallback.
 // resuming is true for a stored setup being resumed at start: only then does a
 // failed order count as a broken setup (see onEvent).
 func (m *Manager) newConfig(req Request, resuming bool) (*certmagic.Config, *certmagic.Cache, error) {
-	provider, err := m.providers(req.Provider, req.Token)
+	provider, err := m.providers(req.Provider, req.credentials())
 	if err != nil {
 		return nil, nil, err
 	}

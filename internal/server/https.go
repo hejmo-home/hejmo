@@ -3,6 +3,8 @@ package server
 import (
 	"context"
 	"errors"
+	"html"
+	"html/template"
 	"net"
 	"net/http"
 	"net/url"
@@ -130,30 +132,56 @@ func (s *server) handleHTTPSForm(w http.ResponseWriter, r *http.Request) {
 	switch r.URL.Query().Get("way") {
 	case "public":
 		way = httpsPublic
+	case "domain":
+		way = httpsDomain
 	case "own":
 		way = httpsOwn
+	}
+	// "Continue" without a choice (the form sends next=1, no way is preselected):
+	// the choice again, with the error under the cards.
+	if way == httpsChoice && r.URL.Query().Get("next") != "" && s.public != nil {
+		s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, way, publicForm{Issuer: publiccert.LetsEncrypt},
+			httpsError{Key: "setup.https.error.way", Field: "way"})
+		return
 	}
 	s.renderHTTPSStep(w, r, http.StatusOK, way, publicForm{Issuer: publiccert.LetsEncrypt}, httpsError{})
 }
 
-// The three pages of the wizard's first step: the choice between two ways, the
-// form of the public name and the own certificate authority.
+// The pages of the wizard's first step: the choice between three ways, the
+// free name at deSEC, the family's own domain at a DNS provider (ticket 57)
+// and the own certificate authority.
 const (
 	httpsChoice = "choice"
 	httpsPublic = "public"
+	httpsDomain = "domain"
 	httpsOwn    = "own"
 )
 
+// domainProviders are the DNS providers of the own-domain page, in the order
+// of its cards, with the name the texts use for them.
+var domainProviders = []struct{ ID, Name string }{
+	{"cloudflare", "Cloudflare"}, {"desec", "deSEC"}, {"hetzner", "Hetzner"}, {"inwx", "INWX"},
+}
+
 // publicForm is what the wizard's public-name form keeps between attempts.
-// Secrets (token, account key) are never sent back.
+// Secrets (token, second token, password, shared secret, account key) are
+// never sent back.
 type publicForm struct {
 	Name, Issuer, LANIP, Email, EABKeyID string
+	Provider, Username                   string
+	TwoFA                                bool
 }
 
 // httpsError is an error of the first step: Key is the page-level text, Field
 // the form field it belongs to and FieldKey a text of its own for that field
-// (when empty, the field shows Key).
-type httpsError struct{ Key, Field, FieldKey string }
+// (when empty, the field shows Key). Fields names further fields (field to
+// text key) that are wrong at the same time; Text is a ready HTML text for
+// Field, built with escaped names.
+type httpsError struct {
+	Key, Field, FieldKey string
+	Fields               map[string]string
+	Text                 template.HTML
+}
 
 func (s *server) renderHTTPSStep(w http.ResponseWriter, r *http.Request, status int, way string, f publicForm, e httpsError) {
 	if s.public == nil && way != httpsOwn { // only the box's own certificate authority is on offer
@@ -162,11 +190,23 @@ func (s *server) renderHTTPSStep(w http.ResponseWriter, r *http.Request, status 
 	if f.LANIP == "" && net.ParseIP(hostOf(r)) != nil {
 		f.LANIP = hostOf(r)
 	}
+	// The own-domain page has one guide per provider; an error belongs to
+	// the guide that was submitted (as on the page that connects a calendar).
+	guides := map[string]any{}
+	for _, p := range domainProviders {
+		g := map[string]any{"Error": "", "ErrorField": "", "FieldError": "", "ErrorFields": map[string]string(nil), "ErrorText": template.HTML(""), "MoreOpen": f.LANIP == ""}
+		if p.ID == f.Provider {
+			g["Error"], g["ErrorField"], g["FieldError"], g["ErrorFields"], g["ErrorText"] = e.Key, e.Field, e.FieldKey, e.Fields, e.Text
+			g["MoreOpen"] = f.LANIP == "" || e.Field == "lan_ip" || e.Field == "zone_token" || e.Field == "eab" || e.Fields["zone_token"] != ""
+		}
+		guides[p.ID] = g
+	}
 	s.render(w, r, status, "setup_https.html", map[string]any{
-		"Way": way, "Host": hostOf(r), "Form": f, "Wizard": wizardAt(1), "Choice": s.public != nil,
-		"Error": e.Key, "ErrorField": e.Field, "FieldError": e.FieldKey, "HTTPSWarning": s.httpsWarning(),
+		"Way": way, "Host": hostOf(r), "Form": f, "Wizard": wizardAt(1), "Choice": s.public != nil, "Provider": f.Provider,
+		"Providers": domainProviders, "Guides": guides,
+		"Error": e.Key, "ErrorField": e.Field, "FieldError": e.FieldKey, "ErrorFields": e.Fields, "ErrorText": e.Text, "HTTPSWarning": s.httpsWarning(),
 		// "More options" are open when the address is missing or was refused.
-		"MoreOpen": f.LANIP == "" || e.Field == "lan_ip",
+		"MoreOpen": f.LANIP == "" || e.Field == "lan_ip" || e.Field == "zone_token" || e.Field == "eab",
 	})
 }
 
@@ -183,28 +223,85 @@ func (s *server) handlePublicHTTPSSubmit(w http.ResponseWriter, r *http.Request)
 	req := publiccert.Request{
 		Name: strings.ToLower(trim("name")), Provider: trim("provider"), Token: trim("token"), Issuer: trim("issuer"),
 		LANIP: trim("lan_ip"), Email: trim("email"), EABKeyID: trim("eab_key_id"), EABHMAC: trim("eab_hmac"),
+		ZoneToken: trim("zone_token"), Username: trim("username"), Password: r.PostFormValue("password"),
+		TwoFA: r.PostFormValue("twofa") != "",
 	}
-	form := publicForm{Name: req.Name, Issuer: req.Issuer, LANIP: req.LANIP, Email: req.Email, EABKeyID: req.EABKeyID}
+	if req.TwoFA {
+		req.OTPSecret = trim("otp_secret")
+	}
+	form := publicForm{Name: req.Name, Issuer: req.Issuer, LANIP: req.LANIP, Email: req.Email, EABKeyID: req.EABKeyID,
+		Provider: req.Provider, Username: req.Username, TwoFA: req.TwoFA}
+	// The page the form came from comes back with its error: the own-domain
+	// page names "domain", the free-name page nothing.
+	way := httpsPublic
+	if r.PostFormValue("way") == httpsDomain {
+		way = httpsDomain
+	}
 	// The order can take a minute and must not be cancelled partway through
 	// if the browser gives up: it runs on its own context.
 	ctx, cancel := context.WithTimeout(context.WithoutCancel(r.Context()), setupTimeout)
 	defer cancel()
 	err := s.public.Setup(ctx, req)
+	var inv *publiccert.InvalidError
+	var taken *publiccert.NameTakenError
 	switch {
 	case err == nil:
 		http.Redirect(w, r, "/setup/https/check", http.StatusSeeOther)
+	case errors.As(err, &taken):
+		// Nothing went wrong with the credentials, but the box keeps none of
+		// them: the secret fields come back empty and the family pastes them
+		// again (the other fields keep their values).
+		s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, way, form, httpsError{
+			Key: "setup.https.error.name_taken", Field: "name", Text: s.nameTakenText(r, taken),
+		})
 	case errors.Is(err, publiccert.ErrInvalid), errors.Is(err, publiccert.ErrUnknownProvider):
 		e := httpsError{Key: "setup.https.error.invalid"}
-		var inv *publiccert.InvalidError
-		if errors.As(err, &inv) && slices.Contains([]string{"token", "name", "lan_ip", "eab"}, inv.Field) {
+		if errors.As(err, &inv) && slices.Contains([]string{"token", "username", "password", "otp_secret", "name", "lan_ip", "eab"}, inv.Field) {
 			e = httpsError{Key: "setup.https.error." + inv.Field, Field: inv.Field}
+			if inv.Field == "otp_secret" && req.OTPSecret == "" {
+				e.Key = "setup.https.error.otp_secret_missing" // nothing was typed: not "the 6-digit code"
+			}
 		}
-		s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, httpsPublic, form, e)
+		s.renderHTTPSStep(w, r, http.StatusUnprocessableEntity, way, form, e)
 	default:
 		s.logger.Error("public HTTPS setup", "err", err) // the CA's text is English and technical: log only
-		// The token is not sent back: the page says so at its field.
-		s.renderHTTPSStep(w, r, http.StatusBadGateway, httpsPublic, form, httpsError{Key: "setup.https.public.failed", Field: "token", FieldKey: "setup.https.error.token_again"})
+		s.renderHTTPSStep(w, r, http.StatusBadGateway, way, form, failedStep(req))
 	}
+}
+
+// failedStep is the error after a failed attempt: the likely cause for the
+// provider on top of its guide, and a note at each secret that the box does
+// not keep one after an error (none of them is sent back).
+func failedStep(req publiccert.Request) httpsError {
+	key := "setup.https.public.failed"
+	if req.Provider != "desec" {
+		key += "." + req.Provider
+	}
+	switch req.Provider {
+	case "inwx":
+		e := httpsError{Key: key, Field: "password", FieldKey: "setup.https.error.password_again", Fields: map[string]string{"password": "setup.https.error.password_again"}} // #nosec G101 -- an i18n key, no credential
+		if req.TwoFA {
+			e.Fields["otp_secret"] = "setup.https.error.secret_again"
+		}
+		return e
+	case "cloudflare":
+		e := httpsError{Key: key, Field: "token", FieldKey: "setup.https.error.token_again"}
+		if req.ZoneToken != "" {
+			e.Fields = map[string]string{"token": "setup.https.error.token_again", "zone_token": "setup.https.error.zone_token_again"} // #nosec G101 -- an i18n key, no credential
+		}
+		return e
+	}
+	return httpsError{Key: key, Field: "token", FieldKey: "setup.https.error.token_again"}
+}
+
+// nameTakenText is the error at the name field: names and address come from
+// the provider and the family, so they are escaped; each is a .host that may
+// wrap on a narrow screen.
+func (s *server) nameTakenText(r *http.Request, e *publiccert.NameTakenError) template.HTML {
+	text := html.EscapeString(s.i18n.T(s.pageLanguage(r), "setup.https.error.name_taken"))
+	host := func(v string) string { return `<span class="host">` + html.EscapeString(v) + `</span>` }
+	text = strings.NewReplacer("{name}", host(e.Name), "{address}", host(e.Address), "{suggestion}", host(e.Suggestion)).Replace(text)
+	return template.HTML(text) // #nosec G203 -- the text is escaped, the values too
 }
 
 // handleNameCheck is the wizard step after the certificate is there: the

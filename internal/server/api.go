@@ -38,6 +38,7 @@ var apiRoutes = []APIRoute{
 	{"PATCH", "/me/passkeys/{id}", auth.Perm("people", auth.Write), (*server).apiRenamePasskey},
 	{"DELETE", "/me/passkeys/{id}", auth.Perm("people", auth.Delete), (*server).apiDeletePasskey},
 	{"POST", "/me/recovery-codes", auth.Perm("people", auth.Write), (*server).apiNewRecoveryCodes},
+	{"POST", "/me/recovery-codes/saved", auth.Perm("people", auth.Write), (*server).apiRecoveryCodesSaved},
 	{"GET", "/people/{id}/invitation", auth.Perm("tokens", auth.Read), (*server).apiGetInvitation},
 	{"POST", "/people/{id}/invitation", auth.Perm("tokens", auth.Write), (*server).apiCreateInvitation},
 	{"DELETE", "/people/{id}/invitation", auth.Perm("tokens", auth.Delete), (*server).apiWithdrawInvitation},

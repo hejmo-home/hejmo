@@ -42,6 +42,8 @@ type SyncRun struct {
 type SyncedCalendar struct {
 	Calendar
 	ConnectionID string
+	// SourceReadOnly says the source shares the calendar for viewing only (Google), so it can never be two-way.
+	SourceReadOnly bool
 	URL          string // the feed or calendar address
 	Sync         SyncState
 }
@@ -124,7 +126,7 @@ func (db *DB) DeferSync(calendarID string, at time.Time) error {
 	return expectOne(db.sql.Exec(`UPDATE calendar_sync SET next_attempt_at = ? WHERE calendar_id = ?`, stamp(at), calendarID))
 }
 
-const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, c.shared, c.waste, n.id, COALESCE(c.remote_url, n.url),
+const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, c.shared, c.waste, c.source_read_only, n.id, COALESCE(c.remote_url, n.url),
 	s.interval_minutes, s.started_at, s.last_attempt_at, s.last_success_at, s.next_attempt_at, s.failures, s.last_error_key, s.last_error_params,
 	s.last_run_events, s.last_run_new, s.last_run_changed, s.last_run_removed,
 	(SELECT COUNT(*) FROM events ev WHERE ev.calendar_id = c.id AND ev.series_id IS NULL)
@@ -163,7 +165,7 @@ func (db *DB) syncedCalendars(query string, args ...any) ([]SyncedCalendar, erro
 		var c SyncedCalendar
 		var started, attempt, success, next sql.NullString
 		var errKey, errParams string
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste, &c.ConnectionID, &c.URL,
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste, &c.SourceReadOnly, &c.ConnectionID, &c.URL,
 			&c.Sync.IntervalMinutes, &started, &attempt, &success, &next, &c.Sync.Failures, &errKey, &errParams,
 			&c.Sync.LastRun.Events, &c.Sync.LastRun.New, &c.Sync.LastRun.Changed, &c.Sync.LastRun.Removed, &c.Sync.EventCount); err != nil {
 			rows.Close()

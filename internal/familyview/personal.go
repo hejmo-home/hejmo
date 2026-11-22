@@ -142,9 +142,9 @@ func BuildPersonal(in PersonalInput) PersonalView {
 			case !multiDay(o, loc):
 				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: clock(o, loc, in.TimeFormat), Family: fam})
 			case firstDay(o, loc).Equal(day):
-				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: o.Start.In(loc).Format(layout(in.TimeFormat)), Family: fam})
+				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: o.Start.In(loc).Format(timeLayout(in.TimeFormat)), Family: fam})
 			case calendar.LastDay(o, loc).Equal(day) && !endsAtMidnight(o, loc):
-				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: "–" + o.End.In(loc).Format(layout(in.TimeFormat)), Family: fam})
+				timedEvents = append(timedEvents, PersonalEvent{Title: o.Title, Time: "–" + o.End.In(loc).Format(timeLayout(in.TimeFormat)), Family: fam})
 			default:
 				allDay = append(allDay, PersonalEvent{Title: o.Title, AllDay: true, Family: fam})
 			}

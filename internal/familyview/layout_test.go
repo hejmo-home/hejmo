@@ -155,7 +155,9 @@ func openEntries(n int) []string {
 
 // Q86, Q129: "one list" in the footer shows up to 8 open entries in full, then says how many are left.
 func TestTheListTileShowsUpToEightEntries(t *testing.T) {
-	list := func(n int) *familyview.ListInput { return &familyview.ListInput{ID: "L1", Name: "Shopping", Open: openEntries(n)} }
+	list := func(n int) *familyview.ListInput {
+		return &familyview.ListInput{ID: "L1", Name: "Shopping", Open: openEntries(n)}
+	}
 	if v := buildWith(nil, familyview.Input{List: list(3)}); v.List != nil {
 		t.Fatalf("list tile with its block off")
 	}

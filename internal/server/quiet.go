@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"crypto/sha256"
 	"encoding/hex"
+	"errors"
 	"html/template"
 
 	"github.com/hejmo-home/hejmo/internal/brightness"
@@ -55,7 +56,17 @@ func listensForWake(d store.Display) bool {
 func (s *server) renderDisplayContent(h store.Household, d store.Display, lang string) (template.HTML, string, error) {
 	now := s.householdNow(h)
 	if !d.Quiet.Active(now) {
-		return s.renderFamily(h, lang, d.ShowTomorrow)
+		lay, err := s.db.DisplayLayout(h.ID, d.ID)
+		if err != nil {
+			return "", "", err
+		}
+		if person, ok := lay.Personal(); ok { // Q88: one person is their personal view
+			markup, version, err := s.renderPersonal(h, &d, lang, person, true)
+			if !errors.Is(err, errNoPerson) {
+				return markup, version, err
+			}
+		}
+		return s.renderFamily(h, lang, &d)
 	}
 	v := quietView{Black: s.quietBlack(d)}
 	if listensForWake(d) {

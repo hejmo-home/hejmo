@@ -54,7 +54,7 @@ func TestTheLayoutOfADisplayWorksThroughTheAPI(t *testing.T) {
 	}
 	for _, bad := range []string{
 		`{"layout":{"people":[]}}`, `{"layout":{"people":["nobody"]}}`, `{"layout":{"blocks":[{"id":"sparkle","enabled":true}]}}`,
-		`{"layout":{"list_id":"nope"}}`, `{"layout":{"blocks":[{"id":"list","enabled":true}]}}`,
+		`{"layout":{"list_id":"nope"}}`,
 	} {
 		if status := rawCall(t, c, http.MethodPatch, "/displays/"+id, bad); status != http.StatusUnprocessableEntity {
 			t.Errorf("%s = %d, want 422", bad, status)
@@ -85,6 +85,27 @@ func TestCopyingALayoutWorksThroughTheAPI(t *testing.T) {
 	}
 	if status, _, _ := c.call(http.MethodPost, "/displays/"+b+"/layout", map[string]any{"from": "00000000-0000-0000-0000-000000000000"}); status != http.StatusNotFound {
 		t.Errorf("unknown source = %d", status)
+	}
+}
+
+// The block "one list" needs a list to show.
+func TestTheListBlockNeedsAList(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
+	_, shown, _ := c.call(http.MethodPost, "/displays", map[string]any{"code": code, "name": "Kitchen", "type": "screen"})
+	id := shown["id"].(string)
+	_, _, lists := c.call(http.MethodGet, "/lists", nil)
+	for _, l := range lists {
+		c.call(http.MethodDelete, "/lists/"+l.(map[string]any)["id"].(string), nil)
+	}
+	if status := rawCall(t, c, http.MethodPatch, "/displays/"+id, `{"layout":{"blocks":[{"id":"list","enabled":true}]}}`); status != http.StatusUnprocessableEntity {
+		t.Errorf("list block without a list = %d, want 422", status)
+	}
+	_, made, _ := c.call(http.MethodPost, "/lists", map[string]any{"name": "Packing", "color": "green", "symbol": "square-filled"})
+	status, got, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"layout": map[string]any{"blocks": []map[string]any{{"id": "list", "enabled": true}}}})
+	if status != http.StatusOK || got["layout"].(map[string]any)["list_id"] != made["id"] {
+		t.Errorf("with a list the block takes it: %d %v", status, got["layout"])
 	}
 }
 

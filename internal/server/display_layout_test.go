@@ -15,7 +15,6 @@ import (
 
 // Ticket 180 (ADR 0020, docs/design/preview-180.html): the layout of a display.
 
-
 // layoutForm is the Layout section of the settings form: the people in order and
 // the blocks in order, the ones named in on switched on.
 func (f *familyBox) layoutForm(whole bool, people []string, on ...string) url.Values {
@@ -96,7 +95,7 @@ func TestADisplayShowsTheChosenPeopleInTheSavedOrder(t *testing.T) {
 func TestAtLeastOnePersonMustBeChosen(t *testing.T) {
 	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
-	r := f.saveSettings(t, f.layoutForm(false, nil, defaultOn...))
+	r := f.do(http.MethodPost, "/displays/"+f.displayID(t)+"/settings", f.layoutForm(false, nil, defaultOn...), en)
 	if r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("status = %d", r.status)
 	}
@@ -227,7 +226,8 @@ func TestTheListBlockShowsOpenEntriesInTheFooter(t *testing.T) {
 	if !strings.Contains(inText(de), "Noch 1 mehr. Tippe hier für die ganze Liste.") {
 		t.Errorf("German more line missing")
 	}
-	// The list is deleted: no tile, no error.
+	// The list is deleted (another one is left): no tile, no error.
+	listWith(t, f.box, "Drugstore", nil, "Soap")
 	if err := f.db.DeleteList(f.householdID, id); err != nil {
 		t.Fatal(err)
 	}
@@ -246,11 +246,11 @@ func TestTheLayoutSectionOnTheDisplayPage(t *testing.T) {
 	f := newFamilyBox(t, "eink_color")
 	f.saveLayout(t, f.layoutForm(true, []string{"Mama", "Papa", "Sebastian", "Mia"}, defaultOn...))
 	page := squash(f.settingsPage(t, en))
-	i, j, k := strings.Index(page, "Where and what"), strings.Index(page, `<fieldset class="layout" id="layout">`), strings.Index(page, `<legend>What it shows</legend>`)
+	i, j, k := strings.Index(page, "Where and what"), strings.Index(page, `<fieldset class="layout" id="layout"`), strings.Index(page, `<legend>What it shows</legend>`)
 	if !(i > 0 && j > i && k > j) {
 		t.Fatalf("order of the sections: where %d layout %d shows %d", i, j, k)
 	}
-	section := page[j : strings.Index(page[j:], "</fieldset><details")+j]
+	section := page[j : strings.Index(page[j:], "</fieldset><fieldset")+j]
 	// A new display looks like today: preview in words, people, zones, blocks.
 	text := inText(section)
 	for _, want := range []string{
@@ -334,7 +334,7 @@ func TestCopyTheLayoutOfAnotherDisplay(t *testing.T) {
 	if r := f.post("/displays/"+kitchen+"/settings", form); r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d", r.status)
 	}
-	page := inText(f.get("/displays/" + hall).body)
+	page := inText(f.do(http.MethodGet, "/displays/"+hall, nil, en).body)
 	if !strings.Contains(page, "Apply layout") {
 		t.Fatalf("copy not offered:\n%s", page)
 	}
@@ -350,7 +350,7 @@ func TestCopyTheLayoutOfAnotherDisplay(t *testing.T) {
 	if len(ds) != 2 {
 		t.Fatalf("displays = %d", len(ds))
 	}
-	follow := f.get(r.location)
+	follow := f.do(http.MethodGet, r.location, nil, en)
 	if !strings.Contains(inText(follow.body), "Layout of “") || !strings.Contains(inText(follow.body), "applied and saved.") {
 		t.Errorf("success line missing:\n%s", inText(follow.body))
 	}

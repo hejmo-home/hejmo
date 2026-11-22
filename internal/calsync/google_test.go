@@ -372,6 +372,27 @@ func TestGoogleAnswering403OnWriteBackLogsTheGoogleMessage(t *testing.T) {
 	}
 }
 
+// Review of ticket 18: the scheduled sync's write step logs a Google 403 as the Google message too.
+func TestGoogleAnswering403WhileTheScheduledSyncWritesLogsTheGoogleMessage(t *testing.T) {
+	g := newGoogleFixture(t)
+	if err := g.sync(t); err != nil {
+		t.Fatal(err)
+	}
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	if _, err := g.db.CreateEvent(g.h.ID, calendar.Event{CalendarID: g.cal.ID, Title: "Piano",
+		Start: time.Date(2026, 11, 21, 15, 0, 0, 0, berlin), End: time.Date(2026, 11, 21, 16, 0, 0, 0, berlin)}); err != nil {
+		t.Fatal(err)
+	}
+	g.putErr = &caldavclient.StatusError{Code: 403, Status: "403 Forbidden"}
+	if err := g.sync(t); err == nil {
+		t.Fatal("a 403 did not fail the sync's write step")
+	}
+	log, _ := g.db.SyncLog(g.h.ID, 10)
+	if len(log) != 1 || log[0].Message.Key != "sync.fail.google_forbidden" {
+		t.Fatalf("sync log = %+v, want sync.fail.google_forbidden", log)
+	}
+}
+
 // Review of ticket 18: the scheduler clears the stashed token of an expired sign-in.
 func TestTheSchedulerClearsAnExpiredStashedToken(t *testing.T) {
 	g := newGoogleFixture(t)

@@ -1,10 +1,17 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "hub.household") "Frame" .Frame)}}
   <h1>{{t "hub.household"}}</h1>
+  {{template "offlineNote" .OfflineNote}}
   {{template "updateNotice" .}}
   {{template "syncNotice" .}}
   <p class="lead">{{t "settings.intro"}}</p>
   {{template "error" .}}
   <form method="post" action="/settings/household" class="steps">
+    {{template "defaultSubmit"}}
+    <fieldset>
+      <legend>{{t "setup.step.home"}}</legend>
+      <span class="hint">{{t "settings.home.hint"}}</span>
+      {{template "placePicker" (dict "Place" .Place)}}
+    </fieldset>
     {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "settings.date_format") "Root" . "Name" "date_format")}}
       <p class="hint">{{t "settings.date_format.hint"}}</p>
       {{template "option" (dict "Name" "date_format" "Value" "dmy" "Label" .DateDMY "Hint" (printf (t "settings.date_format.dmy.hint") .SampleYear) "Checked" (eq .DateFormat "dmy"))}}
@@ -36,4 +43,5 @@
     </fieldset>
     <button class="button" type="submit">{{t "settings.save"}}</button>
   </form>
+  <script src="/static/place.js" defer data-url="/places" data-one="{{t "place.one_match"}}" data-many="{{t "place.n_match"}}" data-more="{{t "place.more5"}}" data-not-there="{{t "place.not_there"}}" data-chosen="{{t "place.chosen"}}" data-change="{{t "place.change"}}" data-pending="{{t "place.pending"}}" data-old="{{.StoredHomeName}}"></script>
 {{template "foot"}}

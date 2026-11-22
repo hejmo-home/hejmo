@@ -8,6 +8,7 @@ import (
 )
 
 func TestPhonesOverviewListsRowsThatOpenTheDetailPage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	pairedPhone(t, b, personNamed(t, b, "Mama"), "Mama's phone")
 	body := getEN(b, "/phones").body
@@ -24,6 +25,7 @@ func TestPhonesOverviewListsRowsThatOpenTheDetailPage(t *testing.T) {
 }
 
 func TestPhoneDetailShowsFactsInWordsAndConfirmsRemovingByName(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	pairedPhone(t, b, personNamed(t, b, "Mama"), "Mama's phone")
 	pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
@@ -37,7 +39,7 @@ func TestPhoneDetailShowsFactsInWordsAndConfirmsRemovingByName(t *testing.T) {
 		}
 		name := strings.ReplaceAll(ph.Name, "'", "&#39;")
 		for _, want := range []string{
-			`<a class="back" href="/phones">`, "All phones", "<h1>" + name + "</h1>", "<dt>For</dt>", "<dt>Allowed</dt>", rights[ph.Name],
+			`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/phones">Phones</a>`, "<h1>" + name + "</h1>", "<dt>For</dt>", "<dt>Allowed</dt>", rights[ph.Name],
 			"<dt>Paired on</dt>", "<dt>Last seen</dt>", `<details class="danger">`, "Remove phone", `action="/phones/` + ph.ID + `/revoke"`,
 			"Yes, remove “" + name + "”", "No, change nothing",
 		} {
@@ -52,6 +54,7 @@ func TestPhoneDetailShowsFactsInWordsAndConfirmsRemovingByName(t *testing.T) {
 }
 
 func TestRemovingAPhoneNamesItInTheSuccessLine(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	pairedPhone(t, b, personNamed(t, b, "Mama"), "Old phone")
 	id := phoneIDRe.FindStringSubmatch(b.get("/phones").body)[1]

@@ -29,6 +29,9 @@ func hubTargets(body string) []string {
 	}
 	var out []string
 	for _, h := range hrefRe.FindAllStringSubmatch(m[1], -1) {
+		if h[1] == "/settings/licences" { // a quiet link below the rows, not a setup screen
+			continue
+		}
 		out = append(out, h[1])
 	}
 	return out
@@ -36,6 +39,7 @@ func hubTargets(body string) []string {
 
 // 5.18: the navigation holds everyday screens only; setup screens sit under Settings (ADR 0017).
 func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	want := []string{"/", "/calendar", "/tasks", "/meals", "/lists", "/settings"}
 	for _, page := range []string{"/", "/tasks", "/settings", "/calendars", "/displays"} {
@@ -48,10 +52,11 @@ func TestNavigationHoldsEverydayScreensAndSettingsOnly(t *testing.T) {
 
 // hubPages are the setup screens the Settings hub holds. Add a new hub entry here; the tests
 // below also check that the hub shows nothing this list lacks.
-var hubPages = []string{"/calendars", "/caldav", "/displays", "/phones", "/mcp", "/people", "/settings/household", "/account", "/sessions"}
+var hubPages = []string{"/calendars", "/caldav", "/displays", "/photos", "/phones", "/mcp", "/people", "/settings/lists", "/settings/household", "/settings/connections", "/settings/https", "/account", "/sessions"}
 
 // 5.18: every setup page is reachable from the Settings hub.
 func TestSettingsHubLinksEverySetupPage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := getEN(b, "/settings")
 	if r.status != http.StatusOK {
@@ -67,7 +72,7 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 			t.Errorf("hub lacks a link to %s: %v", want, got)
 		}
 	}
-	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Phones", "People", "Household", "My account", "Signed-in devices"} {
+	for _, want := range []string{"Calendar connections", "Calendar apps", "Displays", "Phones", "People", "Lists", "Household", "Secure connection", "Connections to the outside", "My account", "Signed-in devices"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("hub lacks %q", want)
 		}
@@ -82,21 +87,22 @@ func TestSettingsHubLinksEverySetupPage(t *testing.T) {
 	}
 }
 
-// 5.18: every setup page links back to the hub, and Settings stays marked in the navigation.
+// 5.18, ticket 182: every setup page links back to the hub in its trail, and Settings stays marked in the navigation.
 func TestSetupPagesLinkBackToSettings(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.post("/calendars", url.Values{"name": {"Feiertage"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
 	for _, page := range hubPages {
 		body := getEN(b, page).body
-		if !strings.Contains(body, `<a class="back" href="/settings">`) {
+		if !strings.Contains(body, `<a href="/settings">Settings</a>`) {
 			t.Errorf("%s has no link back to Settings", page)
 		}
-		// Ticket 111: the link sits inside main. As a grid item of the frame it
+		// Ticket 111: the trail sits inside main. As a grid item of the frame it
 		// broke the 1024 px layout.
-		if at, main := strings.Index(body, `<a class="back" href="/settings">`), strings.Index(body, `<main`); at < main {
-			t.Errorf("%s: the link back to Settings is outside main", page)
+		if at, main := strings.Index(body, `<nav class="crumbs"`), strings.Index(body, `<main`); at < main {
+			t.Errorf("%s: the trail is outside main", page)
 		}
-		if !strings.Contains(body, `<a href="/settings" aria-current="page"`) {
+		if !strings.Contains(body, `<a href="/settings" aria-current="true"`) {
 			t.Errorf("%s does not mark Settings as the current section", page)
 		}
 	}
@@ -110,6 +116,7 @@ func TestSetupPagesLinkBackToSettings(t *testing.T) {
 
 // 5.18: the household page holds the time format and temperature unit.
 func TestHouseholdPageSavesFormats(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.get("/settings/household")
 	if r.status != http.StatusOK || !strings.Contains(r.body, `name="time_format"`) {
@@ -125,6 +132,7 @@ func TestHouseholdPageSavesFormats(t *testing.T) {
 
 // 5.18: a child's device session sees neither Settings nor its pages.
 func TestChildSeesNoSettingsPages(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	child := childSession(t, b)
 	body := child.get("/").body
@@ -143,6 +151,7 @@ func TestChildSeesNoSettingsPages(t *testing.T) {
 
 // 5.18: at 375 px the navigation wraps onto further rows instead of scrolling (design pass 2 on 6.1), with targets of at least 44 px.
 func TestNavigationWrapsWithTouchTargets(t *testing.T) {
+	t.Parallel()
 	css := string(mustStatic(t, "static/hejmo.css"))
 	m := regexp.MustCompile(`\.frame-nav ul \{([^}]*)\}`).FindStringSubmatch(css)
 	if m == nil || !strings.Contains(m[1], "flex-wrap: wrap") || strings.Contains(m[1], "overflow-x") {
@@ -159,6 +168,7 @@ func TestNavigationWrapsWithTouchTargets(t *testing.T) {
 
 // 5.18 / ADR 0017: a display is described by one question, where it hangs; there is no room field.
 func TestDisplayFormAsksWhereItHangs(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := getEN(b, "/displays").body
 	if !strings.Contains(body, "Where does it hang?") {

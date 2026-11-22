@@ -8,6 +8,7 @@ import (
 
 // ADR 0015: everything the web interface can do is also possible through the API.
 func TestPairingAndRevokingPhonesWorkThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, shown, _ := c.call(http.MethodPost, "/phones/pairings", nil)
 	if status != http.StatusCreated || shown["id"] == "" || shown["expires_at"] == "" {
@@ -59,6 +60,7 @@ func TestPairingAndRevokingPhonesWorkThroughTheAPI(t *testing.T) {
 }
 
 func TestOnlyScopedParentsManagePhones(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ro := c.withToken(c.newToken("read"))
 	if status, _, _ := ro.call(http.MethodGet, "/phones", nil); status != http.StatusOK {

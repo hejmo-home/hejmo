@@ -1,0 +1,22 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "outside.on.title") "Frame" .Frame)}}
+  <h1>{{t "outside.on.title"}}</h1>
+  <p class="lead">{{.Cost.Lead}}</p>
+  {{if .Failed}}<p class="error" role="alert">{{tf "outside.on.failed" "name" .Cost.Name}}</p>{{end}}
+  <section class="cost" aria-labelledby="cost"><h2 id="cost">{{t "outside.on.cost"}}</h2><ul>
+    <li><b>{{t "outside.on.cost.address"}}</b> {{.Cost.NewAddress}}</li>
+    <li><b>{{t "outside.on.cost.trust"}}</b>{{t "outside.on.cost.trust.text"}}{{with .Cost.Displays}}<span class="devs"><b>{{t "outside.on.cost.displays"}}</b> {{.}}</span>{{end}}{{with .Cost.Phones}}<span class="devs"><b>{{t "outside.on.cost.phones"}}</b> {{.}}</span>{{end}}{{with .Cost.Apps}}<span class="devs"><b>{{t "outside.on.cost.apps"}}</b> {{.}}</span>{{end}}{{t "outside.on.cost.trust.more"}}</li>
+    <li><b>{{t "outside.on.cost.passkeys"}}</b> {{t "outside.on.cost.passkeys.text"}} {{range .Cost.Passkeys}}<span class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}</span>{{end}}</li>
+  </ul></section>
+  <form method="post" action="/settings/connections/offline" class="tile netblock confirm-page">
+    <h2>{{t "outside.on.steps"}}</h2>
+    <ol class="howto">
+      <li><div class="s"><b>{{tf "outside.on.s1.title" "provider" .Cost.Provider}}</b><p>{{tf "outside.on.s1.text" "name" .Cost.Name "provider" .Cost.Provider}}</p>
+        <label class="confirm{{if .Failed}} invalid{{end}}"><input type="checkbox" name="delete_dns" value="1" checked{{if .Failed}} aria-invalid="true" aria-describedby="err-dns"{{end}}><span>{{t "outside.on.s1.confirm"}}</span></label>
+        {{if .Failed}}<p class="ferr" id="err-dns" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{tf "outside.on.s1.error" "provider" .Cost.Provider}}</span></p>{{end}}</div></li>
+      <li><div class="s"><b>{{t "outside.on.s2.title"}}</b><p>{{tf "outside.on.s2.text" "ip" .Cost.Address}}</p></div></li>
+      <li><div class="s"><b>{{t "outside.on.s3.title"}}</b><p>{{t "outside.on.s3.text"}}</p></div></li>
+      <li><div class="s"><b>{{t "outside.on.s4.title"}}</b><p>{{t "outside.on.s4.text"}}</p></div></li>
+    </ol>
+    <div class="actions"><button class="button" type="submit">{{t "outside.on.go"}}</button><a class="link" href="/settings/connections">{{t "outside.on.no"}}</a></div>
+  </form>
+{{template "foot"}}

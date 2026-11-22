@@ -44,11 +44,27 @@ ADR 0018 named what comes after 0.1 only as "0.2 and later". On 15/11/2026 and 1
 - **Sources in 0.2:** upload to the box and a folder on the box. iPhone HEIC photos are converted in the browser on upload. **Immich albums come in V3.** No iCloud shared albums (no official interface).
 - **Privacy:** the box keeps only a copy resized to display size, with location data removed. Per photo a switch "don't show on displays". No face recognition.
 
+Details decided while building #178:
+
+- **Where it lives:** the photo folder is `<data>/photos` (every subfolder an album, loose files in the default album "Unsere Fotos"); the box keeps only its shrunk copies in `<data>/photo-files`, so originals are never kept. A photo is shrunk to 2048 px on its long edge and re-encoded as JPEG (this drops the location and all other metadata); the page also keeps a 400 px thumbnail. The space limit (default 2 GB, set on the Photos page) counts these copies. At the limit uploads are refused with 507, folder photos wait, and nothing is deleted.
+- **Permissions:** photos and albums use the scopes of `displays` (parents only; children never have them). No new scope.
+- **HEIC in the browser:** the browser's own decoder first (Safari has one), else libheif-js 1.23.5 (libheif compiled to WebAssembly, LGPL-3.0, compatible with AGPL-3.0), vendored in `web/static/vendor/libheif` (JavaScript 91 KB, WebAssembly 1.4 MB) and loaded only when a HEIC photo is chosen. Alternatives looked at: heic2any (MIT wrapper, bundles the same libheif, 2.7 MB), heic-decode (ISC, a Node wrapper of libheif-js). The box itself accepts only JPEG and PNG.
+- **Folder albums** are read by the box every five minutes and when a photos page is opened; they are changed only in the folder (rename, delete, move and add are refused), their photos can be hidden.
+- **Display side:** the family view starts the screensaver page `/display/saver` after the idle time; the page shuffles the photos without repeats, changes them with a hard cut and sends the display back to the day on a touch, in quiet mode, when switched off or unpaired.
+
 ### Brightness (#179)
 
-- Brightness **follows the sun at the home location** (#86), dimmed or screen off in quiet hours, switchable per display.
+- Brightness **follows the sun at the home location** (#86), dimmed or screen off in quiet hours. (Not switchable per display: see "No on/off switch" below.)
 - It goes through the kiosk adapter (FreeKiosk REST: `/api/brightness`, `/api/screen/off`); a plain browser shows a black page at night instead. The E-Ink front light stays experimental until tested on a device (ADR 0018).
 - **Only open-source kiosk apps** (FreeKiosk). There is no adapter for Fully Kiosk or any other proprietary kiosk app.
+
+Details decided while building #179 (grilling Q76 to Q82, preview approved 16/11/2026):
+
+- **Values per display:** Day (default 100 %) and Evening (default 40 %) switch at the same sun times and offsets as the display's automatic theme; without a home location Day applies all day. Quiet mode is off (default: E-Ink front light at 0 %, a normal screen switched off) or strongly dimmed (default 5 %). With a light sensor the display's brightness follows "sunlight" (default) or "room light" (FreeKiosk auto brightness); quiet mode applies either way. All values are adjustable, 1 to 100 %.
+- **No on/off switch:** brightness works as soon as a kiosk app is connected (Evening 100 % means no dimming). Without one the block is greyed out with the reason and a link to `docs/freekiosk.md`. No manual "brightness now" control.
+- **Touch in quiet mode:** only a display that quiet mode switched off wakes. Its page tells the box (`POST /display/wake`), which switches the screen on at Evening brightness for the display's wake minutes (default 1, up to 30) while the page shows the night page instead of black, then off again. A dimmed normal screen keeps the night page, faintly visible, all night.
+- **Kiosk adapter:** FreeKiosk's REST API only: `POST /api/brightness`, `/api/autoBrightness/enable`, `/api/screen/on` and `/off`, `GET /api/status` (whether the device reports a light sensor, and a check that the app answers). The runner asks once a minute and sends a command only when the target changes; a failure is retried and said in words on the settings page. In-memory state only, nothing new is stored but the six values. No new dependency.
+- **E-Ink front light stays experimental** until tested on a device; the block carries the tag "Experimentell".
 
 ### Display layouts (#180)
 

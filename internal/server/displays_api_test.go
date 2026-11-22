@@ -9,6 +9,7 @@ import (
 
 // ADR 0015: everything the web interface can do is also possible through the API.
 func TestPairingAndUnpairingWorkThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	d := newScreen(c.b)
 	code := codeOn(t, d.get("/display", "en").body)
@@ -36,6 +37,7 @@ func TestPairingAndUnpairingWorkThroughTheAPI(t *testing.T) {
 }
 
 func TestAPIRefusesWrongExpiredAndInvalidPairing(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
 	wrong := "000000"
@@ -55,6 +57,7 @@ func TestAPIRefusesWrongExpiredAndInvalidPairing(t *testing.T) {
 }
 
 func TestOnlyScopedParentsManageDisplays(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ro := c.withToken(c.newToken("read"))
 	if status, _, _ := ro.call(http.MethodGet, "/displays", nil); status != http.StatusOK {
@@ -69,6 +72,7 @@ func TestOnlyScopedParentsManageDisplays(t *testing.T) {
 }
 
 func TestAPIAnswers429AfterFiveWrongCodes(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
 	wrong := "000000"
@@ -85,6 +89,7 @@ func TestAPIAnswers429AfterFiveWrongCodes(t *testing.T) {
 
 // ADR 0016: the "show tomorrow block" setting is also available through the API.
 func TestTomorrowBlockSettingWorksThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	d := newScreen(c.b)
 	code := codeOn(t, d.get("/display", "en").body)
@@ -111,6 +116,7 @@ func TestTomorrowBlockSettingWorksThroughTheAPI(t *testing.T) {
 
 // ADR 0015: theme and offsets are also available through the API.
 func TestDisplayThemeWorksThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	d := newScreen(c.b)
 	code := codeOn(t, d.get("/display", "en").body)
@@ -140,6 +146,7 @@ func TestDisplayThemeWorksThroughTheAPI(t *testing.T) {
 
 // Ticket 111: the web form renames a display and changes its type, so the API can too.
 func TestDisplayNameAndTypeChangeThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	id := pairedDisplay(t, c.b, "Hallway", "screen")
 	status, body, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"name": " Kitchen ", "type": "eink_bw"})

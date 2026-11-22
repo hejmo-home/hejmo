@@ -20,11 +20,14 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/outbound"
+	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/store/storetest"
 	"github.com/hejmo-home/hejmo/internal/weather"
 )
 
@@ -43,6 +46,12 @@ type box struct {
 	meteo   *fakeMeteo
 	// updateDir stands in for the data volume that the host script shares with the box.
 	updateDir string
+	// photoDir stands in for the data volume: the photo folder and the stored photos.
+	photoDir string
+	// kioskRun is the runner behind withKiosk; nil without a fake kiosk app.
+	kioskRun *server.KioskRunner
+	// later holds what the runner scheduled through After; runLater runs it.
+	later []func()
 }
 
 // fakeMeteo stands in for Open-Meteo.
@@ -68,6 +77,8 @@ type fakePublic struct {
 	got     []publiccert.Request
 	failure error
 	cleared int
+	// clearErr, if set, is what Clear returns.
+	clearErr error
 	// noCert makes a ready manager have no certificate to serve: the setup is
 	// stored but the certificate could not be obtained.
 	noCert bool
@@ -75,6 +86,9 @@ type fakePublic struct {
 	warnOnFailure bool
 	// gate, if set, holds Setup back until it is closed.
 	gate chan struct{}
+	// deleted counts DeleteRecords calls; deleteErr, if set, is what they return.
+	deleted   int
+	deleteErr error
 	// ctxErr and ctxDeadline describe the context the last Setup ended with.
 	ctxErr      error
 	ctxDeadline bool
@@ -94,9 +108,18 @@ func (f *fakePublic) Status() publiccert.Status {
 	st.Name = f.name
 	return st
 }
+func (f *fakePublic) DeleteRecords(context.Context) error {
+	f.mu.Lock()
+	defer f.mu.Unlock()
+	f.deleted++
+	return f.deleteErr
+}
 func (f *fakePublic) Clear() error {
 	f.mu.Lock()
 	defer f.mu.Unlock()
+	if f.clearErr != nil {
+		return f.clearErr
+	}
 	f.name, f.status, f.cleared = "", publiccert.Status{}, f.cleared+1
 	return nil
 }
@@ -157,7 +180,23 @@ func (f *fakeFeeds) set(url, body string, err error) {
 // boxOption changes how a test box is built.
 type boxOption func(*boxConfig)
 
-type boxConfig struct{ noHostUpdater bool }
+type boxConfig struct {
+	noHostUpdater bool
+	fetcher       *picture.Fetcher
+	kiosk         *fakeKiosk
+	resolver      server.NameResolver
+}
+
+// withKiosk connects the box to a fake kiosk app (the fake FreeKiosk of the
+// kiosk adapter tests): its runner is reachable as box.kioskRun.
+func withKiosk(k *fakeKiosk) boxOption { return func(c *boxConfig) { c.kiosk = k } }
+
+// withResolver makes the box ask this resolver for the router's name of its address.
+func withResolver(r server.NameResolver) boxOption { return func(c *boxConfig) { c.resolver = r } }
+
+// withFetcher makes the box download web images with this fetcher, which a test
+// lets reach its own server (the real one only reaches public addresses).
+func withFetcher(f *picture.Fetcher) boxOption { return func(c *boxConfig) { c.fetcher = f } }
 
 // withoutHostUpdater makes the box run like a plain Docker Compose install,
 // without the host updater of ADR 0018.
@@ -179,11 +218,11 @@ func newBox(t *testing.T, opts ...boxOption) *box {
 // newFreshBox returns a box that has not set up HTTPS yet, reachable over plain HTTP.
 func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	t.Helper()
-	var cfg boxConfig
+	cfg := boxConfig{resolver: &fakeResolver{}} // no test asks the real DNS
 	for _, o := range opts {
 		o(&cfg)
 	}
-	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
+	db, err := store.Open(storetest.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -198,9 +237,11 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
+	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), photoDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time { return b.now }
+	gate := outbound.New(db.Outbound(), db.Outbound()) // as the box has it: the switches of the database
 	b.sync = calsync.New(db, feeds, now)
+	b.sync.SetGate(gate)
 	b.meteo = &fakeMeteo{body: `{"current":{"temperature_2m":18.4,"weather_code":0,"is_day":1}}`, status: 200}
 	b.meteo.srv = httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		b.meteo.mu.Lock()
@@ -209,12 +250,17 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 		_, _ = w.Write([]byte(b.meteo.body))
 	}))
 	t.Cleanup(b.meteo.srv.Close)
-	b.weather = weather.New(weather.WithBaseURL(b.meteo.srv.URL), weather.WithClock(now))
+	b.weather = weather.New(weather.WithBaseURL(b.meteo.srv.URL), weather.WithClock(now), weather.WithGate(gate))
 	updateDir := b.updateDir
 	if cfg.noHostUpdater {
 		updateDir, b.updateDir = "", ""
 	}
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir})
+	var kioskRun *server.KioskRunner
+	if cfg.kiosk != nil {
+		kioskRun = server.NewKioskRunner(server.KioskOptions{DB: db, Factory: cfg.kiosk.factory(), Now: now, After: func(_ time.Duration, f func()) { b.later = append(b.later, f) }})
+		b.kioskRun = kioskRun
+	}
+	b.handler = server.New(server.Options{Kiosk: kioskRun, DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir, Resolver: cfg.resolver})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()
@@ -315,14 +361,23 @@ func serverWithHTTPSPort(b *box, port string) http.Handler {
 	return server.New(server.Options{DB: b.db, PKI: b.pki, Public: b.public, HTTPSPort: port, Now: func() time.Time { return b.now }})
 }
 
+// GeoNames ids of places of the list on the box (internal/places).
+const (
+	idMuenchen      = "2867714"
+	idPasing        = "2855334" // a district of München
+	idObermenzing   = "2859782" // another one
+	idSchmedeswurth = "13394048"
+	idWien          = "2761369"
+)
+
 func validSetupForm() url.Values {
 	return url.Values{
-		"home_name": {"Pasing"},
-		"region":    {"DE-BY"},
-		"name":      {"Mama"},
-		"username":  {"mama"},
-		"password":  {"correct horse battery"},
-		"pin":       {"2468"},
+		"region":   {"DE-BY"},
+		"place_id": {idPasing}, // the place the parent picked from the list
+		"name":     {"Mama"},
+		"username": {"mama"},
+		"password": {"correct horse battery"},
+		"pin":      {"2468"},
 	}
 }
 
@@ -343,5 +398,14 @@ func decodeJSON(t *testing.T, body string, v any) {
 	t.Helper()
 	if err := json.Unmarshal([]byte(body), v); err != nil {
 		t.Fatalf("not JSON: %v\n%s", err, body)
+	}
+}
+
+// runLater runs, in order, what the kiosk runner scheduled for later.
+func (b *box) runLater() {
+	fns := b.later
+	b.later = nil
+	for _, f := range fns {
+		f()
 	}
 }

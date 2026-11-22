@@ -12,21 +12,23 @@ import (
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/caldavclient/caldavtest"
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 type davFixture struct {
-	db        *store.DB
-	h         store.Household
-	srv       *caldavtest.Server
-	remote    string // calendar URL on Radicale
-	svc       *calsync.Service
-	cal       store.SyncedCalendar
-	clock     time.Time
-	fetched   atomic.Int32      // objects downloaded
-	tamper    caldavtest.Tamper // makes chosen objects unreadable on the wire
-	afterList func()            // runs once the box has listed the calendar
+	db          *store.DB
+	h           store.Household
+	srv         *caldavtest.Server
+	remote      string // calendar URL on Radicale
+	svc         *calsync.Service
+	cal         store.SyncedCalendar
+	clock       time.Time
+	fetched     atomic.Int32      // objects downloaded
+	tamper      caldavtest.Tamper // makes chosen objects unreadable on the wire
+	afterList   func()            // runs once the box has listed the calendar
+	beforeFetch func()            // runs once, just before the box downloads objects
 }
 
 // countingRemote counts the objects the box downloads.
@@ -43,7 +45,23 @@ func (c countingRemote) List(ctx context.Context, cal string) ([]caldavclient.Ob
 	return objs, err
 }
 
+// Changes is where a delta sync reads the server's changes; when it only
+// learns of deletions nothing is downloaded, so the hook runs here too.
+func (c countingRemote) Changes(ctx context.Context, cal, token string) (caldavclient.Changes, error) {
+	c.fx.runBeforeFetch()
+	return c.Client.Changes(ctx, cal, token)
+}
+
+func (fx *davFixture) runBeforeFetch() {
+	if fx.beforeFetch != nil {
+		f := fx.beforeFetch
+		fx.beforeFetch = nil
+		f()
+	}
+}
+
 func (c countingRemote) Fetch(ctx context.Context, cal string, urls []string) ([]caldavclient.Object, error) {
+	c.fx.runBeforeFetch()
 	c.fx.fetched.Add(int32(len(urls)))
 	return c.Client.Fetch(ctx, cal, urls)
 }
@@ -76,6 +94,7 @@ func newDAVFixture(t *testing.T, password string) *davFixture {
 		t.Fatal(err)
 	}
 	fx.svc = calsync.New(db, nil, func() time.Time { return fx.clock })
+	fx.svc.SetGate(outbound.AllowAll()) // the tests use their own fetcher or dialer, or a local server
 	fx.svc.SetDialer(func(serverURL, user, pass string) (calsync.Remote, error) {
 		c, err := caldavclient.NewClient(serverURL, user, pass, fx.tamper.Client())
 		return countingRemote{c, fx}, err

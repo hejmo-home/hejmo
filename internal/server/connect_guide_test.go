@@ -31,6 +31,7 @@ func connectBlock(t *testing.T, page string) string {
 }
 
 func TestConnectNewShowsBothGuidesWithExactlyOneServiceChecked(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	for path, want := range map[string]string{
 		"/connections/new":                "icloud",
@@ -61,8 +62,8 @@ func TestConnectNewShowsBothGuidesWithExactlyOneServiceChecked(t *testing.T) {
 		if strings.Contains(block, `form="`) {
 			t.Errorf("%s: the choice cards must not use a form attribute", path)
 		}
-		if !regexp.MustCompile(`<a class="back" href="/calendars">.*Zurück zu den Kalender-Verbindungen</a>`).MatchString(r.body) {
-			t.Errorf("%s: no back link to the calendars:\n%s", path, r.body)
+		if !strings.Contains(r.body, `<a href="/calendars">Kalender-Verbindungen</a>`) {
+			t.Errorf("%s: no trail through the calendar connections:\n%s", path, r.body)
 		}
 		if !strings.Contains(r.body, "<h1>Kalender verbinden</h1>") {
 			t.Errorf("%s: no title", path)
@@ -74,6 +75,7 @@ func TestConnectNewShowsBothGuidesWithExactlyOneServiceChecked(t *testing.T) {
 }
 
 func TestConnectNewNeedsAParent(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.logout()
 	if r := c.b.get("/connections/new"); r.status != http.StatusSeeOther || !strings.HasPrefix(r.location, "/login") {
@@ -82,6 +84,7 @@ func TestConnectNewNeedsAParent(t *testing.T) {
 }
 
 func TestConnectGuideLinksOpenInANewTab(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	for lang, want := range map[string][]string{
 		"de": {"https://account.apple.com", "https://support.apple.com/de-de/102654", "https://docs.nextcloud.com/server/latest/user_manual/de/groupware/calendar.html"},
@@ -108,6 +111,7 @@ func TestConnectGuideLinksOpenInANewTab(t *testing.T) {
 
 // The product owner's rule (15/11/2026): an address in a guide is a link, never plain text.
 func TestConnectGuideHasNoBareAddress(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	for _, lang := range []string{"de", "en"} {
 		r := b.do(http.MethodGet, "/connections/new?service=caldav", nil, map[string]string{"Accept-Language": lang})
@@ -122,6 +126,7 @@ func TestConnectGuideHasNoBareAddress(t *testing.T) {
 }
 
 func TestConnectGuideFields(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	block := connectBlock(t, b.get("/connections/new").body)
 	icloud := block[:strings.Index(block, `data-service="caldav"`)]
@@ -153,6 +158,7 @@ func TestConnectGuideFields(t *testing.T) {
 }
 
 func TestConnectICloudLoginFailureShowsAtThePasswordAndKeepsTheUsername(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
 		return errRemote{err: &caldavclient.StatusError{Code: http.StatusUnauthorized}}, nil
@@ -190,6 +196,7 @@ func TestConnectICloudLoginFailureShowsAtThePasswordAndKeepsTheUsername(t *testi
 }
 
 func TestConnectCalDAVLoginFailureDoesNotMentionApple(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
 		return errRemote{err: &caldavclient.StatusError{Code: http.StatusUnauthorized}}, nil
@@ -214,6 +221,7 @@ func (d downRemote) Calendar(context.Context, string) (caldavclient.Calendar, er
 }
 
 func TestConnectUnreachableServerShowsAtTheAddressField(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
 		return downRemote{errRemote{err: &caldavclient.StatusError{Code: http.StatusNotFound}}}, nil
@@ -242,6 +250,7 @@ func TestConnectUnreachableServerShowsAtTheAddressField(t *testing.T) {
 }
 
 func TestConnectSuccessLineAndBackLinkOnTheChoosePage(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
 		return hostedRemote{found: []caldavclient.Calendar{{URL: flowCalendar, Name: "Home"}, {URL: flowCalendar2, Name: "Work"}}}, nil
@@ -253,8 +262,8 @@ func TestConnectSuccessLineAndBackLinkOnTheChoosePage(t *testing.T) {
 	if !strings.Contains(r.body, "Mit iCloud verbunden. 2 Kalender gefunden: Schalte ein, was die Box zeigen soll.") {
 		t.Errorf("no success line:\n%s", r.body)
 	}
-	if !regexp.MustCompile(`<a class="back" href="/calendars">.*Zurück zu den Kalender-Verbindungen</a>`).MatchString(r.body) || strings.Contains(r.body, `<p><a href="/calendars">`) {
-		t.Error("the choose page has no back link")
+	if !strings.Contains(r.body, `<a href="/calendars">Kalender-Verbindungen</a>`) || strings.Contains(r.body, `<p><a href="/calendars">`) {
+		t.Error("the choose page has no trail through the calendar connections")
 	}
 	r = b.post("/connections", url.Values{"provider": {"caldav"}, "url": {"https://caldav.example.org"}, "username": {"u"}, "password": {"pw-1"}})
 	if !strings.Contains(r.body, "Verbunden. 2 Kalender gefunden: Schalte ein, was die Box zeigen soll.") {
@@ -266,6 +275,7 @@ func TestConnectSuccessLineAndBackLinkOnTheChoosePage(t *testing.T) {
 }
 
 func TestCalendarsPageLinksToTheConnectPage(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	r := b.get("/calendars")
 	for _, want := range []string{"iCloud und andere Kalender-Server", "Noch keine Verbindung. Verbinde iCloud oder einen anderen Kalender-Server, dann erscheinen eure Termine auf der Box.", `<a class="button" href="/connections/new">Kalender verbinden</a>`} {

@@ -1,6 +1,5 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/displays" "Text" (t "displays.back"))}}
-  <h1>{{.D.Name}}</h1>
+  <h1>{{.Title}}</h1>
   {{template "error" .}}
   {{template "facts" .Facts}}
 
@@ -24,6 +23,29 @@
       <p class="hint">{{t "displays.theme.auto.hint"}}</p>
     </fieldset>
 
+    <fieldset class="saver-set" id="bildschirmschoner">
+      <legend>{{t "displays.saver.legend"}}</legend>
+      {{template "switch" (dict "Name" "saver" "Label" (t "displays.saver") "OnText" .D.SaverOnText "OffText" (t "displays.saver.off") "Checked" .D.SaverOn)}}
+      <div class="when-on">
+        {{if .D.NoPhotos}}<div class="notice"><p><b>{{t "displays.saver.nophotos.lead"}}</b> {{tf "displays.saver.nophotos" "n" .D.SaverIdleText}}</p><a class="button secondary" href="/photos"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 17.5l5-5 4 4 2.5-2.5 4.5 4"/></svg>{{t "displays.saver.add"}}</a></div>
+        {{else}}<fieldset class="chips"{{if eq .ErrorField "saver_albums"}} aria-invalid="true"{{end}}>
+          <legend>{{t "displays.saver.albums"}}</legend>
+          <label class="pchip all"><input type="checkbox" name="saver_all" value="1" data-whole{{if .D.AllAlbums}} checked{{end}}><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="14" rx="2"/><circle cx="9" cy="10" r="1.8"/><path d="M4 17.5l5-5 4 4 2.5-2.5 4.5 4"/></svg>{{t "displays.saver.all"}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+          {{range .D.Albums}}<label class="pchip plain"><input type="checkbox" name="saver_album" value="{{.ID}}"{{if .Checked}} checked{{end}}><span class="an">{{.Name}} <small>{{.Count}}</small></span><svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+          {{end}}{{template "fieldError" (dict "Root" . "Name" "saver_albums")}}
+        </fieldset>
+        <p class="hint">{{t "displays.saver.all_hint"}} <a href="/photos">{{t "displays.saver.manage"}}</a></p>{{end}}
+        {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" .D.SaverSummary "Open" (or (eq .ErrorField "saver_idle") (eq .ErrorField "saver_interval")))}}
+          <div class="pair">
+            {{template "field" (dict "Root" . "Name" "saver_idle" "Label" (t "displays.saver.idle") "Type" "number" "Value" .D.SaverIdleText "Bounded" true "Lo" 1 "Hi" 240 "Class" "short")}}
+            {{template "field" (dict "Root" . "Name" "saver_interval" "Label" (t "displays.saver.interval") "Type" "number" "Value" .D.SaverIntervalText "Bounded" true "Lo" 1 "Hi" 240 "Class" "short")}}
+          </div>
+          {{if .D.EInk}}<p class="hint">{{t "displays.saver.eink_hint"}}</p>{{end}}
+        {{template "moreClose"}}
+        <p class="hint quiet-note"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><span>{{.D.QuietNote}}</span></p>
+      </div>
+    </fieldset>
+
     <fieldset>
       <legend>{{t "displays.legend.quiet"}}</legend>
       {{template "switch" (dict "Name" "quiet" "Label" (t "displays.quiet") "OnText" (t "displays.quiet.on") "OffText" (t "displays.quiet.off") "Checked" .D.QuietOn)}}
@@ -33,13 +55,12 @@
       </div>
     </fieldset>
 
-    {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" (or (and .D.KioskURL (t "displays.kiosk.on")) (t "displays.kiosk.off")) "Open" (or (eq .ErrorField "kiosk_url") (eq .ErrorField "sunrise_offset") (eq .ErrorField "sunset_offset")))}}
+    {{template "bright" .}}
+
+    {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" .D.Bright.SunSummary "Open" .D.Bright.SunOpen)}}
       {{template "field" (dict "Root" . "Name" "sunrise_offset" "Label" (t "displays.sunrise_offset") "Type" "number" "Value" .D.SunRise "Bounded" true "Lo" -180 "Hi" 180)}}
       {{template "field" (dict "Root" . "Name" "sunset_offset" "Label" (t "displays.sunset_offset") "Type" "number" "Value" .D.SunSet "Bounded" true "Lo" -180 "Hi" 180)}}
-      {{template "field" (dict "Root" . "Name" "kiosk_url" "Label" (t "displays.kiosk_url") "Type" "url" "Value" .D.KioskURL "Autocapitalize" "none")}}
-      {{template "field" (dict "Root" . "Name" "kiosk_key" "Label" (t "displays.kiosk_key") "Type" "password" "Autocomplete" "off")}}
-      {{if .D.KioskKeySet}}<p class="hint">{{t "displays.kiosk_key_set"}}</p>{{end}}
-      <p class="hint">{{t "displays.kiosk_hint"}}</p>
+      <p class="hint">{{t "displays.sun.hint"}}</p>
     {{template "moreClose"}}
     <button class="button" type="submit">{{t "displays.save"}}</button>
   </form>

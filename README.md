@@ -1,21 +1,28 @@
 # Hejmo
 
-**Your family's day in one place, under your own control.**
+**Your household's day in one place, under your own control.**
 
-Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. A small box at home, such as a Raspberry Pi, collects your family's calendars, tasks, lists and meal plan and shows today on a wall display, tablet or phone: one column per person, so everyone sees at a glance what is on, what is done and what comes tomorrow. All data stays at home.
+Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. A small **box** at home, written in Go with SQLite, collects the household's calendars, tasks, lists and meal plan and shows today on **displays**: wall-mounted E-Ink or normal screens, plus phones. The **family view** has one column per person, so everyone sees at a glance what is on, what is done and what comes tomorrow. All data stays at home.
 
 ![The family view on a wall display: date and time, all-day events, one column per person with today's events and task progress, the dinner plan and tomorrow's waste collection](docs/images/family-light.png)
 
 <sub>The family view (start screen of every display), landscape. Design preview with sample data.</sub>
 
-## What it does
+> **Status (17/11/2026): pre-release.** No version has been published yet. Until the first public release, **0.1**, builds from `main` are previews: not for everyday use, and data may need to be set up again. See the [roadmap](#roadmap) and the [status notes](#status-notes).
 
-- **Family view on the wall:** one column per person with today's events, a progress bar for today's tasks, all-day events and holidays on top, and tiles for today's meals and tomorrow's waste collection. Updates live, landscape or portrait.
-- **Calm on E-Ink:** every screen also works in black and white; people are told apart by marker shapes instead of colours.
-- **Your calendars, synced:** iCloud and any CalDAV server (two-way), Google Calendar, ICS subscriptions such as school or waste collection calendars. Your phones' calendar apps can subscribe to the box in turn.
-- **Web interface and phones:** week calendar, tasks, lists and meal plan in the browser; a phone is paired by QR code. Children get their own simple view.
-- **Private by design:** no subscription, no telemetry, no mandatory cloud. HTTPS with the box's own certificate authority or a free public name, sign-in with a passkey, or password and one-time codes.
-- **Open:** open standards (CalDAV, iCalendar), an open REST API, AGPL-3.0, developed in Europe. Open to your own AI assistant, without built-in AI.
+## What works in `main` today
+
+- **Family view and displays:** one column per person with today's events, task progress, the family strip for all-day events and public holidays, weather and time for the home location (picked from a place list on the box), and tiles for today's meals and tomorrow's waste collection. Live updates, landscape and portrait, black-and-white mode with marker shapes, themes by sunrise and sunset, a photo screensaver with albums, a sync notice and a personal view per person. Displays are paired by QR code.
+- **Quiet mode and brightness:** a night page, and through the kiosk adapter (FreeKiosk, [setup](docs/freekiosk.md)) brightness by sunrise and sunset, off or dimmed at night, per display. Front light on E-Ink is experimental, see [status notes](#status-notes).
+- **Calendar:** events and series with the edit scopes this, this and following, all; multi-day events, public holidays for Germany, Austria and Switzerland, search, subgroups and audiences. The web interface has a week calendar with editing and a page to choose calendars.
+- **Calendar sync:** ICS subscriptions and two-way sync with iCloud or any CalDAV server (fast sync-collection and `.well-known` discovery). The box is itself a CalDAV server for your calendar apps, with an iOS profile and one task list per person (VTODO). Nothing syncs through a cloud of ours.
+- **Tasks:** simple tasks, routines with ready-made routine templates, subtasks, stars with a star log, and task progress per person on the display.
+- **Lists and meals:** shared lists in the web interface and on the display, with an article library (own articles and pictures), quantities with units by country and a tile view for children; diet and allergies per person with allergen warnings; a shared meal plan with meal plan templates; waste collection reminder; day notes.
+- **People and phones:** parents and children, roles, invitations for a second parent, phones paired by QR code (children get their own simple view and cannot sign out), re-pairing a phone for another person in one step, a clear page when a device is no longer paired, parents can end a lost phone's session. Theme chooser (light, dark, automatic) for everyone; settings pages with breadcrumbs. German and English interface.
+- **Sign-in and HTTPS:** setup wizard, HTTPS "only in the home network" with the Box CA or a public name (free deSEC name, or your own domain at Cloudflare, deSEC, Hetzner or INWX, with Let's Encrypt), a router name in the box certificate and a guide for reaching home by VPN, passkeys, password with one-time codes and recovery codes (PDF download), parent PIN for displays.
+- **Offline mode:** one switch stops every connection from the box to the outside; the page "Connections to the outside" shows each one, its last contact and every refused attempt.
+- **Open interfaces:** REST API under `/api/v1` with scoped tokens ([OpenAPI](api/openapi.yaml)), and an MCP server for your own AI assistant, off by default ([guide](docs/mcp.md)). Hejmo has no built-in AI.
+- **Operations:** Docker image for x86_64 and arm64, install script for Raspberry Pi OS, release pipeline with signed images, auto-update at night with rollback, security checks and resource measurement in CI.
 
 <table>
 <tr>
@@ -28,46 +35,58 @@ Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. A s
 </tr>
 </table>
 
-> **Status:** early development. Not ready for everyday use yet; the first public version will be **0.1**.
+## Roadmap
 
-## Feature roadmap
+The plan is in [ADR 0002](docs/adr/0002-goals-and-release-model.md) (release model), [ADR 0018](docs/adr/0018-path-to-0-1.md) (path to 0.1), [ADR 0019](docs/adr/0019-lists-article-library-and-diets.md) (lists) and [ADR 0020](docs/adr/0020-versions-0-2-and-0-3.md) (0.2 and 0.3). All tickets: [milestones](https://github.com/hejmo-home/hejmo/milestones).
 
-✅ done · 🚧 in progress · ⏳ planned
+### 0.1: first public release
 
-### 0.1: first public version
+[Milestone 0.1](https://github.com/hejmo-home/hejmo/milestone/1): 43 tickets done, 3 open.
 
-| Area | Features | Status |
-|---|---|---|
-| Box and setup | Docker image for x86_64 and arm64, setup wizard, HTTPS (own certificate authority or a free deSEC name with Let's Encrypt) | ✅ |
-| People and sign-in | Parents and children, roles, password with one-time codes, display PIN, REST API with scoped tokens | ✅ |
-| | Recovery codes for one-time codes, people page | 🚧 |
-| | Passkeys (sign in with fingerprint, face or PIN; they work under the box's name, never by IP address) | ✅ |
-| Calendar | Series with "this / this and following / all", multi-day events, public holidays for Germany, Austria and Switzerland, search, subgroups | ✅ |
-| Sync | ICS subscriptions, iCloud and CalDAV (read), box as CalDAV server for your calendar apps, iOS profile | ✅ |
-| | Writing back to iCloud and CalDAV, Google Calendar | 🚧 |
-| Displays | Pairing by QR code, family view in colour and black and white, personal view, weather and time, live updates | ✅ |
-| | Portrait layout, quiet mode at night, themes by sunrise and sunset, home location | 🚧 |
-| Web interface and phones | Frame, shared form patterns, phone web app, children's phones | ✅ |
-| | Week calendar with editing, choosing calendars, settings hub | 🚧 |
-| Everyday | Simple tasks | ✅ |
-| | Lists, shared meal plan, meal tile, tasks on the display, waste collection reminder | ⏳ |
-| For children | Stars with a star log | 🚧 |
-| | Routines with ready-made templates, subtasks | ⏳ |
-| Connect | Tasks as VTODO lists in your calendar apps, MCP server for your own AI assistant (off by default) | ⏳ |
-| Operations | Release pipeline with signed images, install script and guide, auto-update at night with rollback, security checks, resource measurement for the Raspberry Pi | ✅ |
+**Done:** everything listed above except the open items below, including the install script and [install guide](docs/install.md), release pipeline, auto-update with rollback, passkeys, routines, stars, subtasks, VTODO export, MCP server and diet and allergies per person.
 
-### Later
+**Still open:**
 
-| Release | Content |
-|---|---|
-| **0.2 and later** | Outlook sync, photo screensaver, brightness control, choosing people per display |
-| **V2 / V3** | Rewards, streaks and badges for stars; leave-the-house reminder per person; box as CardDAV server; school, childcare and logistics; shared-custody model and multiple households (see the specification) |
+- Google Calendar connection ([#18](https://github.com/hejmo-home/hejmo/issues/18)) with its relay page ([#232](https://github.com/hejmo-home/hejmo/issues/232)).
+- One choice page for all ways to add a calendar ([#231](https://github.com/hejmo-home/hejmo/issues/231)).
 
-The plan in detail: [ADR 0018](docs/adr/0018-path-to-0-1.md) (path to 0.1) and the [specification](docs/spec.md).
+### 0.2
+
+[Milestone 0.2](https://github.com/hejmo-home/hejmo/milestone/2), contents per ADR 0020:
+
+- CalDAV: sync-collection and `.well-known` discovery ([#54](https://github.com/hejmo-home/hejmo/issues/54), merged)
+- Public name: more DNS providers, Cloudflare, INWX and Hetzner ([#57](https://github.com/hejmo-home/hejmo/issues/57), merged); VPN guide and router name ([#216](https://github.com/hejmo-home/hejmo/issues/216), merged)
+- API access for displays: open a pairing and read its state ([#61](https://github.com/hejmo-home/hejmo/issues/61), merged)
+- Theme chooser for everyone ([#125](https://github.com/hejmo-home/hejmo/issues/125), merged)
+- Sync lists with Apple Reminders ([#167](https://github.com/hejmo-home/hejmo/issues/167))
+- Articles always on the list ([#168](https://github.com/hejmo-home/hejmo/issues/168))
+- Outlook calendar sync ([#177](https://github.com/hejmo-home/hejmo/issues/177))
+- Photo screensaver for displays ([#178](https://github.com/hejmo-home/hejmo/issues/178), merged)
+- Display brightness control ([#179](https://github.com/hejmo-home/hejmo/issues/179))
+- Choose people and blocks per display, full layouts ([#180](https://github.com/hejmo-home/hejmo/issues/180))
+- Offline mode ([#201](https://github.com/hejmo-home/hejmo/issues/201), merged); uploading an update file ([#221](https://github.com/hejmo-home/hejmo/issues/221))
+- "Personal device" instead of "phone" ([#203](https://github.com/hejmo-home/hejmo/issues/203)); family view at 375 px ([#208](https://github.com/hejmo-home/hejmo/issues/208))
+
+### 0.3
+
+[Milestone 0.3](https://github.com/hejmo-home/hejmo/milestone/3), contents per ADR 0020, details decided in [ADR 0021](docs/adr/0021-version-0-3-recipes-rewards-address-book.md):
+
+- Recipes linked to the meal plan and shopping list, with a starter collection of 200 dishes in German and English ([#193](https://github.com/hejmo-home/hejmo/issues/193))
+- Star rewards: catalogue, streaks and badges ([#194](https://github.com/hejmo-home/hejmo/issues/194))
+- Box as address book, a CardDAV server ([#195](https://github.com/hejmo-home/hejmo/issues/195))
+
+Later: Immich as a photo source for the screensaver (V3).
+
+## Status notes
+
+- **Raspberry Pi: tested in emulation only.** CI runs the box in a container limited like a Raspberry Pi (1 CPU, 1 GB) on an arm64 machine. Nobody has confirmed it on real hardware yet ([measurements](docs/install/hardware.md)).
+- **E-Ink and kiosk functions are experimental, not yet tested on E-Ink devices.** Black and white on real E-Ink, the ghosting reload and the front light in quiet mode are built and tested against a fake kiosk adapter. Everything also works on a normal screen such as an iPad.
+- **Install via Docker Compose** on any Linux (`compose.yaml` in this repository), or with the install script on Raspberry Pi OS. The [install guide](docs/install.md) ([Deutsch](docs/install.de.md)) is a draft until 0.1; auto-update installs published versions only, never previews.
 
 ## Documentation
 
-- Install guide: [English](docs/install.md), [Deutsch](docs/install.de.md) (Raspberry Pi OS: one command)
+- Install guide: [English](docs/install.md), [Deutsch](docs/install.de.md) (draft until 0.1); [hardware and measurements](docs/install/hardware.md)
+- [AI assistants (MCP)](docs/mcp.md) and [threat model](docs/security/threat-model.md)
 - [Specification](docs/spec.md): features, data model, acceptance criteria, design
 - [Architecture decision records](docs/adr/): decisions that refine or override the specification
 - [Design system](DESIGN.md) and [glossary](GLOSSARY.md)
@@ -78,13 +97,13 @@ Requirements: Go (see `go.mod`), Docker.
 
 ```bash
 go test ./...          # run all tests
-go run ./cmd/hejmo     # start the box on http://localhost:8080
+go run ./cmd/hejmo     # start the box on port 8080
 docker compose up      # run the container
 ```
 
-Health check: `GET /healthz` returns `{"status":"ok"}`. Data lives in `HEJMO_DATA_DIR` (default `/data`, SQLite).
+The box answers at [localhost:8080](http://localhost:8080) (HTTP) when run this way. Health check: `GET /healthz` returns `{"status":"ok"}`. Data lives in `HEJMO_DATA_DIR` (default `/data`, SQLite).
 
-**HTTPS** (ADR 0014): the box serves everything over HTTPS; HTTP only redirects. The setup wizard starts over HTTP, creates the box's own certificate authority (name-constrained to the box) and only then asks for a password. Download the iOS profile or certificate at `/ca`. Ports are configurable in Compose through `HEJMO_HTTP_PORT` (default 80) and `HEJMO_HTTPS_PORT` (default 443); keys live in `HEJMO_DATA_DIR/tls`. The wizard can instead set up a **public name**: a free deSEC `dedyn.io` name (or an own domain at deSEC) pointing to the box's LAN address, with a publicly trusted certificate (Let's Encrypt, or Actalis) obtained and renewed by the box through DNS-01, so phones need no CA installed. The DNS token is stored encrypted; its key is `HEJMO_DATA_DIR/secret.key`, or the file named by `HEJMO_SECRET_KEY_FILE` such as a Docker secret (back it up with the database; if it is lost, the box keeps serving the stored certificate over HTTPS and warns you until it expires; restore the key file from your backup). If your router blocks the name (FRITZ!Box DNS rebind protection), the wizard shows how to allow it, or lets you use the box's own certificate authority instead. Without Docker, `go run ./cmd/hejmo` listens on HTTP 8080 and HTTPS 8443 (`HEJMO_ADDR`, `HEJMO_HTTPS_ADDR`, `HEJMO_PUBLIC_HTTPS_PORT`). `HEJMO_PUBLIC_HTTPS_PORT` is the port clients reach HTTPS on, used in redirects and links; if unset it is the port of `HEJMO_HTTPS_ADDR`. Set it only when a port mapping differs (Compose sets it from `HEJMO_HTTPS_PORT`).
+**HTTPS** (ADR 0014): the box serves everything over HTTPS; HTTP only redirects. The setup wizard starts over HTTP, creates the box's own certificate authority (name-constrained to the box) and only then asks for a password. Download the iOS profile or certificate at `/ca`. Ports are configurable in Compose through `HEJMO_HTTP_PORT` (default 80) and `HEJMO_HTTPS_PORT` (default 443); keys live in `HEJMO_DATA_DIR/tls`. The wizard can instead set up a **public name**: a free deSEC `dedyn.io` name, or your own domain at Cloudflare, deSEC, Hetzner or INWX, pointing to the box's LAN address, with a publicly trusted certificate (Let's Encrypt, or Actalis) obtained and renewed by the box through DNS-01, so phones need no CA installed. The DNS credentials (a token, or for INWX user name, password and the two-factor secret if you use one) are stored encrypted; its key is `HEJMO_DATA_DIR/secret.key`, or the file named by `HEJMO_SECRET_KEY_FILE` such as a Docker secret (back it up with the database; if it is lost, the box keeps serving the stored certificate over HTTPS and warns you until it expires; restore the key file from your backup). If your router blocks the name (FRITZ!Box DNS rebind protection), the wizard shows how to allow it, or lets you use the box's own certificate authority instead. Without Docker, `go run ./cmd/hejmo` listens on HTTP 8080 and HTTPS 8443 (`HEJMO_ADDR`, `HEJMO_HTTPS_ADDR`, `HEJMO_PUBLIC_HTTPS_PORT`). `HEJMO_PUBLIC_HTTPS_PORT` is the port clients reach HTTPS on, used in redirects and links; if unset it is the port of `HEJMO_HTTPS_ADDR`. Set it only when a port mapping differs (Compose sets it from `HEJMO_HTTPS_PORT`).
 
 Calendar passwords (iCloud app-specific passwords and other CalDAV logins) are stored encrypted with AES-256-GCM. The key is generated on first start in `/data/secret.key` (mode 0600); `HEJMO_SECRET_KEY_FILE` points to another file, such as a Docker secret. This protects a leaked database file or backup on its own. It does **not** protect a leaked data volume, because the key sits next to the database unless you move it. Keep the key with your backup if you want to restore connections; without it, connect the calendars again.
 
@@ -102,7 +121,7 @@ The reset is logged as `one-time codes reset` in the box's log (`docker compose 
 
 The REST API lives under `/api/v1`; its OpenAPI description is served at `/api/v1/openapi.yaml` ([source](api/openapi.yaml)). Authenticate with a bearer token (`Authorization: Bearer hejmo_…`) created via `POST /api/v1/tokens`. Tokens are limited by scopes such as `read`, `write`, `lists` or `events:read`. `read` and `write` exclude health data (diet and allergies); that needs the explicit scope `health` or `health:read`.
 
-Calendar endpoints (work package 3):
+Calendar endpoints:
 
 | Endpoint | Purpose |
 |---|---|

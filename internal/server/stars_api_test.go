@@ -17,6 +17,7 @@ func starAccount(t *testing.T, c *apiClient, person string) map[string]any {
 // ADR 0018: a new task's default star value is 1 for a child and 0 for an
 // adult; parents can set it per task.
 func TestNewTaskStarValueDefaultsByRoleAndCanBeSet(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	mk := func(person string, extra map[string]any) map[string]any {
 		t.Helper()
@@ -54,6 +55,7 @@ func TestNewTaskStarValueDefaultsByRoleAndCanBeSet(t *testing.T) {
 // Acceptance: Given a task worth 3 stars, when Mia ticks it off, then her
 // balance rises by 3 and a log entry is created. Unticking deducts and logs.
 func TestTickingOnTheApiCreditsAndUntickingDeductsStars(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	_, k, _ := tb.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": tb.miaID, "title": "Tidy room", "repeat": "daily", "stars": 3})
 	id := k["id"].(string)
@@ -79,6 +81,7 @@ func TestTickingOnTheApiCreditsAndUntickingDeductsStars(t *testing.T) {
 // Acceptance: Given a parent books -5 with note "redeemed: ice cream", then
 // the balance and the log show it.
 func TestParentBooksStarsByHandOnTheApi(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	status, e, _ := tb.parent.call(http.MethodPost, "/people/"+tb.miaID+"/stars", map[string]any{"delta": -5, "note": "redeemed: ice cream"})
 	if status != http.StatusCreated || e["delta"] != float64(-5) || e["note"] != "redeemed: ice cream" || e["booked_by"] != "Mama" {
@@ -91,6 +94,7 @@ func TestParentBooksStarsByHandOnTheApi(t *testing.T) {
 }
 
 func TestStarBookingIsParentsOnlyAndValidated(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	path := "/people/" + tb.miaID + "/stars"
 	if status, _, _ := tb.child.call(http.MethodPost, path, map[string]any{"delta": 5, "note": "cheat"}); status != http.StatusForbidden {
@@ -118,6 +122,7 @@ func TestStarBookingIsParentsOnlyAndValidated(t *testing.T) {
 // The contract-checking client refuses a limit outside 1..200, so the server's
 // own check is exercised with a plain request.
 func TestStarLogLimitMustBeBetween1And200(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	get := func(limit string) int {
 		req, _ := http.NewRequest(http.MethodGet, tb.parent.b.srv.URL+"/api/v1/people/"+tb.miaID+"/stars?limit="+limit, nil)

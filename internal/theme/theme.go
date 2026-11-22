@@ -51,20 +51,28 @@ type Input struct {
 
 // Resolve returns what to show now: Light or Dark.
 func Resolve(in Input) Theme {
+	th, _ := ResolveSince(in)
+	return th
+}
+
+// ResolveSince is Resolve plus the moment of the sun switch that decides it
+// (sunrise or sunset with its offset). The moment is zero when no switch
+// decides: a fixed theme, no home location, polar day or night.
+func ResolveSince(in Input) (Theme, time.Time) {
 	switch {
 	case in.Setting == Dark:
-		return Dark
+		return Dark, time.Time{}
 	case in.Setting != Auto:
-		return Light
+		return Light, time.Time{}
 	case in.Lat == 0 && in.Lon == 0:
-		return Light // no home location to compute from
+		return Light, time.Time{} // no home location to compute from
 	}
 	today := sun.On(in.Now, in.Lat, in.Lon)
 	switch today.Kind {
 	case sun.AlwaysUp:
-		return Light
+		return Light, time.Time{}
 	case sun.AlwaysDown:
-		return Dark
+		return Dark, time.Time{}
 	}
 	// The latest switch at or before now decides. Offsets reach 3 hours, so
 	// yesterday's sunset can still be the latest one, and far north tomorrow's
@@ -88,5 +96,5 @@ func Resolve(in Input) Theme {
 			}
 		}
 	}
-	return result
+	return result, latest
 }

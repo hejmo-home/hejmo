@@ -1,5 +1,4 @@
 {{template "head" (dict "Lang" .Lang "Title" (tf "passkey.title" "name" .Passkey.Name) "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/account" "Text" (t "account.title"))}}
   <h1>{{tf "passkey.title" "name" .Passkey.Name}}</h1>
   <dl class="facts">
     <dt>{{t "passkey.fact.state"}}</dt><dd>{{.State}}</dd>

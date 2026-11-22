@@ -1,0 +1,39 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "https.title") "Frame" .Frame)}}
+  <h1>{{t "https.title"}}</h1>
+  {{template "httpsNotice" .}}
+  <dl class="facts">
+    <dt>{{t "https.fact.way"}}</dt>
+    <dd>{{if .Public}}{{t "https.way.public"}}{{else}}{{t "https.way.own"}}{{end}}</dd>
+    {{if .Public}}
+    <dt>{{t "https.fact.name"}}</dt>
+    <dd>{{.Name}}</dd>
+    {{else}}
+    <dt>{{t "https.fact.names"}}</dt>
+    <dd><ul class="certnames">{{range .Names}}<li>{{.}}</li>{{end}}</ul></dd>
+    {{end}}
+    {{with .Until}}<dt>{{t "https.fact.until"}}</dt>
+    <dd>{{.}}</dd>{{end}}
+  </dl>
+  {{if .Saved}}
+  <section class="tile netblock">
+    <h2>{{t "https.trust.title"}}</h2>
+    <p>{{t "https.trust.text"}}</p>
+    <div class="actions"><a class="button" href="{{.TrustURL}}">{{t "https.trust.button"}}</a></div>
+    <p class="hint">{{.TrustHint}}</p>
+  </section>
+  {{end}}
+  <section class="tile netblock">
+    <h2>{{t "https.away.title"}}</h2>
+    <p>{{t "https.vpn.text"}} <a href="{{t "https.vpn.url"}}" target="_blank" rel="noopener">{{t "https.vpn.link"}}</a></p>
+    {{with .AwayHint}}<p class="hint">{{.}}</p>{{end}}
+  </section>
+  {{if and (not .Public) (not .Saved)}}
+  <form method="post" action="/settings/https" class="tile netblock">
+    <h2>{{t "https.router.title"}}</h2>
+    <p>{{t "https.router.text"}}</p>
+    {{template "field" (dict "Root" . "Name" "router_name" "Label" (t "https.router.field") "Value" .Value "Placeholder" "hejmo.fritz.box" "Autocomplete" "off" "Autocapitalize" "none" "Spellcheck" "false" "Hint" (t "https.router.field.hint"))}}
+    <p class="why"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span><b>{{t "https.router.why.title"}}</b> {{t "https.router.why.text"}}</span></p>
+    <button class="button" type="submit">{{t "https.router.save"}}</button>
+  </form>
+  {{end}}
+{{template "foot"}}

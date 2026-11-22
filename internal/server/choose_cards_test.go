@@ -53,6 +53,7 @@ func cardsOf(t *testing.T, page, id string) []string {
 }
 
 func TestCardHeadNamesTheSourceAndTheNameInHejmoIsAFieldOfItsOwn(t *testing.T) {
+	t.Parallel()
 	b, id := cardsBox(t)
 	cards := cardsOf(t, getEN(b, "/connections/"+id).body, id)
 	if len(cards) != 2 {
@@ -90,6 +91,7 @@ func TestCardHeadNamesTheSourceAndTheNameInHejmoIsAFieldOfItsOwn(t *testing.T) {
 }
 
 func TestCardKickerSaysICloudForICloud(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
 		return hostedRemote{found: []caldavclient.Calendar{{URL: "https://caldav.icloud.com/1/calendars/family/", Name: "Family"}}}, nil
@@ -119,6 +121,7 @@ func TestCardKickerSaysICloudForICloud(t *testing.T) {
 }
 
 func TestCardKeepsAnUnsafeSourceNameInsideItsElements(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	const addr = "https://caldav.example.org/cal/x/"
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
@@ -139,6 +142,7 @@ func TestCardKeepsAnUnsafeSourceNameInsideItsElements(t *testing.T) {
 }
 
 func TestCardDoesNotClaimASourceNameWhenTheServerCannotBeAsked(t *testing.T) {
+	t.Parallel()
 	b, id := cardsBox(t)
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
 		return errRemote{err: errors.New("offline in test")}, nil
@@ -154,6 +158,7 @@ func TestCardDoesNotClaimASourceNameWhenTheServerCannotBeAsked(t *testing.T) {
 }
 
 func TestCardsSayTheirStateInWordsAndTheServerMarksWhichIsOn(t *testing.T) {
+	t.Parallel()
 	b, id := cardsBox(t)
 	for lang, want := range map[string]struct{ on, off string }{
 		"en": {`<span class="w">On:</span> shown on the box`, `<span class="w">Off:</span> not on the box`},
@@ -192,6 +197,7 @@ func TestCardsSayTheirStateInWordsAndTheServerMarksWhichIsOn(t *testing.T) {
 }
 
 func TestStylesheetHidesTheFieldsOfOffCardsAndShowsThemLiveWithTheSwitch(t *testing.T) {
+	t.Parallel()
 	// The fields of an off card are in the page but hidden until the switch goes on.
 	b, _ := cardsBox(t)
 	css := b.get("/static/hejmo.css").body
@@ -207,6 +213,7 @@ func TestStylesheetHidesTheFieldsOfOffCardsAndShowsThemLiveWithTheSwitch(t *test
 }
 
 func TestEventCountIsAQuietLineWithBothTextsForAnEmptyCalendar(t *testing.T) {
+	t.Parallel()
 	b, id := cardsBox(t)
 	cards := cardsOf(t, getEN(b, "/connections/"+id).body, id)
 	for _, card := range cards {
@@ -245,6 +252,7 @@ func TestEventCountIsAQuietLineWithBothTextsForAnEmptyCalendar(t *testing.T) {
 }
 
 func TestCardColourSitsBesideMoreOptionsWithItsSwatch(t *testing.T) {
+	t.Parallel()
 	b, id := cardsBox(t)
 	home := cardsOf(t, getEN(b, "/connections/"+id).body, id)[0]
 	want := `More options<span class="sum"><span class="swatch" style="--sw:#2F5E7A"></span>Colour</span>`
@@ -254,6 +262,7 @@ func TestCardColourSitsBesideMoreOptionsWithItsSwatch(t *testing.T) {
 }
 
 func TestIntervalBelongsToAllCalendarsAndSaysItsValue(t *testing.T) {
+	t.Parallel()
 	b, id := cardsBox(t)
 	page := getEN(b, "/connections/"+id).body
 	if !strings.Contains(page, `<details class="more all-cals">`) ||
@@ -267,6 +276,7 @@ func TestIntervalBelongsToAllCalendarsAndSaysItsValue(t *testing.T) {
 }
 
 func TestNothingSwitchedOnShowsTheErrorUnderTheFirstCardsSwitch(t *testing.T) {
+	t.Parallel()
 	b, id := twoCalendarBox(t)
 	form := url.Values{"interval": {"60"}, "shown": {flowCalendar, flowCalendar2}}
 	r := b.do(http.MethodPost, "/connections/"+id+"/calendars", form, map[string]string{"Accept-Language": "en"})
@@ -289,6 +299,7 @@ func TestNothingSwitchedOnShowsTheErrorUnderTheFirstCardsSwitch(t *testing.T) {
 }
 
 func TestAServerWithoutCalendarsGetsOneCalmCardAndNoSaveButton(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { return hostedRemote{}, nil })
 	if r := b.post("/connections", url.Values{"provider": {"icloud"}, "username": {"mama@example.org"}, "password": {"abcd-efgh-ijkl-mnop"}}); r.status != http.StatusOK {
@@ -313,6 +324,7 @@ func TestAServerWithoutCalendarsGetsOneCalmCardAndNoSaveButton(t *testing.T) {
 }
 
 func TestAServerWithoutCalendarsNamesItsHostInTheHint(t *testing.T) {
+	t.Parallel()
 	b := signedInAPI(t).b
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { return hostedRemote{}, nil })
 	if r := b.post("/connections", url.Values{"provider": {"caldav"}, "url": {"https://caldav.example.org"}, "username": {"u"}, "password": {"pw-1"}}); r.status != http.StatusOK {

@@ -9,8 +9,10 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/brightness"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/kiosk"
+	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/quiet"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/theme"
@@ -60,6 +62,21 @@ type displayPage struct {
 	KioskKeySet               bool
 	Types                     []store.DisplayType
 	Themes                    []store.Theme
+	// The screensaver block (ticket 178).
+	SaverOn                              bool
+	SaverIdle                            int
+	SaverIdleText, SaverIntervalText     string
+	SaverOnText, SaverSummary, QuietNote string
+	AllAlbums, NoPhotos, EInk            bool
+	Albums                               []saverAlbum
+	// The brightness block (ticket 179).
+	Bright brightPage
+}
+
+// saverAlbum is one album chip of the screensaver block.
+type saverAlbum struct {
+	ID, Name, Count string
+	Checked         bool
 }
 
 func newDisplayPage(d store.Display, in url.Values) displayPage {
@@ -91,6 +108,9 @@ func newDisplayPage(d store.Display, in url.Values) displayPage {
 // refused save (nil on a plain visit), errKey the text of the error and
 // errField the input it belongs to.
 func (s *server) renderDisplay(w http.ResponseWriter, r *http.Request, p principal, status int, d store.Display, in url.Values, errKey, errField string) {
+	page := newDisplayPage(d, in)
+	s.fillSaver(r, p, &page, d, in)
+	s.fillBrightness(r, p, &page, d, in, errField)
 	facts := []factView{}
 	if d.LastSeen.IsZero() {
 		facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.last_seen")), Value: s.say(r, i18n.Msg("displays.never"))})
@@ -100,10 +120,14 @@ func (s *server) renderDisplay(w http.ResponseWriter, r *http.Request, p princip
 		facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.last_seen")), Value: p.when(d.LastSeen)})
 	}
 	facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.paired")), Value: p.day(d.PairedAt)})
-	s.render(w, r, status, "display.html", map[string]any{
-		"Person": p.person, "D": newDisplayPage(d, in), "Facts": facts, "Error": errKey, "ErrorField": errField,
+	data := map[string]any{
+		"Person": p.person, "D": page, "Facts": facts, "Error": errKey, "ErrorField": errField,
 		"Title": d.Name,
-	})
+	}
+	if brightFields[errField] { // the sentence on top names the block, the field says what is wrong
+		data["Error"], data["FieldError"] = "displays.error.bright_block", errKey
+	}
+	s.render(w, r, status, "display.html", data)
 }
 
 func (s *server) handleDisplayPage(w http.ResponseWriter, r *http.Request) {
@@ -111,9 +135,8 @@ func (s *server) handleDisplayPage(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	d, found := s.displayOf(p.household.ID, r.PathValue("id"))
-	if !found {
-		http.NotFound(w, r)
+	d, ok := s.displayOf(w, r, p.household.ID)
+	if !ok {
 		return
 	}
 	s.renderDisplay(w, r, p, http.StatusOK, d, nil, "", "")
@@ -157,9 +180,8 @@ func (s *server) handleDisplayUnpair(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	d, found := s.displayOf(p.household.ID, r.PathValue("id"))
-	if !found {
-		http.NotFound(w, r)
+	d, ok := s.displayOf(w, r, p.household.ID)
+	if !ok {
 		return
 	}
 	switch err := s.db.RevokeDisplay(p.household.ID, d.ID, s.now()); {
@@ -189,23 +211,86 @@ type displayChange struct {
 	// Theme and the sun offsets (ADR 0015).
 	Theme                       *string
 	SunriseOffset, SunsetOffset *int
+	// Saver is the photo screensaver (ticket 178).
+	Saver *saverChange
+	// Brightness is what the kiosk app sets by time of day and in quiet mode (ticket 179).
+	Brightness *brightChange
+}
+
+// brightChange is a change of a display's brightness values; nil fields stay as they are.
+type brightChange struct {
+	Day, Evening, QuietLevel, WakeMinutes *int
+	QuietMode, Source                     *string
+}
+
+// apply returns the brightness values after the change, or a *store.FieldError naming the wrong one.
+func (c *brightChange) apply(cur brightness.Settings) (brightness.Settings, error) {
+	if c == nil {
+		return cur, nil
+	}
+	if c.Day != nil {
+		cur.Day = *c.Day
+	}
+	if c.Evening != nil {
+		cur.Evening = *c.Evening
+	}
+	if c.QuietLevel != nil {
+		cur.QuietLevel = *c.QuietLevel
+	}
+	if c.WakeMinutes != nil {
+		cur.WakeMinutes = *c.WakeMinutes
+	}
+	if c.QuietMode != nil {
+		cur.QuietMode = brightness.QuietMode(*c.QuietMode)
+	}
+	if c.Source != nil {
+		cur.Source = brightness.Source(*c.Source)
+	}
+	var refused *brightness.Refused
+	if err := cur.Validate(); errors.As(err, &refused) {
+		return cur, &store.FieldError{Field: refused.Field, Msg: refused.Msg}
+	}
+	return cur, nil
+}
+
+// saverChange is a change of a display's screensaver; nil fields stay as they are.
+type saverChange struct {
+	Enabled               *bool
+	IdleMinutes, Interval *int
+	Albums                *[]string
+}
+
+// apply returns the screensaver setting after the change, or the field that is wrong.
+func (c *saverChange) apply(cur store.Saver) (store.Saver, error) {
+	if c == nil {
+		return cur, nil
+	}
+	if c.Enabled != nil {
+		cur.Enabled = *c.Enabled
+	}
+	if c.IdleMinutes != nil {
+		cur.IdleMinutes = *c.IdleMinutes
+	}
+	if c.Interval != nil {
+		cur.IntervalMinutes = *c.Interval
+	}
+	if c.Albums != nil {
+		cur.Albums = *c.Albums
+	}
+	switch {
+	case cur.IdleMinutes < 1 || cur.IdleMinutes > 240:
+		return cur, &store.FieldError{Field: "saver_idle", Msg: "the screensaver starts after 1 to 240 minutes without a touch"}
+	case cur.IntervalMinutes < 1 || cur.IntervalMinutes > 240:
+		return cur, &store.FieldError{Field: "saver_interval", Msg: "a photo stays 1 to 240 minutes"}
+	}
+	return cur, nil
 }
 
 // changeDisplay validates and saves a change, for the web interface and the API alike.
 func (s *server) changeDisplay(householdID, id string, c displayChange) error {
-	list, err := s.db.Displays(householdID)
+	cur, err := s.db.Display(householdID, id)
 	if err != nil {
 		return err
-	}
-	var cur store.Display
-	found := false
-	for _, d := range list {
-		if d.ID == id {
-			cur, found = d, true
-		}
-	}
-	if !found {
-		return store.ErrNotFound
 	}
 	name, typ := cur.Name, cur.Type
 	if c.Name != nil {
@@ -248,23 +333,43 @@ func (s *server) changeDisplay(householdID, id string, c displayChange) error {
 			return errTheme
 		}
 	}
+	saver, err := c.Saver.apply(cur.Saver)
+	if err != nil {
+		return err
+	}
+	bright, err := c.Brightness.apply(cur.Brightness)
+	if err != nil {
+		return err
+	}
 	if name != cur.Name || typ != cur.Type { // the store trims and validates both
 		if err := s.db.SetDisplayIdentity(householdID, id, name, typ); err != nil {
 			return err
 		}
 	}
+	tomorrow := cur.ShowTomorrow
 	if c.ShowTomorrow != nil {
-		if err := s.db.SetDisplayShowTomorrow(householdID, id, *c.ShowTomorrow); err != nil {
-			return err
-		}
+		tomorrow = *c.ShowTomorrow
 	}
-	if th != cur.Theme || rise != cur.SunriseOffset || set != cur.SunsetOffset {
-		if err := s.db.SetDisplayTheme(householdID, id, th, rise, set); err != nil {
+	if tomorrow != cur.ShowTomorrow || th != cur.Theme || rise != cur.SunriseOffset || set != cur.SunsetOffset {
+		if err := s.db.SetDisplayLook(householdID, id, store.DisplayLook{ShowTomorrow: tomorrow, Theme: th, SunriseOffset: rise, SunsetOffset: set}); err != nil {
 			return err
 		}
 	}
 	if sched != cur.Quiet {
 		if err := s.db.SetDisplayQuiet(householdID, id, sched); err != nil {
+			return err
+		}
+	}
+	if !sameSaver(saver, cur.Saver) {
+		if err := s.db.SetDisplaySaver(householdID, id, saver); err != nil {
+			if errors.Is(err, store.ErrInvalid) && c.Saver != nil && c.Saver.Albums != nil {
+				return &store.FieldError{Field: "saver_albums", Msg: "an album of the screensaver is unknown"}
+			}
+			return err
+		}
+	}
+	if bright != cur.Brightness {
+		if err := s.db.SetDisplayBrightness(householdID, id, bright); err != nil {
 			return err
 		}
 	}
@@ -278,6 +383,18 @@ func (s *server) changeDisplay(householdID, id string, c displayChange) error {
 		}
 	}
 	return nil
+}
+
+func sameSaver(a, b store.Saver) bool {
+	if a.Enabled != b.Enabled || a.IdleMinutes != b.IdleMinutes || a.IntervalMinutes != b.IntervalMinutes || len(a.Albums) != len(b.Albums) {
+		return false
+	}
+	for i := range a.Albums {
+		if a.Albums[i] != b.Albums[i] {
+			return false
+		}
+	}
+	return true
 }
 
 // optional returns the form field's value, or nil when the form has no such field.
@@ -299,9 +416,8 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	_ = r.ParseForm()
-	d, found := s.displayOf(p.household.ID, r.PathValue("id"))
-	if !found {
-		http.NotFound(w, r)
+	d, ok := s.displayOf(w, r, p.household.ID)
+	if !ok {
 		return
 	}
 	refuse := func(key, field string) {
@@ -330,6 +446,41 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 	c.ShowTomorrow, c.QuietEnabled = on("show_tomorrow"), on("quiet")
 	c.QuietFrom, c.QuietTo = optional(r, "quiet_from"), optional(r, "quiet_to")
 	c.KioskURL, c.KioskKey = optional(r, "kiosk_url"), optional(r, "kiosk_key")
+	if _, posted := r.PostForm["saver_idle"]; posted { // the whole block is in the form
+		c.Saver = &saverChange{Enabled: on("saver")}
+		for _, f := range []struct {
+			field string
+			into  **int
+		}{{"saver_idle", &c.Saver.IdleMinutes}, {"saver_interval", &c.Saver.Interval}} {
+			v, err := strconv.Atoi(strings.TrimSpace(r.PostForm.Get(f.field)))
+			if err != nil {
+				refuse("displays.error."+f.field, f.field)
+				return
+			}
+			*f.into = &v
+		}
+		albums := []string{}
+		if r.PostForm.Get("saver_all") == "" {
+			albums = append(albums, r.PostForm["saver_album"]...)
+		}
+		c.Saver.Albums = &albums
+	}
+	bc := &brightChange{QuietMode: optional(r, "quiet_light"), Source: optional(r, "light_source")}
+	for _, f := range []struct {
+		field string
+		into  **int
+	}{{"bright_day", &bc.Day}, {"bright_evening", &bc.Evening}, {"bright_quiet", &bc.QuietLevel}, {"wake_minutes", &bc.WakeMinutes}} {
+		if _, posted := r.PostForm[f.field]; !posted {
+			continue
+		}
+		v, err := strconv.Atoi(strings.TrimSpace(r.PostForm.Get(f.field)))
+		if err != nil {
+			refuse("displays.error."+f.field, f.field)
+			return
+		}
+		*f.into = &v
+	}
+	c.Brightness = bc
 	var fieldErr *store.FieldError
 	switch err := s.changeDisplay(p.household.ID, d.ID, c); {
 	case errors.Is(err, store.ErrNotFound):
@@ -350,18 +501,53 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 }
 
 type displayJSON struct {
-	ID            string    `json:"id"`
-	Name          string    `json:"name"`
-	Room          string    `json:"room"`
-	Type          string    `json:"type"`
-	PairedAt      string    `json:"paired_at"`
-	LastSeenAt    *string   `json:"last_seen_at"`
-	ShowTomorrow  bool      `json:"show_tomorrow"`
-	QuietMode     quietJSON `json:"quiet_mode"`
-	Kiosk         kioskJSON `json:"kiosk"`
-	Theme         string    `json:"theme"`
-	SunriseOffset int       `json:"sunrise_offset"`
-	SunsetOffset  int       `json:"sunset_offset"`
+	ID            string     `json:"id"`
+	Name          string     `json:"name"`
+	Room          string     `json:"room"`
+	Type          string     `json:"type"`
+	PairedAt      string     `json:"paired_at"`
+	LastSeenAt    *string    `json:"last_seen_at"`
+	ShowTomorrow  bool       `json:"show_tomorrow"`
+	QuietMode     quietJSON  `json:"quiet_mode"`
+	Kiosk         kioskJSON  `json:"kiosk"`
+	Theme         string     `json:"theme"`
+	SunriseOffset int        `json:"sunrise_offset"`
+	SunsetOffset  int        `json:"sunset_offset"`
+	Screensaver   saverJSON  `json:"screensaver"`
+	Brightness    brightJSON `json:"brightness"`
+	ListView      string     `json:"list_view"`
+}
+
+// brightJSON is a display's brightness: the values, and what the kiosk app
+// was last told to do (null without a kiosk app or before the box checked it).
+type brightJSON struct {
+	Day         int         `json:"day"`
+	Evening     int         `json:"evening"`
+	LightSource string      `json:"light_source"`
+	Quiet       brightQuiet `json:"quiet"`
+	Current     *brightNow  `json:"current"`
+}
+
+type brightQuiet struct {
+	Mode        string `json:"mode"`
+	Level       int    `json:"level"`
+	WakeMinutes int    `json:"wake_minutes"`
+}
+
+type brightNow struct {
+	Phase       string  `json:"phase"`
+	Percent     *int    `json:"percent"`
+	Since       *string `json:"since"`
+	Confirmed   bool    `json:"confirmed"`
+	Reachable   bool    `json:"reachable"`
+	LightSensor bool    `json:"light_sensor"`
+}
+
+type saverJSON struct {
+	Enabled         bool     `json:"enabled"`
+	IdleMinutes     int      `json:"idle_minutes"`
+	IntervalMinutes int      `json:"interval_minutes"`
+	AlbumIDs        []string `json:"album_ids"`
 }
 
 type quietJSON struct {
@@ -376,10 +562,26 @@ type kioskJSON struct {
 	APIKeySet bool   `json:"api_key_set"`
 }
 
-func displayToJSON(d store.Display, loc *time.Location) displayJSON {
+func (s *server) displayToJSON(d store.Display, h store.Household, loc *time.Location) displayJSON {
 	j := displayJSON{ID: d.ID, Name: d.Name, Room: d.Room, Type: string(d.Type), PairedAt: d.PairedAt.In(loc).Format(time.RFC3339), ShowTomorrow: d.ShowTomorrow,
 		QuietMode: quietJSON{d.Quiet.Enabled, d.Quiet.FromText(), d.Quiet.ToText()}, Kiosk: kioskJSON{d.KioskURL, d.KioskKeySet},
-		Theme: string(d.Theme), SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset}
+		Theme: string(d.Theme), SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset,
+		Screensaver: saverJSON{d.Saver.Enabled, d.Saver.IdleMinutes, d.Saver.IntervalMinutes, append([]string{}, d.Saver.Albums...)}, ListView: string(d.ListView)}
+	b := d.Brightness
+	j.Brightness = brightJSON{Day: b.Day, Evening: b.Evening, LightSource: string(b.Source), Quiet: brightQuiet{string(b.QuietMode), b.QuietLevel, b.WakeMinutes}}
+	if st, ok := s.kioskState(d); ok {
+		t := s.plannedTarget(d, h, st.HasSensor, s.now().In(loc))
+		cur := &brightNow{Phase: string(t.Phase), Confirmed: confirmedTarget(st, t), Reachable: st.Reachable, LightSensor: st.HasSensor}
+		if !t.Auto {
+			pct := t.Percent
+			cur.Percent = &pct
+		}
+		if !t.Since.IsZero() {
+			since := t.Since.In(loc).Format(time.RFC3339)
+			cur.Since = &since
+		}
+		j.Brightness.Current = cur
+	}
 	if !d.LastSeen.IsZero() {
 		seen := d.LastSeen.In(loc).Format(time.RFC3339)
 		j.LastSeenAt = &seen
@@ -396,7 +598,7 @@ func (s *server) apiListDisplays(w http.ResponseWriter, _ *http.Request, p princ
 	loc := p.location()
 	out := make([]displayJSON, 0, len(list))
 	for _, d := range list {
-		out = append(out, displayToJSON(d, loc))
+		out = append(out, s.displayToJSON(d, p.household, loc))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -410,7 +612,7 @@ func (s *server) apiPairDisplay(w http.ResponseWriter, r *http.Request, p princi
 	d, err := s.pairDisplay(p, strings.TrimSpace(in.Code), store.Display{Name: in.Name, Room: in.Room, Type: store.DisplayType(in.Type)})
 	switch {
 	case err == nil:
-		writeJSON(w, http.StatusCreated, displayToJSON(d, p.location()))
+		writeJSON(w, http.StatusCreated, s.displayToJSON(d, p.household, p.location()))
 	case errors.Is(err, errTooManyAttempts):
 		writeError(w, http.StatusTooManyRequests, "too many wrong codes, try again later")
 	case errors.Is(err, store.ErrNotFound):
@@ -435,14 +637,39 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 		Theme         *string `json:"theme"`
 		SunriseOffset *int    `json:"sunrise_offset"`
 		SunsetOffset  *int    `json:"sunset_offset"`
-		Kiosk         *struct {
+		Screensaver   *struct {
+			Enabled         *bool     `json:"enabled"`
+			IdleMinutes     *int      `json:"idle_minutes"`
+			IntervalMinutes *int      `json:"interval_minutes"`
+			AlbumIDs        *[]string `json:"album_ids"`
+		} `json:"screensaver"`
+		Kiosk *struct {
 			URL    *string `json:"url"`
 			APIKey *string `json:"api_key"`
 		} `json:"kiosk"`
+		Brightness *struct {
+			Day         *int    `json:"day"`
+			Evening     *int    `json:"evening"`
+			LightSource *string `json:"light_source"`
+			Quiet       *struct {
+				Mode        *string `json:"mode"`
+				Level       *int    `json:"level"`
+				WakeMinutes *int    `json:"wake_minutes"`
+			} `json:"quiet"`
+		} `json:"brightness"`
+		ListView *string `json:"list_view"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
+	}
+	var view list.View
+	if in.ListView != nil {
+		var ok bool
+		if view, ok = list.ParseView(*in.ListView); !ok {
+			writeError(w, http.StatusUnprocessableEntity, "list_view must be tiles or list")
+			return
+		}
 	}
 	c := displayChange{Name: in.Name, Type: in.Type, ShowTomorrow: in.ShowTomorrow, Theme: in.Theme, SunriseOffset: in.SunriseOffset, SunsetOffset: in.SunsetOffset}
 	if q := in.QuietMode; q != nil {
@@ -450,6 +677,15 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 	}
 	if k := in.Kiosk; k != nil {
 		c.KioskURL, c.KioskKey = k.URL, k.APIKey
+	}
+	if b := in.Brightness; b != nil {
+		c.Brightness = &brightChange{Day: b.Day, Evening: b.Evening, Source: b.LightSource}
+		if q := b.Quiet; q != nil {
+			c.Brightness.QuietMode, c.Brightness.QuietLevel, c.Brightness.WakeMinutes = q.Mode, q.Level, q.WakeMinutes
+		}
+	}
+	if sv := in.Screensaver; sv != nil {
+		c.Saver = &saverChange{Enabled: sv.Enabled, IdleMinutes: sv.IdleMinutes, Interval: sv.IntervalMinutes, Albums: sv.AlbumIDs}
 	}
 	var fieldErr *store.FieldError
 	switch err := s.changeDisplay(p.household.ID, r.PathValue("id"), c); {
@@ -472,14 +708,20 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 		s.fail(w, "update display", err)
 		return
 	}
-	list, err := s.db.Displays(p.household.ID)
+	if in.ListView != nil {
+		if err := s.db.SetDisplayListView(p.household.ID, r.PathValue("id"), view); err != nil {
+			s.fail(w, "update display", err)
+			return
+		}
+	}
+	displays, err := s.db.Displays(p.household.ID)
 	if err != nil {
 		s.fail(w, "update display", err)
 		return
 	}
-	for _, d := range list {
+	for _, d := range displays {
 		if d.ID == r.PathValue("id") {
-			writeJSON(w, http.StatusOK, displayToJSON(d, p.location()))
+			writeJSON(w, http.StatusOK, s.displayToJSON(d, p.household, p.location()))
 			return
 		}
 	}
@@ -497,16 +739,66 @@ func (s *server) apiRevokeDisplay(w http.ResponseWriter, r *http.Request, p prin
 	}
 }
 
-// displayOf finds one of the household's paired displays.
-func (s *server) displayOf(householdID, id string) (store.Display, bool) {
-	list, err := s.db.Displays(householdID)
-	if err != nil {
-		return store.Display{}, false
-	}
-	for _, d := range list {
-		if d.ID == id {
-			return d, true
-		}
+// displayOf finds the household's paired display the request names. When it
+// answers itself it returns false: 404 for an unknown display, 500 for a
+// database error.
+func (s *server) displayOf(w http.ResponseWriter, r *http.Request, householdID string) (store.Display, bool) {
+	d, err := s.db.Display(householdID, r.PathValue("id"))
+	switch {
+	case err == nil:
+		return d, true
+	case errors.Is(err, store.ErrNotFound):
+		http.NotFound(w, r)
+	default:
+		s.fail(w, "display", err)
 	}
 	return store.Display{}, false
+}
+
+// fillSaver fills the screensaver block of a display's page: what is chosen
+// now, or what was submitted when the page shows a refused save.
+func (s *server) fillSaver(r *http.Request, p principal, v *displayPage, d store.Display, in url.Values) {
+	lang := s.langOf(r)
+	v.EInk = d.Type == store.DisplayEInkBW || d.Type == store.DisplayEInkColor
+	v.SaverOn, v.SaverIdle = d.Saver.Enabled, d.Saver.IdleMinutes
+	v.SaverIdleText, v.SaverIntervalText = strconv.Itoa(d.Saver.IdleMinutes), strconv.Itoa(d.Saver.IntervalMinutes)
+	chosen := map[string]bool{}
+	for _, a := range d.Saver.Albums {
+		chosen[a] = true
+	}
+	v.AllAlbums = len(d.Saver.Albums) == 0
+	if in != nil {
+		v.SaverOn = in.Get("saver") != ""
+		v.SaverIdleText, v.SaverIntervalText = in.Get("saver_idle"), in.Get("saver_interval")
+		if n, err := strconv.Atoi(strings.TrimSpace(in.Get("saver_idle"))); err == nil {
+			v.SaverIdle = n
+		}
+		chosen = map[string]bool{}
+		for _, a := range in["saver_album"] {
+			chosen[a] = true
+		}
+		v.AllAlbums = in.Get("saver_all") != "" || len(chosen) == 0
+	}
+	albums, _ := s.db.Albums(p.household.ID)
+	total := 0
+	for _, a := range albums {
+		total += a.Photos
+		count := s.i18n.T(lang, "photos.n.empty_short")
+		if a.Photos > 0 {
+			count = s.plural(lang, "photos.n", a.Photos)
+		}
+		v.Albums = append(v.Albums, saverAlbum{ID: a.ID, Name: a.Name, Count: count, Checked: chosen[a.ID] && !v.AllAlbums})
+	}
+	v.NoPhotos = total == 0
+	v.SaverOnText = s.i18n.Format(lang, i18n.Msg("displays.saver.on", "n", strconv.Itoa(v.SaverIdle)))
+	every := s.i18n.T(lang, "displays.saver.every_minute")
+	if iv, err := strconv.Atoi(v.SaverIntervalText); err == nil && iv != 1 {
+		every = s.i18n.Format(lang, i18n.Msg("displays.saver.every_n", "n", strconv.Itoa(iv)))
+	}
+	v.SaverSummary = s.i18n.Format(lang, i18n.Msg("displays.saver.summary", "idle", strconv.Itoa(v.SaverIdle), "every", every))
+	if d.Quiet.Enabled {
+		v.QuietNote = s.i18n.Format(lang, i18n.Msg("displays.saver.quiet_on", "from", d.Quiet.FromText(), "to", d.Quiet.ToText()))
+	} else {
+		v.QuietNote = s.i18n.T(lang, "displays.saver.quiet_off")
+	}
 }

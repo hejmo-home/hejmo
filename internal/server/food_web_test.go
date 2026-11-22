@@ -28,6 +28,7 @@ func foodHas(t *testing.T, what, page string, want ...string) {
 }
 
 func TestPersonPageHasTheCalmFoodRowWhichOpensItsOwnPage(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	page := p.en("/people/" + mia).body
@@ -37,13 +38,14 @@ func TestPersonPageHasTheCalmFoodRowWhichOpensItsOwnPage(t *testing.T) {
 }
 
 func TestFoodPageOffersFourDietsAndFourteenAllergensInTheOrderOfThePageLanguage(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	de := p.foodPage("/people/"+mia+"/food", "de")
 	if de.status != http.StatusOK {
 		t.Fatalf("GET = %d", de.status)
 	}
-	foodHas(t, "food page", de.body, "<h1>Essen und Allergien</h1>", "Zurück zu Mia", "Bleibt in eurer Box", `class="why health"`,
+	foodHas(t, "food page", de.body, "<h1>Essen und Allergien</h1>", `<a href="/people/`+mia+`">Mia</a>`, "Bleibt in eurer Box", `class="why health"`,
 		`<form method="post" action="/people/`+mia+`/food" class="steps food-form">`, "Wie isst Mia?",
 		`value="omnivore" checked`, "Experimentell, ohne Gewähr:", `class="hint caveat"`, `name="other"`, `maxlength="200"`, "Das prüft Hejmo nicht automatisch und kann nicht danach filtern.")
 	if n := strings.Count(de.body, `type="radio" name="diet"`); n != 4 {
@@ -71,6 +73,7 @@ func TestFoodPageOffersFourDietsAndFourteenAllergensInTheOrderOfThePageLanguage(
 }
 
 func TestSavingFoodReturnsToThePersonPageAndShowsWhatNowApplies(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	r := p.saveFood(mia, url.Values{"diet": {"vegetarian"}, "allergens": {"nuts", "peanuts"}, "other": {" Kiwi ,, Erdbeeren"}})
@@ -100,6 +103,7 @@ func peopleRow(page, name string) string {
 }
 
 func TestPeopleOverviewNamesDietAndAllergiesOnlyForThoseWhoNeedIt(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	p.add(t, "Sebastian", "child")
@@ -119,6 +123,7 @@ func TestPeopleOverviewNamesDietAndAllergiesOnlyForThoseWhoNeedIt(t *testing.T) 
 }
 
 func TestFreeTextNamingOneOfTheFourteenIsRefusedAtTheFieldAndNothingIsStored(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	r := p.saveFood(mia, url.Values{"diet": {"vegetarian"}, "allergens": {"peanuts"}, "other": {"Laktose, Kiwi"}})
@@ -151,6 +156,7 @@ func TestFreeTextNamingOneOfTheFourteenIsRefusedAtTheFieldAndNothingIsStored(t *
 }
 
 func TestChildrenCannotOpenOrSaveTheFoodPage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	child := childSession(t, b)
 	h, _ := b.db.HomeHousehold()
@@ -173,6 +179,7 @@ func TestChildrenCannotOpenOrSaveTheFoodPage(t *testing.T) {
 }
 
 func TestDisplaysNeverShowDietOrAllergies(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	p.saveFood(mia, url.Values{"diet": {"vegan"}, "allergens": {"peanuts"}, "other": {"Kiwi"}})
@@ -187,6 +194,7 @@ func TestDisplaysNeverShowDietOrAllergies(t *testing.T) {
 }
 
 func TestMCPTokenFormSetsHealthApartAndOffersNoChange(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	switchMCPOnPage(t, b, true)
 	page := getEN(b, "/mcp/tokens/new").body

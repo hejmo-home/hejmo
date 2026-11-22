@@ -1,19 +1,21 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "calendars.title") "Frame" .Frame)}}
   <h1>{{t "calendars.title"}}</h1>
+  {{template "offlineNote" .OfflineTop}}
   {{template "httpsNotice" .}}
   {{template "syncNotice" .}}
 
-  <p class="lead">{{t "calendars.intro"}}</p>
+  {{if not .OfflineTop}}<p class="lead">{{t "calendars.intro"}}</p>{{end}}
 
   <section aria-labelledby="connections">
     <h2 id="connections">{{t "connections.title"}}</h2>
+    {{template "offlineNote" .ConnNote}}
     {{if .ConnRows}}
     <ul class="list-rows">
       {{range .ConnRows}}{{template "rowLink" .}}
       {{end}}
     </ul>
-    <p><a class="button secondary" href="/connections/new">{{t "connections.connect.more"}}</a></p>
-    {{else}}{{template "empty" (dict "Text" (t "connections.empty") "Href" "/connections/new" "Action" (t "connections.connect"))}}{{end}}
+    {{if not (or .OfflineTop .ConnNote)}}<p><a class="button secondary" href="/connections/new">{{t "connections.connect.more"}}</a></p>{{end}}
+    {{else if not (or .OfflineTop .ConnNote)}}{{template "empty" (dict "Text" (t "connections.empty") "Href" "/connections/new" "Action" (t "connections.connect"))}}{{end}}
   </section>
 
   <section aria-labelledby="synced">
@@ -26,10 +28,11 @@
     {{else}}{{template "empty" (dict "Text" (t "calendars.none") "Href" "#add" "Action" (t "calendars.add.first"))}}{{end}}
   </section>
 
-  <section aria-labelledby="add">
+  {{if not .OfflineTop}}<section aria-labelledby="add">
     <h2 id="add">{{t "calendars.add"}}</h2>
     {{template "error" .}}
-    <form method="post" action="/calendars" class="steps">
+    {{template "offlineNote" .ICSNote}}
+    {{if not .ICSNote}}<form method="post" action="/calendars" class="steps">
       <fieldset>
         {{template "field" (dict "Root" . "Name" "name" "Label" (t "calendars.field.name") "Value" (index .Form "Name") "Required" true)}}
         {{template "field" (dict "Root" . "Name" "url" "Label" (t "calendars.field.url") "Value" (index .Form "URL") "Required" true "Inputmode" "url" "Autocapitalize" "none" "Placeholder" "webcal://…")}}
@@ -44,8 +47,8 @@
         {{template "moreClose"}}
       </fieldset>
       <button class="button" type="submit">{{t "calendars.add.submit"}}</button>
-    </form>
-  </section>
+    </form>{{end}}
+  </section>{{end}}
 
   <section aria-labelledby="log">
     <h2 id="log">{{t "calendars.log"}}</h2>
@@ -54,7 +57,7 @@
     <table class="log">
       <thead><tr><th>{{t "calendars.log.when"}}</th><th>{{t "calendars.log.calendar"}}</th><th>{{t "calendars.log.what"}}</th></tr></thead>
       <tbody>
-        {{range .Log}}<tr><td>{{.At}}</td><td>{{.Calendar}}</td><td>{{.Message}}</td></tr>{{end}}
+        {{range .Log}}<tr><td>{{.At}}</td><td>{{.Calendar}}</td><td>{{.Message}}{{if .Detail}}<details><summary>{{t "calendars.log.version"}}</summary><pre>{{.Detail}}</pre></details>{{end}}</td></tr>{{end}}
       </tbody>
     </table>
     {{else}}<p class="hint">{{t "calendars.log.empty"}}</p>{{end}}

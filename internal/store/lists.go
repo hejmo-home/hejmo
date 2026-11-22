@@ -20,17 +20,17 @@ func (db *DB) CreateList(householdID string, l list.List) (list.List, error) {
 	}
 	l.ID = newID()
 	ts := now()
-	_, err := db.sql.Exec(`INSERT INTO lists (id, household_id, name, color, symbol, sort, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?)`, l.ID, householdID, l.Name, l.Color, l.Symbol, string(l.Sort), ts, ts)
+	_, err := db.sql.Exec(`INSERT INTO lists (id, household_id, name, color, symbol, sort, suggestions, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`, l.ID, householdID, l.Name, l.Color, l.Symbol, string(l.Sort), l.Suggestions, ts, ts)
 	return l, err
 }
 
-const listColumns = `id, name, color, symbol, sort`
+const listColumns = `id, name, color, symbol, sort, suggestions`
 
 func scanList(row interface{ Scan(...any) error }) (list.List, error) {
 	var l list.List
 	var s string
-	err := row.Scan(&l.ID, &l.Name, &l.Color, &l.Symbol, &s)
+	err := row.Scan(&l.ID, &l.Name, &l.Color, &l.Symbol, &s, &l.Suggestions)
 	l.Sort = list.Sort(s)
 	return l, err
 }
@@ -62,14 +62,14 @@ func (db *DB) List(householdID, id string) (list.List, error) {
 	return l, err
 }
 
-// UpdateList changes name, colour, symbol and sorting of a list.
+// UpdateList changes name, colour, symbol, sorting and suggestions of a list.
 func (db *DB) UpdateList(householdID string, l list.List) (list.List, error) {
 	l.Name = strings.TrimSpace(l.Name)
 	if err := l.Validate(); err != nil {
 		return list.List{}, fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
-	res, err := db.sql.Exec(`UPDATE lists SET name = ?, color = ?, symbol = ?, sort = ?, updated_at = ? WHERE household_id = ? AND id = ?`,
-		l.Name, l.Color, l.Symbol, string(l.Sort), now(), householdID, l.ID)
+	res, err := db.sql.Exec(`UPDATE lists SET name = ?, color = ?, symbol = ?, sort = ?, suggestions = ?, updated_at = ? WHERE household_id = ? AND id = ?`,
+		l.Name, l.Color, l.Symbol, string(l.Sort), l.Suggestions, now(), householdID, l.ID)
 	return l, expectOne(res, err)
 }
 
@@ -79,21 +79,29 @@ func (db *DB) DeleteList(householdID, id string) error {
 	return expectOne(res, err)
 }
 
+const entryColumns = `id, text, done, position, article_id, qty_base, qty_unit`
+
+func scanEntry(row interface{ Scan(...any) error }) (list.Entry, error) {
+	var e list.Entry
+	err := row.Scan(&e.ID, &e.Text, &e.Done, &e.Position, &e.ArticleID, &e.Qty.Base, &e.Qty.Unit)
+	return e, err
+}
+
 // Entries returns the entries of a list in the order the list shows them.
 func (db *DB) Entries(householdID, listID string) ([]list.Entry, error) {
 	l, err := db.List(householdID, listID)
 	if err != nil {
 		return nil, err
 	}
-	rows, err := db.sql.Query(`SELECT id, text, done, position FROM list_entries WHERE list_id = ? ORDER BY position, rowid`, listID)
+	rows, err := db.sql.Query(`SELECT `+entryColumns+` FROM list_entries WHERE list_id = ? ORDER BY position, rowid`, listID)
 	if err != nil {
 		return nil, err
 	}
 	defer rows.Close()
 	var out []list.Entry
 	for rows.Next() {
-		var e list.Entry
-		if err := rows.Scan(&e.ID, &e.Text, &e.Done, &e.Position); err != nil {
+		e, err := scanEntry(rows)
+		if err != nil {
 			return nil, err
 		}
 		out = append(out, e)

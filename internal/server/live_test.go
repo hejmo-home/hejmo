@@ -12,6 +12,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/weather"
 )
@@ -38,7 +39,7 @@ func newLiveBox(t *testing.T, interval time.Duration) *liveBox {
 	f := newFamilyBox(t, "eink_bw")
 	c := &clock{t: f.at(14, 8, 0)}
 	// The weather reading ages with the live box's clock, not the family box's.
-	f.weather = weather.New(weather.WithBaseURL(f.meteo.srv.URL), weather.WithClock(c.now))
+	f.weather = weather.New(weather.WithGate(outbound.AllowAll()), weather.WithBaseURL(f.meteo.srv.URL), weather.WithClock(c.now))
 	h := server.New(server.Options{DB: f.db, PKI: f.pki, Now: c.now, LiveInterval: interval, Weather: f.weather})
 	srv := httptest.NewUnstartedServer(h)
 	cert, err := f.pki.GetCertificate(nil)
@@ -133,6 +134,7 @@ var versionRe = regexp.MustCompile(`data-version="([0-9a-f]+)"`)
 // 5.5: Given an E-Ink display, when an event is changed, then the change is visible within 10 seconds.
 // Runs with the box's default interval, so it checks the real promise.
 func TestLiveChangedEventIsAnnouncedAndFetchedWithin10Seconds(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 0)
 	_, _, page := l.get("/display")
 	pageVersion := versionRe.FindStringSubmatch(page)
@@ -163,6 +165,7 @@ func TestLiveChangedEventIsAnnouncedAndFetchedWithin10Seconds(t *testing.T) {
 
 // 5.5: Given an E-Ink display, when nothing changes, then no new image is transmitted.
 func TestLiveNothingIsSentWhenNothingChanges(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
 	s := l.open(t)
 	s.first(t)
@@ -173,6 +176,7 @@ func TestLiveNothingIsSentWhenNothingChanges(t *testing.T) {
 
 // 5.5 (from PR #64): the 18:00 block and the day rollover update without a reload.
 func TestLiveEveningAndMidnightAreAnnounced(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
 	l.showTomorrow(t, true)
 	l.event(t, "Tomorrow school", l.at(15, 8, 0), l.at(15, 9, 0), false, "Mia")
@@ -202,6 +206,7 @@ func TestLiveEveningAndMidnightAreAnnounced(t *testing.T) {
 // minute alone must not change the view version, or every display would
 // repaint its whole view once a minute.
 func TestLiveClockMinuteKeepsTheVersion(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
 	s := l.open(t)
 	first := s.first(t)
@@ -220,6 +225,7 @@ func TestLiveClockMinuteKeepsTheVersion(t *testing.T) {
 
 // Shutdown must not wait for open streams: they end when the box is told to stop.
 func TestLiveShutdownEndsOpenStreams(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	done := make(chan struct{})
 	c := &clock{t: f.at(14, 8, 0)}
@@ -245,6 +251,7 @@ func TestLiveShutdownEndsOpenStreams(t *testing.T) {
 
 // 5.5: Given a lost connection, then the display reconnects and catches up.
 func TestLiveReconnectAnnouncesTheCurrentVersion(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
 	s := l.open(t)
 	old := s.first(t)
@@ -258,6 +265,7 @@ func TestLiveReconnectAnnouncesTheCurrentVersion(t *testing.T) {
 
 // A display that is not paired gets neither the stream nor the view.
 func TestLiveIsOnlyForPairedDisplays(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
 	stranger := newScreen(l.box)
 	for _, path := range []string{"/display/events", "/display/view"} {
@@ -276,6 +284,7 @@ func TestLiveIsOnlyForPairedDisplays(t *testing.T) {
 // 5.8 (round 1 bug): the weather chip appears, changes its icon and hides on
 // the display without a reload: each is a new view version, announced and fetched.
 func TestLiveWeatherChipAppearsChangesIconAndHides(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
 	s := l.open(t)
 	seen := s.first(t)

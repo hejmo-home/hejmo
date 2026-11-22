@@ -1,0 +1,2319 @@
+# Emoji that a symbol can be, with their German and English names, one per line: emoji, German name, English name, separated by tabs.
+# Names: Unicode CLDR annotations (cldr-json, annotations and annotationsDerived, locales de and en), Unicode License v3,
+# https://github.com/unicode-org/cldr-json. Skin-tone variants are left out. The pictures are the Noto Emoji set (Apache-2.0).
+🧑‍🦰	Person: rotes Haar	person: red hair
+🧑‍🦱	Person: lockiges Haar	person: curly hair
+🧑‍🦳	Person: weißes Haar	person: white hair
+🧑‍🦲	Person: Glatze	person: bald
+👨‍🦰	Mann: rotes Haar	man: red hair
+👨‍🦱	Mann: lockiges Haar	man: curly hair
+👨‍🦳	Mann: weißes Haar	man: white hair
+👨‍🦲	Mann: Glatze	man: bald
+👩‍🦰	Frau: rotes Haar	woman: red hair
+👩‍🦱	Frau: lockiges Haar	woman: curly hair
+👩‍🦳	Frau: weißes Haar	woman: white hair
+👩‍🦲	Frau: Glatze	woman: bald
+🚶‍➡	Fußgänger(in): nach rechts	person walking: facing right
+🚶‍♀‍➡	Fußgängerin: nach rechts	woman walking: facing right
+🚶‍♂‍➡	Fußgänger: nach rechts	man walking: facing right
+🧎‍➡	kniende Person: nach rechts	person kneeling: facing right
+🧎‍♀‍➡	kniende Frau: nach rechts	woman kneeling: facing right
+🧎‍♂‍➡	kniender Mann: nach rechts	man kneeling: facing right
+🧑‍🦯‍➡	Person mit Langstock: nach rechts	person with white cane: facing right
+👨‍🦯‍➡	Mann mit Langstock: nach rechts	man with white cane: facing right
+👩‍🦯‍➡	Frau mit Langstock: nach rechts	woman with white cane: facing right
+🧑‍🦼‍➡	Person in elektrischem Rollstuhl: nach rechts	person in motorized wheelchair: facing right
+👨‍🦼‍➡	Mann in elektrischem Rollstuhl: nach rechts	man in motorized wheelchair: facing right
+👩‍🦼‍➡	Frau in elektrischem Rollstuhl: nach rechts	woman in motorized wheelchair: facing right
+🧑‍🦽‍➡	Person in manuellem Rollstuhl: nach rechts	person in manual wheelchair: facing right
+👨‍🦽‍➡	Mann in manuellem Rollstuhl: nach rechts	man in manual wheelchair: facing right
+👩‍🦽‍➡	Frau in manuellem Rollstuhl: nach rechts	woman in manual wheelchair: facing right
+🏃‍➡	laufende Person: nach rechts	person running: facing right
+🏃‍♀‍➡	laufende Frau: nach rechts	woman running: facing right
+🏃‍♂‍➡	laufender Mann: nach rechts	man running: facing right
+👩‍❤‍💋‍👨	sich küssendes Paar: Frau, Mann	kiss: woman, man
+👨‍❤‍💋‍👨	sich küssendes Paar: Mann, Mann	kiss: man, man
+👩‍❤‍💋‍👩	sich küssendes Paar: Frau, Frau	kiss: woman, woman
+👩‍❤‍👨	Liebespaar: Frau, Mann	couple with heart: woman, man
+👨‍❤‍👨	Liebespaar: Mann, Mann	couple with heart: man, man
+👩‍❤‍👩	Liebespaar: Frau, Frau	couple with heart: woman, woman
+👨‍👩‍👦	Familie: Mann, Frau und Junge	family: man, woman, boy
+👨‍👩‍👧	Familie: Mann, Frau und Mädchen	family: man, woman, girl
+👨‍👩‍👧‍👦	Familie: Mann, Frau, Mädchen und Junge	family: man, woman, girl, boy
+👨‍👩‍👦‍👦	Familie: Mann, Frau, Junge und Junge	family: man, woman, boy, boy
+👨‍👩‍👧‍👧	Familie: Mann, Frau, Mädchen und Mädchen	family: man, woman, girl, girl
+👨‍👨‍👦	Familie: Mann, Mann und Junge	family: man, man, boy
+👨‍👨‍👧	Familie: Mann, Mann und Mädchen	family: man, man, girl
+👨‍👨‍👧‍👦	Familie: Mann, Mann, Mädchen und Junge	family: man, man, girl, boy
+👨‍👨‍👦‍👦	Familie: Mann, Mann, Junge und Junge	family: man, man, boy, boy
+👨‍👨‍👧‍👧	Familie: Mann, Mann, Mädchen und Mädchen	family: man, man, girl, girl
+👩‍👩‍👦	Familie: Frau, Frau und Junge	family: woman, woman, boy
+👩‍👩‍👧	Familie: Frau, Frau und Mädchen	family: woman, woman, girl
+👩‍👩‍👧‍👦	Familie: Frau, Frau, Mädchen und Junge	family: woman, woman, girl, boy
+👩‍👩‍👦‍👦	Familie: Frau, Frau, Junge und Junge	family: woman, woman, boy, boy
+👩‍👩‍👧‍👧	Familie: Frau, Frau, Mädchen und Mädchen	family: woman, woman, girl, girl
+👨‍👦	Familie: Mann, Junge	family: man, boy
+👨‍👦‍👦	Familie: Mann, Junge und Junge	family: man, boy, boy
+👨‍👧	Familie: Mann, Mädchen	family: man, girl
+👨‍👧‍👦	Familie: Mann, Mädchen und Junge	family: man, girl, boy
+👨‍👧‍👧	Familie: Mann, Mädchen und Mädchen	family: man, girl, girl
+👩‍👦	Familie: Frau, Junge	family: woman, boy
+👩‍👦‍👦	Familie: Frau, Junge und Junge	family: woman, boy, boy
+👩‍👧	Familie: Frau, Mädchen	family: woman, girl
+👩‍👧‍👦	Familie: Frau, Mädchen und Junge	family: woman, girl, boy
+👩‍👧‍👧	Familie: Frau, Mädchen und Mädchen	family: woman, girl, girl
+#⃣	Taste: #	keycap: #
+*⃣	Taste: *	keycap: *
+🔟	Taste: 10	keycap: 10
+🇦🇨	Flagge: Ascension	flag: Ascension Island
+🇦🇩	Flagge: Andorra	flag: Andorra
+🇦🇪	Flagge: Vereinigte Arabische Emirate	flag: United Arab Emirates
+🇦🇫	Flagge: Afghanistan	flag: Afghanistan
+🇦🇬	Flagge: Antigua und Barbuda	flag: Antigua & Barbuda
+🇦🇮	Flagge: Anguilla	flag: Anguilla
+🇦🇱	Flagge: Albanien	flag: Albania
+🇦🇲	Flagge: Armenien	flag: Armenia
+🇦🇴	Flagge: Angola	flag: Angola
+🇦🇶	Flagge: Antarktis	flag: Antarctica
+🇦🇷	Flagge: Argentinien	flag: Argentina
+🇦🇸	Flagge: Amerikanisch-Samoa	flag: American Samoa
+🇦🇹	Flagge: Österreich	flag: Austria
+🇦🇺	Flagge: Australien	flag: Australia
+🇦🇼	Flagge: Aruba	flag: Aruba
+🇦🇽	Flagge: Ålandinseln	flag: Åland Islands
+🇦🇿	Flagge: Aserbaidschan	flag: Azerbaijan
+🇧🇦	Flagge: Bosnien und Herzegowina	flag: Bosnia & Herzegovina
+🇧🇧	Flagge: Barbados	flag: Barbados
+🇧🇩	Flagge: Bangladesch	flag: Bangladesh
+🇧🇪	Flagge: Belgien	flag: Belgium
+🇧🇫	Flagge: Burkina Faso	flag: Burkina Faso
+🇧🇬	Flagge: Bulgarien	flag: Bulgaria
+🇧🇭	Flagge: Bahrain	flag: Bahrain
+🇧🇮	Flagge: Burundi	flag: Burundi
+🇧🇯	Flagge: Benin	flag: Benin
+🇧🇱	Flagge: St. Barthélemy	flag: St. Barthélemy
+🇧🇲	Flagge: Bermuda	flag: Bermuda
+🇧🇳	Flagge: Brunei Darussalam	flag: Brunei
+🇧🇴	Flagge: Bolivien	flag: Bolivia
+🇧🇶	Flagge: Karibische Niederlande	flag: Caribbean Netherlands
+🇧🇷	Flagge: Brasilien	flag: Brazil
+🇧🇸	Flagge: Bahamas	flag: Bahamas
+🇧🇹	Flagge: Bhutan	flag: Bhutan
+🇧🇻	Flagge: Bouvetinsel	flag: Bouvet Island
+🇧🇼	Flagge: Botsuana	flag: Botswana
+🇧🇾	Flagge: Belarus	flag: Belarus
+🇧🇿	Flagge: Belize	flag: Belize
+🇨🇦	Flagge: Kanada	flag: Canada
+🇨🇨	Flagge: Kokosinseln	flag: Cocos (Keeling) Islands
+🇨🇩	Flagge: Kongo-Kinshasa	flag: Congo - Kinshasa
+🇨🇫	Flagge: Zentralafrikanische Republik	flag: Central African Republic
+🇨🇬	Flagge: Kongo-Brazzaville	flag: Congo - Brazzaville
+🇨🇭	Flagge: Schweiz	flag: Switzerland
+🇨🇮	Flagge: Côte d’Ivoire	flag: Côte d’Ivoire
+🇨🇰	Flagge: Cookinseln	flag: Cook Islands
+🇨🇱	Flagge: Chile	flag: Chile
+🇨🇲	Flagge: Kamerun	flag: Cameroon
+🇨🇳	Flagge: China	flag: China
+🇨🇴	Flagge: Kolumbien	flag: Colombia
+🇨🇵	Flagge: Clipperton-Insel	flag: Clipperton Island
+🇨🇶	Flagge: Sark	flag: Sark
+🇨🇷	Flagge: Costa Rica	flag: Costa Rica
+🇨🇺	Flagge: Kuba	flag: Cuba
+🇨🇻	Flagge: Cabo Verde	flag: Cape Verde
+🇨🇼	Flagge: Curaçao	flag: Curaçao
+🇨🇽	Flagge: Weihnachtsinsel	flag: Christmas Island
+🇨🇾	Flagge: Zypern	flag: Cyprus
+🇨🇿	Flagge: Tschechien	flag: Czechia
+🇩🇪	Flagge: Deutschland	flag: Germany
+🇩🇬	Flagge: Diego Garcia	flag: Diego Garcia
+🇩🇯	Flagge: Dschibuti	flag: Djibouti
+🇩🇰	Flagge: Dänemark	flag: Denmark
+🇩🇲	Flagge: Dominica	flag: Dominica
+🇩🇴	Flagge: Dominikanische Republik	flag: Dominican Republic
+🇩🇿	Flagge: Algerien	flag: Algeria
+🇪🇦	Flagge: Ceuta und Melilla	flag: Ceuta & Melilla
+🇪🇨	Flagge: Ecuador	flag: Ecuador
+🇪🇪	Flagge: Estland	flag: Estonia
+🇪🇬	Flagge: Ägypten	flag: Egypt
+🇪🇭	Flagge: Westsahara	flag: Western Sahara
+🇪🇷	Flagge: Eritrea	flag: Eritrea
+🇪🇸	Flagge: Spanien	flag: Spain
+🇪🇹	Flagge: Äthiopien	flag: Ethiopia
+🇪🇺	Flagge: Europäische Union	flag: European Union
+🇫🇮	Flagge: Finnland	flag: Finland
+🇫🇯	Flagge: Fidschi	flag: Fiji
+🇫🇰	Flagge: Falklandinseln	flag: Falkland Islands
+🇫🇲	Flagge: Mikronesien	flag: Micronesia
+🇫🇴	Flagge: Färöer	flag: Faroe Islands
+🇫🇷	Flagge: Frankreich	flag: France
+🇬🇦	Flagge: Gabun	flag: Gabon
+🇬🇧	Flagge: Vereinigtes Königreich	flag: United Kingdom
+🇬🇩	Flagge: Grenada	flag: Grenada
+🇬🇪	Flagge: Georgien	flag: Georgia
+🇬🇫	Flagge: Französisch-Guayana	flag: French Guiana
+🇬🇬	Flagge: Guernsey	flag: Guernsey
+🇬🇭	Flagge: Ghana	flag: Ghana
+🇬🇮	Flagge: Gibraltar	flag: Gibraltar
+🇬🇱	Flagge: Grönland	flag: Greenland
+🇬🇲	Flagge: Gambia	flag: Gambia
+🇬🇳	Flagge: Guinea	flag: Guinea
+🇬🇵	Flagge: Guadeloupe	flag: Guadeloupe
+🇬🇶	Flagge: Äquatorialguinea	flag: Equatorial Guinea
+🇬🇷	Flagge: Griechenland	flag: Greece
+🇬🇸	Flagge: Südgeorgien und die Südlichen Sandwichinseln	flag: South Georgia & South Sandwich Islands
+🇬🇹	Flagge: Guatemala	flag: Guatemala
+🇬🇺	Flagge: Guam	flag: Guam
+🇬🇼	Flagge: Guinea-Bissau	flag: Guinea-Bissau
+🇬🇾	Flagge: Guyana	flag: Guyana
+🇭🇰	Flagge: Sonderverwaltungsregion Hongkong	flag: Hong Kong SAR China
+🇭🇲	Flagge: Heard und McDonaldinseln	flag: Heard Island & McDonald Islands
+🇭🇳	Flagge: Honduras	flag: Honduras
+🇭🇷	Flagge: Kroatien	flag: Croatia
+🇭🇹	Flagge: Haiti	flag: Haiti
+🇭🇺	Flagge: Ungarn	flag: Hungary
+🇮🇨	Flagge: Kanarische Inseln	flag: Canary Islands
+🇮🇩	Flagge: Indonesien	flag: Indonesia
+🇮🇪	Flagge: Irland	flag: Ireland
+🇮🇱	Flagge: Israel	flag: Israel
+🇮🇲	Flagge: Isle of Man	flag: Isle of Man
+🇮🇳	Flagge: Indien	flag: India
+🇮🇴	Flagge: Britisches Territorium im Indischen Ozean	flag: British Indian Ocean Territory
+🇮🇶	Flagge: Irak	flag: Iraq
+🇮🇷	Flagge: Iran	flag: Iran
+🇮🇸	Flagge: Island	flag: Iceland
+🇮🇹	Flagge: Italien	flag: Italy
+🇯🇪	Flagge: Jersey	flag: Jersey
+🇯🇲	Flagge: Jamaika	flag: Jamaica
+🇯🇴	Flagge: Jordanien	flag: Jordan
+🇯🇵	Flagge: Japan	flag: Japan
+🇰🇪	Flagge: Kenia	flag: Kenya
+🇰🇬	Flagge: Kirgisistan	flag: Kyrgyzstan
+🇰🇭	Flagge: Kambodscha	flag: Cambodia
+🇰🇮	Flagge: Kiribati	flag: Kiribati
+🇰🇲	Flagge: Komoren	flag: Comoros
+🇰🇳	Flagge: St. Kitts und Nevis	flag: St. Kitts & Nevis
+🇰🇵	Flagge: Nordkorea	flag: North Korea
+🇰🇷	Flagge: Südkorea	flag: South Korea
+🇰🇼	Flagge: Kuwait	flag: Kuwait
+🇰🇾	Flagge: Kaimaninseln	flag: Cayman Islands
+🇰🇿	Flagge: Kasachstan	flag: Kazakhstan
+🇱🇦	Flagge: Laos	flag: Laos
+🇱🇧	Flagge: Libanon	flag: Lebanon
+🇱🇨	Flagge: St. Lucia	flag: St. Lucia
+🇱🇮	Flagge: Liechtenstein	flag: Liechtenstein
+🇱🇰	Flagge: Sri Lanka	flag: Sri Lanka
+🇱🇷	Flagge: Liberia	flag: Liberia
+🇱🇸	Flagge: Lesotho	flag: Lesotho
+🇱🇹	Flagge: Litauen	flag: Lithuania
+🇱🇺	Flagge: Luxemburg	flag: Luxembourg
+🇱🇻	Flagge: Lettland	flag: Latvia
+🇱🇾	Flagge: Libyen	flag: Libya
+🇲🇦	Flagge: Marokko	flag: Morocco
+🇲🇨	Flagge: Monaco	flag: Monaco
+🇲🇩	Flagge: Republik Moldau	flag: Moldova
+🇲🇪	Flagge: Montenegro	flag: Montenegro
+🇲🇫	Flagge: St. Martin	flag: St. Martin
+🇲🇬	Flagge: Madagaskar	flag: Madagascar
+🇲🇭	Flagge: Marshallinseln	flag: Marshall Islands
+🇲🇰	Flagge: Nordmazedonien	flag: North Macedonia
+🇲🇱	Flagge: Mali	flag: Mali
+🇲🇲	Flagge: Myanmar	flag: Myanmar (Burma)
+🇲🇳	Flagge: Mongolei	flag: Mongolia
+🇲🇴	Flagge: Sonderverwaltungsregion Macau	flag: Macao SAR China
+🇲🇵	Flagge: Nördliche Marianen	flag: Northern Mariana Islands
+🇲🇶	Flagge: Martinique	flag: Martinique
+🇲🇷	Flagge: Mauretanien	flag: Mauritania
+🇲🇸	Flagge: Montserrat	flag: Montserrat
+🇲🇹	Flagge: Malta	flag: Malta
+🇲🇺	Flagge: Mauritius	flag: Mauritius
+🇲🇻	Flagge: Malediven	flag: Maldives
+🇲🇼	Flagge: Malawi	flag: Malawi
+🇲🇽	Flagge: Mexiko	flag: Mexico
+🇲🇾	Flagge: Malaysia	flag: Malaysia
+🇲🇿	Flagge: Mosambik	flag: Mozambique
+🇳🇦	Flagge: Namibia	flag: Namibia
+🇳🇨	Flagge: Neukaledonien	flag: New Caledonia
+🇳🇪	Flagge: Niger	flag: Niger
+🇳🇫	Flagge: Norfolkinsel	flag: Norfolk Island
+🇳🇬	Flagge: Nigeria	flag: Nigeria
+🇳🇮	Flagge: Nicaragua	flag: Nicaragua
+🇳🇱	Flagge: Niederlande	flag: Netherlands
+🇳🇴	Flagge: Norwegen	flag: Norway
+🇳🇵	Flagge: Nepal	flag: Nepal
+🇳🇷	Flagge: Nauru	flag: Nauru
+🇳🇺	Flagge: Niue	flag: Niue
+🇳🇿	Flagge: Neuseeland	flag: New Zealand
+🇴🇲	Flagge: Oman	flag: Oman
+🇵🇦	Flagge: Panama	flag: Panama
+🇵🇪	Flagge: Peru	flag: Peru
+🇵🇫	Flagge: Französisch-Polynesien	flag: French Polynesia
+🇵🇬	Flagge: Papua-Neuguinea	flag: Papua New Guinea
+🇵🇭	Flagge: Philippinen	flag: Philippines
+🇵🇰	Flagge: Pakistan	flag: Pakistan
+🇵🇱	Flagge: Polen	flag: Poland
+🇵🇲	Flagge: St. Pierre und Miquelon	flag: St. Pierre & Miquelon
+🇵🇳	Flagge: Pitcairninseln	flag: Pitcairn Islands
+🇵🇷	Flagge: Puerto Rico	flag: Puerto Rico
+🇵🇸	Flagge: Palästinensische Autonomiegebiete	flag: Palestinian Territories
+🇵🇹	Flagge: Portugal	flag: Portugal
+🇵🇼	Flagge: Palau	flag: Palau
+🇵🇾	Flagge: Paraguay	flag: Paraguay
+🇶🇦	Flagge: Katar	flag: Qatar
+🇷🇪	Flagge: Réunion	flag: Réunion
+🇷🇴	Flagge: Rumänien	flag: Romania
+🇷🇸	Flagge: Serbien	flag: Serbia
+🇷🇺	Flagge: Russland	flag: Russia
+🇷🇼	Flagge: Ruanda	flag: Rwanda
+🇸🇦	Flagge: Saudi-Arabien	flag: Saudi Arabia
+🇸🇧	Flagge: Salomonen	flag: Solomon Islands
+🇸🇨	Flagge: Seychellen	flag: Seychelles
+🇸🇩	Flagge: Sudan	flag: Sudan
+🇸🇪	Flagge: Schweden	flag: Sweden
+🇸🇬	Flagge: Singapur	flag: Singapore
+🇸🇭	Flagge: St. Helena	flag: St. Helena, Ascension & Tristan da Cunha
+🇸🇮	Flagge: Slowenien	flag: Slovenia
+🇸🇯	Flagge: Spitzbergen und Jan Mayen	flag: Svalbard & Jan Mayen
+🇸🇰	Flagge: Slowakei	flag: Slovakia
+🇸🇱	Flagge: Sierra Leone	flag: Sierra Leone
+🇸🇲	Flagge: San Marino	flag: San Marino
+🇸🇳	Flagge: Senegal	flag: Senegal
+🇸🇴	Flagge: Somalia	flag: Somalia
+🇸🇷	Flagge: Suriname	flag: Suriname
+🇸🇸	Flagge: Südsudan	flag: South Sudan
+🇸🇹	Flagge: São Tomé und Príncipe	flag: São Tomé & Príncipe
+🇸🇻	Flagge: El Salvador	flag: El Salvador
+🇸🇽	Flagge: Sint Maarten	flag: Sint Maarten
+🇸🇾	Flagge: Syrien	flag: Syria
+🇸🇿	Flagge: Eswatini	flag: Eswatini
+🇹🇦	Flagge: Tristan da Cunha	flag: Tristan da Cunha
+🇹🇨	Flagge: Turks- und Caicosinseln	flag: Turks & Caicos Islands
+🇹🇩	Flagge: Tschad	flag: Chad
+🇹🇫	Flagge: Französische Süd- und Antarktisgebiete	flag: French Southern and Antarctic Lands
+🇹🇬	Flagge: Togo	flag: Togo
+🇹🇭	Flagge: Thailand	flag: Thailand
+🇹🇯	Flagge: Tadschikistan	flag: Tajikistan
+🇹🇰	Flagge: Tokelau	flag: Tokelau
+🇹🇱	Flagge: Timor-Leste	flag: Timor-Leste
+🇹🇲	Flagge: Turkmenistan	flag: Turkmenistan
+🇹🇳	Flagge: Tunesien	flag: Tunisia
+🇹🇴	Flagge: Tonga	flag: Tonga
+🇹🇷	Flagge: Türkei	flag: Türkiye
+🇹🇹	Flagge: Trinidad und Tobago	flag: Trinidad & Tobago
+🇹🇻	Flagge: Tuvalu	flag: Tuvalu
+🇹🇼	Flagge: Taiwan	flag: Taiwan
+🇹🇿	Flagge: Tansania	flag: Tanzania
+🇺🇦	Flagge: Ukraine	flag: Ukraine
+🇺🇬	Flagge: Uganda	flag: Uganda
+🇺🇲	Flagge: Amerikanische Überseeinseln	flag: U.S. Outlying Islands
+🇺🇳	Flagge: Vereinte Nationen	flag: United Nations
+🇺🇸	Flagge: Vereinigte Staaten	flag: United States
+🇺🇾	Flagge: Uruguay	flag: Uruguay
+🇺🇿	Flagge: Usbekistan	flag: Uzbekistan
+🇻🇦	Flagge: Vatikanstadt	flag: Vatican City
+🇻🇨	Flagge: St. Vincent und die Grenadinen	flag: St. Vincent & Grenadines
+🇻🇪	Flagge: Venezuela	flag: Venezuela
+🇻🇬	Flagge: Britische Jungferninseln	flag: British Virgin Islands
+🇻🇮	Flagge: Amerikanische Jungferninseln	flag: U.S. Virgin Islands
+🇻🇳	Flagge: Vietnam	flag: Vietnam
+🇻🇺	Flagge: Vanuatu	flag: Vanuatu
+🇼🇫	Flagge: Wallis und Futuna	flag: Wallis & Futuna
+🇼🇸	Flagge: Samoa	flag: Samoa
+🇽🇰	Flagge: Kosovo	flag: Kosovo
+🇾🇪	Flagge: Jemen	flag: Yemen
+🇾🇹	Flagge: Mayotte	flag: Mayotte
+🇿🇦	Flagge: Südafrika	flag: South Africa
+🇿🇲	Flagge: Sambia	flag: Zambia
+🇿🇼	Flagge: Simbabwe	flag: Zimbabwe
+🏴󠁧󠁢󠁥󠁮󠁧󠁿	Flagge: England	flag: England
+🏴󠁧󠁢󠁳󠁣󠁴󠁿	Flagge: Schottland	flag: Scotland
+🏴󠁧󠁢󠁷󠁬󠁳󠁿	Flagge: Wales	flag: Wales
+¤	Unbekannte Währung	Unknown Currency
+֏	Armenischer Dram	Armenian Dram
+؋	Afghanischer Afghani	Afghan Afghani
+৳	Bangladesch-Taka	Bangladeshi Taka
+฿	Thailändischer Baht	Thai Baht
+៛	Kambodschanischer Riel	Cambodian Riel
+₡	Costa-Rica-Colón	Costa Rican Colón
+₦	Nigerianischer Naira	Nigerian Naira
+₪	Israelischer Neuer Schekel	Israeli New Shekel
+₫	Vietnamesischer Dong	Vietnamese Dong
+₭	Laotischer Kip	Laotian Kip
+₮	Mongolischer Tögrög	Mongolian Tugrik
+₲	Paraguayischer Guaraní	Paraguayan Guarani
+₴	Ukrainische Hrywnja	Ukrainian Hryvnia
+₵	Ghanaischer Cedi	Ghanaian Cedi
+₸	Kasachischer Tenge	Kazakhstani Tenge
+₺	Türkische Lira	Turkish Lira
+₼	Aserbaidschan-Manat	Azerbaijani Manat
+₾	Georgischer Lari	Georgian Lari
+₧	Spanische Peseta	Spanish Peseta
+{	öffnende geschweifte Klammer	open curly bracket
+‾	Überstrich	overline
+_	Unterstrich	low line
+-	Bindestrich-Minus	hyphen-minus
+‐	Bindestrich	hyphen
+–	Halbgeviertstrich	en dash
+—	Geviertstrich	em dash
+―	waagerechter Strich	horizontal bar
+・	Katakana-Mittelpunkt	katakana middle dot
+,	Komma	comma
+،	arabisches Komma	arabic comma
+、	ideografisches Komma	ideographic comma
+;	Semikolon	semicolon
+؛	arabisches Semikolon	arabic semicolon
+:	Doppelpunkt	colon
+!	Ausrufezeichen	exclamation mark
+¡	umgekehrtes Ausrufezeichen	inverted exclamation mark
+?	Fragezeichen	question mark
+¿	umgekehrtes Fragezeichen	inverted question mark
+؟	arabisches Fragezeichen	arabic question mark
+‽	Interrobang	interrobang
+.	Punkt	period
+…	Ellipse	ellipsis
+。	ideografischer Punkt	ideographic period
+·	Mittelpunkt	middle dot
+'	gerader Apostroph	typewriter apostrophe
+‘	Apostroph links	left apostrophe
+’	Apostroph rechts	right apostrophe
+‚	Apostroph rechts unten	low right apostrophe
+“	öffnendes doppeltes Anführungszeichen oben	left quotation mark
+”	schließendes doppeltes Anführungszeichen oben	right quotation mark
+„	öffnendes doppeltes Anführungszeichen unten	low right quotation mark
+«	nach links weisendes Guillemet	left guillemet
+»	nach rechts weisendes Guillemet	right guillemet
+)	schließende runde Klammer	close parenthesis
+[	öffnende eckige Klammer	open square bracket
+]	schließende eckige Klammer	close square bracket
+}	schließende geschweifte Klammer	close curly bracket
+〈	öffnende spitze Klammer	open angle bracket
+〉	schließende spitze Klammer	close angle bracket
+《	öffnende doppelte spitze Klammer	open double angle bracket
+》	schließende doppelte spitze Klammer	close double angle bracket
+「	öffnende Eckklammer	open corner bracket
+」	schließende Eckklammer	close corner bracket
+『	öffnende hohle Eckklammer	open hollow corner bracket
+』	schließende hohle Eckklammer	close hollow corner bracket
+【	öffnende schwarze konkave Klammer	open black lens bracket
+】	schließende schwarze konkave Klammer	close black lens bracket
+〔	öffnende stumpfe Klammer	open tortoise shell bracket
+〕	schließende stumpfe Klammer	close tortoise shell bracket
+〖	öffnende hohle konkave Klammer	open hollow lens bracket
+〗	schließende hohle konkave Klammer	close hollow lens bracket
+§	Paragraf	section
+¶	Absatzzeichen	paragraph mark
+@	At-Zeichen	at-sign
+*	Sternchen	asterisk
+/	Schrägstrich	slash
+\	umgekehrter Schrägstrich	backslash
+&	Et-Zeichen	ampersand
+#	Doppelkreuz	hash sign
+%	Prozent	percent
+‰	Promille	per mille
+†	Langkreuz	dagger sign
+‡	Zweibalkenkreuz	double dagger sign
+•	Aufzählungspunkt	bullet
+‧	Silbentrennungspunkt	hyphenation point
+′	Prime	prime
+″	Doppelprime	double prime
+‴	Dreistrich	triple prime
+‸	Caret	caret
+※	Komejirushi	reference mark
+⁂	Asterism	asterism
+`	Gravis	grave accent
+´	Akut	acute accent
+^	Zirkumflex	circumflex accent
+¨	Trema	diaeresis
+°	Grad Alkohol	degree
+℗	Copyrightzeichen für Audioaufnahme	sound recording copyright
+←	nach links weisender Pfeil	left-pointing arrow
+↚	durchgestrichener Pfeil nach links	leftwards arrow stroke
+→	nach rechts weisender Pfeil	right-pointing arrow
+↛	durchgestrichener Pfeil nach rechts	rightwards arrow stroke
+↑	nach oben weisender Pfeil	up-pointing arrow
+↓	nach unten weisender Pfeil	down-pointing arrow
+↜	Wellenpfeil nach links	leftwards wave arrow
+↝	Wellenpfeil nach rechts	rightwards wave arrow
+↞	Pfeil mit Doppelspitze nach links	leftwards two headed arrow
+↟	Pfeil mit Doppelspitze nach oben	upwards two headed arrow
+↠	Pfeil mit Doppelspitze nach rechts	rightwards two headed arrow
+↡	Pfeil mit Doppelspitze nach unten	downwards two headed arrow
+↢	Pfeilschwanz nach links	leftwards arrow tail
+↣	Pfeilschwanz nach rechts	rightwards arrow tail
+↤	Pfeil nach links von Strich weglaufend	leftwards arrow from bar
+↥	Pfeil nach oben von Strich weglaufend	upwards arrow from bar
+↦	Pfeil nach rechts von Strich weglaufend	rightwards arrow from bar
+↧	Pfeil nach unten von Strich weglaufend	downwards arrow from bar
+↨	Pfeil nach oben und unten mit Unterstrich	up down arrow with base
+↫	Pfeil nach links mit Schleife	leftwards arrow loop
+↬	Pfeil nach rechts mit Schleife	rightwards arrow loop
+↭	Wellenpfeil nach links und rechts	left right wave arrow
+↯	Zickzack-Pfeil nach unten	downwards zigzag arrow
+↰	Pfeil nach oben mit Spitze nach links	upwards arrow tip leftwards
+↱	Pfeil nach oben mit Spitze nach rechts	upwards arrow tip rightwards
+↲	Pfeil nach unten mit Spitze nach links	downwards arrow tip leftwards
+↳	Pfeil nach unten mit Spitze nach rechts	downwards arrow tip rightwards
+↴	Pfeil nach rechts mit Spitze nach unten	rightwards arrow corner downwards
+↵	Pfeil nach unten mit Ecke nach links	downwards arrow corner leftwards
+↶	Halbkreisförmiger Pfeil gegen Uhrzeigersinn oben	anticlockwise top semicircle arrow
+↷	Halbkreisförmiger Pfeil im Uhrzeigersinn oben	clockwise top semicircle arrow
+↸	Pfeil nach Nordwesten auf langen Strich zulaufend	north west arrow long bar
+↹	Pfeil nach links auf Strich zulaufend über Pfeil nach rechts auf Strich zulaufend	leftwards over rightwards arrow bars
+↺	Kreisförmiger Pfeil gegen Uhrzeigersinn	anticlockwise open circle arrow
+↻	Kreisförmiger Pfeil im Uhrzeigersinn	clockwise open circle arrow
+↼	Harpune nach links mit Zacken nach oben	leftwards harpoon barb upwards
+↽	Harpune nach links mit Zacken nach unten	leftwards harpoon barb downwards
+↾	Harpune nach oben mit Zacken nach rechts	upwards harpoon barb rightwards
+↿	Harpune nach oben mit Zacken nach links	upwards harpoon barb leftwards
+⇀	Harpune nach rechts mit Zacken nach oben	rightwards harpoon barb upwards
+⇁	Harpune nach rechts mit Zacken nach unten	rightwards harpoon barb downwards
+⇂	Harpune nach unten mit Zacken nach rechts	downwards harpoon barb rightwards
+⇃	Harpune nach unten mit Zacken nach links	downwards harpoon barb leftwards
+⇄	Pfeil nach rechts über Pfeil nach links	rightwards arrow over leftwards arrow
+⇅	nach oben und nach unten weisende Pfeile	up-pointing and down-pointing arrows
+⇆	Linkspfeil über Rechtspfeil	left-pointing over right-pointing arrows
+⇇	gepaarte Pfeile nach links	leftwards paired arrows
+⇈	gepaarte Pfeile nach oben	upwards paired arrows
+⇉	gepaarte Pfeile nach rechts	rightwards paired arrows
+⇊	gepaarte Pfeile nach unten	downwards paired arrows
+⇋	Harpune nach links über Harpune nach rechts	leftwards harpoon over rightwards harpoon
+⇌	Harpune nach rechts über Harpune nach links	rightwards harpoon over leftwards harpoon
+⇐	Pfeil mit Doppelstrich nach links	leftwards double arrow
+⇍	Durchgestrichener Pfeil mit Doppelstrich nach links	leftwards double arrow stroke
+⇑	Pfeil mit Doppelstrich nach oben	upwards double arrow
+⇒	Pfeil mit Doppelstrich nach rechts	rightwards double arrow
+⇏	durchgestrichener Pfeil mit Doppelstrich nach rechts	rightwards double arrow stroke
+⇓	Pfeil mit Doppelstrich nach unten	downwards double arrow
+⇔	Pfeil mit Doppelstrich nach links und rechts	left right double arrow
+⇎	durchgestrichener Pfeil mit Doppelstrich nach links und rechts	left right double arrow stroke
+⇖	Pfeil mit Doppelstrich nach Nordwesten	north west double arrow
+⇗	Pfeil mit Doppelstrich nach Nordosten	north east double arrow
+⇘	Pfeil mit Doppelstrich nach Südosten	south east double arrow
+⇙	Pfeil mit Doppelstrich nach Südwesten	south west double arrow
+⇚	Pfeil mit Dreifachstrich nach links	leftwards triple arrow
+⇛	Pfeil mit Dreifachstrich nach rechts	rightwards triple arrow
+⇜	Schnörkelpfeil nach links	leftwards squiggle arrow
+⇝	Schnörkelpfeil nach rechts	rightwards squiggle arrow
+⇞	Pfeil nach oben mit doppeltem Querstrich	upwards arrow double stroke
+⇟	Pfeil nach unten mit doppeltem Querstrich	downwards arrow double stroke
+⇠	Gestrichelter Pfeil nach links	leftwards dashed arrow
+⇡	Gestrichelter Pfeil nach oben	upwards dashed arrow
+⇢	Gestrichelter Pfeil nach rechts	rightwards dashed arrow
+⇣	Gestrichelter Pfeil nach unten	downwards dashed arrow
+⇤	Pfeil nach links auf Strich zulaufend	leftwards arrow bar
+⇥	Pfeil nach rechts auf Strich zulaufend	rightwards arrow bar
+⇦	weißer Pfeil nach links	leftwards hollow arrow
+⇧	weißer Pfeil nach oben	upwards hollow arrow
+⇨	weißer Pfeil nach rechts	rightwards hollow arrow
+⇩	weißer Pfeil nach unten	downwards hollow arrow
+⇪	weißer Pfeil nach oben von Strich weglaufend	upwards hollow arrow from bar
+⇵	Pfeil nach unten links neben Pfeil nach oben	downwards arrow leftwards upwards arrow
+∀	für alle	for all
+∂	partielle Ableitung	partial differential
+∃	es existiert	there exists
+∅	leere Menge	empty set
+∆	Inkrement	increment
+∇	Nabla	nabla
+∈	Element	element of
+∉	kein Element von	not an element
+∋	enthält als Element	contains as member
+∎	Ende des Beweises	end proof
+∏	Produktzeichen	n-ary product
+∑	Summenzeichen	n-ary summation
++	Pluszeichen	plus sign
+±	Plusminuszeichen	plus-minus
+÷	Division	division sign
+×	Multiplikation	multiplication sign
+<	kleiner als	less-than
+≮	nicht kleiner als	not less-than
+=	Gleichheitszeichen	equal
+≠	ungleich	not equal
+>	größer als	greater-than
+≯	nicht größer als	not greater-than
+¬	Negationszeichen	negation
+|	senkrechter Strich	vertical line
+~	Tilde	tilde
+−	Minuszeichen	minus sign
+⁻	hochgestelltes Minuszeichen	superscript minus
+∓	minus oder plus	minus-or-plus
+∕	Divisionsstrich	division slash
+⁄	Bruchstrich	fraction slash
+∗	Sternchen-Operator	asterisk operator
+∘	Ring-Operator	ring operator
+∙	Kreis-Operator	bullet operator
+√	Quadratwurzel	square root
+∝	proportional zu	proportional
+∞	Unendlichkeitszeichen	infinity sign
+∟	rechter Winkel	right angle
+∠	Winkel-Zeichen	angle
+∣	Teilt-Zeichen	divides
+∥	parallel zu	parallel
+∧	logisches Und	logical and
+∩	Schnittmenge	intersection
+∪	Vereinigungsmenge	union
+∫	Integral	integral
+∬	Doppelintegral	double integral
+∮	Kurvenintegral	contour integral
+∴	Folglich	therefore
+∵	Weil	because
+∶	Verhältniszeichen	ratio
+∷	Proportionszeichen	proportion
+∼	Tilde-Operator	tilde operator
+∽	gespiegelte Tilde	reversed tilde
+∾	umgekehrtes schlafendes S	inverted lazy s
+≃	asymptotisch gleich	asymptotically equal
+≅	ungefähr-gleich	approximately equal
+≈	ungefähr gleich	almost equal
+≌	alles gleich	all equal
+≒	ungefähr gleich oder Bild von	approximately equal the image
+≖	Ring im Gleichheitszeichen	ring in equal
+≡	identisch	identical to
+≣	genau äquivalent	strictly equivalent
+≤	kleiner als oder gleich	less-than or equal
+≥	größer als oder gleich	greater-than or equal
+≦	kleiner als über gleich	less-than over equal
+≧	größer als über gleich	greater-than over equal
+≪	viel kleiner als	much less-than
+≫	viel größer als	much greater-than
+≬	zwischen	between
+≳	größer als oder äquivalent	greater-than equivalent
+≺	vorangehend	precedes
+≻	nachfolgend	succeeds
+⊁	nicht nachfolgend	does not succeed
+⊂	Teilmenge	subset of
+⊃	Obermenge von	superset
+⊆	Teilmenge von oder gleich mit	subset equal
+⊇	Obermenge von oder gleich mit	superset equal
+⊕	eingekreistes Pluszeichen	circled plus
+⊖	eingekreistes Minuszeichen	circled minus
+⊗	eingekreistes Multiplikationszeichen	circled times
+⊘	eingekreister Divisionsstrich	circled division slash
+⊙	eingekreister Punkt-Operator	circled dot operator
+⊚	eingekreister Ring-Operator	circled ring operator
+⊛	eingekreister Stern-Operator	circled asterisk operator
+⊞	eingerahmtes Pluszeichen	squared plus
+⊟	eingerahmtes Minuszeichen	squared minus
+⊥	senkrecht nach oben	up tack
+⊮	erzwingt nicht	does not force
+⊰	vorangehend in Relation	precedes under relation
+⊱	nachfolgend in Relation	succeeds under relation
+⋭	enthält nicht als normale Untergruppe oder gleich	does not contain as normal subgroup equal
+⊶	Original von	original
+⊹	hermitesche konjugierte Matrix	hermitian conjugate matrix
+⊿	rechtes Dreieck	right triangle
+⋁	N-stufiges logisches Oder	n-ary logical or
+⋂	N-stufige Schnittmenge	n-ary intersection
+⋃	N-stufige Vereinigungsmenge	n-ary union
+⋅	Punkt-Operator	dot operator
+⋆	Stern-Operator	star operator
+⋈	natürliche Verknüpfung	natural join
+⋒	doppelte Schnittmenge	double intersection
+⋘	sehr viel kleiner als	very much less-than
+⋙	sehr viel größer als	very much greater-than
+⋮	vertikale Ellipse	vertical ellipsis
+⋯	horizontale Ellipse auf mittlerer Höhe	midline horizontal ellipsis
+⋰	rechts-aufwärts steigende diagonale Ellipse	up right diagonal ellipsis
+⋱	rechts-abwärts fallende diagonale Ellipse	down right diagonal ellipsis
+■	schwarzes Quadrat	filled square
+□	weißes Quadrat	hollow square
+▢	weißes Quadrat mit abgerundeten Ecken	hollow square with rounded corners
+▣	schwarzes Quadrat in weißem Quadrat	hollow square containing filled square
+▤	Quadrat mit horizontaler Schraffur	square with horizontal fill
+▥	Quadrat mit vertikaler Schraffur	square with vertical fill
+▦	Quadrat mit orthogonaler Kreuzschraffur	square orthogonal crosshatch fill
+▧	Quadrat mit Schraffur von oben links nach unten rechts	square upper left lower right fill
+▨	Quadrat mit Schraffur von oben rechts nach unten links	square upper right lower left fill
+▩	Quadrat mit diagonaler Kreuzschraffur	square diagonal crosshatch fill
+▬	schwarzes Rechteck	filled rectangle
+▭	weißes Rechteck	hollow rectangle
+▮	vertikales schwarzes Rechteck	filled vertical rectangle
+▰	schwarzes Parallelogramm	filled parallelogram
+▲	schwarzes nach oben weisendes Dreieck	filled up-pointing triangle
+△	weißes nach oben weisendes Dreieck	hollow up-pointing triangle
+▴	schwarzes nach oben weisendes kleines Dreieck	filled up-pointing small triangle
+▵	weißes nach oben weisendes kleines Dreieck	hollow up-pointing small triangle
+▷	weißes nach rechts weisendes Dreieck	hollow right-pointing triangle
+▸	schwarzes nach rechts weisendes kleines Dreieck	filled right-pointing small triangle
+▹	weißes nach rechts weisendes kleines Dreieck	hollow right-pointing small triangle
+►	schwarzer nach rechts weisender Zeiger	filled right-pointing pointer
+▻	weißer nach rechts weisender Zeiger	hollow right-pointing pointer
+▼	schwarzes nach unten weisendes Dreieck	filled down-pointing triangle
+▽	weißes nach unten weisendes Dreieck	hollow down-pointing triangle
+▾	schwarzes nach unten weisendes kleines Dreieck	filled down-pointing small triangle
+▿	weißes nach unten weisendes kleines Dreieck	hollow down-pointing small triangle
+◁	weißes nach links weisendes Dreieck	hollow left-pointing triangle
+◂	schwarzes nach links weisendes kleines Dreieck	filled left-pointing small triangle
+◃	weißes nach links weisendes kleines Dreieck	hollow left-pointing small triangle
+◄	schwarzer nach links weisender Zeiger	filled left-pointing pointer
+◅	weißer nach links weisender Zeiger	hollow left-pointing pointer
+◆	schwarzes Karo	filled diamond
+◇	weißes Karo	hollow diamond
+◈	weißes Karo mit kleinem schwarzem Karo	hollow diamond containing filled diamond
+◉	weißer Kreis mit kleinem schwarzem Kreis	hollow circle containing filled circle
+◊	Raute	lozenge
+○	hohler Kreis	hollow circle
+◌	punktierter Kreis	dotted circle
+◍	Kreis mit vertikaler Schraffur	circle with vertical fill
+◎	konzentrische Kreise	concentric circles
+●	gefüllter Kreis	filled circle
+◐	Kreis mit schwarzer Hälfte links	circle left half filled
+◑	Kreis mit schwarzer Hälfte rechts	circle right half filled
+◒	Kreis mit schwarzer Hälfte unten	circle lower half filled
+◓	Kreis mit schwarzer Hälfte oben	circle upper half filled
+◔	Kreis mit schwarzem Viertel oben rechts	circle upper right quadrant filled
+◕	schwarzer Kreis mit weißem Viertel oben links	circle all but upper left quadrant filled
+◖	linke Hälfte eines schwarzen Kreises	left half filled circle
+◗	rechte Hälfte eines schwarzen Kreises	right half filled circle
+◘	invertiertes Aufzählungszeichen	inverse bullet
+◙	schwarzes Quadrat mit weißem Kreis	filled square containing hollow circle
+◜	Viertelkreis oben links	upper left quadrant circular arc
+◝	Viertelkreis oben rechts	upper right quadrant circular arc
+◞	Viertelkreis unten rechts	lower right quadrant circular arc
+◟	Viertelkreis unten links	lower left quadrant circular arc
+◠	Halbkreis oben	upper half circle
+◡	Halbkreis unten	lower half circle
+◢	schwarzes Dreieck unten rechts	filled lower right triangle
+◣	schwarzes Dreieck unten links	filled lower left triangle
+◤	schwarzes Dreieck oben links	filled upper left triangle
+◥	schwarzes Dreieck oben rechts	filled upper right triangle
+◦	weißes Aufzählungszeichen	hollow bullet
+◯	großer hohler Kreis	large hollow circle
+◳	weißes Quadrat mit Viertel oben rechts	hollow square upper right quadrant
+◷	weißer Kreis mit Viertel oben rechts	hollow circle with upper right quadrant
+◿	weißes Dreieck unten rechts	lower right triangle
+♪	Achtelnote	eighth note
+⨧	Pluszeichen mit tiefgestellter Zwei	plus subscript two
+⨯	Vektor-/Kreuzprodukt	vector cross product
+⨼	inneres Produkt	interior product
+⩣	logisches Oder mit doppeltem Unterstrich	logical or double underbar
+⩽	schräg gleich oder kleiner als	less-than slanted equal
+⪍	kleiner als über ähnlich oder gleich	less-than above similar equal
+⪚	gleich über größer als	double-line equal greater-than
+⪺	nachfolgend über fast ungleich	succeeds above not almost equal
+♭	Erniedrigungszeichen	flat
+♯	Erhöhungszeichen	sharp
+😀	grinsendes Gesicht	grinning face
+😃	grinsendes Gesicht mit großen Augen	grinning face with big eyes
+😄	grinsendes Gesicht mit lachenden Augen	grinning face with smiling eyes
+😁	strahlendes Gesicht mit lachenden Augen	beaming face with smiling eyes
+😆	Grinsegesicht mit zugekniffenen Augen	grinning squinting face
+😅	grinsendes Gesicht mit Schweißtropfen	grinning face with sweat
+🤣	sich vor Lachen auf dem Boden wälzen	rolling on the floor laughing
+😂	Gesicht mit Freudentränen	face with tears of joy
+🙂	leicht lächelndes Gesicht	slightly smiling face
+🙃	umgekehrtes Gesicht	upside-down face
+🫠	schmelzendes Gesicht	melting face
+🫫	Zerbrechendes Gesicht	cracking face
+😉	zwinkerndes Gesicht	winking face
+😊	lächelndes Gesicht mit lachenden Augen	smiling face with smiling eyes
+😇	lächelndes Gesicht mit Heiligenschein	smiling face with halo
+🥰	lächelndes Gesicht mit Herzen	smiling face with hearts
+😍	lächelndes Gesicht mit herzförmigen Augen	smiling face with heart-eyes
+🤩	überwältigt	star-struck
+😘	Kuss zuwerfendes Gesicht	face blowing a kiss
+😗	küssendes Gesicht	kissing face
+☺	lächelndes Gesicht	smiling face
+😚	küssendes Gesicht mit geschlossenen Augen	kissing face with closed eyes
+😙	küssendes Gesicht mit lächelnden Augen	kissing face with smiling eyes
+🥲	lachendes Gesicht mit Träne	smiling face with tear
+😋	sich die Lippen leckendes Gesicht	face savoring food
+😛	Gesicht mit herausgestreckter Zunge	face with tongue
+😜	zwinkerndes Gesicht mit herausgestreckter Zunge	winking face with tongue
+🤪	irres Gesicht	zany face
+😝	Gesicht mit herausgestreckter Zunge und zusammengekniffenen Augen	squinting face with tongue
+🤑	Gesicht mit Dollarzeichen	money-mouth face
+🤗	Gesicht mit umarmenden Händen	smiling face with open hands
+🤭	verlegen kicherndes Gesicht	face with hand over mouth
+🫢	Gesicht mit offenen Augen und Hand über dem Mund	face with open eyes and hand over mouth
+🫣	Gesicht mit durch die Finger linsendem Auge	face with peeking eye
+🤫	ermahnendes Gesicht	shushing face
+🤔	nachdenkendes Gesicht	thinking face
+🫡	salutierendes Gesicht	saluting face
+🤐	Gesicht mit Reißverschlussmund	zipper-mouth face
+🤨	Gesicht mit hochgezogenen Augenbrauen	face with raised eyebrow
+😐	neutrales Gesicht	neutral face
+😑	ausdrucksloses Gesicht	expressionless face
+😶	Gesicht ohne Mund	face without mouth
+🫥	gestricheltes Gesicht	dotted line face
+😶‍🌫	Gesicht in Wolken	face in clouds
+😏	süffisant lächelndes Gesicht	smirking face
+😒	verstimmtes Gesicht	unamused face
+🙄	Augen verdrehendes Gesicht	face with rolling eyes
+😬	Grimassen schneidendes Gesicht	grimacing face
+😮‍💨	Gesicht, das ausatmet	face exhaling
+🤥	lügendes Gesicht	lying face
+🫨	zitterndes Doppelgesicht	shaking face
+🙂‍↔	Kopfschütteln	head shaking horizontally
+🙂‍↕	Kopfnicken	head shaking vertically
+😌	erleichtertes Gesicht	relieved face
+😔	nachdenkliches Gesicht	pensive face
+😪	schläfriges Gesicht	sleepy face
+🤤	sabberndes Gesicht	drooling face
+😴	schlafendes Gesicht	sleeping face
+🫩	Gesicht mit Augenringen	face with bags under eyes
+😷	Gesicht mit Atemschutzmaske	face with medical mask
+🤒	Gesicht mit Fieberthermometer	face with thermometer
+🤕	Gesicht mit Kopfverband	face with head-bandage
+🤢	würgendes Gesicht	nauseated face
+🤮	kotzendes Gesicht	face vomiting
+🤧	niesendes Gesicht	sneezing face
+🥵	schwitzendes Gesicht	hot face
+🥶	frierendes Gesicht	cold face
+🥴	schwindeliges Gesicht	woozy face
+😵	benommenes Gesicht	face with crossed-out eyes
+😵‍💫	Gesicht mit Spiralen als Augen	face with spiral eyes
+🤯	explodierender Kopf	exploding head
+🤠	Gesicht mit Cowboyhut	cowboy hat face
+🥳	Partygesicht	partying face
+🥸	verkleidet	disguised face
+😎	lächelndes Gesicht mit Sonnenbrille	smiling face with sunglasses
+🤓	Strebergesicht	nerd face
+🧐	Gesicht mit Monokel	face with monocle
+😕	verwundertes Gesicht	confused face
+🫤	Gesicht mit schrägem Mund	face with diagonal mouth
+😟	besorgtes Gesicht	worried face
+🙁	betrübtes Gesicht	slightly frowning face
+☹	düsteres Gesicht	frowning face
+😮	Gesicht mit offenem Mund	face with open mouth
+😯	verdutztes Gesicht	hushed face
+😲	erstauntes Gesicht	astonished face
+😳	errötetes Gesicht mit großen Augen	flushed face
+🫪	verzerrtes Gesicht	distorted face
+🥺	bettelndes Gesicht	pleading face
+🥹	Gesicht, das Tränen zurückhält	face holding back tears
+😦	entsetztes Gesicht	frowning face with open mouth
+😧	qualvolles Gesicht	anguished face
+😨	ängstliches Gesicht	fearful face
+😰	besorgtes Gesicht mit Schweißtropfen	anxious face with sweat
+😥	trauriges aber erleichtertes Gesicht	sad but relieved face
+😢	weinendes Gesicht	crying face
+😭	heulendes Gesicht	loudly crying face
+😱	vor Angst schreiendes Gesicht	face screaming in fear
+😖	verwirrtes Gesicht	confounded face
+😣	entschlossenes Gesicht	persevering face
+😞	enttäuschtes Gesicht	disappointed face
+😓	bedrücktes Gesicht mit Schweiß	downcast face with sweat
+😩	erschöpftes Gesicht	weary face
+😫	müdes Gesicht	tired face
+🥱	gähnendes Gesicht	yawning face
+😤	schnaubendes Gesicht	face with steam from nose
+😡	schmollendes Gesicht	enraged face
+😠	verärgertes Gesicht	angry face
+🤬	Gesicht mit Symbolen über dem Mund	face with symbols on mouth
+😈	grinsendes Gesicht mit Hörnern	smiling face with horns
+👿	wütendes Gesicht mit Hörnern	angry face with horns
+💀	Totenkopf	skull
+☠	Totenkopf mit gekreuzten Knochen	skull and crossbones
+💩	Kothaufen	pile of poo
+🤡	Clown-Gesicht	clown face
+👹	Ungeheuer	ogre
+👺	Kobold	goblin
+👻	Gespenst	ghost
+👽	Außerirdischer	alien
+👾	Computerspiel-Monster	alien monster
+🤖	Roboter	robot
+😺	grinsende Katze	grinning cat
+😸	grinsende Katze mit lachenden Augen	grinning cat with smiling eyes
+😹	Katze mit Freudentränen	cat with tears of joy
+😻	lachende Katze mit Herzen als Augen	smiling cat with heart-eyes
+😼	verwegen lächelnde Katze	cat with wry smile
+😽	küssende Katze	kissing cat
+🙀	erschöpfte Katze	weary cat
+😿	weinende Katze	crying cat
+😾	schmollende Katze	pouting cat
+🙈	sich die Augen zuhaltendes Affengesicht	see-no-evil monkey
+🙉	sich die Ohren zuhaltendes Affengesicht	hear-no-evil monkey
+🙊	sich den Mund zuhaltendes Affengesicht	speak-no-evil monkey
+💌	Liebesbrief	love letter
+💘	Herz mit Pfeil	heart with arrow
+💝	Herz mit Schleife	heart with ribbon
+💖	funkelndes Herz	sparkling heart
+💗	wachsendes Herz	growing heart
+💓	schlagendes Herz	beating heart
+💞	kreisende Herzen	revolving hearts
+💕	zwei Herzen	two hearts
+💟	Herzdekoration	heart decoration
+❣	Herz als Ausrufezeichen	heart exclamation
+💔	gebrochenes Herz	broken heart
+❤‍🔥	Herz in Flammen	heart on fire
+❤‍🩹	Herz mit Verband	mending heart
+❤	rotes Herz	red heart
+🩷	pinkes Herz	pink heart
+🧡	oranges Herz	orange heart
+💛	gelbes Herz	yellow heart
+💚	grünes Herz	green heart
+💙	blaues Herz	blue heart
+🩵	hellblaues Herz	light blue heart
+💜	lila Herz	purple heart
+🤎	braunes Herz	brown heart
+🖤	schwarzes Herz	black heart
+🩶	graues Herz	grey heart
+🤍	weißes Herz	white heart
+💋	Kussabdruck	kiss mark
+💯	100 Punkte	hundred points
+💢	Ärger	anger symbol
+🫯	Kampfwolke	fight cloud
+💥	Zusammenstoß	collision
+💫	schwindlig	dizzy
+💦	Schweißtropfen	sweat droplets
+💨	Staubwolke	dashing away
+🕳	Loch	hole
+💬	Sprechblase mit drei Punkten	speech balloon
+👁‍🗨	Auge in Sprechblase	eye in speech bubble
+🗨	Sprechblase links	left speech bubble
+🗯	Sprechblase für wütende Aussage rechts	right anger bubble
+💭	Gedankenblase	thought balloon
+💤	Schlafen	ZZZ
+👋	winkende Hand	waving hand
+🤚	erhobene Hand von hinten	raised back of hand
+🖐	Hand mit gespreizten Fingern	hand with fingers splayed
+✋	erhobene Hand	raised hand
+🖖	vulkanischer Gruß	vulcan salute
+🫱	nach rechts weisende Hand	rightwards hand
+🫲	nach links weisende Hand	leftwards hand
+🫳	Hand mit Handfläche nach unten	palm down hand
+🫴	Hand mit Handfläche nach oben	palm up hand
+🫷	nach links schiebende Hand	leftwards pushing hand
+🫸	nach rechts schiebende Hand	rightwards pushing hand
+👌	OK-Zeichen	OK hand
+🤌	zusammengedrückte Finger	pinched fingers
+🤏	Wenig-Geste	pinching hand
+✌	Victory-Geste	victory hand
+🤞	Hand mit gekreuzten Fingern	crossed fingers
+🫰	Hand mit gekreuztem Zeigefinger und Daumen	hand with index finger and thumb crossed
+🤟	Ich-liebe-dich-Geste	love-you gesture
+🤘	Teufelsgruß	sign of the horns
+🤙	Ruf-mich-an-Handzeichen	call me hand
+👈	nach links weisender Zeigefinger	backhand index pointing left
+👉	nach rechts weisender Zeigefinger	backhand index pointing right
+👆	nach oben weisender Zeigefinger von hinten	backhand index pointing up
+🖕	Mittelfinger	middle finger
+👇	nach unten weisender Zeigefinger	backhand index pointing down
+☝	nach oben weisender Zeigefinger von vorne	index pointing up
+🫵	auf Betrachter zeigender Zeigefinger	index pointing at the viewer
+👍	Daumen hoch	thumbs up
+👎	Daumen runter	thumbs down
+🫹	Daumen nach links	leftwards thumb sign
+🫺	Daumen nach rechts	rightwards thumb sign
+✊	erhobene Faust	raised fist
+👊	geballte Faust	oncoming fist
+🤛	Faust nach links	left-facing fist
+🤜	Faust nach rechts	right-facing fist
+👏	klatschende Hände	clapping hands
+🙌	zwei erhobene Handflächen	raising hands
+🫶	Hände, die Herz bilden	heart hands
+👐	offene Hände	open hands
+🤲	Handflächen nach oben	palms up together
+🤝	Handschlag	handshake
+🙏	zusammengelegte Handflächen	folded hands
+✍	schreibende Hand	writing hand
+💅	Nagellack	nail polish
+🤳	Selfie	selfie
+💪	angespannter Bizeps	flexed biceps
+🦾	Armprothese	mechanical arm
+🦿	Beinprothese	mechanical leg
+🦵	Bein	leg
+🦶	Fuß	foot
+👂	Ohr	ear
+🦻	Ohr mit Hörgerät	ear with hearing aid
+👃	Nase	nose
+🧠	Gehirn	brain
+🫀	Herz (Organ)	anatomical heart
+🫁	Lunge	lungs
+🦷	Zahn	tooth
+🦴	Knochen	bone
+👀	Augen	eyes
+👁	Auge	eye
+👅	Zunge	tongue
+👄	Mund	mouth
+🫦	auf Lippe beißen	biting lip
+👶	Baby	baby
+🧒	Kind	child
+👦	Junge	boy
+👧	Mädchen	girl
+🧑	Person	person
+👱	Person: blondes Haar	person: blond hair
+👨	Mann	man
+🧔	Person: Bart	person: beard
+🧔‍♂	Mann: Bart	man: beard
+👱‍♂	Mann: blond	man: blond hair
+👩	Frau	woman
+🧔‍♀	Frau: Bart	woman: beard
+👱‍♀	Frau: blond	woman: blond hair
+🧓	ältere Person	older person
+👴	älterer Mann	old man
+👵	ältere Frau	old woman
+🙍	missmutige Person	person frowning
+🙍‍♂	missmutiger Mann	man frowning
+🙍‍♀	missmutige Frau	woman frowning
+🙎	schmollende Person	person pouting
+🙎‍♂	schmollender Mann	man pouting
+🙎‍♀	schmollende Frau	woman pouting
+🙅	Person mit überkreuzten Armen	person gesturing NO
+🙅‍♂	Mann mit überkreuzten Armen	man gesturing NO
+🙅‍♀	Frau mit überkreuzten Armen	woman gesturing NO
+🙆	Person mit Händen auf dem Kopf	person gesturing OK
+🙆‍♂	Mann mit Händen auf dem Kopf	man gesturing OK
+🙆‍♀	Frau mit Händen auf dem Kopf	woman gesturing OK
+💁	Infoschalter-Mitarbeiter(in)	person tipping hand
+💁‍♂	Infoschalter-Mitarbeiter	man tipping hand
+💁‍♀	Infoschalter-Mitarbeiterin	woman tipping hand
+🙋	Person mit erhobenem Arm	person raising hand
+🙋‍♂	Mann mit erhobenem Arm	man raising hand
+🙋‍♀	Frau mit erhobenem Arm	woman raising hand
+🧏	gehörlose Person	deaf person
+🧏‍♂	gehörloser Mann	deaf man
+🧏‍♀	gehörlose Frau	deaf woman
+🙇	sich verbeugende Person	person bowing
+🙇‍♂	sich verbeugender Mann	man bowing
+🙇‍♀	sich verbeugende Frau	woman bowing
+🤦	sich an den Kopf fassende Person	person facepalming
+🤦‍♂	sich an den Kopf fassender Mann	man facepalming
+🤦‍♀	sich an den Kopf fassende Frau	woman facepalming
+🤷	schulterzuckende Person	person shrugging
+🤷‍♂	schulterzuckender Mann	man shrugging
+🤷‍♀	schulterzuckende Frau	woman shrugging
+🧑‍⚕	Arzt/Ärztin	health worker
+👨‍⚕	Arzt	man health worker
+👩‍⚕	Ärztin	woman health worker
+🧑‍🎓	Student(in)	student
+👨‍🎓	Student	man student
+👩‍🎓	Studentin	woman student
+🧑‍🏫	Lehrer(in)	teacher
+👨‍🏫	Lehrer	man teacher
+👩‍🏫	Lehrerin	woman teacher
+🧑‍⚖	Richter(in)	judge
+👨‍⚖	Richter	man judge
+👩‍⚖	Richterin	woman judge
+🧑‍🌾	Bauer/Bäuerin	farmer
+👨‍🌾	Bauer	man farmer
+👩‍🌾	Bäuerin	woman farmer
+🧑‍🍳	Koch/Köchin	cook
+👨‍🍳	Koch	man cook
+👩‍🍳	Köchin	woman cook
+🧑‍🔧	Mechaniker(in)	mechanic
+👨‍🔧	Mechaniker	man mechanic
+👩‍🔧	Mechanikerin	woman mechanic
+🧑‍🏭	Fabrikarbeiter(in)	factory worker
+👨‍🏭	Fabrikarbeiter	man factory worker
+👩‍🏭	Fabrikarbeiterin	woman factory worker
+🧑‍💼	Büroangestellte(r)	office worker
+👨‍💼	Büroangestellter	man office worker
+👩‍💼	Büroangestellte	woman office worker
+🧑‍🔬	Wissenschaftler(in)	scientist
+👨‍🔬	Wissenschaftler	man scientist
+👩‍🔬	Wissenschaftlerin	woman scientist
+🧑‍💻	IT-Experte/IT-Expertin	technologist
+👨‍💻	IT-Experte	man technologist
+👩‍💻	IT-Expertin	woman technologist
+🧑‍🎤	Sänger(in)	singer
+👨‍🎤	Sänger	man singer
+👩‍🎤	Sängerin	woman singer
+🧑‍🎨	Künstler(in)	artist
+👨‍🎨	Künstler	man artist
+👩‍🎨	Künstlerin	woman artist
+🧑‍✈	Pilot(in)	pilot
+👨‍✈	Pilot	man pilot
+👩‍✈	Pilotin	woman pilot
+🧑‍🚀	Astronaut(in)	astronaut
+👨‍🚀	Astronaut	man astronaut
+👩‍🚀	Astronautin	woman astronaut
+🧑‍🚒	Feuerwehrmann/-frau	firefighter
+👨‍🚒	Feuerwehrmann	man firefighter
+👩‍🚒	Feuerwehrfrau	woman firefighter
+👮	Polizist(in)	police officer
+👮‍♂	Polizist	man police officer
+👮‍♀	Polizistin	woman police officer
+🕵	Detektiv(in)	detective
+🕵‍♂	Detektiv	man detective
+🕵‍♀	Detektivin	woman detective
+💂	Wache	guard
+💂‍♂	Wachsoldat	man guard
+💂‍♀	Wachsoldatin	woman guard
+🥷	Ninja	ninja
+👷	Bauarbeiter(in)	construction worker
+👷‍♂	Bauarbeiter	man construction worker
+👷‍♀	Bauarbeiterin	woman construction worker
+🫅	Person mit Krone	person with crown
+🤴	Prinz	prince
+👸	Prinzessin	princess
+👳	Person mit Turban	person wearing turban
+👳‍♂	Mann mit Turban	man wearing turban
+👳‍♀	Frau mit Turban	woman wearing turban
+👲	Mann mit chinesischem Hut	person with skullcap
+🧕	Frau mit Kopftuch	woman with headscarf
+🤵	Person im Smoking	person in tuxedo
+🤵‍♂	Mann im Smoking	man in tuxedo
+🤵‍♀	Frau im Smoking	woman in tuxedo
+👰	Person mit Schleier	person with veil
+👰‍♂	Mann mit Schleier	man with veil
+👰‍♀	Frau mit Schleier	woman with veil
+🤰	schwangere Frau	pregnant woman
+🫃	schwangerer Mann	pregnant man
+🫄	schwangere Person	pregnant person
+🤱	Stillen	breast-feeding
+👩‍🍼	Frau, die Baby die Flasche gibt	woman feeding baby
+👨‍🍼	Mann, der Baby die Flasche gibt	man feeding baby
+🧑‍🍼	Person, die Baby die Flasche gibt	person feeding baby
+👼	Putte	baby angel
+🎅	Weihnachtsmann	Santa Claus
+🤶	Weihnachtsfrau	Mrs. Claus
+🧑‍🎄	Weihnachtsperson	Mx Claus
+🦸	Superheld(in)	superhero
+🦸‍♂	Superheld	man superhero
+🦸‍♀	Heldin	woman superhero
+🦹	Bösewicht	supervillain
+🦹‍♂	männlicher Bösewicht	man supervillain
+🦹‍♀	weiblicher Bösewicht	woman supervillain
+🧙	Magier(in)	mage
+🧙‍♂	Magier	man mage
+🧙‍♀	Magierin	woman mage
+🧚	Märchenfee	fairy
+🧚‍♂	männliche Fee	man fairy
+🧚‍♀	Fee	woman fairy
+🧛	Vampir	vampire
+🧛‍♂	männlicher Vampir	man vampire
+🧛‍♀	weiblicher Vampir	woman vampire
+🧜	Wassermensch	merperson
+🧜‍♂	Wassermann	merman
+🧜‍♀	Meerjungfrau	mermaid
+🧝	Elf(e)	elf
+🧝‍♂	Elf	man elf
+🧝‍♀	Elfe	woman elf
+🧞	Flaschengeist	genie
+🧞‍♂	männlicher Flaschengeist	man genie
+🧞‍♀	weiblicher Flaschengeist	woman genie
+🧟	Zombie	zombie
+🧟‍♂	männlicher Zombie	man zombie
+🧟‍♀	weiblicher Zombie	woman zombie
+🧌	Troll	troll
+🫈	haariges Wesen	hairy creature
+💆	Person, die eine Kopfmassage bekommt	person getting massage
+💆‍♂	Mann, der eine Kopfmassage bekommt	man getting massage
+💆‍♀	Frau, die eine Kopfmassage bekommt	woman getting massage
+💇	Person beim Haareschneiden	person getting haircut
+💇‍♂	Mann beim Haareschneiden	man getting haircut
+💇‍♀	Frau beim Haareschneiden	woman getting haircut
+🚶	Fußgänger(in)	person walking
+🚶‍♂	Fußgänger	man walking
+🚶‍♀	Fußgängerin	woman walking
+🧍	stehende Person	person standing
+🧍‍♂	stehender Mann	man standing
+🧍‍♀	stehende Frau	woman standing
+🧎	kniende Person	person kneeling
+🧎‍♂	kniender Mann	man kneeling
+🧎‍♀	kniende Frau	woman kneeling
+🧑‍🦯	Person mit Langstock	person with white cane
+👨‍🦯	Mann mit Langstock	man with white cane
+👩‍🦯	Frau mit Langstock	woman with white cane
+🧑‍🦼	Person in elektrischem Rollstuhl	person in motorized wheelchair
+👨‍🦼	Mann in elektrischem Rollstuhl	man in motorized wheelchair
+👩‍🦼	Frau in elektrischem Rollstuhl	woman in motorized wheelchair
+🧑‍🦽	Person in manuellem Rollstuhl	person in manual wheelchair
+👨‍🦽	Mann in manuellem Rollstuhl	man in manual wheelchair
+👩‍🦽	Frau in manuellem Rollstuhl	woman in manual wheelchair
+🏃	laufende Person	person running
+🏃‍♂	laufender Mann	man running
+🏃‍♀	laufende Frau	woman running
+🧑‍🩰	Balletttänzerin	ballet dancer
+💃	tanzende Frau	woman dancing
+🕺	tanzender Mann	man dancing
+🕴	schwebender Mann im Anzug	person in suit levitating
+👯	Personen mit Hasenohren	people with bunny ears
+👯‍♂	Männer mit Hasenohren	men with bunny ears
+👯‍♀	Frauen mit Hasenohren	women with bunny ears
+🧖	Person in Dampfsauna	person in steamy room
+🧖‍♂	Mann in Dampfsauna	man in steamy room
+🧖‍♀	Frau in Dampfsauna	woman in steamy room
+🧗	Bergsteiger(in)	person climbing
+🧗‍♂	Bergsteiger	man climbing
+🧗‍♀	Bergsteigerin	woman climbing
+🤺	Fechter(in)	person fencing
+🏇	Pferderennen	horse racing
+⛷	Skifahrer(in)	skier
+🏂	Snowboarder(in)	snowboarder
+🏌	Golfer(in)	person golfing
+🏌‍♂	Golfer	man golfing
+🏌‍♀	Golferin	woman golfing
+🏄	Surfer(in)	person surfing
+🏄‍♂	Surfer	man surfing
+🏄‍♀	Surferin	woman surfing
+🚣	Person im Ruderboot	person rowing boat
+🚣‍♂	Mann im Ruderboot	man rowing boat
+🚣‍♀	Frau im Ruderboot	woman rowing boat
+🏊	Schwimmer(in)	person swimming
+🏊‍♂	Schwimmer	man swimming
+🏊‍♀	Schwimmerin	woman swimming
+⛹	Person mit Ball	person bouncing ball
+⛹‍♂	Mann mit Ball	man bouncing ball
+⛹‍♀	Frau mit Ball	woman bouncing ball
+🏋	Gewichtheber(in)	person lifting weights
+🏋‍♂	Gewichtheber	man lifting weights
+🏋‍♀	Gewichtheberin	woman lifting weights
+🚴	Radfahrer(in)	person biking
+🚴‍♂	Radfahrer	man biking
+🚴‍♀	Radfahrerin	woman biking
+🚵	Mountainbiker(in)	person mountain biking
+🚵‍♂	Mountainbiker	man mountain biking
+🚵‍♀	Mountainbikerin	woman mountain biking
+🤸	Rad schlagende Person	person cartwheeling
+🤸‍♂	Rad schlagender Mann	man cartwheeling
+🤸‍♀	Rad schlagende Frau	woman cartwheeling
+🤼	Ringer(in)	people wrestling
+🤼‍♂	ringende Männer	men wrestling
+🤼‍♀	ringende Frauen	women wrestling
+🤽	Wasserballspieler(in)	person playing water polo
+🤽‍♂	Wasserballspieler	man playing water polo
+🤽‍♀	Wasserballspielerin	woman playing water polo
+🤾	Handballspieler(in)	person playing handball
+🤾‍♂	Handballspieler	man playing handball
+🤾‍♀	Handballspielerin	woman playing handball
+🤹	Jongleur(in)	person juggling
+🤹‍♂	Jongleur	man juggling
+🤹‍♀	Jongleurin	woman juggling
+🧘	Person im Lotossitz	person in lotus position
+🧘‍♂	Mann im Lotossitz	man in lotus position
+🧘‍♀	Frau im Lotossitz	woman in lotus position
+🛀	badende Person	person taking bath
+🛌	im Bett liegende Person	person in bed
+🧑‍🤝‍🧑	sich an den Händen haltende Personen	people holding hands
+👭	Händchen haltende Frauen	women holding hands
+👫	Mann und Frau halten Hände	woman and man holding hands
+👬	Händchen haltende Männer	men holding hands
+💏	sich küssendes Paar	kiss
+💑	Liebespaar	couple with heart
+🗣	sprechender Kopf	speaking head
+👤	Silhouette einer Büste	bust in silhouette
+👥	Silhouette mehrerer Büsten	busts in silhouette
+🫂	sich umarmende Personen	people hugging
+👪	Familie	family
+🧑‍🧑‍🧒	Familie: 2 Erwachsene, 1 Kind	family: adult, adult, child
+🧑‍🧑‍🧒‍🧒	Familie: 2 Erwachsene, 2 Kinder	family: adult, adult, child, child
+🧑‍🧒	Familie: 1 Erwachsene(r), 1 Kind	family: adult, child
+🧑‍🧒‍🧒	Familie: 1 Erwachsene(r), 2 Kinder	family: adult, child, child
+👣	Fußabdrücke	footprints
+🫆	Fingerabdruck	fingerprint
+🦰	rotes Haar	red hair
+🦱	lockiges Haar	curly hair
+🦳	weißes Haar	white hair
+🦲	Glatze	bald
+🐵	Affengesicht	monkey face
+🐒	Affe	monkey
+🦍	Gorilla	gorilla
+🦧	Orang-Utan	orangutan
+🐶	Hundegesicht	dog face
+🐕	Hund	dog
+🦮	Blindenhund	guide dog
+🐕‍🦺	Assistenzhund	service dog
+🐩	Pudel	poodle
+🐺	Wolf	wolf
+🦊	Fuchs	fox
+🦝	Waschbär	raccoon
+🐱	Katzengesicht	cat face
+🐈	Katze	cat
+🐈‍⬛	schwarze Katze	black cat
+🦁	Löwe	lion
+🐯	Tigergesicht	tiger face
+🐅	Tiger	tiger
+🐆	Leopard	leopard
+🐴	Pferdegesicht	horse face
+🫎	Elch	moose
+🫏	Esel	donkey
+🐎	Pferd	horse
+🦄	Einhorn	unicorn
+🦓	Zebra	zebra
+🦌	Hirsch	deer
+🦬	Bison	bison
+🐮	Kuhgesicht	cow face
+🐂	Ochse	ox
+🐃	Wasserbüffel	water buffalo
+🐄	Kuh	cow
+🐷	Schweinegesicht	pig face
+🐖	Schwein	pig
+🐗	Wildschwein	boar
+🐽	Schweinerüssel	pig nose
+🐏	Widder	ram
+🐑	Schaf	ewe
+🐐	Ziege	goat
+🐪	Dromedar	camel
+🐫	Kamel	two-hump camel
+🦙	Lama	llama
+🦒	Giraffe	giraffe
+🐘	Elefant	elephant
+🦣	Mammut	mammoth
+🦏	Nashorn	rhinoceros
+🦛	Nilpferd	hippopotamus
+🐭	Mäusegesicht	mouse face
+🐁	Maus	mouse
+🐀	Ratte	rat
+🐹	Hamster	hamster
+🐰	Hasengesicht	rabbit face
+🐇	Hase	rabbit
+🐿	Streifenhörnchen	chipmunk
+🦫	Biber	beaver
+🦔	Igel	hedgehog
+🦇	Fledermaus	bat
+🐻	Bär	bear
+🐻‍❄	Eisbär	polar bear
+🐨	Koala	koala
+🐼	Panda	panda
+🦥	Faultier	sloth
+🦦	Otter	otter
+🦨	Stinktier	skunk
+🦘	Känguru	kangaroo
+🦡	Dachs	badger
+🐾	Tatzenabdrücke	paw prints
+🦃	Truthahn	turkey
+🐔	Huhn	chicken
+🐓	Hahn	rooster
+🐣	schlüpfendes Küken	hatching chick
+🐤	Küken	baby chick
+🐥	Küken von vorne	front-facing baby chick
+🐦	Vogel	bird
+🐧	Pinguin	penguin
+🕊	Taube	dove
+🦅	Adler	eagle
+🦆	Ente	duck
+🦢	Schwan	swan
+🦉	Eule	owl
+🦤	Dodo	dodo
+🪶	Feder	feather
+🦩	Flamingo	flamingo
+🦚	Pfau	peacock
+🦜	Papagei	parrot
+🪽	Flügel	wing
+🐦‍⬛	schwarzer Vogel	black bird
+🪿	Gans	goose
+🐦‍🔥	Phönix	phoenix
+🐸	Frosch	frog
+🐊	Krokodil	crocodile
+🐢	Schildkröte	turtle
+🦎	Eidechse	lizard
+🐍	Schlange	snake
+🐲	Drachengesicht	dragon face
+🐉	Drache	dragon
+🦕	Sauropode	sauropod
+🦖	T-Rex	T-Rex
+🐳	blasender Wal	spouting whale
+🐋	Wal	whale
+🐬	Delfin	dolphin
+🫍	Orca	orca
+🦭	Seehund	seal
+🐟	Fisch	fish
+🐠	Tropenfisch	tropical fish
+🐡	Kugelfisch	blowfish
+🦈	Hai	shark
+🐙	Oktopus	octopus
+🐚	Schneckenhaus	spiral shell
+🪸	Koralle	coral
+🪼	Qualle	jellyfish
+🦀	Krebs	crab
+🦞	Hummer	lobster
+🦐	Garnele	shrimp
+🦑	Tintenfisch	squid
+🦪	Auster	oyster
+🐌	Schnecke	snail
+🦋	Schmetterling	butterfly
+🫌	Monarchfalter	monarch butterfly
+🐛	Raupe	bug
+🐜	Ameise	ant
+🐝	Biene	honeybee
+🪲	Käfer	beetle
+🐞	Marienkäfer	lady beetle
+🦗	Grille	cricket
+🪳	Kakerlake	cockroach
+🕷	Spinne	spider
+🕸	Spinnennetz	spider web
+🦂	Skorpion	scorpion
+🦟	Mücke	mosquito
+🪰	Fliege	fly
+🪱	Wurm	worm
+🦠	Mikrobe	microbe
+💐	Blumenstrauß	bouquet
+🌸	Kirschblüte	cherry blossom
+💮	Blumenstempel	white flower
+🪷	Lotusblüte	lotus
+🏵	Rosette	rosette
+🌹	Rose	rose
+🥀	welke Blume	wilted flower
+🌺	Hibiskus	hibiscus
+🌻	Sonnenblume	sunflower
+🌼	gelbe Blüte	blossom
+🌷	Tulpe	tulip
+🪻	Hyazinthe	hyacinth
+🌱	Spross	seedling
+🪴	Topfpflanze	potted plant
+🌲	Nadelbaum	evergreen tree
+🌳	Laubbaum	deciduous tree
+🌴	Palme	palm tree
+🌵	Kaktus	cactus
+🌾	Reisähre	sheaf of rice
+🌿	Kräuter	herb
+☘	Kleeblatt	shamrock
+🍀	Glücksklee	four leaf clover
+🍁	Ahornblatt	maple leaf
+🍂	Laub	fallen leaf
+🍃	Blätter im Wind	leaf fluttering in wind
+🪹	leeres Nest	empty nest
+🪺	Nest mit Eiern	nest with eggs
+🍄	Fliegenpilz	mushroom
+🪾	kahler Baum	leafless tree
+🍇	Trauben	grapes
+🍈	Honigmelone	melon
+🍉	Wassermelone	watermelon
+🍊	Mandarine	tangerine
+🍋	Zitrone	lemon
+🍋‍🟩	Limette	lime
+🍌	Banane	banana
+🍍	Ananas	pineapple
+🥭	Mango	mango
+🍎	roter Apfel	red apple
+🍏	grüner Apfel	green apple
+🍐	Birne	pear
+🍑	Pfirsich	peach
+🍒	Kirschen	cherries
+🍓	Erdbeere	strawberry
+🫐	Blaubeeren	blueberries
+🥝	Kiwi	kiwi fruit
+🍅	Tomate	tomato
+🫒	Olive	olive
+🥥	Kokosnuss	coconut
+🥑	Avocado	avocado
+🍆	Aubergine	eggplant
+🥔	Kartoffel	potato
+🥕	Karotte	carrot
+🌽	Maiskolben	ear of corn
+🌶	Peperoni	hot pepper
+🫑	Paprika	bell pepper
+🥒	Gurke	cucumber
+🫝	Saure Gurke	pickle
+🥬	Blattgemüse	leafy green
+🥦	Brokkoli	broccoli
+🧄	Knoblauch	garlic
+🧅	Zwiebel	onion
+🥜	Erdnuss	peanuts
+🫘	Bohnen	beans
+🌰	Kastanie	chestnut
+🫚	Ingwer	ginger root
+🫛	Erbsenschote	pea pod
+🍄‍🟫	brauner Pilz	brown mushroom
+🫜	Wurzelgemüse	root vegetable
+🍞	Brot	bread
+🥐	Croissant	croissant
+🥖	Baguette	baguette bread
+🫓	Fladenbrot	flatbread
+🥨	Brezel	pretzel
+🥯	Bagel	bagel
+🥞	Pfannkuchen	pancakes
+🧇	Waffel	waffle
+🧀	Käsestück	cheese wedge
+🍖	Fleischhachse	meat on bone
+🍗	Hähnchenschenkel	poultry leg
+🥩	Fleischstück	cut of meat
+🥓	Bacon	bacon
+🍔	Hamburger	hamburger
+🍟	Pommes frites	french fries
+🍕	Pizza	pizza
+🌭	Hotdog	hot dog
+🥪	Sandwich	sandwich
+🌮	Taco	taco
+🌯	Burrito	burrito
+🫔	Tamale	tamale
+🥙	Döner	stuffed flatbread
+🧆	Falafel	falafel
+🥚	Ei	egg
+🍳	Spiegelei in Bratpfanne	cooking
+🥘	Pfannengericht	shallow pan of food
+🍲	Topf mit Essen	pot of food
+🫕	Fondue	fondue
+🥣	Schüssel mit Löffel	bowl with spoon
+🥗	Salat	green salad
+🍿	Popcorn	popcorn
+🧈	Butter	butter
+🧂	Salz	salt
+🥫	Konserve	canned food
+🍱	Bento-Box	bento box
+🍘	Reiscracker	rice cracker
+🍙	Reisbällchen	rice ball
+🍚	Reis in Schüssel	cooked rice
+🍛	Reis mit Curry	curry rice
+🍜	Schüssel und Essstäbchen	steaming bowl
+🍝	Spaghetti	spaghetti
+🍠	geröstete Süßkartoffel	roasted sweet potato
+🍢	Oden	oden
+🍣	Sushi	sushi
+🍤	frittierte Garnele	fried shrimp
+🍥	Fischfrikadelle	fish cake with swirl
+🥮	Mondkuchen	moon cake
+🍡	Dango	dango
+🥟	Teigtasche	dumpling
+🥠	Glückskeks	fortune cookie
+🥡	Takeaway-Schachtel	takeout box
+🍦	Softeis	soft ice cream
+🍧	Wassereis	shaved ice
+🍨	Eiscreme	ice cream
+🍩	Donut	doughnut
+🍪	Keks	cookie
+🎂	Geburtstagskuchen	birthday cake
+🍰	Torte	shortcake
+🧁	Cupcake	cupcake
+🥧	Kuchen	pie
+🍫	Schokoladentafel	chocolate bar
+🍬	Bonbon	candy
+🍭	Lutscher	lollipop
+🍮	Pudding	custard
+🍯	Honigtopf	honey pot
+🍼	Babyflasche	baby bottle
+🥛	Glas Milch	glass of milk
+☕	Heißgetränk	hot beverage
+🫖	Teekanne	teapot
+🍵	Teetasse ohne Henkel	teacup without handle
+🍶	Sake-Flasche mit Tasse	sake
+🍾	Flasche mit knallendem Korken	bottle with popping cork
+🍷	Weinglas	wine glass
+🍸	Cocktailglas	cocktail glass
+🍹	Cocktail	tropical drink
+🍺	Bierkrug	beer mug
+🍻	Bierkrüge	clinking beer mugs
+🥂	Sektgläser	clinking glasses
+🥃	Trinkglas	tumbler glass
+🫗	Flüssigkeit ausgießen	pouring liquid
+🥤	Becher mit Strohhalm	cup with straw
+🧋	Bubble Tea	bubble tea
+🧃	Trinkpäckchen	beverage box
+🧉	Mate-Tee	mate
+🧊	Eiswürfel	ice
+🥢	Essstäbchen	chopsticks
+🍽	Teller mit Messer und Gabel	fork and knife with plate
+🍴	Messer und Gabel	fork and knife
+🥄	Löffel	spoon
+🔪	Küchenmesser	kitchen knife
+🫙	Einmachglas	jar
+🏺	Amphore	amphora
+🌍	Globus mit Europa und Afrika	globe showing Europe-Africa
+🌎	Globus mit Amerika	globe showing Americas
+🌏	Globus mit Asien und Australien	globe showing Asia-Australia
+🌐	Globus mit Meridianen	globe with meridians
+🗺	Weltkarte	world map
+🗾	Umriss von Japan	map of Japan
+🧭	Kompass	compass
+🏔	schneebedeckter Berg	snow-capped mountain
+⛰	Berg	mountain
+🛘	Erdrutsch	landslide
+🌋	Vulkan	volcano
+🗻	Fuji	mount fuji
+🏕	Camping	camping
+🏖	Strand mit Sonnenschirm	beach with umbrella
+🏜	Wüste	desert
+🏝	einsame Insel	desert island
+🏞	Nationalpark	national park
+🏟	Stadion	stadium
+🏛	antikes Gebäude	classical building
+🏗	Kran	building construction
+🧱	Ziegelstein	brick
+🪨	Felsen	rock
+🪵	Holz	wood
+🛖	Hütte	hut
+🏘	Wohnhäuser	houses
+🏚	verfallenes Haus	derelict house
+🏠	Haus	house
+🏡	Haus mit Garten	house with garden
+🏢	Bürogebäude	office building
+🏣	japanisches Postgebäude	Japanese post office
+🏤	Postgebäude	post office
+🏥	Krankenhaus	hospital
+🏦	Bank	bank
+🏨	Hotel	hotel
+🏩	Stundenhotel	love hotel
+🏪	Minimarkt	convenience store
+🏫	Schule	school
+🏬	Kaufhaus	department store
+🏭	Fabrik	factory
+🏯	japanisches Schloss	Japanese castle
+🏰	Schloss	castle
+💒	Hochzeit	wedding
+🗼	Tokyo Tower	Tokyo tower
+🗽	Freiheitsstatue	Statue of Liberty
+⛪	Kirche	church
+🕌	Moschee	mosque
+🛕	Hindutempel	hindu temple
+🕍	Synagoge	synagogue
+⛩	Shinto-Schrein	shinto shrine
+🕋	Kaaba	kaaba
+⛲	Springbrunnen	fountain
+⛺	Zelt	tent
+🌁	neblig	foggy
+🌃	Sternenhimmel	night with stars
+🏙	Skyline	cityscape
+🌄	Sonnenaufgang über Bergen	sunrise over mountains
+🌅	Sonnenaufgang über dem Meer	sunrise
+🌆	Abendstimmung in der Stadt	cityscape at dusk
+🌇	Sonnenuntergang in der Stadt	sunset
+🌉	Brücke vor Nachthimmel	bridge at night
+♨	heiße Quellen	hot springs
+🎠	Karussellpferd	carousel horse
+🛝	Spielplatzrutsche	playground slide
+🎡	Riesenrad	ferris wheel
+🎢	Achterbahn	roller coaster
+💈	Barbershop-Säule	barber pole
+🎪	Zirkuszelt	circus tent
+🚂	Dampflokomotive	locomotive
+🚃	Eisenbahnwagen	railway car
+🚄	Hochgeschwindigkeitszug mit spitzer Nase	high-speed train
+🚅	Hochgeschwindigkeitszug	bullet train
+🚆	Zug	train
+🚇	U-Bahn	metro
+🚈	S-Bahn	light rail
+🚉	Bahnhof	station
+🚊	Straßenbahn	tram
+🚝	Einschienenbahn	monorail
+🚞	Bergbahn	mountain railway
+🚋	Straßenbahnwagen	tram car
+🚌	Bus	bus
+🚍	Bus von vorne	oncoming bus
+🚎	Oberleitungsbus	trolleybus
+🚐	Kleinbus	minibus
+🚑	Krankenwagen	ambulance
+🚒	Feuerwehrauto	fire engine
+🚓	Polizeiwagen	police car
+🚔	Polizeiwagen von vorne	oncoming police car
+🚕	Taxi	taxi
+🚖	Taxi von vorne	oncoming taxi
+🚗	Auto	automobile
+🚘	Auto von vorne	oncoming automobile
+🚙	Wohnmobil	sport utility vehicle
+🛻	Pick-up	pickup truck
+🚚	Lieferwagen	delivery truck
+🚛	Sattelzug	articulated lorry
+🚜	Traktor	tractor
+🏎	Rennauto	racing car
+🏍	Motorrad	motorcycle
+🛵	Motorroller	motor scooter
+🦽	manueller Rollstuhl	manual wheelchair
+🦼	elektrischer Rollstuhl	motorized wheelchair
+🛺	Autorikscha	auto rickshaw
+🚲	Fahrrad	bicycle
+🛴	Tretroller	kick scooter
+🛹	Skateboard	skateboard
+🛼	Rollschuh	roller skate
+🚏	Bushaltestelle	bus stop
+🛣	Autobahn	motorway
+🛤	Bahngleis	railway track
+🛢	Ölfass	oil drum
+⛽	Tanksäule	fuel pump
+🛞	Autorad	wheel
+🚨	Polizeilicht	police car light
+🚥	horizontale Verkehrsampel	horizontal traffic light
+🚦	vertikale Verkehrsampel	vertical traffic light
+🛑	Stoppschild	stop sign
+🚧	Baustellenabsperrung	construction
+🛙	Leuchtturm	lighthouse
+⚓	Anker	anchor
+🛟	Rettungsring	ring buoy
+⛵	Segelboot	sailboat
+🛶	Kanu	canoe
+🚤	Schnellboot	speedboat
+🛳	Passagierschiff	passenger ship
+⛴	Fähre	ferry
+🛥	Motorboot	motor boat
+🚢	Schiff	ship
+✈	Flugzeug	airplane
+🛩	kleines Flugzeug	small airplane
+🛫	Abflug	airplane departure
+🛬	Landung eines Flugzeugs	airplane arrival
+🪂	Fallschirm	parachute
+💺	Sitzplatz	seat
+🚁	Hubschrauber	helicopter
+🚟	Schwebebahn	suspension railway
+🚠	Bergschwebebahn	mountain cableway
+🚡	Bergseilbahn	aerial tramway
+🛰	Satellit	satellite
+🚀	Rakete	rocket
+🛸	fliegende Untertasse	flying saucer
+🛎	Rezeptionsklingel	bellhop bell
+🧳	Gepäck	luggage
+⌛	Sanduhr	hourglass done
+⏳	laufende Sanduhr	hourglass not done
+⌚	Armbanduhr	watch
+⏰	Wecker	alarm clock
+⏱	Stoppuhr	stopwatch
+⏲	Zeitschaltuhr	timer clock
+🕰	Kaminuhr	mantelpiece clock
+🕛	Ziffernblatt 12:00 Uhr	twelve o’clock
+🕧	12:30 Uhr	twelve-thirty
+🕐	1:00 Uhr	one o’clock
+🕜	1:30 Uhr	one-thirty
+🕑	2:00 Uhr	two o’clock
+🕝	2:30 Uhr	two-thirty
+🕒	3:00 Uhr	three o’clock
+🕞	3:30 Uhr	three-thirty
+🕓	4:00 Uhr	four o’clock
+🕟	4:30 Uhr	four-thirty
+🕔	5:00 Uhr	five o’clock
+🕠	5:30 Uhr	five-thirty
+🕕	6:00 Uhr	six o’clock
+🕡	6:30 Uhr	six-thirty
+🕖	7:00 Uhr	seven o’clock
+🕢	7:30 Uhr	seven-thirty
+🕗	8:00 Uhr	eight o’clock
+🕣	8:30 Uhr	eight-thirty
+🕘	9:00 Uhr	nine o’clock
+🕤	9:30 Uhr	nine-thirty
+🕙	10:00 Uhr	ten o’clock
+🕥	10:30 Uhr	ten-thirty
+🕚	11:00 Uhr	eleven o’clock
+🕦	11:30 Uhr	eleven-thirty
+🌑	Neumond	new moon
+🌒	erstes Mondviertel	waxing crescent moon
+🌓	zunehmender Halbmond	first quarter moon
+🌔	zweites Mondviertel	waxing gibbous moon
+🌕	Vollmond	full moon
+🌖	drittes Mondviertel	waning gibbous moon
+🌗	abnehmender Halbmond	last quarter moon
+🌘	letztes Mondviertel	waning crescent moon
+🌙	Mondsichel	crescent moon
+🌚	Neumond mit Gesicht	new moon face
+🌛	Mondsichel mit Gesicht links	first quarter moon face
+🌜	Mondsichel mit Gesicht rechts	last quarter moon face
+🌡	Thermometer	thermometer
+☀	Sonne	sun
+🌝	Vollmond mit Gesicht	full moon face
+🌞	Sonne mit Gesicht	sun with face
+🪐	Ringplanet	ringed planet
+⭐	weißer mittelgroßer Stern	star
+🌟	funkelnder Stern	glowing star
+🌠	Sternschnuppe	shooting star
+🌌	Milchstraße	milky way
+☁	Wolke	cloud
+⛅	Sonne hinter Wolke	sun behind cloud
+⛈	Wolke mit Blitz und Regen	cloud with lightning and rain
+🌤	Sonne hinter kleiner Wolke	sun behind small cloud
+🌥	Sonne hinter großer Wolke	sun behind large cloud
+🌦	Sonne hinter Regenwolke	sun behind rain cloud
+🌧	Wolke mit Regen	cloud with rain
+🌨	Wolke mit Schnee	cloud with snow
+🌩	Wolke mit Blitz	cloud with lightning
+🌪	Wirbelsturm	tornado
+🌫	Nebel	fog
+🌬	Wind	wind face
+🌀	Wirbel	cyclone
+🌈	Regenbogen	rainbow
+🌂	geschlossener Regenschirm	closed umbrella
+☂	Regenschirm	umbrella
+☔	Regenschirm im Regen	umbrella with rain drops
+⛱	aufgestellter Sonnenschirm	umbrella on ground
+⚡	Hochspannung	high voltage
+❄	Schneeflocke	snowflake
+☃	Schneemann im Schnee	snowman
+⛄	Schneemann ohne Schneeflocken	snowman without snow
+☄	Komet	comet
+🪋	Meteor	meteor
+🔥	Feuer	fire
+💧	Tropfen	droplet
+🌊	Welle	water wave
+🎃	Halloweenkürbis	jack-o-lantern
+🎄	Weihnachtsbaum	Christmas tree
+🎆	Feuerwerk	fireworks
+🎇	Wunderkerze	sparkler
+🧨	Feuerwerkskörper	firecracker
+✨	funkelnde Sterne	sparkles
+🎈	Luftballon	balloon
+🎉	Konfettibombe	party popper
+🎊	Konfettiball	confetti ball
+🎋	Tanabata-Baum	tanabata tree
+🎍	Piniendekoration	pine decoration
+🎎	japanische Puppen	Japanese dolls
+🎏	traditionelle japanische Windsäcke	carp streamer
+🎐	japanisches Windspiel	wind chime
+🎑	traditionelles Mondfest	moon viewing ceremony
+🧧	roter Umschlag	red envelope
+🎀	pinke Schleife	ribbon
+🎁	Geschenk	wrapped gift
+🎗	Gedenkschleife	reminder ribbon
+🎟	Eintrittskarten	admission tickets
+🎫	Ticket	ticket
+🎖	Militärorden	military medal
+🏆	Pokal	trophy
+🏅	Sportmedaille	sports medal
+🥇	Goldmedaille	1st place medal
+🥈	Silbermedaille	2nd place medal
+🥉	Bronzemedaille	3rd place medal
+⚽	Fußball	soccer ball
+⚾	Baseball	baseball
+🥎	Softball	softball
+🏀	Basketball	basketball
+🏐	Volleyball	volleyball
+🏈	Football	american football
+🏉	Rugbyball	rugby football
+🎾	Tennisball	tennis
+🥏	Frisbee	flying disc
+🎳	Bowling	bowling
+🏏	Kricket	cricket game
+🏑	Feldhockey	field hockey
+🏒	Eishockey	ice hockey
+🥍	Lacrosse	lacrosse
+🏓	Tischtennis	ping pong
+🏸	Badminton	badminton
+🥊	Boxhandschuh	boxing glove
+🥋	Kampfsportanzug	martial arts uniform
+🥅	Tor	goal net
+⛳	Golffahne	flag in hole
+⛸	Schlittschuh	ice skate
+🎣	Angel mit Fisch	fishing pole
+🤿	Tauchmaske	diving mask
+🎽	Laufshirt	running shirt
+🎿	Ski	skis
+🛷	Schlitten	sled
+🥌	Curlingstein	curling stone
+🎯	Darts	bullseye
+🪀	Jo-Jo	yo-yo
+🪁	Drachen	kite
+🔫	Wasserpistole	water pistol
+🎱	Billardkugel	pool 8 ball
+🔮	Kristallkugel	crystal ball
+🪄	Zauberstab	magic wand
+🎮	Gamepad	video game
+🕹	Joystick	joystick
+🎰	Spielautomat	slot machine
+🎲	Spielwürfel	game die
+🧩	Puzzleteil	puzzle piece
+🧸	Teddybär	teddy bear
+🪅	Piñata	piñata
+🪩	Discokugel	mirror ball
+🪆	Matroschka	nesting dolls
+♠	Pik	spade suit
+♥	Herz	heart suit
+♦	Karo	diamond suit
+♣	Kreuz	club suit
+♟	Bauer Schach	chess pawn
+🃏	Jokerkarte	joker
+🀄	Mahjong-Stein	mahjong red dragon
+🎴	japanische Blumenkarte	flower playing cards
+🎭	Masken	performing arts
+🖼	gerahmtes Bild	framed picture
+🎨	Mischpalette	artist palette
+🧵	Faden	thread
+🪡	Nähnadel	sewing needle
+🧶	Wollknäuel	yarn
+🪢	Knoten	knot
+👓	Brille	glasses
+🕶	Sonnenbrille	sunglasses
+🥽	Schutzbrille	goggles
+🥼	Laborkittel	lab coat
+🦺	Sicherheitsweste	safety vest
+👔	Hemd mit Krawatte	necktie
+👕	T-Shirt	t-shirt
+👖	Jeans	jeans
+🧣	Schal	scarf
+🧤	Handschuhe	gloves
+🧥	Mantel	coat
+🧦	Socken	socks
+👗	Kleid	dress
+👘	Kimono	kimono
+🥻	Sari	sari
+🩱	einteiliger Badeanzug	one-piece swimsuit
+🩲	Slip	briefs
+🩳	Shorts	shorts
+👙	Bikini	bikini
+👚	Bluse	woman’s clothes
+🪭	Faltfächer	folding hand fan
+👛	Geldbörse	purse
+👜	Handtasche	handbag
+👝	Clutch	clutch bag
+🛍	Einkaufstüten	shopping bags
+🎒	Schulranzen	backpack
+🩴	Zehensandale	thong sandal
+👞	Herrenschuh	man’s shoe
+👟	Sportschuh	running shoe
+🥾	Wanderstiefel	hiking boot
+🥿	flacher Schuh	flat shoe
+👠	Stöckelschuh	high-heeled shoe
+👡	Damensandale	woman’s sandal
+🩰	Ballettschuhe	ballet shoes
+👢	Damenstiefel	woman’s boot
+🪮	Haarkamm	hair pick
+👑	Krone	crown
+👒	Damenhut	woman’s hat
+🎩	Zylinder	top hat
+🎓	Doktorhut	graduation cap
+🧢	Baseballmütze	billed cap
+🪖	Militärhelm	military helmet
+⛑	Rettungshelm	rescue worker’s helmet
+📿	Gebetskette	prayer beads
+💄	Lippenstift	lipstick
+💍	Ring	ring
+💎	Edelstein	gem stone
+🔇	durchgestrichener Lautsprecher	muted speaker
+🔈	Lautsprecher mit geringer Lautstärke	speaker low volume
+🔉	Lautsprecher mit mittlerer Lautstärke	speaker medium volume
+🔊	Lautsprecher mit hoher Lautstärke	speaker high volume
+📢	Lautsprecher	loudspeaker
+📣	Megafon	megaphone
+📯	Posthorn	postal horn
+🔔	Glocke	bell
+🔕	durchgestrichene Glocke	bell with slash
+🎼	Notenschlüssel	musical score
+🎵	Musiknote	musical note
+🎶	Musiknoten	musical notes
+🎙	Studiomikrofon	studio microphone
+🎚	Schieberegler	level slider
+🎛	Drehregler	control knobs
+🎤	Mikrofon	microphone
+🎧	Kopfhörer	headphone
+📻	Radio	radio
+🎷	Saxofon	saxophone
+🎺	Trompete	trumpet
+🪊	Posaune	trombone
+🪗	Akkordeon	accordion
+🎸	Gitarre	guitar
+🎹	Klaviatur	musical keyboard
+🎻	Geige	violin
+🪕	Banjo	banjo
+🥁	Trommel	drum
+🪘	afrikanische Trommel	long drum
+🪇	Maracas	maracas
+🪈	Flöte	flute
+🪉	Harfe	harp
+📱	Mobiltelefon	mobile phone
+📲	Mobiltelefon mit Pfeil	mobile phone with arrow
+☎	Telefon	telephone
+📞	Telefonhörer	telephone receiver
+📟	Pager	pager
+📠	Faxgerät	fax machine
+🔋	Batterie	battery
+🪫	schwache Batterie	low battery
+🔌	Netzstecker	electric plug
+💻	Laptop	laptop
+🖥	Desktopcomputer	desktop computer
+🖨	Drucker	printer
+⌨	Tastatur	keyboard
+🖱	Computermaus	computer mouse
+🖲	Trackball	trackball
+💽	Minidisc	computer disk
+💾	Diskette	floppy disk
+💿	CD	optical disk
+📀	DVD	dvd
+🧮	Abakus	abacus
+🎥	Filmkamera	movie camera
+🎞	Filmstreifen	film frames
+📽	Filmprojektor	film projector
+🎬	Filmklappe	clapper board
+📺	Fernseher	television
+📷	Fotoapparat	camera
+📸	Fotoapparat mit Blitz	camera with flash
+📹	Videokamera	video camera
+📼	Videokassette	videocassette
+🔍	Lupe nach links	magnifying glass tilted left
+🔎	Lupe nach rechts	magnifying glass tilted right
+🕯	Kerze	candle
+💡	Glühbirne	light bulb
+🔦	Taschenlampe	flashlight
+🏮	rote Papierlaterne	red paper lantern
+🪔	Öllampe	diya lamp
+📔	Notizbuch mit dekorativem Einband	notebook with decorative cover
+📕	geschlossenes Buch	closed book
+📖	offenes Buch	open book
+📗	grünes Buch	green book
+📘	blaues Buch	blue book
+📙	orangefarbenes Buch	orange book
+📚	Bücherstapel	books
+📓	Notizbuch	notebook
+📒	Spiralblock	ledger
+📃	teilweise eingerolltes Blatt	page with curl
+📜	Schriftrolle	scroll
+📄	Vorderseite eines Blattes	page facing up
+📰	Zeitung	newspaper
+🗞	zusammengerollte Zeitung	rolled-up newspaper
+📑	Pagemarker	bookmark tabs
+🔖	Lesezeichen	bookmark
+🏷	Etikett	label
+🪙	Münze	coin
+💰	Geldsack	money bag
+🪎	Schatztruhe	treasure chest
+💴	Yen-Banknote	yen banknote
+💵	Dollar-Banknote	dollar banknote
+💶	Euro-Banknote	euro banknote
+💷	Pfund-Banknote	pound banknote
+💸	Geldschein mit Flügeln	money with wings
+💳	Kreditkarte	credit card
+🧾	Beleg	receipt
+💹	steigende Kurve mit Yen-Zeichen	chart increasing with yen
+✉	Briefumschlag	envelope
+📧	E-Mail	e-mail
+📨	eingehender Briefumschlag	incoming envelope
+📩	Umschlag mit Pfeil	envelope with arrow
+📤	Postausgang	outbox tray
+📥	Posteingang	inbox tray
+📦	Paket	package
+📫	geschlossener Briefkasten mit Post	closed mailbox with raised flag
+📪	geschlossener Briefkasten ohne Post	closed mailbox with lowered flag
+📬	offener Briefkasten mit Post	open mailbox with raised flag
+📭	offener Briefkasten ohne Post	open mailbox with lowered flag
+📮	Briefkasten	postbox
+🗳	Urne mit Wahlzettel	ballot box with ballot
+✏	Bleistift	pencil
+✒	schwarzer Federhalter	black nib
+🖋	Füllhalter	fountain pen
+🖊	Kugelschreiber	pen
+🖌	Pinsel	paintbrush
+🖍	Wachsmalstift	crayon
+📝	Papier und Bleistift	memo
+🪌	Radiergummi	eraser
+💼	Aktentasche	briefcase
+📁	Ordner	file folder
+📂	geöffneter Ordner	open file folder
+🗂	Karteireiter	card index dividers
+📅	Kalender	calendar
+📆	Abreißkalender	tear-off calendar
+🗒	Notizblock	spiral notepad
+🗓	Spiralkalender	spiral calendar
+📇	Rotationskartei	card index
+📈	Aufwärtstrend	chart increasing
+📉	Abwärtstrend	chart decreasing
+📊	Balkendiagramm	bar chart
+📋	Klemmbrett	clipboard
+📌	Reißzwecke	pushpin
+📍	Stecknadel	round pushpin
+📎	Büroklammer	paperclip
+🖇	verhakte Büroklammern	linked paperclips
+📏	Lineal	straight ruler
+📐	dreieckiges Lineal	triangular ruler
+✂	Schere	scissors
+🗃	Karteikasten	card file box
+🗄	Aktenschrank	file cabinet
+🗑	Papierkorb	wastebasket
+🔒	geschlossenes Schloss	locked
+🔓	offenes Schloss	unlocked
+🔏	Schloss mit Füller	locked with pen
+🔐	Schloss mit Schlüssel	locked with key
+🔑	Schlüssel	key
+🗝	alter Schlüssel	old key
+🪍	Kescher	net with handle
+🔨	Hammer	hammer
+🪓	Axt	axe
+⛏	Pickel	pick
+⚒	Hammer und Pickel	hammer and pick
+🛠	Hammer und Schraubenschlüssel	hammer and wrench
+🗡	Dolch	dagger
+⚔	gekreuzte Schwerter	crossed swords
+💣	Bombe	bomb
+🪃	Bumerang	boomerang
+🏹	Pfeil und Bogen	bow and arrow
+🛡	Schutzschild	shield
+🪚	Handsäge	carpentry saw
+🔧	Schraubenschlüssel	wrench
+🪛	Schraubenzieher	screwdriver
+🔩	Mutter und Schraube	nut and bolt
+⚙	Zahnrad	gear
+🗜	Schraubzwinge	clamp
+⚖	Waage	balance scale
+🦯	Blindenstock	white cane
+🔗	Linksymbol	link
+⛓‍💥	gebrochene Kette	broken chain
+⛓	Ketten	chains
+🪝	Haken	hook
+🧰	Werkzeugkasten	toolbox
+🧲	Magnet	magnet
+🪜	Leiter	ladder
+🪏	Schaufel	shovel
+⚗	Destillierapparat	alembic
+🧪	Reagenzglas	test tube
+🧫	Petrischale	petri dish
+🧬	DNA	dna
+🔬	Mikroskop	microscope
+🔭	Teleskop	telescope
+📡	Satellitenschüssel	satellite antenna
+💉	Spritze	syringe
+🩸	Blutstropfen	drop of blood
+💊	Kapsel	pill
+🩹	Heftpflaster	adhesive bandage
+🩼	Krücke	crutch
+🩺	Stethoskop	stethoscope
+🩻	Röntgenbild	x-ray
+🚪	Tür	door
+🛗	Fahrstuhl	elevator
+🪞	Spiegel	mirror
+🪟	Fenster	window
+🛏	Bett	bed
+🛋	Sofa und Lampe	couch and lamp
+🪑	Stuhl	chair
+🚽	Toilette	toilet
+🪠	Saugglocke	plunger
+🚿	Dusche	shower
+🛁	Badewanne	bathtub
+🪤	Mausefalle	mouse trap
+🪒	Rasierer	razor
+🧴	Creme	lotion bottle
+🧷	Sicherheitsnadel	safety pin
+🧹	Besen	broom
+🧺	Korb	basket
+🧻	Küchenrolle	roll of paper
+🪣	Eimer	bucket
+🧼	Seife	soap
+🫧	Blasen	bubbles
+🪥	Zahnbürste	toothbrush
+🧽	Schwamm	sponge
+🧯	Feuerlöscher	fire extinguisher
+🛒	Einkaufswagen	shopping cart
+🚬	Zigarette	cigarette
+⚰	Sarg	coffin
+🪦	Grabstein	headstone
+⚱	Urne	funeral urn
+🧿	Nazar-Amulett	nazar amulet
+🪬	Hamsa	hamsa
+🗿	Statue	moai
+🪧	Protestschild	placard
+🪪	Ausweis	identification card
+🏧	Symbol „Geldautomat“	ATM sign
+🚮	Symbol „Papierkorb“	litter in bin sign
+🚰	Trinkwasser	potable water
+♿	Symbol „Rollstuhl“	wheelchair symbol
+🚹	Herren	men’s room
+🚺	Damen	women’s room
+🚻	Toiletten	restroom
+🚼	Symbol „Baby“	baby symbol
+🚾	WC	water closet
+🛂	Passkontrolle	passport control
+🛃	Zollkontrolle	customs
+🛄	Gepäckausgabe	baggage claim
+🛅	Gepäckaufbewahrung	left luggage
+⚠	Warnung	warning
+🚸	Kinder überqueren die Straße	children crossing
+⛔	Zutritt verboten	no entry
+🚫	Verboten	prohibited
+🚳	Fahrräder verboten	no bicycles
+🚭	Rauchverbot	no smoking
+🚯	Abfall verboten	no littering
+🚱	Kein Trinkwasser	non-potable water
+🚷	Fußgänger verboten	no pedestrians
+📵	Mobiltelefone verboten	no mobile phones
+🔞	Minderjährige verboten	no one under eighteen
+☢	Radioaktiv	radioactive
+☣	Biogefährdung	biohazard
+⬆	Pfeil nach oben	up arrow
+↗	Pfeil nach rechts oben	up-right arrow
+➡	Pfeil nach rechts	right arrow
+↘	Pfeil nach rechts unten	down-right arrow
+⬇	Pfeil nach unten	down arrow
+↙	Pfeil nach links unten	down-left arrow
+⬅	Pfeil nach links	left arrow
+↖	Pfeil nach links oben	up-left arrow
+↕	Pfeil nach oben und unten	up-down arrow
+↔	Pfeil nach links und rechts	left-right arrow
+↮	durchgestrichener Pfeil nach links und rechts	left right arrow stroke
+↩	geschwungener Pfeil nach links	right arrow curving left
+↪	geschwungener Pfeil nach rechts	left arrow curving right
+⤴	geschwungener Pfeil nach oben	right arrow curving up
+⤵	geschwungener Pfeil nach unten	right arrow curving down
+🔃	kreisförmige Pfeile im Uhrzeigersinn	clockwise vertical arrows
+🔄	Pfeile gegen den Uhrzeigersinn	counterclockwise arrows button
+🔙	BACK-Pfeil	BACK arrow
+🔚	END-Pfeil	END arrow
+🔛	ON!-Pfeil	ON! arrow
+🔜	SOON-Pfeil	SOON arrow
+🔝	TOP-Pfeil	TOP arrow
+🛐	religiöse Stätte	place of worship
+⚛	Atomzeichen	atom symbol
+🕉	om	om
+✡	Davidstern	star of David
+☸	Dharma-Rad	wheel of dharma
+☯	Yin und Yang	yin yang
+✝	lateinisches Kreuz	latin cross
+☦	orthodoxes Kreuz	orthodox cross
+☪	Hilal und Stern	star and crescent
+☮	Friedenszeichen	peace symbol
+🕎	Menora	menorah
+🔯	Hexagramm mit Punkt	dotted six-pointed star
+🪯	Khanda	khanda
+♈	Widder (Sternzeichen)	Aries
+♉	Stier (Sternzeichen)	Taurus
+♊	Zwillinge (Sternzeichen)	Gemini
+♋	Krebs (Sternzeichen)	Cancer
+♌	Löwe (Sternzeichen)	Leo
+♍	Jungfrau (Sternzeichen)	Virgo
+♎	Waage (Sternzeichen)	Libra
+♏	Skorpion (Sternzeichen)	Scorpio
+♐	Schütze (Sternzeichen)	Sagittarius
+♑	Steinbock (Sternzeichen)	Capricorn
+♒	Wassermann (Sternzeichen)	Aquarius
+♓	Fische (Sternzeichen)	Pisces
+⛎	Schlangenträger	Ophiuchus
+🔀	Zufallsmodus	shuffle tracks button
+🔁	Wiederholen	repeat button
+🔂	Titel wiederholen	repeat single button
+▶	Wiedergabe	play button
+⏩	Doppelpfeile nach rechts	fast-forward button
+⏭	Nächster Titel	next track button
+⏯	Wiedergabe oder Pause	play or pause button
+◀	Pfeil zurück	reverse button
+⏪	Zurückspulen	fast reverse button
+⏮	Vorheriger Titel	last track button
+🔼	Aufwärts-Schaltfläche	upwards button
+⏫	Doppelpfeile nach oben	fast up button
+🔽	Abwärts-Schaltfläche	downwards button
+⏬	Doppelpfeile nach unten	fast down button
+⏸	Pause	pause button
+⏹	Stopp	stop button
+⏺	Aufnehmen	record button
+⏏	Auswerfen	eject button
+🎦	Kinosymbol	cinema
+🔅	Taste Dimmen	dim button
+🔆	Heller-Taste	bright button
+📶	balkenförmige Signalstärkenanzeige	antenna bars
+🛜	WLAN	wireless
+📳	Vibrationsmodus	vibration mode
+📴	Mobiltelefon aus	mobile phone off
+♀	Frauensymbol	female sign
+♂	Männersymbol	male sign
+⚧	Transgender-Symbol	transgender symbol
+✖	mal	multiply
+➕	plus	plus
+➖	minus	minus
+➗	geteilt durch	divide
+🟰	Gleichheitszeichen extrafett	heavy equals sign
+♾	Unendlichkeit	infinity
+‼	doppeltes Ausrufezeichen	double exclamation mark
+⁉	Ausrufe- und Fragezeichen	exclamation question mark
+❓	rotes Fragezeichen	red question mark
+❔	weißes Fragezeichen	white question mark
+❕	weißes Ausrufezeichen	white exclamation mark
+❗	rotes Ausrufezeichen	red exclamation mark
+〰	Wellenlinie	wavy dash
+💱	Geldwechsel	currency exchange
+💲	Dollarzeichen extrafett	heavy dollar sign
+⚕	Äskulapstab	medical symbol
+♻	Recycling-Symbol	recycling symbol
+⚜	Lilie	fleur-de-lis
+🔱	Dreizack	trident emblem
+📛	Namensschild	name badge
+🔰	japanisches Anfänger-Zeichen	Japanese symbol for beginner
+⭕	hohler roter Kreis	hollow red circle
+✅	weißes Häkchen	check mark button
+☑	abgehaktes Kästchen	check box with check
+✔	kräftiges Häkchen	check mark
+❌	Kreuzzeichen	cross mark
+❎	angekreuztes Kästchen	cross mark button
+➰	Schleife	curly loop
+➿	Doppelschleife	double curly loop
+〽	Teilalternationszeichen	part alternation mark
+✳	achtzackiger Stern	eight-spoked asterisk
+✴	achtstrahliger Stern	eight-pointed star
+❇	Funkeln	sparkle
+©	Copyright	copyright
+®	Registered-Trademark	registered
+™	Markenzeichen	trade mark
+🫟	Spritzer	splatter
+🔠	Eingabesymbol lateinische Großbuchstaben	input latin uppercase
+🔡	Eingabesymbol lateinische Kleinbuchstaben	input latin lowercase
+🔢	Eingabesymbol Zahlen	input numbers
+🔣	Eingabesymbol Sonderzeichen	input symbols
+🔤	Eingabesymbol lateinische Buchstaben	input latin letters
+🅰	Großbuchstabe A in rotem Quadrat	A button (blood type)
+🆎	Großbuchstaben AB in rotem Quadrat	AB button (blood type)
+🅱	Großbuchstabe B in rotem Quadrat	B button (blood type)
+🆑	Großbuchstaben CL in rotem Quadrat	CL button
+🆒	Wort „Cool“ in blauem Quadrat	COOL button
+🆓	Wort „Free“ in blauem Quadrat	FREE button
+ℹ	Buchstabe „i“ in blauem Quadrat	information
+🆔	Großbuchstaben ID in lila Quadrat	ID button
+Ⓜ	Buchstabe „M“ in Kreis	circled M
+🆕	Wort „New“ in blauem Quadrat	NEW button
+🆖	Großbuchstaben NG in blauem Quadrat	NG button
+🅾	Großbuchstabe O in rotem Quadrat	O button (blood type)
+🆗	Großbuchstaben OK in blauem Quadrat	OK button
+🅿	Großbuchstabe P in blauem Quadrat	P button
+🆘	SOS-Zeichen	SOS button
+🆙	Schriftzug „UP!“ im blauen Quadrat	UP! button
+🆚	Schriftzug VS in orangem Quadrat	VS button
+🈁	Schriftzeichen „koko“	Japanese “here” button
+🈂	Schriftzeichen „sa“	Japanese “service charge” button
+🈷	Schriftzeichen für „Monatsbetrag“	Japanese “monthly amount” button
+🈶	Schriftzeichen für „nicht gratis“	Japanese “not free of charge” button
+🈯	Schriftzeichen für „reserviert“	Japanese “reserved” button
+🉐	Schriftzeichen für „Schnäppchen“	Japanese “bargain” button
+🈹	Schriftzeichen für „Rabatt“	Japanese “discount” button
+🈚	Schriftzeichen für „gratis“	Japanese “free of charge” button
+🈲	Schriftzeichen für „verbieten“	Japanese “prohibited” button
+🉑	Schriftzeichen für „akzeptieren“	Japanese “acceptable” button
+🈸	Schriftzeichen für „anwenden“	Japanese “application” button
+🈴	Schriftzeichen für „Note zum Bestehen“	Japanese “passing grade” button
+🈳	Schriftzeichen für „Zimmer frei“	Japanese “vacancy” button
+㊗	Schriftzeichen für „Gratulation“	Japanese “congratulations” button
+㊙	Schriftzeichen für „Geheimnis“	Japanese “secret” button
+🈺	Schriftzeichen für „Geöffnet“	Japanese “open for business” button
+🈵	Schriftzeichen für „Kein Zimmer frei“	Japanese “no vacancy” button
+🔴	roter Punkt	red circle
+🟠	oranger Punkt	orange circle
+🟡	gelber Punkt	yellow circle
+🟢	grüner Punkt	green circle
+🔵	blauer Punkt	blue circle
+🟣	lila Punkt	purple circle
+🟤	brauner Punkt	brown circle
+⚫	schwarzer Punkt	black circle
+⚪	weißer Punkt	white circle
+🟥	rotes Quadrat	red square
+🟧	oranges Quadrat	orange square
+🟨	gelbes Quadrat	yellow square
+🟩	grünes Quadrat	green square
+🟦	blaues Quadrat	blue square
+🟪	lila Quadrat	purple square
+🟫	braunes Quadrat	brown square
+⬛	großes schwarzes Quadrat	black large square
+⬜	großes weißes Quadrat	white large square
+◼	mittelgroßes schwarzes Quadrat	black medium square
+◻	mittelgroßes weißes Quadrat	white medium square
+◾	mittelkleines schwarzes Quadrat	black medium-small square
+◽	mittelkleines weißes Quadrat	white medium-small square
+▪	kleines schwarzes Quadrat	black small square
+▫	kleines weißes Quadrat	white small square
+🔶	große orangefarbene Raute	large orange diamond
+🔷	große blaue Raute	large blue diamond
+🔸	kleine orangefarbene Raute	small orange diamond
+🔹	kleine blaue Raute	small blue diamond
+🔺	rotes Dreieck mit der Spitze nach oben	red triangle pointed up
+🔻	rotes Dreieck mit der Spitze nach unten	red triangle pointed down
+💠	Rautenform mit Punkt	diamond with a dot
+🔘	Optionsfeld	radio button
+🔳	weiße quadratische Schaltfläche	white square button
+🔲	schwarze quadratische Schaltfläche	black square button
+🏁	Zielflagge	chequered flag
+🚩	Wimpel	triangular flag
+🎌	überkreuzte Flaggen	crossed flags
+🏴	schwarze Flagge	black flag
+🏳	weiße Flagge	white flag
+🏳‍🌈	Regenbogenflagge	rainbow flag
+🏳‍⚧	Transgender-Flagge	transgender flag
+🏴‍☠	Piratenflagge	pirate flag
+¢	Cent	cent
+$	Dollar	dollar
+£	Pfund Sterling	pound
+¥	Yen	yen
+₢	Cruzeiro	cruzeiro
+₣	französischer Franc	french franc
+₤	Lira	lira
+₥	Millzeichen	mill
+₩	Won	won
+€	Euro	euro
+₰	Pfennig	german penny
+₱	Peso	peso
+₳	Austral	austral
+₶	Livre tournoise	livre tournois
+₷	Spesmilo	spesmilo
+₹	Indische Rupie	indian rupee
+₽	Rubel	ruble
+₿	Bitcoin-Zeichen	bitcoin
+0⃣	Taste: 0	keycap: 0
+1⃣	Taste: 1	keycap: 1
+2⃣	Taste: 2	keycap: 2
+3⃣	Taste: 3	keycap: 3
+4⃣	Taste: 4	keycap: 4
+5⃣	Taste: 5	keycap: 5
+6⃣	Taste: 6	keycap: 6
+7⃣	Taste: 7	keycap: 7
+8⃣	Taste: 8	keycap: 8
+9⃣	Taste: 9	keycap: 9
+¹	hochgestellte Eins	superscript one
+²	hochgestellte Zwei	superscript two
+³	hochgestellte Drei	superscript three
+₨	Rupie	rupee
+µ	Mikro-Zeichen	micro sign
+﷼	Rial	rial

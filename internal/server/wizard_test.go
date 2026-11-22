@@ -24,6 +24,7 @@ func inText(page string) string {
 // Ticket 133: the first page lists the four steps, says what you need and has
 // one main button to the HTTPS step. It has no step number yet.
 func TestWelcomePageListsTheFourStepsAndWhatYouNeed(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := deGet(b, "/setup")
 	text := inText(r.body)
@@ -60,6 +61,7 @@ func TestWelcomePageListsTheFourStepsAndWhatYouNeed(t *testing.T) {
 // The wizard shell: brand bar with the language switcher, "Setup: Step n of 4" above the progress, the four named
 // steps (done ones with a hidden "(erledigt)"), no navigation.
 func TestWizardShellShowsStepNumberAndProgress(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	page := deGet(b, "/setup").body
 	for _, want := range []string{
@@ -101,12 +103,13 @@ func TestWizardShellShowsStepNumberAndProgress(t *testing.T) {
 	}
 }
 
-// Ticket 133: a choice page first (public name selected), submitted as a GET;
+// Ticket 133: a choice page first (none selected, Q62 a), submitted as a GET;
 // then only the form of the chosen way.
 func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	choice := deGet(b, "/setup/https")
-	for _, want := range []string{`<form class="tile" method="get" action="/setup/https">`, `<fieldset class="choice">`, `name="way" value="public" checked`, `name="way" value="own"`, "Mit öffentlichem Namen (empfohlen)", "Mit eigenem Zertifikat der Box"} {
+	for _, want := range []string{`<form class="tile" method="get" action="/setup/https">`, `<fieldset class="choice">`, `name="way" value="public"`, `name="way" value="own"`, "Mit kostenlosem Namen bei deSEC", "Nur im Heimnetz"} {
 		if !strings.Contains(choice.body, want) {
 			t.Errorf("choice page misses %q", want)
 		}
@@ -114,8 +117,8 @@ func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 	if strings.Contains(choice.body, `name="token"`) || strings.Contains(choice.body, `action="/setup/https"`+` method="post"`) {
 		t.Error("the choice page shows a form already")
 	}
-	if strings.Contains(choice.body, `value="own" checked`) {
-		t.Error("the own CA is selected by default")
+	if strings.Contains(choice.body, " checked") {
+		t.Error("a way is selected by default")
 	}
 
 	public := deGet(b, "/setup/https?way=public")
@@ -132,8 +135,9 @@ func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 	if !regexp.MustCompile(`<details class="more">\s*<summary>[^<]*<svg[^>]*>.*?</svg>Mehr Optionen<span class="sum">127.0.0.1 · Let&#39;s Encrypt</span>`).MatchString(strings.ReplaceAll(public.body, "\n", "")) {
 		t.Errorf("More options is not closed with a summary of address and issuer:\n%s", public.body)
 	}
+	b.post("/setup/offline", url.Values{"offline": {"off"}}) // the question of ticket 201 comes first
 	own := deGet(b, "/setup/https?way=own")
-	for _, want := range []string{`class="addr">127.0.0.1`, `action="/setup/https"`, "Zertifikat erstellen", "Anderen Weg wählen"} {
+	for _, want := range []string{`<ul class="certnames"><li>hejmo.local</li><li>127.0.0.1</li></ul>`, `action="/setup/https"`, "Zertifikat erstellen", "Anderen Weg wählen"} {
 		if !strings.Contains(own.body, want) {
 			t.Errorf("own CA page misses %q", want)
 		}
@@ -145,13 +149,15 @@ func TestHTTPSWayIsChosenFirstThenOneForm(t *testing.T) {
 
 // Without a certificate manager there is no choice: straight to the own CA.
 func TestWithoutAPublicNameOnlyTheOwnCAIsOffered(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.handler = server.New(server.Options{DB: b.db, PKI: b.pki, Now: func() time.Time { return b.now }})
 	b.srv.Close()
 	b.srv = b.plainServer()
+	b.post("/setup/offline", url.Values{"offline": {"off"}}) // the question of ticket 201 comes first
 	for _, path := range []string{"/setup/https", "/setup/https?way=public", "/setup/https?way=own"} {
 		r := deGet(b, path)
-		if !strings.Contains(r.body, "Zertifikat der Box erstellen") || strings.Contains(r.body, `name="token"`) || strings.Contains(r.body, "Anderen Weg wählen") {
+		if !strings.Contains(r.body, "Nur im Heimnetz einrichten") || strings.Contains(r.body, `name="token"`) || strings.Contains(r.body, "Anderen Weg wählen") {
 			t.Errorf("%s: want the own CA page without a way back:\n%s", path, r.body)
 		}
 	}
@@ -160,6 +166,7 @@ func TestWithoutAPublicNameOnlyTheOwnCAIsOffered(t *testing.T) {
 // The address is the box's default; with no IP address in the URL (the box
 // opened as hejmo.local) the field is empty and "More options" is open.
 func TestMoreOptionsAreOpenWhenTheAddressIsMissingOrRefused(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := b.do(http.MethodGet, "/setup/https?way=public", nil, map[string]string{"Host": "hejmo.local", "Accept-Language": "de"})
 	if !strings.Contains(r.body, `<details class="more" open>`) {
@@ -177,11 +184,12 @@ func TestMoreOptionsAreOpenWhenTheAddressIsMissingOrRefused(t *testing.T) {
 
 // Each 422 goes to its field with its own text; everything else stays filled.
 func TestPublicFormErrorsGoToTheirFields(t *testing.T) {
+	t.Parallel()
 	cases := map[string]struct{ field, text string }{
 		"name":   {"name", "Dieser Name geht nicht"},
 		"lan_ip": {"lan_ip", "keine Adresse im Heimnetz"},
 		"eab":    {"eab", "Schlüssel-ID und HMAC-Schlüssel"},
-		"token":  {"token", "Füge den Zugangstoken von deSEC ein"},
+		"token":  {"token", "Füge den Token ein"},
 	}
 	for name, c := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -215,6 +223,7 @@ func TestPublicFormErrorsGoToTheirFields(t *testing.T) {
 // The 502: a page-level error with the two usual causes, and the token field
 // says why it is empty. Name, address, issuer and email stay.
 func TestPublicFailureShowsPageErrorAndAskForTheTokenAgain(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.public.failure = errString("obtain certificate: dns says no")
 	f := publicForm()
@@ -241,6 +250,7 @@ func (e errString) Error() string { return string(e) }
 // While the box gets the certificate (up to 3 minutes) the button is greyed
 // out by the form script, with a line in words. Nothing animates.
 func TestPublicFormHasABusyStateInWords(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := deGet(b, "/setup/https?way=public")
 	for _, want := range []string{
@@ -268,6 +278,7 @@ func TestPublicFormHasABusyStateInWords(t *testing.T) {
 
 // The Actalis keys only show for Actalis (the form's CSS keys off the choice).
 func TestActalisKeysShowOnlyForActalis(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := deGet(b, "/setup/https?way=public")
 	if !strings.Contains(r.body, `<div class="when-actalis">`) || !strings.Contains(r.body, `name="eab_key_id"`) || !strings.Contains(r.body, `name="eab_hmac"`) {
@@ -283,6 +294,7 @@ func TestActalisKeysShowOnlyForActalis(t *testing.T) {
 // as a numbered tile, and the own-CA switch under "Router lässt sich nicht
 // ändern?" as a secondary button.
 func TestNameCheckShowsStatesAsCheckLines(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.post("/setup/https/public", publicForm())
 	r := deGet(b, "/setup/https/check")
@@ -314,13 +326,14 @@ func TestNameCheckShowsStatesAsCheckLines(t *testing.T) {
 // Ticket 133: account page: hints under the fields, regions grouped by country
 // with the state name only, "Show" for the password, the error at the field.
 func TestAccountPageHintsGroupedRegionsAndPasswordReveal(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := deGet(b, "/setup")
 	for _, want := range []string{
 		"<h1>Dein Konto</h1>", "Damit meldest du dich bei Hejmo an.", "<legend>Heimatort</legend>", `<p class="hint">Der Ort gibt Wetter, Sonnenauf- und -untergang, das Bundesland die Feiertage.</p>`, "<legend>Du</legend>", "<legend>Eltern-PIN</legend>",
-		"Für Wetter und Sonnenzeiten.", "Für die Feiertage.", "So erscheinst du auf dem Display.", "Damit meldest du dich an.", "Mindestens 10 Zeichen.",
+		"Ort oder Stadtteil", "Kommt mit dem gewählten Ort", "Die Liste der Orte in Deutschland, Österreich und der Schweiz liegt auf der Box.", "Für die Feiertage.", "So erscheinst du auf dem Display.", "Damit meldest du dich an.", "Mindestens 10 Zeichen.",
 		"Die PIN brauchen Eltern am Display", "PIN (4 bis 8 Ziffern)", `<optgroup label="Deutschland">`, `<optgroup label="Österreich">`, `<optgroup label="Schweiz">`,
-		`<option value="DE-BY" selected>Bayern</option>`, `<span class="pw">`, `data-pw-toggle data-show-text="Anzeigen" data-hide-text="Verbergen"`, "Konto anlegen",
+		`<option value="" selected>Kommt mit dem gewählten Ort</option>`, `<option value="DE-BY">Bayern</option>`, `<span class="pw">`, `data-pw-toggle data-show-text="Anzeigen" data-hide-text="Verbergen"`, "Konto anlegen",
 	} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("account page misses %q", want)
@@ -339,15 +352,16 @@ func TestAccountPageHintsGroupedRegionsAndPasswordReveal(t *testing.T) {
 }
 
 func TestAccountPagePasswordErrorKeepsTheHintAndTheRest(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	f := validSetupForm()
 	f.Set("password", "short")
-	f.Set("home_name", "Garmisch-Partenkirchen")
+	f.Set("place_id", "2922530") // Garmisch-Partenkirchen
 	r := b.do(http.MethodPost, "/setup", f, map[string]string{"Accept-Language": "de"})
 	if r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("status %d", r.status)
 	}
-	for _, want := range []string{`class="ferr" id="err-password"`, "Das Passwort ist zu kurz. Es braucht mindestens 10 Zeichen.", `value="Garmisch-Partenkirchen"`, `value="mama"`, `value="Mama"`, `aria-invalid="true"`} {
+	for _, want := range []string{`class="ferr" id="err-password"`, "Das Passwort ist zu kurz. Es braucht mindestens 10 Zeichen.", `<b>Garmisch-Partenkirchen</b>`, `value="mama"`, `value="Mama"`, `aria-invalid="true"`} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("password error page misses %q", want)
 		}
@@ -376,6 +390,7 @@ func TestAccountPagePasswordErrorKeepsTheHintAndTheRest(t *testing.T) {
 // key, in groups of four, sits under "More options"; on a phone the button
 // that opens the app comes first and the QR code is for another phone.
 func TestTOTPPageDesktopAndPhoneOrder(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	desk := deGet(b, "/setup/totp").body
@@ -416,6 +431,7 @@ func TestTOTPPageDesktopAndPhoneOrder(t *testing.T) {
 }
 
 func TestTOTPWrongCodeNamesTheTwoCauses(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	r := b.do(http.MethodPost, "/setup/totp", url.Values{"code": {"000000"}}, map[string]string{"Accept-Language": "de"})
@@ -426,6 +442,7 @@ func TestTOTPWrongCodeNamesTheTwoCauses(t *testing.T) {
 
 // After a reset of the one-time codes the same page shows no step progress.
 func TestTOTPPageAfterAResetHasNoProgress(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, papaSecret := secondParent(t, b)
 	loginWith(b, "papa", "papa's long password", totpNow(b, papaSecret))
@@ -448,19 +465,20 @@ func TestTOTPPageAfterAResetHasNoProgress(t *testing.T) {
 	}
 }
 
-// Ticket 133: the recovery codes are step 3 of the wizard in the first setup,
-// numbered, printable, with a required confirmation and a GET form to the
-// first steps; outside the wizard the same page sits in the frame.
+// Ticket 133 (card reworked in 176): the recovery codes are step 3 of the
+// wizard in the first setup, numbered, printable, with a required confirmation
+// that the box checks; outside the wizard the same page sits in the frame.
 func TestRecoveryCodesPageInTheWizardAndOutside(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	secret := secretOn(t, b.get("/setup/totp").body)
 	code, _ := auth.TOTPCode(secret, b.now)
 	r := b.do(http.MethodPost, "/setup/totp", url.Values{"code": {code}}, map[string]string{"Accept-Language": "de"})
 	for _, want := range []string{
-		"Schritt 3 von 4", "<h1>Wiederherstellungs\u00adcodes sichern</h1>", "Du siehst die Codes nur jetzt.", `<ol class="codes">`, `class="actions no-print"`, `data-print>Drucken`,
-		`<label class="confirm"><input type="checkbox" required>Ich habe die Codes ausgedruckt oder gespeichert.`, `<form class="tile" method="get" action="/">`,
-		`class="button" type="submit">Weiter zu den ersten Schritten`,
+		"Schritt 3 von 4", "<h1>Wiederherstellungs\u00adcodes sichern</h1>", "Du siehst die Codes <b>nur jetzt</b>.", `<ol class="codes">`, `class="rc-save no-print"`, `data-print>`, "Drucken",
+		`<input type="checkbox" name="saved" value="1">`, "Ich habe meine Wiederherstellungs\u00adcodes gesichert.", `<form class="rc" method="post" action="/account/recovery-codes/saved" data-rc>`,
+		`type="submit" aria-disabled="true">Weiter zu den ersten Schritten`,
 	} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("wizard recovery page misses %q", want)
@@ -475,7 +493,7 @@ func TestRecoveryCodesPageInTheWizardAndOutside(t *testing.T) {
 	// Outside the wizard: in the frame, generic label.
 	secondParent(t, b)
 	out := b.post("/account/recovery-codes", url.Values{})
-	for _, want := range []string{`class="frame-nav"`, `class="button" type="submit">Weiter<`, `required>Ich habe die Codes`} {
+	for _, want := range []string{`class="frame-nav"`, `type="submit" aria-disabled="true">Fertig, zurück zu Mein Konto`, `name="saved" value="1"`} {
 		if !strings.Contains(out.body, want) {
 			t.Errorf("the recovery page outside the wizard misses %q", want)
 		}

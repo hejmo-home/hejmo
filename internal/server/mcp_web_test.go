@@ -73,6 +73,7 @@ func newMCPTokenOnPage(t *testing.T, b *box, name string, levels map[string]stri
 }
 
 func TestSettingsHubRowSaysInWordsWhetherMCPIsOn(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := getEN(b, "/settings").body
 	mcpHas(t, "hub", body, `<a class="hub-row" href="/mcp">`, "<strong>AI assistants (MCP)</strong>", `<b>Off.</b> Let an AI assistant`)
@@ -85,13 +86,14 @@ func TestSettingsHubRowSaysInWordsWhetherMCPIsOn(t *testing.T) {
 }
 
 func TestMCPPageFirstVisitExplainsBeforeTheSwitch(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := getEN(b, "/mcp")
 	if r.status != http.StatusOK {
 		t.Fatalf("GET /mcp = %d", r.status)
 	}
 	mcpHas(t, "/mcp", r.body,
-		`<a class="back" href="/settings">`, "<h1>AI assistants (MCP)</h1>", "As long as MCP is off, no assistant can reach your data.",
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/settings">Settings</a>`, "<h1>AI assistants (MCP)</h1>", "As long as MCP is off, no assistant can reach your data.",
 		`<section class="explain" aria-labelledby="what">`, "<h2 id=\"what\">What is MCP?</h2>", "<b>MCP</b> (Model Context Protocol)",
 		"Put milk and oats on the shopping list.", "What an assistant may do", "Good to know",
 		`<ul class="links">`, `href="https://github.com/hejmo-home/hejmo/blob/main/docs/mcp.md"`, `href="https://modelcontextprotocol.io/docs/getting-started/intro"`, "(English)",
@@ -108,6 +110,7 @@ func TestMCPPageFirstVisitExplainsBeforeTheSwitch(t *testing.T) {
 }
 
 func TestMCPSwitchedOnShowsTheAddressAndInvitesToTheFirstToken(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	switchMCPOnPage(t, b, true)
 	r := getEN(b, "/mcp")
@@ -132,6 +135,7 @@ func TestMCPSwitchedOnShowsTheAddressAndInvitesToTheFirstToken(t *testing.T) {
 }
 
 func TestMCPSwitchingOffNeedsNoConfirmationAndSaysSo(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	switchMCPOnPage(t, b, true)
 	getEN(b, "/mcp")
@@ -142,6 +146,7 @@ func TestMCPSwitchingOffNeedsNoConfirmationAndSaysSo(t *testing.T) {
 }
 
 func TestNewMCPTokenFormDefaultsEveryAreaToReadOnly(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	switchMCPOnPage(t, b, true)
 	r := getEN(b, "/mcp/tokens/new")
@@ -149,7 +154,7 @@ func TestNewMCPTokenFormDefaultsEveryAreaToReadOnly(t *testing.T) {
 		t.Fatalf("GET = %d", r.status)
 	}
 	mcpHas(t, "new token", r.body,
-		`<a class="back" href="/mcp">`, "All MCP tokens", "<h1>New MCP token</h1>", "One token per assistant and device.",
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/mcp">AI assistants (MCP)</a>`, "<h1>New MCP token</h1>", "One token per assistant and device.",
 		`<form method="post" action="/mcp/tokens" class="steps">`, `name="name"`, `maxlength="80"`, "required",
 		"The assistant acts as you, ", `class="marker"`, ". What it enters, the box enters under your name.",
 		`<fieldset class="scopes">`, "What may the assistant do?", "“Change” also means adding, ticking off and deleting.",
@@ -166,6 +171,7 @@ func TestNewMCPTokenFormDefaultsEveryAreaToReadOnly(t *testing.T) {
 }
 
 func TestNewMCPTokenIsShownOnceAndWorksOnlyForMCP(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	switchMCPOnPage(t, b, true)
 	r := postEN(b, "/mcp/tokens", url.Values{"name": {"Claude on Mama's laptop"}, "events": {"write"}, "lists": {"write"}, "tasks": {"read"}, "meals": {"none"}})
@@ -200,6 +206,7 @@ func TestNewMCPTokenIsShownOnceAndWorksOnlyForMCP(t *testing.T) {
 }
 
 func TestNewMCPTokenErrorsSitAtTheFieldAndKeepWhatWasTyped(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	switchMCPOnPage(t, b, true)
 	// No name.
@@ -238,6 +245,7 @@ func TestNewMCPTokenErrorsSitAtTheFieldAndKeepWhatWasTyped(t *testing.T) {
 }
 
 func TestMCPOverviewListsTokensAsCalmRowsWithWordsNotCounts(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	switchMCPOnPage(t, b, true)
 	id, secret := newMCPTokenOnPage(t, b, "Claude on Mama's laptop", map[string]string{"events": "write", "lists": "write", "tasks": "read"})
@@ -263,6 +271,7 @@ func TestMCPOverviewListsTokensAsCalmRowsWithWordsNotCounts(t *testing.T) {
 }
 
 func TestMCPTokenDetailPageShowsRightsInWordsAndRevokesByName(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	switchMCPOnPage(t, b, true)
 	id, secret := newMCPTokenOnPage(t, b, "Einkaufshelfer", map[string]string{"lists": "write", "meals": "read"})
@@ -271,7 +280,7 @@ func TestMCPTokenDetailPageShowsRightsInWordsAndRevokesByName(t *testing.T) {
 		t.Fatalf("GET = %d", r.status)
 	}
 	mcpHas(t, "detail", r.body,
-		`<a class="back" href="/mcp">`, "All MCP tokens", "<h1>Einkaufshelfer</h1>", "<dt>For</dt>", `class="marker"`,
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/mcp">AI assistants (MCP)</a>`, "<h1>Einkaufshelfer</h1>", "<dt>For</dt>", `class="marker"`,
 		"<dt>Reads and changes</dt>", "<dd>Lists</dd>", "<dt>Reads only</dt>", "<dd>Meal plan</dd>", "<dt>May not</dt>", "<dd>Events, Tasks (with routines and stars), Diet and allergies</dd>",
 		"<dt>Created on</dt>", "<dt>Last used</dt>", `class="flag warn"`, "Never used.",
 		"The box never shows the token itself again", "for other rights you create a new token and revoke this one",
@@ -307,6 +316,7 @@ func TestMCPTokenDetailPageShowsRightsInWordsAndRevokesByName(t *testing.T) {
 }
 
 func TestMCPSwitchedOffKeepsTokensAndSaysTheyDoNotWorkNow(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	switchMCPOnPage(t, b, true)
 	id, _ := newMCPTokenOnPage(t, b, "Claude", map[string]string{"events": "read"})
@@ -330,6 +340,7 @@ func TestMCPSwitchedOffKeepsTokensAndSaysTheyDoNotWorkNow(t *testing.T) {
 }
 
 func TestMCPPageInGerman(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := b.get("/mcp").body
 	mcpHas(t, "/mcp de", body, "KI-Assistenten (MCP)", "Was ist MCP?", "Aus: Kein KI-Assistent kommt an eure Daten.", "Speichern", "(Englisch)")
@@ -342,6 +353,7 @@ func TestMCPPageInGerman(t *testing.T) {
 }
 
 func TestMCPPagesAreForParentsOnly(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	for _, path := range []string{"/mcp", "/mcp/tokens/new", "/mcp/tokens/x"} {
 		if r := b.get(path); r.status != http.StatusSeeOther {
@@ -359,6 +371,7 @@ func TestMCPPagesAreForParentsOnly(t *testing.T) {
 
 // API parity (ADR 0015): everything the page does is possible through the REST API.
 func TestMCPThroughTheRESTAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, body, _ := c.call(http.MethodGet, "/mcp", nil)
 	if status != http.StatusOK || body["enabled"] != false || !strings.HasSuffix(body["address"].(string), "/mcp") || !strings.HasPrefix(body["address"].(string), "https://") {
@@ -409,6 +422,7 @@ func TestMCPThroughTheRESTAPI(t *testing.T) {
 }
 
 func TestMCPTokenNameOfMoreThan80CharactersIsRefusedWithItsOwnText(t *testing.T) {
+	t.Parallel()
 	long := strings.Repeat("ä", 81)
 	// The contract test client refuses 81 characters before they reach the server (maxLength in openapi.yaml), so only the edge that is allowed is tried here.
 	c := signedInAPI(t)

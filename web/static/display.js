@@ -18,6 +18,10 @@
 // after a parent confirmed the code, revoked the display, or the code ran out.
 // The same answer carries the theme the display should show now.
 //
+// A quiet display that a kiosk app switched off (ticket 179) marks its page
+// with data-wake-url: a touch, or the screen coming back on, posts there so the
+// box wakes the display for a few minutes.
+//
 // A personal view (ticket 5.6) works the same way on its own addresses
 // (data-view-url, data-events-url), and returns to the family view after
 // data-return-seconds without interaction; refreshes do not count as one.
@@ -25,18 +29,45 @@
 // The lists view (ticket 6.2) works like a personal view and adds a field: a
 // redraw never clears or takes the focus from the field marked data-keep, and
 // adding an entry posts in the background (partial=1), shows the box's answer
-// and keeps the new entry named (?added=) until the next tap.
+// and keeps the new entry named (?added=) until the next tap. On a list with
+// suggestions (ticket 165) the quantity of an entry opens under it: the script
+// names the open entry (?qty=) and the line that says what happened (?r=), and
+// saves the editor in the background like an added entry.
 (function () {
   var el = document.querySelector("[data-display]");
   if (!el) return;
   var state = el.getAttribute("data-state");
   var code = el.getAttribute("data-code") || "";
   var every = Number(el.getAttribute("data-poll-seconds")) || 30;
+  var saverAfter = Number(el.getAttribute("data-saver-seconds")) || 0;
+  var saverURL = el.getAttribute("data-saver-url");
+  var saverTimer;
+  function saverRestart() {
+    clearTimeout(saverTimer);
+    if (saverAfter > 0) saverTimer = setTimeout(saverDue, saverAfter * 1000);
+  }
+  // saverSeconds takes over the idle seconds the box announced.
+  function saverSeconds(s) {
+    if (!saverURL || s.saver_seconds === undefined) return;
+    var n = Number(s.saver_seconds) || 0;
+    if (n !== saverAfter) { saverAfter = n; saverRestart(); }
+  }
+  function saverDue() {
+    fetch("/display/state", { cache: "no-store", credentials: "same-origin" })
+      .then(function (r) { return r.json(); })
+      .then(function (s) {
+        if (s.state === "paired" && s.saver === "1") { location.href = saverURL; return; }
+        saverSeconds(s);
+        saverRestart();
+      })
+      .catch(saverRestart);
+  }
   function check() {
     fetch("/display/state", { cache: "no-store", credentials: "same-origin" })
       .then(function (r) { return r.json(); })
       .then(function (s) {
         if (s.state !== state || (s.code || "") !== code) { location.reload(); return; }
+        saverSeconds(s);
         // Automatic themes switch at sunset and sunrise without a reload (ADR 0015).
         if (s.theme && document.documentElement.getAttribute("data-theme") !== s.theme) {
           document.documentElement.setAttribute("data-theme", s.theme);
@@ -63,6 +94,21 @@
     restart();
   }
 
+  // The family view starts the photo screensaver after data-saver-seconds
+  // without a touch (ticket 178): the box serves it as a page of its own, and
+  // a touch there brings the day back at once. Refreshes do not count.
+  // The page is rendered once and stays for days, so the timer is there
+  // whenever the screensaver is on (also in quiet mode), and when it fires the
+  // display asks the box (/display/state) whether the screensaver is due now.
+  // The same answer, and the regular check, carry the idle seconds: switching
+  // the screensaver on or changing the minutes reaches the display without a reload.
+  if (saverURL) {
+    ["pointerdown", "touchstart", "keydown", "scroll"].forEach(function (name) {
+      document.addEventListener(name, saverRestart, { passive: true, capture: true });
+    });
+    saverRestart();
+  }
+
   // The family view by default; a personal view names its own addresses.
   var viewURL = el.getAttribute("data-view-url") || "/display/view";
   var eventsURL = el.getAttribute("data-events-url") || "/display/events";
@@ -74,6 +120,17 @@
   // The entry just added on the lists view: refreshes name it (?added=) so its
   // row keeps a frame, until the next tap.
   var addedId = "";
+  // The entry whose quantity is open, and the token of the line that says what
+  // the last add or change did (kept in the box's memory for two minutes).
+  var editId = "";
+  var resultToken = "";
+  function viewQuery() {
+    var q = [];
+    if (addedId) q.push("added=" + encodeURIComponent(addedId));
+    if (editId) q.push("qty=" + encodeURIComponent(editId));
+    if (resultToken) q.push("r=" + encodeURIComponent(resultToken));
+    return q.length ? "?" + q.join("&") : "";
+  }
   function armReload() {
     var q = view.querySelector("[data-reload-seconds]");
     if (!q) {
@@ -97,6 +154,24 @@
       });
   }
   armReload();
+  // Quiet mode with a kiosk app (ticket 179, Q79): the page it shows names
+  // data-wake-url, and a touch, or the screen coming back on, tells the box to
+  // wake the display for a while. The box decides; at most one message every 15 seconds.
+  var wakeSent = 0;
+  function wake() {
+    var q = view.querySelector("[data-wake-url]");
+    if (!q) return;
+    var now = Date.now();
+    if (now - wakeSent < 15000) return;
+    wakeSent = now;
+    fetch(q.getAttribute("data-wake-url"), { method: "POST", cache: "no-store", credentials: "same-origin" }).catch(function () {});
+  }
+  ["pointerdown", "touchstart", "keydown"].forEach(function (name) {
+    document.addEventListener(name, wake, { passive: true, capture: true });
+  });
+  document.addEventListener("visibilitychange", function () {
+    if (document.visibilityState !== "hidden") wake();
+  });
   // The field marked data-keep survives a redraw: what is typed in it and its
   // focus (a change from another display must not take the keyboard away).
   function holdField() {
@@ -124,7 +199,7 @@
   function refresh() {
     if (loading) return;
     loading = true;
-    fetch(viewURL + (addedId ? "?added=" + encodeURIComponent(addedId) : ""), { cache: "no-store", credentials: "same-origin" })
+    fetch(viewURL + viewQuery(), { cache: "no-store", credentials: "same-origin" })
       .then(function (r) {
         // A personal view whose person is gone has nothing left to show.
         if (r.status === 404 && target) location.href = target;
@@ -206,10 +281,11 @@
         if (!r.ok && r.status !== 422) throw new Error("add " + r.status);
         var v = r.headers.get("X-Hejmo-View") || "";
         var id = r.ok ? r.headers.get("X-Hejmo-Added") || "" : "";
+        var token = r.ok ? r.headers.get("X-Hejmo-Result") || "" : "";
         return r.text().then(function (html) {
           swap(html, false);
           version = v;
-          if (r.ok) addedId = id;
+          if (r.ok) { addedId = id; resultToken = token; editId = ""; }
           var f = view.querySelector("[data-keep]");
           if (f && f.focus) f.focus();
           var row = view.querySelector(".added");
@@ -224,10 +300,50 @@
         group.appendChild(line);
       });
   }
+  // The editor of a quantity saves in the background: 200 shows the entry
+  // changed, 422 keeps the editor open with the error at the number, 409 says
+  // the entry was ticked off or removed meanwhile.
+  function saveQuantity(e, form) {
+    e.preventDefault();
+    var body = new URLSearchParams(new FormData(form));
+    body.set("partial", "1");
+    fetch(form.action, { method: "POST", body: body, credentials: "same-origin", cache: "no-store" })
+      .then(function (r) {
+        if (r.redirected && new URL(r.url).pathname === "/display") { location.href = "/display"; return; }
+        if (!r.ok && r.status !== 422 && r.status !== 409) throw new Error("quantity " + r.status);
+        var v = r.headers.get("X-Hejmo-View") || "";
+        return r.text().then(function (html) {
+          swap(html, true);
+          version = v;
+          if (r.ok) { addedId = r.headers.get("X-Hejmo-Added") || ""; resultToken = r.headers.get("X-Hejmo-Result") || ""; editId = ""; }
+          else if (r.status === 409) editId = "";
+        });
+      })
+      .catch(function () {
+        var row = form.parentNode;
+        var old = row.querySelector(".ferr.save");
+        if (old) row.removeChild(old);
+        var line = errorLine(form.closest("[data-tick-error]") ? form.closest("[data-tick-error]").getAttribute("data-tick-error") : "");
+        line.className += " save";
+        row.appendChild(line);
+      });
+  }
+  // The quantity button opens or closes the editor of its entry.
+  view.addEventListener("click", function (e) {
+    var open = e.target.closest && e.target.closest("[data-qty-open]");
+    var close = e.target.closest && e.target.closest("[data-qty-close]");
+    if (!open && !close) return;
+    e.preventDefault();
+    addedId = "";
+    resultToken = "";
+    editId = open && open.getAttribute("data-qty-open") !== editId ? open.getAttribute("data-qty-open") : "";
+    refresh();
+  });
   // The frame of the entry just added goes at the next tap.
   document.addEventListener("pointerdown", function () {
     if (!addedId) return;
     addedId = "";
+    resultToken = "";
     var rows = view.querySelectorAll(".added");
     for (var i = 0; i < rows.length; i++) rows[i].classList.remove("added");
   }, { passive: true, capture: true });
@@ -243,13 +359,18 @@
       addEntry(e, form, host);
       return;
     }
-    var btn = form.querySelector && form.querySelector(".big-check");
+    if (/(^| )qty-edit( |$)/.test(form.className || "") && window.fetch && window.FormData) {
+      saveQuantity(e, form);
+      return;
+    }
+    var btn = form.querySelector && form.querySelector(".big-check, .tile-check");
     var tile = form.closest && form.closest("[data-tick-error]");
     if (!btn || !tile || !window.fetch || !window.FormData) return;
     e.preventDefault();
     var row = form.parentNode;
     var old = row.querySelector(".ferr");
     if (old) row.removeChild(old);
+    if (row.removeAttribute) row.removeAttribute("aria-invalid"); // a tile's red frame goes with the old error
     var body = new URLSearchParams(new FormData(form));
     fetch(form.action, { method: "POST", body: body, credentials: "same-origin", cache: "no-store" })
       .then(function (r) {
@@ -261,6 +382,7 @@
       })
       .catch(function () {
         row.appendChild(errorLine(tile.getAttribute("data-tick-error")));
+        if (btn.className && /tile-check/.test(btn.className)) row.setAttribute("aria-invalid", "true");
       });
   });
 

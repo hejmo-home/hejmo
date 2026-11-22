@@ -11,6 +11,7 @@ import (
 // Ticket 94: a device token created on the CalDAV clients page opens task
 // lists as well, and the page says so in one line.
 func TestDeviceTokenFromTheWebPageOpensCalendarsAndTaskLists(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h, _ := familyOf(t, c)
 	res := c.b.post("/caldav/tokens", url.Values{"name": {"iPhone Mama"}})
@@ -34,6 +35,7 @@ func TestDeviceTokenFromTheWebPageOpensCalendarsAndTaskLists(t *testing.T) {
 }
 
 func TestDeviceTokensOfBothKindsAreListed(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	h, _ := familyOf(t, c)
 	c.newToken("calendars")       // an older device token
@@ -50,6 +52,7 @@ func TestDeviceTokensOfBothKindsAreListed(t *testing.T) {
 }
 
 func TestCalDAVPageMentionsTaskLists(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	en := c.b.do(http.MethodGet, "/caldav", nil, map[string]string{"Accept-Language": "en"})
 	de := c.b.do(http.MethodGet, "/caldav", nil, map[string]string{"Accept-Language": "de"})

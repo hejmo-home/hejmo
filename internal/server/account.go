@@ -137,10 +137,21 @@ func (s *server) renderAccount(w http.ResponseWriter, r *http.Request, p princip
 		s.fail(w, "recovery codes", err)
 		return
 	}
+	set, err := s.db.RecoverySet(p.person.ID)
+	if err != nil {
+		s.fail(w, "recovery codes", err)
+		return
+	}
 	others, err := s.otherParents(lang, p)
 	if err != nil {
 		s.fail(w, "people", err)
 		return
+	}
+	// A set that was never confirmed as saved is said so in words (ticket 176).
+	unsaved := set.Exists && set.SavedAt.IsZero()
+	var unsavedHint string
+	if unsaved {
+		unsavedHint = s.i18n.Format(lang, i18n.Msg("otp.recovery.unsaved_hint", "date", datefmt.Date(p.household.DateFormat, set.CreatedAt.In(p.location()))))
 	}
 	var broken []string // the passkeys that stopped working with a new box name
 	var oldName string
@@ -162,7 +173,7 @@ func (s *server) renderAccount(w http.ResponseWriter, r *http.Request, p princip
 		"Broken": s.quotedNames(lang, broken), "OldName": oldName, "BrokenCount": len(broken),
 		"CodesSince": datefmt.Date(p.household.DateFormat, acc.TOTPConfirmedAt.In(p.location())),
 		"LeftText":   s.i18n.Format(lang, i18n.Msg("account.codes.left", "count", strconv.Itoa(len(unused)), "total", strconv.Itoa(recoveryCodeCount))),
-		"Others":     others, "SuccessInline": true,
+		"Others":     others, "SuccessInline": true, "CodesUnsaved": unsaved, "UnsavedHint": unsavedHint,
 	})
 }
 

@@ -27,6 +27,7 @@ import (
 // light, dark and black-and-white.
 // Run: HEJMO_WRITE_PREVIEW=../../docs/design/preview-111.html go test ./internal/server -run WritePreview111
 func TestWritePreview111(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW to the output path to write the preview")

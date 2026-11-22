@@ -13,12 +13,16 @@ import (
 	"net/http/httptest"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/store/storetest"
+	"github.com/libdns/libdns"
 )
 
 const boxName = "mia.dedyn.io"
@@ -37,7 +41,7 @@ type rig struct {
 func newRig(t *testing.T) *rig {
 	t.Helper()
 	r := &rig{t: t, dns: newFakeDNS(t), dir: t.TempDir(), now: time.Now()}
-	r.dbPath = filepath.Join(r.dir, "hejmo.db")
+	r.dbPath = storetest.Path(t)
 	var err error
 	if r.db, err = store.Open(r.dbPath); err != nil {
 		t.Fatal(err)
@@ -59,13 +63,16 @@ func (r *rig) startCA(opt caOption) *fakeCA {
 func (r *rig) manager(directories map[string]string, extra ...publiccert.Option) *publiccert.Manager {
 	r.t.Helper()
 	opts := append([]publiccert.Option{
+		publiccert.WithGate(outbound.AllowAll()), // an extra option may replace it
 		publiccert.WithDirectories(directories),
 		publiccert.WithTrustedRoots(r.roots),
-		publiccert.WithProviderFactory(func(provider, token string) (publiccert.DNSProvider, error) {
-			if provider != "desec" {
-				return nil, publiccert.ErrUnknownProvider
+		publiccert.WithProviderFactory(func(provider string, c publiccert.Credentials) (publiccert.DNSProvider, error) {
+			switch provider {
+			case "desec", "cloudflare", "hetzner", "inwx":
+				r.dns.credentials = append(r.dns.credentials, c)
+				return r.dns, nil
 			}
-			return r.dns, nil
+			return nil, publiccert.ErrUnknownProvider
 		}),
 		publiccert.WithPropagation(0, -1), // the fake name server answers at once
 		publiccert.WithResolvers([]string{r.dns.addr}),
@@ -427,5 +434,268 @@ func TestClearForgetsThePublicSetup(t *testing.T) {
 	again := r.manager(map[string]string{"letsencrypt": le.URL})
 	if err := again.Start(context.Background()); err != nil || again.Ready() {
 		t.Errorf("restart after Clear: err=%v ready=%v", err, again.Ready())
+	}
+}
+
+// credentialsOf returns what the factory was last asked to build a provider for.
+func (r *rig) credentialsOf() publiccert.Credentials {
+	r.dns.mu.Lock()
+	defer r.dns.mu.Unlock()
+	return r.dns.credentials[len(r.dns.credentials)-1]
+}
+
+// Validation per provider: the wizard shows each refusal at its field, before
+// any provider is asked.
+func TestSetupValidatesTheCredentialsOfEachProviderBeforeContactingIt(t *testing.T) {
+	r := newRig(t)
+	le := r.startCA(caOption{})
+	m := r.manager(map[string]string{"letsencrypt": le.URL})
+	inwx := func(mut func(*publiccert.Request)) publiccert.Request {
+		q := request("letsencrypt")
+		q.Provider, q.Token, q.Username, q.Password = "inwx", "", "mueller-familie", "pw"
+		mut(&q)
+		return q
+	}
+	cases := map[string]struct {
+		req   publiccert.Request
+		field string
+	}{
+		"inwx no username":        {inwx(func(q *publiccert.Request) { q.Username = "" }), "username"},
+		"inwx no password":        {inwx(func(q *publiccert.Request) { q.Password = "" }), "password"},
+		"inwx 2fa without secret": {inwx(func(q *publiccert.Request) { q.TwoFA = true }), "otp_secret"},
+		"inwx six digit code":     {inwx(func(q *publiccert.Request) { q.TwoFA, q.OTPSecret = true, "123456" }), "otp_secret"},
+		"inwx not base32":         {inwx(func(q *publiccert.Request) { q.TwoFA, q.OTPSecret = true, "JBSWY3DPEHPK3PX1JBSWY3DP" }), "otp_secret"},
+		"inwx too long":           {inwx(func(q *publiccert.Request) { q.TwoFA, q.OTPSecret = true, strings.Repeat("A", 33) }), "otp_secret"},
+		"inwx bad name":           {inwx(func(q *publiccert.Request) { q.Name = "box" }), "name"},
+		"cloudflare no token": {func() publiccert.Request {
+			q := request("letsencrypt")
+			q.Provider, q.Token = "cloudflare", ""
+			return q
+		}(), "token"},
+		"hetzner no token": {func() publiccert.Request { q := request("letsencrypt"); q.Provider, q.Token = "hetzner", ""; return q }(), "token"},
+	}
+	for name, c := range cases {
+		t.Run(name, func(t *testing.T) {
+			var inv *publiccert.InvalidError
+			if err := m.Setup(context.Background(), c.req); !errors.As(err, &inv) || inv.Field != c.field {
+				t.Fatalf("err = %v, want an InvalidError for %q", err, c.field)
+			}
+		})
+	}
+	if len(r.dns.credentials) != 0 {
+		t.Error("a provider was built for invalid input")
+	}
+}
+
+// A secret typed in groups and lower case is accepted, as INWX shows it; it
+// reaches the provider cleaned up. With the switch off the secret is ignored.
+func TestInwxSecretIsCleanedUpAndIgnoredWhenTwoFactorIsOff(t *testing.T) {
+	r := newRig(t)
+	le := r.startCA(caOption{})
+	m := r.manager(map[string]string{"letsencrypt": le.URL})
+	q := request("letsencrypt")
+	q.Provider, q.Token, q.Username, q.Password, q.TwoFA, q.OTPSecret = "inwx", "", "mueller-familie", "pw", true, "jbsw y3dp ehpk 3pxp"
+	if err := m.Setup(context.Background(), q); err != nil {
+		t.Fatal(err)
+	}
+	if got := r.credentialsOf(); got.OTPSecret != "JBSWY3DPEHPK3PXP" || got.Username != "mueller-familie" || got.Password != "pw" {
+		t.Errorf("provider got %+v", got)
+	}
+	r2 := newRig(t)
+	le2 := r2.startCA(caOption{})
+	m2 := r2.manager(map[string]string{"letsencrypt": le2.URL})
+	q.TwoFA, q.OTPSecret = false, "123456"
+	if err := m2.Setup(context.Background(), q); err != nil {
+		t.Fatal(err)
+	}
+	if got := r2.credentialsOf(); got.OTPSecret != "" {
+		t.Errorf("secret of a switched-off 2FA reached the provider: %+v", got)
+	}
+}
+
+// All credentials are sealed together, survive a restart and are not
+// readable in the database file.
+func TestAllCredentialsAreSealedTogetherAndResumedAfterARestart(t *testing.T) {
+	r := newRig(t)
+	le := r.startCA(caOption{})
+	m := r.manager(map[string]string{"letsencrypt": le.URL})
+	q := request("letsencrypt")
+	q.Provider, q.Token, q.Username, q.Password, q.TwoFA, q.OTPSecret = "inwx", "", "mueller-familie", "geheim-pw-4711", true, "JBSWY3DPEHPK3PXP"
+	if err := m.Setup(context.Background(), q); err != nil {
+		t.Fatal(err)
+	}
+	m.Close()
+	r.db.SQL().Exec(`PRAGMA wal_checkpoint(TRUNCATE)`)
+	for _, f := range []string{r.dbPath, r.dbPath + "-wal"} {
+		if raw, err := os.ReadFile(f); err == nil {
+			for _, secret := range []string{"geheim-pw-4711", "JBSWY3DPEHPK3PXP"} {
+				if bytes.Contains(raw, []byte(secret)) {
+					t.Errorf("%q readable in %s", secret, filepath.Base(f))
+				}
+			}
+		}
+	}
+	m2 := r.manager(map[string]string{"letsencrypt": le.URL})
+	if err := m2.Start(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if got := r.credentialsOf(); got.Username != "mueller-familie" || got.Password != "geheim-pw-4711" || got.OTPSecret != "JBSWY3DPEHPK3PXP" {
+		t.Errorf("resumed provider got %+v", got)
+	}
+	// Cloudflare's two tokens too.
+	r3 := newRig(t)
+	le3 := r3.startCA(caOption{})
+	m3 := r3.manager(map[string]string{"letsencrypt": le3.URL})
+	c := request("letsencrypt")
+	c.Provider, c.Token, c.ZoneToken = "cloudflare", "cf-edit", "cf-read"
+	if err := m3.Setup(context.Background(), c); err != nil {
+		t.Fatal(err)
+	}
+	m3.Close()
+	m4 := r3.manager(map[string]string{"letsencrypt": le3.URL})
+	if err := m4.Start(context.Background()); err != nil {
+		t.Fatal(err)
+	}
+	if got := r3.credentialsOf(); got.Token != "cf-edit" || got.ZoneToken != "cf-read" {
+		t.Errorf("resumed Cloudflare provider got %+v", got)
+	}
+}
+
+// Safety: the box never overwrites an address that is already public.
+func TestSetupRefusesANameThatAlreadyPointsToAPublicAddress(t *testing.T) {
+	for name, c := range map[string]struct {
+		rec  libdns.RR
+		want string
+	}{
+		"public A":    {libdns.RR{Name: "@", Type: "A", Data: "203.0.113.7"}, "203.0.113.7"},
+		"public AAAA": {libdns.RR{Name: "@", Type: "AAAA", Data: "2001:db8::7"}, "2001:db8::7"},
+		"CNAME":       {libdns.RR{Name: "@", Type: "CNAME", Data: "shop.example.net."}, "shop.example.net."},
+	} {
+		t.Run(name, func(t *testing.T) {
+			r := newRig(t)
+			le := r.startCA(caOption{})
+			m := r.manager(map[string]string{"letsencrypt": le.URL})
+			r.dns.put(boxName, c.rec)
+			err := m.Setup(context.Background(), request("letsencrypt"))
+			var taken *publiccert.NameTakenError
+			if !errors.Is(err, publiccert.ErrNameTaken) || !errors.As(err, &taken) {
+				t.Fatalf("err = %v, want ErrNameTaken", err)
+			}
+			if taken.Address != c.want || taken.Suggestion != "box.mia.dedyn.io" {
+				t.Errorf("taken = %+v", taken)
+			}
+			if got := r.dns.addressOf(boxName); got == "192.168.178.20" {
+				t.Error("the existing record was overwritten")
+			}
+			if m.Ready() || le.Orders.Load() != 0 {
+				t.Error("went on after the refusal")
+			}
+		})
+	}
+}
+
+func TestSetupReplacesAPrivateAddressOfAnEarlierBox(t *testing.T) {
+	// old is the address already at the name; lan is the address of this try
+	// ("" means the default one). An address equal to the LAN address is the
+	// box's own record of a failed earlier attempt.
+	cases := []struct{ old, lan string }{
+		{"192.168.178.99", ""}, {"10.0.0.5", ""}, {"172.16.3.4", ""}, {"fd12:3456::1", ""},
+		{"100.64.1.20", ""}, {"169.254.3.4", ""}, {"fe80::1", ""}, {"127.0.0.1", ""},
+		{"2a02:8070:1234::20", "2a02:8070:1234::20"},
+		{"100.64.1.20", "100.64.1.20"},
+		{"169.254.3.4", "169.254.3.4"},
+		{"203.0.113.7", "203.0.113.7"},
+	}
+	for _, c := range cases {
+		r := newRig(t)
+		le := r.startCA(caOption{})
+		m := r.manager(map[string]string{"letsencrypt": le.URL})
+		typ := "A"
+		if strings.Contains(c.old, ":") {
+			typ = "AAAA"
+		}
+		r.dns.put(boxName, libdns.RR{Name: "@", Type: typ, Data: c.old})
+		req := request("letsencrypt")
+		want := "192.168.178.20"
+		if c.lan != "" {
+			req.LANIP, want = c.lan, c.lan
+		}
+		if err := m.Setup(context.Background(), req); err != nil {
+			t.Fatalf("%s: %v", c.old, err)
+		}
+		wantType := "A"
+		if strings.Contains(want, ":") {
+			wantType = "AAAA"
+		}
+		if got := r.dns.addressOfType(boxName, wantType); got != want {
+			t.Errorf("%s: %s record = %q, want %q", c.old, wantType, got, want)
+		}
+	}
+}
+
+// An earlier box's record of the other address family is deleted, so the old
+// box cannot be resolved any more (a ULA AAAA while this try writes an A and
+// the other way round). A public record of the other family still refuses.
+func TestSetupRemovesAPrivateRecordOfTheOtherAddressFamily(t *testing.T) {
+	cases := []struct{ old, oldType, lan, wantType, goneType string }{
+		{"fd12:3456::1", "AAAA", "", "A", "AAAA"},
+		{"192.168.178.99", "A", "fd12:3456::20", "AAAA", "A"},
+	}
+	for _, c := range cases {
+		r := newRig(t)
+		le := r.startCA(caOption{})
+		m := r.manager(map[string]string{"letsencrypt": le.URL})
+		r.dns.put(boxName, libdns.RR{Name: "@", Type: c.oldType, Data: c.old})
+		req := request("letsencrypt")
+		if c.lan != "" {
+			req.LANIP = c.lan
+		}
+		if err := m.Setup(context.Background(), req); err != nil {
+			t.Fatalf("%s: %v", c.old, err)
+		}
+		if got := r.dns.addressOfType(boxName, c.goneType); got != "" {
+			t.Errorf("%s: %s record = %q, want none", c.old, c.goneType, got)
+		}
+		if got := r.dns.addressOfType(boxName, c.wantType); got != req.LANIP {
+			t.Errorf("%s: %s record = %q, want %q", c.old, c.wantType, got, req.LANIP)
+		}
+	}
+}
+
+// An earlier box's record of the other address family that cannot be deleted
+// stops the setup: the old box would stay resolvable at the name.
+func TestSetupFailsWhenAnEarlierBoxsRecordCannotBeDeleted(t *testing.T) {
+	r := newRig(t)
+	le := r.startCA(caOption{})
+	m := r.manager(map[string]string{"letsencrypt": le.URL})
+	r.dns.put(boxName, libdns.RR{Name: "@", Type: "AAAA", Data: "fd12:3456::1"})
+	r.dns.failDelete = errors.New("provider says no")
+	err := m.Setup(context.Background(), request("letsencrypt"))
+	if err == nil || !strings.Contains(err.Error(), "provider says no") {
+		t.Fatalf("Setup = %v, want the delete error", err)
+	}
+	if got := r.dns.addressOf(boxName); got != "" {
+		t.Errorf("an address was written (%q) although the old record stays", got)
+	}
+}
+
+// Stale challenge records of an earlier attempt are removed, so a provider
+// that cannot handle several values at one name is not confused.
+func TestSetupRemovesStaleChallengeRecordsOfThisName(t *testing.T) {
+	r := newRig(t)
+	le := r.startCA(caOption{})
+	m := r.manager(map[string]string{"letsencrypt": le.URL})
+	r.dns.put(boxName,
+		libdns.RR{Name: "_acme-challenge", Type: "TXT", Data: "stale-1"},
+		libdns.RR{Name: "_acme-challenge", Type: "TXT", Data: "stale-2"},
+		libdns.RR{Name: "_acme-challenge.other", Type: "TXT", Data: "not-ours"})
+	if err := m.Setup(context.Background(), request("letsencrypt")); err != nil {
+		t.Fatal(err)
+	}
+	if got := r.dns.txtAt("_acme-challenge.mia.dedyn.io"); len(got) != 0 {
+		t.Errorf("stale challenge records left: %v", got)
+	}
+	if got := r.dns.txtAt("_acme-challenge.other.mia.dedyn.io"); len(got) != 1 {
+		t.Errorf("another name's record was touched: %v", got)
 	}
 }

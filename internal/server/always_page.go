@@ -172,7 +172,7 @@ func (a *alwaysCtx) dueGroups(rules []alwaysRule, d time.Time) []aheadGroup {
 	var out []aheadGroup
 	for _, id := range order {
 		l, _ := a.listByID(id)
-		out = append(out, aheadGroup{l.Name, strings.Join(items[id], ", ")})
+		out = append(out, aheadGroup{l.Name + ":", strings.Join(items[id], ", ")})
 	}
 	return out
 }
@@ -203,7 +203,7 @@ func (a *alwaysCtx) ranGroups(runs []store.AlwaysRun) (groups []aheadGroup, free
 	}
 	for _, id := range order {
 		if l, ok := a.listByID(id); ok {
-			groups = append(groups, aheadGroup{l.Name, strings.Join(parts[id], ", ")})
+			groups = append(groups, aheadGroup{l.Name + ":", strings.Join(parts[id], ", ")})
 		}
 	}
 	return groups, free

@@ -9,7 +9,7 @@
   {{template "alwaysRows" .Running}}{{end}}
   {{if .Ahead}}<h2>{{t "always.ahead.title"}}</h2>
   <ol class="ahead auto-ahead">{{range .Ahead}}
-    <li><span class="wkn"><b>{{.Name}}</b>{{if .Today}}<span class="today">{{t "always.today"}}</span>{{end}}</span><span class="fills">{{range .Groups}}<span><b>{{.List}}:</b> {{.Text}}</span>{{end}}{{range .Free}}<span class="free">{{.}}</span>{{end}}</span></li>{{end}}
+    <li><span class="wkn"><b>{{.Name}}</b>{{if .Today}}<span class="today">{{t "always.today"}}</span>{{end}}</span><span class="fills">{{range .Groups}}<span><b>{{.List}}</b> {{.Text}}</span>{{end}}{{range .Free}}<span class="free">{{.}}</span>{{end}}</span></li>{{end}}
   </ol>{{end}}
   {{if .Stopped}}<h2>{{t "always.stopped.title"}}</h2>
   {{template "alwaysRows" .Stopped}}{{end}}

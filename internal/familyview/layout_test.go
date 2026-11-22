@@ -207,3 +207,22 @@ func TestThePersonalViewFollowsTheHeaderBlocks(t *testing.T) {
 	plain := familyview.BuildPersonal(familyview.PersonalInput{Now: at(14, 9, 0), Person: family()[3]})
 	same(t, orderOf(plain.HeaderOrder), []string{"clock"})
 }
+
+// Q87: whole-family events always show; a display with only some people does not
+// mistake an event for those people for one for the whole family.
+func TestAnEventForTheShownPeopleIsNotAWholeFamilyEvent(t *testing.T) {
+	all := family()
+	shown := []familyview.Person{all[0], all[3]} // Mama and Mia
+	occs := []calendar.Occurrence{
+		timed("Walk", at(14, 10, 0), at(14, 11, 0), "mama", "mia", "papa"),
+		timed("Picnic", at(14, 12, 0), at(14, 13, 0)),
+	}
+	v := buildWith(nil, familyview.Input{People: shown, Everyone: all, Occurrences: occs})
+	same(t, titles(column(t, v, "Mama").Events), []string{"Walk"})
+	if len(v.Strip) != 1 || v.Strip[0].Title != "Picnic" {
+		t.Errorf("strip = %+v, want only the whole-family event", v.Strip)
+	}
+	if len(column(t, v, "Mama").Events[0].WhoParts) == 0 {
+		t.Errorf("the card names who the event is for")
+	}
+}

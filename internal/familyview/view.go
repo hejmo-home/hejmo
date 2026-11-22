@@ -28,11 +28,14 @@ type Person struct {
 
 // Input is everything Build needs. Occurrences must cover today and tomorrow.
 type Input struct {
-	Now    time.Time       // in the household's time zone
-	Lang   string          // "de" or "en", for holiday names
-	Region string          // home region (ISO 3166-2)
-	People []Person        // display order
-	Groups []wholine.Group // subgroups with their members, for the who-line
+	Now    time.Time // in the household's time zone
+	Lang   string    // "de" or "en", for holiday names
+	Region string    // home region (ISO 3166-2)
+	People []Person  // the people of the columns, in column order
+	// Everyone is the whole household, for who an event is meant for and what
+	// counts as the whole family (Q87). Nil: People are everyone.
+	Everyone []Person
+	Groups   []wholine.Group // subgroups with their members, for the who-line
 	// I18n words the who-line; required, whoLine panics without it.
 	I18n        *i18n.Bundle
 	Calendars   map[string]calendar.Audience
@@ -427,8 +430,9 @@ func Chip(w *Weather, unit store.TemperatureUnit) *WeatherChip {
 
 // audienceOf lists the IDs of the people who see o, in display order.
 func audienceOf(in Input, o calendar.Occurrence) []string {
-	viewers := make([]calendar.Viewer, len(in.People))
-	for i, p := range in.People {
+	all := in.everyone()
+	viewers := make([]calendar.Viewer, len(all))
+	for i, p := range all {
 		viewers[i] = calendar.Viewer{PersonID: p.ID, Groups: p.Groups}
 	}
 	return calendar.ViewersOf(o, in.Calendars, viewers)
@@ -436,8 +440,9 @@ func audienceOf(in Input, o calendar.Occurrence) []string {
 
 // whoLine words who o is for; omit is the person of the column it is shown in.
 func whoLine(in Input, o calendar.Occurrence, omit string) wholine.Line {
-	household := make([]wholine.Person, len(in.People))
-	for i, p := range in.People {
+	all := in.everyone()
+	household := make([]wholine.Person, len(all))
+	for i, p := range all {
 		household[i] = wholine.Person{ID: p.ID, Name: p.Name}
 	}
 	if in.I18n == nil {
@@ -454,7 +459,15 @@ func wholeHousehold(in Input, o calendar.Occurrence) bool {
 	if len(a.People) == 0 && len(a.Groups) == 0 && len(o.People) == 0 && len(o.Groups) == 0 {
 		return true
 	}
-	return len(in.People) > 0 && len(audienceOf(in, o)) == len(in.People)
+	return len(in.everyone()) > 0 && len(audienceOf(in, o)) == len(in.everyone())
+}
+
+// everyone is the whole household.
+func (in Input) everyone() []Person {
+	if in.Everyone != nil {
+		return in.Everyone
+	}
+	return in.People
 }
 
 // sees reports whether p is in the effective audience of o (ADR 0011).

@@ -3561,5 +3561,19 @@
   "always.res.paused.many": "{names} are paused",
   "always.res.off.one": "{names} is off",
   "always.res.off.many": "{names} are off",
-  "always.res.none": "No article has “Always on the list” set up."
+  "always.res.none": "No article has “Always on the list” set up.",
+  "always.src": "Comes by itself {rhythm}",
+  "always.src.split": "{prior} already entered + {part} always ({rhythm})",
+  "always.tile.split": "{part} of it {rhythm}",
+  "always.lnote.head": "Came by itself today at {at}:",
+  "always.lnote.head.none": "Looked today at {at}:",
+  "always.lnote.added": "{text} was already on the list: {part} added, now {total}.",
+  "always.lnote.filled": "{text} was already on the list: now {total}.",
+  "always.lnote.exists": "{text} was already on the list and stays as it is.",
+  "always.lnote.holiday": "Hejmo is not putting anything on this list by itself right now.",
+  "always.lnote.holiday.one": "Hejmo is not putting anything on this list by itself right now. On {day} {names} comes again.",
+  "always.lnote.holiday.many": "Hejmo is not putting anything on this list by itself right now. On {day} {names} come again.",
+  "always.lrules.summary": "Comes by itself on this list: {names}",
+  "always.lrules.hint": "Changing and setting up new ones is done on the page of the article.",
+  "always.lrules.link": "Everything that comes by itself"
 }

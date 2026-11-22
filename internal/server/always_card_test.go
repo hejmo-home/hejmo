@@ -50,7 +50,7 @@ var (
 func textOf(html string) string {
 	html = regexp.MustCompile(`(?s)<svg.*?</svg>`).ReplaceAllString(html, "")
 	html = regexp.MustCompile(`<[^>]*>`).ReplaceAllString(html, " ")
-	return strings.Join(strings.Fields(strings.NewReplacer("&#34;", `"`, "&#39;", "'", " ", " ").Replace(html)), " ")
+	return strings.Join(strings.Fields(strings.NewReplacer("&#34;", `"`, "&#39;", "'", "&#43;", "+", " ", " ").Replace(html)), " ")
 }
 
 func TestTheArticlePageOffersTheCardWithNothingChosenExceptTheFirstList(t *testing.T) {

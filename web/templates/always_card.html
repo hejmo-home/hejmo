@@ -45,3 +45,9 @@
         {{template "autoPlan" .Plan}}
       </div>
     </fieldset>{{end}}
+
+{{/* The line above the entries on the day Hejmo put things on, or while the holiday runs (ticket 168). Argument: autoNote. Size: icon size. */}}
+{{define "autoNote"}}{{with .Note}}<div class="auto-note{{if .Holiday}} holiday{{end}}" role="status">{{if .Holiday}}{{template "pauseIcon" $.Size}}{{else}}{{template "repeatIcon" $.Size}}{{end}}<p><b>{{.Head}}</b> {{.Text}}</p></div>{{end}}{{end}}
+
+{{/* "Kommt von selbst auf diese Liste" for parents. Argument: autoRules. */}}
+{{define "autoRules"}}{{with .}}<details class="more auto-rules"><summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{.Summary}}</summary><div>{{template "alwaysRows" .Rows}}<p class="hint">{{t "always.lrules.hint"}} <a href="/settings/lists/always">{{t "always.lrules.link"}}</a></p></div></details>{{end}}{{end}}

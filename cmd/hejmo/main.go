@@ -194,6 +194,16 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-kioskDone }()
 
+	// "Always on the list" puts articles on lists at the household's time
+	// (ticket 168), checked every minute.
+	alwaysRunner := server.NewAlwaysRunner(server.AlwaysOptions{DB: db, Logger: logger})
+	alwaysDone := make(chan struct{})
+	go func() {
+		defer close(alwaysDone)
+		alwaysRunner.Run(ctx, time.Minute)
+	}()
+	defer func() { stop(); <-alwaysDone }()
+
 	// The weather chip's reading: the box asks Open-Meteo every 15 minutes, a
 	// display never does (ADR 0016).
 	forecast := weather.New(weather.WithGate(gate))

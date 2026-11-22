@@ -3561,5 +3561,19 @@
   "always.res.paused.many": "{names} sind angehalten",
   "always.res.off.one": "{names} ist aus",
   "always.res.off.many": "{names} sind aus",
-  "always.res.none": "Bei keinem Artikel ist „Immer auf der Liste“ eingerichtet."
+  "always.res.none": "Bei keinem Artikel ist „Immer auf der Liste“ eingerichtet.",
+  "always.src": "Kommt {rhythm} von selbst",
+  "always.src.split": "{prior} schon eingetragen + {part} immer ({rhythm})",
+  "always.tile.split": "{part} davon {rhythm}",
+  "always.lnote.head": "Heute um {at} von selbst dazugekommen:",
+  "always.lnote.head.none": "Heute um {at} nachgesehen:",
+  "always.lnote.added": "{text} stand schon drauf: {part} dazugezählt, jetzt {total}.",
+  "always.lnote.filled": "{text} stand schon drauf: jetzt {total}.",
+  "always.lnote.exists": "{text} stand schon drauf und bleibt, wie es ist.",
+  "always.lnote.holiday": "Hejmo setzt gerade nichts von selbst auf diese Liste.",
+  "always.lnote.holiday.one": "Hejmo setzt gerade nichts von selbst auf diese Liste. Am {day} kommt wieder {names}.",
+  "always.lnote.holiday.many": "Hejmo setzt gerade nichts von selbst auf diese Liste. Am {day} kommen wieder {names}.",
+  "always.lrules.summary": "Kommt von selbst auf diese Liste: {names}",
+  "always.lrules.hint": "Ändern und Neues einrichten geht auf der Seite des Artikels.",
+  "always.lrules.link": "Alles, was von selbst kommt"
 }

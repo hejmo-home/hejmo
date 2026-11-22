@@ -43,7 +43,7 @@ func TestChoicePageHasOneEqualCardPerWayAndNoneChosen(t *testing.T) {
 		}
 		all, checked := ways(t, r.body)
 		// The order of Q156; the Google card comes with #18, Outlook joined with #177.
-		if !listEq(all, []string{"icloud", "outlook", "caldav", "ics"}) {
+		if !listEq(all, []string{"icloud", "google", "outlook", "caldav", "ics"}) {
 			t.Errorf("%s: cards = %v", path, all)
 		}
 		if len(checked) != 0 {
@@ -66,7 +66,7 @@ func TestChoicePageHasOneEqualCardPerWayAndNoneChosen(t *testing.T) {
 func TestChoicePageChoosesTheWayOfTheQuery(t *testing.T) {
 	t.Parallel()
 	b := signedInAPI(t).b
-	for way, want := range map[string]string{"icloud": "icloud", "outlook": "outlook", "caldav": "caldav", "ics": "ics"} {
+	for way, want := range map[string]string{"icloud": "icloud", "google": "google", "outlook": "outlook", "caldav": "caldav", "ics": "ics"} {
 		_, checked := ways(t, b.get("/connections/new?service="+way).body)
 		if !listEq(checked, []string{want}) {
 			t.Errorf("service=%s: checked = %v", way, checked)
@@ -136,7 +136,7 @@ func TestSubscribingWithBadInputStaysOnTheChoicePageWithTheLinkCardChosen(t *tes
 		t.Fatalf("status %d\n%s", r.status, r.body)
 	}
 	all, checked := ways(t, r.body)
-	if len(all) != 4 || !listEq(checked, []string{"ics"}) {
+	if len(all) != 5 || !listEq(checked, []string{"ics"}) {
 		t.Errorf("cards %v, checked %v: the link card must stay chosen", all, checked)
 	}
 	mustContain(t, r.body, "<h1>Kalender verbinden</h1>", `<a href="/calendars">Kalender-Verbindungen</a>`,
@@ -201,10 +201,10 @@ func TestOnlyCalendarServicesOffLocksTheirCardsAndLeavesTheLinkChosen(t *testing
 	}
 	page := getEN(b, "/connections/new").body
 	all, checked := ways(t, page)
-	if len(all) != 4 || !listEq(checked, []string{"ics"}) {
+	if len(all) != 5 || !listEq(checked, []string{"ics"}) {
 		t.Errorf("cards %v, checked %v: with one way left it is chosen", all, checked)
 	}
-	for _, way := range []string{"icloud", "outlook", "caldav"} {
+	for _, way := range []string{"icloud", "google", "outlook", "caldav"} {
 		mustContain(t, page, `<label class="locked"><input type="radio" name="service" value="`+way+`" disabled>`)
 	}
 	mustNotContain(t, page, `<label class="locked"><input type="radio" name="service" value="ics"`)
@@ -212,7 +212,7 @@ func TestOnlyCalendarServicesOffLocksTheirCardsAndLeavesTheLinkChosen(t *testing
 	if got := wayGuideRe.FindAllStringSubmatch(page, -1); len(got) != 1 || got[0][1] != "ics" {
 		t.Errorf("guides = %v, want only the link guide", got)
 	}
-	if n := strings.Count(page, `<small class="lock">`); n != 3 {
+	if n := strings.Count(page, `<small class="lock">`); n != 4 {
 		t.Errorf("%d lock lines, want one on each locked card", n)
 	}
 	mustContain(t, page, "Locked: Calendar services are off", `class="offline-note"`, "Calendar services are off.", `href="/settings/connections#calendars"`)
@@ -226,7 +226,7 @@ func TestOnlyLinksOffLocksTheLinkCardAndChoosesNothing(t *testing.T) {
 	}
 	page := getEN(b, "/connections/new").body
 	all, checked := ways(t, page)
-	if len(all) != 4 || len(checked) != 0 {
+	if len(all) != 5 || len(checked) != 0 {
 		t.Errorf("cards %v, checked %v", all, checked)
 	}
 	mustContain(t, page, `<label class="locked"><input type="radio" name="service" value="ics" disabled>`, "Locked: ICS subscriptions are off", "ICS subscriptions are off.", `href="/settings/connections#ics"`)

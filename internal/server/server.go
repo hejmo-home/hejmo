@@ -277,6 +277,12 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /notes/{day}", s.handleNoteChange)
 	mux.HandleFunc("POST /notes/{day}/delete", s.handleNoteDelete)
 	mux.HandleFunc("POST /connections", s.handleConnect)
+	mux.HandleFunc("POST /connections/google/app", s.handleGoogleApp)
+	mux.HandleFunc("GET "+googleSignInPath, s.handleGoogleSignIn)
+	mux.HandleFunc("POST /connections/google/start", s.handleGoogleStart)
+	mux.HandleFunc("GET "+googleCallbackPath, s.handleGoogleCallback)
+	mux.HandleFunc("POST /connections/google/paste", s.handleGooglePaste)
+	mux.HandleFunc("POST /connections/google/adopt", s.handleGoogleAdopt)
 	mux.HandleFunc("POST /connections/outlook", s.handleOutlookStart)
 	mux.HandleFunc("GET /connections/outlook/{flow}", s.handleOutlookFlow)
 	mux.HandleFunc("POST /connections/outlook/{flow}/new", s.handleOutlookFlowNew)
@@ -496,6 +502,7 @@ func parseEmbeddedPages() *template.Template {
 		"rich":   rich,
 		"host":   withHost,
 		"repl":   repl,
+		"acct":   accountText,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }
 

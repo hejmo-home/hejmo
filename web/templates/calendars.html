@@ -1,4 +1,5 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "calendars.title") "Frame" .Frame)}}
+  {{range .GNotices}}{{template "gNotice" (dict "N" . "Home" false "Console" $.GConsole)}}{{end}}
   <h1>{{t "calendars.title"}}</h1>
   {{template "offlineNote" .OfflineTop}}
   {{template "httpsNotice" .}}

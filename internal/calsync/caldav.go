@@ -80,15 +80,19 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.store", "detail", err.Error()), err)
 	}
-	user, password, err := s.db.ConnectionCredentials(h.ID, cal.ConnectionID)
+	remote, msg, err := s.remoteFor(ctx, h, conn, at)
 	if err != nil {
-		return fail(i18n.Msg("sync.fail.credentials", "detail", err.Error()), err)
+		return fail(msg, err)
 	}
-	remote, err := s.dial(conn.URL, user, password)
-	if err != nil {
-		return fail(i18n.Msg("sync.fail.address", "detail", err.Error()), err)
+	failRemote := func(err error) error {
+		if s.googleRefused(conn, err) {
+			return fail(i18n.Msg("sync.fail.google_token"), err)
+		}
+		if m, ok := googleMessage(conn, err); ok {
+			return fail(m, err)
+		}
+		return fail(remoteMessage(err), err)
 	}
-	failRemote := func(err error) error { return fail(remoteMessage(err), err) }
 
 	// Box changes go out first, so the import below never overwrites them.
 	var pushErr error
@@ -292,6 +296,9 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	run.done = done
 	if pushErr != nil {
 		// Reading went well; the failed write is logged and tried again.
+		if m, ok := googleMessage(conn, pushErr); ok {
+			return fail(m, pushErr)
+		}
 		return fail(pushMessage(pushErr), pushErr)
 	}
 	return nil

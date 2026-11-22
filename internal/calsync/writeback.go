@@ -35,7 +35,7 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 	if err != nil {
 		return err
 	}
-	if (cal.Kind != "caldav" && cal.Kind != "outlook") || cal.ReadOnly {
+	if (cal.Kind != "caldav" && cal.Kind != "outlook" && cal.Kind != "google") || cal.ReadOnly {
 		return nil
 	}
 	h, err := s.db.Household(householdID)
@@ -76,15 +76,17 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 	if err := s.refuse(cal.Kind, conn.URL); err != nil {
 		return err // the changes stay queued until the connection is on again
 	}
-	user, password, err := s.db.ConnectionCredentials(h.ID, cal.ConnectionID)
+	remote, msg, err := s.remoteFor(ctx, h, conn, at)
 	if err != nil {
-		return fail(i18n.Msg("sync.fail.credentials", "detail", err.Error()), err)
-	}
-	remote, err := s.dial(conn.URL, user, password)
-	if err != nil {
-		return fail(i18n.Msg("sync.fail.address", "detail", err.Error()), err)
+		return fail(msg, err)
 	}
 	if err := s.pushPending(ctx, cal, h, remote); err != nil {
+		if s.googleRefused(conn, err) {
+			return fail(i18n.Msg("sync.fail.google_token"), err)
+		}
+		if m, ok := googleMessage(conn, err); ok {
+			return fail(m, err)
+		}
 		return fail(pushMessage(err), err)
 	}
 	return nil

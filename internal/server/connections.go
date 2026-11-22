@@ -12,6 +12,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
+	"github.com/hejmo-home/hejmo/internal/googleauth"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -33,6 +34,9 @@ type connectionJSON struct {
 	// events arrive until it is renewed.
 	ReauthSince *time.Time       `json:"reauth_since,omitempty"`
 	Calendars   []discoveredJSON `json:"calendars,omitempty"`
+	// Google only: Google refuses the stored sign-in since this time, so the connection must sign in again.
+	NeedsSignIn    bool       `json:"needs_signin,omitempty"`
+	SignInNeededAt *time.Time `json:"signin_needed_at,omitempty"`
 }
 
 type discoveredJSON struct {
@@ -42,10 +46,17 @@ type discoveredJSON struct {
 	// CalendarID is the id of the synced calendar when Added: the calendar
 	// to change or to switch off with /calendars/{id}.
 	CalendarID string `json:"calendar_id,omitempty"`
-	// ReadOnly and SharedBy say what Outlook allows: a calendar it locks (shared
-	// with the account, birthdays), and who shared it, "Name (address)".
-	ReadOnly bool   `json:"read_only,omitempty"`
+	// ReadOnly says Outlook locks the calendar (shared with the account, birthdays).
+	ReadOnly bool `json:"read_only,omitempty"`
+	// Google only: whether the box may change the calendar ("read_write") or only show it
+	// ("read_only"), and why ("writable", "shared", "birthdays", "google").
+	Access string `json:"access,omitempty"`
+	Reason string `json:"reason,omitempty"`
+	// SharedBy says who shares the calendar with this account, when known: for
+	// Outlook "Name (address)", for Google the account.
 	SharedBy string `json:"shared_by,omitempty"`
+	// Shared says another account owns the calendar and shares it with this one (Google).
+	Shared bool `json:"shared,omitempty"`
 	// fromStore marks a calendar the box knows but the server was not asked
 	// about: Name is the name in Hejmo, not the name at the source (web only).
 	fromStore bool
@@ -55,6 +66,10 @@ func connectionOf(c store.Connection) connectionJSON {
 	out := connectionJSON{ID: c.ID, Kind: c.Kind, URL: c.URL, Username: c.Username, Single: c.Single}
 	if !c.ReauthSince.IsZero() {
 		out.ReauthSince = &c.ReauthSince
+	}
+	if !c.SignInNeededAt.IsZero() {
+		at := c.SignInNeededAt
+		out.NeedsSignIn, out.SignInNeededAt = true, &at
 	}
 	return out
 }
@@ -81,7 +96,7 @@ func (s *server) connect(r *http.Request, p principal, in newConnectionInput) (s
 			return store.Connection{}, nil, &inputError{"url", "url must be a web address starting with https://"}
 		}
 	default:
-		return store.Connection{}, nil, &inputError{"provider", "provider must be icloud or caldav"}
+		return store.Connection{}, nil, &inputError{"provider", "provider must be icloud or caldav (Google signs in with POST /google/authorize and POST /google/callback)"}
 	}
 	if strings.TrimSpace(in.Username) == "" {
 		return store.Connection{}, nil, &inputError{"username", "username is required"}
@@ -103,6 +118,9 @@ func (s *server) connect(r *http.Request, p principal, in newConnectionInput) (s
 
 // rediscover lists a connection's calendars again, marking those already synced.
 func (s *server) rediscover(ctx context.Context, p principal, conn store.Connection) ([]discoveredJSON, error) {
+	if conn.Kind == "google" {
+		return s.googleCalendarsOf(ctx, p, conn)
+	}
 	if conn.Kind == "outlook" {
 		return s.rediscoverOutlook(ctx, p, conn)
 	}
@@ -148,6 +166,9 @@ func (s *server) changeConnectionPassword(ctx context.Context, p principal, id, 
 	conn, err := s.db.Connection(p.household.ID, id)
 	if err != nil {
 		return err
+	}
+	if conn.Kind == "google" {
+		return &inputError{"provider", "a Google connection has no password: sign in again with POST /google/authorize"}
 	}
 	if password == "" {
 		return &inputError{"password", "password is required"}
@@ -199,6 +220,15 @@ func (s *server) apiChangeConnectionPassword(w http.ResponseWriter, r *http.Requ
 }
 
 func (s *server) markAdded(p principal, conn store.Connection, found []caldavclient.Calendar) ([]discoveredJSON, error) {
+	list := make([]discoveredJSON, 0, len(found))
+	for _, f := range found {
+		list = append(list, discoveredJSON{URL: f.URL, Name: f.Name})
+	}
+	return s.markAddedList(p, conn, list)
+}
+
+// markAddedList marks which of the found calendars the box already syncs.
+func (s *server) markAddedList(p principal, conn store.Connection, found []discoveredJSON) ([]discoveredJSON, error) {
 	synced, err := s.db.SyncedCalendars(p.household.ID)
 	if err != nil {
 		return nil, err
@@ -211,8 +241,11 @@ func (s *server) markAdded(p principal, conn store.Connection, found []caldavcli
 	}
 	out := make([]discoveredJSON, 0, len(found))
 	for _, f := range found {
-		id, added := have[caldavclient.AddressKey(f.URL)]
-		out = append(out, discoveredJSON{URL: f.URL, Name: f.Name, Added: added, CalendarID: id})
+		f.CalendarID, f.Added = "", false
+		if id, added := have[caldavclient.AddressKey(f.URL)]; added {
+			f.CalendarID, f.Added = id, true
+		}
+		out = append(out, f)
 	}
 	return out, nil
 }
@@ -229,6 +262,9 @@ func (s *server) addConnectionCalendar(r *http.Request, p principal, connectionI
 	if err != nil {
 		return store.SyncedCalendar{}, err
 	}
+	if conn.Kind == "google" {
+		return s.addGoogleCalendar(r, p, conn, in, opts)
+	}
 	if conn.Kind == "outlook" {
 		return s.addOutlookCalendar(r, p, conn, in, opts)
 	}
@@ -240,6 +276,28 @@ func (s *server) addConnectionCalendar(r *http.Request, p principal, connectionI
 	}
 	// The first sync runs now. If it fails the calendar stays and the failure
 	// is in the sync log; the scheduler retries.
+	_ = s.sync.Sync(r.Context(), p.household.ID, cal.ID)
+	return s.db.SyncedCalendar(p.household.ID, cal.ID)
+}
+
+// addGoogleCalendar stores a calendar of a Google connection the parent ticked,
+// with the access Google gives it, and runs its first sync.
+func (s *server) addGoogleCalendar(r *http.Request, p principal, conn store.Connection, in newCalendarInput, opts calendarSettings) (store.SyncedCalendar, error) {
+	found, err := s.googleAccessFor(r.Context(), p, conn, in.URL)
+	if err != nil {
+		return store.SyncedCalendar{}, err
+	}
+	id, ok := googleauth.CalendarIDOf(found.URL)
+	if !ok {
+		return store.SyncedCalendar{}, &inputError{"calendar", "url must be a calendar of this Google account"}
+	}
+	cal, err := s.db.AddGoogleCalendar(p.household.ID, conn.ID, store.NewGoogleCalendar{
+		Name: in.Name, CalendarID: id, Color: opts.color, Audience: opts.audience, IntervalMinutes: opts.interval,
+		SourceLocked: found.Access == "read_only", Now: s.now(),
+	})
+	if err != nil {
+		return store.SyncedCalendar{}, err
+	}
 	_ = s.sync.Sync(r.Context(), p.household.ID, cal.ID)
 	return s.db.SyncedCalendar(p.household.ID, cal.ID)
 }
@@ -377,6 +435,9 @@ func (s *server) apiEventCounts(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	count := func(ctx context.Context, address string) (int, error) {
+		if conn.Kind == "google" {
+			return s.sync.CountConnectionEvents(ctx, p.household, conn, address)
+		}
 		return s.sync.CountEvents(ctx, conn.URL, user, password, address)
 	}
 	if conn.Kind == "outlook" {

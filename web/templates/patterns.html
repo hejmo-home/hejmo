@@ -108,7 +108,7 @@
      each with Label and one of Value, Flag (Kind and Text) or Whole/People. */}}
 {{define "facts"}}<dl class="facts">{{range .}}
   <dt>{{.Label}}</dt>
-  <dd>{{if .Flag}}{{template "flag" .Flag}}{{with .Value}} {{.}}{{end}}{{else}}{{if or .Whole .People}}{{template "forWhom" .}}{{end}}{{.Value}}{{end}}</dd>{{end}}
+  <dd{{if .Host}} class="host"{{end}}>{{if .Flag}}{{template "flag" .Flag}}{{with .Value}} {{.}}{{end}}{{else}}{{if or .Whole .People}}{{template "forWhom" .}}{{end}}{{.Value}}{{end}}</dd>{{end}}
 </dl>{{end}}
 
 {{/* Empty state: one sentence on what the thing is for and the first action. */}}
@@ -219,6 +219,15 @@
   <li><a href="{{.Href}}"><span class="art-sym" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><span class="t"><b>{{.Name}}</b><span class="meta">{{range $i, $m := .Meta}}<span>{{if $i}}· {{end}}{{$m}}</span>{{end}}</span>{{if .Tags}}<span class="tags">{{range .Tags}}<span class="{{.Class}}">{{.Text}}</span>{{end}}</span>{{end}}{{range .Warns}}{{.}}{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
 </ul>{{end}}
 
+{{/* "Sign in at Google again" (ticket 18): the notice on Start, on Calendar connections and on the connection. Arguments: N (account, since, reasons), Home (on Start: adds who can sign in), Console. */}}
+{{define "gNotice"}}<div class="notice act reconnect" role="alert">
+  <p class="head"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{t "google.resignin.title"}}</span></p>
+  <p>{{.N.Text}}</p>
+  {{if .N.SevenDays}}<p class="hint">{{rich (t "google.notice.seven")}}</p>{{template "gOut" (dict "Href" .Console.audience)}}
+  {{else}}<p class="hint">{{t "google.notice.reasons"}}</p>{{end}}
+  {{if .Home}}<p class="hint">{{t "google.notice.who"}}</p>{{end}}
+  <form method="get" action="/connections/google/signin"><input type="hidden" name="connection" value="{{.N.ConnectionID}}"><button class="button secondary" type="submit"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>{{t "google.resignin.title"}}</button></form>
+</div>{{end}}
 {{/* The notice that a Microsoft sign-in has ended (ticket 177, Q37): one
      sentence per account with its own secondary button, never a count.
      Argument: the notice (Items, Intro, Many, Who) or nothing; Home adds who may sign in. */}}

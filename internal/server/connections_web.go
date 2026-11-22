@@ -97,6 +97,8 @@ type wasteRow struct {
 type writeRow struct {
 	ID, Name string
 	TwoWay   bool
+	// Locked: Google shares the calendar for viewing only, so it can never be two-way.
+	Locked bool
 }
 
 // selectionCalendar is one calendar on the choice page with what the parent
@@ -105,11 +107,14 @@ type selectionCalendar struct {
 	URL, Name, Color string
 	// SourceName is the name at the source (iCloud, the CalDAV server): shown
 	// in the head, never editable. Empty when the server was not asked.
-	SourceName     string
-	Hint           template.HTML // "Only in Hejmo. ..." under the field; empty without a SourceName
-	LastSync       string        // when it last synced, in words; empty for a calendar that is not synced
-	Synced, On     bool
-	People, Groups []string
+	SourceName string
+	Hint       template.HTML // "Only in Hejmo. ..." under the field; empty without a SourceName
+	LastSync   string        // when it last synced, in words; empty for a calendar that is not synced
+	// Google only: where the calendar comes from ("Calendar in Google", "Shared by …") and what the box may
+	// do with it, in words, with Access ("read_write" or "read_only") for the tests and the API.
+	Source, AccessLabel, AccessText, Access string
+	Synced, On                              bool
+	People, Groups                          []string
 }
 
 // selectionCalendars shows the discovered calendars with the values of a
@@ -124,7 +129,7 @@ func selectionCalendars(found []discoveredJSON, form url.Values, synced []store.
 	colors := nextColors(taken, len(found))
 	out := make([]selectionCalendar, 0, len(found))
 	for i, f := range found {
-		c := selectionCalendar{URL: f.URL, Name: f.Name, Color: colors[i]}
+		c := selectionCalendar{URL: f.URL, Name: f.Name, Color: colors[i], Access: f.Access}
 		if !f.fromStore {
 			c.SourceName = f.Name
 		}
@@ -209,12 +214,23 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		lastFact,
 		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: p.day(conn.CreatedAt)},
 	}
-	if conn.Kind == "outlook" {
+	google := conn.Kind == "google"
+	switch conn.Kind {
+	case "google":
+		var gerr error
+		if facts, gerr = s.googleFacts(r, p, conn, lastFact); gerr != nil {
+			s.fail(w, "google app", gerr)
+			return
+		}
+	case "outlook":
 		facts = s.outlookFacts(r, p, conn, last)
 	}
 	shown := selectionCalendars(found, form, mine, taken)
 	for i := range shown {
 		shown[i].Hint = s.nameHint(r, conn, shown[i].SourceName)
+		if google {
+			s.googleCard(r, &shown[i], found)
+		}
 	}
 	for i, c := range shown {
 		for _, m := range mine {
@@ -231,8 +247,8 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 	}
 	var writeRows []writeRow
 	for _, m := range mine {
-		if m.Kind == "caldav" || (m.Kind == "outlook" && !m.SourceLocked) {
-			writeRows = append(writeRows, writeRow{ID: m.ID, Name: m.Name, TwoWay: !m.ReadOnly})
+		if m.Kind == "caldav" || m.Kind == "google" || (m.Kind == "outlook" && !m.SourceLocked) {
+			writeRows = append(writeRows, writeRow{ID: m.ID, Name: m.Name, TwoWay: !m.ReadOnly, Locked: m.SourceLocked})
 		}
 	}
 	data := map[string]any{
@@ -244,6 +260,18 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		"Error": errKey, "ErrorField": errField, "ErrorCalendar": errCalendar,
 		"Facts": facts, "Names": names, "ICloud": conn.URL == iCloudServer, "Host": connectionHost(conn), "SourceKicker": s.sourceKicker(r, conn),
 		"LoginOpen": !refusedAt.IsZero() || errField == "password",
+		"Google":    google, "GApp": googleAppView{}, "ConnID": conn.ID,
+	}
+	if google {
+		app, aerr := s.googleAppView(r, p)
+		if aerr != nil {
+			s.fail(w, "google app", aerr)
+			return
+		}
+		data["GApp"], data["GAccounts"], data["LoginOpen"] = app, app.Accounts, true
+		data["GNotices"] = s.googleNoticesOf(r, p, conn.ID)
+		data["Explain"] = s.say(r, i18n.Msg("google.remove.explain"))
+		googleData(data)
 	}
 	if conn.Kind == "outlook" {
 		data["Outlook"], data["Cards"], data["Gone"] = true, s.outlookCards(r, found, mine), outlookGoneOf(mine)
@@ -334,14 +362,20 @@ func (s *server) renderConnectNew(w http.ResponseWriter, r *http.Request, p prin
 		s.fail(w, "synced calendars", err)
 		return
 	}
-	data := map[string]any{
+	app, err := s.googleAppView(r, p)
+	if err != nil {
+		s.fail(w, "google app", err)
+		return
+	}
+	data := googleData(map[string]any{
 		"Person": p.person, "Service": service, "SyncStale": s.syncStale(p.household.ID),
 		"Ways": cards, "Notes": notes, "CanAdd": s.canAddCalendar(),
 		"Error": "", "ErrorField": "", "ConnURL": "", "ConnUsername": "", "ConnSingle": false,
+		"GApp": app, "GClientID": "", "GGuide": false, "GReplace": false,
 		"ICSError": "", "ICSErrorField": "", "ICSErrorFields": map[string]string(nil), "ICSName": "", "ICSURL": "", "ICSColor": nextColors(taken, 1)[0], "ICSInterval": defaultSyncMinutes,
 		"ICSPeople": []string(nil), "ICSGroups": []string(nil),
 		"People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
-	}
+	})
 	s.outlookGuide(data, "")
 	for k, v := range extra {
 		data[k] = v
@@ -409,10 +443,10 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		errKey, status := connectionErrorKey(bad, ""), http.StatusBadGateway
-		if bad.Field == "login" || bad.Field == "reauth" {
+		if bad.Field == "login" || bad.Field == "reauth" || bad.Field == "signin" {
 			status = http.StatusOK
-			if refused, _ := s.refusedSince(p, conn); refused {
-				errKey = "" // the line about the refused login says it
+			if refused, _ := s.refusedSince(p, conn); refused || bad.Field == "signin" {
+				errKey = "" // the line about the refused login, or the notice to sign in again, says it
 			}
 		}
 		s.renderSelection(w, r, p, status, conn, stored, nil, errKey, "", "")
@@ -454,7 +488,14 @@ func (s *server) storedCalendars(p principal, conn store.Connection) ([]discover
 	}
 	var out []discoveredJSON
 	for _, c := range calendarsOf(all, conn.ID) {
-		out = append(out, discoveredJSON{URL: c.URL, Name: c.Name, Added: true, CalendarID: c.ID, fromStore: true})
+		d := discoveredJSON{URL: c.URL, Name: c.Name, Added: true, CalendarID: c.ID, fromStore: true}
+		if conn.Kind == "google" {
+			d.Access, d.Reason = "read_write", "writable"
+			if c.SourceLocked {
+				d.Access, d.Reason = "read_only", "shared"
+			}
+		}
+		out = append(out, d)
 	}
 	return out, nil
 }

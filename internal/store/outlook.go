@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"encoding/base64"
 	"fmt"
 	"strings"
 	"time"
@@ -31,17 +30,6 @@ type NewOutlookCalendar struct {
 	IntervalMinutes                                int
 	SourceLocked                                   bool
 	Now                                            time.Time
-}
-
-func (db *DB) seal(plain string) (string, error) {
-	if db.secrets == nil {
-		return "", errNoKey
-	}
-	raw, err := db.secrets.Seal([]byte(plain))
-	if err != nil {
-		return "", err
-	}
-	return base64.StdEncoding.EncodeToString(raw), nil
 }
 
 // CreateOutlookConnection stores a connection with its refresh token sealed.

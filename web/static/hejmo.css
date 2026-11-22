@@ -241,6 +241,8 @@ input, select { font: inherit; color: var(--text); min-height: var(--touch-targe
 .check input { min-height: 0; width: 20px; height: 20px; }
 .log { border-collapse: collapse; max-width: 100%; font-size: var(--fs-label); }
 .log th, .log td { text-align: left; padding: 6px 12px 6px 0; vertical-align: top; }
+/* The name of the calendar keeps its words whole: the column of a long message must not squeeze it (ticket 18, a Google failure line is long). */
+.log td:nth-child(2) { overflow-wrap: break-word; }
 a { color: var(--accent); }
 
 /* Person slots: a person gets data-person="1".."8" (colour, tint, text on
@@ -2986,6 +2988,82 @@ main > .tile.netblock .button { justify-self: start; }
 /* The form of the page "Nur im Heimnetz" holds its tiles and "More options". */
 .wizard form.homeform { display: grid; gap: var(--gap); min-width: 0; }
 
+.guide > .checkline, .guide > p, .guide > .facts { margin: 0; }
+.guide > .facts { max-width: none; }
+.guide .host, .facts .host, h1.host, .notice .host, .checkline .host, .lead .host { overflow-wrap: anywhere; }
+.connect .cancel { margin: 4px 0 0; display: flex; flex-wrap: wrap; gap: 4px 20px; }
+.notice.act { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px 14px; margin: 0 0 var(--gap-section); box-sizing: border-box; }
+.notice .host, .msg .host { white-space: normal; overflow-wrap: anywhere; }
+.notice.act p { margin: 0; }
+.notice.act .head { display: flex; gap: 8px; align-items: flex-start; font-weight: 700; font-size: var(--fs-event-title); }
+.notice.act .head .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+.notice.act .hint { color: inherit; }
+.notice.act > form, .notice.act > .button { justify-self: start; margin: 0; }
+.notice.act .button.secondary { background: var(--surface); }
+.notice.act .button .icon { stroke: currentColor; vertical-align: -3px; margin-right: 6px; }
+[data-theme="bw"] .notice.act { border: 2px solid var(--text); }
+.why.access { max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-cards); background: var(--surface); }
+.why.access ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 6px; }
+.why.access li { background: none; padding: 0; border-radius: 0; }
+.why.access li b { display: inline; }
+.calfacts .acc, .calfacts .acc b { color: var(--text); }
+.calfacts .acc b { font-weight: 700; }
+
+/* ---- New for #18: connecting Google (preview-18) ---- */
+.host, .facts dd.host, .facts .host, .vals code, .sk .addr, .relay .target b { -webkit-hyphens: manual; hyphens: manual; }
+/* Fix (#17 section on phones): the button beside a write-back row keeps its words and wraps below. */
+section.steps > .card-row { flex-wrap: wrap; }
+section.steps > .card-row > form { flex: none; }
+section.steps > .card-row > .t { flex: 1 1 16em; }
+.connect:has(input[name="service"][value="google"]:checked) .guide:not([data-service="google"]) { display: none; }
+.guide .effort { margin: 0; font-size: var(--fs-label-large); color: var(--text-secondary); }
+/* Values the parent types into Google's forms: Google's field name, the value in the secret face, a copy button. */
+.vals { display: grid; gap: 8px; margin: 0; justify-self: stretch; min-width: 0; }
+.vals > div { display: grid; gap: 4px; min-width: 0; }
+.vals dt { font-size: var(--fs-meta); color: var(--text-secondary); }
+.vals dd { margin: 0; display: flex; flex-wrap: wrap; gap: 8px; align-items: center; min-width: 0; }
+.vals code { flex: 1 1 14em; min-width: 0; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-label-large); font-weight: 600; color: var(--text); background: var(--background); border-radius: var(--radius-field); padding: 9px 12px; overflow-wrap: anywhere; hyphens: manual; }
+.vals .button { flex: none; }
+.vals .button .icon, .button.out-btn .icon, .button.go .icon { stroke: currentColor; vertical-align: -3px; margin-right: 6px; }
+.button.go .icon { margin: 0 0 0 8px; }
+[data-theme="bw"] .vals code { background: var(--surface); border: 2px solid var(--text); }
+/* Two outside links side by side (two APIs). */
+.outs { display: flex; flex-wrap: wrap; gap: 8px 10px; }
+/* A step's caution in words: notice colours with a triangle. */
+.caution { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 10px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label); max-width: 560px; }
+.caution .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+[data-theme="bw"] .caution { background: var(--surface); border: 2px dashed var(--text); }
+/* Simplified sketch of a screen at Google: never a copy of Google's look. Dashed frame, the thing to tap ringed and named in words. */
+figure.sketch { margin: 0; display: grid; gap: 6px; justify-self: stretch; min-width: 0; max-width: 460px; }
+figure.sketch figcaption { font-size: var(--fs-meta); color: var(--text-secondary); }
+.sk { display: grid; gap: 8px; padding: 14px; border: 1.5px dashed var(--text-secondary); border-radius: var(--radius-card); background: var(--background); color: var(--text); font-size: var(--fs-label); min-width: 0; overflow-wrap: anywhere; }
+.sk p { margin: 0; }
+.sk .t1 { font-size: var(--fs-event-title); font-weight: 700; }
+.sk .dim { color: var(--text-secondary); }
+.sk .tap { justify-self: start; display: inline-flex; flex-wrap: wrap; align-items: center; gap: 6px 10px; padding: 4px 8px; border: 2px solid var(--accent); border-radius: var(--radius-field); font-weight: 700; color: var(--accent); }
+.sk .tap .say { font-size: var(--fs-meta); font-weight: 700; background: var(--accent); color: var(--accent-text); border-radius: var(--radius-chip); padding: 1px 8px; white-space: nowrap; }
+.sk .box { display: flex; gap: 8px; align-items: flex-start; }
+.sk .box i { flex: none; width: 18px; height: 18px; border: 2px solid var(--accent); border-radius: 4px; display: grid; place-items: center; font-style: normal; font-size: 13px; line-height: 1; background: var(--accent); color: var(--accent-text); margin-top: 1px; }
+.sk .addr { display: block; hyphens: manual; padding: 6px 12px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-meta); overflow-wrap: anywhere; }
+.sk .addr mark { background: var(--notice-bg); color: var(--notice-text); padding: 0; }
+.sk .err { display: flex; gap: 8px; align-items: flex-start; font-weight: 700; }
+.sk .err .icon { flex: none; stroke: var(--text-secondary); }
+[data-theme="bw"] .sk { border: 2px dashed var(--text); background: var(--surface); }
+[data-theme="bw"] .sk .tap { border: 3px solid var(--text); color: var(--text); }
+[data-theme="bw"] .sk .tap .say, [data-theme="bw"] .sk .box i { background: var(--text); color: var(--surface); border-color: var(--text); }
+[data-theme="bw"] .sk .addr { border: 2px solid var(--text); }
+[data-theme="bw"] .sk .addr mark { background: none; text-decoration: underline 2px; color: var(--text); }
+/* Google's own error codes, each with what to do. */
+dl.gerr { margin: 0; display: grid; gap: 12px; }
+dl.gerr dt { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-weight: 700; font-size: var(--fs-label); overflow-wrap: anywhere; }
+dl.gerr dd { margin: 2px 0 0; display: grid; gap: 6px; justify-items: start; }
+dl.gerr dd p { margin: 0; }
+/* The pasted address: a field that shows the whole long address. */
+.f textarea.addr-in { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-label); min-height: 5.2em; overflow-wrap: anywhere; word-break: break-all; resize: vertical; }
+.f.invalid textarea { border: 2px solid var(--error-text); }
+/* A wrong-account answer offers the account it got as a second way. */
+.guide > .actions { display: flex; flex-wrap: wrap; gap: 10px; }
+@media (max-width: 599px) { .guide > .actions .button { flex: 1 1 100%; text-align: center; } }
 /* Display page: Layout section (#180). */
 .steps fieldset.layout { gap: 14px; }
 .layout .lay-intro { margin: 0; }

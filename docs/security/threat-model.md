@@ -4,8 +4,8 @@ Status: 0.1, written for ticket #97 (ADR 0018, Measurement). No external penetra
 
 ## Scope and assumptions
 
-- **What is protected:** the family's calendar, tasks, stars and the credentials the box holds (password hashes, TOTP secrets, device tokens, the DNS token, calendar connection credentials).
-- **Where it runs:** one box (Raspberry Pi or any Linux with Docker) on a home network. It is **not** exposed to the internet: no port forwarding, no cloud relay. Anyone who can reach its ports is on the family's LAN or Wi-Fi.
+- **What is protected:** the family's calendar, tasks, stars and the credentials the box holds (password hashes, TOTP secrets, device tokens, the DNS token, calendar connection credentials, Google refresh tokens and the Google app's client secret).
+- **Where it runs:** one box (Raspberry Pi or any Linux with Docker) on a home network. It is **not** exposed to the internet: no port forwarding, no cloud service of the project. The one thing outside is a static page for the Google sign-in (see Google Calendar below); it holds no data and runs no code of the project on a server. Anyone who can reach its ports is on the family's LAN or Wi-Fi.
 - **Who attacks:** a guest or a compromised device on the LAN; a thief with a phone or display; someone who finds the box's public DNS name; a malicious dependency or image; a mistake in an update. Not in scope: someone with root on the box or on a parent's unlocked phone.
 - **Trust boundary:** the box's HTTPS ports. Everything behind them (SQLite file, `secret.key`, the data volume) is trusted; whoever can read the data volume owns the family's data.
 
@@ -173,6 +173,40 @@ The host-side script (`hejmo-update`, installed by `install.sh`) runs as root on
 - **Check:** a parent removes their own passkeys at once, and a revoked passkey cannot sign in. When another parent resets one-time codes, the page lists that parent's passkeys by name and removes the ticked ones in the same step; none is ticked in advance. A passkey made for an earlier box name is shown as no longer working and signs nobody in. `test:internal/server/passkeys_test.go`
 - **Check:** refused passkey sign-ins are rate-limited per client address; the counter of a passkey is stored and a passkey whose counter went back is refused (cloned). A sign-in after a reset still leads only to setting up new one-time codes. `test:internal/server/passkeys_test.go`
 - **Accepted risk:** a browser session that was stolen (T8) can create a passkey, because the page asks for no password first (design approved with the preview of #95). The parent sees the passkey in "My account" and removes it there; signing out everywhere is under "Signed-in devices". The browser keeps one flag cookie, `hejmo_passkey_used`, that says a passkey was used on this device; it holds no name and no secret.
+
+## Google Calendar
+
+Added with ticket #18 (ADR 0013). The box signs in to Google with OAuth. The browser comes back through a static relay page on GitHub Pages (`hejmo-home/hejmo-home.github.io`) or, as a fallback, to an address on the parent's own computer that the parent pastes.
+
+### T26. The sign-in code is intercepted on its way back
+
+- **Threat:** someone who sees the browser's return to the box (a guest on the Wi-Fi, a browser extension, the relay page's hosting) takes the one-time `code` and exchanges it for the family's calendar access.
+- **Check:** the sign-in uses PKCE (S256): the code is useless without the verifier, which never leaves the box (it is kept sealed and is never part of an address). The box sends the code to Google only together with the verifier and the client secret it holds. `test:internal/googleauth/googleauth_test.go` `test:internal/server/google_test.go`
+- **Check:** the box asks for offline access to the calendar scope only, and refuses a sign-in in which Google did not grant it. `test:internal/googleauth/googleauth_test.go`
+
+### T27. A forged, replayed or foreign state starts or completes a sign-in
+
+- **Threat:** an attacker sends a parent a link to the box's callback with the attacker's own `code` (login CSRF), replays an old return, or makes up a state, so that the attacker's Google account becomes the family's connection or a state from another box is accepted.
+- **Check:** the state is made and sealed by the box (AES-256-GCM with the box key), short-lived (15 minutes) and single-use; it is marked used whatever the outcome, and a state the box did not make, one that was changed, one that expired and one that was used before are all refused. The callback needs a signed-in parent. `test:internal/googleauth/googleauth_test.go` `test:internal/store/google_test.go` `test:internal/server/google_test.go`
+- **Check:** a pasted fallback address is accepted only with a matching state and only from the fixed fallback address. A state belongs to one household. `test:internal/server/google_test.go`
+
+### T28. The relay page is changed or used to send the code somewhere else
+
+- **Threat:** whoever can change the GitHub Pages repository, or a crafted link to the page, makes the browser send `code` and `state` to a site the attacker runs.
+- **Check:** the page has no third-party code, a strict content security policy and no referrer; it forwards only to the path `/connections/google/callback` and only over `https` (any host) or over `http` to a private address. Its tests run in the relay repository's CI check `relay`. The box does not rely on the page: it checks the state itself (T27). `test:internal/server/google_test.go`
+- **Accepted risk:** if the relay page is replaced by a hostile one, it sees the `code` and `state` of a sign-in. They are no use without the verifier (T26) and the state (T27), which stay on the box. Changes to the page need the same review as this repository (ADR 0013). If the page goes away, the pasted fallback still works.
+
+### T29. Google refresh tokens and the client secret are read at rest or in transit
+
+- **Threat:** a copy of the data volume (T4), a log or a page gives away a refresh token (access to the family's calendars until it is revoked) or the client secret of the family's Google app.
+- **Check:** refresh tokens, the client secret and the PKCE verifier are sealed in the database with the box key like every credential; the secret is never listed or shown again; access tokens live only in memory and are asked for again when a sync finds one refused. `test:internal/store/google_test.go` `test:internal/calsync/google_test.go`
+- **Check:** every request to Google goes through the one door (ADR 0024) and so stops in offline mode or when the calendar services are switched off; the Google hosts are named on "Connections to the outside". `test:internal/calsync/google_test.go` `test:internal/server/offline_test.go`
+- **Accepted risk:** whoever holds the data volume and `secret.key` can use the refresh tokens until the parent removes the app's access at Google; the connection page says so when a connection is removed.
+
+### T30. A sign-in with the wrong account leaves a token behind
+
+- **Threat:** a parent signs in again with another Google account than the connection's. The box keeps that account's refresh token so the parent can add it as a new connection; if the parent never does, a token for an account nobody meant to connect stays in the database.
+- **Check:** the token is kept sealed with the used sign-in, can be taken once, and only by the household it belongs to. It is forgotten when the sign-in expires (15 minutes), by the sync scheduler and not only by the next sign-in, and the row is deleted a day later. `test:internal/store/google_test.go`
 
 ## Article library
 

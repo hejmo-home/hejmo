@@ -72,7 +72,7 @@ func TestARuleThatBreaksTheRulesIsRefusedWithItsField(t *testing.T) {
 		"every 0":         {"milk", map[string]any{"list_id": shop, "weekday": 1, "every": 0}, http.StatusUnprocessableEntity, "every"},
 		"every 53":        {"milk", map[string]any{"list_id": shop, "weekday": 1, "every": 53}, http.StatusUnprocessableEntity, "every"},
 		"bad start":       {"milk", map[string]any{"list_id": shop, "weekday": 1, "start_week": "soon"}, http.StatusUnprocessableEntity, "start_week"},
-		"bad amount":      {"milk", map[string]any{"list_id": shop, "weekday": 1, "quantity": map[string]any{"amount": 0, "unit": "l"}}, http.StatusUnprocessableEntity, "amount"},
+		"bad amount":      {"milk", map[string]any{"list_id": shop, "weekday": 1, "quantity": map[string]any{"amount": 0, "unit": "l"}}, http.StatusUnprocessableEntity, "quantity.amount"},
 	} {
 		status, body, _ := c.call(http.MethodPut, "/articles/"+tc.article+"/always", tc.body)
 		if status != tc.status || (tc.field != "" && body["field"] != tc.field) {

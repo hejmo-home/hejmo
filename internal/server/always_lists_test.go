@@ -147,3 +147,24 @@ func (f *familyBox) runAlways(t *testing.T) {
 	t.Helper()
 	server.NewAlwaysRunner(server.AlwaysOptions{DB: f.db, Now: func() time.Time { return f.now }}).Tick(context.Background())
 }
+
+// ADR 0020: the rule keeps running for an article hidden for an allergy; the
+// entry carries the allergy warning (ADR 0019).
+func TestTheRuleKeepsRunningForAnArticleHiddenForAnAllergyAndTheEntryCarriesTheWarning(t *testing.T) {
+	t.Parallel()
+	b := newAlwaysBox(t)
+	b.person("Mia", "child", "omnivore", "peanuts")
+	if err := b.db.SetLibrarySettings(b.h.ID, store.LibrarySettings{HideAllergen: true, Everyone: true, People: []string{}, ConfirmedBy: b.mama.ID}); err != nil {
+		t.Fatal(err)
+	}
+	b.now = time.Date(2026, 11, 16, 6, 0, 0, 0, time.UTC)
+	b.rule("peanut-butter", b.shop.ID, 1, 1, list.Quantity{})
+	b.tickRunner()
+	page := b.en("/lists/" + b.shop.ID).body
+	if !strings.Contains(page, "Peanut butter") {
+		t.Fatalf("the hidden article is on the list:\n%s", page)
+	}
+	if got := textOf(page); !strings.Contains(got, "Contains Peanuts") || !strings.Contains(got, "Mia") {
+		t.Errorf("the entry lacks the allergy warning:\n%s", got)
+	}
+}

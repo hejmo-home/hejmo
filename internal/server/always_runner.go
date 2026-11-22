@@ -95,7 +95,9 @@ func (a *AlwaysRunner) run(ctx context.Context, h store.Household) error {
 	if err := db.SetAlwaysLastRun(h.ID, day); err != nil { // before the work: a failing rule must not run again and again
 		return err
 	}
-	_ = db.PruneAlwaysRuns(h.ID, today.AddDate(0, 0, -14).Format(always.DateLayout))
+	if err := db.PruneAlwaysRuns(h.ID, today.AddDate(0, 0, -14).Format(always.DateLayout)); err != nil {
+		a.opts.Logger.Error("prune the always runs", "err", err)
+	}
 	if st.Holiday.Covers(today) {
 		return nil
 	}

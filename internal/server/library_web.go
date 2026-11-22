@@ -415,7 +415,11 @@ func (s *server) handleArticleHidden(w http.ResponseWriter, r *http.Request) {
 	var autoKey string
 	var autoValues []string
 	if f := readAuto(r); f.Present {
-		it, _ := s.itemOfShipped(p, lang, id)
+		it, err := s.itemOfShipped(p, lang, id)
+		if err != nil {
+			s.fail(w, "library state", err)
+			return
+		}
 		key, values, ap, err := s.saveAuto(p, lang, it, f)
 		if err != nil {
 			s.fail(w, "save always on the list", err)

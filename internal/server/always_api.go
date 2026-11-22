@@ -125,7 +125,7 @@ func (s *server) apiPutAlways(w http.ResponseWriter, r *http.Request, p principa
 	rule, errs := a.validate(art, f, stored)
 	for _, field := range []string{"list", "weekday", "every", "start", "amount", "unit"} {
 		if msg, bad := errs[field]; bad {
-			api := map[string]string{"list": "list_id", "start": "start_week"}[field]
+			api := map[string]string{"list": "list_id", "start": "start_week", "amount": "quantity.amount", "unit": "quantity.unit"}[field]
 			if api == "" {
 				api = field
 			}

@@ -2769,6 +2769,9 @@ paths:
         that is already open on the list is left as it is, with it Hejmo adds
         the quantity. A rule saved on its own day starts the next time. A rule
         whose list was deleted is paused: `paused` is true and `list_id` null.
+        A rule that does not fit answers 422 with the `field` that is wrong:
+        `list_id`, `weekday`, `every`, `start_week`, `quantity.amount` or
+        `quantity.unit`.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string } }
       requestBody:
@@ -4737,7 +4740,7 @@ components:
       type: object
       required: [weekday, mealtime, text]
       properties:
-        weekday: { type: integer, description: "1 Monday to 7 Sunday (422 otherwise)" }
+        weekday: { type: integer, minimum: 1, maximum: 7, description: "1 Monday to 7 Sunday" }
         mealtime: { $ref: "#/components/schemas/Mealtime" }
         text: { type: string, maxLength: 200 }
     NewMealTemplate:

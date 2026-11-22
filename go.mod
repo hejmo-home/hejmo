@@ -26,6 +26,7 @@ require (
 	golang.org/x/crypto v0.59.0
 	golang.org/x/image v0.48.0
 	golang.org/x/net v0.62.0
+	golang.org/x/oauth2 v0.35.0
 	golang.org/x/text v0.44.0
 	modernc.org/sqlite v1.62.0
 	rsc.io/qr v0.2.0
@@ -61,7 +62,6 @@ require (
 	github.com/zeebo/blake3 v0.2.4 // indirect
 	go.uber.org/multierr v1.11.0 // indirect
 	go.uber.org/zap/exp v0.3.0 // indirect
-	golang.org/x/oauth2 v0.35.0 // indirect
 	golang.org/x/sync v0.25.0 // indirect
 	golang.org/x/sys v0.50.0 // indirect
 	golang.org/x/time v0.15.0 // indirect

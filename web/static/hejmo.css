@@ -2489,6 +2489,42 @@ details.repair + details.danger { margin-top: 0; }
   .frame-bar .signout .button { padding-inline: 12px; }
 }
 
+/* Outlook connection (ticket 177, preview 177): the sign-in code, the reconnect notice, what the box may change. */
+.connect:has(input[name="service"][value="outlook"]:checked) .guide:not([data-service="outlook"]) { display: none;}
+.devcode { display: grid; gap: 10px; justify-self: stretch; padding: 12px 14px; background: var(--background); border-radius: var(--radius-card);}
+.devcode .code { margin: 0; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-title-phone); font-weight: 700; letter-spacing: 0.14em; white-space: nowrap; font-variant-numeric: slashed-zero; color: var(--text);}
+.devcode .row { display: flex; flex-wrap: wrap; gap: 10px;}
+.devcode .button .icon, .notice.act .button .icon { stroke: currentColor; vertical-align: -3px; margin-right: 6px;}
+[data-theme="bw"] .devcode { background: var(--surface); border: 2px solid var(--text);}
+.connect .cancel { margin: 4px 0 0;}
+.guide > .checkline, .guide > p, .guide > ul.opts, .guide > .facts { margin: 0;}
+.guide > .facts { max-width: none;}
+ul.opts { list-style: none; padding: 0;}
+.guide .host, .facts .host, h1.host, .notice .host, .checkline .host { overflow-wrap: anywhere;}
+.notice.act { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px 14px; margin: 0 0 var(--gap-section); box-sizing: border-box;}
+.notice .host, .msg .host { white-space: normal; overflow-wrap: anywhere;}
+.notice.act p { margin: 0;}
+.notice.act .head { display: flex; gap: 8px; align-items: flex-start; font-weight: 700; font-size: var(--fs-event-title);}
+.notice.act .head .icon { flex: none; stroke: currentColor; margin-top: 1px;}
+.notice.act .hint { color: inherit;}
+.notice.act > form, .notice.act > .button { justify-self: start; margin: 0;}
+.notice.act .button.secondary { background: var(--surface);}
+[data-theme="bw"] .notice.act { border: 2px solid var(--text);}
+ul.reconn { list-style: none; margin: 0; padding: 0; display: grid;}
+ul.reconn li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 10px 0 0; margin-top: 10px; border-top: 1px solid currentColor;}
+ul.reconn li:first-child { margin-top: 2px;}
+ul.reconn .t { display: grid; gap: 2px; min-width: 0; flex: 1 1 220px;}
+ul.reconn small { font-size: var(--fs-meta);}
+ul.reconn form { margin: 0;}
+.why.access { max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-cards);}
+.why.access { background: var(--surface);}
+.why.access ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 6px;}
+.why.access li { background: none; padding: 0; border-radius: 0;}
+.why.access li b { display: inline;}
+.calfacts .acc b { color: var(--text); font-weight: 700;}
+.calfacts .acc { color: var(--text);}
+.ms-login { max-width: 560px;}
+.ms-login h2 { margin: 0 0 6px;}
 /* ---- Display page: Brightness section (ticket 179, preview docs/design/preview-179.html; no new tokens) ---- */
 .tag.muted { border-color: var(--text-secondary); color: var(--text-secondary); }
 [data-theme="bw"] .tag.muted { border-style: dashed; }

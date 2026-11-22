@@ -69,6 +69,8 @@ var apiRoutes = []APIRoute{
 	{"POST", "/google/adopt", auth.Perm("settings", auth.Write), (*server).apiGoogleAdopt},
 	{"GET", "/calendar-connections", auth.Perm("settings", auth.Read), (*server).apiListConnections},
 	{"POST", "/calendar-connections", auth.Perm("settings", auth.Write), (*server).apiConnect},
+	{"POST", "/calendar-connections/outlook/sign-ins", auth.Perm("settings", auth.Write), (*server).apiStartSignIn},
+	{"GET", "/calendar-connections/outlook/sign-ins/{id}", auth.Perm("settings", auth.Write), (*server).apiGetSignIn},
 	{"DELETE", "/calendar-connections/{id}", auth.Perm("settings", auth.Delete), (*server).apiDeleteConnection},
 	{"PUT", "/calendar-connections/{id}/credentials", auth.Perm("settings", auth.Write), (*server).apiChangeConnectionPassword},
 	{"GET", "/calendar-connections/{id}/calendars", auth.Perm("settings", auth.Write), (*server).apiDiscover},

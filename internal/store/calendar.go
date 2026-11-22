@@ -27,7 +27,7 @@ type Calendar struct {
 	ID          string
 	HouseholdID string
 	Name        string
-	Kind        string // local, ics, caldav, google
+	Kind        string // local, ics, caldav, google, outlook
 	Color       string
 	ReadOnly    bool // ICS calendars are always read-only
 	// Shared is "share through the box": phones may subscribe to the calendar
@@ -39,6 +39,12 @@ type Calendar struct {
 	// Family marks the household's family calendar: the first local calendar.
 	Family   bool
 	Audience calendar.Audience
+	// SourceLocked: the source (Outlook) does not let the account change this
+	// calendar, so it is read-only for good; SourceOwner names who shared it.
+	SourceLocked bool
+	SourceOwner  string
+	// SourceName is the calendar's name at its source (Outlook).
+	SourceName string
 }
 
 const (
@@ -121,14 +127,14 @@ func (db *DB) CreateCalendar(c Calendar) (Calendar, error) {
 
 // Calendars lists a household's calendars with their audiences.
 func (db *DB) Calendars(householdID string) ([]Calendar, error) {
-	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color, read_only, shared, waste FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
+	rows, err := db.sql.Query(`SELECT id, household_id, name, kind, color, read_only, shared, waste, source_locked, source_owner, source_name FROM calendars WHERE household_id = ? ORDER BY created_at, rowid`, householdID)
 	if err != nil {
 		return nil, err
 	}
 	var out []Calendar
 	for rows.Next() {
 		var c Calendar
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste); err != nil {
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste, &c.SourceLocked, &c.SourceOwner, &c.SourceName); err != nil {
 			rows.Close()
 			return nil, err
 		}
@@ -335,11 +341,13 @@ func insertEventRow(tx *sql.Tx, householdID string, e calendar.Event) error {
 		return err
 	}
 	start, end, tz, recID, seriesID := eventColumns(e)
+	inv := inviteCols(e)
 	ts := now()
 	if _, err := tx.Exec(`INSERT INTO events (id, household_id, calendar_id, title, description, location, all_day,
-		start_local, end_local, tzid, rrule, series_id, recurrence_id, created_at, updated_at)
-		SELECT ?, ?, id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? FROM calendars WHERE id = ? AND household_id = ?`,
+		start_local, end_local, tzid, rrule, series_id, recurrence_id, created_at, updated_at, invited, invite_organizer, invite_response, invite_link)
+		SELECT ?, ?, id, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ? FROM calendars WHERE id = ? AND household_id = ?`,
 		e.ID, householdID, e.Title, e.Description, e.Location, e.AllDay, start, end, tz, e.RRule, seriesID, recID, ts, ts,
+		inv.set, inv.organizer, inv.response, inv.link,
 		e.CalendarID, householdID); err != nil {
 		return err
 	}
@@ -362,9 +370,10 @@ func updateEventRow(tx *sql.Tx, householdID string, e calendar.Event) error {
 		return err
 	}
 	start, end, tz, recID, seriesID := eventColumns(e)
+	inv := inviteCols(e)
 	if err := expectOne(tx.Exec(`UPDATE events SET title = ?, description = ?, location = ?, all_day = ?, start_local = ?, end_local = ?,
-		tzid = ?, rrule = ?, series_id = ?, recurrence_id = ?, updated_at = ? WHERE id = ? AND household_id = ?`,
-		e.Title, e.Description, e.Location, e.AllDay, start, end, tz, e.RRule, seriesID, recID, now(), e.ID, householdID)); err != nil {
+		tzid = ?, rrule = ?, series_id = ?, recurrence_id = ?, updated_at = ?, invited = ?, invite_organizer = ?, invite_response = ?, invite_link = ? WHERE id = ? AND household_id = ?`,
+		e.Title, e.Description, e.Location, e.AllDay, start, end, tz, e.RRule, seriesID, recID, now(), inv.set, inv.organizer, inv.response, inv.link, e.ID, householdID)); err != nil {
 		return err
 	}
 	for _, q := range []string{`DELETE FROM event_exdates WHERE event_id = ?`, `DELETE FROM event_audience WHERE event_id = ?`} {
@@ -399,7 +408,7 @@ func writeAudience(tx *sql.Tx, table, key, id string, a calendar.Audience) error
 }
 
 const eventSelect = `SELECT id, calendar_id, title, description, location, all_day, start_local, end_local, tzid, rrule,
-	COALESCE(series_id, ''), COALESCE(recurrence_id, ''), updated_at FROM events`
+	COALESCE(series_id, ''), COALESCE(recurrence_id, ''), updated_at, invited, invite_organizer, invite_response, invite_link FROM events`
 
 // Series returns the event with this id together with its series: the
 // master and all changed occurrences.
@@ -468,8 +477,14 @@ func (db *DB) queryEvents(query string, args ...any) ([]calendar.Event, error) {
 func scanEvent(rows *sql.Rows) (calendar.Event, error) {
 	var e calendar.Event
 	var start, end, tz, recID, updated string
-	if err := rows.Scan(&e.ID, &e.CalendarID, &e.Title, &e.Description, &e.Location, &e.AllDay, &start, &end, &tz, &e.RRule, &e.SeriesID, &recID, &updated); err != nil {
+	var invited bool
+	var inv calendar.Invitation
+	if err := rows.Scan(&e.ID, &e.CalendarID, &e.Title, &e.Description, &e.Location, &e.AllDay, &start, &end, &tz, &e.RRule, &e.SeriesID, &recID, &updated,
+		&invited, &inv.Organizer, &inv.Response, &inv.WebLink); err != nil {
 		return e, err
+	}
+	if invited {
+		e.Invitation = &inv
 	}
 	e.UpdatedAt, _ = time.Parse(time.RFC3339, updated)
 	loc, err := time.LoadLocation(tz)
@@ -684,3 +699,18 @@ func (db *DB) DeleteGroup(householdID, id string) error {
 	}
 	return tx.Commit()
 }
+
+type inviteColsT struct {
+	set                       bool
+	organizer, response, link string
+}
+
+// invitationColumns is the stored form of an event's invitation.
+func inviteCols(e calendar.Event) inviteColsT {
+	if e.Invitation == nil {
+		return inviteColsT{}
+	}
+	return inviteColsT{true, e.Invitation.Organizer, e.Invitation.Response, e.Invitation.WebLink}
+}
+
+func (c inviteColsT) list() []any { return []any{c.set, c.organizer, c.response, c.link} }

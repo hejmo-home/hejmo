@@ -21,13 +21,13 @@ type calendarWay struct {
 }
 
 // calendarWays are the ways in the order of the choice page (Q156): iCloud,
-// Google, another calendar server, a calendar link.
+// Google, Outlook, another calendar server, a calendar link.
 //
-// Outlook (#177) is not in the registry yet and slots in after Google when its
-// ticket merges.
+// Outlook is paused by the calendars switch alone (ADR 0024).
 var calendarWays = []calendarWay{
 	{"icloud", outbound.Calendars, "connect.icloud.name", "connect.icloud.sub"},
 	{"google", outbound.Calendars, "connect.google.name", "connect.google.sub"},
+	{"outlook", outbound.Calendars, "connect.outlook.name", "connect.outlook.sub"},
 	{"caldav", outbound.Calendars, "connect.caldav.name", "connect.caldav.sub"},
 	{"ics", outbound.ICS, "connect.ics.name", "connect.ics.sub"},
 }

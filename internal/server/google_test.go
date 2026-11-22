@@ -206,7 +206,7 @@ func (gb googleBox) connections(t *testing.T) []store.Connection {
 
 // ---- the app registration ----
 
-func TestConnectPageOffersGoogleBetweenICloudAndOtherServers(t *testing.T) {
+func TestConnectPageOffersGoogleAfterICloudAndBeforeOutlook(t *testing.T) {
 	t.Parallel()
 	gb := newGoogleBox(t)
 	for lang, want := range map[string][]string{
@@ -224,14 +224,14 @@ func TestConnectPageOffersGoogleBetweenICloudAndOtherServers(t *testing.T) {
 			}
 		}
 		radios := regexp.MustCompile(`name="service" value="(\w+)"`).FindAllStringSubmatch(block, -1)
-		if len(radios) != 4 || radios[0][1] != "icloud" || radios[1][1] != "google" || radios[2][1] != "caldav" || radios[3][1] != "ics" {
-			t.Errorf("%s: choice cards = %v, want icloud, google, caldav, ics", lang, radios)
+		if len(radios) != 5 || radios[0][1] != "icloud" || radios[1][1] != "google" || radios[2][1] != "outlook" || radios[3][1] != "caldav" || radios[4][1] != "ics" {
+			t.Errorf("%s: choice cards = %v, want icloud, google, outlook, caldav, ics", lang, radios)
 		}
 		if !strings.Contains(block, `<input type="radio" name="service" value="google" checked>`) {
 			t.Errorf("%s: Google is not the checked card", lang)
 		}
-		if n := strings.Count(block, `<ol class="howto">`); n != 4 {
-			t.Errorf("%s: %d guides on the page, want 4", lang, n)
+		if n := strings.Count(block, `<ol class="howto">`); n != 5 {
+			t.Errorf("%s: %d guides on the page, want 5", lang, n)
 		}
 	}
 }
@@ -744,10 +744,10 @@ func TestTickedGoogleCalendarsAreSyncedAndAReadOnlyShareCanNeverBeTwoWay(t *test
 		by[c.Name] = c
 	}
 	mama, papa := by["Mama"], by["Papa Arbeit"]
-	if mama.Kind != "google" || mama.ReadOnly || mama.SourceReadOnly || mama.URL != cal("mama@gmail.com") || mama.Sync.IntervalMinutes != 15 {
+	if mama.Kind != "google" || mama.ReadOnly || mama.SourceLocked || mama.URL != cal("mama@gmail.com") || mama.Sync.IntervalMinutes != 15 {
 		t.Errorf("own calendar = %+v", mama)
 	}
-	if !papa.ReadOnly || !papa.SourceReadOnly {
+	if !papa.ReadOnly || !papa.SourceLocked {
 		t.Errorf("a calendar shared for viewing is not read-only: %+v", papa)
 	}
 	// The connection page offers "Nur lesbar machen" for the own calendar, and says why the share cannot change.

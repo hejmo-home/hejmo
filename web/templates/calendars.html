@@ -4,6 +4,7 @@
   {{template "offlineNote" .OfflineTop}}
   {{template "httpsNotice" .}}
   {{template "syncNotice" .}}
+  {{template "reconnectNotice" .}}
 
   {{if or .ConnRows .Rows}}
   {{if not .OfflineTop}}<p class="lead">{{t "calendars.intro"}}</p>{{end}}

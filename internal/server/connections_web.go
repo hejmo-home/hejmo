@@ -215,12 +215,15 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: p.day(conn.CreatedAt)},
 	}
 	google := conn.Kind == "google"
-	if google {
+	switch conn.Kind {
+	case "google":
 		var gerr error
 		if facts, gerr = s.googleFacts(r, p, conn, lastFact); gerr != nil {
 			s.fail(w, "google app", gerr)
 			return
 		}
+	case "outlook":
+		facts = s.outlookFacts(r, p, conn, last)
 	}
 	shown := selectionCalendars(found, form, mine, taken)
 	for i := range shown {
@@ -244,8 +247,8 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 	}
 	var writeRows []writeRow
 	for _, m := range mine {
-		if m.Kind == "caldav" || m.Kind == "google" {
-			writeRows = append(writeRows, writeRow{ID: m.ID, Name: m.Name, TwoWay: !m.ReadOnly, Locked: m.SourceReadOnly})
+		if m.Kind == "caldav" || m.Kind == "google" || (m.Kind == "outlook" && !m.SourceLocked) {
+			writeRows = append(writeRows, writeRow{ID: m.ID, Name: m.Name, TwoWay: !m.ReadOnly, Locked: m.SourceLocked})
 		}
 	}
 	data := map[string]any{
@@ -269,6 +272,11 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		data["GNotices"] = s.googleNoticesOf(r, p, conn.ID)
 		data["Explain"] = s.say(r, i18n.Msg("google.remove.explain"))
 		googleData(data)
+	}
+	if conn.Kind == "outlook" {
+		data["Outlook"], data["Cards"], data["Gone"] = true, s.outlookCards(r, found, mine), outlookGoneOf(mine)
+		data["Refused"], data["LoginOpen"] = nil, false
+		refusedAt = time.Time{}
 	}
 	if !refusedAt.IsZero() {
 		data["Refused"] = s.say(r, i18n.Msg("connections.error.refused", "when", p.when(refusedAt)))
@@ -368,6 +376,7 @@ func (s *server) renderConnectNew(w http.ResponseWriter, r *http.Request, p prin
 		"ICSPeople": []string(nil), "ICSGroups": []string(nil),
 		"People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
 	})
+	s.outlookGuide(data, "")
 	for k, v := range extra {
 		data[k] = v
 	}
@@ -410,6 +419,17 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 		s.renderPausedConnection(w, r, p, conn)
 		return
 	}
+	if conn.Kind == "outlook" && !conn.ReauthSince.IsZero() {
+		// Microsoft ended the sign-in: asking would only fail. The page shows what
+		// the box has, says so in its facts, and offers the new sign-in.
+		stored, serr := s.storedCalendars(p, conn)
+		if serr != nil {
+			s.fail(w, "synced calendars", serr)
+			return
+		}
+		s.renderSelection(w, r, p, http.StatusOK, conn, stored, nil, "", "", "")
+		return
+	}
 	found, err := s.rediscover(r.Context(), p, conn)
 	var bad *inputError
 	switch {
@@ -423,7 +443,7 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		errKey, status := connectionErrorKey(bad, ""), http.StatusBadGateway
-		if bad.Field == "login" || bad.Field == "signin" {
+		if bad.Field == "login" || bad.Field == "reauth" || bad.Field == "signin" {
 			status = http.StatusOK
 			if refused, _ := s.refusedSince(p, conn); refused || bad.Field == "signin" {
 				errKey = "" // the line about the refused login, or the notice to sign in again, says it
@@ -434,6 +454,16 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "discover", err)
 		return
+	}
+	if conn.Kind == "outlook" {
+		switch r.URL.Query().Get("connected") {
+		case "new":
+			s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "", connectedMessage("outlook", len(found)))
+			return
+		case "again":
+			s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "", i18n.Msg("connections.success.outlook_again"))
+			return
+		}
 	}
 	s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "")
 }
@@ -461,7 +491,7 @@ func (s *server) storedCalendars(p principal, conn store.Connection) ([]discover
 		d := discoveredJSON{URL: c.URL, Name: c.Name, Added: true, CalendarID: c.ID, fromStore: true}
 		if conn.Kind == "google" {
 			d.Access, d.Reason = "read_write", "writable"
-			if c.SourceReadOnly {
+			if c.SourceLocked {
 				d.Access, d.Reason = "read_only", "shared"
 			}
 		}

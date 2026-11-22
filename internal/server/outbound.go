@@ -248,7 +248,10 @@ func (s *server) outsideFacts(h store.Household) (outsideFacts, error) {
 	for _, c := range conns {
 		f.ConnLabels = append(f.ConnLabels, c.Username)
 		addrs = append(addrs, c.URL)
-		if c.Kind == "google" && !google {
+		switch {
+		case c.Kind == "outlook": // c.URL is no address; the box asks Graph and the sign-in host
+			addrs = append(addrs[:len(addrs)-1], "https://"+s.sync.Graph().Host(), "https://"+s.sync.Graph().AuthHost())
+		case c.Kind == "google" && !google:
 			// The calendar address is only one of the three places a Google account is asked.
 			google = true
 			addrs = append(addrs, googleauth.DefaultEndpoints.Token, googleauth.DefaultEndpoints.CalendarList)
@@ -264,7 +267,7 @@ func (s *server) outsideFacts(h store.Household) (outsideFacts, error) {
 			if m := c.Sync.IntervalMinutes; m > 0 && (f.ICSMinutes == 0 || m < f.ICSMinutes) {
 				f.ICSMinutes = m
 			}
-		case "caldav", "google":
+		case "caldav", "google", "outlook":
 			if m := c.Sync.IntervalMinutes; m > 0 && (f.CalMinutes == 0 || m < f.CalMinutes) {
 				f.CalMinutes = m
 			}

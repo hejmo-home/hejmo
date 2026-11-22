@@ -61,7 +61,7 @@ func (s *server) syncStale(householdID string) bool {
 		return false
 	}
 	for _, c := range cals {
-		if !s.gate.Allowed(serviceOfKind(c.Kind)) {
+		if !s.gate.Allowed(calsync.ServiceOf(c.Kind)) {
 			continue // paused by offline mode or a switch: not a problem
 		}
 		if calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale {
@@ -69,14 +69,6 @@ func (s *server) syncStale(householdID string) bool {
 		}
 	}
 	return false
-}
-
-// serviceOfKind is the connection a calendar kind goes through.
-func serviceOfKind(kind string) outbound.Service {
-	if kind == "caldav" || kind == "google" {
-		return outbound.Calendars
-	}
-	return outbound.ICS
 }
 
 // pausedFlag is the word tag of a calendar or connection whose connection to
@@ -108,7 +100,7 @@ var syncIntervals = []int{5, 15, 30, 60, 120, 360, 1440}
 // syncFlag is what a synced calendar's state says in words when something is
 // wrong: a refused login, a problem of the last run, or no success for a day.
 func (s *server) syncFlag(r *http.Request, p principal, c store.SyncedCalendar, fact bool) *flagView {
-	if f := s.pausedFlag(r, p, serviceOfKind(c.Kind), c.Sync.LastSuccess); f != nil {
+	if f := s.pausedFlag(r, p, calsync.ServiceOf(c.Kind), c.Sync.LastSuccess); f != nil {
 		return f
 	}
 	stale := calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale
@@ -240,6 +232,11 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	for _, e := range entries {
 		log = append(log, logView{at(e.At), e.CalendarName, e.Kind, s.say(r, e.Message), e.Detail})
 	}
+	notice, err := s.reconnectNotice(r, p)
+	if err != nil {
+		s.fail(w, "reconnect notice", err)
+		return
+	}
 	var offlineTop, connNote *offlineNote
 	if s.offline() {
 		offlineTop = s.noteFor(r, outbound.Calendars, "outside.note.calendars")
@@ -248,6 +245,7 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	data := map[string]any{
 		"GNotices":   s.googleNotices(r, p),
+		"Reconnect":  notice,
 		"OfflineTop": offlineTop, "ConnNote": connNote, "CanAdd": s.canAddCalendar(),
 		"Person": p.person, "Rows": subscribed, "ConnRows": connRows, "Log": log,
 		"SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(),
@@ -280,6 +278,9 @@ func (s *server) connectionRow(r *http.Request, p principal, c store.Connection,
 	} else {
 		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("connections.on_box", "names", strings.Join(names, ", ")))})
 	}
+	if c.Kind == "outlook" && !c.ReauthSince.IsZero() {
+		flag = &flagView{Kind: "problem", Text: s.say(r, i18n.Msg("sync.flag.outlook_signin"))}
+	}
 	switch {
 	case flag != nil:
 		row.Flag = flag
@@ -299,6 +300,9 @@ func (s *server) connectionRow(r *http.Request, p principal, c store.Connection,
 func (s *server) serviceName(r *http.Request, c store.Connection) string {
 	if c.Kind == "google" {
 		return s.say(r, i18n.Msg("connections.provider.google"))
+	}
+	if c.Kind == "outlook" {
+		return s.say(r, i18n.Msg("connections.provider.outlook"))
 	}
 	if c.URL == iCloudServer {
 		return s.say(r, i18n.Msg("connections.provider.icloud"))
@@ -340,6 +344,9 @@ func (s *server) nameHint(r *http.Request, c store.Connection, sourceName string
 	}
 	if c.Kind == "google" {
 		key = "connections.card.hint_google"
+	}
+	if c.Kind == "outlook" {
+		key = "outlook.card.hint"
 	}
 	const mark = "\x00name\x00"
 	text := html.EscapeString(s.say(r, i18n.Msg(key, "host", connectionHost(c), "name", mark)))

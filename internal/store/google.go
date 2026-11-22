@@ -273,11 +273,11 @@ func (db *DB) MarkTokenRenewed(householdID, connectionID string, at time.Time) e
 type NewGoogleCalendar struct {
 	Name, CalendarID, Color string
 	Audience                calendar.Audience
-	// ReadOnly makes the box never change it; SourceReadOnly says that Google
+	// ReadOnly makes the box never change it; SourceLocked says that Google
 	// shares it for viewing only, so it can never be two-way.
-	ReadOnly, SourceReadOnly bool
-	IntervalMinutes          int
-	Now                      time.Time
+	ReadOnly, SourceLocked bool
+	IntervalMinutes        int
+	Now                    time.Time
 }
 
 // AddGoogleCalendar adds a calendar of a Google connection, due for its first
@@ -299,9 +299,9 @@ func (db *DB) AddGoogleCalendar(householdID, connectionID string, in NewGoogleCa
 		return SyncedCalendar{}, err
 	}
 	defer tx.Rollback()
-	if _, err := tx.Exec(`INSERT INTO calendars (id, household_id, name, kind, color, connection_id, remote_url, read_only, source_read_only, created_at, updated_at)
+	if _, err := tx.Exec(`INSERT INTO calendars (id, household_id, name, kind, color, connection_id, remote_url, read_only, source_locked, created_at, updated_at)
 		VALUES (?, ?, ?, 'google', ?, ?, ?, ?, ?, ?, ?)`, calID, householdID, strings.TrimSpace(in.Name), in.Color, connectionID,
-		googleauth.CalendarURL(googleauth.CalDAVBase, in.CalendarID), in.ReadOnly || in.SourceReadOnly, in.SourceReadOnly, ts, ts); err != nil {
+		googleauth.CalendarURL(googleauth.CalDAVBase, in.CalendarID), in.ReadOnly || in.SourceLocked, in.SourceLocked, ts, ts); err != nil {
 		return SyncedCalendar{}, err
 	}
 	if err := writeAudience(tx, "calendar_audience", "calendar_id", calID, in.Audience); err != nil {

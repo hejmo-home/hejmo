@@ -124,6 +124,7 @@ type layoutFixture struct {
 	lists       []string // list IDs
 	inviteToken string   // the invitation of Maximilian, a parent without account
 	hint        *screen  // a display that shows the screensaver's hint
+	outlook     []string // the Outlook pages (#177) that no link leads to
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -268,6 +269,7 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	}); r.status != http.StatusSeeOther {
 		t.Fatalf("choose calendars = %d\n%s", r.status, r.body)
 	}
+	f.outlook = f.addOutlook(t)
 	if r := f.post("/caldav/tokens", url.Values{"name": {"iPhone von Friedrich mit langem Gerätenamen"}}); r.status != http.StatusOK {
 		t.Fatalf("CalDAV token = %d\n%s", r.status, r.body)
 	}
@@ -524,6 +526,9 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 		pages = append(pages, layoutPage{site: s, path: path})
 	}
 	for _, p := range crawl(t, parent, "/calendar/search?q=Schwimm", "/calendar/new", "/tasks", "/settings/lists/library/walnuts", "/routines/new?person="+f.ids[1]+"&part=morning") {
+		add(parent, p)
+	}
+	for _, p := range f.outlook {
 		add(parent, p)
 	}
 	// The child's phone shows lists as tiles by default (#166): the tiles of articles with a picture, a symbol and the warning of several people, and of free text.

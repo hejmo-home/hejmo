@@ -108,7 +108,7 @@ func TestSignInNeededIsMarkedAndClearedByANewRefreshToken(t *testing.T) {
 	if err != nil || cal.Kind != "google" || cal.ReadOnly || cal.URL != googleauth.CalendarURL(googleauth.CalDAVBase, "mama@gmail.com") {
 		t.Fatalf("calendar = %+v, %v", cal, err)
 	}
-	ro, err := f.db.AddGoogleCalendar(f.h.ID, conn.ID, store.NewGoogleCalendar{Name: "Papa", CalendarID: "papa@gmail.com", SourceReadOnly: true, Color: "#2F5E7A", IntervalMinutes: 15, Now: t0})
+	ro, err := f.db.AddGoogleCalendar(f.h.ID, conn.ID, store.NewGoogleCalendar{Name: "Papa", CalendarID: "papa@gmail.com", SourceLocked: true, Color: "#2F5E7A", IntervalMinutes: 15, Now: t0})
 	if err != nil || !ro.ReadOnly {
 		t.Fatalf("read-only calendar = %+v, %v", ro, err)
 	}

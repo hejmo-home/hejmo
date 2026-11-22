@@ -29,6 +29,7 @@ import (
 	_ "time/tzdata" // DST rules independent of the host system
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/graph"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
@@ -51,6 +52,10 @@ type config struct {
 	// updater (ADR 0018); empty on a plain Docker Compose install, which has
 	// none. HEJMO_HOST_UPDATER=1 is set by the install script's compose file.
 	UpdateDir string
+	// OutlookClientID is the app ID of the Hejmo project's Microsoft app
+	// registration (ADR 0020), HEJMO_OUTLOOK_CLIENT_ID; empty means the build's
+	// own value (graph.DefaultClientID) or, without one, "not configured".
+	OutlookClientID string
 }
 
 func loadConfig(getenv func(string) string) config {
@@ -76,6 +81,7 @@ func loadConfig(getenv func(string) string) config {
 	if v := getenv("HEJMO_SECRET_KEY_FILE"); v != "" {
 		cfg.SecretKeyFile = v
 	}
+	cfg.OutlookClientID = strings.TrimSpace(getenv("HEJMO_OUTLOOK_CLIENT_ID"))
 	if getenv("HEJMO_HOST_UPDATER") == "1" {
 		cfg.UpdateDir = cfg.DataDir
 	}
@@ -163,6 +169,11 @@ func run(cfg config, logger *slog.Logger) error {
 	// syncs on its own interval (60 minutes for ICS by default).
 	syncer := calsync.New(db, nil, nil)
 	syncer.SetLogger(logger)
+	ms := graph.New(gate.Client(outbound.Calendars, 30*time.Second))
+	if cfg.OutlookClientID != "" {
+		ms.DefaultClientID = cfg.OutlookClientID
+	}
+	syncer.SetGraph(ms)
 	syncer.SetGate(gate)
 	schedulerDone := make(chan struct{})
 	go func() {

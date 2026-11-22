@@ -156,6 +156,9 @@ var wholeFamilyTexts = map[string]bool{
 	"google.replace.text_none":                 true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
 	"google.signin.lead":                       true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
 	"google.replace.text_one_a":                true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"connect.outlook.appid":                    true, // "eurer eigenen App-Registrierung": the family's
+	"connect.outlook.appid.hint":               true, // "wenn ihr ... eine eigene angelegt habt": the family
+	"outlook.fail.consent.ask":                 true, // "Schick ihr": the IT
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

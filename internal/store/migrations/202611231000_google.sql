@@ -1,4 +1,7 @@
--- Google Calendar connection (ADR 0013, ticket 18).
+-- Google Calendar connection (ADR 0013, ticket 18). It runs after the Outlook
+-- migration, which rebuilt calendar_connections and calendars and already allows
+-- the kind 'google' in both; the columns added here would not survive that rebuild
+-- if this ran before it.
 
 -- The family's own OAuth client ("app registration" in the interface): one per
 -- household. The client secret is sealed with the box's key like every credential.
@@ -38,4 +41,4 @@ ALTER TABLE calendar_connections ADD COLUMN token_renewed_at TEXT;
 ALTER TABLE calendar_connections ADD COLUMN signin_needed_at TEXT;
 
 -- Google says a calendar is only shared for viewing: it can never be two-way.
-ALTER TABLE calendars ADD COLUMN source_read_only INTEGER NOT NULL DEFAULT 0;
+-- That is calendars.source_locked, which the Outlook migration (#177) added.

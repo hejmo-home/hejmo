@@ -178,32 +178,32 @@ The host-side script (`hejmo-update`, installed by `install.sh`) runs as root on
 
 Added with ticket #18 (ADR 0013). The box signs in to Google with OAuth. The browser comes back through a static relay page on GitHub Pages (`hejmo-home/hejmo-home.github.io`) or, as a fallback, to an address on the parent's own computer that the parent pastes.
 
-### T25. The sign-in code is intercepted on its way back
+### T26. The sign-in code is intercepted on its way back
 
 - **Threat:** someone who sees the browser's return to the box (a guest on the Wi-Fi, a browser extension, the relay page's hosting) takes the one-time `code` and exchanges it for the family's calendar access.
 - **Check:** the sign-in uses PKCE (S256): the code is useless without the verifier, which never leaves the box (it is kept sealed and is never part of an address). The box sends the code to Google only together with the verifier and the client secret it holds. `test:internal/googleauth/googleauth_test.go` `test:internal/server/google_test.go`
 - **Check:** the box asks for offline access to the calendar scope only, and refuses a sign-in in which Google did not grant it. `test:internal/googleauth/googleauth_test.go`
 
-### T26. A forged, replayed or foreign state starts or completes a sign-in
+### T27. A forged, replayed or foreign state starts or completes a sign-in
 
 - **Threat:** an attacker sends a parent a link to the box's callback with the attacker's own `code` (login CSRF), replays an old return, or makes up a state, so that the attacker's Google account becomes the family's connection or a state from another box is accepted.
 - **Check:** the state is made and sealed by the box (AES-256-GCM with the box key), short-lived (15 minutes) and single-use; it is marked used whatever the outcome, and a state the box did not make, one that was changed, one that expired and one that was used before are all refused. The callback needs a signed-in parent. `test:internal/googleauth/googleauth_test.go` `test:internal/store/google_test.go` `test:internal/server/google_test.go`
 - **Check:** a pasted fallback address is accepted only with a matching state and only from the fixed fallback address. A state belongs to one household. `test:internal/server/google_test.go`
 
-### T27. The relay page is changed or used to send the code somewhere else
+### T28. The relay page is changed or used to send the code somewhere else
 
 - **Threat:** whoever can change the GitHub Pages repository, or a crafted link to the page, makes the browser send `code` and `state` to a site the attacker runs.
-- **Check:** the page has no third-party code, a strict content security policy and no referrer; it forwards only to the path `/connections/google/callback` and only over `https` (any host) or over `http` to a private address. Its tests run in the relay repository's CI check `relay`. The box does not rely on the page: it checks the state itself (T26). `test:internal/server/google_test.go`
-- **Accepted risk:** if the relay page is replaced by a hostile one, it sees the `code` and `state` of a sign-in. They are no use without the verifier (T25) and the state (T26), which stay on the box. Changes to the page need the same review as this repository (ADR 0013). If the page goes away, the pasted fallback still works.
+- **Check:** the page has no third-party code, a strict content security policy and no referrer; it forwards only to the path `/connections/google/callback` and only over `https` (any host) or over `http` to a private address. Its tests run in the relay repository's CI check `relay`. The box does not rely on the page: it checks the state itself (T27). `test:internal/server/google_test.go`
+- **Accepted risk:** if the relay page is replaced by a hostile one, it sees the `code` and `state` of a sign-in. They are no use without the verifier (T26) and the state (T27), which stay on the box. Changes to the page need the same review as this repository (ADR 0013). If the page goes away, the pasted fallback still works.
 
-### T28. Google refresh tokens and the client secret are read at rest or in transit
+### T29. Google refresh tokens and the client secret are read at rest or in transit
 
 - **Threat:** a copy of the data volume (T4), a log or a page gives away a refresh token (access to the family's calendars until it is revoked) or the client secret of the family's Google app.
 - **Check:** refresh tokens, the client secret and the PKCE verifier are sealed in the database with the box key like every credential; the secret is never listed or shown again; access tokens live only in memory and are asked for again when a sync finds one refused. `test:internal/store/google_test.go` `test:internal/calsync/google_test.go`
 - **Check:** every request to Google goes through the one door (ADR 0024) and so stops in offline mode or when the calendar services are switched off; the Google hosts are named on "Connections to the outside". `test:internal/calsync/google_test.go` `test:internal/server/offline_test.go`
 - **Accepted risk:** whoever holds the data volume and `secret.key` can use the refresh tokens until the parent removes the app's access at Google; the connection page says so when a connection is removed.
 
-### T29. A sign-in with the wrong account leaves a token behind
+### T30. A sign-in with the wrong account leaves a token behind
 
 - **Threat:** a parent signs in again with another Google account than the connection's. The box keeps that account's refresh token so the parent can add it as a new connection; if the parent never does, a token for an account nobody meant to connect stays in the database.
 - **Check:** the token is kept sealed with the used sign-in, can be taken once, and only by the household it belongs to. It is forgotten when the sign-in expires (15 minutes), by the sync scheduler and not only by the next sign-in, and the row is deleted a day later. `test:internal/store/google_test.go`
@@ -218,6 +218,19 @@ Added with ticket #18 (ADR 0013). The box signs in to Google with OAuth. The bro
 - **Check:** the answer must be a JPEG, PNG, WebP or GIF; it is decoded and written again as JPEG, scaled to at most 512 px, so no active content (SVG, HTML), no metadata (place, camera) and no trailing data survives, and the box never links to the address afterwards. A web page where a picture was expected is named as such. `test:internal/picture/picture_test.go`
 - **Check:** only parents add or change articles; a token needs the scope `lists:write`. Uploaded photos take the same road and need no network at all. `test:internal/server/library_api_test.go`
 - **Accepted risk:** the box can be made to fetch any public address, so a parent (or a token with `lists:write`) can make it send one request to a public site, which then sees the box's public address. The request carries nothing else.
+
+## Outlook connection
+
+### T25. The Microsoft sign-in is stolen, misused or sent somewhere else
+
+- **Threat:** the box signs in to a Microsoft account (device code, ADR 0020) and holds a refresh token that can read and change that account's calendars. The token could be read from a copied data volume; the code could be used by a stranger to put their own account on the box, or the box could be made to send the token to another host through a link in an answer; the app could ask for more than calendars.
+- **Check:** the refresh token is sealed with AES-256-GCM like every calendar credential and never shown, returned by the API or logged; a rotated token replaces the old one. `test:internal/store/outlook_test.go` `test:internal/server/outlook_test.go`
+- **Check:** only parents start or finish a sign-in, a sign-in belongs to the household that began it and lives for an hour in memory, the code is requested only on a click and is valid for 15 minutes, and a reconnect accepts only the account it is for. `test:internal/server/outlook_test.go`
+- **Check:** the box talks to the two Microsoft hosts only (the identity platform and Graph, both fixed in the program, tests point them at a fake). A link Graph sends (next page, delta link) is followed only below the Graph address, so the access token goes nowhere else. The app asks for `Calendars.ReadWrite`, `offline_access` and `User.Read` and nothing else (no mail, contacts or files). `test:internal/graph/graph_test.go`
+- **Check:** invitations with attendees are never changed from the box, so no message goes to other people from it; a calendar Outlook locks (shared, birthdays) is never written. `test:internal/store/outlook_test.go` `test:internal/calsync/outlook_test.go`
+- **Check:** when Microsoft ends the sign-in (90 days unused, password change, revoked) the box stops asking, keeps the old events and tells parents with "Reconnect Outlook" until they sign in again. `test:internal/calsync/outlook_test.go` `test:internal/server/outlook_test.go`
+- **Accepted risk:** whoever can enter the code at Microsoft while it is shown (15 minutes) and signs in with their own account puts that account's calendars on the box; the page is shown only to a signed-in parent and the connection names the account, so a parent sees it, and the connection can be disconnected. A family's own app registration cannot be publisher-verified, so Microsoft shows an "unverified app" warning for it.
+- **Open (#201):** the connection is made by `internal/graph` with its own HTTP client. When #201 (offline mode, one outbound place) is merged, it moves through that place; until then #201 must list this connection (login.microsoftonline.com, graph.microsoft.com) among the box's outbound connections.
 
 ## MCP
 

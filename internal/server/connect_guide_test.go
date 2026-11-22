@@ -34,18 +34,20 @@ func TestConnectNewShowsTheGuidesAndChoosesOnlyTheServiceOfTheQuery(t *testing.T
 	t.Parallel()
 	b := signedInAPI(t).b
 	for path, want := range map[string]string{
-		"/connections/new":                "", // no way is preselected (ticket 231)
-		"/connections/new?service=icloud": "icloud",
-		"/connections/new?service=caldav": "caldav",
-		"/connections/new?service=bogus":  "",
+		"/connections/new":                 "", // no way is preselected (ticket 231)
+		"/connections/new?service=icloud":  "icloud",
+		"/connections/new?service=caldav":  "caldav",
+		"/connections/new?service=outlook": "outlook",
+		"/connections/new?service=google":  "google",
+		"/connections/new?service=bogus":   "",
 	} {
 		r := b.get(path)
 		if r.status != http.StatusOK {
 			t.Fatalf("%s = %d\n%s", path, r.status, r.body)
 		}
 		block := connectBlock(t, r.body)
-		if n := strings.Count(block, `name="service"`); n != 4 {
-			t.Errorf("%s: %d service radios, want 4 (iCloud, Google, other servers, link)", path, n)
+		if n := strings.Count(block, `name="service"`); n != 5 {
+			t.Errorf("%s: %d service radios, want 5 (iCloud, Google, Outlook, other server, calendar link)", path, n)
 		}
 		checked := regexp.MustCompile(`<input type="radio" name="service" value="(\w+)" checked>`).FindAllStringSubmatch(block, -1)
 		if want == "" && len(checked) != 0 || want != "" && (len(checked) != 1 || checked[0][1] != want) {

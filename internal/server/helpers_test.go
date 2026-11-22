@@ -41,6 +41,7 @@ type box struct {
 	now     time.Time
 	feeds   *fakeFeeds
 	sync    *calsync.Service
+	gate    *outbound.Gate
 	public  *fakePublic
 	weather *weather.Service // fetches from meteo, never from the internet
 	meteo   *fakeMeteo
@@ -240,6 +241,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), photoDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time { return b.now }
 	gate := outbound.New(db.Outbound(), db.Outbound()) // as the box has it: the switches of the database
+	b.gate = gate
 	b.sync = calsync.New(db, feeds, now)
 	b.sync.SetGate(gate)
 	b.meteo = &fakeMeteo{body: `{"current":{"temperature_2m":18.4,"weather_code":0,"is_day":1}}`, status: 200}

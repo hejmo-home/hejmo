@@ -41,6 +41,16 @@ func TestConfigFromEnvironment(t *testing.T) {
 	}
 }
 
+func TestOutlookAppIDComesFromTheEnvironmentAndIsEmptyWithoutOne(t *testing.T) {
+	if cfg := loadConfig(func(string) string { return "" }); cfg.OutlookClientID != "" {
+		t.Errorf("OutlookClientID = %q, want none until the project's app registration exists", cfg.OutlookClientID)
+	}
+	cfg := loadConfig(func(k string) string { return map[string]string{"HEJMO_OUTLOOK_CLIENT_ID": " 5f3c1a2e-0000 "}[k] })
+	if cfg.OutlookClientID != "5f3c1a2e-0000" {
+		t.Errorf("OutlookClientID = %q", cfg.OutlookClientID)
+	}
+}
+
 func TestSecretKeyFileDefaultsToTheDataVolumeAndCanBeMoved(t *testing.T) {
 	cfg := loadConfig(func(k string) string {
 		return map[string]string{"HEJMO_DATA_DIR": "/vol"}[k]

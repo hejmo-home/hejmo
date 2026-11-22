@@ -6,8 +6,11 @@ COPY go.mod go.sum ./
 RUN go mod download
 COPY . .
 ARG TARGETOS TARGETARCH
+# The app ID of the Hejmo project's Microsoft app registration for Outlook (ADR 0020, #177). A public
+# identifier, not a secret; empty until the project has created the registration.
+ARG OUTLOOK_CLIENT_ID=""
 RUN CGO_ENABLED=0 GOOS=$TARGETOS GOARCH=$TARGETARCH \
-    go build -trimpath -ldflags="-s -w" -o /out/hejmo ./cmd/hejmo \
+    go build -trimpath -ldflags="-s -w -X github.com/hejmo-home/hejmo/internal/graph.DefaultClientID=${OUTLOOK_CLIENT_ID}" -o /out/hejmo ./cmd/hejmo \
  && mkdir -p /out/data
 
 # Runtime: distroless static (Apache-2.0), no shell, runs as non-root.

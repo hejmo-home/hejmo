@@ -124,7 +124,7 @@ func (db *DB) DeferSync(calendarID string, at time.Time) error {
 	return expectOne(db.sql.Exec(`UPDATE calendar_sync SET next_attempt_at = ? WHERE calendar_id = ?`, stamp(at), calendarID))
 }
 
-const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, c.shared, c.waste, n.id, COALESCE(c.remote_url, n.url),
+const syncedSelect = `SELECT c.id, c.household_id, c.name, c.kind, c.color, c.read_only, c.shared, c.waste, c.source_locked, c.source_owner, c.source_name, n.id, COALESCE(c.remote_url, n.url),
 	s.interval_minutes, s.started_at, s.last_attempt_at, s.last_success_at, s.next_attempt_at, s.failures, s.last_error_key, s.last_error_params,
 	s.last_run_events, s.last_run_new, s.last_run_changed, s.last_run_removed,
 	(SELECT COUNT(*) FROM events ev WHERE ev.calendar_id = c.id AND ev.series_id IS NULL)
@@ -163,7 +163,7 @@ func (db *DB) syncedCalendars(query string, args ...any) ([]SyncedCalendar, erro
 		var c SyncedCalendar
 		var started, attempt, success, next sql.NullString
 		var errKey, errParams string
-		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste, &c.ConnectionID, &c.URL,
+		if err := rows.Scan(&c.ID, &c.HouseholdID, &c.Name, &c.Kind, &c.Color, &c.ReadOnly, &c.Shared, &c.Waste, &c.SourceLocked, &c.SourceOwner, &c.SourceName, &c.ConnectionID, &c.URL,
 			&c.Sync.IntervalMinutes, &started, &attempt, &success, &next, &c.Sync.Failures, &errKey, &errParams,
 			&c.Sync.LastRun.Events, &c.Sync.LastRun.New, &c.Sync.LastRun.Changed, &c.Sync.LastRun.Removed, &c.Sync.EventCount); err != nil {
 			rows.Close()
@@ -389,7 +389,7 @@ func eventSignature(e calendar.Event) string {
 	}
 	sort.Strings(ex)
 	ex = slices.Compact(ex) // the store keeps each EXDATE once (INSERT OR IGNORE)
-	b, _ := json.Marshal([]any{e.Title, e.Description, e.Location, e.AllDay, start, end, tz, e.RRule, seriesID, recID, ex})
+	b, _ := json.Marshal([]any{e.Title, e.Description, e.Location, e.AllDay, start, end, tz, e.RRule, seriesID, recID, ex, inviteCols(e).list()})
 	return string(b)
 }
 
@@ -398,8 +398,9 @@ func storedSignature(tx *sql.Tx, id string) (string, error) {
 	var title, desc, loc, start, end, tz, rrule string
 	var allDay bool
 	var series, rec sql.NullString
-	if err := tx.QueryRow(`SELECT title, description, location, all_day, start_local, end_local, tzid, rrule, series_id, recurrence_id FROM events WHERE id = ?`, id).
-		Scan(&title, &desc, &loc, &allDay, &start, &end, &tz, &rrule, &series, &rec); err != nil {
+	var inv inviteColsT
+	if err := tx.QueryRow(`SELECT title, description, location, all_day, start_local, end_local, tzid, rrule, series_id, recurrence_id, invited, invite_organizer, invite_response, invite_link FROM events WHERE id = ?`, id).
+		Scan(&title, &desc, &loc, &allDay, &start, &end, &tz, &rrule, &series, &rec, &inv.set, &inv.organizer, &inv.response, &inv.link); err != nil {
 		return "", err
 	}
 	rows, err := tx.Query(`SELECT occurrence FROM event_exdates WHERE event_id = ? ORDER BY occurrence`, id)
@@ -422,7 +423,7 @@ func storedSignature(tx *sql.Tx, id string) (string, error) {
 	if rec.Valid {
 		recID = rec.String
 	}
-	b, _ := json.Marshal([]any{title, desc, loc, allDay, start, end, tz, rrule, seriesID, recID, ex})
+	b, _ := json.Marshal([]any{title, desc, loc, allDay, start, end, tz, rrule, seriesID, recID, ex, inv.list()})
 	return string(b), rows.Err()
 }
 

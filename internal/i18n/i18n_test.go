@@ -143,6 +143,9 @@ var wholeFamilyTexts = map[string]bool{
 	"displays.saver.on":                        true, // "euren Alben": the family's albums
 	"photos.full.hint":                         true, // "ihr nicht mehr braucht": the family's photos
 	"photos.up.wait":                           true, // "Wartet": the state of a file, not an imperative
+	"connect.outlook.appid":                    true, // "eurer eigenen App-Registrierung": the family's
+	"connect.outlook.appid.hint":               true, // "wenn ihr ... eine eigene angelegt habt": the family
+	"outlook.fail.consent.ask":                 true, // "Schick ihr": the IT
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

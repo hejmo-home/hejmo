@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/graph"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
 	"github.com/hejmo-home/hejmo/internal/outbound"
@@ -142,6 +143,7 @@ type Service struct {
 	pushes            sync.WaitGroup
 	bundle            *i18n.Bundle
 	lang              string // language of the readable audience line
+	graph             *graph.Client
 }
 
 func (s *Service) lock(calendarID string) *sync.Mutex {
@@ -179,9 +181,11 @@ func (s *Service) SetGate(g *outbound.Gate) {
 	}
 }
 
-// serviceOf is the connection a calendar kind belongs to.
-func serviceOf(kind string) outbound.Service {
-	if kind == "caldav" {
+// ServiceOf is the connection a calendar kind belongs to: the calendars one
+// for CalDAV and Outlook, the subscription one for the rest. The sync and the
+// pages use this one mapping.
+func ServiceOf(kind string) outbound.Service {
+	if kind == "caldav" || kind == "outlook" { // Microsoft Graph is a calendar service too (ADR 0024)
 		return outbound.Calendars
 	}
 	return outbound.ICS
@@ -192,10 +196,12 @@ func serviceOf(kind string) outbound.Service {
 // not failed.
 func (s *Service) refuse(kind, rawURL string) error {
 	host := rawURL
-	if u, err := url.Parse(rawURL); err == nil && u.Host != "" {
+	if kind == "outlook" {
+		host = s.Graph().Host() // rawURL is a Graph calendar ID, not an address
+	} else if u, err := url.Parse(rawURL); err == nil && u.Host != "" {
 		host = u.Host
 	}
-	return s.gate.Check(serviceOf(kind), host)
+	return s.gate.Check(ServiceOf(kind), host)
 }
 
 // SetLogger sets where unexpected errors go.
@@ -273,6 +279,9 @@ func (s *Service) sync(ctx context.Context, householdID, calendarID string, run 
 	if cal.Kind == "caldav" {
 		return s.syncCalDAV(ctx, cal, h, at, run, fail)
 	}
+	if cal.Kind == "outlook" {
+		return s.syncOutlook(ctx, cal, h, at, run, fail)
+	}
 	feedURL, err := icsfeed.NormalizeURL(cal.URL)
 	if err != nil {
 		return fail(i18n.Msg("sync.fail.address", "detail", err.Error()), err)
@@ -314,7 +323,7 @@ func (s *Service) RunDue(ctx context.Context) {
 		if ctx.Err() != nil {
 			return
 		}
-		if !s.gate.Allowed(serviceOf(c.Kind)) {
+		if !s.gate.Allowed(ServiceOf(c.Kind)) {
 			continue // paused (offline mode or switched off): not tried, not failed
 		}
 		// Sync already wrote the run's one INFO line and stored the failure; the

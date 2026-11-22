@@ -57,7 +57,11 @@ func TestAudienceChipsDefaultToTheWholeFamilyWithoutJavaScript(t *testing.T) {
 		t.Errorf("person chips lack the person marker:\n%s", page)
 	}
 	// Only the link guide: the Outlook guide has its own "leave empty" hint.
-	ics := page[strings.Index(page, `data-service="ics"`):]
+	at := strings.Index(page, `data-service="ics"`)
+	if at < 0 {
+		t.Fatalf("the link guide is missing:\n%s", page)
+	}
+	ics := page[at:]
 	if strings.Contains(ics, "Leave empty") {
 		t.Error("the hint 'leave empty for the whole family' is still there")
 	}

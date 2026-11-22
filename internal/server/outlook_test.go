@@ -555,6 +555,25 @@ func TestAnOutlookCalendarIsPausedByTheCalendarsSwitchNotTheICSSwitch(t *testing
 	page := getEN(b, "/calendars").body
 	mustContain(t, page, "paused, switched off")
 	mustNotContain(t, page, `class="flag problem"`, "data-sync-stale")
+	// The API says the same: paused, and not stale.
+	c := newAPIClient(t, b)
+	c.cookie = true
+	_, _, list := c.call(http.MethodGet, "/calendars", nil)
+	seen := false
+	for _, raw := range list {
+		cal, _ := raw.(map[string]any)
+		if cal["kind"] != "outlook" {
+			continue
+		}
+		seen = true
+		sync, _ := cal["sync"].(map[string]any)
+		if sync["paused"] != true || sync["state"] != "ok" {
+			t.Errorf("sync = %v, want paused and not stale", sync)
+		}
+	}
+	if !seen {
+		t.Fatalf("no Outlook calendar in GET /calendars: %v", list)
+	}
 }
 
 // "Connections to the outside" names every host the box contacts for Outlook
@@ -565,6 +584,14 @@ func TestTheOutsideRowOfCalendarsNamesTheOutlookHostsAndTheInterval(t *testing.T
 	if r := chooseOutlook(t, b, id, "cal-1"); r.status != http.StatusSeeOther {
 		t.Fatalf("choose = %d\n%s", r.status, r.body)
 	}
+	// The sign-in host is another name than the Graph host, so a row that
+	// listed only one of them cannot pass.
+	authBase := strings.Replace(fake.AuthBase(), "127.0.0.1", "localhost", 1)
+	b.sync.SetGraph(&graph.Client{AuthBase: authBase, GraphBase: fake.GraphBase(), DefaultClientID: "app-1", HTTP: b.gate.Client(outbound.Calendars, 30*time.Second)})
+	graphHost, authHost := b.sync.Graph().Host(), b.sync.Graph().AuthHost()
+	if graphHost == authHost {
+		t.Fatalf("the fake serves both from %s", graphHost)
+	}
 	page := getEN(b, "/settings/connections").body
-	mustContain(t, page, b.sync.Graph().Host(), b.sync.Graph().AuthHost(), "every 5 minutes")
+	mustContain(t, page, graphHost, authHost, "every 5 minutes")
 }

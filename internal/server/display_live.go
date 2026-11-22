@@ -26,8 +26,8 @@ const clockMark = "@@hejmo-clock@@"
 // the display would show the same apart from the time. The clock chip changes
 // every minute; the display ticks it itself (ADR 0016), so it must not make
 // every display repaint its whole view.
-func (s *server) renderFamily(h store.Household, lang string, showTomorrow bool) (template.HTML, string, error) {
-	view, err := s.familyView(h, lang, showTomorrow)
+func (s *server) renderFamily(h store.Household, lang string, d *store.Display) (template.HTML, string, error) {
+	view, err := s.familyView(h, lang, d)
 	if err != nil {
 		return "", "", err
 	}
@@ -124,7 +124,7 @@ func (s *server) handleDisplayEvents(w http.ResponseWriter, r *http.Request) {
 				version, err = "gone", nil // the display returns to the family view
 			}
 		} else if person != "" {
-			_, version, err = s.renderPersonal(h, lang, person)
+			_, version, err = s.renderPersonal(h, &d, lang, person, false)
 			if errors.Is(err, errNoPerson) {
 				version, err = "gone", nil // the display returns to the family view
 			}

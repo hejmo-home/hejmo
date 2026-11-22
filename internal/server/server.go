@@ -443,6 +443,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /sw.js", s.handleServiceWorker)
 	mux.HandleFunc("POST /update/dismiss", s.handleUpdateDismiss)
 	mux.HandleFunc("POST /displays/{id}/settings", s.handleDisplaySettings)
+	mux.HandleFunc("POST /displays/{id}/layout/copy", s.handleDisplayLayoutCopy)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
 	return s.requireHTTPS(sameOrigin(withPageLanguage(mux)))

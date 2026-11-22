@@ -15,6 +15,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/familyview"
+	"github.com/hejmo-home/hejmo/internal/layout"
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/qrsvg"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -188,11 +189,29 @@ func (s *server) displayTheme(h store.Household, d store.Display) string {
 // markerShapes are the black-and-white marker shapes in person slot order (DESIGN.md).
 var markerShapes = []string{"circle-filled", "circle-empty", "square-filled", "square-empty", "triangle-filled", "diamond-filled", "cross-filled", "star-filled"}
 
-// familyView builds today's family view of the household.
-func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (familyview.View, error) {
+// familyView builds today's family view of the household as the display d
+// shows it: its people in its order and its blocks (ticket 180). Without a
+// display (the home page) it is the layout of a new display.
+func (s *server) familyView(h store.Household, lang string, d *store.Display) (familyview.View, error) {
 	data, err := s.displayData(h, lang, 2)
 	if err != nil {
 		return familyview.View{}, err
+	}
+	everyone := data.people
+	showTomorrow := false
+	var lay layout.Layout
+	if d != nil {
+		showTomorrow = d.ShowTomorrow
+		if lay, err = s.db.DisplayLayout(h.ID, d.ID); err != nil {
+			return familyview.View{}, err
+		}
+		data.people = orderedPeople(everyone, lay.Order(layout.RotationDay(data.now)))
+	} else {
+		ids, err := s.db.PersonIDs(h.ID)
+		if err != nil {
+			return familyview.View{}, err
+		}
+		lay = layout.Default(ids)
 	}
 	meals, cutoffs := s.mealsToday(h, data.now)
 	today := data.now.Format(store.DayLayout)
@@ -223,7 +242,19 @@ func (s *server) familyView(h store.Household, lang string, showTomorrow bool) (
 	if err != nil {
 		return familyview.View{}, err
 	}
-	return familyview.Build(familyview.Input{HasLists: len(lists) > 0, Meals: meals, MealCutoffs: cutoffs, Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
+	routines := map[string][]familyview.RoutineLine{}
+	if lay.Enabled(layout.Routines) {
+		if routines, err = s.routineLines(h, due); err != nil {
+			return familyview.View{}, err
+		}
+	}
+	var tileList *familyview.ListInput
+	if lay.Enabled(layout.List) {
+		if tileList, err = s.listTileInput(h, lay.ListID); err != nil {
+			return familyview.View{}, err
+		}
+	}
+	return familyview.Build(familyview.Input{Layout: &lay, Everyone: everyone, Routines: routines, List: tileList, HasLists: len(lists) > 0, Meals: meals, MealCutoffs: cutoffs, Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
 		Waste: data.waste, DayNotes: byDay, TomorrowLabel: s.i18n.T(lang, "family.tomorrow"), TodayLabel: s.i18n.T(lang, "family.today"),
 		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID), TaskProgress: progress,
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
@@ -368,6 +399,10 @@ func (s *server) displayState(r *http.Request) map[string]string {
 		switch {
 		case d.Paired:
 			state["state"] = "paired"
+			// How the display hangs, so the layout preview on the settings page is drawn that way (ticket 180).
+			if o := r.URL.Query().Get("orientation"); (o == "portrait" || o == "landscape") && (o == "portrait") != d.Portrait {
+				_ = s.db.SetDisplayOrientation(hash, o == "portrait")
+			}
 			state["saver"], state["saver_seconds"] = "0", strconv.Itoa(s.saverSeconds(d))
 			if h, err := s.db.HomeHousehold(); err == nil {
 				state["theme"] = s.displayTheme(h, d)

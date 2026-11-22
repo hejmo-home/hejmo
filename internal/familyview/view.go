@@ -11,6 +11,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/holiday"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/layout"
 	"github.com/hejmo-home/hejmo/internal/meal"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/wholine"
@@ -27,11 +28,14 @@ type Person struct {
 
 // Input is everything Build needs. Occurrences must cover today and tomorrow.
 type Input struct {
-	Now    time.Time       // in the household's time zone
-	Lang   string          // "de" or "en", for holiday names
-	Region string          // home region (ISO 3166-2)
-	People []Person        // display order
-	Groups []wholine.Group // subgroups with their members, for the who-line
+	Now    time.Time // in the household's time zone
+	Lang   string    // "de" or "en", for holiday names
+	Region string    // home region (ISO 3166-2)
+	People []Person  // the people of the columns, in column order
+	// Everyone is the whole household, for who an event is meant for and what
+	// counts as the whole family (Q87). Nil: People are everyone.
+	Everyone []Person
+	Groups   []wholine.Group // subgroups with their members, for the who-line
 	// I18n words the who-line; required, whoLine panics without it.
 	I18n        *i18n.Bundle
 	Calendars   map[string]calendar.Audience
@@ -68,6 +72,39 @@ type Input struct {
 	// HasLists: the household has at least one list. The header then shows the
 	// Lists button (ticket 6.2); without a list there is nothing to open.
 	HasLists bool
+	// Layout is the display's layout (ticket 180): which blocks are on and in
+	// which order. Nil is today's layout. People must already be in the order
+	// of the columns (layout.Order).
+	Layout *layout.Layout
+	// Routines are each person's routines due today, by person ID.
+	Routines map[string][]RoutineLine
+	// List is the list of the block "one list"; nil when the block has none.
+	List *ListInput
+}
+
+// RoutineLine is one routine of a person today with its progress (Q86).
+type RoutineLine struct {
+	Name  string
+	Part  string // "morning", "afterschool" or "evening"
+	Done  int
+	Total int
+}
+
+// AllDone reports whether every step of the routine is ticked off.
+func (r RoutineLine) AllDone() bool { return r.Total > 0 && r.Done >= r.Total }
+
+// ListInput is the list of the footer block "one list": its open entries in the list's order.
+type ListInput struct {
+	ID, Name string
+	Open     []string
+}
+
+// ListTile is the list tile of the footer: up to layout.MaxListEntries open
+// entries in full; More says how many open entries are not shown (Q129).
+type ListTile struct {
+	ID, Name string
+	Entries  []string
+	More     int
 }
 
 // Weather is a reading for the weather chip; Icon names the symbol.
@@ -109,6 +146,7 @@ type Column struct {
 	Events   []Event
 	Tomorrow []Event   // from 18:00: the first timed events of the next day
 	Progress *Progress // nil: no bar
+	Routines []RoutineLine
 }
 
 // Strip item kinds.
@@ -195,6 +233,11 @@ type View struct {
 	Columns       []Column
 	Meal          *MealTile // nil: nothing planned that is still to come
 	TomorrowTile  *Tile
+	List          *ListTile
+	// HeaderOrder, ColumnBlocks and FooterOrder name the blocks that are on, in
+	// order (ticket 180). Weather without a reading is left out of the header; a
+	// footer block without content (nothing planned, an empty list) has no tile.
+	HeaderOrder, ColumnBlocks, FooterOrder []layout.BlockID
 }
 
 const (
@@ -209,19 +252,56 @@ func Build(in Input) View {
 	d1 := d0.AddDate(0, 0, 1)
 	_, week := now.ISOWeek()
 	v := View{Weekday: now.Weekday(), Week: week, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: now.Location().String(), ClockFormat: clockFormat(in.TimeFormat)}
-	v.Weather = Chip(in.Weather, in.TemperatureUnit)
+	lay := layout.Default(nil)
+	if in.Layout != nil {
+		lay = *in.Layout
+	}
+	if lay.Enabled(layout.Weather) {
+		v.Weather = Chip(in.Weather, in.TemperatureUnit)
+	}
+	for _, b := range lay.In(layout.Header) {
+		if b.On && (b.ID != layout.Weather || v.Weather != nil) {
+			v.HeaderOrder = append(v.HeaderOrder, b.ID)
+		}
+	}
+	for _, b := range lay.In(layout.Columns) {
+		if b.On {
+			v.ColumnBlocks = append(v.ColumnBlocks, b.ID)
+		}
+	}
+	events := lay.Enabled(layout.Events)
 	v.ShowTomorrow = in.ShowTomorrow && now.Hour() >= tomorrowFromHour
 	v.SyncStale = in.SyncStale
 	v.HasLists = in.HasLists
-	v.TomorrowTile = tomorrowTile(in, now, d1)
+	if lay.Enabled(layout.Tomorrow) {
+		v.TomorrowTile = tomorrowTile(in, now, d1)
+	}
 	for _, p := range in.People {
 		col := Column{Person: p}
-		if pr, ok := in.TaskProgress[p.ID]; ok && pr.Total > 0 {
+		if pr, ok := in.TaskProgress[p.ID]; ok && pr.Total > 0 && lay.Enabled(layout.Tasks) {
 			col.Progress = &pr
+		}
+		if lay.Enabled(layout.Routines) {
+			col.Routines = in.Routines[p.ID]
 		}
 		v.Columns = append(v.Columns, col)
 	}
-	v.Meal = mealTile(in)
+	if lay.Enabled(layout.Meals) {
+		v.Meal = mealTile(in)
+	}
+	if lay.Enabled(layout.List) && in.List != nil && len(in.List.Open) > 0 {
+		t := &ListTile{ID: in.List.ID, Name: in.List.Name, Entries: in.List.Open}
+		if len(t.Entries) > layout.MaxListEntries {
+			t.More = len(t.Entries) - layout.MaxListEntries
+			t.Entries = t.Entries[:layout.MaxListEntries]
+		}
+		v.List = t
+	}
+	for _, b := range lay.In(layout.Footer) {
+		if b.On {
+			v.FooterOrder = append(v.FooterOrder, b.ID)
+		}
+	}
 	loc := d0.Location()
 	occs := append([]calendar.Occurrence(nil), in.Occurrences...)
 	sort.SliceStable(occs, func(i, j int) bool { return occs[i].Start.Before(occs[j].Start) })
@@ -234,7 +314,7 @@ func Build(in Input) View {
 		bar := o.AllDay || multiDay(o, loc)
 		if !bar && !whole {
 			for i, p := range in.People {
-				if sees(in, p, o) {
+				if events && sees(in, p, o) {
 					v.Columns[i].Events = append(v.Columns[i].Events, card(o, loc, in.TimeFormat, whoLine(in, o, p.ID)))
 				}
 			}
@@ -282,7 +362,7 @@ func Build(in Input) View {
 				continue
 			}
 			for i, p := range in.People {
-				if sees(in, p, o) && len(v.Columns[i].Tomorrow) < maxTomorrow {
+				if events && sees(in, p, o) && len(v.Columns[i].Tomorrow) < maxTomorrow {
 					v.Columns[i].Tomorrow = append(v.Columns[i].Tomorrow, card(o, loc, in.TimeFormat, whoLine(in, o, p.ID)))
 				}
 			}
@@ -302,7 +382,7 @@ func Build(in Input) View {
 // clock formats the times in the household's zone, whatever zone the event is
 // stored in (synced events often arrive as UTC or with their own TZID).
 func clock(o calendar.Occurrence, loc *time.Location, format store.TimeFormat) string {
-	l := layout(format)
+	l := timeLayout(format)
 	return fmt.Sprintf("%s–%s", o.Start.In(loc).Format(l), o.End.In(loc).Format(l))
 }
 
@@ -311,7 +391,7 @@ func card(o calendar.Occurrence, loc *time.Location, format store.TimeFormat, wh
 }
 
 // ClockText is the time of day in the household's time format ("24h" or "12h").
-func ClockText(t time.Time, format store.TimeFormat) string { return t.Format(layout(format)) }
+func ClockText(t time.Time, format store.TimeFormat) string { return t.Format(timeLayout(format)) }
 
 // ClockFormat names the time format for the display's script ("24h" or "12h").
 func ClockFormat(format store.TimeFormat) string { return clockFormat(format) }
@@ -324,8 +404,8 @@ func clockFormat(format store.TimeFormat) string {
 	return "24h"
 }
 
-// layout is the time layout of the household's time format.
-func layout(format store.TimeFormat) string {
+// timeLayout is the time layout of the household's time format.
+func timeLayout(format store.TimeFormat) string {
 	if format == store.Time12h {
 		return "3:04 PM"
 	}
@@ -347,8 +427,9 @@ func Chip(w *Weather, unit store.TemperatureUnit) *WeatherChip {
 
 // audienceOf lists the IDs of the people who see o, in display order.
 func audienceOf(in Input, o calendar.Occurrence) []string {
-	viewers := make([]calendar.Viewer, len(in.People))
-	for i, p := range in.People {
+	all := in.everyone()
+	viewers := make([]calendar.Viewer, len(all))
+	for i, p := range all {
 		viewers[i] = calendar.Viewer{PersonID: p.ID, Groups: p.Groups}
 	}
 	return calendar.ViewersOf(o, in.Calendars, viewers)
@@ -356,8 +437,9 @@ func audienceOf(in Input, o calendar.Occurrence) []string {
 
 // whoLine words who o is for; omit is the person of the column it is shown in.
 func whoLine(in Input, o calendar.Occurrence, omit string) wholine.Line {
-	household := make([]wholine.Person, len(in.People))
-	for i, p := range in.People {
+	all := in.everyone()
+	household := make([]wholine.Person, len(all))
+	for i, p := range all {
 		household[i] = wholine.Person{ID: p.ID, Name: p.Name}
 	}
 	if in.I18n == nil {
@@ -374,7 +456,15 @@ func wholeHousehold(in Input, o calendar.Occurrence) bool {
 	if len(a.People) == 0 && len(a.Groups) == 0 && len(o.People) == 0 && len(o.Groups) == 0 {
 		return true
 	}
-	return len(in.People) > 0 && len(audienceOf(in, o)) == len(in.People)
+	return len(in.everyone()) > 0 && len(audienceOf(in, o)) == len(in.everyone())
+}
+
+// everyone is the whole household.
+func (in Input) everyone() []Person {
+	if in.Everyone != nil {
+		return in.Everyone
+	}
+	return in.People
 }
 
 // sees reports whether p is in the effective audience of o (ADR 0011).

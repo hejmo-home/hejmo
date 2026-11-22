@@ -187,11 +187,11 @@ The row above the person columns in the family view for events meant for the who
 _Avoid_: banner, header events, all-day row
 
 **Layout**:
-What one display shows: the chosen people, their order and the blocks.
+What one display shows: the chosen people, their order (optionally rotating by a column every day) and the blocks in each of the three zones.
 _Avoid_: template (alone), view (alone)
 
 **Layout block**:
-One part of a display's layout, such as calendar, tasks, meals, weather or lists, which a parent switches on or off per display.
+One part of a display's layout, such as time, weather, events, routines, task progress, meals, the tomorrow tile or one list, which a parent switches on or off and orders within its zone per display.
 _Avoid_: widget, tile, module
 
 **Theme**:

@@ -12,6 +12,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/brightness"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/kiosk"
+	"github.com/hejmo-home/hejmo/internal/layout"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/quiet"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -71,6 +72,8 @@ type displayPage struct {
 	Albums                               []saverAlbum
 	// The brightness block (ticket 179).
 	Bright brightPage
+	// The layout section (ticket 180).
+	Layout layoutPage
 }
 
 // saverAlbum is one album chip of the screensaver block.
@@ -111,6 +114,7 @@ func (s *server) renderDisplay(w http.ResponseWriter, r *http.Request, p princip
 	page := newDisplayPage(d, in)
 	s.fillSaver(r, p, &page, d, in)
 	s.fillBrightness(r, p, &page, d, in, errField)
+	s.fillLayout(r, p, &page, d, in, errField)
 	facts := []factView{}
 	if d.LastSeen.IsZero() {
 		facts = append(facts, factView{Label: s.say(r, i18n.Msg("displays.facts.last_seen")), Value: s.say(r, i18n.Msg("displays.never"))})
@@ -215,6 +219,8 @@ type displayChange struct {
 	Saver *saverChange
 	// Brightness is what the kiosk app sets by time of day and in quiet mode (ticket 179).
 	Brightness *brightChange
+	// Layout is the people and blocks the display shows (ticket 180).
+	Layout *layoutChange
 }
 
 // brightChange is a change of a display's brightness values; nil fields stay as they are.
@@ -373,6 +379,15 @@ func (s *server) changeDisplay(householdID, id string, c displayChange) error {
 			return err
 		}
 	}
+	if c.Layout != nil {
+		h, err := s.db.Household(householdID)
+		if err != nil {
+			return err
+		}
+		if err := s.saveLayout(h, id, *c.Layout); err != nil {
+			return err
+		}
+	}
 	if c.KioskURL != nil {
 		key := c.KioskKey
 		if key != nil && *key == "" {
@@ -465,6 +480,10 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 		}
 		c.Saver.Albums = &albums
 	}
+	if r.PostForm.Has("layout_form") { // the Layout section is in the form
+		lc := layoutFromForm(r.PostForm)
+		c.Layout = &lc
+	}
 	bc := &brightChange{QuietMode: optional(r, "quiet_light"), Source: optional(r, "light_source")}
 	for _, f := range []struct {
 		field string
@@ -482,11 +501,15 @@ func (s *server) handleDisplaySettings(w http.ResponseWriter, r *http.Request) {
 	}
 	c.Brightness = bc
 	var fieldErr *store.FieldError
+	var layoutErr *layoutError
 	switch err := s.changeDisplay(p.household.ID, d.ID, c); {
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
 	case errors.As(err, &fieldErr):
 		refuse("displays.error."+fieldErr.Field, fieldErr.Field)
+	case errors.As(err, &layoutErr):
+		field, key, _ := layoutRefusal(err)
+		refuse(key, field)
 	case errors.Is(err, errQuietTimes):
 		refuse("displays.error.quiet", "quiet_to")
 	case errors.Is(err, errTheme):
@@ -516,6 +539,24 @@ type displayJSON struct {
 	Screensaver   saverJSON  `json:"screensaver"`
 	Brightness    brightJSON `json:"brightness"`
 	ListView      string     `json:"list_view"`
+	Layout        layoutJSON `json:"layout"`
+}
+
+// layoutJSON is a display's layout (ticket 180): the people in the order of
+// today's columns, and the blocks in order inside their zone.
+type layoutJSON struct {
+	WholeFamily bool        `json:"whole_family"`
+	People      []string    `json:"people"`
+	RotateDaily bool        `json:"rotate_daily"`
+	Blocks      []blockJSON `json:"blocks"`
+	ListID      *string     `json:"list_id"`
+	Orientation string      `json:"orientation"`
+}
+
+type blockJSON struct {
+	ID      string `json:"id"`
+	Zone    string `json:"zone"`
+	Enabled bool   `json:"enabled"`
 }
 
 // brightJSON is a display's brightness: the values, and what the kiosk app
@@ -562,7 +603,29 @@ type kioskJSON struct {
 	APIKeySet bool   `json:"api_key_set"`
 }
 
-func (s *server) displayToJSON(d store.Display, h store.Household, loc *time.Location) displayJSON {
+func (s *server) layoutToJSON(d store.Display, h store.Household) (layoutJSON, error) {
+	l, err := s.db.DisplayLayout(h.ID, d.ID)
+	if err != nil {
+		return layoutJSON{}, err
+	}
+	j := layoutJSON{WholeFamily: l.Whole, RotateDaily: l.Rotate, People: l.Order(layout.RotationDay(s.householdNow(h))), Orientation: "landscape", Blocks: []blockJSON{}}
+	if d.Portrait {
+		j.Orientation = "portrait"
+	}
+	for _, z := range layout.Zones() {
+		for _, b := range l.In(z) {
+			j.Blocks = append(j.Blocks, blockJSON{ID: string(b.ID), Zone: string(z), Enabled: b.On})
+		}
+	}
+	if l.ListID != "" {
+		id := l.ListID
+		j.ListID = &id
+	}
+	return j, nil
+}
+
+// displayToJSON is the API form of a display; the error is one of loading its layout.
+func (s *server) displayToJSON(d store.Display, h store.Household, loc *time.Location) (displayJSON, error) {
 	j := displayJSON{ID: d.ID, Name: d.Name, Room: d.Room, Type: string(d.Type), PairedAt: d.PairedAt.In(loc).Format(time.RFC3339), ShowTomorrow: d.ShowTomorrow,
 		QuietMode: quietJSON{d.Quiet.Enabled, d.Quiet.FromText(), d.Quiet.ToText()}, Kiosk: kioskJSON{d.KioskURL, d.KioskKeySet},
 		Theme: string(d.Theme), SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset,
@@ -582,11 +645,27 @@ func (s *server) displayToJSON(d store.Display, h store.Household, loc *time.Loc
 		}
 		j.Brightness.Current = cur
 	}
+	lj, err := s.layoutToJSON(d, h)
+	if err != nil {
+		return displayJSON{}, err
+	}
+	j.Layout = lj
 	if !d.LastSeen.IsZero() {
 		seen := d.LastSeen.In(loc).Format(time.RFC3339)
 		j.LastSeenAt = &seen
 	}
-	return j
+	return j, nil
+}
+
+// writeDisplay answers with a display; a layout that fails to load is a 500, not a
+// display that breaks the contract.
+func (s *server) writeDisplay(w http.ResponseWriter, status int, d store.Display, p principal) {
+	j, err := s.displayToJSON(d, p.household, p.location())
+	if err != nil {
+		s.fail(w, "display layout", err)
+		return
+	}
+	writeJSON(w, status, j)
 }
 
 func (s *server) apiListDisplays(w http.ResponseWriter, _ *http.Request, p principal) {
@@ -598,7 +677,12 @@ func (s *server) apiListDisplays(w http.ResponseWriter, _ *http.Request, p princ
 	loc := p.location()
 	out := make([]displayJSON, 0, len(list))
 	for _, d := range list {
-		out = append(out, s.displayToJSON(d, p.household, loc))
+		j, err := s.displayToJSON(d, p.household, loc)
+		if err != nil {
+			s.fail(w, "display layout", err)
+			return
+		}
+		out = append(out, j)
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -612,7 +696,7 @@ func (s *server) apiPairDisplay(w http.ResponseWriter, r *http.Request, p princi
 	d, err := s.pairDisplay(p, strings.TrimSpace(in.Code), store.Display{Name: in.Name, Room: in.Room, Type: store.DisplayType(in.Type)})
 	switch {
 	case err == nil:
-		writeJSON(w, http.StatusCreated, s.displayToJSON(d, p.household, p.location()))
+		s.writeDisplay(w, http.StatusCreated, d, p)
 	case errors.Is(err, errTooManyAttempts):
 		writeError(w, http.StatusTooManyRequests, "too many wrong codes, try again later")
 	case errors.Is(err, store.ErrNotFound):
@@ -658,6 +742,16 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 			} `json:"quiet"`
 		} `json:"brightness"`
 		ListView *string `json:"list_view"`
+		Layout   *struct {
+			WholeFamily *bool     `json:"whole_family"`
+			People      *[]string `json:"people"`
+			RotateDaily *bool     `json:"rotate_daily"`
+			Blocks      []struct {
+				ID      string `json:"id"`
+				Enabled *bool  `json:"enabled"`
+			} `json:"blocks"`
+			ListID *string `json:"list_id"`
+		} `json:"layout"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -684,13 +778,24 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 			c.Brightness.QuietMode, c.Brightness.QuietLevel, c.Brightness.WakeMinutes = q.Mode, q.Level, q.WakeMinutes
 		}
 	}
+	if ly := in.Layout; ly != nil {
+		lc := layoutChange{Whole: ly.WholeFamily, People: ly.People, Rotate: ly.RotateDaily, ListID: ly.ListID}
+		for _, b := range ly.Blocks {
+			lc.Blocks = append(lc.Blocks, blockChange{ID: b.ID, On: b.Enabled})
+		}
+		c.Layout = &lc
+	}
 	if sv := in.Screensaver; sv != nil {
 		c.Saver = &saverChange{Enabled: sv.Enabled, IdleMinutes: sv.IdleMinutes, Interval: sv.IntervalMinutes, Albums: sv.AlbumIDs}
 	}
 	var fieldErr *store.FieldError
+	var layoutErr *layoutError
 	switch err := s.changeDisplay(p.household.ID, r.PathValue("id"), c); {
 	case errors.Is(err, store.ErrNotFound):
 		writeError(w, http.StatusNotFound, "display not found")
+		return
+	case errors.As(err, &layoutErr):
+		writeError(w, http.StatusUnprocessableEntity, layoutErr.Msg)
 		return
 	case errors.As(err, &fieldErr):
 		writeError(w, http.StatusUnprocessableEntity, fieldErr.Msg)
@@ -721,11 +826,54 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 	}
 	for _, d := range displays {
 		if d.ID == r.PathValue("id") {
-			writeJSON(w, http.StatusOK, s.displayToJSON(d, p.household, p.location()))
+			s.writeDisplay(w, http.StatusOK, d, p)
 			return
 		}
 	}
 	writeError(w, http.StatusNotFound, "display not found")
+}
+
+// apiCopyDisplayLayout gives a display the layout of another one (Q84).
+func (s *server) apiCopyDisplayLayout(w http.ResponseWriter, r *http.Request, p principal) {
+	var in struct {
+		From string `json:"from"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	id := r.PathValue("id")
+	if _, err := s.db.Display(p.household.ID, id); err != nil {
+		writeDisplayError(w, s, err)
+		return
+	}
+	if in.From == id {
+		writeError(w, http.StatusUnprocessableEntity, "a display cannot copy its own layout")
+		return
+	}
+	// The display itself is known by now, so a missing one is the source.
+	if err := s.db.CopyDisplayLayout(p.household.ID, in.From, id); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "display to copy from (from) not found")
+			return
+		}
+		s.fail(w, "display layout", err)
+		return
+	}
+	d, err := s.db.Display(p.household.ID, id)
+	if err != nil {
+		writeDisplayError(w, s, err)
+		return
+	}
+	s.writeDisplay(w, http.StatusOK, d, p)
+}
+
+func writeDisplayError(w http.ResponseWriter, s *server, err error) {
+	if errors.Is(err, store.ErrNotFound) {
+		writeError(w, http.StatusNotFound, "display not found")
+		return
+	}
+	s.fail(w, "display layout", err)
 }
 
 func (s *server) apiRevokeDisplay(w http.ResponseWriter, r *http.Request, p principal) {

@@ -79,6 +79,8 @@ type Display struct {
 	Brightness brightness.Settings
 	// ListView is how the display shows lists (ADR 0019): tiles until someone switches it.
 	ListView list.View
+	// Portrait is how the display last reported it hangs (ticket 180).
+	Portrait bool
 }
 
 // Saver is a display's screensaver setting: on by default, starting after
@@ -107,7 +109,7 @@ func (s Saver) Shows(albumID string) bool {
 	return false
 }
 
-const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow, quiet_enabled, quiet_from, quiet_to, kiosk_url, kiosk_key != '', theme, sunrise_offset, sunset_offset, saver_enabled, saver_idle_minutes, saver_interval_minutes, bright_day, bright_evening, bright_quiet_mode, bright_quiet, wake_minutes, light_source, COALESCE((SELECT view FROM display_list_view WHERE display_id = displays.id), 'tiles')`
+const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow, quiet_enabled, quiet_from, quiet_to, kiosk_url, kiosk_key != '', theme, sunrise_offset, sunset_offset, saver_enabled, saver_idle_minutes, saver_interval_minutes, bright_day, bright_evening, bright_quiet_mode, bright_quiet, wake_minutes, light_source, COALESCE((SELECT view FROM display_list_view WHERE display_id = displays.id), 'tiles'), portrait`
 
 type rowScanner interface{ Scan(...any) error }
 
@@ -118,7 +120,7 @@ func scanDisplay(r rowScanner, at time.Time) (Display, error) {
 	var qOn bool
 	var qFrom, qTo string
 	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow, &qOn, &qFrom, &qTo, &d.KioskURL, &d.KioskKeySet, &d.Theme, &d.SunriseOffset, &d.SunsetOffset, &d.Saver.Enabled, &d.Saver.IdleMinutes, &d.Saver.IntervalMinutes,
-		&d.Brightness.Day, &d.Brightness.Evening, &d.Brightness.QuietMode, &d.Brightness.QuietLevel, &d.Brightness.WakeMinutes, &d.Brightness.Source, &d.ListView); err != nil {
+		&d.Brightness.Day, &d.Brightness.Evening, &d.Brightness.QuietMode, &d.Brightness.QuietLevel, &d.Brightness.WakeMinutes, &d.Brightness.Source, &d.ListView, &d.Portrait); err != nil {
 		return Display{}, err
 	}
 	if q, err := quiet.Parse(qOn, qFrom, qTo); err == nil {

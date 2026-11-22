@@ -65,6 +65,10 @@ async function probe(width, names) {
   const overflowing = [];
   for (const el of document.body.querySelectorAll("*")) {
     if (/^(INPUT|TEXTAREA|SELECT|SVG|SCRIPT|STYLE|OPTION)$/i.test(el.tagName) || el.closest("svg")) continue;
+    // The layout preview of a display (ticket 180) is a small aria-hidden drawing: the
+    // columns beyond the visible ones are cut off by design and its tiny names may run
+    // a pixel or two over; the page says the order in words under it.
+    if (el.closest("[data-mini]")) continue;
     const cs = getComputedStyle(el), r = el.getBoundingClientRect();
     if (hidden(el, cs, r) || cs.display === "inline" || cs.display === "contents" || scrolls(cs) || cs.textOverflow === "ellipsis") continue;
     if (el.scrollWidth > el.clientWidth + 1) overflowing.push(el);

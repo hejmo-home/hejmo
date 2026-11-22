@@ -30,7 +30,7 @@ func (s *server) pairedDisplayOrRedirect(w http.ResponseWriter, r *http.Request)
 
 // personalView builds a person's view: their events for today and the next 6
 // days and their tasks for today (ADR 0015). errNoPerson if they are gone.
-func (s *server) personalView(h store.Household, lang, personID string) (familyview.PersonalView, error) {
+func (s *server) personalView(h store.Household, d *store.Display, lang, personID string, home bool) (familyview.PersonalView, error) {
 	data, err := s.displayData(h, lang, familyview.PersonalDays)
 	if err != nil {
 		return familyview.PersonalView{}, err
@@ -49,7 +49,14 @@ func (s *server) personalView(h store.Household, lang, personID string) (familyv
 	if err != nil {
 		return familyview.PersonalView{}, err
 	}
-	in := familyview.PersonalInput{Now: data.now, Person: *person, People: data.people, Calendars: data.calendars, Occurrences: data.occurrences, TimeFormat: h.TimeFormat}
+	in := familyview.PersonalInput{Now: data.now, Person: *person, People: data.people, Calendars: data.calendars, Occurrences: data.occurrences, TimeFormat: h.TimeFormat, Home: home}
+	if d != nil { // the header blocks of the display apply to its personal views (Q130)
+		lay, err := s.db.DisplayLayout(h.ID, d.ID)
+		if err != nil {
+			return familyview.PersonalView{}, err
+		}
+		in.Layout, in.Weather, in.TemperatureUnit = &lay, s.homeWeather(h), h.TemperatureUnit
+	}
 	for _, t := range due {
 		if t.PersonID == person.ID {
 			in.Tasks = append(in.Tasks, viewTask(t))
@@ -90,8 +97,8 @@ func viewRoutines(all []task.Routine, personID string) []familyview.Routine {
 
 // renderPersonal renders a person's view markup and its version, like
 // renderFamily: the version leaves the clock out, the display ticks it.
-func (s *server) renderPersonal(h store.Household, lang, personID string) (template.HTML, string, error) {
-	view, err := s.personalView(h, lang, personID)
+func (s *server) renderPersonal(h store.Household, d *store.Display, lang, personID string, home bool) (template.HTML, string, error) {
+	view, err := s.personalView(h, d, lang, personID, home)
 	if err != nil {
 		return "", "", err
 	}
@@ -114,7 +121,7 @@ func (s *server) handleDisplayPerson(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	id := r.PathValue("id")
-	view, version, err := s.renderPersonal(h, s.displayLang(r), id)
+	view, version, err := s.renderPersonal(h, &d, s.displayLang(r), id, false)
 	if errors.Is(err, errNoPerson) {
 		// Gone meanwhile: back to the display, never to a bare error page
 		// (it has no display.js and would leave the kiosk stuck).
@@ -137,11 +144,11 @@ func (s *server) handleDisplayPerson(w http.ResponseWriter, r *http.Request) {
 // display's script to swap in (partial update). 404 when the person is gone:
 // the script then returns to the family view.
 func (s *server) handleDisplayPersonView(w http.ResponseWriter, r *http.Request) {
-	_, h, ok := s.pairedDisplay(w, r)
+	d, h, ok := s.pairedDisplay(w, r)
 	if !ok {
 		return
 	}
-	markup, version, err := s.renderPersonal(h, s.displayLang(r), r.PathValue("id"))
+	markup, version, err := s.renderPersonal(h, &d, s.displayLang(r), r.PathValue("id"), false)
 	if errors.Is(err, errNoPerson) {
 		http.NotFound(w, r)
 		return

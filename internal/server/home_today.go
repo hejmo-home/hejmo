@@ -68,7 +68,7 @@ func startOf(t string) string {
 }
 
 func (s *server) todayCard(h store.Household, lang string, people []store.Person) (*todayView, error) {
-	v, err := s.familyView(h, lang, false)
+	v, err := s.familyView(h, lang, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -144,7 +144,7 @@ func starsText(f func(string, ...string) string, n int, key string) string {
 }
 
 func (s *server) childHome(h store.Household, lang string, person store.Person, people []store.Person) (*childView, error) {
-	pv, err := s.personalView(h, lang, person.ID)
+	pv, err := s.personalView(h, nil, lang, person.ID, false)
 	if err != nil {
 		return nil, err
 	}

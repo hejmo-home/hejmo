@@ -247,11 +247,7 @@ func (a *alwaysCtx) firstText(r always.Rule) (string, bool) {
 	}
 	probe := r
 	probe.Since = ""
-	text := a.dayName(first)
-	if !strings.HasSuffix(text, ".") { // the sentence ends with the day
-		text += "."
-	}
-	return text, probe.Due(a.today)
+	return endSentence(a.dayName(first)), probe.Due(a.today)
 }
 
 // storedRule is the rule of an article, nil without one.
@@ -358,4 +354,13 @@ func (s *server) handleAutoPlan(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "text/html; charset=utf-8")
 	w.Header().Set("Cache-Control", "no-store")
 	_, _ = w.Write([]byte(s.fragment(lang, "autoPlan", a.plan(art, f, stored))))
+}
+
+// endSentence makes sure a sentence ends with a full stop: a date in numbers
+// ("23.11.") already has one.
+func endSentence(s string) string {
+	if strings.HasSuffix(s, ".") {
+		return s
+	}
+	return s + "."
 }

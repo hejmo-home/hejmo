@@ -169,14 +169,14 @@ func TestOverviewHasNoAddFormOnlyOneWayIn(t *testing.T) {
 	t.Parallel()
 	b := signedInAPI(t).b
 	empty := b.get("/calendars").body
-	mustContain(t, empty, `data-empty`, `href="/connections/new">Kalender verbinden</a>`, "Noch kein Kalender auf der Box.", "oder abonniere einen Kalender-Link, zum Beispiel von der Schule.")
+	mustContain(t, empty, `data-empty`, `href="/connections/new">Kalender verbinden</a>`, "Noch kein Kalender auf der Box.", "Verbinde iCloud, Outlook oder einen Kalender-Server, oder abonniere einen Kalender-Link, zum Beispiel von der Schule.")
 	mustNotContain(t, empty, `action="/calendars"`, `name="url"`, `aria-labelledby="add"`, "Kalender hinzufügen", "Verbundene Dienste", "Abonnierte Kalender</h2>")
 
 	b.feeds.set(schoolFeed, feedOf(), nil)
 	b.post("/calendars", url.Values{"name": {"Grundschule"}, "url": {schoolFeed}, "interval": {"60"}, "whole_family": {"1"}})
 	page := b.get("/calendars").body
 	mustContain(t, page, `<p class="add-way"><a class="button" href="/connections/new">Kalender verbinden</a></p>`,
-		"<h2 id=\"connections\">Verbundene Dienste</h2>", "Konten bei iCloud oder einem Kalender-Server.", `<p class="hint none">Noch kein Dienst verbunden.</p>`,
+		"<h2 id=\"connections\">Verbundene Dienste</h2>", "Konten bei iCloud, Outlook oder einem Kalender-Server.", `<p class="hint none">Noch kein Dienst verbunden.</p>`,
 		"<h2 id=\"synced\">Abonnierte Kalender</h2>", "Kalender-Links, zum Beispiel von Schule oder Verein. Die Box liest sie nur.", "<b>Grundschule</b>")
 	mustNotContain(t, page, `action="/calendars"`, `name="url"`, "data-empty", "Kalender hinzufügen")
 	if strings.Index(page, `class="add-way"`) > strings.Index(page, `id="connections"`) {

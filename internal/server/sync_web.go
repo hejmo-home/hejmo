@@ -61,7 +61,7 @@ func (s *server) syncStale(householdID string) bool {
 		return false
 	}
 	for _, c := range cals {
-		if !s.gate.Allowed(serviceOfKind(c.Kind)) {
+		if !s.gate.Allowed(calsync.ServiceOf(c.Kind)) {
 			continue // paused by offline mode or a switch: not a problem
 		}
 		if calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale {
@@ -69,14 +69,6 @@ func (s *server) syncStale(householdID string) bool {
 		}
 	}
 	return false
-}
-
-// serviceOfKind is the connection a calendar kind goes through.
-func serviceOfKind(kind string) outbound.Service {
-	if kind == "caldav" {
-		return outbound.Calendars
-	}
-	return outbound.ICS
 }
 
 // pausedFlag is the word tag of a calendar or connection whose connection to
@@ -108,7 +100,7 @@ var syncIntervals = []int{5, 15, 30, 60, 120, 360, 1440}
 // syncFlag is what a synced calendar's state says in words when something is
 // wrong: a refused login, a problem of the last run, or no success for a day.
 func (s *server) syncFlag(r *http.Request, p principal, c store.SyncedCalendar, fact bool) *flagView {
-	if f := s.pausedFlag(r, p, serviceOfKind(c.Kind), c.Sync.LastSuccess); f != nil {
+	if f := s.pausedFlag(r, p, calsync.ServiceOf(c.Kind), c.Sync.LastSuccess); f != nil {
 		return f
 	}
 	stale := calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale

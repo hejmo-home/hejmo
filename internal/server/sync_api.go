@@ -134,7 +134,7 @@ func (s *server) syncState(r *http.Request, c store.SyncedCalendar, loc *time.Lo
 		v := t.In(loc).Format(time.RFC3339)
 		return &v
 	}
-	state, paused := calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess), !s.gate.Allowed(serviceOfKind(c.Kind))
+	state, paused := calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess), !s.gate.Allowed(calsync.ServiceOf(c.Kind))
 	if paused {
 		state = calsync.OK
 	}

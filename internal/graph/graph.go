@@ -107,6 +107,15 @@ func (c *Client) Host() string {
 	return c.graph()
 }
 
+// AuthHost is the sign-in address's host: the box contacts it on every token
+// refresh.
+func (c *Client) AuthHost() string {
+	if u, err := url.Parse(c.auth()); err == nil && u.Host != "" {
+		return u.Host
+	}
+	return c.auth()
+}
+
 // AppID is the app ID to use: the family's own, else the project's. Empty
 // means none is configured.
 func (c *Client) AppID(own string) string {

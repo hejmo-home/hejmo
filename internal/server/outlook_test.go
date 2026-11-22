@@ -525,3 +525,46 @@ func TestOutlookIsRefusedWhileTheCalendarsConnectionIsOff(t *testing.T) {
 		t.Errorf("Microsoft was asked while the connection is off: %v", fake.Requests[asked:])
 	}
 }
+
+// ADR 0024 "Paused, not failed": Outlook is the calendars connection, so only
+// that switch pauses it: not the ICS switch, and not stale while paused.
+func TestAnOutlookCalendarIsPausedByTheCalendarsSwitchNotTheICSSwitch(t *testing.T) {
+	b, fake := outlookBox(t)
+	id := connectOutlook(t, b, fake)
+	if r := chooseOutlook(t, b, id, "cal-1"); r.status != http.StatusSeeOther {
+		t.Fatalf("choose = %d\n%s", r.status, r.body)
+	}
+	h, _ := b.db.HomeHousehold()
+	cals, _ := b.db.SyncedCalendars(h.ID)
+	if len(cals) != 1 {
+		t.Fatalf("calendars = %+v", cals)
+	}
+	if err := b.db.SetServiceEnabled(outbound.ICS, false); err != nil {
+		t.Fatal(err)
+	}
+	if page := getEN(b, "/calendars").body; strings.Contains(page, `class="tag paused"`) {
+		t.Errorf("the ICS switch is off, but the Outlook calendar is tagged paused:\n%s", page)
+	}
+	if err := b.db.SetServiceEnabled(outbound.ICS, true); err != nil {
+		t.Fatal(err)
+	}
+	if err := b.db.SetServiceEnabled(outbound.Calendars, false); err != nil {
+		t.Fatal(err)
+	}
+	b.now = b.now.Add(48 * time.Hour) // without the pause, two days without a sync would be stale
+	page := getEN(b, "/calendars").body
+	mustContain(t, page, "paused, switched off")
+	mustNotContain(t, page, `class="flag problem"`, "data-sync-stale")
+}
+
+// "Connections to the outside" names every host the box contacts for Outlook
+// (Graph and the sign-in host) and how often.
+func TestTheOutsideRowOfCalendarsNamesTheOutlookHostsAndTheInterval(t *testing.T) {
+	b, fake := outlookBox(t)
+	id := connectOutlook(t, b, fake)
+	if r := chooseOutlook(t, b, id, "cal-1"); r.status != http.StatusSeeOther {
+		t.Fatalf("choose = %d\n%s", r.status, r.body)
+	}
+	page := getEN(b, "/settings/connections").body
+	mustContain(t, page, b.sync.Graph().Host(), b.sync.Graph().AuthHost(), "every 5 minutes")
+}

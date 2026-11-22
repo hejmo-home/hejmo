@@ -181,8 +181,10 @@ func (s *Service) SetGate(g *outbound.Gate) {
 	}
 }
 
-// serviceOf is the connection a calendar kind belongs to.
-func serviceOf(kind string) outbound.Service {
+// ServiceOf is the connection a calendar kind belongs to: the calendars one
+// for CalDAV and Outlook, the subscription one for the rest. The sync and the
+// pages use this one mapping.
+func ServiceOf(kind string) outbound.Service {
 	if kind == "caldav" || kind == "outlook" { // Microsoft Graph is a calendar service too (ADR 0024)
 		return outbound.Calendars
 	}
@@ -199,7 +201,7 @@ func (s *Service) refuse(kind, rawURL string) error {
 	} else if u, err := url.Parse(rawURL); err == nil && u.Host != "" {
 		host = u.Host
 	}
-	return s.gate.Check(serviceOf(kind), host)
+	return s.gate.Check(ServiceOf(kind), host)
 }
 
 // SetLogger sets where unexpected errors go.
@@ -321,7 +323,7 @@ func (s *Service) RunDue(ctx context.Context) {
 		if ctx.Err() != nil {
 			return
 		}
-		if !s.gate.Allowed(serviceOf(c.Kind)) {
+		if !s.gate.Allowed(ServiceOf(c.Kind)) {
 			continue // paused (offline mode or switched off): not tried, not failed
 		}
 		// Sync already wrote the run's one INFO line and stored the failure; the

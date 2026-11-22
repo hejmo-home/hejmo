@@ -611,13 +611,12 @@ func TestOutlookIsPausedByTheCalendarsSwitchAndAsksNothingOfMicrosoft(t *testing
 	if len(refused) == 0 {
 		t.Fatal("no refused attempt was recorded")
 	}
-	host := strings.TrimPrefix(fx.fake.GraphBase(), "http://")
-	host, _, _ = strings.Cut(host, "/")
+	host := fx.svc.Graph().Host()
 	for _, r := range refused {
 		if r.Service != outbound.Calendars || r.Target == "cal-1" {
 			t.Errorf("refused attempt = %+v, want the calendars connection and a host, never the calendar id", r)
 		}
-		if r.Target != host && !strings.HasPrefix(r.Target, strings.Split(host, ":")[0]) {
+		if r.Target != host {
 			t.Errorf("refused target = %q, want the Graph host %q", r.Target, host)
 		}
 	}

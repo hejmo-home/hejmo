@@ -303,7 +303,7 @@ func (s *server) finishGoogleLogin(ctx context.Context, p principal, cb googleau
 // adoptStashedGoogle adds the account of a sign-in that was for another
 // connection as a connection of its own.
 func (s *server) adoptStashedGoogle(p principal, nonce string) (store.Connection, error) {
-	account, token, err := s.db.TakeStashedGoogleToken(p.household.ID, nonce)
+	account, token, err := s.db.TakeStashedGoogleToken(p.household.ID, nonce, s.now())
 	if err != nil {
 		return store.Connection{}, err
 	}

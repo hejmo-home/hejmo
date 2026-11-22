@@ -88,6 +88,9 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 		if s.googleRefused(conn, err) {
 			return fail(i18n.Msg("sync.fail.google_token"), err)
 		}
+		if m, ok := googleMessage(conn, err); ok {
+			return fail(m, err)
+		}
 		return fail(remoteMessage(err), err)
 	}
 
@@ -293,6 +296,9 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	run.done = done
 	if pushErr != nil {
 		// Reading went well; the failed write is logged and tried again.
+		if m, ok := googleMessage(conn, pushErr); ok {
+			return fail(m, pushErr)
+		}
 		return fail(pushMessage(pushErr), pushErr)
 	}
 	return nil

@@ -71,6 +71,9 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 		if s.googleRefused(conn, err) {
 			return fail(i18n.Msg("sync.fail.google_token"), err)
 		}
+		if m, ok := googleMessage(conn, err); ok {
+			return fail(m, err)
+		}
 		return fail(pushMessage(err), err)
 	}
 	return nil

@@ -200,16 +200,16 @@ func TestAWrongAccountSignInIsKeptOnceForTheNewConnection(t *testing.T) {
 	if err := f.db.StashGoogleToken(f.h.ID, "n9", "papa@gmail.com", "1//papa-refresh", t0); err != nil {
 		t.Fatal(err)
 	}
-	account, token, err := f.db.TakeStashedGoogleToken(f.h.ID, "n9")
+	account, token, err := f.db.TakeStashedGoogleToken(f.h.ID, "n9", t0)
 	if err != nil || account != "papa@gmail.com" || token != "1//papa-refresh" {
 		t.Fatalf("stash = %q %q %v", account, token, err)
 	}
-	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n9"); !errors.Is(err, store.ErrNotFound) {
+	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n9", t0); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("second take: %v", err)
 	}
 	other, _ := f.db.CreateHousehold(store.Household{Name: "Other"})
 	f.db.StashGoogleToken(f.h.ID, "n9", "papa@gmail.com", "1//papa-refresh", t0)
-	if _, _, err := f.db.TakeStashedGoogleToken(other.ID, "n9"); !errors.Is(err, store.ErrNotFound) {
+	if _, _, err := f.db.TakeStashedGoogleToken(other.ID, "n9", t0); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("another household takes it: %v", err)
 	}
 	f.db.SQL().Exec(`PRAGMA wal_checkpoint(TRUNCATE)`)
@@ -229,14 +229,14 @@ func TestExpiredSignInsLoseTheirStashedTokenWithoutANewSignIn(t *testing.T) {
 	if err := f.db.PruneGoogleLogins(t0.Add(10 * time.Minute)); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n10"); err != nil {
+	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n10", t0.Add(10*time.Minute)); err != nil {
 		t.Fatalf("pruned before the sign-in expired: %v", err)
 	}
 	f.db.StashGoogleToken(f.h.ID, "n10", "papa@gmail.com", "1//papa-refresh", t0)
 	if err := f.db.PruneGoogleLogins(t0.Add(16 * time.Minute)); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n10"); !errors.Is(err, store.ErrNotFound) {
+	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n10", t0.Add(16*time.Minute)); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("an expired sign-in still holds a token: %v", err)
 	}
 	if err := f.db.PruneGoogleLogins(t0.Add(26 * time.Hour)); err != nil {
@@ -262,14 +262,26 @@ func TestAStashedTokenLivesFromTheStashNotFromTheStartOfTheSignIn(t *testing.T) 
 	if err := f.db.PruneGoogleLogins(late.Add(store.StashLifetime - time.Minute)); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n11"); err != nil {
+	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n11", late.Add(store.StashLifetime-time.Minute)); err != nil {
 		t.Fatalf("the offer ran out with the sign-in's window, not its own: %v", err)
 	}
 	f.db.StashGoogleToken(f.h.ID, "n11", "papa@gmail.com", "1//papa-refresh", late)
 	if err := f.db.PruneGoogleLogins(late.Add(store.StashLifetime + time.Minute)); err != nil {
 		t.Fatal(err)
 	}
-	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n11"); !errors.Is(err, store.ErrNotFound) {
+	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n11", late.Add(store.StashLifetime+time.Minute)); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("a stashed token outlived its own lifetime: %v", err)
+	}
+}
+
+// Review of ticket 18: the offer ends after StashLifetime even if no scheduler tick has pruned it yet.
+func TestAStashedTokenIsNotTakenAfterItsLifetimeEvenUnpruned(t *testing.T) {
+	f := newGoogleFixture(t)
+	login := store.GoogleLogin{Nonce: "n12", PersonID: f.person.ID, Verifier: "v", RedirectURI: googleauth.RelayRedirectURI, ExpiresAt: t0.Add(15 * time.Minute)}
+	f.db.CreateGoogleLogin(f.h.ID, login, t0)
+	f.db.TakeGoogleLogin(f.h.ID, "n12", t0)
+	f.db.StashGoogleToken(f.h.ID, "n12", "papa@gmail.com", "1//papa-refresh", t0)
+	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n12", t0.Add(store.StashLifetime+time.Second)); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("an unpruned expired stash was taken: %v", err)
 	}
 }

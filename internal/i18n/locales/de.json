@@ -3145,6 +3145,7 @@
   "sync.fail.google_client": "Google nimmt die Client-ID oder den Clientschlüssel nicht an: App-Registrierung prüfen",
   "sync.fail.google_app": "Für Google ist keine App-Registrierung eingetragen",
   "sync.fail.google_token": "Google hat das Zugriffstoken abgelehnt; es wird bei der nächsten Synchronisierung erneuert",
+  "sync.fail.google_forbidden": "Google hat diese Anfrage abgelehnt (Kontingent, Anfragelimit oder fehlende Kalenderberechtigung); die Box versucht es bei der nächsten Synchronisierung erneut",
   "google.sk.addr.sample": "http://127.0.0.1:8099/?state=hj1.Zm9vYmFy.Kq7&code=4/0AVMBsJh9xR2…&scope=https://www.googleapis.com/auth/calendar",
   "google.sk.allow.tick": "✓"
 }

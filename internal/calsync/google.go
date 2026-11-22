@@ -184,3 +184,15 @@ func (s *Service) googleRefused(conn store.Connection, err error) bool {
 	s.tokens.forget(conn.ID)
 	return true
 }
+
+// googleMessage is the sync log message for a failure of a Google connection
+// that has no password and is not a refused token: Google answers 403 for quota,
+// rate limits and missing calendar permissions, which neither a new password
+// nor a read-only calendar helps with.
+func googleMessage(conn store.Connection, err error) (i18n.Message, bool) {
+	var status *caldavclient.StatusError
+	if conn.Kind != "google" || !errors.As(err, &status) || status.Code != http.StatusForbidden {
+		return i18n.Message{}, false
+	}
+	return i18n.Msg("sync.fail.google_forbidden"), true
+}

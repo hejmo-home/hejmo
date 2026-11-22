@@ -331,14 +331,14 @@ func (db *DB) StashGoogleToken(householdID, nonce, account, refreshToken string,
 
 // TakeStashedGoogleToken returns the stashed account and refresh token once
 // and forgets them; ErrNotFound if there are none.
-func (db *DB) TakeStashedGoogleToken(householdID, nonce string) (account, refreshToken string, err error) {
+func (db *DB) TakeStashedGoogleToken(householdID, nonce string, at time.Time) (account, refreshToken string, err error) {
 	tx, err := db.sql.Begin()
 	if err != nil {
 		return "", "", err
 	}
 	defer tx.Rollback()
 	var acc, sealed sql.NullString
-	err = tx.QueryRow(`SELECT pending_account, pending_token FROM google_login WHERE nonce = ? AND household_id = ?`, nonce, householdID).Scan(&acc, &sealed)
+	err = tx.QueryRow(`SELECT pending_account, pending_token FROM google_login WHERE nonce = ? AND household_id = ? AND pending_at >= ?`, nonce, householdID, stamp(at.Add(-StashLifetime))).Scan(&acc, &sealed)
 	if errors.Is(err, sql.ErrNoRows) || (err == nil && !sealed.Valid) {
 		return "", "", ErrNotFound
 	}

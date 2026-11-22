@@ -339,8 +339,8 @@ func TestGoogleAnswering403KeepsTheAccessToken(t *testing.T) {
 		t.Fatal("a 403 did not fail the sync")
 	}
 	log, _ := g.db.SyncLog(g.h.ID, 10)
-	if len(log) != 1 || log[0].Message.Key == "sync.fail.google_token" {
-		t.Fatalf("sync log = %+v", log)
+	if len(log) != 1 || log[0].Message.Key != "sync.fail.google_forbidden" {
+		t.Fatalf("sync log = %+v, want sync.fail.google_forbidden", log)
 	}
 	g.stateErr = nil
 	if err := g.sync(t); err != nil {
@@ -348,6 +348,27 @@ func TestGoogleAnswering403KeepsTheAccessToken(t *testing.T) {
 	}
 	if g.token.calls() != 1 {
 		t.Fatalf("a valid token was thrown away: %d token calls", g.token.calls())
+	}
+}
+
+// Review of ticket 18: a Google 403 on write-back is a quota or permission message, not "switch to read-only".
+func TestGoogleAnswering403OnWriteBackLogsTheGoogleMessage(t *testing.T) {
+	g := newGoogleFixture(t)
+	if err := g.sync(t); err != nil {
+		t.Fatal(err)
+	}
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	if _, err := g.db.CreateEvent(g.h.ID, calendar.Event{CalendarID: g.cal.ID, Title: "Piano",
+		Start: time.Date(2026, 11, 21, 15, 0, 0, 0, berlin), End: time.Date(2026, 11, 21, 16, 0, 0, 0, berlin)}); err != nil {
+		t.Fatal(err)
+	}
+	g.putErr = &caldavclient.StatusError{Code: 403, Status: "403 Forbidden"}
+	if err := g.svc.Push(context.Background(), g.h.ID, g.cal.ID); err == nil {
+		t.Fatal("a 403 did not fail the write-back")
+	}
+	log, _ := g.db.SyncLog(g.h.ID, 10)
+	if len(log) != 1 || log[0].Message.Key != "sync.fail.google_forbidden" {
+		t.Fatalf("sync log = %+v, want sync.fail.google_forbidden", log)
 	}
 }
 
@@ -364,7 +385,7 @@ func TestTheSchedulerClearsAnExpiredStashedToken(t *testing.T) {
 	}
 	g.clock = g.clock.Add(store.StashLifetime + 20*time.Minute)
 	g.svc.RunDue(context.Background())
-	if _, _, err := g.db.TakeStashedGoogleToken(g.h.ID, "n1"); !errors.Is(err, store.ErrNotFound) {
+	if _, _, err := g.db.TakeStashedGoogleToken(g.h.ID, "n1", g.clock.Add(-store.StashLifetime)); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("RunDue left the token: %v", err)
 	}
 }

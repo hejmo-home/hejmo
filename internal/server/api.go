@@ -153,6 +153,7 @@ var apiRoutes = []APIRoute{
 	{"GET", "/displays", auth.Perm("displays", auth.Read), (*server).apiListDisplays},
 	{"POST", "/displays", auth.Perm("displays", auth.Write), (*server).apiPairDisplay},
 	{"PATCH", "/displays/{id}", auth.Perm("displays", auth.Write), (*server).apiUpdateDisplay},
+	{"POST", "/displays/{id}/layout", auth.Perm("displays", auth.Write), (*server).apiCopyDisplayLayout},
 	{"DELETE", "/displays/{id}", auth.Perm("displays", auth.Delete), (*server).apiRevokeDisplay},
 	{"GET", "/albums", auth.Perm("displays", auth.Read), (*server).apiListAlbums},
 	{"POST", "/albums", auth.Perm("displays", auth.Write), (*server).apiCreateAlbum},

@@ -13,9 +13,10 @@
       {{template "optionsClose" (dict "Root" . "Name" "type")}}
     </fieldset>
 
+    {{template "layoutSection" .}}
+
     <fieldset>
       <legend>{{t "displays.legend.shows"}}</legend>
-      {{template "switch" (dict "Name" "show_tomorrow" "Label" (t "displays.show_tomorrow") "OnText" (t "displays.show_tomorrow.on") "OffText" (t "displays.show_tomorrow.off") "Checked" .D.ShowTomorrow)}}
       {{$th := .D.Theme}}
       {{template "optionsOpen" (dict "Class" "seg" "Legend" (t "displays.theme"))}}
         {{range .D.Themes}}{{template "option" (dict "Name" "theme" "Value" (printf "%s" .) "Label" (t (printf "displays.theme.%s" .)) "Checked" (eq (printf "%s" .) $th))}}{{end}}
@@ -64,6 +65,8 @@
     {{template "moreClose"}}
     <button class="button" type="submit">{{t "displays.save"}}</button>
   </form>
+  {{if .D.Layout.Copy}}<form id="copy-layout" method="post" action="/displays/{{.D.ID}}/layout/copy"></form>{{end}}
 
   {{template "danger" (dict "Label" (t "displays.unpair") "Explain" (tf "displays.unpair.explain" "name" .D.Name) "Confirm" (tf "displays.unpair.confirm" "name" .D.Name) "Action" (printf "/displays/%s/unpair" .D.ID) "CancelHref" (printf "/displays/%s" .D.ID))}}
+  <script src="/static/layout.js" defer></script>
 {{template "foot"}}

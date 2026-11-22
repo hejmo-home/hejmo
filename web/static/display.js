@@ -62,8 +62,14 @@
       })
       .catch(saverRestart);
   }
+  // The box learns how the display hangs, so the layout preview on the settings
+  // page is drawn that way (ticket 180).
+  function orientation() {
+    var w = typeof window !== "undefined" ? window : {};
+    return w.innerHeight > w.innerWidth ? "portrait" : "landscape";
+  }
   function check() {
-    fetch("/display/state", { cache: "no-store", credentials: "same-origin" })
+    fetch("/display/state?orientation=" + orientation(), { cache: "no-store", credentials: "same-origin" })
       .then(function (r) { return r.json(); })
       .then(function (s) {
         if (s.state !== state || (s.code || "") !== code) { location.reload(); return; }

@@ -25,8 +25,8 @@ func (db *DB) SetCalendarReadOnly(householdID, calendarID string, readOnly bool)
 	if err != nil {
 		return err
 	}
-	if kind != "caldav" && kind != "outlook" {
-		return fmt.Errorf("%w: only calendars from CalDAV or Outlook can be switched between two-way and read-only", ErrInvalid)
+	if kind != "caldav" && kind != "google" && kind != "outlook" {
+		return fmt.Errorf("%w: only calendars from CalDAV, Google or Outlook can be switched between two-way and read-only", ErrInvalid)
 	}
 	if !readOnly {
 		var locked bool
@@ -74,7 +74,7 @@ func (m *pushMarker) old(eventID string) error {
 	var cal, address string
 	var readOnly, invited bool
 	err := m.tx.QueryRow(`SELECT e.calendar_id, e.remote_url, c.read_only, e.invited FROM events e JOIN calendars c ON c.id = e.calendar_id
-		WHERE e.id = ? AND e.remote_url IS NOT NULL AND c.kind IN ('caldav', 'outlook')`, eventID).Scan(&cal, &address, &readOnly, &invited)
+		WHERE e.id = ? AND e.remote_url IS NOT NULL AND c.kind IN ('caldav', 'google', 'outlook')`, eventID).Scan(&cal, &address, &readOnly, &invited)
 	if errors.Is(err, sql.ErrNoRows) {
 		return nil
 	}
@@ -103,7 +103,7 @@ func (m *pushMarker) row(id string) (eventRow, bool, error) {
 	var readOnly bool
 	err := m.tx.QueryRow(`SELECT e.calendar_id, c.remote_url, e.series_id, e.recurrence_id, e.remote_url, e.remote_key, c.read_only, c.kind
 		FROM events e JOIN calendars c ON c.id = e.calendar_id
-		WHERE e.id = ? AND c.kind IN ('caldav', 'outlook') AND c.remote_url IS NOT NULL`, id).
+		WHERE e.id = ? AND c.kind IN ('caldav', 'google', 'outlook') AND c.remote_url IS NOT NULL`, id).
 		Scan(&r.calendarID, &r.base, &r.seriesID, &r.recurrenceID, &r.remoteURL, &r.remoteKey, &readOnly, &r.kind)
 	if errors.Is(err, sql.ErrNoRows) {
 		return r, false, nil

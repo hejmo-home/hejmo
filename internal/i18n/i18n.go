@@ -12,6 +12,7 @@ import (
 	"sort"
 	"strconv"
 	"strings"
+	"sync"
 )
 
 // Default is the language used when nothing better matches.
@@ -53,14 +54,17 @@ func Load() (*Bundle, error) {
 	return b, nil
 }
 
-// MustLoad is Load for program start; it panics on a broken catalogue.
-func MustLoad() *Bundle {
+// MustLoad returns the embedded catalogues, loaded once per process and shared:
+// a Bundle is never changed after Load, and reading the JSON again for every
+// server and place list cost tens of MB per test (ticket 238). It panics on a
+// broken catalogue.
+var MustLoad = sync.OnceValue(func() *Bundle {
 	b, err := Load()
 	if err != nil {
 		panic(err)
 	}
 	return b
-}
+})
 
 // Languages returns the available language codes, sorted.
 func (b *Bundle) Languages() []string {

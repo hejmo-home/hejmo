@@ -1,5 +1,6 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
-  <h1{{if .Outlook}} class="host"{{end}}>{{.Connection.Username}}</h1>
+  <h1{{if or .Google .Outlook}} class="host"{{end}}>{{.Connection.Username}}</h1>
+  {{range .GNotices}}{{template "gNotice" (dict "N" . "Home" false "Console" $.GConsole)}}{{end}}
   {{with .Refused}}<p class="error" role="alert">{{.}} <a href="#login">{{t "connections.error.refused_link"}}</a></p>{{end}}
   {{if and .Error (not .ErrorField)}}{{template "error" .}}{{end}}
   {{template "facts" .Facts}}
@@ -7,6 +8,10 @@
   <form method="post" action="/connections/{{.Connection.ID}}/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/{{.Connection.ID}}/event-counts" data-count-loading="{{t "connections.count.loading"}}" data-count-unknown="{{t "connections.count.unknown"}}">
     <h2>{{t "connections.choose.heading"}}</h2>
     <p class="lead">{{if .Outlook}}{{t "outlook.choose.lead"}}{{else}}{{t "connections.choose.lead"}}{{end}}</p>
+    {{if .Google}}<div class="why access"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><div><b>{{t "google.access.title"}}</b><ul>
+      <li><b>{{t "google.access.l1.b"}}</b> {{t "google.access.l1.t"}}</li>
+      <li><b>{{t "google.access.l2.b"}}</b> {{t "google.access.l2.t"}}</li>
+      <li><b>{{t "google.access.l3.b"}}</b> {{t "google.access.l3.t"}}</li></ul></div></div>{{end}}
     {{if .Outlook}}<div class="why access"><div><b>{{t "outlook.access.title"}}</b><ul>
       <li>{{rich (t "outlook.access.own")}}</li><li>{{rich (t "outlook.access.shared")}}</li><li>{{rich (t "outlook.access.invites")}}</li></ul></div></div>{{end}}
     {{range $cal := .Found}}
@@ -14,11 +19,12 @@
     <input type="hidden" name="shown" value="{{$cal.URL}}">
     <fieldset class="calchoice{{if $cal.On}} is-on{{end}}{{if and $here (eq $.ErrorField "calendar")}} invalid{{end}}">
       <div class="card-row">
-        <span class="t"><span class="src">{{if $.Outlook}}{{(index $.Cards $cal.URL).Kicker}}{{else}}{{$.SourceKicker}}{{end}}</span><b>{{or $cal.SourceName $cal.Name}}</b>
+        <span class="t"><span class="src">{{if $.Outlook}}{{(index $.Cards $cal.URL).Kicker}}{{else}}{{or $cal.Source $.SourceKicker}}{{end}}</span><b>{{or $cal.SourceName $cal.Name}}</b>
           <span class="state{{if $cal.On}} is-on{{end}}"><span class="on-text"><span class="w">{{t "connections.state.on"}}</span> {{t "connections.state.on_rest"}}</span><span class="off-text"><span class="w">{{t "connections.state.off"}}</span> {{t "connections.state.off_rest"}}</span></span></span>
         <label class="switch"><input type="checkbox" role="switch" name="calendar" value="{{$cal.URL}}"{{if $cal.On}} checked{{end}} aria-label="{{or $cal.SourceName $cal.Name}}"{{if and $here (eq $.ErrorField "calendar")}} aria-invalid="true" aria-describedby="err-calendar"{{end}}></label>
       </div>
       <div class="calfacts">
+        {{with $cal.AccessLabel}}<p class="acc"><span><b>{{.}}</b> {{$cal.AccessText}}</span></p>{{end}}
         {{if $.Outlook}}{{with index $.Cards $cal.URL}}<p class="acc{{if eq .AccessKind "ro"}} ro{{end}}">{{if eq .AccessKind "ro"}}<svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>{{else}}<svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>{{end}}<span>{{rich .Access}}</span></p>{{end}}{{end}}
         <p class="count" data-count-for="{{$cal.URL}}" data-state="loading">{{template "calIcon"}}{{template "infoIcon"}}<span class="ct">{{t "connections.count.nojs"}}</span><span class="info-text">{{t "connections.count.empty"}}</span><span class="warn-text">{{t "connections.count.empty_on"}}</span></p>{{if $cal.LastSync}}
         <p class="sync"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>{{$cal.LastSync}}</p>{{end}}
@@ -56,11 +62,11 @@
     {{range .WriteBack}}
     <div class="card-row">
       <span class="t"><b>{{.Name}}</b>
-        <span class="hint">{{if .TwoWay}}{{t "calendars.two_way"}}{{else}}{{t "connections.writeback.readonly"}}{{end}}</span></span>
-      {{if .TwoWay}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="1"><button class="button secondary" type="submit" title="{{t "calendars.make_read_only_hint"}}">{{t "calendars.make_read_only"}}</button></form>
+        <span class="hint">{{if .Locked}}{{t "google.writeback.locked"}}{{else if .TwoWay}}{{t "calendars.two_way"}}{{else}}{{t "connections.writeback.readonly"}}{{end}}</span></span>
+      {{if .Locked}}{{else if .TwoWay}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="1"><button class="button secondary" type="submit" title="{{t "calendars.make_read_only_hint"}}">{{t "calendars.make_read_only"}}</button></form>
       {{else}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="0"><button class="button secondary" type="submit">{{t "calendars.make_two_way"}}</button></form>{{end}}
     </div>
-    {{if .TwoWay}}<p class="hint">{{t "calendars.make_read_only_hint"}}</p>{{end}}
+    {{if and .TwoWay (not .Locked)}}<p class="hint">{{t "calendars.make_read_only_hint"}}</p>{{end}}
     {{end}}
   </section>
   {{end}}
@@ -76,7 +82,19 @@
   </section>
   {{end}}
 
-  {{if .Outlook}}
+  {{if .Google}}<section id="login" class="steps">{{template "moreOpen" (dict "Label" (t "google.login.label") "Summary" (t "google.login.summary") "Open" true)}}
+    <p>{{if .GNotices}}{{t "google.login.text_expired"}}{{else}}{{t "google.login.text"}}{{end}}</p>
+    <a class="button secondary" href="/connections/google/signin?connection={{.Connection.ID}}">{{t "google.resignin.title"}}</a>
+    <form method="post" action="/connections/google/app" autocomplete="off">
+      <input type="hidden" name="connection" value="{{.Connection.ID}}">
+      {{template "moreOpen" (dict "Label" (t "google.replace") "Summary" (t "google.replace.sum") "Open" (or (eq .ErrorField "client_id") (eq .ErrorField "client_secret")))}}
+        <p>{{if gt (len .GAccounts) 1}}{{t "google.replace.text_many"}} {{.GApp.AccountsHTML}}{{else}}{{t "google.replace.text_one_a"}} <b class="host">{{.Connection.Username}}</b> {{t "google.replace.text_one_b"}}{{end}}</p>
+        {{template "gApp" (dict "Root" . "ClientID" "" "Retype" false)}}
+        <button class="button secondary" type="submit" name="action" value="replace">{{t "google.submit"}}</button>
+      {{template "moreClose"}}
+    </form>
+  {{template "moreClose"}}</section>
+  {{else if .Outlook}}
   <section class="steps ms-login">
     <h2>{{t "outlook.login.title"}}</h2>
     <p class="hint">{{t "outlook.login.hint"}}</p>
@@ -91,7 +109,16 @@
   {{template "moreClose"}}</section>
   {{end}}
 
-  {{if .Outlook}}
+  {{if .Google}}{{template "dangerOpen" (dict "Label" (t "connections.remove"))}}
+    <p>{{.Explain}}</p>
+    <ul>{{range .Names}}<li><strong>{{.}}</strong></li>{{end}}</ul>
+    <p>{{rich (tf "google.remove.access" "url" .GConsole.access)}}</p>
+    <div class="confirm">
+      <form method="post" action="/connections/{{.Connection.ID}}/delete"><button class="button danger" type="submit">{{tf "google.remove.confirm" "name" .Connection.Username}}</button></form>
+      <a href="/connections/{{.Connection.ID}}">{{t "danger.cancel"}}</a>
+    </div>
+  {{template "dangerClose"}}
+  {{else if .Outlook}}
   {{template "dangerOpen" (dict "Label" (t "connections.remove"))}}
     <p>{{t "outlook.remove.explain"}}</p>
     {{with .Gone}}<ul>{{range .}}<li><strong>{{.Name}}</strong>{{if .Source}} {{repl (t "outlook.remove.source") "{name}" .Source}}{{end}}</li>{{end}}</ul>{{end}}

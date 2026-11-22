@@ -242,7 +242,8 @@ type noteForm struct {
 }
 
 func (s *server) renderHome(w http.ResponseWriter, r *http.Request, status int, person store.Person, h store.Household, form *noteForm) {
-	data := map[string]any{"Person": person, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": person.Role == store.RoleParent && s.httpsWarning(), "Update": s.parentUpdateNotice(person, h), "OfflineNote": s.homeNote(r, person), "StaleUpdate": s.staleUpdate(r, person, h)}
+	data := map[string]any{"GNotices": s.googleHomeNotices(r, person, h), "Person": person, "SyncStale": s.syncStale(h.ID), "HTTPSWarning": person.Role == store.RoleParent && s.httpsWarning(), "Update": s.parentUpdateNotice(person, h), "OfflineNote": s.homeNote(r, person), "StaleUpdate": s.staleUpdate(r, person, h)}
+	googleData(data)
 	first, err := s.firstSteps(person, h, s.langOf(r))
 	if err != nil {
 		s.fail(w, "first steps", err)

@@ -98,6 +98,17 @@ type Client struct {
 // client that refuses every connection: the caller must bring one from the
 // outside gate.
 func NewClient(serverURL, user, password string, hc *http.Client) (*Client, error) {
+	return newClient(serverURL, hc, &authClient{user: user, password: password})
+}
+
+// NewBearerClient is NewClient for a server that takes an OAuth access token
+// instead of a password (Google's CalDAV API, ticket 18). The token is sent
+// only to the configured server's own domain, like a password.
+func NewBearerClient(serverURL, accessToken string, hc *http.Client) (*Client, error) {
+	return newClient(serverURL, hc, &authClient{bearer: accessToken})
+}
+
+func newClient(serverURL string, hc *http.Client, auth *authClient) (*Client, error) {
 	base, err := url.Parse(strings.TrimSpace(serverURL))
 	if err != nil || (base.Scheme != "http" && base.Scheme != "https") || base.Host == "" {
 		return nil, errors.New("not a web address")
@@ -105,7 +116,7 @@ func NewClient(serverURL, user, password string, hc *http.Client) (*Client, erro
 	if hc == nil {
 		hc = outbound.New(outbound.Closed{}, nil).Client(outbound.Calendars, 30*time.Second)
 	}
-	auth := &authClient{base: base, user: user, password: password}
+	auth.base = base
 	cp := *hc // do not change the caller's client
 	prev := hc.CheckRedirect
 	cp.CheckRedirect = func(req *http.Request, via []*http.Request) error {
@@ -124,7 +135,7 @@ func NewClient(serverURL, user, password string, hc *http.Client) (*Client, erro
 		}
 		// Go drops credentials when a redirect leaves the host's own domain
 		// tree; the host is vetted above, so send them again.
-		req.SetBasicAuth(user, password)
+		auth.sign(req)
 		return nil
 	}
 	auth.hc = &cp
@@ -167,6 +178,16 @@ type authClient struct {
 	hc             *http.Client
 	base           *url.URL
 	user, password string
+	bearer         string // an access token instead of user and password
+}
+
+// sign adds the credentials to a request.
+func (a *authClient) sign(req *http.Request) {
+	if a.bearer != "" {
+		req.Header.Set("Authorization", "Bearer "+a.bearer)
+		return
+	}
+	req.SetBasicAuth(a.user, a.password)
 }
 
 // registrable returns the registrable domain of a host ("icloud.com" for
@@ -208,7 +229,7 @@ func (a *authClient) Do(req *http.Request) (*http.Response, error) {
 	if err := a.permit(req.URL); err != nil {
 		return nil, err
 	}
-	req.SetBasicAuth(a.user, a.password)
+	a.sign(req)
 	req.Header.Set("User-Agent", "Hejmo calendar sync")
 	res, err := a.hc.Do(req)
 	if err != nil {

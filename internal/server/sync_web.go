@@ -244,11 +244,13 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		connNote = s.noteFor(r, outbound.Calendars, "outside.note.connect")
 	}
 	data := map[string]any{
+		"GNotices":   s.googleNotices(r, p),
 		"Reconnect":  notice,
 		"OfflineTop": offlineTop, "ConnNote": connNote, "CanAdd": s.canAddCalendar(),
 		"Person": p.person, "Rows": subscribed, "ConnRows": connRows, "Log": log,
 		"SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(),
 	}
+	googleData(data)
 	s.render(w, r, status, "calendars.html", data)
 }
 
@@ -267,6 +269,9 @@ func (s *server) connectionRow(r *http.Request, p principal, c store.Connection,
 		if f := s.syncFlag(r, p, cal, false); f != nil && (flag == nil || cal.Sync.LastError.Key == loginFailKey) {
 			flag = f
 		}
+	}
+	if c.Kind == "google" && !c.SignInNeededAt.IsZero() { // Google refuses the sign-in: the words say what to do
+		flag = &flagView{Kind: "problem", Text: s.say(r, i18n.Msg("google.flag.signin"))}
 	}
 	if len(names) == 0 {
 		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("connections.on_box_none"))})
@@ -293,6 +298,9 @@ func (s *server) connectionRow(r *http.Request, p principal, c store.Connection,
 
 // serviceName names the service of a connection: iCloud, or the CalDAV server's host.
 func (s *server) serviceName(r *http.Request, c store.Connection) string {
+	if c.Kind == "google" {
+		return s.say(r, i18n.Msg("connections.provider.google"))
+	}
 	if c.Kind == "outlook" {
 		return s.say(r, i18n.Msg("connections.provider.outlook"))
 	}
@@ -314,6 +322,9 @@ func connectionHost(c store.Connection) string {
 // iCloud", "Calendar on cloud.example.org"): the small line above the name at
 // the source in a card of Choose calendars.
 func (s *server) sourceKicker(r *http.Request, c store.Connection) string {
+	if c.Kind == "google" {
+		return s.say(r, i18n.Msg("google.card.source"))
+	}
 	if c.URL == iCloudServer {
 		return s.say(r, i18n.Msg("connections.card.source_icloud"))
 	}
@@ -330,6 +341,9 @@ func (s *server) nameHint(r *http.Request, c store.Connection, sourceName string
 	key := "connections.card.hint_host"
 	if c.URL == iCloudServer {
 		key = "connections.card.hint_icloud"
+	}
+	if c.Kind == "google" {
+		key = "connections.card.hint_google"
 	}
 	if c.Kind == "outlook" {
 		key = "outlook.card.hint"
@@ -440,7 +454,7 @@ func (s *server) handleCalendarPage(w http.ResponseWriter, r *http.Request) {
 	} else {
 		last.Value = p.when(c.Sync.LastSuccess)
 	}
-	facts := []factView{{Label: s.say(r, i18n.Msg("calendars.fact.address")), Value: c.URL}, forFact,
+	facts := []factView{{Label: s.say(r, i18n.Msg("calendars.fact.address")), Value: c.URL, Host: c.Kind == "google"}, forFact,
 		{Label: s.say(r, i18n.Msg("calendars.fact.color")), Value: c.Color}, last}
 	if !c.Sync.LastSuccess.IsZero() {
 		run := c.Sync.LastRun

@@ -120,7 +120,7 @@ Details decided while building #179 (grilling Q76 to Q82, preview approved 16/11
 - **Origin of an entry:** `list_entries` carries `auto` (came by itself), `auto_part` (the rule's share) and `auto_prior` (what was already entered). They back the line "1 l already entered + 3 l always". A manual quantity change drops the split; an entry that had a split then loses "kommt von selbst" too, an entry without a split keeps it.
 - **Copying a shipped article** moves its rule to the copy, so the rule follows the article the family now uses.
 - **The holiday switches itself off** on the first run after its last day; the rules run again that day.
-- **API errors:** a bad quantity answers 422 with the field `quantity.amount` or `quantity.unit`; the other fields are `list_id`, `weekday`, `every` and `start_week` (documented in `openapi.yaml`).
+- **API errors:** a bad quantity answers 422 with the field `quantity.amount` or `quantity.unit`; the other fields are `list_id`, `weekday`, `every` and `start_week` (documented in `openapi.yaml`). The web form keeps the plain `amount` and `unit` keys; only the API answers `quantity.*`.
 
 ### Smaller 0.2 tickets
 

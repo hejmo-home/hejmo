@@ -14,6 +14,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/googleauth"
 	"github.com/hejmo-home/hejmo/internal/graph"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
@@ -135,15 +136,19 @@ type Service struct {
 	now    func() time.Time
 	logger *slog.Logger
 	dial   Dialer
-	gate   *outbound.Gate
+	// google talks to Google's token service, googleDial to its CalDAV API; tokens keeps the access tokens.
+	google     *googleauth.Client
+	googleDial GoogleDialer
+	tokens     googleTokens
+	gate       *outbound.Gate
 	// ownFetch and ownDial say that a test or caller set its own; the gate then
 	// does not replace them.
-	ownFetch, ownDial bool
-	locks             sync.Map // calendar id -> *sync.Mutex: one sync per calendar at a time
-	pushes            sync.WaitGroup
-	bundle            *i18n.Bundle
-	lang              string // language of the readable audience line
-	graph             *graph.Client
+	ownFetch, ownDial, ownGoogle bool
+	locks                        sync.Map // calendar id -> *sync.Mutex: one sync per calendar at a time
+	pushes                       sync.WaitGroup
+	bundle                       *i18n.Bundle
+	lang                         string // language of the readable audience line
+	graph                        *graph.Client
 }
 
 func (s *Service) lock(calendarID string) *sync.Mutex {
@@ -179,13 +184,16 @@ func (s *Service) SetGate(g *outbound.Gate) {
 	if !s.ownDial {
 		s.dial = dialer(g)
 	}
+	if !s.ownGoogle {
+		s.google, s.googleDial = googleauth.New(g.Client(outbound.Calendars, 30*time.Second)), googleDialer(g)
+	}
 }
 
 // ServiceOf is the connection a calendar kind belongs to: the calendars one
-// for CalDAV and Outlook, the subscription one for the rest. The sync and the
+// for CalDAV, Google and Outlook, the subscription one for the rest. The sync and the
 // pages use this one mapping.
 func ServiceOf(kind string) outbound.Service {
-	if kind == "caldav" || kind == "outlook" { // Microsoft Graph is a calendar service too (ADR 0024)
+	if kind == "caldav" || kind == "google" || kind == "outlook" { // Microsoft Graph is a calendar service too (ADR 0024)
 		return outbound.Calendars
 	}
 	return outbound.ICS
@@ -276,7 +284,7 @@ func (s *Service) sync(ctx context.Context, householdID, calendarID string, run 
 		}
 		return cause
 	}
-	if cal.Kind == "caldav" {
+	if cal.Kind == "caldav" || cal.Kind == "google" {
 		return s.syncCalDAV(ctx, cal, h, at, run, fail)
 	}
 	if cal.Kind == "outlook" {
@@ -314,6 +322,9 @@ func (s *Service) sync(ctx context.Context, householdID, calendarID string, run 
 
 // RunDue syncs every calendar whose time has come.
 func (s *Service) RunDue(ctx context.Context) {
+	if err := s.db.PruneGoogleLogins(s.now()); err != nil {
+		s.logger.Error("calendar sync: prune Google sign-ins", "err", err)
+	}
 	due, err := s.db.DueCalendars(s.now())
 	if err != nil {
 		s.logger.Error("calendar sync: list due calendars", "err", err)

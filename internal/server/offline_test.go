@@ -727,3 +727,19 @@ func TestTheHouseholdSettingsPageSaysWhatOfflineModeSwitchesOff(t *testing.T) {
 	offlineOn(t, b)
 	mustContain(t, getEN(b, "/settings/household").body, `class="offline-note"`, "Offline mode is on.")
 }
+
+// Review of ticket 18: a Google-only household must see every host the box asks
+// (the token service and the calendar list too) and its sync interval.
+func TestTheCalendarRowNamesGoogleHostsAndTheSyncInterval(t *testing.T) {
+	b := signedInBox(t)
+	h, _ := b.db.HomeHousehold()
+	conn, err := b.db.CreateGoogleConnection(h.ID, "mama@gmail.com", "refresh-1", b.now)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := b.db.AddGoogleCalendar(h.ID, conn.ID, store.NewGoogleCalendar{Name: "Mama", CalendarID: "mama@gmail.com", Color: "#2F5E7A", IntervalMinutes: 15, Now: b.now}); err != nil {
+		t.Fatal(err)
+	}
+	r := getEN(b, "/settings/connections")
+	mustContain(t, r.body, "apidata.googleusercontent.com", "oauth2.googleapis.com", "www.googleapis.com", "every 15 minutes")
+}

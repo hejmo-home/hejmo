@@ -38,6 +38,7 @@ func TestConnectNewShowsTheGuidesAndChoosesOnlyTheServiceOfTheQuery(t *testing.T
 		"/connections/new?service=icloud":  "icloud",
 		"/connections/new?service=caldav":  "caldav",
 		"/connections/new?service=outlook": "outlook",
+		"/connections/new?service=google":  "google",
 		"/connections/new?service=bogus":   "",
 	} {
 		r := b.get(path)
@@ -45,8 +46,8 @@ func TestConnectNewShowsTheGuidesAndChoosesOnlyTheServiceOfTheQuery(t *testing.T
 			t.Fatalf("%s = %d\n%s", path, r.status, r.body)
 		}
 		block := connectBlock(t, r.body)
-		if n := strings.Count(block, `name="service"`); n != 4 {
-			t.Errorf("%s: %d service radios, want 4 (iCloud, Outlook, other server, calendar link)", path, n)
+		if n := strings.Count(block, `name="service"`); n != 5 {
+			t.Errorf("%s: %d service radios, want 5 (iCloud, Google, Outlook, other server, calendar link)", path, n)
 		}
 		checked := regexp.MustCompile(`<input type="radio" name="service" value="(\w+)" checked>`).FindAllStringSubmatch(block, -1)
 		if want == "" && len(checked) != 0 || want != "" && (len(checked) != 1 || checked[0][1] != want) {
@@ -110,13 +111,18 @@ func TestConnectGuideLinksOpenInANewTab(t *testing.T) {
 	}
 }
 
+// valuesRe is what a parent types in at Google (ticket 18, Q155): a value with a copy button, which is
+// no address to open. The rule below applies to pages you open.
+var valuesRe = regexp.MustCompile(`(?s)<dl class="vals">.*?</dl>`)
+
 // The product owner's rule (15/11/2026): an address in a guide is a link, never plain text.
+// Q155 (17/11/2026): values typed in at Google are shown as values with a copy button.
 func TestConnectGuideHasNoBareAddress(t *testing.T) {
 	t.Parallel()
 	b := signedInAPI(t).b
 	for _, lang := range []string{"de", "en"} {
 		r := b.do(http.MethodGet, "/connections/new?service=caldav", nil, map[string]string{"Accept-Language": lang})
-		text := tagRe.ReplaceAllString(anchorRe.ReplaceAllString(connectBlock(t, r.body), " "), " ")
+		text := tagRe.ReplaceAllString(anchorRe.ReplaceAllString(valuesRe.ReplaceAllString(connectBlock(t, r.body), " "), " "), " ")
 		if m := addressRe.FindString(text); m != "" {
 			t.Errorf("%s: bare address %q in the guide text:\n%s", lang, m, text)
 		}

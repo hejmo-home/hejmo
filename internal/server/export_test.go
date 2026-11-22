@@ -59,3 +59,6 @@ func CountLanguageLookups(t *testing.T) func() int {
 	t.Cleanup(func() { languageLookups = func() {} })
 	return func() int { languageLookups = func() {}; return n }
 }
+
+// RelayUsable is relayUsable, for the test of where the relay page may go back to.
+func RelayUsable(origin string) bool { return relayUsable(origin) }

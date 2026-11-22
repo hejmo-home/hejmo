@@ -157,6 +157,9 @@ func TestTheRuleKeepsRunningForAnArticleHiddenForAnAllergyAndTheEntryCarriesTheW
 	if err := b.db.SetLibrarySettings(b.h.ID, store.LibrarySettings{HideAllergen: true, Everyone: true, People: []string{}, ConfirmedBy: b.mama.ID}); err != nil {
 		t.Fatal(err)
 	}
+	if lib := b.en("/settings/lists/library?q=peanut+butter").body; !strings.Contains(textOf(lib), "Hidden because of allergy: Mia") {
+		t.Fatalf("the library does not mark the article as hidden for the allergy:\n%s", lib)
+	}
 	b.now = time.Date(2026, 11, 16, 6, 0, 0, 0, time.UTC)
 	b.rule("peanut-butter", b.shop.ID, 1, 1, list.Quantity{})
 	b.tickRunner()

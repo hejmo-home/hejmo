@@ -222,7 +222,7 @@ test('saving a quantity posts in the background; a refusal keeps the editor open
 
 // The family view with the screensaver timer (ticket 178). The page is rendered
 // once and stays for days: the timer asks the box whether the screensaver is due.
-function family(answers, attrs) {
+function family(answers, attrs, size) {
   const timers = [];
   const intervals = [];
   const requests = [];
@@ -247,6 +247,7 @@ function family(answers, attrs) {
   const clearTimeout = (t) => { if (t) t.live = false; };
   const sandbox = { document, fetch, Intl, Date, encodeURIComponent, location, setInterval: (fn) => intervals.push(fn), setTimeout, clearTimeout };
   sandbox.window = sandbox;
+  Object.assign(sandbox, size || {});
   vm.runInNewContext(source, sandbox);
   const live = () => timers.filter((t) => t.live);
   return { timers, live, intervals, requests, location, listeners };
@@ -401,4 +402,15 @@ test('the next tap on a tile clears its error and its red frame', async () => {
   p.state.listeners.submit(submitEvent(form));
   assert.ok(!li.queryFerr(), 'the old error is gone');
   assert.ok(!('aria-invalid' in li.attrs), 'and the frame with it');
+});
+
+// Ticket 180: the box learns how the display hangs, so the layout preview on the
+// settings page is drawn that way.
+test('the regular check tells the box whether the display hangs in portrait or landscape', () => {
+  const portrait = family([{ state: 'paired' }], {}, { innerWidth: 768, innerHeight: 1024 });
+  portrait.intervals[0]();
+  assert.equal(portrait.requests[0], '/display/state?orientation=portrait');
+  const landscape = family([{ state: 'paired' }], {}, { innerWidth: 1024, innerHeight: 768 });
+  landscape.intervals[0]();
+  assert.equal(landscape.requests[0], '/display/state?orientation=landscape');
 });

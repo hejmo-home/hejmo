@@ -17,6 +17,7 @@ import (
 // web UI is opened, then the setup wizard starts (home location, first parent
 // account, parent PIN).
 func TestUnconfiguredBoxStartsSetupWizard(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	if r := b.get("/"); r.status != http.StatusSeeOther || r.location != "/setup" {
 		t.Fatalf("GET / = %d %q, want 303 to /setup", r.status, r.location)
@@ -30,6 +31,7 @@ func TestUnconfiguredBoxStartsSetupWizard(t *testing.T) {
 }
 
 func TestSetupWizardSpeaksEnglish(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.do(http.MethodGet, "/setup", nil, map[string]string{"Accept-Language": "en-GB,en;q=0.9"})
 	for _, want := range []string{"Your account", "Home location", "The town gives the weather and the sunrise and sunset, the state the public holidays.", "Parent PIN", `lang="en"`, "Create account"} {
@@ -40,6 +42,7 @@ func TestSetupWizardSpeaksEnglish(t *testing.T) {
 }
 
 func TestSetupSavesAndConfirmsTOTP(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 
 	r := b.post("/setup", validSetupForm())
@@ -81,7 +84,7 @@ func TestSetupSavesAndConfirmsTOTP(t *testing.T) {
 		t.Error("wrong code shows no error message")
 	}
 	code, _ := auth.TOTPCode(secret, b.now)
-	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusOK || !strings.Contains(r.body, `action="/"`) {
+	if r := b.post("/setup/totp", url.Values{"code": {code}}); r.status != http.StatusOK || !strings.Contains(r.body, `action="/account/recovery-codes/saved"`) {
 		t.Fatalf("right code = %d, want 200 with the recovery codes and a way on\n%s", r.status, r.body)
 	}
 	if !b.db.Configured() {
@@ -99,13 +102,15 @@ func TestSetupSavesAndConfirmsTOTP(t *testing.T) {
 }
 
 func TestSetupRejectsInvalidInput(t *testing.T) {
+	t.Parallel()
 	cases := map[string]func(url.Values){
 		"short password": func(f url.Values) { f.Set("password", "short") },
 		"bad PIN":        func(f url.Values) { f.Set("pin", "12a") },
 		"no name":        func(f url.Values) { f.Set("name", " ") },
 		"no username":    func(f url.Values) { f.Set("username", "") },
 		"unknown region": func(f url.Values) { f.Set("region", "XX-YY") },
-		"no home":        func(f url.Values) { f.Set("home_name", "") },
+		"no home":        func(f url.Values) { f.Del("place_id") },
+		"unknown place":  func(f url.Values) { f.Set("place_id", "42") },
 	}
 	for name, mutate := range cases {
 		t.Run(name, func(t *testing.T) {
@@ -127,6 +132,7 @@ func TestSetupRejectsInvalidInput(t *testing.T) {
 }
 
 func TestUnfinishedSetupCanStartOver(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	b.logout()
@@ -145,6 +151,7 @@ func TestUnfinishedSetupCanStartOver(t *testing.T) {
 }
 
 func TestTOTPStepNeedsTheSetupSession(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	b.logout()
@@ -154,6 +161,7 @@ func TestTOTPStepNeedsTheSetupSession(t *testing.T) {
 }
 
 func TestFormsRejectForeignOrigin(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.do(http.MethodPost, "/setup", validSetupForm(), map[string]string{"Origin": "http://evil.example"})
 	if r.status != http.StatusForbidden {
@@ -171,6 +179,7 @@ var qrModuleRe = regexp.MustCompile(`M(\d+) (\d+)h1v1h-1z`)
 // exactly the page's otpauth URI, served inline, with a text alternative in both
 // locales; key and link remain.
 func TestSetupTOTPPageShowsQRCodeOfTheOtpauthURI(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 

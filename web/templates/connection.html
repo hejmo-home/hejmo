@@ -1,23 +1,25 @@
 {{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/calendars" "Text" (t "calendars.back"))}}
-  <h1>{{.Connection.Username}}</h1>
+  <h1{{if .Outlook}} class="host"{{end}}>{{.Connection.Username}}</h1>
   {{with .Refused}}<p class="error" role="alert">{{.}} <a href="#login">{{t "connections.error.refused_link"}}</a></p>{{end}}
   {{if and .Error (not .ErrorField)}}{{template "error" .}}{{end}}
   {{template "facts" .Facts}}
   {{if .Found}}
   <form method="post" action="/connections/{{.Connection.ID}}/calendars" class="steps" data-counts-url="/api/v1/calendar-connections/{{.Connection.ID}}/event-counts" data-count-loading="{{t "connections.count.loading"}}" data-count-unknown="{{t "connections.count.unknown"}}">
     <h2>{{t "connections.choose.heading"}}</h2>
-    <p class="lead">{{t "connections.choose.lead"}}</p>
+    <p class="lead">{{if .Outlook}}{{t "outlook.choose.lead"}}{{else}}{{t "connections.choose.lead"}}{{end}}</p>
+    {{if .Outlook}}<div class="why access"><div><b>{{t "outlook.access.title"}}</b><ul>
+      <li>{{rich (t "outlook.access.own")}}</li><li>{{rich (t "outlook.access.shared")}}</li><li>{{rich (t "outlook.access.invites")}}</li></ul></div></div>{{end}}
     {{range $cal := .Found}}
     {{$here := eq $.ErrorCalendar $cal.URL}}
     <input type="hidden" name="shown" value="{{$cal.URL}}">
     <fieldset class="calchoice{{if $cal.On}} is-on{{end}}{{if and $here (eq $.ErrorField "calendar")}} invalid{{end}}">
       <div class="card-row">
-        <span class="t"><span class="src">{{$.SourceKicker}}</span><b>{{or $cal.SourceName $cal.Name}}</b>
+        <span class="t"><span class="src">{{if $.Outlook}}{{(index $.Cards $cal.URL).Kicker}}{{else}}{{$.SourceKicker}}{{end}}</span><b>{{or $cal.SourceName $cal.Name}}</b>
           <span class="state{{if $cal.On}} is-on{{end}}"><span class="on-text"><span class="w">{{t "connections.state.on"}}</span> {{t "connections.state.on_rest"}}</span><span class="off-text"><span class="w">{{t "connections.state.off"}}</span> {{t "connections.state.off_rest"}}</span></span></span>
         <label class="switch"><input type="checkbox" role="switch" name="calendar" value="{{$cal.URL}}"{{if $cal.On}} checked{{end}} aria-label="{{or $cal.SourceName $cal.Name}}"{{if and $here (eq $.ErrorField "calendar")}} aria-invalid="true" aria-describedby="err-calendar"{{end}}></label>
       </div>
       <div class="calfacts">
+        {{if $.Outlook}}{{with index $.Cards $cal.URL}}<p class="acc{{if eq .AccessKind "ro"}} ro{{end}}">{{if eq .AccessKind "ro"}}<svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M2 12s4-7 10-7 10 7 10 7-4 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg>{{else}}<svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>{{end}}<span>{{rich .Access}}</span></p>{{end}}{{end}}
         <p class="count" data-count-for="{{$cal.URL}}" data-state="loading">{{template "calIcon"}}{{template "infoIcon"}}<span class="ct">{{t "connections.count.nojs"}}</span><span class="info-text">{{t "connections.count.empty"}}</span><span class="warn-text">{{t "connections.count.empty_on"}}</span></p>{{if $cal.LastSync}}
         <p class="sync"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 11a8 8 0 0 0-14.5-4.5L4 8M4 13a8 8 0 0 0 14.5 4.5L20 16"/><path d="M4 4v4h4M20 20v-4h-4"/></svg>{{$cal.LastSync}}</p>{{end}}
       </div>
@@ -48,6 +50,20 @@
     <h2>{{t "connections.choose.heading"}}</h2>
     <div class="choose-none"><p><strong>{{t "connections.choose.none"}}</strong></p><p class="hint">{{if .ICloud}}{{t "connections.choose.none_hint_icloud"}}{{else}}{{repl (t "connections.choose.none_hint_host") "{host}" .Host}}{{end}}</p></div>
   </section>{{end}}
+  {{if .WriteBack}}
+  <section class="steps">
+    <h2>{{t "connections.writeback.heading"}}</h2>
+    {{range .WriteBack}}
+    <div class="card-row">
+      <span class="t"><b>{{.Name}}</b>
+        <span class="hint">{{if .TwoWay}}{{t "calendars.two_way"}}{{else}}{{t "connections.writeback.readonly"}}{{end}}</span></span>
+      {{if .TwoWay}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="1"><button class="button secondary" type="submit" title="{{t "calendars.make_read_only_hint"}}">{{t "calendars.make_read_only"}}</button></form>
+      {{else}}<form method="post" action="/calendars/{{.ID}}/read-only"><input type="hidden" name="read_only" value="0"><button class="button secondary" type="submit">{{t "calendars.make_two_way"}}</button></form>{{end}}
+    </div>
+    {{if .TwoWay}}<p class="hint">{{t "calendars.make_read_only_hint"}}</p>{{end}}
+    {{end}}
+  </section>
+  {{end}}
   {{if .Waste}}
   <section class="steps">
     <h2>{{t "connections.waste.heading"}}</h2>
@@ -60,14 +76,34 @@
   </section>
   {{end}}
 
+  {{if .Outlook}}
+  <section class="steps ms-login">
+    <h2>{{t "outlook.login.title"}}</h2>
+    <p class="hint">{{t "outlook.login.hint"}}</p>
+    <form method="post" action="/connections/{{.Connection.ID}}/reconnect"><button class="button secondary" type="submit">{{t "outlook.login.button"}}</button></form>
+  </section>
+  {{else}}
   <section id="login" class="steps">{{template "moreOpen" (dict "Label" (t "connections.login") "Summary" (t "connections.login.summary") "Open" .LoginOpen)}}
     <form method="post" action="/connections/{{.Connection.ID}}/credentials" class="steps" autocomplete="off">
       {{template "field" (dict "Root" . "Name" "password" "Label" (t "connections.login.field") "Type" "password" "Required" true "Autocomplete" "new-password")}}
       <button class="button secondary" type="submit">{{t "connections.login.submit"}}</button>
     </form>
   {{template "moreClose"}}</section>
+  {{end}}
 
+  {{if .Outlook}}
+  {{template "dangerOpen" (dict "Label" (t "connections.remove"))}}
+    <p>{{t "outlook.remove.explain"}}</p>
+    {{with .Gone}}<ul>{{range .}}<li><strong>{{.Name}}</strong>{{if .Source}} {{repl (t "outlook.remove.source") "{name}" .Source}}{{end}}</li>{{end}}</ul>{{end}}
+    <p>{{t "outlook.remove.permission"}} <a href="{{t "outlook.remove.url"}}" target="_blank" rel="noopener">{{t "outlook.remove.url.label"}}</a>{{t "outlook.remove.work"}} <a href="{{t "outlook.remove.work.url"}}" target="_blank" rel="noopener">{{t "outlook.remove.work.label"}}</a> {{t "connect.newtab.after"}}</p>
+    <div class="confirm">
+      <form method="post" action="/connections/{{.Connection.ID}}/delete"><button class="button danger" type="submit">{{repl (t "outlook.remove.confirm") "{account}" .Connection.Username}}</button></form>
+      <a href="/connections/{{.Connection.ID}}">{{t "danger.cancel"}}</a>
+    </div>
+  {{template "dangerClose"}}
+  {{else}}
   {{template "danger" (dict "Label" (t "connections.remove") "Explain" (or (and .ICloud (t "connections.remove.explain_icloud")) (t "connections.remove.explain")) "Names" .Names "Confirm" (t "connections.remove.confirm") "Action" (printf "/connections/%s/delete" .Connection.ID) "CancelHref" (printf "/connections/%s" .Connection.ID))}}
+  {{end}}
   <script src="/static/connection-counts.js" defer></script>
 {{template "foot"}}
 {{define "calIcon"}}<svg class="icon i-cal" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="5" width="16" height="15" rx="2"/><path d="M4 10h16M9 3v4M15 3v4"/></svg>{{end}}

@@ -304,7 +304,6 @@ a { color: var(--accent); }
 .frame-nav ul { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: var(--gap-cards); }
 .frame-nav li { flex: none; }
 .frame-nav a { display: flex; align-items: center; min-height: var(--touch-target); padding: 8px 16px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); text-decoration: none; }
-.frame-nav a[aria-current="page"] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
 [data-theme="bw"] .frame-nav a { border-width: 2px; }
 .back { display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; }
 .hub-row { display: grid; gap: 2px; min-height: var(--touch-target); text-decoration: none; color: var(--text); }
@@ -585,7 +584,10 @@ fieldset.look .pchip:has(input:focus-visible)::after, fieldset.look .pchip[data-
 .bar.before { border-top-left-radius: 0; border-bottom-left-radius: 0; }
 .bar.after { border-top-right-radius: 0; border-bottom-right-radius: 0; }
 .wk-days > li { background: var(--surface); border-radius: var(--radius-card); padding: 6px; min-height: 180px; min-width: 0; display: grid; gap: var(--gap-cards); align-content: start; }
-.wk-days .ev { background: var(--pc-tint, var(--background)); display: grid; gap: 2px; padding: 8px 8px; }
+.wk-days .ev { background: var(--pc-tint, var(--background)); display: grid; grid-template-columns: minmax(0, 1fr); gap: 2px; padding: 8px 8px; }
+.wk-days .ev > * { min-width: 0; }
+.wk-days .ev .title { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* a long word breaks at the card edge instead of widening the day column; words of 12+ letters hyphenate where the browser can (ticket 173, same rules as 172) */
+@supports (hyphenate-limit-chars: 12 5 5) { .wk-days .ev .title { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
 .wk-days ul { display: grid; gap: var(--gap-cards); }
 .wk-dayname { display: none; margin: 0; font-size: var(--fs-person-name); }
 .wk-allday { display: none !important; }
@@ -625,6 +627,42 @@ textarea { width: 100%; font: inherit; color: var(--text); background: var(--sur
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
+
+/* Home location (#86): the dashed "No place chosen yet" box. The picker itself is styled at the end of this file. */
+.place-status.missing { border: 2px dashed var(--text-secondary); }
+[data-theme="bw"] .place-status.missing { border: 2px dashed var(--text); }
+.place-privacy, .steps [data-location] { margin: 0; }
+
+/* Page padding and line breaks (product owner feedback 15/11/2026, #32 and
+   #86). The frame has one column that may be narrower than the navigation
+   row, so the page keeps the same padding on both sides and the navigation
+   wraps inside it (it does not scroll sideways); fieldsets may shrink below
+   their content. On wide screens the "Back to Settings" link and the content
+   both sit right of the navigation, which spans both rows. Words break
+   at syllables in the page language (html lang), a word longer than the line
+   breaks anywhere; nothing is cut or runs over the edge. Continuation lines
+   start under the text, not under a radio or an icon. */
+.frame { grid-template-columns: minmax(0, 1fr); }
+.frame > *, .steps fieldset, .steps fieldset > * { min-width: 0; }
+body.web { overflow-wrap: anywhere; } /* web pages only: the wall display keeps its approved layout (ADR 0015/0016) */
+/* Hyphenation only where the long-word limit is understood: Safari lacks hyphenate-limit-chars and would split short words (die-sen). There long words just break. */
+@supports (hyphenate-limit-chars: 12 5 5) { body.web { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
+@media (min-width: 900px) {
+  .frame.has-nav > .frame-nav { grid-row: span 2; }
+  .frame.has-nav > .back, .frame.has-nav > main { grid-column: 2; }
+}
+.frame-nav ul { flex-wrap: wrap; overflow-x: visible; } /* every item visible, none cut at the edge */
+input, select, textarea, .secret, .pairing-code { -webkit-hyphens: manual; hyphens: manual; }
+.choice label { grid-template-columns: auto minmax(0, 1fr); }
+.choice b, .choice small { grid-column: 2; }
+.place-status > div, .msg, .ferr { min-width: 0; }
+/* A choice of three or more sentences stacks on phones, one full-width row each. */
+@media (max-width: 599px) {
+  fieldset.seg:has(> label:nth-of-type(3)) { flex-direction: column; }
+  fieldset.seg:has(> label:nth-of-type(3)) label { flex: none; justify-content: flex-start; text-align: left; margin: -1px 0 0; border-radius: 0; }
+  fieldset.seg:has(> label:nth-of-type(3)) label:first-of-type { margin-top: 0; border-radius: var(--radius-field) var(--radius-field) 0 0; }
+  fieldset.seg:has(> label:nth-of-type(3)) label:last-of-type { border-radius: 0 0 var(--radius-field) var(--radius-field); }
+}
 
 /* Lists (ticket 6.1; ADR 0015, 0017). The overview shows calm rows that open
    a list. A list page has one add row on top, open entries with a large tick
@@ -683,13 +721,9 @@ html[data-offline] button:disabled, html[data-offline] input:disabled { opacity:
 .notice.top { margin-bottom: 14px; }
 /* ---- Detail pages and calm overview rows (ticket 111, ADR 0017) ---- */
 /* Detail pages and calm overview rows (ADR 0017). */
-/* The frame's single column must be allowed to shrink: without minmax(0, 1fr) the
-   one-line navigation sets the column to its full width and pushes the page past
-   the right edge of a 375 px phone (left margin looks wrong, text does not wrap). */
-.frame { grid-template-columns: minmax(0, 1fr); }
-.frame > * { min-width: 0; }
 .steps .card-row .t b { color: var(--text); }
-h1 { overflow-wrap: anywhere; hyphens: auto; }
+h1 { overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* a name in a heading breaks at a space or hyphen first, inside a word only when wider than the line (ticket 175) */
+.h-name { min-width: 0; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; } /* the name in a flex heading is its own shrinkable item: a word wider than the line breaks at the edge instead of widening the heading (ticket 175, as .fv .person-name) */
 .back { gap: 6px; text-decoration: none; }
 .back .icon { stroke: currentColor; }
 main > .back { margin: 0 0 4px; }
@@ -836,7 +870,7 @@ details.danger .confirm a { display: inline-flex; align-items: center; min-heigh
    no navigation, the progress of the four steps on top. Only existing tokens. */
 .wizard { max-width: 600px; margin: 0 auto; display: grid; gap: var(--gap-section); align-content: start; }
 .wizard main { display: grid; gap: var(--gap); min-width: 0; }
-.wizard h1 { margin: 0; overflow-wrap: anywhere; hyphens: manual; }
+.wizard h1 { margin: 0; min-width: 0; overflow-wrap: break-word; hyphens: manual; }
 .wizard h2 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
 .wizard p, .wizard .lead { margin: 0; }
 .wizard .notice, .wizard .error, .wizard .msg { max-width: none; margin: 0; }
@@ -1044,7 +1078,7 @@ fieldset.choice legend.sr { float: none; width: 1px; margin: -1px; }
 
 /* Personal view: tasks first and as wide as the week, progress in words on top. */
 .pv-header { justify-content: flex-start; flex-wrap: wrap; }
-.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: anywhere; }
+.pv-header h1 { margin-right: auto; min-width: 0; overflow-wrap: break-word; hyphens: manual; }
 .pv-body { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
 .pv-tasks { display: flex; flex-direction: column; padding: 0; overflow: hidden; }
 .tasks-head { flex: none; display: grid; gap: 8px; padding: var(--pad-column) var(--pad-column) 12px; border-bottom: 1px solid var(--border); }
@@ -1497,6 +1531,37 @@ p.hint.later { max-width: 560px; }
   .steps:has(input[name="source"][value="new"]:checked) .src-existing { display: none; }
 }
 
+/* Home location picker, Settings and wizard (#86, product owner decision Q1 =
+   a, 15/11/2026). Builds on the picker of ticket 133 (.place-pick, .place-list,
+   .place-status.ok): the confirmed box carries its state in words on its own
+   line (.st) and "Change" sits at the right; on phones "Change" moves under
+   the text so the name keeps the full width. While a new place is being
+   chosen in Settings, .place-keep says which place stays in use and offers to
+   keep it. Suggestions are not highlighted until the arrow keys move into
+   the list. No new tokens. */
+.place-status { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: start; gap: 6px 10px; }
+.place-status > div { display: grid; gap: 2px; }
+.place-status small { display: block; }
+.place-status .st { color: var(--text); font-weight: 600; font-size: var(--fs-meta); }
+.place-status .button { align-self: center; }
+.place-pick .hint, .place-pick .ferr { margin: 0; }
+.place-keep { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 12px; }
+.place-keep .hint { flex: 1 1 14em; }
+.place-list li b, .place-status b { hyphens: manual; }
+.place-list { gap: 0; }
+.place-list li { border-radius: 0; }
+.place-list li + li { border-top: 1px solid var(--border); }
+.place-list li:hover { background: var(--background); }
+[data-theme="bw"] .place-list li + li { border-top-color: var(--text); }
+.place-pick .lab { display: block; }
+@media (max-width: 479px) {
+  .place-status { grid-template-columns: auto minmax(0, 1fr); }
+  .place-status .button { grid-column: 2; justify-self: start; }
+}
+/* Without JavaScript each suggestion is a submit button that fills its row. */
+.place-list li > button { display: grid; gap: 1px; width: 100%; min-height: inherit; align-content: center; padding: 0; margin: 0; border: 0; background: none; color: inherit; font: inherit; text-align: left; cursor: pointer; }
+.place-list li > button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+
 /* ticket 7.4 subtasks (preview-93), on top of ticket 7.2. Uses existing tokens only. */
 
 /* Personal view and the child's tasks page: a task with subtasks is one card. The task's own
@@ -1784,6 +1849,133 @@ details.more.explain-more { margin-top: var(--gap-section); }
   .lv-head .add-entry .f { flex: 1 1 12em; }
 }
 
+/* ticket 57: own domain at a DNS provider (Cloudflare, deSEC, Hetzner, INWX).
+   Existing tokens only; builds on .connect, .guide and .why of ticket 135. */
+/* Provider cards (name "dns", outside the forms): only the guide of the chosen
+   provider shows; before a choice no guide shows, only the .pick-first hint.
+   (Only where provider cards exist: the calendar connect page has none.) */
+.connect:has(input[name="dns"]):not(:has(input[name="dns"]:checked)) .guide { display: none; }
+.connect:has(input[name="dns"][value="cloudflare"]:checked) .guide:not([data-provider="cloudflare"]),
+.connect:has(input[name="dns"][value="desec"]:checked) .guide:not([data-provider="desec"]),
+.connect:has(input[name="dns"][value="hetzner"]:checked) .guide:not([data-provider="hetzner"]),
+.connect:has(input[name="dns"][value="inwx"]:checked) .guide:not([data-provider="inwx"]) { display: none; }
+.connect:has(input[name="dns"]:checked) .pick-first { display: none; }
+.connect > .hint { margin: 0; max-width: 560px; }
+/* A switch inside a guide step that reveals its fields while on (INWX
+   two-factor sign-in). Off: only the row with its state in words. */
+.switchset { display: grid; gap: 8px; justify-self: stretch; min-width: 0; }
+.switchset > .card-row { padding: 6px 0; }
+.switchset > .when-on { display: grid; gap: 8px; min-width: 0; }
+.switchset > .when-on > p { margin: 0; overflow-wrap: anywhere; }
+.switchset:has(> .card-row .switch input:not(:checked)) > .when-on { display: none; }
+/* Domain names in running text and errors never widen a 375 px page. */
+.ferr span, .error .host, .hint .host { overflow-wrap: anywhere; }
+/* ---- Breadcrumbs (ticket #182, design pass by Opus 16/11/2026; ADR 0017 amended) ----
+   Every page below Settings (and an everyday page two or more levels below its
+   screen) starts with the trail; it replaces the back link. Each part except the
+   last is a link; the last is the page's own name (its h1), plain text with
+   aria-current="page". Names wrap, never cut: breaks between words, hyphenation
+   only in words of 12+ letters, a single token longer than the line (an e-mail
+   address) breaks at the line end as a last resort. Under 600 px the last part
+   is only read out (the h1 right below says it). */
+.crumbs { margin: 0 0 4px; min-width: 0; }
+.crumbs ol { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; align-items: center; font-size: var(--fs-label-large); line-height: 1.35; }
+.crumbs li { display: flex; align-items: center; min-width: 0; max-width: 100%; }
+.crumbs .sep { flex: none; width: 16px; height: 16px; margin: 0 6px; stroke: var(--text-secondary); stroke-width: 2; fill: none; }
+.crumbs a, .crumbs [aria-current] { display: flex; align-items: center; min-width: 0; min-height: var(--touch-target); overflow-wrap: break-word; }
+@supports (hyphenate-limit-chars: 12 5 5) { .crumbs a, .crumbs [aria-current] { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } } /* only where the browser can keep short words whole (as the rules above) */
+.crumbs a { color: var(--accent); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; }
+.crumbs [aria-current] { color: var(--text-secondary); }
+[data-theme="bw"] .crumbs a { color: var(--text); text-decoration-thickness: 2px; }
+[data-theme="bw"] .crumbs [aria-current] { color: var(--text); }
+@media (max-width: 599px) {
+  .crumbs li:last-child:not(:first-child) { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+}
+/* The navigation entry of the section you are in stays filled on its sub-pages
+   (aria-current="true"); the screen itself carries aria-current="page". */
+.frame-nav a[aria-current] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+
+/* Recovery codes (ticket #176): one card .rc in the wizard and in the frame. */
+.rc { display: grid; gap: 14px; max-width: 600px; box-sizing: border-box; padding: var(--pad-column); margin: 0 0 var(--gap-section); background: var(--surface); border-radius: var(--radius-tile); min-width: 0; }
+.wizard .rc { margin: 0; }
+.rc h2 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); }
+.rc-for { margin: -8px 0 0; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.rc-for b { color: var(--text); font-weight: 600; }
+.rc-save { display: grid; gap: 8px; padding-top: 14px; border-top: 1px solid var(--border); }
+.rc-save .actions { margin: 0; }
+.rc-save .button { display: inline-flex; align-items: center; justify-content: center; gap: 8px; }
+.rc-save .hint, .rc-gate .hint { margin: 0; }
+.rc-save .msg, .rc-save .ferr { margin: 0; max-width: none; }
+.rc-save .msg .fname { white-space: normal; overflow-wrap: anywhere; }
+.rc-gate { display: grid; gap: 10px; padding-top: 14px; border-top: 1px solid var(--border); }
+.rc-gate .actions { margin: 0; }
+.rc-gate .confirm { font-weight: 600; padding: 8px 10px; border-radius: var(--radius-field); border: 2px solid transparent; }
+.rc-gate .confirm .sub { display: block; font-weight: 400; font-size: var(--fs-label); color: var(--text-secondary); margin-top: 2px; }
+.rc-gate .confirm[aria-invalid="true"], .rc-gate .confirm:has(input[aria-invalid="true"]) { border-color: var(--error-text); }
+.rc-gate .confirm:has(input:checked) { border-color: transparent; }
+.button[aria-disabled="true"] { cursor: default; background: var(--border); color: var(--text-secondary); }
+[data-theme="bw"] .button[aria-disabled="true"] { background: var(--surface); color: var(--text); border: 2px dashed var(--text); }
+.rc-gate .gate-hint { display: flex; gap: 8px; align-items: flex-start; }
+.rc-gate .gate-hint .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+[data-theme="bw"] .rc-save, [data-theme="bw"] .rc-gate { border-top: 2px solid var(--text); }
+[data-theme="bw"] .rc { border: 2px solid var(--text); }
+@media print { .rc-gate, .rc .msg, .rc .ferr { display: none !important; } .rc { border: 0; padding: 0; } }
+@media (max-width: 599px) { .rc-save .actions .button { flex: 1 1 100%; } .rc-gate .actions .button { flex: 1 1 100%; } }
+
+/* ---- ticket 163: diet and allergies per person ---- */
+/* A free-text allergy the box cannot check: notice colours, a question icon and the words; bw dashed. */
+.unchecked { display: inline-flex; align-items: flex-start; gap: 6px; padding: 3px 8px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label); font-weight: 600; overflow-wrap: break-word; hyphens: manual; justify-self: start; max-width: 100%; box-sizing: border-box; }
+.unchecked .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+[data-theme="bw"] .unchecked { background: none; color: var(--text); border: 2px dashed var(--text); }
+/* People overview: the food line is its own line under name and role. */
+.cards.people li > .food { flex: 1 1 100%; order: 5; margin: 0; display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; font-size: var(--fs-label); color: var(--text); overflow-wrap: break-word; }
+.cards.people li > .food .diet { font-weight: 700; }
+.list-rows .unchecked { margin-top: 2px; }
+/* Food page */
+.for-person { margin: 0 0 var(--gap) !important; }
+p.why.health { background: var(--surface); max-width: 560px; margin: 0 0 var(--gap-section); box-sizing: border-box; }
+p.why.health > span { display: grid; gap: 2px; }
+.food-form > fieldset.choice { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 10px; }
+.food-form > fieldset.choice > legend { font-size: var(--fs-person-name); font-weight: 700; color: var(--text); margin: 0 0 4px; }
+.food-form > fieldset.choice > .hint { margin: 0; grid-column: 1 / -1; }
+.food-form fieldset.allergens { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+.food-form fieldset.allergens > legend, .food-form fieldset.allergens > .hint { grid-column: 1 / -1; }
+.food-form .choice label { align-items: start; align-content: start; }
+.food-form .choice input { margin-top: 1px; }
+.food-form .choice b { overflow-wrap: break-word; hyphens: auto; }
+/* The caveat under the allergen cards: its own line, words kept whole. */
+.food-form > fieldset.choice > .hint.caveat { margin-top: -6px; hyphens: manual; }
+.food-form .hint.caveat b { color: var(--text); }
+.food-form .choice label:has(input:checked) b { font-weight: 800; }
+[data-theme="bw"] .food-form .choice label { border: 2px solid var(--text-secondary); padding: 11px 13px; }
+[data-theme="bw"] .food-form .choice label:has(input:checked) { border: 3px solid var(--text); padding: 10px 12px; background: var(--event-card); }
+[data-theme="bw"] .food-form > fieldset.choice, [data-theme="bw"] .food-form > fieldset.other { border: 2px solid var(--text); }
+.food-form .f input { width: 100%; }
+.unchecked-sample { display: grid; gap: 8px; margin: 0; padding: 10px 12px; border-radius: var(--radius-card); background: var(--background); color: var(--text); font-size: var(--fs-label-large); }
+.unchecked-sample p { margin: 0; }
+[data-theme="bw"] .unchecked-sample { background: var(--surface); border: 2px solid var(--text); }
+/* MCP: the health area is set apart, read only at most. */
+.scope.health { border-top: 2px solid var(--border); margin-top: 4px; }
+.scope.health .area b { display: inline-flex; align-items: center; gap: 6px; }
+.scope.health .area b .icon { stroke: var(--accent); flex: none; }
+[data-theme="bw"] .scope.health { border-top-color: var(--text); }
+/* Outlook (article library ticket): warning under an entry and the box of unchecked allergies under the list. */
+.entries li > .allergen-warn { flex: 1 1 100%; display: flex; align-items: flex-start; gap: 6px; margin: -4px 0 10px; padding: 4px 8px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label); font-weight: 600; overflow-wrap: break-word; }
+.entries li > .allergen-warn .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+/* A person inside a sentence (warning line, unchecked box): inline, so marker, bold name and text share one baseline;
+   the marker sits on the x-height middle and stays glued to the name. Never inline-flex: its baseline is the marker. */
+.allergen-warn .who, .unchecked-box .who { display: inline; font-weight: 700; }
+.allergen-warn .who .marker, .unchecked-box .who .marker { vertical-align: -0.1em; margin-right: 6px; }
+[data-theme="bw"] .allergen-warn .who .marker, [data-theme="bw"] .unchecked-box .who .marker { vertical-align: -0.15em; }
+[data-theme="bw"] .entries li > .allergen-warn { background: none; color: var(--text); border: 2px solid var(--text); }
+.unchecked-box { max-width: 560px; box-sizing: border-box; padding: 14px 16px; border-radius: var(--radius-tile); background: var(--surface); border: 2px dashed var(--notice-text); margin: 0 0 var(--gap-section); }
+.unchecked-box h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 4px; font-size: var(--fs-event-title); }
+.unchecked-box h2 .icon { stroke: currentColor; flex: none; }
+.unchecked-box .hint { margin: 0 0 8px; }
+.unchecked-box ul { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+.unchecked-box li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; overflow-wrap: break-word; }
+[data-theme="bw"] .unchecked-box { border-color: var(--text); }
+
 /* ==== New for #183: Choose calendars cards (preview-183) ==================== */
 /* One card per found calendar. Head: where it comes from (kicker), the name at
    the source, the switch with its state in words. Facts: event count and last
@@ -1866,3 +2058,1140 @@ details.more.explain-more { margin-top: var(--gap-section); }
 .choose-none { background: var(--surface); border-radius: var(--radius-tile); padding: 16px; display: grid; gap: 8px; max-width: 560px; box-sizing: border-box; }
 [data-theme="bw"] .choose-none { border: 2px solid var(--text); }
 .choose-none p { margin: 0; }
+
+/* ticket 57, product owner decision Q62 a: the three ways of the HTTPS step are
+   equal choices. Each card says the same three things in the same order: what
+   the way means, what you need, what it costs. Labels in words, no icons. */
+.choice small.way { display: grid; gap: 4px; }
+.choice small.way > span { display: block; }
+.choice small.way .k { font-weight: 700; color: var(--text); }
+/* The page of the way "Nur im Heimnetz": what it means, before the button. */
+.homeonly { margin: 0; padding-left: 1.2em; display: grid; gap: 6px; max-width: 560px; }
+/* ---- Screensaver, photos and albums (ticket 178, no new tokens) ---- */
+
+/* Screensaver on the display: one photo that fills the screen (cover), on the theme background. */
+.saver { position: fixed; inset: 0; background: var(--background); color: var(--text); display: grid; place-items: center; overflow: hidden; }
+.saver-photo { position: absolute; inset: 0; display: block; width: 100%; height: 100%; object-fit: cover; object-position: 50% 50%; }
+[data-theme="bw"] .saver-photo, .saver[data-display-type="eink_bw"] .saver-photo { filter: grayscale(1); }
+[data-theme="bw"] .saver { background: var(--surface); }
+.saver-when { position: absolute; right: var(--margin); bottom: var(--margin); display: flex; align-items: baseline; flex-wrap: wrap; gap: 2px 10px; max-width: calc(100% - 2 * var(--margin)); padding: 8px 16px; background: var(--surface); color: var(--text); border-radius: var(--radius-chip); }
+.saver-when .t { font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); font-variant-numeric: tabular-nums; }
+.saver-when .d { font-size: var(--fs-label-large); color: var(--text-secondary); white-space: nowrap; }
+[data-theme="bw"] .saver-when { border: 2px solid var(--text); }
+
+/* Hint screen when the display has no photo to show. */
+.saver-hint { box-sizing: border-box; width: min(34em, calc(100% - 2 * var(--margin))); max-height: calc(100% - 2 * var(--margin) - 60px); overflow: auto; display: grid; gap: 14px; justify-items: start; padding: 28px; background: var(--surface); border-radius: var(--radius-tile); margin-bottom: 40px; }
+[data-theme="bw"] .saver-hint { border: 2px solid var(--text); }
+.saver-hint > .icon.big { width: 64px; height: 64px; stroke-width: 1.6px; }
+.saver-hint h1 { margin: 0; font-size: var(--fs-date); line-height: 1.15; overflow-wrap: break-word; hyphens: manual; }
+.saver-hint p { margin: 0; overflow-wrap: break-word; }
+.saver-hint .how { background: var(--background); border-radius: var(--radius-card); padding: 10px 12px; }
+[data-theme="bw"] .saver-hint .how { background: var(--event-card); }
+.saver-hint .button.big { display: inline-flex; align-items: center; gap: 10px; min-height: 56px; padding: 12px 26px; font-size: var(--fs-person-name); }
+.saver-hint .button.big .icon { width: 26px; height: 26px; }
+.saver-hint .tapany { color: var(--text-secondary); font-size: var(--fs-label-large); }
+@media (max-width: 480px) {
+  .saver-hint { padding: 20px; gap: 12px; }
+  .saver-hint h1 { font-size: var(--fs-key-figure); }
+  .saver-hint > .icon.big { width: 48px; height: 48px; }
+  .saver-hint .button.big { width: 100%; justify-content: center; }
+}
+
+/* Photos page: storage card with a meter. */
+.storage { box-sizing: border-box; max-width: 560px; margin: 0 0 var(--gap-section); padding: 16px; display: grid; gap: 8px; background: var(--surface); border-radius: var(--radius-tile); }
+[data-theme="bw"] .storage { border: 2px solid var(--text); }
+.storage .head { display: flex; flex-wrap: wrap; align-items: baseline; justify-content: space-between; gap: 2px 12px; }
+.storage .head b { font-size: var(--fs-event-title); }
+.storage .fig { font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); font-variant-numeric: tabular-nums; white-space: nowrap; }
+.storage p { margin: 0; }
+.storage .flag { margin-top: 2px; }
+.meter { height: var(--progress-height); border-radius: var(--radius-progress); background: var(--progress-track, var(--border)); overflow: hidden; }
+.meter > span { display: block; height: 100%; width: calc(var(--pct, 0) * 1%); background: var(--progress-fill, var(--accent)); }
+.storage.full .meter > span { background: var(--error-text); }
+[data-theme="bw"] .flag.problem, [data-theme="bw"] .flag.warn { background: none; border: 2px solid var(--text); }
+
+/* Upload card and its progress list. */
+.upload { box-sizing: border-box; max-width: 560px; margin: 0 0 var(--gap-section); padding: 16px; display: grid; gap: 12px; background: var(--surface); border-radius: var(--radius-tile); }
+[data-theme="bw"] .upload { border: 2px solid var(--text); }
+.upload h2, .photos-h2 { margin: 0; font-size: var(--fs-person-name); }
+.upload p { margin: 0; }
+.upload .pick { position: relative; display: inline-flex; align-items: center; gap: 8px; justify-self: start; }
+.upload .pick input { position: absolute; opacity: 0; width: 1px; height: 1px; min-height: 0; padding: 0; }
+.upload .button[aria-disabled="true"] { cursor: default; background: var(--border); color: var(--text-secondary); }
+.upload .progress-line { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.upload .progress-line b { font-size: var(--fs-event-title); white-space: nowrap; }
+.uplist { list-style: none; margin: 0; padding: 0; display: grid; }
+.uplist li { display: grid; grid-template-columns: 48px minmax(0, 1fr); gap: 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--border); }
+.uplist .th { width: 48px; height: 48px; border-radius: var(--radius-field); object-fit: cover; background: var(--background); display: grid; place-items: center; }
+.uplist .tx { display: grid; gap: 4px; min-width: 0; }
+.uplist .nm { font-weight: 600; overflow-wrap: anywhere; }
+.uplist .st { display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-label); color: var(--text-secondary); }
+.uplist .st .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+.uplist li[data-state="done"] .st { color: var(--text); }
+.uplist li[data-state="done"] .st .icon { stroke: var(--accent); }
+.uplist li[data-state="busy"] .st { color: var(--text); font-weight: 600; }
+.uplist li[data-state="fail"] .st { color: var(--error-text); background: var(--error-bg); border-radius: var(--radius-field); padding: 4px 8px; justify-self: start; }
+[data-theme="bw"] .uplist li[data-state="fail"] .st { background: none; border: 2px dashed var(--text); }
+.uplist .meter { height: 6px; }
+.refused { box-sizing: border-box; max-width: 560px; margin: 0 0 var(--gap-section); padding: 12px 16px; display: grid; gap: 6px; background: var(--error-bg); color: var(--error-text); border-radius: var(--radius-tile); }
+[data-theme="bw"] .refused { background: var(--surface); border: 2px dashed var(--text); }
+.refused p { margin: 0; font-weight: 600; }
+.refused ul { margin: 0; padding-left: 20px; display: grid; gap: 2px; }
+.refused li { overflow-wrap: anywhere; }
+
+/* Albums overview rows with a cover. */
+.photos-h2 { margin: 0 0 10px; }
+.list-rows.albums .cover { flex: none; width: 64px; height: 64px; border-radius: var(--radius-field); object-fit: cover; background: var(--background); display: grid; place-items: center; }
+.list-rows.albums b { overflow-wrap: break-word; hyphens: manual; }
+.list-rows.albums .meta .icon { stroke: var(--text-secondary); flex: none; }
+.dn { display: inline-block; white-space: nowrap; }
+.new-album { max-width: 560px; margin: 0 0 var(--gap-section); }
+.new-album > div .row, .rename .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+
+/* Album page: photo grid, per-photo switch, selection and the move bar. */
+.pgrid { list-style: none; margin: 0 0 var(--gap-section); padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: var(--gap-cards); max-width: 900px; }
+.ph { position: relative; display: grid; gap: 6px; padding: 6px 6px 4px; background: var(--surface); border-radius: var(--radius-card); }
+[data-theme="bw"] .ph { border: 2px solid var(--text); }
+.ph .img { position: relative; }
+.ph img { display: block; width: 100%; aspect-ratio: 4 / 3; object-fit: cover; border-radius: 8px; }
+.ph.hidden img { opacity: .5; }
+.ph .sel { position: absolute; top: 0; left: 0; width: 44px; height: 44px; display: grid; place-items: center; cursor: pointer; }
+.ph .sel input { appearance: none; -webkit-appearance: none; position: relative; width: 28px; height: 28px; min-height: 0; margin: 0; padding: 0; border: 2px solid var(--text); border-radius: 8px; background: var(--surface); cursor: pointer; }
+.ph .sel input:checked { background: var(--accent); border-color: var(--accent); }
+.ph .sel input:checked::after { content: ""; position: absolute; left: 8px; top: 3px; width: 6px; height: 12px; border: solid var(--accent-text); border-width: 0 3px 3px 0; transform: rotate(45deg); }
+.ph .sel input:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.ph:has(.sel input:checked) { outline: 3px solid var(--accent); outline-offset: -3px; }
+[data-theme="bw"] .ph:has(.sel input:checked) { outline-width: 4px; outline-color: var(--text); }
+.ph .hid { position: absolute; left: 6px; bottom: 6px; display: inline-flex; align-items: center; gap: 4px; padding: 2px 8px; border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-meta); font-weight: 700; }
+.ph .hid .icon { stroke: currentColor; }
+[data-theme="bw"] .ph .hid { border: 2px solid var(--text); }
+.ph .card-row { gap: 8px; }
+.ph .card-row .t { gap: 0; }
+.ph .card-row .lab { font-size: var(--fs-meta); color: var(--text-secondary); }
+.ph .card-row .state { font-size: var(--fs-label); font-weight: 700; color: var(--text); }
+.ph .nm { font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: anywhere; }
+.selbar { display: none; position: sticky; bottom: 0; z-index: 1; box-sizing: border-box; max-width: 900px; margin: 0 0 var(--gap-section); padding: 12px 16px; gap: 10px; background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius-tile); }
+[data-theme="bw"] .selbar { border: 3px solid var(--text); }
+main:has(.pgrid .sel input:checked) .selbar { display: grid; }
+.selbar .count { margin: 0; font-size: var(--fs-event-title); font-weight: 700; }
+.selbar .row { display: flex; flex-wrap: wrap; gap: 10px; align-items: end; }
+.selbar .row .f { flex: 1 1 220px; }
+.selbar .quiet { min-height: var(--touch-target); background: none; border: 0; padding: 0 4px; color: var(--accent); font: inherit; font-weight: 600; cursor: pointer; }
+.selbar details.danger { border-top: 1px solid var(--border); }
+main:has(.pgrid .sel input:checked) .upload .pick { background: var(--surface); color: var(--accent); border: 1px solid var(--accent); }
+.folder-note { display: flex; gap: 10px; align-items: flex-start; }
+.folder-note .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+
+/* Display page: screensaver settings. */
+.steps .saver-set .when-on { display: grid; gap: 10px; }
+.pchip small { color: var(--text-secondary); font-size: var(--fs-meta); font-weight: 400; }
+.quiet-note { display: flex; gap: 8px; align-items: flex-start; margin: 0; }
+.quiet-note .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.saver-set .notice { display: grid; gap: 8px; justify-items: start; }
+.saver-set .notice p { margin: 0; }
+.saver-set .notice .button { color: var(--accent); }
+.list-rows.albums .meta { flex-wrap: nowrap; align-items: flex-start; } .list-rows.albums .meta .icon { margin-top: 2px; }
+.pchip .an { min-width: 0; overflow-wrap: break-word; hyphens: manual; }
+.pchip .an small { white-space: nowrap; }
+.saver-set details.more > summary { flex-wrap: wrap; }
+
+/* Display names link to that display's screensaver block (PO feedback 16/11/2026). */
+a.dn { display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; text-decoration: underline; text-decoration-thickness: 1px; text-underline-offset: 3px; white-space: nowrap; }
+a.dn:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.dnl { display: inline; }
+.list-rows.albums li.arow { background: var(--surface); border-radius: var(--radius-tile); }
+[data-theme="bw"] .list-rows.albums li.arow { border: 2px solid var(--text); }
+.list-rows.albums li.arow > a.main { background: none; border: 0; padding-bottom: 0; }
+.list-rows.albums .shown { display: flex; align-items: flex-start; gap: 0 8px; margin: 0; padding: 4px 16px 14px 92px; font-size: var(--fs-label); color: var(--text-secondary); }
+.list-rows.albums .shown .icon { flex: none; margin-top: 2px; stroke: var(--text-secondary); }
+.list-rows.albums .shown > span { min-width: 0; line-height: 1.5; }
+.list-rows.albums .shown a.dn { padding: 0; margin: -12px 0; background: none; border: 0; border-radius: 0; vertical-align: baseline; }
+.todisp { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; margin: -4px 0 12px; max-width: 560px; font-size: var(--fs-label); color: var(--text-secondary); }
+.todisp .link { gap: 6px; }
+.todisp .link .icon { stroke: currentColor; flex: none; }
+.facts .todisp { margin: 0; flex-basis: 100%; }
+.facts a.dn { margin: -11px 0; }
+.danger li a.dn { min-height: 0; }
+@media (max-width: 480px) {
+  .list-rows.albums .shown { padding: 4px 14px 14px 14px; }
+  a.dn { white-space: normal; overflow-wrap: anywhere; }
+}
+
+.photos-hint { max-width: 560px; margin: 0 0 12px; }
+.album-tools { margin-top: 20px; }
+/* ---- ticket 164: article library ---- */
+/* Symbol or picture of an article: a 44 px square on the background colour; a picture fills it. bw: greyscale with a 2 px border. */
+.art-sym { flex: none; box-sizing: border-box; width: var(--touch-target); height: var(--touch-target); border-radius: var(--radius-field); background: var(--background); display: grid; place-items: center; font-size: 26px; line-height: 1; overflow: hidden; }
+.art-sym img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.art-sym.big { width: calc(var(--touch-target) * 1.5); height: calc(var(--touch-target) * 1.5); font-size: 40px; }
+[data-theme="bw"] .art-sym { border: 2px solid var(--text); background: var(--surface); }
+[data-theme="bw"] .art-sym, [data-theme="bw"] .pic-result img, [data-theme="bw"] .dept-sym { filter: grayscale(1); }
+h1.art-title { display: flex; align-items: center; gap: 14px; }
+h1.art-title > span:last-child { min-width: 0; overflow-wrap: break-word; hyphens: auto; }
+/* Rows of articles: symbol, name, meta words, then one warning per affected person. */
+.list-rows.articles a { align-items: flex-start; }
+.list-rows.articles .chev { align-self: center; }
+.list-rows.articles b { overflow-wrap: break-word; hyphens: auto; }
+.allergen-warn { display: flex; align-items: flex-start; gap: 6px; margin: 0; padding: 4px 8px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label); font-weight: 600; overflow-wrap: break-word; justify-self: start; max-width: 100%; box-sizing: border-box; }
+.allergen-warn .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+[data-theme="bw"] .allergen-warn { background: none; color: var(--text); border: 2px solid var(--text); }
+.tag.hidden-tag { border-color: var(--text-secondary); color: var(--text-secondary); }
+.tag.exp { border-color: var(--notice-text); color: var(--notice-text); background: var(--notice-bg); }
+[data-theme="bw"] .tag.exp { background: none; color: var(--text); border: 2px dashed var(--text); }
+.list-rows .tags { display: flex; flex-wrap: wrap; gap: 6px; }
+/* Search and filter of the library. */
+.lib-search { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; max-width: 560px; margin: 0 0 12px; }
+.lib-search .f { flex: 1 1 220px; min-width: 0; }
+.lib-search .button { flex: none; }
+.lib-filter ul { list-style: none; margin: 0 0 var(--gap-section); padding: 0; display: flex; flex-wrap: wrap; gap: 8px; max-width: 560px; }
+.lib-filter a { display: inline-flex; align-items: center; min-height: var(--touch-target); box-sizing: border-box; padding: 6px 14px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); text-decoration: none; font-size: var(--fs-label-large); }
+.lib-filter a[aria-current] { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+[data-theme="bw"] .lib-filter a { border: 2px solid var(--text); }
+.results-head { margin: 0 0 10px; font-weight: 700; max-width: 560px; }
+.results-head a { font-weight: 600; margin-left: 8px; }
+/* Departments: one closed card each, its count in words; open it to see the rows. */
+details.dept { max-width: 560px; box-sizing: border-box; background: var(--surface); border-radius: var(--radius-tile); margin: 0 0 var(--gap-cards); }
+details.dept > summary { display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 16px; cursor: pointer; list-style: none; }
+details.dept > summary::-webkit-details-marker { display: none; }
+details.dept > summary .t { display: grid; gap: 2px; flex: 1; min-width: 0; }
+details.dept > summary b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); overflow-wrap: break-word; }
+details.dept > summary .meta { font-size: var(--fs-label); color: var(--text-secondary); }
+details.dept > summary .chev { flex: none; stroke: var(--text-secondary); }
+details.dept[open] > summary .chev { transform: rotate(90deg); }
+details.dept > .list-rows { margin: 0; padding: 0 8px 8px; }
+details.dept > .list-rows a { background: var(--background); min-height: 56px; padding: 8px 12px; }
+.dept-sym { flex: none; font-size: 24px; width: 32px; text-align: center; line-height: 1; }
+[data-theme="bw"] details.dept { border: 2px solid var(--text); }
+[data-theme="bw"] details.dept > .list-rows a { background: var(--surface); border: 1px solid var(--text); }
+/* Settings, Lists */
+.lib-card { display: grid; gap: 10px; max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap); padding: 16px; background: var(--surface); border-radius: var(--radius-tile); }
+.lib-card h3 { margin: 0; font-size: var(--fs-event-title); }
+.lib-card p { margin: 0; }
+[data-theme="bw"] .lib-card { border: 2px solid var(--text); }
+ul.allergy-people { list-style: none; margin: 0; padding: 0; display: grid; gap: 8px; }
+ul.allergy-people li { display: flex; flex-wrap: wrap; align-items: baseline; gap: 2px 8px; overflow-wrap: break-word; }
+.steps legend .tag { margin-left: 8px; vertical-align: 3px; }
+.liability { display: grid; gap: 6px; margin: 0; padding: 12px 14px; border-radius: var(--radius-card); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label-large); }
+.liability h3 { display: flex; align-items: flex-start; gap: 8px; margin: 0; font-size: var(--fs-event-title); }
+.liability h3 .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+.liability ul { margin: 0; padding-left: 20px; display: grid; gap: 4px; }
+.liability p { margin: 0; font-weight: 700; }
+[data-theme="bw"] .liability { background: var(--surface); color: var(--text); border: 2px dashed var(--text); }
+.steps .confirm.invalid input { outline: 2px solid var(--error-text); outline-offset: 2px; }
+.steps .unchecked-box { margin: 0; }
+.confirmed { margin: 0; }
+/* Own article form: name, picture, department, what is in it, allergens. */
+.place-list.art-sugg li { grid-template-columns: auto minmax(0, 1fr); column-gap: 10px; }
+.place-list.art-sugg li .art-sym { grid-row: span 2; }
+.place-list.art-sugg a { display: contents; color: inherit; text-decoration: none; }
+.pic-panel { display: none; gap: 10px; }
+.article-form:has(input[name="pic_source"][value="upload"]:checked) .pic-panel.upload,
+.article-form:has(input[name="pic_source"][value="web"]:checked) .pic-panel.web { display: grid; }
+.article-form fieldset.pic > .seg { margin: 0; }
+input[type="file"] { width: 100%; box-sizing: border-box; padding: 6px; }
+input[type="file"]::file-selector-button { font: inherit; font-weight: 700; min-height: 36px; margin-right: 12px; padding: 6px 16px; border: 1px solid var(--accent); border-radius: var(--radius-chip); background: var(--surface); color: var(--accent); cursor: pointer; }
+[data-theme="bw"] input[type="file"]::file-selector-button { border: 2px solid var(--text); color: var(--text); }
+.f.invalid input[type="file"] { border: 2px solid var(--error-text); }
+.web-row { display: flex; flex-wrap: wrap; gap: 10px; align-items: flex-end; }
+.web-row .f { flex: 1 1 240px; min-width: 0; }
+.web-row .button { flex: none; }
+.pic-result { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; padding: 12px; border: 1.5px solid var(--accent); border-radius: var(--radius-card); background: var(--surface); }
+.pic-result img { flex: none; width: calc(var(--touch-target) * 3); height: calc(var(--touch-target) * 3); object-fit: cover; border-radius: var(--radius-field); background: var(--background); }
+.pic-result > div { display: grid; gap: 4px; flex: 1 1 180px; min-width: 0; overflow-wrap: break-word; }
+.pic-result b { display: flex; gap: 6px; align-items: flex-start; }
+.pic-result b .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.pic-result small { font-size: var(--fs-label); color: var(--text-secondary); }
+.pic-result .row { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 4px; }
+[data-theme="bw"] .pic-result { border: 2px solid var(--text); }
+.chips .dept-sym { width: auto; font-size: 20px; }
+.article-form fieldset.chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.article-form fieldset.chips > legend { width: 100%; }
+.article-form fieldset.chips > .hint, .article-form fieldset.chips > .ferr { flex: 0 0 100%; margin: 0; }
+.choice small.aff { display: block; color: var(--notice-text); font-weight: 600; font-size: var(--fs-label); }
+[data-theme="bw"] .choice small.aff { color: var(--text); text-decoration: underline; }
+.nonfood-note { display: none; margin: 0; }
+.article-form:has(input[name="kind"][value="nonfood"]:checked) fieldset.allergens { display: none; }
+.article-form:has(input[name="kind"][value="nonfood"]:checked) .nonfood-note { display: block; }
+.food-form fieldset.kind label b { overflow-wrap: break-word; }
+fieldset.choice[aria-invalid="true"] label { border: 2px solid var(--error-text); padding: 11px 13px; }
+.facts .allergen-warn { font-size: var(--fs-label); }
+.facts dd .diet { color: var(--text-secondary); font-size: var(--fs-label); }
+.facts dd.people { gap: 4px 14px; }
+/* Lists and sentences inside a form card are not .steps cards. */
+.steps .liability li, .steps .unchecked-box li { background: none; padding: 0; border-radius: 0; }
+.steps .confirm span { color: var(--text); font-size: var(--fs-body); }
+.steps .liability span, .steps .unchecked-box span { color: inherit; font-size: inherit; }
+[data-theme="bw"] .lib-form > fieldset { border: 2px solid var(--text); }
+.article-form fieldset.chips > legend { font-size: var(--fs-person-name); font-weight: 700; color: var(--text); margin: 0 0 4px; }
+.article-form textarea[name="name"] { width: 100%; box-sizing: border-box; resize: vertical; font: inherit; color: var(--text); min-height: var(--touch-target); padding: 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); overflow-wrap: break-word; }
+[data-theme="bw"] .article-form textarea[name="name"] { border: 2px solid var(--text); }
+.facts dd.people { display: grid; gap: 6px; }
+/* One diet group reads as one line of text: diet, then the names, wrapping like words (no columns). */
+.facts dd.people .pgrp { display: block; line-height: 1.6; }
+.facts dd.people .pgrp > * { margin-right: 12px; }
+.facts dd.people .pgrp > :last-child { margin-right: 0; }
+/* A person inside a sentence or a row (warning line, allergy list, allergen card, facts): inline like the shared rule of #163,
+   so marker, bold name and text share one baseline. Never inline-flex: its baseline is the marker. */
+ul.allergy-people .who, .choice small.aff .who { display: inline; font-weight: 700; }
+.facts dd .who { display: inline; }
+/* Marker and name never part: an inline-block marker is a break opportunity, so the person does not wrap inside (seen at 375 px). */
+.allergen-warn .who, .unchecked-box .who, ul.allergy-people .who, .choice small.aff .who, .facts dd .who { white-space: nowrap; }
+ul.allergy-people .who .marker, .choice small.aff .who .marker, .facts dd .who .marker { vertical-align: -0.1em; margin-right: 6px; }
+[data-theme="bw"] ul.allergy-people .who .marker, [data-theme="bw"] .choice small.aff .who .marker, [data-theme="bw"] .facts dd .who .marker { vertical-align: -0.15em; }
+/* Caveat line under the warning explanation (as on the food page of #163): its own line, words kept whole. */
+.lib-card .hint.caveat, .article-form fieldset.allergens > .hint.caveat { hyphens: manual; }
+.lib-card .hint.caveat b, .article-form .hint.caveat b { color: var(--text); }
+.article-form fieldset.allergens > .hint.caveat { margin-top: -6px; }
+/* Hiding switched on: every box keeps the card rhythm above and below; the error stays at its tick. */
+.lib-form .when-on { display: grid; gap: var(--gap); }
+.lib-form .when-on > * { margin: 0; }
+.confirm-field { display: grid; gap: 6px; }
+/* ---- ticket 164, PO 16/11/2026: symbol as a third picture option, default units ---- */
+/* Picture choice: Symbol / Foto / Bild aus dem Internet. Nothing checked = the department symbol, said in words. */
+.article-form:has(input[name="pic_source"][value="symbol"]:checked) .pic-panel.symbol { display: grid; }
+.pic-fallback { display: flex; align-items: center; gap: 12px; margin: 0; color: var(--text-secondary); font-size: var(--fs-label); }
+.article-form:has(input[name="pic_source"]:checked) .pic-fallback { margin-top: 2px; }
+/* Symbol picker: tiles with the symbol and its name (never a bare symbol), in a grid that fits 3 per row at 375 px. */
+fieldset.sym-grid { border: 0; margin: 0; padding: 0; min-width: 0; }
+fieldset.sym-grid legend:not(.sr) { float: left; width: 100%; padding: 0; margin: 0 0 8px; font-size: var(--fs-label); color: var(--text-secondary); }
+.sym-tiles { clear: both; display: grid; grid-template-columns: repeat(auto-fill, minmax(88px, 1fr)); gap: 8px; }
+.sym-opt { position: relative; display: grid; justify-items: center; align-content: start; gap: 4px; min-height: 88px; padding: 10px 6px 8px; box-sizing: border-box; border: 1px solid var(--border); border-radius: var(--radius-card); background: var(--surface); color: var(--text); font-size: var(--fs-meta); line-height: 1.25; text-align: center; overflow-wrap: anywhere; hyphens: auto; cursor: pointer; }
+.sym-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; padding: 0; min-height: 0; }
+.sym-opt .e { font-size: 32px; line-height: 1.1; }
+.sym-opt .tick { display: none; position: absolute; top: 5px; right: 5px; stroke: currentColor; }
+.sym-opt:has(input:checked) { border: 2px solid var(--text); padding: 9px 5px 7px; background: var(--background); font-weight: 700; }
+.sym-opt:has(input:checked) .tick { display: block; }
+.sym-opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.sym-chosen { display: flex; align-items: center; gap: 12px; margin: 0; padding: 12px; border: 1.5px solid var(--accent); border-radius: var(--radius-card); }
+.sym-chosen > span { display: grid; gap: 2px; min-width: 0; }
+.sym-chosen b { display: flex; gap: 6px; align-items: flex-start; }
+.sym-chosen b .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.sym-chosen small { font-size: var(--fs-label); color: var(--text-secondary); }
+.pic-panel.symbol .results-head, .pic-panel.symbol .empty { margin: 0; }
+[data-theme="bw"] .sym-opt { border-color: var(--text); }
+[data-theme="bw"] .sym-opt:has(input:checked) { border-width: 3px; padding: 8px 4px 6px; background: var(--surface); }
+[data-theme="bw"] .sym-opt .e { filter: grayscale(1); }
+[data-theme="bw"] .sym-chosen { border: 2px solid var(--text); }
+[data-theme="bw"] .sym-chosen b .icon { stroke: var(--text); }
+/* Units: two chip rows; the unit already chosen first stays visible in the second row, dashed, with its reason in words. */
+fieldset.units { display: grid; gap: var(--gap); }
+fieldset.units > fieldset.chips legend .tag { margin-left: 6px; vertical-align: 1px; }
+.pchip.same { border-style: dashed; color: var(--text-secondary); cursor: not-allowed; }
+[data-theme="bw"] .pchip.same { border-color: var(--text); color: var(--text); }
+.facts dd > .hint { flex-basis: 100%; margin: 0; }
+.pic-panel > p.hint, fieldset.units > p.hint { margin: 0; }
+fieldset.units fieldset.chips legend, fieldset.sym-grid legend:not(.sr) { font-size: var(--fs-label); font-weight: 400; color: var(--text-secondary); }
+/* A button that reads like the link next to a result count ("Suche aufheben") and posts the form, so what was typed is kept. */
+.results-head .linklike, .empty .linklike { font: inherit; font-weight: 600; margin-left: 8px; padding: 0; border: 0; background: none; color: var(--accent); text-decoration: underline; cursor: pointer; }
+.empty .linklike { margin-left: 0; }
+/* A legend only for screen readers takes no room, whatever fieldset it sits in (the picture choice, the symbol results). */
+fieldset legend.sr { float: none; width: 1px; margin: -1px; padding: 0; }
+
+/* ticket 199: the page a phone shows after its device session ended (see DESIGN.md). */
+.unpaired { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; max-width: 560px; }
+.unpaired > * { margin: 0; }
+.unpaired .pic { width: 104px; height: 104px; fill: none; stroke: var(--text); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
+.unpaired .pic .cut { stroke: var(--accent); }
+.unpaired .kid { display: flex; align-items: flex-start; gap: 12px; padding: 14px 16px; background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius-tile); font-size: var(--fs-key-figure); font-weight: var(--fw-key-figure); line-height: 1.3; }
+.unpaired .kid .icon { flex: none; width: 32px; height: 32px; stroke: var(--accent); stroke-width: 2; margin-top: 1px; }
+.unpaired .cause { color: var(--text-secondary); }
+.unpaired .path { white-space: nowrap; }
+.unpaired .tile { display: grid; gap: 10px; padding: var(--pad-column); min-width: 0; }
+[data-theme="bw"] .unpaired .tile { border: 2px solid var(--text); }
+.unpaired .tile h2 { margin: 0; }
+.unpaired details.more .button { justify-self: start; }
+[data-theme="bw"] .unpaired .pic .cut, [data-theme="bw"] .unpaired .kid .icon { stroke: var(--text); }
+[data-theme="bw"] .unpaired .kid { border-color: var(--text); border-width: 3px; }
+@media (min-width: 900px) { .unpaired { margin: 0 auto; } }
+@media (max-height: 500px) { .unpaired .pic { width: 64px; height: 64px; } }
+
+/* ticket 198: pair a child's phone for another person (new, see DESIGN.md). */
+details.repair { box-sizing: border-box; border-top: 1px solid var(--border); margin-top: var(--gap-section); max-width: 560px; }
+details.repair > summary { display: flex; align-items: flex-start; gap: 10px; min-height: var(--touch-target); padding: 10px 0; cursor: pointer; list-style: none; }
+details.repair > summary::-webkit-details-marker { display: none; }
+details.repair > summary .icon { flex: none; margin-top: 1px; stroke: var(--accent); }
+details.repair > summary .t { display: grid; gap: 2px; min-width: 0; }
+details.repair > summary b { color: var(--accent); font-size: var(--fs-label-large); }
+details.repair > summary .hint { color: var(--text-secondary); font-size: var(--fs-label); overflow-wrap: break-word; hyphens: manual; }
+details.repair[open] { background: var(--surface); border: 2px solid var(--accent); border-radius: var(--radius-tile); padding: 0 16px 6px; }
+details.repair[open] > summary .hint { display: none; }
+details.repair form { display: grid; gap: 14px; margin: 0 0 10px; }
+details.repair .notice { margin: 0; display: grid; gap: 6px; }
+details.repair .notice p { margin: 0; }
+details.repair .confirm { display: flex; flex-wrap: wrap; gap: 10px 16px; align-items: center; }
+details.repair .confirm a { display: inline-flex; align-items: center; min-height: var(--touch-target); font-weight: 600; }
+details.repair .button { white-space: normal; text-align: left; }
+details.repair + details.danger { margin-top: 0; }
+[data-theme="bw"] details.repair[open] { border-color: var(--text); }
+[data-theme="bw"] details.repair .notice { border: 2px solid var(--text); }
+.invitee.join-for { margin: 4px 0 16px; font-size: var(--fs-key-figure); }
+.invitee .lbl { font-size: var(--fs-label); font-weight: 400; color: var(--text-secondary); }
+.verification { font-size: var(--fs-key-figure); font-variant-numeric: tabular-nums; white-space: nowrap; }
+
+/* ---- New for #125: theme chooser in the brand bar (ADR 0015, 0017) ---- */
+/* One chooser for everyone signed in, parents and children's phones, beside
+   the language switcher: both are choices of this browser or phone. The menu
+   hangs from the right edge of the brand bar, so it never runs off a 375 px
+   screen. */
+.frame-bar { position: relative; }
+.theme-pick { position: static; }
+.theme-pick > summary { display: flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: var(--touch-target); padding: 0 12px 0 8px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); font-weight: 600; cursor: pointer; list-style: none; }
+.theme-pick > summary::-webkit-details-marker { display: none; }
+.theme-pick > summary .chev { flex: none; width: 14px; height: 14px; }
+.theme-pick[open] > summary { border-color: var(--accent); }
+.theme-pick[open] > summary .chev { transform: rotate(180deg); }
+.theme-pick > summary:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] .theme-pick > summary { border: 2px solid var(--text); }
+.theme-menu { position: absolute; right: 0; top: calc(100% + 6px); z-index: 5; box-sizing: border-box; width: min(380px, 100%); margin: 0; padding: 12px; display: grid; gap: 4px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-card); min-inline-size: 0; }
+[data-theme="bw"] .theme-menu { border: 2px solid var(--text); }
+.theme-menu legend { float: left; width: 100%; padding: 0 4px 8px; font-size: var(--fs-event-title); font-weight: 700; }
+.theme-opt { position: relative; display: flex; align-items: center; gap: 12px; min-height: 60px; padding: 8px 10px; border: 2px solid transparent; border-radius: var(--radius-field); color: var(--text); cursor: pointer; }
+.theme-opt input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; }
+.theme-opt:hover { background: var(--background); }
+.theme-opt:has(input:checked) { border-color: var(--accent); background: var(--background); }
+.theme-opt:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+.theme-opt .opt-text { display: grid; gap: 2px; min-width: 0; overflow-wrap: break-word; hyphens: auto; }
+.theme-opt .opt-name { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 8px; font-size: var(--fs-event-title); font-weight: 700; }
+.theme-opt small { color: var(--text-secondary); font-size: var(--fs-label); }
+.theme-opt .opt-state { display: none; font-size: var(--fs-meta); font-weight: 700; color: var(--accent-text); background: var(--accent); border-radius: var(--radius-chip); padding: 1px 10px; }
+.theme-opt:has(input:checked) .opt-state { display: inline-block; }
+.theme-opt:has(input:disabled) { cursor: default; background: none; }
+.theme-opt:has(input:disabled) .opt-name { color: var(--text-secondary); }
+.theme-opt:has(input:disabled) .swatch { border-style: dashed; }
+.theme-opt small a { color: var(--accent); font-weight: 600; }
+[data-theme="bw"] .theme-opt:has(input:checked) { border: 3px solid var(--text); padding: 7px 9px; background: var(--surface); }
+[data-theme="bw"] .theme-opt:hover { background: none; text-decoration: underline; }
+.theme-menu .msg, .theme-menu .error { margin: 6px 0 0; max-width: none; }
+.theme-menu .where { margin: 6px 4px 0; }
+/* Swatch: a tiny page in the theme it stands for, so a child who cannot read
+   yet sees what each choice looks like. Light shows a sun, dark a moon,
+   automatic both, "follow the device" a phone with both halves. */
+.swatch { flex: none; width: 44px; height: 44px; box-sizing: border-box; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; overflow: hidden; border: 1.5px solid var(--text-secondary); border-radius: var(--radius-field); }
+.swatch > span { display: grid; place-items: center; background: var(--background); color: var(--text); }
+.swatch .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
+.swatch.half .icon { width: 16px; height: 16px; }
+.swatch.phone { width: 30px; margin: 0 7px; border-radius: 8px; border-width: 2px; grid-auto-flow: row; grid-auto-rows: 1fr; grid-auto-columns: auto; }
+.swatch.sm { width: 26px; height: 26px; border-radius: 8px; }
+.swatch.sm.phone { width: 18px; margin: 0 4px; border-radius: 5px; }
+.swatch.sm .icon { width: 15px; height: 15px; }
+.swatch.sm.half .icon { display: none; }
+[data-theme="bw"] .swatch { border: 2px solid var(--text); }
+[data-theme="bw"] .swatch > [data-theme="light"] { --background: var(--surface); }
+[data-theme="bw"] .swatch > [data-theme="dark"] { --background: var(--text); --text: var(--surface); }
+/* A narrow bar next to Sign out drops the visible word, as the language
+   switcher does; the swatch still shows the state and the word stays in the
+   accessible name ("Design: Dunkel"). */
+@media (max-width: 479px) {
+  .frame-tools:has(.signout) .theme-name { position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0; overflow: hidden; clip: rect(0 0 0 0); white-space: nowrap; border: 0; }
+  .frame-tools { gap: 8px; }
+  .frame-bar .signout .button { padding-inline: 12px; }
+}
+
+/* Outlook connection (ticket 177, preview 177): the sign-in code, the reconnect notice, what the box may change. */
+.connect:has(input[name="service"][value="outlook"]:checked) .guide:not([data-service="outlook"]) { display: none;}
+.devcode { display: grid; gap: 10px; justify-self: stretch; padding: 12px 14px; background: var(--background); border-radius: var(--radius-card);}
+.devcode .code { margin: 0; font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-size: var(--fs-title-phone); font-weight: 700; letter-spacing: 0.14em; white-space: nowrap; font-variant-numeric: slashed-zero; color: var(--text);}
+.devcode .row { display: flex; flex-wrap: wrap; gap: 10px;}
+.devcode .button .icon, .notice.act .button .icon { stroke: currentColor; vertical-align: -3px; margin-right: 6px;}
+[data-theme="bw"] .devcode { background: var(--surface); border: 2px solid var(--text);}
+.connect .cancel { margin: 4px 0 0;}
+.guide > .checkline, .guide > p, .guide > ul.opts, .guide > .facts { margin: 0;}
+.guide > .facts { max-width: none;}
+ul.opts { list-style: none; padding: 0;}
+.guide .host, .facts .host, h1.host, .notice .host, .checkline .host { overflow-wrap: anywhere;}
+.notice.act { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 12px 14px; margin: 0 0 var(--gap-section); box-sizing: border-box;}
+.notice .host, .msg .host { white-space: normal; overflow-wrap: anywhere;}
+.notice.act p { margin: 0;}
+.notice.act .head { display: flex; gap: 8px; align-items: flex-start; font-weight: 700; font-size: var(--fs-event-title);}
+.notice.act .head .icon { flex: none; stroke: currentColor; margin-top: 1px;}
+.notice.act .hint { color: inherit;}
+.notice.act > form, .notice.act > .button { justify-self: start; margin: 0;}
+.notice.act .button.secondary { background: var(--surface);}
+[data-theme="bw"] .notice.act { border: 2px solid var(--text);}
+ul.reconn { list-style: none; margin: 0; padding: 0; display: grid;}
+ul.reconn li { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 12px; padding: 10px 0 0; margin-top: 10px; border-top: 1px solid currentColor;}
+ul.reconn li:first-child { margin-top: 2px;}
+ul.reconn .t { display: grid; gap: 2px; min-width: 0; flex: 1 1 220px;}
+ul.reconn small { font-size: var(--fs-meta);}
+ul.reconn form { margin: 0;}
+.why.access { max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-cards);}
+.why.access { background: var(--surface);}
+.why.access ul { margin: 6px 0 0; padding-left: 18px; display: grid; gap: 6px;}
+.why.access li { background: none; padding: 0; border-radius: 0;}
+.why.access li b { display: inline;}
+.calfacts .acc b { color: var(--text); font-weight: 700;}
+.calfacts .acc { color: var(--text);}
+.ms-login { max-width: 560px;}
+.ms-login h2 { margin: 0 0 6px;}
+/* ---- Display page: Brightness section (ticket 179, preview docs/design/preview-179.html; no new tokens) ---- */
+.tag.muted { border-color: var(--text-secondary); color: var(--text-secondary); }
+[data-theme="bw"] .tag.muted { border-style: dashed; }
+.bright h3.q-head { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--border); font-size: var(--fs-event-title); font-weight: 700; }
+.bright h3.q-head .icon { stroke: var(--accent); flex: none; }
+.bright-now { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: var(--fs-label); color: var(--text); overflow-wrap: break-word; }
+.bright-now .icon { flex: none; stroke: var(--accent); margin-top: 1px; }
+.bright .flag { font-weight: 400; }
+.bright .flag a { color: inherit; font-weight: 700; }
+.bright .levels { display: grid; }
+.lvl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 0; }
+.levels .lvl + .lvl { border-top: 1px solid var(--border); }
+.lvl .lt { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 0 10px; align-items: start; flex: 1 1 220px; min-width: 0; color: var(--text); }
+.lvl .lt .icon { grid-row: span 2; stroke: var(--accent); margin-top: 1px; }
+.lvl .lt b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+.lvl .lt span { grid-column: 2; font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: break-word; hyphens: manual; }
+.lvl .ferr { flex: 1 1 100%; }
+.unitf { display: inline-flex; align-items: center; gap: 8px; flex: none; margin-left: auto; white-space: nowrap; }
+.unitf input { width: 5.5em; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.unitf .unit { font-size: var(--fs-event-title); font-weight: 600; color: var(--text); min-width: 1.2em; }
+.lvl.invalid input { border: 2px solid var(--error-text); }
+.bright input:disabled { border-style: dashed; color: var(--text-secondary); background: var(--background); cursor: not-allowed; }
+.bright.unavailable .lvl .lt, .bright.unavailable .unitf .unit, .bright.unavailable .q-head { color: var(--text-secondary); }
+.bright.unavailable .lvl .lt .icon, .bright.unavailable .q-head .icon { stroke: var(--text-secondary); }
+.choice label:has(input:disabled) { border-style: dashed; color: var(--text-secondary); cursor: not-allowed; }
+.choice label:has(input:disabled:checked) { border-color: var(--text-secondary); }
+[data-theme="bw"] .bright input:disabled { border: 2px dashed var(--text); color: var(--text); background: var(--surface); }
+[data-theme="bw"] .choice label:has(input:disabled) { border: 2px dashed var(--text); color: var(--text); }
+.bright-why { max-width: none; }
+.guide-row { display: grid; gap: 6px; justify-items: start; }
+.guide-row .hint { margin: 0; }
+.steps .guide-row a.button.secondary { color: var(--accent); }
+.dim-intro { margin: 6px 0 0; font-weight: 600; }
+.bright .room-note { display: none; gap: 8px; align-items: flex-start; margin: 0; }
+.bright .room-note .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.bright .when-dim, .bright .when-off { display: none; }
+.bright:has(input[name="quiet_light"][value="dim"]:checked) .when-dim { display: block; }
+.bright:has(input[name="quiet_light"][value="off"]:checked) .when-off { display: block; }
+.bright:has(input[name="light_source"][value="room"]:checked) .levels { display: none; }
+.bright:has(input[name="light_source"][value="room"]:checked) .room-note { display: flex; }
+.bright .hint { margin: 0; }
+.bright details.more > summary { flex-wrap: wrap; }
+.bright .choice small { overflow-wrap: break-word; }
+@media (max-width: 480px) {
+  .lvl .lt { flex-basis: 100%; }
+  .unitf { margin-left: 34px; }
+}
+/* ---- ticket 165: adding to lists, suggestions and quantities ---- */
+/* The add card: one form, one primary button. "Without quantity": text and
+   button side by side. "With quantity": the text takes the row, the quantity
+   follows, the button comes last. The mode is a .seg with its state in words. */
+.adder { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-section); padding: 14px 16px 16px; background: var(--surface); border-radius: var(--radius-tile); }
+.adder > * { flex: 1 1 100%; min-width: 0; }
+.adder > .adder-text { flex: 1 1 8em; order: 1; }
+.adder > .adder-go { flex: 0 0 auto; order: 2; }
+.adder > .sugg { order: 3; } .adder > .sugg-hidden { order: 4; } .adder > .sugg-unchecked { order: 5; } .adder > .picked { order: 6; } .adder > fieldset.qty { order: 7; } .adder > .msg { order: 9; }
+.adder[data-mode="qty"] > .adder-text, .adder:has(input[name="mode"][value="qty"]:checked) > .adder-text { flex-basis: 100%; }
+.adder[data-mode="qty"] > .adder-go, .adder:has(input[name="mode"][value="qty"]:checked) > .adder-go { order: 8; min-width: 12em; }
+[data-theme="bw"] .adder { border: 2px solid var(--text); }
+.adder-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
+.adder-label { font-size: var(--fs-event-title); font-weight: 700; color: var(--text); }
+.adder .seg.mode { flex: 0 1 auto; }
+.adder .seg.mode label { flex: 0 0 auto; padding: 8px 14px; }
+.adder-text input { width: 100%; box-sizing: border-box; }
+.adder > .msg { margin: 0; max-width: none; }
+.adder .sugg { display: grid; gap: 6px; min-width: 0; }
+.sugg-q { margin: 0; font-size: var(--fs-label); font-weight: 700; color: var(--text); }
+/* A suggestion: symbol or picture, name, department, "already on the list",
+   one warning per affected person. Selected (keyboard): 2 px accent outline. */
+.adder .place-list.art-sugg li { grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; padding: 6px 8px; }
+.adder .place-list.art-sugg li > .art-sym { grid-row: 1 / span 2; align-self: start; }
+.adder .place-list.art-sugg li > :not(.art-sym) { grid-column: 2; }
+.adder .place-list.art-sugg li + li { border-top: 1px solid var(--border); border-radius: 0; }
+.adder .place-list.art-sugg li[aria-selected="true"] { border-radius: var(--radius-field); border-top-color: transparent; }
+.adder .place-list.art-sugg li[aria-selected="true"] + li { border-top-color: transparent; }
+.art-sugg .on-list { font-size: var(--fs-label); font-weight: 700; color: var(--text); white-space: normal; }
+.art-sugg .allergen-warn { margin-top: 4px; }
+.art-sugg li.free .art-sym { background: none; border: 1.5px dashed var(--text-secondary); }
+.art-sugg li.free .art-sym .icon { stroke: var(--text-secondary); }
+.art-sugg li.free b { font-weight: 600; }
+[data-theme="bw"] .adder .place-list.art-sugg li + li { border-top-color: var(--text); }
+[data-theme="bw"] .art-sugg li.free .art-sym { border: 2px dashed var(--text); filter: none; }
+/* Free-text allergies at the moment of choosing (Q17): never filtered, always said. */
+.sugg-unchecked { display: grid; gap: 6px; }
+.sugg-unchecked .unchecked { margin: 0; }
+.sugg-unchecked .who { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
+/* Articles hidden because of an allergy (#164, experimental): named, not offered. */
+.sugg-hidden { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 10px; border-radius: var(--radius-card); border: 1.5px dashed var(--notice-text); color: var(--text); font-size: var(--fs-label); overflow-wrap: break-word; }
+.sugg-hidden > .icon { flex: none; stroke: var(--text-secondary); margin-top: 2px; }
+.sugg-hidden .tag { margin-right: 4px; vertical-align: 1px; }
+.sugg-hidden .who { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
+[data-theme="bw"] .sugg-hidden { border: 2px dashed var(--text); }
+/* The chosen article, in words, with a way to change it. */
+.picked { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border: 1.5px solid var(--accent); border-radius: var(--radius-card); background: var(--surface); min-width: 0; }
+.picked > div { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.picked b { display: flex; align-items: center; gap: 6px; font-size: var(--fs-event-title); overflow-wrap: break-word; }
+.picked b .icon { flex: none; stroke: var(--accent); }
+.picked small { font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+.picked .button { flex: none; }
+[data-theme="bw"] .picked { border: 2px solid var(--text); }
+[data-theme="bw"] .picked b .icon { stroke: var(--text); }
+/* How much: stepper and unit chips. Only shown "with quantity". */
+.adder fieldset.qty { display: none; border: 0; margin: 0; padding: 12px 0 0; border-top: 1px solid var(--border); gap: 12px; min-width: 0; }
+.adder[data-mode="qty"] fieldset.qty, .adder:has(input[name="mode"][value="qty"]:checked) fieldset.qty { display: grid; }
+.adder fieldset.qty > legend { float: left; width: 100%; padding: 0; margin: 0 0 2px; font-size: var(--fs-event-title); font-weight: 700; color: var(--text); }
+[data-theme="bw"] .adder fieldset.qty { border-top: 2px solid var(--text); }
+.amount .stepper { display: flex; align-items: center; gap: 8px; }
+.amount .stepper input { width: 5.5em; text-align: center; font-size: var(--fs-person-name); font-weight: 700; font-variant-numeric: tabular-nums; }
+.amount .step { display: inline-flex; align-items: center; justify-content: center; width: var(--touch-target); height: var(--touch-target); padding: 0; border-radius: var(--radius-field); }
+.amount .step .icon { stroke: currentColor; stroke-width: 2.4; }
+.amount.invalid .stepper input { border: 2px solid var(--error-text); }
+.amount .ferr { margin-top: 2px; }
+fieldset.units { display: flex; flex-wrap: wrap; gap: 8px; border: 0; margin: 0; padding: 0; min-width: 0; }
+fieldset.units > legend { float: left; width: 100%; padding: 0; margin: 0 0 6px; font-size: var(--fs-label); color: var(--text-secondary); }
+fieldset.units label { position: relative; display: inline-grid; justify-items: center; align-content: center; min-width: var(--touch-target); min-height: var(--touch-target); box-sizing: border-box; padding: 4px 11px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); line-height: 1.2; text-align: center; cursor: pointer; white-space: nowrap; }
+fieldset.units label small { font-size: var(--fs-meta); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+fieldset.units input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; padding: 0; min-height: 0; }
+fieldset.units label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+fieldset.units label:has(input:checked) small { color: var(--accent-text); }
+fieldset.units label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] fieldset.units label { border: 2px solid var(--text); padding: 3px 10px; }
+details.more-units { border-top: 0; }
+details.more-units > summary { min-height: var(--touch-target); }
+details.more-units > summary .sum { margin-left: 8px; padding: 1px 10px; border-radius: var(--radius-chip); background: var(--accent); color: var(--accent-text); font-weight: 700; font-size: var(--fs-label); }
+details.more-units[open] > summary .chev { transform: rotate(90deg); }
+details.more-units > div { display: grid; gap: 8px; }
+details.more-units .hint { margin: 0; }
+.adder .merge { margin: 0; color: var(--text); font-size: var(--fs-label-large); }
+details.more-units .hint a { color: var(--accent); }
+.adder .merge b { white-space: nowrap; }
+/* A success line that carries more: warnings, or one secondary action. */
+.msg .msg-body { display: grid; gap: 8px; min-width: 0; flex: 1; }
+.msg .msg-body p { margin: 0; }
+.msg-act { margin: 0; }
+.msg-act .button { display: inline-flex; align-items: center; gap: 8px; }
+.msg-act .icon { stroke: currentColor; flex: none; }
+/* Quantity on an entry: figures and unit in words, never split, right of the text. */
+.big-check .qty { flex: none; align-self: center; padding: 2px 10px; border-radius: var(--radius-chip); background: var(--background); color: var(--text); font-size: var(--fs-label-large); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+[data-done="true"] .big-check .qty { color: var(--text-secondary); font-weight: 600; }
+[data-theme="bw"] .big-check .qty { background: none; border: 2px solid var(--text); }
+.entries li.added { outline: 2px solid var(--accent); outline-offset: -2px; }
+[data-theme="bw"] .entries li.added { outline-width: 4px; outline-color: var(--text); }
+.list-settings fieldset.sw { border: 0; margin: 0; padding: 0; }
+/* Under 480 px: the mode takes its own full row, the button the full width. */
+@media (max-width: 479px) {
+  .adder { padding: 12px; }
+  .adder .seg.mode { flex: 1 1 100%; }
+  .adder .seg.mode label { flex: 1 1 0; padding: 8px 6px; }
+  .adder[data-mode="qty"] > .adder-go, .adder:has(input[name="mode"][value="qty"]:checked) > .adder-go { flex-basis: 100%; }
+  .picked { flex-wrap: wrap; }
+  .big-check .qty { font-size: var(--fs-label); padding: 2px 8px; }
+}
+/* Display (#33): the add card sits in the fixed head without its own card;
+   the head may scroll if it is taller than the room it has. A low screen
+   (on-screen keyboard open), and any landscape screen while an article is
+   being chosen, drops the list name and state from the head, because the
+   current tab on the left shows both. */
+.lv-head .adder { max-width: none; margin: 0; padding: 0; background: none; border: 0; }
+.lv-head { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+.lv-entries { flex: 1 1 0; }
+.lv .big-check .qty { font-size: var(--fs-event-title); }
+.lv-entries li.added .big-check { border: 2px solid var(--accent); }
+@media (min-width: 800px) {
+  .lv-head:has(.adder .sugg, .adder .picked, .adder .ferr) > .list-title,
+  .lv-head:has(.adder .sugg, .adder .picked, .adder .ferr) > .list-meta { display: none; }
+}
+@media (max-height: 560px) and (min-width: 800px) {
+  .lv-head .list-title, .lv-head .list-meta { display: none; }
+  .lv-header h1 { font-size: var(--fs-key-figure); }
+}
+
+/* ticket 165: Settings › Lists › Units. Grouped by kind, one switch per unit
+   with its size and its state in words; piece is always on. */
+.unit-set fieldset { display: grid; gap: 4px; }
+.unit-set .ugroup { display: grid; margin-top: 10px; }
+.unit-set .ugroup h3 { margin: 0 0 2px; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); }
+.unit-set .urow { padding: 4px 0; min-height: var(--touch-target); border-top: 1px solid var(--border); }
+.unit-set .ugroup h3 + .urow { border-top: 0; }
+.unit-set .urow .state { font-size: var(--fs-label); }
+[data-theme="bw"] .unit-set .urow { border-top-color: var(--text); }
+[data-theme="bw"] .unit-set .ugroup h3 { color: var(--text); }
+
+/* ticket 165 (Q21, 16/11/2026): changing an entry's quantity afterwards.
+   Every open entry on a list with suggestions has its own quantity button
+   right of the tick button: the quantity in words and a pen, or "Menge"
+   (dashed) without one. It opens the editor directly under the entry. */
+.qty-open { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--touch-target); min-width: var(--touch-target); box-sizing: border-box; padding: 4px 12px; border: 1.5px solid var(--accent); border-radius: var(--radius-chip); background: var(--background); color: var(--text); font: inherit; font-size: var(--fs-label-large); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap; text-decoration: none; cursor: pointer; }
+.qty-open .icon { flex: none; stroke: var(--accent); }
+.entries .qty-open { min-width: 6.5em; } /* the tick buttons above each other keep one width as long as the quantity is short */
+.qty-open.none { border-style: dashed; border-color: var(--text-secondary); background: var(--surface); color: var(--text-secondary); font-weight: 600; }
+.qty-open.none .icon { stroke: var(--text-secondary); }
+.qty-open[aria-expanded="true"] { border-style: solid; border-color: var(--accent); background: var(--accent); color: var(--accent-text); }
+.qty-open[aria-expanded="true"] .icon { stroke: var(--accent-text); }
+.qty-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] .qty-open { border: 2px solid var(--text); background: none; color: var(--text); }
+[data-theme="bw"] .qty-open .icon { stroke: var(--text); }
+[data-theme="bw"] .qty-open.none { border-style: dashed; }
+[data-theme="bw"] .qty-open[aria-expanded="true"] { border-style: solid; background: var(--text); color: var(--surface); }
+[data-theme="bw"] .qty-open[aria-expanded="true"] .icon { stroke: var(--surface); }
+.entries li.editing { outline: 2px solid var(--accent); outline-offset: -2px; }
+[data-theme="bw"] .entries li.editing { outline-width: 4px; outline-color: var(--text); }
+/* The editor: same parts as the add card, one primary "Speichern". */
+.qty-edit { flex: 1 1 100%; display: grid; gap: 12px; min-width: 0; max-width: 560px; margin: 0; padding: 12px 0 14px; border-top: 1px solid var(--border); }
+[data-theme="bw"] .qty-edit { border-top: 2px solid var(--text); }
+.qe-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
+.qe-title { margin: 0; font-size: var(--fs-event-title); font-weight: 700; color: var(--text); }
+.qty-edit .seg.mode { flex: 0 1 auto; }
+.qty-edit .seg.mode label { flex: 0 0 auto; padding: 8px 14px; }
+.qty-edit fieldset.qty { display: grid; gap: 12px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.qty-edit[data-mode="none"] fieldset.qty, .qty-edit:has(input[name="qmode"][value="none"]:checked) fieldset.qty { display: none; }
+.qty-edit .merge { margin: 0; color: var(--text); font-size: var(--fs-label-large); overflow-wrap: break-word; }
+.qty-edit .merge b { white-space: nowrap; }
+.qe-go { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.qe-go .button:first-child { min-width: 12em; }
+.qe-go .button { text-align: center; }
+.amount .step[disabled] { border-color: var(--border); color: var(--text-secondary); background: var(--surface); cursor: default; }
+[data-theme="bw"] .amount .step[disabled] { border-style: dashed; border-color: var(--text); color: var(--text); }
+.entries li > .msg { flex: 1 1 100%; margin: 0 0 10px; max-width: none; }
+@media (max-width: 479px) {
+  .qty-edit .seg.mode { flex: 1 1 100%; }
+  .qty-edit .seg.mode label { flex: 1 1 0; padding: 8px 6px; }
+  .qe-go .button { flex: 1 1 100%; }
+  .qty-open { font-size: var(--fs-label); padding: 4px 10px; }
+}
+/* Display (#33): the button is as high as the row; the editor gets big
+   targets for children (64 px stepper and save, 56 px chips and mode). */
+.lv-entries li:has(> .qty-open) { grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; }
+.lv-entries li > :not(:first-child):not(.qty-open) { grid-column: 1 / -1; }
+.lv .qty-open { min-height: 64px; min-width: 9em; padding: 6px 14px; border-radius: var(--radius-card); font-size: var(--fs-event-title); }
+.lv .qty-open .icon { width: 22px; height: 22px; }
+.lv-entries li.editing .big-check { border: 2px solid var(--accent); }
+[data-theme="bw"] .lv-entries li.editing .big-check { border-width: 4px; border-color: var(--text); }
+.lv .qty-edit { max-width: none; padding: 14px; border: 2px solid var(--accent); border-radius: var(--radius-card); background: var(--surface); gap: 14px; }
+[data-theme="bw"] .lv .qty-edit { border: 3px solid var(--text); }
+.lv .qty-edit .qe-title { font-size: var(--fs-person-name); }
+.lv .qty-edit .seg.mode label { min-height: 56px; padding: 8px 18px; font-size: var(--fs-event-title); }
+.lv .qty-edit .amount .step { width: 64px; height: 64px; }
+.lv .qty-edit .amount .step .icon { width: 28px; height: 28px; }
+.lv .qty-edit .amount .stepper input { min-height: 64px; width: 5em; font-size: var(--fs-key-figure); }
+.lv .qty-edit fieldset.units label { min-height: 56px; min-width: 80px; padding: 6px 18px; font-size: var(--fs-event-title); }
+.lv .qty-edit details.more-units > summary { min-height: 56px; font-size: var(--fs-event-title); }
+.lv .qty-edit .merge { font-size: var(--fs-event-title); }
+.lv .qty-edit .qe-go .button { min-height: 64px; padding: 10px 28px; font-size: var(--fs-event-title); }
+.lv-entries li > .msg { margin: 0; max-width: none; }
+/* Display: while a quantity is open the head (list name, state, add row)
+   steps aside, because the current tab names the list; landscape puts number
+   and unit side by side, so "Speichern" fits without scrolling. */
+.lv-list:has(.qty-edit) .lv-head { display: none; }
+@media (min-width: 800px) {
+  .lv .qty-edit fieldset.qty { grid-template-columns: auto minmax(0, 1fr); column-gap: 28px; align-items: start; }
+  .lv .qty-edit details.more-units { grid-column: 1 / -1; }
+  .lv .qty-edit .amount .ferr { width: 0; min-width: 100%; box-sizing: border-box; } /* the error wraps under the stepper and never pushes the units aside */
+}
+/* ticket 165: a legend that only a screen reader reads keeps its 1 px: the width of the visible legends
+   (100%) would make it a page-wide box and widen the page. */
+fieldset.seg > legend.vh, fieldset.units > legend.vh, .adder fieldset.qty > legend.vh, .qty-edit fieldset.qty > legend.vh { float: none; width: 1px; margin: -1px; }
+
+/* ticket 201: offline mode and "Verbindungen nach außen". Existing tokens only. */
+/* The notice that offline mode (or one connection) is off, with "Ändern".
+   A chosen state, not a warning: surface card, not notice colours. */
+.offline-note { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap); padding: 6px 14px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-card); color: var(--text); }
+.offline-note > .icon { flex: none; stroke: var(--accent); align-self: flex-start; margin-top: 10px; }
+.offline-note > p { margin: 0; padding: 8px 0; flex: 1 1 240px; min-width: 0; overflow-wrap: break-word; }
+.offline-note > a { flex: none; margin-left: auto; display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.wizard .offline-note, main > .offline-note { margin: 0 0 var(--gap); }
+[data-theme="bw"] .offline-note { border: 2px solid var(--text); }
+[data-theme="bw"] .offline-note > .icon { stroke: var(--text); }
+[data-theme="bw"] .offline-note > a { color: var(--text); text-decoration-thickness: 2px; }
+/* A warning notice with a lead-in and a link (90 days without update). */
+.notice.lead-in { margin: 0 0 var(--gap-section); display: flex; gap: 10px; align-items: flex-start; }
+.notice.lead-in > .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+.notice.lead-in p { margin: 0; overflow-wrap: break-word; }
+.notice.lead-in a { color: inherit; font-weight: 700; }
+[data-theme="bw"] .notice.lead-in { border: 2px solid var(--text); }
+/* The main switch card and its proof line. */
+.steps fieldset.offline-main { gap: 12px; }
+.offline-main .card-row .t b { font-size: var(--fs-person-name); }
+.steps .offline-main .state { font-size: var(--fs-label-large); color: var(--text); }
+.proof { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-weight: 700; color: var(--text); overflow-wrap: break-word; }
+.proof .icon { flex: none; margin-top: 2px; }
+.proof time { white-space: nowrap; }
+/* One row per connection: name, what it is for, where it goes, last contact, switch. */
+.conns { list-style: none; margin: 0; padding: 0; display: grid; }
+.steps .conns > li, .conns > li { display: grid; gap: 4px; padding: 14px 0; border-top: 1px solid var(--border); border-radius: 0; background: none; min-width: 0; }
+.conns > li:first-child { border-top: 0; padding-top: 4px; }
+.conns > li:last-child { padding-bottom: 0; }
+.conns .card-row { align-items: flex-start; }
+.conns .card-row .t { gap: 3px; }
+.steps .conns .t > small, .conns .t > small { display: block; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.steps .conns .t > small.last, .conns .t > small.last { color: var(--text); }
+.conns .t > small.last b { font-size: inherit; font-weight: 700; }
+.conns .names, .meta, .facts dd { hyphens: manual; }
+.conns .names { font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.steps .conns .state, .conns .state { font-size: var(--fs-label); color: var(--text); font-weight: 600; }
+.conns .state .icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; stroke: currentColor; }
+/* Locked switch: still a switch, visibly off and not movable. */
+.switch input:disabled { border-style: dashed; cursor: not-allowed; }
+.switch:has(input:disabled) { cursor: not-allowed; }
+[data-theme="bw"] .conns > li { border-top-color: var(--text); }
+/* Refused attempts: newest first, time, service and target in words. */
+ol.refused { list-style: none; margin: 0 0 var(--gap); padding: 0; max-width: 560px; background: var(--surface); border-radius: var(--radius-tile); }
+ol.refused li { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 16px; padding: 10px 16px; border-top: 1px solid var(--border); }
+ol.refused li:first-child { border-top: 0; }
+ol.refused time { font-variant-numeric: tabular-nums; font-size: var(--fs-label); color: var(--text-secondary); white-space: nowrap; padding-top: 1px; }
+ol.refused b { font-weight: 600; color: var(--text); }
+.card-row .t .state b { font-size: inherit; font-weight: 700; }
+main > section.explain { max-width: 560px; box-sizing: border-box; background: var(--surface); border-radius: var(--radius-tile); padding: 16px; }
+[data-theme="bw"] main > section.explain { border: 2px solid var(--text); }
+ol.refused .to { grid-column: 2; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+@media (max-width: 480px) { ol.refused li { grid-template-columns: minmax(0, 1fr); } ol.refused .to { grid-column: 1; } }
+[data-theme="bw"] ol.refused { border: 2px solid var(--text); }
+[data-theme="bw"] ol.refused li { border-top-color: var(--text); }
+[data-theme="bw"] ol.refused time, [data-theme="bw"] ol.refused .to { color: var(--text); }
+section.block { max-width: 560px; margin: 0 0 var(--gap-section); }
+section.block > h2 { margin: 0 0 6px; }
+section.block > p { margin: 0 0 10px; }
+/* Paused calendar connection: a word tag, not a problem flag. */
+.tag.paused { border-color: var(--text-secondary); color: var(--text); gap: 4px; }
+.tag.paused .icon { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.4; }
+[data-theme="bw"] .tag.paused { border: 2px dashed var(--text); }
+/* Confirmation pages: what goes outside again, grouped, every thing by name. */
+.conns.plain { max-width: 560px; background: var(--surface); border-radius: var(--radius-tile); padding: 6px 16px 14px; box-sizing: border-box; margin: 0 0 var(--gap); }
+.conns.plain > li:first-child { padding-top: 10px; }
+.conns.plain b { font-size: var(--fs-event-title); }
+[data-theme="bw"] .conns.plain, [data-theme="bw"] .cost { border: 2px solid var(--text); }
+.cost { max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap); padding: 16px; background: var(--surface); border-radius: var(--radius-tile); }
+.cost h2 { margin: 0 0 8px; font-size: var(--fs-person-name); }
+.cost ul { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.cost li { overflow-wrap: break-word; }
+.cost .devs { display: block; }
+.cost .devs b { font-weight: 700; }
+.cost .who { display: inline-flex; align-items: center; gap: 6px; margin-right: 10px; white-space: nowrap; font-weight: 600; }
+.confirm-page .actions { margin-top: 4px; }
+ol.howto .s > .confirm { justify-self: stretch; }
+ol.howto .s > .ferr { justify-self: stretch; }
+.confirm.invalid input { outline: 2px solid var(--error-text); outline-offset: 2px; }
+fieldset.choice.invalid label { border: 2px solid var(--error-text); padding: 11px 13px; }
+.wizard fieldset.choice { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+.hub-row .hint b { color: var(--text); }
+.calsum { list-style: none; margin: 0 0 var(--gap-section); padding: 0; display: grid; gap: var(--gap-cards); max-width: 560px; }
+.calsum li { background: var(--surface); border-radius: var(--radius-tile); padding: 12px 16px; display: grid; gap: 4px; }
+.calsum b { font-size: var(--fs-event-title); }
+.calsum small { font-size: var(--fs-label); color: var(--text-secondary); }
+[data-theme="bw"] .calsum li { border: 2px solid var(--text); }
+/* Lines under a legend that sit flush with it (the preview's inline style, as a class). */
+.steps p.flat { margin: 0; }
+.steps p.hint.flat { clear: both; }
+/* ---- ticket 166: tile view for lists (ADR 0019, preview-166) ---- */
+/* View switch: two buttons with icon and word, the current one filled in
+   accent (bw: black). It saves at once (one POST per button, no script) and the
+   page answers with a success line that says whom the choice applies to. */
+.view-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px var(--gap); max-width: 760px; margin: 0 0 var(--gap); }
+.view-row .list-meta { margin: 0; flex: 1 1 15em; min-width: 0; }
+.view-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 0; margin: 0; }
+.view-switch .lab { margin-right: 10px; font-size: var(--fs-label); color: var(--text-secondary); }
+.view-switch button { position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: var(--touch-target); padding: 8px 14px 8px 12px; margin: 0 0 0 -1px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-label-large); cursor: pointer; }
+.view-switch button:first-of-type { margin-left: 0; border-radius: var(--radius-field) 0 0 var(--radius-field); }
+.view-switch button:last-of-type { border-radius: 0 var(--radius-field) var(--radius-field) 0; }
+.view-switch button .icon { flex: none; stroke: currentColor; }
+.view-switch button[aria-pressed="true"] { z-index: 1; background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+.view-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 2; }
+[data-theme="bw"] .view-switch button { border: 2px solid var(--text); margin-left: -2px; }
+[data-theme="bw"] .view-switch button:first-of-type { margin-left: 0; }
+.view-switch[aria-invalid="true"] button { border: 2px solid var(--error-text); }
+.view-switch .ferr { flex: 0 0 100%; margin: 8px 0 0; }
+
+/* Tiles: one tile per entry, the whole tile is the tick button (at least
+   148 px wide and high). Picture or symbol on top, the tick box in the top
+   right corner, the name in full below (hyphenates only words of 12+
+   letters), then the quantity and any allergen warning in words. */
+.tiles { list-style: none; margin: 0 0 var(--gap); padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 148px), 1fr)); gap: var(--gap-cards); max-width: 760px; }
+.tiles > li { display: grid; grid-template-rows: 1fr auto; gap: 6px; min-width: 0; }
+.tiles form { margin: 0; display: grid; }
+.tile-check { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; box-sizing: border-box; width: 100%; min-width: 0; min-height: 148px; padding: 12px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-tile); background: var(--surface); color: var(--text); font: inherit; text-align: center; cursor: pointer; }
+.tile-check:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tile-check .pic { flex: none; box-sizing: border-box; width: 64px; height: 64px; margin: 4px 0 2px; border-radius: var(--radius-card); background: var(--background); display: grid; place-items: center; font-size: 42px; line-height: 1; overflow: hidden; }
+.tile-check .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Free text has no article and so no picture: its first letter, on a dashed
+   ring, so it never looks like a symbol it is not. */
+.tile-check .pic.letter { background: none; border: 2px dashed var(--border); font-size: 32px; font-weight: 700; color: var(--text-secondary); }
+.tile-check .box { position: absolute; top: 8px; right: 8px; box-sizing: border-box; width: 32px; height: 32px; border: 3px solid var(--text); border-radius: var(--radius-field); background: var(--surface); display: grid; place-items: center; }
+.tile-check .box svg { display: none; }
+.tile-check .title { max-width: 100%; font-size: var(--fs-event-title); font-weight: 600; line-height: 1.25; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) {
+  .tile-check .title { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
+}
+.tile-check .qty { font-size: var(--fs-label); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.tile-check .qty span { white-space: nowrap; }
+/* Allergen warning on a tile (#164 in short): one notice-coloured block with
+   the heading "Allergie-Warnung" and one line per affected person: marker,
+   name and that person's allergens in words. Never a count. */
+.tile-warn { align-self: stretch; display: grid; gap: 2px; margin-top: 2px; padding: 5px 8px 6px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-meta); text-align: left; overflow-wrap: break-word; }
+.tile-warn .h { display: flex; align-items: center; gap: 5px; font-weight: 700; }
+.tile-warn .icon { flex: none; width: 16px; height: 16px; stroke: currentColor; }
+.tile-warn .line { display: block; min-width: 0; }
+.tile-warn .who { display: inline-flex; align-items: center; gap: 4px; margin-right: 4px; font-weight: 700; }
+.tile-warn .who .marker { flex: none; }
+[data-theme="bw"] .tile-warn { background: none; color: var(--text); border: 2px solid var(--text); }
+/* Ticked off: the box fills in the list colour with a white tick (bw: black),
+   the name is struck through, the picture turns grey and the tile loses its
+   white card, as the tick rows do. */
+.tiles [data-done="true"] .tile-check { background: transparent; border-style: dashed; }
+.tiles [data-done="true"] .tile-check .box { background: var(--pc); border-color: var(--pc); }
+.tiles [data-done="true"] .tile-check .box svg { display: block; stroke: var(--surface); stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.tiles [data-done="true"] .tile-check .title { font-weight: 400; color: var(--text-secondary); text-decoration: line-through; }
+.tiles [data-done="true"] .tile-check .pic { filter: grayscale(1); }
+/* The entry just added keeps a frame until the next tap (as #33). */
+.tiles li.added .tile-check { border: 2px solid var(--accent); padding: 11.5px 9.5px; }
+.tiles li[aria-invalid="true"] .tile-check { border: 2px solid var(--error-text); padding: 11.5px 9.5px; }
+.tiles > li > .ferr { margin: 0; }
+[data-theme="bw"] .tile-check { border: 2px solid var(--text); padding: 11.5px 9.5px; }
+[data-theme="bw"] .tile-check .pic { filter: grayscale(1); background: var(--surface); border: 2px solid var(--text); }
+[data-theme="bw"] .tile-check .pic.letter { border: 2px dashed var(--text); color: var(--text); }
+[data-theme="bw"] .tiles [data-done="true"] .tile-check { background: var(--progress-track); border-style: solid; }
+[data-theme="bw"] .tiles [data-done="true"] .tile-check .title { color: var(--text); }
+[data-theme="bw"] .tiles [data-done="true"] .tile-check .box { background: var(--text); border-color: var(--text); }
+[data-theme="bw"] .tiles li.added .tile-check { border: 4px solid var(--text); padding: 9.5px 7.5px; }
+[data-theme="bw"] .tiles li[aria-invalid="true"] .tile-check { border: 4px dashed var(--text); padding: 9.5px 7.5px; }
+
+.list-tiles .unchecked-box { max-width: 760px; }
+/* A phone: two tiles side by side from 320 px; the box and picture shrink a little. */
+@media (max-width: 420px) {
+  .tiles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); }
+  .tile-check { min-height: 136px; }
+}
+
+/* On the display (#33): the tiles fill the list's scroll area; the view switch
+   sits in the list's head next to the state line. */
+.lv-head .view-row { margin: 0; max-width: none; }
+.lv-entries ul.tiles { max-width: none; margin: 0; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); }
+.lv-entries .unchecked-box { max-width: none; margin: 8px 0 0; }
+.lv .tile-check .title { -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) {
+  .lv .tile-check .title { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
+}
+@media (max-width: 599px) {
+  .lv-entries ul.tiles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 128px), 1fr)); }
+  .lv-entries ul.tiles > * + *, .lv-entries .tile-warn * + * { margin-top: 0; }
+  /* A phone used as a display: the list card gives width back to the tiles. */
+  .lv-head { padding: 12px 10px 10px; }
+  .lv-entries { padding: 10px; }
+  .lv .tile-check { padding: 10px 4px; }
+  [data-theme="bw"] .lv .tile-check { padding: 9.5px 3.5px; }
+  .lv .tile-check .title { font-size: var(--fs-label-large); }
+  .lv .tile-check .pic { width: 56px; height: 56px; font-size: 36px; }
+}
+/* In the tile view the groups and actions below the tiles take the tiles' width. */
+main:has(.tiles) .group-head, main:has(.tiles) .hidden-line, main:has(.tiles) .tools, main:has(.tiles) details.danger { max-width: 760px; }
+
+/* ticket 57, product owner decision Q92: the names the box certificate covers,
+   one per line so a long router name never widens a 375 px page. */
+.certnames { margin: 0; padding: 0; list-style: none; display: grid; gap: 2px; font-weight: 700; overflow-wrap: anywhere; }
+.tile .certnames { font-size: var(--fs-person-name); }
+.facts .certnames { font-weight: 400; }
+.choice small.way a { overflow-wrap: anywhere; }
+/* Settings "Sichere Verbindung": one tile per topic (facts, from outside, router name). */
+main > .tile.netblock { display: grid; gap: 12px; padding: var(--pad-column); max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-section); min-width: 0; }
+main > .tile.netblock h2, main > .tile.netblock p { margin: 0; }
+main > .tile.netblock .button { justify-self: start; }
+[data-theme="bw"] main > .tile.netblock { border: 2px solid var(--text); }
+/* The form of the page "Nur im Heimnetz" holds its tiles and "More options". */
+.wizard form.homeform { display: grid; gap: var(--gap); min-width: 0; }
+
+/* Display page: Layout section (#180). */
+.steps fieldset.layout { gap: 14px; }
+.layout .lay-intro { margin: 0; }
+.layout h3.z-head { display: flex; align-items: center; flex-wrap: wrap; gap: 8px 10px; margin: 0; padding-top: 14px; border-top: 1px solid var(--border); font-size: var(--fs-event-title); font-weight: 700; }
+.layout h3.z-head .zp { stroke: var(--accent); flex: none; }
+.zpic { flex: none; fill: none; stroke: var(--text-secondary); stroke-width: 1.5; }
+.zpic .z { fill: var(--accent); stroke: none; }
+.zone { display: grid; gap: 10px; min-width: 0; }
+.zone .always { margin: 0; font-size: var(--fs-meta); color: var(--text-secondary); }
+.zone .hint, .layout > .hint { margin: 0; }
+.zone .blks { display: grid; }
+.blk { padding: 8px 0; gap: 10px; }
+.blks > .blk + .blk, .blks > .sub + .blk, .blks > .why + .blk { border-top: 1px solid var(--border); }
+.blk .t { flex: 1 1 auto; }
+.blk .state { overflow-wrap: break-word; hyphens: manual; }
+.blk .switch { margin-left: 0; flex: none; }
+.blk .mv { margin-left: auto; }
+.mv { display: inline-flex; gap: 6px; flex: none; }
+.mvb { display: inline-grid; place-items: center; width: var(--touch-target); height: var(--touch-target); padding: 0; border: 1px solid var(--border); border-radius: var(--radius-field); background: var(--surface); color: var(--accent); cursor: pointer; }
+.mvb .icon { stroke: var(--accent); }
+.mvb:disabled { border-style: dashed; cursor: default; }
+.mvb:disabled .icon { stroke: var(--border); }
+.mvb:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] .mvb { border: 2px solid var(--text); }
+[data-theme="bw"] .mvb:disabled { border: 2px dashed var(--text-secondary); }
+[data-theme="bw"] .mvb:disabled .icon { stroke: var(--text-secondary); }
+.blk.rot { border-top: 1px solid var(--border); padding-top: 12px; }
+.sub { margin: 0 0 8px 0; padding: 4px 0 4px 14px; border-left: 3px solid var(--border); display: grid; gap: 8px; }
+[data-theme="bw"] .sub { border-left-color: var(--text); }
+.sub .blk.subrow { padding: 4px 0; }
+.sub .f { margin: 0; }
+.sub .f.warn select { border: 2px solid var(--notice-text); }
+.sub .flag.gone, .layout .flag.gone { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 10px; border-radius: var(--radius-card); font-size: var(--fs-label); font-weight: 400; overflow-wrap: break-word; }
+.flag.gone .icon { flex: none; stroke: currentColor; }
+[data-theme="bw"] .flag.gone { background: var(--surface); border: 2px solid var(--text); }
+.why.nolist { margin: 0 0 8px; font-size: var(--fs-label); }
+.why.nolist .icon { flex: none; stroke: var(--accent); }
+.why.nolist a { font-weight: 700; color: var(--accent); }
+[data-theme="bw"] .why.nolist { border: 2px solid var(--text); }
+/* Personal view: zones that do not apply */
+.zone.off .blk .t, .zone.off .always { color: var(--text-secondary); }
+.zone.off .switch { opacity: .5; }
+.why.off-why { font-size: var(--fs-label); }
+[data-theme="bw"] .why.off-why { border: 2px dashed var(--text); }
+[data-theme="bw"] .zone.off .switch { opacity: 1; }
+/* People */
+.zone.people .pick { border: 0; padding: 0; margin: 0; display: grid; gap: 8px; min-width: 0; background: none; border-radius: 0; }
+.pwrap { display: flex; flex-wrap: wrap; gap: 8px; }
+ol.porder { list-style: none; margin: 0; padding: 0; display: grid; gap: 6px; }
+ol.porder > li.prow { margin: 0; padding: 0; background: none; border-radius: 0; min-height: 0; display: flex; align-items: center; gap: 10px; min-width: 0; }
+.prow .pos { flex: none; width: 6.2em; font-size: var(--fs-meta); color: var(--text-secondary); line-height: 1.25; }
+.prow .pchip { flex: 0 1 auto; min-width: 0; }
+.prow .mv { margin-left: auto; }
+.poff { display: grid; gap: 6px; padding-top: 6px; }
+.poff-h { margin: 0; font-size: var(--fs-label); color: var(--text-secondary); }
+.poff-h b { color: var(--text); }
+.zone.people.invalid ol.porder:empty, .zone.people.invalid .pick { outline: 0; }
+.zone.people.invalid .pwrap .pchip.all { border: 2px solid var(--error-text); }
+.layout .hint.fam { font-size: var(--fs-meta); }
+/* Live preview */
+.lay-prev { margin: 0; display: grid; gap: 8px; padding: 12px; border-radius: var(--radius-card); background: var(--background); }
+[data-theme="bw"] .lay-prev { border: 2px solid var(--text); background: var(--surface); }
+.lay-prev figcaption { font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+.lay-prev figcaption b { color: var(--text); }
+.lay-prev .pstate.dirty { color: var(--notice-text); background: var(--notice-bg); padding: 0 6px; border-radius: 6px; font-weight: 600; }
+[data-theme="bw"] .lay-prev .pstate.dirty { background: none; border: 1.5px dashed var(--text); color: var(--text); }
+.lay-words { margin: 0; font-size: var(--fs-label); overflow-wrap: break-word; hyphens: manual; }
+.mini-wrap { display: flex; justify-content: center; container-type: inline-size; }
+@container (max-width: 360px) { .mini.land .m-name b { font-size: 7.5px; } .mini.land .m-name { flex-direction: column; align-items: flex-start; } }
+.mini { --g: 4px; box-sizing: border-box; display: flex; flex-direction: column; gap: var(--g); padding: 7px; border: 1.5px solid var(--text-secondary); border-radius: 12px; background: var(--background); overflow: hidden; font-size: 9px; line-height: 1.2; color: var(--text); }
+.mini.land { width: 100%; max-width: 440px; aspect-ratio: 4 / 3; }
+.mini.port { width: min(100%, 270px); aspect-ratio: 3 / 4; }
+[data-theme="bw"] .mini { border: 2px solid var(--text); background: var(--background); }
+.mini i { font-style: normal; }
+.mini s { text-decoration: none; display: block; }
+.m-head { display: flex; justify-content: space-between; align-items: center; gap: 4px; flex: none; }
+.m-date { display: grid; min-width: 0; }
+.m-date i { font-size: 7px; color: var(--text-secondary); }
+.m-date b { font-size: 12px; font-weight: 700; white-space: nowrap; }
+.m-chips { display: flex; gap: 3px; flex-wrap: wrap; justify-content: flex-end; }
+.m-chip { display: inline-flex; align-items: center; gap: 2px; padding: 2px 5px; border-radius: 8px; background: var(--surface); font-weight: 700; white-space: nowrap; }
+.m-chip .icon { stroke: var(--accent); stroke-width: 2.4; }
+.m-lists { border: 1px solid var(--accent); }
+[data-theme="bw"] .m-chip { border: 1px solid var(--text); }
+.m-strip { flex: none; }
+.m-strip span { display: inline-block; padding: 2px 5px; border-radius: 5px; background: var(--surface); font-weight: 600; }
+.m-strip i { font-weight: 400; color: var(--text-secondary); }
+[data-theme="bw"] .m-strip span { border: 1px solid var(--text); }
+.m-cols { flex: 1; min-height: 0; display: grid; grid-auto-flow: column; grid-auto-columns: calc((100% - (var(--vis) - 1) * var(--g)) / var(--vis)); gap: var(--g); overflow: hidden; }
+.m-col { display: flex; flex-direction: column; gap: 3px; min-width: 0; padding: 4px; border-radius: 7px; background: var(--surface); }
+[data-theme="bw"] .m-col { border: 1px solid var(--text); }
+.m-name { display: flex; flex-wrap: wrap; align-items: center; gap: 2px 3px; margin-bottom: 1px; min-width: 0; }
+.m-name b { font-size: 9px; font-weight: 700; min-width: 0; overflow-wrap: break-word; hyphens: manual; }
+.mini .marker { --marker-size: 7px; }
+[data-theme="bw"] .mini .marker { width: 8px; height: 8px; border-width: 1.5px; }
+.m-col .ev { height: 13px; border-radius: 3px; background: var(--pc-tint); }
+.m-col .ev.short { width: 70%; }
+[data-theme="bw"] .m-col .ev { background: var(--event-card); }
+.m-col .rt { height: 8px; border: 1.5px solid var(--pc); border-radius: 3px; }
+[data-theme="bw"] .m-col .rt { border-color: var(--text); }
+.m-col .pg { height: 4px; border-radius: 2px; background: var(--pc-tint); overflow: hidden; }
+.m-col .pg b { display: block; height: 100%; background: var(--pc); }
+[data-theme="bw"] .m-col .pg { background: var(--progress-track); }
+[data-theme="bw"] .m-col .pg b { background: var(--progress-fill); }
+.m-col.anchor .pg { margin-top: auto; }
+.m-foot { flex: none; display: flex; gap: var(--g); }
+.m-tile { flex: 1 1 0; min-width: 0; display: grid; gap: 2px; padding: 4px 5px; border-radius: 7px; background: var(--surface); }
+.m-tile i { display: flex; align-items: center; gap: 2px; color: var(--text-secondary); overflow-wrap: anywhere; }
+.m-tile .icon { stroke: var(--accent); stroke-width: 2.4; flex: none; }
+.m-tile s { height: 4px; border-radius: 2px; background: var(--border); }
+.m-tile s.short { width: 60%; }
+[data-theme="bw"] .m-tile { border: 1px solid var(--text); }
+[data-theme="bw"] .m-tile s { background: var(--progress-track); }
+.m-pv { flex: 1; min-height: 0; display: grid; grid-template-rows: auto 1fr; gap: 4px; }
+.m-pvh { display: flex; align-items: center; gap: 4px; }
+.m-pvh b { font-size: 13px; }
+.mini .m-pvh .marker { --marker-size: 10px; }
+.m-pvb { display: grid; grid-template-columns: 1fr 1.4fr; gap: var(--g); min-height: 0; }
+.m-pvt, .m-pvd { display: flex; flex-direction: column; gap: 4px; padding: 5px; border-radius: 7px; background: var(--surface); }
+.m-pvt i, .m-pvd i { color: var(--text-secondary); }
+.m-pvt .ck { height: 12px; border: 1.5px solid var(--pc); border-radius: 3px; }
+.m-pvt .ck.done { background: var(--pc-tint); }
+.m-pvd .ev { height: 13px; border-radius: 3px; background: var(--pc-tint); }
+.m-pvd .ev.short { width: 70%; }
+[data-theme="bw"] .m-pvt, [data-theme="bw"] .m-pvd { border: 1px solid var(--text); }
+[data-theme="bw"] .m-pvt .ck { border-color: var(--text); }
+[data-theme="bw"] .m-pvt .ck.done, [data-theme="bw"] .m-pvd .ev { background: var(--event-card); }
+/* Live: the switches show and hide parts of the small preview (no script) */
+.layout:has(input[name="b_clock"]:not(:checked)) .m-clock,
+.layout:has(input[name="b_weather"]:not(:checked)) .m-weather,
+.layout:has(input[name="b_events"]:not(:checked)) .m-col .ev,
+.layout:has(input[name="b_routines"]:not(:checked)) .m-col .rt,
+.layout:has(input[name="b_tasks"]:not(:checked)) .m-col .pg,
+.layout:has(input[name="b_meals"]:not(:checked)) .m-meals,
+.layout:has(input[name="b_tomorrow"]:not(:checked)) .m-tomorrow,
+.layout:has(input[name="b_list"]:not(:checked)) .m-list { display: none; }
+.layout:has(input[name="b_events"]:not(:checked)) .sub:has(input[name="show_tomorrow"]) { display: none; }
+.layout:has(input[name="b_list"]:not(:checked)) .sub:has(select[name="list"]) { display: none; }
+.copy-row { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; }
+.copy-row .f { flex: 1 1 220px; margin: 0; }
+.copy-row .button { display: inline-flex; align-items: center; gap: 8px; }
+.copy-row .button .icon { stroke: currentColor; }
+.layout details.more > summary { flex-wrap: wrap; }
+.layout details.more > div { display: grid; gap: 8px; }
+.steps > .omitted { margin: 0; padding: 10px 14px; border: 1.5px dashed var(--border); border-radius: var(--radius-card); font-size: var(--fs-label); }
+@media (max-width: 480px) {
+  ol.porder > li.prow { flex-wrap: wrap; row-gap: 2px; }
+  .prow .pos { width: 100%; }
+  .prow .pchip { flex: 1 1 0; }
+  .blk:has(.mv) { flex-wrap: wrap; }
+  .blk:has(.mv) .t { flex: 1 1 100%; }
+  .blk .mv { margin-left: 0; }
+  .blk:has(.mv) .switch { margin-left: auto; }
+}
+
+/* Display: list tile in the footer (#180). */
+.fv-footer a.tile.list { color: inherit; text-decoration: none; display: grid; gap: 6px; align-content: start; }
+.fv-footer .tile.list .lab { display: flex; align-items: center; gap: 6px; color: var(--text-secondary); }
+.fv-footer .tile.list .lab .icon { stroke: var(--accent); flex: none; }
+.lt-items { list-style: none; margin: 0; padding: 0; font-size: var(--fs-body); font-weight: 600; line-height: 1.45; overflow-wrap: break-word; hyphens: manual; }
+.lt-items li { display: inline; }
+.lt-items li + li::before { content: " · "; font-weight: 400; color: var(--text-secondary); }
+.lt-items li { white-space: normal; }
+.lt-more { margin: 0; font-size: var(--fs-label); color: var(--text-secondary); }
+.lt-more::after { content: " ›"; color: var(--accent); font-weight: 700; }
+[data-theme="bw"] .fv-footer .tile.list { border: 2px solid var(--text); }
+/* Display: routines in a column (#180). */
+.col-rt { list-style: none; margin: auto 0 0; padding: var(--gap-cards) 0 0; display: grid; gap: 6px; border-top: 1px solid var(--border); font-size: var(--fs-label); }
+.col-rt li { display: flex; gap: 6px; align-items: flex-start; overflow-wrap: break-word; }
+.col-rt .icon { flex: none; stroke: var(--pc); }
+.col-rt li.done { color: var(--text-secondary); }
+[data-theme="bw"] .col-rt .icon { stroke: var(--text); }
+.col-rt + .pbar { margin-top: var(--gap-cards); }
+.m-empty { grid-column: 1 / -1; display: grid; place-items: center; border: 1.5px dashed var(--error-text); border-radius: 7px; color: var(--error-text); font-size: 11px; font-weight: 700; }
+[data-theme="bw"] .m-empty { border: 2px dashed var(--text); color: var(--text); }
+
+/* The preview of a personal view: the header and a sketch of tasks and events (#180). */
+.mini.personal .m-strip, .mini.personal .m-cols, .mini.personal .m-foot { display: none; }
+.mini:not(.personal) .m-pv { display: none; }
+.m-col[hidden] { display: none; }
+.layout [hidden] { display: none !important; }
+
+/* The preview takes its order and widths from custom properties (templates carry no inline styles). */
+.m-col { order: var(--po, 0); }
+.m-chip[data-b], .m-tile[data-b] { order: var(--bo, 0); }
+.m-col [data-b] { order: var(--bo, 0); }
+.m-col .pg b { width: calc(var(--w, 0) * 1%); }
+
+/* ---- ticket 231: one choice page for all ways to add a calendar ----
+   Existing tokens only; builds on .connect, .choice, .guide, .why (ticket 135),
+   .pick-first (ticket 57) and the locked state of ticket 201. */
+/* No way is chosen first: the cards are equal. Until one is chosen no guide
+   shows, only the .pick-first line. */
+.connect:has(input[name="service"]):not(:has(input[name="service"]:checked)) .guide { display: none; }
+.connect:has(input[name="service"][value="google"]:checked) .guide:not([data-service="google"]),
+.connect:has(input[name="service"][value="outlook"]:checked) .guide:not([data-service="outlook"]),
+.connect:has(input[name="service"][value="ics"]:checked) .guide:not([data-service="ics"]) { display: none; }
+.connect:has(input[name="service"]:checked) .pick-first { display: none; }
+/* A way whose connection to the outside is off: dashed frame, no radio, a lock
+   and the reason in words (like the locked switch of ticket 201). */
+.choice label.locked { border-style: dashed; cursor: not-allowed; }
+.choice label.locked input { visibility: hidden; }
+.choice label.locked b { color: var(--text-secondary); }
+.choice small.lock { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 600; }
+.choice small.lock .icon { flex: none; }
+[data-theme="bw"] .choice label.locked { border: 2px dashed var(--text); padding: 11px 13px; }
+/* The trimmed overview: one way in, right under the lead. */
+.add-way { margin: 0 0 var(--gap-section); }
+section > .hint.none { margin-top: -4px; }

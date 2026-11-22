@@ -25,7 +25,7 @@ Lists (#32, #33) take only typed text. On 16/11/2026 the product owner asked whe
 ### Article library
 
 - An **article** is a thing that can be put on a list: name (de/en), symbol, department, the diets it fits, the allergens it contains.
-- The box ships about 250 articles in German and English. Symbols are emoji from **Noto Emoji** (Apache-2.0) as placeholders.
+- The box ships about 250 articles in German and English. Symbols are emoji characters (names from Unicode CLDR) drawn by the system font as placeholders; the **Noto Emoji** font (Apache-2.0) is not bundled, so a symbol looks as the device draws it.
 - Parents manage the library under Settings, Lists, Library: add **own articles**, hide shipped ones, change name, symbol, department, diets and allergens. An own article's picture is a **photo upload** or an **image address on the web**. The box downloads a web image once, never links to it; it accepts only http(s) addresses that resolve to public addresses, checks type and size, and stores every picture re-encoded and scaled down (at most 512 px, JPEG), metadata removed.
 - Free text stays possible; afterwards the box offers to add it to the library.
 - **Suggestions follow the household's diets:** an article is suggested when it fits at least one person's diet.
@@ -40,6 +40,10 @@ Lists (#32, #33) take only typed text. On 16/11/2026 the product owner asked whe
 ### Tile view
 
 - A list can be shown as **tiles** (symbol or picture, name, tick) or as a **list**. Children see tiles by default, adults the list; each person's choice is remembered.
+- **One choice per person for all lists**, stored in the box, so it holds on every device. Nobody changes another person's view, not even a parent. A **display** is not a person: it keeps its own view, tiles until someone at the display (no PIN, a view is harmless) or a parent over the API switches it.
+- **The whole tile is the tick button.** An entry shows the symbol or picture of the article its text names; the text names an article when it equals the article's name in German or English (ignoring case and umlauts), own articles first. An entry that names no article is free text and shows its first letter on a dashed ring, never a made-up picture. Until entries carry an article of their own (ticket 165), the name is the link.
+- **Allergen warnings on tiles** have one line per affected person with the allergens in words, never a count. A list that holds a food article ends with the note about free-text allergies, in both views and on the display.
+- The sort-or-remove view stays rows.
 
 ### Sync (0.2)
 

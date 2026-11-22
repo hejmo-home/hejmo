@@ -27,6 +27,9 @@ var apiRoutes = []APIRoute{
 	{"PATCH", "/people/{id}", auth.Perm("people", auth.Write), (*server).apiUpdatePerson},
 	{"PUT", "/people/order", auth.Perm("people", auth.Write), (*server).apiOrderPeople},
 
+	{"GET", "/food", auth.Perm("health", auth.Read), (*server).apiListFood},
+	{"GET", "/people/{id}/food", auth.Perm("health", auth.Read), (*server).apiGetFood},
+	{"PUT", "/people/{id}/food", auth.Perm("health", auth.Write), (*server).apiPutFood},
 	{"GET", "/people/{id}/stars", auth.Perm("tasks", auth.Read), (*server).apiGetStars},
 	{"POST", "/people/{id}/stars", auth.Perm("tasks", auth.Write), (*server).apiBookStars},
 	{"GET", "/me/passkeys", auth.Perm("people", auth.Read), (*server).apiListPasskeys},
@@ -35,6 +38,7 @@ var apiRoutes = []APIRoute{
 	{"PATCH", "/me/passkeys/{id}", auth.Perm("people", auth.Write), (*server).apiRenamePasskey},
 	{"DELETE", "/me/passkeys/{id}", auth.Perm("people", auth.Delete), (*server).apiDeletePasskey},
 	{"POST", "/me/recovery-codes", auth.Perm("people", auth.Write), (*server).apiNewRecoveryCodes},
+	{"POST", "/me/recovery-codes/saved", auth.Perm("people", auth.Write), (*server).apiRecoveryCodesSaved},
 	{"GET", "/people/{id}/invitation", auth.Perm("tokens", auth.Read), (*server).apiGetInvitation},
 	{"POST", "/people/{id}/invitation", auth.Perm("tokens", auth.Write), (*server).apiCreateInvitation},
 	{"DELETE", "/people/{id}/invitation", auth.Perm("tokens", auth.Delete), (*server).apiWithdrawInvitation},
@@ -60,6 +64,8 @@ var apiRoutes = []APIRoute{
 	{"POST", "/calendars/{id}/sync", auth.Perm("events", auth.Write), (*server).apiSyncCalendar},
 	{"GET", "/calendar-connections", auth.Perm("settings", auth.Read), (*server).apiListConnections},
 	{"POST", "/calendar-connections", auth.Perm("settings", auth.Write), (*server).apiConnect},
+	{"POST", "/calendar-connections/outlook/sign-ins", auth.Perm("settings", auth.Write), (*server).apiStartSignIn},
+	{"GET", "/calendar-connections/outlook/sign-ins/{id}", auth.Perm("settings", auth.Write), (*server).apiGetSignIn},
 	{"DELETE", "/calendar-connections/{id}", auth.Perm("settings", auth.Delete), (*server).apiDeleteConnection},
 	{"PUT", "/calendar-connections/{id}/credentials", auth.Perm("settings", auth.Write), (*server).apiChangeConnectionPassword},
 	{"GET", "/calendar-connections/{id}/calendars", auth.Perm("settings", auth.Write), (*server).apiDiscover},
@@ -67,8 +73,13 @@ var apiRoutes = []APIRoute{
 	{"POST", "/calendar-connections/{id}/calendars", auth.Perm("settings", auth.Write), (*server).apiAddConnectionCalendar},
 	{"GET", "/sync-log", auth.Perm("settings", auth.Read), (*server).apiSyncLog},
 	{"GET", "/https", auth.Perm("settings", auth.Read), (*server).apiHTTPS},
+	{"PATCH", "/https", auth.Perm("settings", auth.Write), (*server).apiSetRouterName},
 	{"GET", "/settings", auth.Perm("settings", auth.Read), (*server).apiGetSettings},
 	{"PATCH", "/settings", auth.Perm("settings", auth.Write), (*server).apiUpdateSettings},
+	{"GET", "/places", auth.Perm("settings", auth.Read), (*server).apiSearchPlaces},
+	{"GET", "/outbound", auth.Perm("settings", auth.Read), (*server).apiGetOutbound},
+	{"PATCH", "/outbound", auth.Perm("settings", auth.Write), (*server).apiPatchOutbound},
+	{"POST", "/outbound/offline", auth.Perm("settings", auth.Write), (*server).apiGoOffline},
 	{"GET", "/update", auth.Perm("settings", auth.Read), (*server).apiGetUpdate},
 	{"POST", "/update/dismiss", auth.Perm("settings", auth.Write), (*server).apiDismissUpdate},
 	{"GET", "/events", auth.Perm("events", auth.Read), (*server).apiListEvents},
@@ -104,6 +115,8 @@ var apiRoutes = []APIRoute{
 	{"PATCH", "/routine-templates/{id}/steps/{step_id}", auth.Perm("tasks", auth.Write), (*server).apiPatchTemplateStep},
 	{"DELETE", "/routine-templates/{id}/steps/{step_id}", auth.Perm("tasks", auth.Write), (*server).apiDeleteTemplateStep},
 	{"PUT", "/routine-templates/{id}/order", auth.Perm("tasks", auth.Write), (*server).apiTemplateOrder},
+	{"GET", "/people/{id}/list-view", auth.Perm("lists", auth.Read), (*server).apiGetListView},
+	{"PUT", "/people/{id}/list-view", auth.Perm("lists", auth.Complete), (*server).apiPutListView},
 	{"GET", "/lists", auth.Perm("lists", auth.Read), (*server).apiListLists},
 	{"POST", "/lists", auth.Perm("lists", auth.Write), (*server).apiCreateList},
 	{"GET", "/lists/{id}", auth.Perm("lists", auth.Read), (*server).apiGetList},
@@ -111,9 +124,25 @@ var apiRoutes = []APIRoute{
 	{"DELETE", "/lists/{id}", auth.Perm("lists", auth.Delete), (*server).apiDeleteList},
 	{"POST", "/lists/{id}/entries", auth.Perm("lists", auth.Write), (*server).apiAddEntry},
 	{"DELETE", "/lists/{id}/entries/{entry}", auth.Perm("lists", auth.Delete), (*server).apiDeleteEntry},
+	{"PATCH", "/lists/{id}/entries/{entry}", auth.Perm("lists", auth.Write), (*server).apiSetQuantity},
 	{"PUT", "/lists/{id}/entries/{entry}/done", auth.Perm("lists", auth.Complete), (*server).apiSetEntryDone},
 	{"PUT", "/lists/{id}/entries/{entry}/position", auth.Perm("lists", auth.Write), (*server).apiMoveEntry},
 	{"DELETE", "/lists/{id}/completed-entries", auth.Perm("lists", auth.Delete), (*server).apiDeleteCompleted},
+	{"GET", "/units", auth.Perm("lists", auth.Read), (*server).apiGetUnits},
+	{"PUT", "/units", auth.Perm("lists", auth.Write), (*server).apiPutUnits},
+	{"DELETE", "/units", auth.Perm("lists", auth.Write), (*server).apiResetUnits},
+	{"GET", "/articles", auth.Perm("lists", auth.Read), (*server).apiListArticles},
+	{"POST", "/articles", auth.Perm("lists", auth.Write), (*server).apiCreateArticle},
+	{"GET", "/articles/{id}", auth.Perm("lists", auth.Read), (*server).apiGetArticle},
+	{"PATCH", "/articles/{id}", auth.Perm("lists", auth.Write), (*server).apiUpdateArticle},
+	{"DELETE", "/articles/{id}", auth.Perm("lists", auth.Delete), (*server).apiDeleteArticle},
+	{"GET", "/articles/{id}/picture", auth.Perm("lists", auth.Read), (*server).apiGetArticlePicture},
+	{"PUT", "/articles/{id}/picture", auth.Perm("lists", auth.Write), (*server).apiPutArticlePicture},
+	{"PUT", "/articles/{id}/hidden", auth.Perm("lists", auth.Write), (*server).apiSetArticleHidden},
+	{"POST", "/articles/{id}/copy", auth.Perm("lists", auth.Write), (*server).apiCopyArticle},
+	{"GET", "/articles/{id}/warnings", auth.Perm("health", auth.Read), (*server).apiArticleWarnings},
+	{"GET", "/library/hiding", auth.Perm("health", auth.Read), (*server).apiGetHiding},
+	{"PUT", "/library/hiding", auth.Perm("health", auth.Write), (*server).apiPutHiding},
 	{"GET", "/meals", auth.Perm("meals", auth.Read), (*server).apiListMeals},
 	{"PUT", "/meals/{date}/{mealtime}", auth.Perm("meals", auth.Write), (*server).apiSetMeal},
 	{"DELETE", "/meals/{date}/{mealtime}", auth.Perm("meals", auth.Delete), (*server).apiDeleteMeal},
@@ -126,20 +155,54 @@ var apiRoutes = []APIRoute{
 	{"GET", "/displays", auth.Perm("displays", auth.Read), (*server).apiListDisplays},
 	{"POST", "/displays", auth.Perm("displays", auth.Write), (*server).apiPairDisplay},
 	{"PATCH", "/displays/{id}", auth.Perm("displays", auth.Write), (*server).apiUpdateDisplay},
+	{"POST", "/displays/{id}/layout", auth.Perm("displays", auth.Write), (*server).apiCopyDisplayLayout},
 	{"DELETE", "/displays/{id}", auth.Perm("displays", auth.Delete), (*server).apiRevokeDisplay},
+	{"GET", "/albums", auth.Perm("displays", auth.Read), (*server).apiListAlbums},
+	{"POST", "/albums", auth.Perm("displays", auth.Write), (*server).apiCreateAlbum},
+	{"GET", "/albums/{id}", auth.Perm("displays", auth.Read), (*server).apiGetAlbum},
+	{"PATCH", "/albums/{id}", auth.Perm("displays", auth.Write), (*server).apiRenameAlbum},
+	{"DELETE", "/albums/{id}", auth.Perm("displays", auth.Delete), (*server).apiDeleteAlbum},
+	{"GET", "/albums/{id}/photos", auth.Perm("displays", auth.Read), (*server).apiListAlbumPhotos},
+	{"POST", "/albums/{id}/photos", auth.Perm("displays", auth.Write), (*server).apiUploadPhoto},
+	{"PATCH", "/photos/{id}", auth.Perm("displays", auth.Write), (*server).apiUpdatePhoto},
+	{"DELETE", "/photos/{id}", auth.Perm("displays", auth.Delete), (*server).apiDeletePhoto},
+	{"GET", "/photos/{id}/image", auth.Perm("displays", auth.Read), (*server).apiPhotoImage},
+	{"GET", "/photo-storage", auth.Perm("displays", auth.Read), (*server).apiPhotoStorage},
+	{"PATCH", "/photo-storage", auth.Perm("displays", auth.Write), (*server).apiSetPhotoLimit},
 	{"GET", "/phones", auth.Perm("tokens", auth.Read), (*server).apiListPhones},
 	{"DELETE", "/phones/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokePhone},
+	{"POST", "/phones/{id}/repair", auth.Perm("tokens", auth.Write), (*server).apiRepairPhone},
 	{"GET", "/phones/pairings", auth.Perm("tokens", auth.Read), (*server).apiListPhonePairings},
 	{"POST", "/phones/pairings", auth.Perm("tokens", auth.Write), (*server).apiCreatePhonePairing},
 	{"POST", "/phones/pairings/{id}/confirm", auth.Perm("tokens", auth.Write), (*server).apiConfirmPhonePairing},
 }
 
+// displayAPIRoutes are the endpoints a display uses before and after it is
+// paired. They take no person: opening a pairing needs no credentials, and
+// the state is read with the display's own token as bearer token.
+var displayAPIRoutes = []struct {
+	Method, Path string
+	handle       func(*server, http.ResponseWriter, *http.Request)
+}{
+	{"POST", "/display/pairing", (*server).apiOpenPairing},
+	{"GET", "/display/state", (*server).apiDisplayState},
+	{"POST", "/display/wake", (*server).apiDisplayWake},
+	{"GET", "/display/saver", (*server).apiDisplaySaver},
+	{"GET", "/display/photos/{id}", (*server).apiDisplayPhoto},
+}
+
 // APIRoutes lists the served endpoints (used by the contract test).
-func APIRoutes() []APIRoute { return append([]APIRoute(nil), apiRoutes...) }
+func APIRoutes() []APIRoute {
+	out := append([]APIRoute(nil), apiRoutes...)
+	for _, r := range displayAPIRoutes {
+		out = append(out, APIRoute{Method: r.Method, Path: r.Path})
+	}
+	return out
+}
 
 // ServesAPIRoute reports whether method and path are served.
 func ServesAPIRoute(method, path string) bool {
-	for _, r := range apiRoutes {
+	for _, r := range APIRoutes() {
 		if strings.EqualFold(r.Method, method) && r.Path == path {
 			return true
 		}
@@ -163,6 +226,9 @@ func (s *server) routeAPI(mux *http.ServeMux) {
 		w.Header().Set("Content-Type", "application/yaml")
 		_, _ = w.Write(api.OpenAPI)
 	})
+	for _, r := range displayAPIRoutes {
+		mux.HandleFunc(r.Method+" /api/v1"+r.Path, func(w http.ResponseWriter, req *http.Request) { r.handle(s, w, req) })
+	}
 	for _, r := range apiRoutes {
 		mux.HandleFunc(r.Method+" /api/v1"+r.Path, func(w http.ResponseWriter, req *http.Request) {
 			p, ok := s.authenticate(req)
@@ -209,7 +275,7 @@ func (s *server) authenticate(r *http.Request) (principal, bool) {
 		return principal{household: h, person: p, scopes: t.Scopes}, err == nil
 	}
 	p, ok := s.currentPerson(r)
-	return principal{household: h, person: p, scopes: "write"}, ok
+	return principal{household: h, person: p, scopes: "write " + auth.HealthResource}, ok
 }
 
 type personJSON struct {

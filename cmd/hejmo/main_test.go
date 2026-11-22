@@ -41,6 +41,16 @@ func TestConfigFromEnvironment(t *testing.T) {
 	}
 }
 
+func TestOutlookAppIDComesFromTheEnvironmentAndIsEmptyWithoutOne(t *testing.T) {
+	if cfg := loadConfig(func(string) string { return "" }); cfg.OutlookClientID != "" {
+		t.Errorf("OutlookClientID = %q, want none until the project's app registration exists", cfg.OutlookClientID)
+	}
+	cfg := loadConfig(func(k string) string { return map[string]string{"HEJMO_OUTLOOK_CLIENT_ID": " 5f3c1a2e-0000 "}[k] })
+	if cfg.OutlookClientID != "5f3c1a2e-0000" {
+		t.Errorf("OutlookClientID = %q", cfg.OutlookClientID)
+	}
+}
+
 func TestSecretKeyFileDefaultsToTheDataVolumeAndCanBeMoved(t *testing.T) {
 	cfg := loadConfig(func(k string) string {
 		return map[string]string{"HEJMO_DATA_DIR": "/vol"}[k]
@@ -443,29 +453,30 @@ func TestCommandLogReachesTheBoxMainProcessOutput(t *testing.T) {
 }
 
 // The weather service reads the home through homeOf: no household is
-// weather.ErrNoHome, the country is the start of the region, and found
-// coordinates are saved on the household.
+// weather.ErrNoHome, a household whose home has no location yet reports (0, 0)
+// and one with a picked place reports its coordinates. Nothing is looked up by
+// name any more (ADR 0023).
 func TestHomeOfAdaptsTheHouseholdForTheWeather(t *testing.T) {
 	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
 	if err != nil {
 		t.Fatal(err)
 	}
 	h := homeOf{db}
-	if _, _, _, _, err := h.Home(); !errors.Is(err, weather.ErrNoHome) {
+	if _, _, err := h.Home(); !errors.Is(err, weather.ErrNoHome) {
 		t.Fatalf("without a household: %v", err)
 	}
-	if _, err := db.CreateHousehold(store.Household{Name: "Home", HomeName: "Pasing", Region: "DE-BY"}); err != nil {
+	hh, err := db.CreateHousehold(store.Household{Name: "Home", HomeName: "Pasing", Region: "DE-BY"})
+	if err != nil {
 		t.Fatal(err)
 	}
-	lat, lon, name, country, err := h.Home()
-	if err != nil || lat != 0 || lon != 0 || name != "Pasing" || country != "DE" {
-		t.Fatalf("home = %v %v %q %q %v", lat, lon, name, country, err)
+	if lat, lon, err := h.Home(); err != nil || lat != 0 || lon != 0 {
+		t.Fatalf("home without a place = %v %v %v", lat, lon, err)
 	}
-	if err := h.SetCoordinates(48.15, 11.46); err != nil {
+	if err := setHome(db, hh, "Pasing", 48.15, 11.46); err != nil {
 		t.Fatal(err)
 	}
-	if lat, lon, _, _, _ := h.Home(); lat != 48.15 || lon != 11.46 {
-		t.Fatalf("coordinates not saved: %v %v", lat, lon)
+	if lat, lon, err := h.Home(); err != nil || lat != 48.15 || lon != 11.46 {
+		t.Fatalf("home with a place = %v %v %v", lat, lon, err)
 	}
 }
 
@@ -512,4 +523,9 @@ func TestUpdateDirIsSetOnlyWhenAHostUpdaterManagesTheBox(t *testing.T) {
 	if managed.UpdateDir != "/d" {
 		t.Fatalf("managed UpdateDir = %q, want the data dir", managed.UpdateDir)
 	}
+}
+
+// setHome stores a home place through the settings save, keeping the rest.
+func setHome(db *store.DB, h store.Household, name string, lat, lon float64) error {
+	return db.SaveHouseholdSettings(h.ID, store.HouseholdSettings{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, MealCutoffs: h.MealCutoffs, Home: &store.Home{Name: name, Latitude: lat, Longitude: lon}})
 }

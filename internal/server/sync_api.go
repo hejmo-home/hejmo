@@ -12,6 +12,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -71,6 +72,9 @@ type syncJSON struct {
 	// successful run (a series counts once); LastRun says what that run did.
 	EventCount int     `json:"event_count"`
 	LastRun    runJSON `json:"last_run"`
+	// Paused is set while the calendar's connection to the outside is off
+	// (offline mode or its switch): it is not tried, and it is not stale.
+	Paused bool `json:"paused"`
 }
 
 type runJSON struct {
@@ -130,13 +134,18 @@ func (s *server) syncState(r *http.Request, c store.SyncedCalendar, loc *time.Lo
 		v := t.In(loc).Format(time.RFC3339)
 		return &v
 	}
+	state, paused := calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess), !s.gate.Allowed(calsync.ServiceOf(c.Kind))
+	if paused {
+		state = calsync.OK
+	}
 	return &syncJSON{
-		State:           calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess),
+		Paused:          paused,
+		State:           state,
 		IntervalMinutes: c.Sync.IntervalMinutes,
 		LastAttemptAt:   ts(c.Sync.LastAttempt),
 		LastSuccessAt:   ts(c.Sync.LastSuccess),
 		LastError:       s.say(r, c.Sync.LastError),
-		EventCount:      c.Sync.LastRun.Events,
+		EventCount:      c.Sync.EventCount,
 		LastRun:         runJSON{c.Sync.LastRun.New, c.Sync.LastRun.Changed, c.Sync.LastRun.Removed},
 	}
 }
@@ -189,18 +198,34 @@ type inputError struct{ Field, Msg string }
 
 func (e *inputError) Error() string { return e.Msg }
 
+// icsInputErrors is the one check of a new subscription's name and link, for
+// the web form (which shows both mistakes at once, as message keys per field)
+// and the API (which reports one). It also returns the normalised address and
+// why the link was refused.
+func icsInputErrors(in newCalendarInput) (map[string]string, string, error) {
+	bad := map[string]string{}
+	if strings.TrimSpace(in.Name) == "" {
+		bad["name"] = "calendars.error.name"
+	}
+	address, err := icsfeed.NormalizeURL(in.URL)
+	if err != nil {
+		bad["url"] = "calendars.error.url"
+	}
+	return bad, address, err
+}
+
 // addICS validates a new ICS subscription, stores it and runs its first sync.
 // The error is an *inputError for bad input, anything else is a server fault.
 func (s *server) addICS(r *http.Request, p principal, in newCalendarInput) (store.SyncedCalendar, error) {
 	if in.Kind != "ics" {
 		return store.SyncedCalendar{}, &inputError{"kind", "kind must be ics"}
 	}
-	if strings.TrimSpace(in.Name) == "" {
+	bad, address, urlErr := icsInputErrors(in)
+	if bad["name"] != "" {
 		return store.SyncedCalendar{}, &inputError{"name", "name is required"}
 	}
-	address, err := icsfeed.NormalizeURL(in.URL)
-	if err != nil {
-		return store.SyncedCalendar{}, &inputError{"url", "url: " + err.Error()}
+	if urlErr != nil {
+		return store.SyncedCalendar{}, &inputError{"url", "url: " + urlErr.Error()}
 	}
 	opts, err := s.calendarOptions(p, in, defaultSyncMinutes)
 	if err != nil {
@@ -288,6 +313,9 @@ func (s *server) apiAddCalendar(w http.ResponseWriter, r *http.Request, p princi
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
+	if in.Kind == "ics" && s.refuseOff(w, outbound.ICS) {
+		return
+	}
 	cal, err := s.addICS(r, p, in)
 	var bad *inputError
 	switch {
@@ -307,6 +335,11 @@ func (s *server) apiSyncCalendar(w http.ResponseWriter, r *http.Request, p princ
 	err := s.sync.Sync(r.Context(), p.household.ID, r.PathValue("id"))
 	if errors.Is(err, store.ErrNotFound) {
 		writeError(w, http.StatusNotFound, "synced calendar not found")
+		return
+	}
+	var refused *outbound.RefusedError
+	if errors.As(err, &refused) { // paused: not a failure
+		s.refuseOff(w, refused.Service)
 		return
 	}
 	// Any other error is a sync failure; it is in the log and in the state below.
@@ -365,25 +398,30 @@ func (s *server) calendarExists(householdID, id string) error {
 
 func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
-		Shared *bool `json:"share_through_box"`
-		Waste  *bool `json:"waste_collection"`
+		Shared   *bool `json:"share_through_box"`
+		ReadOnly *bool `json:"read_only"`
+		Waste    *bool `json:"waste_collection"`
 		calendarChanges
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
 		return
 	}
-	if in.Shared == nil && in.Waste == nil && !in.calendarChanges.any() {
-		writeError(w, http.StatusUnprocessableEntity, "send share_through_box, waste_collection, name, color or audience")
+	if in.Shared == nil && in.ReadOnly == nil && in.Waste == nil && !in.calendarChanges.any() {
+		writeError(w, http.StatusUnprocessableEntity, "send share_through_box, read_only, waste_collection, name, color or audience")
 		return
 	}
 	id := r.PathValue("id")
-	if in.Waste != nil { // refuse before anything is saved
+	if in.Waste != nil && *in.Waste { // refuse before anything is saved; unmarking needs no read-only
 		c, err := s.db.Calendar(p.household.ID, id)
 		if s.storeError(w, "waste calendar", err) {
 			return
 		}
-		if !c.ReadOnly {
+		readOnly := c.ReadOnly // as it will be after this request
+		if in.ReadOnly != nil {
+			readOnly = *in.ReadOnly
+		}
+		if !readOnly {
 			writeError(w, http.StatusUnprocessableEntity, "only a read-only calendar can be a waste collection calendar")
 			return
 		}
@@ -412,6 +450,14 @@ func (s *server) apiUpdateCalendar(w http.ResponseWriter, r *http.Request, p pri
 	if in.Shared != nil && s.storeError(w, "share calendar", s.db.SetCalendarShared(p.household.ID, id, *in.Shared)) {
 		return
 	}
+	if in.ReadOnly != nil {
+		if s.storeError(w, "switch calendar", s.db.SetCalendarReadOnly(p.household.ID, id, *in.ReadOnly)) {
+			return
+		}
+		if !*in.ReadOnly {
+			s.sync.PushSoon(p.household.ID, id) // changes queued before the switch
+		}
+	}
 	if in.Waste != nil && s.storeError(w, "waste calendar", s.db.SetCalendarWaste(p.household.ID, id, *in.Waste)) {
 		return
 	}
@@ -435,6 +481,7 @@ func (s *server) apiDeleteCalendar(w http.ResponseWriter, r *http.Request, p pri
 }
 
 type syncLogJSON struct {
+	Detail       string `json:"detail,omitempty"`
 	ID           string `json:"id"`
 	CalendarID   string `json:"calendar_id"`
 	CalendarName string `json:"calendar_name"`
@@ -451,7 +498,7 @@ func (s *server) apiSyncLog(w http.ResponseWriter, r *http.Request, p principal)
 	}
 	out := make([]syncLogJSON, 0, len(entries))
 	for _, e := range entries {
-		out = append(out, syncLogJSON{e.ID, e.CalendarID, e.CalendarName, e.At.In(p.location()).Format(time.RFC3339), e.Kind, s.say(r, e.Message)})
+		out = append(out, syncLogJSON{e.Detail, e.ID, e.CalendarID, e.CalendarName, e.At.In(p.location()).Format(time.RFC3339), e.Kind, s.say(r, e.Message)})
 	}
 	writeJSON(w, http.StatusOK, out)
 }

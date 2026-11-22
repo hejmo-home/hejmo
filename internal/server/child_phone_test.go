@@ -32,6 +32,7 @@ func newChildPhone(t *testing.T) childPhone {
 
 // 5.14: Given a phone paired for Mia, when it ticks off Mia's task, then it is done.
 func TestChildPhoneTicksOffTheChildsOwnTask(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	page := cp.screen.get("/tasks", "en")
 	if page.status != http.StatusOK || !strings.Contains(page.body, "Brush teeth") {
@@ -62,6 +63,7 @@ func TestChildPhoneTicksOffTheChildsOwnTask(t *testing.T) {
 }
 
 func TestChildPhoneShowsOnlyTheChildsOwnTasks(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	cp.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": personNamed(t, cp.parent.b, "Sebastian").ID, "title": "Feed the cat", "repeat": "daily"})
 	page := cp.screen.get("/tasks", "en")
@@ -74,6 +76,7 @@ func TestChildPhoneShowsOnlyTheChildsOwnTasks(t *testing.T) {
 }
 
 func TestChildPhonePageIsGerman(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	page := cp.screen.get("/tasks", "de")
 	if page.status != http.StatusOK || !strings.Contains(page.body, "Deine Aufgaben für heute") {
@@ -87,6 +90,7 @@ func TestChildPhonePageIsGerman(t *testing.T) {
 // 5.14: Given a phone paired for Mia, when it tries to tick off Sebastian's
 // task or delete an event, then this is refused.
 func TestChildPhoneIsRefusedOtherTasksAndDeletingEvents(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	if r := cp.screen.post("/tasks/"+cp.sebastianTask+"/done", url.Values{"done": {"1"}}); r.status != http.StatusForbidden {
 		t.Errorf("web tick of Sebastian's task = %d, want 403", r.status)
@@ -121,6 +125,7 @@ func TestChildPhoneIsRefusedOtherTasksAndDeletingEvents(t *testing.T) {
 
 // 5.14: Given a phone paired for Mia, then it shows no settings or device management.
 func TestChildPhoneShowsNoSettingsOrDeviceManagement(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	for _, page := range []string{"/", "/tasks"} {
 		body := cp.screen.get(page, "en").body
@@ -142,5 +147,88 @@ func TestChildPhoneShowsNoSettingsOrDeviceManagement(t *testing.T) {
 	}
 	if r := cp.screen.post("/phones/pairings", url.Values{}); r.status != http.StatusForbidden {
 		t.Errorf("child shows a QR code = %d, want 403", r.status)
+	}
+}
+
+// Q46 (ticket 197): a child's phone has no Sign out anywhere; a parent unpairs it.
+func TestChildsPhoneOffersNoSignOut(t *testing.T) {
+	t.Parallel()
+	b := signedInBox(t)
+	phone := pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
+	for _, page := range []string{"/", "/tasks", "/lists"} {
+		if body := phone.get(page, "en").body; strings.Contains(body, `action="/logout"`) || strings.Contains(body, "Sign out") {
+			t.Errorf("child's phone offers Sign out on %s", page)
+		}
+	}
+	// Parents are unchanged, on the browser and on their own phone.
+	if body := b.get("/").body; !strings.Contains(body, `action="/logout"`) {
+		t.Error("parent's browser lost Sign out")
+	}
+	pp := pairedPhone(t, b, personNamed(t, b, "Mama"), "Mama's phone")
+	if body := pp.get("/", "en").body; !strings.Contains(body, `action="/logout"`) {
+		t.Error("parent's phone lost Sign out")
+	}
+}
+
+func TestSignOutPostFromAChildsPhoneIsRefusedAndKeepsTheSession(t *testing.T) {
+	t.Parallel()
+	b := signedInBox(t)
+	phone := pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
+	for lang, want := range map[string]string{"en": "A parent removes", "de": "Eltern entfernen"} {
+		r := phone.postLang("/logout", url.Values{}, lang)
+		if r.status != http.StatusForbidden || !strings.Contains(r.body, want) {
+			t.Errorf("%s: child's sign-out = %d %q, want 403 with %q", lang, r.status, r.body, want)
+		}
+	}
+	if r := phone.get("/", "en"); r.status != http.StatusOK {
+		t.Errorf("child's phone after refused sign-out = %d, want still signed in", r.status)
+	}
+}
+
+// Q46 / PO criterion on #197, drawn by #198: parents see how to hand a phone to
+// someone else or switch the person (pair it for another person), once, at the
+// place where they do it: one sentence on the overview, a line under the box
+// title on a child's phone, du-style in EN and DE.
+func TestParentsSeeHowToHandAPhoneOnOrSwitchThePerson(t *testing.T) {
+	t.Parallel()
+	b := signedInBox(t)
+	pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
+	m := phoneIDRe.FindStringSubmatch(b.get("/phones").body)
+	if m == nil {
+		t.Fatal("no paired phone on the phones page")
+	}
+	for path, wants := range map[string]map[string]string{
+		"/phones":         {"en": "Tap a phone to remove it or pair it for another person.", "de": "Tippe auf ein Handy, um es zu entfernen oder für eine andere Person zu koppeln."},
+		"/phones/" + m[1]: {"en": "Does someone else get this phone? Pair it again in one step here. Mia cannot sign out on this phone.", "de": "Bekommt jemand anderes dieses Handy? Hier koppelst du es in einem Schritt neu. Mia kann sich auf dem Handy nicht selbst abmelden."},
+	} {
+		for lang, want := range wants {
+			r := b.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": lang})
+			if r.status != http.StatusOK || !strings.Contains(r.body, want) {
+				t.Errorf("%s (%s) = %d, lacks the hint %q", path, lang, r.status, want)
+			}
+		}
+	}
+}
+
+// A child's phone that opens someone else's invitation link gets no Sign out
+// button, only the way home and a note that a parent's device is needed.
+func TestChildsPhoneOpeningAForeignInvitationOffersNoSignOut(t *testing.T) {
+	t.Parallel()
+	e := newInviteBox(t)
+	tok := e.create()
+	phone := pairedPhone(t, e.b, e.mia, "Mia's phone")
+	for lang, want := range map[string]string{"en": "device is needed for this", "de": "Gerät der Eltern nötig"} {
+		r := phone.get("/invite/"+tok, lang)
+		if r.status != http.StatusOK || !strings.Contains(r.body, want) || !strings.Contains(r.body, `href="/"`) {
+			t.Errorf("%s: foreign invitation on a child's phone = %d, lacks %q or the way home\n%s", lang, r.status, want, r.body)
+		}
+		if strings.Contains(r.body, `action="/logout"`) || strings.Contains(r.body, "Sign out") || strings.Contains(r.body, "Abmelden") {
+			t.Errorf("%s: child's phone offers Sign out on the invitation page", lang)
+		}
+	}
+	// A parent's own phone keeps the button.
+	pp := pairedPhone(t, e.b, personNamed(t, e.b, "Mama"), "Mama's phone")
+	if body := pp.get("/invite/"+tok, "en").body; !strings.Contains(body, `action="/logout"`) {
+		t.Error("parent's phone lost Sign out on the invitation page")
 	}
 }

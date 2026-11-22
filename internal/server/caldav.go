@@ -491,6 +491,7 @@ func (b *davBackend) PutCalendarObject(ctx context.Context, p string, cal *ical.
 		}
 		return nil, err
 	}
+	b.s.sync.PushSoon(sess.house.ID, c.ID)
 	saved, err := b.stored(sess, c, addr.object)
 	if err != nil || saved == nil {
 		return nil, fmt.Errorf("reload saved event: %v", err)
@@ -617,5 +618,9 @@ func (b *davBackend) DeleteCalendarObject(ctx context.Context, p string) error {
 			return err
 		}
 	}
-	return b.s.db.ApplyChange(sess.house.ID, calendar.Change{Delete: []string{existing.Master.ID}})
+	if err := b.s.db.ApplyChange(sess.house.ID, calendar.Change{Delete: []string{existing.Master.ID}}); err != nil {
+		return err
+	}
+	b.s.sync.PushSoon(sess.house.ID, c.ID)
+	return nil
 }

@@ -26,6 +26,7 @@ import (
 	ical "github.com/emersion/go-ical"
 	"github.com/emersion/go-webdav"
 	davcal "github.com/emersion/go-webdav/caldav"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"golang.org/x/net/publicsuffix"
 )
 
@@ -93,15 +94,16 @@ type Client struct {
 	dav map[string]*davcal.Client // by scheme://host
 }
 
-// NewClient returns a Client for the server at serverURL. A nil hc uses an
-// HTTP client with a 30 second timeout.
+// NewClient returns a Client for the server at serverURL. A nil hc is a
+// client that refuses every connection: the caller must bring one from the
+// outside gate.
 func NewClient(serverURL, user, password string, hc *http.Client) (*Client, error) {
 	base, err := url.Parse(strings.TrimSpace(serverURL))
 	if err != nil || (base.Scheme != "http" && base.Scheme != "https") || base.Host == "" {
 		return nil, errors.New("not a web address")
 	}
 	if hc == nil {
-		hc = &http.Client{Timeout: 30 * time.Second}
+		hc = outbound.New(outbound.Closed{}, nil).Client(outbound.Calendars, 30*time.Second)
 	}
 	auth := &authClient{base: base, user: user, password: password}
 	cp := *hc // do not change the caller's client
@@ -109,6 +111,9 @@ func NewClient(serverURL, user, password string, hc *http.Client) (*Client, erro
 	cp.CheckRedirect = func(req *http.Request, via []*http.Request) error {
 		if err := auth.permit(req.URL); err != nil {
 			return err
+		}
+		if req.Context().Value(manualRedirect{}) != nil {
+			return http.ErrUseLastResponse
 		}
 		if prev != nil {
 			if err := prev(req, via); err != nil {
@@ -260,15 +265,41 @@ type multistatus struct {
 // an address, but a server may name another host of its domain here. The host
 // is checked before the caller sends anything to it.
 func (c *Client) findHref(ctx context.Context, from *url.URL, prop string) (*url.URL, error) {
-	req, err := http.NewRequestWithContext(ctx, "PROPFIND", from.String(), strings.NewReader(fmt.Sprintf(propfindBody, prop)))
-	if err != nil {
-		return nil, err
-	}
-	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
-	req.Header.Set("Depth", "0")
-	res, err := c.auth.Do(req)
-	if err != nil {
-		return nil, err
+	var (
+		res *http.Response
+		at  = from
+	)
+	// A redirect for PROPFIND is followed by hand: Go's client turns a
+	// followed 301, 302 or 303 into a GET, and a server that redirects
+	// /.well-known/caldav (RFC 6764) means the same PROPFIND at the new address.
+	ctx = context.WithValue(ctx, manualRedirect{}, true)
+	for hops := 0; ; hops++ {
+		req, err := http.NewRequestWithContext(ctx, "PROPFIND", at.String(), strings.NewReader(fmt.Sprintf(propfindBody, prop)))
+		if err != nil {
+			return nil, err
+		}
+		req.Header.Set("Content-Type", "application/xml; charset=utf-8")
+		req.Header.Set("Depth", "0")
+		res, err = c.auth.Do(req)
+		if err != nil {
+			return nil, err
+		}
+		loc := res.Header.Get("Location")
+		if res.StatusCode < 300 || res.StatusCode > 399 || loc == "" {
+			break
+		}
+		res.Body.Close()
+		if hops >= 5 {
+			return nil, errors.New("stopped after 5 redirects")
+		}
+		ref, err := url.Parse(strings.TrimSpace(loc))
+		if err != nil {
+			return nil, fmt.Errorf("the server redirected to a malformed address: %w", err)
+		}
+		at = at.ResolveReference(ref)
+		if err := c.auth.permit(at); err != nil {
+			return nil, err
+		}
 	}
 	defer res.Body.Close()
 	if res.StatusCode != http.StatusMultiStatus {
@@ -293,10 +324,6 @@ func (c *Client) findHref(ctx context.Context, from *url.URL, prop string) (*url
 			}
 			// Resolve against the address that finally answered, which may
 			// be on another host than "from" after a redirect.
-			at := from
-			if res.Request != nil && res.Request.URL != nil {
-				at = res.Request.URL
-			}
 			target := at.ResolveReference(ref)
 			if err := c.auth.permit(target); err != nil {
 				return nil, err
@@ -307,9 +334,32 @@ func (c *Client) findHref(ctx context.Context, from *url.URL, prop string) (*url
 	return nil, fmt.Errorf("the server does not say where the %s is", strings.TrimPrefix(strings.TrimPrefix(prop, "c:"), "d:"))
 }
 
+// manualRedirect marks a request whose redirects the caller follows itself.
+type manualRedirect struct{}
+
+// principal finds the signed-in user's principal. A server entered as a bare
+// host (no path) is asked at /.well-known/caldav first (RFC 6764), then at the
+// address itself; an address with a path is used as given.
+func (c *Client) principal(ctx context.Context) (*url.URL, error) {
+	if p := strings.Trim(c.base.Path, "/"); p != "" {
+		return c.findHref(ctx, c.base, "d:current-user-principal")
+	}
+	known := c.base.ResolveReference(&url.URL{Path: "/.well-known/caldav"})
+	principal, err := c.findHref(ctx, known, "d:current-user-principal")
+	if err == nil {
+		return principal, nil
+	}
+	var status *StatusError
+	var foreign *ForeignHostError
+	if errors.As(err, &foreign) || (errors.As(err, &status) && status.Code == http.StatusUnauthorized) {
+		return nil, err
+	}
+	return c.findHref(ctx, c.base, "d:current-user-principal")
+}
+
 // Calendars discovers the server's event calendars of the signed-in user.
 func (c *Client) Calendars(ctx context.Context) ([]Calendar, error) {
-	principal, err := c.findHref(ctx, c.base, "d:current-user-principal")
+	principal, err := c.principal(ctx)
 	if err != nil {
 		return nil, err
 	}
@@ -704,4 +754,170 @@ func AddressKey(address string) string {
 		return address
 	}
 	return strings.ToLower(u.Host) + strings.TrimSuffix(u.Path, "/")
+}
+
+// State is what a calendar collection reports about its own version: the
+// CTag (calendarserver.org, a string that changes whenever anything in the
+// collection does) and the sync token of RFC 6578 (what Changes starts from).
+// Either is empty where the server offers none.
+type State struct {
+	CTag      string
+	SyncToken string
+}
+
+const stateBody = `<?xml version="1.0" encoding="utf-8"?>` +
+	`<d:propfind xmlns:d="DAV:" xmlns:cs="http://calendarserver.org/ns/"><d:prop><cs:getctag/><d:sync-token/></d:prop></d:propfind>`
+
+// State asks a calendar for its CTag and sync token. A server that has
+// neither answers with an empty State, not an error.
+func (c *Client) State(ctx context.Context, calendarURL string) (State, error) {
+	origin, _, err := c.origin(calendarURL)
+	if err != nil {
+		return State{}, err
+	}
+	dir := abs(origin, c.route(calendarURL))
+	req, err := http.NewRequestWithContext(ctx, "PROPFIND", dir, strings.NewReader(stateBody))
+	if err != nil {
+		return State{}, err
+	}
+	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
+	req.Header.Set("Depth", "0")
+	res, err := c.auth.Do(req)
+	if err != nil {
+		return State{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusMultiStatus {
+		return State{}, &StatusError{res.StatusCode, res.Status}
+	}
+	var ans struct {
+		Responses []struct {
+			Propstats []struct {
+				Status string `xml:"DAV: status"`
+				Prop   struct {
+					CTag      string `xml:"http://calendarserver.org/ns/ getctag"`
+					SyncToken string `xml:"DAV: sync-token"`
+				} `xml:"DAV: prop"`
+			} `xml:"DAV: propstat"`
+		} `xml:"DAV: response"`
+	}
+	if err := xml.NewDecoder(res.Body).Decode(&ans); err != nil {
+		return State{}, fmt.Errorf("reading the state of the calendar: %w", err)
+	}
+	var st State
+	for _, r := range ans.Responses {
+		for _, ps := range r.Propstats {
+			if statusCode(ps.Status)/100 != 2 {
+				continue
+			}
+			if v := strings.TrimSpace(ps.Prop.CTag); v != "" {
+				st.CTag = v
+			}
+			if v := strings.TrimSpace(ps.Prop.SyncToken); v != "" {
+				st.SyncToken = v
+			}
+		}
+	}
+	return st, nil
+}
+
+// ErrSyncUnavailable says the server cannot answer a sync-collection REPORT:
+// it does not offer RFC 6578, or it no longer knows the token. The caller
+// lists the ETags instead.
+var ErrSyncUnavailable = errors.New("the server cannot report changes since a sync token")
+
+// Changes is the answer to a sync-collection REPORT: the objects that are new
+// or changed since the token (address and ETag, no data), the addresses of
+// the ones that are gone, and the token to continue from.
+type Changes struct {
+	Token   string
+	Changed []Object
+	Deleted []string
+	// Truncated says the server answered with only part of the changes (RFC
+	// 6578 3.6: 507 on the collection itself); Token is where to carry on.
+	Truncated bool
+}
+
+const changesBody = `<?xml version="1.0" encoding="utf-8"?>` +
+	`<d:sync-collection xmlns:d="DAV:"><d:sync-token>%s</d:sync-token><d:sync-level>1</d:sync-level>` +
+	`<d:prop><d:getetag/></d:prop></d:sync-collection>`
+
+// Changes asks a calendar what changed since a sync token (RFC 6578). A
+// refusal other than a wrong login or a server fault (the REPORT is not
+// known, the token is not valid) is ErrSyncUnavailable.
+func (c *Client) Changes(ctx context.Context, calendarURL, token string) (Changes, error) {
+	origin, _, err := c.origin(calendarURL)
+	if err != nil {
+		return Changes{}, err
+	}
+	dir := abs(origin, c.route(calendarURL))
+	var esc bytes.Buffer
+	xml.EscapeText(&esc, []byte(token))
+	req, err := http.NewRequestWithContext(ctx, "REPORT", dir, strings.NewReader(fmt.Sprintf(changesBody, esc.String())))
+	if err != nil {
+		return Changes{}, err
+	}
+	req.Header.Set("Content-Type", "application/xml; charset=utf-8")
+	req.Header.Set("Depth", "0")
+	res, err := c.auth.Do(req)
+	if err != nil {
+		var se *StatusError
+		if errors.As(err, &se) && se.Code == http.StatusForbidden {
+			return Changes{}, fmt.Errorf("%w: %v", ErrSyncUnavailable, err) // valid-sync-token precondition
+		}
+		return Changes{}, err
+	}
+	defer res.Body.Close()
+	if res.StatusCode != http.StatusMultiStatus {
+		if code := res.StatusCode; code >= 400 && code < 500 && code != http.StatusUnauthorized && code != http.StatusRequestTimeout && code != http.StatusTooManyRequests || code == http.StatusNotImplemented {
+			return Changes{}, fmt.Errorf("%w: %s", ErrSyncUnavailable, res.Status)
+		}
+		return Changes{}, &StatusError{res.StatusCode, res.Status}
+	}
+	var ans struct {
+		reportAnswer
+		Token string `xml:"DAV: sync-token"`
+	}
+	if err := xml.NewDecoder(res.Body).Decode(&ans); err != nil {
+		return Changes{}, fmt.Errorf("reading the changes: %w", err)
+	}
+	if strings.TrimSpace(ans.Token) == "" {
+		return Changes{}, fmt.Errorf("%w: the answer has no new token", ErrSyncUnavailable)
+	}
+	at, _ := url.Parse(dir)
+	if res.Request != nil && res.Request.URL != nil {
+		at = res.Request.URL
+	}
+	self := AddressKey(dir)
+	out := Changes{Token: strings.TrimSpace(ans.Token)}
+	for _, r := range ans.Responses {
+		href, err := url.Parse(strings.TrimSpace(r.Href))
+		if err != nil || strings.TrimSpace(r.Href) == "" {
+			continue
+		}
+		target := at.ResolveReference(href)
+		if err := c.auth.permit(target); err != nil {
+			return Changes{}, err
+		}
+		isSelf := AddressKey(target.String()) == self
+		if isSelf && statusCode(r.Status) == http.StatusInsufficientStorage {
+			out.Truncated = true // the server has more changes than it sent
+		}
+		if strings.HasSuffix(target.Path, "/") || isSelf {
+			continue // a collection
+		}
+		if code := statusCode(r.Status); code == http.StatusNotFound || code == http.StatusGone {
+			out.Deleted = append(out.Deleted, target.String())
+			continue
+		}
+		etag := ""
+		for _, ps := range r.Propstats {
+			if statusCode(ps.Status)/100 == 2 && strings.TrimSpace(ps.Prop.ETag) != "" {
+				etag = unquoteETag(ps.Prop.ETag)
+				break
+			}
+		}
+		out.Changed = append(out.Changed, Object{URL: target.String(), ETag: etag})
+	}
+	return out, nil
 }

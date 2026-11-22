@@ -1,10 +1,13 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "home.title") "Frame" .Frame)}}
   {{with .PINFrom}}<p class="notice" role="status">{{tf "invite.done.pin" "name" .}}</p>{{end}}
-  {{with .Child}}<h1 class="child-h"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span>{{t "home.hello"}} {{$.Person.Name}}</h1>
+  {{with .Child}}<h1 class="child-h"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span><span class="h-name">{{t "home.hello"}} {{$.Person.Name}}</span></h1>
   {{else}}<h1>{{t "home.hello"}} {{.Person.Name}}</h1>{{end}}
+  {{template "offlineNote" .OfflineNote}}
+  {{template "staleUpdate" .StaleUpdate}}
   {{template "httpsNotice" .}}
   {{template "updateNotice" .}}
   {{template "syncNotice" .}}
+  {{template "reconnectNotice" .}}
   {{with .FirstSteps}}<section class="firststeps{{if .Settled}} done{{end}}" data-firststeps>
     <h2>{{t "firststeps.title"}}</h2>
     {{if .Settled}}<p class="msg ok" role="status">{{template "tickIcon" 20}}{{t "firststeps.settled"}}</p>{{else}}<p>{{t "firststeps.lead"}}</p>{{end}}

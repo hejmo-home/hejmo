@@ -52,8 +52,12 @@ _Avoid_: onboarding, installer
 The box's own certificate authority, name-constrained to the box so it cannot vouch for other sites. Devices trust it once (iOS profile, DAVx5 prompt, browser import). The fallback when no public name and certificate are used (ADR 0014).
 _Avoid_: self-signed certificate, root cert
 
+**Router name**:
+The name the family's router gives the box in the home network, for example `hejmo.fritz.box`. The Box CA can cover it besides `hejmo.local` and the box's LAN address, so a phone on a VPN opens the box without a warning. Adding it later makes a new Box CA, and every device must trust the box again (ADR 0014).
+_Avoid_: hostname, local name, DNS name (in user-facing text)
+
 **Public name**:
-A DNS name of the box (a free deSEC `dedyn.io` name or the family's own domain) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
+A DNS name of the box (a free deSEC `dedyn.io` name, or a name under the family's own domain at Cloudflare, deSEC, Hetzner or INWX) that points to the box's LAN address, with a publicly trusted certificate obtained through DNS-01. The default way to get HTTPS; the Box CA is the fallback (ADR 0014).
 _Avoid_: domain, DynDNS
 
 **Passkey**:
@@ -67,6 +71,14 @@ _Avoid_: hostname, domain, relying party (in user-facing text)
 **Home region**:
 The German state, Austrian state or Swiss canton of the household, which decides its public holidays.
 _Avoid_: location, country, Bundesland (in code)
+
+**Place list**:
+The list of towns, villages and districts of Germany, Austria and Switzerland that ships inside the box (GeoNames extract, CC BY 4.0, ADR 0023). The parent picks the home location from it while typing; nothing is looked up on the internet.
+_Avoid_: geocoding, address search
+
+**Home location**:
+The latitude and longitude of the household's home, found from a place the parent picks in the list of places on the box (ADR 0023, which replaces the one-time lookup of ADR 0022). The household keeps the place's id, so the box can show its region in the page language. Sunrise and sunset (front light, themes) and the weather use it; the region does not (too coarse).
+_Avoid_: position, address
 
 ## Calendar
 
@@ -116,16 +128,24 @@ _Avoid_: account, integration, provider (alone)
 A password created at the calendar service (Apple "app-specific password", Nextcloud "app password") for Hejmo alone and used in a calendar connection instead of the account's real password. The family can revoke it at the service at any time; Hejmo never asks for the real password. Not the same as a device token, which the box creates for CalDAV clients.
 _Avoid_: Apple ID password, iCloud password
 
+**Service sign-in**:
+Allowing a calendar connection by signing in at the calendar service itself (Microsoft, Google) instead of entering an app-specific password. The box holds a permission the family can revoke at the service at any time; it never learns the password.
+_Avoid_: OAuth login, token login
+
+**App registration**:
+Hejmo's entry at a calendar service that makes service sign-ins possible at all. Every box uses the Hejmo project's registration unless the family enters its own.
+_Avoid_: client, Azure app
+
 **Synced calendar**:
 A calendar whose events come from, and may be written back to, a calendar outside the box through a calendar connection.
 _Avoid_: external calendar, remote calendar, feed
 
 **Read-only calendar**:
-A synced calendar whose events the box shows but never changes outside. ICS subscriptions are always read-only.
+A synced calendar whose events the box shows but never changes outside. ICS subscriptions are always read-only; a parent can switch a CalDAV calendar between read-only and two-way (the default).
 _Avoid_: subscribed calendar, imported calendar
 
 **Sync conflict**:
-The same event changed both on the box and outside since the last sync.
+The same event changed both on the box and outside since the last sync. The later change wins; the other version stays in the sync log for 30 days.
 _Avoid_: collision, clash
 
 **Sync log**:
@@ -147,7 +167,7 @@ One person's view on a display, opened by tapping them; returns to the family vi
 _Avoid_: profile view, child view (that is a later, separate view)
 
 **Kiosk adapter**:
-The box's connection to the kiosk app on a display that switches its front light and screen, for example in quiet mode.
+The box's connection to the kiosk app on a display that sets its brightness (on E-Ink the front light) and switches its screen, by time of day and in quiet mode.
 _Avoid_: display driver, device control
 
 **Web interface**:
@@ -162,17 +182,33 @@ _Avoid_: display mode, device type
 The row above the person columns in the family view for events meant for the whole household, all-day and multi-day events, and public holidays.
 _Avoid_: banner, header events, all-day row
 
+**Layout**:
+What one display shows: the chosen people, their order (optionally rotating by a column every day) and the blocks in each of the three zones.
+_Avoid_: template (alone), view (alone)
+
+**Layout block**:
+One part of a display's layout, such as time, weather, events, routines, task progress, meals, the tomorrow tile or one list, which a parent switches on or off and orders within its zone per display.
+_Avoid_: widget, tile, module
+
 **Theme**:
 Whether a display or the web interface is light or dark, switches automatically by sunrise and sunset, or follows the device.
 _Avoid_: dark mode (alone), skin, colour scheme
 
 **Quiet mode**:
-The scheduled night state of a display: a calm night page about the coming morning with the front light off, or a black page on a normal screen.
+The scheduled night state of a display: a calm night page about the coming morning with the front light off (or dimmed), or a black page on a normal screen without a kiosk app.
 _Avoid_: sleep mode (in prose), night mode, standby
 
 **Night page**:
 What an E-Ink display shows in quiet mode: the date of the coming morning, the household's first timed event of that day and its waste collection. A normal screen shows a black page instead.
 _Avoid_: sleep screen, standby page
+
+**Screensaver**:
+The photos a display shows after nobody has touched it for a while, one at a time, with the time and date small in a corner; a touch brings back the day at once. It is off during quiet mode. Without photos it shows a hint where adults add them.
+_Avoid_: slideshow, photo frame, diashow
+
+**Album**:
+A named collection of screensaver photos; each photo is in exactly one album, and each display shows all albums or the ones chosen for it. A subfolder of the box's photo folder becomes an album by itself; only that source on the box is called a folder.
+_Avoid_: folder (for an album), gallery, collection
 
 **Phone**:
 A smartphone paired with the box through a QR code that runs the web interface as an app for one person, adult or child. A phone's calendar app syncing over CalDAV is a CalDAV client, not a phone.
@@ -183,7 +219,7 @@ The sign-in of one person in one browser with username, password and one-time co
 _Avoid_: login (as a noun), cookie, session (alone)
 
 **Device session**:
-The long-lived, revocable access of a paired phone, which acts for one person.
+The long-lived, revocable access of a paired phone, which acts for one person. A browser that held one keeps a harmless marker cookie; when its device session has ended, `/login` shows "This device is no longer paired" instead of the sign-in, until a sign-in or a sign-out forgets the marker; a new pairing sets the marker again.
 _Avoid_: remember-me, phone token
 
 **Overview and detail page**:
@@ -212,16 +248,47 @@ _Avoid_: product, item (alone)
 The household's articles: the ones Hejmo ships plus own articles, managed by parents.
 _Avoid_: catalogue, database
 
+**Own article**:
+An article a parent made for the household, with one name for every language, a department, what is in it, allergens, one or two default units and optionally a symbol, a photo or a picture from the web. Shipped articles cannot be changed; "Eigene Fassung anlegen" copies one as an own article.
+_Avoid_: custom article, user article
+
+**Department**:
+The part of the shop an article belongs to (13, such as fruit and vegetables or drugstore). It sorts the library and decides which symbols are suggested first.
+_Avoid_: category, aisle
+
+**Hiding (of articles)**:
+The experimental household setting that leaves articles with an allergen of chosen people out of the suggestions and the tile picker. Off by default; it needs a parent's confirmation of the notice (no guarantee, no liability). A shipped article can also be hidden by hand.
+_Avoid_: filtering, blocking
+
 **Quantity**:
 Number and unit of a list entry, such as 500 g or 1 dozen.
 _Avoid_: amount
 
+**Default unit**:
+One of the one or two units an article offers first when it is added, such as dozen and piece for eggs.
+_Avoid_: standard unit
+
+**Active units**:
+The units the household can choose when adding, preset by the home location's country and changed under Settings, Lists, Units.
+
+**Kind of unit**:
+What a unit measures: pieces (piece, dozen), weight, volume, and pack and bunch, which count only themselves. Only units of one kind convert into each other and add up; another kind of the same article gets its own entry under the old one.
+_Avoid_: dimension, type
+
+**Total**:
+The quantity of an entry after adding up or changing. It is kept exactly (in pieces, grams or millilitres) and shown in the article's first default unit where it fits, otherwise in the clearest unit of its kind.
+_Avoid_: sum
+
 **Always on the list**:
-An article that Hejmo puts on a chosen list by itself on one weekday every X weeks (1 to 52) from a start week, optionally with a quantity, unless it already stands open on that list.
+An article that Hejmo puts on a chosen list by itself on one weekday every X weeks (1 to 52) from a start week, at the household's time (03:00 unless changed), optionally with a quantity. If the article already stands open on that list, Hejmo adds the rule's quantity to it (a rule without a quantity leaves it as it is). If the chosen day is today when the rule is saved, it starts next time.
 _Avoid_: recurring item, staple, auto-add
 
+**Holiday**:
+A household-wide pause from a first to a last day (both included) for every always-on-the-list rule. Nothing is caught up afterwards, and the holiday switches itself off after its last day. Only one at a time; tasks and the meal plan go on.
+_Avoid_: vacation mode, skip
+
 **Tile view**:
-A list shown as tiles with symbol or picture, name and tick; the default for children.
+A list shown as tiles with symbol or picture, name and tick; the default for children. The choice (tiles or list) is one per person for all lists and every device. A display is not a person and keeps its own view, tiles until someone switches it. An entry that names no article shows its first letter on a dashed ring instead of a picture.
 _Avoid_: grid, gallery
 
 **Diet**:
@@ -248,9 +315,33 @@ _Avoid_: template (alone; clashes with routine template), preset, default plan
 A meal plan entry changed for one week where a meal plan template would fill it (also emptied). It keeps its change when the template changes, until "Back to template".
 _Avoid_: override (in prose), exception
 
+**Recipe**:
+A dish with portions, ingredients and steps that can be put on the meal plan; entered by a parent, imported from a web page or from Hejmo's starter collection, always with its source.
+_Avoid_: dish (alone), cooking instructions
+
+**Ingredient**:
+One line of a recipe: an article, optionally with a variety, or free text, with a quantity for the recipe's portions.
+_Avoid_: component, item
+
+**Variety**:
+The more exact kind of an article, such as "Type 405" for flour, kept with an ingredient or list entry. Quantities add up only for the same variety.
+_Avoid_: variant, subtype
+
+**Pantry article**:
+An article usually at home, such as salt or oil, left out by default when a recipe's ingredients go onto a list.
+_Avoid_: staple, stock item
+
+**Cooking view**:
+A recipe shown for cooking on a device: large text, ingredients to tick and one step at a time, with the screen kept on.
+_Avoid_: kitchen mode, cook mode
+
 **Cut-off time**:
 The time of day from which a mealtime is no longer shown on displays, set per mealtime in the household settings. Empty means the mealtime is shown for the rest of the day.
 _Avoid_: deadline, expiry
+
+**Holiday mode**:
+A household-wide pause, with from and to dates, of all articles that are put on a list by themselves. The lists and settings say so while it is on.
+_Avoid_: vacation mode, skip
 
 **Task**:
 Something to be done once or repeatedly, ticked off when done; may belong to a routine, carry a star value and be split into subtasks.
@@ -284,6 +375,30 @@ _Avoid_: point, coin, reward (a reward is what stars are redeemed for)
 The record of every star booking of a person, with task or note, time and who booked it.
 _Avoid_: points log, history
 
+**Reward**:
+Something a person can redeem stars for, from the household's reward catalogue kept by parents: a name, an emoji or picture, a star price, who it is for and an optional limit such as once a week.
+_Avoid_: prize, shop item
+
+**Redemption**:
+Exchanging stars for a reward. A child asks and a parent confirms, or a parent redeems directly; the stars leave the person's star log only on confirmation, and never below zero.
+_Avoid_: purchase, payout
+
+**Savings goal**:
+The one reward a person has chosen to save for; their personal view and the family view show the progress towards its star price.
+_Avoid_: wish, target
+
+**Streak**:
+The days in a row on which a person completed a routine, counting only the days the routine applies and skipping pause days. Shown with the week's count ("5 of 7") and the best streak so far.
+_Avoid_: chain, combo
+
+**Pause day**:
+A day a parent marks for a person (ill, holiday) on which routines do not count, so no streak breaks.
+_Avoid_: skip day, excuse
+
+**Badge**:
+A mark a person earns once for a milestone, such as a first complete routine or a 7-day streak; it is never taken away.
+_Avoid_: achievement, trophy, medal
+
 **Waste collection calendar**:
 A read-only calendar marked as listing the household's waste collection days.
 _Avoid_: bin calendar, garbage feed
@@ -291,6 +406,46 @@ _Avoid_: bin calendar, garbage feed
 **Day note**:
 A parent's free-text note (up to 120 characters) for one day, shown as the last line of the tomorrow tile from 18:00 the evening before until the end of that day, then deleted. A day has one note. A parent sets it on Home (card "Note on the display"); a planned note is changed or removed on its own page.
 _Avoid_: reminder (that is the waste collection highlight), memo
+
+## Contacts
+
+**Contact**:
+An entry in the household's address book: every person of the household, plus others such as grandparents, the daycare or the paediatrician. Served to parents' phones and kept in the box.
+_Avoid_: address (alone), vCard (alone), person (a person is a household member)
+
+**Hejmo name**:
+The name Hejmo and the displays show for a contact, such as "Oma Gerda", next to the full name "Gerda Müller". One per contact for the whole household.
+_Avoid_: alias, display name
+
+**Contact group**:
+A category a contact belongs to: family, childcare and school, doctors, emergency, other, or one a parent adds.
+_Avoid_: tag, label, category
+
+**Relation**:
+The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician".
+_Avoid_: connection, relationship type
+
+## Offline mode and connections to the outside
+
+**Offline mode**:
+A household switch: the box opens no connection to anything outside the home network, and every single connection is off and locked. Calendar, tasks, lists, meals, displays and phones in the home network keep working, with the box's own CA. Asked in the setup wizard right after "Only in the home network". Switching it off lists first what goes outside again.
+_Avoid_: local mode, airplane mode
+
+**Connection to the outside**:
+One thing the box does on the internet that parents can switch: weather, update check, calendar services, ICS subscriptions, recipe import, web images; the DNS service has no switch of its own. Place search is not one: the list of places is on the box.
+_Avoid_: integration, external service
+
+**Gate** (outbound gate):
+The one place in the box through which every connection to the outside goes (`internal/outbound`). It refuses and records every attempt while the connection is off, and records the last contact when one goes through. A test fails if any other code makes a connection of its own.
+_Avoid_: firewall, proxy
+
+**Refused attempt**:
+A connection the gate stopped, with time, connection and target, shown newest first on the page "Connections to the outside". Nothing of it left the house.
+_Avoid_: blocked request, error
+
+**Paused** (calendar):
+The state of a calendar or connection whose connection to the outside is off: its events stay, it shows the tag "paused, offline mode", and it syncs again at once when the connection is on. Not a failure.
+_Avoid_: disabled, disconnected
 
 ## Access
 

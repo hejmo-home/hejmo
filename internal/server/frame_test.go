@@ -28,6 +28,7 @@ func navTargets(t *testing.T, page string) []string {
 
 // 5.11 / 5.18: the navigation holds the everyday screens and Settings, and marks the current one.
 func TestParentNavigationMarksTheCurrentScreen(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	want := []string{"/", "/calendar", "/tasks", "/meals", "/lists", "/settings"}
 	for _, page := range want {
@@ -47,6 +48,7 @@ func TestParentNavigationMarksTheCurrentScreen(t *testing.T) {
 
 // 5.11: a child's device session sees only the screens its role allows.
 func TestChildNavigationShowsOnlyAllowedScreens(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	child := childSession(t, b)
 	r := child.get("/")
@@ -65,6 +67,7 @@ func TestChildNavigationShowsOnlyAllowedScreens(t *testing.T) {
 
 // 5.11: the sign-in and setup screens sit in the frame, without navigation.
 func TestSignedOutScreensHaveFrameWithoutNavigation(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	r := b.get("/login")
 	if !strings.Contains(r.body, `class="frame-bar"`) || strings.Contains(r.body, `class="frame-nav"`) {
@@ -79,6 +82,7 @@ func TestSignedOutScreensHaveFrameWithoutNavigation(t *testing.T) {
 
 // 5.11: every web screen uses the shared stylesheet and no inline colours.
 func TestEveryScreenUsesTheSharedStylesheetWithoutInlineStyles(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.post("/calendars", map[string][]string{"name": {"Feiertage"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
 	pages := []string{"/", "/calendars", "/caldav", "/displays", "/phones", "/tasks", "/meals", "/people", "/settings", "/ca"}
@@ -101,6 +105,7 @@ func TestEveryScreenUsesTheSharedStylesheetWithoutInlineStyles(t *testing.T) {
 
 // 5.11: the frame is German or English, from the locales.
 func TestNavigationIsTranslated(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	de := b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": "de"}).body
 	en := b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": "en"}).body
@@ -117,6 +122,7 @@ func TestNavigationIsTranslated(t *testing.T) {
 }
 
 func TestSignOutIsInTheFrameOnEveryScreen(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for _, page := range []string{"/", "/calendars", "/settings"} {
 		if !strings.Contains(b.get(page).body, `action="/logout"`) {
@@ -128,6 +134,7 @@ func TestSignOutIsInTheFrameOnEveryScreen(t *testing.T) {
 // ADR 0015: displays choose their theme per display (pairing: light, E-Ink: bw), so they
 // neither follow the device's colour scheme nor sit in the web frame.
 func TestDisplaysDoNotFollowTheDeviceAndSitOutsideTheFrame(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	d := newScreen(b)
 	pairing := d.get("/display", "en").body
@@ -144,7 +151,7 @@ func TestDisplaysDoNotFollowTheDeviceAndSitOutsideTheFrame(t *testing.T) {
 			t.Errorf("%s display page is wrapped in the web frame", name)
 		}
 	}
-	if page := b.get("/").body; regexp.MustCompile(`<html lang="[a-z]+">`).FindString(page) == "" || !strings.Contains(page, `<body class="web">`) {
+	if page := b.get("/").body; regexp.MustCompile(`<html lang="[a-z]+"( data-sun-[a-z]+="[0-9]+")*>`).FindString(page) == "" || !strings.Contains(page, `<body class="web">`) {
 		t.Errorf("web page lacks the follow-the-device root or the web body class:\n%s", page)
 	}
 }
@@ -160,6 +167,7 @@ func hasInlineStyle(src string) bool {
 }
 
 func TestInlineStyleCheckAllowsOnlyCustomProperties(t *testing.T) {
+	t.Parallel()
 	for _, ok := range []string{`<span style="--pct:{{.Percent}}">`, `<main style="--cols:{{len .Columns}}">`, `<i style="--a:{{.A}}; --b:{{.B}};">`} {
 		if hasInlineStyle(ok) {
 			t.Errorf("%s should be allowed", ok)
@@ -173,6 +181,7 @@ func TestInlineStyleCheckAllowsOnlyCustomProperties(t *testing.T) {
 }
 
 func TestNoTemplateHasInlineStyles(t *testing.T) {
+	t.Parallel()
 	files, err := fs.Glob(web.Templates, "templates/*.html")
 	if err != nil || len(files) == 0 {
 		t.Fatalf("no templates: %v", err)

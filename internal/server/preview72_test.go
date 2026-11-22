@@ -53,6 +53,7 @@ var countCellRe = regexp.MustCompile(`(<p class="count" data-count-for="([^"]*)"
 // count endpoint, since the preview runs no scripts of the box.
 // Run: HEJMO_WRITE_PREVIEW=../../docs/design/preview-72.html go test ./internal/server -run WritePreview72
 func TestWritePreview72(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW to the output path to write the preview")

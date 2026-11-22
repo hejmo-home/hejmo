@@ -59,6 +59,7 @@ func taskState(t *testing.T, c *apiClient, id, date string) map[string]any {
 }
 
 func TestParentCreatesTasksOfEveryRepetition(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	status, k, _ := tb.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": tb.miaID, "title": "Piano", "emoji": "🎹", "repeat": "weekly", "weekdays": []string{"MO", "WE"}, "part_of_day": "evening"})
 	if status != http.StatusCreated || k["repeat"] != "weekly" || k["part_of_day"] != "evening" || k["date"] != "2026-11-14" || k["due"] != false {
@@ -71,6 +72,7 @@ func TestParentCreatesTasksOfEveryRepetition(t *testing.T) {
 }
 
 func TestTaskInputIsValidated(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	for name, body := range map[string]map[string]any{
 		"no title":      {"person_id": tb.miaID, "title": " ", "repeat": "daily"},
@@ -88,6 +90,7 @@ func TestTaskInputIsValidated(t *testing.T) {
 // The contract client refuses these before they are sent, so the server's own
 // limits are checked with raw requests.
 func TestTaskLimitsOfTheContractAreEnforced(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	for name, body := range map[string]string{
 		"long title": `{"person_id":"` + tb.miaID + `","title":"` + strings.Repeat("x", 500) + `","repeat":"daily"}`,
@@ -102,6 +105,7 @@ func TestTaskLimitsOfTheContractAreEnforced(t *testing.T) {
 // Acceptance: Given a daily task for Mia, when it is ticked off today, then it
 // is open again tomorrow.
 func TestDailyTaskTickedOffTodayIsOpenAgainTomorrow(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id := tb.newDaily(t, tb.miaID)
 	status, k, _ := tb.child.call(http.MethodPut, "/tasks/"+id+"/done", map[string]any{"done": true})
@@ -125,6 +129,7 @@ func TestDailyTaskTickedOffTodayIsOpenAgainTomorrow(t *testing.T) {
 // Acceptance: Given a child, when they tick off their task, then it is
 // allowed; deleting it is refused.
 func TestChildMayTickOffOwnTaskButNotDeleteOrCreate(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	own, other := tb.newDaily(t, tb.miaID), tb.newDaily(t, tb.mamaID)
 	if status, _, _ := tb.child.call(http.MethodPut, "/tasks/"+own+"/done", map[string]any{"done": true}); status != http.StatusOK {
@@ -150,6 +155,7 @@ func TestChildMayTickOffOwnTaskButNotDeleteOrCreate(t *testing.T) {
 // Acceptance: Given a parent on the go, when they confirm a child's task, then
 // it is stored as done.
 func TestParentConfirmsAChildsTask(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id := tb.newDaily(t, tb.miaID)
 	if status, k, _ := tb.parent.call(http.MethodPut, "/tasks/"+id+"/done", map[string]any{"done": true}); status != http.StatusOK || k["done"] != true {
@@ -161,6 +167,7 @@ func TestParentConfirmsAChildsTask(t *testing.T) {
 }
 
 func TestTickRefusesTasksNotDueTodayAndUnknownTasks(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	_, k, _ := tb.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": tb.miaID, "title": "Later", "repeat": "once", "date": "2026-11-20"})
 	if status, _, _ := tb.parent.call(http.MethodPut, "/tasks/"+k["id"].(string)+"/done", map[string]any{"done": true}); status != http.StatusUnprocessableEntity {
@@ -172,6 +179,7 @@ func TestTickRefusesTasksNotDueTodayAndUnknownTasks(t *testing.T) {
 }
 
 func TestParentDeletesTasksAndFiltersByPerson(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	a, b := tb.newDaily(t, tb.miaID), tb.newDaily(t, tb.mamaID)
 	if status, _, list := tb.parent.call(http.MethodGet, "/tasks?person="+tb.miaID, nil); status != http.StatusOK || len(list) != 1 || list[0].(map[string]any)["id"] != a {
@@ -215,6 +223,7 @@ func rawCallBody(t *testing.T, c *apiClient, method, path, body string) (int, st
 }
 
 func TestMalformedJSONIsA400OnBothTaskWrites(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id := tb.newDaily(t, tb.miaID)
 	if got := rawCall(t, tb.parent, http.MethodPost, "/tasks", "{"); got != http.StatusBadRequest {
@@ -229,6 +238,7 @@ func TestMalformedJSONIsA400OnBothTaskWrites(t *testing.T) {
 }
 
 func TestTaskListRefusesAPersonThatIsNoUUID(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	if got := rawCall(t, tb.parent, http.MethodGet, "/tasks?person=mia", ""); got != http.StatusUnprocessableEntity {
 		t.Errorf("person=mia = %d, want 422", got)
@@ -237,6 +247,7 @@ func TestTaskListRefusesAPersonThatIsNoUUID(t *testing.T) {
 
 // Acceptance (#122): PATCH /tasks/{id} changes the star value, nothing else.
 func TestPatchTaskChangesTheStarValueOnly(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id := tb.newDaily(t, tb.miaID)
 	status, got, _ := tb.parent.call(http.MethodPatch, "/tasks/"+id, map[string]any{"stars": 4})
@@ -253,6 +264,7 @@ func TestPatchTaskChangesTheStarValueOnly(t *testing.T) {
 }
 
 func TestPatchTaskRefusesBadBodiesAndUnknownTasks(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	id := tb.newDaily(t, tb.miaID)
 	// Well-formed but invalid values: 422 with the field, like POST /tasks. The

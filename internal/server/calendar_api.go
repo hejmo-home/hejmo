@@ -73,38 +73,55 @@ func nonNil(s []string) []string {
 	return s
 }
 
+// eventInvitationJSON says an event has attendees: it is read-only on the box (a
+// change would send a message to every attendee) and is changed at its source.
+type eventInvitationJSON struct {
+	Organizer string `json:"organizer"`
+	Response  string `json:"response"`
+	WebLink   string `json:"web_link"`
+}
+
+func eventInvitationOf(i *calendar.Invitation) *eventInvitationJSON {
+	if i == nil {
+		return nil
+	}
+	return &eventInvitationJSON{i.Organizer, i.Response, i.WebLink}
+}
+
 type eventJSON struct {
-	ID          string   `json:"id"`
-	CalendarID  string   `json:"calendar_id"`
-	Title       string   `json:"title"`
-	Description string   `json:"description"`
-	Location    string   `json:"location"`
-	AllDay      bool     `json:"all_day"`
-	Start       string   `json:"start"`
-	End         string   `json:"end"`
-	RRule       string   `json:"rrule"`
-	People      []string `json:"people"`
-	Groups      []string `json:"groups"`
+	ID          string               `json:"id"`
+	CalendarID  string               `json:"calendar_id"`
+	Title       string               `json:"title"`
+	Description string               `json:"description"`
+	Location    string               `json:"location"`
+	AllDay      bool                 `json:"all_day"`
+	Start       string               `json:"start"`
+	End         string               `json:"end"`
+	RRule       string               `json:"rrule"`
+	People      []string             `json:"people"`
+	Groups      []string             `json:"groups"`
+	Invitation  *eventInvitationJSON `json:"invitation,omitempty"`
 }
 
 func (s *server) eventToJSON(r *http.Request, e calendar.Event, loc *time.Location) eventJSON {
 	return eventJSON{e.ID, e.CalendarID, s.title(r, e.Title), e.Description, e.Location, e.AllDay,
-		formatTime(e.Start, e.AllDay, loc), formatTime(e.End, e.AllDay, loc), e.RRule, nonNil(e.People), nonNil(e.Groups)}
+		formatTime(e.Start, e.AllDay, loc), formatTime(e.End, e.AllDay, loc), e.RRule, nonNil(e.People), nonNil(e.Groups), eventInvitationOf(e.Invitation)}
 }
 
 type occurrenceJSON struct {
-	EventID      string   `json:"event_id"`
-	SeriesID     string   `json:"series_id"`
-	RecurrenceID string   `json:"recurrence_id"`
-	CalendarID   string   `json:"calendar_id"`
-	Title        string   `json:"title"`
-	Description  string   `json:"description"`
-	Location     string   `json:"location"`
-	AllDay       bool     `json:"all_day"`
-	Start        string   `json:"start"`
-	End          string   `json:"end"`
-	People       []string `json:"people"`
-	Groups       []string `json:"groups"`
+	EventID      string               `json:"event_id"`
+	SeriesID     string               `json:"series_id"`
+	RecurrenceID string               `json:"recurrence_id"`
+	CalendarID   string               `json:"calendar_id"`
+	Title        string               `json:"title"`
+	Description  string               `json:"description"`
+	Location     string               `json:"location"`
+	AllDay       bool                 `json:"all_day"`
+	Start        string               `json:"start"`
+	End          string               `json:"end"`
+	People       []string             `json:"people"`
+	Groups       []string             `json:"groups"`
+	Invitation   *eventInvitationJSON `json:"invitation,omitempty"`
 }
 
 func (s *server) apiListEvents(w http.ResponseWriter, r *http.Request, p principal) {
@@ -138,7 +155,7 @@ func (s *server) apiListEvents(w http.ResponseWriter, r *http.Request, p princip
 			rec = formatTime(o.RecurrenceID, false, loc)
 		}
 		out = append(out, occurrenceJSON{o.EventID, o.SeriesID, rec, o.CalendarID, s.title(r, o.Title), o.Description, o.Location, o.AllDay,
-			formatTime(o.Start, o.AllDay, loc), formatTime(o.End, o.AllDay, loc), nonNil(o.People), nonNil(o.Groups)})
+			formatTime(o.Start, o.AllDay, loc), formatTime(o.End, o.AllDay, loc), nonNil(o.People), nonNil(o.Groups), eventInvitationOf(o.Invitation)})
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -234,6 +251,7 @@ func (s *server) apiCreateEvent(w http.ResponseWriter, r *http.Request, p princi
 	if s.storeError(w, "create event", err) {
 		return
 	}
+	s.sync.PushSoon(p.household.ID, e.CalendarID)
 	writeJSON(w, http.StatusCreated, s.eventToJSON(r, created, p.location()))
 }
 
@@ -309,6 +327,7 @@ func (s *server) apiUpdateEvent(w http.ResponseWriter, r *http.Request, p princi
 	if s.storeError(w, "update event", s.db.ApplyChange(p.household.ID, ch)) {
 		return
 	}
+	s.sync.PushSoon(p.household.ID, series[0].CalendarID)
 	w.WriteHeader(http.StatusNoContent)
 }
 
@@ -324,6 +343,7 @@ func (s *server) apiDeleteEvent(w http.ResponseWriter, r *http.Request, p princi
 	if s.storeError(w, "delete event", s.db.ApplyChange(p.household.ID, ch)) {
 		return
 	}
+	s.sync.PushSoon(p.household.ID, series[0].CalendarID)
 	w.WriteHeader(http.StatusNoContent)
 }
 

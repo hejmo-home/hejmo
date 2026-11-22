@@ -1,5 +1,4 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "mcp.new.title") "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/mcp" "Text" (t "mcp.back"))}}
   <h1>{{t "mcp.new.title"}}</h1>
   <p class="lead">{{t "mcp.new.lead"}}</p>
   <form method="post" action="/mcp/tokens" class="steps">
@@ -11,12 +10,12 @@
     <fieldset class="scopes{{if .ScopesError}} invalid{{end}}"{{if .ScopesError}} aria-describedby="err-scopes"{{end}}>
       <legend>{{t "mcp.new.may"}}</legend>
       <p class="hint">{{t "mcp.new.may.hint"}}</p>
-      {{range .Areas}}<div class="scope">
-          <span class="area" id="a-{{.Area}}"><b>{{.Name}}</b><span>{{.Desc}}</span></span>
-          <fieldset class="seg" aria-labelledby="a-{{.Area}}"><legend>{{.Name}}</legend><label><input type="radio" name="{{.Area}}" value="none"{{if eq .Level "none"}} checked{{end}}>{{t "mcp.level.none"}}</label><label><input type="radio" name="{{.Area}}" value="read"{{if eq .Level "read"}} checked{{end}}>{{t "mcp.level.read"}}</label><label><input type="radio" name="{{.Area}}" value="write"{{if eq .Level "write"}} checked{{end}}>{{t "mcp.level.write"}}</label></fieldset>
+      {{range .Areas}}<div class="scope{{if .Health}} health{{end}}">
+          <span class="area" id="a-{{.Area}}"><b>{{if .Health}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>{{end}}{{.Name}}</b><span>{{.Desc}}</span></span>
+          <fieldset class="seg" aria-labelledby="a-{{.Area}}"><legend>{{.Name}}</legend><label><input type="radio" name="{{.Area}}" value="none"{{if eq .Level "none"}} checked{{end}}>{{t "mcp.level.none"}}</label><label><input type="radio" name="{{.Area}}" value="read"{{if eq .Level "read"}} checked{{end}}>{{t "mcp.level.read"}}</label>{{if not .Health}}<label><input type="radio" name="{{.Area}}" value="write"{{if eq .Level "write"}} checked{{end}}>{{t "mcp.level.write"}}</label>{{end}}</fieldset>
         </div>
       {{end}}{{if .ScopesError}}<p class="ferr" id="err-scopes" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{t "mcp.error.scopes"}}</p>{{end}}
-      <p class="hint">{{t "mcp.new.never"}}</p>
+      <p class="hint">{{t "mcp.new.never"}} {{t "mcp.new.health_hint"}}</p>
     </fieldset>
     <button class="button" type="submit">{{t "mcp.new.create"}}</button>
   </form>

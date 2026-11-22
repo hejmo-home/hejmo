@@ -66,6 +66,12 @@ type calendarContext struct {
 }
 
 func (s *server) calendarContext(w http.ResponseWriter, r *http.Request, p principal) (*calendarContext, bool) {
+	// The family calendar is created on first use; make it exist before the calendars
+	// are listed, or the first "New event" form misses it (and the choice with it).
+	if err := s.db.EnsureFamilyCalendar(p.household.ID); err != nil {
+		s.fail(w, "family calendar", err)
+		return nil, false
+	}
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
 		s.fail(w, "people", err)
@@ -492,7 +498,11 @@ func (c *calendarContext) writable(calendarID string) bool {
 }
 
 func (s *server) createEvent(p principal, e calendar.Event) (calendar.Event, error) {
-	return s.db.CreateEvent(p.household.ID, e)
+	created, err := s.db.CreateEvent(p.household.ID, e)
+	if err == nil {
+		s.sync.PushSoon(p.household.ID, e.CalendarID) // a two-way CalDAV calendar writes it back (ADR 0012)
+	}
+	return created, err
 }
 
 // occurrenceFrom reads the original start of the occurrence a page is about.
@@ -575,6 +585,9 @@ func (s *server) renderEventPage(w http.ResponseWriter, r *http.Request, c *cale
 	f.AllDay = occ.AllDay
 	extra := map[string]any{"EventID": r.PathValue("id"), "Item": c.item(occ), "Recurring": master.Recurring(), "ReadOnly": c.readOnly[occ.CalendarID],
 		"CalendarName": c.calendarName(occ.CalendarID), "Zone": master.Start.Location().String(), "CurrentRepeat": f.Repeat}
+	if inv := master.Invitation; inv != nil {
+		extra["Invite"] = s.outlookInvite(r, c, master, occ)
+	}
 	s.renderEventForm(w, r, c, status, "edit", f, extra, bad)
 }
 
@@ -620,6 +633,9 @@ func (s *server) handleEventEdit(w http.ResponseWriter, r *http.Request) {
 		if ch, err = (calendar.Editor{NewID: store.NewID}).Edit(series, occ.OriginalStart(), scope, patch); err == nil {
 			err = s.db.ApplyChange(p.household.ID, ch)
 		}
+	}
+	if err == nil {
+		s.sync.PushSoon(p.household.ID, occ.CalendarID)
 	}
 	switch {
 	case err == nil:
@@ -722,6 +738,9 @@ func (s *server) handleEventDelete(w http.ResponseWriter, r *http.Request) {
 	ch, err := calendar.Editor{NewID: store.NewID}.Delete(series, occ.OriginalStart(), scope)
 	if err == nil {
 		err = s.db.ApplyChange(p.household.ID, ch)
+	}
+	if err == nil {
+		s.sync.PushSoon(p.household.ID, occ.CalendarID)
 	}
 	switch {
 	case err == nil:

@@ -99,3 +99,16 @@ func TestParseRefusesBadTimes(t *testing.T) {
 		}
 	}
 }
+
+// #179: brightness says since when quiet mode is on.
+func TestSinceIsTheLatestStartOfTheWindow(t *testing.T) {
+	s := quiet.Schedule{Enabled: true, From: 22 * 60, To: 6 * 60}
+	at := time.Date(2026, 11, 17, 2, 0, 0, 0, time.UTC)
+	if got, want := s.Since(at), time.Date(2026, 11, 16, 22, 0, 0, 0, time.UTC); !got.Equal(want) {
+		t.Fatalf("at 02:00 since %s, want %s", got, want)
+	}
+	at = time.Date(2026, 11, 17, 23, 15, 0, 0, time.UTC)
+	if got, want := s.Since(at), time.Date(2026, 11, 17, 22, 0, 0, 0, time.UTC); !got.Equal(want) {
+		t.Fatalf("at 23:15 since %s, want %s", got, want)
+	}
+}

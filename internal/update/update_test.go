@@ -84,3 +84,44 @@ func TestWriteSettingsWritesOneFixedLine(t *testing.T) {
 		t.Fatalf("no directory (updates not managed) must be a no-op, got %v", err)
 	}
 }
+
+// Ticket 201: offline mode reaches the host script as one more fixed key, and
+// the script says when it last looked for a new version.
+func TestWriteStateAddsTheOfflineKeyOnlyWhenOffline(t *testing.T) {
+	dir := t.TempDir()
+	read := func() string {
+		data, err := os.ReadFile(filepath.Join(dir, update.SettingsFile))
+		if err != nil {
+			t.Fatal(err)
+		}
+		return string(data)
+	}
+	if err := update.WriteState(dir, "on", true); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(); got != "mode=on\noffline=yes\n" {
+		t.Errorf("offline: %q", got)
+	}
+	if err := update.WriteState(dir, "notify", false); err != nil {
+		t.Fatal(err)
+	}
+	if got := read(); got != "mode=notify\n" {
+		t.Errorf("online: %q", got)
+	}
+	if err := update.WriteState(dir, "sometimes", true); err == nil {
+		t.Error("an unknown mode was written")
+	}
+	if err := update.WriteState("", "on", true); err != nil {
+		t.Errorf("no directory means no host script: %v", err)
+	}
+}
+
+func TestParseStatusReadsWhenTheScriptLastLooked(t *testing.T) {
+	got := update.ParseStatus([]byte("state=idle\nchecked=2026-11-17T03:31:22Z\n"))
+	if got.Checked != "2026-11-17T03:31:22Z" {
+		t.Errorf("checked = %q", got.Checked)
+	}
+	if got := update.ParseStatus([]byte("checked=soon\n")); got.Checked != "" {
+		t.Errorf("accepted %q", got.Checked)
+	}
+}

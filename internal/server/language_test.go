@@ -27,6 +27,7 @@ func pageLang(t *testing.T, body string) string {
 func langForm(code, next string) url.Values { return url.Values{"lang": {code}, "next": {next}} }
 
 func TestSwitchingBeforeSignInSetsCookieAndShowsPageInNewLanguage(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	r := b.post("/language", langForm("en", "/login"))
 	if r.status != http.StatusSeeOther || r.location != "/login" {
@@ -49,6 +50,7 @@ func TestSwitchingBeforeSignInSetsCookieAndShowsPageInNewLanguage(t *testing.T) 
 }
 
 func TestLanguageCookieAttributes(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	req, _ := http.NewRequest(http.MethodPost, b.srv.URL+"/language", strings.NewReader(langForm("en", "/").Encode()))
 	req.Header.Set("Content-Type", "application/x-www-form-urlencoded")
@@ -87,6 +89,7 @@ func TestLanguageCookieAttributes(t *testing.T) {
 }
 
 func TestLanguageRejectsForeignNextAndUnknownCodes(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	for _, next := range []string{"https://evil.example/", "//evil.example/x", `/\evil.example`, "evil", ""} {
 		if r := b.post("/language", langForm("en", next)); r.status != http.StatusSeeOther || r.location != "/" {
@@ -106,6 +109,7 @@ func TestLanguageRejectsForeignNextAndUnknownCodes(t *testing.T) {
 }
 
 func TestLanguageKeepsAQueryOnTheNextPath(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if r := b.post("/language", langForm("en", "/calendar?view=week")); r.location != "/calendar?view=week" {
 		t.Fatalf("location = %q", r.location)
@@ -113,6 +117,7 @@ func TestLanguageKeepsAQueryOnTheNextPath(t *testing.T) {
 }
 
 func TestSignedInSwitchIsSavedOnTheAccount(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	b.post("/login", loginForm(b, secret, "correct horse battery"))
 	b.post("/language", langForm("en", "/"))
@@ -140,6 +145,7 @@ func TestSignedInSwitchIsSavedOnTheAccount(t *testing.T) {
 }
 
 func TestAccountLanguageCannotBeSavedShowsError(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if _, err := b.db.SQL().Exec(`CREATE TRIGGER no_lang BEFORE UPDATE OF language ON accounts BEGIN SELECT RAISE(ABORT, 'no'); END`); err != nil {
 		t.Fatal(err)
@@ -161,6 +167,7 @@ func TestAccountLanguageCannotBeSavedShowsError(t *testing.T) {
 }
 
 func TestLanguagePrecedence(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	get := func(cookie, accept string) string {
 		t.Helper()
@@ -198,6 +205,7 @@ func TestLanguagePrecedence(t *testing.T) {
 }
 
 func TestContentLanguageFollowsTheChoice(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	req, _ := http.NewRequest(http.MethodGet, b.srv.URL+"/login", nil)
 	req.Header.Set("Cookie", "hejmo_lang=en")
@@ -212,6 +220,7 @@ func TestContentLanguageFollowsTheChoice(t *testing.T) {
 }
 
 func TestSignInCopiesTheCookieChoiceToAnAccountWithNone(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	b.post("/language", langForm("en", "/login"))
 	b.post("/login", loginForm(b, secret, "correct horse battery"))
@@ -241,6 +250,7 @@ func mustURL(t *testing.T, s string) *url.URL {
 }
 
 func TestSwitcherMarkup(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	login := b.do(http.MethodGet, "/login", nil, map[string]string{"Accept-Language": "de"}).body
 	for _, want := range []string{
@@ -274,6 +284,7 @@ func TestSwitcherMarkup(t *testing.T) {
 }
 
 func TestSwitcherOnSetupAndTrustPagesButNotOnDisplays(t *testing.T) {
+	t.Parallel()
 	fresh := newFreshBox(t) // no HTTPS yet: the first setup step
 	if r := fresh.get("/setup/https"); r.status != http.StatusOK || !strings.Contains(r.body, `<details class="lang">`) {
 		t.Errorf("/setup/https: %d, switcher missing", r.status)
@@ -285,7 +296,7 @@ func TestSwitcherOnSetupAndTrustPagesButNotOnDisplays(t *testing.T) {
 		}
 	}
 	b := signedInBox(t)
-	if r := b.get("/account"); r.status != http.StatusOK || !strings.Contains(r.body, `<details class="lang">`) {
+	if r := b.get("/account"); r.status != http.StatusOK || !strings.Contains(r.body, `<details class="lang" name="frame-tool">`) {
 		t.Errorf("/account: %d, switcher missing", r.status)
 	}
 	if r := b.get("/display"); strings.Contains(r.body, `class="lang"`) || strings.Contains(r.body, "/language") {
@@ -298,6 +309,7 @@ func TestSwitcherOnSetupAndTrustPagesButNotOnDisplays(t *testing.T) {
 // rules that guarantee it: one explicit minimum-width column on every frame,
 // and the narrow bar that drops the visible language name next to sign-out.
 func TestFrameCannotOverflowNarrowScreens(t *testing.T) {
+	t.Parallel()
 	css, err := web.Static.ReadFile("static/hejmo.css")
 	if err != nil {
 		t.Fatal(err)
@@ -312,6 +324,7 @@ func TestFrameCannotOverflowNarrowScreens(t *testing.T) {
 }
 
 func TestFlagsAreServed(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	for _, f := range []string{"de", "gb"} {
 		r := b.get("/static/flags/" + f + ".svg")
@@ -324,6 +337,7 @@ func TestFlagsAreServed(t *testing.T) {
 // Text a handler builds (not only the template's) follows the page's language:
 // a German browser that switched to English gets no German on the page.
 func TestHandlerBuiltTextFollowsTheSwitchedLanguage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.post("/language", langForm("en", "/account"))
 	de := map[string]string{"Accept-Language": "de"}
@@ -358,6 +372,7 @@ func TestHandlerBuiltTextFollowsTheSwitchedLanguage(t *testing.T) {
 // A signed-in page reads the language several times (frame, handler-built
 // texts, headers); without the per-request memo each of those is a lookup.
 func TestPageLanguageIsLookedUpOncePerRequest(t *testing.T) {
+	// Not parallel: it swaps the package-level languageLookups hook.
 	b := signedInBox(t)
 	for _, path := range []string{"/", "/account", "/calendars", "/calendar?week=2026-12-25"} {
 		stop := server.CountLanguageLookups(t)

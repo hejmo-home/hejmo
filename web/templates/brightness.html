@@ -1,0 +1,49 @@
+{{/* The Brightness block of a display's settings page (ticket 179, preview
+     docs/design/preview-179.html). Arguments of "bright": the page's data
+     (Root) with .D.Bright. Without a kiosk app (.Available false) the block is
+     greyed out: its fields are disabled, so they are not sent and saving keeps
+     the stored values. */}}
+
+{{define "levelIcon"}}{{if eq . "sun"}}<svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="4"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></svg>{{else if eq . "sunset"}}<svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M7 16a5 5 0 0 1 10 0M3 16h18M5 20h14M12 4.5v3M4.6 9.1l1.6 1.4M19.4 9.1l-1.6 1.4"/></svg>{{else if eq . "moon"}}<svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>{{else}}<svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 11V5.5a1.5 1.5 0 0 1 3 0V11M12 10.5V9a1.5 1.5 0 0 1 3 0v2M15 10.5a1.5 1.5 0 0 1 3 0V15a6 6 0 0 1-6 6h-.5a6 6 0 0 1-4.6-2.2L4.3 15.5a1.6 1.6 0 0 1 2.4-2.1L9 15.5"/></svg>{{end}}{{end}}
+
+{{/* One level row: a title with a line about it and a number with its unit.
+     Arguments: Root, Name, Icon, Title, Sub, Value, Unit, Max, Disabled. */}}
+{{define "level"}}{{$bad := and .Root.ErrorField (eq .Root.ErrorField .Name)}}<div class="lvl{{if $bad}} invalid{{end}}"><label class="lt" for="f-{{.Name}}">{{template "levelIcon" .Icon}}<b>{{.Title}}</b><span>{{.Sub}}</span></label><span class="unitf"><input id="f-{{.Name}}" type="number" name="{{.Name}}" value="{{.Value}}" min="1" max="{{.Max}}" step="1" inputmode="numeric"{{if .Disabled}} disabled{{end}}{{if $bad}} aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}><span class="unit">{{.Unit}}</span></span>{{template "fieldError" (dict "Root" .Root "Name" .Name)}}</div>{{end}}
+
+{{define "bright"}}{{$b := .D.Bright}}{{$off := not $b.Available}}<fieldset class="bright{{if $off}} unavailable{{end}}" id="helligkeit">
+  <legend>{{t "displays.bright.legend"}}{{if $off}}<span class="tag muted">{{t "displays.bright.tag.unavailable"}}</span>{{else if $b.EInk}}<span class="tag">{{t "displays.bright.tag.experimental"}}</span>{{end}}</legend>
+  {{if $off}}<div class="why bright-why"><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 3v5M15 3v5M6.5 8h11v3a5.5 5.5 0 0 1-11 0zM12 16.5V21"/></svg><span><b>{{t "displays.bright.why.lead"}}</b> {{t "displays.bright.why.body"}} {{$b.Why}} {{t "displays.bright.why.free"}}</span></div>
+  <div class="guide-row"><a class="button secondary out" href="{{$b.GuideURL}}" target="_blank" rel="noopener">{{t "displays.bright.guide"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg></a><p class="hint">{{t "displays.bright.guide.hint"}}</p></div>
+  <p class="hint dim-intro">{{t "displays.bright.then"}}</p>
+  {{else if $b.Problem}}<span class="flag problem"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{$b.Problem}}</span></span>
+  {{else}}<p class="bright-now"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span><b>{{$b.NowHead}}</b>{{with $b.NowTail}} · {{.}}{{end}}</span></p>
+  {{end}}
+  {{if and $b.EInk (not $off)}}<p class="hint">{{t "displays.bright.eink"}}</p>
+  {{end}}
+  {{if $b.HasSensor}}<fieldset class="choice src"><legend>{{t "displays.bright.src.legend"}}</legend>
+    <label><input type="radio" name="light_source" value="sun"{{if not $b.Room}} checked{{end}}><b>{{t "displays.bright.src.sun"}}</b><small>{{t "displays.bright.src.sun.hint"}}</small></label>
+    <label><input type="radio" name="light_source" value="room"{{if $b.Room}} checked{{end}}><b>{{t "displays.bright.src.room"}}</b><small>{{t "displays.bright.src.room.hint"}}</small></label>
+    {{template "fieldError" (dict "Root" . "Name" "light_source")}}
+  </fieldset>{{end}}
+  <div class="levels">
+    {{template "level" (dict "Root" . "Name" "bright_day" "Icon" "sun" "Title" (t "displays.bright.day") "Sub" $b.DaySub "Value" $b.Day "Unit" "%" "Max" 100 "Disabled" $off)}}
+    {{template "level" (dict "Root" . "Name" "bright_evening" "Icon" "sunset" "Title" (t "displays.bright.evening") "Sub" $b.EveningSub "Value" $b.Evening "Unit" "%" "Max" 100 "Disabled" $off)}}
+    {{if $b.NoHome}}<span class="flag warn"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{t "displays.bright.no_home"}} <a href="/settings/household">{{t "displays.bright.no_home.link"}}</a></span></span>{{end}}
+  </div>
+  {{if $b.HasSensor}}<p class="hint room-note"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M3 12s3.5-6 9-6 9 6 9 6-3.5 6-9 6-9-6-9-6z"/><circle cx="12" cy="12" r="2.5"/></svg><span>{{$b.RoomNote}}</span></p>
+  {{else if $b.NoSensor}}<p class="hint">{{t "displays.bright.no_sensor"}}</p>{{end}}
+  <h3 class="q-head"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg>{{$b.QuietHead}}</h3>
+  {{if $b.QuietOn}}<fieldset class="choice ql"><legend class="sr">{{t "displays.bright.quiet.legend"}}</legend>
+    <label><input type="radio" name="quiet_light" value="off"{{if ne $b.QuietLight "dim"}} checked{{end}}{{if $off}} disabled{{end}}><b>{{t "displays.bright.quiet.off"}}</b><small>{{$b.OffText}}</small></label>
+    <label><input type="radio" name="quiet_light" value="dim"{{if eq $b.QuietLight "dim"}} checked{{end}}{{if $off}} disabled{{end}}><b>{{t "displays.bright.quiet.dim"}}</b><small>{{t "displays.bright.quiet.dim.hint"}}</small></label>
+  </fieldset>
+  <div class="when-dim">{{template "level" (dict "Root" . "Name" "bright_quiet" "Icon" "moon" "Title" (t "displays.bright.dim.title") "Sub" (t "displays.bright.dim.sub") "Value" $b.Level "Unit" "%" "Max" 100 "Disabled" $off)}}</div>
+  <div class="when-off">{{template "level" (dict "Root" . "Name" "wake_minutes" "Icon" "tap" "Title" (t "displays.bright.wake.title") "Sub" $b.WakeSub "Value" $b.Wake "Unit" $b.WakeUnit "Max" 30 "Disabled" $off)}}</div>
+  {{else}}<p class="hint quiet-note"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M19 14.5A7.5 7.5 0 0 1 9.5 5a7.5 7.5 0 1 0 9.5 9.5z"/></svg><span>{{$b.QuietNote}}</span></p>{{end}}
+  {{template "moreOpen" (dict "Label" (t "displays.kiosk.title") "Summary" $b.KioskSummary "Class" "kiosk" "Open" $b.KioskOpen)}}
+    {{template "field" (dict "Root" . "Name" "kiosk_url" "Label" (t "displays.kiosk_url") "Type" "url" "Value" .D.KioskURL "Autocapitalize" "none")}}
+    {{template "field" (dict "Root" . "Name" "kiosk_key" "Label" (t "displays.kiosk_key") "Type" "password" "Autocomplete" "off")}}
+    {{if .D.KioskKeySet}}<p class="hint">{{t "displays.kiosk_key_set"}}</p>{{end}}
+    <p class="hint">{{t "displays.kiosk_where"}}</p>
+  {{template "moreClose"}}
+</fieldset>{{end}}

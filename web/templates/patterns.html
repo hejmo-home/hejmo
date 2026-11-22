@@ -12,15 +12,16 @@
      words of a button that shows the password). A password
      field never gets a value. The field the page reports in ErrorField shows
      the error under it, is marked invalid and takes the focus. */}}
-{{define "field"}}{{$bad := and .Root.ErrorField (eq .Root.ErrorField .Name)}}{{$type := or .Type "text"}}<div class="f{{with .Class}} {{.}}{{end}}{{if $bad}} invalid{{end}}">
+{{define "field"}}{{$bad := or (and .Root.ErrorField (eq .Root.ErrorField .Name)) (errIn .Root .Name)}}{{$type := or .Type "text"}}<div class="f{{with .Class}} {{.}}{{end}}{{if $bad}} invalid{{end}}">
   <label>{{.Label}}
     {{if .Reveal}}<span class="pw">{{end}}<input name="{{.Name}}" type="{{$type}}"{{if eq $type "time"}} class="tcap"{{end}}{{if ne $type "password"}} value="{{.Value}}"{{end}}{{if .Required}} required{{end}}{{with .Max}} maxlength="{{.}}"{{end}}{{with .Min}} minlength="{{.}}"{{end}}{{with .Pattern}} pattern="{{.}}"{{end}}{{if .Bounded}} min="{{.Lo}}" max="{{.Hi}}" step="1"{{end}}{{with .Inputmode}} inputmode="{{.}}"{{end}}{{with .Autocomplete}} autocomplete="{{.}}"{{end}}{{with .Autocapitalize}} autocapitalize="{{.}}"{{end}}{{with .Placeholder}} placeholder="{{.}}"{{end}}{{with .Spellcheck}} spellcheck="{{.}}"{{end}}{{if or $bad .Autofocus}} autofocus{{end}}{{if $bad}} aria-invalid="true"{{end}}{{if or $bad .Hint}} aria-describedby="{{if $bad}}err-{{.Name}}{{end}}{{if and $bad .Hint}} {{end}}{{if .Hint}}hint-{{.Name}}{{end}}"{{end}}>{{if .Reveal}}<button class="button secondary" type="button" data-pw-toggle data-show-text="{{.Reveal.Show}}" data-hide-text="{{.Reveal.Hide}}" aria-pressed="false">{{.Reveal.Show}}</button></span>{{end}}</label>
   {{template "fieldError" .}}
   {{with .Hint}}<p class="hint" id="hint-{{$.Name}}">{{.}}</p>{{end}}
 </div>{{end}}
 
-{{/* The error text of a field or of a group of controls (chips, segments). */}}
-{{define "fieldError"}}{{if and .Root.ErrorField (eq .Root.ErrorField .Name)}}<p class="ferr" id="err-{{.Name}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{with .Root.ErrorText}}{{.}}{{else}}{{t (or .Root.FieldError .Root.Error)}}{{end}}</p>{{end}}{{end}}
+{{/* The error text of a field or of a group of controls (chips, segments). A
+     page can name several fields at once in ErrorFields (field to text key). */}}
+{{define "fieldError"}}{{if or (and .Root.ErrorField (eq .Root.ErrorField .Name)) (errIn .Root .Name)}}<p class="ferr" id="err-{{.Name}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{with .Root.ErrorText}}{{.}}{{else}}{{t (or (errKey .Root .Name) .Root.FieldError .Root.Error)}}{{end}}</span></p>{{end}}{{end}}
 
 {{/* The error of a field whose text carries a link, built by the server with
      the names escaped (HTML). The text sits in one span so that the flex row of
@@ -60,7 +61,7 @@
      optionsClose with Root and Name to show an error under the group (give
      optionsOpen Root and Name too and the group is marked invalid). */}}
 {{define "optionsOpen"}}<fieldset class="{{.Class}}{{with .When}} {{.}}{{end}}"{{if and .Root .Name .Root.ErrorField (eq .Root.ErrorField .Name)}} aria-invalid="true" aria-describedby="err-{{.Name}}"{{end}}><legend>{{.Legend}}</legend>{{end}}
-{{define "option"}}<label><input type="{{or .Type "radio"}}" name="{{.Name}}" value="{{.Value}}"{{if .Checked}} checked{{end}}>{{if .Hint}}<b>{{.Label}}</b><small>{{.Hint}}</small>{{else}}{{.Label}}{{end}}</label>{{end}}
+{{define "option"}}<label><input type="{{or .Type "radio"}}" name="{{.Name}}" value="{{.Value}}"{{if .Checked}} checked{{end}}{{if .Required}} required{{end}}>{{if .Hint}}<b>{{.Label}}</b><small>{{.Hint}}</small>{{else}}{{.Label}}{{end}}</label>{{end}}
 {{define "optionsClose"}}{{template "fieldError" .}}</fieldset>{{end}}
 
 {{/* "More options": fields with a good default. Arguments: Label, Summary (the
@@ -95,7 +96,8 @@
 
 {{/* A problem or a warning in words, with an icon. Arguments: Kind (problem or
      warn) and Text. */}}
-{{define "flag"}}<span class="flag {{.Kind}}">{{if eq .Icon "clock"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>{{else if eq .Icon "triangle"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{else}}<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{end}}{{.Text}}</span>{{end}}
+{{define "flag"}}{{if eq .Kind "paused"}}{{if .After}}<span class="meta">{{template "pausedTag" .}} {{.After}}</span>{{else}}{{template "pausedTag" .}}{{end}}{{else}}<span class="flag {{.Kind}}">{{if eq .Icon "clock"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>{{else if eq .Icon "triangle"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{else}}<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{end}}{{.Text}}</span>{{end}}{{end}}
+{{define "pausedTag"}}<span class="tag paused"><svg class="icon" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg>{{.Text}}</span>{{end}}
 
 {{/* One calm row of an overview that opens a detail page. Arguments: Href,
      Title, Lines (each with Text and optionally Whole and People) and Flag
@@ -117,6 +119,48 @@
 
 {{/* The link back to the overview, first thing in main. Arguments: Href, Text. */}}
 {{define "backLink"}}<a class="back" href="{{.Href}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 6l-6 6 6 6"/></svg>{{.Text}}</a>{{end}}
+
+{{/* The breadcrumb trail (ticket 182), first thing in main: every part but the
+     last is a link; the last is the page itself. Arguments: Parts (Href, Label), Last. */}}
+{{define "crumbs"}}<nav class="crumbs" aria-label="{{t "crumbs.label"}}"><ol>
+  {{range $i, $c := .Parts}}<li>{{if $i}}{{template "crumbSep"}}{{end}}<a href="{{$c.Href}}">{{$c.Label}}</a></li>
+  {{end}}<li>{{if .Parts}}{{template "crumbSep"}}{{end}}<span aria-current="page">{{.Last}}</span></li>
+</ol></nav>{{end}}
+{{define "crumbSep"}}<svg class="icon sep" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{end}}
+
+{{/* The first submit button of a form with the home location picker. Pressing
+     Enter in a field presses the first submit button of the form; without this
+     one it would be "Change" or the first suggestion. It is hidden and out of
+     the tab order; the real Save button is the last one. */}}
+{{define "defaultSubmit"}}<button class="vh" type="submit" tabindex="-1" aria-hidden="true"></button>{{end}}
+
+{{/* The home location picker (ADR 0023, ticket 86), used by the setup wizard
+     and Settings → Household. Arguments: Place (the placePick view). The page
+     posts place_id, the GeoNames id of a place of the list on the box, and never
+     coordinates.
+     Open state: the field with the suggestions under it (the question, up to
+     five rows, "not in the list?") and the privacy line. Without JavaScript each
+     row is a submit button named place_id; with it, place.js fills the list while
+     typing and swaps in the confirmed state.
+     Confirmed state: the picked place in words (tick, name, region, state line)
+     with "Change" as a submit, and the id in a hidden field.
+     Settings adds, around the picker: the dashed "No place chosen yet" box
+     (Missing) above an open field, and the "keep" row (Keep) below it. */}}
+{{define "placePicker"}}{{with .Place}}{{with .Missing}}<div class="place-status missing" data-location><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><div><b>{{.Title}}</b><small>{{.Hint}}</small></div></div>
+      {{end}}{{if .Chosen}}<div class="f place-pick">
+  <p class="lab">{{t "setup.field.home_name"}}</p>
+  {{with .Chosen}}<div class="place-status ok" role="status" data-location>{{template "tickIcon" 20}}<div><b>{{.Name}}</b>{{with .Region}}<small>{{.}}</small>{{end}}<small class="st">{{.State}}</small></div><button class="button secondary" type="submit" name="place_change" value="1">{{t "place.change"}}</button></div>
+  {{if .ID}}<input type="hidden" name="place_id" value="{{.ID}}">{{end}}{{end}}
+</div>{{else}}<div class="f place-pick{{if .Error}} invalid{{end}}">
+  <label>{{t "setup.field.home_name"}}
+    <input name="home_name" type="text" value="{{.Text}}" role="combobox" aria-expanded="{{if .Options}}true{{else}}false{{end}}"{{if .Options}} aria-controls="pl" aria-autocomplete="list"{{end}}{{if .Error}} aria-invalid="true" aria-describedby="err-home"{{end}} autocomplete="off" required></label>
+  {{if .Error}}{{template "fieldErrorHTML" (dict "Name" "home" "HTML" .ErrorHTML)}}
+  {{end}}{{if .Options}}<p class="place-q" id="pl-q">{{.Question}}</p>
+  <ul class="place-list" id="pl" role="listbox" aria-labelledby="pl-q">{{range $i, $o := .Options}}<li role="option" id="pl-{{$i}}" aria-selected="false"><button type="submit" name="place_id" value="{{$o.ID}}" data-region="{{$o.RegionCode}}"><b>{{$o.Name}}</b><small>{{$o.Region}}</small></button></li>{{end}}</ul>
+  <p class="hint">{{t "place.not_there"}}</p>
+  {{end}}<p class="hint place-privacy">{{t "place.hint"}}</p>
+</div>{{end}}{{with .Keep}}
+      <div class="place-keep" data-location><p class="hint">{{.Hint}}</p><button class="button secondary" type="submit" name="place_keep" value="1">{{.Button}}</button></div>{{end}}{{end}}{{end}}
 
 {{/* The line icon of a mealtime: sunrise, sun, apple, moon. Argument: the
      mealtime ("breakfast", "lunch", "snack", "dinner"). */}}
@@ -163,3 +207,25 @@
   </form>{{end}}
 
 {{define "failIcon"}}<svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.5v.5"/></svg>{{end}}
+
+{{/* A free-text allergy the box cannot check (ticket 163): notice colours, a question icon and the words. The argument is the whole sentence. */}}
+{{define "unchecked"}}<span class="unchecked"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.6M12 16.8v.4"/></svg><span>{{.}}</span></span>{{end}}
+
+{{/* The people whose free-text allergies Hejmo cannot check or filter by (ticket 164). Arguments: Title, Hint and People (each with Chip and Text). */}}
+{{define "freeBox"}}{{if .People}}<section class="unchecked-box" aria-labelledby="unch"><h2 id="unch"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M9.6 9.4a2.5 2.5 0 1 1 3.4 2.4c-.6.3-1 .8-1 1.5v.6M12 16.8v.4"/></svg>{{.Title}}</h2><p class="hint">{{.Hint}}</p><ul>{{range .People}}<li><span class="who"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span>{{printf "%s:" .Chip.Name}}</span> <span>{{.Text}}</span></li>{{end}}</ul></section>{{end}}{{end}}
+
+{{/* Rows of articles of the library (ticket 164): symbol or picture, name, what it is in words, tags and one warning line per affected group. The argument is a list of rows. */}}
+{{define "articleRows"}}<ul class="list-rows articles">{{range .}}
+  <li><a href="{{.Href}}"><span class="art-sym" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><span class="t"><b>{{.Name}}</b><span class="meta">{{range $i, $m := .Meta}}<span>{{if $i}}· {{end}}{{$m}}</span>{{end}}</span>{{if .Tags}}<span class="tags">{{range .Tags}}<span class="{{.Class}}">{{.Text}}</span>{{end}}</span>{{end}}{{range .Warns}}{{.}}{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
+</ul>{{end}}
+
+{{/* The notice that a Microsoft sign-in has ended (ticket 177, Q37): one
+     sentence per account with its own secondary button, never a count.
+     Argument: the notice (Items, Intro, Many, Who) or nothing; Home adds who may sign in. */}}
+{{define "reconnectNotice"}}{{with .Reconnect}}<div class="notice act reconnect" role="alert">
+  <p class="head"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{t "outlook.reconnect.title"}}</span></p>
+  <p>{{.Intro}}</p>
+  {{if .Many}}<ul class="reconn">{{range .Items}}<li><span class="t"><b class="host">{{.Account}}</b><small>{{repl (t "outlook.reconnect.since") "{since}" .Since}}</small></span>
+    <form method="post" action="/connections/{{.ID}}/reconnect"><button class="button secondary" type="submit" aria-label="{{repl (t "outlook.reconnect.label") "{account}" .Account}}">{{t "outlook.reconnect.each"}}</button></form></li>{{end}}</ul>
+  {{else}}{{if $.ReconnectHome}}<p class="hint">{{.Who}}</p>{{end}}{{range .Items}}<form method="post" action="/connections/{{.ID}}/reconnect"><button class="button secondary" type="submit">{{t "outlook.reconnect.title"}}</button></form>{{end}}{{end}}
+</div>{{end}}{{end}}

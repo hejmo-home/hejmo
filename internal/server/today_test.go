@@ -45,6 +45,7 @@ func todayCard(page string) string {
 // Ticket 133, design pass 2: Home for a parent shows the day: the whole
 // family's events, one card per person in order, today's meals; above the note.
 func TestParentHomeShowsTheDay(t *testing.T) {
+	t.Parallel()
 	f := todayBox(t)
 	f.event(t, "Flohmarkt", f.at(14, 11, 0), f.at(14, 13, 0), false)
 	f.event(t, "Yoga", f.at(14, 9, 0), f.at(14, 10, 0), false, "Mama")
@@ -141,6 +142,7 @@ func personCard(t *testing.T, card, name string) string {
 }
 
 func TestEmptyDayHasOneSentenceAndOneAction(t *testing.T) {
+	t.Parallel()
 	f := todayBox(t)
 	c := todayCard(f.page("de", "/").body)
 	for _, want := range []string{
@@ -159,6 +161,7 @@ func TestEmptyDayHasOneSentenceAndOneAction(t *testing.T) {
 // The card is for after the first steps: while the steps are shown, Home is
 // the steps and the note; a child never sees it.
 func TestTodayCardComesAfterTheFirstSteps(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.now = f.at(14, 8, 0)
 	if page := f.page("de", "/").body; todayCard(page) != "" || card(page) == "" {
@@ -190,6 +193,7 @@ func childOf(t *testing.T, f *familyBox, name string) *box {
 // A child's Home: their marker large next to "Hallo Mia", their day, their
 // tasks as large rows, one main button; the removed placeholder key is gone.
 func TestChildHomeShowsTheirDayAndTasks(t *testing.T) {
+	t.Parallel()
 	f := todayBox(t)
 	f.event(t, "Flohmarkt", f.at(14, 11, 0), f.at(14, 13, 0), false)
 	f.event(t, "Schwimmkurs", f.at(14, 15, 30), f.at(14, 16, 30), false, "Mia")
@@ -210,7 +214,7 @@ func TestChildHomeShowsTheirDayAndTasks(t *testing.T) {
 	}
 	main := p[i:]
 	for _, want := range []string{
-		`<h1 class="child-h"><span class="marker" data-person="` + "", "</span>Hallo Mia</h1>",
+		`<h1 class="child-h"><span class="marker" data-person="` + "", `</span><span class="h-name">Hallo Mia</span></h1>`,
 		`<section class="today child" data-person="`, `<h2>Dein Tag heute</h2>`,
 		`<ul class="tev big"><li><span class="tm">11:00</span><span>Flohmarkt <span class="who">mit der ganzen Familie</span></span></li><li><span class="tm">15:30</span><span>Schwimmkurs</span></li></ul>`,
 		`<h3>Deine Aufgaben</h3><ul class="ctasks"><li data-done><span class="box">`, `<span class="t">Zähne putzen</span><span class="stars"><svg class="icon star"`, `</svg>1</span></li>`,
@@ -242,6 +246,7 @@ func TestChildHomeShowsTheirDayAndTasks(t *testing.T) {
 }
 
 func TestChildHomeWithNothingToday(t *testing.T) {
+	t.Parallel()
 	f := todayBox(t)
 	mia := childOf(t, f, "Mia")
 	p := mia.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": "de"}).body

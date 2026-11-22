@@ -3,7 +3,6 @@ package calsync_test
 import (
 	"context"
 	"errors"
-	"path/filepath"
 	"sync"
 	"testing"
 	"time"
@@ -11,7 +10,9 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/store/storetest"
 )
 
 func TestStateIsStaleAfter24HoursWithoutSuccess(t *testing.T) {
@@ -89,7 +90,7 @@ type fixture struct {
 
 func newFixture(t *testing.T) *fixture {
 	t.Helper()
-	db, err := store.Open(filepath.Join(t.TempDir(), "hejmo.db"))
+	db, err := store.Open(storetest.Path(t))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -100,6 +101,7 @@ func newFixture(t *testing.T) *fixture {
 	}
 	fx := &fixture{db: db, h: h, f: &fakeFetcher{feeds: map[string][]byte{}, errs: map[string]error{}}, clock: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	fx.svc = calsync.New(db, fx.f, func() time.Time { return fx.clock })
+	fx.svc.SetGate(outbound.AllowAll()) // the tests use their own fetcher or dialer, or a local server
 	fx.cal, err = db.CreateICSCalendar(h.ID, store.NewICS{Name: "School", URL: feedURL, IntervalMinutes: 60, Now: fx.clock})
 	if err != nil {
 		t.Fatal(err)

@@ -46,6 +46,7 @@ func davCreds(srv *caldavtest.Server) map[string]any {
 }
 
 func TestConnectingShowsDiscoveredCalendarsAndSyncsOnlyTheTickedOnes(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	family := srv.MakeCalendar(t, "family", "Family")
 	srv.MakeCalendar(t, "school", "School")
@@ -115,6 +116,7 @@ func jsonOf(v map[string]any) string {
 }
 
 func TestWrongPasswordIsRefusedAndNothingIsStored(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	bad := davCreds(srv)
 	bad["password"] = "wrong"
@@ -128,6 +130,7 @@ func TestWrongPasswordIsRefusedAndNothingIsStored(t *testing.T) {
 }
 
 func TestSingleCalendarAddressCanBeAddedByHand(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	family := srv.MakeCalendar(t, "family", "Family")
 	srv.MakeCalendar(t, "school", "School")
@@ -141,6 +144,7 @@ func TestSingleCalendarAddressCanBeAddedByHand(t *testing.T) {
 }
 
 func TestICloudNeedsNoAddressAndUsesAppleServer(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	var asked string
 	c.b.sync.SetDialer(func(serverURL, user, pass string) (calsync.Remote, error) {
@@ -154,6 +158,7 @@ func TestICloudNeedsNoAddressAndUsesAppleServer(t *testing.T) {
 }
 
 func TestConnectionInputIsValidated(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	for name, body := range map[string]map[string]any{
 		"blank user":     {"provider": "caldav", "url": srv.URL, "username": " ", "password": "p"},
@@ -182,6 +187,7 @@ func TestConnectionInputIsValidated(t *testing.T) {
 }
 
 func TestRemovingAConnectionRemovesItsEventsAndDeletesNothingOutside(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	family := srv.MakeCalendar(t, "family", "Family")
 	school := srv.MakeCalendar(t, "school", "School")
@@ -212,7 +218,7 @@ func TestRemovingAConnectionRemovesItsEventsAndDeletesNothingOutside(t *testing.
 	}
 
 	// Outside, nothing changed.
-	remote, _ := caldavclient.NewClient(srv.URL, caldavtest.User, caldavtest.Password, nil)
+	remote, _ := caldavclient.NewClient(srv.URL, caldavtest.User, caldavtest.Password, openClient())
 	for _, cal := range []string{family, school} {
 		if objs, err := remote.List(context.Background(), cal); err != nil || len(objs) != 1 {
 			t.Fatalf("objects in %s after removal = %v, %v", cal, objs, err)
@@ -221,6 +227,7 @@ func TestRemovingAConnectionRemovesItsEventsAndDeletesNothingOutside(t *testing.
 }
 
 func TestRemovingOneCalendarKeepsTheConnectionAndTheOtherCalendar(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	srv.MakeCalendar(t, "family", "Family")
 	srv.MakeCalendar(t, "school", "School")
@@ -243,6 +250,7 @@ func TestRemovingOneCalendarKeepsTheConnectionAndTheOtherCalendar(t *testing.T) 
 }
 
 func TestConnectionEndpointsBelongToParents(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	conn := c.connect(t, davCreds(srv))
 	id := conn["id"].(string)
@@ -264,6 +272,7 @@ func TestConnectionEndpointsBelongToParents(t *testing.T) {
 }
 
 func TestWebConnectTickAndRemove(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	b := c.b
 	family := srv.MakeCalendar(t, "family", "Family")
@@ -332,6 +341,7 @@ func TestWebConnectTickAndRemove(t *testing.T) {
 }
 
 func TestConnectionPagesNeedASignedInParent(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	if r := b.post("/connections", url.Values{"provider": {"caldav"}}); r.status != http.StatusSeeOther || r.location != "/login" {
 		t.Fatalf("signed out = %d %q", r.status, r.location)
@@ -347,6 +357,9 @@ type hostedRemote struct {
 func (h hostedRemote) Calendars(context.Context) ([]caldavclient.Calendar, error) {
 	return h.found, nil
 }
+func (h hostedRemote) State(context.Context, string) (caldavclient.State, error) {
+	return caldavclient.State{}, nil
+}
 func (h hostedRemote) List(context.Context, string) ([]caldavclient.Object, error) {
 	return nil, nil
 }
@@ -356,6 +369,7 @@ func (h hostedRemote) Fetch(context.Context, string, []string) ([]caldavclient.O
 }
 
 func TestDiscoveredCalendarOnAnotherHostOfTheServersDomainCanBeAdded(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	home := "https://p123-caldav.example.org/1/calendars/home/"
 	c.b.sync.SetDialer(func(serverURL, user, pass string) (calsync.Remote, error) {
@@ -380,6 +394,7 @@ func TestDiscoveredCalendarOnAnotherHostOfTheServersDomainCanBeAdded(t *testing.
 
 // Long words wrap and hidden things stay hidden (the connect page holds long addresses).
 func TestStylesheetWrapsLongWordsAndKeepsHiddenHidden(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	if css := c.b.get("/static/hejmo.css"); !strings.Contains(css.body, "overflow-wrap: anywhere") || !strings.Contains(css.body, "[hidden]") {
 		t.Fatal("stylesheet lacks wrapping of long words or the hidden rule")
@@ -400,14 +415,27 @@ func (o oneCalendarRemote) Calendar(context.Context, string) (caldavclient.Calen
 func (o oneCalendarRemote) List(context.Context, string) ([]caldavclient.Object, error) {
 	return nil, nil
 }
+func (o oneCalendarRemote) State(context.Context, string) (caldavclient.State, error) {
+	return caldavclient.State{}, nil
+}
+func (o oneCalendarRemote) Changes(context.Context, string, string) (caldavclient.Changes, error) {
+	return caldavclient.Changes{}, caldavclient.ErrSyncUnavailable
+}
 func (o oneCalendarRemote) Fetch(context.Context, string, []string) ([]caldavclient.Object, error) {
 	return nil, nil
+}
+func (o oneCalendarRemote) Put(context.Context, string, string, string) (string, error) {
+	return "", errors.New("not used")
+}
+func (o oneCalendarRemote) Delete(context.Context, string, string) error {
+	return errors.New("not used")
 }
 func (o oneCalendarRemote) CountEvents(context.Context, string, time.Time) (int, error) {
 	return 0, nil
 }
 
 func TestWebICloudIgnoresAddressAndSingleCalendarFlag(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	var asked string
 	singleUsed := false
@@ -429,6 +457,7 @@ func TestWebICloudIgnoresAddressAndSingleCalendarFlag(t *testing.T) {
 }
 
 func TestWebICloudErrorDoesNotEchoHiddenFields(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	c.b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { return nil, errors.New("offline in test") })
 	r := c.b.post("/connections", url.Values{
@@ -452,6 +481,7 @@ type errRemote struct {
 func (e errRemote) Calendars(context.Context) ([]caldavclient.Calendar, error) { return nil, e.err }
 
 func TestWebConnectExplainsAServerThatPointsToAnotherDomain(t *testing.T) {
+	t.Parallel()
 	for name, tc := range map[string]struct {
 		err  error
 		want string

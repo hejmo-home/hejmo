@@ -72,6 +72,27 @@ Nur nötig, wenn du die eigene CA gewählt hast. Öffne auf jedem Gerät `http:/
 
 Die CA ist auf die Box namensbeschränkt und kann daher nicht für andere Websites bürgen. Die Seite zeigt den Fingerabdruck der CA; die Box schreibt ihn auch ins Log (`docker logs hejmo`).
 
+## Von unterwegs: WireGuard mit der FRITZ!Box
+
+Die Box steht in deinem Heimnetz, ein Handy unterwegs erreicht sie deshalb nicht von selbst. Ein VPN holt das Handy zurück ins Heimnetz. Mit einer FRITZ!Box brauchst du dafür keinen weiteren Dienst, denn FRITZ!OS 7.50 und neuer hat WireGuard eingebaut. Nichts davon läuft über Hejmo: Das VPN verbindet dein Handy nur mit deinem Router.
+
+Du brauchst:
+
+- Eine FRITZ!Box mit FRITZ!OS 7.50 oder neuer, die aus dem Internet erreichbar ist.
+- Die WireGuard-App auf dem Handy: [App Store](https://apps.apple.com/app/wireguard/id1441195209) (iPhone, iPad), [Google Play](https://play.google.com/store/apps/details?id=com.wireguard.android) (Android), andere Systeme unter [wireguard.com/install](https://www.wireguard.com/install/).
+
+**Geteilte Adresse (DS-Lite, CGNAT)?** Viele Anbieter teilen eine IPv4-Adresse unter mehreren Kunden, dann erreicht von außen über IPv4 nichts deine FRITZ!Box. Du erkennst es in der FRITZ!Box unter **Internet**, **Online-Monitor**: Dort steht ein DS-Lite-Tunnel, oder die IPv4-Adresse beginnt im Bereich 100.64.0.0/10 (100.64.x.x bis 100.127.x.x). Das VPN klappt oft trotzdem über IPv6, wenn das Mobilfunknetz des Handys es anbietet; dann musst du nichts weiter tun. Andernfalls frage deinen Anbieter nach einer öffentlichen IPv4-Adresse.
+
+So richtest du es ein (etwa 10 Minuten, einmal pro Handy, zu Hause):
+
+1. Öffne die FRITZ!Box unter [http://fritz.box](http://fritz.box) und gehe zu **Internet**, **Freigaben**, **VPN (WireGuard)**. Füge eine Verbindung hinzu und wähle, ein einzelnes Gerät mit dem Heimnetz zu verbinden. Gib ihr einen Namen wie „Handy von Mama“. Die FRITZ!Box bietet eine kostenlose MyFRITZ-Adresse an, damit das Handy sie findet, wenn sich deine Adresse zu Hause ändert; nimm sie an.
+2. Die FRITZ!Box zeigt einen QR-Code. Füge in der WireGuard-App auf dem Handy einen Tunnel hinzu, indem du ihn scannst.
+3. Schalte den Tunnel ein, unterwegs oder mit mobilen Daten, und öffne die Box unter ihrer Adresse im Heimnetz (die Seite **Einstellungen**, **Sichere Verbindung** zeigt sie).
+
+Öffne die Box mit ihrer Adresse oder dem Namen, den der Router ihr gibt, nicht als `hejmo.local`: Über ein VPN findet ein Handy `hejmo.local` meist nicht. In der FRITZ!Box steht der Name der Box unter **Heimnetz**, **Netzwerk**, beim Gerät der Box (zum Beispiel `hejmo.fritz.box`; dort kannst du ihn auch ändern). Trage diesen Namen einmal im Einrichtungsassistenten unter **Mehr Optionen** ein, oder später unter **Einstellungen**, **Sichere Verbindung**, **Name im Router**. Ein später ergänzter Name braucht ein neues Zertifikat der Box, und jedes Gerät muss der Box noch einmal vertrauen (voriges Kapitel).
+
+Andere VPNs funktionieren genauso, solange sie das Handy in dein Heimnetz holen. Diese Anleitung behandelt nur WireGuard in der FRITZ!Box.
+
 ## Displays und Handys
 
 - **Displays:** Öffne im Browser des Displays die Display-Adresse der Box. Es zeigt einen QR-Code und einen sechsstelligen Code. Öffne in der Weboberfläche **Displays**, gib den Code ein und vergib Name, Raum und Typ. Ein E-Ink-Display (schwarz-weiß oder farbig) ist **experimentell**; ein normaler Bildschirm, etwa ein altes Tablet, funktioniert vollständig.
@@ -91,6 +112,45 @@ Das Installationsskript richtet auch eine nächtliche Update-Prüfung ein (ein s
 - Der Container bekommt keinen Zugriff auf den Docker-Socket. Box und Updater tauschen nur zwei kleine Dateien im Datenvolumen aus (`update-settings`, `update-status`) mit festen Schlüsseln und Werten.
 - Das Updater-Skript selbst ändert sich nur, wenn du das Installationsskript erneut ausführst. Den letzten Lauf siehst du mit `sudo journalctl -u hejmo-update`.
 - Schlägt auch die Rückkehr fehl (die Sicherung lässt sich nicht einspielen), bleibt die Box absichtlich **gestoppt**, und Eltern sehen keinen Hinweis, weil die Box aus ist. Antwortet die Box nach einer Update-Nacht nicht, zeigt `sudo journalctl -u hejmo-update`, was passiert ist.
+
+## Offline-Modus
+
+Mit dem **Offline-Modus** (der Einrichtungsassistent fragt gleich nach „Nur im Heimnetz“; später **Einstellungen › Verbindungen nach außen**) verbindet sich die Box mit nichts außerhalb deines Heimnetzes: kein Wetter, kein iCloud, Google oder andere Kalender-Server, keine abonnierten Kalender, keine Bilder aus dem Web, kein DNS-Dienst. Kalender, Aufgaben, Listen, Essen, Displays und Handys im Heimnetz funktionieren weiter. Die Seite zeigt jede Verbindung mit ihrem letzten Kontakt und, solange der Offline-Modus an ist, jeden Versuch, den die Box abgewiesen hat. Mit einem öffentlichen Namen braucht der Offline-Modus zuerst den Wechsel zu „Nur im Heimnetz“; die Seite zeigt, was das kostet.
+
+## Update ohne Internet
+
+Mit Offline-Modus (**Einstellungen › Verbindungen nach außen**) aktualisiert sich die Box nicht selbst, und der nächtliche Updater auch nicht: Die Box schreibt `offline=yes` in die Datei `update-settings`, der Updater verbindet sich mit nichts. Neue Versionen bringst du selbst auf die Box. Nach 90 Tagen ohne Update (die Zahl kannst du auf dieser Seite ändern) sehen Eltern „Seit 90 Tagen nicht aktualisiert“ mit einem Link zu diesem Kapitel.
+
+**Auf einer Box, die vor dem Offline-Modus installiert wurde, führe zuerst einmal das Installationsskript aus** (siehe „Aktualisieren und entfernen“ unten): Ein älterer Updater kennt `offline=yes` nicht und würde jede Nacht weiter nach Updates suchen.
+
+Eine Update-Datei in der Weboberfläche hochzuladen gibt es noch nicht (das ist ein eigener Schritt). Bis dahin geht es von Hand, von einem Computer mit Internet aus und mit der Adresse der Box zur Hand:
+
+1. **Auf einem Computer mit Internet** suchst du die neueste Version auf der [Release-Seite](https://github.com/hejmo-home/hejmo/releases) (eine Nummer wie `0.2.4`, keine Vorabversion). Lade das Image und prüfe seine Signatur, genau wie der Updater:
+   ```bash
+   docker pull ghcr.io/hejmo-home/hejmo:0.2.4
+   docker run --rm ghcr.io/sigstore/cosign/cosign:v2.5.3 verify ghcr.io/hejmo-home/hejmo:0.2.4 \
+     --certificate-identity https://github.com/hejmo-home/hejmo/.github/workflows/release.yml@refs/tags/v0.2.4 \
+     --certificate-oidc-issuer https://token.actions.githubusercontent.com
+   ```
+   Mach nur weiter, wenn die Signatur angezeigt wird. Ein Image ohne oder mit falscher Signatur darf nicht installiert werden.
+2. **Speichere das Image in eine Datei** und kopiere sie auf einen USB-Stick: `docker save ghcr.io/hejmo-home/hejmo:0.2.4 -o hejmo-0.2.4.tar`.
+3. **Auf der Box** bindest du den Stick ein, sicherst die Daten (`sudo cp -a /opt/hejmo/data /opt/hejmo/data.vor-0.2.4`) und lädst das Image: `sudo docker load -i /media/usb/hejmo-0.2.4.tar`.
+4. **Stelle die Box darauf um:** Trage in `/opt/hejmo/.env` `HEJMO_IMAGE=ghcr.io/hejmo-home/hejmo:0.2.4` ein und führe `cd /opt/hejmo && sudo docker compose up -d` aus. Öffne die Box und prüfe, dass alles läuft; die Seite „Verbindungen nach außen“ zeigt weiter, dass nichts nach draußen ging.
+5. **Sag der Box, dass sie aktualisiert wurde.** Die Box sieht nicht, welches Image läuft; von einem Update erfährt sie nur aus der Datei, die der nächtliche Updater schreibt. Ohne diesen Schritt zeigt die Seite weiter die alte Version, und Eltern sehen weiter „Seit N Tagen nicht aktualisiert“. Nimm die Version, die du installiert hast:
+   ```bash
+   sudo sh -c 'rm -f /opt/hejmo/data/update-status && printf "state=updated\nversion=0.2.4\ntime=%s\n" "$(date -u +%Y-%m-%dT%H:%M:%SZ)" > /opt/hejmo/data/update-status'
+   ```
+6. Startet die neue Version nicht, setze `HEJMO_IMAGE` auf das alte Tag zurück, stoppe die Box und spiele die Datensicherung zurück (und überspringe Schritt 5).
+
+## Uhrzeit vom Router
+
+Der Offline-Modus von Hejmo gilt nur für Hejmo. Das Gerät, auf dem die Box läuft (zum Beispiel Raspberry Pi OS), kann weiter die Uhrzeit aus dem Internet holen (NTP) und eigene System-Updates laden. Damit es die Uhrzeit ohne Internet bekommt, richte es auf deinen Router aus, den viele Router (etwa die FRITZ!Box) als Zeitserver anbieten:
+
+1. In der FRITZ!Box öffnest du **Heimnetz › Netzwerk › Netzwerkeinstellungen** und notierst die Adresse der FRITZ!Box (meist `192.168.178.1`). Unter **Heimnetz-Einstellungen** muss *Zeitserver (NTP)* für das Heimnetz an sein.
+2. Auf der Box bearbeitest du `/etc/systemd/timesyncd.conf`, setzt `NTP=192.168.178.1` und `FallbackNTP=` (leer) und startest mit `sudo systemctl restart systemd-timesyncd` neu.
+3. Mit `timedatectl timesync-status` prüfst du, dass der Router der Zeitserver ist.
+
+Die Menünamen unterscheiden sich je nach FRITZ!OS-Version; die Hilfe des Routers zeigt, wo die Einstellung für den Zeitserver liegt. Eine Box mit falscher Uhr kann Zertifikate nicht prüfen und niemanden anmelden, prüfe deshalb die Uhrzeit nach dem ersten Start.
 
 ## Aktualisieren und entfernen
 

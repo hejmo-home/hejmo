@@ -51,6 +51,7 @@ func midsummer() sun.Times {
 
 // 5.15: automatic with offset -30 at sunset; 30 minutes before sunset the display is dark.
 func TestAutomaticDisplayTurnsDarkThirtyMinutesBeforeSunsetWithOffsetMinus30(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	f.atMunich(t)
 	f.setTheme(t, "auto", "0", "-30")
@@ -65,6 +66,7 @@ func TestAutomaticDisplayTurnsDarkThirtyMinutesBeforeSunsetWithOffsetMinus30(t *
 
 // 5.15: offset +45 at sunrise: light 45 minutes after sunrise.
 func TestAutomaticDisplayTurnsLight45MinutesAfterSunriseWithOffsetPlus45(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	f.atMunich(t)
 	f.setTheme(t, "auto", "45", "0")
@@ -79,6 +81,7 @@ func TestAutomaticDisplayTurnsLight45MinutesAfterSunriseWithOffsetPlus45(t *test
 
 // ADR 0015 defaults: E-Ink light, normal screen automatic.
 func TestNewDisplaysStartWithTheDefaultThemeOfTheirType(t *testing.T) {
+	t.Parallel()
 	night := time.Date(2026, 6, 21, 2, 0, 0, 0, berlinTZ)
 	for typ, want := range map[string]string{"eink_bw": "bw", "eink_color": "light", "screen": "dark"} {
 		f := newFamilyBox(t, typ)
@@ -90,6 +93,7 @@ func TestNewDisplaysStartWithTheDefaultThemeOfTheirType(t *testing.T) {
 }
 
 func TestDarkThemeOnABlackAndWhiteEInkDisplayUsesTheDarkPalette(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	if got := themeOf(t, f.view(t, "en", f.at(14, 12, 0))); got != "bw" {
 		t.Fatalf("light = %q, want bw", got)
@@ -101,6 +105,7 @@ func TestDarkThemeOnABlackAndWhiteEInkDisplayUsesTheDarkPalette(t *testing.T) {
 }
 
 func TestDisplaysPageOffersThemeAndOffsets(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	p := f.get("/displays/" + f.displayID(t)).body
 	for _, want := range []string{`name="theme"`, `value="auto" checked`, `name="sunrise_offset"`, `name="sunset_offset"`, `min="-180"`, `max="180"`} {
@@ -116,6 +121,7 @@ func TestDisplaysPageOffersThemeAndOffsets(t *testing.T) {
 }
 
 func TestRefusedThemeSettingsLeaveTheDisplayAsItWas(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	ds, _ := f.db.Displays(f.householdID)
 	for _, form := range []url.Values{
@@ -134,6 +140,7 @@ func TestRefusedThemeSettingsLeaveTheDisplayAsItWas(t *testing.T) {
 
 // A display that stays open switches theme without a reload: its state call carries the theme.
 func TestDisplayStateCarriesTheCurrentTheme(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	f.atMunich(t)
 	f.now = midsummer().Set.Add(time.Hour)
@@ -148,6 +155,7 @@ func TestDisplayStateCarriesTheCurrentTheme(t *testing.T) {
 
 // 5.15: the web interface follows the device by default, so a device that prefers dark gets dark.
 func TestWebInterfaceFollowsTheDeviceByDefault(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	p := b.get("/settings").body
 	if got := themeOf(t, p); got != "" {
@@ -159,16 +167,18 @@ func TestWebInterfaceFollowsTheDeviceByDefault(t *testing.T) {
 }
 
 func TestWebInterfaceOffersLightDarkAutomaticAndFollowTheDevice(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
-	p := b.get("/settings").body
+	p := b.get("/").body
 	for _, v := range []string{"device", "light", "dark", "auto"} {
 		if !strings.Contains(p, `data-theme-choice value="`+v+`"`) && !strings.Contains(p, `value="`+v+`" data-theme-choice`) {
-			t.Errorf("settings page misses the choice %q", v)
+			t.Errorf("page misses the choice %q", v)
 		}
 	}
 }
 
 func TestWebPagesCarryTodaysSunTimesForAutomatic(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	f.atMunich(t)
 	f.now = time.Date(2026, 6, 21, 12, 0, 0, 0, berlinTZ)
@@ -180,6 +190,7 @@ func TestWebPagesCarryTodaysSunTimesForAutomatic(t *testing.T) {
 }
 
 func TestSignedOutPagesCarryNoSunTimes(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	f.atMunich(t)
 	f.now = time.Date(2026, 6, 21, 12, 0, 0, 0, berlinTZ)
@@ -196,6 +207,7 @@ func itoa64(n int64) string { return strconv.FormatInt(n, 10) }
 // E-Ink display keeps the display's own palette, even when its theme is dark.
 // Outside the quiet window the theme applies again.
 func TestQuietModeTakesPrecedenceOverTheTheme(t *testing.T) {
+	t.Parallel()
 	for _, c := range []struct {
 		typ, theme, quiet, outside string
 	}{

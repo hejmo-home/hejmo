@@ -102,7 +102,5 @@ func (s *server) syncUpdateSettings() {
 	if err != nil {
 		return // not set up yet: the script's default (on) applies
 	}
-	if err := update.WriteSettings(s.updateDir, string(h.AutoUpdate)); err != nil {
-		s.logger.Error("write update settings", "err", err)
-	}
+	s.writeUpdateSettings(h.AutoUpdate)
 }

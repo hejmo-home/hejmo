@@ -851,16 +851,13 @@ func (s *server) apiCopyDisplayLayout(w http.ResponseWriter, r *http.Request, p 
 		writeError(w, http.StatusUnprocessableEntity, "a display cannot copy its own layout")
 		return
 	}
-	if _, err := s.db.Display(p.household.ID, in.From); err != nil {
+	// The display itself is known by now, so a missing one is the source.
+	if err := s.db.CopyDisplayLayout(p.household.ID, in.From, id); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "display to copy from (from) not found")
 			return
 		}
 		s.fail(w, "display layout", err)
-		return
-	}
-	if err := s.db.CopyDisplayLayout(p.household.ID, in.From, id); err != nil {
-		writeDisplayError(w, s, err)
 		return
 	}
 	d, err := s.db.Display(p.household.ID, id)

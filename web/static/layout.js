@@ -33,7 +33,7 @@
   function tomorrow(names) { return rotated(names, 1); }
 
   // orders are the columns the display will show today and the order in words
-  // for tomorrow, for the people as the form lists them. A rotation that is
+  // for tomorrow, for the people (ids or names) as the form lists them. A rotation that is
   // switched on now starts from the listed order as its base order, so today's
   // columns are already moved by day mod n; one that runs lists today's columns.
   function orders(names, rotating, wasRotating, day) {
@@ -106,8 +106,12 @@
 
   function sync() {
     var people = rows();
-    var names = people.map(nameOf);
-    var order = orders(names, rotate.checked, wasRotating, orderDay);
+    // The people are told apart by id: two of them may have the same name.
+    var ids = people.map(function (row) { return row.getAttribute("data-pid"); });
+    var nameById = {};
+    people.forEach(function (row, i) { nameById[ids[i]] = nameOf(row); });
+    var order = orders(ids, rotate.checked, wasRotating, orderDay);
+    var tomorrowNames = order.tomorrow.map(function (id) { return nameById[id]; });
     people.forEach(function (row, i) {
       var pos = row.querySelector(".pos");
       var label = i >= visible ? fig.getAttribute("data-col-swipe") : fig.getAttribute("data-col");
@@ -122,7 +126,7 @@
     root.toggleAttribute("data-personal", personal);
     var rot = root.querySelector("[data-rotate]");
     rot.hidden = people.length < 2;
-    rot.querySelector("[data-rotate-on]").textContent = fill(fig.getAttribute("data-tomorrow-on"), { names: order.tomorrow.join(", ") });
+    rot.querySelector("[data-rotate-on]").textContent = fill(fig.getAttribute("data-tomorrow-on"), { names: tomorrowNames.join(", ") });
     var hint = root.querySelector("[data-hint-whole]");
     hint.textContent = hint.getAttribute(whole.checked ? "data-hint-whole" : "data-hint-some");
 
@@ -145,9 +149,7 @@
 
     // The preview.
     var chosen = {};
-    var byName = {};
-    people.forEach(function (row, i) { byName[nameOf(row)] = row.getAttribute("data-pid"); });
-    order.columns.forEach(function (name, i) { chosen[byName[name]] = i; });
+    order.columns.forEach(function (id, i) { chosen[id] = i; });
     Array.prototype.forEach.call(mini.querySelectorAll(".m-col"), function (col) {
       var id = col.getAttribute("data-pid");
       var at = chosen[id];
@@ -170,7 +172,7 @@
       });
     });
     var w = root.querySelector(".lay-words");
-    w.textContent = words(texts, order.columns, portrait, rotate.checked, personal);
+    w.textContent = words(texts, order.columns.map(function (id) { return nameById[id]; }), portrait, rotate.checked, personal);
   }
 
   function dirty() {

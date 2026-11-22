@@ -592,12 +592,15 @@ func (s *server) execute(w io.Writer, name, lang string, data any) error {
 // so the cache stays small; past maxCachedSets an unknown pair is copied for that
 // render alone.
 func (s *server) pagesFor(lang string) (*template.Template, error) {
-	key := pageSetKey{s.i18n, lang}
-	pageSets.Lock()
-	defer pageSets.Unlock()
-	if tpl, ok := pageSets.byKey[key]; ok {
+	key := pageSetKey{s.pages, s.i18n, lang}
+	pageSets.RLock()
+	tpl, ok := pageSets.byKey[key]
+	pageSets.RUnlock()
+	if ok {
 		return tpl, nil
 	}
+	// Copy outside the lock: two renders may both copy on a first miss, and the
+	// second one's copy simply replaces nothing (see below).
 	tpl, err := s.pages.Clone()
 	if err != nil {
 		return nil, err
@@ -607,6 +610,11 @@ func (s *server) pagesFor(lang string) (*template.Template, error) {
 		"t":  func(k string) string { return bundle.T(lang, k) },
 		"tf": func(k string, kv ...string) string { return bundle.Format(lang, i18n.Msg(k, kv...)) },
 	})
+	pageSets.Lock()
+	defer pageSets.Unlock()
+	if cached, ok := pageSets.byKey[key]; ok {
+		return cached, nil
+	}
 	if len(pageSets.byKey) < maxCachedSets {
 		if pageSets.byKey == nil {
 			pageSets.byKey = map[pageSetKey]*template.Template{}
@@ -617,12 +625,13 @@ func (s *server) pagesFor(lang string) (*template.Template, error) {
 }
 
 type pageSetKey struct {
+	pages  *template.Template // the source set, so servers with other pages never share a copy
 	bundle *i18n.Bundle
 	lang   string
 }
 
 var pageSets struct {
-	sync.Mutex
+	sync.RWMutex
 	byKey map[pageSetKey]*template.Template
 }
 

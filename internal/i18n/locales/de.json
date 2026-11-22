@@ -3438,7 +3438,7 @@
   "family.routine_label": "{name}:",
   "layout.list.no_choice": "–",
   "always.card.legend": "Immer auf der Liste",
-  "always.card.hint": "Für Dinge, die ihr regelmäßig braucht, etwa Milch jede Woche.",
+  "always.card.hint": "Für Dinge, die du regelmäßig brauchst, etwa Milch jede Woche.",
   "always.card.label": "Kommt von selbst auf eine Liste",
   "always.card.on": "An. Hejmo setzt {name} von selbst auf die Liste.",
   "always.card.paused": "An, aber angehalten: Die Liste fehlt.",

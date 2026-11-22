@@ -235,8 +235,8 @@ type View struct {
 	TomorrowTile  *Tile
 	List          *ListTile
 	// HeaderOrder, ColumnBlocks and FooterOrder name the blocks that are on, in
-	// order (ticket 180). A header block without content (weather without a
-	// reading) and a footer block without a tile are left out.
+	// order (ticket 180). Weather without a reading is left out of the header; a
+	// footer block without content (nothing planned, an empty list) has no tile.
 	HeaderOrder, ColumnBlocks, FooterOrder []layout.BlockID
 }
 
@@ -298,10 +298,7 @@ func Build(in Input) View {
 		v.List = t
 	}
 	for _, b := range lay.In(layout.Footer) {
-		if !b.On {
-			continue
-		}
-		if (b.ID == layout.Meals && v.Meal != nil) || (b.ID == layout.Tomorrow && v.TomorrowTile != nil) || (b.ID == layout.List && v.List != nil) {
+		if b.On {
 			v.FooterOrder = append(v.FooterOrder, b.ID)
 		}
 	}

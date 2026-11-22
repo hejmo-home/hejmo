@@ -29,11 +29,11 @@
           <div class="lab">{{t "family.tomorrow"}}</div>
           {{range $col.Tomorrow}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div>{{if .WhoParts}}<div class="who">{{template "whoParts" .WhoParts}}</div>{{end}}</div>
           {{end}}</div>{{end}}
-      </div>{{else if eq . "routines"}}{{with $col.Routines}}<ul class="col-rt">{{range .}}<li{{if .AllDone}} class="done"{{end}} data-routine>{{template "partIcon" .Part}}<span>{{if .AllDone}}{{tf "family.routine_done" "name" .Name}}{{else}}<b>{{.Name}}:</b> {{tf "family.routine_rest" "done" (printf "%d" .Done) "total" (printf "%d" .Total)}}{{end}}</span></li>{{end}}</ul>{{end}}{{else if eq . "tasks"}}{{template "progressBlock" $col}}{{end}}{{end}}
+      </div>{{else if eq . "routines"}}{{with $col.Routines}}<ul class="col-rt">{{range .}}<li{{if .AllDone}} class="done"{{end}} data-routine>{{template "partIcon" .Part}}<span>{{if .AllDone}}{{tf "family.routine_done" "name" .Name}}{{else}}<b>{{tf "family.routine_label" "name" .Name}}</b> {{tf "family.routine_rest" "done" (printf "%d" .Done) "total" (printf "%d" .Total)}}{{end}}</span></li>{{end}}</ul>{{end}}{{else if eq . "tasks"}}{{template "progressBlock" $col}}{{end}}{{end}}
     </section>
     {{end}}
   </main>
-  {{if .FooterOrder}}<footer class="fv-footer" data-footer>
+  {{if or .Meal .TomorrowTile .List}}<footer class="fv-footer" data-footer>
     {{range .FooterOrder}}{{if eq . "meals"}}{{with $.Meal}}{{template "mealTile" .}}{{end}}{{else if eq . "tomorrow"}}{{with $.TomorrowTile}}{{template "tile" (dict "Tile" . "Kind" "tomorrow")}}{{end}}{{else if eq . "list"}}{{with $.List}}{{template "fvListTile" .}}{{end}}{{end}}{{end}}
   </footer>{{end}}
 </div>{{end}}

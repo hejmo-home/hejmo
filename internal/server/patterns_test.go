@@ -138,7 +138,7 @@ func TestDisplaySwitchAndChoiceCards(t *testing.T) {
 	h, _ := b.db.HomeHousehold()
 	list, _ := b.db.Displays(h.ID)
 	page := getEN(b, "/displays/"+list[0].ID).body
-	if !strings.Contains(page, `role="switch" name="show_tomorrow"`) || !strings.Contains(page, "Off: today only") || !strings.Contains(page, "On: from 18:00 tomorrow appears, dimmed") {
+	if !strings.Contains(page, `role="switch" name="show_tomorrow"`) || !strings.Contains(page, "Off: today only") || !strings.Contains(page, "On: from 18:00 the first events of tomorrow, paler") {
 		t.Errorf("tomorrow block is not a switch with state text:\n%s", page)
 	}
 	if !strings.Contains(page, `<fieldset class="choice">`) || !strings.Contains(page, `type="radio" name="type" value="eink_bw"`) || !strings.Contains(page, "<small>") {

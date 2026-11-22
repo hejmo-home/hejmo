@@ -64,7 +64,7 @@ func TestWithoutALayoutTheViewIsTodays(t *testing.T) {
 		Weather: &familyview.Weather{TempC: 8, Icon: "clear"}, Meals: map[meal.Mealtime]string{meal.Dinner: "Pasta"}})
 	same(t, orderOf(v.HeaderOrder), []string{"clock", "weather"})
 	same(t, orderOf(v.ColumnBlocks), []string{"events", "tasks"})
-	same(t, orderOf(v.FooterOrder), []string{"meals"})
+	same(t, orderOf(v.FooterOrder), []string{"meals", "tomorrow"})
 	if v.Weather == nil || v.Meal == nil {
 		t.Fatalf("view = %+v", v)
 	}
@@ -141,6 +141,7 @@ func TestFooterTilesFollowTheBlocks(t *testing.T) {
 	if v.TomorrowTile != nil {
 		t.Errorf("tomorrow tile with its block off")
 	}
+	same(t, orderOf(v.FooterOrder), []string{"meals"})
 	v = buildWith(func(l *layout.Layout) { l.Blocks[5], l.Blocks[6] = l.Blocks[6], l.Blocks[5] }, in)
 	same(t, orderOf(v.FooterOrder), []string{"tomorrow", "meals"})
 }
@@ -165,7 +166,7 @@ func TestTheListTileShowsUpToEightEntries(t *testing.T) {
 	if v.List == nil || v.List.ID != "L1" || v.List.Name != "Shopping" || len(v.List.Entries) != 3 || v.List.More != 0 {
 		t.Fatalf("tile = %+v", v.List)
 	}
-	same(t, orderOf(v.FooterOrder), []string{"list"})
+	same(t, orderOf(v.FooterOrder), []string{"meals", "tomorrow", "list"})
 	if v := buildWith(on(layout.List), familyview.Input{List: list(8)}); len(v.List.Entries) != 8 || v.List.More != 0 {
 		t.Errorf("eight = %+v", v.List)
 	}
@@ -174,7 +175,7 @@ func TestTheListTileShowsUpToEightEntries(t *testing.T) {
 		t.Errorf("thirteen = %+v", v.List)
 	}
 	// An empty list is hidden like any empty tile; so is no list at all (deleted).
-	if v := buildWith(on(layout.List), familyview.Input{List: list(0)}); v.List != nil || len(v.FooterOrder) != 0 {
+	if v := buildWith(on(layout.List), familyview.Input{List: list(0)}); v.List != nil {
 		t.Errorf("empty list shown: %+v", v)
 	}
 	if v := buildWith(on(layout.List), familyview.Input{}); v.List != nil {

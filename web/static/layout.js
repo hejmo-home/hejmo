@@ -127,7 +127,7 @@
       var id = col.getAttribute("data-pid");
       var at = chosen[id];
       col.hidden = at === undefined;
-      col.style.order = at === undefined ? 99 : at;
+      col.style.setProperty("--po", String(at === undefined ? 99 : at));
     });
     Array.prototype.forEach.call(mini.querySelectorAll(".m-pvp"), function (el) {
       var at = chosen[el.getAttribute("data-pid")];
@@ -141,7 +141,7 @@
     Array.prototype.forEach.call(root.querySelectorAll("[data-blocks]"), function (container) {
       blockGroups(container).forEach(function (g, i) {
         var id = g[0].getAttribute("data-block");
-        Array.prototype.forEach.call(mini.querySelectorAll('[data-b="' + id + '"]'), function (el) { el.style.order = i; });
+        Array.prototype.forEach.call(mini.querySelectorAll('[data-b="' + id + '"]'), function (el) { el.style.setProperty("--bo", String(i)); });
       });
     });
     var w = root.querySelector(".lay-words");

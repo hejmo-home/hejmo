@@ -3134,3 +3134,9 @@ ol.porder > li.prow { margin: 0; padding: 0; background: none; border-radius: 0;
 .mini:not(.personal) .m-pv { display: none; }
 .m-col[hidden] { display: none; }
 .layout [hidden] { display: none !important; }
+
+/* The preview takes its order and widths from custom properties (templates carry no inline styles). */
+.m-col { order: var(--po, 0); }
+.m-chip[data-b], .m-tile[data-b] { order: var(--bo, 0); }
+.m-col [data-b] { order: var(--bo, 0); }
+.m-col .pg b { width: calc(var(--w, 0) * 1%); }

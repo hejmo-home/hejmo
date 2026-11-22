@@ -3274,5 +3274,7 @@
   "family.routine_done": "{name} erledigt",
   "displays.error.layout_people": "Wähle mindestens eine Person.",
   "displays.error.layout_list": "Diese Liste gibt es nicht.",
-  "displays.error.layout_blocks": "Dieser Block ist unbekannt."
+  "displays.error.layout_blocks": "Dieser Block ist unbekannt.",
+  "family.routine_label": "{name}:",
+  "layout.list.no_choice": "–"
 }

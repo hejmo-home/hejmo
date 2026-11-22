@@ -3274,5 +3274,7 @@
   "family.routine_done": "{name} done",
   "displays.error.layout_people": "Choose at least one person.",
   "displays.error.layout_list": "This list does not exist.",
-  "displays.error.layout_blocks": "This block does not exist."
+  "displays.error.layout_blocks": "This block does not exist.",
+  "family.routine_label": "{name}:",
+  "layout.list.no_choice": "–"
 }

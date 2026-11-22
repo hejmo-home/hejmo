@@ -167,7 +167,7 @@ One person's view on a display, opened by tapping them; returns to the family vi
 _Avoid_: profile view, child view (that is a later, separate view)
 
 **Kiosk adapter**:
-The box's connection to the kiosk app on a display that switches its front light and screen, for example in quiet mode.
+The box's connection to the kiosk app on a display that sets its brightness (on E-Ink the front light) and switches its screen, by time of day and in quiet mode.
 _Avoid_: display driver, device control
 
 **Web interface**:
@@ -195,7 +195,7 @@ Whether a display or the web interface is light or dark, switches automatically 
 _Avoid_: dark mode (alone), skin, colour scheme
 
 **Quiet mode**:
-The scheduled night state of a display: a calm night page about the coming morning with the front light off, or a black page on a normal screen.
+The scheduled night state of a display: a calm night page about the coming morning with the front light off (or dimmed), or a black page on a normal screen without a kiosk app.
 _Avoid_: sleep mode (in prose), night mode, standby
 
 **Night page**:

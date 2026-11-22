@@ -8,7 +8,6 @@ import (
 	"testing"
 	"time"
 
-	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/sun"
 	"github.com/hejmo-home/hejmo/internal/weather"
@@ -46,36 +45,24 @@ func (f *familyBox) setHomeInSettings(t *testing.T) {
 	}
 }
 
-// #29 acceptance criterion 2: given no light sensor, when the sun sets at the
-// home location, then the front light is switched off (fake FreeKiosk API).
-func TestFrontLightFollowsSunsetAtTheHomeLocationSetInSettings(t *testing.T) {
+// #29 and #179: the brightness switches from Day to Evening at sunset at the
+// home location (fake FreeKiosk API); without a home location Day applies all day.
+func TestBrightnessFollowsSunsetAtTheHomeLocationSetInSettings(t *testing.T) {
 	t.Parallel()
-	f := newFamilyBox(t, "eink_bw")
+	fake := &fakeKiosk{}
+	f := newFamilyBox(t, "eink_bw", withKiosk(fake))
 	f.withoutLocation(t)
 	if r := f.saveSettings(t, url.Values{"kiosk_url": {"http://192.168.1.20:8080"}, "kiosk_key": {"k-1"}}); r.status != http.StatusSeeOther {
 		t.Fatalf("kiosk settings = %d", r.status)
 	}
-	fake := &fakeKiosk{}
-	run := server.NewKioskRunner(server.KioskOptions{DB: f.db, Factory: fake.factory(), Now: func() time.Time { return f.now }})
-	ctx := context.Background()
-
-	f.now = f.at(14, 17, 30) // after sunset in Munich, but the box does not know where home is
-	run.Tick(ctx)
-	if fake.count() != 0 {
-		t.Fatal("front light switched off without a home location")
-	}
+	f.tick(f.at(14, 17, 30)) // after sunset in Munich, but the box does not know where home is
+	expect(t, "without a home location", fake.take(), "brightness 100")
 
 	f.setHomeInSettings(t)
-	f.now = f.at(14, 16, 0) // sunset in Pasing is about 16:36
-	run.Tick(ctx)
-	if fake.count() != 0 {
-		t.Fatal("front light switched off before sunset")
-	}
-	f.now = f.at(14, 16, 50)
-	run.Tick(ctx)
-	if fake.count() != 1 || fake.calls[0] != "http://192.168.1.20:8080 k-1" {
-		t.Fatalf("calls = %q, want the front light off once after sunset", fake.calls)
-	}
+	f.tick(f.at(14, 16, 0)) // sunset in Pasing is about 16:36
+	expect(t, "before sunset", fake.take())
+	f.tick(f.at(14, 16, 50))
+	expect(t, "after sunset", fake.take(), "brightness 40")
 }
 
 // #52: the theme switch by sunrise and sunset works on a box whose home

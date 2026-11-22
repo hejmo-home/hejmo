@@ -6,6 +6,7 @@ import (
 	"encoding/hex"
 	"html/template"
 
+	"github.com/hejmo-home/hejmo/internal/brightness"
 	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -20,6 +21,32 @@ type quietView struct {
 	Black         bool
 	ReloadSeconds int
 	Night         familyview.NightView
+	// WakeURL is where a touch tells the box to wake the display (ticket 179,
+	// Q79): set only while the box switched it off through a kiosk app.
+	WakeURL string
+}
+
+// wakeURL is where a touch on a quiet display wakes it.
+const wakeURL = "/display/wake"
+
+// quietBlack reports whether quiet mode shows a black page on d: a normal
+// screen does, unless a kiosk app dims it (the night page stays faintly
+// visible, ticket 179) or a touch woke it for a while (it shows the night
+// page, then goes off again).
+func (s *server) quietBlack(d store.Display) bool {
+	switch {
+	case d.Type != store.DisplayScreen:
+		return false
+	case d.KioskURL != "" && d.Brightness.QuietMode == brightness.QuietDim:
+		return false
+	}
+	return s.kiosk == nil || !s.kiosk.Woken(d.ID)
+}
+
+// listensForWake reports whether the quiet page of d tells the box about a
+// touch: the kiosk app switched it off (Off), so a touch is how it comes back.
+func listensForWake(d store.Display) bool {
+	return d.KioskURL != "" && d.Brightness.QuietMode == brightness.QuietOff
 }
 
 // renderDisplayContent renders what a paired display shows now: the family
@@ -30,7 +57,10 @@ func (s *server) renderDisplayContent(h store.Household, d store.Display, lang s
 	if !d.Quiet.Active(now) {
 		return s.renderFamily(h, lang, d.ShowTomorrow)
 	}
-	v := quietView{Black: d.Type == store.DisplayScreen}
+	v := quietView{Black: s.quietBlack(d)}
+	if listensForWake(d) {
+		v.WakeURL = wakeURL
+	}
 	if !v.Black {
 		morning := d.Quiet.Morning(now)
 		all, err := s.occurrences(h, lang, morning, morning.AddDate(0, 0, 1))
@@ -44,7 +74,9 @@ func (s *server) renderDisplayContent(h store.Household, d store.Display, lang s
 		occs, waste := splitWaste(all, cals)
 		v.Night = familyview.BuildNight(familyview.NightInput{Morning: morning, Occurrences: occs, TimeFormat: h.TimeFormat,
 			Waste: familyview.WasteTitles(waste, morning, morning.AddDate(0, 0, 1))})
-		v.ReloadSeconds = quietReloadSeconds
+		if d.Type != store.DisplayScreen { // against ghosting: only E-Ink
+			v.ReloadSeconds = quietReloadSeconds
+		}
 	}
 	var buf bytes.Buffer
 	if err := s.execute(&buf, "quietView", lang, v); err != nil {

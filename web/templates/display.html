@@ -55,13 +55,12 @@
       </div>
     </fieldset>
 
-    {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" (or (and .D.KioskURL (t "displays.kiosk.on")) (t "displays.kiosk.off")) "Open" (or (eq .ErrorField "kiosk_url") (eq .ErrorField "sunrise_offset") (eq .ErrorField "sunset_offset")))}}
+    {{template "bright" .}}
+
+    {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" .D.Bright.SunSummary "Open" .D.Bright.SunOpen)}}
       {{template "field" (dict "Root" . "Name" "sunrise_offset" "Label" (t "displays.sunrise_offset") "Type" "number" "Value" .D.SunRise "Bounded" true "Lo" -180 "Hi" 180)}}
       {{template "field" (dict "Root" . "Name" "sunset_offset" "Label" (t "displays.sunset_offset") "Type" "number" "Value" .D.SunSet "Bounded" true "Lo" -180 "Hi" 180)}}
-      {{template "field" (dict "Root" . "Name" "kiosk_url" "Label" (t "displays.kiosk_url") "Type" "url" "Value" .D.KioskURL "Autocapitalize" "none")}}
-      {{template "field" (dict "Root" . "Name" "kiosk_key" "Label" (t "displays.kiosk_key") "Type" "password" "Autocomplete" "off")}}
-      {{if .D.KioskKeySet}}<p class="hint">{{t "displays.kiosk_key_set"}}</p>{{end}}
-      <p class="hint">{{t "displays.kiosk_hint"}}</p>
+      <p class="hint">{{t "displays.sun.hint"}}</p>
     {{template "moreClose"}}
     <button class="button" type="submit">{{t "displays.save"}}</button>
   </form>

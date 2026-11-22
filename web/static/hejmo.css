@@ -3125,9 +3125,6 @@ ol.porder > li.prow { margin: 0; padding: 0; background: none; border-radius: 0;
 .col-rt + .pbar { margin-top: var(--gap-cards); }
 .m-empty { grid-column: 1 / -1; display: grid; place-items: center; border: 1.5px dashed var(--error-text); border-radius: 7px; color: var(--error-text); font-size: 11px; font-weight: 700; }
 [data-theme="bw"] .m-empty { border: 2px dashed var(--text); color: var(--text); }
-</template>
-<script>
-(function () {
 
 /* The preview of a personal view: the header and a sketch of tasks and events (#180). */
 .mini.personal .m-strip, .mini.personal .m-cols, .mini.personal .m-foot { display: none; }

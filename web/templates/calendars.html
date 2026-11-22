@@ -5,51 +5,34 @@
   {{template "httpsNotice" .}}
   {{template "syncNotice" .}}
 
+  {{if or .ConnRows .Rows}}
   {{if not .OfflineTop}}<p class="lead">{{t "calendars.intro"}}</p>{{end}}
+  {{if .CanAdd}}<p class="add-way"><a class="button" href="/connections/new">{{t "connections.connect"}}</a></p>{{end}}
 
   <section aria-labelledby="connections">
     <h2 id="connections">{{t "connections.title"}}</h2>
+    <p class="hint">{{t "connections.about"}}</p>
     {{template "offlineNote" .ConnNote}}
     {{if .ConnRows}}
     <ul class="list-rows">
       {{range .ConnRows}}{{template "rowLink" .}}
       {{end}}
     </ul>
-    {{if not (or .OfflineTop .ConnNote)}}<p><a class="button secondary" href="/connections/new">{{t "connections.connect.more"}}</a></p>{{end}}
-    {{else if not (or .OfflineTop .ConnNote)}}{{template "empty" (dict "Text" (t "connections.empty") "Href" "/connections/new" "Action" (t "connections.connect"))}}{{end}}
+    {{else}}<p class="hint none">{{t "connections.none"}}</p>{{end}}
   </section>
 
   <section aria-labelledby="synced">
     <h2 id="synced">{{t "calendars.synced"}}</h2>
+    <p class="hint">{{t "calendars.synced.hint"}}</p>
     {{if .Rows}}
     <ul class="list-rows">
       {{range .Rows}}{{template "rowLink" .}}
       {{end}}
     </ul>
-    {{else}}{{template "empty" (dict "Text" (t "calendars.none") "Href" "#add" "Action" (t "calendars.add.first"))}}{{end}}
+    {{else}}<p class="hint none">{{t "calendars.synced.none"}}</p>{{end}}
   </section>
-
-  {{if not .OfflineTop}}<section aria-labelledby="add">
-    <h2 id="add">{{t "calendars.add"}}</h2>
-    {{template "error" .}}
-    {{template "offlineNote" .ICSNote}}
-    {{if not .ICSNote}}<form method="post" action="/calendars" class="steps">
-      <fieldset>
-        {{template "field" (dict "Root" . "Name" "name" "Label" (t "calendars.field.name") "Value" (index .Form "Name") "Required" true)}}
-        {{template "field" (dict "Root" . "Name" "url" "Label" (t "calendars.field.url") "Value" (index .Form "URL") "Required" true "Inputmode" "url" "Autocapitalize" "none" "Placeholder" "webcal://…")}}
-        {{template "personChips" (dict "Root" . "Name" "people" "Legend" (t "calendars.field.audience") "People" .People "Selected" (strs (index .Form "People")) "Groups" .Groups "SelectedGroups" (strs (index .Form "Groups")) "Whole" true)}}
-        {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" (t "calendars.more.summary") "Open" (or (eq .ErrorField "color") (eq .ErrorField "interval")))}}
-          <label>{{t "calendars.field.color"}}
-            <input name="color" type="color" value="{{with .Form}}{{if .Color}}{{.Color}}{{else}}{{$.AutoColor}}{{end}}{{else}}{{.AutoColor}}{{end}}"></label>
-          {{template "fieldError" (dict "Root" . "Name" "color")}}
-          <label>{{t "calendars.field.interval"}}
-            <select name="interval">{{range .Intervals}}<option value="{{.}}"{{if eq . $.IntervalChosen}} selected{{end}}>{{.}}</option>{{end}}</select></label>
-          {{template "fieldError" (dict "Root" . "Name" "interval")}}
-        {{template "moreClose"}}
-      </fieldset>
-      <button class="button" type="submit">{{t "calendars.add.submit"}}</button>
-    </form>{{end}}
-  </section>{{end}}
+  {{else if .CanAdd}}{{template "offlineNote" .ConnNote}}{{template "empty" (dict "Text" (t "calendars.empty") "Href" "/connections/new" "Action" (t "connections.connect"))}}
+  {{else}}<div class="empty" data-empty><p>{{t "outside.empty.athome"}}</p><a class="button secondary" href="/caldav">{{t "outside.empty.apps"}}</a></div>{{end}}
 
   <section aria-labelledby="log">
     <h2 id="log">{{t "calendars.log"}}</h2>

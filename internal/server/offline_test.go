@@ -380,7 +380,7 @@ func TestAPageWhoseFeatureNeedsTheOutsideShowsTheNoticeInsteadOfTheForm(t *testi
 	b := signedInBox(t)
 	offlineOn(t, b)
 	page := getEN(b, "/connections/new").body
-	mustContain(t, page, `class="offline-note"`, "Offline mode is on.", "Connecting a calendar needs a connection", "Set up calendar apps", `href="/caldav"`)
+	mustContain(t, page, `class="offline-note"`, "Offline mode is on.", "Connecting a calendar and subscribing to a calendar link need a connection to the internet.", "Set up calendar apps", `href="/caldav"`)
 	mustNotContain(t, page, `action="/connections"`, `name="password"`)
 
 	// Only calendar services off, offline mode off: the same notice for that one connection.

@@ -19,19 +19,3 @@ const Piece = "piece"
 
 // Valid reports whether key is a unit of the catalogue.
 func Valid(key string) bool { return slices.Contains(All, key) }
-
-// Offered returns the default units of an article that are active, in the
-// article's order. A default unit that is switched off is left out; when
-// neither is active the article offers piece, so adding it always works.
-func Offered(defaults, active []string) []string {
-	out := []string{}
-	for _, d := range defaults {
-		if slices.Contains(active, d) && !slices.Contains(out, d) {
-			out = append(out, d)
-		}
-	}
-	if len(out) == 0 {
-		return []string{Piece}
-	}
-	return out
-}

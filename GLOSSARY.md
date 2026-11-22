@@ -171,7 +171,7 @@ One person's view on a display, opened by tapping them; returns to the family vi
 _Avoid_: profile view, child view (that is a later, separate view)
 
 **Kiosk adapter**:
-The box's connection to the kiosk app on a display that switches its front light and screen, for example in quiet mode.
+The box's connection to the kiosk app on a display that sets its brightness (on E-Ink the front light) and switches its screen, by time of day and in quiet mode.
 _Avoid_: display driver, device control
 
 **Web interface**:
@@ -199,7 +199,7 @@ Whether a display or the web interface is light or dark, switches automatically 
 _Avoid_: dark mode (alone), skin, colour scheme
 
 **Quiet mode**:
-The scheduled night state of a display: a calm night page about the coming morning with the front light off, or a black page on a normal screen.
+The scheduled night state of a display: a calm night page about the coming morning with the front light off (or dimmed), or a black page on a normal screen without a kiosk app.
 _Avoid_: sleep mode (in prose), night mode, standby
 
 **Night page**:
@@ -267,6 +267,21 @@ _Avoid_: filtering, blocking
 **Quantity**:
 Number and unit of a list entry, such as 500 g or 1 dozen.
 _Avoid_: amount
+
+**Default unit**:
+One of the one or two units an article offers first when it is added, such as dozen and piece for eggs.
+_Avoid_: standard unit
+
+**Active units**:
+The units the household can choose when adding, preset by the home location's country and changed under Settings, Lists, Units.
+
+**Kind of unit**:
+What a unit measures: pieces (piece, dozen), weight, volume, and pack and bunch, which count only themselves. Only units of one kind convert into each other and add up; another kind of the same article gets its own entry under the old one.
+_Avoid_: dimension, type
+
+**Total**:
+The quantity of an entry after adding up or changing. It is kept exactly (in pieces, grams or millilitres) and shown in the article's first default unit where it fits, otherwise in the clearest unit of its kind.
+_Avoid_: sum
 
 **Tile view**:
 A list shown as tiles with symbol or picture, name and tick; the default for children. The choice (tiles or list) is one per person for all lists and every device. A display is not a person and keeps its own view, tiles until someone switches it. An entry that names no article shows its first letter on a dashed ring instead of a picture.

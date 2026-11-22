@@ -224,14 +224,14 @@ func TestConnectPageOffersGoogleBetweenICloudAndOtherServers(t *testing.T) {
 			}
 		}
 		radios := regexp.MustCompile(`name="service" value="(\w+)"`).FindAllStringSubmatch(block, -1)
-		if len(radios) != 3 || radios[0][1] != "icloud" || radios[1][1] != "google" || radios[2][1] != "caldav" {
-			t.Errorf("%s: choice cards = %v, want icloud, google, caldav", lang, radios)
+		if len(radios) != 4 || radios[0][1] != "icloud" || radios[1][1] != "google" || radios[2][1] != "caldav" || radios[3][1] != "ics" {
+			t.Errorf("%s: choice cards = %v, want icloud, google, caldav, ics", lang, radios)
 		}
 		if !strings.Contains(block, `<input type="radio" name="service" value="google" checked>`) {
 			t.Errorf("%s: Google is not the checked card", lang)
 		}
-		if n := strings.Count(block, `<ol class="howto">`); n != 3 {
-			t.Errorf("%s: %d guides on the page, want 3", lang, n)
+		if n := strings.Count(block, `<ol class="howto">`); n != 4 {
+			t.Errorf("%s: %d guides on the page, want 4", lang, n)
 		}
 	}
 }

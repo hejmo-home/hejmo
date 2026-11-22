@@ -81,6 +81,11 @@ type Options struct {
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
 	Logger *slog.Logger
+	// Kiosk is the runner that sets the brightness of displays with a kiosk
+	// app (ticket 179). The settings page reads its state and a touch on a
+	// quiet display wakes it through it. Nil means displays are not driven:
+	// no state is shown and a touch wakes nothing.
+	Kiosk *KioskRunner
 }
 
 // PublicHTTPS is the box's publicly trusted certificate, set up through the
@@ -133,7 +138,8 @@ type server struct {
 	countWait  time.Duration
 	done       <-chan struct{}
 	updateDir  string
-	photos     *photoBox // nil without a data directory for photos
+	kiosk      *KioskRunner // nil when displays are not driven
+	photos     *photoBox    // nil without a data directory for photos
 	flashTexts flashTexts
 	// pictures holds pictures made from an upload or a web image until their article is saved (ticket 164).
 	pictures pendingPictures
@@ -178,6 +184,7 @@ func New(opts Options) http.Handler {
 		s.fetcher = &picture.Fetcher{Gate: s.gate}
 	}
 	s.done = opts.Done
+	s.kiosk = opts.Kiosk
 	s.updateDir = opts.UpdateDir
 	if opts.PhotoDir != "" {
 		s.photos = newPhotoBox(opts.PhotoDir)
@@ -335,6 +342,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}/delete", s.handleTemplateStepDelete)
 	mux.HandleFunc("GET /settings/lists", s.handleListsSettings)
 	mux.HandleFunc("POST /settings/lists", s.handleListsSettingsSave)
+	mux.HandleFunc("POST /settings/lists/units", s.handleUnitsSave)
 	mux.HandleFunc("GET /settings/lists/library", s.handleLibrary)
 	mux.HandleFunc("GET /settings/lists/library/new", s.handleArticleNew)
 	mux.HandleFunc("POST /settings/lists/library", s.handleArticleCreate)
@@ -353,6 +361,9 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /me/list-view", s.handleListView)
 	mux.HandleFunc("POST /lists/{id}/delete", s.handleListDelete)
 	mux.HandleFunc("POST /lists/{id}/entries", s.handleEntryAdd)
+	mux.HandleFunc("GET /lists/{id}/suggest", s.handleListSuggest)
+	mux.HandleFunc("GET /lists/{id}/quantity", s.handleListQuantity)
+	mux.HandleFunc("POST /lists/{id}/entries/{entry}/quantity", s.handleEntryQuantity)
 	mux.HandleFunc("POST /lists/{id}/entries/{entry}/done", s.handleEntryDone)
 	mux.HandleFunc("POST /lists/{id}/entries/{entry}/delete", s.handleEntryDelete)
 	mux.HandleFunc("POST /lists/{id}/entries/{entry}/move", s.handleEntryMove)
@@ -385,6 +396,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
 	mux.HandleFunc("GET /display/events", s.handleDisplayEvents)
+	mux.HandleFunc("POST /display/wake", s.handleDisplayWake)
 	mux.HandleFunc("GET /display/saver", s.handleDisplaySaver)
 	mux.HandleFunc("GET /display/saver/photos", s.serveDisplaySaver)
 	mux.HandleFunc("GET /display/photo/{id}", s.serveDisplayPhoto)
@@ -396,6 +408,9 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /display/lists/{id}", s.handleDisplayList)
 	mux.HandleFunc("GET /display/lists/{id}/view", s.handleDisplayListView)
 	mux.HandleFunc("POST /display/lists/{id}/entries", s.handleDisplayEntryAdd)
+	mux.HandleFunc("GET /display/lists/{id}/suggest", s.handleDisplayListSuggest)
+	mux.HandleFunc("GET /display/lists/{id}/quantity", s.handleDisplayListQuantity)
+	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/quantity", s.handleDisplayEntryQuantity)
 	mux.HandleFunc("POST /display/list-view", s.handleDisplayListViewChoice)
 	mux.HandleFunc("GET /display/articles/{id}/picture", s.handleDisplayArticlePicture)
 	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/done", s.handleDisplayEntryDone)

@@ -34,6 +34,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
+	"github.com/hejmo-home/hejmo/internal/unit"
 )
 
 // The rendered layout check (ticket 161, retro of 16/11/2026): the layout tests
@@ -166,12 +167,24 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	f.event(t, "Zahnarzttermin", f.at(16, 9, 0), f.at(16, 10, 0), false, "Konstantin", "Wilhelmine", "Sophie-Marie")
 
 	// Lists with long entries.
-	l, err := db.CreateList(h, list.List{Name: "Wochenendeinkaufsliste", Color: "blue", Symbol: "circle-empty", Sort: list.Alphabetical})
+	l, err := db.CreateList(h, list.List{Name: "Wochenendeinkaufsliste", Color: "blue", Symbol: "circle-empty", Sort: list.Alphabetical, Suggestions: true})
 	must(err)
 	f.lists = append(f.lists, l.ID)
 	// Entries that name articles (#166): shipped ones that warn several people with long names, and the own articles made below, one with a photo and one with a symbol. The tiles of the child's phone show them.
 	for _, e := range []string{"Haferflockenpackung groß", "Kartoffelsalatzutaten für Samstag", "Vollkornspaghetti", "Bio-Pfefferminztee", "Toastbrot", "Milch", "Haselnuss-Mandel-Knusperflocken mit Schokostückchen", "Katzenfutter Huhn"} {
 		_, err := db.AddEntry(h, l.ID, e)
+		must(err)
+	}
+	// Articles with quantities (ticket 165): a quantity button on every open entry, warnings under it, one ticked off.
+	for _, q := range []struct {
+		text, art, unit string
+		amount          float64
+	}{{"Milch", "milk", "l", 3}, {"Eier", "eggs", "piece", 6}, {"Erdnussbutter", "peanut-butter", "pack", 1}, {"Bananen", "bananas", "", 0}, {"Zucker", "sugar", "g", 500}} {
+		it := store.Item{Text: q.text, ArticleID: q.art}
+		if q.unit != "" {
+			it.Qty = list.NewQuantity(q.amount, q.unit)
+		}
+		_, err := db.AddItem(h, l.ID, it, func(base float64, _ unit.Kind) string { return q.unit })
 		must(err)
 	}
 	l2, err := db.CreateList(h, list.List{Name: "Urlaubsvorbereitungen Ostsee", Color: "green", Symbol: "circle-empty", Sort: list.Manual})
@@ -283,7 +296,9 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	must(os.MkdirAll(folder, 0o755))
 	must(os.WriteFile(filepath.Join(folder, "a.jpg"), jpegPhoto(t, 640, 480), 0o644))
 	_, _, shown := c.call(http.MethodGet, "/displays", nil)
-	c.call(http.MethodPatch, "/displays/"+shown[0].(map[string]any)["id"].(string), map[string]any{"screensaver": map[string]any{"album_ids": []string{trip}}})
+	c.call(http.MethodPatch, "/displays/"+shown[0].(map[string]any)["id"].(string), map[string]any{"screensaver": map[string]any{"album_ids": []string{trip}},
+		// A kiosk app and quiet mode: the Brightness block with its levels and the quiet choice (ticket 179); the second display has no kiosk app, so its block is greyed out.
+		"kiosk": map[string]any{"url": "http://192.168.178.20:8080"}, "quiet_mode": map[string]any{"enabled": true, "from": "22:00", "to": "06:00"}})
 	// A second display whose only album is empty: it shows the hint.
 	f.hint = newScreen(f.box)
 	if r := f.post("/displays", pairForm(codeOn(t, f.hint.get("/display", "en").body))); r.status != http.StatusSeeOther {
@@ -452,26 +467,30 @@ func htmlRoutes(t *testing.T) []string {
 
 // notRendered are GET routes the check does not render, each with its reason.
 var notRendered = map[string]string{
-	"/healthz":                  "plain text",
-	"/static/":                  "assets",
-	"/api/v1/openapi.yaml":      "API document",
-	"/ca/hejmo-ca.crt":          "download",
-	"/ca/hejmo.mobileconfig":    "download",
-	"/manifest.webmanifest":     "JSON",
-	"/sw.js":                    "script",
-	"/display/state":            "JSON",
-	"/display/view":             "fragment of /display, rendered inside it",
-	"/display/lists":            "redirect to the first list",
-	"/display/lists/{id}/view":  "fragment of a list, rendered inside it",
-	"/display/events":           "event stream",
-	"/display/saver/photos":     "JSON",
-	"/display/photo/{id}":       "image",
-	"/display/person/{id}/view": "fragment of the personal view, rendered inside it",
-	"/otp":                      "redirect",
-	"/i/{token}":                "redirect",
-	"/setup/https/check":        "answers a fragment for the setup page's script",
-	"/places":                   "JSON list of places for the home location picker",
-	"/phones/join/{code}":       "one-time pairing link of a phone",
+	"/healthz":                     "plain text",
+	"/static/":                     "assets",
+	"/api/v1/openapi.yaml":         "API document",
+	"/ca/hejmo-ca.crt":             "download",
+	"/ca/hejmo.mobileconfig":       "download",
+	"/manifest.webmanifest":        "JSON",
+	"/sw.js":                       "script",
+	"/display/state":               "JSON",
+	"/display/view":                "fragment of /display, rendered inside it",
+	"/display/lists":               "redirect to the first list",
+	"/display/lists/{id}/view":     "fragment of a list, rendered inside it",
+	"/lists/{id}/suggest":          "fragment: the suggestions under the add card, rendered inside it",
+	"/lists/{id}/quantity":         "fragment: the quantity part of the add card, rendered inside it",
+	"/display/lists/{id}/suggest":  "fragment: the suggestions under the add card, rendered inside it",
+	"/display/lists/{id}/quantity": "fragment: the quantity part of the add card, rendered inside it",
+	"/display/events":              "event stream",
+	"/display/person/{id}/view":    "fragment of the personal view, rendered inside it",
+	"/otp":                         "redirect",
+	"/i/{token}":                   "redirect",
+	"/setup/https/check":           "answers a fragment for the setup page's script",
+	"/places":                      "JSON list of places for the home location picker",
+	"/phones/join/{code}":          "one-time pairing link of a phone",
+	"/display/saver/photos":        "JSON",
+	"/display/photo/{id}":          "image",
 
 	"/articles/{id}/picture":                  "an image",
 	"/display/articles/{id}/picture":          "an image",
@@ -528,6 +547,8 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	// Google (ticket 18): the guide, the sign-in in its variants, the failures that replace the steps,
 	// Choose calendars with its access lines, and the notices to sign in again.
 	pages = append(pages, googlePages(t, f)...)
+	// The choice page of ticket 231: each way chosen, and the link guide with its errors.
+	pages = append(pages, connectChoicePages(t, f)...)
 
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
@@ -552,6 +573,35 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(out, "/invite/"+f.inviteToken)
 	add(out, "/invite/"+f.inviteToken+"/account")
 	return pages
+}
+
+// connectChoicePages returns the choice page "Connect a calendar" (ticket 231)
+// with each way chosen in turn (only the chosen guide shows), and the answer to
+// a link that is none and a missing name: both errors at their fields, with a
+// long link that must wrap.
+func connectChoicePages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	parent := siteOf("app", f.box, f.client)
+	var pages []layoutPage
+	for _, way := range []string{"icloud", "caldav", "ics"} {
+		path := "/connections/new?service=" + way
+		if status, _ := parent.get(t, path); status != http.StatusOK {
+			t.Fatalf("%s = %d, want 200", path, status)
+		}
+		pages = append(pages, layoutPage{site: parent, path: path})
+	}
+	out := map[string]string{}
+	for _, lang := range []string{"de", "en"} {
+		r := f.do(http.MethodPost, "/calendars", url.Values{
+			"name": {""}, "url": {"grundschule-am-lindenpark-mit-einem-sehr-langen-namen.de/termine/kalender für die Klassen 2b und 4a"},
+			"interval": {"60"}, "color": {"#4E7D52"}, "whole_family": {"1"},
+		}, map[string]string{"Accept-Language": lang})
+		if r.status != http.StatusUnprocessableEntity {
+			t.Fatalf("subscribe with errors = %d", r.status)
+		}
+		out[lang] = r.body
+	}
+	return append(pages, layoutPage{site: parent, path: "/connections/new?state=link-errors", html: out})
 }
 
 // offlinePages returns the pages of ticket 201 in the states a crawl does not

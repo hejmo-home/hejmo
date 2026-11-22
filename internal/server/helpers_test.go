@@ -48,6 +48,10 @@ type box struct {
 	updateDir string
 	// photoDir stands in for the data volume: the photo folder and the stored photos.
 	photoDir string
+	// kioskRun is the runner behind withKiosk; nil without a fake kiosk app.
+	kioskRun *server.KioskRunner
+	// later holds what the runner scheduled through After; runLater runs it.
+	later []func()
 }
 
 // fakeMeteo stands in for Open-Meteo.
@@ -179,8 +183,13 @@ type boxOption func(*boxConfig)
 type boxConfig struct {
 	noHostUpdater bool
 	fetcher       *picture.Fetcher
+	kiosk         *fakeKiosk
 	resolver      server.NameResolver
 }
+
+// withKiosk connects the box to a fake kiosk app (the fake FreeKiosk of the
+// kiosk adapter tests): its runner is reachable as box.kioskRun.
+func withKiosk(k *fakeKiosk) boxOption { return func(c *boxConfig) { c.kiosk = k } }
 
 // withResolver makes the box ask this resolver for the router's name of its address.
 func withResolver(r server.NameResolver) boxOption { return func(c *boxConfig) { c.resolver = r } }
@@ -246,7 +255,12 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	if cfg.noHostUpdater {
 		updateDir, b.updateDir = "", ""
 	}
-	b.handler = server.New(server.Options{DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir, Resolver: cfg.resolver})
+	var kioskRun *server.KioskRunner
+	if cfg.kiosk != nil {
+		kioskRun = server.NewKioskRunner(server.KioskOptions{DB: db, Factory: cfg.kiosk.factory(), Now: now, After: func(_ time.Duration, f func()) { b.later = append(b.later, f) }})
+		b.kioskRun = kioskRun
+	}
+	b.handler = server.New(server.Options{Kiosk: kioskRun, DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir, Resolver: cfg.resolver})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()
@@ -384,5 +398,14 @@ func decodeJSON(t *testing.T, body string, v any) {
 	t.Helper()
 	if err := json.Unmarshal([]byte(body), v); err != nil {
 		t.Fatalf("not JSON: %v\n%s", err, body)
+	}
+}
+
+// runLater runs, in order, what the kiosk runner scheduled for later.
+func (b *box) runLater() {
+	fns := b.later
+	b.later = nil
+	for _, f := range fns {
+		f()
 	}
 }

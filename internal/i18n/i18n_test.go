@@ -88,7 +88,6 @@ var wholeFamilyTexts = map[string]bool{
 	"displays.none":                            true, // "euren Tag": the family's day on the wall
 	"connect.legend":                           true, // "eure Kalender": the family's calendars
 	"connect.lead":                             true, // "eure Termine": the family's events, kept by several people
-	"connections.empty":                        true, // "eure Termine": the family's events on the box
 	"setup.welcome.lead":                       true, // "eure Box": the family's box
 	"setup.welcome.step.2":                     true, // "Euer Ort": the family's town
 	"setup.https.way.public.cost":              true, // "eure Box"
@@ -212,7 +211,7 @@ func TestConnectTextsExistInBothLanguages(t *testing.T) {
 		"connect.caldav.name", "connect.caldav.sub", "connect.caldav.heading", "connect.caldav.why", "connect.caldav.step1.title", "connect.caldav.step1.text",
 		"connect.caldav.step1.hint", "connect.caldav.help.url", "connect.caldav.help.label", "connect.caldav.step2.title", "connect.caldav.step2.text", "connect.caldav.step3.title",
 		"connect.caldav.url", "connect.caldav.url.hint", "connect.caldav.username", "connect.caldav.password", "connect.caldav.more", "connect.caldav.more.sum", "connect.caldav.single", "connect.caldav.submit",
-		"connections.title", "connections.empty", "connections.connect", "connections.connect.more",
+		"connections.title", "connections.about", "connections.none", "connections.connect", "calendars.empty",
 		"connections.success.icloud.none", "connections.success.icloud.one", "connections.success.icloud.many",
 		"connections.success.caldav.none", "connections.success.caldav.one", "connections.success.caldav.many",
 		"connections.error.login", "connections.error.login_icloud", "connections.error.login_caldav", "connections.error.server", "connections.error.server_icloud", "connections.error.server_saved",

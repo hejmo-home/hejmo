@@ -37,6 +37,8 @@ gofmt -l . && go vet ./...          # formatting and vet (CI checks both)
 docker compose up -d --build --wait # run the box on http://localhost (HTTP) and https://localhost (HTTPS)
 ```
 
+**Local test runs share one 16 GB Mac** with other agents, the test box and a browser; full `-race` suites in parallel have filled its memory and frozen the desktop app. Locally, test only the packages you changed, with limited parallelism, for example `go test -race -count=1 -p 2 -parallel 4 ./internal/server/...`, plus `gofmt`, `go vet` and `node --test web/test`. The full `-race` suite runs in CI (about 10 minutes): cite that CI run as evidence instead of a local full run. Red runs for the PR body come from the single test that proves the fix.
+
 Local tooling on the development Mac: Go in `~/.local/go/bin`, Homebrew in `/opt/homebrew/bin` (`gh`, `node`), Docker CLI in `/Applications/Docker.app/Contents/Resources/bin`. Non-interactive shells may need these on `PATH`.
 
 ## Agent skills

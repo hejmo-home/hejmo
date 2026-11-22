@@ -969,12 +969,13 @@ func TestNamesAndTextsAreEscapedEverywhere(t *testing.T) {
 	}
 }
 
-func TestEveryLibraryPageHasABackLinkInsideMain(t *testing.T) {
+// Ticket 182 replaced the back links of the pages below Settings by a trail
+// of links inside main; Settings stays marked as the current section.
+func TestEveryLibraryPageHasATrailBackToSettingsInsideMain(t *testing.T) {
 	t.Parallel()
 	l := newLibBox(t)
 	l.person("Mia", "child", "omnivore", "milk")
 	id := l.createArticle(articleForm())
-	// Ticket 182: the trail replaces the back link and sits inside main.
 	for page, up := range map[string]string{
 		"/settings/lists":                `<a href="/settings">Settings</a>`,
 		"/settings/lists/library":        `<a href="/settings/lists">Lists</a>`,
@@ -983,12 +984,13 @@ func TestEveryLibraryPageHasABackLinkInsideMain(t *testing.T) {
 		"/settings/lists/library/" + id:  `<a href="/settings/lists/library">Article library</a>`,
 	} {
 		body := l.en(page).body
-		at, main := strings.Index(body, up), strings.Index(body, "<main")
-		if at < 0 || at < main {
-			t.Errorf("%s: trail link %s missing or outside main", page, up)
+		nav, main := strings.Index(body, `<nav class="crumbs"`), strings.Index(body, "<main")
+		at := strings.Index(body, up)
+		if nav < main || at < nav {
+			t.Errorf("%s: the trail %s is missing or outside main", page, up)
 		}
 		if !strings.Contains(body, `<a href="/settings" aria-current="true"`) {
-			t.Errorf("%s does not mark Settings as current", page)
+			t.Errorf("%s does not mark Settings as the current section", page)
 		}
 	}
 }

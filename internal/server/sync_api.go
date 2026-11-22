@@ -198,18 +198,34 @@ type inputError struct{ Field, Msg string }
 
 func (e *inputError) Error() string { return e.Msg }
 
+// icsInputErrors is the one check of a new subscription's name and link, for
+// the web form (which shows both mistakes at once, as message keys per field)
+// and the API (which reports one). It also returns the normalised address and
+// why the link was refused.
+func icsInputErrors(in newCalendarInput) (map[string]string, string, error) {
+	bad := map[string]string{}
+	if strings.TrimSpace(in.Name) == "" {
+		bad["name"] = "calendars.error.name"
+	}
+	address, err := icsfeed.NormalizeURL(in.URL)
+	if err != nil {
+		bad["url"] = "calendars.error.url"
+	}
+	return bad, address, err
+}
+
 // addICS validates a new ICS subscription, stores it and runs its first sync.
 // The error is an *inputError for bad input, anything else is a server fault.
 func (s *server) addICS(r *http.Request, p principal, in newCalendarInput) (store.SyncedCalendar, error) {
 	if in.Kind != "ics" {
 		return store.SyncedCalendar{}, &inputError{"kind", "kind must be ics"}
 	}
-	if strings.TrimSpace(in.Name) == "" {
+	bad, address, urlErr := icsInputErrors(in)
+	if bad["name"] != "" {
 		return store.SyncedCalendar{}, &inputError{"name", "name is required"}
 	}
-	address, err := icsfeed.NormalizeURL(in.URL)
-	if err != nil {
-		return store.SyncedCalendar{}, &inputError{"url", "url: " + err.Error()}
+	if urlErr != nil {
+		return store.SyncedCalendar{}, &inputError{"url", "url: " + urlErr.Error()}
 	}
 	opts, err := s.calendarOptions(p, in, defaultSyncMinutes)
 	if err != nil {

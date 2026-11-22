@@ -92,7 +92,7 @@ func TestDisplayDetailShowsEverythingAndConfirmsByName(t *testing.T) {
 		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/displays">Displays</a>`, "<h1>Hallway</h1>", `<dl class="facts">`, "Last seen", "Paired on",
 		`<form method="post" action="/displays/` + id + `/settings" class="steps">`,
 		`name="name"`, `name="type"`, `name="show_tomorrow"`, `name="theme"`, `name="quiet"`, `name="quiet_from"`, `name="quiet_to"`,
-		`class="pair when-on"`, `<details class="more">`, "Kiosk app: not set up", `name="kiosk_url"`, `name="sunrise_offset"`,
+		`class="pair when-on"`, `<details class="more">`, `Kiosk app<span class="sum">not set up</span>`, `name="kiosk_url"`, `name="sunrise_offset"`,
 		`<details class="danger">`, `action="/displays/` + id + `/unpair"`, "Yes, unpair “Hallway”", "No, change nothing",
 	} {
 		if !strings.Contains(r.body, want) {
@@ -230,7 +230,7 @@ func TestAKioskErrorOpensMoreOptionsAndShowsAtTheField(t *testing.T) {
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "screen")
 	r := b.post("/displays/"+id+"/settings", url.Values{"kiosk_url": {"192.168.1.20:8080"}})
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-kiosk_url"`) || !strings.Contains(r.body, `<details class="more" open>`) {
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-kiosk_url"`) || !strings.Contains(r.body, `<details class="more kiosk" open>`) {
 		t.Errorf("kiosk error = %d, field error or open details missing\n%s", r.status, r.body)
 	}
 	if !strings.Contains(r.body, `value="192.168.1.20:8080"`) {

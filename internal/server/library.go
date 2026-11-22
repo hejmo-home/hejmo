@@ -41,11 +41,6 @@ type libState struct {
 	own      []store.OwnArticle
 }
 
-// activeUnits are the units the household switched on. Ticket 165 adds the
-// setting (Settings, Lists, Units, preset by the country of the home); until
-// then every household has the preset of most countries.
-func (s *server) activeUnits(string) []string { return unit.DefaultActive }
-
 func (s *server) libState(p principal, lang string) (libState, error) {
 	st := libState{p: p, lang: lang, chips: map[string]personChip{}}
 	var err error
@@ -182,10 +177,11 @@ func (s *server) unitLong(lang, key string) string {
 	return s.i18n.T(lang, "unit."+key+".long")
 }
 
-// offeredUnits are the article's default units that are switched on; piece
-// when neither is.
+// offeredUnits are the units the add card offers for the article: its default
+// units, a switched-off one replaced by the nearest active unit of its kind
+// (unit.Effective); piece when nothing is left.
 func (s *server) offeredUnits(p principal, a library.Article) []string {
-	return unit.Offered(a.Units, s.activeUnits(p.household.ID))
+	return unit.Effective(a.Units, s.activeUnits(p.household))
 }
 
 func (s *server) unitsWords(lang string, keys []string) string {

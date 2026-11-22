@@ -7,10 +7,14 @@
 
 {{define "listTitle"}}<h1 class="list-title"><span class="marker" data-person="{{.List.Slot}}" data-shape="{{.List.Symbol}}" aria-hidden="true"></span><span>{{.List.Name}}</span></h1>{{end}}
 
-{{/* One everyday row: only the big tick box and the text. Arguments: Root, E. */}}
-{{define "tickRow"}}{{$root := .Root}}{{with .E}}<li{{if .Done}} data-done="true"{{end}}>
+{{/* One everyday row: the big tick box and the text, and on a list with suggestions the quantity button, the article's warnings and the editor of its quantity. Arguments: Root, E. */}}
+{{define "tickRow"}}{{$root := .Root}}{{with .E}}<li{{if not .Done}} id="e-{{.ID}}"{{end}}{{if .Editing}} class="editing"{{else if .Added}} class="added"{{end}}{{if .Done}} data-done="true"{{else}} data-done="false"{{end}}>
     <form method="post" action="/lists/{{$root.List.ID}}/entries/{{.ID}}/done"><input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">{{template "keepHide" $root}}
-      <button class="big-check" type="submit" aria-label="{{if .Done}}{{t "lists.untick"}}{{else}}{{t "lists.tick"}}{{end}}: {{.Text}}"><span class="box" aria-hidden="true"></span><span class="title">{{if .Done}}<s>{{.Text}}</s>{{else}}{{.Text}}{{end}}</span></button></form>{{range .Look.Long}}{{.}}{{end}}
+      <button class="big-check" type="submit" aria-label="{{if .Done}}{{t "lists.untick"}}{{else}}{{t "lists.tick"}}{{end}}: {{.Text}}{{if .Qty}}, {{.Qty}}{{end}}"><span class="box" aria-hidden="true"></span><span class="title">{{if .Done}}<s>{{.Text}}</s>{{else}}{{.Text}}{{end}}</span>{{if and .Qty (not .Suggest)}}<span class="qty">{{.Qty}}</span>{{end}}</button></form>
+    {{if .Suggest}}<a class="qty-open{{if not .Qty}} none{{end}}" href="{{.Href}}"{{if .Editing}} aria-expanded="true"{{end}} aria-label="{{.Label}}">{{if .Qty}}{{.Qty}}{{else}}{{t "lq.entry.qty"}}{{end}}{{template "pen"}}</a>{{end}}
+    {{if .Suggest}}{{range .Warns}}{{.}}{{end}}{{else}}{{range .Look.Long}}{{.}}{{end}}{{end}}
+    {{with .Editor}}{{template "qtyEditor" .}}{{end}}
+    {{with .Result}}{{template "result" .}}{{end}}
   </li>
 {{end}}{{end}}
 
@@ -20,18 +24,20 @@
   {{template "syncNotice" .}}
   <div class="view-row"><p class="hint list-meta">{{.Meta}}</p>{{template "viewSwitch" (dict "Action" "/me/list-view" "List" .List.ID "Hide" .Hide "View" .View "Error" .ViewError)}}</div>
 
-  {{if not .Child}}<form method="post" action="/lists/{{.List.ID}}/entries" class="add-entry">
+  {{if not .Child}}{{if .Suggest}}{{template "error" .}}{{template "adder" (dict "Base" .Base "Display" false "Hide" .Hide "A" .A)}}{{else}}<form method="post" action="/lists/{{.List.ID}}/entries" class="add-entry">
     {{template "error" .}}
     {{template "field" (dict "Root" . "Name" "text" "Label" (t "lists.field.entry") "Value" (index .Form "Text") "Required" true "Max" 200 "Autocomplete" "off" "Placeholder" (t "lists.field.entry.placeholder") "Autofocus" (eq .Flash "flash.entry_added"))}}
     {{template "keepHide" .}}
     <button class="button" type="submit">{{t "lists.add"}}</button>
-  </form>{{end}}
+  </form>{{end}}{{else if .Error}}{{template "error" .}}{{end}}
 
+  {{if .Suggest}}<script src="/static/adder.js" defer></script>{{end}}
   {{if not .List.Total}}{{if not .Child}}<div class="empty" data-empty><p>{{t "lists.empty.hint"}}</p></div>{{else if .ChildEmpty}}<div class="empty" data-empty><p>{{.ChildEmpty}}</p></div>{{end}}{{end}}
   {{if and .AllDone .Tiles}}<div class="empty all-done"><p>{{template "tick" 20}}{{t "lists.all_ticked"}}</p></div>{{end}}
   {{if .Open}}{{if .Tiles}}<div class="list-tiles"><ul class="tiles" data-person="{{.List.Slot}}">
   {{range .Open}}{{template "listTile" (dict "Prefix" "/lists/" "List" $.List.ID "Hide" $.Hide "E" .)}}{{end}}</ul></div>{{else}}<ul class="entries">
   {{range .Open}}{{template "tickRow" (dict "Root" $ "E" .)}}{{end}}</ul>{{end}}{{end}}
+  {{with .FreeBox}}{{template "freeBox" .}}{{end}}
   {{if and (not .Child) .List.Total}}<p class="tools"><a href="/lists/{{.List.ID}}?edit=1{{if .Hide}}&amp;ticked=hide{{end}}">{{if .Manual}}{{t "lists.tools"}}{{else}}{{t "lists.tools.az"}}{{end}}</a></p>{{end}}
   {{if .List.Done}}{{if .Hide}}<p class="hidden-line">{{if eq .List.Done 1}}{{t "lists.hidden_line.one"}}{{else}}{{printf (t "lists.hidden_line") .List.Done}}{{end}} <a href="/lists/{{.List.ID}}">{{t "lists.group.show"}}</a></p>
   {{else}}<div class="group-head"><h2>{{printf (t "lists.group") .List.Done}}</h2><a href="?ticked=hide">{{t "lists.group.hide"}}</a></div>
@@ -50,6 +56,7 @@
     <form method="post" action="/lists/{{.List.ID}}/settings" class="steps">
       {{template "keepHide" .}}
       {{template "moreOpen" (dict "Label" (t "lists.settings") "ID" "settings" "Summary" .Summary "Open" (or .Form.SettingsOpen (eq .ErrorField "name")))}}
+        <fieldset class="sw"><legend class="vh">{{t "lq.set.legend"}}</legend>{{template "switch" (dict "Name" "suggestions" "Label" (t "lq.set.legend") "OnText" (t "lq.set.on") "OffText" (t "lq.set.off") "Checked" (index .Form "Suggestions"))}}</fieldset>
         {{template "field" (dict "Root" . "Name" "name" "Label" (t "lists.field.name") "Value" (index .Form "Name") "Required" true "Max" 60)}}
         {{template "listLook" (dict "Root" . "Form" .Form)}}
         <button class="button" type="submit">{{t "lists.save"}}</button>
@@ -75,14 +82,14 @@
 <div class="edit-bar"><p>{{t "lists.edit.saved"}}</p><a class="button" href="/lists/{{.List.ID}}{{if .Hide}}?ticked=hide{{end}}">{{t "lists.edit.done"}}</a></div>
 {{if not .List.Total}}<div class="empty" data-empty><p>{{t "lists.empty.hint"}}</p></div>{{end}}
 {{if .Open}}<ul class="entries">
-  {{range .Open}}<li><span class="title">{{.Text}}</span><span class="row">
+  {{range .Open}}<li><span class="title">{{.Text}}{{with .Qty}} <span class="qty">{{.}}</span>{{end}}</span><span class="row">
     {{if $.Manual}}{{if not .First}}{{template "editButton" (dict "Root" $ "E" . "Action" "move" "Direction" "up" "Label" (t "lists.up") "Aria" (t "lists.up.label") "Icon" "M6 15l6-6 6 6")}}{{end}}
     {{if not .Last}}{{template "editButton" (dict "Root" $ "E" . "Action" "move" "Direction" "down" "Label" (t "lists.down") "Aria" (t "lists.down.label") "Icon" "M6 9l6 6 6-6")}}{{end}}{{end}}
     {{template "editButton" (dict "Root" $ "E" . "Action" "delete" "Label" (t "lists.remove") "Aria" (t "lists.remove") "Icon" "M6 6l12 12M18 6L6 18")}}</span></li>
   {{end}}</ul>{{end}}
 {{if .Ticked}}<div class="group-head"><h2>{{printf (t "lists.group") .List.Done}}</h2></div>
 <ul class="entries">
-  {{range .Ticked}}<li><span class="title"><s>{{.Text}}</s></span><span class="row">
+  {{range .Ticked}}<li><span class="title"><s>{{.Text}}</s>{{with .Qty}} <span class="qty">{{.}}</span>{{end}}</span><span class="row">
     {{template "editButton" (dict "Root" $ "E" . "Action" "delete" "Label" (t "lists.remove") "Aria" (t "lists.remove") "Icon" "M6 6l12 12M18 6L6 18")}}</span></li>
   {{end}}</ul>{{end}}
 </div>
@@ -96,4 +103,4 @@
 {{define "viewSwitch"}}<form class="view-switch" method="post" action="{{.Action}}" role="group" aria-label="{{t "lists.view.label"}}"{{if .Error}} aria-invalid="true"{{end}}><input type="hidden" name="list" value="{{.List}}">{{if .Hide}}<input type="hidden" name="ticked" value="hide">{{end}}<span class="lab" aria-hidden="true">{{t "lists.view.prefix"}}</span><button type="submit" name="view" value="tiles" aria-pressed="{{eq .View "tiles"}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke-width="1.8"><rect x="4" y="4" width="7" height="7" rx="1.5"/><rect x="13" y="4" width="7" height="7" rx="1.5"/><rect x="4" y="13" width="7" height="7" rx="1.5"/><rect x="13" y="13" width="7" height="7" rx="1.5"/></svg>{{t "lists.view.tiles"}}</button><button type="submit" name="view" value="list" aria-pressed="{{eq .View "list"}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke-width="1.8"><rect x="4" y="4.5" width="16" height="4" rx="1.2"/><rect x="4" y="10" width="16" height="4" rx="1.2"/><rect x="4" y="15.5" width="16" height="4" rx="1.2"/></svg>{{t "lists.view.list"}}</button>{{if .Error}}<p class="ferr" id="view-err"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7.5v5.5M12 16.2v.3"/></svg><span>{{.Error}}</span></p>{{end}}</form>{{end}}
 
 {{/* One tile: the whole tile is the tick button. Arguments: Prefix ("/lists/" or "/display/lists/"), List (id), Hide, E (entryView). */}}
-{{define "listTile"}}{{$p := .Prefix}}{{$l := .List}}{{$hide := .Hide}}{{with .E}}<li{{if .Done}} data-done="true"{{else if .Added}} class="added"{{end}}><form method="post" action="{{$p}}{{$l}}/entries/{{.ID}}/done"><input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">{{if $hide}}<input type="hidden" name="ticked" value="hide">{{end}}<button class="tile-check" type="submit" aria-pressed="{{.Done}}"><span class="vh">{{if .Done}}{{printf "%s: " (t "lists.untick")}}{{else}}{{printf "%s: " (t "lists.tick")}}{{end}}</span><span class="pic{{if .Look.Letter}} letter{{end}}" aria-hidden="true">{{if .Look.Picture}}<img src="{{.Look.Picture}}" alt="">{{else if .Look.Letter}}{{.Look.Letter}}{{else}}{{.Look.Symbol}}{{end}}</span><span class="box" aria-hidden="true">{{template "tick" 22}}</span><span class="title">{{.Text}}</span>{{with .Look.Warns}}<span class="tile-warn"><span class="h"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{t "lists.tile.warn"}}</span>{{range .}}<span class="line"><span class="who"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span>{{printf "%s:" .Chip.Name}}</span><span>{{.Allergens}}</span></span>{{end}}</span>{{end}}</button></form></li>{{end}}{{end}}
+{{define "listTile"}}{{$p := .Prefix}}{{$l := .List}}{{$hide := .Hide}}{{with .E}}<li{{if .Done}} data-done="true"{{else if .Added}} class="added"{{end}}><form method="post" action="{{$p}}{{$l}}/entries/{{.ID}}/done"><input type="hidden" name="done" value="{{if .Done}}0{{else}}1{{end}}">{{if $hide}}<input type="hidden" name="ticked" value="hide">{{end}}<button class="tile-check" type="submit" aria-pressed="{{.Done}}"><span class="vh">{{if .Done}}{{printf "%s: " (t "lists.untick")}}{{else}}{{printf "%s: " (t "lists.tick")}}{{end}}</span><span class="pic{{if .Look.Letter}} letter{{end}}" aria-hidden="true">{{if .Look.Picture}}<img src="{{.Look.Picture}}" alt="">{{else if .Look.Letter}}{{.Look.Letter}}{{else}}{{.Look.Symbol}}{{end}}</span><span class="box" aria-hidden="true">{{template "tick" 22}}</span><span class="title">{{.Text}}</span>{{if .Qty}}<span class="qty">{{.Qty}}</span>{{end}}{{with .Look.Warns}}<span class="tile-warn"><span class="h"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{t "lists.tile.warn"}}</span>{{range .}}<span class="line"><span class="who"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span>{{printf "%s:" .Chip.Name}}</span><span>{{.Allergens}}</span></span>{{end}}</span>{{end}}</button></form></li>{{end}}{{end}}

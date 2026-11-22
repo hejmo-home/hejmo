@@ -158,6 +158,68 @@ test('an add that cannot reach the box says so under the field and keeps the tex
   assert.equal(line.children[line.children.length - 1].text, 'Not added: the box cannot be reached.');
 });
 
+// Ticket 165: the quantity of an entry opens under it, and the editor saves in the background.
+const tapOn = (attrs) => ({
+  target: { closest: (sel) => (sel === '[data-qty-open]' && attrs.open ? { getAttribute: () => attrs.open } : sel === '[data-qty-close]' && attrs.close ? {} : null) },
+  preventDefault() { this.prevented = true; },
+});
+
+test('the quantity button opens the editor of its entry in the view, and a second tap closes it', async () => {
+  const p = lists({ responses: [{ status: 200, body: '<p>editor</p>', headers: { 'X-Hejmo-View': 'v2' } }, { status: 200, body: '<p>closed</p>', headers: { 'X-Hejmo-View': 'v3' } }] });
+  const open = tapOn({ open: 'E7' });
+  p.state.listeners.click(open);
+  await tick();
+  assert.ok(open.prevented);
+  assert.equal(p.state.requests[0].url, '/display/lists/L1/view?qty=E7');
+  assert.equal(p.view.html, '<p>editor</p>');
+  p.state.listeners.click(tapOn({ open: 'E7' }));
+  await tick();
+  assert.equal(p.state.requests[1].url, '/display/lists/L1/view', 'the same button closes it');
+});
+
+test('the editor stays open in refreshes, and Cancel closes it', async () => {
+  const p = lists();
+  p.state.listeners.click(tapOn({ open: 'E7' }));
+  await tick();
+  p.announce('v8');
+  await tick();
+  assert.equal(p.state.requests[1].url, '/display/lists/L1/view?qty=E7');
+  p.state.listeners.click(tapOn({ close: true }));
+  await tick();
+  assert.equal(p.state.requests[2].url, '/display/lists/L1/view');
+});
+
+test('saving a quantity posts in the background; a refusal keeps the editor open, a save closes it and names the line', async () => {
+  const p = lists({ responses: [
+    { status: 200, body: '<p>editor</p>', headers: { 'X-Hejmo-View': 'v6' } },
+    { status: 422, body: '<p>error</p>', headers: { 'X-Hejmo-View': 'v7' } },
+    { status: 200, body: '<p>refreshed</p>', headers: { 'X-Hejmo-View': 'v9' } },
+    { status: 200, body: '<p>saved</p>', headers: { 'X-Hejmo-View': 'v8', 'X-Hejmo-Added': 'E7', 'X-Hejmo-Result': 'tok1' } },
+  ] });
+  p.state.listeners.click(tapOn({ open: 'E7' }));
+  await tick();
+  const editor = element({ className: 'qty-edit', action: '/display/lists/L1/entries/E7/quantity' });
+  editor.parentNode = element();
+  editor.closest = () => null;
+  const e = submitEvent(editor);
+  p.state.listeners.submit(e);
+  await tick();
+  assert.ok(e.prevented, 'the editor is not posted the old way');
+  const req = p.state.requests[1];
+  assert.equal(req.url, '/display/lists/L1/entries/E7/quantity');
+  assert.equal(req.init.body.get('partial'), '1');
+  assert.equal(p.view.html, '<p>error</p>');
+  p.announce('v9');
+  await tick();
+  assert.equal(p.state.requests[2].url, '/display/lists/L1/view?qty=E7', 'still open after a refusal');
+  p.state.listeners.submit(submitEvent(editor));
+  await tick();
+  assert.equal(p.view.html, '<p>saved</p>');
+  p.announce('v10');
+  await tick();
+  assert.equal(p.state.requests[4].url, '/display/lists/L1/view?added=E7&r=tok1', 'closed, the entry framed and the line kept');
+});
+
 // The family view with the screensaver timer (ticket 178). The page is rendered
 // once and stays for days: the timer asks the box whether the screensaver is due.
 function family(answers, attrs) {
@@ -248,6 +310,58 @@ test('the poll starts the countdown when the screensaver is switched on, and end
   await tick();
   assert.equal(p.live().length, 0);
   assert.ok(!p.location.reloaded);
+});
+
+// The quiet page of a display a kiosk app switched off listens for a touch
+// (ticket 179): it tells the box, at most every 15 seconds, and only when the
+// markup in the view names an address.
+function quiet(wakeURL) {
+  const requests = [];
+  const listeners = {};
+  const display = element({ attrs: { 'data-display': '', 'data-state': 'paired', 'data-poll-seconds': '30', 'data-version': 'v1' } });
+  const view = element({ addEventListener() {}, querySelectorAll: () => [] });
+  view.querySelector = (sel) => (sel === '[data-wake-url]' && view.wake ? view.wake : null);
+  view.wake = wakeURL ? element({ attrs: { 'data-wake-url': wakeURL } }) : null;
+  display.querySelector = (sel) => (sel === '[data-view]' ? view : null);
+  let now = 1000000;
+  class FakeDate extends Date { static now() { return now; } }
+  const document = {
+    querySelector: (sel) => (sel === '[data-display]' ? display : null),
+    addEventListener: (n, fn) => { (listeners[n] = listeners[n] || []).push(fn); },
+    visibilityState: 'visible',
+  };
+  const fetch = (url, init) => { requests.push({ url, init }); return Promise.resolve({ ok: true, status: 204 }); };
+  class EventSource { constructor() { this.on = {}; } addEventListener() {} }
+  const sandbox = { document, fetch, EventSource, Intl, Date: FakeDate, encodeURIComponent, location: { href: '', reload() {} }, setInterval: () => 0, setTimeout: () => 0, clearTimeout() {} };
+  sandbox.window = sandbox;
+  vm.runInNewContext(source, sandbox);
+  return { requests, listeners, view, advance(ms) { now += ms; } };
+}
+
+test('a touch on a quiet page with a wake address tells the box, at most every 15 seconds', () => {
+  const p = quiet('/display/wake');
+  p.listeners.pointerdown.forEach((fn) => fn({}));
+  assert.equal(p.requests.length, 1);
+  assert.equal(p.requests[0].url, '/display/wake');
+  assert.equal(p.requests[0].init.method, 'POST');
+  p.listeners.touchstart.forEach((fn) => fn({}));
+  assert.equal(p.requests.length, 1, 'a second touch right after is not sent');
+  p.advance(16000);
+  p.listeners.pointerdown.forEach((fn) => fn({}));
+  assert.equal(p.requests.length, 2, 'a later touch keeps the display awake');
+});
+
+test('the screen coming back on counts as a touch', () => {
+  const p = quiet('/display/wake');
+  p.listeners.visibilitychange.forEach((fn) => fn({}));
+  assert.equal(p.requests.length, 1);
+});
+
+test('a page without a wake address sends nothing', () => {
+  const p = quiet('');
+  p.listeners.pointerdown.forEach((fn) => fn({}));
+  p.listeners.visibilitychange.forEach((fn) => fn({}));
+  assert.equal(p.requests.length, 0);
 });
 
 // Ticket 166 (preview-166): a tile is a tick button like a row. If the box

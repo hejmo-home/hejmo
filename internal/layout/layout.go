@@ -79,11 +79,12 @@ const MaxListEntries = 8
 type Layout struct {
 	// Whole is "Ganze Familie": people added to the household later join at the end.
 	Whole bool
-	// People are the chosen people in the order they were saved on OrderDay.
+	// People are the chosen people in their base order: the order of the days
+	// whose number is a multiple of len(People). Without Rotate it is the order
+	// shown every day; with Rotate see Order.
 	People []string
 	// Rotate moves every person one column on each day (Q91).
-	Rotate   bool
-	OrderDay int
+	Rotate bool
 	// Blocks are in order inside their zone.
 	Blocks []Block
 	// ListID is the list of the block "one list"; ListName is its name when it
@@ -205,16 +206,35 @@ func RotationDay(now time.Time) int {
 }
 
 // Order is the order of the columns on a rotation day: with Rotate every person
-// moves one column on for each day since OrderDay, the rightmost to the left.
+// moves one column on each day, the rightmost to the left. The shift counts from
+// a fixed epoch (day mod number of people), so every display with the same
+// people shows the same order on the same day, whenever it was saved (Q91).
 func (l Layout) Order(day int) []string {
 	n := len(l.People)
 	out := slices.Clone(l.People)
 	if !l.Rotate || n < 2 {
 		return out
 	}
-	shift := ((day-l.OrderDay)%n + n) % n
+	shift := shiftOf(day, n)
 	for i, p := range l.People {
 		out[(i+shift)%n] = p
+	}
+	return out
+}
+
+func shiftOf(day, n int) int { return (day%n + n) % n }
+
+// Unrotate is the base order of people who show in the order shown on a rotation
+// day: with Rotate on, Layout{People: Unrotate(shown, day)}.Order(day) is shown.
+func Unrotate(shown []string, day int) []string {
+	n := len(shown)
+	out := slices.Clone(shown)
+	if n < 2 {
+		return out
+	}
+	shift := shiftOf(day, n)
+	for i := range out {
+		out[i] = shown[(i+shift)%n]
 	}
 	return out
 }

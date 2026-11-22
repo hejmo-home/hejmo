@@ -13,7 +13,8 @@ type storedBlock struct {
 	On bool           `json:"on"`
 }
 
-func (db *DB) householdPeopleIDs(householdID string) ([]string, error) {
+// PersonIDs are the IDs of the people of a household, in their order.
+func (db *DB) PersonIDs(householdID string) ([]string, error) {
 	ps, err := db.People(householdID)
 	if err != nil {
 		return nil, err
@@ -32,14 +33,14 @@ func (db *DB) DisplayLayout(householdID, displayID string) (layout.Layout, error
 	if _, err := db.Display(householdID, displayID); err != nil {
 		return layout.Layout{}, err
 	}
-	household, err := db.householdPeopleIDs(householdID)
+	household, err := db.PersonIDs(householdID)
 	if err != nil {
 		return layout.Layout{}, err
 	}
 	var l layout.Layout
 	var people, blocks string
-	err = db.sql.QueryRow(`SELECT whole, rotate, order_day, people, blocks, list_id, list_name FROM display_layout WHERE display_id = ?`, displayID).
-		Scan(&l.Whole, &l.Rotate, &l.OrderDay, &people, &blocks, &l.ListID, &l.ListName)
+	err = db.sql.QueryRow(`SELECT whole, rotate, people, blocks, list_id, list_name FROM display_layout WHERE display_id = ?`, displayID).
+		Scan(&l.Whole, &l.Rotate, &people, &blocks, &l.ListID, &l.ListName)
 	if errors.Is(err, sql.ErrNoRows) {
 		return layout.Default(household), nil
 	}
@@ -80,10 +81,10 @@ func (db *DB) SetDisplayLayout(householdID, displayID string, l layout.Layout) e
 	if err != nil {
 		return err
 	}
-	_, err = db.sql.Exec(`INSERT INTO display_layout (display_id, whole, rotate, order_day, people, blocks, list_id, list_name) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
-		ON CONFLICT(display_id) DO UPDATE SET whole = excluded.whole, rotate = excluded.rotate, order_day = excluded.order_day, people = excluded.people,
+	_, err = db.sql.Exec(`INSERT INTO display_layout (display_id, whole, rotate, people, blocks, list_id, list_name) VALUES (?, ?, ?, ?, ?, ?, ?)
+		ON CONFLICT(display_id) DO UPDATE SET whole = excluded.whole, rotate = excluded.rotate, people = excluded.people,
 		blocks = excluded.blocks, list_id = excluded.list_id, list_name = excluded.list_name`,
-		displayID, l.Whole, l.Rotate, l.OrderDay, string(people), string(blocks), l.ListID, l.ListName)
+		displayID, l.Whole, l.Rotate, string(people), string(blocks), l.ListID, l.ListName)
 	return err
 }
 

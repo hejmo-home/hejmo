@@ -9,15 +9,6 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-// personIDs lists the IDs of the people of the family view.
-func personIDs(people []familyview.Person) []string {
-	out := make([]string, len(people))
-	for i, p := range people {
-		out[i] = p.ID
-	}
-	return out
-}
-
 // orderedPeople are the people named in order, in that order (ticket 180).
 func orderedPeople(all []familyview.Person, order []string) []familyview.Person {
 	out := make([]familyview.Person, 0, len(order))

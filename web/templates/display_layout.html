@@ -3,6 +3,7 @@
 {{define "layoutSection"}}{{$L := .D.Layout}}<fieldset class="layout" id="layout" data-layout{{if $L.Personal}} data-personal{{end}} data-portrait="{{$L.Portrait}}" data-visible="{{if $L.Portrait}}4{{else}}6{{end}}">
   <legend>{{t "layout.legend"}}</legend>
   <input type="hidden" name="layout_form" value="1">
+  <input type="hidden" name="order_day" value="{{$L.OrderDay}}">
   <p class="hint lay-intro">{{tf "layout.intro" "name" $L.Name}}</p>
   <figure class="lay-prev" data-words-order="{{$L.WordsData.Order}}" data-words-order-today="{{$L.WordsData.OrderToday}}" data-words-fit-landscape="{{$L.WordsData.FitLandscape}}" data-words-fit-portrait="{{$L.WordsData.FitPortrait}}" data-words-swipe="{{$L.WordsData.Swipe}}" data-words-none="{{$L.WordsData.None}}" data-words-one="{{$L.WordsData.One}}" data-words-and="{{$L.WordsData.And}}" data-name="{{$L.Name}}" data-col="{{$L.WordsData.Cols}}" data-col-swipe="{{$L.WordsData.PosSwipe}}" data-tomorrow-on="{{$L.WordsData.TomorrowOn}}">
     <figcaption><b>{{t "layout.preview"}}</b> · {{if $L.Portrait}}{{t "layout.orient.portrait"}}{{else}}{{t "layout.orient.landscape"}}{{end}} · {{if $L.Dirty}}<span class="pstate dirty" data-state-text="{{t "layout.state.dirty"}}">{{t "layout.state.dirty"}}</span>{{else}}<span class="pstate" data-saved-text="{{tf "layout.state.saved" "name" $L.Name}}" data-dirty-text="{{t "layout.state.dirty"}}">{{tf "layout.state.saved" "name" $L.Name}}</span>{{end}}</figcaption>

@@ -1,5 +1,5 @@
 -- Display layouts (ticket 180, ADR 0020): per display the people it shows and
--- their order, the switches and order of the layout blocks, and the list of the
+-- their base order (see layout.Order), the switches and order of the layout blocks, and the list of the
 -- block "one list". A display without a row shows today's layout. The blocks are
 -- a JSON array of {id, on} in order, so a new block needs no migration; people
 -- is a JSON array of person IDs. The list name is kept so a deleted list can be
@@ -8,7 +8,6 @@ CREATE TABLE display_layout (
     display_id TEXT PRIMARY KEY REFERENCES displays(id) ON DELETE CASCADE,
     whole      INTEGER NOT NULL CHECK (whole IN (0, 1)),
     rotate     INTEGER NOT NULL CHECK (rotate IN (0, 1)),
-    order_day  INTEGER NOT NULL,
     people     TEXT NOT NULL CHECK (json_valid(people)),
     blocks     TEXT NOT NULL CHECK (json_valid(blocks)),
     list_id    TEXT NOT NULL,

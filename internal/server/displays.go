@@ -380,7 +380,7 @@ func (s *server) changeDisplay(householdID, id string, c displayChange) error {
 		}
 	}
 	if c.Layout != nil {
-		h, err := s.db.HomeHousehold()
+		h, err := s.db.Household(householdID)
 		if err != nil {
 			return err
 		}
@@ -624,7 +624,8 @@ func (s *server) layoutToJSON(d store.Display, h store.Household) (layoutJSON, e
 	return j, nil
 }
 
-func (s *server) displayToJSON(d store.Display, h store.Household, loc *time.Location) displayJSON {
+// displayToJSON is the API form of a display; the error is one of loading its layout.
+func (s *server) displayToJSON(d store.Display, h store.Household, loc *time.Location) (displayJSON, error) {
 	j := displayJSON{ID: d.ID, Name: d.Name, Room: d.Room, Type: string(d.Type), PairedAt: d.PairedAt.In(loc).Format(time.RFC3339), ShowTomorrow: d.ShowTomorrow,
 		QuietMode: quietJSON{d.Quiet.Enabled, d.Quiet.FromText(), d.Quiet.ToText()}, Kiosk: kioskJSON{d.KioskURL, d.KioskKeySet},
 		Theme: string(d.Theme), SunriseOffset: d.SunriseOffset, SunsetOffset: d.SunsetOffset,
@@ -644,16 +645,27 @@ func (s *server) displayToJSON(d store.Display, h store.Household, loc *time.Loc
 		}
 		j.Brightness.Current = cur
 	}
-	if lj, err := s.layoutToJSON(d, h); err == nil {
-		j.Layout = lj
-	} else {
-		s.logger.Error("display layout", "err", err)
+	lj, err := s.layoutToJSON(d, h)
+	if err != nil {
+		return displayJSON{}, err
 	}
+	j.Layout = lj
 	if !d.LastSeen.IsZero() {
 		seen := d.LastSeen.In(loc).Format(time.RFC3339)
 		j.LastSeenAt = &seen
 	}
-	return j
+	return j, nil
+}
+
+// writeDisplay answers with a display; a layout that fails to load is a 500, not a
+// display that breaks the contract.
+func (s *server) writeDisplay(w http.ResponseWriter, status int, d store.Display, p principal) {
+	j, err := s.displayToJSON(d, p.household, p.location())
+	if err != nil {
+		s.fail(w, "display layout", err)
+		return
+	}
+	writeJSON(w, status, j)
 }
 
 func (s *server) apiListDisplays(w http.ResponseWriter, _ *http.Request, p principal) {
@@ -665,7 +677,12 @@ func (s *server) apiListDisplays(w http.ResponseWriter, _ *http.Request, p princ
 	loc := p.location()
 	out := make([]displayJSON, 0, len(list))
 	for _, d := range list {
-		out = append(out, s.displayToJSON(d, p.household, loc))
+		j, err := s.displayToJSON(d, p.household, loc)
+		if err != nil {
+			s.fail(w, "display layout", err)
+			return
+		}
+		out = append(out, j)
 	}
 	writeJSON(w, http.StatusOK, out)
 }
@@ -679,7 +696,7 @@ func (s *server) apiPairDisplay(w http.ResponseWriter, r *http.Request, p princi
 	d, err := s.pairDisplay(p, strings.TrimSpace(in.Code), store.Display{Name: in.Name, Room: in.Room, Type: store.DisplayType(in.Type)})
 	switch {
 	case err == nil:
-		writeJSON(w, http.StatusCreated, s.displayToJSON(d, p.household, p.location()))
+		s.writeDisplay(w, http.StatusCreated, d, p)
 	case errors.Is(err, errTooManyAttempts):
 		writeError(w, http.StatusTooManyRequests, "too many wrong codes, try again later")
 	case errors.Is(err, store.ErrNotFound):
@@ -809,7 +826,7 @@ func (s *server) apiUpdateDisplay(w http.ResponseWriter, r *http.Request, p prin
 	}
 	for _, d := range displays {
 		if d.ID == r.PathValue("id") {
-			writeJSON(w, http.StatusOK, s.displayToJSON(d, p.household, p.location()))
+			s.writeDisplay(w, http.StatusOK, d, p)
 			return
 		}
 	}
@@ -830,6 +847,18 @@ func (s *server) apiCopyDisplayLayout(w http.ResponseWriter, r *http.Request, p 
 		writeDisplayError(w, s, err)
 		return
 	}
+	if in.From == id {
+		writeError(w, http.StatusUnprocessableEntity, "a display cannot copy its own layout")
+		return
+	}
+	if _, err := s.db.Display(p.household.ID, in.From); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "display to copy from (from) not found")
+			return
+		}
+		s.fail(w, "display layout", err)
+		return
+	}
 	if err := s.db.CopyDisplayLayout(p.household.ID, in.From, id); err != nil {
 		writeDisplayError(w, s, err)
 		return
@@ -839,7 +868,7 @@ func (s *server) apiCopyDisplayLayout(w http.ResponseWriter, r *http.Request, p 
 		writeDisplayError(w, s, err)
 		return
 	}
-	writeJSON(w, http.StatusOK, s.displayToJSON(d, p.household, p.location()))
+	s.writeDisplay(w, http.StatusOK, d, p)
 }
 
 func writeDisplayError(w http.ResponseWriter, s *server, err error) {

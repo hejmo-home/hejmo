@@ -895,7 +895,8 @@ paths:
         Takes the people, their order, the daily rotation and the layout blocks of the display
         `from` and saves them on this display (ticket 180, Q84). Name, brightness, quiet mode and
         everything else of this display stay. The layouts are separate afterwards: there are no
-        shared templates.
+        shared templates. Refused with 422 when `from` is this display; 404 when this display or
+        the display `from` does not exist.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -916,6 +917,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /albums:
     get:
       operationId: listAlbums

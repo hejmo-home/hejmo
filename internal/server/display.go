@@ -199,13 +199,19 @@ func (s *server) familyView(h store.Household, lang string, d *store.Display) (f
 	}
 	everyone := data.people
 	showTomorrow := false
-	lay := layout.Default(personIDs(everyone))
+	var lay layout.Layout
 	if d != nil {
 		showTomorrow = d.ShowTomorrow
 		if lay, err = s.db.DisplayLayout(h.ID, d.ID); err != nil {
 			return familyview.View{}, err
 		}
 		data.people = orderedPeople(everyone, lay.Order(layout.RotationDay(data.now)))
+	} else {
+		ids, err := s.db.PersonIDs(h.ID)
+		if err != nil {
+			return familyview.View{}, err
+		}
+		lay = layout.Default(ids)
 	}
 	meals, cutoffs := s.mealsToday(h, data.now)
 	today := data.now.Format(store.DayLayout)

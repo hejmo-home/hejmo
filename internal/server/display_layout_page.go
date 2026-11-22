@@ -27,8 +27,11 @@ func (e *layoutError) Error() string { return "layout " + e.Field + ": " + e.Msg
 // fields stay as they are.
 type layoutChange struct {
 	Whole  *bool
-	People *[]string // the chosen people, in the order of today's columns
-	Rotate *bool
+	People *[]string // the chosen people, in the order of the columns of OrderDay
+	// OrderDay is the rotation day of the order People are in: the day the form
+	// was loaded, so a form saved after 03:00 moves nobody. nil: today.
+	OrderDay *int
+	Rotate   *bool
 	// Blocks name blocks in the order they should have inside their zone; a
 	// block not named keeps its place after the named ones.
 	Blocks []blockChange
@@ -44,6 +47,9 @@ type blockChange struct {
 func layoutFromForm(in url.Values) layoutChange {
 	on := func(name string) *bool { v := in.Get(name) != ""; return &v }
 	c := layoutChange{Whole: on("whole"), Rotate: on("rotate")}
+	if day, err := strconv.Atoi(in.Get("order_day")); err == nil {
+		c.OrderDay = &day
+	}
 	people := slices.Clone(in["person"])
 	if people == nil {
 		people = []string{}
@@ -59,10 +65,11 @@ func layoutFromForm(in url.Values) layoutChange {
 	return c
 }
 
-// applyLayout returns the layout after the change. It always returns the layout
-// the change asks for, together with the error that refuses it, so a refused
-// form can be shown again as it was filled in. cur is the stored layout, today
-// the rotation day, household the IDs of the people of the household.
+// applyLayout returns the layout after the change, with the people in their base
+// order (layout.Order). It always returns the layout the change asks for,
+// together with the error that refuses it, so a refused form can be shown again
+// as it was filled in. cur is the stored layout, today the rotation day,
+// household the IDs of the people of the household.
 func (s *server) applyLayout(householdID string, cur layout.Layout, c layoutChange, today int, household []string) (layout.Layout, error) {
 	var refused error
 	refuse := func(field, msg string) {
@@ -70,26 +77,38 @@ func (s *server) applyLayout(householdID string, cur layout.Layout, c layoutChan
 			refused = &layoutError{field, msg}
 		}
 	}
-	// The people are saved in the order of today's columns, so a rotation
-	// continues from there.
 	l := cur
-	l.People, l.OrderDay = cur.Order(today), today
 	if c.Whole != nil {
 		l.Whole = *c.Whole
 	}
 	if c.Rotate != nil {
 		l.Rotate = *c.Rotate
 	}
-	if c.People != nil {
-		l.People = nil
+	switch {
+	case c.People != nil:
+		// The people come in the order of the columns of orderDay. While the
+		// rotation runs the base order is that order un-rotated; a rotation that
+		// is switched on starts from the order as it is, so every display
+		// switched on with the same people agrees (Q91).
+		var shown []string
 		for _, id := range *c.People {
 			switch {
 			case !slices.Contains(household, id):
 				refuse("people", "unknown person")
-			case !slices.Contains(l.People, id):
-				l.People = append(l.People, id)
+			case !slices.Contains(shown, id):
+				shown = append(shown, id)
 			}
 		}
+		l.People = shown
+		if cur.Rotate && l.Rotate {
+			orderDay := today
+			if c.OrderDay != nil {
+				orderDay = *c.OrderDay
+			}
+			l.People = layout.Unrotate(shown, orderDay)
+		}
+	case cur.Rotate && !l.Rotate:
+		l.People = cur.Order(today) // a rotation switched off stays as it is today
 	}
 	if len(l.People) == 0 {
 		refuse("people", "a display shows at least one person")
@@ -120,7 +139,8 @@ func (s *server) applyLayout(householdID string, cur layout.Layout, c layoutChan
 		}
 	}
 	l.Blocks = append(head, rest...)
-	if c.ListID != nil && *c.ListID != "" {
+	switch {
+	case c.ListID != nil && *c.ListID != "":
 		id, name, ok, err := s.pickList(householdID, *c.ListID)
 		switch {
 		case err != nil:
@@ -130,15 +150,24 @@ func (s *server) applyLayout(householdID string, cur layout.Layout, c layoutChan
 		default:
 			l.ListID, l.ListName = id, name
 		}
-	} else if c.ListID != nil {
-		l.ListID, l.ListName = "", ""
+	case c.ListID != nil && l.ListID != "":
+		// "No choice" removes the choice of a list that is there. The form posts it
+		// for a list that was deleted: that one stays, so the page keeps warning.
+		_, _, there, err := s.pickList(householdID, l.ListID)
+		if err != nil {
+			return l, err
+		}
+		if there {
+			l.ListID, l.ListName = "", ""
+		}
 	}
 	if l.Enabled(layout.List) && l.ListID == "" {
+		// Only a block that is switched on in this change takes a list by itself.
 		id, name, ok, err := s.pickList(householdID, "")
 		switch {
 		case err != nil:
 			return l, err
-		case ok:
+		case ok && !cur.Enabled(layout.List):
 			l.ListID, l.ListName = id, name
 		default:
 			refuse("list", "there is no list to show")
@@ -154,7 +183,7 @@ func (s *server) saveLayout(h store.Household, displayID string, c layoutChange)
 	if err != nil {
 		return err
 	}
-	household, err := s.householdPersonIDs(h.ID)
+	household, err := s.db.PersonIDs(h.ID)
 	if err != nil {
 		return err
 	}
@@ -163,18 +192,6 @@ func (s *server) saveLayout(h store.Household, displayID string, c layoutChange)
 		return err
 	}
 	return s.db.SetDisplayLayout(h.ID, displayID, l)
-}
-
-func (s *server) householdPersonIDs(householdID string) ([]string, error) {
-	ps, err := s.db.People(householdID)
-	if err != nil {
-		return nil, err
-	}
-	out := make([]string, len(ps))
-	for i, p := range ps {
-		out[i] = p.ID
-	}
-	return out, nil
 }
 
 // layoutRefusal says which field the refusal is about, for the page.
@@ -227,6 +244,7 @@ type layoutPage struct {
 	Name           string
 	Portrait       bool
 	Dirty          bool // the form shows an unsaved change
+	OrderDay       int  // the rotation day of the order the form shows
 	Whole, Rotate  bool
 	Chosen         []layoutPerson // in the order of today's columns
 	Off            []personChip   // people not on this display
@@ -326,10 +344,9 @@ func (s *server) fillLayout(r *http.Request, p principal, v *displayPage, d stor
 	if err != nil {
 		cur = layout.Default(household)
 	}
+	// l is the layout with the people in their base order; the page shows today's.
 	l := cur.Normalize(household)
-	// l.People is the saved order; the page shows today's.
-	l.People, l.OrderDay = cur.Order(today), today
-	pg := layoutPage{Name: d.Name, Portrait: d.Portrait}
+	pg := layoutPage{Name: d.Name, Portrait: d.Portrait, OrderDay: today}
 	if in != nil && in.Has("layout_form") {
 		pg.Dirty = true
 		l, _ = s.applyLayout(h.ID, l, layoutFromForm(in), today, household)
@@ -337,6 +354,12 @@ func (s *server) fillLayout(r *http.Request, p principal, v *displayPage, d stor
 			l.People, l.Whole = nil, false
 		}
 	}
+	// Tomorrow's order in words, also while the switch is off: the rotation
+	// starts from the order as it is.
+	tomorrow := l
+	tomorrow.Rotate = true
+	tomorrowOrder := tomorrow.Order(today + 1)
+	l.People = l.Order(today)
 	pg.Whole, pg.Rotate = l.Whole, l.Rotate
 	pg.NoPeople = len(l.People) == 0
 	_, pg.Personal = l.Personal()
@@ -356,12 +379,9 @@ func (s *server) fillLayout(r *http.Request, p principal, v *displayPage, d stor
 			pg.Off = append(pg.Off, c)
 		}
 	}
-	// Tomorrow's order in words, also while the switch is off.
 	{
-		tom := l
-		tom.Rotate = true
-		names := make([]string, 0, len(l.People))
-		for _, id := range tom.Order(today + 1) {
+		names := make([]string, 0, len(tomorrowOrder))
+		for _, id := range tomorrowOrder {
 			names = append(names, byID[id].Name)
 		}
 		pg.RotateTomorrow = say("layout.rotate.on", "names", strings.Join(names, ", "))

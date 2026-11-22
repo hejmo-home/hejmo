@@ -542,6 +542,9 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	// Offline mode (ticket 201): the pages as the box answers them while it is on.
 	pages = append(pages, offlinePages(t, f)...)
 
+	// The choice page of ticket 231: each way chosen, and the link guide with its errors.
+	pages = append(pages, connectChoicePages(t, f)...)
+
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
 	// the state after a continue without the tick.
@@ -565,6 +568,35 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(out, "/invite/"+f.inviteToken)
 	add(out, "/invite/"+f.inviteToken+"/account")
 	return pages
+}
+
+// connectChoicePages returns the choice page "Connect a calendar" (ticket 231)
+// with each way chosen in turn (only the chosen guide shows), and the answer to
+// a link that is none and a missing name: both errors at their fields, with a
+// long link that must wrap.
+func connectChoicePages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	parent := siteOf("app", f.box, f.client)
+	var pages []layoutPage
+	for _, way := range []string{"icloud", "caldav", "ics"} {
+		path := "/connections/new?service=" + way
+		if status, _ := parent.get(t, path); status != http.StatusOK {
+			t.Fatalf("%s = %d, want 200", path, status)
+		}
+		pages = append(pages, layoutPage{site: parent, path: path})
+	}
+	out := map[string]string{}
+	for _, lang := range []string{"de", "en"} {
+		r := f.do(http.MethodPost, "/calendars", url.Values{
+			"name": {""}, "url": {"grundschule-am-lindenpark-mit-einem-sehr-langen-namen.de/termine/kalender für die Klassen 2b und 4a"},
+			"interval": {"60"}, "color": {"#4E7D52"}, "whole_family": {"1"},
+		}, map[string]string{"Accept-Language": lang})
+		if r.status != http.StatusUnprocessableEntity {
+			t.Fatalf("subscribe with errors = %d", r.status)
+		}
+		out[lang] = r.body
+	}
+	return append(pages, layoutPage{site: parent, path: "/connections/new?state=link-errors", html: out})
 }
 
 // offlinePages returns the pages of ticket 201 in the states a crawl does not

@@ -311,22 +311,55 @@ func connectedMessage(provider string, n int) i18n.Message {
 	return i18n.Msg(key+".many", "n", strconv.Itoa(n))
 }
 
-// renderConnectNew shows the connect page with the guide of one service
-// checked. Without a service, or with an unknown one, iCloud is checked.
+// renderConnectNew shows the choice page "Connect a calendar": one card per
+// way (calendarWays) and below them the guide of the chosen one. service is the
+// way chosen; none (or an unknown or locked one) leaves no card chosen unless
+// only one way is left open. Errors belong to the guide that was submitted.
 func (s *server) renderConnectNew(w http.ResponseWriter, r *http.Request, p principal, status int, service string, extra map[string]any) {
-	if service != "caldav" && service != "outlook" {
-		service = "icloud"
+	_, _, peopleChoices, groupChoices, err := s.audienceMaps(p.household.ID)
+	if err != nil {
+		s.fail(w, "people", err)
+		return
+	}
+	cards := s.wayCards(r, service)
+	service = ""
+	for _, c := range cards {
+		if c.Checked {
+			service = c.ID
+		}
+	}
+	notes := s.connectNotes(r)
+	taken, err := s.colorsInUse(p)
+	if err != nil {
+		s.fail(w, "synced calendars", err)
+		return
 	}
 	data := map[string]any{
 		"Person": p.person, "Service": service, "SyncStale": s.syncStale(p.household.ID),
+		"Ways": cards, "Notes": notes, "CanAdd": s.canAddCalendar(),
 		"Error": "", "ErrorField": "", "ConnURL": "", "ConnUsername": "", "ConnSingle": false,
-		"OutNote": s.noteFor(r, outbound.Calendars, "outside.note.connect"),
+		"ICSError": "", "ICSErrorField": "", "ICSErrorFields": map[string]string(nil), "ICSName": "", "ICSURL": "", "ICSColor": nextColors(taken, 1)[0], "ICSInterval": defaultSyncMinutes,
+		"ICSPeople": []string(nil), "ICSGroups": []string(nil),
+		"People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
 	}
 	s.outlookGuide(data, "")
 	for k, v := range extra {
 		data[k] = v
 	}
 	s.render(w, r, status, "connection_new.html", data)
+}
+
+// colorsInUse lists the colours of the household's synced calendars.
+func (s *server) colorsInUse(p principal) ([]string, error) {
+	all, err := s.db.SyncedCalendars(p.household.ID)
+	if err != nil {
+		return nil, err
+	}
+	var taken []string
+	for _, c := range all {
+		taken = append(taken, c.Color)
+	}
+	return taken, nil
 }
 
 func (s *server) handleConnectNew(w http.ResponseWriter, r *http.Request) {

@@ -301,10 +301,10 @@ func (s *server) handleArticle(w http.ResponseWriter, r *http.Request) {
 		s.renderArticleForm(w, r, p, http.StatusOK, st, it.own, s.formOf(*it.own), nil, nil)
 		return
 	}
-	s.renderShipped(w, r, p, st, it)
+	s.renderShipped(w, r, p, http.StatusOK, st, it, nil)
 }
 
-func (s *server) renderShipped(w http.ResponseWriter, r *http.Request, p principal, st libState, it articleItem) {
+func (s *server) renderShipped(w http.ResponseWriter, r *http.Request, p principal, status int, st libState, it articleItem, ap *autoPost) {
 	lang := st.lang
 	name := it.Name(lang)
 	sug := st.suggestion(it)
@@ -367,7 +367,16 @@ func (s *server) renderShipped(w http.ResponseWriter, r *http.Request, p princip
 		return
 	}
 	data["OnLists"] = s.listLinks(lang, lists)
-	s.render(w, r, http.StatusOK, "article.html", data)
+	if ap != nil {
+		data["Hidden"] = r.PostFormValue("hidden") != ""
+	}
+	card, err := s.autoCardFor(p, lang, it, ap)
+	if err != nil {
+		s.fail(w, "always card", err)
+		return
+	}
+	data["Auto"] = card
+	s.render(w, r, status, "article.html", data)
 }
 
 func (s *server) handleArticleHidden(w http.ResponseWriter, r *http.Request) {
@@ -382,15 +391,40 @@ func (s *server) handleArticleHidden(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	hide := r.PostFormValue("hidden") != ""
+	lang := s.langOf(r)
+	var autoKey string
+	var autoValues []string
+	if f := readAuto(r); f.Present {
+		it, _ := s.itemOfShipped(p, lang, id)
+		key, values, ap, err := s.saveAuto(p, lang, it, f)
+		if err != nil {
+			s.fail(w, "save always on the list", err)
+			return
+		}
+		if ap != nil {
+			st, err := s.libState(p, lang)
+			if err != nil {
+				s.fail(w, "library state", err)
+				return
+			}
+			s.renderShipped(w, r, p, http.StatusUnprocessableEntity, st, it, ap)
+			return
+		}
+		autoKey, autoValues = key, values
+	}
 	if err := s.db.SetArticleHidden(p.household.ID, id, hide); err != nil {
 		s.fail(w, "hide article", err)
+		return
+	}
+	if autoKey != "" {
+		s.redirectSavedFields(w, r, libraryPath+"/"+id, autoKey, autoValues...)
 		return
 	}
 	key := "flash.article_shown"
 	if hide {
 		key = "flash.article_hidden"
 	}
-	s.redirectSavedNamed(w, r, libraryPath+"/"+id, key, a.Name(s.langOf(r)))
+	s.redirectSavedNamed(w, r, libraryPath+"/"+id, key, a.Name(lang))
 }
 
 func (s *server) handleArticleCopy(w http.ResponseWriter, r *http.Request) {
@@ -422,6 +456,10 @@ func (s *server) handleArticleCopy(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := s.db.SetArticleHidden(p.household.ID, a.ID, true); err != nil {
 		s.fail(w, "hide copied article", err)
+		return
+	}
+	if err := s.db.MoveAlwaysRule(p.household.ID, a.ID, saved.ID); err != nil { // "always on the list" goes with the copy
+		s.fail(w, "move always rule", err)
 		return
 	}
 	s.redirectSavedNamed(w, r, libraryPath+"/"+saved.ID, "flash.article_copied", a.Name(lang))
@@ -513,4 +551,14 @@ func (s *server) listLinks(lang string, lists []listLink) template.HTML {
 		parts[i] = `<a href="/lists/` + html.EscapeString(l.ID) + `">` + html.EscapeString(l.Name) + `</a>`
 	}
 	return template.HTML(s.joinWords(lang, parts))
+}
+
+// itemOfShipped is a shipped article as an item of the library state.
+func (s *server) itemOfShipped(p principal, lang, id string) (articleItem, error) {
+	st, err := s.libState(p, lang)
+	if err != nil {
+		return articleItem{}, err
+	}
+	it, _ := st.item(id)
+	return it, nil
 }

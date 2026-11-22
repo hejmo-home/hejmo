@@ -498,6 +498,8 @@ var notRendered = map[string]string{
 	"/display/articles/{id}/picture":          "an image",
 	"/settings/lists/library/picture/{token}": "an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
+	"/settings/lists/library/plan/{id}":       "fragment: the sentence under the card of an article, rendered inside it",
+	"/settings/lists/always/plan":             "fragment: the sentence under the holiday, rendered inside its page",
 }
 
 // matches reports whether a request path is served by a route pattern.

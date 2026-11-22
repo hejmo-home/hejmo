@@ -348,6 +348,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /settings/lists/library", s.handleArticleCreate)
 	mux.HandleFunc("GET /settings/lists/library/suggest", s.handleArticleSuggest)
 	mux.HandleFunc("GET /settings/lists/library/picture/{token}", s.handlePendingPicture)
+	mux.HandleFunc("GET /settings/lists/library/plan/{id}", s.handleAutoPlan)
 	mux.HandleFunc("GET /settings/lists/library/{id}", s.handleArticle)
 	mux.HandleFunc("POST /settings/lists/library/{id}", s.handleArticleSave)
 	mux.HandleFunc("POST /settings/lists/library/{id}/hidden", s.handleArticleHidden)

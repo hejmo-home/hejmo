@@ -16,6 +16,7 @@
     {{if .OnLists}}<dt>{{t "art.f.on"}}</dt><dd>{{.OnLists}}</dd>{{end}}
   </dl>
   <form method="post" action="/settings/lists/library/{{.ID}}/hidden" class="steps lib-form">
+    {{template "autoCard" .Auto}}
     <fieldset>
       <legend>{{t "art.hide.legend"}}</legend>
       {{template "switch" (dict "Name" "hidden" "Label" (t "art.hide.label") "OnText" .HideOn "OffText" .HideOff "Checked" .Hidden "AriaLabel" .HideAria)}}
@@ -26,5 +27,7 @@
     <p class="hint">{{t "art.copy.hint"}}</p>
     <form method="post" action="/settings/lists/library/{{.ID}}/copy"><button class="button secondary" type="submit">{{t "art.copy.button"}}</button></form>
   {{template "moreClose"}}
+<script src="/static/adder.js" defer></script>
+<script src="/static/always.js" defer></script>
 {{template "foot"}}
 {{define "dietGroups"}}<dd class="people">{{range .}}<span class="pgrp"><span class="diet">{{printf "%s:" .Diet}}</span>{{range .Who}}<span class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}</span>{{end}}</span>{{end}}</dd>{{end}}

@@ -264,6 +264,21 @@ _Avoid_: filtering, blocking
 Number and unit of a list entry, such as 500 g or 1 dozen.
 _Avoid_: amount
 
+**Default unit**:
+One of the one or two units an article offers first when it is added, such as dozen and piece for eggs.
+_Avoid_: standard unit
+
+**Active units**:
+The units the household can choose when adding, preset by the home location's country and changed under Settings, Lists, Units.
+
+**Kind of unit**:
+What a unit measures: pieces (piece, dozen), weight, volume, and pack and bunch, which count only themselves. Only units of one kind convert into each other and add up; another kind of the same article gets its own entry under the old one.
+_Avoid_: dimension, type
+
+**Total**:
+The quantity of an entry after adding up or changing. It is kept exactly (in pieces, grams or millilitres) and shown in the article's first default unit where it fits, otherwise in the clearest unit of its kind.
+_Avoid_: sum
+
 **Tile view**:
 A list shown as tiles with symbol or picture, name and tick; the default for children. The choice (tiles or list) is one per person for all lists and every device. A display is not a person and keeps its own view, tiles until someone switches it. An entry that names no article shows its first letter on a dashed ring instead of a picture.
 _Avoid_: grid, gallery

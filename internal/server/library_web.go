@@ -408,11 +408,11 @@ func (s *server) handleArticleCopy(w http.ResponseWriter, r *http.Request) {
 	if len(a.Units) > 1 {
 		own.Unit2 = a.Units[1]
 	}
-	if own.Unit1 == "" || !slices.Contains(s.activeUnits(p.household.ID), own.Unit1) { // a copy carries the units too; a switched-off one gives way to piece
+	if own.Unit1 == "" || !slices.Contains(s.activeUnits(p.household), own.Unit1) { // a copy carries the units too; a switched-off one gives way to piece
 		own.Unit1 = s.offeredUnits(p, a)[0]
 		own.Unit2 = ""
 	}
-	if own.Unit2 != "" && !slices.Contains(s.activeUnits(p.household.ID), own.Unit2) {
+	if own.Unit2 != "" && !slices.Contains(s.activeUnits(p.household), own.Unit2) {
 		own.Unit2 = ""
 	}
 	saved, err := s.db.CreateArticle(p.household.ID, p.person.ID, own, nil)

@@ -4,6 +4,18 @@
   <ul class="list-rows">
     <li><a href="/settings/lists/library"><span class="art-sym" aria-hidden="true">{{.LibrarySymbol}}</span><span class="t"><b>{{t "lib.row.title"}}</b><span class="meta">{{.ShippedState}}</span><span class="meta">{{.OwnState}}</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
   </ul>
+  <form class="steps unit-set" method="post" action="/settings/lists/units" id="units">
+    <fieldset><legend>{{t "lq.units.legend"}}</legend>
+      <p class="hint">{{.Units.Hint}}</p>
+      {{range .Units.Groups}}{{$g := .}}<div class="ugroup"><h3>{{.Title}}</h3>
+        {{with .Error}}<p class="ferr" id="err-unit-{{$g.Key}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{.}}</p>{{end}}
+        {{range .Rows}}<div class="urow card-row"><span class="t"><b>{{.Name}}</b>{{if .Always}}<span class="state is-on">{{t "lq.units.always"}}</span>{{else}}<span class="state{{if .On}} is-on{{end}}">{{with .Desc}}{{.}} · {{end}}<span class="on-text">{{t "lq.units.on"}}</span><span class="off-text">{{t "lq.units.off"}}</span></span>{{end}}</span>{{if not .Always}}<label class="switch"><input type="checkbox" role="switch" name="unit_{{.Key}}" aria-label="{{.Name}}"{{if .On}} checked{{end}}></label>{{end}}</div>
+        {{end}}</div>{{end}}
+      <p class="hint">{{t "lq.units.note"}}</p>
+    </fieldset>
+    <button class="button" type="submit">{{t "lq.units.save"}}</button>
+    <details class="more"><summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{t "lq.units.more"}}</summary><div><p class="hint">{{t "lq.units.reset.hint"}}</p><button class="button secondary" type="submit" name="reset" value="1">{{.Units.Reset}}</button></div></details>
+  </form>
   <section aria-labelledby="al">
     <h2 id="al">{{t "lists.set.allergies"}}</h2>
     {{if not .Anyone}}{{template "empty" (dict "Text" (t "lists.set.empty") "Href" "/people" "Action" (t "lists.set.empty.go"))}}

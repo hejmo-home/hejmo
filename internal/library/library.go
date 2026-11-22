@@ -11,6 +11,7 @@ import (
 	"slices"
 	"strings"
 	"sync"
+	"unicode"
 	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/food"
@@ -272,6 +273,65 @@ func (in Input) Validate(active []string) []FieldErr {
 		}
 	}
 	return errs
+}
+
+// Complete returns up to max articles for what is typed while adding to a
+// list, from two letters on: names that start with it first, then names with a
+// word that starts with it, then names that hold it; within one rank own
+// articles come before shipped ones, then by name. German and English names
+// count, ä, ö, ü count like a, o, u.
+func Complete(typed string, all []Article, max int) []Article {
+	q := Fold(typed)
+	if utf8.RuneCountInString(q) < 2 {
+		return nil
+	}
+	rank := func(a Article) int {
+		best := 3
+		for _, name := range []string{Fold(a.De), Fold(a.En)} {
+			if name == "" {
+				continue
+			}
+			switch {
+			case strings.HasPrefix(name, q):
+				best = min(best, 0)
+			case slices.ContainsFunc(strings.FieldsFunc(name, func(r rune) bool { return !unicode.IsLetter(r) && !unicode.IsDigit(r) }), func(w string) bool { return strings.HasPrefix(w, q) }):
+				best = min(best, 1)
+			case strings.Contains(name, q):
+				best = min(best, 2)
+			}
+		}
+		return best
+	}
+	type hit struct {
+		a    Article
+		rank int
+	}
+	var hits []hit
+	for _, a := range all {
+		if r := rank(a); r < 3 {
+			hits = append(hits, hit{a, r})
+		}
+	}
+	slices.SortStableFunc(hits, func(x, y hit) int {
+		if x.rank != y.rank {
+			return x.rank - y.rank
+		}
+		if x.a.Own != y.a.Own {
+			if x.a.Own {
+				return -1
+			}
+			return 1
+		}
+		return strings.Compare(Fold(cmp.Or(x.a.De, x.a.En)), Fold(cmp.Or(y.a.De, y.a.En)))
+	})
+	var out []Article
+	for _, h := range hits {
+		if len(out) == max {
+			break
+		}
+		out = append(out, h.a)
+	}
+	return out
 }
 
 // Resolve finds the article that the text of a list entry names: the whole

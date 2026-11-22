@@ -53,17 +53,30 @@ func (s *server) newListLooks(p principal, lang, picturePrefix string) (listLook
 }
 
 func (l listLooks) articles() []library.Article {
-	all := make([]library.Article, len(l.items))
-	for i, it := range l.items {
-		all[i] = it.Article
+	all := make([]library.Article, 0, len(l.items))
+	for _, it := range l.items {
+		if !it.handHidden { // a name typed as text never finds an article hidden by hand (as when adding)
+			all = append(all, it.Article)
+		}
 	}
 	return all
 }
 
-// resolve is the article, symbol or picture of one entry's text, without the
-// warnings: the API needs no sentences.
-func (l listLooks) resolve(text string, all []library.Article) (entryLook, library.Article, bool) {
-	a, ok := library.Resolve(text, all)
+// resolve is the article, symbol or picture of one entry, without the
+// warnings: the API needs no sentences. The stored article comes first; only an
+// entry without one is looked up by its text.
+func (l listLooks) resolve(articleID, text string, all []library.Article) (entryLook, library.Article, bool) {
+	var a library.Article
+	ok := false
+	if articleID != "" {
+		var it articleItem
+		if it, ok = l.st.item(articleID); ok {
+			a = it.Article
+		}
+	}
+	if !ok {
+		a, ok = library.Resolve(text, all)
+	}
 	if !ok {
 		first, _ := utf8.DecodeRuneInString(strings.TrimSpace(text))
 		return entryLook{Letter: string(unicode.ToUpper(first))}, a, false
@@ -78,8 +91,8 @@ func (l listLooks) resolve(text string, all []library.Article) (entryLook, libra
 }
 
 // lookOf is the look of one entry's text, with its warnings.
-func (l listLooks) lookOf(text string, all []library.Article) entryLook {
-	look, a, ok := l.resolve(text, all)
+func (l listLooks) lookOf(articleID, text string, all []library.Article) entryLook {
+	look, a, ok := l.resolve(articleID, text, all)
 	if !ok {
 		return look
 	}
@@ -95,7 +108,7 @@ func (l listLooks) apply(lists ...[]entryView) (food bool) {
 	all := l.articles()
 	for _, es := range lists {
 		for i := range es {
-			es[i].Look = l.lookOf(es[i].Text, all)
+			es[i].Look = l.lookOf(es[i].ArticleID, es[i].Text, all)
 			food = food || es[i].Look.Food
 		}
 	}

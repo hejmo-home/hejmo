@@ -64,7 +64,7 @@ func TestALayoutIsKeptPerDisplay(t *testing.T) {
 	kitchen, hall := pairDisplayNamed(t, db, h, "t1", "Kitchen"), pairDisplayNamed(t, db, h, "t2", "Hall")
 
 	l := layout.Default(nil)
-	l.Whole, l.People, l.Rotate, l.OrderDay = false, []string{b.ID, a.ID}, true, 42
+	l.Whole, l.People, l.Rotate = false, []string{b.ID, a.ID}, true
 	l.Blocks = []layout.Block{{ID: layout.Weather, On: false}, {ID: layout.Clock, On: true}, {ID: layout.List, On: true}}
 	l.ListID, l.ListName = "some-list", "Packing"
 	if err := db.SetDisplayLayout(h.ID, kitchen.ID, l); err != nil {
@@ -74,7 +74,7 @@ func TestALayoutIsKeptPerDisplay(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got.Whole || !slices.Equal(got.People, []string{b.ID, a.ID}) || !got.Rotate || got.OrderDay != 42 || got.ListID != "some-list" || got.ListName != "Packing" {
+	if got.Whole || !slices.Equal(got.People, []string{b.ID, a.ID}) || !got.Rotate || got.ListID != "some-list" || got.ListName != "Packing" {
 		t.Fatalf("stored = %+v", got)
 	}
 	if got.Enabled(layout.Weather) || !got.Enabled(layout.List) || !got.Enabled(layout.Tasks) {

@@ -138,13 +138,15 @@ func TestDailyRotationMovesEveryoneOneColumnOnAtThreeInTheNight(t *testing.T) {
 		t.Errorf("midnight does not change it")
 	}
 
-	l := layout.Layout{Whole: true, People: []string{"a", "b", "c"}, Rotate: true, OrderDay: 100}
+	// The shift counts from a fixed epoch (day mod n), so it does not depend on
+	// when a display was saved.
+	l := layout.Layout{Whole: true, People: []string{"a", "b", "c"}, Rotate: true}
 	for day, want := range map[int][]string{
-		100: {"a", "b", "c"},
-		101: {"c", "a", "b"},
-		102: {"b", "c", "a"},
-		103: {"a", "b", "c"},
-		99:  {"b", "c", "a"},
+		99:  {"a", "b", "c"},
+		100: {"c", "a", "b"},
+		101: {"b", "c", "a"},
+		102: {"a", "b", "c"},
+		98:  {"b", "c", "a"},
 	} {
 		if got := l.Order(day); !slices.Equal(got, want) {
 			t.Errorf("day %d = %v, want %v", day, got, want)
@@ -159,5 +161,41 @@ func TestDailyRotationMovesEveryoneOneColumnOnAtThreeInTheNight(t *testing.T) {
 	one := layout.Layout{People: []string{"a"}, Rotate: true}
 	if got := one.Order(7); !slices.Equal(got, []string{"a"}) {
 		t.Errorf("one person = %v", got)
+	}
+}
+
+// Q91: every display with rotation on shows the same order on the same day, whenever
+// it was saved: what is saved is the base order, the order of day 0.
+func TestUnrotatingTodaysOrderGivesTheBaseOrder(t *testing.T) {
+	for n := 1; n <= 5; n++ {
+		shown := []string{"a", "b", "c", "d", "e"}[:n]
+		for day := 20000; day < 20000+2*n; day++ {
+			l := layout.Layout{People: layout.Unrotate(shown, day), Rotate: true}
+			if got := l.Order(day); !slices.Equal(got, shown) {
+				t.Errorf("n=%d day=%d: order = %v, want %v", n, day, got, shown)
+			}
+		}
+	}
+	// Two displays that show the same order on different days agree for good once
+	// each saved the base of its day.
+	a := layout.Layout{People: layout.Unrotate([]string{"a", "b", "c"}, 100), Rotate: true}
+	b := layout.Layout{People: layout.Unrotate([]string{"c", "a", "b"}, 101), Rotate: true}
+	for day := 100; day < 110; day++ {
+		if !slices.Equal(a.Order(day), b.Order(day)) {
+			t.Errorf("day %d: %v != %v", day, a.Order(day), b.Order(day))
+		}
+	}
+}
+
+// When the household changes the shift follows the new number of people (day mod
+// n), so the order can jump more than one column that night. This pins it.
+func TestTheRotationFollowsTheNumberOfPeople(t *testing.T) {
+	three := layout.Layout{People: []string{"a", "b", "c"}, Rotate: true}
+	four := layout.Layout{People: []string{"a", "b", "c", "d"}, Rotate: true}
+	if got := three.Order(101); !slices.Equal(got, []string{"b", "c", "a"}) { // 101 mod 3 = 2
+		t.Errorf("three = %v", got)
+	}
+	if got := four.Order(101); !slices.Equal(got, []string{"d", "a", "b", "c"}) { // 101 mod 4 = 1
+		t.Errorf("four = %v", got)
 	}
 }

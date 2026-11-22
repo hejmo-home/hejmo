@@ -58,6 +58,21 @@ func orderOf(bs []layout.BlockID) []string {
 	return out
 }
 
+// Q87: whole-family events show in the strip also with the Events block off.
+func TestWholeFamilyEventsStillShowWithTheEventsBlockOff(t *testing.T) {
+	occs := []calendar.Occurrence{
+		timed("Swimming", at(14, 16, 0), at(14, 17, 0), "mia"),
+		timed("Picnic", at(14, 12, 0), at(14, 13, 0)),
+	}
+	v := buildWith(off(layout.Events), familyview.Input{Occurrences: occs})
+	if len(v.Strip) != 1 || v.Strip[0].Title != "Picnic" {
+		t.Errorf("strip = %+v, want the whole-family event", v.Strip)
+	}
+	if c := column(t, v, "Mia"); len(c.Events) != 0 {
+		t.Errorf("column events = %+v", c.Events)
+	}
+}
+
 // Without a layout the view is the one of today (Q89).
 func TestWithoutALayoutTheViewIsTodays(t *testing.T) {
 	v := familyview.Build(familyview.Input{I18n: i18n.MustLoad(), Now: at(14, 8, 0), Lang: "en", Region: "DE-BY", People: family(),
@@ -175,7 +190,7 @@ func TestTheListTileShowsUpToEightEntries(t *testing.T) {
 		t.Errorf("thirteen = %+v", v.List)
 	}
 	// An empty list is hidden like any empty tile; so is no list at all (deleted).
-	if v := buildWith(on(layout.List), familyview.Input{List: list(0)}); v.List != nil {
+	if v := buildWith(on(layout.List), familyview.Input{List: list(0)}); v.List != nil || !slices.Equal(orderOf(v.FooterOrder), []string{"meals", "tomorrow", "list"}) {
 		t.Errorf("empty list shown: %+v", v)
 	}
 	if v := buildWith(on(layout.List), familyview.Input{}); v.List != nil {

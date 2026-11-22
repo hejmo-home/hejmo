@@ -1,7 +1,9 @@
 package server_test
 
 import (
+	"fmt"
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -83,8 +85,12 @@ func TestCopyingALayoutWorksThroughTheAPI(t *testing.T) {
 	if l["whole_family"] != false || len(l["people"].([]any)) != 1 || got["name"] != "Hall" {
 		t.Errorf("copied = %v", got)
 	}
-	if status, _, _ := c.call(http.MethodPost, "/displays/"+b+"/layout", map[string]any{"from": "00000000-0000-0000-0000-000000000000"}); status != http.StatusNotFound {
-		t.Errorf("unknown source = %d", status)
+	status, errBody, _ := c.call(http.MethodPost, "/displays/"+b+"/layout", map[string]any{"from": "00000000-0000-0000-0000-000000000000"})
+	if status != http.StatusNotFound || !strings.Contains(fmt.Sprint(errBody["error"]), "from") {
+		t.Errorf("unknown source = %d %v, want 404 naming the from display", status, errBody)
+	}
+	if status, _, _ := c.call(http.MethodPost, "/displays/"+b+"/layout", map[string]any{"from": b}); status != http.StatusUnprocessableEntity {
+		t.Errorf("a display copying itself = %d, want 422", status)
 	}
 }
 
@@ -106,6 +112,21 @@ func TestTheListBlockNeedsAList(t *testing.T) {
 	status, got, _ := c.call(http.MethodPatch, "/displays/"+id, map[string]any{"layout": map[string]any{"blocks": []map[string]any{{"id": "list", "enabled": true}}}})
 	if status != http.StatusOK || got["layout"].(map[string]any)["list_id"] != made["id"] {
 		t.Errorf("with a list the block takes it: %d %v", status, got["layout"])
+	}
+}
+
+// An explicit empty list_id removes the choice; the block "list" then has no list
+// unless it is switched on in the same change.
+func TestRemovingTheListOfAnActiveListBlockIsRefused(t *testing.T) {
+	t.Parallel()
+	c := signedInAPI(t)
+	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
+	_, shown, _ := c.call(http.MethodPost, "/displays", map[string]any{"code": code, "name": "Kitchen", "type": "screen"})
+	id := shown["id"].(string)
+	_, made, _ := c.call(http.MethodPost, "/lists", map[string]any{"name": "Packing", "color": "green", "symbol": "square-filled"})
+	c.call(http.MethodPatch, "/displays/"+id, map[string]any{"layout": map[string]any{"list_id": made["id"], "blocks": []map[string]any{{"id": "list", "enabled": true}}}})
+	if status := rawCall(t, c, http.MethodPatch, "/displays/"+id, `{"layout":{"list_id":""}}`); status != http.StatusUnprocessableEntity {
+		t.Errorf("removing the list of an active block = %d, want 422", status)
 	}
 }
 

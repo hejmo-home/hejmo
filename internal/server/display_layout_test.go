@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"strconv"
 	"strings"
 	"testing"
 
@@ -107,6 +108,11 @@ func TestAtLeastOnePersonMustBeChosen(t *testing.T) {
 	eq(t, columnNames(f.view(t, "en", f.at(14, 9, 0))), []string{"Mama", "Papa", "Sebastian", "Mia"})
 }
 
+// rotatedRight moves everyone one column on, the rightmost goes to the left.
+func rotatedRight(x []string) []string {
+	return append([]string{x[len(x)-1]}, x[:len(x)-1]...)
+}
+
 // Q91 a: every day each person moves one column on, at 03:00, off by default.
 func TestDailyRotationMovesEveryoneOneColumnOn(t *testing.T) {
 	t.Parallel()
@@ -114,16 +120,69 @@ func TestDailyRotationMovesEveryoneOneColumnOn(t *testing.T) {
 	form := f.layoutForm(false, []string{"Mama", "Papa", "Mia"}, defaultOn...)
 	form.Set("rotate", "1")
 	f.saveLayout(t, form)
-	eq(t, columnNames(f.view(t, "en", f.at(14, 12, 0))), []string{"Mama", "Papa", "Mia"})
-	eq(t, columnNames(f.view(t, "en", f.at(15, 2, 59))), []string{"Mama", "Papa", "Mia"})
-	eq(t, columnNames(f.view(t, "en", f.at(15, 3, 0))), []string{"Mia", "Mama", "Papa"})
-	eq(t, columnNames(f.view(t, "en", f.at(16, 12, 0))), []string{"Papa", "Mia", "Mama"})
+	// The shift counts from a fixed epoch, so only the steps are known.
+	day14 := columnNames(f.view(t, "en", f.at(14, 12, 0)))
+	eq(t, columnNames(f.view(t, "en", f.at(15, 2, 59))), day14)
+	day15 := rotatedRight(day14)
+	eq(t, columnNames(f.view(t, "en", f.at(15, 3, 0))), day15)
+	day16 := rotatedRight(day15)
+	eq(t, columnNames(f.view(t, "en", f.at(16, 12, 0))), day16)
 	// The settings page lists today's order, and says tomorrow's in words.
 	f.now = f.at(15, 12, 0)
 	page := f.settingsPage(t, en)
-	if !strings.Contains(inText(page), "Tomorrow: Papa, Mia, Mama.") {
-		t.Errorf("tomorrow's order missing:\n%s", inText(page))
+	if want := "Tomorrow: " + strings.Join(day16, ", ") + "."; !strings.Contains(inText(page), want) {
+		t.Errorf("%q missing:\n%s", want, inText(page))
 	}
+}
+
+// Q91: every display with rotation on shows the same order on the same day, also
+// when they were switched on on different days.
+func TestDisplaysWithRotationShowTheSameOrderWhenSwitchedOnOnDifferentDays(t *testing.T) {
+	t.Parallel()
+	f := newFamilyBox(t, "eink_color")
+	hall := f.anotherDisplay(t, "Hall")
+	var kitchen string
+	for _, d := range f.displays(t) {
+		if d.ID != hall {
+			kitchen = d.ID
+		}
+	}
+	form := f.layoutForm(true, []string{"Mama", "Papa", "Sebastian", "Mia"}, defaultOn...)
+	form.Set("rotate", "1")
+	f.now = f.at(14, 12, 0)
+	if r := f.post("/displays/"+kitchen+"/settings", form); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d", r.status)
+	}
+	f.now = f.at(15, 12, 0)
+	if r := f.post("/displays/"+hall+"/settings", form); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d", r.status)
+	}
+	a, _ := f.db.DisplayLayout(f.householdID, kitchen)
+	b, _ := f.db.DisplayLayout(f.householdID, hall)
+	for day := 20000; day < 20008; day++ {
+		eq(t, a.Order(day), b.Order(day))
+	}
+}
+
+// A form loaded before 03:00 and saved after it must not move anybody: it carries
+// the day of the order it showed.
+func TestAFormSavedAfterThreeKeepsTheOrderItShowed(t *testing.T) {
+	t.Parallel()
+	f := newFamilyBox(t, "eink_color")
+	form := f.layoutForm(false, []string{"Mama", "Papa", "Mia"}, defaultOn...)
+	form.Set("rotate", "1")
+	f.saveLayout(t, form)
+	loaded := f.at(14, 12, 0)
+	shown := columnNames(f.view(t, "en", loaded))
+	after := columnNames(f.view(t, "en", f.at(15, 3, 30)))
+	eq(t, after, rotatedRight(shown))
+	// Saved at 03:30 on the 15th, from the form of the 14th.
+	again := f.layoutForm(false, shown, defaultOn...)
+	again.Set("rotate", "1")
+	again.Set("order_day", strconv.Itoa(layout.RotationDay(loaded)))
+	f.now = f.at(15, 3, 30)
+	f.saveLayout(t, again)
+	eq(t, columnNames(f.view(t, "en", f.at(15, 3, 30))), after)
 }
 
 // Q88: exactly one person chosen: the display shows that person's personal view.
@@ -237,6 +296,34 @@ func TestTheListBlockShowsOpenEntriesInTheFooter(t *testing.T) {
 	// The settings page names it.
 	if p := inText(f.settingsPage(t, en)); !strings.Contains(p, "The list “Shopping” no longer exists.") {
 		t.Errorf("no warning about the deleted list:\n%s", p)
+	}
+}
+
+// A list that was deleted stays chosen: saving the settings page posts the "no
+// choice" option, which keeps it, and the warning stays until another is chosen.
+func TestSavingTheSettingsKeepsAListThatWasDeleted(t *testing.T) {
+	t.Parallel()
+	f := newFamilyBox(t, "eink_color")
+	id, _ := f.onlyList(t, "Shopping", nil, "Milk")
+	form := f.layoutForm(true, []string{"Mama", "Papa", "Sebastian", "Mia"}, append(defaultOn, "list")...)
+	form.Set("list", id)
+	f.saveLayout(t, form)
+	listWith(t, f.box, "Drugstore", nil, "Soap")
+	if err := f.db.DeleteList(f.householdID, id); err != nil {
+		t.Fatal(err)
+	}
+	again := f.layoutForm(true, []string{"Mama", "Papa", "Sebastian", "Mia"}, append(defaultOn, "list")...)
+	again.Set("list", "")
+	f.saveLayout(t, again)
+	l, _ := f.db.DisplayLayout(f.householdID, f.displayID(t))
+	if l.ListID != id || l.ListName != "Shopping" {
+		t.Errorf("the choice changed: %q %q", l.ListID, l.ListName)
+	}
+	if page := f.view(t, "en", f.at(14, 9, 0)); strings.Contains(page, `class="tile list"`) {
+		t.Errorf("a list nobody chose is shown")
+	}
+	if p := inText(f.settingsPage(t, en)); !strings.Contains(p, "The list “Shopping” no longer exists.") {
+		t.Errorf("the warning is gone:\n%s", p)
 	}
 }
 

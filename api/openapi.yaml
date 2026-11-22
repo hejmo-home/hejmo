@@ -858,6 +858,7 @@ paths:
         `list_view` (`tiles` or `list`) is how the display shows lists; the display keeps its own view, tiles until it is switched (ADR 0019).
         `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to set the brightness; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
         `brightness` sets the brightness values by time of day and in quiet mode (ticket 179); see `Brightness`.
+        `layout` sets the people, their order and the layout blocks (ticket 180); see `DisplayLayout`.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -883,6 +884,35 @@ paths:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
         "204": { description: Unpaired }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /displays/{id}/layout:
+    post:
+      operationId: copyDisplayLayout
+      summary: Copy the layout of another display onto this one (scope displays:write)
+      description: |
+        Takes the people, their order, the daily rotation and the layout blocks of the display
+        `from` and saves them on this display (ticket 180, Q84). Name, brightness, quiet mode and
+        everything else of this display stay. The layouts are separate afterwards: there are no
+        shared templates.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from]
+              properties:
+                from: { type: string, format: uuid, description: "The display to copy the layout from" }
+      responses:
+        "200":
+          description: This display with its new layout
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Display" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -3998,7 +4028,7 @@ components:
         text: { type: string }
     Display:
       type: object
-      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver, brightness, list_view]
+      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver, brightness, list_view, layout]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: Hallway }
@@ -4014,6 +4044,55 @@ components:
         kiosk: { $ref: "#/components/schemas/Kiosk" }
         screensaver: { $ref: "#/components/schemas/Screensaver" }
         brightness: { $ref: "#/components/schemas/Brightness" }
+        layout: { $ref: "#/components/schemas/DisplayLayout" }
+    DisplayLayout:
+      type: object
+      description: |
+        What a display shows (ticket 180, ADR 0020): which people in which order, and which layout
+        blocks are on in each of the three fixed zones (ADR 0016). Every display has its own layout;
+        a new display starts with today's: the whole family and every block of before. Exactly one
+        person means the display shows that person's personal view (ADR 0015). Events for the whole
+        family always show.
+      required: [whole_family, people, rotate_daily, blocks, list_id, orientation]
+      properties:
+        whole_family: { type: boolean, description: "\"Whole family\": people who join the household later are added at the end. Default true" }
+        people:
+          type: array
+          items: { type: string, format: uuid }
+          description: "The people the display shows, in the order of today's columns, from left to right. With `rotate_daily` the order of today; PATCH it as it is today and the rotation continues from there"
+        rotate_daily: { type: boolean, description: "Every day at 03:00 each person moves one column to the right, the rightmost goes to the left (round-robin), the same on every display with this switched on. Default false" }
+        blocks:
+          type: array
+          description: "Every block with its zone and switch, in the order shown inside each zone"
+          items:
+            type: object
+            required: [id, zone, enabled]
+            properties:
+              id: { type: string, enum: [clock, weather, events, routines, tasks, meals, tomorrow, list] }
+              zone: { type: string, enum: [header, columns, footer] }
+              enabled: { type: boolean }
+        list_id: { type: string, format: uuid, nullable: true, description: "The list of the block `list` (\"one list\"); at most 8 open entries show. Null: none chosen. A list that was deleted meanwhile stays here and the display shows no list until another is chosen" }
+        orientation: { type: string, enum: [landscape, portrait], description: "How the display last reported it hangs (the settings page draws its preview that way). Read-only; landscape until the display reports it" }
+    UpdateDisplayLayout:
+      type: object
+      description: |
+        Only the fields sent change. `blocks` names blocks in the order they should have inside
+        their zone (a block not named keeps its place after the named ones) and may switch them
+        with `enabled`. Refused with 422: no person, an unknown person, an unknown block or list,
+        or the block `list` on while there is no list to show.
+      properties:
+        whole_family: { type: boolean }
+        people: { type: array, items: { type: string, format: uuid }, minItems: 1 }
+        rotate_daily: { type: boolean }
+        blocks:
+          type: array
+          items:
+            type: object
+            required: [id]
+            properties:
+              id: { type: string, enum: [clock, weather, events, routines, tasks, meals, tomorrow, list] }
+              enabled: { type: boolean }
+        list_id: { type: string, description: "The ID of the list of the block `list`; an empty string removes the choice" }
     Brightness:
       type: object
       description: |
@@ -4127,6 +4206,7 @@ components:
         screensaver: { $ref: "#/components/schemas/UpdateScreensaver" }
         brightness: { $ref: "#/components/schemas/UpdateBrightness" }
         list_view: { type: string, enum: [tiles, list], description: "How the display shows lists (ADR 0019); anything else is refused with 422" }
+        layout: { $ref: "#/components/schemas/UpdateDisplayLayout" }
     PairDisplay:
       type: object
       required: [code, name, type]

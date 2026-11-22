@@ -7,6 +7,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 )
 
@@ -278,4 +279,27 @@ func TestOverviewHidesTheButtonInOfflineMode(t *testing.T) {
 	page := getEN(b, "/calendars").body
 	mustContain(t, page, `class="offline-note"`)
 	mustNotContain(t, page, `class="add-way"`, `href="/connections/new"`)
+}
+
+func TestEmptyOverviewWithCalendarServicesOffStillSaysSo(t *testing.T) {
+	t.Parallel()
+	b := signedInBox(t)
+	if err := b.db.SetServiceEnabled(outbound.Calendars, false); err != nil {
+		t.Fatal(err)
+	}
+	page := getEN(b, "/calendars").body
+	mustContain(t, page, "data-empty", `class="offline-note"`, "Calendar services are off.")
+}
+
+// Until #18 and #177 add their cards, no text invites users to connect them.
+func TestTextsNameOnlyTheWaysThatHaveACard(t *testing.T) {
+	t.Parallel()
+	bundle := i18n.MustLoad()
+	for _, key := range []string{"connections.about", "calendars.empty", "connect.note.calendars", "connect.note.ics"} {
+		for _, lang := range []string{"en", "de"} {
+			if text := bundle.T(lang, key); strings.Contains(text, "Google") || strings.Contains(text, "Outlook") {
+				t.Errorf("%s (%s) names a service without a card: %q", key, lang, text)
+			}
+		}
+	}
 }

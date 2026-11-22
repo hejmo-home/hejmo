@@ -173,7 +173,7 @@ func TestEmptyStatesExplainAndOfferTheFirstAction(t *testing.T) {
 	b := signedInBox(t)
 	for _, path := range []string{"/tasks", "/displays", "/caldav", "/calendars"} {
 		page := getEN(b, path).body
-		if !regexp.MustCompile(`(?s)<div class="empty" data-empty>\s*<p>[^<]+</p>\s*<a class="button" href="[#/][a-z/]+">[^<]+</a>`).MatchString(page) {
+		if !regexp.MustCompile(`(?s)<div class="empty" data-empty>\s*<p>[^<]+</p>\s*<a class="button" href="(#[a-z]+|/connections/new)">[^<]+</a>`).MatchString(page) {
 			t.Errorf("%s has no empty state with a first action:\n%s", path, page)
 		}
 	}

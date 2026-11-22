@@ -13,7 +13,6 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
-	"github.com/hejmo-home/hejmo/internal/icsfeed"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -363,13 +362,7 @@ func (s *server) handleCalendarAdd(w http.ResponseWriter, r *http.Request) {
 	}
 	// A missing name and a link that is none are both shown at once, each at its
 	// field; the other mistakes are found one at a time by addICS.
-	missing := map[string]string{}
-	if strings.TrimSpace(in.Name) == "" {
-		missing["name"] = "calendars.error.name"
-	}
-	if _, err := icsfeed.NormalizeURL(in.URL); err != nil {
-		missing["url"] = "calendars.error.url"
-	}
+	missing, _, _ := icsInputErrors(in)
 	var cal store.SyncedCalendar
 	var err error
 	if len(missing) == 0 {

@@ -30,7 +30,7 @@
     </ul>
     {{else}}<p class="hint none">{{t "calendars.synced.none"}}</p>{{end}}
   </section>
-  {{else if .CanAdd}}{{template "empty" (dict "Text" (t "calendars.empty") "Href" "/connections/new" "Action" (t "connections.connect"))}}
+  {{else if .CanAdd}}{{template "offlineNote" .ConnNote}}{{template "empty" (dict "Text" (t "calendars.empty") "Href" "/connections/new" "Action" (t "connections.connect"))}}
   {{else}}<div class="empty" data-empty><p>{{t "outside.empty.athome"}}</p><a class="button secondary" href="/caldav">{{t "outside.empty.apps"}}</a></div>{{end}}
 
   <section aria-labelledby="log">

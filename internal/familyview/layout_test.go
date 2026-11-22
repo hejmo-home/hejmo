@@ -181,3 +181,29 @@ func TestTheListTileShowsUpToEightEntries(t *testing.T) {
 		t.Errorf("no list shown: %+v", v.List)
 	}
 }
+
+// Q88, Q130: a personal view has the header of the display: the time and weather
+// switches still apply, so the personal header gains the weather chip.
+func TestThePersonalViewFollowsTheHeaderBlocks(t *testing.T) {
+	build := func(edit func(*layout.Layout)) familyview.PersonalView {
+		l := layout.Default([]string{"mia"})
+		if edit != nil {
+			edit(&l)
+		}
+		return familyview.BuildPersonal(familyview.PersonalInput{Now: at(14, 9, 0), Person: family()[3], Layout: &l, Weather: &familyview.Weather{TempC: 8, Icon: "clear"}, Home: true})
+	}
+	v := build(nil)
+	same(t, orderOf(v.HeaderOrder), []string{"clock", "weather"})
+	if v.Weather == nil || v.Weather.Text != "8°C" || !v.Home {
+		t.Errorf("view = %+v", v)
+	}
+	v = build(off(layout.Weather))
+	if v.Weather != nil {
+		t.Errorf("weather shown with its block off")
+	}
+	same(t, orderOf(v.HeaderOrder), []string{"clock"})
+	same(t, orderOf(build(off(layout.Clock)).HeaderOrder), []string{"weather"})
+	// Without a layout the header is the one of today: the clock.
+	plain := familyview.BuildPersonal(familyview.PersonalInput{Now: at(14, 9, 0), Person: family()[3]})
+	same(t, orderOf(plain.HeaderOrder), []string{"clock"})
+}

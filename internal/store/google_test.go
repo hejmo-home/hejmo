@@ -218,3 +218,33 @@ func TestAWrongAccountSignInIsKeptOnceForTheNewConnection(t *testing.T) {
 		t.Fatal("the stashed refresh token is stored in plain text")
 	}
 }
+
+// Review of ticket 18: a stashed refresh token must not wait for the next sign-in to be forgotten.
+func TestExpiredSignInsLoseTheirStashedTokenWithoutANewSignIn(t *testing.T) {
+	f := newGoogleFixture(t)
+	login := store.GoogleLogin{Nonce: "n10", PersonID: f.person.ID, Verifier: "v", RedirectURI: googleauth.RelayRedirectURI, ExpiresAt: t0.Add(15 * time.Minute)}
+	f.db.CreateGoogleLogin(f.h.ID, login, t0)
+	f.db.TakeGoogleLogin(f.h.ID, "n10", t0)
+	f.db.StashGoogleToken(f.h.ID, "n10", "papa@gmail.com", "1//papa-refresh")
+	if err := f.db.PruneGoogleLogins(t0.Add(10 * time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n10"); err != nil {
+		t.Fatalf("pruned before the sign-in expired: %v", err)
+	}
+	f.db.StashGoogleToken(f.h.ID, "n10", "papa@gmail.com", "1//papa-refresh")
+	if err := f.db.PruneGoogleLogins(t0.Add(16 * time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if _, _, err := f.db.TakeStashedGoogleToken(f.h.ID, "n10"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("an expired sign-in still holds a token: %v", err)
+	}
+	if err := f.db.PruneGoogleLogins(t0.Add(26 * time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	var n int
+	f.db.SQL().QueryRow(`SELECT COUNT(*) FROM google_login`).Scan(&n)
+	if n != 0 {
+		t.Fatalf("%d logins left after a day", n)
+	}
+}

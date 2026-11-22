@@ -158,6 +158,16 @@ func (db *DB) CreateGoogleLogin(householdID string, l GoogleLogin, at time.Time)
 	return err
 }
 
+// PruneGoogleLogins forgets what a sign-in no longer needs: once it has expired
+// its stashed account and refresh token go, and a day later the whole row.
+func (db *DB) PruneGoogleLogins(at time.Time) error {
+	if _, err := db.sql.Exec(`UPDATE google_login SET pending_account = NULL, pending_token = NULL WHERE expires_at < ? AND pending_token IS NOT NULL`, stamp(at)); err != nil {
+		return err
+	}
+	_, err := db.sql.Exec(`DELETE FROM google_login WHERE expires_at < ?`, stamp(at.Add(-24*time.Hour)))
+	return err
+}
+
 // TakeGoogleLogin uses a started sign-in up: it is marked used whatever the
 // outcome, so one state is never accepted twice. ErrNotFound for one the box
 // never made (or of another household), ErrUsed for one used before,

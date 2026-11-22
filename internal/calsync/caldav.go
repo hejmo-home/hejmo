@@ -84,7 +84,12 @@ func (s *Service) syncCalDAV(ctx context.Context, cal store.SyncedCalendar, h st
 	if err != nil {
 		return fail(msg, err)
 	}
-	failRemote := func(err error) error { return fail(remoteMessage(err), err) }
+	failRemote := func(err error) error {
+		if s.googleRefused(conn, err) {
+			return fail(i18n.Msg("sync.fail.google_token"), err)
+		}
+		return fail(remoteMessage(err), err)
+	}
 
 	// Box changes go out first, so the import below never overwrites them.
 	var pushErr error

@@ -169,3 +169,14 @@ func (s *Service) CountConnectionEvents(ctx context.Context, h store.Household, 
 	}
 	return remote.CountEvents(ctx, calendarURL, s.now().AddDate(-1, 0, 0))
 }
+
+// googleRefused says whether Google's CalDAV API refused the access token of a
+// Google connection, and forgets that token so the next run renews it. A refused
+// token is not a wrong password: the refresh token decides whether a new sign-in is needed.
+func (s *Service) googleRefused(conn store.Connection, err error) bool {
+	if conn.Kind != "google" || !caldavclient.IsUnauthorized(err) {
+		return false
+	}
+	s.tokens.forget(conn.ID)
+	return true
+}

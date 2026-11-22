@@ -3144,6 +3144,7 @@
   "sync.fail.google_signin": "Google no longer accepts the sign-in: sign in at Google again",
   "sync.fail.google_client": "Google does not accept the client ID or client secret: check the app registration",
   "sync.fail.google_app": "No app registration is entered for Google",
+  "sync.fail.google_token": "Google refused the access token; it is renewed at the next sync",
   "google.sk.addr.sample": "http://127.0.0.1:8099/?state=hj1.Zm9vYmFy.Kq7&code=4/0AVMBsJh9xR2…&scope=https://www.googleapis.com/auth/calendar",
   "google.sk.allow.tick": "✓"
 }

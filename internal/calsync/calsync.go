@@ -313,6 +313,9 @@ func (s *Service) sync(ctx context.Context, householdID, calendarID string, run 
 
 // RunDue syncs every calendar whose time has come.
 func (s *Service) RunDue(ctx context.Context) {
+	if err := s.db.PruneGoogleLogins(s.now()); err != nil {
+		s.logger.Error("calendar sync: prune Google sign-ins", "err", err)
+	}
 	due, err := s.db.DueCalendars(s.now())
 	if err != nil {
 		s.logger.Error("calendar sync: list due calendars", "err", err)

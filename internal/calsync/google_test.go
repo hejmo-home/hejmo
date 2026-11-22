@@ -269,3 +269,28 @@ func TestGoogleCalendarsStopWhenTheCalendarServicesAreSwitchedOff(t *testing.T) 
 	}
 	_ = caldavclient.Calendar{}
 }
+
+// Review of ticket 18: a 401 for a cached access token is not a wrong password.
+// The token is forgotten and the next sync renews it.
+func TestGoogleRefusingACachedAccessTokenRenewsItAtTheNextSync(t *testing.T) {
+	g := newGoogleFixture(t)
+	g.put(googleSwim, "swim@google", "Swimming")
+	if err := g.sync(t); err != nil {
+		t.Fatal(err)
+	}
+	g.stateErr = &caldavclient.StatusError{Code: 401, Status: "401 Unauthorized"}
+	if err := g.sync(t); err == nil {
+		t.Fatal("a refused token did not fail the sync")
+	}
+	log, _ := g.db.SyncLog(g.h.ID, 10)
+	if len(log) != 1 || log[0].Message.Key != "sync.fail.google_token" {
+		t.Fatalf("sync log = %+v", log)
+	}
+	g.stateErr = nil
+	if err := g.sync(t); err != nil {
+		t.Fatalf("next sync: %v", err)
+	}
+	if g.token.calls() != 2 || len(g.tokens) != 3 || g.tokens[2] != "access-c" {
+		t.Fatalf("token calls %d, dialled with %v", g.token.calls(), g.tokens)
+	}
+}

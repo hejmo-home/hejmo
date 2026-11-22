@@ -68,6 +68,9 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 		return fail(msg, err)
 	}
 	if err := s.pushPending(ctx, cal, h, remote); err != nil {
+		if s.googleRefused(conn, err) {
+			return fail(i18n.Msg("sync.fail.google_token"), err)
+		}
 		return fail(pushMessage(err), err)
 	}
 	return nil

@@ -3550,5 +3550,16 @@
   "always.row.paused": "Paused: {items}.",
   "always.row.off": "Off: {names}",
   "always.row.holiday": "Holiday until {to}: nothing comes by itself right now",
-  "always.row.holiday.planned": "Holiday planned from {from} to {to}"
+  "always.row.holiday.planned": "Holiday planned from {from} to {to}",
+  "lib.filter.auto": "Always on the list",
+  "always.tag.off.lib": "Always on the list: off",
+  "always.res.one": "{n} article with “Always on the list”: {parts}.",
+  "always.res.many": "{n} articles with “Always on the list”: {parts}.",
+  "always.res.running.one": "1 comes by itself",
+  "always.res.running.many": "{n} come by themselves",
+  "always.res.paused.one": "{names} is paused",
+  "always.res.paused.many": "{names} are paused",
+  "always.res.off.one": "{names} is off",
+  "always.res.off.many": "{names} are off",
+  "always.res.none": "No article has “Always on the list” set up."
 }

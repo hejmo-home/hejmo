@@ -219,3 +219,39 @@ func TestSettingsListsHasTheRowWithNamesAndTheNextTime(t *testing.T) {
 		t.Errorf("row in the holiday: %s", got)
 	}
 }
+
+func TestTheLibraryHasAFourthFilterWithNamesAndATagOnEveryRow(t *testing.T) {
+	t.Parallel()
+	b := newAlwaysBox(t)
+	b.rule("milk", b.shop.ID, 1, 1, list.Quantity{})
+	b.rule("toast", b.shop.ID, 1, 2, list.Quantity{})
+	b.rule("bananas", b.drugstore.ID, 6, 1, list.Quantity{})
+	b.rule("butter", b.shop.ID, 5, 1, list.Quantity{})
+	_ = b.db.DisableAlwaysRule(b.h.ID, "butter")
+	_ = b.db.DeleteList(b.h.ID, b.drugstore.ID)
+	page := b.en("/settings/lists/library?f=auto").body
+	if !strings.Contains(page, `<a href="?f=auto" aria-current="true">Always on the list</a>`) {
+		t.Error("the filter is the fourth and current")
+	}
+	got := textOf(page)
+	for _, want := range []string{
+		"4 articles with “Always on the list”: 2 come by themselves, Bananas is paused, Butter is off.",
+		"Vegetarian · from Hejmo Every Monday on “Shopping”",
+		"Vegetarian · from Hejmo Every other Monday on “Shopping”",
+		"Paused: list deleted",
+		"Always on the list: off",
+	} {
+		if !strings.Contains(got, want) {
+			t.Errorf("page lacks %q\n%s", want, got)
+		}
+	}
+	if !strings.Contains(page, `<p class="results-head auto-res">`) || !strings.Contains(page, `<span class="tag auto">`) {
+		t.Error("bold result sentence and the tag")
+	}
+	if all := b.en("/settings/lists/library?q=milk").body; !strings.Contains(all, `<span class="tag auto">`) {
+		t.Error("the tag is on every row, not only in the filter")
+	}
+	if none := newAlwaysBox(t).en("/settings/lists/library?f=auto").body; !strings.Contains(none, "No article has “Always on the list” set up.") {
+		t.Error("an empty filter says so")
+	}
+}

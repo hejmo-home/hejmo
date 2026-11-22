@@ -3550,5 +3550,16 @@
   "always.row.paused": "Angehalten: {items}.",
   "always.row.off": "Aus: {names}",
   "always.row.holiday": "Urlaub bis {to}: gerade kommt nichts von selbst",
-  "always.row.holiday.planned": "Urlaub geplant vom {from} bis {to}"
+  "always.row.holiday.planned": "Urlaub geplant vom {from} bis {to}",
+  "lib.filter.auto": "Immer auf der Liste",
+  "always.tag.off.lib": "Immer auf der Liste: aus",
+  "always.res.one": "{n} Artikel mit „Immer auf der Liste“: {parts}.",
+  "always.res.many": "{n} Artikel mit „Immer auf der Liste“: {parts}.",
+  "always.res.running.one": "1 kommt von selbst",
+  "always.res.running.many": "{n} kommen von selbst",
+  "always.res.paused.one": "{names} ist angehalten",
+  "always.res.paused.many": "{names} sind angehalten",
+  "always.res.off.one": "{names} ist aus",
+  "always.res.off.many": "{names} sind aus",
+  "always.res.none": "Bei keinem Artikel ist „Immer auf der Liste“ eingerichtet."
 }

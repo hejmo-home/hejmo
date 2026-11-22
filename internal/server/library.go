@@ -8,6 +8,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/always"
 	"github.com/hejmo-home/hejmo/internal/food"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/library"
@@ -39,6 +40,8 @@ type libState struct {
 	hiding   library.Hiding
 	hidden   map[string]bool
 	own      []store.OwnArticle
+	// always are the rules of "always on the list" by article (ticket 168).
+	always map[string]always.Rule
 }
 
 func (s *server) libState(p principal, lang string) (libState, error) {
@@ -68,7 +71,14 @@ func (s *server) libState(p principal, lang string) (libState, error) {
 	if st.hidden, err = s.db.HiddenArticles(p.household.ID); err != nil {
 		return st, err
 	}
-	st.own, err = s.db.Articles(p.household.ID)
+	if st.own, err = s.db.Articles(p.household.ID); err != nil {
+		return st, err
+	}
+	rules, err := s.db.AlwaysRules(p.household.ID)
+	st.always = map[string]always.Rule{}
+	for _, r := range rules {
+		st.always[r.ArticleID] = r
+	}
 	return st, err
 }
 

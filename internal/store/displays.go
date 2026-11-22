@@ -11,6 +11,8 @@ import (
 	"time"
 	"unicode/utf8"
 
+	"github.com/hejmo-home/hejmo/internal/brightness"
+	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/quiet"
 	"github.com/hejmo-home/hejmo/internal/theme"
 )
@@ -73,6 +75,10 @@ type Display struct {
 	SunriseOffset, SunsetOffset int
 	// Saver is the photo screensaver (ticket 178).
 	Saver Saver
+	// Brightness is what the kiosk app sets by time of day and in quiet mode (ticket 179).
+	Brightness brightness.Settings
+	// ListView is how the display shows lists (ADR 0019): tiles until someone switches it.
+	ListView list.View
 }
 
 // Saver is a display's screensaver setting: on by default, starting after
@@ -101,7 +107,7 @@ func (s Saver) Shows(albumID string) bool {
 	return false
 }
 
-const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow, quiet_enabled, quiet_from, quiet_to, kiosk_url, kiosk_key != '', theme, sunrise_offset, sunset_offset, saver_enabled, saver_idle_minutes, saver_interval_minutes`
+const displayColumns = `id, name, room, type, pairing_code, code_expires_at, paired_at, last_seen_at, show_tomorrow, quiet_enabled, quiet_from, quiet_to, kiosk_url, kiosk_key != '', theme, sunrise_offset, sunset_offset, saver_enabled, saver_idle_minutes, saver_interval_minutes, bright_day, bright_evening, bright_quiet_mode, bright_quiet, wake_minutes, light_source, COALESCE((SELECT view FROM display_list_view WHERE display_id = displays.id), 'tiles')`
 
 type rowScanner interface{ Scan(...any) error }
 
@@ -111,7 +117,8 @@ func scanDisplay(r rowScanner, at time.Time) (Display, error) {
 	var code, expires, paired, seen sql.NullString
 	var qOn bool
 	var qFrom, qTo string
-	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow, &qOn, &qFrom, &qTo, &d.KioskURL, &d.KioskKeySet, &d.Theme, &d.SunriseOffset, &d.SunsetOffset, &d.Saver.Enabled, &d.Saver.IdleMinutes, &d.Saver.IntervalMinutes); err != nil {
+	if err := r.Scan(&d.ID, &d.Name, &d.Room, &typ, &code, &expires, &paired, &seen, &d.ShowTomorrow, &qOn, &qFrom, &qTo, &d.KioskURL, &d.KioskKeySet, &d.Theme, &d.SunriseOffset, &d.SunsetOffset, &d.Saver.Enabled, &d.Saver.IdleMinutes, &d.Saver.IntervalMinutes,
+		&d.Brightness.Day, &d.Brightness.Evening, &d.Brightness.QuietMode, &d.Brightness.QuietLevel, &d.Brightness.WakeMinutes, &d.Brightness.Source, &d.ListView); err != nil {
 		return Display{}, err
 	}
 	if q, err := quiet.Parse(qOn, qFrom, qTo); err == nil {
@@ -323,6 +330,17 @@ func (db *DB) SetDisplayLook(householdID, id string, l DisplayLook) error {
 	}
 	return expectOne(db.sql.Exec(`UPDATE displays SET show_tomorrow = ?, theme = ?, sunrise_offset = ?, sunset_offset = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
 		l.ShowTomorrow, string(l.Theme), l.SunriseOffset, l.SunsetOffset, householdID, id))
+}
+
+// SetDisplayBrightness saves the brightness values of one of the household's
+// paired displays; a refused value is a *FieldError named like its form field.
+func (db *DB) SetDisplayBrightness(householdID, id string, b brightness.Settings) error {
+	var refused *brightness.Refused
+	if err := b.Validate(); errors.As(err, &refused) {
+		return &FieldError{refused.Field, refused.Msg}
+	}
+	return expectOne(db.sql.Exec(`UPDATE displays SET bright_day = ?, bright_evening = ?, bright_quiet_mode = ?, bright_quiet = ?, wake_minutes = ?, light_source = ? WHERE household_id = ? AND id = ? AND paired_at IS NOT NULL AND revoked_at IS NULL`,
+		b.Day, b.Evening, string(b.QuietMode), b.QuietLevel, b.WakeMinutes, string(b.Source), householdID, id))
 }
 
 // SetDisplayQuiet saves the quiet mode schedule of one of the household's

@@ -19,6 +19,7 @@ import (
 // templates, with the real stylesheet. It replaces the hand-written preview.
 // Run: HEJMO_WRITE_PREVIEW_122=../../docs/design/preview-122.html go test ./internal/server -run WriteDesignPreview122
 func TestWriteDesignPreview122(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_122")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_122 to the output path to write the preview")

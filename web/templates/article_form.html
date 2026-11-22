@@ -8,7 +8,7 @@
     {{if .Warns}}<dt>{{t "art.f.warning"}}</dt><dd>{{range .Warns}}{{.}}{{end}}</dd>{{end}}
   </dl>{{end}}
   <form method="post" action="/settings/lists/library{{if not .New}}/{{.ID}}{{end}}" enctype="multipart/form-data" class="steps food-form article-form lib-form">
-    {{with .Token}}<input type="hidden" name="picture_token" value="{{.}}">{{end}}{{if .F.Replacing}}<input type="hidden" name="replacing" value="1">{{end}}
+    {{with .F.FromList}}{{with $.F.FromEntry}}<input type="hidden" name="list" value="{{$.F.FromList}}"><input type="hidden" name="entry" value="{{.}}">{{end}}{{end}}{{with .Token}}<input type="hidden" name="picture_token" value="{{.}}">{{end}}{{if .F.Replacing}}<input type="hidden" name="replacing" value="1">{{end}}
     <fieldset>
       <legend>{{t "artf.name.legend"}}</legend>
       {{$bad := .Errs.name}}<div class="f place-pick{{if $bad}} invalid{{end}}" data-article-suggest="/settings/lists/library/suggest" data-self="{{.ID}}">
@@ -55,6 +55,7 @@
       </div>
       <div class="pic-panel web">
         {{if and .Result (eq .Result.Source "web")}}{{template "picResult" .}}
+        {{else if .ImageNote}}{{template "offlineNote" .ImageNote}}
         {{else}}{{$ub := .Errs.url}}<div class="web-row"><div class="f{{if $ub}} invalid{{end}}"><label>{{t "artf.url.label"}}<input type="url" name="url" value="{{.F.URL}}" inputmode="url" autocomplete="off" placeholder="https://…" data-fetch-url aria-describedby="{{if $ub}}err-url {{end}}hint-url"{{if eq .FirstErr "url"}} autofocus aria-invalid="true"{{end}}></label></div><button class="button secondary" type="submit" name="fetch" value="1" data-fetch data-busy="{{.Waiting}}" data-waiting="{{t "artf.url.waiting"}}" data-waiting-small="{{t "artf.url.waiting.small"}}">{{t "artf.url.fetch"}}</button></div>
         {{template "aferr" (dict "Name" "url" "Text" $ub)}}
         <p class="hint" id="hint-url">{{t "artf.url.hint"}}</p>{{end}}

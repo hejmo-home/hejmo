@@ -1,6 +1,6 @@
 # 0014. HTTPS and certificates
 
-- Status: Accepted
+- Status: Accepted, amended by [0024](0024-offline-mode-and-the-one-door-to-the-outside.md)
 - Date: 14/11/2026
 
 ## Context

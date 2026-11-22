@@ -16,6 +16,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -134,6 +135,7 @@ func TestWriteBackToAnICloudShapedServerKeepsRepeatedLinesAndNeedsNoETagInTheAns
 		t.Fatal(err)
 	}
 	svc := calsync.New(db, nil, func() time.Time { return clock })
+	svc.SetGate(outbound.AllowAll())
 	ctx := context.Background()
 	if err := svc.Sync(ctx, h.ID, cal.ID); err != nil {
 		t.Fatal(err)

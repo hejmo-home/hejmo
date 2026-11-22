@@ -11,7 +11,6 @@ import (
 	"io"
 	"io/fs"
 	"log/slog"
-	"net"
 	"net/http"
 	"slices"
 	"strings"
@@ -20,6 +19,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey"
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/pki"
@@ -70,14 +70,22 @@ type Options struct {
 	// Pictures downloads the web images of own articles (ticket 164). Nil means
 	// a fetcher that only reaches public addresses; tests pass one that reaches their own server.
 	Pictures *picture.Fetcher
+	// Gate is the box's door to the outside (ticket 201). Nil means a gate
+	// backed by DB, which is what the box uses.
+	Gate *outbound.Gate
 	// Resolver looks up the name of the box's LAN address in the router, to
 	// prefill the router name of the HTTPS step (decision Q92). Nil means the
-	// system resolver; tests pass a fake.
+	// resolver of the home network (package outbound); tests pass a fake.
 	Resolver NameResolver
 	// Now returns the current time. Nil means time.Now.
 	Now func() time.Time
 	// Logger receives errors. Nil means slog.Default().
 	Logger *slog.Logger
+	// Kiosk is the runner that sets the brightness of displays with a kiosk
+	// app (ticket 179). The settings page reads its state and a touch on a
+	// quiet display wakes it through it. Nil means displays are not driven:
+	// no state is shown and a touch wakes nothing.
+	Kiosk *KioskRunner
 }
 
 // PublicHTTPS is the box's publicly trusted certificate, set up through the
@@ -124,12 +132,14 @@ type server struct {
 	opens      *loginLimiter // pairing screens opened, per client address
 	sync       *calsync.Service
 	weather    *weather.Service
-	places     *places.List // the list of places on the box, loaded at start-up (ADR 0023)
+	gate       *outbound.Gate // every connection to the outside, and its switches
+	places     *places.List   // the list of places on the box, loaded at start-up (ADR 0023)
 	live       time.Duration
 	countWait  time.Duration
 	done       <-chan struct{}
 	updateDir  string
-	photos     *photoBox // nil without a data directory for photos
+	kiosk      *KioskRunner // nil when displays are not driven
+	photos     *photoBox    // nil without a data directory for photos
 	flashTexts flashTexts
 	// pictures holds pictures made from an upload or a web image until their article is saved (ticket 164).
 	pictures pendingPictures
@@ -154,7 +164,7 @@ func New(opts Options) http.Handler {
 		s.httpsPort = "443"
 	}
 	if s.resolver = opts.Resolver; s.resolver == nil {
-		s.resolver = net.DefaultResolver
+		s.resolver = outbound.HomeResolver{}
 	}
 	if s.now == nil {
 		s.now = time.Now
@@ -162,16 +172,21 @@ func New(opts Options) http.Handler {
 	if s.logger == nil {
 		s.logger = slog.Default()
 	}
+	if s.gate = opts.Gate; s.gate == nil {
+		s.gate = outbound.New(s.db.Outbound(), s.db.Outbound())
+	}
 	if s.sync = opts.Sync; s.sync == nil {
 		s.sync = calsync.New(s.db, nil, s.now)
+		s.sync.SetGate(s.gate)
 	}
 	if s.weather = opts.Weather; s.weather == nil {
-		s.weather = weather.New(weather.WithClock(s.now))
+		s.weather = weather.New(weather.WithClock(s.now), weather.WithGate(s.gate))
 	}
 	if s.fetcher = opts.Pictures; s.fetcher == nil {
-		s.fetcher = &picture.Fetcher{}
+		s.fetcher = &picture.Fetcher{Gate: s.gate}
 	}
 	s.done = opts.Done
+	s.kiosk = opts.Kiosk
 	s.updateDir = opts.UpdateDir
 	if opts.PhotoDir != "" {
 		s.photos = newPhotoBox(opts.PhotoDir)
@@ -204,6 +219,8 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /setup/https", s.handleHTTPSSubmit)
 	mux.HandleFunc("POST /setup/https/public", s.handlePublicHTTPSSubmit)
 	mux.HandleFunc("GET /setup/https/check", s.handleNameCheck)
+	mux.HandleFunc("GET /setup/offline", s.handleOfflineQuestion)
+	mux.HandleFunc("POST /setup/offline", s.handleOfflineAnswer)
 	mux.HandleFunc("POST /setup/https/own-ca", s.handleSwitchToOwnCA)
 	mux.HandleFunc("GET /ca", s.handleTrustPage)
 	mux.HandleFunc("GET /ca/hejmo-ca.crt", s.handleCACert)
@@ -325,6 +342,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /routines/templates/{id}/steps/{step}/delete", s.handleTemplateStepDelete)
 	mux.HandleFunc("GET /settings/lists", s.handleListsSettings)
 	mux.HandleFunc("POST /settings/lists", s.handleListsSettingsSave)
+	mux.HandleFunc("POST /settings/lists/units", s.handleUnitsSave)
 	mux.HandleFunc("GET /settings/lists/library", s.handleLibrary)
 	mux.HandleFunc("GET /settings/lists/library/new", s.handleArticleNew)
 	mux.HandleFunc("POST /settings/lists/library", s.handleArticleCreate)
@@ -340,8 +358,12 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /lists", s.handleListCreate)
 	mux.HandleFunc("GET /lists/{id}", s.handleListPage)
 	mux.HandleFunc("POST /lists/{id}/settings", s.handleListSettings)
+	mux.HandleFunc("POST /me/list-view", s.handleListView)
 	mux.HandleFunc("POST /lists/{id}/delete", s.handleListDelete)
 	mux.HandleFunc("POST /lists/{id}/entries", s.handleEntryAdd)
+	mux.HandleFunc("GET /lists/{id}/suggest", s.handleListSuggest)
+	mux.HandleFunc("GET /lists/{id}/quantity", s.handleListQuantity)
+	mux.HandleFunc("POST /lists/{id}/entries/{entry}/quantity", s.handleEntryQuantity)
 	mux.HandleFunc("POST /lists/{id}/entries/{entry}/done", s.handleEntryDone)
 	mux.HandleFunc("POST /lists/{id}/entries/{entry}/delete", s.handleEntryDelete)
 	mux.HandleFunc("POST /lists/{id}/entries/{entry}/move", s.handleEntryMove)
@@ -374,6 +396,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /display/state", s.handleDisplayState)
 	mux.HandleFunc("GET /display/view", s.handleDisplayView)
 	mux.HandleFunc("GET /display/events", s.handleDisplayEvents)
+	mux.HandleFunc("POST /display/wake", s.handleDisplayWake)
 	mux.HandleFunc("GET /display/saver", s.handleDisplaySaver)
 	mux.HandleFunc("GET /display/saver/photos", s.serveDisplaySaver)
 	mux.HandleFunc("GET /display/photo/{id}", s.serveDisplayPhoto)
@@ -385,6 +408,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /display/lists/{id}", s.handleDisplayList)
 	mux.HandleFunc("GET /display/lists/{id}/view", s.handleDisplayListView)
 	mux.HandleFunc("POST /display/lists/{id}/entries", s.handleDisplayEntryAdd)
+	mux.HandleFunc("GET /display/lists/{id}/suggest", s.handleDisplayListSuggest)
+	mux.HandleFunc("GET /display/lists/{id}/quantity", s.handleDisplayListQuantity)
+	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/quantity", s.handleDisplayEntryQuantity)
+	mux.HandleFunc("POST /display/list-view", s.handleDisplayListViewChoice)
+	mux.HandleFunc("GET /display/articles/{id}/picture", s.handleDisplayArticlePicture)
 	mux.HandleFunc("POST /display/lists/{id}/entries/{entry}/done", s.handleDisplayEntryDone)
 	mux.HandleFunc("POST /display/lists/{id}/completed/delete", s.handleDisplayTickedDelete)
 	mux.HandleFunc("GET /displays", s.handleDisplaysPage)
@@ -396,6 +424,12 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /settings/licences", s.handleLicences)
 	mux.HandleFunc("GET /settings/household", s.handleSettingsPage)
 	mux.HandleFunc("POST /settings/household", s.handleSettingsSave)
+	mux.HandleFunc("GET /settings/connections", s.handleConnectionsPage)
+	mux.HandleFunc("POST /settings/connections", s.handleConnectionsSave)
+	mux.HandleFunc("GET /settings/connections/offline", s.handleOfflineOnPage)
+	mux.HandleFunc("POST /settings/connections/offline", s.handleOfflineOn)
+	mux.HandleFunc("GET /settings/connections/online", s.handleOnlinePage)
+	mux.HandleFunc("POST /settings/connections/online", s.handleOnline)
 	mux.HandleFunc("GET /settings/https", s.handleHTTPSSettings)
 	mux.HandleFunc("POST /settings/https", s.handleHTTPSSettingsSave)
 	mux.HandleFunc("GET /phones", s.handlePhonesPage)

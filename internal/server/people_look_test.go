@@ -50,6 +50,7 @@ const (
 // name that person on hover and focus (tooltip and accessible name); free ones
 // say "free".
 func TestLookOptionsNameWhoUsesThemAndFadeTheTaken(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	p.add(t, "Papa", "parent") // blue, empty circle; Mama has terracotta, filled circle
 	for _, page := range []string{p.en("/people").body, p.en("/people/" + p.byName(t, "Papa")["id"].(string)).body} {
@@ -78,6 +79,7 @@ func TestLookOptionsNameWhoUsesThemAndFadeTheTaken(t *testing.T) {
 }
 
 func TestLookOptionsAreNamedInGerman(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	r := p.do(http.MethodGet, "/people", nil, map[string]string{"Accept-Language": "de"})
 	colors, shapes := lookOptions(r.body, "color"), lookOptions(r.body, "shape")
@@ -95,6 +97,7 @@ func TestLookOptionsAreNamedInGerman(t *testing.T) {
 // Acceptance: a colour and marker pair that would be refused is disabled; the
 // current choice is never disabled, so a refused form still shows the error.
 func TestLookPairsThatWouldBeRefusedAreDisabled(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	papa := p.add(t, "Papa", "parent")
 	jonas := p.add(t, "Jonas", "child")
@@ -141,6 +144,7 @@ func TestLookPairsThatWouldBeRefusedAreDisabled(t *testing.T) {
 // Without JavaScript the server still refuses the pair, with the field error,
 // even when a disabled option is posted by hand.
 func TestRefusalStaysOnTheServer(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mama := p.byName(t, "Mama")
 	id := p.add(t, "Mia", "child")["id"].(string)
@@ -158,6 +162,7 @@ func TestRefusalStaysOnTheServer(t *testing.T) {
 // The script keeps the disabled options in step while choosing: every option
 // carries what it is taken with.
 func TestLookOptionsCarryWhatTheyAreTakenWith(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	page := p.en("/people").body
 	if !strings.Contains(page, `data-taken-with="circle-filled"`) || !strings.Contains(page, `data-taken-with="`+terracotta+`"`) {
@@ -168,6 +173,7 @@ func TestLookOptionsCarryWhatTheyAreTakenWith(t *testing.T) {
 // A person stored with a colour outside the palette can be renamed on the web
 // page too, also when the form sends the stored colour and marker back.
 func TestWebRenamesAPersonWithALegacyLook(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	h, _ := p.db.HomeHousehold()
 	legacy, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#123456", Shape: "circle-empty"})
@@ -228,6 +234,7 @@ func (p peopleBox) preselected(t *testing.T, id, name string) url.Values {
 // Acceptance 3 for a legacy colour: changing only the marker must not give the
 // person the colour slot and marker another person has.
 func TestWebLegacyColourWithOnlyTheMarkerChangedCannotCopyAnotherLook(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	h, _ := p.db.HomeHousehold()
 	oma, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#123456", Shape: "square-empty"})
@@ -248,6 +255,7 @@ func TestWebLegacyColourWithOnlyTheMarkerChangedCannotCopyAnotherLook(t *testing
 // Acceptance 3 for a person without a marker: changing only the colour must not
 // give them the colour and the marker the pages show for another person.
 func TestWebPersonWithoutMarkerWithOnlyTheColourChangedCannotCopyAnotherLook(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	h, _ := p.db.HomeHousehold()
 	oma, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#5559A3"})
@@ -268,6 +276,7 @@ func TestWebPersonWithoutMarkerWithOnlyTheColourChangedCannotCopyAnotherLook(t *
 // stored: a person with a legacy colour and no marker shows the blue of their
 // place and the empty circle.
 func TestLookOptionsFollowTheDisplayedLookOfLegacyPeople(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	h, _ := p.db.HomeHousehold()
 	if _, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#123456"}); err != nil {
@@ -291,6 +300,7 @@ func TestLookOptionsFollowTheDisplayedLookOfLegacyPeople(t *testing.T) {
 // Editing one half of a legacy person's look through the API stores the
 // palette values, like the web page: the colour they show, not the legacy hex.
 func TestAPILegacyColourWithOnlyTheMarkerChangedIsStoredAsPaletteColour(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	h, _ := p.db.HomeHousehold()
 	oma, err := p.db.AddPerson(h.ID, store.Person{Name: "Oma", Role: store.RoleParent, Color: "#123456", Shape: "circle-empty"})

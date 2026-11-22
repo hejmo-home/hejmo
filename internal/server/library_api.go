@@ -10,6 +10,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/library"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -107,6 +108,8 @@ func (s *server) pictureErrorJSON(w http.ResponseWriter, field string, err error
 	var big *picture.TooLargeError
 	var status *picture.StatusError
 	switch {
+	case errors.Is(err, outbound.ErrRefused):
+		writeFieldError(w, http.StatusConflict, field, "web images are switched off (offline mode, or the connection \"images\" is off): see GET /outbound")
 	case errors.As(err, &private):
 		writeFieldError(w, http.StatusUnprocessableEntity, field, "the address leads to the own network ("+private.Addr+"), not to the internet; only public addresses are loaded")
 	case errors.As(err, &big):
@@ -321,7 +324,7 @@ func (s *server) apiCopyArticle(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	lang := s.langOf(r)
-	active := s.activeUnits(p.household.ID)
+	active := s.activeUnits(p.household)
 	own := store.OwnArticle{Name: a.Name(lang), Dept: a.Dept, Kind: string(a.Kind), Allergens: a.Allergens, Unit1: s.offeredUnits(p, a)[0]}
 	if len(a.Units) > 1 && slices.Contains(active, a.Units[1]) && a.Units[1] != own.Unit1 {
 		own.Unit2 = a.Units[1]

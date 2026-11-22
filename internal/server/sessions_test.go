@@ -152,6 +152,7 @@ func inOrder(t *testing.T, page string, parts ...string) {
 }
 
 func TestSettingsHubListsSignedInDevicesForParents(t *testing.T) {
+	t.Parallel()
 	s := newSessionsBox(t)
 	if r := s.mama.get("/settings", "en"); !strings.Contains(r.body, `href="/sessions"`) || !strings.Contains(r.body, "Signed-in devices") {
 		t.Fatalf("hub has no row for the sessions:\n%s", r.body)
@@ -162,6 +163,7 @@ func TestSettingsHubListsSignedInDevicesForParents(t *testing.T) {
 }
 
 func TestSessionsListGroupsBrowsersByPerson(t *testing.T) {
+	t.Parallel()
 	s := newSessionsBox(t)
 	r := s.mama.get("/sessions", "en")
 	if r.status != http.StatusOK {
@@ -193,6 +195,7 @@ func TestSessionsListGroupsBrowsersByPerson(t *testing.T) {
 }
 
 func TestSessionsListSaysWhenOnlyThisBrowserIsSignedIn(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	fresh(t, b)
 	mama := newBrowser(b, uaWindowsEdge)
@@ -210,6 +213,7 @@ func TestSessionsListSaysWhenOnlyThisBrowserIsSignedIn(t *testing.T) {
 }
 
 func TestSessionsOfBeforeTheMigrationShowAsUnknown(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	fresh(t, b)
 	mama := newBrowser(b, uaWindowsEdge)
@@ -226,6 +230,7 @@ func TestSessionsOfBeforeTheMigrationShowAsUnknown(t *testing.T) {
 }
 
 func TestSessionDetailOfAnotherBrowserOffersTheConfirmation(t *testing.T) {
+	t.Parallel()
 	s := newSessionsBox(t)
 	id := s.idOf(t, "android_phone|chrome")
 	r := s.mama.get("/sessions/"+id, "de")
@@ -247,6 +252,7 @@ func TestSessionDetailOfAnotherBrowserOffersTheConfirmation(t *testing.T) {
 }
 
 func TestSessionDetailOfTheOwnBrowserOffersSignOutNotEnding(t *testing.T) {
+	t.Parallel()
 	s := newSessionsBox(t)
 	id := s.idOf(t, "mac|firefox")
 	r := s.mama.get("/sessions/"+id, "de")
@@ -260,6 +266,7 @@ func TestSessionDetailOfTheOwnBrowserOffersSignOutNotEnding(t *testing.T) {
 
 // T8: parent A ends parent B's browser session; B's next request is refused.
 func TestParentEndsAnotherParentsBrowserSession(t *testing.T) {
+	t.Parallel()
 	s := newSessionsBox(t)
 	id := s.idOf(t, "android_phone|chrome")
 	if r := s.papa.get("/settings", "en"); r.status != http.StatusOK {
@@ -307,6 +314,7 @@ func TestParentEndsAnotherParentsBrowserSession(t *testing.T) {
 }
 
 func TestLoginPageHasNoNoticeForAVisitorWithoutASession(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	if r := newBrowser(b, uaWindowsEdge).get("/login", "en"); strings.Contains(r.body, "no longer signed in") {
 		t.Errorf("a new visitor sees the signed-out notice")
@@ -314,6 +322,7 @@ func TestLoginPageHasNoNoticeForAVisitorWithoutASession(t *testing.T) {
 }
 
 func TestEndingTheOwnBrowserSessionIsRefused(t *testing.T) {
+	t.Parallel()
 	s := newSessionsBox(t)
 	id := s.idOf(t, "mac|firefox")
 	r := s.mama.post("/sessions/"+id+"/end", url.Values{})
@@ -326,6 +335,7 @@ func TestEndingTheOwnBrowserSessionIsRefused(t *testing.T) {
 }
 
 func TestEndingASessionThatIsGoneIsACalmNotice(t *testing.T) {
+	t.Parallel()
 	s := newSessionsBox(t)
 	id := s.idOf(t, "iphone|safari")
 	s.mama.post("/sessions/"+id+"/end", url.Values{})
@@ -348,6 +358,7 @@ func TestEndingASessionThatIsGoneIsACalmNotice(t *testing.T) {
 }
 
 func TestExpiredSessionsAreNotListed(t *testing.T) {
+	t.Parallel()
 	s := newSessionsBox(t)
 	id := s.idOf(t, "android_phone|chrome")
 	s.now = time.Date(2026, 12, 12, 12, 0, 0, 0, time.UTC) // Papa's signs out by itself on 11/12
@@ -362,6 +373,7 @@ func TestExpiredSessionsAreNotListed(t *testing.T) {
 }
 
 func TestSessionPagesAreForSignedInParentsOnly(t *testing.T) {
+	t.Parallel()
 	s := newSessionsBox(t)
 	id := s.idOf(t, "android_phone|chrome")
 	anon := newBrowser(s.box, uaWindowsEdge)
@@ -403,6 +415,7 @@ func TestSessionPagesAreForSignedInParentsOnly(t *testing.T) {
 // A parent on a paired phone has no browser session of their own: with one
 // other browser signed in, "only this browser" would be wrong.
 func TestSessionsListOnAPairedPhoneDoesNotClaimItIsTheOnlyBrowser(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	fresh(t, b)
 	h, _ := b.db.HomeHousehold()
@@ -422,6 +435,7 @@ func TestSessionsListOnAPairedPhoneDoesNotClaimItIsTheOnlyBrowser(t *testing.T) 
 }
 
 func TestSessionsListSaysWhenNoBrowserIsSignedIn(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	fresh(t, b)
 	h, _ := b.db.HomeHousehold()
@@ -441,6 +455,7 @@ func TestSessionsListSaysWhenNoBrowserIsSignedIn(t *testing.T) {
 }
 
 func TestEndingASessionNeedsTheSameOrigin(t *testing.T) {
+	t.Parallel()
 	s := newSessionsBox(t)
 	id := s.idOf(t, "android_phone|chrome")
 	req, _ := http.NewRequest(http.MethodPost, s.srv.URL+"/sessions/"+id+"/end", strings.NewReader(""))
@@ -460,6 +475,7 @@ func TestEndingASessionNeedsTheSameOrigin(t *testing.T) {
 
 // Only keys are stored: the User-Agent is never kept or shown.
 func TestTheRawUserAgentIsNeverStoredOrShown(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	fresh(t, b)
 	odd := newBrowser(b, sessionsSecretUA)
@@ -478,6 +494,7 @@ func TestTheRawUserAgentIsNeverStoredOrShown(t *testing.T) {
 // The breadcrumb trail is the first thing inside main (ADR 0017, ticket 182). The detail
 // page's trail is covered by TestSessionDetailOfAnotherBrowserOffersTheConfirmation.
 func TestTrailSitsInsideMain(t *testing.T) {
+	t.Parallel()
 	s := newSessionsBox(t)
 	for _, path := range []string{"/sessions", "/phones", "/account"} {
 		body := s.mama.get(path, "en").body

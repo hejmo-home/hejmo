@@ -138,6 +138,15 @@ func (s *server) handleHTTPSForm(w http.ResponseWriter, r *http.Request) {
 	case "own":
 		way = httpsOwn
 	}
+	// Right after "Only in the home network" the wizard asks whether the box
+	// stays fully offline (ticket 201, Q142); a public name needs the internet,
+	// so choosing it takes an earlier "yes" back.
+	if own := way == httpsOwn || s.public == nil; own && !s.outboundBox().Asked {
+		s.renderOfflineQuestion(w, r, http.StatusOK, false)
+		return
+	} else if !own {
+		s.takeOfflineAnswerBack()
+	}
 	// "Continue" without a choice (the form sends next=1, no way is preselected):
 	// the choice again, with the error under the cards.
 	if way == httpsChoice && r.URL.Query().Get("next") != "" && s.public != nil {
@@ -243,6 +252,7 @@ func (s *server) handlePublicHTTPSSubmit(w http.ResponseWriter, r *http.Request)
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
 	}
+	s.takeOfflineAnswerBack() // the DNS service is refused while offline
 	trim := func(k string) string { return strings.TrimSpace(r.PostFormValue(k)) }
 	req := publiccert.Request{
 		Name: strings.ToLower(trim("name")), Provider: trim("provider"), Token: trim("token"), Issuer: trim("issuer"),
@@ -356,11 +366,35 @@ func (s *server) handleSwitchToOwnCA(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/setup/https", http.StatusSeeOther)
 		return
 	}
+	// Choosing the public name took the offline answer back, so the wizard
+	// asks again (ticket 201, Q142). The browser is on plain HTTP here, so the
+	// question is answered at this address, not at /setup/offline.
+	asked, offline := s.outboundBox().Asked, false
+	if !asked {
+		switch r.PostFormValue("offline") {
+		case "on":
+			offline = true
+		case "off":
+		case "":
+			s.renderOfflineQuestionAt(w, r, http.StatusOK, false, "/setup/https/own-ca")
+			return
+		default:
+			s.renderOfflineQuestionAt(w, r, http.StatusUnprocessableEntity, true, "/setup/https/own-ca")
+			return
+		}
+	}
 	if err := s.public.Clear(); err != nil {
 		s.fail(w, "forget public HTTPS setup", err)
 		return
 	}
-	s.provisionOwnCA(w, r, "")
+	// The answer is stored last: if the public setup could not be forgotten or
+	// the own CA not made, the question stays open and a retry asks again.
+	s.provisionOwnCA(w, r, "", func() error {
+		if asked {
+			return nil
+		}
+		return s.db.AnswerOfflineQuestion(offline, s.now())
+	})
 }
 
 func (s *server) apiHTTPS(w http.ResponseWriter, r *http.Request, _ principal) {
@@ -455,10 +489,12 @@ func (s *server) handleHTTPSSubmit(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 	}
-	s.provisionOwnCA(w, r, router)
+	s.provisionOwnCA(w, r, router, nil)
 }
 
-func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request, routerName string) {
+// provisionOwnCA makes the box's own CA and certificate and sends the browser
+// on to the trust page. after, if set, runs once that worked.
+func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request, routerName string, after func() error) {
 	if err := s.pki.ProvisionWithRouterName(hostOf(r), routerName, s.now()); err != nil {
 		if errors.Is(err, pki.ErrInvalidHost) {
 			s.renderHTTPSStep(w, r, http.StatusBadRequest, httpsOwn, publicForm{Issuer: publiccert.LetsEncrypt}, httpsError{Key: "setup.https.invalidhost"})
@@ -466,6 +502,12 @@ func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request, routerNa
 		}
 		s.fail(w, "provision HTTPS", err)
 		return
+	}
+	if after != nil {
+		if err := after(); err != nil {
+			s.fail(w, "offline answer", err)
+			return
+		}
 	}
 	http.Redirect(w, r, "/ca", http.StatusSeeOther)
 }

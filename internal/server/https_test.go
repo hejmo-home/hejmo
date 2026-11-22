@@ -14,6 +14,7 @@ const iPhone = "Mozilla/5.0 (iPhone; CPU iPhone OS 19_0 like Mac OS X) AppleWebK
 // Acceptance: Given a fresh box, when the wizard runs, then no parent password
 // can be set before HTTPS works.
 func TestFreshBoxAsksForHTTPSBeforeAnyPassword(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 
 	// The first page says what is coming and leads to the HTTPS step; it
@@ -32,6 +33,7 @@ func TestFreshBoxAsksForHTTPSBeforeAnyPassword(t *testing.T) {
 }
 
 func TestHTTPSStepIsSpokenInBothLanguages(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	de := b.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": "de"})
 	en := b.do(http.MethodGet, "/setup/https", nil, map[string]string{"Accept-Language": "en"})
@@ -44,6 +46,7 @@ func TestHTTPSStepIsSpokenInBothLanguages(t *testing.T) {
 }
 
 func TestCreatingTheCertificateAuthorityUnlocksThePasswordStepOverHTTPS(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := b.post("/setup/https", url.Values{})
 	if r.status != http.StatusSeeOther || r.location != "/ca" {
@@ -78,6 +81,7 @@ func TestCreatingTheCertificateAuthorityUnlocksThePasswordStepOverHTTPS(t *testi
 }
 
 func TestHTTPSStepRunsOnlyOnce(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	before := string(b.pki.CAPEM())
 	if r := b.post("/setup/https", url.Values{}); r.status != http.StatusSeeOther || r.location != "/setup" {
@@ -91,6 +95,7 @@ func TestHTTPSStepRunsOnlyOnce(t *testing.T) {
 // Acceptance: Given a box with HTTPS set up, when a client calls http://, then
 // it is redirected to https://.
 func TestHTTPRedirectsToHTTPS(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	plain := b.plainServer()
 	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
@@ -118,6 +123,7 @@ func TestHTTPRedirectsToHTTPS(t *testing.T) {
 }
 
 func TestRedirectKeepsAConfiguredPublicHTTPSPort(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.handler = serverWithHTTPSPort(b, "8443")
 	plain := b.plainServer()
@@ -134,6 +140,7 @@ func TestRedirectKeepsAConfiguredPublicHTTPSPort(t *testing.T) {
 
 // Everything else is redirected (ADR 0014).
 func TestPlainHTTPRedirectsEverythingButTheTrustSteps(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	plain := b.plainServer()
 	client := &http.Client{CheckRedirect: func(*http.Request, []*http.Request) error { return http.ErrUseLastResponse }}
@@ -156,6 +163,7 @@ func TestPlainHTTPRedirectsEverythingButTheTrustSteps(t *testing.T) {
 // files are public and identical on every box: serving them in the clear
 // leaks nothing.
 func TestTrustPageRendersStyledOverPlainHTTP(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	plain := b.plainServer()
 	page, err := http.Get(plain.URL + "/ca")
@@ -180,6 +188,7 @@ func TestTrustPageRendersStyledOverPlainHTTP(t *testing.T) {
 }
 
 func TestPlainHTTPStillServesWhatPhonesNeedBeforeTheyTrustTheBox(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	plain := b.plainServer()
 	for _, path := range []string{"/healthz", "/ca", "/ca/hejmo-ca.crt", "/ca/hejmo.mobileconfig"} {
@@ -197,6 +206,7 @@ func TestPlainHTTPStillServesWhatPhonesNeedBeforeTheyTrustTheBox(t *testing.T) {
 // Acceptance: Given an iPhone, when the parent opens the profile download, then
 // a valid configuration profile with the CA is served.
 func TestIPhoneGetsAConfigurationProfileWithTheCA(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	req, _ := http.NewRequest(http.MethodGet, b.srv.URL+"/ca/hejmo.mobileconfig", nil)
 	req.Header.Set("User-Agent", iPhone)
@@ -225,6 +235,7 @@ func TestIPhoneGetsAConfigurationProfileWithTheCA(t *testing.T) {
 }
 
 func TestCACertificateDownload(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.get("/ca/hejmo-ca.crt")
 	if r.status != http.StatusOK || r.body != string(b.pki.CAPEM()) {
@@ -247,6 +258,7 @@ const (
 // and shows its four steps first; the other devices are links. The only main
 // button of the page is the download in step 1.
 func TestTrustPageDetectsTheDeviceAndShowsItsFourSteps(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	cases := []struct {
 		name, ua, current string
@@ -289,6 +301,7 @@ func TestTrustPageDetectsTheDeviceAndShowsItsFourSteps(t *testing.T) {
 
 // ?device= overrides the detection; unknown values and unknown agents fall back.
 func TestTrustPageDeviceOverrideAndFallback(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.trustPage("/ca?device=windows", "de", iPhone)
 	if !strings.Contains(r.body, "Windows: 4 Schritte") || strings.Contains(r.body, "Erkannt:") || !strings.Contains(r.body, "Gewählt: Windows.") {
@@ -315,6 +328,7 @@ func TestTrustPageDeviceOverrideAndFallback(t *testing.T) {
 
 // ChromeOS has no update-ca-certificates: it is not guessed as Linux.
 func TestChromeOSIsNotTakenForLinux(t *testing.T) {
+	t.Parallel()
 	const crOS = "Mozilla/5.0 (X11; CrOS x86_64 14541.0.0) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
 	r := newBox(t).trustPage("/ca", "de", crOS)
 	if !strings.Contains(r.body, "nicht erkannt") {
@@ -327,6 +341,7 @@ func TestChromeOSIsNotTakenForLinux(t *testing.T) {
 
 // An iPad is not called an iPhone in the check lines, Firefox on Android gets its note, and the Mac button is clicked.
 func TestTrustTextsForIPadFirefoxAndMac(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	ios := b.trustPage("/ca?device=ios", "de", iPhone)
 	if strings.Contains(ios.body, "Dein iPhone vertraut") || strings.Contains(ios.body, "iPhone ist nicht") {
@@ -343,6 +358,7 @@ func TestTrustTextsForIPadFirefoxAndMac(t *testing.T) {
 // The iOS steps work on an iPad too, so they never say "das iPhone"; Windows
 // shows only SHA-1 at install time, so it gets no "compare, else do not install" hint.
 func TestTrustTextsFitIPadAndWindows(t *testing.T) {
+	t.Parallel()
 	const iPad = "Mozilla/5.0 (iPad; CPU OS 19_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1"
 	b := newBox(t)
 	ipad := b.trustPage("/ca", "de", iPad)
@@ -364,6 +380,7 @@ func TestTrustTextsFitIPadAndWindows(t *testing.T) {
 }
 
 func TestDetectsDevicesFromTheUserAgent(t *testing.T) {
+	t.Parallel()
 	for ua, want := range map[string]string{iPhone: "ios", androidUA: "android", macUA: "mac", windowsUA: "windows", linuxUA: "linux"} {
 		b := newBox(t)
 		if r := b.trustPage("/ca", "en", ua); !strings.Contains(r.body, `href="?device=`+want+`" aria-current="true"`) {
@@ -376,6 +393,7 @@ func TestDetectsDevicesFromTheUserAgent(t *testing.T) {
 // static/https-check.js): the HTTPS address it asks, the lines that tell the
 // state in words, and the way on, which stays hidden until the check passes.
 func TestTrustPageChecksByItselfAndContinuesOnlyWhenTrusted(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	host := strings.TrimPrefix(b.srv.URL, "https://")
 	host = host[:strings.LastIndex(host, ":")]
@@ -415,6 +433,7 @@ func TestTrustPageChecksByItselfAndContinuesOnlyWhenTrusted(t *testing.T) {
 // A phone on its way to pair keeps its target and its label; the box does not
 // pretend it is the wizard.
 func TestTrustPageKeepsThePairingTargetAndHasNoWizardAfterSetup(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	host := strings.TrimPrefix(c.b.srv.URL, "https://")
 	host = host[:strings.LastIndex(host, ":")] // the box answers on the default HTTPS port in its links
@@ -437,6 +456,7 @@ func TestTrustPageKeepsThePairingTargetAndHasNoWizardAfterSetup(t *testing.T) {
 
 // During the first setup the trust page is step 1 of the wizard.
 func TestTrustPageIsStepOneOfTheWizard(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.post("/setup/https", url.Values{})
 	r := b.trustPage("/ca", "de", macUA)
@@ -454,6 +474,7 @@ func TestTrustPageIsStepOneOfTheWizard(t *testing.T) {
 // to find it on this device; Windows only shows SHA-1, so it says comparing
 // is not possible there.
 func TestTrustPageFingerprintInPlainWords(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	fp := b.pki.CAFingerprint()
 	pairs := strings.Split(fp, ":")
@@ -476,6 +497,7 @@ func TestTrustPageFingerprintInPlainWords(t *testing.T) {
 }
 
 func TestTrustPageShowsTheCAFingerprint(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	if r := b.get("/ca"); !strings.Contains(r.body, b.pki.CAFingerprint()) {
 		t.Errorf("trust page misses the CA fingerprint:\n%s", r.body)
@@ -483,6 +505,7 @@ func TestTrustPageShowsTheCAFingerprint(t *testing.T) {
 }
 
 func TestHTTPSStepRefusesNamesThatCannotGoIntoACertificate(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	r := b.do(http.MethodPost, "/setup/https", url.Values{}, map[string]string{"Host": "hejmo", "Origin": "http://hejmo"})
 	if r.status != http.StatusBadRequest {
@@ -497,6 +520,7 @@ func TestHTTPSStepRefusesNamesThatCannotGoIntoACertificate(t *testing.T) {
 }
 
 func TestTrustPageNeedsHTTPSToBeSetUp(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	if r := b.get("/ca"); r.status != http.StatusSeeOther || r.location != "/setup/https" {
 		t.Fatalf("GET /ca before HTTPS = %d %q", r.status, r.location)
@@ -507,6 +531,7 @@ func TestTrustPageNeedsHTTPSToBeSetUp(t *testing.T) {
 }
 
 func TestRefusedNameIsExplainedInBothLanguages(t *testing.T) {
+	t.Parallel()
 	for lang, want := range map[string]string{"de": "kann nicht für HTTPS verwendet werden", "en": "cannot be used for HTTPS"} {
 		b := newFreshBox(t)
 		r := b.do(http.MethodPost, "/setup/https", url.Values{}, map[string]string{"Host": "hejmo", "Origin": "http://hejmo", "Accept-Language": lang})
@@ -520,6 +545,7 @@ func TestRefusedNameIsExplainedInBothLanguages(t *testing.T) {
 // it over plain HTTP before it trusts the box: the flags and the switch itself
 // must work there instead of redirecting to the untrusted HTTPS address.
 func TestLanguageSwitcherWorksOnTheTrustPageOverPlainHTTP(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	plain := b.plainServer()
 	page, err := http.Get(plain.URL + "/ca")

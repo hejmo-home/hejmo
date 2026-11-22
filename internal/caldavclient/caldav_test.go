@@ -14,7 +14,7 @@ import (
 
 func client(t *testing.T, srv *caldavtest.Server, password string) *caldavclient.Client {
 	t.Helper()
-	c, err := caldavclient.NewClient(srv.URL, caldavtest.User, password, nil)
+	c, err := caldavclient.NewClient(srv.URL, caldavtest.User, password, openClient())
 	if err != nil {
 		t.Fatal(err)
 	}

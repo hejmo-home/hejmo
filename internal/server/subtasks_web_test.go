@@ -13,6 +13,7 @@ func pageEN(b *box, path string) resp {
 
 // Acceptance: Subtasks are editable in the web interface.
 func TestParentAddsEditsMovesAndRemovesSubtasksOnTheTaskPage(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id := tb.newDaily(t, tb.miaID)
@@ -65,6 +66,7 @@ func TestParentAddsEditsMovesAndRemovesSubtasksOnTheTaskPage(t *testing.T) {
 }
 
 func TestSubtaskFormErrorsAppearAtTheFieldAndKeepTheEmoji(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id := tb.newDaily(t, tb.miaID)
@@ -83,6 +85,7 @@ func TestSubtaskFormErrorsAppearAtTheFieldAndKeepTheEmoji(t *testing.T) {
 }
 
 func TestSubtaskLimitOfTenReplacesTheFormWithASentence(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id, _ := tb.schoolBag(t)
@@ -101,6 +104,7 @@ func TestSubtaskLimitOfTenReplacesTheFormWithASentence(t *testing.T) {
 // Parents tick single subtasks on the task page; the success line names the
 // consequence for the task and the stars. API parity with the REST routes.
 func TestParentTicksSubtasksOnTheTaskPageAndSeesTheConsequence(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id, subs := tb.schoolBag(t)
@@ -132,6 +136,7 @@ func TestParentTicksSubtasksOnTheTaskPageAndSeesTheConsequence(t *testing.T) {
 // The tasks page lists every subtask under its task and the tick button says
 // that it ticks all of them.
 func TestTasksPageListsSubtasksAndSaysWhatTheTickButtonDoes(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id, subs := tb.schoolBag(t)
@@ -156,6 +161,7 @@ func TestTasksPageListsSubtasksAndSaysWhatTheTickButtonDoes(t *testing.T) {
 // The "Aufgabe hinzufügen" form stays short: its success line links to the
 // subtasks of the new task.
 func TestNewTaskSuccessLineLinksToItsSubtasks(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {"Tidy room"}, "repeat": {"daily"}})
@@ -170,6 +176,7 @@ func TestNewTaskSuccessLineLinksToItsSubtasks(t *testing.T) {
 // Removing the last open subtask completes the task; the page says so before
 // the parent confirms.
 func TestRemoveSentenceNamesTheConsequenceOfRemovingTheLastOpenSubtask(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id, subs := tb.schoolBag(t)
@@ -192,6 +199,7 @@ func TestRemoveSentenceNamesTheConsequenceOfRemovingTheLastOpenSubtask(t *testin
 }
 
 func TestChildCannotEditSubtasksInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	cp := newChildPhone(t)
 	for _, path := range []string{"/tasks/" + cp.miaTask + "/subtasks", "/tasks/" + cp.miaTask + "/subtasks/x", "/tasks/" + cp.miaTask + "/subtasks/x/move", "/tasks/" + cp.miaTask + "/subtasks/x/delete"} {
 		if r := cp.screen.post(path, url.Values{"title": {"x"}}); r.status != http.StatusForbidden {
@@ -203,6 +211,7 @@ func TestChildCannotEditSubtasksInTheWebInterface(t *testing.T) {
 // With one subtask, removing it leaves a plain open task: no sentence about
 // completing the task.
 func TestRemoveSentenceIsNotShownForTheOnlySubtask(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id := tb.newDaily(t, tb.miaID)
@@ -218,6 +227,7 @@ func TestRemoveSentenceIsNotShownForTheOnlySubtask(t *testing.T) {
 
 // A refused edit shows the error at the field in that row, with what was typed.
 func TestSubtaskEditErrorsAppearInTheRowWithTheTypedValues(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id, subs := tb.schoolBag(t)

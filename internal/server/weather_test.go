@@ -31,6 +31,7 @@ var chipRe = regexp.MustCompile(`(?s)<span class="chip" data-weather[^>]*>.*?</s
 
 // 5.8: Given an Open-Meteo answer, the chip shows temperature and icon.
 func TestWeatherChipShowsTemperatureAndIcon(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	if p := f.view(t, "en", f.at(14, 8, 0)); strings.Contains(p, "data-weather") {
 		t.Fatal("weather chip before there is a reading")
@@ -51,6 +52,7 @@ func TestWeatherChipShowsTemperatureAndIcon(t *testing.T) {
 
 // ADR 0016: temperature unit and time format of the household apply on the display.
 func TestHeaderFollowsTheHouseholdSettings(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.homeWeather(t)
 	f.event(t, "Dentist", f.at(14, 15, 0), f.at(14, 15, 45), false, "Mama")
@@ -67,6 +69,7 @@ func TestHeaderFollowsTheHouseholdSettings(t *testing.T) {
 
 // 5.8: Given Open-Meteo unreachable, the chip shows the last value or hides, without errors.
 func TestWeatherChipKeepsTheLastValueThenHidesWhenOpenMeteoIsUnreachable(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.homeWeather(t)
 	f.meteo.set("oops", 503)
@@ -89,6 +92,7 @@ func TestWeatherChipKeepsTheLastValueThenHidesWhenOpenMeteoIsUnreachable(t *test
 
 // 5.8: the display never calls outside: the page carries no external address.
 func TestFamilyViewNamesNoExternalAddress(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.homeWeather(t)
 	p := f.view(t, "en", f.at(14, 8, 0))
@@ -101,6 +105,7 @@ func TestFamilyViewNamesNoExternalAddress(t *testing.T) {
 // script (ADR 0016): the state answer carries no chips any more, and the clock
 // chip tells the script its zone and time format.
 func TestStateCarriesNoChipsAndClockChipCarriesZoneAndFormat(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.now = f.at(14, 13, 5)
 	f.homeWeather(t)

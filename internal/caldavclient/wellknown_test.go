@@ -47,7 +47,7 @@ func wellKnownServer(t *testing.T, status int) (*httptest.Server, *[]string) {
 func TestCalendarsFollowWellKnownRedirectKeepingPropfind(t *testing.T) {
 	for _, status := range []int{301, 302, 303, 307, 308} {
 		srv, seen := wellKnownServer(t, status)
-		c, err := caldavclient.NewClient(srv.URL, "u", "p", nil)
+		c, err := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -79,7 +79,7 @@ func TestCalendarsFallBackWhenThereIsNoWellKnown(t *testing.T) {
 		}
 	}))
 	t.Cleanup(srv.Close)
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	cals, err := c.Calendars(context.Background())
 	if err != nil || len(cals) != 1 {
 		t.Fatalf("Calendars() = %+v, %v, want the calendar found at the address given", cals, err)
@@ -94,7 +94,7 @@ func TestCalendarsDoNotTryWellKnownForAnAddressWithAPath(t *testing.T) {
 		http.NotFound(w, r)
 	}))
 	t.Cleanup(srv.Close)
-	c, _ := caldavclient.NewClient(srv.URL+"/dav/", "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL+"/dav/", "u", "p", openClient())
 	_, _ = c.Calendars(context.Background())
 	if len(seen) != 1 || seen[0] != "/dav/" {
 		t.Fatalf("requests = %v, want only /dav/", seen)
@@ -107,7 +107,7 @@ func TestWellKnownRedirectToAForeignHostIsRefused(t *testing.T) {
 		http.Redirect(w, r, "http://evil.example.net/dav/", http.StatusMovedPermanently)
 	}))
 	t.Cleanup(srv.Close)
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	_, err := c.Calendars(context.Background())
 	var foreign *caldavclient.ForeignHostError
 	if !asForeign(err, &foreign) {
@@ -135,7 +135,7 @@ func TestCalendarsFallBackWhenWellKnownIsForbidden(t *testing.T) {
 		}
 	}))
 	t.Cleanup(srv.Close)
-	c, _ := caldavclient.NewClient(srv.URL, "u", "p", nil)
+	c, _ := caldavclient.NewClient(srv.URL, "u", "p", openClient())
 	cals, err := c.Calendars(context.Background())
 	if err != nil || len(cals) != 1 {
 		t.Fatalf("Calendars() = %+v, %v, want the calendar found at the address given", cals, err)

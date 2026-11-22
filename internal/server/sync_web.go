@@ -13,6 +13,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -60,11 +61,42 @@ func (s *server) syncStale(householdID string) bool {
 		return false
 	}
 	for _, c := range cals {
+		if !s.gate.Allowed(serviceOfKind(c.Kind)) {
+			continue // paused by offline mode or a switch: not a problem
+		}
 		if calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale {
 			return true
 		}
 	}
 	return false
+}
+
+// serviceOfKind is the connection a calendar kind goes through.
+func serviceOfKind(kind string) outbound.Service {
+	if kind == "caldav" {
+		return outbound.Calendars
+	}
+	return outbound.ICS
+}
+
+// pausedFlag is the word tag of a calendar or connection whose connection to
+// the outside is off, with its last sync: a state, not a problem (ticket 201).
+// It is nil if the connection is on.
+func (s *server) pausedFlag(r *http.Request, p principal, svc outbound.Service, last time.Time) *flagView {
+	var key string
+	switch s.gate.Verdict(svc) {
+	case outbound.VerdictAllowed:
+		return nil
+	case outbound.VerdictOffline:
+		key = "outside.paused"
+	default:
+		key = "outside.paused.off"
+	}
+	after := s.say(r, i18n.Msg("sync.never"))
+	if !last.IsZero() {
+		after = s.say(r, i18n.Msg("outside.paused.last", "when", p.dateTimeSeconds(last)))
+	}
+	return &flagView{Kind: "paused", Text: s.say(r, i18n.Msg(key)), After: after}
 }
 
 type logView struct{ At, Calendar, Kind, Message, Detail string }
@@ -76,6 +108,9 @@ var syncIntervals = []int{5, 15, 30, 60, 120, 360, 1440}
 // syncFlag is what a synced calendar's state says in words when something is
 // wrong: a refused login, a problem of the last run, or no success for a day.
 func (s *server) syncFlag(r *http.Request, p principal, c store.SyncedCalendar, fact bool) *flagView {
+	if f := s.pausedFlag(r, p, serviceOfKind(c.Kind), c.Sync.LastSuccess); f != nil {
+		return f
+	}
 	stale := calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale
 	problem := c.Sync.LastError.Key != ""
 	switch {
@@ -214,8 +249,16 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 		s.fail(w, "reconnect notice", err)
 		return
 	}
+	var offlineTop, connNote, icsNote *offlineNote
+	if s.offline() {
+		offlineTop = s.noteFor(r, outbound.Calendars, "outside.note.calendars")
+	} else {
+		connNote = s.noteFor(r, outbound.Calendars, "outside.note.connect")
+		icsNote = s.noteFor(r, outbound.ICS, "outside.note.subscribe")
+	}
 	data := map[string]any{
-		"Reconnect": notice,
+		"Reconnect":  notice,
+		"OfflineTop": offlineTop, "ConnNote": connNote, "ICSNote": icsNote,
 		"AutoColor": nextColors(taken, 1)[0],
 		"Person":    p.person, "Rows": subscribed, "ConnRows": connRows, "Log": log, "People": peopleChoices, "Groups": groupChoices,
 		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
@@ -257,6 +300,10 @@ func (s *server) connectionRow(r *http.Request, p principal, c store.Connection,
 		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("sync.last", "when", p.when(last)))})
 	case len(names) > 0:
 		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("sync.never"))})
+	}
+	if f := s.pausedFlag(r, p, outbound.Calendars, last); f != nil { // paused: the tag and the last sync replace the rest
+		row.Flag = f
+		row.Lines = row.Lines[:2]
 	}
 	return row
 }
@@ -318,6 +365,10 @@ func (s *server) handleCalendarsPage(w http.ResponseWriter, r *http.Request) {
 func (s *server) handleCalendarAdd(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
+		return
+	}
+	if !s.gate.Allowed(outbound.ICS) { // the page says why there is no form
+		http.Redirect(w, r, "/calendars", http.StatusSeeOther)
 		return
 	}
 	_ = r.ParseForm()

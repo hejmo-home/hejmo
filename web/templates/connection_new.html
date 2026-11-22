@@ -5,7 +5,9 @@
   {{$icUser := ""}}{{$cdUser := ""}}{{$cdURL := ""}}
   {{if eq .Service "icloud"}}{{$icUser = .ConnUsername}}{{else}}{{$cdUser = .ConnUsername}}{{$cdURL = .ConnURL}}{{end}}
   <h1>{{t "connect.title"}}</h1>
-  <p class="lead">{{t "connect.lead"}}</p>
+  {{template "offlineNote" .OutNote}}
+  {{if .OutNote}}<div class="empty"><p>{{t "outside.empty.athome"}}</p><a class="button secondary" href="/caldav">{{t "outside.empty.apps"}}</a></div>
+  {{else}}<p class="lead">{{t "connect.lead"}}</p>
   <div class="connect">
     <fieldset class="choice">
       <legend>{{t "connect.legend"}}</legend>
@@ -82,4 +84,5 @@
       <p class="done-hint">{{t "connect.done"}}</p>
     </form>
   </div>
+{{end}}
 {{template "foot"}}

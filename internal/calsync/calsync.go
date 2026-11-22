@@ -10,12 +10,14 @@ import (
 	"io"
 	"log/slog"
 	"net/http"
+	"net/url"
 	"sync"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/graph"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -74,6 +76,13 @@ func MessageOf(err error) i18n.Message {
 	if errors.As(err, &f) {
 		return f.Msg
 	}
+	var refused *outbound.RefusedError
+	if errors.As(err, &refused) {
+		if refused.Verdict == outbound.VerdictOffline {
+			return i18n.Msg("sync.fail.offline")
+		}
+		return i18n.Msg("sync.fail.switched_off")
+	}
 	return i18n.Msg("sync.fail.fetch", "detail", err.Error())
 }
 
@@ -86,14 +95,14 @@ const maxFeedBytes = 16 << 20
 
 // HTTPFetcher fetches feeds over HTTP(S).
 type HTTPFetcher struct {
-	Client *http.Client // nil: a client with a 30 second timeout
+	Client *http.Client // nil: a client that refuses every connection (the service gives it one from the gate)
 }
 
 // Fetch implements Fetcher.
 func (f HTTPFetcher) Fetch(ctx context.Context, url string) ([]byte, error) {
 	client := f.Client
 	if client == nil {
-		client = &http.Client{Timeout: 30 * time.Second}
+		client = outbound.New(outbound.Closed{}, nil).Client(outbound.ICS, 30*time.Second)
 	}
 	req, err := http.NewRequestWithContext(ctx, http.MethodGet, url, nil)
 	if err != nil {
@@ -126,11 +135,15 @@ type Service struct {
 	now    func() time.Time
 	logger *slog.Logger
 	dial   Dialer
-	locks  sync.Map // calendar id -> *sync.Mutex: one sync per calendar at a time
-	pushes sync.WaitGroup
-	bundle *i18n.Bundle
-	lang   string // language of the readable audience line
-	graph  *graph.Client
+	gate   *outbound.Gate
+	// ownFetch and ownDial say that a test or caller set its own; the gate then
+	// does not replace them.
+	ownFetch, ownDial bool
+	locks             sync.Map // calendar id -> *sync.Mutex: one sync per calendar at a time
+	pushes            sync.WaitGroup
+	bundle            *i18n.Bundle
+	lang              string // language of the readable audience line
+	graph             *graph.Client
 }
 
 func (s *Service) lock(calendarID string) *sync.Mutex {
@@ -140,18 +153,52 @@ func (s *Service) lock(calendarID string) *sync.Mutex {
 
 // New returns a Service. A nil fetcher uses HTTP, a nil clock time.Now.
 func New(db *store.DB, fetch Fetcher, now func() time.Time) *Service {
+	own := fetch != nil
 	if fetch == nil {
 		fetch = HTTPFetcher{}
 	}
 	if now == nil {
 		now = time.Now
 	}
-	return &Service{db: db, fetch: fetch, now: now, logger: slog.Default(), dial: dialCalDAV, bundle: i18n.MustLoad(), lang: i18n.Default}
+	return &Service{db: db, fetch: fetch, now: now, logger: slog.Default(), dial: dialer(nil), ownFetch: own, bundle: i18n.MustLoad(), lang: i18n.Default}
 }
 
 // SetDialer sets how the service connects to CalDAV servers (tests count or
 // fake the traffic).
-func (s *Service) SetDialer(d Dialer) { s.dial = d }
+func (s *Service) SetDialer(d Dialer) { s.dial, s.ownDial = d, true }
+
+// SetGate sends the service's connections through the gate of the outside
+// connections (ticket 201): CalDAV servers are the calendar services, feeds
+// the ICS subscriptions. A fetcher or dialer set by the caller stays. Without a
+// gate every connection is refused.
+func (s *Service) SetGate(g *outbound.Gate) {
+	s.gate = g
+	if !s.ownFetch {
+		s.fetch = HTTPFetcher{Client: g.Client(outbound.ICS, 30*time.Second)}
+	}
+	if !s.ownDial {
+		s.dial = dialer(g)
+	}
+}
+
+// serviceOf is the connection a calendar kind belongs to.
+func serviceOf(kind string) outbound.Service {
+	if kind == "caldav" {
+		return outbound.Calendars
+	}
+	return outbound.ICS
+}
+
+// refuse is the check before a calendar is synced or pushed: if its connection
+// is off, the attempt is recorded and the calendar stays as it is, paused and
+// not failed.
+func (s *Service) refuse(kind, rawURL string) error {
+	host := rawURL
+	if u, err := url.Parse(rawURL); err == nil && u.Host != "" {
+		host = u.Host
+	}
+	return s.gate.Check(serviceOf(kind), host)
+}
 
 // SetLogger sets where unexpected errors go.
 func (s *Service) SetLogger(l *slog.Logger) { s.logger = l }
@@ -213,6 +260,10 @@ func (s *Service) sync(ctx context.Context, householdID, calendarID string, run 
 	at := s.now()
 	interval := time.Duration(cal.Sync.IntervalMinutes) * time.Minute
 
+	if err := s.refuse(cal.Kind, cal.URL); err != nil {
+		run.result, run.failure = "paused", "sync.paused"
+		return err
+	}
 	fail := func(msg i18n.Message, cause error) error {
 		run.result, run.failure = "failed", msg.Key
 		next := at.Add(Backoff(interval, cal.Sync.Failures+1))
@@ -267,6 +318,9 @@ func (s *Service) RunDue(ctx context.Context) {
 	for _, c := range due {
 		if ctx.Err() != nil {
 			return
+		}
+		if !s.gate.Allowed(serviceOf(c.Kind)) {
+			continue // paused (offline mode or switched off): not tried, not failed
 		}
 		// Sync already wrote the run's one INFO line and stored the failure; the
 		// raw error can hold the feed address (often with a secret token) or an

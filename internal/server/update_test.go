@@ -26,6 +26,7 @@ func (b *box) settingsFile() string {
 // 7.12: Settings: on (default), off, notify only. The box hands the choice to
 // the host script through the settings file.
 func TestSettingsScreenSavesTheAutoUpdateMode(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	body := b.get("/settings/household").body
 	if !strings.Contains(body, `name="auto_update"`) || !strings.Contains(body, `value="on" checked`) {
@@ -62,6 +63,7 @@ func TestSettingsScreenSavesTheAutoUpdateMode(t *testing.T) {
 }
 
 func TestAutoUpdateModeWorksThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, got, _ := c.call(http.MethodGet, "/settings", nil)
 	if status != http.StatusOK || got["auto_update"] != "on" {
@@ -80,6 +82,7 @@ func TestAutoUpdateModeWorksThroughTheAPI(t *testing.T) {
 }
 
 func TestAfterAnUpdateTheWebInterfaceShowsWhatIsNewOnce(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if body := b.get("/").body; strings.Contains(body, "data-update-notice") {
 		t.Fatal("notice without any update")
@@ -103,6 +106,7 @@ func TestAfterAnUpdateTheWebInterfaceShowsWhatIsNewOnce(t *testing.T) {
 }
 
 func TestAfterARollbackParentsSeeTheReasonInBothLanguages(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.writeStatus("state=rolled_back\nversion=0.1.0\ntarget=0.2.0\nreason=health_check_failed\ntime=2026-11-16T03:31:00Z\n")
 	for lang, want := range map[string]string{
@@ -121,6 +125,7 @@ func TestAfterARollbackParentsSeeTheReasonInBothLanguages(t *testing.T) {
 }
 
 func TestARejectedImageIsReportedWithItsReason(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.writeStatus("state=rejected\nversion=0.1.0\ntarget=0.2.0\nreason=signature_invalid\ntime=2026-11-16T03:31:00Z\n")
 	body := b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": "en"}).body
@@ -130,6 +135,7 @@ func TestARejectedImageIsReportedWithItsReason(t *testing.T) {
 }
 
 func TestNotifyOnlyTellsParentsThatAnUpdateIsAvailable(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"}, "auto_update": {"notify"}})
 	b.writeStatus("state=available\nversion=0.1.0\ntarget=0.2.0\ntime=2026-11-16T03:30:05Z\n")
@@ -150,6 +156,7 @@ func TestNotifyOnlyTellsParentsThatAnUpdateIsAvailable(t *testing.T) {
 }
 
 func TestChildrenSeeNoUpdateNotices(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	child := childSession(t, b)
 	b.writeStatus("state=rolled_back\nversion=0.1.0\ntarget=0.2.0\nreason=start_failed\ntime=2026-11-16T03:31:00Z\n")
@@ -162,6 +169,7 @@ func TestChildrenSeeNoUpdateNotices(t *testing.T) {
 }
 
 func TestUpdateStatusWorksThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, got, _ := c.call(http.MethodGet, "/update", nil)
 	if status != http.StatusOK || got["mode"] != "on" || got["state"] != "idle" || got["notice"] != false || got["managed"] != true {
@@ -186,6 +194,7 @@ func TestUpdateStatusWorksThroughTheAPI(t *testing.T) {
 
 // A plain Docker Compose install has no updater: the box must not promise updates.
 func TestWithoutAHostUpdaterTheSettingIsNotOffered(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t, withoutHostUpdater)
 	body := b.get("/settings/household").body
 	if strings.Contains(body, "auto_update") || strings.Contains(body, "03:30") {
@@ -202,6 +211,7 @@ func TestWithoutAHostUpdaterTheSettingIsNotOffered(t *testing.T) {
 
 // The API must not promise updates either: it says whether an updater is there.
 func TestAPISaysWhetherAHostUpdaterManagesTheBox(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t, withoutHostUpdater)
 	if status, got, _ := c.call(http.MethodGet, "/update", nil); status != http.StatusOK || got["managed"] != false {
 		t.Fatalf("plain Compose install = %d %v, want managed false", status, got)
@@ -209,6 +219,7 @@ func TestAPISaysWhetherAHostUpdaterManagesTheBox(t *testing.T) {
 }
 
 func TestWithAHostUpdaterTheSettingIsOffered(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if !strings.Contains(b.get("/settings/household").body, `name="auto_update"`) {
 		t.Fatal("auto-update not offered")
@@ -216,6 +227,7 @@ func TestWithAHostUpdaterTheSettingIsOffered(t *testing.T) {
 }
 
 func TestFailedRollbackDoesNotSayTheBoxStillRunsThePreviousVersion(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.writeStatus("state=failed\nversion=0.1.0\ntarget=0.2.0\nreason=rollback_failed\ntime=2026-11-16T03:31:00Z\n")
 	for lang, bad := range map[string]string{"en": "still running the previous version", "de": "läuft weiter mit der vorherigen Version"} {
@@ -230,6 +242,7 @@ func TestFailedRollbackDoesNotSayTheBoxStillRunsThePreviousVersion(t *testing.T)
 }
 
 func TestMissingBoxReasonIsTranslated(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.writeStatus("state=failed\nversion=0.1.0\ntarget=0.2.0\nreason=box_not_running\ntime=2026-11-16T03:31:00Z\n")
 	body := b.get("/").body
@@ -239,6 +252,7 @@ func TestMissingBoxReasonIsTranslated(t *testing.T) {
 }
 
 func TestSavingSettingsToleratesAFailingSettingsFile(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	if err := os.RemoveAll(b.updateDir); err != nil {
 		t.Fatal(err)

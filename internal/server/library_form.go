@@ -20,6 +20,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/food"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/library"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/picture"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/unit"
@@ -42,6 +43,10 @@ type artForm struct {
 	PicSource, Symbol, SymQ, URL   string
 	Token                          string
 	Replacing                      bool
+	// FromList and FromEntry say the form was opened from the success line of a
+	// list ("Add to the library", ticket 165): after saving the entry becomes the
+	// article and the person goes back to the list.
+	FromList, FromEntry string
 }
 
 func (s *server) formOf(o store.OwnArticle) artForm {
@@ -94,7 +99,7 @@ func (s *server) renderArticleForm(w http.ResponseWriter, r *http.Request, p pri
 	if errs == nil {
 		errs = map[string]string{}
 	}
-	active := s.activeUnits(p.household.ID)
+	active := s.activeUnits(p.household)
 	if f.Dept == "" || !library.ValidDept(f.Dept) {
 		f.Dept = library.DefaultDept
 	}
@@ -262,7 +267,7 @@ func (s *server) renderArticleForm(w http.ResponseWriter, r *http.Request, p pri
 		"Chosen":       chosen, "ChosenText": chosenText, "ChosenLabel": chosenLabel, "Tiles": tiles, "SymHead": symHead, "SymLegend": symLegend, "SymNone": symNone, "SymSearching": strings.TrimSpace(f.SymQ) != "",
 		"SymMore": s.i18n.Format(lang, i18n.Msg("artf.sym.more", "count", s.symbolCount(lang))), "SymCapped": capped,
 		"Units1": units1, "Units2": units2, "Kinds": kinds, "Cards": cards, "IsNonFood": f.Kind == string(library.NonFood),
-		"Errs": errs, "FirstErr": first, "Waiting": s.i18n.T(lang, "artf.url.busy"),
+		"ImageNote": s.noteFor(r, outbound.Images, "outside.note.image"), "Errs": errs, "FirstErr": first, "Waiting": s.i18n.T(lang, "artf.url.busy"),
 		"Token": f.Token, "ID": "", "Name": "",
 	}
 	if existing != nil {
@@ -348,7 +353,7 @@ func (s *server) handleArticleNew(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "library state", err)
 		return
 	}
-	f := artForm{Dept: library.DefaultDept, Name: strings.TrimSpace(r.URL.Query().Get("name"))}
+	f := artForm{Dept: library.DefaultDept, Name: strings.TrimSpace(r.URL.Query().Get("name")), FromList: r.URL.Query().Get("list"), FromEntry: r.URL.Query().Get("entry")}
 	if len([]rune(f.Name)) > library.MaxName {
 		f.Name = string([]rune(f.Name)[:library.MaxName])
 	}
@@ -391,6 +396,7 @@ func (s *server) readForm(w http.ResponseWriter, r *http.Request) (f artForm, fi
 	f = artForm{
 		Name: v("name"), Dept: v("dept"), Kind: v("kind"), Unit1: v("unit1"), Unit2: v("unit2"), Allergens: r.PostForm["allergens"],
 		PicSource: v("pic_source"), Symbol: v("symbol"), SymQ: strings.TrimSpace(v("symq")), URL: strings.TrimSpace(v("url")), Token: v("picture_token"), Replacing: v("replacing") != "",
+		FromList: v("list"), FromEntry: v("entry"),
 	}
 	return f, file, nil
 }
@@ -549,6 +555,12 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 	}
 	s.pictures.drop(f.Token)
 	if existing == nil {
+		if f.FromList != "" && f.FromEntry != "" { // the entry the person came from becomes the article
+			if err := s.db.LinkEntryArticle(p.household.ID, f.FromList, f.FromEntry, saved.ID, saved.Name); err == nil {
+				s.redirectSavedNamed(w, r, listURL(r, f.FromList, false), "flash.article_created", saved.Name)
+				return
+			}
+		}
 		s.redirectSavedNamed(w, r, libraryPath, "flash.article_created", saved.Name)
 		return
 	}
@@ -558,7 +570,7 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 // activeUnitsFor is the units the form may use: the ones switched on, and the
 // ones an existing article already has (they stay, so saving does not change them).
 func (s *server) activeUnitsFor(p principal, existing *store.OwnArticle) []string {
-	active := slices.Clone(s.activeUnits(p.household.ID))
+	active := slices.Clone(s.activeUnits(p.household))
 	if existing != nil {
 		for _, k := range []string{existing.Unit1, existing.Unit2} {
 			if k != "" && !slices.Contains(active, k) {
@@ -630,6 +642,8 @@ func (s *server) urlError(lang, raw string, err error) string {
 	var big *picture.TooLargeError
 	var status *picture.StatusError
 	switch {
+	case errors.Is(err, outbound.ErrRefused):
+		return s.i18n.T(lang, "outside.note.image")
 	case errors.As(err, &private):
 		return s.i18n.Format(lang, i18n.Msg("artf.err.url.private", "addr", private.Addr))
 	case errors.Is(err, picture.ErrWebPage):

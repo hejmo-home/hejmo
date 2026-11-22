@@ -96,7 +96,8 @@
 
 {{/* A problem or a warning in words, with an icon. Arguments: Kind (problem or
      warn) and Text. */}}
-{{define "flag"}}<span class="flag {{.Kind}}">{{if eq .Icon "clock"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>{{else if eq .Icon "triangle"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{else}}<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{end}}{{.Text}}</span>{{end}}
+{{define "flag"}}{{if eq .Kind "paused"}}{{if .After}}<span class="meta">{{template "pausedTag" .}} {{.After}}</span>{{else}}{{template "pausedTag" .}}{{end}}{{else}}<span class="flag {{.Kind}}">{{if eq .Icon "clock"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>{{else if eq .Icon "triangle"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg>{{else}}<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{end}}{{.Text}}</span>{{end}}{{end}}
+{{define "pausedTag"}}<span class="tag paused"><svg class="icon" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg>{{.Text}}</span>{{end}}
 
 {{/* One calm row of an overview that opens a detail page. Arguments: Href,
      Title, Lines (each with Text and optionally Whole and People) and Flag

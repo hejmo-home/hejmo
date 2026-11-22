@@ -4,6 +4,7 @@ import (
 	"os"
 	"os/exec"
 	"path/filepath"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -462,7 +463,7 @@ func TestStatusIsNotWrittenThroughALink(t *testing.T) {
 func TestStatusFileHasOnlyFixedKeys(t *testing.T) {
 	b := installed(t)
 	b.mustUpdate("FAKE_START=fail")
-	allowed := map[string]bool{"state": true, "version": true, "target": true, "reason": true, "time": true}
+	allowed := map[string]bool{"state": true, "version": true, "target": true, "reason": true, "time": true, "checked": true}
 	for _, l := range strings.Split(strings.TrimSpace(b.status()), "\n") {
 		k, _, ok := strings.Cut(l, "=")
 		if !ok || !allowed[k] {
@@ -548,5 +549,53 @@ func TestOutdatedAvailableReportBecomesIdle(t *testing.T) {
 	b.mustUpdate("FAKE_LATEST=0.1.0")
 	if !hasLine(b.status(), "state=idle") {
 		t.Errorf("status:\n%s", b.status())
+	}
+}
+
+// Ticket 201 (Q145): offline mode stops the host script too. The box writes
+// offline=yes into the settings file and the script goes nowhere: no check for
+// a new version, no download.
+func TestOfflineKeyStopsTheScriptBeforeAnyConnection(t *testing.T) {
+	for _, mode := range []string{"on", "notify"} {
+		b := installed(t)
+		b.write("opt/hejmo/data/update-settings", "mode="+mode+"\noffline=yes\n")
+		b.mustUpdate()
+		calls := b.calls()
+		if strings.Contains(calls, "curl") || strings.Contains(calls, "pull") || strings.Contains(calls, "api.github.com") {
+			t.Errorf("mode %s: the script connected although offline=yes:\n%s", mode, calls)
+		}
+		if b.status() != "" {
+			t.Errorf("mode %s: wrote a status: %q", mode, b.status())
+		}
+	}
+}
+
+func TestOnlyTheExactOfflineKeyCounts(t *testing.T) {
+	for _, line := range []string{"offline=no", "offline=1", "offline=yes please", "offline = yes", "#offline=yes"} {
+		b := installed(t)
+		b.write("opt/hejmo/data/update-settings", "mode=on\n"+line+"\n")
+		b.mustUpdate("FAKE_LATEST=0.1.0")
+		if !strings.Contains(b.calls(), "api.github.com") {
+			t.Errorf("%q kept the script from looking for updates", line)
+		}
+	}
+}
+
+func TestTheScriptRecordsWhenItLastLookedForAnUpdate(t *testing.T) {
+	b := installed(t)
+	b.write("opt/hejmo/data/update-status", "state=updated\nversion=0.1.0\ntime=2026-11-15T03:30:00Z\n")
+	b.mustUpdate("FAKE_LATEST=0.1.0")
+	st := b.status()
+	if !hasLine(st, "state=updated") || !hasLine(st, "version=0.1.0") || !hasLine(st, "time=2026-11-15T03:30:00Z") {
+		t.Errorf("the report parents have not seen yet was changed:\n%s", st)
+	}
+	if !regexp.MustCompile(`(?m)^checked=\d{4}-\d\d-\d\dT\d\d:\d\d:\d\dZ$`).MatchString(st) {
+		t.Errorf("no checked= line:\n%s", st)
+	}
+	// An update report carries it too.
+	b = installed(t)
+	b.mustUpdate()
+	if st := b.status(); !hasLine(st, "state=updated") || !strings.Contains(st, "checked=") {
+		t.Errorf("status after an update:\n%s", st)
 	}
 }

@@ -13,6 +13,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -263,6 +264,10 @@ func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if !s.gate.Allowed(outbound.Calendars) { // nothing is asked of the server: back to the page that says why
+		http.Redirect(w, r, "/connections/new", http.StatusSeeOther)
+		return
+	}
 	_ = r.ParseForm()
 	in := newConnectionInput{
 		Provider: r.PostFormValue("provider"), URL: r.PostFormValue("url"), Username: r.PostFormValue("username"),
@@ -315,6 +320,7 @@ func (s *server) renderConnectNew(w http.ResponseWriter, r *http.Request, p prin
 	data := map[string]any{
 		"Person": p.person, "Service": service, "SyncStale": s.syncStale(p.household.ID),
 		"Error": "", "ErrorField": "", "ConnURL": "", "ConnUsername": "", "ConnSingle": false,
+		"OutNote": s.noteFor(r, outbound.Calendars, "outside.note.connect"),
 	}
 	s.outlookGuide(data, "")
 	for k, v := range extra {
@@ -340,6 +346,10 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 		return
 	} else if err != nil {
 		s.fail(w, "connection", err)
+		return
+	}
+	if !s.gate.Allowed(outbound.Calendars) { // paused: what the box has, nothing from the server
+		s.renderPausedConnection(w, r, p, conn)
 		return
 	}
 	if conn.Kind == "outlook" && !conn.ReauthSince.IsZero() {
@@ -682,4 +692,61 @@ func (s *server) handleConnectionDelete(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	s.redirectSavedNamed(w, r, "/calendars", "flash.connection_removed", conn.Username)
+}
+
+// pausedCalendar is a calendar of a paused connection, as the page lists it.
+type pausedCalendar struct{ Name, Line string }
+
+// renderPausedConnection is the page of a connection while its connection to the
+// outside is off (ticket 201, Q143): the facts, the calendars already on the
+// box with their event counts, and nothing that needs the server.
+func (s *server) renderPausedConnection(w http.ResponseWriter, r *http.Request, p principal, conn store.Connection) {
+	all, err := s.db.SyncedCalendars(p.household.ID)
+	if err != nil {
+		s.fail(w, "synced calendars", err)
+		return
+	}
+	chips, groups, _, _, err := s.audienceMaps(p.household.ID)
+	if err != nil {
+		s.fail(w, "people", err)
+		return
+	}
+	var last time.Time
+	var cals []pausedCalendar
+	for _, c := range calendarsOf(all, conn.ID) {
+		if c.Sync.LastSuccess.After(last) {
+			last = c.Sync.LastSuccess
+		}
+		people, groupNames, whole := audienceOf(c.Audience, chips, groups)
+		who := s.say(r, i18n.Msg("chips.whole_family"))
+		if !whole {
+			var n []string
+			for _, pc := range people {
+				n = append(n, pc.Name)
+			}
+			who = strings.Join(append(n, groupNames...), ", ")
+		}
+		line := s.say(r, i18n.Msg("outside.onbox.line", "who", who, "n", strconv.Itoa(c.Sync.EventCount)))
+		if !c.Sync.LastSuccess.IsZero() {
+			line += " " + s.say(r, i18n.Msg("outside.onbox.until", "date", p.day(c.Sync.LastSuccess)))
+		}
+		cals = append(cals, pausedCalendar{Name: c.Name, Line: line})
+	}
+	facts := []factView{
+		{Label: s.say(r, i18n.Msg("connections.fact.service")), Value: s.serviceName(r, conn)},
+		{Label: s.say(r, i18n.Msg("outside.fact.sync")), Flag: s.pausedFlag(r, p, outbound.Calendars, time.Time{})},
+		{Label: s.say(r, i18n.Msg("outside.fact.last")), Value: s.syncLastPlain(r, p, last)},
+		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: p.day(conn.CreatedAt)},
+	}
+	s.render(w, r, http.StatusOK, "connection_paused.html", map[string]any{
+		"Connection": newConnectionView(conn), "Title": conn.Username, "Facts": facts, "Calendars": cals,
+		"OutNote": s.noteFor(r, outbound.Calendars, "outside.note.connection"),
+	})
+}
+
+func (s *server) syncLastPlain(r *http.Request, p principal, t time.Time) string {
+	if t.IsZero() {
+		return s.say(r, i18n.Msg("sync.never"))
+	}
+	return p.dateTimeSeconds(t)
 }

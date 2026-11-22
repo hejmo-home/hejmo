@@ -30,6 +30,7 @@ func unpairedPhone(t *testing.T) (*box, *screen, string) {
 }
 
 func TestUnpairedPhoneShowsNoLongerPairedInsteadOfSignIn(t *testing.T) {
+	t.Parallel()
 	_, phone, _ := unpairedPhone(t)
 	de := phone.get("/login", "de")
 	if de.status != http.StatusOK {
@@ -60,6 +61,7 @@ func TestUnpairedPhoneShowsNoLongerPairedInsteadOfSignIn(t *testing.T) {
 }
 
 func TestUnpairedPageKnowsNothingOfTheHousehold(t *testing.T) {
+	t.Parallel()
 	_, phone, _ := unpairedPhone(t)
 	body := phone.get("/login", "de").body
 	for _, who := range []string{"Mama", "Papa", "Sebastian", "Mia", "Pasing"} {
@@ -70,6 +72,7 @@ func TestUnpairedPageKnowsNothingOfTheHousehold(t *testing.T) {
 }
 
 func TestFreshBrowserStillGetsTheSignIn(t *testing.T) {
+	t.Parallel()
 	b, _, _ := unpairedPhone(t)
 	r := newScreen(b).get("/login", "de")
 	if !strings.Contains(r.body, `name="password"`) || strings.Contains(r.body, "data-unpaired") {
@@ -78,6 +81,7 @@ func TestFreshBrowserStillGetsTheSignIn(t *testing.T) {
 }
 
 func TestEndedAdultBrowserSessionKeepsTheSignedOutNotice(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	adult := newScreen(b)
 	if r := adult.post("/login", loginForm(b, secret, "correct horse battery")); r.status != http.StatusSeeOther {
@@ -91,6 +95,7 @@ func TestEndedAdultBrowserSessionKeepsTheSignedOutNotice(t *testing.T) {
 }
 
 func TestUnpairedPhoneRunOutSessionShowsThePageToo(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	phone := pairedPhone(t, signedInFrom(t, b, secret), personNamed(t, b, "Mia"), "Phone")
 	b.now = b.now.Add(400 * 24 * time.Hour)
@@ -108,6 +113,7 @@ func signedInFrom(t *testing.T, b *box, secret string) *box {
 }
 
 func TestAdultSignInFromTheUnpairedPageHasNoNoticeAndBackComesBack(t *testing.T) {
+	t.Parallel()
 	_, phone, _ := unpairedPhone(t)
 	r := phone.get("/login?account=1", "de")
 	if !strings.Contains(r.body, `name="password"`) || strings.Contains(r.body, "data-signed-out") || strings.Contains(r.body, "data-unpaired") {
@@ -119,6 +125,7 @@ func TestAdultSignInFromTheUnpairedPageHasNoNoticeAndBackComesBack(t *testing.T)
 }
 
 func TestSuccessfulSignInForgetsTheUnpairedMarker(t *testing.T) {
+	t.Parallel()
 	b, phone, secret := unpairedPhone(t)
 	if r := phone.post("/login", loginForm(b, secret, "correct horse battery")); r.status != http.StatusSeeOther {
 		t.Fatalf("adult sign-in on the phone = %d", r.status)
@@ -130,6 +137,7 @@ func TestSuccessfulSignInForgetsTheUnpairedMarker(t *testing.T) {
 }
 
 func TestOwnSignOutOnTheDeviceForgetsTheMarker(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	phone := pairedPhone(t, b, personNamed(t, b, "Mama"), "Phone")
 	phone.post("/logout", url.Values{})
@@ -139,6 +147,7 @@ func TestOwnSignOutOnTheDeviceForgetsTheMarker(t *testing.T) {
 }
 
 func TestPairingAgainShowsThePairedHomeInsteadOfTheUnpairedPage(t *testing.T) {
+	t.Parallel()
 	b, phone, _ := unpairedPhone(t)
 	path := showCode(t, b)
 	phone.get(path, "en")
@@ -152,6 +161,7 @@ func TestPairingAgainShowsThePairedHomeInsteadOfTheUnpairedPage(t *testing.T) {
 }
 
 func TestPairingSetsTheDeviceMarker(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	path := showCode(t, b)
 	req, _ := http.NewRequest(http.MethodGet, b.srv.URL+path, nil)
@@ -178,6 +188,7 @@ func TestPairingSetsTheDeviceMarker(t *testing.T) {
 }
 
 func TestPasskeyErrorOnAnUnpairedDeviceShowsTheSignIn(t *testing.T) {
+	t.Parallel()
 	_, phone, _ := unpairedPhone(t)
 	for _, v := range []string{"failed", "cancelled", "gone"} {
 		r := phone.get("/login?passkey="+v, "de")
@@ -190,6 +201,7 @@ func TestPasskeyErrorOnAnUnpairedDeviceShowsTheSignIn(t *testing.T) {
 var signInLinkRe = regexp.MustCompile(`href="(/login\?[^"]*account=1[^"]*)"`)
 
 func TestUnpairedPageLinksToTheSignInWithTheNextPage(t *testing.T) {
+	t.Parallel()
 	_, phone, _ := unpairedPhone(t)
 	r := phone.get("/login?next=/tasks", "de")
 	m := signInLinkRe.FindStringSubmatch(r.body)
@@ -206,6 +218,7 @@ func TestUnpairedPageLinksToTheSignInWithTheNextPage(t *testing.T) {
 }
 
 func TestPairingAgainAfterASecondRevokeShowsThePageAgain(t *testing.T) {
+	t.Parallel()
 	b, phone, _ := unpairedPhone(t)
 	path := showCode(t, b)
 	phone.get(path, "en")
@@ -223,6 +236,7 @@ func TestPairingAgainAfterASecondRevokeShowsThePageAgain(t *testing.T) {
 // A phone re-paired for another person (#198) ends its device session the same
 // way a removal does, so it shows the unpaired page too.
 func TestPhoneRepairedForAnotherPersonShowsTheUnpairedPage(t *testing.T) {
+	t.Parallel()
 	f := newRepairFixture(t)
 	if r := f.b.post(f.repairAction, url.Values{"person": {f.mia.ID}}); r.status != http.StatusOK {
 		t.Fatalf("repair = %d\n%s", r.status, r.body)

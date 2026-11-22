@@ -30,6 +30,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/graph"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/pki"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/secret"
@@ -142,10 +143,16 @@ func run(cfg config, logger *slog.Logger) error {
 		return err
 	}
 
+	// The one door to the outside (ticket 201): every connection of the box
+	// goes through it, and offline mode closes it. A library that falls back to
+	// the default HTTP client is stopped there too.
+	gate := outbound.New(db.Outbound(), db.Outbound())
+	defer outbound.InstallDefault(gate)()
+
 	// A public certificate (ADR 0014), if the family chose a name in the
 	// wizard: its DNS token is sealed with a key file (ADR 0012), by default
 	// next to the database.
-	public, err := publiccert.New(filepath.Join(cfg.DataDir, "tls", "public"), db, sealer, publiccert.WithLogger(logger))
+	public, err := publiccert.New(filepath.Join(cfg.DataDir, "tls", "public"), db, sealer, publiccert.WithLogger(logger), publiccert.WithGate(gate))
 	if err != nil {
 		return err
 	}
@@ -167,6 +174,7 @@ func run(cfg config, logger *slog.Logger) error {
 		ms.DefaultClientID = cfg.OutlookClientID
 	}
 	syncer.SetGraph(ms)
+	syncer.SetGate(gate)
 	schedulerDone := make(chan struct{})
 	go func() {
 		defer close(schedulerDone)
@@ -176,8 +184,8 @@ func run(cfg config, logger *slog.Logger) error {
 	// Background pushes of box changes finish before the database closes.
 	defer syncer.Wait()
 
-	// The kiosk runner switches the front light of displays with a kiosk app
-	// off at sunset and in quiet mode (ADR 0005, 0015), checked every minute.
+	// The kiosk runner sets the brightness of displays with a kiosk app by the
+	// sun and in quiet mode (ADR 0005, 0020), checked every minute.
 	kioskRunner := server.NewKioskRunner(server.KioskOptions{DB: db, Logger: logger})
 	kioskDone := make(chan struct{})
 	go func() {
@@ -188,7 +196,7 @@ func run(cfg config, logger *slog.Logger) error {
 
 	// The weather chip's reading: the box asks Open-Meteo every 15 minutes, a
 	// display never does (ADR 0016).
-	forecast := weather.New()
+	forecast := weather.New(weather.WithGate(gate))
 	weatherDone := make(chan struct{})
 	go func() {
 		defer close(weatherDone)
@@ -196,7 +204,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-weatherDone }()
 
-	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Done: ctx.Done(), UpdateDir: cfg.UpdateDir, PhotoDir: cfg.DataDir})
+	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Gate: gate, Done: ctx.Done(), UpdateDir: cfg.UpdateDir, PhotoDir: cfg.DataDir, Kiosk: kioskRunner})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).
@@ -368,7 +376,7 @@ func backup(cfg config, dest string) error {
 
 // healthcheck asks the box at baseURL for /healthz.
 func healthcheck(baseURL string) error {
-	client := &http.Client{Timeout: 3 * time.Second}
+	client := outbound.Local(3 * time.Second)
 	res, err := client.Get(baseURL + "/healthz")
 	if err != nil {
 		return err

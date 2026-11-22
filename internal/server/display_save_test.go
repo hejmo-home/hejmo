@@ -19,6 +19,7 @@ func shown(t *testing.T, f *familyBox) store.Display {
 
 // #104 leftover: a database error while looking a display up is a 500, not a 404.
 func TestDisplayPageWithADatabaseErrorIsA500NotA404(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	id := f.displayID(t)
 	if r := f.get("/displays/" + id); r.status != http.StatusOK {
@@ -40,6 +41,7 @@ func TestDisplayPageWithADatabaseErrorIsA500NotA404(t *testing.T) {
 
 // An unknown display stays a 404 while the database is fine.
 func TestUnknownDisplayIsA404(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	if r := f.get("/displays/nonsense"); r.status != http.StatusNotFound {
 		t.Fatalf("unknown display = %d, want 404", r.status)
@@ -49,6 +51,7 @@ func TestUnknownDisplayIsA404(t *testing.T) {
 // #104 leftover: the display theme and show_tomorrow are saved together, so a
 // failed save changes neither.
 func TestDisplayThemeAndShowTomorrowAreSavedTogether(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	before := shown(t, f)
 	if _, err := f.db.SQL().Exec(`CREATE TRIGGER no_theme BEFORE UPDATE OF theme ON displays BEGIN SELECT RAISE(ABORT, 'no'); END`); err != nil {

@@ -1,5 +1,6 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "settings.title") "Frame" .Frame)}}
   <h1>{{t "settings.title"}}</h1>
+  {{template "offlineNote" .OfflineNote}}
   {{template "updateNotice" .}}
   {{template "syncNotice" .}}
   <p class="lead">{{t "hub.intro"}}</p>

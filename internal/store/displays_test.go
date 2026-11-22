@@ -8,6 +8,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/brightness"
 	"github.com/hejmo-home/hejmo/internal/quiet"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -479,5 +480,47 @@ func TestDisplayLookIsSavedWhole(t *testing.T) {
 	}
 	if after, _ := db.Display(h.ID, d.ID); !after.ShowTomorrow || after.Theme != "dark" {
 		t.Fatalf("a failed save changed the display: %+v", after)
+	}
+}
+
+// #179, Q76, Q77, Q79: brightness values per display with their defaults.
+func TestDisplayBrightnessHasDefaultsAndIsSavedPerDisplay(t *testing.T) {
+	db, h, d := pairedDisplay(t)
+	if d.Brightness != brightness.Defaults() {
+		t.Fatalf("defaults = %+v, want %+v", d.Brightness, brightness.Defaults())
+	}
+	want := brightness.Settings{Day: 80, Evening: 25, Source: brightness.SourceRoom, QuietMode: brightness.QuietDim, QuietLevel: 3, WakeMinutes: 5}
+	if err := db.SetDisplayBrightness(h.ID, d.ID, want); err != nil {
+		t.Fatal(err)
+	}
+	list, _ := db.Displays(h.ID)
+	if list[0].Brightness != want {
+		t.Fatalf("saved = %+v, want %+v", list[0].Brightness, want)
+	}
+	got, _ := db.DisplayByToken("hash-q", pairT0)
+	if got.Brightness != want {
+		t.Fatalf("by token = %+v", got.Brightness)
+	}
+}
+
+func TestDisplayBrightnessRefusesValuesOutOfRange(t *testing.T) {
+	db, h, d := pairedDisplay(t)
+	for field, mod := range map[string]func(*brightness.Settings){
+		"bright_day":     func(s *brightness.Settings) { s.Day = 0 },
+		"bright_evening": func(s *brightness.Settings) { s.Evening = 140 },
+		"bright_quiet":   func(s *brightness.Settings) { s.QuietLevel = 101 },
+		"wake_minutes":   func(s *brightness.Settings) { s.WakeMinutes = 31 },
+		"quiet_light":    func(s *brightness.Settings) { s.QuietMode = "bright" },
+		"light_source":   func(s *brightness.Settings) { s.Source = "moon" },
+	} {
+		s := brightness.Defaults()
+		mod(&s)
+		var fe *store.FieldError
+		if err := db.SetDisplayBrightness(h.ID, d.ID, s); !errors.As(err, &fe) || fe.Field != field {
+			t.Errorf("%s: err = %v, want a FieldError on it", field, err)
+		}
+	}
+	if err := db.SetDisplayBrightness(h.ID, "nope", brightness.Defaults()); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unknown display: %v", err)
 	}
 }

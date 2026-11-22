@@ -1,17 +1,11 @@
 package server_test
 
 import (
-	"context"
-	"errors"
 	"net/http"
 	"net/url"
 	"strings"
-	"sync"
 	"testing"
 	"time"
-
-	"github.com/hejmo-home/hejmo/internal/kiosk"
-	"github.com/hejmo-home/hejmo/internal/server"
 )
 
 // quietSettings is the settings form of a display with quiet mode on.
@@ -46,6 +40,7 @@ func (f *familyBox) quietOn(t *testing.T) {
 
 // 5.9: Given quiet mode from 22:00 to 06:00, when it turns 22:00, then the display switches to quiet mode.
 func TestDisplaySwitchesToQuietModeAt2200AndBackAt0600(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	f.quietOn(t)
 	f.event(t, "Dentist", f.at(15, 9, 0), f.at(15, 10, 0), false, "Mia")
@@ -64,6 +59,7 @@ func TestDisplaySwitchesToQuietModeAt2200AndBackAt0600(t *testing.T) {
 }
 
 func TestQuietModeIsOffUnlessSwitchedOn(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	if p := f.view(t, "en", f.at(14, 23, 0)); strings.Contains(p, "data-quiet") {
 		t.Fatal("quiet by default")
@@ -74,6 +70,7 @@ func TestQuietModeIsOffUnlessSwitchedOn(t *testing.T) {
 // household's first timed event and its waste collection. At 02:00 on
 // Sunday it still shows Sunday.
 func TestNightPageShowsTheComingMorning(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.quietOn(t)
 	f.event(t, "Swimming", f.at(15, 10, 0), f.at(15, 11, 0), false, "Sebastian")
@@ -99,6 +96,7 @@ func TestNightPageShowsTheComingMorning(t *testing.T) {
 }
 
 func TestNightPageWithoutEventsSaysSo(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	f.quietOn(t)
 	if p := f.view(t, "en", f.at(14, 23, 0)); !strings.Contains(p, "data-no-event") {
@@ -108,6 +106,7 @@ func TestNightPageWithoutEventsSaysSo(t *testing.T) {
 
 // 5.9: a normal screen goes black; without a kiosk app that is the whole story.
 func TestNormalScreenShowsABlackPageInQuietMode(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	f.quietOn(t)
 	f.event(t, "Dentist", f.at(15, 9, 0), f.at(15, 10, 0), false, "Mia")
@@ -120,6 +119,7 @@ func TestNormalScreenShowsABlackPageInQuietMode(t *testing.T) {
 // ADR 0015: against ghosting an E-Ink display reloads once an hour, only in
 // quiet mode.
 func TestEInkDisplaysReloadOncePerHourInQuietModeOnly(t *testing.T) {
+	t.Parallel()
 	for typ, want := range map[string]bool{"eink_bw": true, "eink_color": true, "screen": false} {
 		f := newFamilyBox(t, typ)
 		f.quietOn(t)
@@ -135,6 +135,7 @@ func TestEInkDisplaysReloadOncePerHourInQuietModeOnly(t *testing.T) {
 
 // The partial view and the live version follow quiet mode too.
 func TestLiveQuietModeIsAnnouncedAndServed(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
 	l.quietOn(t)
 	l.clock.set(l.at(14, 21, 59))
@@ -151,6 +152,7 @@ func TestLiveQuietModeIsAnnouncedAndServed(t *testing.T) {
 }
 
 func TestDisplaysPageEditsQuietModeAndKiosk(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	for _, want := range []string{`name="quiet"`, `name="quiet_from"`, `name="quiet_to"`, `name="kiosk_url"`, `name="kiosk_key"`} {
 		if !strings.Contains(f.get("/displays/"+f.displayID(t)).body, want) {
@@ -187,6 +189,7 @@ func TestDisplaysPageEditsQuietModeAndKiosk(t *testing.T) {
 }
 
 func TestQuietModeAndKioskWorkThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	code := codeOn(t, newScreen(c.b).get("/display", "en").body)
 	_, shown, _ := c.call(http.MethodPost, "/displays", map[string]any{"code": code, "name": "Hall", "type": "eink_bw"})
@@ -235,138 +238,4 @@ func mapKeys(m map[string]any) []string {
 		out = append(out, k)
 	}
 	return out
-}
-
-// fakeKiosk stands in for FreeKiosk on a tablet; the adapter itself is tested
-// against a fake REST API in internal/kiosk.
-type fakeKiosk struct {
-	mu    sync.Mutex
-	calls []string // "url key"
-	fail  bool
-}
-
-func (f *fakeKiosk) factory() kiosk.Factory {
-	return func(base, key string) kiosk.Adapter { return fakeAdapter{f, base + " " + key} }
-}
-
-type fakeAdapter struct {
-	f   *fakeKiosk
-	who string
-}
-
-func (a fakeAdapter) FrontLightOff(context.Context) error {
-	a.f.mu.Lock()
-	defer a.f.mu.Unlock()
-	if a.f.fail {
-		return errors.New("tablet unreachable")
-	}
-	a.f.calls = append(a.f.calls, a.who)
-	return nil
-}
-
-func (f *fakeKiosk) count() int { f.mu.Lock(); defer f.mu.Unlock(); return len(f.calls) }
-
-// kioskBox is a family box in Munich whose display has a kiosk app.
-func kioskBox(t *testing.T, quietOn bool) (*familyBox, *fakeKiosk, *server.KioskRunner) {
-	t.Helper()
-	f := newFamilyBox(t, "eink_bw")
-	if _, err := f.db.SQL().Exec(`UPDATE households SET latitude = 48.15, longitude = 11.46`); err != nil {
-		t.Fatal(err)
-	}
-	form := url.Values{"kiosk_url": {"http://192.168.1.20:8080"}, "kiosk_key": {"k-1"}}
-	if quietOn {
-		form = quietForm(form)
-	}
-	if r := f.saveSettings(t, form); r.status != http.StatusSeeOther {
-		t.Fatalf("settings = %d", r.status)
-	}
-	fake := &fakeKiosk{}
-	run := server.NewKioskRunner(server.KioskOptions{DB: f.db, Factory: fake.factory(), Now: func() time.Time { return f.now }})
-	return f, fake, run
-}
-
-// 5.9: Given no light sensor, when the sun sets at the home location, then the
-// front light is switched off (tested against a fake kiosk API).
-func TestFrontLightGoesOffWhenTheSunSets(t *testing.T) {
-	f, fake, run := kioskBox(t, false)
-	ctx := context.Background()
-	f.now = f.at(14, 16, 0) // sunset in Munich is about 16:36
-	run.Tick(ctx)
-	if fake.count() != 0 {
-		t.Fatal("front light switched off before sunset")
-	}
-	f.now = f.at(14, 16, 50)
-	run.Tick(ctx)
-	if fake.count() != 1 || fake.calls[0] != "http://192.168.1.20:8080 k-1" {
-		t.Fatalf("calls = %q", fake.calls)
-	}
-	f.now = f.at(14, 17, 30)
-	run.Tick(ctx)
-	if fake.count() != 1 {
-		t.Fatal("front light command repeated while it stays night")
-	}
-	// The next evening it is switched off again.
-	f.now = f.at(15, 12, 0)
-	run.Tick(ctx)
-	f.now = f.at(15, 16, 50)
-	run.Tick(ctx)
-	if fake.count() != 2 {
-		t.Fatalf("calls = %d, want 2 after the second sunset", fake.count())
-	}
-}
-
-func TestFrontLightGoesOffWhenQuietModeStartsEvenInDaylight(t *testing.T) {
-	f, fake, run := kioskBox(t, true)
-	if _, err := f.db.SQL().Exec(`UPDATE displays SET quiet_from = '12:00', quiet_to = '14:00'`); err != nil {
-		t.Fatal(err)
-	}
-	f.now = f.at(14, 11, 59)
-	run.Tick(context.Background())
-	f.now = f.at(14, 12, 0)
-	run.Tick(context.Background())
-	if fake.count() != 1 {
-		t.Fatalf("calls = %d, want 1 at the start of quiet mode", fake.count())
-	}
-}
-
-func TestFrontLightIsRetriedAfterAFailure(t *testing.T) {
-	f, fake, run := kioskBox(t, false)
-	fake.fail = true
-	f.now = f.at(14, 17, 0)
-	run.Tick(context.Background())
-	fake.mu.Lock()
-	fake.fail = false
-	fake.mu.Unlock()
-	run.Tick(context.Background())
-	if fake.count() != 1 {
-		t.Fatalf("calls = %d, want the retry to succeed once", fake.count())
-	}
-}
-
-func TestDisplaysWithoutKioskOrWithoutLocationAreLeftAlone(t *testing.T) {
-	f := newFamilyBox(t, "eink_bw")
-	fake := &fakeKiosk{}
-	run := server.NewKioskRunner(server.KioskOptions{DB: f.db, Factory: fake.factory(), Now: func() time.Time { return f.now }})
-	f.quietOn(t)
-	f.now = f.at(14, 23, 0)
-	run.Tick(context.Background()) // quiet, but no kiosk app: only the page goes quiet
-	if fake.count() != 0 {
-		t.Fatal("kiosk called without a kiosk app")
-	}
-	// A kiosk app but no home coordinates (a box set up before the home location was confirmed): the sun rule cannot apply, the schedule still does.
-	if _, err := f.db.SQL().Exec(`UPDATE households SET latitude = NULL, longitude = NULL`); err != nil {
-		t.Fatal(err)
-	}
-	f.saveSettings(t, url.Values{"kiosk_url": {"http://tablet:8080"}})
-	f.now = f.at(14, 17, 0)
-	run.Tick(context.Background())
-	if fake.count() != 0 {
-		t.Fatal("front light switched off by sun without a home location")
-	}
-	f.saveSettings(t, quietForm(url.Values{"kiosk_url": {"http://tablet:8080"}}))
-	f.now = f.at(14, 22, 5)
-	run.Tick(context.Background())
-	if fake.count() != 1 {
-		t.Fatalf("calls = %d, want 1 from the quiet schedule", fake.count())
-	}
 }

@@ -46,6 +46,7 @@ func tomorrowTileOf(page string) string { return tomorrowTileRe.FindString(page)
 
 // 6.7 AC1: a waste collection tomorrow appears in the tomorrow tile and is highlighted from 18:00.
 func TestWasteReminderAppearsTheEveningBefore(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.addWaste(t, wasteEvent("p1", "Paper bin", "6"))
 	morning := tomorrowTileOf(f.view(t, "en", f.at(15, 9, 0)))
@@ -63,6 +64,7 @@ func TestWasteReminderAppearsTheEveningBefore(t *testing.T) {
 
 // 6.7 AC2 and AC3: no collection tomorrow, or the collection day has come: no tile.
 func TestWasteReminderIsGoneWithoutACollectionTomorrow(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.addWaste(t, wasteEvent("p1", "Paper bin", "6"))
 	for _, now := range []int{14, 16, 17} {
@@ -74,6 +76,7 @@ func TestWasteReminderIsGoneWithoutACollectionTomorrow(t *testing.T) {
 
 // ADR 0015: waste events appear only in the tomorrow tile, the reminder and the night page.
 func TestWasteEventsStayOutOfTheStripAndColumns(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	wid := f.addWaste(t, wasteEvent("p1", "Paper bin", "5"))
 	p := f.view(t, "en", f.at(15, 9, 0))
@@ -93,6 +96,7 @@ func TestWasteEventsStayOutOfTheStripAndColumns(t *testing.T) {
 // switched to read-only, so the test does that first; then the pages offer the switch on each synced calendar.
 // A writable calendar is refused by the web form as it is by the API, and stays unmarked.
 func TestOnlyReadOnlyCalendarsCanBeWasteCollection(t *testing.T) {
+	t.Parallel()
 	c, srv := radicaleBox(t)
 	family := srv.MakeCalendar(t, "family", "Family")
 	srv.Put(t, family, "swim.ics", caldavtest.Event("swim@test", "Swimming", "20261120T150000", "20261120T160000"))
@@ -152,6 +156,7 @@ func TestOnlyReadOnlyCalendarsCanBeWasteCollection(t *testing.T) {
 
 // ADR 0015: unmarking turns the calendar back into an ordinary one.
 func TestUnmarkedCalendarShowsItsEventsAgain(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "5"))
 	if r := f.post("/calendars/"+id+"/waste", url.Values{"waste": {"off"}}); r.status != http.StatusSeeOther {
@@ -165,6 +170,7 @@ func TestUnmarkedCalendarShowsItsEventsAgain(t *testing.T) {
 
 // ADR 0016: the note is the last line; from 18:00 tomorrow's note replaces today's.
 func TestNoteForTomorrowIsTheLastLineAndReplacesTodaysFrom1800(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.addWaste(t, wasteEvent("p1", "Paper bin", "6"))
 	for day, text := range map[string]string{"2026-11-15": "Swimming bags", "2026-11-16": "Parents' evening"} {
@@ -188,6 +194,7 @@ func TestNoteForTomorrowIsTheLastLineAndReplacesTodaysFrom1800(t *testing.T) {
 
 // ADR 0015: the night page names the waste collection of the coming morning.
 func TestNightPageShowsTheWasteCollectionOfTheMorning(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.quietOn(t)
 	f.addWaste(t, wasteEvent("p1", "Paper bin", "5"), wasteEvent("p2", "Yellow bag", "6"))
@@ -202,6 +209,7 @@ func TestNightPageShowsTheWasteCollectionOfTheMorning(t *testing.T) {
 
 // ADR 0015 (web parity): the API marks a calendar as waste collection; only read-only calendars qualify.
 func TestWasteCollectionThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, family := familyOf(t, c)
 	c.b.feeds.set(schoolFeed, feedOf(), nil)
@@ -223,6 +231,7 @@ func TestWasteCollectionThroughTheAPI(t *testing.T) {
 
 // ADR 0015 (web parity): a parent sets, lists and removes a note for a day through the API.
 func TestDayNotesThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	if status, got, _ := c.call(http.MethodPut, "/day-notes/2026-11-16", map[string]any{"text": "Swimming bags"}); status != http.StatusOK || got["text"] != "Swimming bags" {
 		t.Fatalf("set = %d %v", status, got)
@@ -249,6 +258,7 @@ func TestDayNotesThroughTheAPI(t *testing.T) {
 
 // The API lists only today and later: notes of days that are over are gone when the list is read.
 func TestDayNoteListLeavesOutPastDays(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	for _, day := range []string{"2020-01-01", "2999-01-01"} {
 		if status, _, _ := c.call(http.MethodPut, "/day-notes/"+day, map[string]any{"text": "x"}); status != http.StatusOK {
@@ -263,6 +273,7 @@ func TestDayNoteListLeavesOutPastDays(t *testing.T) {
 // A PATCH that cannot be applied as a whole changes nothing: marking a writable calendar as waste collection
 // is refused before the sharing change in the same request is saved.
 func TestWritableCalendarCannotBeWasteCollection(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	familyOf(t, c) // the family calendar comes first, so Home is an ordinary local calendar
 	cal, err := c.b.db.CreateCalendar(store.Calendar{HouseholdID: mustHousehold(t, c).ID, Name: "Home", Kind: "local", Color: "#2F5E7A"})
@@ -280,6 +291,7 @@ func TestWritableCalendarCannotBeWasteCollection(t *testing.T) {
 
 // The web form counts the trimmed text, like the API.
 func TestNoteWithSurroundingSpaceCountsTrimmed(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	text := " " + strings.Repeat("a", 120) + " "
 	if r := f.post("/notes", url.Values{"day": {"2026-11-16"}, "text": {text}}); r.status != http.StatusSeeOther {
@@ -289,6 +301,7 @@ func TestNoteWithSurroundingSpaceCountsTrimmed(t *testing.T) {
 
 // The waste check looks at the calendar as it will be after the same request switches it.
 func TestWasteIsCheckedAgainstTheStateAfterTheReadOnlySwitchInTheSameRequest(t *testing.T) {
+	t.Parallel()
 	c, _, _, calID := twoWayCalendar(t)
 	if status, cal, _ := c.call(http.MethodPatch, "/calendars/"+calID, map[string]any{"read_only": true, "waste_collection": true}); status != http.StatusOK || cal["read_only"] != true || cal["waste_collection"] != true {
 		t.Fatalf("read-only and waste at once = %d %v, want 200 with both set", status, cal)
@@ -304,6 +317,7 @@ func TestWasteIsCheckedAgainstTheStateAfterTheReadOnlySwitchInTheSameRequest(t *
 
 // Only marking a calendar needs read-only; unmarking never does.
 func TestUnmarkingWasteNeverNeedsReadOnly(t *testing.T) {
+	t.Parallel()
 	c, _, _, calID := twoWayCalendar(t)
 	if status, cal, _ := c.call(http.MethodPatch, "/calendars/"+calID, map[string]any{"waste_collection": false}); status != http.StatusOK || cal["waste_collection"] != false {
 		t.Fatalf("waste_collection false on a two-way calendar = %d %v, want 200", status, cal)

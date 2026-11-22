@@ -10,6 +10,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/icsfeed"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -32,12 +33,15 @@ type Remote interface {
 // Dialer connects to a CalDAV server with one set of credentials.
 type Dialer func(serverURL, user, password string) (Remote, error)
 
-func dialCalDAV(serverURL, user, password string) (Remote, error) {
-	c, err := caldavclient.NewClient(serverURL, user, password, nil)
-	if err != nil {
-		return nil, err
+// dialer connects to CalDAV servers through the calendar services connection of g.
+func dialer(g *outbound.Gate) Dialer {
+	return func(serverURL, user, password string) (Remote, error) {
+		c, err := caldavclient.NewClient(serverURL, user, password, g.Client(outbound.Calendars, 30*time.Second))
+		if err != nil {
+			return nil, err
+		}
+		return c, nil
 	}
-	return c, nil
 }
 
 // Discover signs in to a CalDAV server and lists its event calendars; with

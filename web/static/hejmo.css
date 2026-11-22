@@ -2523,6 +2523,454 @@ ul.reconn form { margin: 0;}
 .calfacts .acc { color: var(--text);}
 .ms-login { max-width: 560px;}
 .ms-login h2 { margin: 0 0 6px;}
+/* ---- Display page: Brightness section (ticket 179, preview docs/design/preview-179.html; no new tokens) ---- */
+.tag.muted { border-color: var(--text-secondary); color: var(--text-secondary); }
+[data-theme="bw"] .tag.muted { border-style: dashed; }
+.bright h3.q-head { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--border); font-size: var(--fs-event-title); font-weight: 700; }
+.bright h3.q-head .icon { stroke: var(--accent); flex: none; }
+.bright-now { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: var(--fs-label); color: var(--text); overflow-wrap: break-word; }
+.bright-now .icon { flex: none; stroke: var(--accent); margin-top: 1px; }
+.bright .flag { font-weight: 400; }
+.bright .flag a { color: inherit; font-weight: 700; }
+.bright .levels { display: grid; }
+.lvl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 0; }
+.levels .lvl + .lvl { border-top: 1px solid var(--border); }
+.lvl .lt { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 0 10px; align-items: start; flex: 1 1 220px; min-width: 0; color: var(--text); }
+.lvl .lt .icon { grid-row: span 2; stroke: var(--accent); margin-top: 1px; }
+.lvl .lt b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+.lvl .lt span { grid-column: 2; font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: break-word; hyphens: manual; }
+.lvl .ferr { flex: 1 1 100%; }
+.unitf { display: inline-flex; align-items: center; gap: 8px; flex: none; margin-left: auto; white-space: nowrap; }
+.unitf input { width: 5.5em; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.unitf .unit { font-size: var(--fs-event-title); font-weight: 600; color: var(--text); min-width: 1.2em; }
+.lvl.invalid input { border: 2px solid var(--error-text); }
+.bright input:disabled { border-style: dashed; color: var(--text-secondary); background: var(--background); cursor: not-allowed; }
+.bright.unavailable .lvl .lt, .bright.unavailable .unitf .unit, .bright.unavailable .q-head { color: var(--text-secondary); }
+.bright.unavailable .lvl .lt .icon, .bright.unavailable .q-head .icon { stroke: var(--text-secondary); }
+.choice label:has(input:disabled) { border-style: dashed; color: var(--text-secondary); cursor: not-allowed; }
+.choice label:has(input:disabled:checked) { border-color: var(--text-secondary); }
+[data-theme="bw"] .bright input:disabled { border: 2px dashed var(--text); color: var(--text); background: var(--surface); }
+[data-theme="bw"] .choice label:has(input:disabled) { border: 2px dashed var(--text); color: var(--text); }
+.bright-why { max-width: none; }
+.guide-row { display: grid; gap: 6px; justify-items: start; }
+.guide-row .hint { margin: 0; }
+.steps .guide-row a.button.secondary { color: var(--accent); }
+.dim-intro { margin: 6px 0 0; font-weight: 600; }
+.bright .room-note { display: none; gap: 8px; align-items: flex-start; margin: 0; }
+.bright .room-note .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.bright .when-dim, .bright .when-off { display: none; }
+.bright:has(input[name="quiet_light"][value="dim"]:checked) .when-dim { display: block; }
+.bright:has(input[name="quiet_light"][value="off"]:checked) .when-off { display: block; }
+.bright:has(input[name="light_source"][value="room"]:checked) .levels { display: none; }
+.bright:has(input[name="light_source"][value="room"]:checked) .room-note { display: flex; }
+.bright .hint { margin: 0; }
+.bright details.more > summary { flex-wrap: wrap; }
+.bright .choice small { overflow-wrap: break-word; }
+@media (max-width: 480px) {
+  .lvl .lt { flex-basis: 100%; }
+  .unitf { margin-left: 34px; }
+}
+/* ---- ticket 165: adding to lists, suggestions and quantities ---- */
+/* The add card: one form, one primary button. "Without quantity": text and
+   button side by side. "With quantity": the text takes the row, the quantity
+   follows, the button comes last. The mode is a .seg with its state in words. */
+.adder { display: flex; flex-wrap: wrap; align-items: flex-end; gap: 10px; max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap-section); padding: 14px 16px 16px; background: var(--surface); border-radius: var(--radius-tile); }
+.adder > * { flex: 1 1 100%; min-width: 0; }
+.adder > .adder-text { flex: 1 1 8em; order: 1; }
+.adder > .adder-go { flex: 0 0 auto; order: 2; }
+.adder > .sugg { order: 3; } .adder > .sugg-hidden { order: 4; } .adder > .sugg-unchecked { order: 5; } .adder > .picked { order: 6; } .adder > fieldset.qty { order: 7; } .adder > .msg { order: 9; }
+.adder[data-mode="qty"] > .adder-text, .adder:has(input[name="mode"][value="qty"]:checked) > .adder-text { flex-basis: 100%; }
+.adder[data-mode="qty"] > .adder-go, .adder:has(input[name="mode"][value="qty"]:checked) > .adder-go { order: 8; min-width: 12em; }
+[data-theme="bw"] .adder { border: 2px solid var(--text); }
+.adder-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
+.adder-label { font-size: var(--fs-event-title); font-weight: 700; color: var(--text); }
+.adder .seg.mode { flex: 0 1 auto; }
+.adder .seg.mode label { flex: 0 0 auto; padding: 8px 14px; }
+.adder-text input { width: 100%; box-sizing: border-box; }
+.adder > .msg { margin: 0; max-width: none; }
+.adder .sugg { display: grid; gap: 6px; min-width: 0; }
+.sugg-q { margin: 0; font-size: var(--fs-label); font-weight: 700; color: var(--text); }
+/* A suggestion: symbol or picture, name, department, "already on the list",
+   one warning per affected person. Selected (keyboard): 2 px accent outline. */
+.adder .place-list.art-sugg li { grid-template-columns: auto minmax(0, 1fr); column-gap: 12px; row-gap: 2px; padding: 6px 8px; }
+.adder .place-list.art-sugg li > .art-sym { grid-row: 1 / span 2; align-self: start; }
+.adder .place-list.art-sugg li > :not(.art-sym) { grid-column: 2; }
+.adder .place-list.art-sugg li + li { border-top: 1px solid var(--border); border-radius: 0; }
+.adder .place-list.art-sugg li[aria-selected="true"] { border-radius: var(--radius-field); border-top-color: transparent; }
+.adder .place-list.art-sugg li[aria-selected="true"] + li { border-top-color: transparent; }
+.art-sugg .on-list { font-size: var(--fs-label); font-weight: 700; color: var(--text); white-space: normal; }
+.art-sugg .allergen-warn { margin-top: 4px; }
+.art-sugg li.free .art-sym { background: none; border: 1.5px dashed var(--text-secondary); }
+.art-sugg li.free .art-sym .icon { stroke: var(--text-secondary); }
+.art-sugg li.free b { font-weight: 600; }
+[data-theme="bw"] .adder .place-list.art-sugg li + li { border-top-color: var(--text); }
+[data-theme="bw"] .art-sugg li.free .art-sym { border: 2px dashed var(--text); filter: none; }
+/* Free-text allergies at the moment of choosing (Q17): never filtered, always said. */
+.sugg-unchecked { display: grid; gap: 6px; }
+.sugg-unchecked .unchecked { margin: 0; }
+.sugg-unchecked .who { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
+/* Articles hidden because of an allergy (#164, experimental): named, not offered. */
+.sugg-hidden { display: flex; gap: 8px; align-items: flex-start; margin: 0; padding: 8px 10px; border-radius: var(--radius-card); border: 1.5px dashed var(--notice-text); color: var(--text); font-size: var(--fs-label); overflow-wrap: break-word; }
+.sugg-hidden > .icon { flex: none; stroke: var(--text-secondary); margin-top: 2px; }
+.sugg-hidden .tag { margin-right: 4px; vertical-align: 1px; }
+.sugg-hidden .who { display: inline-flex; align-items: center; gap: 5px; font-weight: 700; }
+[data-theme="bw"] .sugg-hidden { border: 2px dashed var(--text); }
+/* The chosen article, in words, with a way to change it. */
+.picked { display: flex; align-items: center; gap: 12px; padding: 8px 10px; border: 1.5px solid var(--accent); border-radius: var(--radius-card); background: var(--surface); min-width: 0; }
+.picked > div { display: grid; gap: 2px; flex: 1; min-width: 0; }
+.picked b { display: flex; align-items: center; gap: 6px; font-size: var(--fs-event-title); overflow-wrap: break-word; }
+.picked b .icon { flex: none; stroke: var(--accent); }
+.picked small { font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+.picked .button { flex: none; }
+[data-theme="bw"] .picked { border: 2px solid var(--text); }
+[data-theme="bw"] .picked b .icon { stroke: var(--text); }
+/* How much: stepper and unit chips. Only shown "with quantity". */
+.adder fieldset.qty { display: none; border: 0; margin: 0; padding: 12px 0 0; border-top: 1px solid var(--border); gap: 12px; min-width: 0; }
+.adder[data-mode="qty"] fieldset.qty, .adder:has(input[name="mode"][value="qty"]:checked) fieldset.qty { display: grid; }
+.adder fieldset.qty > legend { float: left; width: 100%; padding: 0; margin: 0 0 2px; font-size: var(--fs-event-title); font-weight: 700; color: var(--text); }
+[data-theme="bw"] .adder fieldset.qty { border-top: 2px solid var(--text); }
+.amount .stepper { display: flex; align-items: center; gap: 8px; }
+.amount .stepper input { width: 5.5em; text-align: center; font-size: var(--fs-person-name); font-weight: 700; font-variant-numeric: tabular-nums; }
+.amount .step { display: inline-flex; align-items: center; justify-content: center; width: var(--touch-target); height: var(--touch-target); padding: 0; border-radius: var(--radius-field); }
+.amount .step .icon { stroke: currentColor; stroke-width: 2.4; }
+.amount.invalid .stepper input { border: 2px solid var(--error-text); }
+.amount .ferr { margin-top: 2px; }
+fieldset.units { display: flex; flex-wrap: wrap; gap: 8px; border: 0; margin: 0; padding: 0; min-width: 0; }
+fieldset.units > legend { float: left; width: 100%; padding: 0; margin: 0 0 6px; font-size: var(--fs-label); color: var(--text-secondary); }
+fieldset.units label { position: relative; display: inline-grid; justify-items: center; align-content: center; min-width: var(--touch-target); min-height: var(--touch-target); box-sizing: border-box; padding: 4px 11px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label-large); line-height: 1.2; text-align: center; cursor: pointer; white-space: nowrap; }
+fieldset.units label small { font-size: var(--fs-meta); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+fieldset.units input { position: absolute; opacity: 0; width: 1px; height: 1px; margin: 0; padding: 0; min-height: 0; }
+fieldset.units label:has(input:checked) { background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+fieldset.units label:has(input:checked) small { color: var(--accent-text); }
+fieldset.units label:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] fieldset.units label { border: 2px solid var(--text); padding: 3px 10px; }
+details.more-units { border-top: 0; }
+details.more-units > summary { min-height: var(--touch-target); }
+details.more-units > summary .sum { margin-left: 8px; padding: 1px 10px; border-radius: var(--radius-chip); background: var(--accent); color: var(--accent-text); font-weight: 700; font-size: var(--fs-label); }
+details.more-units[open] > summary .chev { transform: rotate(90deg); }
+details.more-units > div { display: grid; gap: 8px; }
+details.more-units .hint { margin: 0; }
+.adder .merge { margin: 0; color: var(--text); font-size: var(--fs-label-large); }
+details.more-units .hint a { color: var(--accent); }
+.adder .merge b { white-space: nowrap; }
+/* A success line that carries more: warnings, or one secondary action. */
+.msg .msg-body { display: grid; gap: 8px; min-width: 0; flex: 1; }
+.msg .msg-body p { margin: 0; }
+.msg-act { margin: 0; }
+.msg-act .button { display: inline-flex; align-items: center; gap: 8px; }
+.msg-act .icon { stroke: currentColor; flex: none; }
+/* Quantity on an entry: figures and unit in words, never split, right of the text. */
+.big-check .qty { flex: none; align-self: center; padding: 2px 10px; border-radius: var(--radius-chip); background: var(--background); color: var(--text); font-size: var(--fs-label-large); font-weight: 700; font-variant-numeric: tabular-nums; white-space: nowrap; }
+[data-done="true"] .big-check .qty { color: var(--text-secondary); font-weight: 600; }
+[data-theme="bw"] .big-check .qty { background: none; border: 2px solid var(--text); }
+.entries li.added { outline: 2px solid var(--accent); outline-offset: -2px; }
+[data-theme="bw"] .entries li.added { outline-width: 4px; outline-color: var(--text); }
+.list-settings fieldset.sw { border: 0; margin: 0; padding: 0; }
+/* Under 480 px: the mode takes its own full row, the button the full width. */
+@media (max-width: 479px) {
+  .adder { padding: 12px; }
+  .adder .seg.mode { flex: 1 1 100%; }
+  .adder .seg.mode label { flex: 1 1 0; padding: 8px 6px; }
+  .adder[data-mode="qty"] > .adder-go, .adder:has(input[name="mode"][value="qty"]:checked) > .adder-go { flex-basis: 100%; }
+  .picked { flex-wrap: wrap; }
+  .big-check .qty { font-size: var(--fs-label); padding: 2px 8px; }
+}
+/* Display (#33): the add card sits in the fixed head without its own card;
+   the head may scroll if it is taller than the room it has. A low screen
+   (on-screen keyboard open), and any landscape screen while an article is
+   being chosen, drops the list name and state from the head, because the
+   current tab on the left shows both. */
+.lv-head .adder { max-width: none; margin: 0; padding: 0; background: none; border: 0; }
+.lv-head { flex: 0 1 auto; min-height: 0; overflow-y: auto; }
+.lv-entries { flex: 1 1 0; }
+.lv .big-check .qty { font-size: var(--fs-event-title); }
+.lv-entries li.added .big-check { border: 2px solid var(--accent); }
+@media (min-width: 800px) {
+  .lv-head:has(.adder .sugg, .adder .picked, .adder .ferr) > .list-title,
+  .lv-head:has(.adder .sugg, .adder .picked, .adder .ferr) > .list-meta { display: none; }
+}
+@media (max-height: 560px) and (min-width: 800px) {
+  .lv-head .list-title, .lv-head .list-meta { display: none; }
+  .lv-header h1 { font-size: var(--fs-key-figure); }
+}
+
+/* ticket 165: Settings › Lists › Units. Grouped by kind, one switch per unit
+   with its size and its state in words; piece is always on. */
+.unit-set fieldset { display: grid; gap: 4px; }
+.unit-set .ugroup { display: grid; margin-top: 10px; }
+.unit-set .ugroup h3 { margin: 0 0 2px; font-size: var(--fs-label); font-weight: 700; color: var(--text-secondary); }
+.unit-set .urow { padding: 4px 0; min-height: var(--touch-target); border-top: 1px solid var(--border); }
+.unit-set .ugroup h3 + .urow { border-top: 0; }
+.unit-set .urow .state { font-size: var(--fs-label); }
+[data-theme="bw"] .unit-set .urow { border-top-color: var(--text); }
+[data-theme="bw"] .unit-set .ugroup h3 { color: var(--text); }
+
+/* ticket 165 (Q21, 16/11/2026): changing an entry's quantity afterwards.
+   Every open entry on a list with suggestions has its own quantity button
+   right of the tick button: the quantity in words and a pen, or "Menge"
+   (dashed) without one. It opens the editor directly under the entry. */
+.qty-open { flex: none; display: inline-flex; align-items: center; justify-content: center; gap: 6px; min-height: var(--touch-target); min-width: var(--touch-target); box-sizing: border-box; padding: 4px 12px; border: 1.5px solid var(--accent); border-radius: var(--radius-chip); background: var(--background); color: var(--text); font: inherit; font-size: var(--fs-label-large); font-weight: 700; font-variant-numeric: tabular-nums; line-height: 1.2; white-space: nowrap; text-decoration: none; cursor: pointer; }
+.qty-open .icon { flex: none; stroke: var(--accent); }
+.entries .qty-open { min-width: 6.5em; } /* the tick buttons above each other keep one width as long as the quantity is short */
+.qty-open.none { border-style: dashed; border-color: var(--text-secondary); background: var(--surface); color: var(--text-secondary); font-weight: 600; }
+.qty-open.none .icon { stroke: var(--text-secondary); }
+.qty-open[aria-expanded="true"] { border-style: solid; border-color: var(--accent); background: var(--accent); color: var(--accent-text); }
+.qty-open[aria-expanded="true"] .icon { stroke: var(--accent-text); }
+.qty-open:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+[data-theme="bw"] .qty-open { border: 2px solid var(--text); background: none; color: var(--text); }
+[data-theme="bw"] .qty-open .icon { stroke: var(--text); }
+[data-theme="bw"] .qty-open.none { border-style: dashed; }
+[data-theme="bw"] .qty-open[aria-expanded="true"] { border-style: solid; background: var(--text); color: var(--surface); }
+[data-theme="bw"] .qty-open[aria-expanded="true"] .icon { stroke: var(--surface); }
+.entries li.editing { outline: 2px solid var(--accent); outline-offset: -2px; }
+[data-theme="bw"] .entries li.editing { outline-width: 4px; outline-color: var(--text); }
+/* The editor: same parts as the add card, one primary "Speichern". */
+.qty-edit { flex: 1 1 100%; display: grid; gap: 12px; min-width: 0; max-width: 560px; margin: 0; padding: 12px 0 14px; border-top: 1px solid var(--border); }
+[data-theme="bw"] .qty-edit { border-top: 2px solid var(--text); }
+.qe-top { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px 14px; }
+.qe-title { margin: 0; font-size: var(--fs-event-title); font-weight: 700; color: var(--text); }
+.qty-edit .seg.mode { flex: 0 1 auto; }
+.qty-edit .seg.mode label { flex: 0 0 auto; padding: 8px 14px; }
+.qty-edit fieldset.qty { display: grid; gap: 12px; border: 0; margin: 0; padding: 0; min-width: 0; }
+.qty-edit[data-mode="none"] fieldset.qty, .qty-edit:has(input[name="qmode"][value="none"]:checked) fieldset.qty { display: none; }
+.qty-edit .merge { margin: 0; color: var(--text); font-size: var(--fs-label-large); overflow-wrap: break-word; }
+.qty-edit .merge b { white-space: nowrap; }
+.qe-go { display: flex; flex-wrap: wrap; align-items: center; gap: 10px; }
+.qe-go .button:first-child { min-width: 12em; }
+.qe-go .button { text-align: center; }
+.amount .step[disabled] { border-color: var(--border); color: var(--text-secondary); background: var(--surface); cursor: default; }
+[data-theme="bw"] .amount .step[disabled] { border-style: dashed; border-color: var(--text); color: var(--text); }
+.entries li > .msg { flex: 1 1 100%; margin: 0 0 10px; max-width: none; }
+@media (max-width: 479px) {
+  .qty-edit .seg.mode { flex: 1 1 100%; }
+  .qty-edit .seg.mode label { flex: 1 1 0; padding: 8px 6px; }
+  .qe-go .button { flex: 1 1 100%; }
+  .qty-open { font-size: var(--fs-label); padding: 4px 10px; }
+}
+/* Display (#33): the button is as high as the row; the editor gets big
+   targets for children (64 px stepper and save, 56 px chips and mode). */
+.lv-entries li:has(> .qty-open) { grid-template-columns: minmax(0, 1fr) auto; column-gap: 8px; }
+.lv-entries li > :not(:first-child):not(.qty-open) { grid-column: 1 / -1; }
+.lv .qty-open { min-height: 64px; min-width: 9em; padding: 6px 14px; border-radius: var(--radius-card); font-size: var(--fs-event-title); }
+.lv .qty-open .icon { width: 22px; height: 22px; }
+.lv-entries li.editing .big-check { border: 2px solid var(--accent); }
+[data-theme="bw"] .lv-entries li.editing .big-check { border-width: 4px; border-color: var(--text); }
+.lv .qty-edit { max-width: none; padding: 14px; border: 2px solid var(--accent); border-radius: var(--radius-card); background: var(--surface); gap: 14px; }
+[data-theme="bw"] .lv .qty-edit { border: 3px solid var(--text); }
+.lv .qty-edit .qe-title { font-size: var(--fs-person-name); }
+.lv .qty-edit .seg.mode label { min-height: 56px; padding: 8px 18px; font-size: var(--fs-event-title); }
+.lv .qty-edit .amount .step { width: 64px; height: 64px; }
+.lv .qty-edit .amount .step .icon { width: 28px; height: 28px; }
+.lv .qty-edit .amount .stepper input { min-height: 64px; width: 5em; font-size: var(--fs-key-figure); }
+.lv .qty-edit fieldset.units label { min-height: 56px; min-width: 80px; padding: 6px 18px; font-size: var(--fs-event-title); }
+.lv .qty-edit details.more-units > summary { min-height: 56px; font-size: var(--fs-event-title); }
+.lv .qty-edit .merge { font-size: var(--fs-event-title); }
+.lv .qty-edit .qe-go .button { min-height: 64px; padding: 10px 28px; font-size: var(--fs-event-title); }
+.lv-entries li > .msg { margin: 0; max-width: none; }
+/* Display: while a quantity is open the head (list name, state, add row)
+   steps aside, because the current tab names the list; landscape puts number
+   and unit side by side, so "Speichern" fits without scrolling. */
+.lv-list:has(.qty-edit) .lv-head { display: none; }
+@media (min-width: 800px) {
+  .lv .qty-edit fieldset.qty { grid-template-columns: auto minmax(0, 1fr); column-gap: 28px; align-items: start; }
+  .lv .qty-edit details.more-units { grid-column: 1 / -1; }
+  .lv .qty-edit .amount .ferr { width: 0; min-width: 100%; box-sizing: border-box; } /* the error wraps under the stepper and never pushes the units aside */
+}
+/* ticket 165: a legend that only a screen reader reads keeps its 1 px: the width of the visible legends
+   (100%) would make it a page-wide box and widen the page. */
+fieldset.seg > legend.vh, fieldset.units > legend.vh, .adder fieldset.qty > legend.vh, .qty-edit fieldset.qty > legend.vh { float: none; width: 1px; margin: -1px; }
+
+/* ticket 201: offline mode and "Verbindungen nach außen". Existing tokens only. */
+/* The notice that offline mode (or one connection) is off, with "Ändern".
+   A chosen state, not a warning: surface card, not notice colours. */
+.offline-note { display: flex; flex-wrap: wrap; align-items: center; gap: 0 12px; max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap); padding: 6px 14px; background: var(--surface); border: 1.5px solid var(--border); border-radius: var(--radius-card); color: var(--text); }
+.offline-note > .icon { flex: none; stroke: var(--accent); align-self: flex-start; margin-top: 10px; }
+.offline-note > p { margin: 0; padding: 8px 0; flex: 1 1 240px; min-width: 0; overflow-wrap: break-word; }
+.offline-note > a { flex: none; margin-left: auto; display: inline-flex; align-items: center; min-height: var(--touch-target); color: var(--accent); font-weight: 600; text-decoration: underline; text-underline-offset: 3px; }
+.wizard .offline-note, main > .offline-note { margin: 0 0 var(--gap); }
+[data-theme="bw"] .offline-note { border: 2px solid var(--text); }
+[data-theme="bw"] .offline-note > .icon { stroke: var(--text); }
+[data-theme="bw"] .offline-note > a { color: var(--text); text-decoration-thickness: 2px; }
+/* A warning notice with a lead-in and a link (90 days without update). */
+.notice.lead-in { margin: 0 0 var(--gap-section); display: flex; gap: 10px; align-items: flex-start; }
+.notice.lead-in > .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+.notice.lead-in p { margin: 0; overflow-wrap: break-word; }
+.notice.lead-in a { color: inherit; font-weight: 700; }
+[data-theme="bw"] .notice.lead-in { border: 2px solid var(--text); }
+/* The main switch card and its proof line. */
+.steps fieldset.offline-main { gap: 12px; }
+.offline-main .card-row .t b { font-size: var(--fs-person-name); }
+.steps .offline-main .state { font-size: var(--fs-label-large); color: var(--text); }
+.proof { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-weight: 700; color: var(--text); overflow-wrap: break-word; }
+.proof .icon { flex: none; margin-top: 2px; }
+.proof time { white-space: nowrap; }
+/* One row per connection: name, what it is for, where it goes, last contact, switch. */
+.conns { list-style: none; margin: 0; padding: 0; display: grid; }
+.steps .conns > li, .conns > li { display: grid; gap: 4px; padding: 14px 0; border-top: 1px solid var(--border); border-radius: 0; background: none; min-width: 0; }
+.conns > li:first-child { border-top: 0; padding-top: 4px; }
+.conns > li:last-child { padding-bottom: 0; }
+.conns .card-row { align-items: flex-start; }
+.conns .card-row .t { gap: 3px; }
+.steps .conns .t > small, .conns .t > small { display: block; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.steps .conns .t > small.last, .conns .t > small.last { color: var(--text); }
+.conns .t > small.last b { font-size: inherit; font-weight: 700; }
+.conns .names, .meta, .facts dd { hyphens: manual; }
+.conns .names { font-weight: 600; color: var(--text); overflow-wrap: anywhere; }
+.steps .conns .state, .conns .state { font-size: var(--fs-label); color: var(--text); font-weight: 600; }
+.conns .state .icon { width: 14px; height: 14px; vertical-align: -2px; margin-right: 4px; stroke: currentColor; }
+/* Locked switch: still a switch, visibly off and not movable. */
+.switch input:disabled { border-style: dashed; cursor: not-allowed; }
+.switch:has(input:disabled) { cursor: not-allowed; }
+[data-theme="bw"] .conns > li { border-top-color: var(--text); }
+/* Refused attempts: newest first, time, service and target in words. */
+ol.refused { list-style: none; margin: 0 0 var(--gap); padding: 0; max-width: 560px; background: var(--surface); border-radius: var(--radius-tile); }
+ol.refused li { display: grid; grid-template-columns: max-content minmax(0, 1fr); gap: 2px 16px; padding: 10px 16px; border-top: 1px solid var(--border); }
+ol.refused li:first-child { border-top: 0; }
+ol.refused time { font-variant-numeric: tabular-nums; font-size: var(--fs-label); color: var(--text-secondary); white-space: nowrap; padding-top: 1px; }
+ol.refused b { font-weight: 600; color: var(--text); }
+.card-row .t .state b { font-size: inherit; font-weight: 700; }
+main > section.explain { max-width: 560px; box-sizing: border-box; background: var(--surface); border-radius: var(--radius-tile); padding: 16px; }
+[data-theme="bw"] main > section.explain { border: 2px solid var(--text); }
+ol.refused .to { grid-column: 2; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+@media (max-width: 480px) { ol.refused li { grid-template-columns: minmax(0, 1fr); } ol.refused .to { grid-column: 1; } }
+[data-theme="bw"] ol.refused { border: 2px solid var(--text); }
+[data-theme="bw"] ol.refused li { border-top-color: var(--text); }
+[data-theme="bw"] ol.refused time, [data-theme="bw"] ol.refused .to { color: var(--text); }
+section.block { max-width: 560px; margin: 0 0 var(--gap-section); }
+section.block > h2 { margin: 0 0 6px; }
+section.block > p { margin: 0 0 10px; }
+/* Paused calendar connection: a word tag, not a problem flag. */
+.tag.paused { border-color: var(--text-secondary); color: var(--text); gap: 4px; }
+.tag.paused .icon { width: 12px; height: 12px; stroke: currentColor; stroke-width: 2.4; }
+[data-theme="bw"] .tag.paused { border: 2px dashed var(--text); }
+/* Confirmation pages: what goes outside again, grouped, every thing by name. */
+.conns.plain { max-width: 560px; background: var(--surface); border-radius: var(--radius-tile); padding: 6px 16px 14px; box-sizing: border-box; margin: 0 0 var(--gap); }
+.conns.plain > li:first-child { padding-top: 10px; }
+.conns.plain b { font-size: var(--fs-event-title); }
+[data-theme="bw"] .conns.plain, [data-theme="bw"] .cost { border: 2px solid var(--text); }
+.cost { max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap); padding: 16px; background: var(--surface); border-radius: var(--radius-tile); }
+.cost h2 { margin: 0 0 8px; font-size: var(--fs-person-name); }
+.cost ul { margin: 0; padding-left: 20px; display: grid; gap: 8px; }
+.cost li { overflow-wrap: break-word; }
+.cost .devs { display: block; }
+.cost .devs b { font-weight: 700; }
+.cost .who { display: inline-flex; align-items: center; gap: 6px; margin-right: 10px; white-space: nowrap; font-weight: 600; }
+.confirm-page .actions { margin-top: 4px; }
+ol.howto .s > .confirm { justify-self: stretch; }
+ol.howto .s > .ferr { justify-self: stretch; }
+.confirm.invalid input { outline: 2px solid var(--error-text); outline-offset: 2px; }
+fieldset.choice.invalid label { border: 2px solid var(--error-text); padding: 11px 13px; }
+.wizard fieldset.choice { border: 0; margin: 0; padding: 0; display: grid; gap: 10px; min-width: 0; }
+.hub-row .hint b { color: var(--text); }
+.calsum { list-style: none; margin: 0 0 var(--gap-section); padding: 0; display: grid; gap: var(--gap-cards); max-width: 560px; }
+.calsum li { background: var(--surface); border-radius: var(--radius-tile); padding: 12px 16px; display: grid; gap: 4px; }
+.calsum b { font-size: var(--fs-event-title); }
+.calsum small { font-size: var(--fs-label); color: var(--text-secondary); }
+[data-theme="bw"] .calsum li { border: 2px solid var(--text); }
+/* Lines under a legend that sit flush with it (the preview's inline style, as a class). */
+.steps p.flat { margin: 0; }
+.steps p.hint.flat { clear: both; }
+/* ---- ticket 166: tile view for lists (ADR 0019, preview-166) ---- */
+/* View switch: two buttons with icon and word, the current one filled in
+   accent (bw: black). It saves at once (one POST per button, no script) and the
+   page answers with a success line that says whom the choice applies to. */
+.view-row { display: flex; flex-wrap: wrap; align-items: center; justify-content: space-between; gap: 8px var(--gap); max-width: 760px; margin: 0 0 var(--gap); }
+.view-row .list-meta { margin: 0; flex: 1 1 15em; min-width: 0; }
+.view-switch { display: flex; flex-wrap: wrap; align-items: center; gap: 0; margin: 0; }
+.view-switch .lab { margin-right: 10px; font-size: var(--fs-label); color: var(--text-secondary); }
+.view-switch button { position: relative; display: inline-flex; align-items: center; gap: 7px; min-height: var(--touch-target); padding: 8px 14px 8px 12px; margin: 0 0 0 -1px; border: 1px solid var(--border); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-label-large); cursor: pointer; }
+.view-switch button:first-of-type { margin-left: 0; border-radius: var(--radius-field) 0 0 var(--radius-field); }
+.view-switch button:last-of-type { border-radius: 0 var(--radius-field) var(--radius-field) 0; }
+.view-switch button .icon { flex: none; stroke: currentColor; }
+.view-switch button[aria-pressed="true"] { z-index: 1; background: var(--accent); border-color: var(--accent); color: var(--accent-text); font-weight: 700; }
+.view-switch button:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; z-index: 2; }
+[data-theme="bw"] .view-switch button { border: 2px solid var(--text); margin-left: -2px; }
+[data-theme="bw"] .view-switch button:first-of-type { margin-left: 0; }
+.view-switch[aria-invalid="true"] button { border: 2px solid var(--error-text); }
+.view-switch .ferr { flex: 0 0 100%; margin: 8px 0 0; }
+
+/* Tiles: one tile per entry, the whole tile is the tick button (at least
+   148 px wide and high). Picture or symbol on top, the tick box in the top
+   right corner, the name in full below (hyphenates only words of 12+
+   letters), then the quantity and any allergen warning in words. */
+.tiles { list-style: none; margin: 0 0 var(--gap); padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 148px), 1fr)); gap: var(--gap-cards); max-width: 760px; }
+.tiles > li { display: grid; grid-template-rows: 1fr auto; gap: 6px; min-width: 0; }
+.tiles form { margin: 0; display: grid; }
+.tile-check { position: relative; display: flex; flex-direction: column; align-items: center; gap: 6px; box-sizing: border-box; width: 100%; min-width: 0; min-height: 148px; padding: 12px 10px; border: 1.5px solid var(--border); border-radius: var(--radius-tile); background: var(--surface); color: var(--text); font: inherit; text-align: center; cursor: pointer; }
+.tile-check:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+.tile-check .pic { flex: none; box-sizing: border-box; width: 64px; height: 64px; margin: 4px 0 2px; border-radius: var(--radius-card); background: var(--background); display: grid; place-items: center; font-size: 42px; line-height: 1; overflow: hidden; }
+.tile-check .pic img { width: 100%; height: 100%; object-fit: cover; display: block; }
+/* Free text has no article and so no picture: its first letter, on a dashed
+   ring, so it never looks like a symbol it is not. */
+.tile-check .pic.letter { background: none; border: 2px dashed var(--border); font-size: 32px; font-weight: 700; color: var(--text-secondary); }
+.tile-check .box { position: absolute; top: 8px; right: 8px; box-sizing: border-box; width: 32px; height: 32px; border: 3px solid var(--text); border-radius: var(--radius-field); background: var(--surface); display: grid; place-items: center; }
+.tile-check .box svg { display: none; }
+.tile-check .title { max-width: 100%; font-size: var(--fs-event-title); font-weight: 600; line-height: 1.25; overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) {
+  .tile-check .title { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
+}
+.tile-check .qty { font-size: var(--fs-label); color: var(--text-secondary); font-variant-numeric: tabular-nums; }
+.tile-check .qty span { white-space: nowrap; }
+/* Allergen warning on a tile (#164 in short): one notice-coloured block with
+   the heading "Allergie-Warnung" and one line per affected person: marker,
+   name and that person's allergens in words. Never a count. */
+.tile-warn { align-self: stretch; display: grid; gap: 2px; margin-top: 2px; padding: 5px 8px 6px; border-radius: var(--radius-field); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-meta); text-align: left; overflow-wrap: break-word; }
+.tile-warn .h { display: flex; align-items: center; gap: 5px; font-weight: 700; }
+.tile-warn .icon { flex: none; width: 16px; height: 16px; stroke: currentColor; }
+.tile-warn .line { display: block; min-width: 0; }
+.tile-warn .who { display: inline-flex; align-items: center; gap: 4px; margin-right: 4px; font-weight: 700; }
+.tile-warn .who .marker { flex: none; }
+[data-theme="bw"] .tile-warn { background: none; color: var(--text); border: 2px solid var(--text); }
+/* Ticked off: the box fills in the list colour with a white tick (bw: black),
+   the name is struck through, the picture turns grey and the tile loses its
+   white card, as the tick rows do. */
+.tiles [data-done="true"] .tile-check { background: transparent; border-style: dashed; }
+.tiles [data-done="true"] .tile-check .box { background: var(--pc); border-color: var(--pc); }
+.tiles [data-done="true"] .tile-check .box svg { display: block; stroke: var(--surface); stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+.tiles [data-done="true"] .tile-check .title { font-weight: 400; color: var(--text-secondary); text-decoration: line-through; }
+.tiles [data-done="true"] .tile-check .pic { filter: grayscale(1); }
+/* The entry just added keeps a frame until the next tap (as #33). */
+.tiles li.added .tile-check { border: 2px solid var(--accent); padding: 11.5px 9.5px; }
+.tiles li[aria-invalid="true"] .tile-check { border: 2px solid var(--error-text); padding: 11.5px 9.5px; }
+.tiles > li > .ferr { margin: 0; }
+[data-theme="bw"] .tile-check { border: 2px solid var(--text); padding: 11.5px 9.5px; }
+[data-theme="bw"] .tile-check .pic { filter: grayscale(1); background: var(--surface); border: 2px solid var(--text); }
+[data-theme="bw"] .tile-check .pic.letter { border: 2px dashed var(--text); color: var(--text); }
+[data-theme="bw"] .tiles [data-done="true"] .tile-check { background: var(--progress-track); border-style: solid; }
+[data-theme="bw"] .tiles [data-done="true"] .tile-check .title { color: var(--text); }
+[data-theme="bw"] .tiles [data-done="true"] .tile-check .box { background: var(--text); border-color: var(--text); }
+[data-theme="bw"] .tiles li.added .tile-check { border: 4px solid var(--text); padding: 9.5px 7.5px; }
+[data-theme="bw"] .tiles li[aria-invalid="true"] .tile-check { border: 4px dashed var(--text); padding: 9.5px 7.5px; }
+
+.list-tiles .unchecked-box { max-width: 760px; }
+/* A phone: two tiles side by side from 320 px; the box and picture shrink a little. */
+@media (max-width: 420px) {
+  .tiles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 136px), 1fr)); }
+  .tile-check { min-height: 136px; }
+}
+
+/* On the display (#33): the tiles fill the list's scroll area; the view switch
+   sits in the list's head next to the state line. */
+.lv-head .view-row { margin: 0; max-width: none; }
+.lv-entries ul.tiles { max-width: none; margin: 0; grid-template-columns: repeat(auto-fill, minmax(min(100%, 180px), 1fr)); }
+.lv-entries .unchecked-box { max-width: none; margin: 8px 0 0; }
+.lv .tile-check .title { -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) {
+  .lv .tile-check .title { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; }
+}
+@media (max-width: 599px) {
+  .lv-entries ul.tiles { grid-template-columns: repeat(auto-fill, minmax(min(100%, 128px), 1fr)); }
+  .lv-entries ul.tiles > * + *, .lv-entries .tile-warn * + * { margin-top: 0; }
+  /* A phone used as a display: the list card gives width back to the tiles. */
+  .lv-head { padding: 12px 10px 10px; }
+  .lv-entries { padding: 10px; }
+  .lv .tile-check { padding: 10px 4px; }
+  [data-theme="bw"] .lv .tile-check { padding: 9.5px 3.5px; }
+  .lv .tile-check .title { font-size: var(--fs-label-large); }
+  .lv .tile-check .pic { width: 56px; height: 56px; font-size: 36px; }
+}
+/* In the tile view the groups and actions below the tiles take the tiles' width. */
+main:has(.tiles) .group-head, main:has(.tiles) .hidden-line, main:has(.tiles) .tools, main:has(.tiles) details.danger { max-width: 760px; }
 
 /* ticket 57, product owner decision Q92: the names the box certificate covers,
    one per line so a long router name never widens a 375 px page. */

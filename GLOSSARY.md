@@ -167,7 +167,7 @@ One person's view on a display, opened by tapping them; returns to the family vi
 _Avoid_: profile view, child view (that is a later, separate view)
 
 **Kiosk adapter**:
-The box's connection to the kiosk app on a display that switches its front light and screen, for example in quiet mode.
+The box's connection to the kiosk app on a display that sets its brightness (on E-Ink the front light) and switches its screen, by time of day and in quiet mode.
 _Avoid_: display driver, device control
 
 **Web interface**:
@@ -195,7 +195,7 @@ Whether a display or the web interface is light or dark, switches automatically 
 _Avoid_: dark mode (alone), skin, colour scheme
 
 **Quiet mode**:
-The scheduled night state of a display: a calm night page about the coming morning with the front light off, or a black page on a normal screen.
+The scheduled night state of a display: a calm night page about the coming morning with the front light off (or dimmed), or a black page on a normal screen without a kiosk app.
 _Avoid_: sleep mode (in prose), night mode, standby
 
 **Night page**:
@@ -264,8 +264,23 @@ _Avoid_: filtering, blocking
 Number and unit of a list entry, such as 500 g or 1 dozen.
 _Avoid_: amount
 
+**Default unit**:
+One of the one or two units an article offers first when it is added, such as dozen and piece for eggs.
+_Avoid_: standard unit
+
+**Active units**:
+The units the household can choose when adding, preset by the home location's country and changed under Settings, Lists, Units.
+
+**Kind of unit**:
+What a unit measures: pieces (piece, dozen), weight, volume, and pack and bunch, which count only themselves. Only units of one kind convert into each other and add up; another kind of the same article gets its own entry under the old one.
+_Avoid_: dimension, type
+
+**Total**:
+The quantity of an entry after adding up or changing. It is kept exactly (in pieces, grams or millilitres) and shown in the article's first default unit where it fits, otherwise in the clearest unit of its kind.
+_Avoid_: sum
+
 **Tile view**:
-A list shown as tiles with symbol or picture, name and tick; the default for children.
+A list shown as tiles with symbol or picture, name and tick; the default for children. The choice (tiles or list) is one per person for all lists and every device. A display is not a person and keeps its own view, tiles until someone switches it. An entry that names no article shows its first letter on a dashed ring instead of a picture.
 _Avoid_: grid, gallery
 
 **Diet**:
@@ -401,6 +416,28 @@ _Avoid_: tag, label, category
 **Relation**:
 The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician".
 _Avoid_: connection, relationship type
+
+## Offline mode and connections to the outside
+
+**Offline mode**:
+A household switch: the box opens no connection to anything outside the home network, and every single connection is off and locked. Calendar, tasks, lists, meals, displays and phones in the home network keep working, with the box's own CA. Asked in the setup wizard right after "Only in the home network". Switching it off lists first what goes outside again.
+_Avoid_: local mode, airplane mode
+
+**Connection to the outside**:
+One thing the box does on the internet that parents can switch: weather, update check, calendar services, ICS subscriptions, recipe import, web images; the DNS service has no switch of its own. Place search is not one: the list of places is on the box.
+_Avoid_: integration, external service
+
+**Gate** (outbound gate):
+The one place in the box through which every connection to the outside goes (`internal/outbound`). It refuses and records every attempt while the connection is off, and records the last contact when one goes through. A test fails if any other code makes a connection of its own.
+_Avoid_: firewall, proxy
+
+**Refused attempt**:
+A connection the gate stopped, with time, connection and target, shown newest first on the page "Connections to the outside". Nothing of it left the house.
+_Avoid_: blocked request, error
+
+**Paused** (calendar):
+The state of a calendar or connection whose connection to the outside is off: its events stay, it shows the tag "paused, offline mode", and it syncs again at once when the connection is on. Not a failure.
+_Avoid_: disabled, disconnected
 
 ## Access
 

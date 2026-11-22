@@ -17,9 +17,11 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/store/storetest"
 	"github.com/libdns/libdns"
 )
 
@@ -39,7 +41,7 @@ type rig struct {
 func newRig(t *testing.T) *rig {
 	t.Helper()
 	r := &rig{t: t, dns: newFakeDNS(t), dir: t.TempDir(), now: time.Now()}
-	r.dbPath = filepath.Join(r.dir, "hejmo.db")
+	r.dbPath = storetest.Path(t)
 	var err error
 	if r.db, err = store.Open(r.dbPath); err != nil {
 		t.Fatal(err)
@@ -61,6 +63,7 @@ func (r *rig) startCA(opt caOption) *fakeCA {
 func (r *rig) manager(directories map[string]string, extra ...publiccert.Option) *publiccert.Manager {
 	r.t.Helper()
 	opts := append([]publiccert.Option{
+		publiccert.WithGate(outbound.AllowAll()), // an extra option may replace it
 		publiccert.WithDirectories(directories),
 		publiccert.WithTrustedRoots(r.roots),
 		publiccert.WithProviderFactory(func(provider string, c publiccert.Credentials) (publiccert.DNSProvider, error) {

@@ -30,9 +30,11 @@ import (
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/list"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
+	"github.com/hejmo-home/hejmo/internal/unit"
 )
 
 // The rendered layout check (ticket 161, retro of 16/11/2026): the layout tests
@@ -92,6 +94,7 @@ func requireChrome(t *testing.T) string {
 // instead of skipping it, so CI cannot pass without running it. The test runs
 // it in a child process pointed at a Chrome that does not exist.
 func TestMissingChromeFailsWhenChromeIsRequired(t *testing.T) {
+	t.Parallel()
 	run := func(require string) (string, error) {
 		cmd := exec.Command(os.Args[0], "-test.run=^TestRenderedLayout$", "-test.v")
 		cmd.Env = []string{"PATH=", "HEJMO_CHROME=/nonexistent/chrome", "HEJMO_REQUIRE_CHROME=" + require}
@@ -116,6 +119,7 @@ var layoutNames = []string{"Friedrich", "Maximilian", "Anna-Lena", "Konstantin",
 type layoutFixture struct {
 	*familyBox
 	ids []string // person IDs in layoutNames order
+	kid *screen  // the phone of a child, which shows lists as tiles
 
 	lists       []string // list IDs
 	inviteToken string   // the invitation of Maximilian, a parent without account
@@ -164,11 +168,24 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	f.event(t, "Zahnarzttermin", f.at(16, 9, 0), f.at(16, 10, 0), false, "Konstantin", "Wilhelmine", "Sophie-Marie")
 
 	// Lists with long entries.
-	l, err := db.CreateList(h, list.List{Name: "Wochenendeinkaufsliste", Color: "blue", Symbol: "circle-empty", Sort: list.Alphabetical})
+	l, err := db.CreateList(h, list.List{Name: "Wochenendeinkaufsliste", Color: "blue", Symbol: "circle-empty", Sort: list.Alphabetical, Suggestions: true})
 	must(err)
 	f.lists = append(f.lists, l.ID)
-	for _, e := range []string{"Haferflockenpackung groß", "Kartoffelsalatzutaten für Samstag", "Vollkornspaghetti", "Bio-Pfefferminztee"} {
+	// Entries that name articles (#166): shipped ones that warn several people with long names, and the own articles made below, one with a photo and one with a symbol. The tiles of the child's phone show them.
+	for _, e := range []string{"Haferflockenpackung groß", "Kartoffelsalatzutaten für Samstag", "Vollkornspaghetti", "Bio-Pfefferminztee", "Toastbrot", "Milch", "Haselnuss-Mandel-Knusperflocken mit Schokostückchen", "Katzenfutter Huhn"} {
 		_, err := db.AddEntry(h, l.ID, e)
+		must(err)
+	}
+	// Articles with quantities (ticket 165): a quantity button on every open entry, warnings under it, one ticked off.
+	for _, q := range []struct {
+		text, art, unit string
+		amount          float64
+	}{{"Milch", "milk", "l", 3}, {"Eier", "eggs", "piece", 6}, {"Erdnussbutter", "peanut-butter", "pack", 1}, {"Bananen", "bananas", "", 0}, {"Zucker", "sugar", "g", 500}} {
+		it := store.Item{Text: q.text, ArticleID: q.art}
+		if q.unit != "" {
+			it.Qty = list.NewQuantity(q.amount, q.unit)
+		}
+		_, err := db.AddItem(h, l.ID, it, func(base float64, _ unit.Kind) string { return q.unit })
 		must(err)
 	}
 	l2, err := db.CreateList(h, list.List{Name: "Urlaubsvorbereitungen Ostsee", Color: "green", Symbol: "circle-empty", Sort: list.Manual})
@@ -236,7 +253,7 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	c.switchMCP(t, true)
 	c.newMCPToken(t, "Claude Desktop auf dem Küchenrechner", map[string]string{"lists": "write"})
 	// A paired phone, a calendar connection, a CalDAV device token.
-	pairedPhone(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
+	f.kid = pairedPhone(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
 	connID := connectedBox(t, f.box)
 	// Two calendars with long names (#183): the first is on, for all eight people and under a longer name of its own, the second is off.
 	f.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { // the connection page asks for event counts
@@ -281,7 +298,9 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	must(os.MkdirAll(folder, 0o755))
 	must(os.WriteFile(filepath.Join(folder, "a.jpg"), jpegPhoto(t, 640, 480), 0o644))
 	_, _, shown := c.call(http.MethodGet, "/displays", nil)
-	c.call(http.MethodPatch, "/displays/"+shown[0].(map[string]any)["id"].(string), map[string]any{"screensaver": map[string]any{"album_ids": []string{trip}}})
+	c.call(http.MethodPatch, "/displays/"+shown[0].(map[string]any)["id"].(string), map[string]any{"screensaver": map[string]any{"album_ids": []string{trip}},
+		// A kiosk app and quiet mode: the Brightness block with its levels and the quiet choice (ticket 179); the second display has no kiosk app, so its block is greyed out.
+		"kiosk": map[string]any{"url": "http://192.168.178.20:8080"}, "quiet_mode": map[string]any{"enabled": true, "from": "22:00", "to": "06:00"}})
 	// A second display whose only album is empty: it shows the hint.
 	f.hint = newScreen(f.box)
 	if r := f.post("/displays", pairForm(codeOn(t, f.hint.get("/display", "en").body))); r.status != http.StatusSeeOther {
@@ -450,28 +469,33 @@ func htmlRoutes(t *testing.T) []string {
 
 // notRendered are GET routes the check does not render, each with its reason.
 var notRendered = map[string]string{
-	"/healthz":                  "plain text",
-	"/static/":                  "assets",
-	"/api/v1/openapi.yaml":      "API document",
-	"/ca/hejmo-ca.crt":          "download",
-	"/ca/hejmo.mobileconfig":    "download",
-	"/manifest.webmanifest":     "JSON",
-	"/sw.js":                    "script",
-	"/display/state":            "JSON",
-	"/display/view":             "fragment of /display, rendered inside it",
-	"/display/lists":            "redirect to the first list",
-	"/display/lists/{id}/view":  "fragment of a list, rendered inside it",
-	"/display/events":           "event stream",
-	"/display/saver/photos":     "JSON",
-	"/display/photo/{id}":       "image",
-	"/display/person/{id}/view": "fragment of the personal view, rendered inside it",
-	"/otp":                      "redirect",
-	"/i/{token}":                "redirect",
-	"/setup/https/check":        "answers a fragment for the setup page's script",
-	"/places":                   "JSON list of places for the home location picker",
-	"/phones/join/{code}":       "one-time pairing link of a phone",
+	"/healthz":                     "plain text",
+	"/static/":                     "assets",
+	"/api/v1/openapi.yaml":         "API document",
+	"/ca/hejmo-ca.crt":             "download",
+	"/ca/hejmo.mobileconfig":       "download",
+	"/manifest.webmanifest":        "JSON",
+	"/sw.js":                       "script",
+	"/display/state":               "JSON",
+	"/display/view":                "fragment of /display, rendered inside it",
+	"/display/lists":               "redirect to the first list",
+	"/display/lists/{id}/view":     "fragment of a list, rendered inside it",
+	"/lists/{id}/suggest":          "fragment: the suggestions under the add card, rendered inside it",
+	"/lists/{id}/quantity":         "fragment: the quantity part of the add card, rendered inside it",
+	"/display/lists/{id}/suggest":  "fragment: the suggestions under the add card, rendered inside it",
+	"/display/lists/{id}/quantity": "fragment: the quantity part of the add card, rendered inside it",
+	"/display/events":              "event stream",
+	"/display/person/{id}/view":    "fragment of the personal view, rendered inside it",
+	"/otp":                         "redirect",
+	"/i/{token}":                   "redirect",
+	"/setup/https/check":           "answers a fragment for the setup page's script",
+	"/places":                      "JSON list of places for the home location picker",
+	"/phones/join/{code}":          "one-time pairing link of a phone",
+	"/display/saver/photos":        "JSON",
+	"/display/photo/{id}":          "image",
 
 	"/articles/{id}/picture":                  "an image",
+	"/display/articles/{id}/picture":          "an image",
 	"/settings/lists/library/picture/{token}": "an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
 }
@@ -507,6 +531,11 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	for _, p := range f.outlook {
 		add(parent, p)
 	}
+	// The child's phone shows lists as tiles by default (#166): the tiles of articles with a picture, a symbol and the warning of several people, and of free text.
+	kid := siteOf("child phone", f.box, f.kid.client)
+	add(kid, "/lists")
+	add(kid, "/lists/"+f.lists[0])
+	add(kid, "/lists/"+f.lists[1])
 	// The display: the family view and the personal views of two people.
 	display := siteOf("display", f.box, f.display.client)
 	add(display, "/display")
@@ -516,6 +545,9 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(display, "/display/lists/"+f.lists[1])
 	add(display, "/display/saver")
 	add(siteOf("display hint", f.box, f.hint.client), "/display/saver")
+
+	// Offline mode (ticket 201): the pages as the box answers them while it is on.
+	pages = append(pages, offlinePages(t, f)...)
 
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
@@ -539,6 +571,70 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	// The invitation of a parent: the welcome page and the form for username and password.
 	add(out, "/invite/"+f.inviteToken)
 	add(out, "/invite/"+f.inviteToken+"/account")
+	return pages
+}
+
+// offlinePages returns the pages of ticket 201 in the states a crawl does not
+// reach: with offline mode on (Home, the hub, the connections page with refused
+// attempts, the calendar pages with their paused tags and notices, the
+// confirmation to switch off) and with a public name (the change to the home
+// network, and its error). The box is put back as it was.
+func offlinePages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	parent := siteOf("app", f.box, f.client)
+	var pages []layoutPage
+	grab := func(name, path string) {
+		t.Helper()
+		out := map[string]string{}
+		for _, lang := range []string{"de", "en"} {
+			r := f.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": lang})
+			if r.status != http.StatusOK {
+				t.Fatalf("%s %s = %d", name, path, r.status)
+			}
+			out[lang] = r.body
+		}
+		pages = append(pages, layoutPage{site: parent, path: path + "?state=" + name, html: out})
+	}
+	db := f.box.db
+	if err := db.SetOffline(true, f.box.now); err != nil {
+		t.Fatal(err)
+	}
+	led := db.Outbound()
+	led.Refused(f.box.now, outbound.Calendars, "caldav.example.org")
+	led.Refused(f.box.now.Add(time.Minute), outbound.Images, "www.example-supermarkt.de/bilder/hafer-drink-barista-edition-1-liter-in-der-besonders-langen-verpackung.jpg")
+	hh, _ := db.HomeHousehold()
+	conns, err := db.Connections(hh.ID)
+	if err != nil || len(conns) == 0 {
+		t.Fatalf("the fixture has no calendar connection: %v", err)
+	}
+	connID := conns[0].ID
+	for _, p := range []struct{ name, path string }{
+		{"offline-home", "/"}, {"offline-hub", "/settings"}, {"offline-connections", "/settings/connections"}, {"offline-calendars", "/calendars"},
+		{"offline-connect", "/connections/new"}, {"offline-connection", "/connections/" + connID}, {"offline-switch-off", "/settings/connections/online"},
+	} {
+		grab(p.name, p.path)
+	}
+	if err := db.SetOffline(false, f.box.now); err != nil {
+		t.Fatal(err)
+	}
+	if err := db.SetServiceEnabled(outbound.Calendars, false); err != nil {
+		t.Fatal(err)
+	}
+	grab("calendars-off", "/connections/new")
+	grab("connections-single", "/settings/connections")
+	if err := db.SetServiceEnabled(outbound.Calendars, true); err != nil {
+		t.Fatal(err)
+	}
+	f.box.public.name = "familie-maier-mit-einem-langen-namen.dedyn.io"
+	if err := db.SavePublicHTTPS(store.PublicHTTPS{Name: f.box.public.name, Zone: "dedyn.io", Provider: "desec", Issuer: "letsencrypt", LANIP: "192.168.178.40", Token: []byte("x")}); err != nil {
+		t.Fatal(err)
+	}
+	grab("public-name", "/settings/connections/offline")
+	grab("public-connections", "/settings/connections")
+	f.box.public.name = ""
+	if err := db.DeletePublicHTTPS(); err != nil {
+		t.Fatal(err)
+	}
 	return pages
 }
 
@@ -669,6 +765,7 @@ func wizardPages(t *testing.T) []layoutPage {
 	add("fresh box", fresh, "/setup/https")
 	add("fresh box", fresh, "/setup/https?way=public")
 	add("fresh box", fresh, "/setup/https?way=domain")
+	add("fresh box", fresh, "/setup/offline") // the question of ticket 201
 	add("fresh box", fresh, "/setup/https?way=own")
 	// A router name found by the box, long enough to wrap on a phone.
 	named := newFreshBox(t, withResolver(&fakeResolver{names: map[string][]string{"127.0.0.1": {longRouterName + "."}}}))
@@ -702,6 +799,7 @@ func wizardPages(t *testing.T) []layoutPage {
 // Every GET route that answers a page is rendered by the check, or is listed
 // in notRendered with its reason: a page added later cannot slip through.
 func TestEveryPageIsInTheRenderedLayoutCheck(t *testing.T) {
+	t.Parallel()
 	f := newLayoutFixture(t)
 	pages := append(layoutPages(t, f), wizardPages(t)...)
 	for _, route := range htmlRoutes(t) {
@@ -733,6 +831,23 @@ func TestEveryPageIsInTheRenderedLayoutCheck(t *testing.T) {
 				break
 			}
 		}
+	}
+}
+
+// The layout check can only find what its fixture shows: the child's phone
+// must lay out tiles of an article with a picture, one with a symbol, free
+// text, and a tile that warns several people (#166).
+func TestTheLayoutFixtureShowsEveryKindOfTile(t *testing.T) {
+	t.Parallel()
+	f := newLayoutFixture(t)
+	page := f.kid.get("/lists/"+f.lists[0], "en").body
+	for _, want := range []string{`<ul class="tiles"`, `<img src="/articles/`, `🐈`, `<span class="pic letter"`, `<span class="tile-warn">`} {
+		if !strings.Contains(page, want) {
+			t.Errorf("the child's tiles lack %q", want)
+		}
+	}
+	if toast := tileOf(t, page, "Toastbrot"); strings.Count(toast, `<span class="line">`) < 3 {
+		t.Errorf("the toast does not warn three people:\n%s", toast)
 	}
 }
 
@@ -796,6 +911,7 @@ func (k knownLayoutProblem) covers(path string, width int, p layoutProblem) bool
 // and black-and-white, in German and English, and fails with the page, width,
 // theme and element where text overflows or a name breaks.
 func TestRenderedLayout(t *testing.T) {
+	t.Parallel()
 	chrome := requireChrome(t)
 	f := newLayoutFixture(t)
 	pages := append(layoutPages(t, f), wizardPages(t)...)
@@ -919,6 +1035,7 @@ const langCookieForTest = "hejmo_lang"
 // The probe itself is tested on small pages: each case is a page body, the
 // width it is rendered at, and the kinds of problem the probe must report.
 func TestLayoutProbeFindsWhatItShould(t *testing.T) {
+	t.Parallel()
 	ctx := startChrome(t, requireChrome(t))
 	const clip = `style="width:100px;overflow:hidden"`
 	for _, c := range []struct {
@@ -974,6 +1091,7 @@ func TestLayoutProbeFindsWhatItShould(t *testing.T) {
 }
 
 func TestTheFormAndAShippedArticleAreDifferentPages(t *testing.T) {
+	t.Parallel()
 	form, article := pageShape("/settings/lists/library/new"), pageShape("/settings/lists/library/walnuts")
 	if form == article {
 		t.Errorf("the form and a shipped article share the shape %q, so the crawl renders only one of them", form)
@@ -992,6 +1110,7 @@ func TestTheFormAndAShippedArticleAreDifferentPages(t *testing.T) {
 // Home) need a shrinkable box for the name, or the name overflows instead.
 // The check opens each heading at 300 px with a one-word name of 30 letters.
 func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
+	t.Parallel()
 	chrome := requireChrome(t)
 	const long = "Hubertusmariaaloisiusferdinand"
 	f := newFamilyBox(t, "eink_color")

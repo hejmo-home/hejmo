@@ -27,6 +27,7 @@ import (
 // overwrite it; write to a temporary path and compare:
 // HEJMO_WRITE_PREVIEW_34=/tmp/preview-34.html go test ./internal/server -run WritePreview34
 func TestWritePreview34(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_34")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_34 to the output path to write the preview")

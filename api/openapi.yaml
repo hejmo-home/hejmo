@@ -440,6 +440,50 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /people/{id}/list-view:
+    get:
+      operationId: getListView
+      summary: How a person sees lists, as tiles or as a list (scope lists:read)
+      description: |
+        One choice per person for all lists, on every device (ADR 0019). A
+        person who never chose has the default of the role (`default: true`):
+        children see tiles, adults the list.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The view
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setListView
+      summary: Choose how you see lists (scope lists:complete)
+      description: |
+        Everyone, children included, chooses their own view; nobody changes
+        another person's (403, not even a parent). It is not a change of any
+        list, so the scope is the one for ticking entries off. The view of a
+        display is `list_view` of `PATCH /displays/{id}`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ListViewChange" }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /people/order:
     put:
       operationId: orderPeople
@@ -783,6 +827,26 @@ paths:
             application/json:
               schema: { $ref: "#/components/schemas/DisplayState" }
         "401": { $ref: "#/components/responses/Unauthorized" }
+  /display/wake:
+    post:
+      operationId: wakeDisplay
+      summary: A touch on a quiet display wakes it (its own token as bearer token)
+      security:
+        - displayBearer: []
+      description: |
+        Ticket 179. In quiet mode a display whose kiosk app switched it off (quiet
+        mode `off` in `brightness.quiet.mode`) is woken by a touch: the display's
+        page posts here, and the box keeps it awake for `brightness.quiet.wake_minutes`
+        at evening brightness with the night page, then switches it off again.
+        The answer is 204 whether or not it woke anything: outside quiet mode, while
+        quiet mode only dims, and on a display without a kiosk app nothing changes.
+        An `Authorization` header that is not a bearer token is refused with 401, the
+        token of a display that is not paired with 403.
+      responses:
+        "204":
+          description: Noted
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /displays/{id}:
     patch:
       operationId: updateDisplay
@@ -790,8 +854,10 @@ paths:
       description: |
         Only the fields sent are changed. `name` (1 to 80 characters after trimming) and `type` (`eink_bw`, `eink_color` or `screen`) rename and retype the display; an empty or too long name, or an unknown type, is refused with 422. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
         `theme` and the two offsets set the display's theme (ADR 0015); an unknown theme or an offset outside -180..180 is refused with 422.
-        `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015). Quiet mode takes precedence over the theme.
-        `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to switch the front light off at sunset and in quiet mode; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
+        `quiet_mode` sets the daily window in which the display shows the night page (ADR 0015). Quiet mode takes precedence over the theme. What it does to the light depends on `brightness.quiet.mode`: with `off` the front light goes off (E-Ink) or the screen goes off (normal screen, the page is black meanwhile); with `dim` the night page stays visible and the display is only dimmed to `brightness.quiet.level`. See `Brightness`.
+        `list_view` (`tiles` or `list`) is how the display shows lists; the display keeps its own view, tiles until it is switched (ADR 0019).
+        `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to set the brightness; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
+        `brightness` sets the brightness values by time of day and in quiet mode (ticket 179); see `Brightness`.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -2196,7 +2262,29 @@ paths:
     post:
       operationId: addListEntry
       summary: Add an entry at the end of a list (scope lists:write, parents only)
-      description: An alphabetical list shows it at its place by text.
+      description: |
+        An alphabetical list shows it at its place by text.
+
+        A list with `suggestions` takes an article of the library (`article_id`,
+        the key of a shipped article or the id of an own one; or the exact name
+        in `text`, in German or English, which is the same) and a quantity
+        (`amount` and `unit`). The entry's text is then the article's name in
+        the language of the request. Only open entries merge:
+
+        - the same article (or the same text, ignoring case) with a unit of the
+          same kind **adds up** (500 g + 1 kg = 1.5 kg; 6 pieces + 1 dozen = 18
+          pieces), the total shown in the article's first default unit where it
+          fits (`result: added_to`, status 200);
+        - an entry without quantity takes the quantity (`filled`, 200);
+        - adding without a quantity something that is already there makes no
+          second entry (`exists`, 200);
+        - another kind (piece, pack, bunch, weight, volume) gets its own entry
+          directly under the old one (`added`, 201).
+
+        `unit` is optional: the unit last used for the article, otherwise its
+        first default unit. `amount` is a number above 0 up to 9999; a unit
+        that is switched off (`GET /units`) is refused. A list without
+        suggestions takes plain `text` only.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -2205,21 +2293,72 @@ paths:
           application/json:
             schema:
               type: object
-              required: [text]
               properties:
                 text: { type: string, minLength: 1, maxLength: 200 }
+                article_id: { type: string, description: "Key of a shipped article or id of an own one" }
+                amount: { type: number, description: "Above 0, at most 9999; anything else is refused with 422" }
+                unit: { type: string, description: "A key of `GET /units`; one that is switched off is refused with 422" }
       responses:
+        "200":
+          description: Merged into an entry that was there, or already there
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntryResult" }
         "201":
           description: Created
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ListEntry" }
+              schema: { $ref: "#/components/schemas/ListEntryResult" }
         "400": { $ref: "#/components/responses/Invalid" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /lists/{id}/entries/{entry}:
+    patch:
+      operationId: setListEntryQuantity
+      summary: Change the quantity of an open entry (scope lists:write, parents only)
+      description: |
+        The amount **replaces** the old quantity and never adds to it. The
+        caller converts a change of unit within one kind (500 g to 0.5 kg keeps
+        the amount). `amount` is rounded as shown (two decimals, whole g and ml);
+        sending back the rounded number of the entry's own quantity, in any unit
+        of its kind, keeps the exact total. The total is shown by the same rules
+        as when adding. When
+        the article is already on the list in the new kind (or, for `amount:
+        null`, with any other entry), this entry goes into it (`result: merged`,
+        the answer is the entry that stays); otherwise `result: set`.
+        `amount: null` takes the quantity away. An entry that is ticked off or
+        gone answers 409. Only on lists with `suggestions`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount: { type: number, nullable: true, description: "Above 0, at most 9999; null takes the quantity away" }
+                unit: { type: string, description: "A key of `GET /units`; one that is switched off is refused with 422" }
+      responses:
+        "200":
+          description: The entry now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntryResult" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: The entry is ticked off or gone
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
     delete:
       operationId: deleteListEntry
       summary: Delete one entry (scope lists:delete, parents only)
@@ -2309,6 +2448,64 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /units:
+    get:
+      operationId: getUnits
+      summary: The units a quantity can have in this household (scope lists:read)
+      description: |
+        `active` are the units that can be chosen when adding. They follow the
+        country of the home (`country`) until a parent changes them (`custom:
+        true`): metric plus piece, dozen, pack and bunch in most countries; the
+        United Kingdom adds imperial units; the United States use US customary.
+        `units` lists every unit of the catalogue with its group, kind
+        (`count`, `pack`, `bunch`, `weight`, `volume`: only units of one kind
+        convert into each other) and size in pieces, grams or millilitres.
+      responses:
+        "200":
+          description: The units
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Units" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setUnits
+      summary: Switch units on and off (scope lists:write, parents only)
+      description: |
+        Piece is always on; unknown keys are dropped. Weight and volume each
+        keep at least one unit, otherwise 422 names the group in `field`
+        (`weight` or `volume`). Switching a unit off changes no entry that is
+        already on a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active: { type: array, items: { type: string }, description: "Keys of `GET /units`" }
+      responses:
+        "200":
+          description: The units now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Units" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: resetUnits
+      summary: Go back to the preset of the home's country (scope lists:write, parents only)
+      responses:
+        "200":
+          description: The units now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Units" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /articles:
     get:
       operationId: listArticles
@@ -2317,8 +2514,10 @@ paths:
         The articles Hejmo ships (`source: hejmo`, about 250, German and English
         names) and the household's own ones (`source: own`). Optional `q` keeps
         the articles whose name holds the text, ignoring case and umlauts.
-        `units` are the article's default units, `offered_units` those of them
-        that are switched on (piece when neither is). Articles say which
+        `units` are the article's default units, `offered_units` the ones the
+        add card offers: those that are switched on, a switched-off one
+        replaced by the nearest active unit of its kind (kg by g), piece when
+        nothing is left. Articles say which
         allergens they contain; who is warned about them is health data, see
         `/articles/{id}/warnings`.
       parameters:
@@ -2683,6 +2882,7 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "422": { $ref: "#/components/responses/Invalid" }
   /calendars/{id}:
     parameters:
@@ -2747,6 +2947,7 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
   /calendar-connections:
     get:
@@ -2786,6 +2987,7 @@ paths:
               schema: { $ref: "#/components/schemas/CalendarConnection" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "422": { $ref: "#/components/responses/Invalid" }
   /calendar-connections/outlook/sign-ins:
     post:
@@ -2891,6 +3093,7 @@ paths:
               schema: { $ref: "#/components/schemas/CalendarConnection" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
     post:
@@ -2914,6 +3117,7 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /calendar-connections/{id}/event-counts:
@@ -2938,6 +3142,7 @@ paths:
                 items: { $ref: "#/components/schemas/EventCount" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /sync-log:
@@ -3093,6 +3298,94 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /outbound:
+    get:
+      operationId: getOutbound
+      summary: Offline mode, the connections to the outside, and what the box refused (scope settings:read)
+      description: |
+        The box makes every connection to the outside through one gate (ticket 201).
+        With `offline` true, the gate refuses all of them and records each attempt in
+        `refused`, newest first (at most 200); `connections` then show every switch as
+        `locked`. `enabled` is the state the connection is in now: with offline mode on
+        it is false for all, while the switches themselves are kept and come back when
+        offline mode goes off. The DNS service has no switch (`switchable` false): it is
+        in use while the box has a `public_name`. `last_contact` is the last time the box
+        reached the service (for `update`, the last time the host script looked).
+        Place search is not listed: the list of places is on the box.
+      responses:
+        "200":
+          description: The state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: updateOutbound
+      summary: Switch offline mode or single connections; omitted fields stay as they are (scope settings:write)
+      description: |
+        `offline` switches offline mode on or off; switching it off brings every
+        switch back as it was before. `connections` maps a connection id to its
+        switch; it is refused with 409 while offline mode is on (the switches are
+        locked), and with 422 for an id without a switch (`dns` among them).
+        Switching offline mode on while the box has a `public_name` is refused with
+        409: that needs the change to the home network (`POST /outbound/offline`).
+        `update_reminder_days` (7 to 365) is how many days without an update make
+        the web interface remind parents (offline mode).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OutboundUpdate" }
+      responses:
+        "200":
+          description: The state after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: The switches are locked by offline mode, or the public name must be left first
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /outbound/offline:
+    post:
+      operationId: goOffline
+      summary: Switch offline mode on, leaving a public name first if the box has one (scope settings:write)
+      description: |
+        The change the web page "Switch on offline mode" makes, in its order: with
+        `delete_dns` true the box first deletes its records at the DNS service (the
+        last connection to the outside), then forgets the public name, makes its own
+        certificate for its address at home and switches offline mode on. Every device
+        must trust the box's own CA again, and passkeys only work for the old name.
+        If the DNS service refuses, nothing is changed (502). Without a public name it
+        only switches offline mode on.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                delete_dns: { type: boolean, description: "Delete the box's DNS records at the DNS service first (default false)" }
+      responses:
+        "200":
+          description: The state after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "502":
+          description: The DNS service did not delete the records; nothing was changed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /update:
     get:
       operationId: getUpdate
@@ -3503,6 +3796,7 @@ components:
         color: { $ref: "#/components/schemas/ListColor" }
         symbol: { $ref: "#/components/schemas/ListSymbol" }
         sort: { allOf: [{ $ref: "#/components/schemas/ListSort" }], description: "Default manual" }
+        suggestions: { type: boolean, description: "Suggestions from the article library and quantities; default true" }
     ListChange:
       type: object
       minProperties: 1
@@ -3511,15 +3805,17 @@ components:
         color: { $ref: "#/components/schemas/ListColor" }
         symbol: { $ref: "#/components/schemas/ListSymbol" }
         sort: { $ref: "#/components/schemas/ListSort" }
+        suggestions: { type: boolean }
     List:
       type: object
-      required: [id, name, color, symbol, sort, open_count, done_count]
+      required: [id, name, color, symbol, sort, suggestions, open_count, done_count]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         color: { $ref: "#/components/schemas/ListColor" }
         symbol: { $ref: "#/components/schemas/ListSymbol" }
         sort: { $ref: "#/components/schemas/ListSort" }
+        suggestions: { type: boolean, description: "The list offers articles of the library while typing and takes quantities (a to-do list switches it off)" }
         open_count: { type: integer, description: "Entries not ticked off" }
         done_count: { type: integer, description: "Entries ticked off" }
     Article:
@@ -3616,13 +3912,66 @@ components:
         confirmed_by: { type: string, format: uuid, nullable: true }
         confirmed_at: { type: string, format: date-time, nullable: true }
         experimental: { type: boolean, description: "Always true" }
+    UnitKey:
+      type: string
+      enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
     ListEntry:
       type: object
-      required: [id, text, done]
+      required: [id, text, done, article_id, symbol, picture]
       properties:
         id: { type: string, format: uuid }
         text: { type: string }
         done: { type: boolean }
+        article_id: { type: string, nullable: true, description: "The library article of the entry: the one stored when it was added from the library, else (an entry without one) the article its text names exactly in German or English, ignoring case and umlauts; never an article hidden by hand. The key of a shipped article or the id of an own one. Null for free text." }
+        symbol: { type: string, nullable: true, description: "The emoji a tile shows for the article (its department's symbol when it has none). Null for free text and for an article that has a picture." }
+        picture: { type: string, nullable: true, description: "Path of the own article's picture, `GET /articles/{id}/picture`. Null without one." }
+        amount: { type: number, description: "How much, as shown (rounded: g and ml whole, else at most two decimals); missing without a quantity" }
+        unit: { $ref: "#/components/schemas/UnitKey" }
+    ListEntryResult:
+      allOf:
+        - { $ref: "#/components/schemas/ListEntry" }
+        - type: object
+          required: [result]
+          properties:
+            result:
+              type: string
+              enum: [added, added_to, filled, exists, set, merged]
+              description: What happened to the entry (see `addListEntry` and `setListEntryQuantity`)
+            previous:
+              type: object
+              description: The quantity the entry had before, when it changed
+              required: [amount, unit]
+              properties:
+                amount: { type: number }
+                unit: { $ref: "#/components/schemas/UnitKey" }
+    Units:
+      type: object
+      required: [country, custom, active, units]
+      properties:
+        country: { type: string, description: "ISO 3166-1 alpha-2 country of the home, empty without a place", example: DE }
+        custom: { type: boolean, description: "A parent changed the units; false while they follow the country" }
+        active: { type: array, items: { $ref: "#/components/schemas/UnitKey" } }
+        units:
+          type: array
+          items:
+            type: object
+            required: [key, group, kind, size]
+            properties:
+              key: { $ref: "#/components/schemas/UnitKey" }
+              group: { type: string, enum: [count, weight, volume] }
+              kind: { type: string, enum: [count, pack, bunch, weight, volume] }
+              size: { type: number, description: "In pieces, grams or millilitres" }
+    ListView:
+      type: object
+      required: [view, default]
+      properties:
+        view: { type: string, enum: [tiles, list] }
+        default: { type: boolean, description: "True while the person never chose: children then see tiles, adults the list" }
+    ListViewChange:
+      type: object
+      required: [view]
+      properties:
+        view: { type: string, enum: [tiles, list] }
     ListWithEntries:
       allOf:
         - { $ref: "#/components/schemas/List" }
@@ -3701,7 +4050,7 @@ components:
         text: { type: string }
     Display:
       type: object
-      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver]
+      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver, brightness, list_view]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: Hallway }
@@ -3716,6 +4065,56 @@ components:
         quiet_mode: { $ref: "#/components/schemas/QuietMode" }
         kiosk: { $ref: "#/components/schemas/Kiosk" }
         screensaver: { $ref: "#/components/schemas/Screensaver" }
+        brightness: { $ref: "#/components/schemas/Brightness" }
+    Brightness:
+      type: object
+      description: |
+        How bright the display is (ticket 179, ADR 0020). It needs a kiosk app: the box sets
+        the brightness (E-Ink: the front light) through it, and without one only the values
+        are stored. `day` and `evening` switch at the same sun times and offsets as the
+        automatic theme (ADR 0015); without a home location `day` applies all day.
+      required: [day, evening, light_source, quiet, current]
+      properties:
+        day: { type: integer, minimum: 1, maximum: 100, description: "Percent from sunrise to sunset; default 100" }
+        evening: { type: integer, minimum: 1, maximum: 100, description: "Percent from sunset to sunrise; default 40" }
+        light_source:
+          type: string
+          enum: [sun, room]
+          description: "`sun`: day and evening by the sun. `room`: the device's light sensor regulates (only effective when the device reports one); quiet mode applies either way"
+        quiet:
+          type: object
+          description: What quiet mode does to the light, and the wake after a touch
+          required: [mode, level, wake_minutes]
+          properties:
+            mode: { type: string, enum: [off, dim], description: "`off`: the front light (E-Ink) or the screen (normal screen) goes off. `dim`: dimmed to `level`" }
+            level: { type: integer, minimum: 1, maximum: 100, description: "Percent for `dim`; default 5" }
+            wake_minutes: { type: integer, minimum: 1, maximum: 30, description: "How long a touch wakes a display that quiet mode switched off, at evening brightness; default 1" }
+        current:
+          type: object
+          nullable: true
+          description: What the display should do now and whether the kiosk app confirmed it. Null without a kiosk app or before the box has checked it (it checks every minute).
+          required: [phase, percent, since, confirmed, reachable, light_sensor]
+          properties:
+            phase: { type: string, enum: [day, evening, room, quiet_off, quiet_dim, wake] }
+            percent: { type: integer, nullable: true, description: "Null while the light sensor regulates (`room`, or a `wake` under it)" }
+            since: { type: string, format: date-time, nullable: true, description: "When this phase began; null without a home location" }
+            confirmed: { type: boolean, description: "The kiosk app received it" }
+            reachable: { type: boolean, description: "The kiosk app answered at the last check; the box retries every minute" }
+            light_sensor: { type: boolean, description: "The device reports a light sensor, so `light_source: room` has an effect" }
+    UpdateBrightness:
+      type: object
+      description: Only the fields sent change. A value outside its range, an unknown mode or source is refused with 422.
+      properties:
+        day: { type: integer, minimum: 1, maximum: 100 }
+        evening: { type: integer, minimum: 1, maximum: 100 }
+        light_source: { type: string, enum: [sun, room] }
+        quiet:
+          type: object
+          properties:
+            mode: { type: string, enum: [off, dim] }
+            level: { type: integer, minimum: 1, maximum: 100 }
+            wake_minutes: { type: integer, minimum: 1, maximum: 30 }
+        list_view: { type: string, enum: [tiles, list], description: "How the display shows lists (ADR 0019). A display is not a person and keeps its own view, tiles until someone switches it at the display or here." }
     DisplayPairing:
       type: object
       required: [token, state, code, code_expires_at, pair_url]
@@ -3778,6 +4177,8 @@ components:
             url: { type: string, description: "http or https address; empty removes the kiosk app and its key" }
             api_key: { type: string, writeOnly: true, description: "Omitted or empty keeps the stored key" }
         screensaver: { $ref: "#/components/schemas/UpdateScreensaver" }
+        brightness: { $ref: "#/components/schemas/UpdateBrightness" }
+        list_view: { type: string, enum: [tiles, list], description: "How the display shows lists (ADR 0019); anything else is refused with 422" }
     PairDisplay:
       type: object
       required: [code, name, type]
@@ -3849,7 +4250,8 @@ components:
             new: { type: integer }
             changed: { type: integer }
             removed: { type: integer }
-        state: { type: string, enum: [ok, stale], description: "stale = 24 hours without a successful sync; one success clears it" }
+        state: { type: string, enum: [ok, stale], description: "stale = 24 hours without a successful sync; one success clears it. A paused calendar is never stale" }
+        paused: { type: boolean, description: "True while the calendar's connection to the outside is off (offline mode, or the connection's own switch; see GET /outbound). The calendar keeps its events, is not tried and is not a problem; it syncs again at once when the connection is on" }
         interval_minutes: { type: integer, example: 60 }
         last_attempt_at: { type: string, format: date-time, nullable: true }
         last_success_at: { type: string, format: date-time, nullable: true }
@@ -4009,6 +4411,45 @@ components:
             lunch: { type: string }
             snack: { type: string }
             dinner: { type: string }
+    Outbound:
+      type: object
+      required: [offline, offline_since, update_reminder_days, public_name, connections, refused]
+      properties:
+        offline: { type: boolean }
+        offline_since: { type: string, nullable: true, format: date-time, description: "When offline mode was switched on; null while it is off" }
+        update_reminder_days: { type: integer, minimum: 7, maximum: 365, description: "Days without an update after which parents are reminded (offline mode)" }
+        public_name: { type: string, nullable: true, description: "The box's public DNS name, or null if it uses its own certificate" }
+        connections:
+          type: array
+          items:
+            type: object
+            required: [id, enabled, switchable, locked, last_contact]
+            properties:
+              id: { type: string, enum: [weather, update, calendars, ics, recipes, images, dns] }
+              enabled: { type: boolean, description: "Whether the connection may go outside now; false for all while offline mode is on" }
+              switchable: { type: boolean, description: "False for the DNS service, which has no switch" }
+              locked: { type: boolean, description: "True while offline mode is on" }
+              last_contact: { type: string, nullable: true, format: date-time }
+              target: { type: string, description: "The host last reached" }
+        refused:
+          type: array
+          description: "What the gate refused, newest first, at most 200"
+          items:
+            type: object
+            required: [at, service, target]
+            properties:
+              at: { type: string, format: date-time }
+              service: { type: string, enum: [weather, update, calendars, ics, recipes, images, dns, other] }
+              target: { type: string }
+    OutboundUpdate:
+      type: object
+      properties:
+        offline: { type: boolean }
+        connections:
+          type: object
+          description: "Connection id to switch (weather, update, calendars, ics, recipes, images)"
+          additionalProperties: { type: boolean }
+        update_reminder_days: { type: integer }
     UpdateStatus:
       type: object
       required: [mode, managed, state, notice]
@@ -4280,6 +4721,14 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Invalid:
       description: Request is well-formed but not valid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    OffNow:
+      description: |
+        The connection to the outside this needs is off: offline mode is on, or the
+        connection is switched off (`GET /outbound` says which). Nothing was sent
+        to the outside and nothing was changed.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }

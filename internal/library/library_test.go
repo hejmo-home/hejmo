@@ -292,3 +292,60 @@ func TestValidateAnOwnArticle(t *testing.T) {
 		t.Errorf("normalized = %+v", n)
 	}
 }
+
+func TestCompletionsStartWithTheLettersThenWordsThenAnywhereOwnFirst(t *testing.T) {
+	all := []library.Article{
+		{ID: "ice", De: "Vanilleeis", En: "Vanilla ice cream"},
+		{ID: "eggs", De: "Eier", En: "Eggs"},
+		{ID: "noodles", De: "Eiernudeln", En: "Egg noodles"},
+		{ID: "x", De: "Süßes Ei", En: "Sweet egg", Own: true},
+		{ID: "own", De: "Eigelb", En: "Eigelb", Own: true},
+		{ID: "salad", De: "Eisbergsalat", En: "Iceberg lettuce"},
+	}
+	var ids []string
+	for _, a := range library.Complete("Ei", all, 5) {
+		ids = append(ids, a.ID)
+	}
+	want := []string{"own", "eggs", "noodles", "salad", "x"}
+	if len(ids) != len(want) {
+		t.Fatalf("got %v, want %v", ids, want)
+	}
+	for i := range want {
+		if ids[i] != want[i] {
+			t.Fatalf("got %v, want %v", ids, want)
+		}
+	}
+	if got := library.Complete("e", all, 5); got != nil {
+		t.Errorf("one letter is no search: %v", got)
+	}
+	if got := library.Complete("qq", all, 5); got != nil {
+		t.Errorf("%v", got)
+	}
+	if got := library.Complete("egg", all, 2); len(got) != 2 {
+		t.Errorf("the English name finds too, and max cuts: %v", got)
+	}
+}
+
+func TestResolveFindsTheArticleAnEntryNames(t *testing.T) {
+	own := library.Article{ID: "own-1", Own: true, De: "Käse", En: "Käse", Dept: "dairy", Kind: library.Veg, Symbol: "🧀"}
+	all := []library.Article{own}
+	all = append(all, library.Shipped()...)
+	for text, want := range map[string]string{
+		"Milch":             "milk",
+		"  milch ":          "milk",  // case and spaces do not matter
+		"MILK":              "milk",  // either language
+		"Käse":              "own-1", // an own article wins over a shipped one of the same name
+		"kase":              "own-1", // ä is like a
+		"Nuss-Nougat-Creme": "nut-nougat-spread",
+	} {
+		a, ok := library.Resolve(text, all)
+		if !ok || a.ID != want {
+			t.Errorf("Resolve(%q) = %q, %v, want %q", text, a.ID, ok, want)
+		}
+	}
+	for _, text := range []string{"Geschenkpapier für Sebastians Kindergeburtstag", "", "Mil", "Milch und Honig"} {
+		if a, ok := library.Resolve(text, all); ok {
+			t.Errorf("Resolve(%q) = %q: free text must stay free text", text, a.ID)
+		}
+	}
+}

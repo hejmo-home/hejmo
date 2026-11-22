@@ -1,0 +1,21 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "outside.off.title") "Frame" .Frame)}}
+  <h1>{{t "outside.off.title"}}</h1>
+  <p class="lead">{{t "outside.off.lead"}}</p>
+  {{with .Back.Now}}<h2>{{t "outside.off.now"}}</h2>
+  <ul class="conns plain">
+    {{range .}}<li><b>{{.Name}}</b><small>{{.Text}}</small></li>
+    {{end}}
+  </ul>{{end}}
+  {{with .Back.OnUse}}<h2>{{t "outside.off.onuse"}}</h2>
+  <ul class="conns plain">
+    {{range .}}<li><b>{{.Name}}</b><small>{{.Text}}</small></li>
+    {{end}}
+  </ul>{{end}}
+  {{with .Back.Stays}}<h2>{{t "outside.off.stays"}}</h2>
+  <ul class="conns plain">
+    {{range .}}<li><b>{{.Name}}</b><small>{{.Text}}</small></li>
+    {{end}}
+  </ul>{{end}}
+  <p class="hint">{{t "outside.off.hint"}}</p>
+  <form method="post" action="/settings/connections/online" class="actions"><button class="button" type="submit">{{t "outside.off.yes"}}</button><a class="link" href="/settings/connections">{{t "outside.off.no"}}</a></form>
+{{template "foot"}}

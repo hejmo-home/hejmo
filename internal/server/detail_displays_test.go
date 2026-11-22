@@ -49,6 +49,7 @@ func noDestructiveForm(t *testing.T, page, body string) {
 }
 
 func TestDisplaysOverviewListsRowsThatOpenTheDetailPage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "eink_color")
 	body := getEN(b, "/displays").body
@@ -67,6 +68,7 @@ func TestDisplaysOverviewListsRowsThatOpenTheDetailPage(t *testing.T) {
 }
 
 func TestADisplayNotSeenForFifteenMinutesGetsAWarningFlag(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "screen")
 	b.now = b.now.Add(16 * time.Minute)
@@ -79,6 +81,7 @@ func TestADisplayNotSeenForFifteenMinutesGetsAWarningFlag(t *testing.T) {
 }
 
 func TestDisplayDetailShowsEverythingAndConfirmsByName(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "eink_color")
 	r := getEN(b, "/displays/"+id)
@@ -89,7 +92,7 @@ func TestDisplayDetailShowsEverythingAndConfirmsByName(t *testing.T) {
 		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/displays">Displays</a>`, "<h1>Hallway</h1>", `<dl class="facts">`, "Last seen", "Paired on",
 		`<form method="post" action="/displays/` + id + `/settings" class="steps">`,
 		`name="name"`, `name="type"`, `name="show_tomorrow"`, `name="theme"`, `name="quiet"`, `name="quiet_from"`, `name="quiet_to"`,
-		`class="pair when-on"`, `<details class="more">`, "Kiosk app: not set up", `name="kiosk_url"`, `name="sunrise_offset"`,
+		`class="pair when-on"`, `<details class="more">`, `Kiosk app<span class="sum">not set up</span>`, `name="kiosk_url"`, `name="sunrise_offset"`,
 		`<details class="danger">`, `action="/displays/` + id + `/unpair"`, "Yes, unpair “Hallway”", "No, change nothing",
 	} {
 		if !strings.Contains(r.body, want) {
@@ -105,6 +108,7 @@ func TestDisplayDetailShowsEverythingAndConfirmsByName(t *testing.T) {
 }
 
 func TestDisplayRenameAndTypeSaveWithASuccessLine(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "eink_bw")
 	r := b.post("/displays/"+id+"/settings", url.Values{"name": {"Kitchen"}, "type": {"screen"}, "theme": {"light"}, "sunrise_offset": {"0"}, "sunset_offset": {"0"}})
@@ -123,6 +127,7 @@ func TestDisplayRenameAndTypeSaveWithASuccessLine(t *testing.T) {
 }
 
 func TestDisplayNameAndTypeErrorsShowAtTheirField(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "screen")
 	r := b.post("/displays/"+id+"/settings", url.Values{"name": {"  "}, "type": {"screen"}})
@@ -138,6 +143,7 @@ func TestDisplayNameAndTypeErrorsShowAtTheirField(t *testing.T) {
 // ADR 0015: a dark theme is allowed on a black-and-white display (it takes the dark palette), so the page
 // offers the choice there as on every display, and a theme saved on it can be changed back.
 func TestABlackAndWhiteDisplayKeepsItsThemeControl(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "eink_bw")
 	body := getEN(b, "/displays/"+id).body
@@ -160,6 +166,7 @@ func TestABlackAndWhiteDisplayKeepsItsThemeControl(t *testing.T) {
 
 // The sun offsets are saved on a black-and-white display, with or without a theme in the same post.
 func TestSunOffsetsAreSavedOnABlackAndWhiteDisplay(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "eink_bw")
 	h, _ := b.db.HomeHousehold()
@@ -194,6 +201,7 @@ func displayByID(t *testing.T, b *box, householdID, id string) store.Display {
 }
 
 func TestQuietFieldsAreHiddenWhileTheSwitchIsOffAndTheErrorShowsAtQuietTo(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "screen")
 	body := getEN(b, "/displays/"+id).body
@@ -218,10 +226,11 @@ func TestQuietFieldsAreHiddenWhileTheSwitchIsOffAndTheErrorShowsAtQuietTo(t *tes
 }
 
 func TestAKioskErrorOpensMoreOptionsAndShowsAtTheField(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "screen")
 	r := b.post("/displays/"+id+"/settings", url.Values{"kiosk_url": {"192.168.1.20:8080"}})
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-kiosk_url"`) || !strings.Contains(r.body, `<details class="more" open>`) {
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-kiosk_url"`) || !strings.Contains(r.body, `<details class="more kiosk" open>`) {
 		t.Errorf("kiosk error = %d, field error or open details missing\n%s", r.status, r.body)
 	}
 	if !strings.Contains(r.body, `value="192.168.1.20:8080"`) {
@@ -230,6 +239,7 @@ func TestAKioskErrorOpensMoreOptionsAndShowsAtTheField(t *testing.T) {
 }
 
 func TestUnpairingHappensOnTheDetailPageAndNamesTheDisplay(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "Hallway", "screen")
 	r := b.post("/displays/"+id+"/unpair", url.Values{})
@@ -249,6 +259,7 @@ func TestUnpairingHappensOnTheDetailPageAndNamesTheDisplay(t *testing.T) {
 }
 
 func TestDisplayNamesInTheSuccessLineAreEscaped(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := pairedDisplay(t, b, "<b>Flur</b> & Co", "screen")
 	b.post("/displays/"+id+"/unpair", url.Values{})
@@ -259,6 +270,7 @@ func TestDisplayNamesInTheSuccessLineAreEscaped(t *testing.T) {
 }
 
 func TestALongNameOfWideCharactersStillShowsInTheSuccessLine(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	name := strings.Repeat("😀", 20)
 	id := pairedDisplay(t, b, name, "screen")
@@ -270,6 +282,7 @@ func TestALongNameOfWideCharactersStillShowsInTheSuccessLine(t *testing.T) {
 
 // PATCH /displays/{id} renames and retypes a display, so the contract lists both with their limits.
 func TestOpenAPIListsNameAndTypeOfUpdateDisplay(t *testing.T) {
+	t.Parallel()
 	props := loadSpec(t).Components.Schemas["UpdateDisplay"].Value.Properties
 	name, typ := props["name"], props["type"]
 	if name == nil || name.Value.MinLength != 1 || name.Value.MaxLength == nil || *name.Value.MaxLength != 80 {

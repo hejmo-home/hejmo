@@ -28,6 +28,7 @@ func foodHas(t *testing.T, what, page string, want ...string) {
 }
 
 func TestPersonPageHasTheCalmFoodRowWhichOpensItsOwnPage(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	page := p.en("/people/" + mia).body
@@ -37,6 +38,7 @@ func TestPersonPageHasTheCalmFoodRowWhichOpensItsOwnPage(t *testing.T) {
 }
 
 func TestFoodPageOffersFourDietsAndFourteenAllergensInTheOrderOfThePageLanguage(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	de := p.foodPage("/people/"+mia+"/food", "de")
@@ -71,6 +73,7 @@ func TestFoodPageOffersFourDietsAndFourteenAllergensInTheOrderOfThePageLanguage(
 }
 
 func TestSavingFoodReturnsToThePersonPageAndShowsWhatNowApplies(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	r := p.saveFood(mia, url.Values{"diet": {"vegetarian"}, "allergens": {"nuts", "peanuts"}, "other": {" Kiwi ,, Erdbeeren"}})
@@ -100,6 +103,7 @@ func peopleRow(page, name string) string {
 }
 
 func TestPeopleOverviewNamesDietAndAllergiesOnlyForThoseWhoNeedIt(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	p.add(t, "Sebastian", "child")
@@ -119,6 +123,7 @@ func TestPeopleOverviewNamesDietAndAllergiesOnlyForThoseWhoNeedIt(t *testing.T) 
 }
 
 func TestFreeTextNamingOneOfTheFourteenIsRefusedAtTheFieldAndNothingIsStored(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	r := p.saveFood(mia, url.Values{"diet": {"vegetarian"}, "allergens": {"peanuts"}, "other": {"Laktose, Kiwi"}})
@@ -151,6 +156,7 @@ func TestFreeTextNamingOneOfTheFourteenIsRefusedAtTheFieldAndNothingIsStored(t *
 }
 
 func TestChildrenCannotOpenOrSaveTheFoodPage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	child := childSession(t, b)
 	h, _ := b.db.HomeHousehold()
@@ -173,6 +179,7 @@ func TestChildrenCannotOpenOrSaveTheFoodPage(t *testing.T) {
 }
 
 func TestDisplaysNeverShowDietOrAllergies(t *testing.T) {
+	t.Parallel()
 	p := newPeopleBox(t)
 	mia := p.add(t, "Mia", "child")["id"].(string)
 	p.saveFood(mia, url.Values{"diet": {"vegan"}, "allergens": {"peanuts"}, "other": {"Kiwi"}})
@@ -187,6 +194,7 @@ func TestDisplaysNeverShowDietOrAllergies(t *testing.T) {
 }
 
 func TestMCPTokenFormSetsHealthApartAndOffersNoChange(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	switchMCPOnPage(t, b, true)
 	page := getEN(b, "/mcp/tokens/new").body

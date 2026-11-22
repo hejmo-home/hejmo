@@ -14,6 +14,7 @@ import (
 	"encoding/xml"
 	"log/slog"
 	"math/big"
+	"net"
 	"os"
 	"path/filepath"
 	"slices"
@@ -294,5 +295,61 @@ func TestCAFingerprintIsTheSHA256OfTheCertificate(t *testing.T) {
 	want := strings.ToUpper(hex.EncodeToString(sum[:1])) + ":" + strings.ToUpper(hex.EncodeToString(sum[1:2]))
 	if fp := s.CAFingerprint(); !strings.HasPrefix(fp, want) || strings.Count(fp, ":") != 31 {
 		t.Errorf("fingerprint = %q, want prefix %q and 32 groups", fp, want)
+	}
+}
+
+// Ticket 201 (Q143): leaving a public name for "only in the home network" needs
+// a new CA, because the CA of the standby is limited to the public name and
+// cannot vouch for the box's address at home.
+func TestReprovisionStartsOverWithANewCAForTheNewAddress(t *testing.T) {
+	dir := t.TempDir()
+	s, err := pki.Open(dir)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := s.Provision("familie-maier.dedyn.io", now); err != nil {
+		t.Fatal(err)
+	}
+	oldFP := s.CAFingerprint()
+	if err := s.Reprovision("192.168.178.40", now); err != nil {
+		t.Fatal(err)
+	}
+	if s.CAFingerprint() == oldFP {
+		t.Error("the CA is the old one")
+	}
+	leaf, err := s.GetCertificate(nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	pool := x509.NewCertPool()
+	pool.AddCert(caCert(t, s))
+	if _, err := leaf.Leaf.Verify(x509.VerifyOptions{Roots: pool, DNSName: "", CurrentTime: now, KeyUsages: []x509.ExtKeyUsage{x509.ExtKeyUsageServerAuth}}); err != nil {
+		t.Errorf("the new certificate does not verify against the new CA: %v", err)
+	}
+	if !slices.ContainsFunc(leaf.Leaf.IPAddresses, func(ip net.IP) bool { return ip.Equal(net.ParseIP("192.168.178.40")) }) {
+		t.Errorf("the certificate lacks the address: %v", leaf.Leaf.IPAddresses)
+	}
+	// It survives a restart.
+	again, err := pki.Open(dir)
+	if err != nil || !again.Ready() || again.CAFingerprint() != s.CAFingerprint() {
+		t.Errorf("reopened: %v ready=%v", err, again.Ready())
+	}
+}
+
+func TestReprovisionKeepsTheOldCAWhenTheNewHostIsRefused(t *testing.T) {
+	s := provisioned(t, "familie-maier.dedyn.io")
+	fp := s.CAFingerprint()
+	if err := s.Reprovision("not a host", now); err == nil {
+		t.Fatal("a bad host was accepted")
+	}
+	if !s.Ready() || s.CAFingerprint() != fp {
+		t.Error("a refused change must leave the CA as it was")
+	}
+}
+
+func TestReprovisionOnAFreshStoreIsProvision(t *testing.T) {
+	s, _ := pki.Open(t.TempDir())
+	if err := s.Reprovision("192.168.178.40", now); err != nil || !s.Ready() {
+		t.Fatalf("Reprovision on a fresh store: %v", err)
 	}
 }

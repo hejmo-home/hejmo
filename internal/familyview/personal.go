@@ -5,6 +5,7 @@ import (
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/calendar"
+	"github.com/hejmo-home/hejmo/internal/layout"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -95,6 +96,14 @@ type PersonalInput struct {
 	Stars       Stars
 	// TimeFormat is the household's "24h" (default) or "12h" (ADR 0016).
 	TimeFormat store.TimeFormat
+	// Layout is the display's layout; its header blocks (time, weather) apply
+	// to the personal view too (Q130). Nil: the clock only.
+	Layout          *layout.Layout
+	Weather         *Weather
+	TemperatureUnit store.TemperatureUnit
+	// Home: the display's layout has exactly this person (Q88), so there is no
+	// family view to go back to.
+	Home bool
 }
 
 // PersonalView is the data of one person's screen on a display.
@@ -108,6 +117,11 @@ type PersonalView struct {
 	Tasks       []Task
 	Stars       Stars
 	Routines    []Routine
+	Weather     *WeatherChip
+	// HeaderOrder names the header blocks that are on, in order.
+	HeaderOrder []layout.BlockID
+	// Home: this is the display's home screen, with no way back to a family view.
+	Home bool
 }
 
 // BuildPersonal lays out one person's view: their events for today and the
@@ -116,7 +130,19 @@ func BuildPersonal(in PersonalInput) PersonalView {
 	now := in.Now
 	loc := now.Location()
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-	v := PersonalView{Person: in.Person, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: loc.String(), ClockFormat: clockFormat(in.TimeFormat), Stars: in.Stars}
+	v := PersonalView{Person: in.Person, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: loc.String(), ClockFormat: clockFormat(in.TimeFormat), Stars: in.Stars, Home: in.Home}
+	if in.Layout == nil {
+		v.HeaderOrder = []layout.BlockID{layout.Clock}
+	} else {
+		if in.Layout.Enabled(layout.Weather) {
+			v.Weather = Chip(in.Weather, in.TemperatureUnit)
+		}
+		for _, b := range in.Layout.In(layout.Header) {
+			if b.On && (b.ID != layout.Weather || v.Weather != nil) {
+				v.HeaderOrder = append(v.HeaderOrder, b.ID)
+			}
+		}
+	}
 	occs := append([]calendar.Occurrence(nil), in.Occurrences...)
 	sort.SliceStable(occs, func(i, j int) bool { return occs[i].Start.Before(occs[j].Start) })
 	finput := Input{Calendars: in.Calendars, People: in.People}

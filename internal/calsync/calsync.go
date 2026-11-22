@@ -183,7 +183,7 @@ func (s *Service) SetGate(g *outbound.Gate) {
 
 // serviceOf is the connection a calendar kind belongs to.
 func serviceOf(kind string) outbound.Service {
-	if kind == "caldav" {
+	if kind == "caldav" || kind == "outlook" { // Microsoft Graph is a calendar service too (ADR 0024)
 		return outbound.Calendars
 	}
 	return outbound.ICS
@@ -194,7 +194,9 @@ func serviceOf(kind string) outbound.Service {
 // not failed.
 func (s *Service) refuse(kind, rawURL string) error {
 	host := rawURL
-	if u, err := url.Parse(rawURL); err == nil && u.Host != "" {
+	if kind == "outlook" {
+		host = s.Graph().Host() // rawURL is a Graph calendar ID, not an address
+	} else if u, err := url.Parse(rawURL); err == nil && u.Host != "" {
 		host = u.Host
 	}
 	return s.gate.Check(serviceOf(kind), host)

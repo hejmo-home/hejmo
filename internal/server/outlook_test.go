@@ -10,6 +10,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/graph"
 	"github.com/hejmo-home/hejmo/internal/graph/graphtest"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -21,7 +22,7 @@ func withGraph(t *testing.T, b *box, defaultApp string) *graphtest.Server {
 	t.Helper()
 	fake := graphtest.New()
 	t.Cleanup(fake.Close)
-	b.sync.SetGraph(&graph.Client{AuthBase: fake.AuthBase(), GraphBase: fake.GraphBase(), DefaultClientID: defaultApp})
+	b.sync.SetGraph(&graph.Client{AuthBase: fake.AuthBase(), GraphBase: fake.GraphBase(), DefaultClientID: defaultApp, HTTP: b.gate.Client(outbound.Calendars, 30*time.Second)})
 	return fake
 }
 
@@ -474,5 +475,53 @@ func TestEventCountsOfAnOutlookConnection(t *testing.T) {
 	status, counts := eventCounts(t, b, id)
 	if status != http.StatusOK || countOf(t, counts, "cal-1").Count != 1 || countOf(t, counts, "cal-2").State != "empty" {
 		t.Fatalf("counts = %d %+v", status, counts)
+	}
+}
+
+// ADR 0024: while the calendars connection is off (or the box is offline),
+// Outlook sign-in and discovery are refused with 409 and Microsoft is not asked.
+func TestOutlookIsRefusedWhileTheCalendarsConnectionIsOff(t *testing.T) {
+	c := signedInAPI(t)
+	fake := withGraph(t, c.b, "app-1")
+	fake.AddCalendar("cal-1", "Kalender")
+	status, in, _ := c.call(http.MethodPost, "/calendar-connections/outlook/sign-ins", map[string]any{})
+	if status != http.StatusCreated {
+		t.Fatalf("start = %d %v", status, in)
+	}
+	path := "/calendar-connections/outlook/sign-ins/" + in["id"].(string)
+	fake.SetDeviceState("approved")
+	later(c.b, 10*time.Second)
+	_, got, _ := c.call(http.MethodGet, path, nil)
+	connID, _ := got["connection_id"].(string)
+	if connID == "" {
+		t.Fatalf("signed in = %v", got)
+	}
+	status, in, _ = c.call(http.MethodPost, "/calendar-connections/outlook/sign-ins", map[string]any{})
+	if status != http.StatusCreated {
+		t.Fatalf("second start = %d", status)
+	}
+	waiting := "/calendar-connections/outlook/sign-ins/" + in["id"].(string)
+
+	if err := c.b.db.SetServiceEnabled(outbound.Calendars, false); err != nil {
+		t.Fatal(err)
+	}
+	asked := len(fake.Requests)
+	later(c.b, time.Minute)
+	for _, call := range []struct{ method, path string }{
+		{http.MethodPost, "/calendar-connections/outlook/sign-ins"},
+		{http.MethodGet, waiting},
+		{http.MethodGet, "/calendar-connections/" + connID + "/calendars"},
+	} {
+		if status, body, _ := c.call(call.method, call.path, nil); status != http.StatusConflict {
+			t.Errorf("%s %s = %d %v, want 409", call.method, call.path, status, body)
+		}
+	}
+	for _, form := range []struct{ path, back string }{{"/connections/outlook", "/connections/new"}, {"/connections/" + connID + "/reconnect", "/connections/" + connID}} {
+		if r := c.b.post(form.path, url.Values{}); r.status != http.StatusSeeOther || r.location != form.back {
+			t.Errorf("POST %s = %d %q, want back to %s, the page that says why", form.path, r.status, r.location, form.back)
+		}
+	}
+	if len(fake.Requests) != asked {
+		t.Errorf("Microsoft was asked while the connection is off: %v", fake.Requests[asked:])
 	}
 }

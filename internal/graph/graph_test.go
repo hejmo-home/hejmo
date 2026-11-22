@@ -3,6 +3,7 @@ package graph_test
 import (
 	"context"
 	"errors"
+	"net/http"
 	"testing"
 	"time"
 
@@ -14,7 +15,7 @@ func newClient(t *testing.T) (*graphtest.Server, *graph.Client) {
 	t.Helper()
 	fake := graphtest.New()
 	t.Cleanup(fake.Close)
-	return fake, &graph.Client{AuthBase: fake.AuthBase(), GraphBase: fake.GraphBase(), DefaultClientID: "app-1"}
+	return fake, &graph.Client{AuthBase: fake.AuthBase(), GraphBase: fake.GraphBase(), DefaultClientID: "app-1", HTTP: &http.Client{}}
 }
 
 func TestDeviceSignInReturnsACodeAndWaitsUntilApproved(t *testing.T) {

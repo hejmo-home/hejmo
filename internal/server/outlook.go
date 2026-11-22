@@ -17,6 +17,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/datefmt"
 	"github.com/hejmo-home/hejmo/internal/graph"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -229,6 +230,10 @@ func (s *server) handleOutlookStart(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
+	if !s.gate.Allowed(outbound.Calendars) { // nothing is asked of Microsoft: back to the page that says why
+		http.Redirect(w, r, "/connections/new", http.StatusSeeOther)
+		return
+	}
 	own := strings.TrimSpace(r.PostFormValue("client_id"))
 	f, err := s.startOutlookFlow(r.Context(), p, own, "")
 	var bad *inputError
@@ -262,6 +267,10 @@ func (s *server) handleOutlookReconnect(w http.ResponseWriter, r *http.Request) 
 		s.fail(w, "connection", err)
 		return
 	}
+	if !s.gate.Allowed(outbound.Calendars) {
+		http.Redirect(w, r, "/connections/"+conn.ID, http.StatusSeeOther)
+		return
+	}
 	f, err := s.startOutlookFlow(r.Context(), p, "", conn.ID)
 	if err != nil {
 		key := "outlook.error.down"
@@ -285,7 +294,7 @@ func (s *server) handleOutlookFlowNew(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	old := s.outlook.get(r.PathValue("flow"), p.household.ID)
-	if old == nil {
+	if old == nil || !s.gate.Allowed(outbound.Calendars) {
 		http.Redirect(w, r, "/connections/new?service=outlook", http.StatusSeeOther)
 		return
 	}
@@ -310,7 +319,9 @@ func (s *server) handleOutlookFlow(w http.ResponseWriter, r *http.Request) {
 		http.Redirect(w, r, "/connections/new?service=outlook", http.StatusSeeOther)
 		return
 	}
-	s.pollOutlookFlow(r.Context(), p, f)
+	if s.gate.Allowed(outbound.Calendars) { // paused: the page shows the state it has, nothing is asked of Microsoft
+		s.pollOutlookFlow(r.Context(), p, f)
+	}
 	s.renderOutlookFlow(w, r, p, http.StatusOK, f)
 }
 
@@ -476,6 +487,9 @@ func signInOf(f *outlookFlow) signInJSON {
 }
 
 func (s *server) apiStartSignIn(w http.ResponseWriter, r *http.Request, p principal) {
+	if s.refuseOff(w, outbound.Calendars) {
+		return
+	}
 	var in struct {
 		ClientID     string `json:"client_id"`
 		ConnectionID string `json:"connection_id"`
@@ -508,6 +522,9 @@ func (s *server) apiGetSignIn(w http.ResponseWriter, r *http.Request, p principa
 	f := s.outlook.get(r.PathValue("id"), p.household.ID)
 	if f == nil {
 		writeError(w, http.StatusNotFound, "sign-in not found")
+		return
+	}
+	if s.refuseOff(w, outbound.Calendars) {
 		return
 	}
 	s.pollOutlookFlow(r.Context(), p, f)

@@ -12,6 +12,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/graph"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -30,7 +31,7 @@ func (s *Service) SetGraph(c *graph.Client) { s.graph = c }
 // Graph is the client for Microsoft Graph and the sign-in.
 func (s *Service) Graph() *graph.Client {
 	if s.graph == nil {
-		s.graph = graph.New()
+		s.graph = graph.New(s.gate.Client(outbound.Calendars, 30*time.Second))
 	}
 	return s.graph
 }

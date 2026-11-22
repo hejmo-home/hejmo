@@ -169,7 +169,7 @@ func run(cfg config, logger *slog.Logger) error {
 	// syncs on its own interval (60 minutes for ICS by default).
 	syncer := calsync.New(db, nil, nil)
 	syncer.SetLogger(logger)
-	ms := graph.New()
+	ms := graph.New(gate.Client(outbound.Calendars, 30*time.Second))
 	if cfg.OutlookClientID != "" {
 		ms.DefaultClientID = cfg.OutlookClientID
 	}

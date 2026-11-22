@@ -17,6 +17,7 @@ import (
 	"sync"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"golang.org/x/oauth2"
 )
 
@@ -68,8 +69,10 @@ type Client struct {
 	DefaultClientID string
 }
 
-// New returns a client for Microsoft with the project's default app ID.
-func New() *Client { return &Client{DefaultClientID: DefaultClientID} }
+// New returns a client for Microsoft with the project's default app ID. h is
+// the HTTP client to use: the box passes the one of the gate (ADR 0024), so
+// switching the connection off stops every call.
+func New(h *http.Client) *Client { return &Client{DefaultClientID: DefaultClientID, HTTP: h} }
 
 func (c *Client) auth() string {
 	if c.AuthBase != "" {
@@ -85,11 +88,23 @@ func (c *Client) graph() string {
 	return DefaultGraphBase
 }
 
+// http is the client the calls go through. The box gives the client the
+// gate's (ADR 0024); without one, a nil gate refuses every
+// connection, so nothing reaches Microsoft around the gate.
 func (c *Client) http() *http.Client {
 	if c.HTTP != nil {
 		return c.HTTP
 	}
-	return &http.Client{Timeout: 30 * time.Second}
+	var closed *outbound.Gate // a nil gate refuses everything
+	return closed.Client(outbound.Calendars, 30*time.Second)
+}
+
+// Host is the Graph address's host, for the record of a refused connection.
+func (c *Client) Host() string {
+	if u, err := url.Parse(c.graph()); err == nil && u.Host != "" {
+		return u.Host
+	}
+	return c.graph()
 }
 
 // AppID is the app ID to use: the family's own, else the project's. Empty

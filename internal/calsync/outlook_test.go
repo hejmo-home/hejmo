@@ -12,6 +12,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/graph"
 	"github.com/hejmo-home/hejmo/internal/graph/graphtest"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/secret"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -54,8 +55,14 @@ func newOutlookFx(t *testing.T) *outlookFx {
 		t.Fatal(err)
 	}
 	fx.svc = calsync.New(db, nil, func() time.Time { return fx.clock })
-	fx.svc.SetGraph(&graph.Client{AuthBase: fake.AuthBase(), GraphBase: fake.GraphBase(), DefaultClientID: "app-1"})
+	fx.useGate(outbound.AllowAll())
 	return fx
+}
+
+// useGate sends the service and its Graph client through g, as the box does.
+func (fx *outlookFx) useGate(g *outbound.Gate) {
+	fx.svc.SetGate(g)
+	fx.svc.SetGraph(&graph.Client{AuthBase: fx.fake.AuthBase(), GraphBase: fx.fake.GraphBase(), DefaultClientID: "app-1", HTTP: g.Client(outbound.Calendars, 30*time.Second)})
 }
 
 func (fx *outlookFx) sync(t *testing.T) error {
@@ -534,7 +541,7 @@ func TestAnOwnCalendarWithAnUnfamiliarOwnerAddressIsNotShared(t *testing.T) {
 	}
 }
 
-func TestAPushWithNothingToChangeWritesNoAudienceAndKeepsTheKey(t *testing.T) {
+func TestAPushWithNothingToChangeWritesNoAudienceAgain(t *testing.T) {
 	fx := newOutlookFx(t)
 	start := time.Date(2026, 11, 24, 8, 30, 0, 0, berlinZone)
 	created, err := fx.db.CreateEvent(fx.h.ID, calendar.Event{CalendarID: fx.cal.ID, Title: "Kinderarzt", Start: start, End: start.Add(30 * time.Minute), People: []string{fx.mia.ID}})
@@ -567,5 +574,51 @@ func TestAPushWithNothingToChangeWritesNoAudienceAndKeepsTheKey(t *testing.T) {
 	push()
 	if got := count(); got != before {
 		t.Errorf("audience written again with nothing changed: %d -> %d", before, got)
+	}
+}
+
+// ADR 0024: Outlook (#177) goes through the gate, as the calendar service:
+// switched off, nothing reaches Microsoft and nothing fails.
+func TestOutlookIsPausedByTheCalendarsSwitchAndAsksNothingOfMicrosoft(t *testing.T) {
+	fx := newOutlookFx(t)
+	fx.useGate(outbound.New(fx.db.Outbound(), fx.db.Outbound()))
+	if err := fx.db.SetServiceEnabled(outbound.Calendars, false); err != nil {
+		t.Fatal(err)
+	}
+	start := time.Date(2026, 11, 24, 8, 30, 0, 0, berlinZone)
+	if _, err := fx.db.CreateEvent(fx.h.ID, calendar.Event{CalendarID: fx.cal.ID, Title: "Kinderarzt", Start: start, End: start.Add(30 * time.Minute)}); err != nil {
+		t.Fatal(err)
+	}
+	if err := fx.sync(t); !errors.Is(err, outbound.ErrRefused) {
+		t.Errorf("Sync = %v, want a refused connection", err)
+	}
+	if _, err := fx.svc.DiscoverOutlook(context.Background(), fx.h.ID, fx.conn.ID); !errors.Is(err, outbound.ErrRefused) {
+		t.Errorf("DiscoverOutlook = %v, want a refused connection", err)
+	}
+	if err := fx.svc.Push(context.Background(), fx.h.ID, fx.cal.ID); !errors.Is(err, outbound.ErrRefused) {
+		t.Errorf("Push = %v, want a refused connection", err)
+	}
+	if _, err := fx.svc.Graph().StartSignIn(context.Background(), "app-1"); !errors.Is(err, outbound.ErrRefused) {
+		t.Errorf("StartSignIn = %v, want a refused connection", err)
+	}
+	if len(fx.fake.Requests) != 0 {
+		t.Errorf("Microsoft was asked: %v", fx.fake.Requests)
+	}
+	if s, _ := fx.db.SyncedCalendar(fx.h.ID, fx.cal.ID); s.Sync.Failures != 0 || s.Sync.LastError.Key != "" {
+		t.Errorf("sync state = %+v: a paused calendar has not failed", s.Sync)
+	}
+	refused, _ := fx.db.RefusedAttempts(50)
+	if len(refused) == 0 {
+		t.Fatal("no refused attempt was recorded")
+	}
+	host := strings.TrimPrefix(fx.fake.GraphBase(), "http://")
+	host, _, _ = strings.Cut(host, "/")
+	for _, r := range refused {
+		if r.Service != outbound.Calendars || r.Target == "cal-1" {
+			t.Errorf("refused attempt = %+v, want the calendars connection and a host, never the calendar id", r)
+		}
+		if r.Target != host && !strings.HasPrefix(r.Target, strings.Split(host, ":")[0]) {
+			t.Errorf("refused target = %q, want the Graph host %q", r.Target, host)
+		}
 	}
 }

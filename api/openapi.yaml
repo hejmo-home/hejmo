@@ -3020,6 +3020,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "422": { $ref: "#/components/responses/Invalid" }
         "502": { description: "Microsoft did not answer, so there is no code" }
   /calendar-connections/outlook/sign-ins/{id}:
@@ -3041,6 +3042,7 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/OffNow" }
   /calendar-connections/{id}:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }

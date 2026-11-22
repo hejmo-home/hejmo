@@ -58,6 +58,9 @@ func (s *Service) Push(ctx context.Context, householdID, calendarID string) erro
 		return nil
 	}
 	if cal.Kind == "outlook" {
+		if err := s.refuse(cal.Kind, cal.URL); err != nil {
+			return err // the changes stay queued until the connection is on again
+		}
 		err := s.withOutlook(ctx, h.ID, cal.ConnectionID, func(sess *graph.Session, _ store.Connection) error {
 			return s.pushOutlook(ctx, sess, cal, h)
 		})

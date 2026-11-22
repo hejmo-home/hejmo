@@ -176,9 +176,11 @@ func (l Layout) Enabled(id BlockID) bool {
 	return false
 }
 
-// Personal reports whether the display shows one person's personal view (Q88).
+// Personal reports whether the display shows one person's personal view (Q88):
+// exactly one person is chosen. A household of one with "Whole family" on is a
+// family view with one column, as before.
 func (l Layout) Personal() (string, bool) {
-	if len(l.People) == 1 {
+	if len(l.People) == 1 && !l.Whole {
 		return l.People[0], true
 	}
 	return "", false

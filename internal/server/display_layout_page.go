@@ -339,7 +339,7 @@ func (s *server) fillLayout(r *http.Request, p principal, v *displayPage, d stor
 	}
 	pg.Whole, pg.Rotate = l.Whole, l.Rotate
 	pg.NoPeople = len(l.People) == 0
-	pg.Personal = len(l.People) == 1
+	_, pg.Personal = l.Personal()
 	pg.CanRotate = len(l.People) >= 2
 	visible := layout.Visible(d.Portrait)
 	for i, id := range l.People {
@@ -450,17 +450,17 @@ func (s *server) fillLayout(r *http.Request, p principal, v *displayPage, d stor
 	for i, id := range l.People {
 		names[i] = byID[id].Name
 	}
-	pg.Words = layoutWords(pg.WordsData, names, d.Portrait, l.Rotate, pg.NoPeople)
+	pg.Words = layoutWords(pg.WordsData, names, d.Portrait, l.Rotate, pg.Personal)
 	v.Layout = pg
 }
 
 // layoutWords words the order of the columns under the preview. The script
 // builds the same sentence from the same texts when the form changes.
-func layoutWords(t layoutWordsData, names []string, portrait, rotate, none bool) string {
-	switch len(names) {
-	case 0:
+func layoutWords(t layoutWordsData, names []string, portrait, rotate, personal bool) string {
+	if len(names) == 0 {
 		return t.None
-	case 1:
+	}
+	if personal {
 		return replaceAll(t.One, map[string]string{"{person}": names[0], "{name}": t.Name})
 	}
 	order := t.Order

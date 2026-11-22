@@ -3257,7 +3257,7 @@
   "layout.b.list.off": "Aus: keine Liste unten",
   "layout.list.which": "Welche Liste?",
   "layout.list.gone": "Die Liste „{name}“ gibt es nicht mehr. „{display}“ zeigt darum unten keine Liste. Wähle eine andere oder schalte den Block aus.",
-  "layout.list.none": "Ihr habt noch keine Liste. Lege unter „Listen“ eine an, dann kannst du sie hier zeigen.",
+  "layout.list.none": "Du hast noch keine Liste. Lege unter „Listen“ eine an, dann kannst du sie hier zeigen.",
   "layout.list.none_link": "Zu den Listen",
   "layout.hint.empty": "Ein Block ohne Inhalt bleibt auf dem Display weg, zum Beispiel „Essen heute“, wenn nichts geplant ist.",
   "layout.not_here": "Gilt hier nicht",

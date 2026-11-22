@@ -34,9 +34,10 @@
 
   // words is the sentence under the preview; t holds the texts of the page
   // (order, orderToday, fitLandscape, fitPortrait, swipe, none, one, and, name).
-  function words(t, names, portrait, rotate) {
+  // personal: exactly one person chosen, so the display shows their personal view.
+  function words(t, names, portrait, rotate, personal) {
     if (names.length === 0) return t.none;
-    if (names.length === 1) return fill(t.one, { person: names[0], name: t.name });
+    if (personal) return fill(t.one, { person: names[0], name: t.name });
     var out = fill(rotate ? t.orderToday : t.order, { names: names.join(", ") });
     var visible = portrait ? 4 : 6;
     if (names.length > visible) {
@@ -94,7 +95,7 @@
       down.disabled = i === people.length - 1;
     });
     off.hidden = off.querySelectorAll("label").length === 0;
-    var personal = people.length === 1;
+    var personal = people.length === 1 && !whole.checked;
     root.toggleAttribute("data-personal", personal);
     var rot = root.querySelector("[data-rotate]");
     rot.hidden = people.length < 2;
@@ -144,7 +145,7 @@
       });
     });
     var w = root.querySelector(".lay-words");
-    w.textContent = words(texts, names, portrait, rotate.checked);
+    w.textContent = words(texts, names, portrait, rotate.checked, personal);
   }
 
   function dirty() {

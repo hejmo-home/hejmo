@@ -48,5 +48,6 @@ test('the preview says the order in words, and names the people beyond the visib
 
 test('nobody and one person have their own sentence', () => {
   assert.equal(words(texts, [], false, false), 'Nobody chosen yet.');
-  assert.equal(words(texts, ['Mia'], false, true), 'Only Mia chosen: “Kitchen” shows Mia’s personal view.');
+  assert.equal(words(texts, ['Mia'], false, true, true), 'Only Mia chosen: “Kitchen” shows Mia’s personal view.');
+  assert.equal(words(texts, ['Mia'], false, false, false), 'Left to right: Mia.', 'whole family of one is no personal view');
 });

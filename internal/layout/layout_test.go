@@ -110,6 +110,10 @@ func TestOnePersonIsThePersonalView(t *testing.T) {
 	if _, ok := layout.Default(family).Personal(); ok {
 		t.Errorf("a family is not a personal view")
 	}
+	// A household of one with "Whole family" is a family view with one column, as before.
+	if _, ok := layout.Default([]string{"mama"}).Personal(); ok {
+		t.Errorf("whole family of one is not a personal view")
+	}
 }
 
 // Q87: 6 columns side by side in landscape, 4 in portrait.

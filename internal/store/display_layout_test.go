@@ -41,7 +41,7 @@ func TestADisplayWithoutALayoutShowsTodaysLayout(t *testing.T) {
 	if _, err := db.AddPerson(h.ID, store.Person{Name: "Mama", Role: store.RoleParent}); err != nil {
 		t.Fatal(err)
 	}
-	d := pairedDisplay(t, db, h, "t1", "Kitchen")
+	d := pairDisplayNamed(t, db, h, "t1", "Kitchen")
 	l, err := db.DisplayLayout(h.ID, d.ID)
 	if err != nil {
 		t.Fatal(err)
@@ -61,7 +61,7 @@ func TestALayoutIsKeptPerDisplay(t *testing.T) {
 	db, h := householdForDisplays(t)
 	a, _ := db.AddPerson(h.ID, store.Person{Name: "Mama", Role: store.RoleParent})
 	b, _ := db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
-	kitchen, hall := pairedDisplay(t, db, h, "t1", "Kitchen"), pairedDisplay(t, db, h, "t2", "Hall")
+	kitchen, hall := pairDisplayNamed(t, db, h, "t1", "Kitchen"), pairDisplayNamed(t, db, h, "t2", "Hall")
 
 	l := layout.Default(nil)
 	l.Whole, l.People, l.Rotate, l.OrderDay = false, []string{b.ID, a.ID}, true, 42
@@ -108,7 +108,7 @@ func TestACopiedLayoutIsOwnedByTheTargetDisplay(t *testing.T) {
 	db, h := householdForDisplays(t)
 	a, _ := db.AddPerson(h.ID, store.Person{Name: "Mama", Role: store.RoleParent})
 	b, _ := db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
-	from, to := pairedDisplay(t, db, h, "t1", "Kitchen"), pairedDisplay(t, db, h, "t2", "Hall")
+	from, to := pairDisplayNamed(t, db, h, "t1", "Kitchen"), pairDisplayNamed(t, db, h, "t2", "Hall")
 	l := layout.Default(nil)
 	l.Whole, l.People = false, []string{b.ID, a.ID}
 	if err := db.SetDisplayLayout(h.ID, from.ID, l); err != nil {
@@ -137,7 +137,7 @@ func TestACopiedLayoutIsOwnedByTheTargetDisplay(t *testing.T) {
 // A display says how it hangs; the settings page draws the preview that way.
 func TestADisplayRemembersHowItHangs(t *testing.T) {
 	db, h := householdForDisplays(t)
-	d := pairedDisplay(t, db, h, "t1", "Kitchen")
+	d := pairDisplayNamed(t, db, h, "t1", "Kitchen")
 	if d.Portrait {
 		t.Fatal("landscape until it says otherwise")
 	}

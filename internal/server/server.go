@@ -483,8 +483,13 @@ func (s *server) handleHome(w http.ResponseWriter, r *http.Request) {
 	s.renderHome(w, r, http.StatusOK, p, h, nil)
 }
 
-// parsePages parses the embedded templates; "t" is replaced per render.
-func parsePages() *template.Template {
+// parsePages returns the embedded templates, parsed once per process: every
+// server shares the set and only copies it (pagesFor), never executes it, and
+// parsing it per server.New cost tens of MB per test box (ticket 238). "t" is
+// replaced per language.
+var parsePages = sync.OnceValue(parseEmbeddedPages)
+
+func parseEmbeddedPages() *template.Template {
 	return template.Must(template.New("").Funcs(template.FuncMap{
 		"t":      func(string) string { return "" },
 		"tf":     func(string, ...string) string { return "" },
@@ -572,16 +577,56 @@ func (s *server) render(w http.ResponseWriter, r *http.Request, status int, name
 
 // execute runs the named page template in the given language.
 func (s *server) execute(w io.Writer, name, lang string, data any) error {
-	tpl, err := s.pages.Clone()
+	tpl, err := s.pagesFor(lang)
 	if err != nil {
 		return err
 	}
-	tpl = tpl.Funcs(template.FuncMap{
-		"t":  func(key string) string { return s.i18n.T(lang, key) },
-		"tf": func(key string, kv ...string) string { return s.i18n.Format(lang, i18n.Msg(key, kv...)) },
-	})
 	return tpl.ExecuteTemplate(w, name, data)
 }
+
+// pagesFor returns the template set whose text functions speak lang. Copying
+// the whole set per render cost several MB a page, and a copy per server another
+// tens of MB per test box (ticket 238); a set is copied once per bundle and
+// language for the whole process and then only executed, which html/template
+// allows from many goroutines at once. A bundle is loaded once (i18n.MustLoad),
+// so the cache stays small; past maxCachedSets an unknown pair is copied for that
+// render alone.
+func (s *server) pagesFor(lang string) (*template.Template, error) {
+	key := pageSetKey{s.i18n, lang}
+	pageSets.Lock()
+	defer pageSets.Unlock()
+	if tpl, ok := pageSets.byKey[key]; ok {
+		return tpl, nil
+	}
+	tpl, err := s.pages.Clone()
+	if err != nil {
+		return nil, err
+	}
+	bundle := s.i18n
+	tpl = tpl.Funcs(template.FuncMap{
+		"t":  func(k string) string { return bundle.T(lang, k) },
+		"tf": func(k string, kv ...string) string { return bundle.Format(lang, i18n.Msg(k, kv...)) },
+	})
+	if len(pageSets.byKey) < maxCachedSets {
+		if pageSets.byKey == nil {
+			pageSets.byKey = map[pageSetKey]*template.Template{}
+		}
+		pageSets.byKey[key] = tpl
+	}
+	return tpl, nil
+}
+
+type pageSetKey struct {
+	bundle *i18n.Bundle
+	lang   string
+}
+
+var pageSets struct {
+	sync.Mutex
+	byKey map[pageSetKey]*template.Template
+}
+
+const maxCachedSets = 16
 
 func (s *server) fail(w http.ResponseWriter, what string, err error) {
 	s.logger.Error(what, "err", err)

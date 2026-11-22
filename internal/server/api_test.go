@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -31,17 +32,28 @@ type apiClient struct {
 	host string
 }
 
+// loadSpec returns the parsed and validated OpenAPI document. It is read once
+// per test binary and shared, so callers must not change it: parsing it for every
+// test allocated tens of MB each (ticket 238). newAPIClient copies it.
 func loadSpec(t *testing.T) *openapi3.T {
 	t.Helper()
-	loader := openapi3.NewLoader()
-	doc, err := loader.LoadFromData(api.OpenAPI)
-	if err != nil {
-		t.Fatalf("load openapi.yaml: %v", err)
+	spec.once.Do(func() {
+		doc, err := openapi3.NewLoader().LoadFromData(api.OpenAPI)
+		if err == nil {
+			err = doc.Validate(context.Background())
+		}
+		spec.doc, spec.err = doc, err
+	})
+	if spec.err != nil {
+		t.Fatalf("openapi.yaml: %v", spec.err)
 	}
-	if err := doc.Validate(context.Background()); err != nil {
-		t.Fatalf("openapi.yaml invalid: %v", err)
-	}
-	return doc
+	return spec.doc
+}
+
+var spec struct {
+	once sync.Once
+	doc  *openapi3.T
+	err  error
 }
 
 func init() {
@@ -50,9 +62,9 @@ func init() {
 }
 
 func newAPIClient(t *testing.T, b *box) *apiClient {
-	doc := loadSpec(t)
+	doc := *loadSpec(t) // a copy: the document is shared, only the server differs
 	doc.Servers = openapi3.Servers{{URL: b.srv.URL + "/api/v1"}}
-	router, err := gorillamux.NewRouter(doc)
+	router, err := gorillamux.NewRouter(&doc)
 	if err != nil {
 		t.Fatal(err)
 	}

@@ -60,7 +60,16 @@ jobs:
           # The rendered layout check (ticket 161) drives headless Chrome; no Chrome fails it.
           HEJMO_REQUIRE_CHROME: ${{ matrix.require_chrome }}
           HEJMO_LAYOUT_SHOTS: ${{ runner.temp }}/layout-shots
-        run: ci/test-shard.sh ${{ matrix.shard }} -race -count=1 -timeout 25m
+        run: |
+          # /usr/bin/time -v reports the largest resident set of any test binary of the
+          # shard (ticket 238); it goes to the job summary so a regression shows up.
+          start=$SECONDS
+          set +e
+          /usr/bin/time -v -o "$RUNNER_TEMP/time.txt" ci/test-shard.sh ${{ matrix.shard }} -race -count=1 -timeout 25m
+          rc=$?
+          rss=$(awk -F': ' '/Maximum resident set size/ {printf "%.0f", $2/1024}' "$RUNNER_TEMP/time.txt")
+          echo "Shard ${{ matrix.shard }} on ${{ matrix.arch }}: peak RSS ${rss} MB, $((SECONDS - start)) s" | tee -a "$GITHUB_STEP_SUMMARY"
+          exit $rc
       - name: Screenshots of pages that failed the layout check
         if: failure()
         uses: actions/upload-artifact@v4

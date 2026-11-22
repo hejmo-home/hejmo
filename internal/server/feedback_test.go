@@ -66,7 +66,7 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		{"task add", "/tasks", "/tasks", url.Values{"person": {tb.miaID}, "title": {"Read"}, "repeat": {"daily"}}, "“Read” created for Mia. Add subtasks if Mia should tick it off in parts."},
 		{"task done", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"1"}}, "Marked as done."},
 		{"task reopen", "/tasks/" + taskID + "/done", "/tasks", url.Values{"done": {"0"}}, "Marked as open."},
-		{"calendar add", "/calendars", "/calendars", url.Values{"name": {"Choir"}, "url": {"https://example.org/a.ics"}, "color": {"#2F5E7A"}, "interval": {"60"}}, "Calendar added."},
+		{"calendar add", "/calendars", "/calendars", url.Values{"name": {"Choir"}, "url": {"https://example.org/a.ics"}, "color": {"#2F5E7A"}, "interval": {"60"}}, "“Choir” subscribed. The box fetches the events for the first time now."},
 		{"calendar sync", "/calendars/" + calID + "/sync", "/calendars/" + calID, url.Values{}, "Updated at 1:00:00\u00a0PM. Events: 0 (new 0, changed 0, removed 0)."},
 		{"display pair", "/displays", "/displays", pairForm(code2), "Display paired."},
 		{"display settings", "/displays/" + displayID + "/settings", "/displays/" + displayID, url.Values{"show_tomorrow": {"on"}}, "Saved."},

@@ -192,14 +192,14 @@ func (s *server) audienceMaps(householdID string) (map[string]personChip, map[st
 	return chips, names, list, choices, nil
 }
 
-func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p principal, status int, form map[string]any) {
+func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p principal, status int) {
 	at := func(t time.Time) string {
 		if t.IsZero() {
 			return ""
 		}
 		return p.dateTimeSeconds(t)
 	}
-	chips, groupNames, peopleChoices, groupChoices, err := s.audienceMaps(p.household.ID)
+	chips, groupNames, _, _, err := s.audienceMaps(p.household.ID)
 	if err != nil {
 		s.fail(w, "people", err)
 		return
@@ -240,25 +240,16 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	for _, e := range entries {
 		log = append(log, logView{at(e.At), e.CalendarName, e.Kind, s.say(r, e.Message), e.Detail})
 	}
-	var taken []string
-	for _, c := range synced {
-		taken = append(taken, c.Color)
-	}
-	var offlineTop, connNote, icsNote *offlineNote
+	var offlineTop, connNote *offlineNote
 	if s.offline() {
 		offlineTop = s.noteFor(r, outbound.Calendars, "outside.note.calendars")
 	} else {
 		connNote = s.noteFor(r, outbound.Calendars, "outside.note.connect")
-		icsNote = s.noteFor(r, outbound.ICS, "outside.note.subscribe")
 	}
 	data := map[string]any{
-		"OfflineTop": offlineTop, "ConnNote": connNote, "ICSNote": icsNote,
-		"AutoColor": nextColors(taken, 1)[0],
-		"Person":    p.person, "Rows": subscribed, "ConnRows": connRows, "Log": log, "People": peopleChoices, "Groups": groupChoices,
-		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
-	}
-	if form != nil {
-		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
+		"OfflineTop": offlineTop, "ConnNote": connNote, "CanAdd": s.canAddCalendar(),
+		"Person": p.person, "Rows": subscribed, "ConnRows": connRows, "Log": log,
+		"SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(),
 	}
 	s.render(w, r, status, "calendars.html", data)
 }
@@ -343,17 +334,21 @@ func (s *server) nameHint(r *http.Request, c store.Connection, sourceName string
 
 func (s *server) handleCalendarsPage(w http.ResponseWriter, r *http.Request) {
 	if p, ok := s.parentPage(w, r); ok {
-		s.renderCalendars(w, r, p, http.StatusOK, nil)
+		s.renderCalendars(w, r, p, http.StatusOK)
 	}
 }
 
+// handleCalendarAdd subscribes to a calendar link. The form is the guide of the
+// link card on the choice page; a mistake shows there, at its field, with the
+// link card chosen and everything typed kept. The first sync has run when the
+// success line says the box fetches the events.
 func (s *server) handleCalendarAdd(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
 	}
-	if !s.gate.Allowed(outbound.ICS) { // the page says why there is no form
-		http.Redirect(w, r, "/calendars", http.StatusSeeOther)
+	if !s.gate.Allowed(outbound.ICS) { // the choice page says why a link cannot be subscribed
+		http.Redirect(w, r, "/connections/new", http.StatusSeeOther)
 		return
 	}
 	_ = r.ParseForm()
@@ -365,19 +360,38 @@ func (s *server) handleCalendarAdd(w http.ResponseWriter, r *http.Request) {
 	if convErr == nil {
 		in.IntervalMinutes = &interval
 	}
-	_, err := s.addICS(r, p, in)
+	// A missing name and a link that is none are both shown at once, each at its
+	// field; the other mistakes are found one at a time by addICS.
+	missing, _, _ := icsInputErrors(in)
+	var cal store.SyncedCalendar
+	var err error
+	if len(missing) == 0 {
+		cal, err = s.addICS(r, p, in)
+	}
 	var bad *inputError
 	switch {
-	case errors.As(err, &bad):
-		form := map[string]any{"Error": "calendars.error." + bad.Field, "ErrorField": calendarErrorField(bad.Field), "Name": in.Name, "URL": in.URL, "Color": in.Color,
-			"Interval": interval, "People": in.Audience.People, "Groups": in.Audience.Groups}
-		s.renderCalendars(w, r, p, http.StatusUnprocessableEntity, form)
+	case len(missing) > 0 || errors.As(err, &bad):
+		extra := map[string]any{
+			"ICSName": in.Name, "ICSURL": in.URL, "ICSPeople": in.Audience.People, "ICSGroups": in.Audience.Groups,
+		}
+		if len(missing) > 0 {
+			extra["ICSErrorFields"] = missing
+		} else {
+			extra["ICSError"], extra["ICSErrorField"] = "calendars.error."+bad.Field, calendarErrorField(bad.Field)
+		}
+		if in.Color != "" {
+			extra["ICSColor"] = in.Color
+		}
+		if convErr == nil {
+			extra["ICSInterval"] = interval
+		}
+		s.renderConnectNew(w, r, p, http.StatusUnprocessableEntity, "ics", extra)
 		return
 	case err != nil:
 		s.fail(w, "add calendar", err)
 		return
 	}
-	s.redirectSaved(w, r, "/calendars", "flash.calendar_added")
+	s.redirectSavedNamed(w, r, "/calendars", "flash.calendar_subscribed", cal.Name)
 }
 
 // syncedCalendarPage finds the subscribed calendar of a detail page; the
@@ -498,15 +512,6 @@ func calendarErrorField(field string) string {
 		return "people"
 	}
 	return ""
-}
-
-// intervalChosen is the update interval the add form shows selected: the one
-// just typed after an error, else the default of an hour.
-func intervalChosen(form map[string]any) int {
-	if n, ok := form["Interval"].(int); ok && n > 0 {
-		return n
-	}
-	return 60
 }
 
 // handleCalendarReadOnly switches a CalDAV calendar between two-way and read-only.

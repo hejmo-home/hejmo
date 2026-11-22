@@ -45,14 +45,14 @@ func TestAudienceChipsDefaultToTheWholeFamilyWithoutJavaScript(t *testing.T) {
 	t.Parallel()
 	b, ids := patternBox(t)
 	b.feeds.set("https://example.org/a.ics", feedOf(), nil)
-	got := chips(getEN(b, "/calendars").body)
+	got := chips(getEN(b, "/connections/new?service=ics").body)
 	want := map[string]bool{"Whole family": true, "Mama": false, "Papa": false, "Sebastian": false, "Mia": false}
 	for name, sel := range want {
 		if v, ok := got[name]; !ok || v != sel {
 			t.Errorf("chip %q selected = %v (present %v), want %v", name, v, ok, sel)
 		}
 	}
-	page := getEN(b, "/calendars").body
+	page := getEN(b, "/connections/new?service=ics").body
 	if !strings.Contains(page, `class="marker" data-person="2"`) || !strings.Contains(page, `data-shape="circle-empty"`) {
 		t.Errorf("person chips lack the person marker:\n%s", page)
 	}
@@ -149,12 +149,12 @@ func TestDisplaySwitchAndChoiceCards(t *testing.T) {
 func TestOptionsWithGoodDefaultsSitUnderMoreOptions(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	page := getEN(b, "/calendars").body
-	i := strings.Index(page, `<details class="more"`)
-	if i < 0 {
-		t.Fatalf("no More options on the add form:\n%s", page)
+	page := getEN(b, "/connections/new?service=ics").body
+	loc := regexp.MustCompile(`(?s)<details class="more"[^>]*>\s*<summary[^>]*>(?:<svg[^>]*><path[^>]*/></svg>)?More options<span class="sum">Colour automatic`).FindStringIndex(page)
+	if loc == nil {
+		t.Fatalf("no More options on the link guide:\n%s", page)
 	}
-	rest := page[i:]
+	rest := page[loc[0]:]
 	end := strings.Index(rest, "</details>")
 	for _, name := range []string{"color", "interval"} {
 		if !strings.Contains(rest[:end], `name="`+name+`"`) {
@@ -173,7 +173,7 @@ func TestEmptyStatesExplainAndOfferTheFirstAction(t *testing.T) {
 	b := signedInBox(t)
 	for _, path := range []string{"/tasks", "/displays", "/caldav", "/calendars"} {
 		page := getEN(b, path).body
-		if !regexp.MustCompile(`(?s)<div class="empty" data-empty>\s*<p>[^<]+</p>\s*<a class="button" href="#[a-z]+">[^<]+</a>`).MatchString(page) {
+		if !regexp.MustCompile(`(?s)<div class="empty" data-empty>\s*<p>[^<]+</p>\s*<a class="button" href="(#[a-z]+|/connections/new)">[^<]+</a>`).MatchString(page) {
 			t.Errorf("%s has no empty state with a first action:\n%s", path, page)
 		}
 	}

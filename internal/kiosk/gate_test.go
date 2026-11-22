@@ -13,8 +13,8 @@ import (
 // be made to talk to anything outside it.
 func TestTheKioskAdapterReachesOnlyTheHomeNetwork(t *testing.T) {
 	a := kiosk.NewFreeKiosk("http://203.0.113.9:8080", "key")
-	err := a.FrontLightOff(context.Background())
+	err := a.SetBrightness(context.Background(), 0)
 	if !errors.Is(err, outbound.ErrNotHome) {
-		t.Fatalf("FrontLightOff = %v, want ErrNotHome", err)
+		t.Fatalf("SetBrightness = %v, want ErrNotHome", err)
 	}
 }

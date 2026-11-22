@@ -296,7 +296,9 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	must(os.MkdirAll(folder, 0o755))
 	must(os.WriteFile(filepath.Join(folder, "a.jpg"), jpegPhoto(t, 640, 480), 0o644))
 	_, _, shown := c.call(http.MethodGet, "/displays", nil)
-	c.call(http.MethodPatch, "/displays/"+shown[0].(map[string]any)["id"].(string), map[string]any{"screensaver": map[string]any{"album_ids": []string{trip}}})
+	c.call(http.MethodPatch, "/displays/"+shown[0].(map[string]any)["id"].(string), map[string]any{"screensaver": map[string]any{"album_ids": []string{trip}},
+		// A kiosk app and quiet mode: the Brightness block with its levels and the quiet choice (ticket 179); the second display has no kiosk app, so its block is greyed out.
+		"kiosk": map[string]any{"url": "http://192.168.178.20:8080"}, "quiet_mode": map[string]any{"enabled": true, "from": "22:00", "to": "06:00"}})
 	// A second display whose only album is empty: it shows the hint.
 	f.hint = newScreen(f.box)
 	if r := f.post("/displays", pairForm(codeOn(t, f.hint.get("/display", "en").body))); r.status != http.StatusSeeOther {

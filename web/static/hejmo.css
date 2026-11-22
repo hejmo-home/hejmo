@@ -2487,6 +2487,53 @@ details.repair + details.danger { margin-top: 0; }
   .frame-bar .signout .button { padding-inline: 12px; }
 }
 
+/* ---- Display page: Brightness section (ticket 179, preview docs/design/preview-179.html; no new tokens) ---- */
+.tag.muted { border-color: var(--text-secondary); color: var(--text-secondary); }
+[data-theme="bw"] .tag.muted { border-style: dashed; }
+.bright h3.q-head { display: flex; align-items: center; gap: 8px; margin: 8px 0 0; padding-top: 12px; border-top: 1px solid var(--border); font-size: var(--fs-event-title); font-weight: 700; }
+.bright h3.q-head .icon { stroke: var(--accent); flex: none; }
+.bright-now { display: flex; gap: 8px; align-items: flex-start; margin: 0; font-size: var(--fs-label); color: var(--text); overflow-wrap: break-word; }
+.bright-now .icon { flex: none; stroke: var(--accent); margin-top: 1px; }
+.bright .flag { font-weight: 400; }
+.bright .flag a { color: inherit; font-weight: 700; }
+.bright .levels { display: grid; }
+.lvl { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 14px; padding: 8px 0; }
+.levels .lvl + .lvl { border-top: 1px solid var(--border); }
+.lvl .lt { display: grid; grid-template-columns: 24px minmax(0, 1fr); gap: 0 10px; align-items: start; flex: 1 1 220px; min-width: 0; color: var(--text); }
+.lvl .lt .icon { grid-row: span 2; stroke: var(--accent); margin-top: 1px; }
+.lvl .lt b { font-size: var(--fs-event-title); font-weight: var(--fw-event-title); }
+.lvl .lt span { grid-column: 2; font-size: var(--fs-meta); color: var(--text-secondary); overflow-wrap: break-word; hyphens: manual; }
+.lvl .ferr { flex: 1 1 100%; }
+.unitf { display: inline-flex; align-items: center; gap: 8px; flex: none; margin-left: auto; white-space: nowrap; }
+.unitf input { width: 5.5em; text-align: right; font-variant-numeric: tabular-nums; font-weight: 600; }
+.unitf .unit { font-size: var(--fs-event-title); font-weight: 600; color: var(--text); min-width: 1.2em; }
+.lvl.invalid input { border: 2px solid var(--error-text); }
+.bright input:disabled { border-style: dashed; color: var(--text-secondary); background: var(--background); cursor: not-allowed; }
+.bright.unavailable .lvl .lt, .bright.unavailable .unitf .unit, .bright.unavailable .q-head { color: var(--text-secondary); }
+.bright.unavailable .lvl .lt .icon, .bright.unavailable .q-head .icon { stroke: var(--text-secondary); }
+.choice label:has(input:disabled) { border-style: dashed; color: var(--text-secondary); cursor: not-allowed; }
+.choice label:has(input:disabled:checked) { border-color: var(--text-secondary); }
+[data-theme="bw"] .bright input:disabled { border: 2px dashed var(--text); color: var(--text); background: var(--surface); }
+[data-theme="bw"] .choice label:has(input:disabled) { border: 2px dashed var(--text); color: var(--text); }
+.bright-why { max-width: none; }
+.guide-row { display: grid; gap: 6px; justify-items: start; }
+.guide-row .hint { margin: 0; }
+.steps .guide-row a.button.secondary { color: var(--accent); }
+.dim-intro { margin: 6px 0 0; font-weight: 600; }
+.bright .room-note { display: none; gap: 8px; align-items: flex-start; margin: 0; }
+.bright .room-note .icon { flex: none; stroke: var(--text-secondary); margin-top: 1px; }
+.bright .when-dim, .bright .when-off { display: none; }
+.bright:has(input[name="quiet_light"][value="dim"]:checked) .when-dim { display: block; }
+.bright:has(input[name="quiet_light"][value="off"]:checked) .when-off { display: block; }
+.bright:has(input[name="light_source"][value="room"]:checked) .levels { display: none; }
+.bright:has(input[name="light_source"][value="room"]:checked) .room-note { display: flex; }
+.bright .hint { margin: 0; }
+.bright details.more > summary { flex-wrap: wrap; }
+.bright .choice small { overflow-wrap: break-word; }
+@media (max-width: 480px) {
+  .lvl .lt { flex-basis: 100%; }
+  .unitf { margin-left: 34px; }
+}
 /* ---- ticket 165: adding to lists, suggestions and quantities ---- */
 /* The add card: one form, one primary button. "Without quantity": text and
    button side by side. "With quantity": the text takes the row, the quantity

@@ -276,7 +276,7 @@ func (s *server) finishGoogleLogin(ctx context.Context, p principal, cb googleau
 	switch {
 	case existing != nil && !strings.EqualFold(existing.Username, account):
 		// Another Google account than the one that asked: not thrown away, offered as a new connection.
-		if err := s.db.StashGoogleToken(p.household.ID, nonce, account, tok.Refresh); err != nil {
+		if err := s.db.StashGoogleToken(p.household.ID, nonce, account, tok.Refresh, now); err != nil {
 			return out, err
 		}
 		out.Problem = gpWrongAccount

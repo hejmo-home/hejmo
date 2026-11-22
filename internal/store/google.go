@@ -13,6 +13,9 @@ import (
 	"github.com/hejmo-home/hejmo/internal/secret"
 )
 
+// StashLifetime is how long a stashed account stays on offer, counted from the stash.
+const StashLifetime = 15 * time.Minute
+
 // Errors of a started sign-in at Google.
 var (
 	ErrUsed    = errors.New("store: already used")
@@ -158,10 +161,11 @@ func (db *DB) CreateGoogleLogin(householdID string, l GoogleLogin, at time.Time)
 	return err
 }
 
-// PruneGoogleLogins forgets what a sign-in no longer needs: once it has expired
-// its stashed account and refresh token go, and a day later the whole row.
+// PruneGoogleLogins forgets what a sign-in no longer needs: a stashed account
+// and refresh token go once StashLifetime has passed since they were stashed,
+// and the whole row a day after the sign-in expired.
 func (db *DB) PruneGoogleLogins(at time.Time) error {
-	if _, err := db.sql.Exec(`UPDATE google_login SET pending_account = NULL, pending_token = NULL WHERE expires_at < ? AND pending_token IS NOT NULL`, stamp(at)); err != nil {
+	if _, err := db.sql.Exec(`UPDATE google_login SET pending_account = NULL, pending_token = NULL, pending_at = NULL WHERE pending_at < ?`, stamp(at.Add(-StashLifetime))); err != nil {
 		return err
 	}
 	_, err := db.sql.Exec(`DELETE FROM google_login WHERE expires_at < ?`, stamp(at.Add(-24*time.Hour)))
@@ -315,13 +319,14 @@ func (db *DB) AddGoogleCalendar(householdID, connectionID string, in NewGoogleCa
 
 // StashGoogleToken keeps the refresh token of a sign-in with another account
 // than the connection that asked for it, on the used login, so the parent can
-// add that account as a new connection instead of signing in again.
-func (db *DB) StashGoogleToken(householdID, nonce, account, refreshToken string) error {
+// add that account as a new connection instead of signing in again. The offer
+// lasts StashLifetime from at.
+func (db *DB) StashGoogleToken(householdID, nonce, account, refreshToken string, at time.Time) error {
 	sealed, err := db.seal(refreshToken)
 	if err != nil {
 		return err
 	}
-	return expectOne(db.sql.Exec(`UPDATE google_login SET pending_account = ?, pending_token = ? WHERE nonce = ? AND household_id = ?`, account, sealed, nonce, householdID))
+	return expectOne(db.sql.Exec(`UPDATE google_login SET pending_account = ?, pending_token = ?, pending_at = ? WHERE nonce = ? AND household_id = ?`, account, sealed, stamp(at), nonce, householdID))
 }
 
 // TakeStashedGoogleToken returns the stashed account and refresh token once
@@ -340,7 +345,7 @@ func (db *DB) TakeStashedGoogleToken(householdID, nonce string) (account, refres
 	if err != nil {
 		return "", "", err
 	}
-	if _, err := tx.Exec(`UPDATE google_login SET pending_account = NULL, pending_token = NULL WHERE nonce = ?`, nonce); err != nil {
+	if _, err := tx.Exec(`UPDATE google_login SET pending_account = NULL, pending_token = NULL, pending_at = NULL WHERE nonce = ?`, nonce); err != nil {
 		return "", "", err
 	}
 	if err := tx.Commit(); err != nil {

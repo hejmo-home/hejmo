@@ -22,6 +22,7 @@ CREATE TABLE google_login (
     connection_id TEXT,                    -- set when an existing connection signs in again
     pending_account TEXT,                  -- a sign-in with another account than the connection's, offered as a new connection
     pending_token   TEXT,                  -- its refresh token, sealed
+    pending_at      TEXT,                  -- when it was stashed: the offer lasts from then, not from the start of the sign-in
     created_at    TEXT NOT NULL,
     expires_at    TEXT NOT NULL,
     used_at       TEXT

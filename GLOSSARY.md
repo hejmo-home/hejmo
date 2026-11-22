@@ -134,11 +134,11 @@ _Avoid_: OAuth login, token login
 
 **App registration**:
 Hejmo's entry at a calendar service that makes service sign-ins possible at all. Every box uses the Hejmo project's registration unless the family enters its own. For Google every family creates its own (an OAuth client of type "Web application", ADR 0013): the box keeps its client ID and, encrypted, its client secret once per household, and every Google connection signs in with it. A different client ID makes every Google connection sign in again.
+_Avoid_: client, Azure app
 
 **Sign in again**:
 The state of a service sign-in the service no longer accepts (Google answers `invalid_grant` to the stored refresh token). The connection keeps its calendars, their events and the changes waiting to be written back; parents see a notice with the account and the time since which nothing was synced, and sign in again at the service. An app left on "Testing" at Google loses its sign-ins after 7 days, which the notice says when it fits.
 _Avoid_: reconnect, re-authorise
-_Avoid_: client, Azure app
 
 **Synced calendar**:
 A calendar whose events come from, and may be written back to, a calendar outside the box through a calendar connection.

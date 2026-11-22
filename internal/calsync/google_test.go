@@ -59,6 +59,9 @@ type googleRemote struct {
 }
 
 func (r googleRemote) Put(_ context.Context, objectURL, raw, etag string) (string, error) {
+	if r.g.putErr != nil {
+		return "", r.g.putErr
+	}
 	r.g.puts = append(r.g.puts, r.token+" "+objectURL)
 	return "etag-put", nil
 }
@@ -74,6 +77,7 @@ type googleFixture struct {
 	token  *fakeToken
 	tokens []string // access tokens the sync dialled with
 	puts   []string
+	putErr error
 }
 
 const googleSwim = "https://apidata.googleusercontent.com/caldav/v2/mama@gmail.com/events/swim.ics"
@@ -292,5 +296,75 @@ func TestGoogleRefusingACachedAccessTokenRenewsItAtTheNextSync(t *testing.T) {
 	}
 	if g.token.calls() != 2 || len(g.tokens) != 3 || g.tokens[2] != "access-c" {
 		t.Fatalf("token calls %d, dialled with %v", g.token.calls(), g.tokens)
+	}
+}
+
+// Review of ticket 18: the write-back forgets a refused access token too.
+func TestGoogleRefusingTheAccessTokenOnWriteBackForgetsItAndLogsIt(t *testing.T) {
+	g := newGoogleFixture(t)
+	if err := g.sync(t); err != nil {
+		t.Fatal(err)
+	}
+	berlin, _ := time.LoadLocation("Europe/Berlin")
+	if _, err := g.db.CreateEvent(g.h.ID, calendar.Event{CalendarID: g.cal.ID, Title: "Piano",
+		Start: time.Date(2026, 11, 21, 15, 0, 0, 0, berlin), End: time.Date(2026, 11, 21, 16, 0, 0, 0, berlin)}); err != nil {
+		t.Fatal(err)
+	}
+	g.putErr = &caldavclient.StatusError{Code: 401, Status: "401 Unauthorized"}
+	if err := g.svc.Push(context.Background(), g.h.ID, g.cal.ID); err == nil {
+		t.Fatal("a refused token did not fail the write-back")
+	}
+	log, _ := g.db.SyncLog(g.h.ID, 10)
+	if len(log) != 1 || log[0].Message.Key != "sync.fail.google_token" {
+		t.Fatalf("sync log = %+v", log)
+	}
+	g.putErr = nil
+	g.clock = g.clock.Add(time.Hour)
+	if err := g.svc.Push(context.Background(), g.h.ID, g.cal.ID); err != nil {
+		t.Fatalf("next push: %v", err)
+	}
+	if g.token.calls() != 2 || g.tokens[len(g.tokens)-1] != "access-c" {
+		t.Fatalf("token calls %d, dialled with %v", g.token.calls(), g.tokens)
+	}
+}
+
+// Review of ticket 18: Google answers 403 for quota and missing permissions; the token is fine then.
+func TestGoogleAnswering403KeepsTheAccessToken(t *testing.T) {
+	g := newGoogleFixture(t)
+	if err := g.sync(t); err != nil {
+		t.Fatal(err)
+	}
+	g.stateErr = &caldavclient.StatusError{Code: 403, Status: "403 Forbidden"}
+	if err := g.sync(t); err == nil {
+		t.Fatal("a 403 did not fail the sync")
+	}
+	log, _ := g.db.SyncLog(g.h.ID, 10)
+	if len(log) != 1 || log[0].Message.Key == "sync.fail.google_token" {
+		t.Fatalf("sync log = %+v", log)
+	}
+	g.stateErr = nil
+	if err := g.sync(t); err != nil {
+		t.Fatal(err)
+	}
+	if g.token.calls() != 1 {
+		t.Fatalf("a valid token was thrown away: %d token calls", g.token.calls())
+	}
+}
+
+// Review of ticket 18: the scheduler clears the stashed token of an expired sign-in.
+func TestTheSchedulerClearsAnExpiredStashedToken(t *testing.T) {
+	g := newGoogleFixture(t)
+	login := store.GoogleLogin{Nonce: "n1", Verifier: "v", RedirectURI: googleauth.RelayRedirectURI, ExpiresAt: g.clock.Add(15 * time.Minute)}
+	if err := g.db.CreateGoogleLogin(g.h.ID, login, g.clock); err != nil {
+		t.Fatal(err)
+	}
+	g.db.TakeGoogleLogin(g.h.ID, "n1", g.clock)
+	if err := g.db.StashGoogleToken(g.h.ID, "n1", "papa@gmail.com", "1//papa-refresh", g.clock); err != nil {
+		t.Fatal(err)
+	}
+	g.clock = g.clock.Add(store.StashLifetime + 20*time.Minute)
+	g.svc.RunDue(context.Background())
+	if _, _, err := g.db.TakeStashedGoogleToken(g.h.ID, "n1"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("RunDue left the token: %v", err)
 	}
 }

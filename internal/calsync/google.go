@@ -4,6 +4,7 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"net/http"
 	"sync"
 	"time"
 
@@ -174,7 +175,10 @@ func (s *Service) CountConnectionEvents(ctx context.Context, h store.Household, 
 // Google connection, and forgets that token so the next run renews it. A refused
 // token is not a wrong password: the refresh token decides whether a new sign-in is needed.
 func (s *Service) googleRefused(conn store.Connection, err error) bool {
-	if conn.Kind != "google" || !caldavclient.IsUnauthorized(err) {
+	var status *caldavclient.StatusError
+	// Only 401 says the token is bad: Google also answers 403 for quota, rate
+	// limits and missing calendar permissions, and then the token is fine.
+	if conn.Kind != "google" || !errors.As(err, &status) || status.Code != http.StatusUnauthorized {
 		return false
 	}
 	s.tokens.forget(conn.ID)

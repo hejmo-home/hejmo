@@ -1,6 +1,6 @@
 {{/* The Layout section of a display's settings page (ticket 180, preview-180).
      Argument: the page (.D is the display page, .D.Layout the section). */}}
-{{define "layoutSection"}}{{$L := .D.Layout}}<fieldset class="layout" id="layout" data-layout{{if $L.Personal}} data-personal{{end}} data-portrait="{{$L.Portrait}}" data-visible="{{if $L.Portrait}}4{{else}}6{{end}}">
+{{define "layoutSection"}}{{$L := .D.Layout}}<fieldset class="layout" id="layout" data-layout{{if $L.Personal}} data-personal{{end}} data-portrait="{{$L.Portrait}}" data-visible="{{if $L.Portrait}}4{{else}}6{{end}}" data-order-day="{{$L.OrderDay}}" data-was-rotating="{{$L.WasRotating}}">
   <legend>{{t "layout.legend"}}</legend>
   <input type="hidden" name="layout_form" value="1">
   <input type="hidden" name="order_day" value="{{$L.OrderDay}}">

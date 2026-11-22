@@ -11,7 +11,7 @@ const source = fs.readFileSync(path.join(__dirname, '../static/layout.js'), 'utf
 const sandbox = { document: { querySelector: () => null } };
 sandbox.window = sandbox;
 vm.runInNewContext(source, sandbox);
-const { moved, tomorrow, words } = sandbox.HejmoLayout;
+const { moved, rotated, tomorrow, orders, words } = sandbox.HejmoLayout;
 
 const texts = {
   order: 'Left to right: {names}.', orderToday: 'Today, left to right: {names}.',
@@ -34,6 +34,29 @@ test('tomorrow every person is one column on, the rightmost goes to the left (Q9
   assert.deepEqual([...tomorrow(['Mama', 'Papa', 'Mia'])], ['Mia', 'Mama', 'Papa']);
   assert.deepEqual([...tomorrow(['Mia'])], ['Mia']);
   assert.deepEqual([...tomorrow([])], []);
+});
+
+test('rotated is the order of a rotation day: day mod n columns on, as the server counts it', () => {
+  const abc = ['A', 'B', 'C'];
+  assert.deepEqual([...rotated(abc, 20779)], ['C', 'A', 'B']); // 20779 mod 3 = 1
+  assert.deepEqual([...rotated(abc, 20780)], ['B', 'C', 'A']);
+  assert.deepEqual([...rotated(abc, 20781)], abc);
+  assert.deepEqual([...rotated(abc, -1)], ['B', 'C', 'A'], 'a day before the epoch');
+  assert.deepEqual([...rotated(['A'], 5)], ['A']);
+});
+
+test('a rotation switched on moves today at once: the preview shows today, the words tomorrow (22/11/2026)', () => {
+  const abc = ['A', 'B', 'C'];
+  const on = orders(abc, true, false, 20779);
+  assert.deepEqual([...on.columns], ['C', 'A', 'B'], 'what the display shows after saving');
+  assert.deepEqual([...on.tomorrow], ['B', 'C', 'A']);
+  const off = orders(abc, false, false, 20779);
+  assert.deepEqual([...off.columns], abc, 'switch off: the order as it is');
+  assert.deepEqual([...off.tomorrow], ['B', 'C', 'A'], 'what switching on would say for tomorrow');
+  // A rotation that runs lists today's columns; tomorrow is one column on.
+  const runs = orders(['C', 'A', 'B'], true, true, 20779);
+  assert.deepEqual([...runs.columns], ['C', 'A', 'B']);
+  assert.deepEqual([...runs.tomorrow], ['B', 'C', 'A']);
 });
 
 test('the preview says the order in words, and names the people beyond the visible columns', () => {

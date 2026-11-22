@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strconv"
 	"strings"
 	"testing"
@@ -155,6 +156,104 @@ func TestDisplaysWithRotationShowTheSameOrderWhenSwitchedOnOnDifferentDays(t *te
 	}
 	f.now = f.at(15, 12, 0)
 	if r := f.post("/displays/"+hall+"/settings", form); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d", r.status)
+	}
+	a, _ := f.db.DisplayLayout(f.householdID, kitchen)
+	b, _ := f.db.DisplayLayout(f.householdID, hall)
+	for day := 20000; day < 20008; day++ {
+		eq(t, a.Order(day), b.Order(day))
+	}
+}
+
+// Switching rotation on takes the order as the base order, so today's columns
+// move at once by today mod n. The page must say so: the preview and the
+// sentence show today's columns, the sentence about tomorrow the day after, and
+// the rows keep the order they were posted in.
+func TestSwitchingRotationOnShowsTodaysColumnsAndTomorrowsOrder(t *testing.T) {
+	t.Parallel()
+	f := newFamilyBox(t, "eink_color")
+	posted := []string{"Mama", "Papa", "Mia"}
+	var day int
+	for d := 14; d < 17; d++ { // a day on which the rotation has a shift
+		if layout.RotationDay(f.at(d, 12, 0))%3 != 0 {
+			day = d
+			break
+		}
+	}
+	today := layout.RotationDay(f.at(day, 12, 0))
+	f.now = f.at(day, 12, 0)
+	form := f.layoutForm(false, posted, defaultOn...)
+	form.Set("rotate", "1")
+	form.Set("order_day", strconv.Itoa(today))
+	form.Add("order", "no-such-block") // refused, so the page comes back as it was filled in
+	r := f.do(http.MethodPost, "/displays/"+f.displayID(t)+"/settings", form, en)
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d", r.status)
+	}
+	rotating := layout.Layout{People: posted, Rotate: true}
+	columns, next := rotating.Order(today), rotating.Order(today+1)
+	if slices.Equal(columns, posted) {
+		t.Fatalf("a day without a shift tests nothing")
+	}
+	text := inText(r.body)
+	for _, want := range []string{
+		"Today, left to right: " + strings.Join(columns, ", ") + ".",
+		"Tomorrow: " + strings.Join(next, ", ") + ".",
+		`data-was-rotating="false"`, `data-order-day="` + strconv.Itoa(today) + `"`,
+	} {
+		if !strings.Contains(text, want) && !strings.Contains(r.body, want) {
+			t.Errorf("%q missing:\n%s", want, text)
+		}
+	}
+	rows := regexp.MustCompile(`class="prow" data-pid="[^"]+"><span class="pos">[^<]*</span><label[^>]*>.*?<span class="an">([^<]+)<`).FindAllStringSubmatch(r.body, -1)
+	var got []string
+	for _, m := range rows {
+		got = append(got, m[1])
+	}
+	eq(t, got, posted)
+	// What is saved is what the page announced.
+	form.Del("order")
+	for _, id := range []string{"clock", "weather", "events", "routines", "tasks", "meals", "tomorrow", "list"} {
+		form.Add("order", id)
+	}
+	f.saveLayout(t, form)
+	eq(t, columnNames(f.view(t, "en", f.at(day, 12, 0))), columns)
+}
+
+// One display already rotates, another is switched on a day later with the same
+// people: they agree, also after the first one is saved again from its own page.
+func TestRotatingDisplayAgreesWithOneSwitchedOnADayLater(t *testing.T) {
+	t.Parallel()
+	f := newFamilyBox(t, "eink_color")
+	hall := f.anotherDisplay(t, "Hall")
+	var kitchen string
+	for _, d := range f.displays(t) {
+		if d.ID != hall {
+			kitchen = d.ID
+		}
+	}
+	people := []string{"Mia", "Mama", "Papa", "Sebastian"}
+	form := f.layoutForm(true, people, defaultOn...)
+	form.Set("rotate", "1")
+	f.now = f.at(14, 12, 0)
+	if r := f.post("/displays/"+kitchen+"/settings", form); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d", r.status)
+	}
+	f.now = f.at(15, 12, 0)
+	if r := f.post("/displays/"+hall+"/settings", form); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d", r.status)
+	}
+	// The kitchen is saved again on the 16th from its page of that day: the rows
+	// are the columns of the 16th, and nobody moves.
+	k, _ := f.db.DisplayLayout(f.householdID, kitchen)
+	f.now = f.at(16, 12, 0)
+	again := f.layoutForm(true, nil, defaultOn...)
+	for _, id := range k.Order(layout.RotationDay(f.now)) {
+		again.Add("person", id)
+	}
+	again.Set("rotate", "1")
+	again.Set("order_day", strconv.Itoa(layout.RotationDay(f.now)))
+	if r := f.post("/displays/"+kitchen+"/settings", again); r.status != http.StatusSeeOther {
 		t.Fatalf("save = %d", r.status)
 	}
 	a, _ := f.db.DisplayLayout(f.householdID, kitchen)

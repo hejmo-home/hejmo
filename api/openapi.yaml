@@ -4061,7 +4061,7 @@ components:
         people:
           type: array
           items: { type: string, format: uuid }
-          description: "The people the display shows, in the order of today's columns, from left to right. With `rotate_daily` the order of today; PATCH it as it is today and the rotation continues from there"
+          description: "The people the display shows, in the order of today's columns, from left to right. While the rotation runs, the order of today. A PATCH that switches `rotate_daily` on takes the order it sends (or the stored one) as the base order of the rotation, so today's columns can move at once by today mod the number of people; a PATCH that leaves it on and sends today's order keeps the columns as they are"
         rotate_daily: { type: boolean, description: "Every day at 03:00 each person moves one column to the right, the rightmost goes to the left (round-robin), the same on every display with this switched on. Default false" }
         blocks:
           type: array

@@ -245,8 +245,9 @@ type layoutPage struct {
 	Portrait       bool
 	Dirty          bool // the form shows an unsaved change
 	OrderDay       int  // the rotation day of the order the form shows
+	WasRotating    bool // the rotation runs in the saved layout
 	Whole, Rotate  bool
-	Chosen         []layoutPerson // in the order of today's columns
+	Chosen         []layoutPerson // the rows of the form; today's columns, unless a rotation is switched on now
 	Off            []personChip   // people not on this display
 	NoPeople       bool
 	CanRotate      bool
@@ -346,7 +347,7 @@ func (s *server) fillLayout(r *http.Request, p principal, v *displayPage, d stor
 	}
 	// l is the layout with the people in their base order; the page shows today's.
 	l := cur.Normalize(household)
-	pg := layoutPage{Name: d.Name, Portrait: d.Portrait, OrderDay: today}
+	pg := layoutPage{Name: d.Name, Portrait: d.Portrait, OrderDay: today, WasRotating: l.Rotate}
 	if in != nil && in.Has("layout_form") {
 		pg.Dirty = true
 		l, _ = s.applyLayout(h.ID, l, layoutFromForm(in), today, household)
@@ -359,20 +360,27 @@ func (s *server) fillLayout(r *http.Request, p principal, v *displayPage, d stor
 	tomorrow := l
 	tomorrow.Rotate = true
 	tomorrowOrder := tomorrow.Order(today + 1)
+	// The rows list the people in the order they are saved from. A rotation that
+	// is switched on now takes them as its base order, so today's columns (the
+	// preview) are moved by today mod n while the rows stay as they are.
+	rows := l.People
+	if pg.WasRotating || !l.Rotate {
+		rows = l.Order(today)
+	}
 	l.People = l.Order(today)
 	pg.Whole, pg.Rotate = l.Whole, l.Rotate
 	pg.NoPeople = len(l.People) == 0
 	_, pg.Personal = l.Personal()
 	pg.CanRotate = len(l.People) >= 2
 	visible := layout.Visible(d.Portrait)
-	for i, id := range l.People {
+	for i, id := range rows {
 		c := byID[id]
 		pos := say("layout.col", "n", strconv.Itoa(i+1))
 		if i >= visible {
 			pos = say("layout.col_swipe", "n", strconv.Itoa(i+1))
 		}
 		pg.Chosen = append(pg.Chosen, layoutPerson{personChip: c, Pos: pos,
-			Up: say("layout.up", "name", c.Name), Down: say("layout.down", "name", c.Name), First: i == 0, Last: i == len(l.People)-1})
+			Up: say("layout.up", "name", c.Name), Down: say("layout.down", "name", c.Name), First: i == 0, Last: i == len(rows)-1})
 	}
 	for _, c := range chips {
 		if !slices.Contains(l.People, c.ID) {

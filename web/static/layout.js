@@ -16,11 +16,31 @@
     return out;
   }
 
-  // tomorrow is the order of the columns after the daily rotation: everyone
-  // moves one column on, the rightmost goes to the left (Q91).
-  function tomorrow(names) {
-    if (names.length < 2) return names.slice();
-    return [names[names.length - 1]].concat(names.slice(0, names.length - 1));
+  // rotated is the order of the columns on a rotation day: with the people in
+  // their base order, everyone is (day mod n) columns on, the rightmost go to
+  // the left. The same as layout.Order of the server (Q91).
+  function rotated(names, day) {
+    var n = names.length;
+    var out = names.slice();
+    if (n < 2) return out;
+    var shift = ((day % n) + n) % n;
+    names.forEach(function (name, i) { out[(i + shift) % n] = name; });
+    return out;
+  }
+
+  // tomorrow is the order of the columns after the daily rotation of a rotation
+  // that runs: everyone moves one column on, the rightmost goes to the left (Q91).
+  function tomorrow(names) { return rotated(names, 1); }
+
+  // orders are the columns the display will show today and the order in words
+  // for tomorrow, for the people as the form lists them. A rotation that is
+  // switched on now starts from the listed order as its base order, so today's
+  // columns are already moved by day mod n; one that runs lists today's columns.
+  function orders(names, rotating, wasRotating, day) {
+    if (!wasRotating) {
+      return { columns: rotating ? rotated(names, day) : names.slice(), tomorrow: rotated(names, day + 1) };
+    }
+    return { columns: names.slice(), tomorrow: tomorrow(names) };
   }
 
   function fill(text, values) {
@@ -47,7 +67,7 @@
     return out;
   }
 
-  var api = { moved: moved, tomorrow: tomorrow, words: words, fill: fill };
+  var api = { moved: moved, rotated: rotated, tomorrow: tomorrow, orders: orders, words: words, fill: fill };
   if (typeof window !== "undefined") window.HejmoLayout = api;
 
   var root = typeof document !== "undefined" && document.querySelector ? document.querySelector("[data-layout]") : null;
@@ -55,6 +75,8 @@
 
   var portrait = root.getAttribute("data-portrait") === "true";
   var visible = Number(root.getAttribute("data-visible")) || 6;
+  var orderDay = Number(root.getAttribute("data-order-day")) || 0;
+  var wasRotating = root.getAttribute("data-was-rotating") === "true";
   var fig = root.querySelector(".lay-prev");
   var mini = root.querySelector("[data-mini]");
   var list = root.querySelector("[data-porder]");
@@ -85,6 +107,7 @@
   function sync() {
     var people = rows();
     var names = people.map(nameOf);
+    var order = orders(names, rotate.checked, wasRotating, orderDay);
     people.forEach(function (row, i) {
       var pos = row.querySelector(".pos");
       var label = i >= visible ? fig.getAttribute("data-col-swipe") : fig.getAttribute("data-col");
@@ -99,7 +122,7 @@
     root.toggleAttribute("data-personal", personal);
     var rot = root.querySelector("[data-rotate]");
     rot.hidden = people.length < 2;
-    rot.querySelector("[data-rotate-on]").textContent = fill(fig.getAttribute("data-tomorrow-on"), { names: tomorrow(names).join(", ") });
+    rot.querySelector("[data-rotate-on]").textContent = fill(fig.getAttribute("data-tomorrow-on"), { names: order.tomorrow.join(", ") });
     var hint = root.querySelector("[data-hint-whole]");
     hint.textContent = hint.getAttribute(whole.checked ? "data-hint-whole" : "data-hint-some");
 
@@ -122,7 +145,9 @@
 
     // The preview.
     var chosen = {};
-    people.forEach(function (row, i) { chosen[row.getAttribute("data-pid")] = i; });
+    var byName = {};
+    people.forEach(function (row, i) { byName[nameOf(row)] = row.getAttribute("data-pid"); });
+    order.columns.forEach(function (name, i) { chosen[byName[name]] = i; });
     Array.prototype.forEach.call(mini.querySelectorAll(".m-col"), function (col) {
       var id = col.getAttribute("data-pid");
       var at = chosen[id];
@@ -145,7 +170,7 @@
       });
     });
     var w = root.querySelector(".lay-words");
-    w.textContent = words(texts, names, portrait, rotate.checked, personal);
+    w.textContent = words(texts, order.columns, portrait, rotate.checked, personal);
   }
 
   function dirty() {

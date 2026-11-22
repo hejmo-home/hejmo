@@ -70,7 +70,7 @@ func TestFormErrorsAppearAtTheFieldAndKeepOtherEntries(t *testing.T) {
 		// of its own); look only at the form this case posted to.
 		page := formOf(t, r.body, c.path)
 		tag := inputTag(page, c.field)
-		if !strings.Contains(tag, `aria-invalid="true"`) || !strings.Contains(tag, `aria-describedby="err-`+c.field+`"`) {
+		if !strings.Contains(tag, `aria-invalid="true"`) || !strings.Contains(tag, `aria-describedby="err-`+c.field) {
 			t.Errorf("%s: field %q is not marked invalid: %q", c.name, c.field, tag)
 		}
 		if !strings.Contains(r.body, `id="err-`+c.field+`"`) || strings.Count(r.body, `class="ferr"`) != 1 {

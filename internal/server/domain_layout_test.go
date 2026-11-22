@@ -145,7 +145,7 @@ func TestOwnDomainPageShowsOnlyTheHintBeforeAChoice(t *testing.T) {
 	if err != nil || got != `{"guides":0,"pick":true}` {
 		t.Errorf("got %s (%v)", got, err)
 	}
-	// The calendar connect page keeps showing its guides (the provider rules must not reach it).
+	// The calendar choice page keeps its own rules (the provider rules must not reach it): no card is chosen, so no guide shows, only the hint; the chosen way's guide shows.
 	f := newLayoutFixture(t)
 	site := siteOf("app", f.box, f.client)
 	if _, err := chromedp.Call(ctx, network.ClearBrowserCookies, cdp.Empty{}); err != nil {
@@ -160,8 +160,17 @@ func TestOwnDomainPageShowsOnlyTheHintBeforeAChoice(t *testing.T) {
 	if err := chromedp.Do(ctx, chromedp.Navigate(site.chromeBase()+"/connections/new")); err != nil {
 		t.Fatal(err)
 	}
-	got, err = chromedp.Run(ctx, chromedp.Evaluate[string](`String([...document.querySelectorAll('form.guide')].filter(f => f.offsetParent !== null).length)`))
-	if err != nil || got != "1" {
-		t.Errorf("calendar connect page shows %s guides (%v), want 1", got, err)
+	got, err = chromedp.Run(ctx, chromedp.Evaluate[string](`JSON.stringify({guides: [...document.querySelectorAll('form.guide')].filter(f => f.offsetParent !== null).length, pick: document.querySelector('.pick-first').offsetParent !== null})`))
+	if err != nil || got != `{"guides":0,"pick":true}` {
+		t.Errorf("calendar choice page shows %s (%v), want no guide and the hint", got, err)
+	}
+	for _, way := range []string{"icloud", "caldav", "ics"} {
+		if err := chromedp.Do(ctx, chromedp.Navigate(site.chromeBase()+"/connections/new?service="+way)); err != nil {
+			t.Fatal(err)
+		}
+		got, err = chromedp.Run(ctx, chromedp.Evaluate[string](`JSON.stringify({guides: [...document.querySelectorAll('form.guide')].filter(f => f.offsetParent !== null).map(f => f.dataset.service), pick: document.querySelector('.pick-first').offsetParent !== null})`))
+		if err != nil || got != `{"guides":["`+way+`"],"pick":false}` {
+			t.Errorf("calendar choice page with %s chosen shows %s (%v), want only its guide", way, got, err)
+		}
 	}
 }

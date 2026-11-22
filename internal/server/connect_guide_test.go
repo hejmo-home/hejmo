@@ -30,26 +30,26 @@ func connectBlock(t *testing.T, page string) string {
 	return page[i:]
 }
 
-func TestConnectNewShowsBothGuidesWithExactlyOneServiceChecked(t *testing.T) {
+func TestConnectNewShowsTheGuidesAndChoosesOnlyTheServiceOfTheQuery(t *testing.T) {
 	t.Parallel()
 	b := signedInAPI(t).b
 	for path, want := range map[string]string{
-		"/connections/new":                "icloud",
+		"/connections/new":                "", // no way is preselected (ticket 231)
 		"/connections/new?service=icloud": "icloud",
 		"/connections/new?service=caldav": "caldav",
-		"/connections/new?service=bogus":  "icloud",
+		"/connections/new?service=bogus":  "",
 	} {
 		r := b.get(path)
 		if r.status != http.StatusOK {
 			t.Fatalf("%s = %d\n%s", path, r.status, r.body)
 		}
 		block := connectBlock(t, r.body)
-		if n := strings.Count(block, `name="service"`); n != 2 {
-			t.Errorf("%s: %d service radios, want 2", path, n)
+		if n := strings.Count(block, `name="service"`); n != 3 {
+			t.Errorf("%s: %d service radios, want 3", path, n)
 		}
 		checked := regexp.MustCompile(`<input type="radio" name="service" value="(\w+)" checked>`).FindAllStringSubmatch(block, -1)
-		if len(checked) != 1 || checked[0][1] != want {
-			t.Errorf("%s: checked = %v, want only %s", path, checked, want)
+		if want == "" && len(checked) != 0 || want != "" && (len(checked) != 1 || checked[0][1] != want) {
+			t.Errorf("%s: checked = %v, want %q", path, checked, want)
 		}
 		for _, svc := range []string{"icloud", "caldav"} {
 			if !strings.Contains(block, `<form class="guide" data-service="`+svc+`" method="post" action="/connections"`) {
@@ -278,7 +278,7 @@ func TestCalendarsPageLinksToTheConnectPage(t *testing.T) {
 	t.Parallel()
 	b := signedInAPI(t).b
 	r := b.get("/calendars")
-	for _, want := range []string{"iCloud und andere Kalender-Server", "Noch keine Verbindung. Verbinde iCloud oder einen anderen Kalender-Server, dann erscheinen eure Termine auf der Box.", `<a class="button" href="/connections/new">Kalender verbinden</a>`} {
+	for _, want := range []string{"Noch kein Kalender auf der Box.", `<a class="button" href="/connections/new">Kalender verbinden</a>`} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("empty state lacks %q", want)
 		}
@@ -288,18 +288,18 @@ func TestCalendarsPageLinksToTheConnectPage(t *testing.T) {
 			t.Errorf("calendars page still has %q", gone)
 		}
 	}
-	// One card per connection, then a secondary button for another one.
+	// One card per connection, with the one way in under the lead.
 	b.sync.SetDialer(func(string, string, string) (calsync.Remote, error) {
 		return hostedRemote{found: []caldavclient.Calendar{{URL: flowCalendar, Name: "Home"}}}, nil
 	})
 	b.post("/connections", url.Values{"provider": {"icloud"}, "username": {"mama@example.org"}, "password": {"abcd-efgh-ijkl-mnop"}})
 	r = b.get("/calendars")
-	for _, want := range []string{`<ul class="list-rows">`, "<b>mama@example.org</b>", `<span class="meta">iCloud</span>`, `<a class="button secondary" href="/connections/new">Weiteren Kalender verbinden</a>`} {
+	for _, want := range []string{`<ul class="list-rows">`, "<b>mama@example.org</b>", `<span class="meta">iCloud</span>`, `<p class="add-way"><a class="button" href="/connections/new">Kalender verbinden</a></p>`} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("connection card lacks %q:\n%s", want, r.body)
 		}
 	}
-	if strings.Contains(r.body, "data-empty") && strings.Contains(r.body, "Noch keine Verbindung") {
+	if strings.Contains(r.body, "data-empty") {
 		t.Error("empty state shown next to a connection")
 	}
 }

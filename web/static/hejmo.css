@@ -2902,3 +2902,25 @@ main > .tile.netblock .button { justify-self: start; }
 [data-theme="bw"] main > .tile.netblock { border: 2px solid var(--text); }
 /* The form of the page "Nur im Heimnetz" holds its tiles and "More options". */
 .wizard form.homeform { display: grid; gap: var(--gap); min-width: 0; }
+
+/* ---- ticket 231: one choice page for all ways to add a calendar ----
+   Existing tokens only; builds on .connect, .choice, .guide, .why (ticket 135),
+   .pick-first (ticket 57) and the locked state of ticket 201. */
+/* No way is chosen first: the cards are equal. Until one is chosen no guide
+   shows, only the .pick-first line. */
+.connect:has(input[name="service"]):not(:has(input[name="service"]:checked)) .guide { display: none; }
+.connect:has(input[name="service"][value="google"]:checked) .guide:not([data-service="google"]),
+.connect:has(input[name="service"][value="outlook"]:checked) .guide:not([data-service="outlook"]),
+.connect:has(input[name="service"][value="ics"]:checked) .guide:not([data-service="ics"]) { display: none; }
+.connect:has(input[name="service"]:checked) .pick-first { display: none; }
+/* A way whose connection to the outside is off: dashed frame, no radio, a lock
+   and the reason in words (like the locked switch of ticket 201). */
+.choice label.locked { border-style: dashed; cursor: not-allowed; }
+.choice label.locked input { visibility: hidden; }
+.choice label.locked b { color: var(--text-secondary); }
+.choice small.lock { display: flex; align-items: center; gap: 6px; color: var(--text); font-weight: 600; }
+.choice small.lock .icon { flex: none; }
+[data-theme="bw"] .choice label.locked { border: 2px dashed var(--text); padding: 11px 13px; }
+/* The trimmed overview: one way in, right under the lead. */
+.add-way { margin: 0 0 var(--gap-section); }
+section > .hint.none { margin-top: -4px; }

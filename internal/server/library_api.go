@@ -332,7 +332,12 @@ func (s *server) apiSetArticlePantry(w http.ResponseWriter, r *http.Request, p p
 		return
 	}
 	id := r.PathValue("id")
-	if o, err := s.db.Article(p.household.ID, id); err == nil {
+	o, err := s.db.Article(p.household.ID, id)
+	if err != nil && !errors.Is(err, store.ErrNotFound) {
+		s.fail(w, "mark article", err)
+		return
+	}
+	if err == nil {
 		o.Pantry = *in.Pantry
 		saved, err := s.db.UpdateArticle(p.household.ID, o, store.KeepPicture, nil)
 		if err != nil {
@@ -367,14 +372,10 @@ func (s *server) apiCopyArticle(w http.ResponseWriter, r *http.Request, p princi
 	}
 	lang := s.langOf(r)
 	active := s.activeUnits(p.household)
-	overrides, err := s.db.PantryOverrides(p.household.ID)
+	pantry, err := s.shippedPantry(p, a)
 	if err != nil {
 		s.fail(w, "pantry marks", err)
 		return
-	}
-	pantry := a.Pantry
-	if v, ok := overrides[a.ID]; ok {
-		pantry = v
 	}
 	own := store.OwnArticle{Name: a.Name(lang), Dept: a.Dept, Kind: string(a.Kind), Allergens: a.Allergens, Unit1: s.offeredUnits(p, a)[0], Pantry: pantry}
 	if len(a.Units) > 1 && slices.Contains(active, a.Units[1]) && a.Units[1] != own.Unit1 {

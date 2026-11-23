@@ -342,7 +342,7 @@ func TestShippedArticlesCarryAPantryMarkThatAParentSwitchesPerArticle(t *testing
 		t.Errorf("unmark salt = %d %v", status, a)
 	}
 	_, a, _ = c.call(http.MethodGet, "/articles/salt", nil)
-	_, list := func() (int, []any) { _, _, l := c.call(http.MethodGet, "/articles?q=apples", nil); return 0, l }()
+	_, _, list := c.call(http.MethodGet, "/articles?q=apples", nil)
 	if a["pantry"] != false || len(list) != 1 || list[0].(map[string]any)["pantry"] != true {
 		t.Errorf("not kept: salt = %v, list = %v", a["pantry"], list)
 	}

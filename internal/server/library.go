@@ -116,6 +116,18 @@ func (st libState) item(id string) (articleItem, bool) {
 	return articleItem{}, false
 }
 
+// shippedPantry is the pantry mark the household sees on a shipped article.
+func (s *server) shippedPantry(p principal, a library.Article) (bool, error) {
+	overrides, err := s.db.PantryOverrides(p.household.ID)
+	if err != nil {
+		return false, err
+	}
+	if v, ok := overrides[a.ID]; ok {
+		return v, nil
+	}
+	return a.Pantry, nil
+}
+
 // shipped applies the household's pantry mark to a shipped article.
 func (st libState) shipped(a library.Article) library.Article {
 	if v, ok := st.pantry[a.ID]; ok {

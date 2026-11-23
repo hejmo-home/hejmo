@@ -1046,3 +1046,34 @@ func TestTheOwnArticleFormHasAPantrySwitchThatIsStored(t *testing.T) {
 		t.Error("the mark was not removed")
 	}
 }
+
+func TestACopyOfAShippedArticleKeepsItsPantryMarkAndTheOwnArticleCanBeMarkedOnThePantryRoute(t *testing.T) {
+	t.Parallel()
+	l := newLibBox(t)
+	// pepper is shipped as a pantry article, salt is unmarked by the household first
+	l.postEN("/settings/lists/library/salt/pantry", url.Values{})
+	for key, want := range map[string]bool{"salt": false, "pepper": true} {
+		r := l.postEN("/settings/lists/library/"+key+"/copy", url.Values{})
+		m := idRe.FindStringSubmatch(r.location)
+		if r.status != http.StatusSeeOther || m == nil {
+			t.Fatalf("copy %s = %d %q", key, r.status, r.location)
+		}
+		if own, err := l.db.Article(l.h.ID, m[1]); err != nil || own.Pantry != want {
+			t.Errorf("copy of %s: pantry = %v (%v), want %v", key, own.Pantry, err, want)
+		}
+	}
+	f := articleForm()
+	f.Set("name", "Kräutersalz")
+	id := l.createArticle(f)
+	r := l.postEN("/settings/lists/library/"+id+"/pantry", url.Values{"pantry": {"on"}})
+	if r.status != http.StatusSeeOther || r.location != "/settings/lists/library/"+id {
+		t.Fatalf("mark own = %d %q", r.status, r.location)
+	}
+	if a, _ := l.db.Article(l.h.ID, id); !a.Pantry {
+		t.Error("the own article was not marked")
+	}
+	l.postEN("/settings/lists/library/"+id+"/pantry", url.Values{})
+	if a, _ := l.db.Article(l.h.ID, id); a.Pantry {
+		t.Error("the own article was not unmarked")
+	}
+}

@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"html/template"
@@ -408,7 +409,12 @@ func (s *server) handleArticlePantry(w http.ResponseWriter, r *http.Request) {
 	id := r.PathValue("id")
 	pantry := r.PostFormValue("pantry") != ""
 	var name string
-	if o, err := s.db.Article(p.household.ID, id); err == nil {
+	o, err := s.db.Article(p.household.ID, id)
+	if err != nil && !errors.Is(err, store.ErrNotFound) {
+		s.fail(w, "mark article", err)
+		return
+	}
+	if err == nil {
 		o.Pantry, name = pantry, o.Name
 		if _, err := s.db.UpdateArticle(p.household.ID, o, store.KeepPicture, nil); err != nil {
 			s.fail(w, "mark article", err)
@@ -442,12 +448,12 @@ func (s *server) handleArticleCopy(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	st, err := s.libState(p, lang)
+	pantry, err := s.shippedPantry(p, a)
 	if err != nil {
-		s.fail(w, "library state", err)
+		s.fail(w, "pantry marks", err)
 		return
 	}
-	own := store.OwnArticle{Name: a.Name(lang), Dept: a.Dept, Kind: string(a.Kind), Allergens: a.Allergens, Unit1: a.Units[0], Pantry: st.shipped(a).Pantry}
+	own := store.OwnArticle{Name: a.Name(lang), Dept: a.Dept, Kind: string(a.Kind), Allergens: a.Allergens, Unit1: a.Units[0], Pantry: pantry}
 	if len(a.Units) > 1 {
 		own.Unit2 = a.Units[1]
 	}

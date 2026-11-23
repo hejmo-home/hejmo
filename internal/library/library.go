@@ -181,10 +181,10 @@ func loadShipped() {
 			continue
 		}
 		f := strings.Split(line, "|")
-		if len(f) != 9 || (f[8] != "" && f[8] != "pantry") {
+		if len(f) != 9 || (f[8] != "" && f[8] != "athome") {
 			panic("library: malformed line in articles.txt: " + line)
 		}
-		a := Article{ID: f[0], De: f[1], En: f[2], Dept: f[3], Kind: Kind(f[4]), Symbol: f[5], Units: strings.Split(f[6], ","), Pantry: f[8] == "pantry"}
+		a := Article{ID: f[0], De: f[1], En: f[2], Dept: f[3], Kind: Kind(f[4]), Symbol: f[5], Units: strings.Split(f[6], ","), Pantry: f[8] == "athome"}
 		if f[7] != "" {
 			a.Allergens = strings.Split(f[7], ",")
 		}

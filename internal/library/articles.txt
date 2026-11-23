@@ -2,7 +2,7 @@
 # key | German name | English name | department | what is in it | symbol | default units | allergens | pantry
 # what is in it: meat, fish, veg (vegetarian), vegan or nonfood. Default units: one or two keys of
 # internal/unit. Allergens: keys of the 14 main allergens of EU regulation 1169/2011 annex II, as a
-# product of this kind usually carries them (no traces). Pantry: "pantry" for an article usually at home (salt, oil, flour), recipes leave it out of the shopping list by default (ADR 0021, ticket 278); empty otherwise. NOT yet reviewed by the product owner (follow-up issue 214): change this line only after the review is done.
+# product of this kind usually carries them (no traces). Pantry: "athome" (not the department "pantry") for an article usually at home (salt, oil, flour), recipes leave it out of the shopping list by default (ADR 0021, ticket 278); empty otherwise. NOT yet reviewed by the product owner (follow-up issue 214): change this line only after the review is done.
 # produce
 apples|Äpfel|Apples|produce|vegan|🍎|kg,piece||
 bananas|Bananen|Bananas|produce|vegan|🍌|piece,kg||
@@ -152,13 +152,13 @@ kidney-beans-tin|Kidneybohnen (Dose)|Kidney beans (tin)|pantry|vegan|🫘|piece|
 chopped-tomatoes|Tomaten, gehackt (Dose)|Chopped tomatoes (tin)|pantry|vegan|🥫|piece||
 tomato-passata|Passierte Tomaten|Passata|pantry|vegan|🥫|piece||
 tomato-paste|Tomatenmark|Tomato paste|pantry|vegan|🥫|piece||
-olive-oil|Olivenöl|Olive oil|pantry|vegan|🫒|piece||pantry
-vinegar|Essig|Vinegar|pantry|vegan|🫙|piece|sulphites|pantry
+olive-oil|Olivenöl|Olive oil|pantry|vegan|🫒|piece||athome
+vinegar|Essig|Vinegar|pantry|vegan|🫙|piece|sulphites|athome
 ketchup|Ketchup|Ketchup|pantry|vegan|🍅|piece||
 mustard|Senf|Mustard|pantry|vegan|🫙|piece|mustard|
 mayonnaise|Mayonnaise|Mayonnaise|pantry|veg|🫙|piece|eggs,mustard|
-soy-sauce|Sojasoße|Soy sauce|pantry|vegan|🫙|piece|soy,gluten|pantry
-vegetable-stock|Gemüsebrühe|Vegetable stock|pantry|vegan|🫙|pack|celery|pantry
+soy-sauce|Sojasoße|Soy sauce|pantry|vegan|🫙|piece|soy,gluten|athome
+vegetable-stock|Gemüsebrühe|Vegetable stock|pantry|vegan|🫙|pack|celery|athome
 tea|Tee|Tea|pantry|vegan|🫖|pack||
 coffee|Kaffee|Coffee|pantry|vegan|☕|pack,g||
 cocoa-powder|Kakaopulver|Cocoa powder|pantry|vegan|🍫|pack||
@@ -166,26 +166,26 @@ tahini|Tahini|Tahini|pantry|vegan|🫙|piece|sesame|
 hummus|Hummus|Hummus|pantry|vegan|🫘|pack|sesame|
 coconut-milk|Kokosnussmilch|Coconut milk|pantry|vegan|🥥|piece||
 # baking and spices
-wheat-flour|Weizenmehl|Wheat flour|baking_spices|vegan|🌾|g,kg|gluten|pantry
-spelt-flour|Dinkelmehl|Spelt flour|baking_spices|vegan|🌾|g,kg|gluten|pantry
-sugar|Zucker|Sugar|baking_spices|vegan|🧂|kg,g||pantry
-icing-sugar|Puderzucker|Icing sugar|baking_spices|vegan|🧂|pack,g||pantry
-brown-sugar|Brauner Zucker|Brown sugar|baking_spices|vegan|🧂|pack,g||pantry
-vanilla-sugar|Vanillezucker|Vanilla sugar|baking_spices|vegan|🧂|pack||pantry
-baking-powder|Backpulver|Baking powder|baking_spices|vegan|🧂|pack||pantry
+wheat-flour|Weizenmehl|Wheat flour|baking_spices|vegan|🌾|g,kg|gluten|athome
+spelt-flour|Dinkelmehl|Spelt flour|baking_spices|vegan|🌾|g,kg|gluten|athome
+sugar|Zucker|Sugar|baking_spices|vegan|🧂|kg,g||athome
+icing-sugar|Puderzucker|Icing sugar|baking_spices|vegan|🧂|pack,g||athome
+brown-sugar|Brauner Zucker|Brown sugar|baking_spices|vegan|🧂|pack,g||athome
+vanilla-sugar|Vanillezucker|Vanilla sugar|baking_spices|vegan|🧂|pack||athome
+baking-powder|Backpulver|Baking powder|baking_spices|vegan|🧂|pack||athome
 yeast|Hefe|Yeast|baking_spices|vegan|🍞|pack||
-cornflour|Speisestärke|Cornflour|baking_spices|vegan|🧂|pack||pantry
+cornflour|Speisestärke|Cornflour|baking_spices|vegan|🧂|pack||athome
 ground-hazelnuts|Haselnüsse, gemahlen|Ground hazelnuts|baking_spices|vegan|🌰|pack,g|nuts|
 ground-almonds|Mandeln, gemahlen|Ground almonds|baking_spices|vegan|🌰|pack,g|nuts|
 walnut-pieces|Walnusskerne|Walnut kernels|baking_spices|vegan|🌰|pack,g|nuts|
-salt|Salz|Salt|baking_spices|vegan|🧂|pack||pantry
-pepper|Pfeffer|Pepper|baking_spices|vegan|🧂|piece||pantry
-paprika-powder|Paprikapulver|Paprika powder|baking_spices|vegan|🌶️|piece||pantry
-cinnamon|Zimt|Cinnamon|baking_spices|vegan|🧂|piece||pantry
-nutmeg|Muskatnuss|Nutmeg|baking_spices|vegan|🧂|piece||pantry
-oregano|Oregano|Oregano|baking_spices|vegan|🌿|piece||pantry
-curry-powder|Currypulver|Curry powder|baking_spices|vegan|🧂|piece|mustard|pantry
-sesame-seeds|Sesam|Sesame seeds|baking_spices|vegan|🌱|pack|sesame|pantry
+salt|Salz|Salt|baking_spices|vegan|🧂|pack||athome
+pepper|Pfeffer|Pepper|baking_spices|vegan|🧂|piece||athome
+paprika-powder|Paprikapulver|Paprika powder|baking_spices|vegan|🌶️|piece||athome
+cinnamon|Zimt|Cinnamon|baking_spices|vegan|🧂|piece||athome
+nutmeg|Muskatnuss|Nutmeg|baking_spices|vegan|🧂|piece||athome
+oregano|Oregano|Oregano|baking_spices|vegan|🌿|piece||athome
+curry-powder|Currypulver|Curry powder|baking_spices|vegan|🧂|piece|mustard|athome
+sesame-seeds|Sesam|Sesame seeds|baking_spices|vegan|🌱|pack|sesame|athome
 # sweets and snacks
 milk-chocolate|Milchschokolade|Milk chocolate|sweets|veg|🍫|piece|milk,soy|
 dark-chocolate|Zartbitterschokolade|Dark chocolate|sweets|vegan|🍫|piece|soy|

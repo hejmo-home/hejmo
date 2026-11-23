@@ -218,12 +218,6 @@ func (db *DB) EntryCounts(householdID string) (map[string]EntryCount, error) {
 	return out, rows.Err()
 }
 
-// ListSharing is one list with whether other apps get it.
-type ListSharing struct {
-	List   list.List
-	Shared bool
-}
-
 // SetListsShared switches lists on or off for other apps (ticket 167): the map
 // holds list id and the new state; lists it does not name stay as they are.
 // A list that is gone is a *MissingListError and nothing is stored.

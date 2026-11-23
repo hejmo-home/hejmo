@@ -93,7 +93,7 @@ func davAction(method string) auth.Action {
 
 // scopedTo reports whether a token carries a scope of this resource: ADR 0012
 // opens CalDAV to calendars scopes only, ADR 0018 task lists to tasks scopes
-// only and ticket 167 shared lists to lists scopes only, not to plain read or
+// only and ticket 167 shared lists to the lists scope of device tokens only, not to plain read or
 // write tokens.
 func scopedTo(scopes, resource string) bool {
 	for _, sc := range strings.Fields(scopes) {
@@ -130,6 +130,22 @@ func davAllows(scopes, method, path string) (bool, auth.Permission) {
 	return scopedTo(scopes, res) && auth.ScopesAllow(scopes, perm), perm
 }
 
+// davScopes are the scopes a token has over CalDAV. Shared lists are opened to
+// device tokens only: a token with a lists scope that is made for other
+// software over the API is not widened to CalDAV (Q40).
+func davScopes(t store.APIToken) string {
+	if isDeviceToken(t) {
+		return t.Scopes
+	}
+	var keep []string
+	for _, sc := range strings.Fields(t.Scopes) {
+		if res, _, _ := strings.Cut(sc, ":"); res != "lists" {
+			keep = append(keep, sc)
+		}
+	}
+	return strings.Join(keep, " ")
+}
+
 // davAuth signs a phone in with HTTP Basic: the person's username and a device
 // token with token scope calendars as the password. Browser sessions do not
 // count, so CalDAV is not open to cross-site requests.
@@ -164,7 +180,7 @@ func (s *server) davAuth(next http.Handler) http.Handler {
 			davChallenge(w)
 			return
 		}
-		allowed, perm := davAllows(token.Scopes, r.Method, r.URL.Path)
+		allowed, perm := davAllows(davScopes(token), r.Method, r.URL.Path)
 		// Children have no account; a token held by one is refused all the same.
 		if person.Role != store.RoleParent || !auth.RoleAllows(person.Role, perm) || !allowed {
 			http.Error(w, "forbidden: needs "+perm.String(), http.StatusForbidden)
@@ -178,7 +194,7 @@ func (s *server) davAuth(next http.Handler) http.Handler {
 				return
 			}
 		}
-		sess := &davSession{person: person, house: house, req: r, scopes: token.Scopes}
+		sess := &davSession{person: person, house: house, req: r, scopes: davScopes(token)}
 		next.ServeHTTP(w, r.WithContext(context.WithValue(r.Context(), davKey{}, sess)))
 	})
 }

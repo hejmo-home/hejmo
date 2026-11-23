@@ -2214,8 +2214,9 @@ paths:
         Lists shared with other apps appear to CalDAV clients (Apple Reminders,
         DAVx5 with Tasks.org) as one collection of tasks each, below the
         calendar home, titled "Name · quantity" with the note as the notes
-        field. Only parents' device tokens carry the `lists` scope that reads
-        them; tokens made before version 0.2 are not widened. This is no
+        field. Only parents' device tokens (made on the CalDAV page) open them
+        over CalDAV; tokens made before version 0.2 and tokens made for other
+        software, even with a `lists` scope, are not widened to CalDAV. This is no
         connection to the outside: the device fetches from the box.
       responses:
         "200":

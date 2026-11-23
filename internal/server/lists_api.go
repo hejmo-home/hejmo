@@ -596,6 +596,10 @@ func (s *server) listViewError(w http.ResponseWriter, err error) {
 }
 
 // apiSetNote changes the note of an entry alone, open or ticked off. "" removes it.
+// apiSetNote also changes the note of a ticked-off entry, which the web page
+// refuses with 409 (its editor is only shown on open entries): the API is for
+// other software, which keeps notes in step with its own copy of a ticked-off
+// entry, as Reminders does over CalDAV.
 func (s *server) apiSetNote(w http.ResponseWriter, p principal, l list.List, id, note string) {
 	if err := s.db.SetEntryNote(p.household.ID, l.ID, id, note); err != nil {
 		s.listError(w, "set note", err)

@@ -133,6 +133,9 @@ func (b *davBackend) itemCtx(sess *davSession, full bool) (*itemCtx, error) {
 // itemTitle is the title of an entry's reminder: its words, then the quantity.
 func (c *itemCtx) itemTitle(e list.Entry) string { return list.JoinTitle(e.Text, c.qtyWords(e.Qty)) }
 
+// The UID is the entry's id, which is also its file name: a client that
+// creates an entry under a file name different from its UID gets the file name
+// back as the UID at its next sync.
 func (c *itemCtx) itemObject(path string, e list.Entry) (webcal.CalendarObject, error) {
 	td := hcal.Todo{UID: e.ID, Title: c.itemTitle(e), Notes: e.Note, Done: e.Done, Modified: itemModified}
 	cal, err := td.Calendar()
@@ -228,9 +231,15 @@ var unitWordRe = regexp.MustCompile(`^\p{L}[\p{L}.]*$`)
 // reminder reads a title as the entry it makes: the name as the library
 // writes it, its article, and the quantity (a bare number takes the article's
 // first default unit).
-func (c *itemCtx) reminder(title string, keep *list.Entry) (store.SyncEdit, error) {
+//
+// A list without suggestions (To-dos, #165) has no library and no quantities:
+// the whole title is the text, as typed.
+func (c *itemCtx) reminder(l list.List, title string, keep *list.Entry) (store.SyncEdit, error) {
 	if keep != nil && title == c.itemTitle(*keep) { // unchanged: also keeps what the title cannot say
 		return store.SyncEdit{Text: keep.Text, ArticleID: keep.ArticleID, Qty: keep.Qty}, nil
+	}
+	if !l.Suggestions {
+		return store.SyncEdit{Text: strings.TrimSpace(title)}, nil
 	}
 	sp := list.SplitTitle(title, c.unitWords())
 	var art *articleItem
@@ -247,6 +256,9 @@ func (c *itemCtx) reminder(title string, keep *list.Entry) (store.SyncEdit, erro
 			text = sp.Name
 		}
 	}
+	if sp.Bare && art == nil {
+		text = strings.TrimSpace(title)
+	}
 	out := store.SyncEdit{Text: text}
 	if art != nil {
 		out.ArticleID = art.ID
@@ -254,7 +266,7 @@ func (c *itemCtx) reminder(title string, keep *list.Entry) (store.SyncEdit, erro
 	switch {
 	case sp.Unit != "":
 		out.Qty = list.NewQuantity(sp.Amount, sp.Unit)
-	case sp.Bare:
+	case sp.Bare && art != nil: // free text with a number ("Kapitel 3") stays as typed
 		out.Qty = list.NewQuantity(sp.Amount, c.offered(art)[0])
 	}
 	return out, nil
@@ -303,7 +315,7 @@ func (b *davBackend) putItem(sess *davSession, p string, cal *ical.Calendar, opt
 	if err := checkETag(have, exists, opts.IfMatch, opts.IfNoneMatch); err != nil {
 		return nil, err
 	}
-	in, err := c.reminder(edit.Title, existing)
+	in, err := c.reminder(l, edit.Title, existing)
 	if err != nil {
 		return nil, err
 	}
@@ -347,6 +359,10 @@ func (b *davBackend) deleteItem(sess *davSession, p string) error {
 	if addr, ok := parseListPath(sess, p); ok && addr.entry == "" {
 		return httpError(http.StatusForbidden, "lists are created, renamed and deleted in the box's web interface")
 	}
+	b.mu.Lock()
+	defer b.mu.Unlock()
+	// Read under the lock, as putItem does: the precondition and the delete
+	// see the same entry.
 	l, _, _, e, err := b.entryAt(sess, p)
 	if err != nil {
 		return err
@@ -354,8 +370,6 @@ func (b *davBackend) deleteItem(sess *davSession, p string) error {
 	if e == nil {
 		return httpError(http.StatusNotFound, "no such entry")
 	}
-	b.mu.Lock()
-	defer b.mu.Unlock()
 	if m := webdav.ConditionalMatch(sess.req.Header.Get("If-Match")); m.IsSet() {
 		c, err := b.itemCtx(sess, false)
 		if err != nil {

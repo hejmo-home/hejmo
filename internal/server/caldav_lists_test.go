@@ -143,10 +143,74 @@ func TestListsNeedTheListsScopeAndOldTokensAreNotWidened(t *testing.T) {
 	if status, _, _ := old.raw("GET", lb.path, "", nil); status != http.StatusForbidden {
 		t.Errorf("old token on a list = %d, want 403", status)
 	}
-	only := lb.c.phone(t, "lists")
-	cals, err := only.calendars()
-	if err != nil || len(cals) != 1 || cals[0].Name != "Einkaufen" {
-		t.Fatalf("lists only: %v %v", cals, err)
+	// Software that only has the lists scope over the API is no device: it is
+	// not opened to CalDAV (Q40: old tokens are not widened silently).
+	for _, scopes := range []string{"lists", "lists:write", "calendars lists:read", "events lists"} {
+		other := lb.c.phone(t, scopes)
+		if status, _, _ := other.raw("GET", lb.path, "", nil); status != http.StatusForbidden {
+			t.Errorf("token %q on a list = %d, want 403", scopes, status)
+		}
+		if status, _, _ := other.raw("DELETE", lb.path+"x.ics", "", nil); status != http.StatusForbidden {
+			t.Errorf("token %q deleting an entry = %d, want 403", scopes, status)
+		}
+		if cals, _ := other.calendars(); len(cals) > 0 {
+			for _, cal := range cals {
+				if cal.Name == "Einkaufen" {
+					t.Errorf("token %q sees lists", scopes)
+				}
+			}
+		}
+	}
+	dev := lb.c.phone(t, "calendars lists")
+	cals, err := dev.calendars()
+	found := false
+	for _, cal := range cals {
+		found = found || cal.Name == "Einkaufen"
+	}
+	if err != nil || !found {
+		t.Fatalf("a device token sees the shared list: %v %v", cals, err)
+	}
+}
+
+func TestAListWithoutSuggestionsTakesNoQuantitiesFromReminders(t *testing.T) {
+	t.Parallel()
+	lb := newDavListBox(t)
+	todo, err := lb.c.b.db.CreateList(lb.h.ID, list.List{Name: "Aufgaben", Color: "green", Symbol: "square-filled", Sort: list.Manual})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if err := lb.c.b.db.SetListsShared(lb.h.ID, map[string]bool{lb.shop.ID: true, todo.ID: true}); err != nil {
+		t.Fatal(err)
+	}
+	path := lb.ph.calendarNamed("Aufgaben").Path
+	for _, name := range []string{"Kapitel 3", "Milch 2 l", "Eier 6"} {
+		id := strings.ReplaceAll(name, " ", "-")
+		if status, _, body := lb.ph.raw("PUT", path+id+".ics", todoICS(id, "SUMMARY:"+name), map[string]string{"Content-Type": icsType}); status >= 300 {
+			t.Fatalf("PUT %s: %d %s", name, status, body)
+		}
+		es, _ := lb.c.b.db.Entries(lb.h.ID, todo.ID)
+		var got *list.Entry
+		for i := range es {
+			if es[i].ID == id {
+				got = &es[i]
+			}
+		}
+		if got == nil || got.Text != name || !got.Qty.None() || got.ArticleID != "" {
+			t.Errorf("%q on a list without suggestions: %+v", name, got)
+		}
+	}
+}
+
+func TestFreeTextWithABareNumberStaysAsTyped(t *testing.T) {
+	t.Parallel()
+	lb := newDavListBox(t)
+	if lb.put(t, "k", "SUMMARY:Kapitel 3") >= 300 {
+		t.FailNow()
+	}
+	for _, e := range lb.entries(t) {
+		if e.ID == "k" && (e.Text != "Kapitel 3" || !e.Qty.None()) {
+			t.Errorf("free text with a number: %+v", e)
+		}
 	}
 }
 

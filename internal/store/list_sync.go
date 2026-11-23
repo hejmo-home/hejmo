@@ -13,7 +13,7 @@ import (
 // shared list's entry: the words, the article they name, the quantity, the
 // note and ticking. Dates, times and flags are not stored.
 
-// ErrIDTaken means an entry id is used already (by another list).
+// ErrIDTaken means an entry id is used already (by another list of the household).
 var ErrIDTaken = errors.New("store: the entry id is taken")
 
 // SyncEdit is an entry as another app saved it.
@@ -130,7 +130,7 @@ func (db *DB) SyncNewEntry(householdID, listID, id string, in SyncEdit, show lis
 		return AddResult{}, err
 	}
 	var x string
-	switch err := db.sql.QueryRow(`SELECT id FROM list_entries WHERE id = ?`, id).Scan(&x); {
+	switch err := db.sql.QueryRow(`SELECT e.id FROM list_entries e JOIN lists l ON l.id = e.list_id WHERE e.id = ? AND l.household_id = ?`, id, householdID).Scan(&x); {
 	case err == nil:
 		return AddResult{}, ErrIDTaken
 	case !errors.Is(err, sql.ErrNoRows):

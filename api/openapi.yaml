@@ -4290,6 +4290,101 @@ paths:
         "204": { description: Dismissed }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /update/file:
+    get:
+      operationId: getUpdateFile
+      summary: The uploaded update file that waits or installs, and whether one can be uploaded (scope settings:read)
+      description: |
+        In offline mode (or with the update check switched off) a parent can bring a
+        release to the box as a file instead of the nightly check: `POST` it, check what
+        it holds, then confirm with `POST /update/file/install`. `available` says whether
+        a file can be uploaded now (a host script that installs files runs, the box does
+        not update itself, and no failed rollback needs a person at the box). `state` is
+        `none`, `ready` (checked, waits for the yes; deleted after an hour) or
+        `installing` (handed to the host script; `step` says where it is: `verify`,
+        `backup`, `start` or `health`). One file at a time for the whole box.
+      responses:
+        "200":
+          description: The upload, if any
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UpdateFile" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: uploadUpdateFile
+      summary: Upload an update file; the box checks it and keeps it waiting for confirmation (scope settings:write)
+      description: |
+        Send the file `hejmo-<version>-<arch>.update` of the release page as
+        `multipart/form-data` in the part `update_file`, over HTTPS only. The box checks
+        the format, the cosign signature of the release workflow (offline, against the
+        Sigstore root built into the box), the architecture and that the version is a
+        published one newer than what runs. Nothing is installed by this call. A refused
+        file is deleted at once and the answer carries the `code`: `signature_invalid`,
+        `no_signature`, `wrong_arch`, `not_newer`, `not_newer_unknown`, `prerelease`,
+        `damaged`, `not_update_name`, `no_file`. A file over 500 MB is refused with 413,
+        one that does not fit with room left for the installation with 507; 409 means
+        an installation is running or no upload is possible now (`available` in `GET`).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [update_file]
+              properties:
+                update_file: { type: string, format: binary }
+      responses:
+        "201":
+          description: The file is checked and waits for confirmation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UpdateFile" }
+        "400": { $ref: "#/components/responses/UpdateFileRefused" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/UpdateFileRefused" }
+        "413": { $ref: "#/components/responses/UpdateFileRefused" }
+        "422": { $ref: "#/components/responses/UpdateFileRefused" }
+        "507": { $ref: "#/components/responses/UpdateFileRefused" }
+    delete:
+      operationId: discardUpdateFile
+      summary: Delete the waiting update file (scope settings:write)
+      description: Answers 409 while the file is being installed.
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: The file is being installed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /update/file/install:
+    post:
+      operationId: installUpdateFile
+      summary: Install the waiting update file now (scope settings:write)
+      description: |
+        The parent's yes. The box saves the request in the settings file for the host
+        script (fixed keys: version, SHA-256 of the file, time), which checks the file
+        again, saves the data, starts the new version and goes back to the previous one
+        if it does not answer. The box is unreachable for about two minutes. Poll
+        `GET /update/file` for `step`, and `GET /update` for the result. Over HTTPS only.
+      responses:
+        "202":
+          description: The host script was asked to install the file
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UpdateFile" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: An installation is running already
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /events:
     get:
       operationId: listOccurrences
@@ -5578,6 +5673,25 @@ components:
           description: "Connection id to switch (weather, update, calendars, ics, recipes, images)"
           additionalProperties: { type: boolean }
         update_reminder_days: { type: integer }
+    UpdateFile:
+      type: object
+      required: [state, available]
+      properties:
+        state: { type: string, enum: [none, ready, installing] }
+        available: { type: boolean, description: "Whether a file can be uploaded now" }
+        version: { type: string, description: "The version the file holds (x.y.z)" }
+        from_version: { type: string, description: "The version that ran when the file was uploaded; absent when the box does not know it" }
+        arch: { type: string, enum: [arm64, amd64] }
+        file_name: { type: string }
+        size: { type: integer, format: int64, description: "Bytes" }
+        sha256: { type: string, description: "Of the whole file, hex" }
+        released: { type: string, format: date, description: "Release date of the version, from the signed manifest" }
+        signer: { type: string, description: "The identity the signature names: the release workflow of the tag" }
+        uploaded_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time, description: "When a waiting file is deleted if nobody answers" }
+        started_at: { type: string, format: date-time }
+        started_by: { type: string, description: "The parent who said yes" }
+        step: { type: string, enum: [verify, backup, start, health], description: "Where the host script is with an installation" }
     UpdateStatus:
       type: object
       required: [mode, managed, state, notice]
@@ -5586,11 +5700,11 @@ components:
         managed: { type: boolean, description: "Whether the host updater of the install script manages this box. False on a plain Docker Compose install: then mode (also in /settings) is stored but nothing acts on it." }
         state:
           type: string
-          enum: [idle, available, updated, rolled_back, rejected, failed]
-          description: "idle (nothing newer or no report yet), available (notify only), updated, rolled_back (the new version failed; the previous one runs again with its data), rejected (signature not valid, not installed), failed (nothing changed, except with reason rollback_failed: then the image and database did change)"
+          enum: [idle, installing, available, updated, rolled_back, rejected, failed]
+          description: "installing (an uploaded update file is being installed), idle (nothing newer or no report yet), available (notify only), updated, rolled_back (the new version failed; the previous one runs again with its data), rejected (signature not valid, not installed), failed (nothing changed, except with reason rollback_failed: then the image and database did change)"
         version: { type: string, description: "The version that runs now" }
         target: { type: string, description: "The version offered or attempted" }
-        reason: { type: string, enum: [start_failed, health_check_failed, signature_invalid, backup_failed, pull_failed, rollback_failed, box_not_running] }
+        reason: { type: string, enum: [start_failed, health_check_failed, signature_invalid, backup_failed, pull_failed, rollback_failed, box_not_running, file_invalid, load_failed, verifier_missing] }
         time: { type: string, format: date-time, description: "When the script recorded this event" }
         notice: { type: boolean, description: "Whether the web interface currently shows a notice to parents" }
         release_notes_url: { type: string, format: uri, description: "Release notes of the version installed or offered" }
@@ -5831,6 +5945,7 @@ components:
       properties:
         error: { type: string }
         field: { type: string, description: "The refused field, when the error is about one" }
+        code: { type: string, description: "A fixed word for the cause, where an endpoint documents them" }
   responses:
     Unauthorized:
       description: Missing or invalid credentials
@@ -5844,6 +5959,11 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     NotFound:
       description: Not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    UpdateFileRefused:
+      description: The update file was refused, or no upload is possible now; `code` says why and the text is in the language of the request
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }

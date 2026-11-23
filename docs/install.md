@@ -109,7 +109,7 @@ The install script also sets up a nightly update check (a systemd timer, `hejmo-
 - After an update, parents see once what is new, with a link to the release notes.
 - **Settings** (web interface, **Settings**): *on* (default), *off*, or *notify only* (nothing is installed; parents see that an update is available). The setting is shown only where the install script set up the updater. To stay on a version you pinned with `HEJMO_VERSION`, set automatic updates to *off*; otherwise the updater moves the box to the newest published version.
 - A box that does not know its version, such as a preview build, is never updated.
-- The container gets no access to the Docker socket. The box and the updater exchange only two small files in the data volume (`update-settings`, `update-status`) with fixed keys and values.
+- The container gets no access to the Docker socket. The box and the updater exchange only two small files in the data volume (`update-settings`, `update-status`) with fixed keys and values, plus the update file a parent uploaded (`update-file`, offline mode only, see "Update without the internet"); the updater runs for that file when `hejmo-update.path` sees the settings file change.
 - The updater script itself changes only when you run the install script again. Check the last run with `sudo journalctl -u hejmo-update`.
 - If going back fails too (the backup cannot be restored), the box stays **stopped** on purpose, and parents cannot see a notice because the box is down. If the box does not answer after a night with an update, run `sudo journalctl -u hejmo-update` to see what happened.
 
@@ -123,7 +123,22 @@ With offline mode on (**Settings › Connections to the outside**), the box does
 
 **On a box installed before offline mode existed, run the install script once first** (see "Updating and removing" below): an older updater does not know `offline=yes` and would keep checking for updates every night.
 
-Uploading an update file in the web interface does not exist yet (it is planned as its own step). Until then, do it by hand, from a computer with internet and the box's address at hand:
+### In the web interface
+
+The easy way, for a box set up with the install script. **Settings › Connections to the outside › Upload an update file** (parents only, over HTTPS only):
+
+1. On a computer with internet, open the [releases page](https://github.com/hejmo-home/hejmo/releases) and download `hejmo-<version>-arm64.update` for a Raspberry Pi (or `-amd64.update` for a PC or mini PC) from the newest version without "rc" in its name.
+2. On the upload page, choose the file and press **Upload and check**. The box checks it right away, and a wrong file is refused at the field with the reason: a signature that is not the project's, no signature, the other kind of box, the same or an older version, a pre-release, a file over 500 MB, or no room left on the box. A refused file is deleted at once.
+3. The next page says what is in the file (the signature in words, the new version, what it replaces, which displays are unreachable meanwhile). **Install now** starts the installation; **No, do not install** deletes the file, and so does the box after an hour without an answer.
+4. The page shows the steps in words (check signature, save data, start the new version, check that it answers) and loads itself again when the box is back, after about two minutes. If the new version does not answer, the box goes back to the previous version with the data it saved first, and the page says so. There is no way back to an older version afterwards.
+
+What it checks, and how: the box verifies the cosign signature of the release workflow offline (sigstore-go, with the Sigstore public-good root that ships with the box), then hands the file to the updater through the `update-settings` file; the updater, which is the only installer, takes a copy, checks the signature again on its own with cosign (no network), saves the data, switches and checks that the box answers. The container gets no access to the Docker socket.
+
+**A box installed before this feature runs an older updater that cannot install a file.** The page says so; run the install script once more (see "Updating and removing" below), then the upload is offered. The install script also fetches the signature checker (the cosign image) while there is internet, because the check itself runs without it.
+
+### By hand, with a USB stick
+
+For a box without the install script, or when the page is not an option. From a computer with internet and the box's address at hand:
 
 1. **On a computer with internet**, find the newest version on the [releases page](https://github.com/hejmo-home/hejmo/releases) (use a number such as `0.2.4`, not a pre-release). Pull the image and check its signature, exactly as the updater does:
    ```bash
@@ -155,4 +170,4 @@ The menu names differ between FRITZ!OS versions; the router's own help shows whe
 ## Updating and removing
 
 - Re-running the install script keeps your settings and data and refreshes the updater and the systemd units; it does not update the box itself.
-- To remove the box: `sudo systemctl disable --now hejmo.service hejmo-update.timer && sudo rm /etc/systemd/system/hejmo.service /etc/systemd/system/hejmo-update.service /etc/systemd/system/hejmo-update.timer && cd /opt/hejmo && sudo docker compose down`. Your data stays in `/opt/hejmo/data` until you delete that folder.
+- To remove the box: `sudo systemctl disable --now hejmo.service hejmo-update.timer hejmo-update.path && sudo rm /etc/systemd/system/hejmo.service /etc/systemd/system/hejmo-update.service /etc/systemd/system/hejmo-update.timer /etc/systemd/system/hejmo-update.path /etc/systemd/system/hejmo-update-install.service && cd /opt/hejmo && sudo docker compose down`. Your data stays in `/opt/hejmo/data` until you delete that folder.

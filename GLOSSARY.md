@@ -455,6 +455,14 @@ _Avoid_: blocked request, error
 The state of a calendar or connection whose connection to the outside is off: its events stay, it shows the tag "paused, offline mode", and it syncs again at once when the connection is on. Not a failure.
 _Avoid_: disabled, disconnected
 
+**Update file**:
+A file `hejmo-<version>-<arch>.update` from the release page that a parent uploads in offline mode instead of the nightly check. It holds the image of one version for one kind of box (arm64 or amd64) and the signature of the release workflow. The box checks it and asks for a yes; the host script installs it with a backup, a health check and a rollback. Not an "image" (that is what is inside) and not a "backup".
+_Avoid_: firmware, package, patch, upgrade file
+
+**Signature checked**:
+The box's answer to an update file whose cosign signature names the release workflow of that version, checked without internet. Said in words on the confirmation page ("genuinely from the Hejmo project"), never as a count or a code.
+_Avoid_: verified, trusted
+
 ## Access
 
 **API token**:

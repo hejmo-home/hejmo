@@ -1,0 +1,16 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  <h1>{{.Title}}</h1>
+  {{if eq .State "confirm"}}<p class="sig-ok" role="status"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3l7 3v5c0 4.5-3 8.2-7 10-4-1.8-7-5.5-7-10V6z"/><path d="M8.5 12l2.5 2.5 4.5-5"/></svg><span><b>{{t "updf.install.sig"}}</b> {{.Signer}}</span></p>
+  <dl class="facts"><dt>{{t "updf.install.file"}}</dt><dd><span><span class="fname">{{.FileName}}</span>{{tf "updf.install.size" "mb" (printf "%d" .MB)}}</span></dd><dt>{{t "updf.install.new"}}</dt><dd>{{tf "updf.install.new_value" "version" .Version "date" .Released}}</dd><dt>{{t "updf.fact.installed"}}</dt><dd>{{.Installed}}</dd><dt>{{t "updf.install.notes"}}</dt><dd><a class="ext" href="{{.NotesURL}}" target="_blank" rel="noopener">{{tf "updf.install.notes_link" "version" .Version}}{{template "extLink"}}</a></dd></dl>
+  <section class="cost" aria-labelledby="cost"><h2 id="cost">{{t "updf.cost.title"}}</h2><ul>
+    <li><b>{{t "updf.cost.gone"}}</b>{{if .Displays}} {{t "updf.cost.displays"}}<span class="devs"><b>{{t "updf.cost.displays.label"}}</b> {{.Displays}}</span>{{else}} {{end}}{{t "updf.cost.devices"}}</li>
+    <li><b>{{t "updf.cost.backup"}}</b> {{if .From}}{{tf "updf.cost.backup.text" "version" .From}}{{else}}{{t "updf.cost.backup.text_unknown"}}{{end}}</li>
+    <li><b>{{if .From}}{{tf "updf.cost.noreturn" "version" .From}}{{else}}{{t "updf.cost.noreturn_unknown"}}{{end}}</b> {{t "updf.cost.noreturn.text"}}</li>
+  </ul></section>
+  <form method="post" action="/settings/connections/update/install" class="confirm-page"><div class="actions"><button class="button" type="submit">{{t "updf.install.go"}}</button><button class="link" type="submit" formaction="/settings/connections/update/discard">{{t "updf.install.no"}}</button></div><p class="hint">{{t "updf.install.no.hint"}}</p></form>
+  {{else}}<p class="lead">{{.Lead}}</p>
+  <section class="upd" data-progress-url="{{.ProgressURL}}" data-step="{{.Step}}" data-state="installing">{{template "runList" .Run}}
+    <p id="gone" hidden class="hint">{{t "updf.running.gone"}} <a class="ext" href="{{.Guide}}" target="_blank" rel="noopener">{{t "outside.updates.guide"}}{{template "extLink"}}</a></p></section>
+  <script src="/static/update-upload.js" defer></script>
+  {{end}}
+{{template "foot"}}

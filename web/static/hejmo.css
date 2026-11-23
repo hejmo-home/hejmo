@@ -3669,3 +3669,68 @@ p.why.fam b { display: inline; }
 /* The placeholder without a name: the gallery line icon. */
 .ct-photo.none .icon { width: 40%; height: 40%; stroke: var(--text-secondary); }
 [data-theme="bw"] .ct-photo.none .icon { stroke: var(--text); }
+
+/* ticket 221: upload an update file (offline mode). Existing tokens only. */
+.upd { box-sizing: border-box; max-width: 560px; margin: 0 0 var(--gap-section); padding: 16px; display: grid; gap: 12px; background: var(--surface); border-radius: var(--radius-tile); }
+[data-theme="bw"] .upd { border: 2px solid var(--text); }
+.upd > h2 { margin: 0; font-size: var(--fs-person-name); }
+.upd ol.howto .s > .upd-form, .upd ol.howto .s > .run, .upd ol.howto .s > .meter, .upd ol.howto .s > .progress-line { justify-self: stretch; }
+.upd-form { display: grid; gap: 12px; margin: 0; }
+.upd-form .f label { font-weight: 600; }
+.upd-form .chosen { font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.upd-form .chosen b { color: var(--text); }
+.upd .button .icon, .upd-entry .button .icon { stroke: currentColor; vertical-align: -4px; margin-right: 8px; }
+.upd .progress-line { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.upd .progress-line b { font-size: var(--fs-event-title); }
+.upd .progress-line span { font-variant-numeric: tabular-nums; }
+/* A file name is one token: never hyphenated, broken only at the line end. */
+.fname { margin: 0; font-weight: 700; overflow-wrap: anywhere; -webkit-hyphens: manual; hyphens: manual; }
+.fname i { font-style: italic; font-weight: 600; color: var(--text-secondary); }
+.upd-entry { display: grid; gap: 6px; justify-items: start; }
+.upd-entry .button { display: inline-flex; align-items: center; }
+.upd-usb { max-width: 560px; margin: 0 0 var(--gap-section); }
+
+/* Signature result in words: a result, not a warning (surface, accent frame, shield with a tick). */
+.sig-ok { display: flex; gap: 10px; align-items: flex-start; box-sizing: border-box; max-width: 560px; margin: 0 0 var(--gap); padding: 10px 12px; background: var(--surface); border: 1.5px solid var(--accent); border-radius: var(--radius-card); overflow-wrap: break-word; }
+.sig-ok .icon { flex: none; stroke: var(--accent); margin-top: 1px; }
+[data-theme="bw"] .sig-ok { border: 2px solid var(--text); }
+[data-theme="bw"] .sig-ok .icon { stroke: var(--text); }
+
+/* Run list: one row per step, its state in words next to a distinct shape
+   (done: tick in a circle, busy: clock, wait: dashed circle, fail: cross). */
+ol.run { list-style: none; margin: 0; padding: 0; display: grid; }
+ol.run > li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; align-items: start; padding: 10px 0; border-top: 1px solid var(--border); }
+ol.run > li:first-child { border-top: 0; padding-top: 0; }
+ol.run > li:last-child { padding-bottom: 0; }
+ol.run > li > .icon { stroke: var(--text-secondary); margin-top: 1px; }
+ol.run .s { display: grid; gap: 2px; min-width: 0; }
+ol.run .s > b { font-size: var(--fs-event-title); font-weight: 700; }
+ol.run .st { font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+ol.run .s > p { margin: 0; }
+ol.run li[data-state="done"] > .icon { stroke: var(--accent); }
+ol.run li[data-state="busy"] > .icon { stroke: var(--accent); stroke-width: 2.4px; }
+ol.run li[data-state="busy"] .st { color: var(--text); font-weight: 600; }
+ol.run li[data-state="wait"] .s > b { font-weight: 600; color: var(--text-secondary); }
+ol.run li[data-state="fail"] > .icon { stroke: var(--error-text); }
+ol.run li[data-state="fail"] .st { justify-self: start; padding: 4px 8px; border-radius: var(--radius-field); background: var(--error-bg); color: var(--error-text); font-weight: 600; }
+[data-theme="bw"] ol.run > li { border-top-color: var(--text); }
+[data-theme="bw"] ol.run > li:first-child { border-top: 0; }
+[data-theme="bw"] ol.run > li > .icon { stroke: var(--text); }
+[data-theme="bw"] ol.run li[data-state="fail"] .st { background: none; border: 2px dashed var(--text); }
+
+/* Notices with a lead-in that carry a second line (a link or a button). */
+.notice.lead-in, .error.lead-in { flex-wrap: wrap; row-gap: 0; }
+.notice.lead-in > p:first-of-type, .error.lead-in > p:first-of-type { flex: 1 1 200px; min-width: 0; }
+.notice.lead-in > p + p, .notice.lead-in > p + form { flex: 1 0 100%; box-sizing: border-box; margin: 0; padding-left: 28px; }
+.notice.lead-in .upd-links a, .notice.lead-in .upd-links .link { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.notice.lead-in > form .button.secondary { background: var(--surface); color: var(--text); border-color: currentColor; }
+.error.lead-in { margin: 0 0 var(--gap-section); display: flex; gap: 10px; align-items: flex-start; }
+.error.lead-in > .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+.error.lead-in p { margin: 0; overflow-wrap: break-word; }
+.error.lead-in a { color: inherit; font-weight: 700; }
+[data-theme="bw"] .error.lead-in { border: 2px solid var(--text); }
+.confirm-page .hint { margin: 8px 0 0; max-width: 560px; }
+.confirm-page .actions button.link { text-decoration: underline; text-underline-offset: 3px; }
+.upd-entry .hint { margin: 0; }
+/* A lead-in of a notice is a sentence and may wrap (".notice b" keeps its words together elsewhere); found by the rendered layout check at 375 px. */
+.notice.lead-in > p > b, .error.lead-in > p > b { white-space: normal; }

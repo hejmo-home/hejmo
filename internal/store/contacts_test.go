@@ -287,3 +287,34 @@ func TestAContactPhotoIsStoredChangedAndRemovedWithItsOriginAndPeopleCanHaveOne(
 		t.Fatal(err)
 	}
 }
+
+// Review of #314: changing only the photo touches nothing else, and two changes in one second differ.
+func TestSetContactPhotoChangesOnlyThePhotoColumns(t *testing.T) {
+	t.Parallel()
+	db, h, f := exampleFamily(t)
+	c, err := db.CreateContact(h.ID, f["Mama"].ID, store.ContactInput{HejmoName: "Oma Gerda", FullName: "Gerda Müller", Note: "Schlüssel"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	set, err := db.SetContactPhoto(h.ID, c.ID, f["Papa"].ID, store.SetPicture, &store.ContactPhoto{JPEG: []byte("\xff\xd8one")})
+	if err != nil || !set.HasPhoto || set.PhotoByName != "Papa" || set.FullName != "Gerda Müller" || set.Note != "Schlüssel" {
+		t.Fatalf("set: %+v, %v", set, err)
+	}
+	if set.UpdatedBy != c.UpdatedBy || !set.UpdatedAt.Equal(c.UpdatedAt) {
+		t.Errorf("the photo change bumped updated_by/at: %q %v, was %q %v", set.UpdatedBy, set.UpdatedAt, c.UpdatedBy, c.UpdatedAt)
+	}
+	again, err := db.SetContactPhoto(h.ID, c.ID, f["Papa"].ID, store.SetPicture, &store.ContactPhoto{JPEG: []byte("\xff\xd8two")})
+	if err != nil || !again.PhotoAt.After(set.PhotoAt) {
+		t.Errorf("two changes in one second: PhotoAt %v then %v, want a later one", set.PhotoAt, again.PhotoAt)
+	}
+	gone, err := db.SetContactPhoto(h.ID, c.ID, f["Papa"].ID, store.RemovePicture, nil)
+	if err != nil || gone.HasPhoto || gone.FullName != "Gerda Müller" {
+		t.Errorf("remove: %+v, %v", gone, err)
+	}
+	if _, err := db.SetContactPhoto(h.ID, c.ID, "", store.SetPicture, nil); !errors.Is(err, store.ErrInvalid) {
+		t.Errorf("set without a photo = %v, want ErrInvalid", err)
+	}
+	if _, err := db.SetContactPhoto(h.ID, "nope", "", store.RemovePicture, nil); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unknown contact = %v, want ErrNotFound", err)
+	}
+}

@@ -24,7 +24,7 @@ func contactPhotoPath(c store.Contact) string {
 	if !c.HasPhoto {
 		return ""
 	}
-	return contactsPath + "/" + c.ID + "/photo?v=" + strconv.FormatInt(c.PhotoAt.Unix(), 36)
+	return contactsPath + "/" + c.ID + "/photo?v=" + strconv.FormatInt(c.PhotoAt.UnixNano(), 36)
 }
 
 // ctPhotoView is what a template needs to draw one .ct-photo: the photo, or the initials (or the gallery icon
@@ -98,7 +98,11 @@ func (s *server) handleContactPhoto(w http.ResponseWriter, r *http.Request) {
 func serveContactPhoto(w http.ResponseWriter, r *http.Request, ph store.ContactPhoto) {
 	w.Header().Set("Content-Type", "image/jpeg")
 	w.Header().Set("X-Content-Type-Options", "nosniff")
-	w.Header().Set("Cache-Control", "private, max-age=86400") // the address carries the version
+	if r.URL.Query().Get("v") != "" { // the address carries the version
+		w.Header().Set("Cache-Control", "private, max-age=86400")
+	} else { // the REST address does not: ask again every time (Last-Modified answers with 304)
+		w.Header().Set("Cache-Control", "private, no-cache")
+	}
 	http.ServeContent(w, r, "", ph.At, bytes.NewReader(ph.JPEG))
 }
 
@@ -225,6 +229,7 @@ func (s *server) readContactBody(w http.ResponseWriter, r *http.Request) (file *
 func (s *server) contactPhotoStep(r *http.Request, e ctEnv, f *ctForm, cur *store.Contact, file *multipart.FileHeader, tooBig bool) (*pendingPicture, string) {
 	now := s.now()
 	pend, have := s.pictures.get(f.Token, now)
+	gone := f.Token != "" && !have // the prepared photo expired or was pushed out of the shared store
 	if !have {
 		f.Token = ""
 	}
@@ -256,6 +261,9 @@ func (s *server) contactPhotoStep(r *http.Request, e ctEnv, f *ctForm, cur *stor
 			f.Token, f.Gone = newToken(), false
 			s.pictures.put(f.Token, pend, now)
 		}
+	}
+	if gone && file == nil && photoErr == "" { // never save without a photo the parent chose
+		photoErr = e.t("contact.photo.err.gone")
 	}
 	if !have {
 		return nil, photoErr
@@ -337,13 +345,9 @@ func (s *server) apiDeleteContactPhoto(w http.ResponseWriter, r *http.Request, p
 
 // setContactPhoto changes only the photo of a stored contact; everything else stays as it is.
 func (s *server) setContactPhoto(p principal, cur store.Contact, jpeg []byte, change store.PictureChange) (store.Contact, error) {
-	in := store.ContactInput{
-		HejmoName: cur.HejmoName, FullName: cur.FullName, Street: cur.Street, Postcode: cur.Postcode, City: cur.City, Country: cur.Country,
-		BdayDay: cur.BdayDay, BdayMonth: cur.BdayMonth, BdayYear: cur.BdayYear, Note: cur.Note,
-		Numbers: cur.Numbers, Emails: cur.Emails, GroupIDs: cur.GroupIDs, Today: s.householdNow(p.household), PhotoChange: change,
-	}
+	var photo *store.ContactPhoto
 	if change == store.SetPicture {
-		in.Photo = &store.ContactPhoto{JPEG: jpeg}
+		photo = &store.ContactPhoto{JPEG: jpeg}
 	}
-	return s.db.UpdateContact(p.household.ID, cur.ID, p.person.ID, in)
+	return s.db.SetContactPhoto(p.household.ID, cur.ID, p.person.ID, change, photo)
 }

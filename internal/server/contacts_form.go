@@ -506,6 +506,9 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		defer r.MultipartForm.RemoveAll()
 	}
 	f := parseContactForm(r)
+	if tooBig && cur != nil { // nothing of the form was read: show what is saved, not an empty form
+		f = ctFormOf(*cur)
+	}
 	if cur != nil && cur.IsPerson() {
 		f.Name = cur.HejmoName
 	}

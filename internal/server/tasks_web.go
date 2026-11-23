@@ -184,6 +184,18 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			}
 		}
 		data["StarsShown"], data["StarsBalance"] = sums[p.person.ID].Shown, sums[p.person.ID].Balance
+		// The way to the rewards appears only when something is meant for the child (ticket 291).
+		offered, err := s.db.HasRewards(p.household.ID, p.person.ID)
+		if err != nil {
+			s.fail(w, "rewards", err)
+			return
+		}
+		data["RewardLink"] = offered
+		lang := s.langOf(r)
+		data["RewardSub"] = s.i18n.T(lang, "rwd.link.sub.none")
+		if sums[p.person.ID].Balance > 0 {
+			data["RewardSub"] = s.i18n.Format(lang, i18n.Msg("rwd.link.sub", "stars", s.starsWords(lang, sums[p.person.ID].Balance)))
+		}
 		data["Day"] = today
 	}
 	if !child {

@@ -3309,6 +3309,93 @@ section > .hint.none { margin-top: -4px; }
 .facts dd.wk .week { border-top: 0; padding: 0; max-width: 360px; }
 .list-rows.pauses .tag.paused { justify-self: start; }
 
+/* ticket 291: reward catalogue. Only existing tokens. */
+/* Price: star icon, number and the word, never broken apart. */
+.price { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.price .icon.star { color: var(--accent); }
+/* Catalogue rows (parents): picture, name, price and limit, who it is for. */
+.list-rows.rewards a { align-items: flex-start; }
+.list-rows.rewards .art-sym { margin-top: 2px; }
+.list-rows.rewards b { overflow-wrap: break-word; hyphens: manual; }
+.list-rows.rewards .forl .k { color: var(--text-secondary); }
+.list-rows.rewards .forl .who .icon { stroke: var(--text-secondary); }
+.list-rows.rewards .chev { align-self: center; }
+.list-rows.rewards.archived .art-sym { opacity: .6; }
+[data-theme="bw"] .list-rows.rewards.archived .art-sym { opacity: 1; }
+.tag.arch { display: inline-flex; align-items: center; gap: 4px; border-color: var(--text-secondary); color: var(--text-secondary); }
+.tag.arch .icon { stroke: currentColor; }
+details.more.arch { max-width: 560px; }
+details.more.arch > div > .hint { margin: 0 0 10px; }
+/* Form: the limit count only while a period is chosen. */
+.reward-form .limit { display: grid; gap: 10px; padding-bottom: 8px; }
+.reward-form .limit-count { display: none; }
+.reward-form:has(input[name="limit_period"]:not([value=""]):checked) .limit-count { display: grid; }
+.reward-form .limit .hint { margin: 0; }
+/* Archived detail: the note with its icon. */
+.notice.arch-note { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 var(--gap); }
+.notice.arch-note p { margin: 0; }
+.notice.arch-note .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+details.repair.archive form .notice p { margin: 0 0 6px; }
+details.repair.archive form .notice p:last-child { margin: 0; }
+/* Child view: balance, groups, cards. --pc is the child's colour. */
+.rwd-cat { display: grid; gap: var(--gap-section); max-width: 880px; }
+.rwd-bal { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface); border-radius: var(--radius-tile); max-width: 560px; box-sizing: border-box; }
+.rwd-bal .icon.star { width: 32px; height: 32px; flex: none; color: var(--pc); }
+.rwd-bal p { margin: 0; font-size: var(--fs-key-figure); font-weight: 400; }
+.rwd-bal p b { font-weight: var(--fw-key-figure); white-space: nowrap; }
+.rwd-bal small { display: block; margin-top: 4px; font-size: var(--fs-label-large); color: var(--text-secondary); }
+[data-theme="bw"] .rwd-bal { border: 2px solid var(--text); }
+[data-theme="bw"] .rwd-bal .icon.star { color: var(--text); }
+.rwd-group h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: var(--fs-person-name); }
+.rwd-group h2 .icon { flex: none; stroke: var(--accent); }
+.rwd-group h2 .icon.star { color: var(--accent); }
+.rwd-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--gap-cards); }
+.rwd { display: flex; gap: 12px; align-items: flex-start; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-tile); min-width: 0; }
+.rwd.ok { border: 2px solid var(--pc); padding: 11px; }
+.rwd.later { background: transparent; border: 1.5px dashed var(--border); }
+.rwd.later .art-sym { opacity: .6; }
+.art-sym.huge { width: calc(var(--touch-target) * 1.5); height: calc(var(--touch-target) * 1.5); font-size: 42px; }
+.rwd-body { display: grid; gap: 6px; min-width: 0; flex: 1; }
+.rwd h3 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); line-height: 1.25; overflow-wrap: break-word; hyphens: manual; }
+.rwd-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: center; font-size: var(--fs-label-large); }
+.rwd-meta .lim { color: var(--text-secondary); }
+.rwd-state { margin: 0; display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-label-large); }
+.rwd-state .icon { flex: none; }
+.rwd-state.ok { color: var(--pc-text); background: var(--pc-tint); border-radius: var(--radius-chip); padding: 4px 10px 4px 6px; justify-self: start; align-items: center; }
+.rwd-state.ok .icon { stroke: var(--pc-text); }
+.rwd-state.save { display: grid; gap: 4px; }
+.rwd-state.save p { margin: 0; }
+.rwd-state.later { color: var(--text-secondary); }
+.rwd-state.later b { color: var(--text); }
+.rwd-state.later .icon { stroke: var(--text-secondary); margin-top: 1px; }
+[data-theme="bw"] .rwd { border: 2px solid var(--text); padding: 11px; }
+[data-theme="bw"] .rwd.ok { border-width: 4px; padding: 9px; }
+[data-theme="bw"] .rwd.later { border: 2px dashed var(--text); }
+[data-theme="bw"] .rwd.later .art-sym { opacity: 1; }
+[data-theme="bw"] .rwd-state.ok { background: var(--surface); border: 2px solid var(--text); color: var(--text); }
+[data-theme="bw"] .rwd-state.ok .icon { stroke: var(--text); }
+[data-theme="bw"] .rwd-state.save .progress { background: var(--progress-track); border: 1px solid var(--text); }
+[data-theme="bw"] .rwd-state.save .progress > span { background: var(--progress-fill); }
+@media (max-width: 599px) {
+  .rwd-cards { grid-template-columns: minmax(0, 1fr); }
+  .rwd-bal p { font-size: var(--fs-person-name); }
+}
+/* Child tasks page: the way to the rewards. */
+.reward-link { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; background: var(--surface); border: 2px solid var(--pc); border-radius: var(--radius-tile); color: var(--text); text-decoration: none; box-sizing: border-box; }
+.reward-link > .icon { flex: none; stroke: var(--pc); }
+.reward-link .t { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.reward-link b { font-size: var(--fs-person-name); }
+.reward-link .t span { font-size: var(--fs-label-large); color: var(--text-secondary); }
+.reward-link .chev { flex: none; stroke: var(--text-secondary); }
+[data-theme="bw"] .reward-link { border: 3px solid var(--text); }
+[data-theme="bw"] .reward-link > .icon { stroke: var(--text); }
+details.more[open] .list-rows .chev { transform: none; }
+/* A long reward name in the archive confirmation wraps instead of widening the page. */
+details.repair.archive form { grid-template-columns: minmax(0, 1fr); }
+details.repair.archive form, details.repair.archive .confirm, details.repair.archive .notice { min-width: 0; }
+details.repair.archive .confirm .button { max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
+details.repair.archive .notice b, .notice.arch-note b { white-space: normal; overflow-wrap: anywhere; }
+
 /* ---- ticket 168: articles always on the list (ADR 0019, Q27) ---- */
 /* Article page: the card "Immer auf der Liste" sits in the article's one form,
    before "In den Vorschlägen". Off: only the switch. On: list, day, rhythm,
@@ -3534,6 +3621,8 @@ p.why.fam b { display: inline; }
 /* The photo takes 70 px of the row: a long group name wraps instead of sticking out at 375 px. */
 .list-rows.contacts .t > * { min-width: 0; }
 .list-rows.contacts .tag.grp { white-space: normal; overflow-wrap: anywhere; }
+/* Under 480 px the 70 px of the photo leave too little for a long number with its kind: the pair may wrap. */
+@media (max-width: 479px) { .list-rows.contacts .nums > span { white-space: normal; } }
 
 /* Contact page head: photo beside name and full name; stacked under 480 px. */
 .ct-head { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ph name" "ph full" "ph act"; column-gap: 20px; align-items: start; margin: 0 0 var(--gap); max-width: 560px; }

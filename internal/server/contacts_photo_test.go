@@ -172,9 +172,9 @@ func TestUploadPrepareShowsTheCroppedPhotoKeepsEverythingTypedAndStoresNothingUn
 	}
 	phHas(t, "origin line", c.page("/contacts/"+id, "de").body, "Foto von Mama hinzugefügt am ")
 	phHas(t, "English origin line", c.page("/contacts/"+id, "en").body, "Photo added by Mama on ")
-	// The token is used up.
-	if r := c.photoPost("/contacts/"+id+"/edit", save, "", nil); r.status != http.StatusSeeOther {
-		t.Errorf("save with a used token = %d", r.status)
+	// The token is used up: a second post of the same form asks for the photo again instead of saving without it.
+	if r := c.photoPost("/contacts/"+id+"/edit", save, "", nil); r.status != http.StatusUnprocessableEntity {
+		t.Errorf("save with a used token = %d, want 422", r.status)
 	}
 }
 
@@ -301,7 +301,7 @@ func TestTheOverviewHasAPhotoOrInitialsInEveryRowFamilyRowsIncluded(t *testing.T
 			t.Errorf("row of %s lacks %q:\n%s", name, want, row)
 		}
 	}
-	phHas(t, "photo row", rowOf(page, "Kita Sonnenschein"), `alt="" width="512" height="512"></span><span class="t">`)
+	phHas(t, "photo row", rowOf(page, "Kita Sonnenschein"), `alt="" width="512" height="512" loading="lazy"></span><span class="t">`)
 	phHas(t, "initials are not read out", rowOf(page, "Oma Gerda"), `aria-hidden="true"`)
 }
 
@@ -498,4 +498,82 @@ func TestContactPhotosOverRESTAreCheckedAgainstTheContract(t *testing.T) {
 	if _, status, _ := kc.send(http.MethodPut, "/contacts/"+id+"/photo", mw.FormDataContentType(), buf.Bytes()); status != http.StatusForbidden {
 		t.Errorf("child PUT = %d", status)
 	}
+}
+
+// Review of #314: a prepared photo that is gone (expired or evicted) is never dropped without a word.
+func TestSavingWithAPreparedPhotoThatIsGoneStopsAndAsksForTheChoiceAgain(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	id := c.add(t, formWith("Oma Gerda", nil))
+	r := c.photoPost("/contacts/"+id+"/edit", formWith("Oma Gerda", url.Values{"full_name": {"Gerda Neu"}, "picture_token": {"0123456789abcdef"}}), "", nil)
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("save with an unknown token = %d, want 422\n%s", r.status, r.body)
+	}
+	phHas(t, "form", r.body, `<fieldset id="photo" class="ph-card invalid">`, "Das vorbereitete Foto ist nicht mehr da. Wähle das Foto noch einmal aus.", `value="Gerda Neu"`)
+	phHasNot(t, "form", r.body, "Das neue Foto ist vorbereitet und wird mit gespeichert.", `name="picture_token"`)
+	if c.page("/contacts/"+id, "de").body == "" || strings.Contains(c.page("/contacts/"+id, "de").body, "Gerda Neu") {
+		t.Error("the contact was saved although its photo was gone")
+	}
+	phHas(t, "English", c.photoPostEN(t, "/contacts/"+id+"/edit", url.Values{"name": {"Oma Gerda"}, "picture_token": {"0123456789abcdef"}}, "", nil).body, "The prepared photo is no longer there. Choose the photo again.")
+	// A new photo in the same post replaces the gone one and saves.
+	r = c.photoPost("/contacts/"+id+"/edit", formWith("Oma Gerda", url.Values{"picture_token": {"0123456789abcdef"}}), "n.jpg", testJPEG(t, 300, 300))
+	if r.status != http.StatusSeeOther {
+		t.Errorf("save with a new photo and a gone token = %d", r.status)
+	}
+}
+
+// Review of #314: the photo address changes with every change and the version-less REST address is never cached.
+func TestThePhotoAddressChangesWithEveryChangeAndTheRESTAddressIsNotCached(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	r := c.photoPost("/contacts/new", formWith("Oma Gerda", nil), "a.jpg", testJPEG(t, 400, 400))
+	id := regexp.MustCompile(`/contacts/([0-9a-f-]{36})$`).FindStringSubmatch(r.location)[1]
+	version := func() string {
+		m := regexp.MustCompile(`photo\?v=([0-9a-z]+)`).FindStringSubmatch(c.page("/contacts/"+id, "de").body)
+		if m == nil {
+			t.Fatal("no version on the photo address")
+		}
+		return m[1]
+	}
+	v1 := version()
+	c.photoPost("/contacts/"+id+"/edit", formWith("Oma Gerda", nil), "b.jpg", testJPEG(t, 500, 500))
+	v2 := version()
+	c.photoPost("/contacts/"+id+"/edit", formWith("Oma Gerda", nil), "c.jpg", testJPEG(t, 300, 300))
+	if v3 := version(); v1 == v2 || v2 == v3 || v1 == v3 {
+		t.Errorf("versions %s, %s, %s: two changes gave the same address", v1, v2, v3)
+	}
+	_, header, _ := c.getPhoto("/contacts/" + id + "/photo")
+	if cc := header.Get("Cache-Control"); !strings.Contains(cc, "no-cache") || strings.Contains(cc, "max-age") {
+		t.Errorf("Cache-Control without ?v= = %q, want no-cache", cc)
+	}
+	_, header, _ = c.getPhoto("/contacts/" + id + "/photo?v=" + v2)
+	if cc := header.Get("Cache-Control"); !strings.Contains(cc, "max-age=86400") {
+		t.Errorf("Cache-Control with ?v= = %q, want max-age", cc)
+	}
+}
+
+// Review of #314: a form over the limit is not read; the form comes back with what is saved and says so.
+func TestAFormOverTheLimitComesBackWithTheSavedValuesAndSaysItWasNotRead(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	id := c.add(t, formWith("Oma Gerda", url.Values{"full_name": {"Gerda Müller"}}))
+	r := c.photoPost("/contacts/"+id+"/edit", formWith("Oma Gerda", url.Values{"full_name": {"Nie gelesen"}, "picture": {"upload"}}), "riesig.jpg", bytes.Repeat([]byte{0}, 41<<20))
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("too big = %d", r.status)
+	}
+	phHas(t, "form", r.body, "Die anderen Eingaben wurden nicht gelesen.", `value="Gerda Müller"`, `name="name"`)
+	phHasNot(t, "form", r.body, "Nie gelesen")
+}
+
+// Review of #314: a list shows many photos; the ones in rows load when they come near.
+func TestPhotosInRowsLoadLazilyAndThePageOnesDoNot(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	r := c.photoPost("/contacts/new", formWith("Oma Gerda", nil), "a.jpg", testJPEG(t, 400, 400))
+	id := regexp.MustCompile(`/contacts/([0-9a-f-]{36})$`).FindStringSubmatch(r.location)[1]
+	phHas(t, "overview", c.page("/contacts", "de").body, `<img src="/contacts/`+id+`/photo?v=`)
+	if !regexp.MustCompile(`<img src="/contacts/` + id + `/photo\?v=[0-9a-z]+" alt="" width="512" height="512" loading="lazy">`).MatchString(c.page("/contacts", "de").body) {
+		t.Error("the photo in an overview row has no loading=\"lazy\"")
+	}
+	phHasNot(t, "contact page", c.page("/contacts/"+id, "de").body, `loading="lazy"`)
 }

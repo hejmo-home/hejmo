@@ -399,7 +399,7 @@ func (db *DB) CreateContact(householdID, by string, in ContactInput) (Contact, e
 	if err := writeContactParts(tx, householdID, id, in, false, by, ts); err != nil {
 		return Contact{}, err
 	}
-	if err := writeContactPhoto(tx, id, in, by, ts); err != nil {
+	if err := writeContactPhoto(tx, id, in, by); err != nil {
 		return Contact{}, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -409,21 +409,59 @@ func (db *DB) CreateContact(householdID, by string, in ContactInput) (Contact, e
 }
 
 // writeContactPhoto applies the photo change of a save; the last change wins.
-func writeContactPhoto(tx *sql.Tx, id string, in ContactInput, by, ts string) error {
-	switch in.PhotoChange {
+func writeContactPhoto(tx *sql.Tx, id string, in ContactInput, by string) error {
+	return applyContactPhoto(tx, id, in.PhotoChange, in.Photo, by)
+}
+
+// applyContactPhoto writes the photo columns. The time of a photo has nanoseconds: it is part of the address of
+// the picture, so two changes in one second must not give the same address.
+func applyContactPhoto(tx *sql.Tx, id string, change PictureChange, photo *ContactPhoto, by string) error {
+	switch change {
 	case SetPicture:
 		device := ""
-		if in.Photo.Origin == PhotoSync {
-			device, by = in.Photo.Device, ""
+		if photo.Origin == PhotoSync {
+			device, by = photo.Device, ""
 		}
 		_, err := tx.Exec(`UPDATE contacts SET photo = ?, photo_origin = ?, photo_by = ?, photo_device = ?, photo_at = ? WHERE id = ?`,
-			in.Photo.JPEG, in.Photo.Origin, nullString(by), device, ts, id)
+			photo.JPEG, photo.Origin, nullString(by), device, time.Now().UTC().Format(time.RFC3339Nano), id)
 		return err
 	case RemovePicture:
 		_, err := tx.Exec(`UPDATE contacts SET photo = NULL, photo_origin = '', photo_by = NULL, photo_device = '', photo_at = '' WHERE id = ?`, id)
 		return err
 	}
 	return nil
+}
+
+// SetContactPhoto sets or removes the photo of a contact and touches nothing else: no other field is checked, and
+// updated_by and updated_at stay as they are. ErrNotFound for an unknown contact; ErrInvalid for a photo to set
+// that is missing or has an unknown origin.
+func (db *DB) SetContactPhoto(householdID, id, by string, change PictureChange, photo *ContactPhoto) (Contact, error) {
+	if change == SetPicture {
+		if photo == nil || len(photo.JPEG) == 0 {
+			return Contact{}, &FieldError{Field: "photo", Msg: "a photo to set is needed"}
+		}
+		if photo.Origin == "" {
+			photo.Origin = PhotoManual
+		}
+		if photo.Origin != PhotoManual && photo.Origin != PhotoSync {
+			return Contact{}, &FieldError{Field: "photo", Msg: "the photo comes from the hand or from sync"}
+		}
+	}
+	if _, err := db.Contact(householdID, id); err != nil {
+		return Contact{}, err
+	}
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return Contact{}, err
+	}
+	defer tx.Rollback()
+	if err := applyContactPhoto(tx, id, change, photo, by); err != nil {
+		return Contact{}, err
+	}
+	if err := tx.Commit(); err != nil {
+		return Contact{}, err
+	}
+	return db.Contact(householdID, id)
 }
 
 // ContactPhoto reads the stored JPEG of a contact; ErrNotFound when there is none.
@@ -476,7 +514,7 @@ func (db *DB) UpdateContact(householdID, id, by string, in ContactInput) (Contac
 	if err := writeContactParts(tx, householdID, id, in, cur.IsPerson(), by, ts); err != nil {
 		return Contact{}, err
 	}
-	if err := writeContactPhoto(tx, id, in, by, ts); err != nil {
+	if err := writeContactPhoto(tx, id, in, by); err != nil {
 		return Contact{}, err
 	}
 	if err := tx.Commit(); err != nil {

@@ -441,3 +441,195 @@ test('a tap on the Below-the-columns anchor is left to the browser', () => {
   p.state.listeners.click(e);
   assert.ok(!e.prevented);
 });
+
+// Ticket 208, product owner feedback 23/11/2026: on a phone a tap on a person's
+// column shows that column alone in full width; the back button or a swipe to
+// the right brings all columns back. A fake family view: a grid with columns
+// (slots), a back button and the markup a refresh puts in.
+function fullWidth(opts = {}) {
+  const state = { listeners: {}, docListeners: {}, requests: [], scrolledTo: null, grid: null };
+  const slots = opts.slots || [1, 2, 3];
+  const display = element({ attrs: {
+    'data-display': '', 'data-state': 'paired', 'data-poll-seconds': '30', 'data-version': 'v1',
+  } });
+  const view = element();
+  let fv;
+  let columns;
+  const closestOf = (el, map) => { el.closest = (sel) => (sel in map ? map[sel] : null); return el; };
+  function build(present) {
+    fv = element();
+    const grid = element({ scrollLeft: 0, offsetLeft: 14 });
+    grid.getBoundingClientRect = () => ({ top: opts.gridTop === undefined ? 300 : opts.gridTop });
+    state.grid = grid;
+    columns = present.map((slot, i) => {
+      const col = element({ attrs: { 'data-person': String(slot) }, offsetLeft: 14 + i * 158 });
+      col.name = closestOf(element(), { '.column': col, 'a': element() });
+      col.entry = closestOf(element(), { '.column': col });
+      col.pbar = closestOf(element(), { '.column': col, '.pbar': element(), 'a': element() });
+      return col;
+    });
+    grid.querySelectorAll = () => columns;
+    fv.back = closestOf(element(), { '[data-full-close]': element() });
+    fv.querySelector = (sel) => {
+      if (sel === '.fv-grid') return grid;
+      if (sel === '.column[data-full]') return columns.find((c) => 'data-full' in c.attrs) || null;
+      return null;
+    };
+    fv.removeAttribute = function (n) { delete this.attrs[n]; };
+    columns.forEach((c) => { c.removeAttribute = function (n) { delete this.attrs[n]; }; });
+  }
+  build(slots);
+  view.querySelector = (sel) => {
+    if (sel === '.fv') return fv;
+    const m = /^\.column\[data-person="(\d+)"\]$/.exec(sel);
+    if (m) return columns.find((c) => c.attrs['data-person'] === m[1]) || null;
+    return null;
+  };
+  view.querySelectorAll = () => [];
+  view.addEventListener = (n, fn) => { state.listeners[n] = fn; };
+  Object.defineProperty(view, 'innerHTML', {
+    set(html) { view.html = html; build(state.next || slots); },
+    get() { return view.html; },
+  });
+  display.querySelector = (sel) => (sel === '[data-view]' ? view : null);
+  const document = {
+    querySelector: (sel) => (sel === '[data-display]' ? display : null),
+    addEventListener: (n, fn) => { (state.docListeners[n] = state.docListeners[n] || []).push(fn); },
+    get activeElement() { return null; },
+  };
+  class EventSource { constructor() { state.es = this; this.on = {}; } addEventListener(n, fn) { this.on[n] = fn; } }
+  const fetch = (url) => {
+    state.requests.push(url);
+    return Promise.resolve({ ok: true, status: 200, headers: { get: () => 'v2' }, text: () => Promise.resolve('<p>fresh</p>') });
+  };
+  const queries = [];
+  const sandbox = {
+    document, fetch, EventSource, URLSearchParams, URL, Intl, Date, encodeURIComponent,
+    location: { href: '', reload() {} }, setInterval: () => 0, setTimeout: () => 0, clearTimeout() {},
+    matchMedia: (q) => { queries.push(q); return { matches: opts.phone !== false }; },
+    scrollY: opts.scrollY || 0,
+    scrollTo: (x, y) => { state.scrolledTo = [x, y]; sandbox.scrollY = y; },
+  };
+  sandbox.window = sandbox;
+  vm.runInNewContext(source, sandbox);
+  const click = (target) => {
+    const e = { target, preventDefault() { this.prevented = true; } };
+    state.listeners.click(e);
+    return e;
+  };
+  const swipe = (dx, dy) => {
+    const fire = (n, x, y) => (state.docListeners[n] || []).forEach((fn) => fn({ clientX: x, clientY: y, changedTouches: [{ clientX: x, clientY: y }] }));
+    fire('pointerdown', 300, 400);
+    fire('pointerup', 300 + dx, 400 + dy);
+  };
+  return {
+    state, view, queries, click, swipe, sandbox,
+    get fv() { return fv; }, get columns() { return columns; }, get grid() { return state.grid; },
+    refresh: async (next) => { state.next = next; state.es.on.view({ data: 'v2' }); await tick(); },
+  };
+}
+
+const isFull = (p) => p.fv.attrs['data-full-person'];
+
+test('a tap on a column on a phone shows that column alone', () => {
+  const p = fullWidth();
+  const e = p.click(p.columns[1].entry);
+  assert.ok(e.prevented, 'the tap does not navigate');
+  assert.equal(isFull(p), '2');
+  assert.ok('data-full' in p.columns[1].attrs);
+  assert.ok(!('data-full' in p.columns[0].attrs));
+  assert.equal(p.queries[0], '(max-width: 599px), (max-height: 500px)');
+});
+
+test('a tap on the name opens the column too, the second tap on it opens the personal view', () => {
+  const p = fullWidth();
+  assert.ok(p.click(p.columns[0].name).prevented);
+  assert.equal(isFull(p), '1');
+  assert.ok(!p.click(p.columns[0].name).prevented, 'the browser follows the link');
+  assert.equal(isFull(p), '1', 'and the column stays until the view is left');
+});
+
+test('a tap on the progress block opens the personal view, also with a column full', () => {
+  const p = fullWidth();
+  assert.ok(!p.click(p.columns[0].pbar).prevented);
+  assert.equal(isFull(p), undefined, 'nothing opened');
+  p.click(p.columns[0].entry);
+  assert.ok(!p.click(p.columns[0].pbar).prevented);
+});
+
+test('on a wall display a tap is left to the browser', () => {
+  const p = fullWidth({ phone: false });
+  assert.ok(!p.click(p.columns[0].name).prevented);
+  assert.ok(!p.click(p.columns[0].entry).prevented);
+  assert.equal(isFull(p), undefined);
+});
+
+test('the back button shows all columns, that column first in view', () => {
+  const p = fullWidth({ scrollY: 100 });
+  p.click(p.columns[2].entry);
+  const e = p.click(p.fv.back);
+  assert.ok(e.prevented);
+  assert.equal(isFull(p), undefined);
+  assert.ok(!('data-full' in p.columns[2].attrs));
+  assert.equal(p.grid.scrollLeft, 14 + 2 * 158 - 14, 'the grid starts at that column');
+  assert.equal(p.state.scrolledTo, null, 'the page is above the columns already');
+});
+
+test('closing scrolls back to the top of the columns only if the page is below it', () => {
+  const p = fullWidth({ scrollY: 900, gridTop: -600 });
+  p.click(p.columns[0].entry);
+  p.click(p.fv.back);
+  assert.deepEqual(p.state.scrolledTo, [0, 900 - 600 - 14]);
+});
+
+test('a swipe to the right of at least 64 px, mostly sideways, closes the column', () => {
+  for (const [dx, dy, closes] of [[64, 0, true], [63, 0, false], [200, 99, true], [200, 100, false], [200, -150, false], [120, -59, true]]) {
+    const p = fullWidth();
+    p.click(p.columns[1].entry);
+    p.swipe(dx, dy);
+    assert.equal(isFull(p) === undefined, closes, `dx ${dx}, dy ${dy}`);
+  }
+});
+
+test('a swipe to the left does nothing, nor does a swipe with all columns shown', () => {
+  const p = fullWidth();
+  p.click(p.columns[1].entry);
+  p.swipe(-300, 0);
+  assert.equal(isFull(p), '2');
+  const q = fullWidth();
+  q.swipe(300, 0);
+  assert.equal(isFull(q), undefined);
+  assert.equal(q.state.scrolledTo, null);
+});
+
+test('a touch swipe closes the column as well', () => {
+  const p = fullWidth();
+  p.click(p.columns[1].entry);
+  (p.state.docListeners.touchstart || []).forEach((fn) => fn({ changedTouches: [{ clientX: 50, clientY: 300 }] }));
+  (p.state.docListeners.touchend || []).forEach((fn) => fn({ changedTouches: [{ clientX: 150, clientY: 310 }] }));
+  assert.equal(isFull(p), undefined);
+});
+
+test('a swipe on a wall display does nothing', () => {
+  const p = fullWidth({ phone: false });
+  p.fv.setAttribute('data-full-person', '1');
+  p.swipe(300, 0);
+  assert.equal(isFull(p), '1');
+});
+
+test('a refresh keeps the full column on the new markup', async () => {
+  const p = fullWidth();
+  p.click(p.columns[1].entry);
+  await p.refresh([1, 2, 3]);
+  assert.equal(isFull(p), '2', 'the new view shows that column alone');
+  assert.ok('data-full' in p.columns[1].attrs);
+  assert.ok(!('data-full' in p.columns[0].attrs));
+});
+
+test('a refresh without that person shows all columns', async () => {
+  const p = fullWidth();
+  p.click(p.columns[1].entry);
+  await p.refresh([1, 3]);
+  assert.equal(isFull(p), undefined);
+  assert.ok(p.columns.every((c) => !('data-full' in c.attrs)));
+});

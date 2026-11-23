@@ -1,6 +1,6 @@
 # 0016. Family view header, columns and footer
 
-- Status: Accepted, amended by [0018](0018-path-to-0-1.md), [0023](0023-home-location-from-a-list-on-the-box.md). Amended by the product owner on 15/11/2026 (see Amendment of 15/11/2026) and on 16/11/2026 (see Amendment of 16/11/2026)
+- Status: Accepted, amended by [0018](0018-path-to-0-1.md), [0023](0023-home-location-from-a-list-on-the-box.md). Amended by the product owner on 15/11/2026 (see Amendment of 15/11/2026) and on 16/11/2026 (see Amendment of 16/11/2026); amendment of 23/11/2026 (ticket 208, with the product owner's feedback of 23/11/2026: one column in full width)
 - Date: 14/11/2026
 - Amends: [0008](0008-design-takes-precedence-over-version-plan.md) (the header shows the current time, not the next appointment; the leave-the-house countdown stays out of V1.0 and comes back per person in V2), [0015](0015-display-web-interface-and-everyday.md) (column limits per orientation, tomorrow block faded and off by default, footer tiles, task progress, dinner tile, meal plan on displays, package split of the footer)
 
@@ -78,6 +78,7 @@ Everything else in this ADR is unchanged.
 - **Tiles below the columns.** The footer tiles follow the columns, each full width and complete, in the layout's order (#180).
 - **"Below the columns" line.** A line above the columns names the tiles in words and jumps to them; the put-out pill shows in it when the tomorrow tile is highlighted. With no tile there is no line.
 - **No clock chip under 600 px** (the phone shows its own clock). A refresh keeps the page's scroll position.
+- **One column in full width** (product owner feedback of 23/11/2026, ticket 208). A tap on a person's column (name or entries, not the progress block, which opens the personal view as before) shows that column alone, as wide as the screen; the other columns are hidden, header, strip, "below the columns" line and tiles stay. The way back is a swipe to the right (at least 64 px, more than twice as far sideways as up or down) or the button "Alle Spalten" above the column; all columns return, scrolled so that person's column is first in view. A second tap on the name opens the personal view (the column says so under the name). A view refresh keeps the full column, and shows all columns if that person is gone. Phone breakpoint only (the same one as above): on wall displays (1024 x 768, 768 x 1024) there are no hints and no bar, the name opens the personal view at once, and nothing changes.
 - Wall displays (1024 x 768, 768 x 1024) are unchanged.
 
 Everything else in this ADR is unchanged.

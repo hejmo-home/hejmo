@@ -44,3 +44,24 @@ test('the below line is hidden unless the phone block shows it', () => {
   assert.match(bare, /^\.fv-below \{ display: none; \}/m);
   assert.match(bare, /@media \(max-width: 599px\) \{\s*\.fv \.chips \[data-clock\] \{ display: none; \}\s*\}/);
 });
+
+// Ticket 208 (product owner 23/11/2026): one person's column in full width. The
+// hints, the bar and "nothing today" exist on wall displays too but stay hidden
+// there; on a phone the state set by display.js shows one column alone.
+test('the full-width column is hidden outside the phone breakpoint', () => {
+  const nocomment = css.replace(/\/\*[\s\S]*?\*\//g, '');
+  assert.match(nocomment, /^\.fv \.col-hint, \.fv-fullbar, \.fv \.col-none \{ display: none; \}/m);
+  const i = nocomment.indexOf('.fv .col-hint, .fv-fullbar');
+  const m = nocomment.slice(i).match(/@media \(max-width: 599px\), \(max-height: 500px\) \{([\s\S]*?)\n\}/);
+  assert.ok(m, 'no phone block after the hidden rule');
+  const b = m[1];
+  assert.match(b, /\.fv:not\(\[data-full-person\]\) \.col-hint\.grow \{ display: block; \}/);
+  assert.match(b, /\.fv\[data-full-person\] \.fv-grid \{ grid-auto-columns: 100%; overflow-x: visible; \}/);
+  assert.match(b, /\.column:not\(\[data-full\]\) \{ display: none; \}/);
+  assert.match(b, /\.column\[data-full\] \.col-hint\.to-pv \{ display: block; \}/);
+  assert.match(b, /\.column\[data-full\] \.col-none \{ display: block;/);
+  assert.match(b, /repeat\(auto-fill, minmax\(min\(100%, 230px\), 1fr\)\)/);
+  assert.match(b, /\.tomorrow \{ grid-column: 1 \/ -1;/);
+  assert.match(b, /\[data-theme="bw"\] \.fv-back \{ border: 2px solid var\(--text\);/);
+  assert.match(b, /\[data-theme="bw"\] \.fv-back \.icon \{ stroke: var\(--text\); \}/);
+});

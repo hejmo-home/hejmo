@@ -33,6 +33,13 @@
 // suggestions (ticket 165) the quantity of an entry opens under it: the script
 // names the open entry (?qty=) and the line that says what happened (?r=), and
 // saves the editor in the background like an added entry.
+//
+// On a phone (ticket 208; the same breakpoint as the stylesheet) a tap on a
+// person's column in the family view shows that column alone, in full width:
+// data-full-person on the family view and data-full on the column. The back
+// button (data-full-close) or a swipe to the right brings all columns back; the
+// name link opens the personal view on the second tap. A refresh keeps the full
+// column. Wall displays never get any of it.
 (function () {
   var el = document.querySelector("[data-display]");
   if (!el) return;
@@ -194,14 +201,77 @@
       try { f.setSelectionRange(held.start, held.end); } catch (e) {}
     }
   }
+  // One person's column in full width (ticket 208, product owner 23/11/2026).
+  function phone() {
+    return !!(window.matchMedia && window.matchMedia("(max-width: 599px), (max-height: 500px)").matches);
+  }
+  function familyView() { return view.querySelector(".fv"); }
+  function fullPerson() {
+    var fv = familyView();
+    return fv ? fv.getAttribute("data-full-person") : null;
+  }
+  function openFull(col) {
+    familyView().setAttribute("data-full-person", col.getAttribute("data-person"));
+    col.setAttribute("data-full", "");
+  }
+  // closeFull shows all columns again, that person's column first in view, and
+  // takes the page back to the top of the columns if it is further down.
+  function closeFull() {
+    var fv = familyView();
+    if (!fv) return;
+    var col = fv.querySelector(".column[data-full]");
+    fv.removeAttribute("data-full-person");
+    if (!col) return;
+    col.removeAttribute("data-full");
+    var grid = fv.querySelector(".fv-grid");
+    if (!grid) return;
+    grid.scrollLeft = col.offsetLeft - grid.offsetLeft;
+    var top = grid.getBoundingClientRect().top + (window.scrollY || 0) - 14;
+    if ((window.scrollY || 0) > top && window.scrollTo) window.scrollTo(0, top);
+  }
+  // fullClick handles a click on the family view; true if it was one.
+  function fullClick(e) {
+    var t = e.target;
+    if (!t || !t.closest || !phone()) return false;
+    if (t.closest("[data-full-close]")) { e.preventDefault(); closeFull(); return true; }
+    if (!familyView() || fullPerson() || t.closest(".pbar")) return false;
+    var col = t.closest(".column");
+    if (!col) return false;
+    e.preventDefault();
+    openFull(col);
+    return true;
+  }
+  // A swipe to the right (at least 64 px, more than twice as far sideways as
+  // up or down) closes the full column; a swipe to the left does nothing.
+  var swipeFrom = null;
+  function swipeStart(x, y) { swipeFrom = { x: x, y: y }; }
+  function swipeEnd(x, y) {
+    var from = swipeFrom;
+    swipeFrom = null;
+    if (!from || typeof x !== "number") return;
+    var dx = x - from.x, dy = y - from.y;
+    if (dx >= 64 && Math.abs(dx) > 2 * Math.abs(dy) && phone() && fullPerson()) closeFull();
+  }
+  function touchPoint(e) { return (e.changedTouches && e.changedTouches[0]) || e; }
+  document.addEventListener("pointerdown", function (e) { swipeStart(e.clientX, e.clientY); }, { passive: true });
+  document.addEventListener("pointerup", function (e) { swipeEnd(e.clientX, e.clientY); }, { passive: true });
+  document.addEventListener("touchstart", function (e) { var t = touchPoint(e); swipeStart(t.clientX, t.clientY); }, { passive: true });
+  document.addEventListener("touchend", function (e) { var t = touchPoint(e); swipeEnd(t.clientX, t.clientY); }, { passive: true });
+
   // swap puts new markup into the view; keep holds the field across it.
   function swap(html, keep) {
     var held = keep ? holdField() : null;
+    var full = fullPerson();
     // On a phone the family view scrolls as one page (ticket 208): a refresh
     // must not throw it back to the top.
     var scrolled = window.scrollY || 0;
     view.innerHTML = html;
     if (scrolled && window.scrollY !== scrolled && window.scrollTo) window.scrollTo(0, scrolled);
+    // The full column stays, unless that person is gone from the new view.
+    if (full && phone() && familyView()) {
+      var col = view.querySelector('.column[data-person="' + full + '"]');
+      if (col) openFull(col);
+    }
     restoreField(held);
     tickClock();
     armReload();
@@ -340,6 +410,7 @@
   }
   // The quantity button opens or closes the editor of its entry.
   view.addEventListener("click", function (e) {
+    if (fullClick(e)) return;
     var open = e.target.closest && e.target.closest("[data-qty-open]");
     var close = e.target.closest && e.target.closest("[data-qty-close]");
     if (!open && !close) return;

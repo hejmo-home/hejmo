@@ -144,6 +144,7 @@ var apiRoutes = []APIRoute{
 	{"GET", "/articles/{id}/picture", auth.Perm("lists", auth.Read), (*server).apiGetArticlePicture},
 	{"PUT", "/articles/{id}/picture", auth.Perm("lists", auth.Write), (*server).apiPutArticlePicture},
 	{"PUT", "/articles/{id}/hidden", auth.Perm("lists", auth.Write), (*server).apiSetArticleHidden},
+	{"PUT", "/articles/{id}/pantry", auth.Perm("lists", auth.Write), (*server).apiSetArticlePantry},
 	{"POST", "/articles/{id}/copy", auth.Perm("lists", auth.Write), (*server).apiCopyArticle},
 	{"GET", "/articles/{id}/warnings", auth.Perm("health", auth.Read), (*server).apiArticleWarnings},
 	{"GET", "/library/hiding", auth.Perm("health", auth.Read), (*server).apiGetHiding},

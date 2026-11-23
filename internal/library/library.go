@@ -92,6 +92,10 @@ type Article struct {
 	Symbol    string   // the emoji; an own article may have none
 	Allergens []string // keys of food.Allergens, in that order
 	Units     []string // one or two default units, the first is preselected
+	// Pantry marks an article usually at home (salt, oil): recipes leave it
+	// out of the shopping list by default. For a shipped article this is the
+	// shipped default; the household's own choice is applied on top of it.
+	Pantry bool
 }
 
 // Name is the name in the language of the page.
@@ -177,10 +181,10 @@ func loadShipped() {
 			continue
 		}
 		f := strings.Split(line, "|")
-		if len(f) != 8 {
+		if len(f) != 9 || (f[8] != "" && f[8] != "athome") {
 			panic("library: malformed line in articles.txt: " + line)
 		}
-		a := Article{ID: f[0], De: f[1], En: f[2], Dept: f[3], Kind: Kind(f[4]), Symbol: f[5], Units: strings.Split(f[6], ",")}
+		a := Article{ID: f[0], De: f[1], En: f[2], Dept: f[3], Kind: Kind(f[4]), Symbol: f[5], Units: strings.Split(f[6], ","), Pantry: f[8] == "athome"}
 		if f[7] != "" {
 			a.Allergens = strings.Split(f[7], ",")
 		}

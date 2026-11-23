@@ -22,6 +22,8 @@ type OwnArticle struct {
 	// PicSource is "" (the symbol of the department), "symbol" (Symbol, an
 	// emoji), "upload" or "web" (a stored picture).
 	PicSource, Symbol string
+	// Pantry marks an article usually at home (ADR 0021, ticket 278).
+	Pantry bool
 
 	HasPicture                 bool
 	PictureHost                string // the site a web image came from
@@ -74,12 +76,12 @@ func (a OwnArticle) check(pic *ArticlePicture) (OwnArticle, error) {
 	return a, nil
 }
 
-const articleColumns = `id, name, dept, kind, allergens, unit1, unit2, pic_source, symbol, picture IS NOT NULL, picture_host, picture_from_w, picture_from_h, picture_from_b, picture_at, COALESCE(created_by, ''), created_at`
+const articleColumns = `id, name, dept, kind, allergens, unit1, unit2, pic_source, symbol, pantry, picture IS NOT NULL, picture_host, picture_from_w, picture_from_h, picture_from_b, picture_at, COALESCE(created_by, ''), created_at`
 
 func scanArticle(row interface{ Scan(...any) error }) (OwnArticle, error) {
 	var a OwnArticle
 	var allergens, at, created string
-	err := row.Scan(&a.ID, &a.Name, &a.Dept, &a.Kind, &allergens, &a.Unit1, &a.Unit2, &a.PicSource, &a.Symbol, &a.HasPicture,
+	err := row.Scan(&a.ID, &a.Name, &a.Dept, &a.Kind, &allergens, &a.Unit1, &a.Unit2, &a.PicSource, &a.Symbol, &a.Pantry, &a.HasPicture,
 		&a.PictureHost, &a.PictureFromW, &a.PictureFromH, &a.PictureFromBytes, &at, &a.CreatedBy, &created)
 	a.Allergens = splitKeys(allergens)
 	a.PictureAt, _ = time.Parse(time.RFC3339, at)
@@ -106,9 +108,9 @@ func (db *DB) CreateArticle(householdID, personID string, a OwnArticle, pic *Art
 	if personID != "" {
 		creator = personID
 	}
-	_, err = db.sql.Exec(`INSERT INTO articles (id, household_id, name, dept, kind, allergens, unit1, unit2, pic_source, symbol, picture, picture_host, picture_from_w, picture_from_h, picture_from_b, picture_at, created_by, created_at, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		a.ID, householdID, a.Name, a.Dept, a.Kind, strings.Join(a.Allergens, ","), a.Unit1, a.Unit2, a.PicSource, a.Symbol, jpeg, host, fw, fh, fb, at, creator, ts, ts)
+	_, err = db.sql.Exec(`INSERT INTO articles (id, household_id, name, dept, kind, allergens, unit1, unit2, pic_source, symbol, pantry, picture, picture_host, picture_from_w, picture_from_h, picture_from_b, picture_at, created_by, created_at, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		a.ID, householdID, a.Name, a.Dept, a.Kind, strings.Join(a.Allergens, ","), a.Unit1, a.Unit2, a.PicSource, a.Symbol, a.Pantry, jpeg, host, fw, fh, fb, at, creator, ts, ts)
 	if err != nil {
 		return OwnArticle{}, err
 	}
@@ -167,18 +169,18 @@ func (db *DB) UpdateArticle(householdID string, a OwnArticle, change PictureChan
 	var res sql.Result
 	switch change {
 	case SetPicture:
-		res, err = db.sql.Exec(`UPDATE articles SET name = ?, dept = ?, kind = ?, allergens = ?, unit1 = ?, unit2 = ?, pic_source = ?, symbol = '', picture = ?, picture_host = ?, picture_from_w = ?, picture_from_h = ?, picture_from_b = ?, picture_at = ?, updated_at = ?
+		res, err = db.sql.Exec(`UPDATE articles SET name = ?, dept = ?, kind = ?, allergens = ?, unit1 = ?, unit2 = ?, pantry = ?, pic_source = ?, symbol = '', picture = ?, picture_host = ?, picture_from_w = ?, picture_from_h = ?, picture_from_b = ?, picture_at = ?, updated_at = ?
 			WHERE household_id = ? AND id = ?`,
-			a.Name, a.Dept, a.Kind, strings.Join(a.Allergens, ","), a.Unit1, a.Unit2, pic.Source, pic.JPEG, pic.Host, pic.FromW, pic.FromH, pic.FromBytes, ts, ts, householdID, a.ID)
+			a.Name, a.Dept, a.Kind, strings.Join(a.Allergens, ","), a.Unit1, a.Unit2, a.Pantry, pic.Source, pic.JPEG, pic.Host, pic.FromW, pic.FromH, pic.FromBytes, ts, ts, householdID, a.ID)
 	case RemovePicture:
-		res, err = db.sql.Exec(`UPDATE articles SET name = ?, dept = ?, kind = ?, allergens = ?, unit1 = ?, unit2 = ?, pic_source = ?, symbol = ?, picture = NULL, picture_host = '', picture_from_w = 0, picture_from_h = 0, picture_from_b = 0, picture_at = '', updated_at = ?
+		res, err = db.sql.Exec(`UPDATE articles SET name = ?, dept = ?, kind = ?, allergens = ?, unit1 = ?, unit2 = ?, pantry = ?, pic_source = ?, symbol = ?, picture = NULL, picture_host = '', picture_from_w = 0, picture_from_h = 0, picture_from_b = 0, picture_at = '', updated_at = ?
 			WHERE household_id = ? AND id = ?`,
-			a.Name, a.Dept, a.Kind, strings.Join(a.Allergens, ","), a.Unit1, a.Unit2, a.PicSource, a.Symbol, ts, householdID, a.ID)
+			a.Name, a.Dept, a.Kind, strings.Join(a.Allergens, ","), a.Unit1, a.Unit2, a.Pantry, a.PicSource, a.Symbol, ts, householdID, a.ID)
 	default:
 		// Keeping the picture also keeps what the article shows; a symbol cannot be chosen while a picture stays.
-		res, err = db.sql.Exec(`UPDATE articles SET name = ?, dept = ?, kind = ?, allergens = ?, unit1 = ?, unit2 = ?, updated_at = ?
+		res, err = db.sql.Exec(`UPDATE articles SET name = ?, dept = ?, kind = ?, allergens = ?, unit1 = ?, unit2 = ?, pantry = ?, updated_at = ?
 			WHERE household_id = ? AND id = ?`,
-			a.Name, a.Dept, a.Kind, strings.Join(a.Allergens, ","), a.Unit1, a.Unit2, ts, householdID, a.ID)
+			a.Name, a.Dept, a.Kind, strings.Join(a.Allergens, ","), a.Unit1, a.Unit2, a.Pantry, ts, householdID, a.ID)
 	}
 	if err := expectOne(res, err); err != nil {
 		return OwnArticle{}, err
@@ -220,6 +222,43 @@ func (db *DB) SetArticleHidden(householdID, key string, hidden bool) error {
 		return err
 	}
 	_, err := db.sql.Exec(`DELETE FROM article_hidden WHERE household_id = ? AND article_key = ?`, householdID, key)
+	return err
+}
+
+// PantryOverrides returns the shipped articles whose pantry mark a parent
+// changed: the key and the mark the household chose instead of the shipped one.
+func (db *DB) PantryOverrides(householdID string) (map[string]bool, error) {
+	rows, err := db.sql.Query(`SELECT article_key, pantry FROM article_pantry WHERE household_id = ?`, householdID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]bool{}
+	for rows.Next() {
+		var k string
+		var v bool
+		if err := rows.Scan(&k, &v); err != nil {
+			return nil, err
+		}
+		out[k] = v
+	}
+	return out, rows.Err()
+}
+
+// SetArticlePantry marks a shipped article as a pantry article or not. Only a
+// deviation from the shipped mark is stored, so changing the data file still
+// reaches households that kept the default.
+func (db *DB) SetArticlePantry(householdID, key string, pantry bool) error {
+	a, ok := library.ShippedByID(key)
+	if !ok {
+		return ErrNotFound
+	}
+	if pantry == a.Pantry {
+		_, err := db.sql.Exec(`DELETE FROM article_pantry WHERE household_id = ? AND article_key = ?`, householdID, key)
+		return err
+	}
+	_, err := db.sql.Exec(`INSERT INTO article_pantry (household_id, article_key, pantry) VALUES (?, ?, ?)
+		ON CONFLICT(household_id, article_key) DO UPDATE SET pantry = excluded.pantry`, householdID, key, pantry)
 	return err
 }
 

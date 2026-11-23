@@ -31,9 +31,9 @@ func TestPagesForKeepsServersWithOtherPagesApart(t *testing.T) {
 // and can still be cloned afterwards, process-wide.
 func TestRenderingLeavesTheSharedPageSetCloneable(t *testing.T) {
 	s := &server{pages: parsePages(), i18n: i18n.MustLoad()}
-	if err := s.execute(io.Discard, "familyView", "en", nil); err == nil {
-		t.Log("executed")
-	}
+	// The execute error is ignored on purpose: with nil data the page may fail
+	// midway; what matters is only that it ran on a cached copy, not on the shared set.
+	_ = s.execute(io.Discard, "familyView", "en", nil)
 	if _, err := parsePages().Clone(); err != nil {
 		t.Fatalf("shared page set no longer cloneable: %v", err)
 	}

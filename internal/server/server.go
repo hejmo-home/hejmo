@@ -599,8 +599,8 @@ func (s *server) pagesFor(lang string) (*template.Template, error) {
 	if ok {
 		return tpl, nil
 	}
-	// Copy outside the lock: two renders may both copy on a first miss, and the
-	// second one's copy simply replaces nothing (see below).
+	// Copy outside the lock: two renders may both copy on a first miss; the
+	// loser of the race discards its copy and returns the cached one (see below).
 	tpl, err := s.pages.Clone()
 	if err != nil {
 		return nil, err

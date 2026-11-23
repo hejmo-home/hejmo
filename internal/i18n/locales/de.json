@@ -1214,6 +1214,7 @@
   "personal_devices.revoke.explain": "„{name}“ ist abgemeldet, sobald es die App das nächste Mal öffnet. Du kannst es jederzeit wieder koppeln.",
   "personal_devices.revoke.confirm": "Ja, „{name}“ entfernen",
   "personal_devices.add": "Gerät hinzufügen",
+  "personal_devices.add.display": "Soll das Gerät an der Wand hängen und allen den Tag zeigen? Dann koppele es als Display.",
   "personal_devices.add.intro": "Zeige einen QR-Code, scanne ihn mit der Kamera des Geräts und bestätige das Gerät hier. Der Code gilt zehn Minuten und für ein Gerät.",
   "personal_devices.add.show": "QR-Code anzeigen",
   "personal_devices.verify.personal_device": "Zahl zum Vergleichen:",

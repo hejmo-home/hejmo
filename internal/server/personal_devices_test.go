@@ -565,3 +565,33 @@ func TestPersonalDevicesPageSaysWhatAPersonalDeviceIs(t *testing.T) {
 		}
 	}
 }
+
+// Q149 (#203): the pairing page asks first whether the device should hang on the wall and show
+// everyone the day, and then sends the parent to display pairing.
+func TestPairingPageAsksFirstWhetherTheDeviceIsADisplay(t *testing.T) {
+	t.Parallel()
+	b := signedInBox(t)
+	notice := regexp.MustCompile(`(?s)<p class="notice">(.*?)</p>`)
+	for lang, question := range map[string]string{
+		"en": "Should the device hang on the wall and show everyone the day? Then pair it as a display.",
+		"de": "Soll das Gerät an der Wand hängen und allen den Tag zeigen? Dann koppele es als Display.",
+	} {
+		page := b.do(http.MethodGet, "/personal-devices", nil, map[string]string{"Accept-Language": lang}).body
+		var para string
+		for _, m := range notice.FindAllStringSubmatch(page, -1) {
+			if strings.Contains(m[1], question) {
+				para = m[1]
+			}
+		}
+		if para == "" {
+			t.Errorf("%s: the question about displays is missing", lang)
+			continue
+		}
+		if !strings.Contains(para, `<a href="/displays">`) {
+			t.Errorf("%s: the question does not link to display pairing: %s", lang, para)
+		}
+		if i := strings.Index(page, question); i > strings.Index(page, `action="/personal-devices/pairings"`) {
+			t.Errorf("%s: the question comes after the QR code button, not first", lang)
+		}
+	}
+}

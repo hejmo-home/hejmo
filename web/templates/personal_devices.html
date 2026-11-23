@@ -55,6 +55,7 @@
   <section aria-labelledby="add">
     <h2 id="add">{{t "personal_devices.add"}}</h2>
     {{template "error" .}}
+    <p class="notice">{{t "personal_devices.add.display"}} <a href="/displays">{{t "displays.new"}}</a></p>
     <p class="lead">{{t "personal_devices.add.intro"}}</p>
     <form method="post" action="/personal-devices/pairings" class="steps">
       <button class="button" type="submit">{{t "personal_devices.add.show"}}</button>

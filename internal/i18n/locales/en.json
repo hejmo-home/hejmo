@@ -1214,6 +1214,7 @@
   "personal_devices.revoke.explain": "“{name}” is signed out as soon as it opens the app next time. You can pair it again at any time.",
   "personal_devices.revoke.confirm": "Yes, remove “{name}”",
   "personal_devices.add": "Add a personal device",
+  "personal_devices.add.display": "Should the device hang on the wall and show everyone the day? Then pair it as a display.",
   "personal_devices.add.intro": "Show a QR code, scan it with the personal device's camera and confirm the personal device here. The code works for ten minutes and for one personal device.",
   "personal_devices.add.show": "Show QR code",
   "personal_devices.verify.personal_device": "Number for comparing:",

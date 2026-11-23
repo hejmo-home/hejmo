@@ -71,3 +71,13 @@ The product owner approved the way into the lists on 16/11/2026 (preview-33).
 - The button never uses a person marker, so lists stay apart from the person columns.
 
 Everything else in this ADR is unchanged.
+
+## Amendment of 23/11/2026 (ticket 208, family view on a phone; pending the product owner's approval of preview-208)
+
+- **One scrolling page on phones.** Under 600 px wide or under 501 px high (phone landscape too) the family view scrolls as one page instead of squeezing the columns: columns show every entry and do not scroll inside, they are at least as tall as the rest of the first screen, and the progress block stays at the bottom. Each visible column shows at least its first three entries on the first screen at 375 x 812 and 375 x 667. The page padding is 14 px; columns stay 144 px wide.
+- **Tiles below the columns.** The footer tiles follow the columns, each full width and complete, in the layout's order (#180).
+- **"Below the columns" line.** A line above the columns names the tiles in words and jumps to them; the put-out pill shows in it when the tomorrow tile is highlighted. With no tile there is no line.
+- **No clock chip under 600 px** (the phone shows its own clock). A refresh keeps the page's scroll position.
+- Wall displays (1024 x 768, 768 x 1024) are unchanged.
+
+Everything else in this ADR is unchanged.

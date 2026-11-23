@@ -384,11 +384,11 @@ The one reward a person has chosen to save for; their personal view and the fami
 _Avoid_: wish, target
 
 **Streak**:
-The days in a row on which a person completed a routine, counting only the days the routine applies and skipping pause days. Shown with the week's count ("5 of 7") and the best streak so far.
+The days in a row on which a person completed a routine, counting only the days the routine applies (at least one of its tasks is due) and skipping days off and pause days. One per routine. Shown as the **week** (the seven days Monday to Sunday, "2 of 5 days done") and the **best streak** so far, never as a running counter that can fall to zero; a missed day and a day still to come look the same. The person's switch "week count and badges" (on for children, off for adults) hides both everywhere; stars stay.
 _Avoid_: chain, combo
 
 **Pause day**:
-A day a parent marks for a person (ill, holiday) on which routines do not count, so no streak breaks.
+A day a parent marks for the whole family or for chosen people (ill, holiday), in spans with a first and last day, on which routines do not count: if the routine is not done that day the day drops out of the week and does not end the best streak; if it is done anyway the day counts like a normal day. No reason is recorded. Not the household-wide holiday mode of article rules.
 _Avoid_: skip day, excuse
 
 **Badge**:

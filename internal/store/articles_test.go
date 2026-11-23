@@ -216,3 +216,62 @@ func TestHidingArticlesWithAllergensIsOffUntilAParentConfirmsTheNotice(t *testin
 		t.Errorf("on without a confirmation = %v", err)
 	}
 }
+
+// Ticket 278 (ADR 0021): the pantry mark of own and shipped articles.
+
+func TestAnOwnArticleKeepsItsPantryMarkAndItCanBeChanged(t *testing.T) {
+	db, h, mama := newArticleFixture(t)
+	in := katzenfutter()
+	in.Pantry = true
+	a, err := db.CreateArticle(h.ID, mama.ID, in, nil)
+	if err != nil {
+		t.Fatal(err)
+	}
+	got, _ := db.Article(h.ID, a.ID)
+	if !got.Pantry {
+		t.Fatalf("created pantry = %v, want true", got.Pantry)
+	}
+	got.Pantry = false
+	if _, err := db.UpdateArticle(h.ID, got, store.KeepPicture, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ = db.Article(h.ID, a.ID); got.Pantry {
+		t.Error("the mark was not removed")
+	}
+	got.Pantry = true
+	if _, err := db.UpdateArticle(h.ID, got, store.RemovePicture, nil); err != nil {
+		t.Fatal(err)
+	}
+	if got, _ = db.Article(h.ID, a.ID); !got.Pantry {
+		t.Error("the mark was not set again")
+	}
+}
+
+func TestAParentChangesThePantryMarkOfAShippedArticleAndOnlyTheDifferenceIsStored(t *testing.T) {
+	db, h, _ := newArticleFixture(t)
+	if got, err := db.PantryOverrides(h.ID); err != nil || len(got) != 0 {
+		t.Fatalf("overrides = %v %v, want none", got, err)
+	}
+	if err := db.SetArticlePantry(h.ID, "salt", false); err != nil { // shipped as pantry
+		t.Fatal(err)
+	}
+	if err := db.SetArticlePantry(h.ID, "apples", true); err != nil { // shipped as not pantry
+		t.Fatal(err)
+	}
+	if err := db.SetArticlePantry(h.ID, "pepper", true); err != nil { // the shipped value: nothing to store
+		t.Fatal(err)
+	}
+	got, _ := db.PantryOverrides(h.ID)
+	if !reflect.DeepEqual(got, map[string]bool{"salt": false, "apples": true}) {
+		t.Errorf("overrides = %v", got)
+	}
+	if err := db.SetArticlePantry(h.ID, "salt", true); err != nil { // back to the shipped value
+		t.Fatal(err)
+	}
+	if got, _ = db.PantryOverrides(h.ID); !reflect.DeepEqual(got, map[string]bool{"apples": true}) {
+		t.Errorf("after reset = %v", got)
+	}
+	if err := db.SetArticlePantry(h.ID, "no-such-article", true); !errors.Is(err, store.ErrNotFound) {
+		t.Errorf("unknown article = %v, want ErrNotFound", err)
+	}
+}

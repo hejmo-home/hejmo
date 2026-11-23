@@ -2,6 +2,7 @@ package server
 
 import (
 	"encoding/json"
+	"errors"
 	"fmt"
 	"html"
 	"html/template"
@@ -75,6 +76,9 @@ func (s *server) artRowOf(st libState, it articleItem, flat bool) artRow {
 	}
 	if it.handHidden {
 		row.Tags = append(row.Tags, artTag{s.i18n.T(st.lang, "lib.tag.hand"), "tag hidden-tag"})
+	}
+	if it.Pantry {
+		row.Tags = append(row.Tags, artTag{s.i18n.T(st.lang, "lib.tag.pantry"), "tag"})
 	}
 	if by := st.hiding.HiddenFor(it.Article, st.persons); len(by) > 0 {
 		row.Tags = append(row.Tags, artTag{s.i18n.Format(st.lang, i18n.Msg("lib.tag.allergy", "names", s.joinWords(st.lang, st.names(by)))), "tag exp"})
@@ -322,7 +326,10 @@ func (s *server) renderShipped(w http.ResponseWriter, r *http.Request, p princip
 		"Dept":  s.i18n.T(lang, "dept."+it.Dept),
 		"Units": s.unitsWords(lang, offered), "UnitsHint": s.i18n.Format(lang, i18n.Msg("art.units.hint", "unit", s.unitName(lang, offered[0]))),
 		"Kind": s.i18n.T(lang, "art.kind."+string(it.Kind)), "IsFood": it.Kind != library.NonFood,
-		"Hidden": it.handHidden,
+		"Hidden": it.handHidden, "Pantry": it.Pantry,
+		"PantryOn":   s.i18n.Format(lang, i18n.Msg("art.pantry.on", "name", name)),
+		"PantryOff":  s.i18n.Format(lang, i18n.Msg("art.pantry.off", "name", name)),
+		"PantryAria": s.i18n.Format(lang, i18n.Msg("art.pantry.aria", "name", name)),
 	}
 	fit, notFit := library.FitsPeople(it.Article, st.persons)
 	switch {
@@ -393,6 +400,30 @@ func (s *server) handleArticleHidden(w http.ResponseWriter, r *http.Request) {
 	s.redirectSavedNamed(w, r, libraryPath+"/"+id, key, a.Name(s.langOf(r)))
 }
 
+// handleArticlePantry marks any article, shipped or own, as a pantry article or not.
+func (s *server) handleArticlePantry(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
+	}
+	id := r.PathValue("id")
+	pantry := r.PostFormValue("pantry") != ""
+	name, err := s.setPantry(p, id, pantry, s.langOf(r))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
+		return
+	}
+	if err != nil {
+		s.fail(w, "mark article", err)
+		return
+	}
+	key := "flash.article_pantry_off"
+	if pantry {
+		key = "flash.article_pantry_on"
+	}
+	s.redirectSavedNamed(w, r, libraryPath+"/"+id, key, name)
+}
+
 func (s *server) handleArticleCopy(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
@@ -404,7 +435,12 @@ func (s *server) handleArticleCopy(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	}
-	own := store.OwnArticle{Name: a.Name(lang), Dept: a.Dept, Kind: string(a.Kind), Allergens: a.Allergens, Unit1: a.Units[0]}
+	pantry, err := s.shippedPantry(p, a)
+	if err != nil {
+		s.fail(w, "pantry marks", err)
+		return
+	}
+	own := store.OwnArticle{Name: a.Name(lang), Dept: a.Dept, Kind: string(a.Kind), Allergens: a.Allergens, Unit1: a.Units[0], Pantry: pantry}
 	if len(a.Units) > 1 {
 		own.Unit2 = a.Units[1]
 	}

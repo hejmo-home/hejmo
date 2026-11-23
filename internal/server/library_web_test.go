@@ -998,3 +998,82 @@ func TestEveryLibraryPageHasATrailBackToSettingsInsideMain(t *testing.T) {
 func listFor(name string) list.List {
 	return list.List{Name: name, Color: "green", Symbol: "square-filled", Sort: list.Manual}
 }
+
+// Ticket 278 (ADR 0021): the pantry mark on the web.
+
+func TestAParentSwitchesThePantryMarkOfAShippedArticleAndTheLibraryShowsIt(t *testing.T) {
+	t.Parallel()
+	l := newLibBox(t)
+	libHas(t, "salt", l.en("/settings/lists/library/salt").body, "Pantry article", `name="pantry" checked`, "On. Recipes leave Salt out of the shopping list.")
+	libHasNot(t, "apples", l.en("/settings/lists/library/apples").body, `name="pantry" checked`)
+	libHas(t, "library row", l.en("/settings/lists/library?q=salt").body, `class="tag">Pantry article`)
+	libHasNot(t, "library row", l.en("/settings/lists/library?q=apples").body, "Pantry article")
+
+	r := l.postEN("/settings/lists/library/apples/pantry", url.Values{"pantry": {"on"}})
+	if r.status != http.StatusSeeOther || r.location != "/settings/lists/library/apples" {
+		t.Fatalf("mark = %d %q", r.status, r.location)
+	}
+	libHas(t, "after marking", l.en(r.location).body, "“Apples” is now a pantry article. Recipes leave it out of the shopping list.", `name="pantry" checked`)
+	libHas(t, "library row", l.en("/settings/lists/library?q=apples").body, `class="tag">Pantry article`)
+	libHas(t, "German page", l.de("/settings/lists/library/apples").body, "Vorratsartikel")
+
+	r = l.postEN("/settings/lists/library/salt/pantry", url.Values{})
+	libHas(t, "after unmarking", l.en(r.location).body, "“Salt” is no longer a pantry article. Recipes put it on the shopping list.")
+	libHasNot(t, "after unmarking", l.en("/settings/lists/library/salt").body, `name="pantry" checked`)
+	if r := l.postEN("/settings/lists/library/nothing/pantry", url.Values{"pantry": {"on"}}); r.status != http.StatusNotFound {
+		t.Errorf("an unknown article = %d", r.status)
+	}
+}
+
+func TestTheOwnArticleFormHasAPantrySwitchThatIsStored(t *testing.T) {
+	t.Parallel()
+	l := newLibBox(t)
+	libHas(t, "new form", l.en("/settings/lists/library/new").body, "Pantry article", `name="pantry"`)
+	libHasNot(t, "new form", l.en("/settings/lists/library/new").body, `name="pantry" checked`)
+	f := articleForm()
+	f.Set("name", "Kräutersalz")
+	f.Set("pantry", "on")
+	id := l.createArticle(f)
+	if a, _ := l.db.Article(l.h.ID, id); !a.Pantry {
+		t.Fatal("the mark was not stored")
+	}
+	libHas(t, "edit form", l.en("/settings/lists/library/"+id).body, `name="pantry" checked`)
+	f.Del("pantry")
+	if r := l.postEN("/settings/lists/library/"+id, f); r.status != http.StatusSeeOther {
+		t.Fatalf("save = %d\n%s", r.status, r.body)
+	}
+	if a, _ := l.db.Article(l.h.ID, id); a.Pantry {
+		t.Error("the mark was not removed")
+	}
+}
+
+func TestACopyOfAShippedArticleKeepsItsPantryMarkAndTheOwnArticleCanBeMarkedOnThePantryRoute(t *testing.T) {
+	t.Parallel()
+	l := newLibBox(t)
+	// pepper is shipped as a pantry article, salt is unmarked by the household first
+	l.postEN("/settings/lists/library/salt/pantry", url.Values{})
+	for key, want := range map[string]bool{"salt": false, "pepper": true} {
+		r := l.postEN("/settings/lists/library/"+key+"/copy", url.Values{})
+		m := idRe.FindStringSubmatch(r.location)
+		if r.status != http.StatusSeeOther || m == nil {
+			t.Fatalf("copy %s = %d %q", key, r.status, r.location)
+		}
+		if own, err := l.db.Article(l.h.ID, m[1]); err != nil || own.Pantry != want {
+			t.Errorf("copy of %s: pantry = %v (%v), want %v", key, own.Pantry, err, want)
+		}
+	}
+	f := articleForm()
+	f.Set("name", "Kräutersalz")
+	id := l.createArticle(f)
+	r := l.postEN("/settings/lists/library/"+id+"/pantry", url.Values{"pantry": {"on"}})
+	if r.status != http.StatusSeeOther || r.location != "/settings/lists/library/"+id {
+		t.Fatalf("mark own = %d %q", r.status, r.location)
+	}
+	if a, _ := l.db.Article(l.h.ID, id); !a.Pantry {
+		t.Error("the own article was not marked")
+	}
+	l.postEN("/settings/lists/library/"+id+"/pantry", url.Values{})
+	if a, _ := l.db.Article(l.h.ID, id); a.Pantry {
+		t.Error("the own article was not unmarked")
+	}
+}

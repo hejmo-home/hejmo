@@ -2720,6 +2720,38 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}/pantry:
+    put:
+      operationId: setArticlePantry
+      summary: Mark an article as a pantry article, or not (scope lists:write, parents only)
+      description: |
+        Works for every article. Pantry articles are usually at home (salt,
+        oil, spices); recipes leave them out of the shopping list by default.
+        Hejmo ships typical pantry articles marked; this changes the mark for
+        the household only. For an own article it is the same as `pantry` of
+        `PATCH /articles/{id}`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [pantry]
+              properties:
+                pantry: { type: boolean }
+      responses:
+        "200":
+          description: The article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /articles/{id}/copy:
     post:
       operationId: copyArticle
@@ -4019,7 +4051,7 @@ components:
         done_count: { type: integer, description: "Entries ticked off" }
     Article:
       type: object
-      required: [id, source, name_de, name_en, dept, kind, allergens, units, offered_units, symbol, picture, picture_source, hidden_by_hand, created_by, created_at]
+      required: [id, source, name_de, name_en, dept, kind, allergens, units, offered_units, symbol, picture, picture_source, hidden_by_hand, pantry, created_by, created_at]
       properties:
         id: { type: string, description: "The key of an article from Hejmo, the id of an own one" }
         source: { type: string, enum: [hejmo, own] }
@@ -4047,6 +4079,7 @@ components:
           description: Where the stored picture is (GET), or null
         picture_source: { type: string, enum: ["", symbol, upload, web] }
         hidden_by_hand: { type: boolean }
+        pantry: { type: boolean, description: "A pantry article, usually at home (salt, oil): recipes leave it out of the shopping list by default. Shipped articles come with a default mark that a parent can change per article." }
         created_by: { type: string, format: uuid, nullable: true }
         created_at: { type: string, format: date-time, nullable: true }
     Unit:
@@ -4070,6 +4103,7 @@ components:
         symbol: { type: string, description: "An emoji of the Noto Emoji set" }
         picture_url: { type: string, description: "An http or https address of an image the box downloads once" }
         remove_picture: { type: boolean }
+        pantry: { type: boolean, description: "Mark as a pantry article (default false when creating)" }
     ArticleWarnings:
       type: object
       required: [article_id, warnings, suits, does_not_suit, suggested, not_suggested_because, hidden_for, note]

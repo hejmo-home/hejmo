@@ -229,10 +229,14 @@
     var top = grid.getBoundingClientRect().top + (window.scrollY || 0) - 14;
     if ((window.scrollY || 0) > top && window.scrollTo) window.scrollTo(0, top);
   }
+  var ignoreClickUntil = 0;
   // fullClick handles a click on the family view; true if it was one.
   function fullClick(e) {
     var t = e.target;
     if (!t || !t.closest || !phone()) return false;
+    // A mouse drag to the right ends in a click on whatever lies under the
+    // pointer; the column that drag just closed must not open again.
+    if (Date.now() < ignoreClickUntil) { e.preventDefault(); return true; }
     if (t.closest("[data-full-close]")) { e.preventDefault(); closeFull(); return true; }
     if (!familyView() || fullPerson() || t.closest(".pbar")) return false;
     var col = t.closest(".column");
@@ -250,7 +254,10 @@
     swipeFrom = null;
     if (!from || typeof x !== "number") return;
     var dx = x - from.x, dy = y - from.y;
-    if (dx >= 64 && Math.abs(dx) > 2 * Math.abs(dy) && phone() && fullPerson()) closeFull();
+    if (dx >= 64 && Math.abs(dx) > 2 * Math.abs(dy) && phone() && fullPerson()) {
+      closeFull();
+      ignoreClickUntil = Date.now() + 400;
+    }
   }
   function touchPoint(e) { return (e.changedTouches && e.changedTouches[0]) || e; }
   document.addEventListener("pointerdown", function (e) { swipeStart(e.clientX, e.clientY); }, { passive: true });

@@ -3287,7 +3287,7 @@ section > .hint.none { margin-top: -4px; }
   .family-page:has(.fv) { height: auto; min-height: calc(100vh - 2 * var(--gap)); min-height: calc(100dvh - 2 * var(--gap)); display: flex; flex-direction: column; }
   .family-page:has(.fv) > [data-view] { height: auto; flex: 1 0 auto; display: flex; flex-direction: column; }
   .fv { height: auto; flex: 1 0 auto; }
-  .fv-grid { flex: 1 0 auto; grid-auto-rows: auto; }
+  .fv .fv-grid { flex: 1 0 auto; grid-auto-rows: auto; }
   .fv .column { overflow: visible; }
   .fv .events { flex: 1 0 auto; overflow: visible; }
   /* Worst case, 375 x 667 with 2 strip entries today and 1 tomorrow: the strip
@@ -3297,16 +3297,16 @@ section > .hint.none { margin-top: -4px; }
   .fv .strip-wrap { gap: 6px; }
   .fv .strip { gap: 6px; }
   .fv .strip-item { padding: 5px 10px; }
-  .fv-footer { scroll-margin-top: var(--gap); }
-  .fv-footer .tile { flex-basis: 100%; }
+  .fv .fv-footer { scroll-margin-top: var(--gap); }
+  .fv .fv-footer .tile { flex-basis: 100%; }
   .fv .chips { max-width: 100%; }
-  .fv-below { flex: none; display: flex; align-items: center; min-height: var(--touch-target); padding: 6px 14px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label); text-decoration: none; }
-  .fv-below .t { min-width: 0; line-height: 1.5; overflow-wrap: break-word; }
-  .fv-below .lab { color: var(--text-secondary); }
-  .fv-below b { font-weight: 700; }
-  .fv-below .sep { color: var(--text-secondary); }
-  .fv-below .flag { display: inline-block; background: var(--accent); color: var(--accent-text); border-radius: var(--radius-chip); padding: 0 10px; font-weight: 700; white-space: nowrap; }
-  [data-theme="bw"] .fv-below { border: 2px solid var(--text); padding: 5px 13px; }
+  .fv .fv-below { flex: none; display: flex; align-items: center; min-height: var(--touch-target); padding: 6px 14px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label); text-decoration: none; }
+  .fv .fv-below .t { min-width: 0; line-height: 1.5; overflow-wrap: break-word; }
+  .fv .fv-below .lab { color: var(--text-secondary); }
+  .fv .fv-below b { font-weight: 700; }
+  .fv .fv-below .sep { color: var(--text-secondary); }
+  .fv .fv-below .flag { display: inline-block; background: var(--accent); color: var(--accent-text); border-radius: var(--radius-chip); padding: 0 10px; font-weight: 700; white-space: nowrap; }
+  [data-theme="bw"] .fv .fv-below { border: 2px solid var(--text); padding: 5px 13px; }
 }
 /* A phone shows its own clock in the status bar (as in the lists view, #33):
    the clock chip gives its row to the columns. */
@@ -3319,7 +3319,7 @@ section > .hint.none { margin-top: -4px; }
    column, as wide as the screen; "Zurück zu allen Spalten" or a swipe to the
    right brings all columns back. Wall displays never show any of it: there
    the name still opens the personal view. */
-.fv .col-hint, .fv-fullbar, .fv .col-none { display: none; }
+.fv .col-hint, .fv .fv-fullbar, .fv .col-none { display: none; }
 @media (max-width: 599px), (max-height: 500px) {
   .fv:not([data-full-person]) .column { cursor: pointer; }
   .fv .person-link { row-gap: 0; }
@@ -3327,9 +3327,9 @@ section > .hint.none { margin-top: -4px; }
   .fv .col-hint .icon { width: 14px; height: 14px; vertical-align: -2px; margin-left: 2px; stroke: currentColor; }
   .fv:not([data-full-person]) .col-hint.grow { display: block; }
   .fv[data-full-person] .fv-fullbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; flex: none; }
-  .fv-back { display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-target); padding: 8px 18px 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-label-large); font-weight: 600; cursor: pointer; }
-  .fv-back .icon { flex: none; stroke: var(--accent); }
-  .fv-fullbar .hint { font-size: var(--fs-meta); color: var(--text-secondary); }
+  .fv .fv-back { display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-target); padding: 8px 18px 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-label-large); font-weight: 600; cursor: pointer; }
+  .fv .fv-back .icon { flex: none; stroke: var(--accent); }
+  .fv .fv-fullbar .hint { font-size: var(--fs-meta); color: var(--text-secondary); }
   .fv[data-full-person] .fv-grid { grid-auto-columns: 100%; overflow-x: visible; }
   .fv[data-full-person] .column:not([data-full]) { display: none; }
   .fv .column[data-full] .col-hint.to-pv { display: block; }
@@ -3337,8 +3337,8 @@ section > .hint.none { margin-top: -4px; }
   .fv .column[data-full] .events .tomorrow { grid-column: 1 / -1; grid-template-columns: inherit; }
   .fv .column[data-full] .events .tomorrow .lab { grid-column: 1 / -1; }
   .fv .column[data-full] .col-none { display: block; margin: 0; font-size: var(--fs-body); color: var(--text-secondary); }
-  [data-theme="bw"] .fv-back { border: 2px solid var(--text); padding: 7px 17px 7px 11px; }
-  [data-theme="bw"] .fv-back .icon { stroke: var(--text); }
+  [data-theme="bw"] .fv .fv-back { border: 2px solid var(--text); padding: 7px 17px 7px 11px; }
+  [data-theme="bw"] .fv .fv-back .icon { stroke: var(--text); }
 }
 /* ---- ticket 168: articles always on the list (ADR 0019, Q27) ---- */
 /* Article page: the card "Immer auf der Liste" sits in the article's one form,

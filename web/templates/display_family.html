@@ -24,7 +24,7 @@
   <div class="fv-fullbar"><button type="button" class="fv-back" data-full-close><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg>{{t "family.all_columns"}}</button><span class="hint">{{t "family.swipe_back"}}</span></div>
   <main class="fv-grid" style="--cols:{{len .Columns}}">
     {{range .Columns}}<section class="column" data-person="{{.Person.Slot}}" data-name="{{.Person.Name}}">
-      <h2><a class="person-link" href="/display/person/{{.Person.ID}}"><span class="marker" data-shape="{{.Person.Shape}}"></span><span class="person-name">{{.Person.Name}}</span><span class="col-hint grow">{{t "family.show_big"}}</span><span class="col-hint to-pv">{{t "personal.title"}} <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></a></h2>
+      <h2><a class="person-link" href="/display/person/{{.Person.ID}}"><span class="marker" data-shape="{{.Person.Shape}}"></span><span class="person-name">{{.Person.Name}}</span><span class="col-hint grow" aria-hidden="true">{{t "family.show_big"}}</span><span class="col-hint to-pv" aria-hidden="true">{{t "personal.title"}} <svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></span></a></h2>
       {{$col := .}}{{range $.ColumnBlocks}}{{if eq . "events"}}<div class="events">
         {{if not $col.Events}}<p class="col-none">{{t "family.nothing_today"}}</p>{{end}}{{range $col.Events}}<div class="event"><div class="meta">{{.Time}}</div><div class="title">{{.Title}}</div>{{if .WhoParts}}<div class="who">{{template "whoParts" .WhoParts}}</div>{{end}}</div>
         {{end}}{{if $col.Tomorrow}}<div class="tomorrow" data-tomorrow>

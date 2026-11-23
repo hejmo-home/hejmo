@@ -315,6 +315,10 @@ func TestFamilyViewFullWidthColumn(t *testing.T) {
 				cols()[1].querySelector(".events .title").click();
 				swipe(100, 10);
 				const swiped = state();
+				// A mouse drag ends in a click on the column under the pointer: it must not reopen it.
+				cols()[1].querySelector(".events .title").click();
+				const stray = state().full;
+				await new Promise((r) => setTimeout(r, 500));
 				cols()[3].querySelector(".events").click(); // Mia: nothing planned
 				const mia = state();
 				document.querySelector("[data-full-close]").click();
@@ -322,7 +326,7 @@ func TestFamilyViewFullWidthColumn(t *testing.T) {
 				document.querySelector(".fv").dataset.old = "1";
 				await fetch("/trigger");
 				const swapped = await wait(() => !document.querySelector(".fv").dataset.old);
-				return JSON.stringify({ before, open, hrefs, left, diagonal, short, back, swiped, mia, swapped, after: state() });`)
+				return JSON.stringify({ before, open, hrefs, left, diagonal, short, back, swiped, stray, mia, swapped, after: state() });`)
 			b, o, back, sw, mia, after := decode(t, m, "before"), decode(t, m, "open"), decode(t, m, "back"), decode(t, m, "swiped"), decode(t, m, "mia"), decode(t, m, "after")
 			if b.Shown != 4 || b.Grow != 4 || b.Fullbar || b.ToPv != 0 {
 				t.Errorf("before a tap: %+v", b)
@@ -352,6 +356,9 @@ func TestFamilyViewFullWidthColumn(t *testing.T) {
 			}
 			if sw.Shown != 4 || sw.Full != nil || (sw.CanScroll && abs(int(sw.Second)) > 2) {
 				t.Errorf("right swipe: %+v", sw)
+			}
+			if string(m["stray"]) != "null" {
+				t.Errorf("the click after a closing swipe reopened the column: %s", m["stray"])
 			}
 			if mia.Shown != 1 || mia.None != 1 {
 				t.Errorf("an empty day shows %d notes: %+v", mia.None, mia)

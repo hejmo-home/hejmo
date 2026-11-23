@@ -33,11 +33,11 @@ test('the phone block of the family view is scoped to .fv', () => {
   const rules = m[1].match(/[^{}]+(?=\{)/g).map((s) => s.trim());
   assert.ok(rules.length >= 10, 'rules missing: ' + rules.length);
   for (const sel of rules) {
-    assert.match(sel, /\.fv|:has\(\.fv\)/, 'unscoped phone rule: ' + sel);
+    assert.match(sel, /\.fv(?![-\w])|:has\(\.fv\)/, 'unscoped phone rule: ' + sel);
   }
   assert.match(m[1], /body:has\(\.fv\) \{ overflow: auto;/);
   assert.match(m[1], /\.fv \.column \{ overflow: visible;/);
-  assert.match(m[1], /\.fv-footer \.tile \{ flex-basis: 100%;/);
+  assert.match(m[1], /\.fv \.fv-footer \.tile \{ flex-basis: 100%;/);
 });
 
 test('the below line is hidden unless the phone block shows it', () => {
@@ -50,8 +50,8 @@ test('the below line is hidden unless the phone block shows it', () => {
 // there; on a phone the state set by display.js shows one column alone.
 test('the full-width column is hidden outside the phone breakpoint', () => {
   const nocomment = css.replace(/\/\*[\s\S]*?\*\//g, '');
-  assert.match(nocomment, /^\.fv \.col-hint, \.fv-fullbar, \.fv \.col-none \{ display: none; \}/m);
-  const i = nocomment.indexOf('.fv .col-hint, .fv-fullbar');
+  assert.match(nocomment, /^\.fv \.col-hint, \.fv \.fv-fullbar, \.fv \.col-none \{ display: none; \}/m);
+  const i = nocomment.indexOf('.fv .col-hint, .fv .fv-fullbar');
   const m = nocomment.slice(i).match(/@media \(max-width: 599px\), \(max-height: 500px\) \{([\s\S]*?)\n\}/);
   assert.ok(m, 'no phone block after the hidden rule');
   const b = m[1];
@@ -62,6 +62,6 @@ test('the full-width column is hidden outside the phone breakpoint', () => {
   assert.match(b, /\.column\[data-full\] \.col-none \{ display: block;/);
   assert.match(b, /repeat\(auto-fill, minmax\(min\(100%, 230px\), 1fr\)\)/);
   assert.match(b, /\.tomorrow \{ grid-column: 1 \/ -1;/);
-  assert.match(b, /\[data-theme="bw"\] \.fv-back \{ border: 2px solid var\(--text\);/);
-  assert.match(b, /\[data-theme="bw"\] \.fv-back \.icon \{ stroke: var\(--text\); \}/);
+  assert.match(b, /\[data-theme="bw"\] \.fv \.fv-back \{ border: 2px solid var\(--text\);/);
+  assert.match(b, /\[data-theme="bw"\] \.fv \.fv-back \.icon \{ stroke: var\(--text\); \}/);
 });

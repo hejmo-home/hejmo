@@ -602,6 +602,32 @@ test('a swipe to the left does nothing, nor does a swipe with all columns shown'
   assert.equal(q.state.scrolledTo, null);
 });
 
+// A mouse drag to the right ends in a click on the column under the pointer;
+// it must not open the column that the drag just closed.
+test('the click that follows a closing swipe is ignored, a later tap is not', () => {
+  const p = fullWidth();
+  let now = 1000;
+  p.sandbox.Date = { now: () => now };
+  p.click(p.columns[1].entry);
+  p.swipe(200, 0);
+  assert.equal(isFull(p), undefined);
+  now += 50;
+  const e = p.click(p.columns[1].entry);
+  assert.ok(e.prevented, 'the stray click is swallowed');
+  assert.equal(isFull(p), undefined, 'the column stays closed');
+  now += 1000;
+  p.click(p.columns[1].entry);
+  assert.equal(isFull(p), '2', 'a tap after that opens it');
+});
+
+test('a swipe that does not close the column does not swallow the next tap', () => {
+  const p = fullWidth();
+  p.sandbox.Date = { now: () => 1000 };
+  p.swipe(30, 0);
+  p.click(p.columns[0].entry);
+  assert.equal(isFull(p), '1');
+});
+
 test('a touch swipe closes the column as well', () => {
   const p = fullWidth();
   p.click(p.columns[1].entry);

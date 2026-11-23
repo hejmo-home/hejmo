@@ -29,8 +29,11 @@ import (
 const (
 	// MaxBytes is the largest photo or download Hejmo takes.
 	MaxBytes = 15 << 20
-	// MaxSide is the longest side of the stored picture, in pixels.
+	// MaxSide is the longest side of the stored picture, in pixels, unless a
+	// caller asks for its own limit (ProcessMax): articles, rewards, contacts.
 	MaxSide = 512
+	// RecipeMaxSide is the longest side of a recipe picture (ticket 276).
+	RecipeMaxSide = 1600
 	// MaxPixels is the most pixels a picture may have before it is decoded; a
 	// small file can claim a gigantic image.
 	MaxPixels = 24_000_000
@@ -74,6 +77,16 @@ func Process(r io.Reader) (Result, error) { return ProcessContext(context.Backgr
 
 // ProcessContext is Process, but stops waiting for the decode slot when ctx is done.
 func ProcessContext(ctx context.Context, r io.Reader) (Result, error) {
+	return ProcessMax(ctx, r, MaxSide)
+}
+
+// ProcessMax is ProcessContext with the longest side of the result set by the
+// caller; a value of zero or less means MaxSide. Everything else is the same:
+// the picture is re-encoded and carries no metadata.
+func ProcessMax(ctx context.Context, r io.Reader, maxSide int) (Result, error) {
+	if maxSide <= 0 {
+		maxSide = MaxSide
+	}
 	data, err := io.ReadAll(io.LimitReader(r, MaxBytes+1))
 	if err != nil {
 		return Result{}, err
@@ -115,7 +128,7 @@ func ProcessContext(ctx context.Context, r io.Reader) (Result, error) {
 			res.Rotated = o >= 5
 		}
 	}
-	rgba = scale(rgba)
+	rgba = scale(rgba, maxSide)
 	res.ToW, res.ToH = rgba.Bounds().Dx(), rgba.Bounds().Dy()
 
 	var out bytes.Buffer
@@ -137,16 +150,16 @@ func looksLikeWebPage(data []byte) bool {
 	return false
 }
 
-func scale(src *image.RGBA) *image.RGBA {
+func scale(src *image.RGBA, maxSide int) *image.RGBA {
 	w, h := src.Bounds().Dx(), src.Bounds().Dy()
-	if w <= MaxSide && h <= MaxSide {
+	if w <= maxSide && h <= maxSide {
 		return src
 	}
-	nw, nh := MaxSide, MaxSide
+	nw, nh := maxSide, maxSide
 	if w >= h {
-		nh = max(1, (h*MaxSide+w/2)/w)
+		nh = max(1, (h*maxSide+w/2)/w)
 	} else {
-		nw = max(1, (w*MaxSide+h/2)/h)
+		nw = max(1, (w*maxSide+h/2)/h)
 	}
 	dst := image.NewRGBA(image.Rect(0, 0, nw, nh))
 	xdraw.CatmullRom.Scale(dst, dst.Bounds(), src, src.Bounds(), xdraw.Over, nil)

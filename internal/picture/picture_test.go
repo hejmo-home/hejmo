@@ -300,3 +300,57 @@ func TestACancelledRequestStopsWaitingForTheSlot(t *testing.T) {
 		t.Fatal("a cancelled request kept waiting for the slot")
 	}
 }
+
+// Ticket 276: the longest side is a parameter, so recipes (1600 px) can keep
+// larger pictures than articles (512 px).
+
+func TestACallerCanAskForALargerMaximumAndStillGetsAReEncodedPictureWithoutMetadata(t *testing.T) {
+	src := withEXIF(encodeJPEG(t, gradient(3000, 2000)), 1)
+	res, err := picture.ProcessMax(context.Background(), bytes.NewReader(src), picture.RecipeMaxSide)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if picture.RecipeMaxSide != 1600 {
+		t.Errorf("RecipeMaxSide = %d, want 1600", picture.RecipeMaxSide)
+	}
+	if w, h := size(t, res.JPEG); w != 1600 || h != 1067 {
+		t.Errorf("result %d x %d, want 1600 x 1067", w, h)
+	}
+	if res.ToW != 1600 || res.ToH != 1067 {
+		t.Errorf("facts = %+v", res)
+	}
+	for _, leak := range []string{"Exif", "Koda", "\xff\xe1", "XMP", "http://ns.adobe.com"} {
+		if bytes.Contains(res.JPEG, []byte(leak)) {
+			t.Errorf("the result still holds %q", leak)
+		}
+	}
+	// Smaller than the limit: not enlarged.
+	small, err := picture.ProcessMax(context.Background(), bytes.NewReader(encodeJPEG(t, gradient(1200, 800))), picture.RecipeMaxSide)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w, h := size(t, small.JPEG); w != 1200 || h != 800 {
+		t.Errorf("small result %d x %d", w, h)
+	}
+}
+
+func TestTheSameLargePhotoIsScaledToEachCallersOwnMaximum(t *testing.T) {
+	data := encodeJPEG(t, gradient(3000, 2000))
+	for _, c := range []struct{ max, w, h int }{{512, 512, 341}, {1600, 1600, 1067}, {0, 512, 341}} {
+		res, err := picture.ProcessMax(context.Background(), bytes.NewReader(data), c.max)
+		if err != nil {
+			t.Fatal(err)
+		}
+		if w, h := size(t, res.JPEG); w != c.w || h != c.h {
+			t.Errorf("max %d: result %d x %d, want %d x %d", c.max, w, h, c.w, c.h)
+		}
+	}
+	// Process stays what it was: 512 px.
+	res, err := picture.Process(bytes.NewReader(data))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w, h := size(t, res.JPEG); w != 512 || h != 341 {
+		t.Errorf("Process result %d x %d, want 512 x 341", w, h)
+	}
+}

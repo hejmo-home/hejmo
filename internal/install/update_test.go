@@ -34,7 +34,8 @@ compose)
 		img=$(sed -n 's/^HEJMO_IMAGE=//p' .env | head -n 1)
 		echo "$img" > "$STATE/running"
 		case "$img" in
-		*"$NEW"*)
+		*"$NEW"*|*:0.2.4)
+			cp "$DATA/update-status" "$STATE/status-at-start" 2>/dev/null
 			[ "${FAKE_START:-ok}" = fail ] && exit 1
 			echo "data migrated by the new version" > "$DATA/hejmo.db" ;;
 		esac ;;
@@ -49,14 +50,17 @@ inspect)
 image)
 	case "$2" in
 	inspect)
+		case "$*" in *Labels*) echo "${FAKE_LABEL:-0.2.4}"; exit 0 ;; esac
 		case "$last" in
 		sha256:*) echo "ghcr.io/hejmo-home/hejmo@sha256:$OLD" ;;
 		ghcr.io/hejmo-home/hejmo:*) echo "ghcr.io/hejmo-home/hejmo@sha256:$NEW" ;;
 		esac ;;
 	esac ;;
 pull) [ "${FAKE_PULL:-ok}" = fail ] && exit 1 ;;
+load) [ "${FAKE_LOAD:-ok}" = fail ] && exit 1 ;;
 run) [ "${FAKE_COSIGN:-ok}" = bad ] && exit 1 ;;
 exec)
+	cp "$DATA/update-status" "$STATE/status-at-backup" 2>/dev/null
 	[ "${FAKE_BACKUP:-ok}" = fail ] && exit 1
 	cp "$DATA/hejmo.db" "$DATA/pre-update.db" ;;
 cp)
@@ -74,7 +78,8 @@ case "$last" in
 	echo "{\"id\": 1, \"tag_name\": \"${FAKE_TAG:-v${FAKE_LATEST:-0.2.0}}\", \"prerelease\": false}" ;;
 *healthz)
 	[ "${FAKE_HEALTH:-up}" = down ] && exit 22
-	if [ "${FAKE_NEW_HEALTH:-up}" = down ] && grep -q 2222 "$STATE/running" 2>/dev/null; then exit 22; fi
+	if grep -qE '2222|:0\.2\.4' "$STATE/running" 2>/dev/null; then cp "$HEJMO_ROOT/opt/hejmo/data/update-status" "$STATE/status-at-health" 2>/dev/null; fi
+	if [ "${FAKE_NEW_HEALTH:-up}" = down ] && grep -qE '2222|:0\.2\.4' "$STATE/running" 2>/dev/null; then exit 22; fi
 	echo '{"status":"ok"}' ;;
 esac
 exit 0
@@ -564,7 +569,8 @@ func TestOfflineKeyStopsTheScriptBeforeAnyConnection(t *testing.T) {
 		if strings.Contains(calls, "curl") || strings.Contains(calls, "pull") || strings.Contains(calls, "api.github.com") {
 			t.Errorf("mode %s: the script connected although offline=yes:\n%s", mode, calls)
 		}
-		if b.status() != "" {
+		// It only says which version runs, so that the page for an update file can name what it replaces (ticket 221).
+		if b.status() != "version=0.1.0\n" {
 			t.Errorf("mode %s: wrote a status: %q", mode, b.status())
 		}
 	}

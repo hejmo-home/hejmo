@@ -238,3 +238,14 @@
     <form method="post" action="/connections/{{.ID}}/reconnect"><button class="button secondary" type="submit" aria-label="{{repl (t "outlook.reconnect.label") "{account}" .Account}}">{{t "outlook.reconnect.each"}}</button></form></li>{{end}}</ul>
   {{else}}{{if $.ReconnectHome}}<p class="hint">{{.Who}}</p>{{end}}{{range .Items}}<form method="post" action="/connections/{{.ID}}/reconnect"><button class="button secondary" type="submit">{{t "outlook.reconnect.title"}}</button></form>{{end}}{{end}}
 </div>{{end}}{{end}}
+
+{{/* The week of a routine (ticket 294): seven cells Monday to Sunday, then the
+     week and the best streak in words. Arguments: Week (a *streak.Week; nothing
+     is drawn without one, which is how the person's switch hides it) and
+     Prefix (start the sentence with "This week:"; the routine page leaves it
+     out because its label says so). */}}
+{{define "routineWeek"}}{{with .Week}}<div class="week"><ol aria-label="{{t "week.label"}}">{{range .Cells}}<li data-state="{{.State}}"{{if .Today}} data-today{{end}}><span class="wd" aria-hidden="true">{{if .Today}}{{t "week.today"}}{{else}}{{t (printf "tasks.weekday.%s" .Code)}}{{end}}</span>{{if eq .State "pause"}}<span class="d w" aria-hidden="true">{{t "week.pause"}}</span>{{else if eq .State "off"}}<span class="d w" aria-hidden="true">{{t "week.off"}}</span>{{else if eq .State "before"}}<span class="d" aria-hidden="true"></span>{{else}}<span class="d" aria-hidden="true">{{template "tick" 20}}</span>{{end}}<span class="sr">{{tf (or (and .Today "week.sr.today") "week.sr") "day" (t (printf "weekday.%d" .Dow)) "state" (or (and .Paused (eq .State "done") (t "week.sr.pause_done")) (t (printf "week.sr.%s" .State)))}}</span></li>{{end}}</ol>{{$sum := .Sum}}{{if or $sum.Kind .Best}}<p class="wsum">{{if $sum.Kind}}<span>{{if $.Prefix}}{{t "week.lead"}} {{end}}{{rich (tf $sum.Key "done" (printf "%d" $sum.Done) "total" (printf "%d" $sum.Total))}}</span>{{end}}{{if .Best}}<span>{{rich (tf .BestKey "n" (printf "%d" .Best))}}</span>{{end}}</p>{{end}}</div>{{end}}{{end}}
+
+{{/* The same sentences as one quiet line without markup, for the routine card of
+     the Tasks page. Arguments: Week. */}}
+{{define "weekLines"}}{{with .Week}}{{$sum := .Sum}}{{if $sum.Kind}}<span class="state wline">{{t "week.lead"}} {{plain (tf $sum.Key "done" (printf "%d" $sum.Done) "total" (printf "%d" $sum.Total))}}</span>{{end}}{{if .Best}}<span class="state wline">{{plain (tf .BestKey "n" (printf "%d" .Best))}}</span>{{end}}{{end}}{{end}}

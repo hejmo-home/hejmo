@@ -1,0 +1,77 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  <h1>{{t "rwd.form.title"}}</h1>
+  <p class="lead">{{t "rwd.form.lead"}}</p>
+  {{template "rewardForm" .}}
+{{template "foot"}}
+
+{{/* The form of a reward, to make one or to change one. */}}
+{{define "rewardForm"}}<form method="post" action="/tasks/rewards{{if not .New}}/{{.ID}}{{end}}" class="steps article-form reward-form" enctype="multipart/form-data">
+    {{with .F.Token}}<input type="hidden" name="picture_token" value="{{.}}">{{end}}{{if .F.Replacing}}<input type="hidden" name="replacing" value="1">{{end}}
+    <fieldset>
+      <legend class="sr">{{t "rwd.name.legend"}}</legend>
+      {{$bad := .Errs.name}}<div class="f{{if $bad}} invalid{{end}}">
+        <label>{{t "rwd.name.label"}}<textarea name="name" rows="2" maxlength="60" required aria-describedby="{{if $bad}}err-name {{end}}hint-name"{{if eq .FirstErr "name"}} autofocus aria-invalid="true"{{end}}>{{.F.Name}}</textarea></label>
+        {{template "aferr" (dict "Name" "name" "Text" $bad)}}
+        <p class="hint" id="hint-name">{{t "rwd.name.hint"}}</p>
+      </div>
+    </fieldset>
+    <fieldset class="pic">
+      <legend>{{t "rwd.pic.legend"}}</legend>
+      <p class="hint">{{t "rwd.pic.hint"}}</p>
+      <fieldset class="seg"><legend class="sr">{{t "rwd.pic.seg"}}</legend>
+        <label><input type="radio" name="pic_source" value="symbol"{{if eq .Source "symbol"}} checked{{end}}>{{t "rwd.pic.symbol"}}</label>
+        <label><input type="radio" name="pic_source" value="upload"{{if eq .Source "upload"}} checked{{end}}>{{t "rwd.pic.upload"}}</label>
+      </fieldset>
+      <div class="pic-panel symbol">
+        {{with .Chosen}}<p class="sym-chosen" role="status"><span class="art-sym" aria-hidden="true">{{.Emoji}}</span><span><b>{{template "tickIcon" 18}}<span>{{$.ChosenLabel}}</span></b><small>{{$.ChosenText}}</small></span></p>{{end}}
+        <div class="web-row"><div class="f"><label>{{t "rwd.sym.search"}}<input type="search" name="symq" value="{{.F.SymQ}}" placeholder="{{t "rwd.sym.placeholder"}}"></label></div><button class="button secondary" type="submit" name="symsearch" value="1" formnovalidate>{{t "lib.search.button"}}</button></div>
+        {{if .SymNone}}<div class="empty" data-empty><p>{{.SymNone}}</p><button class="linklike" type="submit" name="symclear" value="1" formnovalidate>{{t "artf.sym.none.clear"}}</button></div>
+        {{else}}
+        {{if .SymHead}}<p class="results-head">{{.SymHead}} <button class="linklike" type="submit" name="symclear" value="1" formnovalidate>{{t "lib.result.clear"}}</button></p>{{end}}
+        <fieldset class="sym-grid"><legend{{if .SymSearching}} class="sr"{{end}}>{{.SymLegend}}</legend>
+          <div class="sym-tiles">{{range .Tiles}}<label class="sym-opt"><input type="radio" name="symbol" value="{{.Emoji}}"{{if .Checked}} checked{{end}}><span class="e" aria-hidden="true">{{.Emoji}}</span><span class="n">{{.Name}}</span>{{template "tickIcon" 16}}</label>{{end}}</div>
+        </fieldset>
+        {{end}}
+        {{template "aferr" (dict "Name" "symbol" "Text" .Errs.symbol)}}
+      </div>
+      <div class="pic-panel upload">
+        {{if .Result}}<div class="pic-result" role="status"><img src="{{.Result.URL}}" alt="{{t "rwd.res.alt"}}" width="132" height="132"><div><b>{{template "tickIcon" 18}}<span>{{.Result.Title}}</span></b><small>{{.Result.Text}}</small><span class="row"><button class="button secondary" type="submit" name="picture" value="replace" formnovalidate>{{t "rwd.res.other"}}</button><button class="button secondary" type="submit" name="picture" value="remove" formnovalidate>{{t "rwd.res.remove"}}</button></span></div></div>
+        {{else}}{{$pb := .Errs.photo}}<div class="f{{if $pb}} invalid{{end}}"><label>{{t "rwd.photo.label"}}<input type="file" name="photo" accept="image/jpeg,image/png,image/webp,image/gif" aria-describedby="{{if $pb}}err-photo {{end}}hint-photo"{{if eq .FirstErr "photo"}} autofocus aria-invalid="true"{{end}}></label>
+        {{template "aferr" (dict "Name" "photo" "Text" $pb)}}
+        <p class="hint" id="hint-photo">{{t "rwd.photo.hint"}}</p></div>{{end}}
+      </div>
+    </fieldset>
+    <fieldset>
+      <legend class="sr">{{t "rwd.price.legend"}}</legend>
+      {{$pr := .Errs.price}}<div class="f short{{if $pr}} invalid{{end}}">
+        <label>{{t "rwd.price.label"}}<input name="price" type="number" inputmode="numeric" min="1" max="999" step="1" required value="{{.F.Price}}" aria-describedby="{{if $pr}}err-price {{end}}hint-price"{{if eq .FirstErr "price"}} autofocus aria-invalid="true"{{end}}></label>
+        {{template "aferr" (dict "Name" "price" "Text" $pr)}}
+        <p class="hint" id="hint-price">{{if .New}}{{t "rwd.price.hint"}}{{else}}{{t "rwd.price.hint.edit"}}{{end}}</p>
+      </div>
+    </fieldset>
+    <fieldset class="chips"{{if .Errs.person}} aria-invalid="true" aria-describedby="err-person"{{end}}>
+      <legend>{{t "rwd.who.legend"}}</legend>
+      <label class="pchip all"><input type="checkbox" name="whole_family" value="1" data-whole{{if .WholeChecked}} checked{{end}}>
+        <svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg>{{t "chips.whole_family"}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+      {{range .People}}<label class="pchip" data-person="{{.Slot}}"><input type="checkbox" name="person" value="{{.ID}}"{{if has $.Selected .ID}} checked{{end}}><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}<svg class="icon tick" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></label>
+      {{end}}
+      {{template "aferr" (dict "Name" "person" "Text" .Errs.person)}}
+      <p class="hint" id="hint-person">{{t "rwd.who.hint"}}</p>
+    </fieldset>
+    {{template "moreOpen" (dict "Label" (t "rwd.limit.more") "Summary" .LimitSummary "Open" .LimitOpen)}}
+      <div class="limit">
+        <fieldset class="seg"><legend>{{t "rwd.limit.seg"}}</legend>
+          <label><input type="radio" name="limit_period" value=""{{if eq .Period ""}} checked{{end}}>{{t "rwd.limit.opt.none"}}</label>
+          <label><input type="radio" name="limit_period" value="d"{{if eq .Period "d"}} checked{{end}}>{{t "rwd.limit.opt.day"}}</label>
+          <label><input type="radio" name="limit_period" value="w"{{if eq .Period "w"}} checked{{end}}>{{t "rwd.limit.opt.week"}}</label>
+          <label><input type="radio" name="limit_period" value="m"{{if eq .Period "m"}} checked{{end}}>{{t "rwd.limit.opt.month"}}</label>
+        </fieldset>
+        {{$cb := or .Errs.limit_count .Errs.limit_period}}<div class="f short limit-count{{if $cb}} invalid{{end}}">
+          <label>{{t "rwd.limit.count"}}<input name="limit_count" type="number" inputmode="numeric" min="1" max="99" step="1" value="{{.F.Count}}"{{if $cb}} aria-invalid="true" aria-describedby="err-count"{{end}}></label>
+          {{template "aferr" (dict "Name" "count" "Text" $cb)}}
+        </div>
+        <p class="hint">{{t "rwd.limit.hint"}}</p>
+      </div>
+    {{template "moreClose"}}
+    <button class="button" type="submit">{{if .New}}{{t "rwd.form.submit"}}{{else}}{{t "rwd.save"}}{{end}}</button>
+  </form>{{end}}

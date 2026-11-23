@@ -1,0 +1,69 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "rwd.title") "Frame" .Frame)}}
+  <h1>{{t "rwd.title"}}</h1>
+  {{if .Parent}}
+  <p class="lead">{{t "rwd.lead"}}</p>
+  {{if or .Rows .Archived}}
+  <div class="tasks-tools"><div class="row"><a class="button" href="/tasks/rewards/new"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "rwd.new"}}</a></div></div>
+  {{else}}
+  <div class="empty" data-empty>
+    <p>{{t "rwd.empty"}}</p>
+    <a class="button" href="/tasks/rewards/new"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "rwd.new"}}</a>
+  </div>
+  {{end}}
+  {{if .Rows}}<ul class="list-rows rewards">{{range .Rows}}{{template "rewardRow" .}}{{end}}</ul>{{end}}
+  {{if .Archived}}
+  <details class="more arch">
+    <summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{t "rwd.arch.title"}}<span class="sum">{{t "rwd.arch.sum"}}</span></summary>
+    <div>
+      <p class="hint">{{t "rwd.arch.hint"}}</p>
+      <ul class="list-rows rewards archived">{{range .Archived}}{{template "rewardRow" .}}{{end}}</ul>
+    </div>
+  </details>
+  {{end}}
+  {{else}}
+  <div class="rwd-cat" data-person="{{.ChildSlot}}">
+    <div class="rwd-bal" data-person="{{.ChildSlot}}">
+      <svg class="icon star" width="28" height="28" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.8l6-.7z"/></svg>
+      <p>{{.Balance}}{{if .NoStars}}<small>{{t "rwd.child.bal.hint"}}</small>{{end}}</p>
+    </div>
+    {{if not .Any}}<div class="empty" data-empty><p>{{.Empty}}</p></div>{{end}}
+    {{if .Ok}}<section class="rwd-group ok">
+      <h2><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg>{{t "rwd.child.group.ok"}}</h2>
+      <ul class="rwd-cards">{{range .Ok}}
+        <li class="rwd ok">{{template "rwdPic" .}}<div class="rwd-body"><h3>{{.Name}}</h3>{{template "rwdMeta" .}}
+          <p class="rwd-state ok"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><b>{{t "rwd.child.enough"}}</b></p></div></li>{{end}}
+      </ul>
+    </section>{{end}}
+    {{if .Save}}<section class="rwd-group save">
+      <h2><svg class="icon star" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.8l6-.7z"/></svg>{{t "rwd.child.group.save"}}</h2>
+      <ul class="rwd-cards">{{range .Save}}
+        <li class="rwd save">{{template "rwdPic" .}}<div class="rwd-body"><h3>{{.Name}}</h3>{{template "rwdMeta" .}}
+          <div class="rwd-state save"><span class="progress" role="img" aria-label="{{.Label}}"><span style="--pct:{{.Pct}}"></span></span><p><b>{{.Missing}}</b></p></div></div></li>{{end}}
+      </ul>
+    </section>{{end}}
+    {{if .Later}}<section class="rwd-group later">
+      <h2><svg class="icon" width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg>{{t "rwd.child.group.later"}}</h2>
+      <ul class="rwd-cards">{{range .Later}}
+        <li class="rwd later">{{template "rwdPic" .}}<div class="rwd-body"><h3>{{.Name}}</h3>{{template "rwdMeta" .}}
+          <p class="rwd-state later"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3.5 2"/></svg><span><b>{{.Later}}</b> {{.Missing}}</span></p></div></li>{{end}}
+      </ul>
+    </section>{{end}}
+  </div>
+  {{end}}
+{{template "foot"}}
+
+{{/* The picture of a reward, or its symbol. */}}
+{{define "rwdPic"}}<span class="art-sym huge" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span>{{end}}
+{{define "rwdMeta"}}<p class="rwd-meta">{{template "rwdPrice" (dict "Size" 18 "Text" .Price)}}{{with .Limit}}<span class="lim">{{.}}</span>{{end}}</p>{{end}}
+{{/* The price: star icon, number and the word, never broken apart. */}}
+{{define "rwdPrice"}}<span class="price"><svg class="icon star" width="{{.Size}}" height="{{.Size}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 3.5l2.6 5.6 6 .7-4.5 4.1 1.2 6-5.3-3-5.3 3 1.2-6L3.4 9.8l6-.7z"/></svg>{{.Text}}</span>{{end}}
+
+{{/* One row of the parents' catalogue. */}}
+{{define "rewardRow"}}<li><a href="/tasks/rewards/{{.ID}}"><span class="art-sym" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><span class="t"><b>{{.Name}}</b>
+  <span class="meta">{{template "rwdPrice" (dict "Size" 16 "Text" .Price)}}<span>·</span><span>{{.Limit}}</span></span>
+  {{if .Archived}}<span class="meta"><span class="tag arch"><svg class="icon" width="14" height="14" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/></svg>{{.ArchivedOn}}</span></span>
+  {{with .Gone}}<span class="flag warn"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{.}}</span>{{end}}
+  {{else}}<span class="meta forl"><span class="k">{{t "rwd.for"}}</span> {{template "rwdWho" .}}</span>{{end}}</span>
+  <svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
+{{/* Who it is for: the whole family, or people with their markers. */}}
+{{define "rwdWho"}}{{if .Whole}}<span class="who"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg> {{t "chips.whole_family"}}</span>{{else}}{{range $i, $c := .People}}{{if $i}} {{end}}<span class="who"><span class="marker" data-person="{{$c.Slot}}" data-shape="{{$c.Shape}}" aria-hidden="true"></span>{{$c.Name}}</span>{{end}}{{end}}{{end}}

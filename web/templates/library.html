@@ -10,7 +10,11 @@
   <nav class="lib-filter" aria-label="{{t "lib.filter.label"}}"><ul>{{range .Filters}}
     <li><a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{.Text}}</a></li>{{end}}
   </ul></nav>
-  {{if .Flat}}
+  {{if .Auto}}
+  {{if .Rows}}<p class="results-head auto-res">{{.AutoResult}}</p>
+  {{template "articleRows" .Rows}}
+  {{else}}<div class="empty" data-empty><p>{{.NoneText}}</p><a href="{{.ClearHref}}">{{t "lib.result.clear"}}</a></div>{{end}}
+  {{else if .Flat}}
   <section aria-labelledby="res">
     <h2 id="res">{{.ResultTitle}}</h2>
     {{if .Rows}}

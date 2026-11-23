@@ -143,3 +143,63 @@ func TestAddingTheDeviceKindDerivesItFromTheOldLabel(t *testing.T) {
 		}
 	}
 }
+
+// #296: the migration that adds the address book gives every existing household the five groups
+// and every existing person a contact with their name, in Familie.
+func TestAddingTheAddressBookMakesContactsOfExistingPeople(t *testing.T) {
+	t.Parallel()
+	conn, err := sql.Open("sqlite", "file:"+filepath.Join(t.TempDir(), "hejmo.db")+"?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_txlock=immediate")
+	if err != nil {
+		t.Fatal(err)
+	}
+	db := &DB{sql: conn}
+	defer db.Close()
+	if _, err := conn.Exec(`CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`); err != nil {
+		t.Fatal(err)
+	}
+	all, err := migrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var before []migration
+	var add migration
+	for _, m := range all {
+		if strings.HasSuffix(m.name, "_contacts.sql") {
+			add = m
+			break
+		}
+		before = append(before, m)
+	}
+	if add.name == "" {
+		t.Fatal("the migration is not shipped")
+	}
+	if err := db.apply(before); err != nil {
+		t.Fatal(err)
+	}
+	ts := stamp(time.Date(2026, 11, 23, 12, 0, 0, 0, time.UTC))
+	for _, q := range []string{
+		`INSERT INTO households (id, name, created_at, updated_at) VALUES ('h1', 'Familie', '` + ts + `', '` + ts + `')`,
+		`INSERT INTO people (id, name, created_at, updated_at) VALUES ('p1', 'Mama', '` + ts + `', '` + ts + `')`,
+		`INSERT INTO people (id, name, created_at, updated_at) VALUES ('p2', 'Mia', '` + ts + `', '` + ts + `')`,
+		`INSERT INTO household_members (household_id, person_id, role, sort_order) VALUES ('h1', 'p1', 'parent', 1)`,
+		`INSERT INTO household_members (household_id, person_id, role, sort_order) VALUES ('h1', 'p2', 'child', 2)`,
+	} {
+		if _, err := conn.Exec(q); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.apply([]migration{add}); err != nil {
+		t.Fatal(err)
+	}
+	var groups, members int
+	var name string
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM contact_groups WHERE household_id = 'h1' AND shipped_key IS NOT NULL`).Scan(&groups); err != nil || groups != 5 {
+		t.Errorf("shipped groups = %d, %v", groups, err)
+	}
+	if err := conn.QueryRow(`SELECT hejmo_name FROM contacts WHERE person_id = 'p2'`).Scan(&name); err != nil || name != "Mia" {
+		t.Errorf("Mia's contact = %q, %v", name, err)
+	}
+	if err := conn.QueryRow(`SELECT COUNT(*) FROM contact_group_members m JOIN contact_groups g ON g.id = m.group_id WHERE g.shipped_key = 'familie'`).Scan(&members); err != nil || members != 2 {
+		t.Errorf("members of Familie = %d, %v", members, err)
+	}
+}

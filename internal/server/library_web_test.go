@@ -558,7 +558,7 @@ func TestOwnArticleWithAChosenSymbolIsCreatedAndShownWithIt(t *testing.T) {
 		t.Errorf("stored = %+v", a)
 	}
 	r := l.en("/settings/lists/library")
-	libHas(t, "library", r.body, "“Katzenfutter Huhn” is now in the library. Hejmo suggests it when adding.", `<span class="art-sym" aria-hidden="true">🐈</span>`, "<span>· Symbol</span>", "<span>· Not food</span>")
+	libHas(t, "library", r.body, "“Katzenfutter Huhn” is now in the library. Hejmo suggests it when adding.", `<span class="art-sym" aria-hidden="true">🐈</span>`, "<span>Symbol</span>", "<span>Not food</span>")
 	// The chosen symbol is announced in words on the edit page.
 	libHas(t, "edit page", l.en("/settings/lists/library/"+id).body, `class="sym-chosen"`, "Chosen: cat", "This is how “Katzenfutter Huhn” appears in the list and on the tile.", `name="pic_source" value="symbol" checked`, `value="🐈" checked`)
 	// Without any choice the department's symbol stays the fallback.
@@ -678,7 +678,7 @@ func TestAPhotoIsScaledDownAndStoredWithoutMetadataAndServedToEveryone(t *testin
 	if r := anon.get("/articles/" + as[0].ID + "/picture"); r.status == http.StatusOK {
 		t.Error("a picture is served without a session")
 	}
-	libHas(t, "library", l.en("/settings/lists/library").body, `<img src="/articles/`+as[0].ID+`/picture?v=`, "<span>· Photo</span>")
+	libHas(t, "library", l.en("/settings/lists/library").body, `<img src="/articles/`+as[0].ID+`/picture?v=`, "<span>Photo</span>")
 	// Edit page: the stored picture is the current one, it can be replaced or removed.
 	edit := l.en("/settings/lists/library/" + as[0].ID).body
 	libHas(t, "edit", edit, `class="pic-result"`, "Current picture", "Uploaded on ", "512 × 256 pixels", `name="picture" value="replace"`, `name="picture" value="remove"`, `name="pic_source" value="upload" checked`)

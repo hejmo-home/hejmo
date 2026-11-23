@@ -7,9 +7,10 @@ info:
     integrations. Authenticate with a bearer token (`Authorization: Bearer hejmo_…`)
     or a browser session. A token acts on behalf of a person and is limited by
     its scopes: `read`, `write`, `<resource>` or `<resource>:<action>`
-    (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens, health;
+    (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens, health, contacts;
     actions: read, write, delete, complete). The resource `health` (diet and
     allergies) is reached only by its own scope: `read` and `write` never include it.
+    The address book (`contacts`) is for parents only: a child's session gets 403 even to read it.
 
     The scopes `calendars` and `tasks` are for a personal device's calendar and
     reminders apps: they open the box's CalDAV server at `/dav/` (HTTP Basic
@@ -480,6 +481,181 @@ paths:
           content:
             application/json:
               schema: { $ref: "#/components/schemas/ListView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /contacts:
+    get:
+      operationId: listContacts
+      summary: The address book, parents only (scope contacts:read)
+      description: |
+        Every contact of the household: the people (one contact each, always in the
+        group Familie) and everyone else. `q` searches Hejmo name, full name, numbers
+        and e-mail addresses; `group` keeps the contacts of one group.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+        - { name: group, in: query, required: false, schema: { type: string }, description: "Id of a contact group" }
+      responses:
+        "200":
+          description: Contacts
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Contact" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createContact
+      summary: Add a contact (parents only, scope contacts:write)
+      description: |
+        Only `name` (the Hejmo name) is required. Numbers and e-mail addresses are kept
+        exactly as typed; lines with an empty value and an address of empty parts are
+        not stored. A number holds digits, a + at the start, spaces and - / ( ) and
+        dots, at least 3 digits. An e-mail address has one @ and a dot in the domain.
+        A birthday needs day and month and may lack the year (then there is no age);
+        dates that do not exist and future dates are refused. At most 10 numbers and
+        10 e-mail addresses. The name is unique in the household, ignoring case,
+        among contacts and people.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ContactInput" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Contact" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /contacts/{id}:
+    get:
+      operationId: getContact
+      summary: One contact (parents only, scope contacts:read)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The contact
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Contact" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: updateContact
+      summary: Replace everything a parent can set on a contact (scope contacts:write)
+      description: |
+        Everything not sent becomes empty. The name and the group Familie of a person's
+        contact stay as they are: the name changes on the person (`PATCH /people/{id}`).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ContactInput" }
+      responses:
+        "200":
+          description: The contact
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Contact" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteContact
+      summary: Delete a contact (parents only, scope contacts:delete)
+      description: The contact of a person goes with the person only, so this answers 422 for it.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /contact-groups:
+    get:
+      operationId: listContactGroups
+      summary: The contact groups with their contacts (parents only, scope contacts:read)
+      description: The five groups of Hejmo (`shipped_key` set, no name, the name is in the language of the page) and the household's own.
+      responses:
+        "200":
+          description: Groups
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/ContactGroup" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createContactGroup
+      summary: Add an own group (parents only, scope contacts:write)
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, description: 1 to 40 characters }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContactGroup" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /contact-groups/{id}:
+    patch:
+      operationId: renameContactGroup
+      summary: Rename an own group (parents only, scope contacts:write)
+      description: The groups of Hejmo keep their names (422).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [name]
+              properties:
+                name: { type: string, description: 1 to 40 characters }
+      responses:
+        "200":
+          description: The group
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ContactGroup" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteContactGroup
+      summary: Delete an own group (parents only, scope contacts:delete)
+      description: Its contacts stay, without the group. The groups of Hejmo cannot be deleted (422).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -2977,6 +3153,125 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /articles/{id}/always:
+    get:
+      operationId: getArticleAlways
+      summary: The rule "always on the list" of an article (scope lists:read)
+      description: |
+        Per article (the key of an article from Hejmo or the id of an own one)
+        one rule: on `weekday` of every `every`-th week from `start_week` Hejmo
+        puts the article on the list at the household's time (`/library/always`).
+        404 when the article has no rule.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The rule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysRule" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setArticleAlways
+      summary: Set the rule of an article, or switch it off (scope lists:write)
+      description: |
+        With `enabled: false` the rule is switched off and keeps what it says
+        (404 without a rule). Otherwise `list_id` and `weekday` are required;
+        `every` is 1 to 52 weeks (default 1), `start_week` any day of the first
+        week (default this week), `quantity` optional: without it an article
+        that is already open on the list is left as it is, with it Hejmo adds
+        the quantity. A rule saved on its own day starts the next time. A rule
+        whose list was deleted is paused: `paused` is true and `list_id` null.
+        A rule that does not fit answers 422 with the `field` that is wrong:
+        `list_id`, `weekday`, `every`, `start_week`, `quantity.amount` or
+        `quantity.unit`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled: { type: boolean }
+                list_id: { type: string, format: uuid }
+                weekday: { type: integer, description: "1 Monday to 7 Sunday (422 otherwise)" }
+                every: { type: integer, description: "1 to 52 (422 otherwise)" }
+                start_week: { type: string, description: "A day, YYYY-MM-DD (422 otherwise)" }
+                quantity:
+                  type: object
+                  required: [amount, unit]
+                  properties:
+                    amount: { type: number }
+                    unit: { $ref: "#/components/schemas/UnitKey" }
+      responses:
+        "200":
+          description: The rule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysRule" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteArticleAlways
+      summary: Remove the rule of an article (scope lists:delete)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /library/always:
+    get:
+      operationId: getLibraryAlways
+      summary: The time of day, the holiday and all rules of "always on the list" (scope lists:read)
+      responses:
+        "200":
+          description: The settings and the rules
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysSettings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setLibraryAlways
+      summary: Set the time of day and the holiday for all rules (scope lists:write)
+      description: |
+        `time` is the household's local time as `HH:MM`. `holiday` pauses all
+        rules from its first to its last day, both included; nothing is caught
+        up afterwards, and it switches itself off after its last day. `null`
+        means no holiday. The last day may not be before the first or already
+        over (422 with the field `holiday.from` or `holiday.to`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [time]
+              properties:
+                time: { type: string, description: "HH:MM, 24 hours (422 otherwise)" }
+                holiday:
+                  nullable: true
+                  allOf:
+                    - { $ref: "#/components/schemas/AlwaysHoliday" }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysSettings" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /articles/{id}/warnings:
     get:
       operationId: getArticleWarnings
@@ -3990,6 +4285,65 @@ components:
         color: { type: string, description: "Hex colour for colour mode: one of the eight palette colours (empty for a person added before colours were chosen)", example: "#B4583A" }
         shape: { type: string, description: "Marker for black-and-white mode", example: circle-filled }
         symbol: { type: string }
+    ContactLine:
+      type: object
+      required: [kind, value]
+      properties:
+        kind: { type: string, description: "One of cell, home, work, other, custom. `cell` only for numbers. `custom` needs a `label` of at most 30 characters." }
+        label: { type: string }
+        value: { type: string, description: The number or address exactly as typed }
+    ContactAddress:
+      type: object
+      properties:
+        street: { type: string }
+        postcode: { type: string }
+        city: { type: string }
+        country: { type: string, description: "Empty means the country of the home" }
+    ContactBirthday:
+      type: object
+      required: [day, month]
+      properties:
+        day: { type: integer, description: "1 to 31, a day that exists" }
+        month: { type: integer, description: "1 to 12" }
+        year: { type: integer, nullable: true, description: "1900 to this year, not in the future; null when unknown (then no age is shown)" }
+    ContactInput:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, description: "The Hejmo name: 1 to 40 characters, unique ignoring case among contacts and people" }
+        full_name: { type: string, description: "At most 120 characters" }
+        numbers: { type: array, description: "At most 10", items: { $ref: "#/components/schemas/ContactLine" } }
+        emails: { type: array, description: "At most 10", items: { $ref: "#/components/schemas/ContactLine" } }
+        address: { $ref: "#/components/schemas/ContactAddress" }
+        birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
+        note: { type: string, description: "At most 1000 characters" }
+        groups: { type: array, items: { type: string }, description: "Ids of contact groups" }
+    Contact:
+      type: object
+      required: [id, person_id, name, full_name, numbers, emails, address, birthday, note, groups, created_by, created_at, updated_by, updated_at]
+      properties:
+        id: { type: string, format: uuid, description: "The id of the person for a person's contact" }
+        person_id: { type: string, format: uuid, nullable: true }
+        name: { type: string }
+        full_name: { type: string }
+        numbers: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
+        emails: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
+        address: { $ref: "#/components/schemas/ContactAddress" }
+        birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
+        note: { type: string }
+        groups: { type: array, items: { type: string } }
+        created_by: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time }
+        updated_by: { type: string, format: uuid, nullable: true }
+        updated_at: { type: string, format: date-time }
+    ContactGroup:
+      type: object
+      required: [id, name, shipped_key, contacts]
+      properties:
+        id: { type: string }
+        name: { type: string, description: "Empty for a group of Hejmo" }
+        shipped_key: { type: string, nullable: true, enum: [familie, kinderbetreuung_schule, arztpraxen, notfall, sonstige, null] }
+        contacts: { type: array, items: { type: string, format: uuid } }
     Diet:
       type: string
       enum: [omnivore, vegetarian, pescatarian, vegan]
@@ -4374,6 +4728,44 @@ components:
           type: array
           items: { type: string, format: uuid }
         note: { type: string }
+    AlwaysHoliday:
+      type: object
+      required: [from, to]
+      properties:
+        from: { type: string, description: "YYYY-MM-DD" }
+        to: { type: string, description: "YYYY-MM-DD" }
+    AlwaysRule:
+      type: object
+      required: [article_id, enabled, paused, list_id, list_name, weekday, every, start_week, quantity, next_date]
+      properties:
+        article_id: { type: string }
+        enabled: { type: boolean }
+        paused: { type: boolean, description: "On, but the list was deleted" }
+        list_id: { type: string, format: uuid, nullable: true }
+        list_name: { type: string }
+        weekday: { type: integer, minimum: 1, maximum: 7 }
+        every: { type: integer, minimum: 1, maximum: 52 }
+        start_week: { type: string, format: date, description: "The Monday of the first week" }
+        quantity:
+          type: object
+          nullable: true
+          required: [amount, unit]
+          properties:
+            amount: { type: number }
+            unit: { $ref: "#/components/schemas/UnitKey" }
+        next_date: { type: string, format: date, nullable: true, description: "The next day it comes, after the holiday; null unless it is running" }
+    AlwaysSettings:
+      type: object
+      required: [time, holiday, rules]
+      properties:
+        time: { type: string }
+        holiday:
+          nullable: true
+          allOf:
+            - { $ref: "#/components/schemas/AlwaysHoliday" }
+        rules:
+          type: array
+          items: { $ref: "#/components/schemas/AlwaysRule" }
     Hiding:
       type: object
       required: [enabled, everyone, people, confirmed_by, confirmed_at, experimental]

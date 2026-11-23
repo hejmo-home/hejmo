@@ -1,0 +1,17 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  <h1>{{.Title}}</h1>
+  <p class="lead">{{t "pause.form.lead"}}</p>
+  {{template "error" .}}
+  <form method="post" action="{{.Action}}" class="steps">
+    <fieldset>
+      {{template "personChips" (dict "Root" . "Name" "people" "Legend" (t "pause.for") "People" .People "Selected" (strs .Selected) "Whole" true)}}
+      <div class="pair">
+        {{template "field" (dict "Root" . "Name" "from" "Label" (t "pause.from") "Type" "date" "Value" .From)}}
+        {{template "field" (dict "Root" . "Name" "to" "Label" (t "pause.to") "Type" "date" "Value" .To)}}
+      </div>
+      <p class="hint">{{t "pause.form.hint"}}</p>
+    </fieldset>
+    <button class="button" type="submit">{{if .New}}{{t "pause.submit"}}{{else}}{{t "people.save"}}{{end}}</button>
+  </form>
+  {{if not .New}}{{template "dangerOpen" (dict "Label" (t "pause.remove") "Confirm" .RemoveConfirm "Explain" .RemoveExplain "Action" .RemoveAction "CancelHref" (printf "/tasks/pauses/%s" .PauseID))}}{{template "dangerClose"}}{{end}}
+{{template "foot"}}

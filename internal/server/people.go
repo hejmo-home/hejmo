@@ -149,6 +149,7 @@ func checkLook(people []store.Person, exceptID string, in *personInput, cur *sto
 func (s *server) apiUpdatePerson(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
 		Name, Color, Shape *string
+		StreaksShown       *bool `json:"streaks_shown"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -192,6 +193,13 @@ func (s *server) apiUpdatePerson(w http.ResponseWriter, r *http.Request, p princ
 		return
 	}
 	cur.Name, cur.Color, cur.Shape = look.Name, look.Color, look.Shape
+	if in.StreaksShown != nil {
+		if err := s.db.SetStreaksShown(p.household.ID, cur.ID, *in.StreaksShown); err != nil {
+			s.fail(w, "streaks switch", err)
+			return
+		}
+		cur.StreaksShown = *in.StreaksShown
+	}
 	writeJSON(w, http.StatusOK, toJSON(cur))
 }
 

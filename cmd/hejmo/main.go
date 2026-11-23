@@ -23,6 +23,7 @@ import (
 	"os"
 	"os/signal"
 	"path/filepath"
+	"runtime"
 	"strings"
 	"syscall"
 	"time"
@@ -52,6 +53,11 @@ type config struct {
 	// updater (ADR 0018); empty on a plain Docker Compose install, which has
 	// none. HEJMO_HOST_UPDATER=1 is set by the install script's compose file.
 	UpdateDir string
+	// UpdateInstall says the host updater also installs an update file the box
+	// keeps for it (ticket 221); HEJMO_HOST_UPDATER_INSTALL=1 is set by an
+	// install script that has the new updater. Without it the box does not offer
+	// the upload: an older updater would never act on the request.
+	UpdateInstall bool
 	// OutlookClientID is the app ID of the Hejmo project's Microsoft app
 	// registration (ADR 0020), HEJMO_OUTLOOK_CLIENT_ID; empty means the build's
 	// own value (graph.DefaultClientID) or, without one, "not configured".
@@ -84,6 +90,7 @@ func loadConfig(getenv func(string) string) config {
 	cfg.OutlookClientID = strings.TrimSpace(getenv("HEJMO_OUTLOOK_CLIENT_ID"))
 	if getenv("HEJMO_HOST_UPDATER") == "1" {
 		cfg.UpdateDir = cfg.DataDir
+		cfg.UpdateInstall = getenv("HEJMO_HOST_UPDATER_INSTALL") == "1"
 	}
 	return cfg
 }
@@ -214,7 +221,7 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-weatherDone }()
 
-	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Gate: gate, Done: ctx.Done(), UpdateDir: cfg.UpdateDir, PhotoDir: cfg.DataDir, Kiosk: kioskRunner})
+	handler := server.New(server.Options{DB: db, PKI: certs, Public: public, HTTPSPort: cfg.PublicHTTPSPort, Logger: logger, Sync: syncer, Weather: forecast, Gate: gate, Done: ctx.Done(), UpdateDir: cfg.UpdateDir, UpdateInstall: cfg.UpdateInstall, UpdateArch: runtime.GOARCH, PhotoDir: cfg.DataDir, Kiosk: kioskRunner})
 
 	// HTTP serves the setup wizard and redirects to HTTPS once the box has its
 	// certificate; HTTPS serves everything else (ADR 0014).

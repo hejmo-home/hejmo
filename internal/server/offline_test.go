@@ -481,7 +481,7 @@ func TestAfterNinetyDaysWithoutAnUpdateParentsSeeTheReminder(t *testing.T) {
 	}
 	signInLater(t, b, secret, installed.UpdatedAt.AddDate(0, 0, 91))
 	page := getEN(b, "/").body
-	mustContain(t, page, `class="notice lead-in"`, "Not updated for 91 days.", "Update without the internet", "install.md#update-without-the-internet")
+	mustContain(t, page, `class="notice lead-in"`, "Not updated for 91 days.", "Upload an update file", `href="/settings/connections/update"`) // the guide moved to the upload page (ticket 221)
 	child := childSession(t, b)
 	if r := getEN(child, "/"); strings.Contains(r.body, "Not updated for") {
 		t.Error("a child sees the reminder")

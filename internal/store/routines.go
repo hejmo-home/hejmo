@@ -5,6 +5,7 @@ import (
 	"errors"
 	"fmt"
 	"strings"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/task"
 )
@@ -18,7 +19,7 @@ func (e *RoutineExistsError) Error() string {
 }
 func (e *RoutineExistsError) Unwrap() error { return ErrConflict }
 
-const routineColumns = `id, person_id, name, part`
+const routineColumns = `id, person_id, name, part, created_at`
 
 // querier is what a transaction and the database share.
 type querier interface {
@@ -28,11 +29,12 @@ type querier interface {
 
 func scanRoutine(row interface{ Scan(...any) error }) (task.Routine, error) {
 	var r task.Routine
-	var part string
-	if err := row.Scan(&r.ID, &r.PersonID, &r.Name, &part); err != nil {
+	var part, created string
+	if err := row.Scan(&r.ID, &r.PersonID, &r.Name, &part, &created); err != nil {
 		return task.Routine{}, err
 	}
 	r.Part = task.PartOfDay(part)
+	r.Created, _ = time.Parse(time.RFC3339, created)
 	return r, nil
 }
 
@@ -78,10 +80,19 @@ func (db *DB) CreateRoutine(householdID string, r task.Routine) (task.Routine, e
 // check and the write, the UNIQUE(person_id, part) constraint fails; that is
 // the same conflict as the check reports.
 func (db *DB) insertRoutine(householdID string, r task.Routine) error {
-	ts := now()
+	ts := createdStamp(r)
 	_, err := db.sql.Exec(`INSERT INTO routines (id, household_id, person_id, name, part, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		r.ID, householdID, r.PersonID, r.Name, string(r.Part), ts, ts)
 	return db.routineConflict(err, r.PersonID, r.Part)
+}
+
+// createdStamp is the creation time stored for a routine: the one it carries,
+// else now.
+func createdStamp(r task.Routine) string {
+	if r.Created.IsZero() {
+		return now()
+	}
+	return r.Created.UTC().Format(time.RFC3339)
 }
 
 // routineConflict turns a unique-constraint failure into RoutineExistsError.

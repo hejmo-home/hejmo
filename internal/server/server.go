@@ -12,6 +12,7 @@ import (
 	"io/fs"
 	"log/slog"
 	"net/http"
+	"runtime"
 	"slices"
 	"strings"
 	"sync"
@@ -26,6 +27,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/places"
 	"github.com/hejmo-home/hejmo/internal/publiccert"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/update"
 	"github.com/hejmo-home/hejmo/internal/weather"
 	"github.com/hejmo-home/hejmo/web"
 )
@@ -63,6 +65,19 @@ type Options struct {
 	// host script: no settings file is written, no status is read and the
 	// settings page does not offer auto-update.
 	UpdateDir string
+	// UpdateInstall says that the host script installs an uploaded update file
+	// (ticket 221, HEJMO_HOST_UPDATER_INSTALL): the install script that is new
+	// enough sets it. Without it the upload page says the script is too old.
+	UpdateInstall bool
+	// UpdateArch is the kind of box this is ("arm64" or "amd64"); empty means this build's.
+	UpdateArch string
+	// UpdateVerifier checks the signature of an uploaded update file. Nil means
+	// the Sigstore public-good root that is part of the box; tests pass their own.
+	UpdateVerifier update.Verifier
+	// UpdateMaxSize is the biggest update file taken; zero means update.MaxFileSize.
+	UpdateMaxSize int64
+	// FreeSpace says how much room the data volume has; nil asks the file system. Tests pass their own.
+	FreeSpace func(dir string) (uint64, error)
 	// PhotoDir is the data volume directory for the photo screensaver (ticket
 	// 178): the photo folder inside it and the shrunk copies the box keeps.
 	// Empty means the box keeps no photos.
@@ -148,6 +163,13 @@ type server struct {
 	// outlook holds the device sign-ins of Outlook that are begun and not finished (ticket 177).
 	outlook outlookFlows
 	rolled  sync.Map // household id -> the day its meal plan calendar was last rolled forward
+	// What an uploaded update file needs (ticket 221).
+	updateInstall  bool
+	updateArch     string
+	updateVerifier update.Verifier
+	updateMax      int64
+	freeSpace      func(string) (uint64, error)
+	uploadMu       sync.Mutex // one upload, one yes and one settling at a time
 }
 
 // New returns the box's root HTTP handler.
@@ -188,6 +210,10 @@ func New(opts Options) http.Handler {
 	s.done = opts.Done
 	s.kiosk = opts.Kiosk
 	s.updateDir = opts.UpdateDir
+	s.updateInstall, s.updateVerifier, s.updateMax, s.freeSpace = opts.UpdateInstall, opts.UpdateVerifier, opts.UpdateMaxSize, opts.FreeSpace
+	if s.updateArch = opts.UpdateArch; s.updateArch == "" {
+		s.updateArch = runtime.GOARCH
+	}
 	if opts.PhotoDir != "" {
 		s.photos = newPhotoBox(opts.PhotoDir)
 		if opts.Done != nil {
@@ -205,6 +231,7 @@ func New(opts Options) http.Handler {
 	s.passkeyTries = newLoginLimiter(10, 10*time.Minute, s.now)
 	s.ceremonies = passkey.NewCeremonies(s.now)
 	s.pages = parsePages()
+	s.settleAtStart() // an installation that ended while the box was away, and what an upload left
 	s.syncUpdateSettings()
 
 	static, err := fs.Sub(web.Static, "static")
@@ -319,6 +346,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /tasks", s.handleTasksPage)
 	mux.HandleFunc("POST /tasks", s.handleTaskAdd)
 	mux.HandleFunc("POST /tasks/stars", s.handleStarBooking)
+	mux.HandleFunc("GET /tasks/pauses/new", s.handlePauseNew)
+	mux.HandleFunc("POST /tasks/pauses/new", s.handlePauseCreate)
+	mux.HandleFunc("GET /tasks/pauses/{id}", s.handlePauseEditPage)
+	mux.HandleFunc("POST /tasks/pauses/edit/{id}", s.handlePauseUpdate)
+	mux.HandleFunc("POST /tasks/pauses/remove/{id}", s.handlePauseRemove)
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
 	mux.HandleFunc("POST /tasks/{id}/subtasks", s.handleSubtaskAdd)
@@ -452,6 +484,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /settings/connections/offline", s.handleOfflineOn)
 	mux.HandleFunc("GET /settings/connections/online", s.handleOnlinePage)
 	mux.HandleFunc("POST /settings/connections/online", s.handleOnline)
+	mux.HandleFunc("GET /settings/connections/update", s.handleUpdatePage)
+	mux.HandleFunc("POST /settings/connections/update", s.handleUpdateUpload)
+	mux.HandleFunc("GET /settings/connections/update/install", s.handleInstallPage)
+	mux.HandleFunc("POST /settings/connections/update/install", s.handleInstall)
+	mux.HandleFunc("POST /settings/connections/update/discard", s.handleDiscard)
 	mux.HandleFunc("GET /settings/https", s.handleHTTPSSettings)
 	mux.HandleFunc("POST /settings/https", s.handleHTTPSSettingsSave)
 	mux.HandleFunc("GET /personal-devices", s.handlePersonalDevicesPage)
@@ -468,7 +505,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("POST /displays/{id}/layout/copy", s.handleDisplayLayoutCopy)
 	s.routeAPI(mux)
 	s.routeCalDAV(mux)
-	return s.requireHTTPS(sameOrigin(withPageLanguage(mux)))
+	return s.requireHTTPS(sameOrigin(withPageLanguage(withRewardPages(mux, s.routeRewards()))))
 }
 
 func (s *server) handleHealthz(w http.ResponseWriter, r *http.Request) {
@@ -518,6 +555,7 @@ func parseEmbeddedPages() *template.Template {
 		"rich":   rich,
 		"host":   withHost,
 		"repl":   repl,
+		"plain":  plainText,
 		"acct":   accountText,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }

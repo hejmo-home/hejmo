@@ -13,6 +13,7 @@ var (
 	crumbSettings = crumb{"/settings", "nav.settings", ""}
 	crumbMeals    = crumb{"/meals", "nav.meals", ""}
 	crumbTasks    = crumb{"/tasks", "nav.tasks", ""}
+	crumbRewards  = crumb{"/tasks/rewards", "rwd.title", ""}
 
 	crumbConnections     = crumb{"/calendars", "hub.connections", ""}
 	crumbConnect         = crumb{"/connections/new", "connect.title", ""}
@@ -23,6 +24,7 @@ var (
 	crumbLibrary         = crumb{"/settings/lists/library", "lib.title", ""}
 	crumbPersonalDevices = crumb{"/personal-devices", "hub.personal_devices", ""}
 	crumbOutside         = crumb{"/settings/connections", "hub.outside", ""}
+	crumbUpload          = crumb{uploadPagePath, "updf.title", ""}
 	crumbMCP             = crumb{"/mcp", "hub.mcp", ""}
 	crumbPeople          = crumb{"/people", "hub.people", ""}
 	crumbContacts        = crumb{"/contacts", "hub.contacts", ""}
@@ -43,6 +45,7 @@ var crumbTrails = map[string][]crumb{
 	"mcp.html": {crumbSettings}, "people.html": {crumbSettings}, "household.html": {crumbSettings}, "account.html": {crumbSettings}, "sessions.html": {crumbSettings},
 	"licences.html": {crumbSettings}, "connections_outside.html": {crumbSettings}, "https_settings.html": {crumbSettings},
 	"offline_on.html": {crumbSettings, crumbOutside}, "offline_off.html": {crumbSettings, crumbOutside},
+	"update_upload.html": {crumbSettings, crumbOutside}, "update_install.html": {crumbSettings, crumbOutside, crumbUpload},
 
 	"calendar_detail.html": {crumbSettings, crumbConnections}, "connection.html": {crumbSettings, crumbConnections}, "connection_paused.html": {crumbSettings, crumbConnections}, "connection_new.html": {crumbSettings, crumbConnections}, "google_signin.html": {crumbSettings, crumbConnections},
 	"library.html": {crumbSettings, crumbLists}, "always.html": {crumbSettings, crumbLists}, "article.html": {crumbSettings, crumbLists, crumbLibrary}, "article_form.html": {crumbSettings, crumbLists, crumbLibrary},
@@ -55,8 +58,10 @@ var crumbTrails = map[string][]crumb{
 	"account_reset.html": {crumbSettings, crumbAccount}, "passkey.html": {crumbSettings, crumbAccount}, "recovery_codes.html": {crumbSettings, crumbAccount},
 	"session.html": {crumbSettings, crumbSessions},
 
+	"pause.html":            {crumbTasks},
 	"meal_template.html":    {crumbMeals, crumbMealTemplates},
 	"routine_template.html": {crumbTasks, crumbRoutineTemplates},
+	"reward_form.html":      {crumbTasks, crumbRewards}, "reward.html": {crumbTasks, crumbRewards},
 }
 
 // crumbsFor returns the parts above the page for a template, or nil when the

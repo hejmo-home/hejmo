@@ -83,6 +83,16 @@ Later: Immich as a photo source for the screensaver (V3).
 - **E-Ink and kiosk functions are experimental, not yet tested on E-Ink devices.** Black and white on real E-Ink, the ghosting reload and the front light in quiet mode are built and tested against a fake kiosk adapter. Everything also works on a normal screen such as an iPad.
 - **Install via Docker Compose** on any Linux (`compose.yaml` in this repository), or with the install script on Raspberry Pi OS. The [install guide](docs/install.md) ([Deutsch](docs/install.de.md)) is a draft until 0.1; auto-update installs published versions only, never previews.
 
+## Why a separate project
+
+Other open-source family organizers exist. Before starting, we looked at OpenSkyLight (a Windows desktop app) and Hearthboard (an Android app, GPL-3.0); neither fits a box with displays. The closest one is [Yuvomi](https://github.com/ulsklyc/yuvomi) (MIT), which covers more areas than Hejmo does today, such as budget and documents. We compared the two closely and decided to keep building Hejmo on its own:
+
+- **Different centre.** Hejmo is built around a box at home and the displays on the wall: E-Ink, kiosk mode, one family view. These are the core of Hejmo. Adding them to another project would change that project's direction.
+- **Different foundations.** Hejmo is a single small Go program with SQLite, made to run on a Raspberry Pi. Every connection to the outside goes through [one tested door](docs/adr/0024-offline-mode-and-the-one-door-to-the-outside.md). Building on a Node.js codebase would mean either giving up these guarantees or rewriting most of it.
+- **Different license.** Hejmo is AGPL-3.0, so improvements to a hosted copy stay open as well.
+
+We still learn from Yuvomi. Its public change history shows which problems real households ran into, and several of them are now acceptance criteria in Hejmo's tickets. If we port a small piece of its MIT-licensed logic, the code names the source.
+
 ## Documentation
 
 - Install guide: [English](docs/install.md), [Deutsch](docs/install.de.md) (draft until 0.1); [hardware and measurements](docs/install/hardware.md)

@@ -385,7 +385,7 @@ func (db *DB) CreateRoutineFromSteps(householdID string, r task.Routine, steps [
 		return task.Routine{}, &RoutineExistsError{Existing: existing}
 	}
 	r.ID = newID()
-	ts := now()
+	ts := createdStamp(r)
 	if _, err := tx.Exec(`INSERT INTO routines (id, household_id, person_id, name, part, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
 		r.ID, householdID, r.PersonID, r.Name, string(r.Part), ts, ts); err != nil {
 		return task.Routine{}, db.routineConflict(err, r.PersonID, r.Part)

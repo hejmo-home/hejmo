@@ -261,6 +261,11 @@ type Person struct {
 	Color  string
 	Shape  string
 	Symbol string
+	// StreaksShown is the switch "week count and badges" (ticket 294): when
+	// off, no week, best streak or badge is shown for the person anywhere.
+	// Stars are not affected. It is set by role when the person is created
+	// (child on, adult off) and can be changed per person.
+	StreaksShown bool
 }
 
 func newID() string {
@@ -340,14 +345,15 @@ func (db *DB) AddPerson(householdID string, p Person) (Person, error) {
 		return Person{}, fmt.Errorf("store: unknown role %q", p.Role)
 	}
 	p.ID = newID()
+	p.StreaksShown = p.Role == RoleChild
 	ts := now()
 	tx, err := db.sql.Begin()
 	if err != nil {
 		return Person{}, err
 	}
 	defer tx.Rollback()
-	if _, err := tx.Exec(`INSERT INTO people (id, name, color, shape, symbol, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?)`,
-		p.ID, p.Name, p.Color, p.Shape, p.Symbol, ts, ts); err != nil {
+	if _, err := tx.Exec(`INSERT INTO people (id, name, color, shape, symbol, streaks_shown, created_at, updated_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+		p.ID, p.Name, p.Color, p.Shape, p.Symbol, p.Role == RoleChild, ts, ts); err != nil {
 		return Person{}, err
 	}
 	if _, err := tx.Exec(`INSERT INTO household_members (household_id, person_id, role, sort_order)
@@ -361,7 +367,7 @@ func (db *DB) AddPerson(householdID string, p Person) (Person, error) {
 	return p, tx.Commit()
 }
 
-const personColumns = `p.id, p.name, m.role, p.color, p.shape, p.symbol`
+const personColumns = `p.id, p.name, m.role, p.color, p.shape, p.symbol, p.streaks_shown`
 
 // People lists a household's members in display order.
 func (db *DB) People(householdID string) ([]Person, error) {
@@ -375,7 +381,7 @@ func (db *DB) People(householdID string) ([]Person, error) {
 	var out []Person
 	for rows.Next() {
 		var p Person
-		if err := rows.Scan(&p.ID, &p.Name, &p.Role, &p.Color, &p.Shape, &p.Symbol); err != nil {
+		if err := rows.Scan(&p.ID, &p.Name, &p.Role, &p.Color, &p.Shape, &p.Symbol, &p.StreaksShown); err != nil {
 			return nil, err
 		}
 		out = append(out, p)
@@ -389,7 +395,7 @@ func (db *DB) Person(householdID, personID string) (Person, error) {
 	err := db.sql.QueryRow(`SELECT `+personColumns+` FROM people p
 		JOIN household_members m ON m.person_id = p.id
 		WHERE m.household_id = ? AND p.id = ?`, householdID, personID).
-		Scan(&p.ID, &p.Name, &p.Role, &p.Color, &p.Shape, &p.Symbol)
+		Scan(&p.ID, &p.Name, &p.Role, &p.Color, &p.Shape, &p.Symbol, &p.StreaksShown)
 	if errors.Is(err, sql.ErrNoRows) {
 		return Person{}, ErrNotFound
 	}

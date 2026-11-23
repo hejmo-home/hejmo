@@ -1,6 +1,7 @@
 package server
 
 import (
+	"errors"
 	"fmt"
 	"html"
 	"html/template"
@@ -116,24 +117,51 @@ func (st libState) item(id string) (articleItem, bool) {
 	return articleItem{}, false
 }
 
+// pantryOf is the pantry mark a household sees on an article: its own change, else the shipped default.
+func pantryOf(overrides map[string]bool, a library.Article) bool {
+	if v, ok := overrides[a.ID]; ok {
+		return v
+	}
+	return a.Pantry
+}
+
 // shippedPantry is the pantry mark the household sees on a shipped article.
 func (s *server) shippedPantry(p principal, a library.Article) (bool, error) {
 	overrides, err := s.db.PantryOverrides(p.household.ID)
 	if err != nil {
 		return false, err
 	}
-	if v, ok := overrides[a.ID]; ok {
-		return v, nil
-	}
-	return a.Pantry, nil
+	return pantryOf(overrides, a), nil
 }
 
 // shipped applies the household's pantry mark to a shipped article.
 func (st libState) shipped(a library.Article) library.Article {
-	if v, ok := st.pantry[a.ID]; ok {
-		a.Pantry = v
-	}
+	a.Pantry = pantryOf(st.pantry, a)
 	return a
+}
+
+// setPantry marks an own article (stored on it) or a shipped one (stored as the household's change)
+// and returns its name; store.ErrNotFound if there is no such article.
+func (s *server) setPantry(p principal, id string, pantry bool, lang string) (string, error) {
+	o, err := s.db.Article(p.household.ID, id)
+	if err == nil {
+		o.Pantry = pantry
+		if _, err := s.db.UpdateArticle(p.household.ID, o, store.KeepPicture, nil); err != nil {
+			return "", err
+		}
+		return o.Name, nil
+	}
+	if !errors.Is(err, store.ErrNotFound) {
+		return "", err
+	}
+	a, ok := library.ShippedByID(id)
+	if !ok {
+		return "", store.ErrNotFound
+	}
+	if err := s.db.SetArticlePantry(p.household.ID, id, pantry); err != nil {
+		return "", err
+	}
+	return a.Name(lang), nil
 }
 
 func (st libState) suggestion(it articleItem) library.Suggestion {

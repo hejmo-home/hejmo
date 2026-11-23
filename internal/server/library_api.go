@@ -332,22 +332,7 @@ func (s *server) apiSetArticlePantry(w http.ResponseWriter, r *http.Request, p p
 		return
 	}
 	id := r.PathValue("id")
-	o, err := s.db.Article(p.household.ID, id)
-	if err != nil && !errors.Is(err, store.ErrNotFound) {
-		s.fail(w, "mark article", err)
-		return
-	}
-	if err == nil {
-		o.Pantry = *in.Pantry
-		saved, err := s.db.UpdateArticle(p.household.ID, o, store.KeepPicture, nil)
-		if err != nil {
-			s.fail(w, "mark article", err)
-			return
-		}
-		writeJSON(w, http.StatusOK, s.articleToJSON(p, articleItem{Article: ownArticle(saved), own: &saved}))
-		return
-	}
-	if err := s.db.SetArticlePantry(p.household.ID, id, *in.Pantry); err != nil {
+	if _, err := s.setPantry(p, id, *in.Pantry, s.langOf(r)); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			writeError(w, http.StatusNotFound, "article not found")
 			return

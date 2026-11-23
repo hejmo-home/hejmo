@@ -408,26 +408,13 @@ func (s *server) handleArticlePantry(w http.ResponseWriter, r *http.Request) {
 	}
 	id := r.PathValue("id")
 	pantry := r.PostFormValue("pantry") != ""
-	var name string
-	o, err := s.db.Article(p.household.ID, id)
-	if err != nil && !errors.Is(err, store.ErrNotFound) {
-		s.fail(w, "mark article", err)
+	name, err := s.setPantry(p, id, pantry, s.langOf(r))
+	if errors.Is(err, store.ErrNotFound) {
+		http.NotFound(w, r)
 		return
 	}
-	if err == nil {
-		o.Pantry, name = pantry, o.Name
-		if _, err := s.db.UpdateArticle(p.household.ID, o, store.KeepPicture, nil); err != nil {
-			s.fail(w, "mark article", err)
-			return
-		}
-	} else if a, ok := library.ShippedByID(id); ok {
-		name = a.Name(s.langOf(r))
-		if err := s.db.SetArticlePantry(p.household.ID, id, pantry); err != nil {
-			s.fail(w, "mark article", err)
-			return
-		}
-	} else {
-		http.NotFound(w, r)
+	if err != nil {
+		s.fail(w, "mark article", err)
 		return
 	}
 	key := "flash.article_pantry_off"

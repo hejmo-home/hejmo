@@ -320,7 +320,7 @@ One line of a recipe: an article, optionally with a variety, or free text, with 
 _Avoid_: component, item
 
 **Variety**:
-The more exact kind of an article, such as "Type 405" for flour, kept with an ingredient or list entry. Quantities add up only for the same variety.
+The more exact kind of an article, such as "Type 405" for flour, kept with an ingredient or list entry and written "Mehl · Type 405". Quantities add up only for the same article and variety (case, spaces and umlauts ignored); allergens and diets come from the article. Free text has no variety.
 _Avoid_: variant, subtype
 
 **Pantry article**:

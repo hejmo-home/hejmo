@@ -3531,6 +3531,9 @@ p.why.fam b { display: inline; }
 /* Overview rows and every other contact row: photo first, then the text. */
 .list-rows.contacts a { gap: 14px; }
 .list-rows.contacts a > .ct-photo { align-self: start; }
+/* The photo takes 70 px of the row: a long group name wraps instead of sticking out at 375 px. */
+.list-rows.contacts .t > * { min-width: 0; }
+.list-rows.contacts .tag.grp { white-space: normal; overflow-wrap: anywhere; }
 
 /* Contact page head: photo beside name and full name; stacked under 480 px. */
 .ct-head { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ph name" "ph full" "ph act"; column-gap: 20px; align-items: start; margin: 0 0 var(--gap); max-width: 560px; }

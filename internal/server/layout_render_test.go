@@ -122,6 +122,7 @@ type layoutFixture struct {
 	kid *screen  // the personal device of a child, which shows lists as tiles
 
 	lists       []string // list IDs
+	longVariety string   // the entry of an article with a very long variety, on the first list
 	inviteToken string   // the invitation of Maximilian, a parent without account
 	hint        *screen  // a display that shows the screensaver's hint
 	outlook     []string // the Outlook pages (#177) that no link leads to
@@ -198,8 +199,11 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 		if q.unit != "" {
 			it.Qty = list.NewQuantity(q.amount, q.unit)
 		}
-		_, err := db.AddItem(h, l.ID, it, func(base float64, _ unit.Kind) string { return q.unit })
+		r, err := db.AddItem(h, l.ID, it, func(base float64, _ unit.Kind) string { return q.unit })
 		must(err)
+		if len(q.variety) > 40 {
+			f.longVariety = r.Entry.ID
+		}
 	}
 	l2, err := db.CreateList(h, list.List{Name: "Urlaubsvorbereitungen Ostsee", Color: "green", Symbol: "circle-empty", Sort: list.Manual})
 	must(err)
@@ -549,6 +553,7 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	add(kid, "/lists")
 	add(kid, "/lists/"+f.lists[0])
 	add(kid, "/lists/"+f.lists[1])
+	add(parent, "/lists/"+f.lists[0]+"?qty="+f.longVariety) // the editor with the Sorte row and the long variety as its pill
 	// The display: the family view and the personal views of two people.
 	display := siteOf("display", f.box, f.display.client)
 	add(display, "/display")

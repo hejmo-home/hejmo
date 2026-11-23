@@ -215,6 +215,42 @@ func TestOrdinaryPairingIsNotPrefilled(t *testing.T) {
 	}
 }
 
+// Q148 (#203): the proposed name says phone or tablet by the kind of screen, never a brand or
+// a model, and "device" when the kind is unknown.
+func TestPersonalDeviceNameFollowsTheKindOfDeviceAndTheLanguagesRuleForTheOwner(t *testing.T) {
+	t.Parallel()
+	const (
+		iPadUA        = "Mozilla/5.0 (iPad; CPU OS 19_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1"
+		androidTablet = "Mozilla/5.0 (Linux; Android 15; SM-X710) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/130.0 Safari/537.36"
+		desktopUA     = "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0"
+	)
+	for _, tc := range []struct{ kind, ua, person, en, de string }{
+		{"iPhone", iPhone, "Mia", "Mia’s phone", "Mias Handy"},
+		{"Android phone", androidUA, "Jonas", "Jonas’s phone", "Jonas’ Handy"},
+		{"iPad", iPadUA, "Max", "Max’s tablet", "Max’ Tablet"},
+		{"Android tablet", androidTablet, "Mia", "Mia’s tablet", "Mias Tablet"},
+		{"unknown", desktopUA, "Moritz", "Moritz’s device", "Moritz’ Gerät"},
+		{"no user agent", "", "Mia", "Mia’s device", "Mias Gerät"},
+	} {
+		f := newRepairFixture(t)
+		who := personNamed(t, f.b, tc.person)
+		path := joinPath(t, f.b.post(f.repairAction, url.Values{"person": {who.ID}}).body)
+		req, _ := http.NewRequest(http.MethodGet, f.b.srv.URL+path, nil)
+		req.Header.Set("User-Agent", tc.ua)
+		res, err := f.b.trustingClient().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		if page := getEN(f.b, "/personal-devices").body; !strings.Contains(page, `value="`+tc.en+`"`) {
+			t.Errorf("%s: English name is not %q", tc.kind, tc.en)
+		}
+		if page := f.b.do(http.MethodGet, "/personal-devices", nil, map[string]string{"Accept-Language": "de"}).body; !strings.Contains(page, `value="`+tc.de+`"`) {
+			t.Errorf("%s: German name is not %q", tc.kind, tc.de)
+		}
+	}
+}
+
 func TestRepairPagesAreGerman(t *testing.T) {
 	t.Parallel()
 	f := newRepairFixture(t)

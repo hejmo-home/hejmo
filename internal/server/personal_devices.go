@@ -133,7 +133,7 @@ func (s *server) renderPersonalDevices(w http.ResponseWriter, r *http.Request, p
 	for _, wp := range waiting {
 		v := waitingView{ID: wp.ID, Device: wp.Device, Expires: at(wp.ExpiresAt), Verification: verificationNumber(wp.ClaimHash)}
 		if c, ok := chips[wp.ForPersonID]; ok { // a personal device that was re-paired: the parent only compares and confirms
-			v.Person, v.Name = c.ID, s.defaultPersonalDeviceName(r, c.Name)
+			v.Person, v.Name = c.ID, s.defaultPersonalDeviceName(r, c.Name, wp.Device)
 		}
 		if form.PairingID == wp.ID {
 			v.Name, v.Person, v.Error, v.ErrorField = form.Name, form.Person, form.Error, form.ErrorField
@@ -289,10 +289,38 @@ func (s *server) whose(r *http.Request, name string) string {
 	return strings.ReplaceAll(possessive(s.langOf(r), name), "'", "’")
 }
 
-// defaultPersonalDeviceName is the name a personal device gets when it is for name:
-// "Mias Gerät", "Jonas’ Gerät", "Mia’s device".
-func (s *server) defaultPersonalDeviceName(r *http.Request, name string) string {
-	return s.say(r, i18n.Msg("personal_devices.default_name", "whose", s.whose(r, name)))
+// defaultPersonalDeviceName is the name proposed for a personal device that is for name:
+// "Mias Handy", "Jonas’ Tablet", "Mia’s device". The word says phone or tablet by the kind of
+// screen the pairing label (see deviceLabel) names, never a brand or a model, and device when
+// the kind is unknown (Q148, #203).
+func (s *server) defaultPersonalDeviceName(r *http.Request, name, label string) string {
+	return s.say(r, i18n.Msg("personal_devices.default_name."+deviceNoun(label), "whose", s.whose(r, name)))
+}
+
+// screenKinds are the devices deviceLabel can name, with the kind of screen each has. The one
+// table makes the label and the kind one fact: rewording a label cannot lose the kind.
+var screenKinds = []struct{ device, noun string }{
+	{deviceIPhone, "phone"},
+	{deviceAndroidPhone, "phone"},
+	{deviceIPad, "tablet"},
+	{deviceAndroidTablet, "tablet"},
+}
+
+const (
+	deviceIPhone        = "iPhone"
+	deviceAndroidPhone  = "Android phone"
+	deviceIPad          = "iPad"
+	deviceAndroidTablet = "Android tablet"
+)
+
+// deviceNoun is phone, tablet or device, from the label deviceLabel made.
+func deviceNoun(label string) string {
+	for _, k := range screenKinds {
+		if strings.HasSuffix(label, " on "+k.device) {
+			return k.noun
+		}
+	}
+	return "device"
 }
 
 // handlePersonalDeviceRepair ends a child's device session and shows a new pairing code
@@ -483,11 +511,13 @@ func deviceLabel(ua string) string {
 	device := ""
 	switch {
 	case has("iPhone"):
-		device = "iPhone"
+		device = deviceIPhone
 	case has("iPad"):
-		device = "iPad"
+		device = deviceIPad
+	case has("Android") && has("Mobile"):
+		device = deviceAndroidPhone
 	case has("Android"):
-		device = "Android"
+		device = deviceAndroidTablet
 	}
 	if device == "" {
 		return browser

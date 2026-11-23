@@ -472,6 +472,25 @@ func TestTheListOnTheArticlePageDoesNotMixThePluralEndingsOfTwoLanguages(t *test
 	}
 }
 
+// A name typed as text never finds an article hidden by hand (as when adding),
+// so the page of the hidden article does not claim the list either.
+func TestTheListOnTheArticlePageIgnoresAFreeTextEntryOfAnArticleHiddenByHand(t *testing.T) {
+	s := newShop(t)
+	if _, err := s.db.AddEntry(s.h.ID, s.id, "Äpfel"); err != nil {
+		t.Fatal(err)
+	}
+	if body := s.de("/settings/lists/library/apples").body; !strings.Contains(body, "Einkaufen") {
+		t.Fatalf("before hiding, the Apples page names the list:\n%s", body)
+	}
+	if err := s.db.SetArticleHidden(s.h.ID, "apples", true); err != nil {
+		t.Fatal(err)
+	}
+	r := s.de("/settings/lists/library/apples")
+	if r.status != 200 || strings.Contains(r.body, "Einkaufen") {
+		t.Errorf("hidden Apples page: status %d, names the list:\n%s", r.status, r.body)
+	}
+}
+
 // The typed variety keeps its row when completions and known varieties would fill them all.
 func TestTheTypedVarietyKeepsItsRowWhenCompletionsFillTheOthers(t *testing.T) {
 	s := newShop(t)

@@ -3759,7 +3759,7 @@ ol.run li[data-state="fail"] .st { justify-self: start; padding: 4px 8px; border
 .pv-goal .g-name { font-size: var(--fs-event-title); }
 .pv-goal .g-count { font-size: var(--fs-event-title); font-weight: 400; }
 .pv-goal[data-reached] { background: var(--pc-tint); color: var(--pc-text); }
-.pv-goal[data-reached] .g-name .k, .pv-goal[data-reached] .pv-goal .g-name .k .icon { color: var(--pc-text); stroke: var(--pc-text); }
+.pv-goal[data-reached] .g-name .k, .pv-goal[data-reached] .g-name .k .icon { color: var(--pc-text); stroke: var(--pc-text); }
 
 /* Child's reward page: "Your savings goal" above the groups; "Save for this" on cards. */
 .rwd-goal { display: grid; gap: 8px; max-width: 560px; }

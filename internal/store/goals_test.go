@@ -168,7 +168,7 @@ func TestAGoalGoesWhenThePersonLeavesAndTheEndedLineLastsSevenDays(t *testing.T)
 	if !g.EndedShown(g.EndedAt.Add(6 * 24 * time.Hour)) {
 		t.Error("the line shows for 7 days")
 	}
-	if g.EndedShown(g.EndedAt.Add(7*24*time.Hour + time.Minute)) {
+	if g.EndedShown(g.EndedAt.Add(7 * 24 * time.Hour)) {
 		t.Error("and not longer")
 	}
 	if err := f.db.ExecUnchecked(`DELETE FROM household_members WHERE person_id = ?`, f.mia.ID); err != nil {

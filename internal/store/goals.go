@@ -1,7 +1,6 @@
 package store
 
 import (
-	"database/sql"
 	"fmt"
 	"time"
 )
@@ -40,7 +39,7 @@ func (g Goal) Ended() bool { return !g.EndedAt.IsZero() }
 
 // EndedShown reports whether the child's page still says the goal ended.
 func (g Goal) EndedShown(at time.Time) bool {
-	return g.Ended() && at.Before(g.EndedAt.Add(GoalEndedDays*24*time.Hour+time.Minute))
+	return g.Ended() && at.Before(g.EndedAt.Add(GoalEndedDays*24*time.Hour))
 }
 
 // goalError is the 422 of a goal that cannot be set.
@@ -155,5 +154,3 @@ func endGoalsOutsideAudience(q rewardDB, rewardID string) error {
 		AND person_id NOT IN (SELECT person_id FROM reward_people WHERE reward_id = ?)`, now(), rewardID, rewardID, rewardID, rewardID)
 	return err
 }
-
-var _ = sql.ErrNoRows

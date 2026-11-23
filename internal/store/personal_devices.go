@@ -23,9 +23,13 @@ var ErrPersonalDevicePending = errors.New("store: personal device pairing not co
 type PersonalDevicePairing struct {
 	ID        string
 	ExpiresAt time.Time
-	// Device is what the personal device said about itself when it opened the code;
-	// empty until a personal device did.
+	// Device is what the personal device said about itself when it opened the code, as the
+	// keys "browser|device" ("safari|iphone", "unknown" for what could not be told); empty
+	// until a personal device did. The page translates it.
 	Device string
+	// Kind is the kind of screen: phone, tablet or device (unknown). Stored with the pairing
+	// and never read back from the label.
+	Kind string
 	// ClaimHash is the hash of the secret of the personal device that opened the code;
 	// the verification number shown to both sides derives from it.
 	ClaimHash string
@@ -127,11 +131,17 @@ func (db *DB) PairingForPerson(codeHash, claimHash string, at time.Time) (Person
 // JoinPersonalDevicePairing records that the personal device with the secret claimHash opened the
 // code. A code serves one personal device: another personal device, an unknown, used or expired
 // code is ErrNotFound. The same personal device may open it again.
-func (db *DB) JoinPersonalDevicePairing(codeHash, claimHash, device string, at time.Time) error {
+//
+// device holds the keys "browser|device" and kind the kind of screen (phone, tablet; anything
+// else is stored as "device").
+func (db *DB) JoinPersonalDevicePairing(codeHash, claimHash, device, kind string, at time.Time) error {
 	device = clip(device, 120)
-	res, err := db.sql.Exec(`UPDATE personal_device_pairings SET claim_hash = ?, device = ?
+	if kind != "phone" && kind != "tablet" {
+		kind = "device"
+	}
+	res, err := db.sql.Exec(`UPDATE personal_device_pairings SET claim_hash = ?, device = ?, device_kind = ?
 		WHERE code_hash = ? AND expires_at > ? AND (claim_hash IS NULL OR claim_hash = ?)`,
-		claimHash, device, codeHash, stamp(at), claimHash)
+		claimHash, device, kind, codeHash, stamp(at), claimHash)
 	if err != nil {
 		return err
 	}
@@ -144,7 +154,7 @@ func (db *DB) JoinPersonalDevicePairing(codeHash, claimHash, device string, at t
 // PendingPersonalDevicePairings lists the codes a personal device opened that wait for a
 // parent's confirmation, oldest first.
 func (db *DB) PendingPersonalDevicePairings(householdID string, at time.Time) ([]PersonalDevicePairing, error) {
-	rows, err := db.sql.Query(`SELECT id, device, expires_at, claim_hash, COALESCE(for_person_id, '') FROM personal_device_pairings
+	rows, err := db.sql.Query(`SELECT id, device, device_kind, expires_at, claim_hash, COALESCE(for_person_id, '') FROM personal_device_pairings
 		WHERE household_id = ? AND claim_hash IS NOT NULL AND person_id IS NULL AND expires_at > ?
 		ORDER BY created_at, rowid`, householdID, stamp(at))
 	if err != nil {
@@ -155,7 +165,7 @@ func (db *DB) PendingPersonalDevicePairings(householdID string, at time.Time) ([
 	for rows.Next() {
 		var p PersonalDevicePairing
 		var exp sql.NullString
-		if err := rows.Scan(&p.ID, &p.Device, &exp, &p.ClaimHash, &p.ForPersonID); err != nil {
+		if err := rows.Scan(&p.ID, &p.Device, &p.Kind, &exp, &p.ClaimHash, &p.ForPersonID); err != nil {
 			return nil, err
 		}
 		p.ExpiresAt = parseStamp(exp)

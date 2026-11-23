@@ -136,16 +136,16 @@ func (s *server) renderPersonalDevices(w http.ResponseWriter, r *http.Request, p
 	}
 	var waitingViews []waitingView
 	for _, wp := range waiting {
-		v := waitingView{ID: wp.ID, Device: wp.Device, Expires: at(wp.ExpiresAt), Verification: verificationNumber(wp.ClaimHash)}
+		v := waitingView{ID: wp.ID, Device: s.deviceLabel(r, wp.Device), Expires: at(wp.ExpiresAt), Verification: verificationNumber(wp.ClaimHash)}
 		proposals := make(map[string]string, len(people))
 		for _, c := range chipsOf(people) {
-			proposals[c.ID] = s.defaultPersonalDeviceName(r, c.Name, wp.Device)
+			proposals[c.ID] = s.defaultPersonalDeviceName(r, c.Name, wp.Kind)
 		}
 		if b, err := json.Marshal(proposals); err == nil {
 			v.Proposals = string(b)
 		}
 		if c, ok := chips[wp.ForPersonID]; ok { // a personal device that was re-paired: the parent only compares and confirms
-			v.Person, v.Name = c.ID, s.defaultPersonalDeviceName(r, c.Name, wp.Device)
+			v.Person, v.Name = c.ID, s.defaultPersonalDeviceName(r, c.Name, wp.Kind)
 		}
 		if form.PairingID == wp.ID {
 			v.Name, v.Person, v.Error, v.ErrorField = form.Name, form.Person, form.Error, form.ErrorField
@@ -303,36 +303,33 @@ func (s *server) whose(r *http.Request, name string) string {
 
 // defaultPersonalDeviceName is the name proposed for a personal device that is for name:
 // "Mias Handy", "Jonas’ Tablet", "Mia’s device". The word says phone or tablet by the kind of
-// screen the pairing label (see deviceLabel) names, never a brand or a model, and device when
-// the kind is unknown (Q148, #203).
-func (s *server) defaultPersonalDeviceName(r *http.Request, name, label string) string {
-	return s.say(r, i18n.Msg("personal_devices.default_name."+deviceNoun(label), "whose", s.whose(r, name)))
-}
-
-// screenKinds are the devices deviceLabel can name, with the kind of screen each has. The one
-// table makes the label and the kind one fact: rewording a label cannot lose the kind.
-var screenKinds = []struct{ device, noun string }{
-	{deviceIPhone, "phone"},
-	{deviceAndroidPhone, "phone"},
-	{deviceIPad, "tablet"},
-	{deviceAndroidTablet, "tablet"},
-}
-
-const (
-	deviceIPhone        = "iPhone"
-	deviceAndroidPhone  = "Android phone"
-	deviceIPad          = "iPad"
-	deviceAndroidTablet = "Android tablet"
-)
-
-// deviceNoun is phone, tablet or device, from the label deviceLabel made.
-func deviceNoun(label string) string {
-	for _, k := range screenKinds {
-		if strings.HasSuffix(label, " on "+k.device) {
-			return k.noun
-		}
+// screen stored with the pairing (see deviceOf), never a brand or a model, and device when the
+// kind is unknown (Q148, #203).
+func (s *server) defaultPersonalDeviceName(r *http.Request, name, kind string) string {
+	if kind != "phone" && kind != "tablet" {
+		kind = "device"
 	}
-	return "device"
+	return s.say(r, i18n.Msg("personal_devices.default_name."+kind, "whose", s.whose(r, name)))
+}
+
+// deviceLabel is what a waiting personal device said about itself ("safari|iphone"), in the
+// language of the page: "Safari on iPhone", "Safari auf iPhone". Empty when nothing was told, so
+// the page says "A device".
+func (s *server) deviceLabel(r *http.Request, device string) string {
+	browser, model, _ := strings.Cut(device, "|")
+	if browser == "" || model == "" || (browser == auth.Unknown && model == auth.Unknown) {
+		return ""
+	}
+	name := func(prefix, key string) string {
+		if t := s.i18n.T(s.langOf(r), prefix+"."+key); t != prefix+"."+key {
+			return t
+		}
+		return s.i18n.T(s.langOf(r), prefix+"."+auth.Unknown)
+	}
+	if model == auth.Unknown {
+		return name("browser", browser)
+	}
+	return s.say(r, i18n.Msg("personal_devices.device.label", "browser", name("browser", browser), "device", name("device", model)))
 }
 
 // handlePersonalDeviceRepair ends a child's device session and shows a new pairing code
@@ -429,7 +426,8 @@ func (s *server) handlePersonalDeviceJoin(w http.ResponseWriter, r *http.Request
 	refuse := func() {
 		s.render(w, r, http.StatusGone, "personal_devices_join.html", map[string]any{"State": "refused"})
 	}
-	if err := s.db.JoinPersonalDevicePairing(codeHash, claimHash, deviceLabel(r.UserAgent(), touchScreen(r)), s.now()); err != nil {
+	device, kind := deviceOf(r.UserAgent(), touchScreen(r))
+	if err := s.db.JoinPersonalDevicePairing(codeHash, claimHash, device, kind, s.now()); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			refuse()
 		} else {
@@ -502,10 +500,12 @@ func touchScreen(r *http.Request) bool {
 	return err == nil && c.Value == "1"
 }
 
-// deviceLabel names a personal device for the parent from its User-Agent, for example
-// "Safari on iPhone". It only helps a parent tell personal devices apart. A Mac user agent with a
-// touch screen is an iPad, which has sent the user agent of a Mac since iPadOS 13.
-func deviceLabel(ua string, touch bool) string {
+// deviceOf tells a personal device's browser and device from its User-Agent, as the keys
+// "browser|device" ("safari|iphone"; "unknown" for what it cannot tell) that the page
+// translates, and the kind of screen: phone, tablet or device. It only helps a parent tell
+// personal devices apart. A Mac user agent with a touch screen is an iPad, which has sent the
+// user agent of a Mac since iPadOS 13.
+func deviceOf(ua string, touch bool) (device, kind string) {
 	has := func(subs ...string) bool {
 		for _, sub := range subs {
 			if strings.Contains(ua, sub) {
@@ -514,34 +514,31 @@ func deviceLabel(ua string, touch bool) string {
 		}
 		return false
 	}
-	browser := "Browser"
+	browser := auth.Unknown
 	switch {
 	case has("Firefox/", "FxiOS"):
-		browser = "Firefox"
+		browser = "firefox"
 	case has("Edg/", "EdgA/", "EdgiOS"):
-		browser = "Edge"
+		browser = "edge"
 	case has("SamsungBrowser"):
-		browser = "Samsung Internet"
+		browser = "samsung"
 	case has("CriOS", "Chrome/"):
-		browser = "Chrome"
+		browser = "chrome"
 	case has("Safari/"):
-		browser = "Safari"
+		browser = "safari"
 	}
-	device := ""
+	model, kind := auth.Unknown, "device"
 	switch {
 	case has("iPhone"):
-		device = deviceIPhone
+		model, kind = "iphone", "phone"
 	case has("iPad"), has("Macintosh") && touch:
-		device = deviceIPad
+		model, kind = "ipad", "tablet"
 	case has("Android") && has("Mobile"):
-		device = deviceAndroidPhone
+		model, kind = "android_phone", "phone"
 	case has("Android"):
-		device = deviceAndroidTablet
+		model, kind = "android_tablet", "tablet"
 	}
-	if device == "" {
-		return browser
-	}
-	return browser + " on " + device
+	return browser + "|" + model, kind
 }
 
 func rfc3339(t time.Time, loc *time.Location) string { return t.In(loc).Format(time.RFC3339) }
@@ -586,7 +583,7 @@ func (s *server) apiCreatePersonalDevicePairing(w http.ResponseWriter, r *http.R
 	writeJSON(w, http.StatusCreated, map[string]string{"id": code.ID, "url": code.URL, "expires_at": rfc3339(code.Expires, p.location())})
 }
 
-func (s *server) apiListPersonalDevicePairings(w http.ResponseWriter, _ *http.Request, p principal) {
+func (s *server) apiListPersonalDevicePairings(w http.ResponseWriter, r *http.Request, p principal) {
 	list, err := s.db.PendingPersonalDevicePairings(p.household.ID, s.now())
 	if err != nil {
 		s.fail(w, "list personal device pairings", err)
@@ -594,7 +591,7 @@ func (s *server) apiListPersonalDevicePairings(w http.ResponseWriter, _ *http.Re
 	}
 	out := make([]map[string]any, 0, len(list))
 	for _, pr := range list {
-		item := map[string]any{"id": pr.ID, "device": pr.Device, "verification": verificationNumber(pr.ClaimHash), "expires_at": rfc3339(pr.ExpiresAt, p.location()), "for_person_id": nil}
+		item := map[string]any{"id": pr.ID, "device": s.deviceLabel(r, pr.Device), "kind": pr.Kind, "verification": verificationNumber(pr.ClaimHash), "expires_at": rfc3339(pr.ExpiresAt, p.location()), "for_person_id": nil}
 		if pr.ForPersonID != "" {
 			item["for_person_id"] = pr.ForPersonID
 		}

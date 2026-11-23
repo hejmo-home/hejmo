@@ -27,7 +27,7 @@ func pairPersonalDevice(t *testing.T, db *store.DB, h store.Household, person st
 	if err != nil {
 		t.Fatal(err)
 	}
-	if err := db.JoinPersonalDevicePairing("code-"+name, "claim-"+name, "Safari on iPhone", personalDeviceT0); err != nil {
+	if err := db.JoinPersonalDevicePairing("code-"+name, "claim-"+name, "safari|iphone", "phone", personalDeviceT0); err != nil {
 		t.Fatal(err)
 	}
 	confirmed, err := db.ConfirmPersonalDevicePairing(h.ID, pr.ID, person.ID, name, personalDeviceT0)
@@ -66,11 +66,11 @@ func TestPairingWaitsForTheParentsConfirmation(t *testing.T) {
 	if _, err := db.CompletePersonalDevicePairing("c", "x", "s", personalDeviceT0, personalDeviceT0.Add(time.Hour)); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("complete before open = %v, want ErrNotFound", err)
 	}
-	if err := db.JoinPersonalDevicePairing("c", "x", "Chrome on Android", personalDeviceT0); err != nil {
+	if err := db.JoinPersonalDevicePairing("c", "x", "chrome|android_tablet", "tablet", personalDeviceT0); err != nil {
 		t.Fatal(err)
 	}
 	pending, _ := db.PendingPersonalDevicePairings(h.ID, personalDeviceT0)
-	if len(pending) != 1 || pending[0].ID != pr.ID || pending[0].Device != "Chrome on Android" {
+	if len(pending) != 1 || pending[0].ID != pr.ID || pending[0].Device != "chrome|android_tablet" || pending[0].Kind != "tablet" {
 		t.Fatalf("pending = %+v", pending)
 	}
 	if _, err := db.CompletePersonalDevicePairing("c", "x", "s", personalDeviceT0, personalDeviceT0.Add(time.Hour)); !errors.Is(err, store.ErrPersonalDevicePending) {
@@ -87,13 +87,13 @@ func TestPairingWaitsForTheParentsConfirmation(t *testing.T) {
 func TestAPairingCodeWorksForOnePersonalDeviceOnly(t *testing.T) {
 	db, h, _ := householdWithMia(t)
 	_, _ = db.CreatePersonalDevicePairing(h.ID, "c", personalDeviceT0)
-	if err := db.JoinPersonalDevicePairing("c", "first", "d", personalDeviceT0); err != nil {
+	if err := db.JoinPersonalDevicePairing("c", "first", "d", "device", personalDeviceT0); err != nil {
 		t.Fatal(err)
 	}
-	if err := db.JoinPersonalDevicePairing("c", "first", "d", personalDeviceT0); err != nil {
+	if err := db.JoinPersonalDevicePairing("c", "first", "d", "device", personalDeviceT0); err != nil {
 		t.Fatalf("same personal device again = %v, want ok", err)
 	}
-	if err := db.JoinPersonalDevicePairing("c", "second", "d", personalDeviceT0); !errors.Is(err, store.ErrNotFound) {
+	if err := db.JoinPersonalDevicePairing("c", "second", "d", "device", personalDeviceT0); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("second personal device = %v, want ErrNotFound", err)
 	}
 }
@@ -102,14 +102,14 @@ func TestExpiredAndUsedPairingCodesAreRefused(t *testing.T) {
 	db, h, mia := householdWithMia(t)
 	_, _ = db.CreatePersonalDevicePairing(h.ID, "old", personalDeviceT0)
 	late := personalDeviceT0.Add(store.PairingCodeLifetime + time.Second)
-	if err := db.JoinPersonalDevicePairing("old", "x", "d", late); !errors.Is(err, store.ErrNotFound) {
+	if err := db.JoinPersonalDevicePairing("old", "x", "d", "device", late); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("expired = %v, want ErrNotFound", err)
 	}
-	if err := db.JoinPersonalDevicePairing("nope", "x", "d", personalDeviceT0); !errors.Is(err, store.ErrNotFound) {
+	if err := db.JoinPersonalDevicePairing("nope", "x", "d", "device", personalDeviceT0); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("unknown = %v, want ErrNotFound", err)
 	}
 	pairPersonalDevice(t, db, h, mia, "A")
-	if err := db.JoinPersonalDevicePairing("code-A", "claim-A", "d", personalDeviceT0); !errors.Is(err, store.ErrNotFound) {
+	if err := db.JoinPersonalDevicePairing("code-A", "claim-A", "d", "device", personalDeviceT0); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("used = %v, want ErrNotFound", err)
 	}
 	if _, err := db.CompletePersonalDevicePairing("code-A", "claim-A", "again", personalDeviceT0, personalDeviceT0.Add(time.Hour)); !errors.Is(err, store.ErrNotFound) {
@@ -120,7 +120,7 @@ func TestExpiredAndUsedPairingCodesAreRefused(t *testing.T) {
 func TestConfirmedPairingExpiresIfThePersonalDeviceNeverCollectsIt(t *testing.T) {
 	db, h, mia := householdWithMia(t)
 	pr, _ := db.CreatePersonalDevicePairing(h.ID, "c", personalDeviceT0)
-	_ = db.JoinPersonalDevicePairing("c", "x", "d", personalDeviceT0)
+	_ = db.JoinPersonalDevicePairing("c", "x", "d", "device", personalDeviceT0)
 	_, _ = db.ConfirmPersonalDevicePairing(h.ID, pr.ID, mia.ID, "Mia", personalDeviceT0)
 	late := personalDeviceT0.Add(store.PairingCodeLifetime + time.Second)
 	if _, err := db.CompletePersonalDevicePairing("c", "x", "s", late, late.Add(time.Hour)); !errors.Is(err, store.ErrNotFound) {
@@ -134,7 +134,7 @@ func TestConfirmedPairingExpiresIfThePersonalDeviceNeverCollectsIt(t *testing.T)
 func TestConfirmingNeedsAHouseholdMemberAndAName(t *testing.T) {
 	db, h, mia := householdWithMia(t)
 	pr, _ := db.CreatePersonalDevicePairing(h.ID, "c", personalDeviceT0)
-	_ = db.JoinPersonalDevicePairing("c", "x", "d", personalDeviceT0)
+	_ = db.JoinPersonalDevicePairing("c", "x", "d", "device", personalDeviceT0)
 	var fe *store.FieldError
 	if _, err := db.ConfirmPersonalDevicePairing(h.ID, pr.ID, mia.ID, "  ", personalDeviceT0); !errors.As(err, &fe) || fe.Field != "name" {
 		t.Fatalf("blank name = %v, want name field error", err)
@@ -190,7 +190,7 @@ func TestCreatingPairingsKeepsOnlyRecentOnes(t *testing.T) {
 			t.Fatal(err)
 		}
 	}
-	if err := db.JoinPersonalDevicePairing("ca", "x", "d", personalDeviceT0.Add(time.Minute)); !errors.Is(err, store.ErrNotFound) {
+	if err := db.JoinPersonalDevicePairing("ca", "x", "d", "device", personalDeviceT0.Add(time.Minute)); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("oldest pairing survived: %v", err)
 	}
 }
@@ -228,7 +228,7 @@ func TestRepairingAPersonalDeviceEndsItsSessionAndLeavesACodeForTheNextPerson(t 
 		t.Errorf("personal devices after re-pairing = %+v, want none", list)
 	}
 	// The new code works like any other: the personal device opens it, a parent confirms.
-	if err := db.JoinPersonalDevicePairing("repair-code", "claim-new", "Safari on iPhone", later); err != nil {
+	if err := db.JoinPersonalDevicePairing("repair-code", "claim-new", "safari|iphone", "phone", later); err != nil {
 		t.Fatal(err)
 	}
 	if for_, ok, err := db.PairingForPerson("repair-code", "claim-new", later); err != nil || !ok || for_.ID != mia.ID || for_.Name != "Mia" {
@@ -258,5 +258,28 @@ func TestRepairingNeedsAnotherPersonOfTheHousehold(t *testing.T) {
 	}
 	if _, err := db.RepairPersonalDevice(h.ID, "unknown", mia.ID, "c4", personalDeviceT0); !errors.Is(err, store.ErrNotFound) {
 		t.Errorf("unknown personal device = %v, want ErrNotFound", err)
+	}
+}
+
+// #243: the kind of device is stored with the pairing, next to the device keys; nothing reads
+// it back from a label. An unknown kind is stored as "device".
+func TestPairingStoresTheKindOfDeviceItsOwn(t *testing.T) {
+	db, h, _ := householdWithMia(t)
+	for _, tc := range []struct{ kind, want string }{{"phone", "phone"}, {"tablet", "tablet"}, {"watch", "device"}, {"", "device"}} {
+		if _, err := db.CreatePersonalDevicePairing(h.ID, "c-"+tc.kind, personalDeviceT0); err != nil {
+			t.Fatal(err)
+		}
+		if err := db.JoinPersonalDevicePairing("c-"+tc.kind, "x-"+tc.kind, "chrome|ipad", tc.kind, personalDeviceT0); err != nil {
+			t.Fatal(err)
+		}
+	}
+	pending, err := db.PendingPersonalDevicePairings(h.ID, personalDeviceT0)
+	if err != nil || len(pending) != 4 {
+		t.Fatalf("pending = %+v, %v", pending, err)
+	}
+	for i, want := range []string{"phone", "tablet", "device", "device"} {
+		if pending[i].Kind != want {
+			t.Errorf("pairing %d kind = %q, want %q", i, pending[i].Kind, want)
+		}
 	}
 }

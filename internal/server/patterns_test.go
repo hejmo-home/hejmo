@@ -229,17 +229,17 @@ func TestNoDestructiveFormOnAnyOverview(t *testing.T) {
 	b.feeds.set("https://example.org/a.ics", feedOf(), nil)
 	b.post("/calendars", url.Values{"name": {"Holidays"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
 	pairedDisplay(t, b, "Hallway", "screen")
-	newDeviceToken(t, b, "Phone")
-	pairedPhone(t, b, personNamed(t, b, "Mama"), "Mama's phone")
+	newDeviceToken(t, b, "Personal device")
+	pairedPersonalDevice(t, b, personNamed(t, b, "Mama"), "Mama's tablet")
 	connID := connectedBox(t, b)
 	h, _ := b.db.HomeHousehold()
 	cals, _ := b.db.SyncedCalendars(h.ID)
 	displays, _ := b.db.Displays(h.ID)
 	tokens, _ := b.db.APITokens(h.ID)
-	phones, _ := b.db.Phones(h.ID)
+	personalDevices, _ := b.db.PersonalDevices(h.ID)
 	tokenID := ""
 	for _, tok := range tokens {
-		if tok.Name == "Phone" {
+		if tok.Name == "Personal device" {
 			tokenID = tok.ID
 		}
 	}
@@ -248,7 +248,7 @@ func TestNoDestructiveFormOnAnyOverview(t *testing.T) {
 		{"/caldav", "/caldav/tokens/" + tokenID, "/caldav/tokens/" + tokenID + "/revoke"},
 		{"/calendars", "/calendars/" + cals[0].ID, "/calendars/" + cals[0].ID + "/delete"},
 		{"/calendars", "/connections/" + connID, "/connections/" + connID + "/delete"},
-		{"/phones", "/phones/" + phones[0].ID, "/phones/" + phones[0].ID + "/revoke"},
+		{"/personal-devices", "/personal-devices/" + personalDevices[0].ID, "/personal-devices/" + personalDevices[0].ID + "/revoke"},
 	} {
 		over := getEN(b, c.overview).body
 		noDestructiveForm(t, c.overview, over)

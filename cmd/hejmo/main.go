@@ -194,6 +194,16 @@ func run(cfg config, logger *slog.Logger) error {
 	}()
 	defer func() { stop(); <-kioskDone }()
 
+	// "Always on the list" puts articles on lists at the household's time
+	// (ticket 168), checked every minute.
+	alwaysRunner := server.NewAlwaysRunner(server.AlwaysOptions{DB: db, Logger: logger})
+	alwaysDone := make(chan struct{})
+	go func() {
+		defer close(alwaysDone)
+		alwaysRunner.Run(ctx, time.Minute)
+	}()
+	defer func() { stop(); <-alwaysDone }()
+
 	// The weather chip's reading: the box asks Open-Meteo every 15 minutes, a
 	// display never does (ADR 0016).
 	forecast := weather.New(weather.WithGate(gate))
@@ -342,7 +352,7 @@ func ensureHTTPS(db *store.DB, certs *pki.Store, now time.Time, logger *slog.Log
 		logger.Error("own CA fallback failed; HTTPS may be unavailable", "err", err)
 		return
 	}
-	logger.Info("own CA kept as a standby; phones need to trust it only if the public certificate is unavailable, see /ca", "name", saved.Name)
+	logger.Info("own CA kept as a standby; personal devices need to trust it only if the public certificate is unavailable, see /ca", "name", saved.Name)
 }
 
 // tlsConfig serves the public certificate when there is one and the box's own

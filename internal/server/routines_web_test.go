@@ -103,7 +103,7 @@ func TestSecondRoutineForThePartIsRefusedAtTheFieldAndNamesTheExistingOne(t *tes
 
 func TestRoutinePagesAreForParentsOnly(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	for _, path := range []string{"/routines/new", "/routines/00000000-0000-4000-8000-000000000000"} {
 		if r := cp.screen.get(path, "en"); r.status != http.StatusForbidden {
 			t.Errorf("child GET %s = %d, want 403", path, r.status)
@@ -313,7 +313,7 @@ func TestTasksPageShowsRoutineCardsBeforeTheOtherTasks(t *testing.T) {
 
 func TestChildTasksPageShowsRoutineBoxesWithBigCheckboxes(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	tb := taskBox{parent: cp.parent, miaID: personNamed(t, cp.parent.b, "Mia").ID}
 	rid, steps := tb.routineOfFour(t)
 	cp.parent.call(http.MethodPut, "/tasks/"+steps[0]+"/done", map[string]any{"done": true})

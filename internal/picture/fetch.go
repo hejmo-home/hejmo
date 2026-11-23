@@ -79,8 +79,13 @@ func (f *Fetcher) public(a netip.Addr) bool {
 	return IsPublic(a)
 }
 
-// Fetch downloads and processes the picture at rawURL.
+// Fetch downloads and processes the picture at rawURL, at most MaxSide px.
 func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (Fetched, error) {
+	return f.FetchMax(ctx, rawURL, MaxSide)
+}
+
+// FetchMax is Fetch with the longest side set by the caller (see ProcessMax).
+func (f *Fetcher) FetchMax(ctx context.Context, rawURL string, maxSide int) (Fetched, error) {
 	u, err := url.Parse(strings.TrimSpace(rawURL))
 	if err != nil {
 		if strings.Contains(err.Error(), "first path segment in URL cannot contain colon") {
@@ -143,7 +148,7 @@ func (f *Fetcher) Fetch(ctx context.Context, rawURL string) (Fetched, error) {
 	if mt, _, _ := mime.ParseMediaType(resp.Header.Get("Content-Type")); mt == "text/html" || mt == "application/xhtml+xml" {
 		return Fetched{}, ErrWebPage
 	}
-	res, err := ProcessContext(ctx, resp.Body)
+	res, err := ProcessMax(ctx, resp.Body, maxSide)
 	if err != nil {
 		var te *TooLargeError
 		if errors.As(err, &te) || errors.Is(err, ErrNotAnImage) || errors.Is(err, ErrWebPage) || errors.Is(err, ErrTooManyPixels) {

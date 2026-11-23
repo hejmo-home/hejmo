@@ -1,0 +1,53 @@
+{{/* Articles that are always on the list (ticket 168, docs/design/preview-168.html).
+     The icons: repeat for what comes by itself, pause for what is stopped. */}}
+{{define "repeatIcon"}}<svg class="icon rep" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><path d="M17 3l3 3-3 3"/><path d="M4 11V9a3 3 0 0 1 3-3h13"/><path d="M7 21l-3-3 3-3"/><path d="M20 13v2a3 3 0 0 1-3 3H4"/></svg>{{end}}
+{{define "pauseIcon"}}<svg class="icon" width="{{.}}" height="{{.}}" viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M10 9v6M14 9v6"/></svg>{{end}}
+{{define "alertIcon"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{end}}
+
+{{/* The sentence block that says in advance what happens. Argument: planView. */}}
+{{define "autoPlan"}}<div class="auto-plan{{if .Stopped}} stopped{{end}}" aria-live="polite"><p class="ap-head">{{if .Stopped}}{{template "pauseIcon" 20}}{{else}}{{template "repeatIcon" 20}}{{end}}<b>{{.Head}}</b></p>{{range .Lines}}<p><span class="{{.Class}}">{{.HTML}}</span></p>{{end}}</div>{{end}}
+
+{{/* The card on the page of an article, inside its one form. Argument: autoCardView. */}}
+{{define "autoCard"}}<fieldset class="auto-card" data-auto data-plan="{{.PlanURL}}">
+      <legend>{{t "always.card.legend"}}</legend>
+      <input type="hidden" name="auto_card" value="1">
+      <p class="hint">{{t "always.card.hint"}}</p>
+      {{template "switch" (dict "Name" "auto" "Label" (t "always.card.label") "OnText" .OnText "OffText" .OffText "Checked" .On "AriaLabel" .Aria)}}
+      <div class="when-on">
+        {{if .NoLists}}<p class="hint">{{t "always.card.nolists"}} <a href="/lists">{{t "always.card.nolists.link"}}</a></p>
+        {{else}}<fieldset class="chips auto-lists"{{if .Errs.list}} aria-invalid="true" aria-describedby="err-list"{{end}}>
+          <legend>{{t "always.list.legend"}}</legend>
+          {{range .Lists}}<label class="pchip plain"><input type="radio" name="auto_list" value="{{.ID}}"{{if .Checked}} checked{{end}}><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><span>{{.Name}}</span>{{template "tickIcon" 16}}</label>
+          {{end}}{{if .Errs.list}}<p class="ferr" id="err-list" role="alert">{{template "alertIcon"}}<span>{{.Errs.list}}</span></p>{{end}}
+        </fieldset>{{end}}
+        <fieldset class="chips auto-days"{{if .Errs.weekday}} aria-invalid="true" aria-describedby="err-day"{{end}}>
+          <legend>{{t "always.day.legend"}}</legend>
+          {{range .Days}}<label class="pchip plain"><input type="radio" name="auto_weekday" value="{{.Value}}"{{if .Checked}} checked{{end}}>{{.Name}}{{template "tickIcon" 16}}</label>
+          {{end}}{{if .Errs.weekday}}<p class="ferr" id="err-day" role="alert">{{template "alertIcon"}}<span>{{.Errs.weekday}}</span></p>{{end}}
+        </fieldset>
+        <div class="auto-rhythm">
+          <div class="f{{if .Errs.every}} invalid{{end}}">
+            <span class="lab" id="lab-every">{{t "always.every.legend"}}</span>
+            <label class="every">{{t "meals.tpl.every.before"}} <input name="auto_every" type="number" inputmode="numeric" min="1" max="52" step="1" value="{{.Every}}"{{if .Errs.every}} aria-invalid="true" aria-describedby="err-every"{{end}} aria-labelledby="lab-every"> {{t "meals.tpl.every.after"}}</label>
+            {{if .Errs.every}}<p class="ferr" id="err-every" role="alert">{{template "alertIcon"}}<span>{{.Errs.every}}</span></p>{{else}}<p class="hint">{{t "always.every.hint"}}</p>{{end}}
+          </div>
+          <div class="f{{if .Errs.start}} invalid{{end}}">
+            <label>{{t "always.start.legend"}}<select name="auto_start"{{if .Errs.start}} aria-invalid="true" aria-describedby="err-start"{{end}}>{{range .Starts}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Label}}</option>{{end}}</select></label>
+            {{if .Errs.start}}<p class="ferr" id="err-start" role="alert">{{template "alertIcon"}}<span>{{.Errs.start}}</span></p>{{end}}
+          </div>
+        </div>
+        <div class="auto-qty">
+          <fieldset class="seg mode"><legend>{{t "always.qty.legend"}}</legend>
+            <label><input type="radio" name="qmode" value="none"{{if ne .QMode "qty"}} checked{{end}}>{{t "lq.mode.quick"}}</label>
+            <label><input type="radio" name="qmode" value="qty"{{if eq .QMode "qty"}} checked{{end}}>{{t "lq.mode.qty"}}</label></fieldset>
+          {{template "qtyFields" .Qty}}
+        </div>
+        {{template "autoPlan" .Plan}}
+      </div>
+    </fieldset>{{end}}
+
+{{/* The line above the entries on the day Hejmo put things on, or while the holiday runs (ticket 168). Argument: autoNote. Size: icon size. */}}
+{{define "autoNote"}}{{with .Note}}<div class="auto-note{{if .Holiday}} holiday{{end}}" role="status">{{if .Holiday}}{{template "pauseIcon" $.Size}}{{else}}{{template "repeatIcon" $.Size}}{{end}}<p><b>{{.Head}}</b> {{.Text}}</p></div>{{end}}{{end}}
+
+{{/* "Kommt von selbst auf diese Liste" for parents. Argument: autoRules. */}}
+{{define "autoRules"}}{{with .}}<details class="more auto-rules"><summary><svg class="icon chev" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>{{.Summary}}</summary><div>{{template "alwaysRows" .Rows}}<p class="hint">{{t "always.lrules.hint"}} <a href="/settings/lists/always">{{t "always.lrules.link"}}</a></p></div></details>{{end}}{{end}}

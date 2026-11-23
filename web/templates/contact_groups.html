@@ -1,0 +1,26 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "contact.groups.title") "Frame" .Frame)}}
+  <h1>{{t "contact.groups.title"}}</h1>
+  <p class="lead">{{t "contact.groups.lead"}}</p>
+  <section aria-labelledby="own">
+    <h2 id="own">{{t "contact.groups.own"}}</h2>
+    {{if .Rows}}<ul class="list-rows">{{range .Rows}}
+      <li><a href="{{.Href}}"><span class="t"><b>{{.Name}}</b><span class="meta">{{.Meta}}</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
+    </ul>{{else}}<div class="empty" data-empty><p>{{t "contact.groups.none"}}</p></div>{{end}}
+  </section>
+  <section aria-labelledby="fix">
+    <h2 id="fix">{{t "contact.groups.fixed"}}</h2>
+    <p class="hint">{{.ShippedText}}</p>
+  </section>
+  <section aria-labelledby="new">
+    <h2 id="new">{{t "contact.groups.new"}}</h2>
+    <form method="post" action="/contacts/groups" class="steps">
+      <fieldset>
+        <div class="f{{if .Err}} invalid{{end}}"><label>{{t "contact.groups.name"}}<input name="name" type="text" maxlength="40" value="{{.Name}}"{{if .Err}} autofocus aria-invalid="true" aria-describedby="err-name hint-name"{{else}} aria-describedby="hint-name"{{end}}></label>
+        {{template "ctGroupErr" .Err}}
+        <p class="hint" id="hint-name">{{t "contact.groups.name.hint"}}</p></div>
+      </fieldset>
+      <button class="button" type="submit">{{t "contact.groups.create"}}</button>
+    </form>
+  </section>
+{{template "foot"}}
+{{define "ctGroupErr"}}{{if .}}<p class="ferr" id="err-name" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.}}</span></p>{{end}}{{end}}

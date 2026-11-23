@@ -209,11 +209,11 @@ func (s *server) createFirstParent(f setupForm, pl places.Place, passwordHash, p
 }
 
 // setupAccount is the account behind a browser session that may set up
-// one-time codes. A paired phone's device session survives a reset but must not
+// one-time codes. A paired personal device's device session survives a reset but must not
 // take the new setup over: that is for the parent, after their password.
 func (s *server) setupAccount(r *http.Request) (store.Account, bool) {
 	p, ok := s.pendingPerson(r)
-	if !ok || s.phoneSession(r) {
+	if !ok || s.personalDeviceSession(r) {
 		return store.Account{}, false
 	}
 	acc, err := s.db.AccountByPerson(p.ID)
@@ -272,7 +272,7 @@ func (s *server) renderTOTP(w http.ResponseWriter, r *http.Request, status int, 
 		"ResetNotice": s.resetNotice(r, acc), "HasPasskey": len(passkeys) > 0,
 		"Secret": acc.TOTPSecret, "SecretGroups": groupsOfFour(acc.TOTPSecret), "Username": acc.Username,
 		"URI": template.URL(uri), // built here, safe scheme
-		"QR":  template.HTML(svg), "Phone": mobileBrowser(r), "InstallKey": authenticatorInstallKey(r), "Error": errKey, "ErrorField": totpErrorField(errKey), "Wizard": shell,
+		"QR":  template.HTML(svg), "PersonalDevice": mobileBrowser(r), "InstallKey": authenticatorInstallKey(r), "Error": errKey, "ErrorField": totpErrorField(errKey), "Wizard": shell,
 	})
 }
 
@@ -403,7 +403,7 @@ func authenticatorInstallKey(r *http.Request) string {
 	return "setup.totp.s1.install.desktop"
 }
 
-// mobileBrowser reports whether the request comes from a phone, where the
+// mobileBrowser reports whether the request comes from a personal device, where the
 // authenticator app can be opened with a button instead of scanning a QR code.
 func mobileBrowser(r *http.Request) bool {
 	ua := strings.ToLower(r.UserAgent())

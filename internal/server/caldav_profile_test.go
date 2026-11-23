@@ -45,7 +45,7 @@ func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 		t.Fatalf("tokens = %+v", toks)
 	}
 	// It works as the CalDAV password, and lists like any device token.
-	cals, err := c.phoneWith(t, "mama", m[1]).calendars()
+	cals, err := c.personalDeviceWith(t, "mama", m[1]).calendars()
 	if err != nil {
 		t.Fatalf("the token in the profile does not sync: %v", err)
 	}
@@ -72,10 +72,10 @@ func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 			}
 		}
 	}
-	if _, err := c.phoneWith(t, "mama", m[1]).calendars(); err == nil {
+	if _, err := c.personalDeviceWith(t, "mama", m[1]).calendars(); err == nil {
 		t.Fatal("a revoked profile token still syncs")
 	}
-	if _, err := c.phoneWith(t, "mama", m2[1]).calendars(); err != nil {
+	if _, err := c.personalDeviceWith(t, "mama", m2[1]).calendars(); err != nil {
 		t.Fatalf("the other profile's token stopped working: %v", err)
 	}
 }
@@ -182,7 +182,7 @@ func TestIOSProfileThroughTheAPI(t *testing.T) {
 	if len(toks) != 1 || toks[0].Scopes != "calendars tasks" || toks[0].Name != "iPad Mama" {
 		t.Fatalf("tokens = %+v", toks)
 	}
-	if cals, err := c.phoneWith(t, "mama", m[1]).calendars(); err != nil || len(cals) < 2 {
+	if cals, err := c.personalDeviceWith(t, "mama", m[1]).calendars(); err != nil || len(cals) < 2 {
 		t.Fatalf("API profile token does not sync calendars and task lists: %v %v", cals, err)
 	}
 	if _, st, _ := c.callRaw(http.MethodPost, "/caldav-profile", map[string]any{"name": " "}); st != http.StatusUnprocessableEntity {

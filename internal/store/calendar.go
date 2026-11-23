@@ -30,7 +30,7 @@ type Calendar struct {
 	Kind        string // local, ics, caldav, google, outlook
 	Color       string
 	ReadOnly    bool // ICS calendars are always read-only
-	// Shared is "share through the box": phones may subscribe to the calendar
+	// Shared is "share through the box": personal devices may subscribe to the calendar
 	// over CalDAV. Always true for the family calendar.
 	Shared bool
 	// Waste marks a read-only calendar as the household's waste collection

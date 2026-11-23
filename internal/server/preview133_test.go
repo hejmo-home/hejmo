@@ -187,7 +187,7 @@ func TestWriteDesignPreview133(t *testing.T) {
 
 	add("Schritt 4: Erste Schritte, ganz neu", "Nach dem Assistenten: Erfolgszeile und die Karte „Erste Schritte“ mit 6 Schritten in sinnvoller Reihenfolge. Jeder sagt in Worten „Noch offen“, „Erledigt“ oder „Übersprungen“; nur der nächste offene hat einen Hauptknopf; jeder lässt sich überspringen.", get(b, "/", ""))
 
-	// Eight people, the first steps half done: Papa is entered but has no phone,
+	// Eight people, the first steps half done: Papa is entered but has no personal device,
 	// the tasks are skipped, the kitchen display is connected.
 	half := kitchenBox(t)
 	for _, n := range []string{"Papa", "Sebastian", "Mia", "Konstantin", "Charlotte-Sophie", "Maximilian", "Friederike"} {
@@ -201,7 +201,7 @@ func TestWriteDesignPreview133(t *testing.T) {
 	get(half, "/", "") // the success line of the last change is shown once
 	add("Erste Schritte: halb fertig (8 Personen, einer übersprungen)", "Erledigt nennt, was da ist: alle 8 Personen als Chips mit Zeichen und Namen, nie „+4“. Ein halb erledigter Schritt zeigt seine Teile mit Haken und Punkt in Worten. Übersprungen hat einen gestrichelten Kreis und „Doch machen“. Der Hauptknopf steht beim nächsten offenen Schritt.", get(half, "/", ""))
 
-	// Everything done: phones, more calendars with their audiences, tasks, a meal plan.
+	// Everything done: personal devices, more calendars with their audiences, tasks, a meal plan.
 	hh, _ := half.db.HomeHousehold()
 	people, _ := half.db.People(hh.ID)
 	byName := map[string]store.Person{}
@@ -209,8 +209,8 @@ func TestWriteDesignPreview133(t *testing.T) {
 		byName[p.Name] = p
 	}
 	half.post("/first-steps/undo", url.Values{"step": {"tasks"}})
-	pairedPhone(t, half, byName["Mama"], "iPhone")
-	pairedPhone(t, half, byName["Papa"], "Android")
+	pairedPersonalDevice(t, half, byName["Mama"], "iPhone")
+	pairedPersonalDevice(t, half, byName["Papa"], "Android")
 	half.feeds.set("https://example.org/familie.ics", feedOf(), nil)
 	half.post("/calendars", url.Values{"name": {"Familie"}, "url": {"https://example.org/familie.ics"}, "color": {"#2F5E7A"}, "interval": {"60"}})
 	for _, c := range []struct {

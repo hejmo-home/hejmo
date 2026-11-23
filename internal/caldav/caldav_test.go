@@ -41,7 +41,7 @@ func roundTrip(t *testing.T, o caldav.Object) caldav.Object {
 	if err != nil {
 		t.Fatal(err)
 	}
-	// Through the wire format, as a phone would see it.
+	// Through the wire format, as a personal device would see it.
 	decoded, err := ical.NewDecoder(strings.NewReader(text(t, cal))).Decode()
 	if err != nil {
 		t.Fatalf("own output does not parse: %v\n%s", err, text(t, cal))
@@ -137,7 +137,7 @@ func TestParseKeepsOldEventsThatAFeedWouldDrop(t *testing.T) {
 		"DTSTART:20150102T160000Z\r\nDTEND:20150102T170000Z\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
 	cal, _ := ical.NewDecoder(strings.NewReader(src)).Decode()
 	if _, err := caldav.Parse(cal, berlin); err != nil {
-		t.Fatalf("an event from 2015 written by a phone must be kept: %v", err)
+		t.Fatalf("an event from 2015 written by a personal device must be kept: %v", err)
 	}
 }
 

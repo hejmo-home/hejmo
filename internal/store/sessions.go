@@ -24,10 +24,10 @@ type BrowserSession struct {
 }
 
 // TouchSession records that the browser behind the session was used at t, at
-// most every SessionTouchInterval. A paired phone's session is left alone.
+// most every SessionTouchInterval. A paired personal device's session is left alone.
 func (db *DB) TouchSession(tokenHash string, t time.Time) {
 	_, _ = db.sql.Exec(`UPDATE sessions SET last_seen_at = ?
-		WHERE token_hash = ? AND phone_id IS NULL AND (last_seen_at IS NULL OR last_seen_at <= ?)`,
+		WHERE token_hash = ? AND personal_device_id IS NULL AND (last_seen_at IS NULL OR last_seen_at <= ?)`,
 		stamp(t), tokenHash, stamp(t.Add(-SessionTouchInterval)))
 }
 
@@ -45,7 +45,7 @@ const browserSessionSelect = `SELECT s.id, s.device, s.created_at, s.last_seen_a
 	FROM sessions s
 	JOIN people p ON p.id = s.person_id
 	JOIN household_members m ON m.person_id = p.id AND m.household_id = ?
-	WHERE s.phone_id IS NULL AND s.expires_at > ?`
+	WHERE s.personal_device_id IS NULL AND s.expires_at > ?`
 
 func scanBrowserSession(r rowScanner) (BrowserSession, error) {
 	var b BrowserSession
@@ -61,7 +61,7 @@ func scanBrowserSession(r rowScanner) (BrowserSession, error) {
 }
 
 // ListBrowserSessions returns the browser sessions of a household that have
-// not expired at time at: paired phones' device sessions are left out. They
+// not expired at time at: paired personal devices' device sessions are left out. They
 // come in household person order, then last used, newest first.
 func (db *DB) ListBrowserSessions(householdID string, at time.Time) ([]BrowserSession, error) {
 	rows, err := db.sql.Query(browserSessionSelect+`
@@ -91,9 +91,9 @@ func (db *DB) BrowserSession(householdID, id string, at time.Time) (BrowserSessi
 }
 
 // EndBrowserSession deletes a browser session, so its browser is refused at
-// its next request. A paired phone's session is not touched: the phone is
-// removed on the phones screen. A session that is gone reports ErrNotFound.
+// its next request. A paired personal device's session is not touched: the personal device is
+// removed on the personal devices screen. A session that is gone reports ErrNotFound.
 func (db *DB) EndBrowserSession(householdID, id string) error {
-	return expectOne(db.sql.Exec(`DELETE FROM sessions WHERE id = ? AND phone_id IS NULL
+	return expectOne(db.sql.Exec(`DELETE FROM sessions WHERE id = ? AND personal_device_id IS NULL
 		AND person_id IN (SELECT person_id FROM household_members WHERE household_id = ?)`, id, householdID))
 }

@@ -33,13 +33,14 @@ type articleJSON struct {
 	Picture       *string  `json:"picture"`
 	PictureSource string   `json:"picture_source"`
 	HiddenByHand  bool     `json:"hidden_by_hand"`
+	Pantry        bool     `json:"pantry"`
 	CreatedBy     *string  `json:"created_by"`
 	CreatedAt     *string  `json:"created_at"`
 }
 
 func (s *server) articleToJSON(p principal, it articleItem) articleJSON {
 	j := articleJSON{ID: it.ID, Source: "hejmo", NameDE: it.De, NameEN: it.En, Dept: it.Dept, Kind: string(it.Kind), Allergens: nonNil(it.Allergens),
-		Units: it.Units, OfferedUnits: s.offeredUnits(p, it.Article), Symbol: it.Symbol, HiddenByHand: it.handHidden}
+		Units: it.Units, OfferedUnits: s.offeredUnits(p, it.Article), Symbol: it.Symbol, HiddenByHand: it.handHidden, Pantry: it.Pantry}
 	if it.own == nil {
 		j.Symbol = it.Symbol
 		return j
@@ -99,6 +100,7 @@ type articleIn struct {
 	Unit2         *string   `json:"unit2"`
 	Symbol        *string   `json:"symbol"`
 	PictureURL    *string   `json:"picture_url"`
+	Pantry        *bool     `json:"pantry"`
 	RemovePicture bool      `json:"remove_picture"`
 }
 
@@ -154,6 +156,9 @@ func (s *server) articleWrite(w http.ResponseWriter, r *http.Request, p principa
 	set(&cur.Unit2, in.Unit2)
 	if in.Allergens != nil {
 		cur.Allergens = *in.Allergens
+	}
+	if in.Pantry != nil {
+		cur.Pantry = *in.Pantry
 	}
 	change := store.KeepPicture
 	var pic *store.ArticlePicture
@@ -317,6 +322,33 @@ func (s *server) apiSetArticleHidden(w http.ResponseWriter, r *http.Request, p p
 	writeJSON(w, http.StatusOK, s.articleToJSON(p, it))
 }
 
+// apiSetArticlePantry marks any article, shipped or own, as a pantry article or not.
+func (s *server) apiSetArticlePantry(w http.ResponseWriter, r *http.Request, p principal) {
+	var in struct {
+		Pantry *bool `json:"pantry"`
+	}
+	if err := json.NewDecoder(io.LimitReader(r.Body, 1<<20)).Decode(&in); err != nil || in.Pantry == nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON")
+		return
+	}
+	id := r.PathValue("id")
+	if _, err := s.setPantry(p, id, *in.Pantry, s.langOf(r)); err != nil {
+		if errors.Is(err, store.ErrNotFound) {
+			writeError(w, http.StatusNotFound, "article not found")
+			return
+		}
+		s.fail(w, "mark article", err)
+		return
+	}
+	st, err := s.libState(p, s.langOf(r))
+	if err != nil {
+		s.fail(w, "library state", err)
+		return
+	}
+	it, _ := st.item(id)
+	writeJSON(w, http.StatusOK, s.articleToJSON(p, it))
+}
+
 func (s *server) apiCopyArticle(w http.ResponseWriter, r *http.Request, p principal) {
 	a, ok := library.ShippedByID(r.PathValue("id"))
 	if !ok {
@@ -325,7 +357,12 @@ func (s *server) apiCopyArticle(w http.ResponseWriter, r *http.Request, p princi
 	}
 	lang := s.langOf(r)
 	active := s.activeUnits(p.household)
-	own := store.OwnArticle{Name: a.Name(lang), Dept: a.Dept, Kind: string(a.Kind), Allergens: a.Allergens, Unit1: s.offeredUnits(p, a)[0]}
+	pantry, err := s.shippedPantry(p, a)
+	if err != nil {
+		s.fail(w, "pantry marks", err)
+		return
+	}
+	own := store.OwnArticle{Name: a.Name(lang), Dept: a.Dept, Kind: string(a.Kind), Allergens: a.Allergens, Unit1: s.offeredUnits(p, a)[0], Pantry: pantry}
 	if len(a.Units) > 1 && slices.Contains(active, a.Units[1]) && a.Units[1] != own.Unit1 {
 		own.Unit2 = a.Units[1]
 	}
@@ -336,6 +373,10 @@ func (s *server) apiCopyArticle(w http.ResponseWriter, r *http.Request, p princi
 	}
 	if err := s.db.SetArticleHidden(p.household.ID, a.ID, true); err != nil {
 		s.fail(w, "hide copied article", err)
+		return
+	}
+	if err := s.db.MoveAlwaysRule(p.household.ID, a.ID, saved.ID); err != nil { // "always on the list" goes with the copy
+		s.fail(w, "move always rule", err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, s.articleToJSON(p, articleItem{Article: ownArticle(saved), own: &saved}))

@@ -60,7 +60,7 @@ func TestDeviceTokensAreListedWithoutTheirSecret(t *testing.T) {
 		t.Fatalf("create = %d", status)
 	}
 	// Using the token marks it as used.
-	ph := c.phoneWith(t, "mama", made["token"].(string))
+	ph := c.personalDeviceWith(t, "mama", made["token"].(string))
 	if _, err := ph.calendars(); err != nil {
 		t.Fatal(err)
 	}
@@ -111,7 +111,7 @@ func TestParentManagesDeviceTokensAndSharingInTheWebInterface(t *testing.T) {
 		t.Fatalf("create = %d\n%s", r.status, r.body)
 	}
 	secret := m[1]
-	if _, err := c.phoneWith(t, "mama", secret).calendars(); err != nil {
+	if _, err := c.personalDeviceWith(t, "mama", secret).calendars(); err != nil {
 		t.Fatalf("the shown token does not work: %v", err)
 	}
 	// The value is shown once only; the API lists the token (parity).
@@ -148,7 +148,7 @@ func TestParentManagesDeviceTokensAndSharingInTheWebInterface(t *testing.T) {
 	if r := b.post("/caldav/tokens/"+toks[0].ID+"/revoke", url.Values{}); r.status != http.StatusSeeOther || r.location != "/caldav" {
 		t.Fatalf("revoke = %d %q", r.status, r.location)
 	}
-	if _, err := c.phoneWith(t, "mama", secret).calendars(); err == nil {
+	if _, err := c.personalDeviceWith(t, "mama", secret).calendars(); err == nil {
 		t.Fatal("a token revoked in the web interface still works")
 	}
 	if r := b.post("/caldav/tokens/"+toks[0].ID+"/revoke", url.Values{}); r.status != http.StatusNotFound {

@@ -13,7 +13,7 @@ import (
 // navItem is one screen of the web interface frame. A person sees it when
 // their role holds the permission the screen needs (ADR 0015), so a child's
 // device session sees only the screens its role allows. Later screens
-// (calendar, lists, phones) add a line here.
+// (calendar, lists, personal devices) add a line here.
 type navItem struct {
 	Href, Label string
 	Needs       auth.Permission
@@ -39,7 +39,7 @@ type navLink struct {
 // frame is the chrome around a web screen: brand bar, sign-out and navigation.
 type frame struct {
 	SignedIn bool
-	// NoSignOut hides Sign out: a child's phone stays signed in; a parent unpairs it (Q46).
+	// NoSignOut hides Sign out: a child's personal device stays signed in; a parent unpairs it (Q46).
 	NoSignOut bool
 	Items     []navLink
 	// SunRise and SunSet are today's sun times at the home location (Unix
@@ -53,7 +53,7 @@ type frame struct {
 	// follows it.
 	TimeFormat string
 	// DateFormat is the household's date layout ("dmy" or "mdy"); the offline
-	// line on phones writes its date that way.
+	// line on personal devices writes its date that way.
 	DateFormat string
 	// Back is set on setup screens: they link back to the Settings hub.
 	Back bool
@@ -80,10 +80,10 @@ type frame struct {
 	LangName, LangFlag string
 	Others             []language
 	Next               string
-	// The theme chooser (ticket 125): a paired phone says "phone" where a
+	// The theme chooser (ticket 125): a paired personal device says "personal device" where a
 	// browser says "browser", and a parent gets a link where a child is told to
 	// ask an adult.
-	ThemePhone, ThemeParent bool
+	ThemePersonalDevice, ThemeParent bool
 }
 
 // frameFor builds the frame for the person behind the request, or a bare
@@ -97,9 +97,9 @@ func (s *server) frameFor(r *http.Request) frame {
 	}
 	f := s.sunFrame()
 	f.SignedIn = true
-	f.ThemePhone = s.phoneSession(r)
+	f.ThemePersonalDevice = s.personalDeviceSession(r)
 	f.ThemeParent = auth.RoleAllows(p.Role, auth.Perm("settings", auth.Write))
-	f.NoSignOut = s.childPhoneSession(r, p)
+	f.NoSignOut = s.childPersonalDeviceSession(r, p)
 	if h, err := s.db.HomeHousehold(); err == nil {
 		f.TimeFormat = string(h.TimeFormat)
 		f.DateFormat = string(h.DateFormat)
@@ -184,9 +184,10 @@ var hubItems = []hubItem{
 	{"/caldav", "hub.caldav", "hub.caldav.hint", auth.Perm("tokens", auth.Read)},
 	{"/displays", "hub.displays", "hub.displays.hint", auth.Perm("displays", auth.Write)},
 	{"/photos", "hub.photos", "hub.photos.hint", auth.Perm("displays", auth.Write)},
-	{"/phones", "hub.phones", "hub.phones.hint", auth.Perm("tokens", auth.Write)},
+	{"/personal-devices", "hub.personal_devices", "hub.personal_devices.hint", auth.Perm("tokens", auth.Write)},
 	{"/mcp", "hub.mcp", "hub.mcp.hint", auth.Perm("tokens", auth.Write)},
 	{"/people", "hub.people", "hub.people.hint", auth.Perm("people", auth.Write)},
+	{"/contacts", "hub.contacts", "hub.contacts.hint", auth.Perm("contacts", auth.Write)},
 	{"/settings/lists", "hub.lists", "hub.lists.hint", auth.Perm("settings", auth.Write)},
 	{"/settings/household", "hub.household", "hub.household.hint", auth.Perm("settings", auth.Write)},
 	{"/settings/connections", "hub.outside", "hub.outside.hint", auth.Perm("settings", auth.Write)},

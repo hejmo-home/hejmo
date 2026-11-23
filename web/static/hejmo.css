@@ -625,7 +625,7 @@ textarea { width: 100%; font: inherit; color: var(--text); background: var(--sur
 .task-stars::before { content: "+" / ""; }
 .task-stars::after { content: "\00a0\2605" / ""; }
 
-/* Phones (ticket 5.13): the QR code a phone scans, and the offline view. */
+/* Personal devices (ticket 5.13): the QR code a personal device scans, and the offline view. */
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
@@ -2389,7 +2389,7 @@ fieldset.units fieldset.chips legend, fieldset.sym-grid legend:not(.sr) { font-s
 /* A legend only for screen readers takes no room, whatever fieldset it sits in (the picture choice, the symbol results). */
 fieldset legend.sr { float: none; width: 1px; margin: -1px; padding: 0; }
 
-/* ticket 199: the page a phone shows after its device session ended (see DESIGN.md). */
+/* ticket 199: the page a personal device shows after its device session ended (see DESIGN.md). */
 .unpaired { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; max-width: 560px; }
 .unpaired > * { margin: 0; }
 .unpaired .pic { width: 104px; height: 104px; fill: none; stroke: var(--text); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -2407,7 +2407,7 @@ fieldset legend.sr { float: none; width: 1px; margin: -1px; padding: 0; }
 @media (min-width: 900px) { .unpaired { margin: 0 auto; } }
 @media (max-height: 500px) { .unpaired .pic { width: 64px; height: 64px; } }
 
-/* ticket 198: pair a child's phone for another person (new, see DESIGN.md). */
+/* ticket 198: pair a child's personal device for another person (new, see DESIGN.md). */
 details.repair { box-sizing: border-box; border-top: 1px solid var(--border); margin-top: var(--gap-section); max-width: 560px; }
 details.repair > summary { display: flex; align-items: flex-start; gap: 10px; min-height: var(--touch-target); padding: 10px 0; cursor: pointer; list-style: none; }
 details.repair > summary::-webkit-details-marker { display: none; }
@@ -2431,8 +2431,8 @@ details.repair + details.danger { margin-top: 0; }
 .verification { font-size: var(--fs-key-figure); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* ---- New for #125: theme chooser in the brand bar (ADR 0015, 0017) ---- */
-/* One chooser for everyone signed in, parents and children's phones, beside
-   the language switcher: both are choices of this browser or phone. The menu
+/* One chooser for everyone signed in, parents and children's personal devices, beside
+   the language switcher: both are choices of this browser or personal device. The menu
    hangs from the right edge of the brand bar, so it never runs off a 375 px
    screen. */
 .frame-bar { position: relative; }
@@ -2467,14 +2467,14 @@ details.repair + details.danger { margin-top: 0; }
 .theme-menu .where { margin: 6px 4px 0; }
 /* Swatch: a tiny page in the theme it stands for, so a child who cannot read
    yet sees what each choice looks like. Light shows a sun, dark a moon,
-   automatic both, "follow the device" a phone with both halves. */
+   automatic both, "follow the device" a personal device with both halves. */
 .swatch { flex: none; width: 44px; height: 44px; box-sizing: border-box; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; overflow: hidden; border: 1.5px solid var(--text-secondary); border-radius: var(--radius-field); }
 .swatch > span { display: grid; place-items: center; background: var(--background); color: var(--text); }
 .swatch .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
 .swatch.half .icon { width: 16px; height: 16px; }
-.swatch.phone { width: 30px; margin: 0 7px; border-radius: 8px; border-width: 2px; grid-auto-flow: row; grid-auto-rows: 1fr; grid-auto-columns: auto; }
+.swatch.personal-device { width: 30px; margin: 0 7px; border-radius: 8px; border-width: 2px; grid-auto-flow: row; grid-auto-rows: 1fr; grid-auto-columns: auto; }
 .swatch.sm { width: 26px; height: 26px; border-radius: 8px; }
-.swatch.sm.phone { width: 18px; margin: 0 4px; border-radius: 5px; }
+.swatch.sm.personal-device { width: 18px; margin: 0 4px; border-radius: 5px; }
 .swatch.sm .icon { width: 15px; height: 15px; }
 .swatch.sm.half .icon { display: none; }
 [data-theme="bw"] .swatch { border: 2px solid var(--text); }
@@ -3313,3 +3313,207 @@ section > .hint.none { margin-top: -4px; }
 @media (max-width: 599px) {
   .fv .chips [data-clock] { display: none; }
 }
+/* ---- ticket 168: articles always on the list (ADR 0019, Q27) ---- */
+/* Article page: the card "Immer auf der Liste" sits in the article's one form,
+   before "In den Vorschlägen". Off: only the switch. On: list, day, rhythm,
+   quantity and the sentence that says in advance what happens. */
+.auto-card .when-on { display: grid; gap: 18px; padding-top: 4px; }
+.auto-card > .hint { margin: 0; }
+.auto-card fieldset.chips { gap: 8px; }
+.auto-card fieldset.chips > .ferr { flex: 1 1 100%; margin: 4px 0 0; }
+.auto-card .pchip { white-space: normal; text-align: left; max-width: 100%; box-sizing: border-box; }
+.auto-card .pchip > span:not(.marker) { overflow-wrap: break-word; hyphens: auto; min-width: 0; }
+.auto-card .pchip .marker { flex: none; }
+.auto-card fieldset.chips[aria-invalid="true"] .pchip { border-color: var(--error-text); }
+.auto-rhythm { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 26em; }
+.auto-rhythm .f { display: grid; gap: 6px; min-width: 0; }
+.auto-rhythm .lab { font-size: var(--fs-label); color: var(--text-secondary); }
+.auto-rhythm .hint, .auto-rhythm .ferr { margin: 0; }
+.auto-rhythm select { width: 100%; }
+.auto-qty { display: grid; gap: 12px; min-width: 0; }
+.auto-qty .seg.mode { justify-self: start; }
+.auto-qty .seg.mode label { flex: 0 0 auto; padding: 8px 14px; }
+.auto-qty fieldset.qty { display: grid; gap: 12px; border: 0; margin: 0; padding: 0; min-width: 0; background: none; }
+.auto-qty:has(input[name="qmode"][value="none"]:checked) fieldset.qty { display: none; }
+.auto-plan { display: grid; gap: 6px; padding: 12px 14px; border: 1.5px solid var(--accent); border-radius: var(--radius-card); background: var(--background); }
+.auto-plan p { margin: 0; overflow-wrap: break-word; }
+.auto-plan .ap-head { display: flex; gap: 8px; align-items: flex-start; font-size: var(--fs-event-title); }
+.auto-plan .ap-head .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.auto-plan .weeks-hint { display: block; padding: 0; background: none; border: 0 !important; color: var(--text); font-size: var(--fs-label-large); }
+.auto-plan.stopped { border: 1.5px dashed var(--notice-text); background: var(--notice-bg); color: var(--notice-text); }
+.auto-plan.stopped .ap-head .icon { stroke: var(--notice-text); }
+.auto-plan.stopped .hint { color: var(--notice-text); }
+[data-theme="bw"] .auto-plan { border: 2px solid var(--text); background: var(--surface); }
+[data-theme="bw"] .auto-plan .ap-head .icon { stroke: var(--text); }
+[data-theme="bw"] .auto-plan.stopped { border: 2px dashed var(--text); color: var(--text); }
+[data-theme="bw"] .auto-plan.stopped .hint, [data-theme="bw"] .auto-plan.stopped .ap-head .icon { color: var(--text); stroke: var(--text); }
+@media (max-width: 479px) {
+  .auto-qty .seg.mode { justify-self: stretch; }
+  .auto-qty .seg.mode label { flex: 1 1 0; padding: 8px 6px; }
+}
+
+/* .steps colours every span grey and makes every legend a heading: undo that
+   inside the card so chips keep their own colours and sub-legends stay labels. */
+.auto-card .pchip > span, .auto-card fieldset.units label span, .auto-plan span, .auto-card .every { color: inherit; font-size: inherit; }
+.auto-plan span.hint { color: var(--text-secondary); font-size: var(--fs-label); }
+.auto-plan.stopped span.hint { color: var(--notice-text); }
+[data-theme="bw"] .auto-plan.stopped span.hint { color: var(--text); }
+.auto-card fieldset.units > legend, .auto-qty .seg.mode > legend { font-size: var(--fs-label); font-weight: 400; color: var(--text-secondary); }
+.auto-card fieldset.units label small { color: var(--text-secondary); }
+
+/* Tags: the rhythm of an article in the library ("Jeden Montag auf „Einkauf“")
+   and the paused state (list deleted). */
+.tag.auto, .tag.paused { gap: 6px; height: auto; padding: 2px 10px; text-align: left; overflow-wrap: break-word; }
+.tag.auto .icon, .tag.paused .icon { flex: none; stroke: currentColor; }
+.tag.paused { border-color: var(--notice-text); color: var(--notice-text); background: var(--notice-bg); }
+[data-theme="bw"] .tag.paused { background: none; color: var(--text); border: 2px dashed var(--text); }
+.list-rows .meta.auto-stopped { color: var(--notice-text); font-weight: 600; }
+[data-theme="bw"] .list-rows .meta.auto-stopped { color: var(--text); }
+.list-rows .art-sym .icon.rep { stroke: var(--accent); }
+[data-theme="bw"] .list-rows .art-sym .icon.rep { stroke: var(--text); }
+.auto-res { margin: 0 0 10px; max-width: 560px; font-weight: 700; overflow-wrap: break-word; }
+.auto-ahead { margin-top: 0; max-width: 560px; box-sizing: border-box; }
+.auto-ahead li { grid-template-columns: 9.5em minmax(0, 1fr); }
+@container (max-width: 420px) { .auto-ahead li { grid-template-columns: minmax(0, 1fr); } }
+
+/* List page: the line on the day of adding and the reason under an entry. */
+.auto-note { display: flex; gap: 10px; align-items: flex-start; max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap); padding: 10px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
+.auto-note p { margin: 0; overflow-wrap: break-word; }
+.auto-note .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+[data-theme="bw"] .auto-note { border: 2px solid var(--text); }
+[data-theme="bw"] .auto-note .icon { stroke: var(--text); }
+.auto-src { display: flex; gap: 6px; align-items: flex-start; margin: -6px 0 8px; padding-left: 54px; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+.entries li > .auto-src { flex: 1 1 100%; }
+.auto-src .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+[data-theme="bw"] .auto-src { color: var(--text); }
+.entries li[data-done="true"] > .auto-src { display: none; }
+details.auto-rules { max-width: 560px; }
+details.auto-rules > summary { overflow-wrap: break-word; }
+details.auto-rules > div { display: grid; gap: 8px; }
+details.auto-rules .list-rows { margin: 0; }
+details.auto-rules .hint { margin: 0; }
+details.auto-rules[open] .list-rows .chev { transform: none; }
+
+/* Display: the same words at display size. */
+.lv-entries .auto-note { max-width: none; margin: 0; font-size: var(--fs-event-title); }
+.lv-entries .auto-src { margin: -2px 0 0; padding-left: 64px; font-size: var(--fs-event-title); }
+
+/* ---- ticket 168 revision (Q43/Q44): holiday and household time ---- */
+/* Holiday: the paused state in words with the pause sign, like "Angehalten";
+   on the list, the overview and the display. */
+.auto-note.holiday { border: 1.5px dashed var(--notice-text); background: var(--notice-bg); color: var(--notice-text); }
+.auto-note.holiday .icon { stroke: var(--notice-text); }
+.auto-note.holiday a { color: inherit; }
+[data-theme="bw"] .auto-note.holiday { border: 2px dashed var(--text); background: var(--surface); color: var(--text); }
+[data-theme="bw"] .auto-note.holiday .icon { stroke: var(--text); }
+main > .msg.ok + .auto-note { margin-top: 0; }
+/* "Für alle Artikel": time capsule and the two holiday dates. */
+.auto-house .f > label { display: grid; gap: 6px; justify-items: start; }
+.auto-house .when-on { display: grid; gap: 14px; }
+.auto-house .pair .f label { display: grid; gap: 6px; }
+.auto-house input[type="date"] { max-width: 100%; box-sizing: border-box; }
+.auto-house .auto-plan { margin: 0; }
+.auto-house .tcap { width: auto; justify-self: start; }
+/* Tile view (#166): one short line under the quantity says that the entry
+   comes by itself, the rhythm in words; after adding up, which part comes
+   always. Hidden on ticked-off tiles. */
+.tile-check .tile-auto { display: block; max-width: 100%; text-align: center; font-size: var(--fs-meta); line-height: 1.3; color: var(--text-secondary); overflow-wrap: break-word; }
+.tile-check .tile-auto .icon { display: inline-block; width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; stroke: currentColor; }
+[data-theme="bw"] .tile-check .tile-auto { color: var(--text); }
+.tiles > li[data-done="true"] .tile-auto { display: none; }
+.lv .tile-check .tile-auto { font-size: var(--fs-label); }
+.list-tiles .auto-note { max-width: 760px; }
+
+/* ---- ticket 296: contacts (preview docs/design/preview-296.html; no new tokens) ---- */
+/* Overview rows: Hejmo name bold, full name, every number with its kind in words, groups as word tags. */
+.list-rows.contacts .t > b { overflow-wrap: break-word; hyphens: manual; }
+.list-rows.contacts .t > b.who { display: flex; align-items: center; gap: 8px; }
+.list-rows.contacts .t > b.who .marker { flex: none; }
+.list-rows.contacts .t > b.who > span { min-width: 0; }
+.list-rows .nums { display: flex; flex-wrap: wrap; gap: 2px 16px; font-size: var(--fs-label); color: var(--text); font-variant-numeric: tabular-nums; }
+.list-rows .nums > span { white-space: nowrap; }
+.list-rows .nums .lab, .list-rows .none { color: var(--text-secondary); }
+.list-rows .none { font-size: var(--fs-label); }
+.grps { display: flex; flex-wrap: wrap; gap: 4px 6px; }
+.list-rows .grps { margin-top: 2px; }
+.tag.grp { border: 1px solid var(--border); color: var(--text); font-weight: 600; background: var(--background); }
+[data-theme="bw"] .tag.grp { border: 1.5px solid var(--text); background: none; }
+.ct-filter ul { margin-bottom: 4px; }
+p.grp-link { margin: 0 0 var(--gap-section); }
+p.grp-link a { display: inline-flex; align-items: center; min-height: var(--touch-target); font-weight: 600; }
+.empty .row-actions { display: flex; flex-wrap: wrap; align-items: center; gap: 8px 16px; margin: 0; }
+.empty .row-actions a:not(.button) { display: inline-flex; align-items: center; min-height: var(--touch-target); font-weight: 600; }
+
+/* Contact page: full name under the heading, facts with tap-to-call and tap-to-write links. */
+.ct-full { margin: -4px 0 var(--gap); font-size: var(--fs-label-large); color: var(--text-secondary); max-width: 560px; overflow-wrap: break-word; }
+.facts.ct > dt.l { align-self: center; padding-top: 0; }
+.facts a.call, .facts a.mail { display: inline-flex; align-items: center; gap: 8px; min-height: var(--touch-target); min-width: 0; max-width: 100%; font-size: var(--fs-event-title); font-weight: 600; color: var(--accent); text-decoration: underline; text-underline-offset: 3px; }
+.facts a.call .icon, .facts a.mail .icon { flex: none; stroke: currentColor; }
+.facts a.call span { white-space: nowrap; font-variant-numeric: tabular-nums; }
+.facts a.mail span { min-width: 0; overflow-wrap: anywhere; hyphens: manual; }
+[data-theme="bw"] .facts a.call, [data-theme="bw"] .facts a.mail { color: var(--text); text-decoration-thickness: 2px; }
+.facts .adr { display: grid; gap: 2px; font-style: normal; }
+.facts dd.note { display: block; white-space: pre-line; overflow-wrap: break-word; }
+.facts dd.none { color: var(--text-secondary); }
+p.why.fam { background: var(--surface); max-width: 560px; margin: 0 0 var(--gap); box-sizing: border-box; font-size: var(--fs-label-large); }
+p.why.fam .icon { stroke: var(--accent); }
+p.why.fam b { display: inline; }
+[data-theme="bw"] p.why.fam .icon { stroke: var(--text); }
+
+/* Contact form: one card per part, number and e-mail lines of kind, value and "Remove". */
+.ct-form fieldset > legend { margin-bottom: 4px; }
+.ct-form fieldset > .hint { margin: 0; }
+.ct-form .lines { list-style: none; margin: 0; padding: 0; display: grid; gap: 10px; }
+.ct-form .line { display: grid; grid-template-columns: minmax(0, 11em) minmax(0, 1fr) auto; grid-template-areas: "lab val rm" "own own own" "err err err"; gap: 8px; align-items: start; }
+.ct-form .line > select { grid-area: lab; width: 100%; min-width: 0; }
+.ct-form .line > input.val { grid-area: val; width: 100%; box-sizing: border-box; min-width: 0; }
+.ct-form .line > .rm { grid-area: rm; }
+.ct-form .line > .own { grid-area: own; }
+.ct-form .line > .ferr { grid-area: err; }
+.ct-form .line.blank { grid-template-columns: minmax(0, 11em) minmax(0, 1fr); grid-template-areas: "lab val" "own own" "err err"; }
+.ct-form .line.invalid > input.val { border: 2px solid var(--error-text); }
+.ct-form .own.invalid input { border: 2px solid var(--error-text); }
+.ct-form .own .ferr { margin-top: 0; }
+@supports selector(:has(*)) {
+  .ct-form .line > .own { display: none; }
+  .ct-form .line:has(> select option[value="own"]:checked) > .own { display: grid; }
+}
+.ct-form .button.sq.rm { padding: 8px 12px; }
+.ct-form .button.add { justify-self: start; }
+.ct-form .pair .f.plz { flex: 0 1 8em; }
+.ct-form .bday { display: flex; flex-wrap: wrap; align-items: start; gap: 10px 14px; }
+.ct-form .bday > legend { width: 100%; }
+.ct-form .bday .f.d { flex: 0 0 5.5em; }
+.ct-form .bday .f.m { flex: 1 1 10em; max-width: 15em; }
+.ct-form .bday .f.y { flex: 0 0 7.5em; }
+.ct-form .bday input { width: 100%; box-sizing: border-box; font-variant-numeric: tabular-nums; }
+.ct-form .bday .opt { color: var(--text-secondary); }
+.ct-form .bday > .ferr, .ct-form .bday > .hint { flex: 0 0 100%; margin: 0; }
+.ct-form .bday.invalid input[aria-invalid], .ct-form .bday.invalid select[aria-invalid] { border: 2px solid var(--error-text); }
+.ct-form fieldset.grp-pick { display: flex; flex-wrap: wrap; gap: 8px; background: var(--surface); border-radius: var(--radius-tile); padding: 16px; }
+.ct-form fieldset.grp-pick > legend { width: 100%; font-size: var(--fs-person-name); font-weight: 700; color: var(--text); margin: 0 0 4px; }
+.ct-form fieldset.grp-pick > .hint, .ct-form fieldset.grp-pick > details { flex: 0 0 100%; margin: 0; }
+.ct-form .pchip { overflow-wrap: break-word; hyphens: manual; max-width: 100%; box-sizing: border-box; }
+.ct-form .pchip.static { --pc: var(--text); --pc-tint: var(--background); --pc-text: var(--text); }
+.ct-form .pchip.static .tick { display: inline-block; }
+.ct-form .invitee .lbl { display: block; }
+.ct-form .counter { margin-top: -2px; }
+[data-theme="bw"] .ct-form fieldset { border: 2px solid var(--text); }
+[data-theme="bw"] .ct-form .pchip { border-width: 2px; }
+[data-theme="bw"] .ct-form .pchip:has(input:checked), [data-theme="bw"] .ct-form .pchip.static { border-width: 3px; padding: 4px 12px 4px 10px; }
+@media (max-width: 479px) {
+  .ct-form .line { grid-template-columns: minmax(0, 1fr) auto; grid-template-areas: "lab lab" "val rm" "own own" "err err"; }
+  .ct-form .line.blank { grid-template-columns: minmax(0, 1fr); grid-template-areas: "lab" "val" "own" "err"; }
+  .ct-form .lines { gap: 16px; }
+}
+/* The number lines are not step cards: no card look of .steps li. */
+.ct-form .lines > li { background: none; padding: 0; border-radius: 0; }
+[data-theme="bw"] .ct-form .lines > li { border: 0; }
+/* E-mail addresses are long: the address takes the whole row under its kind. */
+.ct-form .mails .line { grid-template-columns: minmax(0, 11em) minmax(0, 1fr) auto; grid-template-areas: "lab . rm" "val val val" "own own own" "err err err"; }
+.ct-form .mails .line.blank { grid-template-columns: minmax(0, 11em) minmax(0, 1fr); grid-template-areas: "lab ." "val val" "own own" "err err"; }
+@media (max-width: 479px) {
+  .ct-form .mails .line { grid-template-columns: minmax(0, 1fr); grid-template-areas: "lab" "val" "rm" "own" "err"; }
+  .ct-form .mails .line > .rm { justify-self: end; }
+}
+.ct-form p.lab-static { margin: 0 0 -4px; font-size: var(--fs-label); color: var(--text-secondary); }

@@ -6,7 +6,7 @@ Hejmo can work with an AI assistant such as Claude or ChatGPT through **MCP** (M
 
 - It can work with **events**, **lists**, **tasks** (with routines, templates and stars) and the **meal plan**: only the areas you choose for its token, each either read only or read and change ("change" includes adding, ticking off and deleting).
 - A fifth area, **diet and allergies** (health data), is set apart: it is off for every new token, and the most you can give is read only. Free-text allergies always arrive with the note "not checked automatically, not filterable". Only a parent changes them, in Hejmo.
-- It can **never** change settings, create or revoke tokens, manage people, displays or phones. Those are not offered as tools.
+- It can **never** change settings, create or revoke tokens, manage people, displays or personal devices. Those are not offered as tools.
 - A token belongs to the parent who creates it, and the assistant acts as that person. Children get no MCP token.
 - **What the assistant reads, it sends to its provider** so the AI can answer. Give it only the areas it needs.
 

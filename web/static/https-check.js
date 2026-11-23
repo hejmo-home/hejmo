@@ -135,7 +135,7 @@
     document.addEventListener("visibilitychange", function () {
       if (document.visibilityState === "visible" && !solved) { clearTimeout(timer); running = false; run(); }
     });
-    // A phone leaves the browser to install the profile; the page comes back
+    // A personal device leaves the browser to install the profile; the page comes back
     // from the page cache without a visibilitychange on some browsers.
     window.addEventListener("pageshow", function () { if (!solved) { clearTimeout(timer); running = false; run(); } });
     run();

@@ -120,7 +120,7 @@ func TestWritePreview76(t *testing.T) {
 		return fs
 	}
 	portrait := []frame{{"light", 768, 1024, ""}, {"bw", 768, 1024, ""}}
-	phone := []frame{{"light", 375, 812, ""}, {"dark", 375, 812, ""}}
+	personalDevice := []frame{{"light", 375, 812, ""}, {"dark", 375, 812, ""}}
 	var body strings.Builder
 	var docs []string
 	docOf := map[string]int{}
@@ -140,19 +140,19 @@ func TestWritePreview76(t *testing.T) {
 	}
 	add("1. People: rows with marker, role and order buttons; subgroups; success line",
 		"Mia was just moved up one place (the success line shows once). Each person is a calm row that opens their page; the only buttons on a row are the everyday ones, up and down, which set the order of the columns on the displays. Subgroups sit below with their members.",
-		"", overview, append(append(desk("light", "dark", "bw"), portrait...), phone...)...)
+		"", overview, append(append(desk("light", "dark", "bw"), portrait...), personalDevice...)...)
 	add("2. Add a person: name and adult or child; colour and marker under More options",
 		"One primary action. The box suggests the first free colour and marker, so the defaults never clash. More options is shown open here.",
-		"#new", addForm, append(append(desk("light", "dark", "bw"), portrait[0]), phone...)...)
+		"#new", addForm, append(append(desk("light", "dark", "bw"), portrait[0]), personalDevice...)...)
 	add("3. Change a person: name, colour (eight palette colours) and marker (eight shapes)",
 		"The colour chips carry the colour name, the marker chips show the shape, so nothing relies on colour alone. In black and white every colour is black and only the marker tells people apart. The new eighth colour (raspberry) and marker (star) and the seventh (indigo, plus) join the choice; a household of up to eight people (two parents, six children) gets eight different colours and eight different shapes.",
-		"", edit, append(append(desk("light", "dark", "bw"), portrait[0]), phone...)...)
+		"", edit, append(append(desk("light", "dark", "bw"), portrait[0]), personalDevice...)...)
 	add("4. The same colour with the same marker is refused",
 		"Mia was given Papa's colour and marker. The error sits at the marker choice, and what was typed stays.",
-		"#err-shape", clash.body, append(desk("light", "bw"), phone...)...)
+		"#err-shape", clash.body, append(desk("light", "bw"), personalDevice...)...)
 	add("5. Taken colours and markers are faded, pairs that would be refused are disabled",
 		"Ben wears Mama's terracotta: the markers Mama and the others wear with it (filled circle) are disabled and cannot be chosen; every colour and marker another person uses is faded but still readable, also in black and white; the free ones keep full strength. Picking a colour updates which markers are disabled and the other way round (with JavaScript); without it the server still refuses the pair with the field error, as in frame 4.",
-		"fieldset.look", benPage, append(desk("light", "bw"), phone[0])...)
+		"fieldset.look", benPage, append(desk("light", "bw"), personalDevice[0])...)
 	add("5b. The same for a colour: Emma wears Mama's filled circle",
 		"With the filled circle selected, terracotta (Mama's colour with that marker) is disabled.",
 		"fieldset.look", emmaPage, desk("light", "dark")...)
@@ -161,7 +161,7 @@ func TestWritePreview76(t *testing.T) {
 		"fieldset.look", benPage, frame{"light", 1024, 768, "label[title^='Terracotta']"}, frame{"bw", 1024, 768, "label[title^='Filled circle']"})
 	add("5d. New subgroup: name and person chips",
 		"Subgroups are chosen with the same chips as everywhere else.",
-		"", groupPage, append(desk("light", "dark"), phone[0])...)
+		"", groupPage, append(desk("light", "dark"), personalDevice[0])...)
 	add("6. Result on the display: eight people, eight columns, eight colours and eight shapes",
 		"The family view at 1024 x 768 in light, dark and black and white, and in portrait. Eight columns do not fit side by side: six are shown and the rest scroll sideways (ADR 0016), here from the start. The Birthday party card lists all eight people: in black and white the eight shapes are told apart at 9 px on the card and at 16 px in each column header.",
 		"", family, append(desk("light", "dark", "bw"), portrait...)...)
@@ -191,7 +191,7 @@ h1{font-size:22px}h2{font-size:18px;margin:28px 0 4px}.note{margin:0 0 10px;max-
 figure{margin:0 0 12px}figcaption{margin-bottom:6px;font-weight:700}
 iframe{border:0;background:#fff;display:block}
 </style></head><body>
-<h1>Hejmo 5.21 people in the web interface: preview with the example family (Mama, Papa, Sebastian, Mia and four more children: eight people): 1024 x 768 and portrait, light, dark and black and white; 375 px for phones</h1>
+<h1>Hejmo 5.21 people in the web interface: preview with the example family (Mama, Papa, Sebastian, Mia and four more children: eight people): 1024 x 768 and portrait, light, dark and black and white; 375 px for personal devices</h1>
 <noscript><p>This page needs JavaScript only to place the real pages into their frames.</p></noscript>
 ` + body.String() + `
 <template id="css">` + string(css) + `</template>

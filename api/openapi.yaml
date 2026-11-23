@@ -3027,6 +3027,125 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /articles/{id}/always:
+    get:
+      operationId: getArticleAlways
+      summary: The rule "always on the list" of an article (scope lists:read)
+      description: |
+        Per article (the key of an article from Hejmo or the id of an own one)
+        one rule: on `weekday` of every `every`-th week from `start_week` Hejmo
+        puts the article on the list at the household's time (`/library/always`).
+        404 when the article has no rule.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The rule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysRule" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setArticleAlways
+      summary: Set the rule of an article, or switch it off (scope lists:write)
+      description: |
+        With `enabled: false` the rule is switched off and keeps what it says
+        (404 without a rule). Otherwise `list_id` and `weekday` are required;
+        `every` is 1 to 52 weeks (default 1), `start_week` any day of the first
+        week (default this week), `quantity` optional: without it an article
+        that is already open on the list is left as it is, with it Hejmo adds
+        the quantity. A rule saved on its own day starts the next time. A rule
+        whose list was deleted is paused: `paused` is true and `list_id` null.
+        A rule that does not fit answers 422 with the `field` that is wrong:
+        `list_id`, `weekday`, `every`, `start_week`, `quantity.amount` or
+        `quantity.unit`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled: { type: boolean }
+                list_id: { type: string, format: uuid }
+                weekday: { type: integer, description: "1 Monday to 7 Sunday (422 otherwise)" }
+                every: { type: integer, description: "1 to 52 (422 otherwise)" }
+                start_week: { type: string, description: "A day, YYYY-MM-DD (422 otherwise)" }
+                quantity:
+                  type: object
+                  required: [amount, unit]
+                  properties:
+                    amount: { type: number }
+                    unit: { $ref: "#/components/schemas/UnitKey" }
+      responses:
+        "200":
+          description: The rule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysRule" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteArticleAlways
+      summary: Remove the rule of an article (scope lists:delete)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /library/always:
+    get:
+      operationId: getLibraryAlways
+      summary: The time of day, the holiday and all rules of "always on the list" (scope lists:read)
+      responses:
+        "200":
+          description: The settings and the rules
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysSettings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setLibraryAlways
+      summary: Set the time of day and the holiday for all rules (scope lists:write)
+      description: |
+        `time` is the household's local time as `HH:MM`. `holiday` pauses all
+        rules from its first to its last day, both included; nothing is caught
+        up afterwards, and it switches itself off after its last day. `null`
+        means no holiday. The last day may not be before the first or already
+        over (422 with the field `holiday.from` or `holiday.to`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [time]
+              properties:
+                time: { type: string, description: "HH:MM, 24 hours (422 otherwise)" }
+                holiday:
+                  nullable: true
+                  allOf:
+                    - { $ref: "#/components/schemas/AlwaysHoliday" }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysSettings" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /articles/{id}/warnings:
     get:
       operationId: getArticleWarnings
@@ -4481,6 +4600,44 @@ components:
           type: array
           items: { type: string, format: uuid }
         note: { type: string }
+    AlwaysHoliday:
+      type: object
+      required: [from, to]
+      properties:
+        from: { type: string, description: "YYYY-MM-DD" }
+        to: { type: string, description: "YYYY-MM-DD" }
+    AlwaysRule:
+      type: object
+      required: [article_id, enabled, paused, list_id, list_name, weekday, every, start_week, quantity, next_date]
+      properties:
+        article_id: { type: string }
+        enabled: { type: boolean }
+        paused: { type: boolean, description: "On, but the list was deleted" }
+        list_id: { type: string, format: uuid, nullable: true }
+        list_name: { type: string }
+        weekday: { type: integer, minimum: 1, maximum: 7 }
+        every: { type: integer, minimum: 1, maximum: 52 }
+        start_week: { type: string, format: date, description: "The Monday of the first week" }
+        quantity:
+          type: object
+          nullable: true
+          required: [amount, unit]
+          properties:
+            amount: { type: number }
+            unit: { $ref: "#/components/schemas/UnitKey" }
+        next_date: { type: string, format: date, nullable: true, description: "The next day it comes, after the holiday; null unless it is running" }
+    AlwaysSettings:
+      type: object
+      required: [time, holiday, rules]
+      properties:
+        time: { type: string }
+        holiday:
+          nullable: true
+          allOf:
+            - { $ref: "#/components/schemas/AlwaysHoliday" }
+        rules:
+          type: array
+          items: { $ref: "#/components/schemas/AlwaysRule" }
     Hiding:
       type: object
       required: [enabled, everyone, people, confirmed_by, confirmed_at, experimental]

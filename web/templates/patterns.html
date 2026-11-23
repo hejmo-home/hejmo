@@ -216,7 +216,7 @@
 
 {{/* Rows of articles of the library (ticket 164): symbol or picture, name, what it is in words, tags and one warning line per affected group. The argument is a list of rows. */}}
 {{define "articleRows"}}<ul class="list-rows articles">{{range .}}
-  <li><a href="{{.Href}}"><span class="art-sym" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><span class="t"><b>{{.Name}}</b><span class="meta">{{range $i, $m := .Meta}}<span>{{if $i}}· {{end}}{{$m}}</span>{{end}}</span>{{if .Tags}}<span class="tags">{{range .Tags}}<span class="{{.Class}}">{{.Text}}</span>{{end}}</span>{{end}}{{range .Warns}}{{.}}{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
+  <li><a href="{{.Href}}"><span class="art-sym" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><span class="t"><b>{{.Name}}</b><span class="meta">{{range $i, $m := .Meta}}{{if $i}} {{end}}<span>{{$m}}</span>{{end}}</span>{{if .Tags}}<span class="tags">{{range .Tags}}<span class="{{.Class}}">{{if eq .Icon "repeat"}}{{template "repeatIcon" 16}}{{else if eq .Icon "pause"}}{{template "pauseIcon" 16}}{{end}}{{.Text}}</span>{{end}}</span>{{end}}{{range .Warns}}{{.}}{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
 </ul>{{end}}
 
 {{/* "Sign in at Google again" (ticket 18): the notice on Start, on Calendar connections and on the connection. Arguments: N (account, since, reasons), Home (on Start: adds who can sign in), Console. */}}

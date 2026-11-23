@@ -191,7 +191,10 @@ func (db *DB) UpdateArticle(householdID string, a OwnArticle, change PictureChan
 // DeleteArticle removes an own article.
 func (db *DB) DeleteArticle(householdID, id string) error {
 	res, err := db.sql.Exec(`DELETE FROM articles WHERE household_id = ? AND id = ?`, householdID, id)
-	return expectOne(res, err)
+	if err := expectOne(res, err); err != nil {
+		return err
+	}
+	return db.DeleteAlwaysRule(householdID, id)
 }
 
 // HiddenArticles returns the keys of the shipped articles a parent hid by hand.

@@ -283,6 +283,14 @@ _Avoid_: dimension, type
 The quantity of an entry after adding up or changing. It is kept exactly (in pieces, grams or millilitres) and shown in the article's first default unit where it fits, otherwise in the clearest unit of its kind.
 _Avoid_: sum
 
+**Always on the list**:
+An article that Hejmo puts on a chosen list by itself on one weekday every X weeks (1 to 52) from a start week, at the household's time (03:00 unless changed), optionally with a quantity. If the article already stands open on that list, Hejmo adds the rule's quantity to it (a rule without a quantity leaves it as it is). If the chosen day is today when the rule is saved, it starts next time.
+_Avoid_: recurring item, staple, auto-add
+
+**Holiday**:
+A household-wide pause from a first to a last day (both included) for every always-on-the-list rule. Nothing is caught up afterwards, and the holiday switches itself off after its last day. Only one at a time; tasks and the meal plan go on.
+_Avoid_: vacation mode, skip
+
 **Tile view**:
 A list shown as tiles with symbol or picture, name and tick; the default for children. The choice (tiles or list) is one per person for all lists and every device. A display is not a person and keeps its own view, tiles until someone switches it. An entry that names no article shows its first letter on a dashed ring instead of a picture.
 _Avoid_: grid, gallery

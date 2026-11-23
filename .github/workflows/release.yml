@@ -5,6 +5,11 @@
 #
 # The box's auto-update installs only tags without a suffix, and only images
 # whose keyless signature names this workflow (see the cosign verify step).
+#
+# A published version also gets one update file per architecture,
+# hejmo-<version>-<arch>.update, for boxes in offline mode (ticket 221): the
+# image as an archive, a manifest and the keyless cosign signature of that
+# manifest by this workflow. The box and its host script check it offline.
 name: Release
 
 on:
@@ -72,21 +77,90 @@ jobs:
             --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/release.yml@refs/tags/$TAG" \
             --certificate-oidc-issuer https://token.actions.githubusercontent.com
 
+  # The update files for offline boxes (ticket 221). Only published versions get
+  # them: a pre-release is never installed by a box. The files are checked here
+  # the way the box checks them (cosign for the host script's check, the box's own
+  # library and root for the box's), so a release the boxes would refuse does not go out.
+  update-files:
+    name: Update file (${{ matrix.arch }})
+    needs: image
+    if: ${{ !contains(github.ref, '-') }}
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      id-token: write # keyless signing with the GitHub OIDC token
+    strategy:
+      matrix:
+        arch: [arm64, amd64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+      - uses: sigstore/cosign-installer@v3
+        with:
+          cosign-release: v2.5.3 # the version the host script checks with
+      - name: The image as an archive
+        env:
+          TAG: ${{ github.ref_name }}
+          DIGEST: ${{ needs.image.outputs.digest }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          VERSION="${TAG#v}"
+          skopeo copy --override-os linux --override-arch "$ARCH" \
+            "docker://$IMAGE@$DIGEST" "docker-archive:image.tar:$IMAGE:$VERSION"
+      - name: Manifest, signature, file
+        env:
+          TAG: ${{ github.ref_name }}
+          ARCH: ${{ matrix.arch }}
+        run: |
+          VERSION="${TAG#v}"
+          go run ./tools/mkupdate manifest -version "$VERSION" -arch "$ARCH" -image image.tar -out hejmo-update.json
+          cosign sign-blob --yes --new-bundle-format --bundle hejmo-update.sigstore.json hejmo-update.json
+          go run ./tools/mkupdate pack -manifest hejmo-update.json -bundle hejmo-update.sigstore.json -image image.tar -out "hejmo-$VERSION-$ARCH.update"
+      - name: Verify as the host script will (cosign, offline, with the root of the install script)
+        env:
+          TAG: ${{ github.ref_name }}
+        run: |
+          cosign verify-blob --new-bundle-format --offline --trusted-root internal/update/trusted_root.json \
+            --bundle hejmo-update.sigstore.json \
+            --certificate-identity "https://github.com/${{ github.repository }}/.github/workflows/release.yml@refs/tags/$TAG" \
+            --certificate-oidc-issuer https://token.actions.githubusercontent.com \
+            hejmo-update.json
+      - name: Check as the box does (its own library and root, offline)
+        env:
+          TAG: ${{ github.ref_name }}
+          ARCH: ${{ matrix.arch }}
+        run: go run ./tools/mkupdate check -arch "$ARCH" "hejmo-${TAG#v}-$ARCH.update"
+      - uses: actions/upload-artifact@v4
+        with:
+          name: update-file-${{ matrix.arch }}
+          path: hejmo-*-${{ matrix.arch }}.update
+          if-no-files-found: error
+
   # If this job fails, the image (and :latest) is already public without a
   # GitHub release. Recover by re-running this job from the Actions UI.
   notes:
     name: GitHub release with notes
-    needs: image
+    needs: [image, update-files]
+    # The update files exist only for published versions: skipped is fine, failed is not.
+    if: ${{ !cancelled() && !failure() }}
     runs-on: ubuntu-24.04
     permissions:
       contents: write
     steps:
-      - name: Create the release (notes list the merged PRs since the previous tag)
+      - uses: actions/download-artifact@v4
+        if: ${{ !contains(github.ref, '-') }}
+        with:
+          pattern: update-file-*
+          merge-multiple: true
+      - name: Create the release (notes list the merged PRs since the previous tag; a published version carries its update files)
         env:
           GH_TOKEN: ${{ github.token }}
           TAG: ${{ github.ref_name }}
         run: |
           flags=""
           case "$TAG" in *-*) flags="--prerelease" ;; esac
+          files="$(ls ./*.update 2>/dev/null || true)" # none for a pre-release
           gh release create "$TAG" --repo "${{ github.repository }}" \
-            --title "$TAG" --generate-notes --verify-tag $flags
+            --title "$TAG" --generate-notes --verify-tag $flags $files

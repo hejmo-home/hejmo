@@ -14,6 +14,12 @@ import (
 // Item is a thing put on a list with the article it comes from and how much
 // of it (ADR 0019, ticket 165).
 type Item struct {
+	// ID is the id of a new entry, "" lets the box make one (a reminder
+	// created in another app brings its own).
+	ID string
+	// Note goes with a new entry; an entry that takes the item in keeps its
+	// own note unless it has none.
+	Note      string
 	Text      string
 	ArticleID string // "" for free text
 	Qty       list.Quantity
@@ -85,14 +91,23 @@ func (db *DB) AddItem(householdID, listID string, in Item, show list.Show) (AddR
 		}
 		res.Entry = plan.Target
 		res.Entry.Qty = plan.Result
+		if err := takeNote(tx, &res.Entry, in.Note); err != nil {
+			return AddResult{}, err
+		}
 	case list.Exists:
 		res.Entry = plan.Target
+		if err := takeNote(tx, &res.Entry, in.Note); err != nil {
+			return AddResult{}, err
+		}
 	default:
-		e := list.Entry{ID: newID(), Text: in.Text, ArticleID: in.ArticleID, Qty: plan.Result}
+		e := list.Entry{ID: in.ID, Text: in.Text, ArticleID: in.ArticleID, Qty: plan.Result, Note: in.Note}
+		if e.ID == "" {
+			e.ID = newID()
+		}
 		if plan.After == "" {
-			err = tx.QueryRow(`INSERT INTO list_entries (id, list_id, text, position, created_at, article_id, qty_base, qty_unit)
-				VALUES (?, ?, ?, (SELECT COALESCE(MAX(position) + 1, 0) FROM list_entries WHERE list_id = ?), ?, ?, ?, ?) RETURNING position`,
-				e.ID, listID, e.Text, listID, now(), e.ArticleID, e.Qty.Base, e.Qty.Unit).Scan(&e.Position)
+			err = tx.QueryRow(`INSERT INTO list_entries (id, list_id, text, position, created_at, article_id, qty_base, qty_unit, note)
+				VALUES (?, ?, ?, (SELECT COALESCE(MAX(position) + 1, 0) FROM list_entries WHERE list_id = ?), ?, ?, ?, ?, ?) RETURNING position`,
+				e.ID, listID, e.Text, listID, now(), e.ArticleID, e.Qty.Base, e.Qty.Unit, e.Note).Scan(&e.Position)
 		} else {
 			err = insertAfter(tx, listID, plan.After, es, &e)
 		}
@@ -109,11 +124,21 @@ func (db *DB) AddItem(householdID, listID string, in Item, show list.Show) (AddR
 	return res, tx.Commit()
 }
 
+// takeNote gives an entry without a note the note of an item that was added up into it.
+func takeNote(tx *sql.Tx, e *list.Entry, note string) error {
+	if e.Note != "" || note == "" {
+		return nil
+	}
+	e.Note = note
+	_, err := tx.Exec(`UPDATE list_entries SET note = ? WHERE id = ?`, note, e.ID)
+	return err
+}
+
 // insertAfter stores e directly under the entry with id after, renumbering the
 // positions of the list.
 func insertAfter(tx *sql.Tx, listID, after string, es []list.Entry, e *list.Entry) error {
-	if _, err := tx.Exec(`INSERT INTO list_entries (id, list_id, text, position, created_at, article_id, qty_base, qty_unit)
-		VALUES (?, ?, ?, 0, ?, ?, ?, ?)`, e.ID, listID, e.Text, now(), e.ArticleID, e.Qty.Base, e.Qty.Unit); err != nil {
+	if _, err := tx.Exec(`INSERT INTO list_entries (id, list_id, text, position, created_at, article_id, qty_base, qty_unit, note)
+		VALUES (?, ?, ?, 0, ?, ?, ?, ?, ?)`, e.ID, listID, e.Text, now(), e.ArticleID, e.Qty.Base, e.Qty.Unit, e.Note); err != nil {
 		return err
 	}
 	var ids []string
@@ -167,6 +192,10 @@ func (db *DB) SetQuantity(householdID, listID, entryID string, to list.Quantity,
 			if _, err := tx.Exec(`UPDATE list_entries SET qty_base = ?, qty_unit = ? WHERE id = ?`, plan.Result.Base, plan.Result.Unit, plan.Into.ID); err != nil {
 				return SetResult{}, err
 			}
+		}
+		into := plan.Into
+		if err := takeNote(tx, &into, plan.Entry.Note); err != nil {
+			return SetResult{}, err
 		}
 		if _, err := tx.Exec(`DELETE FROM list_entries WHERE id = ?`, plan.Entry.ID); err != nil {
 			return SetResult{}, err

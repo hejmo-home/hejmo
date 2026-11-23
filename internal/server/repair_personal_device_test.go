@@ -427,3 +427,42 @@ func TestOnlyScopedParentsRepairPersonalDevicesThroughTheAPI(t *testing.T) {
 		t.Fatalf("read token re-pairs = %d, want 403", status)
 	}
 }
+
+// #243: the label of a waiting device is built from stored keys and translated when it is
+// shown: "Safari auf iPhone" on a German page, "Safari on iPhone" on an English one. The
+// kind of device is stored with the pairing.
+func TestWaitingDeviceIsLabelledInThePageLanguage(t *testing.T) {
+	t.Parallel()
+	const (
+		iPadUA        = "Mozilla/5.0 (iPad; CPU OS 19_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1"
+		firefoxLinux  = "Mozilla/5.0 (X11; Linux x86_64; rv:130.0) Gecko/20100101 Firefox/130.0"
+		androidFxMob  = "Mozilla/5.0 (Android 15; Mobile; rv:130.0) Gecko/130.0 Firefox/130.0"
+		wantUnknownEN = "A device"
+	)
+	for _, tc := range []struct{ name, ua, en, de string }{
+		{"iPhone", iPhone, "Safari on iPhone", "Safari auf iPhone"},
+		{"Android phone", androidUA, "Chrome on Android phone", "Chrome auf Android-Handy"},
+		{"iPad", iPadUA, "Safari on iPad", "Safari auf iPad"},
+		{"Firefox on Android", androidFxMob, "Firefox on Android phone", "Firefox auf Android-Handy"},
+		{"browser only", firefoxLinux, "Firefox", "Firefox"},
+		{"nothing known", "", wantUnknownEN, "Ein Gerät"},
+	} {
+		b := signedInBox(t)
+		path := showCode(t, b)
+		req, _ := http.NewRequest(http.MethodGet, b.srv.URL+path, nil)
+		req.Header.Set("User-Agent", tc.ua)
+		res, err := b.trustingClient().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		legend := regexp.MustCompile(`(?s)data-pairing-id="[^"]*"[^>]*>\s*<fieldset>\s*<legend>([^<]*)</legend>`)
+		if m := legend.FindStringSubmatch(getEN(b, "/personal-devices").body); m == nil || m[1] != tc.en {
+			t.Errorf("%s: English label = %v, want %q", tc.name, m, tc.en)
+		}
+		page := b.do(http.MethodGet, "/personal-devices", nil, map[string]string{"Accept-Language": "de"}).body
+		if m := legend.FindStringSubmatch(page); m == nil || m[1] != tc.de {
+			t.Errorf("%s: German label = %v, want %q", tc.name, m, tc.de)
+		}
+	}
+}

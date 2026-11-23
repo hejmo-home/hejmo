@@ -2,7 +2,9 @@ package store
 
 import (
 	"database/sql"
+	"fmt"
 	"path/filepath"
+	"strings"
 	"testing"
 	"time"
 )
@@ -73,5 +75,71 @@ func TestRenamingPhonesToPersonalDevicesKeepsAPairedDeviceAndItsSession(t *testi
 	}
 	if !db.IsPersonalDeviceSession("hash1") {
 		t.Error("the session is no longer a personal device's device session")
+	}
+}
+
+// #243: the migration that adds the kind of device derives it once from the label that
+// pairings opened before it carry ("Safari on iPhone"), and turns the label into device keys.
+func TestAddingTheDeviceKindDerivesItFromTheOldLabel(t *testing.T) {
+	t.Parallel()
+	conn, err := sql.Open("sqlite", "file:"+filepath.Join(t.TempDir(), "hejmo.db")+"?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_txlock=immediate")
+	if err != nil {
+		t.Fatal(err)
+	}
+	db := &DB{sql: conn}
+	defer db.Close()
+	if _, err := conn.Exec(`CREATE TABLE schema_migrations (version INTEGER PRIMARY KEY, name TEXT NOT NULL, applied_at TEXT NOT NULL DEFAULT CURRENT_TIMESTAMP)`); err != nil {
+		t.Fatal(err)
+	}
+	all, err := migrations()
+	if err != nil {
+		t.Fatal(err)
+	}
+	var before []migration
+	var add migration
+	for _, m := range all {
+		if strings.HasSuffix(m.name, "_device_kind.sql") {
+			add = m
+			break
+		}
+		before = append(before, m)
+	}
+	if add.name == "" {
+		t.Fatal("the migration is not shipped")
+	}
+	if err := db.apply(before); err != nil {
+		t.Fatal(err)
+	}
+	now := time.Date(2026, 11, 23, 12, 0, 0, 0, time.UTC)
+	if _, err := conn.Exec(`INSERT INTO households (id, name, created_at, updated_at) VALUES ('h1', 'Familie', ?, ?)`, stamp(now), stamp(now)); err != nil {
+		t.Fatal(err)
+	}
+	labels := []struct{ label, device, kind string }{
+		{"Safari on iPhone", "safari|iphone", "phone"},
+		{"Chrome on Android phone", "chrome|android_phone", "phone"},
+		{"Safari on iPad", "safari|ipad", "tablet"},
+		{"Samsung Internet on Android tablet", "samsung|android_tablet", "tablet"},
+		{"Firefox", "firefox|unknown", "device"},
+		{"Edge", "edge|unknown", "device"},
+		{"Browser", "unknown|unknown", "device"},
+		{"", "", "device"},
+	}
+	for i, l := range labels {
+		if _, err := conn.Exec(`INSERT INTO personal_device_pairings (id, household_id, code_hash, created_at, expires_at, device) VALUES (?, 'h1', ?, ?, ?, ?)`,
+			fmt.Sprint("p", i), fmt.Sprint("c", i), stamp(now), stamp(now.Add(time.Hour)), l.label); err != nil {
+			t.Fatal(err)
+		}
+	}
+	if err := db.apply([]migration{add}); err != nil {
+		t.Fatal(err)
+	}
+	for i, l := range labels {
+		var device, kind string
+		if err := conn.QueryRow(`SELECT device, device_kind FROM personal_device_pairings WHERE id = ?`, fmt.Sprint("p", i)).Scan(&device, &kind); err != nil {
+			t.Fatal(err)
+		}
+		if device != l.device || kind != l.kind {
+			t.Errorf("%q became device %q, kind %q; want %q, %q", l.label, device, kind, l.device, l.kind)
+		}
 	}
 }

@@ -28,7 +28,7 @@
     <h2 id="waiting">{{t "personal_devices.waiting"}}</h2>
     {{range .Waiting}}
     {{$root := dict "Error" .Error "ErrorField" .ErrorField}}
-    <form method="post" action="/personal-devices/pairings/{{.ID}}/confirm" class="steps" data-pairing-id="{{.ID}}">
+    <form method="post" action="/personal-devices/pairings/{{.ID}}/confirm" class="steps" data-pairing-id="{{.ID}}" data-name-proposals="{{.Proposals}}">
       <fieldset>
         <legend>{{if .Device}}{{.Device}}{{else}}{{t "personal_devices.device.unknown"}}{{end}}</legend>
         <p>{{t "personal_devices.verify.parent"}} <strong class="verification" data-verification="{{.Verification}}">{{.Verification}}</strong></p>
@@ -38,6 +38,7 @@
       <button class="button" type="submit">{{t "personal_devices.confirm"}}</button>
     </form>
     {{end}}
+    <script src="/static/name-proposal.js" defer></script>
   </section>
   {{end}}
 

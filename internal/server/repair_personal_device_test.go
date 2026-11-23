@@ -1,6 +1,8 @@
 package server_test
 
 import (
+	"encoding/json"
+	"html"
 	"io"
 	"net/http"
 	"net/url"
@@ -281,6 +283,50 @@ func TestAnIPadThatSendsTheUserAgentOfAMacIsATablet(t *testing.T) {
 		}
 		if got := getEN(f.b, "/personal-devices").body; !strings.Contains(got, `value="`+tc.want+`"`) {
 			t.Errorf("%s: the name is not %q", tc.name, tc.want)
+		}
+	}
+}
+
+// Q148 (#203): every personal device gets a name when it is paired, also at an ordinary
+// pairing, where the person is chosen only on the parent's screen. The form carries the name
+// proposed for each person by the kind of screen the device opened the code with, and the
+// script (web/static/form.js) puts it in the name field when a person is chosen.
+func TestOrdinaryPairingProposesAnEditableNameOncePersonIsChosen(t *testing.T) {
+	t.Parallel()
+	attr := regexp.MustCompile(`data-name-proposals="([^"]*)"`)
+	for lang, want := range map[string]map[string]string{
+		"en": {"Mia": "Mia’s phone", "Mama": "Mama’s phone"},
+		"de": {"Mia": "Mias Handy", "Mama": "Mamas Handy"},
+	} {
+		b := signedInBox(t)
+		ids := map[string]string{}
+		for person := range want {
+			ids[person] = personNamed(t, b, person).ID
+		}
+		path := showCode(t, b)
+		req, _ := http.NewRequest(http.MethodGet, b.srv.URL+path, nil)
+		req.Header.Set("User-Agent", iPhone)
+		res, err := b.trustingClient().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		page := b.do(http.MethodGet, "/personal-devices", nil, map[string]string{"Accept-Language": lang}).body
+		m := attr.FindStringSubmatch(page)
+		if m == nil {
+			t.Fatalf("%s: the waiting form carries no proposed names\n%s", lang, page)
+		}
+		var got map[string]string
+		if err := json.Unmarshal([]byte(html.UnescapeString(m[1])), &got); err != nil {
+			t.Fatalf("%s: proposed names are not JSON: %v", lang, err)
+		}
+		for person, name := range want {
+			if id := ids[person]; got[id] != name {
+				t.Errorf("%s: proposed name for %s = %q, want %q", lang, person, got[id], name)
+			}
+		}
+		if strings.Contains(page, `name="name" type="text" value="M`) {
+			t.Errorf("%s: the name is filled in before a person is chosen", lang)
 		}
 	}
 }

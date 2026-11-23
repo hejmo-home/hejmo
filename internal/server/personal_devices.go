@@ -33,6 +33,9 @@ const (
 // are filled only for the pairing a failed confirmation was about.
 type waitingView struct {
 	ID, Device, Expires, Verification, Name, Person, Error, ErrorField string
+	// Proposals is a JSON object from person ID to the name proposed when that person is
+	// chosen (Q148); web/static/name-proposal.js puts it in the name field.
+	Proposals string
 	// Selected is Person as a list, for the person chips.
 	Selected []string
 }
@@ -134,6 +137,13 @@ func (s *server) renderPersonalDevices(w http.ResponseWriter, r *http.Request, p
 	var waitingViews []waitingView
 	for _, wp := range waiting {
 		v := waitingView{ID: wp.ID, Device: wp.Device, Expires: at(wp.ExpiresAt), Verification: verificationNumber(wp.ClaimHash)}
+		proposals := make(map[string]string, len(people))
+		for _, c := range chipsOf(people) {
+			proposals[c.ID] = s.defaultPersonalDeviceName(r, c.Name, wp.Device)
+		}
+		if b, err := json.Marshal(proposals); err == nil {
+			v.Proposals = string(b)
+		}
 		if c, ok := chips[wp.ForPersonID]; ok { // a personal device that was re-paired: the parent only compares and confirms
 			v.Person, v.Name = c.ID, s.defaultPersonalDeviceName(r, c.Name, wp.Device)
 		}

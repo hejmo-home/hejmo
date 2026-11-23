@@ -441,7 +441,7 @@ func TestOfflineViewGetsItsTextsInBothLanguagesAndItsScripts(t *testing.T) {
 func TestQRCodeHasATranslatedAccessibleLabel(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	for lang, want := range map[string]string{"en": "QR code to pair a personal device", "de": "QR-Code zum Koppeln eines Geräts"} {
+	for lang, want := range map[string]string{"en": "QR code to pair a device", "de": "QR-Code zum Koppeln eines Geräts"} {
 		r := b.do(http.MethodPost, "/personal-devices/pairings", url.Values{}, map[string]string{"Accept-Language": lang})
 		if !strings.Contains(r.body, `aria-label="`+want+`"`) {
 			t.Errorf("%s: QR code misses the label %q (raw key shown?)", lang, want)

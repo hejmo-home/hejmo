@@ -3,6 +3,7 @@ package server_test
 import (
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"testing"
 )
@@ -18,7 +19,7 @@ type relLine struct {
 // withRels adds the relation lines of the form: rel1_word, rel1_whole and rel1_person for each line.
 func withRels(f url.Values, lines ...relLine) url.Values {
 	for i, l := range lines {
-		n := "rel" + string(rune('1'+i))
+		n := "rel" + strconv.Itoa(i+1)
 		f.Set(n+"_word", l.word)
 		if l.whole {
 			f.Set(n+"_whole", "1")
@@ -422,5 +423,30 @@ func TestContactsAPIReadsAndWritesRelationsAndChecksThem(t *testing.T) {
 	}
 	if status, got, _ := c.api.call(http.MethodPut, "/contacts/"+id, map[string]any{"name": "Oma Gerda"}); status != http.StatusOK || len(got["relations"].([]any)) != 0 {
 		t.Errorf("replace = %d %v", status, got)
+	}
+}
+
+func TestMoreThan20RelationLinesAreRefusedByTheFormAndTheAPI(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	var lines []relLine
+	var api []any
+	for i := 0; i < 20+1; i++ {
+		lines = append(lines, relLine{word: "Oma", whole: true})
+		api = append(api, map[string]any{"word": "Oma", "whole_family": true})
+	}
+	r := c.send("/contacts/new", withRels(contactForm("Oma Gerda", "", nil, nil), lines...))
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("21 lines on the form = %d", r.status)
+	}
+	ctHas(t, "error", r.body, `<a href="#rels">Relations</a>`, "More than 20 relations are not possible.")
+	if r := c.send("/contacts/new", withRels(contactForm("Oma Gerda", "", nil, nil), lines[:20]...)); r.status != http.StatusSeeOther {
+		t.Errorf("20 lines on the form = %d", r.status)
+	}
+	if status, _, _ := c.api.call(http.MethodPost, "/contacts", map[string]any{"name": "Zu viele", "relations": api}); status != http.StatusUnprocessableEntity {
+		t.Errorf("21 relations by the API = %d, want 422", status)
+	}
+	if status, _, _ := c.api.call(http.MethodPost, "/contacts", map[string]any{"name": "Genug", "relations": api[:20]}); status != http.StatusCreated {
+		t.Errorf("20 relations by the API = %d, want 201", status)
 	}
 }

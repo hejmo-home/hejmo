@@ -288,6 +288,8 @@ func (e ctEnv) problemText(pr ctProblem, d ctDraft) string {
 		return e.t("contact.error.label.required")
 	case "number_own.label_long", "email_own.label_long":
 		return e.t("contact.error.label.long")
+	case "rels.many":
+		return e.t("contact.error.rels.many", "max", strconv.Itoa(maxRelLines))
 	case "numbers.many":
 		return e.t("contact.error.numbers.many")
 	case "emails.many":
@@ -341,6 +343,8 @@ func (e ctEnv) anchorText(pr ctProblem) string {
 		return e.t("contact.link.number", "n", strconv.Itoa(pr.N))
 	case pr.Field == "email" || pr.Field == "email_own":
 		return e.t("contact.link.email", "n", strconv.Itoa(pr.N))
+	case pr.Field == "rels":
+		return e.t("contact.link.rels")
 	case pr.Field == "numbers":
 		return e.t("contact.link.numbers")
 	case pr.Field == "emails":

@@ -4493,7 +4493,7 @@ components:
         people: { type: array, items: { type: string, format: uuid }, description: "Ids of people of the household, in the order of the people; at least one unless `whole_family`" }
     ContactRelationInput:
       type: object
-      description: "A relation as the API takes it: `whole_family` and `people` may be left out (false, none)."
+      description: "A relation as the API takes it: `whole_family` and `people` may be left out (false, none). A word with no people and no `whole_family` is 422 (unlike the web form, which reads a line with no person chosen as the whole family)."
       required: [word]
       properties:
         word: { type: string, description: "1 to 40 characters; leave it empty only for an empty line (whole family), which is skipped" }
@@ -4511,7 +4511,7 @@ components:
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
         note: { type: string, description: "At most 1000 characters" }
         groups: { type: array, items: { type: string }, description: "Ids of contact groups" }
-        relations: { type: array, items: { $ref: "#/components/schemas/ContactRelationInput" }, description: "Replaces the relations; an empty line (no word, whole family) is skipped, people without a word are 422, so are more than 40 characters, unknown people and any relation on a person's contact" }
+        relations: { type: array, items: { $ref: "#/components/schemas/ContactRelationInput" }, description: "Replaces the relations; an empty line (no word, whole family) is skipped, people without a word are 422, so are a word with no people (and no `whole_family`), more than 40 characters, unknown people, more than 20 relations and any relation on a person's contact" }
     Contact:
       type: object
       required: [id, person_id, name, full_name, numbers, emails, address, birthday, note, groups, relations, created_by, created_at, updated_by, updated_at]

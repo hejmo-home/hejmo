@@ -4203,6 +4203,8 @@
   "contact.error.rel.word.unnamed": "Write who the contact is for {names}, for example “{example}”.",
   "contact.error.rel.long": "The word can be at most 40 characters long.",
   "contact.link.rel": "Relation {n}",
+  "contact.link.rels": "Relations",
+  "contact.error.rels.many": "More than {max} relations are not possible. Remove one before you add another.",
   "contact.aria.rel.remove": "Remove relation {n}",
   "contact.aria.rels": "Relations",
   "contact.person.contacts": "Contacts of {name}",

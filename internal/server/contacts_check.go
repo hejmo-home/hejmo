@@ -82,6 +82,9 @@ func checkContact(d ctDraft, today time.Time, taken func(name string) *store.Nam
 		add("name", "full_name", 0, "long", "")
 	}
 	if !d.IsPerson { // the people of the household are related through "Personen"
+		if len(d.Rels) > maxRelLines {
+			add("rels", "rels", 0, "many", "")
+		}
 		for i, r := range d.Rels {
 			n, word := i+1, strings.TrimSpace(r.Word)
 			switch {

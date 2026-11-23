@@ -75,3 +75,12 @@ func TestRelatedTypeMapsOnlyTheWordsAvCardKnows(t *testing.T) {
 		}
 	}
 }
+
+func TestARelatedLabelWithADoubleQuoteIsEncodedPerRFC6868(t *testing.T) {
+	t.Parallel()
+	got := contact.RelatedLines(contact.VCard4, []contact.Related{{ContactID: "1b4e28ba-2fa1-4d3b-a2c0-0d6e5c1a7f01", Word: `Tante "Mimi" ^_^`}}, 1)
+	want := []string{`RELATED;VALUE=uri;LABEL="Tante ^'Mimi^' ^^_^^":urn:uuid:1b4e28ba-2fa1-4d3b-a2c0-0d6e5c1a7f01`}
+	if !reflect.DeepEqual(got, want) {
+		t.Errorf("lines = %q, want %q", got, want)
+	}
+}

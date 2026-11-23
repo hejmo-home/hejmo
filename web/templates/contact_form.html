@@ -22,6 +22,7 @@
       <ul class="rel-lines" data-lines="rel">{{range .Rels}}{{template "ctRel" (dict "L" . "People" $.People)}}{{end}}</ul>
       {{if .MoreRels}}<button class="button secondary sq add" type="submit" name="more" value="rel" formnovalidate><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "contact.f.rels.more"}}</button>{{end}}
       <p class="hint">{{t "contact.f.rels.kids"}}</p>
+      {{template "ctErr" (dict "ID" "rels" "Text" .Errs.rels)}}
       <datalist id="rel-words">{{range .RelWords}}<option value="{{.}}">{{end}}</datalist>
       <template data-line="rel">{{template "ctRel" (dict "L" .RelTpl "People" .People)}}</template>
     </fieldset>

@@ -69,9 +69,10 @@ func escapeText(s string) string {
 	return r.Replace(s)
 }
 
-// paramValue writes a parameter value: in double quotes when it holds ; : or , (a double quote itself cannot be written and goes).
+// paramValue writes a parameter value (RFC 6868): ^ becomes ^^, a double quote ^' and a line break ^n; the value
+// is put in double quotes when it holds ; : or , or a space.
 func paramValue(s string) string {
-	s = strings.NewReplacer(`"`, "", "\r", " ", "\n", " ").Replace(s)
+	s = strings.NewReplacer("^", "^^", `"`, "^'", "\r\n", "^n", "\n", "^n", "\r", "^n").Replace(s)
 	if strings.ContainsAny(s, ";:,") || strings.TrimSpace(s) != s || strings.Contains(s, " ") {
 		return `"` + s + `"`
 	}

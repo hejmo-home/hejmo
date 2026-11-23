@@ -425,6 +425,10 @@ _Avoid_: alias, display name
 A category a contact belongs to: family, childcare and school, doctors, emergency, other, or one a parent adds.
 _Avoid_: tag, label, category
 
+**Contact photo**:
+The one square JPEG (at most 512 by 512 pixels, no metadata) of a contact, set by a parent from the camera or gallery or sent by a phone over contact sync. Without one, Hejmo shows the initials of the Hejmo name.
+_Avoid_: avatar, profile picture
+
 **Relation**:
 The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician".
 _Avoid_: connection, relationship type

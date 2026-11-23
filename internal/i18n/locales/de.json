@@ -3930,7 +3930,7 @@
   "contact.photo.keep": "Foto doch behalten",
   "contact.photo.gone": "Das Foto wird beim Speichern entfernt.",
   "contact.photo.gone.after": "Danach zeigt Hejmo überall {initials}.",
-  "contact.photo.hint": "Ein Foto vom Handy oder Computer (JPEG, PNG, WebP, GIF oder HEIC, höchstens 15 MB). Hejmo schneidet es quadratisch zu, bei Hochformat mit mehr Platz oben, verkleinert es auf 512 × 512 Pixel und entfernt Ort und Kameradaten. Es bleibt auf eurer Box.",
+  "contact.photo.hint": "Ein Foto vom Handy oder Computer (JPEG, PNG, WebP, GIF oder HEIC, höchstens 15 MB). Hejmo schneidet es quadratisch zu, bei Hochformat mit mehr Platz oben, verkleinert es auf 512 × 512 Pixel und entfernt Ort und Kameradaten. Es bleibt auf der Box.",
   "contact.photo.err.notimage": "„{file}“ ist kein Foto. Wähle ein Bild: JPEG, PNG, WebP, GIF oder HEIC.",
   "contact.photo.err.big": "„{file}“ ist {size} groß. Hejmo nimmt Fotos bis 15 MB. Mach ein neues Foto oder wähle ein kleineres.",
   "contact.photo.err.pixels": "„{file}“ hat zu viele Pixel. Mach ein kleineres Foto oder wähle ein kleineres.",

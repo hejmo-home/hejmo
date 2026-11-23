@@ -313,7 +313,7 @@ func TestTheFormHasAPhotoCardAfterNameWithTheStateInWords(t *testing.T) {
 		`<span class="ct-photo page none" aria-hidden="true"><svg class="icon"`, "<b>Noch kein Foto</b>", "Ohne Foto zeigt Hejmo die Anfangsbuchstaben des Namens in Hejmo.",
 		`<label class="button secondary touch">`, `accept="image/*" capture="environment"`, "Foto aufnehmen", "Aus der Galerie wählen",
 		`<label class="button secondary mouse">`, "Foto auswählen", `aria-describedby="hint-photo"`, `<p class="hint" id="hint-photo">`, "JPEG, PNG, WebP, GIF oder HEIC, höchstens 15 MB",
-		"Es bleibt auf eurer Box.")
+		"Es bleibt auf der Box.")
 	if strings.Index(form, `id="photo"`) < strings.Index(form, `id="name"`) || strings.Index(form, `id="photo"`) > strings.Index(form, `id="numbers"`) {
 		t.Error("the photo card is not between Name and Numbers")
 	}

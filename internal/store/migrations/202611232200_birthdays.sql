@@ -28,3 +28,26 @@ CREATE UNIQUE INDEX calendars_remote_url ON calendars (connection_id, remote_url
 
 -- A contact's birthday is in the calendar unless a parent switched it off.
 ALTER TABLE contacts ADD COLUMN hide_birthday INTEGER NOT NULL DEFAULT 0;
+
+-- Contacts that have a birthday already: the calendar and one yearly series per
+-- contact, as the box writes them (internal/birthday). A series starts in the
+-- year of birth, or in 1896 (a leap year before any real birth year) when it is
+-- unknown; 29 February repeats on the last day of February. The name is the
+-- English one: the box renames nothing, a new calendar takes the language of
+-- whoever saves next.
+INSERT INTO calendars (id, household_id, name, kind, color, read_only, shared, created_at, updated_at)
+SELECT lower(hex(randomblob(16))), h.id, 'Birthdays', 'birthdays', '#A0526A', 1, 1, h.created_at, h.created_at
+FROM households h
+WHERE EXISTS (SELECT 1 FROM contacts c WHERE c.household_id = h.id AND c.bday_day IS NOT NULL);
+
+INSERT INTO events (id, household_id, calendar_id, title, all_day, start_local, end_local, tzid, rrule, created_at, updated_at)
+SELECT 'birthday-' || c.id, c.household_id, cal.id, c.hejmo_name, 1,
+       date(printf('%04d-%02d-%02d', COALESCE(c.bday_year, 1896), c.bday_month, c.bday_day)),
+       date(printf('%04d-%02d-%02d', COALESCE(c.bday_year, 1896), c.bday_month, c.bday_day), '+1 day'),
+       COALESCE(NULLIF(h.timezone, ''), 'UTC'),
+       CASE WHEN c.bday_day = 29 AND c.bday_month = 2 THEN 'FREQ=YEARLY;BYMONTH=2;BYMONTHDAY=-1' ELSE 'FREQ=YEARLY' END,
+       c.updated_at, c.updated_at
+FROM contacts c
+JOIN households h ON h.id = c.household_id
+JOIN calendars cal ON cal.household_id = c.household_id AND cal.kind = 'birthdays'
+WHERE c.bday_day IS NOT NULL AND c.hide_birthday = 0;

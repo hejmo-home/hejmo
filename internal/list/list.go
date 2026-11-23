@@ -22,6 +22,8 @@ const (
 const (
 	MaxName = 60
 	MaxText = 200
+	// MaxNote is the longest note of an entry, in characters.
+	MaxNote = 500
 )
 
 // Colors are the list colours, in the order of the person colour slots of
@@ -46,6 +48,9 @@ type List struct {
 	// Suggestions says the list offers articles from the library while typing
 	// and takes quantities (ticket 165). A to-do list switches it off.
 	Suggestions bool
+	// Shared says the list is also a collection of reminders for CalDAV
+	// clients such as Apple Reminders (ticket 167). New lists are not shared.
+	Shared bool
 }
 
 // Entry is one line of text on a list that can be ticked off.
@@ -57,6 +62,9 @@ type Entry struct {
 	ArticleID string
 	// Qty is how much of it; none for an entry without quantity.
 	Qty Quantity
+	// Note is a few words under the entry, "" without one. It is also the
+	// notes field of the reminder.
+	Note string
 }
 
 // InvalidError says which field of a list is wrong.
@@ -138,4 +146,12 @@ func ParseView(s string) (View, bool) {
 		return v, true
 	}
 	return "", false
+}
+
+// ValidateNote checks the note of an entry; an empty note is fine.
+func ValidateNote(note string) error {
+	if utf8.RuneCountInString(note) > MaxNote {
+		return &InvalidError{"note", "too long"}
+	}
+	return nil
 }

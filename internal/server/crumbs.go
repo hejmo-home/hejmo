@@ -21,6 +21,7 @@ var (
 	crumbPhotos          = crumb{"/photos", "hub.photos", ""}
 	crumbLists           = crumb{"/settings/lists", "hub.lists", ""}
 	crumbLibrary         = crumb{"/settings/lists/library", "lib.title", ""}
+	crumbSharing         = crumb{"/settings/lists/sharing", "share.title", ""}
 	crumbPersonalDevices = crumb{"/personal-devices", "hub.personal_devices", ""}
 	crumbOutside         = crumb{"/settings/connections", "hub.outside", ""}
 	crumbMCP             = crumb{"/mcp", "hub.mcp", ""}
@@ -45,6 +46,7 @@ var crumbTrails = map[string][]crumb{
 	"offline_on.html": {crumbSettings, crumbOutside}, "offline_off.html": {crumbSettings, crumbOutside},
 
 	"calendar_detail.html": {crumbSettings, crumbConnections}, "connection.html": {crumbSettings, crumbConnections}, "connection_paused.html": {crumbSettings, crumbConnections}, "connection_new.html": {crumbSettings, crumbConnections}, "google_signin.html": {crumbSettings, crumbConnections},
+	"list_sharing.html": {crumbSettings, crumbLists}, "list_sharing_setup.html": {crumbSettings, crumbLists, crumbSharing},
 	"library.html": {crumbSettings, crumbLists}, "article.html": {crumbSettings, crumbLists, crumbLibrary}, "article_form.html": {crumbSettings, crumbLists, crumbLibrary},
 	"display.html": {crumbSettings, crumbDisplays}, "photo_album.html": {crumbSettings, crumbPhotos},
 	"token.html": {crumbSettings, crumbCalDAV}, "token_once.html": {crumbSettings, crumbCalDAV},

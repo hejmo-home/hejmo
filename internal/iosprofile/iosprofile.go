@@ -65,7 +65,7 @@ func CalDAV(p Params) ([]byte, error) {
 	str("CalDAVPrincipalURL", "https://"+authority+p.PrincipalPath)
 	b.WriteString("\t\t</dict>\n\t</array>\n\t<key>PayloadType</key>\n\t<string>Configuration</string>\n\t<key>PayloadVersion</key>\n\t<integer>1</integer>\n")
 	for _, kv := range [][2]string{{"PayloadIdentifier", p.Identifier}, {"PayloadUUID", p.ProfileUUID}, {"PayloadDisplayName", "Hejmo: " + p.DeviceName},
-		{"PayloadDescription", "Sets up the calendars of your Hejmo box on this device. It holds a password: install it, then delete the file."}} {
+		{"PayloadDescription", "Sets up the calendars, tasks and lists of your Hejmo box on this device. It holds a password: install it, then delete the file."}} {
 		entry("\t", kv[0], kv[1])
 	}
 	b.WriteString("</dict>\n</plist>\n")

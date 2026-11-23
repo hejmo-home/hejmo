@@ -1,0 +1,72 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "share.title") "Frame" .Frame)}}
+  <h1>{{t "share.title"}}</h1>
+  {{template "syncNotice" .}}
+  <p class="lead">{{t "share.lead"}}</p>
+  {{if .Rows}}
+  <form method="post" action="/settings/lists/sharing" class="steps">
+    <fieldset>
+      <legend>{{t "share.legend"}}</legend>
+      <p class="hint">{{t "share.hint"}}</p>
+      <div class="share-rows">
+        {{range .Rows}}<div class="card-row{{if .Error}} invalid{{end}}">
+          <input type="hidden" name="seen" value="{{.Seen}}">
+          <span class="marker" data-person="{{.Slot}}" data-shape="{{.Symbol}}" aria-hidden="true"></span>
+          <span class="t"><b>{{.Name}}</b><span class="state{{if .On}} is-on{{end}}"><span class="on-text">{{.OnText}}</span><span class="off-text">{{.OffText}}</span></span></span>
+          <label class="switch"><input type="checkbox" role="switch" name="share" value="{{.ID}}"{{if .On}} checked{{end}} aria-label="{{.Aria}}"{{if .Error}} aria-invalid="true" aria-describedby="err-share-{{.ID}}"{{end}}></label>
+        </div>
+        {{$id := .ID}}{{with .Error}}<p class="ferr" id="err-share-{{$id}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.}}</span></p>{{end}}{{end}}
+      </div>
+    </fieldset>
+    <button class="button" type="submit">{{t "share.save"}}</button>
+  </form>
+  {{else}}
+  <form class="steps">
+    <fieldset>
+      <legend>{{t "share.legend"}}</legend>
+      <div class="empty" data-empty><p>{{t "share.empty"}}</p><a class="button secondary" href="/lists">{{t "share.empty.go"}}</a></div>
+    </fieldset>
+  </form>
+  {{end}}
+
+  {{if .HasLists}}<section aria-labelledby="look">
+    <h2 id="look">{{t "share.look.title"}}</h2>
+    {{if .Sample}}<div class="sync-sample">
+      <h3>{{.SampleTitle}}</h3>
+      <p class="hint">{{t "share.sample.hint"}}</p>
+      <ul aria-label="{{t "share.sample.aria"}}">
+        {{range .Sample}}<li{{if .Done}} class="done"{{end}}><span class="ring" aria-hidden="true"></span><span class="ttl">{{.Title}}{{with .Note}}<small class="nt">{{.}}</small>{{end}}</span>{{if .Done}}<span class="from">{{t "share.sample.done"}}</span>{{end}}</li>
+        {{end}}
+      </ul>
+      {{with .SampleMore}}<p class="hint">{{.}}</p>{{end}}
+    </div>{{end}}
+    <div class="lib-card">
+      <h3>{{t "share.can.title"}}</h3>
+      <dl class="can-do">
+        <div><dt>{{t "share.can.tick.t"}}</dt><dd>{{t "share.can.tick.d"}}</dd></div>
+        <div><dt>{{t "share.can.add.t"}}</dt><dd>{{t "share.can.add.d"}}</dd></div>
+        <div><dt>{{t "share.can.qty.t"}}</dt><dd>{{t "share.can.qty.d"}}</dd></div>
+        <div><dt>{{t "share.can.note.t"}}</dt><dd>{{t "share.can.note.d"}}</dd></div>
+        <div><dt>{{t "share.can.edit.t"}}</dt><dd>{{t "share.can.edit.d"}}</dd></div>
+        <div><dt>{{t "share.can.lists.t"}}</dt><dd>{{t "share.can.lists.d"}}</dd></div>
+      </dl>
+    </div>
+    <div class="lib-card">
+      <h3>{{t "share.stays.title"}}</h3>
+      <ul class="stays">
+        <li>{{t "share.stays.health"}}</li>
+        <li>{{t "share.stays.looks"}}</li>
+        <li>{{t "share.stays.dates"}}</li>
+      </ul>
+    </div>
+  </section>{{end}}
+
+  <section aria-labelledby="dev">
+    <h2 id="dev">{{t "share.dev.title"}}</h2>
+    {{if .Devices}}<ul class="list-rows dev-rows">
+      {{range .Devices}}<li><a href="{{.Href}}"><span class="art-sym" aria-hidden="true"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke-width="1.8"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg></span><span class="t"><b>{{.Title}}</b>{{range .Lines}}<span class="meta">{{.Text}}</span>{{end}}{{with .Flag}}{{template "flag" .}}{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+      {{end}}
+    </ul>{{else}}<div class="empty" data-empty><p>{{t "share.dev.none"}}</p></div>{{end}}
+    <p class="setup-actions"><a class="button secondary" href="/settings/lists/sharing/setup">{{t "share.setup.button"}}</a></p>
+    <p class="hint">{{.AndroidHint}}</p>
+  </section>
+{{template "foot"}}

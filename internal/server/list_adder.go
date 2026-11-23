@@ -10,6 +10,7 @@ import (
 	"net/url"
 	"slices"
 	"strings"
+	"unicode/utf8"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/library"
@@ -443,6 +444,7 @@ type outcome struct {
 	Old       list.Quantity   // merged: what the entry that went away had
 	Beside    []list.Quantity // new entry: the entries of the other kind it stands next to
 	LibOffer  bool            // offer to add the text to the library
+	Shared    bool            // a note was saved on a list that is also in Reminders
 }
 
 func (s *server) putOutcome(o outcome) string {
@@ -505,6 +507,14 @@ func (c *itemCtx) result(o outcome, display bool) resultView {
 		rv.Line = c.htmlMsg("lq.res.filled", "text", text, "qty", c.boldQty(o.Total))
 	case "add:" + string(list.Exists):
 		rv.Line = c.htmlMsg("lq.res.exists", "text", text)
+	case "note:saved":
+		key := "lists.note.saved"
+		if o.Shared {
+			key = "lists.note.saved_shared"
+		}
+		rv.Line = c.htmlMsg(key, "text", text)
+	case "note:removed":
+		rv.Line = c.htmlMsg("lists.note.removed", "text", text)
 	case "edit:" + string(list.SetOnly):
 		switch {
 		case o.Total.None():
@@ -566,6 +576,21 @@ type editorView struct {
 	Qty                    qtyView
 	Merge                  template.HTML
 	Hide, Display          bool
+	// Note is the note field (ticket 167): not on a display, which edits the
+	// quantity only. NoteOnly is the editor of a list without quantities.
+	Note     *noteField
+	NoteOnly bool
+}
+
+// noteField is the note of an entry in its editor.
+type noteField struct {
+	ID, Value string
+	Count     int
+	Error     string
+}
+
+func newNoteField(anchor, value, errText string) *noteField {
+	return &noteField{ID: "qn-" + anchor, Value: value, Count: utf8.RuneCountInString(strings.TrimSpace(value)), Error: errText}
 }
 
 // ---- the entries of a list with suggestions
@@ -585,6 +610,10 @@ func (c *itemCtx) articleOf(e list.Entry) *articleItem {
 type editPost struct {
 	EntryID, Mode, Amount, Unit string
 	Converted                   bool
+	// Note is the note the web editor posted; NoteSet says the field was there
+	// (the editor of a display has none).
+	Note    string
+	NoteSet bool
 }
 
 func editPostOf(form map[string]any) *editPost {
@@ -625,23 +654,27 @@ func (c *itemCtx) entryViews(es []list.Entry, o entryOpts) (open, ticked []entry
 		o.Added = o.Out.EntryID
 	}
 	for _, e := range es {
-		ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done, Added: e.ID == o.Added, Qty: c.qtyWords(e.Qty)}
+		ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done, Added: e.ID == o.Added, Qty: c.qtyWords(e.Qty), Note: e.Note}
 		if e.Done {
 			ticked = append(ticked, ev)
 			continue
 		}
 		ev.Suggest = o.Parent || o.Display
 		if ev.Suggest {
-			ev.Label = c.msg("lq.entry.add", "text", e.Text)
+			add, change := "lq.entry.add", "lq.entry.change"
+			if !o.Display { // the button also opens the note
+				add, change = "lq.entry.add_note", "lq.entry.change_note"
+			}
+			ev.Label = c.msg(add, "text", e.Text)
 			if !e.Qty.None() {
-				ev.Label = c.msg("lq.entry.change", "text", e.Text, "qty", ev.Qty)
+				ev.Label = c.msg(change, "text", e.Text, "qty", ev.Qty)
 			}
 			ev.Href = "?qty=" + url.QueryEscape(e.ID) + o.HideQ + "#e-" + e.ID
 		}
 		if it := c.articleOf(e); it != nil {
 			ev.Warns = c.s.warnLines(c.st, c.st.warnings(*it))
 		}
-		if o.Out != nil && o.Out.Kind == "edit" && o.Out.EntryID == e.ID {
+		if o.Out != nil && (o.Out.Kind == "edit" || o.Out.Kind == "note") && o.Out.EntryID == e.ID {
 			rv := c.result(*o.Out, o.Display)
 			ev.Result = &rv
 		}
@@ -673,6 +706,16 @@ func (c *itemCtx) editor(es []list.Entry, e list.Entry, o entryOpts) *editorView
 	q.AmountID, q.UnitName, q.WithMerge, q.Error = "qa-"+e.ID, "qunit", false, errText
 	ed := &editorView{Anchor: e.ID, Action: o.Base + "/entries/" + e.ID + "/quantity", Mode: mode, Qty: q, Hide: o.Hide, Display: o.Display,
 		Cancel: o.Base + "#e-" + e.ID}
+	if !o.Display {
+		note, noteErr := e.Note, ""
+		if o.Post != nil && o.Post.EntryID == e.ID && o.Post.NoteSet {
+			note = o.Post.Note
+			if o.ErrField == "edit-note" {
+				noteErr = c.s.i18n.T(c.lang, o.ErrKey)
+			}
+		}
+		ed.Note = newNoteField(e.ID, note, noteErr)
+	}
 	if o.Hide {
 		ed.Cancel = o.Base + "?ticked=hide#e-" + e.ID
 	}

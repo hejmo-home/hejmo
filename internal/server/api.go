@@ -133,6 +133,8 @@ var apiRoutes = []APIRoute{
 	{"PUT", "/routine-templates/{id}/order", auth.Perm("tasks", auth.Write), (*server).apiTemplateOrder},
 	{"GET", "/people/{id}/list-view", auth.Perm("lists", auth.Read), (*server).apiGetListView},
 	{"PUT", "/people/{id}/list-view", auth.Perm("lists", auth.Complete), (*server).apiPutListView},
+	{"GET", "/list-sharing", auth.Perm("lists", auth.Read), (*server).apiGetSharing},
+	{"PATCH", "/list-sharing", auth.Perm("lists", auth.Write), (*server).apiPatchSharing},
 	{"GET", "/lists", auth.Perm("lists", auth.Read), (*server).apiListLists},
 	{"POST", "/lists", auth.Perm("lists", auth.Write), (*server).apiCreateList},
 	{"GET", "/lists/{id}", auth.Perm("lists", auth.Read), (*server).apiGetList},

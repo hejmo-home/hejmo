@@ -97,7 +97,7 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 ### T9. A child's account or token reaches parent functions
 
 - **Threat:** a child's token or session is used for settings, tokens or other people's data.
-- **Check:** tokens of a child are refused; only calendar scopes open CalDAV. `test:internal/server/caldav_test.go`
+- **Check:** tokens of a child are refused; only the calendars, tasks and lists scopes open CalDAV. The lists scope opens shared lists (read and write of entries) over CalDAV to parents' device tokens only; a token made for other software with a lists scope is not widened. `test:internal/server/caldav_test.go` `test:internal/server/caldav_lists_test.go`
 
 ### T10. A bad certificate profile is installed on a personal device
 

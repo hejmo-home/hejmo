@@ -1,0 +1,28 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "ios_setup.title") "Frame" .Frame)}}
+  <h1>{{t "ios_setup.title"}}</h1>
+  <p class="lead">{{.Lead}}</p>
+  {{if .CAFirst}}<p class="notice" role="status" data-ca-profile-first>{{t "caldav.profile.ca_first"}} <a href="/ca">{{t "caldav.profile.ca_link"}}</a></p>{{end}}
+  {{$bad := eq .ErrorField "profile_name"}}
+  <form method="post" action="/caldav/profile" class="profile-steps">
+    <input type="hidden" name="next" value="/settings/lists/sharing">
+    <ol class="howto">
+      <li><div class="s"><b>{{t "ios_setup.s1.title"}}</b><p>{{t "ios_setup.s1.text"}}</p></div></li>
+      <li><div class="s"><b>{{t "ios_setup.s2.title"}}</b>
+        {{if .HTTPS}}<div class="f{{if $bad}} invalid{{end}}">
+          <label>{{t "ios_setup.s2.label"}}<input name="profile_name" type="text" maxlength="80" required placeholder="{{.Placeholder}}" value="{{with .Form}}{{index . "ProfileName"}}{{end}}"{{if $bad}} aria-invalid="true" autofocus aria-describedby="err-profile_name hint-profile_name"{{else}} aria-describedby="hint-profile_name"{{end}}></label>
+          {{if $bad}}<p class="ferr" id="err-profile_name" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg>{{.NameError}}</p>{{end}}
+          <p class="hint" id="hint-profile_name">{{t "ios_setup.s2.hint"}}</p>
+        </div>
+        <button class="button" type="submit">{{t "ios_setup.s2.button"}}</button>
+        {{else}}<p class="ferr" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.HTTPSLine}}</span></p>{{end}}
+      </div></li>
+      <li><div class="s"><b>{{t "ios_setup.s3.title"}}</b><p><span class="path">{{t "ios_setup.s3.path"}}</span>{{t "ios_setup.s3.after"}}</p></div></li>
+      <li><div class="s"><b>{{t "ios_setup.s4.title"}}</b>
+        {{if .NoneShared}}<p>{{.NoneLine}}</p>
+        {{else}}<p>{{.ListsLine}}</p>{{end}}
+      </div></li>
+    </ol>
+  </form>
+  {{if .HomeOnly}}<p class="hint home-only"><b>{{t "ios_setup.home.lead"}}</b> {{t "ios_setup.home.text"}}</p>{{end}}
+  <p class="hint">{{.OnceLine}}</p>
+{{template "foot"}}

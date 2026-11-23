@@ -3,6 +3,7 @@ package server
 import (
 	"errors"
 	"fmt"
+	"html"
 	"html/template"
 	"net/http"
 	"net/url"
@@ -34,13 +35,17 @@ type entryView struct {
 	// as a button that opens the editor (ticket 165).
 	Suggest bool
 	Qty     string // the quantity in words, "" without
-	Label   string // the accessible name of the quantity button
-	Href    string // where the button leads without script
-	Warns   []template.HTML
-	Editing bool
-	Editor  *editorView
-	Result  *resultView // the line after changing the quantity of this entry
-	Look    entryLook
+	// Note is the note under the entry, "" without (ticket 167). NoteOnly says
+	// the button is the one of a list without quantities: it opens the note alone.
+	Note     string
+	NoteOnly bool
+	Label    string // the accessible name of the quantity button
+	Href     string // where the button leads without script
+	Warns    []template.HTML
+	Editing  bool
+	Editor   *editorView
+	Result   *resultView // the line after changing the quantity of this entry
+	Look     entryLook
 }
 
 func (s *server) newListView(lang string, l list.List, c store.EntryCount) listView {
@@ -254,8 +259,40 @@ func (s *server) renderList(w http.ResponseWriter, r *http.Request, p principal,
 		data["A"] = ic.adder(es, adderOpts{Base: "/lists/" + l.ID, Form: form, Out: out, ErrField: errField, Editing: editingOpen(open), Parent: !child})
 		data["FreeBox"] = map[string]any{"Title": t(s, lang, "lq.unchecked.title"), "Hint": t(s, lang, "lq.unchecked.hint"), "People": s.freeText(ic.st)}
 	} else {
+		// A parent changes the note of an entry of a list without quantities (ticket 167).
+		noteBtn := !child && !edit
+		base, editID, post := "/lists/"+l.ID, r.URL.Query().Get("qty"), editPostOf(form)
+		if post != nil {
+			editID = post.EntryID
+		}
+		var out *outcome
+		var nc *itemCtx
+		if noteBtn {
+			out = s.outcomeOf(r)
+			nc = &itemCtx{s: s, p: p, lang: lang, active: s.activeUnits(p.household)}
+		}
 		for _, e := range es {
-			ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done}
+			ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done, Note: e.Note}
+			if noteBtn && !e.Done {
+				ev.NoteOnly = true
+				ev.Label = nc.msg("lists.note.add", "text", e.Text)
+				if e.Note != "" {
+					ev.Label = nc.msg("lists.note.edit", "text", e.Text)
+				}
+				ev.Href = "?qty=" + url.QueryEscape(e.ID) + hideQuery(r) + "#e-" + e.ID
+				if out != nil && out.Kind == "note" && out.EntryID == e.ID {
+					rv := nc.result(*out, false)
+					ev.Result = &rv
+				}
+				if e.ID == editID {
+					ev.Editing = true
+					ek := ""
+					if errField == "edit-note" {
+						ek = errKey
+					}
+					ev.Editor = s.noteEditor(lang, base, e, hideTicked(r), post, ek)
+				}
+			}
 			if !e.Qty.None() {
 				ev.Qty = s.qtyWordsFor(p, lang, e.Qty)
 			}
@@ -298,6 +335,12 @@ func (s *server) renderList(w http.ResponseWriter, r *http.Request, p principal,
 	data["SuccessInline"] = edit
 	data["Manual"] = l.Sort == list.Manual
 	data["Suggestions"] = l.Suggestions
+	if l.Shared { // so nobody wonders why entries come or are ticked by themselves
+		data["SharedLine"] = template.HTML(html.EscapeString(t(s, lang, "lists.shared.plain"))) // #nosec G203 -- escaped
+		if !child {
+			data["SharedLine"] = s.linkLine(lang, "lists.shared.note", sharingPath, t(s, lang, "share.title"), ".")
+		}
+	}
 	data["Summary"] = s.listSummary(r, form)
 	data["SyncStale"] = s.syncStale(p.household.ID)
 	data["Error"], data["ErrorField"] = errKey, errField
@@ -587,7 +630,14 @@ func (s *server) handleEntryQuantity(w http.ResponseWriter, r *http.Request) {
 	}
 	c.listID = l.ID
 	id := r.PathValue("entry")
-	post := &editPost{EntryID: id, Mode: r.PostFormValue("qmode"), Amount: r.PostFormValue("amount"), Unit: r.PostFormValue("qunit"), Converted: r.PostFormValue("converted") == "1"}
+	post := &editPost{EntryID: id, Mode: r.PostFormValue("qmode"), Amount: r.PostFormValue("amount"), Unit: r.PostFormValue("qunit"), Converted: r.PostFormValue("converted") == "1",
+		Note: cleanNote(r.PostFormValue("note")), NoteSet: r.PostForm.Has("note")}
+	if post.NoteSet {
+		if err := list.ValidateNote(post.Note); err != nil {
+			s.renderList(w, r, p, http.StatusUnprocessableEntity, l, false, map[string]any{"Text": "", "EditPost": post}, "lists.note.error", "edit-note")
+			return
+		}
+	}
 	res, o, err := c.changeQuantity(l.ID, id, post)
 	switch ie, isItem := asItemError(err); {
 	case isItem:
@@ -600,7 +650,16 @@ func (s *server) handleEntryQuantity(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "set quantity", err)
 		return
 	}
-	_ = res
+	if post.NoteSet {
+		e, changed, err := s.saveNote(p, l, o.EntryID, post.Note, res.Plan.Action == list.SetMerged)
+		if err != nil {
+			s.fail(w, "set note", err)
+			return
+		}
+		if changed && res.Plan.Action == list.SetOnly && res.Plan.Before == res.Plan.Result {
+			o = noteOutcome(l, e, post.Note) // only the note changed: say so
+		}
+	}
 	http.Redirect(w, r, s.resultURL(r, l.ID, o), http.StatusSeeOther)
 }
 

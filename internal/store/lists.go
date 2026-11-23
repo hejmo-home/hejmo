@@ -25,12 +25,12 @@ func (db *DB) CreateList(householdID string, l list.List) (list.List, error) {
 	return l, err
 }
 
-const listColumns = `id, name, color, symbol, sort, suggestions`
+const listColumns = `id, name, color, symbol, sort, suggestions, shared`
 
 func scanList(row interface{ Scan(...any) error }) (list.List, error) {
 	var l list.List
 	var s string
-	err := row.Scan(&l.ID, &l.Name, &l.Color, &l.Symbol, &s, &l.Suggestions)
+	err := row.Scan(&l.ID, &l.Name, &l.Color, &l.Symbol, &s, &l.Suggestions, &l.Shared)
 	l.Sort = list.Sort(s)
 	return l, err
 }
@@ -79,11 +79,11 @@ func (db *DB) DeleteList(householdID, id string) error {
 	return expectOne(res, err)
 }
 
-const entryColumns = `id, text, done, position, article_id, qty_base, qty_unit`
+const entryColumns = `id, text, done, position, article_id, qty_base, qty_unit, note`
 
 func scanEntry(row interface{ Scan(...any) error }) (list.Entry, error) {
 	var e list.Entry
-	err := row.Scan(&e.ID, &e.Text, &e.Done, &e.Position, &e.ArticleID, &e.Qty.Base, &e.Qty.Unit)
+	err := row.Scan(&e.ID, &e.Text, &e.Done, &e.Position, &e.ArticleID, &e.Qty.Base, &e.Qty.Unit, &e.Note)
 	return e, err
 }
 
@@ -216,4 +216,44 @@ func (db *DB) EntryCounts(householdID string) (map[string]EntryCount, error) {
 		out[id] = c
 	}
 	return out, rows.Err()
+}
+
+// SetListsShared switches lists on or off for other apps (ticket 167): the map
+// holds list id and the new state; lists it does not name stay as they are.
+// A list that is gone is a *MissingListError and nothing is stored.
+func (db *DB) SetListsShared(householdID string, shared map[string]bool) error {
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	for id, on := range shared {
+		res, err := tx.Exec(`UPDATE lists SET shared = ?, updated_at = ? WHERE household_id = ? AND id = ?`, on, now(), householdID, id)
+		if err != nil {
+			return err
+		}
+		if n, _ := res.RowsAffected(); n == 0 {
+			return &MissingListError{ID: id}
+		}
+	}
+	return tx.Commit()
+}
+
+// MissingListError says a list of a request is gone (deleted meanwhile).
+type MissingListError struct{ ID string }
+
+func (e *MissingListError) Error() string { return "store: list " + e.ID + " not found" }
+
+// Is makes it an ErrNotFound.
+func (e *MissingListError) Is(target error) bool { return target == ErrNotFound }
+
+// SetEntryNote gives an entry a note ("" removes it); ticked-off entries keep theirs.
+func (db *DB) SetEntryNote(householdID, listID, id, note string) error {
+	note = strings.TrimSpace(note)
+	if err := list.ValidateNote(note); err != nil {
+		return fmt.Errorf("%w: %w", ErrInvalid, err)
+	}
+	res, err := db.sql.Exec(`UPDATE list_entries SET note = ? WHERE id = ? AND list_id IN (SELECT id FROM lists WHERE id = ? AND household_id = ?)`,
+		note, id, listID, householdID)
+	return expectOne(res, err)
 }

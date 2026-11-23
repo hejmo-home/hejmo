@@ -125,6 +125,8 @@ var flashFields = map[string][]string{
 	"flash.photos_moved":           {"n", "album"},
 	"flash.photo_deleted":          {"n"},
 	"flash.photos_deleted":         {"n"},
+	"flash.lists_shared":           {"names"},
+	"flash.lists_shared.one":       {"names"},
 	"flash.otp_reset":              {"name"},
 	"flash.otp_reset_passkey":      {"name", "possessive", "passkeys"},
 	"flash.otp_reset_passkeys":     {"name", "possessive", "passkeys"},

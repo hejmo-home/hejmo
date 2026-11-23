@@ -45,6 +45,7 @@ type listsViewData struct {
 	ViewLine  string // the success line after switching the view
 	ViewError string // the view could not be saved
 	FreeText  []freeTextPerson
+	Shared    bool // the list is also in Apple Reminders (ticket 167)
 }
 
 // errNoList means the list of a lists view is gone (deleted meanwhile).
@@ -96,6 +97,7 @@ func (s *server) listsView(h store.Household, d store.Display, lang, listID stri
 	}
 	c := countOf(es)
 	v.Current = s.newListView(lang, *cur, c)
+	v.Shared = cur.Shared
 	v.View, v.Tiles = string(d.ListView), d.ListView == list.Tiles
 	switch {
 	case o.ViewError:
@@ -135,7 +137,7 @@ func (s *server) listsView(h store.Household, d store.Display, lang, listID stri
 		return v, nil
 	}
 	for _, e := range es {
-		ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done}
+		ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done, Note: e.Note}
 		switch {
 		case e.Done:
 			v.Ticked = append(v.Ticked, ev)

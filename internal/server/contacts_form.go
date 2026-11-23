@@ -509,7 +509,6 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, d.input())
 	}
 	var taken *store.NameTakenError
-	var fe *store.FieldError
 	switch {
 	case errors.As(err, &taken): // made between the check and the save
 		code := "taken"
@@ -519,11 +518,7 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: d, Status: http.StatusUnprocessableEntity,
 			Problems: []ctProblem{{Anchor: "name", Field: "name", Code: code, Arg: taken.Existing}}})
 		return
-	case errors.As(err, &fe):
-		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: d, Status: http.StatusUnprocessableEntity,
-			Problems: []ctProblem{{Anchor: "name", Field: fe.Field, Code: fe.Msg}}})
-		return
-	case err != nil:
+	case err != nil: // the form checked every rule the store knows, so a store refusal here is a bug, not something to tell the person
 		s.fail(w, "save contact", err)
 		return
 	}

@@ -105,14 +105,14 @@ func scanContact(sc interface{ Scan(...any) error }) (Contact, error) {
 // loadLines fills the numbers, the e-mail addresses and the groups of contacts.
 func (db *DB) loadContactParts(q interface {
 	Query(string, ...any) (*sql.Rows, error)
-}, householdID string, list []Contact) error {
+}, householdID, onlyID string, list []Contact) error {
 	at := map[string]int{}
 	for i := range list {
 		at[list[i].ID] = i
 	}
 	for _, t := range []struct{ table string }{{"contact_phones"}, {"contact_emails"}} {
 		rows, err := q.Query(`SELECT l.contact_id, l.kind, l.custom_label, l.value FROM `+t.table+` l
-			JOIN contacts c ON c.id = l.contact_id WHERE c.household_id = ? ORDER BY l.contact_id, l.position`, householdID)
+			JOIN contacts c ON c.id = l.contact_id WHERE c.household_id = ? AND (? = '' OR c.id = ?) ORDER BY l.contact_id, l.position`, householdID, onlyID, onlyID)
 		if err != nil {
 			return err
 		}
@@ -136,7 +136,7 @@ func (db *DB) loadContactParts(q interface {
 		}
 	}
 	rows, err := q.Query(`SELECT m.contact_id, m.group_id FROM contact_group_members m JOIN contacts c ON c.id = m.contact_id
-		WHERE c.household_id = ? ORDER BY m.contact_id, m.group_id`, householdID)
+		WHERE c.household_id = ? AND (? = '' OR c.id = ?) ORDER BY m.contact_id, m.group_id`, householdID, onlyID, onlyID)
 	if err != nil {
 		return err
 	}
@@ -174,21 +174,31 @@ func (db *DB) Contacts(householdID string) ([]Contact, error) {
 	if err := rows.Close(); err != nil {
 		return nil, err
 	}
-	return out, db.loadContactParts(db.sql, householdID, out)
+	return out, db.loadContactParts(db.sql, householdID, "", out)
 }
 
 // Contact loads one contact of a household.
 func (db *DB) Contact(householdID, id string) (Contact, error) {
-	all, err := db.Contacts(householdID)
+	rows, err := db.sql.Query(`SELECT `+contactColumns+contactFrom+` WHERE c.household_id = ? AND c.id = ?`, householdID, id)
 	if err != nil {
 		return Contact{}, err
 	}
-	for _, c := range all {
-		if c.ID == id {
-			return c, nil
+	var out []Contact
+	for rows.Next() {
+		c, err := scanContact(rows)
+		if err != nil {
+			rows.Close()
+			return Contact{}, err
 		}
+		out = append(out, c)
 	}
-	return Contact{}, ErrNotFound
+	if err := rows.Close(); err != nil {
+		return Contact{}, err
+	}
+	if len(out) == 0 {
+		return Contact{}, ErrNotFound
+	}
+	return out[0], db.loadContactParts(db.sql, householdID, id, out)
 }
 
 // checkContactName looks for another contact of the household (people
@@ -253,7 +263,8 @@ func (in *ContactInput) clean() error {
 		in.BdayYear = 0 // a year alone is no birthday
 	}
 	if in.BdayDay != 0 || in.BdayMonth != 0 || in.BdayYear != 0 {
-		if msg := contact.CheckBirthday(in.BdayDay, in.BdayMonth, in.BdayYear, time.Now()); msg != "" {
+		// A day of slack: the form already checks against the household's today, the store must never be stricter.
+		if msg := contact.CheckBirthday(in.BdayDay, in.BdayMonth, in.BdayYear, time.Now().Add(24*time.Hour)); msg != "" {
 			return &FieldError{Field: "birthday", Msg: "the birthday is not a date: " + msg}
 		}
 	}

@@ -4,6 +4,7 @@ import (
 	"errors"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/contact"
 	"github.com/hejmo-home/hejmo/internal/store"
@@ -97,6 +98,17 @@ func TestAContactKeepsTheNumberAsTypedAndNeverStoresEmptyLinesOrAnEmptyAddress(t
 }
 
 // Acceptance: a birthday without a year is a birthday without an age.
+// The household's today may be a day ahead of UTC: the store must not refuse a birthday the form let through.
+func TestABirthdayOfTheHouseholdsTodayIsNotRefusedWhenUTCStillLivesYesterday(t *testing.T) {
+	t.Parallel()
+	db, h, _ := exampleFamily(t)
+	ahead := time.Now().UTC().Add(24 * time.Hour)
+	in := store.ContactInput{HejmoName: "Baby", BdayDay: ahead.Day(), BdayMonth: int(ahead.Month()), BdayYear: ahead.Year()}
+	if _, err := db.CreateContact(h.ID, "", in); err != nil {
+		t.Fatalf("a birthday on the household's today: %v", err)
+	}
+}
+
 func TestABirthdayMayLackTheYearButNeverHaveJustADayOrMonth(t *testing.T) {
 	t.Parallel()
 	db, h, _ := exampleFamily(t)

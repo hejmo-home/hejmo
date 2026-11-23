@@ -1,10 +1,11 @@
 // Package contact holds the rules for the address book (ticket 296, ADR 0021)
-// that need no database: what a telenumber_x number, an e-mail address and a
+// that need no database: what a number, an e-mail address and a
 // birthday may look like. The rules check; they never rewrite what a person
-// typed (a telenumber_x number is kept as typed), except that surrounding spaces go.
+// typed (a number is kept as typed), except that surrounding spaces go.
 package contact
 
 import (
+	"regexp"
 	"strings"
 	"time"
 	"unicode/utf8"
@@ -72,16 +73,6 @@ func CleanLines(in []Line) []Line {
 	return out
 }
 
-// AddressEmpty reports whether every part of an address is empty: such an address is never stored.
-func AddressEmpty(parts ...string) bool {
-	for _, p := range parts {
-		if strings.TrimSpace(p) != "" {
-			return false
-		}
-	}
-	return true
-}
-
 // Runes counts characters.
 func Runes(s string) int { return utf8.RuneCountInString(s) }
 
@@ -106,11 +97,19 @@ func CheckNumber(v string) (code, bad string) {
 	return "", ""
 }
 
-// TelHref is the tel: link of a typed number: its digits and a leading +, nothing else.
+// trunkZero is the "(0)" of "+49 (0)171": a trunk prefix that is dropped when dialled from abroad.
+var trunkZero = regexp.MustCompile(`\(\s*0\s*\)`)
+
+// TelHref is the tel: link of a typed number: its digits and a leading +,
+// nothing else. In international format (a leading +) the "(0)" trunk prefix is dropped.
 func TelHref(v string) string {
+	v = strings.TrimSpace(v)
+	if strings.HasPrefix(v, "+") {
+		v = trunkZero.ReplaceAllString(v, "")
+	}
 	var b strings.Builder
 	b.WriteString("tel:")
-	for i, r := range strings.TrimSpace(v) {
+	for i, r := range v {
 		if (r >= '0' && r <= '9') || (r == '+' && i == 0) {
 			b.WriteRune(r)
 		}

@@ -263,3 +263,20 @@ func TestConnectTextsExistInBothLanguages(t *testing.T) {
 		}
 	}
 }
+
+// A find-and-replace once left "telenumber_x" in English texts; the English contact texts say "number".
+func TestEnglishTextsHoldNoStrayPlaceholderWords(t *testing.T) {
+	raw, err := os.ReadFile("locales/en.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cat := map[string]string{}
+	if err := json.Unmarshal(raw, &cat); err != nil {
+		t.Fatal(err)
+	}
+	for key, text := range cat {
+		if strings.Contains(text, "telenumber_x") {
+			t.Errorf("en %s holds a stray placeholder word: %s", key, text)
+		}
+	}
+}

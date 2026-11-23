@@ -30,7 +30,7 @@ func TestNumberKeepsWhatWasTypedAndNamesTheFirstBadCharacter(t *testing.T) {
 
 func TestTelHrefHoldsOnlyDigitsAndALeadingPlus(t *testing.T) {
 	t.Parallel()
-	for in, want := range map[string]string{"0171 3456 789": "tel:01713456789", "+49 (0)89 1234-56": "tel:+4908912345" + "6", "089/12.34": "tel:0891234"} {
+	for in, want := range map[string]string{"0171 3456 789": "tel:01713456789", "+49 (0)89 1234-56": "tel:+498912345" + "6", "+49 (0) 171/3456-789": "tel:+491713456789", "+49(0)171 3456789": "tel:+491713456789", "0(0)89": "tel:0089", "089/12.34": "tel:0891234"} {
 		if got := contact.TelHref(in); got != want {
 			t.Errorf("TelHref(%q) = %q, want %q", in, got, want)
 		}
@@ -95,8 +95,5 @@ func TestCleanDropsEmptyLinesAndKeepsTheTypedValue(t *testing.T) {
 	got := contact.CleanLines(in)
 	if len(got) != 2 || got[0].Value != "0171 3456 789" || got[1].Label != "Gartenhaus" {
 		t.Fatalf("CleanLines = %+v", got)
-	}
-	if !contact.AddressEmpty("", " ", "", "\t") || contact.AddressEmpty("", "", "Rosenheim", "") {
-		t.Error("AddressEmpty")
 	}
 }

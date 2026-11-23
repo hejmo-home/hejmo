@@ -201,7 +201,7 @@ func TestTypedNumberIsKeptAndEmptyLinesAndAddressAreNeverStored(t *testing.T) {
 		t.Errorf("an empty address was stored: %v", a)
 	}
 	page := c.page("/contacts/"+id, "en").body
-	ctHas(t, "contact page", page, `href="tel:+4901713456789"`, "<span>+49 (0)171/3456-789</span>")
+	ctHas(t, "contact page", page, `href="tel:+491713456789"`, "<span>+49 (0)171/3456-789</span>")
 	ctHasNot(t, "contact page", page, "<address", "Address")
 }
 

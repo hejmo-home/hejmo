@@ -4,7 +4,7 @@
   <div class="notice arch-note" role="status"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="4" rx="1"/><path d="M5 8v11h14V8M10 12h4"/></svg><p>{{.ArchivedNote}}</p></div>
   <dl class="facts">
     <dt>{{t "rwd.detail.price"}}</dt><dd>{{template "rwdPrice" (dict "Size" 16 "Text" .PriceWords)}}</dd>
-    <dt>{{t "rwd.for.fact"}}</dt><dd>{{if .Gone}}–{{else}}{{template "rwdWho" (dict "Whole" .Whole "People" .Who)}}{{end}}</dd>
+    <dt>{{t "rwd.for.fact"}}</dt><dd>{{if .Gone}}{{t "layout.list.no_choice"}}{{else}}{{template "rwdWho" (dict "Whole" .Whole "People" .Who)}}{{end}}</dd>
     <dt>{{t "rwd.detail.limit"}}</dt><dd>{{.LimitWords}}</dd>
     {{template "rewardRedeemed" .}}
   </dl>
@@ -40,4 +40,4 @@
 {{template "foot"}}
 
 {{/* How often the reward was redeemed, by whom, and when last. */}}
-{{define "rewardRedeemed"}}<dt>{{t "rwd.detail.redeemed"}}</dt><dd>{{with .Redeemed}}<span class="lines"><span>{{.Total}}: {{range $i, $b := .By}}{{if $i}}, {{end}}<span class="who">{{if $b.Known}}<span class="marker" data-person="{{$b.Chip.Slot}}" data-shape="{{$b.Chip.Shape}}" aria-hidden="true"></span>{{$b.Chip.Name}}{{else}}{{t "tasks.stars.removed"}}{{end}}</span> {{$b.Times}}{{end}}</span><span class="hint">{{.Last}}</span></span>{{else}}{{t "rwd.detail.never"}}{{end}}</dd>{{end}}
+{{define "rewardRedeemed"}}<dt>{{t "rwd.detail.redeemed"}}</dt><dd>{{with .Redeemed}}<span class="lines"><span>{{.Intro}}{{range $b := .By}}{{$b.Sep}}<span class="who">{{if $b.Known}}<span class="marker" data-person="{{$b.Chip.Slot}}" data-shape="{{$b.Chip.Shape}}" aria-hidden="true"></span>{{$b.Chip.Name}}{{else}}{{t "tasks.stars.removed"}}{{end}}</span> {{$b.Times}}{{end}}</span><span class="hint">{{.Last}}</span></span>{{else}}{{t "rwd.detail.never"}}{{end}}</dd>{{end}}

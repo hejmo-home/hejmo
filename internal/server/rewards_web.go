@@ -38,15 +38,15 @@ func withRewardPages(rest, rewards http.Handler) http.Handler {
 
 func (s *server) routeRewards() http.Handler {
 	mux := http.NewServeMux()
-	mux.HandleFunc("GET "+rewardsPath, s.handleRewards)
-	mux.HandleFunc("GET "+rewardsPath+"/new", s.handleRewardNew)
-	mux.HandleFunc("POST "+rewardsPath, s.handleRewardCreate)
-	mux.HandleFunc("GET "+rewardsPath+"/{id}", s.handleReward)
-	mux.HandleFunc("POST "+rewardsPath+"/{id}", s.handleRewardSave)
-	mux.HandleFunc("POST "+rewardsPath+"/{id}/archive", s.handleRewardArchive)
-	mux.HandleFunc("POST "+rewardsPath+"/{id}/restore", s.handleRewardRestore)
-	mux.HandleFunc("POST "+rewardsPath+"/{id}/delete", s.handleRewardDelete)
-	mux.HandleFunc("GET "+rewardsPath+"/{id}/picture", s.handleRewardPicture)
+	mux.HandleFunc("GET /tasks/rewards", s.handleRewards)
+	mux.HandleFunc("GET /tasks/rewards/new", s.handleRewardNew)
+	mux.HandleFunc("POST /tasks/rewards", s.handleRewardCreate)
+	mux.HandleFunc("GET /tasks/rewards/{id}", s.handleReward)
+	mux.HandleFunc("POST /tasks/rewards/{id}", s.handleRewardSave)
+	mux.HandleFunc("POST /tasks/rewards/{id}/archive", s.handleRewardArchive)
+	mux.HandleFunc("POST /tasks/rewards/{id}/restore", s.handleRewardRestore)
+	mux.HandleFunc("POST /tasks/rewards/{id}/delete", s.handleRewardDelete)
+	mux.HandleFunc("GET /tasks/rewards/{id}/picture", s.handleRewardPicture)
 	return mux
 }
 
@@ -331,11 +331,12 @@ func (s *server) readRewardForm(w http.ResponseWriter, r *http.Request) (f rewar
 type factRow struct{ Label, Text, Hint string }
 
 type redeemedFact struct {
-	Total, Last string
-	By          []redeemedBy
+	Total, Intro, Last string
+	By                 []redeemedBy
 }
 
 type redeemedBy struct {
+	Sep   string
 	Chip  personChip
 	Known bool
 	Times string
@@ -354,9 +355,14 @@ func (s *server) redeemedOf(p principal, lang string, f store.RewardFacts, chips
 		return nil
 	}
 	out := &redeemedFact{Total: s.timesWords(lang, f.Count)}
-	for _, bp := range f.ByPerson {
+	out.Intro = out.Total + ": "
+	for i, bp := range f.ByPerson {
 		c, ok := chips[bp.PersonID]
-		out.By = append(out.By, redeemedBy{Chip: c, Known: ok, Times: s.timesWords(lang, bp.Count)})
+		sep := ""
+		if i > 0 {
+			sep = ", "
+		}
+		out.By = append(out.By, redeemedBy{Sep: sep, Chip: c, Known: ok, Times: s.timesWords(lang, bp.Count)})
 	}
 	if c, ok := chips[f.LastBy]; ok {
 		out.Last = s.i18n.Format(lang, i18n.Msg("rwd.detail.last", "date", p.day(f.Last), "name", c.Name))

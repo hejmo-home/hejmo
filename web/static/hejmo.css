@@ -3355,3 +3355,8 @@ details.repair.archive form .notice p:last-child { margin: 0; }
 [data-theme="bw"] .reward-link { border: 3px solid var(--text); }
 [data-theme="bw"] .reward-link > .icon { stroke: var(--text); }
 details.more[open] .list-rows .chev { transform: none; }
+/* A long reward name in the archive confirmation wraps instead of widening the page. */
+details.repair.archive form { grid-template-columns: minmax(0, 1fr); }
+details.repair.archive form, details.repair.archive .confirm, details.repair.archive .notice { min-width: 0; }
+details.repair.archive .confirm .button { max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
+details.repair.archive .notice b, .notice.arch-note b { white-space: normal; overflow-wrap: anywhere; }

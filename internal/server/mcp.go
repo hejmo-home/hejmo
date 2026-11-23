@@ -105,7 +105,7 @@ var mcpTools = []mcpTool{
 		idOf("list"), opt("name", "string", "List name"), opt("color", "string", "terracotta, blue, green, ochre, plum or teal"), opt("symbol", "string", "The list symbol"), opt("sort", "string", "manual or alphabetical")}},
 	{name: "delete_list", desc: "Delete a list with all its entries.", method: "DELETE", path: "/lists/{id}", params: []mcpParam{idOf("list")}},
 	{name: "add_list_entry", desc: "Add an entry at the end of a list, for example an item on the shopping list.", method: "POST", path: "/lists/{id}/entries", params: []mcpParam{
-		idOf("list"), req("text", "string", "The entry text")}},
+		idOf("list"), req("text", "string", "The entry text; the exact name of an article of the library (any language, singular or plural) makes it that article"), opt("variety", "string", "A variety of the article, for example Type 405 for flour (at most 60 characters). Only for an article; quantities add up only for the same variety")}},
 	{name: "delete_list_entry", desc: "Delete one entry of a list.", method: "DELETE", path: "/lists/{id}/entries/{entry}", params: []mcpParam{idOf("list"), req("entry", "string", "The id of the entry")}},
 	{name: "set_list_entry_done", desc: "Tick an entry off, or open it again.", method: "PUT", path: "/lists/{id}/entries/{entry}/done", params: []mcpParam{
 		idOf("list"), req("entry", "string", "The id of the entry"), req("done", "boolean", "true to tick off, false to open again")}},

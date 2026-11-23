@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"net/http"
+	"strings"
 	"testing"
 )
 
@@ -324,5 +325,108 @@ func TestAHandHiddenArticleTypedAsTextStaysFreeTextInTheAPIAnswers(t *testing.T)
 	status, e = lb.add(t, other, map[string]any{"article_id": "eggs", "amount": 6, "unit": "piece"})
 	if status != http.StatusCreated || e["article_id"] != "eggs" || e["symbol"] == nil {
 		t.Fatalf("picked = %d %v", status, e)
+	}
+}
+
+// Ticket 277: varieties over REST.
+
+func TestAVarietyKeepsEntriesApartAndTheSameVarietyAddsUpOverTheAPI(t *testing.T) {
+	lb := newListBox(t)
+	id := lb.shopList(t)
+	status, e := lb.add(t, id, map[string]any{"article_id": "wheat-flour", "amount": 500, "unit": "g"})
+	if status != http.StatusCreated || e["variety"] != nil {
+		t.Fatalf("%d %v", status, e)
+	}
+	status, e = lb.add(t, id, map[string]any{"article_id": "wheat-flour", "variety": "  Type   405 ", "amount": 1, "unit": "kg"})
+	if status != http.StatusCreated || e["variety"] != "Type 405" || e["result"] != "added" {
+		t.Fatalf("two entries: %d %v", status, e)
+	}
+	status, e = lb.add(t, id, map[string]any{"article_id": "wheat-flour", "variety": "type 405", "amount": 1, "unit": "kg"})
+	if status != http.StatusOK || e["result"] != "added_to" || e["amount"] != 2.0 || e["variety"] != "Type 405" {
+		t.Fatalf("they add up: %d %v", status, e)
+	}
+	if first := entryOf(t, lb.parent, id, 0); first["variety"] != nil || first["amount"] != 500.0 {
+		t.Errorf("%v", first)
+	}
+	if second := entryOf(t, lb.parent, id, 1); second["variety"] != "Type 405" {
+		t.Errorf("GET carries the variety: %v", second)
+	}
+	// Adding without a quantity exists only for article and variety both equal.
+	status, e = lb.add(t, id, map[string]any{"article_id": "sugar", "variety": "braun"})
+	if status != http.StatusCreated {
+		t.Fatalf("%d %v", status, e)
+	}
+	status, e = lb.add(t, id, map[string]any{"article_id": "sugar", "variety": "Braun"})
+	if status != http.StatusOK || e["result"] != "exists" {
+		t.Errorf("%d %v", status, e)
+	}
+	status, e = lb.add(t, id, map[string]any{"article_id": "sugar"})
+	if status != http.StatusCreated {
+		t.Errorf("sugar next to brown sugar: %d %v", status, e)
+	}
+}
+
+func TestAVarietyNeedsAnArticleAndAtMostSixtyCharactersOverTheAPI(t *testing.T) {
+	lb := newListBox(t)
+	id := lb.shopList(t)
+	status, e := lb.add(t, id, map[string]any{"text": "Quinoa-Pops", "variety": "bunt"})
+	if status != http.StatusUnprocessableEntity || e["field"] != "variety" {
+		t.Errorf("free text has no variety: %d %v", status, e)
+	}
+	status, e = lb.add(t, id, map[string]any{"article_id": "sugar", "variety": strings.Repeat("x", 61)})
+	if status != http.StatusUnprocessableEntity || e["field"] != "variety" {
+		t.Errorf("too long: %d %v", status, e)
+	}
+	status, e = lb.add(t, id, map[string]any{"article_id": "sugar", "variety": strings.Repeat("ä", 60)})
+	if status != http.StatusCreated {
+		t.Errorf("60 characters are fine: %d %v", status, e)
+	}
+	// A list without suggestions has no articles and so no variety.
+	_, l, _ := lb.parent.call(http.MethodPost, "/lists", map[string]any{"name": "To-dos", "color": "blue", "symbol": "circle-empty", "suggestions": false})
+	status, e = lb.add(t, l["id"].(string), map[string]any{"text": "Anruf", "variety": "x"})
+	if status != http.StatusUnprocessableEntity {
+		t.Errorf("%d %v", status, e)
+	}
+}
+
+func TestPatchingTheVarietyMergesAndNotesIt(t *testing.T) {
+	lb := newListBox(t)
+	id := lb.shopList(t)
+	_, a := lb.add(t, id, map[string]any{"article_id": "wheat-flour", "amount": 500, "unit": "g"})
+	lb.add(t, id, map[string]any{"article_id": "wheat-flour", "variety": "Type 405", "amount": 1, "unit": "kg"})
+	path := "/lists/" + id + "/entries/" + a["id"].(string)
+	status, e, _ := lb.parent.call(http.MethodPatch, path, map[string]any{"variety": "Type 550"})
+	if status != http.StatusOK || e["result"] != "set" || e["variety"] != "Type 550" || e["amount"] != 500.0 {
+		t.Fatalf("only the variety: %d %v", status, e)
+	}
+	status, e, _ = lb.parent.call(http.MethodPatch, path, map[string]any{"variety": "type 405"})
+	if status != http.StatusOK || e["result"] != "merged" || e["variety"] != "Type 405" || e["amount"] != 1.5 || e["id"] == a["id"] {
+		t.Fatalf("merged: %d %v", status, e)
+	}
+	e2 := entryOf(t, lb.parent, id, 0)
+	status, e, _ = lb.parent.call(http.MethodPatch, "/lists/"+id+"/entries/"+e2["id"].(string), map[string]any{"variety": nil})
+	if status != http.StatusOK || e["variety"] != nil {
+		t.Errorf("null takes it away: %d %v", status, e)
+	}
+	status, e, _ = lb.parent.call(http.MethodPatch, "/lists/"+id+"/entries/"+e2["id"].(string), map[string]any{"variety": strings.Repeat("x", 61)})
+	if status != http.StatusUnprocessableEntity || e["field"] != "variety" {
+		t.Errorf("%d %v", status, e)
+	}
+	_, f := lb.add(t, id, map[string]any{"text": "Quinoa-Pops"})
+	status, e, _ = lb.parent.call(http.MethodPatch, "/lists/"+id+"/entries/"+f["id"].(string), map[string]any{"variety": "bunt"})
+	if status != http.StatusUnprocessableEntity || e["field"] != "variety" {
+		t.Errorf("free text: %d %v", status, e)
+	}
+	if status, _, _ := lb.parent.call(http.MethodPatch, path, map[string]any{}); status != http.StatusBadRequest {
+		t.Errorf("neither amount nor variety: %d", status)
+	}
+}
+
+func TestTypedPluralsNameTheArticleOverTheAPI(t *testing.T) {
+	lb := newListBox(t)
+	id := lb.shopList(t)
+	status, e := lb.add(t, id, map[string]any{"text": "Zitrone"})
+	if status != http.StatusCreated || e["article_id"] != "lemons" {
+		t.Errorf("%d %v", status, e)
 	}
 }

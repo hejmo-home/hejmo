@@ -100,6 +100,72 @@ func (c *itemCtx) cannotConvert(old, add list.Quantity) (a, b string, measure bo
 	return c.kindNoun(ok), c.kindNoun(ak), false
 }
 
+// entryLabel is the entry in words: "Mehl · Type 405", the notation everywhere.
+func entryLabel(text, variety string) string {
+	if variety == "" {
+		return text
+	}
+	return text + " · " + variety
+}
+
+// varietyOf reads what the Sorte row posted: the chip chosen or, with "new",
+// the text typed. isNew says the person chose "Neue Sorte".
+func varietyOf(pick, text string) (variety string, isNew bool) {
+	if pick == "new" {
+		return list.NormalizeVariety(text), true
+	}
+	return list.NormalizeVariety(pick), false
+}
+
+// varietyView is the "Sorte:" row of the add card and of the editor.
+type varietyView struct {
+	PickName, TextName, TextID string
+	Options                    []string // the varieties used before
+	Picked                     string   // the value of the checked chip: "", a variety or "new"
+	Text                       string   // the text of the new variety
+	State                      string   // the closed row in words
+	Chosen                     bool     // State is a variety: shown as a filled pill
+	Error                      string
+	Open                       bool
+	Hint                       string
+}
+
+// varietyFields builds the Sorte row of an article. pick and text are what
+// the form said ("" and "" for no variety); prefix is "" (add card) or "q" (editor).
+func (c *itemCtx) varietyFields(art articleItem, prefix, pick, text, errKey string) *varietyView {
+	v := &varietyView{PickName: prefix + "variety_pick", TextName: prefix + "variety", TextID: prefix + "variety", Options: c.varieties(art.ID),
+		Hint: c.msg("lq.var.hint", "name", art.Name(c.lang))}
+	cur, isNew := varietyOf(pick, text)
+	if i := slices.IndexFunc(v.Options, func(o string) bool { return list.VarietyKey(o) == list.VarietyKey(cur) }); isNew && cur != "" && errKey == "" && i >= 0 {
+		isNew, cur = false, v.Options[i] // a variety used before is its chip
+	}
+	if isNew {
+		v.Picked, v.Text = "new", list.NormalizeVariety(text)
+		if v.Text == "" && text != "" {
+			v.Text = text // keep what was typed, spaces and all
+		}
+	} else if cur != "" {
+		if i := slices.IndexFunc(v.Options, func(o string) bool { return list.VarietyKey(o) == list.VarietyKey(cur) }); i >= 0 {
+			cur = v.Options[i]
+		} else {
+			v.Options = append([]string{cur}, v.Options...)
+		}
+		v.Picked = cur
+	}
+	switch {
+	case isNew && cur == "":
+		v.State = c.msg("lq.var.empty")
+	case cur == "":
+		v.State = c.msg("lq.var.none")
+	default:
+		v.State, v.Chosen = cur, true
+	}
+	if errKey != "" {
+		v.Error, v.Open = c.s.i18n.T(c.lang, errKey), true
+	}
+	return v
+}
+
 // ---- views
 
 // qtyChip is one unit to choose.
@@ -174,15 +240,15 @@ func (c *itemCtx) qtyFields(art *articleItem, amount, chosen string, display boo
 
 // pickedView is the chosen article in words.
 type pickedView struct {
-	ID, Name, Symbol, Picture, Sub string
+	ID, Name, Variety, Symbol, Picture, Sub string
 }
 
-func (c *itemCtx) picked(it articleItem) *pickedView {
+func (c *itemCtx) picked(it articleItem, variety string) *pickedView {
 	key := "lq.picked.lib"
 	if it.own != nil {
 		key = "lq.picked.own"
 	}
-	pv := &pickedView{ID: it.ID, Name: it.Name(c.lang), Symbol: symbolOf(it), Sub: c.msg(key, "dept", c.s.i18n.T(c.lang, "dept."+it.Dept))}
+	pv := &pickedView{ID: it.ID, Name: it.Name(c.lang), Variety: variety, Symbol: symbolOf(it), Sub: c.msg(key, "dept", c.s.i18n.T(c.lang, "dept."+it.Dept))}
 	if it.own != nil && it.own.HasPicture {
 		pv.Picture = pictureURL(*it.own)
 	}
@@ -191,10 +257,10 @@ func (c *itemCtx) picked(it articleItem) *pickedView {
 
 // suggRow is one suggested article.
 type suggRow struct {
-	ID, Name, Sub, Symbol, Picture string
-	OnList                         string
-	Warns                          []template.HTML
-	Idx                            int
+	ID, Name, Variety, Sub, Symbol, Picture string
+	OnList                                  string
+	Warns                                   []template.HTML
+	Idx                                     int
 }
 
 type suggView struct {
@@ -212,11 +278,11 @@ type suggView struct {
 const maxSuggestions = 4
 
 // onList is what already stands on the list for an article, in words.
-func (c *itemCtx) onList(es []list.Entry, articleID, text string) string {
+func (c *itemCtx) onList(es []list.Entry, articleID, variety, text string) string {
 	var parts []string
 	has := false
 	for _, e := range es {
-		if !e.Same(articleID, text) {
+		if !e.Same(articleID, variety, text) {
 			continue
 		}
 		has = true
@@ -250,35 +316,85 @@ func (c *itemCtx) suggest(es []list.Entry, typed, mode string) suggView {
 	}
 	var shown []articleItem
 	var hidden []articleItem
-	for _, a := range library.Complete(typed, all, 200) {
-		it := byID[a.ID]
-		switch sg := c.st.suggestion(it); {
-		case sg.Suggested:
-			if len(shown) < maxSuggestions {
-				shown = append(shown, it)
-			}
-		case sg.Reason == library.ReasonAllergy:
-			hidden = append(hidden, it)
+	var offered []library.Article // the articles that may be suggested at all
+	for _, it := range c.st.items() {
+		if c.st.suggestion(it).Suggested {
+			offered = append(offered, it.Article)
 		}
 	}
-	for i, it := range shown {
-		row := suggRow{ID: it.ID, Idx: i, Name: it.Name(c.lang), Symbol: symbolOf(it), Sub: c.s.i18n.T(c.lang, "dept."+it.Dept)}
+	typedVariety := ""
+	if a, rest, ok := library.LeadingName(typed, offered); ok { // "Mehl Type 405": the article and its variety
+		shown, typedVariety = []articleItem{byID[a.ID]}, rest
+	} else {
+		for _, a := range library.Complete(typed, all, 200) {
+			it := byID[a.ID]
+			switch sg := c.st.suggestion(it); {
+			case sg.Suggested:
+				if len(shown) < maxSuggestions {
+					shown = append(shown, it)
+				}
+			case sg.Reason == library.ReasonAllergy:
+				hidden = append(hidden, it)
+			}
+		}
+	}
+	// One row per article, then one per variety: the one typed first, the
+	// article without one, then the varieties the household used, those on the list first.
+	row := func(it articleItem, variety string) suggRow {
+		r := suggRow{ID: it.ID, Name: it.Name(c.lang), Variety: variety, Symbol: symbolOf(it), Sub: c.s.i18n.T(c.lang, "dept."+it.Dept)}
 		if it.own != nil {
-			row.Sub = c.s.i18n.T(c.lang, "lib.from.own") + " · " + row.Sub
-			row.Sub = strings.ToUpper(row.Sub[:1]) + row.Sub[1:]
+			r.Sub = c.s.i18n.T(c.lang, "lib.from.own") + " · " + r.Sub
+			r.Sub = strings.ToUpper(r.Sub[:1]) + r.Sub[1:]
 			if it.own.HasPicture {
-				row.Picture = pictureURL(*it.own)
+				r.Picture = pictureURL(*it.own)
 			}
 		}
-		row.OnList = c.onList(es, it.ID, row.Name)
-		row.Warns = c.s.warnLines(c.st, c.st.warnings(it))
-		v.Rows = append(v.Rows, row)
+		r.OnList = c.onList(es, it.ID, variety, r.Name)
+		r.Warns = c.s.warnLines(c.st, c.st.warnings(it))
+		return r
 	}
+	var rows []suggRow
+	for _, it := range shown {
+		known := c.varieties(it.ID)
+		slices.SortStableFunc(known, func(a, b string) int { return onListRank(es, it.ID, a) - onListRank(es, it.ID, b) })
+		if typedVariety != "" {
+			r := row(it, typedVariety)
+			key := "lq.var.sub.new"
+			if slices.ContainsFunc(known, func(k string) bool { return list.VarietyKey(k) == list.VarietyKey(typedVariety) }) {
+				key = "lq.var.sub.known"
+			}
+			r.Sub = c.msg(key, "name", r.Name) + " · " + r.Sub
+			rows = append(rows, r)
+		}
+		rows = append(rows, row(it, ""))
+		for _, k := range known {
+			if typedVariety != "" && list.VarietyKey(k) == list.VarietyKey(typedVariety) {
+				continue
+			}
+			r := row(it, k)
+			r.Sub = c.msg("lq.var.sub.known", "name", r.Name) + " · " + r.Sub
+			rows = append(rows, r)
+		}
+	}
+	if len(rows) > maxSuggestions {
+		rows = rows[:maxSuggestions]
+	}
+	withVariety := map[string]bool{}
+	for _, r := range rows {
+		withVariety[r.ID] = withVariety[r.ID] || r.Variety != ""
+	}
+	for i := range rows {
+		if rows[i].Variety == "" && withVariety[rows[i].ID] {
+			rows[i].Sub = c.msg("lq.var.sub.none") + " · " + rows[i].Sub
+		}
+		rows[i].Idx = i
+	}
+	v.Rows = rows
 	tap := "lq.sugg.tap.quick"
 	if mode == "qty" {
 		tap = "lq.sugg.tap.qty"
 	}
-	switch n := len(shown); {
+	switch n := len(rows); {
 	case n == 0:
 		v.Intro = c.msg("lq.sugg.none")
 	case n == 1:
@@ -296,6 +412,16 @@ func (c *itemCtx) suggest(es []list.Entry, typed, mode string) suggView {
 		v.Unchecked = append(v.Unchecked, template.HTML(line))
 	}
 	return v
+}
+
+// onListRank puts the varieties that stand on the list before the others.
+func onListRank(es []list.Entry, articleID, variety string) int {
+	if slices.ContainsFunc(es, func(e list.Entry) bool {
+		return !e.Done && e.ArticleID == articleID && list.VarietyKey(e.Variety) == list.VarietyKey(variety)
+	}) {
+		return 0
+	}
+	return 1
 }
 
 func htmlReplace(s string, pairs ...string) string { return strings.NewReplacer(pairs...).Replace(s) }
@@ -358,12 +484,15 @@ func (c *itemCtx) addSentence(es []list.Entry, art *articleItem, text string, in
 		artID = art.ID
 		text = art.Name(c.lang)
 	}
-	plan := list.PlanAdd(es, artID, text, q, c.show(art))
+	plan := list.PlanAdd(es, artID, in.Variety, text, q, c.show(art))
 	switch plan.Action {
 	case list.AddedTo:
 		return c.htmlMsg("lq.merge.same", "now", c.boldQty(plan.Before), "add", c.boldQty(q), "total", c.boldQty(plan.Result))
 	case list.AddedNew:
 		if plan.After == "" {
+			if other, ok := otherVariety(es, artID, in.Variety); ok {
+				return c.otherVarietySentence(other, text, in.Variety)
+			}
 			return ""
 		}
 		var old list.Quantity
@@ -385,7 +514,39 @@ func (c *itemCtx) addSentence(es []list.Entry, art *articleItem, text string, in
 	return ""
 }
 
-// editSentence says what saving the editor will do.
+// otherVariety finds an open entry of the same article with another variety.
+func otherVariety(es []list.Entry, articleID, variety string) (list.Entry, bool) {
+	if articleID == "" {
+		return list.Entry{}, false
+	}
+	at := slices.IndexFunc(es, func(e list.Entry) bool {
+		return !e.Done && e.ArticleID == articleID && list.VarietyKey(e.Variety) != list.VarietyKey(variety)
+	})
+	if at < 0 {
+		return list.Entry{}, false
+	}
+	return es[at], true
+}
+
+// otherVarietySentence says that another variety of the article stands on the
+// list and why the new one gets its own entry.
+func (c *itemCtx) otherVarietySentence(other list.Entry, name, variety string) template.HTML {
+	with := c.msg("lq.var.without")
+	if other.Variety != "" {
+		with = c.msg("lq.var.with", "variety", other.Variety)
+	}
+	v := variety
+	if v == "" {
+		v = c.msg("lq.var.no")
+	}
+	if other.Qty.None() {
+		return c.htmlMsg("lq.merge.other.variety.noqty", "name", bold(name), "other", html.EscapeString(with), "variety", html.EscapeString(v))
+	}
+	return c.htmlMsg("lq.merge.other.variety", "name", bold(name), "other", html.EscapeString(with), "now", c.boldQty(other.Qty), "variety", html.EscapeString(v))
+}
+
+// editSentence says what saving the editor will do. in.Variety is the variety
+// the entry will have.
 func (c *itemCtx) editSentence(es []list.Entry, e list.Entry, art *articleItem, none bool, in itemIn) template.HTML {
 	var to list.Quantity
 	if !none {
@@ -395,7 +556,7 @@ func (c *itemCtx) editSentence(es []list.Entry, e list.Entry, art *articleItem, 
 		}
 		to = q
 	}
-	plan, err := list.PlanSet(es, e.ID, to, c.show(art))
+	plan, err := list.PlanSet(es, e.ID, to, in.Variety, c.show(art))
 	if err != nil {
 		return ""
 	}
@@ -403,8 +564,10 @@ func (c *itemCtx) editSentence(es []list.Entry, e list.Entry, art *articleItem, 
 	if !plan.Before.None() {
 		before = c.boldQty(plan.Before)
 	}
-	text := html.EscapeString(e.Text)
+	text := html.EscapeString(entryLabel(e.Text, plan.Variety))
 	switch {
+	case plan.Action == list.SetOnly && plan.Variety != list.NormalizeVariety(e.Variety) && plan.Before == plan.Result:
+		return c.htmlMsg("lq.edit.variety", "text", bold(entryLabel(e.Text, plan.Variety)))
 	case plan.Action == list.SetMerged && to.None():
 		return c.htmlMsg("lq.edit.none_merge", "before", before, "other", c.boldQty(plan.Into.Qty))
 	case plan.Action == list.SetMerged:
@@ -430,10 +593,14 @@ func (c *itemCtx) editSentence(es []list.Entry, e list.Entry, art *articleItem, 
 
 // outcome is what an add or a change did, kept for the redirect that follows.
 type outcome struct {
-	Kind      string // "add" or "edit"
-	Action    string // list.AddAction or list.SetAction
-	EntryID   string
-	Text      string
+	Kind    string // "add" or "edit"
+	Action  string // list.AddAction or list.SetAction
+	EntryID string
+	Text    string
+	Variety string
+	NextTo  string // new entry: the entry of the same article with another variety it stands next to
+	// Was is the entry as it was written before a change of its variety.
+	Was       string
 	ArticleID string
 	Free      bool
 	Added     list.Quantity
@@ -482,11 +649,14 @@ type resultAct struct{ Href, Label string }
 // result builds the success line of an outcome. display is true on a display,
 // where parents manage the library: it only says the sentence.
 func (c *itemCtx) result(o outcome, display bool) resultView {
-	text := html.EscapeString(o.Text)
+	label := entryLabel(o.Text, o.Variety)
+	text := html.EscapeString(label)
 	var rv resultView
 	switch o.Kind + ":" + o.Action {
 	case "add:" + string(list.AddedNew):
-		if o.Total.None() {
+		if o.NextTo != "" && len(o.Beside) == 0 {
+			rv.Line = c.htmlMsg("lq.res.new.variety", "text", text, "other", html.EscapeString(o.NextTo))
+		} else if o.Total.None() {
 			rv.Line = c.htmlMsg("lq.res.new", "text", text)
 		} else {
 			rv.Line = c.htmlMsg("lq.res.new.qty", "qty", c.boldQty(o.Total), "text", text)
@@ -507,18 +677,20 @@ func (c *itemCtx) result(o outcome, display bool) resultView {
 		rv.Line = c.htmlMsg("lq.res.exists", "text", text)
 	case "edit:" + string(list.SetOnly):
 		switch {
+		case o.Was != "":
+			rv.Line = c.htmlMsg("lq.res.set.variety", "text", bold(label), "was", html.EscapeString(o.Was))
 		case o.Total.None():
-			rv.Line = c.htmlMsg("lq.res.set.none_after", "text", bold(o.Text), "before", html.EscapeString(c.qtyWords(o.Before)))
+			rv.Line = c.htmlMsg("lq.res.set.none_after", "text", bold(label), "before", html.EscapeString(c.qtyWords(o.Before)))
 		case o.Before.None():
-			rv.Line = c.htmlMsg("lq.res.set.none_before", "text", bold(o.Text), "after", c.boldQty(o.Total))
+			rv.Line = c.htmlMsg("lq.res.set.none_before", "text", bold(label), "after", c.boldQty(o.Total))
 		default:
-			rv.Line = c.htmlMsg("lq.res.set", "text", bold(o.Text), "after", c.boldQty(o.Total), "before", html.EscapeString(c.qtyWords(o.Before)))
+			rv.Line = c.htmlMsg("lq.res.set", "text", bold(label), "after", c.boldQty(o.Total), "before", html.EscapeString(c.qtyWords(o.Before)))
 		}
 	case "edit:" + string(list.SetMerged):
 		if o.Added.None() {
-			rv.Line = c.htmlMsg("lq.res.merged.none", "text", bold(o.Text), "qty", c.boldQty(o.Total), "old", html.EscapeString(c.qtyWords(o.Old)))
+			rv.Line = c.htmlMsg("lq.res.merged.none", "text", bold(label), "qty", c.boldQty(o.Total), "old", html.EscapeString(c.qtyWords(o.Old)))
 		} else {
-			rv.Line = c.htmlMsg("lq.res.merged", "text", bold(o.Text), "added", html.EscapeString(c.qtyWords(o.Added)), "other", html.EscapeString(c.qtyWords(o.Other)), "total", c.boldQty(o.Total), "old", html.EscapeString(c.qtyWords(o.Old)))
+			rv.Line = c.htmlMsg("lq.res.merged", "text", bold(label), "added", html.EscapeString(c.qtyWords(o.Added)), "other", html.EscapeString(c.qtyWords(o.Other)), "total", c.boldQty(o.Total), "old", html.EscapeString(c.qtyWords(o.Old)))
 		}
 	}
 	if o.Kind == "add" {
@@ -554,6 +726,7 @@ type adderView struct {
 	TextError             string
 	Autofocus, Secondary  bool
 	Picked                *pickedView
+	Variety               *varietyView // the Sorte row, only while an article is chosen
 	Qty                   qtyView
 	Sugg                  template.HTML
 	Result                *resultView
@@ -562,7 +735,8 @@ type adderView struct {
 // editorView is the quantity editor of one entry.
 type editorView struct {
 	Anchor, Action, Cancel string
-	Mode                   string // "qty" or "none"
+	Mode                   string       // "qty" or "none"
+	Variety                *varietyView // the Sorte row, only for an entry with an article
 	Qty                    qtyView
 	Merge                  template.HTML
 	Hide, Display          bool
@@ -585,6 +759,15 @@ func (c *itemCtx) articleOf(e list.Entry) *articleItem {
 type editPost struct {
 	EntryID, Mode, Amount, Unit string
 	Converted                   bool
+	// HasVariety says the editor posted the Sorte row; VarietyPick and Variety are its values.
+	HasVariety           bool
+	VarietyPick, Variety string
+}
+
+// editPostFrom reads what the editor of an entry posted.
+func editPostFrom(r *http.Request, id string) *editPost {
+	return &editPost{EntryID: id, Mode: r.PostFormValue("qmode"), Amount: r.PostFormValue("amount"), Unit: r.PostFormValue("qunit"), Converted: r.PostFormValue("converted") == "1",
+		HasVariety: r.PostForm.Has("qvariety_pick"), VarietyPick: r.PostFormValue("qvariety_pick"), Variety: r.PostFormValue("qvariety")}
 }
 
 func editPostOf(form map[string]any) *editPost {
@@ -625,16 +808,20 @@ func (c *itemCtx) entryViews(es []list.Entry, o entryOpts) (open, ticked []entry
 		o.Added = o.Out.EntryID
 	}
 	for _, e := range es {
-		ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done, Added: e.ID == o.Added, Qty: c.qtyWords(e.Qty)}
+		ev := entryView{ID: e.ID, Text: e.Text, Variety: e.Variety, ArticleID: e.ArticleID, Done: e.Done, Added: e.ID == o.Added, Qty: c.qtyWords(e.Qty)}
 		if e.Done {
 			ticked = append(ticked, ev)
 			continue
 		}
 		ev.Suggest = o.Parent || o.Display
 		if ev.Suggest {
-			ev.Label = c.msg("lq.entry.add", "text", e.Text)
+			free := ""
+			if e.ArticleID == "" {
+				free = ".free"
+			}
+			ev.Label = c.msg("lq.entry.add"+free, "text", ev.Plain())
 			if !e.Qty.None() {
-				ev.Label = c.msg("lq.entry.change", "text", e.Text, "qty", ev.Qty)
+				ev.Label = c.msg("lq.entry.change"+free, "text", ev.Plain(), "qty", ev.Qty)
 			}
 			ev.Href = "?qty=" + url.QueryEscape(e.ID) + o.HideQ + "#e-" + e.ID
 		}
@@ -662,11 +849,19 @@ func (c *itemCtx) editor(es []list.Entry, e list.Entry, o entryOpts) *editorView
 	if !e.Qty.None() {
 		amount, chosen = amountText(e.Qty, c.lang), e.Qty.Unit
 	}
-	var errText string
+	var errText, varErr string
+	pick, vtext, variety := e.Variety, "", e.Variety
 	if o.Post != nil && o.Post.EntryID == e.ID {
 		mode, amount, chosen = o.Post.Mode, o.Post.Amount, o.Post.Unit
 		if o.ErrField == "edit-"+string(fieldAmount) || o.ErrField == "edit-"+string(fieldUnit) {
 			errText = c.s.i18n.T(c.lang, o.ErrKey)
+		}
+		if o.Post.HasVariety {
+			pick, vtext = o.Post.VarietyPick, o.Post.Variety
+			variety, _ = varietyOf(pick, vtext)
+		}
+		if o.ErrField == "edit-"+string(fieldVariety) {
+			varErr = o.ErrKey
 		}
 	}
 	q := c.qtyFields(art, amount, chosen, o.Display)
@@ -676,7 +871,12 @@ func (c *itemCtx) editor(es []list.Entry, e list.Entry, o entryOpts) *editorView
 	if o.Hide {
 		ed.Cancel = o.Base + "?ticked=hide#e-" + e.ID
 	}
-	ed.Merge = c.editSentence(es, e, art, mode == "none", itemIn{Amount: amount, Unit: chosen})
+	if art != nil {
+		ed.Variety = c.varietyFields(*art, "q", pick, vtext, varErr)
+	} else {
+		variety = ""
+	}
+	ed.Merge = c.editSentence(es, e, art, mode == "none", itemIn{Amount: amount, Unit: chosen, Variety: variety})
 	return ed
 }
 
@@ -685,6 +885,7 @@ type adderOpts struct {
 	Form            map[string]any
 	Out             *outcome
 	ErrField        string
+	ErrKey          string // the text of a variety error
 	Editing, Parent bool
 	Display         bool
 }
@@ -693,6 +894,8 @@ type adderOpts struct {
 func (c *itemCtx) adder(es []list.Entry, o adderOpts) adderView {
 	str := func(k string) string { v, _ := o.Form[k].(string); return v }
 	a := adderView{Mode: str("Mode"), Text: str("Text"), ArticleID: str("Article"), Secondary: o.Editing}
+	vpick, vtext := str("VarietyPick"), str("Variety")
+	variety, _ := varietyOf(vpick, vtext)
 	if a.Mode != "qty" {
 		a.Mode = "quick"
 	}
@@ -704,7 +907,12 @@ func (c *itemCtx) adder(es []list.Entry, o adderOpts) adderView {
 	if a.ArticleID != "" {
 		if it, ok := c.article(a.ArticleID); ok {
 			art = &it
-			a.Picked = c.picked(it)
+			a.Picked = c.picked(it, variety)
+			varErr := ""
+			if o.ErrField == string(fieldVariety) {
+				varErr = o.ErrKey
+			}
+			a.Variety = c.varietyFields(it, "", vpick, vtext, varErr)
 		} else {
 			a.ArticleID = ""
 		}
@@ -720,7 +928,7 @@ func (c *itemCtx) adder(es []list.Entry, o adderOpts) adderView {
 	}
 	if a.Mode == "qty" {
 		name := a.Text
-		a.Qty.Merge = c.addSentence(es, art, name, itemIn{Qty: true, Amount: amount, Unit: a.Qty.Unit})
+		a.Qty.Merge = c.addSentence(es, art, name, itemIn{Qty: true, Amount: amount, Unit: a.Qty.Unit, Variety: variety})
 	}
 	if o.Out != nil && o.Out.Kind == "add" {
 		rv := c.result(*o.Out, o.Display)
@@ -732,7 +940,7 @@ func (c *itemCtx) adder(es []list.Entry, o adderOpts) adderView {
 
 // addOutcome describes what adding did, for the line that follows.
 func (c *itemCtx) addOutcome(listID string, rs resolved, res store.AddResult) (outcome, error) {
-	o := outcome{Kind: "add", Action: string(res.Plan.Action), EntryID: res.Entry.ID, Text: res.Entry.Text, ArticleID: rs.Item.ArticleID,
+	o := outcome{Kind: "add", Action: string(res.Plan.Action), EntryID: res.Entry.ID, Text: res.Entry.Text, Variety: res.Entry.Variety, ArticleID: rs.Item.ArticleID,
 		Free: rs.Article == nil, Added: rs.Item.Qty, Before: res.Plan.Before, Total: res.Entry.Qty}
 	if res.Plan.Action == list.AddedNew {
 		es, err := c.s.db.Entries(c.p.household.ID, listID)
@@ -740,9 +948,12 @@ func (c *itemCtx) addOutcome(listID string, rs resolved, res store.AddResult) (o
 			return o, err
 		}
 		for _, e := range es {
-			if e.ID != res.Entry.ID && e.Same(rs.Item.ArticleID, rs.Item.Text) && !e.Qty.None() {
+			if e.ID != res.Entry.ID && e.Same(rs.Item.ArticleID, rs.Item.Variety, rs.Item.Text) && !e.Qty.None() {
 				o.Beside = append(o.Beside, e.Qty)
 			}
+		}
+		if other, ok := otherVariety(es, rs.Item.ArticleID, rs.Item.Variety); ok && other.ID != res.Entry.ID {
+			o.NextTo = entryLabel(other.Text, other.Variety)
 		}
 	}
 	return o, nil
@@ -759,6 +970,14 @@ func (c *itemCtx) changeQuantity(listID, entryID string, post *editPost) (store.
 		return store.SetResult{}, outcome{}, list.ErrNotOpen
 	}
 	art := c.articleOf(es[at])
+	var variety *string
+	if post.HasVariety && art != nil {
+		v, isNew := varietyOf(post.VarietyPick, post.Variety)
+		if err := list.ValidateVariety(v); err != nil && (isNew || v != "") {
+			return store.SetResult{}, outcome{}, &itemError{fieldVariety, err.(*list.InvalidError).Msg}
+		}
+		variety = &v
+	}
 	var to list.Quantity
 	chosen := ""
 	if post.Mode != "none" {
@@ -776,14 +995,16 @@ func (c *itemCtx) changeQuantity(listID, entryID string, post *editPost) (store.
 			to.Base = cur.Base
 		}
 	}
-	res, err := c.s.db.SetQuantity(c.p.household.ID, listID, entryID, to, chosen, c.show(art))
+	res, err := c.s.db.ChangeEntry(c.p.household.ID, listID, entryID, to, chosen, variety, c.show(art))
 	if err != nil {
 		return res, outcome{}, err
 	}
 	pl := res.Plan
-	o := outcome{Kind: "edit", Action: string(pl.Action), EntryID: pl.Entry.ID, Text: pl.Entry.Text, ArticleID: pl.Entry.ArticleID, Added: to, Before: pl.Before, Total: pl.Result}
+	o := outcome{Kind: "edit", Action: string(pl.Action), EntryID: pl.Entry.ID, Text: pl.Entry.Text, Variety: pl.Variety, ArticleID: pl.Entry.ArticleID, Added: to, Before: pl.Before, Total: pl.Result}
 	if pl.Action == list.SetMerged {
 		o.EntryID, o.Other, o.Old = pl.Into.ID, pl.Into.Qty, pl.Before
+	} else if list.VarietyKey(pl.Variety) != list.VarietyKey(pl.Entry.Variety) && pl.Before == pl.Result {
+		o.Was = entryLabel(pl.Entry.Text, pl.Entry.Variety)
 	}
 	return res, o, nil
 }
@@ -820,24 +1041,40 @@ func (s *server) writeFragmentLang(w http.ResponseWriter, r *http.Request, p pri
 		if it, ok := c.article(q.Get("article")); ok {
 			art = &it
 		}
+		// The Sorte row as it stands: the chip chosen and the text typed; "variety" alone is a variety to put in.
+		vpick, vtext := q.Get("variety_pick"), q.Get("variety")
+		if !q.Has("variety_pick") && vtext != "" {
+			vpick = "new"
+		}
+		variety, _ := varietyOf(vpick, vtext)
 		if id := q.Get("entry"); id != "" { // the editor of an entry: its sentence only
 			at := slices.IndexFunc(es, func(e list.Entry) bool { return e.ID == id })
 			if at >= 0 {
 				e := es[at]
 				chosen := q.Get("unit")
-				out = c.editSentence(es, e, c.articleOf(e), q.Get("none") == "1", itemIn{Amount: amount, Unit: chosen})
+				if !q.Has("variety_pick") && !q.Has("variety") {
+					variety = e.Variety
+				}
+				if c.articleOf(e) == nil {
+					variety = ""
+				}
+				out = c.editSentence(es, e, c.articleOf(e), q.Get("none") == "1", itemIn{Amount: amount, Unit: chosen, Variety: variety})
 			}
 			break
 		}
 		text := q.Get("text")
+		if art == nil {
+			variety = ""
+		}
 		qv := c.qtyFields(art, amount, q.Get("unit"), display)
-		qv.Merge = c.addSentence(es, art, text, itemIn{Qty: true, Amount: amount, Unit: qv.Unit})
+		qv.Merge = c.addSentence(es, art, text, itemIn{Qty: true, Amount: amount, Unit: qv.Unit, Variety: variety})
 		if q.Get("part") == "merge" {
 			out = qv.Merge
 			break
 		}
 		if art != nil {
-			out = s.fragment(lang, "picked", c.picked(*art))
+			out = s.fragment(lang, "picked", c.picked(*art, variety))
+			out += s.fragment(lang, "variety", c.varietyFields(*art, "", vpick, vtext, ""))
 		}
 		out += s.fragment(lang, "qtyFields", qv)
 	}

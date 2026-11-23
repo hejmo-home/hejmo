@@ -32,8 +32,10 @@ type entryJSON struct {
 	// library article the text names, its symbol or the address of its own
 	// picture. All three are null for free text.
 	ArticleID *string `json:"article_id"`
-	Symbol    *string `json:"symbol"`
-	Picture   *string `json:"picture"`
+	// Variety is "Type 405" of "Mehl · Type 405"; null for none and for free text.
+	Variety *string `json:"variety"`
+	Symbol  *string `json:"symbol"`
+	Picture *string `json:"picture"`
 	// Amount and Unit are the quantity of an entry of a list with suggestions.
 	Amount *float64 `json:"amount,omitempty"`
 	Unit   string   `json:"unit,omitempty"`
@@ -60,6 +62,9 @@ func entryToJSON(e list.Entry) entryJSON {
 	j := entryJSON{ID: e.ID, Text: e.Text, Done: e.Done}
 	if e.ArticleID != "" {
 		j.ArticleID = &e.ArticleID
+	}
+	if e.Variety != "" {
+		j.Variety = &e.Variety
 	}
 	if !e.Qty.None() {
 		a := formatJSONAmount(e.Qty)
@@ -259,6 +264,7 @@ func (s *server) apiAddEntry(w http.ResponseWriter, r *http.Request, p principal
 		ArticleID string   `json:"article_id"`
 		Amount    *float64 `json:"amount"`
 		Unit      string   `json:"unit"`
+		Variety   *string  `json:"variety"`
 	}
 	if err := json.NewDecoder(r.Body).Decode(&in); err != nil {
 		writeError(w, http.StatusBadRequest, "invalid JSON")
@@ -269,9 +275,17 @@ func (s *server) apiAddEntry(w http.ResponseWriter, r *http.Request, p principal
 		s.listError(w, "list", err)
 		return
 	}
+	variety := ""
+	if in.Variety != nil {
+		variety = *in.Variety
+	}
 	if !l.Suggestions {
 		if in.ArticleID != "" || in.Amount != nil || in.Unit != "" {
 			writeFieldError(w, http.StatusUnprocessableEntity, "article_id", "this list has no articles and no quantities")
+			return
+		}
+		if list.NormalizeVariety(variety) != "" {
+			writeFieldError(w, http.StatusUnprocessableEntity, "variety", "this list has no articles and so no varieties")
 			return
 		}
 		e, err := s.db.AddEntry(p.household.ID, l.ID, in.Text)
@@ -292,7 +306,7 @@ func (s *server) apiAddEntry(w http.ResponseWriter, r *http.Request, p principal
 		s.fail(w, "library state", err)
 		return
 	}
-	it := itemIn{Text: in.Text, ArticleID: in.ArticleID, Unit: in.Unit}
+	it := itemIn{Text: in.Text, ArticleID: in.ArticleID, Unit: in.Unit, Variety: variety}
 	if in.Amount != nil {
 		it.Qty, it.Amount = true, numberText(*in.Amount)
 	} else if in.Unit != "" {
@@ -339,11 +353,12 @@ func apiField(f itemField) string {
 // the old one and never adds to it. "amount": null takes the quantity away.
 func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
-		Amount json.RawMessage `json:"amount"`
-		Unit   string          `json:"unit"`
+		Amount  json.RawMessage `json:"amount"`
+		Unit    string          `json:"unit"`
+		Variety json.RawMessage `json:"variety"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.Amount == nil {
-		writeError(w, http.StatusBadRequest, "invalid JSON: amount is required (a number or null)")
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || (in.Amount == nil && in.Variety == nil) {
+		writeError(w, http.StatusBadRequest, "invalid JSON: amount (a number or null) or variety is required")
 		return
 	}
 	l, err := s.db.List(p.household.ID, r.PathValue("id"))
@@ -354,6 +369,19 @@ func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p princi
 	if !l.Suggestions {
 		writeFieldError(w, http.StatusUnprocessableEntity, "amount", "this list has no quantities")
 		return
+	}
+	var variety *string // nil: the variety stays
+	if in.Variety != nil {
+		var v *string
+		if err := json.Unmarshal(in.Variety, &v); err != nil {
+			writeFieldError(w, http.StatusUnprocessableEntity, "variety", "variety must be a string or null")
+			return
+		}
+		none := ""
+		if v == nil {
+			v = &none
+		}
+		variety = v
 	}
 	c, err := s.itemContext(p, s.langOf(r))
 	if err != nil {
@@ -376,7 +404,13 @@ func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p princi
 		}
 	}
 	chosen := ""
-	if string(in.Amount) != "null" {
+	if in.Amount == nil { // only the variety changes: the quantity stays
+		for _, e := range es {
+			if e.ID == id {
+				to, chosen = e.Qty, e.Qty.Unit
+			}
+		}
+	} else if string(in.Amount) != "null" {
 		var f float64
 		if err := json.Unmarshal(in.Amount, &f); err != nil {
 			writeFieldError(w, http.StatusUnprocessableEntity, "amount", "amount must be a number or null")
@@ -394,10 +428,14 @@ func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p princi
 			to.Base = e.Qty.Base
 		}
 	}
-	res, err := s.db.SetQuantity(p.household.ID, listID, id, to, chosen, c.show(art))
+	res, err := s.db.ChangeEntry(p.household.ID, listID, id, to, chosen, variety, c.show(art))
+	var inv *list.InvalidError
 	switch {
 	case errors.Is(err, list.ErrNotOpen):
 		writeError(w, http.StatusConflict, "the entry is ticked off or gone")
+		return
+	case errors.As(err, &inv) && inv.Field == "variety":
+		writeFieldError(w, http.StatusUnprocessableEntity, "variety", err.Error())
 		return
 	case err != nil:
 		s.listError(w, "set quantity", err)
@@ -408,6 +446,9 @@ func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p princi
 		e = res.Plan.Into
 	}
 	e.Qty = res.Plan.Result
+	if res.Plan.Action != list.SetMerged {
+		e.Variety = res.Plan.Variety
+	}
 	if out.entryJSON, err = s.entryJSONOf(p, e); err != nil {
 		s.fail(w, "entry looks", err)
 		return

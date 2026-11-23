@@ -244,14 +244,13 @@ func (s *server) listsWith(p principal, name string, includeDone bool) ([]listLi
 	if err != nil {
 		return nil, err
 	}
-	want := library.Fold(name)
 	var out []listLink
 	for _, l := range lists {
 		es, err := s.db.Entries(p.household.ID, l.ID)
 		if err != nil {
 			return nil, err
 		}
-		if slices.ContainsFunc(es, func(e list.Entry) bool { return (includeDone || !e.Done) && library.Fold(e.Text) == want }) {
+		if slices.ContainsFunc(es, func(e list.Entry) bool { return (includeDone || !e.Done) && library.SameName(e.Text, name) }) {
 			out = append(out, listLink{l.ID, l.Name})
 		}
 	}

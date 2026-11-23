@@ -188,6 +188,19 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 		_, err := db.AddItem(h, l.ID, it, func(base float64, _ unit.Kind) string { return q.unit })
 		must(err)
 	}
+	// Varieties (ticket 277): the same article without and with varieties, one of them very long.
+	for _, q := range []struct {
+		text, art, variety string
+		amount             float64
+		unit               string
+	}{{"Weizenmehl", "wheat-flour", "", 500, "g"}, {"Weizenmehl", "wheat-flour", "Type 405", 1, "kg"}, {"Dinkelmehl", "spelt-flour", "Dinkel-Vollkorn Type 1050 aus der Mühle Schäftlarn", 0, ""}, {"Milch", "milk", "laktosefrei", 3, "l"}} {
+		it := store.Item{Text: q.text, ArticleID: q.art, Variety: q.variety}
+		if q.unit != "" {
+			it.Qty = list.NewQuantity(q.amount, q.unit)
+		}
+		_, err := db.AddItem(h, l.ID, it, func(base float64, _ unit.Kind) string { return q.unit })
+		must(err)
+	}
 	l2, err := db.CreateList(h, list.List{Name: "Urlaubsvorbereitungen Ostsee", Color: "green", Symbol: "circle-empty", Sort: list.Manual})
 	must(err)
 	f.lists = append(f.lists, l2.ID)
@@ -880,6 +893,9 @@ func TestTheLayoutFixtureShowsEveryKindOfTile(t *testing.T) {
 		if !strings.Contains(page, want) {
 			t.Errorf("the child's tiles lack %q", want)
 		}
+	}
+	if tile := tileOf(t, page, "Dinkelmehl"); !strings.Contains(tile, `<span class="variety"><span class="vh">Variety: </span>Dinkel-Vollkorn Type 1050 aus der Mühle Schäftlarn</span>`) {
+		t.Errorf("the tile of an article with a long variety:\n%s", tile)
 	}
 	if toast := tileOf(t, page, "Toastbrot"); strings.Count(toast, `<span class="line">`) < 3 {
 		t.Errorf("the toast does not warn three people:\n%s", toast)

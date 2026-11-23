@@ -71,16 +71,47 @@ func (c *itemCtx) byName(text string) (articleItem, bool) {
 	if n == "" {
 		return articleItem{}, false
 	}
+	var visible []articleItem
 	for _, it := range c.st.items() {
-		if it.handHidden {
-			continue
+		if !it.handHidden {
+			visible = append(visible, it)
 		}
+	}
+	for _, it := range visible { // the exact name first
 		if library.Fold(it.De) == n || library.Fold(it.En) == n {
+			return it, true
+		}
+	}
+	for _, it := range visible { // then singular or plural (ticket 277)
+		if library.SameName(it.De, text) || library.SameName(it.En, text) {
 			return it, true
 		}
 	}
 	return articleItem{}, false
 }
+
+// namesArticle reports whether the typed text still names the article: its
+// name in either language, singular or plural, or that name followed by a variety.
+func namesArticle(text string, it articleItem) bool {
+	if library.SameName(text, it.De) || library.SameName(text, it.En) {
+		return true
+	}
+	_, _, ok := library.LeadingName(text, []library.Article{it.Article})
+	return ok
+}
+
+// varieties are the varieties the household used for an article, newest first.
+func (c *itemCtx) varieties(articleID string) []string {
+	vs, err := c.s.db.ArticleVarieties(c.p.household.ID, articleID, maxKnownVarieties)
+	if err != nil {
+		c.s.logger.Error("known varieties", "err", err)
+		return nil
+	}
+	return vs
+}
+
+// maxKnownVarieties is how many varieties of an article are offered.
+const maxKnownVarieties = 4
 
 // defaults are the default units of an article, or of free text.
 func defaultsOf(it *articleItem) []string {
@@ -118,6 +149,9 @@ const (
 	fieldAmount itemField = "amount"
 	fieldUnit   itemField = "unit"
 	fieldItem   itemField = "article"
+	// fieldVariety is the variety; its Msg says "required" (a new variety was
+	// asked for and left empty), "too long" or "needs an article".
+	fieldVariety itemField = "variety"
 )
 
 // itemError is a refused input; Field is where the person sees it.
@@ -128,12 +162,27 @@ type itemError struct {
 
 func (e *itemError) Error() string { return string(e.Field) + ": " + e.Msg }
 
+// key is the text of the refusal for the person, by field.
+func (e *itemError) key(display bool) string {
+	if e.Field == fieldVariety {
+		if e.Msg == "too long" {
+			return "lq.err.variety.long"
+		}
+		return "lq.err.variety.empty"
+	}
+	return itemErrorKey(e.Field, display)
+}
+
 // itemIn is what a form or a request says about an item to add.
 type itemIn struct {
 	Text, ArticleID string
-	Qty             bool   // with quantity
-	Amount          string // as typed, comma or point
-	Unit            string // "" takes the preselected one
+	// Variety is the variety asked for ("" for none); VarietyNew says the
+	// person chose "new variety", so an empty one is an error.
+	Variety    string
+	VarietyNew bool
+	Qty        bool   // with quantity
+	Amount     string // as typed, comma or point
+	Unit       string // "" takes the preselected one
 }
 
 // resolved is an item ready to be stored.
@@ -144,7 +193,7 @@ type resolved struct {
 }
 
 // resolve turns the input into what is stored: the article (by id, or by the
-// exact name typed), the text in the language of the page and the quantity.
+// exact name typed, or its singular or plural), the text in the language of the page and the quantity.
 func (c *itemCtx) resolve(in itemIn) (resolved, error) {
 	var art *articleItem
 	text := strings.TrimSpace(in.Text)
@@ -157,7 +206,7 @@ func (c *itemCtx) resolve(in itemIn) (resolved, error) {
 	} else if it, ok := c.byName(text); ok {
 		art = &it
 	}
-	if art != nil && (in.ArticleID != "" || library.Fold(text) == library.Fold(art.Name(c.lang))) {
+	if art != nil && (in.ArticleID != "" || library.SameName(text, art.Name(c.lang))) {
 		text = art.Name(c.lang) // the name as the library writes it; a name typed in the other language stays as typed
 	}
 	if err := list.ValidateText(text); err != nil {
@@ -166,6 +215,15 @@ func (c *itemCtx) resolve(in itemIn) (resolved, error) {
 	out := resolved{Item: store.Item{Text: text}, Article: art}
 	if art != nil {
 		out.Item.ArticleID = art.ID
+	}
+	if v := list.NormalizeVariety(in.Variety); v != "" || in.VarietyNew {
+		if art == nil {
+			return resolved{}, &itemError{fieldVariety, "needs an article"}
+		}
+		if err := list.ValidateVariety(v); err != nil {
+			return resolved{}, &itemError{fieldVariety, err.(*list.InvalidError).Msg}
+		}
+		out.Item.Variety = v
 	}
 	if in.Qty {
 		q, u, err := c.quantity(art, in.Amount, in.Unit)

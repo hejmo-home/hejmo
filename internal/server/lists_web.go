@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/hejmo-home/hejmo/internal/i18n"
-	"github.com/hejmo-home/hejmo/internal/library"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -25,6 +24,7 @@ type listView struct {
 // comes before or after it, which is what moving up and down depends on.
 type entryView struct {
 	ID, Text  string
+	Variety   string // "Type 405" of "Mehl · Type 405", "" for none
 	ArticleID string // the stored article, "" for free text
 	Done      bool
 	First     bool
@@ -42,6 +42,9 @@ type entryView struct {
 	Result  *resultView // the line after changing the quantity of this entry
 	Look    entryLook
 }
+
+// Plain is the entry in words for labels: "Mehl · Type 405".
+func (e entryView) Plain() string { return entryLabel(e.Text, e.Variety) }
 
 func (s *server) newListView(lang string, l list.List, c store.EntryCount) listView {
 	return listView{State: s.listState(lang, c.Open, c.Done), ID: l.ID, Name: l.Name, Color: l.Color, Symbol: l.Symbol, Sort: string(l.Sort), Slot: list.Slot(l.Color), Open: c.Open, Done: c.Done, Total: c.Open + c.Done}
@@ -251,11 +254,11 @@ func (s *server) renderList(w http.ResponseWriter, r *http.Request, p principal,
 		out := s.outcomeOf(r) // a result line is shown once
 		open, ticked = ic.entryViews(es, entryOpts{Base: "/lists/" + l.ID, Hide: hideTicked(r), Parent: !child, Added: r.URL.Query().Get("added"), Edit: r.URL.Query().Get("qty"), Out: out, Post: editPostOf(form), HideQ: hideQuery(r), ErrField: errField, ErrKey: errKey})
 		data["Suggest"], data["Base"] = true, "/lists/"+l.ID
-		data["A"] = ic.adder(es, adderOpts{Base: "/lists/" + l.ID, Form: form, Out: out, ErrField: errField, Editing: editingOpen(open), Parent: !child})
+		data["A"] = ic.adder(es, adderOpts{Base: "/lists/" + l.ID, Form: form, Out: out, ErrField: errField, ErrKey: errKey, Editing: editingOpen(open), Parent: !child})
 		data["FreeBox"] = map[string]any{"Title": t(s, lang, "lq.unchecked.title"), "Hint": t(s, lang, "lq.unchecked.hint"), "People": s.freeText(ic.st)}
 	} else {
 		for _, e := range es {
-			ev := entryView{ID: e.ID, Text: e.Text, ArticleID: e.ArticleID, Done: e.Done}
+			ev := entryView{ID: e.ID, Text: e.Text, Variety: e.Variety, ArticleID: e.ArticleID, Done: e.Done}
 			if !e.Qty.None() {
 				ev.Qty = s.qtyWordsFor(p, lang, e.Qty)
 			}
@@ -495,10 +498,14 @@ func (s *server) handleEntryAdd(w http.ResponseWriter, r *http.Request) {
 // formItem reads what the add card posted.
 func formItem(r *http.Request, c *itemCtx) itemIn {
 	in := itemIn{Text: r.PostFormValue("text"), ArticleID: r.PostFormValue("article"), Qty: r.PostFormValue("mode") == "qty", Amount: r.PostFormValue("amount"), Unit: r.PostFormValue("unit")}
+	in.Variety, in.VarietyNew = varietyOf(r.PostFormValue("variety_pick"), r.PostFormValue("variety"))
 	if in.ArticleID != "" && strings.TrimSpace(in.Text) != "" { // a picked article goes stale when the text is changed after it
-		if it, ok := c.article(in.ArticleID); !ok || (library.Fold(in.Text) != library.Fold(it.De) && library.Fold(in.Text) != library.Fold(it.En)) {
+		if it, ok := c.article(in.ArticleID); !ok || !namesArticle(in.Text, it) {
 			in.ArticleID = ""
 		}
+	}
+	if in.ArticleID == "" { // free text has no variety
+		in.Variety, in.VarietyNew = "", false
 	}
 	return in
 }
@@ -530,8 +537,9 @@ func (s *server) addToList(w http.ResponseWriter, r *http.Request, p principal, 
 	in := formItem(r, c)
 	rs, err := c.resolve(in)
 	if ie, ok := asItemError(err); ok {
-		form := map[string]any{"Text": text, "Mode": r.PostFormValue("mode"), "Amount": in.Amount, "Unit": in.Unit, "Article": in.ArticleID}
-		s.renderList(w, r, p, http.StatusUnprocessableEntity, l, false, form, itemErrorKey(ie.Field, false), string(ie.Field))
+		form := map[string]any{"Text": text, "Mode": r.PostFormValue("mode"), "Amount": in.Amount, "Unit": in.Unit, "Article": in.ArticleID,
+			"VarietyPick": r.PostFormValue("variety_pick"), "Variety": r.PostFormValue("variety")}
+		s.renderList(w, r, p, http.StatusUnprocessableEntity, l, false, form, ie.key(false), string(ie.Field))
 		return
 	} else if err != nil {
 		s.fail(w, "add entry", err)
@@ -587,11 +595,11 @@ func (s *server) handleEntryQuantity(w http.ResponseWriter, r *http.Request) {
 	}
 	c.listID = l.ID
 	id := r.PathValue("entry")
-	post := &editPost{EntryID: id, Mode: r.PostFormValue("qmode"), Amount: r.PostFormValue("amount"), Unit: r.PostFormValue("qunit"), Converted: r.PostFormValue("converted") == "1"}
+	post := editPostFrom(r, id)
 	res, o, err := c.changeQuantity(l.ID, id, post)
 	switch ie, isItem := asItemError(err); {
 	case isItem:
-		s.renderList(w, r, p, http.StatusUnprocessableEntity, l, false, map[string]any{"Text": "", "EditPost": post}, itemErrorKey(ie.Field, false), "edit-"+string(ie.Field))
+		s.renderList(w, r, p, http.StatusUnprocessableEntity, l, false, map[string]any{"Text": "", "EditPost": post}, ie.key(false), "edit-"+string(ie.Field))
 		return
 	case errors.Is(err, list.ErrNotOpen):
 		s.renderList(w, r, p, http.StatusConflict, l, false, map[string]any{"Text": ""}, "lq.err.gone", "")

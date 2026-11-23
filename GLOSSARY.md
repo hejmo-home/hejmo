@@ -433,6 +433,10 @@ _Avoid_: birthday list, anniversary calendar
 The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician".
 _Avoid_: connection, relationship type
 
+**Emergency numbers**:
+The layout block of a display's footer that shows every contact of the contact group "emergency" with at least one phone number, large enough to read across the room: photo (or initials), Hejmo name and every number, the kind of number in words when there are several. Off by default; it takes a footer row of its own and is never shortened or counted.
+_Avoid_: emergency list, SOS tile, Important numbers (that is the children's page)
+
 ## Offline mode and connections to the outside
 
 **Offline mode**:

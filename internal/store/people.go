@@ -288,10 +288,20 @@ func (db *DB) CreateHousehold(h Household) (Household, error) {
 	if h.HomePlaceID != 0 {
 		placeID = h.HomePlaceID
 	}
-	_, err := db.sql.Exec(`INSERT INTO households (id, name, home_name, home_place_id, latitude, longitude, region, timezone, created_at, updated_at)
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return h, err
+	}
+	defer tx.Rollback()
+	if _, err := tx.Exec(`INSERT INTO households (id, name, home_name, home_place_id, latitude, longitude, region, timezone, created_at, updated_at)
 		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		h.ID, h.Name, h.HomeName, placeID, h.Latitude, h.Longitude, h.Region, h.Timezone, ts, ts)
-	return h, err
+		h.ID, h.Name, h.HomeName, placeID, h.Latitude, h.Longitude, h.Region, h.Timezone, ts, ts); err != nil {
+		return h, err
+	}
+	if err := seedContactGroups(tx, h.ID, ts); err != nil { // the five groups of the address book (ticket 296)
+		return h, err
+	}
+	return h, tx.Commit()
 }
 
 // Household loads a household by id.
@@ -345,6 +355,9 @@ func (db *DB) AddPerson(householdID string, p Person) (Person, error) {
 		householdID, p.ID, p.Role, householdID); err != nil {
 		return Person{}, err
 	}
+	if err := addPersonContact(tx, householdID, p, ts); err != nil { // every person is a contact (ticket 296)
+		return Person{}, err
+	}
 	return p, tx.Commit()
 }
 
@@ -391,9 +404,22 @@ func (db *DB) UpdatePerson(householdID, personID, name, color, shape string) err
 	if name == "" {
 		return &FieldError{Field: "name", Msg: "person name required"}
 	}
-	return expectOne(db.sql.Exec(`UPDATE people SET name = ?, color = ?, shape = ?, updated_at = ?
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	ts := now()
+	if err := expectOne(tx.Exec(`UPDATE people SET name = ?, color = ?, shape = ?, updated_at = ?
 		WHERE id = ? AND id IN (SELECT person_id FROM household_members WHERE household_id = ?)`,
-		name, color, shape, now(), personID, householdID))
+		name, color, shape, ts, personID, householdID)); err != nil {
+		return err
+	}
+	// The Hejmo name of the person's contact is the person's name (ticket 296).
+	if _, err := tx.Exec(`UPDATE contacts SET hejmo_name = ?, updated_at = ? WHERE person_id = ? AND household_id = ?`, name, ts, personID, householdID); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // SetPeopleOrder stores the order of the family view. ids must name every

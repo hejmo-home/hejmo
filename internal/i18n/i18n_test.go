@@ -159,6 +159,13 @@ var wholeFamilyTexts = map[string]bool{
 	"connect.outlook.appid":                    true, // "eurer eigenen App-Registrierung": the family's
 	"connect.outlook.appid.hint":               true, // "wenn ihr ... eine eigene angelegt habt": the family
 	"outlook.fail.consent.ask":                 true, // "Schick ihr": the IT
+	"contact.family":                           true, // "Aus eurer Familie": the people of the household (ticket 296)
+	"contact.lead":                             true, // "Eure Familie und alle, die ihr erreichen wollt": the household's address book
+	"contact.fam.lead":                         true, // "Gehört zu eurer Familie."
+	"contact.country.hint.none":                true, // "im Land eures Zuhauses"
+	"contact.error.name.taken_person":          true, // "aus eurer Familie"
+	"hub.contacts.hint":                        true, // "eurer Familie und von allen, die ihr erreichen wollt"
+	"hub.contacts.state":                       true, // "aus eurer Familie"
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {
@@ -253,6 +260,30 @@ func TestConnectTextsExistInBothLanguages(t *testing.T) {
 			if m := address.FindString(b.T(lang, k)); m != "" {
 				t.Errorf("%s %s holds a plain-text address %q", lang, k, m)
 			}
+		}
+	}
+}
+
+// A find-and-replace once left "telenumber_x" in English texts. No contact text shows an identifier-like word
+// (lower case words joined by an underscore) to a person.
+func TestEnglishContactTextsHoldNoStrayIdentifiers(t *testing.T) {
+	raw, err := os.ReadFile("locales/en.json")
+	if err != nil {
+		t.Fatal(err)
+	}
+	cat := map[string]string{}
+	if err := json.Unmarshal(raw, &cat); err != nil {
+		t.Fatal(err)
+	}
+	ident := regexp.MustCompile(`[a-z]+_[a-z]+`)
+	placeholder := regexp.MustCompile(`\{[^}]*\}`)
+	for key, text := range cat {
+		if !strings.HasPrefix(key, "contact.") {
+			continue
+		}
+		plain := placeholder.ReplaceAllString(text, "") // {name} placeholders are no words
+		if w := ident.FindString(plain); w != "" {
+			t.Errorf("en %s holds the identifier-like word %q: %s", key, w, text)
 		}
 	}
 }

@@ -2,6 +2,22 @@
 // Without this script they are submit buttons (name more / remove) and the server shows the form again with
 // everything typed kept and one line added or removed. A line to add comes from the <template data-line> of its
 // fieldset, with {n} where its number goes. The save bar says when something is not saved yet.
+//
+// Relations (ticket 298): the same for "Weitere Beziehung" and "Entfernen" on a relation line, and the sentence
+// under each line ("Oma von Sebastian und Mia") follows the word and the chips while you type. The server writes
+// the same sentence for the first render; the three small words come from the data-of, data-whole and data-and
+// attributes of the card. A blank line for the whole family is left out of what is sent.
+
+// relSentence writes how a relation reads on the contact; "" when there is nothing to say yet.
+function relSentence(word, names, whole, texts) {
+  word = String(word || "").trim();
+  if (!word) return "";
+  if (whole) return word + " " + texts.whole;
+  if (!names.length) return "";
+  var list = names.length === 1 ? names[0] : names.slice(0, -1).join(", ") + " " + texts.and + " " + names[names.length - 1];
+  return word + " " + texts.of + " " + list;
+}
+
 (function () {
   var form = document.querySelector("form.ct-form");
   if (!form) return;
@@ -63,6 +79,13 @@
     var button = ev.target && ev.target.closest && ev.target.closest('button[name="more"], button[name="remove"]');
     if (!button) return;
     var name = button.getAttribute("name"), value = button.getAttribute("value") || "";
+    if (rels && (value === "rel" || /^rel\d+$/.test(value))) {
+      var line = button.closest("li.rel-line");
+      if (name === "more") { ev.preventDefault(); rels.add(); }
+      else if (line) { ev.preventDefault(); rels.remove(line); }
+      markDirty();
+      return;
+    }
     if (name === "more") {
       ev.preventDefault();
       add(value);
@@ -79,6 +102,100 @@
     var d = form.querySelector(".savebar .dirty");
     if (d) d.hidden = false;
   }
-  form.addEventListener("input", markDirty);
-  form.addEventListener("change", markDirty);
+
+  // The relation lines.
+  var MAXREL = 20;
+  var rels = (function () {
+    var card = form.querySelector("fieldset#rels");
+    if (!card) return null;
+    var texts = { of: card.getAttribute("data-of") || "", whole: card.getAttribute("data-whole") || "", and: card.getAttribute("data-and") || "" };
+    var ul = form.querySelector("ul.rel-lines"), tpl = form.querySelector('template[data-line="rel"]');
+    function rows() { return ul.querySelectorAll("li.rel-line"); }
+    function wordOf(li) { return li.querySelector('input[name$="_word"]'); }
+    function wholeOf(li) { return li.querySelector("input[data-whole]"); }
+    function people(li) { return Array.prototype.slice.call(li.querySelectorAll(".pchip:not(.all) input")); }
+
+    // update writes the sentence of a line. changed is the input that was touched: the chip "Ganze Familie" is
+    // put in step with the people by form.js after this runs, so "whole" is read from what was just chosen.
+    function update(li, changed) {
+      var say = li.querySelector(".rel-say");
+      if (!say) return;
+      var names = people(li).filter(function (i) { return i.checked; }).map(function (i) { return i.closest("label").textContent.trim(); });
+      var whole = names.length === 0 || (changed && changed.hasAttribute && changed.hasAttribute("data-whole") && changed.checked);
+      var text = relSentence(wordOf(li).value, whole ? [] : names, whole, texts);
+      say.querySelector("b").textContent = text;
+      say.hidden = text === "";
+    }
+
+    function renumber() {
+      var all = rows();
+      for (var i = 0; i < all.length; i++) {
+        var n = i + 1, li = all[i];
+        li.setAttribute("id", "rel" + n);
+        var named = li.querySelectorAll("[name]");
+        for (var j = 0; j < named.length; j++) {
+          var nm = named[j].getAttribute("name");
+          if (/^rel\d+_/.test(nm)) named[j].setAttribute("name", nm.replace(/^rel\d+/, "rel" + n));
+        }
+        var labelled = li.querySelectorAll("[aria-label]");
+        for (var k = 0; k < labelled.length; k++) labelled[k].setAttribute("aria-label", labelled[k].getAttribute("aria-label").replace(/\d+/, String(n)));
+        var rm = li.querySelector("button.rm");
+        if (rm) rm.setAttribute("value", "rel" + n);
+      }
+      var more = form.querySelector('button[name="more"][value="rel"]');
+      if (more) more.hidden = all.length >= MAXREL;
+    }
+
+    return {
+      update: update,
+      add: function () {
+        var all = rows(), n = all.length + 1;
+        if (!tpl || n > MAXREL) return;
+        var first = all[0];
+        if (first && first.classList.contains("blank")) {
+          // The only line had no "Entfernen"; with two lines each has one.
+          first.classList.remove("blank");
+          var m = /<button[^>]*\brm\b[\s\S]*?<\/button>/.exec(tpl.innerHTML);
+          if (m) first.querySelector(".f").insertAdjacentHTML("afterend", fill(m[0], 1));
+        }
+        ul.insertAdjacentHTML("beforeend", fill(tpl.innerHTML, n));
+        renumber();
+        var input = wordOf(rows()[n - 1]);
+        if (input && input.focus) input.focus();
+      },
+      remove: function (li) {
+        if (rows().length <= 1) { // the last line stays, empty and for the whole family
+          wordOf(li).value = "";
+          people(li).forEach(function (i) { i.checked = false; });
+          wholeOf(li).checked = true;
+          update(li);
+          return;
+        }
+        li.remove();
+        renumber();
+      },
+      // Submitting leaves out a blank line for the whole family: the server skips it anyway.
+      beforeSubmit: function () {
+        var all = rows();
+        for (var i = 0; i < all.length; i++) {
+          if (wordOf(all[i]).value.trim() === "" && wholeOf(all[i]).checked) all[i].remove();
+        }
+      },
+      lineOf: function (el) { return el && el.closest ? el.closest("li.rel-line") : null; },
+    };
+  })();
+
+  form.addEventListener("input", function (ev) {
+    markDirty();
+    var li = rels && rels.lineOf(ev.target);
+    if (li) rels.update(li, ev.target);
+  });
+  form.addEventListener("change", function (ev) {
+    markDirty();
+    var li = rels && rels.lineOf(ev.target);
+    if (li) rels.update(li, ev.target);
+  });
+  if (rels) form.addEventListener("submit", function () { rels.beforeSubmit(); });
 })();
+
+if (typeof module !== "undefined" && module.exports) module.exports = { relSentence: relSentence };

@@ -63,6 +63,12 @@ func (r Reward) MeantFor(personID string) bool {
 	return len(r.PersonIDs) == 0 || slices.Contains(r.PersonIDs, personID)
 }
 
+// VisibleTo reports whether the person may see the reward: adults see all,
+// a child only an offered one meant for them.
+func (r Reward) VisibleTo(personID string, child bool) bool {
+	return !child || (!r.Archived() && r.MeantFor(personID))
+}
+
 // Audience is who a reward is meant for: the whole household, or chosen people.
 type Audience struct {
 	Whole     bool

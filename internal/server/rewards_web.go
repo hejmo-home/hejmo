@@ -863,7 +863,7 @@ func (s *server) handleRewardPicture(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	rw, err := s.db.Reward(p.household.ID, r.PathValue("id"))
-	if err != nil || (isChild(p) && (rw.Archived() || !rw.MeantFor(p.person.ID))) {
+	if err != nil || !rw.VisibleTo(p.person.ID, isChild(p)) {
 		http.NotFound(w, r)
 		return
 	}

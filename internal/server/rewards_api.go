@@ -126,7 +126,7 @@ func (s *server) apiListRewards(w http.ResponseWriter, _ *http.Request, p princi
 // rewardFor loads a reward the caller may see: a child only an offered one meant for them.
 func (s *server) rewardFor(w http.ResponseWriter, p principal, id string) (store.Reward, bool) {
 	r, err := s.db.Reward(p.household.ID, id)
-	if errors.Is(err, store.ErrNotFound) || (err == nil && isChild(p) && (r.Archived() || !r.MeantFor(p.person.ID))) {
+	if errors.Is(err, store.ErrNotFound) || (err == nil && !r.VisibleTo(p.person.ID, isChild(p))) {
 		writeError(w, http.StatusNotFound, "reward not found")
 		return store.Reward{}, false
 	}

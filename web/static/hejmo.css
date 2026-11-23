@@ -3273,6 +3273,38 @@ ol.porder > li.prow { margin: 0; padding: 0; background: none; border-radius: 0;
 /* The trimmed overview: one way in, right under the lead. */
 .add-way { margin: 0 0 var(--gap-section); }
 section > .hint.none { margin-top: -4px; }
+/* #294 (new, see DESIGN.md) */
+/* Week of a routine (#294): seven day cells Monday to Sunday under the steps,
+   then the week and the best streak in words. Done = filled box with a tick in
+   the person colour (bw: black), open (to come or missed, the same) = empty box,
+   pause and off = a word, before the routine started = nothing. */
+.week { display: grid; gap: 8px; padding: 10px 4px 2px; border-top: 1px solid var(--border); min-width: 0; }
+[data-theme="bw"] .week { border-top: 2px solid var(--text); }
+.week ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.week li { display: grid; justify-items: center; align-content: start; gap: 4px; min-width: 0; }
+.week .wd { font-size: var(--fs-meta); color: var(--text-secondary); white-space: nowrap; line-height: 1.2; }
+.week li[data-today] .wd { color: var(--text); font-weight: 700; }
+.week .d { box-sizing: border-box; width: 32px; height: 32px; border: 2px solid var(--text-secondary); border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; }
+.week .d svg { display: none; }
+.week li[data-today] .d { border-width: 3px; border-color: var(--text); }
+.week [data-state="done"] .d { background: var(--pc, var(--accent)); border-color: var(--pc, var(--accent)); }
+.week [data-state="done"] .d svg { display: block; stroke: var(--surface); stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+[data-theme="bw"] .week .d { border-color: var(--text); }
+[data-theme="bw"] .week [data-state="done"] .d { background: var(--text); border-color: var(--text); }
+.week .d.w { width: 100%; max-width: 52px; font-size: var(--fs-meta); font-weight: 600; color: var(--text-secondary); white-space: nowrap; overflow: visible; }
+.week [data-state="pause"] .d.w { border: 1.5px dashed var(--text-secondary); color: var(--text); }
+[data-theme="bw"] .week [data-state="pause"] .d.w { border: 2px dashed var(--text); }
+.week [data-state="off"] .d.w { border: 0; }
+.week [data-state="before"] .d { border: 0; }
+.week .wsum { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: var(--fs-label-large); color: var(--text); overflow-wrap: anywhere; }
+.week .wsum b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.routine[data-all-done] .week { border-top-color: var(--pc); }
+/* parent pages: the week as a line in words on the routine card, the cells in the facts */
+.rhead .state.wline { color: var(--text); }
+.rhead .tag.paused { margin-top: 4px; justify-self: start; }
+.facts dd.wk { display: block; }
+.facts dd.wk .week { border-top: 0; padding: 0; max-width: 360px; }
+.list-rows.pauses .tag.paused { justify-self: start; }
 
 /* ticket 291: reward catalogue. Only existing tokens. */
 /* Price: star icon, number and the word, never broken apart. */

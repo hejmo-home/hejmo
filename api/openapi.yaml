@@ -359,6 +359,7 @@ paths:
         Only the fields sent change. The colour is one of the eight palette colours
         (`Person.color`), the marker one of the eight shapes. No two people may have
         the same colour and the same marker: such a request gets 422.
+        `streaks_shown` switches the week count and badges of the person on or off.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -1501,6 +1502,86 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/pauses:
+    get:
+      operationId: listPauses
+      summary: Pause days of the household (scope tasks:read)
+      description: |
+        Pause days are spans of days (first and last included) on which routines
+        do not count: a pause day that is not done drops out of the week count
+        and does not end the best streak; one that is done anyway counts like a
+        normal day. Earliest first. A pause without `person_ids` is for the whole
+        family (`whole_family`). Everyone, children included, may read them.
+      responses:
+        "200":
+          description: Pauses
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Pause" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createPause
+      summary: Enter pause days (scope tasks:write, parents only)
+      description: |
+        Past days are allowed; the counts recalculate. A pause that overlaps
+        pauses of exactly the same people is merged with them, and the merged
+        pause is returned. `to` before `from` and a span over 366 days give 422
+        with `field: to`; an unknown person gives 422 with `field: people`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewPause" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pause" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/pauses/{id}:
+    patch:
+      operationId: updatePause
+      summary: Change the days or the people of a pause (scope tasks:write, parents only)
+      description: |
+        Only the fields sent change; an empty `person_ids` makes it a pause of
+        the whole family. Merged with overlapping pauses of the same people like
+        a new one; the pause keeps its id.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PauseUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pause" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deletePause
+      summary: Remove a pause (scope tasks:delete, parents only)
+      description: The days count normally again; what was ticked off stays.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /tasks/{id}:
     patch:
       operationId: updateTask
@@ -4277,7 +4358,7 @@ components:
       enum: [parent, child]
     Person:
       type: object
-      required: [id, name, role, color, shape, symbol]
+      required: [id, name, role, color, shape, symbol, streaks_shown]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
@@ -4285,6 +4366,7 @@ components:
         color: { type: string, description: "Hex colour for colour mode: one of the eight palette colours (empty for a person added before colours were chosen)", example: "#B4583A" }
         shape: { type: string, description: "Marker for black-and-white mode", example: circle-filled }
         symbol: { type: string }
+        streaks_shown: { type: boolean, description: "The switch \"week count and badges\": when off, no week, best streak or badge is shown for the person anywhere (stars stay). On for children and off for adults when the person is created." }
     ContactLine:
       type: object
       required: [kind, value]
@@ -4393,6 +4475,7 @@ components:
         name: { type: string, minLength: 1, maxLength: 80 }
         color: { $ref: "#/components/schemas/PersonColor" }
         shape: { $ref: "#/components/schemas/PersonShape" }
+        streaks_shown: { type: boolean }
     NewPerson:
       type: object
       required: [name, role]
@@ -4471,6 +4554,36 @@ components:
               stars: { type: integer, minimum: 0, maximum: 100 }
               repeat: { $ref: "#/components/schemas/TemplateRepeat" }
               weekdays: { type: array, items: { $ref: "#/components/schemas/TaskWeekday" } }
+    Pause:
+      type: object
+      required: [id, from, to, person_ids, whole_family]
+      properties:
+        id: { type: string, format: uuid }
+        from: { type: string, format: date, description: "First day, in the household's time zone" }
+        to: { type: string, format: date, description: "Last day, not before `from`, at most 366 days long" }
+        person_ids:
+          type: array
+          items: { type: string, format: uuid }
+          description: The people the pause is for; empty for the whole family
+        whole_family: { type: boolean }
+    NewPause:
+      type: object
+      required: [from, to]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        person_ids:
+          type: array
+          items: { type: string, format: uuid }
+          description: Leave out or empty for the whole family
+    PauseUpdate:
+      type: object
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        person_ids:
+          type: array
+          items: { type: string, format: uuid }
     Routine:
       type: object
       required: [id, person_id, name, part_of_day, task_ids]

@@ -8,6 +8,7 @@ import (
 
 	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/streak"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
 
@@ -66,7 +67,11 @@ func (s *server) personalView(h store.Household, d *store.Display, lang, personI
 	if err != nil {
 		return familyview.PersonalView{}, err
 	}
-	in.Routines = viewRoutines(routines, person.ID)
+	weeks, err := s.routineWeeks(h, day)
+	if err != nil {
+		return familyview.PersonalView{}, err
+	}
+	in.Routines = viewRoutines(routines, person.ID, weeks)
 	sums, err := s.db.StarSummaries(h.ID)
 	if err != nil {
 		return familyview.PersonalView{}, err
@@ -85,11 +90,11 @@ func viewTask(t store.DayTask) familyview.Task {
 }
 
 // viewRoutines are the routines of one person.
-func viewRoutines(all []task.Routine, personID string) []familyview.Routine {
+func viewRoutines(all []task.Routine, personID string, weeks map[string]*streak.Week) []familyview.Routine {
 	var out []familyview.Routine
 	for _, r := range all {
 		if r.PersonID == personID {
-			out = append(out, familyview.Routine{ID: r.ID, Name: r.Name, Part: string(r.Part)})
+			out = append(out, familyview.Routine{ID: r.ID, Name: r.Name, Part: string(r.Part), Week: weeks[r.ID]})
 		}
 	}
 	return out

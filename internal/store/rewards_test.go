@@ -383,3 +383,25 @@ func TestChangingARewardKeepsItsRedemptionsAndChangesTheAudience(t *testing.T) {
 		t.Errorf("unknown reward = %v", err)
 	}
 }
+
+func TestRewardVisibleTo(t *testing.T) {
+	archived := time.Now()
+	cases := []struct {
+		name  string
+		r     store.Reward
+		child bool
+		want  bool
+	}{
+		{"adult sees archived", store.Reward{ArchivedAt: archived}, false, true},
+		{"adult sees unmeant", store.Reward{PersonIDs: []string{"x"}}, false, true},
+		{"child sees meant", store.Reward{PersonIDs: []string{"kid"}}, true, true},
+		{"child sees whole household", store.Reward{}, true, true},
+		{"child misses unmeant", store.Reward{PersonIDs: []string{"x"}}, true, false},
+		{"child misses archived", store.Reward{ArchivedAt: archived}, true, false},
+	}
+	for _, c := range cases {
+		if got := c.r.VisibleTo("kid", c.child); got != c.want {
+			t.Errorf("%s: got %v, want %v", c.name, got, c.want)
+		}
+	}
+}

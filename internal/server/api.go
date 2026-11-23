@@ -106,6 +106,10 @@ var apiRoutes = []APIRoute{
 	{"GET", "/search", auth.Perm("events", auth.Read), (*server).apiSearch},
 	{"GET", "/tasks", auth.Perm("tasks", auth.Read), (*server).apiListTasks},
 	{"POST", "/tasks", auth.Perm("tasks", auth.Write), (*server).apiCreateTask},
+	{"GET", "/tasks/pauses", auth.Perm("tasks", auth.Read), (*server).apiListPauses},
+	{"POST", "/tasks/pauses", auth.Perm("tasks", auth.Write), (*server).apiCreatePause},
+	{"PATCH", "/tasks/pauses/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchPause},
+	{"DELETE", "/tasks/pauses/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeletePause},
 	{"PATCH", "/tasks/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchTask},
 	{"DELETE", "/tasks/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeleteTask},
 	{"PUT", "/tasks/{id}/done", auth.Perm("tasks", auth.Complete), (*server).apiSetTaskDone},
@@ -307,10 +311,12 @@ type personJSON struct {
 	Color  string     `json:"color"`
 	Shape  string     `json:"shape"`
 	Symbol string     `json:"symbol"`
+	// StreaksShown is the switch "week count and badges" (ticket 294).
+	StreaksShown bool `json:"streaks_shown"`
 }
 
 func toJSON(p store.Person) personJSON {
-	return personJSON{p.ID, p.Name, p.Role, p.Color, p.Shape, p.Symbol}
+	return personJSON{p.ID, p.Name, p.Role, p.Color, p.Shape, p.Symbol, p.StreaksShown}
 }
 
 func (s *server) apiMe(w http.ResponseWriter, _ *http.Request, p principal) {

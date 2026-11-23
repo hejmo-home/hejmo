@@ -35,7 +35,7 @@
      StarsShown and Labels (name the parts). */}}
 {{define "taskParts"}}{{$root := .}}{{range .Parts}}<section class="part" data-part="{{or .Part "anytime"}}">{{if $root.Labels}}<div class="lab">{{template "partIcon" .Part}}{{t (printf "personal.part_%s" (or .Part "anytime"))}}</div>{{end}}
   {{with .Routine}}<section class="routine"{{if .AllDone}} data-all-done{{end}} aria-label="{{.Name}}"><div class="routine-head"><b>{{.Name}}</b><span class="rcount"{{if .AllDone}} role="status"{{end}}>{{if .AllDone}}{{template "tick" 20}}{{end}}{{tf "routine.progress" "done" (printf "%d" .Progress.Done) "total" (printf "%d" .Progress.Total)}}</span></div>
-    <ol>{{range .Tasks}}{{template "bigCheckRow" (dict "Task" . "Root" $root)}}{{end}}</ol></section>{{end}}
+    <ol>{{range .Tasks}}{{template "bigCheckRow" (dict "Task" . "Root" $root)}}{{end}}</ol>{{template "routineWeek" (dict "Week" .Week "Prefix" true)}}</section>{{end}}
   {{with .Tasks}}<ul>{{range .}}{{template "bigCheckRow" (dict "Task" . "Root" $root)}}{{end}}</ul>{{end}}</section>{{end}}{{end}}
 
 {{define "bigCheckRow"}}{{if .Task.Subtasks}}{{template "subgroupRow" .}}{{else}}{{$k := .Task}}{{$r := .Root}}<li data-task="{{$k.ID}}" data-done="{{$k.Done}}"{{if $k.Next}} data-next{{end}}><form method="post" action="{{$r.Prefix}}/{{$k.ID}}/done">

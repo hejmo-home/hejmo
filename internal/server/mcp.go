@@ -123,6 +123,12 @@ var mcpTools = []mcpTool{
 	{name: "update_task", desc: "Change a task's star value.", method: "PATCH", path: "/tasks/{id}", params: []mcpParam{idOf("task"), req("stars", "integer", "Stars earned")}},
 	{name: "delete_task", desc: "Delete a task with its history.", method: "DELETE", path: "/tasks/{id}", params: []mcpParam{idOf("task")}},
 	{name: "set_task_done", desc: "Tick a task off, or open it again.", method: "PUT", path: "/tasks/{id}/done", params: []mcpParam{idOf("task"), req("done", "boolean", "true to tick off, false to open again")}},
+	{name: "list_pauses", desc: "List the pause days: spans of days on which routines do not count. No person means the whole family.", method: "GET", path: "/tasks/pauses"},
+	{name: "create_pause", desc: "Enter pause days (for example an illness or a holiday); past days are fine. Overlapping pauses of the same people are merged.", method: "POST", path: "/tasks/pauses", params: []mcpParam{
+		req("from", "string", "First day, YYYY-MM-DD"), req("to", "string", "Last day, YYYY-MM-DD, at most 366 days long"), opt("person_ids", "strings", "The people it is for; leave out for the whole family")}},
+	{name: "update_pause", desc: "Change the days or the people of a pause.", method: "PATCH", path: "/tasks/pauses/{id}", params: []mcpParam{
+		idOf("pause"), opt("from", "string", "First day, YYYY-MM-DD"), opt("to", "string", "Last day, YYYY-MM-DD"), opt("person_ids", "strings", "The people it is for; an empty list means the whole family")}},
+	{name: "delete_pause", desc: "Remove a pause. The days count normally again; what was ticked off stays.", method: "DELETE", path: "/tasks/pauses/{id}", params: []mcpParam{idOf("pause")}},
 	{name: "list_routines", desc: "List the routines with their tasks in order.", method: "GET", path: "/routines", params: []mcpParam{opt("person", "string", "Only routines of this person id")}},
 	{name: "get_routine", desc: "Get one routine with its tasks in order.", method: "GET", path: "/routines/{id}", params: []mcpParam{idOf("routine")}},
 	{name: "create_routine", desc: "Create a routine for a person, or from a routine template.", method: "POST", path: "/routines", params: []mcpParam{

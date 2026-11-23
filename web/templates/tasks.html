@@ -25,7 +25,7 @@
       <a class="button secondary" href="/routines/new?person={{.ID}}">{{t "routine.new"}}</a>
     </div>{{end}}
     {{range .Routines}}<section class="rcard" aria-label="{{.Name}}">
-      <a class="rhead" href="/routines/{{.ID}}">{{template "partIconSized" (dict "Part" .Part "Size" 22)}}<span class="t"><b>{{.Name}}</b><span class="state">{{if not .Steps}}{{tf "routine.card.state.empty" "part" (t (printf "routine.part.%s" .Part))}}{{else if not .Total}}{{tf "routine.card.state.none" "part" (t (printf "routine.part.%s" .Part))}}{{else}}{{tf "routine.card.state" "part" (t (printf "routine.part.%s" .Part)) "done" (printf "%d" .Done) "total" (printf "%d" .Total)}}{{end}}</span></span><span class="open">{{t "routine.open"}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
+      <a class="rhead" href="/routines/{{.ID}}">{{template "partIconSized" (dict "Part" .Part "Size" 22)}}<span class="t"><b>{{.Name}}</b><span class="state">{{if not .Steps}}{{tf "routine.card.state.empty" "part" (t (printf "routine.part.%s" .Part))}}{{else if not .Total}}{{tf "routine.card.state.none" "part" (t (printf "routine.part.%s" .Part))}}{{else}}{{tf "routine.card.state" "part" (t (printf "routine.part.%s" .Part)) "done" (printf "%d" .Done) "total" (printf "%d" .Total)}}{{end}}</span>{{template "weekLines" (dict "Week" .Week)}}{{if .PauseToday}}<span class="state"><span class="tag paused"><svg class="icon" width="12" height="12" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6v12M15 6v12"/></svg>{{t "tasks.pause.today"}}</span></span>{{end}}</span><span class="open">{{t "routine.open"}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>
       {{if .Steps}}<ol class="rsteps">
         {{range .Steps}}<li data-task="{{.ID}}"{{if .Done}} data-done{{end}}{{if .Subs}} class="has-subs"{{end}}>
           <span class="nr" aria-hidden="true">{{.Nr}}</span>
@@ -60,6 +60,16 @@
     </ul>{{end}}
   </section>
   {{else}}{{template "empty" (dict "Text" (t "tasks.none") "Href" "#new" "Action" (t "tasks.none.action"))}}{{end}}
+
+  <section aria-labelledby="pauses">
+    <h2 id="pauses">{{t "pause.title"}}</h2>
+    <p class="lead">{{t "pause.lead"}}</p>
+    {{if .Pauses}}<ul class="list-rows pauses">{{range .Pauses}}{{template "rowLink" .}}{{end}}</ul>{{else}}<p class="hint">{{t "pause.none"}}</p>{{end}}
+    <p class="row"><a class="button secondary" href="/tasks/pauses/new"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "pause.add"}}</a></p>
+    {{if .PastPauses}}{{template "moreOpen" (dict "Label" (t "pause.past") "Summary" (tf "pause.past.sum" "range" .LastPause))}}
+      <ul class="list-rows pauses">{{range .PastPauses}}{{template "rowLink" .}}{{end}}</ul>
+    {{template "moreClose"}}{{end}}
+  </section>
   {{end}}
 
   {{if not .Child}}<section aria-labelledby="stars">

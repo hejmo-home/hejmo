@@ -137,6 +137,9 @@ type Routine struct {
 	PersonID string
 	Name     string
 	Part     PartOfDay // Morning, AfterSchool or Evening
+	// Created is when the routine was made; days before it do not count for
+	// its week (ticket 294). Zero when storing: now.
+	Created time.Time
 }
 
 // Validate reports why a routine cannot be stored.

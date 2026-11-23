@@ -34,6 +34,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/streak"
 	"github.com/hejmo-home/hejmo/internal/task"
 	"github.com/hejmo-home/hejmo/internal/unit"
 )
@@ -204,12 +205,25 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 		must(err)
 	}
 	mia := f.people["Maximilian"].ID
-	r, err := db.CreateRoutine(h, task.Routine{PersonID: mia, Name: "Morgenroutine vor der Schule", Part: task.Morning})
+	r, err := db.CreateRoutine(h, task.Routine{PersonID: mia, Name: "Morgenroutine vor der Schule", Part: task.Morning, Created: time.Date(2026, 11, 2, 6, 0, 0, 0, berlinTZ)})
 	must(err)
 	for _, title := range []string{"Zähne putzen", "Schulranzen packen", "Frühstücksbrotdose einpacken"} {
-		_, err := db.AddTask(h, task.Task{PersonID: mia, Title: title, Repeat: task.Daily, Date: "2026-11-14", RoutineID: r.ID, Stars: 1})
+		k, err := db.AddTask(h, task.Task{PersonID: mia, Title: title, Repeat: task.Daily, Date: "2026-11-02", RoutineID: r.ID, Stars: 1})
 		must(err)
+		// The week of Mon 9 to Sun 15 November (#294): Monday to Wednesday done, Thursday half, Friday and today paused.
+		for _, day := range []string{"2026-11-09", "2026-11-10", "2026-11-11"} {
+			must(db.SetTaskDone(h, k.ID, day, true, "", f.at(14, 13, 0)))
+		}
+		if title == "Zähne putzen" {
+			must(db.SetTaskDone(h, k.ID, "2026-11-12", true, "", f.at(14, 13, 0)))
+		}
 	}
+	_, err = db.SavePause(h, streak.Pause{From: "2026-11-13", To: "2026-11-14", People: []string{mia}}, "")
+	must(err)
+	_, err = db.SavePause(h, streak.Pause{From: "2026-12-19", To: "2027-01-03"}, "")
+	must(err)
+	_, err = db.SavePause(h, streak.Pause{From: "2026-11-02", To: "2026-11-03", People: []string{f.people["Anna-Lena"].ID, mia}}, "")
+	must(err)
 	_, err = db.SaveRoutineAsTemplate(h, r.ID, "Morgenroutine für Grundschulkinder")
 	must(err)
 

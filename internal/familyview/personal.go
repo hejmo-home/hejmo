@@ -7,6 +7,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/layout"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/streak"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
 
@@ -55,6 +56,9 @@ func (t Task) SubtasksDone() (done, total int) {
 type Routine struct {
 	ID, Name string
 	Part     string // "morning", "afterschool" or "evening"
+	// Week is the routine's week (ticket 294); nil while the person's switch
+	// "week count and badges" is off.
+	Week *streak.Week
 }
 
 // Stars is a person's star balance (ADR 0018). Shown is false for people with
@@ -215,6 +219,7 @@ type RoutineBox struct {
 	Tasks    []Task
 	Progress Progress
 	AllDone  bool
+	Week     *streak.Week // nil while the switch is off
 }
 
 // TaskPart is the content of one part of the day: the person's routine for it,
@@ -247,7 +252,7 @@ func (v PersonalView) Parts() []TaskPart {
 				continue
 			}
 			if box == nil {
-				box = &RoutineBox{ID: r.ID, Name: r.Name}
+				box = &RoutineBox{ID: r.ID, Name: r.Name, Week: r.Week}
 			}
 			box.Tasks = append(box.Tasks, t)
 		}

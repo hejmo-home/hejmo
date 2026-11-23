@@ -30,7 +30,8 @@ const (
 	// MaxBytes is the largest photo or download Hejmo takes.
 	MaxBytes = 15 << 20
 	// MaxSide is the longest side of the stored picture, in pixels, unless a
-	// caller asks for its own limit (ProcessMax): articles, rewards, contacts.
+	// caller asks for its own limit (ProcessMax): articles, and everything
+	// else that has no limit of its own.
 	MaxSide = 512
 	// RecipeMaxSide is the longest side of a recipe picture (ticket 276).
 	RecipeMaxSide = 1600

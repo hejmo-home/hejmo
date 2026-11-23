@@ -305,13 +305,13 @@ func TestACancelledRequestStopsWaitingForTheSlot(t *testing.T) {
 // larger pictures than articles (512 px).
 
 func TestACallerCanAskForALargerMaximumAndStillGetsAReEncodedPictureWithoutMetadata(t *testing.T) {
+	if picture.RecipeMaxSide != 1600 {
+		t.Fatalf("RecipeMaxSide = %d, want 1600", picture.RecipeMaxSide)
+	}
 	src := withEXIF(encodeJPEG(t, gradient(3000, 2000)), 1)
 	res, err := picture.ProcessMax(context.Background(), bytes.NewReader(src), picture.RecipeMaxSide)
 	if err != nil {
 		t.Fatal(err)
-	}
-	if picture.RecipeMaxSide != 1600 {
-		t.Errorf("RecipeMaxSide = %d, want 1600", picture.RecipeMaxSide)
 	}
 	if w, h := size(t, res.JPEG); w != 1600 || h != 1067 {
 		t.Errorf("result %d x %d, want 1600 x 1067", w, h)
@@ -336,7 +336,7 @@ func TestACallerCanAskForALargerMaximumAndStillGetsAReEncodedPictureWithoutMetad
 
 func TestTheSameLargePhotoIsScaledToEachCallersOwnMaximum(t *testing.T) {
 	data := encodeJPEG(t, gradient(3000, 2000))
-	for _, c := range []struct{ max, w, h int }{{512, 512, 341}, {1600, 1600, 1067}, {0, 512, 341}} {
+	for _, c := range []struct{ max, w, h int }{{512, 512, 341}, {1600, 1600, 1067}, {0, 512, 341}, {-1, 512, 341}} {
 		res, err := picture.ProcessMax(context.Background(), bytes.NewReader(data), c.max)
 		if err != nil {
 			t.Fatal(err)

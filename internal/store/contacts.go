@@ -29,7 +29,7 @@ type Contact struct {
 	// BdayDay and BdayMonth belong together; BdayYear is 0 when it is unknown.
 	BdayDay, BdayMonth, BdayYear int
 	Note                         string
-	Phones, Emails               []contact.Line
+	Numbers, Emails              []contact.Line
 	GroupIDs                     []string
 	CreatedBy, CreatedByName     string
 	CreatedAt                    time.Time
@@ -125,7 +125,7 @@ func (db *DB) loadContactParts(q interface {
 			}
 			if i, ok := at[id]; ok {
 				if t.table == "contact_phones" {
-					list[i].Phones = append(list[i].Phones, l)
+					list[i].Numbers = append(list[i].Numbers, l)
 				} else {
 					list[i].Emails = append(list[i].Emails, l)
 				}
@@ -218,7 +218,7 @@ type ContactInput struct {
 	HejmoName, FullName, Street, Postcode, City, Country string
 	BdayDay, BdayMonth, BdayYear                         int
 	Note                                                 string
-	Phones, Emails                                       []contact.Line
+	Numbers, Emails                                      []contact.Line
 	// GroupIDs are the groups the contact is in; a person is always in Familie as well.
 	GroupIDs []string
 	// NewGroup, when not empty, is the name of a group made together with the contact and added to it.
@@ -229,7 +229,7 @@ func (in *ContactInput) clean() error {
 	in.HejmoName, in.FullName = strings.TrimSpace(in.HejmoName), strings.TrimSpace(in.FullName)
 	in.Street, in.Postcode, in.City, in.Country = strings.TrimSpace(in.Street), strings.TrimSpace(in.Postcode), strings.TrimSpace(in.City), strings.TrimSpace(in.Country)
 	in.Note, in.NewGroup = strings.TrimSpace(in.Note), strings.TrimSpace(in.NewGroup)
-	in.Phones, in.Emails = contact.CleanLines(in.Phones), contact.CleanLines(in.Emails)
+	in.Numbers, in.Emails = contact.CleanLines(in.Numbers), contact.CleanLines(in.Emails)
 	switch {
 	case in.HejmoName == "" || contact.Runes(in.HejmoName) > contact.MaxName:
 		return &FieldError{Field: "name", Msg: "the Hejmo name is required, at most 40 characters"}
@@ -237,14 +237,14 @@ func (in *ContactInput) clean() error {
 		return &FieldError{Field: "full_name", Msg: "the full name is at most 120 characters"}
 	case contact.Runes(in.Note) > contact.MaxNote:
 		return &FieldError{Field: "note", Msg: "the note is at most 1000 characters"}
-	case len(in.Phones) > contact.MaxLines:
-		return &FieldError{Field: "phones", Msg: "at most 10 numbers"}
+	case len(in.Numbers) > contact.MaxLines:
+		return &FieldError{Field: "numbers", Msg: "at most 10 numbers"}
 	case len(in.Emails) > contact.MaxLines:
 		return &FieldError{Field: "emails", Msg: "at most 10 e-mail addresses"}
 	case contact.Runes(in.NewGroup) > contact.MaxName:
 		return &FieldError{Field: "new_group", Msg: "the group name is at most 40 characters"}
 	}
-	for _, l := range append(append([]contact.Line{}, in.Phones...), in.Emails...) {
+	for _, l := range append(append([]contact.Line{}, in.Numbers...), in.Emails...) {
 		if !contact.KindValid(l.Kind) || (l.Kind == contact.Custom && (l.Label == "" || contact.Runes(l.Label) > contact.MaxOwnLabel)) {
 			return &FieldError{Field: "kind", Msg: "a custom kind needs a label of at most 30 characters"}
 		}
@@ -271,7 +271,7 @@ func writeContactParts(tx *sql.Tx, householdID, id string, in ContactInput, isPe
 	for _, t := range []struct {
 		table string
 		lines []contact.Line
-	}{{"contact_phones", in.Phones}, {"contact_emails", in.Emails}} {
+	}{{"contact_phones", in.Numbers}, {"contact_emails", in.Emails}} {
 		if _, err := tx.Exec(`DELETE FROM `+t.table+` WHERE contact_id = ?`, id); err != nil {
 			return err
 		}

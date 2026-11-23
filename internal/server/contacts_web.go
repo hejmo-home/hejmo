@@ -141,7 +141,7 @@ func (e ctEnv) row(c store.Contact, withGroups bool) ctRow {
 	if chip, ok := e.chips[c.PersonID]; ok && c.IsPerson() {
 		row.Person, row.Slot, row.Shape = true, chip.Slot, chip.Shape
 	}
-	for _, l := range c.Phones {
+	for _, l := range c.Numbers {
 		row.Nums = append(row.Nums, ctNum{e.kindWord(l, false), l.Value})
 	}
 	if withGroups && !c.IsPerson() {
@@ -164,7 +164,7 @@ func ctMatches(c store.Contact, q string) bool {
 		return true
 	}
 	digits := onlyDigits(q)
-	for _, l := range c.Phones {
+	for _, l := range c.Numbers {
 		if strings.Contains(library.Fold(l.Value), q) || (len(digits) >= 3 && strings.Contains(onlyDigits(l.Value), digits)) {
 			return true
 		}
@@ -323,10 +323,10 @@ func (s *server) handleContact(w http.ResponseWriter, r *http.Request) {
 		data["PersonHref"] = "/people/" + c.PersonID
 	}
 	var facts []ctFact
-	for _, l := range c.Phones {
+	for _, l := range c.Numbers {
 		facts = append(facts, ctFact{Label: e.kindWord(l, false), Value: l.Value, Tel: template.URL(contact.TelHref(l.Value)), Kind: "call"})
 	}
-	data["NoPhone"] = len(c.Phones) == 0
+	data["NoNumber"] = len(c.Numbers) == 0
 	for _, l := range c.Emails {
 		facts = append(facts, ctFact{Label: e.factLabel(l, true), Value: l.Value, Mail: "mailto:" + l.Value, Kind: "mail"})
 	}
@@ -414,7 +414,7 @@ func (s *server) personContactRow(r *http.Request, p principal, personID string)
 	}
 	e := ctEnv{s: s, lang: s.langOf(r), p: p}
 	row := ctPersonRow{Href: contactsPath + "/" + c.ID}
-	if c.FullName == "" && len(c.Phones) == 0 && len(c.Emails) == 0 && c.Street == "" && c.City == "" && c.Postcode == "" && c.BdayDay == 0 {
+	if c.FullName == "" && len(c.Numbers) == 0 && len(c.Emails) == 0 && c.Street == "" && c.City == "" && c.Postcode == "" && c.BdayDay == 0 {
 		row.Empty, row.Title = true, e.t("contact.person.empty")
 		row.Lines = []string{e.t("contact.person.empty.hint")}
 		return row, true
@@ -423,10 +423,10 @@ func (s *server) personContactRow(r *http.Request, p principal, personID string)
 	if row.Title == "" {
 		row.Title = c.HejmoName
 	}
-	if len(c.Phones) == 0 {
+	if len(c.Numbers) == 0 {
 		row.Lines = append(row.Lines, e.t("contact.nonumber"))
 	}
-	for _, l := range c.Phones {
+	for _, l := range c.Numbers {
 		row.Lines = append(row.Lines, e.kindWord(l, false)+" "+l.Value)
 	}
 	if c.BdayDay != 0 {

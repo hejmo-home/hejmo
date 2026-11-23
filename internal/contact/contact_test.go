@@ -7,11 +7,11 @@ import (
 	"github.com/hejmo-home/hejmo/internal/contact"
 )
 
-func TestPhoneKeepsWhatWasTypedAndNamesTheFirstBadCharacter(t *testing.T) {
+func TestNumberKeepsWhatWasTypedAndNamesTheFirstBadCharacter(t *testing.T) {
 	t.Parallel()
 	for _, ok := range []string{"112", "116117", "0171 3456 789", "+49 (0)89 1234-56/7", "089.1234.56", "+491711234567"} {
-		if code, bad := contact.CheckPhone(ok); code != "" {
-			t.Errorf("CheckPhone(%q) = %q %q, want valid", ok, code, bad)
+		if code, bad := contact.CheckNumber(ok); code != "" {
+			t.Errorf("CheckNumber(%q) = %q %q, want valid", ok, code, bad)
 		}
 	}
 	for _, c := range []struct{ in, code, bad string }{
@@ -22,8 +22,8 @@ func TestPhoneKeepsWhatWasTypedAndNamesTheFirstBadCharacter(t *testing.T) {
 		{"+- ()", "digits", ""},
 		{"abc 12", "char", "a"},
 	} {
-		if code, bad := contact.CheckPhone(c.in); code != c.code || bad != c.bad {
-			t.Errorf("CheckPhone(%q) = %q %q, want %q %q", c.in, code, bad, c.code, c.bad)
+		if code, bad := contact.CheckNumber(c.in); code != c.code || bad != c.bad {
+			t.Errorf("CheckNumber(%q) = %q %q, want %q %q", c.in, code, bad, c.code, c.bad)
 		}
 	}
 }

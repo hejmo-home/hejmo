@@ -13,7 +13,7 @@ function rowHtml(kind, n, remove) {
   return '<li class="line" id="' + kind + n + '"><select aria-label="Art ' + n + '"></select><input class="val" aria-label="Nummer ' + n + '">' +
     (remove ? '<button class="button secondary sq rm" type="submit" name="remove" value="' + kind + n + '" aria-label="Nummer ' + n + ' entfernen">x</button>' : '') + '</li>';
 }
-const TEMPLATE = rowHtml('phone', '{n}', true);
+const TEMPLATE = rowHtml('number', '{n}', true);
 
 // A small document: only what the script touches.
 function setup(initial) {
@@ -39,9 +39,9 @@ function setup(initial) {
   const list = {
     items: [], html: [],
     querySelectorAll() { return this.items; },
-    insertAdjacentHTML(where, h) { this.html.push(h); const n = this.items.length + 1; this.items.push(line('phone', n, h)); },
+    insertAdjacentHTML(where, h) { this.html.push(h); const n = this.items.length + 1; this.items.push(line('number', n, h)); },
   };
-  initial.forEach((remove, i) => list.items.push(line('phone', i + 1, rowHtml('phone', i + 1, remove).replace('class="line"', remove ? 'class="line"' : 'class="line blank"'))));
+  initial.forEach((remove, i) => list.items.push(line('number', i + 1, rowHtml('number', i + 1, remove).replace('class="line"', remove ? 'class="line"' : 'class="line blank"'))));
   const more = { hidden: false };
   const dirty = { hidden: true };
   const handlers = {};
@@ -49,9 +49,9 @@ function setup(initial) {
   const form = {
     addEventListener(t, f) { handlers[t] = f; },
     querySelector(sel) {
-      if (sel === 'ul.lines[data-lines="phone"]') return list;
-      if (sel === 'template[data-line="phone"]') return tpl;
-      if (sel === 'button[name="more"][value="phone"]') return more;
+      if (sel === 'ul.lines[data-lines="number"]') return list;
+      if (sel === 'template[data-line="number"]') return tpl;
+      if (sel === 'button[name="more"][value="number"]') return more;
       if (sel === '.savebar .dirty') return dirty;
       return null;
     },
@@ -69,9 +69,9 @@ function setup(initial) {
 
 test('"Weitere Nummer" adds a numbered line from the template and does not submit', () => {
   const t = setup([true, true]);
-  assert.equal(t.click('more', 'phone'), true);
+  assert.equal(t.click('more', 'number'), true);
   assert.equal(t.list.items.length, 3);
-  assert.match(t.list.html[0], /id="phone3"/);
+  assert.match(t.list.html[0], /id="number3"/);
   assert.match(t.list.html[0], /aria-label="Nummer 3 entfernen"/);
   assert.equal(t.list.items[2].children.val.attrs['aria-label'], 'Nummer 3');
   assert.equal(t.dirty.hidden, false);
@@ -80,27 +80,27 @@ test('"Weitere Nummer" adds a numbered line from the template and does not submi
 test('the only blank line gets its "Entfernen" when a second line is added', () => {
   const t = setup([false]);
   assert.equal(t.list.items[0].classList.contains('blank'), true);
-  t.click('more', 'phone');
+  t.click('more', 'number');
   const first = t.list.items[0];
   assert.equal(first.classList.contains('blank'), false);
-  assert.match(first.children.val.inserted[0][1], /name="remove" value="phone1"/);
+  assert.match(first.children.val.inserted[0][1], /name="remove" value="number1"/);
 });
 
 test('no more than ten lines: the button hides at ten and nothing is added past it', () => {
   const t = setup(Array(9).fill(true));
-  t.click('more', 'phone');
+  t.click('more', 'number');
   assert.equal(t.list.items.length, 10);
   assert.equal(t.more.hidden, true);
-  t.click('more', 'phone');
+  t.click('more', 'number');
   assert.equal(t.list.items.length, 10);
 });
 
 test('"Entfernen" removes the line and renumbers the rest', () => {
   const t = setup([true, true, true]);
-  assert.equal(t.click('remove', 'phone2', t.list.items[1]), true);
+  assert.equal(t.click('remove', 'number2', t.list.items[1]), true);
   assert.equal(t.list.items.length, 2);
-  assert.equal(t.list.items[1].getAttribute('id'), 'phone2');
-  assert.equal(t.list.items[1].children.rm.attrs.value, 'phone2');
+  assert.equal(t.list.items[1].getAttribute('id'), 'number2');
+  assert.equal(t.list.items[1].children.rm.attrs.value, 'number2');
   assert.equal(t.list.items[1].children.val.attrs['aria-label'], 'Nummer 2');
   assert.equal(t.list.items[1].children.rm.attrs['aria-label'], 'Nummer 2 entfernen');
 });
@@ -108,7 +108,7 @@ test('"Entfernen" removes the line and renumbers the rest', () => {
 test('removing the last line empties it instead of leaving no line', () => {
   const t = setup([true]);
   const li = t.list.items[0];
-  t.click('remove', 'phone1', li);
+  t.click('remove', 'number1', li);
   assert.equal(t.list.items.length, 1);
   assert.equal(li.children.val.value, '');
   assert.equal(li.children.select.selectedIndex, 0);

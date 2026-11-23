@@ -3,7 +3,7 @@
   {{with .Full}}<p class="ct-full">{{.}}</p>{{end}}
   {{if .IsPerson}}<p class="why fam"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="3"/><circle cx="16" cy="10" r="2.5"/><path d="M3.5 19c.5-3.5 3-5 5.5-5s5 1.5 5.5 5M14.5 15c2.5 0 4.5 1 5 4"/></svg><span><b>{{t "contact.fam.lead"}}</b> {{tf "contact.fam.before" "name" .Name}} <a href="{{.PersonHref}}">{{t "contact.fam.link"}}</a>{{tf "contact.fam.after" "name" .Name}}</span></p>{{end}}
   <dl class="facts ct">
-    {{if .NoPhone}}<dt>{{t "contact.fact.phone"}}</dt><dd class="none">{{t "contact.fact.nophone"}}</dd>{{end}}
+    {{if .NoNumber}}<dt>{{t "contact.fact.number"}}</dt><dd class="none">{{t "contact.fact.nonumber"}}</dd>{{end}}
     {{range .Facts}}<dt class="l">{{.Label}}</dt><dd>{{if eq .Kind "call"}}<a class="call" href="{{.Tel}}" aria-label="{{tf "contact.aria.call" "kind" .Label "value" .Value}}"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M6.5 3.5h3l1.5 4-2 1.5a11 11 0 0 0 6 6l1.5-2 4 1.5v3a2 2 0 0 1-2 2A16 16 0 0 1 4.5 5.5a2 2 0 0 1 2-2z"/></svg><span>{{.Value}}</span></a>{{else}}<a class="mail" href="{{.Mail}}"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5.5" width="17" height="13" rx="2"/><path d="M4 7l8 6 8-6"/></svg><span>{{.Value}}</span></a>{{end}}</dd>
     {{end}}
     {{if .Address}}<dt>{{t "contact.fact.address"}}</dt><dd><address class="adr">{{range .Address}}<span>{{.}}</span>{{end}}</address></dd>{{end}}

@@ -72,14 +72,14 @@ func TestAContactKeepsTheNumberAsTypedAndNeverStoresEmptyLinesOrAnEmptyAddress(t
 	db, h, f := exampleFamily(t)
 	c, err := db.CreateContact(h.ID, f["Mama"].ID, store.ContactInput{
 		HejmoName: " Oma Gerda ", FullName: "Gerda Müller",
-		Phones: []contact.Line{{Kind: contact.Cell, Value: " 0171 3456 789 "}, {Kind: contact.Home, Value: "  "}, {Kind: contact.Custom, Label: "Gartenhaus", Value: "+49 (0)160/111-2223"}, {Kind: contact.Work}},
-		Emails: []contact.Line{{Kind: contact.Home}, {Kind: contact.Home, Value: "gerda.mueller@example.de"}},
-		Street: " ", Postcode: "", City: "\t", Country: "",
+		Numbers: []contact.Line{{Kind: contact.Cell, Value: " 0171 3456 789 "}, {Kind: contact.Home, Value: "  "}, {Kind: contact.Custom, Label: "Gartenhaus", Value: "+49 (0)160/111-2223"}, {Kind: contact.Work}},
+		Emails:  []contact.Line{{Kind: contact.Home}, {Kind: contact.Home, Value: "gerda.mueller@example.de"}},
+		Street:  " ", Postcode: "", City: "\t", Country: "",
 	})
 	if err != nil {
 		t.Fatal(err)
 	}
-	if c.HejmoName != "Oma Gerda" || len(c.Phones) != 2 || c.Phones[0].Value != "0171 3456 789" || c.Phones[1].Value != "+49 (0)160/111-2223" || c.Phones[1].Label != "Gartenhaus" || len(c.Emails) != 1 {
+	if c.HejmoName != "Oma Gerda" || len(c.Numbers) != 2 || c.Numbers[0].Value != "0171 3456 789" || c.Numbers[1].Value != "+49 (0)160/111-2223" || c.Numbers[1].Label != "Gartenhaus" || len(c.Emails) != 1 {
 		t.Fatalf("contact = %+v", c)
 	}
 	if c.Street != "" || c.Postcode != "" || c.City != "" || c.Country != "" {
@@ -139,14 +139,14 @@ func TestTheHejmoNameIsUniqueIgnoringCaseAmongContactsAndPeople(t *testing.T) {
 	if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: strings.Repeat("x", 41)}); !errors.As(err, &fe) {
 		t.Errorf("41 characters: %v", err)
 	}
-	if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Zehn", Phones: make([]contact.Line, 0)}); err != nil {
+	if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Zehn", Numbers: make([]contact.Line, 0)}); err != nil {
 		t.Fatal(err)
 	}
 	var lines []contact.Line
 	for i := 0; i < 11; i++ {
 		lines = append(lines, contact.Line{Kind: contact.Cell, Value: "0171 000"})
 	}
-	if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Elf", Phones: lines}); !errors.As(err, &fe) || fe.Field != "phones" {
+	if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Elf", Numbers: lines}); !errors.As(err, &fe) || fe.Field != "numbers" {
 		t.Errorf("11 numbers: %v", err)
 	}
 }
@@ -155,7 +155,7 @@ func TestAPersonsContactKeepsItsNameAndFamilieAndCannotBeDeleted(t *testing.T) {
 	t.Parallel()
 	db, h, f := exampleFamily(t)
 	fam := groupKey(t, db, h, "familie")
-	c, err := db.UpdateContact(h.ID, f["Mia"].ID, f["Mama"].ID, store.ContactInput{HejmoName: "Etwas anderes", FullName: "Mia Maier", Phones: []contact.Line{{Kind: contact.Cell, Value: "0151 1234567"}}})
+	c, err := db.UpdateContact(h.ID, f["Mia"].ID, f["Mama"].ID, store.ContactInput{HejmoName: "Etwas anderes", FullName: "Mia Maier", Numbers: []contact.Line{{Kind: contact.Cell, Value: "0151 1234567"}}})
 	if err != nil || c.HejmoName != "Mia" || c.FullName != "Mia Maier" || len(c.GroupIDs) != 1 || c.GroupIDs[0] != fam.ID {
 		t.Fatalf("contact = %+v, %v", c, err)
 	}

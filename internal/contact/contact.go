@@ -1,7 +1,7 @@
 // Package contact holds the rules for the address book (ticket 296, ADR 0021)
-// that need no database: what a phone number, an e-mail address and a
+// that need no database: what a telenumber_x number, an e-mail address and a
 // birthday may look like. The rules check; they never rewrite what a person
-// typed (a phone number is kept as typed), except that surrounding spaces go.
+// typed (a telenumber_x number is kept as typed), except that surrounding spaces go.
 package contact
 
 import (
@@ -33,10 +33,10 @@ const (
 	Custom Kind = "custom"
 )
 
-// PhoneKinds and EmailKinds are the kinds the form offers besides "own label".
+// NumberKinds and EmailKinds are the kinds the form offers besides "own label".
 var (
-	PhoneKinds = []Kind{Cell, Home, Work, Other}
-	EmailKinds = []Kind{Home, Work, Other}
+	NumberKinds = []Kind{Cell, Home, Work, Other}
+	EmailKinds  = []Kind{Home, Work, Other}
 )
 
 // Line is one number or e-mail address with its kind. Label is set for Custom only.
@@ -85,10 +85,10 @@ func AddressEmpty(parts ...string) bool {
 // Runes counts characters.
 func Runes(s string) int { return utf8.RuneCountInString(s) }
 
-// CheckPhone checks a typed number: digits, a + only at the start, spaces and
+// CheckNumber checks a typed number: digits, a + only at the start, spaces and
 // - / ( ) and dots, at least 3 digits (so 112 and 116117 pass). It returns ""
 // when the number is fine, "char" with the first wrong character, or "digits".
-func CheckPhone(v string) (code, bad string) {
+func CheckNumber(v string) (code, bad string) {
 	digits := 0
 	for i, r := range v {
 		switch {

@@ -24,7 +24,7 @@ type contactJSON struct {
 	PersonID  *string           `json:"person_id"`
 	Name      string            `json:"name"`
 	FullName  string            `json:"full_name"`
-	Phones    []contactLineJSON `json:"phones"`
+	Numbers   []contactLineJSON `json:"numbers"`
 	Emails    []contactLineJSON `json:"emails"`
 	Address   contactAddress    `json:"address"`
 	Birthday  *contactBirthday  `json:"birthday"`
@@ -75,7 +75,7 @@ func (s *server) contactToJSON(p principal, c store.Contact) contactJSON {
 	loc := p.location()
 	out := contactJSON{
 		ID: c.ID, PersonID: strPtr(c.PersonID), Name: c.HejmoName, FullName: c.FullName,
-		Phones: linesJSON(c.Phones), Emails: linesJSON(c.Emails), Address: contactAddress{c.Street, c.Postcode, c.City, c.Country},
+		Numbers: linesJSON(c.Numbers), Emails: linesJSON(c.Emails), Address: contactAddress{c.Street, c.Postcode, c.City, c.Country},
 		Note: c.Note, Groups: append([]string{}, c.GroupIDs...), CreatedBy: strPtr(c.CreatedBy), CreatedAt: rfc3339(c.CreatedAt, loc),
 		UpdatedBy: strPtr(c.UpdatedBy), UpdatedAt: rfc3339(c.UpdatedAt, loc),
 	}
@@ -119,7 +119,7 @@ func (s *server) apiGetContact(w http.ResponseWriter, r *http.Request, p princip
 type contactIn struct {
 	Name     string            `json:"name"`
 	FullName string            `json:"full_name"`
-	Phones   []contactLineJSON `json:"phones"`
+	Numbers  []contactLineJSON `json:"numbers"`
 	Emails   []contactLineJSON `json:"emails"`
 	Address  contactAddress    `json:"address"`
 	Birthday *contactBirthday  `json:"birthday"`
@@ -127,11 +127,11 @@ type contactIn struct {
 	Groups   []string          `json:"groups"`
 }
 
-func jsonLines(in []contactLineJSON, phone bool) ([]contact.Line, string) {
+func jsonLines(in []contactLineJSON, number bool) ([]contact.Line, string) {
 	var out []contact.Line
 	for _, l := range in {
 		k := contact.Kind(l.Kind)
-		if !contact.KindValid(k) || (!phone && k == contact.Cell) {
+		if !contact.KindValid(k) || (!number && k == contact.Cell) {
 			return nil, "kind: unknown kind " + l.Kind
 		}
 		out = append(out, contact.Line{Kind: k, Label: l.Label, Value: l.Value})
@@ -143,8 +143,8 @@ func (in contactIn) draft(isPerson bool) (ctDraft, string) {
 	d := ctDraft{Name: in.Name, Full: in.FullName, Street: in.Address.Street, Postcode: in.Address.Postcode, City: in.Address.City, Country: in.Address.Country,
 		Note: in.Note, GroupIDs: in.Groups, IsPerson: isPerson}
 	var bad string
-	if d.Phones, bad = jsonLines(in.Phones, true); bad != "" {
-		return d, "phones." + bad
+	if d.Numbers, bad = jsonLines(in.Numbers, true); bad != "" {
+		return d, "numbers." + bad
 	}
 	if d.Emails, bad = jsonLines(in.Emails, false); bad != "" {
 		return d, "emails." + bad

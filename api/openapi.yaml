@@ -3986,7 +3986,7 @@ components:
       properties:
         name: { type: string, description: "The Hejmo name: 1 to 40 characters, unique ignoring case among contacts and people" }
         full_name: { type: string, description: "At most 120 characters" }
-        phones: { type: array, description: "At most 10", items: { $ref: "#/components/schemas/ContactLine" } }
+        numbers: { type: array, description: "At most 10", items: { $ref: "#/components/schemas/ContactLine" } }
         emails: { type: array, description: "At most 10", items: { $ref: "#/components/schemas/ContactLine" } }
         address: { $ref: "#/components/schemas/ContactAddress" }
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
@@ -3994,13 +3994,13 @@ components:
         groups: { type: array, items: { type: string }, description: "Ids of contact groups" }
     Contact:
       type: object
-      required: [id, person_id, name, full_name, phones, emails, address, birthday, note, groups, created_by, created_at, updated_by, updated_at]
+      required: [id, person_id, name, full_name, numbers, emails, address, birthday, note, groups, created_by, created_at, updated_by, updated_at]
       properties:
         id: { type: string, format: uuid, description: "The id of the person for a person's contact" }
         person_id: { type: string, format: uuid, nullable: true }
         name: { type: string }
         full_name: { type: string }
-        phones: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
+        numbers: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
         emails: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
         address: { $ref: "#/components/schemas/ContactAddress" }
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }

@@ -14,7 +14,7 @@ import (
 // both build one, so they follow the same rules (ticket 296).
 type ctDraft struct {
 	Name, Full                      string
-	Phones, Emails                  []contact.Line
+	Numbers, Emails                 []contact.Line
 	Street, Postcode, City, Country string
 	Day, Month, Year                int
 	BdayNotNumbers                  bool // the form held something that is no number
@@ -70,11 +70,11 @@ func checkContact(d ctDraft, today time.Time, taken func(name string) *store.Nam
 	}
 	for _, set := range []struct {
 		lines          []contact.Line
-		phone          bool
+		number         bool
 		field, anchor  string
 		many, manyName string
 	}{
-		{d.Phones, true, "phone", "phone", "phones", "phones"},
+		{d.Numbers, true, "number", "number", "numbers", "numbers"},
 		{d.Emails, false, "email", "email", "emails", "mails"},
 	} {
 		filled := 0
@@ -87,8 +87,8 @@ func checkContact(d ctDraft, today time.Time, taken func(name string) *store.Nam
 			}
 			filled++
 			id := set.anchor + strconv.Itoa(n)
-			if set.phone {
-				if code, bad := contact.CheckPhone(value); code != "" {
+			if set.number {
+				if code, bad := contact.CheckNumber(value); code != "" {
 					add(id, set.field, n, code, bad)
 				}
 			} else if code := contact.CheckEmail(value); code != "" {
@@ -141,6 +141,6 @@ func (d ctDraft) input() store.ContactInput {
 	return store.ContactInput{
 		HejmoName: d.Name, FullName: d.Full, Street: d.Street, Postcode: d.Postcode, City: d.City, Country: d.Country,
 		BdayDay: d.Day, BdayMonth: d.Month, BdayYear: d.Year, Note: d.Note,
-		Phones: d.Phones, Emails: d.Emails, GroupIDs: d.GroupIDs, NewGroup: d.NewGroup,
+		Numbers: d.Numbers, Emails: d.Emails, GroupIDs: d.GroupIDs, NewGroup: d.NewGroup,
 	}
 }

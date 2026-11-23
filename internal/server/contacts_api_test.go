@@ -22,7 +22,7 @@ func TestContactsAPIListsPeopleAsContactsAndMakesReadsAndChangesOfOthers(t *test
 	}
 	status, got, _ := c.api.call(http.MethodPost, "/contacts", map[string]any{
 		"name": "Oma Gerda", "full_name": "Gerda Müller",
-		"phones":   []any{map[string]any{"kind": "cell", "value": " 0171 3456 789 "}, map[string]any{"kind": "custom", "label": "Gartenhaus", "value": "0160 111 2223"}, map[string]any{"kind": "home", "value": ""}},
+		"numbers":  []any{map[string]any{"kind": "cell", "value": " 0171 3456 789 "}, map[string]any{"kind": "custom", "label": "Gartenhaus", "value": "0160 111 2223"}, map[string]any{"kind": "home", "value": ""}},
 		"emails":   []any{map[string]any{"kind": "home", "value": "gerda@example.de"}},
 		"address":  map[string]any{"street": " ", "city": ""},
 		"birthday": map[string]any{"day": 14, "month": 3},
@@ -31,9 +31,9 @@ func TestContactsAPIListsPeopleAsContactsAndMakesReadsAndChangesOfOthers(t *test
 	if status != http.StatusCreated || got["person_id"] != nil || got["created_by"] == nil {
 		t.Fatalf("create = %d %v", status, got)
 	}
-	phones := got["phones"].([]any)
-	if len(phones) != 2 || phones[0].(map[string]any)["value"] != "0171 3456 789" || phones[1].(map[string]any)["label"] != "Gartenhaus" {
-		t.Errorf("phones = %v", phones)
+	numbers := got["numbers"].([]any)
+	if len(numbers) != 2 || numbers[0].(map[string]any)["value"] != "0171 3456 789" || numbers[1].(map[string]any)["label"] != "Gartenhaus" {
+		t.Errorf("numbers = %v", numbers)
 	}
 	if b := got["birthday"].(map[string]any); b["year"] != nil || b["day"] != float64(14) {
 		t.Errorf("birthday = %v", b)
@@ -42,8 +42,8 @@ func TestContactsAPIListsPeopleAsContactsAndMakesReadsAndChangesOfOthers(t *test
 	if status, _, list := c.api.call(http.MethodGet, "/contacts?q=0171", nil); status != http.StatusOK || len(list) != 1 {
 		t.Errorf("search = %d %v", status, list)
 	}
-	status, got, _ = c.api.call(http.MethodPut, "/contacts/"+id, map[string]any{"name": "Oma Gerda", "phones": []any{}, "groups": []any{}})
-	if status != http.StatusOK || len(got["phones"].([]any)) != 0 || got["full_name"] != "" || got["updated_by"] == nil {
+	status, got, _ = c.api.call(http.MethodPut, "/contacts/"+id, map[string]any{"name": "Oma Gerda", "numbers": []any{}, "groups": []any{}})
+	if status != http.StatusOK || len(got["numbers"].([]any)) != 0 || got["full_name"] != "" || got["updated_by"] == nil {
 		t.Errorf("replace = %d %v", status, got)
 	}
 	if status, _, _ := c.api.call(http.MethodDelete, "/contacts/"+id, nil); status != http.StatusNoContent {
@@ -75,12 +75,12 @@ func TestContactsAPIRefusesWhatTheFormRefuses(t *testing.T) {
 		"a person's name":          {"name": "MAMA"},
 		"no name":                  {"name": " "},
 		"41 characters":            {"name": strings.Repeat("x", 41)},
-		"bad number":               {"name": "A", "phones": []any{map[string]any{"kind": "cell", "value": "089 23x4"}}},
-		"two digits":               {"name": "A", "phones": []any{map[string]any{"kind": "cell", "value": "12"}}},
-		"custom without a label":   {"name": "A", "phones": []any{map[string]any{"kind": "custom", "value": "0171 123"}}},
-		"unknown kind":             {"name": "A", "phones": []any{map[string]any{"kind": "pager", "value": "0171 123"}}},
+		"bad number":               {"name": "A", "numbers": []any{map[string]any{"kind": "cell", "value": "089 23x4"}}},
+		"two digits":               {"name": "A", "numbers": []any{map[string]any{"kind": "cell", "value": "12"}}},
+		"custom without a label":   {"name": "A", "numbers": []any{map[string]any{"kind": "custom", "value": "0171 123"}}},
+		"unknown kind":             {"name": "A", "numbers": []any{map[string]any{"kind": "pager", "value": "0171 123"}}},
 		"no dot in the domain":     {"name": "A", "emails": []any{map[string]any{"kind": "home", "value": "a@example"}}},
-		"eleven numbers":           {"name": "A", "phones": many},
+		"eleven numbers":           {"name": "A", "numbers": many},
 		"31 February":              {"name": "A", "birthday": map[string]any{"day": 31, "month": 2, "year": 2018}},
 		"29 February, common year": {"name": "A", "birthday": map[string]any{"day": 29, "month": 2, "year": 2025}},
 		"year 1899":                {"name": "A", "birthday": map[string]any{"day": 1, "month": 1, "year": 1899}},

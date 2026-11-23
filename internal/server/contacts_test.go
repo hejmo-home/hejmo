@@ -27,13 +27,13 @@ func (c ctBox) send(path string, f url.Values) resp {
 	return c.do(http.MethodPost, path, f, map[string]string{"Accept-Language": "en"})
 }
 
-// contactForm is a filled contact form: phones are (kind, own label, number) lines.
-func contactForm(name, full string, phones [][3]string, emails [][3]string) url.Values {
+// contactForm is a filled contact form: numbers are (kind, own label, number) lines.
+func contactForm(name, full string, numbers [][3]string, emails [][3]string) url.Values {
 	f := url.Values{"name": {name}, "full_name": {full}}
-	for _, p := range phones {
-		f.Add("phone_label", p[0])
-		f.Add("phone_own", p[1])
-		f.Add("phone", p[2])
+	for _, p := range numbers {
+		f.Add("number_label", p[0])
+		f.Add("number_own", p[1])
+		f.Add("number", p[2])
 	}
 	for _, e := range emails {
 		f.Add("email_label", e[0])
@@ -190,9 +190,9 @@ func TestTypedNumberIsKeptAndEmptyLinesAndAddressAreNeverStored(t *testing.T) {
 	f.Set("city", "\t")
 	id := c.add(t, f)
 	_, got, _ := c.api.call(http.MethodGet, "/contacts/"+id, nil)
-	phones := got["phones"].([]any)
-	if len(phones) != 1 || phones[0].(map[string]any)["value"] != "+49 (0)171/3456-789" || phones[0].(map[string]any)["kind"] != "cell" {
-		t.Errorf("phones = %v", phones)
+	numbers := got["numbers"].([]any)
+	if len(numbers) != 1 || numbers[0].(map[string]any)["value"] != "+49 (0)171/3456-789" || numbers[0].(map[string]any)["kind"] != "cell" {
+		t.Errorf("numbers = %v", numbers)
 	}
 	if len(got["emails"].([]any)) != 0 {
 		t.Errorf("emails = %v", got["emails"])
@@ -306,12 +306,12 @@ func TestContactFormShowsErrorsAtTheirFieldsAndKeepsEverythingTyped(t *testing.T
 		t.Fatalf("status = %d", r.status)
 	}
 	ctHas(t, "form with errors", r.body,
-		`class="error form-error" role="alert"`, "Not saved. Please check these 5 items:", `<a href="#name">Name in Hejmo</a>`, `<a href="#phone2">Phone number 2</a>`, `<a href="#phone3">Phone number 3</a>`, `<a href="#email1">E-mail address 1</a>`, `<a href="#birthday">Birthday</a>`,
+		`class="error form-error" role="alert"`, "Not saved. Please check these 5 items:", `<a href="#name">Name in Hejmo</a>`, `<a href="#number2">Number 2</a>`, `<a href="#number3">Number 3</a>`, `<a href="#email1">E-mail address 1</a>`, `<a href="#birthday">Birthday</a>`,
 		`id="err-name"`, "“Mia” exists already: Mia from your family.", "“Mia (daycare)” or “Mia Schulz”",
-		`id="err-phone2"`, "There is a “x” here.", `id="err-phoneown3"`, "Write a label",
+		`id="err-number2"`, "There is a “x” here.", `id="err-numberown3"`, "Write a label",
 		`id="err-email1"`, "After the @ the dot and the ending are missing", `id="err-birthday"`, "There is no February 31.",
 		`value="Mia Schulz"`, `value="0172 4455 6677"`, `value="089 23x4 5678"`, `value="0160 2223 334"`, `value="familie.schulz@example"`, `value="31"`, `<option value="2" selected>February</option>`, `value="2018"`)
-	ctHas(t, "ids", r.body, `<li class="line" id="phone1">`, `<li class="line invalid" id="phone2">`, `id="phone3"`, `id="email1"`, `id="birthday"`, `id="name"`)
+	ctHas(t, "ids", r.body, `<li class="line" id="number1">`, `<li class="line invalid" id="number2">`, `id="number3"`, `id="email1"`, `id="birthday"`, `id="name"`)
 	// Nothing was stored.
 	if _, _, list := c.api.call(http.MethodGet, "/contacts?q=Schulz", nil); len(list) != 0 {
 		t.Errorf("a refused contact was stored: %v", list)
@@ -358,9 +358,9 @@ func TestContactFormRulesOfNameNumberEmailAndBirthday(t *testing.T) {
 	bad("long note", long, "1000 characters at most")
 	many := contactForm("C", "", nil, nil)
 	for i := 0; i < 11; i++ {
-		many.Add("phone_label", "cell")
-		many.Add("phone_own", "")
-		many.Add("phone", "0171 000")
+		many.Add("number_label", "cell")
+		many.Add("number_own", "")
+		many.Add("number", "0171 000")
 	}
 	bad("eleven numbers", many, "More than 10 numbers")
 }
@@ -369,12 +369,12 @@ func TestWithoutJavaScriptMoreAndRemoveReShowTheFormWithEverythingKept(t *testin
 	t.Parallel()
 	c := newCtBox(t)
 	f := contactForm("Oma Gerda", "", [][3]string{{"cell", "", "0171 1"}, {"home", "", "0172 2"}}, nil)
-	f.Set("more", "phone")
+	f.Set("more", "number")
 	r := c.send("/contacts/new", f)
 	if r.status != http.StatusOK {
 		t.Fatalf("more = %d", r.status)
 	}
-	ctHas(t, "after more", r.body, `value="Oma Gerda"`, `value="0171 1"`, `value="0172 2"`, `id="phone3"`)
+	ctHas(t, "after more", r.body, `value="Oma Gerda"`, `value="0171 1"`, `value="0172 2"`, `id="number3"`)
 	if n := strings.Count(r.body, `<li class="line`); n != 3+1 { // three numbers and the one e-mail line; the templates are inert but counted: see below
 		// The two <template> lines are in the page too.
 		if n != 3+1+2 {
@@ -382,7 +382,7 @@ func TestWithoutJavaScriptMoreAndRemoveReShowTheFormWithEverythingKept(t *testin
 		}
 	}
 	f2 := contactForm("Oma Gerda", "", [][3]string{{"cell", "", "0171 1"}, {"home", "", "0172 2"}, {"work", "", "0173 3"}}, nil)
-	f2.Set("remove", "phone2")
+	f2.Set("remove", "number2")
 	r = c.send("/contacts/new", f2)
 	ctHas(t, "after remove", r.body, `value="0171 1"`, `value="0173 3"`)
 	ctHasNot(t, "after remove", r.body, `value="0172 2"`)

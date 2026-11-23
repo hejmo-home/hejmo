@@ -244,13 +244,29 @@ func (db *DB) SetTaskDone(householdID, id, day string, done bool, by string, at 
 func setTaskDoneTx(tx *sql.Tx, t task.Task, day string, done bool, by string, at time.Time) (changed bool, stars int, err error) {
 	var delta int
 	if done {
+		// Stars an earlier untick could not take back are held against this tick.
+		var debt int
+		if err := tx.QueryRow(`SELECT stars FROM task_star_debt WHERE task_id = ? AND day = ?`, t.ID, day).Scan(&debt); err != nil && !errors.Is(err, sql.ErrNoRows) {
+			return false, 0, err
+		}
+		credit := max(0, t.Stars-debt)
 		res, err := tx.Exec(`INSERT INTO task_done (task_id, day, completed_at, completed_by, stars) VALUES (?, ?, ?, NULLIF(?, ''), ?)
-			ON CONFLICT (task_id, day) DO NOTHING`, t.ID, day, at.UTC().Format(time.RFC3339), by, t.Stars)
+			ON CONFLICT (task_id, day) DO NOTHING`, t.ID, day, at.UTC().Format(time.RFC3339), by, credit)
 		if err != nil {
 			return false, 0, err
 		}
 		if n, _ := res.RowsAffected(); n > 0 {
-			changed, delta = true, t.Stars
+			changed, delta = true, credit
+			if debt > 0 {
+				if _, err := tx.Exec(`DELETE FROM task_star_debt WHERE task_id = ? AND day = ?`, t.ID, day); err != nil {
+					return false, 0, err
+				}
+				if rest := debt - (t.Stars - credit); rest > 0 {
+					if _, err := tx.Exec(`INSERT INTO task_star_debt (task_id, day, stars) VALUES (?, ?, ?)`, t.ID, day, rest); err != nil {
+						return false, 0, err
+					}
+				}
+			}
 		}
 	} else {
 		var credited int
@@ -270,7 +286,14 @@ func setTaskDoneTx(tx *sql.Tx, t task.Task, day string, done bool, by string, at
 			if err := tx.QueryRow(`SELECT h.below_zero FROM households h JOIN tasks k ON k.household_id = h.id WHERE k.id = ?`, t.ID).Scan(&below); err != nil {
 				return false, 0, err
 			}
-			changed, delta = true, -reward.Deduction(credited, bal, below)
+			taken := reward.Deduction(credited, bal, below)
+			changed, delta = true, -taken
+			if short := credited - taken; short > 0 { // not taken back: held against the next tick
+				if _, err := tx.Exec(`INSERT INTO task_star_debt (task_id, day, stars) VALUES (?, ?, ?)
+					ON CONFLICT (task_id, day) DO UPDATE SET stars = stars + excluded.stars`, t.ID, day, short); err != nil {
+					return false, 0, err
+				}
+			}
 		}
 	}
 	if delta != 0 {

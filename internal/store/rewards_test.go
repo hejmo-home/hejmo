@@ -145,7 +145,7 @@ func TestARewardThatWasRedeemedCanOnlyBeArchived(t *testing.T) {
 	if err := f.db.InsertRedemption(r.ID, f.mia.ID, "confirmed", time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	if err := f.db.DeleteReward(f.h.ID, r.ID); !errors.Is(err, store.ErrRedeemed) {
+	if err := f.db.DeleteReward(f.h.ID, r.ID, rt0); !errors.Is(err, store.ErrRedeemed) {
 		t.Fatalf("delete = %v, want ErrRedeemed", err)
 	}
 	if _, err := f.db.Reward(f.h.ID, r.ID); err != nil {
@@ -167,13 +167,13 @@ func TestARewardNeverRedeemedCanBeDeletedAndOpenRequestsDoNotBlockIt(t *testing.
 	if err := f.db.InsertRedemption(r.ID, f.mia.ID, "declined", time.Now()); err != nil {
 		t.Fatal(err)
 	}
-	if err := f.db.DeleteReward(f.h.ID, r.ID); err != nil {
+	if err := f.db.DeleteReward(f.h.ID, r.ID, rt0); err != nil {
 		t.Fatalf("delete = %v", err)
 	}
 	if _, err := f.db.Reward(f.h.ID, r.ID); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("after delete: %v", err)
 	}
-	if err := f.db.DeleteReward(f.h.ID, r.ID); !errors.Is(err, store.ErrNotFound) {
+	if err := f.db.DeleteReward(f.h.ID, r.ID, rt0); !errors.Is(err, store.ErrNotFound) {
 		t.Fatalf("second delete = %v", err)
 	}
 }

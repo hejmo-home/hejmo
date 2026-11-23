@@ -404,7 +404,7 @@ func (db *DB) RestoreReward(householdID, id string, aud *Audience) (Reward, erro
 
 // DeleteReward removes a reward that was never redeemed. One with a confirmed
 // redemption is ErrRedeemed: archive it, so the star logs stay right (Y).
-func (db *DB) DeleteReward(householdID, id string) error {
+func (db *DB) DeleteReward(householdID, id string, at time.Time) error {
 	tx, err := db.sql.Begin()
 	if err != nil {
 		return err
@@ -423,7 +423,7 @@ func (db *DB) DeleteReward(householdID, id string) error {
 	if n > 0 {
 		return ErrRedeemed
 	}
-	if err := declineOpenOfReward(tx, id, time.Now()); err != nil {
+	if err := declineOpenOfReward(tx, id, at); err != nil {
 		return err
 	}
 	res, err := tx.Exec(`DELETE FROM rewards WHERE household_id = ? AND id = ?`, householdID, id)

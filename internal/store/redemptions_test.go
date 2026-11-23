@@ -202,7 +202,7 @@ func TestArchivingOrDeletingARewardDeclinesItsOpenRequestsWithAReasonTheChildSee
 	if _, err := f.db.ArchiveReward(f.h.ID, a.ID, rt0.Add(time.Minute)); err != nil {
 		t.Fatal(err)
 	}
-	if err := f.db.DeleteReward(f.h.ID, b.ID); err != nil {
+	if err := f.db.DeleteReward(f.h.ID, b.ID, rt0); err != nil {
 		t.Fatal(err)
 	}
 	for _, id := range []string{ra.ID, rb.ID} {
@@ -298,5 +298,162 @@ func TestAPersonWhoLeavesTakesTheirOpenRequestsBack(t *testing.T) {
 	}
 	if got, err := f.db.Redemption(f.h.ID, r.ID); err != nil || got.Status != store.RedemptionWithdrawn {
 		t.Fatalf("request = %+v %v, want withdrawn", got, err)
+	}
+}
+
+// A child can untick their own tasks: with below-zero off, taking back less
+// than was credited must not let a re-tick credit the full value again.
+func TestUntickAndRetickLoopWithBelowZeroOffMintsNoStars(t *testing.T) {
+	f := newRewardFixture(t)
+	tk, err := f.db.AddTask(f.h.ID, task.Task{PersonID: f.sebastian.ID, Title: "Zimmer aufräumen", Repeat: task.Once, Date: "2026-11-23", Stars: 3})
+	if err != nil {
+		t.Fatal(err)
+	}
+	day := "2026-11-23"
+	if err := f.db.SetBelowZero(f.h.ID, false); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, true, f.sebastian.ID, rt0); err != nil {
+		t.Fatal(err)
+	}
+	rw := f.reward(t, store.Reward{Name: "Kleines Eis", Symbol: "🍦", Price: 3})
+	at := rt0.Add(time.Hour)
+	r, err := f.db.AskReward(f.h.ID, f.sebastian.ID, rw.ID, at, time.UTC)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.db.ConfirmRedemption(f.h.ID, r.ID, f.mama.ID, at, time.UTC); err != nil {
+		t.Fatal(err)
+	}
+	// Balance 0: the untick can take nothing back, the re-tick must credit nothing.
+	if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, false, f.sebastian.ID, at.Add(time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, true, f.sebastian.ID, at.Add(2*time.Minute)); err != nil {
+		t.Fatal(err)
+	}
+	if got := f.balance(t, f.sebastian); got != 0 {
+		t.Fatalf("balance after untick and re-tick = %d, want 0 (3 earned, 3 spent, nothing minted)", got)
+	}
+	var re *store.RedeemError
+	if _, err := f.db.AskReward(f.h.ID, f.sebastian.ID, rw.ID, at.Add(time.Hour), time.UTC); !errors.As(err, &re) {
+		t.Fatalf("a second reward without stars = %v, want a stars error", err)
+	}
+}
+
+func TestAnUntickThatTookBackEverythingLeavesNoDebt(t *testing.T) {
+	f := newRewardFixture(t)
+	tk, _ := f.db.AddTask(f.h.ID, task.Task{PersonID: f.mia.ID, Title: "Zimmer aufräumen", Repeat: task.Once, Date: "2026-11-23", Stars: 3})
+	_ = f.db.SetBelowZero(f.h.ID, false)
+	day := "2026-11-23"
+	for i := 0; i < 2; i++ {
+		if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, true, f.mia.ID, rt0); err != nil {
+			t.Fatal(err)
+		}
+		if got := f.balance(t, f.mia); got != 3 {
+			t.Fatalf("round %d tick: balance = %d, want 3", i, got)
+		}
+		if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, false, f.mia.ID, rt0.Add(time.Hour)); err != nil {
+			t.Fatal(err)
+		}
+		if got := f.balance(t, f.mia); got != 0 {
+			t.Fatalf("round %d untick: balance = %d, want 0", i, got)
+		}
+	}
+}
+
+// Ticket 292, acceptance: two parallel confirmations book the stars once.
+func TestParallelConfirmationsOfOneRequestBookTheStarsOnce(t *testing.T) {
+	f := newRewardFixture(t)
+	f.stars(t, f.sebastian, 12)
+	r, err := f.db.AskReward(f.h.ID, f.sebastian.ID, f.reward(t, eis()).ID, rt0, time.UTC)
+	if err != nil {
+		t.Fatal(err)
+	}
+	const n = 8
+	errs := make(chan error, n)
+	start := make(chan struct{})
+	for i := 0; i < n; i++ {
+		go func() {
+			<-start
+			_, err := f.db.ConfirmRedemption(f.h.ID, r.ID, f.mama.ID, rt0, time.UTC)
+			errs <- err
+		}()
+	}
+	close(start)
+	ok, decided := 0, 0
+	for i := 0; i < n; i++ {
+		var de *store.DecidedError
+		switch err := <-errs; {
+		case err == nil:
+			ok++
+		case errors.As(err, &de):
+			decided++
+		default:
+			t.Errorf("unexpected error: %v", err)
+		}
+	}
+	if ok != 1 || decided != n-1 {
+		t.Fatalf("%d confirmed, %d already decided; want 1 and %d", ok, decided, n-1)
+	}
+	if got := f.balance(t, f.sebastian); got != 4 {
+		t.Fatalf("balance = %d, want 4 (8 booked once)", got)
+	}
+}
+
+func TestAConfirmationRacingADirectRedemptionOfTheSameRequestBooksOnce(t *testing.T) {
+	f := newRewardFixture(t)
+	f.stars(t, f.sebastian, 12)
+	rw := f.reward(t, eis())
+	r, err := f.db.AskReward(f.h.ID, f.sebastian.ID, rw.ID, rt0, time.UTC)
+	if err != nil {
+		t.Fatal(err)
+	}
+	start := make(chan struct{})
+	errs := make(chan error, 2)
+	go func() {
+		<-start
+		_, err := f.db.ConfirmRedemption(f.h.ID, r.ID, f.mama.ID, rt0, time.UTC)
+		errs <- err
+	}()
+	go func() {
+		<-start
+		_, err := f.db.RedeemNow(f.h.ID, rw.ID, f.sebastian.ID, f.papa.ID, rt0, time.UTC)
+		errs <- err
+	}()
+	close(start)
+	for i := 0; i < 2; i++ {
+		<-errs // either may lose with a decided/limit error; what counts is the booking
+	}
+	if got := f.balance(t, f.sebastian); got != 4 {
+		t.Fatalf("balance = %d, want 4 (8 booked exactly once)", got)
+	}
+}
+
+func TestBelowZeroCauseIgnoresARewardRedeemedAfterTheReopening(t *testing.T) {
+	f := newRewardFixture(t)
+	tk, _ := f.db.AddTask(f.h.ID, task.Task{PersonID: f.mia.ID, Title: "Zimmer aufräumen", Repeat: task.Once, Date: "2026-11-23", Stars: 3})
+	day := "2026-11-23"
+	_ = f.db.SetTaskDone(f.h.ID, tk.ID, day, true, f.mia.ID, rt0)
+	older := f.reward(t, store.Reward{Name: "Kleines Eis", Symbol: "🍦", Price: 3})
+	r, _ := f.db.AskReward(f.h.ID, f.mia.ID, older.ID, rt0, time.UTC)
+	if _, err := f.db.ConfirmRedemption(f.h.ID, r.ID, f.mama.ID, rt0.Add(time.Minute), time.UTC); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, false, f.mama.ID, rt0.Add(time.Hour)); err != nil {
+		t.Fatal(err)
+	}
+	// A later redemption cannot have caused the negative balance.
+	f.stars(t, f.mia, 10)
+	later := f.reward(t, store.Reward{Name: "Kino", Symbol: "🎬", Price: 2})
+	if _, err := f.db.RedeemNow(f.h.ID, later.ID, f.mia.ID, f.mama.ID, rt0.Add(2*time.Hour), time.UTC); err != nil {
+		t.Fatal(err)
+	}
+	title, name, err := f.db.BelowZeroCause(f.mia.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if title != "Zimmer aufräumen" || name != "Kleines Eis" {
+		t.Fatalf("cause = %q / %q, want the task and the reward redeemed before the reopening", title, name)
 	}
 }

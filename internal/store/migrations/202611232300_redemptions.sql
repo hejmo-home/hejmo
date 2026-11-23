@@ -48,3 +48,14 @@ ALTER TABLE star_log ADD COLUMN redemption_id TEXT REFERENCES reward_redemptions
 
 -- Whether unticking a task may take a balance below zero (product owner, 23/11/2026).
 ALTER TABLE households ADD COLUMN below_zero INTEGER NOT NULL DEFAULT 1 CHECK (below_zero IN (0, 1));
+
+-- With below-zero off, unticking may take back less than the tick credited.
+-- What it could not take back is remembered per task and day and is held
+-- against the next tick of that task, so unticking and ticking again mints
+-- no stars.
+CREATE TABLE task_star_debt (
+    task_id TEXT NOT NULL REFERENCES tasks(id) ON DELETE CASCADE,
+    day     TEXT NOT NULL,
+    stars   INTEGER NOT NULL CHECK (stars > 0),
+    PRIMARY KEY (task_id, day)
+);

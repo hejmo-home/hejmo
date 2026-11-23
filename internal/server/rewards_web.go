@@ -989,7 +989,7 @@ func (s *server) handleRewardDelete(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	switch err := s.db.DeleteReward(p.household.ID, rw.ID); {
+	switch err := s.db.DeleteReward(p.household.ID, rw.ID, s.now()); {
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
 	case errors.Is(err, store.ErrRedeemed):

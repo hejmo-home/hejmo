@@ -3872,7 +3872,7 @@
   "flash.rwd_declined": "Abgelehnt: <b>„{reward}“</b> für {name}. {name} behält die Sterne.",
   "rwd.link.asked": "Du hast gefragt: „{reward}“. Wartet auf {parents}.",
   "rwd.redeem.title": "Jetzt für jemanden einlösen",
-  "rwd.redeem.sum": "ohne Anfrage, zum Beispiel wenn ihr gerade ins Kino geht",
+  "rwd.redeem.sum": "ohne Anfrage, zum Beispiel direkt an der Kinokasse",
   "rwd.redeem.who": "Für wen?",
   "rwd.redeem.chip.ok": "{have}, danach {after}",
   "rwd.redeem.chip.asked": "; hat schon gefragt",

@@ -290,16 +290,12 @@ func personName(q rewardDB, id string) string {
 
 // confirmIn books a redemption: balance and limit are checked and the stars
 // booked in the caller's transaction. The redemption row exists and is open.
-func confirmIn(tx *sql.Tx, householdID, id string, rw Reward, personID, by string, at time.Time, loc *time.Location) error {
+func confirmIn(tx *sql.Tx, id string, rw Reward, price int, personID, by string, at time.Time, loc *time.Location) error {
 	bal, err := balanceOf(tx, personID)
 	if err != nil {
 		return err
 	}
 	// The price of the request counts, not the current one: what the child was shown.
-	var price int
-	if err := tx.QueryRow(`SELECT price FROM reward_redemptions WHERE id = ?`, id).Scan(&price); err != nil {
-		return err
-	}
 	rw.Price = price
 	if err := checkFor(tx, rw, personID, bal, at, loc); err != nil {
 		return err
@@ -331,7 +327,7 @@ func (db *DB) ConfirmRedemption(householdID, id, by string, at time.Time, loc *t
 	if err != nil {
 		return Redemption{}, err
 	}
-	if err := confirmIn(tx, householdID, id, rw, r.PersonID, by, at, loc); err != nil {
+	if err := confirmIn(tx, id, rw, r.Price, r.PersonID, by, at, loc); err != nil {
 		return Redemption{}, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -393,9 +389,11 @@ func (db *DB) RedeemNow(householdID, rewardID, personID, by string, at time.Time
 		return Redemption{}, err
 	}
 	var id string
-	err = tx.QueryRow(`SELECT id FROM reward_redemptions WHERE person_id = ? AND reward_id = ? AND status = 'open'`, personID, rewardID).Scan(&id)
+	price := rw.Price
+	err = tx.QueryRow(`SELECT id, price FROM reward_redemptions WHERE person_id = ? AND reward_id = ? AND status = 'open'`, personID, rewardID).Scan(&id, &price)
 	switch {
 	case errors.Is(err, sql.ErrNoRows):
+		price = rw.Price
 		if id, err = insertRedemption(tx, householdID, rw, personID, RedemptionOpen, at); err != nil {
 			return Redemption{}, err
 		}
@@ -405,7 +403,7 @@ func (db *DB) RedeemNow(householdID, rewardID, personID, by string, at time.Time
 	case err != nil:
 		return Redemption{}, err
 	}
-	if err := confirmIn(tx, householdID, id, rw, personID, by, at, loc); err != nil {
+	if err := confirmIn(tx, id, rw, price, personID, by, at, loc); err != nil {
 		return Redemption{}, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -432,10 +430,16 @@ func (db *DB) SetBelowZero(householdID string, on bool) error {
 }
 
 // BelowZeroCause names what put a negative balance below zero: the task that
-// was reopened last and the reward redeemed last. Either may be empty.
+// was reopened last and the reward redeemed last before that reopening (a
+// later redemption cannot have caused it). Either may be empty.
 func (db *DB) BelowZeroCause(personID string) (taskTitle, rewardName string, err error) {
-	err = db.sql.QueryRow(`SELECT COALESCE((SELECT task_title FROM star_log WHERE person_id = ? AND delta < 0 AND task_id IS NOT NULL ORDER BY created_at DESC, rowid DESC LIMIT 1), ''),
-		COALESCE((SELECT name FROM reward_redemptions WHERE person_id = ? AND status = 'confirmed' ORDER BY decided_at DESC, rowid DESC LIMIT 1), '')`, personID, personID).Scan(&taskTitle, &rewardName)
+	var reopenedAt string
+	err = db.sql.QueryRow(`SELECT COALESCE(MAX(task_title), ''), COALESCE(MAX(created_at), '') FROM (
+		SELECT task_title, created_at FROM star_log WHERE person_id = ? AND delta < 0 AND task_id IS NOT NULL ORDER BY created_at DESC, rowid DESC LIMIT 1)`, personID).Scan(&taskTitle, &reopenedAt)
+	if err != nil || reopenedAt == "" {
+		return taskTitle, "", err
+	}
+	err = db.sql.QueryRow(`SELECT COALESCE((SELECT name FROM reward_redemptions WHERE person_id = ? AND status = 'confirmed' AND decided_at <= ? ORDER BY decided_at DESC, rowid DESC LIMIT 1), '')`, personID, reopenedAt).Scan(&rewardName)
 	return taskTitle, rewardName, err
 }
 

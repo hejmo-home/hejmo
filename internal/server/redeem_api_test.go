@@ -219,3 +219,41 @@ func TestMCPListsConfirmsDeclinesAndRedeemsForAParent(t *testing.T) {
 		t.Errorf("redeem = %v %s", failed, out)
 	}
 }
+
+// Acceptance: two parents confirming the same request at once book it once.
+func TestParallelConfirmationsOverRESTBookOnceAndTheRestSeeItDecided(t *testing.T) {
+	t.Parallel()
+	rb := newRewardBox(t)
+	eis := rb.create(t, map[string]any{"name": "Eis", "price": 8})["id"].(string)
+	rb.book(t, rb.sebastianID, 12)
+	_, req := rb.ask(t, eis)
+	id := req["id"].(string)
+	const n = 6
+	codes := make(chan int, n)
+	start := make(chan struct{})
+	for i := 0; i < n; i++ {
+		go func() {
+			<-start
+			status, _, _ := rb.parent.call(http.MethodPost, "/rewards/requests/"+id+"/confirm", nil)
+			codes <- status
+		}()
+	}
+	close(start)
+	ok, conflict := 0, 0
+	for i := 0; i < n; i++ {
+		switch s := <-codes; s {
+		case http.StatusOK:
+			ok++
+		case http.StatusConflict:
+			conflict++
+		default:
+			t.Errorf("unexpected status %d", s)
+		}
+	}
+	if ok != 1 || conflict != n-1 {
+		t.Fatalf("%d confirmed, %d conflicts; want 1 and %d", ok, conflict, n-1)
+	}
+	if got := rb.balance(t, rb.sebastianID); got != 4 {
+		t.Fatalf("balance = %v, want 4", got)
+	}
+}

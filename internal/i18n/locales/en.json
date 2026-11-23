@@ -3872,7 +3872,7 @@
   "flash.rwd_declined": "Declined: <b>“{reward}”</b> for {name}. {name} keeps the stars.",
   "rwd.link.asked": "You asked for “{reward}”. Waiting for {parents}.",
   "rwd.redeem.title": "Redeem for someone now",
-  "rwd.redeem.sum": "without a request, for example when you are just off to the cinema",
+  "rwd.redeem.sum": "without a request, for example right at the cinema counter",
   "rwd.redeem.who": "For whom?",
   "rwd.redeem.chip.ok": "{have}, then {after}",
   "rwd.redeem.chip.asked": "; has already asked",

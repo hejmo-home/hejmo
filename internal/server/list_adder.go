@@ -322,19 +322,25 @@ func (c *itemCtx) suggest(es []list.Entry, typed, mode string) suggView {
 			offered = append(offered, it.Article)
 		}
 	}
-	typedVariety := ""
-	if a, rest, ok := library.LeadingName(typed, offered); ok { // "Mehl Type 405": the article and its variety
-		shown, typedVariety = []articleItem{byID[a.ID]}, rest
-	} else {
-		for _, a := range library.Complete(typed, all, 200) {
-			it := byID[a.ID]
-			switch sg := c.st.suggestion(it); {
-			case sg.Suggested:
-				if len(shown) < maxSuggestions {
-					shown = append(shown, it)
-				}
-			case sg.Reason == library.ReasonAllergy:
-				hidden = append(hidden, it)
+	for _, a := range library.Complete(typed, all, 200) {
+		it := byID[a.ID]
+		switch sg := c.st.suggestion(it); {
+		case sg.Suggested:
+			if len(shown) < maxSuggestions {
+				shown = append(shown, it)
+			}
+		case sg.Reason == library.ReasonAllergy:
+			hidden = append(hidden, it)
+		}
+	}
+	// "Mehl Type 405": the article and its variety, after the articles the text
+	// completes, and never when the whole text is an article's name.
+	lead, typedVariety := articleItem{}, ""
+	if _, named := library.Resolve(typed, all); !named {
+		if a, rest, ok := library.LeadingName(typed, offered); ok {
+			lead, typedVariety = byID[a.ID], rest
+			if !slices.ContainsFunc(shown, func(it articleItem) bool { return it.ID == lead.ID }) {
+				shown = append(shown, lead)
 			}
 		}
 	}
@@ -357,7 +363,7 @@ func (c *itemCtx) suggest(es []list.Entry, typed, mode string) suggView {
 	for _, it := range shown {
 		known := c.varieties(it.ID)
 		slices.SortStableFunc(known, func(a, b string) int { return onListRank(es, it.ID, a) - onListRank(es, it.ID, b) })
-		if typedVariety != "" {
+		if typedVariety != "" && it.ID == lead.ID {
 			r := row(it, typedVariety)
 			key := "lq.var.sub.new"
 			if slices.ContainsFunc(known, func(k string) bool { return list.VarietyKey(k) == list.VarietyKey(typedVariety) }) {
@@ -368,7 +374,7 @@ func (c *itemCtx) suggest(es []list.Entry, typed, mode string) suggView {
 		}
 		rows = append(rows, row(it, ""))
 		for _, k := range known {
-			if typedVariety != "" && list.VarietyKey(k) == list.VarietyKey(typedVariety) {
+			if typedVariety != "" && it.ID == lead.ID && list.VarietyKey(k) == list.VarietyKey(typedVariety) {
 				continue
 			}
 			r := row(it, k)

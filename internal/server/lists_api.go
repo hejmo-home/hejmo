@@ -367,7 +367,11 @@ func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	if !l.Suggestions {
-		writeFieldError(w, http.StatusUnprocessableEntity, "amount", "this list has no quantities")
+		field := "amount"
+		if in.Amount == nil {
+			field = "variety" // only the variety was sent
+		}
+		writeFieldError(w, http.StatusUnprocessableEntity, field, "this list has no quantities")
 		return
 	}
 	var variety *string // nil: the variety stays

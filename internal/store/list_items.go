@@ -228,7 +228,9 @@ func (db *DB) ChangeEntry(householdID, listID, entryID string, to list.Quantity,
 // ArticleVarieties are the varieties the household used for an article, newest
 // first, each once (ignoring case, spaces and umlauts), at most limit: from
 // the entries of all its lists, open and ticked off. Nothing is stored for
-// this; a variety goes away with the last entry that has it.
+// this; a variety goes away with the last entry that has it. "Newest" is the
+// entry that was made last: a variety set on an older entry later (PATCH or
+// the editor) keeps the rank of that entry.
 func (db *DB) ArticleVarieties(householdID, articleID string, limit int) ([]string, error) {
 	rows, err := db.sql.Query(`SELECT e.variety FROM list_entries e JOIN lists l ON l.id = e.list_id
 		WHERE l.household_id = ? AND e.article_id = ? AND e.variety IS NOT NULL ORDER BY e.created_at DESC, e.rowid DESC`, householdID, articleID)

@@ -430,3 +430,30 @@ func TestTypedPluralsNameTheArticleOverTheAPI(t *testing.T) {
 		t.Errorf("%d %v", status, e)
 	}
 }
+
+// A German plural is not folded onto an English name: "Beeren" is not "Beer".
+func TestAGermanPluralDoesNotTurnIntoAnEnglishArticleOverTheAPI(t *testing.T) {
+	lb := newListBox(t)
+	id := lb.shopList(t)
+	status, e := lb.add(t, id, map[string]any{"text": "Beeren"})
+	if status != http.StatusCreated || e["article_id"] != nil && e["article_id"] != "" {
+		t.Fatalf("free text: %d %v", status, e)
+	}
+}
+
+func TestPatchingOnlyTheVarietyOfAListWithoutSuggestionsNamesTheVarietyField(t *testing.T) {
+	lb := newListBox(t)
+	id := lb.shopList(t)
+	eid := lb.addEntry(t, id, "Mehl")
+	lb.parent.call(http.MethodPatch, "/lists/"+id, map[string]any{"suggestions": false})
+	for body, field := range map[string]string{`variety`: "variety", `amount`: "amount"} {
+		req := map[string]any{body: "Type 405"}
+		if body == "amount" {
+			req = map[string]any{"amount": 2, "unit": "piece"}
+		}
+		status, e, _ := lb.parent.call(http.MethodPatch, "/lists/"+id+"/entries/"+eid, req)
+		if status != http.StatusUnprocessableEntity || e["field"] != field {
+			t.Errorf("%s: %d %v", body, status, e)
+		}
+	}
+}

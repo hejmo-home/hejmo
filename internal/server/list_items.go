@@ -64,36 +64,26 @@ func (c *itemCtx) article(id string) (articleItem, bool) {
 	return c.st.item(id)
 }
 
-// byName finds the article a text names exactly (ignoring case and umlauts),
-// in German or English; own articles first, and never one a parent hid by hand.
+// byName finds the article a text names (ignoring case and umlauts, singular
+// or plural), in German or English; own articles first, and never one a
+// parent hid by hand.
 func (c *itemCtx) byName(text string) (articleItem, bool) {
-	n := library.Fold(text)
-	if n == "" {
-		return articleItem{}, false
-	}
-	var visible []articleItem
+	var visible []library.Article
+	byID := map[string]articleItem{}
 	for _, it := range c.st.items() {
 		if !it.handHidden {
-			visible = append(visible, it)
+			visible = append(visible, it.Article)
+			byID[it.ID] = it
 		}
 	}
-	for _, it := range visible { // the exact name first
-		if library.Fold(it.De) == n || library.Fold(it.En) == n {
-			return it, true
-		}
-	}
-	for _, it := range visible { // then singular or plural (ticket 277)
-		if library.SameName(it.De, text) || library.SameName(it.En, text) {
-			return it, true
-		}
-	}
-	return articleItem{}, false
+	a, ok := library.Resolve(text, visible)
+	return byID[a.ID], ok
 }
 
 // namesArticle reports whether the typed text still names the article: its
 // name in either language, singular or plural, or that name followed by a variety.
 func namesArticle(text string, it articleItem) bool {
-	if library.SameName(text, it.De) || library.SameName(text, it.En) {
+	if it.Named(text) {
 		return true
 	}
 	_, _, ok := library.LeadingName(text, []library.Article{it.Article})
@@ -206,7 +196,7 @@ func (c *itemCtx) resolve(in itemIn) (resolved, error) {
 	} else if it, ok := c.byName(text); ok {
 		art = &it
 	}
-	if art != nil && (in.ArticleID != "" || library.SameName(text, art.Name(c.lang))) {
+	if art != nil && (in.ArticleID != "" || library.SameName(text, art.Name(c.lang), library.Lang(c.lang))) {
 		text = art.Name(c.lang) // the name as the library writes it; a name typed in the other language stays as typed
 	}
 	if err := list.ValidateText(text); err != nil {

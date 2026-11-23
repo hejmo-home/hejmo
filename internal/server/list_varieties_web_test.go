@@ -4,9 +4,11 @@ import (
 	"net/http"
 	"net/url"
 	"regexp"
+	"slices"
 	"strings"
 	"testing"
 
+	"github.com/hejmo-home/hejmo/internal/library"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/unit"
@@ -392,5 +394,56 @@ func TestTheListOnTheArticlePageFindsAnEntryOfThePluralOrSingularName(t *testing
 	}
 	if body := s.de("/settings/lists/library/lemons").body; !strings.Contains(body, "Einkaufen") {
 		t.Errorf("the article page lists the list it stands on:\n%s", body)
+	}
+}
+
+// firstArticles are the articles of the suggestion rows, in order.
+func firstArticles(body string) []string {
+	var out []string
+	for _, m := range regexp.MustCompile(`data-article="([^"]+)"`).FindAllStringSubmatch(body, -1) {
+		out = append(out, m[1])
+	}
+	return out
+}
+
+func TestTypingAShippedNameOrAnyStartOfItStillSuggestsThatArticle(t *testing.T) {
+	s := newShop(t)
+	all := library.Shipped()
+	for _, a := range all {
+		for lang, name := range map[string]string{"en": a.En, "de": a.De} {
+			if !strings.ContainsAny(name, " ,·-:") {
+				continue // only names with a separator can be split into article and variety
+			}
+			rs := []rune(name)
+			for n := 2; n <= len(rs); n++ {
+				typed := strings.TrimSpace(string(rs[:n]))
+				path := s.path("/suggest?q=" + url.QueryEscape(typed) + "&mode=quick")
+				body := s.en(path).body
+				if lang == "de" {
+					body = s.de(path).body
+				}
+				got := firstArticles(body)
+				want := library.Complete(typed, all, 1)
+				if len(want) == 0 {
+					continue
+				}
+				if len(got) == 0 || got[0] != want[0].ID {
+					t.Fatalf("%q suggests %v first, not %s", typed, got, want[0].ID)
+				}
+				if n == len(rs) && !slices.Contains(got, a.ID) {
+					t.Fatalf("the whole name %q does not suggest %s: %v", typed, a.ID, got)
+				}
+			}
+		}
+	}
+}
+
+func TestTypingTheNameOfAnArticleThatStartsWithAnotherOneAddsNoMadeUpVariety(t *testing.T) {
+	s := newShop(t)
+	for _, typed := range []string{"Milk chocolate", "Apple juice", "Sesame seeds", "Berries (frozen)"} {
+		body := s.en(s.path("/suggest?q=" + url.QueryEscape(typed) + "&mode=quick")).body
+		if strings.Contains(body, `class="variety"`) && strings.Contains(body, "New variety of") {
+			t.Errorf("%q: a variety was made up:\n%s", typed, body)
+		}
 	}
 }

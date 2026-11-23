@@ -250,7 +250,9 @@ func (s *server) listsWith(p principal, name string, includeDone bool) ([]listLi
 		if err != nil {
 			return nil, err
 		}
-		if slices.ContainsFunc(es, func(e list.Entry) bool { return (includeDone || !e.Done) && library.SameName(e.Text, name) }) {
+		if slices.ContainsFunc(es, func(e list.Entry) bool {
+			return (includeDone || !e.Done) && library.Article{De: name, En: name}.Named(e.Text)
+		}) {
 			out = append(out, listLink{l.ID, l.Name})
 		}
 	}

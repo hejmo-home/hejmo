@@ -153,3 +153,57 @@ func TestReleaseRunScriptsDoNotInterpolateRefName(t *testing.T) {
 		}
 	}
 }
+
+// Ticket 221: a published version also carries one update file per
+// architecture, for boxes in offline mode. The workflow builds them from the
+// image it signed, signs the manifest with the same identity, checks the file
+// as the box and the host script will, and attaches it to the release.
+func TestReleaseBuildsSignedUpdateFilesForPublishedVersionsOnly(t *testing.T) {
+	doc, raw := load(t, "release.yml")
+	jobs := doc["jobs"].(map[string]any)
+	job, ok := jobs["update-files"].(map[string]any)
+	if !ok {
+		t.Fatal("release.yml has no job update-files")
+	}
+	if !strings.Contains(job["if"].(string), "contains(github.ref, '-')") {
+		t.Errorf("update files are for published versions only, if = %v", job["if"])
+	}
+	perms := job["permissions"].(map[string]any)
+	if perms["id-token"] != "write" || perms["contents"] != "read" {
+		t.Errorf("the job signs keyless and writes nothing else: %v", perms)
+	}
+	var arches []string
+	for _, a := range job["strategy"].(map[string]any)["matrix"].(map[string]any)["arch"].([]any) {
+		arches = append(arches, a.(string))
+	}
+	if len(arches) != 2 || arches[0] != "arm64" || arches[1] != "amd64" {
+		t.Errorf("matrix = %v, want both architectures", arches)
+	}
+	for _, want := range []string{
+		"cosign-release: v2.5.3",                           // the version the host script checks with
+		"cosign sign-blob --yes --new-bundle-format",       // keyless, in the format both checks read
+		"cosign verify-blob",                               // the pipeline checks its own signature as the host script will
+		"--trusted-root internal/update/trusted_root.json", // with the root the install script keeps
+		"go run ./tools/mkupdate check",                    // and as the box does
+		"skopeo copy --override-os linux --override-arch",  // the image of that architecture, from the signed digest
+		"hejmo-$VERSION-$ARCH.update",                      // the name the page tells parents to download
+	} {
+		if !strings.Contains(raw, want) {
+			t.Errorf("release.yml lacks %q", want)
+		}
+	}
+	notes := jobs["notes"].(map[string]any)
+	needs := strs(notes["needs"])
+	if len(needs) != 2 || needs[0] != "image" || needs[1] != "update-files" {
+		t.Errorf("the release waits for the update files: needs = %v", needs)
+	}
+	if !strings.Contains(raw, "$flags $files") {
+		t.Error("the release does not carry the update files")
+	}
+	// The signer of the update files is the signer of the image: one identity to trust.
+	for _, name := range []string{"image", "update-files"} {
+		if p, _ := jobs[name].(map[string]any)["permissions"].(map[string]any); p["id-token"] != "write" {
+			t.Errorf("job %s does not sign", name)
+		}
+	}
+}

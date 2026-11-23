@@ -57,7 +57,7 @@ func newBox(t *testing.T) *box {
 	t.Helper()
 	b := &box{t: t, root: t.TempDir(), bin: t.TempDir(), state: t.TempDir()}
 	tools := t.TempDir()
-	for _, n := range []string{"bash", "env", "sh", "mkdir", "cat", "cmp", "mv", "rm", "cp", "chmod", "sed", "awk", "grep", "date", "tr", "dirname", "mktemp", "install", "tee", "head", "cut", "touch", "printf", "ls", "test", "ln", "wc"} {
+	for _, n := range []string{"bash", "env", "sh", "mkdir", "cat", "cmp", "mv", "rm", "cp", "chmod", "sed", "awk", "grep", "date", "tr", "dirname", "mktemp", "install", "tee", "head", "cut", "touch", "printf", "ls", "test", "ln", "wc", "tar", "sort", "sha256sum", "shasum"} {
 		if p, err := exec.LookPath(n); err == nil {
 			_ = os.Symlink(p, filepath.Join(tools, n))
 		}

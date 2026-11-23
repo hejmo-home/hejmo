@@ -47,7 +47,12 @@ func (s *server) outboundBox() store.OutboundBox {
 // writeUpdateSettings tells the host script the household's mode, and to stay
 // offline while offline mode is on or the update check is switched off.
 func (s *server) writeUpdateSettings(mode store.UpdateMode) {
-	if err := update.WriteState(s.updateDir, string(mode), !s.gate.Allowed(outbound.Update)); err != nil {
+	st := update.Settings{Mode: string(mode), Offline: !s.gate.Allowed(outbound.Update)}
+	// A parent's yes to an uploaded file stays in the file until the installation is over (ticket 221).
+	if u, ok, err := s.db.UpdateUpload(); err == nil && ok && u.State == store.UploadInstalling {
+		st.Install = &update.Install{Version: u.Version, SHA256: u.SHA256, Time: u.StartedAt}
+	}
+	if err := update.Write(s.updateDir, st); err != nil {
 		s.logger.Error("write update settings", "err", err)
 	}
 }
@@ -458,6 +463,8 @@ func (s *server) homeNote(r *http.Request, person store.Person) *offlineNote {
 // than the chosen days without an update (Q145).
 type staleUpdate struct {
 	Lead, Text, Link, GuideURL string
+	// Upload is the page that takes an update file; set when a host script can install one (ticket 221), and then it replaces the guide.
+	Upload, UploadLink string
 }
 
 func (s *server) staleUpdate(r *http.Request, person store.Person, h store.Household) *staleUpdate {
@@ -488,5 +495,8 @@ func (s *server) staleUpdate(r *http.Request, person store.Person, h store.House
 	}
 	u.Text = s.i18n.Format(lang, i18n.Msg(key, "version", st.Version, "date", date))
 	u.Link = s.i18n.T(lang, "outside.updates.guide")
+	if s.uploadsPossible() {
+		u.Upload, u.UploadLink = uploadPagePath, s.i18n.T(lang, "updf.entry.button")
+	}
 	return u
 }

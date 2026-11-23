@@ -74,18 +74,18 @@ The CA is name-constrained to the box, so it cannot vouch for other websites. Th
 
 ## Away from home: WireGuard with the FRITZ!Box
 
-The box lives in your home network, so a personal device away from home does not reach it by itself. A VPN puts the device back into the home network; with a FRITZ!Box you need no extra service for that, because FRITZ!OS 7.50 and newer has WireGuard built in. Nothing of this goes through Hejmo: the VPN connects your phone to your router only.
+The box lives in your home network, so a personal device away from home does not reach it by itself. A VPN puts the device back into the home network; with a FRITZ!Box you need no extra service for that, because FRITZ!OS 7.50 and newer has WireGuard built in. Nothing of this goes through Hejmo: the VPN connects your device to your router only.
 
 You need:
 
 - A FRITZ!Box with FRITZ!OS 7.50 or newer that can be reached from the internet.
 - The WireGuard app on the device: [App Store](https://apps.apple.com/app/wireguard/id1441195209) (iPhone, iPad), [Google Play](https://play.google.com/store/apps/details?id=com.wireguard.android) (Android), other systems at [wireguard.com/install](https://www.wireguard.com/install/).
 
-**Shared address (DS-Lite, CGNAT)?** Many providers share one IPv4 address between customers, and then nothing reaches your FRITZ!Box from outside over IPv4. You recognise it in the FRITZ!Box under **Internet**, **Online Monitor**: it shows a DS-Lite tunnel, or the IPv4 address starts in the range 100.64.0.0/10 (100.64.x.x to 100.127.x.x). The VPN often still works over IPv6 when the mobile network of the phone offers it; then you need to do nothing more. Otherwise ask your provider for a public IPv4 address.
+**Shared address (DS-Lite, CGNAT)?** Many providers share one IPv4 address between customers, and then nothing reaches your FRITZ!Box from outside over IPv4. You recognise it in the FRITZ!Box under **Internet**, **Online Monitor**: it shows a DS-Lite tunnel, or the IPv4 address starts in the range 100.64.0.0/10 (100.64.x.x to 100.127.x.x). The VPN often still works over IPv6 when the mobile network of the device offers it; then you need to do nothing more. Otherwise ask your provider for a public IPv4 address.
 
 Set it up (about 10 minutes, once per device, at home):
 
-1. Open the FRITZ!Box at [http://fritz.box](http://fritz.box) and go to **Internet**, **Permit Access**, **VPN (WireGuard)**. Add a connection and choose to connect a single device to the home network. Give it a name such as "Mama's device". The FRITZ!Box offers a free MyFRITZ address so the phone finds it when your home address changes; accept it.
+1. Open the FRITZ!Box at [http://fritz.box](http://fritz.box) and go to **Internet**, **Permit Access**, **VPN (WireGuard)**. Add a connection and choose to connect a single device to the home network. Give it a name such as "Mama's device". The FRITZ!Box offers a free MyFRITZ address so the device finds it when your home address changes; accept it.
 2. The FRITZ!Box shows a QR code. In the WireGuard app on the device add a tunnel by scanning it.
 3. Switch the tunnel on, away from home or on mobile data, and open the box under its address in the home network (the page **Settings**, **Secure connection** shows it).
 

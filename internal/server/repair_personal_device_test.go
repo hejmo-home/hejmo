@@ -43,7 +43,7 @@ func TestChildsPersonalDevicePageOffersPairingForAnotherPersonInOneConfirmation(
 	body := getEN(f.b, "/personal-devices/"+f.personalDeviceID).body
 	for _, want := range []string{
 		`<details class="repair">`, "<b>Pair for another person</b>", `action="` + f.repairAction + `"`,
-		"Who is the personal device for now?",
+		"Who is the device for now?",
 		"<b>Sebastian</b> is signed out on “Sebastians Handy” at once. Until you pair it again, it works for nobody.",
 		"Sebastian’s events, tasks and stars stay as they are.",
 		"Yes, pair “Sebastians Handy” again", "No, change nothing",
@@ -54,7 +54,7 @@ func TestChildsPersonalDevicePageOffersPairingForAnotherPersonInOneConfirmation(
 		}
 	}
 	// The #197 hint sits at the action, once, and says why the child cannot do it.
-	if n := strings.Count(body, "Sebastian cannot sign out on this personal device."); n != 1 {
+	if n := strings.Count(body, "Sebastian cannot sign out on this device."); n != 1 {
 		t.Errorf("hint for parents appears %d times, want once", n)
 	}
 	if strings.Contains(body, "remove it here and pair it again") {
@@ -98,7 +98,7 @@ func TestRepairWithoutAPersonChangesNothingAndSaysSo(t *testing.T) {
 	if r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("repair without a person = %d, want 422\n%s", r.status, r.body)
 	}
-	for _, want := range []string{`<details class="repair" open>`, `id="err-person"`, "Please choose who the personal device is for now. Nothing has changed yet."} {
+	for _, want := range []string{`<details class="repair" open>`, `id="err-person"`, "Please choose who the device is for now. Nothing has changed yet."} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("error page lacks %q\n%s", want, r.body)
 		}
@@ -136,15 +136,15 @@ func TestRepairEndsTheOldSessionAndShowsTheNewCodeForThePerson(t *testing.T) {
 	}
 	for _, want := range []string{
 		`data-success`, "“Sebastians Handy” is signed out. Scan the code now.",
-		`<section class="once"`, "Scan this code with the camera of the personal device that used to be called “Sebastians Handy”.",
+		`<section class="once"`, "Scan this code with the camera of the device that used to be called “Sebastians Handy”.",
 		"Afterwards it is for", `data-person="`, ">Mia<", `data-join-url=`, "Works once, until",
-		"Check for the personal device",
+		"Check for the device",
 	} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("answer lacks %q\n%s", want, r.body)
 		}
 	}
-	// One main action: no "Add a personal device" while the code is shown, and the old personal device is gone.
+	// One main action: no "Add a device" while the code is shown, and the old personal device is gone.
 	for _, gone := range []string{"Show QR code", "/personal-devices/" + f.personalDeviceID} {
 		if strings.Contains(r.body, gone) {
 			t.Errorf("answer still has %q", gone)

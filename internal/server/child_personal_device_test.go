@@ -199,7 +199,7 @@ func TestParentsSeeHowToHandAPersonalDeviceOnOrSwitchThePerson(t *testing.T) {
 	}
 	for path, wants := range map[string]map[string]string{
 		"/personal-devices":         {"en": "Tap a device to remove it or pair it for another person.", "de": "Tippe auf ein Gerät, um es zu entfernen oder für eine andere Person zu koppeln."},
-		"/personal-devices/" + m[1]: {"en": "Does someone else get this personal device? Pair it again in one step here. Mia cannot sign out on this personal device.", "de": "Bekommt jemand anderes dieses Gerät? Hier koppelst du es in einem Schritt neu. Mia kann sich auf dem Gerät nicht selbst abmelden."},
+		"/personal-devices/" + m[1]: {"en": "Does someone else get this device? Pair it again in one step here. Mia cannot sign out on this device.", "de": "Bekommt jemand anderes dieses Gerät? Hier koppelst du es in einem Schritt neu. Mia kann sich auf dem Gerät nicht selbst abmelden."},
 	} {
 		for lang, want := range wants {
 			r := b.do(http.MethodGet, path, nil, map[string]string{"Accept-Language": lang})

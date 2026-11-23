@@ -40,7 +40,7 @@ func TestPersonalDeviceDetailShowsFactsInWordsAndConfirmsRemovingByName(t *testi
 		name := strings.ReplaceAll(ph.Name, "'", "&#39;")
 		for _, want := range []string{
 			`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/personal-devices">Personal devices</a>`, "<h1>" + name + "</h1>", "<dt>For</dt>", "<dt>Allowed</dt>", rights[ph.Name],
-			"<dt>Paired on</dt>", "<dt>Last seen</dt>", `<details class="danger">`, "Remove personal device", `action="/personal-devices/` + ph.ID + `/revoke"`,
+			"<dt>Paired on</dt>", "<dt>Last seen</dt>", `<details class="danger">`, "Remove device", `action="/personal-devices/` + ph.ID + `/revoke"`,
 			"Yes, remove “" + name + "”", "No, change nothing",
 		} {
 			if !strings.Contains(r.body, want) {

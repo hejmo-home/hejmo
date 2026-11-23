@@ -298,7 +298,7 @@ func TestOnlyParentsSeeThePersonalDevicesScreen(t *testing.T) {
 func TestPersonalDevicesScreenIsTranslated(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	for lang, want := range map[string]string{"en": "Add a personal device", "de": "Gerät hinzufügen"} {
+	for lang, want := range map[string]string{"en": "Add a device", "de": "Gerät hinzufügen"} {
 		r := b.do(http.MethodGet, "/personal-devices", nil, map[string]string{"Accept-Language": lang})
 		if r.status != http.StatusOK || !strings.Contains(r.body, want) {
 			t.Errorf("%s: personal devices screen misses %q (%d)", lang, want, r.status)

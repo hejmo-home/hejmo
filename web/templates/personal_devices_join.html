@@ -5,6 +5,7 @@
     <p class="lead">{{t "personal_devices.join.waiting.text"}}</p>
     <p>{{t "personal_devices.verify.personal_device"}} <strong class="verification" data-verification="{{.Verification}}">{{.Verification}}</strong></p>
   </div>
+  <script src="/static/screen-kind.js" defer></script>
 {{else}}{{template "head" (dict "Lang" .Lang "Title" (t "personal_devices.join.refused.title") "Frame" .Frame)}}
   <div data-state="refused">
     <h1>{{t "personal_devices.join.refused.title"}}</h1>

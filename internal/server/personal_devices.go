@@ -22,6 +22,8 @@ const (
 	// pairingCookie holds a personal device's own claim on a pairing code while it waits
 	// for a parent's confirmation. The box keeps only its hash.
 	pairingCookie = "hejmo_pairing"
+	// touchCookie is set by the pairing page's script when the device has a touch screen.
+	touchCookie = "hejmo_touch"
 	// personalDevicePollSeconds is how often a waiting personal device asks whether a parent
 	// confirmed.
 	personalDevicePollSeconds = 3
@@ -417,7 +419,7 @@ func (s *server) handlePersonalDeviceJoin(w http.ResponseWriter, r *http.Request
 	refuse := func() {
 		s.render(w, r, http.StatusGone, "personal_devices_join.html", map[string]any{"State": "refused"})
 	}
-	if err := s.db.JoinPersonalDevicePairing(codeHash, claimHash, deviceLabel(r.UserAgent()), s.now()); err != nil {
+	if err := s.db.JoinPersonalDevicePairing(codeHash, claimHash, deviceLabel(r.UserAgent(), touchScreen(r)), s.now()); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			refuse()
 		} else {
@@ -484,9 +486,16 @@ func verificationNumber(claimHash string) string {
 	return fmt.Sprintf("%03d %03d", n/1000, n%1000)
 }
 
+// touchScreen is whether the pairing page reported a touch screen (web/static/screen-kind.js).
+func touchScreen(r *http.Request) bool {
+	c, err := r.Cookie(touchCookie)
+	return err == nil && c.Value == "1"
+}
+
 // deviceLabel names a personal device for the parent from its User-Agent, for example
-// "Safari on iPhone". It only helps a parent tell personal devices apart.
-func deviceLabel(ua string) string {
+// "Safari on iPhone". It only helps a parent tell personal devices apart. A Mac user agent with a
+// touch screen is an iPad, which has sent the user agent of a Mac since iPadOS 13.
+func deviceLabel(ua string, touch bool) string {
 	has := func(subs ...string) bool {
 		for _, sub := range subs {
 			if strings.Contains(ua, sub) {
@@ -512,7 +521,7 @@ func deviceLabel(ua string) string {
 	switch {
 	case has("iPhone"):
 		device = deviceIPhone
-	case has("iPad"):
+	case has("iPad"), has("Macintosh") && touch:
 		device = deviceIPad
 	case has("Android") && has("Mobile"):
 		device = deviceAndroidPhone

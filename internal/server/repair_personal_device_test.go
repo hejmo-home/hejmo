@@ -1,6 +1,7 @@
 package server_test
 
 import (
+	"io"
 	"net/http"
 	"net/url"
 	"regexp"
@@ -247,6 +248,39 @@ func TestPersonalDeviceNameFollowsTheKindOfDeviceAndTheLanguagesRuleForTheOwner(
 		}
 		if page := f.b.do(http.MethodGet, "/personal-devices", nil, map[string]string{"Accept-Language": "de"}).body; !strings.Contains(page, `value="`+tc.de+`"`) {
 			t.Errorf("%s: German name is not %q", tc.kind, tc.de)
+		}
+	}
+}
+
+// Q148 (#203): since iPadOS 13 Safari and Chrome on an iPad send the user agent of a Mac. The
+// join page then reports a touch screen (a cookie its script sets), and a Mac with a touch
+// screen is an iPad: a tablet. A Mac without one stays a device of unknown kind.
+func TestAnIPadThatSendsTheUserAgentOfAMacIsATablet(t *testing.T) {
+	t.Parallel()
+	const macUA = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/19.0 Safari/605.1.15"
+	for _, tc := range []struct{ name, cookie, want string }{
+		{"touch screen", "hejmo_touch=1", "Max’s tablet"},
+		{"no touch screen", "", "Max’s device"},
+	} {
+		f := newRepairFixture(t)
+		who := personNamed(t, f.b, "Max")
+		path := joinPath(t, f.b.post(f.repairAction, url.Values{"person": {who.ID}}).body)
+		req, _ := http.NewRequest(http.MethodGet, f.b.srv.URL+path, nil)
+		req.Header.Set("User-Agent", macUA)
+		if tc.cookie != "" {
+			req.Header.Set("Cookie", tc.cookie)
+		}
+		res, err := f.b.trustingClient().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		page, _ := io.ReadAll(res.Body)
+		res.Body.Close()
+		if !strings.Contains(string(page), `<script src="/static/screen-kind.js"`) {
+			t.Errorf("%s: the join page does not load the script that reports the screen", tc.name)
+		}
+		if got := getEN(f.b, "/personal-devices").body; !strings.Contains(got, `value="`+tc.want+`"`) {
+			t.Errorf("%s: the name is not %q", tc.name, tc.want)
 		}
 	}
 }

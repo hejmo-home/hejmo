@@ -1303,7 +1303,7 @@ func (f *layoutFixture) addRewards(t *testing.T) []string {
 	}
 	redeem := func(id, person string) {
 		t.Helper()
-		if _, err := db.SQL().Exec(`INSERT INTO reward_redemptions (id, reward_id, person_id, status, price, requested_at, decided_at) VALUES (lower(hex(randomblob(8))), ?, ?, 'confirmed', 5, ?, ?)`, id, person, "2026-11-12T10:00:00Z", "2026-11-12T10:00:00Z"); err != nil {
+		if _, err := db.SQL().Exec(`INSERT INTO reward_redemptions (id, household_id, reward_id, person_id, status, price, requested_at, decided_at) SELECT lower(hex(randomblob(8))), household_id, id, ?, 'confirmed', 5, ?, ? FROM rewards WHERE id = ?`, person, "2026-11-12T10:00:00Z", "2026-11-12T10:00:00Z", id); err != nil {
 			t.Fatal(err)
 		}
 	}

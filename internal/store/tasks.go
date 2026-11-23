@@ -8,6 +8,7 @@ import (
 	"strings"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/reward"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
 
@@ -261,7 +262,15 @@ func setTaskDoneTx(tx *sql.Tx, t task.Task, day string, done bool, by string, at
 			if _, err := tx.Exec(`DELETE FROM task_done WHERE task_id = ? AND day = ?`, t.ID, day); err != nil {
 				return false, 0, err
 			}
-			changed, delta = true, -credited
+			bal, err := balanceOf(tx, t.PersonID)
+			if err != nil {
+				return false, 0, err
+			}
+			var below bool
+			if err := tx.QueryRow(`SELECT h.below_zero FROM households h JOIN tasks k ON k.household_id = h.id WHERE k.id = ?`, t.ID).Scan(&below); err != nil {
+				return false, 0, err
+			}
+			changed, delta = true, -reward.Deduction(credited, bal, below)
 		}
 	}
 	if delta != 0 {

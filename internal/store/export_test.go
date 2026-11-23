@@ -24,7 +24,7 @@ func (db *DB) ExecUnchecked(query string, args ...any) error {
 // a status and the time it was decided.
 func (db *DB) InsertRedemption(rewardID, personID, status string, at time.Time) error {
 	ts := at.UTC().Format(time.RFC3339)
-	_, err := db.sql.Exec(`INSERT INTO reward_redemptions (id, reward_id, person_id, status, price, requested_at, decided_at) VALUES (?, ?, ?, ?, 5, ?, ?)`,
-		newID(), rewardID, personID, status, ts, ts)
+	_, err := db.sql.Exec(`INSERT INTO reward_redemptions (id, household_id, reward_id, person_id, status, price, requested_at, decided_at) SELECT ?, household_id, id, ?, ?, 5, ?, ? FROM rewards WHERE id = ?`,
+		newID(), personID, status, ts, ts, rewardID)
 	return err
 }

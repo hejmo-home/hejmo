@@ -139,3 +139,51 @@ func (in Input) Validate() []FieldErr {
 	}
 	return errs
 }
+
+// Free is what a person may still ask for: the balance minus the stars set
+// aside for their other open requests, never below zero (ticket 292).
+func Free(balance, reserved int) int { return max(0, balance-reserved) }
+
+// Reason says why a person cannot redeem a reward now.
+type Reason string
+
+// The reasons, the first that applies.
+const (
+	NoReason       Reason = ""
+	NotEnoughStars Reason = "stars"
+	LimitReached   Reason = "limit"
+)
+
+// Check is the answer of CanRedeem.
+type Check struct {
+	Reason Reason
+	// Missing is the number of stars still missing with NotEnoughStars.
+	Missing int
+	// AvailableAgain is the start of the next period with LimitReached.
+	AvailableAgain time.Time
+}
+
+// OK reports that the person can redeem.
+func (c Check) OK() bool { return c.Reason == NoReason }
+
+// CanRedeem checks a redemption: the balance must cover the price (redeeming
+// never takes it below zero) and the limit of the period must not be used up.
+// confirmed are the times of the person's confirmed redemptions of the reward.
+func CanRedeem(price, balance int, l Limit, confirmed []time.Time, now time.Time, loc *time.Location) Check {
+	if balance < price {
+		return Check{Reason: NotEnoughStars, Missing: price - balance}
+	}
+	if st := Evaluate(l, confirmed, now, loc); st.Reached {
+		return Check{Reason: LimitReached, AvailableAgain: st.AvailableAgain}
+	}
+	return Check{}
+}
+
+// Deduction is how many stars unticking a task takes back: all it credited,
+// or with below-zero switched off at most what the person has.
+func Deduction(credited, balance int, belowZero bool) int {
+	if belowZero {
+		return credited
+	}
+	return min(credited, max(0, balance))
+}

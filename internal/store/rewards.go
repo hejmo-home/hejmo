@@ -343,9 +343,20 @@ func (db *DB) UpdateReward(householdID string, r Reward, change PictureChange, p
 // ArchiveReward hides a reward from children; redemptions stay in the star logs.
 // Archiving an archived reward changes nothing.
 func (db *DB) ArchiveReward(householdID, id string, at time.Time) (Reward, error) {
-	res, err := db.sql.Exec(`UPDATE rewards SET archived_at = COALESCE(archived_at, ?), updated_at = ? WHERE household_id = ? AND id = ?`,
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return Reward{}, err
+	}
+	defer tx.Rollback()
+	res, err := tx.Exec(`UPDATE rewards SET archived_at = COALESCE(archived_at, ?), updated_at = ? WHERE household_id = ? AND id = ?`,
 		at.UTC().Format(time.RFC3339), now(), householdID, id)
 	if err := expectOne(res, err); err != nil {
+		return Reward{}, err
+	}
+	if err := declineOpenOfReward(tx, id, at); err != nil { // the child sees "this reward is gone"; the stars stay (ticket 292)
+		return Reward{}, err
+	}
+	if err := tx.Commit(); err != nil {
 		return Reward{}, err
 	}
 	return db.Reward(householdID, id)
@@ -411,6 +422,9 @@ func (db *DB) DeleteReward(householdID, id string) error {
 	}
 	if n > 0 {
 		return ErrRedeemed
+	}
+	if err := declineOpenOfReward(tx, id, time.Now()); err != nil {
+		return err
 	}
 	res, err := tx.Exec(`DELETE FROM rewards WHERE household_id = ? AND id = ?`, householdID, id)
 	if err := expectOne(res, err); err != nil {

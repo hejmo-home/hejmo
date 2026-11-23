@@ -13,6 +13,7 @@ var (
 	crumbSettings = crumb{"/settings", "nav.settings", ""}
 	crumbMeals    = crumb{"/meals", "nav.meals", ""}
 	crumbTasks    = crumb{"/tasks", "nav.tasks", ""}
+	crumbRewards  = crumb{"/tasks/rewards", "rwd.title", ""}
 
 	crumbConnections     = crumb{"/calendars", "hub.connections", ""}
 	crumbConnect         = crumb{"/connections/new", "connect.title", ""}
@@ -58,6 +59,7 @@ var crumbTrails = map[string][]crumb{
 	"pause.html":            {crumbTasks},
 	"meal_template.html":    {crumbMeals, crumbMealTemplates},
 	"routine_template.html": {crumbTasks, crumbRoutineTemplates},
+	"reward_form.html":      {crumbTasks, crumbRewards}, "reward.html": {crumbTasks, crumbRewards},
 }
 
 // crumbsFor returns the parts above the page for a template, or nil when the

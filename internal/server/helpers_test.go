@@ -29,6 +29,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/server"
 	"github.com/hejmo-home/hejmo/internal/store"
 	"github.com/hejmo-home/hejmo/internal/store/storetest"
+	"github.com/hejmo-home/hejmo/internal/update/updatetest"
 	"github.com/hejmo-home/hejmo/internal/weather"
 )
 
@@ -56,6 +57,26 @@ type box struct {
 	kioskRun *server.KioskRunner
 	// later holds what the runner scheduled through After; runLater runs it.
 	later []func()
+	// sigstoreOnce makes the virtual Sigstore that signs the update files of a test (ticket 221) when one needs it.
+	sigstore *sigstoreHolder
+}
+
+type sigstoreHolder struct {
+	once sync.Once
+	sig  *updatetest.Sigstore
+}
+
+// sig is the Sigstore that signed the update files of this box's tests; the box trusts exactly this one.
+func (b *box) sig() *updatetest.Sigstore {
+	b.sigstore.once.Do(func() { b.sigstore.sig = updatetest.New(b.t) })
+	return b.sigstore.sig
+}
+
+// lazyVerifier checks update files against the box's test Sigstore, made when the first file arrives.
+type lazyVerifier struct{ b *box }
+
+func (v lazyVerifier) Verify(manifest, bundle []byte, version string) (string, error) {
+	return v.b.sig().Verifier(v.b.t).Verify(manifest, bundle, version)
 }
 
 // fakeMeteo stands in for Open-Meteo.
@@ -186,9 +207,13 @@ type boxOption func(*boxConfig)
 
 type boxConfig struct {
 	noHostUpdater bool
-	fetcher       *picture.Fetcher
-	kiosk         *fakeKiosk
-	resolver      server.NameResolver
+	// oldHostUpdater is a host script from before ticket 221: it manages the settings and status files but installs no uploaded file.
+	oldHostUpdater bool
+	freeSpace      func(string) (uint64, error)
+	maxUpdateSize  int64
+	fetcher        *picture.Fetcher
+	kiosk          *fakeKiosk
+	resolver       server.NameResolver
 }
 
 // withKiosk connects the box to a fake kiosk app (the fake FreeKiosk of the
@@ -201,6 +226,17 @@ func withResolver(r server.NameResolver) boxOption { return func(c *boxConfig) {
 // withFetcher makes the box download web images with this fetcher, which a test
 // lets reach its own server (the real one only reaches public addresses).
 func withFetcher(f *picture.Fetcher) boxOption { return func(c *boxConfig) { c.fetcher = f } }
+
+// withOldHostUpdater makes the box run beside a host script that cannot install an uploaded file.
+func withOldHostUpdater(c *boxConfig) { c.oldHostUpdater = true }
+
+// withFreeSpace makes the box see this much room on the data volume.
+func withFreeSpace(bytes uint64) boxOption {
+	return func(c *boxConfig) { c.freeSpace = func(string) (uint64, error) { return bytes, nil } }
+}
+
+// withMaxUpdateSize makes the box take update files of at most this many bytes.
+func withMaxUpdateSize(n int64) boxOption { return func(c *boxConfig) { c.maxUpdateSize = n } }
 
 // withoutHostUpdater makes the box run like a plain Docker Compose install,
 // without the host updater of ADR 0018.
@@ -241,7 +277,7 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 	if err != nil {
 		t.Fatal(err)
 	}
-	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), photoDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
+	b := &box{sigstore: &sigstoreHolder{}, t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), photoDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
 	now := func() time.Time {
 		if b.nowHook != nil {
 			_, file, _, _ := runtime.Caller(2) // the clock closure, householdNow, then the handler
@@ -271,7 +307,8 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 		kioskRun = server.NewKioskRunner(server.KioskOptions{DB: db, Factory: cfg.kiosk.factory(), Now: now, After: func(_ time.Duration, f func()) { b.later = append(b.later, f) }})
 		b.kioskRun = kioskRun
 	}
-	b.handler = server.New(server.Options{Kiosk: kioskRun, DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir, Resolver: cfg.resolver})
+	b.handler = server.New(server.Options{Kiosk: kioskRun, DB: db, PKI: certs, Public: b.public, Now: now, Sync: b.sync, Weather: b.weather, UpdateDir: updateDir, Pictures: cfg.fetcher, PhotoDir: b.photoDir, Resolver: cfg.resolver,
+		UpdateInstall: updateDir != "" && !cfg.oldHostUpdater, UpdateArch: "arm64", UpdateVerifier: lazyVerifier{b}, UpdateMaxSize: cfg.maxUpdateSize, FreeSpace: cfg.freeSpace})
 	b.srv = httptest.NewServer(b.handler)
 	t.Cleanup(func() { b.srv.Close() })
 	b.client = b.trustingClient()

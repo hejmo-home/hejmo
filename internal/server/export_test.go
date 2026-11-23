@@ -2,6 +2,7 @@ package server
 
 import (
 	"html/template"
+	"net/http"
 	"strings"
 	"testing"
 
@@ -62,3 +63,7 @@ func CountLanguageLookups(t *testing.T) func() int {
 
 // RelayUsable is relayUsable, for the test of where the relay page may go back to.
 func RelayUsable(origin string) bool { return relayUsable(origin) }
+
+// UploadNeedsHTTPS reports whether an upload request must be refused because
+// it did not arrive over TLS (ticket 221).
+func UploadNeedsHTTPS(r *http.Request) bool { return !uploadOverTLS(r) }

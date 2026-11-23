@@ -41,7 +41,7 @@ var states = map[State]bool{Installing: true, Idle: true, Available: true, Updat
 
 // Reasons are the fixed causes of a rollback, rejection or failure; the web
 // interface has a translated text for each.
-var Reasons = []string{"start_failed", "health_check_failed", "signature_invalid", "backup_failed", "pull_failed", "rollback_failed", "box_not_running", "file_invalid", "load_failed"}
+var Reasons = []string{"start_failed", "health_check_failed", "signature_invalid", "backup_failed", "pull_failed", "rollback_failed", "box_not_running", "file_invalid", "load_failed", "verifier_missing"}
 
 // Status is the script's report. Every field is empty if absent or invalid.
 type Status struct {
@@ -51,7 +51,9 @@ type Status struct {
 	Reason  string
 	// Step is where an installation of an uploaded file is: one of Steps.
 	Step string
-	Time string // RFC 3339 UTC; identifies the event, so a notice is shown once
+	// Backup is when the script finished saving the data before an installation (RFC 3339 UTC).
+	Backup string
+	Time   string // RFC 3339 UTC; identifies the event, so a notice is shown once
 	// Checked is when the script last looked for a new version (RFC 3339 UTC);
 	// it is the last contact of the update check (ticket 201).
 	Checked string
@@ -112,6 +114,10 @@ func ParseStatus(data []byte) Status {
 		case "reason":
 			if validReason(val) {
 				s.Reason = val
+			}
+		case "backup":
+			if _, err := time.Parse(time.RFC3339, val); err == nil && len(val) <= 25 {
+				s.Backup = val
 			}
 		case "step":
 			if validStep(val) {

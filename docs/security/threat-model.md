@@ -153,6 +153,26 @@ The host-side script (`hejmo-update`, installed by `install.sh`) runs as root on
 - **Threat:** auto-update becomes a way to change the host script.
 - **Check:** the script is updated only by re-running the install script, never by auto-update. `test:internal/install/update_test.go`
 
+### T31. A forged or foreign update file is installed through the web interface
+
+- **Threat:** a parent's device, a guest with a stolen session or a man in the middle uploads a file that looks like a release (a self-built image, a release of another project, an old signed one for the wrong box) and the box installs it.
+- **Check:** only parents, only over HTTPS, only in offline mode (the nightly check cannot be bypassed). The box checks the format, then the keyless cosign signature of the release workflow of exactly that version (certificate identity and issuer, certificate and log timestamps, all offline with sigstore-go against the Sigstore root built into the box), then the architecture, a published version newer than what runs, and that the image is the signed one by its SHA-256; a refused file is deleted at once. The host script, the only installer, checks the whole file again on its own with cosign (no network, the root kept in `/opt/hejmo`). `test:internal/update/file_test.go`, `test:internal/server/update_upload_test.go`, `test:internal/install/upload_test.go`, `test:internal/release/workflows_test.go`
+
+### T32. The uploaded file is used to run something on the host
+
+- **Threat:** the container, which a bad file or a compromised box controls, gets code executed as root by the host script, through the file, its name, a link or a setting.
+- **Check:** the box never opens or runs the file; it hands it over only through the settings file with fixed keys (`install` as a version, `install_sha256` as 64 hex digits, `install_time` as a time) that the script reads with exact patterns and never interpolates. The script copies the file out of the data volume first (a link is refused), checks the SHA-256 the box named, accepts exactly three members of an archive and extracts only those into a directory only root reaches (links and other members are refused), reads the manifest with fixed patterns and loads nothing that the signature and the SHA-256 do not cover. A request older than two hours, from the future, or answered already is ignored. The container still gets no Docker socket. `test:internal/install/upload_test.go`, `test:internal/update/update_test.go`
+
+### T33. An update file fills the disk or the box is left half installed
+
+- **Threat:** a huge or endless upload, or a file that waits for ever, fills the data volume; an installation that fails loses the family's data.
+- **Check:** at most 500 MB, refused before the first byte when the browser knows the size and again while it arrives; the box checks for room for two copies of the file and the backup before it takes the file; one file at a time for the whole box; a waiting file is deleted after an hour, an installation that reports nothing is given up after two; the host script saves the data first and goes back to the previous image and data when the new version does not start or answer. `test:internal/server/update_upload_test.go`, `test:internal/install/upload_test.go`
+
+### T34. The trusted root is stale or replaced
+
+- **Threat:** the Sigstore keys rotate and the box refuses every release, or a copy of the root on the box is swapped so that a foreign file passes.
+- **Check:** the root is part of the program of the box (embedded, no download) and of the install script (written next to the updater, changed only by running the script again); a test fails when the two differ. `tools/trustedroot` fetches it with the library's TUF client, which verifies every step from the root built into sigstore-go. The release pipeline checks every update file offline with both the host script's tool and the box's own library before it publishes. `test:internal/install/upload_test.go`, `test:internal/update/file_test.go`
+
 ## Accounts
 
 ### T22. An invitation link is guessed, intercepted or reused

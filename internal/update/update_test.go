@@ -179,3 +179,12 @@ func TestParseStatusReadsTheInstallStep(t *testing.T) {
 		}
 	}
 }
+
+func TestParseStatusReadsWhenTheDataWasSaved(t *testing.T) {
+	if got := update.ParseStatus([]byte("state=installing\nstep=start\nbackup=2026-11-23T21:04:31Z\n")); got.Backup != "2026-11-23T21:04:31Z" {
+		t.Errorf("backup = %q", got.Backup)
+	}
+	if got := update.ParseStatus([]byte("backup=later\n")); got.Backup != "" {
+		t.Errorf("accepted %q", got.Backup)
+	}
+}

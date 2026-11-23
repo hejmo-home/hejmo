@@ -59,7 +59,11 @@ func (s *server) handleUpdateDismiss(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "dismiss update notice", err)
 		return
 	}
-	http.Redirect(w, r, "/", http.StatusSeeOther)
+	to := "/"
+	if r.PostFormValue("back") == uploadPagePath { // the notice on the upload page stays on that page
+		to = uploadPagePath
+	}
+	http.Redirect(w, r, to, http.StatusSeeOther)
 }
 
 func (s *server) dismissUpdate(h store.Household) error {

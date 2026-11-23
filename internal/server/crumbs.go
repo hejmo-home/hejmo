@@ -23,6 +23,7 @@ var (
 	crumbLibrary         = crumb{"/settings/lists/library", "lib.title", ""}
 	crumbPersonalDevices = crumb{"/personal-devices", "hub.personal_devices", ""}
 	crumbOutside         = crumb{"/settings/connections", "hub.outside", ""}
+	crumbUpload          = crumb{uploadPagePath, "updf.title", ""}
 	crumbMCP             = crumb{"/mcp", "hub.mcp", ""}
 	crumbPeople          = crumb{"/people", "hub.people", ""}
 	crumbContacts        = crumb{"/contacts", "hub.contacts", ""}
@@ -43,6 +44,7 @@ var crumbTrails = map[string][]crumb{
 	"mcp.html": {crumbSettings}, "people.html": {crumbSettings}, "household.html": {crumbSettings}, "account.html": {crumbSettings}, "sessions.html": {crumbSettings},
 	"licences.html": {crumbSettings}, "connections_outside.html": {crumbSettings}, "https_settings.html": {crumbSettings},
 	"offline_on.html": {crumbSettings, crumbOutside}, "offline_off.html": {crumbSettings, crumbOutside},
+	"update_upload.html": {crumbSettings, crumbOutside}, "update_install.html": {crumbSettings, crumbOutside, crumbUpload},
 
 	"calendar_detail.html": {crumbSettings, crumbConnections}, "connection.html": {crumbSettings, crumbConnections}, "connection_paused.html": {crumbSettings, crumbConnections}, "connection_new.html": {crumbSettings, crumbConnections}, "google_signin.html": {crumbSettings, crumbConnections},
 	"library.html": {crumbSettings, crumbLists}, "always.html": {crumbSettings, crumbLists}, "article.html": {crumbSettings, crumbLists, crumbLibrary}, "article_form.html": {crumbSettings, crumbLists, crumbLibrary},

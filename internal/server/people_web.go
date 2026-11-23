@@ -252,8 +252,12 @@ func (s *server) renderPerson(w http.ResponseWriter, r *http.Request, p principa
 			form["Color"] = personColors[chip.Slot-1] // the colour the displays show for them
 		}
 	}
+	streaksShown := person.StreaksShown
+	if v, ok := form["Streaks"].(bool); ok {
+		streaksShown = v // a rejected form keeps the switch as the parent left it
+	}
 	data := map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role, "StreaksShown": person.StreaksShown,
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role, "StreaksShown": streaksShown,
 		"Form": form, "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
 	f, err := s.db.PersonFood(p.household.ID, person.ID)
@@ -320,7 +324,7 @@ func (s *server) handlePersonSave(w http.ResponseWriter, r *http.Request) {
 	field, key := checkLook(people, person.ID, &look, &person)
 	if field != "" {
 		s.renderPerson(w, r, p, http.StatusUnprocessableEntity, person, people, map[string]any{
-			"Name": strings.TrimSpace(r.PostFormValue("name")), "Color": look.Color, "Shape": look.Shape, "Error": key, "ErrorField": field,
+			"Name": strings.TrimSpace(r.PostFormValue("name")), "Color": look.Color, "Shape": look.Shape, "Streaks": r.PostFormValue("streaks") != "", "Error": key, "ErrorField": field,
 		})
 		return
 	}

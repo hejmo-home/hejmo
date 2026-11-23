@@ -427,6 +427,35 @@ func TestThePersonPageHasTheSwitchAndSavesIt(t *testing.T) {
 	}
 }
 
+func TestARejectedPersonFormKeepsTheSwitchTheParentSet(t *testing.T) {
+	t.Parallel()
+	w := newWeekBox(t)
+	mia := w.people["Mia"] // the switch is on for her
+	hdr := map[string]string{"Accept-Language": "en"}
+	checked := func(body string) bool {
+		i := strings.Index(body, `name="streaks"`)
+		if i < 0 {
+			t.Fatalf("no switch on the page:\n%s", body)
+		}
+		j := strings.Index(body[i:], ">")
+		return strings.Contains(body[i:i+j], "checked")
+	}
+	off := w.do(http.MethodPost, "/people/"+mia.ID, url.Values{"name": {""}}, hdr)
+	if off.status != http.StatusUnprocessableEntity {
+		t.Fatalf("empty name = %d, want 422\n%s", off.status, off.body)
+	}
+	if checked(off.body) {
+		t.Errorf("the parent switched it off, the 422 page shows it on")
+	}
+	on := w.do(http.MethodPost, "/people/"+mia.ID, url.Values{"name": {""}, "streaks": {"on"}}, hdr)
+	if on.status != http.StatusUnprocessableEntity || !checked(on.body) {
+		t.Errorf("422 with the switch on: status %d, checked %v", on.status, checked(on.body))
+	}
+	if got, _ := w.db.Person(w.householdID, mia.ID); !got.StreaksShown {
+		t.Error("a rejected form changed the stored switch")
+	}
+}
+
 func TestPersonsCreatedByRoleGetTheSwitchByRole(t *testing.T) {
 	t.Parallel()
 	f := newFamilyBox(t, "eink_color")

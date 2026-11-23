@@ -4234,7 +4234,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         from: { type: string, format: date, description: "First day, in the household's time zone" }
-        to: { type: string, format: date, description: "Last day, not before `from`, at most 366 days after it" }
+        to: { type: string, format: date, description: "Last day, not before `from`, at most 366 days long" }
         person_ids:
           type: array
           items: { type: string, format: uuid }

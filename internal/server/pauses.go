@@ -114,7 +114,8 @@ func (s *server) pauseRows(lang string, p principal, today string) (current, pas
 	return current, past, lastPast, nil
 }
 
-// pauseTitle names the page: new, or the change of a pause for names.
+// pauseFormData collects what the pause form shows: the people to pick from,
+// the pause being changed (nil for a new one) and the posted values with their error.
 func (s *server) pauseFormData(lang string, p principal, existing *streak.Pause, form map[string]any) (map[string]any, error) {
 	people, err := s.db.People(p.household.ID)
 	if err != nil {

@@ -49,6 +49,12 @@ type Reward struct {
 	CreatedAt   time.Time
 }
 
+// WholeHousehold reports a reward meant for everyone, also people who join
+// later. One archived because its people left is not: it needs a new audience.
+func (r Reward) WholeHousehold() bool {
+	return len(r.PersonIDs) == 0 && r.ArchivedReason != ArchivedAudienceGone
+}
+
 // Archived reports whether the reward is hidden from children.
 func (r Reward) Archived() bool { return !r.ArchivedAt.IsZero() }
 

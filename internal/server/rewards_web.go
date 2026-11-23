@@ -149,7 +149,7 @@ func (s *server) rewardRows(p principal, lang string, list []store.Reward, chips
 	rows := make([]rewardRow, 0, len(list))
 	for _, r := range list {
 		row := rewardRow{ID: r.ID, Name: r.Name, Symbol: r.Symbol, Picture: pictureOf(r), Price: s.starsWords(lang, r.Price), Limit: s.limitWords(lang, r.Limit),
-			Whole: len(r.PersonIDs) == 0 && r.ArchivedReason != store.ArchivedAudienceGone, Archived: r.Archived()}
+			Whole: r.WholeHousehold(), Archived: r.Archived()}
 		for _, id := range r.PersonIDs {
 			if c, ok := chips[id]; ok {
 				row.People = append(row.People, c)
@@ -481,7 +481,7 @@ func (s *server) renderRewardForm(w http.ResponseWriter, r *http.Request, p prin
 		}
 		data["CreatedText"] = created
 		data["PriceWords"], data["LimitWords"] = s.starsWords(lang, rw.Price), s.limitWords(lang, rw.Limit)
-		data["Whole"] = len(rw.PersonIDs) == 0 && rw.ArchivedReason != store.ArchivedAudienceGone
+		data["Whole"] = rw.WholeHousehold()
 		var who []personChip
 		for _, id := range rw.PersonIDs {
 			if c, ok := cm[id]; ok {

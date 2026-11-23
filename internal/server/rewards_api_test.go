@@ -210,6 +210,25 @@ func TestTheLimitCountsConfirmedRedemptionsPerPersonInTheCurrentWeek(t *testing.
 	}
 }
 
+func TestTheRedeemedCountStillIncludesRedemptionsOfAPersonWhoLeft(t *testing.T) {
+	t.Parallel()
+	rb := newRewardBox(t)
+	id := rb.create(t, map[string]any{"name": "Eis", "price": 3, "whole_family": true})["id"].(string)
+	rb.redeem(t, id, rb.miaID, "confirmed", rb.parent.b.now)
+	rb.redeem(t, id, rb.sebastianID, "confirmed", rb.parent.b.now)
+	if _, err := rb.parent.b.db.SQL().Exec(`DELETE FROM people WHERE id = ?`, rb.miaID); err != nil {
+		t.Fatal(err)
+	}
+	_, one, _ := rb.parent.call(http.MethodGet, "/rewards/"+id, nil)
+	if one["redeemed"] != float64(2) {
+		t.Errorf("redeemed after mia left = %v, want 2", one["redeemed"])
+	}
+	_, _, list := rb.parent.call(http.MethodGet, "/rewards", nil)
+	if len(list) != 1 || list[0].(map[string]any)["redeemed"] != float64(2) {
+		t.Errorf("list = %v, want redeemed 2", list)
+	}
+}
+
 // Acceptance: a reward that was ever redeemed is archived, not deleted (Y).
 func TestARedeemedRewardIsRefusedDeletionAndCanBeArchivedAndOfferedAgain(t *testing.T) {
 	t.Parallel()

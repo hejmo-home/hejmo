@@ -40,7 +40,7 @@ type rewardJSON struct {
 func (s *server) rewardToJSON(p principal, r store.Reward, redeemed int, st *rewardState) rewardJSON {
 	loc := p.location()
 	j := rewardJSON{ID: r.ID, Name: r.Name, Symbol: r.Symbol, PictureSource: r.PicSource, Price: r.Price, LimitPeriod: string(r.Limit.Period),
-		WholeFamily: len(r.PersonIDs) == 0 && r.ArchivedReason != store.ArchivedAudienceGone, PersonIDs: nonNil(r.PersonIDs), Archived: r.Archived(), CreatedAt: r.CreatedAt.In(loc).Format(time.RFC3339)}
+		WholeFamily: r.WholeHousehold(), PersonIDs: nonNil(r.PersonIDs), Archived: r.Archived(), CreatedAt: r.CreatedAt.In(loc).Format(time.RFC3339)}
 	if r.HasPicture {
 		u := rewardPictureAPI(r)
 		j.Picture = &u

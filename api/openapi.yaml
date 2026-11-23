@@ -4517,10 +4517,11 @@ components:
         last_seen_at: { type: string, format: date-time, nullable: true }
     PersonalDevicePairing:
       type: object
-      required: [id, device, verification, expires_at, for_person_id]
+      required: [id, device, kind, verification, expires_at, for_person_id]
       properties:
         id: { type: string, format: uuid }
-        device: { type: string, example: Safari on iPhone, description: "What the personal device said about itself" }
+        device: { type: string, example: Safari on iPhone, description: "What the personal device said about itself (browser and device), in the language of the request; empty when it said nothing" }
+        kind: { type: string, enum: [phone, tablet, device], description: "The kind of screen, stored with the pairing; `device` when unknown. The box proposes the name by it." }
         verification: { type: string, example: "483 920", description: "Six-digit number the waiting personal device shows. Confirm only if it matches the number on the personal device in your hand." }
         expires_at: { type: string, format: date-time }
         for_person_id: { type: string, format: uuid, nullable: true, description: "Whom the personal device is for next when the code came from `repairPersonalDevice`; null for an ordinary code" }

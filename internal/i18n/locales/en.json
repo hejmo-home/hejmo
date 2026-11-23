@@ -1203,6 +1203,7 @@
   "personal_devices.qr.ca_first": "This box uses its own certificate. The device first installs it (iPhone: configuration profile, Android: CA certificate in the security settings) and then continues by itself.",
   "personal_devices.qr.check": "Check for the device",
   "personal_devices.waiting": "Devices waiting for you",
+  "personal_devices.device.label": "{browser} on {device}",
   "personal_devices.device.unknown": "A device",
   "personal_devices.name": "Name for the device, for example \"Mia's phone\"",
   "personal_devices.person": "Who is this device for?",

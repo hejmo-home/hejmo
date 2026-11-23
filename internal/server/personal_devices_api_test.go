@@ -73,3 +73,31 @@ func TestOnlyScopedParentsManagePersonalDevices(t *testing.T) {
 		t.Fatalf("read token revokes = %d, want 403", status)
 	}
 }
+
+// #243: the API says the kind of device a waiting personal device is, from the stored kind.
+func TestWaitingPersonalDeviceNamesItsKindThroughTheAPI(t *testing.T) {
+	t.Parallel()
+	for _, tc := range []struct{ ua, kind string }{
+		{iPhone, "phone"},
+		{"Mozilla/5.0 (iPad; CPU OS 19_0 like Mac OS X) AppleWebKit/605.1.15 Mobile/15E148 Safari/604.1", "tablet"},
+		{"", "device"},
+	} {
+		c := signedInAPI(t)
+		_, shown, _ := c.call(http.MethodPost, "/personal-devices/pairings", nil)
+		path := joinPath(t, `data-join-url="`+shown["url"].(string)+`"`)
+		req, _ := http.NewRequest(http.MethodGet, c.b.srv.URL+path, nil)
+		req.Header.Set("User-Agent", tc.ua)
+		res, err := c.b.trustingClient().Do(req)
+		if err != nil {
+			t.Fatal(err)
+		}
+		res.Body.Close()
+		status, _, waiting := c.call(http.MethodGet, "/personal-devices/pairings", nil)
+		if status != http.StatusOK || len(waiting) != 1 {
+			t.Fatalf("waiting = %d %v", status, waiting)
+		}
+		if got := waiting[0].(map[string]any)["kind"]; got != tc.kind {
+			t.Errorf("kind for %q = %v, want %q", tc.ua, got, tc.kind)
+		}
+	}
+}

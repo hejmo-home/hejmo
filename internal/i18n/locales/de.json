@@ -1203,6 +1203,7 @@
   "personal_devices.qr.ca_first": "Diese Box nutzt ihr eigenes Zertifikat. Das Gerät installiert es zuerst (iPhone: Konfigurationsprofil, Android: CA-Zertifikat in den Sicherheitseinstellungen) und macht danach von selbst weiter.",
   "personal_devices.qr.check": "Nach dem Gerät schauen",
   "personal_devices.waiting": "Geräte, die auf dich warten",
+  "personal_devices.device.label": "{browser} auf {device}",
   "personal_devices.device.unknown": "Ein Gerät",
   "personal_devices.name": "Name für das Gerät, zum Beispiel „Mias Handy“",
   "personal_devices.person": "Für wen ist dieses Gerät?",

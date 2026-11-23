@@ -215,7 +215,7 @@ A named collection of screensaver photos; each photo is in exactly one album, an
 _Avoid_: folder (for an album), gallery, collection
 
 **Personal device**:
-A phone, tablet or other device paired with the box through a QR code that uses the web interface as an app for one person, adult or child. It is named by its pairing ("Mia's phone", "Mia's tablet", "Mia's device" when the kind is unknown; never a brand or model) and listed under "Personal devices" (`/personal-devices`). A calendar app syncing over CalDAV is a CalDAV client, not a personal device; a wall screen is a display.
+A phone, tablet or other device paired with the box through a QR code that uses the web interface as an app for one person, adult or child. It is named by its pairing ("Mia's phone", "Mia's tablet", "Mia's device" when the kind is unknown; never a brand or model; the kind phone, tablet or device is stored with the pairing, and the browser and device a pairing shows are translated when shown, "Safari on iPhone", "Safari auf iPhone") and listed under "Personal devices" (`/personal-devices`). A calendar app syncing over CalDAV is a CalDAV client, not a personal device; a wall screen is a display.
 _Avoid_: phone (alone), mobile, handset
 
 **Browser session**:

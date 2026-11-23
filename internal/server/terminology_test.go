@@ -76,7 +76,10 @@ func TestOldPhoneTermIsGoneFromLocalesTemplatesContractAndRoutes(t *testing.T) {
 			t.Errorf("%s uses the old term", f)
 		}
 	}
-	if oldTerm.MatchString(strings.ReplaceAll(repoFile(t, "api", "openapi.yaml"), "iPhone", "")) {
+	// The kind of device (#243) is the value "phone", "tablet" or "device": the one place the
+	// word is data, not wording.
+	spec := strings.ReplaceAll(strings.ReplaceAll(repoFile(t, "api", "openapi.yaml"), "iPhone", ""), "enum: [phone, tablet, device]", "")
+	if oldTerm.MatchString(spec) {
 		t.Error("api/openapi.yaml uses the old term")
 	}
 	// Every file that registers routes, not only server.go and api.go.

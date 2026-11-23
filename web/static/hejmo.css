@@ -81,6 +81,9 @@
   --journey-border: 1.5px;
   --icon-stroke: 1.8px;
   --touch-target: 44px;
+  --photo-row: 56px; /* contact photo in rows (ticket 297) */
+  --photo-kid: 96px; /* ... in the children's important numbers */
+  --photo-page: 132px; /* ... on the contact page and in the form */
   font-family: Figtree, system-ui, sans-serif;
 }
 
@@ -3510,3 +3513,67 @@ p.why.fam b { display: inline; }
   .ct-form .mails .line > .rm { justify-self: end; }
 }
 .ct-form p.lab-static { margin: 0 0 -4px; font-size: var(--fs-label); color: var(--text-secondary); }
+
+/* ---- ticket 297: contact photos (preview docs/design/preview-297.html; size tokens photo-row, photo-kid, photo-page) ---- */
+/* One photo component everywhere a contact appears: a square with card corners (never a circle, so it is never read as a person marker). */
+.ct-photo { flex: none; box-sizing: border-box; width: var(--photo-row); height: var(--photo-row); border-radius: var(--radius-card); overflow: hidden; display: grid; place-items: center; background: var(--background); }
+.ct-photo img { width: 100%; height: 100%; object-fit: cover; display: block; }
+.ct-photo.page { width: var(--photo-page); height: var(--photo-page); }
+.ct-photo.kid { width: var(--photo-kid); height: var(--photo-kid); }
+/* Without a photo: the initials of the Hejmo name, calm, on the page background with a thin border. */
+.ct-photo.none { border: 1px solid var(--border); color: var(--text-secondary); font-weight: 700; font-size: calc(var(--photo-row) * 0.36); letter-spacing: 0.02em; line-height: 1; user-select: none; }
+.ct-photo.page.none { font-size: calc(var(--photo-page) * 0.34); }
+.ct-photo.kid.none { font-size: calc(var(--photo-kid) * 0.34); }
+[data-theme="bw"] .ct-photo { border: 2px solid var(--text); }
+[data-theme="bw"] .ct-photo img { filter: grayscale(1); }
+[data-theme="bw"] .ct-photo.none { background: var(--surface); color: var(--text); }
+
+/* Overview rows and every other contact row: photo first, then the text. */
+.list-rows.contacts a { gap: 14px; }
+.list-rows.contacts a > .ct-photo { align-self: start; }
+
+/* Contact page head: photo beside name and full name; stacked under 480 px. */
+.ct-head { display: grid; grid-template-columns: auto minmax(0, 1fr); grid-template-areas: "ph name" "ph full" "ph act"; column-gap: 20px; align-items: start; margin: 0 0 var(--gap); max-width: 560px; }
+.ct-head > .ct-photo { grid-area: ph; }
+.ct-head > h1 { grid-area: name; margin: 0 0 4px; align-self: end; }
+.ct-head > .ct-full { grid-area: full; margin: 0; }
+.ct-head > .ph-link { grid-area: act; }
+.ct-head .ph-link a { display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-target); font-weight: 600; font-size: var(--fs-label-large); }
+.ct-head .ph-link .icon { stroke: currentColor; }
+.ct-head .ph-link { margin: 4px 0 0; }
+@media (max-width: 479px) {
+  .ct-head { grid-template-columns: minmax(0, 1fr); grid-template-areas: "ph" "name" "full" "act"; row-gap: 10px; }
+  .ct-head > h1 { margin: 0; }
+}
+
+/* Form card "Foto": current state, then the buttons, then the hint. */
+.ct-form .ph-card { display: grid; gap: 12px; }
+.ph-now { display: flex; flex-wrap: wrap; gap: 14px; align-items: flex-start; }
+.ph-now > .st { flex: 1 1 200px; min-width: 0; display: grid; gap: 4px; font-size: var(--fs-label-large); overflow-wrap: break-word; }
+.ph-now > .st b { font-size: var(--fs-event-title); }
+.ph-now > .st small { font-size: var(--fs-label); color: var(--text-secondary); }
+.ph-card .pic-result img { border-radius: var(--radius-card); }
+.ph-card .pic-result b .icon { stroke: var(--accent); }
+.ph-pick { display: flex; flex-wrap: wrap; gap: 10px; }
+.ph-pick .button { position: relative; display: inline-flex; align-items: center; gap: 8px; }
+.ph-pick .button .icon { flex: none; stroke: currentColor; }
+.ph-pick label.button input { position: absolute; opacity: 0; width: 1px; height: 1px; min-height: 0; padding: 0; }
+.ph-pick label.button:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 2px; }
+/* Camera and gallery on devices with touch, one "choose" button with a mouse. */
+.ph-pick .touch { display: none; }
+@media (any-pointer: coarse) { .ph-pick .touch { display: inline-flex; } .ph-pick .mouse { display: none; } }
+.ph-card.invalid .ph-pick .button:not(.rm) { border: 2px solid var(--error-text); }
+.ph-card > .ferr { margin: 0; }
+/* Marked for removal: the placeholder, a notice and "Keep it after all". */
+.ph-gone { display: grid; gap: 8px; padding: 12px; border: 1.5px dashed var(--notice-text); border-radius: var(--radius-card); background: var(--notice-bg); color: var(--notice-text); font-size: var(--fs-label-large); }
+.ph-gone b { color: inherit; }
+.ph-gone .button { justify-self: start; }
+[data-theme="bw"] .ph-gone { border: 2px dashed var(--text); background: var(--surface); color: var(--text); }
+[data-theme="bw"] .ph-card .pic-result { border-width: 2px; }
+
+/* Person page: the contact data row shows the photo too. */
+.list-rows.ct-row a { gap: 14px; }
+
+/* The placeholder without a name: the gallery line icon. */
+.ct-photo.none .icon { width: 40%; height: 40%; stroke: var(--text-secondary); }
+[data-theme="bw"] .ct-photo.none .icon { stroke: var(--text); }

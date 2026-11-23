@@ -427,6 +427,9 @@ func (db *DB) UpdatePerson(householdID, personID, name, color, shape string) err
 	if _, err := tx.Exec(`UPDATE contacts SET hejmo_name = ?, updated_at = ? WHERE person_id = ? AND household_id = ?`, name, ts, personID, householdID); err != nil {
 		return err
 	}
+	if err := syncBirthdays(tx, householdID, ""); err != nil { // the event carries the name; no calendar is made here, so no calendar name is needed
+		return err
+	}
 	return tx.Commit()
 }
 

@@ -17,9 +17,6 @@ type Relation struct {
 	PersonIDs   []string
 }
 
-// RelatedContact is what the card of a person says about one contact: the contact and the word.
-type RelatedContact struct{ ContactID, ContactName, Word string }
-
 func relationsError(msg string) error { return &FieldError{Field: "relations", Msg: msg} }
 
 // cleanRelations trims the words, drops people from whole-family relations, checks every relation and merges the
@@ -140,7 +137,7 @@ func loadRelations(q interface {
 
 // PersonRelations lists what the card of a person says about contacts: one entry per relation that has the person
 // in it or is for the whole family, with the contact and the word.
-func (db *DB) PersonRelations(householdID, personID string) ([]RelatedContact, error) {
+func (db *DB) PersonRelations(householdID, personID string) ([]contact.Related, error) {
 	rows, err := db.sql.Query(`SELECT c.id, c.hejmo_name, r.word FROM contact_relations r JOIN contacts c ON c.id = r.contact_id
 		WHERE c.household_id = ? AND (r.whole_family = 1 OR EXISTS (SELECT 1 FROM contact_relation_people rp WHERE rp.relation_id = r.id AND rp.person_id = ?))
 		ORDER BY c.hejmo_name COLLATE NOCASE, c.rowid, r.position`, householdID, personID)
@@ -148,9 +145,9 @@ func (db *DB) PersonRelations(householdID, personID string) ([]RelatedContact, e
 		return nil, err
 	}
 	defer rows.Close()
-	var out []RelatedContact
+	var out []contact.Related
 	for rows.Next() {
-		var r RelatedContact
+		var r contact.Related
 		if err := rows.Scan(&r.ContactID, &r.ContactName, &r.Word); err != nil {
 			return nil, err
 		}

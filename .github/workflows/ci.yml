@@ -78,41 +78,6 @@ jobs:
           path: ${{ runner.temp }}/layout-shots
           if-no-files-found: ignore
 
-  # TEMPORARY (ticket 238, acceptance criteria 1-2): peak RSS of the whole
-  # internal/server race binary: before (39cbd74, parent of the #239 merge), main (PR base) and head, per
-  # architecture. Remove once the numbers are in the PR body.
-  measure-server-rss:
-    name: Whole-package RSS (${{ matrix.arch }}, ${{ matrix.which }})
-    if: github.event_name == 'pull_request'
-    strategy:
-      fail-fast: false
-      matrix:
-        arch: [x86_64, arm64]
-        which: [before, main, head]
-        include:
-          - arch: x86_64
-            runner: ubuntu-24.04
-          - arch: arm64
-            runner: ubuntu-24.04-arm
-    runs-on: ${{ matrix.runner }}
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{ (matrix.which == 'before' && '39cbd7486a9e7b2a98dba59341821ee1ee43eb77') || (matrix.which == 'main' && github.event.pull_request.base.sha) || github.event.pull_request.head.sha }}
-          fetch-depth: 0
-      - uses: actions/setup-go@v5
-        with:
-          go-version-file: go.mod
-      - name: go test -race -count=1 ./internal/server (whole package)
-        run: |
-          start=$SECONDS
-          set +e
-          /usr/bin/time -v -o "$RUNNER_TEMP/time.txt" go test -race -count=1 -timeout 40m ./internal/server
-          rc=$?
-          rss=$(awk -F': ' '/Maximum resident set size/ {printf "%.0f", $2/1024}' "$RUNNER_TEMP/time.txt")
-          echo "WHOLE PACKAGE ${{ matrix.which }} on ${{ matrix.arch }}: peak RSS ${rss} MB (all processes, largest), $((SECONDS - start)) s, exit $rc" | tee -a "$GITHUB_STEP_SUMMARY"
-          exit 0
-
   # Aggregate: keeps the required checks "Test (x86_64)" and "Test (arm64)" of the
   # branch protection alive, so renaming the shard jobs needs no settings change.
   # Passes only when every shard of every architecture passed (a skipped or

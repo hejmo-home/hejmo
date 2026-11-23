@@ -28,13 +28,15 @@ type Contact struct {
 	Country      string
 	// BdayDay and BdayMonth belong together; BdayYear is 0 when it is unknown.
 	BdayDay, BdayMonth, BdayYear int
-	Note                         string
-	Numbers, Emails              []contact.Line
-	GroupIDs                     []string
-	CreatedBy, CreatedByName     string
-	CreatedAt                    time.Time
-	UpdatedBy, UpdatedByName     string
-	UpdatedAt                    time.Time
+	// HideBirthday keeps the birthday out of the generated calendar Birthdays (ticket 302).
+	HideBirthday             bool
+	Note                     string
+	Numbers, Emails          []contact.Line
+	GroupIDs                 []string
+	CreatedBy, CreatedByName string
+	CreatedAt                time.Time
+	UpdatedBy, UpdatedByName string
+	UpdatedAt                time.Time
 }
 
 // IsPerson reports whether the contact is a person of the household.
@@ -87,7 +89,7 @@ func addPersonContact(tx *sql.Tx, householdID string, p Person, ts string) error
 }
 
 const contactColumns = `c.id, COALESCE(c.person_id, ''), c.hejmo_name, c.full_name, c.street, c.postcode, c.city, c.country,
-	COALESCE(c.bday_day, 0), COALESCE(c.bday_month, 0), COALESCE(c.bday_year, 0), c.note,
+	COALESCE(c.bday_day, 0), COALESCE(c.bday_month, 0), COALESCE(c.bday_year, 0), c.hide_birthday, c.note,
 	COALESCE(c.created_by, ''), COALESCE(cp.name, ''), c.created_at, COALESCE(c.updated_by, ''), COALESCE(up.name, ''), c.updated_at`
 
 const contactFrom = ` FROM contacts c LEFT JOIN people cp ON cp.id = c.created_by LEFT JOIN people up ON up.id = c.updated_by `
@@ -96,7 +98,7 @@ func scanContact(sc interface{ Scan(...any) error }) (Contact, error) {
 	var c Contact
 	var created, updated string
 	err := sc.Scan(&c.ID, &c.PersonID, &c.HejmoName, &c.FullName, &c.Street, &c.Postcode, &c.City, &c.Country,
-		&c.BdayDay, &c.BdayMonth, &c.BdayYear, &c.Note, &c.CreatedBy, &c.CreatedByName, &created, &c.UpdatedBy, &c.UpdatedByName, &updated)
+		&c.BdayDay, &c.BdayMonth, &c.BdayYear, &c.HideBirthday, &c.Note, &c.CreatedBy, &c.CreatedByName, &created, &c.UpdatedBy, &c.UpdatedByName, &updated)
 	c.CreatedAt, _ = time.Parse(time.RFC3339, created)
 	c.UpdatedAt, _ = time.Parse(time.RFC3339, updated)
 	return c, err
@@ -227,8 +229,12 @@ func checkContactName(tx *sql.Tx, householdID, exceptID, name string) error {
 type ContactInput struct {
 	HejmoName, FullName, Street, Postcode, City, Country string
 	BdayDay, BdayMonth, BdayYear                         int
-	Note                                                 string
-	Numbers, Emails                                      []contact.Line
+	// HideBirthday keeps the birthday out of the generated calendar Birthdays.
+	HideBirthday bool
+	// CalendarName names that calendar if this change makes it ("Birthdays", in the language of whoever saves).
+	CalendarName    string
+	Note            string
+	Numbers, Emails []contact.Line
 	// GroupIDs are the groups the contact is in; a person is always in Familie as well.
 	GroupIDs []string
 	// NewGroup, when not empty, is the name of a group made together with the contact and added to it.
@@ -348,13 +354,16 @@ func (db *DB) CreateContact(householdID, by string, in ContactInput) (Contact, e
 	if err := checkContactName(tx, householdID, "", in.HejmoName); err != nil {
 		return Contact{}, err
 	}
-	if _, err := tx.Exec(`INSERT INTO contacts (id, household_id, hejmo_name, full_name, street, postcode, city, country, bday_day, bday_month, bday_year, note, created_by, created_at, updated_by, updated_at)
-		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
-		id, householdID, in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.Note,
+	if _, err := tx.Exec(`INSERT INTO contacts (id, household_id, hejmo_name, full_name, street, postcode, city, country, bday_day, bday_month, bday_year, hide_birthday, note, created_by, created_at, updated_by, updated_at)
+		VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+		id, householdID, in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.Note,
 		nullString(by), ts, nullString(by), ts); err != nil {
 		return Contact{}, err
 	}
 	if err := writeContactParts(tx, householdID, id, in, false, by, ts); err != nil {
+		return Contact{}, err
+	}
+	if err := syncBirthdays(tx, householdID, in.CalendarName); err != nil {
 		return Contact{}, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -392,12 +401,15 @@ func (db *DB) UpdateContact(householdID, id, by string, in ContactInput) (Contac
 	if err := checkContactName(tx, householdID, id, in.HejmoName); err != nil {
 		return Contact{}, err
 	}
-	if _, err := tx.Exec(`UPDATE contacts SET hejmo_name = ?, full_name = ?, street = ?, postcode = ?, city = ?, country = ?, bday_day = ?, bday_month = ?, bday_year = ?, note = ?, updated_by = ?, updated_at = ?
+	if _, err := tx.Exec(`UPDATE contacts SET hejmo_name = ?, full_name = ?, street = ?, postcode = ?, city = ?, country = ?, bday_day = ?, bday_month = ?, bday_year = ?, hide_birthday = ?, note = ?, updated_by = ?, updated_at = ?
 		WHERE id = ? AND household_id = ?`,
-		in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.Note, nullString(by), ts, id, householdID); err != nil {
+		in.HejmoName, in.FullName, in.Street, in.Postcode, in.City, in.Country, nullInt(in.BdayDay), nullInt(in.BdayMonth), nullInt(in.BdayYear), in.HideBirthday, in.Note, nullString(by), ts, id, householdID); err != nil {
 		return Contact{}, err
 	}
 	if err := writeContactParts(tx, householdID, id, in, cur.IsPerson(), by, ts); err != nil {
+		return Contact{}, err
+	}
+	if err := syncBirthdays(tx, householdID, in.CalendarName); err != nil {
 		return Contact{}, err
 	}
 	if err := tx.Commit(); err != nil {
@@ -416,7 +428,18 @@ func (db *DB) DeleteContact(householdID, id string) error {
 	if c.IsPerson() {
 		return &FieldError{Field: "id", Msg: "the contact of a person goes with the person"}
 	}
-	return expectOne(db.sql.Exec(`DELETE FROM contacts WHERE id = ? AND household_id = ?`, id, householdID))
+	tx, err := db.sql.Begin()
+	if err != nil {
+		return err
+	}
+	defer tx.Rollback()
+	if err := expectOne(tx.Exec(`DELETE FROM contacts WHERE id = ? AND household_id = ?`, id, householdID)); err != nil {
+		return err
+	}
+	if err := syncBirthdays(tx, householdID, ""); err != nil {
+		return err
+	}
+	return tx.Commit()
 }
 
 // ContactGroups lists the groups of a household: the five of Hejmo in their

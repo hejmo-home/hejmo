@@ -42,7 +42,7 @@ type artForm struct {
 	Allergens                      []string
 	PicSource, Symbol, SymQ, URL   string
 	Token                          string
-	Replacing                      bool
+	Replacing, Pantry              bool
 	// FromList and FromEntry say the form was opened from the success line of a
 	// list ("Add to the library", ticket 165): after saving the entry becomes the
 	// article and the person goes back to the list.
@@ -52,7 +52,7 @@ type artForm struct {
 }
 
 func (s *server) formOf(o store.OwnArticle) artForm {
-	return artForm{Name: o.Name, Dept: o.Dept, Kind: o.Kind, Unit1: o.Unit1, Unit2: o.Unit2, Allergens: o.Allergens, PicSource: o.PicSource, Symbol: o.Symbol}
+	return artForm{Name: o.Name, Dept: o.Dept, Kind: o.Kind, Unit1: o.Unit1, Unit2: o.Unit2, Allergens: o.Allergens, PicSource: o.PicSource, Symbol: o.Symbol, Pantry: o.Pantry}
 }
 
 // Views of the parts of the form.
@@ -407,7 +407,7 @@ func (s *server) readForm(w http.ResponseWriter, r *http.Request) (f artForm, fi
 	v := r.PostFormValue
 	f = artForm{
 		Name: v("name"), Dept: v("dept"), Kind: v("kind"), Unit1: v("unit1"), Unit2: v("unit2"), Allergens: r.PostForm["allergens"],
-		PicSource: v("pic_source"), Symbol: v("symbol"), SymQ: strings.TrimSpace(v("symq")), URL: strings.TrimSpace(v("url")), Token: v("picture_token"), Replacing: v("replacing") != "",
+		PicSource: v("pic_source"), Symbol: v("symbol"), SymQ: strings.TrimSpace(v("symq")), URL: strings.TrimSpace(v("url")), Token: v("picture_token"), Replacing: v("replacing") != "", Pantry: v("pantry") != "",
 		FromList: v("list"), FromEntry: v("entry"), Auto: readAuto(r),
 	}
 	return f, file, nil
@@ -554,7 +554,7 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 		return
 	}
 	in = in.Normalized()
-	own := store.OwnArticle{Name: in.Name, Dept: in.Dept, Kind: in.Kind, Allergens: in.Allergens, Unit1: in.Unit1, Unit2: in.Unit2, PicSource: in.PicSource, Symbol: in.Symbol}
+	own := store.OwnArticle{Name: in.Name, Dept: in.Dept, Kind: in.Kind, Allergens: in.Allergens, Unit1: in.Unit1, Unit2: in.Unit2, PicSource: in.PicSource, Symbol: in.Symbol, Pantry: f.Pantry}
 	var pic *store.ArticlePicture
 	if (eff == "upload" || eff == "web") && havePend {
 		pc := pend.ArticlePicture

@@ -27,10 +27,10 @@ func TestInstallGuideExistsInBothLanguagesAndIsLinkedFromReadme(t *testing.T) {
 		notes    []string // the honesty markers of ADR 0018
 	}{
 		"en": {"docs/install.md",
-			[]string{"## Requirements", "## Install", "## First steps", "## HTTPS", "## Trust the box's own CA", "## Away from home: WireGuard with the FRITZ!Box", "## Displays and phones", "## Automatic updates"},
+			[]string{"## Requirements", "## Install", "## First steps", "## HTTPS", "## Trust the box's own CA", "## Away from home: WireGuard with the FRITZ!Box", "## Displays and personal devices", "## Automatic updates"},
 			[]string{"experimental", "not yet tested on E-Ink devices", "tested in emulation", "03:30", "cosign", "notify only"}},
 		"de": {"docs/install.de.md",
-			[]string{"## Voraussetzungen", "## Installation", "## Erste Schritte", "## HTTPS", "## Der eigenen CA vertrauen", "## Von unterwegs: WireGuard mit der FRITZ!Box", "## Displays und Handys", "## Automatische Updates"},
+			[]string{"## Voraussetzungen", "## Installation", "## Erste Schritte", "## HTTPS", "## Der eigenen CA vertrauen", "## Von unterwegs: WireGuard mit der FRITZ!Box", "## Displays und persönliche Geräte", "## Automatische Updates"},
 			[]string{"experimentell", "noch nicht auf E-Ink-Geräten getestet", "in der Emulation getestet", "03:30", "cosign", "nur benachrichtigen"}},
 	}
 	for lang, g := range guides {
@@ -109,7 +109,7 @@ func TestWireGuardChapterIsInBothGuidesAndEveryAddressIsALink(t *testing.T) {
 		if bare := bareAddress.FindAllString(markdownLink.ReplaceAllString(text, ""), -1); len(bare) > 0 {
 			t.Errorf("%s: addresses outside a link, every address must be clickable: %v", g.file, bare)
 		}
-		// The chapter sits before "Displays and phones", behind the trust chapter it refers to.
+		// The chapter sits before "Displays and personal devices", behind the trust chapter it refers to.
 		body := read(t, g.file)
 		if strings.Index(body, g.heading) < strings.Index(body, "## Trust the box's own CA\n")+strings.Index(body, "## Der eigenen CA vertrauen\n")+1 {
 			t.Errorf("%s: the chapter is not behind the trust chapter", g.file)

@@ -93,9 +93,9 @@ func stampText(h store.Household, t time.Time) string {
 }
 
 // inviteURL is the address that goes into the QR code and the link. With the
-// box's own certificate authority the phone cannot reach the HTTPS address
+// box's own certificate authority the personal device cannot reach the HTTPS address
 // before it trusts the box, so a short plain-HTTP address leads to the trust
-// page first (like phone pairing, ADR 0014, 0015).
+// page first (like personal device pairing, ADR 0014, 0015).
 func (s *server) inviteURL(r *http.Request, token string) string {
 	if s.pki.Ready() && !s.publicInUse() {
 		host := hostOf(r)

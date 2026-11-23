@@ -1,0 +1,39 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "hub.contacts") "Frame" .Frame)}}
+  <h1>{{t "hub.contacts"}}</h1>
+  <p class="lead">{{t "contact.lead"}}</p>
+  <p><a class="button" href="/contacts/new">{{t "contact.new"}}</a></p>
+  {{if .HasOthers}}
+  <form class="lib-search" method="get" action="/contacts" role="search">
+    <div class="f"><label>{{t "contact.search.label"}}<input name="q" type="search" value="{{.Q}}" placeholder="{{t "contact.search.placeholder"}}"></label></div>
+    {{if .G}}<input type="hidden" name="g" value="{{.G}}">{{end}}
+    <button class="button secondary" type="submit">{{t "contact.search.button"}}</button>
+  </form>
+  <nav class="lib-filter ct-filter" aria-label="{{t "contact.filter.label"}}"><ul>{{range .Filters}}
+    <li><a href="{{.Href}}"{{if .Current}} aria-current="true"{{end}}>{{.Text}}</a></li>{{end}}
+  </ul></nav>
+  <p class="hint grp-link"><a href="/contacts/groups">{{t "contact.groups.manage"}}</a></p>
+  {{end}}
+  {{if .NoMatch}}
+  <section aria-labelledby="res">
+    <h2 id="res">{{.ResultTitle}}</h2>
+    <div class="empty" data-empty><p>{{.NoneText}}</p><p class="row-actions">{{if .NewHref}}<a class="button secondary" href="{{.NewHref}}">{{.NewText}}</a>{{end}}<a href="{{.ClearHref}}">{{.ClearText}}</a></p></div>
+  </section>
+  {{else}}
+  {{if or .Others .OthersEmpty}}
+  <section aria-labelledby="oth">
+    <h2 id="oth">{{.OthersTitle}}</h2>
+    {{if .Others}}{{template "contactRows" .Others}}{{else}}<div class="empty" data-empty><p>{{t "contact.others.empty"}}</p></div>{{end}}
+  </section>
+  {{end}}
+  {{if .Family}}
+  <section aria-labelledby="fam">
+    <h2 id="fam">{{t "contact.family"}}</h2>
+    <p class="hint">{{t "contact.family.hint.before"}} <a href="/people">{{t "hub.people"}}</a> {{t "contact.family.hint.after"}}</p>
+    {{template "contactRows" .Family}}
+  </section>
+  {{end}}
+  {{end}}
+{{template "foot"}}
+{{define "contactRows"}}<ul class="list-rows contacts">{{range .}}
+    <li><a href="{{.Href}}"><span class="t">{{if .Person}}<b class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><span>{{.Name}}</span></b>{{else}}<b>{{.Name}}</b>{{end}}{{with .Full}}<span class="meta">{{.}}</span>{{end}}{{if .Nums}}<span class="nums">{{range .Nums}}<span><span class="lab">{{.Label}}</span> {{.Value}}</span>{{end}}</span>{{else}}<span class="none">{{t "contact.nonumber"}}</span>{{end}}{{with .Groups}}<span class="grps">{{range .}}<span class="tag grp">{{.}}</span>{{end}}</span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
+  </ul>{{end}}

@@ -202,11 +202,11 @@ func (s *server) handleConnectionsSave(w http.ResponseWriter, r *http.Request) {
 // ---- switching on with a public name (Q143)
 
 type costView struct {
-	Name, Provider, Address string
-	Displays, Phones, Apps  string // the names, joined by commas
-	Passkeys                []personChip
-	Lead                    template.HTML
-	NewAddress              template.HTML
+	Name, Provider, Address         string
+	Displays, PersonalDevices, Apps string // the names, joined by commas
+	Passkeys                        []personChip
+	Lead                            template.HTML
+	NewAddress                      template.HTML
 }
 
 func (s *server) costOf(r *http.Request, p principal) (costView, bool, error) {
@@ -220,16 +220,16 @@ func (s *server) costOf(r *http.Request, p principal) (costView, bool, error) {
 	if err != nil {
 		return v, false, err
 	}
-	var displays, phones, apps []string
+	var displays, personalDevices, apps []string
 	for _, d := range ds {
 		displays = append(displays, d.Name)
 	}
-	ph, err := s.db.Phones(p.household.ID)
+	ph, err := s.db.PersonalDevices(p.household.ID)
 	if err != nil {
 		return v, false, err
 	}
 	for _, x := range ph {
-		phones = append(phones, x.Name)
+		personalDevices = append(personalDevices, x.Name)
 	}
 	toks, err := s.deviceTokens(p.household.ID)
 	if err != nil {
@@ -238,7 +238,7 @@ func (s *server) costOf(r *http.Request, p principal) (costView, bool, error) {
 	for _, t := range toks {
 		apps = append(apps, t.Name)
 	}
-	v.Displays, v.Phones, v.Apps = strings.Join(displays, ", "), strings.Join(phones, ", "), strings.Join(apps, ", ")
+	v.Displays, v.PersonalDevices, v.Apps = strings.Join(displays, ", "), strings.Join(personalDevices, ", "), strings.Join(apps, ", ")
 	people, err := s.db.People(p.household.ID)
 	if err != nil {
 		return v, false, err

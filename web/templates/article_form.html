@@ -90,6 +90,10 @@
       {{end}}
     </fieldset>
     {{if not .New}}{{template "autoCard" .Auto}}{{end}}
+    <fieldset>
+      <legend>{{t "art.pantry.legend"}}</legend>
+      {{template "switch" (dict "Name" "pantry" "Label" (t "art.pantry.label") "OnText" (t "art.pantry.form.on") "OffText" (t "art.pantry.form.off") "Checked" .F.Pantry "AriaLabel" (t "art.pantry.form.aria"))}}
+    </fieldset>
     <p class="hint nonfood-note">{{t "artf.nonfood.note"}}</p>
     <button class="button" type="submit">{{if .New}}{{t "artf.submit.new"}}{{else}}{{t "people.save"}}{{end}}</button>
   </form>

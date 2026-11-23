@@ -200,7 +200,7 @@ func TestRemoveSentenceNamesTheConsequenceOfRemovingTheLastOpenSubtask(t *testin
 
 func TestChildCannotEditSubtasksInTheWebInterface(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	for _, path := range []string{"/tasks/" + cp.miaTask + "/subtasks", "/tasks/" + cp.miaTask + "/subtasks/x", "/tasks/" + cp.miaTask + "/subtasks/x/move", "/tasks/" + cp.miaTask + "/subtasks/x/delete"} {
 		if r := cp.screen.post(path, url.Values{"title": {"x"}}); r.status != http.StatusForbidden {
 			t.Errorf("child POST %s = %d, want 403", path, r.status)

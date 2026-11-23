@@ -4,7 +4,7 @@
   {{if .Failed}}<p class="error" role="alert">{{tf "outside.on.failed" "name" .Cost.Name}}</p>{{end}}
   <section class="cost" aria-labelledby="cost"><h2 id="cost">{{t "outside.on.cost"}}</h2><ul>
     <li><b>{{t "outside.on.cost.address"}}</b> {{.Cost.NewAddress}}</li>
-    <li><b>{{t "outside.on.cost.trust"}}</b>{{t "outside.on.cost.trust.text"}}{{with .Cost.Displays}}<span class="devs"><b>{{t "outside.on.cost.displays"}}</b> {{.}}</span>{{end}}{{with .Cost.Phones}}<span class="devs"><b>{{t "outside.on.cost.phones"}}</b> {{.}}</span>{{end}}{{with .Cost.Apps}}<span class="devs"><b>{{t "outside.on.cost.apps"}}</b> {{.}}</span>{{end}}{{t "outside.on.cost.trust.more"}}</li>
+    <li><b>{{t "outside.on.cost.trust"}}</b>{{t "outside.on.cost.trust.text"}}{{with .Cost.Displays}}<span class="devs"><b>{{t "outside.on.cost.displays"}}</b> {{.}}</span>{{end}}{{with .Cost.PersonalDevices}}<span class="devs"><b>{{t "outside.on.cost.personal_devices"}}</b> {{.}}</span>{{end}}{{with .Cost.Apps}}<span class="devs"><b>{{t "outside.on.cost.apps"}}</b> {{.}}</span>{{end}}{{t "outside.on.cost.trust.more"}}</li>
     <li><b>{{t "outside.on.cost.passkeys"}}</b> {{t "outside.on.cost.passkeys.text"}} {{range .Cost.Passkeys}}<span class="who"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}}</span>{{end}}</li>
   </ul></section>
   <form method="post" action="/settings/connections/offline" class="tile netblock confirm-page">

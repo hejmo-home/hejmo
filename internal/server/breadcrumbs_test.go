@@ -77,7 +77,7 @@ func TestOverviewPagesBelowSettingsStartWithATrail(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
 	for _, c := range []struct{ path, entry string }{
-		{"/calendars", "Calendar connections"}, {"/caldav", "Calendar apps"}, {"/displays", "Displays"}, {"/phones", "Phones"},
+		{"/calendars", "Calendar connections"}, {"/caldav", "Calendar apps"}, {"/displays", "Displays"}, {"/personal-devices", "Personal devices"},
 		{"/mcp", "AI assistants (MCP)"}, {"/people", "People"}, {"/settings/household", "Household"}, {"/account", "My account"}, {"/sessions", "Signed-in devices"},
 	} {
 		body := getEN(b, c.path).body
@@ -189,13 +189,13 @@ func TestTheLastPartIsTheHeadingOfThePageOnEveryPageBelowSettings(t *testing.T) 
 	dispID := pairedDisplay(t, b, "Hallway", "screen")
 	connID := connectedBox(t, b)
 	switchMCPOnPage(t, b, true)
-	b.post("/caldav/tokens", url.Values{"name": {"Phone"}})
+	b.post("/caldav/tokens", url.Values{"name": {"Personal device"}})
 	h, _ := b.db.HomeHousehold()
 	tokens, _ := b.db.APITokens(h.ID)
 	people, _ := b.db.People(h.ID)
 	pages := []string{"/connections/new", "/connections/" + connID, "/displays/" + dispID, "/groups/new", "/mcp/tokens/new", "/people/" + people[0].ID}
 	for _, tok := range tokens {
-		if tok.Name == "Phone" {
+		if tok.Name == "Personal device" {
 			pages = append(pages, "/caldav/tokens/"+tok.ID)
 		}
 	}

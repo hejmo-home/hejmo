@@ -52,7 +52,7 @@ func TestParentFindsTheThemeChooserInTheBrandBar(t *testing.T) {
 		last = i
 	}
 	for _, w := range []string{`<fieldset class="theme-menu" data-theme-choices `, "<legend>Theme in this browser</legend>", `<span class="vh">Theme: </span>`,
-		"Always light", "Always dark, easy on the eyes in the evening", "Light or dark, the way your phone or computer is set",
+		"Always light", "Always dark, easy on the eyes in the evening", "Light or dark, the way your device or computer is set",
 		`<span class="opt-state">Selected</span>`, "Applies to this browser only. Everyone else keeps their theme.", "Like your device"} {
 		if !strings.Contains(menu, w) {
 			t.Errorf("chooser lacks %q:\n%s", w, menu)
@@ -72,24 +72,24 @@ func TestLanguageAndThemeMenusAreOneExclusiveGroup(t *testing.T) {
 	}
 }
 
-// #125: the chooser reaches children: a child's phone has no Settings, but the brand bar.
-func TestChildsPhoneHasTheThemeChooserAndSaysPhone(t *testing.T) {
+// #125: the chooser reaches children: a child's personal device has no Settings, but the brand bar.
+func TestChildsPersonalDeviceHasTheThemeChooserAndSaysPersonalDevice(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	for _, path := range []string{"/", "/tasks"} {
 		menu := themePick(t, cp.screen.get(path, "de").body)
-		for _, w := range []string{"<legend>Design auf diesem Handy</legend>", "Wie dein Handy", "Gilt nur auf diesem Handy. Alle anderen behalten ihr Design.", `<span class="vh">Design: </span>`} {
+		for _, w := range []string{"<legend>Design auf diesem Gerät</legend>", "Wie dein Gerät", "Gilt nur auf diesem Gerät. Alle anderen behalten ihr Design.", `<span class="vh">Design: </span>`} {
 			if !strings.Contains(menu, w) {
 				t.Errorf("%s: child's chooser lacks %q:\n%s", path, w, menu)
 			}
 		}
 	}
 	if strings.Contains(cp.screen.get("/", "en").body, "this browser") {
-		t.Error("a phone's chooser speaks of a browser")
+		t.Error("a personal device's chooser speaks of a browser")
 	}
 }
 
-// #125: a browser session (not a paired phone) says browser and device.
+// #125: a browser session (not a paired personal device) says browser and device.
 func TestBrowserChooserSaysBrowserAndDevice(t *testing.T) {
 	t.Parallel()
 	menu := themePick(t, signedInBox(t).get("/").body)
@@ -124,7 +124,7 @@ func TestSignedOutPagesHaveNoThemeChooser(t *testing.T) {
 // chosen and says why; a child reads that an adult must enter the place.
 func TestWithoutHomeLocationAutomaticIsDisabledAndSaysWhy(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	noHome(t, cp.parent.b)
 	menu := themePick(t, cp.screen.get("/", "de").body)
 	if !regexp.MustCompile(`value="auto" data-theme-choice disabled`).MatchString(menu) || !strings.Contains(menu, "Geht erst, wenn ein Erwachsener den Ort eures Zuhauses eingetragen hat.") {

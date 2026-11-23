@@ -70,15 +70,15 @@ func TestListBrowserSessionsGroupsByPersonAndLastUsed(t *testing.T) {
 	}
 }
 
-// A paired phone's device session is not a browser session.
-func TestListBrowserSessionsLeavesOutPairedPhones(t *testing.T) {
+// A paired personal device's device session is not a browser session.
+func TestListBrowserSessionsLeavesOutPairedPersonalDevices(t *testing.T) {
 	db, _ := openTemp(t)
 	h, p := seedHousehold(t, db)
 	mustSession(t, db, "browser", p["Mama"].ID, "mac|safari", sessionT0, sessionT0.Add(time.Hour))
-	if _, err := db.SQL().Exec(`INSERT INTO phones (id, household_id, person_id, name, created_at) VALUES ('ph1', ?, ?, 'Mia''s phone', ?)`, h.ID, p["Mama"].ID, sessionT0.Format(time.RFC3339)); err != nil {
+	if _, err := db.SQL().Exec(`INSERT INTO personal_devices (id, household_id, person_id, name, created_at) VALUES ('ph1', ?, ?, 'Mia''s personal device', ?)`, h.ID, p["Mama"].ID, sessionT0.Format(time.RFC3339)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.SQL().Exec(`INSERT INTO sessions (id, token_hash, person_id, created_at, expires_at, phone_id) VALUES ('phone-sess-id', 'phone-tok', ?, ?, ?, 'ph1')`,
+	if _, err := db.SQL().Exec(`INSERT INTO sessions (id, token_hash, person_id, created_at, expires_at, personal_device_id) VALUES ('personal-device-sess-id', 'personal-device-tok', ?, ?, ?, 'ph1')`,
 		p["Mama"].ID, sessionT0.Format(time.RFC3339), sessionT0.Add(time.Hour).Format(time.RFC3339)); err != nil {
 		t.Fatal(err)
 	}
@@ -86,11 +86,11 @@ func TestListBrowserSessionsLeavesOutPairedPhones(t *testing.T) {
 	if err != nil || len(got) != 1 || got[0].Device != "mac|safari" {
 		t.Fatalf("list = %+v, %v", got, err)
 	}
-	if err := db.EndBrowserSession(h.ID, "phone-sess-id"); !errors.Is(err, store.ErrNotFound) {
-		t.Fatalf("ending a phone's session = %v, want not found", err)
+	if err := db.EndBrowserSession(h.ID, "personal-device-sess-id"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("ending a personal device's session = %v, want not found", err)
 	}
-	if _, err := db.SessionPerson("phone-tok", sessionT0); err != nil {
-		t.Fatalf("the phone's session is gone: %v", err)
+	if _, err := db.SessionPerson("personal-device-tok", sessionT0); err != nil {
+		t.Fatalf("the personal device's session is gone: %v", err)
 	}
 }
 

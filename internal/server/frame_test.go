@@ -58,7 +58,7 @@ func TestChildNavigationShowsOnlyAllowedScreens(t *testing.T) {
 	if got := navTargets(t, r.body); strings.Join(got, " ") != "/ /tasks /meals /lists" {
 		t.Fatalf("child nav = %v, want /, /tasks, /meals and /lists", got)
 	}
-	for _, page := range []string{"/calendars", "/caldav", "/displays", "/phones", "/people", "/settings"} {
+	for _, page := range []string{"/calendars", "/caldav", "/displays", "/personal-devices", "/people", "/settings"} {
 		if r := child.get(page); r.status != http.StatusForbidden {
 			t.Errorf("child GET %s = %d, want 403", page, r.status)
 		}
@@ -85,7 +85,7 @@ func TestEveryScreenUsesTheSharedStylesheetWithoutInlineStyles(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
 	b.post("/calendars", map[string][]string{"name": {"Feiertage"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
-	pages := []string{"/", "/calendars", "/caldav", "/displays", "/phones", "/tasks", "/meals", "/people", "/settings", "/ca"}
+	pages := []string{"/", "/calendars", "/caldav", "/displays", "/personal-devices", "/tasks", "/meals", "/people", "/settings", "/ca"}
 	for _, page := range pages {
 		body := b.get(page).body
 		if !strings.Contains(body, `href="/static/hejmo.css"`) {

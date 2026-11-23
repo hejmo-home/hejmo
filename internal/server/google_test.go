@@ -856,7 +856,7 @@ func TestInvalidGrantMarksTheConnectionAndIsShownToParents(t *testing.T) {
 func TestSignInAgainNoticeIsForParentsOnly(t *testing.T) {
 	t.Parallel()
 	gb, _ := signInAgainBox(t)
-	scr := pairedPhone(t, gb.b, personNamed(t, gb.b, "Mia"), "Mia's phone")
+	scr := pairedPersonalDevice(t, gb.b, personNamed(t, gb.b, "Mia"), "Mia's tablet")
 	if r := scr.get("/", "de"); r.status != http.StatusOK || strings.Contains(r.body, "Google") {
 		t.Errorf("a child's Start shows the notice: %d", r.status)
 	}

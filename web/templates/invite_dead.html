@@ -6,7 +6,7 @@
     <p class="invitee"><span class="marker" data-person="{{.InviteeChip.Slot}}" data-shape="{{.InviteeChip.Shape}}" aria-hidden="true"></span><span>{{.Invitee.Name}}</span></p>
     <p>{{t "invite.dead.other.as.pre"}} <span class="who"><span class="marker" data-person="{{.Who.Slot}}" data-shape="{{.Who.Shape}}" aria-hidden="true"></span>{{.Who.Name}}</span>{{t "invite.dead.other.as.post"}}</p>
   </section>
-  {{if .ChildPhone}}<p>{{t "invite.dead.other.child"}}</p>
+  {{if .ChildPersonalDevice}}<p>{{t "invite.dead.other.child"}}</p>
   <div class="actions">
     <a class="link" href="/">{{t "invite.dead.other.home"}}</a>
   </div>

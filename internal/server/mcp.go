@@ -21,7 +21,7 @@ import (
 // plan as MCP tools. A tool runs the very REST handler of its route, for the
 // person the token belongs to and with the token's scopes, so every rule and
 // every scope check of the REST API applies unchanged. Nothing that manages
-// tokens, settings, people, displays or phones is a tool.
+// tokens, settings, people, displays or personal devices is a tool.
 
 const mcpInstructions = "These tools read and change the family's shared Hejmo box: calendar events, lists, tasks with routines and stars, and the meal plan. " +
 	"You act as the parent who created your token. Tools you cannot see are not allowed for your token."

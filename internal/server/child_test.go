@@ -11,7 +11,7 @@ import (
 )
 
 // childSession returns a client with a session of the child Mia, created
-// directly. Tests of the pairing flow itself use pairedPhone.
+// directly. Tests of the pairing flow itself use pairedPersonalDevice.
 func childSession(t *testing.T, b *box) *box {
 	t.Helper()
 	h, err := b.db.HomeHousehold()

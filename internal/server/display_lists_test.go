@@ -444,7 +444,7 @@ func TestDeletingTickedOffEntriesOnTheDisplay(t *testing.T) {
 	id, _ := f.onlyList(t, "Shopping", []string{"Oat milk", "Bread"}, "Bananas", "Oat milk", "Bread")
 	body := f.listsPage(t, "en", "/display/lists/"+id).body
 	for _, want := range []string{`<summary>Delete ticked-off entries (2)</summary>`,
-		`<p>The 2 ticked-off entries of this list are deleted for good, on every display and phone. Open entries stay.</p>`,
+		`<p>The 2 ticked-off entries of this list are deleted for good, on every display and personal device. Open entries stay.</p>`,
 		`<form method="post" action="/display/lists/` + id + `/completed/delete">`, `<button class="button danger" type="submit">Yes, delete 2 entries</button>`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("lacks %q", want)
@@ -462,7 +462,7 @@ func TestDeletingTickedOffEntriesOnTheDisplay(t *testing.T) {
 	}
 	id1, _ := listWith(t, f.box, "One", []string{"a"}, "a", "b")
 	one := f.display.get("/display/lists/"+id1, "en").body
-	for _, want := range []string{"Delete ticked-off entry (1)", "Yes, delete 1 entry", "The ticked-off entry of this list is deleted for good, on every display and phone. Open entries stay."} {
+	for _, want := range []string{"Delete ticked-off entry (1)", "Yes, delete 1 entry", "The ticked-off entry of this list is deleted for good, on every display and personal device. Open entries stay."} {
 		if !strings.Contains(one, want) {
 			t.Errorf("singular lacks %q", want)
 		}
@@ -520,7 +520,7 @@ func TestListsViewIsGerman(t *testing.T) {
 	id, _ := f.onlyList(t, "Einkauf", []string{"Brot"}, "Milch", "Brot")
 	body := f.listsPage(t, "de", "/display/lists/"+id).body
 	for _, want := range []string{`<html lang="de"`, `<nav aria-label="Alle Listen">`, "Zurück zur Familienansicht", "Von Hand sortiert. 1 offen, 1 abgehakt.", ">Neuer Eintrag<", "Hinzufügen", "Abgehakt (1)", "Abgehakten Eintrag löschen (1)",
-		"Ja, 1 Eintrag löschen", "Der abgehakte Eintrag dieser Liste wird endgültig gelöscht, auf allen Displays und Handys. Offene Einträge bleiben."} {
+		"Ja, 1 Eintrag löschen", "Der abgehakte Eintrag dieser Liste wird endgültig gelöscht, auf allen Displays und Geräten. Offene Einträge bleiben."} {
 		if !strings.Contains(body, want) {
 			t.Errorf("German lists view lacks %q", want)
 		}

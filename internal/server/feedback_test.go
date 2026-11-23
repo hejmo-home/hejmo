@@ -46,11 +46,11 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 	displayID := displays[0].ID
 	d2 := newScreen(b)
 	code2 := codeOn(t, d2.get("/display", "en").body)
-	b.post("/caldav/tokens", url.Values{"name": {"Phone"}})
+	b.post("/caldav/tokens", url.Values{"name": {"Personal device"}})
 	tokens, _ := b.db.APITokens(h.ID)
 	var tokenID string
 	for _, tok := range tokens {
-		if tok.Name == "Phone" {
+		if tok.Name == "Personal device" {
 			tokenID = tok.ID
 		}
 	}
@@ -71,7 +71,7 @@ func TestEverySavingPageShowsASuccessLineAfterwards(t *testing.T) {
 		{"display pair", "/displays", "/displays", pairForm(code2), "Display paired."},
 		{"display settings", "/displays/" + displayID + "/settings", "/displays/" + displayID, url.Values{"show_tomorrow": {"on"}}, "Saved."},
 		{"share", "/caldav/calendars/" + calID + "/share", "/caldav", url.Values{"shared": {"on"}}, "Sharing through the box is on."},
-		{"token revoke", "/caldav/tokens/" + tokenID + "/revoke", "/caldav", url.Values{}, "Access for “Phone” revoked."},
+		{"token revoke", "/caldav/tokens/" + tokenID + "/revoke", "/caldav", url.Values{}, "Access for “Personal device” revoked."},
 		{"connection calendars", "/connections/" + connID + "/calendars", "/calendars", url.Values{"calendar": {flowCalendar}, "name_" + flowCalendar: {"Home"}, "interval": {"60"}}, "Calendar added."},
 		{"task delete", "/tasks/" + taskID + "/delete", "/tasks", url.Values{}, "Task deleted."},
 		{"calendar remove", "/calendars/" + calID + "/delete", "/calendars", url.Values{}, "“Holidays” removed."},
@@ -128,11 +128,11 @@ func TestFinishingSetupShowsASuccessLine(t *testing.T) {
 func TestCreatingADeviceTokenShowsASuccessLine(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	r := b.do(http.MethodPost, "/caldav/tokens", url.Values{"name": {"Phone"}}, map[string]string{"Accept-Language": "en"})
+	r := b.do(http.MethodPost, "/caldav/tokens", url.Values{"name": {"Personal device"}}, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusOK {
 		t.Fatalf("POST = %d", r.status)
 	}
-	if got := successLine(r.body); got != "Device token for “Phone” created." {
+	if got := successLine(r.body); got != "Device token for “Personal device” created." {
 		t.Errorf("success line = %q", got)
 	}
 	if !strings.Contains(r.body, "data-device-token=") {

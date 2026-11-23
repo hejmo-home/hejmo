@@ -77,7 +77,7 @@ func TestValidateScopes(t *testing.T) {
 	}
 }
 
-// A device token for a phone's calendar app carries the scope "calendars": it
+// A device token for a personal device's calendar app carries the scope "calendars": it
 // reaches the box's CalDAV server and nothing in the REST API (ADR 0012).
 func TestCalendarsScopeCoversOnlyCalendars(t *testing.T) {
 	if err := auth.ValidateScopes("calendars"); err != nil {

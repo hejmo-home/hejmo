@@ -43,7 +43,7 @@ func TestDeviceTokenRowSaysWhenItWasLastUsedWithSeconds(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
 	_, secret := newDeviceToken(t, c.b, "iPhone Mama")
-	if _, err := c.phoneWith(t, "mama", secret).calendars(); err != nil {
+	if _, err := c.personalDeviceWith(t, "mama", secret).calendars(); err != nil {
 		t.Fatal(err)
 	}
 	body := getEN(c.b, "/caldav").body
@@ -114,12 +114,12 @@ func TestANewTokenIsShownOnceOnItsOwnPage(t *testing.T) {
 	// A success line is waiting from an earlier save; it must not replace this page's own.
 	id := pairedDisplay(t, b, "Hallway", "screen")
 	b.post("/displays/"+id+"/settings", url.Values{"show_tomorrow": {"on"}})
-	r := b.do(http.MethodPost, "/caldav/tokens", url.Values{"name": {"Phone"}}, map[string]string{"Accept-Language": "en"})
+	r := b.do(http.MethodPost, "/caldav/tokens", url.Values{"name": {"Personal device"}}, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusOK {
 		t.Fatalf("create = %d", r.status)
 	}
 	for _, want := range []string{
-		"Device token for “Phone” created.", `<section class="once"`, `data-device-token="hejmo_`, `data-copy`, "Copy token",
+		"Device token for “Personal device” created.", `<section class="once"`, `data-device-token="hejmo_`, `data-copy`, "Copy token",
 		"Server address", "User name", "Password", "the token above", "Done, the token is entered", `/caldav/tokens/`,
 	} {
 		if !strings.Contains(r.body, want) {

@@ -39,7 +39,7 @@
   <script src="/static/passkey.js" defer></script>
 {{template "foot"}}
 
-{{define "resetHint"}}<p class="hint" data-otp-reset>{{t "otp.reset.revoke"}} <a href="/phones">{{t "nav.phones"}}</a> {{t "otp.reset.revoke.and"}} <a href="/caldav">{{t "hub.caldav"}}</a>{{t "otp.reset.revoke.end"}}</p>{{end}}
+{{define "resetHint"}}<p class="hint" data-otp-reset>{{t "otp.reset.revoke"}} <a href="/personal-devices">{{t "nav.personal_devices"}}</a> {{t "otp.reset.revoke.and"}} <a href="/caldav">{{t "hub.caldav"}}</a>{{t "otp.reset.revoke.end"}}</p>{{end}}
 
 {{define "passkeyIPNotice"}}<p class="notice" data-passkey-ip>{{t "account.passkeys.ip.lead"}} {{t "login.passkey.ip.before"}} <span class="host">{{.HostHere}}</span> {{t "login.passkey.ip.after"}} <a href="{{.BoxURL}}">{{t "account.passkeys.ip.link.pre"}} <span class="host">{{.BoxName}}</span>{{with t "account.passkeys.ip.link.post"}} {{.}}{{end}}</a></p>{{end}}
 

@@ -21,6 +21,11 @@ type starEntryJSON struct {
 	BookedBy        string `json:"booked_by"`
 	BookedByRemoved bool   `json:"booked_by_removed"`
 	CreatedAt       string `json:"created_at"`
+	// Redemption is set on the booking of a confirmed redemption (ticket 292): the redemption, what the reward was then, and whether a parent redeemed it directly.
+	Redemption   string `json:"redemption_id"`
+	RewardName   string `json:"reward_name"`
+	RewardSymbol string `json:"reward_symbol"`
+	Direct       bool   `json:"direct"`
 }
 
 type starAccountJSON struct {
@@ -32,7 +37,8 @@ type starAccountJSON struct {
 
 func starEntryToJSON(e store.StarEntry, loc *time.Location) starEntryJSON {
 	return starEntryJSON{ID: e.ID, PersonID: e.PersonID, Delta: e.Delta, Note: e.Note, TaskID: e.TaskID, TaskTitle: e.TaskTitle,
-		Day: e.Day, BookedBy: e.BookedByName, BookedByRemoved: e.BookedByRemoved, CreatedAt: e.At.In(loc).Format(time.RFC3339)}
+		Day: e.Day, BookedBy: e.BookedByName, BookedByRemoved: e.BookedByRemoved, CreatedAt: e.At.In(loc).Format(time.RFC3339),
+		Redemption: e.RedemptionID, RewardName: e.RewardName, RewardSymbol: e.RewardSymbol, Direct: e.Direct}
 }
 
 func (s *server) apiGetStars(w http.ResponseWriter, r *http.Request, p principal) {

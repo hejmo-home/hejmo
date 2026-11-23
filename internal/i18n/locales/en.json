@@ -3701,5 +3701,8 @@
   "people.streaks.hint": "For children this is on at first, for adults off.",
   "people.streaks.aria": "Week count and badges for this person",
   "flash.streaks_off": "{name} no longer sees week counts or badges. Stars stay visible.",
-  "pause.edit.title.whole": "Pause for the whole family"
+  "pause.edit.title.whole": "Pause for the whole family",
+  "week.lead": "This week:",
+  "week.sr": "{day}: {state}",
+  "week.sr.today": "today, {day}: {state}"
 }

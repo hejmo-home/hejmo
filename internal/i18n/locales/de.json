@@ -3665,7 +3665,7 @@
   "week.best.other": "Bestwert: **{n} Tage am Stück**",
   "tasks.pause.today": "Heute Pausetag",
   "pause.title": "Pausetage",
-  "pause.lead": "An Pausetagen zählen Routinen nicht, etwa wenn ein Kind krank ist oder ihr verreist. So unterbricht kein Tag den Bestwert.",
+  "pause.lead": "An Pausetagen zählen Routinen nicht, etwa wenn ein Kind krank ist oder die Familie verreist. So unterbricht kein Tag den Bestwert.",
   "pause.none": "Keine Pausetage geplant.",
   "pause.add": "Pausetage eintragen",
   "pause.running": "Läuft gerade",
@@ -3701,5 +3701,8 @@
   "people.streaks.hint": "Für Kinder ist das am Anfang an, für Erwachsene aus.",
   "people.streaks.aria": "Wochenzähler und Abzeichen für diese Person",
   "flash.streaks_off": "{name} sieht jetzt keine Wochenzähler und keine Abzeichen mehr. Sterne bleiben sichtbar.",
-  "pause.edit.title.whole": "Pause für die ganze Familie"
+  "pause.edit.title.whole": "Pause für die ganze Familie",
+  "week.lead": "Diese Woche:",
+  "week.sr": "{day}: {state}",
+  "week.sr.today": "heute, {day}: {state}"
 }

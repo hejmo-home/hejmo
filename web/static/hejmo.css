@@ -3273,6 +3273,40 @@ ol.porder > li.prow { margin: 0; padding: 0; background: none; border-radius: 0;
 /* The trimmed overview: one way in, right under the lead. */
 .add-way { margin: 0 0 var(--gap-section); }
 section > .hint.none { margin-top: -4px; }
+/* ---- ticket 277: varieties of articles on list entries ("Mehl · Type 405") ----
+   The variety follows the article's name after " · " in regular weight, so
+   "Mehl" and "Mehl · Type 405" read as two things. On a tile it is its own
+   line under the name. It is never cut. */
+.variety { font-weight: 400; }
+.big-check .title .variety, .art-sugg b .variety, .picked b .variety, .edit .title .variety { font-weight: 400; color: var(--text); }
+[data-done="true"] .big-check .title .variety { color: var(--text-secondary); }
+.picked b > span { min-width: 0; overflow-wrap: break-word; }
+.tile-check .variety { max-width: 100%; margin-top: -4px; font-size: var(--fs-label-large); line-height: 1.25; color: var(--text); overflow-wrap: break-word; -webkit-hyphens: manual; hyphens: manual; }
+@supports (hyphenate-limit-chars: 12 5 5) { .tile-check .variety { -webkit-hyphens: auto; hyphens: auto; hyphenate-limit-chars: 12 5 5; } }
+.tiles [data-done="true"] .tile-check .variety { color: var(--text-secondary); text-decoration: line-through; }
+[data-theme="bw"] .tiles [data-done="true"] .tile-check .variety { color: var(--text); }
+/* "Sorte:" in the add card and the quantity editor: closed it says the state
+   in words ("keine" or the variety as a filled pill); open, radio chips
+   "Ohne Sorte", the varieties used before, "Neue Sorte" with its text field. */
+.adder > .variety-more { order: 6; }
+details.variety-more { border-top: 1px solid var(--border); min-width: 0; }
+details.variety-more > summary { flex-wrap: wrap; color: var(--text); }
+details.variety-more > summary > span:first-of-type { color: var(--accent); }
+details.variety-more .v-state { font-size: var(--fs-label-large); color: var(--text); }
+details.variety-more .v-state.chosen { padding: 1px 10px; border-radius: var(--radius-chip); background: var(--accent); color: var(--accent-text); font-weight: 700; overflow-wrap: anywhere; }
+details.variety-more > div { display: grid; gap: 10px; padding: 2px 0 12px; }
+fieldset.variety-pick label { white-space: normal; text-align: left; justify-items: start; max-width: 100%; overflow-wrap: anywhere; }
+fieldset.variety-pick > legend { font-size: var(--fs-label); color: var(--text-secondary); }
+.variety-more .variety-new { display: none; }
+.variety-more:has(input[value="new"]:checked) .variety-new { display: grid; }
+.variety-new input { width: 100%; max-width: 24em; box-sizing: border-box; }
+.variety-new.invalid input { border: 2px solid var(--error-text); }
+.variety-more .hint { margin: 0; }
+.qty-edit details.variety-more { border-top: 0; }
+[data-theme="bw"] details.variety-more { border-top: 2px solid var(--text); }
+[data-theme="bw"] .qty-edit details.variety-more { border-top: 0; }
+[data-theme="bw"] details.variety-more .v-state.chosen { background: var(--text); color: var(--surface); }
+.lv fieldset.variety-pick label { min-height: 56px; }
 /* #294 (new, see DESIGN.md) */
 /* Week of a routine (#294): seven day cells Monday to Sunday under the steps,
    then the week and the best streak in words. Done = filled box with a tick in

@@ -70,7 +70,7 @@ func openTexts(entries []list.Entry) []string {
 	var out []string
 	for _, e := range entries {
 		if !e.Done {
-			out = append(out, e.Text)
+			out = append(out, entryLabel(e.Text, e.Variety))
 		}
 	}
 	return out

@@ -55,3 +55,12 @@ test('the editor tells the box that the page converted the number', () => {
   assert.equal(field.value, '1');
   a.markConverted({ querySelector: () => null }); // no field, nothing to do
 });
+
+test('the closed Sorte row says none, the variety, or a new variety that is still empty (ticket 277)', () => {
+  assert.deepEqual(a.varietyState('', ''), { kind: 'none', text: '' });
+  assert.deepEqual(a.varietyState('', 'ignored'), { kind: 'none', text: '' });
+  assert.deepEqual(a.varietyState('Type 550', ''), { kind: 'chosen', text: 'Type 550' });
+  assert.deepEqual(a.varietyState('new', '  Type \t 405 '), { kind: 'chosen', text: 'Type 405' });
+  assert.deepEqual(a.varietyState('new', '   '), { kind: 'empty', text: '' });
+  assert.deepEqual(a.varietyState('new', undefined), { kind: 'empty', text: '' });
+});

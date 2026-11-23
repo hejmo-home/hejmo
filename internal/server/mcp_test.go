@@ -349,6 +349,28 @@ func TestMCPToolsDoWhatTheRESTFunctionsDo(t *testing.T) {
 	}
 }
 
+// Ticket 277: the lists area carries the variety of an entry.
+func TestMCPAddsAListEntryWithAVarietyAndReadsItBack(t *testing.T) {
+	t.Parallel()
+	tb := newTaskBox(t)
+	c := tb.parent
+	c.switchMCP(t, true)
+	s := c.mcpSession(t, c.newMCPToken(t, "Claude Desktop", map[string]string{"lists": "write"}))
+	listID := listBox{tb}.newList(t, "Einkauf", "manual")
+	if out, failed := callTool(s, "add_list_entry", map[string]any{"id": listID, "text": "Milch", "variety": "laktosefrei"}); failed || !strings.Contains(out, `"variety":"laktosefrei"`) {
+		t.Fatalf("add_list_entry = %v %s", failed, out)
+	}
+	if out, failed := callTool(s, "add_list_entry", map[string]any{"id": listID, "text": "Milch"}); failed || !strings.Contains(out, `"variety":null`) {
+		t.Fatalf("Milch next to Milch · laktosefrei: %v %s", failed, out)
+	}
+	if out, failed := callTool(s, "get_list", map[string]any{"id": listID}); failed || strings.Count(out, `"text":"Milch"`) != 2 || !strings.Contains(out, `"variety":"laktosefrei"`) {
+		t.Errorf("get_list carries the variety: %v %s", failed, out)
+	}
+	if out, failed := callTool(s, "add_list_entry", map[string]any{"id": listID, "text": "Quinoa-Pops", "variety": "bunt"}); !failed || !strings.Contains(out, "variety") {
+		t.Errorf("free text has no variety: %v %s", failed, out)
+	}
+}
+
 // Scopes are enforced unchanged: lists:read lets an assistant read lists and nothing else.
 func TestMCPEnforcesScopesPerAreaAndAction(t *testing.T) {
 	t.Parallel()

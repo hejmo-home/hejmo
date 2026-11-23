@@ -21,6 +21,7 @@ CREATE TABLE rewards (
     -- Archived rewards are hidden from children and from the child API.
     archived_at     TEXT,
     archived_reason TEXT CHECK (archived_reason IS NULL OR archived_reason = 'audience_gone'),
+    archived_person TEXT NOT NULL DEFAULT '', -- the name of the person who left, to say so on the reward's page
     created_by     TEXT REFERENCES people(id) ON DELETE SET NULL,
     created_at     TEXT NOT NULL,
     updated_at     TEXT NOT NULL,
@@ -54,14 +55,14 @@ CREATE INDEX reward_redemptions_reward ON reward_redemptions (reward_id, person_
 -- "whole family" because its audience became empty.
 CREATE TRIGGER rewards_audience_gone_people BEFORE DELETE ON people
 BEGIN
-    UPDATE rewards SET archived_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), archived_reason = 'audience_gone'
+    UPDATE rewards SET archived_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), archived_reason = 'audience_gone', archived_person = COALESCE((SELECT name FROM people WHERE id = OLD.id), '')
     WHERE archived_at IS NULL
       AND id IN (SELECT reward_id FROM reward_people GROUP BY reward_id HAVING COUNT(*) = 1 AND MIN(person_id) = OLD.id);
 END;
 
 CREATE TRIGGER rewards_audience_gone_member BEFORE DELETE ON household_members
 BEGIN
-    UPDATE rewards SET archived_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), archived_reason = 'audience_gone'
+    UPDATE rewards SET archived_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), archived_reason = 'audience_gone', archived_person = COALESCE((SELECT name FROM people WHERE id = OLD.person_id), '')
     WHERE archived_at IS NULL AND household_id = OLD.household_id
       AND id IN (SELECT reward_id FROM reward_people GROUP BY reward_id HAVING COUNT(*) = 1 AND MIN(person_id) = OLD.person_id);
     DELETE FROM reward_people WHERE person_id = OLD.person_id

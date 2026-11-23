@@ -43,8 +43,10 @@ type Reward struct {
 	// ArchivedAudienceGone when the box archived it, else empty.
 	ArchivedAt     time.Time
 	ArchivedReason string
-	CreatedBy      string // the person; "" when that person is gone
-	CreatedAt      time.Time
+	// ArchivedFor is the name of the person who left, with ArchivedAudienceGone.
+	ArchivedFor string
+	CreatedBy   string // the person; "" when that person is gone
+	CreatedAt   time.Time
 }
 
 // Archived reports whether the reward is hidden from children.
@@ -82,13 +84,13 @@ func (r Reward) check(pic *ArticlePicture) (Reward, error) {
 }
 
 const rewardColumns = `id, name, pic_source, symbol, price, limit_period, COALESCE(limit_count, 0), picture IS NOT NULL, picture_from_w, picture_from_h, picture_from_b, picture_at,
-	COALESCE(archived_at, ''), COALESCE(archived_reason, ''), COALESCE(created_by, ''), created_at`
+	COALESCE(archived_at, ''), COALESCE(archived_reason, ''), archived_person, COALESCE(created_by, ''), created_at`
 
 func scanReward(row interface{ Scan(...any) error }) (Reward, error) {
 	var r Reward
 	var period, pat, arch, created string
 	err := row.Scan(&r.ID, &r.Name, &r.PicSource, &r.Symbol, &r.Price, &period, &r.Limit.Count, &r.HasPicture, &r.PictureFromW, &r.PictureFromH, &r.PictureFromBytes, &pat,
-		&arch, &r.ArchivedReason, &r.CreatedBy, &created)
+		&arch, &r.ArchivedReason, &r.ArchivedFor, &r.CreatedBy, &created)
 	r.Limit.Period = reward.Period(period)
 	r.PictureAt, _ = time.Parse(time.RFC3339, pat)
 	r.ArchivedAt, _ = time.Parse(time.RFC3339, arch)
@@ -363,7 +365,7 @@ func (db *DB) RestoreReward(householdID, id string, aud *Audience) (Reward, erro
 	if err := checkAudience(tx, householdID, ids); err != nil {
 		return Reward{}, err
 	}
-	if _, err := tx.Exec(`UPDATE rewards SET archived_at = NULL, archived_reason = NULL, updated_at = ? WHERE household_id = ? AND id = ?`, now(), householdID, id); err != nil {
+	if _, err := tx.Exec(`UPDATE rewards SET archived_at = NULL, archived_reason = NULL, archived_person = '', updated_at = ? WHERE household_id = ? AND id = ?`, now(), householdID, id); err != nil {
 		return Reward{}, err
 	}
 	if aud != nil {

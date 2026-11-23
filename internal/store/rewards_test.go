@@ -237,7 +237,7 @@ func TestRemovingTheOnlyPersonOfARewardArchivesIt(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	if !got.Archived() || got.ArchivedReason != "audience_gone" {
+	if !got.Archived() || got.ArchivedReason != "audience_gone" || got.ArchivedFor != "Mia" {
 		t.Errorf("sole audience: %+v", got)
 	}
 	if len(got.PersonIDs) != 0 {

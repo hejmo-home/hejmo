@@ -51,19 +51,19 @@ CREATE TABLE reward_redemptions (
 CREATE INDEX reward_redemptions_reward ON reward_redemptions (reward_id, person_id, decided_at);
 
 -- When the last person a reward is meant for leaves, the reward is archived
--- in the same transaction, with the reason. It must never fall back to
+-- in the same transaction, with the reason (a reward archived by hand keeps its
+-- archived_at and gets the reason too). It must never fall back to
 -- "whole family" because its audience became empty.
 CREATE TRIGGER rewards_audience_gone_people BEFORE DELETE ON people
 BEGIN
-    UPDATE rewards SET archived_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), archived_reason = 'audience_gone', archived_person = COALESCE((SELECT name FROM people WHERE id = OLD.id), '')
-    WHERE archived_at IS NULL
-      AND id IN (SELECT reward_id FROM reward_people GROUP BY reward_id HAVING COUNT(*) = 1 AND MIN(person_id) = OLD.id);
+    UPDATE rewards SET archived_at = COALESCE(archived_at, strftime('%Y-%m-%dT%H:%M:%SZ', 'now')), archived_reason = 'audience_gone', archived_person = COALESCE((SELECT name FROM people WHERE id = OLD.id), '')
+    WHERE id IN (SELECT reward_id FROM reward_people GROUP BY reward_id HAVING COUNT(*) = 1 AND MIN(person_id) = OLD.id);
 END;
 
 CREATE TRIGGER rewards_audience_gone_member BEFORE DELETE ON household_members
 BEGIN
-    UPDATE rewards SET archived_at = strftime('%Y-%m-%dT%H:%M:%SZ', 'now'), archived_reason = 'audience_gone', archived_person = COALESCE((SELECT name FROM people WHERE id = OLD.person_id), '')
-    WHERE archived_at IS NULL AND household_id = OLD.household_id
+    UPDATE rewards SET archived_at = COALESCE(archived_at, strftime('%Y-%m-%dT%H:%M:%SZ', 'now')), archived_reason = 'audience_gone', archived_person = COALESCE((SELECT name FROM people WHERE id = OLD.person_id), '')
+    WHERE household_id = OLD.household_id
       AND id IN (SELECT reward_id FROM reward_people GROUP BY reward_id HAVING COUNT(*) = 1 AND MIN(person_id) = OLD.person_id);
     DELETE FROM reward_people WHERE person_id = OLD.person_id
       AND reward_id IN (SELECT id FROM rewards WHERE household_id = OLD.household_id);

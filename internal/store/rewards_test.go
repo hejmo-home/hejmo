@@ -223,6 +223,22 @@ func TestRedemptionTimesAreConfirmedOnesPerRewardAndPerson(t *testing.T) {
 	}
 }
 
+func TestRedemptionCountsIncludePeopleWhoHaveLeft(t *testing.T) {
+	f := newRewardFixture(t)
+	r, _ := f.db.CreateReward(f.h.ID, f.mama.ID, eis(), nil)
+	at := time.Date(2026, 11, 23, 9, 0, 0, 0, time.UTC)
+	_ = f.db.InsertRedemption(r.ID, f.mia.ID, "confirmed", at)
+	_ = f.db.InsertRedemption(r.ID, f.sebastian.ID, "confirmed", at)
+	_ = f.db.InsertRedemption(r.ID, f.sebastian.ID, "declined", at)
+	if err := f.db.ExecUnchecked(`DELETE FROM people WHERE id = ?`, f.mia.ID); err != nil {
+		t.Fatal(err)
+	}
+	counts, err := f.db.ConfirmedRedemptionCounts(f.h.ID)
+	if err != nil || counts[r.ID] != 2 {
+		t.Fatalf("counts = %v %v, want 2 (the one who left still counts)", counts, err)
+	}
+}
+
 // Acceptance: when the last person a reward is meant for is removed, the
 // reward is archived with its reason in the same transaction, never "whole family".
 func TestRemovingTheOnlyPersonOfARewardArchivesIt(t *testing.T) {
@@ -290,6 +306,38 @@ func TestRestoringAnAudienceGoneRewardNeedsANewAudience(t *testing.T) {
 	got, err := f.db.RestoreReward(f.h.ID, r.ID, &store.Audience{PersonIDs: []string{f.sebastian.ID}})
 	if err != nil || got.Archived() || got.ArchivedReason != "" || !reflect.DeepEqual(got.PersonIDs, []string{f.sebastian.ID}) {
 		t.Fatalf("restore = %+v %v", got, err)
+	}
+}
+
+// A reward archived by hand and meant for one person also needs a new audience
+// when that person leaves: restoring it must never offer it to the whole family.
+func TestRestoringAHandArchivedRewardWhoseAudienceLeftNeedsANewAudience(t *testing.T) {
+	f := newRewardFixture(t)
+	r, _ := f.db.CreateReward(f.h.ID, f.mama.ID, store.Reward{Name: "Kuscheltier", Price: 40, PersonIDs: []string{f.mia.ID}}, nil)
+	if _, err := f.db.ArchiveReward(f.h.ID, r.ID, time.Date(2026, 11, 24, 8, 0, 0, 0, time.UTC)); err != nil {
+		t.Fatal(err)
+	}
+	if err := f.db.ExecUnchecked(`DELETE FROM people WHERE id = ?`, f.mia.ID); err != nil {
+		t.Fatal(err)
+	}
+	got, _ := f.db.Reward(f.h.ID, r.ID)
+	if !got.Archived() || got.ArchivedReason != "audience_gone" {
+		t.Fatalf("reward = %+v, want archived with reason audience_gone", got)
+	}
+	if _, err := f.db.RestoreReward(f.h.ID, r.ID, nil); !errors.Is(err, store.ErrInvalid) {
+		t.Fatalf("restore without an audience = %v, want ErrInvalid", err)
+	}
+}
+
+func TestRestoringAHandArchivedRewardWhoseMemberLeftNeedsANewAudience(t *testing.T) {
+	f := newRewardFixture(t)
+	r, _ := f.db.CreateReward(f.h.ID, f.mama.ID, store.Reward{Name: "Kuscheltier", Price: 40, PersonIDs: []string{f.mia.ID}}, nil)
+	_, _ = f.db.ArchiveReward(f.h.ID, r.ID, time.Date(2026, 11, 24, 8, 0, 0, 0, time.UTC))
+	if err := f.db.ExecUnchecked(`DELETE FROM household_members WHERE person_id = ?`, f.mia.ID); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := f.db.RestoreReward(f.h.ID, r.ID, nil); !errors.Is(err, store.ErrInvalid) {
+		t.Fatalf("restore without an audience = %v, want ErrInvalid", err)
 	}
 }
 

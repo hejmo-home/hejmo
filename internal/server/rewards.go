@@ -42,19 +42,9 @@ func (s *server) rewardStates(p principal, personID string, list []store.Reward)
 	return balance, states, nil
 }
 
-// redeemedCounts is how often each reward was redeemed (confirmed).
+// redeemedCounts is how often each reward was redeemed (confirmed), by anyone, also people who left.
 func (s *server) redeemedCounts(p principal) (map[string]int, error) {
-	times, err := s.db.ConfirmedRedemptions(p.household.ID)
-	if err != nil {
-		return nil, err
-	}
-	out := map[string]int{}
-	for id, by := range times {
-		for _, list := range by {
-			out[id] += len(list)
-		}
-	}
-	return out, nil
+	return s.db.ConfirmedRedemptionCounts(p.household.ID)
 }
 
 func isChild(p principal) bool { return p.person.Role == store.RoleChild }

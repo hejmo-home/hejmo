@@ -481,6 +481,27 @@ func (db *DB) ConfirmedRedemptions(householdID string) (map[string]map[string][]
 	return out, rows.Err()
 }
 
+// ConfirmedRedemptionCounts is how often each reward was redeemed (confirmed),
+// including by people who have left: what DeleteReward goes by.
+func (db *DB) ConfirmedRedemptionCounts(householdID string) (map[string]int, error) {
+	rows, err := db.sql.Query(`SELECT d.reward_id, COUNT(*) FROM reward_redemptions d JOIN rewards r ON r.id = d.reward_id
+		WHERE r.household_id = ? AND d.status = 'confirmed' GROUP BY d.reward_id`, householdID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	out := map[string]int{}
+	for rows.Next() {
+		var id string
+		var n int
+		if err := rows.Scan(&id, &n); err != nil {
+			return nil, err
+		}
+		out[id] = n
+	}
+	return out, rows.Err()
+}
+
 // HasRewards reports whether at least one offered reward is meant for the person.
 func (db *DB) HasRewards(householdID, personID string) (bool, error) {
 	list, err := db.RewardsFor(householdID, personID)

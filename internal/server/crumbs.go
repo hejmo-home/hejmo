@@ -61,7 +61,7 @@ var crumbTrails = map[string][]crumb{
 	"pause.html":            {crumbTasks},
 	"meal_template.html":    {crumbMeals, crumbMealTemplates},
 	"routine_template.html": {crumbTasks, crumbRoutineTemplates},
-	"reward_form.html":      {crumbTasks, crumbRewards}, "reward.html": {crumbTasks, crumbRewards},
+	"reward_form.html":      {crumbTasks, crumbRewards}, "reward.html": {crumbTasks, crumbRewards}, "reward_goal.html": {crumbTasks, crumbRewards},
 }
 
 // crumbsFor returns the parts above the page for a template, or nil when the

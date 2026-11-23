@@ -114,9 +114,7 @@ func TestTheStarsBlockCanBeSwitchedOffPerDisplay(t *testing.T) {
 	if goalBlock(f.view(t, "en", f.at(14, 9, 0)), "Mia") == "" {
 		t.Fatal("on by default")
 	}
-	form := f.layoutForm(true, []string{"Mama", "Papa", "Sebastian", "Mia"}, defaultOn...)
-	form.Add("order", "stars")
-	if r := f.saveLayout(t, form); r.status >= 400 {
+	if r := f.saveLayout(t, f.layoutForm(true, []string{"Mama", "Papa", "Sebastian", "Mia"}, "clock", "weather", "events", "tasks", "meals", "tomorrow")); r.status >= 400 {
 		t.Fatalf("save = %d", r.status)
 	}
 	if goalBlock(f.view(t, "en", f.at(14, 9, 0)), "Mia") != "" {

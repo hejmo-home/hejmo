@@ -5251,7 +5251,7 @@ components:
             type: object
             required: [id, zone, enabled]
             properties:
-              id: { type: string, enum: [clock, weather, events, routines, tasks, meals, tomorrow, list] }
+              id: { type: string, enum: [clock, weather, events, routines, tasks, stars, meals, tomorrow, list] }
               zone: { type: string, enum: [header, columns, footer] }
               enabled: { type: boolean }
         list_id: { type: string, format: uuid, nullable: true, description: "The list of the block `list` (\"one list\"); at most 8 open entries show. Null: none chosen. A list that was deleted meanwhile stays here and the display shows no list until another is chosen" }
@@ -5273,7 +5273,7 @@ components:
             type: object
             required: [id]
             properties:
-              id: { type: string, enum: [clock, weather, events, routines, tasks, meals, tomorrow, list] }
+              id: { type: string, enum: [clock, weather, events, routines, tasks, stars, meals, tomorrow, list] }
               enabled: { type: boolean }
         list_id: { type: string, description: "The ID of the list of the block `list`; an empty string removes the choice" }
     Brightness:

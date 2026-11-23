@@ -76,11 +76,16 @@
 
   {{if not .Child}}<section aria-labelledby="stars">
     <h2 id="stars">{{t "tasks.stars.title"}}</h2>
-    <p class="lead">{{t "tasks.stars.intro"}} {{t "tasks.stars.rewards.pre"}}<a href="/tasks/rewards">{{t "rwd.title"}}</a>{{t "tasks.stars.rewards.post"}}</p>
-    {{if .StarCards}}<ul class="cards">
-      {{range .StarCards}}
-        <li data-balance="{{.Balance}}">
-          <strong><input class="swatch" type="color" value="{{.Color}}" disabled tabindex="-1" aria-hidden="true"> {{.Name}} <span class="stars-balance">{{.Balance}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span></strong>
+    {{with .Success}}{{template "success" .}}{{end}}
+    <p class="lead">{{t "tasks.stars.intro"}} {{t "tasks.stars.rewards.pre"}}<a href="/tasks/rewards">{{t "rwd.title"}}</a>{{t "tasks.stars.rewards.post"}} {{t "tasks.stars.goal"}}</p>
+    {{if .StarCards}}<ul class="cards stars">
+      {{range .StarCards}}{{$c := .}}
+        <li data-person="{{.Slot}}" data-balance="{{.Balance}}">
+          <strong class="st-head"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span>{{.Name}} <span class="stars-balance">{{.Balance}}<span class="sr"> {{t "tasks.stars.unit"}}</span></span></strong>
+          {{if .HasRewards}}{{with .Goal}}<p class="goal-line" data-person="{{$c.Slot}}">{{template "goalIcon" 18}}<span><span class="k">{{t "tasks.goal.label"}}</span> {{template "goalPic" (dict "Goal" . "Class" "sm")}}{{if .Reached}}{{tfh "tasks.goal.enough" "name" .Name}}{{else}}{{tfh "tasks.goal.progress" "name" .Name "have" (printf "%d" .Have) "price" (printf "%d" .Price) "left" (printf "%d" .Left)}}{{end}}</span></p>
+          <a class="g-link" href="/tasks/rewards/goal/{{$c.ID}}">{{t "tasks.goal.change"}}</a>
+          {{else}}<p class="goal-line none" data-person="{{$c.Slot}}">{{template "goalIcon" 18}}<span>{{tf "tasks.goal.none" "possessive" $c.Poss}}</span></p>
+          <a class="g-link" href="/tasks/rewards/goal/{{$c.ID}}">{{t "tasks.goal.choose"}}</a>{{end}}{{end}}
           <span class="hint">{{t "tasks.stars.log"}}</span>
           {{range .Entries}}<span class="log-line"><b>{{.Delta}}</b> {{.Label}}<span class="hint"> · {{.When}}{{if .By}} · {{.By}}{{if .ByRemoved}} {{t "tasks.stars.removed"}}{{end}}{{end}}</span></span>
           {{else}}<span class="hint">{{t "tasks.stars.log_empty"}}</span>{{end}}

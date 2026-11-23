@@ -2,7 +2,6 @@ package store
 
 import (
 	"database/sql"
-	"errors"
 	"fmt"
 	"time"
 )
@@ -119,19 +118,27 @@ func (db *DB) Goals(householdID string) (map[string]Goal, error) {
 	if err := rows.Err(); err != nil {
 		return nil, err
 	}
+	var rewards map[string]Reward
 	for id, g := range out {
 		if g.Reward.ID == "" || g.Ended() {
 			g.Reward = Reward{}
 			out[id] = g
 			continue
 		}
-		r, err := db.Reward(householdID, g.Reward.ID)
-		if errors.Is(err, ErrNotFound) {
+		if rewards == nil { // one read of the catalogue for all goals
+			list, err := db.Rewards(householdID)
+			if err != nil {
+				return nil, err
+			}
+			rewards = make(map[string]Reward, len(list))
+			for _, r := range list {
+				rewards[r.ID] = r
+			}
+		}
+		r, ok := rewards[g.Reward.ID]
+		if !ok {
 			delete(out, id)
 			continue
-		}
-		if err != nil {
-			return nil, err
 		}
 		g.Reward = r
 		out[id] = g

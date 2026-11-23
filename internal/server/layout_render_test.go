@@ -519,6 +519,7 @@ var notRendered = map[string]string{
 	"/articles/{id}/picture":                  "an image",
 	"/tasks/rewards/{id}/picture":             "the photo of a reward, an image",
 	"/display/articles/{id}/picture":          "an image",
+	"/display/rewards/{id}/picture":           "an image",
 	"/settings/lists/library/picture/{token}": "an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
 	"/settings/lists/library/plan/{id}":       "fragment: the sentence under the card of an article, rendered inside it",

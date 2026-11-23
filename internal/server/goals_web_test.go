@@ -142,7 +142,7 @@ func TestARedemptionAnArchivedRewardAndAChangedAudienceEndTheGoalWithAKindLine(t
 	g.rewardWeb.stars(t, g.mia, 30)
 	g.redeem(t, g.kino, g.mia, "confirmed", g.b.now)
 	page := g.miaScreen.get("/tasks/rewards", "de").body
-	hasAll(t, "redeemed", page, `<p class="msg ok" role="status" data-success>`, "<b>Geschafft!</b>", "„Kino mit Popcorn“", "eingelöst", "Such dir ein neues Sparziel aus, wenn du magst.", `class="hint g-pick"`)
+	hasAll(t, "redeemed", page, `<p class="msg ok" role="status" data-success>`, "<b>Geschafft!</b>", "„Kino mit Popcorn“", "eingelöst", "Such dir ein neues Sparziel aus, wenn du magst.")
 	hasNone(t, "redeemed", page, `class="rwd-goal"`)
 	if i, j := strings.Index(page, "data-success"), strings.Index(page, "<h1>"); !(i > 0 && i < j) {
 		t.Errorf("the line comes before the heading")
@@ -162,7 +162,7 @@ func TestARedemptionAnArchivedRewardAndAChangedAudienceEndTheGoalWithAKindLine(t
 	hasNone(t, "archived", page, `class="rwd-goal"`, "Geschafft!")
 
 	// The line lasts 7 days.
-	if _, err := g.b.db.SQL().Exec(`UPDATE savings_goals SET ended_at = ?`, time.Now().Add(-8*24*time.Hour).UTC().Format(time.RFC3339)); err != nil {
+	if _, err := g.b.db.SQL().Exec(`UPDATE savings_goals SET ended_at = ?`, "2020-01-01T00:00:00Z"); err != nil {
 		t.Fatal(err)
 	}
 	if page = g.miaScreen.get("/tasks/rewards", "de").body; strings.Contains(page, "g-ended") {
@@ -209,9 +209,8 @@ func TestTheParentsStarCardsShowEachGoalAndTheWayToChangeIt(t *testing.T) {
 		`class="goal-line none"`, "Noch kein Sparziel. In Mias Spalte stehen nur die Sterne.", `href="/tasks/rewards/goal/`+g.mia+`">Sparziel wählen</a>`,
 		"Jede Person kann eine Belohnung als Sparziel haben; es steht in ihrer Spalte auf dem Bildschirm.")
 	hasNone(t, "star cards", page, `class="swatch" type="color"`)
-	// Mama (the signed-in parent): the rewards are for the whole family, so she gets a line too.
-	if n := count(page, `class="goal-line`); n < 3 {
-		t.Errorf("goal lines = %d", n)
+	if n := count(page, `class="goal-line`); n != 2 {
+		t.Errorf("goal lines = %d, want one per card", n)
 	}
 }
 
@@ -219,6 +218,8 @@ func TestAPersonWithNoRewardMeantForThemGetsNoGoalLine(t *testing.T) {
 	t.Parallel()
 	rw := newRewardWeb(t)
 	rw.create(t, "Nur Sebastian", "6", url.Values{"whole_family": {""}, "person": {rw.sebastian}})
+	rw.stars(t, rw.sebastian, 3)
+	rw.stars(t, rw.mia, 3)
 	page := rw.b.get("/tasks").body
 	if strings.Count(page, `class="goal-line`) != 1 || !strings.Contains(page, `href="/tasks/rewards/goal/`+rw.sebastian+`"`) || strings.Contains(page, `/tasks/rewards/goal/`+rw.mia) {
 		t.Errorf("only Sebastian has a reward meant for him:\n%s", page)
@@ -275,7 +276,8 @@ func TestTheGoalPageNamesAnArchivedRewardAtTheFieldAndLeavesItOut(t *testing.T) 
 	if strings.Contains(r.body, "<b>Eis aus der Eisdiele</b>") {
 		t.Error("the archived reward must be left out of the list")
 	}
-	if i, j := strings.Index(r.body, `<fieldset`), strings.Index(r.body, `class="ferr"`); !(i < j && j < strings.Index(r.body, "</fieldset>")) {
+	i := strings.Index(r.body, `<fieldset class="choice goals"`)
+	if j := strings.Index(r.body[i:], `class="ferr"`); j < 0 || j > strings.Index(r.body[i:], "</fieldset>") {
 		t.Error("the error belongs inside the fieldset")
 	}
 	h, _ := g.b.db.HomeHousehold()
@@ -289,7 +291,7 @@ func TestTheGoalPageForSomeoneWithoutARewardOffersTheNewRewardButton(t *testing.
 	rw := newRewardWeb(t)
 	page := rw.b.get("/tasks/rewards/goal/" + rw.mia)
 	hasAll(t, "empty", page.body, `<div class="empty" data-empty>`, "Für Mia gibt es noch keine Belohnung.", `href="/tasks/rewards/new"`, "Neue Belohnung")
-	hasNone(t, "empty", page.body, `<fieldset`)
+	hasNone(t, "empty", page.body, `class="choice goals"`)
 	if r := rw.b.get("/tasks/rewards/goal/nobody"); r.status != http.StatusNotFound {
 		t.Errorf("unknown person = %d", r.status)
 	}

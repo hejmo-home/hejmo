@@ -433,6 +433,10 @@ _Avoid_: birthday list, anniversary calendar
 The link of a contact to one or more people of the household, with what they are to them, such as "friend of Mia" or "paediatrician".
 _Avoid_: connection, relationship type
 
+**Important numbers**:
+The children's page of contacts a parent switched to "visible for children" (`/numbers`, "Wichtige Nummern"): photo, Hejmo name and every phone number of each such contact, never address, e-mail, birthday, groups or note. A child does not see their own contact. A relation alone does not make a contact visible; a visible contact without a phone number is not shown until it has one.
+_Avoid_: emergency list (that is the display block "Emergency numbers"), child contacts
+
 ## Offline mode and connections to the outside
 
 **Offline mode**:

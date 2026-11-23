@@ -2,6 +2,7 @@ package server_test
 
 import (
 	"net/http"
+	"regexp"
 	"strings"
 	"testing"
 )
@@ -146,4 +147,34 @@ func TestBirthdaysShowInTheWeekOfTheCalendarPageWithTheirAge(t *testing.T) {
 	page := c.page("/calendar?week=2026-11-16", "en").body
 	ctHas(t, "calendar week", page, "Mia B (7)", "Oma Gerda")
 	ctHasNot(t, "calendar week", page, "Oma Gerda (")
+}
+
+// The API declares event ids as uuids (Occurrence.event_id, /events/{id}), and
+// clients send them back: a birthday's id must be one, and it must work in
+// /events/{id}, where the calendar being read-only refuses the change.
+func TestBirthdayEventIDsAreUUIDsAndWorkInEventsByID(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	if status, _, _ := c.api.call(http.MethodPost, "/contacts", map[string]any{"name": "Oma Gerda", "birthday": map[string]any{"day": 3, "month": 5}}); status != http.StatusCreated {
+		t.Fatalf("create = %d", status)
+	}
+	cal := birthdayCalendarOf(t, c)
+	status, _, list := c.api.call(http.MethodGet, "/events?from=2028-05-01T00:00:00Z&to=2028-06-01T00:00:00Z", nil)
+	if status != http.StatusOK {
+		t.Fatalf("events = %d", status)
+	}
+	uuid := regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$`)
+	var id string
+	for _, x := range list {
+		if m := x.(map[string]any); m["calendar_id"] == cal["id"] {
+			id, _ = m["event_id"].(string)
+		}
+	}
+	if !uuid.MatchString(id) {
+		t.Fatalf("event_id of the birthday = %q, want a uuid", id)
+	}
+	status, _, _ = c.api.call(http.MethodDelete, "/events/"+id, nil)
+	if status != http.StatusUnprocessableEntity {
+		t.Errorf("DELETE /events/%s = %d, want 422: the read-only calendar refuses it, the id is found", id, status)
+	}
 }

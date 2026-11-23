@@ -436,6 +436,8 @@ func (db *DB) DeleteContact(householdID, id string) error {
 	if err := expectOne(tx.Exec(`DELETE FROM contacts WHERE id = ? AND household_id = ?`, id, householdID)); err != nil {
 		return err
 	}
+	// The name is for a calendar that has to be made; deleting a contact makes
+	// none (a calendar exists as soon as one birthday was saved).
 	if err := syncBirthdays(tx, householdID, ""); err != nil {
 		return err
 	}

@@ -5,6 +5,7 @@ import (
 	"testing"
 	"time"
 
+	"github.com/hejmo-home/hejmo/internal/birthday"
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
@@ -166,5 +167,82 @@ func TestTheCalendarFollowsTheContact(t *testing.T) {
 	}
 	if got := birthdayDays(t, db, h, 2026); len(got) != 0 {
 		t.Errorf("contact deleted, still in the calendar: %v", got)
+	}
+}
+
+// The API declares event ids as uuids and the age follows the event kind, not
+// its id: the store gives the birthday series of a contact the id
+// birthday.EventID and marks only the events of the calendar of kind birthdays.
+func TestBirthdayEventsHaveAUUIDPerContactAndAreMarkedAsBirthdays(t *testing.T) {
+	t.Parallel()
+	db, h, _ := exampleFamily(t)
+	gerda, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Oma Gerda", BdayDay: 3, BdayMonth: 5, BdayYear: 1950})
+	if err != nil {
+		t.Fatal(err)
+	}
+	fam, err := db.FamilyCalendar(h.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	day := time.Date(2026, 5, 3, 0, 0, 0, 0, time.UTC)
+	if _, err := db.CreateEvent(h.ID, calendar.Event{CalendarID: fam.ID, Title: "Anniversary", AllDay: true, Start: day, End: day.AddDate(0, 0, 1), RRule: "FREQ=YEARLY"}); err != nil {
+		t.Fatal(err)
+	}
+	events, err := db.EventsBetween(h.ID, time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC))
+	if err != nil {
+		t.Fatal(err)
+	}
+	cal, _ := birthdayCalendar(t, db, h)
+	seen := map[string]bool{}
+	for _, e := range events {
+		switch e.CalendarID {
+		case cal.ID:
+			seen["birthday"] = true
+			if e.ID != birthday.EventID(gerda.ID) || !e.Birthday {
+				t.Errorf("birthday event = id %q marked %v, want id %q marked", e.ID, e.Birthday, birthday.EventID(gerda.ID))
+			}
+		case fam.ID:
+			seen["family"] = true
+			if e.Birthday {
+				t.Error("an event of the family calendar is marked as a birthday")
+			}
+		}
+	}
+	if !seen["birthday"] || !seen["family"] {
+		t.Fatalf("events = %+v", events)
+	}
+	if got := strings.Join(birthdayDays(t, db, h, 2026), ","); got != "03.05. Oma Gerda (76)" {
+		t.Errorf("2026 = %s", got)
+	}
+}
+
+// Contacts that exist before the calendar (the migration makes the calendar,
+// the box writes the events) are in it after the next start.
+func TestTheBoxWritesTheBirthdaysOfExistingContactsAtStart(t *testing.T) {
+	t.Parallel()
+	db, path := openTemp(t)
+	h, err := db.CreateHousehold(store.Household{Name: "Family"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Oma Gerda", BdayDay: 3, BdayMonth: 5}); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.SQL().Exec(`DELETE FROM events`); err != nil {
+		t.Fatal(err)
+	}
+	if got := birthdayDays(t, db, h, 2026); len(got) != 0 {
+		t.Fatalf("setup: events left: %v", got)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	again, err := store.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer again.Close()
+	if got := strings.Join(birthdayDays(t, again, h, 2026), ","); got != "03.05. Oma Gerda" {
+		t.Errorf("2026 after the start = %s", got)
 	}
 }

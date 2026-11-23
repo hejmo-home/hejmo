@@ -10,7 +10,7 @@ import (
 )
 
 // #302: birthdays of contacts that exist before the migration are in the
-// calendar right after it, and so are the leap day and a missing year.
+// calendar after it and the start of the box, and so are the leap day and a missing year.
 func TestBirthdaysMigrationWritesTheCalendarForExistingContacts(t *testing.T) {
 	t.Parallel()
 	conn, err := sql.Open("sqlite", "file:"+filepath.Join(t.TempDir(), "hejmo.db")+"?_pragma=foreign_keys(1)&_pragma=busy_timeout(5000)&_txlock=immediate")
@@ -60,6 +60,11 @@ func TestBirthdaysMigrationWritesTheCalendarForExistingContacts(t *testing.T) {
 	}
 	if cals, _ := db.Calendars("h2"); len(cals) != 0 {
 		t.Errorf("a household without birthdays got a calendar: %+v", cals)
+	}
+	// The migration makes the calendar; the events are written by the box at
+	// its next start (an SQL migration cannot make the UUIDv5 ids).
+	if err := db.SyncAllBirthdays(); err != nil {
+		t.Fatal(err)
 	}
 	from, to := time.Date(2026, 1, 1, 0, 0, 0, 0, time.UTC), time.Date(2027, 1, 1, 0, 0, 0, 0, time.UTC)
 	events, err := db.EventsBetween("h1", from, to)

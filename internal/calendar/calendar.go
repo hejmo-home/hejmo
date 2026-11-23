@@ -37,6 +37,10 @@ type Event struct {
 	// the box shows it but never changes it, since a change would send a
 	// message to every attendee.
 	Invitation *Invitation
+	// Birthday is set by the store for the events of the calendar of kind
+	// birthdays: their occurrences carry the age (see Expand). It is not stored
+	// on the event.
+	Birthday bool
 }
 
 // Invitation says who invited and what the family's account answered, with a
@@ -101,7 +105,7 @@ func Expand(events []Event, from, to time.Time) ([]Occurrence, error) {
 				continue
 			}
 			o := occurrence(e, s, s, e.ID)
-			if birthday.IsEvent(e.ID) && !withAge(&o, e.Start.Year()) {
+			if e.Birthday && !withAge(&o, e.Start.Year()) {
 				continue
 			}
 			if o.Start.Before(to) && o.End.After(from) {

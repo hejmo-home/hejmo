@@ -1,6 +1,7 @@
 package birthday_test
 
 import (
+	"regexp"
 	"testing"
 
 	"github.com/hejmo-home/hejmo/internal/birthday"
@@ -55,16 +56,24 @@ func TestAgeOnlyWhenTheYearIsKnown(t *testing.T) {
 	}
 }
 
-func TestEventIDRoundTrip(t *testing.T) {
+var uuidV5 = regexp.MustCompile(`^[0-9a-f]{8}-[0-9a-f]{4}-5[0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$`)
+
+// The API declares every event id a uuid, so the id of a birthday series must
+// be one: a UUIDv5 of the contact id, the same on every box start.
+func TestEventIDIsAStableUUIDPerContact(t *testing.T) {
 	t.Parallel()
 	id := birthday.EventID("abc123")
-	if !birthday.IsEvent(id) {
-		t.Fatalf("%q is not recognised as a birthday event", id)
+	if !uuidV5.MatchString(id) {
+		t.Fatalf("EventID = %q, want a version 5 UUID", id)
 	}
-	if got := birthday.ContactID(id); got != "abc123" {
-		t.Errorf("ContactID = %q, want abc123", got)
+	// Computed with Python's uuid.uuid5(uuid.NAMESPACE_URL, "abc123").
+	if id != "616d42ca-cddb-57f6-a86d-ed5fbcd0ed3d" {
+		t.Errorf("EventID(abc123) = %q, want 616d42ca-cddb-57f6-a86d-ed5fbcd0ed3d", id)
 	}
-	if birthday.IsEvent("abc123") {
-		t.Error("an ordinary event id is no birthday event")
+	if again := birthday.EventID("abc123"); again != id {
+		t.Errorf("EventID is not stable: %q, then %q", id, again)
+	}
+	if other := birthday.EventID("abc124"); other == id {
+		t.Error("two contacts share an event id")
 	}
 }

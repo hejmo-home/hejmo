@@ -16,21 +16,31 @@ const birthdayCalendarColor = "#A0526A"
 // defaultBirthdayCalendarName names the calendar when the caller gave no name.
 const defaultBirthdayCalendarName = "Birthdays"
 
-// SyncBirthdays rewrites the generated calendar Birthdays from the contacts of
-// a household. The store does this itself whenever a contact or the name of a
-// person changes; this is for a caller that wants to be sure (the start of the
-// box, for contacts that were made before the calendar existed). calendarName
-// names the calendar if it has to be made.
-func (db *DB) SyncBirthdays(householdID, calendarName string) error {
-	tx, err := db.sql.Begin()
+// SyncAllBirthdays rewrites the generated calendar Birthdays of every
+// household that has one. The box runs it at its start: the migration makes the
+// calendar for contacts that exist before it, but cannot make the events (their
+// ids are UUIDv5, see birthday.EventID). Nothing is touched that is right
+// already.
+func (db *DB) SyncAllBirthdays() error {
+	ids, err := db.strings(`SELECT DISTINCT household_id FROM calendars WHERE kind = 'birthdays'`)
 	if err != nil {
 		return err
 	}
-	defer tx.Rollback()
-	if err := syncBirthdays(tx, householdID, calendarName); err != nil {
-		return err
+	for _, id := range ids {
+		tx, err := db.sql.Begin()
+		if err != nil {
+			return err
+		}
+		// The calendar exists, so its name is never used here.
+		if err := syncBirthdays(tx, id, ""); err != nil {
+			tx.Rollback()
+			return err
+		}
+		if err := tx.Commit(); err != nil {
+			return err
+		}
 	}
-	return tx.Commit()
+	return nil
 }
 
 // syncBirthdays makes the calendar of a household say what its contacts say:
@@ -108,7 +118,7 @@ func syncBirthdays(tx *sql.Tx, householdID, calendarName string) error {
 	for id, w := range wanted {
 		year, rule := birthday.Series(w.day, w.month, w.birthYear)
 		start := time.Date(year, time.Month(w.month), w.day, 0, 0, 0, 0, loc)
-		ev := calendar.Event{ID: id, CalendarID: calID, Title: w.title, AllDay: true, Start: start, End: start.AddDate(0, 0, 1), RRule: rule}
+		ev := calendar.Event{ID: id, CalendarID: calID, Title: w.title, AllDay: true, Start: start, End: start.AddDate(0, 0, 1), RRule: rule, Birthday: true}
 		old, exists := haveEvents[id]
 		switch {
 		case !exists:

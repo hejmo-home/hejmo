@@ -12,7 +12,7 @@ import (
 func birthdayEvent(contactID, name string, d, m, y int) calendar.Event {
 	year, rule := birthday.Series(d, m, y)
 	start := time.Date(year, time.Month(m), d, 0, 0, 0, 0, berlin)
-	return calendar.Event{ID: birthday.EventID(contactID), Title: name, AllDay: true, Start: start, End: start.AddDate(0, 0, 1), RRule: rule}
+	return calendar.Event{ID: birthday.EventID(contactID), Title: name, AllDay: true, Start: start, End: start.AddDate(0, 0, 1), RRule: rule, Birthday: true}
 }
 
 func dated(occs []calendar.Occurrence) []string {
@@ -71,4 +71,17 @@ func TestOrdinaryYearlyEventGetsNoAge(t *testing.T) {
 		t.Fatal(err)
 	}
 	equal(t, dated(occs), []string{"12.05.2026 Anniversary"})
+}
+
+// The age comes from the event being a birthday (the marker the store sets for
+// the calendar of kind birthdays), not from what its id looks like.
+func TestAgeFollowsTheBirthdayMarkerNotTheID(t *testing.T) {
+	t.Parallel()
+	marked := calendar.Event{ID: "9b2f0c1e-0000-4000-8000-000000000001", Title: "Mia", AllDay: true, Start: day(2019, 5, 12), End: day(2019, 5, 13), RRule: "FREQ=YEARLY", Birthday: true}
+	lookalike := calendar.Event{ID: "birthday-x", Title: "Anniversary", AllDay: true, Start: day(2019, 5, 12), End: day(2019, 5, 13), RRule: "FREQ=YEARLY"}
+	occs, err := calendar.Expand([]calendar.Event{marked, lookalike}, day(2026, 5, 1), day(2026, 6, 1))
+	if err != nil {
+		t.Fatal(err)
+	}
+	equal(t, dated(occs), []string{"12.05.2026 Anniversary", "12.05.2026 Mia (7)"})
 }

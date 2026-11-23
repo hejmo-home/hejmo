@@ -3,7 +3,10 @@
 // and when it carries an age. It knows nothing about storage or HTTP.
 package birthday
 
-import "strings"
+import (
+	"crypto/sha1" //nolint:gosec // UUIDv5, see EventID
+	"fmt"
+)
 
 // UnknownYearStart is the year a series starts in when the birth year is
 // unknown. It is a leap year (so 29 February can start a series) before the
@@ -11,17 +14,23 @@ import "strings"
 // with a real birth year.
 const UnknownYearStart = 1896
 
-const idPrefix = "birthday-"
+// eventNamespace is the UUID namespace of the event ids (the URL namespace of
+// RFC 4122, the contact id being the name in it).
+var eventNamespace = [16]byte{0x6b, 0xa7, 0xb8, 0x11, 0x9d, 0xad, 0x11, 0xd1, 0x80, 0xb4, 0x00, 0xc0, 0x4f, 0xd4, 0x30, 0xc8}
 
-// EventID is the id of the event of a contact: one series per contact, so the
-// box can rewrite it without a table of its own.
-func EventID(contactID string) string { return idPrefix + contactID }
-
-// IsEvent reports whether an event id is that of a birthday series.
-func IsEvent(eventID string) bool { return strings.HasPrefix(eventID, idPrefix) }
-
-// ContactID is the contact an event id belongs to.
-func ContactID(eventID string) string { return strings.TrimPrefix(eventID, idPrefix) }
+// EventID is the id of the event of a contact: a UUIDv5 of the contact id, so
+// it is a valid event id in the API (format uuid), the same on every start of
+// the box, and the box can rewrite the series without a table of its own.
+func EventID(contactID string) string {
+	h := sha1.New() //nolint:gosec // UUIDv5 is defined with SHA-1; no security use
+	h.Write(eventNamespace[:])
+	h.Write([]byte(contactID))
+	var b [16]byte
+	copy(b[:], h.Sum(nil))
+	b[6] = b[6]&0x0f | 0x50 // version 5
+	b[8] = b[8]&0x3f | 0x80 // variant RFC 4122
+	return fmt.Sprintf("%x-%x-%x-%x-%x", b[0:4], b[4:6], b[6:8], b[8:10], b[10:16])
+}
 
 // Series says how a birthday repeats: the year the series starts in (the birth
 // year, or UnknownYearStart when it is unknown) and its RRULE. 29 February

@@ -789,3 +789,53 @@ func httpRequest(tls bool) *http.Request {
 	}
 	return r
 }
+
+// A file takes minutes to arrive over a slow network; nobody else's page waits for it.
+func TestAnUploadThatIsStillComingInDoesNotHoldUpOtherPages(t *testing.T) {
+	t.Parallel()
+	b := offlineUpdateBox(t)
+	data := b.release(updatetest.Spec{})
+	pr, pw := io.Pipe()
+	mw := multipart.NewWriter(pw)
+	started := make(chan struct{})
+	finished := make(chan resp, 1)
+	go func() {
+		req, _ := http.NewRequest(http.MethodPost, b.srv.URL+uploadPath, pr)
+		req.Header.Set("Content-Type", mw.FormDataContentType())
+		req.Header.Set("Origin", b.srv.URL)
+		res, err := b.client.Do(req)
+		if err != nil {
+			finished <- resp{status: -1, body: err.Error()}
+			return
+		}
+		defer res.Body.Close()
+		out, _ := io.ReadAll(res.Body)
+		finished <- resp{res.StatusCode, res.Header.Get("Location"), string(out)}
+	}()
+	go func() {
+		part, _ := mw.CreateFormFile("update_file", "hejmo-0.2.4-arm64.update")
+		_, _ = part.Write(data[:len(data)/2])
+		close(started)
+	}()
+	<-started
+	time.Sleep(100 * time.Millisecond) // the first half is with the box now
+	done := make(chan resp, 1)
+	go func() { done <- getEN(b, uploadPath) }()
+	select {
+	case r := <-done:
+		if r.status != http.StatusOK {
+			t.Errorf("page during an upload = %d", r.status)
+		}
+	case <-time.After(5 * time.Second):
+		t.Fatal("a page waited for someone else's upload")
+	}
+	// The connection breaks: half a file is no file.
+	_ = pw.CloseWithError(io.ErrUnexpectedEOF)
+	r := <-finished
+	if r.status == http.StatusSeeOther {
+		t.Errorf("a broken upload was taken: %d", r.status)
+	}
+	if _, err := os.Stat(b.pendingFile()); err == nil {
+		t.Error("half a file was kept")
+	}
+}

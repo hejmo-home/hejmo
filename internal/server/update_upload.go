@@ -11,7 +11,6 @@ import (
 	"net/http"
 	"os"
 	"path/filepath"
-	"regexp"
 	"strings"
 	"syscall"
 	"time"
@@ -213,8 +212,6 @@ type uploadFailure struct {
 
 func (f *uploadFailure) Error() string { return f.code }
 
-var unsafeNameRe = regexp.MustCompile(`[^\p{L}\p{N} ._()+\-]`)
-
 // cleanFileName is the name the browser sent, as a plain name to show: no path, no control characters.
 func cleanFileName(name string) string {
 	name = strings.ReplaceAll(name, "\\", "/")
@@ -260,17 +257,23 @@ func (s *server) verifier() (update.Verifier, error) {
 // waiting for confirmation. It is the one place that both the page and the API
 // use.
 func (s *server) receiveUpload(w http.ResponseWriter, r *http.Request) (store.UpdateUpload, *uploadFailure) {
+	// The lock is held while the box looks at its state and again while it keeps the file, not while the
+	// file comes in: that takes minutes on a slow network, and everyone else's page would wait.
 	s.uploadMu.Lock()
-	defer s.uploadMu.Unlock()
 	s.settleLocked()
+	var early *uploadFailure
 	switch {
 	case !uploadOverTLS(r):
-		return store.UpdateUpload{}, &uploadFailure{status: http.StatusForbidden, code: "https"}
+		early = &uploadFailure{status: http.StatusForbidden, code: "https"}
 	case !s.uploadsPossible() || !s.hostStaysOffline() || s.rollbackFailed():
-		return store.UpdateUpload{}, &uploadFailure{status: http.StatusConflict, code: "unavailable"}
+		early = &uploadFailure{status: http.StatusConflict, code: "unavailable"}
 	}
-	if cur, ok, _ := s.db.UpdateUpload(); ok && cur.State == store.UploadInstalling {
-		return store.UpdateUpload{}, &uploadFailure{status: http.StatusConflict, code: "busy"}
+	if cur, ok, _ := s.db.UpdateUpload(); early == nil && ok && cur.State == store.UploadInstalling {
+		early = &uploadFailure{status: http.StatusConflict, code: "busy"}
+	}
+	s.uploadMu.Unlock()
+	if early != nil {
+		return store.UpdateUpload{}, early
 	}
 	max := s.maxUpdateSize()
 	free, err := s.free(s.updateDir)
@@ -339,6 +342,8 @@ func (s *server) keepUpload(part io.Reader, name string, max int64) (store.Updat
 	case err != nil:
 		return store.UpdateUpload{}, interrupted(err)
 	}
+	s.uploadMu.Lock()
+	defer s.uploadMu.Unlock()
 	if free, err := s.free(s.updateDir); err == nil && free+uint64(n) < needBytes(n) { // the file itself is on the disk already
 		return store.UpdateUpload{}, noRoom(free+uint64(n), needBytes(n))
 	}
@@ -458,12 +463,6 @@ func archLong(s *server, lang, arch string) string { return s.i18n.T(lang, "updf
 func (s *server) rollbackFailed() bool {
 	st := update.ReadStatus(s.updateDir)
 	return st.State == update.Failed && st.Reason == "rollback_failed"
-}
-
-// uploadView is what the upload page shows.
-type uploadView struct {
-	Kind string // form, online, nohost, oldhost, http, rollback_failed
-	Data map[string]any
 }
 
 // renderUploadPage shows the page of the upload form, or the state that stands

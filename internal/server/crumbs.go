@@ -25,6 +25,8 @@ var (
 	crumbOutside         = crumb{"/settings/connections", "hub.outside", ""}
 	crumbMCP             = crumb{"/mcp", "hub.mcp", ""}
 	crumbPeople          = crumb{"/people", "hub.people", ""}
+	crumbContacts        = crumb{"/contacts", "hub.contacts", ""}
+	crumbContactGroups   = crumb{"/contacts/groups", "contact.groups.title", ""}
 	crumbAccount         = crumb{"/account", "hub.otp", ""}
 	crumbSessions        = crumb{"/sessions", "hub.sessions", ""}
 
@@ -48,6 +50,7 @@ var crumbTrails = map[string][]crumb{
 	"token.html": {crumbSettings, crumbCalDAV}, "token_once.html": {crumbSettings, crumbCalDAV},
 	"personal_device.html": {crumbSettings, crumbPersonalDevices},
 	"mcp_token.html":       {crumbSettings, crumbMCP}, "mcp_token_new.html": {crumbSettings, crumbMCP}, "mcp_token_once.html": {crumbSettings, crumbMCP},
+	"contacts.html": {crumbSettings}, "contact.html": {crumbSettings, crumbContacts}, "contact_groups.html": {crumbSettings, crumbContacts}, "contact_group.html": {crumbSettings, crumbContacts, crumbContactGroups},
 	"person_edit.html": {crumbSettings, crumbPeople}, "group.html": {crumbSettings, crumbPeople},
 	"account_reset.html": {crumbSettings, crumbAccount}, "passkey.html": {crumbSettings, crumbAccount}, "recovery_codes.html": {crumbSettings, crumbAccount},
 	"session.html": {crumbSettings, crumbSessions},
@@ -67,6 +70,11 @@ func crumbsFor(name string, data map[string]any) []crumb {
 			return []crumb{crumbSettings, crumbPeople, {Href: "/people/" + id, Name: who}}
 		}
 		return []crumb{crumbSettings, crumbPeople}
+	case "contact_form.html":
+		if id, who := lookup(data, "CT", "ID"), lookup(data, "CT", "Name"); id != "" {
+			return []crumb{crumbSettings, crumbContacts, {Href: "/contacts/" + id, Name: who}}
+		}
+		return []crumb{crumbSettings, crumbContacts}
 	case "connection_off.html":
 		if id, who := lookup(data, "Connection", "ID"), lookup(data, "Connection", "Username"); id != "" {
 			return []crumb{crumbSettings, crumbConnections, {Href: "/connections/" + id, Name: who}}

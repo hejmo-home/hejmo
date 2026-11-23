@@ -19,7 +19,7 @@ const (
 )
 
 // Resources known to the permission model.
-var Resources = []string{"people", "events", "calendars", "tasks", "lists", "meals", "displays", "settings", "tokens", "health"}
+var Resources = []string{"people", "events", "calendars", "tasks", "lists", "meals", "displays", "settings", "tokens", "health", "contacts"}
 
 // Permission is a resource plus an action, e.g. events:write.
 type Permission struct {
@@ -34,14 +34,15 @@ func (p Permission) String() string { return p.Resource + ":" + string(p.Action)
 
 // RoleAllows applies the V1 role model: parents may do everything; children
 // may read (except tokens, settings and displays, which are device and box
-// management) and tick off tasks and list items, nothing else.
+// management, and the address book, which only parents see: ADR 0021) and
+// tick off tasks and list items, nothing else.
 func RoleAllows(role store.Role, p Permission) bool {
 	switch role {
 	case store.RoleParent:
 		return true
 	case store.RoleChild:
 		if p.Action == Read {
-			return p.Resource != "tokens" && p.Resource != "settings" && p.Resource != "displays" && p.Resource != "health"
+			return p.Resource != "tokens" && p.Resource != "settings" && p.Resource != "displays" && p.Resource != "health" && p.Resource != "contacts"
 		}
 		return p.Action == Complete && (p.Resource == "tasks" || p.Resource == "lists")
 	}

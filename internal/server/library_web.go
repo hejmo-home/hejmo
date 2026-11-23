@@ -253,7 +253,9 @@ func (s *server) listsWith(p principal, st libState, articleID string, includeDo
 	}
 	var all []library.Article
 	for _, it := range st.items() {
-		all = append(all, it.Article)
+		if !it.handHidden { // a name typed as text never finds an article hidden by hand (as when adding)
+			all = append(all, it.Article)
+		}
 	}
 	var out []listLink
 	for _, l := range lists {

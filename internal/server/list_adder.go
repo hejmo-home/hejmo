@@ -383,10 +383,10 @@ func (c *itemCtx) suggest(es []list.Entry, typed, mode string) suggView {
 		}
 	}
 	if len(rows) > maxSuggestions {
-		typed := slices.IndexFunc(rows, func(r suggRow) bool { return typedVariety != "" && r.ID == lead.ID && r.Variety == typedVariety })
+		at := slices.IndexFunc(rows, func(r suggRow) bool { return typedVariety != "" && r.ID == lead.ID && r.Variety == typedVariety })
 		cut := rows[:maxSuggestions]
-		if typed >= maxSuggestions { // the typed variety keeps a row of its own
-			cut[maxSuggestions-1] = rows[typed]
+		if at >= maxSuggestions { // the typed variety keeps a row of its own
+			cut[maxSuggestions-1] = rows[at]
 		}
 		rows = cut
 	}

@@ -457,10 +457,14 @@ func TestTheListOnTheArticlePageDoesNotMixThePluralEndingsOfTwoLanguages(t *test
 			t.Fatal(err)
 		}
 	}
-	for _, c := range []struct{ id, lang string }{{"beer", "en"}, {"ice-cream", "de"}} {
-		body := s.en("/settings/lists/library/" + c.id).body
+	for _, c := range []struct{ id, lang, name string }{{"beer", "en", "Beer"}, {"ice-cream", "de", "Eis"}} {
+		r := s.en("/settings/lists/library/" + c.id)
 		if c.lang == "de" {
-			body = s.de("/settings/lists/library/" + c.id).body
+			r = s.de("/settings/lists/library/" + c.id)
+		}
+		body := r.body
+		if r.status != 200 || !strings.Contains(body, c.name) {
+			t.Fatalf("%s page: status %d, name %q missing:\n%s", c.id, r.status, c.name, body)
 		}
 		if strings.Contains(body, "Einkaufen") || strings.Contains(body, "Shopping") {
 			t.Errorf("%s page claims a list:\n%s", c.id, body)

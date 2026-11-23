@@ -29,6 +29,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/contact"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
@@ -121,11 +122,12 @@ type layoutFixture struct {
 	ids []string // person IDs in layoutNames order
 	kid *screen  // the personal device of a child, which shows lists as tiles
 
-	lists       []string // list IDs
-	longVariety string   // the entry of an article with a very long variety, on the first list
-	inviteToken string   // the invitation of Maximilian, a parent without account
-	hint        *screen  // a display that shows the screensaver's hint
-	outlook     []string // the Outlook pages (#177) that no link leads to
+	lists         []string // list IDs
+	longVariety   string   // the entry of an article with a very long variety, on the first list
+	contactGroups []string // the ids of the contact groups in their order
+	inviteToken   string   // the invitation of Maximilian, a parent without account
+	hint          *screen  // a display that shows the screensaver's hint
+	outlook       []string // the Outlook pages (#177) that no link leads to
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -254,6 +256,9 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	_, err = db.CreateCalendar(store.Calendar{HouseholdID: h, Name: "Fußballtrainingsplanung", Kind: "local", Color: "#3B82F6"})
 	must(err)
 	must(db.SetDayNote(h, "2026-11-14", "Bitte Schwimmsachen und Handtücher für Maximilian und Anna-Lena nicht vergessen"))
+
+	// The address book (ticket 296): long names, several numbers, own labels, long e-mail addresses, a long note and groups.
+	f.addContacts(t)
 
 	// Meal plan and template through the API, like a parent.
 	c := newAPIClient(t, f.box)
@@ -572,6 +577,12 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	pages = append(pages, googlePages(t, f)...)
 	// The choice page of ticket 231: each way chosen, and the link guide with its errors.
 	pages = append(pages, connectChoicePages(t, f)...)
+
+	// The address book (ticket 296): a search without a match and the form with every kind of error.
+	for _, p := range []string{"/contacts?q=Bäckereiverkäuferinnenvereinigung", "/contacts?g=" + f.contactGroups[0], "/contacts/" + f.ids[1], "/contacts/" + f.ids[1] + "/edit", "/people/" + f.ids[1]} {
+		add(parent, p)
+	}
+	pages = append(pages, contactPages(t, f)...)
 
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
@@ -1251,4 +1262,64 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 			}
 		})
 	}
+}
+
+// addContacts fills the address book with long texts: names that must wrap, numbers with own labels, long
+// e-mail addresses and a note of many lines.
+func (f *layoutFixture) addContacts(t *testing.T) {
+	t.Helper()
+	h, db, by := f.householdID, f.db, f.ids[0]
+	groups, err := db.ContactGroups(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, g := range groups {
+		f.contactGroups = append(f.contactGroups, g.ID)
+	}
+	long := strings.Repeat("Sehr lange Notiz mit vielen Wörtern und Zeilenumbrüchen. ", 12)
+	for _, in := range []store.ContactInput{
+		{HejmoName: "Oma Gerda im Gartenfreundeverein", FullName: "Gerda Müller-Schulze-Hohenstein-Wöllenstein", Street: "Am Erlenbach zehn, Haus 7, Hinterhof", Postcode: "83022", City: "Rosenheim", Country: "Deutschland",
+			BdayDay: 14, BdayMonth: 3, Note: long, GroupIDs: []string{f.contactGroups[0], f.contactGroups[3]},
+			Numbers: []contact.Line{{Kind: contact.Cell, Value: "+49 (0) 171 3456 789 12 34"}, {Kind: contact.Home, Value: "08031 87 65 43"}, {Kind: contact.Custom, Label: "Gartenhaus im Urlaub", Value: "0160 111 2223"}, {Kind: contact.Work, Value: "089 4455 6677-12"}},
+			Emails:  []contact.Line{{Kind: contact.Home, Value: "gerda.mueller-schulze@gartenfreunde-am-erlenbach-rosenheim.example"}, {Kind: contact.Custom, Label: "Gartenfreundeverein", Value: "gerda@example.de"}}},
+		{HejmoName: "Kinderarztpraxis Yılmaz-Hoffmann", FullName: "Kinderarztpraxis Dr. Elif Yılmaz-Hoffmann und Kollegen", Numbers: []contact.Line{{Kind: contact.Work, Value: "089 1234 5670"}}, BdayDay: 2, BdayMonth: 9, BdayYear: 1950, GroupIDs: []string{f.contactGroups[2]}},
+		{HejmoName: "Ärztlicher Bereitschaftsdienst", GroupIDs: []string{f.contactGroups[2], f.contactGroups[3]}, NewGroup: "Fußball-Eltern der U11 am Erlenweg"},
+	} {
+		if _, err := db.CreateContact(h, by, in); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// The people have contact data too.
+	for i, id := range f.ids[:3] {
+		if _, err := db.UpdateContact(h, id, by, store.ContactInput{FullName: layoutNames[i] + " Maier-Schmidt-Wöllenstein", Numbers: []contact.Line{{Kind: contact.Cell, Value: "0176 2345 6789"}}, BdayDay: 21, BdayMonth: 6, BdayYear: 2018}); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// contactPages are the contact form after a refused save (every error at its field, in both languages), and the
+// form for a person, which only a link of the contact page reaches in one shape.
+func contactPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	site := siteOf("contact form", f.box, f.client)
+	form := url.Values{"name": {layoutNames[1]}, "full_name": {"Maximilian Schulz"}, "bday_day": {"31"}, "bday_month": {"2"}, "bday_year": {"2018"}, "new_group": {"Familie"},
+		"note": {strings.Repeat("n", 1001)}}
+	for i, row := range [][3]string{{"cell", "", "0172 4455 6677"}, {"home", "", "089 23x4 5678"}, {"own", "", "0160 2223 334"}} {
+		_ = i
+		form.Add("number_label", row[0])
+		form.Add("number_own", row[1])
+		form.Add("number", row[2])
+	}
+	form.Add("email_label", "home")
+	form.Add("email_own", "")
+	form.Add("email", "familie.schulz-hohenstein-wöllenstein@example")
+	for _, lang := range []string{"de", "en"} {
+		refused := f.do(http.MethodPost, "/contacts/new", form, map[string]string{"Accept-Language": lang})
+		if refused.status != http.StatusUnprocessableEntity {
+			t.Fatalf("contact form with errors = %d\n%s", refused.status, refused.body)
+		}
+		pages = append(pages, layoutPage{site: site, path: "/contacts/new#refused", html: map[string]string{lang: refused.body}})
+	}
+	return mergeCardPages(pages)
 }

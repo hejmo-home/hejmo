@@ -21,6 +21,7 @@ type ctDraft struct {
 	Note, NewGroup                  string
 	GroupIDs                        []string
 	IsPerson                        bool
+	HideBirthday                    bool // keep the birthday out of the Birthdays calendar
 }
 
 // ctProblem is one thing to put right. Anchor is the id of the part of the form it belongs to, Field the name of
@@ -137,10 +138,11 @@ func checkContact(d ctDraft, today time.Time, taken func(name string) *store.Nam
 }
 
 // input is the draft as the store takes it.
-func (d ctDraft) input(today time.Time) store.ContactInput {
+func (d ctDraft) input(today time.Time, calendarName string) store.ContactInput {
 	return store.ContactInput{
 		HejmoName: d.Name, FullName: d.Full, Street: d.Street, Postcode: d.Postcode, City: d.City, Country: d.Country,
 		BdayDay: d.Day, BdayMonth: d.Month, BdayYear: d.Year, Note: d.Note,
 		Numbers: d.Numbers, Emails: d.Emails, GroupIDs: d.GroupIDs, NewGroup: d.NewGroup, Today: today,
+		HideBirthday: d.HideBirthday, CalendarName: calendarName,
 	}
 }

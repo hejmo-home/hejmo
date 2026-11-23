@@ -16,7 +16,9 @@ import (
 type Item struct {
 	Text      string
 	ArticleID string // "" for free text
-	Qty       list.Quantity
+	// Variety is "Type 405" of "Mehl · Type 405", "" for none; free text has none.
+	Variety string
+	Qty     list.Quantity
 	// ChosenUnit is the unit the person picked; it is remembered for the next
 	// time ("" without a quantity).
 	ChosenUnit string
@@ -64,6 +66,10 @@ func (db *DB) AddItem(householdID, listID string, in Item, show list.Show) (AddR
 	if err := list.ValidateText(in.Text); err != nil {
 		return AddResult{}, fmt.Errorf("%w: %w", ErrInvalid, err)
 	}
+	var err error
+	if in.Variety, err = checkVariety(in.ArticleID, in.Variety); err != nil {
+		return AddResult{}, err
+	}
 	if _, err := db.List(householdID, listID); err != nil {
 		return AddResult{}, err
 	}
@@ -76,7 +82,7 @@ func (db *DB) AddItem(householdID, listID string, in Item, show list.Show) (AddR
 	if err != nil {
 		return AddResult{}, err
 	}
-	plan := list.PlanAdd(es, in.ArticleID, in.Text, in.Qty, show)
+	plan := list.PlanAdd(es, in.ArticleID, in.Variety, in.Text, in.Qty, show)
 	res := AddResult{Plan: plan}
 	switch plan.Action {
 	case list.AddedTo, list.Filled:
@@ -88,11 +94,11 @@ func (db *DB) AddItem(householdID, listID string, in Item, show list.Show) (AddR
 	case list.Exists:
 		res.Entry = plan.Target
 	default:
-		e := list.Entry{ID: newID(), Text: in.Text, ArticleID: in.ArticleID, Qty: plan.Result}
+		e := list.Entry{ID: newID(), Text: in.Text, ArticleID: in.ArticleID, Variety: in.Variety, Qty: plan.Result}
 		if plan.After == "" {
-			err = tx.QueryRow(`INSERT INTO list_entries (id, list_id, text, position, created_at, article_id, qty_base, qty_unit)
-				VALUES (?, ?, ?, (SELECT COALESCE(MAX(position) + 1, 0) FROM list_entries WHERE list_id = ?), ?, ?, ?, ?) RETURNING position`,
-				e.ID, listID, e.Text, listID, now(), e.ArticleID, e.Qty.Base, e.Qty.Unit).Scan(&e.Position)
+			err = tx.QueryRow(`INSERT INTO list_entries (id, list_id, text, position, created_at, article_id, variety, qty_base, qty_unit)
+				VALUES (?, ?, ?, (SELECT COALESCE(MAX(position) + 1, 0) FROM list_entries WHERE list_id = ?), ?, ?, NULLIF(?, ''), ?, ?) RETURNING position`,
+				e.ID, listID, e.Text, listID, now(), e.ArticleID, e.Variety, e.Qty.Base, e.Qty.Unit).Scan(&e.Position)
 		} else {
 			err = insertAfter(tx, listID, plan.After, es, &e)
 		}
@@ -112,8 +118,8 @@ func (db *DB) AddItem(householdID, listID string, in Item, show list.Show) (AddR
 // insertAfter stores e directly under the entry with id after, renumbering the
 // positions of the list.
 func insertAfter(tx *sql.Tx, listID, after string, es []list.Entry, e *list.Entry) error {
-	if _, err := tx.Exec(`INSERT INTO list_entries (id, list_id, text, position, created_at, article_id, qty_base, qty_unit)
-		VALUES (?, ?, ?, 0, ?, ?, ?, ?)`, e.ID, listID, e.Text, now(), e.ArticleID, e.Qty.Base, e.Qty.Unit); err != nil {
+	if _, err := tx.Exec(`INSERT INTO list_entries (id, list_id, text, position, created_at, article_id, variety, qty_base, qty_unit)
+		VALUES (?, ?, ?, 0, ?, ?, NULLIF(?, ''), ?, ?)`, e.ID, listID, e.Text, now(), e.ArticleID, e.Variety, e.Qty.Base, e.Qty.Unit); err != nil {
 		return err
 	}
 	var ids []string
@@ -137,14 +143,39 @@ func insertAfter(tx *sql.Tx, listID, after string, es []list.Entry, e *list.Entr
 	return nil
 }
 
-// SetResult says what changing a quantity did.
+// SetResult says what changing an entry did.
 type SetResult struct{ Plan list.SetPlan }
 
+// checkVariety normalizes a variety and refuses one on free text, an empty
+// one that was asked for is the caller's to avoid, and one that is too long.
+func checkVariety(articleID, variety string) (string, error) {
+	variety = list.NormalizeVariety(variety)
+	switch {
+	case variety == "":
+		return "", nil
+	case articleID == "":
+		return "", fmt.Errorf("%w: %w", ErrInvalid, &list.InvalidError{Field: "variety", Msg: "needs an article"})
+	}
+	if err := list.ValidateVariety(variety); err != nil {
+		return "", fmt.Errorf("%w: %w", ErrInvalid, err)
+	}
+	return variety, nil
+}
+
 // SetQuantity gives an open entry a new quantity (none for the zero Quantity):
-// it replaces the old one and never adds. When another entry of the article
-// has the same kind, this entry goes into it. A list that is gone is
-// ErrNotFound; an entry that is gone or ticked off is list.ErrNotOpen.
+// it replaces the old one and never adds, and keeps the entry's variety. When
+// another entry of the article has the same variety and kind, this entry goes
+// into it. A list that is gone is ErrNotFound; an entry that is gone or ticked
+// off is list.ErrNotOpen.
 func (db *DB) SetQuantity(householdID, listID, entryID string, to list.Quantity, chosenUnit string, show list.Show) (SetResult, error) {
+	return db.ChangeEntry(householdID, listID, entryID, to, chosenUnit, nil, show)
+}
+
+// ChangeEntry gives an open entry a new quantity and, when variety is not nil,
+// a new variety ("" takes it away; only an entry with an article has one). It
+// replaces and never adds. When another open entry has the same article, the
+// same variety (as it will be) and the same kind, this entry goes into it.
+func (db *DB) ChangeEntry(householdID, listID, entryID string, to list.Quantity, chosenUnit string, variety *string, show list.Show) (SetResult, error) {
 	if _, err := db.List(householdID, listID); err != nil {
 		return SetResult{}, err
 	}
@@ -157,7 +188,17 @@ func (db *DB) SetQuantity(householdID, listID, entryID string, to list.Quantity,
 	if err != nil {
 		return SetResult{}, err
 	}
-	plan, err := list.PlanSet(es, entryID, to, show)
+	at := slices.IndexFunc(es, func(e list.Entry) bool { return e.ID == entryID && !e.Done })
+	if at < 0 {
+		return SetResult{}, list.ErrNotOpen
+	}
+	v := es[at].Variety
+	if variety != nil {
+		if v, err = checkVariety(es[at].ArticleID, *variety); err != nil {
+			return SetResult{}, err
+		}
+	}
+	plan, err := list.PlanSet(es, entryID, to, v, show)
 	if err != nil {
 		return SetResult{}, err
 	}
@@ -172,7 +213,7 @@ func (db *DB) SetQuantity(householdID, listID, entryID string, to list.Quantity,
 			return SetResult{}, err
 		}
 	default:
-		if _, err := tx.Exec(`UPDATE list_entries SET qty_base = ?, qty_unit = ? WHERE id = ?`, plan.Result.Base, plan.Result.Unit, plan.Entry.ID); err != nil {
+		if _, err := tx.Exec(`UPDATE list_entries SET qty_base = ?, qty_unit = ?, variety = NULLIF(?, '') WHERE id = ?`, plan.Result.Base, plan.Result.Unit, plan.Variety, plan.Entry.ID); err != nil {
 			return SetResult{}, err
 		}
 	}
@@ -182,6 +223,32 @@ func (db *DB) SetQuantity(householdID, listID, entryID string, to list.Quantity,
 		}
 	}
 	return SetResult{Plan: plan}, tx.Commit()
+}
+
+// ArticleVarieties are the varieties the household used for an article, newest
+// first, each once (ignoring case, spaces and umlauts), at most limit: from
+// the entries of all its lists, open and ticked off. Nothing is stored for
+// this; a variety goes away with the last entry that has it.
+func (db *DB) ArticleVarieties(householdID, articleID string, limit int) ([]string, error) {
+	rows, err := db.sql.Query(`SELECT e.variety FROM list_entries e JOIN lists l ON l.id = e.list_id
+		WHERE l.household_id = ? AND e.article_id = ? AND e.variety IS NOT NULL ORDER BY e.created_at DESC, e.rowid DESC`, householdID, articleID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var out []string
+	seen := map[string]bool{}
+	for rows.Next() && len(out) < limit {
+		var v string
+		if err := rows.Scan(&v); err != nil {
+			return nil, err
+		}
+		if k := list.VarietyKey(v); !seen[k] {
+			seen[k] = true
+			out = append(out, v)
+		}
+	}
+	return out, rows.Err()
 }
 
 // LastUnit is the unit last used for an article in the household, "" if none.

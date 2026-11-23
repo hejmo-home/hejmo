@@ -282,6 +282,7 @@ func TestChildrenReadTheLibraryButChangeNothing(t *testing.T) {
 	}{
 		{http.MethodPost, "/articles", map[string]any{"name": "x", "kind": "veg", "unit1": "piece"}},
 		{http.MethodPut, "/articles/walnuts/hidden", map[string]any{"hidden": true}},
+		{http.MethodPut, "/articles/walnuts/pantry", map[string]any{"pantry": true}},
 		{http.MethodPost, "/articles/walnuts/copy", nil},
 		{http.MethodGet, "/articles/walnuts/warnings", nil},
 		{http.MethodGet, "/library/hiding", nil},
@@ -319,5 +320,75 @@ func TestHidingNeedsConfirmationAndRecordsWhoConfirmedAndWhen(t *testing.T) {
 	_, h, _ = c.call(http.MethodPut, "/library/hiding", map[string]any{"enabled": false})
 	if h["enabled"] != false || h["confirmed_by"] == nil {
 		t.Errorf("off = %v", h)
+	}
+}
+
+// Ticket 278 (ADR 0021): the pantry mark over REST.
+
+func TestShippedArticlesCarryAPantryMarkThatAParentSwitchesPerArticle(t *testing.T) {
+	t.Parallel()
+	c, _ := newArticleAPI(t)
+	_, salt, _ := c.call(http.MethodGet, "/articles/salt", nil)
+	_, apples, _ := c.call(http.MethodGet, "/articles/apples", nil)
+	if salt["pantry"] != true || apples["pantry"] != false {
+		t.Fatalf("salt = %v, apples = %v", salt["pantry"], apples["pantry"])
+	}
+	status, a, _ := c.call(http.MethodPut, "/articles/apples/pantry", map[string]any{"pantry": true})
+	if status != http.StatusOK || a["pantry"] != true || a["id"] != "apples" {
+		t.Errorf("mark apples = %d %v", status, a)
+	}
+	status, a, _ = c.call(http.MethodPut, "/articles/salt/pantry", map[string]any{"pantry": false})
+	if status != http.StatusOK || a["pantry"] != false {
+		t.Errorf("unmark salt = %d %v", status, a)
+	}
+	_, a, _ = c.call(http.MethodGet, "/articles/salt", nil)
+	_, _, list := c.call(http.MethodGet, "/articles?q=apples", nil)
+	if a["pantry"] != false || len(list) != 1 || list[0].(map[string]any)["pantry"] != true {
+		t.Errorf("not kept: salt = %v, list = %v", a["pantry"], list)
+	}
+	_, a, _ = c.call(http.MethodPut, "/articles/salt/pantry", map[string]any{"pantry": true})
+	if a["pantry"] != true {
+		t.Errorf("reset salt = %v", a["pantry"])
+	}
+	if status, _, _ := c.call(http.MethodPut, "/articles/nothing/pantry", map[string]any{"pantry": true}); status != http.StatusNotFound {
+		t.Errorf("unknown = %d", status)
+	}
+	// An own version made from a shipped article keeps the mark the household sees.
+	c.call(http.MethodPut, "/articles/salt/pantry", map[string]any{"pantry": false})
+	if _, cp, _ := c.call(http.MethodPost, "/articles/salt/copy", nil); cp["pantry"] != false {
+		t.Errorf("copy of unmarked salt = %v", cp["pantry"])
+	}
+	if _, cp, _ := c.call(http.MethodPost, "/articles/pepper/copy", nil); cp["pantry"] != true {
+		t.Errorf("copy of pepper = %v", cp["pantry"])
+	}
+	// A shipped article still cannot be changed otherwise.
+	if status, _, _ := c.call(http.MethodPatch, "/articles/salt", map[string]any{"pantry": false}); status != http.StatusUnprocessableEntity {
+		t.Errorf("patch shipped = %d", status)
+	}
+}
+
+func TestAnOwnArticleIsMarkedAsPantryOnCreateChangeAndOverThePantryRoute(t *testing.T) {
+	t.Parallel()
+	c, _ := newArticleAPI(t)
+	status, a, _ := c.call(http.MethodPost, "/articles", map[string]any{"name": "Kräutersalz", "dept": "baking_spices", "kind": "vegan", "unit1": "pack", "pantry": true})
+	if status != http.StatusCreated || a["pantry"] != true {
+		t.Fatalf("create = %d %v", status, a)
+	}
+	id := a["id"].(string)
+	_, b, _ := c.call(http.MethodPost, "/articles", map[string]any{"name": "Katzenfutter", "dept": "other", "kind": "nonfood", "unit1": "pack"})
+	if b["pantry"] != false {
+		t.Errorf("default = %v, want false", b["pantry"])
+	}
+	_, a, _ = c.call(http.MethodPatch, "/articles/"+id, map[string]any{"name": "Kräutersalz fein"})
+	if a["pantry"] != true {
+		t.Errorf("a change without pantry keeps the mark: %v", a["pantry"])
+	}
+	_, a, _ = c.call(http.MethodPatch, "/articles/"+id, map[string]any{"pantry": false})
+	if a["pantry"] != false {
+		t.Errorf("patch = %v", a["pantry"])
+	}
+	status, a, _ = c.call(http.MethodPut, "/articles/"+id+"/pantry", map[string]any{"pantry": true})
+	if status != http.StatusOK || a["pantry"] != true || a["source"] != "own" {
+		t.Errorf("put = %d %v", status, a)
 	}
 }

@@ -349,3 +349,30 @@ func TestResolveFindsTheArticleAnEntryNames(t *testing.T) {
 		}
 	}
 }
+
+// Ticket 278 (ADR 0021): shipped articles carry a pantry mark; recipes leave
+// pantry articles out of the shopping list by default.
+
+func TestTheShippedLibraryMarksTypicalPantryArticlesAndNoFreshOnes(t *testing.T) {
+	for _, key := range []string{"salt", "pepper", "sugar", "olive-oil", "vinegar", "wheat-flour", "baking-powder", "cinnamon", "paprika-powder"} {
+		a, ok := library.ShippedByID(key)
+		if !ok || !a.Pantry {
+			t.Errorf("%s: pantry = %v, want true", key, a.Pantry)
+		}
+	}
+	for _, key := range []string{"apples", "bananas", "tomatoes", "yeast", "toilet-paper"} {
+		a, ok := library.ShippedByID(key)
+		if !ok || a.Pantry {
+			t.Errorf("%s: pantry = %v, want false", key, a.Pantry)
+		}
+	}
+	n := 0
+	for _, a := range library.Shipped() {
+		if a.Pantry {
+			n++
+		}
+	}
+	if n < 10 || n > 40 {
+		t.Errorf("%d shipped pantry articles, want a sensible few", n)
+	}
+}

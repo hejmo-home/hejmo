@@ -347,3 +347,26 @@ func TestAWebImageIsRefusedWhileItsConnectionIsOff(t *testing.T) {
 		t.Errorf("refused = %v, want the address without its query", led.refused)
 	}
 }
+
+func TestADownloadCanAskForALargerMaximum(t *testing.T) {
+	body := encodeJPEG(t, gradient(2400, 1200))
+	srv := serve(t, func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "image/jpeg")
+		_, _ = w.Write(body)
+	})
+	f := loopbackIsPublic()
+	res, err := f.FetchMax(context.Background(), srv.URL+"/a.jpg", picture.RecipeMaxSide)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w, h := size(t, res.JPEG); w != 1600 || h != 800 {
+		t.Errorf("result %d x %d, want 1600 x 800", w, h)
+	}
+	res, err = f.Fetch(context.Background(), srv.URL+"/a.jpg")
+	if err != nil {
+		t.Fatal(err)
+	}
+	if w, h := size(t, res.JPEG); w != 512 || h != 256 {
+		t.Errorf("Fetch result %d x %d, want 512 x 256", w, h)
+	}
+}

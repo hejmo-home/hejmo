@@ -352,6 +352,17 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /settings/lists/sharing", s.handleSharing)
 	mux.HandleFunc("POST /settings/lists/sharing", s.handleSharingSave)
 	mux.HandleFunc("GET /settings/lists/sharing/setup", s.handleSharingSetup)
+	mux.HandleFunc("GET /contacts", s.handleContacts)
+	mux.HandleFunc("GET /contacts/new", s.handleContactNew)
+	mux.HandleFunc("POST /contacts/new", s.handleContactCreate)
+	mux.HandleFunc("GET /contacts/groups", s.handleContactGroups)
+	mux.HandleFunc("POST /contacts/groups", s.handleContactGroupCreate)
+	mux.HandleFunc("POST /contacts/groups/{id}/delete", s.handleContactGroupDelete)
+	mux.HandleFunc("GET /contacts/{id}", s.handleContact)
+	// "/contacts/{id}/edit" and "/contacts/groups/{id}" match a request alike ("/contacts/groups/edit"), which the mux
+	// refuses as two patterns: one decides.
+	mux.HandleFunc("GET /contacts/{first}/{second}", s.contactSubpage)
+	mux.HandleFunc("POST /contacts/{first}/{second}", s.contactSubpage)
 	mux.HandleFunc("GET /settings/lists/library", s.handleLibrary)
 	mux.HandleFunc("GET /settings/lists/library/new", s.handleArticleNew)
 	mux.HandleFunc("POST /settings/lists/library", s.handleArticleCreate)
@@ -360,6 +371,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /settings/lists/library/{id}", s.handleArticle)
 	mux.HandleFunc("POST /settings/lists/library/{id}", s.handleArticleSave)
 	mux.HandleFunc("POST /settings/lists/library/{id}/hidden", s.handleArticleHidden)
+	mux.HandleFunc("POST /settings/lists/library/{id}/pantry", s.handleArticlePantry)
 	mux.HandleFunc("POST /settings/lists/library/{id}/copy", s.handleArticleCopy)
 	mux.HandleFunc("POST /settings/lists/library/{id}/delete", s.handleArticleDelete)
 	mux.HandleFunc("GET /articles/{id}/picture", s.handleArticlePicture)
@@ -596,12 +608,15 @@ func (s *server) execute(w io.Writer, name, lang string, data any) error {
 // so the cache stays small; past maxCachedSets an unknown pair is copied for that
 // render alone.
 func (s *server) pagesFor(lang string) (*template.Template, error) {
-	key := pageSetKey{s.i18n, lang}
-	pageSets.Lock()
-	defer pageSets.Unlock()
-	if tpl, ok := pageSets.byKey[key]; ok {
+	key := pageSetKey{s.pages, s.i18n, lang}
+	pageSets.RLock()
+	tpl, ok := pageSets.byKey[key]
+	pageSets.RUnlock()
+	if ok {
 		return tpl, nil
 	}
+	// Copy outside the lock: two renders may both copy on a first miss; the
+	// loser of the race discards its copy and returns the cached one (see below).
 	tpl, err := s.pages.Clone()
 	if err != nil {
 		return nil, err
@@ -611,6 +626,11 @@ func (s *server) pagesFor(lang string) (*template.Template, error) {
 		"t":  func(k string) string { return bundle.T(lang, k) },
 		"tf": func(k string, kv ...string) string { return bundle.Format(lang, i18n.Msg(k, kv...)) },
 	})
+	pageSets.Lock()
+	defer pageSets.Unlock()
+	if cached, ok := pageSets.byKey[key]; ok {
+		return cached, nil
+	}
 	if len(pageSets.byKey) < maxCachedSets {
 		if pageSets.byKey == nil {
 			pageSets.byKey = map[pageSetKey]*template.Template{}
@@ -621,12 +641,13 @@ func (s *server) pagesFor(lang string) (*template.Template, error) {
 }
 
 type pageSetKey struct {
+	pages  *template.Template // the source set, so servers with other pages never share a copy
 	bundle *i18n.Bundle
 	lang   string
 }
 
 var pageSets struct {
-	sync.Mutex
+	sync.RWMutex
 	byKey map[pageSetKey]*template.Template
 }
 

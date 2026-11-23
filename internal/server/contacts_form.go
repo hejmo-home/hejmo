@@ -23,6 +23,9 @@ type ctForm struct {
 	Day, Month, Year                string
 	Groups                          []string
 	NewGroup, Note                  string
+	// Token is the prepared photo that waits for the save (ticket 297); Gone marks the saved photo for removal.
+	Token string
+	Gone  bool
 }
 
 const ownKind = "own"        // the select option "Eigene Bezeichnung …"
@@ -56,6 +59,7 @@ func parseContactForm(r *http.Request) ctForm {
 		Street: r.PostFormValue("street"), Postcode: r.PostFormValue("postcode"), City: r.PostFormValue("city"), Country: r.PostFormValue("country"),
 		Day: r.PostFormValue("bday_day"), Month: r.PostFormValue("bday_month"), Year: r.PostFormValue("bday_year"),
 		Groups: r.PostForm["group"], NewGroup: r.PostFormValue("new_group"), Note: strings.ReplaceAll(r.PostFormValue("note"), "\r\n", "\n"),
+		Token: r.PostFormValue("picture_token"), Gone: r.PostFormValue("photo_gone") != "",
 	}
 	return f
 }
@@ -303,6 +307,9 @@ type ctFormState struct {
 	Problems []ctProblem
 	Draft    ctDraft
 	Status   int
+	// The prepared photo, and what is wrong with the photo that was just chosen (ticket 297).
+	Pend     *pendingPicture
+	PhotoErr string
 }
 
 // groupChoices are the chips of the groups, ticked as the form has them.
@@ -361,7 +368,16 @@ func (s *server) renderContactForm(w http.ResponseWriter, r *http.Request, e ctE
 		}
 		data["ErrLead"] = e.t(key, "n", strconv.Itoa(len(links)))
 		data["ErrEnd"] = e.t("contact.error.summary.end")
+		if st.Pend != nil { // a photo that was prepared before another field was wrong stays prepared
+			data["ErrEnd"] = e.t("contact.error.summary.end") + " " + e.t("contact.photo.kept")
+		}
 	}
+	saveLabel := e.t("contact.new")
+	if st.Contact != nil {
+		saveLabel = e.t("people.save")
+	}
+	card := e.photoCard(f, st.Contact, st.Pend, st.PhotoErr, saveLabel)
+	data["Photo"], data["Dirty"] = card, card.Mode == "new" || card.Mode == "gone"
 	chips, fam := e.groupChoices(f, st.Contact)
 	data["GroupChips"], data["FamChip"] = chips, fam
 	if c := st.Contact; c != nil {
@@ -485,9 +501,26 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		}
 		cur = &all[i]
 	}
+	file, tooBig := s.readContactBody(w, r)
+	if r.MultipartForm != nil {
+		defer r.MultipartForm.RemoveAll()
+	}
 	f := parseContactForm(r)
 	if cur != nil && cur.IsPerson() {
 		f.Name = cur.HejmoName
+	}
+	pend, photoErr := s.contactPhotoStep(r, e, &f, cur, file, tooBig)
+	state := func(st ctFormState) ctFormState {
+		st.Contact, st.Pend, st.PhotoErr = cur, pend, photoErr
+		return st
+	}
+	if action := r.PostFormValue("picture"); action == "upload" || action == "remove" || action == "keep" {
+		status := http.StatusOK
+		if photoErr != "" {
+			status = http.StatusUnprocessableEntity
+		}
+		s.renderContactForm(w, r, e, f, state(ctFormState{Status: status}))
+		return
 	}
 	if more, remove := r.PostFormValue("more"), r.PostFormValue("remove"); more != "" || remove != "" {
 		switch more {
@@ -508,7 +541,7 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 				*base.lines = slices.Delete(slices.Clone(*base.lines), n-1, n)
 			}
 		}
-		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Status: http.StatusOK})
+		s.renderContactForm(w, r, e, f, state(ctFormState{Status: http.StatusOK}))
 		return
 	}
 	gone := e.dropVanishedGroups(&f)
@@ -517,15 +550,22 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 	if gone {
 		problems = append(problems, ctProblem{Anchor: "groups", Field: "groups", Code: "gone"})
 	}
-	if len(problems) > 0 {
-		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Problems: problems, Draft: d, Status: http.StatusUnprocessableEntity})
+	if len(problems) > 0 || photoErr != "" {
+		s.renderContactForm(w, r, e, f, state(ctFormState{Problems: problems, Draft: d, Status: http.StatusUnprocessableEntity}))
 		return
+	}
+	in := d.input(s.householdNow(p.household))
+	switch {
+	case pend != nil:
+		in.PhotoChange, in.Photo = store.SetPicture, &store.ContactPhoto{JPEG: pend.JPEG}
+	case f.Gone:
+		in.PhotoChange = store.RemovePicture
 	}
 	var saved store.Contact
 	if cur == nil {
-		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, d.input(s.householdNow(p.household)))
+		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, in)
 	} else {
-		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, d.input(s.householdNow(p.household)))
+		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, in)
 	}
 	var taken *store.NameTakenError
 	var fe *store.FieldError
@@ -535,12 +575,12 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		if taken.ExistingIsPerson {
 			code = "taken_person"
 		}
-		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: d, Status: http.StatusUnprocessableEntity,
-			Problems: []ctProblem{{Anchor: "name", Field: "name", Code: code, Arg: taken.Existing}}})
+		s.renderContactForm(w, r, e, f, state(ctFormState{Draft: d, Status: http.StatusUnprocessableEntity,
+			Problems: []ctProblem{{Anchor: "name", Field: "name", Code: code, Arg: taken.Existing}}}))
 		return
 	case errors.As(err, &fe) && fe.Field == "new_group" && fe.Msg == store.GroupExistsMsg: // a group of this name was made between the check and the save
-		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: d, Status: http.StatusUnprocessableEntity,
-			Problems: []ctProblem{{Anchor: "groups", Field: "new_group", Code: "taken", Arg: strings.TrimSpace(d.NewGroup)}}})
+		s.renderContactForm(w, r, e, f, state(ctFormState{Draft: d, Status: http.StatusUnprocessableEntity,
+			Problems: []ctProblem{{Anchor: "groups", Field: "new_group", Code: "taken", Arg: strings.TrimSpace(d.NewGroup)}}}))
 		return
 	case errors.As(err, &fe) && fe.Field == "groups": // a ticked group was deleted between the check and the save
 		// e.groups was read before the other delete: read it again, or the group stays offered and ticked
@@ -549,14 +589,19 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 			return
 		}
 		e.dropVanishedGroups(&f)
-		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: f.draft(cur != nil && cur.IsPerson()), Status: http.StatusUnprocessableEntity,
-			Problems: []ctProblem{{Anchor: "groups", Field: "groups", Code: "gone"}}})
+		s.renderContactForm(w, r, e, f, state(ctFormState{Draft: f.draft(cur != nil && cur.IsPerson()), Status: http.StatusUnprocessableEntity,
+			Problems: []ctProblem{{Anchor: "groups", Field: "groups", Code: "gone"}}}))
 		return
 	case err != nil: // the form checked every other rule the store knows, so a store refusal here is a bug
 		s.fail(w, "save contact", err)
 		return
 	}
-	s.redirectSavedNamed(w, r, contactsPath+"/"+saved.ID, "flash.contact_saved", saved.HejmoName)
+	flash := "flash.contact_saved"
+	if pend != nil {
+		s.pictures.drop(f.Token)
+		flash = "flash.contact_saved_photo"
+	}
+	s.redirectSavedNamed(w, r, contactsPath+"/"+saved.ID, flash, saved.HejmoName)
 }
 
 func (s *server) handleContactEdit(w http.ResponseWriter, r *http.Request) {

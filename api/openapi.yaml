@@ -585,6 +585,69 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /contacts/{id}/photo:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getContactPhoto
+      summary: The photo of a contact (parents only, scope contacts:read)
+      description: |
+        A square JPEG of at most 512 by 512 pixels without metadata. 404 when the contact has no photo.
+        The web interface adds `?v=` (the time the photo was set) to the address so a changed photo is
+        fetched again; the answer is `Cache-Control: private`.
+      responses:
+        "200":
+          description: A JPEG
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setContactPhoto
+      summary: Set or replace the photo of a contact (parents only, scope contacts:write)
+      description: |
+        Send a JPEG, PNG, WebP or GIF as `multipart/form-data` in the part `file`; the web interface
+        converts HEIC to JPEG in the browser first and HEIC sent here is refused with 422. The box cuts
+        the picture to a square (landscape from the centre, portrait with a quarter of the excess taken
+        from the top), shrinks it to at most 512 by 512 pixels and stores it as a JPEG without location
+        or camera data. A file over 15 MB is refused with 413, one that is no picture or has more than
+        24 million pixels with 422. The last change wins, whether it came from here, the web interface
+        or contact sync. Also works for the contact of a person.
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "200":
+          description: The contact, with its photo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Contact" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "413":
+          description: The file is over 15 MB
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteContactPhoto
+      summary: Remove the photo of a contact (parents only, scope contacts:delete)
+      description: Answers 204 also when there was no photo. Hejmo then shows the initials of the name.
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /contact-groups:
     get:
       operationId: listContactGroups
@@ -4195,7 +4258,7 @@ components:
         groups: { type: array, items: { type: string }, description: "Ids of contact groups" }
     Contact:
       type: object
-      required: [id, person_id, name, full_name, numbers, emails, address, birthday, note, groups, created_by, created_at, updated_by, updated_at]
+      required: [id, person_id, name, full_name, numbers, emails, address, birthday, note, groups, photo, created_by, created_at, updated_by, updated_at]
       properties:
         id: { type: string, format: uuid, description: "The id of the person for a person's contact" }
         person_id: { type: string, format: uuid, nullable: true }
@@ -4207,10 +4270,20 @@ components:
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
         note: { type: string }
         groups: { type: array, items: { type: string } }
+        photo: { allOf: [{ $ref: "#/components/schemas/ContactPhoto" }], nullable: true, description: "Null without a photo; the photo itself is at `/contacts/{id}/photo`" }
         created_by: { type: string, format: uuid, nullable: true }
         created_at: { type: string, format: date-time }
         updated_by: { type: string, format: uuid, nullable: true }
         updated_at: { type: string, format: date-time }
+    ContactPhoto:
+      type: object
+      description: Where the photo of a contact came from. The last change wins.
+      required: [origin, by, device, at]
+      properties:
+        origin: { type: string, enum: [manual, sync], description: "`manual`: a parent chose it; `sync`: a phone sent it over contact sync" }
+        by: { type: string, format: uuid, nullable: true, description: "The parent who set it (`manual`); null for `sync` or when that person is gone" }
+        device: { type: string, description: "The phone, for `sync`; else empty" }
+        at: { type: string, format: date-time }
     ContactGroup:
       type: object
       required: [id, name, shipped_key, contacts]

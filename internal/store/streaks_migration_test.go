@@ -26,7 +26,7 @@ func TestStreaksMigrationBackfillsTheSwitchByRole(t *testing.T) {
 	var before []migration
 	var mine migration
 	for _, m := range all {
-		if m.name == "202611231400_pauses.sql" {
+		if m.name == "202611231912_pauses.sql" {
 			mine = m
 			break
 		}

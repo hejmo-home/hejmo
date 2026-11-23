@@ -354,6 +354,17 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /settings/lists", s.handleListsSettings)
 	mux.HandleFunc("POST /settings/lists", s.handleListsSettingsSave)
 	mux.HandleFunc("POST /settings/lists/units", s.handleUnitsSave)
+	mux.HandleFunc("GET /contacts", s.handleContacts)
+	mux.HandleFunc("GET /contacts/new", s.handleContactNew)
+	mux.HandleFunc("POST /contacts/new", s.handleContactCreate)
+	mux.HandleFunc("GET /contacts/groups", s.handleContactGroups)
+	mux.HandleFunc("POST /contacts/groups", s.handleContactGroupCreate)
+	mux.HandleFunc("POST /contacts/groups/{id}/delete", s.handleContactGroupDelete)
+	mux.HandleFunc("GET /contacts/{id}", s.handleContact)
+	// "/contacts/{id}/edit" and "/contacts/groups/{id}" match a request alike ("/contacts/groups/edit"), which the mux
+	// refuses as two patterns: one decides.
+	mux.HandleFunc("GET /contacts/{first}/{second}", s.contactSubpage)
+	mux.HandleFunc("POST /contacts/{first}/{second}", s.contactSubpage)
 	mux.HandleFunc("GET /settings/lists/library", s.handleLibrary)
 	mux.HandleFunc("GET /settings/lists/library/new", s.handleArticleNew)
 	mux.HandleFunc("POST /settings/lists/library", s.handleArticleCreate)

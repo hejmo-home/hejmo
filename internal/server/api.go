@@ -27,6 +27,17 @@ var apiRoutes = []APIRoute{
 	{"PATCH", "/people/{id}", auth.Perm("people", auth.Write), (*server).apiUpdatePerson},
 	{"PUT", "/people/order", auth.Perm("people", auth.Write), (*server).apiOrderPeople},
 
+	// The address book (ticket 296): parents only, whatever the action.
+	{"GET", "/contacts", auth.Perm("contacts", auth.Read), (*server).apiListContacts},
+	{"POST", "/contacts", auth.Perm("contacts", auth.Write), (*server).apiCreateContact},
+	{"GET", "/contacts/{id}", auth.Perm("contacts", auth.Read), (*server).apiGetContact},
+	{"PUT", "/contacts/{id}", auth.Perm("contacts", auth.Write), (*server).apiUpdateContact},
+	{"DELETE", "/contacts/{id}", auth.Perm("contacts", auth.Delete), (*server).apiDeleteContact},
+	{"GET", "/contact-groups", auth.Perm("contacts", auth.Read), (*server).apiListContactGroups},
+	{"POST", "/contact-groups", auth.Perm("contacts", auth.Write), (*server).apiCreateContactGroup},
+	{"PATCH", "/contact-groups/{id}", auth.Perm("contacts", auth.Write), (*server).apiRenameContactGroup},
+	{"DELETE", "/contact-groups/{id}", auth.Perm("contacts", auth.Delete), (*server).apiDeleteContactGroup},
+
 	{"GET", "/food", auth.Perm("health", auth.Read), (*server).apiListFood},
 	{"GET", "/people/{id}/food", auth.Perm("health", auth.Read), (*server).apiGetFood},
 	{"PUT", "/people/{id}/food", auth.Perm("health", auth.Write), (*server).apiPutFood},

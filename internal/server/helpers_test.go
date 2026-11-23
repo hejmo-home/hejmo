@@ -13,6 +13,7 @@ import (
 	"net/url"
 	"path/filepath"
 	"regexp"
+	"runtime"
 	"strconv"
 	"strings"
 	"sync"
@@ -39,6 +40,8 @@ type box struct {
 	db      *store.DB
 	client  *http.Client
 	now     time.Time
+	// nowHook, when set, runs on every read of the clock and gets the file of the code that asked for the household's time.
+	nowHook func(callerFile string)
 	feeds   *fakeFeeds
 	sync    *calsync.Service
 	gate    *outbound.Gate
@@ -239,7 +242,13 @@ func newFreshBox(t *testing.T, opts ...boxOption) *box {
 		t.Fatal(err)
 	}
 	b := &box{t: t, db: db, pki: certs, feeds: feeds, public: &fakePublic{}, updateDir: t.TempDir(), photoDir: t.TempDir(), now: time.Date(2026, 11, 14, 12, 0, 0, 0, time.UTC)}
-	now := func() time.Time { return b.now }
+	now := func() time.Time {
+		if b.nowHook != nil {
+			_, file, _, _ := runtime.Caller(2) // the clock closure, householdNow, then the handler
+			b.nowHook(filepath.Base(file))
+		}
+		return b.now
+	}
 	gate := outbound.New(db.Outbound(), db.Outbound()) // as the box has it: the switches of the database
 	b.gate = gate
 	b.sync = calsync.New(db, feeds, now)

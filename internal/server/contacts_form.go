@@ -538,11 +538,16 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: d, Status: http.StatusUnprocessableEntity,
 			Problems: []ctProblem{{Anchor: "name", Field: "name", Code: code, Arg: taken.Existing}}})
 		return
-	case errors.As(err, &fe) && fe.Field == "new_group": // a group of this name was made between the check and the save
+	case errors.As(err, &fe) && fe.Field == "new_group" && fe.Msg == store.GroupExistsMsg: // a group of this name was made between the check and the save
 		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: d, Status: http.StatusUnprocessableEntity,
 			Problems: []ctProblem{{Anchor: "groups", Field: "new_group", Code: "taken", Arg: strings.TrimSpace(d.NewGroup)}}})
 		return
 	case errors.As(err, &fe) && fe.Field == "groups": // a ticked group was deleted between the check and the save
+		// e.groups was read before the other delete: read it again, or the group stays offered and ticked
+		if e.groups, err = s.db.ContactGroups(p.household.ID); err != nil {
+			s.fail(w, "load contact groups", err)
+			return
+		}
 		e.dropVanishedGroups(&f)
 		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: f.draft(cur != nil && cur.IsPerson()), Status: http.StatusUnprocessableEntity,
 			Problems: []ctProblem{{Anchor: "groups", Field: "groups", Code: "gone"}}})

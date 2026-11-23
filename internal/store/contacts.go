@@ -470,6 +470,9 @@ func (db *DB) ContactGroup(householdID, id string) (ContactGroup, error) {
 	return ContactGroup{}, ErrNotFound
 }
 
+// GroupExistsMsg is the Msg of the FieldError for a group name that is in use.
+const GroupExistsMsg = "a group of this name exists"
+
 func addGroup(tx *sql.Tx, householdID, name, by, ts string) (string, error) {
 	name = strings.TrimSpace(name)
 	if name == "" || contact.Runes(name) > contact.MaxName {
@@ -480,7 +483,7 @@ func addGroup(tx *sql.Tx, householdID, name, by, ts string) (string, error) {
 		return "", err
 	}
 	if have > 0 {
-		return "", &FieldError{Field: "new_group", Msg: "a group of this name exists"}
+		return "", &FieldError{Field: "new_group", Msg: GroupExistsMsg}
 	}
 	id := newID()
 	_, err := tx.Exec(`INSERT INTO contact_groups (id, household_id, name, created_by, created_at) VALUES (?, ?, ?, ?, ?)`, id, householdID, name, nullString(by), ts)
@@ -523,7 +526,7 @@ func (db *DB) RenameContactGroup(householdID, id, name string) error {
 		return err
 	}
 	if have > 0 {
-		return &FieldError{Field: "name", Msg: "a group of this name exists"}
+		return &FieldError{Field: "name", Msg: GroupExistsMsg}
 	}
 	return expectOne(db.sql.Exec(`UPDATE contact_groups SET name = ? WHERE id = ? AND household_id = ?`, name, id, householdID))
 }

@@ -502,3 +502,60 @@ func TestAGroupThatVanishedWhileTheFormWasOpenShowsTheFormAgainWithEverythingKep
 		t.Errorf("a refused contact was stored: %v", list)
 	}
 }
+
+// raceOnce runs f once, when the contact form has been checked and is about to be saved: a write by
+// someone else between the form's check and the save, with no seam in production code. The clock is
+// read there for the household's today (contacts_form.go), after the groups were loaded and checked.
+func (c ctBox) raceOnce(f func()) {
+	done := false
+	c.nowHook = func(file string) {
+		if file == "contacts_form.go" && !done {
+			done = true
+			f()
+		}
+	}
+}
+
+func TestAGroupDeletedBetweenTheCheckAndTheSaveIsGoneFromTheFormAndUntickedThere(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	if r := c.send("/contacts/groups", url.Values{"name": {"Nachbarschaft Erlenweg"}}); r.status != http.StatusSeeOther {
+		t.Fatalf("make group = %d", r.status)
+	}
+	var gid string
+	if err := c.db.SQL().QueryRow(`SELECT id FROM contact_groups WHERE name = 'Nachbarschaft Erlenweg'`).Scan(&gid); err != nil {
+		t.Fatal(err)
+	}
+	c.raceOnce(func() {
+		if _, err := c.db.SQL().Exec(`DELETE FROM contact_groups WHERE id = ?`, gid); err != nil {
+			t.Error(err)
+		}
+	})
+	f := contactForm("Kita Sonnenschein", "", nil, nil)
+	f.Add("group", gid)
+	r := c.send("/contacts/new", f)
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d, want 422\n%s", r.status, r.body)
+	}
+	ctHas(t, "form", r.body, "no longer exists", `value="Kita Sonnenschein"`)
+	if strings.Contains(r.body, "Nachbarschaft Erlenweg") || strings.Contains(r.body, gid) {
+		t.Errorf("the deleted group is still offered or ticked in the form\n%s", r.body)
+	}
+}
+
+func TestAGroupMadeBetweenTheCheckAndTheSaveShowsAnErrorAtTheNewGroupField(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	c.raceOnce(func() {
+		if _, err := c.db.SQL().Exec(`INSERT INTO contact_groups (id, household_id, name, created_at) SELECT '11111111-1111-1111-1111-111111111111', id, 'Fußball-Eltern', 'now' FROM households`); err != nil {
+			t.Error(err)
+		}
+	})
+	f := contactForm("Kita Sonnenschein", "", nil, nil)
+	f.Set("new_group", "fußball-eltern")
+	r := c.send("/contacts/new", f)
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d, want 422\n%s", r.status, r.body)
+	}
+	ctHas(t, "form", r.body, `id="err-new_group"`, "exists already", `value="Kita Sonnenschein"`)
+}

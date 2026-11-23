@@ -276,11 +276,12 @@ func TestEnglishContactTextsHoldNoStrayIdentifiers(t *testing.T) {
 		t.Fatal(err)
 	}
 	ident := regexp.MustCompile(`[a-z]+_[a-z]+`)
+	placeholder := regexp.MustCompile(`\{[^}]*\}`)
 	for key, text := range cat {
 		if !strings.HasPrefix(key, "contact.") {
 			continue
 		}
-		plain := regexp.MustCompile(`\{[^}]*\}`).ReplaceAllString(text, "") // {name} placeholders are no words
+		plain := placeholder.ReplaceAllString(text, "") // {name} placeholders are no words
 		if w := ident.FindString(plain); w != "" {
 			t.Errorf("en %s holds the identifier-like word %q: %s", key, w, text)
 		}

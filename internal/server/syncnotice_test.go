@@ -11,6 +11,10 @@ import (
 
 const syncNotice = `data-sync-notice`
 
+// infoSymbolPath is the path of the sync notice's info symbol; other icons (the
+// chevron of the personal-view hint) are no sync symbol.
+const infoSymbolPath = `M12 11v6M12 7.5v.01`
+
 // staleCalendar adds an ICS calendar that started syncing 25 hours before the
 // family box's clock and never succeeded.
 func staleCalendar(t *testing.T, f *familyBox) store.SyncedCalendar {
@@ -61,7 +65,7 @@ func TestSyncNoticeIsNotInThePersonColumns(t *testing.T) {
 		t.Fatal("no notice")
 	}
 	for _, col := range columnRe.FindAllString(page, -1) {
-		if strings.Contains(col, syncNotice) || strings.Contains(col, "<svg") {
+		if strings.Contains(col, syncNotice) || strings.Contains(col, infoSymbolPath) {
 			t.Fatalf("notice in a column:\n%s", col)
 		}
 	}

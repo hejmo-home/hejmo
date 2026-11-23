@@ -20,6 +20,9 @@ type OutboundBox struct {
 	ReminderDays int
 	// UpdatedAt is when the box was installed or last updated, as far as it knows.
 	UpdatedAt time.Time
+	// InstalledVersion and InstalledReleased are the version an uploaded update
+	// file installed last and its release date (YYYY-MM-DD, from the signed manifest); empty if none (ticket 221).
+	InstalledVersion, InstalledReleased string
 }
 
 // Bounds of OutboundBox.ReminderDays.
@@ -36,8 +39,8 @@ func (db *DB) OutboundBox() (OutboundBox, error) {
 	var b OutboundBox
 	var since sql.NullString
 	var updated string
-	err := db.sql.QueryRow(`SELECT offline, offline_since, asked, update_reminder_days, updated_at FROM outbound_box WHERE id = 1`).
-		Scan(&b.Offline, &since, &b.Asked, &b.ReminderDays, &updated)
+	err := db.sql.QueryRow(`SELECT offline, offline_since, asked, update_reminder_days, updated_at, installed_version, installed_released FROM outbound_box WHERE id = 1`).
+		Scan(&b.Offline, &since, &b.Asked, &b.ReminderDays, &updated, &b.InstalledVersion, &b.InstalledReleased)
 	if err != nil {
 		return OutboundBox{}, err
 	}
@@ -87,6 +90,12 @@ func (db *DB) SetUpdateReminderDays(days int) error {
 // time than the one known is ignored.
 func (db *DB) NoteUpdated(t time.Time) error {
 	_, err := db.sql.Exec(`UPDATE outbound_box SET updated_at = ? WHERE id = 1 AND updated_at < ?`, stamp(t), stamp(t))
+	return err
+}
+
+// SetInstalledRelease remembers the release date of the version an uploaded file installed.
+func (db *DB) SetInstalledRelease(version, released string) error {
+	_, err := db.sql.Exec(`UPDATE outbound_box SET installed_version = ?, installed_released = ? WHERE id = 1`, version, released)
 	return err
 }
 

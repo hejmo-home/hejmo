@@ -5,6 +5,7 @@ import (
 	"path/filepath"
 	"strings"
 	"testing"
+	"time"
 
 	"github.com/hejmo-home/hejmo/internal/update"
 )
@@ -123,5 +124,67 @@ func TestParseStatusReadsWhenTheScriptLastLooked(t *testing.T) {
 	}
 	if got := update.ParseStatus([]byte("checked=soon\n")); got.Checked != "" {
 		t.Errorf("accepted %q", got.Checked)
+	}
+}
+
+// Ticket 221: the box hands an uploaded file to the host script through the
+// settings file (fixed keys, never executed) and the script answers step by step.
+func TestWriteInstallAddsTheRequestAsFixedKeys(t *testing.T) {
+	dir := t.TempDir()
+	at := time.Date(2026, 11, 23, 21, 4, 12, 0, time.UTC)
+	sum := strings.Repeat("ab", 32)
+	if err := update.Write(dir, update.Settings{Mode: "on", Offline: true, Install: &update.Install{Version: "0.2.4", SHA256: sum, Time: at}}); err != nil {
+		t.Fatal(err)
+	}
+	data, _ := os.ReadFile(filepath.Join(dir, update.SettingsFile))
+	want := "mode=on\noffline=yes\ninstall=0.2.4\ninstall_sha256=" + sum + "\ninstall_time=2026-11-23T21:04:12Z\n"
+	if string(data) != want {
+		t.Errorf("file = %q, want %q", data, want)
+	}
+	// Anything that is not a version, a checksum or a time is never written.
+	for name, in := range map[string]update.Install{
+		"markup":       {Version: "0.2.4\ninstall=9.9.9", SHA256: sum, Time: at},
+		"pre-release":  {Version: "0.2.5-rc.1", SHA256: sum, Time: at},
+		"short sum":    {Version: "0.2.4", SHA256: "abc", Time: at},
+		"upper-case":   {Version: "0.2.4", SHA256: strings.Repeat("AB", 32), Time: at},
+		"shell in sum": {Version: "0.2.4", SHA256: strings.Repeat("a", 62) + "$(", Time: at},
+		"no time":      {Version: "0.2.4", SHA256: sum},
+	} {
+		if err := update.Write(dir, update.Settings{Mode: "on", Install: &in}); err == nil {
+			t.Errorf("%s: written", name)
+		}
+	}
+	// Without a request the file is the one of before.
+	if err := update.Write(dir, update.Settings{Mode: "on"}); err != nil {
+		t.Fatal(err)
+	}
+	if data, _ := os.ReadFile(filepath.Join(dir, update.SettingsFile)); string(data) != "mode=on\n" {
+		t.Errorf("file = %q", data)
+	}
+}
+
+func TestParseStatusReadsTheInstallStep(t *testing.T) {
+	got := update.ParseStatus([]byte("state=installing\ntarget=0.2.4\nversion=0.2.3\nstep=backup\ntime=2026-11-23T21:04:12Z\n"))
+	if got.State != update.Installing || got.Step != "backup" || got.Target != "0.2.4" {
+		t.Errorf("got %+v", got)
+	}
+	for _, bad := range []string{"step=rm -rf", "step=<b>", "step=", "step=Backup"} {
+		if got := update.ParseStatus([]byte("state=installing\n" + bad + "\n")); got.Step != "" {
+			t.Errorf("%q: accepted step %q", bad, got.Step)
+		}
+	}
+	for _, r := range []string{"file_invalid", "load_failed"} {
+		if got := update.ParseStatus([]byte("state=failed\nreason=" + r + "\n")); got.Reason != r {
+			t.Errorf("reason %q not read", r)
+		}
+	}
+}
+
+func TestParseStatusReadsWhenTheDataWasSaved(t *testing.T) {
+	if got := update.ParseStatus([]byte("state=installing\nstep=start\nbackup=2026-11-23T21:04:31Z\n")); got.Backup != "2026-11-23T21:04:31Z" {
+		t.Errorf("backup = %q", got.Backup)
+	}
+	if got := update.ParseStatus([]byte("backup=later\n")); got.Backup != "" {
+		t.Errorf("accepted %q", got.Backup)
 	}
 }

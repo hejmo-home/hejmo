@@ -109,7 +109,7 @@ Das Installationsskript richtet auch eine nächtliche Update-Prüfung ein (ein s
 - Nach einem Update sehen Eltern einmalig, was neu ist, mit Link zu den Release Notes.
 - **Einstellung** (Weboberfläche, **Einstellungen**): *an* (Standard), *aus* oder *nur benachrichtigen* (nichts wird installiert; Eltern sehen, dass ein Update bereitsteht). Die Einstellung erscheint nur, wo das Installationsskript den Updater eingerichtet hat. Willst du bei einer mit `HEJMO_VERSION` festgelegten Version bleiben, stelle die automatischen Updates auf *aus*; sonst hebt der Updater die Box auf die neueste veröffentlichte Version.
 - Eine Box, die ihre Version nicht kennt (etwa ein Vorschau-Build), wird nie aktualisiert.
-- Der Container bekommt keinen Zugriff auf den Docker-Socket. Box und Updater tauschen nur zwei kleine Dateien im Datenvolumen aus (`update-settings`, `update-status`) mit festen Schlüsseln und Werten.
+- Der Container bekommt keinen Zugriff auf den Docker-Socket. Box und Updater tauschen nur zwei kleine Dateien im Datenvolumen aus (`update-settings`, `update-status`) mit festen Schlüsseln und Werten, dazu die Update-Datei, die ein Elternteil hochgeladen hat (`update-file`, nur im Offline-Modus, siehe „Update ohne Internet“); der Updater läuft für diese Datei, wenn `hejmo-update.path` sieht, dass sich die Einstellungsdatei ändert.
 - Das Updater-Skript selbst ändert sich nur, wenn du das Installationsskript erneut ausführst. Den letzten Lauf siehst du mit `sudo journalctl -u hejmo-update`.
 - Schlägt auch die Rückkehr fehl (die Sicherung lässt sich nicht einspielen), bleibt die Box absichtlich **gestoppt**, und Eltern sehen keinen Hinweis, weil die Box aus ist. Antwortet die Box nach einer Update-Nacht nicht, zeigt `sudo journalctl -u hejmo-update`, was passiert ist.
 
@@ -123,7 +123,22 @@ Mit Offline-Modus (**Einstellungen › Verbindungen nach außen**) aktualisiert 
 
 **Auf einer Box, die vor dem Offline-Modus installiert wurde, führe zuerst einmal das Installationsskript aus** (siehe „Aktualisieren und entfernen“ unten): Ein älterer Updater kennt `offline=yes` nicht und würde jede Nacht weiter nach Updates suchen.
 
-Eine Update-Datei in der Weboberfläche hochzuladen gibt es noch nicht (das ist ein eigener Schritt). Bis dahin geht es von Hand, von einem Computer mit Internet aus und mit der Adresse der Box zur Hand:
+### In der Weboberfläche
+
+Der einfache Weg, für eine Box, die mit dem Installationsskript eingerichtet wurde. **Einstellungen › Verbindungen nach außen › Update-Datei hochladen** (nur Eltern, nur über HTTPS):
+
+1. Öffne auf einem Computer mit Internet die [Release-Seite](https://github.com/hejmo-home/hejmo/releases) und lade bei der neuesten Version ohne „rc“ im Namen die Datei `hejmo-<Version>-arm64.update` herunter (für einen Raspberry Pi; für einen PC oder Mini-PC `-amd64.update`).
+2. Wähle die Datei auf der Upload-Seite und drücke **Hochladen und prüfen**. Die Box prüft sie sofort, und eine falsche Datei wird am Feld mit dem Grund abgewiesen: eine Signatur, die nicht vom Projekt stammt, keine Signatur, die andere Art Box, dieselbe oder eine ältere Version, eine Vorabversion, eine Datei über 500 MB oder zu wenig Platz auf der Box. Eine abgewiesene Datei wird sofort gelöscht.
+3. Die nächste Seite sagt, was in der Datei steckt (die Signatur in Worten, die neue Version, was sie ersetzt, welche Displays so lange nicht erreichbar sind). **Jetzt installieren** startet die Installation; **Nein, nicht installieren** löscht die Datei, und die Box löscht sie auch nach einer Stunde ohne Antwort.
+4. Die Seite zeigt die Schritte in Worten (Signatur prüfen, Daten sichern, neue Version starten, prüfen, ob sie antwortet) und lädt sich selbst neu, wenn die Box nach etwa zwei Minuten wieder da ist. Antwortet die neue Version nicht, geht die Box mit den vorher gesicherten Daten zur vorherigen Version zurück, und die Seite sagt das. Zu einer älteren Version geht es danach nicht zurück.
+
+Was geprüft wird und wie: Die Box prüft die cosign-Signatur des Release-Ablaufs offline (sigstore-go, mit dem öffentlichen Sigstore-Root, der in der Box steckt) und gibt die Datei dann über die Datei `update-settings` an den Updater weiter. Der Updater, der einzige Installierer, macht eine Kopie, prüft die Signatur noch einmal selbst mit cosign (ohne Netz), sichert die Daten, schaltet um und prüft, ob die Box antwortet. Der Container bekommt keinen Zugriff auf den Docker-Socket.
+
+**Eine Box, die vor dieser Funktion installiert wurde, hat einen älteren Updater, der keine Datei installieren kann.** Die Seite sagt das; führe das Installationsskript noch einmal aus (siehe „Aktualisieren und entfernen“ unten), dann wird das Hochladen angeboten. Das Installationsskript holt auch den Signatur-Prüfer (das cosign-Image), solange Internet da ist, denn die Prüfung selbst läuft ohne.
+
+### Von Hand, mit einem USB-Stick
+
+Für eine Box ohne das Installationsskript, oder wenn die Seite keine Option ist. Von einem Computer mit Internet aus und mit der Adresse der Box zur Hand:
 
 1. **Auf einem Computer mit Internet** suchst du die neueste Version auf der [Release-Seite](https://github.com/hejmo-home/hejmo/releases) (eine Nummer wie `0.2.4`, keine Vorabversion). Lade das Image und prüfe seine Signatur, genau wie der Updater:
    ```bash
@@ -155,4 +170,4 @@ Die Menünamen unterscheiden sich je nach FRITZ!OS-Version; die Hilfe des Router
 ## Aktualisieren und entfernen
 
 - Ein erneuter Lauf des Installationsskripts behält Einstellungen und Daten und erneuert Updater und systemd-Units; die Box selbst aktualisiert er nicht.
-- Zum Entfernen: `sudo systemctl disable --now hejmo.service hejmo-update.timer && sudo rm /etc/systemd/system/hejmo.service /etc/systemd/system/hejmo-update.service /etc/systemd/system/hejmo-update.timer && cd /opt/hejmo && sudo docker compose down`. Deine Daten bleiben in `/opt/hejmo/data`, bis du den Ordner löschst.
+- Zum Entfernen: `sudo systemctl disable --now hejmo.service hejmo-update.timer hejmo-update.path && sudo rm /etc/systemd/system/hejmo.service /etc/systemd/system/hejmo-update.service /etc/systemd/system/hejmo-update.timer /etc/systemd/system/hejmo-update.path /etc/systemd/system/hejmo-update-install.service && cd /opt/hejmo && sudo docker compose down`. Deine Daten bleiben in `/opt/hejmo/data`, bis du den Ordner löschst.

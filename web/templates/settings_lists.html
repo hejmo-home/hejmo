@@ -3,6 +3,7 @@
   <p class="lead">{{t "lists.set.lead"}}</p>
   <ul class="list-rows">
     <li><a href="/settings/lists/library"><span class="art-sym" aria-hidden="true">{{.LibrarySymbol}}</span><span class="t"><b>{{t "lib.row.title"}}</b><span class="meta">{{.ShippedState}}</span><span class="meta">{{.OwnState}}</span></span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+    <li><a href="/settings/lists/sharing"><span class="art-sym" aria-hidden="true"><svg class="icon" width="24" height="24" viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke-width="1.8"><rect x="7" y="3" width="10" height="18" rx="2.5"/><path d="M11 18h2"/></svg></span><span class="t"><b>{{t "share.title"}}</b>{{range .SharingLines}}<span class="meta">{{.}}</span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
   </ul>
   <form class="steps unit-set" method="post" action="/settings/lists/units" id="units">
     <fieldset><legend>{{t "lq.units.legend"}}</legend>

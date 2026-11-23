@@ -2206,6 +2206,52 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /list-sharing:
+    get:
+      operationId: getListSharing
+      summary: Which lists are also in Apple Reminders (scope lists:read)
+      description: |
+        Lists shared with other apps appear to CalDAV clients (Apple Reminders,
+        DAVx5 with Tasks.org) as one collection of tasks each, below the
+        calendar home, titled "Name · quantity" with the note as the notes
+        field. Only parents' device tokens carry the `lists` scope that reads
+        them; tokens made before version 0.2 are not widened. This is no
+        connection to the outside: the device fetches from the box.
+      responses:
+        "200":
+          description: Every list with its switch
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListSharing" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: setListSharing
+      summary: Switch lists on or off for other apps (scope lists:write, parents only)
+      description: |
+        `lists` maps list ids to the new state; lists it does not name stay
+        as they are. Nothing is stored when one of them is gone (422).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [lists]
+              properties:
+                lists:
+                  type: object
+                  additionalProperties: { type: boolean }
+      responses:
+        "200":
+          description: Every list with its switch, as stored now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListSharing" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /lists:
     get:
       operationId: listLists
@@ -2349,8 +2395,14 @@ paths:
   /lists/{id}/entries/{entry}:
     patch:
       operationId: setListEntryQuantity
-      summary: Change the quantity of an open entry (scope lists:write, parents only)
+      summary: Change the quantity or the note of an entry (scope lists:write, parents only)
       description: |
+        Send `amount` (with `unit`), `note` or both. `note` replaces the note of
+        the entry ("" removes it; at most 500 characters, else 422), also of a
+        ticked-off entry, and on lists without `suggestions`. Without `amount`
+        the quantity stays and the answer says `result: set`. The rest of this
+        text is about `amount`.
+
         The amount **replaces** the old quantity and never adds to it. The
         caller converts a change of unit within one kind (500 g to 0.5 kg keeps
         the amount). `amount` is rounded as shown (two decimals, whole g and ml);
@@ -2371,10 +2423,10 @@ paths:
           application/json:
             schema:
               type: object
-              required: [amount]
               properties:
-                amount: { type: number, nullable: true, description: "Above 0, at most 9999; null takes the quantity away" }
+                amount: { type: number, nullable: true, description: "Above 0, at most 9999; null takes the quantity away. Only on lists with `suggestions`." }
                 unit: { type: string, description: "A key of `GET /units`; one that is switched off is refused with 422" }
+                note: { type: string, maxLength: 500, description: "The note of the entry; empty removes it" }
       responses:
         "200":
           description: The entry now
@@ -4007,7 +4059,7 @@ components:
         suggestions: { type: boolean }
     List:
       type: object
-      required: [id, name, color, symbol, sort, suggestions, open_count, done_count]
+      required: [id, name, color, symbol, sort, suggestions, shared, open_count, done_count]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
@@ -4015,6 +4067,7 @@ components:
         symbol: { $ref: "#/components/schemas/ListSymbol" }
         sort: { $ref: "#/components/schemas/ListSort" }
         suggestions: { type: boolean, description: "The list offers articles of the library while typing and takes quantities (a to-do list switches it off)" }
+        shared: { type: boolean, description: "The list is also in Apple Reminders and other CalDAV apps; change it with `PATCH /list-sharing`. New lists are off." }
         open_count: { type: integer, description: "Entries not ticked off" }
         done_count: { type: integer, description: "Entries ticked off" }
     Article:
@@ -4116,16 +4169,31 @@ components:
       enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
     ListEntry:
       type: object
-      required: [id, text, done, article_id, symbol, picture]
+      required: [id, text, done, article_id, symbol, picture, note]
       properties:
         id: { type: string, format: uuid }
         text: { type: string }
         done: { type: boolean }
+        note: { type: string, maxLength: 500, description: "A few words under the entry, empty without one. Written in Hejmo or in Apple Reminders (the notes field), kept when the entry is ticked off." }
         article_id: { type: string, nullable: true, description: "The library article of the entry: the one stored when it was added from the library, else (an entry without one) the article its text names exactly in German or English, ignoring case and umlauts; never an article hidden by hand. The key of a shipped article or the id of an own one. Null for free text." }
         symbol: { type: string, nullable: true, description: "The emoji a tile shows for the article (its department's symbol when it has none). Null for free text and for an article that has a picture." }
         picture: { type: string, nullable: true, description: "Path of the own article's picture, `GET /articles/{id}/picture`. Null without one." }
         amount: { type: number, description: "How much, as shown (rounded: g and ml whole, else at most two decimals); missing without a quantity" }
         unit: { $ref: "#/components/schemas/UnitKey" }
+    ListSharing:
+      type: object
+      required: [lists]
+      properties:
+        lists:
+          type: array
+          items:
+            type: object
+            required: [id, name, shared, open_count]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+              shared: { type: boolean }
+              open_count: { type: integer }
     ListEntryResult:
       allOf:
         - { $ref: "#/components/schemas/ListEntry" }

@@ -130,9 +130,15 @@ func (s *server) renderListsSettingsUnits(w http.ResponseWriter, r *http.Request
 			confirmed = s.i18n.Format(lang, i18n.Msg("lists.set.confirmed", "name", c.Name, "when", p.dateTime(st.settings.ConfirmedAt)))
 		}
 	}
+	allLists, err := s.db.Lists(p.household.ID)
+	if err != nil {
+		s.fail(w, "lists", err)
+		return
+	}
 	data := map[string]any{
-		"Units":  s.unitsForm(p, lang, unitsOn, unitsErr),
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID),
+		"SharingLines": s.sharingRowLines(lang, allLists),
+		"Units":        s.unitsForm(p, lang, unitsOn, unitsErr),
+		"Person":       p.person, "SyncStale": s.syncStale(p.household.ID),
 		"LibrarySymbol": hejmoSymbol, "ShippedState": shipped, "OwnState": own,
 		"Anyone": len(withAllergies) > 0, "CanHide": len(holders) > 0,
 		"AllergyPeople": withAllergies, "WithoutText": withoutText, "Sample": sample,

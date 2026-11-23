@@ -323,7 +323,7 @@ func TestAnEntryShowsItsQuantityAsAButtonAndNothingIsTickedOffByIt(t *testing.T)
 	s := newShop(t)
 	id := s.seed("eggs", "Eggs", 6, "piece")
 	body := s.en(s.path("")).body
-	re := regexp.MustCompile(`<a class="qty-open" href="\?qty=` + id + `#e-` + id + `"[^>]*aria-label="Change quantity: Eggs, 6 pieces">6 pieces`)
+	re := regexp.MustCompile(`<a class="qty-open" href="\?qty=` + id + `#e-` + id + `"[^>]*aria-label="Change quantity or note: Eggs, 6 pieces">6 pieces`)
 	if !re.MatchString(body) {
 		t.Errorf("the quantity button:\n%s", body)
 	}

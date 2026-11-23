@@ -244,6 +244,14 @@ _Avoid_: checklist, note
 One line of text on a list that can be ticked off.
 _Avoid_: item (alone), list item
 
+**Shared list** (in German "geteilte Liste"):
+A list a parent switched on for other apps (ticket 167): CalDAV clients such as Apple Reminders get it as one collection of tasks, one reminder per entry, titled "Name · quantity". New lists are not shared. Ticking, adding, changing and deleting entries work both ways; lists themselves are created, renamed and deleted in Hejmo only. Only parents' device tokens carry the `lists` scope.
+_Avoid_: synced list, exported list
+
+**Entry note**:
+A few words (at most 500 characters) shown small under a list entry. Written in Hejmo or in the notes field of a reminder and kept when the entry is ticked off.
+_Avoid_: comment, description
+
 **Article**:
 A thing that can be put on a list, from the article library: name, symbol or picture, department, the diets it fits and the allergens it contains.
 _Avoid_: product, item (alone)

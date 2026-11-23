@@ -18,10 +18,12 @@ type listJSON struct {
 	Symbol string `json:"symbol"`
 	Sort   string `json:"sort"`
 	// Suggestions says the list offers articles of the library and takes quantities.
-	Suggestions bool         `json:"suggestions"`
-	OpenCount   int          `json:"open_count"`
-	DoneCount   int          `json:"done_count"`
-	Entries     *[]entryJSON `json:"entries,omitempty"`
+	Suggestions bool `json:"suggestions"`
+	// Shared says the list is also in Apple Reminders and other CalDAV apps.
+	Shared    bool         `json:"shared"`
+	OpenCount int          `json:"open_count"`
+	DoneCount int          `json:"done_count"`
+	Entries   *[]entryJSON `json:"entries,omitempty"`
 }
 
 type entryJSON struct {
@@ -37,6 +39,8 @@ type entryJSON struct {
 	// Amount and Unit are the quantity of an entry of a list with suggestions.
 	Amount *float64 `json:"amount,omitempty"`
 	Unit   string   `json:"unit,omitempty"`
+	// Note is the note under the entry, "" without one (at most 500 characters).
+	Note string `json:"note"`
 }
 
 // qtyJSON is a quantity: the number as shown, in its unit.
@@ -57,7 +61,7 @@ type entryResultJSON struct {
 }
 
 func entryToJSON(e list.Entry) entryJSON {
-	j := entryJSON{ID: e.ID, Text: e.Text, Done: e.Done}
+	j := entryJSON{ID: e.ID, Text: e.Text, Done: e.Done, Note: e.Note}
 	if e.ArticleID != "" {
 		j.ArticleID = &e.ArticleID
 	}
@@ -76,7 +80,7 @@ func previousJSON(q list.Quantity) *qtyJSON {
 }
 
 func listToJSON(l list.List, c store.EntryCount) listJSON {
-	return listJSON{ID: l.ID, Name: l.Name, Color: l.Color, Symbol: l.Symbol, Sort: string(l.Sort), Suggestions: l.Suggestions, OpenCount: c.Open, DoneCount: c.Done}
+	return listJSON{ID: l.ID, Name: l.Name, Color: l.Color, Symbol: l.Symbol, Sort: string(l.Sort), Suggestions: l.Suggestions, Shared: l.Shared, OpenCount: c.Open, DoneCount: c.Done}
 }
 
 // entriesToJSON turns entries into their JSON with their looks (tiles need
@@ -341,9 +345,10 @@ func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p princi
 	var in struct {
 		Amount json.RawMessage `json:"amount"`
 		Unit   string          `json:"unit"`
+		Note   *string         `json:"note"`
 	}
-	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.Amount == nil {
-		writeError(w, http.StatusBadRequest, "invalid JSON: amount is required (a number or null)")
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || (in.Amount == nil && in.Note == nil) {
+		writeError(w, http.StatusBadRequest, "invalid JSON: amount (a number or null) or note is required")
 		return
 	}
 	l, err := s.db.List(p.household.ID, r.PathValue("id"))
@@ -351,8 +356,19 @@ func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p princi
 		s.listError(w, "list", err)
 		return
 	}
-	if !l.Suggestions {
+	if in.Amount != nil && !l.Suggestions {
 		writeFieldError(w, http.StatusUnprocessableEntity, "amount", "this list has no quantities")
+		return
+	}
+	var note string
+	if in.Note != nil {
+		if note = cleanNote(*in.Note); list.ValidateNote(note) != nil {
+			writeFieldError(w, http.StatusUnprocessableEntity, "note", "a note has at most 500 characters")
+			return
+		}
+	}
+	if in.Amount == nil { // the note alone: the quantity stays
+		s.apiSetNote(w, p, l, r.PathValue("entry"), note)
 		return
 	}
 	c, err := s.itemContext(p, s.langOf(r))
@@ -408,6 +424,14 @@ func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p princi
 		e = res.Plan.Into
 	}
 	e.Qty = res.Plan.Result
+	if in.Note != nil {
+		saved, _, err := s.saveNote(p, l, e.ID, note, res.Plan.Action == list.SetMerged)
+		if err != nil {
+			s.listError(w, "set note", err)
+			return
+		}
+		e.Note = saved.Note
+	}
 	if out.entryJSON, err = s.entryJSONOf(p, e); err != nil {
 		s.fail(w, "entry looks", err)
 		return
@@ -569,4 +593,74 @@ func (s *server) listViewError(w http.ResponseWriter, err error) {
 		return
 	}
 	s.fail(w, "list view", err)
+}
+
+// apiSetNote changes the note of an entry alone, open or ticked off. "" removes it.
+func (s *server) apiSetNote(w http.ResponseWriter, p principal, l list.List, id, note string) {
+	if err := s.db.SetEntryNote(p.household.ID, l.ID, id, note); err != nil {
+		s.listError(w, "set note", err)
+		return
+	}
+	e, err := s.entryState(p, l.ID, id)
+	if err != nil {
+		s.fail(w, "entry", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, entryResultJSON{entryJSON: e, Result: string(list.SetOnly)})
+}
+
+// sharingJSON is a list and whether other apps get it.
+type sharingJSON struct {
+	ID        string `json:"id"`
+	Name      string `json:"name"`
+	Shared    bool   `json:"shared"`
+	OpenCount int    `json:"open_count"`
+}
+
+func (s *server) sharingToJSON(p principal) ([]sharingJSON, error) {
+	lists, err := s.db.Lists(p.household.ID)
+	if err != nil {
+		return nil, err
+	}
+	counts, err := s.db.EntryCounts(p.household.ID)
+	if err != nil {
+		return nil, err
+	}
+	out := make([]sharingJSON, 0, len(lists))
+	for _, l := range lists {
+		out = append(out, sharingJSON{ID: l.ID, Name: l.Name, Shared: l.Shared, OpenCount: counts[l.ID].Open})
+	}
+	return out, nil
+}
+
+// apiGetSharing says which lists are also in Apple Reminders.
+func (s *server) apiGetSharing(w http.ResponseWriter, _ *http.Request, p principal) {
+	out, err := s.sharingToJSON(p)
+	if err != nil {
+		s.fail(w, "list sharing", err)
+		return
+	}
+	writeJSON(w, http.StatusOK, map[string][]sharingJSON{"lists": out})
+}
+
+// apiPatchSharing switches lists on or off for other apps: {"lists": {"<id>": true}}.
+// Lists it does not name stay as they are. A list that is gone stores nothing.
+func (s *server) apiPatchSharing(w http.ResponseWriter, r *http.Request, p principal) {
+	var in struct {
+		Lists map[string]bool `json:"lists"`
+	}
+	if err := json.NewDecoder(r.Body).Decode(&in); err != nil || in.Lists == nil {
+		writeError(w, http.StatusBadRequest, "invalid JSON: lists is required (list id to true or false)")
+		return
+	}
+	var missing *store.MissingListError
+	switch err := s.db.SetListsShared(p.household.ID, in.Lists); {
+	case errors.As(err, &missing):
+		writeFieldError(w, http.StatusUnprocessableEntity, "lists", "no such list: "+missing.ID)
+		return
+	case err != nil:
+		s.fail(w, "list sharing", err)
+		return
+	}
+	s.apiGetSharing(w, r, p)
 }

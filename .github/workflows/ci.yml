@@ -79,7 +79,7 @@ jobs:
           if-no-files-found: ignore
 
   # TEMPORARY (ticket 238, acceptance criteria 1-2): peak RSS of the whole
-  # internal/server race binary, before (PR base) and after (PR head), per
+  # internal/server race binary: before (39cbd74, parent of the #239 merge), main (PR base) and head, per
   # architecture. Remove once the numbers are in the PR body.
   measure-server-rss:
     name: Whole-package RSS (${{ matrix.arch }}, ${{ matrix.which }})
@@ -88,7 +88,7 @@ jobs:
       fail-fast: false
       matrix:
         arch: [x86_64, arm64]
-        which: [before, after]
+        which: [before, main, head]
         include:
           - arch: x86_64
             runner: ubuntu-24.04
@@ -98,7 +98,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ matrix.which == 'before' && github.event.pull_request.base.sha || github.event.pull_request.head.sha }}
+          ref: ${{ (matrix.which == 'before' && '39cbd74') || (matrix.which == 'main' && github.event.pull_request.base.sha) || github.event.pull_request.head.sha }}
+          fetch-depth: 0
       - uses: actions/setup-go@v5
         with:
           go-version-file: go.mod

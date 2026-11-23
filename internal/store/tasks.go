@@ -314,8 +314,8 @@ func setTaskDoneTx(tx *sql.Tx, t task.Task, day string, done bool, by string, at
 
 // SetTaskStars changes the star value of a task (0 to task.MaxStars). It
 // counts from the next tick: task_done rows and the star log are not touched,
-// so credited ticks keep their value and unticking deducts what was credited
-// (ADR 0018).
+// so ticks keep the value they had and unticking tries to deduct that full
+// value (ADR 0018, ADR 0021 #292).
 func (db *DB) SetTaskStars(householdID, id string, stars int) error {
 	if stars < 0 || stars > task.MaxStars {
 		return fmt.Errorf("%w: %w", ErrInvalid, &task.InvalidError{Field: "stars", Msg: fmt.Sprintf("stars must be between 0 and %d", task.MaxStars)})
@@ -330,8 +330,10 @@ func (db *DB) SetTaskStars(householdID, id string, stars int) error {
 	return nil
 }
 
-// TaskDoneStars returns the stars credited when a task was ticked off on a
-// day, and whether it is ticked off that day.
+// TaskDoneStars returns the full star value the tick of a task carries on a
+// day, and whether it is ticked off that day. It is what reopening tries to
+// deduct, not necessarily what was booked: a re-tick that only paid off debt
+// (task_star_debt) books fewer stars, or none.
 func (db *DB) TaskDoneStars(id, day string) (stars int, done bool, err error) {
 	err = db.sql.QueryRow(`SELECT stars FROM task_done WHERE task_id = ? AND day = ?`, id, day).Scan(&stars)
 	if errors.Is(err, sql.ErrNoRows) {

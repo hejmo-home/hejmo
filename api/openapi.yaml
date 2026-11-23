@@ -4142,7 +4142,7 @@ components:
         text: { type: string, description: "The entry's words: for an article its name, without the variety" }
         done: { type: boolean }
         variety: { type: string, nullable: true, maxLength: 60, description: "The variety of the article, for example `Type 405` (shown as \"Mehl · Type 405\"); null for none and for free text. Quantities add up only for the same article and variety." }
-        article_id: { type: string, nullable: true, description: "The library article of the entry: the one stored when it was added from the library, else (an entry without one) the article its text names exactly in German or English, ignoring case and umlauts; never an article hidden by hand. The key of a shipped article or the id of an own one. Null for free text." }
+        article_id: { type: string, nullable: true, description: "The library article of the entry: the one stored when it was added from the library, else (an entry without one) the article its text names in German or English, ignoring case, umlauts and singular or plural (the exact name first, the endings of the name's own language only); never an article hidden by hand. The key of a shipped article or the id of an own one. Null for free text." }
         symbol: { type: string, nullable: true, description: "The emoji a tile shows for the article (its department's symbol when it has none). Null for free text and for an article that has a picture." }
         picture: { type: string, nullable: true, description: "Path of the own article's picture, `GET /articles/{id}/picture`. Null without one." }
         amount: { type: number, description: "How much, as shown (rounded: g and ml whole, else at most two decimals); missing without a quantity" }

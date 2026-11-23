@@ -447,3 +447,38 @@ func TestTypingTheNameOfAnArticleThatStartsWithAnotherOneAddsNoMadeUpVariety(t *
 		}
 	}
 }
+
+// A page names its lists by the article itself: the English Beer page is not on
+// a list holding "Beeren", the German Eis page not on one holding "Ei".
+func TestTheListOnTheArticlePageDoesNotMixThePluralEndingsOfTwoLanguages(t *testing.T) {
+	s := newShop(t)
+	for _, text := range []string{"Beeren", "Ei"} {
+		if _, err := s.db.AddEntry(s.h.ID, s.id, text); err != nil {
+			t.Fatal(err)
+		}
+	}
+	for _, c := range []struct{ id, lang string }{{"beer", "en"}, {"ice-cream", "de"}} {
+		body := s.en("/settings/lists/library/" + c.id).body
+		if c.lang == "de" {
+			body = s.de("/settings/lists/library/" + c.id).body
+		}
+		if strings.Contains(body, "Einkaufen") || strings.Contains(body, "Shopping") {
+			t.Errorf("%s page claims a list:\n%s", c.id, body)
+		}
+	}
+}
+
+// The typed variety keeps its row when completions and known varieties would fill them all.
+func TestTheTypedVarietyKeepsItsRowWhenCompletionsFillTheOthers(t *testing.T) {
+	s := newShop(t)
+	for _, v := range []string{"Seeds", "Wholemeal", "Spelt", "Rye"} {
+		s.seedVariety("bread-rolls", "Bread rolls", v, 0, "")
+	}
+	body := s.en(s.path("/suggest?q=Bread+r&mode=quick")).body
+	if !strings.Contains(body, `data-article="bread"`) || !strings.Contains(body, `data-variety="r"`) {
+		t.Errorf("the row for Bread with the typed variety is gone:\n%s", body)
+	}
+	if n := len(firstArticles(body)); n > 4 {
+		t.Errorf("%d rows, at most 4", n)
+	}
+}

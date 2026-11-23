@@ -432,6 +432,9 @@ func (s *server) apiSetQuantity(w http.ResponseWriter, r *http.Request, p princi
 			to.Base = e.Qty.Base
 		}
 	}
+	if in.Amount == nil {
+		chosen = "" // only the variety changes: no unit was chosen, the last unit stays
+	}
 	res, err := s.db.ChangeEntry(p.household.ID, listID, id, to, chosen, variety, c.show(art))
 	var inv *list.InvalidError
 	switch {

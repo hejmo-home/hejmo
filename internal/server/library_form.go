@@ -283,14 +283,14 @@ func (s *server) renderArticleForm(w http.ResponseWriter, r *http.Request, p pri
 		}
 		data["From"] = from
 		data["Warns"] = s.warnLines(st, st.warnings(it))
-		onLists, err := s.listsWith(p, o.Name, false)
+		onLists, err := s.listsWith(p, st, o.ID, false)
 		if err != nil {
 			s.fail(w, "lists", err)
 			return
 		}
 		data["OnLists"] = s.listLinks(lang, onLists)
 		data["HasLists"] = len(onLists) > 0
-		stays, err := s.listsWith(p, o.Name, true)
+		stays, err := s.listsWith(p, st, o.ID, true)
 		if err != nil {
 			s.fail(w, "lists", err)
 			return

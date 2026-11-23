@@ -457,3 +457,23 @@ func TestPatchingOnlyTheVarietyOfAListWithoutSuggestionsNamesTheVarietyField(t *
 		}
 	}
 }
+
+// Changing only the variety is no unit choice: the unit last used for the
+// article stays the one the household chose last.
+func TestPatchingOnlyTheVarietyDoesNotChangeTheLastUnitOfTheArticle(t *testing.T) {
+	lb := newListBox(t)
+	id := lb.shopList(t)
+	_, first := lb.add(t, id, map[string]any{"article_id": "sugar", "amount": 500, "unit": "g"})
+	lb.add(t, id, map[string]any{"article_id": "sugar", "amount": 1, "unit": "kg", "variety": "Rohr"})
+	h, _ := lb.parent.b.db.HomeHousehold()
+	if u, _ := lb.parent.b.db.LastUnit(h.ID, "sugar"); u != "kg" {
+		t.Fatalf("before: last unit %q", u)
+	}
+	status, e, _ := lb.parent.call(http.MethodPatch, "/lists/"+id+"/entries/"+first["id"].(string), map[string]any{"variety": "Braun"})
+	if status != http.StatusOK {
+		t.Fatalf("patch: %d %v", status, e)
+	}
+	if u, _ := lb.parent.b.db.LastUnit(h.ID, "sugar"); u != "kg" {
+		t.Errorf("last unit after a variety-only change: %q, want kg", u)
+	}
+}

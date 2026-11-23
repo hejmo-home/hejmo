@@ -193,9 +193,9 @@ func TestParentChangesAndDeletesAListInTheWebInterface(t *testing.T) {
 }
 
 // Acceptance (web): a child ticks off, but cannot delete a list or add entries.
-func TestChildPhoneTicksOffListEntriesButDeletesNothing(t *testing.T) {
+func TestChildPersonalDeviceTicksOffListEntriesButDeletesNothing(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	b := cp.parent.b
 	id := firstListID(t, b)
 	h, _ := b.db.HomeHousehold()
@@ -236,7 +236,7 @@ func TestChildPhoneTicksOffListEntriesButDeletesNothing(t *testing.T) {
 		t.Errorf("child overview = %d, offers creating a list", overview.status)
 	}
 	// API parity.
-	if status, _, _ := cp.phone.call(http.MethodDelete, "/lists/"+id, nil); status != http.StatusForbidden {
+	if status, _, _ := cp.personalDevice.call(http.MethodDelete, "/lists/"+id, nil); status != http.StatusForbidden {
 		t.Errorf("API child deletes list = %d, want 403", status)
 	}
 }

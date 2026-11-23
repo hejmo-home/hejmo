@@ -152,7 +152,7 @@ func (s *server) fillFamily(st *firstStep, people []store.Person, f func(string,
 	return nil
 }
 
-// fillParents is the second parent and phones step. The second parent is a
+// fillParents is the second parent and personal devices step. The second parent is a
 // parent other than the one looking at Home: who set the box up is not stored,
 // and the order of the people can change. The parent counts once they have an
 // account, so an invitation that was accepted counts (ticket 145); while a link
@@ -180,15 +180,15 @@ func (s *server) fillParents(st *firstStep, h store.Household, viewer store.Pers
 			}
 		}
 	}
-	phones, err := s.db.Phones(h.ID)
+	personalDevices, err := s.db.PersonalDevices(h.ID)
 	if err != nil {
 		return err
 	}
 	var list []string
-	for _, ph := range phones {
+	for _, ph := range personalDevices {
 		list = append(list, ph.PersonName+" ("+ph.Name+")")
 	}
-	hasParent, hasPhone := len(withAccount) > 0, len(phones) > 0
+	hasParent, hasPersonalDevice := len(withAccount) > 0, len(personalDevices) > 0
 	var acts []fsAction
 	var waitingText string
 	switch {
@@ -202,19 +202,19 @@ func (s *server) fillParents(st *firstStep, h store.Household, viewer store.Pers
 	default:
 		acts = append(acts, fsAction{"/people", f("firststeps.parents.add")})
 	}
-	if !hasPhone {
-		acts = append(acts, fsAction{"/phones", f("firststeps.parents.phone")})
+	if !hasPersonalDevice {
+		acts = append(acts, fsAction{"/personal-devices", f("firststeps.parents.personal_device")})
 	}
-	settle(st, hasParent && hasPhone, fsAction{"/phones", f("firststeps.parents.manage")}, acts...)
-	if hasParent || hasPhone || waitingText != "" {
-		st.Subs = []fsSub{{hasParent, f("firststeps.parents.person.open")}, {hasPhone, f("firststeps.parents.phones.open")}}
+	settle(st, hasParent && hasPersonalDevice, fsAction{"/personal-devices", f("firststeps.parents.manage")}, acts...)
+	if hasParent || hasPersonalDevice || waitingText != "" {
+		st.Subs = []fsSub{{hasParent, f("firststeps.parents.person.open")}, {hasPersonalDevice, f("firststeps.parents.personal_devices.open")}}
 		if hasParent {
 			st.Subs[0].Text = f("firststeps.parents.person", "names", strings.Join(withAccount, ", "))
 		} else if waitingText != "" {
 			st.Subs[0].Text = waitingText
 		}
-		if hasPhone {
-			st.Subs[1].Text = f("firststeps.parents.phones", "list", strings.Join(list, ", "))
+		if hasPersonalDevice {
+			st.Subs[1].Text = f("firststeps.parents.personal_devices", "list", strings.Join(list, ", "))
 		}
 	} else {
 		st.Text = f("firststeps.parents.text")

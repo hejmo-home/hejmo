@@ -388,7 +388,7 @@ func TestOwnCAAfterAFailedPublicAttemptLeavesNoWarning(t *testing.T) {
 }
 
 // A stored public setup whose certificate could not be obtained: the manager
-// is ready but has nothing to serve, so the box's own CA is what phones get.
+// is ready but has nothing to serve, so the box's own CA is what personal devices get.
 func TestOwnCAFallbackWithoutAPublicCertificateIsReportedAndOffersItsTrustPage(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)

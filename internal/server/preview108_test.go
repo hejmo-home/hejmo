@@ -65,7 +65,7 @@ func TestWritePreview108(t *testing.T) {
 	}
 	ended := page(s.mama, "/sessions", "de")
 	gone := page(s.mama, "/sessions?gone=1", "de")
-	refused := page(s.papa, "/login", "de") // the lost phone's next request, as it lands on the sign-in page
+	refused := page(s.papa, "/login", "de") // the lost personal device's next request, as it lands on the sign-in page
 	if r := s.papa.get("/", "de"); r.status != http.StatusSeeOther {
 		t.Fatalf("refused request = %d", r.status)
 	}
@@ -125,7 +125,7 @@ func TestWritePreview108(t *testing.T) {
 		}
 		return fs
 	}
-	portrait, phone, phoneDark := frame{"light", 768, 1024}, frame{"light", 375, 812}, frame{"dark", 375, 812}
+	portrait, personalDevice, personalDeviceDark := frame{"light", 768, 1024}, frame{"light", 375, 812}, frame{"dark", 375, 812}
 	var body strings.Builder
 	var docs []string
 	docOf := map[string]int{}
@@ -143,20 +143,20 @@ func TestWritePreview108(t *testing.T) {
 		}
 		body.WriteString("</div>\n")
 	}
-	section("1. Settings: new row &quot;Signed-in devices&quot;", "A parent finds the list where every other setup page lives: one calm row under Settings, next to one-time codes (account security). Only parents see it.", hub, append(desk("light", "bw"), phone)...)
-	section("2. Signed-in devices: the list", "Grouped by person (marker and name, household order). Each row says device and browser in words, when it was last used and since when it is signed in. The browser you are using carries the word tag. Rows open a detail page; nothing is ended from the list. Paired phones are not duplicated here: one line points to Phones.", list,
-		append(desk("light", "dark", "bw"), portrait, phone, phoneDark)...)
-	section("3. Detail page of another browser (confirmation closed)", "Facts in words, one action. The destructive action is a closed disclosure, as on every detail page (ADR 0017).", detail, append(desk("light", "bw"), phone)...)
-	section("4. Detail page: confirmation open", "The confirmation says what happens (signed out at once, sign-in page next time, password and code needed) and what stays (paired phones, calendar apps). The red button is the confirmation.", open(detail),
-		append(desk("light", "dark", "bw"), portrait, phone)...)
-	section("5. After ending: success line", "Back on the list, the success line names device and person; the row is gone.", ended, append(desk("light", "bw"), phone)...)
-	section("6. Detail page of this browser", "You cannot end your own sign-in here; the page says so and offers Abmelden, the existing sign-out.", own, desk("light")[0], phone)
-	section("7. Edge: only this browser is signed in", "The list is never empty (you are signed in); one sentence says what will appear here.", only, desk("light")[0], phone)
-	section("8. Edge: already ended or expired", "Another parent ended it first, or it expired while the page was open: a calm notice, no error.", gone, desk("light")[0], phone)
-	section("9. Edge: many sign-ins, long name, unknown device", "Long names wrap; sign-ins made before this ticket show &quot;Unbekanntes Gerät&quot; and &quot;noch nicht erfasst&quot;. No counts, every sign-in is a row.", manyList, append(desk("light", "bw"), portrait, phone)...)
-	section("10. The lost phone: next request", "The ended browser is refused and lands on the sign-in page with one calm sentence (shown whenever a session cookie came along that the box no longer knows).", refused, phone, desk("bw")[0])
-	section("11. English", "Same screens in English.", listEN, desk("light")[0], phone)
-	section("12. English confirmation", "", detailEN, phone)
+	section("1. Settings: new row &quot;Signed-in devices&quot;", "A parent finds the list where every other setup page lives: one calm row under Settings, next to one-time codes (account security). Only parents see it.", hub, append(desk("light", "bw"), personalDevice)...)
+	section("2. Signed-in devices: the list", "Grouped by person (marker and name, household order). Each row says device and browser in words, when it was last used and since when it is signed in. The browser you are using carries the word tag. Rows open a detail page; nothing is ended from the list. Paired personal devices are not duplicated here: one line points to Personal devices.", list,
+		append(desk("light", "dark", "bw"), portrait, personalDevice, personalDeviceDark)...)
+	section("3. Detail page of another browser (confirmation closed)", "Facts in words, one action. The destructive action is a closed disclosure, as on every detail page (ADR 0017).", detail, append(desk("light", "bw"), personalDevice)...)
+	section("4. Detail page: confirmation open", "The confirmation says what happens (signed out at once, sign-in page next time, password and code needed) and what stays (paired personal devices, calendar apps). The red button is the confirmation.", open(detail),
+		append(desk("light", "dark", "bw"), portrait, personalDevice)...)
+	section("5. After ending: success line", "Back on the list, the success line names device and person; the row is gone.", ended, append(desk("light", "bw"), personalDevice)...)
+	section("6. Detail page of this browser", "You cannot end your own sign-in here; the page says so and offers Abmelden, the existing sign-out.", own, desk("light")[0], personalDevice)
+	section("7. Edge: only this browser is signed in", "The list is never empty (you are signed in); one sentence says what will appear here.", only, desk("light")[0], personalDevice)
+	section("8. Edge: already ended or expired", "Another parent ended it first, or it expired while the page was open: a calm notice, no error.", gone, desk("light")[0], personalDevice)
+	section("9. Edge: many sign-ins, long name, unknown device", "Long names wrap; sign-ins made before this ticket show &quot;Unbekanntes Gerät&quot; and &quot;noch nicht erfasst&quot;. No counts, every sign-in is a row.", manyList, append(desk("light", "bw"), portrait, personalDevice)...)
+	section("10. The lost personal device: next request", "The ended browser is refused and lands on the sign-in page with one calm sentence (shown whenever a session cookie came along that the box no longer knows).", refused, personalDevice, desk("bw")[0])
+	section("11. English", "Same screens in English.", listEN, desk("light")[0], personalDevice)
+	section("12. English confirmation", "", detailEN, personalDevice)
 
 	var jsDocs strings.Builder
 	for i, h := range docs {

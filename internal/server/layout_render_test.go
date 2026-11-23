@@ -119,7 +119,7 @@ var layoutNames = []string{"Friedrich", "Maximilian", "Anna-Lena", "Konstantin",
 type layoutFixture struct {
 	*familyBox
 	ids []string // person IDs in layoutNames order
-	kid *screen  // the phone of a child, which shows lists as tiles
+	kid *screen  // the personal device of a child, which shows lists as tiles
 
 	lists       []string // list IDs
 	inviteToken string   // the invitation of Maximilian, a parent without account
@@ -171,7 +171,7 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	l, err := db.CreateList(h, list.List{Name: "Wochenendeinkaufsliste", Color: "blue", Symbol: "circle-empty", Sort: list.Alphabetical, Suggestions: true})
 	must(err)
 	f.lists = append(f.lists, l.ID)
-	// Entries that name articles (#166): shipped ones that warn several people with long names, and the own articles made below, one with a photo and one with a symbol. The tiles of the child's phone show them.
+	// Entries that name articles (#166): shipped ones that warn several people with long names, and the own articles made below, one with a photo and one with a symbol. The tiles of the child's personal device show them.
 	for _, e := range []string{"Haferflockenpackung groß", "Kartoffelsalatzutaten für Samstag", "Vollkornspaghetti", "Bio-Pfefferminztee", "Toastbrot", "Milch", "Haselnuss-Mandel-Knusperflocken mit Schokostückchen", "Katzenfutter Huhn"} {
 		_, err := db.AddEntry(h, l.ID, e)
 		must(err)
@@ -252,8 +252,8 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	c.addICS(t, map[string]any{"kind": "ics", "name": "Schulkalender der Grundschule", "url": schoolFeed})
 	c.switchMCP(t, true)
 	c.newMCPToken(t, "Claude Desktop auf dem Küchenrechner", map[string]string{"lists": "write"})
-	// A paired phone, a calendar connection, a CalDAV device token.
-	f.kid = pairedPhone(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
+	// A paired personal device, a calendar connection, a CalDAV device token.
+	f.kid = pairedPersonalDevice(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
 	connID := connectedBox(t, f.box)
 	// Two calendars with long names (#183): the first is on, for all eight people and under a longer name of its own, the second is off.
 	f.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { // the connection page asks for event counts
@@ -387,7 +387,7 @@ var (
 	uuidRe     = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
 	isoDayRe   = regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
 	// Links that are no framed pages: downloads, the API, assets, fragments.
-	notPageRe = regexp.MustCompile(`^/(static/|api/|healthz|manifest|sw\.js|logout|display(/|$|\?)|ca/|update/|\.well-known|i/|phones/join/)|\.(ics|crt|mobileconfig)(\?|$)`)
+	notPageRe = regexp.MustCompile(`^/(static/|api/|healthz|manifest|sw\.js|logout|display(/|$|\?)|ca/|update/|\.well-known|i/|personal-devices/join/)|\.(ics|crt|mobileconfig)(\?|$)`)
 )
 
 // shape reduces a path to the page it is: IDs and days become placeholders.
@@ -469,30 +469,30 @@ func htmlRoutes(t *testing.T) []string {
 
 // notRendered are GET routes the check does not render, each with its reason.
 var notRendered = map[string]string{
-	"/healthz":                     "plain text",
-	"/static/":                     "assets",
-	"/api/v1/openapi.yaml":         "API document",
-	"/ca/hejmo-ca.crt":             "download",
-	"/ca/hejmo.mobileconfig":       "download",
-	"/manifest.webmanifest":        "JSON",
-	"/sw.js":                       "script",
-	"/display/state":               "JSON",
-	"/display/view":                "fragment of /display, rendered inside it",
-	"/display/lists":               "redirect to the first list",
-	"/display/lists/{id}/view":     "fragment of a list, rendered inside it",
-	"/lists/{id}/suggest":          "fragment: the suggestions under the add card, rendered inside it",
-	"/lists/{id}/quantity":         "fragment: the quantity part of the add card, rendered inside it",
-	"/display/lists/{id}/suggest":  "fragment: the suggestions under the add card, rendered inside it",
-	"/display/lists/{id}/quantity": "fragment: the quantity part of the add card, rendered inside it",
-	"/display/events":              "event stream",
-	"/display/person/{id}/view":    "fragment of the personal view, rendered inside it",
-	"/otp":                         "redirect",
-	"/i/{token}":                   "redirect",
-	"/setup/https/check":           "answers a fragment for the setup page's script",
-	"/places":                      "JSON list of places for the home location picker",
-	"/phones/join/{code}":          "one-time pairing link of a phone",
-	"/display/saver/photos":        "JSON",
-	"/display/photo/{id}":          "image",
+	"/healthz":                      "plain text",
+	"/static/":                      "assets",
+	"/api/v1/openapi.yaml":          "API document",
+	"/ca/hejmo-ca.crt":              "download",
+	"/ca/hejmo.mobileconfig":        "download",
+	"/manifest.webmanifest":         "JSON",
+	"/sw.js":                        "script",
+	"/display/state":                "JSON",
+	"/display/view":                 "fragment of /display, rendered inside it",
+	"/display/lists":                "redirect to the first list",
+	"/display/lists/{id}/view":      "fragment of a list, rendered inside it",
+	"/lists/{id}/suggest":           "fragment: the suggestions under the add card, rendered inside it",
+	"/lists/{id}/quantity":          "fragment: the quantity part of the add card, rendered inside it",
+	"/display/lists/{id}/suggest":   "fragment: the suggestions under the add card, rendered inside it",
+	"/display/lists/{id}/quantity":  "fragment: the quantity part of the add card, rendered inside it",
+	"/display/events":               "event stream",
+	"/display/person/{id}/view":     "fragment of the personal view, rendered inside it",
+	"/otp":                          "redirect",
+	"/i/{token}":                    "redirect",
+	"/setup/https/check":            "answers a fragment for the setup page's script",
+	"/places":                       "JSON list of places for the home location picker",
+	"/personal-devices/join/{code}": "one-time pairing link of a personal device",
+	"/display/saver/photos":         "JSON",
+	"/display/photo/{id}":           "image",
 
 	"/articles/{id}/picture":                  "an image",
 	"/display/articles/{id}/picture":          "an image",
@@ -531,8 +531,8 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	for _, p := range f.outlook {
 		add(parent, p)
 	}
-	// The child's phone shows lists as tiles by default (#166): the tiles of articles with a picture, a symbol and the warning of several people, and of free text.
-	kid := siteOf("child phone", f.box, f.kid.client)
+	// The child's personal device shows lists as tiles by default (#166): the tiles of articles with a picture, a symbol and the warning of several people, and of free text.
+	kid := siteOf("child personal device", f.box, f.kid.client)
 	add(kid, "/lists")
 	add(kid, "/lists/"+f.lists[0])
 	add(kid, "/lists/"+f.lists[1])
@@ -571,9 +571,9 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	out := siteOf("signed out", f.box, f.client)
 	add(out, "/login")
 	add(out, "/ca")
-	// A phone whose device session was removed (ticket 199), on a box of its own.
-	oldBox, oldPhone, _ := unpairedPhone(t)
-	add(siteOf("unpaired device", oldBox, oldPhone.client), "/login")
+	// A personal device whose device session was removed (ticket 199), on a box of its own.
+	oldBox, oldPersonalDevice, _ := unpairedPersonalDevice(t)
+	add(siteOf("unpaired device", oldBox, oldPersonalDevice.client), "/login")
 	// The invitation of a parent: the welcome page and the form for username and password.
 	add(out, "/invite/"+f.inviteToken)
 	add(out, "/invite/"+f.inviteToken+"/account")
@@ -869,7 +869,7 @@ func TestEveryPageIsInTheRenderedLayoutCheck(t *testing.T) {
 	}
 }
 
-// The layout check can only find what its fixture shows: the child's phone
+// The layout check can only find what its fixture shows: the child's personal device
 // must lay out tiles of an article with a picture, one with a symbol, free
 // text, and a tile that warns several people (#166).
 func TestTheLayoutFixtureShowsEveryKindOfTile(t *testing.T) {
@@ -982,7 +982,7 @@ func TestRenderedLayout(t *testing.T) {
 								return err
 							}
 						}
-						// Displays and phones follow the browser's language, the web pages the cookie.
+						// Displays and personal devices follow the browser's language, the web pages the cookie.
 						if _, err := chromedp.Call(ctx, network.SetExtraHTTPHeaders, network.SetExtraHTTPHeadersParams{Headers: network.Headers{"Accept-Language": lang}}); err != nil {
 							return err
 						}
@@ -1159,7 +1159,7 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 	mia, papa := f.people["Mia"], f.people["Papa"]
 	mia.Name = long
 	display := siteOf("display", f.box, f.display.client)
-	phone := siteOf("child's phone", f.box, pairedPhone(t, f.box, mia, "Handy").client)
+	personalDevice := siteOf("child's personal device", f.box, pairedPersonalDevice(t, f.box, mia, "Handy").client)
 	inv := f.do(http.MethodPost, "/people/"+papa.ID+"/invitation", url.Values{}, nil)
 	token := inviteTokenRe.FindString(inv.body)
 	if inv.status != http.StatusOK || token == "" {
@@ -1182,7 +1182,7 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 	}
 	cases := []headingCase{
 		{display, "/display/person/" + mia.ID, ".pv-header h1", long},
-		{phone, "/", "h1.child-h", long},
+		{personalDevice, "/", "h1.child-h", long},
 		{out, "/invite/" + token, ".wizard h1", long},
 		{parent, "/settings/lists/library/" + art.ID, "h1.art-title", longArticle},
 	}

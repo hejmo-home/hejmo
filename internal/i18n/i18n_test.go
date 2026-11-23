@@ -124,7 +124,7 @@ var wholeFamilyTexts = map[string]bool{
 	"food.why.title":                           true, // "eurer Box": the family's box (preview 163)
 	"theme.auto.parent":                        true, // "eures Zuhauses": the family's home
 	"theme.auto.child":                         true, // "eures Zuhauses"
-	"theme.where.phone":                        true, // "behalten ihr Design": everyone else
+	"theme.where.personal_device":              true, // "behalten ihr Design": everyone else
 	"theme.where.browser":                      true, // "behalten ihr Design"
 	"art.sug.diet":                             true, // "bei euch": the family
 	"art.fits.nobody":                          true,

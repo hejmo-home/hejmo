@@ -1,0 +1,15 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  <h1>{{.PersonalDevice.Name}}</h1>
+  {{template "facts" .Facts}}
+  {{with .Repair}}{{$root := $}}
+  <details class="repair"{{if .Open}} open{{end}}>
+    <summary><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 8h14M14 4l4 4-4 4"/><path d="M20 16H6M10 12l-4 4 4 4"/></svg><span class="t"><b>{{t "personal_devices.repair.title"}}</b><span class="hint">{{tf "personal_devices.repair.hint" "name" .Name}}</span></span></summary>
+    <form method="post" action="/personal-devices/{{$root.PersonalDevice.ID}}/repair">
+      {{template "personChips" (dict "Root" $root "Name" "person" "Legend" (t "personal_devices.repair.who") "People" .People "Single" true)}}
+      <div class="notice"><p><b>{{.Name}}</b> {{tf "personal_devices.repair.signedout" "personal_device" $root.PersonalDevice.Name}}</p><p>{{tf "personal_devices.repair.stays" "whose" .Whose}}</p></div>
+      <div class="confirm"><button class="button" type="submit">{{tf "personal_devices.repair.confirm" "personal_device" $root.PersonalDevice.Name}}</button><a href="/personal-devices/{{$root.PersonalDevice.ID}}">{{t "danger.cancel"}}</a></div>
+    </form>
+  </details>
+  {{end}}
+  {{template "danger" (dict "Label" (t "personal_devices.revoke") "Explain" (tf "personal_devices.revoke.explain" "name" .PersonalDevice.Name) "Confirm" (tf "personal_devices.revoke.confirm" "name" .PersonalDevice.Name) "Action" (printf "/personal-devices/%s/revoke" .PersonalDevice.ID) "CancelHref" (printf "/personal-devices/%s" .PersonalDevice.ID))}}
+{{template "foot"}}

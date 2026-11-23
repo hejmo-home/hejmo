@@ -191,7 +191,7 @@ func TestMCPRefusesAnOrdinaryAPIToken(t *testing.T) {
 	if status, _, _ := c.withToken(mcpToken).call(http.MethodGet, "/lists", nil); status != http.StatusUnauthorized {
 		t.Errorf("REST API with an MCP token = %d, want 401", status)
 	}
-	if _, err := c.phoneWith(t, "mama", mcpToken).calendars(); err == nil {
+	if _, err := c.personalDeviceWith(t, "mama", mcpToken).calendars(); err == nil {
 		t.Error("CalDAV accepted an MCP token")
 	}
 }
@@ -254,7 +254,7 @@ func TestMCPIsServedOnlyOverHTTPS(t *testing.T) {
 }
 
 // The tool list holds events, lists, tasks and the meal plan, and never
-// anything that manages tokens, settings, people, displays or phones.
+// anything that manages tokens, settings, people, displays or personal devices.
 func TestMCPToolListHasNoTokenOrSettingsTools(t *testing.T) {
 	t.Parallel()
 	c := newTaskBox(t).parent
@@ -265,7 +265,7 @@ func TestMCPToolListHasNoTokenOrSettingsTools(t *testing.T) {
 		t.Fatalf("only %d tools: %v", len(names), names)
 	}
 	for _, n := range names {
-		for _, banned := range []string{"token", "setting", "people", "person", "display", "phone", "connection", "invitation", "otp", "recovery", "https", "update_check"} {
+		for _, banned := range []string{"token", "setting", "people", "person", "display", "personal_device", "connection", "invitation", "otp", "recovery", "https", "update_check"} {
 			if strings.Contains(n, banned) {
 				t.Errorf("tool %q manages %s", n, banned)
 			}

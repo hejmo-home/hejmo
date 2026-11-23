@@ -77,9 +77,9 @@ func TestSettingsHubRowSaysInWordsWhetherMCPIsOn(t *testing.T) {
 	b := signedInBox(t)
 	body := getEN(b, "/settings").body
 	mcpHas(t, "hub", body, `<a class="hub-row" href="/mcp">`, "<strong>AI assistants (MCP)</strong>", `<b>Off.</b> Let an AI assistant`)
-	// After Phones, because it is another access from outside.
-	if strings.Index(body, `href="/phones"`) > strings.Index(body, `href="/mcp"`) || strings.Index(body, `href="/mcp"`) > strings.Index(body, `href="/people"`) {
-		t.Error("the MCP row is not between Phones and People")
+	// After Personal devices, because it is another access from outside.
+	if strings.Index(body, `href="/personal-devices"`) > strings.Index(body, `href="/mcp"`) || strings.Index(body, `href="/mcp"`) > strings.Index(body, `href="/people"`) {
+		t.Error("the MCP row is not between Personal devices and People")
 	}
 	switchMCPOnPage(t, b, true)
 	mcpHas(t, "hub", getEN(b, "/settings").body, `<b>On.</b> Let an AI assistant`)
@@ -159,7 +159,7 @@ func TestNewMCPTokenFormDefaultsEveryAreaToReadOnly(t *testing.T) {
 		"The assistant acts as you, ", `class="marker"`, ". What it enters, the box enters under your name.",
 		`<fieldset class="scopes">`, "What may the assistant do?", "“Change” also means adding, ticking off and deleting.",
 		"Events", "Lists", "Tasks (with routines and stars)", "Meal plan",
-		"Never possible: settings, tokens, people, displays and phones.", `<button class="button" type="submit">Create token</button>`)
+		"Never possible: settings, tokens, people, displays and personal devices.", `<button class="button" type="submit">Create token</button>`)
 	for _, area := range []string{"events", "lists", "tasks", "meals"} {
 		mcpHas(t, "area "+area, r.body,
 			`<input type="radio" name="`+area+`" value="none">No`,

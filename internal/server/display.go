@@ -86,7 +86,7 @@ func (s *server) currentDisplay(r *http.Request) (store.Display, string, bool) {
 	return d, hash, err == nil
 }
 
-// pairURL is where the QR code on a pairing screen leads a parent's phone.
+// pairURL is where the QR code on a pairing screen leads a parent's personal device.
 func (s *server) pairURL(r *http.Request, code string) string {
 	origin := s.httpsOrigin(r)
 	if r.TLS != nil {

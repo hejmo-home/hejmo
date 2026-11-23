@@ -278,7 +278,7 @@ func TestHiddenTickedOffEntriesShowALineAndTheChoiceSurvivesEveryRedirect(t *tes
 
 func TestToolsLinkIsForParentsAndOnlyWhenThereAreEntries(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	b := cp.parent.b
 	id, _ := listWith(t, b, "Shop", nil, "a")
 	empty, _ := listWith(t, b, "Empty", nil)
@@ -489,7 +489,7 @@ func TestEmptyListShowsTheAddRowAndOneSentence(t *testing.T) {
 
 func TestChildViewHasNoAddRowNoToolsAndTheTickedOffGroup(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	b := cp.parent.b
 	id, _ := listWith(t, b, "Shop", []string{"b", "c"}, "a", "b", "c")
 	cp.screen.post("/me/list-view", url.Values{"view": {"list"}, "list": {id}}) // children see tiles first (ticket 166); this is the list
@@ -544,7 +544,7 @@ func cssRule(t *testing.T, css, selector string) string {
 
 // Design pass 2 on 6.1: nothing is wider than a 375 px screen, and long words
 // break and hyphenate under the page language.
-func TestListsStylesKeepLongTextInsideThePhoneWidth(t *testing.T) {
+func TestListsStylesKeepLongTextInsideThePersonalDeviceWidth(t *testing.T) {
 	t.Parallel()
 	raw, err := fs.ReadFile(web.Static, "static/hejmo.css")
 	if err != nil {

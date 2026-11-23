@@ -38,7 +38,7 @@ func TestWebTimesFollowTheHouseholdTimeFormat(t *testing.T) {
 	d := newScreen(b)
 	b.post("/displays", pairForm(codeOn(t, d.get("/display", "en").body)))
 	b.post("/calendars", url.Values{"name": {"Feiertage"}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}})
-	b.post("/caldav/tokens", url.Values{"name": {"Phone"}})
+	b.post("/caldav/tokens", url.Values{"name": {"Personal device"}})
 	// The token is stamped with the real clock, so the CalDAV page is matched by shape.
 	h24 := regexp.MustCompile(`\d\d\.\d\d\.\d{4},\x{00a0}\d{1,2}:\d\d:\d\d(?:\x{00a0}[AP]M)?`)
 	tokenPage := func() string {

@@ -62,8 +62,8 @@ func TestSettingsHubOffersPhotosAfterDisplaysAndNamesItsState(t *testing.T) {
 	t.Parallel()
 	b, c := photoBoxWith(t)
 	hub := b.get("/settings").body
-	if i, j := strings.Index(hub, `href="/displays"`), strings.Index(hub, `href="/photos"`); i < 0 || j < i || j > strings.Index(hub, `href="/phones"`) {
-		t.Fatalf("the hub has the photos row at %d, displays at %d, want it after Displays and before Phones", j, i)
+	if i, j := strings.Index(hub, `href="/displays"`), strings.Index(hub, `href="/photos"`); i < 0 || j < i || j > strings.Index(hub, `href="/personal-devices"`) {
+		t.Fatalf("the hub has the photos row at %d, displays at %d, want it after Displays and before Personal devices", j, i)
 	}
 	if !strings.Contains(hub, "Noch keine Fotos.") {
 		t.Errorf("the hub row does not say that there are no photos yet:\n%s", hub)
@@ -83,7 +83,7 @@ func TestPhotosPageWithoutPhotosExplainsAndOffersTheFirstAction(t *testing.T) {
 		t.Fatalf("GET /photos = %d", r.status)
 	}
 	for _, want := range []string{"Noch keine Fotos", "Fotos auswählen", "Unsere Fotos", "Noch leer", "Das reicht für etwa", `href="/displays"`, "Zu den Displays",
-		"Welche Alben ein Display zeigt, stellst du beim Display ein.", "JPEG, PNG oder HEIC, vom Handy oder Computer"} {
+		"Welche Alben ein Display zeigt, stellst du beim Display ein.", "JPEG, PNG oder HEIC, vom Gerät oder Computer"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("the page lacks %q", want)
 		}
@@ -290,7 +290,7 @@ func TestOnlyAdultsSeeThePhotoPages(t *testing.T) {
 
 func TestNothingOnThePhotoPagesNamesADevice(t *testing.T) {
 	t.Parallel()
-	// The browser converts photos from any phone or computer: no text says iPhone.
+	// The browser converts photos from any personal device or computer: no text says iPhone.
 	for _, lang := range []string{"de", "en"} {
 		raw, err := os.ReadFile(fmt.Sprintf("../i18n/locales/%s.json", lang))
 		if err != nil {

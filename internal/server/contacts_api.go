@@ -193,9 +193,9 @@ func (s *server) saveContactAPI(w http.ResponseWriter, r *http.Request, p princi
 	}
 	var saved store.Contact
 	if id == "" {
-		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, d.input())
+		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, d.input(s.householdNow(p.household)))
 	} else {
-		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, d.input())
+		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, d.input(s.householdNow(p.household)))
 	}
 	var taken *store.NameTakenError
 	if errors.As(err, &taken) {

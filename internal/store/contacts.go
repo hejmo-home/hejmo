@@ -233,6 +233,8 @@ type ContactInput struct {
 	GroupIDs []string
 	// NewGroup, when not empty, is the name of a group made together with the contact and added to it.
 	NewGroup string
+	// Today is the household's today, which the birthday is checked against; the zero value means now.
+	Today time.Time
 }
 
 func (in *ContactInput) clean() error {
@@ -263,8 +265,11 @@ func (in *ContactInput) clean() error {
 		in.BdayYear = 0 // a year alone is no birthday
 	}
 	if in.BdayDay != 0 || in.BdayMonth != 0 || in.BdayYear != 0 {
-		// A day of slack: the form already checks against the household's today, the store must never be stricter.
-		if msg := contact.CheckBirthday(in.BdayDay, in.BdayMonth, in.BdayYear, time.Now().Add(24*time.Hour)); msg != "" {
+		today := in.Today
+		if today.IsZero() {
+			today = time.Now()
+		}
+		if msg := contact.CheckBirthday(in.BdayDay, in.BdayMonth, in.BdayYear, today); msg != "" {
 			return &FieldError{Field: "birthday", Msg: "the birthday is not a date: " + msg}
 		}
 	}

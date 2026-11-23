@@ -3830,6 +3830,7 @@
   "contact.error.group.required": "Write a name for the group.",
   "contact.error.group.long": "The name of the group can be 40 characters at most.",
   "contact.error.group.taken": "A group “{name}” exists already. Take another name.",
+  "contact.error.group.gone": "One of the groups you ticked no longer exists. Please choose the groups again.",
   "flash.contact_saved": "“{name}” saved.",
   "flash.contact_deleted": "“{name}” deleted.",
   "flash.contact_group_created": "Group “{name}” added.",

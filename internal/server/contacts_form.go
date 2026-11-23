@@ -256,6 +256,8 @@ func (e ctEnv) problemText(pr ctProblem, d ctDraft) string {
 		return e.t("contact.error.group.long")
 	case "new_group.taken":
 		return e.t("contact.error.group.taken", "name", pr.Arg)
+	case "groups.gone":
+		return e.t("contact.error.group.gone")
 	}
 	return pr.String()
 }
@@ -289,6 +291,8 @@ func (e ctEnv) anchorText(pr ctProblem) string {
 		return e.t("contact.link.birthday")
 	case pr.Field == "note":
 		return e.t("contact.link.note")
+	case pr.Field == "groups":
+		return e.t("contact.f.groups")
 	}
 	return e.t("contact.link.group")
 }
@@ -408,6 +412,17 @@ func nameTakenIn(all []store.Contact, exceptID string) func(string) *store.NameT
 	}
 }
 
+// dropVanishedGroups unticks the groups that do not exist (any more) and says whether there were any.
+func (e ctEnv) dropVanishedGroups(f *ctForm) bool {
+	known := func(id string) bool {
+		return slices.ContainsFunc(e.groups, func(g store.ContactGroup) bool { return g.ID == id })
+	}
+	kept := slices.DeleteFunc(slices.Clone(f.Groups), func(id string) bool { return !known(id) })
+	gone := len(kept) != len(f.Groups)
+	f.Groups = kept
+	return gone
+}
+
 // groupTakenIn answers whether a group name is in use, among the own groups and the names of the five of Hejmo.
 func (e ctEnv) groupTaken(name string) bool {
 	for _, g := range e.groups {
@@ -496,19 +511,24 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Status: http.StatusOK})
 		return
 	}
+	gone := e.dropVanishedGroups(&f)
 	d := f.draft(cur != nil && cur.IsPerson())
 	problems := checkContact(d, s.householdNow(p.household), nameTakenIn(all, id), e.groupTaken)
+	if gone {
+		problems = append(problems, ctProblem{Anchor: "groups", Field: "groups", Code: "gone"})
+	}
 	if len(problems) > 0 {
 		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Problems: problems, Draft: d, Status: http.StatusUnprocessableEntity})
 		return
 	}
 	var saved store.Contact
 	if cur == nil {
-		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, d.input())
+		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, d.input(s.householdNow(p.household)))
 	} else {
-		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, d.input())
+		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, d.input(s.householdNow(p.household)))
 	}
 	var taken *store.NameTakenError
+	var fe *store.FieldError
 	switch {
 	case errors.As(err, &taken): // made between the check and the save
 		code := "taken"
@@ -518,7 +538,16 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: d, Status: http.StatusUnprocessableEntity,
 			Problems: []ctProblem{{Anchor: "name", Field: "name", Code: code, Arg: taken.Existing}}})
 		return
-	case err != nil: // the form checked every rule the store knows, so a store refusal here is a bug, not something to tell the person
+	case errors.As(err, &fe) && fe.Field == "new_group": // a group of this name was made between the check and the save
+		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: d, Status: http.StatusUnprocessableEntity,
+			Problems: []ctProblem{{Anchor: "groups", Field: "new_group", Code: "taken", Arg: strings.TrimSpace(d.NewGroup)}}})
+		return
+	case errors.As(err, &fe) && fe.Field == "groups": // a ticked group was deleted between the check and the save
+		e.dropVanishedGroups(&f)
+		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Draft: f.draft(cur != nil && cur.IsPerson()), Status: http.StatusUnprocessableEntity,
+			Problems: []ctProblem{{Anchor: "groups", Field: "groups", Code: "gone"}}})
+		return
+	case err != nil: // the form checked every other rule the store knows, so a store refusal here is a bug
 		s.fail(w, "save contact", err)
 		return
 	}

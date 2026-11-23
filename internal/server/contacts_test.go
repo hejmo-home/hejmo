@@ -300,7 +300,6 @@ func TestContactFormShowsErrorsAtTheirFieldsAndKeepsEverythingTyped(t *testing.T
 	f.Set("bday_day", "31")
 	f.Set("bday_month", "2")
 	f.Set("bday_year", "2018")
-	f.Add("group", "x")
 	r := c.send("/contacts/new", f)
 	if r.status != http.StatusUnprocessableEntity {
 		t.Fatalf("status = %d", r.status)
@@ -484,5 +483,22 @@ func TestTrailsOfTheContactPages(t *testing.T) {
 		{"/contacts/groups/" + g["id"].(string), []crumbPart{settings, contacts, part("Contact groups", "/contacts/groups"), part("Fußball", "")}},
 	} {
 		wantTrail(t, tc.path, c.page(tc.path, "en").body, tc.want...)
+	}
+}
+
+// Acceptance: a group that vanished while the form was open (or never existed) is no reason to lose what was typed.
+func TestAGroupThatVanishedWhileTheFormWasOpenShowsTheFormAgainWithEverythingKept(t *testing.T) {
+	t.Parallel()
+	c := newCtBox(t)
+	f := contactForm("Kita Sonnenschein", "", [][3]string{{"cell", "", "0172 4455 6677"}}, nil)
+	f.Set("note", "Abholung bis 16 Uhr")
+	f.Add("group", "00000000-0000-0000-0000-000000000000")
+	r := c.send("/contacts/new", f)
+	if r.status != http.StatusUnprocessableEntity {
+		t.Fatalf("status = %d, want 422\n%s", r.status, r.body)
+	}
+	ctHas(t, "form", r.body, `<a href="#groups">`, "no longer exists", `value="Kita Sonnenschein"`, `value="0172 4455 6677"`, "Abholung bis 16 Uhr")
+	if _, _, list := c.api.call(http.MethodGet, "/contacts?q=Sonnenschein", nil); len(list) != 0 {
+		t.Errorf("a refused contact was stored: %v", list)
 	}
 }

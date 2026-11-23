@@ -264,8 +264,9 @@ func TestConnectTextsExistInBothLanguages(t *testing.T) {
 	}
 }
 
-// A find-and-replace once left "telenumber_x" in English texts; the English contact texts say "number".
-func TestEnglishTextsHoldNoStrayPlaceholderWords(t *testing.T) {
+// A find-and-replace once left "telenumber_x" in English texts. No contact text shows an identifier-like word
+// (lower case words joined by an underscore) to a person.
+func TestEnglishContactTextsHoldNoStrayIdentifiers(t *testing.T) {
 	raw, err := os.ReadFile("locales/en.json")
 	if err != nil {
 		t.Fatal(err)
@@ -274,9 +275,14 @@ func TestEnglishTextsHoldNoStrayPlaceholderWords(t *testing.T) {
 	if err := json.Unmarshal(raw, &cat); err != nil {
 		t.Fatal(err)
 	}
+	ident := regexp.MustCompile(`[a-z]+_[a-z]+`)
 	for key, text := range cat {
-		if strings.Contains(text, "telenumber_x") {
-			t.Errorf("en %s holds a stray placeholder word: %s", key, text)
+		if !strings.HasPrefix(key, "contact.") {
+			continue
+		}
+		plain := regexp.MustCompile(`\{[^}]*\}`).ReplaceAllString(text, "") // {name} placeholders are no words
+		if w := ident.FindString(plain); w != "" {
+			t.Errorf("en %s holds the identifier-like word %q: %s", key, w, text)
 		}
 	}
 }

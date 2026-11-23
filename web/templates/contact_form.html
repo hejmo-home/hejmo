@@ -45,6 +45,7 @@
     </fieldset>
     <fieldset id="groups" class="chips grp-pick">
       <legend>{{t "contact.f.groups"}}</legend>
+      {{template "ctErr" (dict "ID" "groups" "Text" .Errs.groups)}}
       {{if .FamChip}}<span class="pchip plain static">{{.FamChip}}{{template "tickIcon" 16}}</span>
       {{end}}{{range .GroupChips}}<label class="pchip plain"><input type="checkbox" name="group" value="{{.ID}}"{{if .Checked}} checked{{end}}>{{.Name}}{{template "tickIcon" 16}}</label>
       {{end}}<p class="hint">{{if .IsPerson}}{{.FamHint}}{{else}}{{t "contact.f.groups.hint"}}{{end}}</p>

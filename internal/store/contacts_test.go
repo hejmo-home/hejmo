@@ -97,18 +97,23 @@ func TestAContactKeepsTheNumberAsTypedAndNeverStoresEmptyLinesOrAnEmptyAddress(t
 	}
 }
 
-// Acceptance: a birthday without a year is a birthday without an age.
-// The household's today may be a day ahead of UTC: the store must not refuse a birthday the form let through.
-func TestABirthdayOfTheHouseholdsTodayIsNotRefusedWhenUTCStillLivesYesterday(t *testing.T) {
+// The household's today may be a day ahead of UTC: the store checks a birthday against the day it is given, no broader.
+func TestTheStoreChecksABirthdayAgainstTheHouseholdsTodayAndNotAgainstTomorrow(t *testing.T) {
 	t.Parallel()
 	db, h, _ := exampleFamily(t)
-	ahead := time.Now().UTC().Add(24 * time.Hour)
-	in := store.ContactInput{HejmoName: "Baby", BdayDay: ahead.Day(), BdayMonth: int(ahead.Month()), BdayYear: ahead.Year()}
-	if _, err := db.CreateContact(h.ID, "", in); err != nil {
+	today := time.Date(2026, 3, 14, 0, 30, 0, 0, time.UTC)
+	on := store.ContactInput{HejmoName: "Baby", BdayDay: 14, BdayMonth: 3, BdayYear: 2026, Today: today}
+	if _, err := db.CreateContact(h.ID, "", on); err != nil {
 		t.Fatalf("a birthday on the household's today: %v", err)
+	}
+	var fe *store.FieldError
+	next := store.ContactInput{HejmoName: "Baby 2", BdayDay: 15, BdayMonth: 3, BdayYear: 2026, Today: today}
+	if _, err := db.CreateContact(h.ID, "", next); !errors.As(err, &fe) || fe.Field != "birthday" {
+		t.Errorf("a birthday on the day after the household's today: err = %v, want a birthday error", err)
 	}
 }
 
+// Acceptance: a birthday without a year is a birthday without an age.
 func TestABirthdayMayLackTheYearButNeverHaveJustADayOrMonth(t *testing.T) {
 	t.Parallel()
 	db, h, _ := exampleFamily(t)

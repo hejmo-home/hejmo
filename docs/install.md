@@ -13,7 +13,7 @@ Hejmo runs as a Docker container on a small box in your home. One command instal
 - A Raspberry Pi 4 or 5 (or newer) with **1 GB RAM or more**, running **Raspberry Pi OS (64-bit)**, with Ethernet or Wi-Fi at home. 32-bit Raspberry Pi OS is not supported. Any 64-bit Debian or Ubuntu machine (x86_64 or arm64) works the same way.
 - A **fixed address** for the box: reserve one for it in your router so that it does not change.
 - Internet access during installation (Docker and the Hejmo image are downloaded).
-- A computer or phone on the same home network for the setup wizard.
+- A computer or personal device on the same home network for the setup wizard.
 - The ports **80** (HTTP, redirects to HTTPS) and **443** (HTTPS) free on the box. You can change them later (see below).
 
 ## Install
@@ -57,7 +57,7 @@ After editing it, run `cd /opt/hejmo && sudo docker compose up -d`.
 
 The box serves everything over HTTPS. The wizard offers two ways:
 
-- **A public name (recommended).** The wizard sets up a free name such as `familie.dedyn.io` at deSEC (or a name of your own domain at deSEC) that points to the box's address at home, and obtains a certificate that every phone and browser trusts. Only the name and a few checks leave your home; your data stays on the box. If your router blocks the name (FRITZ!Box DNS rebind protection), the wizard shows how to allow it.
+- **A public name (recommended).** The wizard sets up a free name such as `familie.dedyn.io` at deSEC (or a name of your own domain at deSEC) that points to the box's address at home, and obtains a certificate that every personal device and browser trusts. Only the name and a few checks leave your home; your data stays on the box. If your router blocks the name (FRITZ!Box DNS rebind protection), the wizard shows how to allow it.
 - **The box's own certificate authority (CA).** Needs no outside service. You trust the box once on each device (next section).
 
 Back up `/opt/hejmo/data` including `secret.key` (it protects stored passwords and the DNS token).
@@ -74,30 +74,30 @@ The CA is name-constrained to the box, so it cannot vouch for other websites. Th
 
 ## Away from home: WireGuard with the FRITZ!Box
 
-The box lives in your home network, so a phone away from home does not reach it by itself. A VPN puts the phone back into the home network; with a FRITZ!Box you need no extra service for that, because FRITZ!OS 7.50 and newer has WireGuard built in. Nothing of this goes through Hejmo: the VPN connects your phone to your router only.
+The box lives in your home network, so a personal device away from home does not reach it by itself. A VPN puts the device back into the home network; with a FRITZ!Box you need no extra service for that, because FRITZ!OS 7.50 and newer has WireGuard built in. Nothing of this goes through Hejmo: the VPN connects your device to your router only.
 
 You need:
 
 - A FRITZ!Box with FRITZ!OS 7.50 or newer that can be reached from the internet.
-- The WireGuard app on the phone: [App Store](https://apps.apple.com/app/wireguard/id1441195209) (iPhone, iPad), [Google Play](https://play.google.com/store/apps/details?id=com.wireguard.android) (Android), other systems at [wireguard.com/install](https://www.wireguard.com/install/).
+- The WireGuard app on the device: [App Store](https://apps.apple.com/app/wireguard/id1441195209) (iPhone, iPad), [Google Play](https://play.google.com/store/apps/details?id=com.wireguard.android) (Android), other systems at [wireguard.com/install](https://www.wireguard.com/install/).
 
-**Shared address (DS-Lite, CGNAT)?** Many providers share one IPv4 address between customers, and then nothing reaches your FRITZ!Box from outside over IPv4. You recognise it in the FRITZ!Box under **Internet**, **Online Monitor**: it shows a DS-Lite tunnel, or the IPv4 address starts in the range 100.64.0.0/10 (100.64.x.x to 100.127.x.x). The VPN often still works over IPv6 when the mobile network of the phone offers it; then you need to do nothing more. Otherwise ask your provider for a public IPv4 address.
+**Shared address (DS-Lite, CGNAT)?** Many providers share one IPv4 address between customers, and then nothing reaches your FRITZ!Box from outside over IPv4. You recognise it in the FRITZ!Box under **Internet**, **Online Monitor**: it shows a DS-Lite tunnel, or the IPv4 address starts in the range 100.64.0.0/10 (100.64.x.x to 100.127.x.x). The VPN often still works over IPv6 when the mobile network of the device offers it; then you need to do nothing more. Otherwise ask your provider for a public IPv4 address.
 
-Set it up (about 10 minutes, once per phone, at home):
+Set it up (about 10 minutes, once per device, at home):
 
-1. Open the FRITZ!Box at [http://fritz.box](http://fritz.box) and go to **Internet**, **Permit Access**, **VPN (WireGuard)**. Add a connection and choose to connect a single device to the home network. Give it a name such as "Mama's phone". The FRITZ!Box offers a free MyFRITZ address so the phone finds it when your home address changes; accept it.
-2. The FRITZ!Box shows a QR code. In the WireGuard app on the phone add a tunnel by scanning it.
+1. Open the FRITZ!Box at [http://fritz.box](http://fritz.box) and go to **Internet**, **Permit Access**, **VPN (WireGuard)**. Add a connection and choose to connect a single device to the home network. Give it a name such as "Mama's device". The FRITZ!Box offers a free MyFRITZ address so the device finds it when your home address changes; accept it.
+2. The FRITZ!Box shows a QR code. In the WireGuard app on the device add a tunnel by scanning it.
 3. Switch the tunnel on, away from home or on mobile data, and open the box under its address in the home network (the page **Settings**, **Secure connection** shows it).
 
-Open the box by its address or by the name the router gives it, not as `hejmo.local`: through a VPN a phone usually cannot find `hejmo.local`. In the FRITZ!Box the name of the box is under **Home Network**, **Network**, at the box's device (for example `hejmo.fritz.box`; you can rename it there). Enter that name once in the setup wizard under **More options**, or later under **Settings**, **Secure connection**, **Name in the router**. A name added later needs a new certificate of the box, and every device has to trust the box again (previous chapter).
+Open the box by its address or by the name the router gives it, not as `hejmo.local`: through a VPN a device usually cannot find `hejmo.local`. In the FRITZ!Box the name of the box is under **Home Network**, **Network**, at the box's device (for example `hejmo.fritz.box`; you can rename it there). Enter that name once in the setup wizard under **More options**, or later under **Settings**, **Secure connection**, **Name in the router**. A name added later needs a new certificate of the box, and every device has to trust the box again (previous chapter).
 
-Other VPNs work the same way as long as they put the phone into your home network. This guide covers WireGuard in the FRITZ!Box only.
+Other VPNs work the same way as long as they put the device into your home network. This guide covers WireGuard in the FRITZ!Box only.
 
-## Displays and phones
+## Displays and personal devices
 
 - **Displays:** open the box's display address on the display's browser. It shows a QR code and a six-digit code. In the web interface, open **Displays**, enter the code and give the display a name, room and type. An E-Ink display (black and white or colour) is **experimental**; a normal screen, such as an old tablet, works fully.
-- **Phones:** open the box's address in the phone's browser and sign in. Phone pairing by QR code and the installable phone web app come with the phone screens of the web interface. Calendar apps (iOS Calendar, DAVx5) can subscribe to the box over CalDAV with a device token from the **CalDAV** page.
-- On a phone, trust the own CA first if you use one.
+- **Personal devices (phone, tablet):** open the box's address in the device's browser and sign in. A parent pairs it by QR code under **Settings › Personal devices**; it then runs the web interface as an app. Calendar apps (iOS Calendar, DAVx5) can subscribe to the box over CalDAV with a device token from the **CalDAV** page.
+- On a personal device, trust the own CA first if you use one.
 
 ## Automatic updates
 
@@ -115,7 +115,7 @@ The install script also sets up a nightly update check (a systemd timer, `hejmo-
 
 ## Offline mode
 
-With **offline mode** (the setup wizard asks right after you choose "Only in the home network"; later **Settings › Connections to the outside**) the box makes no connection to anything outside your home network: no weather, no iCloud, Google or other calendar servers, no subscribed calendars, no web images, no DNS service. Calendar, tasks, lists, meals, displays and phones in the home network keep working. The page lists every connection with its last contact and, while offline mode is on, every attempt the box refused. With a public name, offline mode needs the change to "Only in the home network" first; the page shows what that costs.
+With **offline mode** (the setup wizard asks right after you choose "Only in the home network"; later **Settings › Connections to the outside**) the box makes no connection to anything outside your home network: no weather, no iCloud, Google or other calendar servers, no subscribed calendars, no web images, no DNS service. Calendar, tasks, lists, meals, displays and personal devices in the home network keep working. The page lists every connection with its last contact and, while offline mode is on, every attempt the box refused. With a public name, offline mode needs the change to "Only in the home network" first; the page shows what that costs.
 
 ## Update without the internet
 

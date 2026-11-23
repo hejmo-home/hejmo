@@ -31,7 +31,7 @@ func setFood(t *testing.T, b *box, who string, f store.Food) {
 
 func TestAdultsSeeTheListAndChildrenSeeTilesUntilTheyChoose(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	b := cp.parent.b
 	id, _ := tileList(t, b, nil, "Milk", "Bananas")
 
@@ -66,7 +66,7 @@ func TestAdultsSeeTheListAndChildrenSeeTilesUntilTheyChoose(t *testing.T) {
 
 func TestChoosingTilesIsRememberedForEveryListAndOnlyForThePerson(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	b := cp.parent.b
 	id, _ := tileList(t, b, nil, "Milk")
 	other, _ := listWith(t, b, "Other", nil, "Eggs")
@@ -149,7 +149,7 @@ func tileOf(t *testing.T, page, name string) string {
 
 func TestATileIsTheWholeTickButtonWithPictureOrSymbolOrLetter(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	b := cp.parent.b
 	h, _ := b.db.HomeHousehold()
 	art, err := b.db.CreateArticle(h.ID, personID(t, b, "Mama"), store.OwnArticle{Name: "Oat drink barista", Dept: "dairy", Kind: "vegan", Unit1: "l"},
@@ -283,7 +283,7 @@ func TestFreeTextAllergiesEndEveryListWithFoodInBothViews(t *testing.T) {
 
 func TestTilesOfAnEmptyOrFinishedListSayWhatThatMeansToAChild(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	b := cp.parent.b
 	empty, _ := listWith(t, b, "Nothing", nil)
 	page := cp.screen.get("/lists/"+empty, "en").body

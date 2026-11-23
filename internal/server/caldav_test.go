@@ -17,9 +17,9 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-// phone is a CalDAV client such as iOS Calendar or DAVx5: the parent's
+// personal device is a CalDAV client such as iOS Calendar or DAVx5: the parent's
 // username with a device token as the password.
-type phone struct {
+type personalDevice struct {
 	t      *testing.T
 	b      *box
 	user   string
@@ -27,23 +27,23 @@ type phone struct {
 	client *caldav.Client
 }
 
-func (c *apiClient) phone(t *testing.T, scopes string) *phone {
+func (c *apiClient) personalDevice(t *testing.T, scopes string) *personalDevice {
 	t.Helper()
-	return c.phoneWith(t, "mama", c.newToken(scopes))
+	return c.personalDeviceWith(t, "mama", c.newToken(scopes))
 }
 
-func (c *apiClient) phoneWith(t *testing.T, user, secret string) *phone {
+func (c *apiClient) personalDeviceWith(t *testing.T, user, secret string) *personalDevice {
 	t.Helper()
 	http := webdav.HTTPClientWithBasicAuth(c.b.bareClient(), user, secret)
 	cl, err := caldav.NewClient(http, c.b.srv.URL+"/dav/")
 	if err != nil {
 		t.Fatal(err)
 	}
-	return &phone{t, c.b, user, secret, cl}
+	return &personalDevice{t, c.b, user, secret, cl}
 }
 
-// calendars discovers the calendars the way a phone does: principal, home set, calendars.
-func (p *phone) calendars() ([]caldav.Calendar, error) {
+// calendars discovers the calendars the way a personal device does: principal, home set, calendars.
+func (p *personalDevice) calendars() ([]caldav.Calendar, error) {
 	ctx := context.Background()
 	principal, err := p.client.FindCurrentUserPrincipal(ctx)
 	if err != nil {
@@ -56,7 +56,7 @@ func (p *phone) calendars() ([]caldav.Calendar, error) {
 	return p.client.FindCalendars(ctx, home)
 }
 
-func (p *phone) calendarNamed(name string) caldav.Calendar {
+func (p *personalDevice) calendarNamed(name string) caldav.Calendar {
 	p.t.Helper()
 	cals, err := p.calendars()
 	if err != nil {
@@ -71,7 +71,7 @@ func (p *phone) calendarNamed(name string) caldav.Calendar {
 	return caldav.Calendar{}
 }
 
-func (p *phone) titles(calPath string) []string {
+func (p *personalDevice) titles(calPath string) []string {
 	p.t.Helper()
 	objs, err := p.client.QueryCalendar(context.Background(), calPath, &caldav.CalendarQuery{
 		CompFilter: caldav.CompFilter{Name: "VCALENDAR", Comps: []caldav.CompFilter{{Name: "VEVENT"}}},
@@ -89,8 +89,8 @@ func (p *phone) titles(calPath string) []string {
 	return out
 }
 
-// raw sends one DAV request with the phone's credentials.
-func (p *phone) raw(method, path, body string, header map[string]string) (int, http.Header, string) {
+// raw sends one DAV request with the personal device's credentials.
+func (p *personalDevice) raw(method, path, body string, header map[string]string) (int, http.Header, string) {
 	p.t.Helper()
 	req, _ := http.NewRequest(method, p.b.srv.URL+path, strings.NewReader(body))
 	req.SetBasicAuth(p.user, p.secret)
@@ -140,10 +140,10 @@ func eventICS(uid, title, start, end string) string {
 
 const icsType = "text/calendar; charset=utf-8"
 
-// Acceptance: Given the box as a CalDAV server, when a phone subscribes to the
+// Acceptance: Given the box as a CalDAV server, when a personal device subscribes to the
 // family calendar, then it sees all events its role is allowed to see, and no
 // others.
-func TestPhoneSeesTheFamilyCalendarAndOnlyWhatIsShared(t *testing.T) {
+func TestPersonalDeviceSeesTheFamilyCalendarAndOnlyWhatIsShared(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
 	h, family := familyOf(t, c)
@@ -165,7 +165,7 @@ func TestPhoneSeesTheFamilyCalendarAndOnlyWhatIsShared(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	ph := c.phone(t, "calendars")
+	ph := c.personalDevice(t, "calendars")
 	cals, err := ph.calendars()
 	if err != nil {
 		t.Fatal(err)
@@ -182,14 +182,14 @@ func TestPhoneSeesTheFamilyCalendarAndOnlyWhatIsShared(t *testing.T) {
 }
 
 // Acceptance: Given a calendar with "share through the box" off, then it is
-// not listed for phones (and cannot be reached by its address).
+// not listed for personal devices (and cannot be reached by its address).
 func TestUnsharedCalendarIsNeitherListedNorReachable(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
 	h, _ := familyOf(t, c)
 	c.b.feeds.set(schoolFeed, feedOf("UID:trip\r\nSUMMARY:School trip\r\nDTSTART:20261125T080000Z\r\nDTEND:20261125T120000Z"), nil)
 	school := c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
-	ph := c.phone(t, "calendars")
+	ph := c.personalDevice(t, "calendars")
 	listed := ph.calendarNamed("School")
 
 	if err := c.b.db.SetCalendarShared(h.ID, school["id"].(string), false); err != nil {
@@ -206,7 +206,7 @@ func TestUnsharedCalendarIsNeitherListedNorReachable(t *testing.T) {
 	}
 }
 
-// Acceptance: Given a revoked device token, when the phone syncs, then it is refused.
+// Acceptance: Given a revoked device token, when the personal device syncs, then it is refused.
 func TestRevokedDeviceTokenIsRefused(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
@@ -214,7 +214,7 @@ func TestRevokedDeviceTokenIsRefused(t *testing.T) {
 	if status != http.StatusCreated {
 		t.Fatalf("create token = %d", status)
 	}
-	ph := c.phoneWith(t, "mama", created["token"].(string))
+	ph := c.personalDeviceWith(t, "mama", created["token"].(string))
 	if _, err := ph.calendars(); err != nil {
 		t.Fatalf("before revoking: %v", err)
 	}
@@ -234,7 +234,7 @@ func TestOnlyDeviceCredentialsOpenTheCalendarServer(t *testing.T) {
 	c := signedInAPI(t)
 	token := c.newToken("calendars")
 	other := func(user, secret string) int {
-		s, _, _ := c.phoneWith(t, user, secret).raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"})
+		s, _, _ := c.personalDeviceWith(t, user, secret).raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"})
 		return s
 	}
 	if got := other("mama", token); got != http.StatusMultiStatus {
@@ -263,7 +263,7 @@ func TestOnlyDeviceCredentialsOpenTheCalendarServer(t *testing.T) {
 		t.Fatalf("session cookie on CalDAV = %d, want a refusal", res.StatusCode)
 	}
 	// A read-only token syncs but does not write.
-	ro := c.phoneWith(t, "mama", c.newToken("calendars:read"))
+	ro := c.personalDeviceWith(t, "mama", c.newToken("calendars:read"))
 	cal := ro.calendarNamed("Family")
 	if status, _, _ := ro.raw("PUT", cal.Path+"x.ics", eventICS("x", "X", "20261120T090000Z", "20261120T100000Z"), map[string]string{"Content-Type": icsType}); status != http.StatusForbidden {
 		t.Fatalf("PUT with a read-only token = %d, want 403", status)
@@ -275,7 +275,7 @@ func TestChildrenAndOtherAddressesAreRefused(t *testing.T) {
 	c := signedInAPI(t)
 	h, _ := familyOf(t, c)
 	token := c.newToken("calendars")
-	ph := c.phoneWith(t, "mama", token)
+	ph := c.personalDeviceWith(t, "mama", token)
 	if status, _, _ := ph.raw("PROPFIND", "/dav/papa/", "", map[string]string{"Depth": "0"}); status != http.StatusNotFound {
 		t.Fatalf("someone else's principal = %d, want 404", status)
 	}
@@ -283,17 +283,17 @@ func TestChildrenAndOtherAddressesAreRefused(t *testing.T) {
 	mia, _ := c.b.db.AddPerson(h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
 	_ = c.b.db.CreateAccount(store.Account{PersonID: mia.ID, Username: "mia", PasswordHash: "x", TOTPSecret: "S"})
 	_, _ = c.b.db.CreateAPIToken(store.APIToken{Name: "kid", Hash: auth.HashToken("hejmo_kid"), PersonID: mia.ID, Scopes: "calendars"})
-	if status, _, _ := c.phoneWith(t, "mia", "hejmo_kid").raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"}); status != http.StatusForbidden {
+	if status, _, _ := c.personalDeviceWith(t, "mia", "hejmo_kid").raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"}); status != http.StatusForbidden {
 		t.Fatalf("child's token = %d, want 403", status)
 	}
 }
 
-// Acceptance: Given an event changed on the phone, when it is saved, then it
+// Acceptance: Given an event changed on the personal device, when it is saved, then it
 // appears on the box immediately; a stale If-Match gets 412.
-func TestEventSavedOnThePhoneAppearsOnTheBoxAndStaleWritesAreRefused(t *testing.T) {
+func TestEventSavedOnThePersonalDeviceAppearsOnTheBoxAndStaleWritesAreRefused(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
-	ph := c.phone(t, "calendars")
+	ph := c.personalDevice(t, "calendars")
 	family := ph.calendarNamed("Family")
 	href := family.Path + "dentist-1.ics"
 
@@ -321,7 +321,7 @@ func TestEventSavedOnThePhoneAppearsOnTheBoxAndStaleWritesAreRefused(t *testing.
 		t.Fatalf("the ETag must change with the content: %q after %q", hdr.Get("ETag"), first)
 	}
 
-	// The phone still holds the first version: its write is stale.
+	// The personal device still holds the first version: its write is stale.
 	if status, _, _ := ph.raw("PUT", href, eventICS("dentist-1", "Stale", "20261122T090000Z", "20261122T100000Z"), map[string]string{"Content-Type": icsType, "If-Match": first}); status != http.StatusPreconditionFailed {
 		t.Fatalf("stale If-Match = %d, want 412", status)
 	}
@@ -346,7 +346,7 @@ func TestEventSavedOnThePhoneAppearsOnTheBoxAndStaleWritesAreRefused(t *testing.
 	}
 }
 
-func TestPhoneEditsKeepWhatThePhoneDoesNotShow(t *testing.T) {
+func TestPersonalDeviceEditsKeepWhatThePersonalDeviceDoesNotShow(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
 	h, family := familyOf(t, c)
@@ -355,21 +355,21 @@ func TestPhoneEditsKeepWhatThePhoneDoesNotShow(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	ph := c.phone(t, "calendars")
+	ph := c.personalDevice(t, "calendars")
 	href := ph.calendarNamed("Family").Path + ev.ID + ".ics"
 	if status, _, _ := ph.raw("PUT", href, eventICS(ev.ID, "Swimming lesson", "20261121T150000Z", "20261121T160000Z"), map[string]string{"Content-Type": icsType}); status != http.StatusCreated && status != http.StatusNoContent {
 		t.Fatalf("update = %d", status)
 	}
 	series, err := c.b.db.Series(h.ID, ev.ID)
 	if err != nil || len(series) != 1 || series[0].Title != "Swimming lesson" || len(series[0].People) != 1 || series[0].People[0] != mia.ID {
-		t.Fatalf("after the phone's edit: %+v, %v", series, err)
+		t.Fatalf("after the personal device's edit: %+v, %v", series, err)
 	}
 }
 
-func TestPhoneCanSaveRecurringEventsWithChangedOccurrences(t *testing.T) {
+func TestPersonalDeviceCanSaveRecurringEventsWithChangedOccurrences(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
-	ph := c.phone(t, "calendars")
+	ph := c.personalDevice(t, "calendars")
 	href := ph.calendarNamed("Family").Path + "choir.ics"
 	body := "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Test//EN\r\n" +
 		"BEGIN:VEVENT\r\nUID:choir\r\nDTSTAMP:20261114T120000Z\r\nSUMMARY:Choir\r\nDTSTART;TZID=Europe/Berlin:20261103T170000\r\nDTEND;TZID=Europe/Berlin:20261103T180000\r\nRRULE:FREQ=WEEKLY;COUNT=4\r\nEXDATE;TZID=Europe/Berlin:20261117T170000\r\nEND:VEVENT\r\n" +
@@ -380,7 +380,7 @@ func TestPhoneCanSaveRecurringEventsWithChangedOccurrences(t *testing.T) {
 	occ := c.occurrences(t, "from=2026-11-01T00:00:00%2B01:00&to=2026-12-01T00:00:00%2B01:00")
 	sameList(t, occTitles(occ), []string{"11-03T17:00 Choir", "11-10T18:00 Choir (hall B)", "11-24T17:00 Choir"})
 
-	// The phone drops the changed occurrence and the series' end: a full replace.
+	// The personal device drops the changed occurrence and the series' end: a full replace.
 	body2 := "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:-//Test//EN\r\n" +
 		"BEGIN:VEVENT\r\nUID:choir\r\nDTSTAMP:20261114T120000Z\r\nSUMMARY:Choir\r\nDTSTART;TZID=Europe/Berlin:20261103T170000\r\nDTEND;TZID=Europe/Berlin:20261103T180000\r\nRRULE:FREQ=WEEKLY;COUNT=2\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n"
 	if status, _, resp := ph.raw("PUT", href, body2, map[string]string{"Content-Type": icsType}); status != http.StatusCreated && status != http.StatusNoContent {
@@ -390,12 +390,12 @@ func TestPhoneCanSaveRecurringEventsWithChangedOccurrences(t *testing.T) {
 	sameList(t, occTitles(occ), []string{"11-03T17:00 Choir", "11-10T17:00 Choir"})
 }
 
-func TestPhoneCannotChangeSubscribedCalendarsOrNameClashes(t *testing.T) {
+func TestPersonalDeviceCannotChangeSubscribedCalendarsOrNameClashes(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
 	c.b.feeds.set(schoolFeed, feedOf("UID:trip\r\nSUMMARY:School trip\r\nDTSTART:20261125T080000Z\r\nDTEND:20261125T120000Z"), nil)
 	c.addICS(t, map[string]any{"kind": "ics", "name": "School", "url": schoolFeed})
-	ph := c.phone(t, "calendars")
+	ph := c.personalDevice(t, "calendars")
 	school, family := ph.calendarNamed("School"), ph.calendarNamed("Family")
 
 	if status, _, _ := ph.raw("PUT", school.Path+"new.ics", eventICS("new", "New", "20261120T090000Z", "20261120T100000Z"), map[string]string{"Content-Type": icsType}); status != http.StatusForbidden {
@@ -490,13 +490,13 @@ func at(y int, m time.Month, d, hh, mm int) time.Time {
 func TestDeletingOverCalDAVNeedsTheDeleteRight(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
-	owner := c.phone(t, "calendars")
+	owner := c.personalDevice(t, "calendars")
 	family := owner.calendarNamed("Family")
 	href := family.Path + "gone.ics"
 	if status, _, _ := owner.raw("PUT", href, eventICS("gone", "Gone", "20261120T090000Z", "20261120T100000Z"), map[string]string{"Content-Type": icsType}); status != http.StatusCreated {
 		t.Fatalf("create = %d", status)
 	}
-	noDelete := c.phone(t, "calendars:read calendars:write")
+	noDelete := c.personalDevice(t, "calendars:read calendars:write")
 	if status, _, _ := noDelete.raw("DELETE", href, "", nil); status != http.StatusForbidden {
 		t.Fatalf("DELETE without calendars:delete = %d, want 403", status)
 	}
@@ -513,30 +513,30 @@ func TestOnlyCalendarScopesOpenCalDAV(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
 	for _, scope := range []string{"read", "write"} {
-		ph := c.phone(t, scope)
+		ph := c.personalDevice(t, scope)
 		if status, _, _ := ph.raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"}); status != http.StatusForbidden {
 			t.Fatalf("token %q on CalDAV = %d, want 403", scope, status)
 		}
 	}
-	ph := c.phone(t, "calendars:read")
+	ph := c.personalDevice(t, "calendars:read")
 	if status, _, _ := ph.raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"}); status != http.StatusMultiStatus {
 		t.Fatalf("calendars:read = %d, want 207", status)
 	}
 }
 
-// Pins today's behaviour: the name a phone picks is the event's id and UID,
-// whatever UID the phone sent inside the object.
+// Pins today's behaviour: the name a personal device picks is the event's id and UID,
+// whatever UID the personal device sent inside the object.
 func TestTheResourceNameBecomesTheEventUID(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
-	ph := c.phone(t, "calendars")
+	ph := c.personalDevice(t, "calendars")
 	family := ph.calendarNamed("Family")
 	href := family.Path + "by-name.ics"
-	if status, _, _ := ph.raw("PUT", href, eventICS("phone-uid", "Named", "20261120T090000Z", "20261120T100000Z"), map[string]string{"Content-Type": icsType}); status != http.StatusCreated {
+	if status, _, _ := ph.raw("PUT", href, eventICS("personal-device-uid", "Named", "20261120T090000Z", "20261120T100000Z"), map[string]string{"Content-Type": icsType}); status != http.StatusCreated {
 		t.Fatalf("create = %d", status)
 	}
 	_, _, body := ph.raw("GET", href, "", nil)
-	if !strings.Contains(body, "UID:by-name") || strings.Contains(body, "phone-uid") {
+	if !strings.Contains(body, "UID:by-name") || strings.Contains(body, "personal-device-uid") {
 		t.Fatalf("stored object:\n%s", body)
 	}
 }

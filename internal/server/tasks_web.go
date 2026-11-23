@@ -112,7 +112,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 	choices := chipsOf(people)
 	child := p.person.Role == store.RoleChild
 	for _, person := range people {
-		// A child's phone shows the child's own tasks only (ADR 0015).
+		// A child's personal device shows the child's own tasks only (ADR 0015).
 		if child && person.ID != p.person.ID {
 			continue
 		}

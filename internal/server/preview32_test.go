@@ -31,7 +31,7 @@ func TestWritePreview32(t *testing.T) {
 	js, _ := web.Static.ReadFile("static/form.js")
 	font, _ := web.Static.ReadFile("static/fonts/Figtree-wght.ttf")
 
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	b := cp.parent.b
 	h, _ := b.db.HomeHousehold()
 	lists, _ := b.db.Lists(h.ID)
@@ -96,7 +96,7 @@ func TestWritePreview32(t *testing.T) {
 		return fs
 	}
 	portrait := []frame{{theme: "light", w: 768, h: 1024}, {theme: "bw", w: 768, h: 1024}}
-	phone := func(themes ...string) []frame {
+	personalDevice := func(themes ...string) []frame {
 		var fs []frame
 		for _, th := range themes {
 			fs = append(fs, frame{theme: th, w: 375, h: 812})
@@ -104,7 +104,7 @@ func TestWritePreview32(t *testing.T) {
 		return fs
 	}
 	all := func() []frame {
-		return append(append(desk("light", "dark", "bw"), portrait...), phone("light", "bw")...)
+		return append(append(desk("light", "dark", "bw"), portrait...), personalDevice("light", "bw")...)
 	}
 	var body strings.Builder
 	var docs []string
@@ -119,7 +119,7 @@ func TestWritePreview32(t *testing.T) {
 		body.WriteString("</div>\n")
 	}
 
-	_ = page(parent, "/lists") // shows and clears the success line left over from pairing Mia's phone
+	_ = page(parent, "/lists") // shows and clears the success line left over from pairing Mia's tablet
 	if r := b.post("/lists/"+shopping.ID+"/entries", url.Values{"text": {"Pasta"}}); r.status != http.StatusSeeOther {
 		t.Fatalf("add = %d", r.status)
 	}
@@ -142,29 +142,29 @@ func TestWritePreview32(t *testing.T) {
 		t.Fatalf("move up = %d", r.status)
 	}
 	section("3. Sort or remove entries", "Moving and removing are rare, so they leave the everyday rows: \"Sort or remove entries\" opens this view. Buttons say what they do in words. Up and down count only the open entries, so the first open entry has no Up. A single entry is removed straight away with a success line (ADR 0015 lets displays do this without the PIN). Done goes back to the list.", "",
-		page(parent, "/lists/"+shopping.ID+"?edit=1"), append(desk("light", "bw"), phone("light")...)...)
+		page(parent, "/lists/"+shopping.ID+"?edit=1"), append(desk("light", "bw"), personalDevice("light")...)...)
 
 	section("4. A list sorted A to Z: Holiday packing", "A new entry appears at its alphabetical place (ignoring case, with ä like a). There is nothing to sort by hand, so the link only says \"Remove entries\".", "",
 		page(parent, "/lists/"+packing.ID), desk("light", "bw")...)
 	section("5. Ticked-off entries hidden", "\"Hide\" on the group hides the ticked-off entries; the page says how many are hidden and how to show them. The choice stays while ticking, adding and removing.", "",
-		page(parent, "/lists/"+shopping.ID+"?ticked=hide"), append(desk("light", "bw"), phone("light")...)...)
+		page(parent, "/lists/"+shopping.ID+"?ticked=hide"), append(desk("light", "bw"), personalDevice("light")...)...)
 
 	newForm := strings.Replace(page(parent, "/lists"), `<details class="more">`, `<details class="more" open>`, 1)
 	section("6. New list: colour, symbol and order under More options", "Defaults are the next free colour and symbol. Colour and symbol are named, not only shown; in black and white the colour chips show only their names, because every colour prints black there.", "#new",
-		newForm, append(desk("light", "dark", "bw"), phone("light")...)...)
+		newForm, append(desk("light", "dark", "bw"), personalDevice("light")...)...)
 
 	failed := b.do(http.MethodPost, "/lists", url.Values{"name": {""}, "color": {"teal"}, "symbol": {"square-filled"}, "sort": {"alphabetical"}}, map[string]string{"Accept-Language": "en"})
 	if failed.status != http.StatusUnprocessableEntity {
 		t.Fatalf("failed create = %d", failed.status)
 	}
 	section("7. Error at the name", "The error is under the field. The chosen colour, symbol and order stay, and the closed More options says so (\"Teal, filled square, A to Z\").", "#new",
-		failed.body, append(desk("light", "bw"), phone("light")...)...)
+		failed.body, append(desk("light", "bw"), personalDevice("light")...)...)
 
-	section("8. Mia's phone", "A child reads and ticks off; there is no add row, no sorting, removing or deleting, and no Settings in the navigation. The large boxes work for children who cannot read well yet.", "",
-		page(child, "/lists/"+shopping.ID), append(phone("light", "bw"), desk("light")...)...)
+	section("8. Mia's tablet", "A child reads and ticks off; there is no add row, no sorting, removing or deleting, and no Settings in the navigation. The large boxes work for children who cannot read well yet.", "",
+		page(child, "/lists/"+shopping.ID), append(personalDevice("light", "bw"), desk("light")...)...)
 
 	section("9. An empty list", "What to do next, in one sentence.", "",
-		page(parent, "/lists/"+gifts.ID), append(desk("light"), phone("light")...)...)
+		page(parent, "/lists/"+gifts.ID), append(desk("light"), personalDevice("light")...)...)
 
 	// Section 10: German, long words, 375 px phone. A box of its own, so that the
 	// overview shows only these two lists. Names longer than the 60 characters of
@@ -226,9 +226,9 @@ func TestWritePreview32(t *testing.T) {
 	}
 	// The overview is read after the add, so no success line sits on top of it.
 	section("10. German, long words, 375 px phone", "Everything here is German, so the browser hyphenates by the page language: long compound words break with a hyphen at the line end, the text of a wrapped entry sits under the text and not under the box, and nothing is wider than the screen. The overview has a list name of 64 characters (the forms allow 60, so it is stored directly; the page must still fit it) and an empty list.", "",
-		deOf("/lists"), de(phone("light")...)...)
+		deOf("/lists"), de(personalDevice("light")...)...)
 	section("10b. German, long words: the list page", "The list page in German: long entries, a ticked-off entry, and the success line for the entry just added.", "",
-		deList, de(append(phone("light", "bw"), frame{theme: "light", w: 768, h: 1024})...)...)
+		deList, de(append(personalDevice("light", "bw"), frame{theme: "light", w: 768, h: 1024})...)...)
 
 	var jsDocs strings.Builder
 	for i, h := range docs {
@@ -295,7 +295,7 @@ type screenGetter struct{ s *screen }
 func (g screenGetter) get(path string) resp { return g.s.get(path, "en") }
 
 // The preview frames must wear the class of the served page's <body>
-// (body.web sets the phone margin); a <template> drops the tag, so the
+// (body.web sets the personal device margin); a <template> drops the tag, so the
 // generator carries the class over by hand.
 func TestPreview32FramesCarryTheServedBodyClass(t *testing.T) {
 	served := getEN(signedInBox(t), "/lists").body

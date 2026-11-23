@@ -4,7 +4,7 @@
 // reached, a page is shown from that copy, read-only, with the time it was
 // loaded (offline.js draws the notice and switches the controls off). Nothing
 // is changed offline. The copies go as soon as the box says the person is
-// signed out (revoked phone, sign-out).
+// signed out (revoked personal device, sign-out).
 //
 // The styles and scripts every page needs are kept apart (they hold nothing
 // personal) and are loaded when the service worker is installed, so a kept page
@@ -15,7 +15,7 @@ const ASSET_CACHE = 'hejmo-assets-v1';
 const ASSETS = ['/static/hejmo.css', '/static/form.js', '/static/offline.js', '/static/theme.js', '/static/fonts/Figtree-wght.ttf', '/static/flags/de.svg', '/static/flags/gb.svg'];
 const MAX_PAGES = 30;
 const STAMP = 'x-hejmo-cached-at';
-// A box that does not answer (the phone is away from home) is given up on
+// A box that does not answer (the personal device is away from home) is given up on
 // after this long, so the kept copy shows instead of a spinner.
 const TIMEOUT_MS = 4000;
 
@@ -26,7 +26,7 @@ function reach(url, options) {
 }
 
 // Never kept: displays, the API and CalDAV, pairing and setup, sign-in.
-const SKIP = ['/display', '/api', '/dav', '/ca', '/setup', '/phones/join'];
+const SKIP = ['/display', '/api', '/dav', '/ca', '/setup', '/personal-devices/join'];
 
 self.addEventListener('install', (event) => {
   event.waitUntil(caches.open(ASSET_CACHE).then((cache) => cache.addAll(ASSETS)).then(() => self.skipWaiting()));

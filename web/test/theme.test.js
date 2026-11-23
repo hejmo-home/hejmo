@@ -59,9 +59,9 @@ function chooser({ auto = true } = {}) {
   const where = tag('p', 'hint where', {}, 'Applies to this browser only.');
   const menu = tag('fieldset', 'theme-menu', { 'data-theme-choices': '', 'data-saved': 'Saved: {name}.', 'data-error': 'Could not be saved.' },
     tag('legend', '', {}, 'Theme'),
-    opt('light', 'Light', ''), opt('dark', 'Dark', ''), opt('auto', 'Automatic', ' half', auto ? {} : { disabled: '' }), opt('device', 'Like your device', ' phone half'), where);
+    opt('light', 'Light', ''), opt('dark', 'Dark', ''), opt('auto', 'Automatic', ' half', auto ? {} : { disabled: '' }), opt('device', 'Like your device', ' personal-device half'), where);
   const chipName = tag('span', 'theme-name', {}, tag('span', 'vh', {}, 'Theme: '), 'Like your device');
-  const summary = tag('summary', '', {}, tag('span', 'swatch sm phone half', {}), chipName);
+  const summary = tag('summary', '', {}, tag('span', 'swatch sm personal-device half', {}), chipName);
   const details = tag('details', 'theme-pick', {}, summary, menu);
   const radio = (v) => menu.querySelectorAll('[data-theme-choice]').find((r) => r.value === v);
   return { details, menu, summary, chipName, where, radio };

@@ -86,7 +86,7 @@ func TestWritePreview71(t *testing.T) {
 		return fs
 	}
 	portrait := frame{"light", 768, 1024}
-	phoneLight, phoneDark := frame{"light", 375, 812}, frame{"dark", 375, 812}
+	personalDeviceLight, personalDeviceDark := frame{"light", 375, 812}, frame{"dark", 375, 812}
 	var body strings.Builder
 	var docs []string
 	docOf := map[string]int{}
@@ -98,7 +98,7 @@ func TestWritePreview71(t *testing.T) {
 			docs = append(docs, html)
 		}
 		// Design gate: every page is shown at 1280 px and at 375 px, light and dark.
-		frames = append(frames, phoneLight, phoneDark)
+		frames = append(frames, personalDeviceLight, personalDeviceDark)
 		if title != "" {
 			fmt.Fprintf(&body, "<h2>%s</h2><p class=\"note\">%s</p>", title, note)
 		}

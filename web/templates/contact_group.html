@@ -1,0 +1,16 @@
+{{template "head" (dict "Lang" .Lang "Title" .GroupName "Frame" .Frame)}}
+  <h1>{{.GroupName}}</h1>
+  <dl class="facts">
+    <dt>{{t "contact.group.f.contacts"}}</dt><dd>{{if .Members}}{{range .Members}}<a href="{{.Href}}">{{.Name}}</a> {{end}}{{else}}{{t "contact.groups.empty"}}{{end}}</dd>
+    <dt>{{t "contact.group.f.created"}}</dt><dd>{{.Created}}</dd>
+  </dl>
+  <form method="post" action="/contacts/groups/{{.ID}}" class="steps">
+    <fieldset>
+      <legend>{{t "contact.group.rename"}}</legend>
+      <div class="f{{if .Err}} invalid{{end}}"><label>{{t "contact.groups.name"}}<input name="name" type="text" maxlength="40" value="{{.Name}}"{{if .Err}} autofocus aria-invalid="true" aria-describedby="err-name"{{end}}></label>
+      {{template "ctGroupErr" .Err}}</div>
+    </fieldset>
+    <button class="button" type="submit">{{t "people.save"}}</button>
+  </form>
+  {{template "dangerOpen" (dict "Label" (t "contact.group.delete.summary") "Confirm" .DeleteConfirm "Explain" .DeleteExplain "Names" .Stays "Action" (printf "/contacts/groups/%s/delete" .ID) "CancelHref" (printf "/contacts/groups/%s" .ID))}}{{template "dangerClose"}}
+{{template "foot"}}

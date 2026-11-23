@@ -21,7 +21,7 @@ import (
 
 // TestWritePreview111 writes the self-contained preview page for the product
 // owner's approval of ticket 111 (detail pages for displays, device tokens,
-// calendar connections, subscribed calendars and phones, ADR 0017). Every
+// calendar connections, subscribed calendars and personal devices, ADR 0017). Every
 // frame is a real page of the box, rendered by the real templates in German
 // for the eight-person family, at 1024 x 768, 768 x 1024 and 375 px wide, in
 // light, dark and black-and-white.
@@ -229,10 +229,10 @@ func TestWritePreview111(t *testing.T) {
 	// (the overview was taken before that sync, with the problem flag)
 	b.now = time.Date(2026, 11, 15, 7, 42, 30, 0, local)
 
-	// ---- phones ----
-	phoneNames := []struct{ owner, name string }{{"Mama", "iPhone Mama"}, {"Papa", "Papas Pixel"}, {"Sebastian", "Sebastians Handy"}, {"Mia", "Mias altes iPhone aus der Schublade"},
+	// ---- personal devices ----
+	personalDeviceNames := []struct{ owner, name string }{{"Mama", "iPhone Mama"}, {"Papa", "Papas Pixel"}, {"Sebastian", "Sebastians Handy"}, {"Mia", "Mias altes iPhone aus der Schublade"},
 		{"Jonas", "Jonas’ Handy"}, {"Lotta", "Lottas Handy"}, {"Ben", "Bens Tablet"}, {"Emma", "Emmas Handy"}}
-	for _, ph := range phoneNames {
+	for _, ph := range personalDeviceNames {
 		p, _ := func() (store.Person, bool) {
 			for _, x := range people {
 				if x.Name == ph.owner {
@@ -241,19 +241,19 @@ func TestWritePreview111(t *testing.T) {
 			}
 			return store.Person{}, false
 		}()
-		pairedPhone(t, b, p, ph.name)
+		pairedPersonalDevice(t, b, p, ph.name)
 	}
-	phones, _ := b.db.Phones(h.ID)
+	personalDevices, _ := b.db.PersonalDevices(h.ID)
 	var bens string
-	for i, ph := range phones {
-		sql(`UPDATE phones SET created_at = ?, last_seen_at = ? WHERE id = ?`, moment(1, 20, 0, 0), moment(15, 7, 40-i, 2), ph.ID)
+	for i, ph := range personalDevices {
+		sql(`UPDATE personal_devices SET created_at = ?, last_seen_at = ? WHERE id = ?`, moment(1, 20, 0, 0), moment(15, 7, 40-i, 2), ph.ID)
 		if ph.Name == "Bens Tablet" {
 			bens = ph.ID
-			sql(`UPDATE phones SET last_seen_at = ? WHERE id = ?`, moment(12, 18, 30, 0), ph.ID)
+			sql(`UPDATE personal_devices SET last_seen_at = ? WHERE id = ?`, moment(12, 18, 30, 0), ph.ID)
 		}
 	}
-	phonesOverview := page("/phones")
-	phoneDetail := page("/phones/" + bens)
+	personalDevicesOverview := page("/personal-devices")
+	personalDeviceDetail := page("/personal-devices/" + bens)
 
 	// ---- the page ----
 	type frame struct {
@@ -304,8 +304,8 @@ func TestWritePreview111(t *testing.T) {
 	add("14. Verbindung: der Server hat die Anmeldung abgelehnt", "Die Fehlerzeile nennt die Zeit und springt zum Passwortfeld; der Abschnitt Anmeldedaten ist offen, der Fehler steht am Feld.", refusedForm)
 	add("15. Verbindung: Trennen nennt die Kalender", "", open(icloudDisconnect))
 	add("16. Abonnierter Kalender: Stand, Jetzt abgleichen, Entfernen", "Nach „Jetzt abgleichen“ steht Zeit, Anzahl und was sich geändert hat in der Erfolgszeile.", calendarDetail)
-	add("17. Handys: acht Personen, je eine Zeile", "", phonesOverview)
-	add("18. Handy: Entfernen fragt zuerst", "Die Rechte des Handys in Worten.", open(phoneDetail))
+	add("17. Handys: acht Personen, je eine Zeile", "", personalDevicesOverview)
+	add("18. Handy: Entfernen fragt zuerst", "Die Rechte des Handys in Worten.", open(personalDeviceDetail))
 	_ = refusedPage
 
 	var jsDocs strings.Builder

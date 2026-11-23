@@ -198,7 +198,7 @@ func cleanPasskeyName(name string) string {
 }
 
 // passkeyNameSuggestion is the name a new passkey gets when the parent does not
-// choose one: the device it is made on; a phone or tablet is the person's.
+// choose one: the device it is made on; a personal device or tablet is the person's.
 func (s *server) passkeyNameSuggestion(lang, personName, device string) string {
 	if device == "" || device == auth.Unknown {
 		return s.i18n.T(lang, "passkey.name.default")
@@ -223,10 +223,10 @@ func readJSON(r *http.Request, v any) bool {
 
 // passkeySubject is the parent behind a browser session who may create passkeys:
 // a signed-in parent, or the parent of the wizard whose one-time code is not
-// confirmed yet. A paired phone's session never qualifies.
+// confirmed yet. A paired personal device's session never qualifies.
 func (s *server) passkeySubject(w http.ResponseWriter, r *http.Request) (store.Person, bool) {
 	p, ok := s.pendingPerson(r)
-	if !ok || s.phoneSession(r) {
+	if !ok || s.personalDeviceSession(r) {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 		return store.Person{}, false
 	}
@@ -422,7 +422,7 @@ func (s *server) handleLoginPasskeyFinish(w http.ResponseWriter, r *http.Request
 // another parent's one-time codes) with one of the parent's own passkeys.
 func (s *server) handlePasskeyAssertBegin(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.currentPerson(r)
-	if !ok || s.phoneSession(r) {
+	if !ok || s.personalDeviceSession(r) {
 		writeJSON(w, http.StatusUnauthorized, map[string]string{"error": "unauthorized"})
 		return
 	}
@@ -517,17 +517,17 @@ func (s *server) apiListPasskeys(w http.ResponseWriter, _ *http.Request, p princ
 	writeJSON(w, http.StatusOK, out)
 }
 
-// browserOnly refuses a token and a paired phone's session: a passkey signs in
+// browserOnly refuses a token and a paired personal device's session: a passkey signs in
 // for good, so only a signed-in browser may create one (a stolen token or a lost
-// phone must not be able to). The same rule as passkeySubject; a session that
+// personal device must not be able to). The same rule as passkeySubject; a session that
 // still has to set up its one-time codes never reaches the API (currentPerson).
 func (s *server) browserOnly(w http.ResponseWriter, r *http.Request) bool {
 	if r.Header.Get("Authorization") != "" {
 		writeError(w, http.StatusForbidden, "passkeys are created in a signed-in browser, not with a token")
 		return false
 	}
-	if s.phoneSession(r) {
-		writeError(w, http.StatusForbidden, "passkeys are created in a signed-in browser, not on a paired phone")
+	if s.personalDeviceSession(r) {
+		writeError(w, http.StatusForbidden, "passkeys are created in a signed-in browser, not on a paired personal device")
 		return false
 	}
 	return true

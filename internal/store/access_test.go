@@ -172,19 +172,19 @@ func TestResetOTPRemovesSecretCodesAndBrowserSessionsButKeepsTokensAndTheBoxConf
 	if err := db.CreateSession("tok", mama.ID, "", time.Now(), time.Now().Add(time.Hour)); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.CreateAPIToken(store.APIToken{Name: "phone", Hash: "x", PersonID: mama.ID, Scopes: "calendars"}); err != nil {
+	if _, err := db.CreateAPIToken(store.APIToken{Name: "personal_device", Hash: "x", PersonID: mama.ID, Scopes: "calendars"}); err != nil {
 		t.Fatal(err)
 	}
 	h, err := db.HomeHousehold()
 	if err != nil {
 		t.Fatal(err)
 	}
-	pairPhone(t, db, h, mama, "Mama's phone")
+	pairPersonalDevice(t, db, h, mama, "Mama's tablet")
 	if err := db.ResetOTP(mama.ID); err != nil {
 		t.Fatal(err)
 	}
-	if _, err := db.SessionPerson("session-Mama's phone", phoneT0.Add(time.Hour)); err != nil {
-		t.Fatalf("phone device session ended by the reset: %v", err)
+	if _, err := db.SessionPerson("session-Mama's tablet", personalDeviceT0.Add(time.Hour)); err != nil {
+		t.Fatalf("personal device device session ended by the reset: %v", err)
 	}
 	acc, _ := db.AccountByPerson(mama.ID)
 	if acc.TOTPConfirmed || acc.TOTPSecret != "" {

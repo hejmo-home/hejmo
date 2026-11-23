@@ -168,7 +168,7 @@ func TestRouterNameFieldIsEmptyAndClosedWhenTheRouterKnowsNoName(t *testing.T) {
 	for _, want := range []string{`<details class="more">`, `<span class="sum">Kein Name im Router</span>`, `Name im Router (freiwillig)`,
 		`name="router_name" type="text" value=""`, `placeholder="hejmo.fritz.box"`, `autocomplete="off"`,
 		`Die Box hat in deinem Router keinen Namen gefunden. Bei der FRITZ!Box steht er unter Heimnetz › Netzwerk beim Gerät der Box, zum Beispiel hejmo.fritz.box.`,
-		`Wozu? Über ein VPN findet das Handy hejmo.local oft nicht, den Namen im Router aber schon.`,
+		`Wozu? Über ein VPN findet das Gerät hejmo.local oft nicht, den Namen im Router aber schon.`,
 		`aria-describedby="hint-router_name hint-router_name2"`} {
 		if !strings.Contains(body, want) {
 			t.Errorf("page misses %q", want)
@@ -371,7 +371,7 @@ func TestSettingsPageShowsFactsAndTheTwoTiles(t *testing.T) {
 	}
 	away := regexp.MustCompile(`(?s)<section class="tile netblock">\s*<h2>Von unterwegs</h2>.*?</section>`).FindString(r.body)
 	for _, want := range []string{"Mit einem VPN wie WireGuard (z.\u00a0B. in der FRITZ!Box) bist du auch von unterwegs im Heimnetz.", `<a href="` + guideDE + `" target="_blank" rel="noopener">Anleitung für WireGuard</a>`,
-		"Über ein VPN findet das Handy hejmo.local oft nicht. Öffne die Box dann unter 127.0.0.1 oder unter dem Namen im Router (unten)."} {
+		"Über ein VPN findet das Gerät hejmo.local oft nicht. Öffne die Box dann unter 127.0.0.1 oder unter dem Namen im Router (unten)."} {
 		if !strings.Contains(away, want) {
 			t.Errorf("the tile \"Von unterwegs\" misses %q:\n%s", want, away)
 		}

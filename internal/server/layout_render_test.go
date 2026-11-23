@@ -29,6 +29,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/auth"
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calsync"
+	"github.com/hejmo-home/hejmo/internal/contact"
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
@@ -119,12 +120,13 @@ var layoutNames = []string{"Friedrich", "Maximilian", "Anna-Lena", "Konstantin",
 type layoutFixture struct {
 	*familyBox
 	ids []string // person IDs in layoutNames order
-	kid *screen  // the phone of a child, which shows lists as tiles
+	kid *screen  // the personal device of a child, which shows lists as tiles
 
-	lists       []string // list IDs
-	inviteToken string   // the invitation of Maximilian, a parent without account
-	hint        *screen  // a display that shows the screensaver's hint
-	outlook     []string // the Outlook pages (#177) that no link leads to
+	lists         []string // list IDs
+	contactGroups []string // the ids of the contact groups in their order
+	inviteToken   string   // the invitation of Maximilian, a parent without account
+	hint          *screen  // a display that shows the screensaver's hint
+	outlook       []string // the Outlook pages (#177) that no link leads to
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -171,7 +173,7 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	l, err := db.CreateList(h, list.List{Name: "Wochenendeinkaufsliste", Color: "blue", Symbol: "circle-empty", Sort: list.Alphabetical, Suggestions: true})
 	must(err)
 	f.lists = append(f.lists, l.ID)
-	// Entries that name articles (#166): shipped ones that warn several people with long names, and the own articles made below, one with a photo and one with a symbol. The tiles of the child's phone show them.
+	// Entries that name articles (#166): shipped ones that warn several people with long names, and the own articles made below, one with a photo and one with a symbol. The tiles of the child's personal device show them.
 	for _, e := range []string{"Haferflockenpackung groß", "Kartoffelsalatzutaten für Samstag", "Vollkornspaghetti", "Bio-Pfefferminztee", "Toastbrot", "Milch", "Haselnuss-Mandel-Knusperflocken mit Schokostückchen", "Katzenfutter Huhn"} {
 		_, err := db.AddEntry(h, l.ID, e)
 		must(err)
@@ -238,6 +240,9 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	must(err)
 	must(db.SetDayNote(h, "2026-11-14", "Bitte Schwimmsachen und Handtücher für Maximilian und Anna-Lena nicht vergessen"))
 
+	// The address book (ticket 296): long names, several numbers, own labels, long e-mail addresses, a long note and groups.
+	f.addContacts(t)
+
 	// Meal plan and template through the API, like a parent.
 	c := newAPIClient(t, f.box)
 	c.cookie = true
@@ -252,8 +257,8 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 	c.addICS(t, map[string]any{"kind": "ics", "name": "Schulkalender der Grundschule", "url": schoolFeed})
 	c.switchMCP(t, true)
 	c.newMCPToken(t, "Claude Desktop auf dem Küchenrechner", map[string]string{"lists": "write"})
-	// A paired phone, a calendar connection, a CalDAV device token.
-	f.kid = pairedPhone(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
+	// A paired personal device, a calendar connection, a CalDAV device token.
+	f.kid = pairedPersonalDevice(t, f.box, f.people["Anna-Lena"], "Handy von Anna-Lena im Kinderzimmer")
 	connID := connectedBox(t, f.box)
 	// Two calendars with long names (#183): the first is on, for all eight people and under a longer name of its own, the second is off.
 	f.sync.SetDialer(func(string, string, string) (calsync.Remote, error) { // the connection page asks for event counts
@@ -387,7 +392,7 @@ var (
 	uuidRe     = regexp.MustCompile(`[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}`)
 	isoDayRe   = regexp.MustCompile(`\d{4}-\d{2}-\d{2}`)
 	// Links that are no framed pages: downloads, the API, assets, fragments.
-	notPageRe = regexp.MustCompile(`^/(static/|api/|healthz|manifest|sw\.js|logout|display(/|$|\?)|ca/|update/|\.well-known|i/|phones/join/)|\.(ics|crt|mobileconfig)(\?|$)`)
+	notPageRe = regexp.MustCompile(`^/(static/|api/|healthz|manifest|sw\.js|logout|display(/|$|\?)|ca/|update/|\.well-known|i/|personal-devices/join/)|\.(ics|crt|mobileconfig)(\?|$)`)
 )
 
 // shape reduces a path to the page it is: IDs and days become placeholders.
@@ -469,35 +474,37 @@ func htmlRoutes(t *testing.T) []string {
 
 // notRendered are GET routes the check does not render, each with its reason.
 var notRendered = map[string]string{
-	"/healthz":                     "plain text",
-	"/static/":                     "assets",
-	"/api/v1/openapi.yaml":         "API document",
-	"/ca/hejmo-ca.crt":             "download",
-	"/ca/hejmo.mobileconfig":       "download",
-	"/manifest.webmanifest":        "JSON",
-	"/sw.js":                       "script",
-	"/display/state":               "JSON",
-	"/display/view":                "fragment of /display, rendered inside it",
-	"/display/lists":               "redirect to the first list",
-	"/display/lists/{id}/view":     "fragment of a list, rendered inside it",
-	"/lists/{id}/suggest":          "fragment: the suggestions under the add card, rendered inside it",
-	"/lists/{id}/quantity":         "fragment: the quantity part of the add card, rendered inside it",
-	"/display/lists/{id}/suggest":  "fragment: the suggestions under the add card, rendered inside it",
-	"/display/lists/{id}/quantity": "fragment: the quantity part of the add card, rendered inside it",
-	"/display/events":              "event stream",
-	"/display/person/{id}/view":    "fragment of the personal view, rendered inside it",
-	"/otp":                         "redirect",
-	"/i/{token}":                   "redirect",
-	"/setup/https/check":           "answers a fragment for the setup page's script",
-	"/places":                      "JSON list of places for the home location picker",
-	"/phones/join/{code}":          "one-time pairing link of a phone",
-	"/display/saver/photos":        "JSON",
-	"/display/photo/{id}":          "image",
+	"/healthz":                      "plain text",
+	"/static/":                      "assets",
+	"/api/v1/openapi.yaml":          "API document",
+	"/ca/hejmo-ca.crt":              "download",
+	"/ca/hejmo.mobileconfig":        "download",
+	"/manifest.webmanifest":         "JSON",
+	"/sw.js":                        "script",
+	"/display/state":                "JSON",
+	"/display/view":                 "fragment of /display, rendered inside it",
+	"/display/lists":                "redirect to the first list",
+	"/display/lists/{id}/view":      "fragment of a list, rendered inside it",
+	"/lists/{id}/suggest":           "fragment: the suggestions under the add card, rendered inside it",
+	"/lists/{id}/quantity":          "fragment: the quantity part of the add card, rendered inside it",
+	"/display/lists/{id}/suggest":   "fragment: the suggestions under the add card, rendered inside it",
+	"/display/lists/{id}/quantity":  "fragment: the quantity part of the add card, rendered inside it",
+	"/display/events":               "event stream",
+	"/display/person/{id}/view":     "fragment of the personal view, rendered inside it",
+	"/otp":                          "redirect",
+	"/i/{token}":                    "redirect",
+	"/setup/https/check":            "answers a fragment for the setup page's script",
+	"/places":                       "JSON list of places for the home location picker",
+	"/personal-devices/join/{code}": "one-time pairing link of a personal device",
+	"/display/saver/photos":         "JSON",
+	"/display/photo/{id}":           "image",
 
 	"/articles/{id}/picture":                  "an image",
 	"/display/articles/{id}/picture":          "an image",
 	"/settings/lists/library/picture/{token}": "an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
+	"/settings/lists/library/plan/{id}":       "fragment: the sentence under the card of an article, rendered inside it",
+	"/settings/lists/always/plan":             "fragment: the sentence under the holiday, rendered inside its page",
 }
 
 // matches reports whether a request path is served by a route pattern.
@@ -531,8 +538,8 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	for _, p := range f.outlook {
 		add(parent, p)
 	}
-	// The child's phone shows lists as tiles by default (#166): the tiles of articles with a picture, a symbol and the warning of several people, and of free text.
-	kid := siteOf("child phone", f.box, f.kid.client)
+	// The child's personal device shows lists as tiles by default (#166): the tiles of articles with a picture, a symbol and the warning of several people, and of free text.
+	kid := siteOf("child personal device", f.box, f.kid.client)
 	add(kid, "/lists")
 	add(kid, "/lists/"+f.lists[0])
 	add(kid, "/lists/"+f.lists[1])
@@ -555,6 +562,12 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	// The choice page of ticket 231: each way chosen, and the link guide with its errors.
 	pages = append(pages, connectChoicePages(t, f)...)
 
+	// The address book (ticket 296): a search without a match and the form with every kind of error.
+	for _, p := range []string{"/contacts?q=Bäckereiverkäuferinnenvereinigung", "/contacts?g=" + f.contactGroups[0], "/contacts/" + f.ids[1], "/contacts/" + f.ids[1] + "/edit", "/people/" + f.ids[1]} {
+		add(parent, p)
+	}
+	pages = append(pages, contactPages(t, f)...)
+
 	// The card of recovery codes (#176) is reached only by POST: rendered with
 	// the box's answer, in the wizard, the invitation and My account, and in
 	// the state after a continue without the tick.
@@ -571,9 +584,9 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	out := siteOf("signed out", f.box, f.client)
 	add(out, "/login")
 	add(out, "/ca")
-	// A phone whose device session was removed (ticket 199), on a box of its own.
-	oldBox, oldPhone, _ := unpairedPhone(t)
-	add(siteOf("unpaired device", oldBox, oldPhone.client), "/login")
+	// A personal device whose device session was removed (ticket 199), on a box of its own.
+	oldBox, oldPersonalDevice, _ := unpairedPersonalDevice(t)
+	add(siteOf("unpaired device", oldBox, oldPersonalDevice.client), "/login")
 	// The invitation of a parent: the welcome page and the form for username and password.
 	add(out, "/invite/"+f.inviteToken)
 	add(out, "/invite/"+f.inviteToken+"/account")
@@ -869,7 +882,7 @@ func TestEveryPageIsInTheRenderedLayoutCheck(t *testing.T) {
 	}
 }
 
-// The layout check can only find what its fixture shows: the child's phone
+// The layout check can only find what its fixture shows: the child's personal device
 // must lay out tiles of an article with a picture, one with a symbol, free
 // text, and a tile that warns several people (#166).
 func TestTheLayoutFixtureShowsEveryKindOfTile(t *testing.T) {
@@ -982,7 +995,7 @@ func TestRenderedLayout(t *testing.T) {
 								return err
 							}
 						}
-						// Displays and phones follow the browser's language, the web pages the cookie.
+						// Displays and personal devices follow the browser's language, the web pages the cookie.
 						if _, err := chromedp.Call(ctx, network.SetExtraHTTPHeaders, network.SetExtraHTTPHeadersParams{Headers: network.Headers{"Accept-Language": lang}}); err != nil {
 							return err
 						}
@@ -1159,7 +1172,7 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 	mia, papa := f.people["Mia"], f.people["Papa"]
 	mia.Name = long
 	display := siteOf("display", f.box, f.display.client)
-	phone := siteOf("child's phone", f.box, pairedPhone(t, f.box, mia, "Handy").client)
+	personalDevice := siteOf("child's personal device", f.box, pairedPersonalDevice(t, f.box, mia, "Handy").client)
 	inv := f.do(http.MethodPost, "/people/"+papa.ID+"/invitation", url.Values{}, nil)
 	token := inviteTokenRe.FindString(inv.body)
 	if inv.status != http.StatusOK || token == "" {
@@ -1182,7 +1195,7 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 	}
 	cases := []headingCase{
 		{display, "/display/person/" + mia.ID, ".pv-header h1", long},
-		{phone, "/", "h1.child-h", long},
+		{personalDevice, "/", "h1.child-h", long},
 		{out, "/invite/" + token, ".wizard h1", long},
 		{parent, "/settings/lists/library/" + art.ID, "h1.art-title", longArticle},
 	}
@@ -1230,4 +1243,64 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 			}
 		})
 	}
+}
+
+// addContacts fills the address book with long texts: names that must wrap, numbers with own labels, long
+// e-mail addresses and a note of many lines.
+func (f *layoutFixture) addContacts(t *testing.T) {
+	t.Helper()
+	h, db, by := f.householdID, f.db, f.ids[0]
+	groups, err := db.ContactGroups(h)
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, g := range groups {
+		f.contactGroups = append(f.contactGroups, g.ID)
+	}
+	long := strings.Repeat("Sehr lange Notiz mit vielen Wörtern und Zeilenumbrüchen. ", 12)
+	for _, in := range []store.ContactInput{
+		{HejmoName: "Oma Gerda im Gartenfreundeverein", FullName: "Gerda Müller-Schulze-Hohenstein-Wöllenstein", Street: "Am Erlenbach zehn, Haus 7, Hinterhof", Postcode: "83022", City: "Rosenheim", Country: "Deutschland",
+			BdayDay: 14, BdayMonth: 3, Note: long, GroupIDs: []string{f.contactGroups[0], f.contactGroups[3]},
+			Numbers: []contact.Line{{Kind: contact.Cell, Value: "+49 (0) 171 3456 789 12 34"}, {Kind: contact.Home, Value: "08031 87 65 43"}, {Kind: contact.Custom, Label: "Gartenhaus im Urlaub", Value: "0160 111 2223"}, {Kind: contact.Work, Value: "089 4455 6677-12"}},
+			Emails:  []contact.Line{{Kind: contact.Home, Value: "gerda.mueller-schulze@gartenfreunde-am-erlenbach-rosenheim.example"}, {Kind: contact.Custom, Label: "Gartenfreundeverein", Value: "gerda@example.de"}}},
+		{HejmoName: "Kinderarztpraxis Yılmaz-Hoffmann", FullName: "Kinderarztpraxis Dr. Elif Yılmaz-Hoffmann und Kollegen", Numbers: []contact.Line{{Kind: contact.Work, Value: "089 1234 5670"}}, BdayDay: 2, BdayMonth: 9, BdayYear: 1950, GroupIDs: []string{f.contactGroups[2]}},
+		{HejmoName: "Ärztlicher Bereitschaftsdienst", GroupIDs: []string{f.contactGroups[2], f.contactGroups[3]}, NewGroup: "Fußball-Eltern der U11 am Erlenweg"},
+	} {
+		if _, err := db.CreateContact(h, by, in); err != nil {
+			t.Fatal(err)
+		}
+	}
+	// The people have contact data too.
+	for i, id := range f.ids[:3] {
+		if _, err := db.UpdateContact(h, id, by, store.ContactInput{FullName: layoutNames[i] + " Maier-Schmidt-Wöllenstein", Numbers: []contact.Line{{Kind: contact.Cell, Value: "0176 2345 6789"}}, BdayDay: 21, BdayMonth: 6, BdayYear: 2018}); err != nil {
+			t.Fatal(err)
+		}
+	}
+}
+
+// contactPages are the contact form after a refused save (every error at its field, in both languages), and the
+// form for a person, which only a link of the contact page reaches in one shape.
+func contactPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	site := siteOf("contact form", f.box, f.client)
+	form := url.Values{"name": {layoutNames[1]}, "full_name": {"Maximilian Schulz"}, "bday_day": {"31"}, "bday_month": {"2"}, "bday_year": {"2018"}, "new_group": {"Familie"},
+		"note": {strings.Repeat("n", 1001)}}
+	for i, row := range [][3]string{{"cell", "", "0172 4455 6677"}, {"home", "", "089 23x4 5678"}, {"own", "", "0160 2223 334"}} {
+		_ = i
+		form.Add("number_label", row[0])
+		form.Add("number_own", row[1])
+		form.Add("number", row[2])
+	}
+	form.Add("email_label", "home")
+	form.Add("email_own", "")
+	form.Add("email", "familie.schulz-hohenstein-wöllenstein@example")
+	for _, lang := range []string{"de", "en"} {
+		refused := f.do(http.MethodPost, "/contacts/new", form, map[string]string{"Accept-Language": lang})
+		if refused.status != http.StatusUnprocessableEntity {
+			t.Fatalf("contact form with errors = %d\n%s", refused.status, refused.body)
+		}
+		pages = append(pages, layoutPage{site: site, path: "/contacts/new#refused", html: map[string]string{lang: refused.body}})
+	}
+	return mergeCardPages(pages)
 }

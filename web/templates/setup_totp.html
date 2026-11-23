@@ -10,8 +10,8 @@
   <form class="tile" method="post" action="/setup/totp">
     <ol class="howto">
       <li><div class="s"><b>{{t "setup.totp.s1.title"}}</b><p>{{t "setup.totp.s1.text"}}</p><p>{{rich (t .InstallKey)}}</p></div></li>
-      {{if .Phone}}
-      <li><div class="s"><b>{{t "setup.totp.phone.title"}}</b><p>{{t "setup.totp.phone.text"}}</p>
+      {{if .PersonalDevice}}
+      <li><div class="s"><b>{{t "setup.totp.personal_device.title"}}</b><p>{{t "setup.totp.personal_device.text"}}</p>
         <a class="button secondary" href="{{.URI}}">{{t "setup.totp.link"}}</a>
         {{template "moreOpen" (dict "Label" (t "setup.totp.other"))}}
           <p>{{t "setup.totp.other.text"}}</p>

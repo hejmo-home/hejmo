@@ -42,15 +42,17 @@ type artForm struct {
 	Allergens                      []string
 	PicSource, Symbol, SymQ, URL   string
 	Token                          string
-	Replacing                      bool
+	Replacing, Pantry              bool
 	// FromList and FromEntry say the form was opened from the success line of a
 	// list ("Add to the library", ticket 165): after saving the entry becomes the
 	// article and the person goes back to the list.
 	FromList, FromEntry string
+	// Auto is the card "Immer auf der Liste" as it was posted (ticket 168).
+	Auto autoForm
 }
 
 func (s *server) formOf(o store.OwnArticle) artForm {
-	return artForm{Name: o.Name, Dept: o.Dept, Kind: o.Kind, Unit1: o.Unit1, Unit2: o.Unit2, Allergens: o.Allergens, PicSource: o.PicSource, Symbol: o.Symbol}
+	return artForm{Name: o.Name, Dept: o.Dept, Kind: o.Kind, Unit1: o.Unit1, Unit2: o.Unit2, Allergens: o.Allergens, PicSource: o.PicSource, Symbol: o.Symbol, Pantry: o.Pantry}
 }
 
 // Views of the parts of the form.
@@ -305,6 +307,16 @@ func (s *server) renderArticleForm(w http.ResponseWriter, r *http.Request, p pri
 			data["DeleteExplain"] = s.i18n.Format(lang, i18n.Msg("art.delete.explain_none", "name", o.Name))
 		}
 		data["DeleteConfirm"] = s.i18n.Format(lang, i18n.Msg("art.delete.confirm", "name", o.Name))
+		var ap *autoPost
+		if f.Auto.Present {
+			ap = &autoPost{Form: f.Auto, Errs: errs}
+		}
+		card, err := s.autoCardFor(p, lang, it, ap)
+		if err != nil {
+			s.fail(w, "always card", err)
+			return
+		}
+		data["Auto"] = card
 	}
 	s.render(w, r, status, "article_form.html", data)
 }
@@ -395,8 +407,8 @@ func (s *server) readForm(w http.ResponseWriter, r *http.Request) (f artForm, fi
 	v := r.PostFormValue
 	f = artForm{
 		Name: v("name"), Dept: v("dept"), Kind: v("kind"), Unit1: v("unit1"), Unit2: v("unit2"), Allergens: r.PostForm["allergens"],
-		PicSource: v("pic_source"), Symbol: v("symbol"), SymQ: strings.TrimSpace(v("symq")), URL: strings.TrimSpace(v("url")), Token: v("picture_token"), Replacing: v("replacing") != "",
-		FromList: v("list"), FromEntry: v("entry"),
+		PicSource: v("pic_source"), Symbol: v("symbol"), SymQ: strings.TrimSpace(v("symq")), URL: strings.TrimSpace(v("url")), Token: v("picture_token"), Replacing: v("replacing") != "", Pantry: v("pantry") != "",
+		FromList: v("list"), FromEntry: v("entry"), Auto: readAuto(r),
 	}
 	return f, file, nil
 }
@@ -520,12 +532,29 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 			errs[e.Field] = s.fieldError(lang, e)
 		}
 	}
+	if existing != nil && f.Auto.Present && f.Auto.On {
+		it := articleItem{Article: ownArticle(*existing), own: existing}
+		a, err := s.alwaysContext(p, lang)
+		if err != nil {
+			s.fail(w, "always context", err)
+			return
+		}
+		stored, err := s.storedRule(p, existing.ID)
+		if err != nil {
+			s.fail(w, "always rule", err)
+			return
+		}
+		_, autoErrs := a.validate(it, f.Auto, stored)
+		for k, v := range autoErrs {
+			errs[k] = v
+		}
+	}
 	if len(errs) > 0 {
 		s.renderArticleForm(w, r, p, http.StatusUnprocessableEntity, st, existing, f, pendPtr, errs)
 		return
 	}
 	in = in.Normalized()
-	own := store.OwnArticle{Name: in.Name, Dept: in.Dept, Kind: in.Kind, Allergens: in.Allergens, Unit1: in.Unit1, Unit2: in.Unit2, PicSource: in.PicSource, Symbol: in.Symbol}
+	own := store.OwnArticle{Name: in.Name, Dept: in.Dept, Kind: in.Kind, Allergens: in.Allergens, Unit1: in.Unit1, Unit2: in.Unit2, PicSource: in.PicSource, Symbol: in.Symbol, Pantry: f.Pantry}
 	var pic *store.ArticlePicture
 	if (eff == "upload" || eff == "web") && havePend {
 		pc := pend.ArticlePicture
@@ -563,6 +592,18 @@ func (s *server) submitArticle(w http.ResponseWriter, r *http.Request, p princip
 		}
 		s.redirectSavedNamed(w, r, libraryPath, "flash.article_created", saved.Name)
 		return
+	}
+	if f.Auto.Present {
+		it := articleItem{Article: ownArticle(saved), own: &saved}
+		key, values, _, err := s.saveAuto(p, lang, it, f.Auto)
+		if err != nil {
+			s.fail(w, "save always on the list", err)
+			return
+		}
+		if key != "" {
+			s.redirectSavedFields(w, r, libraryPath+"/"+saved.ID, key, values...)
+			return
+		}
 	}
 	s.redirectSavedNamed(w, r, libraryPath+"/"+saved.ID, "flash.article_saved", saved.Name)
 }

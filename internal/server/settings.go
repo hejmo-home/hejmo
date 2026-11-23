@@ -9,6 +9,7 @@ import (
 	"math"
 	"net/http"
 	"net/url"
+	"strconv"
 	"strings"
 	"time"
 
@@ -333,6 +334,9 @@ func (s *server) handleSettingsHub(w http.ResponseWriter, r *http.Request) {
 			if it.Href == httpsSettingsPath {
 				e.State = s.httpsHubState()
 			}
+			if it.Href == contactsPath {
+				e.StateText = s.contactHubState(s.langOf(r), p.household)
+			}
 			if it.Href == "/photos" {
 				e.StateText = s.photoHubState(s.langOf(r), p.household)
 			}
@@ -518,4 +522,19 @@ func (s *server) saveSettings(h store.Household, in store.HouseholdSettings) err
 // one reads it the wrong way round.
 func (s *server) dateSample(h store.Household) time.Time {
 	return time.Date(s.householdNow(h).Year(), time.December, 24, 12, 0, 0, 0, time.UTC)
+}
+
+// contactHubState is the state of the address book in words, before the hint: "8 aus eurer Familie, 10 weitere."
+func (s *server) contactHubState(lang string, h store.Household) string {
+	all, err := s.db.Contacts(h.ID)
+	if err != nil {
+		return ""
+	}
+	family := 0
+	for _, c := range all {
+		if c.IsPerson() {
+			family++
+		}
+	}
+	return s.i18n.Format(lang, i18n.Msg("hub.contacts.state", "family", strconv.Itoa(family), "others", strconv.Itoa(len(all)-family)))
 }

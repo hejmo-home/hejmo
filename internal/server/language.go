@@ -112,7 +112,7 @@ func cookieLanguage(r *http.Request) string {
 
 // handleLanguageSwitch applies a choice of the language switcher: this browser
 // remembers it, and a signed-in account keeps it for every device. Displays and
-// the children's phones are not touched by a parent's choice.
+// the children's personal devices are not touched by a parent's choice.
 func (s *server) handleLanguageSwitch(w http.ResponseWriter, r *http.Request) {
 	l, ok := languageByCode(r.PostFormValue("lang"))
 	if !ok {
@@ -129,7 +129,7 @@ func (s *server) handleLanguageSwitch(w http.ResponseWriter, r *http.Request) {
 	})
 	key := "flash.lang.device"
 	if p, ok := s.currentPerson(r); ok {
-		if _, err := s.db.AccountByPerson(p.ID); err == nil { // a phone's device session has no account
+		if _, err := s.db.AccountByPerson(p.ID); err == nil { // a personal device's device session has no account
 			if err := s.db.SetAccountLanguage(p.ID, l.Code); err != nil {
 				s.logger.Error("save account language", "err", err)
 				key = "flash.lang.error"

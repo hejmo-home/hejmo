@@ -133,7 +133,7 @@ func TestThreatModel(t *testing.T) {
 	doc := read(t, "docs/security/threat-model.md")
 	w := loadWorkflow(t)
 
-	for _, area := range []string{"Home network", "Displays", "Phones", "DNS records at deSEC", "Auto-update script", "MCP", "Google Calendar"} {
+	for _, area := range []string{"Home network", "Displays", "Personal devices", "DNS records at deSEC", "Auto-update script", "MCP", "Google Calendar"} {
 		if !regexp.MustCompile(`(?m)^## ` + regexp.QuoteMeta(area) + `\s*$`).MatchString(doc) {
 			t.Errorf("threat model has no section %q", area)
 		}

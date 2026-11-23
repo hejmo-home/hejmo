@@ -131,8 +131,8 @@ func TestWriteDesignPreview91(t *testing.T) {
 	}
 	rErrDoc := webDoc(rErr.body)
 	taskDoc := webDoc(f.do("GET", "/tasks/"+breakfast.ID, nil, de).body)
-	phone := pairedPhone(t, f.box, f.people["Mia"], "Mias Handy")
-	childDoc := webDoc(phone.get("/tasks", "de").body)
+	personalDevice := pairedPersonalDevice(t, f.box, f.people["Mia"], "Mias Handy")
+	childDoc := webDoc(personalDevice.get("/tasks", "de").body)
 
 	if r := f.post("/routines/"+morning.ID+"/move", url.Values{"task": {breakfast.ID}, "direction": {"up"}}); r.status != 303 {
 		t.Fatalf("move = %d", r.status)

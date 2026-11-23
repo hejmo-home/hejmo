@@ -16,6 +16,7 @@ package main
 import (
 	"fmt"
 	"os"
+	"path/filepath"
 
 	"github.com/sigstore/sigstore-go/pkg/root"
 )
@@ -35,7 +36,7 @@ func main() {
 		fmt.Fprintln(os.Stderr, "trustedroot:", err)
 		os.Exit(1)
 	}
-	if err := os.WriteFile(os.Args[1], append(data, '\n'), 0o644); err != nil {
+	if err := os.WriteFile(filepath.Clean(os.Args[1]), append(data, '\n'), 0o644); err != nil { // #nosec G703 -- the path is the operator's own command-line argument of a build tool
 		fmt.Fprintln(os.Stderr, "trustedroot:", err)
 		os.Exit(1)
 	}

@@ -422,6 +422,26 @@ func TestAFileThatIsALinkIsNeverRead(t *testing.T) {
 	}
 }
 
+// The container is not trusted: it can swap the file for a link between a check of the host script
+// and its copy. The script must copy without following links and check what arrived.
+func TestAFileSwappedForALinkBetweenCheckAndCopyIsNeverRead(t *testing.T) {
+	b := installed(t)
+	good := fileSpec{}.bytes(t)
+	b.handOver(good, "0.2.4", time.Now())
+	secret := "root's secret"
+	b.write("opt/hejmo/secret", secret)
+	b.mustInstall("FAKE_SWAP_FILE=" + filepath.Join(b.root, "opt/hejmo/secret"))
+	if st := b.status(); !hasLine(st, "reason=file_invalid") {
+		t.Errorf("status:\n%s", st)
+	}
+	if b.exists("opt/hejmo/state/incoming.update") {
+		t.Error("what arrived was kept")
+	}
+	if strings.Contains(b.calls(), "docker load") {
+		t.Error("a swapped file was loaded")
+	}
+}
+
 func TestAnUnknownRunningVersionRefusesTheFile(t *testing.T) {
 	b := installed(t)
 	if err := os.WriteFile(filepath.Join(b.state, "version"), []byte("\n"), 0o644); err != nil { // a preview build has no version label

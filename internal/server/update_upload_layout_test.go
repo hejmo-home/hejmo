@@ -32,7 +32,7 @@ func updateUploadPages(t *testing.T, f *layoutFixture) []layoutPage {
 			}
 			out[lang] = r.body
 		}
-		pages = append(pages, layoutPage{site: site, path: path + "#" + name, html: out})
+		pages = append(pages, layoutPage{site: site, path: path + "?state=" + name, html: out})
 	}
 	view := func(name, path string, status int) {
 		t.Helper()

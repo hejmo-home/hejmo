@@ -75,7 +75,12 @@ func freeBytes(dir string) (uint64, error) {
 }
 
 // needBytes is the room a file of this size needs on the box.
-func needBytes(size int64) uint64 { return 2*uint64(size) + headroom }
+func needBytes(size int64) uint64 {
+	if size < 0 {
+		return headroom
+	}
+	return 2*uint64(size) + headroom // #nosec G115 -- checked non-negative above
+}
 
 func megabytesUp(n uint64) uint64 { return (n + mib - 1) / mib }
 
@@ -344,8 +349,11 @@ func (s *server) keepUpload(part io.Reader, name string, max int64) (store.Updat
 	}
 	s.uploadMu.Lock()
 	defer s.uploadMu.Unlock()
-	if free, err := s.free(s.updateDir); err == nil && free+uint64(n) < needBytes(n) { // the file itself is on the disk already
-		return store.UpdateUpload{}, noRoom(free+uint64(n), needBytes(n))
+	if free, err := s.free(s.updateDir); err == nil && n >= 0 {
+		have := free + uint64(n) // #nosec G115 -- checked non-negative above; the file itself is on the disk already
+		if have < needBytes(n) {
+			return store.UpdateUpload{}, noRoom(have, needBytes(n))
+		}
 	}
 	v, err := s.verifier()
 	if err != nil {

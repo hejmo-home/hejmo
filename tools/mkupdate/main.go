@@ -17,6 +17,7 @@ import (
 	"fmt"
 	"io"
 	"os"
+	"path/filepath"
 	"time"
 
 	"github.com/hejmo-home/hejmo/internal/update"
@@ -53,7 +54,7 @@ func run(args []string, out io.Writer, v update.Verifier) error {
 		if err != nil {
 			return err
 		}
-		return os.WriteFile(*outFile, data, 0o644)
+		return os.WriteFile(filepath.Clean(*outFile), data, 0o644) // #nosec G703 -- the path is the operator's own command-line argument of a build tool
 	case "pack":
 		manifest := fs.String("manifest", "", "the signed manifest")
 		bundle := fs.String("bundle", "", "the cosign bundle that signs it")
@@ -62,15 +63,15 @@ func run(args []string, out io.Writer, v update.Verifier) error {
 		if err := fs.Parse(args[1:]); err != nil {
 			return err
 		}
-		m, err := os.ReadFile(*manifest)
+		m, err := os.ReadFile(filepath.Clean(*manifest)) // #nosec G703 -- the path is the operator's own command-line argument of a build tool
 		if err != nil {
 			return err
 		}
-		b, err := os.ReadFile(*bundle)
+		b, err := os.ReadFile(filepath.Clean(*bundle)) // #nosec G703 -- the path is the operator's own command-line argument of a build tool
 		if err != nil {
 			return err
 		}
-		img, err := os.Open(*image)
+		img, err := os.Open(filepath.Clean(*image)) // #nosec G703 -- the path is the operator's own command-line argument of a build tool
 		if err != nil {
 			return err
 		}
@@ -79,7 +80,7 @@ func run(args []string, out io.Writer, v update.Verifier) error {
 		if err != nil {
 			return err
 		}
-		dst, err := os.Create(*outFile)
+		dst, err := os.Create(filepath.Clean(*outFile)) // #nosec G703 -- the path is the operator's own command-line argument of a build tool
 		if err != nil {
 			return err
 		}

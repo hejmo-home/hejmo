@@ -4284,7 +4284,7 @@
   "updf.cost.gone": "The box is unreachable for about 2 minutes.",
   "updf.cost.displays": "Displays keep showing their last state and reload afterwards:",
   "updf.cost.displays.label": "Displays:",
-  "updf.cost.phones": "Phones and browsers briefly show “not reachable”.",
+  "updf.cost.devices": "Devices and browsers briefly show “not reachable”.",
   "updf.cost.backup": "The box saves your data first.",
   "updf.cost.backup.text": "If the new version does not start or does not answer, the box goes back to Hejmo {version} with that data.",
   "updf.cost.backup.text_unknown": "If the new version does not start or does not answer, the box goes back to the version it runs now with that data.",

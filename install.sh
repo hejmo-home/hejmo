@@ -198,6 +198,11 @@ if mv --help 2>&1 | grep -q -- ' -T'; then MV+=(-T); fi
 
 mkdir -p "$HOLD"
 chmod 0700 "$HOLD"
+# The nightly update and the installation of an uploaded file never run together: the second waits.
+if command -v flock >/dev/null 2>&1; then
+	exec 9>"$HOLD/lock"
+	flock -w 1800 9 || exit 0
+fi
 
 CHECKED=""
 UPLOADED=0 # 1 while an uploaded file is installed
@@ -524,10 +529,14 @@ run_install() {
 	# 1. Take the file out of the data volume, where the container could change it.
 	local file="$DATA/update-file" copy="$HOLD/incoming.update" dir="$HOLD/incoming"
 	rm -rf "$dir" "$copy"
-	if [ ! -f "$file" ] || [ -L "$file" ] || [ "$(wc -c <"$file")" -gt 524288000 ]; then
+	# docker cp does not follow a link: a link the container swapped in arrives as a link, a FIFO or a
+	# device as a node. Nothing is checked on the volume first, because the container could change the file
+	# between a check and the copy; what arrived here is what is checked.
+	if ! docker cp hejmo:/data/update-file "$copy" >/dev/null 2>&1 ||
+		[ ! -f "$copy" ] || [ -L "$copy" ] || [ "$(wc -c <"$copy")" -gt 524288000 ]; then
+		rm -rf "$copy"
 		refuse_file failed file_invalid
 	fi
-	cp "$file" "$copy"
 	rm -f "$file"
 	if [ "$(sha256_of "$copy")" != "$REQ_SHA" ]; then
 		refuse_file failed file_invalid

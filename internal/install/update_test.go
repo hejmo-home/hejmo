@@ -64,7 +64,9 @@ exec)
 	[ "${FAKE_BACKUP:-ok}" = fail ] && exit 1
 	cp "$DATA/hejmo.db" "$DATA/pre-update.db" ;;
 cp)
-	cp "$DATA/${2#hejmo:/data/}" "$3" ;;
+	# Like the real one: a link is copied as a link, never followed.
+	if [ -n "$FAKE_SWAP_FILE" ] && [ "${2#hejmo:/data/}" = update-file ]; then rm -f "$DATA/update-file"; ln -s "$FAKE_SWAP_FILE" "$DATA/update-file"; fi
+	cp -P "$DATA/${2#hejmo:/data/}" "$3" ;;
 esac
 exit 0
 `

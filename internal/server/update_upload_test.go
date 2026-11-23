@@ -343,7 +343,7 @@ func TestWithoutDisplaysTheConfirmationNamesNone(t *testing.T) {
 	b := offlineUpdateBox(t)
 	uploadGood(t, b)
 	r := getEN(b, confirmPath)
-	mustContain(t, r.body, "The box is unreachable for about 2 minutes.", "Phones and browsers briefly show “not reachable”.")
+	mustContain(t, r.body, "The box is unreachable for about 2 minutes.", "Devices and browsers briefly show “not reachable”.")
 	mustNotContain(t, r.body, `class="devs"`, "Displays keep showing")
 }
 

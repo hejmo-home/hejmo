@@ -4284,7 +4284,7 @@
   "updf.cost.gone": "Etwa 2 Minuten ist die Box nicht erreichbar.",
   "updf.cost.displays": "Die Displays zeigen so lange den letzten Stand und laden danach neu:",
   "updf.cost.displays.label": "Displays:",
-  "updf.cost.phones": "Handys und Browser sehen kurz „nicht erreichbar“.",
+  "updf.cost.devices": "Geräte und Browser sehen kurz „nicht erreichbar“.",
   "updf.cost.backup": "Vorher sichert die Box deine Daten.",
   "updf.cost.backup.text": "Startet die neue Version nicht oder antwortet sie nicht, geht die Box mit diesen Daten zu Hejmo {version} zurück.",
   "updf.cost.backup.text_unknown": "Startet die neue Version nicht oder antwortet sie nicht, geht die Box mit diesen Daten zur jetzigen Version zurück.",

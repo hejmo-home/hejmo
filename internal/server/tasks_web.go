@@ -107,6 +107,11 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 		s.fail(w, "subtasks", err)
 		return
 	}
+	weeks, err := s.routineWeeks(p.household, today)
+	if err != nil {
+		s.fail(w, "weeks", err)
+		return
+	}
 	var cards []starCard
 	var groups []personTasks
 	choices := chipsOf(people)
@@ -136,7 +141,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 				}
 			}
 			sort.SliceStable(steps, func(i, j int) bool { return steps[i].Position < steps[j].Position })
-			card := routineCard{ID: rt.ID, Name: rt.Name, Part: string(rt.Part), Steps: routineSteps(p.household.DateFormat, steps, today, doneToday, subs)}
+			card := routineCard{ID: rt.ID, Name: rt.Name, Part: string(rt.Part), Steps: routineSteps(p.household.DateFormat, steps, today, doneToday, subs), Week: weeks[rt.ID]}
 			card.Done, card.Total = progressOfSteps(card.Steps)
 			g.Routines = append(g.Routines, card)
 		}
@@ -171,7 +176,7 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			s.fail(w, "tasks of the day", err)
 			return
 		}
-		parts, progress := childParts(due, routines, p.person.ID)
+		parts, progress := childParts(due, routines, p.person.ID, weeks)
 		data["ChildParts"], data["ChildProgress"], data["ChildSlot"] = parts, progress, 0
 		for _, c := range choices {
 			if c.ID == p.person.ID {
@@ -179,7 +184,27 @@ func (s *server) renderTasks(w http.ResponseWriter, r *http.Request, p principal
 			}
 		}
 		data["StarsShown"], data["StarsBalance"] = sums[p.person.ID].Shown, sums[p.person.ID].Balance
+		// The way to the rewards appears only when something is meant for the child (ticket 291).
+		offered, err := s.db.HasRewards(p.household.ID, p.person.ID)
+		if err != nil {
+			s.fail(w, "rewards", err)
+			return
+		}
+		data["RewardLink"] = offered
+		lang := s.langOf(r)
+		data["RewardSub"] = s.i18n.T(lang, "rwd.link.sub.none")
+		if sums[p.person.ID].Balance > 0 {
+			data["RewardSub"] = s.i18n.Format(lang, i18n.Msg("rwd.link.sub", "stars", s.starsWords(lang, sums[p.person.ID].Balance)))
+		}
 		data["Day"] = today
+	}
+	if !child {
+		current, past, lastPast, err := s.pauseRows(s.langOf(r), p, today)
+		if err != nil {
+			s.fail(w, "pauses", err)
+			return
+		}
+		data["Pauses"], data["PastPauses"], data["LastPause"] = current, past, lastPast
 	}
 	s.render(w, r, status, "tasks.html", data)
 }

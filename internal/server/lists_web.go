@@ -41,6 +41,9 @@ type entryView struct {
 	Editor  *editorView
 	Result  *resultView // the line after changing the quantity of this entry
 	Look    entryLook
+	// AutoSrc and TileAuto say a rule of "always on the list" put the entry on
+	// the list: the line under it, and the short one on its tile (ticket 168).
+	AutoSrc, TileAuto string
 }
 
 // Plain is the entry in words for labels: "Mehl · Type 405".
@@ -284,6 +287,12 @@ func (s *server) renderList(w http.ResponseWriter, r *http.Request, p principal,
 			return
 		}
 		food := lk.apply(open, ticked)
+		au, err := s.autoOverlay(p, lang, l, es, open, ticked)
+		if err != nil {
+			s.fail(w, "always overlay", err)
+			return
+		}
+		data["Auto"] = au
 		if !l.Suggestions { // a list with suggestions has its own note, FreeBox
 			data["FreeText"] = lk.freeTextNote(food)
 		}

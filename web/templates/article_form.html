@@ -89,6 +89,7 @@
       {{range .Cards}}<label><input type="checkbox" name="allergens" value="{{.Key}}"{{if .Checked}} checked{{end}}><b>{{.Name}}</b><small>{{.Examples}}</small>{{with .Aff}}<small class="aff">{{.}}</small>{{end}}</label>
       {{end}}
     </fieldset>
+    {{if not .New}}{{template "autoCard" .Auto}}{{end}}
     <fieldset>
       <legend>{{t "art.pantry.legend"}}</legend>
       {{template "switch" (dict "Name" "pantry" "Label" (t "art.pantry.label") "OnText" (t "art.pantry.form.on") "OffText" (t "art.pantry.form.off") "Checked" .F.Pantry "AriaLabel" (t "art.pantry.form.aria"))}}
@@ -100,6 +101,7 @@
   {{template "dangerOpen" (dict "Label" (t "art.delete.summary") "Confirm" .DeleteConfirm "Explain" .DeleteExplain "Names" .Stays "Action" (printf "/settings/lists/library/%s/delete" .ID) "CancelHref" (printf "/settings/lists/library/%s" .ID))}}{{template "dangerClose"}}
   {{end}}
   <script src="/static/article.js" defer></script>
+  {{if not .New}}<script src="/static/adder.js" defer></script><script src="/static/always.js" defer></script>{{end}}
 {{template "foot"}}
 {{define "aferr"}}{{if .Text}}<p class="ferr" id="err-{{.Name}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.Text}}</span></p>{{end}}{{end}}
 {{define "picResult"}}<div class="pic-result" role="status"><img src="{{.Result.URL}}" alt="{{t "artf.res.alt"}}" width="132" height="132"><div><b>{{template "tickIcon" 18}}<span>{{.Result.Title}}</span></b><small>{{.Result.Text}}</small><span class="row"><button class="button secondary" type="submit" name="picture" value="replace" formnovalidate>{{t "artf.res.other"}}</button>{{if .Result.CanRemove}}<button class="button secondary" type="submit" name="picture" value="remove">{{t "artf.res.remove"}}</button>{{end}}</span></div></div>{{end}}

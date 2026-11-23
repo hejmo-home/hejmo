@@ -26,6 +26,7 @@ type listsViewData struct {
 	Current                 listView
 	Meta                    string
 	Open, Ticked            []entryView
+	Auto                    listAuto // the day's note and the reasons of ticket 168
 	Clock, ClockZone        string
 	ClockFormat             string
 	Text                    string // the typed text kept in the field after an error
@@ -122,6 +123,9 @@ func (s *server) listsView(h store.Household, d store.Display, lang, listID stri
 			return v, err
 		}
 		lk.apply(v.Open, v.Ticked)
+		if v.Auto, err = s.autoOverlay(principal{household: h, person: store.Person{Role: store.RoleChild}}, lang, *cur, es, v.Open, v.Ticked); err != nil {
+			return v, err
+		}
 		v.Meta = s.listMeta(lang, *cur, v.Current.State, false)
 		v.Empty = len(es) == 0
 		v.AllDone = len(es) > 0 && c.Open == 0
@@ -152,6 +156,9 @@ func (s *server) listsView(h store.Household, d store.Display, lang, listID stri
 		return v, err
 	}
 	v.FreeText = lk.freeTextNote(lk.apply(v.Open, v.Ticked))
+	if v.Auto, err = s.autoOverlay(principal{household: h, person: store.Person{Role: store.RoleChild}}, lang, *cur, es, v.Open, v.Ticked); err != nil {
+		return v, err
+	}
 	switch {
 	case o.ViewError:
 		v.ViewError = s.viewErrorText(lang, d.ListView)

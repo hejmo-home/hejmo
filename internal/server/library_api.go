@@ -375,6 +375,10 @@ func (s *server) apiCopyArticle(w http.ResponseWriter, r *http.Request, p princi
 		s.fail(w, "hide copied article", err)
 		return
 	}
+	if err := s.db.MoveAlwaysRule(p.household.ID, a.ID, saved.ID); err != nil { // "always on the list" goes with the copy
+		s.fail(w, "move always rule", err)
+		return
+	}
 	writeJSON(w, http.StatusCreated, s.articleToJSON(p, articleItem{Article: ownArticle(saved), own: &saved}))
 }
 

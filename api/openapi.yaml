@@ -359,6 +359,7 @@ paths:
         Only the fields sent change. The colour is one of the eight palette colours
         (`Person.color`), the marker one of the eight shapes. No two people may have
         the same colour and the same marker: such a request gets 422.
+        `streaks_shown` switches the week count and badges of the person on or off.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -1501,6 +1502,86 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/pauses:
+    get:
+      operationId: listPauses
+      summary: Pause days of the household (scope tasks:read)
+      description: |
+        Pause days are spans of days (first and last included) on which routines
+        do not count: a pause day that is not done drops out of the week count
+        and does not end the best streak; one that is done anyway counts like a
+        normal day. Earliest first. A pause without `person_ids` is for the whole
+        family (`whole_family`). Everyone, children included, may read them.
+      responses:
+        "200":
+          description: Pauses
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Pause" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createPause
+      summary: Enter pause days (scope tasks:write, parents only)
+      description: |
+        Past days are allowed; the counts recalculate. A pause that overlaps
+        pauses of exactly the same people is merged with them, and the merged
+        pause is returned. `to` before `from` and a span over 366 days give 422
+        with `field: to`; an unknown person gives 422 with `field: people`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/NewPause" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pause" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /tasks/pauses/{id}:
+    patch:
+      operationId: updatePause
+      summary: Change the days or the people of a pause (scope tasks:write, parents only)
+      description: |
+        Only the fields sent change; an empty `person_ids` makes it a pause of
+        the whole family. Merged with overlapping pauses of the same people like
+        a new one; the pause keeps its id.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/PauseUpdate" }
+      responses:
+        "200":
+          description: Updated
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Pause" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deletePause
+      summary: Remove a pause (scope tasks:delete, parents only)
+      description: The days count normally again; what was ticked off stays.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /tasks/{id}:
     patch:
       operationId: updateTask
@@ -2382,6 +2463,213 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /rewards:
+    get:
+      operationId: listRewards
+      summary: The reward catalogue (scope tasks:read)
+      description: |
+        What children trade their stars for (ticket 291). A parent gets every
+        reward, archived ones included, with `redeemed` (how often it was
+        confirmed). A child gets only the offered rewards meant for them, sorted
+        by price and then name, each with `affordable` (their star balance
+        covers the price), `limit_reached` and `available_again` (the start of
+        the next period when the limit is used up). A limit counts the person's
+        confirmed redemptions in the current calendar day, week (Monday to
+        Sunday) or month in the household time zone, not a rolling window. For a
+        child `redeemed` and `created_by` are null; for a parent the three
+        child fields are null.
+      responses:
+        "200":
+          description: The rewards, by price and name
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Reward" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createReward
+      summary: Add a reward (scope tasks:write, parents only)
+      description: |
+        `name` (at most 60 characters) and `price` (1 to 999 stars) are
+        required, and so is the audience: `whole_family: true` (everyone, also
+        people who join later) or `person_ids` (at least one). The picture is
+        a `symbol` (an emoji of the Noto Emoji set, default the gift) or a
+        photo sent with `PUT /rewards/{id}/picture`; a reward never fetches a
+        picture from the web. `limit_period` is `none` (default), `day`,
+        `week` or `month`; `limit_count` (1 to 99) is required with a period
+        and must be left out without one.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RewardWrite" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reward" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /rewards/{id}:
+    get:
+      operationId: getReward
+      summary: One reward (scope tasks:read)
+      description: A child gets 404 for an archived reward and for one meant for others.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The reward
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reward" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateReward
+      summary: Change an offered reward (scope tasks:write, parents only)
+      description: |
+        Fields left out keep their value. A new price applies from now on;
+        earlier redemptions keep the price they had. `symbol` replaces a photo
+        by a symbol, `remove_picture` takes the photo away (the symbol shows).
+        An archived reward is 409: offer it again first.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RewardWrite" }
+      responses:
+        "200":
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reward" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RewardConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteReward
+      summary: Delete a reward that was never redeemed (scope tasks:delete, parents only)
+      description: |
+        A reward with a confirmed redemption is 409: archive it with
+        `POST /rewards/{id}/archive`, so the star logs stay right.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RewardConflict" }
+  /rewards/{id}/archive:
+    post:
+      operationId: archiveReward
+      summary: Archive a reward (scope tasks:write, parents only)
+      description: |
+        An archived reward is hidden from children and from the child view of
+        the API. Redemptions stay in the star logs. Archiving again changes
+        nothing.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Archived
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reward" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /rewards/{id}/restore:
+    post:
+      operationId: restoreReward
+      summary: Offer an archived reward again (scope tasks:write, parents only)
+      description: |
+        A reward the box archived itself (`archived_reason: audience_gone`)
+        was meant only for people who left the household. It is never offered
+        to the whole family by itself: the body must say who it is for now
+        (`whole_family: true` or `person_ids`), else 422. For any other
+        archived reward the body is optional; with one, it replaces the audience.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                whole_family: { type: boolean }
+                person_ids: { type: array, items: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Offered again
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reward" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /rewards/{id}/picture:
+    get:
+      operationId: getRewardPicture
+      summary: The stored photo of a reward, a JPEG of at most 512 px (scope tasks:read)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The picture
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setRewardPicture
+      summary: Set the photo of a reward (scope tasks:write, parents only)
+      description: |
+        The request body is the photo itself: JPEG, PNG, WebP or GIF, at most
+        15 MB. The box turns it upright, scales it to at most 512 px and stores
+        it as JPEG without metadata (place, camera). Refused with 422 when it is
+        too large, not a picture or a web page.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema: { type: string, format: binary }
+          image/png:
+            schema: { type: string, format: binary }
+          image/webp:
+            schema: { type: string, format: binary }
+          image/gif:
+            schema: { type: string, format: binary }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Reward" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/RewardConflict" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /lists:
     get:
       operationId: listLists
@@ -2966,6 +3254,125 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /articles/{id}/always:
+    get:
+      operationId: getArticleAlways
+      summary: The rule "always on the list" of an article (scope lists:read)
+      description: |
+        Per article (the key of an article from Hejmo or the id of an own one)
+        one rule: on `weekday` of every `every`-th week from `start_week` Hejmo
+        puts the article on the list at the household's time (`/library/always`).
+        404 when the article has no rule.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The rule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysRule" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setArticleAlways
+      summary: Set the rule of an article, or switch it off (scope lists:write)
+      description: |
+        With `enabled: false` the rule is switched off and keeps what it says
+        (404 without a rule). Otherwise `list_id` and `weekday` are required;
+        `every` is 1 to 52 weeks (default 1), `start_week` any day of the first
+        week (default this week), `quantity` optional: without it an article
+        that is already open on the list is left as it is, with it Hejmo adds
+        the quantity. A rule saved on its own day starts the next time. A rule
+        whose list was deleted is paused: `paused` is true and `list_id` null.
+        A rule that does not fit answers 422 with the `field` that is wrong:
+        `list_id`, `weekday`, `every`, `start_week`, `quantity.amount` or
+        `quantity.unit`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                enabled: { type: boolean }
+                list_id: { type: string, format: uuid }
+                weekday: { type: integer, description: "1 Monday to 7 Sunday (422 otherwise)" }
+                every: { type: integer, description: "1 to 52 (422 otherwise)" }
+                start_week: { type: string, description: "A day, YYYY-MM-DD (422 otherwise)" }
+                quantity:
+                  type: object
+                  required: [amount, unit]
+                  properties:
+                    amount: { type: number }
+                    unit: { $ref: "#/components/schemas/UnitKey" }
+      responses:
+        "200":
+          description: The rule
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysRule" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteArticleAlways
+      summary: Remove the rule of an article (scope lists:delete)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Removed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /library/always:
+    get:
+      operationId: getLibraryAlways
+      summary: The time of day, the holiday and all rules of "always on the list" (scope lists:read)
+      responses:
+        "200":
+          description: The settings and the rules
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysSettings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setLibraryAlways
+      summary: Set the time of day and the holiday for all rules (scope lists:write)
+      description: |
+        `time` is the household's local time as `HH:MM`. `holiday` pauses all
+        rules from its first to its last day, both included; nothing is caught
+        up afterwards, and it switches itself off after its last day. `null`
+        means no holiday. The last day may not be before the first or already
+        over (422 with the field `holiday.from` or `holiday.to`).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [time]
+              properties:
+                time: { type: string, description: "HH:MM, 24 hours (422 otherwise)" }
+                holiday:
+                  nullable: true
+                  allOf:
+                    - { $ref: "#/components/schemas/AlwaysHoliday" }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/AlwaysSettings" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /articles/{id}/warnings:
     get:
       operationId: getArticleWarnings
@@ -3840,6 +4247,101 @@ paths:
         "204": { description: Dismissed }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /update/file:
+    get:
+      operationId: getUpdateFile
+      summary: The uploaded update file that waits or installs, and whether one can be uploaded (scope settings:read)
+      description: |
+        In offline mode (or with the update check switched off) a parent can bring a
+        release to the box as a file instead of the nightly check: `POST` it, check what
+        it holds, then confirm with `POST /update/file/install`. `available` says whether
+        a file can be uploaded now (a host script that installs files runs, the box does
+        not update itself, and no failed rollback needs a person at the box). `state` is
+        `none`, `ready` (checked, waits for the yes; deleted after an hour) or
+        `installing` (handed to the host script; `step` says where it is: `verify`,
+        `backup`, `start` or `health`). One file at a time for the whole box.
+      responses:
+        "200":
+          description: The upload, if any
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UpdateFile" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: uploadUpdateFile
+      summary: Upload an update file; the box checks it and keeps it waiting for confirmation (scope settings:write)
+      description: |
+        Send the file `hejmo-<version>-<arch>.update` of the release page as
+        `multipart/form-data` in the part `update_file`, over HTTPS only. The box checks
+        the format, the cosign signature of the release workflow (offline, against the
+        Sigstore root built into the box), the architecture and that the version is a
+        published one newer than what runs. Nothing is installed by this call. A refused
+        file is deleted at once and the answer carries the `code`: `signature_invalid`,
+        `no_signature`, `wrong_arch`, `not_newer`, `not_newer_unknown`, `prerelease`,
+        `damaged`, `not_update_name`, `no_file`. A file over 500 MB is refused with 413,
+        one that does not fit with room left for the installation with 507; 409 means
+        an installation is running or no upload is possible now (`available` in `GET`).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [update_file]
+              properties:
+                update_file: { type: string, format: binary }
+      responses:
+        "201":
+          description: The file is checked and waits for confirmation
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UpdateFile" }
+        "400": { $ref: "#/components/responses/UpdateFileRefused" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/UpdateFileRefused" }
+        "413": { $ref: "#/components/responses/UpdateFileRefused" }
+        "422": { $ref: "#/components/responses/UpdateFileRefused" }
+        "507": { $ref: "#/components/responses/UpdateFileRefused" }
+    delete:
+      operationId: discardUpdateFile
+      summary: Delete the waiting update file (scope settings:write)
+      description: Answers 409 while the file is being installed.
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: The file is being installed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /update/file/install:
+    post:
+      operationId: installUpdateFile
+      summary: Install the waiting update file now (scope settings:write)
+      description: |
+        The parent's yes. The box saves the request in the settings file for the host
+        script (fixed keys: version, SHA-256 of the file, time), which checks the file
+        again, saves the data, starts the new version and goes back to the previous one
+        if it does not answer. The box is unreachable for about two minutes. Poll
+        `GET /update/file` for `step`, and `GET /update` for the result. Over HTTPS only.
+      responses:
+        "202":
+          description: The host script was asked to install the file
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/UpdateFile" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: An installation is running already
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /events:
     get:
       operationId: listOccurrences
@@ -3971,7 +4473,7 @@ components:
       enum: [parent, child]
     Person:
       type: object
-      required: [id, name, role, color, shape, symbol]
+      required: [id, name, role, color, shape, symbol, streaks_shown]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
@@ -3979,6 +4481,7 @@ components:
         color: { type: string, description: "Hex colour for colour mode: one of the eight palette colours (empty for a person added before colours were chosen)", example: "#B4583A" }
         shape: { type: string, description: "Marker for black-and-white mode", example: circle-filled }
         symbol: { type: string }
+        streaks_shown: { type: boolean, description: "The switch \"week count and badges\": when off, no week, best streak or badge is shown for the person anywhere (stars stay). On for children and off for adults when the person is created." }
     ContactLine:
       type: object
       required: [kind, value]
@@ -4010,11 +4513,12 @@ components:
         emails: { type: array, description: "At most 10", items: { $ref: "#/components/schemas/ContactLine" } }
         address: { $ref: "#/components/schemas/ContactAddress" }
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
+        show_in_birthdays: { type: boolean, default: true, description: "Whether the birthday is in the generated calendar of kind `birthdays`. Omitted means true, so a replace without it switches the birthday on again" }
         note: { type: string, description: "At most 1000 characters" }
         groups: { type: array, items: { type: string }, description: "Ids of contact groups" }
     Contact:
       type: object
-      required: [id, person_id, name, full_name, numbers, emails, address, birthday, note, groups, created_by, created_at, updated_by, updated_at]
+      required: [id, person_id, name, full_name, numbers, emails, address, birthday, show_in_birthdays, note, groups, created_by, created_at, updated_by, updated_at]
       properties:
         id: { type: string, format: uuid, description: "The id of the person for a person's contact" }
         person_id: { type: string, format: uuid, nullable: true }
@@ -4024,6 +4528,7 @@ components:
         emails: { type: array, items: { $ref: "#/components/schemas/ContactLine" } }
         address: { $ref: "#/components/schemas/ContactAddress" }
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
+        show_in_birthdays: { type: boolean, description: "Whether the birthday is in the generated calendar of kind `birthdays`" }
         note: { type: string }
         groups: { type: array, items: { type: string } }
         created_by: { type: string, format: uuid, nullable: true }
@@ -4087,6 +4592,7 @@ components:
         name: { type: string, minLength: 1, maxLength: 80 }
         color: { $ref: "#/components/schemas/PersonColor" }
         shape: { $ref: "#/components/schemas/PersonShape" }
+        streaks_shown: { type: boolean }
     NewPerson:
       type: object
       required: [name, role]
@@ -4165,6 +4671,36 @@ components:
               stars: { type: integer, minimum: 0, maximum: 100 }
               repeat: { $ref: "#/components/schemas/TemplateRepeat" }
               weekdays: { type: array, items: { $ref: "#/components/schemas/TaskWeekday" } }
+    Pause:
+      type: object
+      required: [id, from, to, person_ids, whole_family]
+      properties:
+        id: { type: string, format: uuid }
+        from: { type: string, format: date, description: "First day, in the household's time zone" }
+        to: { type: string, format: date, description: "Last day, not before `from`, at most 366 days long" }
+        person_ids:
+          type: array
+          items: { type: string, format: uuid }
+          description: The people the pause is for; empty for the whole family
+        whole_family: { type: boolean }
+    NewPause:
+      type: object
+      required: [from, to]
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        person_ids:
+          type: array
+          items: { type: string, format: uuid }
+          description: Leave out or empty for the whole family
+    PauseUpdate:
+      type: object
+      properties:
+        from: { type: string, format: date }
+        to: { type: string, format: date }
+        person_ids:
+          type: array
+          items: { type: string, format: uuid }
     Routine:
       type: object
       required: [id, person_id, name, part_of_day, task_ids]
@@ -4340,6 +4876,40 @@ components:
     Unit:
       type: string
       enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
+    Reward:
+      type: object
+      required: [id, name, symbol, picture, picture_source, price, limit_period, limit_count, whole_family, person_ids, archived, archived_at, archived_reason, redeemed, created_by, created_at, affordable, limit_reached, available_again]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string, maxLength: 60 }
+        symbol: { type: string, description: "An emoji; shown when there is no photo" }
+        picture: { type: string, nullable: true, description: "Path of the stored photo, `GET /rewards/{id}/picture`" }
+        picture_source: { type: string, enum: [symbol, upload] }
+        price: { type: integer, minimum: 1, maximum: 999, description: Stars }
+        limit_period: { type: string, enum: [none, day, week, month] }
+        limit_count: { type: integer, nullable: true, minimum: 1, maximum: 99, description: "How often one person may redeem it per period; null without a period" }
+        whole_family: { type: boolean, description: "Meant for everyone, also people who join later" }
+        person_ids: { type: array, items: { type: string, format: uuid }, description: "The people it is meant for; empty with whole_family" }
+        archived: { type: boolean }
+        archived_at: { type: string, format: date-time, nullable: true }
+        archived_reason: { type: string, enum: [audience_gone], nullable: true, description: "Set when the box archived it because the last person it was meant for left the household" }
+        redeemed: { type: integer, nullable: true, description: "Confirmed redemptions; null for a child" }
+        created_by: { type: string, format: uuid, nullable: true, description: "Null for a child, and when that person is gone" }
+        created_at: { type: string, format: date-time }
+        affordable: { type: boolean, nullable: true, description: "The caller's balance covers the price; null for a parent" }
+        limit_reached: { type: boolean, nullable: true, description: "The caller used up the limit in the current period; null for a parent" }
+        available_again: { type: string, format: date-time, nullable: true, description: "Start of the next period while the limit is reached" }
+    RewardWrite:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        symbol: { type: string, description: "An emoji of the Noto Emoji set" }
+        price: { type: integer, minimum: 1, maximum: 999 }
+        limit_period: { type: string, enum: [none, day, week, month] }
+        limit_count: { type: integer, minimum: 1, maximum: 99 }
+        whole_family: { type: boolean }
+        person_ids: { type: array, items: { type: string, format: uuid } }
+        remove_picture: { type: boolean }
     ArticleWrite:
       type: object
       properties:
@@ -4388,6 +4958,44 @@ components:
           type: array
           items: { type: string, format: uuid }
         note: { type: string }
+    AlwaysHoliday:
+      type: object
+      required: [from, to]
+      properties:
+        from: { type: string, description: "YYYY-MM-DD" }
+        to: { type: string, description: "YYYY-MM-DD" }
+    AlwaysRule:
+      type: object
+      required: [article_id, enabled, paused, list_id, list_name, weekday, every, start_week, quantity, next_date]
+      properties:
+        article_id: { type: string }
+        enabled: { type: boolean }
+        paused: { type: boolean, description: "On, but the list was deleted" }
+        list_id: { type: string, format: uuid, nullable: true }
+        list_name: { type: string }
+        weekday: { type: integer, minimum: 1, maximum: 7 }
+        every: { type: integer, minimum: 1, maximum: 52 }
+        start_week: { type: string, format: date, description: "The Monday of the first week" }
+        quantity:
+          type: object
+          nullable: true
+          required: [amount, unit]
+          properties:
+            amount: { type: number }
+            unit: { $ref: "#/components/schemas/UnitKey" }
+        next_date: { type: string, format: date, nullable: true, description: "The next day it comes, after the holiday; null unless it is running" }
+    AlwaysSettings:
+      type: object
+      required: [time, holiday, rules]
+      properties:
+        time: { type: string }
+        holiday:
+          nullable: true
+          allOf:
+            - { $ref: "#/components/schemas/AlwaysHoliday" }
+        rules:
+          type: array
+          items: { $ref: "#/components/schemas/AlwaysRule" }
     Hiding:
       type: object
       required: [enabled, everyone, people, confirmed_by, confirmed_at, experimental]
@@ -4489,7 +5097,7 @@ components:
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
-        kind: { type: string, enum: [local, ics, caldav, google, outlook, meals], description: "meals is the meal plan, generated by the box: read-only, its events change only in the meal plan" }
+        kind: { type: string, enum: [local, ics, caldav, google, outlook, meals, birthdays], description: "meals is the meal plan, generated by the box: read-only, its events change only in the meal plan. birthdays is the calendar of the birthdays of the contacts (`birthday`, `show_in_birthdays` of a contact), generated by the box: read-only, one yearly all-day event per contact, made when the first birthday is saved. A birthday shows with the age when the year is known (`Mia (7)`); 29 February repeats on the last day of February in other years" }
         color: { type: string }
         read_only: { type: boolean, description: "The box never changes this calendar's events outside (always true for ICS; false by default for CalDAV and Google, where a parent can switch it on)" }
         waste_collection: { type: boolean, description: "A read-only calendar marked as the household's waste collection calendar: its events show only in the family view's tomorrow tile (reminder from 18:00) and on the night page, not in the strip, person columns or personal view" }
@@ -5015,6 +5623,25 @@ components:
           description: "Connection id to switch (weather, update, calendars, ics, recipes, images)"
           additionalProperties: { type: boolean }
         update_reminder_days: { type: integer }
+    UpdateFile:
+      type: object
+      required: [state, available]
+      properties:
+        state: { type: string, enum: [none, ready, installing] }
+        available: { type: boolean, description: "Whether a file can be uploaded now" }
+        version: { type: string, description: "The version the file holds (x.y.z)" }
+        from_version: { type: string, description: "The version that ran when the file was uploaded; absent when the box does not know it" }
+        arch: { type: string, enum: [arm64, amd64] }
+        file_name: { type: string }
+        size: { type: integer, format: int64, description: "Bytes" }
+        sha256: { type: string, description: "Of the whole file, hex" }
+        released: { type: string, format: date, description: "Release date of the version, from the signed manifest" }
+        signer: { type: string, description: "The identity the signature names: the release workflow of the tag" }
+        uploaded_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time, description: "When a waiting file is deleted if nobody answers" }
+        started_at: { type: string, format: date-time }
+        started_by: { type: string, description: "The parent who said yes" }
+        step: { type: string, enum: [verify, backup, start, health], description: "Where the host script is with an installation" }
     UpdateStatus:
       type: object
       required: [mode, managed, state, notice]
@@ -5023,11 +5650,11 @@ components:
         managed: { type: boolean, description: "Whether the host updater of the install script manages this box. False on a plain Docker Compose install: then mode (also in /settings) is stored but nothing acts on it." }
         state:
           type: string
-          enum: [idle, available, updated, rolled_back, rejected, failed]
-          description: "idle (nothing newer or no report yet), available (notify only), updated, rolled_back (the new version failed; the previous one runs again with its data), rejected (signature not valid, not installed), failed (nothing changed, except with reason rollback_failed: then the image and database did change)"
+          enum: [idle, installing, available, updated, rolled_back, rejected, failed]
+          description: "installing (an uploaded update file is being installed), idle (nothing newer or no report yet), available (notify only), updated, rolled_back (the new version failed; the previous one runs again with its data), rejected (signature not valid, not installed), failed (nothing changed, except with reason rollback_failed: then the image and database did change)"
         version: { type: string, description: "The version that runs now" }
         target: { type: string, description: "The version offered or attempted" }
-        reason: { type: string, enum: [start_failed, health_check_failed, signature_invalid, backup_failed, pull_failed, rollback_failed, box_not_running] }
+        reason: { type: string, enum: [start_failed, health_check_failed, signature_invalid, backup_failed, pull_failed, rollback_failed, box_not_running, file_invalid, load_failed, verifier_missing] }
         time: { type: string, format: date-time, description: "When the script recorded this event" }
         notice: { type: boolean, description: "Whether the web interface currently shows a notice to parents" }
         release_notes_url: { type: string, format: uri, description: "Release notes of the version installed or offered" }
@@ -5268,6 +5895,7 @@ components:
       properties:
         error: { type: string }
         field: { type: string, description: "The refused field, when the error is about one" }
+        code: { type: string, description: "A fixed word for the cause, where an endpoint documents them" }
   responses:
     Unauthorized:
       description: Missing or invalid credentials
@@ -5281,6 +5909,11 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     NotFound:
       description: Not found
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    UpdateFileRefused:
+      description: The update file was refused, or no upload is possible now; `code` says why and the text is in the language of the request
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
@@ -5308,6 +5941,14 @@ components:
       description: |
         An own template already has that name (`field: name`), or the template
         ships with Hejmo and cannot be changed.
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    RewardConflict:
+      description: |
+        The request clashes with what is stored: the reward was redeemed (it is
+        archived, not deleted), or it is archived (offer it again to change it).
+        Nothing was changed.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }

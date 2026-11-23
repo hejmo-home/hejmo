@@ -387,12 +387,19 @@ func TestTilesShowTheVarietyOnItsOwnLineBetweenNameAndQuantity(t *testing.T) {
 	}
 }
 
+// onListFact says whether the "Currently on" fact of an article page names the
+// list; the card "Always on the list" names the lists on every page.
+func onListFact(body, list string) bool {
+	m := regexp.MustCompile(`(?s)<dt>(?:Currently on|Steht gerade auf)</dt><dd>(.*?)</dd>`).FindStringSubmatch(body)
+	return m != nil && strings.Contains(m[1], list)
+}
+
 func TestTheListOnTheArticlePageFindsAnEntryOfThePluralOrSingularName(t *testing.T) {
 	s := newShop(t)
 	if _, err := s.db.AddEntry(s.h.ID, s.id, "Zitrone"); err != nil {
 		t.Fatal(err)
 	}
-	if body := s.de("/settings/lists/library/lemons").body; !strings.Contains(body, "Einkaufen") {
+	if body := s.de("/settings/lists/library/lemons").body; !onListFact(body, "Einkaufen") {
 		t.Errorf("the article page lists the list it stands on:\n%s", body)
 	}
 }
@@ -466,7 +473,7 @@ func TestTheListOnTheArticlePageDoesNotMixThePluralEndingsOfTwoLanguages(t *test
 		if r.status != 200 || !strings.Contains(body, c.name) {
 			t.Fatalf("%s page: status %d, name %q missing:\n%s", c.id, r.status, c.name, body)
 		}
-		if strings.Contains(body, "Einkaufen") || strings.Contains(body, "Shopping") {
+		if onListFact(body, "Einkaufen") || onListFact(body, "Shopping") {
 			t.Errorf("%s page claims a list:\n%s", c.id, body)
 		}
 	}
@@ -479,14 +486,14 @@ func TestTheListOnTheArticlePageIgnoresAFreeTextEntryOfAnArticleHiddenByHand(t *
 	if _, err := s.db.AddEntry(s.h.ID, s.id, "Äpfel"); err != nil {
 		t.Fatal(err)
 	}
-	if body := s.de("/settings/lists/library/apples").body; !strings.Contains(body, "Einkaufen") {
+	if body := s.de("/settings/lists/library/apples").body; !onListFact(body, "Einkaufen") {
 		t.Fatalf("before hiding, the Apples page names the list:\n%s", body)
 	}
 	if err := s.db.SetArticleHidden(s.h.ID, "apples", true); err != nil {
 		t.Fatal(err)
 	}
 	r := s.de("/settings/lists/library/apples")
-	if r.status != 200 || strings.Contains(r.body, "Einkaufen") {
+	if r.status != 200 || onListFact(r.body, "Einkaufen") {
 		t.Errorf("hidden Apples page: status %d, names the list:\n%s", r.status, r.body)
 	}
 }

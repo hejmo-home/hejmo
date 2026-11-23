@@ -62,6 +62,22 @@ func setLastUnit(tx *sql.Tx, householdID, articleID, key string) error {
 // second entry, and another kind gets its own entry directly under the old
 // one. Only open entries merge. show says in which unit a total is shown.
 func (db *DB) AddItem(householdID, listID string, in Item, show list.Show) (AddResult, error) {
+	return db.addItem(householdID, listID, in, show, false)
+}
+
+// AddItemFromRule is AddItem for a rule of "always on the list" (ticket 168):
+// the same adding up, and the entry remembers it came by itself, with the
+// quantity that was already entered and the one the rule brought. An open entry
+// is left as it is when the rule has no quantity.
+func (db *DB) AddItemFromRule(householdID, listID string, in Item, show list.Show) (AddResult, error) {
+	return db.addItem(householdID, listID, in, show, true)
+}
+
+// clearOrigin is what a quantity changed by hand does to where an entry came
+// from: the split goes, and with it the line that told it; a plain "came by itself" stays.
+const clearOrigin = `auto = CASE WHEN auto_prior > 0 THEN 0 ELSE auto END, auto_part = 0, auto_prior = 0`
+
+func (db *DB) addItem(householdID, listID string, in Item, show list.Show, rule bool) (AddResult, error) {
 	in.Text = strings.TrimSpace(in.Text)
 	if err := list.ValidateText(in.Text); err != nil {
 		return AddResult{}, fmt.Errorf("%w: %w", ErrInvalid, err)
@@ -86,7 +102,17 @@ func (db *DB) AddItem(householdID, listID string, in Item, show list.Show) (AddR
 	res := AddResult{Plan: plan}
 	switch plan.Action {
 	case list.AddedTo, list.Filled:
-		if _, err := tx.Exec(`UPDATE list_entries SET qty_base = ?, qty_unit = ? WHERE id = ?`, plan.Result.Base, plan.Result.Unit, plan.Target.ID); err != nil {
+		set := clearOrigin
+		args := []any{plan.Result.Base, plan.Result.Unit}
+		if rule {
+			prior := 0.0
+			if plan.Action == list.AddedTo {
+				prior = plan.Before.Base
+			}
+			set = `auto = 1, auto_part = ?, auto_prior = ?`
+			args = append(args, in.Qty.Base, prior)
+		}
+		if _, err := tx.Exec(`UPDATE list_entries SET qty_base = ?, qty_unit = ?, `+set+` WHERE id = ?`, append(args, plan.Target.ID)...); err != nil {
 			return AddResult{}, err
 		}
 		res.Entry = plan.Target
@@ -101,6 +127,10 @@ func (db *DB) AddItem(householdID, listID string, in Item, show list.Show) (AddR
 				e.ID, listID, e.Text, listID, now(), e.ArticleID, e.Variety, e.Qty.Base, e.Qty.Unit).Scan(&e.Position)
 		} else {
 			err = insertAfter(tx, listID, plan.After, es, &e)
+		}
+		if err == nil && rule {
+			e.Origin = list.Origin{Auto: true, Part: in.Qty.Base}
+			_, err = tx.Exec(`UPDATE list_entries SET auto = 1, auto_part = ? WHERE id = ?`, in.Qty.Base, e.ID)
 		}
 		if err != nil {
 			return AddResult{}, err
@@ -205,7 +235,7 @@ func (db *DB) ChangeEntry(householdID, listID, entryID string, to list.Quantity,
 	switch plan.Action {
 	case list.SetMerged:
 		if !to.None() {
-			if _, err := tx.Exec(`UPDATE list_entries SET qty_base = ?, qty_unit = ? WHERE id = ?`, plan.Result.Base, plan.Result.Unit, plan.Into.ID); err != nil {
+			if _, err := tx.Exec(`UPDATE list_entries SET qty_base = ?, qty_unit = ?, `+clearOrigin+` WHERE id = ?`, plan.Result.Base, plan.Result.Unit, plan.Into.ID); err != nil {
 				return SetResult{}, err
 			}
 		}
@@ -213,7 +243,7 @@ func (db *DB) ChangeEntry(householdID, listID, entryID string, to list.Quantity,
 			return SetResult{}, err
 		}
 	default:
-		if _, err := tx.Exec(`UPDATE list_entries SET qty_base = ?, qty_unit = ?, variety = NULLIF(?, '') WHERE id = ?`, plan.Result.Base, plan.Result.Unit, plan.Variety, plan.Entry.ID); err != nil {
+		if _, err := tx.Exec(`UPDATE list_entries SET qty_base = ?, qty_unit = ?, variety = NULLIF(?, ''), `+clearOrigin+` WHERE id = ?`, plan.Result.Base, plan.Result.Unit, plan.Variety, plan.Entry.ID); err != nil {
 			return SetResult{}, err
 		}
 	}

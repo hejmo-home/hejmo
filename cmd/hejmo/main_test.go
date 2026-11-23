@@ -525,6 +525,20 @@ func TestUpdateDirIsSetOnlyWhenAHostUpdaterManagesTheBox(t *testing.T) {
 	}
 }
 
+// Ticket 221: an uploaded update file is offered only beside a host updater that installs it.
+func TestUploadsAreOfferedOnlyBesideAnUpdaterThatInstallsThem(t *testing.T) {
+	env := func(m map[string]string) func(string) string { return func(k string) string { return m[k] } }
+	if loadConfig(env(map[string]string{"HEJMO_HOST_UPDATER": "1"})).UpdateInstall {
+		t.Error("an updater from before ticket 221 installs files")
+	}
+	if !loadConfig(env(map[string]string{"HEJMO_HOST_UPDATER": "1", "HEJMO_HOST_UPDATER_INSTALL": "1"})).UpdateInstall {
+		t.Error("an updater that installs files is not recognised")
+	}
+	if loadConfig(env(map[string]string{"HEJMO_HOST_UPDATER_INSTALL": "1"})).UpdateInstall {
+		t.Error("files are offered without a host updater at all")
+	}
+}
+
 // setHome stores a home place through the settings save, keeping the rest.
 func setHome(db *store.DB, h store.Household, name string, lat, lon float64) error {
 	return db.SaveHouseholdSettings(h.ID, store.HouseholdSettings{DateFormat: h.DateFormat, TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, AutoUpdate: h.AutoUpdate, MealCutoffs: h.MealCutoffs, Home: &store.Home{Name: name, Latitude: lat, Longitude: lon}})

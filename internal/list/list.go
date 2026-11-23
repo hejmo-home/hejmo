@@ -62,6 +62,16 @@ type Entry struct {
 	Variety string
 	// Qty is how much of it; none for an entry without quantity.
 	Qty Quantity
+	// Origin says a rule of "always on the list" put the entry on the list.
+	Origin Origin
+}
+
+// Origin is where an entry came from when a rule put it on the list (ticket
+// 168): Part is the quantity the rule brought and Prior the quantity that was
+// already on the list, both exact. Both are zero after a quantity was changed by hand.
+type Origin struct {
+	Auto        bool
+	Part, Prior float64
 }
 
 // InvalidError says which field of a list is wrong.

@@ -93,6 +93,11 @@ func (s *server) renderListsSettingsUnits(w http.ResponseWriter, r *http.Request
 		form = &settingsForm{On: st.settings.HideAllergen, Whole: st.settings.Everyone, People: st.settings.People, Confirm: st.settings.HideAllergen}
 	}
 	shipped, own := s.libraryRowStates(st)
+	alwaysRow, err := s.hubRowFor(p, lang)
+	if err != nil {
+		s.fail(w, "always row", err)
+		return
+	}
 
 	var withAllergies []allergyPerson
 	var without []string
@@ -133,7 +138,7 @@ func (s *server) renderListsSettingsUnits(w http.ResponseWriter, r *http.Request
 	data := map[string]any{
 		"Units":  s.unitsForm(p, lang, unitsOn, unitsErr),
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID),
-		"LibrarySymbol": hejmoSymbol, "ShippedState": shipped, "OwnState": own,
+		"LibrarySymbol": hejmoSymbol, "ShippedState": shipped, "OwnState": own, "AlwaysRow": alwaysRow,
 		"Anyone": len(withAllergies) > 0, "CanHide": len(holders) > 0,
 		"AllergyPeople": withAllergies, "WithoutText": withoutText, "Sample": sample,
 		"Form": form, "Holders": holders, "Confirmed": confirmed, "FreeText": s.freeText(st),

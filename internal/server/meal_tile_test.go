@@ -10,7 +10,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-var footerRe = regexp.MustCompile(`(?s)<footer class="fv-footer" data-footer>.*?</footer>`)
+var footerRe = regexp.MustCompile(`(?s)<footer class="fv-footer" id="fv-footer" data-footer>.*?</footer>`)
 
 // plan stores today's (14/11/2026) meals through the same path as the meal plan page.
 func (f *familyBox) plan(t *testing.T, entries map[meal.Mealtime]string) {

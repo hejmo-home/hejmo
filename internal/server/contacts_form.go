@@ -23,6 +23,7 @@ type ctForm struct {
 	Day, Month, Year                string
 	Groups                          []string
 	NewGroup, Note                  string
+	HideBirthday                    bool // "keep out of the Birthdays calendar"
 }
 
 const ownKind = "own"        // the select option "Eigene Bezeichnung …"
@@ -56,6 +57,7 @@ func parseContactForm(r *http.Request) ctForm {
 		Street: r.PostFormValue("street"), Postcode: r.PostFormValue("postcode"), City: r.PostFormValue("city"), Country: r.PostFormValue("country"),
 		Day: r.PostFormValue("bday_day"), Month: r.PostFormValue("bday_month"), Year: r.PostFormValue("bday_year"),
 		Groups: r.PostForm["group"], NewGroup: r.PostFormValue("new_group"), Note: strings.ReplaceAll(r.PostFormValue("note"), "\r\n", "\n"),
+		HideBirthday: r.PostFormValue("hide_birthday") != "",
 	}
 	return f
 }
@@ -90,7 +92,7 @@ func atoiOrZero(s string) (int, bool) {
 // draft turns the form into a draft the rules can check.
 func (f ctForm) draft(isPerson bool) ctDraft {
 	d := ctDraft{Name: f.Name, Full: f.Full, Street: f.Street, Postcode: f.Postcode, City: f.City, Country: f.Country, Note: f.Note,
-		NewGroup: f.NewGroup, GroupIDs: f.Groups, IsPerson: isPerson}
+		NewGroup: f.NewGroup, GroupIDs: f.Groups, IsPerson: isPerson, HideBirthday: f.HideBirthday}
 	for _, l := range f.Numbers {
 		d.Numbers = append(d.Numbers, l.line(true))
 	}
@@ -107,7 +109,7 @@ func (f ctForm) draft(isPerson bool) ctDraft {
 
 // ctFormOf is the form of a stored contact.
 func ctFormOf(c store.Contact) ctForm {
-	f := ctForm{Name: c.HejmoName, Full: c.FullName, Street: c.Street, Postcode: c.Postcode, City: c.City, Country: c.Country, Note: c.Note, Groups: c.GroupIDs}
+	f := ctForm{Name: c.HejmoName, Full: c.FullName, Street: c.Street, Postcode: c.Postcode, City: c.City, Country: c.Country, Note: c.Note, Groups: c.GroupIDs, HideBirthday: c.HideBirthday}
 	for _, l := range c.Numbers {
 		f.Numbers = append(f.Numbers, lineFormOf(l))
 	}
@@ -523,9 +525,9 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 	}
 	var saved store.Contact
 	if cur == nil {
-		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, d.input(s.householdNow(p.household)))
+		saved, err = s.db.CreateContact(p.household.ID, p.person.ID, d.input(s.householdNow(p.household), s.i18n.T(e.lang, "birthdays.calendar_name")))
 	} else {
-		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, d.input(s.householdNow(p.household)))
+		saved, err = s.db.UpdateContact(p.household.ID, id, p.person.ID, d.input(s.householdNow(p.household), s.i18n.T(e.lang, "birthdays.calendar_name")))
 	}
 	var taken *store.NameTakenError
 	var fe *store.FieldError

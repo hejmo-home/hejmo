@@ -70,7 +70,11 @@ func (db *DB) UpdateList(householdID string, l list.List) (list.List, error) {
 	}
 	res, err := db.sql.Exec(`UPDATE lists SET name = ?, color = ?, symbol = ?, sort = ?, suggestions = ?, updated_at = ? WHERE household_id = ? AND id = ?`,
 		l.Name, l.Color, l.Symbol, string(l.Sort), l.Suggestions, now(), householdID, l.ID)
-	return l, expectOne(res, err)
+	if err := expectOne(res, err); err != nil {
+		return l, err
+	}
+	_, err = db.sql.Exec(`UPDATE list_always SET list_name = ? WHERE household_id = ? AND list_id = ?`, l.Name, householdID, l.ID)
+	return l, err
 }
 
 // DeleteList removes a list with its entries.
@@ -79,11 +83,11 @@ func (db *DB) DeleteList(householdID, id string) error {
 	return expectOne(res, err)
 }
 
-const entryColumns = `id, text, done, position, article_id, COALESCE(variety, ''), qty_base, qty_unit`
+const entryColumns = `id, text, done, position, article_id, COALESCE(variety, ''), qty_base, qty_unit, auto, auto_part, auto_prior`
 
 func scanEntry(row interface{ Scan(...any) error }) (list.Entry, error) {
 	var e list.Entry
-	err := row.Scan(&e.ID, &e.Text, &e.Done, &e.Position, &e.ArticleID, &e.Variety, &e.Qty.Base, &e.Qty.Unit)
+	err := row.Scan(&e.ID, &e.Text, &e.Done, &e.Position, &e.ArticleID, &e.Variety, &e.Qty.Base, &e.Qty.Unit, &e.Origin.Auto, &e.Origin.Part, &e.Origin.Prior)
 	return e, err
 }
 

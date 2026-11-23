@@ -109,7 +109,7 @@ func (s *server) renderConnections(w http.ResponseWriter, r *http.Request, p pri
 	}
 	data := map[string]any{
 		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Offline": box.Offline, "Rows": rows, "Refused": refused,
-		"Days": days, "ErrorField": errField, "Error": form.Error, "UpdateManaged": s.updateDir != "",
+		"Days": days, "ErrorField": errField, "Error": form.Error, "UpdateManaged": s.updateDir != "", "UploadReady": s.uploadsPossible(),
 		"Guide": s.i18n.T(lang, guideUpdateAnchor), "TimeGuide": s.i18n.T(lang, "outside.scope.time.url"),
 		"Scope": s.scopeNote(r, p),
 	}

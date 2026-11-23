@@ -65,6 +65,11 @@ var (
 		opt("groups", "strings", "Group ids it is for"),
 		opt("rrule", "string", "Repetition as an iCalendar RRULE, for example FREQ=WEEKLY;COUNT=3"),
 	}
+	rewardFields = []mcpParam{
+		opt("symbol", "string", "An emoji (default the gift)"),
+		opt("limit_period", "string", "none, day, week or month"), opt("limit_count", "integer", "How often one person may redeem it per period, 1 to 99"),
+		opt("whole_family", "boolean", "Meant for the whole family"), opt("person_ids", "strings", "Person ids it is meant for"),
+	}
 	taskTitle   = "The task title"
 	mealtime    = req("mealtime", "string", "breakfast, lunch, snack or dinner")
 	mealDate    = req("date", "string", "The day, YYYY-MM-DD")
@@ -123,6 +128,12 @@ var mcpTools = []mcpTool{
 	{name: "update_task", desc: "Change a task's star value.", method: "PATCH", path: "/tasks/{id}", params: []mcpParam{idOf("task"), req("stars", "integer", "Stars earned")}},
 	{name: "delete_task", desc: "Delete a task with its history.", method: "DELETE", path: "/tasks/{id}", params: []mcpParam{idOf("task")}},
 	{name: "set_task_done", desc: "Tick a task off, or open it again.", method: "PUT", path: "/tasks/{id}/done", params: []mcpParam{idOf("task"), req("done", "boolean", "true to tick off, false to open again")}},
+	{name: "list_pauses", desc: "List the pause days: spans of days on which routines do not count. No person means the whole family.", method: "GET", path: "/tasks/pauses"},
+	{name: "create_pause", desc: "Enter pause days (for example an illness or a holiday); past days are fine. Overlapping pauses of the same people are merged.", method: "POST", path: "/tasks/pauses", params: []mcpParam{
+		req("from", "string", "First day, YYYY-MM-DD"), req("to", "string", "Last day, YYYY-MM-DD, at most 366 days long"), opt("person_ids", "strings", "The people it is for; leave out for the whole family")}},
+	{name: "update_pause", desc: "Change the days or the people of a pause.", method: "PATCH", path: "/tasks/pauses/{id}", params: []mcpParam{
+		idOf("pause"), opt("from", "string", "First day, YYYY-MM-DD"), opt("to", "string", "Last day, YYYY-MM-DD"), opt("person_ids", "strings", "The people it is for; an empty list means the whole family")}},
+	{name: "delete_pause", desc: "Remove a pause. The days count normally again; what was ticked off stays.", method: "DELETE", path: "/tasks/pauses/{id}", params: []mcpParam{idOf("pause")}},
 	{name: "list_routines", desc: "List the routines with their tasks in order.", method: "GET", path: "/routines", params: []mcpParam{opt("person", "string", "Only routines of this person id")}},
 	{name: "get_routine", desc: "Get one routine with its tasks in order.", method: "GET", path: "/routines/{id}", params: []mcpParam{idOf("routine")}},
 	{name: "create_routine", desc: "Create a routine for a person, or from a routine template.", method: "POST", path: "/routines", params: []mcpParam{
@@ -150,6 +161,18 @@ var mcpTools = []mcpTool{
 		req("id", "string", "The person id"), opt("limit", "integer", "How many log entries, 1 to 200 (default 50)")}},
 	{name: "book_stars", desc: "Book stars by hand with a note: positive adds, negative takes away.", method: "POST", path: "/people/{id}/stars", params: []mcpParam{
 		req("id", "string", "The person id"), req("delta", "integer", "Stars to add (positive) or take away (negative)"), req("note", "string", "Why")}},
+
+	// Reward catalogue
+	{name: "list_rewards", desc: "List the reward catalogue by price (for a child: only what is meant for them, with what they can afford).", method: "GET", path: "/rewards"},
+	{name: "get_reward", desc: "Get one reward.", method: "GET", path: "/rewards/{id}", params: []mcpParam{idOf("reward")}},
+	{name: "create_reward", desc: "Create a reward children trade stars for. Say who it is for: whole_family or person_ids.", method: "POST", path: "/rewards", params: append([]mcpParam{
+		req("name", "string", "Reward name (at most 60 characters)"), req("price", "integer", "Stars, 1 to 999")}, rewardFields...)},
+	{name: "update_reward", desc: "Change an offered reward (an archived one must be restored first).", method: "PATCH", path: "/rewards/{id}", params: append([]mcpParam{
+		idOf("reward"), opt("name", "string", "Reward name"), opt("price", "integer", "Stars, 1 to 999; applies from now on")}, rewardFields...)},
+	{name: "archive_reward", desc: "Archive a reward: children no longer see it, redemptions stay in the star logs.", method: "POST", path: "/rewards/{id}/archive", params: []mcpParam{idOf("reward")}},
+	{name: "restore_reward", desc: "Offer an archived reward again. One archived because its people left needs whole_family or person_ids.", method: "POST", path: "/rewards/{id}/restore", params: []mcpParam{
+		idOf("reward"), opt("whole_family", "boolean", "Meant for the whole family"), opt("person_ids", "strings", "Person ids it is meant for")}},
+	{name: "delete_reward", desc: "Delete a reward that was never redeemed; a redeemed one must be archived.", method: "DELETE", path: "/rewards/{id}", params: []mcpParam{idOf("reward")}},
 
 	// Meal plan
 	{name: "list_meals", desc: "List the meal plan from one day to another (default: the coming seven days).", method: "GET", path: "/meals", params: []mcpParam{

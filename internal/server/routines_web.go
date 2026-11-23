@@ -11,6 +11,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/familyview"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/streak"
 	"github.com/hejmo-home/hejmo/internal/task"
 )
 
@@ -29,6 +30,21 @@ type routineCard struct {
 	ID, Name, Part string
 	Done, Total    int // of the steps due today
 	Steps          []routineStep
+	// Week is the routine's week, nil while the owner's switch is off (ticket 294).
+	Week *streak.Week
+}
+
+// PauseToday is whether today is a pause day for the routine that is due.
+func (c routineCard) PauseToday() bool {
+	if c.Week == nil {
+		return false
+	}
+	for _, d := range c.Week.Cells {
+		if d.Today {
+			return d.Paused
+		}
+	}
+	return false
 }
 
 // routineSteps numbers the tasks of a routine, in their order.
@@ -286,7 +302,13 @@ func (s *server) renderRoutine(w http.ResponseWriter, r *http.Request, p princip
 	if _, ok := save["Name"]; !ok {
 		save["Name"] = box.Name
 	}
+	weeks, err := s.routineWeeks(p.household, today)
+	if err != nil {
+		s.fail(w, "weeks", err)
+		return
+	}
 	data := map[string]any{
+		"Week": weeks[rt.ID], "StreaksShown": owner.StreaksShown, "OwnerPossessive": possessive(s.langOf(r), owner.Name),
 		"Save": save, "SaveBox": box, "ErrorText": st.ErrorText,
 		"Person": p.person, "Routine": rt, "Owner": chip, "OwnerName": owner.Name, "Steps": steps, "Free": free, "Done": done, "Total": total,
 		"Add": add, "Settings": settings, "Repeats": []string{"daily", "weekly", "once"}, "Weekdays": taskWeekdays, "Parts": routineParts, "MaxStars": task.MaxStars,
@@ -543,13 +565,13 @@ func (s *server) handleTaskLeaveRoutine(w http.ResponseWriter, r *http.Request) 
 
 // childParts lays out a child's tasks for today as the display does: parts of
 // the day with their routines. It is what a child's tasks page shows.
-func childParts(due []store.DayTask, routines []task.Routine, personID string) ([]familyview.TaskPart, familyview.Progress) {
+func childParts(due []store.DayTask, routines []task.Routine, personID string, weeks map[string]*streak.Week) ([]familyview.TaskPart, familyview.Progress) {
 	var tasks []familyview.Task
 	for _, t := range due {
 		if t.PersonID == personID {
 			tasks = append(tasks, viewTask(t))
 		}
 	}
-	v := familyview.PersonalView{Tasks: tasks, Routines: viewRoutines(routines, personID)}
+	v := familyview.PersonalView{Tasks: tasks, Routines: viewRoutines(routines, personID, weeks)}
 	return v.Parts(), familyview.ProgressOf(tasks)
 }

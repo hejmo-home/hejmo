@@ -3307,6 +3307,303 @@ fieldset.variety-pick > legend { font-size: var(--fs-label); color: var(--text-s
 [data-theme="bw"] .qty-edit details.variety-more { border-top: 0; }
 [data-theme="bw"] details.variety-more .v-state.chosen { background: var(--text); color: var(--surface); }
 .lv fieldset.variety-pick label { min-height: 56px; }
+/* #294 (new, see DESIGN.md) */
+/* Week of a routine (#294): seven day cells Monday to Sunday under the steps,
+   then the week and the best streak in words. Done = filled box with a tick in
+   the person colour (bw: black), open (to come or missed, the same) = empty box,
+   pause and off = a word, before the routine started = nothing. */
+.week { display: grid; gap: 8px; padding: 10px 4px 2px; border-top: 1px solid var(--border); min-width: 0; }
+[data-theme="bw"] .week { border-top: 2px solid var(--text); }
+.week ol { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(7, minmax(0, 1fr)); gap: 4px; }
+.week li { display: grid; justify-items: center; align-content: start; gap: 4px; min-width: 0; }
+.week .wd { font-size: var(--fs-meta); color: var(--text-secondary); white-space: nowrap; line-height: 1.2; }
+.week li[data-today] .wd { color: var(--text); font-weight: 700; }
+.week .d { box-sizing: border-box; width: 32px; height: 32px; border: 2px solid var(--text-secondary); border-radius: 9px; display: inline-flex; align-items: center; justify-content: center; }
+.week .d svg { display: none; }
+.week li[data-today] .d { border-width: 3px; border-color: var(--text); }
+.week [data-state="done"] .d { background: var(--pc, var(--accent)); border-color: var(--pc, var(--accent)); }
+.week [data-state="done"] .d svg { display: block; stroke: var(--surface); stroke-width: 3.2; fill: none; stroke-linecap: round; stroke-linejoin: round; }
+[data-theme="bw"] .week .d { border-color: var(--text); }
+[data-theme="bw"] .week [data-state="done"] .d { background: var(--text); border-color: var(--text); }
+.week .d.w { width: 100%; max-width: 52px; font-size: var(--fs-meta); font-weight: 600; color: var(--text-secondary); white-space: nowrap; overflow: visible; }
+.week [data-state="pause"] .d.w { border: 1.5px dashed var(--text-secondary); color: var(--text); }
+[data-theme="bw"] .week [data-state="pause"] .d.w { border: 2px dashed var(--text); }
+.week [data-state="off"] .d.w { border: 0; }
+.week [data-state="before"] .d { border: 0; }
+.week .wsum { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 14px; font-size: var(--fs-label-large); color: var(--text); overflow-wrap: anywhere; }
+.week .wsum b { font-weight: 700; font-variant-numeric: tabular-nums; }
+.routine[data-all-done] .week { border-top-color: var(--pc); }
+/* parent pages: the week as a line in words on the routine card, the cells in the facts */
+.rhead .state.wline { color: var(--text); }
+.rhead .tag.paused { margin-top: 4px; justify-self: start; }
+.facts dd.wk { display: block; }
+.facts dd.wk .week { border-top: 0; padding: 0; max-width: 360px; }
+.list-rows.pauses .tag.paused { justify-self: start; }
+
+/* ticket 291: reward catalogue. Only existing tokens. */
+/* Price: star icon, number and the word, never broken apart. */
+.price { display: inline-flex; align-items: center; gap: 4px; white-space: nowrap; font-weight: 700; color: var(--text); font-variant-numeric: tabular-nums; }
+.price .icon.star { color: var(--accent); }
+/* Catalogue rows (parents): picture, name, price and limit, who it is for. */
+.list-rows.rewards a { align-items: flex-start; }
+.list-rows.rewards .art-sym { margin-top: 2px; }
+.list-rows.rewards b { overflow-wrap: break-word; hyphens: manual; }
+.list-rows.rewards .forl .k { color: var(--text-secondary); }
+.list-rows.rewards .forl .who .icon { stroke: var(--text-secondary); }
+.list-rows.rewards .chev { align-self: center; }
+.list-rows.rewards.archived .art-sym { opacity: .6; }
+[data-theme="bw"] .list-rows.rewards.archived .art-sym { opacity: 1; }
+.tag.arch { display: inline-flex; align-items: center; gap: 4px; border-color: var(--text-secondary); color: var(--text-secondary); }
+.tag.arch .icon { stroke: currentColor; }
+details.more.arch { max-width: 560px; }
+details.more.arch > div > .hint { margin: 0 0 10px; }
+/* Form: the limit count only while a period is chosen. */
+.reward-form .limit { display: grid; gap: 10px; padding-bottom: 8px; }
+.reward-form .limit-count { display: none; }
+.reward-form:has(input[name="limit_period"]:not([value=""]):checked) .limit-count { display: grid; }
+.reward-form .limit .hint { margin: 0; }
+/* Archived detail: the note with its icon. */
+.notice.arch-note { display: flex; gap: 10px; align-items: flex-start; margin: 0 0 var(--gap); }
+.notice.arch-note p { margin: 0; }
+.notice.arch-note .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+details.repair.archive form .notice p { margin: 0 0 6px; }
+details.repair.archive form .notice p:last-child { margin: 0; }
+/* Child view: balance, groups, cards. --pc is the child's colour. */
+.rwd-cat { display: grid; gap: var(--gap-section); max-width: 880px; }
+.rwd-bal { display: flex; align-items: center; gap: 12px; padding: 14px 16px; background: var(--surface); border-radius: var(--radius-tile); max-width: 560px; box-sizing: border-box; }
+.rwd-bal .icon.star { width: 32px; height: 32px; flex: none; color: var(--pc); }
+.rwd-bal p { margin: 0; font-size: var(--fs-key-figure); font-weight: 400; }
+.rwd-bal p b { font-weight: var(--fw-key-figure); white-space: nowrap; }
+.rwd-bal small { display: block; margin-top: 4px; font-size: var(--fs-label-large); color: var(--text-secondary); }
+[data-theme="bw"] .rwd-bal { border: 2px solid var(--text); }
+[data-theme="bw"] .rwd-bal .icon.star { color: var(--text); }
+.rwd-group h2 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: var(--fs-person-name); }
+.rwd-group h2 .icon { flex: none; stroke: var(--accent); }
+.rwd-group h2 .icon.star { color: var(--accent); }
+.rwd-cards { list-style: none; margin: 0; padding: 0; display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: var(--gap-cards); }
+.rwd { display: flex; gap: 12px; align-items: flex-start; padding: 12px; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-tile); min-width: 0; }
+.rwd.ok { border: 2px solid var(--pc); padding: 11px; }
+.rwd.later { background: transparent; border: 1.5px dashed var(--border); }
+.rwd.later .art-sym { opacity: .6; }
+.art-sym.huge { width: calc(var(--touch-target) * 1.5); height: calc(var(--touch-target) * 1.5); font-size: 42px; }
+.rwd-body { display: grid; gap: 6px; min-width: 0; flex: 1; }
+.rwd h3 { margin: 0; font-size: var(--fs-person-name); font-weight: var(--fw-person-name); line-height: 1.25; overflow-wrap: break-word; hyphens: manual; }
+.rwd-meta { margin: 0; display: flex; flex-wrap: wrap; gap: 2px 12px; align-items: center; font-size: var(--fs-label-large); }
+.rwd-meta .lim { color: var(--text-secondary); }
+.rwd-state { margin: 0; display: flex; gap: 6px; align-items: flex-start; font-size: var(--fs-label-large); }
+.rwd-state .icon { flex: none; }
+.rwd-state.ok { color: var(--pc-text); background: var(--pc-tint); border-radius: var(--radius-chip); padding: 4px 10px 4px 6px; justify-self: start; align-items: center; }
+.rwd-state.ok .icon { stroke: var(--pc-text); }
+.rwd-state.save { display: grid; gap: 4px; }
+.rwd-state.save p { margin: 0; }
+.rwd-state.later { color: var(--text-secondary); }
+.rwd-state.later b { color: var(--text); }
+.rwd-state.later .icon { stroke: var(--text-secondary); margin-top: 1px; }
+[data-theme="bw"] .rwd { border: 2px solid var(--text); padding: 11px; }
+[data-theme="bw"] .rwd.ok { border-width: 4px; padding: 9px; }
+[data-theme="bw"] .rwd.later { border: 2px dashed var(--text); }
+[data-theme="bw"] .rwd.later .art-sym { opacity: 1; }
+[data-theme="bw"] .rwd-state.ok { background: var(--surface); border: 2px solid var(--text); color: var(--text); }
+[data-theme="bw"] .rwd-state.ok .icon { stroke: var(--text); }
+[data-theme="bw"] .rwd-state.save .progress { background: var(--progress-track); border: 1px solid var(--text); }
+[data-theme="bw"] .rwd-state.save .progress > span { background: var(--progress-fill); }
+@media (max-width: 599px) {
+  .rwd-cards { grid-template-columns: minmax(0, 1fr); }
+  .rwd-bal p { font-size: var(--fs-person-name); }
+}
+/* Child tasks page: the way to the rewards. */
+.reward-link { display: flex; align-items: center; gap: 12px; min-height: 64px; padding: 12px 16px; background: var(--surface); border: 2px solid var(--pc); border-radius: var(--radius-tile); color: var(--text); text-decoration: none; box-sizing: border-box; }
+.reward-link > .icon { flex: none; stroke: var(--pc); }
+.reward-link .t { display: grid; gap: 2px; min-width: 0; flex: 1; }
+.reward-link b { font-size: var(--fs-person-name); }
+.reward-link .t span { font-size: var(--fs-label-large); color: var(--text-secondary); }
+.reward-link .chev { flex: none; stroke: var(--text-secondary); }
+[data-theme="bw"] .reward-link { border: 3px solid var(--text); }
+[data-theme="bw"] .reward-link > .icon { stroke: var(--text); }
+details.more[open] .list-rows .chev { transform: none; }
+/* A long reward name in the archive confirmation wraps instead of widening the page. */
+details.repair.archive form { grid-template-columns: minmax(0, 1fr); }
+details.repair.archive form, details.repair.archive .confirm, details.repair.archive .notice { min-width: 0; }
+details.repair.archive .confirm .button { max-width: 100%; box-sizing: border-box; overflow-wrap: anywhere; }
+details.repair.archive .notice b, .notice.arch-note b { white-space: normal; overflow-wrap: anywhere; }
+
+/* Display: the family view on a phone (ticket 208). Under 600 px wide or
+   under 501 px high the page scrolls as a whole instead of squeezing the
+   columns: every column shows all its entries (no scrolling inside a column),
+   the columns are at least as tall as the rest of the first screen, and the
+   footer tiles follow below them, full width. The line "Below the columns"
+   (.fv-below) names the tiles on the first screen and jumps to them. Wider
+   and taller screens (every wall display) keep the fixed layout. */
+.fv-below { display: none; }
+@media (max-width: 599px), (max-height: 500px) {
+  body:has(.fv) { overflow: auto; padding: var(--gap); }
+  .family-page:has(.fv) { height: auto; min-height: calc(100vh - 2 * var(--gap)); min-height: calc(100dvh - 2 * var(--gap)); display: flex; flex-direction: column; }
+  .family-page:has(.fv) > [data-view] { height: auto; flex: 1 0 auto; display: flex; flex-direction: column; }
+  .fv { height: auto; flex: 1 0 auto; }
+  .fv .fv-grid { flex: 1 0 auto; grid-auto-rows: auto; }
+  .fv .column { overflow: visible; }
+  .fv .events { flex: 1 0 auto; overflow: visible; }
+  /* Worst case, 375 x 667 with 2 strip entries today and 1 tomorrow: the strip
+     and the gaps are compact so the third entry of every column stays on the
+     first screen. */
+  .fv { gap: var(--gap-cards); }
+  .fv .strip-wrap { gap: 6px; }
+  .fv .strip { gap: 6px; }
+  .fv .strip-item { padding: 5px 10px; }
+  .fv .fv-footer { scroll-margin-top: var(--gap); }
+  .fv .fv-footer .tile { flex-basis: 100%; }
+  .fv .chips { max-width: 100%; }
+  .fv .fv-below { flex: none; display: flex; align-items: center; min-height: var(--touch-target); padding: 6px 14px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label); text-decoration: none; }
+  .fv .fv-below .t { min-width: 0; line-height: 1.5; overflow-wrap: break-word; }
+  .fv .fv-below .lab { color: var(--text-secondary); }
+  .fv .fv-below b { font-weight: 700; }
+  .fv .fv-below .sep { color: var(--text-secondary); }
+  .fv .fv-below .flag { display: inline-block; background: var(--accent); color: var(--accent-text); border-radius: var(--radius-chip); padding: 0 10px; font-weight: 700; white-space: nowrap; }
+  [data-theme="bw"] .fv .fv-below { border: 2px solid var(--text); padding: 5px 13px; }
+}
+/* A phone shows its own clock in the status bar (as in the lists view, #33):
+   the clock chip gives its row to the columns. */
+@media (max-width: 599px) {
+  .fv .chips [data-clock] { display: none; }
+}
+/* Display: a person's column in full width on a phone (ticket 208, product
+   owner 23/11/2026). Same breakpoint as the phone layout above. Tapping a
+   column (its name or its entries; not the progress block) shows only that
+   column, as wide as the screen; "Zurück zu allen Spalten" or a swipe to the
+   right brings all columns back. Wall displays never show any of it: there
+   the name still opens the personal view. */
+.fv .col-hint, .fv .fv-fullbar, .fv .col-none { display: none; }
+@media (max-width: 599px), (max-height: 500px) {
+  .fv:not([data-full-person]) .column { cursor: pointer; }
+  .fv .person-link { row-gap: 0; }
+  .fv .col-hint { flex-basis: 100%; font-size: var(--fs-meta); font-weight: 600; line-height: 1.3; color: var(--accent); }
+  .fv .col-hint .icon { width: 14px; height: 14px; vertical-align: -2px; margin-left: 2px; stroke: currentColor; }
+  .fv:not([data-full-person]) .col-hint.grow { display: block; }
+  .fv[data-full-person] .fv-fullbar { display: flex; flex-wrap: wrap; align-items: center; gap: 6px 14px; flex: none; }
+  .fv .fv-back { display: inline-flex; align-items: center; gap: 6px; min-height: var(--touch-target); padding: 8px 18px 8px 12px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font: inherit; font-size: var(--fs-label-large); font-weight: 600; cursor: pointer; }
+  .fv .fv-back .icon { flex: none; stroke: var(--accent); }
+  .fv .fv-fullbar .hint { font-size: var(--fs-meta); color: var(--text-secondary); }
+  .fv[data-full-person] .fv-grid { grid-auto-columns: 100%; overflow-x: visible; }
+  .fv[data-full-person] .column:not([data-full]) { display: none; }
+  .fv .column[data-full] .col-hint.to-pv { display: block; }
+  .fv .column[data-full] .events { grid-template-columns: repeat(auto-fill, minmax(min(100%, 230px), 1fr)); }
+  .fv .column[data-full] .events .tomorrow { grid-column: 1 / -1; grid-template-columns: inherit; }
+  .fv .column[data-full] .events .tomorrow .lab { grid-column: 1 / -1; }
+  .fv .column[data-full] .col-none { display: block; margin: 0; font-size: var(--fs-body); color: var(--text-secondary); }
+  [data-theme="bw"] .fv .fv-back { border: 2px solid var(--text); padding: 7px 17px 7px 11px; }
+  [data-theme="bw"] .fv .fv-back .icon { stroke: var(--text); }
+}
+/* ---- ticket 168: articles always on the list (ADR 0019, Q27) ---- */
+/* Article page: the card "Immer auf der Liste" sits in the article's one form,
+   before "In den Vorschlägen". Off: only the switch. On: list, day, rhythm,
+   quantity and the sentence that says in advance what happens. */
+.auto-card .when-on { display: grid; gap: 18px; padding-top: 4px; }
+.auto-card > .hint { margin: 0; }
+.auto-card fieldset.chips { gap: 8px; }
+.auto-card fieldset.chips > .ferr { flex: 1 1 100%; margin: 4px 0 0; }
+.auto-card .pchip { white-space: normal; text-align: left; max-width: 100%; box-sizing: border-box; }
+.auto-card .pchip > span:not(.marker) { overflow-wrap: break-word; hyphens: auto; min-width: 0; }
+.auto-card .pchip .marker { flex: none; }
+.auto-card fieldset.chips[aria-invalid="true"] .pchip { border-color: var(--error-text); }
+.auto-rhythm { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 26em; }
+.auto-rhythm .f { display: grid; gap: 6px; min-width: 0; }
+.auto-rhythm .lab { font-size: var(--fs-label); color: var(--text-secondary); }
+.auto-rhythm .hint, .auto-rhythm .ferr { margin: 0; }
+.auto-rhythm select { width: 100%; }
+.auto-qty { display: grid; gap: 12px; min-width: 0; }
+.auto-qty .seg.mode { justify-self: start; }
+.auto-qty .seg.mode label { flex: 0 0 auto; padding: 8px 14px; }
+.auto-qty fieldset.qty { display: grid; gap: 12px; border: 0; margin: 0; padding: 0; min-width: 0; background: none; }
+.auto-qty:has(input[name="qmode"][value="none"]:checked) fieldset.qty { display: none; }
+.auto-plan { display: grid; gap: 6px; padding: 12px 14px; border: 1.5px solid var(--accent); border-radius: var(--radius-card); background: var(--background); }
+.auto-plan p { margin: 0; overflow-wrap: break-word; }
+.auto-plan .ap-head { display: flex; gap: 8px; align-items: flex-start; font-size: var(--fs-event-title); }
+.auto-plan .ap-head .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.auto-plan .weeks-hint { display: block; padding: 0; background: none; border: 0 !important; color: var(--text); font-size: var(--fs-label-large); }
+.auto-plan.stopped { border: 1.5px dashed var(--notice-text); background: var(--notice-bg); color: var(--notice-text); }
+.auto-plan.stopped .ap-head .icon { stroke: var(--notice-text); }
+.auto-plan.stopped .hint { color: var(--notice-text); }
+[data-theme="bw"] .auto-plan { border: 2px solid var(--text); background: var(--surface); }
+[data-theme="bw"] .auto-plan .ap-head .icon { stroke: var(--text); }
+[data-theme="bw"] .auto-plan.stopped { border: 2px dashed var(--text); color: var(--text); }
+[data-theme="bw"] .auto-plan.stopped .hint, [data-theme="bw"] .auto-plan.stopped .ap-head .icon { color: var(--text); stroke: var(--text); }
+@media (max-width: 479px) {
+  .auto-qty .seg.mode { justify-self: stretch; }
+  .auto-qty .seg.mode label { flex: 1 1 0; padding: 8px 6px; }
+}
+
+/* .steps colours every span grey and makes every legend a heading: undo that
+   inside the card so chips keep their own colours and sub-legends stay labels. */
+.auto-card .pchip > span, .auto-card fieldset.units label span, .auto-plan span, .auto-card .every { color: inherit; font-size: inherit; }
+.auto-plan span.hint { color: var(--text-secondary); font-size: var(--fs-label); }
+.auto-plan.stopped span.hint { color: var(--notice-text); }
+[data-theme="bw"] .auto-plan.stopped span.hint { color: var(--text); }
+.auto-card fieldset.units > legend, .auto-qty .seg.mode > legend { font-size: var(--fs-label); font-weight: 400; color: var(--text-secondary); }
+.auto-card fieldset.units label small { color: var(--text-secondary); }
+
+/* Tags: the rhythm of an article in the library ("Jeden Montag auf „Einkauf“")
+   and the paused state (list deleted). */
+.tag.auto, .tag.paused { gap: 6px; height: auto; padding: 2px 10px; text-align: left; overflow-wrap: break-word; }
+.tag.auto .icon, .tag.paused .icon { flex: none; stroke: currentColor; }
+.tag.paused { border-color: var(--notice-text); color: var(--notice-text); background: var(--notice-bg); }
+[data-theme="bw"] .tag.paused { background: none; color: var(--text); border: 2px dashed var(--text); }
+.list-rows .meta.auto-stopped { color: var(--notice-text); font-weight: 600; }
+[data-theme="bw"] .list-rows .meta.auto-stopped { color: var(--text); }
+.list-rows .art-sym .icon.rep { stroke: var(--accent); }
+[data-theme="bw"] .list-rows .art-sym .icon.rep { stroke: var(--text); }
+.auto-res { margin: 0 0 10px; max-width: 560px; font-weight: 700; overflow-wrap: break-word; }
+.auto-ahead { margin-top: 0; max-width: 560px; box-sizing: border-box; }
+.auto-ahead li { grid-template-columns: 9.5em minmax(0, 1fr); }
+@container (max-width: 420px) { .auto-ahead li { grid-template-columns: minmax(0, 1fr); } }
+
+/* List page: the line on the day of adding and the reason under an entry. */
+.auto-note { display: flex; gap: 10px; align-items: flex-start; max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap); padding: 10px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
+.auto-note p { margin: 0; overflow-wrap: break-word; }
+.auto-note .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+[data-theme="bw"] .auto-note { border: 2px solid var(--text); }
+[data-theme="bw"] .auto-note .icon { stroke: var(--text); }
+.auto-src { display: flex; gap: 6px; align-items: flex-start; margin: -6px 0 8px; padding-left: 54px; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+.entries li > .auto-src { flex: 1 1 100%; }
+.auto-src .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+[data-theme="bw"] .auto-src { color: var(--text); }
+.entries li[data-done="true"] > .auto-src { display: none; }
+details.auto-rules { max-width: 560px; }
+details.auto-rules > summary { overflow-wrap: break-word; }
+details.auto-rules > div { display: grid; gap: 8px; }
+details.auto-rules .list-rows { margin: 0; }
+details.auto-rules .hint { margin: 0; }
+details.auto-rules[open] .list-rows .chev { transform: none; }
+
+/* Display: the same words at display size. */
+.lv-entries .auto-note { max-width: none; margin: 0; font-size: var(--fs-event-title); }
+.lv-entries .auto-src { margin: -2px 0 0; padding-left: 64px; font-size: var(--fs-event-title); }
+
+/* ---- ticket 168 revision (Q43/Q44): holiday and household time ---- */
+/* Holiday: the paused state in words with the pause sign, like "Angehalten";
+   on the list, the overview and the display. */
+.auto-note.holiday { border: 1.5px dashed var(--notice-text); background: var(--notice-bg); color: var(--notice-text); }
+.auto-note.holiday .icon { stroke: var(--notice-text); }
+.auto-note.holiday a { color: inherit; }
+[data-theme="bw"] .auto-note.holiday { border: 2px dashed var(--text); background: var(--surface); color: var(--text); }
+[data-theme="bw"] .auto-note.holiday .icon { stroke: var(--text); }
+main > .msg.ok + .auto-note { margin-top: 0; }
+/* "Für alle Artikel": time capsule and the two holiday dates. */
+.auto-house .f > label { display: grid; gap: 6px; justify-items: start; }
+.auto-house .when-on { display: grid; gap: 14px; }
+.auto-house .pair .f label { display: grid; gap: 6px; }
+.auto-house input[type="date"] { max-width: 100%; box-sizing: border-box; }
+.auto-house .auto-plan { margin: 0; }
+.auto-house .tcap { width: auto; justify-self: start; }
+/* Tile view (#166): one short line under the quantity says that the entry
+   comes by itself, the rhythm in words; after adding up, which part comes
+   always. Hidden on ticked-off tiles. */
+.tile-check .tile-auto { display: block; max-width: 100%; text-align: center; font-size: var(--fs-meta); line-height: 1.3; color: var(--text-secondary); overflow-wrap: break-word; }
+.tile-check .tile-auto .icon { display: inline-block; width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; stroke: currentColor; }
+[data-theme="bw"] .tile-check .tile-auto { color: var(--text); }
+.tiles > li[data-done="true"] .tile-auto { display: none; }
+.lv .tile-check .tile-auto { font-size: var(--fs-label); }
+.list-tiles .auto-note { max-width: 760px; }
+
 /* ---- ticket 296: contacts (preview docs/design/preview-296.html; no new tokens) ---- */
 /* Overview rows: Hejmo name bold, full name, every number with its kind in words, groups as word tags. */
 .list-rows.contacts .t > b { overflow-wrap: break-word; hyphens: manual; }
@@ -3400,3 +3697,68 @@ p.why.fam b { display: inline; }
   .ct-form .mails .line > .rm { justify-self: end; }
 }
 .ct-form p.lab-static { margin: 0 0 -4px; font-size: var(--fs-label); color: var(--text-secondary); }
+
+/* ticket 221: upload an update file (offline mode). Existing tokens only. */
+.upd { box-sizing: border-box; max-width: 560px; margin: 0 0 var(--gap-section); padding: 16px; display: grid; gap: 12px; background: var(--surface); border-radius: var(--radius-tile); }
+[data-theme="bw"] .upd { border: 2px solid var(--text); }
+.upd > h2 { margin: 0; font-size: var(--fs-person-name); }
+.upd ol.howto .s > .upd-form, .upd ol.howto .s > .run, .upd ol.howto .s > .meter, .upd ol.howto .s > .progress-line { justify-self: stretch; }
+.upd-form { display: grid; gap: 12px; margin: 0; }
+.upd-form .f label { font-weight: 600; }
+.upd-form .chosen { font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: anywhere; }
+.upd-form .chosen b { color: var(--text); }
+.upd .button .icon, .upd-entry .button .icon { stroke: currentColor; vertical-align: -4px; margin-right: 8px; }
+.upd .progress-line { display: flex; flex-wrap: wrap; gap: 4px 10px; align-items: baseline; }
+.upd .progress-line b { font-size: var(--fs-event-title); }
+.upd .progress-line span { font-variant-numeric: tabular-nums; }
+/* A file name is one token: never hyphenated, broken only at the line end. */
+.fname { margin: 0; font-weight: 700; overflow-wrap: anywhere; -webkit-hyphens: manual; hyphens: manual; }
+.fname i { font-style: italic; font-weight: 600; color: var(--text-secondary); }
+.upd-entry { display: grid; gap: 6px; justify-items: start; }
+.upd-entry .button { display: inline-flex; align-items: center; }
+.upd-usb { max-width: 560px; margin: 0 0 var(--gap-section); }
+
+/* Signature result in words: a result, not a warning (surface, accent frame, shield with a tick). */
+.sig-ok { display: flex; gap: 10px; align-items: flex-start; box-sizing: border-box; max-width: 560px; margin: 0 0 var(--gap); padding: 10px 12px; background: var(--surface); border: 1.5px solid var(--accent); border-radius: var(--radius-card); overflow-wrap: break-word; }
+.sig-ok .icon { flex: none; stroke: var(--accent); margin-top: 1px; }
+[data-theme="bw"] .sig-ok { border: 2px solid var(--text); }
+[data-theme="bw"] .sig-ok .icon { stroke: var(--text); }
+
+/* Run list: one row per step, its state in words next to a distinct shape
+   (done: tick in a circle, busy: clock, wait: dashed circle, fail: cross). */
+ol.run { list-style: none; margin: 0; padding: 0; display: grid; }
+ol.run > li { display: grid; grid-template-columns: 22px minmax(0, 1fr); gap: 12px; align-items: start; padding: 10px 0; border-top: 1px solid var(--border); }
+ol.run > li:first-child { border-top: 0; padding-top: 0; }
+ol.run > li:last-child { padding-bottom: 0; }
+ol.run > li > .icon { stroke: var(--text-secondary); margin-top: 1px; }
+ol.run .s { display: grid; gap: 2px; min-width: 0; }
+ol.run .s > b { font-size: var(--fs-event-title); font-weight: 700; }
+ol.run .st { font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+ol.run .s > p { margin: 0; }
+ol.run li[data-state="done"] > .icon { stroke: var(--accent); }
+ol.run li[data-state="busy"] > .icon { stroke: var(--accent); stroke-width: 2.4px; }
+ol.run li[data-state="busy"] .st { color: var(--text); font-weight: 600; }
+ol.run li[data-state="wait"] .s > b { font-weight: 600; color: var(--text-secondary); }
+ol.run li[data-state="fail"] > .icon { stroke: var(--error-text); }
+ol.run li[data-state="fail"] .st { justify-self: start; padding: 4px 8px; border-radius: var(--radius-field); background: var(--error-bg); color: var(--error-text); font-weight: 600; }
+[data-theme="bw"] ol.run > li { border-top-color: var(--text); }
+[data-theme="bw"] ol.run > li:first-child { border-top: 0; }
+[data-theme="bw"] ol.run > li > .icon { stroke: var(--text); }
+[data-theme="bw"] ol.run li[data-state="fail"] .st { background: none; border: 2px dashed var(--text); }
+
+/* Notices with a lead-in that carry a second line (a link or a button). */
+.notice.lead-in, .error.lead-in { flex-wrap: wrap; row-gap: 0; }
+.notice.lead-in > p:first-of-type, .error.lead-in > p:first-of-type { flex: 1 1 200px; min-width: 0; }
+.notice.lead-in > p + p, .notice.lead-in > p + form { flex: 1 0 100%; box-sizing: border-box; margin: 0; padding-left: 28px; }
+.notice.lead-in .upd-links a, .notice.lead-in .upd-links .link { color: inherit; font-weight: 700; text-decoration: underline; text-underline-offset: 3px; }
+.notice.lead-in > form .button.secondary { background: var(--surface); color: var(--text); border-color: currentColor; }
+.error.lead-in { margin: 0 0 var(--gap-section); display: flex; gap: 10px; align-items: flex-start; }
+.error.lead-in > .icon { flex: none; stroke: currentColor; margin-top: 2px; }
+.error.lead-in p { margin: 0; overflow-wrap: break-word; }
+.error.lead-in a { color: inherit; font-weight: 700; }
+[data-theme="bw"] .error.lead-in { border: 2px solid var(--text); }
+.confirm-page .hint { margin: 8px 0 0; max-width: 560px; }
+.confirm-page .actions button.link { text-decoration: underline; text-underline-offset: 3px; }
+.upd-entry .hint { margin: 0; }
+/* A lead-in of a notice is a sentence and may wrap (".notice b" keeps its words together elsewhere); found by the rendered layout check at 375 px. */
+.notice.lead-in > p > b, .error.lead-in > p > b { white-space: normal; }

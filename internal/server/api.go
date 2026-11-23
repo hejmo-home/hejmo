@@ -98,6 +98,10 @@ var apiRoutes = []APIRoute{
 	{"POST", "/outbound/offline", auth.Perm("settings", auth.Write), (*server).apiGoOffline},
 	{"GET", "/update", auth.Perm("settings", auth.Read), (*server).apiGetUpdate},
 	{"POST", "/update/dismiss", auth.Perm("settings", auth.Write), (*server).apiDismissUpdate},
+	{"GET", "/update/file", auth.Perm("settings", auth.Read), (*server).apiGetUpdateFile},
+	{"POST", "/update/file", auth.Perm("settings", auth.Write), (*server).apiUploadUpdateFile},
+	{"DELETE", "/update/file", auth.Perm("settings", auth.Write), (*server).apiDiscardUpdateFile},
+	{"POST", "/update/file/install", auth.Perm("settings", auth.Write), (*server).apiInstallUpdateFile},
 	{"GET", "/events", auth.Perm("events", auth.Read), (*server).apiListEvents},
 	{"POST", "/events", auth.Perm("events", auth.Write), (*server).apiCreateEvent},
 	{"PATCH", "/events/{id}", auth.Perm("events", auth.Write), (*server).apiUpdateEvent},
@@ -106,6 +110,10 @@ var apiRoutes = []APIRoute{
 	{"GET", "/search", auth.Perm("events", auth.Read), (*server).apiSearch},
 	{"GET", "/tasks", auth.Perm("tasks", auth.Read), (*server).apiListTasks},
 	{"POST", "/tasks", auth.Perm("tasks", auth.Write), (*server).apiCreateTask},
+	{"GET", "/tasks/pauses", auth.Perm("tasks", auth.Read), (*server).apiListPauses},
+	{"POST", "/tasks/pauses", auth.Perm("tasks", auth.Write), (*server).apiCreatePause},
+	{"PATCH", "/tasks/pauses/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchPause},
+	{"DELETE", "/tasks/pauses/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeletePause},
 	{"PATCH", "/tasks/{id}", auth.Perm("tasks", auth.Write), (*server).apiPatchTask},
 	{"DELETE", "/tasks/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeleteTask},
 	{"PUT", "/tasks/{id}/done", auth.Perm("tasks", auth.Complete), (*server).apiSetTaskDone},
@@ -133,6 +141,15 @@ var apiRoutes = []APIRoute{
 	{"PUT", "/routine-templates/{id}/order", auth.Perm("tasks", auth.Write), (*server).apiTemplateOrder},
 	{"GET", "/people/{id}/list-view", auth.Perm("lists", auth.Read), (*server).apiGetListView},
 	{"PUT", "/people/{id}/list-view", auth.Perm("lists", auth.Complete), (*server).apiPutListView},
+	{"GET", "/rewards", auth.Perm("tasks", auth.Read), (*server).apiListRewards},
+	{"POST", "/rewards", auth.Perm("tasks", auth.Write), (*server).apiCreateReward},
+	{"GET", "/rewards/{id}", auth.Perm("tasks", auth.Read), (*server).apiGetReward},
+	{"PATCH", "/rewards/{id}", auth.Perm("tasks", auth.Write), (*server).apiUpdateReward},
+	{"DELETE", "/rewards/{id}", auth.Perm("tasks", auth.Delete), (*server).apiDeleteReward},
+	{"POST", "/rewards/{id}/archive", auth.Perm("tasks", auth.Write), (*server).apiArchiveReward},
+	{"POST", "/rewards/{id}/restore", auth.Perm("tasks", auth.Write), (*server).apiRestoreReward},
+	{"GET", "/rewards/{id}/picture", auth.Perm("tasks", auth.Read), (*server).apiGetRewardPicture},
+	{"PUT", "/rewards/{id}/picture", auth.Perm("tasks", auth.Write), (*server).apiPutRewardPicture},
 	{"GET", "/lists", auth.Perm("lists", auth.Read), (*server).apiListLists},
 	{"POST", "/lists", auth.Perm("lists", auth.Write), (*server).apiCreateList},
 	{"GET", "/lists/{id}", auth.Perm("lists", auth.Read), (*server).apiGetList},
@@ -157,6 +174,11 @@ var apiRoutes = []APIRoute{
 	{"PUT", "/articles/{id}/hidden", auth.Perm("lists", auth.Write), (*server).apiSetArticleHidden},
 	{"PUT", "/articles/{id}/pantry", auth.Perm("lists", auth.Write), (*server).apiSetArticlePantry},
 	{"POST", "/articles/{id}/copy", auth.Perm("lists", auth.Write), (*server).apiCopyArticle},
+	{"GET", "/articles/{id}/always", auth.Perm("lists", auth.Read), (*server).apiGetAlways},
+	{"PUT", "/articles/{id}/always", auth.Perm("lists", auth.Write), (*server).apiPutAlways},
+	{"DELETE", "/articles/{id}/always", auth.Perm("lists", auth.Delete), (*server).apiDeleteAlways},
+	{"GET", "/library/always", auth.Perm("lists", auth.Read), (*server).apiGetAlwaysSettings},
+	{"PUT", "/library/always", auth.Perm("lists", auth.Write), (*server).apiPutAlwaysSettings},
 	{"GET", "/articles/{id}/warnings", auth.Perm("health", auth.Read), (*server).apiArticleWarnings},
 	{"GET", "/library/hiding", auth.Perm("health", auth.Read), (*server).apiGetHiding},
 	{"PUT", "/library/hiding", auth.Perm("health", auth.Write), (*server).apiPutHiding},
@@ -302,10 +324,12 @@ type personJSON struct {
 	Color  string     `json:"color"`
 	Shape  string     `json:"shape"`
 	Symbol string     `json:"symbol"`
+	// StreaksShown is the switch "week count and badges" (ticket 294).
+	StreaksShown bool `json:"streaks_shown"`
 }
 
 func toJSON(p store.Person) personJSON {
-	return personJSON{p.ID, p.Name, p.Role, p.Color, p.Shape, p.Symbol}
+	return personJSON{p.ID, p.Name, p.Role, p.Color, p.Shape, p.Symbol, p.StreaksShown}
 }
 
 func (s *server) apiMe(w http.ResponseWriter, _ *http.Request, p principal) {

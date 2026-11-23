@@ -33,7 +33,9 @@ import (
 	"github.com/hejmo-home/hejmo/internal/list"
 	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/passkey/passkeytest"
+	"github.com/hejmo-home/hejmo/internal/reward"
 	"github.com/hejmo-home/hejmo/internal/store"
+	"github.com/hejmo-home/hejmo/internal/streak"
 	"github.com/hejmo-home/hejmo/internal/task"
 	"github.com/hejmo-home/hejmo/internal/unit"
 )
@@ -128,6 +130,7 @@ type layoutFixture struct {
 	inviteToken   string   // the invitation of Maximilian, a parent without account
 	hint          *screen  // a display that shows the screensaver's hint
 	outlook       []string // the Outlook pages (#177) that no link leads to
+	rewards       []string // reward IDs (#291): redeemed, never redeemed, archived by hand, archived because its person left
 }
 
 func newLayoutFixture(t *testing.T) *layoutFixture {
@@ -221,12 +224,25 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 		must(err)
 	}
 	mia := f.people["Maximilian"].ID
-	r, err := db.CreateRoutine(h, task.Routine{PersonID: mia, Name: "Morgenroutine vor der Schule", Part: task.Morning})
+	r, err := db.CreateRoutine(h, task.Routine{PersonID: mia, Name: "Morgenroutine vor der Schule", Part: task.Morning, Created: time.Date(2026, 11, 2, 6, 0, 0, 0, berlinTZ)})
 	must(err)
 	for _, title := range []string{"Zähne putzen", "Schulranzen packen", "Frühstücksbrotdose einpacken"} {
-		_, err := db.AddTask(h, task.Task{PersonID: mia, Title: title, Repeat: task.Daily, Date: "2026-11-14", RoutineID: r.ID, Stars: 1})
+		k, err := db.AddTask(h, task.Task{PersonID: mia, Title: title, Repeat: task.Daily, Date: "2026-11-02", RoutineID: r.ID, Stars: 1})
 		must(err)
+		// The week of Mon 9 to Sun 15 November (#294): Monday to Wednesday done, Thursday half, Friday and today paused.
+		for _, day := range []string{"2026-11-09", "2026-11-10", "2026-11-11"} {
+			must(db.SetTaskDone(h, k.ID, day, true, "", f.at(14, 13, 0)))
+		}
+		if title == "Zähne putzen" {
+			must(db.SetTaskDone(h, k.ID, "2026-11-12", true, "", f.at(14, 13, 0)))
+		}
 	}
+	_, err = db.SavePause(h, streak.Pause{From: "2026-11-13", To: "2026-11-14", People: []string{mia}}, "")
+	must(err)
+	_, err = db.SavePause(h, streak.Pause{From: "2026-12-19", To: "2027-01-03"}, "")
+	must(err)
+	_, err = db.SavePause(h, streak.Pause{From: "2026-11-02", To: "2026-11-03", People: []string{f.people["Anna-Lena"].ID, mia}}, "")
+	must(err)
 	_, err = db.SaveRoutineAsTemplate(h, r.ID, "Morgenroutine für Grundschulkinder")
 	must(err)
 
@@ -292,6 +308,7 @@ func newLayoutFixture(t *testing.T) *layoutFixture {
 		t.Fatalf("choose calendars = %d\n%s", r.status, r.body)
 	}
 	f.outlook = f.addOutlook(t)
+	f.rewards = f.addRewards(t)
 	if r := f.post("/caldav/tokens", url.Values{"name": {"iPhone von Friedrich mit langem Gerätenamen"}}); r.status != http.StatusOK {
 		t.Fatalf("CalDAV token = %d\n%s", r.status, r.body)
 	}
@@ -517,9 +534,12 @@ var notRendered = map[string]string{
 	"/display/photo/{id}":           "image",
 
 	"/articles/{id}/picture":                  "an image",
+	"/tasks/rewards/{id}/picture":             "the photo of a reward, an image",
 	"/display/articles/{id}/picture":          "an image",
 	"/settings/lists/library/picture/{token}": "an image",
 	"/settings/lists/library/suggest":         "JSON for the live list under the name field",
+	"/settings/lists/library/plan/{id}":       "fragment: the sentence under the card of an article, rendered inside it",
+	"/settings/lists/always/plan":             "fragment: the sentence under the holiday, rendered inside its page",
 }
 
 // matches reports whether a request path is served by a route pattern.
@@ -553,8 +573,23 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 	for _, p := range f.outlook {
 		add(parent, p)
 	}
+	// The reward catalogue (#291): the crawl renders one page of each kind; the new reward form and the four
+	// states of a reward's page (redeemed with the archive box, never redeemed with the delete box, archived by
+	// hand, archived because its person left) are reached by hand, and the form with its errors by a POST.
+	have := map[string]bool{}
+	for _, pg := range pages {
+		have[pg.path] = true
+	}
+	for _, p := range append([]string{"/tasks/rewards/new"}, prefixed("/tasks/rewards/", f.rewards)...) {
+		if !have[p] {
+			add(parent, p)
+		}
+	}
+	pages = append(pages, rewardFormPages(t, f)...)
 	// The child's personal device shows lists as tiles by default (#166): the tiles of articles with a picture, a symbol and the warning of several people, and of free text.
 	kid := siteOf("child personal device", f.box, f.kid.client)
+	add(kid, "/tasks")
+	add(kid, "/tasks/rewards")
 	add(kid, "/lists")
 	add(kid, "/lists/"+f.lists[0])
 	add(kid, "/lists/"+f.lists[1])
@@ -571,6 +606,8 @@ func layoutPages(t *testing.T, f *layoutFixture) []layoutPage {
 
 	// Offline mode (ticket 201): the pages as the box answers them while it is on.
 	pages = append(pages, offlinePages(t, f)...)
+	// Uploading an update file (ticket 221): the page, its errors, the confirmation and the installation.
+	pages = append(pages, updateUploadPages(t, f)...)
 
 	// Google (ticket 18): the guide, the sign-in in its variants, the failures that replace the steps,
 	// Choose calendars with its access lines, and the notices to sign in again.
@@ -1262,6 +1299,75 @@ func TestLongSingleWordNameStaysInsideHeadings(t *testing.T) {
 			}
 		})
 	}
+}
+
+func prefixed(prefix string, ids []string) []string {
+	var out []string
+	for _, id := range ids {
+		out = append(out, prefix+id)
+	}
+	return out
+}
+
+// addRewards makes the catalogue of the layout fixture (#291): long names, a limit, a photo-less and a
+// symbol reward, one meant for people, and the four states of a reward's page.
+func (f *layoutFixture) addRewards(t *testing.T) []string {
+	t.Helper()
+	db, h := f.db, f.householdID
+	mk := func(r store.Reward) string {
+		t.Helper()
+		got, err := db.CreateReward(h, f.ids[0], r, nil)
+		if err != nil {
+			t.Fatal(err)
+		}
+		return got.ID
+	}
+	redeem := func(id, person string) {
+		t.Helper()
+		if _, err := db.SQL().Exec(`INSERT INTO reward_redemptions (id, reward_id, person_id, status, price, requested_at, decided_at) VALUES (lower(hex(randomblob(8))), ?, ?, 'confirmed', 5, ?, ?)`, id, person, "2026-11-12T10:00:00Z", "2026-11-12T10:00:00Z"); err != nil {
+			t.Fatal(err)
+		}
+	}
+	anna := f.people["Anna-Lena"].ID
+	if _, err := db.BookStars(h, anna, 12, "layout", f.ids[0], f.now); err != nil {
+		t.Fatal(err)
+	}
+	redeemed := mk(store.Reward{Name: "Am Wochenende länger aufbleiben und den Film aussuchen", Symbol: "🌙", Price: 15, Limit: reward.Limit{Period: reward.Week, Count: 1}, PersonIDs: f.ids[1:7]})
+	for _, who := range f.ids[1:4] {
+		redeem(redeemed, who)
+	}
+	redeem(redeemed, anna)
+	never := mk(store.Reward{Name: "Eis aus der Eisdiele", Symbol: "🍦", Price: 8, Limit: reward.Limit{Period: reward.Day, Count: 2}})
+	mk(store.Reward{Name: "Spielenachmittag mit Freundinnen und Freunden daheim", Symbol: "🎲", Price: 5})
+	mk(store.Reward{Name: "Kinoabend", Symbol: "🎬", Price: 30, Limit: reward.Limit{Period: reward.Month, Count: 1}, PersonIDs: []string{anna}})
+	byHand := mk(store.Reward{Name: "Fahrradtour mit Papa", Symbol: "🚲", Price: 25})
+	redeem(byHand, anna)
+	if _, err := db.ArchiveReward(h, byHand, f.now); err != nil {
+		t.Fatal(err)
+	}
+	gone := mk(store.Reward{Name: "Neues Kuscheltier", Symbol: "🧸", Price: 40, PersonIDs: []string{f.ids[7]}})
+	if _, err := db.SQL().Exec(`UPDATE rewards SET archived_at = '2026-11-02T10:00:00Z', archived_reason = 'audience_gone', archived_person = 'Leopoldine' WHERE id = ?`, gone); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.SQL().Exec(`DELETE FROM reward_people WHERE reward_id = ?`, gone); err != nil {
+		t.Fatal(err)
+	}
+	return []string{redeemed, never, byHand, gone}
+}
+
+// rewardFormPages returns the reward form as the box answers a form with an error at every field.
+func rewardFormPages(t *testing.T, f *layoutFixture) []layoutPage {
+	t.Helper()
+	var pages []layoutPage
+	site := siteOf("reward form", f.box, f.client)
+	for _, lang := range []string{"de", "en"} {
+		bad := f.do(http.MethodPost, "/tasks/rewards", url.Values{"name": {""}, "price": {"0"}, "pic_source": {"symbol"}, "symbol": {"🎁"}, "limit_period": {"w"}, "limit_count": {"0"}}, map[string]string{"Accept-Language": lang})
+		if bad.status != http.StatusUnprocessableEntity {
+			t.Fatalf("reward form with errors = %d\n%s", bad.status, bad.body)
+		}
+		pages = append(pages, layoutPage{site: site, path: "/tasks/rewards/new#errors", html: map[string]string{lang: bad.body}})
+	}
+	return mergeCardPages(pages)
 }
 
 // addContacts fills the address book with long texts: names that must wrap, numbers with own labels, long

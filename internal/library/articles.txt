@@ -1,266 +1,266 @@
 # The articles Hejmo ships (ADR 0019, ticket 164). One per line, fields separated by "|":
-# key | German name | English name | department | what is in it | symbol | default units | allergens
+# key | German name | English name | department | what is in it | symbol | default units | allergens | pantry
 # what is in it: meat, fish, veg (vegetarian), vegan or nonfood. Default units: one or two keys of
 # internal/unit. Allergens: keys of the 14 main allergens of EU regulation 1169/2011 annex II, as a
-# product of this kind usually carries them (no traces). NOT yet reviewed by the product owner (follow-up issue 214): change this line only after the review is done.
+# product of this kind usually carries them (no traces). Pantry: "pantry" for an article usually at home (salt, oil, flour), recipes leave it out of the shopping list by default (ADR 0021, ticket 278); empty otherwise. NOT yet reviewed by the product owner (follow-up issue 214): change this line only after the review is done.
 # produce
-apples|Äpfel|Apples|produce|vegan|🍎|kg,piece|
-bananas|Bananen|Bananas|produce|vegan|🍌|piece,kg|
-pears|Birnen|Pears|produce|vegan|🍐|kg,piece|
-oranges|Orangen|Oranges|produce|vegan|🍊|kg,piece|
-lemons|Zitronen|Lemons|produce|vegan|🍋|piece,kg|
-limes|Limetten|Limes|produce|vegan|🍋|piece|
-mandarins|Mandarinen|Mandarins|produce|vegan|🍊|kg,piece|
-grapes|Weintrauben|Grapes|produce|vegan|🍇|g,kg|
-strawberries|Erdbeeren|Strawberries|produce|vegan|🍓|g,pack|
-raspberries|Himbeeren|Raspberries|produce|vegan|🍓|g,pack|
-blueberries|Heidelbeeren|Blueberries|produce|vegan|🫐|g,pack|
-kiwis|Kiwis|Kiwis|produce|vegan|🥝|piece,kg|
-mangos|Mangos|Mangos|produce|vegan|🥭|piece|
-pineapple|Ananas|Pineapple|produce|vegan|🍍|piece|
-watermelon|Wassermelone|Watermelon|produce|vegan|🍉|piece,kg|
-peaches|Pfirsiche|Peaches|produce|vegan|🍑|kg,piece|
-cherries|Kirschen|Cherries|produce|vegan|🍒|g,kg|
-plums|Pflaumen|Plums|produce|vegan|🍑|kg,piece|
-avocados|Avocados|Avocados|produce|vegan|🥑|piece|
-tomatoes|Tomaten|Tomatoes|produce|vegan|🍅|kg,piece|
-cucumbers|Gurken|Cucumbers|produce|vegan|🥒|piece|
-bell-peppers|Paprika|Bell peppers|produce|vegan|🫑|piece|
-zucchini|Zucchini|Zucchini|produce|vegan|🥒|piece,kg|
-aubergines|Auberginen|Aubergines|produce|vegan|🍆|piece|
-carrots|Karotten|Carrots|produce|vegan|🥕|kg,bunch|
-potatoes|Kartoffeln|Potatoes|produce|vegan|🥔|kg|
-sweet-potatoes|Süßkartoffeln|Sweet potatoes|produce|vegan|🍠|kg,piece|
-onions|Zwiebeln|Onions|produce|vegan|🧅|kg,piece|
-garlic|Knoblauch|Garlic|produce|vegan|🧄|piece|
-leeks|Lauch|Leeks|produce|vegan|🥬|piece|
-broccoli|Brokkoli|Broccoli|produce|vegan|🥦|piece,g|
-cauliflower|Blumenkohl|Cauliflower|produce|vegan|🥦|piece|
-spinach|Spinat|Spinach|produce|vegan|🥬|g,pack|
-lettuce|Kopfsalat|Lettuce|produce|vegan|🥬|piece|
-rocket|Rucola|Rocket|produce|vegan|🥬|pack,g|
-mushrooms|Champignons|Mushrooms|produce|vegan|🍄|g,pack|
-sweetcorn|Mais|Sweetcorn|produce|vegan|🌽|piece|
-radishes|Radieschen|Radishes|produce|vegan|🥕|bunch|
-kohlrabi|Kohlrabi|Kohlrabi|produce|vegan|🥬|piece|
-red-cabbage|Rotkohl|Red cabbage|produce|vegan|🥬|piece,kg|
-white-cabbage|Weißkohl|White cabbage|produce|vegan|🥬|piece,kg|
-celeriac|Knollensellerie|Celeriac|produce|vegan|🥬|piece,kg|celery
-ginger|Ingwer|Ginger|produce|vegan|🫚|g,piece|
-parsley|Petersilie|Parsley|produce|vegan|🌿|bunch|
-chives|Schnittlauch|Chives|produce|vegan|🌿|bunch|
-basil|Basilikum|Basil|produce|vegan|🌿|piece,bunch|
+apples|Äpfel|Apples|produce|vegan|🍎|kg,piece||
+bananas|Bananen|Bananas|produce|vegan|🍌|piece,kg||
+pears|Birnen|Pears|produce|vegan|🍐|kg,piece||
+oranges|Orangen|Oranges|produce|vegan|🍊|kg,piece||
+lemons|Zitronen|Lemons|produce|vegan|🍋|piece,kg||
+limes|Limetten|Limes|produce|vegan|🍋|piece||
+mandarins|Mandarinen|Mandarins|produce|vegan|🍊|kg,piece||
+grapes|Weintrauben|Grapes|produce|vegan|🍇|g,kg||
+strawberries|Erdbeeren|Strawberries|produce|vegan|🍓|g,pack||
+raspberries|Himbeeren|Raspberries|produce|vegan|🍓|g,pack||
+blueberries|Heidelbeeren|Blueberries|produce|vegan|🫐|g,pack||
+kiwis|Kiwis|Kiwis|produce|vegan|🥝|piece,kg||
+mangos|Mangos|Mangos|produce|vegan|🥭|piece||
+pineapple|Ananas|Pineapple|produce|vegan|🍍|piece||
+watermelon|Wassermelone|Watermelon|produce|vegan|🍉|piece,kg||
+peaches|Pfirsiche|Peaches|produce|vegan|🍑|kg,piece||
+cherries|Kirschen|Cherries|produce|vegan|🍒|g,kg||
+plums|Pflaumen|Plums|produce|vegan|🍑|kg,piece||
+avocados|Avocados|Avocados|produce|vegan|🥑|piece||
+tomatoes|Tomaten|Tomatoes|produce|vegan|🍅|kg,piece||
+cucumbers|Gurken|Cucumbers|produce|vegan|🥒|piece||
+bell-peppers|Paprika|Bell peppers|produce|vegan|🫑|piece||
+zucchini|Zucchini|Zucchini|produce|vegan|🥒|piece,kg||
+aubergines|Auberginen|Aubergines|produce|vegan|🍆|piece||
+carrots|Karotten|Carrots|produce|vegan|🥕|kg,bunch||
+potatoes|Kartoffeln|Potatoes|produce|vegan|🥔|kg||
+sweet-potatoes|Süßkartoffeln|Sweet potatoes|produce|vegan|🍠|kg,piece||
+onions|Zwiebeln|Onions|produce|vegan|🧅|kg,piece||
+garlic|Knoblauch|Garlic|produce|vegan|🧄|piece||
+leeks|Lauch|Leeks|produce|vegan|🥬|piece||
+broccoli|Brokkoli|Broccoli|produce|vegan|🥦|piece,g||
+cauliflower|Blumenkohl|Cauliflower|produce|vegan|🥦|piece||
+spinach|Spinat|Spinach|produce|vegan|🥬|g,pack||
+lettuce|Kopfsalat|Lettuce|produce|vegan|🥬|piece||
+rocket|Rucola|Rocket|produce|vegan|🥬|pack,g||
+mushrooms|Champignons|Mushrooms|produce|vegan|🍄|g,pack||
+sweetcorn|Mais|Sweetcorn|produce|vegan|🌽|piece||
+radishes|Radieschen|Radishes|produce|vegan|🥕|bunch||
+kohlrabi|Kohlrabi|Kohlrabi|produce|vegan|🥬|piece||
+red-cabbage|Rotkohl|Red cabbage|produce|vegan|🥬|piece,kg||
+white-cabbage|Weißkohl|White cabbage|produce|vegan|🥬|piece,kg||
+celeriac|Knollensellerie|Celeriac|produce|vegan|🥬|piece,kg|celery|
+ginger|Ingwer|Ginger|produce|vegan|🫚|g,piece||
+parsley|Petersilie|Parsley|produce|vegan|🌿|bunch||
+chives|Schnittlauch|Chives|produce|vegan|🌿|bunch||
+basil|Basilikum|Basil|produce|vegan|🌿|piece,bunch||
 # bakery
-bread|Brot|Bread|bakery|vegan|🍞|piece|gluten
-wholemeal-bread|Vollkornbrot|Wholemeal bread|bakery|vegan|🍞|piece|gluten
-rye-bread|Roggenbrot|Rye bread|bakery|vegan|🍞|piece|gluten
-toast|Toastbrot|Sliced bread|bakery|veg|🍞|pack|gluten,milk
-bread-rolls|Brötchen|Bread rolls|bakery|vegan|🥖|piece|gluten
-pretzels|Laugenbrezeln|Pretzels|bakery|vegan|🥨|piece|gluten
-croissants|Croissants|Croissants|bakery|veg|🥐|piece|gluten,milk,eggs
-baguette|Baguette|Baguette|bakery|vegan|🥖|piece|gluten
-sesame-rolls|Sesambrötchen|Sesame rolls|bakery|vegan|🥖|piece|gluten,sesame
-seeded-rolls|Körnerbrötchen|Seeded rolls|bakery|vegan|🥖|piece|gluten,sesame
-pita-bread|Fladenbrot|Pita bread|bakery|vegan|🫓|piece|gluten
-tortilla-wraps|Wraps|Tortilla wraps|bakery|vegan|🌯|pack|gluten
-crispbread|Knäckebrot|Crispbread|bakery|vegan|🍞|pack|gluten
-rusks|Zwieback|Rusks|bakery|veg|🍞|pack|gluten,milk,eggs
-cake|Kuchen|Cake|bakery|veg|🍰|piece|gluten,milk,eggs
-cheesecake|Käsekuchen|Cheesecake|bakery|veg|🍰|piece|gluten,milk,eggs
-doughnuts|Berliner|Doughnuts|bakery|veg|🍩|piece|gluten,milk,eggs
-pizza-dough|Pizzateig|Pizza dough|bakery|vegan|🍕|piece|gluten
-bread-crumbs|Paniermehl|Breadcrumbs|bakery|vegan|🍞|pack,g|gluten
+bread|Brot|Bread|bakery|vegan|🍞|piece|gluten|
+wholemeal-bread|Vollkornbrot|Wholemeal bread|bakery|vegan|🍞|piece|gluten|
+rye-bread|Roggenbrot|Rye bread|bakery|vegan|🍞|piece|gluten|
+toast|Toastbrot|Sliced bread|bakery|veg|🍞|pack|gluten,milk|
+bread-rolls|Brötchen|Bread rolls|bakery|vegan|🥖|piece|gluten|
+pretzels|Laugenbrezeln|Pretzels|bakery|vegan|🥨|piece|gluten|
+croissants|Croissants|Croissants|bakery|veg|🥐|piece|gluten,milk,eggs|
+baguette|Baguette|Baguette|bakery|vegan|🥖|piece|gluten|
+sesame-rolls|Sesambrötchen|Sesame rolls|bakery|vegan|🥖|piece|gluten,sesame|
+seeded-rolls|Körnerbrötchen|Seeded rolls|bakery|vegan|🥖|piece|gluten,sesame|
+pita-bread|Fladenbrot|Pita bread|bakery|vegan|🫓|piece|gluten|
+tortilla-wraps|Wraps|Tortilla wraps|bakery|vegan|🌯|pack|gluten|
+crispbread|Knäckebrot|Crispbread|bakery|vegan|🍞|pack|gluten|
+rusks|Zwieback|Rusks|bakery|veg|🍞|pack|gluten,milk,eggs|
+cake|Kuchen|Cake|bakery|veg|🍰|piece|gluten,milk,eggs|
+cheesecake|Käsekuchen|Cheesecake|bakery|veg|🍰|piece|gluten,milk,eggs|
+doughnuts|Berliner|Doughnuts|bakery|veg|🍩|piece|gluten,milk,eggs|
+pizza-dough|Pizzateig|Pizza dough|bakery|vegan|🍕|piece|gluten|
+bread-crumbs|Paniermehl|Breadcrumbs|bakery|vegan|🍞|pack,g|gluten|
 # dairy
-milk|Milch|Milk|dairy|veg|🥛|l,pack|milk
-oat-drink|Haferdrink|Oat drink|dairy|vegan|🥛|l|gluten
-soy-drink|Sojadrink|Soy drink|dairy|vegan|🥛|l|soy
-almond-drink|Mandeldrink|Almond drink|dairy|vegan|🥛|l|nuts
-butter|Butter|Butter|dairy|veg|🧈|pack,g|milk
-margarine|Margarine|Margarine|dairy|vegan|🧈|pack|
-cream|Sahne|Cream|dairy|veg|🥛|pack,ml|milk
-sour-cream|Saure Sahne|Sour cream|dairy|veg|🥛|pack|milk
-creme-fraiche|Crème fraîche|Crème fraîche|dairy|veg|🥛|pack|milk
-yoghurt|Joghurt|Yoghurt|dairy|veg|🥛|pack,g|milk
-quark|Quark|Quark|dairy|veg|🥛|pack,g|milk
-cream-cheese|Frischkäse|Cream cheese|dairy|veg|🧀|pack|milk
-mozzarella|Mozzarella|Mozzarella|dairy|veg|🧀|pack,piece|milk
-gouda|Gouda|Gouda|dairy|veg|🧀|g,pack|milk
-emmental|Emmentaler|Emmental|dairy|veg|🧀|g,pack|milk
-parmesan|Parmesan|Parmesan|dairy|veg|🧀|g,pack|milk
-feta|Feta|Feta|dairy|veg|🧀|pack,g|milk
-grated-cheese|Geriebener Käse|Grated cheese|dairy|veg|🧀|pack,g|milk
-cottage-cheese|Hüttenkäse|Cottage cheese|dairy|veg|🧀|pack|milk
-eggs|Eier|Eggs|dairy|veg|🥚|dozen,piece|eggs
-pudding|Pudding|Pudding|dairy|veg|🍮|pack,piece|milk
-kefir|Kefir|Kefir|dairy|veg|🥛|l,pack|milk
-buttermilk|Buttermilch|Buttermilk|dairy|veg|🥛|l,pack|milk
-plant-yoghurt|Pflanzenjoghurt|Plant-based yoghurt|dairy|vegan|🥛|pack|soy
+milk|Milch|Milk|dairy|veg|🥛|l,pack|milk|
+oat-drink|Haferdrink|Oat drink|dairy|vegan|🥛|l|gluten|
+soy-drink|Sojadrink|Soy drink|dairy|vegan|🥛|l|soy|
+almond-drink|Mandeldrink|Almond drink|dairy|vegan|🥛|l|nuts|
+butter|Butter|Butter|dairy|veg|🧈|pack,g|milk|
+margarine|Margarine|Margarine|dairy|vegan|🧈|pack||
+cream|Sahne|Cream|dairy|veg|🥛|pack,ml|milk|
+sour-cream|Saure Sahne|Sour cream|dairy|veg|🥛|pack|milk|
+creme-fraiche|Crème fraîche|Crème fraîche|dairy|veg|🥛|pack|milk|
+yoghurt|Joghurt|Yoghurt|dairy|veg|🥛|pack,g|milk|
+quark|Quark|Quark|dairy|veg|🥛|pack,g|milk|
+cream-cheese|Frischkäse|Cream cheese|dairy|veg|🧀|pack|milk|
+mozzarella|Mozzarella|Mozzarella|dairy|veg|🧀|pack,piece|milk|
+gouda|Gouda|Gouda|dairy|veg|🧀|g,pack|milk|
+emmental|Emmentaler|Emmental|dairy|veg|🧀|g,pack|milk|
+parmesan|Parmesan|Parmesan|dairy|veg|🧀|g,pack|milk|
+feta|Feta|Feta|dairy|veg|🧀|pack,g|milk|
+grated-cheese|Geriebener Käse|Grated cheese|dairy|veg|🧀|pack,g|milk|
+cottage-cheese|Hüttenkäse|Cottage cheese|dairy|veg|🧀|pack|milk|
+eggs|Eier|Eggs|dairy|veg|🥚|dozen,piece|eggs|
+pudding|Pudding|Pudding|dairy|veg|🍮|pack,piece|milk|
+kefir|Kefir|Kefir|dairy|veg|🥛|l,pack|milk|
+buttermilk|Buttermilch|Buttermilk|dairy|veg|🥛|l,pack|milk|
+plant-yoghurt|Pflanzenjoghurt|Plant-based yoghurt|dairy|vegan|🥛|pack|soy|
 # meat and fish
-chicken-breast|Hähnchenbrust|Chicken breast|meat_fish|meat|🍗|g,kg|
-chicken-legs|Hähnchenschenkel|Chicken legs|meat_fish|meat|🍗|kg,piece|
-minced-meat|Hackfleisch|Minced meat|meat_fish|meat|🥩|g,kg|
-beef-steak|Rindersteak|Beef steak|meat_fish|meat|🥩|piece,g|
-pork-chops|Schweinekoteletts|Pork chops|meat_fish|meat|🥩|piece,g|
-schnitzel|Schnitzel|Schnitzel|meat_fish|meat|🥩|piece,g|
-bacon|Speck|Bacon|meat_fish|meat|🥓|pack,g|
-ham|Schinken|Ham|meat_fish|meat|🥓|pack,g|
-salami|Salami|Salami|meat_fish|meat|🥓|pack,g|
-sausages|Würstchen|Sausages|meat_fish|meat|🌭|pack,piece|
-bratwurst|Bratwurst|Bratwurst|meat_fish|meat|🌭|piece,pack|
-cold-cuts|Aufschnitt|Cold cuts|meat_fish|meat|🥓|pack,g|
-turkey-breast|Putenbrust|Turkey breast|meat_fish|meat|🍗|g,kg|
-lamb|Lammfleisch|Lamb|meat_fish|meat|🥩|g,kg|
-salmon-fillet|Lachsfilet|Salmon fillet|meat_fish|fish|🐟|g,piece|fish
-cod-fillet|Kabeljaufilet|Cod fillet|meat_fish|fish|🐟|g,piece|fish
-trout|Forelle|Trout|meat_fish|fish|🐟|piece|fish
-tuna-tin|Thunfisch (Dose)|Tuna (tin)|meat_fish|fish|🥫|piece|fish
-fish-fingers|Fischstäbchen|Fish fingers|meat_fish|fish|🐟|pack|fish,gluten
-prawns|Garnelen|Prawns|meat_fish|fish|🦐|g,pack|crustaceans
-smoked-salmon|Räucherlachs|Smoked salmon|meat_fish|fish|🐟|pack,g|fish
-mussels|Muscheln|Mussels|meat_fish|fish|🦪|kg,g|molluscs
+chicken-breast|Hähnchenbrust|Chicken breast|meat_fish|meat|🍗|g,kg||
+chicken-legs|Hähnchenschenkel|Chicken legs|meat_fish|meat|🍗|kg,piece||
+minced-meat|Hackfleisch|Minced meat|meat_fish|meat|🥩|g,kg||
+beef-steak|Rindersteak|Beef steak|meat_fish|meat|🥩|piece,g||
+pork-chops|Schweinekoteletts|Pork chops|meat_fish|meat|🥩|piece,g||
+schnitzel|Schnitzel|Schnitzel|meat_fish|meat|🥩|piece,g||
+bacon|Speck|Bacon|meat_fish|meat|🥓|pack,g||
+ham|Schinken|Ham|meat_fish|meat|🥓|pack,g||
+salami|Salami|Salami|meat_fish|meat|🥓|pack,g||
+sausages|Würstchen|Sausages|meat_fish|meat|🌭|pack,piece||
+bratwurst|Bratwurst|Bratwurst|meat_fish|meat|🌭|piece,pack||
+cold-cuts|Aufschnitt|Cold cuts|meat_fish|meat|🥓|pack,g||
+turkey-breast|Putenbrust|Turkey breast|meat_fish|meat|🍗|g,kg||
+lamb|Lammfleisch|Lamb|meat_fish|meat|🥩|g,kg||
+salmon-fillet|Lachsfilet|Salmon fillet|meat_fish|fish|🐟|g,piece|fish|
+cod-fillet|Kabeljaufilet|Cod fillet|meat_fish|fish|🐟|g,piece|fish|
+trout|Forelle|Trout|meat_fish|fish|🐟|piece|fish|
+tuna-tin|Thunfisch (Dose)|Tuna (tin)|meat_fish|fish|🥫|piece|fish|
+fish-fingers|Fischstäbchen|Fish fingers|meat_fish|fish|🐟|pack|fish,gluten|
+prawns|Garnelen|Prawns|meat_fish|fish|🦐|g,pack|crustaceans|
+smoked-salmon|Räucherlachs|Smoked salmon|meat_fish|fish|🐟|pack,g|fish|
+mussels|Muscheln|Mussels|meat_fish|fish|🦪|kg,g|molluscs|
 # frozen
-frozen-peas|Erbsen (tiefgekühlt)|Frozen peas|frozen|vegan|🫛|pack|
-frozen-spinach|Rahmspinat (tiefgekühlt)|Creamed spinach (frozen)|frozen|veg|🥬|pack|milk
-frozen-veg|Gemüsemischung (tiefgekühlt)|Frozen vegetables|frozen|vegan|🥦|pack|
-frozen-berries|Beeren (tiefgekühlt)|Frozen berries|frozen|vegan|🫐|pack|
-fries|Pommes frites|French fries|frozen|vegan|🍟|pack|
-frozen-pizza|Pizza (tiefgekühlt)|Frozen pizza|frozen|veg|🍕|piece|gluten,milk
-ice-cream|Eis|Ice cream|frozen|veg|🍨|pack|milk
-fish-fingers-frozen|Fischstäbchen (tiefgekühlt)|Fish fingers (frozen)|frozen|fish|🐟|pack|fish,gluten
-frozen-chicken-nuggets|Chicken Nuggets|Chicken nuggets|frozen|meat|🍗|pack|gluten
-frozen-dumplings|Maultaschen|Maultaschen|frozen|meat|🥟|pack|gluten,eggs
-frozen-bread-rolls|Brötchen zum Aufbacken|Bake-off rolls|frozen|vegan|🥖|pack|gluten
-frozen-herbs|Kräuter (tiefgekühlt)|Frozen herbs|frozen|vegan|🌿|pack|
-ice-cubes|Eiswürfel|Ice cubes|frozen|nonfood|🧊|pack|
-frozen-veggie-burgers|Veggie-Burger (tiefgekühlt)|Veggie burgers (frozen)|frozen|vegan|🍔|pack|soy,gluten
+frozen-peas|Erbsen (tiefgekühlt)|Frozen peas|frozen|vegan|🫛|pack||
+frozen-spinach|Rahmspinat (tiefgekühlt)|Creamed spinach (frozen)|frozen|veg|🥬|pack|milk|
+frozen-veg|Gemüsemischung (tiefgekühlt)|Frozen vegetables|frozen|vegan|🥦|pack||
+frozen-berries|Beeren (tiefgekühlt)|Frozen berries|frozen|vegan|🫐|pack||
+fries|Pommes frites|French fries|frozen|vegan|🍟|pack||
+frozen-pizza|Pizza (tiefgekühlt)|Frozen pizza|frozen|veg|🍕|piece|gluten,milk|
+ice-cream|Eis|Ice cream|frozen|veg|🍨|pack|milk|
+fish-fingers-frozen|Fischstäbchen (tiefgekühlt)|Fish fingers (frozen)|frozen|fish|🐟|pack|fish,gluten|
+frozen-chicken-nuggets|Chicken Nuggets|Chicken nuggets|frozen|meat|🍗|pack|gluten|
+frozen-dumplings|Maultaschen|Maultaschen|frozen|meat|🥟|pack|gluten,eggs|
+frozen-bread-rolls|Brötchen zum Aufbacken|Bake-off rolls|frozen|vegan|🥖|pack|gluten|
+frozen-herbs|Kräuter (tiefgekühlt)|Frozen herbs|frozen|vegan|🌿|pack||
+ice-cubes|Eiswürfel|Ice cubes|frozen|nonfood|🧊|pack||
+frozen-veggie-burgers|Veggie-Burger (tiefgekühlt)|Veggie burgers (frozen)|frozen|vegan|🍔|pack|soy,gluten|
 # pantry and breakfast
-rolled-oats|Haferflocken|Rolled oats|pantry|vegan|🥣|g,pack|gluten
-muesli|Müsli|Muesli|pantry|vegan|🥣|pack|gluten,nuts
-cornflakes|Cornflakes|Cornflakes|pantry|vegan|🥣|pack|gluten
-honey|Honig|Honey|pantry|veg|🍯|piece|
-jam|Marmelade|Jam|pantry|vegan|🍓|piece|
-nut-nougat-spread|Nuss-Nougat-Creme|Hazelnut chocolate spread|pantry|veg|🍫|piece|milk,nuts,soy
-peanut-butter|Erdnussbutter|Peanut butter|pantry|vegan|🥜|piece,g|peanuts
-pasta|Nudeln|Pasta|pantry|vegan|🍝|g,pack|gluten
-spaghetti|Spaghetti|Spaghetti|pantry|vegan|🍝|g,pack|gluten
-rice|Reis|Rice|pantry|vegan|🍚|g,kg|
-basmati-rice|Basmatireis|Basmati rice|pantry|vegan|🍚|g,kg|
-couscous|Couscous|Couscous|pantry|vegan|🍚|g,pack|gluten
-lentils|Linsen|Lentils|pantry|vegan|🫘|g,pack|
-chickpeas-tin|Kichererbsen (Dose)|Chickpeas (tin)|pantry|vegan|🫘|piece|
-kidney-beans-tin|Kidneybohnen (Dose)|Kidney beans (tin)|pantry|vegan|🫘|piece|
-chopped-tomatoes|Tomaten, gehackt (Dose)|Chopped tomatoes (tin)|pantry|vegan|🥫|piece|
-tomato-passata|Passierte Tomaten|Passata|pantry|vegan|🥫|piece|
-tomato-paste|Tomatenmark|Tomato paste|pantry|vegan|🥫|piece|
-olive-oil|Olivenöl|Olive oil|pantry|vegan|🫒|piece|
-vinegar|Essig|Vinegar|pantry|vegan|🫙|piece|sulphites
-ketchup|Ketchup|Ketchup|pantry|vegan|🍅|piece|
-mustard|Senf|Mustard|pantry|vegan|🫙|piece|mustard
-mayonnaise|Mayonnaise|Mayonnaise|pantry|veg|🫙|piece|eggs,mustard
-soy-sauce|Sojasoße|Soy sauce|pantry|vegan|🫙|piece|soy,gluten
-vegetable-stock|Gemüsebrühe|Vegetable stock|pantry|vegan|🫙|pack|celery
-tea|Tee|Tea|pantry|vegan|🫖|pack|
-coffee|Kaffee|Coffee|pantry|vegan|☕|pack,g|
-cocoa-powder|Kakaopulver|Cocoa powder|pantry|vegan|🍫|pack|
-tahini|Tahini|Tahini|pantry|vegan|🫙|piece|sesame
-hummus|Hummus|Hummus|pantry|vegan|🫘|pack|sesame
-coconut-milk|Kokosnussmilch|Coconut milk|pantry|vegan|🥥|piece|
+rolled-oats|Haferflocken|Rolled oats|pantry|vegan|🥣|g,pack|gluten|
+muesli|Müsli|Muesli|pantry|vegan|🥣|pack|gluten,nuts|
+cornflakes|Cornflakes|Cornflakes|pantry|vegan|🥣|pack|gluten|
+honey|Honig|Honey|pantry|veg|🍯|piece||
+jam|Marmelade|Jam|pantry|vegan|🍓|piece||
+nut-nougat-spread|Nuss-Nougat-Creme|Hazelnut chocolate spread|pantry|veg|🍫|piece|milk,nuts,soy|
+peanut-butter|Erdnussbutter|Peanut butter|pantry|vegan|🥜|piece,g|peanuts|
+pasta|Nudeln|Pasta|pantry|vegan|🍝|g,pack|gluten|
+spaghetti|Spaghetti|Spaghetti|pantry|vegan|🍝|g,pack|gluten|
+rice|Reis|Rice|pantry|vegan|🍚|g,kg||
+basmati-rice|Basmatireis|Basmati rice|pantry|vegan|🍚|g,kg||
+couscous|Couscous|Couscous|pantry|vegan|🍚|g,pack|gluten|
+lentils|Linsen|Lentils|pantry|vegan|🫘|g,pack||
+chickpeas-tin|Kichererbsen (Dose)|Chickpeas (tin)|pantry|vegan|🫘|piece||
+kidney-beans-tin|Kidneybohnen (Dose)|Kidney beans (tin)|pantry|vegan|🫘|piece||
+chopped-tomatoes|Tomaten, gehackt (Dose)|Chopped tomatoes (tin)|pantry|vegan|🥫|piece||
+tomato-passata|Passierte Tomaten|Passata|pantry|vegan|🥫|piece||
+tomato-paste|Tomatenmark|Tomato paste|pantry|vegan|🥫|piece||
+olive-oil|Olivenöl|Olive oil|pantry|vegan|🫒|piece||pantry
+vinegar|Essig|Vinegar|pantry|vegan|🫙|piece|sulphites|pantry
+ketchup|Ketchup|Ketchup|pantry|vegan|🍅|piece||
+mustard|Senf|Mustard|pantry|vegan|🫙|piece|mustard|
+mayonnaise|Mayonnaise|Mayonnaise|pantry|veg|🫙|piece|eggs,mustard|
+soy-sauce|Sojasoße|Soy sauce|pantry|vegan|🫙|piece|soy,gluten|pantry
+vegetable-stock|Gemüsebrühe|Vegetable stock|pantry|vegan|🫙|pack|celery|pantry
+tea|Tee|Tea|pantry|vegan|🫖|pack||
+coffee|Kaffee|Coffee|pantry|vegan|☕|pack,g||
+cocoa-powder|Kakaopulver|Cocoa powder|pantry|vegan|🍫|pack||
+tahini|Tahini|Tahini|pantry|vegan|🫙|piece|sesame|
+hummus|Hummus|Hummus|pantry|vegan|🫘|pack|sesame|
+coconut-milk|Kokosnussmilch|Coconut milk|pantry|vegan|🥥|piece||
 # baking and spices
-wheat-flour|Weizenmehl|Wheat flour|baking_spices|vegan|🌾|g,kg|gluten
-spelt-flour|Dinkelmehl|Spelt flour|baking_spices|vegan|🌾|g,kg|gluten
-sugar|Zucker|Sugar|baking_spices|vegan|🧂|kg,g|
-icing-sugar|Puderzucker|Icing sugar|baking_spices|vegan|🧂|pack,g|
-brown-sugar|Brauner Zucker|Brown sugar|baking_spices|vegan|🧂|pack,g|
-vanilla-sugar|Vanillezucker|Vanilla sugar|baking_spices|vegan|🧂|pack|
-baking-powder|Backpulver|Baking powder|baking_spices|vegan|🧂|pack|
-yeast|Hefe|Yeast|baking_spices|vegan|🍞|pack|
-cornflour|Speisestärke|Cornflour|baking_spices|vegan|🧂|pack|
-ground-hazelnuts|Haselnüsse, gemahlen|Ground hazelnuts|baking_spices|vegan|🌰|pack,g|nuts
-ground-almonds|Mandeln, gemahlen|Ground almonds|baking_spices|vegan|🌰|pack,g|nuts
-walnut-pieces|Walnusskerne|Walnut kernels|baking_spices|vegan|🌰|pack,g|nuts
-salt|Salz|Salt|baking_spices|vegan|🧂|pack|
-pepper|Pfeffer|Pepper|baking_spices|vegan|🧂|piece|
-paprika-powder|Paprikapulver|Paprika powder|baking_spices|vegan|🌶️|piece|
-cinnamon|Zimt|Cinnamon|baking_spices|vegan|🧂|piece|
-nutmeg|Muskatnuss|Nutmeg|baking_spices|vegan|🧂|piece|
-oregano|Oregano|Oregano|baking_spices|vegan|🌿|piece|
-curry-powder|Currypulver|Curry powder|baking_spices|vegan|🧂|piece|mustard
-sesame-seeds|Sesam|Sesame seeds|baking_spices|vegan|🌱|pack|sesame
+wheat-flour|Weizenmehl|Wheat flour|baking_spices|vegan|🌾|g,kg|gluten|pantry
+spelt-flour|Dinkelmehl|Spelt flour|baking_spices|vegan|🌾|g,kg|gluten|pantry
+sugar|Zucker|Sugar|baking_spices|vegan|🧂|kg,g||pantry
+icing-sugar|Puderzucker|Icing sugar|baking_spices|vegan|🧂|pack,g||pantry
+brown-sugar|Brauner Zucker|Brown sugar|baking_spices|vegan|🧂|pack,g||pantry
+vanilla-sugar|Vanillezucker|Vanilla sugar|baking_spices|vegan|🧂|pack||pantry
+baking-powder|Backpulver|Baking powder|baking_spices|vegan|🧂|pack||pantry
+yeast|Hefe|Yeast|baking_spices|vegan|🍞|pack||
+cornflour|Speisestärke|Cornflour|baking_spices|vegan|🧂|pack||pantry
+ground-hazelnuts|Haselnüsse, gemahlen|Ground hazelnuts|baking_spices|vegan|🌰|pack,g|nuts|
+ground-almonds|Mandeln, gemahlen|Ground almonds|baking_spices|vegan|🌰|pack,g|nuts|
+walnut-pieces|Walnusskerne|Walnut kernels|baking_spices|vegan|🌰|pack,g|nuts|
+salt|Salz|Salt|baking_spices|vegan|🧂|pack||pantry
+pepper|Pfeffer|Pepper|baking_spices|vegan|🧂|piece||pantry
+paprika-powder|Paprikapulver|Paprika powder|baking_spices|vegan|🌶️|piece||pantry
+cinnamon|Zimt|Cinnamon|baking_spices|vegan|🧂|piece||pantry
+nutmeg|Muskatnuss|Nutmeg|baking_spices|vegan|🧂|piece||pantry
+oregano|Oregano|Oregano|baking_spices|vegan|🌿|piece||pantry
+curry-powder|Currypulver|Curry powder|baking_spices|vegan|🧂|piece|mustard|pantry
+sesame-seeds|Sesam|Sesame seeds|baking_spices|vegan|🌱|pack|sesame|pantry
 # sweets and snacks
-milk-chocolate|Milchschokolade|Milk chocolate|sweets|veg|🍫|piece|milk,soy
-dark-chocolate|Zartbitterschokolade|Dark chocolate|sweets|vegan|🍫|piece|soy
-nut-chocolate|Nussschokolade|Hazelnut chocolate|sweets|veg|🍫|piece|milk,nuts,soy
-gummy-bears|Gummibärchen|Gummy bears|sweets|meat|🍬|pack|
-fruit-gums|Fruchtgummi (ohne Gelatine)|Fruit gums (gelatine-free)|sweets|vegan|🍬|pack|
-biscuits|Kekse|Biscuits|sweets|veg|🍪|pack|gluten,milk,eggs
-oat-biscuits|Haferkekse|Oat biscuits|sweets|veg|🍪|pack|gluten,milk
-crisps|Chips|Crisps|sweets|vegan|🥔|pack|
-salty-sticks|Salzstangen|Salty sticks|sweets|vegan|🥨|pack|gluten
-popcorn|Popcorn|Popcorn|sweets|vegan|🍿|pack|
-peanuts-salted|Erdnüsse, gesalzen|Salted peanuts|sweets|vegan|🥜|pack|peanuts
-walnuts|Walnüsse|Walnuts|sweets|vegan|🌰|pack,g|nuts
-cashews|Cashewkerne|Cashews|sweets|vegan|🌰|pack,g|nuts
-trail-mix|Studentenfutter|Trail mix|sweets|vegan|🥜|pack|nuts,peanuts
-raisins|Rosinen|Raisins|sweets|vegan|🍇|pack,g|sulphites
-fruit-bars|Fruchtriegel|Fruit bars|sweets|vegan|🍫|pack|nuts
-waffles|Waffeln|Waffles|sweets|veg|🧇|pack|gluten,milk,eggs
+milk-chocolate|Milchschokolade|Milk chocolate|sweets|veg|🍫|piece|milk,soy|
+dark-chocolate|Zartbitterschokolade|Dark chocolate|sweets|vegan|🍫|piece|soy|
+nut-chocolate|Nussschokolade|Hazelnut chocolate|sweets|veg|🍫|piece|milk,nuts,soy|
+gummy-bears|Gummibärchen|Gummy bears|sweets|meat|🍬|pack||
+fruit-gums|Fruchtgummi (ohne Gelatine)|Fruit gums (gelatine-free)|sweets|vegan|🍬|pack||
+biscuits|Kekse|Biscuits|sweets|veg|🍪|pack|gluten,milk,eggs|
+oat-biscuits|Haferkekse|Oat biscuits|sweets|veg|🍪|pack|gluten,milk|
+crisps|Chips|Crisps|sweets|vegan|🥔|pack||
+salty-sticks|Salzstangen|Salty sticks|sweets|vegan|🥨|pack|gluten|
+popcorn|Popcorn|Popcorn|sweets|vegan|🍿|pack||
+peanuts-salted|Erdnüsse, gesalzen|Salted peanuts|sweets|vegan|🥜|pack|peanuts|
+walnuts|Walnüsse|Walnuts|sweets|vegan|🌰|pack,g|nuts|
+cashews|Cashewkerne|Cashews|sweets|vegan|🌰|pack,g|nuts|
+trail-mix|Studentenfutter|Trail mix|sweets|vegan|🥜|pack|nuts,peanuts|
+raisins|Rosinen|Raisins|sweets|vegan|🍇|pack,g|sulphites|
+fruit-bars|Fruchtriegel|Fruit bars|sweets|vegan|🍫|pack|nuts|
+waffles|Waffeln|Waffles|sweets|veg|🧇|pack|gluten,milk,eggs|
 # drinks
-water|Wasser|Water|drinks|vegan|💧|l,pack|
-sparkling-water|Sprudelwasser|Sparkling water|drinks|vegan|💧|pack,l|
-apple-juice|Apfelsaft|Apple juice|drinks|vegan|🧃|l|
-orange-juice|Orangensaft|Orange juice|drinks|vegan|🧃|l|
-apple-spritzer|Apfelschorle|Apple spritzer|drinks|vegan|🧃|pack,l|
-lemonade|Limonade|Lemonade|drinks|vegan|🥤|l,pack|
-cola|Cola|Cola|drinks|vegan|🥤|l,pack|
-iced-tea|Eistee|Iced tea|drinks|vegan|🧋|l,pack|
-beer|Bier|Beer|drinks|vegan|🍺|pack,piece|gluten
-wine|Wein|Wine|drinks|vegan|🍷|piece|sulphites
-sparkling-wine|Sekt|Sparkling wine|drinks|vegan|🍾|piece|sulphites
-cocoa-drink|Kakaogetränk|Cocoa drink|drinks|veg|🥛|l,pack|milk
-smoothie|Smoothie|Smoothie|drinks|vegan|🥤|piece|
-baby-tea|Kindertee|Children's tea|drinks|vegan|🫖|pack|
-coffee-beans|Kaffeebohnen|Coffee beans|drinks|vegan|☕|pack,g|
-mineral-water-still|Stilles Wasser|Still water|drinks|vegan|💧|pack,l|
+water|Wasser|Water|drinks|vegan|💧|l,pack||
+sparkling-water|Sprudelwasser|Sparkling water|drinks|vegan|💧|pack,l||
+apple-juice|Apfelsaft|Apple juice|drinks|vegan|🧃|l||
+orange-juice|Orangensaft|Orange juice|drinks|vegan|🧃|l||
+apple-spritzer|Apfelschorle|Apple spritzer|drinks|vegan|🧃|pack,l||
+lemonade|Limonade|Lemonade|drinks|vegan|🥤|l,pack||
+cola|Cola|Cola|drinks|vegan|🥤|l,pack||
+iced-tea|Eistee|Iced tea|drinks|vegan|🧋|l,pack||
+beer|Bier|Beer|drinks|vegan|🍺|pack,piece|gluten|
+wine|Wein|Wine|drinks|vegan|🍷|piece|sulphites|
+sparkling-wine|Sekt|Sparkling wine|drinks|vegan|🍾|piece|sulphites|
+cocoa-drink|Kakaogetränk|Cocoa drink|drinks|veg|🥛|l,pack|milk|
+smoothie|Smoothie|Smoothie|drinks|vegan|🥤|piece||
+baby-tea|Kindertee|Children's tea|drinks|vegan|🫖|pack||
+coffee-beans|Kaffeebohnen|Coffee beans|drinks|vegan|☕|pack,g||
+mineral-water-still|Stilles Wasser|Still water|drinks|vegan|💧|pack,l||
 # drugstore
-toothpaste|Zahnpasta|Toothpaste|drugstore|nonfood|🪥|piece|
-toothbrush|Zahnbürste|Toothbrush|drugstore|nonfood|🪥|piece|
-shampoo|Shampoo|Shampoo|drugstore|nonfood|🧴|piece|
-shower-gel|Duschgel|Shower gel|drugstore|nonfood|🧴|piece|
-soap|Seife|Soap|drugstore|nonfood|🧼|piece|
-deodorant|Deo|Deodorant|drugstore|nonfood|🧴|piece|
-sun-cream|Sonnencreme|Sun cream|drugstore|nonfood|🧴|piece|
-toilet-paper|Toilettenpapier|Toilet paper|drugstore|nonfood|🧻|pack|
-tissues|Taschentücher|Tissues|drugstore|nonfood|🧻|pack|
-plasters|Pflaster|Plasters|drugstore|nonfood|🩹|pack|
-cotton-pads|Wattepads|Cotton pads|drugstore|nonfood|🧴|pack|
-razors|Rasierer|Razors|drugstore|nonfood|🪒|pack|
-hand-cream|Handcreme|Hand cream|drugstore|nonfood|🧴|piece|
-mouthwash|Mundspülung|Mouthwash|drugstore|nonfood|🧴|piece|
-lip-balm|Lippenpflege|Lip balm|drugstore|nonfood|🧴|piece|
+toothpaste|Zahnpasta|Toothpaste|drugstore|nonfood|🪥|piece||
+toothbrush|Zahnbürste|Toothbrush|drugstore|nonfood|🪥|piece||
+shampoo|Shampoo|Shampoo|drugstore|nonfood|🧴|piece||
+shower-gel|Duschgel|Shower gel|drugstore|nonfood|🧴|piece||
+soap|Seife|Soap|drugstore|nonfood|🧼|piece||
+deodorant|Deo|Deodorant|drugstore|nonfood|🧴|piece||
+sun-cream|Sonnencreme|Sun cream|drugstore|nonfood|🧴|piece||
+toilet-paper|Toilettenpapier|Toilet paper|drugstore|nonfood|🧻|pack||
+tissues|Taschentücher|Tissues|drugstore|nonfood|🧻|pack||
+plasters|Pflaster|Plasters|drugstore|nonfood|🩹|pack||
+cotton-pads|Wattepads|Cotton pads|drugstore|nonfood|🧴|pack||
+razors|Rasierer|Razors|drugstore|nonfood|🪒|pack||
+hand-cream|Handcreme|Hand cream|drugstore|nonfood|🧴|piece||
+mouthwash|Mundspülung|Mouthwash|drugstore|nonfood|🧴|piece||
+lip-balm|Lippenpflege|Lip balm|drugstore|nonfood|🧴|piece||
 # household
-washing-up-liquid|Spülmittel|Washing-up liquid|household|nonfood|🧽|piece|
-dishwasher-tabs|Spülmaschinentabs|Dishwasher tablets|household|nonfood|🧽|pack|
-laundry-detergent|Waschmittel|Laundry detergent|household|nonfood|🧺|pack|
-fabric-softener|Weichspüler|Fabric softener|household|nonfood|🧺|piece|
-all-purpose-cleaner|Allzweckreiniger|All-purpose cleaner|household|nonfood|🧽|piece|
-kitchen-roll|Küchenrolle|Kitchen roll|household|nonfood|🧻|pack|
-bin-bags|Müllbeutel|Bin bags|household|nonfood|🗑️|pack|
-sponges|Schwämme|Sponges|household|nonfood|🧽|pack|
-batteries|Batterien|Batteries|household|nonfood|🔋|pack|
-light-bulbs|Glühbirnen|Light bulbs|household|nonfood|💡|piece|
-candles|Kerzen|Candles|household|nonfood|🕯️|pack|
-cling-film|Frischhaltefolie|Cling film|household|nonfood|🧻|piece|
+washing-up-liquid|Spülmittel|Washing-up liquid|household|nonfood|🧽|piece||
+dishwasher-tabs|Spülmaschinentabs|Dishwasher tablets|household|nonfood|🧽|pack||
+laundry-detergent|Waschmittel|Laundry detergent|household|nonfood|🧺|pack||
+fabric-softener|Weichspüler|Fabric softener|household|nonfood|🧺|piece||
+all-purpose-cleaner|Allzweckreiniger|All-purpose cleaner|household|nonfood|🧽|piece||
+kitchen-roll|Küchenrolle|Kitchen roll|household|nonfood|🧻|pack||
+bin-bags|Müllbeutel|Bin bags|household|nonfood|🗑️|pack||
+sponges|Schwämme|Sponges|household|nonfood|🧽|pack||
+batteries|Batterien|Batteries|household|nonfood|🔋|pack||
+light-bulbs|Glühbirnen|Light bulbs|household|nonfood|💡|piece||
+candles|Kerzen|Candles|household|nonfood|🕯️|pack||
+cling-film|Frischhaltefolie|Cling film|household|nonfood|🧻|piece||
 # baby and child
-baby-nappies|Windeln|Nappies|baby|nonfood|🍼|pack|
-baby-wipes|Feuchttücher|Baby wipes|baby|nonfood|🧻|pack|
-baby-food-jar|Babybrei (Glas)|Baby food (jar)|baby|vegan|🍼|piece|
-baby-porridge|Milchbrei|Milk porridge|baby|veg|🍼|pack|milk,gluten
-baby-formula|Babymilch|Baby formula|baby|veg|🍼|pack|milk,soy
-baby-cream|Wundschutzcreme|Nappy cream|baby|nonfood|🍼|piece|
-fruit-pouches|Quetschies|Fruit pouches|baby|vegan|🍼|pack|
-rice-cakes-baby|Reiswaffeln für Kinder|Baby rice cakes|baby|vegan|🍘|pack|
-dummy|Schnuller|Dummies|baby|nonfood|🍼|piece|
+baby-nappies|Windeln|Nappies|baby|nonfood|🍼|pack||
+baby-wipes|Feuchttücher|Baby wipes|baby|nonfood|🧻|pack||
+baby-food-jar|Babybrei (Glas)|Baby food (jar)|baby|vegan|🍼|piece||
+baby-porridge|Milchbrei|Milk porridge|baby|veg|🍼|pack|milk,gluten|
+baby-formula|Babymilch|Baby formula|baby|veg|🍼|pack|milk,soy|
+baby-cream|Wundschutzcreme|Nappy cream|baby|nonfood|🍼|piece||
+fruit-pouches|Quetschies|Fruit pouches|baby|vegan|🍼|pack||
+rice-cakes-baby|Reiswaffeln für Kinder|Baby rice cakes|baby|vegan|🍘|pack||
+dummy|Schnuller|Dummies|baby|nonfood|🍼|piece||
 # other
-gift-wrap|Geschenkpapier|Gift wrap|other|nonfood|🎁|piece|
-birthday-card|Geburtstagskarte|Birthday card|other|nonfood|💌|piece|
-pet-food|Tierfutter|Pet food|other|nonfood|🐾|pack|
+gift-wrap|Geschenkpapier|Gift wrap|other|nonfood|🎁|piece||
+birthday-card|Geburtstagskarte|Birthday card|other|nonfood|💌|piece||
+pet-food|Tierfutter|Pet food|other|nonfood|🐾|pack||

@@ -357,6 +357,7 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /settings/lists/library/{id}", s.handleArticle)
 	mux.HandleFunc("POST /settings/lists/library/{id}", s.handleArticleSave)
 	mux.HandleFunc("POST /settings/lists/library/{id}/hidden", s.handleArticleHidden)
+	mux.HandleFunc("POST /settings/lists/library/{id}/pantry", s.handleArticlePantry)
 	mux.HandleFunc("POST /settings/lists/library/{id}/copy", s.handleArticleCopy)
 	mux.HandleFunc("POST /settings/lists/library/{id}/delete", s.handleArticleDelete)
 	mux.HandleFunc("GET /articles/{id}/picture", s.handleArticlePicture)

@@ -38,6 +38,7 @@ type libState struct {
 	settings store.LibrarySettings
 	hiding   library.Hiding
 	hidden   map[string]bool
+	pantry   map[string]bool // shipped articles whose pantry mark a parent changed
 	own      []store.OwnArticle
 }
 
@@ -68,6 +69,9 @@ func (s *server) libState(p principal, lang string) (libState, error) {
 	if st.hidden, err = s.db.HiddenArticles(p.household.ID); err != nil {
 		return st, err
 	}
+	if st.pantry, err = s.db.PantryOverrides(p.household.ID); err != nil {
+		return st, err
+	}
 	st.own, err = s.db.Articles(p.household.ID)
 	return st, err
 }
@@ -82,7 +86,7 @@ func ownArticle(o store.OwnArticle) library.Article {
 	if o.PicSource == "symbol" {
 		sym = o.Symbol
 	}
-	return library.Article{ID: o.ID, Own: true, De: o.Name, En: o.Name, Dept: o.Dept, Kind: library.Kind(o.Kind), Symbol: sym, Allergens: o.Allergens, Units: units}
+	return library.Article{ID: o.ID, Own: true, De: o.Name, En: o.Name, Dept: o.Dept, Kind: library.Kind(o.Kind), Symbol: sym, Allergens: o.Allergens, Units: units, Pantry: o.Pantry}
 }
 
 // items returns own articles (oldest first) and then the shipped ones.
@@ -93,7 +97,7 @@ func (st libState) items() []articleItem {
 		out = append(out, articleItem{Article: ownArticle(o), own: &o})
 	}
 	for _, a := range library.Shipped() {
-		out = append(out, articleItem{Article: a, handHidden: st.hidden[a.ID]})
+		out = append(out, articleItem{Article: st.shipped(a), handHidden: st.hidden[a.ID]})
 	}
 	return out
 }
@@ -107,9 +111,17 @@ func (st libState) item(id string) (articleItem, bool) {
 		}
 	}
 	if a, ok := library.ShippedByID(id); ok {
-		return articleItem{Article: a, handHidden: st.hidden[id]}, true
+		return articleItem{Article: st.shipped(a), handHidden: st.hidden[id]}, true
 	}
 	return articleItem{}, false
+}
+
+// shipped applies the household's pantry mark to a shipped article.
+func (st libState) shipped(a library.Article) library.Article {
+	if v, ok := st.pantry[a.ID]; ok {
+		a.Pantry = v
+	}
+	return a
 }
 
 func (st libState) suggestion(it articleItem) library.Suggestion {

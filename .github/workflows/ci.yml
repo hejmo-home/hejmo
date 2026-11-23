@@ -98,7 +98,7 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          ref: ${{ (matrix.which == 'before' && '39cbd74') || (matrix.which == 'main' && github.event.pull_request.base.sha) || github.event.pull_request.head.sha }}
+          ref: ${{ (matrix.which == 'before' && '39cbd7486a9e7b2a98dba59341821ee1ee43eb77') || (matrix.which == 'main' && github.event.pull_request.base.sha) || github.event.pull_request.head.sha }}
           fetch-depth: 0
       - uses: actions/setup-go@v5
         with:

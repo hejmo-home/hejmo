@@ -692,6 +692,7 @@
   "family.progress": "{done} von {total} Aufgaben erledigt",
   "family.progress_one": "{done} von 1 Aufgabe erledigt",
   "family.progress_all": "Alle Aufgaben erledigt",
+  "family.below": "Unter den Spalten:",
   "family.tomorrow": "Morgen",
   "family.day": "Tag",
   "family.partial": "in den meisten Orten",

@@ -23,3 +23,24 @@ test('hejmo.css has balanced braces', () => {
   }
   assert.equal(depth, 0, 'unclosed braces: ' + depth);
 });
+
+// Ticket 208: on a phone the family view scrolls as one page. Every rule is
+// scoped to .fv / :has(.fv), so the lists view and the personal view on the
+// same .family-page wrapper keep their fixed layout.
+test('the phone block of the family view is scoped to .fv', () => {
+  const m = bare.match(/@media \(max-width: 599px\), \(max-height: 500px\) \{([\s\S]*?)\n\}/);
+  assert.ok(m, 'no @media (max-width: 599px), (max-height: 500px) block');
+  const rules = m[1].match(/[^{}]+(?=\{)/g).map((s) => s.trim());
+  assert.ok(rules.length >= 10, 'rules missing: ' + rules.length);
+  for (const sel of rules) {
+    assert.match(sel, /\.fv|:has\(\.fv\)/, 'unscoped phone rule: ' + sel);
+  }
+  assert.match(m[1], /body:has\(\.fv\) \{ overflow: auto;/);
+  assert.match(m[1], /\.fv \.column \{ overflow: visible;/);
+  assert.match(m[1], /\.fv-footer \.tile \{ flex-basis: 100%;/);
+});
+
+test('the below line is hidden unless the phone block shows it', () => {
+  assert.match(bare, /^\.fv-below \{ display: none; \}/m);
+  assert.match(bare, /@media \(max-width: 599px\) \{\s*\.fv \.chips \[data-clock\] \{ display: none; \}\s*\}/);
+});

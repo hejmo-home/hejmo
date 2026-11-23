@@ -3273,3 +3273,36 @@ ol.porder > li.prow { margin: 0; padding: 0; background: none; border-radius: 0;
 /* The trimmed overview: one way in, right under the lead. */
 .add-way { margin: 0 0 var(--gap-section); }
 section > .hint.none { margin-top: -4px; }
+
+/* Display: the family view on a phone (ticket 208). Under 600 px wide or
+   under 501 px high the page scrolls as a whole instead of squeezing the
+   columns: every column shows all its entries (no scrolling inside a column),
+   the columns are at least as tall as the rest of the first screen, and the
+   footer tiles follow below them, full width. The line "Below the columns"
+   (.fv-below) names the tiles on the first screen and jumps to them. Wider
+   and taller screens (every wall display) keep the fixed layout. */
+.fv-below { display: none; }
+@media (max-width: 599px), (max-height: 500px) {
+  body:has(.fv) { overflow: auto; padding: var(--gap); }
+  .family-page:has(.fv) { height: auto; min-height: calc(100vh - 2 * var(--gap)); min-height: calc(100dvh - 2 * var(--gap)); display: flex; flex-direction: column; }
+  .family-page:has(.fv) > [data-view] { height: auto; flex: 1 0 auto; display: flex; flex-direction: column; }
+  .fv { height: auto; flex: 1 0 auto; }
+  .fv-grid { flex: 1 0 auto; grid-auto-rows: auto; }
+  .fv .column { overflow: visible; }
+  .fv .events { flex: 1 0 auto; overflow: visible; }
+  .fv-footer { scroll-margin-top: var(--gap); }
+  .fv-footer .tile { flex-basis: 100%; }
+  .fv .chips { max-width: 100%; }
+  .fv-below { flex: none; display: flex; align-items: center; min-height: var(--touch-target); padding: 6px 14px; border: 1px solid var(--border); border-radius: var(--radius-chip); background: var(--surface); color: var(--text); font-size: var(--fs-label); text-decoration: none; }
+  .fv-below .t { min-width: 0; line-height: 1.5; overflow-wrap: break-word; }
+  .fv-below .lab { color: var(--text-secondary); }
+  .fv-below b { font-weight: 700; }
+  .fv-below .sep { color: var(--text-secondary); }
+  .fv-below .flag { display: inline-block; background: var(--accent); color: var(--accent-text); border-radius: var(--radius-chip); padding: 0 10px; font-weight: 700; white-space: nowrap; }
+  [data-theme="bw"] .fv-below { border: 2px solid var(--text); padding: 5px 13px; }
+}
+/* A phone shows its own clock in the status bar (as in the lists view, #33):
+   the clock chip gives its row to the columns. */
+@media (max-width: 599px) {
+  .fv .chips [data-clock] { display: none; }
+}

@@ -2463,6 +2463,70 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /people/{id}/savings-goal:
+    get:
+      operationId: getSavingsGoal
+      summary: A person's savings goal (scope tasks:read)
+      description: |
+        The reward a person saves for (ticket 293), with their star balance
+        (the number of the star chip; nothing is set aside) and whether it is
+        reached (`balance >= price`, the reward's current price). Without a goal
+        `reward_id` is null. A goal ends by itself when its redemption is
+        confirmed, when the reward is archived or deleted, or when it is no
+        longer meant for the person; `ended` then says why and when, for 7 days
+        or until a new goal is chosen. Everyone may read it. There is exactly
+        one goal per person and no ranking between people.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The savings goal
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SavingsGoal" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setSavingsGoal
+      summary: Choose a savings goal (scope tasks:complete, parents for anyone, a child only for themselves)
+      description: |
+        Replaces the person's goal (and any ended line). The reward must be
+        offered (not archived) and meant for the person, else 422 with field
+        `reward_id`. A child changing another person's goal gets 403.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [reward_id]
+              properties:
+                reward_id: { type: string, format: uuid }
+      responses:
+        "200":
+          description: The savings goal now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/SavingsGoal" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: clearSavingsGoal
+      summary: Clear the savings goal (scope tasks:complete, parents for anyone, a child only for themselves)
+      description: The stars stay. Without a goal nothing happens.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "204": { description: No savings goal now }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /rewards:
     get:
       operationId: listRewards
@@ -4856,6 +4920,27 @@ components:
     Unit:
       type: string
       enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
+    SavingsGoal:
+      type: object
+      required: [person_id, reward_id, name, symbol, price, balance, reached, set_at, ended]
+      properties:
+        person_id: { type: string, format: uuid }
+        reward_id: { type: string, format: uuid, nullable: true, description: "The reward saved for; null without a goal" }
+        name: { type: string, nullable: true }
+        symbol: { type: string, nullable: true }
+        price: { type: integer, nullable: true, description: "The reward's current price" }
+        balance: { type: integer, description: "The plain star balance" }
+        reached: { type: boolean, description: "balance >= price" }
+        set_at: { type: string, format: date-time, nullable: true }
+        ended:
+          nullable: true
+          description: Why and when the goal ended by itself; null after 7 days and once a new goal is chosen
+          type: object
+          required: [reason, at, name]
+          properties:
+            reason: { type: string, enum: [redeemed, archived, deleted, audience] }
+            at: { type: string, format: date-time }
+            name: { type: string, description: "The reward's name when the goal ended" }
     Reward:
       type: object
       required: [id, name, symbol, picture, picture_source, price, limit_period, limit_count, whole_family, person_ids, archived, archived_at, archived_reason, redeemed, created_by, created_at, affordable, limit_reached, available_again]

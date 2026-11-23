@@ -28,7 +28,7 @@ func TestADefaultLayoutLooksLikeTodaysDisplay(t *testing.T) {
 	}
 	want := map[layout.BlockID]bool{
 		layout.Clock: true, layout.Weather: true,
-		layout.Events: true, layout.Routines: false, layout.Tasks: true,
+		layout.Events: true, layout.Routines: false, layout.Tasks: true, layout.Stars: true,
 		layout.Meals: true, layout.Tomorrow: true, layout.List: false,
 	}
 	for id, on := range want {
@@ -40,7 +40,7 @@ func TestADefaultLayoutLooksLikeTodaysDisplay(t *testing.T) {
 	if got := ids(l.In(layout.Header)); !slices.Equal(got, []layout.BlockID{layout.Clock, layout.Weather}) {
 		t.Errorf("header = %v", got)
 	}
-	if got := ids(l.In(layout.Columns)); !slices.Equal(got, []layout.BlockID{layout.Events, layout.Routines, layout.Tasks}) {
+	if got := ids(l.In(layout.Columns)); !slices.Equal(got, []layout.BlockID{layout.Events, layout.Routines, layout.Tasks, layout.Stars}) {
 		t.Errorf("columns = %v", got)
 	}
 	if got := ids(l.In(layout.Footer)); !slices.Equal(got, []layout.BlockID{layout.Meals, layout.Tomorrow, layout.List}) {
@@ -62,7 +62,7 @@ func TestNormalizeCompletesBlocksAndDropsUnknownOnes(t *testing.T) {
 	if n.Enabled(layout.Weather) {
 		t.Errorf("the stored switch was lost")
 	}
-	if got := ids(n.In(layout.Columns)); !slices.Equal(got, []layout.BlockID{layout.Tasks, layout.Events, layout.Routines}) {
+	if got := ids(n.In(layout.Columns)); !slices.Equal(got, []layout.BlockID{layout.Tasks, layout.Events, layout.Routines, layout.Stars}) {
 		t.Errorf("columns = %v", got)
 	}
 	if n.Enabled(layout.Events) != true || n.Enabled(layout.Routines) != false {

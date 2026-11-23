@@ -1,6 +1,11 @@
 {{template "head" (dict "Lang" .Lang "Title" .Name "Frame" .Frame)}}
-  <h1>{{if .IsPerson}}<span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span> {{end}}{{.Name}}</h1>
-  {{with .Full}}<p class="ct-full">{{.}}</p>{{end}}
+  <div class="ct-head">
+    <h1>{{if .IsPerson}}<span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span> {{end}}{{.Name}}</h1>
+    {{with .Full}}<p class="ct-full">{{.}}</p>{{end}}
+    {{if .Rels}}<ul class="ct-rels" aria-label="{{t "contact.aria.rels"}}">{{range .Rels}}
+      <li>{{if .Whole}}<svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11l8-6.5 8 6.5"/><path d="M6 10v9h12v-9"/></svg><b>{{.Word}}</b> {{.WholeText}}{{else}}<b>{{.Word}}</b> {{.Of}} {{range .Who}}<span class="who"><span class="marker" data-person="{{.Chip.Slot}}" data-shape="{{.Chip.Shape}}" aria-hidden="true"></span>{{.Chip.Name}}</span>{{.Sep}}{{end}}{{end}}</li>{{end}}
+    </ul>{{end}}
+  </div>
   {{if .IsPerson}}<p class="why fam"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="9" r="3"/><circle cx="16" cy="10" r="2.5"/><path d="M3.5 19c.5-3.5 3-5 5.5-5s5 1.5 5.5 5M14.5 15c2.5 0 4.5 1 5 4"/></svg><span><b>{{t "contact.fam.lead"}}</b> {{tf "contact.fam.before" "name" .Name}} <a href="{{.PersonHref}}">{{t "contact.fam.link"}}</a>{{tf "contact.fam.after" "name" .Name}}</span></p>{{end}}
   <dl class="facts ct">
     {{if .NoNumber}}<dt>{{t "contact.fact.number"}}</dt><dd class="none">{{t "contact.fact.nonumber"}}</dd>{{end}}

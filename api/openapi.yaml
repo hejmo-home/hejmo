@@ -492,7 +492,7 @@ paths:
       summary: The address book, parents only (scope contacts:read)
       description: |
         Every contact of the household: the people (one contact each, always in the
-        group Familie) and everyone else. `q` searches Hejmo name, full name, numbers
+        group Familie) and everyone else. `q` searches Hejmo name, full name, numbers, the words of relations
         and e-mail addresses; `group` keeps the contacts of one group.
       parameters:
         - { name: q, in: query, required: false, schema: { type: string } }
@@ -4388,6 +4388,22 @@ components:
         day: { type: integer, description: "1 to 31, a day that exists" }
         month: { type: integer, description: "1 to 12" }
         year: { type: integer, nullable: true, description: "1900 to this year, not in the future; null when unknown (then no age is shown)" }
+    ContactRelation:
+      type: object
+      description: "A relation (ADR 0021): one word plus the people it is for, or the whole family. A whole-family relation stores no people, so a person who joins later is included. Only further contacts have relations, never a person's contact."
+      required: [word, whole_family, people]
+      properties:
+        word: { type: string, description: "1 to 40 characters, for example Oma, Klassenlehrerin, Kinderärztin; the same word for the same people is merged" }
+        whole_family: { type: boolean, description: "True: the whole family; `people` is then empty" }
+        people: { type: array, items: { type: string, format: uuid }, description: "Ids of people of the household, in the order of the people; at least one unless `whole_family`" }
+    ContactRelationInput:
+      type: object
+      description: "A relation as the API takes it: `whole_family` and `people` may be left out (false, none)."
+      required: [word]
+      properties:
+        word: { type: string, description: "1 to 40 characters; leave it empty only for an empty line (whole family), which is skipped" }
+        whole_family: { type: boolean }
+        people: { type: array, items: { type: string, format: uuid } }
     ContactInput:
       type: object
       required: [name]
@@ -4400,9 +4416,10 @@ components:
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
         note: { type: string, description: "At most 1000 characters" }
         groups: { type: array, items: { type: string }, description: "Ids of contact groups" }
+        relations: { type: array, items: { $ref: "#/components/schemas/ContactRelationInput" }, description: "Replaces the relations; an empty line (no word, whole family) is skipped, people without a word are 422, so are more than 40 characters, unknown people and any relation on a person's contact" }
     Contact:
       type: object
-      required: [id, person_id, name, full_name, numbers, emails, address, birthday, note, groups, created_by, created_at, updated_by, updated_at]
+      required: [id, person_id, name, full_name, numbers, emails, address, birthday, note, groups, relations, created_by, created_at, updated_by, updated_at]
       properties:
         id: { type: string, format: uuid, description: "The id of the person for a person's contact" }
         person_id: { type: string, format: uuid, nullable: true }
@@ -4414,6 +4431,7 @@ components:
         birthday: { allOf: [{ $ref: "#/components/schemas/ContactBirthday" }], nullable: true }
         note: { type: string }
         groups: { type: array, items: { type: string } }
+        relations: { type: array, items: { $ref: "#/components/schemas/ContactRelation" } }
         created_by: { type: string, format: uuid, nullable: true }
         created_at: { type: string, format: date-time }
         updated_by: { type: string, format: uuid, nullable: true }

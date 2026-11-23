@@ -3,7 +3,9 @@ package server
 import (
 	"errors"
 	"net/http"
+	"regexp"
 	"slices"
+	"sort"
 	"strconv"
 	"strings"
 
@@ -23,7 +25,41 @@ type ctForm struct {
 	Day, Month, Year                string
 	Groups                          []string
 	NewGroup, Note                  string
+	Rels                            []ctRelForm // the relation lines (ticket 298)
+	For                             string      // the person whose page the form was opened from ("Kontakt für Mia anlegen")
 }
+
+// ctRelForm is a relation line as the form holds it. Whole is "no person chosen": the whole family stores no
+// people, so the server reads the line as the whole family when none is ticked (the page works without JavaScript).
+type ctRelForm struct {
+	Word   string
+	Whole  bool
+	People []string
+}
+
+var relWordField = regexp.MustCompile(`^rel(\d+)_word$`)
+
+// parseRels reads the relation lines in the order of their numbers; the numbers may have gaps.
+func parseRels(r *http.Request) []ctRelForm {
+	var ns []int
+	for k := range r.PostForm {
+		if m := relWordField.FindStringSubmatch(k); m != nil {
+			if n, err := strconv.Atoi(m[1]); err == nil {
+				ns = append(ns, n)
+			}
+		}
+	}
+	sort.Ints(ns)
+	var out []ctRelForm
+	for _, n := range ns {
+		base := "rel" + strconv.Itoa(n)
+		people := slices.Clone(r.PostForm[base+"_person"])
+		out = append(out, ctRelForm{Word: r.PostForm.Get(base + "_word"), People: people, Whole: len(people) == 0})
+	}
+	return out
+}
+
+const maxRelLines = 20 // relation lines on a form
 
 const ownKind = "own"        // the select option "Eigene Bezeichnung …"
 const labelPrefix = "label:" // a saved own label, as an option of its own
@@ -56,6 +92,7 @@ func parseContactForm(r *http.Request) ctForm {
 		Street: r.PostFormValue("street"), Postcode: r.PostFormValue("postcode"), City: r.PostFormValue("city"), Country: r.PostFormValue("country"),
 		Day: r.PostFormValue("bday_day"), Month: r.PostFormValue("bday_month"), Year: r.PostFormValue("bday_year"),
 		Groups: r.PostForm["group"], NewGroup: r.PostFormValue("new_group"), Note: strings.ReplaceAll(r.PostFormValue("note"), "\r\n", "\n"),
+		Rels: parseRels(r), For: r.PostFormValue("for"),
 	}
 	return f
 }
@@ -91,6 +128,9 @@ func atoiOrZero(s string) (int, bool) {
 func (f ctForm) draft(isPerson bool) ctDraft {
 	d := ctDraft{Name: f.Name, Full: f.Full, Street: f.Street, Postcode: f.Postcode, City: f.City, Country: f.Country, Note: f.Note,
 		NewGroup: f.NewGroup, GroupIDs: f.Groups, IsPerson: isPerson}
+	for _, r := range f.Rels {
+		d.Rels = append(d.Rels, ctRelDraft{Word: r.Word, Whole: r.Whole, PersonIDs: r.People})
+	}
 	for _, l := range f.Numbers {
 		d.Numbers = append(d.Numbers, l.line(true))
 	}
@@ -113,6 +153,9 @@ func ctFormOf(c store.Contact) ctForm {
 	}
 	for _, l := range c.Emails {
 		f.Emails = append(f.Emails, lineFormOf(l))
+	}
+	for _, r := range c.Relations {
+		f.Rels = append(f.Rels, ctRelForm{Word: r.Word, Whole: r.WholeFamily, People: r.PersonIDs})
 	}
 	if c.BdayDay != 0 {
 		f.Day, f.Month = strconv.Itoa(c.BdayDay), strconv.Itoa(c.BdayMonth)
@@ -218,6 +261,19 @@ func (e ctEnv) problemText(pr ctProblem, d ctDraft) string {
 		return e.t("contact.error.name.taken", "name", strings.TrimSpace(d.Name), "existing", pr.Arg, "examples", e.nameExamples(d))
 	case "full_name.long":
 		return e.t("contact.error.full.long")
+	case "rel.word":
+		var names []string
+		if pr.N >= 1 && pr.N <= len(d.Rels) {
+			names = e.relNames(d.Rels[pr.N-1].PersonIDs)
+		}
+		key := "contact.error.rel.word"
+		kv := []string{"contact", strings.TrimSpace(d.Name), "names", contact.JoinNames(names, e.t("contact.rel.and")), "example", e.t("contact.rel.example")}
+		if strings.TrimSpace(d.Name) == "" {
+			key = "contact.error.rel.word.unnamed"
+		}
+		return e.t(key, kv...)
+	case "rel.long":
+		return e.t("contact.error.rel.long")
 	case "number.char", "email.char":
 		return e.t("contact.error.number.char", "char", pr.Arg)
 	case "number.digits":
@@ -279,6 +335,8 @@ func (e ctEnv) anchorText(pr ctProblem) string {
 		return e.t("contact.link.full")
 	case pr.Anchor == "name":
 		return e.t("contact.link.name")
+	case pr.Field == "rel":
+		return e.t("contact.link.rel", "n", strconv.Itoa(pr.N))
 	case pr.Field == "number" || pr.Field == "number_own":
 		return e.t("contact.link.number", "n", strconv.Itoa(pr.N))
 	case pr.Field == "email" || pr.Field == "email_own":
@@ -351,8 +409,16 @@ func (s *server) renderContactForm(w http.ResponseWriter, r *http.Request, e ctE
 		"Months": e.months(f.Month), "MDY": p.household.DateFormat == store.DateMDY, "MaxYear": s.householdNow(p.household).Year(),
 		"NoteCount": contact.Runes(strings.TrimSpace(f.Note)),
 		"BdayErr":   errs["birthday"] != "", "NewGroupOpen": f.NewGroup != "" || errs["new_group"] != "",
-		"MoreNumbers": len(f.Numbers) < contact.MaxLines, "MoreEmails": len(f.Emails) < contact.MaxLines,
+		"MoreNumbers": len(f.Numbers) < contact.MaxLines, "MoreRels": len(f.Rels) < maxRelLines, "MoreEmails": len(f.Emails) < contact.MaxLines,
 		"CountryHint": e.countryHint(), "NumberTpl": e.lineTemplate(true), "EmailTpl": e.lineTemplate(false),
+		"Rels": e.relViews(f.Rels, lineErrs), "RelTpl": e.relTemplate(), "People": e.peopleChips(),
+		"SayOf": e.t("contact.rel.of"), "SayWhole": e.t("contact.rel.whole"), "SayAnd": e.t("contact.rel.and"),
+	}
+	if all, err := s.db.Contacts(p.household.ID); err == nil {
+		data["RelWords"] = e.relWords(all)
+	} else {
+		s.fail(w, "contacts", err)
+		return
 	}
 	if len(links) > 0 {
 		key := "contact.error.summary.many"
@@ -380,6 +446,12 @@ func (s *server) renderContactForm(w http.ResponseWriter, r *http.Request, e ctE
 	} else {
 		data["Action"] = contactsPath + "/new"
 		data["Title"] = e.t("contact.new.title")
+		if i := slices.IndexFunc(e.people, func(x store.Person) bool { return x.ID == f.For }); i >= 0 && f.For != "" { // opened from a person's page
+			who := e.people[i].Name
+			data["ForPerson"] = map[string]string{"ID": f.For, "Name": who}
+			data["Title"] = e.t("contact.new.for.title", "name", who)
+			data["Lead"] = e.t("contact.new.for.lead", "name", who)
+		}
 	}
 	s.render(w, r, st.Status, "contact_form.html", data)
 }
@@ -449,7 +521,11 @@ func (s *server) handleContactNew(w http.ResponseWriter, r *http.Request) {
 	if !ok {
 		return
 	}
-	s.renderContactForm(w, r, e, ctForm{Name: strings.TrimSpace(r.URL.Query().Get("name"))}, ctFormState{Status: http.StatusOK})
+	f := ctForm{Name: strings.TrimSpace(r.URL.Query().Get("name")), For: e.knownPerson(r.URL.Query().Get("for"))}
+	if f.For != "" { // "Kontakt für Mia anlegen": the one relation line has Mia chosen
+		f.Rels = []ctRelForm{{People: []string{f.For}}}
+	}
+	s.renderContactForm(w, r, e, f, ctFormState{Status: http.StatusOK})
 }
 
 // handleContactCreate and handleContactSave answer the contact form. A button "Weitere Nummer" or "Entfernen"
@@ -486,11 +562,19 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 		cur = &all[i]
 	}
 	f := parseContactForm(r)
+	if cur != nil {
+		f.For = ""
+	}
 	if cur != nil && cur.IsPerson() {
 		f.Name = cur.HejmoName
+		f.Rels = nil // the people of the household are related through "Personen"
 	}
 	if more, remove := r.PostFormValue("more"), r.PostFormValue("remove"); more != "" || remove != "" {
 		switch more {
+		case "rel":
+			if len(f.Rels) < maxRelLines {
+				f.Rels = append(f.Rels, ctRelForm{Whole: true})
+			}
 		case "number":
 			if len(f.Numbers) < contact.MaxLines {
 				f.Numbers = append(f.Numbers, ctLineForm{})
@@ -508,10 +592,14 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 				*base.lines = slices.Delete(slices.Clone(*base.lines), n-1, n)
 			}
 		}
+		if n, err := strconv.Atoi(strings.TrimPrefix(remove, "rel")); err == nil && strings.HasPrefix(remove, "rel") && n >= 1 && n <= len(f.Rels) {
+			f.Rels = slices.Delete(slices.Clone(f.Rels), n-1, n)
+		}
 		s.renderContactForm(w, r, e, f, ctFormState{Contact: cur, Status: http.StatusOK})
 		return
 	}
 	gone := e.dropVanishedGroups(&f)
+	e.dropVanishedPeople(&f)
 	d := f.draft(cur != nil && cur.IsPerson())
 	problems := checkContact(d, s.householdNow(p.household), nameTakenIn(all, id), e.groupTaken)
 	if gone {
@@ -555,6 +643,12 @@ func (s *server) saveContact(w http.ResponseWriter, r *http.Request, id string) 
 	case err != nil: // the form checked every other rule the store knows, so a store refusal here is a bug
 		s.fail(w, "save contact", err)
 		return
+	}
+	if f.For != "" { // back to the person's page, with the relation in the success line
+		if says := e.relSentences(saved, f.For); len(says) > 0 {
+			s.redirectSavedFields(w, r, "/people/"+f.For+"#contacts", "flash.contact_added_for", saved.HejmoName, strings.Join(says, ", "))
+			return
+		}
 	}
 	s.redirectSavedNamed(w, r, contactsPath+"/"+saved.ID, "flash.contact_saved", saved.HejmoName)
 }

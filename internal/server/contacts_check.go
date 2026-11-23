@@ -21,6 +21,19 @@ type ctDraft struct {
 	Note, NewGroup                  string
 	GroupIDs                        []string
 	IsPerson                        bool
+	Rels                            []ctRelDraft // the relation lines in the order of the form (ticket 298)
+}
+
+// ctRelDraft is a relation line as typed: the word, and the people it is for or the whole family.
+type ctRelDraft struct {
+	Word      string
+	Whole     bool
+	PersonIDs []string
+}
+
+// empty reports whether a line says nothing: no word, and nobody chosen or the whole family.
+func (r ctRelDraft) empty() bool {
+	return strings.TrimSpace(r.Word) == "" && (r.Whole || len(r.PersonIDs) == 0)
 }
 
 // ctProblem is one thing to put right. Anchor is the id of the part of the form it belongs to, Field the name of
@@ -67,6 +80,18 @@ func checkContact(d ctDraft, today time.Time, taken func(name string) *store.Nam
 	}
 	if contact.Runes(strings.TrimSpace(d.Full)) > contact.MaxFullName {
 		add("name", "full_name", 0, "long", "")
+	}
+	if !d.IsPerson { // the people of the household are related through "Personen"
+		for i, r := range d.Rels {
+			n, word := i+1, strings.TrimSpace(r.Word)
+			switch {
+			case r.empty():
+			case word == "":
+				add("rel"+strconv.Itoa(n), "rel", n, "word", "")
+			case contact.Runes(word) > contact.MaxRelation:
+				add("rel"+strconv.Itoa(n), "rel", n, "long", "")
+			}
+		}
 	}
 	for _, set := range []struct {
 		lines          []contact.Line
@@ -138,7 +163,13 @@ func checkContact(d ctDraft, today time.Time, taken func(name string) *store.Nam
 
 // input is the draft as the store takes it.
 func (d ctDraft) input(today time.Time) store.ContactInput {
-	return store.ContactInput{
+	var rels []store.Relation
+	for _, r := range d.Rels {
+		if !r.empty() && !d.IsPerson {
+			rels = append(rels, store.Relation{Word: r.Word, WholeFamily: r.Whole, PersonIDs: r.PersonIDs})
+		}
+	}
+	return store.ContactInput{Relations: rels,
 		HejmoName: d.Name, FullName: d.Full, Street: d.Street, Postcode: d.Postcode, City: d.City, Country: d.Country,
 		BdayDay: d.Day, BdayMonth: d.Month, BdayYear: d.Year, Note: d.Note,
 		Numbers: d.Numbers, Emails: d.Emails, GroupIDs: d.GroupIDs, NewGroup: d.NewGroup, Today: today,

@@ -120,6 +120,7 @@ var flashFields = map[string][]string{
 	"flash.routine_applied":        {"owner", "routine", "person", "tasks", "template"},
 	"flash.routine_applied_own":    {"owner", "routine", "person", "tasks", "template", "origin"},
 	"flash.pause_saved":            {"names", "range"},
+	"flash.contact_added_for":      {"name", "sentence"},
 	"flash.rtpl_moved":             {"title", "place", "total"},
 	"flash.routine_template_saved": {"name", "id"},
 	"flash.photo_moved":            {"n", "album"},

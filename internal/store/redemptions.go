@@ -438,3 +438,18 @@ func (db *DB) BelowZeroCause(personID string) (taskTitle, rewardName string, err
 		COALESCE((SELECT name FROM reward_redemptions WHERE person_id = ? AND status = 'confirmed' ORDER BY decided_at DESC, rowid DESC LIMIT 1), '')`, personID, personID).Scan(&taskTitle, &rewardName)
 	return taskTitle, rewardName, err
 }
+
+// ReservedStars is what a person's open requests set aside: they stay in the
+// balance until a parent says yes, but a new request cannot spend them again.
+func (db *DB) ReservedStars(personID string) (int, error) { return reservedOf(db.sql, personID) }
+
+// RedemptionPicture reads the picture the reward had when it was asked for;
+// ErrNotFound when it had none.
+func (db *DB) RedemptionPicture(householdID, id string) ([]byte, error) {
+	var b []byte
+	err := db.sql.QueryRow(`SELECT picture FROM reward_redemptions WHERE household_id = ? AND id = ?`, householdID, id).Scan(&b)
+	if errors.Is(err, sql.ErrNoRows) || (err == nil && b == nil) {
+		return nil, ErrNotFound
+	}
+	return b, err
+}

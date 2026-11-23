@@ -22,7 +22,7 @@ import (
 )
 
 // Outlook sign-in (ticket 177, ADR 0020). A parent starts a device-code
-// sign-in, signs in at Microsoft on the phone or computer, and the box notices:
+// sign-in, signs in at Microsoft on the personal device or computer, and the box notices:
 // every view of the sign-in page (or of its API twin) asks Microsoft once when
 // the interval has passed, so no background task is needed and a closed page
 // stops asking. The state lives in memory: a code is good for 15 minutes.

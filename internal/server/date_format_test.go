@@ -22,7 +22,7 @@ func TestSettingsScreenOffersTheDateFormatFirst(t *testing.T) {
 	year := "2026" // the test clock stands at 14/11/2026
 	for _, want := range []string{
 		`<fieldset class="seg"><legend>Date format</legend>`,
-		`<p class="hint">For every date written in numbers: calendar, tasks, meals, notes, phones and sync. Dates in words, like on the displays, stay as they are.</p>`,
+		`<p class="hint">For every date written in numbers: calendar, tasks, meals, notes, personal devices and sync. Dates in words, like on the displays, stay as they are.</p>`,
 		`<input type="radio" name="date_format" value="dmy" checked><b>24.12.` + year + `</b><small>Day first: 24` + "\u00a0" + `December` + "\u00a0" + year + `</small>`,
 		`<input type="radio" name="date_format" value="mdy"><b>12/24/` + year + `</b><small>Month first: 24` + "\u00a0" + `December` + "\u00a0" + year + `</small>`,
 	} {
@@ -34,7 +34,7 @@ func TestSettingsScreenOffersTheDateFormatFirst(t *testing.T) {
 		t.Error("date format does not come before time format")
 	}
 	de := b.do(http.MethodGet, "/settings/household", nil, map[string]string{"Accept-Language": "de"}).body
-	for _, want := range []string{"<legend>Datumsformat</legend>", "Für jedes Datum in Ziffern: Kalender, Aufgaben, Essen, Notizen, Handys und Synchronisierung.", "Tag zuerst: 24.\u00a0Dezember\u00a0" + year, "Monat zuerst: 24.\u00a0Dezember\u00a0" + year} {
+	for _, want := range []string{"<legend>Datumsformat</legend>", "Für jedes Datum in Ziffern: Kalender, Aufgaben, Essen, Notizen, persönliche Geräte und Synchronisierung.", "Tag zuerst: 24.\u00a0Dezember\u00a0" + year, "Monat zuerst: 24.\u00a0Dezember\u00a0" + year} {
 		if !strings.Contains(de, want) {
 			t.Errorf("German settings page lacks %q", want)
 		}
@@ -171,15 +171,15 @@ func TestHomeAndNotePageFollowTheDateFormat(t *testing.T) {
 	}
 }
 
-// The QR code of a phone pairing says until when it is valid, and the sync
+// The QR code of a personal device pairing says until when it is valid, and the sync
 // problems carry the date with the time and seconds.
-func TestPhoneExpiryAndSyncLogFollowTheDateFormat(t *testing.T) {
+func TestPersonalDeviceExpiryAndSyncLogFollowTheDateFormat(t *testing.T) {
 	t.Parallel()
 	b, cal := icsBox(t)
 	useDateFormat(t, b, "mdy")
-	r := b.post("/phones/pairings", url.Values{})
+	r := b.post("/personal-devices/pairings", url.Values{})
 	if !regexp.MustCompile(`\d\d/\d\d/\d{4}\x{00a0}\d\d:\d\d`).MatchString(r.body) || regexp.MustCompile(`\d\d\.\d\d\.\d{4}`).MatchString(r.body) {
-		t.Errorf("phone pairing does not write month first:\n%s", r.body)
+		t.Errorf("personal device pairing does not write month first:\n%s", r.body)
 	}
 	h, _ := b.db.HomeHousehold()
 	if err := b.db.FailSync(h.ID, cal.ID, i18n.Msg("sync.fail.status", "status", "503"), b.now, b.now.Add(time.Hour)); err != nil {
@@ -263,17 +263,17 @@ func TestDisplaysStayFreeOfNumericDatesWhenTheFormatSwitches(t *testing.T) {
 }
 
 // The detail pages say their dates through datefmt too: a connection, a
-// display, a phone and a token, in both formats.
+// display, a personal device and a token, in both formats.
 func TestDetailPagesFollowTheDateFormat(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
 	connID := chosenConnection(t, b)
 	displayID := pairedDisplay(t, b, "Kitchen", "screen")
-	pairedPhone(t, b, personNamed(t, b, "Mama"), "Mama's phone")
+	pairedPersonalDevice(t, b, personNamed(t, b, "Mama"), "Mama's tablet")
 	h, _ := b.db.HomeHousehold()
-	phones, _ := b.db.Phones(h.ID)
+	personalDevices, _ := b.db.PersonalDevices(h.ID)
 	tokenID, _ := newDeviceToken(t, b, "iPhone Mama")
-	pages := []string{"/connections/" + connID, "/displays/" + displayID, "/phones/" + phones[0].ID, "/caldav/tokens/" + tokenID}
+	pages := []string{"/connections/" + connID, "/displays/" + displayID, "/personal-devices/" + personalDevices[0].ID, "/caldav/tokens/" + tokenID}
 	// The token is stamped with the real clock, so its date is matched by shape.
 	dmy := regexp.MustCompile(`\b\d{2}\.\d{2}\.\d{4}\b`)
 	mdy := regexp.MustCompile(`\b\d{2}/\d{2}/\d{4}\b`)

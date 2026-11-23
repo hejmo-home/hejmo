@@ -341,8 +341,8 @@ func TestResetPageListsTheOtherParentsPasskeysAndRemovesTheTickedOnes(t *testing
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, papaSecret := secondParent(t, b)
 	loginWith(b, "papa", "papa's long password", totpNow(b, papaSecret))
-	phone, mac := passkeytest.New(), passkeytest.New()
-	addPasskeyAt(t, b, phone, boxName, "iPhone")
+	personalDevice, mac := passkeytest.New(), passkeytest.New()
+	addPasskeyAt(t, b, personalDevice, boxName, "iPhone")
 	addPasskeyAt(t, b, mac, boxName, "Mac im Arbeitszimmer")
 	list, _ := b.db.Passkeys(papa.ID)
 	b.logout()
@@ -391,12 +391,12 @@ func TestResetPageListsTheOtherParentsPasskeysAndRemovesTheTickedOnes(t *testing
 	if !strings.Contains(done, "Einmalcodes zurückgesetzt am") {
 		t.Error("Papa's row does not say the codes were reset")
 	}
-	if !strings.Contains(done, `href="/phones"`) || !strings.Contains(done, `href="/caldav"`) {
-		t.Error("the reminder about paired phones and calendar apps is gone")
+	if !strings.Contains(done, `href="/personal-devices"`) || !strings.Contains(done, `href="/caldav"`) {
+		t.Error("the reminder about paired personal devices and calendar apps is gone")
 	}
 	// The passkey that was removed cannot sign in; the other one still can.
 	b.logout()
-	if r := signInWithPasskey(t, b, phone, boxName); r.status != http.StatusUnauthorized {
+	if r := signInWithPasskey(t, b, personalDevice, boxName); r.status != http.StatusUnauthorized {
 		t.Errorf("the removed passkey signed in: %d", r.status)
 	}
 	if r := signInWithPasskey(t, b, mac, boxName); r.status != http.StatusOK {
@@ -766,14 +766,14 @@ func TestResetThroughTheAPIRemovesTickedPasskeys(t *testing.T) {
 	}
 }
 
-// ADR 0017, T23: a paired phone never creates a passkey, through the API
+// ADR 0017, T23: a paired personal device never creates a passkey, through the API
 // either, before or after a reset of its parent's one-time codes.
-func TestPairedPhoneCannotCreateAPasskeyThroughTheAPI(t *testing.T) {
+func TestPairedPersonalDeviceCannotCreateAPasskeyThroughTheAPI(t *testing.T) {
 	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
-	phone := pairedPhone(t, b, papa, "Papa's phone")
+	personalDevice := pairedPersonalDevice(t, b, papa, "Papa's tablet")
 	call := func(path string) int {
 		t.Helper()
 		req, _ := http.NewRequest(http.MethodPost, b.srv.URL+"/api/v1"+path, strings.NewReader(`{"ceremony":"x","credential":{}}`))
@@ -781,10 +781,10 @@ func TestPairedPhoneCannotCreateAPasskeyThroughTheAPI(t *testing.T) {
 		req.Header.Set("Content-Type", "application/json")
 		req.Header.Set("Origin", "https://"+boxName)
 		u, _ := url.Parse(b.srv.URL)
-		for _, c := range phone.client.Jar.Cookies(u) { // the jar keys cookies by Host, as asBrowserOn does
+		for _, c := range personalDevice.client.Jar.Cookies(u) { // the jar keys cookies by Host, as asBrowserOn does
 			req.AddCookie(c)
 		}
-		res, err := phone.client.Do(req)
+		res, err := personalDevice.client.Do(req)
 		if err != nil {
 			t.Fatal(err)
 		}
@@ -795,7 +795,7 @@ func TestPairedPhoneCannotCreateAPasskeyThroughTheAPI(t *testing.T) {
 		t.Helper()
 		for _, path := range []string{"/me/passkeys/registration", "/me/passkeys"} {
 			if got := call(path); got != http.StatusForbidden {
-				t.Errorf("%s: phone POST %s = %d, want 403", when, path, got)
+				t.Errorf("%s: personal device POST %s = %d, want 403", when, path, got)
 			}
 		}
 	}

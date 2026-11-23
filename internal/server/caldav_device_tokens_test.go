@@ -23,7 +23,7 @@ func TestDeviceTokenFromTheWebPageOpensCalendarsAndTaskLists(t *testing.T) {
 	if m == "" || len(toks) != 1 || toks[0].Scopes != "calendars tasks lists" {
 		t.Fatalf("token %q, tokens %+v", m, toks)
 	}
-	cals, err := c.phoneWith(t, "mama", m).calendars()
+	cals, err := c.personalDeviceWith(t, "mama", m).calendars()
 	if err != nil || len(cals) != 2 {
 		t.Fatalf("calendars and task lists = %v, %v", cals, err)
 	}

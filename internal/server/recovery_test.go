@@ -155,7 +155,7 @@ func TestParentResetsAnotherParentsOneTimeCodes(t *testing.T) {
 	papaJar := b.client.Jar
 	b.logout()
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
-	papaPhone := pairedPhone(t, b, papa, "Papa's phone")
+	papaPersonalDevice := pairedPersonalDevice(t, b, papa, "Papa's personal device")
 
 	if page := b.get("/account").body; !strings.Contains(page, "/account/reset/"+papa.ID) || strings.Contains(page, "/account/reset/"+papa.ID+"x") {
 		t.Fatalf("the page offers no reset for the other parent:\n%s", page)
@@ -180,12 +180,12 @@ func TestParentResetsAnotherParentsOneTimeCodes(t *testing.T) {
 		t.Fatalf("the success page does not remind to revoke paired devices:\n%s", r.body)
 	}
 
-	// ADR 0017: Papa's paired phone keeps working while his codes are pending.
-	if r := papaPhone.get("/", "en"); r.status != http.StatusOK {
-		t.Fatalf("Papa's phone after the reset = %d %q, want 200", r.status, r.location)
+	// ADR 0017: Papa's paired personal device keeps working while his codes are pending.
+	if r := papaPersonalDevice.get("/", "en"); r.status != http.StatusOK {
+		t.Fatalf("Papa's personal device after the reset = %d %q, want 200", r.status, r.location)
 	}
-	if !strings.Contains(r.body, `href="/phones"`) {
-		t.Fatalf("the success page does not link the phones page:\n%s", r.body)
+	if !strings.Contains(r.body, `href="/personal-devices"`) {
+		t.Fatalf("the success page does not link the personal devices page:\n%s", r.body)
 	}
 
 	// Papa's browser session ended; his password alone leads to a new setup.
@@ -517,36 +517,36 @@ func TestRecoveryCodesPageAndResetFormsUseSharedPatterns(t *testing.T) {
 }
 
 // ADR 0017: after a reset the parent's password is followed by a new setup. A
-// paired phone keeps its session but must not take that setup over.
-func TestResetParentsPhoneCannotSetUpTheirOneTimeCodes(t *testing.T) {
+// paired personal device keeps its session but must not take that setup over.
+func TestResetParentsPersonalDeviceCannotSetUpTheirOneTimeCodes(t *testing.T) {
 	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, papaSecret := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
-	papaPhone := pairedPhone(t, b, papa, "Papa's phone")
+	papaPersonalDevice := pairedPersonalDevice(t, b, papa, "Papa's personal device")
 	own := url.Values{"password": {"correct horse battery"}, "code": {totpNow(b, mamaSecret)}}
 	if r := b.post("/account/reset/"+papa.ID, own); r.status != http.StatusSeeOther {
 		t.Fatalf("reset = %d", r.status)
 	}
 
-	r := papaPhone.get("/setup/totp", "en")
+	r := papaPersonalDevice.get("/setup/totp", "en")
 	if r.status != http.StatusSeeOther || r.location != "/setup" || strings.Contains(r.body, "data-secret") {
-		t.Fatalf("phone GET /setup/totp = %d %q, want a redirect without a setup page", r.status, r.location)
+		t.Fatalf("personal device GET /setup/totp = %d %q, want a redirect without a setup page", r.status, r.location)
 	}
 	acc, _ := b.db.AccountByPerson(papa.ID)
 	if acc.TOTPSecret != "" {
-		t.Fatal("the phone caused a new secret to be created")
+		t.Fatal("the personal device caused a new secret to be created")
 	}
-	// Even with a valid code for a secret the phone could know.
-	post := papaPhone.post("/setup/totp", url.Values{"code": {totpNow(b, acc.TOTPSecret)}})
+	// Even with a valid code for a secret the personal device could know.
+	post := papaPersonalDevice.post("/setup/totp", url.Values{"code": {totpNow(b, acc.TOTPSecret)}})
 	if post.status == http.StatusOK {
-		t.Fatalf("phone POST /setup/totp = 200, want refused\n%s", post.body)
+		t.Fatalf("personal device POST /setup/totp = 200, want refused\n%s", post.body)
 	}
-	if r := papaPhone.post("/account/recovery-codes", url.Values{}); r.status == http.StatusOK {
-		t.Fatalf("phone minted recovery codes while the account is pending\n%s", r.body)
+	if r := papaPersonalDevice.post("/account/recovery-codes", url.Values{}); r.status == http.StatusOK {
+		t.Fatalf("personal device minted recovery codes while the account is pending\n%s", r.body)
 	}
 	if acc, _ := b.db.AccountByPerson(papa.ID); acc.TOTPConfirmed {
-		t.Fatal("the phone confirmed the parent's one-time codes")
+		t.Fatal("the personal device confirmed the parent's one-time codes")
 	}
 	// The parent's own password sign-in still leads to the setup.
 	b.logout()

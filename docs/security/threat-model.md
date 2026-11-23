@@ -6,7 +6,7 @@ Status: 0.1, written for ticket #97 (ADR 0018, Measurement). No external penetra
 
 - **What is protected:** the family's calendar, tasks, stars and the credentials the box holds (password hashes, TOTP secrets, device tokens, the DNS token, calendar connection credentials, Google refresh tokens and the Google app's client secret).
 - **Where it runs:** one box (Raspberry Pi or any Linux with Docker) on a home network. It is **not** exposed to the internet: no port forwarding, no cloud service of the project. The one thing outside is a static page for the Google sign-in (see Google Calendar below); it holds no data and runs no code of the project on a server. Anyone who can reach its ports is on the family's LAN or Wi-Fi.
-- **Who attacks:** a guest or a compromised device on the LAN; a thief with a phone or display; someone who finds the box's public DNS name; a malicious dependency or image; a mistake in an update. Not in scope: someone with root on the box or on a parent's unlocked phone.
+- **Who attacks:** a guest or a compromised device on the LAN; a thief with a personal device or display; someone who finds the box's public DNS name; a malicious dependency or image; a mistake in an update. Not in scope: someone with root on the box or on a parent's unlocked personal device.
 - **Trust boundary:** the box's HTTPS ports. Everything behind them (SQLite file, `secret.key`, the data volume) is trusted; whoever can read the data volume owns the family's data.
 
 How to read this: every threat has a **Check** (a CI job, a test, or a ticket that builds it) or an **Accepted risk** with the reason. A test (`internal/securitydocs`) fails if a threat has neither, if a named CI job does not exist, or if a named test file does not exist. Checks written as `#NN` are not built yet; the ticket owns them.
@@ -63,13 +63,13 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 
 ## Displays
 
-### T5. A stranger pairs their own screen or phone, or guesses a pairing code
+### T5. A stranger pairs their own screen or personal device, or guesses a pairing code
 
-- **Threat:** a display or phone shows the family's day to whoever completes pairing.
+- **Threat:** a display or personal device shows the family's day to whoever completes pairing.
 - **Check:** pairing needs a short code confirmed by a signed-in parent; codes expire; guessing codes and opening many pairing screens are rate-limited. `test:internal/server/displays_test.go`
-- **Check:** a phone's pairing code is random (128 bits, stored only as a hash), works for one phone and ten minutes, and the phone only gets its device session after a signed-in parent confirmed it and chose the person; a code seen over a shoulder is useless once used, expired or unconfirmed. `test:internal/server/phones_test.go`
-- **Check:** with the box's own CA the pairing code travels over plain HTTP (the trust page), so someone on the home network could open it before the real phone. The waiting phone and the phones screen therefore both show a six-digit number derived from the phone's secret; a parent confirms only a phone whose number matches the one in hand, and a second phone cannot take over a code that was opened. `test:internal/server/phones_test.go`
-- **Accepted risk:** a parent who confirms a waiting phone without comparing the number gives that phone a session; the screen asks for the comparison but cannot enforce it.
+- **Check:** a personal device's pairing code is random (128 bits, stored only as a hash), works for one personal device and ten minutes, and the personal device only gets its device session after a signed-in parent confirmed it and chose the person; a code seen over a shoulder is useless once used, expired or unconfirmed. `test:internal/server/personal_devices_test.go`
+- **Check:** with the box's own CA the pairing code travels over plain HTTP (the trust page), so someone on the home network could open it before the real personal device. The waiting personal device and the personal devices screen therefore both show a six-digit number derived from the personal device's secret; a parent confirms only a personal device whose number matches the one in hand, and a second personal device cannot take over a code that was opened. `test:internal/server/personal_devices_test.go`
+- **Accepted risk:** a parent who confirms a waiting personal device without comparing the number gives that personal device a session; the screen asks for the comparison but cannot enforce it.
 
 ### T6. A lost or stolen display keeps access
 
@@ -77,29 +77,29 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 - **Check:** a parent revokes a display; it falls back to the pairing screen within a minute. `test:internal/server/displays_test.go`
 - **Accepted risk:** a display shows the family view only (titles and times), never settings, tokens or other people's private data; this is the purpose of a wall display.
 
-### T7. Hostile text in a title runs as script on a display or phone
+### T7. Hostile text in a title runs as script on a display or personal device
 
 - **Threat:** an event title or task name from a synced calendar contains markup.
 - **Check:** every page is rendered by `html/template`, which escapes by context; tests render a `<script>` title on the family view, the display page and the tasks page and require it escaped. `test:internal/server/escaping_test.go` (gosec's XSS rules are medium severity and do not fail CI; the triage above covers the places that wrap markup deliberately.)
 - **Accepted risk:** the box sets no Content-Security-Policy or clickjacking headers yet. Pages are only reachable on the LAN over HTTPS and templates escape, so exploitation needs a second flaw. Adding the headers is a follow-up for the product owner to schedule.
 
-## Phones
+## Personal devices
 
-### T8. A lost phone keeps a session or a CalDAV token
+### T8. A lost personal device keeps a session or a CalDAV token
 
 - **Threat:** a thief opens the web interface or syncs the calendar.
 - **Check:** device tokens are stored as hashes and can be revoked, after which they are refused. `test:internal/server/caldav_test.go`
-- **Check:** a paired phone's device session is listed on the phones screen and removed by a parent, after which the phone is signed out at its next request. `test:internal/server/phones_test.go`
+- **Check:** a paired personal device's device session is listed on the personal devices screen and removed by a parent, after which the personal device is signed out at its next request. `test:internal/server/personal_devices_test.go`
 - **Check:** the service worker deletes the offline copy of the pages when the person signs in again or the box redirects to the sign-in page, and keeps only styles and scripts, which hold nothing personal. `test:web/test/sw.test.js`
-- **Check:** parent A ends parent B's browser session under Signed-in devices, after which B's next request is refused and lands on the sign-in page, which clears the cookie; a paired phone's session cannot be ended there, and a parent cannot end their own. `test:internal/server/sessions_test.go`
-- **Accepted risk:** a browser session lasts 30 days. A lost phone keeps its session until a parent ends it (the box does not know a phone is lost) or it expires; the phone's own lock screen is the protection meanwhile. Sessions made before #108 show as an unknown device with no last use, and a parent finds them by person and sign-in date.
+- **Check:** parent A ends parent B's browser session under Signed-in devices, after which B's next request is refused and lands on the sign-in page, which clears the cookie; a paired personal device's session cannot be ended there, and a parent cannot end their own. `test:internal/server/sessions_test.go`
+- **Accepted risk:** a browser session lasts 30 days. A lost personal device keeps its session until a parent ends it (the box does not know a personal device is lost) or it expires; the personal device's own lock screen is the protection meanwhile. Sessions made before #108 show as an unknown device with no last use, and a parent finds them by person and sign-in date.
 
 ### T9. A child's account or token reaches parent functions
 
 - **Threat:** a child's token or session is used for settings, tokens or other people's data.
-- **Check:** tokens of a child are refused; only calendar scopes open CalDAV. The lists scope opens shared lists (read and write of entries) over CalDAV to parents' device tokens only; a token made for other software with a lists scope is not widened. `test:internal/server/caldav_test.go` `test:internal/server/caldav_lists_test.go`
+- **Check:** tokens of a child are refused; only the calendars, tasks and lists scopes open CalDAV. The lists scope opens shared lists (read and write of entries) over CalDAV to parents' device tokens only; a token made for other software with a lists scope is not widened. `test:internal/server/caldav_test.go` `test:internal/server/caldav_lists_test.go`
 
-### T10. A bad certificate profile is installed on a phone
+### T10. A bad certificate profile is installed on a personal device
 
 - **Threat:** the own-CA fallback asks parents to install a CA; a CA that could vouch for any site would be dangerous.
 - **Check:** the CA is name-constrained to the box's names, so it cannot vouch for other sites. `test:internal/pki/pki_test.go`
@@ -122,7 +122,7 @@ Two **high** findings (G115, integer conversions in `internal/auth`) were fixed 
 
 - **Threat:** deSEC or the CA is down, a record is changed, or renewal fails and the certificate lapses.
 - **Check:** the box never falls back to plain HTTP; it serves the stored certificate or its own CA's certificate, warns parents, and keeps renewing. `test:internal/server/public_https_test.go`
-- **Accepted risk:** if an attacker controls the DNS record, phones are pointed at the attacker's machine, but the sign-in password never leaves the phone without a valid certificate for that name, which the attacker cannot obtain without the DNS token (T11).
+- **Accepted risk:** if an attacker controls the DNS record, personal devices are pointed at the attacker's machine, but the sign-in password never leaves the personal device without a valid certificate for that name, which the attacker cannot obtain without the DNS token (T11).
 
 ### T14. A dependency or the base image has a known vulnerability
 
@@ -162,7 +162,7 @@ The host-side script (`hejmo-update`, installed by `install.sh`) runs as root on
 - **Check:** unknown or cut-off links answer with one page that names nobody and no date, and wrong tries per address are rate-limited like sign-ins; every try at the account form counts too. `test:internal/server/invite_test.go`
 - **Check:** the invited person chooses username and password on their own device, so no password passes through another person; the password is hashed with Argon2id and is never sent back to the browser. A parent can reset the new parent's one-time codes (ADR 0017). `test:internal/server/invite_test.go`
 - **Check:** only adults without an account can be invited; children keep device sessions (ADR 0010). Creating, withdrawing and accepting are logged with the names of the people. `test:internal/store/invitations_test.go` `test:internal/server/invite_api_test.go`
-- **Accepted risk:** whoever holds the link before the invited person can create the account, and the link travels over a chat or over the QR code on the parent's screen. The page tells the parent to send it only to that person, and the parent sees on the invitation page when it was used; a link used by the wrong person shows as "used". **There is no remedy yet:** a parent cannot remove a person or an account, and resetting the one-time codes (ADR 0017) keeps the password and leads the next password sign-in into code setup, so the holder of the account stays a full parent. The invitation page shows no reset link while the one-time code is not yet set up. Open for the product owner: a way for a parent to remove an account created through an invitation (own ticket). With the box's own CA the short address and the trust page are plain HTTP (like phone pairing, T5): the token is visible to someone who can read the home network's traffic until the invited device trusts the box; the account form itself is HTTPS only.
+- **Accepted risk:** whoever holds the link before the invited person can create the account, and the link travels over a chat or over the QR code on the parent's screen. The page tells the parent to send it only to that person, and the parent sees on the invitation page when it was used; a link used by the wrong person shows as "used". **There is no remedy yet:** a parent cannot remove a person or an account, and resetting the one-time codes (ADR 0017) keeps the password and leads the next password sign-in into code setup, so the holder of the account stays a full parent. The invitation page shows no reset link while the one-time code is not yet set up. Open for the product owner: a way for a parent to remove an account created through an invitation (own ticket). With the box's own CA the short address and the trust page are plain HTTP (like personal device pairing, T5): the token is visible to someone who can read the home network's traffic until the invited device trusts the box; the account form itself is HTTPS only.
 
 ### T23. A passkey signs in someone who should not be in, or outlives a lost device
 

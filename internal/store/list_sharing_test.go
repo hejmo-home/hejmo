@@ -137,3 +137,23 @@ func TestEditingAReminderIntoAnotherEntryOfTheArticleMergesThem(t *testing.T) {
 		t.Fatalf("%v", l)
 	}
 }
+
+func TestANewReminderWithAnIDOfAnotherHouseholdIsTakenNotAFailure(t *testing.T) {
+	db, h, l := shopping(t)
+	other, err := db.CreateHousehold(store.Household{Name: "Other"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	ol, err := db.CreateList(other.ID, list.List{Name: "Einkauf", Color: "green", Symbol: "square-filled", Sort: list.Manual, Suggestions: true})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.SyncNewEntry(other.ID, ol.ID, "reminder-x", store.SyncEdit{Text: "Brot"}, show("piece")); err != nil {
+		t.Fatal(err)
+	}
+	for _, done := range []bool{false, true} {
+		if _, err := db.SyncNewEntry(h.ID, l.ID, "reminder-x", store.SyncEdit{Text: "Brot", Done: done}, show("piece")); !errors.Is(err, store.ErrIDTaken) {
+			t.Errorf("done=%v: %v", done, err)
+		}
+	}
+}

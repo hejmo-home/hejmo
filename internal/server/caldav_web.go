@@ -149,7 +149,7 @@ func (s *server) renderCalDAV(w http.ResponseWriter, r *http.Request, p principa
 		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
 		data["ProfileError"] = form["ProfileError"]
 	}
-	// With the box's own CA the phone must trust the box before the profile can work (ADR 0014).
+	// With the box's own CA the personal device must trust the box before the profile can work (ADR 0014).
 	data["CAFirst"] = s.pki.Ready() && !s.publicInUse()
 	s.render(w, r, status, "caldav.html", data)
 }

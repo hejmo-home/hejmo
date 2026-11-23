@@ -122,8 +122,8 @@ func TestMetadataIsRemoved(t *testing.T) {
 	}
 }
 
-func TestThePhoneOrientationIsAppliedBeforeTheMetadataIsDropped(t *testing.T) {
-	// A 300 x 200 photo that the phone took lying down: orientation 6 means "turn right".
+func TestThePersonalDeviceOrientationIsAppliedBeforeTheMetadataIsDropped(t *testing.T) {
+	// A 300 x 200 photo that the personal device took lying down: orientation 6 means "turn right".
 	src := withEXIF(encodeJPEG(t, gradient(300, 200)), 6)
 	res, err := picture.Process(bytes.NewReader(src))
 	if err != nil {

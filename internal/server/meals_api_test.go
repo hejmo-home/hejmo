@@ -181,19 +181,19 @@ func TestMealEventsCannotBeChangedInTheCalendar(t *testing.T) {
 	}
 }
 
-// ADR 0015: "Share through the box" is on by default, so a phone finds the
+// ADR 0015: "Share through the box" is on by default, so a personal device finds the
 // meals as a calendar, and CalDAV clients cannot write to it.
-func TestMealCalendarIsSharedToPhonesAndReadOnlyThere(t *testing.T) {
+func TestMealCalendarIsSharedToPersonalDevicesAndReadOnlyThere(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
 	putMeal(t, c, tuesday, "dinner", "Nudelauflauf")
-	p := c.phone(t, "calendars")
+	p := c.personalDevice(t, "calendars")
 	cal := p.calendarNamed("Essensplan")
 	if got := p.titles(cal.Path); len(got) != 1 || got[0] != "Abendessen: Nudelauflauf" {
-		t.Fatalf("phone sees %v", got)
+		t.Fatalf("personal device sees %v", got)
 	}
 	if status, _, _ := p.raw(http.MethodPut, cal.Path+"extra.ics", "BEGIN:VCALENDAR\r\nVERSION:2.0\r\nPRODID:x\r\nBEGIN:VEVENT\r\nUID:extra\r\nDTSTAMP:20261114T120000Z\r\nDTSTART:20261117T180000Z\r\nDTEND:20261117T190000Z\r\nSUMMARY:Extra\r\nEND:VEVENT\r\nEND:VCALENDAR\r\n", map[string]string{"Content-Type": "text/calendar"}); status != http.StatusForbidden {
-		t.Errorf("phone PUT = %d, want 403", status)
+		t.Errorf("personal device PUT = %d, want 403", status)
 	}
 	// A parent may switch sharing off like for any other calendar.
 	_, _, cals := c.call(http.MethodGet, "/calendars", nil)
@@ -205,7 +205,7 @@ func TestMealCalendarIsSharedToPhonesAndReadOnlyThere(t *testing.T) {
 		}
 	}
 	if cals, _ := p.calendars(); len(cals) != 1 { // the family calendar only
-		t.Fatalf("phone still sees %d calendars", len(cals))
+		t.Fatalf("personal device still sees %d calendars", len(cals))
 	}
 }
 

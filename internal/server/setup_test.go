@@ -70,10 +70,10 @@ func TestSetupSavesAndConfirmsTOTP(t *testing.T) {
 		t.Fatalf("GET /setup/totp = %d\n%s", page.status, page.body)
 	}
 	secret := secretOn(t, page.body)
-	// On a phone the page opens the authenticator app instead; the QR code is for another phone.
-	phone := b.do(http.MethodGet, "/setup/totp", nil, map[string]string{"User-Agent": iPhone})
-	if !strings.Contains(phone.body, `href="otpauth://totp/Hejmo:mama`) || strings.Contains(phone.body, "data-totp-secret") {
-		t.Errorf("phone page lacks the app link or shows the key:\n%s", phone.body)
+	// On a personal device the page opens the authenticator app instead; the QR code is for another personal device.
+	personalDevice := b.do(http.MethodGet, "/setup/totp", nil, map[string]string{"User-Agent": iPhone})
+	if !strings.Contains(personalDevice.body, `href="otpauth://totp/Hejmo:mama`) || strings.Contains(personalDevice.body, "data-totp-secret") {
+		t.Errorf("personal device page lacks the app link or shows the key:\n%s", personalDevice.body)
 	}
 
 	r = b.do(http.MethodPost, "/setup/totp", url.Values{"code": {"000000"}}, map[string]string{"Accept-Language": "en"})

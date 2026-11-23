@@ -23,7 +23,7 @@ type davListBox struct {
 	h      store.Household
 	shop   list.List // shared
 	packen list.List // not shared
-	ph     *phone
+	ph     *personalDevice
 	path   string // the shared list's collection
 }
 
@@ -42,7 +42,7 @@ func newDavListBox(t *testing.T) davListBox {
 	if err := c.b.db.SetListsShared(h.ID, map[string]bool{lb.shop.ID: true}); err != nil {
 		t.Fatal(err)
 	}
-	lb.ph = c.phone(t, "calendars tasks lists")
+	lb.ph = c.personalDevice(t, "calendars tasks lists")
 	lb.path = lb.ph.calendarNamed("Einkaufen").Path
 	return lb
 }
@@ -133,7 +133,7 @@ func TestAnEntryIsAReminderTitledWithItsQuantityAndCarryingItsNote(t *testing.T)
 func TestListsNeedTheListsScopeAndOldTokensAreNotWidened(t *testing.T) {
 	t.Parallel()
 	lb := newDavListBox(t)
-	old := lb.c.phone(t, "calendars tasks")
+	old := lb.c.personalDevice(t, "calendars tasks")
 	cals, _ := old.calendars()
 	for _, cal := range cals {
 		if cal.Name == "Einkaufen" {
@@ -146,7 +146,7 @@ func TestListsNeedTheListsScopeAndOldTokensAreNotWidened(t *testing.T) {
 	// Software that only has the lists scope over the API is no device: it is
 	// not opened to CalDAV (Q40: old tokens are not widened silently).
 	for _, scopes := range []string{"lists", "lists:write", "calendars lists:read", "events lists"} {
-		other := lb.c.phone(t, scopes)
+		other := lb.c.personalDevice(t, scopes)
 		if status, _, _ := other.raw("GET", lb.path, "", nil); status != http.StatusForbidden {
 			t.Errorf("token %q on a list = %d, want 403", scopes, status)
 		}
@@ -161,7 +161,7 @@ func TestListsNeedTheListsScopeAndOldTokensAreNotWidened(t *testing.T) {
 			}
 		}
 	}
-	dev := lb.c.phone(t, "calendars lists")
+	dev := lb.c.personalDevice(t, "calendars lists")
 	cals, err := dev.calendars()
 	found := false
 	for _, cal := range cals {
@@ -220,7 +220,7 @@ func TestChildrenGetNoListsInReminders(t *testing.T) {
 	mia, _ := lb.c.b.db.AddPerson(lb.h.ID, store.Person{Name: "Mia", Role: store.RoleChild})
 	_ = lb.c.b.db.CreateAccount(store.Account{PersonID: mia.ID, Username: "mia", PasswordHash: "x", TOTPSecret: "S"})
 	_, _ = lb.c.b.db.CreateAPIToken(store.APIToken{Name: "kid", Hash: auth.HashToken("hejmo_kid"), PersonID: mia.ID, Scopes: "calendars tasks lists"})
-	if status, _, _ := lb.c.phoneWith(t, "mia", "hejmo_kid").raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"}); status != http.StatusForbidden {
+	if status, _, _ := lb.c.personalDeviceWith(t, "mia", "hejmo_kid").raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"}); status != http.StatusForbidden {
 		t.Errorf("a child's token = %d, want 403", status)
 	}
 }

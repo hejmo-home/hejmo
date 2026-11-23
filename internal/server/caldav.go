@@ -21,7 +21,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-// The box as CalDAV server (ADR 0012): phones subscribe to the family
+// The box as CalDAV server (ADR 0012): personal devices subscribe to the family
 // calendar and to every calendar shared through the box, and write events
 // back. Addresses:
 //
@@ -146,7 +146,7 @@ func davScopes(t store.APIToken) string {
 	return strings.Join(keep, " ")
 }
 
-// davAuth signs a phone in with HTTP Basic: the person's username and a device
+// davAuth signs a personal device in with HTTP Basic: the person's username and a device
 // token with token scope calendars as the password. Browser sessions do not
 // count, so CalDAV is not open to cross-site requests.
 func (s *server) davAuth(next http.Handler) http.Handler {
@@ -245,7 +245,7 @@ func (b *davBackend) CreateCalendar(context.Context, *webcal.Calendar) error {
 	return httpError(http.StatusForbidden, "calendars are managed in the box's web interface")
 }
 
-// served lists the calendars phones may see: the family calendar always and
+// served lists the calendars personal devices may see: the family calendar always and
 // every calendar shared through the box.
 func (b *davBackend) served(sess *davSession) ([]store.Calendar, error) {
 	// The family calendar is created on first use, so it is always there to serve.
@@ -581,8 +581,8 @@ func checkETag(have string, exists bool, ifMatch, ifNoneMatch webdav.Conditional
 	return nil
 }
 
-// changeFor turns the object a phone saved into the edit that makes the box
-// equal to it: the series' audience is kept (phones do not show it), changed
+// changeFor turns the object a personal device saved into the edit that makes the box
+// equal to it: the series' audience is kept (personal devices do not show it), changed
 // occurrences are matched by their original start.
 func changeFor(calendarID, id string, existing *hcal.Object, in hcal.Object) calendar.Change {
 	master := in.Master

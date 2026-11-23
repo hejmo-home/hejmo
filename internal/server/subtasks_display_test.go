@@ -166,11 +166,11 @@ func TestNothingIsMarkedNextOutsideRoutines(t *testing.T) {
 	}
 }
 
-// Acceptance: subtasks are tickable on phones: the child's tasks page shows
+// Acceptance: subtasks are tickable on personal devices: the child's tasks page shows
 // the same cards, and the child ticks only subtasks of their own tasks.
-func TestChildPhoneTicksSubtasks(t *testing.T) {
+func TestChildPersonalDeviceTicksSubtasks(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	tb := taskBox{parent: cp.parent}
 	mia := personNamed(t, cp.parent.b, "Mia")
 	_, k, _ := cp.parent.call(http.MethodPost, "/tasks", map[string]any{"person_id": mia.ID, "title": "Tidy room", "repeat": "daily", "stars": 3})

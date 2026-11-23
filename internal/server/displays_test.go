@@ -77,7 +77,7 @@ func TestUnpairedDisplayShowsQRCodeAndSixDigitCode(t *testing.T) {
 			t.Errorf("pairing screen misses %q", want)
 		}
 	}
-	// The QR code leads a parent's phone to the confirmation form with the code filled in.
+	// The QR code leads a parent's personal device to the confirmation form with the code filled in.
 	m := pairURLRe.FindStringSubmatch(r.body)
 	if m == nil || !strings.HasPrefix(m[1], b.srv.URL+"/displays") || !strings.Contains(m[1], "code="+code) {
 		t.Fatalf("pair url = %v, want %s/displays?code=%s", m, b.srv.URL, code)

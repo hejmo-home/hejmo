@@ -14,20 +14,20 @@ var (
 	crumbMeals    = crumb{"/meals", "nav.meals", ""}
 	crumbTasks    = crumb{"/tasks", "nav.tasks", ""}
 
-	crumbConnections = crumb{"/calendars", "hub.connections", ""}
-	crumbConnect     = crumb{"/connections/new", "connect.title", ""}
-	crumbCalDAV      = crumb{"/caldav", "hub.caldav", ""}
-	crumbDisplays    = crumb{"/displays", "hub.displays", ""}
-	crumbPhotos      = crumb{"/photos", "hub.photos", ""}
-	crumbLists       = crumb{"/settings/lists", "hub.lists", ""}
-	crumbLibrary     = crumb{"/settings/lists/library", "lib.title", ""}
-	crumbSharing     = crumb{"/settings/lists/sharing", "share.title", ""}
-	crumbPhones      = crumb{"/phones", "hub.phones", ""}
-	crumbOutside     = crumb{"/settings/connections", "hub.outside", ""}
-	crumbMCP         = crumb{"/mcp", "hub.mcp", ""}
-	crumbPeople      = crumb{"/people", "hub.people", ""}
-	crumbAccount     = crumb{"/account", "hub.otp", ""}
-	crumbSessions    = crumb{"/sessions", "hub.sessions", ""}
+	crumbConnections     = crumb{"/calendars", "hub.connections", ""}
+	crumbConnect         = crumb{"/connections/new", "connect.title", ""}
+	crumbCalDAV          = crumb{"/caldav", "hub.caldav", ""}
+	crumbDisplays        = crumb{"/displays", "hub.displays", ""}
+	crumbPhotos          = crumb{"/photos", "hub.photos", ""}
+	crumbLists           = crumb{"/settings/lists", "hub.lists", ""}
+	crumbLibrary         = crumb{"/settings/lists/library", "lib.title", ""}
+	crumbSharing         = crumb{"/settings/lists/sharing", "share.title", ""}
+	crumbPersonalDevices = crumb{"/personal-devices", "hub.personal_devices", ""}
+	crumbOutside         = crumb{"/settings/connections", "hub.outside", ""}
+	crumbMCP             = crumb{"/mcp", "hub.mcp", ""}
+	crumbPeople          = crumb{"/people", "hub.people", ""}
+	crumbAccount         = crumb{"/account", "hub.otp", ""}
+	crumbSessions        = crumb{"/sessions", "hub.sessions", ""}
 
 	crumbMealTemplates    = crumb{"/meals/templates", "meals.tpl.title", ""}
 	crumbRoutineTemplates = crumb{"/routines/templates", "routine.tpl.title", ""}
@@ -38,7 +38,7 @@ var (
 // everyday page one level deep keeps its back link). Pages that are the hub
 // itself, or that hold no trail, are not listed.
 var crumbTrails = map[string][]crumb{
-	"calendars.html": {crumbSettings}, "caldav.html": {crumbSettings}, "displays.html": {crumbSettings}, "photos.html": {crumbSettings}, "settings_lists.html": {crumbSettings}, "phones.html": {crumbSettings},
+	"calendars.html": {crumbSettings}, "caldav.html": {crumbSettings}, "displays.html": {crumbSettings}, "photos.html": {crumbSettings}, "settings_lists.html": {crumbSettings}, "personal_devices.html": {crumbSettings},
 	"mcp.html": {crumbSettings}, "people.html": {crumbSettings}, "household.html": {crumbSettings}, "account.html": {crumbSettings}, "sessions.html": {crumbSettings},
 	"licences.html": {crumbSettings}, "connections_outside.html": {crumbSettings}, "https_settings.html": {crumbSettings},
 	"offline_on.html": {crumbSettings, crumbOutside}, "offline_off.html": {crumbSettings, crumbOutside},
@@ -48,8 +48,8 @@ var crumbTrails = map[string][]crumb{
 	"library.html": {crumbSettings, crumbLists}, "article.html": {crumbSettings, crumbLists, crumbLibrary}, "article_form.html": {crumbSettings, crumbLists, crumbLibrary},
 	"display.html": {crumbSettings, crumbDisplays}, "photo_album.html": {crumbSettings, crumbPhotos},
 	"token.html": {crumbSettings, crumbCalDAV}, "token_once.html": {crumbSettings, crumbCalDAV},
-	"phone.html":     {crumbSettings, crumbPhones},
-	"mcp_token.html": {crumbSettings, crumbMCP}, "mcp_token_new.html": {crumbSettings, crumbMCP}, "mcp_token_once.html": {crumbSettings, crumbMCP},
+	"personal_device.html": {crumbSettings, crumbPersonalDevices},
+	"mcp_token.html":       {crumbSettings, crumbMCP}, "mcp_token_new.html": {crumbSettings, crumbMCP}, "mcp_token_once.html": {crumbSettings, crumbMCP},
 	"person_edit.html": {crumbSettings, crumbPeople}, "group.html": {crumbSettings, crumbPeople},
 	"account_reset.html": {crumbSettings, crumbAccount}, "passkey.html": {crumbSettings, crumbAccount}, "recovery_codes.html": {crumbSettings, crumbAccount},
 	"session.html": {crumbSettings, crumbSessions},

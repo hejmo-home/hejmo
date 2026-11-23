@@ -126,7 +126,7 @@ func TestSignedInSwitchIsSavedOnTheAccount(t *testing.T) {
 		t.Fatalf("account language = %q, %v", acc.Language, err)
 	}
 	page := b.do(http.MethodGet, "/", nil, map[string]string{"Accept-Language": "de"})
-	if pageLang(t, page.body) != "en" || !strings.Contains(page.body, "Language changed to English and saved for your account. Displays and the children&#39;s phones keep their language.") {
+	if pageLang(t, page.body) != "en" || !strings.Contains(page.body, "Language changed to English and saved for your account. Displays and the children&#39;s personal devices keep their language.") {
 		t.Fatalf("home after switch:\n%s", page.body)
 	}
 	// On another device without the cookie, the account's language applies.

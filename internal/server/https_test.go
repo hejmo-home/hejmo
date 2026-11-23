@@ -187,7 +187,7 @@ func TestTrustPageRendersStyledOverPlainHTTP(t *testing.T) {
 	}
 }
 
-func TestPlainHTTPStillServesWhatPhonesNeedBeforeTheyTrustTheBox(t *testing.T) {
+func TestPlainHTTPStillServesWhatPersonalDevicesNeedBeforeTheyTrustTheBox(t *testing.T) {
 	t.Parallel()
 	b := newBox(t)
 	plain := b.plainServer()
@@ -430,14 +430,14 @@ func TestTrustPageChecksByItselfAndContinuesOnlyWhenTrusted(t *testing.T) {
 	}
 }
 
-// A phone on its way to pair keeps its target and its label; the box does not
+// A personal device on its way to pair keeps its target and its label; the box does not
 // pretend it is the wizard.
 func TestTrustPageKeepsThePairingTargetAndHasNoWizardAfterSetup(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
 	host := strings.TrimPrefix(c.b.srv.URL, "https://")
 	host = host[:strings.LastIndex(host, ":")] // the box answers on the default HTTPS port in its links
-	target := "https://" + host + "/phones/join/ABC123"
+	target := "https://" + host + "/personal-devices/join/ABC123"
 	r := c.b.trustPage("/ca?continue="+url.QueryEscape(target), "de", iPhone)
 	if !strings.Contains(r.body, `href="`+target+`" data-continue-link hidden>Weiter mit der Einrichtung`) {
 		t.Errorf("the pairing target or its label is gone:\n%s", r.body)
@@ -541,7 +541,7 @@ func TestRefusedNameIsExplainedInBothLanguages(t *testing.T) {
 	}
 }
 
-// The trust page carries the language switcher (ticket 134), and a phone reads
+// The trust page carries the language switcher (ticket 134), and a personal device reads
 // it over plain HTTP before it trusts the box: the flags and the switch itself
 // must work there instead of redirecting to the untrusted HTTPS address.
 func TestLanguageSwitcherWorksOnTheTrustPageOverPlainHTTP(t *testing.T) {

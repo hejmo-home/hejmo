@@ -21,7 +21,7 @@ import (
 // large checkboxes. Since the design pass (Opus) the templates and the
 // stylesheet carry its markup, so regenerating gives the same design for the
 // example family; the committed docs/design/preview-37.html is the designer's
-// reference with its extra edge cases (eight people, phone, long titles). Every frame is an iframe with the real stylesheet and the
+// reference with its extra edge cases (eight people, personal device, long titles). Every frame is an iframe with the real stylesheet and the
 // real templates, built from the real view models.
 // Run: HEJMO_WRITE_PREVIEW_37=../../docs/design/preview-37.html go test ./internal/server -run WriteDesignPreview37
 func TestWriteDesignPreview37(t *testing.T) {

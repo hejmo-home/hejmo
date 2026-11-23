@@ -136,11 +136,20 @@ func (db *DB) SyncNewEntry(householdID, listID, id string, in SyncEdit, show lis
 	case !errors.Is(err, sql.ErrNoRows):
 		return AddResult{}, err
 	}
+	res, err := db.insertSyncedEntry(householdID, listID, id, in, show)
+	if isUniqueViolation(err) {
+		// list_entries.id is unique across households: an id used elsewhere is taken as well
+		return AddResult{}, ErrIDTaken
+	}
+	return res, err
+}
+
+func (db *DB) insertSyncedEntry(householdID, listID, id string, in SyncEdit, show list.Show) (AddResult, error) {
 	if !in.Done {
 		return db.AddItem(householdID, listID, Item{ID: id, Note: in.Note, Text: in.Text, ArticleID: in.ArticleID, Qty: in.Qty}, show)
 	}
 	e := list.Entry{ID: id, Text: in.Text, ArticleID: in.ArticleID, Qty: in.Qty, Note: in.Note, Done: true}
-	err = db.sql.QueryRow(`INSERT INTO list_entries (id, list_id, text, done, position, created_at, article_id, qty_base, qty_unit, note)
+	err := db.sql.QueryRow(`INSERT INTO list_entries (id, list_id, text, done, position, created_at, article_id, qty_base, qty_unit, note)
 		VALUES (?, ?, ?, 1, (SELECT COALESCE(MAX(position) + 1, 0) FROM list_entries WHERE list_id = ?), ?, ?, ?, ?, ?) RETURNING position`,
 		e.ID, listID, e.Text, listID, now(), e.ArticleID, e.Qty.Base, e.Qty.Unit, e.Note).Scan(&e.Position)
 	return AddResult{Plan: list.AddPlan{Action: list.AddedNew, Result: e.Qty}, Entry: e}, err

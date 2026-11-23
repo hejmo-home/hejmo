@@ -127,17 +127,17 @@ func (db *DB) SessionPerson(tokenHash string, t time.Time) (string, error) {
 	return id, err
 }
 
-// IsPhoneSession reports whether the session is a paired phone's device session.
-func (db *DB) IsPhoneSession(tokenHash string) bool {
+// IsPersonalDeviceSession reports whether the session is a paired personal device's device session.
+func (db *DB) IsPersonalDeviceSession(tokenHash string) bool {
 	var n int
-	err := db.sql.QueryRow(`SELECT COUNT(*) FROM sessions WHERE token_hash = ? AND phone_id IS NOT NULL`, tokenHash).Scan(&n)
+	err := db.sql.QueryRow(`SELECT COUNT(*) FROM sessions WHERE token_hash = ? AND personal_device_id IS NOT NULL`, tokenHash).Scan(&n)
 	return err == nil && n > 0
 }
 
-// DeleteSession ends a session. A phone's device session takes the phone with
-// it: signing out on the phone unpairs it.
+// DeleteSession ends a session. A personal device's device session takes the personal device with
+// it: signing out on the personal device unpairs it.
 func (db *DB) DeleteSession(tokenHash string) error {
-	if _, err := db.sql.Exec(`DELETE FROM phones WHERE id = (SELECT phone_id FROM sessions WHERE token_hash = ?)`, tokenHash); err != nil {
+	if _, err := db.sql.Exec(`DELETE FROM personal_devices WHERE id = (SELECT personal_device_id FROM sessions WHERE token_hash = ?)`, tokenHash); err != nil {
 		return err
 	}
 	_, err := db.sql.Exec(`DELETE FROM sessions WHERE token_hash = ?`, tokenHash)
@@ -330,7 +330,7 @@ func (db *DB) SpendRecoveryCode(id string) error {
 }
 
 // ResetOTP removes a person's one-time code secret and recovery codes and
-// ends their browser sessions. Device tokens and paired phones' device
+// ends their browser sessions. Device tokens and paired personal devices' device
 // sessions stay (ADR 0017). The next sign-in must set up one-time codes again.
 // This is the reset from the box's command line; it names nobody as the one
 // who reset.
@@ -355,7 +355,7 @@ func (db *DB) ResetOTPBy(personID, byID string, removeIDs []string) ([]Passkey, 
 	if err := expectOne(res, err); err != nil {
 		return nil, err
 	}
-	for _, q := range []string{`DELETE FROM recovery_codes WHERE person_id = ?`, `DELETE FROM sessions WHERE person_id = ? AND phone_id IS NULL`} {
+	for _, q := range []string{`DELETE FROM recovery_codes WHERE person_id = ?`, `DELETE FROM sessions WHERE person_id = ? AND personal_device_id IS NULL`} {
 		if _, err := tx.Exec(q, personID); err != nil {
 			return nil, err
 		}

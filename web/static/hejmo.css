@@ -625,7 +625,7 @@ textarea { width: 100%; font: inherit; color: var(--text); background: var(--sur
 .task-stars::before { content: "+" / ""; }
 .task-stars::after { content: "\00a0\2605" / ""; }
 
-/* Phones (ticket 5.13): the QR code a phone scans, and the offline view. */
+/* Personal devices (ticket 5.13): the QR code a personal device scans, and the offline view. */
 .pair-qr { width: min(70vw, 280px); margin: 0 0 12px; color: var(--text); background: var(--surface); border-radius: var(--radius-tile); padding: 8px; }
 .pair-qr svg { display: block; width: 100%; height: auto; }
 html[data-offline] button:disabled, html[data-offline] input:disabled { opacity: .5; }
@@ -2389,7 +2389,7 @@ fieldset.units fieldset.chips legend, fieldset.sym-grid legend:not(.sr) { font-s
 /* A legend only for screen readers takes no room, whatever fieldset it sits in (the picture choice, the symbol results). */
 fieldset legend.sr { float: none; width: 1px; margin: -1px; padding: 0; }
 
-/* ticket 199: the page a phone shows after its device session ended (see DESIGN.md). */
+/* ticket 199: the page a personal device shows after its device session ended (see DESIGN.md). */
 .unpaired { display: grid; grid-template-columns: minmax(0, 1fr); gap: 16px; max-width: 560px; }
 .unpaired > * { margin: 0; }
 .unpaired .pic { width: 104px; height: 104px; fill: none; stroke: var(--text); stroke-width: 2.5; stroke-linecap: round; stroke-linejoin: round; }
@@ -2407,7 +2407,7 @@ fieldset legend.sr { float: none; width: 1px; margin: -1px; padding: 0; }
 @media (min-width: 900px) { .unpaired { margin: 0 auto; } }
 @media (max-height: 500px) { .unpaired .pic { width: 64px; height: 64px; } }
 
-/* ticket 198: pair a child's phone for another person (new, see DESIGN.md). */
+/* ticket 198: pair a child's personal device for another person (new, see DESIGN.md). */
 details.repair { box-sizing: border-box; border-top: 1px solid var(--border); margin-top: var(--gap-section); max-width: 560px; }
 details.repair > summary { display: flex; align-items: flex-start; gap: 10px; min-height: var(--touch-target); padding: 10px 0; cursor: pointer; list-style: none; }
 details.repair > summary::-webkit-details-marker { display: none; }
@@ -2431,8 +2431,8 @@ details.repair + details.danger { margin-top: 0; }
 .verification { font-size: var(--fs-key-figure); font-variant-numeric: tabular-nums; white-space: nowrap; }
 
 /* ---- New for #125: theme chooser in the brand bar (ADR 0015, 0017) ---- */
-/* One chooser for everyone signed in, parents and children's phones, beside
-   the language switcher: both are choices of this browser or phone. The menu
+/* One chooser for everyone signed in, parents and children's personal devices, beside
+   the language switcher: both are choices of this browser or personal device. The menu
    hangs from the right edge of the brand bar, so it never runs off a 375 px
    screen. */
 .frame-bar { position: relative; }
@@ -2467,14 +2467,14 @@ details.repair + details.danger { margin-top: 0; }
 .theme-menu .where { margin: 6px 4px 0; }
 /* Swatch: a tiny page in the theme it stands for, so a child who cannot read
    yet sees what each choice looks like. Light shows a sun, dark a moon,
-   automatic both, "follow the device" a phone with both halves. */
+   automatic both, "follow the device" a personal device with both halves. */
 .swatch { flex: none; width: 44px; height: 44px; box-sizing: border-box; display: grid; grid-auto-flow: column; grid-auto-columns: 1fr; overflow: hidden; border: 1.5px solid var(--text-secondary); border-radius: var(--radius-field); }
 .swatch > span { display: grid; place-items: center; background: var(--background); color: var(--text); }
 .swatch .icon { width: 22px; height: 22px; stroke: currentColor; fill: none; stroke-width: 2; }
 .swatch.half .icon { width: 16px; height: 16px; }
-.swatch.phone { width: 30px; margin: 0 7px; border-radius: 8px; border-width: 2px; grid-auto-flow: row; grid-auto-rows: 1fr; grid-auto-columns: auto; }
+.swatch.personal-device { width: 30px; margin: 0 7px; border-radius: 8px; border-width: 2px; grid-auto-flow: row; grid-auto-rows: 1fr; grid-auto-columns: auto; }
 .swatch.sm { width: 26px; height: 26px; border-radius: 8px; }
-.swatch.sm.phone { width: 18px; margin: 0 4px; border-radius: 5px; }
+.swatch.sm.personal-device { width: 18px; margin: 0 4px; border-radius: 5px; }
 .swatch.sm .icon { width: 15px; height: 15px; }
 .swatch.sm.half .icon { display: none; }
 [data-theme="bw"] .swatch { border: 2px solid var(--text); }

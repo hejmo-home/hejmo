@@ -3,7 +3,7 @@ info:
   title: Hejmo box API
   version: 0.5.0
   description: |
-    The REST API is the single interface for the web UI, displays, phones and
+    The REST API is the single interface for the web UI, displays, personal devices and
     integrations. Authenticate with a bearer token (`Authorization: Bearer hejmo_…`)
     or a browser session. A token acts on behalf of a person and is limited by
     its scopes: `read`, `write`, `<resource>` or `<resource>:<action>`
@@ -11,7 +11,7 @@ info:
     actions: read, write, delete, complete). The resource `health` (diet and
     allergies) is reached only by its own scope: `read` and `write` never include it.
 
-    The scopes `calendars` and `tasks` are for a phone's calendar and
+    The scopes `calendars` and `tasks` are for a personal device's calendar and
     reminders apps: they open the box's CalDAV server at `/dav/` (HTTP Basic
     with the person's username and the token as password, HTTPS only) and
     nothing in this REST API. `calendars` opens the calendars (VEVENT),
@@ -30,7 +30,7 @@ info:
     plan, except managing calendars (`POST /calendars`, `PATCH` and `DELETE`
     `/calendars/{id}`, `POST /calendars/{id}/sync` are no tools), run as the parent who made the token and with the token's scopes;
     tools the scopes do not allow are not offered. Tokens, settings, people,
-    displays and phones are never tools. A token made for MCP works there only:
+    displays and personal devices are never tools. A token made for MCP works there only:
     this REST API and CalDAV refuse it, and MCP refuses every other token.
   license:
     name: AGPL-3.0-or-later
@@ -126,7 +126,7 @@ paths:
         Second step of creating a passkey: send what the browser's credentials
         API answered to the options of `POST /me/passkeys/registration`. Only a
         signed-in browser session may create a passkey, never a token and never a
-        paired phone's session: a passkey
+        paired personal device's session: a passkey
         signs in for good, so a stolen token must not be able to make one. The
         box checks the answer: the authenticator must have verified the user.
       requestBody:
@@ -159,7 +159,7 @@ paths:
         First step of creating a passkey. The answer holds the options for
         `navigator.credentials.create`. The request must come to the box under its
         box name (GLOSSARY): over an IP address or another name it is refused with
-        409, because a passkey could not work there. A token and a paired phone's session
+        409, because a passkey could not work there. A token and a paired personal device's session
         are refused with 403.
       responses:
         "200":
@@ -745,7 +745,7 @@ paths:
     get:
       operationId: listDisplays
       summary: Paired displays of the household (scope displays:read)
-      description: Children, including a child's phone, are refused (403). Device management is for parents.
+      description: Children, including a child's personal device, are refused (403). Device management is for parents.
       responses:
         "200":
           description: Displays, oldest first. Unpaired displays are not listed.
@@ -1168,26 +1168,26 @@ paths:
               schema: { type: string, format: binary }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "404": { $ref: "#/components/responses/NotFound" }
-  /phones:
+  /personal-devices:
     get:
-      operationId: listPhones
-      summary: Paired phones of the household (scope tokens:read)
-      description: Each phone has a long-lived device session for the person it was paired for (ADR 0015).
+      operationId: listPersonalDevices
+      summary: Paired personal devices of the household (scope tokens:read)
+      description: Each personal device has a long-lived device session for the person it was paired for (ADR 0015).
       responses:
         "200":
-          description: Phones, oldest first
+          description: Personal devices, oldest first
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: "#/components/schemas/Phone" }
+                items: { $ref: "#/components/schemas/PersonalDevice" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
-  /phones/{id}:
+  /personal-devices/{id}:
     delete:
-      operationId: revokePhone
-      summary: Remove a phone and end its device session (scope tokens:delete)
-      description: The phone is signed out the next time it opens the app.
+      operationId: revokePersonalDevice
+      summary: Remove a personal device and end its device session (scope tokens:delete)
+      description: The personal device is signed out the next time it opens the app.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       responses:
@@ -1195,19 +1195,19 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
-  /phones/{id}/repair:
+  /personal-devices/{id}/repair:
     post:
-      operationId: repairPhone
-      summary: Give a phone to another person in one step (scope tokens:write)
+      operationId: repairPersonalDevice
+      summary: Give a personal device to another person in one step (scope tokens:write)
       description: |
-        Removes the phone, ends its device session at once and returns a new
-        pairing code that says whom the phone is for next. The code follows the
-        usual rules of `createPhonePairing` (valid once, ten minutes, the
-        household's limit of open codes). The phone opens it, the waiting phone
-        shows the person, and a parent confirms it with `confirmPhonePairing`
+        Removes the personal device, ends its device session at once and returns a new
+        pairing code that says whom the personal device is for next. The code follows the
+        usual rules of `createPersonalDevicePairing` (valid once, ten minutes, the
+        household's limit of open codes). The personal device opens it, the waiting personal device
+        shows the person, and a parent confirms it with `confirmPersonalDevicePairing`
         (the waiting list names the person in `for_person_id`). `person_id` must
-        be another member of the household than the phone's current person (422
-        otherwise, and nothing changes). Nothing of the person the phone had
+        be another member of the household than the personal device's current person (422
+        otherwise, and nothing changes). Nothing of the person the personal device had
         (events, tasks, stars) is touched.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -1215,57 +1215,57 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/RepairPhone" }
+            schema: { $ref: "#/components/schemas/RepairPersonalDevice" }
       responses:
         "201":
           description: The new pairing code, for the chosen person
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/NewPhonePairing" }
+              schema: { $ref: "#/components/schemas/NewPersonalDevicePairing" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
-  /phones/pairings:
+  /personal-devices/pairings:
     get:
-      operationId: listPhonePairings
-      summary: Phones that opened a pairing code and wait for confirmation (scope tokens:read)
+      operationId: listPersonalDevicePairings
+      summary: Personal devices that opened a pairing code and wait for confirmation (scope tokens:read)
       responses:
         "200":
-          description: Waiting phones, oldest first
+          description: Waiting personal devices, oldest first
           content:
             application/json:
               schema:
                 type: array
-                items: { $ref: "#/components/schemas/PhonePairing" }
+                items: { $ref: "#/components/schemas/PersonalDevicePairing" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
     post:
-      operationId: createPhonePairing
-      summary: Create a pairing code for a phone (scope tokens:write)
+      operationId: createPersonalDevicePairing
+      summary: Create a pairing code for a personal device (scope tokens:write)
       description: |
-        Returns the address a phone opens, valid once and for ten minutes; show
+        Returns the address a personal device opens, valid once and for ten minutes; show
         it as a QR code. The box keeps only a hash of the code, so the address
         is only in this answer. With the box's own certificate authority the
         address leads over the plain-HTTP trust page first, which then leads on
-        to the pairing (ADR 0014). The phone opens the address, waits, and a
-        parent confirms it with `confirmPhonePairing`.
+        to the pairing (ADR 0014). The personal device opens the address, waits, and a
+        parent confirms it with `confirmPersonalDevicePairing`.
       responses:
         "201":
           description: The pairing code
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/NewPhonePairing" }
+              schema: { $ref: "#/components/schemas/NewPersonalDevicePairing" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
-  /phones/pairings/{id}/confirm:
+  /personal-devices/pairings/{id}/confirm:
     post:
-      operationId: confirmPhonePairing
-      summary: Confirm the phone that opened a pairing code (scope tokens:write)
+      operationId: confirmPersonalDevicePairing
+      summary: Confirm the personal device that opened a pairing code (scope tokens:write)
       description: |
-        Chooses whom the phone is for (an account or a child) and names it. The
-        phone gets its device session at its next request. The phone acts with
-        the role of that person. A pairing that no phone opened, or that
+        Chooses whom the personal device is for (an account or a child) and names it. The
+        personal device gets its device session at its next request. The personal device acts with
+        the role of that person. A pairing that no personal device opened, or that
         expired or was confirmed already, is 404.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -1273,13 +1273,13 @@ paths:
         required: true
         content:
           application/json:
-            schema: { $ref: "#/components/schemas/ConfirmPhone" }
+            schema: { $ref: "#/components/schemas/ConfirmPersonalDevice" }
       responses:
         "201":
-          description: The phone
+          description: The personal device
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/Phone" }
+              schema: { $ref: "#/components/schemas/PersonalDevice" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
@@ -2977,7 +2977,7 @@ paths:
       summary: Change a synced calendar (share through the box, two-way / read-only, waste collection, name, colour, audience)
       description: |
         Send at least one field. `share_through_box` switches sharing through the box for a synced
-        calendar; the family calendar is always served to phones, asking to change it answers 422.
+        calendar; the family calendar is always served to personal devices, asking to change it answers 422.
         `read_only` switches a CalDAV calendar between two-way (the default: events created, changed or deleted on the box
         are written back to the server right away, ADR 0012) and read-only (the box never writes; API edits answer 422).
         ICS and local calendars have no such switch and answer 422. Switching back to two-way pushes
@@ -3245,7 +3245,7 @@ paths:
       summary: Start the device sign-in of an Outlook (Microsoft) account (parents, scope settings:write)
       description: |
         Asks Microsoft for a device code (a public client: the box holds no secret). The parent opens the
-        verification address on any phone or computer, enters `user_code`, signs in and chooses Accept; the
+        verification address on any personal device or computer, enters `user_code`, signs in and chooses Accept; the
         box notices by itself, see `GET /calendar-connections/outlook/sign-ins/{id}`. A code is valid for
         15 minutes, so fetch it only when the parent is ready. `client_id` is the app ID of the family's own
         app registration; left out, the Hejmo project's registration is used (422 if the box has none).
@@ -3420,7 +3420,7 @@ paths:
         `own-ca` is the box's own certificate authority (it is renewed by the box). Without `warning` there is
         nothing to do. With `warning` true it is the fallback of a configured box whose public certificate could
         not be loaded or obtained (decision Q27): the box serves its own CA's certificate on HTTPS, never
-        plain HTTP, and phones must first trust the own CA (`/ca`); `renewal_error` says why.
+        plain HTTP, and personal devices must first trust the own CA (`/ca`); `renewal_error` says why.
         `public` is a publicly trusted certificate for the family's DNS name (ADR 0014); `warning` is set when its
         renewal failed or it is about to expire.
 
@@ -4272,7 +4272,7 @@ components:
         color: { type: string }
         read_only: { type: boolean, description: "The box never changes this calendar's events outside (always true for ICS; false by default for CalDAV and Google, where a parent can switch it on)" }
         waste_collection: { type: boolean, description: "A read-only calendar marked as the household's waste collection calendar: its events show only in the family view's tomorrow tile (reminder from 18:00) and on the night page, not in the strip, person columns or personal view" }
-        share_through_box: { type: boolean, description: "Phones may subscribe to this calendar over CalDAV. Always true for the family calendar; on by default for ICS, off for CalDAV and Google" }
+        share_through_box: { type: boolean, description: "Personal devices may subscribe to this calendar over CalDAV. Always true for the family calendar; on by default for ICS, off for CalDAV and Google" }
         audience: { $ref: "#/components/schemas/Audience" }
         sync: { $ref: "#/components/schemas/SyncState" }
     ApiToken:
@@ -4440,7 +4440,7 @@ components:
         state: { type: string, enum: [pairing] }
         code: { type: string, pattern: "^[0-9]{6}$", example: "482916" }
         code_expires_at: { type: string, format: date-time }
-        pair_url: { type: string, description: "Where a parent's phone confirms the code (the QR code on the page route)" }
+        pair_url: { type: string, description: "Where a parent's personal device confirms the code (the QR code on the page route)" }
     DisplayState:
       type: object
       required: [state]
@@ -4505,38 +4505,38 @@ components:
         name: { type: string, minLength: 1, maxLength: 80 }
         room: { type: string, maxLength: 80 }
         type: { $ref: "#/components/schemas/DisplayType" }
-    Phone:
+    PersonalDevice:
       type: object
       required: [id, name, person_id, person_name, paired_at, last_seen_at]
       properties:
         id: { type: string, format: uuid }
-        name: { type: string, example: "Mia's phone" }
-        person_id: { type: string, format: uuid, description: "The person the phone acts for, with their role" }
+        name: { type: string, example: "Mia's tablet" }
+        person_id: { type: string, format: uuid, description: "The person the personal device acts for, with their role" }
         person_name: { type: string, example: Mia }
         paired_at: { type: string, format: date-time }
         last_seen_at: { type: string, format: date-time, nullable: true }
-    PhonePairing:
+    PersonalDevicePairing:
       type: object
       required: [id, device, verification, expires_at, for_person_id]
       properties:
         id: { type: string, format: uuid }
-        device: { type: string, example: Safari on iPhone, description: "What the phone said about itself" }
-        verification: { type: string, example: "483 920", description: "Six-digit number the waiting phone shows. Confirm only if it matches the number on the phone in your hand." }
+        device: { type: string, example: Safari on iPhone, description: "What the personal device said about itself" }
+        verification: { type: string, example: "483 920", description: "Six-digit number the waiting personal device shows. Confirm only if it matches the number on the personal device in your hand." }
         expires_at: { type: string, format: date-time }
-        for_person_id: { type: string, format: uuid, nullable: true, description: "Whom the phone is for next when the code came from `repairPhone`; null for an ordinary code" }
-    NewPhonePairing:
+        for_person_id: { type: string, format: uuid, nullable: true, description: "Whom the personal device is for next when the code came from `repairPersonalDevice`; null for an ordinary code" }
+    NewPersonalDevicePairing:
       type: object
       required: [id, url, expires_at]
       properties:
         id: { type: string, format: uuid }
         url: { type: string, format: uri, description: "The address to show as a QR code. Only in this answer." }
         expires_at: { type: string, format: date-time }
-        person_id: { type: string, format: uuid, description: "Only for `repairPhone`: whom the phone is for next" }
-    RepairPhone:
+        person_id: { type: string, format: uuid, description: "Only for `repairPersonalDevice`: whom the personal device is for next" }
+    RepairPersonalDevice:
       type: object
       required: [person_id]
       properties:
-        person_id: { type: string, format: uuid, description: "Whom the phone is for next: a member of the household other than the phone's current person" }
+        person_id: { type: string, format: uuid, description: "Whom the personal device is for next: a member of the household other than the personal device's current person" }
     Invitation:
       type: object
       required: [state, created_at, expires_at, created_by, accepted_at, withdrawn_at]
@@ -4548,7 +4548,7 @@ components:
         accepted_at: { type: string, format: date-time, nullable: true }
         withdrawn_at: { type: string, format: date-time, nullable: true, description: Also set when a newer link replaced it }
         url: { type: string, format: uri, description: "The address to show as a QR code or send. Only in the answer of createInvitation." }
-    ConfirmPhone:
+    ConfirmPersonalDevice:
       type: object
       required: [person_id, name]
       properties:

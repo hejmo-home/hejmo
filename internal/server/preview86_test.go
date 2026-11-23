@@ -148,7 +148,7 @@ func TestWriteDesignPreview86(t *testing.T) {
 			body.WriteString("</div>\n")
 		}
 	}
-	// German phone frames: lang="de" on the device so words hyphenate in German.
+	// German personal device frames: lang="de" on the device so words hyphenate in German.
 	body.WriteString(`<h2 class="sec">Phone, 375 px wide, German: long words, place names and texts (lang="de", hyphenation)</h2>` + "\n")
 	for _, v := range germanViews {
 		fmt.Fprintf(&body, `<h3 class="sec">%s</h3><div class="row-of">`+"\n", v.title)

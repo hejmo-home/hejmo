@@ -232,11 +232,11 @@ func TestStarsOnTheTasksPageAreGerman(t *testing.T) {
 	}
 }
 
-// 7.1: a child's phone shows neither the star accounts nor the booking form
+// 7.1: a child's personal device shows neither the star accounts nor the booking form
 // (ADR 0015), so a child never sees siblings' balances.
-func TestChildPhoneShowsNoStarAccountsOrBookingForm(t *testing.T) {
+func TestChildPersonalDeviceShowsNoStarAccountsOrBookingForm(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	b := cp.parent.b
 	b.post("/tasks", url.Values{"person": {personNamed(t, b, "Mia").ID}, "title": {"Tidy room"}, "repeat": {"daily"}, "stars": {"3"}})
 	_, _, list := cp.parent.call(http.MethodGet, "/tasks", nil)

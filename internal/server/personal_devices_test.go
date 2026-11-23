@@ -548,3 +548,20 @@ func TestOfflineScriptGetsTheHouseholdTimeAndDateFormat(t *testing.T) {
 		}
 	}
 }
+
+// Q147 (#203): the page says what a personal device is.
+func TestPersonalDevicesPageSaysWhatAPersonalDeviceIs(t *testing.T) {
+	t.Parallel()
+	b := signedInBox(t)
+	for lang, want := range map[string][]string{
+		"en": {"<h1>Personal devices</h1>", "Phones, tablets and other devices that belong to one person."},
+		"de": {"<h1>Persönliche Geräte</h1>", "Handys, Tablets und andere Geräte, die zu einer Person gehören."},
+	} {
+		page := b.do(http.MethodGet, "/personal-devices", nil, map[string]string{"Accept-Language": lang}).body
+		for _, w := range want {
+			if !strings.Contains(page, w) {
+				t.Errorf("%s: page lacks %q", lang, w)
+			}
+		}
+	}
+}

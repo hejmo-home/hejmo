@@ -54,7 +54,7 @@ func TestTemplatesMenuListsOwnFirstThenTheOnesFromHejmoInTheLanguageInUse(t *tes
 
 func TestTemplatesPagesAreForParentsOnly(t *testing.T) {
 	t.Parallel()
-	cp := newChildPhone(t)
+	cp := newChildPersonalDevice(t)
 	for _, path := range []string{"/routines/templates", "/routines/templates/evening"} {
 		if r := cp.screen.get(path, "en"); r.status != http.StatusForbidden {
 			t.Errorf("child GET %s = %d, want 403", path, r.status)

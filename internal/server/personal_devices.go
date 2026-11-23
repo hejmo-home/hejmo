@@ -19,15 +19,15 @@ import (
 )
 
 const (
-	// pairingCookie holds a phone's own claim on a pairing code while it waits
+	// pairingCookie holds a personal device's own claim on a pairing code while it waits
 	// for a parent's confirmation. The box keeps only its hash.
 	pairingCookie = "hejmo_pairing"
-	// phonePollSeconds is how often a waiting phone asks whether a parent
+	// personalDevicePollSeconds is how often a waiting personal device asks whether a parent
 	// confirmed.
-	phonePollSeconds = 3
+	personalDevicePollSeconds = 3
 )
 
-// waitingView is a phone that opened its code. The form fields and the error
+// waitingView is a personal device that opened its code. The form fields and the error
 // are filled only for the pairing a failed confirmation was about.
 type waitingView struct {
 	ID, Device, Expires, Verification, Name, Person, Error, ErrorField string
@@ -35,12 +35,12 @@ type waitingView struct {
 	Selected []string
 }
 
-// confirmForm is the parent's entry on a waiting phone that was refused, shown
+// confirmForm is the parent's entry on a waiting personal device that was refused, shown
 // again with its error. The zero value is "no entry".
 type confirmForm struct{ PairingID, Name, Person, Error, ErrorField string }
 
 // pairingCode is a fresh pairing code and where its QR code leads. A code that
-// came from re-pairing a phone also says whom the phone is for next (ForPerson)
+// came from re-pairing a personal device also says whom the personal device is for next (ForPerson)
 // and what it was called (OldName).
 type pairingCode struct {
 	ID        string
@@ -54,19 +54,19 @@ type pairingCode struct {
 // only in the returned address: the box keeps its hash.
 func (s *server) newPairingCode(r *http.Request, householdID string) (pairingCode, error) {
 	code := auth.NewToken()
-	pr, err := s.db.CreatePhonePairing(householdID, auth.HashToken(code), s.now())
+	pr, err := s.db.CreatePersonalDevicePairing(householdID, auth.HashToken(code), s.now())
 	if err != nil {
 		return pairingCode{}, err
 	}
 	return pairingCode{ID: pr.ID, URL: s.joinURL(r, code), Expires: pr.ExpiresAt}, nil
 }
 
-// joinURL is where a phone that scans the QR code goes. With the box's own CA
-// the phone cannot reach the HTTPS address before it trusts the box, so the
+// joinURL is where a personal device that scans the QR code goes. With the box's own CA
+// the personal device cannot reach the HTTPS address before it trusts the box, so the
 // code points to the trust page first, over plain HTTP, which then leads on
 // (ADR 0014, 0015).
 func (s *server) joinURL(r *http.Request, code string) string {
-	join := s.httpsOrigin(r) + "/phones/join/" + code
+	join := s.httpsOrigin(r) + "/personal-devices/join/" + code
 	if s.pki.Ready() && !s.publicInUse() {
 		host := hostOf(r)
 		if strings.Contains(host, ":") {
@@ -83,27 +83,27 @@ func (s *server) trustContinue(r *http.Request) string {
 	raw := r.URL.Query().Get("continue")
 	u, err := url.Parse(raw)
 	origin, oerr := url.Parse(s.httpsOrigin(r))
-	if err != nil || oerr != nil || u.Scheme != "https" || !strings.EqualFold(u.Host, origin.Host) || !strings.HasPrefix(u.Path, "/phones/join/") {
+	if err != nil || oerr != nil || u.Scheme != "https" || !strings.EqualFold(u.Host, origin.Host) || !strings.HasPrefix(u.Path, "/personal-devices/join/") {
 		return ""
 	}
 	return u.String()
 }
 
-func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principal, status int, code *pairingCode, form confirmForm) {
+func (s *server) renderPersonalDevices(w http.ResponseWriter, r *http.Request, p principal, status int, code *pairingCode, form confirmForm) {
 	at := func(t time.Time) string {
 		if t.IsZero() {
 			return ""
 		}
 		return p.dateTime(t)
 	}
-	phones, err := s.db.Phones(p.household.ID)
+	personalDevices, err := s.db.PersonalDevices(p.household.ID)
 	if err != nil {
-		s.fail(w, "phones", err)
+		s.fail(w, "personal_devices", err)
 		return
 	}
-	waiting, err := s.db.PendingPhonePairings(p.household.ID, s.now())
+	waiting, err := s.db.PendingPersonalDevicePairings(p.household.ID, s.now())
 	if err != nil {
-		s.fail(w, "waiting phones", err)
+		s.fail(w, "waiting personal devices", err)
 		return
 	}
 	people, err := s.db.People(p.household.ID)
@@ -117,23 +117,23 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 		return
 	}
 	var rows []rowView
-	for _, ph := range phones {
-		row := rowView{Href: "/phones/" + ph.ID, Title: ph.Name, Lines: []rowLine{s.whoLine(r, chips, ph.PersonID, ph.PersonName)}}
+	for _, ph := range personalDevices {
+		row := rowView{Href: "/personal-devices/" + ph.ID, Title: ph.Name, Lines: []rowLine{s.whoLine(r, chips, ph.PersonID, ph.PersonName)}}
 		switch {
 		case !ph.SessionEnds.IsZero() && !ph.SessionEnds.After(s.now()):
-			row.Flag = &flagView{Kind: "warn", Text: s.say(r, i18n.Msg("phones.expired"))}
+			row.Flag = &flagView{Kind: "warn", Text: s.say(r, i18n.Msg("personal_devices.expired"))}
 		case ph.LastSeen.IsZero():
-			row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("phones.never"))})
+			row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("personal_devices.never"))})
 		default:
-			row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("phones.last_seen_at", "when", p.when(ph.LastSeen)))})
+			row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("personal_devices.last_seen_at", "when", p.when(ph.LastSeen)))})
 		}
 		rows = append(rows, row)
 	}
 	var waitingViews []waitingView
 	for _, wp := range waiting {
 		v := waitingView{ID: wp.ID, Device: wp.Device, Expires: at(wp.ExpiresAt), Verification: verificationNumber(wp.ClaimHash)}
-		if c, ok := chips[wp.ForPersonID]; ok { // a phone that was re-paired: the parent only compares and confirms
-			v.Person, v.Name = c.ID, s.defaultPhoneName(r, c.Name)
+		if c, ok := chips[wp.ForPersonID]; ok { // a personal device that was re-paired: the parent only compares and confirms
+			v.Person, v.Name = c.ID, s.defaultPersonalDeviceName(r, c.Name)
 		}
 		if form.PairingID == wp.ID {
 			v.Name, v.Person, v.Error, v.ErrorField = form.Name, form.Person, form.Error, form.ErrorField
@@ -148,7 +148,7 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 		"Rows": rows, "Waiting": waitingViews, "People": chipsOf(people),
 	}
 	if code != nil {
-		svg, err := qrsvg.SVG(code.URL, s.i18n.T(s.langOf(r), "phones.qr.label"))
+		svg, err := qrsvg.SVG(code.URL, s.i18n.T(s.langOf(r), "personal_devices.qr.label"))
 		if err != nil {
 			s.fail(w, "qr code", err)
 			return
@@ -156,36 +156,36 @@ func (s *server) renderPhones(w http.ResponseWriter, r *http.Request, p principa
 		data["Code"] = map[string]any{"URL": code.URL, "QR": template.HTML(svg), "Expires": at(code.Expires)}
 		if code.ForPerson != nil {
 			// "Works once, until <b>Monday, 16.11.2026, 17:52</b>."
-			valid := html.EscapeString(s.say(r, i18n.Msg("phones.repair.valid", "when", "\x00")))
+			valid := html.EscapeString(s.say(r, i18n.Msg("personal_devices.repair.valid", "when", "\x00")))
 			valid = strings.Replace(valid, "\x00", "<b>"+html.EscapeString(p.dateTime(code.Expires))+"</b>", 1)
 			data["Repair"] = map[string]any{"OldName": code.OldName, "For": *code.ForPerson, "Valid": template.HTML(valid)}
-			data["SuccessMsg"] = i18n.Msg("phones.repair.done", "phone", code.OldName)
+			data["SuccessMsg"] = i18n.Msg("personal_devices.repair.done", "personal_device", code.OldName)
 		}
 	}
 	data["CAFirst"] = s.pki.Ready() && !s.publicInUse()
-	s.render(w, r, status, "phones.html", data)
+	s.render(w, r, status, "personal_devices.html", data)
 }
 
-func (s *server) handlePhonesPage(w http.ResponseWriter, r *http.Request) {
+func (s *server) handlePersonalDevicesPage(w http.ResponseWriter, r *http.Request) {
 	if p, ok := s.parentPage(w, r); ok {
-		s.renderPhones(w, r, p, http.StatusOK, nil, confirmForm{})
+		s.renderPersonalDevices(w, r, p, http.StatusOK, nil, confirmForm{})
 	}
 }
 
-func (s *server) handlePhonePairingCreate(w http.ResponseWriter, r *http.Request) {
+func (s *server) handlePersonalDevicePairingCreate(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
 	}
 	code, err := s.newPairingCode(r, p.household.ID)
 	if err != nil {
-		s.fail(w, "phone pairing", err)
+		s.fail(w, "personal device pairing", err)
 		return
 	}
-	s.renderPhones(w, r, p, http.StatusOK, &code, confirmForm{})
+	s.renderPersonalDevices(w, r, p, http.StatusOK, &code, confirmForm{})
 }
 
-func (s *server) handlePhonePairingConfirm(w http.ResponseWriter, r *http.Request) {
+func (s *server) handlePersonalDevicePairingConfirm(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
@@ -195,46 +195,46 @@ func (s *server) handlePhonePairingConfirm(w http.ResponseWriter, r *http.Reques
 		return confirmForm{PairingID: r.PathValue("id"), Name: name, Person: person, Error: key, ErrorField: field}
 	}
 	var fieldErr *store.FieldError
-	switch _, err := s.db.ConfirmPhonePairing(p.household.ID, r.PathValue("id"), person, name, s.now()); {
+	switch _, err := s.db.ConfirmPersonalDevicePairing(p.household.ID, r.PathValue("id"), person, name, s.now()); {
 	case err == nil:
-		s.redirectSaved(w, r, "/phones", "flash.phone_paired")
+		s.redirectSaved(w, r, "/personal-devices", "flash.personal_device_paired")
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
 	case errors.As(err, &fieldErr):
-		s.renderPhones(w, r, p, http.StatusUnprocessableEntity, nil, form("phones.error."+fieldErr.Field, fieldErr.Field))
+		s.renderPersonalDevices(w, r, p, http.StatusUnprocessableEntity, nil, form("personal_devices.error."+fieldErr.Field, fieldErr.Field))
 	default:
-		s.fail(w, "confirm phone", err)
+		s.fail(w, "confirm personal device", err)
 	}
 }
 
-// phoneOf finds one of the household's paired phones.
-func (s *server) phoneOf(householdID, id string) (store.Phone, bool, error) {
-	phones, err := s.db.Phones(householdID)
+// personalDeviceOf finds one of the household's paired personal devices.
+func (s *server) personalDeviceOf(householdID, id string) (store.PersonalDevice, bool, error) {
+	personalDevices, err := s.db.PersonalDevices(householdID)
 	if err != nil {
-		return store.Phone{}, false, err
+		return store.PersonalDevice{}, false, err
 	}
-	for _, ph := range phones {
+	for _, ph := range personalDevices {
 		if ph.ID == id {
 			return ph, true, nil
 		}
 	}
-	return store.Phone{}, false, nil
+	return store.PersonalDevice{}, false, nil
 }
 
-func (s *server) handlePhonePage(w http.ResponseWriter, r *http.Request) {
+func (s *server) handlePersonalDevicePage(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
 	}
-	s.renderPhone(w, r, p, http.StatusOK, "")
+	s.renderPersonalDevice(w, r, p, http.StatusOK, "")
 }
 
-// renderPhone shows one paired phone. errKey, when set, is the error at the
+// renderPersonalDevice shows one paired personal device. errKey, when set, is the error at the
 // person chips of the "pair for another person" box, which then stays open.
-func (s *server) renderPhone(w http.ResponseWriter, r *http.Request, p principal, status int, errKey string) {
-	ph, found, err := s.phoneOf(p.household.ID, r.PathValue("id"))
+func (s *server) renderPersonalDevice(w http.ResponseWriter, r *http.Request, p principal, status int, errKey string) {
+	ph, found, err := s.personalDeviceOf(p.household.ID, r.PathValue("id"))
 	if err != nil {
-		s.fail(w, "phone", err)
+		s.fail(w, "personal_device", err)
 		return
 	}
 	if !found {
@@ -247,8 +247,8 @@ func (s *server) renderPhone(w http.ResponseWriter, r *http.Request, p principal
 		return
 	}
 	chips := chipsOf(people)
-	who := factView{Label: s.say(r, i18n.Msg("phones.fact.for")), Value: ph.PersonName}
-	can := "phones.can.child"
+	who := factView{Label: s.say(r, i18n.Msg("personal_devices.fact.for")), Value: ph.PersonName}
+	can := "personal_devices.can.child"
 	var others []personChip
 	for i, c := range chips {
 		if c.ID != ph.PersonID {
@@ -257,22 +257,22 @@ func (s *server) renderPhone(w http.ResponseWriter, r *http.Request, p principal
 		}
 		who.Value, who.People = "", []personChip{c}
 		if people[i].Role == store.RoleParent {
-			can = "phones.can.parent"
+			can = "personal_devices.can.parent"
 		}
 	}
-	last := factView{Label: s.say(r, i18n.Msg("phones.fact.last_seen")), Value: s.say(r, i18n.Msg("phones.never"))}
+	last := factView{Label: s.say(r, i18n.Msg("personal_devices.fact.last_seen")), Value: s.say(r, i18n.Msg("personal_devices.never"))}
 	if !ph.LastSeen.IsZero() {
 		last.Value = p.when(ph.LastSeen)
 	}
 	facts := []factView{who,
-		{Label: s.say(r, i18n.Msg("phones.fact.can")), Value: s.say(r, i18n.Msg(can))},
-		{Label: s.say(r, i18n.Msg("phones.fact.paired")), Value: p.day(ph.PairedAt)},
+		{Label: s.say(r, i18n.Msg("personal_devices.fact.can")), Value: s.say(r, i18n.Msg(can))},
+		{Label: s.say(r, i18n.Msg("personal_devices.fact.paired")), Value: p.day(ph.PairedAt)},
 		last}
 	if !ph.SessionEnds.IsZero() && !ph.SessionEnds.After(s.now()) {
-		facts = append(facts, factView{Label: s.say(r, i18n.Msg("phones.fact.session")), Flag: &flagView{Kind: "warn", Text: s.say(r, i18n.Msg("phones.expired"))}})
+		facts = append(facts, factView{Label: s.say(r, i18n.Msg("personal_devices.fact.session")), Flag: &flagView{Kind: "warn", Text: s.say(r, i18n.Msg("personal_devices.expired"))}})
 	}
-	data := map[string]any{"Person": p.person, "Phone": ph, "Facts": facts, "Title": ph.Name}
-	if can == "phones.can.child" { // parents can sign themselves out (#197): only a child's phone is handed on
+	data := map[string]any{"Person": p.person, "PersonalDevice": ph, "Facts": facts, "Title": ph.Name}
+	if can == "personal_devices.can.child" { // parents can sign themselves out (#197): only a child's personal device is handed on
 		data["Repair"] = map[string]any{
 			"Name": ph.PersonName, "Whose": s.whose(r, ph.PersonName), "People": others, "Open": errKey != "",
 		}
@@ -280,7 +280,7 @@ func (s *server) renderPhone(w http.ResponseWriter, r *http.Request, p principal
 	if errKey != "" {
 		data["Error"], data["ErrorField"] = errKey, "person"
 	}
-	s.render(w, r, status, "phone.html", data)
+	s.render(w, r, status, "personal_device.html", data)
 }
 
 // whose is a name's genitive in the page language, with the typographic
@@ -289,29 +289,29 @@ func (s *server) whose(r *http.Request, name string) string {
 	return strings.ReplaceAll(possessive(s.langOf(r), name), "'", "’")
 }
 
-// defaultPhoneName is the name a phone gets when it is for name: "Mias Handy",
-// "Jonas’ Handy", "Mia’s phone".
-func (s *server) defaultPhoneName(r *http.Request, name string) string {
-	return s.say(r, i18n.Msg("phones.default_name", "whose", s.whose(r, name)))
+// defaultPersonalDeviceName is the name a personal device gets when it is for name:
+// "Mias Gerät", "Jonas’ Gerät", "Mia’s device".
+func (s *server) defaultPersonalDeviceName(r *http.Request, name string) string {
+	return s.say(r, i18n.Msg("personal_devices.default_name", "whose", s.whose(r, name)))
 }
 
-// handlePhoneRepair ends a child's device session and shows a new pairing code
-// for the person the phone is handed to, in one step (#198).
-func (s *server) handlePhoneRepair(w http.ResponseWriter, r *http.Request) {
+// handlePersonalDeviceRepair ends a child's device session and shows a new pairing code
+// for the person the personal device is handed to, in one step (#198).
+func (s *server) handlePersonalDeviceRepair(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
 	}
-	ph, found, err := s.phoneOf(p.household.ID, r.PathValue("id"))
+	ph, found, err := s.personalDeviceOf(p.household.ID, r.PathValue("id"))
 	if err != nil {
-		s.fail(w, "phone", err)
+		s.fail(w, "personal_device", err)
 		return
 	}
 	if !found {
 		http.NotFound(w, r)
 		return
 	}
-	code, pr, err := s.repairPhone(r, p, ph.ID, r.PostFormValue("person"))
+	code, pr, err := s.repairPersonalDevice(r, p, ph.ID, r.PostFormValue("person"))
 	var fieldErr *store.FieldError
 	switch {
 	case err == nil:
@@ -319,10 +319,10 @@ func (s *server) handlePhoneRepair(w http.ResponseWriter, r *http.Request) {
 		http.NotFound(w, r)
 		return
 	case errors.As(err, &fieldErr):
-		s.renderPhone(w, r, p, http.StatusUnprocessableEntity, "phones.repair.error")
+		s.renderPersonalDevice(w, r, p, http.StatusUnprocessableEntity, "personal_devices.repair.error")
 		return
 	default:
-		s.fail(w, "repair phone", err)
+		s.fail(w, "repair personal device", err)
 		return
 	}
 	chips, err := s.chipByPerson(p.household.ID)
@@ -331,47 +331,47 @@ func (s *server) handlePhoneRepair(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	forPerson := chips[pr.ForPersonID]
-	s.renderPhones(w, r, p, http.StatusOK, &pairingCode{ID: pr.ID, URL: code, Expires: pr.ExpiresAt, ForPerson: &forPerson, OldName: ph.Name}, confirmForm{})
+	s.renderPersonalDevices(w, r, p, http.StatusOK, &pairingCode{ID: pr.ID, URL: code, Expires: pr.ExpiresAt, ForPerson: &forPerson, OldName: ph.Name}, confirmForm{})
 }
 
-// repairPhone ends the phone's session and stores a code for personID; the
+// repairPersonalDevice ends the personal device's session and stores a code for personID; the
 // address of the code is returned with the stored pairing.
-func (s *server) repairPhone(r *http.Request, p principal, phoneID, personID string) (string, store.PhonePairing, error) {
+func (s *server) repairPersonalDevice(r *http.Request, p principal, personalDeviceID, personID string) (string, store.PersonalDevicePairing, error) {
 	code := auth.NewToken()
-	pr, err := s.db.RepairPhone(p.household.ID, phoneID, personID, auth.HashToken(code), s.now())
+	pr, err := s.db.RepairPersonalDevice(p.household.ID, personalDeviceID, personID, auth.HashToken(code), s.now())
 	if err != nil {
 		return "", pr, err
 	}
 	return s.joinURL(r, code), pr, nil
 }
 
-func (s *server) handlePhoneRevoke(w http.ResponseWriter, r *http.Request) {
+func (s *server) handlePersonalDeviceRevoke(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
 		return
 	}
-	ph, found, err := s.phoneOf(p.household.ID, r.PathValue("id"))
+	ph, found, err := s.personalDeviceOf(p.household.ID, r.PathValue("id"))
 	if err != nil {
-		s.fail(w, "phone", err)
+		s.fail(w, "personal_device", err)
 		return
 	}
 	if !found {
 		http.NotFound(w, r)
 		return
 	}
-	switch err := s.db.RevokePhone(p.household.ID, ph.ID); {
+	switch err := s.db.RevokePersonalDevice(p.household.ID, ph.ID); {
 	case errors.Is(err, store.ErrNotFound):
 		http.NotFound(w, r)
 	case err != nil:
-		s.fail(w, "revoke phone", err)
+		s.fail(w, "revoke personal device", err)
 	default:
-		s.redirectSavedNamed(w, r, "/phones", "flash.phone_revoked", ph.Name)
+		s.redirectSavedNamed(w, r, "/personal-devices", "flash.personal_device_revoked", ph.Name)
 	}
 }
 
-// handlePhoneJoin is the address in the QR code, opened by the phone. The
-// phone waits here until a parent confirms, then gets its device session.
-func (s *server) handlePhoneJoin(w http.ResponseWriter, r *http.Request) {
+// handlePersonalDeviceJoin is the address in the QR code, opened by the personal device. The
+// personal device waits here until a parent confirms, then gets its device session.
+func (s *server) handlePersonalDeviceJoin(w http.ResponseWriter, r *http.Request) {
 	if !s.db.Configured() {
 		http.Redirect(w, r, "/setup", http.StatusSeeOther)
 		return
@@ -386,32 +386,34 @@ func (s *server) handlePhoneJoin(w http.ResponseWriter, r *http.Request) {
 		claim = auth.NewToken()
 	}
 	claimHash := auth.HashToken(claim)
-	refuse := func() { s.render(w, r, http.StatusGone, "phones_join.html", map[string]any{"State": "refused"}) }
-	if err := s.db.JoinPhonePairing(codeHash, claimHash, deviceLabel(r.UserAgent()), s.now()); err != nil {
+	refuse := func() {
+		s.render(w, r, http.StatusGone, "personal_devices_join.html", map[string]any{"State": "refused"})
+	}
+	if err := s.db.JoinPersonalDevicePairing(codeHash, claimHash, deviceLabel(r.UserAgent()), s.now()); err != nil {
 		if errors.Is(err, store.ErrNotFound) {
 			refuse()
 		} else {
-			s.fail(w, "join phone pairing", err)
+			s.fail(w, "join personal device pairing", err)
 		}
 		return
 	}
 	token := auth.NewToken()
-	expires := s.now().Add(store.PhoneSessionLifetime)
-	switch _, err := s.db.CompletePhonePairing(codeHash, claimHash, auth.HashToken(token), s.now(), expires); {
+	expires := s.now().Add(store.PersonalDeviceSessionLifetime)
+	switch _, err := s.db.CompletePersonalDevicePairing(codeHash, claimHash, auth.HashToken(token), s.now(), expires); {
 	case err == nil:
-		http.SetCookie(w, &http.Cookie{Name: pairingCookie, Value: "", Path: "/phones/join/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode})
+		http.SetCookie(w, &http.Cookie{Name: pairingCookie, Value: "", Path: "/personal-devices/join/", MaxAge: -1, HttpOnly: true, SameSite: http.SameSiteLaxMode})
 		http.SetCookie(w, &http.Cookie{
 			Name: sessionCookie, Value: token, Path: "/", Expires: expires,
 			HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
 		})
 		s.setDeviceMarker(w, r)
 		http.Redirect(w, r, "/", http.StatusSeeOther)
-	case errors.Is(err, store.ErrPhonePending):
+	case errors.Is(err, store.ErrPersonalDevicePending):
 		http.SetCookie(w, &http.Cookie{
-			Name: pairingCookie, Value: claim, Path: "/phones/join/", MaxAge: int(store.PairingCodeLifetime.Seconds()),
+			Name: pairingCookie, Value: claim, Path: "/personal-devices/join/", MaxAge: int(store.PairingCodeLifetime.Seconds()),
 			HttpOnly: true, SameSite: http.SameSiteLaxMode, Secure: r.TLS != nil,
 		})
-		data := map[string]any{"State": "waiting", "Poll": phonePollSeconds, "Verification": verificationNumber(claimHash)}
+		data := map[string]any{"State": "waiting", "Poll": personalDevicePollSeconds, "Verification": verificationNumber(claimHash)}
 		if next, ok, err := s.db.PairingForPerson(codeHash, claimHash, s.now()); err != nil {
 			s.fail(w, "pairing person", err)
 			return
@@ -428,20 +430,20 @@ func (s *server) handlePhoneJoin(w http.ResponseWriter, r *http.Request) {
 			}
 			data["For"] = chips[next.ID]
 		}
-		s.render(w, r, http.StatusOK, "phones_join.html", data)
+		s.render(w, r, http.StatusOK, "personal_devices_join.html", data)
 	case errors.Is(err, store.ErrNotFound):
 		refuse()
 	default:
-		s.fail(w, "complete phone pairing", err)
+		s.fail(w, "complete personal device pairing", err)
 	}
 }
 
-// verificationNumber is a six-digit number both the waiting phone and the
-// parent's phones screen show, taken from the hash of the phone's secret. The
+// verificationNumber is a six-digit number both the waiting personal device and the
+// parent's personal devices screen show, taken from the hash of the personal device's secret. The
 // pairing address can travel over plain HTTP (the trust page of the box's own
 // CA), so someone on the home network could open the code before the real
-// phone does; that someone cannot make their phone show the number of the
-// phone in the parent's hand, so the parent confirms only a matching number.
+// personal device does; that someone cannot make their personal device show the number of the
+// personal device in the parent's hand, so the parent confirms only a matching number.
 func verificationNumber(claimHash string) string {
 	if len(claimHash) < 8 {
 		return ""
@@ -454,8 +456,8 @@ func verificationNumber(claimHash string) string {
 	return fmt.Sprintf("%03d %03d", n/1000, n%1000)
 }
 
-// deviceLabel names a phone for the parent from its User-Agent, for example
-// "Safari on iPhone". It only helps a parent tell phones apart.
+// deviceLabel names a personal device for the parent from its User-Agent, for example
+// "Safari on iPhone". It only helps a parent tell personal devices apart.
 func deviceLabel(ua string) string {
 	has := func(subs ...string) bool {
 		for _, sub := range subs {
@@ -495,7 +497,7 @@ func deviceLabel(ua string) string {
 
 func rfc3339(t time.Time, loc *time.Location) string { return t.In(loc).Format(time.RFC3339) }
 
-type phoneJSON struct {
+type personalDeviceJSON struct {
 	ID         string  `json:"id"`
 	Name       string  `json:"name"`
 	PersonID   string  `json:"person_id"`
@@ -504,8 +506,8 @@ type phoneJSON struct {
 	LastSeenAt *string `json:"last_seen_at"`
 }
 
-func phoneToJSON(ph store.Phone, loc *time.Location) phoneJSON {
-	j := phoneJSON{ID: ph.ID, Name: ph.Name, PersonID: ph.PersonID, PersonName: ph.PersonName, PairedAt: rfc3339(ph.PairedAt, loc)}
+func personalDeviceToJSON(ph store.PersonalDevice, loc *time.Location) personalDeviceJSON {
+	j := personalDeviceJSON{ID: ph.ID, Name: ph.Name, PersonID: ph.PersonID, PersonName: ph.PersonName, PairedAt: rfc3339(ph.PairedAt, loc)}
 	if !ph.LastSeen.IsZero() {
 		seen := rfc3339(ph.LastSeen, loc)
 		j.LastSeenAt = &seen
@@ -513,32 +515,32 @@ func phoneToJSON(ph store.Phone, loc *time.Location) phoneJSON {
 	return j
 }
 
-func (s *server) apiListPhones(w http.ResponseWriter, _ *http.Request, p principal) {
-	list, err := s.db.Phones(p.household.ID)
+func (s *server) apiListPersonalDevices(w http.ResponseWriter, _ *http.Request, p principal) {
+	list, err := s.db.PersonalDevices(p.household.ID)
 	if err != nil {
-		s.fail(w, "list phones", err)
+		s.fail(w, "list personal devices", err)
 		return
 	}
-	out := make([]phoneJSON, 0, len(list))
+	out := make([]personalDeviceJSON, 0, len(list))
 	for _, ph := range list {
-		out = append(out, phoneToJSON(ph, p.location()))
+		out = append(out, personalDeviceToJSON(ph, p.location()))
 	}
 	writeJSON(w, http.StatusOK, out)
 }
 
-func (s *server) apiCreatePhonePairing(w http.ResponseWriter, r *http.Request, p principal) {
+func (s *server) apiCreatePersonalDevicePairing(w http.ResponseWriter, r *http.Request, p principal) {
 	code, err := s.newPairingCode(r, p.household.ID)
 	if err != nil {
-		s.fail(w, "phone pairing", err)
+		s.fail(w, "personal device pairing", err)
 		return
 	}
 	writeJSON(w, http.StatusCreated, map[string]string{"id": code.ID, "url": code.URL, "expires_at": rfc3339(code.Expires, p.location())})
 }
 
-func (s *server) apiListPhonePairings(w http.ResponseWriter, _ *http.Request, p principal) {
-	list, err := s.db.PendingPhonePairings(p.household.ID, s.now())
+func (s *server) apiListPersonalDevicePairings(w http.ResponseWriter, _ *http.Request, p principal) {
+	list, err := s.db.PendingPersonalDevicePairings(p.household.ID, s.now())
 	if err != nil {
-		s.fail(w, "list phone pairings", err)
+		s.fail(w, "list personal device pairings", err)
 		return
 	}
 	out := make([]map[string]any, 0, len(list))
@@ -552,7 +554,7 @@ func (s *server) apiListPhonePairings(w http.ResponseWriter, _ *http.Request, p 
 	writeJSON(w, http.StatusOK, out)
 }
 
-func (s *server) apiConfirmPhonePairing(w http.ResponseWriter, r *http.Request, p principal) {
+func (s *server) apiConfirmPersonalDevicePairing(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
 		PersonID string `json:"person_id"`
 		Name     string `json:"name"`
@@ -562,23 +564,23 @@ func (s *server) apiConfirmPhonePairing(w http.ResponseWriter, r *http.Request, 
 		return
 	}
 	var fieldErr *store.FieldError
-	ph, err := s.db.ConfirmPhonePairing(p.household.ID, r.PathValue("id"), in.PersonID, in.Name, s.now())
+	ph, err := s.db.ConfirmPersonalDevicePairing(p.household.ID, r.PathValue("id"), in.PersonID, in.Name, s.now())
 	switch {
 	case err == nil:
 	case errors.Is(err, store.ErrNotFound):
-		writeError(w, http.StatusNotFound, "no phone is waiting with this pairing, or the code has expired")
+		writeError(w, http.StatusNotFound, "no personal device is waiting with this pairing, or the code has expired")
 		return
 	case errors.As(err, &fieldErr):
 		writeError(w, http.StatusUnprocessableEntity, fieldErr.Error())
 		return
 	default:
-		s.fail(w, "confirm phone", err)
+		s.fail(w, "confirm personal device", err)
 		return
 	}
-	// The phone collects its session at its next request; the answer shows the
-	// phone as it will be listed.
+	// The personal device collects its session at its next request; the answer shows the
+	// personal device as it will be listed.
 	ph.PersonName = s.personName(p, ph.PersonID)
-	writeJSON(w, http.StatusCreated, phoneToJSON(ph, p.location()))
+	writeJSON(w, http.StatusCreated, personalDeviceToJSON(ph, p.location()))
 }
 
 func (s *server) personName(p principal, id string) string {
@@ -588,9 +590,9 @@ func (s *server) personName(p principal, id string) string {
 	return ""
 }
 
-// apiRepairPhone gives a phone to another person: its session ends and a new
+// apiRepairPersonalDevice gives a personal device to another person: its session ends and a new
 // pairing code for that person is returned (#198).
-func (s *server) apiRepairPhone(w http.ResponseWriter, r *http.Request, p principal) {
+func (s *server) apiRepairPersonalDevice(w http.ResponseWriter, r *http.Request, p principal) {
 	var in struct {
 		PersonID string `json:"person_id"`
 	}
@@ -599,25 +601,25 @@ func (s *server) apiRepairPhone(w http.ResponseWriter, r *http.Request, p princi
 		return
 	}
 	var fieldErr *store.FieldError
-	url, pr, err := s.repairPhone(r, p, r.PathValue("id"), in.PersonID)
+	url, pr, err := s.repairPersonalDevice(r, p, r.PathValue("id"), in.PersonID)
 	switch {
 	case err == nil:
 		writeJSON(w, http.StatusCreated, map[string]string{"id": pr.ID, "url": url, "expires_at": rfc3339(pr.ExpiresAt, p.location()), "person_id": pr.ForPersonID})
 	case errors.Is(err, store.ErrNotFound):
-		writeError(w, http.StatusNotFound, "phone not found")
+		writeError(w, http.StatusNotFound, "personal device not found")
 	case errors.As(err, &fieldErr):
 		writeError(w, http.StatusUnprocessableEntity, fieldErr.Error())
 	default:
-		s.fail(w, "repair phone", err)
+		s.fail(w, "repair personal device", err)
 	}
 }
 
-func (s *server) apiRevokePhone(w http.ResponseWriter, r *http.Request, p principal) {
-	switch err := s.db.RevokePhone(p.household.ID, r.PathValue("id")); {
+func (s *server) apiRevokePersonalDevice(w http.ResponseWriter, r *http.Request, p principal) {
+	switch err := s.db.RevokePersonalDevice(p.household.ID, r.PathValue("id")); {
 	case errors.Is(err, store.ErrNotFound):
-		writeError(w, http.StatusNotFound, "phone not found")
+		writeError(w, http.StatusNotFound, "personal device not found")
 	case err != nil:
-		s.fail(w, "revoke phone", err)
+		s.fail(w, "revoke personal device", err)
 	default:
 		w.WriteHeader(http.StatusNoContent)
 	}

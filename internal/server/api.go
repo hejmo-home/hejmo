@@ -174,12 +174,12 @@ var apiRoutes = []APIRoute{
 	{"GET", "/photos/{id}/image", auth.Perm("displays", auth.Read), (*server).apiPhotoImage},
 	{"GET", "/photo-storage", auth.Perm("displays", auth.Read), (*server).apiPhotoStorage},
 	{"PATCH", "/photo-storage", auth.Perm("displays", auth.Write), (*server).apiSetPhotoLimit},
-	{"GET", "/phones", auth.Perm("tokens", auth.Read), (*server).apiListPhones},
-	{"DELETE", "/phones/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokePhone},
-	{"POST", "/phones/{id}/repair", auth.Perm("tokens", auth.Write), (*server).apiRepairPhone},
-	{"GET", "/phones/pairings", auth.Perm("tokens", auth.Read), (*server).apiListPhonePairings},
-	{"POST", "/phones/pairings", auth.Perm("tokens", auth.Write), (*server).apiCreatePhonePairing},
-	{"POST", "/phones/pairings/{id}/confirm", auth.Perm("tokens", auth.Write), (*server).apiConfirmPhonePairing},
+	{"GET", "/personal-devices", auth.Perm("tokens", auth.Read), (*server).apiListPersonalDevices},
+	{"DELETE", "/personal-devices/{id}", auth.Perm("tokens", auth.Delete), (*server).apiRevokePersonalDevice},
+	{"POST", "/personal-devices/{id}/repair", auth.Perm("tokens", auth.Write), (*server).apiRepairPersonalDevice},
+	{"GET", "/personal-devices/pairings", auth.Perm("tokens", auth.Read), (*server).apiListPersonalDevicePairings},
+	{"POST", "/personal-devices/pairings", auth.Perm("tokens", auth.Write), (*server).apiCreatePersonalDevicePairing},
+	{"POST", "/personal-devices/pairings/{id}/confirm", auth.Perm("tokens", auth.Write), (*server).apiConfirmPersonalDevicePairing},
 }
 
 // displayAPIRoutes are the endpoints a display uses before and after it is

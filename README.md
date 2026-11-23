@@ -2,7 +2,7 @@
 
 **Your household's day in one place, under your own control.**
 
-Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. A small **box** at home, written in Go with SQLite, collects the household's calendars, tasks, lists and meal plan and shows today on **displays**: wall-mounted E-Ink or normal screens, plus phones. The **family view** has one column per person, so everyone sees at a glance what is on, what is done and what comes tomorrow. All data stays at home.
+Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. A small **box** at home, written in Go with SQLite, collects the household's calendars, tasks, lists and meal plan and shows today on **displays**: wall-mounted E-Ink or normal screens, plus personal devices. The **family view** has one column per person, so everyone sees at a glance what is on, what is done and what comes tomorrow. All data stays at home.
 
 ![The family view on a wall display: date and time, all-day events, one column per person with today's events and task progress, the dinner plan and tomorrow's waste collection](docs/images/family-light.png)
 
@@ -18,7 +18,7 @@ Hejmo (Esperanto for "home") is a self-hosted, open-source family organizer. A s
 - **Calendar sync:** ICS subscriptions and two-way sync with iCloud or any CalDAV server (fast sync-collection and `.well-known` discovery). The box is itself a CalDAV server for your calendar apps, with an iOS profile and one task list per person (VTODO). Nothing syncs through a cloud of ours.
 - **Tasks:** simple tasks, routines with ready-made routine templates, subtasks, stars with a star log, and task progress per person on the display.
 - **Lists and meals:** shared lists in the web interface and on the display, with an article library (own articles and pictures), quantities with units by country and a tile view for children; diet and allergies per person with allergen warnings; a shared meal plan with meal plan templates; waste collection reminder; day notes.
-- **People and phones:** parents and children, roles, invitations for a second parent, phones paired by QR code (children get their own simple view and cannot sign out), re-pairing a phone for another person in one step, a clear page when a device is no longer paired, parents can end a lost phone's session. Theme chooser (light, dark, automatic) for everyone; settings pages with breadcrumbs. German and English interface.
+- **People and personal devices:** parents and children, roles, invitations for a second parent, personal devices (phones, tablets) paired by QR code (children get their own simple view and cannot sign out), re-pairing a personal device for another person in one step, a clear page when a device is no longer paired, parents can end a lost device's session. Theme chooser (light, dark, automatic) for everyone; settings pages with breadcrumbs. German and English interface.
 - **Sign-in and HTTPS:** setup wizard, HTTPS "only in the home network" with the Box CA or a public name (free deSEC name, or your own domain at Cloudflare, deSEC, Hetzner or INWX, with Let's Encrypt), a router name in the box certificate and a guide for reaching home by VPN, passkeys, password with one-time codes and recovery codes (PDF download), parent PIN for displays.
 - **Offline mode:** one switch stops every connection from the box to the outside; the page "Connections to the outside" shows each one, its last contact and every refused attempt.
 - **Open interfaces:** REST API under `/api/v1` with scoped tokens ([OpenAPI](api/openapi.yaml)), and an MCP server for your own AI assistant, off by default ([guide](docs/mcp.md)). Hejmo has no built-in AI.
@@ -65,7 +65,7 @@ The plan is in [ADR 0002](docs/adr/0002-goals-and-release-model.md) (release mod
 - Display brightness control ([#179](https://github.com/hejmo-home/hejmo/issues/179))
 - Choose people and blocks per display, full layouts ([#180](https://github.com/hejmo-home/hejmo/issues/180))
 - Offline mode ([#201](https://github.com/hejmo-home/hejmo/issues/201), merged); uploading an update file ([#221](https://github.com/hejmo-home/hejmo/issues/221))
-- "Personal device" instead of "phone" ([#203](https://github.com/hejmo-home/hejmo/issues/203)); family view at 375 px ([#208](https://github.com/hejmo-home/hejmo/issues/208))
+- family view at 375 px ([#208](https://github.com/hejmo-home/hejmo/issues/208))
 
 ### 0.3
 

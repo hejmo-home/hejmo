@@ -73,7 +73,7 @@ func TestFormScriptHoldsThePickerAndTheMealPlanBehaviour(t *testing.T) {
 }
 
 // Frame fixes found while rendering the design pass (and moved on with ticket
-// 111): on a phone the navigation must not widen the page, and the "Back to
+// 111): on a personal device the navigation must not widen the page, and the "Back to
 // Settings" link sits inside main, in the content column, instead of being a
 // grid item of the frame that broke the 1024 px layout.
 func TestFrameLayoutCoversTheBackLinkAndNarrowScreens(t *testing.T) {

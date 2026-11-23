@@ -184,8 +184,8 @@ func localPath(p string) string {
 }
 
 func (s *server) handleLogout(w http.ResponseWriter, r *http.Request) {
-	// A stale page must not end a child's phone session either (Q46).
-	if p, ok := s.currentPerson(r); ok && s.childPhoneSession(r, p) {
+	// A stale page must not end a child's personal device session either (Q46).
+	if p, ok := s.currentPerson(r); ok && s.childPersonalDeviceSession(r, p) {
 		http.Error(w, s.i18n.T(s.langOf(r), "home.logout.child"), http.StatusForbidden)
 		return
 	}

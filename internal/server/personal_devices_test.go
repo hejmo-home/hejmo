@@ -14,12 +14,12 @@ import (
 )
 
 var (
-	joinURLRe   = regexp.MustCompile(`data-join-url="([^"]+)"`)
-	pairingIDRe = regexp.MustCompile(`data-pairing-id="([^"]+)"`)
-	phoneIDRe   = regexp.MustCompile(`href="/phones/([0-9a-f-]{36})"`)
+	joinURLRe          = regexp.MustCompile(`data-join-url="([^"]+)"`)
+	pairingIDRe        = regexp.MustCompile(`data-pairing-id="([^"]+)"`)
+	personalDeviceIDRe = regexp.MustCompile(`href="/personal-devices/([0-9a-f-]{36})"`)
 )
 
-// joinPath is the path a phone opens after scanning the QR code on page. With
+// joinPath is the path a personal device opens after scanning the QR code on page. With
 // the box's own CA the code leads through the trust page first.
 func joinPath(t *testing.T, page string) string {
 	t.Helper()
@@ -36,8 +36,8 @@ func joinPath(t *testing.T, page string) string {
 			t.Fatal(err)
 		}
 	}
-	if !strings.HasPrefix(u.Path, "/phones/join/") {
-		t.Fatalf("join address %q does not lead to /phones/join/", u)
+	if !strings.HasPrefix(u.Path, "/personal-devices/join/") {
+		t.Fatalf("join address %q does not lead to /personal-devices/join/", u)
 	}
 	return u.Path
 }
@@ -64,87 +64,87 @@ func personNamed(t *testing.T, b *box, name string) store.Person {
 	return p
 }
 
-// showCode has the signed-in parent show a QR code and returns the path the phone opens.
+// showCode has the signed-in parent show a QR code and returns the path the personal device opens.
 func showCode(t *testing.T, b *box) string {
 	t.Helper()
-	r := b.post("/phones/pairings", url.Values{})
+	r := b.post("/personal-devices/pairings", url.Values{})
 	if r.status != http.StatusOK {
-		t.Fatalf("POST /phones/pairings = %d\n%s", r.status, r.body)
+		t.Fatalf("POST /personal-devices/pairings = %d\n%s", r.status, r.body)
 	}
 	return joinPath(t, r.body)
 }
 
-// confirmPhone is the parent's confirmation of the one waiting phone.
-func confirmPhone(t *testing.T, b *box, person store.Person, name string) resp {
+// confirmPersonalDevice is the parent's confirmation of the one waiting personal device.
+func confirmPersonalDevice(t *testing.T, b *box, person store.Person, name string) resp {
 	t.Helper()
-	page := b.get("/phones").body
+	page := b.get("/personal-devices").body
 	m := pairingIDRe.FindStringSubmatch(page)
 	if m == nil {
-		t.Fatalf("no waiting phone on the phones page:\n%s", page)
+		t.Fatalf("no waiting personal device on the personal devices page:\n%s", page)
 	}
-	return b.post("/phones/pairings/"+m[1]+"/confirm", url.Values{"person": {person.ID}, "name": {name}})
+	return b.post("/personal-devices/pairings/"+m[1]+"/confirm", url.Values{"person": {person.ID}, "name": {name}})
 }
 
-// pairedPhone pairs a phone for person and returns it, signed in.
-func pairedPhone(t *testing.T, b *box, person store.Person, name string) *screen {
+// pairedPersonalDevice pairs a personal device for person and returns it, signed in.
+func pairedPersonalDevice(t *testing.T, b *box, person store.Person, name string) *screen {
 	t.Helper()
 	path := showCode(t, b)
 	ph := newScreen(b)
 	if r := ph.get(path, "en"); r.status != http.StatusOK {
-		t.Fatalf("phone opens the code = %d\n%s", r.status, r.body)
+		t.Fatalf("personal device opens the code = %d\n%s", r.status, r.body)
 	}
-	if r := confirmPhone(t, b, person, name); r.status != http.StatusSeeOther {
+	if r := confirmPersonalDevice(t, b, person, name); r.status != http.StatusSeeOther {
 		t.Fatalf("confirm = %d\n%s", r.status, r.body)
 	}
 	if r := ph.get(path, "en"); r.status != http.StatusSeeOther || r.location != "/" {
-		t.Fatalf("phone collects its session = %d %q", r.status, r.location)
+		t.Fatalf("personal device collects its session = %d %q", r.status, r.location)
 	}
 	return ph
 }
 
-// 5.13: Given a QR code shown by a parent, when a phone opens it and the parent
-// confirms, then the phone has a device session for that account.
-func TestPhoneOpensTheQRCodeAndGetsADeviceSessionAfterTheParentConfirms(t *testing.T) {
+// 5.13: Given a QR code shown by a parent, when a personal device opens it and the parent
+// confirms, then the personal device has a device session for that account.
+func TestPersonalDeviceOpensTheQRCodeAndGetsADeviceSessionAfterTheParentConfirms(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	r := b.post("/phones/pairings", url.Values{})
+	r := b.post("/personal-devices/pairings", url.Values{})
 	for _, want := range []string{"<svg", `role="img"`, "data-join-url"} {
 		if !strings.Contains(r.body, want) {
 			t.Errorf("QR page misses %q", want)
 		}
 	}
 	path := joinPath(t, r.body)
-	phone := newScreen(b)
+	personalDevice := newScreen(b)
 
-	waiting := phone.get(path, "en")
+	waiting := personalDevice.get(path, "en")
 	if waiting.status != http.StatusOK || !strings.Contains(waiting.body, `data-state="waiting"`) || !strings.Contains(waiting.body, `http-equiv="refresh"`) {
-		t.Fatalf("phone before confirmation = %d\n%s", waiting.status, waiting.body)
+		t.Fatalf("personal device before confirmation = %d\n%s", waiting.status, waiting.body)
 	}
-	if got := phone.get("/", "en"); got.status != http.StatusSeeOther {
-		t.Fatalf("phone is signed in before the parent confirmed: %d", got.status)
+	if got := personalDevice.get("/", "en"); got.status != http.StatusSeeOther {
+		t.Fatalf("personal device is signed in before the parent confirmed: %d", got.status)
 	}
-	if again := phone.get(path, "en"); again.status != http.StatusOK || !strings.Contains(again.body, `data-state="waiting"`) {
-		t.Fatalf("phone still waiting = %d", again.status)
+	if again := personalDevice.get(path, "en"); again.status != http.StatusOK || !strings.Contains(again.body, `data-state="waiting"`) {
+		t.Fatalf("personal device still waiting = %d", again.status)
 	}
 
-	// The parent sees the waiting phone and chooses the account.
-	page := b.get("/phones").body
+	// The parent sees the waiting personal device and chooses the account.
+	page := b.get("/personal-devices").body
 	if !strings.Contains(page, "data-pairing-id") {
-		t.Fatalf("parent does not see the waiting phone:\n%s", page)
+		t.Fatalf("parent does not see the waiting personal device:\n%s", page)
 	}
 	mama := personNamed(t, b, "Mama")
-	if c := confirmPhone(t, b, mama, "Mama's phone"); c.status != http.StatusSeeOther || c.location != "/phones" {
+	if c := confirmPersonalDevice(t, b, mama, "Mama's tablet"); c.status != http.StatusSeeOther || c.location != "/personal-devices" {
 		t.Fatalf("confirm = %d %q", c.status, c.location)
 	}
-	if done := phone.get(path, "en"); done.status != http.StatusSeeOther || done.location != "/" {
-		t.Fatalf("phone after confirmation = %d %q, want 303 to /", done.status, done.location)
+	if done := personalDevice.get(path, "en"); done.status != http.StatusSeeOther || done.location != "/" {
+		t.Fatalf("personal device after confirmation = %d %q, want 303 to /", done.status, done.location)
 	}
-	me := phone.get("/api/v1/me", "en")
+	me := personalDevice.get("/api/v1/me", "en")
 	if me.status != http.StatusOK || !strings.Contains(me.body, `"Mama"`) {
-		t.Fatalf("phone is not signed in as Mama: %d %s", me.status, me.body)
+		t.Fatalf("personal device is not signed in as Mama: %d %s", me.status, me.body)
 	}
-	if list := b.get("/phones").body; !strings.Contains(list, "Mama&#39;s phone") || !phoneIDRe.MatchString(list) {
-		t.Fatalf("phones page does not list the phone:\n%s", list)
+	if list := b.get("/personal-devices").body; !strings.Contains(list, "Mama&#39;s tablet") || !personalDeviceIDRe.MatchString(list) {
+		t.Fatalf("personal devices page does not list the personal device:\n%s", list)
 	}
 }
 
@@ -152,45 +152,45 @@ func TestPhoneOpensTheQRCodeAndGetsADeviceSessionAfterTheParentConfirms(t *testi
 func TestExpiredUnknownAndUsedPairingCodesAreRefused(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	refused := func(what, path string, phone *screen) {
+	refused := func(what, path string, personalDevice *screen) {
 		t.Helper()
-		signedIn := phone.get("/", "en").status == http.StatusOK // the phone that paired legitimately stays signed in
-		r := phone.get(path, "en")
+		signedIn := personalDevice.get("/", "en").status == http.StatusOK // the personal device that paired legitimately stays signed in
+		r := personalDevice.get(path, "en")
 		if r.status != http.StatusGone || !strings.Contains(r.body, `data-state="refused"`) {
 			t.Errorf("%s: %d, want 410 with the refusal page\n%s", what, r.status, r.body)
 		}
-		if got := phone.get("/", "en"); (got.status == http.StatusOK) != signedIn {
-			t.Errorf("%s: phone got a session (%d)", what, got.status)
+		if got := personalDevice.get("/", "en"); (got.status == http.StatusOK) != signedIn {
+			t.Errorf("%s: personal device got a session (%d)", what, got.status)
 		}
 	}
 
-	refused("unknown code", "/phones/join/not-a-code", newScreen(b))
+	refused("unknown code", "/personal-devices/join/not-a-code", newScreen(b))
 
 	expired := showCode(t, b)
 	b.now = b.now.Add(store.PairingCodeLifetime + time.Minute)
 	refused("expired code", expired, newScreen(b))
 
-	// A used code: a second phone cannot use it, neither while the first waits nor afterwards.
+	// A used code: a second personal device cannot use it, neither while the first waits nor afterwards.
 	path := showCode(t, b)
 	first := newScreen(b)
 	first.get(path, "en")
-	refused("code of another phone, waiting", path, newScreen(b))
-	confirmPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
+	refused("code of another personal device, waiting", path, newScreen(b))
+	confirmPersonalDevice(t, b, personNamed(t, b, "Mia"), "Mia's tablet")
 	first.get(path, "en")
-	refused("code of another phone, paired", path, newScreen(b))
-	refused("used code, same phone", path, first)
+	refused("code of another personal device, paired", path, newScreen(b))
+	refused("used code, same personal device", path, first)
 }
 
 func TestACodeConfirmedTooLateIsRefusedToo(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
 	path := showCode(t, b)
-	phone := newScreen(b)
-	phone.get(path, "en")
-	page := b.get("/phones").body
+	personalDevice := newScreen(b)
+	personalDevice.get(path, "en")
+	page := b.get("/personal-devices").body
 	id := pairingIDRe.FindStringSubmatch(page)[1]
 	b.now = b.now.Add(store.PairingCodeLifetime + time.Minute)
-	r := b.post("/phones/pairings/"+id+"/confirm", url.Values{"person": {personNamed(t, b, "Mia").ID}, "name": {"Mia"}})
+	r := b.post("/personal-devices/pairings/"+id+"/confirm", url.Values{"person": {personNamed(t, b, "Mia").ID}, "name": {"Mia"}})
 	if r.status != http.StatusNotFound {
 		t.Fatalf("confirm after expiry = %d, want 404", r.status)
 	}
@@ -201,116 +201,116 @@ func TestConfirmingNeedsANameAndAPerson(t *testing.T) {
 	b := signedInBox(t)
 	path := showCode(t, b)
 	newScreen(b).get(path, "en")
-	id := pairingIDRe.FindStringSubmatch(b.get("/phones").body)[1]
+	id := pairingIDRe.FindStringSubmatch(b.get("/personal-devices").body)[1]
 	mia := personNamed(t, b, "Mia")
-	if r := b.post("/phones/pairings/"+id+"/confirm", url.Values{"person": {mia.ID}, "name": {" "}}); r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-name"`) {
+	if r := b.post("/personal-devices/pairings/"+id+"/confirm", url.Values{"person": {mia.ID}, "name": {" "}}); r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-name"`) {
 		t.Errorf("blank name = %d\n%s", r.status, r.body)
 	}
-	if r := b.post("/phones/pairings/"+id+"/confirm", url.Values{"person": {"nobody"}, "name": {"Phone"}}); r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-person"`) {
+	if r := b.post("/personal-devices/pairings/"+id+"/confirm", url.Values{"person": {"nobody"}, "name": {"Personal device"}}); r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-person"`) {
 		t.Errorf("unknown person = %d\n%s", r.status, r.body)
 	}
 }
 
-// 5.13: Given a revoked device session, when the phone loads the app, then it is signed out.
-func TestRevokedPhoneIsSignedOut(t *testing.T) {
+// 5.13: Given a revoked device session, when the personal device loads the app, then it is signed out.
+func TestRevokedPersonalDeviceIsSignedOut(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	phone := pairedPhone(t, b, personNamed(t, b, "Mama"), "Old phone")
-	if r := phone.get("/", "en"); r.status != http.StatusOK {
-		t.Fatalf("phone before revoking = %d", r.status)
+	personalDevice := pairedPersonalDevice(t, b, personNamed(t, b, "Mama"), "Old tablet")
+	if r := personalDevice.get("/", "en"); r.status != http.StatusOK {
+		t.Fatalf("personal device before revoking = %d", r.status)
 	}
-	id := phoneIDRe.FindStringSubmatch(b.get("/phones").body)[1]
-	if r := b.post("/phones/"+id+"/revoke", url.Values{}); r.status != http.StatusSeeOther || r.location != "/phones" {
+	id := personalDeviceIDRe.FindStringSubmatch(b.get("/personal-devices").body)[1]
+	if r := b.post("/personal-devices/"+id+"/revoke", url.Values{}); r.status != http.StatusSeeOther || r.location != "/personal-devices" {
 		t.Fatalf("revoke = %d %q", r.status, r.location)
 	}
-	if r := phone.get("/", "en"); r.status != http.StatusSeeOther || r.location != "/login" {
-		t.Fatalf("revoked phone loads the app = %d %q, want 303 to /login", r.status, r.location)
+	if r := personalDevice.get("/", "en"); r.status != http.StatusSeeOther || r.location != "/login" {
+		t.Fatalf("revoked personal device loads the app = %d %q, want 303 to /login", r.status, r.location)
 	}
-	if r := phone.get("/api/v1/me", "en"); r.status != http.StatusUnauthorized {
-		t.Fatalf("revoked phone calls the API = %d, want 401", r.status)
+	if r := personalDevice.get("/api/v1/me", "en"); r.status != http.StatusUnauthorized {
+		t.Fatalf("revoked personal device calls the API = %d, want 401", r.status)
 	}
-	if phoneIDRe.MatchString(b.get("/phones").body) {
-		t.Error("revoked phone is still listed")
+	if personalDeviceIDRe.MatchString(b.get("/personal-devices").body) {
+		t.Error("revoked personal device is still listed")
 	}
-	if r := b.post("/phones/"+id+"/revoke", url.Values{}); r.status != http.StatusNotFound {
+	if r := b.post("/personal-devices/"+id+"/revoke", url.Values{}); r.status != http.StatusNotFound {
 		t.Fatalf("second revoke = %d, want 404", r.status)
 	}
 }
 
-func TestSigningOutOnThePhoneRemovesIt(t *testing.T) {
+func TestSigningOutOnThePersonalDeviceRemovesIt(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	phone := pairedPhone(t, b, personNamed(t, b, "Mama"), "Phone")
+	personalDevice := pairedPersonalDevice(t, b, personNamed(t, b, "Mama"), "Personal device")
 	req, _ := http.NewRequest(http.MethodPost, b.srv.URL+"/logout", nil)
 	req.Header.Set("Origin", b.srv.URL)
-	res, err := phone.client.Do(req)
+	res, err := personalDevice.client.Do(req)
 	if err != nil {
 		t.Fatal(err)
 	}
 	res.Body.Close()
-	if phoneIDRe.MatchString(b.get("/phones").body) {
-		t.Error("a phone that signed out is still listed")
+	if personalDeviceIDRe.MatchString(b.get("/personal-devices").body) {
+		t.Error("a personal device that signed out is still listed")
 	}
 }
 
-func TestPhoneSessionIsLongLived(t *testing.T) {
+func TestPersonalDeviceSessionIsLongLived(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	phone := pairedPhone(t, b, personNamed(t, b, "Mama"), "Phone")
+	personalDevice := pairedPersonalDevice(t, b, personNamed(t, b, "Mama"), "Personal device")
 	b.now = b.now.Add(300 * 24 * time.Hour)
-	if r := phone.get("/", "en"); r.status != http.StatusOK {
-		t.Fatalf("phone after 300 days = %d, want still signed in", r.status)
+	if r := personalDevice.get("/", "en"); r.status != http.StatusOK {
+		t.Fatalf("personal device after 300 days = %d, want still signed in", r.status)
 	}
 	b.now = b.now.Add(70 * 24 * time.Hour)
-	if r := phone.get("/", "en"); r.status != http.StatusSeeOther {
-		t.Fatalf("phone after 370 days = %d, want signed out", r.status)
+	if r := personalDevice.get("/", "en"); r.status != http.StatusSeeOther {
+		t.Fatalf("personal device after 370 days = %d, want signed out", r.status)
 	}
 }
 
-// ADR 0015: a child's phone acts with the child's role.
-func TestChildsPhoneHasTheChildsRoleOnly(t *testing.T) {
+// ADR 0015: a child's personal device acts with the child's role.
+func TestChildsPersonalDeviceHasTheChildsRoleOnly(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	phone := pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone")
-	if r := phone.get("/phones", "en"); r.status != http.StatusForbidden {
-		t.Errorf("child's phone opens /phones = %d, want 403", r.status)
+	personalDevice := pairedPersonalDevice(t, b, personNamed(t, b, "Mia"), "Mia's tablet")
+	if r := personalDevice.get("/personal-devices", "en"); r.status != http.StatusForbidden {
+		t.Errorf("child's personal device opens /personal-devices = %d, want 403", r.status)
 	}
-	if r := phone.get("/api/v1/phones", "en"); r.status != http.StatusForbidden {
-		t.Errorf("child's phone lists phones = %d, want 403", r.status)
+	if r := personalDevice.get("/api/v1/personal-devices", "en"); r.status != http.StatusForbidden {
+		t.Errorf("child's personal device lists personal devices = %d, want 403", r.status)
 	}
-	if nav := navTargets(t, phone.get("/", "en").body); strings.Contains(strings.Join(nav, " "), "/phones") {
-		t.Errorf("child's navigation offers the phones screen: %v", nav)
+	if nav := navTargets(t, personalDevice.get("/", "en").body); strings.Contains(strings.Join(nav, " "), "/personal-devices") {
+		t.Errorf("child's navigation offers the personal devices screen: %v", nav)
 	}
 }
 
-func TestOnlyParentsSeeThePhonesScreen(t *testing.T) {
+func TestOnlyParentsSeeThePersonalDevicesScreen(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
 	b.logout()
-	if r := b.get("/phones"); r.status != http.StatusSeeOther {
+	if r := b.get("/personal-devices"); r.status != http.StatusSeeOther {
 		t.Fatalf("signed out = %d, want redirect to login", r.status)
 	}
-	if r := b.post("/phones/pairings", url.Values{}); r.status != http.StatusSeeOther {
+	if r := b.post("/personal-devices/pairings", url.Values{}); r.status != http.StatusSeeOther {
 		t.Fatalf("signed out creates a pairing = %d", r.status)
 	}
 }
 
-func TestPhonesScreenIsTranslated(t *testing.T) {
+func TestPersonalDevicesScreenIsTranslated(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	for lang, want := range map[string]string{"en": "Add a phone", "de": "Handy hinzufügen"} {
-		r := b.do(http.MethodGet, "/phones", nil, map[string]string{"Accept-Language": lang})
+	for lang, want := range map[string]string{"en": "Add a personal device", "de": "Gerät hinzufügen"} {
+		r := b.do(http.MethodGet, "/personal-devices", nil, map[string]string{"Accept-Language": lang})
 		if r.status != http.StatusOK || !strings.Contains(r.body, want) {
-			t.Errorf("%s: phones screen misses %q (%d)", lang, want, r.status)
+			t.Errorf("%s: personal devices screen misses %q (%d)", lang, want, r.status)
 		}
 	}
 }
 
-// 5.13: With the box's own CA the QR flow points phones to installing the CA first.
-func TestWithTheBoxsOwnCAThePhoneGetsTheTrustPageFirst(t *testing.T) {
+// 5.13: With the box's own CA the QR flow points personal devices to installing the CA first.
+func TestWithTheBoxsOwnCAThePersonalDeviceGetsTheTrustPageFirst(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	r := b.post("/phones/pairings", url.Values{})
+	r := b.post("/personal-devices/pairings", url.Values{})
 	raw := html.UnescapeString(joinURLRe.FindStringSubmatch(r.body)[1])
 	u, _ := url.Parse(raw)
 	if u.Scheme != "http" || u.Path != "/ca" || !strings.HasPrefix(u.Query().Get("continue"), "https://") {
@@ -320,7 +320,7 @@ func TestWithTheBoxsOwnCAThePhoneGetsTheTrustPageFirst(t *testing.T) {
 	if !strings.Contains(page.body, `href="`+u.Query().Get("continue")+`"`) {
 		t.Errorf("trust page does not lead on to the pairing:\n%s", page.body)
 	}
-	foreign := newScreen(b).get("/ca?continue="+url.QueryEscape("https://evil.example/phones/join/x"), "en")
+	foreign := newScreen(b).get("/ca?continue="+url.QueryEscape("https://evil.example/personal-devices/join/x"), "en")
 	// The address may stay in the language switcher's own "next" path (the
 	// switcher only ever leads back to this box); cut that input out, then
 	// the address must appear nowhere else.
@@ -334,9 +334,9 @@ func TestWithAPublicCertificateTheQRCodeLeadsStraightToThePairing(t *testing.T) 
 	t.Parallel()
 	b := signedInBox(t)
 	b.public.name = "mia.dedyn.io"
-	r := b.post("/phones/pairings", url.Values{})
+	r := b.post("/personal-devices/pairings", url.Values{})
 	raw := html.UnescapeString(joinURLRe.FindStringSubmatch(r.body)[1])
-	if !strings.HasPrefix(raw, "https://mia.dedyn.io/phones/join/") {
+	if !strings.HasPrefix(raw, "https://mia.dedyn.io/personal-devices/join/") {
 		t.Fatalf("QR address = %q", raw)
 	}
 }
@@ -441,8 +441,8 @@ func TestOfflineViewGetsItsTextsInBothLanguagesAndItsScripts(t *testing.T) {
 func TestQRCodeHasATranslatedAccessibleLabel(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
-	for lang, want := range map[string]string{"en": "QR code to pair a phone", "de": "QR-Code zum Koppeln eines Handys"} {
-		r := b.do(http.MethodPost, "/phones/pairings", url.Values{}, map[string]string{"Accept-Language": lang})
+	for lang, want := range map[string]string{"en": "QR code to pair a personal device", "de": "QR-Code zum Koppeln eines Geräts"} {
+		r := b.do(http.MethodPost, "/personal-devices/pairings", url.Values{}, map[string]string{"Accept-Language": lang})
 		if !strings.Contains(r.body, `aria-label="`+want+`"`) {
 			t.Errorf("%s: QR code misses the label %q (raw key shown?)", lang, want)
 		}
@@ -452,60 +452,60 @@ func TestQRCodeHasATranslatedAccessibleLabel(t *testing.T) {
 var verificationRe = regexp.MustCompile(`data-verification="([0-9 ]+)"`)
 
 // Review of #118: the code travels over plain HTTP with the box's own CA, so
-// the phone shows a number the parent compares before confirming. A phone that
+// the personal device shows a number the parent compares before confirming. A personal device that
 // is not the one in the parent's hand shows another number.
-func TestPhoneAndParentSeeTheSameVerificationNumber(t *testing.T) {
+func TestPersonalDeviceAndParentSeeTheSameVerificationNumber(t *testing.T) {
 	t.Parallel()
 	b := signedInBox(t)
 	path := showCode(t, b)
-	phone := newScreen(b)
-	waiting := phone.get(path, "en")
-	onPhone := verificationRe.FindStringSubmatch(waiting.body)
-	if onPhone == nil {
-		t.Fatalf("waiting phone shows no verification number:\n%s", waiting.body)
+	personalDevice := newScreen(b)
+	waiting := personalDevice.get(path, "en")
+	onPersonalDevice := verificationRe.FindStringSubmatch(waiting.body)
+	if onPersonalDevice == nil {
+		t.Fatalf("waiting personal device shows no verification number:\n%s", waiting.body)
 	}
-	if again := verificationRe.FindStringSubmatch(phone.get(path, "en").body); again == nil || again[1] != onPhone[1] {
-		t.Errorf("number changes between requests: %v vs %v", again, onPhone)
+	if again := verificationRe.FindStringSubmatch(personalDevice.get(path, "en").body); again == nil || again[1] != onPersonalDevice[1] {
+		t.Errorf("number changes between requests: %v vs %v", again, onPersonalDevice)
 	}
-	onParent := verificationRe.FindStringSubmatch(b.get("/phones").body)
-	if onParent == nil || onParent[1] != onPhone[1] {
-		t.Fatalf("parent sees %v, phone shows %v", onParent, onPhone)
+	onParent := verificationRe.FindStringSubmatch(b.get("/personal-devices").body)
+	if onParent == nil || onParent[1] != onPersonalDevice[1] {
+		t.Fatalf("parent sees %v, personal device shows %v", onParent, onPersonalDevice)
 	}
-	if len(strings.ReplaceAll(onPhone[1], " ", "")) != 6 {
-		t.Errorf("verification number %q is not six digits", onPhone[1])
+	if len(strings.ReplaceAll(onPersonalDevice[1], " ", "")) != 6 {
+		t.Errorf("verification number %q is not six digits", onPersonalDevice[1])
 	}
-	// Another phone cannot take over the code, and is not shown a number.
+	// Another personal device cannot take over the code, and is not shown a number.
 	if other := newScreen(b).get(path, "en"); other.status != http.StatusGone || verificationRe.MatchString(other.body) {
-		t.Errorf("second phone = %d, want refused without a number", other.status)
+		t.Errorf("second personal device = %d, want refused without a number", other.status)
 	}
 }
 
 func TestVerificationNumberIsInTheAPIToo(t *testing.T) {
 	t.Parallel()
 	c := signedInAPI(t)
-	_, shown, _ := c.call(http.MethodPost, "/phones/pairings", nil)
+	_, shown, _ := c.call(http.MethodPost, "/personal-devices/pairings", nil)
 	path := joinPath(t, `data-join-url="`+shown["url"].(string)+`"`)
-	phone := newScreen(c.b)
-	onPhone := verificationRe.FindStringSubmatch(phone.get(path, "en").body)
-	_, _, waiting := c.call(http.MethodGet, "/phones/pairings", nil)
-	if onPhone == nil || len(waiting) != 1 || waiting[0].(map[string]any)["verification"] != onPhone[1] {
-		t.Fatalf("API waiting = %v, phone shows %v", waiting, onPhone)
+	personalDevice := newScreen(c.b)
+	onPersonalDevice := verificationRe.FindStringSubmatch(personalDevice.get(path, "en").body)
+	_, _, waiting := c.call(http.MethodGet, "/personal-devices/pairings", nil)
+	if onPersonalDevice == nil || len(waiting) != 1 || waiting[0].(map[string]any)["verification"] != onPersonalDevice[1] {
+		t.Fatalf("API waiting = %v, personal device shows %v", waiting, onPersonalDevice)
 	}
 }
 
-// Review of #118: a phone whose device session ran out is shown as expired.
-func TestPhoneWithAnExpiredSessionIsListedAsExpired(t *testing.T) {
+// Review of #118: a personal device whose device session ran out is shown as expired.
+func TestPersonalDeviceWithAnExpiredSessionIsListedAsExpired(t *testing.T) {
 	t.Parallel()
 	b, secret := configuredBox(t)
 	b.post("/login", loginForm(b, secret, "correct horse battery"))
-	pairedPhone(t, b, personNamed(t, b, "Mama"), "Old phone")
-	if strings.Contains(b.get("/phones").body, `class="flag warn"`) {
-		t.Fatal("fresh phone is shown as expired")
+	pairedPersonalDevice(t, b, personNamed(t, b, "Mama"), "Old tablet")
+	if strings.Contains(b.get("/personal-devices").body, `class="flag warn"`) {
+		t.Fatal("fresh personal device is shown as expired")
 	}
-	b.now = b.now.Add(store.PhoneSessionLifetime + 24*time.Hour)
+	b.now = b.now.Add(store.PersonalDeviceSessionLifetime + 24*time.Hour)
 	b.post("/login", loginForm(b, secret, "correct horse battery"))
-	if !strings.Contains(b.get("/phones").body, `class="flag warn"`) {
-		t.Fatal("phone with an expired session is not shown as expired")
+	if !strings.Contains(b.get("/personal-devices").body, `class="flag warn"`) {
+		t.Fatal("personal device with an expired session is not shown as expired")
 	}
 }
 

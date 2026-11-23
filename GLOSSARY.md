@@ -53,7 +53,7 @@ The box's own certificate authority, name-constrained to the box so it cannot vo
 _Avoid_: self-signed certificate, root cert
 
 **Router name**:
-The name the family's router gives the box in the home network, for example `hejmo.fritz.box`. The Box CA can cover it besides `hejmo.local` and the box's LAN address, so a phone on a VPN opens the box without a warning. Adding it later makes a new Box CA, and every device must trust the box again (ADR 0014).
+The name the family's router gives the box in the home network, for example `hejmo.fritz.box`. The Box CA can cover it besides `hejmo.local` and the box's LAN address, so a personal device on a VPN opens the box without a warning. Adding it later makes a new Box CA, and every device must trust the box again (ADR 0014).
 _Avoid_: hostname, local name, DNS name (in user-facing text)
 
 **Public name**:
@@ -175,7 +175,7 @@ The box's connection to the kiosk app on a display that sets its brightness (on 
 _Avoid_: display driver, device control
 
 **Web interface**:
-The box's pages for managing the household in a browser or as an app on a phone.
+The box's pages for managing the household in a browser or as an app on a personal device.
 _Avoid_: web UI, admin, dashboard
 
 **Display type**:
@@ -214,25 +214,25 @@ _Avoid_: slideshow, photo frame, diashow
 A named collection of screensaver photos; each photo is in exactly one album, and each display shows all albums or the ones chosen for it. A subfolder of the box's photo folder becomes an album by itself; only that source on the box is called a folder.
 _Avoid_: folder (for an album), gallery, collection
 
-**Phone**:
-A smartphone paired with the box through a QR code that runs the web interface as an app for one person, adult or child. A phone's calendar app syncing over CalDAV is a CalDAV client, not a phone.
-_Avoid_: mobile, client (alone), handset
+**Personal device**:
+A phone, tablet or other device paired with the box through a QR code that uses the web interface as an app for one person, adult or child. It is named by its pairing ("Mia's phone", "Mia's tablet", "Mia's device" when the kind is unknown; never a brand or model) and listed under "Personal devices" (`/personal-devices`). A calendar app syncing over CalDAV is a CalDAV client, not a personal device; a wall screen is a display.
+_Avoid_: phone (alone), mobile, handset
 
 **Browser session**:
-The sign-in of one person in one browser with username, password and one-time code; lasts 30 days. Ended by signing out in that browser or by a parent under "Signed-in devices"; a paired phone's access is a device session, not a browser session.
+The sign-in of one person in one browser with username, password and one-time code; lasts 30 days. Ended by signing out in that browser or by a parent under "Signed-in devices"; a paired personal device's access is a device session, not a browser session.
 _Avoid_: login (as a noun), cookie, session (alone)
 
 **Device session**:
-The long-lived, revocable access of a paired phone, which acts for one person. A browser that held one keeps a harmless marker cookie; when its device session has ended, `/login` shows "This device is no longer paired" instead of the sign-in, until a sign-in or a sign-out forgets the marker; a new pairing sets the marker again.
-_Avoid_: remember-me, phone token
+The long-lived, revocable access of a paired personal device, which acts for one person. A browser that held one keeps a harmless marker cookie; when its device session has ended, `/login` shows "This device is no longer paired" instead of the sign-in, until a sign-in or a sign-out forgets the marker; a new pairing sets the marker again.
+_Avoid_: remember-me, device token (that is a CalDAV password)
 
 **Overview and detail page**:
-An overview lists the things of one kind (displays, device tokens, connections, subscribed calendars, phones) as calm rows; each row opens the thing's detail page. Changing a thing and removing it, revoking it or disconnecting it happen only on its detail page, after a confirmation that names it.
+An overview lists the things of one kind (displays, device tokens, connections, subscribed calendars, personal devices) as calm rows; each row opens the thing's detail page. Changing a thing and removing it, revoking it or disconnecting it happen only on its detail page, after a confirmation that names it.
 _Avoid_: list page (for the overview), settings page (for the detail page)
 
 **Device token**:
-The password a calendar app or CalDAV client on a phone uses, one per device and revocable on its own; shown once when created. It is a token of scopes `calendars` and `tasks`, unlike an API token for other software.
-_Avoid_: app password, phone token (a phone has a device session)
+The password a calendar app or CalDAV client on a personal device uses, one per device and revocable on its own; shown once when created. It is a token of scopes `calendars` and `tasks`, unlike an API token for other software.
+_Avoid_: app password, phone token (a personal device has a device session)
 
 ## Everyday
 
@@ -406,7 +406,7 @@ _Avoid_: reminder (that is the waste collection highlight), memo
 ## Contacts
 
 **Contact**:
-An entry in the household's address book: every person of the household, plus others such as grandparents, the daycare or the paediatrician. Served to parents' phones and kept in the box.
+An entry in the household's address book: every person of the household, plus others such as grandparents, the daycare or the paediatrician. Served to parents' personal devices and kept in the box.
 _Avoid_: address (alone), vCard (alone), person (a person is a household member)
 
 **Hejmo name**:
@@ -424,7 +424,7 @@ _Avoid_: connection, relationship type
 ## Offline mode and connections to the outside
 
 **Offline mode**:
-A household switch: the box opens no connection to anything outside the home network, and every single connection is off and locked. Calendar, tasks, lists, meals, displays and phones in the home network keep working, with the box's own CA. Asked in the setup wizard right after "Only in the home network". Switching it off lists first what goes outside again.
+A household switch: the box opens no connection to anything outside the home network, and every single connection is off and locked. Calendar, tasks, lists, meals, displays and personal devices in the home network keep working, with the box's own CA. Asked in the setup wizard right after "Only in the home network". Switching it off lists first what goes outside again.
 _Avoid_: local mode, airplane mode
 
 **Connection to the outside**:
@@ -458,7 +458,7 @@ An API token created by a parent for one AI assistant on one device (for example
 _Avoid_: assistant key, AI token
 
 **MCP server**:
-The box's endpoint for AI assistants (Model Context Protocol, `/mcp`). Off by default, served over HTTPS only, switched on by a parent on the page "AI assistants (MCP)". Its tools are the REST functions of the areas a token holds, except managing and syncing calendars; tokens, settings, people, displays and phones are never tools.
+The box's endpoint for AI assistants (Model Context Protocol, `/mcp`). Off by default, served over HTTPS only, switched on by a parent on the page "AI assistants (MCP)". Its tools are the REST functions of the areas a token holds, except managing and syncing calendars; tokens, settings, people, displays and personal devices are never tools.
 _Avoid_: AI mode, assistant API
 
 **Share through the box**:

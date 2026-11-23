@@ -184,7 +184,7 @@ func TestSyncLogShowsTheVersionThatLostAConflict(t *testing.T) {
 
 func msgOf(key string, kv ...string) i18n.Message { return i18n.Msg(key, kv...) }
 
-func TestAnEventSavedOnAPhoneInASharedTwoWayCalendarReachesTheServer(t *testing.T) {
+func TestAnEventSavedOnAPersonalDeviceInASharedTwoWayCalendarReachesTheServer(t *testing.T) {
 	t.Parallel()
 	c, srv := radicaleBox(t)
 	remote := srv.MakeCalendar(t, "shared", "Shared")
@@ -194,19 +194,19 @@ func TestAnEventSavedOnAPhoneInASharedTwoWayCalendarReachesTheServer(t *testing.
 	if status, body, _ := c.call(http.MethodPatch, "/calendars/"+cal["id"].(string), map[string]any{"share_through_box": true}); status != http.StatusOK {
 		t.Fatalf("share = %d %v", status, body)
 	}
-	ph := c.phone(t, "calendars")
+	ph := c.personalDevice(t, "calendars")
 	box := ph.calendarNamed("Radicale shared")
 
 	status, _, body := ph.raw("PUT", box.Path+"dentist.ics", eventICS("dentist", "Dentist", "20261120T090000Z", "20261120T100000Z"), map[string]string{"Content-Type": icsType, "If-None-Match": "*"})
 	if status != http.StatusCreated {
-		t.Fatalf("phone create = %d %s", status, body)
+		t.Fatalf("personal device create = %d %s", status, body)
 	}
 	c.b.sync.Wait()
 	if got := srv.Get(t, remote+"dentist.ics"); !strings.Contains(got, "SUMMARY:Dentist") {
 		t.Fatalf("outside = %q", got)
 	}
 	if status, _, _ := ph.raw("DELETE", box.Path+"dentist.ics", "", nil); status != http.StatusNoContent {
-		t.Fatalf("phone delete = %d", status)
+		t.Fatalf("personal device delete = %d", status)
 	}
 	c.b.sync.Wait()
 	if got := srv.Get(t, remote+"dentist.ics"); got != "" {

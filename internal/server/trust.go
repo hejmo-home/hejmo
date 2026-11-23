@@ -102,7 +102,7 @@ func (s *server) trustDevice(r *http.Request) trustPage {
 }
 
 // trustDeviceLink is one entry of the device chooser. It keeps the address a
-// phone is on its way to pair with (continue), so choosing another device does
+// personal device is on its way to pair with (continue), so choosing another device does
 // not lose it.
 type trustDeviceLink struct {
 	Key, Href string

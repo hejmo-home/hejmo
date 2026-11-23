@@ -42,7 +42,7 @@ type browserResp struct {
 // no sign-in at all.
 func fresh(t *testing.T, b *box) {
 	t.Helper()
-	if _, err := b.db.SQL().Exec(`DELETE FROM sessions WHERE phone_id IS NULL`); err != nil {
+	if _, err := b.db.SQL().Exec(`DELETE FROM sessions WHERE personal_device_id IS NULL`); err != nil {
 		t.Fatal(err)
 	}
 }
@@ -94,9 +94,9 @@ func (br *browser) signIn(t *testing.T, user, password, secret string, at time.T
 // drives), on an iPhone with Safari, and Papa on an Android phone with Chrome.
 type sessionsBox struct {
 	*box
-	mama, mamaPhone, papa *browser
-	papaPerson            store.Person
-	mamaSecret, papaSec   string
+	mama, mamaPersonalDevice, papa *browser
+	papaPerson                     store.Person
+	mamaSecret, papaSec            string
 }
 
 func newSessionsBox(t *testing.T) sessionsBox {
@@ -108,10 +108,10 @@ func newSessionsBox(t *testing.T) sessionsBox {
 	utc := func(d, h, m int) time.Time { return time.Date(2026, 11, d, h, m, 0, 0, time.UTC) }
 	s.mama = newBrowser(b, uaMacFirefox)
 	s.mama.signIn(t, "mama", mamaPassword, mamaSecret, utc(2, 7, 14))
-	s.mamaPhone = newBrowser(b, uaIPhoneSafari)
-	s.mamaPhone.signIn(t, "mama", mamaPassword, mamaSecret, time.Date(2026, 10, 28, 19, 30, 0, 0, time.UTC))
+	s.mamaPersonalDevice = newBrowser(b, uaIPhoneSafari)
+	s.mamaPersonalDevice.signIn(t, "mama", mamaPassword, mamaSecret, time.Date(2026, 10, 28, 19, 30, 0, 0, time.UTC))
 	s.b().now = utc(13, 20, 5)
-	s.mamaPhone.get("/", "en")
+	s.mamaPersonalDevice.get("/", "en")
 	s.papa = newBrowser(b, uaAndroidChrome)
 	s.papa.signIn(t, "papa", papaPassword, papaSecret, utc(11, 18, 2))
 	s.b().now = utc(14, 6, 48)
@@ -171,7 +171,7 @@ func TestSessionsListGroupsBrowsersByPerson(t *testing.T) {
 	}
 	inOrder(t, r.body,
 		`<h1>Signed-in devices</h1>`,
-		`class="notice"`, `href="/phones"`,
+		`class="notice"`, `href="/personal-devices"`,
 		`class="who-head"`, "Mama",
 		`class="cards sessions"`,
 		"Mac · Firefox", `<span class="tag">This browser</span>`, "Last used: today, 13:00 · Signed in 02.11.2026",
@@ -244,7 +244,7 @@ func TestSessionDetailOfAnotherBrowserOffersTheConfirmation(t *testing.T) {
 		"Zuletzt benutzt", "heute, 07:48", "Angemeldet am", "11.11.2026, 19:02", "Meldet sich von selbst ab am", "11.12.2026",
 		`<details class="danger">`, "Anmeldung beenden",
 		"„Android-Handy · Chrome“ von Papa ist sofort abgemeldet.",
-		"Gekoppelte Handys und Kalender-Apps bleiben verbunden.",
+		"Gekoppelte Geräte und Kalender-Apps bleiben verbunden.",
 		`action="/sessions/`+id+`/end"`, `class="button danger"`, "Ja, Anmeldung beenden")
 	if strings.Contains(r.body, `class="tag"`) {
 		t.Errorf("another browser carries the own-browser tag")
@@ -391,30 +391,30 @@ func TestSessionPagesAreForSignedInParentsOnly(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	loginWith(s.box, "mama", mamaPassword, totpNow(s.box, s.mamaSecret)) // the parent who pairs the phone
-	kid := pairedPhone(t, s.box, mia, "Mia's phone")
+	loginWith(s.box, "mama", mamaPassword, totpNow(s.box, s.mamaSecret)) // the parent who pairs the personal device
+	kid := pairedPersonalDevice(t, s.box, mia, "Mia's tablet")
 	for _, p := range []string{"/sessions", "/sessions/" + id} {
 		if r := kid.get(p, "en"); r.status != http.StatusForbidden {
 			t.Errorf("child GET %s = %d, want 403", p, r.status)
 		}
 	}
-	// A phone's device session is not a browser session: it is not listed and
+	// A personal device's device session is not a browser session: it is not listed and
 	// cannot be ended here.
 	if list := s.mama.get("/sessions", "en").body; strings.Contains(list, "Mia") {
-		t.Errorf("a paired phone is listed:\n%s", list)
+		t.Errorf("a paired personal device is listed:\n%s", list)
 	}
-	var phoneID string
-	if err := s.db.SQL().QueryRow(`SELECT id FROM sessions WHERE phone_id IS NOT NULL LIMIT 1`).Scan(&phoneID); err != nil || phoneID == "" {
-		t.Fatalf("no phone session row: %v", err)
+	var personalDeviceID string
+	if err := s.db.SQL().QueryRow(`SELECT id FROM sessions WHERE personal_device_id IS NOT NULL LIMIT 1`).Scan(&personalDeviceID); err != nil || personalDeviceID == "" {
+		t.Fatalf("no personal device session row: %v", err)
 	}
-	if r := s.mama.post("/sessions/"+phoneID+"/end", url.Values{}); r.status != http.StatusSeeOther || r.location != "/sessions?gone=1" {
-		t.Errorf("ending a phone session here = %d %q, want the gone redirect", r.status, r.location)
+	if r := s.mama.post("/sessions/"+personalDeviceID+"/end", url.Values{}); r.status != http.StatusSeeOther || r.location != "/sessions?gone=1" {
+		t.Errorf("ending a personal device session here = %d %q, want the gone redirect", r.status, r.location)
 	}
 }
 
-// A parent on a paired phone has no browser session of their own: with one
+// A parent on a paired personal device has no browser session of their own: with one
 // other browser signed in, "only this browser" would be wrong.
-func TestSessionsListOnAPairedPhoneDoesNotClaimItIsTheOnlyBrowser(t *testing.T) {
+func TestSessionsListOnAPairedPersonalDeviceDoesNotClaimItIsTheOnlyBrowser(t *testing.T) {
 	t.Parallel()
 	b, secret := configuredBox(t)
 	fresh(t, b)
@@ -424,13 +424,13 @@ func TestSessionsListOnAPairedPhoneDoesNotClaimItIsTheOnlyBrowser(t *testing.T) 
 		t.Fatal(people, err)
 	}
 	loginWith(b, "mama", mamaPassword, totpNow(b, secret))
-	phone := pairedPhone(t, b, people[0], "Mama's phone")
-	r := phone.get("/sessions", "de")
+	personalDevice := pairedPersonalDevice(t, b, people[0], "Mama's tablet")
+	r := personalDevice.get("/sessions", "de")
 	if r.status != http.StatusOK {
-		t.Fatalf("parent phone GET /sessions = %d\n%s", r.status, r.body)
+		t.Fatalf("parent personal device GET /sessions = %d\n%s", r.status, r.body)
 	}
 	if strings.Contains(r.body, "Nur dieser Browser ist angemeldet.") || !strings.Contains(r.body, `href="/sessions/`) {
-		t.Errorf("wrong sentence or list on a paired phone:\n%s", r.body)
+		t.Errorf("wrong sentence or list on a paired personal device:\n%s", r.body)
 	}
 }
 
@@ -444,11 +444,11 @@ func TestSessionsListSaysWhenNoBrowserIsSignedIn(t *testing.T) {
 		t.Fatal(people, err)
 	}
 	loginWith(b, "mama", mamaPassword, totpNow(b, secret))
-	phone := pairedPhone(t, b, people[0], "Mama's phone")
-	if _, err := b.db.SQL().Exec(`DELETE FROM sessions WHERE phone_id IS NULL`); err != nil {
+	personalDevice := pairedPersonalDevice(t, b, people[0], "Mama's tablet")
+	if _, err := b.db.SQL().Exec(`DELETE FROM sessions WHERE personal_device_id IS NULL`); err != nil {
 		t.Fatal(err)
 	}
-	r := phone.get("/sessions", "de")
+	r := personalDevice.get("/sessions", "de")
 	if !strings.Contains(r.body, `data-empty`) || !strings.Contains(r.body, "Kein Browser ist angemeldet.") {
 		t.Errorf("no empty sentence:\n%s", r.body)
 	}
@@ -496,7 +496,7 @@ func TestTheRawUserAgentIsNeverStoredOrShown(t *testing.T) {
 func TestTrailSitsInsideMain(t *testing.T) {
 	t.Parallel()
 	s := newSessionsBox(t)
-	for _, path := range []string{"/sessions", "/phones", "/account"} {
+	for _, path := range []string{"/sessions", "/personal-devices", "/account"} {
 		body := s.mama.get(path, "en").body
 		back, main := strings.Index(body, `<main id="content">`+"\n"+`<nav class="crumbs"`), strings.Index(body, `<main id="content">`)
 		if back < 0 || main < 0 {

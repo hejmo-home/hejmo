@@ -387,9 +387,9 @@ func TestAccountPagePasswordErrorKeepsTheHintAndTheRest(t *testing.T) {
 }
 
 // Ticket 133: one-time code: on a computer the QR code comes first and the
-// key, in groups of four, sits under "More options"; on a phone the button
-// that opens the app comes first and the QR code is for another phone.
-func TestTOTPPageDesktopAndPhoneOrder(t *testing.T) {
+// key, in groups of four, sits under "More options"; on a personal device the button
+// that opens the app comes first and the QR code is for another personal device.
+func TestTOTPPageDesktopAndPersonalDeviceOrder(t *testing.T) {
 	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
@@ -414,19 +414,19 @@ func TestTOTPPageDesktopAndPhoneOrder(t *testing.T) {
 	if strings.Index(desk, "Authenticator-App öffnen") > strings.Index(desk, "QR-Code scannen") {
 		t.Error("steps out of order")
 	}
-	phone := b.do(http.MethodGet, "/setup/totp", nil, map[string]string{"Accept-Language": "de", "User-Agent": androidUA}).body
-	open := strings.Index(phone, `class="button secondary" href="otpauth://totp/Hejmo:mama`)
-	qr := strings.Index(phone, `class="qr"`)
+	personalDevice := b.do(http.MethodGet, "/setup/totp", nil, map[string]string{"Accept-Language": "de", "User-Agent": androidUA}).body
+	open := strings.Index(personalDevice, `class="button secondary" href="otpauth://totp/Hejmo:mama`)
+	qr := strings.Index(personalDevice, `class="qr"`)
 	if open < 0 || qr < 0 || open > qr {
-		t.Errorf("on a phone the app button must come before the QR code (%d, %d)", open, qr)
+		t.Errorf("on a personal device the app button must come before the QR code (%d, %d)", open, qr)
 	}
-	for _, want := range []string{"In Authenticator-App öffnen", "Die App ist auf einem anderen Handy?", "Code aus der App"} {
-		if !strings.Contains(phone, want) {
-			t.Errorf("phone page misses %q", want)
+	for _, want := range []string{"In Authenticator-App öffnen", "Die App ist auf einem anderen Gerät?", "Code aus der App"} {
+		if !strings.Contains(personalDevice, want) {
+			t.Errorf("personal device page misses %q", want)
 		}
 	}
-	if strings.Contains(phone, "Schlüssel abtippen") {
-		t.Error("the phone page asks to type the key")
+	if strings.Contains(personalDevice, "Schlüssel abtippen") {
+		t.Error("the personal device page asks to type the key")
 	}
 }
 
@@ -435,7 +435,7 @@ func TestTOTPWrongCodeNamesTheTwoCauses(t *testing.T) {
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	r := b.do(http.MethodPost, "/setup/totp", url.Values{"code": {"000000"}}, map[string]string{"Accept-Language": "de"})
-	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "Der Code stimmt nicht. Nimm den Code, der gerade in der App steht. Stimmt er wieder nicht, prüfe, ob die Uhrzeit deines Handys stimmt.") || !strings.Contains(r.body, `id="err-code"`) {
+	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "Der Code stimmt nicht. Nimm den Code, der gerade in der App steht. Stimmt er wieder nicht, prüfe, ob die Uhrzeit deines Geräts stimmt.") || !strings.Contains(r.body, `id="err-code"`) {
 		t.Errorf("wrong code = %d\n%s", r.status, r.body)
 	}
 }

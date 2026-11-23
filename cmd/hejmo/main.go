@@ -342,7 +342,7 @@ func ensureHTTPS(db *store.DB, certs *pki.Store, now time.Time, logger *slog.Log
 		logger.Error("own CA fallback failed; HTTPS may be unavailable", "err", err)
 		return
 	}
-	logger.Info("own CA kept as a standby; phones need to trust it only if the public certificate is unavailable, see /ca", "name", saved.Name)
+	logger.Info("own CA kept as a standby; personal devices need to trust it only if the public certificate is unavailable, see /ca", "name", saved.Name)
 }
 
 // tlsConfig serves the public certificate when there is one and the box's own

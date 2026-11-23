@@ -114,7 +114,7 @@ func TestWritePreview49(t *testing.T) {
 	add("1. The week: day columns, multi-day events as continuous bars",
 		"Monday to Sunday with today marked. The hut weekend (Fri to Sun, whole family) and Mia's school trip (Tue to Thu) are one bar each and sit in their own rows. Timed events sit in their day, with the markers of their people; in black and white the marker is a shape. The school concert comes from a read-only calendar: no link, marked as read-only. Weekly events repeat (the repeat sign). \"+\" adds an event on that day.",
 		"", week, append(three(1024, 768), frame{"light", 768, 1024}, frame{"bw", 768, 1024})...)
-	add("2. The week on a phone",
+	add("2. The week on a personal device",
 		"Below 760 px the days stack and the bars become entries inside every day they cover.",
 		"", week, frame{"light", 375, 812}, frame{"dark", 375, 812})
 	add("3. New event: person chips, repeat, More options",

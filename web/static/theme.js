@@ -1,4 +1,4 @@
-// Theme of the web interface (ADR 0015), stored per browser or phone:
+// Theme of the web interface (ADR 0015), stored per browser or personal device:
 // "device" (default: no data-theme, so prefers-color-scheme decides), "light",
 // "dark" or "auto" (dark from sunset to sunrise at home; the box puts today's
 // sun times on <html> as data-sun-rise and data-sun-set, Unix seconds).

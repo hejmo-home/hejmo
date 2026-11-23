@@ -22,7 +22,7 @@ import (
 const setupTimeout = 3 * time.Minute
 
 // requireHTTPS redirects plain-HTTP requests to HTTPS once the box has its
-// certificate (ADR 0014), whatever the method. Only what a phone needs before
+// certificate (ADR 0014), whatever the method. Only what a personal device needs before
 // it trusts the box (health check, trust page, CA downloads) stays reachable
 // over HTTP.
 func (s *server) requireHTTPS(next http.Handler) http.Handler {
@@ -513,7 +513,7 @@ func (s *server) provisionOwnCA(w http.ResponseWriter, r *http.Request, routerNa
 }
 
 // trustOptions says where the trust page leads on to and in which shell it is
-// shown. The zero value is the plain page (what a phone opens before pairing).
+// shown. The zero value is the plain page (what a personal device opens before pairing).
 type trustOptions struct {
 	Continue, ContinueKey string
 	Wizard                *wizardView
@@ -534,7 +534,7 @@ func (s *server) handleTrustPage(w http.ResponseWriter, r *http.Request) {
 	if !s.db.Configured() {
 		opts = trustOptions{Continue: s.httpsOrigin(r) + "/setup", ContinueKey: "trust.continue.setup", Wizard: wizardAt(1)}
 	} else if next := s.trustContinue(r); next != "" {
-		opts = trustOptions{Continue: next, ContinueKey: "trust.continue"} // a phone on its way to pair (ticket 5.13)
+		opts = trustOptions{Continue: next, ContinueKey: "trust.continue"} // a personal device on its way to pair (ticket 5.13)
 	}
 	s.renderTrust(w, r, opts)
 }
@@ -555,7 +555,7 @@ func (s *server) renderTrust(w http.ResponseWriter, r *http.Request, opts trustO
 	if opts.Wizard != nil {
 		data["Wizard"] = opts.Wizard
 	}
-	cont := "" // only a phone's pairing target travels with the device chooser
+	cont := "" // only a personal device's pairing target travels with the device chooser
 	if s.db.Configured() && opts.Invite == nil {
 		cont = s.trustContinue(r)
 	}

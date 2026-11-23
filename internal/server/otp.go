@@ -51,7 +51,7 @@ const (
 // confirmed as saved is replaced by the next request that has no "fresh"
 // field: that is a reload of this very POST, and the page says so.
 func (s *server) issueRecoveryCodes(w http.ResponseWriter, r *http.Request, personID string) {
-	// A pending account sets up new codes first; the phone must not mint any.
+	// A pending account sets up new codes first; the personal device must not mint any.
 	if acc, err := s.db.AccountByPerson(personID); err == nil && !acc.TOTPConfirmed {
 		http.Redirect(w, r, "/setup/totp", http.StatusSeeOther)
 		return

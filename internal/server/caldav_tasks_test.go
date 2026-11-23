@@ -26,7 +26,7 @@ type davTaskBox struct {
 	swim    task.Task // once, 20/11, 2 stars
 	cat     task.Task // daily, 1 star
 	monday  task.Task // weekly on Mondays: not due on the test day
-	ph      *phone
+	ph      *personalDevice
 	listing string // Mia's task list path
 }
 
@@ -56,7 +56,7 @@ func newDavTaskBox(t *testing.T) davTaskBox {
 	tb.swim = add(task.Task{Title: "Pack swim bag", Notes: "Towel", Repeat: task.Once, Date: "2026-11-20", Stars: 2})
 	tb.cat = add(task.Task{Title: "Feed the cat", Repeat: task.Daily, Date: "2026-11-01", Stars: 1})
 	tb.monday = add(task.Task{Title: "Piano", Repeat: task.Weekly, Weekdays: []string{"MO"}, Date: "2026-11-01", Stars: 1})
-	tb.ph = c.phone(t, "calendars tasks")
+	tb.ph = c.personalDevice(t, "calendars tasks")
 	tb.listing = tb.ph.calendarNamed("Mia").Path
 	return tb
 }
@@ -68,7 +68,7 @@ func todoICS(uid string, lines ...string) string {
 }
 
 // todos queries a task list the way Reminders does and returns title -> VTODO.
-func (p *phone) todos(path string) map[string]*ical.Component {
+func (p *personalDevice) todos(path string) map[string]*ical.Component {
 	p.t.Helper()
 	objs, err := p.client.QueryCalendar(context.Background(), path, &caldav.CalendarQuery{
 		CompFilter: caldav.CompFilter{Name: "VCALENDAR", Comps: []caldav.CompFilter{{Name: "VTODO"}}},
@@ -158,7 +158,7 @@ func TestCalDAVOffersOneTaskListPerPersonWithTheTasksDueToday(t *testing.T) {
 func TestTaskListsNeedTheTasksScope(t *testing.T) {
 	t.Parallel()
 	tb := newDavTaskBox(t)
-	only := tb.c.phone(t, "calendars")
+	only := tb.c.personalDevice(t, "calendars")
 	cals, _ := only.calendars()
 	for _, cal := range cals {
 		if cal.Name == "Mia" || cal.Name == "Mama" {
@@ -174,7 +174,7 @@ func TestTaskListsNeedTheTasksScope(t *testing.T) {
 		}
 	}
 	// And the other way round: tasks without calendars sees task lists only.
-	tasksOnly := tb.c.phone(t, "tasks")
+	tasksOnly := tb.c.personalDevice(t, "tasks")
 	cals, err := tasksOnly.calendars()
 	if err != nil {
 		t.Fatal(err)
@@ -197,7 +197,7 @@ func TestChildTokensAreRefusedForTaskLists(t *testing.T) {
 	tb := newDavTaskBox(t)
 	_ = tb.c.b.db.CreateAccount(store.Account{PersonID: tb.mia.ID, Username: "mia", PasswordHash: "x", TOTPSecret: "S"})
 	_, _ = tb.c.b.db.CreateAPIToken(store.APIToken{Name: "kid", Hash: auth.HashToken("hejmo_kid"), PersonID: tb.mia.ID, Scopes: "calendars tasks"})
-	if status, _, _ := tb.c.phoneWith(t, "mia", "hejmo_kid").raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"}); status != http.StatusForbidden {
+	if status, _, _ := tb.c.personalDeviceWith(t, "mia", "hejmo_kid").raw("PROPFIND", "/dav/", "", map[string]string{"Depth": "0"}); status != http.StatusForbidden {
 		t.Fatalf("child's token = %d, want 403", status)
 	}
 }
@@ -337,7 +337,7 @@ func TestCreatingAndDeletingTasksFromOutsideAreRefused(t *testing.T) {
 func TestTaskWritesNeedTheWriteScopeAndAnInvalidSaveChangesNothing(t *testing.T) {
 	t.Parallel()
 	tb := newDavTaskBox(t)
-	ro := tb.c.phone(t, "tasks:read")
+	ro := tb.c.personalDevice(t, "tasks:read")
 	if status, _, _ := ro.raw("PUT", tb.href(tb.swim), todoICS(tb.swim.ID, "SUMMARY:Hacked"), map[string]string{"Content-Type": icsType}); status != http.StatusForbidden {
 		t.Fatalf("PUT with tasks:read = %d, want 403", status)
 	}

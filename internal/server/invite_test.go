@@ -166,7 +166,7 @@ func TestCreatingAnInvitationShowsQRCodeAndLinkOnceAndStoresOnlyAHash(t *testing
 		t.Errorf("a box with its own CA must lead over the plain-HTTP trust page: %d\n%s", r.status, r.body)
 	}
 	if !strings.Contains(strings.ToLower(r.body), "own certificate") {
-		t.Error("a box with its own CA must tell what Papa's phone does first")
+		t.Error("a box with its own CA must tell what Papa's personal device does first")
 	}
 	tok := inviteTokenRe.FindString(r.body)
 	h, _ := e.b.db.HomeHousehold()
@@ -452,7 +452,7 @@ func TestSignedInAsSomeoneElseTheInvitationStaysOpenAndSignOutComesBack(t *testi
 	t.Parallel()
 	e := newInviteBox(t)
 	tok := e.create()
-	r := e.en(http.MethodGet, "/invite/"+tok, nil) // Mama scans Papa's code on her own phone
+	r := e.en(http.MethodGet, "/invite/"+tok, nil) // Mama scans Papa's code on her own personal device
 	for _, want := range []string{"<h1>This invitation is for Papa</h1>", "Invited is", "You are signed in on this device as", "Mama", `value="/invite/` + tok + `"`, "Sign out and let Papa continue", `href="/"`} {
 		if r.status != http.StatusOK || !strings.Contains(r.body, want) {
 			t.Fatalf("signed in as someone else = %d, lacks %q\n%s", r.status, want, r.body)
@@ -563,11 +563,11 @@ func TestAcceptedInvitationPageShowsWhenAndThroughWhomAndLinksToTheReset(t *test
 func TestOnlyAParentCanInvite(t *testing.T) {
 	t.Parallel()
 	e := newInviteBox(t)
-	phone := pairedPhone(t, e.b, e.mia, "Mia's phone") // a child's device session
-	if r := phone.get(e.page(), "en"); r.status != http.StatusForbidden {
+	personalDevice := pairedPersonalDevice(t, e.b, e.mia, "Mia's tablet") // a child's device session
+	if r := personalDevice.get(e.page(), "en"); r.status != http.StatusForbidden {
 		t.Errorf("a child opens the invitation page = %d, want 403", r.status)
 	}
-	if r := phone.post(e.page(), url.Values{}); r.status != http.StatusForbidden {
+	if r := personalDevice.post(e.page(), url.Values{}); r.status != http.StatusForbidden {
 		t.Errorf("a child creates an invitation = %d, want 403", r.status)
 	}
 	if _, err := e.b.db.LatestInvitation(homeID(t, e.b), e.papa.ID); err == nil {
@@ -588,7 +588,7 @@ func TestBoxWithAPublicCertificateGivesAnHTTPSLink(t *testing.T) {
 }
 
 // With the box's own CA the QR code leads over plain HTTP to the trust page
-// first, like phone pairing (5.13), and then on to the invitation.
+// first, like personal device pairing (5.13), and then on to the invitation.
 func TestShortPlainHTTPAddressLeadsThroughTheTrustPageToTheInvitation(t *testing.T) {
 	t.Parallel()
 	e := newInviteBox(t)

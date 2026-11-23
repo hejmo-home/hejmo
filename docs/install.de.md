@@ -13,7 +13,7 @@ Hejmo läuft als Docker-Container auf einer kleinen Box bei euch zu Hause. Auf R
 - Ein Raspberry Pi 4 oder 5 (oder neuer) mit **mindestens 1 GB RAM** und **Raspberry Pi OS (64-Bit)**, per LAN oder WLAN im Heimnetz. 32-Bit-Raspberry-Pi-OS wird nicht unterstützt. Jeder 64-Bit-Rechner mit Debian oder Ubuntu (x86_64 oder arm64) funktioniert genauso.
 - Eine **feste Adresse** für die Box: Reserviere ihr im Router eine Adresse, damit sie sich nicht ändert.
 - Internetzugang während der Installation (Docker und das Hejmo-Image werden geladen).
-- Ein Computer oder Handy im selben Heimnetz für den Einrichtungsassistenten.
+- Ein Computer oder Gerät im selben Heimnetz für den Einrichtungsassistenten.
 - Die Ports **80** (HTTP, leitet auf HTTPS um) und **443** (HTTPS) müssen auf der Box frei sein. Du kannst sie später ändern (siehe unten).
 
 ## Installation
@@ -57,7 +57,7 @@ Nach dem Bearbeiten: `cd /opt/hejmo && sudo docker compose up -d`.
 
 Die Box liefert alles über HTTPS aus. Der Assistent bietet zwei Wege:
 
-- **Ein öffentlicher Name (empfohlen).** Der Assistent richtet einen kostenlosen Namen wie `familie.dedyn.io` bei deSEC ein (oder einen Namen deiner eigenen Domain bei deSEC), der auf die Adresse der Box zu Hause zeigt, und holt ein Zertifikat, dem jedes Handy und jeder Browser vertraut. Nur der Name und einige Prüfungen verlassen dein Zuhause; deine Daten bleiben auf der Box. Blockiert dein Router den Namen (DNS-Rebind-Schutz der FRITZ!Box), zeigt der Assistent, wie du ihn erlaubst.
+- **Ein öffentlicher Name (empfohlen).** Der Assistent richtet einen kostenlosen Namen wie `familie.dedyn.io` bei deSEC ein (oder einen Namen deiner eigenen Domain bei deSEC), der auf die Adresse der Box zu Hause zeigt, und holt ein Zertifikat, dem jedes Gerät und jeder Browser vertraut. Nur der Name und einige Prüfungen verlassen dein Zuhause; deine Daten bleiben auf der Box. Blockiert dein Router den Namen (DNS-Rebind-Schutz der FRITZ!Box), zeigt der Assistent, wie du ihn erlaubst.
 - **Die eigene Zertifizierungsstelle (CA) der Box.** Braucht keinen externen Dienst. Du vertraust der Box einmal pro Gerät (nächster Abschnitt).
 
 Sichere `/opt/hejmo/data` samt `secret.key` (sie schützt gespeicherte Passwörter und das DNS-Token).
@@ -74,30 +74,30 @@ Die CA ist auf die Box namensbeschränkt und kann daher nicht für andere Websit
 
 ## Von unterwegs: WireGuard mit der FRITZ!Box
 
-Die Box steht in deinem Heimnetz, ein Handy unterwegs erreicht sie deshalb nicht von selbst. Ein VPN holt das Handy zurück ins Heimnetz. Mit einer FRITZ!Box brauchst du dafür keinen weiteren Dienst, denn FRITZ!OS 7.50 und neuer hat WireGuard eingebaut. Nichts davon läuft über Hejmo: Das VPN verbindet dein Handy nur mit deinem Router.
+Die Box steht in deinem Heimnetz, ein Gerät unterwegs erreicht sie deshalb nicht von selbst. Ein VPN holt das Gerät zurück ins Heimnetz. Mit einer FRITZ!Box brauchst du dafür keinen weiteren Dienst, denn FRITZ!OS 7.50 und neuer hat WireGuard eingebaut. Nichts davon läuft über Hejmo: Das VPN verbindet dein Handy nur mit deinem Router.
 
 Du brauchst:
 
 - Eine FRITZ!Box mit FRITZ!OS 7.50 oder neuer, die aus dem Internet erreichbar ist.
-- Die WireGuard-App auf dem Handy: [App Store](https://apps.apple.com/app/wireguard/id1441195209) (iPhone, iPad), [Google Play](https://play.google.com/store/apps/details?id=com.wireguard.android) (Android), andere Systeme unter [wireguard.com/install](https://www.wireguard.com/install/).
+- Die WireGuard-App auf dem Gerät: [App Store](https://apps.apple.com/app/wireguard/id1441195209) (iPhone, iPad), [Google Play](https://play.google.com/store/apps/details?id=com.wireguard.android) (Android), andere Systeme unter [wireguard.com/install](https://www.wireguard.com/install/).
 
 **Geteilte Adresse (DS-Lite, CGNAT)?** Viele Anbieter teilen eine IPv4-Adresse unter mehreren Kunden, dann erreicht von außen über IPv4 nichts deine FRITZ!Box. Du erkennst es in der FRITZ!Box unter **Internet**, **Online-Monitor**: Dort steht ein DS-Lite-Tunnel, oder die IPv4-Adresse beginnt im Bereich 100.64.0.0/10 (100.64.x.x bis 100.127.x.x). Das VPN klappt oft trotzdem über IPv6, wenn das Mobilfunknetz des Handys es anbietet; dann musst du nichts weiter tun. Andernfalls frage deinen Anbieter nach einer öffentlichen IPv4-Adresse.
 
-So richtest du es ein (etwa 10 Minuten, einmal pro Handy, zu Hause):
+So richtest du es ein (etwa 10 Minuten, einmal pro Gerät, zu Hause):
 
 1. Öffne die FRITZ!Box unter [http://fritz.box](http://fritz.box) und gehe zu **Internet**, **Freigaben**, **VPN (WireGuard)**. Füge eine Verbindung hinzu und wähle, ein einzelnes Gerät mit dem Heimnetz zu verbinden. Gib ihr einen Namen wie „Handy von Mama“. Die FRITZ!Box bietet eine kostenlose MyFRITZ-Adresse an, damit das Handy sie findet, wenn sich deine Adresse zu Hause ändert; nimm sie an.
-2. Die FRITZ!Box zeigt einen QR-Code. Füge in der WireGuard-App auf dem Handy einen Tunnel hinzu, indem du ihn scannst.
+2. Die FRITZ!Box zeigt einen QR-Code. Füge in der WireGuard-App auf dem Gerät einen Tunnel hinzu, indem du ihn scannst.
 3. Schalte den Tunnel ein, unterwegs oder mit mobilen Daten, und öffne die Box unter ihrer Adresse im Heimnetz (die Seite **Einstellungen**, **Sichere Verbindung** zeigt sie).
 
-Öffne die Box mit ihrer Adresse oder dem Namen, den der Router ihr gibt, nicht als `hejmo.local`: Über ein VPN findet ein Handy `hejmo.local` meist nicht. In der FRITZ!Box steht der Name der Box unter **Heimnetz**, **Netzwerk**, beim Gerät der Box (zum Beispiel `hejmo.fritz.box`; dort kannst du ihn auch ändern). Trage diesen Namen einmal im Einrichtungsassistenten unter **Mehr Optionen** ein, oder später unter **Einstellungen**, **Sichere Verbindung**, **Name im Router**. Ein später ergänzter Name braucht ein neues Zertifikat der Box, und jedes Gerät muss der Box noch einmal vertrauen (voriges Kapitel).
+Öffne die Box mit ihrer Adresse oder dem Namen, den der Router ihr gibt, nicht als `hejmo.local`: Über ein VPN findet ein Gerät `hejmo.local` meist nicht. In der FRITZ!Box steht der Name der Box unter **Heimnetz**, **Netzwerk**, beim Gerät der Box (zum Beispiel `hejmo.fritz.box`; dort kannst du ihn auch ändern). Trage diesen Namen einmal im Einrichtungsassistenten unter **Mehr Optionen** ein, oder später unter **Einstellungen**, **Sichere Verbindung**, **Name im Router**. Ein später ergänzter Name braucht ein neues Zertifikat der Box, und jedes Gerät muss der Box noch einmal vertrauen (voriges Kapitel).
 
-Andere VPNs funktionieren genauso, solange sie das Handy in dein Heimnetz holen. Diese Anleitung behandelt nur WireGuard in der FRITZ!Box.
+Andere VPNs funktionieren genauso, solange sie das Gerät in dein Heimnetz holen. Diese Anleitung behandelt nur WireGuard in der FRITZ!Box.
 
-## Displays und Handys
+## Displays und persönliche Geräte
 
 - **Displays:** Öffne im Browser des Displays die Display-Adresse der Box. Es zeigt einen QR-Code und einen sechsstelligen Code. Öffne in der Weboberfläche **Displays**, gib den Code ein und vergib Name, Raum und Typ. Ein E-Ink-Display (schwarz-weiß oder farbig) ist **experimentell**; ein normaler Bildschirm, etwa ein altes Tablet, funktioniert vollständig.
-- **Handys:** Öffne die Adresse der Box im Browser des Handys und melde dich an. Die Kopplung per QR-Code und die installierbare Handy-Web-App kommen mit den Handy-Bildschirmen der Weboberfläche. Kalender-Apps (iOS-Kalender, DAVx5) können die Box per CalDAV mit einem Geräte-Token von der Seite **CalDAV** abonnieren.
-- Nutzt du die eigene CA, vertraue ihr auf dem Handy zuerst.
+- **Persönliche Geräte (Handy, Tablet):** Öffne die Adresse der Box im Browser des Geräts und melde dich an. Ein Elternteil koppelt es per QR-Code unter **Einstellungen › Persönliche Geräte**; danach läuft die Weboberfläche wie eine App. Kalender-Apps (iOS-Kalender, DAVx5) können die Box per CalDAV mit einem Geräte-Token von der Seite **CalDAV** abonnieren.
+- Nutzt du die eigene CA, vertraue ihr auf dem Gerät zuerst.
 
 ## Automatische Updates
 
@@ -115,7 +115,7 @@ Das Installationsskript richtet auch eine nächtliche Update-Prüfung ein (ein s
 
 ## Offline-Modus
 
-Mit dem **Offline-Modus** (der Einrichtungsassistent fragt gleich nach „Nur im Heimnetz“; später **Einstellungen › Verbindungen nach außen**) verbindet sich die Box mit nichts außerhalb deines Heimnetzes: kein Wetter, kein iCloud, Google oder andere Kalender-Server, keine abonnierten Kalender, keine Bilder aus dem Web, kein DNS-Dienst. Kalender, Aufgaben, Listen, Essen, Displays und Handys im Heimnetz funktionieren weiter. Die Seite zeigt jede Verbindung mit ihrem letzten Kontakt und, solange der Offline-Modus an ist, jeden Versuch, den die Box abgewiesen hat. Mit einem öffentlichen Namen braucht der Offline-Modus zuerst den Wechsel zu „Nur im Heimnetz“; die Seite zeigt, was das kostet.
+Mit dem **Offline-Modus** (der Einrichtungsassistent fragt gleich nach „Nur im Heimnetz“; später **Einstellungen › Verbindungen nach außen**) verbindet sich die Box mit nichts außerhalb deines Heimnetzes: kein Wetter, kein iCloud, Google oder andere Kalender-Server, keine abonnierten Kalender, keine Bilder aus dem Web, kein DNS-Dienst. Kalender, Aufgaben, Listen, Essen, Displays und persönliche Geräte im Heimnetz funktionieren weiter. Die Seite zeigt jede Verbindung mit ihrem letzten Kontakt und, solange der Offline-Modus an ist, jeden Versuch, den die Box abgewiesen hat. Mit einem öffentlichen Namen braucht der Offline-Modus zuerst den Wechsel zu „Nur im Heimnetz“; die Seite zeigt, was das kostet.
 
 ## Update ohne Internet
 

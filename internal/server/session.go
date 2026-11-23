@@ -64,13 +64,13 @@ func (s *server) endSession(w http.ResponseWriter, r *http.Request) {
 // currentPerson resolves the session cookie to a household member. A person
 // whose one-time codes were reset has a session only to set up new ones
 // (pendingPerson); nothing else is reachable until that is confirmed. A paired
-// phone's device session is exempt.
+// personal device's device session is exempt.
 func (s *server) currentPerson(r *http.Request) (store.Person, bool) {
 	p, ok := s.pendingPerson(r)
 	if !ok {
 		return store.Person{}, false
 	}
-	if s.phoneSession(r) {
+	if s.personalDeviceSession(r) {
 		return p, true
 	}
 	if acc, err := s.db.AccountByPerson(p.ID); err == nil && !acc.TOTPConfirmed {
@@ -79,16 +79,16 @@ func (s *server) currentPerson(r *http.Request) (store.Person, bool) {
 	return p, true
 }
 
-// phoneSession reports whether the request carries a paired phone's device session.
-func (s *server) phoneSession(r *http.Request) bool {
+// personalDeviceSession reports whether the request carries a paired personal device's device session.
+func (s *server) personalDeviceSession(r *http.Request) bool {
 	c, err := r.Cookie(sessionCookie)
-	return err == nil && s.db.IsPhoneSession(auth.HashToken(c.Value))
+	return err == nil && s.db.IsPersonalDeviceSession(auth.HashToken(c.Value))
 }
 
-// childPhoneSession reports whether the request carries a child's phone's
-// device session, which cannot be signed out on the phone (Q46).
-func (s *server) childPhoneSession(r *http.Request, p store.Person) bool {
-	return p.Role == store.RoleChild && s.phoneSession(r)
+// childPersonalDeviceSession reports whether the request carries a child's personal device's
+// device session, which cannot be signed out on the personal device (Q46).
+func (s *server) childPersonalDeviceSession(r *http.Request, p store.Person) bool {
+	return p.Role == store.RoleChild && s.personalDeviceSession(r)
 }
 
 // pendingPerson resolves the session cookie even when the person still has to
@@ -103,7 +103,7 @@ func (s *server) pendingPerson(r *http.Request) (store.Person, bool) {
 	if err != nil {
 		return store.Person{}, false
 	}
-	s.db.TouchPhoneSession(hash, s.now())
+	s.db.TouchPersonalDeviceSession(hash, s.now())
 	s.db.TouchSession(hash, s.now())
 	return s.member(personID)
 }

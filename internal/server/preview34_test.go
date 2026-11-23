@@ -16,7 +16,7 @@ import (
 // TestWritePreview34 writes the self-contained preview page for the product
 // owner's approval of ticket 6.3 (meal plan and cut-off times), in its design
 // pass: the generated page has the sections of the committed
-// docs/design/preview-34.html (parent week, German on a phone, error, error
+// docs/design/preview-34.html (parent week, German on a personal device, error, error
 // scrolled to the field, empty week, child, Settings > Household, time picker
 // open). Every frame is a real page of the box, rendered by the real templates
 // for the example family (Mama, Papa, Sebastian, Mia). Each frame is an iframe
@@ -84,7 +84,7 @@ func TestWritePreview34(t *testing.T) {
 	}
 	failed := r.body
 	empty := page(b, "en", "/meals?week=2026-11-23") // a week nobody planned yet
-	child := pairedPhone(t, b, personNamed(t, b, "Mia"), "Mia's phone").get("/meals?week=2026-11-09", "en").body
+	child := pairedPersonalDevice(t, b, personNamed(t, b, "Mia"), "Mia's tablet").get("/meals?week=2026-11-09", "en").body
 	// The household page as it looks after a save (with its own success line), and
 	// as it looks when opened (for the time picker).
 	if r := b.post("/settings/household", url.Values{"time_format": {"24h"}, "temperature_unit": {"c"},
@@ -110,7 +110,7 @@ func TestWritePreview34(t *testing.T) {
 	}
 	land := func(themes ...string) []frame { return size(1024, 768, themes...) }
 	port := func(themes ...string) []frame { return size(768, 1024, themes...) }
-	phone := func(themes ...string) []frame { return size(375, 812, themes...) }
+	personalDevice := func(themes ...string) []frame { return size(375, 812, themes...) }
 	german34 := func(fs []frame) []frame {
 		for i := range fs {
 			fs[i].lang = "de"
@@ -128,7 +128,7 @@ func TestWritePreview34(t *testing.T) {
 			shape := "landscape"
 			switch {
 			case f.w == 375:
-				shape = "phone"
+				shape = "personal_device"
 			case f.h > f.w:
 				shape = "portrait"
 			}
@@ -153,25 +153,25 @@ func TestWritePreview34(t *testing.T) {
 	}
 	add("1. Meal plan of the week (parent): a card per day, a row per mealtime, one save button that stays in reach",
 		"Sample week of the example family. Each row is the mealtime in words with a small icon, then the dish; a long dish wraps instead of being cut off (Thursday). Today (Saturday) has a thick outline and the label \"Today\". The week heading names the calendar week. \"Save week 46\" sits in a bar at the bottom of the screen while the days scroll, and says \"Changes not saved yet\" once something is typed. Enter saves. An empty field removes that meal. Every filled field is also an all-day event \"Dinner: Pasta bake\" in the generated, read-only meal-plan calendar.",
-		"", "", planDoc, cat(land("light", "dark", "bw"), port("light", "dark", "bw"), phone("light", "bw"))...)
-	add("2. German on a phone: long words and dishes",
+		"", "", planDoc, cat(land("light", "dark", "bw"), port("light", "dark", "bw"), personalDevice("light", "bw"))...)
+	add("2. German on a personal device: long words and dishes",
 		"The same week in German at 375 px: \"Mittagessen\" and \"Abendessen\" fit the label column; inside a narrow card the mealtime moves above the dish.",
-		"", "", germanDoc, cat(german34(phone("light")), german34(port("light")))...)
+		"", "", germanDoc, cat(german34(personalDevice("light")), german34(port("light")))...)
 	add("3. Too long a meal: error at the field, everything typed stays",
 		"A meal is one line of at most 200 characters (the browser already stops typing at 200; this is what the box answers to longer text). Nothing is saved. A line above the week says so and links to the field, because the field may be far down; the field itself shows the error and keeps the whole text.",
 		"", "", failedDoc, cat(land("light", "bw"), port("light"))...)
 	add("3b. The same error, scrolled to the field",
 		"In the box the field with the error takes the focus (autofocus), so the page opens scrolled to it. The field shows the whole text, wrapped, and the message under it.",
-		"#meal_2026-11-11_dinner", "", failedDoc, cat(land("light"), port("bw"), phone("light"))...)
+		"#meal_2026-11-11_dinner", "", failedDoc, cat(land("light"), port("bw"), personalDevice("light"))...)
 	add("4. A week nobody planned yet",
 		"One sentence says what to do; the same fields and the same single button. \"Back to this week\" appears whenever another week is shown.",
 		"", "", emptyDoc, land("light", "bw")...)
-	add("5. A child (phone or browser): read only",
+	add("5. A child (personal device or browser): read only",
 		"Children see the plan, not the fields: the dish is large, the mealtime has a word and an icon, an unplanned mealtime is left out, and a day without anything says \"Nothing planned.\" The navigation has no Calendar and no Settings for children.",
-		"", "", childDoc, cat(land("light", "bw"), port("light"), phone("light"))...)
+		"", "", childDoc, cat(land("light", "bw"), port("light"), personalDevice("light"))...)
 	add("6. Settings > Household: when meals disappear from displays",
 		"One switch row per mealtime with its state in words (ADR 0017). On: \"Disappears from displays at a set time\" and the time in a capsule. Off: \"Shown all day\" and no time field. Defaults: breakfast 10:00, lunch 13:30, snack 16:30 on; dinner off (ADR 0016). The page is shown scrolled to the section. The \"Back to Settings\" link now sits above the content, not beside the navigation.",
-		"fieldset.cutoffs", "", settingsDoc, cat(land("light", "dark", "bw"), port("light", "bw"), phone("light"))...)
+		"fieldset.cutoffs", "", settingsDoc, cat(land("light", "dark", "bw"), port("light", "bw"), personalDevice("light"))...)
 	add("7. Time picker on a computer and on displays (shared for every time field)",
 		"Tapping the capsule opens a panel below it: the chosen time large, hours 00 to 23 and minutes in 5-minute steps as tap targets, \"Done\" closes it. No wheel and no scrolling, so it works with a mouse and on E-Ink. Typing into the capsule still works. On iPhone, iPad and Android the capsule is the system time field and opens the system picker (iOS wheel), so nothing is shown here for them. With the 12-hour format the hours are 1 to 12 with an AM / PM segmented control below.",
 		"fieldset.cutoffs", `input[name=cutoff_breakfast]`, pickerDoc, cat(land("light", "bw"), port("bw"))...)

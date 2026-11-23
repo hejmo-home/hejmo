@@ -141,29 +141,29 @@ func TestFirstStepsDoneContentAndTheMovingMainButton(t *testing.T) {
 	if !strings.Contains(parents, `<a class="button" href="/people/`+papa.ID+`/invitation">Papa einladen</a>`) {
 		t.Errorf("the main button does not lead to the invitation:\n%s", parents)
 	}
-	// Papa has an account: the second parent is done, the main button moves to the phone.
+	// Papa has an account: the second parent is done, the main button moves to the personal device.
 	if err := p.box.db.CreateAccount(store.Account{PersonID: papa.ID, Username: "papa", PasswordHash: "x", TOTPSecret: "S"}); err != nil {
 		t.Fatal(err)
 	}
 	c = card(homeDE(p.box))
 	parents = stepOf(t, c, 2)
-	if !strings.Contains(parents, `<li data-state="done">`) || !strings.Contains(parents, "Papa") || !strings.Contains(parents, `<li data-state="open"><span class="dot" aria-hidden="true"></span><span>Noch kein Handy verbunden.<span class="vh"> (noch offen)</span>`) || !strings.Contains(parents, `<span class="vh"> (erledigt)</span>`) {
+	if !strings.Contains(parents, `<li data-state="done">`) || !strings.Contains(parents, "Papa") || !strings.Contains(parents, `<li data-state="open"><span class="dot" aria-hidden="true"></span><span>Noch kein Gerät verbunden.<span class="vh"> (noch offen)</span>`) || !strings.Contains(parents, `<span class="vh"> (erledigt)</span>`) {
 		t.Errorf("parents step:\n%s", parents)
 	}
 	if !strings.Contains(parents, `data-state="open">Noch offen`) {
 		t.Error("a half done step must not say Erledigt")
 	}
-	if !strings.Contains(stepOf(t, c, 2), `<a class="button" href="/phones">Handy verbinden</a>`) {
-		t.Errorf("the main button did not move to the phone step:\n%s", parents)
+	if !strings.Contains(stepOf(t, c, 2), `<a class="button" href="/personal-devices">Gerät verbinden</a>`) {
+		t.Errorf("the main button did not move to the personal device step:\n%s", parents)
 	}
 	if strings.Count(c, `class="button"`) != 1 {
 		t.Error("more than one main button")
 	}
-	// A phone for Papa completes the step.
-	pairedPhone(t, p.box, papa, "Android")
+	// A personal device for Papa completes the step.
+	pairedPersonalDevice(t, p.box, papa, "Android")
 	parents = stepOf(t, card(homeDE(p.box)), 2)
 	if !strings.Contains(parents, `data-state="done">Erledigt</span>`) || !strings.Contains(parents, "Papa (Android)") {
-		t.Errorf("parents step is not done with a phone:\n%s", parents)
+		t.Errorf("parents step is not done with a personal device:\n%s", parents)
 	}
 	// Calendars: one for everyone, one for Papa and Mia.
 	p.feeds.set("https://example.org/a.ics", feedOf(), nil)
@@ -343,13 +343,13 @@ func TestFirstStepsAreNotForChildrenAndNeedAParent(t *testing.T) {
 			mia = x
 		}
 	}
-	phone := pairedPhone(t, p.box, mia, "Mia's phone")
-	if r := phone.get("/", "de"); strings.Contains(r.body, "data-firststeps") {
+	personalDevice := pairedPersonalDevice(t, p.box, mia, "Mia's tablet")
+	if r := personalDevice.get("/", "de"); strings.Contains(r.body, "data-firststeps") {
 		t.Error("a child sees the first steps")
 	}
 	for _, path := range []string{"/first-steps/hide", "/first-steps/show", "/first-steps/skip", "/first-steps/undo"} {
-		if r := phone.post(path, url.Values{"step": {"family"}}); r.status != http.StatusForbidden {
-			t.Errorf("a child's phone posts %s = %d, want 403", path, r.status)
+		if r := personalDevice.post(path, url.Values{"step": {"family"}}); r.status != http.StatusForbidden {
+			t.Errorf("a child's personal device posts %s = %d, want 403", path, r.status)
 		}
 		if r := newFreshBox(t).post(path, url.Values{"step": {"family"}}); r.status == http.StatusSeeOther && r.location == "/" {
 			t.Errorf("anyone can post %s", path)

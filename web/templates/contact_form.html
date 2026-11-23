@@ -1,0 +1,78 @@
+{{template "head" (dict "Lang" .Lang "Title" .Title "Frame" .Frame)}}
+  <h1>{{.Title}}</h1>
+  {{if not .Editing}}<p class="lead">{{t "contact.new.lead"}}</p>{{end}}
+  {{if .ErrLinks}}<p class="error form-error" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.ErrLead}} {{range .ErrLinks}}<a href="#{{.Anchor}}">{{.Text}}</a>{{.Sep}}{{end}}{{.ErrEnd}}</span></p>{{end}}
+  <form method="post" action="{{.Action}}" class="steps ct-form" novalidate>
+    <fieldset id="name">
+      <legend>{{t "contact.f.name"}}</legend>
+      {{if .IsPerson}}<p class="lab-static">{{t "contact.f.hejmo"}}</p>
+      <p class="invitee"><span class="marker" data-person="{{.Slot}}" data-shape="{{.Shape}}" aria-hidden="true"></span><span>{{.PersonName}}</span></p>
+      <p class="hint">{{t "contact.person.hint"}} <a href="{{.PersonHref}}">{{.PersonLink}}</a>{{t "contact.person.hint.after"}}</p>
+      {{else}}{{$bad := .Errs.name}}<div class="f{{if $bad}} invalid{{end}}"><label>{{t "contact.f.hejmo"}}<input name="name" type="text" maxlength="40" required value="{{.F.Name}}"{{if $bad}} autofocus aria-invalid="true"{{end}} aria-describedby="{{if $bad}}err-name {{end}}hint-name"></label>
+      {{template "ctErr" (dict "ID" "name" "Text" $bad)}}
+      <p class="hint" id="hint-name">{{t "contact.f.hejmo.hint"}}</p></div>{{end}}
+      {{$bad := .Errs.full_name}}<div class="f{{if $bad}} invalid{{end}}"><label>{{t "contact.f.full"}}<input name="full_name" type="text" maxlength="120" value="{{.F.Full}}"{{if $bad}} aria-invalid="true"{{end}} aria-describedby="{{if $bad}}err-full_name {{end}}hint-full"></label>
+      {{template "ctErr" (dict "ID" "full_name" "Text" $bad)}}
+      <p class="hint" id="hint-full">{{t "contact.f.full.hint"}}</p></div>
+    </fieldset>
+    <fieldset id="phones">
+      <legend>{{t "contact.f.phones"}}</legend>
+      <p class="hint">{{t "contact.f.phones.hint"}}</p>
+      <ul class="lines" data-lines="phone">{{range .Phones}}{{template "ctLine" (dict "L" . "Base" "phone" "Phone" true)}}{{end}}</ul>
+      {{template "ctErr" (dict "ID" "phones" "Text" .Errs.phones)}}
+      {{if .MorePhones}}<button class="button secondary sq add" type="submit" name="more" value="phone" formnovalidate><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "contact.f.phones.more"}}</button>{{end}}
+      <template data-line="phone">{{template "ctLine" (dict "L" .PhoneTpl "Base" "phone" "Phone" true)}}</template>
+    </fieldset>
+    <fieldset id="mails" class="mails">
+      <legend>{{t "contact.f.emails"}}</legend>
+      <ul class="lines" data-lines="email">{{range .Emails}}{{template "ctLine" (dict "L" . "Base" "email" "Phone" false)}}{{end}}</ul>
+      {{template "ctErr" (dict "ID" "emails" "Text" .Errs.emails)}}
+      {{if .MoreEmails}}<button class="button secondary sq add" type="submit" name="more" value="email" formnovalidate><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14"/></svg>{{t "contact.f.emails.more"}}</button>{{end}}
+      <template data-line="email">{{template "ctLine" (dict "L" .EmailTpl "Base" "email" "Phone" false)}}</template>
+    </fieldset>
+    <fieldset id="address">
+      <legend>{{t "contact.f.address"}}</legend>
+      <div class="f"><label>{{t "contact.f.street"}}<input name="street" type="text" maxlength="120" autocomplete="off" value="{{.F.Street}}"></label></div>
+      <div class="pair"><div class="f plz"><label>{{t "contact.f.postcode"}}<input name="postcode" type="text" inputmode="numeric" maxlength="10" autocomplete="off" value="{{.F.Postcode}}"></label></div><div class="f"><label>{{t "contact.f.city"}}<input name="city" type="text" maxlength="80" autocomplete="off" value="{{.F.City}}"></label></div></div>
+      <div class="f"><label>{{t "contact.f.country"}}<input name="country" type="text" maxlength="60" autocomplete="off" value="{{.F.Country}}" aria-describedby="hint-country"></label><p class="hint" id="hint-country">{{.CountryHint}}</p></div>
+    </fieldset>
+    <fieldset id="birthday" class="bday{{if .BdayErr}} invalid{{end}}"{{if .BdayErr}} aria-describedby="err-birthday"{{end}}>
+      <legend>{{t "contact.f.birthday"}}</legend>
+      {{if .MDY}}{{template "ctMonth" .}}{{template "ctDay" .}}{{else}}{{template "ctDay" .}}{{template "ctMonth" .}}{{end}}
+      <div class="f y"><label>{{t "contact.f.year"}}<input name="bday_year" type="number" inputmode="numeric" min="1900" max="{{.MaxYear}}" value="{{.F.Year}}"{{if .BdayErr}} aria-invalid="true"{{end}}></label></div>
+      {{template "ctErr" (dict "ID" "birthday" "Text" .Errs.birthday)}}
+      <p class="hint">{{t "contact.f.birthday.hint"}}</p>
+    </fieldset>
+    <fieldset id="groups" class="chips grp-pick">
+      <legend>{{t "contact.f.groups"}}</legend>
+      {{if .FamChip}}<span class="pchip plain static">{{.FamChip}}{{template "tickIcon" 16}}</span>
+      {{end}}{{range .GroupChips}}<label class="pchip plain"><input type="checkbox" name="group" value="{{.ID}}"{{if .Checked}} checked{{end}}>{{.Name}}{{template "tickIcon" 16}}</label>
+      {{end}}<p class="hint">{{if .IsPerson}}{{.FamHint}}{{else}}{{t "contact.f.groups.hint"}}{{end}}</p>
+      {{template "moreOpen" (dict "Label" (t "contact.f.newgroup") "Open" .NewGroupOpen)}}
+        {{$bad := .Errs.new_group}}<div class="f{{if $bad}} invalid{{end}}"><label>{{t "contact.f.newgroup.name"}}<input name="new_group" type="text" maxlength="40" value="{{.F.NewGroup}}"{{if $bad}} aria-invalid="true"{{end}} aria-describedby="{{if $bad}}err-new_group {{end}}hint-newgroup"></label>
+        {{template "ctErr" (dict "ID" "new_group" "Text" $bad)}}
+        <p class="hint" id="hint-newgroup">{{t "contact.f.newgroup.hint"}}</p></div>
+      {{template "moreClose"}}
+    </fieldset>
+    <fieldset id="note">
+      <legend>{{t "contact.f.note"}}</legend>
+      {{$bad := .Errs.note}}<div class="f{{if $bad}} invalid{{end}}"><label>{{t "contact.f.note"}}<textarea name="note" rows="3" maxlength="1000" data-counter{{if $bad}} aria-invalid="true"{{end}} aria-describedby="{{if $bad}}err-note {{end}}hint-note">{{.F.Note}}</textarea></label>
+      <span class="counter" data-format="{{t "contact.note.counter"}}">{{printf (t "contact.note.counter") .NoteCount}}</span>
+      {{template "ctErr" (dict "ID" "note" "Text" $bad)}}
+      <p class="hint" id="hint-note">{{t "contact.f.note.hint"}}</p></div>
+    </fieldset>
+    <div class="savebar"><button class="button" type="submit">{{if .Editing}}{{t "people.save"}}{{else}}{{t "contact.new"}}{{end}}</button>{{if .Editing}}<span class="dirty" hidden>{{t "contact.dirty"}}</span>{{end}}</div>
+  </form>
+  <script src="/static/note.js" defer></script>
+  <script src="/static/contact.js" defer></script>
+{{template "foot"}}
+{{define "ctErr"}}{{if .Text}}<p class="ferr" id="err-{{.ID}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{.Text}}</span></p>{{end}}{{end}}
+{{define "ctDay"}}<div class="f d"><label>{{t "contact.f.day"}}<input name="bday_day" type="number" inputmode="numeric" min="1" max="31" value="{{.F.Day}}"{{if .BdayErr}} aria-invalid="true"{{end}}></label></div>{{end}}
+{{define "ctMonth"}}<div class="f m"><label>{{t "contact.f.month"}}<select name="bday_month"{{if .BdayErr}} aria-invalid="true"{{end}}>{{range .Months}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Text}}</option>{{end}}</select></label></div>{{end}}
+{{define "ctLine"}}{{$l := .L}}<li class="line{{if $l.Blank}} blank{{end}}{{if or $l.Err $l.OwnErr}} invalid{{end}}" id="{{$l.ID}}">
+        <select name="{{.Base}}_label" aria-label="{{$l.AriaKind}}">{{range $l.Options}}<option value="{{.Value}}"{{if .Selected}} selected{{end}}>{{.Text}}</option>{{end}}</select>
+        <input class="val" name="{{.Base}}" {{if .Phone}}type="tel" inputmode="tel"{{else}}type="email"{{end}} autocomplete="off" value="{{$l.Value}}" aria-label="{{$l.AriaValue}}"{{if $l.Err}} aria-invalid="true" aria-describedby="err-{{$l.ID}}"{{end}}>
+        {{if not $l.Blank}}<button class="button secondary sq rm" type="submit" name="remove" value="{{$l.ID}}" formnovalidate aria-label="{{$l.AriaRemove}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg>{{t "contact.f.remove"}}</button>{{end}}
+        <div class="f own{{if $l.OwnErr}} invalid{{end}}"><label>{{t "contact.f.own"}}<input name="{{.Base}}_own" type="text" maxlength="30" value="{{$l.Own}}"{{if $l.OwnErr}} aria-invalid="true" aria-describedby="err-{{.Base}}own{{$l.N}}"{{end}}></label>{{if $l.OwnErr}}<p class="ferr" id="err-{{.Base}}own{{$l.N}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{$l.OwnErr}}</span></p>{{end}}</div>
+        {{if $l.Err}}<p class="ferr" id="err-{{$l.ID}}" role="alert"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 8v5M12 16.5v.5"/><circle cx="12" cy="12" r="9"/></svg><span>{{$l.Err}}</span></p>{{end}}
+      </li>{{end}}

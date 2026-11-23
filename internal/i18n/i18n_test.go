@@ -159,6 +159,13 @@ var wholeFamilyTexts = map[string]bool{
 	"connect.outlook.appid":                    true, // "eurer eigenen App-Registrierung": the family's
 	"connect.outlook.appid.hint":               true, // "wenn ihr ... eine eigene angelegt habt": the family
 	"outlook.fail.consent.ask":                 true, // "Schick ihr": the IT
+	"contact.family":                           true, // "Aus eurer Familie": the people of the household (ticket 296)
+	"contact.lead":                             true, // "Eure Familie und alle, die ihr erreichen wollt": the household's address book
+	"contact.fam.lead":                         true, // "Gehört zu eurer Familie."
+	"contact.country.hint.none":                true, // "im Land eures Zuhauses"
+	"contact.error.name.taken_person":          true, // "aus eurer Familie"
+	"hub.contacts.hint":                        true, // "eurer Familie und von allen, die ihr erreichen wollt"
+	"hub.contacts.state":                       true, // "aus eurer Familie"
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {

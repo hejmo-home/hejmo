@@ -265,3 +265,38 @@ func TestUntickingWithBelowZeroOnMayTakeTheBalanceBelowZero(t *testing.T) {
 		t.Fatalf("balance = %d, want -3", got)
 	}
 }
+
+func TestARequestKeepsThePictureTheRewardHadWhenItWasAskedFor(t *testing.T) {
+	f := newRewardFixture(t)
+	f.stars(t, f.sebastian, 12)
+	rw, err := f.db.CreateReward(f.h.ID, f.mama.ID, eis(), &store.ArticlePicture{Source: "upload", JPEG: []byte("first"), FromW: 10, FromH: 10, FromBytes: 5})
+	if err != nil {
+		t.Fatal(err)
+	}
+	r, err := f.db.AskReward(f.h.ID, f.sebastian.ID, rw.ID, rt0, time.UTC)
+	if err != nil || !r.HasPicture {
+		t.Fatalf("request = %+v %v", r, err)
+	}
+	if _, err := f.db.UpdateReward(f.h.ID, rw, store.SetPicture, &store.ArticlePicture{Source: "upload", JPEG: []byte("second"), FromW: 10, FromH: 10, FromBytes: 6}); err != nil {
+		t.Fatal(err)
+	}
+	got, err := f.db.RedemptionPicture(f.h.ID, r.ID)
+	if err != nil || string(got) != "first" {
+		t.Fatalf("picture = %q %v, want the first one", got, err)
+	}
+}
+
+func TestAPersonWhoLeavesTakesTheirOpenRequestsBack(t *testing.T) {
+	f := newRewardFixture(t)
+	f.stars(t, f.mia, 12)
+	r, _ := f.db.AskReward(f.h.ID, f.mia.ID, f.reward(t, eis()).ID, rt0, time.UTC)
+	if _, err := f.db.SQL().Exec(`DELETE FROM people WHERE id = ?`, f.mia.ID); err != nil {
+		t.Fatal(err)
+	}
+	if open, _ := f.db.OpenRedemptions(f.h.ID); len(open) != 0 {
+		t.Fatalf("open = %+v", open)
+	}
+	if got, err := f.db.Redemption(f.h.ID, r.ID); err != nil || got.Status != store.RedemptionWithdrawn {
+		t.Fatalf("request = %+v %v, want withdrawn", got, err)
+	}
+}

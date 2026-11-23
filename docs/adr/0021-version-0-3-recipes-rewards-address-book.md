@@ -31,6 +31,7 @@ ADR 0020 placed recipes (#193), star rewards (#194) and the box as address book 
 
 - A **reward catalogue** per household; stars stay with the person. A reward has a name, emoji or picture, star price, who it is for and an optional limit.
 - **Redemption:** a child asks, a parent confirms or declines; parents can redeem directly. Stars are booked only on confirmation and never go below zero.
+- Details decided with #292 (product owner, 23/11/2026): a child's **open requests set their stars aside** (a new request needs the price in free stars); archiving or deleting a reward **declines** its open requests with the reason "reward gone" instead of blocking; limits apply to parents too; unticking a task whose stars were redeemed may take the balance **below zero**, switchable per household (on by default).
 - One **savings goal** per person, with progress in the personal view and in the display's person column. No catalogue or redeeming on wall displays.
 - **Streaks** only for routines, shown as "this week 5 of 7" and best streak; **pause days** do not break them; a missed day gives no message. No automatic bonus stars.
 - About ten shipped **badges**, never taken away; own badges later.

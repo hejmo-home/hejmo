@@ -270,3 +270,43 @@ func TestBrowserSessionsMigrationBackfillsExistingRows(t *testing.T) {
 		t.Errorf("ids = %v, want two distinct", ids)
 	}
 }
+
+// Ticket 298: when a person leaves, their id goes from the relations of contacts, and a relation that has no
+// people left (and is not for the whole family) goes with them.
+func TestAPersonLeavingTakesTheirIdFromRelationsAndDropsThoseWithNobodyLeft(t *testing.T) {
+	db, err := Open(filepath.Join(t.TempDir(), "hejmo.db"))
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer db.Close()
+	h, err := db.CreateHousehold(Household{Name: "Family"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	var ids []string
+	for _, n := range []string{"Mama", "Mia", "Ben"} {
+		p, err := db.AddPerson(h.ID, Person{Name: n, Role: RoleParent})
+		if err != nil {
+			t.Fatal(err)
+		}
+		ids = append(ids, p.ID)
+	}
+	c, err := db.CreateContact(h.ID, "", ContactInput{HejmoName: "Oma Gerda", Relations: []Relation{
+		{Word: "Oma", PersonIDs: []string{ids[1], ids[2]}}, {Word: "Freundin", PersonIDs: []string{ids[1]}}, {Word: "Nachbarin", WholeFamily: true}}})
+	if err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.sql.Exec(`DELETE FROM household_members WHERE person_id = ?`, ids[1]); err != nil {
+		t.Fatal(err)
+	}
+	if _, err := db.sql.Exec(`DELETE FROM people WHERE id = ?`, ids[1]); err != nil {
+		t.Fatal(err)
+	}
+	c, err = db.Contact(h.ID, c.ID)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(c.Relations) != 2 || c.Relations[0].Word != "Oma" || len(c.Relations[0].PersonIDs) != 1 || c.Relations[0].PersonIDs[0] != ids[2] || c.Relations[1].Word != "Nachbarin" {
+		t.Errorf("relations = %+v", c.Relations)
+	}
+}

@@ -7,7 +7,10 @@
     <dd>{{template "partIconSized" (dict "Part" .Routine.Part "Size" 18)}}{{t (printf "routine.part.%s" .Routine.Part)}}</dd>
     <dt>{{t "routine.fact.today"}}</dt>
     <dd>{{if not .Steps}}{{t "routine.today.none"}}{{else if not .Total}}{{t "routine.today.nothing_due"}}{{else}}{{tf "routine.progress" "done" (printf "%d" .Done) "total" (printf "%d" .Total)}}{{end}}</dd>
+    <dt>{{t "routine.fact.week"}}</dt>
+    {{if .StreaksShown}}<dd class="wk" data-person="{{.Owner.Slot}}">{{template "routineWeek" (dict "Week" .Week "Prefix" false)}}</dd>{{else}}<dd>{{tf "routine.week.off" "name" .OwnerName}} <a href="/people/{{.Owner.ID}}">{{tf "routine.week.off.link" "possessive" .OwnerPossessive}}</a></dd>{{end}}
   </dl>
+  {{if .StreaksShown}}<p class="hint">{{t "routine.week.hint"}} <a href="/tasks/pauses/new?person={{.Owner.ID}}">{{tf "routine.week.pause_link" "name" .OwnerName}}</a></p>{{end}}
 
   <section aria-labelledby="order">
     <h2 id="order">{{t "routine.order"}}</h2>

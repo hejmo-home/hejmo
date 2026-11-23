@@ -319,6 +319,11 @@ func New(opts Options) http.Handler {
 	mux.HandleFunc("GET /tasks", s.handleTasksPage)
 	mux.HandleFunc("POST /tasks", s.handleTaskAdd)
 	mux.HandleFunc("POST /tasks/stars", s.handleStarBooking)
+	mux.HandleFunc("GET /tasks/pauses/new", s.handlePauseNew)
+	mux.HandleFunc("POST /tasks/pauses/new", s.handlePauseCreate)
+	mux.HandleFunc("GET /tasks/pauses/{id}", s.handlePauseEditPage)
+	mux.HandleFunc("POST /tasks/pauses/edit/{id}", s.handlePauseUpdate)
+	mux.HandleFunc("POST /tasks/pauses/remove/{id}", s.handlePauseRemove)
 	mux.HandleFunc("GET /tasks/{id}", s.handleTaskPage)
 	mux.HandleFunc("POST /tasks/{id}/done", s.handleTaskDone)
 	mux.HandleFunc("POST /tasks/{id}/subtasks", s.handleSubtaskAdd)
@@ -503,6 +508,7 @@ func parseEmbeddedPages() *template.Template {
 		"rich":   rich,
 		"host":   withHost,
 		"repl":   repl,
+		"plain":  plainText,
 		"acct":   accountText,
 	}).ParseFS(web.Templates, "templates/*.html"))
 }

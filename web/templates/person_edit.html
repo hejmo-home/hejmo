@@ -12,6 +12,11 @@
       {{template "field" (dict "Root" . "Name" "name" "Label" (t "people.field.name") "Value" (index $f "Name") "Required" true "Max" 80 "Autocomplete" "off")}}
       {{template "look" (dict "Root" . "Color" (index $f "Color") "Shape" (index $f "Shape") "Colors" .Colors "Shapes" .Shapes)}}
     </fieldset>
+    <fieldset>
+      <legend>{{t "people.routines"}}</legend>
+      {{template "switch" (dict "Name" "streaks" "Label" (t "people.streaks.label") "OnText" (tf "people.streaks.on" "name" .Subject.Name) "OffText" (tf "people.streaks.off" "name" .Subject.Name) "AriaLabel" (t "people.streaks.aria") "Checked" .StreaksShown)}}
+      <p class="hint">{{t "people.streaks.hint"}}</p>
+    </fieldset>
     <button class="button" type="submit">{{t "people.save"}}</button>
   </form>
 {{template "foot"}}

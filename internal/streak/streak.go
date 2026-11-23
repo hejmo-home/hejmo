@@ -134,10 +134,17 @@ func (r Routine) State(day string) State {
 // Cell is one day of the week strip.
 type Cell struct {
 	Date    string
-	Weekday int // 0 Monday to 6 Sunday
+	Weekday int    // 0 Monday to 6 Sunday
+	Dow     int    // time.Weekday: 0 Sunday to 6 Saturday, for the names of the days
+	Code    string // RFC 5545 weekday code: MO to SU
 	State   State
-	Today   bool
+	// Paused is set on every day the person has a pause day, done or not, so a
+	// page can say a done day was a pause day.
+	Paused bool
+	Today  bool
 }
+
+var weekdayCodes = [7]string{"MO", "TU", "WE", "TH", "FR", "SA", "SU"}
 
 // Week is the week of a routine, Monday to Sunday, and its numbers.
 type Week struct {
@@ -159,7 +166,8 @@ func (r Routine) Week(today string) Week {
 	monday := t.AddDate(0, 0, -((int(t.Weekday()) + 6) % 7))
 	for i := range w.Cells {
 		day := monday.AddDate(0, 0, i).Format(task.DateLayout)
-		c := Cell{Date: day, Weekday: i, State: r.State(day), Today: day == today}
+		c := Cell{Date: day, Weekday: i, Dow: (i + 1) % 7, Code: weekdayCodes[i], State: r.State(day), Today: day == today}
+		c.Paused = c.State != Before && c.State != Off && r.paused(day)
 		w.Cells[i] = c
 		switch c.State {
 		case Done:
@@ -216,4 +224,33 @@ func (w Week) Summary() (kind string, done, total int) {
 		return "sum_all", w.Done, w.Total
 	}
 	return "sum", w.Done, w.Total
+}
+
+// Sentence is a Summary for templates: Kind as in Summary.
+type Sentence struct {
+	Kind        string
+	Done, Total int
+}
+
+// Sum is Summary as one value, for templates.
+func (w Week) Sum() Sentence {
+	k, d, n := w.Summary()
+	return Sentence{k, d, n}
+}
+
+// Key is the locale key of the sentence, week.<kind>, with ".one" when the
+// week has a single day.
+func (s Sentence) Key() string {
+	if s.Total == 1 && (s.Kind == "sum_zero" || s.Kind == "sum_all") {
+		return "week." + s.Kind + ".one"
+	}
+	return "week." + s.Kind
+}
+
+// BestKey is the locale key of the best streak line, singular for one day.
+func (w Week) BestKey() string {
+	if w.Best == 1 {
+		return "week.best.one"
+	}
+	return "week.best.other"
 }

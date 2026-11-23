@@ -253,7 +253,7 @@ func (s *server) renderPerson(w http.ResponseWriter, r *http.Request, p principa
 		}
 	}
 	data := map[string]any{
-		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role,
+		"Person": p.person, "SyncStale": s.syncStale(p.household.ID), "Subject": chip, "Role": person.Role, "StreaksShown": person.StreaksShown,
 		"Form": form, "Error": form["Error"], "ErrorField": form["ErrorField"],
 	}
 	f, err := s.db.PersonFood(p.household.ID, person.ID)
@@ -324,6 +324,18 @@ func (s *server) handlePersonSave(w http.ResponseWriter, r *http.Request) {
 	if err := s.db.UpdatePerson(p.household.ID, person.ID, look.Name, look.Color, look.Shape); err != nil {
 		s.fail(w, "update person", err)
 		return
+	}
+	// The switch "week count and badges" is saved with the rest of the form.
+	streaks := r.PostFormValue("streaks") != ""
+	if streaks != person.StreaksShown {
+		if err := s.db.SetStreaksShown(p.household.ID, person.ID, streaks); err != nil {
+			s.fail(w, "streaks switch", err)
+			return
+		}
+		if !streaks {
+			s.redirectSavedNamed(w, r, "/people", "flash.streaks_off", look.Name)
+			return
+		}
 	}
 	s.redirectSaved(w, r, "/people", "flash.person_saved")
 }

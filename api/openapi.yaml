@@ -4487,9 +4487,9 @@ components:
       description: Where the photo of a contact came from. The last change wins.
       required: [origin, by, device, at]
       properties:
-        origin: { type: string, enum: [manual, sync], description: "`manual`: a parent chose it; `sync`: a phone sent it over contact sync" }
+        origin: { type: string, enum: [manual, sync], description: "`manual`: a parent chose it; `sync`: a personal device sent it over contact sync" }
         by: { type: string, format: uuid, nullable: true, description: "The parent who set it (`manual`); null for `sync` or when that person is gone" }
-        device: { type: string, description: "The phone, for `sync`; else empty" }
+        device: { type: string, description: "The personal device, for `sync`; else empty" }
         at: { type: string, format: date-time }
     ContactGroup:
       type: object

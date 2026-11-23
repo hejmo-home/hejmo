@@ -140,6 +140,7 @@ func mamaWithPasskey(t *testing.T) (*box, string, *passkeytest.Authenticator) {
 // 7.6: Given a parent with a passkey, when they sign in with it, then no
 // password or one-time code is asked.
 func TestParentSignsInWithAPasskeyWithoutPasswordOrOneTimeCode(t *testing.T) {
+	t.Parallel()
 	b, _, dev := mamaWithPasskey(t)
 	if r := b.get("/"); r.status != http.StatusSeeOther {
 		t.Fatalf("signed out: GET / = %d", r.status)
@@ -158,6 +159,7 @@ func TestParentSignsInWithAPasskeyWithoutPasswordOrOneTimeCode(t *testing.T) {
 
 // 7.6: a passkey sign-in sends the parent where they wanted to go.
 func TestPasskeySignInLeadsToTheRequestedPage(t *testing.T) {
+	t.Parallel()
 	b, _, dev := mamaWithPasskey(t)
 	c, _ := begin(t, b, boxName, "/login/passkey/begin")
 	cred, _ := dev.Get(c.Options, "https://"+boxName)
@@ -175,6 +177,7 @@ func TestPasskeySignInLeadsToTheRequestedPage(t *testing.T) {
 
 // 7.6: the passkey is remembered on the browser as "used", never by name.
 func TestPasskeySignInMakesThePasskeyTheMainActionOnThisDevice(t *testing.T) {
+	t.Parallel()
 	b, _, dev := mamaWithPasskey(t)
 	login := b.at(boxName, http.MethodGet, "/login", nil).body
 	for _, want := range []string{`data-passkey-signin`, `class="or"`, `class="signin-pk"`, `autocomplete="username webauthn"`} {
@@ -202,6 +205,7 @@ func TestPasskeySignInMakesThePasskeyTheMainActionOnThisDevice(t *testing.T) {
 // 7.6: Given the box reached by IP address, then no passkey is offered and
 // password sign-in works.
 func TestNoPasskeyIsOfferedOverAnIPAddressAndPasswordSignInWorks(t *testing.T) {
+	t.Parallel()
 	b, secret, _ := mamaWithPasskey(t)
 	login := b.get("/login").body // the test box is at 127.0.0.1
 	if strings.Contains(login, "data-passkey-signin") {
@@ -234,6 +238,7 @@ func TestNoPasskeyIsOfferedOverAnIPAddressAndPasswordSignInWorks(t *testing.T) {
 
 // 7.6: Given a revoked passkey, then it cannot sign in.
 func TestARevokedPasskeyCannotSignIn(t *testing.T) {
+	t.Parallel()
 	b, secret, dev := mamaWithPasskey(t)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, secret))
 	acc, _ := b.db.AccountByUsername("mama")
@@ -259,6 +264,7 @@ func TestARevokedPasskeyCannotSignIn(t *testing.T) {
 
 // 7.6: a passkey of an earlier box name signs nobody in.
 func TestAPasskeyOfAnEarlierBoxNameDoesNotSignIn(t *testing.T) {
+	t.Parallel()
 	b, secret, _ := mamaWithPasskey(t)
 	b.public.name = "familie-mueller.dedyn.io" // the box has a public name now
 	other := passkeytest.New()                 // a device that holds nothing for the new name
@@ -285,6 +291,7 @@ func TestAPasskeyOfAnEarlierBoxNameDoesNotSignIn(t *testing.T) {
 // 7.6: Given a reset of one-time codes, then a passkey sign-in still works and
 // asks to set up new one-time codes.
 func TestPasskeySignInAfterAResetStillWorksAndAsksForNewOneTimeCodes(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, papaSecret := secondParent(t, b)
 	loginWith(b, "papa", "papa's long password", totpNow(b, papaSecret))
@@ -330,6 +337,7 @@ func TestPasskeySignInAfterAResetStillWorksAndAsksForNewOneTimeCodes(t *testing.
 // parent's one-time codes lists that parent's passkeys with checkboxes, none
 // ticked; the ticked ones are removed with the reset.
 func TestResetPageListsTheOtherParentsPasskeysAndRemovesTheTickedOnes(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, papaSecret := secondParent(t, b)
 	loginWith(b, "papa", "papa's long password", totpNow(b, papaSecret))
@@ -399,6 +407,7 @@ func TestResetPageListsTheOtherParentsPasskeysAndRemovesTheTickedOnes(t *testing
 // ADR 0018: a parent with a passkey confirms the reset with it, instead of
 // password and one-time code.
 func TestResetIsConfirmedWithTheParentsOwnPasskey(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
@@ -465,6 +474,7 @@ func secondParentNamed(t *testing.T, b *box, name, username string) (store.Perso
 
 // ADR 0018: the setup wizard offers a passkey right after the account.
 func TestWizardOffersAPasskeyAfterTheAccountAndLeadsOnToTheOneTimeCode(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	r := b.at(boxName, http.MethodPost, "/setup", validSetupForm())
 	if r.status != http.StatusSeeOther || r.location != "/setup/passkey" {
@@ -500,6 +510,7 @@ func TestWizardOffersAPasskeyAfterTheAccountAndLeadsOnToTheOneTimeCode(t *testin
 }
 
 func TestWizardSkipsTheOfferOverAnIPAddress(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	if r := b.post("/setup", validSetupForm()); r.status != http.StatusSeeOther || r.location != "/setup/totp" {
 		t.Fatalf("account created over the IP address = %d %q, want straight on to the one-time code", r.status, r.location)
@@ -510,6 +521,7 @@ func TestWizardSkipsTheOfferOverAnIPAddress(t *testing.T) {
 }
 
 func TestOfferWithoutJavaScriptSaysNothingWasCreated(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.at(boxName, http.MethodPost, "/setup", validSetupForm())
 	r := b.at(boxName, http.MethodPost, "/account/passkeys", url.Values{"name": {"Mac"}})
@@ -520,6 +532,7 @@ func TestOfferWithoutJavaScriptSaysNothingWasCreated(t *testing.T) {
 
 // Mein Konto: list, detail page, rename and remove.
 func TestMeinKontoListsRenamesAndRemovesPasskeys(t *testing.T) {
+	t.Parallel()
 	b, secret, _ := mamaWithPasskey(t)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, secret))
 	acc, _ := b.db.AccountByUsername("mama")
@@ -570,6 +583,7 @@ func TestMeinKontoListsRenamesAndRemovesPasskeys(t *testing.T) {
 
 // A parent cannot see, rename or remove another parent's passkey.
 func TestPasskeysOfAnotherPersonAreNotReachable(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, papaSecret := secondParent(t, b)
 	loginWith(b, "papa", "papa's long password", totpNow(b, papaSecret))
@@ -593,6 +607,7 @@ func TestPasskeysOfAnotherPersonAreNotReachable(t *testing.T) {
 
 // A passkey cannot be created or used without a person who is allowed.
 func TestPasskeyEndpointsNeedASignedInParent(t *testing.T) {
+	t.Parallel()
 	b, _, _ := setupWithCodes(t)
 	if r := b.jsonAt(boxName, http.MethodPost, "/account/passkeys/begin", nil); r.status != http.StatusUnauthorized {
 		t.Errorf("registration signed out = %d", r.status)
@@ -617,6 +632,7 @@ func TestPasskeyEndpointsNeedASignedInParent(t *testing.T) {
 
 // A ceremony works once and only for the person who began it.
 func TestARegistrationCeremonyWorksOnceAndOnlyForItsPerson(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	_, papaSecret := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
@@ -637,6 +653,7 @@ func TestARegistrationCeremonyWorksOnceAndOnlyForItsPerson(t *testing.T) {
 
 // The sign-in page states of the preview (docs 5 to 8).
 func TestSignInPageStates(t *testing.T) {
+	t.Parallel()
 	b, _, _ := mamaWithPasskey(t)
 	def := b.at(boxName, http.MethodGet, "/login", nil).body
 	if !strings.Contains(def, `<p class="or">oder</p>`) || !strings.Contains(def, "Mit Fingerabdruck, Gesicht oder Geräte-PIN, ohne Passwort und Einmalcode") {
@@ -666,6 +683,7 @@ func TestSignInPageStates(t *testing.T) {
 
 // ADR 0015: everything a page can do is possible through the REST API.
 func TestPasskeysThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	b, secret, _ := mamaWithPasskey(t)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, secret))
 	c := newAPIClient(t, b)
@@ -729,6 +747,7 @@ func TestPasskeysThroughTheAPI(t *testing.T) {
 
 // The reset through the API can remove passkeys in the same step as well.
 func TestResetThroughTheAPIRemovesTickedPasskeys(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, papaSecret := secondParent(t, b)
 	loginWith(b, "papa", "papa's long password", totpNow(b, papaSecret))
@@ -750,6 +769,7 @@ func TestResetThroughTheAPIRemovesTickedPasskeys(t *testing.T) {
 // ADR 0017, T23: a paired phone never creates a passkey, through the API
 // either, before or after a reset of its parent's one-time codes.
 func TestPairedPhoneCannotCreateAPasskeyThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
@@ -795,6 +815,7 @@ func TestPairedPhoneCannotCreateAPasskeyThroughTheAPI(t *testing.T) {
 // passkey: that would be a way in without a one-time code. The wizard and the
 // invitation (pending, never reset) are the cases that may.
 func TestPasswordOnlySessionAfterAResetCannotCreateAPasskey(t *testing.T) {
+	t.Parallel()
 	b, mamaSecret, _ := setupWithCodes(t)
 	papa, _ := secondParent(t, b)
 	loginWith(b, "mama", "correct horse battery", totpNow(b, mamaSecret))
@@ -817,6 +838,7 @@ func TestPasswordOnlySessionAfterAResetCannotCreateAPasskey(t *testing.T) {
 
 // Control for the test above: the wizard's pending session (never reset) may.
 func TestWizardSessionStillMayBeginAPasskey(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	if r := b.at(boxName, http.MethodPost, "/setup", validSetupForm()); r.status != http.StatusSeeOther {
 		t.Fatalf("setup = %d", r.status)

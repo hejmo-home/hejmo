@@ -7,6 +7,8 @@ import (
 	"regexp"
 	"strings"
 	"testing"
+
+	"github.com/hejmo-home/hejmo/internal/store"
 )
 
 // calendarBox is the example family with a paired display and the parent signed in.
@@ -31,6 +33,7 @@ func eventForm(title, date, start, end string) url.Values {
 // Ticket 5.12: Given a parent, when they create a weekly event for Mia, then it
 // appears in the week view and on the display.
 func TestParentCreatesAWeeklyEventForMiaAndItShowsInTheWeekAndOnTheDisplay(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	form := eventForm("Swimming", "2026-11-14", "15:00", "16:00")
 	form.Set("repeat", "weekly")
@@ -97,6 +100,7 @@ func timesOf(page, title string) []string {
 // Ticket 5.12: Given a series, when "this and following" is changed, then
 // earlier occurrences remain unchanged.
 func TestChangingThisAndFollowingLeavesEarlierOccurrencesUnchanged(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	form := eventForm("Choir", "2026-11-02", "17:00", "18:00")
 	form.Set("repeat", "weekly")
@@ -137,6 +141,7 @@ func TestChangingThisAndFollowingLeavesEarlierOccurrencesUnchanged(t *testing.T)
 }
 
 func TestChangingOnlyThisOccurrenceAndAllOfASeries(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	form := eventForm("Piano", "2026-11-02", "16:00", "17:00")
 	form.Set("repeat", "weekly")
@@ -169,6 +174,7 @@ func TestChangingOnlyThisOccurrenceAndAllOfASeries(t *testing.T) {
 // Ticket 5.12: Given an event spanning three days, when the week view is
 // shown, then it appears as one continuous bar.
 func TestAnEventOfThreeDaysIsOneContinuousBar(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	form := url.Values{"title": {"Hut weekend"}, "all_day": {"on"}, "start_date": {"2026-11-17"}, "end_date": {"2026-11-19"}, "repeat": {"none"}, "whole_family": {"1"}}
 	f.postEvent(t, form)
@@ -197,6 +203,7 @@ func TestAnEventOfThreeDaysIsOneContinuousBar(t *testing.T) {
 
 // Ticket 5.12: Given a read-only calendar, then its events offer no edit actions.
 func TestEventsOfReadOnlyCalendarsOfferNoEditActions(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	f.feeds.set("https://example.org/school.ics", feedOf("UID:trip\r\nSUMMARY:School trip\r\nDTSTART:20261117T080000Z\r\nDTEND:20261117T120000Z"), nil)
 	if r := f.post("/calendars", url.Values{"name": {"School"}, "url": {"https://example.org/school.ics"}, "color": {"#2F5E7A"}, "interval": {"60"}, "whole_family": {"1"}}); r.status != http.StatusSeeOther {
@@ -246,6 +253,7 @@ func TestEventsOfReadOnlyCalendarsOfferNoEditActions(t *testing.T) {
 // Ticket 5.12: Given a search for "schwimm", then "Schwimmen" is found (prefix,
 // accent-insensitive).
 func TestSearchFindsEventsByPrefixIgnoringAccents(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	f.postEvent(t, eventForm("Schwimmen", "2026-11-18", "15:00", "16:00"))
 	f.postEvent(t, eventForm("Café Treff", "2026-11-19", "15:00", "16:00"))
@@ -263,6 +271,7 @@ func TestSearchFindsEventsByPrefixIgnoringAccents(t *testing.T) {
 }
 
 func TestParentDeletesEventsBehindAConfirmationWithAScopeForSeries(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	f.postEvent(t, eventForm("Dentist", "2026-11-17", "10:00", "11:00"))
 	series := eventForm("Choir", "2026-11-02", "17:00", "18:00")
@@ -299,6 +308,7 @@ func TestParentDeletesEventsBehindAConfirmationWithAScopeForSeries(t *testing.T)
 }
 
 func TestEventFormShowsErrorsAtTheFieldAndKeepsEntries(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	for _, c := range []struct {
 		change func(url.Values)
@@ -323,6 +333,7 @@ func TestEventFormShowsErrorsAtTheFieldAndKeepsEntries(t *testing.T) {
 }
 
 func TestCalendarScreenIsForParentsAndGerman(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	for _, path := range []string{"/calendar", "/calendar/new", "/calendar/search?q=a"} {
 		if r := b.get(path); r.status != http.StatusSeeOther || !strings.HasPrefix(r.location, "/login") {
@@ -341,6 +352,7 @@ func TestCalendarScreenIsForParentsAndGerman(t *testing.T) {
 
 // A saved event is the same through the API (ADR 0015: parity).
 func TestEventsMadeInTheWebInterfaceAreVisibleThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	form := eventForm("Swimming", "2026-11-14", "15:00", "16:00")
 	form.Set("repeat", "weekly")
@@ -369,6 +381,7 @@ func TestEventsMadeInTheWebInterfaceAreVisibleThroughTheAPI(t *testing.T) {
 // The earlier half of a split series ends the day before the split; editing it
 // without touching repeat or end must not bring the split-off occurrence back.
 func TestEditingTheEarlierHalfOfASplitSeriesKeepsItsEnd(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	form := eventForm("Choir", "2026-11-02", "17:00", "18:00")
 	form.Set("repeat", "weekly")
@@ -409,6 +422,7 @@ func TestEditingTheEarlierHalfOfASplitSeriesKeepsItsEnd(t *testing.T) {
 // An event page opened without ?occurrence= must still save when the first
 // occurrence of its series was moved.
 func TestEventPageOfASeriesWhoseFirstOccurrenceWasMovedStillSaves(t *testing.T) {
+	t.Parallel()
 	f := calendarBox(t)
 	form := eventForm("Piano", "2026-11-02", "16:00", "17:00")
 	form.Set("repeat", "weekly")
@@ -436,10 +450,34 @@ func TestEventPageOfASeriesWhoseFirstOccurrenceWasMovedStillSaves(t *testing.T) 
 
 // ADR 0015: the zone of an event is not changed afterwards; the API says so.
 func TestAPIRefusesATimezoneWhenChangingAnEvent(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ev := c.createEvent(t, map[string]any{"title": "Call", "start": "2026-11-14T09:00:00+01:00", "end": "2026-11-14T10:00:00+01:00"})
 	status, _, _ := c.call(http.MethodPatch, "/events/"+ev["id"].(string), map[string]any{"timezone": "Europe/London"})
 	if status != http.StatusUnprocessableEntity {
 		t.Fatalf("patch with timezone = %d", status)
+	}
+}
+
+// PR 81 finding: right after connecting a CalDAV calendar the household has no
+// family calendar yet (it is created on first use). The first visit to the
+// "New event" form must still offer both calendars.
+func TestNewEventFormOffersEveryWritableCalendarOnTheFirstVisit(t *testing.T) {
+	t.Parallel()
+	b := signedInAPI(t).b
+	h, _ := b.db.HomeHousehold()
+	conn, err := b.db.CreateCalDAVConnection(h.ID, store.NewCalDAVConnection{URL: "https://caldav.example.org/", Username: "u@example.org", Password: "xxxx-xxxx-xxxx-xxxx", Now: b.now})
+	if err != nil {
+		t.Fatal(err)
+	}
+	work, err := b.db.AddCalDAVCalendar(h.ID, conn.ID, store.NewCalDAVCalendar{Name: "Work", RemoteURL: "https://caldav.example.org/work/", Color: "#2F5E7A", IntervalMinutes: 60, Now: b.now})
+	if err != nil {
+		t.Fatal(err)
+	}
+	for visit := 1; visit <= 2; visit++ {
+		page := getEN(b, "/calendar/new").body
+		if !strings.Contains(page, `<select name="calendar">`) || !strings.Contains(page, `value="`+work.ID+`"`) || !strings.Contains(page, ">Family</option>") {
+			t.Fatalf("visit %d: no calendar choice with Work and Family:\n%s", visit, page)
+		}
 	}
 }

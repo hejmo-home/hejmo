@@ -36,6 +36,7 @@ func chosenConnection(t *testing.T, b *box) string {
 }
 
 func TestConnectionOverviewRowsShowServiceCalendarsAndLastSync(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := chosenConnection(t, b)
 	body := getEN(b, "/calendars").body
@@ -53,6 +54,7 @@ func TestConnectionOverviewRowsShowServiceCalendarsAndLastSync(t *testing.T) {
 }
 
 func TestConnectionDetailHoldsFactsChooseCalendarsPasswordAndDisconnect(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := chosenConnection(t, b)
 	acceptOnly(b, "pw-1")
@@ -61,9 +63,9 @@ func TestConnectionDetailHoldsFactsChooseCalendarsPasswordAndDisconnect(t *testi
 		t.Fatalf("GET = %d\n%s", r.status, r.body)
 	}
 	for _, want := range []string{
-		`<a class="back" href="/calendars">`, "Back to calendar connections", "<h1>u</h1>",
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/calendars">Calendar connections</a>`, "<h1>u</h1>",
 		"<dt>Service</dt>", "<dt>User name</dt>", "<dt>Last synced</dt>", "<dt>Connected since</dt>",
-		`<form method="post" action="/connections/` + id + `/calendars" class="steps"`, `class="calchoice"`, `role="switch"`, `name="calendar"`,
+		`<form method="post" action="/connections/` + id + `/calendars" class="steps"`, `class="calchoice is-on"`, `role="switch"`, `name="calendar"`,
 		"Save", `<section id="login"`, `name="password"`, "Check and save password", `action="/connections/` + id + `/credentials"`,
 		`<details class="danger">`, "Disconnect", "<strong>Home</strong>", `action="/connections/` + id + `/delete"`, "Yes, disconnect", "No, change nothing",
 	} {
@@ -83,6 +85,7 @@ func TestConnectionDetailHoldsFactsChooseCalendarsPasswordAndDisconnect(t *testi
 }
 
 func TestARefusedLoginIsToldWithTheTimeAndLinksToTheCredentials(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.now = time.Date(2026, 11, 14, 21, 10, 5, 0, time.UTC) // 22:10:05 in Munich
 	id := chosenConnection(t, b)
@@ -108,6 +111,7 @@ func TestARefusedLoginIsToldWithTheTimeAndLinksToTheCredentials(t *testing.T) {
 }
 
 func TestNewPasswordIsCheckedAgainstTheServerAndStoredEncrypted(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := chosenConnection(t, b)
 	acceptOnly(b, "pw-1")
@@ -149,6 +153,7 @@ func TestNewPasswordIsCheckedAgainstTheServerAndStoredEncrypted(t *testing.T) {
 }
 
 func TestDisconnectingNamesTheConnectionInTheSuccessLine(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := chosenConnection(t, b)
 	if r := b.post("/connections/"+id+"/delete", url.Values{}); r.status != http.StatusSeeOther || r.location != "/calendars" {
@@ -160,6 +165,7 @@ func TestDisconnectingNamesTheConnectionInTheSuccessLine(t *testing.T) {
 }
 
 func TestSwitchingACalendarOffStillAsksAndCancelsToTheConnectionPage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := chosenConnection(t, b)
 	form := url.Values{"shown": {flowCalendar, flowCalendar + "2/"}, "interval": {"60"}, "calendar": {flowCalendar + "2/"}, "name_" + flowCalendar + "2/": {"Work"}}
@@ -171,6 +177,7 @@ func TestSwitchingACalendarOffStillAsksAndCancelsToTheConnectionPage(t *testing.
 
 // ADR 0017: after a new password the connection's calendars sync at once, not at their next backed-off turn.
 func TestANewPasswordSyncsTheConnectionsCalendarsAtOnce(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	b.now = time.Date(2026, 11, 14, 21, 10, 5, 0, time.UTC)
 	id := chosenConnection(t, b)
@@ -195,6 +202,7 @@ func TestANewPasswordSyncsTheConnectionsCalendarsAtOnce(t *testing.T) {
 }
 
 func TestConnectionPasswordWorksThroughTheAPI(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	id := chosenConnection(t, c.b)
 	acceptOnly(c.b, "new-pw")
@@ -218,17 +226,18 @@ func TestConnectionPasswordWorksThroughTheAPI(t *testing.T) {
 }
 
 func TestAnOnCalendarShowsItsLastSyncUnderTheSwitch(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id := chosenConnection(t, b)
 	acceptOnly(b, "pw-1")
 	body := getEN(b, "/connections/"+id).body
 	home := body[strings.Index(body, `<b>Home</b>`):]
-	home = home[:strings.Index(home, `name="name_`)]
-	if !strings.Contains(home, `<span class="status">Last synced `) {
+	home = home[:strings.Index(home, `<div class="calfields">`)]
+	if !strings.Contains(home, `<p class="sync">`) || !strings.Contains(home, "Last synced ") {
 		t.Errorf("the calendar that is on shows no last sync\n%s", home)
 	}
 	work := body[strings.Index(body, `<b>Work</b>`):]
-	work = work[:strings.Index(work, `name="name_`)]
+	work = work[:strings.Index(work, `<div class="calfields">`)]
 	if strings.Contains(work, "Last synced") {
 		t.Errorf("a calendar that is off shows a last sync\n%s", work)
 	}

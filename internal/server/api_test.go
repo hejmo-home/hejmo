@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"net/url"
 	"strings"
+	"sync"
 	"testing"
 
 	"github.com/getkin/kin-openapi/openapi3"
@@ -31,17 +32,28 @@ type apiClient struct {
 	host string
 }
 
+// loadSpec returns the parsed and validated OpenAPI document. It is read once
+// per test binary and shared, so callers must not change it: parsing it for every
+// test allocated tens of MB each (ticket 238). newAPIClient copies it.
 func loadSpec(t *testing.T) *openapi3.T {
 	t.Helper()
-	loader := openapi3.NewLoader()
-	doc, err := loader.LoadFromData(api.OpenAPI)
-	if err != nil {
-		t.Fatalf("load openapi.yaml: %v", err)
+	spec.once.Do(func() {
+		doc, err := openapi3.NewLoader().LoadFromData(api.OpenAPI)
+		if err == nil {
+			err = doc.Validate(context.Background())
+		}
+		spec.doc, spec.err = doc, err
+	})
+	if spec.err != nil {
+		t.Fatalf("openapi.yaml: %v", spec.err)
 	}
-	if err := doc.Validate(context.Background()); err != nil {
-		t.Fatalf("openapi.yaml invalid: %v", err)
-	}
-	return doc
+	return spec.doc
+}
+
+var spec struct {
+	once sync.Once
+	doc  *openapi3.T
+	err  error
 }
 
 func init() {
@@ -50,9 +62,9 @@ func init() {
 }
 
 func newAPIClient(t *testing.T, b *box) *apiClient {
-	doc := loadSpec(t)
+	doc := *loadSpec(t) // a copy: the document is shared, only the server differs
 	doc.Servers = openapi3.Servers{{URL: b.srv.URL + "/api/v1"}}
-	router, err := gorillamux.NewRouter(doc)
+	router, err := gorillamux.NewRouter(&doc)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -75,15 +87,23 @@ func (c *apiClient) call(method, path string, body any) (int, map[string]any, []
 // callRaw is call for answers that are not JSON: the body, status and content
 // type, after both request and response were checked against openapi.yaml.
 func (c *apiClient) callRaw(method, path string, body any) (string, int, string) {
-	t := c.b.t
-	t.Helper()
+	c.b.t.Helper()
 	var raw []byte
+	ctype := ""
 	if body != nil {
 		raw, _ = json.Marshal(body)
+		ctype = "application/json"
 	}
+	return c.send(method, path, ctype, raw)
+}
+
+// send is callRaw for a body of any content type (a photo upload is multipart).
+func (c *apiClient) send(method, path, contentType string, raw []byte) (string, int, string) {
+	t := c.b.t
+	t.Helper()
 	req, _ := http.NewRequest(method, c.b.srv.URL+"/api/v1"+path, bytes.NewReader(raw))
-	if body != nil {
-		req.Header.Set("Content-Type", "application/json")
+	if contentType != "" {
+		req.Header.Set("Content-Type", contentType)
 	}
 	if c.token != "" {
 		req.Header.Set("Authorization", "Bearer "+c.token)
@@ -160,6 +180,7 @@ func (c *apiClient) withToken(token string) *apiClient {
 }
 
 func TestOpenAPIDocumentsEveryRoute(t *testing.T) {
+	t.Parallel()
 	doc := loadSpec(t)
 	for _, r := range server.APIRoutes() {
 		item := doc.Paths.Find(r.Path)
@@ -177,6 +198,7 @@ func TestOpenAPIDocumentsEveryRoute(t *testing.T) {
 }
 
 func TestOpenAPIFileIsServed(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	res, err := b.bareClient().Get(b.srv.URL + "/api/v1/openapi.yaml")
 	if err != nil {
@@ -190,6 +212,7 @@ func TestOpenAPIFileIsServed(t *testing.T) {
 }
 
 func TestAPIRequiresAuthentication(t *testing.T) {
+	t.Parallel()
 	c := newAPIClient(t, newBox(t))
 	if status, _, _ := c.call(http.MethodGet, "/people", nil); status != http.StatusUnauthorized {
 		t.Fatalf("anonymous = %d, want 401", status)
@@ -201,6 +224,7 @@ func TestAPIRequiresAuthentication(t *testing.T) {
 }
 
 func TestParentManagesPeopleViaSession(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, me, _ := c.call(http.MethodGet, "/me", nil)
 	if status != http.StatusOK || me["name"] != "Mama" || me["role"] != "parent" {
@@ -230,6 +254,7 @@ func TestParentManagesPeopleViaSession(t *testing.T) {
 // to create something, then the API answers 403. (The calendar variant of this
 // test follows with events in work package 3.)
 func TestReadOnlyTokenCannotWrite(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	ro := c.withToken(c.newToken("read"))
 
@@ -245,6 +270,7 @@ func TestReadOnlyTokenCannotWrite(t *testing.T) {
 }
 
 func TestTokenRevocation(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	status, created, _ := c.call(http.MethodPost, "/tokens", map[string]any{"name": "Assistant", "scopes": "read"})
 	if status != http.StatusCreated {
@@ -263,6 +289,7 @@ func TestTokenRevocation(t *testing.T) {
 }
 
 func TestTokenScopesAreValidated(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	if status, _, _ := c.call(http.MethodPost, "/tokens", map[string]any{"name": "x", "scopes": "admin"}); status != http.StatusUnprocessableEntity {
 		t.Fatalf("unknown scope = %d, want 422", status)
@@ -270,6 +297,7 @@ func TestTokenScopesAreValidated(t *testing.T) {
 }
 
 func TestCookieAPIWritesNeedSameOrigin(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	req, _ := http.NewRequest(http.MethodPost, c.b.srv.URL+"/api/v1/people", strings.NewReader(`{"name":"Mia","role":"child"}`))
 	req.Header.Set("Content-Type", "application/json")

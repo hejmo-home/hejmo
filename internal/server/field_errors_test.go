@@ -35,6 +35,7 @@ func formOf(t *testing.T, page, action string) string {
 // ADR 0017, ticket 5.16: a form error is shown at its field; the other
 // entries stay filled in, passwords never come back.
 func TestFormErrorsAppearAtTheFieldAndKeepOtherEntries(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	b.feeds.set("https://example.org/a.ics", feedOf(), nil)
@@ -69,7 +70,7 @@ func TestFormErrorsAppearAtTheFieldAndKeepOtherEntries(t *testing.T) {
 		// of its own); look only at the form this case posted to.
 		page := formOf(t, r.body, c.path)
 		tag := inputTag(page, c.field)
-		if !strings.Contains(tag, `aria-invalid="true"`) || !strings.Contains(tag, `aria-describedby="err-`+c.field+`"`) {
+		if !strings.Contains(tag, `aria-invalid="true"`) || !regexp.MustCompile(`aria-describedby="err-`+c.field+`( hint-`+c.field+`)?"`).MatchString(tag) {
 			t.Errorf("%s: field %q is not marked invalid: %q", c.name, c.field, tag)
 		}
 		if !strings.Contains(r.body, `id="err-`+c.field+`"`) || strings.Count(r.body, `class="ferr"`) != 1 {
@@ -92,6 +93,7 @@ func TestFormErrorsAppearAtTheFieldAndKeepOtherEntries(t *testing.T) {
 }
 
 func TestSetupErrorsAppearAtTheFieldAndNeverReturnPasswords(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	form := validSetupForm()
 	form.Set("password", "short")
@@ -102,7 +104,11 @@ func TestSetupErrorsAppearAtTheFieldAndNeverReturnPasswords(t *testing.T) {
 	if tag := inputTag(r.body, "password"); !strings.Contains(tag, `aria-invalid="true"`) || strings.Contains(tag, "short") {
 		t.Errorf("password field = %q", tag)
 	}
-	for name, value := range map[string]string{"home_name": "Pasing", "name": "Mama", "username": "mama"} {
+	// The picked place stays confirmed (its id travels along).
+	if !strings.Contains(inputTag(r.body, "place_id"), `value="`+idPasing+`"`) || !strings.Contains(r.body, "<b>Pasing</b>") {
+		t.Errorf("the picked place is lost: %q", inputTag(r.body, "place_id"))
+	}
+	for name, value := range map[string]string{"name": "Mama", "username": "mama"} {
 		if !strings.Contains(inputTag(r.body, name), `value="`+value+`"`) {
 			t.Errorf("%s not kept: %q", name, inputTag(r.body, name))
 		}
@@ -118,6 +124,7 @@ func TestSetupErrorsAppearAtTheFieldAndNeverReturnPasswords(t *testing.T) {
 }
 
 func TestSetupCodeErrorAppearsAtTheCodeField(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	r := b.post("/setup/totp", url.Values{"code": {"000000"}})
@@ -127,6 +134,7 @@ func TestSetupCodeErrorAppearsAtTheCodeField(t *testing.T) {
 }
 
 func TestSignInErrorKeepsTheUsernameButNotThePassword(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	code, _ := auth.TOTPCode(secret, b.now)
 	r := b.post("/login", url.Values{"username": {"mama"}, "password": {"wrong password"}, "code": {code}})

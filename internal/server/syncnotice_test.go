@@ -29,6 +29,7 @@ var headerRe = regexp.MustCompile(`(?s)<header class="fv-header">.*?</header>`)
 
 // 5.10: Given a stale synced calendar, then the header shows the info symbol and text (German and English).
 func TestSyncNoticeShowsInTheHeaderInBothLanguages(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	if page := f.view(t, "en", f.at(14, 13, 0)); strings.Contains(page, syncNotice) {
 		t.Fatal("notice shown without any synced calendar")
@@ -52,6 +53,7 @@ func TestSyncNoticeShowsInTheHeaderInBothLanguages(t *testing.T) {
 
 // 5.10: The symbol does not appear in the person columns.
 func TestSyncNoticeIsNotInThePersonColumns(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_bw")
 	staleCalendar(t, f)
 	page := f.view(t, "en", f.at(14, 13, 0))
@@ -68,6 +70,7 @@ func TestSyncNoticeIsNotInThePersonColumns(t *testing.T) {
 // 5.10: Given the next successful sync, then the symbol disappears within 10 seconds.
 // Runs with the box's default live interval, so it checks the real promise.
 func TestSyncNoticeDisappearsWithin10SecondsOfTheNextSync(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 0)
 	cal := staleCalendar(t, l.familyBox)
 	l.clock.set(l.at(14, 13, 0))

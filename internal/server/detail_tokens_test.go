@@ -24,6 +24,7 @@ func newDeviceToken(t *testing.T, b *box, name string) (id, secret string) {
 }
 
 func TestDeviceTokenOverviewListsRowsThatOpenTheDetailPage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, secret := newDeviceToken(t, b, "iPhone Mama")
 	body := getEN(b, "/caldav").body
@@ -39,6 +40,7 @@ func TestDeviceTokenOverviewListsRowsThatOpenTheDetailPage(t *testing.T) {
 }
 
 func TestDeviceTokenRowSaysWhenItWasLastUsedWithSeconds(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, secret := newDeviceToken(t, c.b, "iPhone Mama")
 	if _, err := c.phoneWith(t, "mama", secret).calendars(); err != nil {
@@ -54,6 +56,7 @@ func TestDeviceTokenRowSaysWhenItWasLastUsedWithSeconds(t *testing.T) {
 }
 
 func TestDeviceTokenDetailShowsFactsAndConfirmsRevokingByName(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, secret := newDeviceToken(t, b, "iPhone Mama")
 	r := getEN(b, "/caldav/tokens/"+id)
@@ -61,7 +64,7 @@ func TestDeviceTokenDetailShowsFactsAndConfirmsRevokingByName(t *testing.T) {
 		t.Fatalf("GET = %d", r.status)
 	}
 	for _, want := range []string{
-		`<a class="back" href="/caldav">`, "All device tokens", "<h1>iPhone Mama</h1>", "<dt>For</dt>", "<dt>Allowed</dt>", "Read calendars and tasks, save events, change tasks",
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/caldav">Calendar apps</a>`, "<h1>iPhone Mama</h1>", "<dt>For</dt>", "<dt>Allowed</dt>", "Read calendars and tasks, save events, change tasks",
 		"<dt>Created on</dt>", "<dt>Last used</dt>", "never shows the token itself again",
 		`<details class="danger">`, "Revoke access", `action="/caldav/tokens/` + id + `/revoke"`, "Yes, revoke access", "No, change nothing",
 	} {
@@ -81,6 +84,7 @@ func TestDeviceTokenDetailShowsFactsAndConfirmsRevokingByName(t *testing.T) {
 }
 
 func TestOnlyDeviceTokensHaveADetailPage(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	_, made, _ := c.call(http.MethodPost, "/tokens", map[string]any{"name": "Script", "scopes": "read"})
 	if r := c.b.get("/caldav/tokens/" + made["id"].(string)); r.status != http.StatusNotFound {
@@ -89,6 +93,7 @@ func TestOnlyDeviceTokensHaveADetailPage(t *testing.T) {
 }
 
 func TestRevokingATokenNamesItInTheSuccessLine(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	id, _ := newDeviceToken(t, b, "iPhone Mama")
 	r := b.post("/caldav/tokens/"+id+"/revoke", url.Values{})
@@ -104,6 +109,7 @@ func TestRevokingATokenNamesItInTheSuccessLine(t *testing.T) {
 }
 
 func TestANewTokenIsShownOnceOnItsOwnPage(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	// A success line is waiting from an earlier save; it must not replace this page's own.
 	id := pairedDisplay(t, b, "Hallway", "screen")
@@ -137,6 +143,7 @@ func TestANewTokenIsShownOnceOnItsOwnPage(t *testing.T) {
 }
 
 func TestATokenNeedsAValidNameOnTheOverview(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	r := b.do(http.MethodPost, "/caldav/tokens", url.Values{"name": {" "}}, map[string]string{"Accept-Language": "en"})
 	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, `id="err-name"`) || strings.Contains(r.body, `class="once"`) {

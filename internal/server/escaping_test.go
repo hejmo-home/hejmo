@@ -20,6 +20,7 @@ func requireEscaped(t *testing.T, where, page string) {
 }
 
 func TestHostileEventTitleIsEscapedOnTheFamilyViewAndDisplayPage(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "screen")
 	f.event(t, hostileTitle, f.at(14, 15, 0), f.at(14, 16, 0), false, "Mia")
 	requireEscaped(t, "GET /display", f.view(t, "en", f.at(14, 13, 0)))
@@ -31,6 +32,7 @@ func TestHostileEventTitleIsEscapedOnTheFamilyViewAndDisplayPage(t *testing.T) {
 }
 
 func TestHostileTaskTitleIsEscapedOnTheTasksPage(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	if r := b.post("/tasks", url.Values{"person": {tb.miaID}, "title": {hostileTitle}, "repeat": {"daily"}}); r.status != 303 {

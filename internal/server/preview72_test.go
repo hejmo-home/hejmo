@@ -43,7 +43,7 @@ func (p previewRemote) CountEvents(_ context.Context, address string, _ time.Tim
 	return n, nil
 }
 
-var countCellRe = regexp.MustCompile(`<span class="hint count" data-count-for="([^"]*)" data-state="loading">[^<]*</span>`)
+var countCellRe = regexp.MustCompile(`(<p class="count" data-count-for="([^"]*)" data-state=")loading(">.*?<span class="ct">)[^<]*(</span>)`)
 
 // TestWritePreview72 writes the self-contained preview page for the product
 // owner's approval of ticket 5.17 (Choose calendars and calendar management).
@@ -53,6 +53,7 @@ var countCellRe = regexp.MustCompile(`<span class="hint count" data-count-for="(
 // count endpoint, since the preview runs no scripts of the box.
 // Run: HEJMO_WRITE_PREVIEW=../../docs/design/preview-72.html go test ./internal/server -run WritePreview72
 func TestWritePreview72(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW to the output path to write the preview")
@@ -133,8 +134,9 @@ func TestWritePreview72(t *testing.T) {
 		byURL[a.URL] = a
 	}
 	choose := countCellRe.ReplaceAllStringFunc(page("/connections/"+connID), func(m string) string {
-		a := byURL[countCellRe.FindStringSubmatch(m)[1]]
-		return fmt.Sprintf(`<span class="hint count" data-count-for="%s" data-state="%s">%s</span>`, countCellRe.FindStringSubmatch(m)[1], a.State, a.Text)
+		parts := countCellRe.FindStringSubmatch(m)
+		a := byURL[parts[2]]
+		return parts[1] + a.State + parts[3] + a.Text + parts[4]
 	})
 	// The page while the counts are still loading.
 	loading := strings.ReplaceAll(page("/connections/"+connID), "The number of events is shown when JavaScript is on.", "Counting events…")

@@ -19,6 +19,7 @@ func extLink(href, text string) string {
 // Every address in a guide is a link; the welcome page names the apps and deSEC
 // as links and ends step 4 with the guided start page.
 func TestWelcomePageLinksTheAppsAndDeSEC(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	body := deGet(b, "/setup").body
 	for _, want := range []string{
@@ -42,6 +43,7 @@ func TestWelcomePageLinksTheAppsAndDeSEC(t *testing.T) {
 
 // The deSEC form links each step to the page where it happens.
 func TestDeSECFormLinksSignupDomainsAndTokens(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	body := deGet(b, "/setup/https?way=public").body
 	signup := `<a class="link" href="https://desec.io/signup" target="_blank" rel="noopener noreferrer">Konto bei deSEC anlegen <svg`
@@ -65,6 +67,7 @@ func TestDeSECFormLinksSignupDomainsAndTokens(t *testing.T) {
 // One-time code step 1: store links depend on the device. A computer shows both
 // stores, an Android phone only Google Play, an iPhone only the App Store.
 func TestTOTPStoreLinksFollowTheDevice(t *testing.T) {
+	t.Parallel()
 	b := newBox(t)
 	b.post("/setup", validSetupForm())
 	appStore2fas := extLink("https://apps.apple.com/app/2fas-auth/id1217793794", "für iPhone im App Store")
@@ -107,6 +110,7 @@ func TestTOTPStoreLinksFollowTheDevice(t *testing.T) {
 // The name the parent types into the router is the one address that is not a
 // link: it gets a "Copy" button instead.
 func TestRouterNameHasACopyButton(t *testing.T) {
+	t.Parallel()
 	b := newFreshBox(t)
 	b.post("/setup/https/public", publicForm())
 	body := deGet(b, "/setup/https/check").body

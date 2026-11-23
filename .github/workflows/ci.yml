@@ -10,10 +10,14 @@ permissions:
 
 jobs:
   test:
-    name: Test (${{ matrix.arch }})
+    name: Test (${{ matrix.arch }}, shard ${{ matrix.shard }})
     strategy:
       fail-fast: false
+      # Three shards per architecture (ticket 228): ci/test-shard.sh runs half of
+      # the internal/server tests in shards 1 and 2 and every other package in 3.
       matrix:
+        shard: [1, 2, 3]
+        arch: [x86_64, arm64]
         include:
           # Chrome comes with the x86_64 runner image (the "Chrome for the rendered
           # layout check" step prints it: 157 on 16/11/2026). The arm64 image has
@@ -32,9 +36,18 @@ jobs:
         with:
           go-version-file: go.mod
       - name: Formatting
+        if: matrix.shard == 1
         run: test -z "$(gofmt -l .)" || (gofmt -l . && exit 1)
       - name: Vet
+        if: matrix.shard == 1
         run: go vet ./...
+      - name: Shards 1 and 2 cover every server test
+        if: matrix.shard == 1
+        run: |
+          # A shard that matched nothing would pass green; compare against go test -list.
+          want=$(go test -list '^(Test|Example)' ./internal/server | grep -E '^(Test|Example)' | sort)
+          got=$( (HEJMO_SHARD_LIST=1 ci/test-shard.sh 1; HEJMO_SHARD_LIST=1 ci/test-shard.sh 2) | sort)
+          test -n "$want" && test "$want" = "$got" || { diff <(echo "$want") <(echo "$got") | head -20; exit 1; }
       - name: Chrome for the rendered layout check
         run: |
           for c in google-chrome google-chrome-stable chromium chromium-browser chrome; do command -v "$c" && "$c" --version; done || true
@@ -47,14 +60,38 @@ jobs:
           # The rendered layout check (ticket 161) drives headless Chrome; no Chrome fails it.
           HEJMO_REQUIRE_CHROME: ${{ matrix.require_chrome }}
           HEJMO_LAYOUT_SHOTS: ${{ runner.temp }}/layout-shots
-        run: go test -race -count=1 -timeout 40m ./...
+        run: |
+          # /usr/bin/time -v reports the largest resident set of any test binary of the
+          # shard (ticket 238); it goes to the job summary so a regression shows up.
+          start=$SECONDS
+          set +e
+          /usr/bin/time -v -o "$RUNNER_TEMP/time.txt" ci/test-shard.sh ${{ matrix.shard }} -race -count=1 -timeout 25m
+          rc=$?
+          rss=$(awk -F': ' '/Maximum resident set size/ {printf "%.0f", $2/1024}' "$RUNNER_TEMP/time.txt")
+          echo "Shard ${{ matrix.shard }} on ${{ matrix.arch }}: peak RSS ${rss} MB, $((SECONDS - start)) s" | tee -a "$GITHUB_STEP_SUMMARY"
+          exit $rc
       - name: Screenshots of pages that failed the layout check
         if: failure()
         uses: actions/upload-artifact@v4
         with:
-          name: layout-shots-${{ matrix.arch }}
+          name: layout-shots-${{ matrix.arch }}-${{ matrix.shard }}
           path: ${{ runner.temp }}/layout-shots
           if-no-files-found: ignore
+
+  # Aggregate: keeps the required checks "Test (x86_64)" and "Test (arm64)" of the
+  # branch protection alive, so renaming the shard jobs needs no settings change.
+  # Passes only when every shard of every architecture passed (a skipped or
+  # cancelled shard counts as a failure).
+  test-result:
+    name: Test (${{ matrix.arch }})
+    needs: test
+    if: always()
+    strategy:
+      matrix:
+        arch: [x86_64, arm64]
+    runs-on: ubuntu-24.04
+    steps:
+      - run: test "${{ needs.test.result }}" = success
 
   container:
     name: Container (${{ matrix.arch }})

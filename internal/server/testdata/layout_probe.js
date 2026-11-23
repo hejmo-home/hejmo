@@ -41,6 +41,22 @@ async function probe(width, names) {
     });
   }
 
+  // 1b. At desktop widths the frame's navigation stays a column beside the
+  // content (ticket 181): it does not turn into rows above it.
+  if (width >= 1024) {
+    const nav = document.querySelector(".frame > .frame-nav"), main = document.querySelector(".frame > main");
+    if (nav && main) {
+      const n = nav.getBoundingClientRect(), m = main.getBoundingClientRect();
+      if (n.right > m.left + 0.5) {
+        problems.push({
+          kind: "navigation-not-beside-content",
+          el: describe(nav),
+          detail: "navigation spans " + Math.round(n.left) + "-" + Math.round(n.right) + " px, content starts at " + Math.round(m.left) + " px",
+        });
+      }
+    }
+  }
+
   // 2. No text container overflows its box. A box whose content is wider than
   // the box is reported when no element inside it is wider than its own box
   // (the ancestors are widened by it), and when it holds text: its own, from
@@ -49,6 +65,10 @@ async function probe(width, names) {
   const overflowing = [];
   for (const el of document.body.querySelectorAll("*")) {
     if (/^(INPUT|TEXTAREA|SELECT|SVG|SCRIPT|STYLE|OPTION)$/i.test(el.tagName) || el.closest("svg")) continue;
+    // The layout preview of a display (ticket 180) is a small aria-hidden drawing: the
+    // columns beyond the visible ones are cut off by design and its tiny names may run
+    // a pixel or two over; the page says the order in words under it.
+    if (el.closest("[data-mini]")) continue;
     const cs = getComputedStyle(el), r = el.getBoundingClientRect();
     if (hidden(el, cs, r) || cs.display === "inline" || cs.display === "contents" || scrolls(cs) || cs.textOverflow === "ellipsis") continue;
     if (el.scrollWidth > el.clientWidth + 1) overflowing.push(el);

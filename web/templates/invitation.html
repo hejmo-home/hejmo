@@ -1,6 +1,5 @@
 {{template "head" (dict "Lang" .Lang "Title" (tf (printf "invite.title.%s" .Kind) "name" .Subject.Name "possessive" .Possessive) "Frame" .Frame)}}
   {{with .Success}}{{template "success" .}}{{end}}
-  {{template "backLink" (dict "Href" (printf "/people/%s" .Subject.ID) "Text" .Subject.Name)}}
   {{if eq .Kind "new_link"}}
   <h1>{{tf "invite.title.none" "name" .Subject.Name}}</h1>
   <section class="once invite-once" aria-labelledby="once-h">

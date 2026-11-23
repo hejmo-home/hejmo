@@ -29,6 +29,7 @@ func loginForm(b *box, secret, password string) url.Values {
 }
 
 func TestSignedOutVisitorIsSentToLogin(t *testing.T) {
+	t.Parallel()
 	b, _ := configuredBox(t)
 	if r := b.get("/"); r.status != http.StatusSeeOther || r.location != "/login" {
 		t.Fatalf("GET / signed out = %d %q, want 303 to /login", r.status, r.location)
@@ -40,6 +41,7 @@ func TestSignedOutVisitorIsSentToLogin(t *testing.T) {
 }
 
 func TestLoginWithPasswordAndTOTP(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	r := b.post("/login", loginForm(b, secret, "correct horse battery"))
 	if r.status != http.StatusSeeOther || r.location != "/" {
@@ -57,6 +59,7 @@ func TestLoginWithPasswordAndTOTP(t *testing.T) {
 }
 
 func TestLoginRejectsWrongCredentials(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	wrongPassword := loginForm(b, secret, "wrong horse battery")
 	wrongCode := loginForm(b, secret, "correct horse battery")
@@ -76,6 +79,7 @@ func TestLoginRejectsWrongCredentials(t *testing.T) {
 }
 
 func TestLoginIsRateLimited(t *testing.T) {
+	t.Parallel()
 	b, secret := configuredBox(t)
 	bad := loginForm(b, secret, "wrong horse battery")
 	for i := 0; i < 5; i++ {

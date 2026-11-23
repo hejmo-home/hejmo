@@ -42,20 +42,27 @@ func chips(page string) map[string]bool {
 // also without JavaScript, so the "Whole family" chip is a plain checkbox that
 // the server renders selected and that people can only add to.
 func TestAudienceChipsDefaultToTheWholeFamilyWithoutJavaScript(t *testing.T) {
+	t.Parallel()
 	b, ids := patternBox(t)
 	b.feeds.set("https://example.org/a.ics", feedOf(), nil)
-	got := chips(getEN(b, "/calendars").body)
+	got := chips(getEN(b, "/connections/new?service=ics").body)
 	want := map[string]bool{"Whole family": true, "Mama": false, "Papa": false, "Sebastian": false, "Mia": false}
 	for name, sel := range want {
 		if v, ok := got[name]; !ok || v != sel {
 			t.Errorf("chip %q selected = %v (present %v), want %v", name, v, ok, sel)
 		}
 	}
-	page := getEN(b, "/calendars").body
+	page := getEN(b, "/connections/new?service=ics").body
 	if !strings.Contains(page, `class="marker" data-person="2"`) || !strings.Contains(page, `data-shape="circle-empty"`) {
 		t.Errorf("person chips lack the person marker:\n%s", page)
 	}
-	if strings.Contains(page, "Leave empty") {
+	// Only the link guide: the Outlook guide has its own "leave empty" hint.
+	at := strings.Index(page, `data-service="ics"`)
+	if at < 0 {
+		t.Fatalf("the link guide is missing:\n%s", page)
+	}
+	ics := page[at:]
+	if strings.Contains(ics, "Leave empty") {
 		t.Error("the hint 'leave empty for the whole family' is still there")
 	}
 
@@ -78,6 +85,7 @@ func TestAudienceChipsDefaultToTheWholeFamilyWithoutJavaScript(t *testing.T) {
 }
 
 func TestChosenPeopleStayChosenAfterAnError(t *testing.T) {
+	t.Parallel()
 	b, ids := patternBox(t)
 	r := b.do(http.MethodPost, "/calendars", url.Values{"name": {""}, "url": {"https://example.org/a.ics"}, "color": {"#B4583A"}, "interval": {"60"}, "people": {ids["Mia"], ids["Sebastian"]}}, map[string]string{"Accept-Language": "en"})
 	got := chips(r.body)
@@ -87,6 +95,7 @@ func TestChosenPeopleStayChosenAfterAnError(t *testing.T) {
 }
 
 func TestTaskPersonIsASingleChoiceChip(t *testing.T) {
+	t.Parallel()
 	b, ids := patternBox(t)
 	page := getEN(b, "/tasks").body
 	if !strings.Contains(page, `type="radio" name="person"`) || strings.Contains(page, "<select name=\"person\"") {
@@ -106,6 +115,7 @@ func TestTaskPersonIsASingleChoiceChip(t *testing.T) {
 }
 
 func TestSettingsUseSegmentedControls(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	page := getEN(b, "/settings/household").body
 	for _, want := range []string{`<fieldset class="seg">`, `type="radio" name="time_format" value="24h" checked`, `type="radio" name="temperature_unit" value="c" checked`} {
@@ -116,6 +126,7 @@ func TestSettingsUseSegmentedControls(t *testing.T) {
 }
 
 func TestTaskFormShowsDependentFieldsOnlyWhenTheyApply(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	page := getEN(b, "/tasks").body
 	for _, want := range []string{`<fieldset class="seg">`, `name="repeat" value="daily" checked`, `class="when when-once"`, `class="days when-weekly"`} {
@@ -126,13 +137,14 @@ func TestTaskFormShowsDependentFieldsOnlyWhenTheyApply(t *testing.T) {
 }
 
 func TestDisplaySwitchAndChoiceCards(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	d := newScreen(b)
 	b.post("/displays", pairForm(codeOn(t, d.get("/display", "en").body)))
 	h, _ := b.db.HomeHousehold()
 	list, _ := b.db.Displays(h.ID)
 	page := getEN(b, "/displays/"+list[0].ID).body
-	if !strings.Contains(page, `role="switch" name="show_tomorrow"`) || !strings.Contains(page, "Off: today only") || !strings.Contains(page, "On: from 18:00 tomorrow appears, dimmed") {
+	if !strings.Contains(page, `role="switch" name="show_tomorrow"`) || !strings.Contains(page, "Off: today only") || !strings.Contains(page, "On: from 18:00 the first events of tomorrow, paler") {
 		t.Errorf("tomorrow block is not a switch with state text:\n%s", page)
 	}
 	if !strings.Contains(page, `<fieldset class="choice">`) || !strings.Contains(page, `type="radio" name="type" value="eink_bw"`) || !strings.Contains(page, "<small>") {
@@ -141,13 +153,14 @@ func TestDisplaySwitchAndChoiceCards(t *testing.T) {
 }
 
 func TestOptionsWithGoodDefaultsSitUnderMoreOptions(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
-	page := getEN(b, "/calendars").body
-	i := strings.Index(page, `<details class="more"`)
-	if i < 0 {
-		t.Fatalf("no More options on the add form:\n%s", page)
+	page := getEN(b, "/connections/new?service=ics").body
+	loc := regexp.MustCompile(`(?s)<details class="more"[^>]*>\s*<summary[^>]*>(?:<svg[^>]*><path[^>]*/></svg>)?More options<span class="sum">Colour automatic`).FindStringIndex(page)
+	if loc == nil {
+		t.Fatalf("no More options on the link guide:\n%s", page)
 	}
-	rest := page[i:]
+	rest := page[loc[0]:]
 	end := strings.Index(rest, "</details>")
 	for _, name := range []string{"color", "interval"} {
 		if !strings.Contains(rest[:end], `name="`+name+`"`) {
@@ -162,10 +175,11 @@ func TestOptionsWithGoodDefaultsSitUnderMoreOptions(t *testing.T) {
 }
 
 func TestEmptyStatesExplainAndOfferTheFirstAction(t *testing.T) {
+	t.Parallel()
 	b := signedInBox(t)
 	for _, path := range []string{"/tasks", "/displays", "/caldav", "/calendars"} {
 		page := getEN(b, path).body
-		if !regexp.MustCompile(`(?s)<div class="empty" data-empty>\s*<p>[^<]+</p>\s*<a class="button" href="#[a-z]+">[^<]+</a>`).MatchString(page) {
+		if !regexp.MustCompile(`(?s)<div class="empty" data-empty>\s*<p>[^<]+</p>\s*<a class="button" href="(#[a-z]+|/connections/new)">[^<]+</a>`).MatchString(page) {
 			t.Errorf("%s has no empty state with a first action:\n%s", path, page)
 		}
 	}
@@ -173,6 +187,7 @@ func TestEmptyStatesExplainAndOfferTheFirstAction(t *testing.T) {
 
 // ADR 0017: destructive actions live on the detail page, behind a confirmation.
 func TestDeletingATaskHappensOnItsDetailPageAfterConfirming(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	id := tb.newDaily(t, tb.miaID)
@@ -208,6 +223,7 @@ func TestDeletingATaskHappensOnItsDetailPageAfterConfirming(t *testing.T) {
 // disconnect. Every such action lives on the detail page the row opens, in a
 // closed disclosure, and the overview rows lead there.
 func TestNoDestructiveFormOnAnyOverview(t *testing.T) {
+	t.Parallel()
 	tb := newTaskBox(t)
 	b := tb.parent.b
 	b.feeds.set("https://example.org/a.ics", feedOf(), nil)

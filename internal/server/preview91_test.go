@@ -22,6 +22,7 @@ import (
 // replaces the hand-written design preview.
 // Run: HEJMO_WRITE_PREVIEW_91=../../docs/design/preview-91.html go test ./internal/server -run WriteDesignPreview91
 func TestWriteDesignPreview91(t *testing.T) {
+	t.Parallel()
 	out := os.Getenv("HEJMO_WRITE_PREVIEW_91")
 	if out == "" {
 		t.Skip("set HEJMO_WRITE_PREVIEW_91 to the output path to write the preview")

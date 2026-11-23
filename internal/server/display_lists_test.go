@@ -77,6 +77,7 @@ func entryDone(t *testing.T, f *familyBox, listID, entryID string) bool {
 // The way in: one "Lists" button in the header before the clock, hidden when
 // the household has no list.
 func TestFamilyViewHeaderHasAListsButtonBeforeTheClock(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	page := f.view(t, "en", f.at(14, 9, 0))
 	at := strings.Index(page, `class="chip lists-link" href="/display/lists"`)
@@ -108,6 +109,7 @@ func TestFamilyViewHeaderHasAListsButtonBeforeTheClock(t *testing.T) {
 // "Lists" opens the first list in the household's order; the display does not
 // remember a choice. Without a list there is nothing to open.
 func TestListsOpensTheFirstList(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	first := f.homeLists(t)[0]
 	f.now = f.at(14, 9, 0)
@@ -127,6 +129,7 @@ func TestListsOpensTheFirstList(t *testing.T) {
 // Everything on a display is for paired displays; a list that is gone sends the
 // display back to the family view and never leaves a bare error page.
 func TestListsPagesNeedAPairedDisplayAndAKnownList(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id, ids := f.onlyList(t, "Shopping", nil, "Milk")
 	loose := newScreen(f.box)
@@ -169,7 +172,9 @@ var (
 // The lists view: a rail of every list (symbol, full name, state in words) and
 // the chosen list, whose head stays put above the entries.
 func TestListsViewShowsTheRailAndTheChosenList(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
+	f.showRows(t) // this test is about the rows of the lists view; tiles are tested apart (ticket 166)
 	shop, _ := f.onlyList(t, "Shopping", []string{"Oat milk", "Bread"}, "Bananas", "Coffee", "Oat milk", "Bread")
 	todo, _ := listWith(t, f.box, "To-dos", nil, "Call plumber")
 	gift, _ := listWith(t, f.box, "Gift ideas", nil)
@@ -215,6 +220,7 @@ func TestListsViewShowsTheRailAndTheChosenList(t *testing.T) {
 
 // The meta line says how the list is sorted, and the order follows it.
 func TestListsViewSaysHowTheListIsSorted(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id, _ := f.onlyList(t, "Shopping", nil, "bbb", "aaa")
 	l, _ := f.db.List(f.householdID, id)
@@ -232,7 +238,9 @@ func TestListsViewSaysHowTheListIsSorted(t *testing.T) {
 // 6.2 criterion 1: given a list opened on the display, when an entry is ticked
 // off, then it is ticked off in the web interface.
 func TestTickingOnTheDisplayTicksInTheWebInterface(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
+	f.showRows(t) // this test is about the rows of the lists view; tiles are tested apart (ticket 166)
 	id, ids := f.onlyList(t, "Shopping", nil, "Bananas", "Coffee")
 	f.now = f.at(14, 9, 0)
 	back := "/display/lists/" + id
@@ -270,7 +278,9 @@ func TestTickingOnTheDisplayTicksInTheWebInterface(t *testing.T) {
 // view open within 10 seconds, as a new version of that view; the clock does
 // not move it. A deleted list sends the display back.
 func TestListsViewReceivesLiveUpdates(t *testing.T) {
+	t.Parallel()
 	l := newLiveBox(t, 10*time.Millisecond)
+	l.showRows(t) // this test is about the rows of the lists view; tiles are tested apart (ticket 166)
 	id, ids := l.onlyList(t, "Shopping", nil, "Bananas", "Coffee")
 	_, _, page := l.get("/display/lists/" + id)
 	pageVersion, events, view := versionRe.FindStringSubmatch(page), eventsURLRe.FindStringSubmatch(page), viewURLRe.FindStringSubmatch(page)
@@ -294,6 +304,17 @@ func TestListsViewReceivesLiveUpdates(t *testing.T) {
 		t.Fatalf("no new version within 10 seconds (got %q, ok=%v)", v, ok)
 	}
 	code, hdr, body := l.get(view[1])
+	// Under load other content of the view (the clock, an entry) can change
+	// between the announcement and the fetch; then the stream announces the
+	// version the view now shows. Read on until the two agree.
+	for i := 0; i < 5 && hdr.Get("X-Hejmo-View") != v; i++ {
+		next, ok := s.next(t, 2*time.Second)
+		if !ok {
+			break
+		}
+		v = next
+		code, hdr, body = l.get(view[1])
+	}
 	if code != 200 || !strings.Contains(body, `aria-label="Mark as open: Coffee"`) || strings.Contains(body, "<html") || !strings.Contains(body, "08:01") {
 		t.Fatalf("GET %s = %d, want the list markup alone with the tick and the clock:\n%s", view[1], code, body)
 	}
@@ -310,8 +331,17 @@ func TestListsViewReceivesLiveUpdates(t *testing.T) {
 	if err := l.db.DeleteList(l.householdID, id); err != nil {
 		t.Fatal(err)
 	}
-	if v, ok := s.next(t, 2*time.Second); !ok || v != "gone" {
-		t.Errorf("a deleted list announced %q (ok=%v), want gone", v, ok)
+	// A slow runner may deliver one more version for the reopened entry before
+	// the deletion shows; skip those, the list must end up gone.
+	deadline := time.Now().Add(10 * time.Second)
+	last, ok := "", false
+	for time.Now().Before(deadline) {
+		if last, ok = s.next(t, 2*time.Second); !ok || last == "gone" {
+			break
+		}
+	}
+	if !ok || last != "gone" {
+		t.Errorf("a deleted list announced %q (ok=%v), want gone", last, ok)
 	}
 }
 
@@ -319,7 +349,9 @@ func TestListsViewReceivesLiveUpdates(t *testing.T) {
 // the list. After adding: a success line naming the entry, the new row framed
 // and the field empty again.
 func TestAddingOnTheDisplayShowsTheEntryAndSaysSo(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
+	f.showRows(t) // this test is about the rows of the lists view; tiles are tested apart (ticket 166)
 	id, _ := f.onlyList(t, "Shopping", nil, "Bananas")
 	f.now = f.at(14, 9, 0)
 	r := f.display.post("/display/lists/"+id+"/entries", url.Values{"text": {"  Pasta "}})
@@ -360,6 +392,7 @@ func TestAddingOnTheDisplayShowsTheEntryAndSaysSo(t *testing.T) {
 
 // An A-to-Z list puts the new entry in the middle: its row is the framed one.
 func TestAddedEntryIsFramedInItsAlphabeticalPlace(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id, _ := f.onlyList(t, "Shopping", nil, "Apples", "Zucchini")
 	l, _ := f.db.List(f.householdID, id)
@@ -376,6 +409,7 @@ func TestAddedEntryIsFramedInItsAlphabeticalPlace(t *testing.T) {
 // Errors at the place where they happen: the field error under the add row,
 // the typed text kept.
 func TestAddingWithoutTextOrTooLongShowsTheErrorAtTheField(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id, _ := f.onlyList(t, "Shopping", nil, "Bananas")
 	f.now = f.at(14, 9, 0)
@@ -405,6 +439,7 @@ func TestAddingWithoutTextOrTooLongShowsTheErrorAtTheField(t *testing.T) {
 // Delete the ticked-off entries from the display: no parent PIN (ADR 0015); the
 // number is named in the summary, the explanation and the button.
 func TestDeletingTickedOffEntriesOnTheDisplay(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id, _ := f.onlyList(t, "Shopping", []string{"Oat milk", "Bread"}, "Bananas", "Oat milk", "Bread")
 	body := f.listsPage(t, "en", "/display/lists/"+id).body
@@ -437,6 +472,7 @@ func TestDeletingTickedOffEntriesOnTheDisplay(t *testing.T) {
 // Empty list: one sentence on what to do. All ticked off: a calm line with a
 // tick, then the ticked-off group and the delete action.
 func TestEmptyAndFinishedListsHaveTheirOwnLine(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	empty, _ := f.onlyList(t, "Gift ideas", nil)
 	body := f.listsPage(t, "en", "/display/lists/"+empty).body
@@ -454,7 +490,9 @@ func TestEmptyAndFinishedListsHaveTheirOwnLine(t *testing.T) {
 // 6.2 criterion 3: the list view returns to the family view after 30 seconds
 // without interaction (display.js counts; typing counts as interaction).
 func TestListsViewReturnsToTheFamilyViewAfter30Seconds(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
+	f.showRows(t) // this test is about the rows of the lists view; tiles are tested apart (ticket 166)
 	id, _ := f.onlyList(t, "Shopping", nil, "Bananas")
 	body := f.listsPage(t, "en", "/display/lists/"+id).body
 	for _, want := range []string{`data-return-seconds="30"`, `data-return-url="/display"`, `data-view-url="/display/lists/` + id + `/view"`,
@@ -477,6 +515,7 @@ func TestListsViewReturnsToTheFamilyViewAfter30Seconds(t *testing.T) {
 
 // The page is German on a German box.
 func TestListsViewIsGerman(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id, _ := f.onlyList(t, "Einkauf", []string{"Brot"}, "Milch", "Brot")
 	body := f.listsPage(t, "de", "/display/lists/"+id).body
@@ -494,6 +533,7 @@ func TestListsViewIsGerman(t *testing.T) {
 
 // The styles are the ones of the approved preview, word for word.
 func TestListsDisplayStylesAreThePreviews(t *testing.T) {
+	t.Parallel()
 	preview, err := os.ReadFile("../../docs/design/preview-33.html")
 	if err != nil {
 		t.Fatal(err)
@@ -519,6 +559,7 @@ func TestListsDisplayStylesAreThePreviews(t *testing.T) {
 
 // ADR 0016 names the way in: a Lists button in the header, no third footer tile.
 func TestADR0016NamesTheListsButton(t *testing.T) {
+	t.Parallel()
 	b, err := os.ReadFile("../../docs/adr/0016-family-view-header-and-footer.md")
 	if err != nil {
 		t.Fatal(err)
@@ -531,6 +572,7 @@ func TestADR0016NamesTheListsButton(t *testing.T) {
 // The display's script adds in the background (partial=1): the box answers with
 // the new view markup alone (200), or with the view and the field error (422).
 func TestAddingInTheBackgroundAnswersWithTheViewAlone(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id, _ := f.onlyList(t, "Shopping", nil, "Bananas")
 	f.now = f.at(14, 9, 0)
@@ -542,5 +584,14 @@ func TestAddingInTheBackgroundAnswersWithTheViewAlone(t *testing.T) {
 	bad := f.display.postLang("/display/lists/"+id+"/entries", url.Values{"text": {" "}, "partial": {"1"}}, "en")
 	if bad.status != http.StatusUnprocessableEntity || strings.Contains(bad.body, "<html") || !strings.Contains(bad.body, "Type the entry first, then tap Add.") {
 		t.Errorf("partial add without text = %d:\n%s", bad.status, bad.body)
+	}
+}
+
+// showRows puts the display on the list view of the #33 rows; a display shows
+// tiles until it is switched (ticket 166).
+func (f *familyBox) showRows(t *testing.T) {
+	t.Helper()
+	if err := f.db.SetDisplayListView(f.householdID, f.displayID(t), list.Rows); err != nil {
+		t.Fatal(err)
 	}
 }

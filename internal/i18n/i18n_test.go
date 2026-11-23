@@ -85,27 +85,80 @@ func TestFormatFillsParameters(t *testing.T) {
 // ADR 0017: German texts address the user as "du". "eure"/"euer" stay only
 // where the whole family is meant; every such text is listed here with its key.
 var wholeFamilyTexts = map[string]bool{
-	"displays.none":                  true, // "euren Tag": the family's day on the wall
-	"connect.legend":                 true, // "eure Kalender": the family's calendars
-	"connect.lead":                   true, // "eure Termine": the family's events, kept by several people
-	"connections.empty":              true, // "eure Termine": the family's events on the box
-	"setup.welcome.lead":             true, // "eure Box": the family's box
-	"setup.welcome.step.2":           true, // "Euer Ort": the family's town
-	"setup.https.way.public.hint":    true, // "eure Box"
-	"setup.https.public.lan_ip.hint": true, // "eure Geräte"
-	"setup.https.rebind.why":         true, // "bei euch zu Hause"
-	"setup.totp.lead":                true, // "eure Box"
-	"firststeps.lead":                true, // "eurem Familienleben"
-	"firststeps.settled":             true, // "eure Familie"
-	"firststeps.close.hint":          true, // "euren Tag"
-	"mcp.intro.off":                  true, // "eurer Hejmo-Box": the family's box
-	"mcp.intro.on":                   true, // "eurer Hejmo-Box"
-	"mcp.switch.off":                 true, // "eure Daten": the family's data
-	"mcp.area.events.desc":           true, // "eure anderen Kalender": the family's calendars
-	"mcp.explain.what":               true, // "eure Hejmo-Box"
-	"mcp.explain.know3":              true, // "eurem Heimnetz": the family's home network
-	"flash.mcp_off":                  true, // "eure Daten"
-	"firststeps.display.text":        true, // "euren Tag"
+	"displays.none":                            true, // "euren Tag": the family's day on the wall
+	"connect.legend":                           true, // "eure Kalender": the family's calendars
+	"connect.lead":                             true, // "eure Termine": the family's events, kept by several people
+	"setup.welcome.lead":                       true, // "eure Box": the family's box
+	"setup.welcome.step.2":                     true, // "Euer Ort": the family's town
+	"setup.https.way.public.cost":              true, // "eure Box"
+	"setup.https.way.domain.cost":              true, // "eure Box"
+	"setup.https.way.own.means":                true, // "bei euch zu Hause"
+	"setup.https.way.domain.means":             true, // "eurer Domain": the family's domain
+	"setup.https.public.lan_ip.hint":           true, // "eure Geräte"
+	"setup.https.rebind.why":                   true, // "bei euch zu Hause"
+	"setup.totp.lead":                          true, // "eure Box"
+	"firststeps.lead":                          true, // "eurem Familienleben"
+	"firststeps.settled":                       true, // "eure Familie"
+	"firststeps.close.hint":                    true, // "euren Tag"
+	"mcp.intro.off":                            true, // "eurer Hejmo-Box": the family's box
+	"mcp.intro.on":                             true, // "eurer Hejmo-Box"
+	"mcp.switch.off":                           true, // "eure Daten": the family's data
+	"mcp.area.events.desc":                     true, // "eure anderen Kalender": the family's calendars
+	"mcp.explain.what":                         true, // "eure Hejmo-Box"
+	"mcp.explain.know3":                        true, // "eurem Heimnetz": the family's home network
+	"flash.mcp_off":                            true, // "eure Daten"
+	"firststeps.display.text":                  true, // "euren Tag"
+	"setup.https.domain.cloudflare.sub":        true, // "eure Domain": the family's domain
+	"setup.https.domain.legend":                true, // "eure Domain": the family's domain
+	"setup.https.way.domain":                   true, // "eure Domain": the family's domain
+	"setup.https.error.name_taken":             true, // "eure Domain": the family's domain
+	"setup.https.domain.name.text":             true, // "eure Domain": the family's domain
+	"setup.https.domain.hetzner.token.text":    true, // "eure Domain": the family's domain
+	"setup.https.public.failed.hetzner":        true, // "eure Domain": the family's domain
+	"setup.https.domain.other":                 true, // "eure Domain": the family's domain
+	"setup.https.public.failed.cloudflare":     true, // "eure Domain": the family's domain
+	"setup.https.domain.lead":                  true, // "eure Domain": the family's domain
+	"setup.https.domain.name.hint":             true, // "eure Domain": the family's domain
+	"setup.https.domain.cloudflare.token.text": true, // "eure Domain": the family's domain
+	"setup.https.domain.why.hetzner.text":      true, // "eure Domain": the family's domain
+	"food.why.title":                           true, // "eurer Box": the family's box (preview 163)
+	"theme.auto.parent":                        true, // "eures Zuhauses": the family's home
+	"theme.auto.child":                         true, // "eures Zuhauses"
+	"theme.where.phone":                        true, // "behalten ihr Design": everyone else
+	"theme.where.browser":                      true, // "behalten ihr Design"
+	"art.sug.diet":                             true, // "bei euch": the family
+	"art.fits.nobody":                          true,
+	"art.fits.all":                             true,
+	"artf.kind.hint":                           true,
+	"lib.own.empty":                            true, // "was ihr oft kauft", "eure Lieblingsmarke": the family
+	"lists.set.hide.none":                      true,
+	"artf.url.hint":                            true, // "eurer Box": the family's box
+	"art.copy.hint":                            true, // "eure Marke"
+	"art.hide.off.diet":                        true,
+	"artf.err.url.private":                     true, // "euer eigenes Netz": the family's network
+	"lists.set.empty":                          true,
+	"lib.lead":                                 true, // "wenn ihr etwas auf eine Liste setzt"
+	"art.units.hint":                           true, // "bis ihr eine andere Einheit nehmt"
+	"saver.hint.title":                         true, // "eure Fotos": the family's photos (preview 178)
+	"displays.saver.on":                        true, // "euren Alben": the family's albums
+	"photos.full.hint":                         true, // "ihr nicht mehr braucht": the family's photos
+	"photos.up.wait":                           true, // "Wartet": the state of a file, not an imperative
+	"google.s.warn.text":                       true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.replace.text_many":                 true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.s1.hint":                           true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.reg.lead":                          true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.why.text":                          true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.s.warn.title":                      true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.s4.hint":                           true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.error.client_rejected":             true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.notice.seven":                      true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.fact.app.own":                      true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.replace.text_none":                 true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.signin.lead":                       true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"google.replace.text_one_a":                true, // "eure App-Registrierung", "ihr": the family that owns the app registration at Google (preview 18)
+	"connect.outlook.appid":                    true, // "eurer eigenen App-Registrierung": the family's
+	"connect.outlook.appid.hint":               true, // "wenn ihr ... eine eigene angelegt habt": the family
+	"outlook.fail.consent.ask":                 true, // "Schick ihr": the IT
 }
 
 func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {
@@ -123,8 +176,8 @@ func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {
 		if wholeFamilyTexts[key] {
 			continue
 		}
-		// "ihr eigenes Zertifikat" refers to the box, not to the reader.
-		clean := strings.ReplaceAll(text, "ihr eigenes", "")
+		// "ihr eigenes Zertifikat" and "ihr Zertifikat" (the certificate of the box) refer to the box, not to the reader.
+		clean := strings.NewReplacer("ihr eigenes", "", "ihr Zertifikat", "").Replace(text)
 		if m := plural.FindString(clean); m != "" {
 			t.Errorf("de %s uses %q instead of du: %s", key, m, text)
 		}
@@ -132,6 +185,16 @@ func TestGermanLocaleAddressesTheUserAsDu(t *testing.T) {
 	for key := range wholeFamilyTexts {
 		if _, ok := cat[key]; !ok {
 			t.Errorf("allow-list names unknown key %s", key)
+		}
+	}
+}
+
+// The 12-hour example keeps its space non-breaking, so "2:30 PM" never breaks across lines.
+func TestTwelveHourExampleDoesNotBreak(t *testing.T) {
+	b := i18n.MustLoad()
+	for _, lang := range []string{"de", "en"} {
+		if got := b.T(lang, "settings.time_format.12h"); !strings.Contains(got, "(2:30 PM)") {
+			t.Errorf("%s settings.time_format.12h = %q, want 2:30 PM with a non-breaking space", lang, got)
 		}
 	}
 }
@@ -151,7 +214,7 @@ func TestConnectTextsExistInBothLanguages(t *testing.T) {
 		"connect.caldav.name", "connect.caldav.sub", "connect.caldav.heading", "connect.caldav.why", "connect.caldav.step1.title", "connect.caldav.step1.text",
 		"connect.caldav.step1.hint", "connect.caldav.help.url", "connect.caldav.help.label", "connect.caldav.step2.title", "connect.caldav.step2.text", "connect.caldav.step3.title",
 		"connect.caldav.url", "connect.caldav.url.hint", "connect.caldav.username", "connect.caldav.password", "connect.caldav.more", "connect.caldav.more.sum", "connect.caldav.single", "connect.caldav.submit",
-		"connections.title", "connections.empty", "connections.connect", "connections.connect.more",
+		"connections.title", "connections.about", "connections.none", "connections.connect", "calendars.empty",
 		"connections.success.icloud.none", "connections.success.icloud.one", "connections.success.icloud.many",
 		"connections.success.caldav.none", "connections.success.caldav.one", "connections.success.caldav.many",
 		"connections.error.login", "connections.error.login_icloud", "connections.error.login_caldav", "connections.error.server", "connections.error.server_icloud", "connections.error.server_saved",

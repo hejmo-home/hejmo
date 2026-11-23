@@ -2,6 +2,7 @@ package server
 
 import (
 	"errors"
+	"html/template"
 	"net/http"
 	"net/url"
 	"slices"
@@ -12,6 +13,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/caldavclient"
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -91,13 +93,28 @@ type wasteRow struct {
 	Waste    bool
 }
 
+// writeRow is a CalDAV calendar of a connection with its two-way / read-only switch.
+type writeRow struct {
+	ID, Name string
+	TwoWay   bool
+	// Locked: Google shares the calendar for viewing only, so it can never be two-way.
+	Locked bool
+}
+
 // selectionCalendar is one calendar on the choice page with what the parent
 // entered for it, or what is stored, or the defaults. On means the switch is on.
 type selectionCalendar struct {
 	URL, Name, Color string
-	LastSync         string // when it last synced, in words; empty for a calendar that is not synced
-	Synced, On       bool
-	People, Groups   []string
+	// SourceName is the name at the source (iCloud, the CalDAV server): shown
+	// in the head, never editable. Empty when the server was not asked.
+	SourceName string
+	Hint       template.HTML // "Only in Hejmo. ..." under the field; empty without a SourceName
+	LastSync   string        // when it last synced, in words; empty for a calendar that is not synced
+	// Google only: where the calendar comes from ("Calendar in Google", "Shared by …") and what the box may
+	// do with it, in words, with Access ("read_write" or "read_only") for the tests and the API.
+	Source, AccessLabel, AccessText, Access string
+	Synced, On                              bool
+	People, Groups                          []string
 }
 
 // selectionCalendars shows the discovered calendars with the values of a
@@ -112,7 +129,10 @@ func selectionCalendars(found []discoveredJSON, form url.Values, synced []store.
 	colors := nextColors(taken, len(found))
 	out := make([]selectionCalendar, 0, len(found))
 	for i, f := range found {
-		c := selectionCalendar{URL: f.URL, Name: f.Name, Color: colors[i]}
+		c := selectionCalendar{URL: f.URL, Name: f.Name, Color: colors[i], Access: f.Access}
+		if !f.fromStore {
+			c.SourceName = f.Name
+		}
 		if stored, ok := byKey[caldavclient.AddressKey(f.URL)]; ok {
 			c.Synced, c.On, c.Name, c.Color = true, true, stored.Name, stored.Color
 			c.People, c.Groups = stored.Audience.People, stored.Audience.Groups
@@ -194,7 +214,24 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 		lastFact,
 		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: p.day(conn.CreatedAt)},
 	}
+	google := conn.Kind == "google"
+	switch conn.Kind {
+	case "google":
+		var gerr error
+		if facts, gerr = s.googleFacts(r, p, conn, lastFact); gerr != nil {
+			s.fail(w, "google app", gerr)
+			return
+		}
+	case "outlook":
+		facts = s.outlookFacts(r, p, conn, last)
+	}
 	shown := selectionCalendars(found, form, mine, taken)
+	for i := range shown {
+		shown[i].Hint = s.nameHint(r, conn, shown[i].SourceName)
+		if google {
+			s.googleCard(r, &shown[i], found)
+		}
+	}
 	for i, c := range shown {
 		for _, m := range mine {
 			if c.Synced && caldavclient.AddressKey(m.URL) == caldavclient.AddressKey(c.URL) {
@@ -208,14 +245,38 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 			wasteRows = append(wasteRows, wasteRow{ID: m.ID, Name: m.Name, Waste: m.Waste})
 		}
 	}
+	var writeRows []writeRow
+	for _, m := range mine {
+		if m.Kind == "caldav" || m.Kind == "google" || (m.Kind == "outlook" && !m.SourceLocked) {
+			writeRows = append(writeRows, writeRow{ID: m.ID, Name: m.Name, TwoWay: !m.ReadOnly, Locked: m.SourceLocked})
+		}
+	}
 	data := map[string]any{
-		"Waste":  wasteRows,
-		"Person": p.person, "Connection": newConnectionView(conn), "Title": conn.Username,
+		"Waste":     wasteRows,
+		"WriteBack": writeRows,
+		"Person":    p.person, "Connection": newConnectionView(conn), "Title": conn.Username,
 		"Found": shown, "People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
 		"DefaultInterval": interval, "SyncStale": s.syncStale(p.household.ID),
 		"Error": errKey, "ErrorField": errField, "ErrorCalendar": errCalendar,
-		"Facts": facts, "Names": names, "ICloud": conn.URL == iCloudServer,
+		"Facts": facts, "Names": names, "ICloud": conn.URL == iCloudServer, "Host": connectionHost(conn), "SourceKicker": s.sourceKicker(r, conn),
 		"LoginOpen": !refusedAt.IsZero() || errField == "password",
+		"Google":    google, "GApp": googleAppView{}, "ConnID": conn.ID,
+	}
+	if google {
+		app, aerr := s.googleAppView(r, p)
+		if aerr != nil {
+			s.fail(w, "google app", aerr)
+			return
+		}
+		data["GApp"], data["GAccounts"], data["LoginOpen"] = app, app.Accounts, true
+		data["GNotices"] = s.googleNoticesOf(r, p, conn.ID)
+		data["Explain"] = s.say(r, i18n.Msg("google.remove.explain"))
+		googleData(data)
+	}
+	if conn.Kind == "outlook" {
+		data["Outlook"], data["Cards"], data["Gone"] = true, s.outlookCards(r, found, mine), outlookGoneOf(mine)
+		data["Refused"], data["LoginOpen"] = nil, false
+		refusedAt = time.Time{}
 	}
 	if !refusedAt.IsZero() {
 		data["Refused"] = s.say(r, i18n.Msg("connections.error.refused", "when", p.when(refusedAt)))
@@ -229,6 +290,10 @@ func (s *server) renderSelection(w http.ResponseWriter, r *http.Request, p princ
 func (s *server) handleConnect(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
+		return
+	}
+	if !s.gate.Allowed(outbound.Calendars) { // nothing is asked of the server: back to the page that says why
+		http.Redirect(w, r, "/connections/new", http.StatusSeeOther)
 		return
 	}
 	_ = r.ParseForm()
@@ -274,20 +339,61 @@ func connectedMessage(provider string, n int) i18n.Message {
 	return i18n.Msg(key+".many", "n", strconv.Itoa(n))
 }
 
-// renderConnectNew shows the connect page with the guide of one service
-// checked. Without a service, or with an unknown one, iCloud is checked.
+// renderConnectNew shows the choice page "Connect a calendar": one card per
+// way (calendarWays) and below them the guide of the chosen one. service is the
+// way chosen; none (or an unknown or locked one) leaves no card chosen unless
+// only one way is left open. Errors belong to the guide that was submitted.
 func (s *server) renderConnectNew(w http.ResponseWriter, r *http.Request, p principal, status int, service string, extra map[string]any) {
-	if service != "caldav" {
-		service = "icloud"
+	_, _, peopleChoices, groupChoices, err := s.audienceMaps(p.household.ID)
+	if err != nil {
+		s.fail(w, "people", err)
+		return
 	}
-	data := map[string]any{
+	cards := s.wayCards(r, service)
+	service = ""
+	for _, c := range cards {
+		if c.Checked {
+			service = c.ID
+		}
+	}
+	notes := s.connectNotes(r)
+	taken, err := s.colorsInUse(p)
+	if err != nil {
+		s.fail(w, "synced calendars", err)
+		return
+	}
+	app, err := s.googleAppView(r, p)
+	if err != nil {
+		s.fail(w, "google app", err)
+		return
+	}
+	data := googleData(map[string]any{
 		"Person": p.person, "Service": service, "SyncStale": s.syncStale(p.household.ID),
+		"Ways": cards, "Notes": notes, "CanAdd": s.canAddCalendar(),
 		"Error": "", "ErrorField": "", "ConnURL": "", "ConnUsername": "", "ConnSingle": false,
-	}
+		"GApp": app, "GClientID": "", "GGuide": false, "GReplace": false,
+		"ICSError": "", "ICSErrorField": "", "ICSErrorFields": map[string]string(nil), "ICSName": "", "ICSURL": "", "ICSColor": nextColors(taken, 1)[0], "ICSInterval": defaultSyncMinutes,
+		"ICSPeople": []string(nil), "ICSGroups": []string(nil),
+		"People": peopleChoices, "Groups": groupChoices, "Intervals": syncIntervals,
+	})
+	s.outlookGuide(data, "")
 	for k, v := range extra {
 		data[k] = v
 	}
 	s.render(w, r, status, "connection_new.html", data)
+}
+
+// colorsInUse lists the colours of the household's synced calendars.
+func (s *server) colorsInUse(p principal) ([]string, error) {
+	all, err := s.db.SyncedCalendars(p.household.ID)
+	if err != nil {
+		return nil, err
+	}
+	var taken []string
+	for _, c := range all {
+		taken = append(taken, c.Color)
+	}
+	return taken, nil
 }
 
 func (s *server) handleConnectNew(w http.ResponseWriter, r *http.Request) {
@@ -309,6 +415,21 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 		s.fail(w, "connection", err)
 		return
 	}
+	if !s.gate.Allowed(outbound.Calendars) { // paused: what the box has, nothing from the server
+		s.renderPausedConnection(w, r, p, conn)
+		return
+	}
+	if conn.Kind == "outlook" && !conn.ReauthSince.IsZero() {
+		// Microsoft ended the sign-in: asking would only fail. The page shows what
+		// the box has, says so in its facts, and offers the new sign-in.
+		stored, serr := s.storedCalendars(p, conn)
+		if serr != nil {
+			s.fail(w, "synced calendars", serr)
+			return
+		}
+		s.renderSelection(w, r, p, http.StatusOK, conn, stored, nil, "", "", "")
+		return
+	}
 	found, err := s.rediscover(r.Context(), p, conn)
 	var bad *inputError
 	switch {
@@ -322,10 +443,10 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 			return
 		}
 		errKey, status := connectionErrorKey(bad, ""), http.StatusBadGateway
-		if bad.Field == "login" {
+		if bad.Field == "login" || bad.Field == "reauth" || bad.Field == "signin" {
 			status = http.StatusOK
-			if refused, _ := s.refusedSince(p, conn); refused {
-				errKey = "" // the line about the refused login says it
+			if refused, _ := s.refusedSince(p, conn); refused || bad.Field == "signin" {
+				errKey = "" // the line about the refused login, or the notice to sign in again, says it
 			}
 		}
 		s.renderSelection(w, r, p, status, conn, stored, nil, errKey, "", "")
@@ -333,6 +454,16 @@ func (s *server) handleConnectionPage(w http.ResponseWriter, r *http.Request) {
 	case err != nil:
 		s.fail(w, "discover", err)
 		return
+	}
+	if conn.Kind == "outlook" {
+		switch r.URL.Query().Get("connected") {
+		case "new":
+			s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "", connectedMessage("outlook", len(found)))
+			return
+		case "again":
+			s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "", i18n.Msg("connections.success.outlook_again"))
+			return
+		}
 	}
 	s.renderSelection(w, r, p, http.StatusOK, conn, found, nil, "", "", "")
 }
@@ -357,7 +488,14 @@ func (s *server) storedCalendars(p principal, conn store.Connection) ([]discover
 	}
 	var out []discoveredJSON
 	for _, c := range calendarsOf(all, conn.ID) {
-		out = append(out, discoveredJSON{URL: c.URL, Name: c.Name, Added: true, CalendarID: c.ID})
+		d := discoveredJSON{URL: c.URL, Name: c.Name, Added: true, CalendarID: c.ID, fromStore: true}
+		if conn.Kind == "google" {
+			d.Access, d.Reason = "read_write", "writable"
+			if c.SourceLocked {
+				d.Access, d.Reason = "read_only", "shared"
+			}
+		}
+		out = append(out, d)
 	}
 	return out, nil
 }
@@ -487,6 +625,8 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 		if derr != nil {
 			// Without calendars the error cannot sit at one; show it generally.
 			found, errField = nil, ""
+		} else if errField == "calendar" && errCalendar == "" && len(found) > 0 {
+			errCalendar = found[0].URL // nothing is switched on: the first card says so
 		} else if errField != "" && !shownIn(found, errCalendar) {
 			// An unknown calendar shows no field, so the message goes in the
 			// general error line.
@@ -495,7 +635,7 @@ func (s *server) handleConnectionCalendars(w http.ResponseWriter, r *http.Reques
 		s.renderSelection(w, r, p, http.StatusUnprocessableEntity, conn, found, r.PostForm, errKey, errField, errCalendar)
 	}
 	if len(chosen) == 0 && len(keep) == 0 && len(off) == 0 {
-		show("connections.error.none_ticked", "", "")
+		show("connections.error.none_ticked", "calendar", "") // at the first card's switch
 		return
 	}
 	check := func(err error, address string) bool {
@@ -626,4 +766,61 @@ func (s *server) handleConnectionDelete(w http.ResponseWriter, r *http.Request) 
 		return
 	}
 	s.redirectSavedNamed(w, r, "/calendars", "flash.connection_removed", conn.Username)
+}
+
+// pausedCalendar is a calendar of a paused connection, as the page lists it.
+type pausedCalendar struct{ Name, Line string }
+
+// renderPausedConnection is the page of a connection while its connection to the
+// outside is off (ticket 201, Q143): the facts, the calendars already on the
+// box with their event counts, and nothing that needs the server.
+func (s *server) renderPausedConnection(w http.ResponseWriter, r *http.Request, p principal, conn store.Connection) {
+	all, err := s.db.SyncedCalendars(p.household.ID)
+	if err != nil {
+		s.fail(w, "synced calendars", err)
+		return
+	}
+	chips, groups, _, _, err := s.audienceMaps(p.household.ID)
+	if err != nil {
+		s.fail(w, "people", err)
+		return
+	}
+	var last time.Time
+	var cals []pausedCalendar
+	for _, c := range calendarsOf(all, conn.ID) {
+		if c.Sync.LastSuccess.After(last) {
+			last = c.Sync.LastSuccess
+		}
+		people, groupNames, whole := audienceOf(c.Audience, chips, groups)
+		who := s.say(r, i18n.Msg("chips.whole_family"))
+		if !whole {
+			var n []string
+			for _, pc := range people {
+				n = append(n, pc.Name)
+			}
+			who = strings.Join(append(n, groupNames...), ", ")
+		}
+		line := s.say(r, i18n.Msg("outside.onbox.line", "who", who, "n", strconv.Itoa(c.Sync.EventCount)))
+		if !c.Sync.LastSuccess.IsZero() {
+			line += " " + s.say(r, i18n.Msg("outside.onbox.until", "date", p.day(c.Sync.LastSuccess)))
+		}
+		cals = append(cals, pausedCalendar{Name: c.Name, Line: line})
+	}
+	facts := []factView{
+		{Label: s.say(r, i18n.Msg("connections.fact.service")), Value: s.serviceName(r, conn)},
+		{Label: s.say(r, i18n.Msg("outside.fact.sync")), Flag: s.pausedFlag(r, p, outbound.Calendars, time.Time{})},
+		{Label: s.say(r, i18n.Msg("outside.fact.last")), Value: s.syncLastPlain(r, p, last)},
+		{Label: s.say(r, i18n.Msg("connections.fact.since")), Value: p.day(conn.CreatedAt)},
+	}
+	s.render(w, r, http.StatusOK, "connection_paused.html", map[string]any{
+		"Connection": newConnectionView(conn), "Title": conn.Username, "Facts": facts, "Calendars": cals,
+		"OutNote": s.noteFor(r, outbound.Calendars, "outside.note.connection"),
+	})
+}
+
+func (s *server) syncLastPlain(r *http.Request, p principal, t time.Time) string {
+	if t.IsZero() {
+		return s.say(r, i18n.Msg("sync.never"))
+	}
+	return p.dateTimeSeconds(t)
 }

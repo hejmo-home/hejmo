@@ -80,3 +80,13 @@ func (s Schedule) Morning(t time.Time) time.Time {
 	}
 	return day
 }
+
+// Since returns the latest start of the window at or before t (in t's zone):
+// when quiet mode began that is on at t. It is only meaningful while Active(t).
+func (s Schedule) Since(t time.Time) time.Time {
+	day := time.Date(t.Year(), t.Month(), t.Day(), 0, 0, 0, 0, t.Location())
+	if minuteOfDay(t) < s.From {
+		day = day.AddDate(0, 0, -1)
+	}
+	return time.Date(day.Year(), day.Month(), day.Day(), s.From/60, s.From%60, 0, 0, t.Location())
+}

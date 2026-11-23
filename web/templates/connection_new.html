@@ -1,19 +1,22 @@
 {{template "head" (dict "Lang" .Lang "Title" (t "connect.title") "Frame" .Frame)}}
-  {{template "backLink" (dict "Href" "/calendars" "Text" (t "calendars.back"))}}
-  {{/* The guide of the service the card chooses; an error belongs to the guide that was submitted. */}}
-  {{$ic := dict "ErrorField" "" "Error" ""}}{{$cd := dict "ErrorField" "" "Error" ""}}
-  {{if eq .Service "icloud"}}{{$ic = dict "ErrorField" .ErrorField "Error" .Error}}{{else}}{{$cd = dict "ErrorField" .ErrorField "Error" .Error}}{{end}}
+  {{/* The guide of the way the card chooses; an error belongs to the guide that was submitted. */}}
+  {{$ic := dict "ErrorField" "" "Error" ""}}{{$cd := dict "ErrorField" "" "Error" ""}}{{$ol := dict "ErrorField" "" "Error" ""}}{{$ics := dict "ErrorField" .ICSErrorField "Error" .ICSError "ErrorFields" .ICSErrorFields}}
+  {{if eq .Service "icloud"}}{{$ic = dict "ErrorField" .ErrorField "Error" .Error}}{{else if eq .Service "outlook"}}{{$ol = dict "ErrorField" .ErrorField "Error" .Error}}{{else if eq .Service "caldav"}}{{$cd = dict "ErrorField" .ErrorField "Error" .Error}}{{end}}
   {{$icUser := ""}}{{$cdUser := ""}}{{$cdURL := ""}}
-  {{if eq .Service "icloud"}}{{$icUser = .ConnUsername}}{{else}}{{$cdUser = .ConnUsername}}{{$cdURL = .ConnURL}}{{end}}
+  {{if eq .Service "icloud"}}{{$icUser = .ConnUsername}}{{else if eq .Service "caldav"}}{{$cdUser = .ConnUsername}}{{$cdURL = .ConnURL}}{{end}}
   <h1>{{t "connect.title"}}</h1>
-  <p class="lead">{{t "connect.lead"}}</p>
+  {{range .Notes}}{{template "offlineNote" .}}
+  {{end}}{{if not .CanAdd}}<div class="empty"><p>{{t "outside.empty.athome"}}</p><a class="button secondary" href="/caldav">{{t "outside.empty.apps"}}</a></div>
+  {{else}}{{if not .Service}}{{template "error" .}}{{end}}<p class="lead">{{t "connect.lead"}}</p>
   <div class="connect">
     <fieldset class="choice">
       <legend>{{t "connect.legend"}}</legend>
-      <label><input type="radio" name="service" value="icloud"{{if eq .Service "icloud"}} checked{{end}}><b>{{t "connect.icloud.name"}}</b><small>{{t "connect.icloud.sub"}}</small></label>
-      <label><input type="radio" name="service" value="caldav"{{if eq .Service "caldav"}} checked{{end}}><b>{{t "connect.caldav.name"}}</b><small>{{t "connect.caldav.sub"}}</small></label>
+      {{range .Ways}}<label{{if .Locked}} class="locked"{{end}}><input type="radio" name="service" value="{{.ID}}"{{if .Checked}} checked{{end}}{{if .Locked}} disabled{{end}}><b>{{.Name}}</b><small>{{.Sub}}</small>{{if .Locked}}<small class="lock"><svg class="icon" width="16" height="16" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg>{{.Lock}}</small>{{end}}</label>
+      {{end}}
     </fieldset>
+    <p class="hint pick-first">{{t "connect.pickfirst"}}</p>
 
+    {{range .Ways}}{{if .Locked}}{{else if eq .ID "icloud"}}
     <form class="guide" data-service="icloud" method="post" action="/connections" autocomplete="off">
       <input type="hidden" name="provider" value="icloud">
       <h2>{{t "connect.icloud.heading"}}</h2>
@@ -37,7 +40,82 @@
       <div class="actions"><button class="button" type="submit">{{t "connect.icloud.submit"}}</button></div>
       <p class="done-hint">{{t "connect.done"}}</p>
     </form>
-
+    {{else if eq .ID "outlook"}}
+    <form class="guide" data-service="outlook" method="post" action="/connections/outlook" autocomplete="off">
+      <h2>{{t "connect.outlook.heading"}}</h2>
+      {{template "error" $ol}}
+      {{if and (eq $.Service "outlook") (not $.OutlookConfigured) (not $ol.Error)}}<p class="error" role="alert">{{t "outlook.error.no_app"}}</p>{{end}}
+      <p class="why"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>{{t "outlook.why.title"}}</b>{{t "connect.outlook.why"}}</span></p>
+      <ol class="howto">
+        <li><div class="s"><b>{{t "connect.outlook.step1.title"}}</b><p>{{t "connect.outlook.step1.text"}}</p></div></li>
+        <li><div class="s"><b>{{t "connect.outlook.step2.title"}}</b><p>{{rich (t "connect.outlook.step2.text")}}</p></div></li>
+        <li><div class="s"><b>{{t "connect.outlook.step3.title"}}</b><p>{{t "connect.outlook.step3.text"}}</p></div></li>
+      </ol>
+      {{template "moreOpen" (dict "Label" (t "connect.outlook.work.summary") "Open" false)}}
+        <p>{{t "connect.outlook.work.text"}}</p>
+      {{template "moreClose"}}
+      {{template "moreOpen" (dict "Label" (t "connect.outlook.more") "Summary" (or (and $.OutlookApp (t "connect.outlook.more.sum_own")) (and $.OutlookConfigured (t "connect.outlook.more.sum_project")) (t "connect.outlook.more.sum_none")) "Open" (or $.OutlookOpen (not $.OutlookConfigured)))}}
+        {{template "field" (dict "Root" $ol "Name" "client_id" "Label" (t "connect.outlook.appid") "Value" $.OutlookApp "Autocapitalize" "none" "Spellcheck" "false" "Hint" (t "connect.outlook.appid.hint"))}}
+        <a class="button secondary out" href="{{t "connect.outlook.help.url"}}" target="_blank" rel="noopener">{{t "connect.outlook.help.label"}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg><span class="vh">{{t "connect.newtab.sr"}}</span></a>
+      {{template "moreClose"}}
+      <div class="actions"><button class="button" type="submit">{{t "connect.outlook.submit"}}</button></div>
+      <p class="done-hint">{{t "connect.done"}}</p>
+    </form>
+    {{else if eq .ID "google"}}
+    {{/* Google (ticket 18, preview-18): the family's own OAuth client, then the sign-in on its own page. */}}
+    {{$g := dict "ErrorField" "" "Error" ""}}{{if eq $.Service "google"}}{{$g = dict "ErrorField" $.ErrorField "Error" $.Error "ErrorText" $.ErrorText}}{{end}}
+    {{$showGuide := or (not $.GApp.Registered) $.GGuide}}
+    <form class="guide" data-service="google" method="post" action="/connections/google/app" autocomplete="off">
+      <h2>{{t "google.heading"}}</h2>
+      {{if $showGuide}}
+      <p class="effort">{{t "google.effort"}}</p>
+      <p class="why"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="11" width="14" height="9" rx="2"/><path d="M8 11V8a4 4 0 0 1 8 0v3"/></svg><span><b>{{t "google.why.title"}}</b>{{t "google.why.text"}}</span></p>
+      <ol class="howto">
+        <li><div class="s"><b>{{t "google.s1.title"}}</b><p>{{rich (t "google.s1.text")}}</p>
+          {{template "gOut" (dict "Href" $.GConsole.create)}}
+          <p class="hint">{{rich (t "google.s1.hint")}}</p></div></li>
+        <li><div class="s"><b>{{t "google.s2.title"}}</b><p>{{rich (t "google.s2.text")}}</p>
+          <div class="outs">{{template "gOut" (dict "Href" $.GConsole.caldav "Label" (t "google.s2.caldav"))}}{{template "gOut" (dict "Href" $.GConsole.calendar "Label" (t "google.s2.calendar"))}}</div></div></li>
+        <li><div class="s"><b>{{t "google.s3.title"}}</b><p>{{rich (t "google.s3.text")}}</p>
+          {{template "gOut" (dict "Href" $.GConsole.overview)}}</div></li>
+        <li><div class="s"><b>{{t "google.s4.title"}}</b><p>{{rich (t "google.s4.text")}}</p>
+          {{template "gVals" (list (dict "Label" (t "google.s4.label") "Value" $.GValues.domain))}}
+          {{template "gOut" (dict "Href" $.GConsole.branding)}}
+          <p class="hint">{{t "google.s4.hint"}}</p></div></li>
+        <li><div class="s"><b>{{t "google.s5.title"}}</b><p>{{rich (t "google.s5.text")}}</p>
+          {{template "gVals" (list (dict "Label" (t "google.s5.label") "Value" $.GValues.scope))}}
+          {{template "gOut" (dict "Href" $.GConsole.scopes)}}</div></li>
+        <li><div class="s"><b>{{t "google.s6.title"}}</b><p>{{rich (t "google.s6.text")}}</p>
+          {{template "gOut" (dict "Href" $.GConsole.audience)}}
+          <p class="caution"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{rich (t "google.s6.caution")}}</span></p></div></li>
+        <li><div class="s"><b>{{t "google.s7.title"}}</b><p>{{rich (t "google.s7.text")}}</p>
+          {{template "gVals" (list (dict "Label" (t "google.s7.label1") "Value" $.GValues.relay) (dict "Label" (t "google.s7.label2") "Value" $.GValues.fallback))}}
+          {{template "gOut" (dict "Href" $.GConsole.client)}}
+          <p class="caution"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4l9 16H3z"/><path d="M12 10v4M12 17v.5"/></svg><span>{{t "google.s7.caution"}}</span></p></div></li>
+        <li><div class="s"><b>{{t "google.s8.title"}}</b><p>{{t "google.s8.text"}}</p>
+          {{template "gApp" (dict "Root" $g "ClientID" $.GClientID "Retype" (and $g.Error (eq $.Service "google")))}}
+        </div></li>
+      </ol>
+      <div class="actions"><button class="button" type="submit" name="action" value="save">{{t "google.submit"}}</button></div>
+      <p class="done-hint">{{t "google.done"}}</p>
+      {{else}}
+      {{template "error" $g}}
+      <p>{{t "google.reg.lead"}}</p>
+      <dl class="facts">
+        <dt>{{t "google.fact.app"}}</dt><dd>{{if $.GApp.By}}{{tf "google.fact.app.value" "date" $.GApp.Since "name" $.GApp.By}}{{else}}{{tf "google.fact.app.value_noname" "date" $.GApp.Since}}{{end}}</dd>
+        <dt>{{t "google.fact.client"}}</dt><dd class="host">{{$.GApp.ClientID}}</dd>
+        {{if $.GApp.Accounts}}<dt>{{t "google.fact.connected"}}</dt>{{range $.GApp.Accounts}}<dd class="host">{{.}}</dd>{{end}}{{end}}
+      </dl>
+      <div class="actions"><button class="button" type="submit" name="action" value="continue">{{t "google.continue"}}</button></div>
+      {{template "moreOpen" (dict "Label" (t "google.replace") "Summary" (t "google.replace.sum") "Open" $.GReplace)}}
+        <p>{{if $.GApp.Accounts}}{{if gt (len $.GApp.Accounts) 1}}{{t "google.replace.text_many"}} {{$.GApp.AccountsHTML}}{{else}}{{t "google.replace.text_one_a"}} <b class="host">{{index $.GApp.Accounts 0}}</b> {{t "google.replace.text_one_b"}}{{end}}{{else}}{{t "google.replace.text_none"}}{{end}}</p>
+        {{template "gApp" (dict "Root" $g "ClientID" $.GClientID "Retype" (and $g.Error (eq $.Service "google")))}}
+        <button class="button secondary" type="submit" name="action" value="replace">{{t "google.submit"}}</button>
+      {{template "moreClose"}}
+      <p class="done-hint">{{t "google.done"}}</p>
+      {{end}}
+    </form>
+    {{else if eq .ID "caldav"}}
     <form class="guide" data-service="caldav" method="post" action="/connections" autocomplete="off">
       <input type="hidden" name="provider" value="caldav">
       <h2>{{t "connect.caldav.heading"}}</h2>
@@ -52,13 +130,52 @@
           {{template "field" (dict "Root" $cd "Name" "url" "Label" (t "connect.caldav.url") "Value" $cdURL "Required" true "Inputmode" "url" "Autocapitalize" "none" "Spellcheck" "false" "Hint" (t "connect.caldav.url.hint"))}}
           {{template "field" (dict "Root" $cd "Name" "username" "Label" (t "connect.caldav.username") "Value" $cdUser "Required" true "Autocomplete" "username" "Autocapitalize" "none" "Spellcheck" "false")}}
           {{template "field" (dict "Root" $cd "Name" "password" "Label" (t "connect.caldav.password") "Type" "password" "Required" true "Autocomplete" "off")}}
-          {{template "moreOpen" (dict "Label" (t "connect.caldav.more") "Summary" (t "connect.caldav.more.sum") "Open" (and (eq .Service "caldav") .ConnSingle))}}
-            <label class="check"><input type="checkbox" name="single_calendar" value="1"{{if and (eq .Service "caldav") .ConnSingle}} checked{{end}}> {{t "connect.caldav.single"}}</label>
+          {{template "moreOpen" (dict "Label" (t "connect.caldav.more") "Summary" (t "connect.caldav.more.sum") "Open" (and (eq $.Service "caldav") $.ConnSingle))}}
+            <label class="check"><input type="checkbox" name="single_calendar" value="1"{{if and (eq $.Service "caldav") $.ConnSingle}} checked{{end}}> {{t "connect.caldav.single"}}</label>
           {{template "moreClose"}}
         </div></li>
       </ol>
       <div class="actions"><button class="button" type="submit">{{t "connect.caldav.submit"}}</button></div>
       <p class="done-hint">{{t "connect.done"}}</p>
     </form>
+    {{else if eq .ID "ics"}}
+    <form class="guide" data-service="ics" method="post" action="/calendars" autocomplete="off">
+      <h2>{{t "connect.ics.heading"}}</h2>
+      {{template "error" $ics}}
+      <p class="why"><svg class="icon" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M20 12a8 8 0 1 1-2.3-5.7"/><path d="M20 4v4h-4"/></svg><span><b>{{t "connect.ics.why.title"}}</b>{{t "connect.ics.why"}}</span></p>
+      <ol class="howto">
+        <li><div class="s"><b>{{t "connect.ics.step1.title"}}</b><p>{{rich (t "connect.ics.step1.text")}}</p>
+          {{template "moreOpen" (dict "Label" (t "connect.ics.find.summary") "Open" false)}}
+            <p>{{rich (t "connect.ics.find.school")}}</p>
+            <p>{{rich (t "connect.ics.find.waste")}}</p>
+            <p>{{rich (t "connect.ics.find.google")}}</p>
+          {{template "moreClose"}}
+          {{template "field" (dict "Root" $ics "Name" "url" "Label" (t "connect.ics.url") "Value" $.ICSURL "Required" true "Inputmode" "url" "Autocapitalize" "none" "Spellcheck" "false" "Hint" (t "connect.ics.url.hint"))}}</div></li>
+        <li><div class="s"><b>{{t "connect.ics.step2.title"}}</b>
+          {{template "field" (dict "Root" $ics "Name" "name" "Label" (t "connect.ics.name.label") "Value" $.ICSName "Required" true "Hint" (t "connect.ics.name.hint"))}}</div></li>
+        <li><div class="s"><b>{{t "connect.ics.step3.title"}}</b><p>{{t "connect.ics.step3.text"}}</p>
+          {{template "personChips" (dict "Root" $ics "Name" "people" "Legend" (t "calendars.field.audience") "People" $.People "Selected" $.ICSPeople "Groups" $.Groups "SelectedGroups" $.ICSGroups "Whole" true)}}</div></li>
+      </ol>
+      {{template "moreOpen" (dict "Label" (t "calendars.more") "Summary" (tf "connect.ics.more.sum" "minutes" (print $.ICSInterval)) "Open" (or (eq $ics.ErrorField "color") (eq $ics.ErrorField "interval")))}}
+        <label>{{t "calendars.field.color"}}
+          <input name="color" type="color" value="{{$.ICSColor}}"></label>
+        {{template "fieldError" (dict "Root" $ics "Name" "color")}}
+        <label>{{t "calendars.field.interval"}}
+          <select name="interval">{{range $.Intervals}}<option value="{{.}}"{{if eq . $.ICSInterval}} selected{{end}}>{{.}}</option>{{end}}</select></label>
+        {{template "fieldError" (dict "Root" $ics "Name" "interval")}}
+      {{template "moreClose"}}
+      <div class="actions"><button class="button" type="submit">{{t "connect.ics.submit"}}</button></div>
+      <p class="done-hint">{{t "connect.ics.done"}}</p>
+    </form>
+    {{end}}{{end}}
   </div>
+{{end}}
 {{template "foot"}}
+{{/* Building blocks of the Google pages (ticket 18). */}}
+{{/* A link to a page at Google: its address as the label, opens in a new tab. Arguments: Href, optionally Label. */}}
+{{define "gOut"}}<a class="button secondary out" href="{{.Href}}" target="_blank" rel="noopener">{{with .Label}}{{.}}{{else}}{{repl .Href "https://" ""}}{{end}}<svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><path d="M14 5h5v5M19 5l-8 8M17 14v5H5V7h5"/></svg><span class="vh">{{t "connect.newtab.sr"}}</span></a>{{end}}
+{{/* Values typed in at Google: the value in a code face and a copy button, never a link (Q155). Argument: a list of Label and Value. */}}
+{{define "gVals"}}<dl class="vals">{{range .}}<div><dt>{{.Label}}</dt><dd><code>{{.Value}}</code><button class="button secondary" type="button" data-copy="{{.Value}}" data-copied-text="{{t "google.copied"}}"><svg class="icon" width="18" height="18" viewBox="0 0 24 24" aria-hidden="true"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>{{t "google.copy"}}</button></dd></div>{{end}}</dl>{{end}}
+{{/* The two fields of the app registration. Arguments: Root (the error), ClientID (kept after an error) and Retype (the secret has to be typed again). */}}
+{{define "gApp"}}{{template "field" (dict "Root" .Root "Name" "client_id" "Label" (t "google.field.client_id") "Value" .ClientID "Autocapitalize" "none" "Spellcheck" "false" "Hint" (t "google.field.client_id.hint"))}}
+{{template "field" (dict "Root" .Root "Name" "client_secret" "Label" (t "google.field.client_secret") "Type" "password" "Autocomplete" "off" "Reveal" (dict "Show" (t "google.pw.show") "Hide" (t "google.pw.hide")) "Hint" (or (and .Retype (t "google.field.client_secret.retype")) (t "google.field.client_secret.hint")))}}{{end}}

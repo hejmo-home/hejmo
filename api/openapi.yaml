@@ -7,8 +7,9 @@ info:
     integrations. Authenticate with a bearer token (`Authorization: Bearer hejmo_…`)
     or a browser session. A token acts on behalf of a person and is limited by
     its scopes: `read`, `write`, `<resource>` or `<resource>:<action>`
-    (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens;
-    actions: read, write, delete, complete).
+    (resources: people, events, calendars, tasks, lists, meals, displays, settings, tokens, health;
+    actions: read, write, delete, complete). The resource `health` (diet and
+    allergies) is reached only by its own scope: `read` and `write` never include it.
 
     The scopes `calendars` and `tasks` are for a phone's calendar and
     reminders apps: they open the box's CalDAV server at `/dav/` (HTTP Basic
@@ -75,6 +76,31 @@ paths:
                     items: { type: string, example: K7QD2-M9XPA }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+  /me/recovery-codes/saved:
+    post:
+      operationId: confirmRecoveryCodesSaved
+      summary: Say that the caller saved their current recovery codes (parents only, scope people:write)
+      description: |
+        The web page asks for a tick before it continues ("I have saved my
+        recovery codes"); this is the same confirmation for API clients. The
+        box cannot know how the codes were kept and does not ask. Send it only
+        once the codes of the last `POST /me/recovery-codes` are saved: the web
+        page "My account" says "not confirmed as saved" until it arrives. A new
+        set clears the confirmation.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [saved]
+              properties:
+                saved: { type: boolean, description: Must be true; false is refused. }
+      responses:
+        "204": { description: Confirmed }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /me/passkeys:
     get:
       operationId: listPasskeys
@@ -349,6 +375,115 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /food:
+    get:
+      operationId: listFood
+      summary: Diet and allergies of every person (scope health:read, parents only)
+      description: |
+        Health data (ADR 0019). Only the explicit scope `health` or `health:read`
+        reaches it: the broad scopes `read` and `write` do not, and children
+        never do (403). Every answer says that free-text allergies are not
+        checked automatically and cannot be filtered by.
+      responses:
+        "200":
+          description: One entry per person, in the order of the family view
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Food" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /people/{id}/food:
+    get:
+      operationId: getFood
+      summary: Diet and allergies of a person (scope health:read, parents only)
+      description: |
+        A person nobody has edited eats everything (`omnivore`) and has no
+        allergies. Health data: see `/food` for who may read it.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: Diet and allergies
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Food" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setFood
+      summary: Set diet and allergies of a person (scope health:write, parents only)
+      description: |
+        Replaces everything. `allergens` are keys of the 14 main EU allergens
+        (once each, stored in the order of the schema). `other` is the free text,
+        one entry per item without commas, 200 characters at most in all; an
+        entry that names one of the 14 (or a common word for one: Laktose,
+        Gluten, Nüsse, Ei) is refused with 422 and the key to send in
+        `allergens` instead. MCP tokens can never change them: the MCP area
+        `health` is read only.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/FoodUpdate" }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Food" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /people/{id}/list-view:
+    get:
+      operationId: getListView
+      summary: How a person sees lists, as tiles or as a list (scope lists:read)
+      description: |
+        One choice per person for all lists, on every device (ADR 0019). A
+        person who never chose has the default of the role (`default: true`):
+        children see tiles, adults the list.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: The view
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setListView
+      summary: Choose how you see lists (scope lists:complete)
+      description: |
+        Everyone, children included, chooses their own view; nobody changes
+        another person's (403, not even a parent). It is not a change of any
+        list, so the scope is the one for ticking entries off. The view of a
+        display is `list_view` of `PATCH /displays/{id}`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ListViewChange" }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListView" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /people/order:
     put:
       operationId: orderPeople
@@ -469,7 +604,9 @@ paths:
       description: |
         The areas events, lists, tasks (with routines, templates and stars) and
         meals each get `none`, `read` (scope `<area>:read`) or `write` (scope
-        `<area>`, every action including adding, ticking off and deleting). An
+        `<area>`, every action including adding, ticking off and deleting). The
+        area `health` (diet and allergies) takes only `none` (default) or `read`.
+        An
         area left out counts as `none`; at least one area needs `read` or
         `write` (else 422). The token acts as the caller, who has to be a parent,
         and never holds `read`, `write`, `tokens` or `settings`. The name is
@@ -644,6 +781,72 @@ paths:
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
         "429": { $ref: "#/components/responses/TooManyRequests" }
+  /display/pairing:
+    post:
+      operationId: openDisplayPairing
+      summary: Open a pairing as a new display (no credentials)
+      security: []
+      description: |
+        A display without a token asks the box for a six-digit pairing code,
+        valid for ten minutes, and its own token. The token is in this answer
+        only; the display keeps it and sends it as bearer token to
+        `GET /display/state` and to its page routes under `/display`. A parent
+        confirms the code with `POST /displays`, or by scanning the QR code
+        behind `pair_url`. This is what `GET /display` does for a browser.
+        Opening is limited per client address (10 in 10 minutes, shared with
+        `GET /display`; 429 with `Retry-After`), and the box keeps at most 20
+        waiting displays: opening one more drops the oldest.
+      responses:
+        "201":
+          description: A waiting display with its code and token
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DisplayPairing" }
+        "409":
+          description: The box is not set up yet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "429": { $ref: "#/components/responses/TooManyRequests" }
+  /display/state:
+    get:
+      operationId: getDisplayState
+      summary: A display reads its state (its own token as bearer token)
+      security:
+        - displayBearer: []
+      description: |
+        `paired`, `pairing` (with its `code`) or `unpaired`: the token is
+        revoked or unknown, or its code ran out. An unpaired display opens a
+        new pairing. A paired display also gets the `theme` it shows now and, for its photo screensaver, `saver` and `saver_seconds`.
+        Poll it about every 30 seconds: a revoked display notices within a
+        minute. A request without a bearer token is refused with 401.
+      responses:
+        "200":
+          description: The state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DisplayState" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /display/wake:
+    post:
+      operationId: wakeDisplay
+      summary: A touch on a quiet display wakes it (its own token as bearer token)
+      security:
+        - displayBearer: []
+      description: |
+        Ticket 179. In quiet mode a display whose kiosk app switched it off (quiet
+        mode `off` in `brightness.quiet.mode`) is woken by a touch: the display's
+        page posts here, and the box keeps it awake for `brightness.quiet.wake_minutes`
+        at evening brightness with the night page, then switches it off again.
+        The answer is 204 whether or not it woke anything: outside quiet mode, while
+        quiet mode only dims, and on a display without a kiosk app nothing changes.
+        An `Authorization` header that is not a bearer token is refused with 401, the
+        token of a display that is not paired with 403.
+      responses:
+        "204":
+          description: Noted
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
   /displays/{id}:
     patch:
       operationId: updateDisplay
@@ -651,8 +854,11 @@ paths:
       description: |
         Only the fields sent are changed. `name` (1 to 80 characters after trimming) and `type` (`eink_bw`, `eink_color` or `screen`) rename and retype the display; an empty or too long name, or an unknown type, is refused with 422. `show_tomorrow` switches the tomorrow block of the family view (ADR 0016).
         `theme` and the two offsets set the display's theme (ADR 0015); an unknown theme or an offset outside -180..180 is refused with 422.
-        `quiet_mode` sets the daily window in which the display shows the night page (a black page on a normal screen) and the front light goes off (ADR 0015). Quiet mode takes precedence over the theme.
-        `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to switch the front light off at sunset and in quiet mode; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
+        `quiet_mode` sets the daily window in which the display shows the night page (ADR 0015). Quiet mode takes precedence over the theme. What it does to the light depends on `brightness.quiet.mode`: with `off` the front light goes off (E-Ink) or the screen goes off (normal screen, the page is black meanwhile); with `dim` the night page stays visible and the display is only dimmed to `brightness.quiet.level`. See `Brightness`.
+        `list_view` (`tiles` or `list`) is how the display shows lists; the display keeps its own view, tiles until it is switched (ADR 0019).
+        `kiosk` sets the address and API key of the kiosk app (FreeKiosk, ADR 0005) the box uses to set the brightness; an empty `url` removes it. Times and addresses that are not valid are refused with 422.
+        `brightness` sets the brightness values by time of day and in quiet mode (ticket 179); see `Brightness`.
+        `layout` sets the people, their order and the layout blocks (ticket 180); see `DisplayLayout`.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -681,6 +887,287 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /displays/{id}/layout:
+    post:
+      operationId: copyDisplayLayout
+      summary: Copy the layout of another display onto this one (scope displays:write)
+      description: |
+        Takes the people, their order, the daily rotation and the layout blocks of the display
+        `from` and saves them on this display (ticket 180, Q84). Name, brightness, quiet mode and
+        everything else of this display stay. The layouts are separate afterwards: there are no
+        shared templates. Refused with 422 when `from` is this display; 404 when this display or
+        the display `from` does not exist.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [from]
+              properties:
+                from: { type: string, format: uuid, description: "The display to copy the layout from" }
+      responses:
+        "200":
+          description: This display with its new layout
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Display" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /albums:
+    get:
+      operationId: listAlbums
+      summary: Albums of screensaver photos (scope displays:read)
+      description: |
+        The default album comes first. Each album says which displays show it
+        (a display that chose no album shows all albums). Children are refused (403).
+      responses:
+        "200":
+          description: Albums
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Album" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createAlbum
+      summary: Make an album (scope displays:write)
+      description: The name is trimmed, 1 to 80 characters and unique in any letter case, else 422 with `field` `album_name`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlbumName" }
+      responses:
+        "201":
+          description: The new album
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Album" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /albums/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getAlbum
+      summary: One album (scope displays:read)
+      responses:
+        "200":
+          description: The album
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Album" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: renameAlbum
+      summary: Rename an uploaded album (scope displays:write)
+      description: A folder album is renamed in the folder on the box and is refused with 422.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/AlbumName" }
+      responses:
+        "200":
+          description: The album
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Album" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteAlbum
+      summary: Delete an uploaded album with its photos (scope displays:delete)
+      description: |
+        The photos of the album are deleted from the box. A display that showed
+        only this album shows all albums afterwards. The default album and folder
+        albums cannot be deleted (422).
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /albums/{id}/photos:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: listAlbumPhotos
+      summary: The photos of an album, newest first (scope displays:read)
+      responses:
+        "200":
+          description: Photos
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Photo" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    post:
+      operationId: uploadPhoto
+      summary: Add one photo to an uploaded album (scope displays:write)
+      description: |
+        Send a JPEG or PNG as `multipart/form-data` in the part `file`. The web
+        interface converts HEIC photos to JPEG in the browser first; HEIC sent here
+        is refused with 422. The box keeps only a copy shrunk to display size, without
+        location data or any other metadata. A file over 64 MB is refused with 413;
+        when the photo does not fit in the space for photos the box answers 507 and
+        deletes nothing. A folder album takes no uploads (422).
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required: [file]
+              properties:
+                file: { type: string, format: binary }
+      responses:
+        "201":
+          description: The photo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Photo" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "413": { $ref: "#/components/responses/TooLarge" }
+        "422": { $ref: "#/components/responses/Invalid" }
+        "507": { $ref: "#/components/responses/PhotosFull" }
+  /photos/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    patch:
+      operationId: updatePhoto
+      summary: Hide or show a photo on displays, or move it to another album (scope displays:write)
+      description: |
+        `hidden` switches "don't show on displays". `album_id` moves an uploaded photo
+        to another uploaded album; photos and albums that come from the box's folder
+        are changed in the folder (422), but their photos can be hidden.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/UpdatePhoto" }
+      responses:
+        "200":
+          description: The photo
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Photo" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deletePhoto
+      summary: Delete an uploaded photo from the box (scope displays:delete)
+      description: A photo from the box's folder is deleted in the folder (422).
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /photos/{id}/image:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      - { name: size, in: query, required: false, schema: { type: string, enum: [display, thumbnail], default: display }, description: "`thumbnail` is 400 pixels on the long edge" }
+    get:
+      operationId: getPhotoImage
+      summary: The stored copy of a photo (scope displays:read)
+      responses:
+        "200":
+          description: A JPEG
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /photo-storage:
+    get:
+      operationId: getPhotoStorage
+      summary: The space for photos (scope displays:read)
+      responses:
+        "200":
+          description: Space used and the limit
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PhotoStorage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: setPhotoLimit
+      summary: Set the limit for photos (scope displays:write)
+      description: At least 1 GB, else 422. Lowering it below what is used deletes nothing; the box only refuses new photos.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [limit_gb]
+              properties:
+                limit_gb: { type: integer, description: "1 to 100000, else 422" }
+      responses:
+        "200":
+          description: The space for photos
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/PhotoStorage" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /display/saver:
+    get:
+      operationId: getDisplaySaver
+      summary: A display reads what its screensaver shows (its own token as bearer token)
+      security:
+        - displayBearer: []
+      description: |
+        `active` is false when the display has the screensaver off, is in quiet
+        mode or is not paired: it then shows the day. `photos` are the photos to
+        show, in no particular order (the display shuffles them and shows each
+        once before any repeats); hidden photos and photos of albums the display
+        does not show are left out. Fetch each with `GET /display/photos/{id}`.
+      responses:
+        "200":
+          description: The screensaver
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/DisplaySaver" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+  /display/photos/{id}:
+    get:
+      operationId: getDisplayPhoto
+      summary: A display fetches a photo (its own token as bearer token)
+      security:
+        - displayBearer: []
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      responses:
+        "200":
+          description: A JPEG
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "404": { $ref: "#/components/responses/NotFound" }
   /phones:
     get:
       operationId: listPhones
@@ -708,6 +1195,37 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /phones/{id}/repair:
+    post:
+      operationId: repairPhone
+      summary: Give a phone to another person in one step (scope tokens:write)
+      description: |
+        Removes the phone, ends its device session at once and returns a new
+        pairing code that says whom the phone is for next. The code follows the
+        usual rules of `createPhonePairing` (valid once, ten minutes, the
+        household's limit of open codes). The phone opens it, the waiting phone
+        shows the person, and a parent confirms it with `confirmPhonePairing`
+        (the waiting list names the person in `for_person_id`). `person_id` must
+        be another member of the household than the phone's current person (422
+        otherwise, and nothing changes). Nothing of the person the phone had
+        (events, tasks, stars) is touched.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/RepairPhone" }
+      responses:
+        "201":
+          description: The new pairing code, for the chosen person
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/NewPhonePairing" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /phones/pairings:
     get:
       operationId: listPhonePairings
@@ -1776,7 +2294,29 @@ paths:
     post:
       operationId: addListEntry
       summary: Add an entry at the end of a list (scope lists:write, parents only)
-      description: An alphabetical list shows it at its place by text.
+      description: |
+        An alphabetical list shows it at its place by text.
+
+        A list with `suggestions` takes an article of the library (`article_id`,
+        the key of a shipped article or the id of an own one; or the exact name
+        in `text`, in German or English, which is the same) and a quantity
+        (`amount` and `unit`). The entry's text is then the article's name in
+        the language of the request. Only open entries merge:
+
+        - the same article (or the same text, ignoring case) with a unit of the
+          same kind **adds up** (500 g + 1 kg = 1.5 kg; 6 pieces + 1 dozen = 18
+          pieces), the total shown in the article's first default unit where it
+          fits (`result: added_to`, status 200);
+        - an entry without quantity takes the quantity (`filled`, 200);
+        - adding without a quantity something that is already there makes no
+          second entry (`exists`, 200);
+        - another kind (piece, pack, bunch, weight, volume) gets its own entry
+          directly under the old one (`added`, 201).
+
+        `unit` is optional: the unit last used for the article, otherwise its
+        first default unit. `amount` is a number above 0 up to 9999; a unit
+        that is switched off (`GET /units`) is refused. A list without
+        suggestions takes plain `text` only.
       parameters:
         - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
       requestBody:
@@ -1785,21 +2325,72 @@ paths:
           application/json:
             schema:
               type: object
-              required: [text]
               properties:
                 text: { type: string, minLength: 1, maxLength: 200 }
+                article_id: { type: string, description: "Key of a shipped article or id of an own one" }
+                amount: { type: number, description: "Above 0, at most 9999; anything else is refused with 422" }
+                unit: { type: string, description: "A key of `GET /units`; one that is switched off is refused with 422" }
       responses:
+        "200":
+          description: Merged into an entry that was there, or already there
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntryResult" }
         "201":
           description: Created
           content:
             application/json:
-              schema: { $ref: "#/components/schemas/ListEntry" }
+              schema: { $ref: "#/components/schemas/ListEntryResult" }
         "400": { $ref: "#/components/responses/Invalid" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /lists/{id}/entries/{entry}:
+    patch:
+      operationId: setListEntryQuantity
+      summary: Change the quantity of an open entry (scope lists:write, parents only)
+      description: |
+        The amount **replaces** the old quantity and never adds to it. The
+        caller converts a change of unit within one kind (500 g to 0.5 kg keeps
+        the amount). `amount` is rounded as shown (two decimals, whole g and ml);
+        sending back the rounded number of the entry's own quantity, in any unit
+        of its kind, keeps the exact total. The total is shown by the same rules
+        as when adding. When
+        the article is already on the list in the new kind (or, for `amount:
+        null`, with any other entry), this entry goes into it (`result: merged`,
+        the answer is the entry that stays); otherwise `result: set`.
+        `amount: null` takes the quantity away. An entry that is ticked off or
+        gone answers 409. Only on lists with `suggestions`.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+        - { name: entry, in: path, required: true, schema: { type: string, format: uuid } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [amount]
+              properties:
+                amount: { type: number, nullable: true, description: "Above 0, at most 9999; null takes the quantity away" }
+                unit: { type: string, description: "A key of `GET /units`; one that is switched off is refused with 422" }
+      responses:
+        "200":
+          description: The entry now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ListEntryResult" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409":
+          description: The entry is ticked off or gone
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
     delete:
       operationId: deleteListEntry
       summary: Delete one entry (scope lists:delete, parents only)
@@ -1889,6 +2480,330 @@ paths:
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
+  /units:
+    get:
+      operationId: getUnits
+      summary: The units a quantity can have in this household (scope lists:read)
+      description: |
+        `active` are the units that can be chosen when adding. They follow the
+        country of the home (`country`) until a parent changes them (`custom:
+        true`): metric plus piece, dozen, pack and bunch in most countries; the
+        United Kingdom adds imperial units; the United States use US customary.
+        `units` lists every unit of the catalogue with its group, kind
+        (`count`, `pack`, `bunch`, `weight`, `volume`: only units of one kind
+        convert into each other) and size in pieces, grams or millilitres.
+      responses:
+        "200":
+          description: The units
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Units" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setUnits
+      summary: Switch units on and off (scope lists:write, parents only)
+      description: |
+        Piece is always on; unknown keys are dropped. Weight and volume each
+        keep at least one unit, otherwise 422 names the group in `field`
+        (`weight` or `volume`). Switching a unit off changes no entry that is
+        already on a list.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [active]
+              properties:
+                active: { type: array, items: { type: string }, description: "Keys of `GET /units`" }
+      responses:
+        "200":
+          description: The units now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Units" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: resetUnits
+      summary: Go back to the preset of the home's country (scope lists:write, parents only)
+      responses:
+        "200":
+          description: The units now
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Units" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+  /articles:
+    get:
+      operationId: listArticles
+      summary: The article library, shipped and own articles (scope lists:read)
+      description: |
+        The articles Hejmo ships (`source: hejmo`, about 250, German and English
+        names) and the household's own ones (`source: own`). Optional `q` keeps
+        the articles whose name holds the text, ignoring case and umlauts.
+        `units` are the article's default units, `offered_units` the ones the
+        add card offers: those that are switched on, a switched-off one
+        replaced by the nearest active unit of its kind (kg by g), piece when
+        nothing is left. Articles say which
+        allergens they contain; who is warned about them is health data, see
+        `/articles/{id}/warnings`.
+      parameters:
+        - { name: q, in: query, required: false, schema: { type: string } }
+      responses:
+        "200":
+          description: The articles
+          content:
+            application/json:
+              schema:
+                type: array
+                items: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    post:
+      operationId: createArticle
+      summary: Add an own article (scope lists:write, parents only)
+      description: |
+        `kind` has no default: `meat`, `fish`, `veg`, `vegan` or `nonfood`.
+        Allergens are keys of the 14 main EU allergens and are cleared for
+        `nonfood`. `unit1` is required (default piece), `unit2` optional; both
+        must be switched on. A picture is either a `symbol` (an emoji of the Noto
+        Emoji set) or a `picture_url` that the box downloads once (http or
+        https, public addresses only, at most 15 MB, 10 seconds); the box stores a
+        scaled-down JPEG without metadata and never links to the address. A
+        photo is sent with `PUT /articles/{id}/picture`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleWrite" }
+      responses:
+        "201":
+          description: Created
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}:
+    get:
+      operationId: getArticle
+      summary: One article, by its key (shipped) or id (own) (scope lists:read)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    patch:
+      operationId: updateArticle
+      summary: Change an own article (scope lists:write, parents only)
+      description: |
+        Fields left out keep their value. `symbol` replaces a picture by a
+        symbol, `picture_url` replaces it by a downloaded image,
+        `remove_picture` takes it away (the tile then shows the symbol of the
+        department). Articles from Hejmo cannot be changed (422): hide them or
+        copy them.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/ArticleWrite" }
+      responses:
+        "200":
+          description: Changed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+    delete:
+      operationId: deleteArticle
+      summary: Delete an own article (scope lists:delete, parents only)
+      description: Entries on lists keep their text.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "204": { description: Deleted }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}/picture:
+    get:
+      operationId: getArticlePicture
+      summary: The stored picture of an own article, a JPEG of at most 512 px (scope lists:read)
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The picture
+          content:
+            image/jpeg:
+              schema: { type: string, format: binary }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+    put:
+      operationId: setArticlePicture
+      summary: Set the picture of an own article from a photo (scope lists:write, parents only)
+      description: |
+        The request body is the photo itself: JPEG, PNG, WebP or GIF, at most
+        15 MB. The box turns it upright, scales it to at most 512 px and
+        stores it as JPEG without metadata (place, camera). Refused with 422
+        when it is too large, not a picture or a web page.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          image/jpeg:
+            schema: { type: string, format: binary }
+          image/png:
+            schema: { type: string, format: binary }
+          image/webp:
+            schema: { type: string, format: binary }
+          image/gif:
+            schema: { type: string, format: binary }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}/hidden:
+    put:
+      operationId: setArticleHidden
+      summary: Hide an article from Hejmo by hand, or show it again (scope lists:write, parents only)
+      description: |
+        A hidden article is not suggested; typing it by hand still works. Own
+        articles are deleted, not hidden (422).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [hidden]
+              properties:
+                hidden: { type: boolean }
+      responses:
+        "200":
+          description: The article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /articles/{id}/copy:
+    post:
+      operationId: copyArticle
+      summary: Make an own version of an article from Hejmo (scope lists:write, parents only)
+      description: |
+        Copies name (in the language of the request), department, units and
+        allergens as an own article and hides the original.
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "201":
+          description: The own article
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Article" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /articles/{id}/warnings:
+    get:
+      operationId: getArticleWarnings
+      summary: Who has to look out for an article, and whether Hejmo suggests it (scope health:read, parents only)
+      description: |
+        Health data: who is allergic and which diets an article suits. People
+        with exactly the same allergens share one entry. The answer is
+        experimental and without guarantee: it only knows the 14 main
+        allergens as tagged in the library, no traces, and cannot check free
+        text (`note`).
+      parameters:
+        - { name: id, in: path, required: true, schema: { type: string } }
+      responses:
+        "200":
+          description: The warnings
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/ArticleWarnings" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /library/hiding:
+    get:
+      operationId: getLibraryHiding
+      summary: The experimental setting that hides articles with an allergen (scope health:read, parents only)
+      responses:
+        "200":
+          description: The setting
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hiding" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setLibraryHiding
+      summary: Switch the hiding on or off (scope health:write, parents only)
+      description: |
+        Off by default and experimental: Hejmo guarantees no completeness and
+        takes no liability. Switching it on needs `confirm: true`, which says
+        that the person behind the token read the notice; they are recorded
+        with the time. `everyone` hides for everyone with allergies, otherwise
+        only for `people`. Free text is never hidden.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [enabled]
+              properties:
+                enabled: { type: boolean }
+                everyone: { type: boolean }
+                people:
+                  type: array
+                  items: { type: string, format: uuid }
+                confirm: { type: boolean }
+      responses:
+        "200":
+          description: Stored
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Hiding" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
   /groups:
     get:
       operationId: listGroups
@@ -1999,18 +2914,23 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "422": { $ref: "#/components/responses/Invalid" }
   /calendars/{id}:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     patch:
       operationId: updateCalendar
-      summary: Change a synced calendar (share through the box, waste collection, name, colour, audience)
+      summary: Change a synced calendar (share through the box, two-way / read-only, waste collection, name, colour, audience)
       description: |
         Send at least one field. `share_through_box` switches sharing through the box for a synced
         calendar; the family calendar is always served to phones, asking to change it answers 422.
+        `read_only` switches a CalDAV calendar between two-way (the default: events created, changed or deleted on the box
+        are written back to the server right away, ADR 0012) and read-only (the box never writes; API edits answer 422).
+        ICS and local calendars have no such switch and answer 422. Switching back to two-way pushes
+        changes still queued and also removes `waste_collection` (only a read-only calendar can be a waste collection calendar).
         `name`, `color` and `audience` can only be changed on a synced calendar (else 422; 404 if no calendar has the id); a field
-        left out stays as it is. Nothing is sent to the calendar's source.
+        left out stays as it is. Changing them sends nothing to the calendar's source.
       requestBody:
         required: true
         content:
@@ -2019,6 +2939,7 @@ paths:
               type: object
               properties:
                 share_through_box: { type: boolean }
+                read_only: { type: boolean, description: "CalDAV calendars only; false (two-way) also clears waste_collection" }
                 waste_collection: { type: boolean, description: "Only a read-only calendar can be marked, else 422" }
                 name: { type: string, minLength: 1 }
                 color: { type: string, example: "#B4583A", description: "#RRGGBB, else 422" }
@@ -2058,12 +2979,178 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
+        "404": { $ref: "#/components/responses/NotFound" }
+  /google:
+    get:
+      operationId: getGoogleApp
+      summary: The family's Google app registration (parents, scope settings:read)
+      description: |
+        Google lets programs reach calendars only with an app registration (an OAuth client of type
+        "Web application"). Each family creates its own at Google (ADR 0013); the box keeps one per household.
+        This returns the client ID, the two redirect URIs and the scope to enter at Google, and the Google
+        accounts already connected. The client secret is stored encrypted and never returned.
+      responses:
+        "200":
+          description: The app registration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GoogleApp" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    put:
+      operationId: setGoogleApp
+      summary: Enter or replace the Google app registration (parents, scope settings:write)
+      description: |
+        Stores the client ID (it ends with `.apps.googleusercontent.com`, else 422 with `field`
+        `client_id`) and the client secret (encrypted). Another client ID applies to all Google connections:
+        their sign-ins belong to the old client, so they are marked `needs_signin` and listed in
+        `sign_in_again`. The same client ID with a new secret keeps them. Nothing is sent to Google.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [client_id, client_secret]
+              properties:
+                client_id: { type: string, example: "318046275519-k7q2m9xlb4tn0c8e1rvd6hf3ys5pjw2a.apps.googleusercontent.com" }
+                client_secret: { type: string, writeOnly: true, description: "Shown by Google only once. Stored encrypted, never returned" }
+      responses:
+        "200":
+          description: The app registration
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/GoogleApp" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422":
+          description: The client ID or the client secret is not valid; `field` names it
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+  /google/authorize:
+    post:
+      operationId: startGoogleSignIn
+      summary: Start signing in at Google (parents, scope settings:write)
+      description: |
+        Makes the PKCE pair (S256) and a `state` that the box signs, valid for 15 minutes and for one use,
+        and returns the address at Google to open in a browser. Nothing is created before this call.
+        `way` `relay` sends Google's answer through the static page `https://hejmo-home.github.io/oauth/`,
+        which forwards it to the box (`https://<box>/connections/google/callback`); it only works when the
+        relay page may go back to the address this request reached the box under (https, or http to an
+        address in the home network), else the answer says `fallback`. On the `fallback` way Google sends
+        the browser to `http://127.0.0.1:8099/`, which shows an error; the address in the address bar is
+        then given to `POST /google/callback` as `url`. With `connection_id` an existing Google connection
+        signs in again.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                way: { type: string, enum: [relay, fallback], default: relay }
+                connection_id: { type: string, format: uuid, description: "A Google connection that signs in again" }
+      responses:
+        "200":
+          description: Where to send the browser
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [url, way, redirect_uri, expires_at]
+                properties:
+                  url: { type: string, description: "The address at Google" }
+                  way: { type: string, enum: [relay, fallback], description: "The way that will be used" }
+                  redirect_uri: { type: string }
+                  expires_at: { type: string, format: date-time }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/OffNow" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /google/callback:
+    post:
+      operationId: finishGoogleSignIn
+      summary: Finish signing in at Google (parents, scope settings:write)
+      description: |
+        Takes what Google sent back, either the whole address from the address bar of the fallback way
+        (`url`) or its parts (`code`, `state`, `error`, `scope`). The `state` must be one the box made,
+        not older than 15 minutes and not used before; the code is then exchanged with the PKCE verifier and
+        the refresh token is stored encrypted. A new Google account becomes a connection (201); an account
+        that already has a connection, or a connection that signs in again, gets the new refresh token
+        (200) and its calendars sync again at once. Tick calendars with `POST /calendar-connections/{id}/calendars`.
+        Otherwise 422 with `problem`: `state_unknown`, `state_expired`, `state_used`, `cancelled`,
+        `code_rejected`, `scope_missing`, `client_rejected`, `wrong_account` (another Google account than the
+        connection that asked; `account` and `nonce` are then given: `POST /google/adopt` adds it as a new
+        connection), `not_a_callback`, `unreachable`, `no_app`.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                url: { type: string, example: "http://127.0.0.1:8099/?state=hj1.aHR0cHM6Ly9ib3g.AbCd&code=4%2F0AVMB&scope=https%3A%2F%2Fwww.googleapis.com%2Fauth%2Fcalendar" }
+                code: { type: string }
+                state: { type: string }
+                error: { type: string, example: access_denied }
+                scope: { type: string }
+      responses:
+        "200":
+          description: An existing connection signed in again
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CalendarConnection" }
+        "201":
+          description: Connected
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CalendarConnection" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
+        "422":
+          description: The sign-in did not work; `problem` says why and nothing was stored
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [error, problem]
+                properties:
+                  error: { type: string }
+                  problem: { type: string, enum: [state_unknown, state_expired, state_used, cancelled, code_rejected, scope_missing, client_rejected, wrong_account, not_a_callback, unreachable, no_app] }
+                  account: { type: string, description: "With wrong_account: the Google account that signed in" }
+                  nonce: { type: string, description: "With wrong_account: for POST /google/adopt" }
+  /google/adopt:
+    post:
+      operationId: addStashedGoogleAccount
+      summary: Add the account of a sign-in that was for another connection as a new connection (parents, scope settings:write)
+      description: The `nonce` comes from a `wrong_account` answer of `POST /google/callback`. It works once.
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [nonce]
+              properties:
+                nonce: { type: string }
+      responses:
+        "201":
+          description: Connected
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/CalendarConnection" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
         "404": { $ref: "#/components/responses/NotFound" }
   /calendar-connections:
     get:
       operationId: listCalendarConnections
-      summary: CalDAV and iCloud connections (parents, scope settings:read)
-      description: Never contains a password.
+      summary: CalDAV, iCloud and Google connections (parents, scope settings:read)
+      description: Never contains a password, a refresh token or a client secret.
       responses:
         "200":
           description: Connections
@@ -2097,7 +3184,62 @@ paths:
               schema: { $ref: "#/components/schemas/CalendarConnection" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /calendar-connections/outlook/sign-ins:
+    post:
+      operationId: startOutlookSignIn
+      summary: Start the device sign-in of an Outlook (Microsoft) account (parents, scope settings:write)
+      description: |
+        Asks Microsoft for a device code (a public client: the box holds no secret). The parent opens the
+        verification address on any phone or computer, enters `user_code`, signs in and chooses Accept; the
+        box notices by itself, see `GET /calendar-connections/outlook/sign-ins/{id}`. A code is valid for
+        15 minutes, so fetch it only when the parent is ready. `client_id` is the app ID of the family's own
+        app registration; left out, the Hejmo project's registration is used (422 if the box has none).
+        With `connection_id` the sign-in renews an existing connection whose Microsoft sign-in ended; only the
+        same account is accepted. Personal Microsoft accounts work first; work and school accounts work
+        unless the tenant requires admin consent (state `consent_required`).
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                client_id: { type: string, description: "App ID of the family's own app registration" }
+                connection_id: { type: string, format: uuid, description: "Reconnect this Outlook connection" }
+      responses:
+        "201":
+          description: A code to enter at Microsoft
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OutlookSignIn" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/OffNow" }
+        "422": { $ref: "#/components/responses/Invalid" }
+        "502": { description: "Microsoft did not answer, so there is no code" }
+  /calendar-connections/outlook/sign-ins/{id}:
+    parameters:
+      - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
+    get:
+      operationId: getOutlookSignIn
+      summary: State of an Outlook sign-in; asks Microsoft if its interval has passed (parents, scope settings:write)
+      description: |
+        Poll about every `interval_seconds`. When the person has signed in, the connection is stored (the
+        refresh token sealed, never returned) and `connection_id` names it; an account the box already has is
+        renewed, not added twice. The sign-in is kept in the box's memory for an hour.
+      responses:
+        "200":
+          description: The state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/OutlookSignIn" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "404": { $ref: "#/components/responses/NotFound" }
+        "409": { $ref: "#/components/responses/OffNow" }
   /calendar-connections/{id}:
     parameters:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
@@ -2115,7 +3257,7 @@ paths:
       - { name: id, in: path, required: true, schema: { type: string, format: uuid } }
     put:
       operationId: changeConnectionPassword
-      summary: Replace the password of a connection, after the server accepted it (parents, scope settings:write)
+      summary: Replace the password of a connection, after the server accepted it (parents, scope settings:write; not for Google)
       description: |
         Signs in with the new password and lists the server's calendars, as when connecting. Only if that
         works is the password stored (encrypted with the box's key, never returned) and the connection's
@@ -2150,6 +3292,7 @@ paths:
               schema: { $ref: "#/components/schemas/CalendarConnection" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
     post:
@@ -2159,7 +3302,7 @@ paths:
         Adds the calendar with its colour and audience and syncs it once right away; if that
         first sync fails the calendar is still added (see the sync log) and the scheduler retries.
         `url` must be a calendar on the connection's server and not yet synced. These calendars
-        are read-only for now; delta sync runs every 5 minutes by default.
+        are two-way (see `PATCH /calendars/{id}`); delta sync runs every 5 minutes by default.
       requestBody:
         required: true
         content:
@@ -2173,6 +3316,7 @@ paths:
               schema: { $ref: "#/components/schemas/Calendar" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /calendar-connections/{id}/event-counts:
@@ -2197,6 +3341,7 @@ paths:
                 items: { $ref: "#/components/schemas/EventCount" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+        "409": { $ref: "#/components/responses/OffNow" }
         "404": { $ref: "#/components/responses/NotFound" }
         "422": { $ref: "#/components/responses/Invalid" }
   /sync-log:
@@ -2225,6 +3370,10 @@ paths:
         plain HTTP, and phones must first trust the own CA (`/ca`); `renewal_error` says why.
         `public` is a publicly trusted certificate for the family's DNS name (ADR 0014); `warning` is set when its
         renewal failed or it is about to expire.
+
+        With the own CA, `names` lists what the box certificate is valid for (the box name, the address of the
+        box in the home network, and the router name if there is one), `router_name` is the name of the box in
+        the family's router (decision Q92) and `expires_at` is when the CA ends.
       responses:
         "200":
           description: HTTPS status
@@ -2233,6 +3382,45 @@ paths:
               schema: { $ref: "#/components/schemas/HTTPSStatus" }
         "401": { $ref: "#/components/responses/Unauthorized" }
         "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: setRouterName
+      summary: Add the box's name in the router to its certificate (parents, scope settings:write)
+      description: |
+        The page "Sichere Verbindung" of the web interface as an API call (decision Q92). Only with the box's own
+        CA. The box CA is name-constrained to the box, so a new name needs a **new CA**: it replaces the old one
+        and an earlier router name, and **every device must trust the box again** (trust page `/ca`, which
+        opens over plain HTTP; the CA's fingerprint changes). The name is lower-cased and a trailing dot is
+        dropped. It must have at least two labels of letters a to z, digits and hyphens, and must not be an
+        address or a name the certificate covers already (422). With a public name the box has no use for
+        it (409).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              required: [router_name]
+              properties:
+                router_name: { type: string, example: hejmo.fritz.box, description: "The name the router shows for the box, for example hejmo.fritz.box" }
+      responses:
+        "200":
+          description: HTTPS status with the new certificate names
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/HTTPSStatus" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: The box uses a public name, or has no CA yet
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422":
+          description: The name is missing, cannot go into a certificate or is covered already
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /settings:
     get:
       operationId: getSettings
@@ -2252,6 +3440,16 @@ paths:
         The time format applies to every time shown in the web interface and
         on displays (ADR 0016). An unknown `date_format` is refused with 400, an
         unknown value of any other field with 422.
+
+        The home place sets where sunrise and sunset are computed (front light
+        of displays, themes) and which weather is shown. Give `home_place_id`,
+        the id of a place of the list on the box (find it with `GET /places`):
+        the name and the coordinates then come from the list, and giving
+        `home_name`, `latitude` or `longitude` as well is refused. Or give
+        `latitude` and `longitude` together (degrees, -90 to 90 and -180 to 180);
+        a new `home_name` needs them too, and the stored `home_place_id` becomes
+        null. An unknown place id, out-of-range or lone coordinates are refused
+        with 422.
       requestBody:
         required: true
         content:
@@ -2267,6 +3465,126 @@ paths:
         "403": { $ref: "#/components/responses/Forbidden" }
         "400": { $ref: "#/components/responses/Invalid" }
         "422": { $ref: "#/components/responses/Invalid" }
+  /places:
+    get:
+      operationId: searchPlaces
+      summary: Search the places on the box, to set the home location (scope settings:read)
+      description: |
+        Searches the list of towns, villages and districts of Germany, Austria
+        and Switzerland that ships on the box (GeoNames, CC BY 4.0). The answer
+        comes from the box; nothing goes to the internet. Matching is case- and
+        diacritic-insensitive (ü = ue, ß = ss) over the name, the ASCII name and the
+        alternate names in German, English, French and Italian. It starts at two
+        letters (a shorter name is an empty list). Names that start with the
+        text come before names with a word that does, then larger places come
+        first. At most five places are listed; `more` says that more matched.
+        No match is an empty list. Use the `id` as `home_place_id` of
+        `PATCH /settings`.
+      parameters:
+        - { name: name, in: query, required: true, schema: { type: string, maxLength: 100 }, description: "The text to search for, for example Pasing; blank or longer than 100 characters is refused with 422" }
+        - { name: lang, in: query, required: false, schema: { type: string, enum: [de, en] }, description: "The language of the region label; default the language of the request. Anything else is refused with 422" }
+      responses:
+        "200":
+          description: The matching places, best match first
+          content:
+            application/json:
+              schema:
+                type: object
+                required: [places, more]
+                properties:
+                  places: { type: array, maxItems: 5, items: { $ref: "#/components/schemas/Place" } }
+                  more: { type: boolean, description: "True if more than five places matched; the five largest are listed" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /outbound:
+    get:
+      operationId: getOutbound
+      summary: Offline mode, the connections to the outside, and what the box refused (scope settings:read)
+      description: |
+        The box makes every connection to the outside through one gate (ticket 201).
+        With `offline` true, the gate refuses all of them and records each attempt in
+        `refused`, newest first (at most 200); `connections` then show every switch as
+        `locked`. `enabled` is the state the connection is in now: with offline mode on
+        it is false for all, while the switches themselves are kept and come back when
+        offline mode goes off. The DNS service has no switch (`switchable` false): it is
+        in use while the box has a `public_name`. `last_contact` is the last time the box
+        reached the service (for `update`, the last time the host script looked).
+        Place search is not listed: the list of places is on the box.
+      responses:
+        "200":
+          description: The state
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+    patch:
+      operationId: updateOutbound
+      summary: Switch offline mode or single connections; omitted fields stay as they are (scope settings:write)
+      description: |
+        `offline` switches offline mode on or off; switching it off brings every
+        switch back as it was before. `connections` maps a connection id to its
+        switch; it is refused with 409 while offline mode is on (the switches are
+        locked), and with 422 for an id without a switch (`dns` among them).
+        Switching offline mode on while the box has a `public_name` is refused with
+        409: that needs the change to the home network (`POST /outbound/offline`).
+        `update_reminder_days` (7 to 365) is how many days without an update make
+        the web interface remind parents (offline mode).
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema: { $ref: "#/components/schemas/OutboundUpdate" }
+      responses:
+        "200":
+          description: The state after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "409":
+          description: The switches are locked by offline mode, or the public name must be left first
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
+        "422": { $ref: "#/components/responses/Invalid" }
+  /outbound/offline:
+    post:
+      operationId: goOffline
+      summary: Switch offline mode on, leaving a public name first if the box has one (scope settings:write)
+      description: |
+        The change the web page "Switch on offline mode" makes, in its order: with
+        `delete_dns` true the box first deletes its records at the DNS service (the
+        last connection to the outside), then forgets the public name, makes its own
+        certificate for its address at home and switches offline mode on. Every device
+        must trust the box's own CA again, and passkeys only work for the old name.
+        If the DNS service refuses, nothing is changed (502). Without a public name it
+        only switches offline mode on.
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                delete_dns: { type: boolean, description: "Delete the box's DNS records at the DNS service first (default false)" }
+      responses:
+        "200":
+          description: The state after the change
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Outbound" }
+        "400": { $ref: "#/components/responses/Invalid" }
+        "401": { $ref: "#/components/responses/Unauthorized" }
+        "403": { $ref: "#/components/responses/Forbidden" }
+        "502":
+          description: The DNS service did not delete the records; nothing was changed
+          content:
+            application/json:
+              schema: { $ref: "#/components/schemas/Error" }
   /update:
     get:
       operationId: getUpdate
@@ -2317,6 +3635,10 @@ paths:
     post:
       operationId: createEvent
       summary: Create an event or a series
+      description: |
+        In a two-way CalDAV calendar the event is written to the server right away (in the background; if the
+        server is down it is queued and written with the next sync). In a read-only calendar the answer is 422.
+        Changing and deleting events (`PATCH`/`DELETE /events/{id}`) work the same way.
       requestBody:
         required: true
         content:
@@ -2414,6 +3736,7 @@ components:
   securitySchemes:
     bearer: { type: http, scheme: bearer }
     session: { type: apiKey, in: cookie, name: hejmo_session }
+    displayBearer: { type: http, scheme: bearer, description: "A display's own token from `POST /display/pairing`; it opens the display's routes only" }
   schemas:
     Role:
       type: string
@@ -2428,6 +3751,41 @@ components:
         color: { type: string, description: "Hex colour for colour mode: one of the eight palette colours (empty for a person added before colours were chosen)", example: "#B4583A" }
         shape: { type: string, description: "Marker for black-and-white mode", example: circle-filled }
         symbol: { type: string }
+    Diet:
+      type: string
+      enum: [omnivore, vegetarian, pescatarian, vegan]
+    Allergen:
+      type: string
+      description: The 14 main allergens of EU Regulation 1169/2011, Annex II
+      enum: [celery, gluten, crustaceans, eggs, fish, lupin, milk, molluscs, mustard, nuts, peanuts, sesame, soy, sulphites]
+    Food:
+      type: object
+      description: Diet and allergies of a person. Health data (ADR 0019).
+      required: [person_id, diet, allergens, other, other_note]
+      properties:
+        person_id: { type: string, format: uuid }
+        diet: { $ref: "#/components/schemas/Diet" }
+        allergens:
+          type: array
+          items: { $ref: "#/components/schemas/Allergen" }
+        other:
+          type: array
+          description: Free-text allergies and intolerances. The box cannot check or filter by them.
+          items: { type: string }
+        other_note: { type: string, description: "Always says that `other` is not checked automatically and not filterable (nicht automatisch geprüft, nicht filterbar)" }
+    FoodUpdate:
+      type: object
+      required: [diet]
+      properties:
+        diet: { type: string, description: "One of `Diet`; anything else gets 422", example: vegetarian }
+        allergens:
+          type: array
+          description: Keys of `Allergen`; an unknown key gets 422. Omitted means none (the entry is replaced as a whole)
+          items: { type: string }
+        other:
+          type: array
+          description: Free-text entries without commas; omitted means none
+          items: { type: string }
     PersonColor:
       type: string
       description: The eight person colours of the palette, in slot order
@@ -2637,6 +3995,7 @@ components:
         color: { $ref: "#/components/schemas/ListColor" }
         symbol: { $ref: "#/components/schemas/ListSymbol" }
         sort: { allOf: [{ $ref: "#/components/schemas/ListSort" }], description: "Default manual" }
+        suggestions: { type: boolean, description: "Suggestions from the article library and quantities; default true" }
     ListChange:
       type: object
       minProperties: 1
@@ -2645,24 +4004,173 @@ components:
         color: { $ref: "#/components/schemas/ListColor" }
         symbol: { $ref: "#/components/schemas/ListSymbol" }
         sort: { $ref: "#/components/schemas/ListSort" }
+        suggestions: { type: boolean }
     List:
       type: object
-      required: [id, name, color, symbol, sort, open_count, done_count]
+      required: [id, name, color, symbol, sort, suggestions, open_count, done_count]
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
         color: { $ref: "#/components/schemas/ListColor" }
         symbol: { $ref: "#/components/schemas/ListSymbol" }
         sort: { $ref: "#/components/schemas/ListSort" }
+        suggestions: { type: boolean, description: "The list offers articles of the library while typing and takes quantities (a to-do list switches it off)" }
         open_count: { type: integer, description: "Entries not ticked off" }
         done_count: { type: integer, description: "Entries ticked off" }
+    Article:
+      type: object
+      required: [id, source, name_de, name_en, dept, kind, allergens, units, offered_units, symbol, picture, picture_source, hidden_by_hand, created_by, created_at]
+      properties:
+        id: { type: string, description: "The key of an article from Hejmo, the id of an own one" }
+        source: { type: string, enum: [hejmo, own] }
+        name_de: { type: string }
+        name_en: { type: string, description: The same as name_de for an own article }
+        dept:
+          type: string
+          enum: [produce, bakery, dairy, meat_fish, frozen, pantry, baking_spices, sweets, drinks, drugstore, household, baby, other]
+        kind: { type: string, enum: [meat, fish, veg, vegan, nonfood] }
+        allergens:
+          type: array
+          items: { type: string, enum: [celery, gluten, crustaceans, eggs, fish, lupin, milk, molluscs, mustard, nuts, peanuts, sesame, soy, sulphites] }
+        units:
+          type: array
+          description: One or two default units, the first is preselected when adding
+          items: { $ref: "#/components/schemas/Unit" }
+        offered_units:
+          type: array
+          description: The default units that are switched on; piece when neither is
+          items: { $ref: "#/components/schemas/Unit" }
+        symbol: { type: string, description: "The emoji of a shipped article or a chosen symbol, else empty" }
+        picture:
+          type: string
+          nullable: true
+          description: Where the stored picture is (GET), or null
+        picture_source: { type: string, enum: ["", symbol, upload, web] }
+        hidden_by_hand: { type: boolean }
+        created_by: { type: string, format: uuid, nullable: true }
+        created_at: { type: string, format: date-time, nullable: true }
+    Unit:
+      type: string
+      enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
+    ArticleWrite:
+      type: object
+      properties:
+        name: { type: string, minLength: 1, maxLength: 60 }
+        dept:
+          type: string
+          enum: [produce, bakery, dairy, meat_fish, frozen, pantry, baking_spices, sweets, drinks, drugstore, household, baby, other]
+        kind: { type: string, enum: [meat, fish, veg, vegan, nonfood] }
+        allergens:
+          type: array
+          items: { type: string, enum: [celery, gluten, crustaceans, eggs, fish, lupin, milk, molluscs, mustard, nuts, peanuts, sesame, soy, sulphites] }
+        unit1: { $ref: "#/components/schemas/Unit" }
+        unit2:
+          type: string
+          description: "The optional second default unit, empty for none"
+        symbol: { type: string, description: "An emoji of the Noto Emoji set" }
+        picture_url: { type: string, description: "An http or https address of an image the box downloads once" }
+        remove_picture: { type: boolean }
+    ArticleWarnings:
+      type: object
+      required: [article_id, warnings, suits, does_not_suit, suggested, not_suggested_because, hidden_for, note]
+      properties:
+        article_id: { type: string }
+        warnings:
+          type: array
+          items:
+            type: object
+            required: [people, allergens]
+            properties:
+              people:
+                type: array
+                items: { type: string, format: uuid }
+              allergens:
+                type: array
+                items: { type: string }
+        suits:
+          type: array
+          items: { type: string, format: uuid }
+        does_not_suit:
+          type: array
+          items: { type: string, format: uuid }
+        suggested: { type: boolean }
+        not_suggested_because: { type: string, nullable: true, enum: [hand, allergy, diet, null] }
+        hidden_for:
+          type: array
+          items: { type: string, format: uuid }
+        note: { type: string }
+    Hiding:
+      type: object
+      required: [enabled, everyone, people, confirmed_by, confirmed_at, experimental]
+      properties:
+        enabled: { type: boolean }
+        everyone: { type: boolean }
+        people:
+          type: array
+          items: { type: string, format: uuid }
+        confirmed_by: { type: string, format: uuid, nullable: true }
+        confirmed_at: { type: string, format: date-time, nullable: true }
+        experimental: { type: boolean, description: "Always true" }
+    UnitKey:
+      type: string
+      enum: [piece, dozen, pack, bunch, g, kg, ml, l, oz, lb, floz_us, floz_uk, cup_us, pint_us, pint_uk, quart_us, gallon_us, gallon_uk]
     ListEntry:
       type: object
-      required: [id, text, done]
+      required: [id, text, done, article_id, symbol, picture]
       properties:
         id: { type: string, format: uuid }
         text: { type: string }
         done: { type: boolean }
+        article_id: { type: string, nullable: true, description: "The library article of the entry: the one stored when it was added from the library, else (an entry without one) the article its text names exactly in German or English, ignoring case and umlauts; never an article hidden by hand. The key of a shipped article or the id of an own one. Null for free text." }
+        symbol: { type: string, nullable: true, description: "The emoji a tile shows for the article (its department's symbol when it has none). Null for free text and for an article that has a picture." }
+        picture: { type: string, nullable: true, description: "Path of the own article's picture, `GET /articles/{id}/picture`. Null without one." }
+        amount: { type: number, description: "How much, as shown (rounded: g and ml whole, else at most two decimals); missing without a quantity" }
+        unit: { $ref: "#/components/schemas/UnitKey" }
+    ListEntryResult:
+      allOf:
+        - { $ref: "#/components/schemas/ListEntry" }
+        - type: object
+          required: [result]
+          properties:
+            result:
+              type: string
+              enum: [added, added_to, filled, exists, set, merged]
+              description: What happened to the entry (see `addListEntry` and `setListEntryQuantity`)
+            previous:
+              type: object
+              description: The quantity the entry had before, when it changed
+              required: [amount, unit]
+              properties:
+                amount: { type: number }
+                unit: { $ref: "#/components/schemas/UnitKey" }
+    Units:
+      type: object
+      required: [country, custom, active, units]
+      properties:
+        country: { type: string, description: "ISO 3166-1 alpha-2 country of the home, empty without a place", example: DE }
+        custom: { type: boolean, description: "A parent changed the units; false while they follow the country" }
+        active: { type: array, items: { $ref: "#/components/schemas/UnitKey" } }
+        units:
+          type: array
+          items:
+            type: object
+            required: [key, group, kind, size]
+            properties:
+              key: { $ref: "#/components/schemas/UnitKey" }
+              group: { type: string, enum: [count, weight, volume] }
+              kind: { type: string, enum: [count, pack, bunch, weight, volume] }
+              size: { type: number, description: "In pieces, grams or millilitres" }
+    ListView:
+      type: object
+      required: [view, default]
+      properties:
+        view: { type: string, enum: [tiles, list] }
+        default: { type: boolean, description: "True while the person never chose: children then see tiles, adults the list" }
+    ListViewChange:
+      type: object
+      required: [view]
+      properties:
+        view: { type: string, enum: [tiles, list] }
     ListWithEntries:
       allOf:
         - { $ref: "#/components/schemas/List" }
@@ -2691,9 +4199,9 @@ components:
       properties:
         id: { type: string, format: uuid }
         name: { type: string }
-        kind: { type: string, enum: [local, ics, caldav, google, meals], description: "meals is the meal plan, generated by the box: read-only, its events change only in the meal plan" }
+        kind: { type: string, enum: [local, ics, caldav, google, outlook, meals], description: "meals is the meal plan, generated by the box: read-only, its events change only in the meal plan" }
         color: { type: string }
-        read_only: { type: boolean, description: "The box never changes this calendar's events (always true for ICS)" }
+        read_only: { type: boolean, description: "The box never changes this calendar's events outside (always true for ICS; false by default for CalDAV and Google, where a parent can switch it on)" }
         waste_collection: { type: boolean, description: "A read-only calendar marked as the household's waste collection calendar: its events show only in the family view's tomorrow tile (reminder from 18:00) and on the night page, not in the strip, person columns or personal view" }
         share_through_box: { type: boolean, description: "Phones may subscribe to this calendar over CalDAV. Always true for the family calendar; on by default for ICS, off for CalDAV and Google" }
         audience: { $ref: "#/components/schemas/Audience" }
@@ -2723,6 +4231,9 @@ components:
         lists: { $ref: "#/components/schemas/MCPLevel" }
         tasks: { $ref: "#/components/schemas/MCPLevel" }
         meals: { $ref: "#/components/schemas/MCPLevel" }
+        health:
+          description: Diet and allergies (health data). Only `none` or `read`; `write` is refused with 422 and the default is `none`.
+          allOf: [{ $ref: "#/components/schemas/MCPLevel" }]
     MCPLevel:
       type: string
       enum: [none, read, write]
@@ -2738,7 +4249,7 @@ components:
         text: { type: string }
     Display:
       type: object
-      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk]
+      required: [id, name, room, type, paired_at, last_seen_at, show_tomorrow, theme, sunrise_offset, sunset_offset, quiet_mode, kiosk, screensaver, brightness, list_view, layout]
       properties:
         id: { type: string, format: uuid }
         name: { type: string, example: Hallway }
@@ -2752,6 +4263,124 @@ components:
         sunset_offset: { type: integer, minimum: -180, maximum: 180, description: "Minutes added to sunset before an automatic theme turns dark" }
         quiet_mode: { $ref: "#/components/schemas/QuietMode" }
         kiosk: { $ref: "#/components/schemas/Kiosk" }
+        screensaver: { $ref: "#/components/schemas/Screensaver" }
+        brightness: { $ref: "#/components/schemas/Brightness" }
+        layout: { $ref: "#/components/schemas/DisplayLayout" }
+    DisplayLayout:
+      type: object
+      description: |
+        What a display shows (ticket 180, ADR 0020): which people in which order, and which layout
+        blocks are on in each of the three fixed zones (ADR 0016). Every display has its own layout;
+        a new display starts with today's: the whole family and every block of before. Exactly one
+        person means the display shows that person's personal view (ADR 0015). Events for the whole
+        family always show.
+      required: [whole_family, people, rotate_daily, blocks, list_id, orientation]
+      properties:
+        whole_family: { type: boolean, description: "\"Whole family\": people who join the household later are added at the end. Default true" }
+        people:
+          type: array
+          items: { type: string, format: uuid }
+          description: "The people the display shows, in the order of today's columns, from left to right. While the rotation runs, the order of today. A PATCH that switches `rotate_daily` on takes the order it sends (or the stored one) as the base order of the rotation, so today's columns can move at once by today mod the number of people; a PATCH that leaves it on and sends today's order keeps the columns as they are"
+        rotate_daily: { type: boolean, description: "Every day at 03:00 each person moves one column to the right, the rightmost goes to the left (round-robin), the same on every display with this switched on. Default false" }
+        blocks:
+          type: array
+          description: "Every block with its zone and switch, in the order shown inside each zone"
+          items:
+            type: object
+            required: [id, zone, enabled]
+            properties:
+              id: { type: string, enum: [clock, weather, events, routines, tasks, meals, tomorrow, list] }
+              zone: { type: string, enum: [header, columns, footer] }
+              enabled: { type: boolean }
+        list_id: { type: string, format: uuid, nullable: true, description: "The list of the block `list` (\"one list\"); at most 8 open entries show. Null: none chosen. A list that was deleted meanwhile stays here and the display shows no list until another is chosen" }
+        orientation: { type: string, enum: [landscape, portrait], description: "How the display last reported it hangs (the settings page draws its preview that way). Read-only; landscape until the display reports it" }
+    UpdateDisplayLayout:
+      type: object
+      description: |
+        Only the fields sent change. `blocks` names blocks in the order they should have inside
+        their zone (a block not named keeps its place after the named ones) and may switch them
+        with `enabled`. Refused with 422: no person, an unknown person, an unknown block or list,
+        or the block `list` on while there is no list to show.
+      properties:
+        whole_family: { type: boolean }
+        people: { type: array, items: { type: string, format: uuid }, minItems: 1 }
+        rotate_daily: { type: boolean }
+        blocks:
+          type: array
+          items:
+            type: object
+            required: [id]
+            properties:
+              id: { type: string, enum: [clock, weather, events, routines, tasks, meals, tomorrow, list] }
+              enabled: { type: boolean }
+        list_id: { type: string, description: "The ID of the list of the block `list`; an empty string removes the choice" }
+    Brightness:
+      type: object
+      description: |
+        How bright the display is (ticket 179, ADR 0020). It needs a kiosk app: the box sets
+        the brightness (E-Ink: the front light) through it, and without one only the values
+        are stored. `day` and `evening` switch at the same sun times and offsets as the
+        automatic theme (ADR 0015); without a home location `day` applies all day.
+      required: [day, evening, light_source, quiet, current]
+      properties:
+        day: { type: integer, minimum: 1, maximum: 100, description: "Percent from sunrise to sunset; default 100" }
+        evening: { type: integer, minimum: 1, maximum: 100, description: "Percent from sunset to sunrise; default 40" }
+        light_source:
+          type: string
+          enum: [sun, room]
+          description: "`sun`: day and evening by the sun. `room`: the device's light sensor regulates (only effective when the device reports one); quiet mode applies either way"
+        quiet:
+          type: object
+          description: What quiet mode does to the light, and the wake after a touch
+          required: [mode, level, wake_minutes]
+          properties:
+            mode: { type: string, enum: [off, dim], description: "`off`: the front light (E-Ink) or the screen (normal screen) goes off. `dim`: dimmed to `level`" }
+            level: { type: integer, minimum: 1, maximum: 100, description: "Percent for `dim`; default 5" }
+            wake_minutes: { type: integer, minimum: 1, maximum: 30, description: "How long a touch wakes a display that quiet mode switched off, at evening brightness; default 1" }
+        current:
+          type: object
+          nullable: true
+          description: What the display should do now and whether the kiosk app confirmed it. Null without a kiosk app or before the box has checked it (it checks every minute).
+          required: [phase, percent, since, confirmed, reachable, light_sensor]
+          properties:
+            phase: { type: string, enum: [day, evening, room, quiet_off, quiet_dim, wake] }
+            percent: { type: integer, nullable: true, description: "Null while the light sensor regulates (`room`, or a `wake` under it)" }
+            since: { type: string, format: date-time, nullable: true, description: "When this phase began; null without a home location" }
+            confirmed: { type: boolean, description: "The kiosk app received it" }
+            reachable: { type: boolean, description: "The kiosk app answered at the last check; the box retries every minute" }
+            light_sensor: { type: boolean, description: "The device reports a light sensor, so `light_source: room` has an effect" }
+    UpdateBrightness:
+      type: object
+      description: Only the fields sent change. A value outside its range, an unknown mode or source is refused with 422.
+      properties:
+        day: { type: integer, minimum: 1, maximum: 100 }
+        evening: { type: integer, minimum: 1, maximum: 100 }
+        light_source: { type: string, enum: [sun, room] }
+        quiet:
+          type: object
+          properties:
+            mode: { type: string, enum: [off, dim] }
+            level: { type: integer, minimum: 1, maximum: 100 }
+            wake_minutes: { type: integer, minimum: 1, maximum: 30 }
+        list_view: { type: string, enum: [tiles, list], description: "How the display shows lists (ADR 0019). A display is not a person and keeps its own view, tiles until someone switches it at the display or here." }
+    DisplayPairing:
+      type: object
+      required: [token, state, code, code_expires_at, pair_url]
+      properties:
+        token: { type: string, description: "The display's own bearer token, shown once" }
+        state: { type: string, enum: [pairing] }
+        code: { type: string, pattern: "^[0-9]{6}$", example: "482916" }
+        code_expires_at: { type: string, format: date-time }
+        pair_url: { type: string, description: "Where a parent's phone confirms the code (the QR code on the page route)" }
+    DisplayState:
+      type: object
+      required: [state]
+      properties:
+        state: { type: string, enum: [paired, pairing, unpaired] }
+        code: { type: string, pattern: "^[0-9]{6}$", description: "Only while `pairing`" }
+        theme: { type: string, description: "Only while `paired`: the palette shown now (light, dark or bw)" }
+        saver: { type: string, enum: ["0", "1"], description: "Only while `paired`: `1` when the photo screensaver is due now (on, and not in quiet mode)" }
+        saver_seconds: { type: string, pattern: "^[0-9]+$", description: "Only while `paired`: the idle seconds after which the family view asks again; `0` when the screensaver is off" }
     QuietMode:
       type: object
       description: The daily window, in the household's time zone, in which the display is quiet (ADR 0015). Off by default.
@@ -2795,6 +4424,10 @@ components:
           properties:
             url: { type: string, description: "http or https address; empty removes the kiosk app and its key" }
             api_key: { type: string, writeOnly: true, description: "Omitted or empty keeps the stored key" }
+        screensaver: { $ref: "#/components/schemas/UpdateScreensaver" }
+        brightness: { $ref: "#/components/schemas/UpdateBrightness" }
+        list_view: { type: string, enum: [tiles, list], description: "How the display shows lists (ADR 0019); anything else is refused with 422" }
+        layout: { $ref: "#/components/schemas/UpdateDisplayLayout" }
     PairDisplay:
       type: object
       required: [code, name, type]
@@ -2815,12 +4448,13 @@ components:
         last_seen_at: { type: string, format: date-time, nullable: true }
     PhonePairing:
       type: object
-      required: [id, device, verification, expires_at]
+      required: [id, device, verification, expires_at, for_person_id]
       properties:
         id: { type: string, format: uuid }
         device: { type: string, example: Safari on iPhone, description: "What the phone said about itself" }
         verification: { type: string, example: "483 920", description: "Six-digit number the waiting phone shows. Confirm only if it matches the number on the phone in your hand." }
         expires_at: { type: string, format: date-time }
+        for_person_id: { type: string, format: uuid, nullable: true, description: "Whom the phone is for next when the code came from `repairPhone`; null for an ordinary code" }
     NewPhonePairing:
       type: object
       required: [id, url, expires_at]
@@ -2828,6 +4462,12 @@ components:
         id: { type: string, format: uuid }
         url: { type: string, format: uri, description: "The address to show as a QR code. Only in this answer." }
         expires_at: { type: string, format: date-time }
+        person_id: { type: string, format: uuid, description: "Only for `repairPhone`: whom the phone is for next" }
+    RepairPhone:
+      type: object
+      required: [person_id]
+      properties:
+        person_id: { type: string, format: uuid, description: "Whom the phone is for next: a member of the household other than the phone's current person" }
     Invitation:
       type: object
       required: [state, created_at, expires_at, created_by, accepted_at, withdrawn_at]
@@ -2850,7 +4490,7 @@ components:
       description: Only on synced calendars. Displays read `state` to show the sync notice.
       required: [state, interval_minutes, last_attempt_at, last_success_at, last_error]
       properties:
-        event_count: { type: integer, description: "Events the calendar holds after the last successful run; a series counts once" }
+        event_count: { type: integer, description: "Events the calendar holds now, events written on the box included and not limited to the import window; a series counts once" }
         last_run:
           type: object
           description: What the last successful run did to the events. A failed run leaves it as it was.
@@ -2859,7 +4499,8 @@ components:
             new: { type: integer }
             changed: { type: integer }
             removed: { type: integer }
-        state: { type: string, enum: [ok, stale], description: "stale = 24 hours without a successful sync; one success clears it" }
+        state: { type: string, enum: [ok, stale], description: "stale = 24 hours without a successful sync; one success clears it. A paused calendar is never stale" }
+        paused: { type: boolean, description: "True while the calendar's connection to the outside is off (offline mode, or the connection's own switch; see GET /outbound). The calendar keeps its events, is not tried and is not a problem; it syncs again at once when the connection is on" }
         interval_minutes: { type: integer, example: 60 }
         last_attempt_at: { type: string, format: date-time, nullable: true }
         last_success_at: { type: string, format: date-time, nullable: true }
@@ -2879,10 +4520,13 @@ components:
       required: [id, kind, url, username, single_calendar]
       properties:
         id: { type: string, format: uuid }
-        kind: { type: string, enum: [caldav] }
+        kind: { type: string, enum: [caldav, google, outlook], description: "outlook: signed in at Microsoft (`/calendar-connections/outlook/sign-ins`); `username` is then the Microsoft account. google: signed in at Google with the family's own app registration (`/google`); `username` is then the Google account and `url` Google's CalDAV API" }
         url: { type: string, example: "https://caldav.icloud.com" }
-        username: { type: string }
+        username: { type: string, description: "The Apple ID or CalDAV user name; for Outlook the Microsoft account" }
         single_calendar: { type: boolean }
+        needs_signin: { type: boolean, description: "Google only: Google no longer accepts the stored sign-in (invalid_grant): the connection must sign in again (`POST /google/authorize` with its id). Its calendars keep their events and queued changes. Absent when the sign-in works" }
+        signin_needed_at: { type: string, format: date-time, description: "Google only, with `needs_signin`: since when" }
+        reauth_since: { type: string, format: date-time, description: "Outlook only: when the Microsoft sign-in ended. Until it is renewed (a new sign-in through the reconnect page) no new events arrive; the old ones stay. Absent while the sign-in is valid." }
         calendars:
           type: array
           description: The server's event calendars. Only on connect and on discovery.
@@ -2893,7 +4537,55 @@ components:
               url: { type: string }
               name: { type: string }
               added: { type: boolean, description: "Already synced through this connection" }
+              read_only: { type: boolean, description: "Outlook only: Outlook does not let the account change this calendar (shared with it, birthdays, holidays). It is read-only for good" }
+              shared_by: { type: string, description: "Who shared the calendar, when it is known: Outlook gives \"Name (address)\", Google the account" }
               calendar_id: { type: string, format: uuid, description: "The synced calendar, when `added`: change it with PATCH /calendars/{id}, switch it off with DELETE /calendars/{id}" }
+              access: { type: string, enum: [read_write, read_only], description: "Google only: whether the box may change events in this calendar. `read_only` calendars (shared for viewing only, birthdays, holidays) are added read-only and can never be switched to two-way" }
+              reason: { type: string, enum: [writable, shared, birthdays, google], description: "Google only: why (`shared` = shared with this account for viewing only)" }
+              shared: { type: boolean, description: "Google only: another account owns the calendar and shares it with this one" }
+    GoogleApp:
+      type: object
+      required: [configured, redirect_uris, scope, accounts]
+      properties:
+        configured: { type: boolean, description: "The family has entered its app registration (OAuth client)" }
+        client_id: { type: string, description: "Ends with .apps.googleusercontent.com. The client secret is never returned" }
+        registered_at: { type: string, format: date-time }
+        redirect_uris:
+          type: object
+          description: The two redirect URIs to enter at Google (exact match). Values to type in, not links
+          required: [relay, fallback]
+          properties:
+            relay: { type: string, example: "https://hejmo-home.github.io/oauth/" }
+            fallback: { type: string, example: "http://127.0.0.1:8099/" }
+        scope: { type: string, example: "https://www.googleapis.com/auth/calendar" }
+        accounts: { type: array, items: { type: string }, description: "Google accounts already connected" }
+        sign_in_again:
+          type: array
+          items: { type: string }
+          description: Only in the answer to a PUT that changed the client ID. The Google accounts that must sign in again, because their sign-ins belong to the old client
+    OutlookSignIn:
+      type: object
+      required: [id, state]
+      properties:
+        id: { type: string, format: uuid }
+        state:
+          type: string
+          enum: [waiting, signed_in, expired, declined, consent_required, wrong_account, error]
+          description: |
+            waiting: no verdict yet. signed_in: the connection is stored. expired: the code ran out.
+            declined: Cancel or Do not accept at Microsoft. consent_required: a work or school tenant needs an
+            administrator to approve the app (give the IT `app_id` and `scopes`). wrong_account: a reconnect was
+            signed in with another account (`other_account`). error: Microsoft did not answer or the account could not be read; start again.
+        user_code: { type: string, description: "Only while waiting" }
+        verification_uri: { type: string, description: "Only while waiting, e.g. https://microsoft.com/devicelogin" }
+        expires_at: { type: string, format: date-time, description: "Only while waiting" }
+        interval_seconds: { type: integer, description: "How often to ask. Only while waiting" }
+        last_polled_at: { type: string, format: date-time, description: "When the box last asked Microsoft" }
+        account: { type: string, description: "The Microsoft account signed in (for wrong_account: the one that was expected)" }
+        other_account: { type: string, description: "wrong_account: the account that signed in" }
+        connection_id: { type: string, format: uuid, description: "When signed_in" }
+        app_id: { type: string, description: "consent_required: the app ID the IT approves" }
+        scopes: { type: array, items: { type: string }, description: "consent_required: the permissions the app asks for" }
     EventCount:
       type: object
       required: [url, state, count, text]
@@ -2930,11 +4622,26 @@ components:
         at: { type: string, format: date-time }
         kind: { type: string, enum: [failure, conflict, note] }
         message: { type: string, description: "Translated to the language of the request (Accept-Language, default German)" }
+        detail: { type: string, description: "For a conflict: the version that lost, as iCalendar text. Kept for 30 days with the entry. Absent for other entries" }
+    Place:
+      type: object
+      required: [id, name, region, latitude, longitude, region_code]
+      properties:
+        id: { type: integer, description: "The GeoNames id; give it as home_place_id", example: 2855334 }
+        name: { type: string, example: Pasing }
+        region: { type: string, description: "What sets the place apart, in the language asked for: district of its town (when it is one), the area when two results would read the same, the state or canton and the country", example: "district of München, Bayern, Germany" }
+        latitude: { type: number, format: double }
+        longitude: { type: number, format: double }
+        region_code: { type: string, description: "ISO 3166-2 code of the state or canton, one of the regions of the setup form", example: DE-BY }
     Settings:
       type: object
-      required: [date_format, time_format, temperature_unit, auto_update, first_steps_hidden, first_steps_skipped, meal_cutoffs]
+      required: [date_format, time_format, temperature_unit, auto_update, home_name, home_place_id, latitude, longitude, first_steps_hidden, first_steps_skipped, meal_cutoffs]
       properties:
         date_format: { type: string, enum: [dmy, mdy], description: "Day first DD.MM.YYYY (default) or month first MM/DD/YYYY. Only how the web interface writes dates in numbers; this API, CalDAV and iCalendar stay ISO 8601" }
+        home_name: { type: string, description: "The name of the home place; the name of the place picked from the list" }
+        home_place_id: { type: integer, nullable: true, description: "The id of the place of the list on the box (GET /places) the home was picked from; null when the location was set by coordinates only" }
+        latitude: { type: number, nullable: true, format: double, description: "Latitude of the home in degrees (north positive); null until the home has a location. Sunrise and sunset, themes and weather use it" }
+        longitude: { type: number, nullable: true, format: double, description: "Longitude of the home in degrees (east positive); null until the home has a location" }
         time_format: { type: string, enum: ["24h", "12h"], description: "24-hour (default) or 12-hour clock" }
         temperature_unit: { type: string, enum: [c, f], description: "Degrees Celsius (default) or Fahrenheit" }
         first_steps_hidden: { type: boolean, description: "Whether the first steps card on the start page is hidden (default false). A parent closes the card when all six steps are done or skipped, or hides it earlier." }
@@ -2958,6 +4665,10 @@ components:
       type: object
       properties:
         date_format: { type: string, description: "dmy or mdy; anything else is refused with 400" }
+        home_place_id: { type: integer, description: "A place of the list on the box (GET /places): name and coordinates come from it; not together with home_name, latitude or longitude" }
+        home_name: { type: string, description: "New home place name; needs latitude and longitude" }
+        latitude: { type: number, format: double, description: "-90 to 90; with longitude" }
+        longitude: { type: number, format: double, description: "-180 to 180; with latitude. latitude 0 and longitude 0 together mean no location and are refused" }
         time_format: { type: string, description: "24h or 12h" }
         temperature_unit: { type: string, description: "c or f" }
         auto_update: { type: string, description: "on, off or notify" }
@@ -2974,6 +4685,45 @@ components:
             lunch: { type: string }
             snack: { type: string }
             dinner: { type: string }
+    Outbound:
+      type: object
+      required: [offline, offline_since, update_reminder_days, public_name, connections, refused]
+      properties:
+        offline: { type: boolean }
+        offline_since: { type: string, nullable: true, format: date-time, description: "When offline mode was switched on; null while it is off" }
+        update_reminder_days: { type: integer, minimum: 7, maximum: 365, description: "Days without an update after which parents are reminded (offline mode)" }
+        public_name: { type: string, nullable: true, description: "The box's public DNS name, or null if it uses its own certificate" }
+        connections:
+          type: array
+          items:
+            type: object
+            required: [id, enabled, switchable, locked, last_contact]
+            properties:
+              id: { type: string, enum: [weather, update, calendars, ics, recipes, images, dns] }
+              enabled: { type: boolean, description: "Whether the connection may go outside now; false for all while offline mode is on" }
+              switchable: { type: boolean, description: "False for the DNS service, which has no switch" }
+              locked: { type: boolean, description: "True while offline mode is on" }
+              last_contact: { type: string, nullable: true, format: date-time }
+              target: { type: string, description: "The host last reached" }
+        refused:
+          type: array
+          description: "What the gate refused, newest first, at most 200"
+          items:
+            type: object
+            required: [at, service, target]
+            properties:
+              at: { type: string, format: date-time }
+              service: { type: string, enum: [weather, update, calendars, ics, recipes, images, dns, other] }
+              target: { type: string }
+    OutboundUpdate:
+      type: object
+      properties:
+        offline: { type: boolean }
+        connections:
+          type: object
+          description: "Connection id to switch (weather, update, calendars, ics, recipes, images)"
+          additionalProperties: { type: boolean }
+        update_reminder_days: { type: integer }
     UpdateStatus:
       type: object
       required: [mode, managed, state, notice]
@@ -2997,7 +4747,9 @@ components:
         mode: { type: string, enum: [own-ca, public] }
         name: { type: string, description: "Public DNS name of the box (mode public)" }
         issuer: { type: string, enum: [letsencrypt, actalis], description: "Chosen certificate authority (mode public)" }
-        expires_at: { type: string, format: date-time }
+        expires_at: { type: string, format: date-time, description: "When the public certificate ends (mode public), or when the box's own CA ends (mode own-ca)" }
+        names: { type: array, items: { type: string }, description: "Names and addresses the box certificate is valid for (mode own-ca)" }
+        router_name: { type: string, description: "The name of the box in the router that the certificate covers (mode own-ca, only when there is one)" }
         warning: { type: boolean, description: "True if the public certificate could not be resumed, loaded, obtained or renewed, or expires within 7 days" }
         renewal_error: { type: string, description: "Why the last resume, load, order or renewal failed" }
     Mealtime: { type: string, enum: [breakfast, lunch, snack, dinner] }
@@ -3079,6 +4831,15 @@ components:
         rrule: { type: string, description: "RFC 5545 RRULE value, empty for single events", example: "FREQ=WEEKLY;BYDAY=MO" }
         people: { type: array, items: { type: string, format: uuid } }
         groups: { type: array, items: { type: string, format: uuid } }
+        invitation: { $ref: "#/components/schemas/EventInvitation" }
+    EventInvitation:
+      type: object
+      description: Other people are invited to this event (Outlook). It is read-only on the box, also in a calendar that is not, because a change would send a message to every attendee; changing or deleting it answers 422. Change it at its source (`web_link`).
+      required: [organizer, response, web_link]
+      properties:
+        organizer: { type: string }
+        response: { type: string, description: "The account's answer in Outlook", enum: ["", accepted, tentativelyAccepted, declined, notResponded, organizer] }
+        web_link: { type: string }
     NewEvent:
       type: object
       required: [title, start, end]
@@ -3122,6 +4883,94 @@ components:
         end: { type: string }
         people: { type: array, items: { type: string, format: uuid } }
         groups: { type: array, items: { type: string, format: uuid } }
+        invitation: { $ref: "#/components/schemas/EventInvitation" }
+    Screensaver:
+      type: object
+      description: |
+        The photo screensaver of a display (ADR 0020). On by default; it never runs
+        in quiet mode. A new E-Ink display changes the photo every 15 minutes, any
+        other display every minute.
+      required: [enabled, idle_minutes, interval_minutes, album_ids]
+      properties:
+        enabled: { type: boolean }
+        idle_minutes: { type: integer, minimum: 1, maximum: 240, example: 10, description: "Minutes without a touch before the photos start" }
+        interval_minutes: { type: integer, minimum: 1, maximum: 240, example: 1, description: "Minutes each photo stays" }
+        album_ids: { type: array, items: { type: string, format: uuid }, description: "The albums it shows; empty means all albums, including albums made later" }
+    UpdateScreensaver:
+      type: object
+      properties:
+        enabled: { type: boolean }
+        idle_minutes: { type: integer, description: "1 to 240, else 422" }
+        interval_minutes: { type: integer, description: "1 to 240, else 422" }
+        album_ids: { type: array, items: { type: string, format: uuid }, description: "An empty list means all albums; an unknown album is refused with 422" }
+    DisplaySaver:
+      type: object
+      required: [active, interval_seconds, display_type, photos]
+      properties:
+        active: { type: boolean }
+        interval_seconds: { type: integer }
+        display_type: { $ref: "#/components/schemas/DisplayType" }
+        photos: { type: array, items: { type: string, format: uuid } }
+    AlbumName:
+      type: object
+      required: [name]
+      properties:
+        name: { type: string, minLength: 1, maxLength: 80 }
+    Album:
+      type: object
+      required: [id, name, source, folder, default, photo_count, hidden_count, cover_photo_id, displays]
+      properties:
+        id: { type: string, format: uuid }
+        name: { type: string }
+        source: { type: string, enum: [upload, folder], description: "`folder`: it comes from a subfolder of the box's photo folder and is changed only there" }
+        folder: { type: string, description: "The subfolder name, empty for an uploaded album" }
+        default: { type: boolean, description: "The album that takes the first uploads and the photos lying directly in the folder; it cannot be deleted" }
+        photo_count: { type: integer }
+        hidden_count: { type: integer, description: "How many of the photos are hidden from displays" }
+        cover_photo_id: { type: string, nullable: true, format: uuid }
+        displays:
+          type: array
+          description: The displays that show this album
+          items:
+            type: object
+            required: [id, name]
+            properties:
+              id: { type: string, format: uuid }
+              name: { type: string }
+    Photo:
+      type: object
+      required: [id, album_id, name, hidden, width, height, created_at]
+      properties:
+        id: { type: string, format: uuid }
+        album_id: { type: string, format: uuid }
+        name: { type: string, description: "The file name it came with" }
+        hidden: { type: boolean, description: "Don't show on displays" }
+        width: { type: integer }
+        height: { type: integer }
+        created_at: { type: string, format: date-time }
+    UpdatePhoto:
+      type: object
+      properties:
+        hidden: { type: boolean }
+        album_id: { type: string, format: uuid }
+    PhotoStorage:
+      type: object
+      required: [used_bytes, limit_bytes, limit_gb, photo_count, full, waiting]
+      properties:
+        used_bytes: { type: integer, format: int64 }
+        limit_bytes: { type: integer, format: int64 }
+        limit_gb: { type: integer, example: 2 }
+        photo_count: { type: integer }
+        full: { type: boolean, description: "Whether another photo would be refused" }
+        waiting:
+          type: array
+          description: Photos in the box's folder that wait for space, by folder (empty name is the folder itself)
+          items:
+            type: object
+            required: [folder, count]
+            properties:
+              folder: { type: string }
+              count: { type: integer }
     Error:
       type: object
       required: [error]
@@ -3146,6 +4995,14 @@ components:
           schema: { $ref: "#/components/schemas/Error" }
     Invalid:
       description: Request is well-formed but not valid
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    OffNow:
+      description: |
+        The connection to the outside this needs is off: offline mode is on, or the
+        connection is switched off (`GET /outbound` says which). Nothing was sent
+        to the outside and nothing was changed.
       content:
         application/json:
           schema: { $ref: "#/components/schemas/Error" }
@@ -3181,6 +5038,16 @@ components:
       content:
         application/json:
           schema: { $ref: "#/components/schemas/MealTemplateClash" }
+    TooLarge:
+      description: The file is larger than 64 MB
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
+    PhotosFull:
+      description: The space for photos is full; nothing was deleted
+      content:
+        application/json:
+          schema: { $ref: "#/components/schemas/Error" }
     TooManyRequests:
       description: Too many wrong attempts, try again later
       content:

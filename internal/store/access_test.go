@@ -236,3 +236,35 @@ func TestAccountLanguage(t *testing.T) {
 		t.Fatalf("unknown person: %v", err)
 	}
 }
+
+// Ticket 176: a new set of recovery codes is "not confirmed as saved" until the
+// person says so; a newer set starts unconfirmed again.
+func TestRecoveryCodesAreUnconfirmedUntilConfirmedAsSaved(t *testing.T) {
+	db, _ := openTemp(t)
+	mama := confirmedParent(t, db)
+	if set, err := db.RecoverySet(mama.ID); err != nil || set.Exists {
+		t.Fatalf("before any set: %+v, %v", set, err)
+	}
+	if err := db.ReplaceRecoveryCodes(mama.ID, []string{"h1", "h2"}); err != nil {
+		t.Fatal(err)
+	}
+	set, err := db.RecoverySet(mama.ID)
+	if err != nil || !set.Exists || set.Unused != 2 || set.CreatedAt.IsZero() || !set.SavedAt.IsZero() {
+		t.Fatalf("new set: %+v, %v", set, err)
+	}
+	if err := db.ConfirmRecoveryCodesSaved(mama.ID); err != nil {
+		t.Fatal(err)
+	}
+	if set, _ := db.RecoverySet(mama.ID); set.SavedAt.IsZero() {
+		t.Fatal("not saved after the confirmation")
+	}
+	if err := db.ReplaceRecoveryCodes(mama.ID, []string{"n1"}); err != nil {
+		t.Fatal(err)
+	}
+	if set, _ := db.RecoverySet(mama.ID); !set.SavedAt.IsZero() {
+		t.Fatal("a newer set counts as saved")
+	}
+	if err := db.ConfirmRecoveryCodesSaved("nobody"); !errors.Is(err, store.ErrNotFound) {
+		t.Fatalf("confirming for nobody: %v", err)
+	}
+}

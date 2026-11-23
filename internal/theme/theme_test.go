@@ -142,3 +142,23 @@ func TestDefaultsByDisplayType(t *testing.T) {
 		t.Fatal("defaults: E-Ink light, normal screen automatic")
 	}
 }
+
+// #179: the display's brightness follows the same switches as the automatic
+// theme, and says when the current one happened.
+func TestResolveSinceNamesTheSwitchThatDecides(t *testing.T) {
+	s := solar(t)
+	in := auto(s.Set.Add(2*time.Hour), 0, 20)
+	got, since := theme.ResolveSince(in)
+	if got != theme.Dark || !since.Equal(s.Set.Add(20*time.Minute)) {
+		t.Fatalf("after sunset = %s since %s, want dark since %s", got, since, s.Set.Add(20*time.Minute))
+	}
+	in.Now = s.Rise.Add(3 * time.Hour)
+	got, since = theme.ResolveSince(in)
+	if got != theme.Light || !since.Equal(s.Rise) {
+		t.Fatalf("morning = %s since %s, want light since %s", got, since, s.Rise)
+	}
+	in.Setting = theme.Dark
+	if _, since := theme.ResolveSince(in); !since.IsZero() {
+		t.Fatalf("a fixed theme has no switch, since = %s", since)
+	}
+}

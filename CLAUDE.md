@@ -30,11 +30,14 @@ Self-hosted, open-source family organizer: a Go box (Raspberry Pi, Docker) with 
 ```bash
 go test ./...                       # all tests
 go test -race -count=1 ./...        # as CI runs them (CI sets HEJMO_REQUIRE_RADICALE=1: no Docker means failure, not skip)
+ci/test-shard.sh 1 -race -count=1       # one CI shard (1 and 2: half of internal/server each; 3: every other package); tests that share a database use internal/store/storetest.Path, a migrated copy per test; tests are parallel (t.Parallel()) unless they swap a package-level value
 node --test web/test                # the JavaScript tests alone (also run inside go test; CI sets HEJMO_REQUIRE_NODE=1: no node means failure, not skip)
-go test -run 'TestRenderedLayout$' ./internal/server  # the rendered layout check: every page in headless Chrome (chromedp) at 375, 768 and 1024 px, light and black-and-white, German and English; names broken, text overflowing, pages wider than the viewport fail it. Needs Chrome: skipped without, CI sets HEJMO_REQUIRE_CHROME=1 (x86_64) so no Chrome means failure; HEJMO_CHROME picks the binary, HEJMO_LAYOUT_SHOTS the directory for screenshots of failing pages
+go test -run 'TestRenderedLayout$' ./internal/server  # the rendered layout check: every page in headless Chrome (chromedp) at 375, 768, 1024, 1440 and 1900 px, light and black-and-white, German and English; names broken, text overflowing, pages wider than the viewport and a side navigation that is not beside the content from 1024 px up fail it. Needs Chrome: skipped without, CI sets HEJMO_REQUIRE_CHROME=1 (x86_64) so no Chrome means failure; HEJMO_CHROME picks the binary, HEJMO_LAYOUT_SHOTS the directory for screenshots of failing pages
 gofmt -l . && go vet ./...          # formatting and vet (CI checks both)
 docker compose up -d --build --wait # run the box on http://localhost (HTTP) and https://localhost (HTTPS)
 ```
+
+**Local test runs share one 16 GB Mac** with other agents, the test box and a browser; full `-race` suites in parallel have filled its memory and frozen the desktop app. Locally, run only the tests you added or changed, for example `go test -race -count=1 -p 1 -parallel 2 -run 'TestFoo|TestBar' ./internal/server`; never run the whole `./internal/server` package locally, because its race binary grows to about 10 GB (four of them froze the Mac on 22/11/2026). A local watchdog kills any test binary over 3 GB; a killed run means: rely on CI, plus `gofmt`, `go vet` and `node --test web/test`. The full `-race` suite runs in CI (about 10 minutes): cite that CI run as evidence instead of a local full run. Red runs for the PR body come from the single test that proves the fix.
 
 Local tooling on the development Mac: Go in `~/.local/go/bin`, Homebrew in `/opt/homebrew/bin` (`gh`, `node`), Docker CLI in `/Applications/Docker.app/Contents/Resources/bin`. Non-interactive shells may need these on `PATH`.
 

@@ -2,6 +2,8 @@ package server
 
 import (
 	"errors"
+	"html"
+	"html/template"
 	"net/http"
 	"net/url"
 	"strconv"
@@ -11,6 +13,7 @@ import (
 	"github.com/hejmo-home/hejmo/internal/calendar"
 	"github.com/hejmo-home/hejmo/internal/calsync"
 	"github.com/hejmo-home/hejmo/internal/i18n"
+	"github.com/hejmo-home/hejmo/internal/outbound"
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
@@ -58,6 +61,9 @@ func (s *server) syncStale(householdID string) bool {
 		return false
 	}
 	for _, c := range cals {
+		if !s.gate.Allowed(calsync.ServiceOf(c.Kind)) {
+			continue // paused by offline mode or a switch: not a problem
+		}
 		if calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale {
 			return true
 		}
@@ -65,7 +71,27 @@ func (s *server) syncStale(householdID string) bool {
 	return false
 }
 
-type logView struct{ At, Calendar, Kind, Message string }
+// pausedFlag is the word tag of a calendar or connection whose connection to
+// the outside is off, with its last sync: a state, not a problem (ticket 201).
+// It is nil if the connection is on.
+func (s *server) pausedFlag(r *http.Request, p principal, svc outbound.Service, last time.Time) *flagView {
+	var key string
+	switch s.gate.Verdict(svc) {
+	case outbound.VerdictAllowed:
+		return nil
+	case outbound.VerdictOffline:
+		key = "outside.paused"
+	default:
+		key = "outside.paused.off"
+	}
+	after := s.say(r, i18n.Msg("sync.never"))
+	if !last.IsZero() {
+		after = s.say(r, i18n.Msg("outside.paused.last", "when", p.dateTimeSeconds(last)))
+	}
+	return &flagView{Kind: "paused", Text: s.say(r, i18n.Msg(key)), After: after}
+}
+
+type logView struct{ At, Calendar, Kind, Message, Detail string }
 
 type choice struct{ ID, Name string }
 
@@ -74,6 +100,9 @@ var syncIntervals = []int{5, 15, 30, 60, 120, 360, 1440}
 // syncFlag is what a synced calendar's state says in words when something is
 // wrong: a refused login, a problem of the last run, or no success for a day.
 func (s *server) syncFlag(r *http.Request, p principal, c store.SyncedCalendar, fact bool) *flagView {
+	if f := s.pausedFlag(r, p, calsync.ServiceOf(c.Kind), c.Sync.LastSuccess); f != nil {
+		return f
+	}
 	stale := calsync.StateAt(s.now(), c.Sync.StartedAt, c.Sync.LastSuccess) == calsync.Stale
 	problem := c.Sync.LastError.Key != ""
 	switch {
@@ -155,14 +184,14 @@ func (s *server) audienceMaps(householdID string) (map[string]personChip, map[st
 	return chips, names, list, choices, nil
 }
 
-func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p principal, status int, form map[string]any) {
+func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p principal, status int) {
 	at := func(t time.Time) string {
 		if t.IsZero() {
 			return ""
 		}
 		return p.dateTimeSeconds(t)
 	}
-	chips, groupNames, peopleChoices, groupChoices, err := s.audienceMaps(p.household.ID)
+	chips, groupNames, _, _, err := s.audienceMaps(p.household.ID)
 	if err != nil {
 		s.fail(w, "people", err)
 		return
@@ -201,20 +230,27 @@ func (s *server) renderCalendars(w http.ResponseWriter, r *http.Request, p princ
 	}
 	var log []logView
 	for _, e := range entries {
-		log = append(log, logView{at(e.At), e.CalendarName, e.Kind, s.say(r, e.Message)})
+		log = append(log, logView{at(e.At), e.CalendarName, e.Kind, s.say(r, e.Message), e.Detail})
 	}
-	var taken []string
-	for _, c := range synced {
-		taken = append(taken, c.Color)
+	notice, err := s.reconnectNotice(r, p)
+	if err != nil {
+		s.fail(w, "reconnect notice", err)
+		return
+	}
+	var offlineTop, connNote *offlineNote
+	if s.offline() {
+		offlineTop = s.noteFor(r, outbound.Calendars, "outside.note.calendars")
+	} else {
+		connNote = s.noteFor(r, outbound.Calendars, "outside.note.connect")
 	}
 	data := map[string]any{
-		"AutoColor": nextColors(taken, 1)[0],
-		"Person":    p.person, "Rows": subscribed, "ConnRows": connRows, "Log": log, "People": peopleChoices, "Groups": groupChoices,
-		"Intervals": syncIntervals, "IntervalChosen": intervalChosen(form), "SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(), "Form": form,
+		"GNotices":   s.googleNotices(r, p),
+		"Reconnect":  notice,
+		"OfflineTop": offlineTop, "ConnNote": connNote, "CanAdd": s.canAddCalendar(),
+		"Person": p.person, "Rows": subscribed, "ConnRows": connRows, "Log": log,
+		"SyncStale": s.syncStale(p.household.ID), "HTTPSWarning": s.httpsWarning(),
 	}
-	if form != nil {
-		data["Error"], data["ErrorField"] = form["Error"], form["ErrorField"]
-	}
+	googleData(data)
 	s.render(w, r, status, "calendars.html", data)
 }
 
@@ -234,10 +270,16 @@ func (s *server) connectionRow(r *http.Request, p principal, c store.Connection,
 			flag = f
 		}
 	}
+	if c.Kind == "google" && !c.SignInNeededAt.IsZero() { // Google refuses the sign-in: the words say what to do
+		flag = &flagView{Kind: "problem", Text: s.say(r, i18n.Msg("google.flag.signin"))}
+	}
 	if len(names) == 0 {
 		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("connections.on_box_none"))})
 	} else {
 		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("connections.on_box", "names", strings.Join(names, ", ")))})
+	}
+	if c.Kind == "outlook" && !c.ReauthSince.IsZero() {
+		flag = &flagView{Kind: "problem", Text: s.say(r, i18n.Msg("sync.flag.outlook_signin"))}
 	}
 	switch {
 	case flag != nil:
@@ -247,30 +289,87 @@ func (s *server) connectionRow(r *http.Request, p principal, c store.Connection,
 	case len(names) > 0:
 		row.Lines = append(row.Lines, rowLine{Text: s.say(r, i18n.Msg("sync.never"))})
 	}
+	if f := s.pausedFlag(r, p, outbound.Calendars, last); f != nil { // paused: the tag and the last sync replace the rest
+		row.Flag = f
+		row.Lines = row.Lines[:2]
+	}
 	return row
 }
 
 // serviceName names the service of a connection: iCloud, or the CalDAV server's host.
 func (s *server) serviceName(r *http.Request, c store.Connection) string {
+	if c.Kind == "google" {
+		return s.say(r, i18n.Msg("connections.provider.google"))
+	}
+	if c.Kind == "outlook" {
+		return s.say(r, i18n.Msg("connections.provider.outlook"))
+	}
 	if c.URL == iCloudServer {
 		return s.say(r, i18n.Msg("connections.provider.icloud"))
 	}
-	host := c.URL
+	return s.say(r, i18n.Msg("connections.service.caldav", "host", connectionHost(c)))
+}
+
+// connectionHost is the host of a connection's server, the way people read it.
+func connectionHost(c store.Connection) string {
 	if u, err := url.Parse(c.URL); err == nil && u.Host != "" {
-		host = u.Host
+		return u.Host
 	}
-	return s.say(r, i18n.Msg("connections.service.caldav", "host", host))
+	return c.URL
+}
+
+// sourceKicker says where the calendars of a connection live ("Calendar in
+// iCloud", "Calendar on cloud.example.org"): the small line above the name at
+// the source in a card of Choose calendars.
+func (s *server) sourceKicker(r *http.Request, c store.Connection) string {
+	if c.Kind == "google" {
+		return s.say(r, i18n.Msg("google.card.source"))
+	}
+	if c.URL == iCloudServer {
+		return s.say(r, i18n.Msg("connections.card.source_icloud"))
+	}
+	return s.say(r, i18n.Msg("connections.card.source_host", "host", connectionHost(c)))
+}
+
+// nameHint is the sentence under "Name in Hejmo": renaming here does not
+// rename the calendar at the source, which keeps its name (shown in <q>). Empty
+// when the name at the source is not known. Names are escaped.
+func (s *server) nameHint(r *http.Request, c store.Connection, sourceName string) template.HTML {
+	if sourceName == "" {
+		return ""
+	}
+	key := "connections.card.hint_host"
+	if c.URL == iCloudServer {
+		key = "connections.card.hint_icloud"
+	}
+	if c.Kind == "google" {
+		key = "connections.card.hint_google"
+	}
+	if c.Kind == "outlook" {
+		key = "outlook.card.hint"
+	}
+	const mark = "\x00name\x00"
+	text := html.EscapeString(s.say(r, i18n.Msg(key, "host", connectionHost(c), "name", mark)))
+	return template.HTML(strings.Replace(text, mark, "<q>"+html.EscapeString(sourceName)+"</q>", 1))
 }
 
 func (s *server) handleCalendarsPage(w http.ResponseWriter, r *http.Request) {
 	if p, ok := s.parentPage(w, r); ok {
-		s.renderCalendars(w, r, p, http.StatusOK, nil)
+		s.renderCalendars(w, r, p, http.StatusOK)
 	}
 }
 
+// handleCalendarAdd subscribes to a calendar link. The form is the guide of the
+// link card on the choice page; a mistake shows there, at its field, with the
+// link card chosen and everything typed kept. The first sync has run when the
+// success line says the box fetches the events.
 func (s *server) handleCalendarAdd(w http.ResponseWriter, r *http.Request) {
 	p, ok := s.parentPage(w, r)
 	if !ok {
+		return
+	}
+	if !s.gate.Allowed(outbound.ICS) { // the choice page says why a link cannot be subscribed
+		http.Redirect(w, r, "/connections/new", http.StatusSeeOther)
 		return
 	}
 	_ = r.ParseForm()
@@ -282,19 +381,38 @@ func (s *server) handleCalendarAdd(w http.ResponseWriter, r *http.Request) {
 	if convErr == nil {
 		in.IntervalMinutes = &interval
 	}
-	_, err := s.addICS(r, p, in)
+	// A missing name and a link that is none are both shown at once, each at its
+	// field; the other mistakes are found one at a time by addICS.
+	missing, _, _ := icsInputErrors(in)
+	var cal store.SyncedCalendar
+	var err error
+	if len(missing) == 0 {
+		cal, err = s.addICS(r, p, in)
+	}
 	var bad *inputError
 	switch {
-	case errors.As(err, &bad):
-		form := map[string]any{"Error": "calendars.error." + bad.Field, "ErrorField": calendarErrorField(bad.Field), "Name": in.Name, "URL": in.URL, "Color": in.Color,
-			"Interval": interval, "People": in.Audience.People, "Groups": in.Audience.Groups}
-		s.renderCalendars(w, r, p, http.StatusUnprocessableEntity, form)
+	case len(missing) > 0 || errors.As(err, &bad):
+		extra := map[string]any{
+			"ICSName": in.Name, "ICSURL": in.URL, "ICSPeople": in.Audience.People, "ICSGroups": in.Audience.Groups,
+		}
+		if len(missing) > 0 {
+			extra["ICSErrorFields"] = missing
+		} else {
+			extra["ICSError"], extra["ICSErrorField"] = "calendars.error."+bad.Field, calendarErrorField(bad.Field)
+		}
+		if in.Color != "" {
+			extra["ICSColor"] = in.Color
+		}
+		if convErr == nil {
+			extra["ICSInterval"] = interval
+		}
+		s.renderConnectNew(w, r, p, http.StatusUnprocessableEntity, "ics", extra)
 		return
 	case err != nil:
 		s.fail(w, "add calendar", err)
 		return
 	}
-	s.redirectSaved(w, r, "/calendars", "flash.calendar_added")
+	s.redirectSavedNamed(w, r, "/calendars", "flash.calendar_subscribed", cal.Name)
 }
 
 // syncedCalendarPage finds the subscribed calendar of a detail page; the
@@ -336,12 +454,12 @@ func (s *server) handleCalendarPage(w http.ResponseWriter, r *http.Request) {
 	} else {
 		last.Value = p.when(c.Sync.LastSuccess)
 	}
-	facts := []factView{{Label: s.say(r, i18n.Msg("calendars.fact.address")), Value: c.URL}, forFact,
+	facts := []factView{{Label: s.say(r, i18n.Msg("calendars.fact.address")), Value: c.URL, Host: c.Kind == "google"}, forFact,
 		{Label: s.say(r, i18n.Msg("calendars.fact.color")), Value: c.Color}, last}
 	if !c.Sync.LastSuccess.IsZero() {
 		run := c.Sync.LastRun
 		facts = append(facts,
-			factView{Label: s.say(r, i18n.Msg("calendars.fact.events")), Value: s.say(r, i18n.Msg("calendars.fact.events_value", "count", strconv.Itoa(run.Events)))},
+			factView{Label: s.say(r, i18n.Msg("calendars.fact.events")), Value: s.say(r, i18n.Msg("calendars.fact.events_value", "count", strconv.Itoa(c.Sync.EventCount)))},
 			factView{Label: s.say(r, i18n.Msg("calendars.fact.run")), Value: s.say(r, i18n.Msg("calendars.fact.run_value", "new", strconv.Itoa(run.New), "changed", strconv.Itoa(run.Changed), "removed", strconv.Itoa(run.Removed)))})
 	}
 	page := map[string]any{"Person": p.person, "Calendar": c, "Facts": facts, "Title": c.Name}
@@ -417,11 +535,32 @@ func calendarErrorField(field string) string {
 	return ""
 }
 
-// intervalChosen is the update interval the add form shows selected: the one
-// just typed after an error, else the default of an hour.
-func intervalChosen(form map[string]any) int {
-	if n, ok := form["Interval"].(int); ok && n > 0 {
-		return n
+// handleCalendarReadOnly switches a CalDAV calendar between two-way and read-only.
+func (s *server) handleCalendarReadOnly(w http.ResponseWriter, r *http.Request) {
+	p, ok := s.parentPage(w, r)
+	if !ok {
+		return
 	}
-	return 60
+	_ = r.ParseForm()
+	readOnly := r.PostFormValue("read_only") == "1"
+	err := s.db.SetCalendarReadOnly(p.household.ID, r.PathValue("id"), readOnly)
+	switch {
+	case errors.Is(err, store.ErrNotFound):
+		http.NotFound(w, r)
+		return
+	case errors.Is(err, store.ErrInvalid):
+		http.Error(w, http.StatusText(http.StatusUnprocessableEntity), http.StatusUnprocessableEntity)
+		return
+	case err != nil:
+		s.fail(w, "switch calendar", err)
+		return
+	}
+	if !readOnly {
+		s.sync.PushSoon(p.household.ID, r.PathValue("id"))
+	}
+	if c, err := s.db.SyncedCalendar(p.household.ID, r.PathValue("id")); err == nil && c.ConnectionID != "" {
+		http.Redirect(w, r, "/connections/"+c.ConnectionID, http.StatusSeeOther)
+		return
+	}
+	http.Redirect(w, r, "/calendars", http.StatusSeeOther)
 }

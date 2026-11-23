@@ -38,6 +38,7 @@ func mustNotContain(t *testing.T, page string, bad ...string) {
 
 // Design pass: the reminder says what to do, each collection has a bin icon, the note is set apart.
 func TestTomorrowTileDrawsReminderPillBinsAndNote(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.addWaste(t, wasteEvent("p1", "Paper bin", "6"), wasteEvent("p2", "Residual waste", "6"))
 	if r := f.post("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Mia: swimming bag"}}); r.status != http.StatusSeeOther {
@@ -60,6 +61,7 @@ func TestTomorrowTileDrawsReminderPillBinsAndNote(t *testing.T) {
 
 // Design pass: today's note says "Today" next to a collection; alone, the tile is labelled "Today".
 func TestTomorrowTileTodaysNote(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	if r := f.post("/notes", url.Values{"day": {"2026-11-15"}, "text": {"Football kit"}}); r.status != http.StatusSeeOther {
 		t.Fatalf("note = %d", r.status)
@@ -77,6 +79,7 @@ func TestTomorrowTileTodaysNote(t *testing.T) {
 
 // Design pass: four collections share one line, every title named, no "+N more"; the note stays.
 func TestTomorrowTileNamesAllCollectionsOnOneLine(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.addWaste(t, wasteEvent("p1", "Paper bin", "6"), wasteEvent("p2", "Residual waste", "6"), wasteEvent("p3", "Organic waste", "6"), wasteEvent("p4", "Yellow bag", "6"))
 	f.post("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Mia: swimming bag"}})
@@ -93,6 +96,7 @@ func TestTomorrowTileNamesAllCollectionsOnOneLine(t *testing.T) {
 
 // Design pass: the night page uses the same bin icon and names.
 func TestNightPageUsesTheBinIcon(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.quietOn(t)
 	f.addWaste(t, wasteEvent("p1", "Paper bin", "5"), wasteEvent("p2", "Residual waste", "5"))
@@ -102,6 +106,7 @@ func TestNightPageUsesTheBinIcon(t *testing.T) {
 
 // The note card on Home: day choice with Tomorrow preselected, a text field with counter, one primary action.
 func TestHomeHasTheNoteCard(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	p := f.page("de", "/").body
 	mustContain(t, p, "Notiz auf dem Display", `<fieldset class="seg">`,
@@ -123,6 +128,7 @@ func TestHomeHasTheNoteCard(t *testing.T) {
 
 // Saving says when the note appears.
 func TestSavingANoteSaysWhenItAppears(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	r := f.save("/notes", url.Values{"day": {"tomorrow"}, "text": {" Mia: Schwimmsachen "}}, "de")
 	if r.status != http.StatusSeeOther || r.location != "/" {
@@ -142,6 +148,7 @@ func TestSavingANoteSaysWhenItAppears(t *testing.T) {
 
 // An empty note is a field error that keeps the chosen day; so is a day in the past. Nothing is removed.
 func TestEmptyOrPastNoteIsAFieldError(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.save("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Bleibt"}}, "de")
 	for _, text := range []string{"", "   \n "} {
@@ -177,6 +184,7 @@ func TestEmptyOrPastNoteIsAFieldError(t *testing.T) {
 
 // Home lists the planned notes as rows that open the note; there are no inline Remove buttons.
 func TestHomeListsPlannedNotesAsRows(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	p := f.page("de", "/").body
 	mustContain(t, p, "Geplante Notizen", "Noch keine Notiz geplant.")
@@ -191,6 +199,7 @@ func TestHomeListsPlannedNotesAsRows(t *testing.T) {
 
 // A planned note opens on its own page: change it, or remove it after a confirmation.
 func TestNotePageChangesAndRemoves(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.save("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Mia: Schwimmsachen"}}, "de")
 	p := f.page("de", "/notes/2026-11-16").body
@@ -229,6 +238,7 @@ func TestNotePageChangesAndRemoves(t *testing.T) {
 
 // The calendar page (not the list, not Home) holds the waste switch and no longer holds the day note; the waste collection is a switch with its state in words.
 func TestCalendarsPageHasTheWasteSwitch(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "6"), wasteEvent("p2", "Residual waste", "6"))
 	p := f.page("de", "/calendars/"+id).body
@@ -250,6 +260,7 @@ func TestCalendarsPageHasTheWasteSwitch(t *testing.T) {
 
 // Switched on without a collection in the next 30 days, the card says so.
 func TestCalendarsPageSaysWhenThereIsNoCollectionSoon(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "6"))
 	f.now = f.at(17, 12, 0) // the collection has passed
@@ -259,6 +270,7 @@ func TestCalendarsPageSaysWhenThereIsNoCollectionSoon(t *testing.T) {
 
 // The flash after switching says when the next collection shows; without one it keeps to the state.
 func TestWasteFlashTexts(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	id := f.addWaste(t, wasteEvent("p1", "Paper bin", "6"))
 	f.save("/calendars/"+id+"/waste", url.Values{"waste": {"on"}}, "de")
@@ -278,6 +290,7 @@ func TestWasteFlashTexts(t *testing.T) {
 
 // The frame grid may shrink below its content, so the German navigation does not widen a 375 px phone.
 func TestFrameGridMayShrink(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	css := f.get("/static/hejmo.css").body
 	if !regexp.MustCompile(`\.frame \{ grid-template-columns: minmax\(0, 1fr\); \}`).MatchString(css) {
@@ -287,6 +300,7 @@ func TestFrameGridMayShrink(t *testing.T) {
 
 // The flash names the day the reminder starts, with its date, and says so when it shows already.
 func TestWasteFlashNamesTheDayAndTheDisplayNow(t *testing.T) {
+	t.Parallel()
 	// Collection tomorrow, before 18:00: the evening before is today.
 	g := newFamilyBox(t, "eink_color")
 	gid := g.addWaste(t, wasteEvent("p0", "Paper bin", "5")) // Sunday 15.11., the clock is Saturday 14.11. 13:00
@@ -310,6 +324,7 @@ func TestWasteFlashNamesTheDayAndTheDisplayNow(t *testing.T) {
 
 // A note of a past day that is not pruned yet can be neither opened nor saved.
 func TestPastNoteHasNoPage(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	if err := f.db.SetDayNote(f.householdID, "2026-11-13", "Alt"); err != nil {
 		t.Fatal(err)
@@ -327,6 +342,7 @@ func TestPastNoteHasNoPage(t *testing.T) {
 
 // The note page belongs to Home, so Home is the current item in the navigation.
 func TestNotePageMarksHomeAsCurrent(t *testing.T) {
+	t.Parallel()
 	f := newFamilyBox(t, "eink_color")
 	f.save("/notes", url.Values{"day": {"2026-11-16"}, "text": {"Mia"}}, "de")
 	mustContain(t, f.page("de", "/notes/2026-11-16").body, `<a href="/" aria-current="page"`)

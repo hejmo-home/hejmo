@@ -44,6 +44,7 @@ func templateID(t *testing.T, c *apiClient, name string) string {
 }
 
 func TestTemplatePagesNeedAParent(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	child := childSession(t, c.b)
 	for _, path := range []string{"/meals/templates", "/meals/templates/new"} {
@@ -64,6 +65,7 @@ func TestTemplatePagesNeedAParent(t *testing.T) {
 }
 
 func TestTheTemplatesMenuInvitesToCreateTheFirstTemplate(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	r := c.b.do(http.MethodGet, "/meals/templates", nil, en)
 	for _, want := range []string{"<h1>Meal plan templates</h1>", `<a class="back" href="/meals">`, `class="empty"`, `href="/meals/templates/new"`, "New template", `<a href="/meals" aria-current="page"`} {
@@ -78,6 +80,7 @@ func TestTheTemplatesMenuInvitesToCreateTheFirstTemplate(t *testing.T) {
 
 // Acceptance: create, edit and delete templates in the Templates menu.
 func TestParentCreatesATemplateAndTheMenuListsItWithTheComingWeeks(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	r := saveTemplate(t, c, weekBForm("Week B", "2026-11-16", "2"), en)
 	if r.status != http.StatusSeeOther || r.location != "/meals/templates" {
@@ -110,6 +113,7 @@ func TestParentCreatesATemplateAndTheMenuListsItWithTheComingWeeks(t *testing.T)
 }
 
 func TestTheTemplateFormListsTheWeeksItFillsAcrossTheTurnOfTheYear(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	bad := weekBForm("", "2026-11-16", "2") // no name: the page comes back with the form
 	r := saveTemplate(t, c, bad, en)
@@ -131,10 +135,11 @@ func TestTheTemplateFormListsTheWeeksItFillsAcrossTheTurnOfTheYear(t *testing.T)
 }
 
 func TestTheTemplateFormHasEveryFieldOfTheDesign(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	r := c.b.do(http.MethodGet, "/meals/templates/new", nil, en)
 	for _, want := range []string{
-		`<a class="back" href="/meals/templates">`, "<h1>New template</h1>", `class="steps wide tpl-form"`, `action="/meals/templates"`,
+		`<nav class="crumbs" aria-label="Breadcrumb">`, `<a href="/meals/templates">Meal plan templates</a>`, "<h1>New template</h1>", `class="steps wide tpl-form"`, `action="/meals/templates"`,
 		`name="name"`, `maxlength="60"`, "Which meals does it fill?", `name="fills" value="one"`, `name="fills" value="all"`, `<div class="mtpick-wrap"><fieldset class="choice mtpick">`, `name="mealtime" value="dinner"`,
 		`id="schedule"`, `class="every"`, `name="every"`, `min="1" max="52"`, `name="start"`, `class="weeks-hint"`, "<h2>Meals of the week</h2>",
 		`data-mt="breakfast"`, `name="tpl_7_dinner"`, `name="tpl_1_breakfast"`, "Save template", `class="savebar"`, "Week 46 · 09.11. – 15.11.", "Week 45 · 08.11. – 14.11.",
@@ -155,6 +160,7 @@ func TestTheTemplateFormHasEveryFieldOfTheDesign(t *testing.T) {
 }
 
 func TestATemplateNeedsANameAnIntervalAndAMeal(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	r := saveTemplate(t, c, weekBForm(" ", "2026-11-16", "2"), en)
 	if r.status != http.StatusUnprocessableEntity || !strings.Contains(r.body, "Give the template a name, for example “Week A”.") || !strings.Contains(r.body, `id="err-name"`) ||
@@ -185,6 +191,7 @@ func TestATemplateNeedsANameAnIntervalAndAMeal(t *testing.T) {
 
 // Acceptance: overlapping templates are refused at save with a message naming the clash.
 func TestAClashingTemplateIsRefusedNamingTheOtherEverythingTypedStaysAndNothingIsSaved(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	saveTemplate(t, c, weekBForm("Week A", "2026-11-16", "2"), en)
 	form := weekBForm("Every week", "2026-11-16", "1")
@@ -216,6 +223,7 @@ func TestAClashingTemplateIsRefusedNamingTheOtherEverythingTypedStaysAndNothingI
 }
 
 func TestEditingATemplateShowsItsValuesAndDeletingKeepsPastAndAdjustedMeals(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	saveTemplate(t, c, weekBForm("Week B", "2026-11-16", "2"), en)
 	id := templateID(t, c, "Week B")
@@ -252,6 +260,7 @@ func TestEditingATemplateShowsItsValuesAndDeletingKeepsPastAndAdjustedMeals(t *t
 }
 
 func TestTheMealPlanSaysWhereMealsComeFromAndOffersBackToTemplate(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	b := c.b
 	// Without templates the card invites to create one.
@@ -311,6 +320,7 @@ func TestTheMealPlanSaysWhereMealsComeFromAndOffersBackToTemplate(t *testing.T) 
 }
 
 func TestChildrenSeeTheEffectiveMealWithoutTemplateMarks(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	saveTemplate(t, c, weekBForm("Week B", "2026-11-16", "2"), en)
 	r := childSession(t, c.b).do(http.MethodGet, "/meals?week=2026-11-16", nil, en)
@@ -325,11 +335,12 @@ func TestChildrenSeeTheEffectiveMealWithoutTemplateMarks(t *testing.T) {
 }
 
 func TestTemplatePagesAreGermanInDuForm(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	saveTemplate(t, c, weekBForm("Woche B", "2026-11-16", "2"), de)
 	for path, wants := range map[string][]string{
 		"/meals/templates":       {"<h1>Essensplan-Vorlagen</h1>", "Neue Vorlage", "Die nächsten Wochen", "<b>Abendessen</b> von Montag bis Mittwoch", "Alle 2 Wochen ab Woche 47 (16.11.2026)", "Zurück zum Essensplan"},
-		"/meals/templates/new":   {"Welche Mahlzeiten füllt sie?", "Eine Mahlzeit am Tag", "Alle Mahlzeiten des Tages", "Welche Mahlzeit?", "Wann kommt sie dran?", "Startwoche", "Mahlzeiten der Woche", "Vorlage speichern", "Zurück zu den Vorlagen"},
+		"/meals/templates/new":   {"Welche Mahlzeiten füllt sie?", "Eine Mahlzeit am Tag", "Alle Mahlzeiten des Tages", "Welche Mahlzeit?", "Wann kommt sie dran?", "Startwoche", "Mahlzeiten der Woche", "Vorlage speichern", `<a href="/meals/templates">Essensplan-Vorlagen</a>`},
 		"/meals?week=2026-11-16": {"Vorlagen</a>", "Aus Vorlage"},
 	} {
 		body := c.b.do(http.MethodGet, path, nil, de).body
@@ -353,6 +364,7 @@ func TestTemplatePagesAreGermanInDuForm(t *testing.T) {
 }
 
 func TestTheMealPlanCalendarRollsForwardOncePerDayWhenAPageIsOpened(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t) // the clock stands at Saturday 14/11/2026
 	form := weekBForm("Every day", "2026-11-16", "1")
 	for wd := 4; wd <= 7; wd++ {
@@ -410,6 +422,7 @@ func TestTheMealPlanCalendarRollsForwardOncePerDayWhenAPageIsOpened(t *testing.T
 }
 
 func TestBackToTemplateOnAMealThatIsNotAdjustedAnyMoreStillSavesWhatWasTyped(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	saveTemplate(t, c, weekBForm("Week B", "2026-11-16", "2"), en)
 	// Tuesday follows the template (another tab restored it); the form still offers "Back to template".
@@ -424,6 +437,7 @@ func TestBackToTemplateOnAMealThatIsNotAdjustedAnyMoreStillSavesWhatWasTyped(t *
 
 // A clash that starts in week 53 names the year at both ends of its week.
 func TestAClashAcrossNewYearNamesBothYearsInEveryDateFormat(t *testing.T) {
+	t.Parallel()
 	for setting, want := range map[string]string{"dmy": "(28.12.2026 – 03.01.2027)", "mdy": "(12/28/2026 – 01/03/2027)"} {
 		t.Run(setting, func(t *testing.T) {
 			c := signedInAPI(t)
@@ -442,6 +456,7 @@ func TestAClashAcrossNewYearNamesBothYearsInEveryDateFormat(t *testing.T) {
 
 // Month first: the menu, the options of the start week and the weeks hint.
 func TestTemplatePagesFollowTheMonthFirstDateFormat(t *testing.T) {
+	t.Parallel()
 	c := signedInAPI(t)
 	useDateFormat(t, c.b, "mdy")
 	saveTemplate(t, c, weekBForm("Week B", "2026-11-16", "2"), en)

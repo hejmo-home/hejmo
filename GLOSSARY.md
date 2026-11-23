@@ -231,7 +231,7 @@ An overview lists the things of one kind (displays, device tokens, connections, 
 _Avoid_: list page (for the overview), settings page (for the detail page)
 
 **Device token**:
-The password a calendar app or CalDAV client on a personal device uses, one per device and revocable on its own; shown once when created. It is a token of scopes `calendars` and `tasks`, unlike an API token for other software.
+The password a calendar app or CalDAV client on a personal device uses, one per device and revocable on its own; shown once when created. It is a token of scopes `calendars`, `tasks` and `lists` (`lists` opens the shared lists), unlike an API token for other software.
 _Avoid_: app password, phone token (a personal device has a device session)
 
 ## Everyday
@@ -245,7 +245,7 @@ One line of text on a list that can be ticked off.
 _Avoid_: item (alone), list item
 
 **Shared list** (in German "geteilte Liste"):
-A list a parent switched on for other apps (ticket 167): CalDAV clients such as Apple Reminders get it as one collection of tasks, one reminder per entry, titled "Name · quantity". New lists are not shared. Ticking, adding, changing and deleting entries work both ways; lists themselves are created, renamed and deleted in Hejmo only. Only parents' device tokens carry the `lists` scope.
+A list a parent switched on for other apps (ticket 167): CalDAV clients such as Apple Reminders get it as one collection of tasks, one reminder per entry, titled "Name · quantity". New lists are not shared. Ticking, adding, changing and deleting entries work both ways; lists themselves are created, renamed and deleted in Hejmo only. Only parents' device tokens open them over CalDAV.
 _Avoid_: synced list, exported list
 
 **Entry note**:
@@ -458,7 +458,7 @@ A secret that lets software act on behalf of a person through the API, limited b
 _Avoid_: API key, access key
 
 **Device token**:
-An API token with the token scopes `calendars` and `tasks`, created by a parent for one CalDAV client (for example "iPhone Mama") and used as the password next to the person's username. `calendars` opens the calendars, `tasks` the task lists (one per person); older device tokens with `calendars` alone still work and see no task lists. Revoked on its own.
+An API token with the token scopes `calendars`, `tasks` and `lists`, created by a parent for one CalDAV client (for example "iPhone Mama") and used as the password next to the person's username. `calendars` opens the calendars, `tasks` the task lists (one per person), `lists` the shared lists; older device tokens with `calendars` alone still work and see no task lists. Revoked on its own.
 _Avoid_: app password, CalDAV password
 
 **MCP token**:

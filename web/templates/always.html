@@ -1,0 +1,51 @@
+{{template "head" (dict "Lang" .Lang "Title" (t "always.title") "Frame" .Frame)}}
+  <h1>{{t "always.title"}}</h1>
+  {{if .Empty}}<div class="empty"><p>{{t "always.empty"}}</p><a class="button secondary" href="{{.LibraryHref}}">{{t "always.empty.go"}}</a></div>
+  {{else}}
+  <p class="lead">{{.Lead}}</p>
+  <p class="hint">{{t "always.new.hint"}} <a href="{{.LibraryHref}}">{{t "always.new.link"}}</a></p>
+  {{with .HolidayNote}}<div class="auto-note holiday" role="status">{{template "pauseIcon" 20}}<p><b>{{.Head}}</b> {{.Text}} <a href="#urlaub">{{t "always.note.change"}}</a></p></div>{{end}}
+  {{if .Running}}<h2>{{t "always.running.title"}}</h2>
+  {{template "alwaysRows" .Running}}{{end}}
+  {{if .Ahead}}<h2>{{t "always.ahead.title"}}</h2>
+  <ol class="ahead auto-ahead">{{range .Ahead}}
+    <li><span class="wkn"><b>{{.Name}}</b>{{if .Today}}<span class="today">{{t "always.today"}}</span>{{end}}</span><span class="fills">{{range .Groups}}<span><b>{{.List}}</b> {{.Text}}</span>{{end}}{{range .Free}}<span class="free">{{.}}</span>{{end}}</span></li>{{end}}
+  </ol>{{end}}
+  {{if .Stopped}}<h2>{{t "always.stopped.title"}}</h2>
+  {{template "alwaysRows" .Stopped}}{{end}}
+  <section aria-labelledby="fa">
+    <h2 id="fa">{{t "always.all.title"}}</h2>
+    <form method="post" action="/settings/lists/always" class="steps lib-form auto-house">
+      <fieldset>
+        <legend>{{t "always.time.legend"}}</legend>
+        <div class="f{{if .Errs.At}} invalid{{end}}">
+          <label>{{t "always.time.label"}}<input class="tcap" type="time" name="at" value="{{.Form.At}}" step="900"{{if .Errs.At}} aria-invalid="true" aria-describedby="err-at"{{end}}></label>
+          {{if .Errs.At}}<p class="ferr" id="err-at" role="alert">{{template "alertIcon"}}<span>{{.Errs.At}}</span></p>{{end}}
+          <p class="hint">{{.TimeHint}}</p>
+        </div>
+      </fieldset>
+      <fieldset id="urlaub" data-holiday data-plan="{{.PlanURL}}">
+        <legend>{{t "always.holiday.legend"}}</legend>
+        <p class="hint">{{t "always.holiday.hint"}}</p>
+        {{template "switch" (dict "Name" "holiday" "Label" (t "always.holiday.label") "OnText" .HolidayState "OffText" (t "always.holiday.off") "Checked" .Form.On)}}
+        <div class="when-on">
+          <div class="pair">
+            <div class="f{{if .Errs.From}} invalid{{end}}"><label>{{t "always.holiday.from"}}<input type="date" name="holiday_from" value="{{.Form.From}}"{{if .Errs.From}} aria-invalid="true" aria-describedby="err-von"{{end}}></label>
+              {{if .Errs.From}}<p class="ferr" id="err-von" role="alert">{{template "alertIcon"}}{{.Errs.From}}</p>{{end}}</div>
+            <div class="f{{if .Errs.To}} invalid{{end}}"><label>{{t "always.holiday.to"}}<input type="date" name="holiday_to" value="{{.Form.To}}"{{if .Errs.To}} aria-invalid="true" aria-describedby="err-bis"{{end}}></label>
+              {{if .Errs.To}}<p class="ferr" id="err-bis" role="alert">{{template "alertIcon"}}{{.Errs.To}}</p>{{end}}</div>
+          </div>
+          {{template "autoPlan" .HolidayPlan}}
+        </div>
+      </fieldset>
+      <button class="button" type="submit">{{t "people.save"}}</button>
+    </form>
+  </section>
+  {{end}}
+  <script src="/static/always.js" defer></script>
+{{template "foot"}}
+
+{{/* Rows of articles that come by itself or are stopped. Argument: list of alwaysRow. */}}
+{{define "alwaysRows"}}<ul class="list-rows articles">{{range .}}
+    <li><a href="{{.Href}}"><span class="art-sym" aria-hidden="true">{{if .Picture}}<img src="{{.Picture}}" alt="">{{else}}{{.Symbol}}{{end}}</span><span class="t"><b>{{.Name}}</b>{{if .Tag}}<span class="tags"><span class="{{.TagClass}}">{{if .TagPaused}}{{template "pauseIcon" 16}}{{end}}{{.Tag}}</span></span>{{end}}{{if .Meta1}}<span class="meta">{{range $i, $p := .Meta1}}{{if $i}} {{end}}<span>{{$p}}</span>{{end}}</span>{{end}}{{if .Meta2}}<span class="meta">{{range $i, $p := .Meta2}}{{if $i}} {{end}}<span>{{$p}}</span>{{end}}</span>{{end}}</span><svg class="icon chev" width="20" height="20" viewBox="0 0 24 24" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>{{end}}
+  </ul>{{end}}

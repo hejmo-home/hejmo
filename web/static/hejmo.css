@@ -3273,6 +3273,118 @@ ol.porder > li.prow { margin: 0; padding: 0; background: none; border-radius: 0;
 /* The trimmed overview: one way in, right under the lead. */
 .add-way { margin: 0 0 var(--gap-section); }
 section > .hint.none { margin-top: -4px; }
+
+/* ---- ticket 168: articles always on the list (ADR 0019, Q27) ---- */
+/* Article page: the card "Immer auf der Liste" sits in the article's one form,
+   before "In den Vorschlägen". Off: only the switch. On: list, day, rhythm,
+   quantity and the sentence that says in advance what happens. */
+.auto-card .when-on { display: grid; gap: 18px; padding-top: 4px; }
+.auto-card > .hint { margin: 0; }
+.auto-card fieldset.chips { gap: 8px; }
+.auto-card fieldset.chips > .ferr { flex: 1 1 100%; margin: 4px 0 0; }
+.auto-card .pchip { white-space: normal; text-align: left; max-width: 100%; box-sizing: border-box; }
+.auto-card .pchip > span:not(.marker) { overflow-wrap: break-word; hyphens: auto; min-width: 0; }
+.auto-card .pchip .marker { flex: none; }
+.auto-card fieldset.chips[aria-invalid="true"] .pchip { border-color: var(--error-text); }
+.auto-rhythm { display: grid; grid-template-columns: minmax(0, 1fr); gap: 14px; max-width: 26em; }
+.auto-rhythm .f { display: grid; gap: 6px; min-width: 0; }
+.auto-rhythm .lab { font-size: var(--fs-label); color: var(--text-secondary); }
+.auto-rhythm .hint, .auto-rhythm .ferr { margin: 0; }
+.auto-rhythm select { width: 100%; }
+.auto-qty { display: grid; gap: 12px; min-width: 0; }
+.auto-qty .seg.mode { justify-self: start; }
+.auto-qty .seg.mode label { flex: 0 0 auto; padding: 8px 14px; }
+.auto-qty fieldset.qty { display: grid; gap: 12px; border: 0; margin: 0; padding: 0; min-width: 0; background: none; }
+.auto-qty:has(input[name="qmode"][value="none"]:checked) fieldset.qty { display: none; }
+.auto-plan { display: grid; gap: 6px; padding: 12px 14px; border: 1.5px solid var(--accent); border-radius: var(--radius-card); background: var(--background); }
+.auto-plan p { margin: 0; overflow-wrap: break-word; }
+.auto-plan .ap-head { display: flex; gap: 8px; align-items: flex-start; font-size: var(--fs-event-title); }
+.auto-plan .ap-head .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+.auto-plan .weeks-hint { display: block; padding: 0; background: none; border: 0 !important; color: var(--text); font-size: var(--fs-label-large); }
+.auto-plan.stopped { border: 1.5px dashed var(--notice-text); background: var(--notice-bg); color: var(--notice-text); }
+.auto-plan.stopped .ap-head .icon { stroke: var(--notice-text); }
+.auto-plan.stopped .hint { color: var(--notice-text); }
+[data-theme="bw"] .auto-plan { border: 2px solid var(--text); background: var(--surface); }
+[data-theme="bw"] .auto-plan .ap-head .icon { stroke: var(--text); }
+[data-theme="bw"] .auto-plan.stopped { border: 2px dashed var(--text); color: var(--text); }
+[data-theme="bw"] .auto-plan.stopped .hint, [data-theme="bw"] .auto-plan.stopped .ap-head .icon { color: var(--text); stroke: var(--text); }
+@media (max-width: 479px) {
+  .auto-qty .seg.mode { justify-self: stretch; }
+  .auto-qty .seg.mode label { flex: 1 1 0; padding: 8px 6px; }
+}
+
+/* .steps colours every span grey and makes every legend a heading: undo that
+   inside the card so chips keep their own colours and sub-legends stay labels. */
+.auto-card .pchip > span, .auto-card fieldset.units label span, .auto-plan span, .auto-card .every { color: inherit; font-size: inherit; }
+.auto-plan span.hint { color: var(--text-secondary); font-size: var(--fs-label); }
+.auto-plan.stopped span.hint { color: var(--notice-text); }
+[data-theme="bw"] .auto-plan.stopped span.hint { color: var(--text); }
+.auto-card fieldset.units > legend, .auto-qty .seg.mode > legend { font-size: var(--fs-label); font-weight: 400; color: var(--text-secondary); }
+.auto-card fieldset.units label small { color: var(--text-secondary); }
+
+/* Tags: the rhythm of an article in the library ("Jeden Montag auf „Einkauf“")
+   and the paused state (list deleted). */
+.tag.auto, .tag.paused { gap: 6px; height: auto; padding: 2px 10px; text-align: left; overflow-wrap: break-word; }
+.tag.auto .icon, .tag.paused .icon { flex: none; stroke: currentColor; }
+.tag.paused { border-color: var(--notice-text); color: var(--notice-text); background: var(--notice-bg); }
+[data-theme="bw"] .tag.paused { background: none; color: var(--text); border: 2px dashed var(--text); }
+.list-rows .meta.auto-stopped { color: var(--notice-text); font-weight: 600; }
+[data-theme="bw"] .list-rows .meta.auto-stopped { color: var(--text); }
+.list-rows .art-sym .icon.rep { stroke: var(--accent); }
+[data-theme="bw"] .list-rows .art-sym .icon.rep { stroke: var(--text); }
+.auto-res { margin: 0 0 10px; max-width: 560px; font-weight: 700; overflow-wrap: break-word; }
+.auto-ahead { margin-top: 0; max-width: 560px; box-sizing: border-box; }
+.auto-ahead li { grid-template-columns: 9.5em minmax(0, 1fr); }
+@container (max-width: 420px) { .auto-ahead li { grid-template-columns: minmax(0, 1fr); } }
+
+/* List page: the line on the day of adding and the reason under an entry. */
+.auto-note { display: flex; gap: 10px; align-items: flex-start; max-width: 560px; box-sizing: border-box; margin: 0 0 var(--gap); padding: 10px 12px; border: 1.5px solid var(--border); border-radius: var(--radius-card); background: var(--surface); }
+.auto-note p { margin: 0; overflow-wrap: break-word; }
+.auto-note .icon { flex: none; stroke: var(--accent); margin-top: 2px; }
+[data-theme="bw"] .auto-note { border: 2px solid var(--text); }
+[data-theme="bw"] .auto-note .icon { stroke: var(--text); }
+.auto-src { display: flex; gap: 6px; align-items: flex-start; margin: -6px 0 8px; padding-left: 54px; font-size: var(--fs-label); color: var(--text-secondary); overflow-wrap: break-word; }
+.entries li > .auto-src { flex: 1 1 100%; }
+.auto-src .icon { flex: none; stroke: currentColor; margin-top: 1px; }
+[data-theme="bw"] .auto-src { color: var(--text); }
+.entries li[data-done="true"] > .auto-src { display: none; }
+details.auto-rules { max-width: 560px; }
+details.auto-rules > summary { overflow-wrap: break-word; }
+details.auto-rules > div { display: grid; gap: 8px; }
+details.auto-rules .list-rows { margin: 0; }
+details.auto-rules .hint { margin: 0; }
+details.auto-rules[open] .list-rows .chev { transform: none; }
+
+/* Display: the same words at display size. */
+.lv-entries .auto-note { max-width: none; margin: 0; font-size: var(--fs-event-title); }
+.lv-entries .auto-src { margin: -2px 0 0; padding-left: 64px; font-size: var(--fs-event-title); }
+
+/* ---- ticket 168 revision (Q43/Q44): holiday and household time ---- */
+/* Holiday: the paused state in words with the pause sign, like "Angehalten";
+   on the list, the overview and the display. */
+.auto-note.holiday { border: 1.5px dashed var(--notice-text); background: var(--notice-bg); color: var(--notice-text); }
+.auto-note.holiday .icon { stroke: var(--notice-text); }
+.auto-note.holiday a { color: inherit; }
+[data-theme="bw"] .auto-note.holiday { border: 2px dashed var(--text); background: var(--surface); color: var(--text); }
+[data-theme="bw"] .auto-note.holiday .icon { stroke: var(--text); }
+main > .msg.ok + .auto-note { margin-top: 0; }
+/* "Für alle Artikel": time capsule and the two holiday dates. */
+.auto-house .f > label { display: grid; gap: 6px; justify-items: start; }
+.auto-house .when-on { display: grid; gap: 14px; }
+.auto-house .pair .f label { display: grid; gap: 6px; }
+.auto-house input[type="date"] { max-width: 100%; box-sizing: border-box; }
+.auto-house .auto-plan { margin: 0; }
+.auto-house .tcap { width: auto; justify-self: start; }
+/* Tile view (#166): one short line under the quantity says that the entry
+   comes by itself, the rhythm in words; after adding up, which part comes
+   always. Hidden on ticked-off tiles. */
+.tile-check .tile-auto { display: block; max-width: 100%; text-align: center; font-size: var(--fs-meta); line-height: 1.3; color: var(--text-secondary); overflow-wrap: break-word; }
+.tile-check .tile-auto .icon { display: inline-block; width: 14px; height: 14px; margin-right: 4px; vertical-align: -2px; stroke: currentColor; }
+[data-theme="bw"] .tile-check .tile-auto { color: var(--text); }
+.tiles > li[data-done="true"] .tile-auto { display: none; }
+.lv .tile-check .tile-auto { font-size: var(--fs-label); }
+.list-tiles .auto-note { max-width: 760px; }
+
 /* ---- ticket 296: contacts (preview docs/design/preview-296.html; no new tokens) ---- */
 /* Overview rows: Hejmo name bold, full name, every number with its kind in words, groups as word tags. */
 .list-rows.contacts .t > b { overflow-wrap: break-word; hyphens: manual; }

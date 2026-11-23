@@ -15,6 +15,7 @@ import (
 	"golang.org/x/text/collate"
 	textlang "golang.org/x/text/language"
 
+	"github.com/hejmo-home/hejmo/internal/always"
 	"github.com/hejmo-home/hejmo/internal/food"
 	"github.com/hejmo-home/hejmo/internal/i18n"
 	"github.com/hejmo-home/hejmo/internal/library"
@@ -23,7 +24,11 @@ import (
 )
 
 // artTag is a word label on an article row.
-type artTag struct{ Text, Class string }
+type artTag struct {
+	Text, Class string
+	// Icon is "repeat" or "pause" for the tags of "always on the list".
+	Icon string
+}
 
 // artRow is one article in the library: symbol or picture, name, what it is
 // in words, tags, and one warning line per group of affected people.
@@ -75,13 +80,19 @@ func (s *server) artRowOf(st libState, it articleItem, flat bool) artRow {
 		row.Meta = []string{kind}
 	}
 	if it.handHidden {
-		row.Tags = append(row.Tags, artTag{s.i18n.T(st.lang, "lib.tag.hand"), "tag hidden-tag"})
+		row.Tags = append(row.Tags, artTag{Text: s.i18n.T(st.lang, "lib.tag.hand"), Class: "tag hidden-tag"})
 	}
 	if it.Pantry {
-		row.Tags = append(row.Tags, artTag{s.i18n.T(st.lang, "lib.tag.pantry"), "tag"})
+		row.Tags = append(row.Tags, artTag{Text: s.i18n.T(st.lang, "lib.tag.pantry"), Class: "tag"})
 	}
 	if by := st.hiding.HiddenFor(it.Article, st.persons); len(by) > 0 {
-		row.Tags = append(row.Tags, artTag{s.i18n.Format(st.lang, i18n.Msg("lib.tag.allergy", "names", s.joinWords(st.lang, st.names(by)))), "tag exp"})
+		row.Tags = append(row.Tags, artTag{Text: s.i18n.Format(st.lang, i18n.Msg("lib.tag.allergy", "names", s.joinWords(st.lang, st.names(by)))), Class: "tag exp"})
+	}
+	for i := 0; i < len(row.Meta)-1; i++ { // the separator ends a part, so no line starts with a dot
+		row.Meta[i] += " ·"
+	}
+	if r, ok := st.always[it.ID]; ok {
+		row.Tags = append(row.Tags, s.alwaysTag(st, r))
 	}
 	row.Warns = s.warnLines(st, st.warnings(it))
 	return row
@@ -126,7 +137,7 @@ func (s *server) handleLibrary(w http.ResponseWriter, r *http.Request) {
 	}
 	q := strings.TrimSpace(r.URL.Query().Get("q"))
 	f := r.URL.Query().Get("f")
-	if f != "warn" && f != "hidden" {
+	if f != "warn" && f != "hidden" && f != "auto" {
 		f = "all"
 	}
 	items := st.items()
@@ -146,6 +157,7 @@ func (s *server) handleLibrary(w http.ResponseWriter, r *http.Request) {
 		{"Href": filterHref("all"), "Text": s.i18n.T(lang, "lib.filter.all"), "Current": f == "all"},
 		{"Href": filterHref("warn"), "Text": s.i18n.T(lang, "lib.filter.warn"), "Current": f == "warn"},
 		{"Href": filterHref("hidden"), "Text": s.i18n.T(lang, "lib.filter.hidden"), "Current": f == "hidden"},
+		{"Href": filterHref("auto"), "Text": s.i18n.T(lang, "lib.filter.auto"), "Current": f == "auto"},
 	}
 
 	if q != "" || f != "all" {
@@ -161,6 +173,10 @@ func (s *server) handleLibrary(w http.ResponseWriter, r *http.Request) {
 				}
 			case "hidden":
 				if r := st.suggestion(it).Reason; r != library.ReasonHand && r != library.ReasonAllergy {
+					continue
+				}
+			case "auto":
+				if _, ok := st.always[it.ID]; !ok {
 					continue
 				}
 			}
@@ -184,6 +200,10 @@ func (s *server) handleLibrary(w http.ResponseWriter, r *http.Request) {
 			data["NoneText"] = s.i18n.Format(lang, i18n.Msg("lib.result.none", "q", q))
 			data["NewHref"] = libraryPath + "/new?" + url.Values{"name": {q}}.Encode()
 			data["NewText"] = s.i18n.Format(lang, i18n.Msg("lib.result.new", "q", q))
+		case f == "auto":
+			data["Auto"], data["ClearHref"] = true, libraryPath
+			data["AutoResult"] = s.autoResult(st, hits)
+			data["NoneText"] = s.i18n.T(lang, "always.res.none")
 		default:
 			data["ResultTitle"] = s.i18n.T(lang, "lib.filter."+f+".title")
 			data["Head"] = s.countWords(lang, len(hits), "lib.filter."+f+".count.one", "lib.filter."+f+".count.many")
@@ -305,10 +325,10 @@ func (s *server) handleArticle(w http.ResponseWriter, r *http.Request) {
 		s.renderArticleForm(w, r, p, http.StatusOK, st, it.own, s.formOf(*it.own), nil, nil)
 		return
 	}
-	s.renderShipped(w, r, p, st, it)
+	s.renderShipped(w, r, p, http.StatusOK, st, it, nil)
 }
 
-func (s *server) renderShipped(w http.ResponseWriter, r *http.Request, p principal, st libState, it articleItem) {
+func (s *server) renderShipped(w http.ResponseWriter, r *http.Request, p principal, status int, st libState, it articleItem, ap *autoPost) {
 	lang := st.lang
 	name := it.Name(lang)
 	sug := st.suggestion(it)
@@ -374,7 +394,16 @@ func (s *server) renderShipped(w http.ResponseWriter, r *http.Request, p princip
 		return
 	}
 	data["OnLists"] = s.listLinks(lang, lists)
-	s.render(w, r, http.StatusOK, "article.html", data)
+	if ap != nil {
+		data["Hidden"] = r.PostFormValue("hidden") != ""
+	}
+	card, err := s.autoCardFor(p, lang, it, ap)
+	if err != nil {
+		s.fail(w, "always card", err)
+		return
+	}
+	data["Auto"] = card
+	s.render(w, r, status, "article.html", data)
 }
 
 func (s *server) handleArticleHidden(w http.ResponseWriter, r *http.Request) {
@@ -389,15 +418,44 @@ func (s *server) handleArticleHidden(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	hide := r.PostFormValue("hidden") != ""
+	lang := s.langOf(r)
+	var autoKey string
+	var autoValues []string
+	if f := readAuto(r); f.Present {
+		it, err := s.itemOfShipped(p, lang, id)
+		if err != nil {
+			s.fail(w, "library state", err)
+			return
+		}
+		key, values, ap, err := s.saveAuto(p, lang, it, f)
+		if err != nil {
+			s.fail(w, "save always on the list", err)
+			return
+		}
+		if ap != nil {
+			st, err := s.libState(p, lang)
+			if err != nil {
+				s.fail(w, "library state", err)
+				return
+			}
+			s.renderShipped(w, r, p, http.StatusUnprocessableEntity, st, it, ap)
+			return
+		}
+		autoKey, autoValues = key, values
+	}
 	if err := s.db.SetArticleHidden(p.household.ID, id, hide); err != nil {
 		s.fail(w, "hide article", err)
+		return
+	}
+	if autoKey != "" {
+		s.redirectSavedFields(w, r, libraryPath+"/"+id, autoKey, autoValues...)
 		return
 	}
 	key := "flash.article_shown"
 	if hide {
 		key = "flash.article_hidden"
 	}
-	s.redirectSavedNamed(w, r, libraryPath+"/"+id, key, a.Name(s.langOf(r)))
+	s.redirectSavedNamed(w, r, libraryPath+"/"+id, key, a.Name(lang))
 }
 
 // handleArticlePantry marks any article, shipped or own, as a pantry article or not.
@@ -458,6 +516,10 @@ func (s *server) handleArticleCopy(w http.ResponseWriter, r *http.Request) {
 	}
 	if err := s.db.SetArticleHidden(p.household.ID, a.ID, true); err != nil {
 		s.fail(w, "hide copied article", err)
+		return
+	}
+	if err := s.db.MoveAlwaysRule(p.household.ID, a.ID, saved.ID); err != nil { // "always on the list" goes with the copy
+		s.fail(w, "move always rule", err)
 		return
 	}
 	s.redirectSavedNamed(w, r, libraryPath+"/"+saved.ID, "flash.article_copied", a.Name(lang))
@@ -549,4 +611,68 @@ func (s *server) listLinks(lang string, lists []listLink) template.HTML {
 		parts[i] = `<a href="/lists/` + html.EscapeString(l.ID) + `">` + html.EscapeString(l.Name) + `</a>`
 	}
 	return template.HTML(s.joinWords(lang, parts))
+}
+
+// itemOfShipped is a shipped article as an item of the library state.
+func (s *server) itemOfShipped(p principal, lang, id string) (articleItem, error) {
+	st, err := s.libState(p, lang)
+	if err != nil {
+		return articleItem{}, err
+	}
+	it, _ := st.item(id)
+	return it, nil
+}
+
+// alwaysTag is the tag of an article with a rule: its rhythm and list in
+// words, or why it is not running.
+func (s *server) alwaysTag(st libState, r always.Rule) artTag {
+	a := &alwaysCtx{s: s, lang: st.lang}
+	switch {
+	case r.Paused():
+		return artTag{Text: s.i18n.T(st.lang, "always.tag.paused"), Class: "tag paused", Icon: "pause"}
+	case !r.Enabled:
+		return artTag{Text: s.i18n.T(st.lang, "always.tag.off.lib"), Class: "tag hidden-tag"}
+	}
+	return artTag{Text: a.rhythmOn(r), Class: "tag auto", Icon: "repeat"}
+}
+
+// autoResult is the sentence over the filter "Immer auf der Liste": how many
+// articles have a rule, how many come by themselves, and which do not, by name.
+func (s *server) autoResult(st libState, hits []articleItem) string {
+	var running int
+	var paused, off []string
+	for _, it := range hits {
+		switch r := st.always[it.ID]; {
+		case r.Paused():
+			paused = append(paused, it.Name(st.lang))
+		case !r.Enabled:
+			off = append(off, it.Name(st.lang))
+		default:
+			running++
+		}
+	}
+	var parts []string
+	switch {
+	case running == 1:
+		parts = append(parts, s.i18n.T(st.lang, "always.res.running.one"))
+	case running > 1:
+		parts = append(parts, s.i18n.Format(st.lang, i18n.Msg("always.res.running.many", "n", strconv.Itoa(running))))
+	}
+	for _, g := range []struct {
+		names     []string
+		one, many string
+	}{{paused, "always.res.paused.one", "always.res.paused.many"}, {off, "always.res.off.one", "always.res.off.many"}} {
+		key := g.many
+		if len(g.names) == 1 {
+			key = g.one
+		}
+		if len(g.names) > 0 {
+			parts = append(parts, s.i18n.Format(st.lang, i18n.Msg(key, "names", s.joinWords(st.lang, g.names))))
+		}
+	}
+	head := "always.res.many"
+	if len(hits) == 1 {
+		head = "always.res.one"
+	}
+	return s.i18n.Format(st.lang, i18n.Msg(head, "n", strconv.Itoa(len(hits)), "parts", strings.Join(parts, ", ")))
 }

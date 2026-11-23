@@ -45,7 +45,7 @@ var crumbTrails = map[string][]crumb{
 	"offline_on.html": {crumbSettings, crumbOutside}, "offline_off.html": {crumbSettings, crumbOutside},
 
 	"calendar_detail.html": {crumbSettings, crumbConnections}, "connection.html": {crumbSettings, crumbConnections}, "connection_paused.html": {crumbSettings, crumbConnections}, "connection_new.html": {crumbSettings, crumbConnections}, "google_signin.html": {crumbSettings, crumbConnections},
-	"library.html": {crumbSettings, crumbLists}, "article.html": {crumbSettings, crumbLists, crumbLibrary}, "article_form.html": {crumbSettings, crumbLists, crumbLibrary},
+	"library.html": {crumbSettings, crumbLists}, "always.html": {crumbSettings, crumbLists}, "article.html": {crumbSettings, crumbLists, crumbLibrary}, "article_form.html": {crumbSettings, crumbLists, crumbLibrary},
 	"display.html": {crumbSettings, crumbDisplays}, "photo_album.html": {crumbSettings, crumbPhotos},
 	"token.html": {crumbSettings, crumbCalDAV}, "token_once.html": {crumbSettings, crumbCalDAV},
 	"personal_device.html": {crumbSettings, crumbPersonalDevices},

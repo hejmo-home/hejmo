@@ -246,3 +246,47 @@ func TestTheBoxWritesTheBirthdaysOfExistingContactsAtStart(t *testing.T) {
 		t.Errorf("2026 after the start = %s", got)
 	}
 }
+
+// A sync runs at every start and on every contact save; a birthday event that
+// is right already is not written again, so CalDAV clients do not fetch it again.
+func TestAnEventThatIsRightAlreadyIsNotTouchedBySyncs(t *testing.T) {
+	t.Parallel()
+	db, path := openTemp(t)
+	h, err := db.CreateHousehold(store.Household{Name: "Family"})
+	if err != nil {
+		t.Fatal(err)
+	}
+	gerda, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Oma Gerda", BdayDay: 3, BdayMonth: 5})
+	if err != nil {
+		t.Fatal(err)
+	}
+	const marker = "2001-01-01T00:00:00Z"
+	if _, err := db.SQL().Exec(`UPDATE events SET updated_at = ?`, marker); err != nil {
+		t.Fatal(err)
+	}
+	updatedAt := func(db *store.DB) string {
+		t.Helper()
+		var got string
+		if err := db.SQL().QueryRow(`SELECT updated_at FROM events WHERE id = ?`, birthday.EventID(gerda.ID)).Scan(&got); err != nil {
+			t.Fatal(err)
+		}
+		return got
+	}
+	if _, err := db.CreateContact(h.ID, "", store.ContactInput{HejmoName: "Opa Karl", BdayDay: 4, BdayMonth: 6}); err != nil {
+		t.Fatal(err)
+	}
+	if got := updatedAt(db); got != marker {
+		t.Errorf("updated_at after another contact was saved = %s, want %s", got, marker)
+	}
+	if err := db.Close(); err != nil {
+		t.Fatal(err)
+	}
+	again, err := store.Open(path)
+	if err != nil {
+		t.Fatal(err)
+	}
+	defer again.Close()
+	if got := updatedAt(again); got != marker {
+		t.Errorf("updated_at after the next start = %s, want %s", got, marker)
+	}
+}

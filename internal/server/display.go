@@ -254,10 +254,44 @@ func (s *server) familyView(h store.Household, lang string, d *store.Display) (f
 			return familyview.View{}, err
 		}
 	}
-	return familyview.Build(familyview.Input{Layout: &lay, Everyone: everyone, Routines: routines, List: tileList, HasLists: len(lists) > 0, Meals: meals, MealCutoffs: cutoffs, Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
+	stars, err := s.starsInputs(h)
+	if err != nil {
+		return familyview.View{}, err
+	}
+	return familyview.Build(familyview.Input{Stars: stars, Layout: &lay, Everyone: everyone, Routines: routines, List: tileList, HasLists: len(lists) > 0, Meals: meals, MealCutoffs: cutoffs, Now: data.now, Lang: lang, Region: h.Region, People: data.people, Groups: data.groups, I18n: s.i18n,
 		Waste: data.waste, DayNotes: byDay, TomorrowLabel: s.i18n.T(lang, "family.tomorrow"), TodayLabel: s.i18n.T(lang, "family.today"),
 		Calendars: data.calendars, Occurrences: data.occurrences, ShowTomorrow: showTomorrow, SyncStale: s.syncStale(h.ID), TaskProgress: progress,
 		TimeFormat: h.TimeFormat, TemperatureUnit: h.TemperatureUnit, Weather: s.homeWeather(h)}), nil
+}
+
+// starsInputs is every person's balance, whether stars show for them and their
+// savings goal, for the stars block of the columns (ticket 293).
+func (s *server) starsInputs(h store.Household) (map[string]familyview.StarsInput, error) {
+	sums, err := s.db.StarSummaries(h.ID)
+	if err != nil {
+		return nil, err
+	}
+	goals, err := s.db.Goals(h.ID)
+	if err != nil {
+		return nil, err
+	}
+	out := make(map[string]familyview.StarsInput, len(sums))
+	for id, sum := range sums {
+		out[id] = familyview.StarsInput{Balance: sum.Balance, Shown: sum.Shown, Goal: displayGoal(goals[id])}
+	}
+	return out, nil
+}
+
+// displayGoal is the goal as a display shows it; nil without an active goal.
+func displayGoal(g store.Goal) *familyview.GoalInput {
+	if !g.Active() {
+		return nil
+	}
+	in := &familyview.GoalInput{Name: g.Reward.Name, Symbol: g.Reward.Symbol, Price: g.Reward.Price}
+	if g.Reward.HasPicture {
+		in.Picture = "/display/rewards/" + g.Reward.ID + "/picture?v=" + strconv.FormatInt(g.Reward.PictureAt.Unix(), 10)
+	}
+	return in
 }
 
 // mealsToday reads today's meals for the meal tile. If they cannot be read it

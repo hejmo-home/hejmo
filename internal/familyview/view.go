@@ -109,6 +109,7 @@ type Goal struct {
 	Price, Balance        int
 	Reached               bool
 	Pct                   int
+	Left                  int // stars still missing, 0 once reached
 }
 
 // RoutineLine is one routine of a person today with its progress (Q86).
@@ -418,7 +419,7 @@ func goalOf(g *GoalInput, balance int) *Goal {
 		return nil
 	}
 	return &Goal{Name: g.Name, Symbol: g.Symbol, Picture: g.Picture, Price: g.Price, Balance: balance,
-		Reached: balance >= g.Price, Pct: max(0, min(100, balance*100/g.Price))}
+		Reached: balance >= g.Price, Pct: max(0, min(100, balance*100/g.Price)), Left: max(0, g.Price-balance)}
 }
 
 // clock formats the times in the household's zone, whatever zone the event is

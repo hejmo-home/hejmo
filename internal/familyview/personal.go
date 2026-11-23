@@ -102,6 +102,9 @@ type PersonalInput struct {
 	Stars       Stars
 	// Goal is the person's savings goal; it shows only while stars do.
 	Goal *GoalInput
+	// Parents are the parents' names in words ("Mama or Papa"): whom to ask
+	// once the goal is reached.
+	Parents string
 	// TimeFormat is the household's "24h" (default) or "12h" (ADR 0016).
 	TimeFormat store.TimeFormat
 	// Layout is the display's layout; its header blocks (time, weather) apply
@@ -125,6 +128,7 @@ type PersonalView struct {
 	Tasks       []Task
 	Stars       Stars
 	Routines    []Routine
+	Parents     string // whom to ask once the goal is reached
 	Weather     *WeatherChip
 	// HeaderOrder names the header blocks that are on, in order.
 	HeaderOrder []layout.BlockID
@@ -138,7 +142,7 @@ func BuildPersonal(in PersonalInput) PersonalView {
 	now := in.Now
 	loc := now.Location()
 	d0 := time.Date(now.Year(), now.Month(), now.Day(), 0, 0, 0, 0, loc)
-	v := PersonalView{Person: in.Person, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: loc.String(), ClockFormat: clockFormat(in.TimeFormat), Stars: in.Stars, Home: in.Home}
+	v := PersonalView{Person: in.Person, Date: d0, Clock: ClockText(now, in.TimeFormat), ClockZone: loc.String(), ClockFormat: clockFormat(in.TimeFormat), Stars: in.Stars, Parents: in.Parents, Home: in.Home}
 	if in.Stars.Shown {
 		v.Stars.Goal = goalOf(in.Goal, in.Stars.Balance)
 	}

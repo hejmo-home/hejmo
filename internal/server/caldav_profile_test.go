@@ -41,7 +41,7 @@ func TestParentDownloadsAnIOSProfileWithANewDeviceToken(t *testing.T) {
 
 	// A new token with scope calendars exists, named after the device.
 	toks, _ := b.db.APITokens(h.ID)
-	if len(toks) != 1 || toks[0].Name != "iPhone Mama" || toks[0].Scopes != "calendars tasks" || toks[0].PersonName != "Mama" {
+	if len(toks) != 1 || toks[0].Name != "iPhone Mama" || toks[0].Scopes != "calendars tasks lists" || toks[0].PersonName != "Mama" {
 		t.Fatalf("tokens = %+v", toks)
 	}
 	// It works as the CalDAV password, and lists like any device token.
@@ -179,7 +179,7 @@ func TestIOSProfileThroughTheAPI(t *testing.T) {
 		t.Fatalf("profile = %d %q\n%s", status, ct, raw)
 	}
 	toks, _ := c.b.db.APITokens(h.ID)
-	if len(toks) != 1 || toks[0].Scopes != "calendars tasks" || toks[0].Name != "iPad Mama" {
+	if len(toks) != 1 || toks[0].Scopes != "calendars tasks lists" || toks[0].Name != "iPad Mama" {
 		t.Fatalf("tokens = %+v", toks)
 	}
 	if cals, err := c.phoneWith(t, "mama", m[1]).calendars(); err != nil || len(cals) < 2 {

@@ -60,7 +60,8 @@ func davChallenge(w http.ResponseWriter) {
 }
 
 // davResource says which resource an address belongs to: the task lists below
-// the calendar home are tasks, any other calendar is calendars, and the root,
+// the calendar home are tasks, the shared lists are lists, any other calendar
+// is calendars, and the root,
 // the principal and the home set itself ("") belong to both.
 func davResource(p string) string {
 	_, rest, found := strings.Cut(p, "/calendars/")
@@ -73,6 +74,8 @@ func davResource(p string) string {
 		return ""
 	case strings.HasPrefix(first, taskListPrefix):
 		return "tasks"
+	case strings.HasPrefix(first, listCollectionPrefix):
+		return "lists"
 	}
 	return "calendars"
 }
@@ -90,7 +93,8 @@ func davAction(method string) auth.Action {
 
 // scopedTo reports whether a token carries a scope of this resource: ADR 0012
 // opens CalDAV to calendars scopes only, ADR 0018 task lists to tasks scopes
-// only, not to plain read or write tokens.
+// only and ticket 167 shared lists to lists scopes only, not to plain read or
+// write tokens.
 func scopedTo(scopes, resource string) bool {
 	for _, sc := range strings.Fields(scopes) {
 		if res, _, _ := strings.Cut(sc, ":"); res == resource {
@@ -113,7 +117,7 @@ func davAllows(scopes, method, path string) (bool, auth.Permission) {
 	res := davResource(path)
 	if res == "" {
 		if action == auth.Read {
-			for _, r := range []string{"calendars", "tasks"} {
+			for _, r := range []string{"calendars", "tasks", "lists"} {
 				if canRead(scopes, r) {
 					return true, auth.Perm(r, auth.Read)
 				}
@@ -271,6 +275,13 @@ func (b *davBackend) ListCalendars(ctx context.Context) ([]webcal.Calendar, erro
 		}
 		out = append(out, lists...)
 	}
+	if canRead(sess.scopes, "lists") {
+		shared, err := b.sharedLists(sess)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, shared...)
+	}
 	return out, nil
 }
 
@@ -322,6 +333,9 @@ func (b *davBackend) GetCalendar(ctx context.Context, p string) (*webcal.Calenda
 	}
 	if isTaskPath(p) {
 		return b.getTaskList(sess, p)
+	}
+	if isListPath(p) {
+		return b.getSharedList(sess, p)
 	}
 	c, addr, err := b.calendarAt(sess, p)
 	if err != nil {
@@ -405,6 +419,9 @@ func (b *davBackend) GetCalendarObject(ctx context.Context, p string, _ *webcal.
 	if isTaskPath(p) {
 		return b.getTodo(sess, p)
 	}
+	if isListPath(p) {
+		return b.getItem(sess, p)
+	}
 	c, addr, err := b.calendarAt(sess, p)
 	if err != nil {
 		return nil, err
@@ -431,6 +448,9 @@ func (b *davBackend) ListCalendarObjects(ctx context.Context, p string, _ *webca
 	if isTaskPath(p) {
 		return b.listTodos(sess, p)
 	}
+	if isListPath(p) {
+		return b.listItems(sess, p)
+	}
 	c, _, err := b.calendarAt(sess, p)
 	if err != nil {
 		return nil, err
@@ -456,6 +476,9 @@ func (b *davBackend) PutCalendarObject(ctx context.Context, p string, cal *ical.
 	}
 	if isTaskPath(p) {
 		return b.putTodo(sess, p, cal, opts)
+	}
+	if isListPath(p) {
+		return b.putItem(sess, p, cal, opts)
 	}
 	c, addr, err := b.calendarAt(sess, p)
 	if err != nil {
@@ -593,6 +616,9 @@ func (b *davBackend) DeleteCalendarObject(ctx context.Context, p string) error {
 	}
 	if isTaskPath(p) {
 		return b.deleteTodo(sess, p)
+	}
+	if isListPath(p) {
+		return b.deleteItem(sess, p)
 	}
 	c, addr, err := b.calendarAt(sess, p)
 	if err != nil {

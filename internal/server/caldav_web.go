@@ -15,17 +15,18 @@ import (
 	"github.com/hejmo-home/hejmo/internal/store"
 )
 
-// deviceScope is the token scopes of a new CalDAV client: its calendars and,
-// since ADR 0018, the task lists. Tokens made before that hold calendars only
-// and are device tokens all the same.
-const deviceScope = "calendars tasks"
+// deviceScope is the token scopes of a new CalDAV client: its calendars, since
+// ADR 0018 the task lists and since ticket 167 the lists shared with other
+// apps. Tokens made before hold fewer scopes and are device tokens all the
+// same; they are not widened. Only parents make device tokens.
+const deviceScope = "calendars tasks lists"
 
 type sharedView struct {
 	ID, Name, Color string
 	Shared, Always  bool
 }
 
-// deviceTokens lists the household's device tokens (scopes calendars and tasks only):
+// deviceTokens lists the household's device tokens (scopes calendars, tasks and lists only):
 // the tokens other software uses through the API are not device tokens.
 func (s *server) deviceTokens(householdID string) ([]store.APIToken, error) {
 	tokens, err := s.db.APITokens(householdID)
@@ -45,19 +46,24 @@ func isDeviceToken(t store.APIToken) bool {
 	if t.MCP { // tokens made for MCP are not for calendar apps
 		return false
 	}
+	// A token with lists alone is the scope other software uses over the API.
 	scopes := strings.Fields(t.Scopes)
 	for _, sc := range scopes {
-		if sc != "calendars" && sc != "tasks" {
+		if sc != "calendars" && sc != "tasks" && sc != "lists" {
 			return false
 		}
 	}
-	return len(scopes) > 0
+	return scopedTo(t.Scopes, "calendars") || scopedTo(t.Scopes, "tasks")
 }
 
 // scopeTextKey names the message that says what a device token may do.
 func scopeTextKey(t store.APIToken) string {
-	cal, tasks := scopedTo(t.Scopes, "calendars"), scopedTo(t.Scopes, "tasks")
+	cal, tasks, lists := scopedTo(t.Scopes, "calendars"), scopedTo(t.Scopes, "tasks"), scopedTo(t.Scopes, "lists")
 	switch {
+	case cal && tasks && lists:
+		return "caldav.scope.calendars_tasks_lists"
+	case lists && !cal && !tasks:
+		return "caldav.scope.lists"
 	case cal && tasks:
 		return "caldav.scope.calendars_tasks"
 	case tasks:
@@ -226,7 +232,8 @@ func (s *server) handleDeviceTokenPage(w http.ResponseWriter, r *http.Request) {
 // iosProfile creates a new device token for the person and returns the iOS
 // configuration profile that holds it (ADR 0017). The box keeps no copy: the
 // token is stored hashed, the profile only exists in this answer.
-// The token opens the person's calendars and the task lists (ADR 0018).
+// The token opens the person's calendars, the task lists (ADR 0018) and the
+// lists shared with other apps (ticket 167).
 func (s *server) iosProfile(r *http.Request, p principal, name string) ([]byte, error) {
 	acc, err := s.db.AccountByPerson(p.person.ID)
 	if err != nil {
@@ -270,9 +277,15 @@ func (s *server) handleIOSProfile(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	name := strings.TrimSpace(r.PostFormValue("profile_name"))
+	// The setup page for lists posts here too (ticket 167) and wants its own page back on an error.
+	setup := r.PostFormValue("next") == sharingPath
 	switch {
-	case r.TLS == nil: // a token must never travel unencrypted
+	case r.TLS == nil && setup: // a token must never travel unencrypted
+		s.renderSharingSetup(w, r, p, http.StatusForbidden, map[string]any{"ProfileName": name})
+	case r.TLS == nil:
 		s.renderCalDAV(w, r, p, http.StatusForbidden, map[string]any{"ProfileError": "caldav.profile.error.https", "ProfileName": name})
+	case !validDeviceName(name) && setup:
+		s.renderSharingSetup(w, r, p, http.StatusUnprocessableEntity, map[string]any{"Error": "caldav.error.name", "ErrorField": "profile_name", "ProfileName": name})
 	case !validDeviceName(name):
 		s.renderCalDAV(w, r, p, http.StatusUnprocessableEntity, map[string]any{"Error": "caldav.error.name", "ErrorField": "profile_name", "ProfileName": name})
 	default:

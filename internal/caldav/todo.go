@@ -95,9 +95,27 @@ type TodoEdit struct {
 	Completed bool
 }
 
+// MaxItemTitle bounds the title of a list entry's reminder: the entry's text
+// plus a quantity after it.
+const MaxItemTitle = 260
+
+// ParseItemTodo reads a reminder saved to a shared list (ticket 167): title,
+// notes and completion. Dates, times and flags are ignored, and notes are not
+// bounded here: the box cuts them to what an entry holds.
+func ParseItemTodo(cal *ical.Calendar) (TodoEdit, error) {
+	edit, err := parseTodo(cal, time.UTC, MaxItemTitle, -1)
+	edit.Due = ""
+	return edit, err
+}
+
 // ParseTodo reads what a client saves: exactly one VTODO. Times are read in
 // zone when they carry none.
 func ParseTodo(cal *ical.Calendar, zone *time.Location) (TodoEdit, error) {
+	return parseTodo(cal, zone, MaxTodoTitle, MaxTodoNotes)
+}
+
+// parseTodo reads one VTODO; a negative maxNotes allows any length.
+func parseTodo(cal *ical.Calendar, zone *time.Location, maxTitle, maxNotes int) (TodoEdit, error) {
 	bad := func(msg string) (TodoEdit, error) { return TodoEdit{}, fmt.Errorf("%w: %s", ErrInvalid, msg) }
 	var todo *ical.Component
 	for _, c := range cal.Children {
@@ -119,13 +137,13 @@ func ParseTodo(cal *ical.Calendar, zone *time.Location) (TodoEdit, error) {
 	if title == "" {
 		return bad("title required")
 	}
-	if utf8.RuneCountInString(title) > MaxTodoTitle {
-		return bad(fmt.Sprintf("title may have at most %d characters", MaxTodoTitle))
+	if utf8.RuneCountInString(title) > maxTitle {
+		return bad(fmt.Sprintf("title may have at most %d characters", maxTitle))
 	}
 	notes, _ := todo.Props.Text(ical.PropDescription)
 	notes = strings.TrimSpace(notes)
-	if utf8.RuneCountInString(notes) > MaxTodoNotes {
-		return bad(fmt.Sprintf("notes may have at most %d characters", MaxTodoNotes))
+	if maxNotes >= 0 && utf8.RuneCountInString(notes) > maxNotes {
+		return bad(fmt.Sprintf("notes may have at most %d characters", maxNotes))
 	}
 	out := TodoEdit{Title: title, Notes: notes}
 	if p := todo.Props.Get(ical.PropDue); p != nil {

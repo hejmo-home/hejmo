@@ -325,12 +325,17 @@ func TestUntickAndRetickLoopWithBelowZeroOffMintsNoStars(t *testing.T) {
 	if _, err := f.db.ConfirmRedemption(f.h.ID, r.ID, f.mama.ID, at, time.UTC); err != nil {
 		t.Fatal(err)
 	}
-	// Balance 0: the untick can take nothing back, the re-tick must credit nothing.
-	if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, false, f.sebastian.ID, at.Add(time.Minute)); err != nil {
-		t.Fatal(err)
-	}
-	if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, true, f.sebastian.ID, at.Add(2*time.Minute)); err != nil {
-		t.Fatal(err)
+	// Balance 0: every untick can take nothing back, every re-tick must credit nothing.
+	for i := 0; i < 3; i++ {
+		if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, false, f.sebastian.ID, at.Add(time.Duration(2*i+1)*time.Minute)); err != nil {
+			t.Fatal(err)
+		}
+		if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, true, f.sebastian.ID, at.Add(time.Duration(2*i+2)*time.Minute)); err != nil {
+			t.Fatal(err)
+		}
+		if got := f.balance(t, f.sebastian); got != 0 {
+			t.Fatalf("round %d: balance after untick and re-tick = %d, want 0 (3 earned, 3 spent, nothing minted)", i, got)
+		}
 	}
 	if got := f.balance(t, f.sebastian); got != 0 {
 		t.Fatalf("balance after untick and re-tick = %d, want 0 (3 earned, 3 spent, nothing minted)", got)
@@ -339,6 +344,48 @@ func TestUntickAndRetickLoopWithBelowZeroOffMintsNoStars(t *testing.T) {
 	if _, err := f.db.AskReward(f.h.ID, f.sebastian.ID, rw.ID, at.Add(time.Hour), time.UTC); !errors.As(err, &re) {
 		t.Fatalf("a second reward without stars = %v, want a stars error", err)
 	}
+}
+
+// The star value changing between an untick and a re-tick must neither mint
+// nor lose stars: the debt is held against the new value.
+func TestStarValueChangeWhileDebtIsOutstanding(t *testing.T) {
+	f := newRewardFixture(t)
+	tk, _ := f.db.AddTask(f.h.ID, task.Task{PersonID: f.sebastian.ID, Title: "Zimmer aufräumen", Repeat: task.Once, Date: "2026-11-23", Stars: 3})
+	_ = f.db.SetBelowZero(f.h.ID, false)
+	day := "2026-11-23"
+	clock := rt0
+	if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, true, f.sebastian.ID, clock); err != nil {
+		t.Fatal(err)
+	}
+	// Spend the 3 earned stars.
+	if _, err := f.db.SQL().Exec(`INSERT INTO star_log (id, person_id, delta, day, created_at) VALUES ('spend', ?, -3, ?, ?)`, f.sebastian.ID, day, rt0.UTC().Format(time.RFC3339)); err != nil {
+		t.Fatal(err)
+	}
+	step := func(done bool, want int, msg string) {
+		t.Helper()
+		clock = clock.Add(time.Minute)
+		if err := f.db.SetTaskDone(f.h.ID, tk.ID, day, done, f.sebastian.ID, clock); err != nil {
+			t.Fatal(err)
+		}
+		if got := f.balance(t, f.sebastian); got != want {
+			t.Fatalf("%s: balance = %d, want %d", msg, got, want)
+		}
+	}
+	step(false, 0, "untick takes nothing (3 owed)")
+	if err := f.db.SetTaskStars(f.h.ID, tk.ID, 5); err != nil {
+		t.Fatal(err)
+	}
+	step(true, 2, "re-tick at 5 stars pays the 3 owed, credits 2")
+	step(false, 0, "untick takes back what is there (3 owed again)")
+	if err := f.db.SetTaskStars(f.h.ID, tk.ID, 2); err != nil {
+		t.Fatal(err)
+	}
+	step(true, 0, "re-tick at 2 stars credits nothing")
+	step(false, 0, "untick: still nothing to take back")
+	if err := f.db.SetTaskStars(f.h.ID, tk.ID, 3); err != nil {
+		t.Fatal(err)
+	}
+	step(true, 0, "back at 3 stars, the debt still swallows the credit")
 }
 
 func TestAnUntickThatTookBackEverythingLeavesNoDebt(t *testing.T) {

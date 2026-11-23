@@ -250,8 +250,11 @@ func setTaskDoneTx(tx *sql.Tx, t task.Task, day string, done bool, by string, at
 			return false, 0, err
 		}
 		credit := max(0, t.Stars-debt)
+		// task_done keeps the full value so every untick tries to take all of
+		// it back and records the shortfall again; only the star log is
+		// reduced by the debt paid.
 		res, err := tx.Exec(`INSERT INTO task_done (task_id, day, completed_at, completed_by, stars) VALUES (?, ?, ?, NULLIF(?, ''), ?)
-			ON CONFLICT (task_id, day) DO NOTHING`, t.ID, day, at.UTC().Format(time.RFC3339), by, credit)
+			ON CONFLICT (task_id, day) DO NOTHING`, t.ID, day, at.UTC().Format(time.RFC3339), by, t.Stars)
 		if err != nil {
 			return false, 0, err
 		}

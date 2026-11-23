@@ -47,7 +47,7 @@ function lists(opts = {}) {
   view.querySelectorAll = (sel) => (sel === '.added' ? view.added : []);
   view.addEventListener = (n, fn) => { state.listeners[n] = fn; };
   Object.defineProperty(view, 'innerHTML', {
-    set(html) { view.html = html; view.field = newField(''); if (state.active) state.active = null; },
+    set(html) { view.html = html; if (opts.scrolled) sandbox.scrollY = 0; view.field = newField(''); if (state.active) state.active = null; },
     get() { return view.html; },
   });
   display.querySelector = (sel) => (sel === '[data-view]' ? view : null);
@@ -77,8 +77,10 @@ function lists(opts = {}) {
     location, setInterval: () => 0, setTimeout: () => 0, clearTimeout() {},
   };
   sandbox.window = sandbox;
+  sandbox.scrollY = opts.scrolled || 0;
+  sandbox.scrollTo = (x, y) => { state.scrolledTo = [x, y]; sandbox.scrollY = y; };
   vm.runInNewContext(source, sandbox);
-  return { state, view, form, slot, host, announce: (v) => state.es.on.view({ data: v }), location };
+  return { sandbox, state, view, form, slot, host, announce: (v) => state.es.on.view({ data: v }), location };
 }
 
 const submitEvent = (form) => ({ target: form, preventDefault() { this.prevented = true; } });
@@ -413,4 +415,29 @@ test('the regular check tells the box whether the display hangs in portrait or l
   const landscape = family([{ state: 'paired' }], {}, { innerWidth: 1024, innerHeight: 768 });
   landscape.intervals[0]();
   assert.equal(landscape.requests[0], '/display/state?orientation=landscape');
+});
+
+// Ticket 208: a phone that has scrolled down to the tiles stays there when the
+// box swaps the view (the family view scrolls as one page on phones).
+test('a refresh keeps the scroll position of the page', async () => {
+  const p = lists({ scrolled: 420 });
+  p.announce('v2');
+  await tick();
+  assert.equal(p.view.html, '<p>fresh</p>');
+  assert.deepEqual(p.state.scrolledTo, [0, 420]);
+  assert.equal(p.sandbox.scrollY, 420);
+});
+
+test('a page that has not scrolled is not scrolled by a refresh', async () => {
+  const p = lists();
+  p.announce('v2');
+  await tick();
+  assert.equal(p.state.scrolledTo, undefined);
+});
+
+test('a tap on the Below-the-columns anchor is left to the browser', () => {
+  const p = lists();
+  const e = { target: { closest: () => null }, preventDefault() { this.prevented = true; } };
+  p.state.listeners.click(e);
+  assert.ok(!e.prevented);
 });

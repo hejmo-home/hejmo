@@ -197,7 +197,11 @@
   // swap puts new markup into the view; keep holds the field across it.
   function swap(html, keep) {
     var held = keep ? holdField() : null;
+    // On a phone the family view scrolls as one page (ticket 208): a refresh
+    // must not throw it back to the top.
+    var scrolled = window.scrollY || 0;
     view.innerHTML = html;
+    if (scrolled && window.scrollY !== scrolled && window.scrollTo) window.scrollTo(0, scrolled);
     restoreField(held);
     tickClock();
     armReload();

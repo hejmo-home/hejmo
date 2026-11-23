@@ -3621,7 +3621,7 @@
   "layout.b.tasks.on": "An: unten in der Spalte, zum Beispiel „3 von 5 Aufgaben erledigt“",
   "layout.b.tasks.off": "Aus: kein Aufgaben-Fortschritt",
   "layout.b.stars": "Sterne und Sparziel",
-  "layout.b.stars.on": "An: die Sterne jeder Person und ihr Sparziel, zum Beispiel ★ 12 von 30",
+  "layout.b.stars.on": "An: die Sterne jeder Person und das Sparziel, zum Beispiel ★ 12 von 30",
   "layout.b.stars.off": "Aus: keine Sterne in den Spalten",
   "layout.b.meals": "Essen heute",
   "layout.b.meals.on": "An: was heute noch gegessen wird",

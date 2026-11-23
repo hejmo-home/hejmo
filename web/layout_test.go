@@ -54,7 +54,7 @@ func visibleColumns(t *testing.T, css string, w, h float64, n int) (int, float64
 		}
 	}
 	margin, gap, min := px(t, root["--margin"]), px(t, root["--gap"]), px(t, root["--col-min"])
-	if w < 600 { // ticket 208: a phone's page padding is --gap, not --margin
+	if w < 600 || h <= 500 { // ticket 208: a phone's page padding (also in landscape) is --gap, not --margin
 		margin = gap
 	}
 	avail := w - 2*margin

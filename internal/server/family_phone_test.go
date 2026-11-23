@@ -23,6 +23,8 @@ import (
 
 // threeTileView is a family view with four people, a busy day and all three
 // footer tiles: meals, tomorrow with the put-out pill, and a list of 8 entries.
+// The family strip is filled too (2 entries today, 1 tomorrow): it is the worst
+// case for the first screen, because it pushes the columns down.
 func threeTileView() familyview.View {
 	d := func(h, m int) time.Time { return time.Date(2026, 11, 14, h, m, 0, 0, berlinTZ) }
 	people := []familyview.Person{
@@ -40,6 +42,8 @@ func threeTileView() familyview.View {
 	v.Meal = &familyview.MealTile{Label: "Meals today", Entries: []familyview.MealEntry{{Mealtime: "lunch", Dish: "Tomato soup"}, {Mealtime: "dinner", Dish: "Pasta bake"}}}
 	v.TomorrowTile = &familyview.Tile{Label: "Tomorrow", Alert: true, Lines: []familyview.Line{{Kind: familyview.LineWaste, Text: "Paper bin"}, {Kind: familyview.LineWaste, Text: "Residual waste"}}}
 	v.List = &familyview.ListTile{ID: "l1", Name: "Shopping list", More: 2, Entries: []string{"Milk", "Bread", "Apples", "Pasta", "Tomatoes", "Cheese", "Rice", "Eggs"}}
+	v.Strip = []familyview.StripItem{{Kind: familyview.KindEvent, Title: "School trip to the museum", AllDay: true}, {Kind: familyview.KindEvent, Title: "Grandma visits", AllDay: true}}
+	v.StripTomorrow = []familyview.StripItem{{Kind: familyview.KindEvent, Title: "Dentist", AllDay: true}}
 	v.FooterOrder = []layout.BlockID{"meals", "tomorrow", "list"}
 	return v
 }
@@ -82,7 +86,7 @@ func TestFamilyViewOnPhonesAndWallDisplays(t *testing.T) {
 	for _, c := range []struct {
 		w, h  int
 		phone bool
-	}{{375, 812, true}, {375, 667, true}, {1024, 768, false}, {768, 1024, false}} {
+	}{{375, 812, true}, {375, 667, true}, {812, 375, true}, {1024, 768, false}, {768, 1024, false}} {
 		t.Run(fmt.Sprintf("%dx%d", c.w, c.h), func(t *testing.T) {
 			if _, err := chromedp.Call(ctx, emulation.SetDeviceMetricsOverride, emulation.SetDeviceMetricsOverrideParams{Width: int64(c.w), Height: int64(c.h), DeviceScaleFactor: 1}); err != nil {
 				t.Fatal(err)
@@ -113,14 +117,15 @@ func TestFamilyViewOnPhonesAndWallDisplays(t *testing.T) {
 				}
 				return
 			}
-			if m.BodyOverflow == "hidden" || m.Below == "none" || m.BodyPadding != "14px" || m.Clock != "none" {
+			if m.BodyOverflow == "hidden" || m.Below == "none" || m.BodyPadding != "14px" || (c.w < 600) != (m.Clock == "none") {
 				t.Errorf("phone layout missing: %s", got)
 			}
 			if m.Columns < 2 {
 				t.Errorf("%d visible columns: %s", m.Columns, got)
 			}
 			for i, low := range m.Lowest {
-				if low > float64(m.Inner) {
+				// A landscape phone is too short for three entries on the first screen.
+				if c.h > 500 && low > float64(m.Inner) {
 					t.Errorf("column %d: its third entry ends at %.0f px, below the first screen (%d px)", i+1, low, m.Inner)
 				}
 				if m.Events[i] != 5 {

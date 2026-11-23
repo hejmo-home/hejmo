@@ -3290,6 +3290,13 @@ section > .hint.none { margin-top: -4px; }
   .fv-grid { flex: 1 0 auto; grid-auto-rows: auto; }
   .fv .column { overflow: visible; }
   .fv .events { flex: 1 0 auto; overflow: visible; }
+  /* Worst case, 375 x 667 with 2 strip entries today and 1 tomorrow: the strip
+     and the gaps are compact so the third entry of every column stays on the
+     first screen. */
+  .fv { gap: var(--gap-cards); }
+  .fv .strip-wrap { gap: 6px; }
+  .fv .strip { gap: 6px; }
+  .fv .strip-item { padding: 5px 10px; }
   .fv-footer { scroll-margin-top: var(--gap); }
   .fv-footer .tile { flex-basis: 100%; }
   .fv .chips { max-width: 100%; }
